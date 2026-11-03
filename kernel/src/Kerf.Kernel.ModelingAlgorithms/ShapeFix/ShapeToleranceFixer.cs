@@ -18,8 +18,8 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <remarks>
 /// A stateless working object. OCCT's <c>LimitTolerance</c> and <c>SetTolerance</c> write the tolerances in place,
 /// so they are internal (ported code on shapes it owns). Callers use the twins <see cref="ToleranceLimited"/> and
-/// <see cref="WithTolerance"/>, which work on a copy of a frozen shape, give back its unchanged sub-shapes and freeze
-/// the result (decision 583).
+/// <see cref="WithTolerance"/>, which run them in a working overlay (Kerf unit 10H1): the caller's frozen shape isn't
+/// written, the result shares its unchanged sub-shapes and is frozen.
 /// </remarks>
 public sealed class ShapeToleranceFixer
 {
@@ -212,16 +212,16 @@ public sealed class ShapeToleranceFixer
     // ---- OCCT.NET: the functional twins (design 4.6, decision 583) ----
 
     /// <summary>
-    /// The shape with the tolerances limited as <see cref="LimitTolerance"/> does, frozen: a frozen shape is copied
-    /// first, and the sub-shapes left unchanged are the caller's own; a shape needing no change is returned itself.
+    /// The shape with the tolerances limited as <see cref="LimitTolerance"/> does, frozen: the sub-shapes left unchanged
+    /// are the caller's own; a shape needing no change is returned itself.
     /// <paramref name="isDone"/> is <c>LimitTolerance</c>'s result (true if a tolerance changed).
     /// </summary>
     public Shape ToleranceLimited(in Shape shape, double tmin, out bool isDone, double tmax = 0.0,
                                          ShapeType styp = ShapeType.Shape)
     {
-        var entry = new CopyAtEntry(shape);
-        isDone = LimitTolerance(entry.Shape(), tmin, tmax, styp);
-        Shape result = entry.Finish(entry.Shape());
+        using var overlay = WorkingOverlay.Begin(shape);
+        isDone = LimitTolerance(shape, tmin, tmax, styp);
+        Shape result = overlay.Finish(shape);
         result.TShape()?.FreezeGraph();
         return result;
     }
@@ -232,9 +232,9 @@ public sealed class ShapeToleranceFixer
     /// </summary>
     public Shape WithTolerance(in Shape shape, double preci, ShapeType styp = ShapeType.Shape)
     {
-        var entry = new CopyAtEntry(shape);
-        SetTolerance(entry.Shape(), preci, styp);
-        Shape result = entry.Finish(entry.Shape());
+        using var overlay = WorkingOverlay.Begin(shape);
+        SetTolerance(shape, preci, styp);
+        Shape result = overlay.Finish(shape);
         result.TShape()?.FreezeGraph();
         return result;
     }
