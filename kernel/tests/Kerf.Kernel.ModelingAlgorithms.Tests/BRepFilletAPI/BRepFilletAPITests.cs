@@ -69,7 +69,7 @@ public class BRepFilletAPITests
     public void TheCallersShapeIsUnwrittenAndItsUnchangedFacesAreInTheResult()
     {
         Shape aBox = Box();
-        Assert.True(BrepTools.HoldsFrozen(aBox));
+        Assert.True(TestCopies.HoldsFrozen(aBox));
         double[] aBefore = VertexTolerances(aBox);
         string aText = Text(aBox);
         Edge E = EdgeOf(aBox, 1);
@@ -117,8 +117,8 @@ public class BRepFilletAPITests
     [Fact]
     public void AnUnfrozenInputIsWorkedOnInPlaceAsOcct()
     {
-        Shape aBox = BrepTools.ExactCopyForWrite(Box(), out History _);
-        Assert.False(BrepTools.HoldsFrozen(aBox));
+        Shape aBox = TestCopies.ExactCopyForWrite(Box(), out History _);
+        Assert.False(TestCopies.HoldsFrozen(aBox));
         MakeFillet aFillet = new(aBox);
         aFillet.Add(2.0, EdgeOf(aBox, 1));
         aFillet.Build();

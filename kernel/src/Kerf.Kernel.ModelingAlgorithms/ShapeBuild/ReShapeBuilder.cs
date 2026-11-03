@@ -29,10 +29,10 @@ namespace Kerf.Engine.Healing.Build;
 /// </para>
 /// <para>
 /// Apply only writes into the shapes it builds (EmptyCopied parents, ranges copied onto a rebuilt edge, the Closed
-/// flag of rebuilt wires and shells): it works on frozen shapes. A healing algorithm that ran on a copy of a frozen
-/// shape (decision 583) records its replacements of the copy's sub-shapes here; <see cref="CopyAtEntry"/>
-/// then re-keys them to the caller's sub-shapes, so <c>Value</c>, <c>Apply</c> and <c>History</c> answer for the
-/// shapes the caller holds.
+/// flag of rebuilt wires and shells): it works on frozen shapes. A healing algorithm runs on the caller's shape in a
+/// working overlay (units 10H1 and 10H4) and records its replacements of the caller's sub-shapes here; the overlay's
+/// <c>Finish</c> brings the replacements up to date and records the sub-shapes changed in place, so <c>Value</c>,
+/// <c>Apply</c> and <c>History</c> answer for the shapes the caller holds.
 /// </para>
 /// </remarks>
 public class ReShapeBuilder : ReShape

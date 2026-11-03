@@ -122,8 +122,8 @@ public static class OperLibrary
         => ctx.Messages() is not null ? new MsgRegistrator() : null;
 
     // True if the modifier may write into the shape: inside a working overlay (the context's, while operators run),
-    // which takes the writes, or when it holds no frozen shape (Kerf unit 10H4).
-    private static bool IsWritable(in Shape s) => WorkingOverlay.Writing is not null || !BrepTools.HoldsFrozen(s);
+    // which takes the writes, or when it holds no frozen shape (Kerf units 10H4, 10H6).
+    private static bool IsWritable(in Shape s) => WorkingOverlay.Writing is not null || WorkingOverlay.IsWritableInPlace(s);
 
     // The modifiers run on the context's result in its working overlay, in the mutable-input mode as OCCT's (decision
     // 1022)

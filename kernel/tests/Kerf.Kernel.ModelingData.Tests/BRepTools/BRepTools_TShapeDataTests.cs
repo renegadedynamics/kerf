@@ -11,10 +11,11 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingData.Tests;
 
 /// <summary>
-/// BRepTools.ExactCopyForWrite (an exact structural copy: nothing recomputed) and BRepTools.KeepUnchanged (the copy's
-/// unchanged parts given back as the original's own).
+/// BRepTools.CopyData and CopyFlags (an exact copy of a TShape's data: nothing recomputed), through the tests' exact
+/// copy, and IsSameData (a working copy left equal to its original gives back the original), through the working
+/// overlay. Until unit 10H6 they tested BRepTools.ExactCopyForWrite and KeepUnchanged, which copy at entry used.
 /// </summary>
-public class BRepTools_ExactCopyTests
+public class BRepTools_TShapeDataTests
 {
     /// <summary>A frozen box whose first face's first edge has a pcurve over its own range [0, 1] (not same range).</summary>
     private static Solid BoxWithARangedPCurve()
@@ -35,7 +36,7 @@ public class BRepTools_ExactCopyTests
     {
         Solid aBox = BoxWithARangedPCurve();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aH);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out History aH);
         aSnap.AssertUnchanged(aBox);
         Assert.False(aCopy.TShape()!.IsFrozen);
         Assert.False(aCopy.IsSame(aBox));
@@ -52,22 +53,28 @@ public class BRepTools_ExactCopyTests
     public void An_unchanged_copy_gives_back_the_original()
     {
         Solid aBox = BoxWithARangedPCurve();
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
-        Shape aKept = BrepTools.KeepUnchanged(aBox, aCopy, out History aH);
+        Edge anE = ShapeCasts.Edge(new Explorer(aBox, ShapeType.Edge).Current());
+        using var anOverlay = WorkingOverlay.Begin(aBox);
+        new BrepBuilder().SameRange(anE, false); // written (a working copy), but the value it held
+        Assert.Equal(1, anOverlay.WorkingCount);
+        Shape aKept = anOverlay.Finish(aBox);
         Assert.True(aKept.IsEqual(aBox));
-        Assert.False(aH.HasModified);
+        Assert.False(anOverlay.History().HasModified);
     }
 
     [Fact]
     public void A_changed_vertex_takes_its_edges_faces_and_parents_with_it()
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out History aCopyH);
         Vertex aV = ShapeCasts.Vertex(new Explorer(aBox, ShapeType.Vertex).Current());
-        Vertex aVCopy = ShapeCasts.Vertex(aCopyH.Modified(aV)[0]);
-        new BrepBuilder().UpdateVertex(aVCopy, 1e-3);
-
-        Shape aKept = BrepTools.KeepUnchanged(aBox, aCopy, out History aH);
+        Shape aKept;
+        History aH;
+        using (var anOverlay = WorkingOverlay.Begin(aBox))
+        {
+            new BrepBuilder().UpdateVertex(aV, 1e-3);
+            aKept = anOverlay.Finish(aBox);
+            aH = anOverlay.History();
+        }
         Assert.False(aKept.IsSame(aBox));
         // a corner of the box: its 3 edges and 3 faces change; the other 7 vertices, 9 edges and 3 faces are the box's
         (int Kept, int Changed) Count(ShapeType theType)

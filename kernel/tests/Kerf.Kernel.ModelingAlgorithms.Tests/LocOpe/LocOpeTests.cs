@@ -155,7 +155,7 @@ public class LocOpeTests
     {
         // ported code's own shape (BRepFeat's intermediate results) isn't copied: the vertices get their point
         // representations in place, and the faces away from the split are the shape's own
-        Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _);
+        Shape aBox = TestCopies.ExactCopyForWrite(Box(), out _);
         Assert.False(aBox.TShape()!.IsFrozen);
         Edge anEdge = ShapeCasts.Edge(new Explorer(TopFace(aBox), ShapeType.Edge).Current());
         Tool.Range(anEdge, out double f, out double l);

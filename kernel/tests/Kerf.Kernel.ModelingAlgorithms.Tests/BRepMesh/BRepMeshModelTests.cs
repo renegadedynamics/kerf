@@ -411,7 +411,7 @@ public class BRepMeshModelTests
         Assert.True(anError is global::Kerf.Engine.Foundation.ImmutableObjectException or LockedShapeException, global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()));
         aSnapshot.AssertUnchanged(aShape);
 
-        Shape aCopy = BrepTools.ExactCopyForWrite(aShape, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aShape, out _);
         var aFaceMeshes = new HashSet<Triangulation>(ReferenceEqualityComparer.Instance);
         foreach (Shape aF in Explore(aCopy, ShapeType.Face))
         {
@@ -606,6 +606,16 @@ public class BRepMeshModelTests
 
     // ----------------------------------------------------------------------------------------------- post-processor
 
+    // What stands in the meshed result for a sub-shape of the input (unit 10H6: the model holds the input's own).
+    private static Shape InResult(IncrementalMesh theMesh, in Shape theShape)
+    {
+        foreach (Shape aModified in theMesh.History().Modified(theShape))
+        {
+            return aModified;
+        }
+        return theShape;
+    }
+
     [Fact]
     public void Post_processor_commits_polygons_and_reuse_gives_back_the_mesh()
     {
@@ -632,7 +642,9 @@ public class BRepMeshModelTests
         Assert.True(aResult.TShape()!.IsFrozen);
 
         // Each face's triangulation, with the deflection measured and the parameters it was made with.
-        ModelModel aModel = aContext.GetModel()!; // of the copy, whose meshed sub-shapes the result holds
+        // the model of the input's own sub-shapes (unit 10H6: meshed in a working overlay); the result holds what stands
+        // for them (InResult)
+        ModelModel aModel = aContext.GetModel()!;
         foreach (Shape aF in Explore(aResult, ShapeType.Face))
         {
             Triangulation aTri = Tool.Triangulation(ShapeCasts.Face(aF), out _)!;
@@ -652,7 +664,7 @@ public class BRepMeshModelTests
             EdgeModel? aDEdge = null;
             for (int i = 0; i < aModel.EdgesNb() && aDEdge is null; i++)
             {
-                if (aModel.GetEdge(i).GetEdge().IsSame(anEdge))
+                if (InResult(aMesh, aModel.GetEdge(i).GetEdge()).IsSame(anEdge))
                 {
                     aDEdge = aModel.GetEdge(i);
                 }
@@ -746,12 +758,14 @@ public class BRepMeshModelTests
             Assert.Equal(0.0, aFirst.GetPoint(0).X(), 1e-12);
             Assert.Equal(2 * Math.PI, aLast.GetPoint(0).X(), 1e-12);
 
-            Face aFace = aFirst.GetFace().GetFace();
+            // the model holds the input's faces and edges; the meshes are on what stands for them in the result
+            Face aFace = ShapeCasts.Face(InResult(aMesh, aFirst.GetFace().GetFace()));
             Triangulation aTri = Tool.Triangulation(aFace, out Placement aLoc)!;
+            Shape anEdge = InResult(aMesh, aDEdge.GetEdge());
             PolygonOnTriangulation aForward =
-                Tool.PolygonOnTriangulation(ShapeCasts.Edge(aDEdge.GetEdge().Oriented(Forward)), aTri, aLoc)!;
+                Tool.PolygonOnTriangulation(ShapeCasts.Edge(anEdge.Oriented(Forward)), aTri, aLoc)!;
             PolygonOnTriangulation aReversed =
-                Tool.PolygonOnTriangulation(ShapeCasts.Edge(aDEdge.GetEdge().Oriented(Reversed)), aTri, aLoc)!;
+                Tool.PolygonOnTriangulation(ShapeCasts.Edge(anEdge.Oriented(Reversed)), aTri, aLoc)!;
             for (int k = 1; k <= aForward.NodeCount; k++)
             {
                 Assert.Equal(aFirst.GetIndex(k - 1), aForward.Node(k));
@@ -792,15 +806,15 @@ public class BRepMeshModelTests
                 ToolParameters aSerial = aBase, aParallel = aBase;
                 aSerial.InParallel = false;
                 aParallel.InParallel = true;
-                string aReference = Dump(Model(BrepTools.ExactCopyForWrite(aShape, out _), aSerial));
+                string aReference = Dump(Model(TestCopies.ExactCopyForWrite(aShape, out _), aSerial));
                 for (int aRun = 0; aRun < 2; aRun++)
                 {
-                    string aDump = Dump(Model(BrepTools.ExactCopyForWrite(aShape, out _), aParallel));
+                    string aDump = Dump(Model(TestCopies.ExactCopyForWrite(aShape, out _), aParallel));
                     Assert.True(aReference == aDump, $"{aName}: parallel run {aRun} differs");
                 }
                 using (global::Kerf.Engine.Foundation.OsdParallel.ForceSerialScope())
                 {
-                    Assert.True(aReference == Dump(Model(BrepTools.ExactCopyForWrite(aShape, out _), aParallel)), $"{aName}: forced serial");
+                    Assert.True(aReference == Dump(Model(TestCopies.ExactCopyForWrite(aShape, out _), aParallel)), $"{aName}: forced serial");
                 }
             }
         }

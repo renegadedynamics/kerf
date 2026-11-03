@@ -629,7 +629,7 @@ public class TransferReader : Transient
         {
             return sh;
         }
-        if (!BrepTools.HoldsFrozen(sh))
+        if (WorkingOverlay.IsWritableInPlace(sh))
         {
             ShapeFixFixer.EncodeRegularity(sh, tolang);
             return sh;
@@ -653,7 +653,7 @@ public class TransferReader : Transient
         {
             return;
         }
-        if (!BrepTools.HoldsFrozen(shape))
+        if (WorkingOverlay.IsWritableInPlace(shape))
         {
             ShapeFixFixer.EncodeRegularity(shape, tolAng);
             return;

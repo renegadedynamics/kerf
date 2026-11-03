@@ -234,7 +234,7 @@ public class HLRBRepTests
     }
 
     [Fact]
-    public void OutLiner_FrozenInputIsCopiedAndUnchanged()
+    public void OutLiner_FrozenInputIsOutlinedInAWorkingOverlayAndUnchanged()
     {
         Shape aCyl = new ApiMakeCylinder(10.0, 30.0).Shape(); // frozen
         Assert.True(aCyl.TShape()!.IsFrozen);
@@ -242,11 +242,11 @@ public class HLRBRepTests
         HiddenLineData DS = Load(aCyl, Axo, 3, out OutLiner S);
         Assert.Equal(aBefore, BRepText(aCyl));
         Assert.True(S.OriginalShape().IsEqual(aCyl));
-        Assert.False(S.InternalWorkingShape().IsSame(aCyl));
-        // the outlining split the circles at the silhouette's ends and added isolines
+        // the outlining split the circles at the silhouette's ends and added isolines; its data structure holds the
+        // caller's own faces and edges (unit 10H6: it worked on them in a working overlay)
         TopologyData TopDS = S.DataStructure();
         int nbSplit = 0, nbIso = 0, nbIntL = 0;
-        for (Explorer ex = new(S.InternalWorkingShape(), ShapeType.Face); ex.More(); ex.Next())
+        for (Explorer ex = new(aCyl, ShapeType.Face); ex.More(); ex.Next())
         {
             Face F = ShapeCasts.Face(ex.Current());
             nbIso += TopDS.FaceHasIsoL(F) ? TopDS.FaceIsoL(F).Extent() : 0;
@@ -268,14 +268,14 @@ public class HLRBRepTests
     public void OutLiner_UnfrozenInputIsWrittenInPlaceWithTheSameResult()
     {
         Shape aFrozen = new ApiMakeCylinder(10.0, 30.0).Shape();
-        Shape aWork = BrepTools.ExactCopyForWrite(aFrozen, out _);
+        Shape aWork = TestCopies.ExactCopyForWrite(aFrozen, out _);
         Assert.False(aWork.TShape()!.IsFrozen);
 
         HiddenLineData DS1 = Load(aFrozen, Axo, 3, out OutLiner S1);
         HiddenLineData DS2 = Load(aWork, Axo, 3, out OutLiner S2);
         // an unfrozen shape is outlined in place, as OCCT does (the split edges' end vertices are updated)
-        Assert.True(S2.InternalWorkingShape().IsSame(aWork));
-        // and the data is the same as the frozen shape's copy gives
+        Assert.True(S2.OriginalShape().IsSame(aWork));
+        // and the data is the same as the frozen shape's overlay gives
         Assert.Equal(DS1.EdgeCount, DS2.EdgeCount);
         for (int e = 1; e <= DS1.EdgeCount; e++)
         {

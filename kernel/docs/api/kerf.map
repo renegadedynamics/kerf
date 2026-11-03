@@ -891,7 +891,6 @@ type T:Occt.BRepSweep_Tool Kerf.Engine.Construction.Sweeping.SweepingTool  # 10E
 type T:Occt.BRepSweep_Translation Kerf.Engine.Construction.Sweeping.Translation  # 10E: internal, drafted in 10E
 type T:Occt.BRepSweep_Trsf Kerf.Engine.Construction.Sweeping.Trsf  # 10E: internal, drafted in 10E
 type T:Occt.BRepTools Kerf.Engine.Topology.Tools.BrepTools  # 10E: settled by hand
-type T:Occt.BRepTools_CopyAtEntry Kerf.Engine.Topology.Tools.CopyAtEntry  # draft
 type T:Occt.BRepTools_CopyModification Kerf.Engine.Topology.Tools.CopyModification  # engine (10D)
 type T:Occt.BRepTools_GTrsfModification Kerf.Engine.Topology.Tools.GTrsfModification  # engine (10D)
 type T:Occt.BRepTools_History Kerf.Engine.Topology.History  # engine (10D)
@@ -4756,7 +4755,6 @@ member M:Occt.ShapeAnalysis_FreeBoundsProperties.checkNotches(Kerf.Topology.Wire
 member M:Occt.ShapeAnalysis_Wire.checkTail(Kerf.Topology.Edge@,Kerf.Topology.Edge@,System.Double,System.Double,System.Double,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,Kerf.Topology.Edge@,System.Boolean)~System.Boolean CheckTailCore  # 10E: settled by hand (checkTail and CheckTail would share a signature)
 member M:Occt.ShapeFix.removeSmallEdges(Kerf.Topology.Shape@,System.Double)~Occt.ShapeFix_Shape RemoveSmallEdgesCore  # 10E: settled by hand (removeSmallEdges and RemoveSmallEdges would share a signature)
 member M:Occt.ShapeFix_FaceConnect.build(Occt.NCollection_DataMap{Kerf.Topology.Shape,Occt.NCollection_List{Kerf.Topology.Shape}},Kerf.Topology.Shell@,System.Double,System.Double)~Kerf.Topology.Shell BuildCore  # 10E: settled by hand (build and Build would share a signature)
-member M:Occt.BRepTools.keepUnchanged(Occt.TopoDS_TShape,Occt.TopoDS_TShape,System.Collections.Generic.Dictionary{Occt.TopoDS_TShape,Occt.TopoDS_TShape},System.Boolean,System.Boolean)~Occt.TopoDS_TShape KeepUnchangedCore  # 10E: settled by hand (keepUnchanged and KeepUnchanged would share a signature)
 member M:Occt.BRepTools.removeInternals(Occt.TopoDS_Shape@,Occt.NCollection_Map{Occt.TopoDS_Shape})~System.Boolean RemoveInternalsCore  # 10E: settled by hand (removeInternals and RemoveInternals would share a signature)
 member M:Occt.BRepTools_NurbsConvertModification.newCurve(Occt.NCollection_IndexedDataMap{System.Object,System.Object},Occt.TopoDS_Edge@,Occt.TopoDS_Face@,System.Double@,System.Double@)~Occt.Geom2d_Curve NewCurveCore  # 10E: settled by hand (newCurve and NewCurve would share a signature)
 member M:Occt.BRepTools_NurbsConvertModification.newCurve(Occt.NCollection_IndexedDataMap{System.Object,System.Object},Occt.TopoDS_Edge@,System.Double@,System.Double@)~Occt.Geom_Curve NewCurveCore  # 10E: settled by hand (newCurve and NewCurve would share a signature)
@@ -4765,10 +4763,6 @@ member M:Occt.BRepTools_NurbsConvertModification.newParameter(Kerf.Geometry.Poin
 member M:Occt.BRepTools_NurbsConvertModification.newSurface(Occt.NCollection_IndexedDataMap{System.Object,System.Object},Occt.TopoDS_Face@)~Occt.Geom_Surface NewSurfaceCore  # 10E: settled by hand (newSurface and NewSurface would share a signature)
 member M:Occt.BRepTools_ReShape.history(System.Boolean)~Occt.BRepTools_History HistoryCore  # 10E: settled by hand (history and History would share a signature)
 member M:Occt.BRepTools_ReShape.replace(Occt.TopoDS_Shape@,Occt.TopoDS_Shape@,Occt.BRepTools_ReShape.TReplacementKind) ReplaceCore  # 10E: settled by hand (replace and Replace would share a signature)
-member M:Occt.BRep_Builder.updateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.Polygon3D,Kerf.Topology.Placement@,System.Boolean) UpdateEdgeCore  # 10E: settled by hand (updateEdge and UpdateEdge would share a signature)
-member M:Occt.BRep_Builder.updateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.PolygonOnTriangulation,Kerf.Engine.Meshing.PolygonOnTriangulation,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@,System.Boolean) UpdateEdgeCore  # 10E: settled by hand (updateEdge and UpdateEdge would share a signature)
-member M:Occt.BRep_Builder.updateEdge(Occt.TopoDS_Edge@,Kerf.Engine.Meshing.PolygonOnTriangulation,Kerf.Engine.Meshing.Triangulation,Kerf.Topology.Placement@,System.Boolean) UpdateEdgeCore  # 10E: settled by hand (updateEdge and UpdateEdge would share a signature)
-member M:Occt.BRep_Builder.updateFace(Occt.TopoDS_Face@,Kerf.Engine.Meshing.Triangulation,System.Boolean,System.Boolean) UpdateFaceCore  # 10E: settled by hand (updateFace and UpdateFace would share a signature)
 member M:Occt.Extrema_GlobOptFuncCQuadric.value(System.Double,System.Double@) ValueCore  # 10E: settled by hand (value and Value would share a signature)
 member M:Occt.Extrema_GlobOptFuncCS.gradient(System.Double,System.Double,System.Double,Kerf.Engine.Numerics.VectorBase{System.Double}) GradientCore  # 10E: settled by hand (gradient and Gradient would share a signature)
 member M:Occt.Extrema_GlobOptFuncCS.value(System.Double,System.Double,System.Double,System.Double@) ValueCore  # 10E: settled by hand (value and Value would share a signature)
@@ -6942,8 +6936,6 @@ property M:Occt.BRepPrim_GWedge.IsDegeneratedShape~System.Boolean IsDegeneratedS
 property M:Occt.BRepPrim_OneAxis.HasSides~System.Boolean HasSides
 property M:Occt.BRepProj_Projection.IsDone~System.Boolean IsDone
 property M:Occt.BRepSweep_Tool.NbShapes~System.Int32 ShapeCount
-property M:Occt.BRepTools_CopyAtEntry.IsCopied~System.Boolean IsCopied
-property M:Occt.BRepTools_CopyAtEntry.IsFinished~System.Boolean IsFinished
 property M:Occt.BRepTools_History.HasGenerated~System.Boolean HasGenerated
 property M:Occt.BRepTools_History.HasModified~System.Boolean HasModified
 property M:Occt.BRepTools_History.HasRemoved~System.Boolean HasRemoved

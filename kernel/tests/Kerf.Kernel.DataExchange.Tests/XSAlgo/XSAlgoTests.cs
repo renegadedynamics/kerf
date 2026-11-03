@@ -171,7 +171,7 @@ public class XSAlgoTests
         Assert.True(aContainer.ProcessShape(new Shape(), 0, 0, "", "", ref anInfo, aStatics).IsNull);
 
         // CheckPCurve through the container, on a box's working copy
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out _);
         var aFace = ShapeCasts.Face(new Explorer(aCopy, ShapeType.Face).Current());
         var anEdge = ShapeCasts.Edge(new Explorer(aFace, ShapeType.Edge).Current());
         Assert.True(aContainer.CheckPCurve(anEdge, aFace, 1e-3, false, aStatics));

@@ -40,7 +40,7 @@ public class ShapeBuildTests
         aSnap.AssertUnchanged(theInput);
         Assert.True(aResult.TShape()!.IsFrozen);
 
-        Edge aCopy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(theInput, out _));
+        Edge aCopy = ShapeCasts.Edge(TestCopies.ExactCopyForWrite(theInput, out _));
         theInPlace(aCopy);
         Assert.Equal(Text(aCopy), Text(aResult));
     }

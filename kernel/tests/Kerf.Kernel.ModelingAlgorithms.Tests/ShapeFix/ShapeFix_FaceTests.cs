@@ -310,7 +310,7 @@ public class ShapeFix_FaceTests
             aB.Add(anOuter, TestShapes.Edge(aV[i], aV[(i + 1) % 4])); // clockwise: misoriented for a single wire
         }
         aB.Add(aFace, anOuter);
-        Assert.False(BrepTools.HoldsFrozen(aFace));
+        Assert.False(TestCopies.HoldsFrozen(aFace));
 
         var aFix = new FaceFixer(aFace);
         Assert.True(aFix.FixOrientation());

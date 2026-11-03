@@ -37,7 +37,7 @@ public class BRepLibTwinsTests
         aSnap.AssertUnchanged(theInput);
         Assert.True(aResult.TShape()!.IsFrozen);
 
-        Shape aCopy = BrepTools.ExactCopyForWrite(theInput, out _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(theInput, out _);
         theStatic(aCopy);
         Assert.Equal(Text(aCopy), Text(aResult));
     }

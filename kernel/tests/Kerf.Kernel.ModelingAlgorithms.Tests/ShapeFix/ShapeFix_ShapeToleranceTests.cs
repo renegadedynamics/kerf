@@ -33,7 +33,7 @@ public class ShapeFix_ShapeToleranceTests
     [Fact]
     public void LimitTolerance_InPlace_RaisesAndLowers()
     {
-        Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _);
+        Shape aBox = TestCopies.ExactCopyForWrite(Box(), out _);
         var aTool = new ShapeToleranceFixer();
         Assert.True(aTool.LimitTolerance(aBox, 1e-3));
         Assert.All(Subs(aBox, ShapeType.Edge), e => Assert.Equal(1e-3, Tool.Tolerance(ShapeCasts.Edge(e))));
@@ -48,7 +48,7 @@ public class ShapeFix_ShapeToleranceTests
     public void LimitTolerance_Wire_DoesntCountTheEdges()
     {
         // OCCT: in WIRE mode only the vertices' changes make the result true
-        Shape aW = BrepTools.ExactCopyForWrite(
+        Shape aW = TestCopies.ExactCopyForWrite(
             new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), true).Wire(), out _);
         var aTool = new ShapeToleranceFixer();
         aTool.SetTolerance(aW, 1e-3, ShapeType.Vertex);
@@ -59,7 +59,7 @@ public class ShapeFix_ShapeToleranceTests
     [Fact]
     public void SetTolerance_InPlace_ByType()
     {
-        Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _);
+        Shape aBox = TestCopies.ExactCopyForWrite(Box(), out _);
         var aTool = new ShapeToleranceFixer();
         aTool.SetTolerance(aBox, 0.5, ShapeType.Wire);
         Assert.All(Subs(aBox, ShapeType.Vertex), v => Assert.Equal(0.5, Tool.Tolerance(ShapeCasts.Vertex(v))));

@@ -59,9 +59,8 @@ namespace Kerf.Engine.Offsets;
 /// <see cref="MakeThickSolid"/> run OCCT's code on the caller's shape in a working overlay (unit 10H5,
 /// <see cref="WorkingOverlay"/>; in place inside an operation's overlay that takes writes): the writes into the
 /// caller's frozen TShapes go to working copies, and at the end the result holds new TShapes only for the sub-shapes
-/// that changed (a thick solid holds the caller's faces it left alone). The thickening mode still copies the caller's
-/// shape at the entry (<see cref="CopyAtEntry"/>, decision 1005) and works on the copy: its walls are made by
-/// BRepLib_MakeFace, which copies frozen edges itself until construction runs in an overlay (decision 1421). The
+/// that changed (a thick solid holds the caller's faces it left alone). The thickening mode too (unit 10H6): its walls,
+/// made by BRepLib_MakeFace on the caller's free edges, write into the same overlay and share those edges. The
 /// history (<see cref="Generated"/>, <see cref="Modified"/>, <see cref="IsDeleted"/>) answers for the caller's
 /// sub-shapes, as OCCT's.
 /// </para>
@@ -114,10 +113,6 @@ public sealed partial class MakeOffset
     private WorkingOverlay? _overlay;
     private Dictionary<TShape, TShape>? _copies;    // a caller's unfrozen TShapes -> their copies (BeginOverlay)
     private Dictionary<TShape, TShape>? _originals; // the inverse
-    // OCCT.NET: the copy at the entry of a run in the thickening mode (decision 1005; left by unit 10H5, decision
-    // 1421); null until such a run starts, and after Initialize.
-    private CopyAtEntry? _entry;
-    private bool _isEntryFinished; // OCCT.NET: a second run without Initialize finds the entry finished
 
     // OCCT_DEBUG: the globals AffichInt2d, AffichOffC, ChronBuild, NbAE, NbAF, NVP, NVM, NVN, the chronometer and
     // DEBVerticesControl are left out.
@@ -478,8 +473,6 @@ public sealed partial class MakeOffset
         _overlay = null;
         _copies = null;
         _originals = null;
-        _entry = null;
-        _isEntryFinished = false;
         // Kerf: OCCT's analysis keeps its edge types and ancestors from the last run, which a run on the same shapes
         // then doubles (occt-issues.md); with the copies at the entry each run had new shapes (unit 10H5)
         _analyse.Clear();
@@ -661,14 +654,6 @@ public sealed partial class MakeOffset
     /// </summary>
     private WorkingOverlay? BeginOverlay()
     {
-        if (_thickening || _entry is not null)
-        {
-            // Kerf: the thickening mode stays on its copy at the entry (decision 1421): its walls are made by
-            // BRepLib_MakeFace, which copies frozen edges at its entry until construction's overlay (unit 10H3), so in
-            // a working overlay a wall would hold copies of the caller's edges and vertices beside the caller's own
-            EnterCopy();
-            return null;
-        }
         if (WorkingOverlay.Writing is not null)
         {
             _overlay = null;
@@ -713,72 +698,17 @@ public sealed partial class MakeOffset
         {
             _offsetShape = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(_offsetShape), _copies);
         }
-        else if (_entry is not null)
-        {
-            FinishCopy();
-        }
-    }
-
-    /// <summary>
-    /// Copies the caller's shape at the entry of a run in the thickening mode (decision 1005) when it holds frozen
-    /// TShapes, and maps the closing faces and the faces with their own offsets onto the copy. Once per
-    /// <see cref="Initialize"/>.
-    /// </summary>
-    private void EnterCopy()
-    {
-        if (_entry is not null)
-        {
-            return;
-        }
-        _entry = new CopyAtEntry(_shape);
-        if (!_entry.IsCopied)
-        {
-            return;
-        }
-        _shape = _entry.Shape();
-        IndexedSet<Shape> originalFaces = new(_originalFaces);
-        _originalFaces.Clear();
-        for (int i = 0; i < originalFaces.Count; ++i)
-        {
-            _originalFaces.Add(_entry.Copied(originalFaces[i]));
-        }
-        Dictionary<Shape, double> faceOffset = new(_faceOffset,_faceOffset.Comparer);
-        _faceOffset.Clear();
-        foreach (KeyValuePair<Shape, double> it in faceOffset)
-        {
-            _faceOffset[_entry.Copied(it.Key)] = it.Value;
-        }
-    }
-
-    /// <summary>
-    /// Ends a run on the copy at the entry: the copied sub-shapes left unchanged are the caller's own again in the
-    /// result (decision 1005).
-    /// </summary>
-    private void FinishCopy()
-    {
-        // OCCT.NET (unit 7G): finished for a null result too, so that the history (InternalFinal) can be read after a
-        // run reported done with a null shape (decision 1049).
-        if (_entry is null || !_entry.IsCopied || _isEntryFinished)
-        {
-            return;
-        }
-        _offsetShape = _entry.Finish(_offsetShape);
-        _isEntryFinished = true;
     }
 
     /// <summary>
     /// The shape a run works on for a caller's sub-shape <paramref name="s"/>: itself, or its copy for an unfrozen
     /// sub-shape of an unfrozen input (see <see cref="BeginOverlay"/>).
     /// </summary>
-    internal Shape InternalCopied(in Shape s) => _entry is not null ? _entry.Copied(s) : WorkingOverlay.CopiedIn(s, _copies);
+    internal Shape InternalCopied(in Shape s) => WorkingOverlay.CopiedIn(s, _copies);
 
     // The caller's sub-shape a shape of the run stands for (the inverse of InternalCopied).
     private Shape InternalOriginal(in Shape s)
     {
-        if (_entry is not null)
-        {
-            return _entry.IsCopied ? _entry.Original(s) : s;
-        }
         if (_originals is null || s.IsNull || !_originals.TryGetValue(s.TShape()!, out TShape? original))
         {
             return s;
@@ -791,10 +721,6 @@ public sealed partial class MakeOffset
     /// <summary>What stands in the result for a shape of the run (see <see cref="WorkingOverlay.Final"/>).</summary>
     internal Shape InternalFinal(in Shape s)
     {
-        if (_entry is not null)
-        {
-            return !_entry.IsCopied || s.IsNull ? s : _entry.Final(s);
-        }
         return _overlay is null || !_overlay.IsFinished || s.IsNull ? s : _overlay.Final(s);
     }
 

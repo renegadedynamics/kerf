@@ -27,11 +27,11 @@ namespace Kerf.Engine.Meshing;
 /// <para>
 /// <b>Writing into shapes.</b> Only this class attaches meshes. <see cref="AddInFace"/>, <see cref="NullifyFace"/>,
 /// <see cref="NullifyEdge(in Edge, Triangulation?, in Placement)"/> and the <c>UpdateEdge</c>
-/// overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's internal non-freezing
-/// forms (decision 488): the mesher's triangulations and polygons stay unfrozen, so its post-processor can set each
-/// triangulation's deflection and parameters in place, and they freeze with the result when it is published
-/// (<c>FreezeGraph</c>). On a frozen face or edge they throw <see cref="ImmutableObjectException"/>: the mesher writes
-/// only into an unfrozen shape, or into an exact copy of a frozen one (decision 489).
+/// overloads write into the face or edge they are given, as OCCT's do, through BRep_Builder's mesh forms
+/// (<c>UpdateFaceMesh</c>, <c>UpdateEdgeMesh</c>; decision 488): the mesher's triangulations and polygons stay
+/// unfrozen, so its post-processor can set each triangulation's deflection and parameters in place, and they freeze with the result when it is published (<c>FreezeGraph</c>). The mesher
+/// writes into an unfrozen shape in place, and into a frozen one in a working overlay (unit 10H6, decision 489);
+/// outside one, a frozen face or edge throws <see cref="LockedShapeException"/>.
 /// </para>
 /// </remarks>
 public static class ShapeTool
@@ -146,7 +146,8 @@ public static class ShapeTool
     /// </summary>
     /// <remarks>
     /// Writes the nodes of <paramref name="triangulation"/> (unfrozen: the mesher's own) and attaches it to the face
-    /// unfrozen (decision 488). OCCT passes the handle by reference without changing it; so does the port.
+    /// unfrozen (it freezes with the face's graph, decision 488). OCCT passes the handle by reference without changing
+    /// it; so does the port.
     /// </remarks>
     public static void AddInFace(in Face face, Triangulation triangulation)
     {
@@ -164,14 +165,14 @@ public static class ShapeTool
         }
 
         BrepBuilder builder = new();
-        builder.UpdateFaceUnfrozen(face, triangulation); // OCCT.NET: the mesher's non-freezing attach (decision 488)
+        builder.UpdateFaceMesh(face, triangulation);
     }
 
     /// <summary>Removes the face's triangulation.</summary>
     public static void NullifyFace(in Face face)
     {
         BrepBuilder builder = new();
-        builder.UpdateFaceUnfrozen(face, null);
+        builder.UpdateFaceMesh(face, null);
     }
 
     /// <summary>Removes the edge's polygon on the triangulation of the face with the given location.</summary>
@@ -184,7 +185,7 @@ public static class ShapeTool
     public static void NullifyEdge(in Edge edge, in Placement location)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeUnfrozen(edge, (Polygon3D?)null, location);
+        builder.UpdateEdgeMesh(edge, (Polygon3D?)null, location);
     }
 
     /// <summary>Stores the polygon on the triangulation of the face with the given location into the edge.</summary>
@@ -194,7 +195,7 @@ public static class ShapeTool
                                   in Placement location)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeUnfrozen(edge, polygon, triangulation, location);
+        builder.UpdateEdgeMesh(edge, polygon, triangulation, location);
     }
 
     /// <summary>
@@ -208,14 +209,14 @@ public static class ShapeTool
                                   in Placement location)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeUnfrozen(edge, polygon1, polygon2, triangulation, location);
+        builder.UpdateEdgeMesh(edge, polygon1, polygon2, triangulation, location);
     }
 
     /// <summary>Stores the 3D polygon into the edge.</summary>
     public static void UpdateEdge(in Edge edge, Polygon3D? polygon)
     {
         BrepBuilder builder = new();
-        builder.UpdateEdgeUnfrozen(edge, polygon, new Placement());
+        builder.UpdateEdgeMesh(edge, polygon, new Placement());
     }
 
     /// <summary>The point moved by the location.</summary>

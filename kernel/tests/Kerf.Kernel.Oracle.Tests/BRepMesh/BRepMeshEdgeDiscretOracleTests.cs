@@ -425,7 +425,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             {
                 string aF3 = NativeMesh(aF2, aDeflection, true, anAngle, out N.Poly_Triangulation?[] aNativeTris);
                 Shape aPortF2 = PortRead(aF2);
-                Shape aCopy = BrepTools.ExactCopyForWrite(aPortF2, out _);
+                Shape aCopy = TestCopies.ExactCopyForWrite(aPortF2, out _);
                 ModelModel aModel = PortModel(aCopy, Params(aDeflection, true, anAngle));
                 Compare(anOracle, aTally, $"{aName} again at {aDeflection} {anAngle}", aModel, aCopy, PortRead(aF3), aNativeTris,
                         aPortF2);

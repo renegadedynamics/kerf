@@ -19,7 +19,7 @@ namespace Kerf.Engine.HiddenLines;
 /// their edges by their own faces and by each other's.
 /// </summary>
 /// <remarks>
-/// A working object (a transient), as OCCT's. The outliners copy frozen shapes at the entry (decision 1095), so the
+/// A working object (a transient), as OCCT's. The outliners write in working overlays (unit 10H6), so the
 /// algorithm never writes into the caller's shapes. <see cref="Debug(bool)"/> turns on OCCT's traces, written to
 /// standard output.
 /// </remarks>

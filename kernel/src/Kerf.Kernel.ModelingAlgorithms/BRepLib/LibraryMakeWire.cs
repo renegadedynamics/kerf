@@ -132,7 +132,7 @@ public class LibraryMakeWire : LibraryMakeShape
         {
             return WorkingOverlay.Begin(_shape);
         }
-        return isNeeded ? WorkingOverlay.BeginUnlessInside(new Shape()) : null;
+        return isNeeded ? WorkingOverlay.BeginUnlessWriting(new Shape()) : null;
     }
 
     // True if adding the edge may merge one of its vertices onto the wire's: a vertex of it isn't one of the wire's.

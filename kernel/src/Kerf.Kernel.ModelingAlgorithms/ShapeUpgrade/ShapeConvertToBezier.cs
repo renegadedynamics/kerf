@@ -27,9 +27,9 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// <remarks>
 /// <para>
 /// A working object (decision 21). Unlike the other dividers, its last step writes into the result in place (edge
-/// ranges and curves, Bezier poles, the faces' Update), and the result shares the shape's unchanged sub-shapes; so a
-/// shape holding frozen shapes is copied at the entry (<see cref="CopyAtEntry"/>, decision 583) and the
-/// caller's own sub-shapes are given back where nothing changed, the context re-keyed to them (decision 999).
+/// ranges and curves, Bezier poles, the faces' Update), and the result shares the shape's unchanged sub-shapes; so it
+/// runs on the caller's shape in a working overlay (unit 10H4), and the result holds the caller's own sub-shapes where
+/// nothing changed, the context answering for them (decision 999).
 /// </para>
 /// <para>
 /// OCCT changes the Bezier curves of the edges in place (Segment, SetPole). The port's curves attached to an edge are

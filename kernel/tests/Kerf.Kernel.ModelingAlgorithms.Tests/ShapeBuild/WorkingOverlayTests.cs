@@ -363,14 +363,15 @@ public class WorkingOverlayTests
         Assert.Throws<LockedShapeException>(() => new BrepBuilder().UpdateVertex(v, 1.0));
     }
 
-    // The pilot's old path (decision 642): the in-place fix on CopyAtEntry's copy.
+    // The in-place fix on an unfrozen exact copy, as OCCT runs it (the pilot's old path, decision 642, ran it on
+    // CopyAtEntry's copy, which unit 10H6 removed; the copy gave back the input's unchanged sub-shapes, so the sharing
+    // was compared too: the inputs-unchanged tests check it now).
     private static Shape OnCopy(in Shape shape, ReShapeBuilder? context, Func<Shape, bool> fix)
     {
-        var entry = new CopyAtEntry(shape, context);
-        fix(entry.Shape());
-        Shape result = entry.Finish(entry.Shape());
-        result.TShape()!.FreezeGraph();
-        return result;
+        Shape copy = TestCopies.ExactCopyForWrite(shape, out _);
+        fix(copy);
+        copy.TShape()!.FreezeGraph();
+        return copy;
     }
 
     private static Edge CircleOnTop()
@@ -386,10 +387,10 @@ public class WorkingOverlayTests
         return text.ToString();
     }
 
-    // The pilot stays at level 1 (plan 3.2): on the overlay it gives what it gave on a copy, the same BRep text (flags,
-    // tolerances, ranges, curves and surfaces), sharing the same sub-shapes of the input.
+    // The pilot stays at level 1 (plan 3.2): on the overlay it gives what the in-place fix gives on a copy, the same BRep
+    // text (flags, tolerances, ranges, curves and surfaces).
     [Fact]
-    public void The_pilot_gives_what_copy_at_entry_gave()
+    public void The_pilot_gives_what_the_in_place_fix_gives_on_a_copy()
     {
         Face cylinder = TestShapes.Frozen(TestShapes.CylinderFace(5, 10));
         Edge circle = TestShapes.Frozen(CircleOnTop());
@@ -401,11 +402,6 @@ public class WorkingOverlayTests
         void Same(in Shape input, Shape before, Shape after)
         {
             Assert.Equal(BrepText(before), BrepText(after));
-            Assert.Equal(ReferenceEquals(before.TShape(), input.TShape()), ReferenceEquals(after.TShape(), input.TShape()));
-            foreach (Shape sub in SubShapes(input, ShapeType.Vertex).Concat(SubShapes(input, ShapeType.Edge)))
-            {
-                Assert.Equal(Holds(before, sub, sub.ShapeType()), Holds(after, sub, sub.ShapeType()));
-            }
         }
 
         Same(circle, OnCopy(circle, null, e => new EdgeFixer().FixAddPCurve(ShapeCasts.Edge(e), cylinder, false)),

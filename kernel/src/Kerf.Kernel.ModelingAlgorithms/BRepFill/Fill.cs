@@ -178,7 +178,7 @@ public static class Fill
         // Kerf: OCCT writes into the edges (pcurves on the face, vertex parameters): in a working overlay (unit 10H3),
         // so the face holds the caller's edges and vertices wherever it left them unchanged; inside an operation's
         // overlay, the writes are that operation's
-        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
         Face face = FaceCore(edge1, edge2);
         return overlay is null ? face : ShapeCasts.Face(overlay.Finish(face));
     }
@@ -410,7 +410,7 @@ public static class Fill
     /// <summary><see cref="Shell"/> without freezing the result, for ported callers that build on it.</summary>
     internal static Shell InternalShell(in Wire wire1, in Wire wire2)
     {
-        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape()); // Kerf: as InternalFace
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape()); // Kerf: as InternalFace
         Shell shell = ShellCore(wire1, wire2);
         return overlay is null ? shell : ShapeCasts.Shell(overlay.Finish(shell));
     }

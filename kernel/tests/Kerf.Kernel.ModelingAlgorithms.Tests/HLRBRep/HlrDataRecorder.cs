@@ -431,7 +431,7 @@ internal sealed class HlrDataRecorder
             Int(DS.EdgeCount);
             Int(DS.FaceCount);
             End();
-            RecTopo(S, S.InternalWorkingShape());
+            RecTopo(S, S.OriginalShape());
             DS.Update(P);
             RecEData(DS);
             RecFData(DS);

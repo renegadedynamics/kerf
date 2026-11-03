@@ -535,10 +535,12 @@ public sealed class BrepBuilder : Builder
 
     /// <summary>
     /// <see cref="UpdateFace(in Face, Triangulation?, bool)"/> without freezing the triangulation: the
-    /// mesher's attach (BRepMesh_ShapeTool only, decision 488). The triangulation freezes with the face's graph when
-    /// the result is published.
+    /// mesher's attach (BRepMesh_ShapeTool only, decision 488), so that its post-processor can set the triangulation's
+    /// deflection and parameters, as OCCT's. The triangulation freezes with the face's graph when the result is
+    /// published. (Until unit 10H6 named <c>UpdateFaceUnfrozen</c>; it concerns the mesh's freezing, not the face's:
+    /// a frozen face takes it in a working overlay, as every update.)
     /// </summary>
-    internal void UpdateFaceUnfrozen(in Face face, Triangulation? triangulation, bool toReset = true)
+    internal void UpdateFaceMesh(in Face face, Triangulation? triangulation, bool toReset = true)
         => UpdateFaceCore(face, triangulation, toReset, false);
 
     private static void UpdateFaceCore(in Face face, Triangulation? triangulation, bool toReset,
@@ -770,9 +772,9 @@ public sealed class BrepBuilder : Builder
 
     /// <summary>
     /// <see cref="UpdateEdge(in Edge, Polygon3D?, in Placement)"/> without freezing the polygon: the
-    /// mesher's attach (BRepMesh_ShapeTool only, decision 488).
+    /// mesher's attach (BRepMesh_ShapeTool only, decision 488; see <see cref="UpdateFaceMesh"/>).
     /// </summary>
-    internal void UpdateEdgeUnfrozen(in Edge e, Polygon3D? p, in Placement l) => UpdateEdgeCore(e, p, l, false);
+    internal void UpdateEdgeMesh(in Edge e, Polygon3D? p, in Placement l) => UpdateEdgeCore(e, p, l, false);
 
     private static void UpdateEdgeCore(in Edge e, Polygon3D? p, in Placement L, bool toFreeze)
     {
@@ -824,7 +826,7 @@ public sealed class BrepBuilder : Builder
     /// <see cref="UpdateEdge(in Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
     /// without freezing the polygon and the triangulation: the mesher's attach (BRepMesh_ShapeTool only, decision 488).
     /// </summary>
-    internal void UpdateEdgeUnfrozen(in Edge e, PolygonOnTriangulation? p, Triangulation? t,
+    internal void UpdateEdgeMesh(in Edge e, PolygonOnTriangulation? p, Triangulation? t,
                                      in Placement l)
         => UpdateEdgeCore(e, p, t, l, false);
 
@@ -887,10 +889,10 @@ public sealed class BrepBuilder : Builder
         => UpdateEdgeCore(e, p1, p2, t, l, true);
 
     /// <summary>
-    /// The seam form of <see cref="UpdateEdgeUnfrozen(in Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
+    /// The seam form of <see cref="UpdateEdgeMesh(in Edge, PolygonOnTriangulation?, Triangulation?, in Placement)"/>
     /// (decision 488).
     /// </summary>
-    internal void UpdateEdgeUnfrozen(in Edge e,
+    internal void UpdateEdgeMesh(in Edge e,
                                      PolygonOnTriangulation? p1,
                                      PolygonOnTriangulation? p2,
                                      Triangulation? t,

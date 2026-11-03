@@ -4291,7 +4291,6 @@ Kerf.Engine.Topology.TSolid TopoDS_TSolid
 Kerf.Engine.Topology.TVertex TopoDS_TVertex
 Kerf.Engine.Topology.TWire TopoDS_TWire
 Kerf.Engine.Topology.Tools.BrepTools BRepTools
-Kerf.Engine.Topology.Tools.CopyAtEntry BRepTools_CopyAtEntry
 Kerf.Engine.Topology.Tools.CopyModification BRepTools_CopyModification
 Kerf.Engine.Topology.Tools.GTrsfModification BRepTools_GTrsfModification
 Kerf.Engine.Topology.Tools.Modification BRepTools_Modification

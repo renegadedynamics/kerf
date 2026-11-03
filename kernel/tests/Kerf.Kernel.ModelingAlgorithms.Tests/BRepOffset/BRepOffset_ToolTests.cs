@@ -24,7 +24,7 @@ public class BRepOffset_ToolTests
     private static Shape Box() => new MakeBox(10.0, 20.0, 30.0).Shape();
 
     // An unfrozen copy, for the tools that write into the shapes they are given (the offset's own shapes).
-    private static Shape WritableBox() => BrepTools.ExactCopyForWrite(Box(), out _);
+    private static Shape WritableBox() => TestCopies.ExactCopyForWrite(Box(), out _);
 
     private static Face Face(in Shape theS, int theIndex)
     {
@@ -200,7 +200,7 @@ public class BRepOffset_ToolTests
     [Fact]
     public void EnLargeFace_CylinderWithUpdatedPCurves()
     {
-        Shape aCyl = BrepTools.ExactCopyForWrite(new ApiMakeCylinder(5.0, 10.0).Shape(), out _);
+        Shape aCyl = TestCopies.ExactCopyForWrite(new ApiMakeCylinder(5.0, 10.0).Shape(), out _);
         Face F = new();
         for (global::Kerf.Engine.Topology.Explorer anExp = new(aCyl, global::Kerf.Topology.ShapeType.Face); anExp.More(); anExp.Next())
         {
@@ -221,7 +221,7 @@ public class BRepOffset_ToolTests
     {
         // A skew segment revolved about OZ: a surface of revolution, which EnlargeGeometry extends in V.
         Edge E = new MakeEdge(new Point3D(5, 0, 0), new Point3D(5, 3, 10)).Edge();
-        Shape aRevol = BrepTools.ExactCopyForWrite(new ApiMakeRevol(E, Constants.OZ()).Shape(), out _);
+        Shape aRevol = TestCopies.ExactCopyForWrite(new ApiMakeRevol(E, Constants.OZ()).Shape(), out _);
         Face F = global::Kerf.Engine.Topology.ShapeCasts.Face(new global::Kerf.Engine.Topology.Explorer(aRevol, global::Kerf.Topology.ShapeType.Face).Current());
         Assert.IsType<RevolutionSurface>(Tool.Surface(F));
         BrepTools.UVBounds(F, out _, out _, out double FV1, out double FV2);

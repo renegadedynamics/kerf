@@ -24,6 +24,7 @@
     <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TopoDS\TestShapes.cs" Link="TestShapes.cs" />
     <!-- A record of a shape graph, to check that the in-place statics' twins leave their inputs unchanged -->
     <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TopoDS\ShapeSnapshot.cs" Link="ShapeSnapshot.cs" />
+    <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TopoDS\TestCopies.cs" Link="TestCopies.cs" />
   </ItemGroup>
 
   <ItemGroup>

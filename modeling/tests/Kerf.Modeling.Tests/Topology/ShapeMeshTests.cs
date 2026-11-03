@@ -191,12 +191,27 @@ public class ShapeMeshTests
         var meshed = sphere.Rewrapped(sphere.MeshedCopy(0.01, 0.2, relative: false));
         var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
         var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
-        var clock = Stopwatch.StartNew();
-        var buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed.TopoShape, faces, edges, 0.01, 0.2);
-        clock.Stop();
+        // Kerf (unit 10H6): one cold wall-clock sample (the first call, with its JIT) failed in merge gates on a loaded
+        // machine (1,200 ms against about 12 ms warm), so the test checks what the copy allocates, which load doesn't
+        // change, and the best of five runs. The copy writes the normals straight into its buffer: it computed them on a
+        // copy of each triangulation, 6.5 MB of allocation for 2.4 MB of buffers, now 2.7 MB.
+        Kerf.Engine.Meshing.MeshBuffers buffers = null!;
+        var best = TimeSpan.MaxValue;
+        long allocated = long.MaxValue;
+        for (int run = 0; run < 5; run++)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            var clock = Stopwatch.StartNew();
+            buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(meshed.TopoShape, faces, edges, 0.01, 0.2);
+            clock.Stop();
+            allocated = Math.Min(allocated, GC.GetAllocatedBytesForCurrentThread() - before);
+            best = clock.Elapsed < best ? clock.Elapsed : best;
+        }
         var triangles = buffers.Triangles.Length / 3;
         Assert.True(triangles > 100_000, $"{triangles} triangles");
-        Assert.True(clock.Elapsed < TimeSpan.FromMilliseconds(100), $"{triangles} triangles took {clock.Elapsed.TotalMilliseconds:F0} ms to copy out");
+        long bufferBytes = 4L * (buffers.Positions.Length + buffers.Normals.Length + buffers.Triangles.Length);
+        Assert.True(allocated < 2 * bufferBytes, $"copying out {triangles} triangles allocated {allocated:N0} bytes for {bufferBytes:N0} of buffers, best {best.TotalMilliseconds:F1} ms");
+        Assert.True(best < TimeSpan.FromMilliseconds(100), $"{triangles} triangles took {best.TotalMilliseconds:F0} ms at best to copy out");
     }
 
     [Fact]

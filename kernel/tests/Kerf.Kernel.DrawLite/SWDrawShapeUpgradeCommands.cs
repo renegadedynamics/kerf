@@ -18,16 +18,15 @@ namespace Kerf.Kernel.DrawLite;
 /// <remarks>
 /// OCCT's UnifySameDomain writes into the shape it is given, even in its safe input mode (it adds the pcurves of the
 /// unified faces' reference surface to the input's edges), so in DRAWEXE every variable holding the input's sub-shapes
-/// sees the change. Draw-lite runs it as decision 495's in-place commands do: on an unfrozen copy of the input, which
-/// the algorithm then works on in place as OCCT's does, and every variable sharing a changed TShape is rebound
-/// (DrawShapeRebind); the copy's sub-shapes left unchanged are the input's again (BRepTools_CopyAtEntry's Finish), so
-/// only the variables holding a changed one are rebound. The shapes to keep are taken on the copy. The history is
-/// recorded in the session (BRepTest_Objects), composed with the copy's.
+/// sees the change. Draw-lite runs it as decision 495's in-place commands do: on the input itself in a working overlay
+/// (unit 10H6; until then on an unfrozen copy), which the algorithm works in as OCCT's works in place, and every
+/// variable sharing a changed TShape is rebound (DrawShapeRebind); only the variables holding a changed one are
+/// rebound. The history is recorded in the session (BRepTest_Objects), composed with the overlay's.
 /// <para>
 /// Unit 7C's divide and convert commands (<c>DT_*</c>, <c>splitface</c>, <c>RemoveIntWires</c>) run the same way: OCCT's
 /// tools (ShapeFix_ComposeShell's edge splits, ShapeConvertToBezier's last step) and the ShapeFix::SameParameter that
 /// follows them write into the input and into the result, which shares the input's sub-shapes, so Draw-lite runs the
-/// tool on an unfrozen copy of the input (<see cref="SWDRAWShapeFixCommands.InPlace"/>, reading the tools' internal,
+/// tool on the input in a working overlay (<see cref="SWDRAWShapeFixCommands.InPlace"/>, reading the tools' internal,
 /// unfrozen results) and SameParameter on a copy of the result (<see cref="SameParameterInPlace"/>), rebinding every
 /// variable that shares a changed sub-shape after each. <c>offsetcurve</c> and <c>offset2dcurve</c> make offset curves;
 /// the split commands bind the pieces of a curve or surface. Nothing of the file is left out (the commented-out OCCT
@@ -149,16 +148,16 @@ internal static partial class SWDrawShapeUpgradeCommands
             }
         }
 
-        // OCCT works on the input itself: Draw-lite on an unfrozen copy, rebound afterwards (see the class)
-        var anEntry = new CopyAtEntry(aShape, null, true);
+        // OCCT works on the input itself: Draw-lite in a working overlay, rebound afterwards (see the class)
+        using var anOverlay = WorkingOverlay.Begin(aShape);
         var aMapOfShapes = new HashSet<Shape>(ShapeHasher.Instance);
         foreach (Shape aKeepShape in aKeepShapes)
         {
-            aMapOfShapes.Add(anEntry.Copied(aKeepShape));
+            aMapOfShapes.Add(aKeepShape);
         }
 
         var aUnifier = new UnifySameDomain();
-        aUnifier.Initialize(anEntry.Shape(), anUEdges, anUFaces, anConBS);
+        aUnifier.Initialize(aShape, anUEdges, anUFaces, anConBS);
         aUnifier.KeepShapes(aMapOfShapes);
         aUnifier.SetSafeInputMode(isSafeInputMode);
         aUnifier.AllowInternalEdges(isAllowInternal);
@@ -166,33 +165,31 @@ internal static partial class SWDrawShapeUpgradeCommands
         aUnifier.SetAngularTolerance(aAngTol);
         aUnifier.Build();
 
-        // the copy's sub-shapes left unchanged are the input's again, in the result and in the copy, so only the
-        // variables sharing a changed sub-shape are rebound
-        Shape aWork = anEntry.Shape();
-        Shape Result = anEntry.Finish(aUnifier.InternalShape(), [aWork]);
-        DrawShapeRebind.Rebind(theDI, aShape, anEntry.Final(aWork));
+        // only the variables sharing a changed sub-shape are rebound
+        Shape Result = anOverlay.Finish(aUnifier.InternalShape(), [aShape]);
+        DrawShapeRebind.Rebind(theDI, aShape, anOverlay.Final(aShape));
         theDI.SetShape(a[1], Result);
-        // BRepTest_Objects::SetHistory(aUnifier.History()), composed with the copy so it answers for the input's shapes
+        // BRepTest_Objects::SetHistory(aUnifier.History()), composed with the overlay's in-place changes
         if (BRepTestHistoryCommands.IsHistoryNeeded(theDI))
         {
-            BRepTestHistoryCommands.SetHistory(theDI, ReboundHistory(aShape, anEntry, aUnifier.InternalHistory()));
+            BRepTestHistoryCommands.SetHistory(theDI, ReboundHistory(aShape, anOverlay, aUnifier.InternalHistory()));
         }
         return 0;
     }
 
     /// <summary>
-    /// The history of an algorithm run on <paramref name="theEntry"/>'s copy of <paramref name="theInput"/>, answering
-    /// both for the input's sub-shapes (<see cref="CopyAtEntry.Composed"/>) and for the changed copies that
-    /// the rebound variables now hold in their place (unit 6L). In DRAWEXE a sub-shape changed in place is still the
+    /// The history of an algorithm run on <paramref name="theInput"/> in <paramref name="theOverlay"/>, answering
+    /// both for the input's sub-shapes (<see cref="WorkingOverlay.Composed"/>) and for what the rebound variables now
+    /// hold in their place (unit 6L). In DRAWEXE a sub-shape changed in place is still the
     /// same TShape, so a variable exploded after the command (the unify_same_domain grid's end script explodes the
     /// input again) asks the history about it; here it holds the changed copy, whose entries are its copy's own: removed,
     /// modified and generated as the algorithm says, and not modified when the algorithm says nothing (natively the
     /// shape itself is in the result).
     /// </summary>
-    private static History ReboundHistory(in Shape theInput, CopyAtEntry theEntry, History? theHistory)
+    private static History ReboundHistory(in Shape theInput, WorkingOverlay theOverlay, History? theHistory)
     {
-        History aComposed = theEntry.Composed(theHistory);
-        if (theHistory is null || !theEntry.IsCopied)
+        History aComposed = theOverlay.Composed(theHistory);
+        if (theHistory is null)
         {
             return aComposed;
         }
@@ -204,8 +201,8 @@ internal static partial class SWDrawShapeUpgradeCommands
             {
                 continue;
             }
-            Shape aCopy = theEntry.Copied(aSub);
-            Shape aNow = theEntry.Final(aCopy);
+            Shape aCopy = aSub;
+            Shape aNow = theOverlay.Final(aCopy);
             if (ReferenceEquals(aNow.TShape(), aSub.TShape()))
             {
                 continue;
@@ -217,7 +214,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             }
             foreach (Shape aModified in theHistory.Modified(aCopy))
             {
-                Shape aFinal = theEntry.Final(aModified);
+                Shape aFinal = theOverlay.Final(aModified);
                 if (!aFinal.IsSame(aNow))
                 {
                     aComposed.AddModified(aNow, aFinal);
@@ -225,7 +222,7 @@ internal static partial class SWDrawShapeUpgradeCommands
             }
             foreach (Shape aGenerated in theHistory.Generated(aCopy))
             {
-                aComposed.AddGenerated(aNow, theEntry.Final(aGenerated));
+                aComposed.AddGenerated(aNow, theOverlay.Final(aGenerated));
             }
         }
         return aComposed;

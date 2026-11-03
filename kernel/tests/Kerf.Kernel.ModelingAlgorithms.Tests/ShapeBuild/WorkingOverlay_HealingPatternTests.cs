@@ -14,11 +14,12 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
 
 /// <summary>
-/// The copy at the entry of a healing algorithm (decision 583) and the composition of its context and histories with
-/// the copy's, on a toy algorithm written as ShapeFix's are: it edits the shape in place and records replacements in a
-/// ShapeBuild_ReShape context. This is the pattern units 6H2, 6H3, 6S and 6U follow.
+/// The working overlay of a healing algorithm and the composition of its context and histories with the overlay's, on
+/// a toy algorithm written as ShapeFix's are: it edits the shape in place and records replacements in a ShapeBuild_ReShape
+/// context. Until unit 10H6 these tests ran the same toy on BRepTools_CopyAtEntry (decision 583), the copy at the entry
+/// that the overlay replaced; the assertions on the results are theirs.
 /// </summary>
-public class BRepTools_CopyAtEntryTests
+public class WorkingOverlay_HealingPatternTests
 {
     private static Shape Box() => new MakeBox(10, 20, 30).Shape();
 
@@ -60,21 +61,21 @@ public class BRepTools_CopyAtEntryTests
     }
 
     /// <summary>
-    /// A toy healing algorithm, written as a ShapeFix class is: the shape it is given is copied at the entry if
-    /// frozen, then OCCT's code runs on the copy (an in-place tolerance raise on <paramref name="theVertex"/>, the
+    /// A toy healing algorithm, written as a ShapeFix class is: an overlay is opened on the shape it is given, then
+    /// OCCT's code runs on the shape itself (an in-place tolerance raise on <paramref name="theVertex"/>, the
     /// replacement of <paramref name="theFace"/> by a copy recorded in the context, the context applied), and the end
-    /// gives the caller's sub-shapes back.
+    /// assembles the result, sharing the caller's unchanged sub-shapes.
     /// </summary>
     private static Shape ToyFix(in Shape theShape, ReShapeBuilder theContext, in Shape theVertex,
-                                       in Shape theFace, out CopyAtEntry theEntry)
+                                       in Shape theFace, out WorkingOverlay theOverlay)
     {
-        // 1. the entry: the shape to work on; arguments referring to the input's sub-shapes are mapped onto the copy
-        var anEntry = new CopyAtEntry(theShape, theContext);
-        Shape aWork = anEntry.Shape();
-        Vertex aV = ShapeCasts.Vertex(anEntry.Copied(theVertex));
-        Face aF = ShapeCasts.Face(anEntry.Copied(theFace));
+        // 1. the entry: the overlay; the shape and the arguments are the caller's own
+        using var anOverlay = WorkingOverlay.Begin(theShape, theContext);
+        Shape aWork = theShape;
+        Vertex aV = ShapeCasts.Vertex(theVertex);
+        Face aF = ShapeCasts.Face(theFace);
 
-        // 2. OCCT's code, unchanged, on the copy
+        // 2. OCCT's code, unchanged, on the caller's shape
         var aB = new BrepBuilder();
         if (!aV.IsNull)
         {
@@ -91,9 +92,9 @@ public class BRepTools_CopyAtEntryTests
         }
         Shape aResult = theContext.InternalApply(aWork);
 
-        // 3. the end: the result with the caller's unchanged sub-shapes, the context re-keyed to the caller's shapes
-        aResult = anEntry.Finish(aResult);
-        theEntry = anEntry;
+        // 3. the end: the result with the caller's unchanged sub-shapes, the context brought up to date
+        aResult = anOverlay.Finish(aResult);
+        theOverlay = anOverlay;
         return aResult; // the algorithm's public Shape() freezes it
     }
 
@@ -106,10 +107,10 @@ public class BRepTools_CopyAtEntryTests
         Face aFace = FaceWithout(aBox, aVertex);
         var aContext = new ReShapeBuilder();
 
-        Shape aResult = ToyFix(aBox, aContext, aVertex, aFace, out CopyAtEntry anEntry);
+        Shape aResult = ToyFix(aBox, aContext, aVertex, aFace, out WorkingOverlay anOverlay);
 
         aSnap.AssertUnchanged(aBox);
-        Assert.True(anEntry.IsCopied);
+        Assert.NotEqual(0, anOverlay.WorkingCount);
         Assert.False(ReferenceEquals(aResult.TShape(), aBox.TShape()));
 
         // of the 6 faces: 3 hold the vertex (changed in place), 1 was replaced; 2 are the caller's own
@@ -134,7 +135,7 @@ public class BRepTools_CopyAtEntryTests
             }
         }
         Assert.Equal(9, aNbKeptEdges);
-        Assert.False(aResult.TShape()!.IsFrozen); // the helper freezes nothing
+        Assert.False(aResult.TShape()!.IsFrozen); // the overlay freezes nothing
     }
 
     [Fact]
@@ -182,28 +183,28 @@ public class BRepTools_CopyAtEntryTests
         Face aFace = FaceWithout(aBox, aVertex);
         var aContext = new ReShapeBuilder();
 
-        // the context's history is taken over the copy before Finish, as an algorithm keeping its own would
-        var anEntry = new CopyAtEntry(aBox, aContext);
-        Face aF = ShapeCasts.Face(anEntry.Copied(aFace));
+        // the algorithm's history is kept over the caller's sub-shapes, as an algorithm keeping its own would
+        using var anOverlay = WorkingOverlay.Begin(aBox, aContext);
+        Face aF = aFace;
         Shape aNewF = aF.EmptyCopied();
         var aB = new BrepBuilder();
         for (var anIt = new Iterator(aF, false, false); anIt.More(); anIt.Next())
         {
             aB.Add(aNewF, anIt.Value());
         }
-        aB.UpdateVertex(ShapeCasts.Vertex(anEntry.Copied(aVertex)), 0.01);
+        aB.UpdateVertex(ShapeCasts.Vertex(aVertex), 0.01);
         var anAlgoHistory = new History();
         anAlgoHistory.AddModified(aF, aNewF);
-        Shape aRemovedE = anEntry.Copied(SubShapes(aBox, ShapeType.Edge)[5]);
+        Shape aRemovedE = SubShapes(aBox, ShapeType.Edge)[5];
         anAlgoHistory.Remove(aRemovedE);
-        Shape aResult = anEntry.Finish(new Shape(), [aNewF]);
+        Shape aResult = anOverlay.Finish(new Shape(), [aNewF]);
 
         Assert.True(aResult.IsNull);
-        History aComposed = anEntry.Composed(anAlgoHistory);
+        History aComposed = anOverlay.Composed(anAlgoHistory);
         Assert.True(ReferenceEquals(aComposed.Modified(aFace)[0].TShape(), aNewF.TShape()));
         Assert.True(aComposed.IsRemoved(SubShapes(aBox, ShapeType.Edge)[5]));
-        Assert.Single(aComposed.Modified(aVertex)); // changed in place: modified into its copy
-        Assert.Single(anEntry.History().Modified(aVertex));
+        Assert.Single(aComposed.Modified(aVertex)); // changed in place: modified into what stands for it
+        Assert.Single(anOverlay.History().Modified(aVertex));
 
         // the new face holds the caller's edges where they are unchanged
         int aNbCallers = 0;
@@ -222,23 +223,23 @@ public class BRepTools_CopyAtEntryTests
     {
         Shape aBox = Box();
         var aContext = new ReShapeBuilder();
-        Shape aResult = ToyFix(aBox, aContext, new Vertex(), new Face(), out CopyAtEntry anEntry);
+        Shape aResult = ToyFix(aBox, aContext, new Vertex(), new Face(), out WorkingOverlay anOverlay);
 
-        Assert.True(anEntry.IsCopied);
+        Assert.Equal(0, anOverlay.WorkingCount);
         Assert.True(ReferenceEquals(aResult.TShape(), aBox.TShape()));
-        Assert.True(anEntry.History().Modified(SubShapes(aBox, ShapeType.Face)[0]).Count == 0);
+        Assert.True(anOverlay.History().Modified(SubShapes(aBox, ShapeType.Face)[0]).Count == 0);
         Assert.False(aContext.History().HasModified);
     }
 
     [Fact]
     public void UnfrozenInput_RunsInPlace()
     {
-        Shape aBox = BrepTools.ExactCopyForWrite(Box(), out _); // owned by ported code: unfrozen
+        Shape aBox = TestCopies.ExactCopyForWrite(Box(), out _); // owned by ported code: unfrozen
         Shape aVertex = SubShapes(aBox, ShapeType.Vertex)[0];
         var aContext = new ReShapeBuilder();
-        Shape aResult = ToyFix(aBox, aContext, aVertex, new Face(), out CopyAtEntry anEntry);
+        Shape aResult = ToyFix(aBox, aContext, aVertex, new Face(), out WorkingOverlay anOverlay);
 
-        Assert.False(anEntry.IsCopied);
+        Assert.Equal(0, anOverlay.WorkingCount);
         Assert.True(ReferenceEquals(aResult.TShape(), aBox.TShape()));
         Assert.Equal(0.01, Tool.Tolerance(ShapeCasts.Vertex(aVertex))); // OCCT's in-place edit
     }
@@ -264,9 +265,10 @@ public class BRepTools_CopyAtEntryTests
     [Fact]
     public void Finish_IsCalledOnce()
     {
-        var anEntry = new CopyAtEntry(Box());
-        Assert.ThrowsAny<ProgramErrorException>(() => anEntry.History());
-        anEntry.Finish(anEntry.Shape());
-        Assert.ThrowsAny<ProgramErrorException>(() => anEntry.Finish(anEntry.Shape()));
+        Shape aBox = Box();
+        using var anOverlay = WorkingOverlay.Begin(aBox);
+        Assert.ThrowsAny<ProgramErrorException>(() => anOverlay.History());
+        anOverlay.Finish(aBox);
+        Assert.ThrowsAny<ProgramErrorException>(() => anOverlay.Finish(aBox));
     }
 }

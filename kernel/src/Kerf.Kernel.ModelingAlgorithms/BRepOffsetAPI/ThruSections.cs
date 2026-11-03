@@ -344,7 +344,7 @@ public class ThruSections : MakeShape
         _last = new Face();
         _shape = new Shape();
 
-        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
         try
         {
             BuildCore();

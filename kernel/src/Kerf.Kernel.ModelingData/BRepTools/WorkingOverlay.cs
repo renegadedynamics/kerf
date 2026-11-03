@@ -21,7 +21,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// <para>
 /// OCCT's algorithms edit the topology they are given: they raise a vertex's tolerance, add a pcurve, set an edge's
 /// range or flags, add and remove sub-shapes. In Kerf the shapes a caller holds are frozen. Instead of copying the input
-/// at the entry (<see cref="CopyAtEntry"/>), an operation opens an overlay and runs on the input itself:
+/// at the entry, as the port did until phase 10, an operation opens an overlay and runs on the input itself:
 /// </para>
 /// <list type="number">
 /// <item><description><b>Writes.</b> The first write into a frozen TShape (through <c>BrepBuilder</c>,
@@ -55,9 +55,26 @@ namespace Kerf.Engine.Topology.Tools;
 /// <c>Change…</c> accessors, which make the working copy.
 /// </para>
 /// <para>
-/// Without an open overlay nothing changes: a write into a frozen TShape throws as before
-/// (<see cref="LockedShapeException"/>, <see cref="ImmutableObjectException"/>), and the accessors read the TShape's
-/// own data. The cost when no overlay is open anywhere in the process is one static read per accessor.
+/// Without an open overlay nothing changes: a write into a frozen TShape throws
+/// (<see cref="LockedShapeException"/> from the builder, <see cref="ImmutableObjectException"/> from a TShape's
+/// setter), and the accessors read the TShape's own data. That is the one rule protecting published shapes:
+/// <see cref="IsReadOnly"/> (frozen, and no overlay here takes the write). The cost when no overlay is open anywhere in
+/// the process is one static read per accessor.
+/// </para>
+/// <para>
+/// <b>The ways in</b> (overlay-survey.md, sections 6 to 9):
+/// <list type="bullet">
+/// <item><description><see cref="Begin"/>: an overlay of the operation's own, nested in any open one. For functional
+/// twins, an operation's change of a result it already handed out, and operations that give a result rather than
+/// write into what they are given (the mesher).</description></item>
+/// <item><description><see cref="BeginUnlessWriting"/>: an overlay of its own unless one that takes writes is open
+/// here; then null, and the operation writes into that one, as OCCT's in-place algorithm called by another writes into
+/// the shapes the caller works on. The usual entry of an in-place algorithm.</description></item>
+/// <item><description><see cref="ForTool"/> with <see cref="Enter"/>: a tool whose work spans several public calls (a
+/// load, fixes, a result) keeps a <see cref="Detached"/> overlay, current only inside each call, or borrows the one that
+/// takes writes here.</description></item>
+/// </list>
+/// Each ends with <see cref="Finish"/> (or is dropped unfinished, when nothing it wrote is handed out), and is disposed.
 /// </para>
 /// </remarks>
 internal sealed partial class WorkingOverlay : IDisposable
@@ -115,20 +132,8 @@ internal sealed partial class WorkingOverlay : IDisposable
         return overlay;
     }
 
-    /// <summary>
-    /// Opens an overlay as <see cref="Begin"/> does, unless an operation's overlay is open here and unfinished: then
-    /// null, and the writes go to that overlay (unit 10H3). For an algorithm that another operation runs on shapes it
-    /// works on (a sweep of a profile in an evolved shape, the generator of a loft): OCCT writes in place, and the
-    /// calling operation reads the writes back and assembles them into its own result.
-    /// </summary>
-    public static WorkingOverlay? BeginUnlessInside(in Shape input, ReShape? context = null)
-        => Current is { IsFinished: false } ? null : Begin(input, context);
-
     /// <summary>The overlay current here, or null.</summary>
     public static WorkingOverlay? Current => Volatile.Read(ref s_openCount) == 0 ? null : t_current;
-
-    /// <summary>The input given to <see cref="Begin"/>.</summary>
-    public Shape Input() => _input;
 
     /// <summary>The overlay this one is nested in, or null.</summary>
     public WorkingOverlay? Parent => _parent;
@@ -220,21 +225,9 @@ internal sealed partial class WorkingOverlay : IDisposable
 
     /// <summary>
     /// True if a write into <paramref name="tShape"/> must be refused (OCCT's <c>Locked()</c> test in BRep_Builder): it
-    /// is locked by its flag, or frozen with no overlay open here to take the write.
+    /// is locked by its flag, or read-only here (<see cref="IsReadOnly"/>).
     /// </summary>
-    internal static bool IsLocked(TShape tShape)
-    {
-        if (tShape.LockedFlag())
-        {
-            return true;
-        }
-        if (!tShape.IsFrozen)
-        {
-            return false;
-        }
-        WorkingOverlay? overlay = Current;
-        return overlay is null || overlay._isFinished;
-    }
+    internal static bool IsLocked(TShape tShape) => tShape.LockedFlag() || IsReadOnly(tShape);
 
     /// <summary>
     /// True if a write into <paramref name="tShape"/> would make its working copy here: it is frozen, not locked by its
@@ -307,10 +300,10 @@ internal sealed partial class WorkingOverlay : IDisposable
     /// Ends the operation: assembles <paramref name="result"/> and <paramref name="others"/> (other shapes it hands
     /// out), and the replacements its context records, with new TShapes for what changed and the input's own for the
     /// rest. In the context, a sub-shape of the input that changed without a request is recorded as replaced by what
-    /// stands for it now (as <see cref="CopyAtEntry"/> does). Returns the assembled result, unfrozen. When nothing was
-    /// written, returns <paramref name="result"/> as it is. With <paramref name="ignoreToleranceGuard"/>, a vertex whose
-    /// tolerance was only raised by BRepLib's rounding guard (<c>2 * Epsilon(tol)</c>) counts as unchanged, as in
-    /// <c>BrepTools.KeepUnchanged</c> (unit 10H3: the face of a planar wire, which updates every tolerance).
+    /// stands for it now (decision 643). Returns the assembled result, unfrozen. When nothing was written, returns
+    /// <paramref name="result"/> as it is. With <paramref name="ignoreToleranceGuard"/>, a vertex whose tolerance was
+    /// only raised by BRepLib's rounding guard (<c>2 * Epsilon(tol)</c>) counts as unchanged (unit 10H3: the face of a
+    /// planar wire, which updates every tolerance).
     /// </summary>
     public Shape Finish(in Shape result, IEnumerable<Shape>? others = null, bool ignoreToleranceGuard = false)
     {
@@ -361,7 +354,7 @@ internal sealed partial class WorkingOverlay : IDisposable
                 {
                     Assembled(replacement);
                 }
-                _context.ReplaceTShapes(NoImages, _final);
+                _context.ReplaceResults(_final);
                 for (int i = 0; i < subShapes.Count; i++)
                 {
                     Shape sub = subShapes[i];
@@ -379,8 +372,6 @@ internal sealed partial class WorkingOverlay : IDisposable
             _isAssembling = false;
         }
     }
-
-    private static readonly Dictionary<TShape, TShape> NoImages = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// After <see cref="Finish"/>: what stands for a shape the operation worked with: for a TShape it wrote into (or

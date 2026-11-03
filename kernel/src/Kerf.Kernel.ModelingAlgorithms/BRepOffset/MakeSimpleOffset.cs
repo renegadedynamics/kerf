@@ -55,11 +55,13 @@ public enum SimpleOffsetStatus
 /// <para>
 /// The modifier, in its immutable-input mode, is the copy of the input (decision 973): the offset shell never writes
 /// into the caller's shape. Building the solid does: the walls give the input's free edges pcurves (in place, as
-/// OCCT), and <c>ShapeFix_Edge</c> makes them same-parameter. So, with the solid flag, a frozen input is copied at
-/// the entry (<see cref="CopyAtEntry"/>, with the healing context); the algorithm runs on the copy, and the
-/// copied sub-shapes it left unchanged are the caller's own again in the result. <see cref="Generated"/> and
-/// <see cref="Modified"/> answer for the caller's sub-shapes; <see cref="Modified"/> of a sub-shape changed on its copy
-/// is that changed copy.
+/// OCCT), and <c>ShapeFix_Edge</c> makes them same-parameter. So, with the solid flag, the algorithm runs on the
+/// caller's shape in a working overlay (unit 10H6, <see cref="WorkingOverlay"/>; in place inside an operation's
+/// overlay that takes writes): the writes into the caller's frozen edges go to working copies, and the result holds new
+/// TShapes only for the sub-shapes that changed. A caller's unfrozen shape (a shell it built of frozen faces) is worked
+/// on with its unfrozen TShapes copied, so the run never writes into it. <see cref="Generated"/> and
+/// <see cref="Modified"/> answer for the caller's sub-shapes; <see cref="Modified"/> of a sub-shape changed in place
+/// is what stands for it in the result.
 /// </para>
 /// <para>
 /// <see cref="GetResultShape"/>, <see cref="Generated"/> and <see cref="Modified"/> freeze what they return (a
@@ -98,9 +100,11 @@ public sealed class MakeSimpleOffset
     // Result shape.
     private Shape _resShape = new();
 
-    // OCCT.NET: the shape the algorithm works on (the input, or its copy at the entry), and the copy at the entry.
+    // Kerf: the shape the algorithm works on (the input, or the input with its unfrozen TShapes copied), and the working
+    // overlay of the solid's run (unit 10H6); null for the shell, and for a run in place inside an operation's overlay.
     private Shape _shape = new();
-    private CopyAtEntry? _entry;
+    private WorkingOverlay? _overlay;
+    private Dictionary<TShape, TShape>? _copies; // the caller's unfrozen TShapes -> their copies
 
     //=================================================================================================
 
@@ -222,8 +226,9 @@ public sealed class MakeSimpleOffset
         _maxAngle = 0.0;
         _mapVE.Clear();
         _reShape.Clear(); // Clear possible stored modifications.
-        // OCCT.NET: the previous copy at the entry
-        _entry = null;
+        // Kerf: the previous run's overlay
+        _overlay = null;
+        _copies = null;
         _shape = _inputShape;
     }
 
@@ -273,16 +278,25 @@ public sealed class MakeSimpleOffset
             ComputeMaxAngle();
         }
 
-        // OCCT.NET: copy at entry (plan 2.2): the walls of the solid write into the input's free edges. Kerf: left on
-        // its copy by unit 10H5 (decision 1421): the walls' faces are made by BRepLib_MakeFace, which copies a frozen
-        // wire at its entry until construction's overlay (10H3), so in a working overlay a wall would hold a copy of
-        // the caller's edge, and the shell wouldn't close
-        if (_isBuildSolid)
+        // Kerf: the walls of the solid write into the input's free edges, in a working overlay (unit 10H6; the walls'
+        // faces, made by BRepLib_MakeFace, write into the same overlay and share the caller's edges)
+        if (_isBuildSolid && WorkingOverlay.Writing is null)
         {
-            _entry = new CopyAtEntry(_inputShape, _reShape);
-            _shape = _entry.Shape();
+            _shape = WorkingOverlay.WithUnfrozenCopied(_inputShape, out _copies);
+            _overlay = WorkingOverlay.Begin(_shape, _reShape);
         }
+        try
+        {
+            PerformCore();
+        }
+        finally
+        {
+            _overlay?.Dispose();
+        }
+    }
 
+    private void PerformCore()
+    {
         _builder.Init(_shape);
         var mapper = new SimpleOffset(_shape, _offsetValue, _tolerance);
         _builder.Perform(mapper);
@@ -323,13 +337,14 @@ public sealed class MakeSimpleOffset
         _isDone = true;
     }
 
-    // OCCT.NET: the end of the copy at the entry: the copies left unchanged are the caller's own again, in the result
-    // and in the healing context, which then answers for the caller's sub-shapes.
+    // Kerf: the end of the solid's overlay: the result holds new TShapes for the caller's sub-shapes the run changed, the
+    // caller's own for the rest (and for the unfrozen ones copied at the start that it left equal); the healing context
+    // records each sub-shape changed in place as replaced (unit 10H6).
     private void FinishEntry()
     {
-        if (_entry is not null)
+        if (_overlay is not null && !_overlay.IsFinished)
         {
-            _resShape = _entry.Finish(_resShape);
+            _resShape = WorkingOverlay.UncopiedWhereUnchanged(_overlay.Finish(_resShape), _copies);
         }
     }
 
@@ -800,11 +815,12 @@ public sealed class MakeSimpleOffset
     {
         // Shape generated by modification.
         Shape res;
-        // OCCT.NET: the modifier ran on the copy at the entry, if any; what stands for its result after the entry's end
-        res = _builder.InternalModifiedShape(_entry is null ? shape : _entry.Copied(shape));
-        if (_entry is not null)
+        // Kerf: the modifier ran on the caller's shape (its unfrozen TShapes copied) in the solid's overlay, if any; what
+        // stands for its result after the overlay's end
+        res = _builder.InternalModifiedShape(WorkingOverlay.CopiedIn(shape, _copies));
+        if (_overlay is { IsFinished: true })
         {
-            res = _entry.Final(res);
+            res = _overlay.Final(res);
         }
 
         if (res.IsNull)

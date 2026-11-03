@@ -1,5 +1,6 @@
-// Kerf: the working overlay of healing's tools (unit 10H4): an operation run in place inside another's overlay, and
-// the detached overlay of a tool whose fixes run in several public calls. Not a port of an OCCT file.
+// Kerf: the ways into a working overlay other than Begin (units 10H4 and 10H6): an operation run in place inside
+// another's overlay, the detached overlay of a tool whose work runs in several public calls, and a functional
+// operation's unfrozen input. Not a port of an OCCT file.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Topology;
@@ -17,17 +18,62 @@ internal sealed partial class WorkingOverlay
     public static WorkingOverlay? Writing => Current is { _isFinished: false } current ? current : null;
 
     /// <summary>
-    /// True if <paramref name="tShape"/> is frozen and no overlay here takes writes into it: the port's frozen-shape
-    /// checks that skip or refuse a write ask this, so that inside an overlay the operation writes as OCCT's does (as it
-    /// did into the unfrozen copies made at the entry).
+    /// True if <paramref name="tShape"/> is frozen and no overlay here takes writes into it: the one rule protecting
+    /// published shapes. BRep_Builder's refusals (<see cref="IsLocked"/>) and the port's frozen-shape checks that skip or
+    /// refuse a write ask this, so that inside an overlay the operation writes as OCCT's does; the TShapes' setters
+    /// follow the same rule (<see cref="TryWritable"/>, else <c>CheckMutable</c> throws).
     /// </summary>
     public static bool IsReadOnly(TShape tShape) => tShape.IsFrozen && Writing is null;
 
     /// <summary>
-    /// Opens an overlay for an in-place operation on <paramref name="input"/>, unless one that takes writes is open
-    /// here: then returns null, and the operation runs in place inside it, its writes going to that overlay, as OCCT's
-    /// in-place algorithm called by another (ShapeFix_Wire by ShapeFix_Face, ShapeFix_Shape by ShapeProcess) writes
-    /// into the shapes the outer one works on. The caller finishes and disposes the overlay it gets.
+    /// True if no TShape of <paramref name="shape"/>'s graph is frozen: ported code's own shape, which in-place code
+    /// writes into outside any overlay, as OCCT's (the mesher, the STEP reader's regularity, the shape processing's
+    /// modifiers). Each TShape is visited once; a frozen TShape's graph is frozen, so the walk stops there.
+    /// </summary>
+    public static bool IsWritableInPlace(in Shape shape)
+    {
+        TShape? root = shape.TShape();
+        if (root is null)
+        {
+            return true;
+        }
+        if (root.IsFrozen)
+        {
+            return false;
+        }
+        var visited = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
+        var stack = new Stack<TShape>();
+        stack.Push(root);
+        while (stack.Count > 0)
+        {
+            TShape tShape = stack.Pop();
+            if (tShape.IsFrozen)
+            {
+                return false;
+            }
+            if (!visited.Add(tShape))
+            {
+                continue;
+            }
+            for (var it = new NCollection_List<Shape>.Iterator(tShape._shapes); it.More(); it.Next())
+            {
+                TShape? child = it.Value().TShape();
+                if (child is not null)
+                {
+                    stack.Push(child);
+                }
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Opens an overlay for an in-place operation on <paramref name="input"/> (as <see cref="Begin"/>), unless one that
+    /// takes writes is open here (<see cref="Writing"/>): then returns null, and the operation runs in place inside it,
+    /// its writes going to that overlay, as OCCT's in-place algorithm called by another writes into the shapes the
+    /// caller works on (ShapeFix_Wire by ShapeFix_Face, a sweep by an evolved shape, MakeFace by an offset's walls). The
+    /// calling operation reads the writes back and assembles them into its own result; a nested overlay would keep them
+    /// from it. The caller finishes and disposes the overlay it gets (units 10H3 and 10H4, merged by 10H6).
     /// </summary>
     public static WorkingOverlay? BeginUnlessWriting(in Shape input, ReShape? context = null) =>
         Writing is null ? Begin(input, context) : null;

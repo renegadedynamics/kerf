@@ -29,8 +29,8 @@ namespace Kerf.Engine.Healing.Fixes;
 /// </para>
 /// <para>
 /// The public form is <see cref="Built(in Shape)"/>: the connections recorded on a shape's edges are built on
-/// an exact copy of that shape (<see cref="CopyAtEntry"/>, decision 583), whose unchanged sub-shapes are the
-/// caller's own, and the result is frozen.
+/// that shape in a working overlay (unit 10H4), so the result's unchanged sub-shapes are the caller's own, and the
+/// result is frozen.
 /// </para>
 /// </remarks>
 public sealed class EdgeConnectFixer

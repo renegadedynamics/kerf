@@ -28,7 +28,7 @@ public class BRepOffset_MakeLoopsInter3dTests
         MakePolygon aPoly = new(new Point3D(0, 0, theZ), new Point3D(10, 0, theZ),
                                                new Point3D(10, 10, theZ), new Point3D(0, 10, theZ), true);
         Face aFace = new MakeFace(aPoly.Wire(), true).Face();
-        return ShapeCasts.Face(BrepTools.ExactCopyForWrite(aFace, out _));
+        return ShapeCasts.Face(TestCopies.ExactCopyForWrite(aFace, out _));
     }
 
     private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)

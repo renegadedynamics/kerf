@@ -54,7 +54,7 @@ public abstract class MakeSweep : MakeShape
     /// </summary>
     private protected WorkingOverlay? BeginGenerating(in Shape s)
     {
-        _overlay = WorkingOverlay.BeginUnlessInside(s);
+        _overlay = WorkingOverlay.BeginUnlessWriting(s);
         return _overlay;
     }
 

@@ -195,7 +195,7 @@ public class LibraryMakeFace : LibraryMakeShape
         // (unit 10H3), so the face holds the caller's own edges and vertices wherever they are unchanged, and faces
         // built on wires sharing edges share them. UpdateTolerances raises every vertex by its rounding guard
         // (2 * Epsilon(tol)); a raise of no more than that is ignored, else no frozen vertex could ever be kept.
-        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(aW);
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(aW);
         Add(aW);
         //
         BrepLibrary.UpdateTolerances(_shape);
