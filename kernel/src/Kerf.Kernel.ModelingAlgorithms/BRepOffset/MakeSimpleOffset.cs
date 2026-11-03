@@ -272,7 +272,10 @@ public sealed class MakeSimpleOffset
             ComputeMaxAngle();
         }
 
-        // OCCT.NET: copy at entry (plan 2.2): the walls of the solid write into the input's free edges
+        // OCCT.NET: copy at entry (plan 2.2): the walls of the solid write into the input's free edges. Kerf: left on
+        // its copy by unit 10H5 (decision 16203): the walls' faces are made by BRepLib_MakeFace, which copies a frozen
+        // wire at its entry until construction's overlay (10H3), so in a working overlay a wall would hold a copy of
+        // the caller's edge, and the shell wouldn't close
         if (_isBuildSolid)
         {
             _entry = new CopyAtEntry(_inputShape, _reShape);
