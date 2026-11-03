@@ -18,7 +18,8 @@ namespace Kerf.Engine.Booleans.Algo;
 /// </para>
 /// <para>
 /// OCCT's <see cref="Image"/> of a shape without images appends the shape to a function-level static list and returns
-/// it, so the list grows with every such call (marked <c>// OCCT</c>, occt-issues.md). The port's list is per thread.
+/// it, so the list grows with every such call (marked <c>// OCCT</c>, occt-issues.md). The port's list is the image
+/// object's own (unit 10I; per thread before), so what one operation appended never reaches another.
 /// </para>
 /// </remarks>
 public sealed class ShapeImage
@@ -27,8 +28,7 @@ public sealed class ShapeImage
     private readonly NCollection_DataMap<Shape, Shape> _up = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);
 
-    [ThreadStatic]
-    private static NCollection_List<Shape>? s_noImage;
+    private NCollection_List<Shape>? _noImage;
 
     /// <summary>An empty image.</summary>
     public ShapeImage()
@@ -209,9 +209,9 @@ public sealed class ShapeImage
         if (!HasImage(s))
         {
             // OCCT: the static list keeps every shape appended by earlier calls
-            s_noImage ??= new NCollection_List<Shape>();
-            s_noImage.Append(s);
-            return s_noImage;
+            _noImage ??= new NCollection_List<Shape>();
+            _noImage.Append(s);
+            return _noImage;
         }
         return _down[s];
     }

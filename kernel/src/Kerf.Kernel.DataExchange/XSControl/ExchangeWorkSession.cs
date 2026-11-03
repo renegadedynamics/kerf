@@ -22,9 +22,10 @@ namespace Kerf.Engine.Exchange.Framework;
 /// </summary>
 public class ExchangeWorkSession : WorkSession
 {
-    // OCCT's process-wide mutex (GetGlobalMutex) around SelectNorm, NewModel and TransferWriteShape: kept, as the
-    // controllers (and their actors) are shared by all sessions (decision 1222)
-    private static readonly object WS_GLOBAL_MUTEX = new object();
+    // OCCT's process-wide mutex (GetGlobalMutex) around SelectNorm, NewModel and TransferWriteShape is the
+    // controller's (Controller.SessionLock, unit 10I): a recorded controller and its actors are shared by the sessions
+    // that select it (decision 1222), but most sessions have their own (decision 1264). Selecting a norm changes only
+    // the session.
 
     public ExchangeWorkSession()
     {
@@ -92,10 +93,7 @@ public class ExchangeWorkSession : WorkSession
     /// </summary>
     public bool SelectNorm(string normname)
     {
-        lock (WS_GLOBAL_MUTEX)
-        {
-            return SelectNormLocked(normname);
-        }
+        return SelectNormLocked(normname);
     }
 
     private bool SelectNormLocked(string normname)
@@ -593,7 +591,11 @@ public class ExchangeWorkSession : WorkSession
     /// </summary>
     public InterfaceModel? NewModel()
     {
-        lock (WS_GLOBAL_MUTEX)
+        if (_controller is null)
+        {
+            return null;
+        }
+        lock (_controller.SessionLock)
         {
             return NewModelLocked();
         }
@@ -649,7 +651,11 @@ public class ExchangeWorkSession : WorkSession
     /// </summary>
     public ReturnStatus TransferWriteShape(Shape shape, bool compgraph = true, ProgressRange progress = default)
     {
-        lock (WS_GLOBAL_MUTEX)
+        if (_controller is null)
+        {
+            return ReturnStatus.RetError;
+        }
+        lock (_controller.SessionLock)
         {
             return TransferWriteShapeLocked(shape, compgraph, progress);
         }

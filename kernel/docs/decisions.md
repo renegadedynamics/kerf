@@ -14211,3 +14211,94 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        machine's noise (other units ran beside), not the change. The converted sites (the checks, the wire tools,
        cells, defeaturing's wires, the periodicity) are outside the benchmark; each now copies only the TShapes it
        writes, where it copied the whole input (10H1's pilot measured 25 to 43% less allocation for that change).
+
+## Phase 10: unit 10I, state
+
+1385. **One operation context, ambient** (plan 2.7; docs/state.md). `Kerf.Engine.Foundation.OperationContext`
+       (Foundation, `Context/`) holds the settings OCCT kept in process-wide statics. A setting is a `ContextKey<T>`,
+       a name and an immutable default, declared `static readonly` by the class it configures, so Foundation knows none
+       of the other assemblies' settings. A context is immutable (`With`, `Without`) and overrides few settings, kept as
+       key and value pairs scanned by identity. The current one is an `AsyncLocal`: it flows into the tasks and
+       `Parallel.For` bodies an operation starts and into the operations nested in it, and other flows (threads,
+       tests, Bento's cells) see their own. `Begin(…)` sets a scope, restored on disposal; `Set(key, value)` changes
+       the setting for the rest of the current flow and is what OCCT's process-wide setters now do
+       (`Quantity_Color::SetEpsilon`, `BOPAlgo_Options::SetParallelMode`, `GeomTools::SetUndefinedTypeHandler`,
+       `ShapeAlgo::SetAlgoContainer`, `Message::SetDefaultMessenger`, BRepLib's `Precision`/`Plane`,
+       `BRepMesh_IncrementalMesh::SetParallelDefault`, `BRepMesh_DiscretFactory::SetDefaultName`, AppBlend's and Blend's
+       debug switches). Where nothing was set, a read is one `AsyncLocal` read. The setters were internal or used only by
+       Draw-lite and tests, whose commands run synchronously, so a setting still lasts for the rest of a command
+       sequence, but no longer reaches another test or interpreter running beside it.
+1386. **Ambient where the chain is long, parameters where it is short.** The settings are read deep in OCCT's call
+       graph (the message table by every algorithm that reports, BRepLib's plane by the 2D makers, the mesher's
+       defaults by every factory call), where a parameter would touch hundreds of signatures. What already travels
+       explicitly stays explicit: a `ProcessContext` carries its resource manager, an algorithm its own
+       `SetRunParallel`, a STEP session its parameter set (decision 1222). Rejected: one context object passed down,
+       which is the parameter threading by another name.
+1387. **What the context doesn't hold.** 10H1's working overlay keeps its own `AsyncLocal`, mirrored in the thread
+       static its accessors read on every TShape access (decision 1359): it flows the same way, and folding it in would
+       add an indirection to that hot path while 10H2 changes it. No scratch pools: an operation's parallel bodies run
+       on several threads, so per-operation scratch would race; the scratch OCCT keeps across calls stays per thread
+       where that is OCCT's own scope (`thread_local`) and a new instance always starts afresh, so nothing crosses
+       operations: BlendFunc_ConstRad's and EvolRad's values (decision 1037), Contap_HContTool's sampling bounds
+       (1075), TopOpeBRepTool's classifier, GeomTools' reading depth, AdvApp2Var's Hermite cache (113).
+1388. **The message table, ShapeProcess's registry and `Resource_Manager`: immutable defaults, overrides per flow.**
+       - `MsgFile`: the compiled-in texts (BOPAlgo's, SHMessage's, XSMessage's) go into an immutable default table
+         once each, through their owners' `Lazy` initialisations (`AddDefaults`), the table replaced by
+         compare-and-swap so readers take no lock; `AddMsg`/`LoadFromString` (internal: Draw-lite and tests) add to the
+         flow (`AdditionsSetting`). `Msg` of an unknown keyword no longer stores OCCT's surrogate text under it: a read
+         wrote the process's table, and `AlertDiagnostics` (which asks `HasMsg` first) gave a later operation another
+         message for an alert an earlier one had looked up. `MsgFile_UnknownKeyword` now expects `HasMsg` false after.
+       - ShapeProcess: `OperLibrary.Init` publishes the 18 operators once as a frozen dictionary; `RegisterOperator`
+         adds to the flow (`OperatorsSetting`), refusing a name either layer has, as OCCT refuses a second registration.
+       - `ProcessContext.LoadResourceManager`: OCCT's cache of the last file, five statics behind a mutex reloaded on a
+         new name or modification time, goes. A compiled-in file is parsed once per name (a `ConcurrentDictionary`,
+         invisible: each context gets a copy); the caller's directories are read each time. New:
+         `ProcessContext.ResourceOverridesSetting`, resources by full name applied to every context loaded in the flow,
+         the STEP and IGES readers' included, so an operation can run with its own shape processing parameters beside
+         others on the defaults. `ClearResourceCache` (Draw-lite's corpus) goes with the cache.
+1389. **State that crossed operations is the operation's own.**
+       - BRepAlgo_Image's `Image` of a shape without images appends it to a list OCCT keeps static and returns, and
+         BRepAlgo_AsDes hands out a static "empty" list `ChangeDescendant` can fill (both `// OCCT`). They were per
+         thread, so one offset's appends reached the next offset on that thread; they are now the object's own, which
+         keeps OCCT's behaviour within an operation. No test changed.
+       - STEPConstruct_Assembly's `MakeRelationship()` numbered occurrences from a process-wide counter; nothing called
+         it (the writer passes its own counter, decision 1266), so it is removed.
+       - Removed as unread: HLRBRep_Data's seven intersection counters (written unsynchronised from the hider, read
+         only by OCCT's `OCCT_DEBUG` traces) and AdvApp2Var's common block `mblank__` (written by `macinit_`, never read).
+       - One-time initialisations are `Lazy<T>` or static initialisers: BOPAlgo's, Shape Healing's and data exchange's
+         messages, ShapeProcess's operators, ShapeAlgo's container, the STEP and STEP-XCAF controllers, and the mesh
+         factory registry (built in `DiscretAlgoFactory`'s static initialiser from the two factories, OCCT's
+         self-registering singletons gone; `RegisterFactory`/`UnregisterFactory` act only on the registry being built).
+1390. **Caches stay where invisible, without locks.** Poly_Triangulation's cached range publishes a new box each time
+       (never changed once published), so its four locks go; FEmTool's linear criteria (three classes) and an XDE
+       assembly's compound publish their first value by compare-and-swap (computed twice at worst, equal); the
+       controllers' dictionary is an immutable one replaced by compare-and-swap. `FailureDiagnostics`' codes, the
+       streams' `ConditionalWeakTable`s and PLib_HermitJacobi's matrices were lock-free already.
+1391. **The locks left** (docs/state.md lists them): the writer locks of LibCtl's global lists and StepData's header
+       protocol, reached only from the protocols' one-time initialisations; the locks of one operation's own objects
+       written by its parallel bodies (BVH's build queue, Message_Report, the progress range, the overlay, DistanceShapeShape's
+       inner-solid search, StepSelect_StepType's library, the modelling layer's warning scope); the shape log's file
+       (test tooling, off by default); and `XSControl_WorkSession`'s, which was OCCT's process-wide mutex around
+       `NewModel` and `TransferWriteShape` and is now the controller's (`Controller.SessionLock`): sessions sharing a
+       recorded controller take turns as before, and every STEP reader and writer, which has its own controller
+       (decision 1264), waits for no other (`SelectNorm` changes only its session and takes none). One static lock
+       remains in an algorithm: BOPAlgo_PaveFiller's `VerticesLock` (decision 789), within one Boolean's parallel
+       p-curve makers but shared by Booleans running at once; it is 10H2's file, and the filler can own it there.
+1392. **Measured** (Release, 24 logical processors, other units running beside: the figures carry the machine's noise).
+       No cost found: the settings read where nothing was set are one `AsyncLocal` read, and the locks removed were
+       rarely contended.
+       - Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks`, 11 examples, 7 passes; it gains parallel rounds, every
+         example 24 times at once on the thread pool, each result checked against the serial one): serial medians
+         1,545 ms before, 1,469 ms after; allocation per example unchanged (802 MB for the largest); a parallel round
+         11.6 s before, 10.7 s after, 27.7 GB allocated either way, no result differing. The parallel rounds are
+         dominated by workstation GC (23 to 25 s of pauses), not by contention.
+       - The Booleans benchmark (`-- booleans simple`, 407 cases): serial 2,651 ms before, 2,693 ms after; parallel
+         3,030 ms before (a noisy run), 1,993 ms after; 8.25 MB per Boolean either way.
+       - Tests: Foundation 2,272 (2,268 and OperationContextTests' 4), ModelingData 3,145, ModelingAlgorithms 4,736
+         (9 skipped), DataExchange 274 (271 and ConcurrencyTests' 3; 1 skipped), Oracle 383, Draw-lite 687, the
+         modelling layer 1,876 (1,875 and ConcurrentPartsTests). Changed: `MsgFile_UnknownKeyword` (decision 1388) and
+         the Draw-lite meshing test, which reads `mpparallel`'s setting from the interpreter's context.
+         Draw-lite's cheap-gaps class failed in two later runs on `bug24157_5`/`_8`'s check that `bbuild -t` takes at
+         most 15 s of wall time: alone they take 1 to 3 s; twelve at once take 10 to 12 s, on `main` as on this branch
+         (measured both ways); with the class's other cases and other units' suites beside, 18 to 21 s. A timing check
+         under load, not a regression; it passed in the first full run.

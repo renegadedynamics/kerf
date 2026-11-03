@@ -10,31 +10,33 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>
-/// An abstract factory of meshing algorithms, with a process-wide registry of the factories by name.
+/// An abstract factory of meshing algorithms, with a registry of the factories by name.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The registry is process-wide state (decision 492). Its mutators, <see cref="RegisterFactory"/> and
-/// <see cref="UnregisterFactory"/>, are internal. The two factories OCCT registers when its libraries load,
-/// <see cref="IncrementalMeshFactory"/> ("FastDiscret", preferred) and <see cref="Factory"/>
-/// ("XBRepMesh"), register when this type initialises, in that order. There is no plugin loading (OCCT 8 has none
-/// either). The registry is locked, so it can be read from several threads.
+/// The registry is built once (decision 492; unit 10I): the two factories OCCT registers when its libraries load,
+/// <see cref="IncrementalMeshFactory"/> ("FastDiscret", preferred) and <see cref="Factory"/> ("XBRepMesh"), register
+/// when this type initialises, in that order, and the registry doesn't change afterwards, so it is read without a lock.
+/// OCCT's <c>RegisterFactory</c> and <c>UnregisterFactory</c> work on the registry being built. There is no plugin
+/// loading (OCCT 8 has none either). The meshing algorithm a caller gets by default is a setting of the operation
+/// context (<see cref="DiscretFactory"/>).
 /// </para>
 /// <para>Names are compared ignoring the case of ASCII letters, as OCCT's <c>IsSameString(..., false)</c>.</para>
 /// </remarks>
 public abstract class DiscretAlgoFactory : Transient
 {
-    private static readonly Lock Lock = new();
-    private static readonly NCollection_List<DiscretAlgoFactory> TheFactories = new();
+    private static readonly DiscretAlgoFactory[] TheFactories = RegisterAll();
 
     /// <summary>The factory's name.</summary>
     protected readonly string _name;
 
-    static DiscretAlgoFactory()
+    // OCCT's self-registering instances (FactoryInitializer), in the order TKMesh and TKXMesh load.
+    private static DiscretAlgoFactory[] RegisterAll()
     {
-        // OCCT's self-registering instances (FactoryInitializer), in the order TKMesh and TKXMesh load.
-        IncrementalMeshFactory.Register();
-        Factory.Register();
+        var factories = new NCollection_List<DiscretAlgoFactory>();
+        RegisterFactory(factories, new IncrementalMeshFactory(), true);
+        RegisterFactory(factories, new Factory());
+        return [.. factories];
     }
 
     /// <summary>A factory with the name that identifies it.</summary>
@@ -44,87 +46,72 @@ public abstract class DiscretAlgoFactory : Transient
     }
 
     /// <summary>
-    /// Registers a factory: first (the default) if <paramref name="isPreferred"/>, replacing any of the same name;
-    /// otherwise last, unless one of the same name is already registered. Internal (decision 492).
+    /// Registers a factory in the registry being built: first (the default) if <paramref name="isPreferred"/>,
+    /// replacing any of the same name; otherwise last, unless one of the same name is already registered.
     /// </summary>
-    internal static void RegisterFactory(DiscretAlgoFactory factory, bool isPreferred = false)
+    private static void RegisterFactory(NCollection_List<DiscretAlgoFactory> factories, DiscretAlgoFactory factory,
+                                        bool isPreferred = false)
     {
-        lock (global::Kerf.Engine.Meshing.DiscretAlgoFactory.Lock)
+        string name = factory.Name();
+        if (isPreferred)
         {
-            string name = factory.Name();
-            NCollection_List<DiscretAlgoFactory> factories = TheFactories;
-            if (isPreferred)
+            UnregisterFactory(factories, name);
+            factories.Prepend(factory);
+            return;
+        }
+
+        for (NCollection_List<DiscretAlgoFactory>.Iterator iter = new(factories); iter.More(); iter.Next())
+        {
+            if (IsSameString(iter.Value().Name(), name))
             {
-                UnregisterFactory(name);
-                factories.Prepend(factory);
                 return;
             }
-
-            for (NCollection_List<DiscretAlgoFactory>.Iterator iter = new(factories); iter.More(); iter.Next())
-            {
-                if (IsSameString(iter.Value().Name(), name))
-                {
-                    return;
-                }
-            }
-
-            factories.Append(factory);
         }
+
+        factories.Append(factory);
     }
 
-    /// <summary>Unregisters the factories of the name. Internal (decision 492).</summary>
-    internal static void UnregisterFactory(string name)
+    /// <summary>Unregisters the factories of the name from the registry being built.</summary>
+    private static void UnregisterFactory(NCollection_List<DiscretAlgoFactory> factories, string name)
     {
-        lock (global::Kerf.Engine.Meshing.DiscretAlgoFactory.Lock)
+        for (NCollection_List<DiscretAlgoFactory>.Iterator iter = new(factories); iter.More();)
         {
-            NCollection_List<DiscretAlgoFactory> factories = TheFactories;
-            for (NCollection_List<DiscretAlgoFactory>.Iterator iter = new(factories); iter.More();)
+            if (IsSameString(iter.Value().Name(), name))
             {
-                if (IsSameString(iter.Value().Name(), name))
-                {
-                    factories.Remove(iter);
-                }
-                else
-                {
-                    iter.Next();
-                }
+                factories.Remove(iter);
+            }
+            else
+            {
+                iter.Next();
             }
         }
     }
 
     /// <summary>The default (first registered) factory, or null if none is registered.</summary>
-    public static DiscretAlgoFactory? DefaultFactory()
-    {
-        lock (global::Kerf.Engine.Meshing.DiscretAlgoFactory.Lock)
-        {
-            return !TheFactories.IsEmpty() ? TheFactories.First() : null;
-        }
-    }
+    public static DiscretAlgoFactory? DefaultFactory() => TheFactories.Length > 0 ? TheFactories[0] : null;
 
     /// <summary>The factory of the name, or null if none is registered.</summary>
     public static DiscretAlgoFactory? FindFactory(string name)
     {
-        lock (global::Kerf.Engine.Meshing.DiscretAlgoFactory.Lock)
+        foreach (DiscretAlgoFactory factory in TheFactories)
         {
-            for (NCollection_List<DiscretAlgoFactory>.Iterator iter = new(TheFactories); iter.More(); iter.Next())
+            if (IsSameString(factory.Name(), name))
             {
-                if (IsSameString(iter.Value().Name(), name))
-                {
-                    return iter.Value();
-                }
+                return factory;
             }
-
-            return null;
         }
+        return null;
     }
 
     /// <summary>The registered factories, in order (a copy: OCCT returns the registry itself).</summary>
     public static NCollection_List<DiscretAlgoFactory> Factories()
     {
-        lock (global::Kerf.Engine.Meshing.DiscretAlgoFactory.Lock)
+        var factories = new NCollection_List<DiscretAlgoFactory>();
+        foreach (DiscretAlgoFactory factory in TheFactories)
         {
-            return new NCollection_List<DiscretAlgoFactory>(TheFactories);
+            factories.Append(factory);
         }
+        return factories;
     }
 
     /// <summary>A new meshing algorithm for the shape with the linear and angular deflections, not yet performed.</summary>

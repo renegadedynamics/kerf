@@ -652,33 +652,26 @@ public sealed class StaticSet
     }
 
     /// <summary>
-    /// Loads data exchange's messages (XSMessage's texts) into <see cref="MsgFile"/>, once per process,
-    /// unless they are there already: the end of OCCT's <c>Interface_Static::Standards</c>.
+    /// Loads data exchange's messages (XSMessage's texts) into the defaults of <see cref="MsgFile"/>, once per
+    /// process: the end of OCCT's <c>Interface_Static::Standards</c>.
     /// </summary>
     /// <remarks>
     /// OCCT first tries the message file the environment variable CSF_XSMessage names; the port loads only the text
-    /// compiled in, OCCT's XSTEP.us (as decision 975 for Shape Healing). Process-wide state, as OCCT's, behind a lock:
-    /// loading the same texts again changes nothing.
+    /// compiled in, OCCT's XSTEP.us (as decision 975 for Shape Healing), once (a one-time initialisation, unit 10I).
     /// </remarks>
     /// <exception cref="ProgramErrorException">The messages can't be loaded (never with the compiled-in text).</exception>
-    public static void LoadMessages()
-    {
-        lock (MessagesLock)
-        {
-            if (!MsgFile.HasMsg("XSTEP_1"))
-            {
-                // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_XSMessage", "XSTEP") left out (decision 1181)
-                MsgFile.LoadFromString(XstepMessages.Text);
-                if (!MsgFile.HasMsg("XSTEP_1"))
-                {
-                    throw new ProgramErrorException(
-                        "Critical Error - message resources for Interface_Static are invalid or undefined!");
-                }
-            }
-        }
-    }
+    public static void LoadMessages() => _ = MessagesLoaded.Value;
 
-    private static readonly Lock MessagesLock = new();
+    private static readonly Lazy<bool> MessagesLoaded = new(() =>
+    {
+        // OCCT.NET: OCCT's Message_MsgFile::LoadFromEnv("CSF_XSMessage", "XSTEP") left out (decision 1181)
+        MsgFile.AddDefaults(XstepMessages.Text);
+        if (!MsgFile.HasMsg("XSTEP_1"))
+        {
+            throw new ProgramErrorException("Critical Error - message resources for Interface_Static are invalid or undefined!");
+        }
+        return true;
+    });
 
     // sscanf(part, "%30s %d", ...): the integer after the first word (0 if none, as OCCT's initialised nume)
     private static int SscanfSecondInteger(string part)

@@ -10,6 +10,7 @@ using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using Occt;
+using System.Collections.Immutable;
 using static Kerf.Engine.Exchange.Framework.Selection.ReturnStatus;
 
 namespace Kerf.Engine.Exchange.Framework;
@@ -26,9 +27,16 @@ namespace Kerf.Engine.Exchange.Framework;
 public abstract class Controller : Transient
 {
     // OCCT's dictionary of the recorded controllers (a file static "listad"): process-wide, filled once by the
-    // norms' initialisations (Record, AutoRecord) before the sessions select them, under a lock (decision 1222).
-    private static readonly NCollection_DataMap<string, Controller> Listad = new NCollection_DataMap<string, Controller>();
-    private static readonly object ListadLock = new object();
+    // norms' initialisations (Record, AutoRecord) before the sessions select them (decision 1222); replaced whole
+    // when a norm records its controller, so readers take no lock (unit 10I)
+    private static ImmutableDictionary<string, Controller> s_listad = ImmutableDictionary.Create<string, Controller>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The lock of the sessions working with this controller around the steps that change its actors (OCCT's
+    /// process-wide mutex of XSControl_WorkSession): sessions sharing a recorded controller take turns, and those
+    /// with controllers of their own (every STEP reader and writer, decision 1264) never wait for each other.
+    /// </summary>
+    internal Lock SessionLock { get; } = new();
 
     private static ReturnStatus TransferFinder(ActorOfFinderProcess? actor, Finder mapper,
                                                         FinderProcess fp, InterfaceModel? model,
@@ -100,17 +108,20 @@ public abstract class Controller : Transient
     /// </summary>
     /// <remarks>
     /// OCCT.NET: the dictionary is process-wide, as OCCT's: a norm records its controller once, in its
-    /// initialisation, before sessions select it (decision 1222). Recording is thread-safe; recording again the
-    /// same controller, or one of a type it derives from, changes nothing.
+    /// initialisation, before sessions select it (decision 1222). Recording is thread-safe without a lock (the
+    /// dictionary is replaced whole); recording again the same controller, or one of a type it derives from, changes
+    /// nothing.
     /// </remarks>
     public void Record(string name)
     {
-        lock (ListadLock)
+        ImmutableDictionary<string, Controller> current;
+        do
         {
-            if (Listad.IsBound(name))
+            current = Volatile.Read(ref s_listad);
+            if (current.TryGetValue(name, out Controller? recorded))
             {
                 Transient thisadapt = this;
-                Transient newadapt = Listad.ChangeFind(name);
+                Transient newadapt = recorded;
                 if (newadapt.IsKind(thisadapt.DynamicType()))
                 {
                     return;
@@ -120,8 +131,8 @@ public abstract class Controller : Transient
                     throw new DomainErrorException("XSControl_Controller : Record");
                 }
             }
-            Listad.Bind(name, this);
         }
+        while (!ReferenceEquals(Interlocked.CompareExchange(ref s_listad, current.SetItem(name, this), current), current));
     }
 
     /// <summary>
@@ -129,10 +140,7 @@ public abstract class Controller : Transient
     /// </summary>
     public static Controller? Recorded(string name)
     {
-        lock (ListadLock)
-        {
-            return Listad.Find(name, out Controller recorded) ? recorded : null;
-        }
+        return Volatile.Read(ref s_listad).TryGetValue(name, out Controller? recorded) ? recorded : null;
     }
 
     /// <summary>

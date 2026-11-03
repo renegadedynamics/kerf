@@ -19,20 +19,10 @@ namespace Kerf.Engine.Meshing;
 /// </remarks>
 public sealed class Factory : DiscretAlgoFactory
 {
-    // Self-registering factory instance
-    private static Factory? THE_FACTORY_INSTANCE;
-
-    // Registers this factory under the name "XBRepMesh".
-    private Factory()
+    // The instance DiscretAlgoFactory's registry holds, made when it initialises (OCCT's self-registering instance)
+    internal Factory()
         : base("XBRepMesh")
     {
-        RegisterFactory(this);
-    }
-
-    // The FactoryInitializer: creates (and so registers) the instance once.
-    internal static void Register()
-    {
-        THE_FACTORY_INSTANCE ??= new Factory();
     }
 
     /// <summary>A new <see cref="IncrementalMesh"/> for the shape with the deflections, not yet performed.</summary>

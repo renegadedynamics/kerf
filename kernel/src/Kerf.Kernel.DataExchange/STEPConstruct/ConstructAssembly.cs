@@ -21,18 +21,15 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// </summary>
 /// <remarks>
 /// A C++ value class, a C# class here (decision 1185). OCCT numbers the NEXT_ASSEMBLY_USAGE_OCCURRENCEs it makes from a
-/// process-wide counter (a function static); the port's writer passes its own counter
-/// (<see cref="MakeRelationship(ref int)"/>, decision 1266), and <see cref="MakeRelationship()"/> keeps a
-/// process-wide one for other callers.
+/// process-wide counter (a function static); the port's caller passes its own counter
+/// (<see cref="MakeRelationship(ref int)"/>, decision 1266). OCCT's form without a counter is left out (unit 10I): it
+/// made an output depend on what the process wrote before.
 /// </remarks>
 public class ConstructAssembly
 {
     //: k8 abv 06.01.99: TR10: writing unique names for NAUOs
     // :j4 16.03.99 gka S4134
     // abv 18.11.99 renamed from StepPDR_MakeItem
-
-    // OCCT's "static int id" of MakeRelationship
-    private static int s_processNauoId;
 
     public ConstructAssembly()
     {
@@ -72,17 +69,9 @@ public class ConstructAssembly
     }
 
     /// <summary>
-    /// Make a (ShapeRepresentationRelationship,...WithTransformation) Resulting Value is returned by ItemValue
-    /// </summary>
-    /// <remarks>OCCT.NET: numbers the occurrence from a process-wide counter, as OCCT.</remarks>
-    public void MakeRelationship()
-    {
-        MakeRelationship(Interlocked.Increment(ref s_processNauoId));
-    }
-
-    /// <summary>
-    /// As <see cref="MakeRelationship()"/>, numbering the occurrence from the caller's counter (OCCT.NET: the
-    /// writer's own, decision 1266).
+    /// Make a (ShapeRepresentationRelationship,...WithTransformation) Resulting Value is returned by ItemValue,
+    /// numbering the occurrence from the caller's counter (OCCT.NET: the writer's own, decision 1266; OCCT's is
+    /// process-wide).
     /// </summary>
     public void MakeRelationship(ref int nauoId)
     {

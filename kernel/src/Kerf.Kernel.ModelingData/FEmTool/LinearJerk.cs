@@ -20,10 +20,9 @@ namespace Kerf.Engine.Approximation.FiniteElements;
 public class LinearJerk : ElementaryCriterion
 {
     // OCCT keeps the integrals of the last constraint order in function-static variables, recomputed when the
-    // order changes; they are cached here per order, under a lock (the values are the same).
+    // order changes; they are cached here per order, published without a lock (the values are the same).
     private const int WDeg = 14;
     private static readonly math_Vector?[] MatrixElemts = new math_Vector?[3];
-    private static readonly Lock Lock = new();
 
     private readonly Matrix _refMatrix;
     private readonly int _order;
@@ -41,27 +40,26 @@ public class LinearJerk : ElementaryCriterion
         }
 
         math_Vector matrixElemts;
-        lock (global::Kerf.Engine.Approximation.FiniteElements.LinearJerk.Lock)
+        math_Vector? cached = Volatile.Read(ref MatrixElemts[_order]);
+        if (cached is null)
         {
-            if (global::Kerf.Engine.Approximation.FiniteElements.LinearJerk.MatrixElemts[_order] is not math_Vector cached)
-            {
-                // Calculating RefMatrix
-                int derOrder = 3;
-                HermitJacobi theBase = new(WDeg, constraintOrder);
-                ElementsOfRefMatrix elem = new(theBase, derOrder);
+            // Calculating RefMatrix
+            int derOrder = 3;
+            HermitJacobi theBase = new(WDeg, constraintOrder);
+            ElementsOfRefMatrix elem = new(theBase, derOrder);
 
-                int maxDegree = WDeg + 1;
-                math_IntegerVector order = new(1, 1, Min(4 * (maxDegree / 2 + 1), NumericTables.GaussPointsMax()));
-                math_Vector lower = new(1, 1, -1.0), upper = new(1, 1, 1.0);
+            int maxDegree = WDeg + 1;
+            math_IntegerVector order = new(1, 1, Min(4 * (maxDegree / 2 + 1), NumericTables.GaussPointsMax()));
+            math_Vector lower = new(1, 1, -1.0), upper = new(1, 1, 1.0);
 
-                GaussSetIntegration anInt = new(elem, lower, upper, order);
+            GaussSetIntegration anInt = new(elem, lower, upper, order);
 
-                cached = new math_Vector(0, ((WDeg + 2) * (WDeg + 1)) / 2 - 1);
-                cached.Initialized(anInt.Value());
-                global::Kerf.Engine.Approximation.FiniteElements.LinearJerk.MatrixElemts[_order] = cached;
-            }
-            matrixElemts = cached;
+            cached = new math_Vector(0, ((WDeg + 2) * (WDeg + 1)) / 2 - 1);
+            cached.Initialized(anInt.Value());
+            // computed twice at worst, by threads racing on the first use; the values are the same
+            cached = Interlocked.CompareExchange(ref MatrixElemts[_order], cached, null) ?? cached;
         }
+        matrixElemts = cached;
 
         int i, j, ii, jj;
         for (ii = i = 0; i <= workDegree; i++)

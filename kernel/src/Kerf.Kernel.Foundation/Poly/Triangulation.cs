@@ -42,8 +42,8 @@ namespace Kerf.Engine.Meshing;
 /// </remarks>
 public class Triangulation : Transient
 {
-    // OCCT keeps the cached box behind an atomic pointer guarded by a shared mutex
-    private readonly Lock _cachedMinMaxMutex = new();
+    // OCCT keeps the cached box behind an atomic pointer guarded by a shared mutex; here each box is published whole,
+    // never changed once published, so readers and writers need no lock (unit 10I)
     private StrongBox<Box>? _cachedMinMax;
 
     protected double _deflection;
@@ -266,11 +266,8 @@ public class Triangulation : Transient
     /// <summary>The cached range of the nodes, void if there is none.</summary>
     public Box CachedMinMax()
     {
-        lock (_cachedMinMaxMutex)
-        {
-            StrongBox<Box>? box = _cachedMinMax;
-            return box is null ? new Box() : box.Value;
-        }
+        StrongBox<Box>? box = Volatile.Read(ref _cachedMinMax);
+        return box is null ? new Box() : box.Value;
     }
 
     /// <summary>
@@ -285,19 +282,7 @@ public class Triangulation : Transient
             return;
         }
 
-        lock (_cachedMinMaxMutex)
-        {
-            StrongBox<Box>? aBox = _cachedMinMax;
-            if (aBox is null)
-            {
-                aBox = new StrongBox<Box>(box);
-                Volatile.Write(ref _cachedMinMax, aBox);
-            }
-            else
-            {
-                aBox.Value = box;
-            }
-        }
+        Volatile.Write(ref _cachedMinMax, new StrongBox<Box>(box));
     }
 
     /// <summary>True if a range of the nodes is cached.</summary>
@@ -320,17 +305,14 @@ public class Triangulation : Transient
     {
         var aBox = new Box();
         bool usedCache = false;
-        lock (_cachedMinMaxMutex)
+        StrongBox<Box>? cachedBox = Volatile.Read(ref _cachedMinMax);
+        if (cachedBox is not null
+            && (!HasGeometry || !isAccurate || trsf.Form() == Identity
+                || trsf.Form() == Translation || trsf.Form() == PntMirror
+                || trsf.Form() == Scale))
         {
-            StrongBox<Box>? cachedBox = _cachedMinMax;
-            if (cachedBox is not null
-                && (!HasGeometry || !isAccurate || trsf.Form() == Identity
-                    || trsf.Form() == Translation || trsf.Form() == PntMirror
-                    || trsf.Form() == Scale))
-            {
-                aBox = cachedBox.Value.Transformed(trsf);
-                usedCache = true;
-            }
+            aBox = cachedBox.Value.Transformed(trsf);
+            usedCache = true;
         }
 
         if (!usedCache)
@@ -746,10 +728,7 @@ public class Triangulation : Transient
     /// <summary>Clears the cached range.</summary>
     protected void UnsetCachedMinMax()
     {
-        lock (_cachedMinMaxMutex)
-        {
-            Volatile.Write(ref _cachedMinMax, null);
-        }
+        Volatile.Write(ref _cachedMinMax, null);
     }
 
     /// <summary>The bounding box of the nodes, transformed.</summary>

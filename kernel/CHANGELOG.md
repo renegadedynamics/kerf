@@ -1738,3 +1738,23 @@ Phase 10 (part): no copy at entry in the Booleans (unit 10H2).
   modified only when it changed.
 - The general fuse and `BRepAlgoAPI_*` keep OCCT's non-destructive mode on frozen arguments; a Boolean run inside
   another operation's overlay is destructive, as OCCT's on an unlocked shape.
+
+Phase 10 (part): state (unit 10I).
+- No process-wide settings: what OCCT kept in statics (the message table's additions, ShapeProcess's registered
+  operators, the parallel defaults of the Booleans and the mesher, the meshing algorithm's name, BRepLib's precision and
+  plane, `Quantity_Color`'s epsilon, the default messenger and report, GeomTools' handler, ShapeAlgo's container, debug
+  flags) are settings of `OperationContext` (Foundation): immutable defaults, overridden for a scope
+  (`OperationContext.Begin`) or a flow of execution, which flow into the tasks an operation starts and never reach
+  another operation, thread or test. OCCT's setters now change the current flow only.
+- `ProcessContext.ResourceOverridesSetting`: an operation can run shape processing (the STEP and IGES readers' too)
+  with its own resources beside others on the defaults. The resource files compiled in are parsed once; OCCT's cache of
+  the last file goes, and `ClearResourceCache` with it.
+- `MsgFile.Msg` of an unknown keyword no longer stores the surrogate text, so `HasMsg` stays false for it.
+- Removed: `STEPConstruct_Assembly.MakeRelationship()`, which numbered occurrences from a process-wide counter (the form
+  taking the caller's counter stays).
+- 32 locks go: the registries are built once and published whole, the caches publish without locks, and
+  `XSControl_WorkSession`'s process-wide mutex is its controller's, so STEP readers and writers no longer wait for each
+  other. docs/state.md lists every static, thread static and lock that remains, and why.
+- Concurrency tests run Booleans, fillets, offsets, healing, shape processing, STEP reading and writing, meshing and
+  the modelling layer's parts on many threads, each giving its serial BRep text.
+

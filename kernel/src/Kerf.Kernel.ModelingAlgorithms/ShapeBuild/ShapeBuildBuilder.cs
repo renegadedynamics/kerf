@@ -11,18 +11,15 @@ namespace Kerf.Engine.Healing.Build;
 /// <summary>Tools for building shapes in Shape Healing.</summary>
 public static class ShapeBuildBuilder
 {
-    private static PlaneSurface? s_xoy;
+    private static readonly PlaneSurface Xoy = MakeXoy();
+
+    private static PlaneSurface MakeXoy()
+    {
+        var plane = new PlaneSurface(0, 0, 1, 0);
+        plane.Freeze();
+        return plane;
+    }
 
     /// <summary>The plane XOY (Z = 0): one object, frozen, shared by every call.</summary>
-    public static PlaneSurface PlaneXOY()
-    {
-        if (s_xoy is null)
-        {
-            var plane = new PlaneSurface(0, 0, 1, 0);
-            plane.Freeze();
-            Interlocked.CompareExchange(ref s_xoy, plane, null);
-        }
-
-        return s_xoy;
-    }
+    public static PlaneSurface PlaneXOY() => Xoy;
 }

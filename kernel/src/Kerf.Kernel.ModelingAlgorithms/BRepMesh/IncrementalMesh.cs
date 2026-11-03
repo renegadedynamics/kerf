@@ -45,8 +45,8 @@ namespace Kerf.Engine.Meshing;
 public class IncrementalMesh : DiscretRoot
 {
     // Default flag to control parallelization for BRepMesh_IncrementalMesh tool returned for Mesh Factory
-    // (process-wide, with an internal setter: decisions 415, 492).
-    private static volatile bool s_isInParallel = false;
+    // (process-wide in OCCT; a setting of the operation context, with an internal setter: decisions 415, 492, unit 10I).
+    internal static readonly ContextKey<bool> ParallelDefaultSetting = new("BRepMesh_IncrementalMesh.ParallelDefault", false);
 
     protected ToolParameters _parameters = new();
     protected bool _modified;
@@ -246,18 +246,18 @@ public class IncrementalMesh : DiscretRoot
         IncrementalMesh anAlgo = new();
         anAlgo.ChangeParameters().Deflection = deflection;
         anAlgo.ChangeParameters().Angle = angle;
-        anAlgo.ChangeParameters().InParallel = s_isInParallel;
+        anAlgo.ChangeParameters().InParallel = ParallelDefaultSetting.Value;
         anAlgo.SetShape(shape);
         algo = anAlgo;
         return 0; // no error
     }
 
     /// <summary>The parallel flag that <see cref="Discret"/> sets (for the mesh factories).</summary>
-    public static bool IsParallelDefault => s_isInParallel;
+    public static bool IsParallelDefault => ParallelDefaultSetting.Value;
 
     /// <summary>
-    /// Sets the parallel flag of <see cref="Discret"/>. Internal: a process-wide setting that only Draw-lite's
-    /// <c>mpparallel</c> changes (decision 492).
+    /// Sets the parallel flag of <see cref="Discret"/> for the rest of the current flow of execution. Internal: only
+    /// Draw-lite's <c>mpparallel</c> changes it (decision 492).
     /// </summary>
-    internal static void SetParallelDefault(bool inParallel) => s_isInParallel = inParallel;
+    internal static void SetParallelDefault(bool inParallel) => OperationContext.Set(ParallelDefaultSetting, inParallel);
 }

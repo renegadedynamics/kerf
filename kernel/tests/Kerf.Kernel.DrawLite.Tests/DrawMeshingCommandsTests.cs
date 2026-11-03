@@ -228,17 +228,15 @@ public class DrawMeshingCommandsTests
         Assert.Equal(Text(Meshed(anInput, Parameters(0.1) with { Angle = 0.3 })), Text(i.GetShape("s")));
         Assert.DoesNotContain("empty", i.Eval("trinfo s_1"), StringComparison.Ordinal);
 
-        // mpparallel sets the mesher's process-wide default
+        // mpparallel sets the mesher's default in the interpreter's context (process-wide in OCCT; unit 10I)
         o.GetStringBuilder().Clear();
-        try
+        i.Eval("mpparallel; mpparallel 1");
+        using (Kerf.Engine.Foundation.OperationContext.Begin(i.Context))
         {
-            i.Eval("mpparallel; mpparallel 1");
             Assert.True(IncrementalMesh.IsParallelDefault);
         }
-        finally
-        {
-            i.Eval("mpparallel 0");
-        }
+        Assert.False(IncrementalMesh.IsParallelDefault);
+        i.Eval("mpparallel 0");
 
         Assert.Equal("Incremental Mesh, multi-threading OFF\nIncremental Mesh, multi-threading ON\nIncremental Mesh, multi-threading OFF\n", o.ToString());
     }

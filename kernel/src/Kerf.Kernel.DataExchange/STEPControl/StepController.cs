@@ -37,8 +37,15 @@ namespace Kerf.Engine.Exchange.Step;
 /// </remarks>
 public class StepController : Controller
 {
-    private static readonly object InitLock = new object();
-    private static StepController s_recorded;
+    // The controller recorded under "STEP" and "step", made once (a one-time initialisation, unit 10I)
+    private static readonly Lazy<StepController> TheRecorded = new(() =>
+    {
+        global::Kerf.Engine.Healing.ShapeAlgo.Init();
+        StepController stepctl = new StepController();
+        stepctl.AutoRecord(); // avec les noms donnes a la construction
+        // OCCT's XSAlgo::Init() declares XSAlgo's statics process-wide: here per parameter set (InitStatics)
+        return stepctl;
+    });
 
     //  Pour NewModel et Write : definition de produit (temporaire ...)
     /// <summary>Initializes the use of STEP Norm (the first time) and returns a Controller</summary>
@@ -469,17 +476,7 @@ public class StepController : Controller
     /// <remarks>OCCT.NET: once per process, thread-safe; also initialises ShapeAlgo (decision 1241).</remarks>
     public static bool Init()
     {
-        lock (InitLock)
-        {
-            if (s_recorded is null)
-            {
-                global::Kerf.Engine.Healing.ShapeAlgo.Init();
-                StepController stepctl = new StepController();
-                stepctl.AutoRecord(); // avec les noms donnes a la construction
-                // OCCT's XSAlgo::Init() declares XSAlgo's statics process-wide: here per parameter set (InitStatics)
-                s_recorded = stepctl;
-            }
-        }
+        _ = TheRecorded.Value;
         return true;
     }
 
