@@ -25,8 +25,8 @@ namespace Kerf.Engine.Features.Local;
 /// <para>
 /// As in OCCT, it writes into the shapes it works with: point representations of the shape's vertices on the fused
 /// edges, pcurves of the generated shape's edges on the rebuilt faces. So the shape and the generated shape's
-/// sub-shapes are worked on as copies when frozen (decision 1013), and the result shares the caller's unchanged
-/// sub-shapes. <see cref="ResultingShape"/> and <see cref="DescendantFace"/> freeze what they hand out; LocOpe_Gluer
+/// sub-shapes are written in a working overlay (decision 1013, unit 10H5: <see cref="WorkingShapes"/>), and the result
+/// shares the caller's unchanged sub-shapes. <see cref="ResultingShape"/> and <see cref="DescendantFace"/> freeze what they hand out; LocOpe_Gluer
 /// reads the <c>Internal</c> forms and ends the working shapes itself.
 /// </para>
 /// <para>
@@ -44,8 +44,6 @@ public sealed class LocalGenerator
     private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _modShapes = new(ShapeHasher.Instance);
     private WorkingShapes _work = new();
     private bool _ownsWork = true;
-    // the generated shape answers for its own shapes (a caller's), not the working copies
-    private bool _mapsG = true;
 
     /// <summary>Empty constructor.</summary>
     public LocalGenerator()
@@ -68,7 +66,6 @@ public sealed class LocalGenerator
     {
         _work = work;
         _ownsWork = false;
-        _mapsG = false;
         _shape = s;
         _done = false;
     }
@@ -96,34 +93,16 @@ public sealed class LocalGenerator
     }
 
     /// <summary>Returns the initial shape (the caller's).</summary>
-    public Shape Shape() => _work.Original(_shape);
+    public Shape Shape() => _shape;
 
-    // The generated shape's answers, as working shapes
-    private NCollection_List<Shape> GeneratingEdges(GeneratedShape g) => WorkingList(g.GeneratingEdges());
+    // The generated shape's answers
+    private static NCollection_List<Shape> GeneratingEdges(GeneratedShape g) => g.GeneratingEdges();
 
-    private Edge Generated(GeneratedShape g, in Vertex v) =>
-        ShapeCasts.Edge(_work.Working(g.Generated(ShapeCasts.Vertex(GOriginal(v)))));
+    private static Edge Generated(GeneratedShape g, in Vertex v) => g.Generated(v);
 
-    private Face Generated(GeneratedShape g, in Edge e) =>
-        ShapeCasts.Face(_work.Working(g.Generated(ShapeCasts.Edge(GOriginal(e)))));
+    private static Face Generated(GeneratedShape g, in Edge e) => g.Generated(e);
 
-    private NCollection_List<Shape> OrientedFaces(GeneratedShape g) => WorkingList(g.OrientedFaces());
-
-    private Shape GOriginal(in Shape shape) => _mapsG ? _work.Original(shape) : shape;
-
-    private NCollection_List<Shape> WorkingList(NCollection_List<Shape> list)
-    {
-        if (!_mapsG)
-        {
-            return list;
-        }
-        var aList = new NCollection_List<Shape>();
-        for (NCollection_List<Shape>.Iterator it = new(list); it.More(); it.Next())
-        {
-            aList.Append(_work.Working(it.Value()));
-        }
-        return aList;
-    }
+    private static NCollection_List<Shape> OrientedFaces(GeneratedShape g) => g.OrientedFaces();
 
     /// <summary>
     /// Glues <paramref name="g"/> on the shape. Ends the working shapes: the result shares the caller's unchanged
@@ -138,10 +117,12 @@ public sealed class LocalGenerator
         if (_ownsWork)
         {
             _work = new WorkingShapes();
-            _shape = _work.Working(_shape);
         }
-        InternalPerform(g);
-        if (!_ownsWork || !_done || !_work.IsCopied)
+        using (_work.Enter())
+        {
+            InternalPerform(g);
+        }
+        if (!_ownsWork || !_done || !_work.IsWritten)
         {
             return;
         }
@@ -1203,7 +1184,7 @@ public sealed class LocalGenerator
         WorkingShapes.Published(InternalDescendantFace(f));
 
     /// <summary>
-    /// <see cref="DescendantFace"/> without freezing, for ported code (of the caller's face or of its working copy).
+    /// <see cref="DescendantFace"/> without freezing, for ported code.
     /// </summary>
     internal NCollection_List<Shape> InternalDescendantFace(in Face f)
     {
@@ -1211,7 +1192,7 @@ public sealed class LocalGenerator
         {
             throw new NotDoneException();
         }
-        return _modShapes[_work.Copied(f)];
+        return _modShapes[f];
     }
 
     // OCCT.NET: OCCT translates the projected pcurve in place; a frozen one (shared) is translated on a copy

@@ -43,9 +43,8 @@ namespace Kerf.Engine.Features;
 /// <remarks>
 /// <para>A working object (decision 21): <see cref="MakeShape.Shape"/>, the history and the lists
 /// publish what they return (frozen); ported code reads the <c>Internal</c> forms.</para>
-/// <para>The basis shape and the contour are read, never written: the gluing copies them (LocOpe_Gluer, decision 1013),
-/// the Booleans are non-destructive; the same-parameter pass OCCT runs on the glued result works on its copy where it
-/// holds the caller's shapes (decision 1052).</para>
+/// <para>The basis shape and the contour are never written: the gluing (LocOpe_Gluer, decision 1013) and the
+/// same-parameter pass OCCT runs on the glued result (decision 1052) write in a working overlay (unit 10H5).</para>
 /// </remarks>
 public abstract class RibSlot : MakeShape
 {
@@ -235,31 +234,33 @@ public abstract class RibSlot : MakeShape
     }
 
     // OCCT runs BRepLib::SameParameter(myShape, 1.e-7, true) on the glued result in place. The result shares the
-    // caller's frozen sub-shapes where the gluing left them unchanged: the pass runs on its copy for write, the
-    // sub-shapes it leaves unchanged go back to the caller's, and the history follows (decision 1052).
+    // caller's frozen sub-shapes where the gluing left them unchanged: the pass runs in a working overlay (in place
+    // inside an operation's one that takes writes), the result holds new TShapes only for what it changed, and the
+    // history follows (decision 1052, unit 10H5).
     private void SameParameterOfTheGluedResult()
     {
-        CopyAtEntry copy = new(_shape);
-        BrepLibrary.SameParameter(copy.Shape(), 1.0e-7, true);
-        if (!copy.IsCopied)
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shape);
+        BrepLibrary.SameParameter(_shape, 1.0e-7, true);
+        if (overlay is null)
         {
             return;
         }
-        _shape = copy.Finish(copy.Shape());
+        _shape = overlay.Finish(_shape);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = Final(copy, _map[key]);
+            _map[key] = Final(overlay, _map[key]);
         }
-        _newEdges = Final(copy, _newEdges);
-        _tgtEdges = Final(copy, _tgtEdges);
+        _newEdges = Final(overlay, _newEdges);
+        _tgtEdges = Final(overlay, _tgtEdges);
     }
 
-    private static NCollection_List<Shape> Final(CopyAtEntry copy, NCollection_List<Shape> list)
+    // The shapes of a list as they stand after a working overlay's end.
+    private protected static NCollection_List<Shape> Final(WorkingOverlay overlay, NCollection_List<Shape> list)
     {
         NCollection_List<Shape> aList = new();
         for (NCollection_List<Shape>.Iterator it = new(list); it.More(); it.Next())
         {
-            aList.Append(copy.Final(copy.Copied(it.Value())));
+            aList.Append(overlay.Final(it.Value()));
         }
         return aList;
     }

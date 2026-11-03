@@ -8,6 +8,7 @@ using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Features.Local;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -61,15 +62,16 @@ public sealed class MakeRevol : Form
     public void Init(in Shape sbase, in Shape pbase, in Face skface, in Axis3D axis, int mode,
                      bool modify)
     {
-        // OCCT.NET: the working copies of frozen inputs (decision 1052)
+        // Kerf: the working overlay the feature writes into its inputs in (decision 1052, unit 10H5)
         StartWorkingShapes();
+        using WorkingOverlay.Scope scope = EnterWork();
         _axis = axis;
-        _pbase = Working(pbase);
-        _sbase = Working(sbase);
+        _pbase = pbase;
+        _sbase = sbase;
         BasisShapeValid();
-        _skface = Working(skface);
+        _skface = skface;
         SketchFaceValid();
-        _pbase = Working(pbase);
+        _pbase = pbase;
         _slface.Clear();
         if (mode == 0)
         {
@@ -107,10 +109,11 @@ public sealed class MakeRevol : Form
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in Edge e, in Face f)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         Explorer exp = new();
         for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(Working(f)))
+            if (exp.Current().IsSame(f))
             {
                 break;
             }
@@ -122,7 +125,7 @@ public sealed class MakeRevol : Form
 
         for (exp.Init(_pbase, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(Working(e)))
+            if (exp.Current().IsSame(e))
             {
                 break;
             }
@@ -154,6 +157,7 @@ public sealed class MakeRevol : Form
     /// <summary>Builds a revolved feature of the angle <paramref name="angle"/> (radians).</summary>
     public void Perform(double angle)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         _sFrom.Nullify();
         ShapeFromValid();
         _sUntil.Nullify();
@@ -271,6 +275,7 @@ public sealed class MakeRevol : Form
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         double angle = 0.0;
         bool tourComplet = false;
 
@@ -283,7 +288,7 @@ public sealed class MakeRevol : Form
         {
             throw new ConstructionErrorException();
         }
-        if (!_skface.IsNull && Working(until).IsSame(_skface))
+        if (!_skface.IsNull && until.IsSame(_skface))
         {
             angle = 2 * M_PI;
             tourComplet = true;
@@ -293,7 +298,7 @@ public sealed class MakeRevol : Form
         PerfSelectionValid();
         _sFrom.Nullify();
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trf = TransformShapeFU(1);
         ShapeUntilValid();
 
@@ -386,13 +391,14 @@ public sealed class MakeRevol : Form
     /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in Shape From, in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         if (From.IsNull || until.IsNull)
         {
             throw new ConstructionErrorException();
         }
         if (!_skface.IsNull)
         {
-            if (Working(From).IsSame(_skface))
+            if (From.IsSame(_skface))
             {
                 _justGluer = true;
                 Perform(until);
@@ -401,7 +407,7 @@ public sealed class MakeRevol : Form
                     return;
                 }
             }
-            else if (Working(until).IsSame(_skface))
+            else if (until.IsSame(_skface))
             {
                 _justGluer = true;
                 _axis = _axis.Reversed();
@@ -427,10 +433,10 @@ public sealed class MakeRevol : Form
         {
             throw new ConstructionErrorException();
         }
-        _sFrom = Working(From);
+        _sFrom = From;
         bool trff = TransformShapeFU(0);
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trfu = TransformShapeFU(1);
         ShapeUntilValid();
         if (trfu != trff)
@@ -555,6 +561,7 @@ public sealed class MakeRevol : Form
     /// <summary>Builds a revolved feature all around the axis.</summary>
     public void PerformThruAll()
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         Perform(2.0 * M_PI);
     }
 
@@ -562,6 +569,7 @@ public sealed class MakeRevol : Form
     /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
     public void PerformUntilAngle(in Shape until, double angle)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero angle goes on and
         // builds the revolution again with the angle 0
         if (until.IsNull)
@@ -578,7 +586,7 @@ public sealed class MakeRevol : Form
             throw new ConstructionErrorException();
         }
 
-        if (!_skface.IsNull && Working(until).IsSame(_skface))
+        if (!_skface.IsNull && until.IsSame(_skface))
         {
             Perform(angle);
             return;
@@ -589,7 +597,7 @@ public sealed class MakeRevol : Form
         PerfSelectionValid();
         _sFrom.Nullify();
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trf = TransformShapeFU(1);
         ShapeUntilValid();
 

@@ -8,6 +8,7 @@ using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Features.Local;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -31,8 +32,9 @@ namespace Kerf.Engine.Features;
 /// <see cref="MakeShape.Modified"/>, <see cref="MakeShape.Generated"/>,
 /// <see cref="FirstShape"/>, <see cref="LastShape"/>, <see cref="NewEdges"/> and <see cref="TgtEdges"/> publish what
 /// they return (frozen); ported code reads the <c>Internal</c> forms. The history answers for the caller's shapes.</para>
-/// <para>The basis shape, the sketch face, the from and until shapes are read, never written: the gluing copies them
-/// (LocOpe_Gluer's working shapes, decision 1013), the Booleans are non-destructive (decision 274).</para>
+/// <para>The basis shape, the sketch face, the from and until shapes are never written: the feature's writes into them
+/// (the gluing's, the sweeps', the destructive Booleans') go to its working overlay (decisions 1013, 1052, unit
+/// 10H5), and the result holds new TShapes only for the caller's sub-shapes that changed.</para>
 /// </remarks>
 public abstract class Form : MakeShape
 {
@@ -62,14 +64,14 @@ public abstract class Form : MakeShape
     private bool _psok;
     private StatusError _statusError;
 
-    // OCCT.NET: the working copies of the frozen shapes the feature is given (decision 1052)
+    // Kerf: the working overlay the feature writes into the shapes it is given in (decision 1052, unit 10H5)
     private protected WorkingShapes? _work;
     private WorkingShapes? _finishedWork;
 
-    // OCCT.NET: OCCT's IsSame(sh, F) in the history, where sh may be the changed working copy of the caller's F: OCCT
-    // changes F in place, keeping its identity, so the copy counts as F (decision 1052)
+    // OCCT.NET: OCCT's IsSame(sh, F) in the history, where sh may stand for the caller's F changed in place: OCCT
+    // changes F in place, keeping its identity, so what stands for it counts as F (decision 1052)
     private bool IsSameInHistory(in Shape sh, in Shape f) =>
-        sh.IsSame(f) || (_finishedWork is not null && _finishedWork.Original(sh).IsSame(f));
+        sh.IsSame(f) || (_finishedWork is not null && sh.IsSame(_finishedWork.Final(f)));
 
     /// <summary>Redefines the empty constructor.</summary>
     protected Form()
@@ -123,12 +125,12 @@ public abstract class Form : MakeShape
     public StatusError CurrentStatusError() => _statusError;
 
     /// <summary>
-    /// OCCT.NET: starts the feature's working shapes (decision 1052). OCCT's feature writes into the shapes it is
-    /// given: the Booleans it runs are destructive (they raise tolerances and add pcurves in place) and the sweeps
-    /// write into the profile. Every shape entering the feature goes through <see cref="Working(in Shape)"/>, which gives the
-    /// exact copy for write of a frozen one, all copies sharing one map (a face of the basis shape given as the sketch
-    /// face or the until shape has its one copy); the result, the history and the lists are given back on the caller's
-    /// shapes where the feature left them unchanged, at the first publication (<see cref="FinishWorkingShapes"/>).
+    /// OCCT.NET: starts the feature's working overlay (decision 1052, unit 10H5). OCCT's feature writes into the shapes
+    /// it is given: the Booleans it runs are destructive (they raise tolerances and add pcurves in place) and the sweeps
+    /// write into the profile. The feature works on the caller's shapes in a detached working overlay, which each of
+    /// its public calls that runs the construction enters (<see cref="EnterWork"/>); the result, the history and the
+    /// lists hold new TShapes for the caller's sub-shapes it changed, from the first publication
+    /// (<see cref="FinishWorkingShapes"/>).
     /// </summary>
     private protected void StartWorkingShapes()
     {
@@ -136,20 +138,17 @@ public abstract class Form : MakeShape
         _finishedWork = null;
     }
 
-    /// <summary>The working shape standing for <paramref name="s"/> (decision 1052).</summary>
-    private protected Shape Working(in Shape s)
+    /// <summary>Enters the feature's working overlay (unit 10H5), for a public call that runs the construction.</summary>
+    private protected WorkingOverlay.Scope EnterWork()
     {
         _work ??= new WorkingShapes();
-        return _work.Working(s);
+        return _work.Enter();
     }
 
-    /// <summary>The working face standing for <paramref name="f"/> (decision 1052).</summary>
-    private protected Face Working(in Face f) => f.IsNull ? f : ShapeCasts.Face(Working((Shape)f));
-
     /// <summary>
-    /// OCCT.NET: ends the working shapes (decision 1052): every copy the feature left unchanged is replaced by the
-    /// caller's shape in the result and the lists, and the history is keyed by the caller's shapes. Once per
-    /// construction; called by every accessor of the result and the history.
+    /// OCCT.NET: ends the working overlay (decision 1052, unit 10H5): the result and the lists get new TShapes for the
+    /// caller's sub-shapes the feature changed; the history is keyed by the caller's shapes. Once per construction;
+    /// called by every accessor of the result and the history.
     /// </summary>
     private protected virtual void FinishWorkingShapes()
     {
@@ -167,29 +166,17 @@ public abstract class Form : MakeShape
         shapes.AddRange(_newEdges);
         shapes.AddRange(_tgtEdges);
         work.Finish(shapes);
-        if (!work.IsCopied)
+        if (!work.IsWritten)
         {
             return;
         }
         _shape = work.Final(_shape);
-        var map = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _map)
+        foreach (Shape key in _map.Keys.ToList())
         {
-            Shape key = work.Original(item.Key);
-            if (!map.IsBound(key))
-            {
-                map.Bind(key, work.Final(item.Value));
-            }
+            _map[key] = work.Final(_map[key]);
         }
-        _map = map;
         _newEdges = work.Final(_newEdges);
         _tgtEdges = work.Final(_tgtEdges);
-        _sbase = work.Original(_sbase);
-        _skface = ShapeCasts.Face(work.Original(_skface));
-        _sFrom = work.Original(_sFrom);
-        _sUntil = work.Original(_sUntil);
-        _fShape = work.Original(_fShape);
-        _lShape = work.Original(_lShape);
     }
 
     /// <summary>The result, unfrozen, on the caller's shapes where they are unchanged (OCCT's virtual).</summary>
