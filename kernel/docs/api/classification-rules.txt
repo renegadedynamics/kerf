@@ -1,0 +1,614 @@
+# The public/engine split of the kernel's public types (unit 10D; phase10-plan.md 2.1; docs/api/README.md).
+# Read by tools/api-classify.cs, which writes classification.tsv and kerf-seed.map. A draft for the owner's review.
+#
+#   area    <Area> <public namespace, or - for none> <engine namespace>
+#   package <Package> public|engine|removed <Area>[/<Sub>/<Namespace>] [pre:<Prefix>] [suf:<Suffix>]  # note
+#   type    <Type> public|engine|removed <Area>[/<Sub>] [<NewName>] [=> <public replacement>]  # note
+#   allow   <Name>  (a public name that is also a common .NET type's, accepted on purpose)
+#
+# A type rule overrides its package's. public: the type itself becomes the public type, renamed and reshaped by 10L.
+# engine: it becomes internal in Kerf.Engine.<Area>, renamed by rule. removed: it goes (10J, or 10F for exceptions);
+# until then it keeps its OCCT name in the namespace Occt. "=>" names what replaces it in the public API, for the
+# types the modelling layer uses (docs/api/modeling-uses.txt); "new" marks a public type 10L writes.
+
+area Core           Kerf              Kerf.Engine
+area Foundation     -                 Kerf.Engine.Foundation
+area Collections    -                 Kerf.Engine.Collections
+area Numerics       -                 Kerf.Engine.Numerics
+area Geometry       Kerf.Geometry     Kerf.Engine.Geometry
+area Approximation  -                 Kerf.Engine.Approximation
+area Intersection   -                 Kerf.Engine.Intersection
+area Extrema        -                 Kerf.Engine.Extrema
+area Topology       Kerf.Topology     Kerf.Engine.Topology
+area Classification -                 Kerf.Engine.Classification
+area Construction   Kerf.Construction Kerf.Engine.Construction
+area Booleans       Kerf.Booleans     Kerf.Engine.Booleans
+area Fillets        Kerf.Fillets      Kerf.Engine.Fillets
+area Offsets        Kerf.Offsets      Kerf.Engine.Offsets
+area Features       Kerf.Features     Kerf.Engine.Features
+area Healing        Kerf.Healing      Kerf.Engine.Healing
+area Measurement    Kerf.Measurement  Kerf.Engine.Measurement
+area Meshing        Kerf.Meshing      Kerf.Engine.Meshing
+area HiddenLines    -                 Kerf.Engine.HiddenLines
+area Exchange       Kerf.Exchange     Kerf.Engine.Exchange
+
+# ---------------------------------------------------------------------------------------------------------------------
+# Foundation
+# ---------------------------------------------------------------------------------------------------------------------
+
+package Standard    engine Foundation     # Standard_Transient stays the engine's base; exceptions go to .NET's in 10F
+type Standard_Transient engine Foundation Transient   # public types derive from it: it stays visible, marked engine (README, question 55)
+type Standard_Failure engine Foundation Failure       # the engine's exceptions-as-statuses (10F); never crosses the public API
+type Standard_ConstructionError engine Foundation ConstructionError => ArgumentException, or a Result's diagnostic
+type Standard_TypeMismatch engine Foundation TypeMismatch => InvalidCastException
+package StdFail     engine Foundation
+type StdFail_NotDone engine Foundation NotDone => Result<T> (10F)
+package Message     engine Foundation         # alerts and reports become Diagnostics at the boundary (README 2)
+package Resource    engine Foundation/Resources
+package Storage     engine Foundation
+type Storage_StreamFormatError engine Foundation StreamFormatError => a Result's diagnostic (Exchange)
+package TCollection removed Collections        # strings: string
+package Precision   engine Foundation          => Kerf.Geometry.Tolerances (new)
+package Quantity    engine Foundation          # colours: Kerf.Exchange.ColorRgba (new)
+type Quantity_Color engine Foundation Color => Kerf.Exchange.ColorRgba (new)
+type Quantity_ColorRGBA engine Foundation ColorWithAlpha => Kerf.Exchange.ColorRgba (new)
+type Quantity_TypeOfColor engine Foundation ColorSpace => Kerf.Exchange.ColorRgba.FromSrgb / FromLinear
+package std         engine Foundation/Std      # the port's stand-ins for C++'s standard library
+
+package NCollection removed Collections        # List<T>, HashSet<T>, Dictionary<,>, arrays and spans (10J)
+type NCollection_UBTree engine Collections SpatialTree        # algorithms, not containers: they stay, renamed
+type NCollection_UBTreeFiller engine Collections SpatialTreeFiller
+type NCollection_EBTree engine Collections IndexedSpatialTree
+type NCollection_CellFilter engine Collections CellFilter
+type NCollection_CellFilter_Action engine Collections CellFilterAction
+type NCollection_Primes engine Collections Primes
+type INCollection_UBTreeBnd engine Collections SpatialTreeBox
+type INCollection_CellFilter_Inspector engine Collections CellFilterInspector
+package INCollection removed Collections
+package PackedList  removed Collections        # Schematiq-shaped returns go (question 50)
+
+package math        engine Numerics
+package MathInteg   engine Numerics/Integration
+package MathLin     engine Numerics/Linear
+package MathOpt     engine Numerics/Optimisation
+package MathPoly    engine Numerics/Polynomials
+package MathRoot    engine Numerics/Roots
+package MathSys     engine Numerics/Systems
+package MathUtils   engine Numerics/Utilities
+package PSO         engine Numerics
+package PLib        engine Numerics/Polynomials
+type math engine Numerics NumericTables
+
+package gp          public Geometry
+type gp            engine Geometry Constants  => static members of the value types (Point3D.Origin, Direction3D.XAxis…)
+type gp_Pnt        public Geometry Point3D
+type gp_Pnt2d      public Geometry Point2D
+type gp_Vec        public Geometry Vector3D
+type gp_Vec2d      public Geometry Vector2D
+type gp_Dir        public Geometry Direction3D
+type gp_Dir2d      public Geometry Direction2D
+type gp_XYZ        engine Geometry Xyz        => Point3D, Vector3D
+type gp_XY         engine Geometry Xy         => Point2D, Vector2D
+type gp_Ax1        public Geometry Axis3D
+type gp_Ax2d       public Geometry Axis2D
+type gp_Ax2        public Geometry Frame3D
+type gp_Ax22d      public Geometry Frame2D
+type gp_Ax3        public Geometry CoordinateSystem3D
+type gp_Trsf       public Geometry Transform3D
+type gp_Trsf2d     public Geometry Transform2D
+type gp_GTrsf      public Geometry GeneralTransform3D
+type gp_GTrsf2d    public Geometry GeneralTransform2D
+type gp_TrsfForm   public Geometry TransformForm
+type gp_EulerSequence public Geometry EulerSequence
+type gp_Mat        public Geometry Matrix3x3
+type gp_Mat2d      engine Geometry Matrix2x2
+type gp_Quaternion engine Geometry Quaternion3  => Transform3D.FromRotation, Transform3D.GetEulerAngles (System.Numerics has Quaternion)
+type gp_QuaternionNLerp engine Geometry QuaternionNLerp
+type gp_QuaternionSLerp engine Geometry QuaternionSLerp
+type gp_TrsfNLerp  engine Geometry TransformNLerp
+type gp_Lin        public Geometry Line3D
+type gp_Lin2d      public Geometry Line2D
+type gp_Circ       public Geometry Circle3D
+type gp_Circ2d     public Geometry Circle2D
+type gp_Elips      public Geometry Ellipse3D
+type gp_Elips2d    public Geometry Ellipse2D
+type gp_Hypr       public Geometry Hyperbola3D
+type gp_Hypr2d     public Geometry Hyperbola2D
+type gp_Parab      public Geometry Parabola3D
+type gp_Parab2d    public Geometry Parabola2D
+type gp_Pln        public Geometry Plane3D    # not Plane: System.Numerics.Plane, and Kerf.Modeling's Plane
+type gp_Cylinder   public Geometry Cylinder3D # 3D throughout gp's analytic values, clear of Kerf.Modeling's Cylinder
+type gp_Cone       public Geometry Cone3D
+type gp_Sphere     public Geometry Sphere3D
+type gp_Torus      public Geometry Torus3D
+type gp_VectorWithNullMagnitude engine Geometry NullVectorException => ArgumentException (misuse)
+
+package GeomAbs     engine Geometry
+type GeomAbs_Shape       public Geometry Continuity
+type GeomAbs_CurveType   public Geometry CurveKind
+type GeomAbs_SurfaceType public Geometry SurfaceKind
+type GeomAbs_JoinType    public Geometry JoinKind
+
+package BSplCLib    engine Geometry/Splines
+package BSplSLib    engine Geometry/Splines pre:Surface
+package Convert     engine Geometry/Conversion
+package IConvert    engine Geometry/Conversion
+package CSLib       engine Geometry
+package ElCLib      engine Geometry
+package ElSLib      engine Geometry
+package Bnd         engine Geometry/Bounds
+type Bnd_Box       engine Geometry/Bounds Box   => Kerf.Geometry.BoundingBox (new)
+type Bnd_OBB       engine Geometry/Bounds OrientedBox => Kerf.Geometry.OrientedBox (new)
+package BVH         engine Geometry/Bvh
+package TopLoc      engine Topology
+type TopLoc_Location public Topology Placement  # a shape's location: a chain of shared transforms
+package Poly        engine Meshing
+type Poly_Triangle engine Meshing Triangle1   => Kerf.Meshing.Triangle (new, 0-based)
+type Poly_Triangulation engine Meshing Triangulation => Kerf.Meshing.FaceMesh (new)
+
+# ---------------------------------------------------------------------------------------------------------------------
+# ModelingData
+# ---------------------------------------------------------------------------------------------------------------------
+
+package Geom        public Geometry
+type Geom_Geometry        public Geometry Geometry3D
+type Geom_Curve           public Geometry Curve3D
+type Geom_BoundedCurve    public Geometry BoundedCurve3D
+type Geom_BSplineCurve    public Geometry BSplineCurve3D
+type Geom_BezierCurve     public Geometry BezierCurve3D
+type Geom_TrimmedCurve    public Geometry TrimmedCurve3D
+type Geom_Conic           public Geometry ConicCurve3D
+type Geom_Circle          public Geometry CircleCurve3D
+type Geom_Ellipse         public Geometry EllipseCurve3D
+type Geom_Hyperbola       public Geometry HyperbolaCurve3D
+type Geom_Parabola        public Geometry ParabolaCurve3D
+type Geom_Line            public Geometry LineCurve3D
+type Geom_OffsetCurve     public Geometry OffsetCurve3D
+type Geom_Surface         public Geometry Surface
+type Geom_BoundedSurface  public Geometry BoundedSurface
+type Geom_BSplineSurface  public Geometry BSplineSurface
+type Geom_BezierSurface   public Geometry BezierSurface
+type Geom_RectangularTrimmedSurface public Geometry TrimmedSurface
+type Geom_ElementarySurface public Geometry ElementarySurface
+type Geom_Plane           public Geometry PlaneSurface
+type Geom_CylindricalSurface public Geometry CylindricalSurface
+type Geom_ConicalSurface  public Geometry ConicalSurface
+type Geom_SphericalSurface public Geometry SphericalSurface
+type Geom_ToroidalSurface public Geometry ToroidalSurface
+type Geom_SweptSurface    public Geometry SweptSurface
+type Geom_SurfaceOfLinearExtrusion public Geometry ExtrusionSurface
+type Geom_SurfaceOfRevolution public Geometry RevolutionSurface
+type Geom_OffsetSurface   public Geometry OffsetSurface
+type Geom_Point           engine Geometry/Objects Point        => Point3D
+type Geom_CartesianPoint  engine Geometry/Objects CartesianPoint => Point3D
+type Geom_Vector          engine Geometry/Objects Vector3
+type Geom_VectorWithMagnitude engine Geometry/Objects VectorWithMagnitude
+type Geom_Direction       engine Geometry/Objects Direction
+type Geom_AxisPlacement   engine Geometry/Objects AxisPlacement
+type Geom_Axis1Placement  engine Geometry/Objects Axis1Placement
+type Geom_Axis2Placement  engine Geometry/Objects Axis2Placement
+type Geom_Transformation  engine Geometry/Objects Transformation => Transform3D
+type Geom_UndefinedDerivative engine Geometry/Objects UndefinedDerivative
+type Geom_UndefinedValue  engine Geometry/Objects UndefinedValue
+
+package Geom2d      public Geometry
+type Geom2d_Geometry      public Geometry Geometry2D
+type Geom2d_Curve         public Geometry Curve2D
+type Geom2d_BoundedCurve  public Geometry BoundedCurve2D
+type Geom2d_BSplineCurve  public Geometry BSplineCurve2D
+type Geom2d_BezierCurve   public Geometry BezierCurve2D
+type Geom2d_TrimmedCurve  public Geometry TrimmedCurve2D
+type Geom2d_Conic         public Geometry ConicCurve2D
+type Geom2d_Circle        public Geometry CircleCurve2D
+type Geom2d_Ellipse       public Geometry EllipseCurve2D
+type Geom2d_Hyperbola     public Geometry HyperbolaCurve2D
+type Geom2d_Parabola      public Geometry ParabolaCurve2D
+type Geom2d_Line          public Geometry LineCurve2D
+type Geom2d_OffsetCurve   public Geometry OffsetCurve2D
+type Geom2d_Point         engine Geometry/Objects Point2        => Point2D
+type Geom2d_CartesianPoint engine Geometry/Objects CartesianPoint2 => Point2D
+type Geom2d_Vector        engine Geometry/Objects Vector2
+type Geom2d_VectorWithMagnitude engine Geometry/Objects VectorWithMagnitude2
+type Geom2d_Direction     engine Geometry/Objects Direction2
+type Geom2d_AxisPlacement engine Geometry/Objects AxisPlacement2
+type Geom2d_Transformation engine Geometry/Objects Transformation2 => Transform2D
+type Geom2d_UndefinedDerivative engine Geometry/Objects UndefinedDerivative2
+type Geom2d_UndefinedValue engine Geometry/Objects UndefinedValue2
+
+package GeomAdaptor   engine Geometry/Adaptors
+package Geom2dAdaptor engine Geometry/Adaptors
+type GeomAdaptor_Curve engine Geometry/Adaptors CurveAdaptor   => Curve3D's own evaluation members
+type GeomAdaptor_Surface engine Geometry/Adaptors SurfaceAdaptor => Surface's own evaluation members
+type Geom2dAdaptor_Curve engine Geometry/Adaptors CurveAdaptor2D => Curve2D's own evaluation members
+package Adaptor2d     engine Geometry/Adaptors
+type Adaptor2d_Curve2d engine Geometry/Adaptors Curve2DAdaptorBase
+package Adaptor3d     engine Geometry/Adaptors
+type Adaptor3d_Curve engine Geometry/Adaptors CurveAdaptorBase
+type Adaptor3d_Surface engine Geometry/Adaptors SurfaceAdaptorBase
+package GeomConvert   engine Geometry/Conversion  => BSplineCurve3D.From(curve), Curve3D.ToBSpline (new)
+package Geom2dConvert engine Geometry/Conversion suf:2D  => BSplineCurve2D.From(curve)
+package GeomEval      engine Geometry/Evaluation
+package Geom2dEval    engine Geometry/Evaluation suf:2D
+package GeomGridEval  engine Geometry/Evaluation/Grid suf:Grid
+package Geom2dGridEval engine Geometry/Evaluation/Grid suf:Grid2D
+package GeomHash      engine Geometry/Hashing
+package Geom2dHash    engine Geometry/Hashing suf:2D
+package PolygonOnTriHashKey engine Meshing
+package GeomLib       engine Geometry/Library
+type GeomLib_IsPlanarSurface engine Geometry/Library IsPlanarSurface => Surface.TryGetPlane (new)
+package GeomLProp     engine Geometry/Properties
+package LProp         engine Geometry/Properties
+package GeomProjLib   engine Geometry/Projection
+package ProjLib       engine Geometry/Projection
+package GeomTools     engine Exchange/Brep
+package GeomBndLib    engine Geometry/Bounds/Computation suf:Bounds
+package BndLib        engine Geometry/Bounds
+package Hermit        engine Approximation
+package CPnts         engine Measurement/Points
+package GCPnts        engine Measurement
+type GCPnts_AbscissaPoint engine Measurement AbscissaPoint => EdgeCurve.ParameterAtLength, Curve3D.Length (new)
+type GCPnts_UniformDeflection engine Measurement UniformDeflection => EdgeCurve.Discretize(DiscretizeOptions) (new)
+type GCPnts_QuasiUniformDeflection engine Measurement QuasiUniformDeflection => EdgeCurve.Discretize(DiscretizeOptions) (new)
+package GProp         engine Measurement
+type GProp_GProps engine Measurement Properties => MassProperties (new record)
+type GProp_PrincipalProps engine Measurement PrincipalProperties => MassProperties.PrincipalAxes (new)
+package GC            engine Construction/Curves   => CircleCurve3D.Arc… and the other curve factories (Geometry review)
+package gce           engine Construction/Values   => the value types' constructors and factories
+package IntAna        engine Intersection
+package IntAna2d      engine Intersection/TwoD
+type IntAna2d_AnaIntersection engine Intersection/TwoD AnalyticIntersection => Line2D.Intersect, Circle2D.Intersect (new)
+package Extrema       engine Extrema
+type Extrema_ExtPC engine Extrema CurvePointExtrema => Curve3D.Project(point) (new)
+package ExtremaPC     engine Extrema/PointCurve
+package AppDef        engine Approximation
+package AppParCurves  engine Approximation
+package IAppParCurves engine Approximation
+package AppCont       engine Approximation
+package Approx        engine Approximation
+package IApprox       engine Approximation/Interfaces
+package AdvApprox     engine Approximation/Advanced
+package AdvApp2Var    engine Approximation/Advanced
+package FEmTool       engine Approximation/FiniteElements
+
+package TopoDS      public Topology
+type TopoDS                engine Topology ShapeCasts   => Shape's conversions (explicit casts, TryAs)
+type TopoDS_Shape          public Topology Shape
+type TopoDS_Vertex         public Topology Vertex
+type TopoDS_Edge           public Topology Edge
+type TopoDS_Wire           public Topology Wire
+type TopoDS_Face           public Topology Face
+type TopoDS_Shell          public Topology Shell
+type TopoDS_Solid          public Topology Solid
+type TopoDS_CompSolid      public Topology CompSolid
+type TopoDS_Compound       public Topology Compound
+type TopoDS_TShape         engine Topology TShape
+type TopoDS_TVertex        engine Topology TVertex
+type TopoDS_TEdge          engine Topology TEdge
+type TopoDS_TWire          engine Topology TWire
+type TopoDS_TFace          engine Topology TFace
+type TopoDS_TShell         engine Topology TShell
+type TopoDS_TSolid         engine Topology TSolid
+type TopoDS_TCompSolid     engine Topology TCompSolid
+type TopoDS_TCompound      engine Topology TCompound
+type TopoDS_HShape         removed Topology
+type TopoDS_Builder        engine Topology Builder      => Compound.Create, Wire.FromEdges and the Construction factories
+type TopoDS_Iterator       engine Topology Iterator     => Shape.Children
+type TopoDS_FrozenShape    removed Topology             # goes with copy at entry (10H)
+type TopoDS_LockedShape    removed Topology
+type TopoDS_UnCompatibleShapes engine Topology IncompatibleShapes
+type TopoDS_AlertAttribute engine Topology AlertAttribute
+type TopoDS_AlertWithShape engine Topology AlertWithShape
+package TopAbs      engine Topology
+type TopAbs_ShapeEnum      public Topology ShapeType
+type TopAbs_Orientation    public Topology Orientation
+type TopAbs_State          public Topology Containment
+package TopExp      engine Topology
+type TopExp_Explorer       engine Topology Explorer     => Shape.Explore, Shape.Faces… (IEnumerable)
+type TopExp                engine Topology Exploration  => Shape.Explore, Shape.FirstVertex, ShapeGraph.Ancestors (new)
+package TopTools    removed Collections                  # maps and lists of shapes: .NET collections with ShapeComparer
+type TopTools engine Exchange/Brep ShapeTools
+type TopTools_FormatVersion engine Exchange/Brep FormatVersion
+type TopTools_FormatVersionBounds engine Exchange/Brep FormatVersionBounds
+type TopTools_ShapeMapHasher engine Topology ShapeHasher => ShapeComparer.Same, ShapeComparer.Equal (new)
+type TopTools_ShapeSet     engine Exchange/Brep ShapeSet
+type TopTools_LocationSet  engine Exchange/Brep LocationSet
+package BRep        engine Topology/Brep
+type BRep_Curve3D engine Topology/Brep Curve3DRepresentation
+type BRep_Tool             engine Topology/Brep Tool    => Vertex.Point, Edge.Curve, Face.Surface, Tolerance… (Topology review)
+package BRepAdaptor engine Topology/Adaptors
+type BRepAdaptor_Curve     engine Topology/Adaptors EdgeCurveAdaptor => Kerf.Topology.EdgeCurve (new)
+type BRepAdaptor_Curve2d   engine Topology/Adaptors EdgeCurve2DAdaptor => Kerf.Topology.EdgeCurve.OnFace (new)
+type BRepAdaptor_Surface   engine Topology/Adaptors FaceSurfaceAdaptor => Kerf.Topology.FaceSurface (new)
+type BRepAdaptor_CompCurve engine Topology/Adaptors WireCurveAdaptor => Kerf.Topology.WireCurve (new)
+package BRepLProp   engine Topology/Properties   => FaceSurface.Normal, FaceSurface.Curvature, Edge continuity (new)
+package BRepTools   engine Topology/Tools
+type BRepTools             engine Topology/Tools Tools  => Face.UVBounds, Face.OuterWire, Brep.Write
+type BRepTools_History     engine Topology History      => Kerf.Topology.ShapeHistory (new)
+type BRepTools_ReShape     engine Topology ReShape      => ShapeHistory, and the healing operations
+type BRepTools_WireExplorer engine Topology/Tools WireExplorer => Wire.OrderedEdges (new)
+type BRepTools_ShapeSet    engine Exchange/Brep BrepShapeSet
+package BinTools    engine Exchange/Brep/Binary
+
+# ---------------------------------------------------------------------------------------------------------------------
+# ModelingAlgorithms
+# ---------------------------------------------------------------------------------------------------------------------
+
+type MeshExtraction engine Meshing MeshExtraction => Kerf.Meshing.ShapeMesh (new)
+type MeshBuffers    engine Meshing MeshBuffers    => Kerf.Meshing.ShapeMesh (new)
+
+package BRepAlgoAPI engine Booleans/Api
+type BRepAlgoAPI_Fuse      engine Booleans/Api Fuse      => BooleanOperations.Fuse
+type BRepAlgoAPI_Cut       engine Booleans/Api Cut       => BooleanOperations.Cut
+type BRepAlgoAPI_Common    engine Booleans/Api Common    => BooleanOperations.Common
+type BRepAlgoAPI_Section   engine Booleans/Api Section   => BooleanOperations.Section
+type BRepAlgoAPI_Splitter  engine Booleans/Api Splitter  => BooleanOperations.Split
+type BRepAlgoAPI_BuilderAlgo engine Booleans/Api BuilderAlgo => BooleanOperations.Partition (General Fuse)
+type BRepAlgoAPI_BooleanOperation engine Booleans/Api BooleanOperation => BooleanOperations
+type BRepAlgoAPI_Algo      engine Booleans/Api Algo      => Result<T>'s diagnostics
+package BOPAlgo     engine Booleans
+type BOPAlgo_Splitter      engine Booleans Splitter      => BooleanOperations.Split
+type BOPAlgo_GlueEnum      engine Booleans GlueMode      => Kerf.Booleans.GlueMode (new)
+type BOPAlgo_AlertSelfInterferingShape engine Booleans AlertSelfInterferingShape => DiagnosticCode.SelfIntersection (new)
+package BOPDS       engine Booleans/Data
+package BOPTools    engine Booleans/Tools
+package BRepAlgo    engine Booleans/Algo
+package TopOpeBRepBuild engine Booleans/Legacy/Build
+package TopOpeBRepDS    engine Booleans/Legacy/Data pre:Ds
+package TopOpeBRepTool  engine Booleans/Legacy/Tools
+package TopBas      engine Booleans/Legacy
+package TopCnx      engine Booleans/Legacy
+package TopTrans    engine Booleans/Legacy
+package IntTools    engine Intersection/Tools
+type IntTools_FClass2d engine Classification FaceClassifier2D => Face.Classify(uv) (new)
+
+package BRepPrimAPI engine Construction/Api
+type BRepPrimAPI_MakeBox      engine Construction/Api MakeBox      => Primitives.Box
+type BRepPrimAPI_MakeCylinder engine Construction/Api MakeCylinder => Primitives.Cylinder
+type BRepPrimAPI_MakeCone     engine Construction/Api MakeCone     => Primitives.Cone
+type BRepPrimAPI_MakeSphere   engine Construction/Api MakeSphere   => Primitives.Sphere
+type BRepPrimAPI_MakeTorus    engine Construction/Api MakeTorus    => Primitives.Torus
+type BRepPrimAPI_MakeWedge    engine Construction/Api MakeWedge    => Primitives.Wedge
+type BRepPrimAPI_MakeHalfSpace engine Construction/Api MakeHalfSpace => Primitives.HalfSpace
+type BRepPrimAPI_MakePrism    engine Construction/Api MakePrism    => Sweeps.Extrude
+type BRepPrimAPI_MakeRevol    engine Construction/Api MakeRevol    => Sweeps.Revolve
+package BRepBuilderAPI engine Construction/Api
+type BRepBuilderAPI_MakeVertex  engine Construction/Api MakeVertex  => Vertex.At (new)
+type BRepBuilderAPI_MakeEdge    engine Construction/Api MakeEdge    => Edge.Line, Edge.FromCurve… (ShapeFactory)
+type BRepBuilderAPI_MakeWire    engine Construction/Api MakeWire    => Wire.FromEdges (ShapeFactory)
+type BRepBuilderAPI_MakePolygon engine Construction/Api MakePolygon => Wire.Polygon (ShapeFactory)
+type BRepBuilderAPI_MakeFace    engine Construction/Api MakeFace    => Face.FromWire, Face.FromSurface (ShapeFactory)
+type BRepBuilderAPI_MakeShell   engine Construction/Api MakeShell   => Shell.FromSurface (ShapeFactory)
+type BRepBuilderAPI_MakeSolid   engine Construction/Api MakeSolid   => Solid.FromShells (ShapeFactory)
+type BRepBuilderAPI_Transform   engine Construction/Api Transform   => Shape.Moved, Shape.Transformed (ShapeTransforms)
+type BRepBuilderAPI_GTransform  engine Construction/Api GTransform  => Shape.Transformed(GeneralTransform3D)
+type BRepBuilderAPI_Copy        engine Construction/Api Copy        => not needed: shapes are immutable
+type BRepBuilderAPI_Sewing      engine Healing Sewing                => HealingOperations.Sew
+type BRepBuilderAPI_MakeShape   engine Construction/Api MakeShape   => Result<Built<T>>
+type BRepBuilderAPI_WireError   engine Construction/Api WireError   => DiagnosticCode (new)
+type BRepBuilderAPI_TransitionMode engine Construction/Api TransitionMode => Kerf.Construction.Transition (new)
+package BRepLib     engine Construction/Library
+type BRepLib engine Construction/Library Library => automatic in the factories (curves 3D built); Edge.WithCurve3D
+type BRepLib_FindSurface engine Construction/Library FindSurface => Wire.TryGetPlane, Shape.TryFindSurface (new)
+package BRepFill    engine Construction/Filling
+type BRepFill engine Construction/Filling Fill => Sweeps.Ruled (new)
+package BRepOffsetAPI engine Offsets/Api
+type BRepOffsetAPI_MakePipeShell engine Construction/Api MakePipeShell => Sweeps.Sweep
+type BRepOffsetAPI_MakePipe   engine Construction/Api MakePipe   => Sweeps.Sweep
+type BRepOffsetAPI_ThruSections engine Construction/Api ThruSections => Sweeps.Loft
+type BRepOffsetAPI_MakeFilling engine Construction/Api MakeFilling => Surfaces.Fill (new)
+type BRepOffsetAPI_MakeOffset engine Offsets/Api MakeWireOffset   => OffsetOperations.Offset2D
+type BRepOffsetAPI_MakeOffsetShape engine Offsets/Api MakeOffsetShape => OffsetOperations.Offset
+type BRepOffsetAPI_MakeThickSolid engine Offsets/Api MakeThickSolid => OffsetOperations.Hollow, OffsetOperations.Thicken
+type BRepOffsetAPI_DraftAngle engine Features/Api DraftAngle     => FeatureOperations.Draft
+type BRepOffsetAPI_MakeDraft  engine Features/Api MakeDraft
+type BRepOffsetAPI_MakeEvolved engine Construction/Api MakeEvolved => Sweeps.Evolve
+type BRepOffsetAPI_NormalProjection engine Construction/Api NormalProjection => Projections.ProjectNormal
+type BRepOffsetAPI_MiddlePath engine Construction/Api MiddlePath
+type BRepOffsetAPI_FindContigousEdges engine Healing FindContiguousEdges
+package BRepOffset  engine Offsets
+type BRepOffset_Mode engine Offsets OffsetMode => Kerf.Offsets.OffsetMode (new)
+type BRepOffset_MakeOffset engine Offsets MakeOffset => OffsetOperations.Offset
+package BRepOffsetSimple engine Offsets/Simple
+package BiTgte      engine Offsets/Blend
+package BRepMAT2d   engine Offsets/MedialAxis
+package MAT         engine Offsets/MedialAxis pre:Medial
+package MAT2d       engine Offsets/MedialAxis
+package Bisector    engine Offsets/Bisectors
+package Draft       engine Features/Draft
+package BRepFeat    engine Features
+type BRepFeat_MakeDPrism engine Features MakeDraftPrism => FeatureOperations.ExtrudeUntil
+type BRepFeat_SplitShape engine Features SplitShape     => FeatureOperations.SplitFaces
+package LocOpe      engine Features/Local
+package BRepProj    engine Construction/Api
+type BRepProj_Projection engine Construction/Api Projection => Projections.Project
+package HelixBRep   engine Construction/Helix
+package HelixGeom   engine Construction/Helix/Geometry
+package BRepPreviewAPI engine Construction/Preview
+
+package BRepFilletAPI engine Fillets/Api
+type BRepFilletAPI_MakeFillet   engine Fillets/Api MakeFillet   => FilletOperations.Fillet
+type BRepFilletAPI_MakeChamfer  engine Fillets/Api MakeChamfer  => FilletOperations.Chamfer
+type BRepFilletAPI_MakeFillet2d engine Fillets/Api MakeFillet2D => FilletOperations.Fillet2D, Chamfer2D
+package ChFi2d      engine Fillets/Planar
+package ChFi3d      engine Fillets
+package ChFiDS      engine Fillets/Data
+type ChFiDS_ErrorStatus engine Fillets/Data ErrorStatus => DiagnosticCode.Fillet… (new)
+package FilletSurf  engine Fillets/Surfaces
+package BRepBlend   engine Fillets/Blend
+package Blend       engine Fillets/Blend
+package BlendFunc   engine Fillets/BlendFunctions
+package AppBlend    engine Fillets/Blend
+package IAppBlend   engine Fillets/Blend
+
+package GeomAPI     engine Geometry/Api
+type GeomAPI engine Geometry/Api Projections  => Curve3D.ToPlane / Curve2D.OnPlane (new)
+type GeomAPI_Interpolate engine Geometry/Api Interpolate => BSplineCurve3D.Interpolate (new)
+type GeomAPI_PointsToBSpline engine Geometry/Api PointsToBSpline => BSplineCurve3D.Approximate (new)
+type GeomAPI_PointsToBSplineSurface engine Geometry/Api PointsToBSplineSurface => BSplineSurface.Approximate (new)
+type GeomAPI_ProjectPointOnCurve engine Geometry/Api ProjectPointOnCurve => Curve3D.Project (new)
+type GeomAPI_ProjectPointOnSurf engine Geometry/Api ProjectPointOnSurface => Surface.Project (new)
+type GeomAPI_IntCS engine Geometry/Api CurveSurfaceIntersection => Curve3D.Intersect(Surface) (new)
+type GeomAPI_IntSS engine Geometry/Api SurfaceSurfaceIntersection => Surface.Intersect(Surface) (new)
+package Geom2dAPI   engine Geometry/Api suf:2D
+type Geom2dAPI_InterCurveCurve engine Geometry/Api CurveCurveIntersection2D => Curve2D.Intersect (new)
+type Geom2dAPI_ProjectPointOnCurve engine Geometry/Api ProjectPointOnCurve2D => Curve2D.Project (new)
+package GeomFill    engine Construction/Surfaces
+type GeomFill_TrihedronLaw engine Construction/Surfaces TrihedronLaw => Kerf.Construction.SweepFrame (new enum)
+type GeomFill_Frenet engine Construction/Surfaces Frenet => SweepFrame.Frenet
+type GeomFill_CorrectedFrenet engine Construction/Surfaces CorrectedFrenet => SweepFrame.CorrectedFrenet
+package GeomPlate   engine Construction/Plate
+type GeomPlate_Surface engine Construction/Plate PlateSurface
+package Plate       engine Construction/Plate
+package NLPlate     engine Construction/Plate
+package FairCurve   engine Construction/Fairing
+package Law         engine Construction/Laws
+package GccAna      engine Construction/Constraints/Analytic
+package GccEnt      engine Construction/Constraints
+type GccEnt_Position engine Construction/Constraints Qualifier => Kerf.Geometry.Tangency (new)
+package GccInt      engine Construction/Constraints
+package Geom2dGcc   engine Construction/Constraints  => Circle2D.TangentTo…, Line2D.TangentTo… (Constrained2D, new)
+package GeomInt     engine Intersection/Surfaces
+package Geom2dInt   engine Intersection/TwoD
+package IntCurve    engine Intersection/Curves
+package IIntCurve   engine Intersection/Curves
+package IntCurveSurface engine Intersection/CurveSurface
+package IIntCurveSurface engine Intersection/CurveSurface
+package IntCurvesFace engine Intersection/CurveSurface
+package BRepIntCurveSurface engine Intersection/CurveSurface
+type BRepIntCurveSurface_Inter engine Intersection/CurveSurface CurveShapeIntersector => Shape.Intersect(Line3D) (new)
+package IntImp      engine Intersection/Implicit
+package IIntImp     engine Intersection/Implicit
+package IntImpParGen engine Intersection/Implicit
+package IIntImpParGen engine Intersection/Implicit
+package IntPatch    engine Intersection/Patches
+package IntPolyh    engine Intersection/Polyhedra pre:Polyhedron
+package IntRes2d    engine Intersection/TwoD
+package IntStart    engine Intersection/Walking
+package IIntStart   engine Intersection/Walking
+package IntSurf     engine Intersection/Walking
+package IntWalk     engine Intersection/Walking
+package IIntWalk    engine Intersection/Walking
+package Intf        engine Intersection/Polygons
+package IIntf       engine Intersection/Polygons
+package Intrv       engine Intersection
+package ApproxInt   engine Intersection/Approximation
+package IApproxInt  engine Intersection/Approximation
+package BRepApprox  engine Intersection/Approximation
+package Contap      engine HiddenLines/Contours
+package BRepTopAdaptor engine Topology/Adaptors
+package LocalAnalysis engine Measurement
+
+package BRepClass   engine Classification
+type BRepClass_Edge engine Classification ClassifierEdge
+package BRepClass3d engine Classification
+type BRepClass3d_SolidClassifier engine Classification SolidClassifier => MeasureOperations.Classify (new)
+package Hatch       engine Classification/Hatching
+package HatchGen    engine Classification/Hatching
+package Geom2dHatch engine Classification/Hatching suf:2D
+
+package BRepGProp   engine Measurement
+type BRepGProp engine Measurement MassPropertiesBuilder => MeasureOperations.MassProperties, Volume, Area, Length
+type BRepGProp_Face engine Measurement FaceIntegrand => FaceSurface (normal and area element)
+package BRepBndLib  engine Measurement
+type BRepBndLib engine Measurement Bounds => MeasureOperations.BoundingBox, OrientedBox
+package BRepExtrema engine Measurement/Distance
+type BRepExtrema_DistShapeShape engine Measurement/Distance DistanceShapeShape => MeasureOperations.Distance
+type BRepExtrema_SupportType engine Measurement/Distance SupportType => Kerf.Measurement.SupportKind (new)
+package BRepCheck   engine Healing/Checks suf:Check
+type BRepCheck_Analyzer engine Healing/Checks Analyzer => HealingOperations.Validate
+
+package ShapeAnalysis engine Healing/Analysis suf:Analysis
+type ShapeAnalysis_FreeBounds engine Healing/Analysis FreeBounds => HealingOperations.ConnectEdges, FreeBoundaries
+type ShapeAnalysis_Surface engine Healing/Analysis SurfaceAnalysis => FaceSurface.Parameters(point) (new)
+type ShapeAnalysis_Shell engine Healing/Analysis ShellAnalysis => HealingOperations.Validate
+package ShapeFix    engine Healing/Fixes suf:Fixer
+type ShapeFix_Shape engine Healing/Fixes ShapeFixer => HealingOperations.Fix
+type ShapeFix_Solid engine Healing/Fixes SolidFixer => HealingOperations.MakeSolid
+type ShapeFix_Face engine Healing/Fixes FaceFixer => HealingOperations.Fix (FixOptions)
+type ShapeFix_Wireframe engine Healing/Fixes WireframeFixer => HealingOperations.FixWireframe
+package ShapeUpgrade engine Healing/Upgrade
+type ShapeUpgrade_UnifySameDomain engine Healing/Upgrade UnifySameDomain => HealingOperations.Unify
+package ShapeCustom  engine Healing/Custom
+type ShapeCustom_Surface engine Healing/Custom SurfaceCustom
+type ShapeCustom engine Healing/Custom Customize => HealingOperations.ConvertToBSpline (new)
+type ShapeCustom_RestrictionParameters engine Healing/Custom RestrictionParameters => BSplineConversionOptions (new)
+package ShapeBuild   engine Healing/Build suf:Builder
+package ShapeConstruct engine Healing/Construct
+package ShapeExtend  engine Healing/Extend
+package ShapeAlgo    engine Healing
+package ShapeProcess engine Healing/Process
+package ShapeProcessAPI engine Healing/Process
+
+package BRepMesh     engine Meshing
+type BRepMesh_Edge engine Meshing MeshEdge
+type BRepMesh_Vertex engine Meshing MeshVertex
+type BRepMesh_IncrementalMesh engine Meshing IncrementalMesh => Mesher.Mesh
+package BRepMeshData engine Meshing/Data suf:Data
+package IMeshData    engine Meshing/Model suf:Model
+package IMeshTools   engine Meshing/Tools
+package XBRepMesh    engine Meshing
+package DelaBella    engine Meshing/Delaunay pre:Delaunay
+package IDelaBella   engine Meshing/Delaunay
+
+package HLRAlgo      engine HiddenLines/Algorithm
+package HLRBRep      engine HiddenLines
+type HLRBRep_Surface engine HiddenLines HlrSurface
+package HLRTopoBRep  engine HiddenLines/Topology
+package HLRAppli     engine HiddenLines
+package Prs3d        engine HiddenLines/Presentation
+package StdPrs       engine HiddenLines/Presentation
+package Aspect       engine HiddenLines/Presentation
+
+# ---------------------------------------------------------------------------------------------------------------------
+# DataExchange
+# ---------------------------------------------------------------------------------------------------------------------
+
+package STEPControl     engine Exchange/Step
+type STEPControl_Reader engine Exchange/Step Reader => Step.Read
+type STEPControl_Writer engine Exchange/Step Writer => Step.Write
+type STEPControl_StepModelType engine Exchange/Step ModelType => StepWriteOptions.Representation (new)
+package STEPCAFControl  engine Exchange/Step/Documents
+package STEPConstruct   engine Exchange/Step/Construct
+package STEPEdit        engine Exchange/Step/Edit
+package STEPSelections  engine Exchange/Step/Selections
+package StepSelect      engine Exchange/Step/Selections
+package DESTEP          engine Exchange/Step
+package DE              engine Exchange
+package StepData        engine Exchange/Step/Data
+package StepFile        engine Exchange/Step/Parser
+package StepToGeom      engine Exchange/Step/Import/Geometry
+package StepToTopoDS    engine Exchange/Step/Import
+package GeomToStep      engine Exchange/Step/Export/Geometry
+package TopoDSToStep    engine Exchange/Step/Export
+package HeaderSection   engine Exchange/Step/Header
+package RWHeaderSection engine Exchange/Step/Header
+package APIHeaderSection engine Exchange/Step/Header
+package StepAP203       engine Exchange/Step/Ap203
+package StepAP214       engine Exchange/Step/Ap214
+package StepAP242       engine Exchange/Step/Ap242
+package StepBasic       engine Exchange/Step/Basic
+package StepDimTol      engine Exchange/Step/Tolerances
+package StepElement     engine Exchange/Step/Elements
+package StepFEA         engine Exchange/Step/Fea
+package StepGeom        engine Exchange/Step/Geometry pre:Step
+package StepKinematics  engine Exchange/Step/Kinematics
+package StepRepr        engine Exchange/Step/Representation
+package StepShape       engine Exchange/Step/Shapes pre:Step
+package StepVisual      engine Exchange/Step/Visual
+package Interface       engine Exchange/Framework
+package Transfer        engine Exchange/Framework/Transfer
+package TransferBRep    engine Exchange/Framework/Transfer
+package IFSelect        engine Exchange/Framework/Selection
+type IFSelect_ReturnStatus engine Exchange/Framework/Selection ReturnStatus => Result<T>
+package IFGraph         engine Exchange/Framework/Graph
+package XSControl       engine Exchange/Framework
+package XSAlgo          engine Exchange/Framework
+package MoniTool        engine Exchange/Framework/Monitoring
+package LibCtl          engine Exchange/Framework
+package UnitsMethods    engine Exchange/Framework
+package XdeDoc          engine Exchange/Documents          => Kerf.Exchange.ModelNode (new)
+package StlAPI          engine Exchange/Stl/Api                => Stl.Read, Stl.Write
+package RWStl           engine Exchange/Stl
+package RWGltf          engine Exchange/Gltf               => Gltf.Read, Gltf.Write
+package RW3mf           engine Exchange/ThreeMf            => ThreeMf.Write
+package RWObj           engine Exchange/Obj                => Obj.Read
