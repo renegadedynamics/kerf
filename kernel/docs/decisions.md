@@ -14688,3 +14688,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        scenes (a box edge at the origin, so native's origin was within 5e-8 of the right point) and Draw-lite's
        `distmini` on MODERN_Refrigerator_1.brep, whose contact points native reported at the origin where they are at
        (5e-8, 70, 150) and the like.
+16504. **ShapeAnalysis_Edge::CheckOverlapping returns on a zero-length edge** (row 512). The sampling step is half the
+       shorter edge's length; for a zero-length edge it was 0 and the loop never ended. A step that no longer advances
+       ends the sampling, so the edge's one point is checked once. Test with a time limit (`HangGuard`, new in the
+       ModelingAlgorithms tests): a zero-length edge on another overlaps it, one off it doesn't.
