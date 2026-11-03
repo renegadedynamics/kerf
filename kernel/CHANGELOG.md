@@ -1829,6 +1829,6 @@ and K2 of the triage).
   constraints, and C1 now meaning G1 rather than G2; a pipe of a vertex's history; a pipe between two sections on a
   3D path; SweptToElementary on shapes with degenerated edges (most revolved shapes); a loft through closed B-spline
   sections with different knots. The medial axis of a single closed edge reports failure instead of crashing.
-- Left for later, with reasons (decision 16514): the 2D offset's two medial-axis failures and some multi-face drafts.
+- Left for later, with reasons (decision 1441): the 2D offset's two medial-axis failures and some multi-face drafts.
 - Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows
   fixed.
