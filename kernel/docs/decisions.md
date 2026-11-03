@@ -14929,6 +14929,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        - **Tests**, the same counts as `main` at f3cefbf3 before each commit and after the last: Foundation 2,297,
          ModelingData 3,145, ModelingAlgorithms 4,780 (9 skipped), DataExchange 276 (1 skipped), Oracle 383, Draw-lite
          687 (the base run had one time-out under load, bug24157_5; after the last commit all pass), the modelling
-         layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (16302),
+         layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (decision 1453),
          and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
          printer; the tool now parenthesises in a string).
