@@ -174,7 +174,7 @@ public class BRepLibTwinsTests
         Assert.False(Tool.SameParameter(anE));
         Assert.Single(aH.Modified(anE));
         Point2D aUV = Tool.CurveOnSurface(aNewE, ShapeCasts.Face(aResult), out _, out _)!.Value(5);
-        Assert.Equal(5, aUV.X(), 1e-5);
+        Assert.Equal(5, aUV.X, 1e-5);
     }
 
     [Fact]
@@ -246,7 +246,7 @@ public class BRepLibTwinsTests
         Solid aResult = BrepLibrary.ClosedSolidOriented(aReversed, out bool isOriented);
         Assert.True(isOriented);
         Assert.True(aResult.IsSame(aBox));
-        Assert.Equal(aBox.Orientation(), aResult.Orientation());
+        Assert.Equal(aBox.Orientation, aResult.Orientation);
         Assert.True(BrepLibrary.ClosedSolidOriented(aBox, out isOriented).IsEqual(aBox));
         Assert.True(isOriented);
     }

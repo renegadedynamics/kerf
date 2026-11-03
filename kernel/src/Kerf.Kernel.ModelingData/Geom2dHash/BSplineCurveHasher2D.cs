@@ -19,7 +19,7 @@ internal readonly struct BSplineCurveHasher2D(double theCompTolerance, double th
     {
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash(curve.Degree()),
+            HashUtils.Hash(curve.Degree),
             HashUtils.Hash(curve.PoleCount),
             HashUtils.Hash(curve.KnotCount),
             HashUtils.Hash(curve.IsRational ? 1 : 0)
@@ -31,7 +31,7 @@ internal readonly struct BSplineCurveHasher2D(double theCompTolerance, double th
     public bool IsEqual(BSplineCurve2D curve1, BSplineCurve2D curve2)
     {
         // Compare degrees
-        if (curve1.Degree() != curve2.Degree())
+        if (curve1.Degree != curve2.Degree)
         {
             return false;
         }

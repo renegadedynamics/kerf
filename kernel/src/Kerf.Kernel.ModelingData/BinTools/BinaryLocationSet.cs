@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// </summary>
 public class BinaryLocationSet
 {
-    private readonly IndexedSet<Placement> _map = new();
+    private readonly IndexedSet<Placement> _map = new(PlacementIdentityComparer.Instance);
 
     /// <summary>An empty set of locations.</summary>
     public BinaryLocationSet()
@@ -88,8 +88,8 @@ public class BinaryLocationSet
     // operator<<(Standard_OStream&, const gp_Trsf&)
     internal static void Write(Stream os, in Transform3D t)
     {
-        Xyz v = t.TranslationPart();
-        Matrix3x3 m = t.VectorialPart();
+        Xyz v = t.TranslationXyz();
+        Matrix3x3 m = t.VectorialPart;
 
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, m[1, 1]);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutReal(os, m[1, 2]);
@@ -147,7 +147,7 @@ public class BinaryLocationSet
                 if (elementary)
                 {
                     os.WriteByte(1); // 1
-                    Write(os, l.Transformation());
+                    Write(os, l.Transformation);
                 }
                 else
                 {

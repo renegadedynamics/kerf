@@ -68,8 +68,8 @@ public class Geom2d_CartesianPointTest
     {
         CartesianPoint2 aPnt   = new CartesianPoint2(3.0, 4.0);
         Point2D                     aGpPnt = aPnt.Pnt2d();
-        Assert.Equal(3.0, aGpPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(4.0, aGpPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aGpPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aGpPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

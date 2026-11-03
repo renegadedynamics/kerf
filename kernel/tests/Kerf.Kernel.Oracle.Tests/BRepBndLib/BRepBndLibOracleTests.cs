@@ -31,7 +31,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
             string aWhat = $"scene {aScene} ({ClassificationScenes.Name(aScene)})";
             bool aStartFull = anOracle.Bool();
             Point3D aMin = new(anOracle.Real(-30, 0), anOracle.Real(-30, 0), anOracle.Real(-30, 0));
-            Point3D aMax = new(aMin.X() + anOracle.Real(0, 5), aMin.Y() + anOracle.Real(0, 5), aMin.Z() + anOracle.Real(0, 5));
+            Point3D aMax = new(aMin.X + anOracle.Real(0, 5), aMin.Y + anOracle.Real(0, 5), aMin.Z + anOracle.Real(0, 5));
 
             (N.Bnd_Box, Box) Start()
             {

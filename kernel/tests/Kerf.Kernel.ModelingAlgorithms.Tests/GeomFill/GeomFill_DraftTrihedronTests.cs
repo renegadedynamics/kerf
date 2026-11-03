@@ -31,9 +31,9 @@ public class GeomFill_DraftTrihedronTests
         for (double u = 0.05; u < 1; u += 0.1)
         {
             (Vector3D T, Vector3D N, Vector3D B) = D0(aLaw, u);
-            Assert.Equal(1.0, T.Magnitude(), 1e-12);
-            Assert.Equal(1.0, N.Magnitude(), 1e-12);
-            Assert.Equal(1.0, B.Magnitude(), 1e-12);
+            Assert.Equal(1.0, T.Magnitude, 1e-12);
+            Assert.Equal(1.0, N.Magnitude, 1e-12);
+            Assert.Equal(1.0, B.Magnitude, 1e-12);
             Assert.Equal(0.0, T.Dot(N), 1e-12);
             Assert.Equal(0.0, T.Dot(B), 1e-12);
             // the tangent is perpendicular to the draft direction

@@ -109,7 +109,7 @@ internal static class Features
                 var d = new DraftAngle(s);
                 foreach (Shape f in Sub(s, ShapeType.Face))
                 {
-                    if (Tool.Surface(ShapeCasts.Face(f)) is not PlaneSurface p || Math.Abs(p.Pln().Axis().Direction().Z()) < 1.0e-9)
+                    if (Tool.Surface(ShapeCasts.Face(f)) is not PlaneSurface p || Math.Abs(p.Plane.Axis.Direction.Z) < 1.0e-9)
                     {
                         d.Add(ShapeCasts.Face(f), new Direction3D(0, 0, 1), 3.0 * Math.PI / 180.0, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
                         if (!d.AddDone())

@@ -22,7 +22,7 @@ public class LineCurve3D : Curve3D
     public LineCurve3D(in Axis3D a) => _pos = a;
 
     /// <summary>A line equal to L.</summary>
-    public LineCurve3D(in Line3D l) => _pos = l.Position();
+    public LineCurve3D(in Line3D l) => _pos = l.Position;
 
     /// <summary>A line through P with direction V.</summary>
     public LineCurve3D(in Point3D p, in Direction3D v) => _pos = new Axis3D(p, v);
@@ -54,7 +54,7 @@ public class LineCurve3D : Curve3D
     internal void SetLin(in Line3D l)
     {
         CheckMutable();
-        _pos = l.Position();
+        _pos = l.Position;
     }
 
     internal void SetLocation(in Point3D p)
@@ -70,24 +70,24 @@ public class LineCurve3D : Curve3D
     }
 
     /// <summary>The axis of the line.</summary>
-    public Axis3D Position() => _pos;
+    public Axis3D Position => _pos;
 
     public sealed override bool IsClosed => false;
 
     public sealed override bool IsPeriodic => false;
 
-    public sealed override Continuity Continuity() => CN;
+    public sealed override Continuity Continuity => CN;
 
     /// <summary>-Precision::Infinite().</summary>
-    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>The non-persistent line equal to this one.</summary>
-    public Line3D Lin() => new Line3D(_pos);
+    public Line3D Line => new Line3D(_pos);
 
-    public sealed override bool IsCN(int n) => true;
+    internal sealed override bool IsCN(int n) => true;
 
     /// <summary>Applies T to this line.</summary>
     protected internal sealed override void Transform(in Transform3D t)
@@ -96,16 +96,16 @@ public class LineCurve3D : Curve3D
         _pos = _pos.Transformed(t);
     }
 
-    public sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.LineValue(u, _pos);
+    internal sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.LineValue(u, _pos);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result = new ResD1();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result = new ResD2();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
@@ -113,7 +113,7 @@ public class LineCurve3D : Curve3D
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
@@ -123,7 +123,7 @@ public class LineCurve3D : Curve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">N &lt; 1.</exception>
-    public sealed override Vector3D EvalDN(double u, int n)
+    internal sealed override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -131,7 +131,7 @@ public class LineCurve3D : Curve3D
         }
         if (n == 1)
         {
-            return new Vector3D(_pos.Direction());
+            return new Vector3D(_pos.Direction);
         }
         else
         {
@@ -140,17 +140,17 @@ public class LineCurve3D : Curve3D
     }
 
     /// <summary>U * |T.ScaleFactor()| (U itself when infinite).</summary>
-    public sealed override double TransformedParameter(double u, in Transform3D t)
+    internal sealed override double TransformedParameter(double u, in Transform3D t)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor());
+        return u * Math.Abs(t.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    public sealed override double ParametricTransformation(in Transform3D t) => Math.Abs(t.ScaleFactor());
+    internal sealed override double ParametricTransformation(in Transform3D t) => Math.Abs(t.ScaleFactor);
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 

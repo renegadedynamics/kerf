@@ -53,13 +53,13 @@ public class MiddlePath : MakeShape
         Curve3D curve = Tool.Curve(anEdge, out _, out _)!;
         if (curve.GetType() == typeof(TrimmedCurve3D))
         {
-            curve = ((TrimmedCurve3D)curve).BasisCurve();
+            curve = ((TrimmedCurve3D)curve).BasisCurve;
         }
 
         Point3D pnt1, pnt2;
         if (curve is LineCurve3D geomLine)
         {
-            aLine = geomLine.Lin();
+            aLine = geomLine.Line;
             return true;
         }
         else if (curve is BezierCurve3D theBezier)
@@ -100,7 +100,7 @@ public class MiddlePath : MakeShape
     private static Vector3D TangentOfEdge(in Shape aShape, bool onFirst)
     {
         Edge edge = ShapeCasts.Edge(aShape);
-        Orientation or = edge.Orientation();
+        Orientation or = edge.Orientation;
 
         Curve3D curve = Tool.Curve(edge, out double fpar, out double lpar)!;
         double thePar;
@@ -202,7 +202,7 @@ public class MiddlePath : MakeShape
         _initialShape = unifier.Shape();
 
         Wire startWire, endWire;
-        if (startShape.ShapeType() == ShapeType.Face)
+        if (startShape.Type == ShapeType.Face)
         {
             Face startFace = ShapeCasts.Face(startShape);
             startWire = BrepTools.OuterWire(startFace);
@@ -212,7 +212,7 @@ public class MiddlePath : MakeShape
             startWire = ShapeCasts.Wire(startShape);
         }
 
-        if (endShape.ShapeType() == ShapeType.Face)
+        if (endShape.Type == ShapeType.Face)
         {
             Face endFace = ShapeCasts.Face(endShape);
             endWire = BrepTools.OuterWire(endFace);
@@ -225,7 +225,7 @@ public class MiddlePath : MakeShape
         _startWire = GetUnifiedWire(startWire, unifier);
         _endWire = GetUnifiedWire(endWire, unifier);
 
-        _closedSection = _startWire.Closed();
+        _closedSection = _startWire.IsClosed;
         _closedRing = _startWire.IsSame(_endWire);
         _ = _closedRing;
     }
@@ -328,7 +328,7 @@ public class MiddlePath : MakeShape
                 Shape theShape = _paths[i].Last();
                 Edge theEdge;
                 Vertex theVertex;
-                if (theShape.ShapeType() == ShapeType.Edge)
+                if (theShape.Type == ShapeType.Edge)
                 {
                     theEdge = ShapeCasts.Edge(theShape);
                     theVertex = Exploration.LastVertex(theEdge, true);
@@ -441,13 +441,13 @@ public class MiddlePath : MakeShape
 
                 if (toInsertVertex)
                 {
-                    if (path1[i].ShapeType() == ShapeType.Edge)
+                    if (path1[i].Type == ShapeType.Edge)
                     {
                         Edge aE1 = ShapeCasts.Edge(path1[i]);
                         Shape fver = Exploration.FirstVertex(aE1, true);
                         path1.InsertBefore(i, fver);
                     }
-                    if (path2[i].ShapeType() == ShapeType.Edge)
+                    if (path2[i].Type == ShapeType.Edge)
                     {
                         Edge aE2 = ShapeCasts.Edge(path2[i]);
                         Shape fver = Exploration.FirstVertex(aE2, true);
@@ -457,11 +457,11 @@ public class MiddlePath : MakeShape
                 }
 
                 Edge e1 = new(), e2 = new();
-                if (path1[i].ShapeType() == ShapeType.Edge)
+                if (path1[i].Type == ShapeType.Edge)
                 {
                     e1 = ShapeCasts.Edge(path1[i]);
                 }
-                if (path2[i].ShapeType() == ShapeType.Edge)
+                if (path2[i].Type == ShapeType.Edge)
                 {
                     e2 = ShapeCasts.Edge(path2[i]);
                 }
@@ -515,7 +515,7 @@ public class MiddlePath : MakeShape
                     }
                 }
 
-                if ((path1[i]).ShapeType() == ShapeType.Vertex && (path2[i]).ShapeType() == ShapeType.Vertex)
+                if ((path1[i]).Type == ShapeType.Vertex && (path2[i]).Type == ShapeType.Vertex)
                 {
                     edgeSeq[j - 1] = properEdge;
                     continue;
@@ -543,7 +543,7 @@ public class MiddlePath : MakeShape
                         double lastPar1, lastPar2;
                         Curve2D pCurve1 = Tool.CurveOnSurface(e1, theFace, out double fpar1, out double lpar1)!;
                         Curve2D pCurve2 = Tool.CurveOnSurface(e2, theFace, out double fpar2, out double lpar2)!;
-                        if (e1.Orientation() == Forward)
+                        if (e1.Orientation == Forward)
                         {
                             lastPar1 = lpar1;
                         }
@@ -551,7 +551,7 @@ public class MiddlePath : MakeShape
                         {
                             lastPar1 = fpar1;
                         }
-                        if (e2.Orientation() == Forward)
+                        if (e2.Orientation == Forward)
                         {
                             lastPar2 = lpar2;
                         }
@@ -563,7 +563,7 @@ public class MiddlePath : MakeShape
                         Point2D lastPnt2d = pCurve2.Value(lastPar2);
                         Surface theSurf = Tool.Surface(theFace)!;
                         LineCurve2D theLine = new MakeLine2d(firstPnt2d, lastPnt2d).Value();
-                        double len_ne = firstPnt2d.Distance(lastPnt2d);
+                        double len_ne = firstPnt2d.DistanceTo(lastPnt2d);
                         Edge newEdge = new LibraryMakeEdge(theLine, theSurf, prevVertex, curVertex, 0.0, len_ne).InternalEdge();
                         BrepLibrary.BuildCurve3d(newEdge);
                         edgeSeq[j - 1] = newEdge;
@@ -575,7 +575,7 @@ public class MiddlePath : MakeShape
                         double firstPar1, lastPar1, firstPar2, lastPar2;
                         Curve2D pCurve1 = Tool.CurveOnSurface(e1, theFace, out double fpar1, out double lpar1)!;
                         Curve2D pCurve2 = Tool.CurveOnSurface(e2, theFace, out double fpar2, out double lpar2)!;
-                        if (e1.Orientation() == Forward)
+                        if (e1.Orientation == Forward)
                         {
                             firstPar1 = fpar1;
                             lastPar1 = lpar1;
@@ -585,7 +585,7 @@ public class MiddlePath : MakeShape
                             firstPar1 = lpar1;
                             lastPar1 = fpar1;
                         }
-                        if (e2.Orientation() == Forward)
+                        if (e2.Orientation == Forward)
                         {
                             firstPar2 = fpar2;
                             lastPar2 = lpar2;
@@ -599,17 +599,17 @@ public class MiddlePath : MakeShape
                         Point2D lastPnt2d = pCurve2.Value(lastPar2);
                         Surface theSurf = Tool.Surface(theFace)!;
                         LineCurve2D theLine = new MakeLine2d(firstPnt2d, lastPnt2d).Value();
-                        double len_ne = firstPnt2d.Distance(lastPnt2d);
+                        double len_ne = firstPnt2d.DistanceTo(lastPnt2d);
                         Edge newEdge = new LibraryMakeEdge(theLine, theSurf, prevVertex, curVertex, 0.0, len_ne).InternalEdge();
                         BrepLibrary.BuildCurve3d(newEdge);
                         Point2D prevFirstPnt2d = pCurve1.Value(firstPar1);
                         Point2D prevLastPnt2d = pCurve2.Value(firstPar2);
                         LineCurve2D line1 = new MakeLine2d(prevFirstPnt2d, lastPnt2d).Value();
                         LineCurve2D line2 = new MakeLine2d(firstPnt2d, prevLastPnt2d).Value();
-                        double len_ne1 = prevFirstPnt2d.Distance(lastPnt2d);
+                        double len_ne1 = prevFirstPnt2d.DistanceTo(lastPnt2d);
                         Edge newEdge1 = new LibraryMakeEdge(line1, theSurf, prevPrevVer, curVertex, 0.0, len_ne1).InternalEdge();
                         BrepLibrary.BuildCurve3d(newEdge1);
-                        double len_ne2 = firstPnt2d.Distance(prevLastPnt2d);
+                        double len_ne2 = firstPnt2d.DistanceTo(prevLastPnt2d);
                         Edge newEdge2 = new LibraryMakeEdge(line2, theSurf, prevVertex, prevCurVer, 0.0, len_ne2).InternalEdge();
                         BrepLibrary.BuildCurve3d(newEdge2);
                         bool good_ne = IsValidEdge(newEdge, theFace);
@@ -735,7 +735,7 @@ public class MiddlePath : MakeShape
         for (i = 1; i <= nbSecFaces; i++)
         {
             Properties properties = new();
-            if (secFaces[i].ShapeType() == ShapeType.Face)
+            if (secFaces[i].Type == ShapeType.Face)
             {
                 MassPropertiesBuilder.SurfaceProperties(secFaces[i], properties);
             }
@@ -757,7 +757,7 @@ public class MiddlePath : MakeShape
             for (j = 1; j <= _paths.Length(); j++)
             {
                 Shape shape = _paths[j][i];
-                if (shape.ShapeType() == ShapeType.Vertex)
+                if (shape.Type == ShapeType.Vertex)
                 {
                     typeOfMidEdge = OtherCurve;
                     break;
@@ -794,36 +794,36 @@ public class MiddlePath : MakeShape
                     Curve3D curve = Tool.Curve(edge, out double fpar, out double lpar)!;
                     if (curve.GetType() == typeof(TrimmedCurve3D))
                     {
-                        curve = ((TrimmedCurve3D)curve).BasisCurve();
+                        curve = ((TrimmedCurve3D)curve).BasisCurve;
                     }
                     pnt1 = curve.Value(fpar);
                     pnt2 = curve.Value(lpar);
                     CircleCurve3D circle = (CircleCurve3D)curve;
-                    Circle3D circ = circle.Circ();
+                    Circle3D circ = circle.Circle;
                     if (j == 1)
                     {
-                        theAxis = circ.Axis();
-                        theDir1 = new Direction3D(new Vector3D(circ.Location(), pnt1));
-                        theDir2 = new Direction3D(new Vector3D(circ.Location(), pnt2));
+                        theAxis = circ.Axis;
+                        theDir1 = new Direction3D(new Vector3D(circ.Location, pnt1));
+                        theDir2 = new Direction3D(new Vector3D(circ.Location, pnt2));
                         theAngle = lpar - fpar;
-                        double theParam = (edge.Orientation() == Forward) ? fpar : lpar;
+                        double theParam = (edge.Orientation == Forward) ? fpar : lpar;
                         curve.D1(theParam, out pnt1, out theTangent);
-                        if (edge.Orientation() == Reversed)
+                        if (edge.Orientation == Reversed)
                         {
                             theTangent = theTangent.Reversed();
                         }
                     }
                     else
                     {
-                        Axis3D axis = circ.Axis();
+                        Axis3D axis = circ.Axis;
                         Line3D lin = new(axis);
-                        if (!lin.Contains(theAxis.Location(), linTol) || !axis.IsParallel(theAxis, angTol))
+                        if (!lin.Contains(theAxis.Location, linTol) || !axis.IsParallel(theAxis, angTol))
                         {
                             similarArcs = false;
                             break;
                         }
-                        Direction3D dir1 = new(new Vector3D(circ.Location(), pnt1));
-                        Direction3D dir2 = new(new Vector3D(circ.Location(), pnt2));
+                        Direction3D dir1 = new(new Vector3D(circ.Location, pnt1));
+                        Direction3D dir2 = new(new Vector3D(circ.Location, pnt2));
                         if (!((dir1.IsEqual(theDir1, angTol) && dir2.IsEqual(theDir2, angTol))
                               || (dir1.IsEqual(theDir2, angTol) && dir2.IsEqual(theDir1, angTol))))
                         {
@@ -834,15 +834,15 @@ public class MiddlePath : MakeShape
                 }
                 if (similarArcs)
                 {
-                    Xyz axisLoc = theAxis.Location().XYZ();
-                    Xyz axisDir = theAxis.Direction().XYZ();
+                    Xyz axisLoc = theAxis.Location.XYZ();
+                    Xyz axisDir = theAxis.Direction.XYZ();
                     double parameter = (centers[i].XYZ() - axisLoc) * axisDir;
                     Point3D theCenterOfCirc = new(axisLoc + parameter * axisDir);
 
                     Vector3D vec1 = new(theCenterOfCirc, centers[i]);
                     Vector3D vec2 = new(theCenterOfCirc, centers[i + 1]);
 
-                    double angle = vec1.AngleWithRef(vec2, new Vector3D(theAxis.Direction()));
+                    double angle = vec1.AngleWithRef(vec2, new Vector3D(theAxis.Direction));
                     if (angle < 0.0)
                     {
                         angle += 2.0 * M_PI;
@@ -851,14 +851,14 @@ public class MiddlePath : MakeShape
                     {
                         theAxis = theAxis.Reversed();
                     }
-                    Frame3D theAx2 = new(theCenterOfCirc, theAxis.Direction(), new Direction3D(vec1));
-                    CircleCurve3D theCircle = new MakeCircle(theAx2, vec1.Magnitude()).Value();
+                    Frame3D theAx2 = new(theCenterOfCirc, theAxis.Direction, new Direction3D(vec1));
+                    CircleCurve3D theCircle = new MakeCircle(theAx2, vec1.Magnitude).Value();
                     theCircle.D1(0.0, out pnt1, out Vector3D tangent);
                     if (tangent * theTangent < 0.0)
                     {
                         theAxis = theAxis.Reversed();
-                        theAx2 = new Frame3D(theCenterOfCirc, theAxis.Direction(), new Direction3D(vec1));
-                        theCircle = new MakeCircle(theAx2, vec1.Magnitude()).Value();
+                        theAx2 = new Frame3D(theCenterOfCirc, theAxis.Direction, new Direction3D(vec1));
+                        theCircle = new MakeCircle(theAx2, vec1.Magnitude).Value();
                     }
                     LibraryMakeEdge me = new(theCircle, 0.0, theAngle);
                     me.Build();
@@ -896,7 +896,7 @@ public class MiddlePath : MakeShape
                         Vector3D tangent;
                         if (k == i)
                         {
-                            if (_paths[indp][k].ShapeType() == ShapeType.Vertex)
+                            if (_paths[indp][k].Type == ShapeType.Vertex)
                             {
                                 continue;
                             }
@@ -904,7 +904,7 @@ public class MiddlePath : MakeShape
                         }
                         else if (k == j)
                         {
-                            if (_paths[indp][k - 1].ShapeType() == ShapeType.Vertex)
+                            if (_paths[indp][k - 1].Type == ShapeType.Vertex)
                             {
                                 continue;
                             }
@@ -912,7 +912,7 @@ public class MiddlePath : MakeShape
                         }
                         else
                         {
-                            if (_paths[indp][k - 1].ShapeType() == ShapeType.Vertex || _paths[indp][k].ShapeType() == ShapeType.Vertex)
+                            if (_paths[indp][k - 1].Type == ShapeType.Vertex || _paths[indp][k].Type == ShapeType.Vertex)
                             {
                                 continue;
                             }

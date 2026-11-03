@@ -31,7 +31,7 @@ public class PolygonOnSurface : CurveRepresentation
 
     /// <summary>A polygon in the parametric space of <paramref name="s"/> with location <paramref name="l"/>.</summary>
     public override bool IsPolygonOnSurface(Surface? s, in Placement l)
-        => ReferenceEquals(s, _surface) && (l == _location);
+        => ReferenceEquals(s, _surface) && (l.IsEqual(_location));
 
     public override Surface? Surface() => _surface;
 

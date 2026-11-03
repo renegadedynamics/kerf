@@ -18,7 +18,7 @@ public class GC_MakeCircle2dTest
         MakeCircle2d aMaker = new(aBase, aPoint);
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
-        Assert.Equal(10.0, aMaker.Value().Circ2d().Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, aMaker.Value().Circle.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class GC_MakeCircle2dTest
         MakeCircle2d aMaker = new(aBase, -2.0);
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
-        Assert.Equal(3.0, aMaker.Value().Circ2d().Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aMaker.Value().Circle.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -39,6 +39,6 @@ public class GC_MakeCircle2dTest
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
         Assert.NotNull(aMaker.Value());
-        Assert.Equal(0.0, aMaker.Value().Circ2d().Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aMaker.Value().Circle.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

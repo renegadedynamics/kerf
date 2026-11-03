@@ -167,7 +167,7 @@ public sealed class AbscissaPoint
             }
             case Circle:
             {
-                ratio = c.Circle().Radius();
+                ratio = c.Circle().Radius;
                 return LengthParametrized;
             }
             case BezierCurve:
@@ -175,7 +175,7 @@ public sealed class AbscissaPoint
                 BezierCurve3D bz = c.Bezier();
                 if (bz.PoleCount == 2 && !bz.IsRational)
                 {
-                    ratio = bz.DN(0, 1).Magnitude();
+                    ratio = bz.DN(0, 1).Magnitude;
                     return LengthParametrized;
                 }
                 return Parametrized;
@@ -185,7 +185,7 @@ public sealed class AbscissaPoint
                 BSplineCurve3D bs = c.BSpline();
                 if (bs.PoleCount == 2 && !bs.IsRational)
                 {
-                    ratio = bs.DN(bs.FirstParameter(), 1).Magnitude();
+                    ratio = bs.DN(bs.FirstParameter, 1).Magnitude;
                     return LengthParametrized;
                 }
                 return Parametrized;
@@ -540,7 +540,7 @@ public sealed class AbscissaPoint
             }
             case Circle:
             {
-                ratio = c.Circle().Radius();
+                ratio = c.Circle().Radius;
                 return LengthParametrized;
             }
             case BezierCurve:
@@ -548,7 +548,7 @@ public sealed class AbscissaPoint
                 BezierCurve2D bz = c.Bezier();
                 if (bz.PoleCount == 2 && !bz.IsRational)
                 {
-                    ratio = bz.DN(0, 1).Magnitude();
+                    ratio = bz.DN(0, 1).Magnitude;
                     return LengthParametrized;
                 }
                 return Parametrized;
@@ -558,7 +558,7 @@ public sealed class AbscissaPoint
                 BSplineCurve2D bs = c.BSpline();
                 if (bs.PoleCount == 2 && !bs.IsRational)
                 {
-                    ratio = bs.DN(bs.FirstParameter(), 1).Magnitude();
+                    ratio = bs.DN(bs.FirstParameter, 1).Magnitude;
                     return LengthParametrized;
                 }
                 return Parametrized;

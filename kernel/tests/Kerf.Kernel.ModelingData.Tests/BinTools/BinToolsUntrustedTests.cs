@@ -156,7 +156,7 @@ public class BinToolsUntrustedTests
         // the position-based format reads recursively
         byte[] aPositional = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting / 2 - 2));
         Shape aShape = BinToolsRoundTripTests.ReadShapes(aPositional, 1)[0];
-        Assert.Equal(ShapeType.Compound, aShape.ShapeType());
+        Assert.Equal(ShapeType.Compound, aShape.Type);
         byte[] aTooDeep = BinToolsRoundTripTests.WriteShapes(true, false, NestedCompounds(global::Kerf.Engine.Exchange.Brep.Binary.BinTools.MaxShapeNesting));
         Assert.Throws<StreamFormatErrorException>(() => ReadPositional(aTooDeep));
 

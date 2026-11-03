@@ -128,7 +128,7 @@ public class AlgoContainer : Transient
         // est deja fait !!! ( il faut faire des paquets de 30 points
         // maximum , travailler dans un espace 0,1 pour tenir la precision)
 
-        if (bspline.Degree() != 1)
+        if (bspline.Degree != 1)
         {
             seq.Append(bspline);
             return;
@@ -142,7 +142,7 @@ public class AlgoContainer : Transient
         NCollection_Array1<double> weigs = bspline.InternalWeightsArray();
         NCollection_Array1<double> knots = bspline.InternalKnots();
         NCollection_Array1<int> mults = bspline.InternalMultiplicities();
-        int deg = bspline.Degree();
+        int deg = bspline.Degree;
 
         int jpole = 1;
         int j, poleIndex, i1;
@@ -259,7 +259,7 @@ public class AlgoContainer : Transient
         // maximum , travailler dans un espace 0,1 pour tenir la precision
         // puis reconstruire une BSpline somme des toutes les Bspline).
 
-        if (bspline.Degree() != 1)
+        if (bspline.Degree != 1)
         {
             seq.Append(bspline);
             return;
@@ -274,7 +274,7 @@ public class AlgoContainer : Transient
         NCollection_Array1<double> weigs = bspline.InternalWeightsArray();
         NCollection_Array1<double> knots = bspline.InternalKnots();
         NCollection_Array1<int> mults = bspline.InternalMultiplicities();
-        int deg = bspline.Degree();
+        int deg = bspline.Degree;
 
         int jpole = 1;
         int j, poleIndex, i1;
@@ -342,7 +342,7 @@ public class AlgoContainer : Transient
                 for (j = 1; j <= jpole; j++)
                 {
                     var pOn2S = new PntOn2S();
-                    pOn2S.SetValue(p[j], newP[j].X(), newP[j].Y(), u2, v2);
+                    pOn2S.SetValue(p[j], newP[j].X, newP[j].Y, u2, v2);
                     r.Add(pOn2S);
                 }
                 var theapp3d = new WLApprox();
@@ -414,7 +414,7 @@ public class AlgoContainer : Transient
                                                       Kerf.Engine.Foundation.Precision.Confusion(),
                                                       C1,
                                                       100,
-                                                      BSplineSurface.MaxDegree());
+                                                      BSplineSurface.MaxDegree);
     }
 
     /// <summary>
@@ -516,11 +516,11 @@ public class AlgoContainer : Transient
         // essai mjm du 22/05/97
         bool isToReverse1 = false;
         bool isToReverse2 = false;
-        if (edge1.Orientation() == Reversed)
+        if (edge1.Orientation == Reversed)
         {
             isToReverse1 = true;
         }
-        if (edge2.Orientation() == Reversed)
+        if (edge2.Orientation == Reversed)
         {
             isToReverse2 = true;
         }
@@ -616,7 +616,7 @@ public class AlgoContainer : Transient
                 cook.Next();
                 cookIndex++;
                 edge1 = ShapeCasts.Edge(cook.Value());
-                isToReverse1 = edge1.Orientation() == Reversed;
+                isToReverse1 = edge1.Orientation == Reversed;
                 crv1 = Tool.Curve(edge1, out loc1, out first1, out last1);
                 delta1 = last1 - first1;
             }
@@ -624,7 +624,7 @@ public class AlgoContainer : Transient
             {
                 perry.Next();
                 edge2 = ShapeCasts.Edge(perry.Value());
-                isToReverse2 = edge2.Orientation() == Reversed;
+                isToReverse2 = edge2.Orientation == Reversed;
                 crv2 = Tool.Curve(edge2, out loc2, out first2, out last2);
                 delta2 = last2 - first2;
             }

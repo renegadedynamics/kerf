@@ -21,12 +21,12 @@ public class IntTools_TopolToolTests
         Assert.Equal(100, aTool.NbSamples());
         // iv = 1 + Index / NbU, iu = 1 + Index - (iv - 1) NbU; steps (sup - inf) / (n + 1)
         aTool.SamplePoint(1, out Point2D aP2d, out Point3D aP3d);
-        Assert.Equal(2.0, aP2d.X(), 1e-15);
-        Assert.Equal(2.0, aP2d.Y(), 1e-15);
-        Assert.Equal(aP3d.X(), aP2d.X());
+        Assert.Equal(2.0, aP2d.X, 1e-15);
+        Assert.Equal(2.0, aP2d.Y, 1e-15);
+        Assert.Equal(aP3d.X, aP2d.X);
         aTool.SamplePoint(23, out aP2d, out _);
-        Assert.Equal(4.0, aP2d.X(), 1e-15);
-        Assert.Equal(6.0, aP2d.Y(), 1e-15);
+        Assert.Equal(4.0, aP2d.X, 1e-15);
+        Assert.Equal(6.0, aP2d.Y, 1e-15);
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class IntTools_TopolToolTests
         aTool.SamplePoint(1, out Point2D aP2d, out _);
         // As OCCT, index 1 is the second sample in U: the grid is read from index 0 (occt-issues.md)
         double aDU = 2.0e5 / 11;
-        Assert.Equal(-1.0e5 + 2 * aDU, aP2d.X(), 1e-9);
+        Assert.Equal(-1.0e5 + 2 * aDU, aP2d.X, 1e-9);
     }
 
     [Fact]

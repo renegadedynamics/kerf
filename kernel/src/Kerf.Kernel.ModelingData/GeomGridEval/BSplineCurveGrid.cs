@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// As in OCCT, the parameters of a non-periodic curve must be ascending: a parameter below the current span's
 /// end is evaluated on the current span without being located again.
 /// </remarks>
-public sealed class BSplineCurveGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class BSplineCurveGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     // Threshold for using cache vs direct evaluation.
     private const int THE_CACHE_THRESHOLD = 2;
@@ -42,7 +42,7 @@ public sealed class BSplineCurveGrid : GeomGridEvalGrid.ICurveEvaluator
             Weights = geom.InternalWeights();
             Knots = geom.InternalKnots();
             Mults = geom.InternalMultiplicities();
-            Degree = geom.Degree();
+            Degree = geom.Degree;
             IsPeriodic = geom.IsPeriodic;
         }
     }

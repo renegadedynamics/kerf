@@ -289,12 +289,12 @@ public static partial class AlgoTools
     private static void CheckEdge(in Edge ed, double aMaxTol, IndexedSet<Shape> aMapToAvoid)
     {
         Edge e = ed;
-        e.Orientation(Forward);
+        e.Orient(Forward);
         double tolE = Tool.Tolerance(e);
         //
         BrepTEdge te = (BrepTEdge)e.TShape()!;
         //
-        Placement eloc = e.Location();
+        Placement eloc = e.Placement;
 
         Iterator itS = new(e);
         for (; itS.More(); itS.Next())
@@ -319,7 +319,7 @@ public static partial class AlgoTools
                     Curve3D? c = cr.Curve3D();
                     if (c is not null)
                     {
-                        Placement l = (eloc * cr.Location()).Predivided(v.Location());
+                        Placement l = (eloc * cr.Location()).Predivided(v.Placement);
                         NCollection_List<PointRepresentation>.Iterator itPR = new(tv.Points());
                         while (itPR.More())
                         {
@@ -327,8 +327,8 @@ public static partial class AlgoTools
                             if (pr.IsPointOnCurve(c, l))
                             {
                                 Point3D pc = c.Value(pr.Parameter());
-                                pc = pc.Transformed(l.Transformation());
-                                double d2 = pv.SquareDistance(pc);
+                                pc = pc.Transformed(l.Transformation);
+                                double d2 = pv.SquareDistanceTo(pc);
                                 if (d2 > tol)
                                 {
                                     double newTolerance = Math.Sqrt(d2) + dd;
@@ -341,7 +341,7 @@ public static partial class AlgoTools
                             itPR.Next();
                         }
                         //
-                        Orientation orV = v.Orientation();
+                        Orientation orV = v.Orientation;
                         if (orV == Forward || orV == Reversed)
                         {
                             GCurve gc = (GCurve)cr;
@@ -354,9 +354,9 @@ public static partial class AlgoTools
                             {
                                 pc = c.Value(gc.Last());
                             }
-                            pc = pc.Transformed(l.Transformation());
+                            pc = pc.Transformed(l.Transformation);
                             //
-                            double d2 = pv.SquareDistance(pc);
+                            double d2 = pv.SquareDistanceTo(pc);
                             if (d2 > tol)
                             {
                                 double newTolerance = Math.Sqrt(d2) + dd;
@@ -491,8 +491,8 @@ public static partial class AlgoTools
             }
             //
             p2d = pnt.Value();
-            s.D0(p2d.X(), p2d.Y(), out p);
-            dist = pv.SquareDistance(p);
+            s.D0(p2d.X, p2d.Y, out p);
+            dist = pv.SquareDistanceTo(p);
             if (dist > maxDist && dist < maxThresDist)
             {
                 maxDist = dist;
@@ -513,7 +513,7 @@ public static partial class AlgoTools
         NCollection_List<Shape>.Iterator it = new();
         //
         f = aFx;
-        f.Orientation(Forward);
+        f.Orient(Forward);
         Surface s = Tool.Surface(aFx)!;
 
         Exploration.MapShapesAndUniqueAncestors(f, ShapeType.Vertex, ShapeType.Edge, mve, true);
@@ -550,8 +550,8 @@ public static partial class AlgoTools
                 }
                 //
                 c2D.D0(t, out p2D);
-                s.D0(p2D.X(), p2D.Y(), out p);
-                d2 = pv.SquareDistance(p);
+                s.D0(p2D.X, p2D.Y, out p);
+                d2 = pv.SquareDistanceTo(p);
                 if (d2 > d2max)
                 {
                     d2max = d2;
@@ -671,14 +671,14 @@ public static partial class AlgoTools
             {
                 if (myCref.IsCurve3D)
                 {
-                    Curve3D c3dx = (Curve3D)myCref.Curve3D()!.Transformed(myCref.Location().Transformation());
+                    Curve3D c3dx = (Curve3D)myCref.Curve3D()!.Transformed(myCref.Location().Transformation);
                     CurveAdaptor gac3d = new(c3dx, first, last);
                     myHCurve = gac3d;
                 }
                 else
                 { // curve on surface
                     Surface sref = myCref.Surface()!;
-                    sref = (Surface)sref.Transformed(myCref.Location().Transformation());
+                    sref = (Surface)sref.Transformed(myCref.Location().Transformation);
                     Curve2D pCref = myCref.PCurve()!;
                     SurfaceAdaptor gahSref = new(sref);
                     CurveAdaptor2D ghpCref = new(pCref, first, last);
@@ -706,10 +706,10 @@ public static partial class AlgoTools
             double last = myHCurve.LastParameter();
 
             BrepTFace tf = (BrepTFace)s.TShape()!;
-            Placement floc = s.Location();
+            Placement floc = s.Placement;
             Placement tFloc = tf.Location();
             Surface? su = tf.Surface();
-            Placement L = (floc * tFloc).Predivided(myShape.Location());
+            Placement L = (floc * tFloc).Predivided(myShape.Placement);
             bool pcurvefound = false;
 
             NCollection_List<CurveRepresentation>.Iterator itcr = new(te.Curves());
@@ -728,7 +728,7 @@ public static partial class AlgoTools
 
                     Surface sb;
                     _ = cr.Surface();
-                    sb = (Surface)su!.Transformed(L.Transformation());
+                    sb = (Surface)su!.Transformed(L.Transformation);
                     Curve2D pc = cr.PCurve()!;
                     SurfaceAdaptor gahs = new(sb);
                     CurveAdaptor2D ghpc = new(pc, f, l);
@@ -772,7 +772,7 @@ public static partial class AlgoTools
                 PlaneSurface? p;
                 if (su is TrimmedSurface rts)
                 {
-                    p = rts.BasisSurface() as PlaneSurface;
+                    p = rts.BasisSurface as PlaneSurface;
                 }
                 else
                 {
@@ -785,7 +785,7 @@ public static partial class AlgoTools
 
                 else
                 { // on fait la projection a la volee, comme BRep_Tool
-                    p = (PlaneSurface)p.Transformed(L.Transformation());
+                    p = (PlaneSurface)p.Transformed(L.Transformation);
                     // on projette Cref sur ce plan
                     SurfaceAdaptor gahs = new(p);
 
@@ -797,7 +797,7 @@ public static partial class AlgoTools
                     Curve3D projOnPlane =
                         global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(new TrimmedCurve3D(c3dx, first, last),
                                                    p,
-                                                   p.Position().Direction(),
+                                                   p.Position.Direction,
                                                    true)!;
 
                     CurveAdaptor hCurve = new(projOnPlane);
@@ -852,7 +852,7 @@ public static partial class AlgoTools
         for (; itF.More(); itF.Next())
         {
             Shape s = itF.Value();
-            if (s.ShapeType() == ShapeType.Wire)
+            if (s.Type == ShapeType.Wire)
             {
                 itW.Initialize(s);
                 for (; itW.More(); itW.Next())
@@ -889,7 +889,7 @@ public static partial class AlgoTools
         ShapeType type;
         BrepBuilder bb = new();
         //
-        type = aS.ShapeType();
+        type = aS.Type;
         if (type == ShapeType.Edge)
         {
             Edge e = ShapeCasts.Edge(aS);

@@ -56,7 +56,7 @@ public class CurveOnClosedSurface : CurveOnSurfaceRepresentation
 
     /// <summary>A curve on two surfaces (continuity).</summary>
     public override bool IsRegularity(Surface? s1, Surface? s2, in Placement l1, in Placement l2)
-        => ReferenceEquals(Surface(), s1) && ReferenceEquals(Surface(), s2) && (Location() == l1) && (Location() == l2);
+        => ReferenceEquals(Surface(), s1) && ReferenceEquals(Surface(), s2) && (Location().IsEqual(l1)) && (Location().IsEqual(l2));
 
     public override Curve2D? PCurve2() => _pCurve2;
 

@@ -95,7 +95,7 @@ public sealed class WireframeBuilder : ExportRoot
     public bool GetTrimmedCurveFromEdge(in Edge edge, in Face face, Dictionary<Shape, Transient> map,
                                         ref NCollection_HSequence<Transient> curveList, in Factors localFactors)
     {
-        if (edge.Orientation() == Internal || edge.Orientation() == External)
+        if (edge.Orientation == Internal || edge.Orientation == External)
         {
             // OCCT_DEBUG output left out
             return false;
@@ -128,7 +128,7 @@ public sealed class WireframeBuilder : ExportRoot
         {
             Vertex vertex = ShapeCasts.Vertex(exp.Value());
             Point3D gpP = Tool.Pnt(vertex);
-            if (vertex.Orientation() == Forward)
+            if (vertex.Orientation == Forward)
             {
                 vFirst = vertex;
                 // 1.point for trimming
@@ -136,7 +136,7 @@ public sealed class WireframeBuilder : ExportRoot
                 sgcp1 = gtsmcp.Value();
             }
 
-            if (vertex.Orientation() == Reversed)
+            if (vertex.Orientation == Reversed)
             {
                 vLast = vertex;
                 // 2.point for trimming
@@ -151,7 +151,7 @@ public sealed class WireframeBuilder : ExportRoot
         {
             if (c is TrimmedCurve3D trimmed)
             {
-                c = trimmed.BasisCurve();
+                c = trimmed.BasisCurve;
             }
 
             var gtsmc = new MakeCurve(c, localFactors);
@@ -215,7 +215,7 @@ public sealed class WireframeBuilder : ExportRoot
             {
                 Point3D pnt1 = ca.Value(ca.FirstParameter()), pnt2 = ca.Value(ca.LastParameter());
                 Vector3D v = new Vector3D(pnt1, pnt2);
-                double length = v.Magnitude();
+                double length = v.Magnitude;
                 if (length >= global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     var l = new LineCurve3D(pnt1, new Direction3D(v));
@@ -291,7 +291,7 @@ public sealed class WireframeBuilder : ExportRoot
         bool result = false; // szv#4:S4163:12Mar99 `done` hid one from this, initialisation needed
 
         // szv#4:S4163:12Mar99 optimized
-        switch (aShape.ShapeType())
+        switch (aShape.Type)
         {
             case ShapeType.Edge:
             {
@@ -346,7 +346,7 @@ public sealed class WireframeBuilder : ExportRoot
                 it.Initialize(aShape);
                 for (; it.More(); it.Next())
                 {
-                    if (it.Value().ShapeType() == ShapeType.Shell)
+                    if (it.Value().Type == ShapeType.Shell)
                     {
                         if (GetTrimmedCurveFromShape(it.Value(), aMap, ref aCurveList, localFactors))
                         {

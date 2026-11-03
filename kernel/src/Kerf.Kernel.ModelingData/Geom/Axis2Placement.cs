@@ -23,9 +23,9 @@ public class Axis2Placement : AxisPlacement
     /// <summary>A coordinate system equal to A2.</summary>
     public Axis2Placement(in Frame3D a2)
     {
-        _vxdir = a2.XDirection();
-        _vydir = a2.YDirection();
-        _axis = a2.Axis();
+        _vxdir = a2.XDirection;
+        _vydir = a2.YDirection;
+        _axis = a2.Axis;
     }
 
     /// <summary>
@@ -52,7 +52,7 @@ public class Axis2Placement : AxisPlacement
     public override Geometry3D Copy()
     {
         Axis2Placement a2;
-        a2 = new Axis2Placement(_axis.Location(), _axis.Direction(), _vxdir, _vydir);
+        a2 = new Axis2Placement(_axis.Location, _axis.Direction, _vxdir, _vydir);
         return a2;
     }
 
@@ -65,9 +65,9 @@ public class Axis2Placement : AxisPlacement
     internal void SetAx2(in Frame3D a2)
     {
         CheckMutable();
-        _vxdir = a2.XDirection();
-        _vydir = a2.YDirection();
-        _axis = a2.Axis();
+        _vxdir = a2.XDirection;
+        _vydir = a2.YDirection;
+        _axis = a2.Axis;
     }
 
     /// <summary>Changes the main direction; the new X direction is V ^ (previous X ^ V).</summary>
@@ -85,8 +85,8 @@ public class Axis2Placement : AxisPlacement
     internal void SetXDirection(in Direction3D vx)
     {
         CheckMutable();
-        _vxdir = _axis.Direction().CrossCrossed(vx, _axis.Direction());
-        _vydir = _axis.Direction().Crossed(_vxdir);
+        _vxdir = _axis.Direction.CrossCrossed(vx, _axis.Direction);
+        _vydir = _axis.Direction.Crossed(_vxdir);
     }
 
     /// <summary>Changes the Y direction to the projection of Vy; the main direction is kept, X is recomputed.</summary>
@@ -94,12 +94,12 @@ public class Axis2Placement : AxisPlacement
     internal void SetYDirection(in Direction3D vy)
     {
         CheckMutable();
-        _vxdir = vy.Crossed(_axis.Direction());
-        _vydir = (_axis.Direction()).Crossed(_vxdir);
+        _vxdir = vy.Crossed(_axis.Direction);
+        _vydir = (_axis.Direction).Crossed(_vxdir);
     }
 
     /// <summary>The coordinate system as a <see cref="Frame3D"/>.</summary>
-    public Frame3D Ax2() => new Frame3D(_axis.Location(), _axis.Direction(), _vxdir);
+    public Frame3D Ax2() => new Frame3D(_axis.Location, _axis.Direction, _vxdir);
 
     /// <summary>
     /// Applies T: the origin and the X and Y directions are transformed, and the main direction becomes X ^ Y.
@@ -108,7 +108,7 @@ public class Axis2Placement : AxisPlacement
     {
         CheckMutable();
         // axis.Location().Transform (T);
-        _axis = _axis.WithLocation(_axis.Location().Transformed(t)); // 10-03-93
+        _axis = _axis.WithLocation(_axis.Location.Transformed(t)); // 10-03-93
         _vxdir = _vxdir.Transformed(t);
         _vydir = _vydir.Transformed(t);
         _axis = _axis.WithDirection(_vxdir.Crossed(_vydir));

@@ -85,7 +85,7 @@ internal static class EdgeIntersectorRecordings
                             aA = BRepMeshModelKit.ReadDataOcc(f[2]);
                             aB = f[3] == "-" ? aA : BRepMeshModelKit.ReadDataOcc(f[3]);
                             Vector3D aShift = new(FromHex(f[4]), FromHex(f[5]), FromHex(f[6]));
-                            if (aShift.SquareMagnitude() != 0.0)
+                            if (aShift.SquareMagnitude != 0.0)
                             {
                                 Transform3D aT = new Transform3D().WithTranslation(aShift);
                                 aB = aB.Moved(new Placement(aT));
@@ -133,8 +133,8 @@ internal static class EdgeIntersectorRecordings
         if (theWithPoints)
         {
             theCP.BoundingPoints(out Point3D aP1, out Point3D aP2);
-            aS.Append(' ').Append(Hex(aP1.X())).Append(' ').Append(Hex(aP1.Y())).Append(' ').Append(Hex(aP1.Z()))
-              .Append(' ').Append(Hex(aP2.X())).Append(' ').Append(Hex(aP2.Y())).Append(' ').Append(Hex(aP2.Z()));
+            aS.Append(' ').Append(Hex(aP1.X)).Append(' ').Append(Hex(aP1.Y)).Append(' ').Append(Hex(aP1.Z))
+              .Append(' ').Append(Hex(aP2.X)).Append(' ').Append(Hex(aP2.Y)).Append(' ').Append(Hex(aP2.Z));
         }
         return aS.ToString();
     }

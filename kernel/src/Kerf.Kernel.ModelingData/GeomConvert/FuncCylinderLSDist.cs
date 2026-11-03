@@ -73,7 +73,7 @@ public sealed class FuncCylinderLSDist : MultipleVarFunctionWithGradient
     {
         var loc = new Xyz(X[1], X[2], X[3]);
         double r = X[4], r2 = r * r;
-        double x = _dir.X(), y = _dir.Y(), z = _dir.Z();
+        double x = _dir.X, y = _dir.Y, z = _dir.Z;
         g.Init(0.0);
         int i;
         for (i = _points!.Lower(); i <= _points.Upper(); ++i)
@@ -81,9 +81,9 @@ public sealed class FuncCylinderLSDist : MultipleVarFunctionWithGradient
             var v = new Vector3D(_points.Value(i) - loc);
             double d2 = v.CrossSquareMagnitude(new Vector3D(_dir));
             double d = d2 - r2;
-            double dx0 = 2.0 * (v.Z() * x - v.X() * z) * z - 2.0 * (v.X() * y - v.Y() * x) * y;
-            double dy0 = -2.0 * (v.Y() * z - v.Z() * y) * z + 2.0 * (v.X() * y - v.Y() * x) * x;
-            double dz0 = 2.0 * (v.Y() * z - v.Z() * y) * y - 2.0 * (v.Z() * x - v.X() * z) * x;
+            double dx0 = 2.0 * (v.Z * x - v.X * z) * z - 2.0 * (v.X * y - v.Y * x) * y;
+            double dy0 = -2.0 * (v.Y * z - v.Z * y) * z + 2.0 * (v.X * y - v.Y * x) * x;
+            double dz0 = 2.0 * (v.Y * z - v.Z * y) * y - 2.0 * (v.Z * x - v.X * z) * x;
             g[1] += d * dx0;
             g[2] += d * dy0;
             g[3] += d * dz0;
@@ -101,7 +101,7 @@ public sealed class FuncCylinderLSDist : MultipleVarFunctionWithGradient
     {
         var loc = new Xyz(X[1], X[2], X[3]);
         double r = X[4], r2 = r * r;
-        double x = _dir.X(), y = _dir.Y(), z = _dir.Z();
+        double x = _dir.X, y = _dir.Y, z = _dir.Z;
         f = 0.0;
         g.Init(0.0);
         int i;
@@ -110,9 +110,9 @@ public sealed class FuncCylinderLSDist : MultipleVarFunctionWithGradient
             var v = new Vector3D(_points.Value(i) - loc);
             double d2 = v.CrossSquareMagnitude(new Vector3D(_dir));
             double d = d2 - r2;
-            double dx0 = 2.0 * (v.Z() * x - v.X() * z) * z - 2.0 * (v.X() * y - v.Y() * x) * y;
-            double dy0 = -2.0 * (v.Y() * z - v.Z() * y) * z + 2.0 * (v.X() * y - v.Y() * x) * x;
-            double dz0 = 2.0 * (v.Y() * z - v.Z() * y) * y - 2.0 * (v.Z() * x - v.X() * z) * x;
+            double dx0 = 2.0 * (v.Z * x - v.X * z) * z - 2.0 * (v.X * y - v.Y * x) * y;
+            double dy0 = -2.0 * (v.Y * z - v.Z * y) * z + 2.0 * (v.X * y - v.Y * x) * x;
+            double dz0 = 2.0 * (v.Y * z - v.Z * y) * y - 2.0 * (v.Z * x - v.X * z) * x;
             g[1] += d * dx0;
             g[2] += d * dy0;
             g[3] += d * dz0;

@@ -186,7 +186,7 @@ internal static class BRepTestCheckCommands
             Print(OS, theState, Ana, iter.Value());
         }
 
-        ShapeType styp = S.ShapeType();
+        ShapeType styp = S.Type;
         if (Ana.Result(S) is { } aResult && !theState.theMap.ContainsKey(S))
         {
             NCollection_List<StatusCheck> aStatuses = aResult.Status();
@@ -313,7 +313,7 @@ internal static class BRepTestCheckCommands
             GetProblemShapes(theState, Ana, iter.Value(), sl, NbProblems);
         }
 
-        ShapeType styp = Shape.ShapeType();
+        ShapeType styp = Shape.Type;
         if (Ana.Result(Shape) is { } aResult && !theState.theMap.ContainsKey(Shape))
         {
             StatusCheck aFirst = aResult.Status().First();
@@ -422,7 +422,7 @@ internal static class BRepTestCheckCommands
         var B = new BrepBuilder();
         foreach ((ShapeType aType, string aLabel, string aSuffix) in aByType)
         {
-            List<Shape> aShapes = sl.Where(s => s.ShapeType() == aType).ToList();
+            List<Shape> aShapes = sl.Where(s => s.Type == aType).ToList();
             if (aShapes.Count == 0)
             {
                 continue;
@@ -665,7 +665,7 @@ internal static class BRepTestCheckCommands
 
         Shape S = theDI.GetShape(a[1]);
         double tol;
-        if (S.ShapeType() == ShapeType.Edge)
+        if (S.Type == ShapeType.Edge)
         {
             var bce = new EdgeCheck(ShapeCasts.Edge(S));
             tol = bce.Tolerance();

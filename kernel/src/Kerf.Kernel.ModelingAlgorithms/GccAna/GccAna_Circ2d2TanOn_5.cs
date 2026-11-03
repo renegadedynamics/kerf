@@ -36,7 +36,7 @@ public sealed partial class AnalyticCirc2d2TanOn
         _nbrSol = 0;
 
         Direction2D dirx = new(Direction2D.D.X);
-        double dist = point1.Distance(point2);
+        double dist = point1.DistanceTo(point2);
         if (dist < Math.Abs(tolerance))
         {
             _wellDone = true;
@@ -44,7 +44,7 @@ public sealed partial class AnalyticCirc2d2TanOn
         else
         {
             Line2D l1 = new(new Point2D((point1.XY() + point2.XY()) / 2.0),
-                              new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
+                              new Direction2D(point1.Y - point2.Y, point2.X - point1.X));
             AnalyticIntersection intp = new(l1, onLine);
             if (intp.IsDone)
             {
@@ -54,13 +54,13 @@ public sealed partial class AnalyticCirc2d2TanOn
                     {
                         _nbrSol++;
                         Axis2D axe = new(intp.Point(i).Value(), dirx);
-                        _cirsol[_nbrSol] = new Circle2D(axe, point1.Distance(intp.Point(i).Value()));
+                        _cirsol[_nbrSol] = new Circle2D(axe, point1.DistanceTo(intp.Point(i).Value()));
                         //        ====================================================================
                         _qualifier1[_nbrSol] = Qualifier.Noqualifier;
                         _qualifier2[_nbrSol] = Qualifier.Noqualifier;
                         _pnttg1sol[_nbrSol] = point1;
                         _pnttg2sol[_nbrSol] = point2;
-                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location;
                         _pararg1[_nbrSol] = 0.0;
                         _pararg2[_nbrSol] = 0.0;
                         _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);

@@ -199,7 +199,7 @@ internal static partial class Build123dPhase7Capture
     private static string Index(IndexedSet<Shape> theMap, in Shape theS)
     {
         int anI = theMap.IndexOf(theS) + 1;
-        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
+        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation == Orientation.Reversed ? "r" : "");
     }
 
     private static string Sorted(IEnumerable<string> theItems) => string.Join(' ', theItems.Order(StringComparer.Ordinal));
@@ -246,7 +246,7 @@ internal static partial class Build123dPhase7Capture
         for (int i = 1; i <= anIn.Count; i++)
         {
             Shape aS = anIn[i - 1];
-            if (aS.ShapeType() is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
+            if (aS.Type is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
             {
                 continue;
             }

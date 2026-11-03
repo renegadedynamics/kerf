@@ -78,7 +78,7 @@ public class IntQuadQuad
             global::Kerf.Engine.Geometry.ElSLib.Parameters(gpObj, pt, out u, out v);
             Point3D pProj = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, gpObj);
 
-            if (pt.SquareDistance(pProj) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (pt.SquareDistanceTo(pProj) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 // aPt is not an intersection point
                 continue;
@@ -384,7 +384,7 @@ public class IntQuadQuad
             _previouscurve[raz] = _nextcurve[raz] = 0;
         }
         //
-        rCyl = cyl.Radius();
+        rCyl = cyl.Radius;
         realEpsilon = RealEpsilon();
         //----------------------------------------------------------------------
         //-- Coefficients of the quadric:
@@ -400,7 +400,7 @@ public class IntQuadQuad
         //--                 Cyl.Position() -> Ax2
         //----------------------------------------------------------------------
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref q1,
-                             cyl.Position());
+                             cyl.Position);
 
         //----------------------------------------------------------------------
         //-- Parameterization of Cylinder Cyl:
@@ -701,11 +701,11 @@ public class IntQuadQuad
         //
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out q1);
         //
-        CoordinateSystem tAx3 = cone.Position();
-        tAx3 = tAx3.WithLocation(cone.Apex());
+        CoordinateSystem tAx3 = cone.Position;
+        tAx3 = tAx3.WithLocation(cone.Apex);
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref q1, tAx3);
         //
-        tgAngle = 1.0 / (Math.Tan(cone.SemiAngle()));
+        tgAngle = 1.0 / (Math.Tan(cone.SemiAngle));
         //
         // The parametrization of the Cone
         //
@@ -1121,7 +1121,7 @@ public class IntQuadQuad
                     if (notLastOpenC2)
                     {
                         if (Math.Abs(dInfC1 - dSupC2) <= eps
-                            && (_theCurve[c1].Value(dInfC1).Distance(_theCurve[c2].Value(dSupC2))
+                            && (_theCurve[c1].Value(dInfC1).DistanceTo(_theCurve[c2].Value(dSupC2))
                                 < epsilon_DISTANCE))
                         {
                             _previouscurve[c1] = c2 + 1;
@@ -1131,7 +1131,7 @@ public class IntQuadQuad
                     if (notFirstOpenC2)
                     {
                         if (Math.Abs(dInfC1 - dInfC2) <= eps
-                            && (_theCurve[c1].Value(dInfC1).Distance(_theCurve[c2].Value(dInfC2))
+                            && (_theCurve[c1].Value(dInfC1).DistanceTo(_theCurve[c2].Value(dInfC2))
                                 < epsilon_DISTANCE))
                         {
                             _previouscurve[c1] = -(c2 + 1);
@@ -1144,7 +1144,7 @@ public class IntQuadQuad
                     if (notLastOpenC2)
                     {
                         if (Math.Abs(dSupC1 - dSupC2) <= eps
-                            && (_theCurve[c1].Value(dSupC1).Distance(_theCurve[c2].Value(dSupC2))
+                            && (_theCurve[c1].Value(dSupC1).DistanceTo(_theCurve[c2].Value(dSupC2))
                                 < epsilon_DISTANCE))
                         {
                             _nextcurve[c1] = -(c2 + 1);
@@ -1154,7 +1154,7 @@ public class IntQuadQuad
                     if (notFirstOpenC2)
                     {
                         if (Math.Abs(dSupC1 - dInfC2) <= eps
-                            && (_theCurve[c1].Value(dSupC1).Distance(_theCurve[c2].Value(dInfC2))
+                            && (_theCurve[c1].Value(dSupC1).DistanceTo(_theCurve[c2].Value(dInfC2))
                                 < epsilon_DISTANCE))
                         {
                             _nextcurve[c1] = c2 + 1;

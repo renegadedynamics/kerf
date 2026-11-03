@@ -179,8 +179,8 @@ internal static partial class Extras
             {
                 case BSplineCurve3D b: _bytes += 32L * b.PoleCount + 12L * b.KnotCount; break;
                 case BezierCurve3D z: _bytes += 32L * z.PoleCount; break;
-                case TrimmedCurve3D t: Curve(t.BasisCurve()); break;
-                case OffsetCurve3D o: Curve(o.BasisCurve()); break;
+                case TrimmedCurve3D t: Curve(t.BasisCurve); break;
+                case OffsetCurve3D o: Curve(o.BasisCurve); break;
             }
         }
 
@@ -193,8 +193,8 @@ internal static partial class Extras
             {
                 case BSplineCurve2D b: _bytes += 24L * b.PoleCount + 12L * b.KnotCount; break;
                 case BezierCurve2D z: _bytes += 24L * z.PoleCount; break;
-                case TrimmedCurve2D t: Curve2d(t.BasisCurve()); break;
-                case OffsetCurve2D o: Curve2d(o.BasisCurve()); break;
+                case TrimmedCurve2D t: Curve2d(t.BasisCurve); break;
+                case OffsetCurve2D o: Curve2d(o.BasisCurve); break;
             }
         }
 
@@ -207,9 +207,9 @@ internal static partial class Extras
             {
                 case BSplineSurface b: _bytes += 32L * b.UPoleCount * b.VPoleCount + 12L * (b.UKnotCount + b.VKnotCount); break;
                 case BezierSurface z: _bytes += 32L * z.UPoleCount * z.VPoleCount; break;
-                case TrimmedSurface t: Surface(t.BasisSurface()); break;
-                case OffsetSurface o: Surface(o.BasisSurface()); break;
-                case SweptSurface w: Curve(w.BasisCurve()); break;
+                case TrimmedSurface t: Surface(t.BasisSurface); break;
+                case OffsetSurface o: Surface(o.BasisSurface); break;
+                case SweptSurface w: Curve(w.BasisCurve); break;
             }
         }
     }

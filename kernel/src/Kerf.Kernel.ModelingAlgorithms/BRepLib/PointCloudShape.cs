@@ -203,8 +203,8 @@ public abstract class PointCloudShape
         BrepTools.UVBounds(aFace, out double uMin, out double uMax, out double vMin, out double vMax);
         var classifier = new FClass2d(aFace, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        Placement loc = face.Location();
-        Transform3D trsf = loc.Transformation();
+        Placement loc = face.Placement;
+        Transform3D trsf = loc.Transformation;
         Surface? surf = Tool.Surface(aFace, out _);
         if (surf is null)
         {
@@ -228,11 +228,11 @@ public abstract class PointCloudShape
             surf.D1(u, v, out Point3D p1, out Vector3D dU, out Vector3D dV);
 
             Vector3D norm = dU ^ dV;
-            if (aFace.Orientation() == Reversed)
+            if (aFace.Orientation == Reversed)
             {
                 norm = norm.Reversed();
             }
-            double normMod = norm.Magnitude();
+            double normMod = norm.Magnitude;
             if (normMod > Constants.Resolution())
             {
                 norm /= normMod;
@@ -262,7 +262,7 @@ public abstract class PointCloudShape
             return false;
         }
 
-        Transform3D trsf = loc.Transformation();
+        Transform3D trsf = loc.Transformation;
 
         // OCCT.NET: frozen. OCCT computes missing normals into the face's triangulation; the port on a copy.
         triangulation = ToolTriangulatedShape.NormalsComputed(aFace, triangulation)!;

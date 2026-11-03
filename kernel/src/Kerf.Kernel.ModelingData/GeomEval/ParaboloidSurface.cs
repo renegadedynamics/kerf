@@ -84,7 +84,7 @@ public sealed class ParaboloidSurface : ElementarySurface
     }
 
     /// <summary>U in [0, 2*Pi], V in [-Precision::Infinite(), Precision::Infinite()].</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = 2.0 * M_PI;
@@ -114,28 +114,28 @@ public sealed class ParaboloidSurface : ElementarySurface
         throw new MethodNotImplementedException("GeomEval_ParaboloidSurface::VIso");
     }
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
         double zComp = v * v / (4.0 * _focal);
 
-        return new Point3D(o.X() + v * cosU * xDir.X() + v * sinU * yDir.X() + zComp * zDir.X(),
-                          o.Y() + v * cosU * xDir.Y() + v * sinU * yDir.Y() + zComp * zDir.Y(),
-                          o.Z() + v * cosU * xDir.Z() + v * sinU * yDir.Z() + zComp * zDir.Z());
+        return new Point3D(o.X + v * cosU * xDir.X + v * sinU * yDir.X + zComp * zDir.X,
+                          o.Y + v * cosU * xDir.Y + v * sinU * yDir.Y + zComp * zDir.Y,
+                          o.Z + v * cosU * xDir.Z + v * sinU * yDir.Z + zComp * zDir.Z);
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -146,29 +146,29 @@ public sealed class ParaboloidSurface : ElementarySurface
 
         // P = O + V*cosU*XD + V*sinU*YD + V^2/(4F)*ZD
         result.Point =
-            new Point3D(o.X() + v * cosU * xDir.X() + v * sinU * yDir.X() + zComp * zDir.X(),
-                       o.Y() + v * cosU * xDir.Y() + v * sinU * yDir.Y() + zComp * zDir.Y(),
-                       o.Z() + v * cosU * xDir.Z() + v * sinU * yDir.Z() + zComp * zDir.Z());
+            new Point3D(o.X + v * cosU * xDir.X + v * sinU * yDir.X + zComp * zDir.X,
+                       o.Y + v * cosU * xDir.Y + v * sinU * yDir.Y + zComp * zDir.Y,
+                       o.Z + v * cosU * xDir.Z + v * sinU * yDir.Z + zComp * zDir.Z);
 
         // dP/du = -V*sinU*XD + V*cosU*YD
-        result.D1U = new Vector3D(-v * sinU * xDir.X() + v * cosU * yDir.X(),
-                                 -v * sinU * xDir.Y() + v * cosU * yDir.Y(),
-                                 -v * sinU * xDir.Z() + v * cosU * yDir.Z());
+        result.D1U = new Vector3D(-v * sinU * xDir.X + v * cosU * yDir.X,
+                                 -v * sinU * xDir.Y + v * cosU * yDir.Y,
+                                 -v * sinU * xDir.Z + v * cosU * yDir.Z);
 
         // dP/dv = cosU*XD + sinU*YD + V/(2F)*ZD
-        result.D1V = new Vector3D(cosU * xDir.X() + sinU * yDir.X() + vOver2F * zDir.X(),
-                                 cosU * xDir.Y() + sinU * yDir.Y() + vOver2F * zDir.Y(),
-                                 cosU * xDir.Z() + sinU * yDir.Z() + vOver2F * zDir.Z());
+        result.D1V = new Vector3D(cosU * xDir.X + sinU * yDir.X + vOver2F * zDir.X,
+                                 cosU * xDir.Y + sinU * yDir.Y + vOver2F * zDir.Y,
+                                 cosU * xDir.Z + sinU * yDir.Z + vOver2F * zDir.Z);
 
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -180,42 +180,42 @@ public sealed class ParaboloidSurface : ElementarySurface
 
         // P
         result.Point =
-            new Point3D(o.X() + v * cosU * xDir.X() + v * sinU * yDir.X() + zComp * zDir.X(),
-                       o.Y() + v * cosU * xDir.Y() + v * sinU * yDir.Y() + zComp * zDir.Y(),
-                       o.Z() + v * cosU * xDir.Z() + v * sinU * yDir.Z() + zComp * zDir.Z());
+            new Point3D(o.X + v * cosU * xDir.X + v * sinU * yDir.X + zComp * zDir.X,
+                       o.Y + v * cosU * xDir.Y + v * sinU * yDir.Y + zComp * zDir.Y,
+                       o.Z + v * cosU * xDir.Z + v * sinU * yDir.Z + zComp * zDir.Z);
 
         // dP/du
-        result.D1U = new Vector3D(-v * sinU * xDir.X() + v * cosU * yDir.X(),
-                                 -v * sinU * xDir.Y() + v * cosU * yDir.Y(),
-                                 -v * sinU * xDir.Z() + v * cosU * yDir.Z());
+        result.D1U = new Vector3D(-v * sinU * xDir.X + v * cosU * yDir.X,
+                                 -v * sinU * xDir.Y + v * cosU * yDir.Y,
+                                 -v * sinU * xDir.Z + v * cosU * yDir.Z);
 
         // dP/dv
-        result.D1V = new Vector3D(cosU * xDir.X() + sinU * yDir.X() + vOver2F * zDir.X(),
-                                 cosU * xDir.Y() + sinU * yDir.Y() + vOver2F * zDir.Y(),
-                                 cosU * xDir.Z() + sinU * yDir.Z() + vOver2F * zDir.Z());
+        result.D1V = new Vector3D(cosU * xDir.X + sinU * yDir.X + vOver2F * zDir.X,
+                                 cosU * xDir.Y + sinU * yDir.Y + vOver2F * zDir.Y,
+                                 cosU * xDir.Z + sinU * yDir.Z + vOver2F * zDir.Z);
 
         // d2P/du2 = -V*cosU*XD - V*sinU*YD
-        result.D2U = new Vector3D(-v * cosU * xDir.X() - v * sinU * yDir.X(),
-                                 -v * cosU * xDir.Y() - v * sinU * yDir.Y(),
-                                 -v * cosU * xDir.Z() - v * sinU * yDir.Z());
+        result.D2U = new Vector3D(-v * cosU * xDir.X - v * sinU * yDir.X,
+                                 -v * cosU * xDir.Y - v * sinU * yDir.Y,
+                                 -v * cosU * xDir.Z - v * sinU * yDir.Z);
 
         // d2P/dv2 = 1/(2F)*ZD
-        result.D2V = new Vector3D(inv2F * zDir.X(), inv2F * zDir.Y(), inv2F * zDir.Z());
+        result.D2V = new Vector3D(inv2F * zDir.X, inv2F * zDir.Y, inv2F * zDir.Z);
 
         // d2P/dudv = -sinU*XD + cosU*YD
-        result.D2UV = new Vector3D(-sinU * xDir.X() + cosU * yDir.X(),
-                                  -sinU * xDir.Y() + cosU * yDir.Y(),
-                                  -sinU * xDir.Z() + cosU * yDir.Z());
+        result.D2UV = new Vector3D(-sinU * xDir.X + cosU * yDir.X,
+                                  -sinU * xDir.Y + cosU * yDir.Y,
+                                  -sinU * xDir.Z + cosU * yDir.Z);
 
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -227,45 +227,45 @@ public sealed class ParaboloidSurface : ElementarySurface
 
         // P
         result.Point =
-            new Point3D(o.X() + v * cosU * xDir.X() + v * sinU * yDir.X() + zComp * zDir.X(),
-                       o.Y() + v * cosU * xDir.Y() + v * sinU * yDir.Y() + zComp * zDir.Y(),
-                       o.Z() + v * cosU * xDir.Z() + v * sinU * yDir.Z() + zComp * zDir.Z());
+            new Point3D(o.X + v * cosU * xDir.X + v * sinU * yDir.X + zComp * zDir.X,
+                       o.Y + v * cosU * xDir.Y + v * sinU * yDir.Y + zComp * zDir.Y,
+                       o.Z + v * cosU * xDir.Z + v * sinU * yDir.Z + zComp * zDir.Z);
 
         // dP/du
-        result.D1U = new Vector3D(-v * sinU * xDir.X() + v * cosU * yDir.X(),
-                                 -v * sinU * xDir.Y() + v * cosU * yDir.Y(),
-                                 -v * sinU * xDir.Z() + v * cosU * yDir.Z());
+        result.D1U = new Vector3D(-v * sinU * xDir.X + v * cosU * yDir.X,
+                                 -v * sinU * xDir.Y + v * cosU * yDir.Y,
+                                 -v * sinU * xDir.Z + v * cosU * yDir.Z);
 
         // dP/dv
-        result.D1V = new Vector3D(cosU * xDir.X() + sinU * yDir.X() + vOver2F * zDir.X(),
-                                 cosU * xDir.Y() + sinU * yDir.Y() + vOver2F * zDir.Y(),
-                                 cosU * xDir.Z() + sinU * yDir.Z() + vOver2F * zDir.Z());
+        result.D1V = new Vector3D(cosU * xDir.X + sinU * yDir.X + vOver2F * zDir.X,
+                                 cosU * xDir.Y + sinU * yDir.Y + vOver2F * zDir.Y,
+                                 cosU * xDir.Z + sinU * yDir.Z + vOver2F * zDir.Z);
 
         // d2P/du2
-        result.D2U = new Vector3D(-v * cosU * xDir.X() - v * sinU * yDir.X(),
-                                 -v * cosU * xDir.Y() - v * sinU * yDir.Y(),
-                                 -v * cosU * xDir.Z() - v * sinU * yDir.Z());
+        result.D2U = new Vector3D(-v * cosU * xDir.X - v * sinU * yDir.X,
+                                 -v * cosU * xDir.Y - v * sinU * yDir.Y,
+                                 -v * cosU * xDir.Z - v * sinU * yDir.Z);
 
         // d2P/dv2
-        result.D2V = new Vector3D(inv2F * zDir.X(), inv2F * zDir.Y(), inv2F * zDir.Z());
+        result.D2V = new Vector3D(inv2F * zDir.X, inv2F * zDir.Y, inv2F * zDir.Z);
 
         // d2P/dudv
-        result.D2UV = new Vector3D(-sinU * xDir.X() + cosU * yDir.X(),
-                                  -sinU * xDir.Y() + cosU * yDir.Y(),
-                                  -sinU * xDir.Z() + cosU * yDir.Z());
+        result.D2UV = new Vector3D(-sinU * xDir.X + cosU * yDir.X,
+                                  -sinU * xDir.Y + cosU * yDir.Y,
+                                  -sinU * xDir.Z + cosU * yDir.Z);
 
         // d3P/du3 = V*sinU*XD - V*cosU*YD
-        result.D3U = new Vector3D(v * sinU * xDir.X() - v * cosU * yDir.X(),
-                                 v * sinU * xDir.Y() - v * cosU * yDir.Y(),
-                                 v * sinU * xDir.Z() - v * cosU * yDir.Z());
+        result.D3U = new Vector3D(v * sinU * xDir.X - v * cosU * yDir.X,
+                                 v * sinU * xDir.Y - v * cosU * yDir.Y,
+                                 v * sinU * xDir.Z - v * cosU * yDir.Z);
 
         // d3P/dv3 = 0
         result.D3V = new Vector3D(0.0, 0.0, 0.0);
 
         // d3P/du2dv = -cosU*XD - sinU*YD
-        result.D3UUV = new Vector3D(-cosU * xDir.X() - sinU * yDir.X(),
-                                   -cosU * xDir.Y() - sinU * yDir.Y(),
-                                   -cosU * xDir.Z() - sinU * yDir.Z());
+        result.D3UUV = new Vector3D(-cosU * xDir.X - sinU * yDir.X,
+                                   -cosU * xDir.Y - sinU * yDir.Y,
+                                   -cosU * xDir.Z - sinU * yDir.Z);
 
         // d3P/dudv2 = 0
         result.D3UVV = new Vector3D(0.0, 0.0, 0.0);
@@ -274,16 +274,16 @@ public sealed class ParaboloidSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
             throw new UndefinedDerivative3DException("GeomEval_ParaboloidSurface::EvalDN: invalid derivative order");
         }
 
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         // The parametrization is:
         //   P = O + v*cos(u)*XD + v*sin(u)*YD + v^2/(4F)*ZD
@@ -332,9 +332,9 @@ public sealed class ParaboloidSurface : ElementarySurface
             // else 0 for Nv >= 3
         }
 
-        return new Vector3D(xCoeff * xDir.X() + yCoeff * yDir.X() + zCoeff * zDir.X(),
-                          xCoeff * xDir.Y() + yCoeff * yDir.Y() + zCoeff * zDir.Y(),
-                          xCoeff * xDir.Z() + yCoeff * yDir.Z() + zCoeff * zDir.Z());
+        return new Vector3D(xCoeff * xDir.X + yCoeff * yDir.X + zCoeff * zDir.X,
+                          xCoeff * xDir.Y + yCoeff * yDir.Y + zCoeff * zDir.Y,
+                          xCoeff * xDir.Z + yCoeff * yDir.Z + zCoeff * zDir.Z);
     }
 
     /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>

@@ -376,12 +376,12 @@ internal static class HLRTestCommands
         else
         {
             Frame3D theAxes = new(anOrigin, aNormal);
-            aDX = theAxes.XDirection();
+            aDX = theAxes.XDirection;
         }
 
         ReflectLines Reflector = new(aShape);
-        Reflector.SetAxes(aNormal.X(), aNormal.Y(), aNormal.Z(), anOrigin.X(), anOrigin.Y(), anOrigin.Z(), aDX.X(), aDX.Y(),
-                          aDX.Z());
+        Reflector.SetAxes(aNormal.X, aNormal.Y, aNormal.Z, anOrigin.X, anOrigin.Y, anOrigin.Z, aDX.X, aDX.Y,
+                          aDX.Z);
         Reflector.Perform();
         return Reflector;
     }
@@ -503,8 +503,8 @@ public sealed class DrawHlrProjector(in AlgorithmProjector theProjector) : DrawD
             theStream.Write(Projector.Focus().ToString(CultureInfo.InvariantCulture) + "\n");
         }
         Transform3D aTransformation = Projector.Transformation();
-        Xyz aTranslationVector = aTransformation.TranslationPart();
-        Matrix3x3 aMatrix = aTransformation.VectorialPart();
+        Xyz aTranslationVector = aTransformation.TranslationXyz();
+        Matrix3x3 aMatrix = aTransformation.VectorialPart;
         for (int r = 1; r <= 3; r++)
         {
             for (int c = 1; c <= 3; c++)

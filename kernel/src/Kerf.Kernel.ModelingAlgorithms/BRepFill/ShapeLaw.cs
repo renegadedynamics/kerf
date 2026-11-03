@@ -136,7 +136,7 @@ public class ShapeLaw : SectionLaw
                     if (build)
                     {
                         // occ::handle<Geom_Curve> C = BRep_Tool::Curve(E,First,Last);
-                        if (e.Orientation() == Reversed)
+                        if (e.Orientation == Reversed)
                         {
                             double aux;
                             Curve3D cBis;
@@ -148,7 +148,7 @@ public class ShapeLaw : SectionLaw
                         }
 
                         bool isClosed = Tool.IsClosed(e);
-                        if (isClosed && Math.Abs(c.FirstParameter() - first) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        if (isClosed && Math.Abs(c.FirstParameter - first) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             isClosed = false; // trimmed curve differs
                         }
@@ -176,7 +176,7 @@ public class ShapeLaw : SectionLaw
         //  std::cout << "new law" << std::endl;
 
         //  Is the law closed by U ?
-        _uclosed = w.Closed();
+        _uclosed = w.IsClosed;
         if (!_uclosed)
         {
             // if not sure about the flag, make check
@@ -185,7 +185,7 @@ public class ShapeLaw : SectionLaw
             edge1 = ShapeCasts.Edge(_edges.Value(_edges.Length()));
             edge2 = ShapeCasts.Edge(_edges.Value(1));
 
-            if (edge1.Orientation() == Reversed)
+            if (edge1.Orientation == Reversed)
             {
                 v1 = Exploration.FirstVertex(edge1);
             }
@@ -194,7 +194,7 @@ public class ShapeLaw : SectionLaw
                 v1 = Exploration.LastVertex(edge1);
             }
 
-            if (edge2.Orientation() == Reversed)
+            if (edge2.Orientation == Reversed)
             {
                 v2 = Exploration.LastVertex(edge2);
             }
@@ -242,7 +242,7 @@ public class ShapeLaw : SectionLaw
         if (index <= _edges!.Length())
         {
             e = ShapeCasts.Edge(_edges.Value(index));
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 v = Exploration.LastVertex(e);
             }
@@ -254,7 +254,7 @@ public class ShapeLaw : SectionLaw
         else if (index == _edges.Length() + 1)
         {
             e = ShapeCasts.Edge(_edges.Value(index - 1));
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 v = Exploration.FirstVertex(e);
             }
@@ -339,7 +339,7 @@ public class ShapeLaw : SectionLaw
                                    mults.Array1(),
                                    degree,
                                    loi.IsUPeriodic);
-        tol += pFirst.Distance(bs.Value(knots.Value(1)));
+        tol += pFirst.DistanceTo(bs.Value(knots.Value(1)));
         return tol;
     }
 

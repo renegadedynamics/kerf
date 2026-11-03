@@ -219,7 +219,7 @@ public sealed partial class IntConicConic : Intersection2D
         //  if(maxtol<0.000001) maxtol = 0.000001;
 
         // OCCT offsets the line by (maxtol Dy, maxtol Dx), which is not normal to it (as is).
-        Vector2D offset = new(maxtol * l.Direction().Y(), maxtol * l.Direction().X());
+        Vector2D offset = new(maxtol * l.Direction.Y, maxtol * l.Direction.X);
         Line2D lp = l.Translated(offset);
         theIntAna2d.Perform(p, new Conic(lp));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref pntinf, ref bsup, ref pntsup, p, maxtol,
@@ -324,7 +324,7 @@ public sealed partial class IntConicConic : Intersection2D
         {
             maxtol = 0.000001;
         }
-        Vector2D offset = new(maxtol * h.XAxis().Direction().X(), maxtol * h.XAxis().Direction().Y());
+        Vector2D offset = new(maxtol * h.XAxis.Direction.X, maxtol * h.XAxis.Direction.Y);
         Hyperbola2D hp = h.Translated(offset);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(hp, new Conic(l));
@@ -408,16 +408,16 @@ public sealed partial class IntConicConic : Intersection2D
 
         double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
         Point2D pntinf = new(), pntsup = new();
-        maxtol = c.Radius() / 10.0;
+        maxtol = c.Radius / 10.0;
         Circle2D cp = c;
-        cp = cp.WithRadius(c.Radius() + maxtol);
+        cp = cp.WithRadius(c.Radius + maxtol);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(p, new Conic(cp));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref pntinf, ref bsup, ref pntsup, p, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
-        if (c.Radius() > maxtol)
+        if (c.Radius > maxtol)
         {
-            cp = cp.WithRadius(c.Radius() - maxtol);
+            cp = cp.WithRadius(c.Radius - maxtol);
             theIntAna2d.Perform(p, new Conic(cp));
             SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref pntinf, ref bsup, ref pntsup, p, maxtol,
                                     PARAM_MAX_ON_PARABOLA);
@@ -538,8 +538,8 @@ public sealed partial class IntConicConic : Intersection2D
         }
         double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
         Point2D pntinf = new(), pntsup = new();
-        maxtol = c.Radius() / 10.0;
-        Vector2D offset = new(maxtol * h.XAxis().Direction().X(), maxtol * h.XAxis().Direction().Y());
+        maxtol = c.Radius / 10.0;
+        Vector2D offset = new(maxtol * h.XAxis.Direction.X, maxtol * h.XAxis.Direction.Y);
         Hyperbola2D hp = h.Translated(offset);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(hp, new Conic(c));
@@ -630,7 +630,7 @@ public sealed partial class IntConicConic : Intersection2D
         {
             maxtol = 0.000001;
         }
-        Vector2D offset = new(maxtol * p2.MirrorAxis().Direction().X(), maxtol * p2.MirrorAxis().Direction().Y());
+        Vector2D offset = new(maxtol * p2.MirrorAxis.Direction.X, maxtol * p2.MirrorAxis.Direction.Y);
         Parabola2D pp = p2.Translated(offset);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(pp, new Conic(p1));
@@ -725,18 +725,18 @@ public sealed partial class IntConicConic : Intersection2D
             maxtol = tolConf;
         }
 
-        maxtol = e.MinorRadius() / 10.0;
+        maxtol = e.MinorRadius / 10.0;
         Ellipse2D ep = e;
-        ep = ep.WithMajorRadius(e.MajorRadius() + maxtol);
-        ep = ep.WithMinorRadius(e.MinorRadius() + maxtol);
+        ep = ep.WithMajorRadius(e.MajorRadius + maxtol);
+        ep = ep.WithMinorRadius(e.MinorRadius + maxtol);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(p, new Conic(ep));
         SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref pntinf, ref bsup, ref pntsup, p, maxtol,
                                 PARAM_MAX_ON_PARABOLA);
-        if (e.MinorRadius() > maxtol)
+        if (e.MinorRadius > maxtol)
         {
-            ep = ep.WithMinorRadius(e.MinorRadius() - maxtol);
-            ep = ep.WithMajorRadius(e.MajorRadius() - maxtol);
+            ep = ep.WithMinorRadius(e.MinorRadius - maxtol);
+            ep = ep.WithMajorRadius(e.MajorRadius - maxtol);
             theIntAna2d.Perform(p, new Conic(ep));
             SetBinfBsupFromIntAna2d(theIntAna2d, ref binf, ref pntinf, ref bsup, ref pntsup, p, maxtol,
                                     PARAM_MAX_ON_PARABOLA);
@@ -823,7 +823,7 @@ public sealed partial class IntConicConic : Intersection2D
         {
             maxtol = 0.000001;
         }
-        Vector2D offset = new(maxtol * h.XAxis().Direction().X(), maxtol * h.XAxis().Direction().Y());
+        Vector2D offset = new(maxtol * h.XAxis.Direction.X, maxtol * h.XAxis.Direction.Y);
         Hyperbola2D hp = h.Translated(offset);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(hp, new Conic(p));
@@ -951,8 +951,8 @@ public sealed partial class IntConicConic : Intersection2D
 
         double binf = global::Kerf.Engine.Foundation.Precision.Infinite(), bsup = -global::Kerf.Engine.Foundation.Precision.Infinite(), maxtol;
         Point2D pntinf = new(), pntsup = new();
-        maxtol = e.MinorRadius() / 10.0;
-        Vector2D offset = new(maxtol * h.XAxis().Direction().X(), maxtol * h.XAxis().Direction().Y());
+        maxtol = e.MinorRadius / 10.0;
+        Vector2D offset = new(maxtol * h.XAxis.Direction.X, maxtol * h.XAxis.Direction.Y);
         Hyperbola2D hp = h.Translated(offset);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(hp, new Conic(e));
@@ -1049,7 +1049,7 @@ public sealed partial class IntConicConic : Intersection2D
         {
             maxtol = 0.000001;
         }
-        Vector2D offset = new(maxtol * h2.XAxis().Direction().X(), maxtol * h2.XAxis().Direction().Y());
+        Vector2D offset = new(maxtol * h2.XAxis.Direction.X, maxtol * h2.XAxis.Direction.Y);
         Hyperbola2D hp = h2.Translated(offset);
         AnalyticIntersection theIntAna2d = new();
         theIntAna2d.Perform(hp, new Conic(h1));
@@ -1133,7 +1133,7 @@ public sealed partial class IntConicConic : Intersection2D
                     if (Math.Abs(param) < limite)
                     {
                         global::Kerf.Engine.Geometry.ElCLib.D1(param, pr, out _, out Vector2D v);
-                        double normeD1 = v.Magnitude();
+                        double normeD1 = v.Magnitude;
                         double dparam = 100.0 * maxtol / normeD1;
                         if (dparam < 1e-3)
                         {
@@ -1178,7 +1178,7 @@ public sealed partial class IntConicConic : Intersection2D
                     if (Math.Abs(param) < limite)
                     {
                         global::Kerf.Engine.Geometry.ElCLib.D1(param, h, out _, out Vector2D v);
-                        double normeD1 = v.Magnitude();
+                        double normeD1 = v.Magnitude;
                         double dparam = 100.0 * maxtol / normeD1;
                         if (dparam < 1e-3)
                         {

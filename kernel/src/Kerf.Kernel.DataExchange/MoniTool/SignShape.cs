@@ -47,6 +47,6 @@ public class SignShape : SignText
         {
             return "SHAPE";
         }
-        return global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(sh.ShapeType());
+        return global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(sh.Type);
     }
 }

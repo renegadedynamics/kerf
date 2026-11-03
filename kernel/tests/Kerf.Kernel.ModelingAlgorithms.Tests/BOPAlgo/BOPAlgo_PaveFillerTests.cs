@@ -233,7 +233,7 @@ public class BOPAlgo_PaveFillerTests
                 Edge anEdge = ShapeCasts.Edge(anEdgeExp.Current());
                 if (Tool.Degenerated(anEdge))
                 {
-                    aBuilder.Add(aNewWire, aNewDegEdge.Oriented(anEdge.Orientation()));
+                    aBuilder.Add(aNewWire, aNewDegEdge.Oriented(anEdge.Orientation));
                 }
                 else
                 {

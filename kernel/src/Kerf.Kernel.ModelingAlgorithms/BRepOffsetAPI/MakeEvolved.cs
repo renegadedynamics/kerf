@@ -64,7 +64,7 @@ public class MakeEvolved : MakeShape
                                      bool runInParallel = false)
     {
         _isVolume = isVolume;
-        if (spine.ShapeType() != ShapeType.Wire && spine.ShapeType() != ShapeType.Face)
+        if (spine.Type != ShapeType.Wire && spine.Type != ShapeType.Face)
         {
             throw new TypeMismatchException("BRepOffsetAPI_MakeEvolved: face or wire is expected as a spine");
         }
@@ -72,7 +72,7 @@ public class MakeEvolved : MakeShape
         {
             _volume.SetParallelMode(runInParallel);
             Wire aSpine;
-            if (spine.ShapeType() == ShapeType.Wire)
+            if (spine.Type == ShapeType.Wire)
             {
                 aSpine = ShapeCasts.Wire(spine);
             }
@@ -98,7 +98,7 @@ public class MakeEvolved : MakeShape
                     return;
                 }
             }
-            if (spine.ShapeType() == ShapeType.Wire)
+            if (spine.Type == ShapeType.Wire)
             {
                 _evolved.Perform(ShapeCasts.Wire(spine), profile, axis, joinType, isSolid);
             }

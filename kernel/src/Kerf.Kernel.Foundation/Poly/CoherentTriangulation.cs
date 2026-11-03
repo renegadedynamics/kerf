@@ -228,7 +228,7 @@ public class CoherentTriangulation : Transient
                 for (i = 0; i < nNodes; i++)
                 {
                     Point2D uv = triangulation.UVNode(i + 1);
-                    _nodes[i].SetUV(uv.X(), uv.Y());
+                    _nodes[i].SetUV(uv.X, uv.Y);
                 }
             }
 

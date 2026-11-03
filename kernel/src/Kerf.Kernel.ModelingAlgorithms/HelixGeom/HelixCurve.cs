@@ -160,7 +160,7 @@ public class HelixCurve : CurveAdaptorBase
     }
 
     /// <summary>The point and first derivative at <paramref name="t"/>.</summary>
-    public sealed override Curve3D.ResD1 EvalD1(double t)
+    internal sealed override Curve3D.ResD1 EvalD1(double t)
     {
         double st, ct, x, y, z, a1, a2;
         // Calculate point and first derivative
@@ -193,7 +193,7 @@ public class HelixCurve : CurveAdaptorBase
     }
 
     /// <summary>The point and first two derivatives at <paramref name="t"/>.</summary>
-    public sealed override Curve3D.ResD2 EvalD2(double t)
+    internal sealed override Curve3D.ResD2 EvalD2(double t)
     {
         double st, ct, x, y, z, a1, a2;
         // Calculate point, first and second derivatives

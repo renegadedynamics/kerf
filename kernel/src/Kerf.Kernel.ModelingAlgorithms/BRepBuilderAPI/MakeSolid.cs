@@ -105,7 +105,7 @@ public class MakeSolid : MakeShape
     /// <summary>True if the face <paramref name="s"/> was deleted (BRepLib's face status).</summary>
     public override bool IsDeleted(in Shape s)
     {
-        if (s.ShapeType() == ShapeType.Face)
+        if (s.Type == ShapeType.Face)
         {
             LibraryShapeModification status = _makeSolid.FaceStatus(ShapeCasts.Face(s));
 

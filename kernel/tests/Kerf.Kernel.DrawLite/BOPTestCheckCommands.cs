@@ -835,7 +835,7 @@ internal static class BOPTestCheckCommands
             return 1;
         }
         //
-        if (aS1.ShapeType() != ShapeType.Edge || aS2.ShapeType() != ShapeType.Face)
+        if (aS1.Type != ShapeType.Edge || aS2.Type != ShapeType.Face)
         {
             di.Append("type mismatch\n");
             return 1;

@@ -26,12 +26,12 @@ public class gce_PortTest
     public void Lines_and_directions()
     {
         Line3D aLin = (Line3D)new MakeLin(new Point3D(1, 0, 0), new Point3D(1, 2, 0));
-        Assert.Equal(new Direction3D(0, 1, 0), aLin.Direction());
+        Assert.Equal(new Direction3D(0, 1, 0), aLin.Direction);
 
         Line2D aLin2d = new MakeLin2d(new Line2D(new Point2D(0, 0), new Direction2D(1, 0)), 2.0).Value();
-        Assert.Equal(new Point2D(0, 2), aLin2d.Location()); // to the left of the line for a positive distance
+        Assert.Equal(new Point2D(0, 2), aLin2d.Location); // to the left of the line for a positive distance
         Assert.Equal(NullAxis, new MakeLin2d(0, 0, 1).Status());
-        Assert.Equal(1.0, new MakeLin2d(0, 1, -1).Value().Distance(new Point2D(5, 0)), Tol);
+        Assert.Equal(1.0, new MakeLin2d(0, 1, -1).Value().DistanceTo(new Point2D(5, 0)), Tol);
 
         Assert.Equal(NullVector, new MakeDir(0, 0, 0).Status());
         Assert.Equal(new Direction3D(0, 0, 1), new MakeDir(new Point3D(1, 1, 1), new Point3D(1, 1, 4)).Value());
@@ -45,8 +45,8 @@ public class gce_PortTest
         var aMaker = new MakeCirc(new Point3D(1, 0, 0), new Point3D(0, 1, 0), new Point3D(-1, 0, 0));
         Assert.True(aMaker.IsDone);
         Circle3D aCirc = aMaker.Value();
-        Assert.Equal(1.0, aCirc.Radius(), Tol);
-        Assert.Equal(0.0, aCirc.Location().Distance(new Point3D(0, 0, 0)), Tol);
+        Assert.Equal(1.0, aCirc.Radius, Tol);
+        Assert.Equal(0.0, aCirc.Location.DistanceTo(new Point3D(0, 0, 0)), Tol);
 
         Assert.Equal(ColinearPoints, new MakeCirc(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0)).Status());
         Assert.Equal(ConfusedPoints, new MakeCirc(new Point3D(0, 0, 0), new Point3D(0, 0, 0), new Point3D(2, 0, 0)).Status());
@@ -54,7 +54,7 @@ public class gce_PortTest
         // OCCT leaves the status unset for three coincident points; the port's is gce_Done (decision 118)
         var aPoint = new MakeCirc(new Point3D(1, 2, 3), new Point3D(1, 2, 3), new Point3D(1, 2, 3));
         Assert.True(aPoint.IsDone);
-        Assert.Equal(0.0, aPoint.Value().Radius());
+        Assert.Equal(0.0, aPoint.Value().Radius);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public class gce_PortTest
         // OCCT's release build returns the status; the port must not throw from C.Value() (decision 119)
         var aMaker = new MakeCirc(new Point3D(0, 0, 0), new Plane3D(), -1.0);
         Assert.Equal(NegativeRadius, aMaker.Status());
-        Assert.Equal(2.0, new MakeCirc(new Point3D(0, 0, 0), new Plane3D(), 2.0).Value().Radius());
+        Assert.Equal(2.0, new MakeCirc(new Point3D(0, 0, 0), new Plane3D(), 2.0).Value().Radius);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class gce_PortTest
         Assert.Equal(IntersectionError, aMaker.Status());
 
         var aCirc = new MakeCirc2d(new Point2D(1, 0), new Point2D(0, 1), new Point2D(-1, 0)).Value();
-        Assert.Equal(1.0, aCirc.Radius(), Tol);
+        Assert.Equal(1.0, aCirc.Radius, Tol);
         Assert.True(aCirc.IsDirect);
         var aReversed = new MakeCirc2d(new Point2D(-1, 0), new Point2D(0, 1), new Point2D(1, 0)).Value();
         Assert.False(aReversed.IsDirect);
@@ -87,8 +87,8 @@ public class gce_PortTest
         Assert.Equal(ColinearPoints, new MakePln(new Point3D(0, 0, 0), new Point3D(1, 1, 1), new Point3D(2, 2, 2)).Status());
         Assert.Equal(BadEquation, new MakePln(0, 0, 0, 1).Status());
         Plane3D aPln = new MakePln(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(0, 1, 0)).Value();
-        Assert.Equal(new Direction3D(0, 0, 1), aPln.Axis().Direction());
-        Assert.Equal(3.0, new MakePln(aPln, 3.0).Value().Location().Z(), Tol);
+        Assert.Equal(new Direction3D(0, 0, 1), aPln.Axis.Direction);
+        Assert.Equal(3.0, new MakePln(aPln, 3.0).Value().Location.Z, Tol);
         Assert.Equal(ConfusedPoints, new MakePln(new Point3D(1, 1, 1), new Point3D(1, 1, 1)).Status());
     }
 
@@ -100,11 +100,11 @@ public class gce_PortTest
         Assert.Equal(InvertRadius, new MakeElips2d(new Axis2D(), 1, 2).Status());
         Assert.Equal(NullFocusLength, new MakeParab(new Frame3D(), -1).Status());
         Assert.Equal(NullAxis, new MakeParab2d(new Point2D(1, 1), new Point2D(1, 1)).Status());
-        Assert.Equal(2.0, new MakeParab2d(new Point2D(2, 0), new Point2D(0, 0)).Value().Focal(), Tol);
+        Assert.Equal(2.0, new MakeParab2d(new Point2D(2, 0), new Point2D(0, 0)).Value().Focal, Tol);
         Assert.Equal(BadAngle, new MakeCone(new Frame3D(), 0.0, 1.0).Status());
         Assert.Equal(NullAxis, new MakeCone(new Point3D(0, 0, 0), new Point3D(0, 0, 0), 1.0, 2.0).Status());
         Assert.Equal(NegativeRadius, new MakeCylinder(new Cylinder(new CoordinateSystem(), 1.0), -2.0).Status());
-        Assert.Equal(3.0, new MakeCylinder(new Circle3D(new Frame3D(), 3.0)).Value().Radius());
+        Assert.Equal(3.0, new MakeCylinder(new Circle3D(new Frame3D(), 3.0)).Value().Radius);
     }
 
     [Fact]

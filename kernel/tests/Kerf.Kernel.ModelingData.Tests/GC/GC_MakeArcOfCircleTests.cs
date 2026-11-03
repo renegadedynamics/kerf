@@ -42,6 +42,6 @@ public class GC_MakeArcOfCircleTest
         Assert.True(aMaker.IsDone);
         Assert.Equal(Done, aMaker.Status());
         Assert.NotNull(aMaker.Value());
-        Assert.True(aMaker.Value().StartPoint().IsEqual(aP1, global::Kerf.Engine.Foundation.Precision.Confusion()));
+        Assert.True(aMaker.Value().StartPoint.IsEqual(aP1, global::Kerf.Engine.Foundation.Precision.Confusion()));
     }
 }

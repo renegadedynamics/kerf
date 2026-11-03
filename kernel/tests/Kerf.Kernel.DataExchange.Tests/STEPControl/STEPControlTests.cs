@@ -118,7 +118,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         Assert.Equal(ReturnStatus.RetDone, aReader.ReadStream("box.stp", new MemoryStream(Encoding.UTF8.GetBytes(aText))));
         Assert.Equal(1, aReader.TransferRoots());
         Shape aRead = aReader.OneShape();
-        Assert.Equal(ShapeType.Solid, aRead.ShapeType());
+        Assert.Equal(ShapeType.Solid, aRead.Type);
         var aProps = new Properties();
         MassPropertiesBuilder.VolumeProperties(aRead, aProps);
         Assert.Equal(6000.0, aProps.Mass(), 6);
@@ -146,7 +146,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         aReader.ReadStream("asm.stp", new MemoryStream(Encoding.UTF8.GetBytes(aText)));
         aReader.TransferRoots();
         Shape aRead = aReader.OneShape();
-        Assert.Equal(ShapeType.Compound, aRead.ShapeType());
+        Assert.Equal(ShapeType.Compound, aRead.Type);
         var aProps = new Properties();
         MassPropertiesBuilder.VolumeProperties(aRead, aProps);
         Assert.Equal(12000.0, aProps.Mass(), 6);

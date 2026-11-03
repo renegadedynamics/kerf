@@ -107,7 +107,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
     // directions until stable, and the port's, built from those numbers, must come out the same; otherwise another
     // random placement is drawn. (gp_Ax2's constructor recomputes the X direction, and the two compilers don't always
     // round it alike.)
-    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X && theN.Y() == theP.Y && theN.Z() == theP.Z;
 
     private static Direction3D FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
 
@@ -144,7 +144,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             using var aNX = aNAx.XDirection();
             using var aNY = aNAx.YDirection();
             var anAx = new Frame3D(aP, FromNative(aND), FromNative(aNX));
-            if (Same(aND, anAx.Direction()) && Same(aNX, anAx.XDirection()) && Same(aNY, anAx.YDirection()))
+            if (Same(aND, anAx.Direction) && Same(aNX, anAx.XDirection) && Same(aNY, anAx.YDirection))
             {
                 return anAx;
             }
@@ -165,7 +165,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             using var aND = aNAx.Direction();
             using var aNX = aNAx.XDirection();
             using var aNY = aNAx.YDirection();
-            if (Same(aND, anAx.Direction()) && Same(aNX, anAx.XDirection()) && Same(aNY, anAx.YDirection()))
+            if (Same(aND, anAx.Direction) && Same(aNX, anAx.XDirection) && Same(aNY, anAx.YDirection))
             {
                 return anAx;
             }
@@ -854,7 +854,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
         for (int i = 0; i < 8; i++)
         {
             aP[i] = global::Kerf.Engine.Geometry.ElSLib.PlaneValue((i & 1) * dx, ((i >> 1) & 1) * dy, theAx).Translated(
-                new Vector3D(theAx.Direction()) * (((i >> 2) & 1) * dz));
+                new Vector3D(theAx.Direction) * (((i >> 2) & 1) * dz));
         }
         var aNV = new N.TopoDS_Vertex[8];
         var aPV = new Vertex[8];
@@ -913,7 +913,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             double aLift = aCase % 4 == 0 ? 0 : Math.Pow(10, -2 * (aCase % 4));
             for (int i = 0; i < aPts.Length; i++)
             {
-                aPts[i] = aPts[i].Translated(new Vector3D(anAx.Direction()) * (anO.Real(-1, 1) * aLift));
+                aPts[i] = aPts[i].Translated(new Vector3D(anAx.Direction) * (anO.Real(-1, 1) * aLift));
             }
             var aNP = new N.BRepBuilderAPI_MakePolygon();
             var aPP = new LibraryMakePolygon();

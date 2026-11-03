@@ -84,8 +84,8 @@ public class BRepFill_OffsetWireTests
         Assert.False(anOW.InternalShape().TShape()!.IsFrozen);
         Shape aResult = anOW.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
-        Assert.True(aResult.Closed());
+        Assert.Equal(ShapeType.Wire, aResult.Type);
+        Assert.True(aResult.IsClosed);
         Assert.Equal(theLength, Length(aResult), 1.0e-9);
         Assert.True(anOW.Spine().TShape()!.IsFrozen);
 
@@ -94,7 +94,7 @@ public class BRepFill_OffsetWireTests
         {
             ISchematiqList<Shape> aGenerated = anOW.GeneratedShapes(anExp.Current());
             Assert.Single(aGenerated);
-            Assert.Equal(ShapeType.Edge, aGenerated[0].ShapeType());
+            Assert.Equal(ShapeType.Edge, aGenerated[0].Type);
             Assert.True(aGenerated[0].TShape()!.IsFrozen);
         }
         Assert.Equal(aText, Text(aFace));
@@ -168,7 +168,7 @@ public class BRepFill_OffsetWireTests
         if (theIsOpenResult)
         {
             // one open parallel, on the side of the positive offset: 10 + 10 and a quarter circle (as natively)
-            Assert.False(aResult.Closed());
+            Assert.False(aResult.IsClosed);
             Assert.Equal(20 + Math.PI / 2, Length(aResult), 1.0e-9);
         }
         else

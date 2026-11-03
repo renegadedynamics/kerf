@@ -120,7 +120,7 @@ public sealed class Curve2dBounds
         if (curve is TrimmedCurve2D trim)
         {
             _adaptorOwned = new CurveAdaptor2D(curve);
-            curveForDetection = trim.BasisCurve();
+            curveForDetection = trim.BasisCurve;
         }
 
         // OCCT's lambda tryEmplaceEvaluator
@@ -214,7 +214,7 @@ public sealed class Curve2dBounds
             default:
             {
                 Curve2D geom = _evaluator.CurveGeometry()!;
-                return _evaluator.BoxOptimal(geom.FirstParameter(), geom.LastParameter(), tol);
+                return _evaluator.BoxOptimal(geom.FirstParameter, geom.LastParameter, tol);
             }
         }
     }

@@ -27,7 +27,7 @@ public class ProjLib_ProjectedCurveTests
         {
             double t = theFirst + (theLast - theFirst) * i / theNb;
             Point2D aUV = thePCurve.Value(t);
-            double aDist = theSurf.Value(aUV.X(), aUV.Y()).Distance(theCurve.Value(t));
+            double aDist = theSurf.Value(aUV.X, aUV.Y).DistanceTo(theCurve.Value(t));
             Assert.True(aDist <= theTol, $"distance {aDist} at t = {t} (tolerance {theTol})");
         }
     }
@@ -57,7 +57,7 @@ public class ProjLib_ProjectedCurveTests
     private static CurveOnSurface CurveOn(SurfaceAdaptorBase theSurf, in Point2D theFrom, in Point2D theTo)
     {
         var aLine = new LineCurve2D(theFrom, new Direction2D(new Vector2D(theFrom, theTo)));
-        var aSeg = new CurveAdaptor2D(aLine, 0.0, theFrom.Distance(theTo));
+        var aSeg = new CurveAdaptor2D(aLine, 0.0, theFrom.DistanceTo(theTo));
         return new CurveOnSurface(aSeg, theSurf);
     }
 
@@ -70,8 +70,8 @@ public class ProjLib_ProjectedCurveTests
         var aProj = new global::Kerf.Engine.Geometry.Projection.ProjectedCurve(aS, aC);
         Assert.Equal(CurveKind.Line, aProj.GetType());
         Line2D aExpected = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(Tilted), aLin);
-        Assert.Equal(aExpected.Location().X(), aProj.Line().Location().X(), 1.0e-14);
-        Assert.Equal(aExpected.Direction().Y(), aProj.Line().Direction().Y(), 1.0e-14);
+        Assert.Equal(aExpected.Location.X, aProj.Line().Location.X, 1.0e-14);
+        Assert.Equal(aExpected.Direction.Y, aProj.Line().Direction.Y, 1.0e-14);
         Assert.Equal(-2.0, aProj.FirstParameter());
         Assert.Equal(3.0, aProj.LastParameter());
         Assert.False(aProj.IsPeriodic);
@@ -138,8 +138,8 @@ public class ProjLib_ProjectedCurveTests
         for (int i = 1; i <= 4; i++)
         {
             Point2D aExpected = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(new Plane3D(Tilted), aPoles[i]);
-            Assert.Equal(aExpected.X(), aRes.Pole(i).X(), 1.0e-12);
-            Assert.Equal(aExpected.Y(), aRes.Pole(i).Y(), 1.0e-12);
+            Assert.Equal(aExpected.X, aRes.Pole(i).X, 1.0e-12);
+            Assert.Equal(aExpected.Y, aRes.Pole(i).Y, 1.0e-12);
         }
 
         // The shallow copy shares the result.
@@ -200,9 +200,9 @@ public class ProjLib_ProjectedCurveTests
         Assert.Equal(CurveKind.Line, aProj.GetType());
         // UFrame put the start into [0, 2 pi[.
         Point2D aStart = global::Kerf.Engine.Geometry.ElCLib.Value(aFirst, aProj.Line());
-        Assert.InRange(aStart.X(), 0.0, 2.0 * M_PI);
-        Assert.Equal(0.5, aStart.X(), 1.0e-12);
-        Assert.Equal(1.5, aStart.Y(), 1.0e-12);
+        Assert.InRange(aStart.X, 0.0, 2.0 * M_PI);
+        Assert.Equal(0.5, aStart.X, 1.0e-12);
+        Assert.Equal(1.5, aStart.Y, 1.0e-12);
         global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProj, out Curve2D aC2d);
         CheckOnCurve(aC2d, aS, aC, aFirst, aLast, 1.0e-12);
     }
@@ -223,7 +223,7 @@ public class ProjLib_ProjectedCurveTests
         // In the surface's period.
         for (int i = 0; i <= 20; i++)
         {
-            Assert.InRange(aRes.Value(0.3 + 2.2 * i / 20).X(), -1.0e-9, 2.0 * M_PI + 1.0e-9);
+            Assert.InRange(aRes.Value(0.3 + 2.2 * i / 20).X, -1.0e-9, 2.0 * M_PI + 1.0e-9);
         }
     }
 
@@ -239,7 +239,7 @@ public class ProjLib_ProjectedCurveTests
         Assert.Equal(CurveKind.Line, aProj.GetType());
         global::Kerf.Engine.Geometry.Projection.ProjLib.MakePCurveOfType(aProj, out Curve2D aC2d);
         CheckOnCurve(aC2d, aS, aC, 1.0, 2.0, 1.0e-12);
-        Assert.Equal(aV, aC2d.Value(1.5).Y(), 1.0e-12);
+        Assert.Equal(aV, aC2d.Value(1.5).Y, 1.0e-12);
     }
 
     [Fact]
@@ -252,16 +252,16 @@ public class ProjLib_ProjectedCurveTests
         var aCirc = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, -1, 0), new Direction3D(1, 0, 0)), aR);
         BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aCirc, 0.0, M_PI / 2.0));
         var aC = new CurveAdaptor(aBS);
-        double aFirst = aBS.FirstParameter(), aLast = aBS.LastParameter();
+        double aFirst = aBS.FirstParameter, aLast = aBS.LastParameter;
         var aProj = new global::Kerf.Engine.Geometry.Projection.ProjectedCurve(aS, aC, 1.0e-6);
         Assert.Equal(CurveKind.BSplineCurve, aProj.GetType());
         // The projected curve was trimmed before the pole...
         Assert.True(aProj.GetCurve()!.LastParameter() < aLast);
         BSplineCurve2D aRes = aProj.BSpline();
         // ... and the pcurve extended back to the whole range, ending on the pole's line V = pi/2.
-        Assert.Equal(aFirst, aRes.FirstParameter(), 1.0e-9);
-        Assert.Equal(aLast, aRes.LastParameter(), 1.0e-9);
-        Assert.Equal(M_PI / 2.0, aRes.Value(aLast).Y(), 1.0e-6);
+        Assert.Equal(aFirst, aRes.FirstParameter, 1.0e-9);
+        Assert.Equal(aLast, aRes.LastParameter, 1.0e-9);
+        Assert.Equal(M_PI / 2.0, aRes.Value(aLast).Y, 1.0e-6);
         CheckOnCurve(aRes, aS, aC, aFirst, aLast, 1.0e-3);
     }
 
@@ -330,10 +330,10 @@ public class ProjLib_ProjectedCurveTests
         Assert.Equal(CurveKind.BSplineCurve, aProj.GetType());
         Assert.True(aProj.GetCurve()!.FirstParameter() > aFirst);
         BSplineCurve2D aRes = aProj.BSpline();
-        Assert.Equal(aFirst, aRes.FirstParameter(), 1.0e-9);
-        Assert.Equal(aLast, aRes.LastParameter(), 1.0e-9);
+        Assert.Equal(aFirst, aRes.FirstParameter, 1.0e-9);
+        Assert.Equal(aLast, aRes.LastParameter, 1.0e-9);
         // The extension ends on the meridian's parameter of the axis point.
-        Assert.Equal(0.0, aRes.Value(aFirst).Y(), 1.0e-6);
+        Assert.Equal(0.0, aRes.Value(aFirst).Y, 1.0e-6);
         CheckOnCurve(aRes, aS, aC, aFirst, aLast, 1.0e-3);
     }
 

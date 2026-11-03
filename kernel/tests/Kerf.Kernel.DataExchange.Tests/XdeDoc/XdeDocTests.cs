@@ -33,7 +33,7 @@ public class XdeDocTests
 
         // the assembly's shape: the compound of its components, made once, frozen
         Shape aCompound = anAssembly.Shape;
-        Assert.Equal(ShapeType.Compound, aCompound.ShapeType());
+        Assert.Equal(ShapeType.Compound, aCompound.Type);
         Assert.True(aCompound.TShape()!.IsFrozen);
         Assert.True(aCompound.IsEqual(anAssembly.Shape));
         Assert.Equal(2, new Iterator(aCompound).More() ? CountChildren(aCompound) : 0);
@@ -70,11 +70,11 @@ public class XdeDocTests
         Assert.Equal(new string?[] { "Asm", "Plate" }, anItems[2].NamePath);
 
         // the root's (1, 2, 3) composed with each component's
-        Xyz aT0 = anItems[0].Location.Transformation().TranslationPart();
+        Xyz aT0 = anItems[0].Location.Transformation.TranslationXyz();
         Assert.Equal(1.0, aT0.X(), 12);
         Assert.Equal(2.0, aT0.Y(), 12);
         Assert.Equal(3.0, aT0.Z(), 12);
-        Xyz aT2 = anItems[2].Location.Transformation().TranslationPart();
+        Xyz aT2 = anItems[2].Location.Transformation.TranslationXyz();
         Assert.Equal(42.0, aT2.Y(), 12);
 
         // the product's colour, overridden by the instance's
@@ -323,7 +323,7 @@ public class XdeDocTests
         Assert.Equal("0:1:1:2", aFound.Entry());
         Tree aTree = aDoc3.ToTree();
         Instance aRoot = Assert.Single(aTree.Roots);
-        Assert.Equal(7.0, aRoot.Location.Transformation().TranslationPart().Z(), 12);
+        Assert.Equal(7.0, aRoot.Location.Transformation.TranslationXyz().Z(), 12);
         Assert.False(aRoot.Product.IsAssembly);
     }
 

@@ -81,18 +81,18 @@ public class ExtElC2d
             _sqDist[idx] = RealLast();
         }
 
-        Vector2D d1 = new(c1.Direction());
-        Vector2D d2 = new(c2.Direction());
+        Vector2D d1 = new(c1.Direction);
+        Vector2D d2 = new(c2.Direction);
         if (d1.IsParallel(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             _isPar = true;
-            _sqDist[0] = c2.SquareDistance(c1.Location());
+            _sqDist[0] = c2.SquareDistanceTo(c1.Location);
             _nbExt = 1;
         }
         else
         {
             // Vector from P1 to P2 (P2 - P1).
-            Vector2D p1P2 = new(c1.Location(), c2.Location());
+            Vector2D p1P2 = new(c1.Location, c2.Location);
 
             // Solve linear system using Cramer's rule:
             // D1.X * t1 + D2.X * (-t2)  = P2.X - P1.X
@@ -141,16 +141,16 @@ public class ExtElC2d
         }
 
         // Calculate T1 in the reference of the circle ...
-        Direction2D d = c1.Direction();
+        Direction2D d = c1.Direction;
         Direction2D x2, y2;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
 
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double u1;
         Span<double> teta = stackalloc double[2];
-        Point2D o1 = c1.Location();
+        Point2D o1 = c1.Location;
         Point2D p1, p2;
 
         if (Math.Abs(dy) <= RealEpsilon())
@@ -170,7 +170,7 @@ public class ExtElC2d
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[0], c2);
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv2d(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv2d(teta[0], p2);
         _nbExt++;
@@ -178,7 +178,7 @@ public class ExtElC2d
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[1], c2);
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv2d(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv2d(teta[1], p2);
         _nbExt++;
@@ -198,16 +198,16 @@ public class ExtElC2d
         }
 
         // Calculate T1 in the reference of the ellipse ...
-        Direction2D d = c1.Direction();
+        Direction2D d = c1.Direction;
         Direction2D x2, y2;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
 
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
-        double u1, r1 = c2.MajorRadius(), r2 = c2.MinorRadius();
+        double u1, r1 = c2.MajorRadius, r2 = c2.MinorRadius;
         Span<double> teta = stackalloc double[2];
-        Point2D o1 = c1.Location(), p1, p2;
+        Point2D o1 = c1.Location, p1, p2;
 
         if (Math.Abs(dy) <= RealEpsilon())
         {
@@ -226,7 +226,7 @@ public class ExtElC2d
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[0], c2);
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv2d(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv2d(teta[0], p2);
         _nbExt++;
@@ -234,7 +234,7 @@ public class ExtElC2d
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(teta[1], c2);
         u1 = (new Vector2D(o1, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv2d(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv2d(teta[1], p2);
         _nbExt++;
@@ -253,14 +253,14 @@ public class ExtElC2d
         }
 
         // Calculate T1 in the reference of the parabole ...
-        Direction2D d = c1.Direction();
+        Direction2D d = c1.Direction;
         Direction2D x2, y2;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
 
-        double u1, v2, u2 = 0, R = c2.MajorRadius(), r = c2.MinorRadius();
+        double u1, v2, u2 = 0, R = c2.MajorRadius, r = c2.MinorRadius;
         Point2D p1, p2;
         if (Math.Abs(dy) < RealEpsilon())
         {
@@ -278,9 +278,9 @@ public class ExtElC2d
         }
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
 
-        u1 = (new Vector2D(c1.Location(), p2)).Dot(new Vector2D(d));
+        u1 = (new Vector2D(c1.Location, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv2d(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv2d(u2, p2);
         _nbExt++;
@@ -299,14 +299,14 @@ public class ExtElC2d
         }
 
         // Calculate  T1 in the reference of the parabole ...
-        Direction2D d = c1.Direction();
+        Direction2D d = c1.Direction;
         Direction2D x2, y2;
-        x2 = c2.MirrorAxis().Direction();
-        y2 = c2.Axis().YAxis().Direction();
+        x2 = c2.MirrorAxis.Direction;
+        y2 = c2.Axis.YAxis.Direction;
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
 
-        double u1, u2, p = c2.Parameter();
+        double u1, u2, p = c2.Parameter;
         Point2D p1, p2;
         if (Math.Abs(dy) < RealEpsilon())
         {
@@ -315,9 +315,9 @@ public class ExtElC2d
         u2 = dx * p / dy;
         p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
 
-        u1 = (new Vector2D(c1.Location(), p2)).Dot(new Vector2D(d));
+        u1 = (new Vector2D(c1.Location, p2)).Dot(new Vector2D(d));
         p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv2d(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv2d(u2, p2);
         _nbExt++;
@@ -336,24 +336,24 @@ public class ExtElC2d
             _sqDist[idx] = RealLast();
         }
 
-        Point2D o1 = c1.Location();
-        Point2D o2 = c2.Location();
+        Point2D o1 = c1.Location;
+        Point2D o2 = c2.Location;
 
         Vector2D do1O2 = new(o1, o2);
-        double sqDCenters = do1O2.SquareMagnitude();
+        double sqDCenters = do1O2.SquareMagnitude;
         if (sqDCenters < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             _isPar = true;
             _nbExt = 1;
             _done = true;
-            double dr = c1.Radius() - c2.Radius();
+            double dr = c1.Radius - c2.Radius;
             _sqDist[0] = dr * dr;
             return;
         }
 
         int noSol, kk;
         double u1, u2;
-        double r1 = c1.Radius(), r2 = c2.Radius();
+        double r1 = c1.Radius, r2 = c2.Radius;
         Span<double> usol2 = stackalloc double[2];
         Span<double> usol1 = stackalloc double[2];
         Span<Point2D> p1 = [new(), new()];
@@ -376,7 +376,7 @@ public class ExtElC2d
             for (kk = 0; kk <= 1; kk++)
             {
                 u2 = usol2[kk];
-                _sqDist[_nbExt] = p2[kk].SquareDistance(p1[noSol]);
+                _sqDist[_nbExt] = p2[kk].SquareDistanceTo(p1[noSol]);
                 _point[2 * _nbExt] = new POnCurv2d(u1, p1[noSol]);
                 _point[2 * _nbExt + 1] = new POnCurv2d(u2, p2[kk]);
                 _nbExt++;
@@ -397,7 +397,7 @@ public class ExtElC2d
 
         int i, j;
 
-        ExtPElC2d extElip = new(c1.Location(), c2, global::Kerf.Engine.Foundation.Precision.Confusion(), 0.0, 2.0 * M_PI);
+        ExtPElC2d extElip = new(c1.Location, c2, global::Kerf.Engine.Foundation.Precision.Confusion(), 0.0, 2.0 * M_PI);
 
         if (extElip.IsDone)
         {
@@ -432,7 +432,7 @@ public class ExtElC2d
 
         int i, j;
 
-        ExtPElC2d extHyp = new(c1.Location(), c2, global::Kerf.Engine.Foundation.Precision.Confusion(), RealFirst(), RealLast());
+        ExtPElC2d extHyp = new(c1.Location, c2, global::Kerf.Engine.Foundation.Precision.Confusion(), RealFirst(), RealLast());
 
         if (extHyp.IsDone)
         {
@@ -467,7 +467,7 @@ public class ExtElC2d
 
         int i, j;
 
-        ExtPElC2d extParab = new(c1.Location(), c2, global::Kerf.Engine.Foundation.Precision.Confusion(), RealFirst(), RealLast());
+        ExtPElC2d extParab = new(c1.Location, c2, global::Kerf.Engine.Foundation.Precision.Confusion(), RealFirst(), RealLast());
 
         if (extParab.IsDone)
         {

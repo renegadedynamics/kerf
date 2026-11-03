@@ -33,8 +33,8 @@ public class ParabolaCurve2D : ConicCurve2D
     /// <summary>The parabola equal to Prb.</summary>
     public ParabolaCurve2D(in Parabola2D prb)
     {
-        _focalLength = prb.Focal();
-        _pos = prb.Axis();
+        _focalLength = prb.Focal;
+        _pos = prb.Axis;
     }
 
     /// <summary>The parabola whose axis of symmetry is MirrorAxis; Sense gives the orientation.</summary>
@@ -65,8 +65,8 @@ public class ParabolaCurve2D : ConicCurve2D
     public ParabolaCurve2D(in Axis2D d, in Point2D f)
     {
         Parabola2D prb = new Parabola2D(d, f);
-        _pos = prb.Axis();
-        _focalLength = prb.Focal();
+        _pos = prb.Axis;
+        _focalLength = prb.Focal;
     }
 
     internal void SetFocal(double focal)
@@ -82,21 +82,21 @@ public class ParabolaCurve2D : ConicCurve2D
     internal void SetParab2d(in Parabola2D prb)
     {
         CheckMutable();
-        _focalLength = prb.Focal();
-        _pos = prb.Axis();
+        _focalLength = prb.Focal;
+        _pos = prb.Axis;
     }
 
     /// <summary>The parabola as a gp_Parab2d.</summary>
-    public Parabola2D Parab2d() => new Parabola2D(_pos, _focalLength);
+    public Parabola2D Parabola => new Parabola2D(_pos, _focalLength);
 
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
     /// <summary>-Precision::Infinite().</summary>
-    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>
     public sealed override bool IsClosed => false;
@@ -105,47 +105,53 @@ public class ParabolaCurve2D : ConicCurve2D
     public sealed override bool IsPeriodic => false;
 
     /// <summary>The directrix: parallel to the Y axis, at the focal distance on the negative side of the apex.</summary>
-    public Axis2D Directrix()
+    public Axis2D Directrix
     {
-        Parabola2D prb = new Parabola2D(_pos, _focalLength);
-        return prb.Directrix();
+        get
+        {
+            Parabola2D prb = new Parabola2D(_pos, _focalLength);
+            return prb.Directrix;
+        }
     }
 
     /// <summary>1.</summary>
-    public sealed override double Eccentricity() => 1.0;
+    public sealed override double Eccentricity => 1.0;
 
     /// <summary>The focus.</summary>
-    public Point2D Focus()
+    public Point2D Focus
     {
-        Xy pxy = _pos.XDirection().XY();
-        pxy.Multiply(_focalLength);
-        pxy.Add(_pos.Location().XY());
-        return new Point2D(pxy);
+        get
+        {
+            Xy pxy = _pos.XDirection.XY();
+            pxy.Multiply(_focalLength);
+            pxy.Add(_pos.Location.XY());
+            return new Point2D(pxy);
+        }
     }
 
     /// <summary>The focal length: the distance from the apex to the focus.</summary>
-    public double Focal() => _focalLength;
+    public double Focal => _focalLength;
 
     /// <summary>The parameter: the distance from the focus to the directrix, 2 * Focal().</summary>
-    public double Parameter() => 2.0 * _focalLength;
+    public double Parameter => 2.0 * _focalLength;
 
-    public sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(u, _pos, _focalLength);
+    internal sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(u, _pos, _focalLength);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD1(u, _pos, _focalLength, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(u, _pos, _focalLength, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(u, _pos, _focalLength, out result.Point, out result.D1, out result.D2);
@@ -154,7 +160,7 @@ public class ParabolaCurve2D : ConicCurve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -167,22 +173,22 @@ public class ParabolaCurve2D : ConicCurve2D
     protected internal sealed override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _focalLength *= Math.Abs(t.ScaleFactor());
+        _focalLength *= Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>
-    public sealed override double TransformedParameter(double u, in Transform2D t)
+    internal sealed override double TransformedParameter(double u, in Transform2D t)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor());
+        return u * Math.Abs(t.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    public sealed override double ParametricTransformation(in Transform2D t) => Math.Abs(t.ScaleFactor());
+    internal sealed override double ParametricTransformation(in Transform2D t) => Math.Abs(t.ScaleFactor);
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 

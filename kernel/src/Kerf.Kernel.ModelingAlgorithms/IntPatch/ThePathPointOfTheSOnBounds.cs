@@ -141,5 +141,5 @@ public partial struct ThePathPointOfTheSOnBounds
                                    in ThePathPointOfTheSOnBounds right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => $"{Constants.Format("IntPatch_ThePathPointOfTheSOnBounds", _point.X(), _point.Y(), _point.Z(), _tol, _param)} new {_isnew}";
+        => $"{Constants.Format("IntPatch_ThePathPointOfTheSOnBounds", _point.X, _point.Y, _point.Z, _tol, _param)} new {_isnew}";
 }

@@ -70,7 +70,7 @@ public class ShapeExtendWireDataTests
         {
             anEdges.Add(it.Value());
         }
-        if (aW.Orientation() == Reversed)
+        if (aW.Orientation == Reversed)
         {
             anEdges.Reverse();
         }
@@ -84,13 +84,13 @@ public class ShapeExtendWireDataTests
 
         Wire aNew = aWD.Wire();
         Assert.True(aNew.TShape()!.IsFrozen);
-        Assert.True(aNew.Closed());
+        Assert.True(aNew.IsClosed);
         Assert.Equal(4, aNew.ChildCount);
 
         Wire anAPI = aWD.WireAPIMake();
         Assert.False(anAPI.IsNull);
         Assert.True(anAPI.TShape()!.IsFrozen);
-        Assert.True(anAPI.Closed());
+        Assert.True(anAPI.IsClosed);
 
         Wire anInternal = aWD.InternalWire();
         Assert.False(anInternal.TShape()!.IsFrozen);
@@ -105,7 +105,7 @@ public class ShapeExtendWireDataTests
         // the edges are prepended, keeping their own orientation (the iterator gives them reversed with the wire)
         Assert.True(aWD.Edge(1).IsSame(s[3]));
         Assert.True(aWD.Edge(4).IsSame(s[0]));
-        Assert.Equal(Reversed, aWD.Edge(1).Orientation());
+        Assert.Equal(Reversed, aWD.Edge(1).Orientation);
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public class ShapeExtendWireDataTests
         Assert.Equal(5, aNM.EdgeCount);
         Assert.Equal(0, aNM.NonManifoldEdgeCount);
         Assert.True(aNM.Edge(5).IsSame(anInternal));
-        Assert.False(aNM.Wire().Closed()); // not manifold: the wire isn't marked closed
+        Assert.False(aNM.Wire().IsClosed); // not manifold: the wire isn't marked closed
 
         // Init from another wire data copies both lists and the mode
         var aCopy = new ExtendWireData();
@@ -290,7 +290,7 @@ public class ShapeExtendWireDataTests
         Face aFrozen = FirstFace(new ApiMakeCylinder(1, 2).Shape(), f => Tool.Surface(f) is CylindricalSurface);
         Face aF = ShapeCasts.Face(TestCopies.ExactCopyForWrite(aFrozen, out _));
         var aWD = new ExtendWireData(BrepTools.OuterWire(aF));
-        int aSeam = Enumerable.Range(1, 4).First(i => aWD.IsSeam(i) && aWD.Edge(i).Orientation() == Forward);
+        int aSeam = Enumerable.Range(1, 4).First(i => aWD.IsSeam(i) && aWD.Edge(i).Orientation == Forward);
         Edge aSeamE = aWD.Edge(aSeam);
         Curve2D aFwd = Tool.CurveOnSurface(aSeamE, aF, out _, out _)!;
         Curve2D aRev = Tool.CurveOnSurface(ShapeCasts.Edge(aSeamE.Reversed()), aF, out _, out _)!;
@@ -316,7 +316,7 @@ public class ShapeExtendWireDataTests
         aWD.Add(TestShapes.Edge(new Point3D(0, 0, 0), new Point3D(1, 0, 0)));
         aWD.Add(TestShapes.Edge(new Point3D(5, 0, 0), new Point3D(6, 0, 0)));
         Assert.True(aWD.WireAPIMake().IsNull);
-        Assert.False(aWD.Wire().Closed());
+        Assert.False(aWD.Wire().IsClosed);
         Assert.True(IsPlanar(FirstFace(new MakeBox(1, 1, 1).Shape())));
     }
 }

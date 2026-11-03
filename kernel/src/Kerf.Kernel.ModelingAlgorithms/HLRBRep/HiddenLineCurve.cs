@@ -148,7 +148,7 @@ public sealed class HiddenLineCurve
             case global::Kerf.Geometry.CurveKind.Circle:
                 if (!Proj().Perspective())
                 {
-                    Direction3D d1 = BCurveTool.Circle(_curve).Axis().Direction();
+                    Direction3D d1 = BCurveTool.Circle(_curve).Axis.Direction;
                     d1 = d1.Transformed(Proj().Transformation());
                     if (d1.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
@@ -163,7 +163,7 @@ public sealed class HiddenLineCurve
                         _type = global::Kerf.Geometry.CurveKind.Ellipse;
                         // compute the angle offset
                         Direction3D d3 = d1.Crossed(Constants.DZ());
-                        Direction3D d2 = BCurveTool.Circle(_curve).XAxis().Direction();
+                        Direction3D d2 = BCurveTool.Circle(_curve).XAxis.Direction;
                         d2 = d2.Transformed(Proj().Transformation());
                         _ox = d3.AngleWithRef(d2, d1);
                     }
@@ -173,7 +173,7 @@ public sealed class HiddenLineCurve
             case global::Kerf.Geometry.CurveKind.Ellipse:
                 if (!Proj().Perspective())
                 {
-                    Direction3D d1 = BCurveTool.Ellipse(_curve).Axis().Direction();
+                    Direction3D d1 = BCurveTool.Ellipse(_curve).Axis.Direction;
                     d1 = d1.Transformed(Proj().Transformation());
                     if (d1.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
@@ -218,30 +218,30 @@ public sealed class HiddenLineCurve
             { // bezier degree 1
                 BCurveTool.D1(_curve, 0, out Point3D pl, out Vector3D vl);
                 L = new Line3D(pl, new Direction3D(vl));
-                l3d = pl.Distance(BCurveTool.Value(_curve, 1.0));
+                l3d = pl.DistanceTo(BCurveTool.Value(_curve, 1.0));
             }
-            Point3D p = L.Location();
-            Vector3D v = new(L.Direction());
+            Point3D p = L.Location;
+            Vector3D v = new(L.Direction);
             p = p.Transformed(Proj().Transformation());
             v = v.Transformed(Proj().Transformation());
             if (Proj().Perspective())
             {
                 D1(0.0, out Point2D f, out Vector2D vfx);
                 vfx = vfx.Normalized();
-                _vx = (vfx.X() * v.X() + vfx.Y() * v.Y()) * l3d;
-                double l = -(vfx.X() * f.X() + vfx.Y() * f.Y());
-                f = f.WithCoord(f.X() + vfx.X() * l, f.Y() + vfx.Y() * l);
-                _ox = vfx.X() * (p.X() - f.X()) + vfx.Y() * (p.Y() - f.Y());
-                Vector3D vfz = new(-f.X(), -f.Y(), Proj().Focus());
-                _of = vfz.Magnitude();
+                _vx = (vfx.X * v.X + vfx.Y * v.Y) * l3d;
+                double l = -(vfx.X * f.X + vfx.Y * f.Y);
+                f = f.WithCoord(f.X + vfx.X * l, f.Y + vfx.Y * l);
+                _ox = vfx.X * (p.X - f.X) + vfx.Y * (p.Y - f.Y);
+                Vector3D vfz = new(-f.X, -f.Y, Proj().Focus());
+                _of = vfz.Magnitude;
                 vfz /= _of;
                 _vz = vfz * v;
                 _vz *= l3d;
-                _oz = vfz * new Vector3D(p.X() - f.X(), p.Y() - f.Y(), p.Z());
+                _oz = vfz * new Vector3D(p.X - f.X, p.Y - f.Y, p.Z);
             }
             else
             {
-                _vx = Sqrt(v.X() * v.X() + v.Y() * v.Y()) * l3d;
+                _vx = Sqrt(v.X * v.X + v.Y * v.Y) * l3d;
             }
         }
         return (UpdateMinMax(totMin, totMax));
@@ -314,7 +314,7 @@ public sealed class HiddenLineCurve
     {
         BCurveTool.D0(_curve, u, out Point3D p3d);
         p3d = p3d.Transformed(Proj().Transformation());
-        return p3d.Z();
+        return p3d.Z;
     }
 
     /// <summary>The 3D point of parameter U.</summary>
@@ -416,10 +416,10 @@ public sealed class HiddenLineCurve
             v13D = v13D.Transformed(Proj().Transformation());
 
             double f = Proj().Focus();
-            double r = 1.0 - p3D.Z() / f;
-            double e = v13D.Z() / (f * r * r);
-            p = new Point2D(p3D.X() / r, p3D.Y() / r);
-            v = new Vector2D(v13D.X() / r + p3D.X() * e, v13D.Y() / r + p3D.Y() * e);
+            double r = 1.0 - p3D.Z / f;
+            double e = v13D.Z / (f * r * r);
+            p = new Point2D(p3D.X / r, p3D.Y / r);
+            v = new Vector2D(v13D.X / r + p3D.X * e, v13D.Y / r + p3D.Y * e);
         }
         else
         {
@@ -447,20 +447,20 @@ public sealed class HiddenLineCurve
         if (Proj().Perspective())
         {
             double f = Proj().Focus();
-            double r = 1.0 - p3D.Z() / f;
+            double r = 1.0 - p3D.Z / f;
             double q = f * r * r;
-            double e = v13D.Z() / q;
-            double c = e * v13D.Z() / (f * r);
-            p = new Point2D(p3D.X() / r, p3D.Y() / r);
-            v1 = new Vector2D(v13D.X() / r + p3D.X() * e, v13D.Y() / r + p3D.Y() * e);
-            v2 = new Vector2D(v23D.X() / r + 2 * v13D.X() * e + p3D.X() * v23D.Z() / q + 2 * p3D.X() * c,
-                              v23D.Y() / r + 2 * v13D.Y() * e + p3D.Y() * v23D.Z() / q + 2 * p3D.Y() * c);
+            double e = v13D.Z / q;
+            double c = e * v13D.Z / (f * r);
+            p = new Point2D(p3D.X / r, p3D.Y / r);
+            v1 = new Vector2D(v13D.X / r + p3D.X * e, v13D.Y / r + p3D.Y * e);
+            v2 = new Vector2D(v23D.X / r + 2 * v13D.X * e + p3D.X * v23D.Z / q + 2 * p3D.X * c,
+                              v23D.Y / r + 2 * v13D.Y * e + p3D.Y * v23D.Z / q + 2 * p3D.Y * c);
         }
         else
         {
-            p = new Point2D(p3D.X(), p3D.Y());
-            v1 = new Vector2D(v13D.X(), v13D.Y());
-            v2 = new Vector2D(v23D.X(), v23D.Y());
+            p = new Point2D(p3D.X, p3D.Y);
+            v1 = new Vector2D(v13D.X, v13D.Y);
+            v2 = new Vector2D(v23D.X, v23D.Y);
         }
     }
 
@@ -500,14 +500,14 @@ public sealed class HiddenLineCurve
         // this is a circle
         Circle3D c = BCurveTool.Circle(_curve);
         c = c.Transformed(Proj().Transformation());
-        Direction3D d1 = c.Axis().Direction();
+        Direction3D d1 = c.Axis.Direction;
         Direction3D d3 = d1.Crossed(Constants.DZ());
         Direction3D d2 = d1.Crossed(d3);
-        double rap = Sqrt(d2.X() * d2.X() + d2.Y() * d2.Y());
-        Direction2D d = new(d1.Y(), -d1.X());
-        Point2D p = new(c.Location().X(), c.Location().Y());
-        Ellipse2D el = new(new Axis2D(p, d), c.Radius(), c.Radius() * rap);
-        if (d1.Z() < 0)
+        double rap = Sqrt(d2.X * d2.X + d2.Y * d2.Y);
+        Direction2D d = new(d1.Y, -d1.X);
+        Point2D p = new(c.Location.X, c.Location.Y);
+        Ellipse2D el = new(new Axis2D(p, d), c.Radius, c.Radius * rap);
+        if (d1.Z < 0)
         {
             el = el.Reversed();
         }
@@ -551,7 +551,7 @@ public sealed class HiddenLineCurve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref tp3[i]);
-            tp[i] = new Point2D(tp3[i].X(), tp3[i].Y());
+            tp[i] = new Point2D(tp3[i].X, tp3[i].Y);
         }
     }
 
@@ -569,7 +569,7 @@ public sealed class HiddenLineCurve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref tp3[i]);
-            tp[i] = new Point2D(tp3[i].X(), tp3[i].Y());
+            tp[i] = new Point2D(tp3[i].X, tp3[i].Y);
         }
     }
 
@@ -610,7 +610,7 @@ public sealed class HiddenLineCurve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref tp3[i]);
-            tp[i] = new Point2D(tp3[i].X(), tp3[i].Y());
+            tp[i] = new Point2D(tp3[i].X, tp3[i].Y);
         }
     }
 
@@ -634,7 +634,7 @@ public sealed class HiddenLineCurve
         for (int i = i1; i <= i2; i++)
         {
             Proj().Transform(ref tp3[i]);
-            tp[i] = new Point2D(tp3[i].X(), tp3[i].Y());
+            tp[i] = new Point2D(tp3[i].X, tp3[i].Y);
         }
     }
 

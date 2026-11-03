@@ -26,10 +26,10 @@ public class GeomBndLib_OffsetCurve2dTest
             double aU = theU1 + i * aStep;
             Point2D aPnt = theCurve.Value(aU);
             string aWhere = $"Point outside box at U={aU}";
-            GeomBndLibCurve2dTestUtils.ExpectGE(aPnt.X(), aXmin - Conf, aWhere);
-            GeomBndLibCurve2dTestUtils.ExpectLE(aPnt.X(), aXmax + Conf, aWhere);
-            GeomBndLibCurve2dTestUtils.ExpectGE(aPnt.Y(), aYmin - Conf, aWhere);
-            GeomBndLibCurve2dTestUtils.ExpectLE(aPnt.Y(), aYmax + Conf, aWhere);
+            GeomBndLibCurve2dTestUtils.ExpectGE(aPnt.X, aXmin - Conf, aWhere);
+            GeomBndLibCurve2dTestUtils.ExpectLE(aPnt.X, aXmax + Conf, aWhere);
+            GeomBndLibCurve2dTestUtils.ExpectGE(aPnt.Y, aYmin - Conf, aWhere);
+            GeomBndLibCurve2dTestUtils.ExpectLE(aPnt.Y, aYmax + Conf, aWhere);
         }
     }
 

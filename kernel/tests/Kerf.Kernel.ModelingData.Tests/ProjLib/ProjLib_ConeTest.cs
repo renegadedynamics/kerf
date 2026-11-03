@@ -19,7 +19,7 @@ public class ProjLib_ConeTest
         ConeProjector aProjector = new(aCone, aCircle);
         Assert.True(aProjector.IsDone);
         Assert.Equal(CurveKind.Line, aProjector.GetType());
-        Assert.Equal(0.0, aProjector.Line().Direction().Y(), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(0.0, aProjector.Line().Direction.Y, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     [Fact]
@@ -43,6 +43,6 @@ public class ProjLib_ConeTest
         ConeProjector aProjector = new(aCone, aCircle);
         Assert.True(aProjector.IsDone);
         Assert.Equal(CurveKind.Line, aProjector.GetType());
-        Assert.True(aProjector.Line().Direction().X() < 0.0);
+        Assert.True(aProjector.Line().Direction.X < 0.0);
     }
 }

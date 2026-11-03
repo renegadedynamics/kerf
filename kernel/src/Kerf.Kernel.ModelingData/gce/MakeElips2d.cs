@@ -25,10 +25,10 @@ public sealed class MakeElips2d : Root
     /// </summary>
     public MakeElips2d(in Point2D s1, in Point2D s2, in Point2D center)
     {
-        double d1 = s1.Distance(center);
+        double d1 = s1.DistanceTo(center);
         Direction2D xAxis = new(s1.XY() - center.XY());
         Direction2D yAxis = new(s2.XY() - center.XY());
-        double d2 = new Line2D(center, xAxis).Distance(s2);
+        double d2 = new Line2D(center, xAxis).DistanceTo(s2);
         if (d1 < d2)
         {
             _theError = InvertAxis;

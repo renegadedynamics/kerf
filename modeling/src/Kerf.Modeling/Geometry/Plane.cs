@@ -66,13 +66,13 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     Plane(Plane3D pln, bool owned)
     {
         Pln = EnsureRightHanded(pln);
-        var loc = Pln.Location();
-        var axis = Pln.Axis();
-        var z = axis.Direction();
-        var xAxis = Pln.XAxis();
-        var x = xAxis.Direction();
-        var yAxis = Pln.YAxis();
-        var y = yAxis.Direction();
+        var loc = Pln.Location;
+        var axis = Pln.Axis;
+        var z = axis.Direction;
+        var xAxis = Pln.XAxis;
+        var x = xAxis.Direction;
+        var yAxis = Pln.YAxis;
+        var y = yAxis.Direction;
         (Origin, XDir, YDir, ZDir) = (new Vector(loc), new Vector(x), new Vector(y), new Vector(z));
     }
 
@@ -122,8 +122,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         else
         {
             var elementary = (surface as ElementarySurface)!;
-            var position = elementary.Position();
-            var x = position.XDirection();
+            var position = elementary.Position;
+            var x = position.XDirection;
             faceXDir = new Vector(x);
         }
         var x14 = (xDir ?? faceXDir).Round(14);
@@ -206,7 +206,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             var p = origin.ToGpPnt();
             var n = z.ToGpDir();
             var ax3 = new CoordinateSystem(p, n);
-            var xd = ax3.XDirection();
+            var xd = ax3.XDirection;
             x = new Vector(xd).Normalized();
         }
         else
@@ -232,7 +232,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         // build123d moves a planar XY face to the location and reads back its surface's X direction and
         // its normal. Both follow from transforming the XY frame's directions as gp_Ax3::Transform does:
         // X and Y each transformed as a gp_Dir, and the normal their cross product.
-        var trsf = location.Wrapped.Transformation();
+        var trsf = location.Wrapped.Transformation;
         var dx = new Direction3D(1, 0, 0);
         var dy = new Direction3D(0, 1, 0);
         var tx = dx.Transformed(trsf);
@@ -244,16 +244,16 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     static Plane3D EnsureRightHanded(Plane3D pln)
     {
-        var position = pln.Position();
-        if (position.Direct())
+        var position = pln.Position;
+        if (position.IsDirect)
             return pln;
 
         Trace.TraceWarning("Trying to set a left-handed plane");
-        var loc = pln.Location();
-        var axis = pln.Axis();
-        var n = axis.Direction();
-        var xAxis = pln.XAxis();
-        var vx = xAxis.Direction();
+        var loc = pln.Location;
+        var axis = pln.Axis;
+        var n = axis.Direction;
+        var xAxis = pln.XAxis;
+        var vx = xAxis.Direction;
         var ax2 = new Frame3D(loc, n, vx);
         var ax3 = new CoordinateSystem(ax2);
         return new Plane3D(ax3);
@@ -263,13 +263,13 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public Plane3D ToGpPln() => Pln;
 
     /// <summary>A new OCCT gp_Ax3 for this plane's coordinate system.</summary>
-    public CoordinateSystem ToGpAx3() => Pln.Position();
+    public CoordinateSystem ToGpAx3() => Pln.Position;
 
     /// <summary>A new OCCT gp_Ax2 for this plane's coordinate system.</summary>
     public Frame3D ToGpAx2()
     {
-        var ax3 = Pln.Position();
-        return ax3.Ax2();
+        var ax3 = Pln.Position;
+        return ax3.Frame;
     }
 
     /// <summary>The plane moved by <paramref name="amount"/> along its Z direction.</summary>
@@ -356,7 +356,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         get
         {
             var global = new CoordinateSystem();
-            var local = Pln.Position();
+            var local = Pln.Position;
             var t = new Transform3D();
             t = t.WithTransformation(global, local);
             return new Matrix(t);
@@ -369,7 +369,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         get
         {
             var global = new CoordinateSystem();
-            var local = Pln.Position();
+            var local = Pln.Position;
             var t = new Transform3D();
             t = t.WithTransformation(local, global);
             return new Matrix(t);
@@ -406,8 +406,8 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public Location LocationBetween(Plane other)
     {
         var t = new Transform3D();
-        var from = Pln.Position();
-        var to = other.Pln.Position();
+        var from = Pln.Position;
+        var to = other.Pln.Position;
         t = t.WithTransformation(from, to);
         return new Location(t);
     }
@@ -478,7 +478,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
             return axis;
         var ax1 = axis.ToGpAx1();
         var line = new LineCurve3D(ax1);
-        var ax3 = Pln.Position();
+        var ax3 = Pln.Position;
         var plane = new PlaneSurface(ax3);
         var intersection = new CurveSurfaceIntersection(line, plane);
         if (intersection.IsDone && intersection.PointCount == 1)
@@ -501,7 +501,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         {
             var curve = intersector.Line(1);
             var line = (curve as LineCurve3D) ?? throw new InvalidOperationException("plane intersection isn't a line");
-            var position = line.Position();
+            var position = line.Position;
             return new Axis(position);
         }
         return null;

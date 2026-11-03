@@ -43,7 +43,7 @@ public sealed class MakeSegment2d : Root
     /// <summary>The segment from P1 to P2; fails with gce_ConfusedPoints if they coincide.</summary>
     public MakeSegment2d(in Point2D p1, in Point2D p2)
     {
-        double dist = p1.Distance(p2);
+        double dist = p1.DistanceTo(p2);
         if (dist > Constants.Resolution())
         {
             // GC_MakeLine2d(P1, P2) succeeds here: it only fails below gp::Resolution().

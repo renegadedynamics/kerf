@@ -76,7 +76,7 @@ internal static class GeometryTestBisecCommands
                 Type Type2 = C2.GetType();
                 if (Type1 == typeof(LineCurve2D) && Type2 == typeof(LineCurve2D))
                 {
-                    Lin2dBisec Bis = new(((LineCurve2D)C1).Lin2d(), ((LineCurve2D)C2).Lin2d());
+                    Lin2dBisec Bis = new(((LineCurve2D)C1).Line, ((LineCurve2D)C2).Line);
                     if (Bis.IsDone)
                     {
                         NbSol = Bis.SolutionCount;
@@ -93,7 +93,7 @@ internal static class GeometryTestBisecCommands
                 }
                 else if (Type1 == typeof(LineCurve2D) && Type2 == typeof(CircleCurve2D))
                 {
-                    CircLin2dBisec Bis = new(((CircleCurve2D)C2).Circ2d(), ((LineCurve2D)C1).Lin2d());
+                    CircLin2dBisec Bis = new(((CircleCurve2D)C2).Circle, ((LineCurve2D)C1).Line);
                     if (Bis.IsDone)
                     {
                         NbSol = Bis.SolutionCount;
@@ -115,7 +115,7 @@ internal static class GeometryTestBisecCommands
                 }
                 else if (Type2 == typeof(LineCurve2D) && Type1 == typeof(CircleCurve2D))
                 {
-                    CircLin2dBisec Bis = new(((CircleCurve2D)C1).Circ2d(), ((LineCurve2D)C2).Lin2d());
+                    CircLin2dBisec Bis = new(((CircleCurve2D)C1).Circle, ((LineCurve2D)C2).Line);
                     if (Bis.IsDone)
                     {
                         NbSol = Bis.SolutionCount;
@@ -137,7 +137,7 @@ internal static class GeometryTestBisecCommands
                 }
                 else if (Type2 == typeof(CircleCurve2D) && Type1 == typeof(CircleCurve2D))
                 {
-                    Circ2dBisec Bis = new(((CircleCurve2D)C1).Circ2d(), ((CircleCurve2D)C2).Circ2d());
+                    Circ2dBisec Bis = new(((CircleCurve2D)C1).Circle, ((CircleCurve2D)C2).Circle);
                     if (Bis.IsDone)
                     {
                         NbSol = Bis.SolutionCount;
@@ -167,7 +167,7 @@ internal static class GeometryTestBisecCommands
             {
                 if (Type1 == typeof(CircleCurve2D))
                 {
-                    CircPnt2dBisec Bis = new(((CircleCurve2D)C1).Circ2d(), P2);
+                    CircPnt2dBisec Bis = new(((CircleCurve2D)C1).Circle, P2);
                     if (Bis.IsDone)
                     {
                         NbSol = Bis.SolutionCount;
@@ -189,7 +189,7 @@ internal static class GeometryTestBisecCommands
                 }
                 else if (Type1 == typeof(LineCurve2D))
                 {
-                    LinPnt2dBisec Bis = new(((LineCurve2D)C1).Lin2d(), P2);
+                    LinPnt2dBisec Bis = new(((LineCurve2D)C1).Line, P2);
                     if (Bis.IsDone)
                     {
                         NbSol = 1;
@@ -215,7 +215,7 @@ internal static class GeometryTestBisecCommands
                 Type Type2 = C2.GetType();
                 if (Type2 == typeof(CircleCurve2D))
                 {
-                    CircPnt2dBisec Bis = new(((CircleCurve2D)C2).Circ2d(), P1);
+                    CircPnt2dBisec Bis = new(((CircleCurve2D)C2).Circle, P1);
                     if (Bis.IsDone)
                     {
                         NbSol = Bis.SolutionCount;
@@ -237,7 +237,7 @@ internal static class GeometryTestBisecCommands
                 }
                 else if (Type2 == typeof(LineCurve2D))
                 {
-                    LinPnt2dBisec Bis = new(((LineCurve2D)C2).Lin2d(), P1);
+                    LinPnt2dBisec Bis = new(((LineCurve2D)C2).Line, P1);
                     if (Bis.IsDone)
                     {
                         NbSol = 1;

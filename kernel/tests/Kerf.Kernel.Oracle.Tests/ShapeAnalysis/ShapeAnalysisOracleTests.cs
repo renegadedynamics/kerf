@@ -218,8 +218,8 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                 double t1 = f + (l - f) * anOracle.Real(0, 0.3), t2 = f + (l - f) * anOracle.Real(0.7, 1);
                 aNC = new N.Geom_TrimmedCurve(aNC, t1, t2);
                 aPC = new TrimmedCurve3D(aPC, t1, t2);
-                f = aPC.FirstParameter();
-                l = aPC.LastParameter();
+                f = aPC.FirstParameter;
+                l = aPC.LastParameter;
                 aCase += ", trimmed";
             }
 
@@ -233,7 +233,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
                 aP = aP.Translated(new Vector3D(anOracle.Real(-1, 1), anOracle.Real(-1, 1), anOracle.Real(-1, 1)) * anOff);
                 if (k == 7 && aWhat == "circle")
                 {
-                    aP = ((CircleCurve3D)(aPC is TrimmedCurve3D aT ? aT.BasisCurve() : aPC)).Location(); // on the axis
+                    aP = ((CircleCurve3D)(aPC is TrimmedCurve3D aT ? aT.BasisCurve : aPC)).Location; // on the axis
                 }
 
                 using N.gp_Pnt aNP = Oracle.ToNative(aP);
@@ -671,7 +671,7 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
 
             theOracle.Same(aNSAS.Gap(), aSAS.Gap(), aStep + ", NextValueOfUV gap");
 
-            double aNU = aPrev.X(), aNV = aPrev.Y(), aPU = aPrev.X(), aPV = aPrev.Y();
+            double aNU = aPrev.X, aNV = aPrev.Y, aPU = aPrev.X, aPV = aPrev.Y;
             theOracle.Same(aNSAS.UVFromIso(aNP, aPreci, ref aNU, ref aNV), aSAS.UVFromIso(aP, aPreci, ref aPU, ref aPV),
                            aStep + ", UVFromIso");
             theOracle.Same(aNU, aPU, aStep + ", UVFromIso U");

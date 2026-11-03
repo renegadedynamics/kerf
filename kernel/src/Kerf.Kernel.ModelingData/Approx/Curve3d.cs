@@ -59,21 +59,21 @@ public sealed class Curve3d
             {
                 case 0:
                     pnt = _fonct.Value(par);
-                    result[0] = pnt.X();
-                    result[1] = pnt.Y();
-                    result[2] = pnt.Z();
+                    result[0] = pnt.X;
+                    result[1] = pnt.Y;
+                    result[2] = pnt.Z;
                     break;
                 case 1:
                     _fonct.D1(par, out pnt, out v1);
-                    result[0] = v1.X();
-                    result[1] = v1.Y();
-                    result[2] = v1.Z();
+                    result[0] = v1.X;
+                    result[1] = v1.Y;
+                    result[2] = v1.Z;
                     break;
                 case 2:
                     _fonct.D2(par, out pnt, out v1, out v2);
-                    result[0] = v2.X();
-                    result[1] = v2.Y();
-                    result[2] = v2.Z();
+                    result[0] = v2.X;
+                    result[1] = v2.Y;
+                    result[2] = v2.Z;
                     break;
                 default:
                     result[0] = result[1] = result[2] = 0.0;
@@ -173,7 +173,7 @@ public sealed class Curve3d
         // As in OCCT, this reads the curve: it throws without a result.
         BSplineCurve3D curve = _bSplCurve ?? throw new NotDoneException("Approx_Curve3d::Dump");
         o.Write("******* Dump of ApproxCurve *******" + '\n');
-        o.Write("*******Degree     " + curve.Degree().ToString(CultureInfo.InvariantCulture) + '\n');
+        o.Write("*******Degree     " + curve.Degree.ToString(CultureInfo.InvariantCulture) + '\n');
         o.Write("*******NbSegments " + (curve.KnotCount - 1).ToString(CultureInfo.InvariantCulture) + '\n');
         o.Write("*******Error      " + MaxError().ToString(CultureInfo.InvariantCulture) + '\n');
     }

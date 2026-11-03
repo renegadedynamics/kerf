@@ -25,14 +25,14 @@ public class HelixGeom_BuilderHelixCoilTests
         Curve3D aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Test curve endpoints
-        aCurve.D0(aCurve.FirstParameter(), out Point3D aP1);
-        aCurve.D0(aCurve.LastParameter(), out Point3D aP2);
-        Assert.Equal(2.0, aP1.X(), myTolerance);
-        Assert.Equal(0.0, aP1.Y(), myTolerance);
-        Assert.Equal(0.0, aP1.Z(), myTolerance);
-        Assert.Equal(2.0, aP2.X(), myTolerance);
-        Assert.Equal(0.0, aP2.Y(), myTolerance);
-        Assert.Equal(5.0, aP2.Z(), myTolerance);
+        aCurve.D0(aCurve.FirstParameter, out Point3D aP1);
+        aCurve.D0(aCurve.LastParameter, out Point3D aP2);
+        Assert.Equal(2.0, aP1.X, myTolerance);
+        Assert.Equal(0.0, aP1.Y, myTolerance);
+        Assert.Equal(0.0, aP1.Z, myTolerance);
+        Assert.Equal(2.0, aP2.X, myTolerance);
+        Assert.Equal(0.0, aP2.Y, myTolerance);
+        Assert.Equal(5.0, aP2.Z, myTolerance);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class HelixGeom_BuilderHelixCoilTests
         BSplineCurve3D? aBSpline = aCurve as BSplineCurve3D;
         Assert.NotNull(aBSpline);
         // Check B-spline properties
-        Assert.True(aBSpline.Degree() <= 8);
+        Assert.True(aBSpline.Degree <= 8);
         Assert.True(aBSpline.PoleCount > 0);
     }
 }
@@ -130,9 +130,9 @@ public class HelixGeom_BuilderHelixTests
         Frame3D aTestPosition = new(new Point3D(10.0, 20.0, 30.0), new Direction3D(Direction3D.D.X), new Direction3D(Direction3D.D.Y));
         aBuilder.SetPosition(aTestPosition);
         Frame3D aRetrievedPosition = aBuilder.Position();
-        Assert.True(aRetrievedPosition.Location().IsEqual(aTestPosition.Location(), 1e-15));
-        Assert.True(aRetrievedPosition.Direction().IsEqual(aTestPosition.Direction(), 1e-15));
-        Assert.True(aRetrievedPosition.XDirection().IsEqual(aTestPosition.XDirection(), 1e-15));
+        Assert.True(aRetrievedPosition.Location.IsEqual(aTestPosition.Location, 1e-15));
+        Assert.True(aRetrievedPosition.Direction.IsEqual(aTestPosition.Direction, 1e-15));
+        Assert.True(aRetrievedPosition.XDirection.IsEqual(aTestPosition.XDirection, 1e-15));
     }
 
     [Fact]

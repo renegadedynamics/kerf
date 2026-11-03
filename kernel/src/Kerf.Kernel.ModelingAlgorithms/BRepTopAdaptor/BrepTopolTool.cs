@@ -75,7 +75,7 @@ public class BrepTopolTool : TopolTool
         }
 
         Shape s_wnt = brhs.Face();
-        s_wnt.Orientation(Forward);
+        s_wnt.Orient(Forward);
         _face = ShapeCasts.Face(s_wnt);
         _fClass2d = null;
         _nbSamplesU = -1;
@@ -161,7 +161,7 @@ public class BrepTopolTool : TopolTool
     public override Orientation Orientation(Curve2DAdaptorBase c)
     {
         var brhc = (EdgeCurve2DAdaptor)c;
-        return brhc.Edge().Orientation();
+        return brhc.Edge().Orientation;
     }
 
     /// <summary>The orientation of the vertex.</summary>
@@ -189,9 +189,9 @@ public class BrepTopolTool : TopolTool
                 Point3D a = array2.Value(i, 1);
                 Point3D b = array2.Value(i, 2);
                 Point3D c = array2.Value(i, 3);
-                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
-                            c.Y() - b.Y() - b.Y() + a.Y(),
-                            c.Z() - b.Z() - b.Z() + a.Z());
+                vi = vi.WithCoord(c.X - b.X - b.X + a.X,
+                            c.Y - b.Y - b.Y + a.Y,
+                            c.Z - b.Z - b.Z + a.Z);
 
                 int locnbch = 0;
 
@@ -201,9 +201,9 @@ public class BrepTopolTool : TopolTool
                     Point3D ax = array2.Value(i, j - 1);
                     Point3D bx = array2.Value(i, j);
                     Point3D cx = array2.Value(i, j + 1);
-                    vip1 = vip1.WithCoord(cx.X() - bx.X() - bx.X() + ax.X(),
-                                  cx.Y() - bx.Y() - bx.Y() + ax.Y(),
-                                  cx.Z() - bx.Z() - bx.Z() + ax.Z());
+                    vip1 = vip1.WithCoord(cx.X - bx.X - bx.X + ax.X,
+                                  cx.Y - bx.Y - bx.Y + ax.Y,
+                                  cx.Z - bx.Z - bx.Z + ax.Z);
                     double pd = vi.Dot(vip1);
                     vi = vip1;
                     if (pd > 1.0e-7 || pd < -1.0e-7)
@@ -244,9 +244,9 @@ public class BrepTopolTool : TopolTool
                 Point3D a = array2.Value(1, j);
                 Point3D b = array2.Value(2, j);
                 Point3D c = array2.Value(3, j);
-                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
-                            c.Y() - b.Y() - b.Y() + a.Y(),
-                            c.Z() - b.Z() - b.Z() + a.Z());
+                vi = vi.WithCoord(c.X - b.X - b.X + a.X,
+                            c.Y - b.Y - b.Y + a.Y,
+                            c.Z - b.Z - b.Z + a.Z);
 
                 int locnbch = 0;
 
@@ -256,9 +256,9 @@ public class BrepTopolTool : TopolTool
                     Point3D ax = array2.Value(i - 1, j);
                     Point3D bx = array2.Value(i, j);
                     Point3D cx = array2.Value(i + 1, j);
-                    vip1 = vip1.WithCoord(cx.X() - bx.X() - bx.X() + ax.X(),
-                                  cx.Y() - bx.Y() - bx.Y() + ax.Y(),
-                                  cx.Z() - bx.Z() - bx.Z() + ax.Z());
+                    vip1 = vip1.WithCoord(cx.X - bx.X - bx.X + ax.X,
+                                  cx.Y - bx.Y - bx.Y + ax.Y,
+                                  cx.Z - bx.Z - bx.Z + ax.Z);
                     double pd = vi.Dot(vip1);
                     vi = vip1;
                     if (pd > 1.0e-7 || pd < -1.0e-7)

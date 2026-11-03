@@ -55,9 +55,9 @@ public class CartesianPoint2 : Point2
 
     public override Point2D Pnt2d() => _gpPnt2d;
 
-    public override double X() => _gpPnt2d.X();
+    public override double X() => _gpPnt2d.X;
 
-    public override double Y() => _gpPnt2d.Y();
+    public override double Y() => _gpPnt2d.Y;
 
     /// <summary>Applies T to this point.</summary>
     protected internal override void Transform(in Transform2D t)

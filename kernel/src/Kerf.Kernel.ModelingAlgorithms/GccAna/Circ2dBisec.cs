@@ -45,22 +45,22 @@ public sealed class Circ2dBisec
         _wellDone = false;
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        double r1 = circ1.Radius();
-        double r2 = circ2.Radius();
+        double r1 = circ1.Radius;
+        double r2 = circ2.Radius;
         _sameradius = Math.Abs(r1 - r2) <= tol;
         if (r1 < r2)
         {
             _circle1 = circ2;
             _circle2 = circ1;
-            r1 = _circle1.Radius();
-            r2 = _circle2.Radius();
+            r1 = _circle1.Radius;
+            r2 = _circle2.Radius;
         }
         else
         {
             _circle1 = circ1;
             _circle2 = circ2;
         }
-        double dist = _circle2.Location().Distance(_circle1.Location());
+        double dist = _circle2.Location.DistanceTo(_circle1.Location);
         if (r1 - dist - r2 > tol)
         {
             _intersection = 0;
@@ -150,11 +150,11 @@ public sealed class Circ2dBisec
         }
         else
         {
-            double xcencir1 = _circle1.Location().X();
-            double ycencir1 = _circle1.Location().Y();
-            double xcencir2 = _circle2.Location().X();
-            double ycencir2 = _circle2.Location().Y();
-            double dist = _circle1.Location().Distance(_circle2.Location());
+            double xcencir1 = _circle1.Location.X;
+            double ycencir1 = _circle1.Location.Y;
+            double xcencir2 = _circle2.Location.X;
+            double ycencir2 = _circle2.Location.Y;
+            double dist = _circle1.Location.DistanceTo(_circle2.Location);
 
             Point2D pcen = new((xcencir1 + xcencir2) / 2.0, (ycencir1 + ycencir2) / 2.0);
             Direction2D dircen = new(), medcen = new();
@@ -167,8 +167,8 @@ public sealed class Circ2dBisec
             Axis2D acenx = new(pcen, dirx);
             Axis2D acencen = new(pcen, dircen);
 
-            double r1 = _circle1.Radius();
-            double r2 = _circle2.Radius();
+            double r1 = _circle1.Radius;
+            double r2 = _circle2.Radius;
 
             if ((_nbrSol == 1) && (_intersection == 0))
             {
@@ -195,7 +195,7 @@ public sealed class Circ2dBisec
                 }
                 else if (index == 2)
                 {
-                    Line2D l = new(_circle1.Location(), dircen);
+                    Line2D l = new(_circle1.Location, dircen);
                     bissol = new BLine(l);
                 }
             }

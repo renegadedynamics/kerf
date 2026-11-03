@@ -30,7 +30,7 @@ public sealed class BSplineCurveKnotSplitting
         int firstIndex = basisCurve.FirstUKnotIndex();
         int lastIndex = basisCurve.LastUKnotIndex();
 
-        int degree = basisCurve.Degree();
+        int degree = basisCurve.Degree;
 
         if (continuityRange == 0)
         {

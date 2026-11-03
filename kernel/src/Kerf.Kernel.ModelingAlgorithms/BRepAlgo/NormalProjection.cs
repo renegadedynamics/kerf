@@ -220,7 +220,7 @@ public sealed class NormalProjection
                 {
                     if (hProjector.IsSinglePnt(k, out Point2D p2d))
                     {
-                        hProjector.GetSurface()!.D0(p2d.X(), p2d.Y(), out p);
+                        hProjector.GetSurface()!.D0(p2d.X, p2d.Y, out p);
                         prj = new LibraryMakeVertex(p).InternalShape();
                         descenList.Append(prj);
                         bb.Add(VertexRes, prj);
@@ -311,18 +311,18 @@ public sealed class NormalProjection
                                 // start from 3 points to reject non degenerated edges
                                 // very fast
                                 nbPoint = 3;
-                                dPar = (bs3d.LastParameter() - bs3d.FirstParameter()) / (nbPoint - 1);
+                                dPar = (bs3d.LastParameter - bs3d.FirstParameter) / (nbPoint - 1);
                                 for (ii = 0; ii < nbPoint; ii++)
                                 {
-                                    par = bs3d.FirstParameter() + ii * dPar;
+                                    par = bs3d.FirstParameter + ii * dPar;
                                     pp = bs3d.Value(par);
                                     p1 = p1.WithXYZ(p1.XYZ() + pp.XYZ() / nbPoint);
                                 }
                                 for (ii = 0; ii < nbPoint && degenerated; ii++)
                                 {
-                                    par = bs3d.FirstParameter() + ii * dPar;
+                                    par = bs3d.FirstParameter + ii * dPar;
                                     pp = bs3d.Value(par);
-                                    dist = p1.Distance(pp);
+                                    dist = p1.DistanceTo(pp);
                                     if (dist > _tol3d)
                                     {
                                         degenerated = false;
@@ -334,18 +334,18 @@ public sealed class NormalProjection
                                 {
                                     p1 = p1.WithCoord(0.0, 0.0, 0.0);
                                     nbPoint = 10;
-                                    dPar = (bs3d.LastParameter() - bs3d.FirstParameter()) / (nbPoint - 1);
+                                    dPar = (bs3d.LastParameter - bs3d.FirstParameter) / (nbPoint - 1);
                                     for (ii = 0; ii < nbPoint; ii++)
                                     {
-                                        par = bs3d.FirstParameter() + ii * dPar;
+                                        par = bs3d.FirstParameter + ii * dPar;
                                         pp = bs3d.Value(par);
                                         p1 = p1.WithXYZ(p1.XYZ() + pp.XYZ() / nbPoint);
                                     }
                                     for (ii = 0; ii < nbPoint && degenerated; ii++)
                                     {
-                                        par = bs3d.FirstParameter() + ii * dPar;
+                                        par = bs3d.FirstParameter + ii * dPar;
                                         pp = bs3d.Value(par);
-                                        dist = p1.Distance(pp);
+                                        dist = p1.DistanceTo(pp);
                                         if (dist > _tol3d)
                                         {
                                             degenerated = false;
@@ -406,8 +406,8 @@ public sealed class NormalProjection
                                 {
                                     // if the common operation has failed, try to classify the part
                                     FClass2d classifier = new(ShapeCasts.Face(faces.Value(j)), global::Kerf.Engine.Foundation.Precision.Confusion());
-                                    double f = pCur2d!.FirstParameter();
-                                    double l = pCur2d.LastParameter();
+                                    double f = pCur2d!.FirstParameter;
+                                    double l = pCur2d.LastParameter;
                                     double pmil = (f + l) / 2;
                                     pCur2d.D0(pmil, out Point2D puv);
                                     Containment state;
@@ -424,8 +424,8 @@ public sealed class NormalProjection
                             else
                             {
                                 FClass2d classifier = new(ShapeCasts.Face(faces.Value(j)), global::Kerf.Engine.Foundation.Precision.Confusion());
-                                double f = pCur2d!.FirstParameter();
-                                double l = pCur2d.LastParameter();
+                                double f = pCur2d!.FirstParameter;
+                                double l = pCur2d.LastParameter;
                                 double pmil = (f + l) / 2;
                                 pCur2d.D0(pmil, out Point2D puv);
                                 Containment state;

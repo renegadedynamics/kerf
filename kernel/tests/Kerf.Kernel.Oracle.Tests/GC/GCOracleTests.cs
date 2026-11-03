@@ -19,8 +19,8 @@ public class GCOracleTests(ITestOutputHelper output)
                                 string theWhat, double theTolerance = Oracle.Tolerance)
     {
         double aNF = theNative.FirstParameter(), aNL = theNative.LastParameter();
-        theOracle.Same(aNF, thePort.FirstParameter(), theWhat + " FirstParameter", theTolerance);
-        theOracle.Same(aNL, thePort.LastParameter(), theWhat + " LastParameter", theTolerance);
+        theOracle.Same(aNF, thePort.FirstParameter, theWhat + " FirstParameter", theTolerance);
+        theOracle.Same(aNL, thePort.LastParameter, theWhat + " LastParameter", theTolerance);
         // Points at the native parameters, so that a parameter difference doesn't count twice
         foreach (double aT in new[] { 0.0, 0.25, 0.5, 1.0 })
         {
@@ -39,17 +39,17 @@ public class GCOracleTests(ITestOutputHelper output)
         using var aNBasis = theNative.BasisCurve();
         using var aNCircle = N.Geom_Circle.DownCast(aNBasis);
         using var aNCirc = aNCircle!.Circ();
-        Circle3D aCirc = ((CircleCurve3D)thePort.BasisCurve()).Circ();
-        theOracle.Same(aNCirc.Radius(), aCirc.Radius(), theWhat + " radius", theTolerance);
+        Circle3D aCirc = ((CircleCurve3D)thePort.BasisCurve).Circle;
+        theOracle.Same(aNCirc.Radius(), aCirc.Radius, theWhat + " radius", theTolerance);
         using var aNPos = aNCirc.Position();
         using var aNLoc = aNPos.Location();
         using var aNZ = aNPos.Direction();
         using var aNX = aNPos.XDirection();
         using var aNZXYZ = aNZ.XYZ();
         using var aNXXYZ = aNX.XYZ();
-        theOracle.Same(Oracle.FromNative(aNLoc).XYZ(), aCirc.Location().XYZ(), theWhat + " center", theTolerance);
-        theOracle.Same(Oracle.FromNative(aNZXYZ), aCirc.Axis().Direction().XYZ(), theWhat + " normal", theTolerance);
-        theOracle.Same(Oracle.FromNative(aNXXYZ), aCirc.XAxis().Direction().XYZ(), theWhat + " X direction",
+        theOracle.Same(Oracle.FromNative(aNLoc).XYZ(), aCirc.Location.XYZ(), theWhat + " center", theTolerance);
+        theOracle.Same(Oracle.FromNative(aNZXYZ), aCirc.Axis.Direction.XYZ(), theWhat + " normal", theTolerance);
+        theOracle.Same(Oracle.FromNative(aNXXYZ), aCirc.XAxis.Direction.XYZ(), theWhat + " X direction",
                        theTolerance);
     }
 

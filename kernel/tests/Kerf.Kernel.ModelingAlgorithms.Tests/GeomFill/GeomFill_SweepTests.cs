@@ -57,7 +57,7 @@ public class GeomFill_SweepTests
 
     private static CircleCurve3D CircleAtStart(Curve3D thePath, double theRadius)
     {
-        thePath.D1(thePath.FirstParameter(), out Point3D aP, out Vector3D aT);
+        thePath.D1(thePath.FirstParameter, out Point3D aP, out Vector3D aT);
         return new CircleCurve3D(new Frame3D(aP, new Direction3D(aT)), theRadius);
     }
 
@@ -104,7 +104,7 @@ public class GeomFill_SweepTests
         for (int i = 1; i <= aNb; i++)
         {
             Xyz aXYZ = M * aSect.Pole(i).XYZ() + V.XYZ();
-            Assert.True(new Point3D(aXYZ).Distance(aP[i]) < 1e-12);
+            Assert.True(new Point3D(aXYZ).DistanceTo(aP[i]) < 1e-12);
         }
 
         // D1 and D2 against central differences
@@ -116,9 +116,9 @@ public class GeomFill_SweepTests
         for (int i = 1; i <= aNb; i++)
         {
             Vector3D aFD = new Vector3D(aPm[i], aPp[i]) / (2 * h);
-            Assert.True((aFD - aD[i]).Magnitude() < 1e-5 * (1 + aD[i].Magnitude()));
+            Assert.True((aFD - aD[i]).Magnitude < 1e-5 * (1 + aD[i].Magnitude));
             Vector3D aFD2 = (aDp[i] - aDm[i]) / (2 * h);
-            Assert.True((aFD2 - aD2[i]).Magnitude() < 1e-3 * (1 + aD2[i].Magnitude()));
+            Assert.True((aFD2 - aD2[i]).Magnitude < 1e-3 * (1 + aD2[i].Magnitude));
         }
 
         // a constant section: the location's intervals
@@ -140,7 +140,7 @@ public class GeomFill_SweepTests
         aPipe.Perform(1e-4, false);
         Assert.True(aPipe.IsDone);
         var aCyl = Assert.IsType<TrimmedSurface>(aPipe.Surface());
-        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface());
+        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface);
         Assert.Equal(0.0, aPipe.ErrorOnSurf());
 
         // a circular path and a circle off the axis: a torus, with the sections as u-isos
@@ -150,14 +150,14 @@ public class GeomFill_SweepTests
         Assert.True(aPipe.IsDone);
         Assert.True(aPipe.ExchangeUV() || aPipe.Surface() is TrimmedSurface);
         var aTor = Assert.IsType<TrimmedSurface>(aPipe.Surface());
-        Assert.IsType<ToroidalSurface>(aTor.BasisSurface());
+        Assert.IsType<ToroidalSurface>(aTor.BasisSurface);
 
         // a straight path and an ellipse: an extrusion
         EllipseCurve3D anEllipse = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 3, 1);
         aPipe = new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aLine, anEllipse, global::Kerf.Engine.Construction.Surfaces.Trihedron.IsCorrectedFrenet);
         aPipe.Perform(1e-4, false);
         var anExt = Assert.IsType<TrimmedSurface>(aPipe.Surface());
-        Assert.IsType<ExtrusionSurface>(anExt.BasisSurface());
+        Assert.IsType<ExtrusionSurface>(anExt.BasisSurface);
 
         // without the particular cases, a B-spline surface
         aPipe = new global::Kerf.Engine.Construction.Surfaces.SurfacePipe(aLine, CircleAtStart(aLine, 2), global::Kerf.Engine.Construction.Surfaces.Trihedron.IsCorrectedFrenet);
@@ -195,9 +195,9 @@ public class GeomFill_SweepTests
         Assert.Equal(0.0, aV);
 
         // the surface's iso-v at the start is the scaled section placed at the path's start
-        aS.Bounds(out double u1, out double u2, out double v1, out _);
+        aS.ParameterBounds(out double u1, out double u2, out double v1, out _);
         Point3D aP0 = aS.Value(u1, v1);
-        Assert.True(aP0.Distance(aPath.Value(0)) < 5);
+        Assert.True(aP0.DistanceTo(aPath.Value(0)) < 5);
         Assert.True(aSweep.ErrorOnSurface() < 1e-4);
         Assert.True(u2 > u1);
     }
@@ -222,9 +222,9 @@ public class GeomFill_SweepTests
         aLaw.D2(1.3, out double f, out double df, out double d2f);
         for (int i = 1; i <= aNb; i++)
         {
-            Assert.True(aP[i].Distance(new Point3D(aSect.Pole(i).XYZ() * f)) < 1e-12);
-            Assert.True((aD[i] - new Vector3D(aSect.Pole(i).XYZ() * df)).Magnitude() < 1e-12);
-            Assert.True((aD2[i] - new Vector3D(aSect.Pole(i).XYZ() * d2f)).Magnitude() < 1e-12);
+            Assert.True(aP[i].DistanceTo(new Point3D(aSect.Pole(i).XYZ() * f)) < 1e-12);
+            Assert.True((aD[i] - new Vector3D(aSect.Pole(i).XYZ() * df)).Magnitude < 1e-12);
+            Assert.True((aD2[i] - new Vector3D(aSect.Pole(i).XYZ() * d2f)).Magnitude < 1e-12);
             Assert.Equal(0.0, aDW[i]);
         }
         Assert.False(aSec.IsVPeriodic);
@@ -273,9 +273,9 @@ public class GeomFill_SweepTests
         BSplineSurface aSurf = aLaw.BSplineSurface()!;
         Assert.True(aSurf.IsFrozen);
         Assert.Same(aSurf, aLaw.InternalBSplineSurface());
-        aSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aSurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 10.0, 0.0, 1.0), (u1, u2, v1, v2));
-        Assert.True(aSurf.VDegree() >= 2);
+        Assert.True(aSurf.VDegree >= 2);
 
         // the sections are the v-isos at their parameters
         aLaw.SectionShape(out int aNb, out _, out _);
@@ -283,7 +283,7 @@ public class GeomFill_SweepTests
         NCollection_Array1<Vector3D> aD = new(1, aNb), aD2 = new(1, aNb), aDm = new(1, aNb), aDp = new(1, aNb);
         NCollection_Array1<double> aW = new(1, aNb), aDW = new(1, aNb), aD2W = new(1, aNb);
         Assert.True(aLaw.D0(0, aP, aW));
-        Assert.True(aSurf.Value(5, 0).Distance(aS1.Value(0.5)) < 1e-5);
+        Assert.True(aSurf.Value(5, 0).DistanceTo(aS1.Value(0.5)) < 1e-5);
 
         // D1, D2 against central differences
         double v = 0.4, h = 1e-6;
@@ -292,8 +292,8 @@ public class GeomFill_SweepTests
         Assert.True(aLaw.D2(v, aP, aD, aD2, aW, aDW, aD2W));
         for (int i = 1; i <= aNb; i++)
         {
-            Assert.True((new Vector3D(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude() < 1e-5 * (1 + aD[i].Magnitude()));
-            Assert.True(((aDp[i] - aDm[i]) / (2 * h) - aD2[i]).Magnitude() < 1e-3 * (1 + aD2[i].Magnitude()));
+            Assert.True((new Vector3D(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude < 1e-5 * (1 + aD[i].Magnitude));
+            Assert.True(((aDp[i] - aDm[i]) / (2 * h) - aD2[i]).Magnitude < 1e-3 * (1 + aD2[i].Magnitude));
         }
     }
 
@@ -313,7 +313,7 @@ public class GeomFill_SweepTests
         Assert.Equal(0.0, anErr);
         Assert.True(aLaw.IsConicalLaw(ref anErr));
         Curve3D aMid = aLaw.CirclSection(2.5);
-        Assert.Equal(2.0, Assert.IsType<CircleCurve3D>(aMid).Radius(), 1e-12);
+        Assert.Equal(2.0, Assert.IsType<CircleCurve3D>(aMid).Radius, 1e-12);
         Curve3D aConst = aLaw.ConstantSection();
         Assert.NotSame(aSeq[1], aConst);
 
@@ -321,7 +321,7 @@ public class GeomFill_SweepTests
         aLaw = new global::Kerf.Engine.Construction.Surfaces.SurfaceNSections(aSeq, aPar, 0, 2 * M_PI, 0, 5);
         Assert.False(aLaw.IsConstant(ref anErr));
         Assert.True(aLaw.IsConicalLaw(ref anErr));
-        Assert.Equal(3.0, ((CircleCurve3D)aLaw.CirclSection(2.5)).Radius(), 1e-12);
+        Assert.Equal(3.0, ((CircleCurve3D)aLaw.CirclSection(2.5)).Radius, 1e-12);
 
         // three sections: neither
         aSeq.Append(new CircleCurve3D(anAx.Translated(new Vector3D(0, 0, 9)), 1));
@@ -345,7 +345,7 @@ public class GeomFill_SweepTests
         NCollection_Sequence<Transform3D> aTrsfs = new();
         global::Kerf.Engine.Construction.Surfaces.SurfaceNSections aCut = new(aSeq, aTrsfs, aPar, 0.25, 0.75, 0, 1, aRef);
         BSplineSurface aS = aCut.BSplineSurface()!;
-        aS.Bounds(out double u1, out double u2, out _, out _);
+        aS.ParameterBounds(out double u1, out double u2, out _, out _);
         Assert.Equal(0.25, u1, 1e-12);
         Assert.Equal(0.75, u2, 1e-12);
         Assert.NotSame(aRef, aS);
@@ -375,7 +375,7 @@ public class GeomFill_SweepTests
         Point3D aC = new(1, 2, 3);
         Direction3D aN = new(0.1, 0.2, 1);
         Frame3D anAx = new(aC, aN);
-        Vector3D aX = new(anAx.XDirection()), aY = new(anAx.YDirection());
+        Vector3D aX = new(anAx.XDirection), aY = new(anAx.YDirection);
 
         // the arc of theAngle at time t, its first point turning with t
         void Arc(double t, out Vector3D ns1, out Vector3D ns2, out Point3D P1, out Point3D P2)
@@ -398,12 +398,12 @@ public class GeomFill_SweepTests
         BSplineCurve3D anArc = new(aP, aW, aK, aM, aDeg);
         for (int i = 0; i <= 10; i++)
         {
-            double u = anArc.FirstParameter() + (anArc.LastParameter() - anArc.FirstParameter()) * i / 10;
+            double u = anArc.FirstParameter + (anArc.LastParameter - anArc.FirstParameter) * i / 10;
             // exact for the rational conversions; the polynomial one approximates the circle
-            Assert.Equal(aR, anArc.Value(u).Distance(aC), theConv == Polynomial ? 1e-6 : 1e-9);
+            Assert.Equal(aR, anArc.Value(u).DistanceTo(aC), theConv == Polynomial ? 1e-6 : 1e-9);
         }
-        Assert.True(anArc.StartPoint().Distance(p1) < 1e-9);
-        Assert.True(anArc.EndPoint().Distance(p2) < 1e-9);
+        Assert.True(anArc.StartPoint.DistanceTo(p1) < 1e-9);
+        Assert.True(anArc.EndPoint.DistanceTo(p2) < 1e-9);
 
         // the first derivatives against differences: the arc turns about the normal at unit speed
         Arc(t0 - h, out Vector3D m1, out Vector3D m2, out Point3D q1m, out Point3D q2m);
@@ -420,7 +420,7 @@ public class GeomFill_SweepTests
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(aConv, pl1, pl2, new Vector3D(aN), q1p, q2p, aR, aC, aPp, aWp);
         for (int i = 1; i <= aNbP; i++)
         {
-            Assert.True((new Vector3D(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude() < 1e-4);
+            Assert.True((new Vector3D(aPm[i], aPp[i]) / (2 * h) - aD[i]).Magnitude < 1e-4);
             Assert.Equal((aWp[i] - aWm[i]) / (2 * h), aDW[i], 1e-4);
         }
 
@@ -449,8 +449,8 @@ public class GeomFill_SweepTests
         Assert.True(aP.Initialized());
         NCollection_Array1<Point3D> aPoles = new(1, 8);
         aP.Section(new Point3D(1, 0, 0), new Point3D(0, 0, 0), new Vector3D(0, 0, 1), M_PI / 2, aPoles);
-        Assert.True(aPoles[1].Distance(new Point3D(1, 0, 0)) < 1e-12);
-        Assert.True(aPoles[8].Distance(new Point3D(0, 1, 0)) < 1e-12);
+        Assert.True(aPoles[1].DistanceTo(new Point3D(1, 0, 0)) < 1e-12);
+        Assert.True(aPoles[8].DistanceTo(new Point3D(0, 1, 0)) < 1e-12);
     }
 
     [Fact]
@@ -460,20 +460,20 @@ public class GeomFill_SweepTests
         TrimmedCurve3D aL1 = new(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 4);
         TrimmedCurve3D aL2 = new(new LineCurve3D(new Point3D(0, 3, 0), new Direction3D(1, 0, 0)), 0, 4);
         var aPlane = Assert.IsType<TrimmedSurface>(global::Kerf.Engine.Construction.Surfaces.GeomFill.Surface(aL1, aL2));
-        Assert.IsType<PlaneSurface>(aPlane.BasisSurface());
+        Assert.IsType<PlaneSurface>(aPlane.BasisSurface);
         Assert.True(aPlane.IsFrozen);
 
         // coaxial circles: a cylinder, a cone
         Frame3D anAx = new(new Point3D(0, 0, 0), new Direction3D(0, 0, 1));
         CircleCurve3D aC1 = new(anAx, 2);
         var aCyl = (TrimmedSurface)global::Kerf.Engine.Construction.Surfaces.GeomFill.Surface(aC1, new CircleCurve3D(anAx.Translated(new Vector3D(0, 0, 3)), 2))!;
-        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface());
+        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface);
         var aCone = (TrimmedSurface)global::Kerf.Engine.Construction.Surfaces.GeomFill.Surface(aC1, new CircleCurve3D(anAx.Translated(new Vector3D(0, 0, 3)), 3))!;
-        Assert.IsType<ConicalSurface>(aCone.BasisSurface());
-        aCone.Bounds(out _, out _, out double aV1, out double aV2);
+        Assert.IsType<ConicalSurface>(aCone.BasisSurface);
+        aCone.ParameterBounds(out _, out _, out double aV1, out double aV2);
         Point3D aTop = aCone.Value(0, Math.Abs(aV1) > Math.Abs(aV2) ? aV1 : aV2);
-        Assert.Equal(3.0, aTop.Z(), 1e-9);
-        Assert.Equal(3.0, new Point3D(aTop.X(), aTop.Y(), 0).Distance(new Point3D(0, 0, 0)), 1e-9);
+        Assert.Equal(3.0, aTop.Z, 1e-9);
+        Assert.Equal(3.0, new Point3D(aTop.X, aTop.Y, 0).DistanceTo(new Point3D(0, 0, 0)), 1e-9);
 
         // otherwise: GeomFill_Generator's B-spline surface
         Surface aRuled = global::Kerf.Engine.Construction.Surfaces.GeomFill.Surface(Path3d(), OpenSection(new Point3D(0, 5, 0)))!;
@@ -495,8 +495,8 @@ public class GeomFill_SweepTests
             aP2[i] = aPath.Pole(i).Translated(new Vector3D(0, 0, theR));
         }
         return (aPath,
-                new BSplineCurve3D(aP1, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree()),
-                new BSplineCurve3D(aP2, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree()));
+                new BSplineCurve3D(aP1, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree),
+                new BSplineCurve3D(aP2, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree));
     }
 
     [Theory]
@@ -519,8 +519,8 @@ public class GeomFill_SweepTests
         double v = 0.8;
         Assert.True(aF.D0(v, 0, 2, aP, aP2, aW));
         BSplineCurve3D anArc = new(aP, aW, aK, aM, aDeg);
-        Assert.True(anArc.StartPoint().Distance(aC1.Value(v)) < 1e-9);
-        Assert.True(anArc.EndPoint().Distance(aC2.Value(v)) < 1e-9);
+        Assert.True(anArc.StartPoint.DistanceTo(aC1.Value(v)) < 1e-9);
+        Assert.True(anArc.EndPoint.DistanceTo(aC2.Value(v)) < 1e-9);
         Assert.Equal(0, aF.Nb2dCurves());
         Assert.True(aF.MaximalSection() > 0);
 
@@ -530,7 +530,7 @@ public class GeomFill_SweepTests
         aF.D0(v, 0.5, 1.5, aQ, aP2, aW);
         for (int i = 1; i <= aNbP; i++)
         {
-            Assert.True(aQ[i].Distance(aP[i]) < 1e-12);
+            Assert.True(aQ[i].DistanceTo(aP[i]) < 1e-12);
         }
     }
 
@@ -553,7 +553,7 @@ public class GeomFill_SweepTests
         // the last section is the first one rotated by 2 radians about the circle's axis
         Transform3D aRot = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         BSplineCurve3D aFirst = OpenSection(new Point3D(8, 0, 0));
-        Assert.True(aP[1].Distance(aFirst.Pole(1).Transformed(aRot)) < 1e-9);
+        Assert.True(aP[1].DistanceTo(aFirst.Pole(1).Transformed(aRot)) < 1e-9);
         Assert.Throws<RangeErrorException>(() => aGen.Transformation(aNbS));
     }
 
@@ -572,7 +572,7 @@ public class GeomFill_SweepTests
         Assert.Equal(global::Kerf.Engine.Construction.Surfaces.SurfacePipeError.PipeOk, aPipe.GetStatus());
         Surface aS = aPipe.Surface()!;
         Assert.True(aS.IsFrozen);
-        aS.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         ProjectPointOnCurve aProj = new();
         for (int i = 0; i <= 4; i++)
         {
@@ -593,7 +593,7 @@ public class GeomFill_SweepTests
         aPath.Freeze();
         CircleCurve3D aS1 = CircleAtStart(aPath, 1);
         CircleCurve3D aS2 = CircleAtStart(aPath, 2);
-        BSplineCurve3D aS3 = OpenSection(aPath.StartPoint());
+        BSplineCurve3D aS3 = OpenSection(aPath.StartPoint);
         aS1.Freeze();
         aS2.Freeze();
         aS3.Freeze();
@@ -608,7 +608,7 @@ public class GeomFill_SweepTests
         anEvolving.Perform(1e-4, false);
         Assert.True(anEvolving.IsDone);
 
-        aPath.D1(aPath.LastParameter(), out Point3D anEnd, out Vector3D anEndT);
+        aPath.D1(aPath.LastParameter, out Point3D anEnd, out Vector3D anEndT);
         CircleCurve3D aS4 = new(new Frame3D(anEnd, new Direction3D(anEndT)), 2);
         aS4.Freeze();
         NCollection_Sequence<Curve3D> aSeq = new();
@@ -650,14 +650,14 @@ public class GeomFill_SweepTests
         Assert.True(aPipe.IsDone);
         Assert.Equal(global::Kerf.Engine.Construction.Surfaces.SurfacePipeError.PipeOk, aPipe.GetStatus());
         Surface aSurface = aPipe.Surface()!;
-        aSurface.Bounds(out double u1, out double u2, out double v1, out double v2);
-        Point3D aStart = aPath.Value(aPath.FirstParameter()), anEnd = aPath.Value(aPath.LastParameter());
+        aSurface.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
+        Point3D aStart = aPath.Value(aPath.FirstParameter), anEnd = aPath.Value(aPath.LastParameter);
         for (int i = 0; i <= 16; i++)
         {
             double u = u1 + (u2 - u1) * i / 16;
-            double aFirst = aSurface.Value(u, v1).Distance(aStart);
+            double aFirst = aSurface.Value(u, v1).DistanceTo(aStart);
             Assert.InRange(aFirst, 0.9, 1.2);
-            Assert.Equal(2.0 * aFirst, aSurface.Value(u, v2).Distance(anEnd), 1e-3);
+            Assert.Equal(2.0 * aFirst, aSurface.Value(u, v2).DistanceTo(anEnd), 1e-3);
         }
     }
 
@@ -693,7 +693,7 @@ public class GeomFill_SweepTests
         aPipe.Perform(true);
         Assert.True(aPipe.IsDone);
         var aCyl = Assert.IsType<TrimmedSurface>(aPipe.Surface());
-        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface());
+        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface);
         Assert.False(aPipe.ExchangeUV());
 
         // three coaxial arcs: a torus
@@ -705,7 +705,7 @@ public class GeomFill_SweepTests
         aPipe.Perform(true);
         Assert.True(aPipe.IsDone);
         var aTor = Assert.IsType<TrimmedSurface>(aPipe.Surface());
-        Assert.IsType<ToroidalSurface>(aTor.BasisSurface());
+        Assert.IsType<ToroidalSurface>(aTor.BasisSurface);
         Assert.True(aPipe.ExchangeUV());
     }
 
@@ -718,7 +718,7 @@ public class GeomFill_SweepTests
         {
             aPoles[i] = aPath.Pole(i).Translated(new Vector3D(0, 3, 0));
         }
-        BSplineCurve3D aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree());
+        BSplineCurve3D aGuide = new(aPoles, aPath.InternalKnots(), aPath.InternalMultiplicities(), aPath.Degree);
         foreach (bool byACR in new[] { false, true })
         {
             global::Kerf.Engine.Construction.Surfaces.SurfacePipe aPipe = new(aPath, new CurveAdaptor(aGuide), CircleAtStart(aPath, 3), byACR, false);

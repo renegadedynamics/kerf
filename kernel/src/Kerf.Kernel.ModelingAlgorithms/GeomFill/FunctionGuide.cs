@@ -51,8 +51,8 @@ public sealed class FunctionGuide : FunctionSetWithDerivatives
         {
             _isconst = true;
             _theConst = _theLaw.ConstantSection();
-            _first = _theConst.FirstParameter();
-            _last = _theConst.LastParameter();
+            _first = _theConst.FirstParameter;
+            _last = _theConst.LastParameter;
         }
         else
         {

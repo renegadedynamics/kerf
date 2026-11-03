@@ -36,10 +36,10 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double tol)
     {
         Box box = new();
-        Sphere sphere = _geom.Sphere();
-        Point3D p = sphere.Location();
-        double r = sphere.Radius();
-        box.Update(p.X() - r, p.Y() - r, p.Z() - r, p.X() + r, p.Y() + r, p.Z() + r);
+        Sphere sphere = _geom.Sphere;
+        Point3D p = sphere.Location;
+        double r = sphere.Radius;
+        box.Update(p.X - r, p.Y - r, p.Z - r, p.X + r, p.Y + r, p.Z + r);
         box.Enlarge(tol);
         return box;
     }
@@ -52,15 +52,15 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
                                       double vMax,
                                       ref Box box)
     {
-        Point3D p = sphere.Location();
-        double r = sphere.Radius();
+        Point3D p = sphere.Location;
+        double r = sphere.Radius;
 
-        double xmin = p.X() - r;
-        double xmax = p.X() + r;
-        double ymin = p.Y() - r;
-        double ymax = p.Y() + r;
-        double zmin = p.Z() - r;
-        double zmax = p.Z() + r;
+        double xmin = p.X - r;
+        double xmax = p.X + r;
+        double ymin = p.Y - r;
+        double ymax = p.Y + r;
+        double zmin = p.Z - r;
+        double zmax = p.Z + r;
 
         double uper = 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
         double vper = M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -74,7 +74,7 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
         // Check 6 extremal points (axis-aligned extrema of the full sphere).
         double u, v;
         double umax = uMin + 2.0 * M_PI;
-        CoordinateSystem pos = sphere.Position();
+        CoordinateSystem pos = sphere.Position;
         Point3D pExt = p;
 
         // -X extremum
@@ -93,7 +93,7 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
         {
             box.Add(pExt);
         }
-        pExt = pExt.WithX(p.X());
+        pExt = pExt.WithX(p.X);
         // -Y extremum
         pExt = pExt.WithY(ymin);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
@@ -110,7 +110,7 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
         {
             box.Add(pExt);
         }
-        pExt = pExt.WithY(p.Y());
+        pExt = pExt.WithY(p.Y);
         // -Z extremum
         pExt = pExt.WithZ(zmin);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
@@ -142,7 +142,7 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for sphere patch [theUMin, theUMax] x [theVMin, theVMax].</summary>
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
-        Sphere sphere = _geom.Sphere();
+        Sphere sphere = _geom.Sphere;
 
         // Check if it is a whole sphere.
         if (Math.Abs(uMin) < global::Kerf.Engine.Foundation.Precision.Angular()

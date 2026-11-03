@@ -26,13 +26,13 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
         double first = f, last = l;
         if (!C3d.IsPeriodic)
         {
-            first = Math.Max(first, C3d.FirstParameter());
-            last = Math.Min(last, C3d.LastParameter());
+            first = Math.Max(first, C3d.FirstParameter);
+            last = Math.Min(last, C3d.LastParameter);
         }
         if (!C2d.IsPeriodic)
         {
-            first = Math.Max(first, C2d.FirstParameter());
-            last = Math.Min(last, C2d.LastParameter());
+            first = Math.Max(first, C2d.FirstParameter);
+            last = Math.Min(last, C2d.LastParameter);
         }
         CurveAdaptor aGeomAdaptorCurve = new(C3d, first, last);
         CurveAdaptor2D aGeom2dAdaptorCurve = new(C2d, first, last);
@@ -60,8 +60,8 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 cnt++;
                 Point2D aP2d = C2d.Value(t);
                 Point3D aPC = C3d.Value(t);
-                Point3D aPS = S.Value(aP2d.X(), aP2d.Y());
-                d = aPS.SquareDistance(aPC);
+                Point3D aPS = S.Value(aP2d.X, aP2d.Y);
+                d = aPS.SquareDistanceTo(aPC);
                 if (d > dmax)
                 {
                     dmax = d;
@@ -72,8 +72,8 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 t = last;
                 Point2D aP2d = C2d.Value(t);
                 Point3D aPC = C3d.Value(t);
-                Point3D aPS = S.Value(aP2d.X(), aP2d.Y());
-                d = aPS.SquareDistance(aPC);
+                Point3D aPS = S.Value(aP2d.X, aP2d.Y);
+                d = aPS.SquareDistanceTo(aPC);
                 if (d > dmax)
                 {
                     dmax = d;
@@ -126,17 +126,17 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                 {
                     for (int i = 0; i < aSpec.Poles.Length; i++)
                     {
-                        aSpec.Poles[i] = new Point2D(aSpec.Poles[i].X() * 0.3, aSpec.Poles[i].Y());
+                        aSpec.Poles[i] = new Point2D(aSpec.Poles[i].X * 0.3, aSpec.Poles[i].Y);
                     }
                 }
                 double aNoise = anOracle.Int(0, 3) == 0 ? 0.0 : anOracle.Real(0.0, 0.5);
                 NCollection_Array1<Point3D> aPoles3d = new(1, aSpec.Poles.Length);
                 for (int i = 0; i < aSpec.Poles.Length; i++)
                 {
-                    Point3D aP = aPS.Value(aSpec.Poles[i].X(), aSpec.Poles[i].Y());
-                    aPoles3d[i + 1] = new Point3D(aP.X() + aNoise * anOracle.Real(-1, 1),
-                                                 aP.Y() + aNoise * anOracle.Real(-1, 1),
-                                                 aP.Z() + aNoise * anOracle.Real(-1, 1));
+                    Point3D aP = aPS.Value(aSpec.Poles[i].X, aSpec.Poles[i].Y);
+                    aPoles3d[i + 1] = new Point3D(aP.X + aNoise * anOracle.Real(-1, 1),
+                                                 aP.Y + aNoise * anOracle.Real(-1, 1),
+                                                 aP.Z + aNoise * anOracle.Real(-1, 1));
                 }
                 NCollection_Array1<double>? aWeights =
                     aSpec.Weights is null ? null : NCollection_Array1<double>.From(aSpec.Weights);
@@ -148,8 +148,8 @@ public class GeomLibCheckCurveOnSurfaceOracleTests(ITestOutputHelper output)
                           : new BSplineCurve3D(aPoles3d, aWeights!, aKnots, aMults, aSpec.Degree);
                 aNC2 = Geom2dOracle.ToNative(aSpec);
                 aPC2 = Geom2dOracle.ToPort(aSpec);
-                aF = aPC.FirstParameter();
-                aL = aPC.LastParameter();
+                aF = aPC.FirstParameter;
+                aL = aPC.LastParameter;
                 if (anOracle.Bool())
                 {
                     double a = anOracle.Real(aF, aF + 0.4 * (aL - aF));

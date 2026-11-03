@@ -106,12 +106,12 @@ public sealed class Circ2d2TanRad
                 if (type1 == Circle)
                 {
                     CircleCurve2D        ccc1 = (cc1 as CircleCurve2D)!;
-                    Circle2D            c1   = ccc1.Circ2d();
+                    Circle2D            c1   = ccc1.Circle;
                     QualifiedCirc qc1  = new(c1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D        ccc2    = (cc2 as CircleCurve2D)!;
-                        Circle2D            c2      = ccc2.Circ2d();
+                        Circle2D            c2      = ccc2.Circle;
                         AnalyticCirc2d2TanRad circAna = new(qc1, new QualifiedCirc(c2, qualified2.Qualifier()), radius, tolerance);
                         _wellDone = circAna.IsDone;
                         _nbrSol   = circAna.SolutionCount;
@@ -124,7 +124,7 @@ public sealed class Circ2d2TanRad
                     else
                     {
                         LineCurve2D ll2 = (cc2 as LineCurve2D)!;
-                        Line2D    l2  = ll2.Lin2d();
+                        Line2D    l2  = ll2.Line;
                         if (!qualified2.IsEnclosing)
                         {
                             AnalyticCirc2d2TanRad circAna = new(qc1, new QualifiedLin(l2, qualified2.Qualifier()), radius, tolerance);
@@ -146,7 +146,7 @@ public sealed class Circ2d2TanRad
                 else
                 {
                     LineCurve2D ll1 = (cc1 as LineCurve2D)!;
-                    Line2D    l1  = ll1.Lin2d();
+                    Line2D    l1  = ll1.Line;
                     if (qualified1.IsEnclosing)
                     {
                         _wellDone = false;
@@ -158,7 +158,7 @@ public sealed class Circ2d2TanRad
                         if (type2 == Circle)
                         {
                             CircleCurve2D ccc2 = (cc2 as CircleCurve2D)!;
-                            Circle2D     c2   = ccc2.Circ2d();
+                            Circle2D     c2   = ccc2.Circle;
                             _invert             = true;
                             AnalyticCirc2d2TanRad circAna = new(new QualifiedCirc(c2, qualified2.Qualifier()), ql1, radius, tolerance);
                             _wellDone = circAna.IsDone;
@@ -172,7 +172,7 @@ public sealed class Circ2d2TanRad
                         else
                         {
                             LineCurve2D ll2 = (cc2 as LineCurve2D)!;
-                            Line2D    l2  = ll2.Lin2d();
+                            Line2D    l2  = ll2.Line;
                             if (!qualified2.IsEnclosing)
                             {
                                 AnalyticCirc2d2TanRad circAna = new(ql1, new QualifiedLin(l2, qualified2.Qualifier()), radius, tolerance);
@@ -201,7 +201,7 @@ public sealed class Circ2d2TanRad
                 if (type1 == Line)
                 {
                     LineCurve2D ll1 = (cc1 as LineCurve2D)!;
-                    Line2D    l1  = ll1.Lin2d();
+                    Line2D    l1  = ll1.Line;
                     if (qualified1.IsEnclosing)
                     {
                         _wellDone = false;
@@ -224,7 +224,7 @@ public sealed class Circ2d2TanRad
                 else if (type1 == Circle)
                 {
                     CircleCurve2D              ccc1    = (cc1 as CircleCurve2D)!;
-                    Circle2D                  c1      = ccc1.Circ2d();
+                    Circle2D                  c1      = ccc1.Circle;
                     QualifiedCirc       qc1     = new(c1, qualified1.Qualifier());
                     QCurve           qc2     = new(C2, qualified2.Qualifier());
                     Circ2d2TanRadGeo circGeo = new(qc1, qc2, radius, tolerance);
@@ -240,7 +240,7 @@ public sealed class Circ2d2TanRad
                 {
                     _invert          = true;
                     LineCurve2D ll2 = (cc2 as LineCurve2D)!;
-                    Line2D    l2  = ll2.Lin2d();
+                    Line2D    l2  = ll2.Line;
                     if (qualified2.IsEnclosing)
                     {
                         _wellDone = false;
@@ -264,7 +264,7 @@ public sealed class Circ2d2TanRad
                 {
                     _invert                             = true;
                     CircleCurve2D              ccc2    = (cc2 as CircleCurve2D)!;
-                    Circle2D                  c2      = ccc2.Circ2d();
+                    Circle2D                  c2      = ccc2.Circle;
                     QualifiedCirc       qc2     = new(c2, qualified2.Qualifier());
                     QCurve           qc1     = new(C1, qualified1.Qualifier());
                     Circ2d2TanRadGeo circGeo = new(qc2, qc1, radius, tolerance);
@@ -319,7 +319,7 @@ public sealed class Circ2d2TanRad
                 if (type1 == Circle)
                 {
                     CircleCurve2D        ccc1    = (cc1 as CircleCurve2D)!;
-                    Circle2D            c1      = ccc1.Circ2d();
+                    Circle2D            c1      = ccc1.Circle;
                     QualifiedCirc qc1     = new(c1, qualified1.Qualifier());
                     AnalyticCirc2d2TanRad circAna = new(qc1, point.Pnt2d(), radius, tolerance);
                     _wellDone = circAna.IsDone;
@@ -333,7 +333,7 @@ public sealed class Circ2d2TanRad
                 else
                 {
                     LineCurve2D          lll1    = (cc1 as LineCurve2D)!;
-                    Line2D             l1      = lll1.Lin2d();
+                    Line2D             l1      = lll1.Line;
                     QualifiedLin  ql1     = new(l1, qualified1.Qualifier());
                     AnalyticCirc2d2TanRad circAna = new(ql1, point.Pnt2d(), radius, tolerance);
                     _wellDone = circAna.IsDone;

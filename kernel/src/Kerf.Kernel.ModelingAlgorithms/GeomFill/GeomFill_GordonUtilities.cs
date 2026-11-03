@@ -94,7 +94,7 @@ internal static class GordonUtilities
     /// <summary>Returns a stable cubic degree when the OCCT degree limit allows it.</summary>
     internal static int InterpolationDegree()
     {
-        return Min(3, BSplineCurve3D.MaxDegree());
+        return Min(3, BSplineCurve3D.MaxDegree);
     }
 
     /// <summary>Returns a parameter comparison tolerance scaled by the interval length.</summary>
@@ -197,8 +197,8 @@ internal static class GordonUtilities
 
         try
         {
-            double first = curve.FirstParameter();
-            double last = curve.LastParameter();
+            double first = curve.FirstParameter;
+            double last = curve.LastParameter;
             if (last <= first + global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 return false;
@@ -274,14 +274,14 @@ internal static class GordonUtilities
         CurveAdaptor guideAdaptor = new(guide);
         Point3D profilePoint = profileAdaptor.EvalD0(profileParam);
         Point3D guidePoint = guideAdaptor.EvalD0(guideParam);
-        double gap = profilePoint.Distance(guidePoint);
+        double gap = profilePoint.DistanceTo(guidePoint);
         if (gap > tolerance)
         {
             return;
         }
 
-        double profileTol = ParameterResolution(profile.FirstParameter(), profile.LastParameter());
-        double guideTol = ParameterResolution(guide.FirstParameter(), guide.LastParameter());
+        double profileTol = ParameterResolution(profile.FirstParameter, profile.LastParameter);
+        double guideTol = ParameterResolution(guide.FirstParameter, guide.LastParameter);
         for (int contactIdx = 0; contactIdx < contacts.Candidates.Size(); ++contactIdx)
         {
             Contact contact = contacts.Candidates.Value(contactIdx);
@@ -300,7 +300,7 @@ internal static class GordonUtilities
                                               in Point3D profilePoint, in Point3D guidePoint, double tolerance,
                                               ContactSet contacts)
     {
-        if (profilePoint.Distance(guidePoint) > tolerance)
+        if (profilePoint.DistanceTo(guidePoint) > tolerance)
         {
             return;
         }
@@ -320,8 +320,8 @@ internal static class GordonUtilities
     internal static void AppendBoundaryContacts(BSplineCurve3D profile, BSplineCurve3D guide,
                                                 double tolerance, ContactSet contacts)
     {
-        ReadOnlySpan<double> profileBounds = [profile.FirstParameter(), profile.LastParameter()];
-        ReadOnlySpan<double> guideBounds = [guide.FirstParameter(), guide.LastParameter()];
+        ReadOnlySpan<double> profileBounds = [profile.FirstParameter, profile.LastParameter];
+        ReadOnlySpan<double> guideBounds = [guide.FirstParameter, guide.LastParameter];
         CurveAdaptor profileAdaptor = new(profile);
         CurveAdaptor guideAdaptor = new(guide);
         foreach (double profileParam in profileBounds)
@@ -345,16 +345,16 @@ internal static class GordonUtilities
     internal static bool AppendLinearSegmentContact(BSplineCurve3D profile, BSplineCurve3D guide,
                                                     double tolerance, ContactSet contacts)
     {
-        if (profile.Degree() != 1 || guide.Degree() != 1 || profile.PoleCount != 2
+        if (profile.Degree != 1 || guide.Degree != 1 || profile.PoleCount != 2
             || guide.PoleCount != 2)
         {
             return false;
         }
 
-        double profileFirst = profile.FirstParameter();
-        double profileLast = profile.LastParameter();
-        double guideFirst = guide.FirstParameter();
-        double guideLast = guide.LastParameter();
+        double profileFirst = profile.FirstParameter;
+        double profileLast = profile.LastParameter;
+        double guideFirst = guide.FirstParameter;
+        double guideLast = guide.LastParameter;
         if (profileLast <= profileFirst + global::Kerf.Engine.Foundation.Precision.PConfusion()
             || guideLast <= guideFirst + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
@@ -527,8 +527,8 @@ internal static class GordonUtilities
     /// <summary>Snaps one parameter value to the curve boundary when it is close enough.</summary>
     internal static double SnappedParameter(BSplineCurve3D curve, double parameter, double tolerance)
     {
-        double first = curve.FirstParameter();
-        double last = curve.LastParameter();
+        double first = curve.FirstParameter;
+        double last = curve.LastParameter;
         double tol = BoundaryParameterResolution(first, last, tolerance);
         if (Math.Abs(parameter - first) < tol)
         {
@@ -577,7 +577,7 @@ internal static class GordonUtilities
                 CurveAdaptor guideAdaptor = new(guides.At(guideIdx)!);
                 Point3D profilePoint = profileAdaptor.EvalD0(profileParams.At(profileIdx, guideIdx));
                 Point3D guidePoint = guideAdaptor.EvalD0(guideParams.At(profileIdx, guideIdx));
-                if (profilePoint.Distance(guidePoint) > tol)
+                if (profilePoint.DistanceTo(guidePoint) > tol)
                 {
                     return false;
                 }
@@ -585,13 +585,13 @@ internal static class GordonUtilities
                 {
                     Point3D oppositePoint =
                       profileAdaptor.EvalD0(profileParams.At(profileIdx, lastGuide - guideIdx));
-                    uGap = Max(uGap, profilePoint.Distance(oppositePoint));
+                    uGap = Max(uGap, profilePoint.DistanceTo(oppositePoint));
                 }
                 if (profileIdx == 0 || profileIdx == lastProfile)
                 {
                     Point3D oppositePoint =
                       guideAdaptor.EvalD0(guideParams.At(lastProfile - profileIdx, guideIdx));
-                    vGap = Max(vGap, guidePoint.Distance(oppositePoint));
+                    vGap = Max(vGap, guidePoint.DistanceTo(oppositePoint));
                 }
             }
         }
@@ -602,16 +602,16 @@ internal static class GordonUtilities
         {
             for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
             {
-                profileParams.ChangeAt(profileIdx, 0) = profiles.At(profileIdx)!.FirstParameter();
-                profileParams.ChangeAt(profileIdx, lastGuide) = profiles.At(profileIdx)!.LastParameter();
+                profileParams.ChangeAt(profileIdx, 0) = profiles.At(profileIdx)!.FirstParameter;
+                profileParams.ChangeAt(profileIdx, lastGuide) = profiles.At(profileIdx)!.LastParameter;
             }
         }
         if (isVClosed)
         {
             for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
             {
-                guideParams.ChangeAt(0, guideIdx) = guides.At(guideIdx)!.FirstParameter();
-                guideParams.ChangeAt(lastProfile, guideIdx) = guides.At(guideIdx)!.LastParameter();
+                guideParams.ChangeAt(0, guideIdx) = guides.At(guideIdx)!.FirstParameter;
+                guideParams.ChangeAt(lastProfile, guideIdx) = guides.At(guideIdx)!.LastParameter;
             }
         }
         return true;
@@ -698,7 +698,7 @@ internal static class GordonUtilities
             CurveAdaptor profileAdaptor = new(profiles.At(profileIdx)!);
             Point3D first = profileAdaptor.EvalD0(profileParams.At(profileIdx, 0));
             Point3D last = profileAdaptor.EvalD0(profileParams.At(profileIdx, lastGuide));
-            if (first.Distance(last) > tol)
+            if (first.DistanceTo(last) > tol)
             {
                 isURepeated = false;
                 break;
@@ -708,8 +708,8 @@ internal static class GordonUtilities
         {
             for (int profileIdx = 0; profileIdx < profiles.Size(); ++profileIdx)
             {
-                profileParams.ChangeAt(profileIdx, 0) = profiles.At(profileIdx)!.FirstParameter();
-                profileParams.ChangeAt(profileIdx, lastGuide) = profiles.At(profileIdx)!.LastParameter();
+                profileParams.ChangeAt(profileIdx, 0) = profiles.At(profileIdx)!.FirstParameter;
+                profileParams.ChangeAt(profileIdx, lastGuide) = profiles.At(profileIdx)!.LastParameter;
             }
         }
 
@@ -719,7 +719,7 @@ internal static class GordonUtilities
             CurveAdaptor guideAdaptor = new(guides.At(guideIdx)!);
             Point3D first = guideAdaptor.EvalD0(guideParams.At(0, guideIdx));
             Point3D last = guideAdaptor.EvalD0(guideParams.At(lastProf, guideIdx));
-            if (first.Distance(last) > tol)
+            if (first.DistanceTo(last) > tol)
             {
                 isVRepeated = false;
                 break;
@@ -729,8 +729,8 @@ internal static class GordonUtilities
         {
             for (int guideIdx = 0; guideIdx < guides.Size(); ++guideIdx)
             {
-                guideParams.ChangeAt(0, guideIdx) = guides.At(guideIdx)!.FirstParameter();
-                guideParams.ChangeAt(lastProf, guideIdx) = guides.At(guideIdx)!.LastParameter();
+                guideParams.ChangeAt(0, guideIdx) = guides.At(guideIdx)!.FirstParameter;
+                guideParams.ChangeAt(lastProf, guideIdx) = guides.At(guideIdx)!.LastParameter;
             }
         }
     }
@@ -749,7 +749,7 @@ internal static class GordonUtilities
     /// <summary>Returns a parameter in the destination curve orientation.</summary>
     internal static double OrientedParameter(BSplineCurve3D curve, double parameter, bool isForward)
     {
-        return isForward ? parameter : curve.FirstParameter() + curve.LastParameter() - parameter;
+        return isForward ? parameter : curve.FirstParameter + curve.LastParameter - parameter;
     }
 
     /// <summary>Scores an oriented contact against the expected grid position.</summary>
@@ -783,12 +783,12 @@ internal static class GordonUtilities
                                              ref double mismatch)
     {
         double firstRawParameter =
-          isForward ? firstParameter : curve.FirstParameter() + curve.LastParameter() - firstParameter;
+          isForward ? firstParameter : curve.FirstParameter + curve.LastParameter - firstParameter;
         double lastRawParameter =
-          isForward ? lastParameter : curve.FirstParameter() + curve.LastParameter() - lastParameter;
+          isForward ? lastParameter : curve.FirstParameter + curve.LastParameter - lastParameter;
         Curve3D.ResD1 firstD1 = curve.EvalD1(firstRawParameter);
         Curve3D.ResD1 lastD1 = curve.EvalD1(lastRawParameter);
-        if (firstD1.Point.Distance(lastD1.Point) > Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion()))
+        if (firstD1.Point.DistanceTo(lastD1.Point) > Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             return false;
         }
@@ -800,8 +800,8 @@ internal static class GordonUtilities
             firstTangent = firstTangent.Reversed();
             lastTangent = lastTangent.Reversed();
         }
-        double firstMagnitude = firstTangent.Magnitude();
-        double lastMagnitude = lastTangent.Magnitude();
+        double firstMagnitude = firstTangent.Magnitude;
+        double lastMagnitude = lastTangent.Magnitude;
         if (firstMagnitude <= Constants.Resolution() || lastMagnitude <= Constants.Resolution())
         {
             return false;
@@ -1075,7 +1075,7 @@ internal static class GordonUtilities
             return false;
         }
 
-        int degree = curve.Degree();
+        int degree = curve.Degree;
         NCollection_LinearVector<double> newKnotValues = new();
         NCollection_LinearVector<int> newKnotMults = new();
         int constraintIdx = 1;
@@ -1152,9 +1152,9 @@ internal static class GordonUtilities
             Point3D pole = curvePoles.At(poleIdx);
             double weight = curveWeights.At(poleIdx);
             int homogeneousIdx = 4 * poleIdx;
-            homogeneousPoles.ChangeAt(homogeneousIdx) = pole.X() * weight;
-            homogeneousPoles.ChangeAt(homogeneousIdx + 1) = pole.Y() * weight;
-            homogeneousPoles.ChangeAt(homogeneousIdx + 2) = pole.Z() * weight;
+            homogeneousPoles.ChangeAt(homogeneousIdx) = pole.X * weight;
+            homogeneousPoles.ChangeAt(homogeneousIdx + 1) = pole.Y * weight;
+            homogeneousPoles.ChangeAt(homogeneousIdx + 2) = pole.Z * weight;
             homogeneousPoles.ChangeAt(homogeneousIdx + 3) = weight;
         }
 
@@ -1231,23 +1231,23 @@ internal static class GordonUtilities
         math_Vector source = new(1, sourceParams.Length() + 2);
         math_Vector target = new(1, targetParams.Length() + 2);
         int nbConstraints = 0;
-        double sourceTol = ParameterResolution(aCurve.FirstParameter(), aCurve.LastParameter());
+        double sourceTol = ParameterResolution(aCurve.FirstParameter, aCurve.LastParameter);
         double targetTol = ParameterResolution(0.0, 1.0);
 
-        PushConstraint(source, target, ref nbConstraints, aCurve.FirstParameter(), 0.0, sourceTol, targetTol);
+        PushConstraint(source, target, ref nbConstraints, aCurve.FirstParameter, 0.0, sourceTol, targetTol);
         for (int paramIdx = sourceParams.Lower(); paramIdx <= sourceParams.Upper(); ++paramIdx)
         {
             double sourceParam = sourceParams[paramIdx];
             double targetParam = targetParams[paramIdx];
-            if (Math.Abs(sourceParam - aCurve.FirstParameter()) <= sourceTol
-                || Math.Abs(sourceParam - aCurve.LastParameter()) <= sourceTol
+            if (Math.Abs(sourceParam - aCurve.FirstParameter) <= sourceTol
+                || Math.Abs(sourceParam - aCurve.LastParameter) <= sourceTol
                 || Math.Abs(targetParam) <= targetTol || Math.Abs(targetParam - 1.0) <= targetTol)
             {
                 continue;
             }
             PushConstraint(source, target, ref nbConstraints, sourceParam, targetParam, sourceTol, targetTol);
         }
-        PushConstraint(source, target, ref nbConstraints, aCurve.LastParameter(), 1.0, sourceTol, targetTol);
+        PushConstraint(source, target, ref nbConstraints, aCurve.LastParameter, 1.0, sourceTol, targetTol);
 
         ScalarLaw law = new();
         if (!law.Init(source, target, nbConstraints))
@@ -1286,7 +1286,7 @@ internal static class GordonUtilities
         {
             double targetParam = samples.Value(sampleIdx);
             Point3D point = curveAdaptor.EvalD0(law.Value(targetParam));
-            if (!points.IsEmpty() && point.Distance(points.Last()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (!points.IsEmpty() && point.DistanceTo(points.Last()) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 continue;
             }
@@ -1323,7 +1323,7 @@ internal static class GordonUtilities
             double targetParam = samples.Value(sampleIdx);
             Point3D sourcePoint = curveAdaptor.EvalD0(law.Value(targetParam));
             Point3D newPoint = newCurveAdaptor.EvalD0(targetParam);
-            maxDeviation = Max(maxDeviation, sourcePoint.Distance(newPoint));
+            maxDeviation = Max(maxDeviation, sourcePoint.DistanceTo(newPoint));
         }
         return curve is not null;
     }
@@ -1421,8 +1421,8 @@ internal static class GordonUtilities
             return 1.0;
         }
 
-        ReadOnlySpan<int> extrapMode = [curve.Degree(), curve.Degree()];
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(parameter, curve.IsPeriodic, false, extrapMode, curve.Degree(),
+        ReadOnlySpan<int> extrapMode = [curve.Degree, curve.Degree];
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.Eval(parameter, curve.IsPeriodic, false, extrapMode, curve.Degree,
                       curve.InternalKnotSequence(), curve.InternalPoles(), curve.InternalWeightsArray(),
                       out Point3D _, out double weight);
         return weight;

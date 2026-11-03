@@ -35,9 +35,9 @@ public class GccAna_Circ2d3TanTests
     /// <summary>The position of the solution relative to a circle, as GccEnt names it.</summary>
     private static global::Kerf.Engine.Construction.Constraints.Qualifier Classify(in Circle2D theSol, in Circle2D theArg)
     {
-        double d = theSol.Location().Distance(theArg.Location());
-        double r = theSol.Radius();
-        double R = theArg.Radius();
+        double d = theSol.Location.DistanceTo(theArg.Location);
+        double r = theSol.Radius;
+        double R = theArg.Radius;
         if (Math.Abs(d - (R + r)) <= Tol)
         {
             return global::Kerf.Engine.Construction.Constraints.Qualifier.Outside;
@@ -56,12 +56,12 @@ public class GccAna_Circ2d3TanTests
     /// <summary>The side of a line the solution is on: enclosed on the left, outside on the right.</summary>
     private static global::Kerf.Engine.Construction.Constraints.Qualifier Classify(in Circle2D theSol, in Line2D theArg)
     {
-        double aCross = theArg.Direction().XY() ^ (theSol.Location().XY() - theArg.Location().XY());
+        double aCross = theArg.Direction.XY() ^ (theSol.Location.XY() - theArg.Location.XY());
         return aCross > 0.0 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed : global::Kerf.Engine.Construction.Constraints.Qualifier.Outside;
     }
 
     private static void AssertNear(in Point2D theExpected, in Point2D theActual, double theTol = Tol)
-        => Assert.True(theExpected.Distance(theActual) <= theTol, $"{theExpected} != {theActual}");
+        => Assert.True(theExpected.DistanceTo(theActual) <= theTol, $"{theExpected} != {theActual}");
 
     private delegate void TangencyFn(int theIndex, out double theParSol, out double theParArg, out Point2D thePnt);
 
@@ -85,10 +85,10 @@ public class GccAna_Circ2d3TanTests
                         Assert.NotEqual(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, Classify(aSol, anArg.C));
                         break;
                     case 1:
-                        Assert.Equal(aSol.Radius(), anArg.L.Distance(aSol.Location()), Tol);
+                        Assert.Equal(aSol.Radius, anArg.L.DistanceTo(aSol.Location), Tol);
                         break;
                     default:
-                        Assert.Equal(aSol.Radius(), aSol.Location().Distance(anArg.P), Tol);
+                        Assert.Equal(aSol.Radius, aSol.Location.DistanceTo(anArg.P), Tol);
                         break;
                 }
                 if (aSame[k](i) || theSkipTangency == k + 1)
@@ -97,16 +97,16 @@ public class GccAna_Circ2d3TanTests
                 }
                 aTangency[k](i, out double aParSol, out double aParArg, out Point2D aPnt);
                 // the tangency point is on the solution, at ParSol
-                Assert.Equal(aSol.Radius(), aSol.Location().Distance(aPnt), Tol);
+                Assert.Equal(aSol.Radius, aSol.Location.DistanceTo(aPnt), Tol);
                 AssertNear(aPnt, global::Kerf.Engine.Geometry.ElCLib.Value(aParSol, aSol));
                 switch (anArg.Kind)
                 {
                     case 0:
-                        Assert.Equal(anArg.C.Radius(), anArg.C.Location().Distance(aPnt), Tol);
+                        Assert.Equal(anArg.C.Radius, anArg.C.Location.DistanceTo(aPnt), Tol);
                         AssertNear(aPnt, global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, anArg.C));
                         break;
                     case 1:
-                        Assert.Equal(0.0, anArg.L.Distance(aPnt), Tol);
+                        Assert.Equal(0.0, anArg.L.DistanceTo(aPnt), Tol);
                         AssertNear(aPnt, global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, anArg.L));
                         break;
                     default:
@@ -186,7 +186,7 @@ public class GccAna_Circ2d3TanTests
         Assert.Equal(1, anInner.SolutionCount);
         AnalyticCirc2d3Tan anOuter = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(C1), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(C2), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(C3), Tol);
         Assert.Equal(1, anOuter.SolutionCount);
-        Assert.True(anOuter.ThisSolution(1).Radius() > anInner.ThisSolution(1).Radius());
+        Assert.True(anOuter.ThisSolution(1).Radius > anInner.ThisSolution(1).Radius);
         AnalyticCirc2d3Tan anEnclosed = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(C1), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(C2), global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosed(C3), Tol);
         Assert.Equal(0, anEnclosed.SolutionCount);
     }
@@ -254,7 +254,7 @@ public class GccAna_Circ2d3TanTests
         {
             Circle2D aSol = aSolver.ThisSolution(i);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, Classify(aSol, aA));
-            if (Classify(aSol, aB) == global::Kerf.Engine.Construction.Constraints.Qualifier.Outside && Math.Abs(LX.Distance(aSol.Location()) - aSol.Radius()) <= Tol)
+            if (Classify(aSol, aB) == global::Kerf.Engine.Construction.Constraints.Qualifier.Outside && Math.Abs(LX.DistanceTo(aSol.Location) - aSol.Radius) <= Tol)
             {
                 aValid++;
                 Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, Classify(aSol, LX));
@@ -284,8 +284,8 @@ public class GccAna_Circ2d3TanTests
         for (int i = 1; i <= aSolver.SolutionCount; i++)
         {
             // the centres are on the bisectors of the axes
-            Point2D aP = aSolver.ThisSolution(i).Location();
-            Assert.Equal(Math.Abs(aP.X()), Math.Abs(aP.Y()), Tol);
+            Point2D aP = aSolver.ThisSolution(i).Location;
+            Assert.Equal(Math.Abs(aP.X), Math.Abs(aP.Y), Tol);
         }
     }
 
@@ -309,7 +309,7 @@ public class GccAna_Circ2d3TanTests
         for (int i = 1; i <= 4; i++)
         {
             Circle2D aSol = aSolver.ThisSolution(i);
-            aRadii[i - 1] = aSol.Radius();
+            aRadii[i - 1] = aSol.Radius;
             aSolver.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ3);
             Assert.Equal((Classify(aSol, T1), Classify(aSol, T2), Classify(aSol, T3)), (aQ1, aQ2, aQ3));
         }
@@ -325,8 +325,8 @@ public class GccAna_Circ2d3TanTests
         AnalyticCirc2d3Tan aSolver = new(aQ1, aQ2, aQ3, Tol);
         CheckSolutions(aSolver, Arg.Of(aQ1), Arg.Of(aQ2), Arg.Of(aQ3));
         Assert.Equal(1, aSolver.SolutionCount);
-        Assert.Equal(1.0, aSolver.ThisSolution(1).Radius(), Tol);
-        AssertNear(new Point2D(1.0, 1.0), aSolver.ThisSolution(1).Location());
+        Assert.Equal(1.0, aSolver.ThisSolution(1).Radius, Tol);
+        AssertNear(new Point2D(1.0, 1.0), aSolver.ThisSolution(1).Location);
     }
 
     [Fact]
@@ -393,7 +393,7 @@ public class GccAna_Circ2d3TanTests
         CheckSolutions(aSolver, Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aC)), Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(LX)), Arg.Of(aP), 1);
         Assert.Equal(4, aSolver.SolutionCount);
         aSolver.Tangency1(1, out _, out _, out Point2D aPnt);
-        Assert.True(Math.Abs(aC.Location().Distance(aPnt) - aC.Radius()) > 1.0e-3);
+        Assert.True(Math.Abs(aC.Location.DistanceTo(aPnt) - aC.Radius) > 1.0e-3);
     }
 
     [Fact]
@@ -405,7 +405,7 @@ public class GccAna_Circ2d3TanTests
         CheckSolutions(aSolver, Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(LX)), Arg.Of(global::Kerf.Engine.Construction.Constraints.GccEnt.Unqualified(aLY)), Arg.Of(aP));
         // centres (t, t) with (1 - t)^2 + (2 - t)^2 = t^2: t = 1 or 5
         Assert.Equal(2, aSolver.SolutionCount);
-        double[] aRadii = [aSolver.ThisSolution(1).Radius(), aSolver.ThisSolution(2).Radius()];
+        double[] aRadii = [aSolver.ThisSolution(1).Radius, aSolver.ThisSolution(2).Radius];
         Array.Sort(aRadii);
         Assert.Equal(1.0, aRadii[0], Tol);
         Assert.Equal(5.0, aRadii[1], Tol);
@@ -433,8 +433,8 @@ public class GccAna_Circ2d3TanTests
         Assert.Equal(2, aSolver.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
-            Assert.Equal(2.0, aSolver.ThisSolution(i).Radius(), Tol);
-            Assert.Equal(Math.Sqrt(3.0), Math.Abs(aSolver.ThisSolution(i).Location().X()), Tol);
+            Assert.Equal(2.0, aSolver.ThisSolution(i).Radius, Tol);
+            Assert.Equal(Math.Sqrt(3.0), Math.Abs(aSolver.ThisSolution(i).Location.X), Tol);
         }
     }
 
@@ -445,8 +445,8 @@ public class GccAna_Circ2d3TanTests
         AnalyticCirc2d3Tan aSolver = new(aP1, aP2, aP3, Tol);
         CheckSolutions(aSolver, Arg.Of(aP1), Arg.Of(aP2), Arg.Of(aP3));
         Assert.Equal(1, aSolver.SolutionCount);
-        AssertNear(new Point2D(1.0, 1.0), aSolver.ThisSolution(1).Location());
-        Assert.Equal(Math.Sqrt(2.0), aSolver.ThisSolution(1).Radius(), Tol);
+        AssertNear(new Point2D(1.0, 1.0), aSolver.ThisSolution(1).Location);
+        Assert.Equal(Math.Sqrt(2.0), aSolver.ThisSolution(1).Radius, Tol);
         aSolver.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ3);
         Assert.Equal((global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier), (aQ1, aQ2, aQ3));
     }
@@ -465,7 +465,7 @@ public class GccAna_Circ2d3TanTests
         Point2D aP = new(1.0, 2.0);
         AnalyticCirc2d3Tan aSolver = new(aP, aP, aP, Tol);
         Assert.Equal(1, aSolver.SolutionCount);
-        Assert.Equal(0.0, aSolver.ThisSolution(1).Radius());
+        Assert.Equal(0.0, aSolver.ThisSolution(1).Radius);
     }
 
     //=========================================================================

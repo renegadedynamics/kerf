@@ -116,7 +116,7 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
 
     private static int TrsfType(in Transform3D trsf)
     {
-        Matrix3x3 mat = trsf.VectorialPart();
+        Matrix3x3 mat = trsf.VectorialPart;
         if ((Math.Abs(mat.Value(1, 1) - 1.0) < 1e-15) && (Math.Abs(mat.Value(2, 2) - 1.0) < 1e-15)
             && (Math.Abs(mat.Value(3, 3) - 1.0) < 1e-15))
         {
@@ -245,9 +245,9 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
             {
                 case 0:
                 { //-- axono standard
-                    double x07 = p.X() * 0.7071067811865475;
-                    double y05 = p.Y() * 0.5;
-                    double z05 = p.Z() * 0.5;
+                    double x07 = p.X * 0.7071067811865475;
+                    double y05 = p.Y * 0.5;
+                    double z05 = p.Z * 0.5;
                     x = x07 - y05 + z05;
                     y = x07 + y05 - z05;
                     //-- Z=0.7071067811865475*(P.Y()+P.Z());
@@ -256,23 +256,23 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
                 }
                 case 1:
                 { //-- top
-                    x = p.X();
-                    y = p.Y(); //-- Z=P.Z();
+                    x = p.X;
+                    y = p.Y; //-- Z=P.Z();
                     pout = pout.WithCoord(x, y);
                     break;
                 }
                 case 2:
                 {
-                    x = p.X();
-                    y = p.Z(); //-- Z=-P.Y();
+                    x = p.X;
+                    y = p.Z; //-- Z=-P.Y();
                     pout = pout.WithCoord(x, y);
                     break;
                 }
                 case 3:
                 {
-                    double xmy05 = (p.X() - p.Y()) * 0.5;
-                    double z07 = p.Z() * 0.7071067811865476;
-                    x = 0.7071067811865476 * (p.X() + p.Y());
+                    double xmy05 = (p.X - p.Y) * 0.5;
+                    double z07 = p.Z * 0.7071067811865476;
+                    x = 0.7071067811865476 * (p.X + p.Y);
                     y = -xmy05 + z07;
                     pout = pout.WithCoord(x, y);
                     //-- Z= xmy05+z07;
@@ -284,12 +284,12 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
                     Transform(ref p2);
                     if (_persp)
                     {
-                        double r = 1.0 - p2.Z() / _focus;
-                        pout = pout.WithCoord(p2.X() / r, p2.Y() / r);
+                        double r = 1.0 - p2.Z / _focus;
+                        pout = pout.WithCoord(p2.X / r, p2.Y / r);
                     }
                     else
                     {
-                        pout = pout.WithCoord(p2.X(), p2.Y());
+                        pout = pout.WithCoord(p2.X, p2.Y);
                     }
                     break;
                 }
@@ -301,12 +301,12 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
             Transform(ref p2);
             if (_persp)
             {
-                double r = 1.0 - p2.Z() / _focus;
-                pout = pout.WithCoord(p2.X() / r, p2.Y() / r);
+                double r = 1.0 - p2.Z / _focus;
+                pout = pout.WithCoord(p2.X / r, p2.Y / r);
             }
             else
             {
-                pout = pout.WithCoord(p2.X(), p2.Y());
+                pout = pout.WithCoord(p2.X, p2.Y);
             }
         }
     }
@@ -320,33 +320,33 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
             {
                 case 0:
                 { //-- axono standard
-                    double x07 = p.X() * 0.7071067811865475;
-                    double y05 = p.Y() * 0.5;
-                    double z05 = p.Z() * 0.5;
+                    double x07 = p.X * 0.7071067811865475;
+                    double y05 = p.Y * 0.5;
+                    double z05 = p.Z * 0.5;
                     x = x07 - y05 + z05;
                     y = x07 + y05 - z05;
-                    z = 0.7071067811865475 * (p.Y() + p.Z());
+                    z = 0.7071067811865475 * (p.Y + p.Z);
                     break;
                 }
                 case 1:
                 { //-- top
-                    x = p.X();
-                    y = p.Y();
-                    z = p.Z();
+                    x = p.X;
+                    y = p.Y;
+                    z = p.Z;
                     break;
                 }
                 case 2:
                 {
-                    x = p.X();
-                    y = p.Z();
-                    z = -p.Y();
+                    x = p.X;
+                    y = p.Z;
+                    z = -p.Y;
                     break;
                 }
                 case 3:
                 {
-                    double xmy05 = (p.X() - p.Y()) * 0.5;
-                    double z07 = p.Z() * 0.7071067811865476;
-                    x = 0.7071067811865476 * (p.X() + p.Y());
+                    double xmy05 = (p.X - p.Y) * 0.5;
+                    double z07 = p.Z * 0.7071067811865476;
+                    x = 0.7071067811865476 * (p.X + p.Y);
                     y = -xmy05 + z07;
                     z = xmy05 + z07;
                     break;
@@ -385,15 +385,15 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
         dd1 = dd1.Transformed(_trsf);
         if (_persp)
         {
-            double r = 1.0 - pp.Z() / _focus;
-            pout = pout.WithCoord(pp.X() / r, pp.Y() / r);
-            d1out = d1out.WithCoord(dd1.X() / r + pp.X() * dd1.Z() / (_focus * r * r),
-                           dd1.Y() / r + pp.Y() * dd1.Z() / (_focus * r * r));
+            double r = 1.0 - pp.Z / _focus;
+            pout = pout.WithCoord(pp.X / r, pp.Y / r);
+            d1out = d1out.WithCoord(dd1.X / r + pp.X * dd1.Z / (_focus * r * r),
+                           dd1.Y / r + pp.Y * dd1.Z / (_focus * r * r));
         }
         else
         {
-            pout = pout.WithCoord(pp.X(), pp.Y());
-            d1out = d1out.WithCoord(dd1.X(), dd1.Y());
+            pout = pout.WithCoord(pp.X, pp.Y);
+            d1out = d1out.WithCoord(dd1.X, dd1.Y);
         }
     }
 
@@ -417,28 +417,28 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
     {
         Vector3D v1 = new(1, 0, 0);
         v1 = v1.Transformed(_trsf);
-        if ((Math.Abs(v1.X()) + Math.Abs(v1.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
+        if ((Math.Abs(v1.X) + Math.Abs(v1.Y)) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             v1 = v1.WithCoord(1, 1, 0);
         }
-        Vector2D d1 = new(v1.X(), v1.Y());
-        _d1 = _d1.WithCoord(-d1.Y(), d1.X());
+        Vector2D d1 = new(v1.X, v1.Y);
+        _d1 = _d1.WithCoord(-d1.Y, d1.X);
         Vector3D v2 = new(0, 1, 0);
         v2 = v2.Transformed(_trsf);
-        if ((Math.Abs(v2.X()) + Math.Abs(v2.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
+        if ((Math.Abs(v2.X) + Math.Abs(v2.Y)) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             v2 = v2.WithCoord(1, 1, 0);
         }
-        Vector2D d2 = new(v2.X(), v2.Y());
-        _d2 = _d2.WithCoord(-d2.Y(), d2.X());
+        Vector2D d2 = new(v2.X, v2.Y);
+        _d2 = _d2.WithCoord(-d2.Y, d2.X);
         Vector3D v3 = new(0, 0, 1);
         v3 = v3.Transformed(_trsf);
-        if ((Math.Abs(v3.X()) + Math.Abs(v3.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
+        if ((Math.Abs(v3.X) + Math.Abs(v3.Y)) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             v3 = v3.WithCoord(1, 1, 0);
         }
-        Vector2D d3 = new(v3.X(), v3.Y());
-        _d3 = _d3.WithCoord(-d3.Y(), d3.X());
+        Vector2D d3 = new(v3.X, v3.Y);
+        _d3 = _d3.WithCoord(-d3.Y, d3.X);
     }
 
     public readonly bool Equals(AlgorithmProjector other)

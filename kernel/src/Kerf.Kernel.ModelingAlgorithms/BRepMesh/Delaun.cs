@@ -1208,7 +1208,7 @@ public sealed class Delaun
 
         Vector2D refLinkDir = new(pivotVertex.Coord() - startEdgeVertexS.Coord());
 
-        if (refLinkDir.SquareMagnitude() < Precision2)
+        if (refLinkDir.SquareMagnitude < Precision2)
         {
             return true;
         }
@@ -1364,7 +1364,7 @@ public sealed class Delaun
 
             Vector2D curLinkDir = new(GetVertex(otherNode).Coord() - pivotVertex.Coord());
 
-            if (curLinkDir.SquareMagnitude() < Precision2)
+            if (curLinkDir.SquareMagnitude < Precision2)
             {
                 deadLinks.Add(neighbourLinkId);
                 continue;
@@ -1375,7 +1375,7 @@ public sealed class Delaun
                 leprousLinks.Add(neighbourLinkId);
             }
 
-            double angle = refLinkDir.Angle(curLinkDir);
+            double angle = refLinkDir.AngleTo(curLinkDir);
             bool isFrontier = (neighbourLink.Movability() == DegreeOfFreedom.Frontier);
 
             bool isCheckPointOnEdge = true;
@@ -1702,7 +1702,7 @@ public sealed class Delaun
 
         MeshVertex firstVertex = GetVertex(polygonVertices[0]);
         Vector2D prevVertexDir = new(firstVertex.Coord() - centerPointXY);
-        if (prevVertexDir.SquareMagnitude() < Precision2)
+        if (prevVertexDir.SquareMagnitude < Precision2)
         {
             return true;
         }
@@ -1713,12 +1713,12 @@ public sealed class Delaun
             MeshVertex polyVertex = GetVertex(polygonVertices[polyIt]);
 
             Vector2D curVertexDir = new(polyVertex.Coord() - centerPointXY);
-            if (curVertexDir.SquareMagnitude() < Precision2)
+            if (curVertexDir.SquareMagnitude < Precision2)
             {
                 return true;
             }
 
-            totalAng += curVertexDir.Angle(prevVertexDir);
+            totalAng += curVertexDir.AngleTo(prevVertexDir);
             prevVertexDir = curVertexDir;
         }
 
@@ -1963,8 +1963,8 @@ public sealed class Delaun
                         return;
                     }
 
-                    double dist1 = intPnt.SquareDistance(nextPnts[0]);
-                    double dist2 = intPnt.SquareDistance(nextPnts[1]);
+                    double dist1 = intPnt.SquareDistanceTo(nextPnts[0]);
+                    double dist2 = intPnt.SquareDistanceTo(nextPnts[1]);
 
                     // Choose node with lower distance
                     bool isCloseToStart = (dist1 < dist2);
@@ -2212,7 +2212,7 @@ public sealed class Delaun
 
         Vector2D refEdgeDir = new(refVertices[0], refVertices[1]);
 
-        double refEdgeLen = refEdgeDir.Magnitude();
+        double refEdgeLen = refEdgeDir.Magnitude;
         if (refEdgeLen < Precision)
         {
             polygon.Clear();
@@ -2246,7 +2246,7 @@ public sealed class Delaun
             Vector2D distanceDir = new(refVertices[1], pivotVertex);
 
             double dist = refEdgeDir ^ distanceDir;
-            double angle = Math.Abs(refEdgeDir.Angle(distanceDir));
+            double angle = Math.Abs(refEdgeDir.AngleTo(distanceDir));
             double absDist = Math.Abs(dist);
             if (absDist < Precision || dist < 0.0)
             {

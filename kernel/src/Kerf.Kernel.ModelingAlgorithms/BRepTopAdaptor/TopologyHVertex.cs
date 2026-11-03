@@ -61,9 +61,9 @@ public class TopologyHVertex : HVertex
         Orientation or = Orientation();
         c.D1(p, out Point2D p2d, out Vector2D v2d);
         Vector3D dc = new();
-        s.D1(p2d.X(), p2d.Y(), out Point3D P, out Vector3D du, out Vector3D dv);
-        dc = Vector3D.LinearForm(v2d.X(), du, v2d.Y(), dv);
-        double resUV, mag = dc.Magnitude();
+        s.D1(p2d.X, p2d.Y, out Point3D P, out Vector3D du, out Vector3D dv);
+        dc = Vector3D.LinearForm(v2d.X, du, v2d.Y, dv);
+        double resUV, mag = dc.Magnitude;
 
         double uRes = s.UResolution(tv);
         double vRes = s.VResolution(tv);
@@ -110,9 +110,9 @@ public class TopologyHVertex : HVertex
         }
 
         c.D0(pp, out p2d);
-        s.D0(p2d.X(), p2d.Y(), out Point3D p1);
+        s.D0(p2d.X, p2d.Y, out Point3D p1);
 
-        double dist = P.Distance(p1);
+        double dist = P.DistanceTo(p1);
         if ((dist > 1e-12) && ((dist > 1.1 * tv) || (dist < 0.8 * tv)))
         {
             // Refine if possible
@@ -137,9 +137,9 @@ public class TopologyHVertex : HVertex
             }
 
             c.D1(pp, out p2d, out v2d);
-            s.D1(p2d.X(), p2d.Y(), out p1, out du, out dv);
-            dc = Vector3D.LinearForm(v2d.X(), du, v2d.Y(), dv);
-            dist1 = P.Distance(p1);
+            s.D1(p2d.X, p2d.Y, out p1, out du, out dv);
+            dc = Vector3D.LinearForm(v2d.X, du, v2d.Y, dv);
+            dist1 = P.DistanceTo(p1);
             if (Math.Abs(dist1 - tv) < Math.Abs(dist - tv))
             {
                 // Take the result of interpolation
@@ -147,7 +147,7 @@ public class TopologyHVertex : HVertex
                 dist = dist1;
             }
 
-            mag = dc.Magnitude();
+            mag = dc.Magnitude;
             if (tv > 1.0e7 * mag)
             {
                 mag = tv * 1.0e-7;
@@ -173,8 +173,8 @@ public class TopologyHVertex : HVertex
             }
 
             c.D0(pp, out p2d);
-            s.D0(p2d.X(), p2d.Y(), out p1);
-            dist1 = P.Distance(p1);
+            s.D0(p2d.X, p2d.Y, out p1);
+            dist1 = P.DistanceTo(p1);
             if (Math.Abs(dist1 - tv) < Math.Abs(dist - tv))
             {
                 // Take the new estimation
@@ -186,7 +186,7 @@ public class TopologyHVertex : HVertex
     }
 
     /// <summary>The orientation of the vertex.</summary>
-    public override Orientation Orientation() => _vtx.Orientation();
+    public override Orientation Orientation() => _vtx.Orientation;
 
     /// <summary>True if <paramref name="other"/> (a BRepTopAdaptor_HVertex) holds the same vertex.</summary>
     public override bool IsSame(HVertex other)

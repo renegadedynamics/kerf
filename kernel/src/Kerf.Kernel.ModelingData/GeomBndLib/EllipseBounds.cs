@@ -30,10 +30,10 @@ public sealed class EllipseBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full ellipse.</summary>
-    public Box Box(double tol) => Box(_geom.Elips(), tol);
+    public Box Box(double tol) => Box(_geom.Ellipse, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box Box(double u1, double u2, double tol) => Box(_geom.Elips(), u1, u2, tol);
+    public Box Box(double u1, double u2, double tol) => Box(_geom.Ellipse, u1, u2, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -42,11 +42,11 @@ public sealed class EllipseBounds : CurveBounds.ICurveEvaluator
     public static Box Box(in Ellipse3D elips, double tol)
     {
         Box box = new();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
-        Xyz o = elips.Location().XYZ();
-        Xyz xd = elips.XAxis().Direction().XYZ();
-        Xyz yd = elips.YAxis().Direction().XYZ();
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
+        Xyz o = elips.Location.XYZ();
+        Xyz xd = elips.XAxis.Direction.XYZ();
+        Xyz yd = elips.YAxis.Direction.XYZ();
 
         // For a full ellipse, compute per-coordinate analytical extrema.
         Span<double> min = stackalloc double[3];
@@ -68,11 +68,11 @@ public sealed class EllipseBounds : CurveBounds.ICurveEvaluator
     public static Box Box(in Ellipse3D elips, double u1, double u2, double tol)
     {
         Box box = new();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
-        Xyz o = elips.Location().XYZ();
-        Xyz xd = elips.XAxis().Direction().XYZ();
-        Xyz yd = elips.YAxis().Direction().XYZ();
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
+        Xyz o = elips.Location.XYZ();
+        Xyz xd = elips.XAxis.Direction.XYZ();
+        Xyz yd = elips.YAxis.Direction.XYZ();
 
         double period = 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (u2 - u1 >= period)
@@ -85,7 +85,7 @@ public sealed class EllipseBounds : CurveBounds.ICurveEvaluator
         global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, aTol, ref aU1, ref aU2);
 
         // Add arc endpoints.
-        Frame3D pos = elips.Position();
+        Frame3D pos = elips.Position;
         box.Add(global::Kerf.Engine.Geometry.ElCLib.EllipseValue(aU1, pos, majR, minR));
         box.Add(global::Kerf.Engine.Geometry.ElCLib.EllipseValue(aU2, pos, majR, minR));
 

@@ -97,16 +97,16 @@ public partial class PWalking
             switch (choixIso)
             {
                 case ConstIsoparametric.UIsoparametricOnCaro1:
-                    f = Math.Abs(_previousd1.X());
+                    f = Math.Abs(_previousd1.X);
                     break;
                 case ConstIsoparametric.VIsoparametricOnCaro1:
-                    f = Math.Abs(_previousd1.Y());
+                    f = Math.Abs(_previousd1.Y);
                     break;
                 case ConstIsoparametric.UIsoparametricOnCaro2:
-                    f = Math.Abs(_previousd2.X());
+                    f = Math.Abs(_previousd2.X);
                     break;
                 case ConstIsoparametric.VIsoparametricOnCaro2:
-                    f = Math.Abs(_previousd2.Y());
+                    f = Math.Abs(_previousd2.Y);
                     break;
             }
 
@@ -117,10 +117,10 @@ public partial class PWalking
 
             SetParameters(param, _previousPoint);
 
-            double dP1 = _sensCheminement * _pasuv[0] * _previousd1.X() / f;
-            double dP2 = _sensCheminement * _pasuv[1] * _previousd1.Y() / f;
-            double dP3 = _sensCheminement * _pasuv[2] * _previousd2.X() / f;
-            double dP4 = _sensCheminement * _pasuv[3] * _previousd2.Y() / f;
+            double dP1 = _sensCheminement * _pasuv[0] * _previousd1.X / f;
+            double dP2 = _sensCheminement * _pasuv[1] * _previousd1.Y / f;
+            double dP3 = _sensCheminement * _pasuv[2] * _previousd2.X / f;
+            double dP4 = _sensCheminement * _pasuv[3] * _previousd2.Y / f;
 
             if (choixIso == ConstIsoparametric.UIsoparametricOnCaro1 && Math.Abs(dP1) < 1.0e-7)
             {
@@ -277,7 +277,7 @@ public partial class PWalking
                                     Point3D pf = _line.Value(1).Value();
                                     Point3D pl = _previousPoint.Value();
 
-                                    if (pf.Distance(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                                    if (pf.DistanceTo(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         dIncKey++;
                                         if (dIncKey == 5000)
@@ -373,7 +373,7 @@ public partial class PWalking
                                             Point3D pf = _line.Value(1).Value();
                                             Point3D pl = _previousPoint.Value();
 
-                                            if (pf.Distance(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                                            if (pf.DistanceTo(pl) < global::Kerf.Engine.Foundation.Precision.Confusion())
                                             {
                                                 dIncKey++;
                                                 if (dIncKey == 5000)
@@ -486,11 +486,11 @@ public partial class PWalking
                         isoDir = new Direction2D(Direction2D.D.X);
                     }
 
-                    if (tangentZoneDir.SquareMagnitude() > Constants.Resolution())
+                    if (tangentZoneDir.SquareMagnitude > Constants.Resolution())
                     {
                         double piquota = M_PI * 0.25;
 
-                        if (Math.Abs(tangentZoneDir.Angle(new Vector2D(isoDir))) > piquota)
+                        if (Math.Abs(tangentZoneDir.AngleTo(new Vector2D(isoDir))) > piquota)
                         {
                             int ii = 1, nextii = 2;
                             Vector2D d1 = new(0, 0);
@@ -507,7 +507,7 @@ public partial class PWalking
                                     new Point2D(firstParams.Value(afirstindex), firstParams.Value(afirstindex + 1)),
                                     new Point2D(lastParams.Value(afirstindex), lastParams.Value(afirstindex + 1)));
                                 ii++;
-                            } while ((d1.SquareMagnitude() < asqresol) && (ii < seqOfNewPoint.Length()));
+                            } while ((d1.SquareMagnitude < asqresol) && (ii < seqOfNewPoint.Length()));
 
                             nextii = ii;
 
@@ -526,10 +526,10 @@ public partial class PWalking
                                         new Point2D(firstParams.Value(afirstindex), firstParams.Value(afirstindex + 1)),
                                         new Point2D(lastParams.Value(afirstindex), lastParams.Value(afirstindex + 1)));
                                     jj++;
-                                } while ((nextd1.SquareMagnitude() < asqresol) && (jj < seqOfNewPoint.Length()));
+                                } while ((nextd1.SquareMagnitude < asqresol) && (jj < seqOfNewPoint.Length()));
                                 nextii = jj;
 
-                                if (Math.Abs(d1.Angle(nextd1)) > piquota)
+                                if (Math.Abs(d1.AngleTo(nextd1)) > piquota)
                                 {
                                     bExtendLine = false;
                                     break;
@@ -591,7 +591,7 @@ public partial class PWalking
         aSurf1.D1(init[1], init[2], out Point3D p1, out Vector3D d1u, out Vector3D d1v);
         aSurf2.D1(init[3], init[4], out Point3D p2, out Vector3D d2U, out Vector3D d2V);
 
-        double sqDistPrev = p1.SquareDistance(p2);
+        double sqDistPrev = p1.SquareDistanceTo(p2);
 
         Vector3D p12 = new(p1, p2);
 
@@ -630,7 +630,7 @@ public partial class PWalking
             aSurf1.D1(paRu, paRv, out Point3D pt1, out d1u, out d1v);
             aSurf2.D1(parU, parV, out Point3D pt2, out d2U, out d2V);
 
-            double sqDist = pt1.SquareDistance(pt2);
+            double sqDist = pt1.SquareDistanceTo(pt2);
 
             if (sqDist < sqDistPrev)
             {
@@ -702,7 +702,7 @@ public partial class PWalking
 
             Vector3D vec = new(p0, ps);
 
-            double sqDist = vec.SquareMagnitude();
+            double sqDist = vec.SquareMagnitude;
 
             if (sqDist >= sqDistPrev)
             {
@@ -785,14 +785,14 @@ public partial class PWalking
                     iu = 2 * k;
                     iv = iu + 1;
                     surfs[k].D1(pars[iu], pars[iv], out Point3D pInt, out Vector3D du, out Vector3D dv);
-                    double mod = du.Magnitude();
+                    double mod = du.Magnitude;
                     if (mod > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double tolU = the3DTol / mod;
                         if (Math.Abs(lowBorder[iu] - pars[iu]) < tolU)
                         {
                             p = surfs[k].Value(lowBorder[iu], pars[iv]);
-                            if (pInt.SquareDistance(p) < tol2)
+                            if (pInt.SquareDistanceTo(p) < tol2)
                             {
                                 pars[iu] = lowBorder[iu];
                             }
@@ -800,20 +800,20 @@ public partial class PWalking
                         else if (Math.Abs(uppBorder[iu] - pars[iu]) < tolU)
                         {
                             p = surfs[k].Value(uppBorder[iu], pars[iv]);
-                            if (pInt.SquareDistance(p) < tol2)
+                            if (pInt.SquareDistanceTo(p) < tol2)
                             {
                                 pars[iu] = uppBorder[iu];
                             }
                         }
                     }
-                    mod = dv.Magnitude();
+                    mod = dv.Magnitude;
                     if (mod > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double tolV = the3DTol / mod;
                         if (Math.Abs(lowBorder[iv] - pars[iv]) < tolV)
                         {
                             p = surfs[k].Value(pars[iu], lowBorder[iv]);
-                            if (pInt.SquareDistance(p) < tol2)
+                            if (pInt.SquareDistanceTo(p) < tol2)
                             {
                                 pars[iv] = lowBorder[iv];
                             }
@@ -821,7 +821,7 @@ public partial class PWalking
                         else if (Math.Abs(uppBorder[iv] - pars[iv]) < tolV)
                         {
                             p = surfs[k].Value(pars[iu], uppBorder[iv]);
-                            if (pInt.SquareDistance(p) < tol2)
+                            if (pInt.SquareDistanceTo(p) < tol2)
                             {
                                 pars[iv] = uppBorder[iv];
                             }
@@ -927,7 +927,7 @@ public partial class PWalking
         Point3D p2 = aSurf2.Value(pnt[3], pnt[4]);
         Point3D pInt = new(0.5 * (p1.XYZ() + p2.XYZ()));
 
-        double sqDist = pInt.SquareDistance(p1);
+        double sqDist = pInt.SquareDistanceTo(p1);
         if (sqDist > tol * tol)
         {
             return isOK;
@@ -972,7 +972,7 @@ public partial class PWalking
                 for (; pInd <= nbPnts; pInd++)
                 {
                     p1 = p1.WithXYZ(_line.Value(pInd).Value().XYZ());
-                    if (p1.SquareDistance(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (p1.SquareDistanceTo(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -981,7 +981,7 @@ public partial class PWalking
                 for (++pInd; pInd <= nbPnts; pInd++)
                 {
                     p2 = p2.WithXYZ(_line.Value(pInd).Value().XYZ());
-                    if (p1.SquareDistance(p2) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (p1.SquareDistanceTo(p2) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -1004,7 +1004,7 @@ public partial class PWalking
             }
 
             p1 = p1.WithXYZ(_line.Value(1).Value().XYZ());
-            if (p1.SquareDistance(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (p1.SquareDistanceTo(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(1);
             }
@@ -1023,7 +1023,7 @@ public partial class PWalking
                 for (; pInd > 0; pInd--)
                 {
                     pCurr = pCurr.WithXYZ(_line.Value(pInd).Value().XYZ());
-                    if (pCurr.SquareDistance(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (pCurr.SquareDistanceTo(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -1032,7 +1032,7 @@ public partial class PWalking
                 for (--pInd; pInd > 0; pInd--)
                 {
                     pPrev = pPrev.WithXYZ(_line.Value(pInd).Value().XYZ());
-                    if (pCurr.SquareDistance(pPrev) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (pCurr.SquareDistanceTo(pPrev) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
                     }
@@ -1056,7 +1056,7 @@ public partial class PWalking
 
             int nbPntsL = _line.PointCount;
             p1 = p1.WithXYZ(_line.Value(nbPntsL).Value().XYZ());
-            if (p1.SquareDistance(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (p1.SquareDistanceTo(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(nbPntsL);
             }
@@ -1382,7 +1382,7 @@ public partial class PWalking
                     Point3D p1 = aSurf1.Value(pnt[1], pnt[2]), p2 = aSurf2.Value(pnt[3], pnt[4]);
                     Point3D pInt = new(0.5 * (p1.XYZ() + p2.XYZ()));
 
-                    double sqDist1 = pInt.SquareDistance(p1), sqDist2 = pInt.SquareDistance(p2);
+                    double sqDist1 = pInt.SquareDistanceTo(p1), sqDist2 = pInt.SquareDistanceTo(p2);
 
                     if ((sqDist1 < tol) && (sqDist2 < tol))
                     {

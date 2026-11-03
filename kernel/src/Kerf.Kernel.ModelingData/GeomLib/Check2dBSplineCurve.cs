@@ -52,7 +52,7 @@ public sealed class Check2dBSplineCurve
 
             // Near first
             tangent = new Vector2D(_curve.Pole(1), _curve.Pole(2));
-            tangent_magnitude = tangent.Magnitude();
+            tangent_magnitude = tangent.Magnitude;
             if (tangent_magnitude > _tolerance)
             {
                 tangent_normalized = tangent / tangent_magnitude;
@@ -61,7 +61,7 @@ public sealed class Check2dBSplineCurve
             for (ii = 3; ii <= num_poles; ii++)
             {
                 a_vector = new Vector2D(_curve.Pole(1), _curve.Pole(ii));
-                vector_magnitude = a_vector.Magnitude();
+                vector_magnitude = a_vector.Magnitude;
 
                 if (tangent_magnitude > _tolerance && vector_magnitude > _tolerance)
                 {
@@ -85,7 +85,7 @@ public sealed class Check2dBSplineCurve
 
             // Near last
             tangent = new Vector2D(_curve.Pole(num_poles), _curve.Pole(num_poles - 1));
-            tangent_magnitude = tangent.Magnitude();
+            tangent_magnitude = tangent.Magnitude;
             if (tangent_magnitude > _tolerance)
             {
                 tangent_normalized = tangent / tangent_magnitude;
@@ -94,7 +94,7 @@ public sealed class Check2dBSplineCurve
             for (ii = num_poles - 2; ii >= 1; ii--)
             {
                 a_vector = new Vector2D(_curve.Pole(num_poles), _curve.Pole(ii));
-                vector_magnitude = a_vector.Magnitude();
+                vector_magnitude = a_vector.Magnitude;
 
                 if (tangent_magnitude > _tolerance && vector_magnitude > _tolerance)
                 {

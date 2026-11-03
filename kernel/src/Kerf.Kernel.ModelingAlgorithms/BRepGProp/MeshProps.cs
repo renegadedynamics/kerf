@@ -54,10 +54,10 @@ public class MeshProps : Properties
         }
         else
         {
-            Transform3D tr = loc.Transformation();
+            Transform3D tr = loc.Transformation;
             //
-            bool isToCopy = tr.ScaleFactor() * tr.HVectorialPart().Determinant() < 0.0
-                            || Math.Abs(Math.Abs(tr.ScaleFactor()) - 1.0) > Constants.Resolution();
+            bool isToCopy = tr.ScaleFactor * tr.RotationPart.Determinant < 0.0
+                            || Math.Abs(Math.Abs(tr.ScaleFactor) - 1.0) > Constants.Resolution();
             if (isToCopy)
             {
                 var copy = new Triangulation(mesh.NodeCount, mesh.TriangleCount, false);
@@ -95,7 +95,7 @@ public class MeshProps : Properties
             }
 
             // Transform inertia tensor for rotation
-            Matrix3x3 hVec = trInv.HVectorialPart();
+            Matrix3x3 hVec = trInv.RotationPart;
             Matrix3x3 hVecT = hVec.Transposed();
             hVecT = hVecT.Multiplied(inertia0);
             inertia0 = hVecT.Multiplied(hVec);
@@ -215,7 +215,7 @@ public class MeshProps : Properties
         var v12 = new Vector3D(p2, p1);
         var v23 = new Vector3D(p3, p2);
         Vector3D norm = v12 ^ v23;
-        double det = norm.Magnitude();
+        double det = norm.Magnitude;
         if (det <= Constants.Resolution())
         {
             return;
@@ -245,15 +245,15 @@ public class MeshProps : Properties
             x = l1 * (x1 - x3) + l2 * (x2 - x3) + x3;
             y = l1 * (y1 - y3) + l2 * (y2 - y3) + y3;
             Point3D p = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(x, y, posPln);
-            x = p.X() - apex.X();
-            y = p.Y() - apex.Y();
-            z = p.Z() - apex.Z();
+            x = p.X - apex.X;
+            y = p.Y - apex.Y;
+            z = p.Z - apex.Z;
             //
             if (isVolume)
             {
-                double xn = dn.X() * w;
-                double yn = dn.Y() * w;
-                double zn = dn.Z() * w;
+                double xn = dn.X * w;
+                double yn = dn.Y * w;
+                double zn = dn.Z * w;
                 double dv = x * xn + y * yn + z * zn;
                 CalculateElVProps(x, y, z, dv, gProps);
             }

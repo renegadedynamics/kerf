@@ -193,21 +193,21 @@ public class MakeFillet : LocalOperation
     {
         if (uandR.Length() == 1)
         {
-            SetRadius(uandR[uandR.Lower()].Y(), ic, iinC);
+            SetRadius(uandR[uandR.Lower()].Y, ic, iinC);
         }
         else if (uandR.Length() == 2)
         {
-            SetRadius(uandR[uandR.Lower()].Y(), uandR[uandR.Upper()].Y(), ic, iinC);
+            SetRadius(uandR[uandR.Lower()].Y, uandR[uandR.Upper()].Y, ic, iinC);
         }
         else
         {
-            double uf = uandR[uandR.Lower()].X();
-            double ul = uandR[uandR.Upper()].X();
+            double uf = uandR[uandR.Lower()].X;
+            double ul = uandR[uandR.Upper()].X;
             for (int i = uandR.Lower(); i <= uandR.Upper(); i++)
             {
-                double ucur = uandR[i].X();
+                double ucur = uandR[i].X;
                 ucur = (ucur - uf) / (ul - uf);
-                Xy newUandR = new(ucur, uandR[i].Y());
+                Xy newUandR = new(ucur, uandR[i].Y);
                 _builder.SetRadius(newUandR, ic, iinC);
             }
         }

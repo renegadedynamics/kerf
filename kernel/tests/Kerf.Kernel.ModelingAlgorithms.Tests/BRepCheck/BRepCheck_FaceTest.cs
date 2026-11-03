@@ -109,7 +109,7 @@ public class BRepCheck_FaceTest
         var aCenter2d = new Point2D(50.0, 50.0);
         var aBasis = new CircleCurve2D(new Axis2D(aCenter2d, new Direction2D(1.0, 0.0)), 4.0);
         var anOffset = new OffsetCurve2D(aBasis, 1.0);
-        double aRadius = anOffset.Value(0.0).Distance(aCenter2d);
+        double aRadius = anOffset.Value(0.0).DistanceTo(aCenter2d);
 
         Edge anEdge = CircleEdge(new Circle3D(new Frame3D(new Point3D(50.0, 50.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), aRadius));
 
@@ -150,7 +150,7 @@ public class BRepCheck_FaceTest
         var aB = new BrepBuilder();
         Edge anEdge = new();
         aB.MakeEdge(ref anEdge, aLine, global::Kerf.Engine.Foundation.Precision.Confusion());
-        aB.Range(anEdge, aLine.FirstParameter(), aLine.LastParameter());
+        aB.Range(anEdge, aLine.FirstParameter, aLine.LastParameter);
         aB.Add(aFace, MakeWire(anEdge));
 
         aFace = TestShapes.Frozen(aFace);
@@ -158,6 +158,6 @@ public class BRepCheck_FaceTest
         Face aReversedFace = ShapeCasts.Face(aFace.Reversed());
         Assert.Equal(StatusCheck.NoError, aForwardStatus);
         Assert.Equal(aForwardStatus, classifyWires(aReversedFace));
-        Assert.Equal(Reversed, aReversedFace.Orientation());
+        Assert.Equal(Reversed, aReversedFace.Orientation);
     }
 }

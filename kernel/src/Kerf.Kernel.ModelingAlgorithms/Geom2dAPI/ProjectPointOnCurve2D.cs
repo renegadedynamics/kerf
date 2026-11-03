@@ -51,7 +51,7 @@ public class ProjectPointOnCurve2D
     /// <summary>Computes the projections of <paramref name="p"/> on <paramref name="curve"/>.</summary>
     public void Init(in Point2D p, Curve2D curve)
     {
-        Init(p, curve, curve.FirstParameter(), curve.LastParameter());
+        Init(p, curve, curve.FirstParameter, curve.LastParameter);
     }
 
     /// <summary>

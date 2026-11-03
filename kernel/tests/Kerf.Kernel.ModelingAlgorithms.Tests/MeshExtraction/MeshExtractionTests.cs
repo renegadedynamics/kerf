@@ -224,7 +224,7 @@ public class MeshExtractionTests
         for (int i = 1; i <= aPolygon.NodeCount; i++)
         {
             Point3D aP = aPolygon.Nodes().Value(i);
-            Assert.Equal((float)aP.X(), aBuffers.Points[3 * (aBuffers.EdgePoints[aCircleIndex] + i - 1)]);
+            Assert.Equal((float)aP.X, aBuffers.Points[3 * (aBuffers.EdgePoints[aCircleIndex] + i - 1)]);
         }
 
         // Unmeshed: every edge is discretised with the given tolerances, and faces give no nodes

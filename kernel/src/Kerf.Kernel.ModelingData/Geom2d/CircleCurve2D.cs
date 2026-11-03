@@ -31,8 +31,8 @@ public class CircleCurve2D : ConicCurve2D
     /// <summary>The circle equal to C.</summary>
     public CircleCurve2D(in Circle2D c)
     {
-        _radius = c.Radius();
-        _pos = c.Axis();
+        _radius = c.Radius;
+        _pos = c.Axis;
     }
 
     /// <summary>
@@ -65,8 +65,8 @@ public class CircleCurve2D : ConicCurve2D
     internal void SetCirc2d(in Circle2D c)
     {
         CheckMutable();
-        _radius = c.Radius();
-        _pos = c.Axis();
+        _radius = c.Radius;
+        _pos = c.Axis;
     }
 
     internal void SetRadius(double r)
@@ -80,22 +80,22 @@ public class CircleCurve2D : ConicCurve2D
     }
 
     /// <summary>The radius.</summary>
-    public double Radius() => _radius;
+    public double Radius => _radius;
 
     /// <summary>The circle as a gp_Circ2d.</summary>
-    public Circle2D Circ2d() => new Circle2D(_pos, _radius);
+    public Circle2D Circle => new Circle2D(_pos, _radius);
 
     /// <summary>2*PI - U.</summary>
     public sealed override double ReversedParameter(double u) => (2.0 * M_PI - u);
 
     /// <summary>0.</summary>
-    public sealed override double Eccentricity() => 0.0;
+    public sealed override double Eccentricity => 0.0;
 
     /// <summary>0.</summary>
-    public sealed override double FirstParameter() => 0.0;
+    public sealed override double FirstParameter => 0.0;
 
     /// <summary>2*PI.</summary>
-    public sealed override double LastParameter() => 2.0 * M_PI;
+    public sealed override double LastParameter => 2.0 * M_PI;
 
     /// <summary>True.</summary>
     public sealed override bool IsClosed => true;
@@ -103,23 +103,23 @@ public class CircleCurve2D : ConicCurve2D
     /// <summary>True.</summary>
     public sealed override bool IsPeriodic => true;
 
-    public sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(u, _pos, _radius);
+    internal sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(u, _pos, _radius);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElCLib.CircleD1(u, _pos, _radius, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElCLib.CircleD2(u, _pos, _radius, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElCLib.CircleD3(u, _pos, _radius, out result.Point, out result.D1, out result.D2, out result.D3);
@@ -127,7 +127,7 @@ public class CircleCurve2D : ConicCurve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -140,7 +140,7 @@ public class CircleCurve2D : ConicCurve2D
     protected internal sealed override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor());
+        _radius = _radius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 

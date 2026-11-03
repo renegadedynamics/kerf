@@ -279,8 +279,8 @@ public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         p2p3 = p2P3 / _firstRad;
         p3p1 = p3P1 / _firstRad;
         // norme des Tani.
-        double nnor1 = tan1.Magnitude();
-        double nnor2 = tan2.Magnitude();
+        double nnor1 = tan1.Magnitude;
+        double nnor2 = tan2.Magnitude;
         // Fonctions Fui.
         // ==============
         fval[1] = (p3P1.Dot(p3P1) - x[4] * x[4]) / (_firstRad * _firstRad);
@@ -304,8 +304,8 @@ public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         p2p3 = p2P3 / _firstRad;
         p3p1 = p3P1 / _firstRad;
         // normales au courbes normees Nori et non nromees nori et norme des nori.
-        double nnor1 = tan1.Magnitude();
-        double nnor2 = tan2.Magnitude();
+        double nnor1 = tan1.Magnitude;
+        double nnor2 = tan2.Magnitude;
         // Derivees dFui/uj  1 <= ui <= 3 , 1 <= uj <= 3
         // =============================================
         deriv[1, 1] = 2.0 * tan1.Dot(p3P1) / (_firstRad * _firstRad);
@@ -346,8 +346,8 @@ public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
         p2p3 = p2P3 / _firstRad;
         p3p1 = p3P1 / _firstRad;
         // normales au courbes normees Nori et non nromees nori et norme des nori.
-        double nnor1 = tan1.Magnitude();
-        double nnor2 = tan2.Magnitude();
+        double nnor1 = tan1.Magnitude;
+        double nnor2 = tan2.Magnitude;
         // Fonctions Fui.
         // ==============
         fval[1] = (p3P1.Dot(p3P1) - x[4] * x[4]) / (_firstRad * _firstRad);

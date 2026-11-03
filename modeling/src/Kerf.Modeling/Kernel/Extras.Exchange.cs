@@ -62,7 +62,7 @@ internal static partial class Extras
             for (int i = 1; i <= mesh.NodeCount; i++)
             {
                 var p = mesh.Node(i);
-                mesh.SetNode(i, new Point3D(p.X() * scale, p.Y() * scale, p.Z() * scale));
+                mesh.SetNode(i, new Point3D(p.X * scale, p.Y * scale, p.Z * scale));
             }
         }
         var face = new global::Kerf.Topology.Face();
@@ -258,7 +258,7 @@ internal static partial class Extras
         }
         // A part: its shape at the origin, placed by the instance, as XCAF holds a located shape
         var origin = shape.Located(new Placement());
-        var key = new ProductKey(origin.TShape()!, origin.Orientation(), node.Name, node.Color);
+        var key = new ProductKey(origin.TShape()!, origin.Orientation, node.Name, node.Color);
         if (!products.ByKey.TryGetValue(key, out var product))
         {
             if (!products.Shapes.Add(key.TShape))
@@ -272,7 +272,7 @@ internal static partial class Extras
             }
             products.ByKey[key] = product;
         }
-        return new Instance(product, shape.Location());
+        return new Instance(product, shape.Placement);
     }
 
     private static ColorWithAlpha Rgba((double R, double G, double B, double A) c)

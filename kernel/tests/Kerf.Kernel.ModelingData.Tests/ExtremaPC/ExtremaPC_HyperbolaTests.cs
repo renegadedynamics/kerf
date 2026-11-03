@@ -85,7 +85,7 @@ public class ExtremaPC_HyperbolaTest
         // Verify the point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        double aExpectedSq = aPoint.SquareDistance(aPtOnHyper);
+        double aExpectedSq = aPoint.SquareDistanceTo(aPtOnHyper);
         Assert.Equal(aExpectedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
@@ -104,8 +104,8 @@ public class ExtremaPC_HyperbolaTest
         // Verify the closest point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
 
         // For negative Y, parameter should be negative
         Assert.True(aResult[aMinIdx].Parameter < 0.0);
@@ -126,7 +126,7 @@ public class ExtremaPC_HyperbolaTest
         // Verify the closest point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
 
         // Distance should be less than distance to center (sqrt(25^2+5^2) = 25.5)
         Assert.True(Math.Sqrt(aResult.MinSquareDistance()) < 26.0);
@@ -253,8 +253,8 @@ public class ExtremaPC_HyperbolaTest
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public class ExtremaPC_HyperbolaTest
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
     }
 
     [Fact]
@@ -290,8 +290,8 @@ public class ExtremaPC_HyperbolaTest
         // Verify point is on hyperbola and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     //==================================================================================================
@@ -378,8 +378,8 @@ public class ExtremaPC_HyperbolaTest
         // Verify point is on hyperbola and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnHyper), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     //==================================================================================================
@@ -401,7 +401,7 @@ public class ExtremaPC_HyperbolaTest
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
 
         // Distance should include X component (out of plane)
         Assert.True(aResult.MinSquareDistance() >= 25.0); // At least 5^2
@@ -422,7 +422,7 @@ public class ExtremaPC_HyperbolaTest
         // Verify point is on hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnHyper = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnHyper), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnHyper), THE_TOL);
 
         // Distance should include Y component (out of plane)
         Assert.True(aResult.MinSquareDistance() >= 25.0); // At least 5^2
@@ -447,9 +447,9 @@ public class ExtremaPC_HyperbolaTest
         // Verify the projected point is on the hyperbola
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, aHyperbola);
-        Assert.Equal(aPtOnCurve.X(), aResult[aMinIdx].Point.X(), THE_TOL);
-        Assert.Equal(aPtOnCurve.Y(), aResult[aMinIdx].Point.Y(), THE_TOL);
-        Assert.Equal(aPtOnCurve.Z(), aResult[aMinIdx].Point.Z(), THE_TOL);
+        Assert.Equal(aPtOnCurve.X, aResult[aMinIdx].Point.X, THE_TOL);
+        Assert.Equal(aPtOnCurve.Y, aResult[aMinIdx].Point.Y, THE_TOL);
+        Assert.Equal(aPtOnCurve.Z, aResult[aMinIdx].Point.Z, THE_TOL);
     }
 
     [Fact]
@@ -466,7 +466,7 @@ public class ExtremaPC_HyperbolaTest
 
         // Verify distance matches point distance
         int aMinIdx = aResult.MinIndex();
-        double aComputedSq = aPoint.SquareDistance(aResult[aMinIdx].Point);
+        double aComputedSq = aPoint.SquareDistanceTo(aResult[aMinIdx].Point);
         Assert.Equal(aComputedSq, aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 }

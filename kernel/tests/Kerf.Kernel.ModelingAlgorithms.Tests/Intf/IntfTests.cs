@@ -232,8 +232,8 @@ public class IntfTests
         {
             Assert.Equal(1.0, anInter.PntValue(i).ParamOnFirst(), 15);
             Assert.Equal(0.5, anInter.PntValue(i).ParamOnSecond(), 15);
-            Assert.Equal(1.0, anInter.Pnt2dValue(i).X(), 15);
-            Assert.Equal(1.0, anInter.Pnt2dValue(i).Y(), 15);
+            Assert.Equal(1.0, anInter.Pnt2dValue(i).X, 15);
+            Assert.Equal(1.0, anInter.Pnt2dValue(i).Y, 15);
         }
     }
 

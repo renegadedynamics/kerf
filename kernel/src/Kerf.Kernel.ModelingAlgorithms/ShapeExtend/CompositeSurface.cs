@@ -305,20 +305,20 @@ public class CompositeSurface : Surface
     /// <summary>The indices of the patch holding the global point.</summary>
     public void LocateUVPoint(in Point2D pnt, out int i, out int j)
     {
-        i = LocateUParameter(pnt.X());
-        j = LocateVParameter(pnt.Y());
+        i = LocateUParameter(pnt.X);
+        j = LocateVParameter(pnt.Y);
     }
 
     /// <summary>The patch holding the global point (U, V). Frozen.</summary>
     public Surface Patch(double u, double v) => Shared(_patches!.Value(LocateUParameter(u), LocateVParameter(v)));
 
     /// <summary>The patch holding the global point. Frozen.</summary>
-    public Surface Patch(in Point2D pnt) => Shared(_patches!.Value(LocateUParameter(pnt.X()), LocateVParameter(pnt.Y())));
+    public Surface Patch(in Point2D pnt) => Shared(_patches!.Value(LocateUParameter(pnt.X), LocateVParameter(pnt.Y)));
 
     /// <summary>The global U of the local parameter u on patch (i, j).</summary>
     public double ULocalToGlobal(int i, int j, double u)
     {
-        _patches!.Value(i, j).Bounds(out double u1, out double u2, out _, out _);
+        _patches!.Value(i, j).ParameterBounds(out double u1, out double u2, out _, out _);
         double scale = (_uJointValues!.Value(i + 1) - _uJointValues.Value(i)) / (u2 - u1);
         return u * scale + (_uJointValues.Value(i) - u1 * scale); // ! this formula is stable if u1 is infinite
     }
@@ -326,7 +326,7 @@ public class CompositeSurface : Surface
     /// <summary>The global V of the local parameter v on patch (i, j).</summary>
     public double VLocalToGlobal(int i, int j, double v)
     {
-        _patches!.Value(i, j).Bounds(out _, out _, out double v1, out double v2);
+        _patches!.Value(i, j).ParameterBounds(out _, out _, out double v1, out double v2);
         double scale = (_vJointValues!.Value(j + 1) - _vJointValues.Value(j)) / (v2 - v1);
         return v * scale + (_vJointValues.Value(j) - v1 * scale); // ! this formula is stable if v1 is infinite
     }
@@ -334,19 +334,19 @@ public class CompositeSurface : Surface
     /// <summary>The global point of the local point uv on patch (i, j).</summary>
     public Point2D LocalToGlobal(int i, int j, in Point2D uv)
     {
-        _patches!.Value(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
+        _patches!.Value(i, j).ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         double scaleu = (_uJointValues!.Value(i + 1) - _uJointValues.Value(i)) / (u2 - u1);
         double scalev = (_vJointValues!.Value(j + 1) - _vJointValues.Value(j)) / (v2 - v1);
-        return new Point2D(uv.X() * scaleu
+        return new Point2D(uv.X * scaleu
                             + (_uJointValues.Value(i)
                                - u1 * scaleu), // ! this formula is stable if u1 or v1 is infinite
-                            uv.Y() * scalev + (_vJointValues.Value(j) - v1 * scalev));
+                            uv.Y * scalev + (_vJointValues.Value(j) - v1 * scalev));
     }
 
     /// <summary>The local u on patch (i, j) of the global parameter U.</summary>
     public double UGlobalToLocal(int i, int j, double u)
     {
-        _patches!.Value(i, j).Bounds(out double u1, out double u2, out _, out _);
+        _patches!.Value(i, j).ParameterBounds(out double u1, out double u2, out _, out _);
         double scale = (u2 - u1) / (_uJointValues!.Value(i + 1) - _uJointValues.Value(i));
         return u * scale + (u1 - _uJointValues.Value(i) * scale); // ! this formula is stable if u1 is infinite
     }
@@ -354,7 +354,7 @@ public class CompositeSurface : Surface
     /// <summary>The local v on patch (i, j) of the global parameter V.</summary>
     public double VGlobalToLocal(int i, int j, double v)
     {
-        _patches!.Value(i, j).Bounds(out _, out _, out double v1, out double v2);
+        _patches!.Value(i, j).ParameterBounds(out _, out _, out double v1, out double v2);
         double scale = (v2 - v1) / (_vJointValues!.Value(j + 1) - _vJointValues.Value(j));
         return v * scale + (v1 - _vJointValues.Value(j) * scale); // ! this formula is stable if v1 is infinite
     }
@@ -362,14 +362,14 @@ public class CompositeSurface : Surface
     /// <summary>The local point on patch (i, j) of the global point UV.</summary>
     public Point2D GlobalToLocal(int i, int j, in Point2D uv)
     {
-        _patches!.Value(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
+        _patches!.Value(i, j).ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         double scaleu = (u2 - u1) / (_uJointValues!.Value(i + 1) - _uJointValues.Value(i));
         double scalev = (v2 - v1) / (_vJointValues!.Value(j + 1) - _vJointValues.Value(j));
         return new Point2D(
-            uv.X() * scaleu
+            uv.X * scaleu
             + (u1
                - _uJointValues.Value(i) * scaleu), // ! this formula is stable if u1 or v1 is infinite
-            uv.Y() * scalev + (v1 - _vJointValues.Value(j) * scalev));
+            uv.Y * scalev + (v1 - _vJointValues.Value(j) * scalev));
     }
 
     /// <summary>
@@ -378,7 +378,7 @@ public class CompositeSurface : Surface
     /// </summary>
     public bool GlobalToLocalTransformation(int i, int j, out double uFact, out Transform2D trsf)
     {
-        _patches!.Value(i, j).Bounds(out double u1, out double u2, out double v1, out double v2);
+        _patches!.Value(i, j).ParameterBounds(out double u1, out double u2, out double v1, out double v2);
 
         double scaleu = (u2 - u1) / (_uJointValues!.Value(i + 1) - _uJointValues.Value(i));
         double scalev = (v2 - v1) / (_vJointValues!.Value(j + 1) - _vJointValues.Value(j));
@@ -386,7 +386,7 @@ public class CompositeSurface : Surface
 
         uFact = scaleu / scalev;
         Transform2D Shift = new(), scale = new();
-        if (shift.X() != 0.0 || shift.Y() != 0.0)
+        if (shift.X != 0.0 || shift.Y != 0.0)
         {
             Shift = Shift.WithTranslation(shift);
         }
@@ -395,7 +395,7 @@ public class CompositeSurface : Surface
             scale = scale.WithScale(new Point2D(0, 0), scalev);
         }
         trsf = scale * Shift;
-        return uFact != 1.0 || trsf.Form() != TransformForm.Identity;
+        return uFact != 1.0 || trsf.Form != TransformForm.Identity;
     }
 
     //=======================================================================
@@ -483,7 +483,7 @@ public class CompositeSurface : Surface
     public override double VReversedParameter(double v) => v;
 
     /// <summary>The first and last joint values.</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = UJointValue(1);
         v1 = VJointValue(1);
@@ -504,13 +504,13 @@ public class CompositeSurface : Surface
     public override Curve3D VIso(double v) => null!; // OCCT returns a null handle
 
     /// <summary>C0.</summary>
-    public override Continuity Continuity() => C0;
+    public override Continuity Continuity => C0;
 
     /// <summary>True for N &lt;= 0 only.</summary>
-    public override bool IsCNu(int n) => n <= 0;
+    internal override bool IsCNu(int n) => n <= 0;
 
     /// <summary>True for N &lt;= 0 only.</summary>
-    public override bool IsCNv(int n) => n <= 0;
+    internal override bool IsCNv(int n) => n <= 0;
 
     /// <summary>True if the first and last U rows meet (computed by <see cref="CheckConnectivity"/>).</summary>
     public override bool IsUClosed => _uClosed;
@@ -518,54 +518,54 @@ public class CompositeSurface : Surface
     /// <summary>True if the first and last V columns meet (computed by <see cref="CheckConnectivity"/>).</summary>
     public override bool IsVClosed => _vClosed;
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
         int i = LocateUParameter(u);
         int j = LocateVParameter(v);
         Point2D uv = GlobalToLocal(i, j, new Point2D(u, v));
-        return _patches!.Value(i, j).EvalD0(uv.X(), uv.Y());
+        return _patches!.Value(i, j).EvalD0(uv.X, uv.Y);
     }
 
     // OCCT returns the patch's derivatives unscaled by the joint values.
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
         int i = LocateUParameter(u);
         int j = LocateVParameter(v);
         Point2D uv = GlobalToLocal(i, j, new Point2D(u, v));
-        return _patches!.Value(i, j).EvalD1(uv.X(), uv.Y());
+        return _patches!.Value(i, j).EvalD1(uv.X, uv.Y);
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
         int i = LocateUParameter(u);
         int j = LocateVParameter(v);
         Point2D uv = GlobalToLocal(i, j, new Point2D(u, v));
-        return _patches!.Value(i, j).EvalD2(uv.X(), uv.Y());
+        return _patches!.Value(i, j).EvalD2(uv.X, uv.Y);
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
         int i = LocateUParameter(u);
         int j = LocateVParameter(v);
         Point2D uv = GlobalToLocal(i, j, new Point2D(u, v));
-        return _patches!.Value(i, j).EvalD3(uv.X(), uv.Y());
+        return _patches!.Value(i, j).EvalD3(uv.X, uv.Y);
     }
 
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         int i = LocateUParameter(u);
         int j = LocateVParameter(v);
         Point2D uv = GlobalToLocal(i, j, new Point2D(u, v));
-        return _patches!.Value(i, j).EvalDN(uv.X(), uv.Y(), nu, nv);
+        return _patches!.Value(i, j).EvalDN(uv.X, uv.Y, nu, nv);
     }
 
     /// <summary>The point at the global parameters.</summary>
     public Point3D Value(in Point2D pnt)
     {
-        int i = LocateUParameter(pnt.X());
-        int j = LocateVParameter(pnt.Y());
+        int i = LocateUParameter(pnt.X);
+        int j = LocateVParameter(pnt.Y);
         Point2D uv = GlobalToLocal(i, j, pnt);
-        _patches!.Value(i, j).D0(uv.X(), uv.Y(), out Point3D point);
+        _patches!.Value(i, j).D0(uv.X, uv.Y, out Point3D point);
         return point;
     }
 
@@ -587,7 +587,7 @@ public class CompositeSurface : Surface
             int i; // svv Jan 10 2000 : porting on DEC
             for (i = 1; i <= nbU; i++)
             {
-                _patches!.Value(i, 1).Bounds(out u1, out u2, out v1, out v2);
+                _patches!.Value(i, 1).ParameterBounds(out u1, out u2, out v1, out v2);
                 if (i == 1)
                 {
                     _uJointValues.SetValue(1, u = u1);
@@ -597,7 +597,7 @@ public class CompositeSurface : Surface
             }
             for (i = 1; i <= nbV; i++)
             {
-                _patches!.Value(1, i).Bounds(out u1, out u2, out v1, out v2);
+                _patches!.Value(1, i).ParameterBounds(out u1, out u2, out v1, out v2);
                 if (i == 1)
                 {
                     _vJointValues.SetValue(1, v = v1);
@@ -631,7 +631,7 @@ public class CompositeSurface : Surface
 
     private static void GetLimitedBounds(Surface surf, out double u1, out double u2, out double v1, out double v2)
     {
-        surf.Bounds(out u1, out u2, out v1, out v2);
+        surf.ParameterBounds(out u1, out u2, out v1, out v2);
         u1 = LimitValue(u1);
         u2 = LimitValue(u2);
         v1 = LimitValue(v1);
@@ -667,7 +667,7 @@ public class CompositeSurface : Surface
                 {
                     double parj = vj1 + stepj * isample;
                     double pari = vi1 + stepi * isample;
-                    double dist2 = sj.Value(uj2, parj).SquareDistance(si.Value(ui1, pari));
+                    double dist2 = sj.Value(uj2, parj).SquareDistanceTo(si.Value(ui1, pari));
                     if (maxdist2 < dist2)
                     {
                         maxdist2 = dist2;
@@ -700,7 +700,7 @@ public class CompositeSurface : Surface
                 {
                     double parj = uj1 + stepj * isample;
                     double pari = ui1 + stepi * isample;
-                    double dist2 = sj.Value(parj, vj2).SquareDistance(si.Value(pari, vi1));
+                    double dist2 = sj.Value(parj, vj2).SquareDistanceTo(si.Value(pari, vi1));
                     if (maxdist2 < dist2)
                     {
                         maxdist2 = dist2;

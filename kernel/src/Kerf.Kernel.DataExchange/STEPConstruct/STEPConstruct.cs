@@ -42,7 +42,7 @@ public static class StepConstruct
                                                          ref Placement loc)
     {
         RepresentationItem item = null;
-        loc = shape.Location();
+        loc = shape.Placement;
         ShapeMapper mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(finderProcess, shape);
         if (!finderProcess.FindTypedTransient(mapper, typeof(RepresentationItem), ref item) && !loc.IsIdentity)
         {

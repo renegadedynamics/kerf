@@ -502,7 +502,7 @@ public class Ecc2d
         }
 
         return Curve2dTool.Value(_c[0]!, _points1[n])
-            .SquareDistance(Curve2dTool.Value(_c[1]!, _points2[n]));
+            .SquareDistanceTo(Curve2dTool.Value(_c[1]!, _points2[n]));
     }
 
     /// <summary>The points of the Nth extremum, on the first and on the second curve.</summary>

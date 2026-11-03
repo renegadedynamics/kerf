@@ -44,7 +44,7 @@ public sealed class RemoveLocations : Transient
     {
         Shape aShape = shape;
         _shape = aShape;
-        ShapeType shtype = shape.ShapeType();
+        ShapeType shtype = shape.Type;
         bool isRemoveLoc = ((shtype != ShapeType.Compound && _levelRemoving == ShapeType.Shape)
                             || ((int)_levelRemoving <= ((int)shtype)));
         Shape s = new();
@@ -130,7 +130,7 @@ public sealed class RemoveLocations : Transient
         bool isRebuild = false;
         if (!loc.IsIdentity)
         {
-            Surface anewSurf = (Surface)surf.Transformed(loc.Transformation());
+            Surface anewSurf = (Surface)surf.Transformed(loc.Transformation);
             b.MakeFace(ref newFace, anewSurf, Tool.Tolerance(face));
             isRebuild = true;
         }
@@ -156,14 +156,14 @@ public sealed class RemoveLocations : Transient
             {
                 if (!loc.IsIdentity)
                 {
-                    Curve3D anewC3d = (Curve3D)c3d.Transformed(loc.Transformation());
+                    Curve3D anewC3d = (Curve3D)c3d.Transformed(loc.Transformation);
                     c3d = anewC3d;
                 }
 
                 b.UpdateEdge(newEdge, c3d, Tool.Tolerance(edge));
                 b.Range(newEdge, first3d, last3d);
             }
-            newEdge.Orientation(edge.Orientation());
+            newEdge.Orient(edge.Orientation);
             if (Tool.Degenerated(edge))
             {
                 b.Degenerated(newEdge, true);
@@ -185,9 +185,9 @@ public sealed class RemoveLocations : Transient
                     {
                         Edge tmpE = ShapeCasts.Edge(edge.Reversed());
                         c2d1 = Tool.CurveOnSurface(tmpE, face, out first2d, out last2d);
-                        Orientation orEdge = newEdge.Orientation();
+                        Orientation orEdge = newEdge.Orientation;
 
-                        if (face.Orientation() == Reversed)
+                        if (face.Orientation == Reversed)
                         {
                             orEdge = (orEdge == Forward ? Reversed : Forward);
                         }
@@ -222,7 +222,7 @@ public sealed class RemoveLocations : Transient
     {
         BrepBuilder b = new();
         b.MakeVertex(ref newVertex);
-        newVertex.Orientation(vertex.Orientation());
+        newVertex.Orient(vertex.Orientation);
         Point3D p1 = Tool.Pnt(vertex);
         b.UpdateVertex(newVertex, p1, Tool.Tolerance(vertex));
         return true;
@@ -237,10 +237,10 @@ public sealed class RemoveLocations : Transient
     {
         bool isDone = false;
         Shape aNewShape = new();
-        ShapeType shtype = shape.ShapeType();
+        ShapeType shtype = shape.Type;
         BrepBuilder b = new();
         Shape aShape = shape;
-        if (!removeLoc && !shape.Location().IsIdentity)
+        if (!removeLoc && !shape.Placement.IsIdentity)
         {
             Placement nulLoc = new();
             aShape.Location(nulLoc);
@@ -249,10 +249,10 @@ public sealed class RemoveLocations : Transient
         if (isBound)
         {
             aNewShape = _mapNewShapes.GetValue(aShape);
-            aNewShape.Orientation(shape.Orientation());
-            if (!removeLoc && !shape.Location().IsIdentity)
+            aNewShape.Orient(shape.Orientation);
+            if (!removeLoc && !shape.Placement.IsIdentity)
             {
-                Placement l = shape.Location();
+                Placement l = shape.Placement;
                 aNewShape.Location(l);
             }
             if (shtype != ShapeType.Edge)
@@ -276,7 +276,7 @@ public sealed class RemoveLocations : Transient
             anAncShape = aShape;
         }
         if (isRemoveLoc
-            && (!aShape.Location().IsIdentity || shtype == ShapeType.Edge || shtype == ShapeType.Face))
+            && (!aShape.Placement.IsIdentity || shtype == ShapeType.Edge || shtype == ShapeType.Face))
         {
 
             // Rebuild geometry for shape with location.
@@ -334,16 +334,16 @@ public sealed class RemoveLocations : Transient
             {
                 aNewShape = shape.EmptyCopied();
                 // it is safe to simply copy Closed flag since this operation does not change topology
-                aNewShape.Closed(shape.Closed());
+                aNewShape.Closed(shape.IsClosed);
             }
             Placement oldLoc, nullloc = new();
-            oldLoc = shape.Location();
+            oldLoc = shape.Placement;
             if (!oldLoc.IsIdentity)
             {
                 aNewShape.Location(nullloc);
             }
-            Orientation orient = shape.Orientation();
-            aNewShape.Orientation(Forward);
+            Orientation orient = shape.Orientation;
+            aNewShape.Orient(Forward);
             Iterator it = new(aShape, false, isRemoveLoc);
             for (; it.More(); it.Next())
             {
@@ -355,7 +355,7 @@ public sealed class RemoveLocations : Transient
             }
             if (isDone)
             {
-                aNewShape.Orientation(orient);
+                aNewShape.Orient(orient);
             }
             else
             {

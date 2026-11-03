@@ -54,7 +54,7 @@ public sealed class Axis2Placement3dMaker : GeometryRoot
         Frame3D a = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
         //   le reste inchange
 
-        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location(), a.Direction(), a.XDirection(), "", localFactors.LengthFactor());
+        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location, a.Direction, a.XDirection, "", localFactors.LengthFactor());
         _axis2Placement3d = axe;
         _done = true;
     }
@@ -71,7 +71,7 @@ public sealed class Axis2Placement3dMaker : GeometryRoot
     /// <summary>An Ax2, its location divided by the length factor.</summary>
     public Axis2Placement3dMaker(in Frame3D a, in Factors localFactors)
     {
-        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location(), a.Direction(), a.XDirection(), "", localFactors.LengthFactor());
+        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location, a.Direction, a.XDirection, "", localFactors.LengthFactor());
         _axis2Placement3d = axe;
         _done = true;
     }
@@ -88,7 +88,7 @@ public sealed class Axis2Placement3dMaker : GeometryRoot
     /// <summary>An Ax3 (direct or not), its location divided by the length factor.</summary>
     public Axis2Placement3dMaker(in CoordinateSystem a, in Factors localFactors)
     {
-        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location(), a.Direction(), a.XDirection(), "", localFactors.LengthFactor());
+        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location, a.Direction, a.XDirection, "", localFactors.LengthFactor());
         _axis2Placement3d = axe;
         _done = true;
     }
@@ -109,7 +109,7 @@ public sealed class Axis2Placement3dMaker : GeometryRoot
         a = a.Transformed(t);
         //   le reste inchange
 
-        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location(), a.Direction(), a.XDirection(), "", localFactors.LengthFactor());
+        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location, a.Direction, a.XDirection, "", localFactors.LengthFactor());
         _axis2Placement3d = axe;
         _done = true;
     }
@@ -130,7 +130,7 @@ public sealed class Axis2Placement3dMaker : GeometryRoot
         Frame3D a;
         a = axis2.Ax2();
 
-        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location(), a.Direction(), a.XDirection(), "", localFactors.LengthFactor());
+        StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location, a.Direction, a.XDirection, "", localFactors.LengthFactor());
         _axis2Placement3d = axe;
         _done = true;
     }

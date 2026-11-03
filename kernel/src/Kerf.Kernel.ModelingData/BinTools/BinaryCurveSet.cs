@@ -76,55 +76,55 @@ public class BinaryCurveSet
     private static void Write(OStream os, LineCurve3D l)
     {
         os = os << Line;
-        Line3D c = l.Lin();
-        os = os << c.Location();  // Pnt
-        os = os << c.Direction(); // Dir
+        Line3D c = l.Line;
+        os = os << c.Location;  // Pnt
+        os = os << c.Direction; // Dir
     }
 
     private static void Write(OStream os, CircleCurve3D cc)
     {
         os = os << Circle;
-        Circle3D c = cc.Circ();
-        os = os << c.Location();
-        os = os << c.Axis().Direction();
-        os = os << c.XAxis().Direction();
-        os = os << c.YAxis().Direction();
-        os = os << c.Radius();
+        Circle3D c = cc.Circle;
+        os = os << c.Location;
+        os = os << c.Axis.Direction;
+        os = os << c.XAxis.Direction;
+        os = os << c.YAxis.Direction;
+        os = os << c.Radius;
     }
 
     private static void Write(OStream os, EllipseCurve3D e)
     {
         os = os << Ellipse;
-        Ellipse3D c = e.Elips();
-        os = os << c.Location();
-        os = os << c.Axis().Direction();
-        os = os << c.XAxis().Direction();
-        os = os << c.YAxis().Direction();
-        os = os << c.MajorRadius();
-        os = os << c.MinorRadius();
+        Ellipse3D c = e.Ellipse;
+        os = os << c.Location;
+        os = os << c.Axis.Direction;
+        os = os << c.XAxis.Direction;
+        os = os << c.YAxis.Direction;
+        os = os << c.MajorRadius;
+        os = os << c.MinorRadius;
     }
 
     private static void Write(OStream os, ParabolaCurve3D p)
     {
         os = os << Parabola;
-        Parabola3D c = p.Parab();
-        os = os << c.Location();
-        os = os << c.Axis().Direction();
-        os = os << c.XAxis().Direction();
-        os = os << c.YAxis().Direction();
-        os = os << c.Focal();
+        Parabola3D c = p.Parabola;
+        os = os << c.Location;
+        os = os << c.Axis.Direction;
+        os = os << c.XAxis.Direction;
+        os = os << c.YAxis.Direction;
+        os = os << c.Focal;
     }
 
     private static void Write(OStream os, HyperbolaCurve3D h)
     {
         os = os << Hyperbola;
-        Hyperbola3D c = h.Hypr();
-        os = os << c.Location();
-        os = os << c.Axis().Direction();
-        os = os << c.XAxis().Direction();
-        os = os << c.YAxis().Direction();
-        os = os << c.MajorRadius();
-        os = os << c.MinorRadius();
+        Hyperbola3D c = h.Hyperbola;
+        os = os << c.Location;
+        os = os << c.Axis.Direction;
+        os = os << c.XAxis.Direction;
+        os = os << c.YAxis.Direction;
+        os = os << c.MajorRadius;
+        os = os << c.MinorRadius;
     }
 
     private static void Write(OStream os, BezierCurve3D b)
@@ -133,7 +133,7 @@ public class BinaryCurveSet
         bool rational = b.IsRational;
         os = os << rational; // rational
         // poles and weights
-        int i, degree = b.Degree();
+        int i, degree = b.Degree;
         os = os << (char)degree; //<< Degree
         for (i = 1; i <= degree + 1; i++)
         {
@@ -154,7 +154,7 @@ public class BinaryCurveSet
         os = os << periodic; // periodic
         // poles and weights
         int i, degree, nbPoles, nbKnots;
-        degree = b.Degree();
+        degree = b.Degree;
         nbPoles = b.PoleCount;
         nbKnots = b.KnotCount;
         os = os << (char)degree;
@@ -179,17 +179,17 @@ public class BinaryCurveSet
     private static void Write(OStream os, TrimmedCurve3D c)
     {
         os = os << Trimmed;
-        os = os << c.FirstParameter();
-        os = os << c.LastParameter();
-        WriteCurve(c.BasisCurve(), os);
+        os = os << c.FirstParameter;
+        os = os << c.LastParameter;
+        WriteCurve(c.BasisCurve, os);
     }
 
     private static void Write(OStream os, OffsetCurve3D c)
     {
         os = os << Offset;
-        os = os << c.Offset(); // Offset
-        os = os << c.Direction();
-        WriteCurve(c.BasisCurve(), os);
+        os = os << c.Offset; // Offset
+        os = os << c.Direction;
+        WriteCurve(c.BasisCurve, os);
     }
 
     /// <summary>Writes a curve (its type byte, then its data).</summary>

@@ -99,14 +99,14 @@ public class BezierCurves
             trouve = false;
             for (j = i; j <= 3 && !trouve; j++)
             {
-                if (gc[j].StartPoint().Distance(gc[i - 1].EndPoint()) < tol)
+                if (gc[j].StartPoint.DistanceTo(gc[i - 1].EndPoint) < tol)
                 {
                     dummy = gc[i];
                     gc[i] = gc[j];
                     gc[j] = dummy;
                     trouve = true;
                 }
-                else if (gc[j].EndPoint().Distance(gc[i - 1].EndPoint()) < tol)
+                else if (gc[j].EndPoint.DistanceTo(gc[i - 1].EndPoint) < tol)
                 {
                     gc[j] = (BezierCurve3D)gc[j].Reversed();
                     dummy = gc[i];
@@ -133,14 +133,14 @@ public class BezierCurves
     private static NCollection_Array1<Point3D> PolesOf(BezierCurve3D c)
     {
         NCollection_Array1<Point3D> p = new(1, c.PoleCount);
-        c.Poles(p);
+        c.CopyPolesTo(p);
         return p;
     }
 
     private static NCollection_Array1<double> WeightsOf(BezierCurve3D c)
     {
         NCollection_Array1<double> w = new(1, c.PoleCount);
-        c.Weights(w);
+        c.CopyWeightsTo(w);
         return w;
     }
 
@@ -182,8 +182,8 @@ public class BezierCurves
         Standard_ConstructionError_Raise_if(!isOK, " GeomFill_BezierCurves: Courbes non jointives");
 
         // Mise en conformite des degres
-        int degU = Max(cc1.Degree(), cc3.Degree());
-        int degV = Max(cc2.Degree(), cc4.Degree());
+        int degU = Max(cc1.Degree, cc3.Degree);
+        int degV = Max(cc2.Degree, cc4.Degree);
 
         if (type == FillingStyle.CoonsStyle)
         {
@@ -191,19 +191,19 @@ public class BezierCurves
             degV = Max(degV, 3);
         }
 
-        if (cc1.Degree() < degU)
+        if (cc1.Degree < degU)
         {
             cc1.Increase(degU);
         }
-        if (cc2.Degree() < degV)
+        if (cc2.Degree < degV)
         {
             cc2.Increase(degV);
         }
-        if (cc3.Degree() < degU)
+        if (cc3.Degree < degU)
         {
             cc3.Increase(degU);
         }
-        if (cc4.Degree() < degV)
+        if (cc4.Degree < degV)
         {
             cc4.Increase(degV);
         }
@@ -280,24 +280,24 @@ public class BezierCurves
         NCollection_Array1<Point3D> poles = new(1, 2);
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         tol = tol * tol;
-        if (c1.StartPoint().SquareDistance(c2.StartPoint()) > tol
-            && c1.StartPoint().SquareDistance(c2.EndPoint()) > tol)
+        if (c1.StartPoint.SquareDistanceTo(c2.StartPoint) > tol
+            && c1.StartPoint.SquareDistanceTo(c2.EndPoint) > tol)
         {
-            poles[1] = c1.StartPoint();
+            poles[1] = c1.StartPoint;
         }
         else
         {
-            poles[1] = c1.EndPoint();
+            poles[1] = c1.EndPoint;
         }
 
-        if (c3.StartPoint().SquareDistance(c2.StartPoint()) > tol
-            && c3.StartPoint().SquareDistance(c2.EndPoint()) > tol)
+        if (c3.StartPoint.SquareDistanceTo(c2.StartPoint) > tol
+            && c3.StartPoint.SquareDistanceTo(c2.EndPoint) > tol)
         {
-            poles[2] = c3.StartPoint();
+            poles[2] = c3.StartPoint;
         }
         else
         {
-            poles[2] = c3.EndPoint();
+            poles[2] = c3.EndPoint;
         }
         c4 = new BezierCurve3D(poles);
         Init(c1, c2, c3, c4, type);
@@ -312,8 +312,8 @@ public class BezierCurves
         BezierCurve3D cc1 = (BezierCurve3D)c1.Copy();
         BezierCurve3D cc2 = (BezierCurve3D)c2.Copy();
 
-        int deg1 = cc1.Degree();
-        int deg2 = cc2.Degree();
+        int deg1 = cc1.Degree;
+        int deg2 = cc2.Degree;
 
         bool isRat = (cc1.IsRational || cc2.IsRational);
 
@@ -321,11 +321,11 @@ public class BezierCurves
         {
             int degU = Max(deg1, deg2);
 
-            if (cc1.Degree() < degU)
+            if (cc1.Degree < degU)
             {
                 cc1.Increase(degU);
             }
-            if (cc2.Degree() < degU)
+            if (cc2.Degree < degU)
             {
                 cc2.Increase(degU);
             }
@@ -361,23 +361,23 @@ public class BezierCurves
         {
             double eps = global::Kerf.Engine.Foundation.Precision.Confusion();
             bool isOK = false;
-            if (cc1.StartPoint().IsEqual(cc2.StartPoint(), eps))
+            if (cc1.StartPoint.IsEqual(cc2.StartPoint, eps))
             {
                 isOK = true;
             }
-            else if (cc1.StartPoint().IsEqual(cc2.EndPoint(), eps))
+            else if (cc1.StartPoint.IsEqual(cc2.EndPoint, eps))
             {
                 cc2.Reverse();
                 isOK = true;
             }
-            else if (cc1.EndPoint().IsEqual(cc2.StartPoint(), eps))
+            else if (cc1.EndPoint.IsEqual(cc2.StartPoint, eps))
             {
                 // OCCT: reverses the caller's C1, not its copy CC1, so the filling is built from the unreversed
                 // copy. The port leaves the caller's curve unchanged (decision 846): the result is OCCT's
                 // (occt-issues.md).
                 isOK = true;
             }
-            else if (cc1.EndPoint().IsEqual(cc2.EndPoint(), eps))
+            else if (cc1.EndPoint.IsEqual(cc2.EndPoint, eps))
             {
                 cc1.Reverse();
                 cc2.Reverse();

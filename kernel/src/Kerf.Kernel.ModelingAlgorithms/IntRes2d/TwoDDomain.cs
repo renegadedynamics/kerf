@@ -88,11 +88,11 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         _periodfirst = _periodlast = 0.0;
 
         first_param = LimitInfinite(par1);
-        _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt1.X()), LimitInfinite(pnt1.Y()));
+        _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt1.X), LimitInfinite(pnt1.Y));
         _firstTol = tol1;
 
         last_param = LimitInfinite(par2);
-        _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt2.X()), LimitInfinite(pnt2.Y()));
+        _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt2.X), LimitInfinite(pnt2.Y));
         _lastTol = tol2;
     }
 
@@ -111,14 +111,14 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         {
             _status = 1;
             first_param = LimitInfinite(par);
-            _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
+            _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt.X), LimitInfinite(pnt.Y));
             _firstTol = tol;
         }
         else
         {
             _status = 2;
             last_param = LimitInfinite(par);
-            _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
+            _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt.X), LimitInfinite(pnt.Y));
             _lastTol = tol;
         }
     }
@@ -270,7 +270,7 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
 
     public override readonly string ToString()
         => $"IntRes2d_Domain(status: {_status}, "
-           + Constants.Format("first", first_param, _firstTol, _firstPoint.X(), _firstPoint.Y()) + ", "
-           + Constants.Format("last", last_param, _lastTol, _lastPoint.X(), _lastPoint.Y()) + ", "
+           + Constants.Format("first", first_param, _firstTol, _firstPoint.X, _firstPoint.Y) + ", "
+           + Constants.Format("last", last_param, _lastTol, _lastPoint.X, _lastPoint.Y) + ", "
            + Constants.Format("period", _periodfirst, _periodlast) + ")";
 }

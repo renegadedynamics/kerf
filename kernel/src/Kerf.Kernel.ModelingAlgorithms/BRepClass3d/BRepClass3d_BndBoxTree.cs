@@ -46,7 +46,7 @@ public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
         }
 
         Shape shp = _mapOfShape[obj - 1];
-        ShapeType sht = shp.ShapeType();
+        ShapeType sht = shp.Type;
         if (sht == ShapeType.Edge)
         {
             Edge e = ShapeCasts.Edge(shp);
@@ -76,7 +76,7 @@ public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
             double vertTSq = Tool.Tolerance(v);
             vertTSq *= vertTSq;
             // Vertex-Point interference.
-            if (vPnt.SquareDistance(_p) < vertTSq)
+            if (vPnt.SquareDistanceTo(_p) < vertTSq)
             {
                 _stop = true;
                 return true;
@@ -130,7 +130,7 @@ public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
         }
 
         Shape shp = _mapOfShape[obj - 1];
-        ShapeType sht = shp.ShapeType();
+        ShapeType sht = shp.Type;
         if (sht == ShapeType.Edge)
         {
             Edge e = ShapeCasts.Edge(shp);

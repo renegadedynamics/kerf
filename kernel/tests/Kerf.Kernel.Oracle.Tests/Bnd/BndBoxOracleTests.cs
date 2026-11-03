@@ -241,9 +241,9 @@ public class BndBoxOracleTests(ITestOutputHelper output)
             case 0:
                 return new Direction3D(theOracle.Int(0, 1) == 0 ? Direction3D.D.X : Direction3D.D.NY);
             case 1:
-                return new Direction3D(0.0, aD.Y(), aD.Z() + 0.5);
+                return new Direction3D(0.0, aD.Y, aD.Z + 0.5);
             case 2:
-                return new Direction3D(aD.X() + 0.5, 0.0, aD.Z());
+                return new Direction3D(aD.X + 0.5, 0.0, aD.Z);
             default:
                 return aD;
         }

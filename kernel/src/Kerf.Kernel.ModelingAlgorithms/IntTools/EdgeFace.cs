@@ -305,10 +305,10 @@ public class EdgeFace
         if (surfType == SurfaceKind.Cylinder)
         {
             Cylinder cyl = aBAS.Cylinder();
-            Axis3D ax1 = cyl.Axis();
+            Axis3D ax1 = cyl.Axis;
             Line3D linAxis = new(ax1);
-            double dc, radius = cyl.Radius();
-            dc = linAxis.Distance(aP);
+            double dc, radius = cyl.Radius;
+            dc = linAxis.DistanceTo(aP);
             if (dc < aTol)
             {
                 aD = radius;
@@ -319,15 +319,15 @@ public class EdgeFace
         if (surfType == SurfaceKind.Cone)
         {
             Cone cone = aBAS.Cone();
-            Axis3D ax1 = cone.Axis();
+            Axis3D ax1 = cone.Axis;
             Line3D linAxis = new(ax1);
             double dc, radius, ds, semiAngle;
-            dc = linAxis.Distance(aP);
+            dc = linAxis.DistanceTo(aP);
             if (dc < aTol)
             {
-                Point3D apex = cone.Apex();
-                semiAngle = cone.SemiAngle();
-                ds = aP.Distance(apex);
+                Point3D apex = cone.Apex;
+                semiAngle = cone.SemiAngle;
+                ds = aP.DistanceTo(apex);
 
                 radius = ds * Math.Tan(semiAngle);
                 aD = radius;
@@ -340,13 +340,13 @@ public class EdgeFace
             double majorRadius, minorRadius, dc;
 
             Torus torus = aBAS.Torus();
-            Point3D pLoc = torus.Location();
-            majorRadius = torus.MajorRadius();
+            Point3D pLoc = torus.Location;
+            majorRadius = torus.MajorRadius;
 
-            dc = Math.Abs(pLoc.Distance(aP) - majorRadius);
+            dc = Math.Abs(pLoc.DistanceTo(aP) - majorRadius);
             if (dc < aTol)
             {
-                minorRadius = torus.MinorRadius();
+                minorRadius = torus.MinorRadius;
                 aD = minorRadius;
                 return bRetFlag;
             }
@@ -374,7 +374,7 @@ public class EdgeFace
             Point3D pf, pl;
             _c.D0(af1, out pf);
             _c.D0(al1, out pl);
-            df1 = pf.Distance(pl);
+            df1 = pf.DistanceTo(pl);
             bool isWholeRange = false;
 
             if ((Math.Abs(af1 - _range.First()) < _c.Resolution(_criteria))
@@ -393,7 +393,7 @@ public class EdgeFace
                 {
                     tm = (af1 + al1) * 0.5;
 
-                    if (pf.Distance(_c.Value(tm)) > _criteria * 2.0)
+                    if (pf.DistanceTo(_c.Value(tm)) > _criteria * 2.0)
                     {
                         aCommonPrt.SetType(global::Kerf.Topology.ShapeType.Edge);
                         return 0;
@@ -757,7 +757,7 @@ public class EdgeFace
         Curve3D curve = Tool.Curve(_c.Edge(), out _, out _)!;
         Surface surface = Tool.Surface(_s.Face())!;
 
-        surface.Bounds(out u1f, out u1l, out v1f, out v1l);
+        surface.ParameterBounds(out u1f, out u1l, out v1f, out v1l);
 
         CurveAdaptor theCurve = new(curve, tf, tl);
         SurfaceAdaptor theSurface = new(surface, u1f, u1l, v1f, v1l);
@@ -841,12 +841,12 @@ public class EdgeFace
         if (cType == Circle && sType == Plane)
         {
             Circle3D circ = aCurve.Circle();
-            Axis3D ax1 = circ.Axis();
-            Direction3D dirAx1 = ax1.Direction();
+            Axis3D ax1 = circ.Axis;
+            Direction3D dirAx1 = ax1.Direction;
 
             Plane3D pln = aSurface.Plane();
-            Axis3D ax = pln.Axis();
-            Direction3D dirPln = ax.Direction();
+            Axis3D ax = pln.Axis;
+            Direction3D dirPln = ax.Direction;
 
             bFlag = IntersectionTools.IsDirsCoinside(dirAx1, dirPln);
         }
@@ -866,10 +866,10 @@ public class EdgeFace
         if (cType == Circle && sType == Plane)
         {
             Circle3D circ = aCurve.Circle();
-            Point3D center = circ.Location();
-            double r = circ.Radius();
+            Point3D center = circ.Location;
+            double r = circ.Radius;
             Plane3D pln = aSurface.Plane();
-            double d = pln.Distance(center);
+            double d = pln.DistanceTo(center);
             if (Math.Abs(d - r) < aCriteria)
             {
                 return !bFlag;
@@ -899,7 +899,7 @@ public class EdgeFace
             eLength = global::Kerf.Engine.Intersection.Tools.IntTools.Length(aCurve.Edge());
 
             Cylinder cylinder = aSurface.Cylinder();
-            radius = cylinder.Radius();
+            radius = cylinder.Radius;
             dLR = 2 * radius;
 
             iDiscretNew = (int)(eLength / dLR);

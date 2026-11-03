@@ -35,7 +35,7 @@ public abstract class GeometryVector3D : Geometry3D
 
     /// <summary>The angle to Other, in [0, PI].</summary>
     /// <exception cref="NullVectorException">Either magnitude is at most <c>gp::Resolution()</c>.</exception>
-    public double Angle(GeometryVector3D other) => _gpVec.Angle(other.Vec());
+    public double Angle(GeometryVector3D other) => _gpVec.AngleTo(other.Vec());
 
     /// <summary>
     /// The angle to Other, in [-PI, PI], positive if this ^ Other has the orientation of VRef.
@@ -54,13 +54,13 @@ public abstract class GeometryVector3D : Geometry3D
     public abstract double SquareMagnitude();
 
     /// <summary>The X coordinate.</summary>
-    public double X() => _gpVec.X();
+    public double X() => _gpVec.X;
 
     /// <summary>The Y coordinate.</summary>
-    public double Y() => _gpVec.Y();
+    public double Y() => _gpVec.Y;
 
     /// <summary>The Z coordinate.</summary>
-    public double Z() => _gpVec.Z();
+    public double Z() => _gpVec.Z;
 
     /// <summary>Replaces this vector by this ^ Other.</summary>
     /// <exception cref="ConstructionErrorException">This is a direction and the vectors are parallel.</exception>

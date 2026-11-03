@@ -357,7 +357,7 @@ public class OffsetOrientationTests
     {
         var cone = Solid.MakeCone(22.5, 33.75, 40);
         var cup = (Shape3D)cone.Offset3D(cone.Faces().SortBy(Axis.Z)[^1..], 3, kind: Kind.Intersection);
-        Assert.Equal(Orientation.Forward, cup.Wrapped.Orientation());
+        Assert.Equal(Orientation.Forward, cup.Wrapped.Orientation);
         Assert.True(cup.Volume > 0);
         var rim = cup.Edges().FilterBy(GeomType.Circle).SortBy(Axis.Z)[0];
         var rounded = cup.Fillet(1, [rim]);
@@ -376,7 +376,7 @@ public class OffsetOrientationTests
         var box = Solid.MakeBox(30, 20, 10);
         var top = box.Faces().SortBy(Axis.Z)[^1..];
         var shelled = (Shape3D)box.Offset3D(top, amount, kind: kind);
-        Assert.Equal(Orientation.Forward, shelled.Wrapped.Orientation());
+        Assert.Equal(Orientation.Forward, shelled.Wrapped.Orientation);
         Assert.True(shelled.Volume > 0);
         // The sharp edges around the opening fillet on every variant
         var rim = shelled.Edges().FilterBy(GeomType.Line).GroupBy(Axis.Z)[^1];

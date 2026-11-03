@@ -44,7 +44,7 @@ internal static class SplineHelpers
                 box.Add(p3);
                 // PointOps<gp_Pnt>::Mid
                 Point3D pc = new((p1.XYZ() + p3.XYZ()) / 2.0);
-                tol = Max(tol, pc.Distance(p2));
+                tol = Max(tol, pc.DistanceTo(p2));
                 p1 = p3;
             }
         }

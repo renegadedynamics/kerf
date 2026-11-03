@@ -451,7 +451,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     // The largest distance between the two faces' surfaces on a grid of the native face's UV bounds.
     private static string SurfaceDeviation(in Shape theNative, in Shape thePort)
     {
-        if (theNative.ShapeType() != ShapeType.Face || thePort.ShapeType() != ShapeType.Face)
+        if (theNative.Type != ShapeType.Face || thePort.Type != ShapeType.Face)
         {
             return "(not faces)";
         }
@@ -463,7 +463,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             for (int j = 0; j <= 20; j++)
             {
                 double u = u1 + (u2 - u1) * i / 20, v = v1 + (v2 - v1) * j / 20;
-                aMax = Math.Max(aMax, aNS.Value(u, v).Distance(aPS.Value(u, v)));
+                aMax = Math.Max(aMax, aNS.Value(u, v).DistanceTo(aPS.Value(u, v)));
             }
         }
         return $"max deviation {aMax:G3}";
@@ -497,7 +497,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         {
             case 1:
             {
-                Point3D aMid = new Point3D((theP1.XYZ() + theP2.XYZ()) * 0.5).Translated(theOracle.Vec() * (0.02 * theP1.Distance(theP2) / 100.0 * theOracle.Real(1, 10)));
+                Point3D aMid = new Point3D((theP1.XYZ() + theP2.XYZ()) * 0.5).Translated(theOracle.Vec() * (0.02 * theP1.DistanceTo(theP2) / 100.0 * theOracle.Real(1, 10)));
                 using var anArc = new N.GC_MakeArcOfCircle(Oracle.ToNative(theP1), Oracle.ToNative(aMid), Oracle.ToNative(theP2));
                 theWhat = "arc";
                 return new N.BRepBuilderAPI_MakeEdge(anArc.Value(), theV1, theV2).Edge();
@@ -510,7 +510,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 {
                     double t = (i - 1.0) / (aNb - 1.0);
                     Point3D aP = new Point3D(theP1.XYZ() * (1 - t) + theP2.XYZ() * t);
-                    aPoles[i] = i == 1 || i == aNb ? aP : aP.Translated(theOracle.Vec() * (0.002 * theP1.Distance(theP2)));
+                    aPoles[i] = i == 1 || i == aNb ? aP : aP.Translated(theOracle.Vec() * (0.002 * theP1.DistanceTo(theP2)));
                 }
                 using var anApprox = new N.GeomAPI_PointsToBSpline(Oracle.ToNative(aPoles));
                 theWhat = "bspline";
@@ -533,9 +533,9 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         {
             double a = 2.0 * Math.PI * i / aNb + theOracle.Real(-0.2, 0.2);
             double r = R * theOracle.Real(0.7, 1.3);
-            aPnts[i] = anAx.Location().Translated(new Vector3D(anAx.XDirection()) * (r * Math.Cos(a)))
-                .Translated(new Vector3D(anAx.YDirection()) * (r * Math.Sin(a)))
-                .Translated(new Vector3D(anAx.Direction()) * (R * theOracle.Real(-0.4, 0.4)));
+            aPnts[i] = anAx.Location.Translated(new Vector3D(anAx.XDirection) * (r * Math.Cos(a)))
+                .Translated(new Vector3D(anAx.YDirection) * (r * Math.Sin(a)))
+                .Translated(new Vector3D(anAx.Direction) * (R * theOracle.Real(-0.4, 0.4)));
         }
         var aVs = aPnts.Select(p => NVertex(p)).ToArray();
         var anEdges = new List<N.TopoDS_Shape>();
@@ -568,7 +568,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             aNb++;
             if (aPrev is Point3D aQ)
             {
-                aSize = Math.Max(aSize, aQ.Distance(aPnt));
+                aSize = Math.Max(aSize, aQ.DistanceTo(aPnt));
             }
             aPrev = aPnt;
         }
@@ -621,8 +621,8 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         anInputs.Add(aBox.TopFace()); // input 8, for the initial surface
         var aCase = new FillingCase
         {
-            Center = anAx.Location().Translated(new Vector3D(anAx.XDirection()) * (dx / 2)).Translated(new Vector3D(anAx.YDirection()) * (dy / 2))
-                .Translated(new Vector3D(anAx.Direction()) * (dz * theOracle.Real(0.9, 1.3))),
+            Center = anAx.Location.Translated(new Vector3D(anAx.XDirection) * (dx / 2)).Translated(new Vector3D(anAx.YDirection) * (dy / 2))
+                .Translated(new Vector3D(anAx.Direction) * (dz * theOracle.Real(0.9, 1.3))),
             What = $"box hole {theIndex} ({dx:G3} x {dy:G3} x {dz:G3}, {theOrder}{(theFreeConstraint ? ", one side free" : "")})",
             Inputs = anInputs,
         };
@@ -673,7 +673,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 continue;
             }
             using var aP = aCurve.Value(aCurve.FirstParameter());
-            double h = (new Point3D(aP.X(), aP.Y(), aP.Z()).XYZ() - anAx.Location().XYZ()).Dot(anAx.Direction().XYZ());
+            double h = (new Point3D(aP.X(), aP.Y(), aP.Z()).XYZ() - anAx.Location.XYZ()).Dot(anAx.Direction.XYZ());
             if (h > aBest)
             {
                 aBest = h;
@@ -909,7 +909,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 aPI.Perform();
                 N.TopoDS_Edge aNE = new N.BRepBuilderAPI_MakeEdge(aNI.Curve()).Edge();
                 Edge aPE = new MakeEdge(aPI.Curve()).Edge();
-                using N.gp_Vec aNV = new(aDirs[k].X(), aDirs[k].Y(), aDirs[k].Z());
+                using N.gp_Vec aNV = new(aDirs[k].X, aDirs[k].Y, aDirs[k].Z);
                 aNFaces.Add(N.TopoDS.Face(new N.BRepPrimAPI_MakePrism(aNE, aNV, false, true).Shape()));
                 aPFaces.Add(ShapeCasts.Face(new ApiMakePrism(aPE, aDirs[k]).Shape()));
                 aNEdges.Add(aNE);
@@ -1024,11 +1024,11 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         Face aFace = ShapeCasts.Face(aShape);
         var aW = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };
         SurfaceSet.PrintSurface(Tool.Surface(aFace)!, aW, true);
-        aW.WriteLine($"face {aFace.Orientation()} {Tool.Tolerance(aFace):R}");
+        aW.WriteLine($"face {aFace.Orientation} {Tool.Tolerance(aFace):R}");
         for (var anExp = new Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge anE = ShapeCasts.Edge(anExp.Current());
-            aW.WriteLine($"edge {anE.Orientation()} {Tool.Tolerance(anE):R}");
+            aW.WriteLine($"edge {anE.Orientation} {Tool.Tolerance(anE):R}");
             Curve3D? aC = Tool.Curve(anE, out double f, out double l);
             if (aC is not null)
             {
@@ -1045,7 +1045,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
             foreach (Vertex aV in new[] { aV1, aV2 })
             {
                 Point3D aP = Tool.Pnt(aV);
-                aW.WriteLine($"vertex {aP.X():R} {aP.Y():R} {aP.Z():R} {Tool.Tolerance(aV):R}");
+                aW.WriteLine($"vertex {aP.X:R} {aP.Y:R} {aP.Z:R} {Tool.Tolerance(aV):R}");
             }
         }
         return aW.ToString();

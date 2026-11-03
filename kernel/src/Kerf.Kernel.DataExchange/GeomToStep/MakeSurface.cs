@@ -49,14 +49,14 @@ public sealed class MakeSurface : GeometryRoot
         else if (s is OffsetSurface)
         {
             OffsetSurface s1 = s as OffsetSurface;
-            MakeSurface mkBasis = new MakeSurface(s1.BasisSurface(), localFactors);
+            MakeSurface mkBasis = new MakeSurface(s1.BasisSurface, localFactors);
             _done = mkBasis.IsDone;
             if (!_done)
             {
                 return;
             }
             StepOffsetSurface surf = new StepOffsetSurface();
-            surf.Init(new TCollection_HAsciiString(""), mkBasis.Value(), s1.Offset() / localFactors.LengthFactor(), Logical.LFalse);
+            surf.Init(new TCollection_HAsciiString(""), mkBasis.Value(), s1.Offset / localFactors.LengthFactor(), Logical.LFalse);
             _surface = surf;
         }
         else

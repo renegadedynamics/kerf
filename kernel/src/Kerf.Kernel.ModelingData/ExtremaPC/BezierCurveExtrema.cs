@@ -31,9 +31,9 @@ public sealed class BezierCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.
     {
         _curve = curve;
         _adaptor = new CurveAdaptor(curve);
-        _domain = new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(curve.FirstParameter(), curve.LastParameter());
+        _domain = new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(curve.FirstParameter, curve.LastParameter);
         _nbSamples = Max(global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BEZIER_MIN_SAMPLES,
-                          global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BEZIER_DEGREE_MULTIPLIER * (curve.Degree() + 1));
+                          global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BEZIER_DEGREE_MULTIPLIER * (curve.Degree + 1));
         BuildGrid();
     }
 
@@ -44,7 +44,7 @@ public sealed class BezierCurveExtrema : global::Kerf.Engine.Extrema.PointCurve.
         _adaptor = new CurveAdaptor(curve);
         _domain = domain;
         _nbSamples = Max(global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BEZIER_MIN_SAMPLES,
-                          global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BEZIER_DEGREE_MULTIPLIER * (curve.Degree() + 1));
+                          global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BEZIER_DEGREE_MULTIPLIER * (curve.Degree + 1));
         BuildGrid();
     }
 

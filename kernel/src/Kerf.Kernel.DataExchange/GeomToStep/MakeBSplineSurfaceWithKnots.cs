@@ -42,8 +42,8 @@ public sealed class MakeBSplineSurfaceWithKnots : GeometryRoot
         BSplKnotDistribution uDistribution, vDistribution;
         StepKnotType knotSpec;
 
-        uDegree = bs.UDegree();
-        vDegree = bs.VDegree();
+        uDegree = bs.UDegree;
+        vDegree = bs.VDegree;
 
         nu = bs.UPoleCount;
         nv = bs.VPoleCount;
@@ -113,8 +113,8 @@ public sealed class MakeBSplineSurfaceWithKnots : GeometryRoot
             vKnots.SetValue(i, rtampon);
         }
 
-        uDistribution = bs.UKnotDistribution();
-        vDistribution = bs.VKnotDistribution();
+        uDistribution = bs.UKnotDistribution;
+        vDistribution = bs.VKnotDistribution;
         if (uDistribution == NonUniform && vDistribution == NonUniform)
         {
             knotSpec = StepKnotType.KtUnspecified;

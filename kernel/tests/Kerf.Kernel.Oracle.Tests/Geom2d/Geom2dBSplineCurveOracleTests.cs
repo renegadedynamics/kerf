@@ -39,8 +39,8 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             {
                 anOracle.Same(aNative.IsCN(n), aPort.IsCN(n), $"IsCN({n})");
             }
-            anOracle.Same(aNative.IsG1(aPort.FirstParameter(), aPort.LastParameter(), 1e-6),
-                          aPort.IsG1(aPort.FirstParameter(), aPort.LastParameter(), 1e-6), "IsG1");
+            anOracle.Same(aNative.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6),
+                          aPort.IsG1(aPort.FirstParameter, aPort.LastParameter, 1e-6), "IsG1");
 
             double aTol = anOracle.Real(1e-7, 1e-2);
             double aNRes = 0.0;
@@ -120,9 +120,9 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
                              out Func<N.Geom2d_BSplineCurve, double[]> theNativeEdit,
                              out Func<BSplineCurve2D, double[]> thePortEdit)
     {
-        int aDeg = thePort.Degree();
+        int aDeg = thePort.Degree;
         int aNbKnots = thePort.KnotCount;
-        double aF = thePort.FirstParameter(), aL = thePort.LastParameter();
+        double aF = thePort.FirstParameter, aL = thePort.LastParameter;
         theNativeEdit = _ => [];
         thePortEdit = _ => [];
         switch (theKind)
@@ -337,7 +337,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
             }
             case 10:
             {
-                BSplKnotDistribution aDist = thePort.KnotDistribution();
+                BSplKnotDistribution aDist = thePort.KnotDistribution;
                 if (aDist != Uniform && aDist != QuasiUniform)
                 {
                     theWhat = "";
@@ -488,7 +488,7 @@ public class Geom2dBSplineCurveOracleTests(ITestOutputHelper output)
 
                 // Some edits of unclamped curves leave a pole count that doesn't match the multiplicities, natively
                 // as in the port (compared just above); later edits would then read past the arrays. Stop there.
-                if (aPort.PoleCount != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aPort.Degree(), aPort.IsPeriodic, aPort.InternalMultiplicities()))
+                if (aPort.PoleCount != global::Kerf.Engine.Geometry.Splines.BSplCLib.NbPoles(aPort.Degree, aPort.IsPeriodic, aPort.InternalMultiplicities()))
                 {
                     anInconsistent[aWhat] = anInconsistent.GetValueOrDefault(aWhat) + 1;
                     break;

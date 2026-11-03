@@ -24,16 +24,16 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
 
     private static void SameDir(Oracle theOracle, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
-        theOracle.Same(theN.X(), theP.X(), theWhat + " X");
-        theOracle.Same(theN.Y(), theP.Y(), theWhat + " Y");
-        theOracle.Same(theN.Z(), theP.Z(), theWhat + " Z");
+        theOracle.Same(theN.X(), theP.X, theWhat + " X");
+        theOracle.Same(theN.Y(), theP.Y, theWhat + " Y");
+        theOracle.Same(theN.Z(), theP.Z, theWhat + " Z");
     }
 
     /// <summary>A point of the plane of theAx3 at (a, b), moved off it by theNoise times a random amount.</summary>
     private static Point3D PlanePoint(Oracle theOracle, in CoordinateSystem theAx3, double a, double b, double theNoise)
     {
-        Xyz aP = theAx3.Location().XYZ() + a * theAx3.XDirection().XYZ() + b * theAx3.YDirection().XYZ()
-                    + theNoise * theOracle.Real(-1, 1) * theAx3.Direction().XYZ();
+        Xyz aP = theAx3.Location.XYZ() + a * theAx3.XDirection.XYZ() + b * theAx3.YDirection.XYZ()
+                    + theNoise * theOracle.Real(-1, 1) * theAx3.Direction.XYZ();
         return new Point3D(aP);
     }
 
@@ -163,13 +163,13 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
             return (new N.Geom_SurfaceOfRevolution(aNC, aNAxis), new RevolutionSurface(new CircleCurve3D(anAx2, R), anAxis));
         }
         // Raw direction perpendicular to the axis, tilted along it by Noise
-        Xyz aPerp = anAxis.Direction().XYZ() ^ RawDir(theOracle);
+        Xyz aPerp = anAxis.Direction.XYZ() ^ RawDir(theOracle);
         double aTilt = Noises[theOracle.Int(0, Noises.Length - 1)];
-        Xyz aRaw = aPerp + aTilt * aPerp.Modulus() * anAxis.Direction().XYZ();
-        Point3D aStart = anAxis.Location();
+        Xyz aRaw = aPerp + aTilt * aPerp.Modulus() * anAxis.Direction.XYZ();
+        Point3D aStart = anAxis.Location;
         if (theOracle.Int(0, 2) == 0)
         {
-            aStart = new Point3D(aStart.XYZ() + theOracle.Real(-5, 5) * anAxis.Direction().XYZ());
+            aStart = new Point3D(aStart.XYZ() + theOracle.Real(-5, 5) * anAxis.Direction.XYZ());
         }
         using var aNDir = new N.gp_Dir(aRaw.X(), aRaw.Y(), aRaw.Z());
         using var aNStart = Oracle.ToNative(aStart);
@@ -196,7 +196,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
         if (theOracle.Int(0, 3) == 0)
         {
             Point3D aP = PlanePoint(theOracle, anAx3, 0, 0, 0);
-            Xyz aRaw = theOracle.Real(-1, 1) * anAx3.XDirection().XYZ() + anAx3.YDirection().XYZ();
+            Xyz aRaw = theOracle.Real(-1, 1) * anAx3.XDirection.XYZ() + anAx3.YDirection.XYZ();
             using var aNP = Oracle.ToNative(aP);
             using var aNDir = new N.gp_Dir(aRaw.X(), aRaw.Y(), aRaw.Z());
             using var aNLine = new N.Geom_Line(aNP, aNDir);
@@ -220,11 +220,11 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
             aPC = aWeights is null ? new BSplineCurve3D(aPoles, aKnots, aMults, aDeg)
                                    : new BSplineCurve3D(aPoles, aWeights, aKnots, aMults, aDeg);
         }
-        Xyz anExt = theOracle.Real(-1, 1) * anAx3.XDirection().XYZ() + theOracle.Real(-1, 1) * anAx3.YDirection().XYZ()
-                       + aTilt * anAx3.Direction().XYZ();
+        Xyz anExt = theOracle.Real(-1, 1) * anAx3.XDirection.XYZ() + theOracle.Real(-1, 1) * anAx3.YDirection.XYZ()
+                       + aTilt * anAx3.Direction.XYZ();
         if (anExt.Modulus() < 0.1)
         {
-            anExt = anAx3.XDirection().XYZ();
+            anExt = anAx3.XDirection.XYZ();
         }
         using (aNC)
         using (var aNExt = new N.gp_Dir(anExt.X(), anExt.Y(), anExt.Z()))
@@ -278,7 +278,7 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
                                                            : PlanarBSpline(theOracle, aNoise, false);
                 using (aN)
                 {
-                    aP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                    aP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                     double U1 = Bound(theOracle, aU1, aU2, out double U2);
                     double V1 = Bound(theOracle, aV1, aV2, out double V2);
                     return (new N.Geom_RectangularTrimmedSurface(aN, U1, U2, V1, V2),
@@ -338,11 +338,11 @@ public class GeomLib_IsPlanarSurfaceOracleTests(ITestOutputHelper output)
                     using N.gp_Dir aNDir = aNPos.Direction();
                     using N.gp_Dir aNXDir = aNPos.XDirection();
                     using N.gp_Dir aNYDir = aNPos.YDirection();
-                    CoordinateSystem aPos = aP.Plan().Position();
-                    anOracle.Same(aNLoc, aPos.Location(), aWhat + " location");
-                    SameDir(anOracle, aNDir, aPos.Direction(), aWhat + " direction");
-                    SameDir(anOracle, aNXDir, aPos.XDirection(), aWhat + " X direction");
-                    SameDir(anOracle, aNYDir, aPos.YDirection(), aWhat + " Y direction");
+                    CoordinateSystem aPos = aP.Plan().Position;
+                    anOracle.Same(aNLoc, aPos.Location, aWhat + " location");
+                    SameDir(anOracle, aNDir, aPos.Direction, aWhat + " direction");
+                    SameDir(anOracle, aNXDir, aPos.XDirection, aWhat + " X direction");
+                    SameDir(anOracle, aNYDir, aPos.YDirection, aWhat + " Y direction");
                 }
                 else
                 {

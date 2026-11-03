@@ -58,12 +58,12 @@ public static class AlgoTools3D
         //
         bIsLeft = false;
         sp = aSplit;
-        sp.Orientation(Forward);
+        sp.Orient(Forward);
         tol = Tool.Tolerance(sp);
         //
         s = Tool.Surface(aF)!;
         //
-        s.Bounds(out umin, out umax, out vmin, out vmax);
+        s.ParameterBounds(out umin, out umax, out vmin, out vmax);
         //
 
         bIsUPeriodic = s.IsUClosed;
@@ -90,21 +90,21 @@ public static class AlgoTools3D
             {
                 Surface sb;
                 //
-                sb = rts.BasisSurface();
+                sb = rts.BasisSurface;
                 bIsUPeriodic = sb.IsUPeriodic;
                 bIsVPeriodic = sb.IsVPeriodic;
                 //
 
                 if (bIsUPeriodic || bIsVPeriodic)
                 {
-                    uPeriod = bIsUPeriodic ? sb.UPeriod() : 0.0;
-                    vPeriod = bIsVPeriodic ? sb.VPeriod() : 0.0;
+                    uPeriod = bIsUPeriodic ? sb.UPeriod : 0.0;
+                    vPeriod = bIsVPeriodic ? sb.VPeriod : 0.0;
                 }
                 else
                 {
                     bool bIsUClosed = sb.IsUClosed;
                     bool bIsVClosed = sb.IsVClosed;
-                    sb.Bounds(out double globalUmin, out double globalUmax, out double globalVmin, out double globalVmax);
+                    sb.ParameterBounds(out double globalUmin, out double globalUmax, out double globalVmin, out double globalVmax);
 
                     if (bIsUClosed && Math.Abs(umin - globalUmin) < tol
                         && Math.Abs(umax - globalUmax) < tol)
@@ -134,8 +134,8 @@ public static class AlgoTools3D
         c2D1.D1(t, out p2D, out vec2D);
         Direction2D dir2D1 = new(vec2D), dox = new(Direction2D.D.NX), doy = new(Direction2D.D.Y);
         //
-        u = p2D.X();
-        v = p2D.Y();
+        u = p2D.X;
+        v = p2D.Y;
         //
         u1 = u;
         v1 = v;
@@ -230,10 +230,10 @@ public static class AlgoTools3D
         }
 
         Edge aESplit = eSplit;
-        aESplit.Orientation(Forward);
+        aESplit.Orient(Forward);
 
         Face aFace = face;
-        aFace.Orientation(Forward);
+        aFace.Orient(Forward);
 
         Curve2D? c2DSplit = Tool.CurveOnSurface(aESplit, aFace, out double ts1, out double ts2);
         if (c2DSplit is null)
@@ -317,7 +317,7 @@ public static class AlgoTools3D
 
         GetNormalToFaceOnEdge(aE, aF, t, out aDNF, context);
 
-        if (aF.Orientation() == Reversed)
+        if (aF.Orientation == Reversed)
         {
             aDNF = aDNF.Reversed();
         }
@@ -338,8 +338,8 @@ public static class AlgoTools3D
         AlgoTools2D.CurveOnSurface(aE, aF1, out Curve2D? c2D1, out _, context);
 
         c2D1!.D0(aT, out p2D);
-        u = p2D.X();
-        v = p2D.Y();
+        u = p2D.X;
+        v = p2D.Y;
 
         s1.D1(u, v, out _, out Vector3D d1U, out Vector3D d1V);
         Direction3D dd1U = new(d1U);
@@ -384,13 +384,13 @@ public static class AlgoTools3D
     {
         aS.D1(u, v, out _, out Vector3D d1U, out Vector3D d1V);
 
-        double lenU = d1U.SquareMagnitude();
+        double lenU = d1U.SquareMagnitude;
         if (lenU < Constants.Resolution())
         {
             return false;
         }
 
-        double lenV = d1V.SquareMagnitude();
+        double lenV = d1V.SquareMagnitude;
         if (lenV < Constants.Resolution())
         {
             return false;
@@ -424,9 +424,9 @@ public static class AlgoTools3D
         {
             Surface s = Tool.Surface(aF)!;
 
-            GetNormalToSurface(s, px2DNear.X(), px2DNear.Y(), ref aDNF);
+            GetNormalToSurface(s, px2DNear.X, px2DNear.Y, ref aDNF);
 
-            if (aF.Orientation() == Reversed)
+            if (aF.Orientation == Reversed)
             {
                 aDNF = aDNF.Reversed();
             }
@@ -445,9 +445,9 @@ public static class AlgoTools3D
         {
             Surface s = Tool.Surface(aF)!;
 
-            GetNormalToSurface(s, px2DNear.X(), px2DNear.Y(), ref aDNF);
+            GetNormalToSurface(s, px2DNear.X, px2DNear.Y, ref aDNF);
 
-            if (aF.Orientation() == Reversed)
+            if (aF.Orientation == Reversed)
             {
                 aDNF = aDNF.Reversed();
             }
@@ -466,9 +466,9 @@ public static class AlgoTools3D
         {
             Surface s = Tool.Surface(aF)!;
 
-            GetNormalToSurface(s, px2DNear.X(), px2DNear.Y(), ref aDNF);
+            GetNormalToSurface(s, px2DNear.X, px2DNear.Y, ref aDNF);
 
-            if (aF.Orientation() == Reversed)
+            if (aF.Orientation == Reversed)
             {
                 aDNF = aDNF.Reversed();
             }
@@ -502,14 +502,14 @@ public static class AlgoTools3D
         c2D!.D1(aT, out Point2D px2D, out Vector2D vx2D);
         Direction2D dx2D = new(vx2D);
 
-        Direction2D dp = new Direction2D().WithCoord(-dx2D.Y(), dx2D.X());
+        Direction2D dp = new Direction2D().WithCoord(-dx2D.Y, dx2D.X);
 
-        if (aE.Orientation() == Reversed)
+        if (aE.Orientation == Reversed)
         {
             dp = dp.Reversed();
         }
 
-        if (aF.Orientation() == Reversed)
+        if (aF.Orientation == Reversed)
         {
             dp = dp.Reversed();
         }
@@ -538,7 +538,7 @@ public static class AlgoTools3D
                     double r, dT;
                     //
                     Cylinder cyl = gas.Cylinder();
-                    r = cyl.Radius();
+                    r = cyl.Radius;
                     dT = 1.0 - transVal / r;
                     if (dT >= -1 && dT <= 1)
                     {
@@ -552,15 +552,15 @@ public static class AlgoTools3D
             }
             else
             {
-                aPx2DNear = aPx2DNear.WithCoord(px2D.X() + aDt2D * dp.X(), px2D.Y() + aDt2D * dp.Y());
+                aPx2DNear = aPx2DNear.WithCoord(px2D.X + aDt2D * dp.X, px2D.Y + aDt2D * dp.Y);
             }
         }
         else
         {
-            aPx2DNear = aPx2DNear.WithCoord(px2D.X() + aDt2D * dp.X(), px2D.Y() + aDt2D * dp.Y());
+            aPx2DNear = aPx2DNear.WithCoord(px2D.X + aDt2D * dp.X, px2D.Y + aDt2D * dp.Y);
         }
         //
-        s.D0(aPx2DNear.X(), aPx2DNear.Y(), out aPxNear);
+        s.D0(aPx2DNear.X, aPx2DNear.Y, out aPxNear);
         return iErr;
     }
 
@@ -654,7 +654,7 @@ public static class AlgoTools3D
         //
         // 2. compute point inside the face near the edge
         Face ff = aF;
-        ff.Orientation(Forward);
+        ff.Orient(Forward);
         OrientEdgeOnFace(aE, ff, out Edge eRight);
         //
         int iErr = PointNearEdge(eRight, ff, t, ref aPInFace2D, ref aPInFace, context);
@@ -725,7 +725,7 @@ public static class AlgoTools3D
     private static bool HasGeometry(in Shape aS)
     {
         bool bHasGeometry = true;
-        ShapeType type = aS.ShapeType();
+        ShapeType type = aS.Type;
 
         if (type == ShapeType.Vertex)
         {
@@ -797,7 +797,7 @@ public static class AlgoTools3D
         if (Tool.IsClosed(aE, aF))
         {
             aERight = aE;
-            aERight.Orientation(aE.Orientation());
+            aERight.Orient(aE.Orientation);
 
             int iFoundCount = 0;
             Edge edge = aE;
@@ -828,12 +828,12 @@ public static class AlgoTools3D
             if (ss.IsSame(aE))
             {
                 aERight = aE;
-                aERight.Orientation(ss.Orientation());
+                aERight.Orient(ss.Orientation);
                 return;
             }
         }
         aERight = aE;
-        aERight.Orientation(aE.Orientation());
+        aERight.Orient(aE.Orientation);
     }
 
     /// <summary>
@@ -893,14 +893,14 @@ public static class AlgoTools3D
         c2D.D1(t, out Point2D aP2D, out Vector2D v2D);
         Direction2D d2Dx = new(v2D);
         //
-        Direction2D d2D = new Direction2D().WithCoord(-d2Dx.Y(), d2Dx.X());
+        Direction2D d2D = new Direction2D().WithCoord(-d2Dx.Y, d2Dx.X);
         //
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             d2D = d2D.Reversed();
         }
         //
-        if (f.Orientation() == Reversed)
+        if (f.Orientation == Reversed)
         {
             d2D = d2D.Reversed();
         }
@@ -983,7 +983,7 @@ public static class AlgoTools3D
             Surface s = Tool.Surface(f)!;
             //
             l2D.D0(vx, out p2D);
-            s.D0(p2D.X(), p2D.Y(), out p);
+            s.D0(p2D.X, p2D.Y, out p);
             break;
         }
         //

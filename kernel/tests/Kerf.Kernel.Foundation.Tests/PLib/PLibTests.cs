@@ -13,17 +13,17 @@ public class PLibTest
     private static void checkPointsEqual(in Point3D thePnt1, in Point3D thePnt2)
     {
         double theTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Assert.Equal(thePnt2.X(), thePnt1.X(), theTolerance);
-        Assert.Equal(thePnt2.Y(), thePnt1.Y(), theTolerance);
-        Assert.Equal(thePnt2.Z(), thePnt1.Z(), theTolerance);
+        Assert.Equal(thePnt2.X, thePnt1.X, theTolerance);
+        Assert.Equal(thePnt2.Y, thePnt1.Y, theTolerance);
+        Assert.Equal(thePnt2.Z, thePnt1.Z, theTolerance);
     }
 
     // Helper function for comparing 2D points with tolerance
     private static void checkPoint2dEqual(in Point2D thePnt1, in Point2D thePnt2)
     {
         double theTolerance = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Assert.Equal(thePnt2.X(), thePnt1.X(), theTolerance);
-        Assert.Equal(thePnt2.Y(), thePnt1.Y(), theTolerance);
+        Assert.Equal(thePnt2.X, thePnt1.X, theTolerance);
+        Assert.Equal(thePnt2.Y, thePnt1.Y, theTolerance);
     }
 
     // Tests for basic utility functions

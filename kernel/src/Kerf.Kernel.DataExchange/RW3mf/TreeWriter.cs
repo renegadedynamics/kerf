@@ -245,7 +245,7 @@ public sealed class TreeWriter
                     }
                     if (child is not null)
                     {
-                        components.Add((child.Id, component.Location.IsIdentity ? null : component.Location.Transformation()));
+                        components.Add((child.Id, component.Location.IsIdentity ? null : component.Location.Transformation));
                     }
                 }
                 def = components.Count == 0 ? null : new ObjectDef { Name = product.Name, Components = components };
@@ -302,7 +302,7 @@ public sealed class TreeWriter
             }
             if (def is not null)
             {
-                build.Add((def.Id, root.Location.IsIdentity ? null : root.Location.Transformation()));
+                build.Add((def.Id, root.Location.IsIdentity ? null : root.Location.Transformation));
             }
         }
 

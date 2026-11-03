@@ -31,7 +31,7 @@ public sealed class MakeHypr2d : Root
         double distS1 = vecS1.Modulus();
         double distS2 = vecS2.Modulus();
         if (distS1 <= Constants.Resolution() || distS2 <= Constants.Resolution()
-            || s1.Distance(s2) <= Constants.Resolution())
+            || s1.DistanceTo(s2) <= Constants.Resolution())
         {
             _theError = ConfusedPoints;
             return;
@@ -40,7 +40,7 @@ public sealed class MakeHypr2d : Root
         Direction2D yAxis = new(vecS2);
         Frame2D axis = new(center, xAxis, yAxis);
         Line2D line = new(center, xAxis);
-        double minorDist = line.Distance(s2);
+        double minorDist = line.DistanceTo(s2);
         if (minorDist <= Constants.Resolution())
         {
             _theError = ColinearPoints;

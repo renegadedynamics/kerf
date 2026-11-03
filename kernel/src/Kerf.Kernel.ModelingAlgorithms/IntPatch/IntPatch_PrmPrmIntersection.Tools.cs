@@ -59,7 +59,7 @@ public partial class PrmPrmIntersection
                     wLine.Vertex(tiV).Parameters(out u1, out v1, out u2, out v2);
                     Point2D pts1 = new(u1, v1), pts2 = new(u2, v2);
 
-                    double tDistance = cPV.Distance(tPV);
+                    double tDistance = cPV.DistanceTo(tPV);
                     double uRs1 = surf1.UResolution(tDistance);
                     double vRs1 = surf1.VResolution(tDistance);
                     double uRs2 = surf2.UResolution(tDistance);
@@ -71,8 +71,8 @@ public partial class PrmPrmIntersection
                     {
                         if (pntDMin > tDistance && tDistance > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
-                            double sqDist1 = pcs1.SquareDistance(pts1),
-                                   sqDist2 = pcs2.SquareDistance(pts2);
+                            double sqDist1 = pcs1.SquareDistanceTo(pts1),
+                                   sqDist2 = pcs2.SquareDistanceTo(pts2);
                             if ((sqDist1 < rmaxS1 * rmaxS1) && (sqDist2 < rmaxS2 * rmaxS2))
                             {
                                 pntDMin = tDistance;
@@ -244,8 +244,8 @@ public partial class PrmPrmIntersection
                 Point3D p1prev = existWL.Point(nbPP).Value(), p2prev = existWL.Point(nbPP + 1).Value();
                 Point3D p1curr = pw.Value(nbPP).Value(), p2curr = pw.Value(nbPP + 1).Value();
 
-                lPrev += p1prev.Distance(p2prev);
-                lCurr += p1curr.Distance(p2curr);
+                lPrev += p1prev.DistanceTo(p2prev);
+                lCurr += p1curr.DistanceTo(p2curr);
             }
 
             if (lPrev < lCurr)
@@ -560,23 +560,23 @@ public partial class PrmPrmIntersection
 
                 if (ammb > 0.0)
                 {
-                    Direction3D abn = new(pb.X() - pa.X(), pb.Y() - pa.Y(), pb.Z() - pa.Z());
-                    double lan = abn.X() * am.X() + abn.Y() * am.Y() + abn.Z() * am.Z();
-                    Vector3D ah = new(lan * abn.X(), lan * abn.Y(), lan * abn.Z());
-                    Vector3D hm = new(am.X() - ah.X(), am.Y() - ah.Y(), am.Z() - ah.Z());
+                    Direction3D abn = new(pb.X - pa.X, pb.Y - pa.Y, pb.Z - pa.Z);
+                    double lan = abn.X * am.X + abn.Y * am.Y + abn.Z * am.Z;
+                    Vector3D ah = new(lan * abn.X, lan * abn.Y, lan * abn.Z);
+                    Vector3D hm = new(am.X - ah.X, am.Y - ah.Y, am.Z - ah.Z);
                     double d = 0.0;
 
-                    if (hm.X() < deflection)
+                    if (hm.X < deflection)
                     {
-                        d += hm.X() * hm.X();
+                        d += hm.X * hm.X;
 
-                        if (hm.Y() < deflection)
+                        if (hm.Y < deflection)
                         {
-                            d += hm.Y() * hm.Y();
+                            d += hm.Y * hm.Y;
 
-                            if (hm.Z() < deflection)
+                            if (hm.Z < deflection)
                             {
-                                d += hm.Z() * hm.Z();
+                                d += hm.Z * hm.Z;
                             }
                             else
                             {
@@ -600,8 +600,8 @@ public partial class PrmPrmIntersection
                 }
                 else
                 {
-                    double dab = pa.SquareDistance(pb);
-                    double dap = pa.SquareDistance(pStart);
+                    double dab = pa.SquareDistanceTo(pb);
+                    double dap = pa.SquareDistanceTo(pStart);
 
                     if (dap < dab)
                     {
@@ -609,7 +609,7 @@ public partial class PrmPrmIntersection
                     }
                     else
                     {
-                        double dbp = pb.SquareDistance(pStart);
+                        double dbp = pb.SquareDistanceTo(pStart);
 
                         if (dbp < dab)
                         {

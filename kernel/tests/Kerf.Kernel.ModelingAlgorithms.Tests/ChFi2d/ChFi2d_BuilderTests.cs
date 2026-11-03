@@ -111,7 +111,7 @@ public class ChFi2d_BuilderTests
 
         // the chamfer is a segment of length sqrt(1 + 4)
         var aCurve = new EdgeCurveAdaptor(aChamfer);
-        Assert.Equal(Math.Sqrt(5.0), aCurve.Value(aCurve.FirstParameter()).Distance(aCurve.Value(aCurve.LastParameter())), 1.0e-12);
+        Assert.Equal(Math.Sqrt(5.0), aCurve.Value(aCurve.FirstParameter()).DistanceTo(aCurve.Value(aCurve.LastParameter())), 1.0e-12);
 
         Assert.True(aMaker.IsModified(E1));
         Assert.True(aMaker.IsModified(E2));
@@ -178,7 +178,7 @@ public class ChFi2d_BuilderTests
         Face aFlat = Polygon(new Point3D(0, 0, 0), new Point3D(5, 0, 0), new Point3D(10, 0, 0), new Point3D(10, 10, 0));
         var aFlatMaker = new MakeFillet2D(aFlat);
         Vertex aMid = ShapeCasts.Vertex(Sub(aFlat, ShapeType.Vertex)
-                                           .First(v => Tool.Pnt(ShapeCasts.Vertex(v)).Distance(new Point3D(5, 0, 0)) < 1e-9));
+                                           .First(v => Tool.Pnt(ShapeCasts.Vertex(v)).DistanceTo(new Point3D(5, 0, 0)) < 1e-9));
         aFlatMaker.AddFillet(aMid, 1.0);
         Assert.Equal(ConstructionError.TangencyError, aFlatMaker.Status());
     }
@@ -259,8 +259,8 @@ public class ChFi2d_BuilderTests
         Edge anArc = aFillet.Result(new Point3D(10, 0, 0), ref M1, ref M2);
         var aCurve = new EdgeCurveAdaptor(anArc);
         Assert.Equal(CurveKind.Circle, aCurve.GetType());
-        Assert.Equal(2.0, aCurve.Circle().Radius(), 1.0e-12);
-        Assert.True(aCurve.Circle().Location().IsEqual(new Point3D(8, 2, 0), 1.0e-12));
+        Assert.Equal(2.0, aCurve.Circle().Radius, 1.0e-12);
+        Assert.True(aCurve.Circle().Location.IsEqual(new Point3D(8, 2, 0), 1.0e-12));
         Assert.Equal(8.0, new EdgeCurveAdaptor(M1).LastParameter() - new EdgeCurveAdaptor(M1).FirstParameter(), 1.0e-12);
 
         // apart by a gap: the iterative algorithm
@@ -268,7 +268,7 @@ public class ChFi2d_BuilderTests
         var anIterative = new FilletAlgo(E1, E3, aPln);
         Assert.True(anIterative.Perform(2.0));
         Edge anArc2 = anIterative.Result(new Point3D(10, 0, 0), ref M1, ref M2);
-        Assert.Equal(2.0, new EdgeCurveAdaptor(anArc2).Circle().Radius(), 1.0e-12);
+        Assert.Equal(2.0, new EdgeCurveAdaptor(anArc2).Circle().Radius, 1.0e-12);
 
         // a chamfer of lengths 1 and 3
         var aChamfer = new ChamferApi(E1, E2);

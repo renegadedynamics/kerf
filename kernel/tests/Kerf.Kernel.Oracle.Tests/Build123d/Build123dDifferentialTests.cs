@@ -344,7 +344,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
     private static string TopKey(string theText)
     {
         Shape aShape = BooleanOracleTests.ReadPort(theText);
-        return Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.ShapeType()) + ":" + CanonicalKeys.Build(aShape).Key(aShape);
+        return Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.Type) + ":" + CanonicalKeys.Build(aShape).Key(aShape);
     }
 
     // "seq class type": the header without its byte count and the build123d calls, which inlining varies
@@ -400,7 +400,7 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
             if (!aBox.IsVoid)
             {
                 Point3D aMin = aBox.CornerMin(), aMax = aBox.CornerMax();
-                aBounds = string.Create(CultureInfo.InvariantCulture, $"{aMin.X():R} {aMin.Y():R} {aMin.Z():R} {aMax.X():R} {aMax.Y():R} {aMax.Z():R}");
+                aBounds = string.Create(CultureInfo.InvariantCulture, $"{aMin.X:R} {aMin.Y:R} {aMin.Z:R} {aMax.X:R} {aMax.Y:R} {aMax.Z:R}");
             }
             return string.Create(CultureInfo.InvariantCulture,
                                  $"{string.Join("/", aCounts)} volume {aVolume.Mass():R} area {anArea.Mass():R} box {aBounds}");

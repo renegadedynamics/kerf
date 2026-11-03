@@ -270,7 +270,7 @@ public class Approx_SweepApproximationTests
             for (int i = 0; i <= 8; i++)
             {
                 double u = 2.0 * Math.PI * i / 8.0;
-                Assert.True(aSurf.Value(u, v).Distance(aSection.Value(u)) < 1.0e-5);
+                Assert.True(aSurf.Value(u, v).DistanceTo(aSection.Value(u)) < 1.0e-5);
             }
         }
 
@@ -286,7 +286,7 @@ public class Approx_SweepApproximationTests
         for (int j = 0; j <= 10; j++)
         {
             double v = 0.2 * j;
-            Assert.True(aC2d.Value(v).Distance(new Point2D(v, 2.0 * v)) < 1.0e-6);
+            Assert.True(aC2d.Value(v).DistanceTo(new Point2D(v, 2.0 * v)) < 1.0e-6);
         }
         Assert.True(anApprox.Max2dError(1) <= 1.0e-5);
         Assert.True(anApprox.Average2dError(1) <= anApprox.Max2dError(1));
@@ -317,7 +317,7 @@ public class Approx_SweepApproximationTests
             {
                 double u = 0.25 * i;
                 Xyz anExpected = P1.XYZ() * ((1 - u) * (1 - u)) + P2.XYZ() * (2 * u * (1 - u)) + P3.XYZ() * (u * u);
-                Assert.True(aSurf.Value(u, v).Distance(new Point3D(anExpected)) < 1.0e-6);
+                Assert.True(aSurf.Value(u, v).DistanceTo(new Point3D(anExpected)) < 1.0e-6);
             }
         }
         Assert.Contains("Segment(s) of degree", anApprox.ToString());

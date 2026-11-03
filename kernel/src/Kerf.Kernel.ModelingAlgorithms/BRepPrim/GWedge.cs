@@ -394,22 +394,22 @@ internal class GWedge
         int i = BRepPrim_Wedge_NumDir1(d1);
 
         Direction3D d = new();
-        Vector3D vx = new(_axes.XDirection());
-        Vector3D vy = new(_axes.YDirection());
-        Vector3D vz = new(_axes.Direction());
+        Vector3D vx = new(_axes.XDirection);
+        Vector3D vy = new(_axes.YDirection);
+        Vector3D vz = new(_axes.Direction);
 
         switch (i / 2)
         {
             case 0:
-                d = _axes.XDirection();
+                d = _axes.XDirection;
                 break;
 
             case 1:
-                d = _axes.YDirection();
+                d = _axes.YDirection;
                 break;
 
             case 2:
-                d = _axes.Direction();
+                d = _axes.Direction;
                 break;
         }
         double x = 0.0, y = 0.0, z = 0.0;
@@ -475,10 +475,10 @@ internal class GWedge
                 break;
         }
 
-        Point3D p = _axes.Location();
-        p = p.Translated(x * new Vector3D(_axes.XDirection()));
-        p = p.Translated(y * new Vector3D(_axes.YDirection()));
-        p = p.Translated(z * new Vector3D(_axes.Direction()));
+        Point3D p = _axes.Location;
+        p = p.Translated(x * new Vector3D(_axes.XDirection));
+        p = p.Translated(y * new Vector3D(_axes.YDirection));
+        p = p.Translated(z * new Vector3D(_axes.Direction));
         Plane3D plane = new(p, d);
         return plane;
     }
@@ -533,15 +533,15 @@ internal class GWedge
             }
 
             Line3D l;
-            Direction3D dx = p.XAxis().Direction();
-            Direction3D dy = p.YAxis().Direction();
+            Direction3D dx = p.XAxis.Direction;
+            Direction3D dy = p.YAxis.Direction;
             double u, v, du, dv;
             if (HasEdge(d1, dd4))
             {
                 l = Line(d1, dd4);
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location(), out u, out v);
-                du = l.Direction() * dx;
-                dv = l.Direction() * dy;
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location, out u, out v);
+                du = l.Direction * dx;
+                dv = l.Direction * dy;
                 _builder.SetPCurve(_edges[BRepPrim_Wedge_NumDir2(d1, dd4)],
                                     _faces[i],
                                     new Line2D(new Point2D(u, v), new Direction2D(du, dv)));
@@ -549,9 +549,9 @@ internal class GWedge
             if (HasEdge(d1, dd3))
             {
                 l = Line(d1, dd3);
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location(), out u, out v);
-                du = l.Direction() * dx;
-                dv = l.Direction() * dy;
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location, out u, out v);
+                du = l.Direction * dx;
+                dv = l.Direction * dy;
                 _builder.SetPCurve(_edges[BRepPrim_Wedge_NumDir2(d1, dd3)],
                                     _faces[i],
                                     new Line2D(new Point2D(u, v), new Direction2D(du, dv)));
@@ -560,9 +560,9 @@ internal class GWedge
             if (HasEdge(d1, dd2))
             {
                 l = Line(d1, dd2);
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location(), out u, out v);
-                du = l.Direction() * dx;
-                dv = l.Direction() * dy;
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location, out u, out v);
+                du = l.Direction * dx;
+                dv = l.Direction * dy;
                 _builder.SetPCurve(_edges[BRepPrim_Wedge_NumDir2(d1, dd2)],
                                     _faces[i],
                                     new Line2D(new Point2D(u, v), new Direction2D(du, dv)));
@@ -571,9 +571,9 @@ internal class GWedge
             if (HasEdge(d1, dd1))
             {
                 l = Line(d1, dd1);
-                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location(), out u, out v);
-                du = l.Direction() * dx;
-                dv = l.Direction() * dy;
+                global::Kerf.Engine.Geometry.ElSLib.Parameters(p, l.Location, out u, out v);
+                du = l.Direction * dx;
+                dv = l.Direction * dy;
                 _builder.SetPCurve(_edges[BRepPrim_Wedge_NumDir2(d1, dd1)],
                                     _faces[i],
                                     new Line2D(new Point2D(u, v), new Direction2D(du, dv)));
@@ -722,22 +722,22 @@ internal class GWedge
         double x = 0.0, y = 0.0, z = 0.0;
 
         Direction3D d = new();
-        Vector3D vx = new(_axes.XDirection());
-        Vector3D vy = new(_axes.YDirection());
-        Vector3D vz = new(_axes.Direction());
+        Vector3D vx = new(_axes.XDirection);
+        Vector3D vy = new(_axes.YDirection);
+        Vector3D vz = new(_axes.Direction);
 
         switch (i / 4)
         {
             case 0:
-                d = _axes.Direction();
+                d = _axes.Direction;
                 break;
 
             case 1:
-                d = _axes.XDirection();
+                d = _axes.XDirection;
                 break;
 
             case 2:
-                d = _axes.YDirection();
+                d = _axes.YDirection;
                 break;
         }
 
@@ -844,10 +844,10 @@ internal class GWedge
                 break;
         }
 
-        Point3D p = _axes.Location();
-        p = p.Translated(x * new Vector3D(_axes.XDirection()));
-        p = p.Translated(y * new Vector3D(_axes.YDirection()));
-        p = p.Translated(z * new Vector3D(_axes.Direction()));
+        Point3D p = _axes.Location;
+        p = p.Translated(x * new Vector3D(_axes.XDirection));
+        p = p.Translated(y * new Vector3D(_axes.YDirection));
+        p = p.Translated(z * new Vector3D(_axes.Direction));
         return new Line3D(new Axis3D(p, d));
     }
 
@@ -1008,10 +1008,10 @@ internal class GWedge
                 break;
         }
 
-        Point3D p = _axes.Location();
-        p = p.Translated(x * new Vector3D(_axes.XDirection()));
-        p = p.Translated(y * new Vector3D(_axes.YDirection()));
-        p = p.Translated(z * new Vector3D(_axes.Direction()));
+        Point3D p = _axes.Location;
+        p = p.Translated(x * new Vector3D(_axes.XDirection));
+        p = p.Translated(y * new Vector3D(_axes.YDirection));
+        p = p.Translated(z * new Vector3D(_axes.Direction));
         return p;
     }
 

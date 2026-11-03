@@ -45,15 +45,15 @@ public class IntPatch_PrmPrmIntersectionTests
             {
                 PntOn2S aP = aWL.Point(k);
                 aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-                Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"line {i} point {k} off S1");
-                Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"line {i} point {k} off S2");
+                Assert.True(theS1.Value(u1, v1).DistanceTo(aP.Value()) < theTol, $"line {i} point {k} off S1");
+                Assert.True(theS2.Value(u2, v2).DistanceTo(aP.Value()) < theTol, $"line {i} point {k} off S2");
             }
             for (int k = 1; k <= aWL.VertexCount; k++)
             {
                 PatchPoint aV = aWL.Vertex(k);
                 aV.Parameters(out double u1, out double v1, out double u2, out double v2);
-                Assert.True(theS1.Value(u1, v1).Distance(aV.Value()) < theTol, $"line {i} vertex {k} off S1");
-                Assert.True(theS2.Value(u2, v2).Distance(aV.Value()) < theTol, $"line {i} vertex {k} off S2");
+                Assert.True(theS1.Value(u1, v1).DistanceTo(aV.Value()) < theTol, $"line {i} vertex {k} off S1");
+                Assert.True(theS2.Value(u2, v2).DistanceTo(aV.Value()) < theTol, $"line {i} vertex {k} off S2");
             }
         }
     }
@@ -225,8 +225,8 @@ public class IntPatch_PrmPrmIntersectionTests
         {
             PntOn2S aP = aNew.Point(k);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-            Assert.True(aS1.Value(u1, v1).Distance(aP.Value()) < 1.0e-5);
-            Assert.True(aS2.Value(u2, v2).Distance(aP.Value()) < 1.0e-5);
+            Assert.True(aS1.Value(u1, v1).DistanceTo(aP.Value()) < 1.0e-5);
+            Assert.True(aS2.Value(u2, v2).DistanceTo(aP.Value()) < 1.0e-5);
         }
         Assert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 0, 1, 2, 5));
         Assert.Throws<OutOfRangeException>(() => anInt.NewLine(aS1, aS2, 1, 3, 3, 5));

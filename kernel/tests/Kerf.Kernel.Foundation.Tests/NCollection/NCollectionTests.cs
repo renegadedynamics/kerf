@@ -16,7 +16,7 @@ public class NCollectionTests
         var aTrsfs = new NCollection_Array2<Transform3D>(1, 2, 1, 2);
 
         Assert.Equal(new Direction3D(), aDirs[2]);
-        Assert.Equal(1.0, aDirs[2].X());
+        Assert.Equal(1.0, aDirs[2].X);
         Assert.Equal(new Transform3D(), aTrsfs[2, 2]);
         Assert.Equal(0.0, new NCollection_Array1<double>(1, 3)[3]);
     }

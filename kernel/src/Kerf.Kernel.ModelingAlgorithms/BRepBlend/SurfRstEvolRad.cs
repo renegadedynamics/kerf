@@ -174,10 +174,10 @@ public class SurfRstEvolRad : SurfRstFunction
         f[2] = _nplan.XYZ().Dot(_ptrst.XYZ()) + _d;
 
         ns = d1u1.Crossed(d1v1);
-        norm = _nplan.Crossed(ns).Magnitude();
+        norm = _nplan.Crossed(ns).Magnitude;
         ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
         vref = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
-        f[3] = vref.SquareMagnitude() - _ray * _ray;
+        f[3] = vref.SquareMagnitude - _ray * _ray;
         return true;
     }
 
@@ -201,7 +201,7 @@ public class SurfRstEvolRad : SurfRstFunction
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
         ndotns = _nplan.Dot(ns);
 
         vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
@@ -253,14 +253,14 @@ public class SurfRstEvolRad : SurfRstFunction
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
         ndotns = _nplan.Dot(ns);
 
         vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
         vref = vref.Divided(norm);
         vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
 
-        f[3] = vref.SquareMagnitude() - _ray * _ray;
+        f[3] = vref.SquareMagnitude - _ray * _ray;
 
         // Derivative by u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
@@ -295,7 +295,7 @@ public class SurfRstEvolRad : SurfRstFunction
         _d1gui = new Vector3D(0.0, 0.0, 0.0);
         _nplan = new Vector3D(0.0, 0.0, 0.0);
         _tguide.D2(param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _nplan.WithXYZ(_d1gui.Normalized().XYZ());
         Xyz nplanXYZ = _nplan.XYZ();
         Xyz ptguiXYZ = _ptgui.XYZ();
@@ -377,7 +377,7 @@ public class SurfRstEvolRad : SurfRstFunction
             ns = d1u1.Crossed(d1v1);
             ncrossns = _nplan.Crossed(ns);
             ndotns = _nplan.Dot(ns);
-            norm = ncrossns.Magnitude();
+            norm = ncrossns.Magnitude;
 
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
             Vector3D dnw = new();
@@ -416,7 +416,7 @@ public class SurfRstEvolRad : SurfRstFunction
                 _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
                 _tgrst = secmember[3] * d1;
                 _tg2ds = _tg2ds.WithCoord(secmember[1], secmember[2]);
-                _surfrst.D1(_pt2drst.X(), _pt2drst.Y(), out bid, out d1urst, out d1vrst);
+                _surfrst.D1(_pt2drst.X, _pt2drst.Y, out bid, out d1urst, out d1vrst);
                 double a, b;
                 T3dto2d(out a, out b, _tgrst, d1urst, d1vrst);
                 _tg2drst = _tg2drst.WithCoord(a, b);
@@ -455,7 +455,7 @@ public class SurfRstEvolRad : SurfRstFunction
             {
                 _minang = angle;
             }
-            _distmin = Min(_distmin, _pts.Distance(_ptrst));
+            _distmin = Min(_distmin, _pts.DistanceTo(_ptrst));
 
             return true;
         }
@@ -527,7 +527,7 @@ public class SurfRstEvolRad : SurfRstFunction
         _surf.D1(sol[1], sol[2], out bid, out d1u, out d1v);
         ns = nsInPlane = d1u.Crossed(d1v);
 
-        norm = _nplan.Crossed(ns).Magnitude();
+        norm = _nplan.Crossed(ns).Magnitude;
         unsurnorm = 1.0 / norm;
         nsInPlane = Vector3D.LinearForm(_nplan.Dot(ns) * unsurnorm, _nplan, -unsurnorm, ns);
 
@@ -545,7 +545,7 @@ public class SurfRstEvolRad : SurfRstFunction
         _rstref!.Value(sol[3]).Coord(out u, out v);
         _surfref!.D1(u, v, out bid, out d1u, out d1v);
         nRst = d1u.Crossed(d1v);
-        norm = _nplan.Crossed(nRst).Magnitude();
+        norm = _nplan.Crossed(nRst).Magnitude;
         unsurnorm = 1.0 / norm;
         nRstInPlane = new Vector3D();
         nRstInPlane = Vector3D.LinearForm(_nplan.Dot(nRst) * unsurnorm, _nplan, -unsurnorm, nRst);
@@ -560,8 +560,8 @@ public class SurfRstEvolRad : SurfRstFunction
             tgRst = tgRst.Reversed();
         }
 
-        double dot, nt = nRstInPlane.Magnitude();
-        nt *= tgRst.Magnitude();
+        double dot, nt = nRstInPlane.Magnitude;
+        nt *= tgRst.Magnitude;
         if (Math.Abs(nt) < 1.0e-7)
         {
             return false; // Singularity or Incoherence.
@@ -615,7 +615,7 @@ public class SurfRstEvolRad : SurfRstFunction
 
         ns = d1u1.Crossed(d1v1);
 
-        norm = _nplan.Crossed(ns).Magnitude();
+        norm = _nplan.Crossed(ns).Magnitude;
         ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
         center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
         c = c.WithRadius(Math.Abs(_ray));
@@ -766,10 +766,10 @@ public class SurfRstEvolRad : SurfRstFunction
 
         _surf.D1(u1, v1, out _pts, out d1u1, out d1v1);
         _ptrst = _cons.Value(w);
-        _distmin = Min(_distmin, _pts.Distance(_ptrst));
+        _distmin = Min(_distmin, _pts.DistanceTo(_ptrst));
 
         poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(u1, v1);
-        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(pt2d.X(), pt2d.Y());
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(pt2d.X, pt2d.Y);
 
         // Linear Case
         if (_sShape == SectionShape.Linear)
@@ -782,7 +782,7 @@ public class SurfRstEvolRad : SurfRstFunction
         }
 
         ns = d1u1.Crossed(d1v1);
-        norm = _nplan.Crossed(ns).Magnitude();
+        norm = _nplan.Crossed(ns).Magnitude;
 
         ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
 
@@ -826,7 +826,7 @@ public class SurfRstEvolRad : SurfRstFunction
         _tevol.D1(prm, out _ray, out dray);
         _ray = _sg1 * _ray;
         dray = _sg1 * dray;
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
@@ -848,7 +848,7 @@ public class SurfRstEvolRad : SurfRstFunction
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
         ndotns = _nplan.Dot(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
         if (norm < Eps)
         {
             norm = 1; // Not enough, but it is not necessary to stop
@@ -910,7 +910,7 @@ public class SurfRstEvolRad : SurfRstFunction
 
             dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgrst, _tgs);
             dn2w = Vector3D.LinearForm(dray, ns, dn2w);
-            norm = resul.Magnitude();
+            norm = resul.Magnitude;
             dn2w = dn2w.Divided(norm);
             ns2 = -resul.Normalized();
             dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
@@ -927,11 +927,11 @@ public class SurfRstEvolRad : SurfRstFunction
         // Tops 2D
 
         poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
-        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(_pt2drst.X(), _pt2drst.Y());
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(_pt2drst.X, _pt2drst.Y);
         if (!istgt)
         {
             dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(secmember[1], secmember[2]);
-            _surfrst.D1(_pt2drst.X(), _pt2drst.Y(), out bid, out d1urst, out d1vrst);
+            _surfrst.D1(_pt2drst.X, _pt2drst.Y, out bid, out d1urst, out d1vrst);
             double a, b;
             T3dto2d(out a, out b, _tgrst, d1urst, d1vrst);
             dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(a, b);

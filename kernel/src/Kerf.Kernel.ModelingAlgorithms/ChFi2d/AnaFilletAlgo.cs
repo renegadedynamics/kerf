@@ -68,20 +68,20 @@ public sealed class AnaFilletAlgo
         CircleCurve3D circle = (ac.Curve().Curve() as CircleCurve3D)!; // OCCT dereferences down_cast's result unchecked
         Point3D start = ac.Value(f);
         Point3D end = ac.Value(l);
-        Point3D center = ac.Circle().Location();
-        CoordinateSystem plane = new(ac.Circle().Position());
+        Point3D center = ac.Circle().Location;
+        CoordinateSystem plane = new(ac.Circle().Position);
 
         // Get point on circle at half angle
         circle.D0(0.5 * (f + l), out Point3D m);
 
         // Compare angles between vectors to middle point and to the end point.
         Vector3D startv = new(center, start), endv = new(center, end), middlev = new(center, m);
-        double middlea = startv.AngleWithRef(middlev, new Vector3D(plane.Direction()));
+        double middlea = startv.AngleWithRef(middlev, new Vector3D(plane.Direction));
         while (middlea < 0.0)
         {
             middlea += 2.0 * M_PI;
         }
-        double enda = startv.AngleWithRef(endv, new Vector3D(plane.Direction()));
+        double enda = startv.AngleWithRef(endv, new Vector3D(plane.Direction));
         while (enda < 0.0)
         {
             enda += 2.0 * M_PI;
@@ -94,12 +94,12 @@ public sealed class AnaFilletAlgo
     // Equality of points computed through square distance between the points.
     private static bool IsEqual(in Point3D p1, in Point3D p2)
     {
-        return p1.SquareDistance(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
+        return p1.SquareDistanceTo(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
     }
 
     private static bool IsEqual(in Point2D p1, in Point2D p2)
     {
-        return p1.SquareDistance(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
+        return p1.SquareDistanceTo(p2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion();
     }
 
     // An empty constructor.
@@ -197,10 +197,10 @@ public sealed class AnaFilletAlgo
             _segment1 = false;
             Circle3D c = ac1.Circle();
 
-            Point2D loc = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, c.Location());
+            Point2D loc = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, c.Location);
             loc.Coord(out _xc1, out _yc1);
 
-            _radius1 = c.Radius();
+            _radius1 = c.Radius;
             _cw1 = IsCW(ac1);
         }
 
@@ -230,10 +230,10 @@ public sealed class AnaFilletAlgo
             _segment2 = false;
             Circle3D c = ac2.Circle();
 
-            Point2D loc = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, c.Location());
+            Point2D loc = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(plane, c.Location);
             loc.Coord(out _xc2, out _yc2);
 
-            _radius2 = c.Radius();
+            _radius2 = c.Radius;
             _cw2 = IsCW(ac2);
         }
     }
@@ -378,7 +378,7 @@ public sealed class AnaFilletAlgo
         }
 
         // Invert the fillet for left-handed plane.
-        if (!_plane.Position().Direct())
+        if (!_plane.Position.IsDirect)
         {
             cw = !cw;
         }
@@ -386,7 +386,7 @@ public sealed class AnaFilletAlgo
         // Construct a fillet.
         // Make circle.
         Point3D center = global::Kerf.Engine.Geometry.ElSLib.Value(xc, yc, _plane);
-        Direction3D normal = _plane.Position().Direction();
+        Direction3D normal = _plane.Position.Direction;
         var circ = new Circle3D(new Frame3D(center, cw ? -normal : normal), radius);
 
         // Fillet may only shrink a neighbour edge, it can't prolongate it.
@@ -420,7 +420,7 @@ public sealed class AnaFilletAlgo
                 if (bRet)
                 {
                     // Invert the fillet for left-handed planes.
-                    if (!_plane.Position().Direct())
+                    if (!_plane.Position.IsDirect)
                     {
                         cw = !cw;
                     }
@@ -450,7 +450,7 @@ public sealed class AnaFilletAlgo
             }
             else
             {
-                if (_e1.Orientation() == Forward)
+                if (_e1.Orientation == Forward)
                 {
                     pstart = ac1.Value(ac1.LastParameter() - start);
                 }
@@ -467,7 +467,7 @@ public sealed class AnaFilletAlgo
             }
             else
             {
-                if (_e2.Orientation() == Forward)
+                if (_e2.Orientation == Forward)
                 {
                     pend = ac2.Value(ac2.FirstParameter() + end);
                 }
@@ -488,7 +488,7 @@ public sealed class AnaFilletAlgo
                 // Left neighbour.
                 Point3D p1, p2;
                 _shrinke1.Nullify();
-                if (_e1.Orientation() == Forward)
+                if (_e1.Orientation == Forward)
                 {
                     p1 = ac1.Value(ac1.FirstParameter());
                     p2 = pstart;
@@ -519,7 +519,7 @@ public sealed class AnaFilletAlgo
 
                 // Right neighbour.
                 _shrinke2.Nullify();
-                if (_e1.Orientation() == Forward) // OCCT: e1's orientation decides e2's ends
+                if (_e1.Orientation == Forward) // OCCT: e1's orientation decides e2's ends
                 {
                     p1 = pend;
                     p2 = ac2.Value(ac2.LastParameter());
@@ -592,7 +592,7 @@ public sealed class AnaFilletAlgo
         Vector2D bisec = 0.5 * (v1 + v2);
 
         // Check bisectrissa.
-        if (bisec.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (bisec.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return false;
         }
@@ -601,7 +601,7 @@ public sealed class AnaFilletAlgo
         bisec = bisec.Normalized();
 
         // Angle at bisectrissa.
-        double beta = v1.Angle(bisec);
+        double beta = v1.AngleTo(bisec);
 
         // Length along the bisectrissa till the center of fillet.
         double l = radius / Math.Sin(Math.Abs(beta));
@@ -638,7 +638,7 @@ public sealed class AnaFilletAlgo
         var pc2 = new Point2D(_xc2, _yc2);
 
         // Check length of segment.
-        if (p11.SquareDistance(p12) < Constants.Resolution())
+        if (p11.SquareDistanceTo(p12) < Constants.Resolution())
         {
             return false;
         }
@@ -659,7 +659,7 @@ public sealed class AnaFilletAlgo
 
         // If vectors coincide (segment and arc are tangent),
         // the algorithm doesn't work...
-        double angle = v1.Angle(v2);
+        double angle = v1.AngleTo(v2);
         if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
@@ -672,7 +672,7 @@ public sealed class AnaFilletAlgo
 
         // If segment and arc look in opposite direction,
         // no fillet is possible.
-        if (bisec.SquareMagnitude() < Constants.Resolution())
+        if (bisec.SquareMagnitude < Constants.Resolution())
         {
             return false;
         }
@@ -688,7 +688,7 @@ public sealed class AnaFilletAlgo
         var line = new Line2D(p11, new Direction2D(-d1));
         d1 = d1.Rotated(M_PI_2);
         line = line.Translated(radius * d1);
-        if (line.Distance(nearp) > radius)
+        if (line.DistanceTo(nearp) > radius)
         {
             line = line.Translated(-2.0 * radius * d1);
         }
@@ -696,7 +696,7 @@ public sealed class AnaFilletAlgo
         // Make a circle of radius of the arc +/- fillet radius.
         var axes = new Axis2D(pc2, Constants.DX2d());
         var circ = new Circle2D(axes, _radius2 + radius);
-        if (_radius2 > radius && circ.Distance(nearp) > radius)
+        if (_radius2 > radius && circ.DistanceTo(nearp) > radius)
         {
             circ = circ.WithRadius(_radius2 - radius);
         }
@@ -716,7 +716,7 @@ public sealed class AnaFilletAlgo
             IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
-            double d = nearl.Distance(p);
+            double d = nearl.DistanceTo(p);
             if (d < minDist)
             {
                 minDist = d;
@@ -726,13 +726,13 @@ public sealed class AnaFilletAlgo
 
         // Shrink of segment.
         var pc = new Point2D(xc, yc);
-        double l2 = pc.SquareDistance(p12);
+        double l2 = pc.SquareDistanceTo(p12);
         double rf2 = radius * radius;
         start = Math.Sqrt(l2 - rf2);
 
         // Shrink of arc.
         var pcc = new Vector2D(pc2, pc);
-        end = Math.Abs(new Vector2D(pc2, p12).Angle(pcc));
+        end = Math.Abs(new Vector2D(pc2, p12).AngleTo(pcc));
 
         // Duplicate the information on shrink the arc:
         // calculate a point on the arc coinciding with the end of fillet.
@@ -753,7 +753,7 @@ public sealed class AnaFilletAlgo
             IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
-            double d2 = p.SquareDistance(pc);
+            double d2 = p.SquareDistanceTo(pc);
             if (Math.Abs(d2 - rf2) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 p.Coord(out xend, out yend);
@@ -762,7 +762,7 @@ public sealed class AnaFilletAlgo
         }
 
         // Orientation of the fillet.
-        angle = v1.Angle(v2);
+        angle = v1.AngleTo(v2);
         cw = angle > 0.0;
         return true;
     }
@@ -786,7 +786,7 @@ public sealed class AnaFilletAlgo
         var pc1 = new Point2D(_xc1, _yc1);
 
         // Check length of segment.
-        if (p12.SquareDistance(p22) < Constants.Resolution())
+        if (p12.SquareDistanceTo(p22) < Constants.Resolution())
         {
             return false;
         }
@@ -807,7 +807,7 @@ public sealed class AnaFilletAlgo
 
         // If vectors coincide (segment and arc are tangent),
         // the algorithm doesn't work...
-        double angle = v1.Angle(v2);
+        double angle = v1.AngleTo(v2);
         if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
@@ -820,7 +820,7 @@ public sealed class AnaFilletAlgo
 
         // If segment and arc look in opposite direction,
         // no fillet is possible.
-        if (bisec.SquareMagnitude() < Constants.Resolution())
+        if (bisec.SquareMagnitude < Constants.Resolution())
         {
             return false;
         }
@@ -836,7 +836,7 @@ public sealed class AnaFilletAlgo
         var line = new Line2D(p22, new Direction2D(-d2Vec));
         d2Vec = d2Vec.Rotated(M_PI_2);
         line = line.Translated(radius * d2Vec);
-        if (line.Distance(nearPoint) > radius)
+        if (line.DistanceTo(nearPoint) > radius)
         {
             line = line.Translated(-2.0 * radius * d2Vec);
         }
@@ -844,7 +844,7 @@ public sealed class AnaFilletAlgo
         // Make a circle of radius of the arc +/- fillet radius.
         var axes = new Axis2D(pc1, Constants.DX2d());
         var circ = new Circle2D(axes, _radius1 + radius);
-        if (_radius1 > radius && circ.Distance(nearPoint) > radius)
+        if (_radius1 > radius && circ.DistanceTo(nearPoint) > radius)
         {
             circ = circ.WithRadius(_radius1 - radius);
         }
@@ -864,7 +864,7 @@ public sealed class AnaFilletAlgo
             IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
-            double d = nearLine.Distance(p);
+            double d = nearLine.DistanceTo(p);
             if (d < minDist)
             {
                 minDist = d;
@@ -874,13 +874,13 @@ public sealed class AnaFilletAlgo
 
         // Shrink of segment.
         var pc = new Point2D(xc, yc);
-        double l2 = pc.SquareDistance(p12);
+        double l2 = pc.SquareDistanceTo(p12);
         double rf2 = radius * radius;
         end = Math.Sqrt(l2 - rf2);
 
         // Shrink of arc.
         var pcc = new Vector2D(pc1, pc);
-        start = Math.Abs(new Vector2D(pc1, p12).Angle(pcc));
+        start = Math.Abs(new Vector2D(pc1, p12).AngleTo(pcc));
 
         // Duplicate the information on shrink the arc:
         // calculate a point on the arc coinciding with the start of fillet.
@@ -901,7 +901,7 @@ public sealed class AnaFilletAlgo
             IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
-            double d2 = p.SquareDistance(pc);
+            double d2 = p.SquareDistanceTo(pc);
             if (Math.Abs(d2 - rf2) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()) // OCCT: SegmentFilletArc compares with Confusion
             {
                 p.Coord(out xstart, out ystart);
@@ -910,7 +910,7 @@ public sealed class AnaFilletAlgo
         }
 
         // Orientation of the fillet.
-        angle = v2.Angle(v1);
+        angle = v2.AngleTo(v1);
         cw = angle < 0.0;
         return true;
     }
@@ -954,7 +954,7 @@ public sealed class AnaFilletAlgo
         v1 = v1.Normalized();
         v2 = v2.Normalized();
         Vector2D bisec = 0.5 * (v1 + v2);
-        if (bisec.SquareMagnitude() < Constants.Resolution())
+        if (bisec.SquareMagnitude < Constants.Resolution())
         {
             return false;
         }
@@ -968,14 +968,14 @@ public sealed class AnaFilletAlgo
         // Arc 1.
         var axes = new Axis2D(pc1, Constants.DX2d());
         var c1 = new Circle2D(axes, _radius1 + radius);
-        if (_radius1 > radius && c1.Distance(checkp) > radius)
+        if (_radius1 > radius && c1.DistanceTo(checkp) > radius)
         {
             c1 = c1.WithRadius(_radius1 - radius);
         }
         // Arc 2.
         axes = axes.WithLocation(pc2);
         var c2 = new Circle2D(axes, _radius2 + radius);
-        if (_radius2 > radius && c2.Distance(checkp) > radius)
+        if (_radius2 > radius && c2.DistanceTo(checkp) > radius)
         {
             c2 = c2.WithRadius(_radius2 - radius);
         }
@@ -996,7 +996,7 @@ public sealed class AnaFilletAlgo
             IntPoint intp = intersector.Point(i);
             Point2D p = intp.Value();
 
-            double d = checkp.SquareDistance(p);
+            double d = checkp.SquareDistanceTo(p);
             if (d < minDist)
             {
                 minDist = d;
@@ -1006,10 +1006,10 @@ public sealed class AnaFilletAlgo
         pc.Coord(out xc, out yc);
 
         // Orientation of fillet.
-        double angle = v1.Angle(v2);
+        double angle = v1.AngleTo(v2);
         if (Math.Abs(angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            angle = new Vector2D(pc, pc1).Angle(new Vector2D(pc, pc2));
+            angle = new Vector2D(pc, pc1).AngleTo(new Vector2D(pc, pc2));
             cw = angle < 0.0;
         }
         else
@@ -1018,8 +1018,8 @@ public sealed class AnaFilletAlgo
         }
 
         // Shrinking of circles.
-        start = Math.Abs(new Vector2D(pc1, p12).Angle(new Vector2D(pc1, pc)));
-        end = Math.Abs(new Vector2D(pc2, p12).Angle(new Vector2D(pc2, pc)));
+        start = Math.Abs(new Vector2D(pc1, p12).AngleTo(new Vector2D(pc1, pc)));
+        end = Math.Abs(new Vector2D(pc2, p12).AngleTo(new Vector2D(pc2, pc)));
         return true;
     }
 

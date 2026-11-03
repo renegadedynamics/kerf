@@ -35,7 +35,7 @@ public class IntPatch_RstIntTests
             Point3D aP = new(5, -2.5 + k, 0);
             global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln2, aP, out double u2, out double v2);
             PntOn2S aPnt = new();
-            aPnt.SetValue(aP, 5, aP.Y(), u2, v2);
+            aPnt.SetValue(aP, 5, aP.Y, u2, v2);
             aCurve.Add(aPnt);
         }
         WLine aW = new(aCurve, false, WalkingTypeTrans.In, WalkingTypeTrans.Out);
@@ -46,23 +46,23 @@ public class IntPatch_RstIntTests
         Assert.Equal(17, aW.NbPnts());
         Assert.Equal(new[] { 1.0, 4.0, 15.0, 17.0 },
                      Enumerable.Range(1, aW.VertexCount).Select(i => aW.Vertex(i).ParameterOnLine()));
-        Assert.True(aW.FirstPoint().Value().Distance(new Point3D(5, -2.5, 0)) < 1e-12);
-        Assert.True(aW.LastPoint().Value().Distance(new Point3D(5, 11.5, 0)) < 1e-12);
+        Assert.True(aW.FirstPoint().Value().DistanceTo(new Point3D(5, -2.5, 0)) < 1e-12);
+        Assert.True(aW.LastPoint().Value().DistanceTo(new Point3D(5, 11.5, 0)) < 1e-12);
         Assert.False(aW.FirstPoint().IsOnDomS1);
 
         double[] aY = [0.0, 10.0];
         for (int i = 2; i <= 3; i++)
         {
             PatchPoint aV = aW.Vertex(i);
-            Assert.True(aV.Value().Distance(new Point3D(5, aY[i - 2], 0)) < 1e-7);
-            Assert.True(aW.Point((int)aV.ParameterOnLine()).Value().Distance(aV.Value()) < 1e-7);
+            Assert.True(aV.Value().DistanceTo(new Point3D(5, aY[i - 2], 0)) < 1e-7);
+            Assert.True(aW.Point((int)aV.ParameterOnLine()).Value().DistanceTo(aV.Value()) < 1e-7);
             Assert.True(aV.IsOnDomS1);
             Assert.False(aV.IsOnDomS2);
             Assert.False(aV.IsVertexOnS1);
 
             // The arc's parameter gives the crossing.
             Curve2DAdaptorBase anArc = aV.ArcOnS1();
-            Assert.True(anArc.Value(aV.ParameterOnArc1()).Distance(new Point2D(5, aY[i - 2])) < 1e-7);
+            Assert.True(anArc.Value(aV.ParameterOnArc1()).DistanceTo(new Point2D(5, aY[i - 2])) < 1e-7);
             aV.ParametersOnS1(out double u1, out double v1);
             Assert.Equal(5.0, u1, 1e-7);
             Assert.Equal(aY[i - 2], v1, 1e-7);
@@ -71,8 +71,8 @@ public class IntPatch_RstIntTests
             anArc.D1(aV.ParameterOnArc1(), out _, out Vector2D aD);
             WalkingTransition aTLine = aV.TransitionLineArc1(), aTArc = aV.TransitionOnS1();
             Assert.False(aTLine.IsTangent);
-            Assert.Equal(aD.X() > 0 ? WalkingTypeTrans.In : WalkingTypeTrans.Out, aTLine.TransitionType());
-            Assert.Equal(aD.X() > 0 ? WalkingTypeTrans.Out : WalkingTypeTrans.In, aTArc.TransitionType());
+            Assert.Equal(aD.X > 0 ? WalkingTypeTrans.In : WalkingTypeTrans.Out, aTLine.TransitionType());
+            Assert.Equal(aD.X > 0 ? WalkingTypeTrans.Out : WalkingTypeTrans.In, aTArc.TransitionType());
         }
         Assert.NotSame(aW.Vertex(2).ArcOnS1(), aW.Vertex(3).ArcOnS1());
         Assert.False(aW.HasArcOnS1);

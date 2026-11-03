@@ -206,7 +206,7 @@ public static class StepToGeom
         {
             StepBezierCurve bzC = sc as StepBezierCurve;
             int degree = bzC.Degree();
-            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree)
             {
                 return null;
             }
@@ -233,7 +233,7 @@ public static class StepToGeom
         {
             StepUniformCurve uc = sc as StepUniformCurve;
             int degree = uc.Degree();
-            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree)
             {
                 return null;
             }
@@ -263,7 +263,7 @@ public static class StepToGeom
         {
             StepQuasiUniformCurve quc = sc as StepQuasiUniformCurve;
             int degree = quc.Degree();
-            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree)
             {
                 return null;
             }
@@ -295,7 +295,7 @@ public static class StepToGeom
         {
             StepUniformCurveAndRationalBSplineCurve ruc = sc as StepUniformCurveAndRationalBSplineCurve;
             int degree = ruc.Degree();
-            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree)
             {
                 return null;
             }
@@ -330,7 +330,7 @@ public static class StepToGeom
         {
             StepQuasiUniformCurveAndRationalBSplineCurve rquc = sc as StepQuasiUniformCurveAndRationalBSplineCurve;
             int degree = rquc.Degree();
-            if (degree < 1 || degree > BSplineCurve3D.MaxDegree())
+            if (degree < 1 || degree > BSplineCurve3D.MaxDegree)
             {
                 return null;
             }
@@ -831,7 +831,7 @@ public static class StepToGeom
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (stepGeom_BSplineCurve.ClosedCurve() != Logical.LFalse && bSplineCurve.Degree() > 1 && bSplineCurve.IsClosed)
+        if (stepGeom_BSplineCurve.ClosedCurve() != Logical.LFalse && bSplineCurve.Degree > 1 && bSplineCurve.IsClosed)
         {
             bSplineCurve.SetPeriodic();
         }
@@ -900,7 +900,7 @@ public static class StepToGeom
         // abv 04.07.00 CAX-IF TRJ4: trj4_k1_top-md-203.stp #716 (face #581):
         // force periodicity on closed curves
         // OCCT: the logical is tested as a C++ bool, so UNKNOWN counts as closed (occt-issues.md, 8D)
-        if (stepGeom_BSplineCurve.ClosedCurve() != Logical.LFalse && bSplineCurve.Degree() > 1 && bSplineCurve.IsClosed)
+        if (stepGeom_BSplineCurve.ClosedCurve() != Logical.LFalse && bSplineCurve.Degree > 1 && bSplineCurve.IsClosed)
         {
             bSplineCurve.SetPeriodic();
         }
@@ -1517,7 +1517,7 @@ public static class StepToGeom
                 //: o9 abv 19 Feb 99
                 else
                 {
-                    a = a.WithXDirection(a.XDirection() ^ a.Direction());
+                    a = a.WithXDirection(a.XDirection ^ a.Direction);
                     return new EllipseCurve3D(a, minorR, majorR);
                 }
             }
@@ -1550,8 +1550,8 @@ public static class StepToGeom
                 }
                 else
                 {
-                    Direction2D x = a.XDirection();
-                    a = a.WithXDirection(new Direction2D(x.X(), -x.Y()));
+                    Direction2D x = a.XDirection;
+                    a = a.WithXDirection(new Direction2D(x.X, -x.Y));
                     return new EllipseCurve2D(a, minorR, majorR);
                 }
             }
@@ -1623,7 +1623,7 @@ public static class StepToGeom
             VectorWithMagnitude? d = MakeVectorWithMagnitude(sc.Dir(), localFactors);
             if (d is not null)
             {
-                if (d.Vec().SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (d.Vec().SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return null;
                 }
@@ -1845,7 +1845,7 @@ public static class StepToGeom
             {
                 ConicalSurface conicS = theBasis as ConicalSurface;
                 uFact = angleFact;
-                vFact = lengthFact / Math.Cos(conicS.SemiAngle());
+                vFact = lengthFact / Math.Cos(conicS.SemiAngle);
             }
             else if (theBasis is PlaneSurface)
             {
@@ -1933,20 +1933,20 @@ public static class StepToGeom
                 {
                     // sln 03.10.01. BUC61003. creation of  offset surface is corrected
                     double offset = os.Distance() * localFactors.LengthFactor();
-                    if (basisSurface.Continuity() == C0)
+                    if (basisSurface.Continuity == C0)
                     {
                         MakeFace bFace = new MakeFace(basisSurface, global::Kerf.Engine.Foundation.Precision.Confusion());
                         if (bFace.IsDone)
                         {
                             // OCCT: the process-wide container (null before ShapeAlgo.Init, as in OCCT)
                             Shape result = global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().C0ShapeToC1Shape(bFace.Face(), Math.Abs(offset));
-                            if (result.ShapeType() == ShapeType.Face)
+                            if (result.Type == ShapeType.Face)
                             {
                                 basisSurface = Tool.Surface(ShapeCasts.Face(result));
                             }
                         }
                     }
-                    if (basisSurface.Continuity() != C0)
+                    if (basisSurface.Continuity != C0)
                     {
                         return new OffsetSurface(basisSurface, offset);
                     }
@@ -2003,7 +2003,7 @@ public static class StepToGeom
             {
                 Direction3D d = new Direction3D(v.Vec());
                 LineCurve3D line = c as LineCurve3D;
-                if (line is not null && line.Lin().Direction().IsParallel(d, global::Kerf.Engine.Foundation.Precision.Angular()))
+                if (line is not null && line.Line.Direction.IsParallel(d, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return null;
                 }
@@ -2036,13 +2036,13 @@ public static class StepToGeom
                 if (c is CircleCurve3D || c is EllipseCurve3D)
                 {
                     ConicCurve3D conic = c as ConicCurve3D;
-                    Point3D pc = conic.Location();
+                    Point3D pc = conic.Location;
                     Line3D rl = new Line3D(a);
-                    if (rl.Distance(pc) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (rl.DistanceTo(pc) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     { // pc lies on A2
-                        Direction3D dirline = a.Direction();
-                        Direction3D norm = conic.Axis().Direction();
-                        Direction3D xAxis = conic.XAxis().Direction();
+                        Direction3D dirline = a.Direction;
+                        Direction3D norm = conic.Axis.Direction;
+                        Direction3D xAxis = conic.XAxis.Direction;
                         // checking A2 lies on plane of circle
                         if (dirline.IsNormal(norm, global::Kerf.Engine.Foundation.Precision.Angular())
                             && (dirline.IsParallel(xAxis, global::Kerf.Engine.Foundation.Precision.Angular()) || c is CircleCurve3D))
@@ -2401,8 +2401,8 @@ public static class StepToGeom
 
         if (foundParam1 && foundParam2)
         {
-            double cf = theCurve.FirstParameter();
-            double cl = theCurve.LastParameter();
+            double cf = theCurve.FirstParameter;
+            double cl = theCurve.LastParameter;
             //: abv 09.04.99: S4136: bm2_ug_t4-B.stp #70610: protect against OutOfRange
             if (!theCurve.IsPeriodic)
             {

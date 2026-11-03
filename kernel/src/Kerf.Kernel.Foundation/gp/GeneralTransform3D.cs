@@ -52,10 +52,10 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
     public GeneralTransform3D(in Transform3D t)
     {
-        _shape = t.Form();
+        _shape = t.Form;
         _matrix = t._matrix;
-        _loc = t.TranslationPart();
-        _scale = t.ScaleFactor();
+        _loc = t.TranslationXyz();
+        _scale = t.ScaleFactor;
     }
 
     /// <summary>The transformation with vectorial part <paramref name="m"/> and translation part <paramref name="v"/>.</summary>
@@ -88,15 +88,15 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         double scale = _scale;
         shape = Other;
         scale = 0.0;
-        matrix = matrix.WithDot(a1.Direction().XYZ());
+        matrix = matrix.WithDot(a1.Direction.XYZ());
         matrix = matrix.Multiplied(1.0 - ratio);
         matrix = matrix.WithDiagonal(matrix.Value(1, 1) + ratio,
                            matrix.Value(2, 2) + ratio,
                            matrix.Value(3, 3) + ratio);
-        loc = a1.Location().XYZ();
+        loc = a1.Location.XYZ();
         loc.Reverse();
         loc.Multiply(matrix);
-        loc.Add(a1.Location().XYZ());
+        loc.Add(a1.Location.XYZ());
         return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
@@ -108,9 +108,9 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         double scale = _scale;
         shape = Other;
         scale = 0.0;
-        matrix = matrix.WithDot(a2.Direction().XYZ());
+        matrix = matrix.WithDot(a2.Direction.XYZ());
         matrix = matrix.Multiplied(ratio - 1.0);
-        loc = a2.Location().XYZ();
+        loc = a2.Location.XYZ();
         loc.Reverse();
         loc.Multiply(matrix);
         matrix = matrix.WithDiagonal(matrix.Value(1, 1) + 1.0, matrix.Value(2, 2) + 1.0, matrix.Value(3, 3) + 1.0);
@@ -118,7 +118,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     }
 
     /// <summary>A copy with one coefficient of the 3x4 matrix replaced (row 1 to 3, column 1 to 4).</summary>
-    public readonly GeneralTransform3D WithValue(int row, int col, double value)
+    internal readonly GeneralTransform3D WithValue(int row, int col, double value)
     {
         Matrix3x3 matrix = _matrix;
         Xyz loc = _loc;
@@ -165,10 +165,10 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         Xyz loc = _loc;
         TransformForm shape = _shape;
         loc = coord;
-        if (Form() == CompoundTrsf || Form() == Other || Form() == Translation)
+        if (Form == CompoundTrsf || Form == Other || Form == Translation)
         {
         }
-        else if (Form() == Identity)
+        else if (Form == Identity)
         {
             shape = Translation;
         }
@@ -182,7 +182,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     public readonly GeneralTransform3D WithTrsf(in Transform3D t) => new(t);
 
     /// <summary>A copy whose form is recomputed from its matrix (OCCT's <c>SetForm</c>).</summary>
-    public readonly GeneralTransform3D WithForm()
+    internal readonly GeneralTransform3D WithForm()
     {
         TransformForm shape = _shape;
         double tol = 1.0e-12; // Precision::Angular();
@@ -190,7 +190,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         // don t trust the initial values !
         //
         Matrix3x3 m = _matrix;
-        double s = m.Determinant();
+        double s = m.Determinant;
 
         if (Math.Abs(s) < Constants.Resolution())
         {
@@ -263,20 +263,20 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
     // Queries
 
     /// <summary>True when the determinant of the vectorial part is negative.</summary>
-    public readonly bool IsNegative => _matrix.Determinant() < 0.0;
+    public readonly bool IsNegative => _matrix.Determinant < 0.0;
 
     /// <summary>True when the vectorial part is singular, so the transformation cannot be inverted.</summary>
-    public readonly bool IsSingular => _matrix.IsSingular();
+    public readonly bool IsSingular => _matrix.IsSingular;
 
-    public readonly TransformForm Form() => _shape;
+    public readonly TransformForm Form => _shape;
 
-    public readonly Xyz TranslationPart() => _loc;
+    public readonly Xyz TranslationXyz() => _loc;
 
     /// <summary>The 3x3 vectorial part, without the scale factor of a non-<c>gp_Other</c> form.</summary>
-    public readonly Matrix3x3 VectorialPart() => _matrix;
+    public readonly Matrix3x3 VectorialPart => _matrix;
 
     /// <summary>The coefficient at a row (1 to 3) and column (1 to 4) of the 3x4 matrix, scale included.</summary>
-    public readonly double Value(int row, int col)
+    internal readonly double Value(int row, int col)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 4, " ");
         if (col == 4)
@@ -308,7 +308,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         }
         else
         {
-            Transform3D t = Trsf();
+            Transform3D t = ToTransform();
             t = t.Inverted();
             (matrix, loc, shape, scale) = new GeneralTransform3D(matrix, loc, shape, scale).WithTrsf(t);
         }
@@ -322,7 +322,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         Xyz loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        if (Form() == Other || t.Form() == Other)
+        if (Form == Other || t.Form == Other)
         {
             shape = Other;
             loc.Add(t._loc.Multiplied(matrix));
@@ -330,8 +330,8 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         }
         else
         {
-            Transform3D t1 = Trsf();
-            Transform3D t2 = t.Trsf();
+            Transform3D t1 = ToTransform();
+            Transform3D t2 = t.ToTransform();
             t1 = t1.Multiplied(t2);
             matrix = t1._matrix;
             loc = t1._loc;
@@ -348,7 +348,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         Xyz loc = _loc;
         TransformForm shape = _shape;
         double scale = _scale;
-        if (Form() == Other || t.Form() == Other)
+        if (Form == Other || t.Form == Other)
         {
             shape = Other;
             loc.Multiply(t._matrix);
@@ -357,8 +357,8 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         }
         else
         {
-            Transform3D t1 = Trsf();
-            Transform3D t2 = t.Trsf();
+            Transform3D t1 = ToTransform();
+            Transform3D t2 = t.ToTransform();
             t1 = t1.PreMultiplied(t2);
             matrix = t1._matrix;
             loc = t1._loc;
@@ -416,7 +416,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
             }
             else
             {
-                Transform3D t = Trsf();
+                Transform3D t = ToTransform();
                 t = t.Powered(n);
                 (matrix, loc, shape, scale) = new GeneralTransform3D(matrix, loc, shape, scale).WithTrsf(t);
             }
@@ -424,7 +424,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
-    public readonly void Transforms(ref Xyz coord)
+    internal readonly void Transforms(ref Xyz coord)
     {
         coord.Multiply(_matrix);
         if (!(_shape == Other) && !(_scale == 1.0))
@@ -435,7 +435,7 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
         coord.Add(_loc);
     }
 
-    public readonly void Transforms(ref double x, ref double y, ref double z)
+    internal readonly void Transforms(ref double x, ref double y, ref double z)
     {
         Xyz triplet = new(x, y, z);
         triplet.Multiply(_matrix);
@@ -458,9 +458,9 @@ public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3
 
     /// <summary>This transformation as a <see cref="Transform3D"/>.</summary>
     /// <exception cref="ConstructionErrorException">The form is <c>gp_Other</c>.</exception>
-    public readonly Transform3D Trsf()
+    public readonly Transform3D ToTransform()
     {
-        if (Form() == Other)
+        if (Form == Other)
         {
             throw new ConstructionErrorException("gp_GTrsf::Trsf() - non-orthogonal GTrsf");
         }

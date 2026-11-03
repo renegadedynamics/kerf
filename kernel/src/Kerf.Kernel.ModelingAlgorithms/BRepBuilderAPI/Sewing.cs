@@ -321,7 +321,7 @@ public class Sewing : Transient
         {
             Point3D p1 = Tool.Pnt(ShapeCasts.Vertex(v1));
             Point3D p2 = Tool.Pnt(ShapeCasts.Vertex(v2));
-            return (p1.Distance(p2) < totLength / (1.2 * M_PI));
+            return (p1.DistanceTo(p2) < totLength / (1.2 * M_PI));
         }
         return false;
     }
@@ -337,26 +337,26 @@ public class Sewing : Transient
         bool isClosed = false;
 
         Point2D psurf1 = (acrv2d.IsPeriodic ? acrv2d.Value(f2d)
-                                               : acrv2d.Value(Max(f2d, acrv2d.FirstParameter())));
+                                               : acrv2d.Value(Max(f2d, acrv2d.FirstParameter)));
         Point2D psurf2 = (acrv2d.IsPeriodic ? acrv2d.Value(l2d)
-                                               : acrv2d.Value(Min(l2d, acrv2d.LastParameter())));
+                                               : acrv2d.Value(Min(l2d, acrv2d.LastParameter)));
         Curve3D crv1;
         Curve3D crv2;
         if (isUIsos)
         {
-            crv1 = thesurf.UIso(psurf1.X());
-            crv2 = thesurf.UIso(psurf2.X());
+            crv1 = thesurf.UIso(psurf1.X);
+            crv2 = thesurf.UIso(psurf2.X);
         }
         else
         {
-            crv1 = thesurf.VIso(psurf1.Y());
-            crv2 = thesurf.VIso(psurf2.Y());
+            crv1 = thesurf.VIso(psurf1.Y);
+            crv2 = thesurf.VIso(psurf2.Y);
         }
         Point3D p11 = new(), p1m = new(), p12 = new(), p21 = new(), p2m = new(), p22 = new();
-        double af1 = crv1.FirstParameter();
-        double al1 = crv1.LastParameter();
-        double af2 = crv2.FirstParameter();
-        double al2 = crv2.LastParameter();
+        double af1 = crv1.FirstParameter;
+        double al1 = crv1.LastParameter;
+        double af2 = crv2.FirstParameter;
+        double al2 = crv2.LastParameter;
         crv1.D0(af1, out p11);
         crv1.D0((af1 + al1) * 0.5, out p1m);
         crv1.D0(al1, out p12);
@@ -378,11 +378,11 @@ public class Sewing : Transient
         Surface tmpsurf = surf;
         if (tmpsurf is TrimmedSurface rts)
         {
-            tmpsurf = rts.BasisSurface();
+            tmpsurf = rts.BasisSurface;
         }
         else if (tmpsurf is OffsetSurface os)
         {
-            tmpsurf = os.BasisSurface();
+            tmpsurf = os.BasisSurface;
         }
         else
         {
@@ -409,11 +409,11 @@ public class Sewing : Transient
         Surface tmpsurf = surf;
         if (tmpsurf is TrimmedSurface rts)
         {
-            tmpsurf = rts.BasisSurface();
+            tmpsurf = rts.BasisSurface;
         }
         else if (tmpsurf is OffsetSurface os)
         {
-            tmpsurf = os.BasisSurface();
+            tmpsurf = os.BasisSurface;
         }
         else
         {
@@ -599,7 +599,7 @@ public class Sewing : Transient
         if (isDone)
         {
             // Change result orientation
-            edge1.Orientation(isForward ? Forward : Reversed);
+            edge1.Orient(isForward ? Forward : Reversed);
         }
         else
         {
@@ -618,8 +618,8 @@ public class Sewing : Transient
         var itV = new Iterator(edge, false);
         for (; itV.More(); itV.Next())
         {
-            if (itV.Value().Orientation() == Internal
-                || itV.Value().Orientation() == External)
+            if (itV.Value().Orientation == Internal
+                || itV.Value().Orientation == External)
             {
                 seqNMVert.Append(itV.Value());
             }
@@ -640,8 +640,8 @@ public class Sewing : Transient
             Vertex v = ShapeCasts.Vertex(seqNMVert.Value(i));
             Point3D pt = Tool.Pnt(v);
 
-            double distF2 = pfirst.SquareDistance(pt);
-            double distL2 = plast.SquareDistance(pt);
+            double distF2 = pfirst.SquareDistanceTo(pt);
+            double distL2 = plast.SquareDistanceTo(pt);
             double apar = (distF2 > distL2 ? last : first);
             // Project current point on curve
             locProj.Perform(pt);
@@ -697,7 +697,7 @@ public class Sewing : Transient
         //
         dR = r[m] - r[n]; // dR >= 0.
         var vd = new Vector3D(p[m], p[n]);
-        d = vd.Magnitude();
+        d = vd.Magnitude;
         //
         if (d <= dR || d < eps)
         {
@@ -744,7 +744,7 @@ public class Sewing : Transient
         dmax = -1.0;
         for (int i = 0; i < 3; ++i)
         {
-            di = center.Distance(p[i]);
+            di = center.DistanceTo(p[i]);
             di += r[i];
             if (di > dmax)
             {
@@ -826,14 +826,14 @@ public class Sewing : Transient
         // Create new edge
         var edge = new Edge();
         builder.MakeEdge(ref edge);
-        edge.Orientation(edge1.Orientation());
+        edge.Orient(edge1.Orientation);
 
         // Retrieve edge curve
         Curve3D? c3d = Tool.Curve(edge1, out Placement loc3d, out double first3d, out double last3d);
         if (!loc3d.IsIdentity)
         {
             c3d = (Curve3D)c3d!.Copy();
-            c3d.Transform(loc3d.Transformation());
+            c3d.Transform(loc3d.Transformation);
         }
         builder.UpdateEdge(edge, c3d, Tool.Tolerance(edge1));
         builder.Range(edge, first, last);
@@ -1047,8 +1047,8 @@ public class Sewing : Transient
                 bool isSeam1 = ((IsUClosedSurface(surf1!, edge1, loc1) || IsVClosedSurface(surf1!, edge1, loc1))
                                 && Tool.IsClosed(ShapeCasts.Edge(edge1), fac1));
                 c2d1 = Tool.CurveOnSurface(edge1, fac1, out first2d, out last2d);
-                ori = edge1.Orientation();
-                if (fac1.Orientation() == Reversed)
+                ori = edge1.Orientation;
+                if (fac1.Orientation == Reversed)
                 {
                     ori = global::Kerf.Engine.Topology.TopAbs.Reverse(ori);
                 }
@@ -1090,12 +1090,12 @@ public class Sewing : Transient
                         bool vclosed = IsVClosedSurface(surf2!, edge2, loc2);
                         if (uclosed || vclosed)
                         {
-                            double pf = c2d1!.FirstParameter();
+                            double pf = c2d1!.FirstParameter;
                             Point2D p1n = c2d1.Value(Max(first, pf));
-                            Point2D p21n = c2d2.Value(Max(first, c2d2.FirstParameter()));
-                            Point2D p22n = c2d2.Value(Min(last, c2d2.LastParameter()));
-                            double aDist = Min(p1n.Distance(p21n), p1n.Distance(p22n));
-                            surf2!.Bounds(out double u1, out double u2, out double v1, out double v2);
+                            Point2D p21n = c2d2.Value(Max(first, c2d2.FirstParameter));
+                            Point2D p22n = c2d2.Value(Min(last, c2d2.LastParameter));
+                            double aDist = Min(p1n.DistanceTo(p21n), p1n.DistanceTo(p22n));
+                            surf2!.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                             isSeam = ((uclosed && aDist > 0.75 * (Math.Abs(u2 - u1)))
                                       || (vclosed && aDist > 0.75 * (Math.Abs(v2 - v1))));
                             if (!isSeam && Tool.IsClosed(ShapeCasts.Edge(edge), fac1))
@@ -1120,9 +1120,9 @@ public class Sewing : Transient
                 }
                 else if (isSeam2)
                 {
-                    Orientation initOri = edge2.Orientation();
-                    Orientation secOri = edge.Orientation();
-                    if (fac2.Orientation() == Reversed)
+                    Orientation initOri = edge2.Orientation;
+                    Orientation secOri = edge.Orientation;
+                    if (fac2.Orientation == Reversed)
                     {
                         initOri = global::Kerf.Engine.Topology.TopAbs.Reverse(initOri);
                         secOri = global::Kerf.Engine.Topology.TopAbs.Reverse(secOri);
@@ -1218,7 +1218,7 @@ public class Sewing : Transient
                         Surface s = surf2!;
                         if (!loc2.IsIdentity)
                         {
-                            s = (Surface)surf2!.Transformed(loc2.Transformation());
+                            s = (Surface)surf2!.Transformed(loc2.Transformation);
                         }
 
                         double dist2 = 0.0;
@@ -1226,9 +1226,9 @@ public class Sewing : Transient
                         for (i = 1; i <= nbp; i++)
                         {
                             Point2D p2d = c2d2!.Value(first + (i - 1) * deltaT);
-                            s.D0(p2d.X(), p2d.Y(), out Point3D p2);
+                            s.D0(p2d.X, p2d.Y, out Point3D p2);
                             Point3D p1 = c3dpnt[i];
-                            dist = p2.SquareDistance(p1);
+                            dist = p2.SquareDistanceTo(p1);
                             if (dist > dist2)
                             {
                                 dist2 = dist;
@@ -1299,7 +1299,7 @@ public class Sewing : Transient
                 if (!loc.IsIdentity)
                 {
                     surf = (Surface)surf!.Copy();
-                    surf.Transform(loc.Transformation());
+                    surf.Transform(loc.Transformation);
                 }
                 c2d = Tool.CurveOnSurface(edge, face, out first, out last);
             }
@@ -1316,7 +1316,7 @@ public class Sewing : Transient
             if (!loc.IsIdentity)
             {
                 c3d = (Curve3D)c3d!.Copy();
-                c3d.Transform(loc.Transformation());
+                c3d.Transform(loc.Transformation);
             }
 
             var adapt = new CurveAdaptor(c3d!);
@@ -1328,16 +1328,16 @@ public class Sewing : Transient
             for (j = 1; j <= npt; j++)
             {
                 c2d!.D0(uniAbs.Parameter((secForward[i] || i == indRef) ? j : npt - j + 1), out Point2D p);
-                surf!.D1(p.X(), p.Y(), out _, out Vector3D w1, out Vector3D w2);
+                surf!.D1(p.X, p.Y, out _, out Vector3D w1, out Vector3D w2);
                 Vector3D n = w1 ^ w2; // Compute the normal vector
                 if (i == indRef)
                 {
                     normRef[j] = n;
                 }
-                else if ((n.Magnitude() > Constants.Resolution()) && (normRef[j].Magnitude() > Constants.Resolution()))
+                else if ((n.Magnitude > Constants.Resolution()) && (normRef[j].Magnitude > Constants.Resolution()))
                 {
                     nbComputedAngle++;
-                    double angular = n.Angle(normRef[j]);
+                    double angular = n.AngleTo(normRef[j]);
                     if (angular > M_PI / 2.0)
                     {
                         angular = M_PI - angular;
@@ -1397,7 +1397,7 @@ public class Sewing : Transient
             if (!loc.IsIdentity)
             {
                 c3d = (Curve3D)c3d.Copy();
-                c3d.Transform(loc.Transformation());
+                c3d.Transform(loc.Transformation);
             }
 
             if (i == indRef)
@@ -1438,7 +1438,7 @@ public class Sewing : Transient
                     ptsRef[j] = pt;
                     if (j > 1)
                     {
-                        lenSec2 += pt.SquareDistance(ptsRef[j - 1]);
+                        lenSec2 += pt.SquareDistanceTo(ptsRef[j - 1]);
                     }
                 }
                 else
@@ -1447,10 +1447,10 @@ public class Sewing : Transient
                     // protection to avoid merging with small sections
                     if (j > 1)
                     {
-                        lenSec2 += pt.SquareDistance(ptsSec[j - 1]);
+                        lenSec2 += pt.SquareDistanceTo(ptsSec[j - 1]);
                     }
                     // To evaluate mutual orientation and distance
-                    dist = pt.Distance(ptsRef[j]);
+                    dist = pt.DistanceTo(ptsRef[j]);
                     if (minDist > dist)
                     {
                         minDist = dist;
@@ -1459,7 +1459,7 @@ public class Sewing : Transient
                     {
                         distFor = dist;
                     }
-                    dist = pt.Distance(ptsRef[npt - j + 1]);
+                    dist = pt.DistanceTo(ptsRef[npt - j + 1]);
 
                     if (minDist > dist)
                     {
@@ -1580,7 +1580,7 @@ public class Sewing : Transient
             dv = (c2Vmax - c2Vmin);
             isULongC2 = (dv <= du);
             isVLongC2 = (du <= dv);
-            surf!.Bounds(out sUmin, out sUmax, out sVmin, out sVmax);
+            surf!.ParameterBounds(out sUmin, out sUmax, out sVmin, out sVmax);
         }
         if (isUClosed && isVLongC1 && isVLongC2)
         {
@@ -2338,7 +2338,7 @@ public class Sewing : Transient
     {
         Shape newShape = _reShape.InternalApply(ToWork(aShape));
         // Degenerated face
-        if (aShape.ShapeType() == ShapeType.Face)
+        if (aShape.Type == ShapeType.Face)
         {
             return newShape.IsNull;
         }
@@ -2347,12 +2347,12 @@ public class Sewing : Transient
             return false;
         }
         // Degenerated edge
-        if (newShape.ShapeType() == ShapeType.Edge)
+        if (newShape.Type == ShapeType.Edge)
         {
             return Tool.Degenerated(ShapeCasts.Edge(newShape));
         }
         // Degenerated wire
-        if (newShape.ShapeType() == ShapeType.Wire)
+        if (newShape.Type == ShapeType.Wire)
         {
             bool isDegenerated = true;
             for (var it = new Iterator(newShape); it.More() && isDegenerated; it.Next())
@@ -2518,7 +2518,7 @@ public class Sewing : Transient
                 {
                     // Retrieve current wire
                     tmpShape = witer.Value(); // for porting
-                    if (tmpShape.ShapeType() != ShapeType.Wire)
+                    if (tmpShape.Type != ShapeType.Wire)
                     {
                         continue;
                     }
@@ -2564,7 +2564,7 @@ public class Sewing : Transient
                                 double delta = (last - first) / (npt - 1);
                                 for (int idx = 0; idx < npt; idx++)
                                 {
-                                    dist = cp.Distance(c3d.Value(first + idx * delta));
+                                    dist = cp.DistanceTo(c3d.Value(first + idx * delta));
                                     if (maxdist < dist)
                                     {
                                         maxdist = dist;
@@ -2595,7 +2595,7 @@ public class Sewing : Transient
                                             for (; liter.More(); liter.Next())
                                             {
                                                 Shape v = liter.Value();
-                                                _reShape.Replace(v, nv1.Oriented(v.Orientation()));
+                                                _reShape.Replace(v, nv1.Oriented(v.Orientation));
                                                 vlist1.Append(v);
                                             }
                                             gluedVertices.Remove(nv2);
@@ -2605,14 +2605,14 @@ public class Sewing : Transient
                                     {
                                         // Add second vertex to the existing list
                                         vlist1.Append(v2);
-                                        _reShape.Replace(v2, nv1.Oriented(v2.Orientation()));
+                                        _reShape.Replace(v2, nv1.Oriented(v2.Orientation));
                                     }
                                 }
                                 else if (!nv2.IsSame(v2))
                                 {
                                     // Add first vertex to the existing list
                                     gluedVertices.GetValue(nv2).Append(v1);
-                                    _reShape.Replace(v1, nv2.Oriented(v1.Orientation()));
+                                    _reShape.Replace(v1, nv2.Oriented(v1.Orientation));
                                 }
                                 else if (!v1.IsSame(v2))
                                 {
@@ -2623,8 +2623,8 @@ public class Sewing : Transient
                                     vlist.Append(v1);
                                     vlist.Append(v2);
                                     gluedVertices.Add(nv, vlist);
-                                    _reShape.Replace(v1, nv.Oriented(v1.Orientation()));
-                                    _reShape.Replace(v2, nv.Oriented(v2.Orientation()));
+                                    _reShape.Replace(v1, nv.Oriented(v1.Orientation));
+                                    _reShape.Replace(v2, nv.Oriented(v2.Orientation));
                                 }
                             }
                         }
@@ -2645,9 +2645,9 @@ public class Sewing : Transient
                                 b.Range(nedge, pfirst, plast);
                                 b.Degenerated(nedge, true);
                                 Exploration.Vertices(fedge, out Vertex v1, out Vertex v2);
-                                b.Add(nedge, _reShape.InternalApply(v1).Oriented(v1.Orientation()));
-                                b.Add(nedge, _reShape.InternalApply(v2).Oriented(v2.Orientation()));
-                                b.Add(nwire, nedge.Oriented(edge.Orientation()));
+                                b.Add(nedge, _reShape.InternalApply(v1).Oriented(v1.Orientation));
+                                b.Add(nedge, _reShape.InternalApply(v2).Oriented(v2.Orientation));
+                                b.Add(nwire, nedge.Oriented(edge.Orientation));
                                 _degenerated.Add(nedge);
                             }
                             isWireChanged = true;
@@ -2661,7 +2661,7 @@ public class Sewing : Transient
                     // Record wire in the new face
                     if (isWireChanged)
                     {
-                        b.Add(nface, nwire.Oriented(wire.Orientation()));
+                        b.Add(nface, nwire.Oriented(wire.Orientation));
                         isFaceChanged = true;
                     }
                     else
@@ -2678,7 +2678,7 @@ public class Sewing : Transient
                 }
                 else if (isFaceChanged)
                 {
-                    _reShape.Replace(face, nface.Oriented(face.Orientation()));
+                    _reShape.Replace(face, nface.Oriented(face.Orientation));
                 }
             }
         }
@@ -2708,7 +2708,7 @@ public class Sewing : Transient
                     {
                         mtol = vtol;
                     }
-                    vtol = vp.Distance(Tool.Pnt(ShapeCasts.Vertex(liter2.Value())));
+                    vtol = vp.DistanceTo(Tool.Pnt(ShapeCasts.Vertex(liter2.Value())));
                     if (tol < vtol)
                     {
                         tol = vtol;
@@ -2799,7 +2799,7 @@ public class Sewing : Transient
                 // Explore face to find all boundaries
                 for (var iw = new Iterator(face); iw.More(); iw.Next())
                 {
-                    if (iw.Value().ShapeType() != ShapeType.Wire)
+                    if (iw.Value().Type != ShapeType.Wire)
                     {
                         continue;
                     }
@@ -2821,7 +2821,7 @@ public class Sewing : Transient
             NCollection_List<Shape> listFaces = edgeFaces.ValueAt(iterEF);
             int nbFaces = listFaces.Extent();
             Shape edge = edgeFaces.KeyAt(iterEF);
-            if (edge.Orientation() == Internal)
+            if (edge.Orientation == Internal)
             {
                 continue;
             }
@@ -2879,7 +2879,7 @@ public class Sewing : Transient
                 {
                     continue;
                 }
-                if (vFirst.Orientation() == Internal || vLast.Orientation() == Internal)
+                if (vFirst.Orientation == Internal || vLast.Orientation == Internal)
                 {
                     continue;
                 }
@@ -3045,7 +3045,7 @@ public class Sewing : Transient
             for (; itv.More(); itv.Next())
             {
                 Vertex vertex = ShapeCasts.Vertex(itv.Value());
-                double t = center.Distance(Tool.Pnt(vertex)) + Tool.Tolerance(vertex);
+                double t = center.DistanceTo(Tool.Pnt(vertex)) + Tool.Tolerance(vertex);
                 if (toler < t)
                 {
                     toler = t;
@@ -3296,14 +3296,14 @@ public class Sewing : Transient
                 }
                 // Append near node to the sequence
                 Point3D pt2 = Tool.Pnt(node2);
-                double dist = pt1.Distance(pt2);
+                double dist = pt1.DistanceTo(pt2);
                 if (dist < tolerance)
                 {
                     bool isIns = false;
                     for (int kk = 1; kk <= seqNodes.Length() && !isIns; kk++)
                     {
                         Point3D pt = Tool.Pnt(ShapeCasts.Vertex(seqNodes.Value(kk)));
-                        if (dist < pt1.Distance(pt))
+                        if (dist < pt1.DistanceTo(pt))
                         {
                             seqNodes.InsertBefore(kk, node2);
                             isIns = true;
@@ -3331,7 +3331,7 @@ public class Sewing : Transient
                             if (n1 != n2)
                             {
                                 Point3D p1 = Tool.Pnt(n1);
-                                if (p2.Distance(p1) >= pt1.Distance(p1))
+                                if (p2.DistanceTo(p1) >= pt1.DistanceTo(p1))
                                 {
                                     k++;
                                     continue;
@@ -3485,8 +3485,8 @@ public class Sewing : Transient
         if (newnb < nb)
         {
             Shape anewEdge = edge.EmptyCopied();
-            Orientation ori = edge.Orientation();
-            anewEdge.Orientation(Forward);
+            Orientation ori = edge.Orientation;
+            anewEdge.Orient(Forward);
             var b = new BrepBuilder();
             b.Add(anewEdge, v1);
             b.Add(anewEdge, v2);
@@ -3495,7 +3495,7 @@ public class Sewing : Transient
             {
                 b.Add(anewEdge, edVert.Value(i));
             }
-            anewEdge.Orientation(ori);
+            anewEdge.Orient(ori);
             reShape.Replace(edge, anewEdge);
         }
     }
@@ -3517,21 +3517,21 @@ public class Sewing : Transient
         aReShape.Replace(oldShape, newShape);
         Vertex v1new = new(), v2new = new();
         Exploration.Vertices(ShapeCasts.Edge(oldShape), out Vertex v1old, out Vertex v2old);
-        Orientation orold = oldShape.Orientation();
+        Orientation orold = oldShape.Orientation;
         Orientation ornew = orold;
-        if (newShape.ShapeType() == ShapeType.Edge)
+        if (newShape.Type == ShapeType.Edge)
         {
             Edge en = ShapeCasts.Edge(newShape);
             Exploration.Vertices(en, out v1new, out v2new);
-            ornew = en.Orientation();
+            ornew = en.Orientation;
             ReplaceNMVertices(en, v1new, v2new, aReShape);
         }
-        else if (newShape.ShapeType() == ShapeType.Wire)
+        else if (newShape.Type == ShapeType.Wire)
         {
             for (var aex = new Explorer(newShape, ShapeType.Edge); aex.More(); aex.Next())
             {
                 Edge ed = ShapeCasts.Edge(aex.Current());
-                ornew = ed.Orientation();
+                ornew = ed.Orientation;
                 Exploration.Vertices(ed, out Vertex v1, out Vertex v2);
                 ReplaceNMVertices(ed, v1, v2, aReShape);
                 if (v1new.IsNull)
@@ -3542,8 +3542,8 @@ public class Sewing : Transient
             }
         }
 
-        v1new.Orientation(v1old.Orientation());
-        v2new.Orientation(v2old.Orientation());
+        v1new.Orient(v1old.Orientation);
+        v2new.Orient(v2old.Orientation);
         if (v1old.IsSame(v2old) && !v1old.IsSame(v1new) && !aReShape.IsRecorded(v1new))
         {
             aReShape.Replace(v1old, v1new);
@@ -3551,8 +3551,8 @@ public class Sewing : Transient
         }
         if (orold == ornew)
         {
-            v1new.Orientation(v1old.Orientation());
-            v2new.Orientation(v2old.Orientation());
+            v1new.Orient(v1old.Orientation);
+            v2new.Orient(v2old.Orientation);
             if (!v1old.IsSame(v1new) && !v1old.IsSame(v2new) && !aReShape.IsRecorded(v1new))
             {
                 aReShape.Replace(v1old, v1new);
@@ -3564,8 +3564,8 @@ public class Sewing : Transient
         }
         else
         {
-            v1new.Orientation(v2old.Orientation());
-            v2new.Orientation(v1old.Orientation());
+            v1new.Orient(v2old.Orientation);
+            v2new.Orient(v1old.Orientation);
             if (!v1old.IsSame(v2new) && !v1old.IsSame(v1new) && !aReShape.IsRecorded(v2new))
             {
                 aReShape.Replace(v1old, v2new);
@@ -3616,12 +3616,12 @@ public class Sewing : Transient
                 }
                 if (!no1.IsSame(nno1))
                 {
-                    nno1.Orientation(no1.Orientation());
+                    nno1.Orient(no1.Orientation);
                     _reShape.Replace(no1, nno1);
                 }
                 if (!no2.IsSame(nno2))
                 {
-                    nno2.Orientation(no2.Orientation());
+                    nno2.Orient(no2.Orientation);
                     _reShape.Replace(no2, nno2);
                 }
                 _mergedEdges.Add(bound);
@@ -3635,7 +3635,7 @@ public class Sewing : Transient
             if (hasCuttingSections)
             {
                 b.MakeWire(ref boundWire);
-                boundWire.Orientation(bound.Orientation());
+                boundWire.Orient(bound.Orientation);
                 // Iterate on cutting sections
                 var its = new NCollection_List<Shape>.Iterator(_boundSections.GetValue(bound));
                 for (; its.More(); its.Next())
@@ -3718,7 +3718,7 @@ public class Sewing : Transient
                         bool isForward = false;
                         if (!mergedEdge.IsNull)
                         {
-                            isForward = (mergedEdge.Orientation() == Forward);
+                            isForward = (mergedEdge.Orientation == Forward);
                         }
                         // Process actually merged edges
                         int nbActuallyMerged = 0;
@@ -3729,7 +3729,7 @@ public class Sewing : Transient
                             {
                                 nbActuallyMerged++;
                                 // Record merged edge in the map
-                                Orientation orient = iedge.Orientation();
+                                Orientation orient = iedge.Orientation;
                                 if (!isForward)
                                 {
                                     orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
@@ -3748,7 +3748,7 @@ public class Sewing : Transient
                         if (nbActuallyMerged != 0)
                         {
                             // Record merged bound in the map
-                            Orientation orient = bound.Orientation();
+                            Orientation orient = bound.Orientation;
                             if (!isForward)
                             {
                                 orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
@@ -3847,7 +3847,7 @@ public class Sewing : Transient
                             bool isForward = false;
                             if (!mergedEdge.IsNull)
                             {
-                                isForward = (mergedEdge.Orientation() == Forward);
+                                isForward = (mergedEdge.Orientation == Forward);
                             }
                             // Process actually merged edges
                             int nbActuallyMerged = 0;
@@ -3858,7 +3858,7 @@ public class Sewing : Transient
                                 {
                                     nbActuallyMerged++;
                                     // Record merged edge in the map
-                                    Orientation orient = iedge.Orientation();
+                                    Orientation orient = iedge.Orientation;
                                     if (!isForward)
                                     {
                                         orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
@@ -3879,7 +3879,7 @@ public class Sewing : Transient
                             if (nbActuallyMerged != 0)
                             {
                                 // Record merged section in the map
-                                Orientation orient = section.Orientation();
+                                Orientation orient = section.Orientation;
                                 if (!isForward)
                                 {
                                     orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
@@ -4265,7 +4265,7 @@ public class Sewing : Transient
             if (!loc.IsIdentity)
             {
                 c3d = (Curve3D)c3d.Copy();
-                c3d.Transform(loc.Transformation());
+                c3d.Transform(loc.Transformation);
             }
             // Create cutting sections
             var listSections = new NCollection_List<Shape>();
@@ -4482,7 +4482,7 @@ public class Sewing : Transient
 
     private static bool IsDegeneratedWire(in Shape wire)
     {
-        if (wire.ShapeType() != ShapeType.Wire)
+        if (wire.Type != ShapeType.Wire)
         {
             return false;
         }
@@ -4526,15 +4526,15 @@ public class Sewing : Transient
                 c3d = (Curve3D)c3d.Copy();
                 if (!loc.IsIdentity)
                 {
-                    c3d.Transform(loc.Transformation());
+                    c3d.Transform(loc.Transformation);
                 }
                 Point3D pfirst = c3d.Value(first);
                 Point3D plast = c3d.Value(last);
                 Point3D pmid = c3d.Value((first + last) * 0.5);
                 double length = 0;
-                if (pfirst.Distance(plast) > pfirst.Distance(pmid))
+                if (pfirst.DistanceTo(plast) > pfirst.DistanceTo(pmid))
                 {
-                    length = pfirst.Distance(plast);
+                    length = pfirst.DistanceTo(plast);
                 }
                 else
                 {
@@ -4583,7 +4583,7 @@ public class Sewing : Transient
         if (!loc.IsIdentity)
         {
             c3d = (Curve3D)c3d.Copy();
-            c3d.Transform(loc.Transformation());
+            c3d.Transform(loc.Transformation);
         }
 
         // Test if the new edge is degenerated
@@ -4609,18 +4609,18 @@ public class Sewing : Transient
         else
         {
             var newVertex = new Vertex();
-            if (p1.Distance(p3) < Tool.Tolerance(v1))
+            if (p1.DistanceTo(p3) < Tool.Tolerance(v1))
             {
                 newVertex = v1;
             }
-            else if (p1.Distance(p3) < Tool.Tolerance(v2))
+            else if (p1.DistanceTo(p3) < Tool.Tolerance(v2))
             {
                 newVertex = v2;
             }
             else
             {
-                double d1 = Tool.Tolerance(v1) + p2.Distance(p1);
-                double d2 = Tool.Tolerance(v2) + p2.Distance(p3);
+                double d1 = Tool.Tolerance(v1) + p2.DistanceTo(p1);
+                double d2 = Tool.Tolerance(v2) + p2.DistanceTo(p3);
                 double newTolerance = Max(d1, d2);
                 builder.MakeVertex(ref newVertex, p2, newTolerance);
             }
@@ -4820,7 +4820,7 @@ public class Sewing : Transient
         {
             Shape sh = expSh.Value();
             bool hasEdges = false;
-            if (sh.ShapeType() == ShapeType.Shell)
+            if (sh.Type == ShapeType.Shell)
             {
                 if (_nonmanifold)
                 {
@@ -4849,7 +4849,7 @@ public class Sewing : Transient
                     }
                 }
             }
-            else if (sh.ShapeType() == ShapeType.Face)
+            else if (sh.Type == ShapeType.Face)
             {
                 if (_nonmanifold)
                 {
@@ -5136,8 +5136,8 @@ public class Sewing : Transient
         {
             Point3D pt = arrPnt[i1];
             double worktol = _tolerance;
-            double distF2 = pfirst.SquareDistance(pt);
-            double distL2 = plast.SquareDistance(pt);
+            double distF2 = pfirst.SquareDistanceTo(pt);
+            double distL2 = plast.SquareDistanceTo(pt);
             bool isProjected = false;
             try
             {
@@ -5163,7 +5163,7 @@ public class Sewing : Transient
                         POnCurv pOnC = locProj.Point(indMin);
                         double paramProj = pOnC.Parameter();
                         Point3D ptProj = gac.Value(paramProj);
-                        double distProj2 = ptProj.SquareDistance(pt);
+                        double distProj2 = ptProj.SquareDistanceTo(pt);
                         if (!locProj.IsMin(indMin))
                         {
                             if (Min(distF2, distL2) < dist2Min)
@@ -5276,7 +5276,7 @@ public class Sewing : Transient
             if (!loc.IsIdentity)
             {
                 c3d = (Curve3D)c3d!.Copy();
-                c3d.Transform(loc.Transformation());
+                c3d.Transform(loc.Transformation);
             }
             var gac = new CurveAdaptor(c3d!);
             seqVert.Prepend(vfirst);
@@ -5305,10 +5305,10 @@ public class Sewing : Transient
 
             // Find the closest vertex
             int indexMin = 1;
-            double dist, distMin = pntProj.Distance(seqPnt[1]);
+            double dist, distMin = pntProj.DistanceTo(seqPnt[1]);
             for (j = 2; j <= seqPnt.Length(); j++)
             {
-                dist = pntProj.Distance(seqPnt[j]);
+                dist = pntProj.DistanceTo(seqPnt[j]);
                 if (dist < distMin)
                 {
                     distMin = dist;
@@ -5539,8 +5539,8 @@ public class Sewing : Transient
                 }
                 else
                 {
-                    Orientation ori = edge.Orientation();
-                    if (fac.Orientation() == Reversed)
+                    Orientation ori = edge.Orientation;
+                    if (fac.Orientation == Reversed)
                     {
                         ori = global::Kerf.Engine.Topology.TopAbs.Reverse(ori);
                     }

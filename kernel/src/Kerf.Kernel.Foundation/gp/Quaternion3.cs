@@ -52,18 +52,18 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
     internal void SetRotation(in Vector3D vecFrom, in Vector3D vecTo)
     {
         Vector3D vecCross = vecFrom.Crossed(vecTo);
-        Set(vecCross.X(), vecCross.Y(), vecCross.Z(), vecFrom.Dot(vecTo));
+        Set(vecCross.X, vecCross.Y, vecCross.Z, vecFrom.Dot(vecTo));
         Normalize(); // if "from" or "to" not unit, normalize quat
         _w += 1.0; // reducing angle to halfangle
         if (_w <= Constants.Resolution()) // angle close to PI
         {
-            if ((vecFrom.Z() * vecFrom.Z()) > (vecFrom.X() * vecFrom.X()))
+            if ((vecFrom.Z * vecFrom.Z) > (vecFrom.X * vecFrom.X))
             {
-                Set(0.0, vecFrom.Z(), -vecFrom.Y(), _w); // theVecFrom * gp_Vec(1,0,0)
+                Set(0.0, vecFrom.Z, -vecFrom.Y, _w); // theVecFrom * gp_Vec(1,0,0)
             }
             else
             {
-                Set(vecFrom.Y(), -vecFrom.X(), 0.0, _w); // theVecFrom * gp_Vec(0,0,1)
+                Set(vecFrom.Y, -vecFrom.X, 0.0, _w); // theVecFrom * gp_Vec(0,0,1)
             }
         }
 
@@ -73,13 +73,13 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
     internal void SetRotation(in Vector3D vecFrom, in Vector3D vecTo, in Vector3D helpCrossVec)
     {
         Vector3D vecCross = vecFrom.Crossed(vecTo);
-        Set(vecCross.X(), vecCross.Y(), vecCross.Z(), vecFrom.Dot(vecTo));
+        Set(vecCross.X, vecCross.Y, vecCross.Z, vecFrom.Dot(vecTo));
         Normalize(); // if "from" or "to" not unit, normalize quat
         _w += 1.0; // reducing angle to halfangle
         if (_w <= Constants.Resolution()) // angle close to PI
         {
             Vector3D theAxis = vecFrom.Crossed(helpCrossVec);
-            Set(theAxis.X(), theAxis.Y(), theAxis.Z(), _w);
+            Set(theAxis.X, theAxis.Y, theAxis.Z, _w);
         }
 
         Normalize();
@@ -90,7 +90,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         Vector3D anAxis = axis.Normalized();
         double angleHalf = 0.5 * angle;
         double sin_a = Math.Sin(angleHalf);
-        Set(anAxis.X() * sin_a, anAxis.Y() * sin_a, anAxis.Z() * sin_a, Math.Cos(angleHalf));
+        Set(anAxis.X * sin_a, anAxis.Y * sin_a, anAxis.Z * sin_a, Math.Cos(angleHalf));
     }
 
     internal void SetMatrix(in Matrix3x3 mat)
@@ -466,10 +466,10 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
     /// <summary>The vector rotated by this quaternion.</summary>
     public readonly Vector3D Multiply(in Vector3D vec)
     {
-        Quaternion3 theQ = new(vec.X() * _w + vec.Z() * _y - vec.Y() * _z,
-                                 vec.Y() * _w + vec.X() * _z - vec.Z() * _x,
-                                 vec.Z() * _w + vec.Y() * _x - vec.X() * _y,
-                                 vec.X() * _x + vec.Y() * _y + vec.Z() * _z);
+        Quaternion3 theQ = new(vec.X * _w + vec.Z * _y - vec.Y * _z,
+                                 vec.Y * _w + vec.X * _z - vec.Z * _x,
+                                 vec.Z * _w + vec.Y * _x - vec.X * _y,
+                                 vec.X * _x + vec.Y * _y + vec.Z * _z);
         return new Vector3D(_w * theQ._x + _x * theQ._w + _y * theQ._z - _z * theQ._y,
                           _w * theQ._y + _y * theQ._w + _z * theQ._x - _x * theQ._z,
                           _w * theQ._z + _z * theQ._w + _x * theQ._y - _y * theQ._x)

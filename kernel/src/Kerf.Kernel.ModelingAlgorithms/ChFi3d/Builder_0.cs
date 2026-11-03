@@ -93,19 +93,19 @@ internal static partial class Builder_0
         aSurface = theBase!;
         if (aSurface is TrimmedSurface trimmedSurface)
         {
-            aSurface = trimmedSurface.BasisSurface();
+            aSurface = trimmedSurface.BasisSurface;
         }
 
-        aSurface.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aSurface.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         double periodU = 0.0;
         double periodV = 0.0;
         if (aSurface.IsUPeriodic)
         {
-            periodU = aSurface.UPeriod();
+            periodU = aSurface.UPeriod;
         }
         if (aSurface.IsVPeriodic)
         {
-            periodV = aSurface.VPeriod();
+            periodV = aSurface.VPeriod;
         }
 
         double stepU = aUmax - aUmin;
@@ -160,10 +160,10 @@ internal static partial class Builder_0
     internal static void ChFi3d_Boite(in Point2D p1, in Point2D p2, out double mu, out double Mu, out double mv,
                                       out double Mv)
     {
-        mu = Math.Min(p1.X(), p2.X());
-        Mu = Math.Max(p1.X(), p2.X());
-        mv = Math.Min(p1.Y(), p2.Y());
-        Mv = Math.Max(p1.Y(), p2.Y());
+        mu = Math.Min(p1.X, p2.X);
+        Mu = Math.Max(p1.X, p2.X);
+        mv = Math.Min(p1.Y, p2.Y);
+        Mv = Math.Max(p1.Y, p2.Y);
     }
 
     //=======================================================================
@@ -176,17 +176,17 @@ internal static partial class Builder_0
                                       out double dv, out double mu, out double Mu, out double mv, out double Mv)
     {
         double a, b;
-        a = Math.Min(p1.X(), p2.X());
-        b = Math.Min(p3.X(), p4.X());
+        a = Math.Min(p1.X, p2.X);
+        b = Math.Min(p3.X, p4.X);
         mu = Math.Min(a, b);
-        a = Math.Max(p1.X(), p2.X());
-        b = Math.Max(p3.X(), p4.X());
+        a = Math.Max(p1.X, p2.X);
+        b = Math.Max(p3.X, p4.X);
         Mu = Math.Max(a, b);
-        a = Math.Min(p1.Y(), p2.Y());
-        b = Math.Min(p3.Y(), p4.Y());
+        a = Math.Min(p1.Y, p2.Y);
+        b = Math.Min(p3.Y, p4.Y);
         mv = Math.Min(a, b);
-        a = Math.Max(p1.Y(), p2.Y());
-        b = Math.Max(p3.Y(), p4.Y());
+        a = Math.Max(p1.Y, p2.Y);
+        b = Math.Max(p3.Y, p4.Y);
         Mv = Math.Max(a, b);
         du = Mu - mu;
         dv = Mv - mv;
@@ -457,7 +457,7 @@ internal static partial class Builder_0
             return cont;
         }
         Face f = f1;
-        f.Orientation(Forward);
+        f.Orient(Forward);
         FaceSurfaceAdaptor s = new(f, false);
         SurfaceKind typ = s.GetType();
         if (typ != SurfaceKind.Cone && typ != SurfaceKind.Sphere && typ != SurfaceKind.Torus)
@@ -526,8 +526,8 @@ internal static partial class Builder_0
         }
         else if (st2 == SurfaceKind.Cylinder)
         {
-            Direction3D d1 = aS1.Plane().Axis().Direction();
-            Direction3D d2 = aS2.Cylinder().Axis().Direction();
+            Direction3D d1 = aS1.Plane().Axis.Direction;
+            Direction3D d2 = aS2.Cylinder().Axis.Direction;
             //
             if (ct == Line && d1.IsNormal(d2, pa))
             {
@@ -540,8 +540,8 @@ internal static partial class Builder_0
         }
         else if (st2 == SurfaceKind.Cone)
         {
-            Direction3D d1 = aS1.Plane().Axis().Direction();
-            Direction3D d2 = aS2.Cone().Axis().Direction();
+            Direction3D d1 = aS1.Plane().Axis.Direction;
+            Direction3D d2 = aS2.Cone().Axis.Direction;
             if (ct == Circle && d1.IsParallel(d2, pa))
             {
                 return bRet;
@@ -653,7 +653,7 @@ internal static partial class Builder_0
         Surface fffil = dStr.Surface(cd.SetOfSurfData()!.Value(i).Surf()).Surface()!;
         Point2D pp = cd.SetOfSurfData()!.Value(i).Interference(jf).PCurveOnSurf()!.Value(p);
         SurfaceAdaptor gs = new(fffil);
-        P = fffil.Value(pp.X(), pp.Y());
+        P = fffil.Value(pp.X, pp.Y);
         Point3D pbid;
         Vector3D vbid;
         switch (gs.GetType())
@@ -661,15 +661,15 @@ internal static partial class Builder_0
             case SurfaceKind.Cylinder:
             {
                 Cylinder cyl = gs.Cylinder();
-                r = cyl.Radius();
-                global::Kerf.Engine.Geometry.ElSLib.D1(pp.X(), pp.Y(), cyl, out pbid, out vbid, out v);
+                r = cyl.Radius;
+                global::Kerf.Engine.Geometry.ElSLib.D1(pp.X, pp.Y, cyl, out pbid, out vbid, out v);
             }
                 break;
             case SurfaceKind.Torus:
             {
                 Torus tor = gs.Torus();
-                r = tor.MinorRadius();
-                global::Kerf.Engine.Geometry.ElSLib.D1(pp.X(), pp.Y(), tor, out pbid, out v, out vbid);
+                r = tor.MinorRadius;
+                global::Kerf.Engine.Geometry.ElSLib.D1(pp.X, pp.Y, tor, out pbid, out v, out vbid);
             }
                 break;
             default:
@@ -739,7 +739,7 @@ internal static partial class Builder_0
             ccc = ccc.WithPosition(circax2);
             ccc = ccc.WithRadius(rad);
             wFirst = 0.0;
-            wLast = dddeb.Angle(ddfin);
+            wLast = dddeb.AngleTo(ddfin);
             return new CircleCurve3D(ccc);
         }
 
@@ -758,13 +758,13 @@ internal static partial class Builder_0
     internal static BezierCurve3D ChFi3d_Spine(in Point3D pd, ref Vector3D vd, in Point3D pf, ref Vector3D vf, double r)
     {
         NCollection_Array1<Point3D> pol = new(1, 4);
-        double fac = 0.5 * Math.Tan((Math.PI - vd.Angle(vf)) * 0.5);
+        double fac = 0.5 * Math.Tan((Math.PI - vd.AngleTo(vf)) * 0.5);
         pol[1] = pd;
         vd = vd.Multiplied(fac * r);
-        pol[2] = pol[2].WithCoord(pd.X() + vd.X(), pd.Y() + vd.Y(), pd.Z() + vd.Z());
+        pol[2] = pol[2].WithCoord(pd.X + vd.X, pd.Y + vd.Y, pd.Z + vd.Z);
         pol[4] = pf;
         vf = vf.Multiplied(fac * r);
-        pol[3] = pol[3].WithCoord(pf.X() + vf.X(), pf.Y() + vf.Y(), pf.Z() + vf.Z());
+        pol[3] = pol[3].WithCoord(pf.X + vf.X, pf.Y + vf.Y, pf.Z + vf.Z);
         return new BezierCurve3D(pol);
     }
 
@@ -807,14 +807,14 @@ internal static partial class Builder_0
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL face");
             }
             orSave1 = cd1.Orientation(jf1);
-            or = orFace1 = face.Orientation();
+            or = orFace1 = face.Orientation;
             orSave2 = cd2.Orientation(jf2);
             Shape shape2 = dStr.Shape(fd2.Index(jf2));
             if (shape2.IsNull)
             {
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
             }
-            orFace2 = shape2.Orientation();
+            orFace2 = shape2.Orientation;
             visavis = true;
             sameside = global::Kerf.Engine.Fillets.ChFi3d.SameSide(or, orSave1, orSave2, orFace1, orFace2);
             // The parameters of the other side are not used for orientation. This would raise problems
@@ -864,14 +864,14 @@ internal static partial class Builder_0
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL face");
             }
             orSave1 = cd1.Orientation(jf1);
-            or = orFace1 = face.Orientation();
+            or = orFace1 = face.Orientation;
             orSave2 = cd2.Orientation(jf2);
             Shape shape2 = dStr.Shape(fd2.Index(jf2));
             if (shape2.IsNull)
             {
                 throw new NullObjectException("ChFi3d_IsInFront : Trying to check orientation of NULL shape");
             }
-            orFace2 = shape2.Orientation();
+            orFace2 = shape2.Orientation;
             visavis = true;
             sameside = global::Kerf.Engine.Fillets.ChFi3d.SameSide(or, orSave1, orSave2, orFace1, orFace2);
             // The parameters of the other side are not used for orientation. This would raise problems
@@ -936,9 +936,9 @@ internal static partial class Builder_0
     /// </summary>
     internal static void ChFi3d_Coefficient(in Vector3D v3d, in Vector3D d1u, in Vector3D d1v, out double du, out double dv)
     {
-        double aa = d1u.SquareMagnitude();
+        double aa = d1u.SquareMagnitude;
         double bb = d1u.Dot(d1v);
-        double cc = d1v.SquareMagnitude();
+        double cc = d1v.SquareMagnitude;
         double dd = d1u.Dot(v3d);
         double ee = d1v.Dot(v3d);
         double delta = aa * cc - bb * bb;

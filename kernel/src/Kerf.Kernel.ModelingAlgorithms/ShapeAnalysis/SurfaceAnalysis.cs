@@ -124,7 +124,7 @@ public class SurfaceAnalysis : Transient
             return;
         }
 
-        _surf.Bounds(out _uf, out _ul, out _vf, out _vl);
+        _surf.ParameterBounds(out _uf, out _ul, out _vf, out _vl);
         _adSur = new SurfaceAdaptor(_surf);
     }
 
@@ -148,7 +148,7 @@ public class SurfaceAnalysis : Transient
         _nbDeg     = -1;
         _uCloseVal = _vCloseVal = -1;
         _gap       = 0.0;
-        _surf.Bounds(out _uf, out _ul, out _vf, out _vl);
+        _surf.ParameterBounds(out _uf, out _ul, out _vf, out _vl);
         _adSur    = new SurfaceAdaptor(_surf);
         _isos     = false;
         _isoBoxes = false;
@@ -200,7 +200,7 @@ public class SurfaceAnalysis : Transient
     public Point3D Value(double u, double v) => _adSur!.Value(u, v);
 
     /// <summary>Returns the point of parameters p2d.</summary>
-    public Point3D Value(in Point2D p2d) => _adSur!.Value(p2d.X(), p2d.Y());
+    public Point3D Value(in Point2D p2d) => _adSur!.Value(p2d.X, p2d.Y);
 
     private void ComputeSingularities()
     {
@@ -223,9 +223,9 @@ public class SurfaceAnalysis : Transient
 
         if (_surf is ConicalSurface conicS)
         {
-            double vApex = -conicS.RefRadius() / Math.Sin(conicS.SemiAngle());
+            double vApex = -conicS.RefRadius / Math.Sin(conicS.SemiAngle);
             _preci[0] = 0;
-            _p3d[0]   = conicS.Apex();
+            _p3d[0]   = conicS.Apex;
             _firstP2d[0] = _firstP2d[0].WithCoord(su1, vApex);
             _lastP2d[0] = _lastP2d[0].WithCoord(su2, vApex);
             _firstPar[0] = su1;
@@ -235,8 +235,8 @@ public class SurfaceAnalysis : Transient
         }
         else if (_surf is ToroidalSurface toroidS)
         {
-            double minorR = toroidS.MinorRadius();
-            double majorR = toroidS.MajorRadius();
+            double minorR = toroidS.MinorRadius;
+            double majorR = toroidS.MajorRadius;
             // szv#4:S4163:12Mar99 warning - possible div by zero
             double ang = Math.Acos(Min(1.0, majorR / minorR));
             _preci[0] = _preci[1] = Max(0.0, majorR - minorR);
@@ -299,10 +299,10 @@ public class SurfaceAnalysis : Transient
             Point3D corner3 = _adSur.Value(su2, sv1);
             Point3D corner4 = _adSur.Value(su2, sv2);
 
-            _preci[0] = Max(corner1.Distance(corner2), Max(_p3d[0].Distance(corner1), _p3d[0].Distance(corner2)));
-            _preci[1] = Max(corner3.Distance(corner4), Max(_p3d[1].Distance(corner3), _p3d[1].Distance(corner4)));
-            _preci[2] = Max(corner1.Distance(corner3), Max(_p3d[2].Distance(corner1), _p3d[2].Distance(corner3)));
-            _preci[3] = Max(corner2.Distance(corner4), Max(_p3d[3].Distance(corner2), _p3d[3].Distance(corner4)));
+            _preci[0] = Max(corner1.DistanceTo(corner2), Max(_p3d[0].DistanceTo(corner1), _p3d[0].DistanceTo(corner2)));
+            _preci[1] = Max(corner3.DistanceTo(corner4), Max(_p3d[1].DistanceTo(corner3), _p3d[1].DistanceTo(corner4)));
+            _preci[2] = Max(corner1.DistanceTo(corner3), Max(_p3d[2].DistanceTo(corner1), _p3d[2].DistanceTo(corner3)));
+            _preci[3] = Max(corner2.DistanceTo(corner4), Max(_p3d[3].DistanceTo(corner2), _p3d[3].DistanceTo(corner4)));
 
             _nbDeg = 4;
         }
@@ -385,7 +385,7 @@ public class SurfaceAnalysis : Transient
 
         for (int i = 0; i < _nbDeg && _preci[i] <= preci; i++)
         {
-            _gap = _p3d[i].Distance(p3d);
+            _gap = _p3d[i].DistanceTo(p3d);
             // rln S4135
             if (_gap <= preci)
             {
@@ -414,7 +414,7 @@ public class SurfaceAnalysis : Transient
         double gapMin = RealLast();
         for (int i = 0; i < _nbDeg && _preci[i] <= preci; i++)
         {
-            _gap = _p3d[i].Distance(p3d);
+            _gap = _p3d[i].DistanceTo(p3d);
             // rln S4135
             if (_gap <= preci)
             {
@@ -459,10 +459,10 @@ public class SurfaceAnalysis : Transient
         double gapMin = RealLast();
         for (int i = 0; i < _nbDeg && _preci[i] <= preci; i++)
         {
-            double gap2 = _p3d[i].SquareDistance(p3d);
+            double gap2 = _p3d[i].SquareDistanceTo(p3d);
             if (gap2 > preci * preci)
             {
-                gap2 = Min(gap2, _p3d[i].SquareDistance(Value(result)));
+                gap2 = Min(gap2, _p3d[i].SquareDistanceTo(Value(result)));
             }
 
             // rln S4135
@@ -481,11 +481,11 @@ public class SurfaceAnalysis : Transient
         _gap = Math.Sqrt(gapMin);
         if (!_uIsoDeg[indMin])
         {
-            result = result.WithX(neighbour.X());
+            result = result.WithX(neighbour.X);
         }
         else
         {
-            result = result.WithY(neighbour.Y());
+            result = result.WithY(neighbour.Y);
         }
 
         return true;
@@ -512,10 +512,10 @@ public class SurfaceAnalysis : Transient
         int    j      = (direct ? 1 : nbrPnt);
         for (int i = 0; i < _nbDeg && _preci[i] <= preci; i++)
         {
-            double gap2 = _p3d[i].SquareDistance(points[j]);
+            double gap2 = _p3d[i].SquareDistanceTo(points[j]);
             if (gap2 > prec2)
             {
-                gap2 = Min(gap2, _p3d[i].SquareDistance(Value(pnt2d[j])));
+                gap2 = Min(gap2, _p3d[i].SquareDistanceTo(Value(pnt2d[j])));
             }
 
             if (gap2 <= prec2 && gapMin > gap2)
@@ -538,7 +538,7 @@ public class SurfaceAnalysis : Transient
         {
             pk = pnt2d[k];
             Point3D p1 = points[k];
-            if (_p3d[indMin].SquareDistance(p1) > prec2 && _p3d[indMin].SquareDistance(Value(pk)) > prec2)
+            if (_p3d[indMin].SquareDistanceTo(p1) > prec2 && _p3d[indMin].SquareDistanceTo(Value(pk)) > prec2)
             {
                 break;
             }
@@ -547,8 +547,8 @@ public class SurfaceAnalysis : Transient
         //: p8 abv 11 Mar 99: PRO7226 #489490: if whole pcurve is degenerate, distribute evenly
         if (k < 1 || k > nbrPnt)
         {
-            double x1 = (_uIsoDeg[indMin] ? pnt2d[1].Y() : pnt2d[1].X());
-            double x2 = (_uIsoDeg[indMin] ? pnt2d[nbrPnt].Y() : pnt2d[nbrPnt].X());
+            double x1 = (_uIsoDeg[indMin] ? pnt2d[1].Y : pnt2d[1].X);
+            double x2 = (_uIsoDeg[indMin] ? pnt2d[nbrPnt].Y : pnt2d[nbrPnt].X);
             for (j = 1; j <= nbrPnt; j++)
             {
                 // szv#4:S4163:12Mar99 warning - possible div by zero
@@ -570,11 +570,11 @@ public class SurfaceAnalysis : Transient
         {
             if (!_uIsoDeg[indMin])
             {
-                pnt2d[j] = pnt2d[j].WithX(pk.X());
+                pnt2d[j] = pnt2d[j].WithX(pk.X);
             }
             else
             {
-                pnt2d[j] = pnt2d[j].WithY(pk.Y());
+                pnt2d[j] = pnt2d[j].WithY(pk.Y);
             }
         }
 
@@ -591,7 +591,7 @@ public class SurfaceAnalysis : Transient
         Point3D p1    = Value(p2d1);
         Point3D p2    = Value(p2d2);
         Point3D pm    = Value(new Point2D(0.5 * (p2d1.XY() + p2d2.XY())));
-        double max3d = Max(p1.Distance(p2), Max(pm.Distance(p1), pm.Distance(p2)));
+        double max3d = Max(p1.DistanceTo(p2), Max(pm.DistanceTo(p1), pm.DistanceTo(p2)));
         if (max3d > tol)
         {
             return false;
@@ -606,8 +606,8 @@ public class SurfaceAnalysis : Transient
             return false;
         }
 
-        double du = Math.Abs(p2d1.X() - p2d2.X()) / ru;
-        double dv = Math.Abs(p2d1.Y() - p2d2.Y()) / rv;
+        double du = Math.Abs(p2d1.X - p2d2.X) / ru;
+        double dv = Math.Abs(p2d1.Y - p2d2.Y) / rv;
         max3d *= ratio;
         return du * du + dv * dv > max3d * max3d;
     }
@@ -731,17 +731,17 @@ public class SurfaceAnalysis : Transient
                 case SurfaceOfExtrusion:
                 { //: c8 abv 03 Mar 98: UKI60094 #753: process Geom_SurfaceOfLinearExtrusion
                     var        extr = (ExtrusionSurface)_surf;
-                    Curve3D crv  = extr.BasisCurve();
-                    double     f    = crv.FirstParameter();
-                    double     l    = crv.LastParameter();
+                    Curve3D crv  = extr.BasisCurve;
+                    double     f    = crv.FirstParameter;
+                    double     l    = crv.LastParameter;
                     //: r3 abv (smh) 30 Mar 99: protect against unexpected signals
                     if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(f) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(l))
                     {
                         Point3D p1 = crv.Value(f);
                         Point3D p2 = crv.Value(l);
-                        _uCloseVal = p1.SquareDistance(p2);
+                        _uCloseVal = p1.SquareDistanceTo(p2);
                         Point3D pm = crv.Value((f + l) / 2.0);
-                        umidVal = p1.SquareDistance(pm);
+                        umidVal = p1.SquareDistanceTo(pm);
                     }
                     else
                     {
@@ -767,28 +767,28 @@ public class SurfaceAnalysis : Transient
                     else if (bs.IsURational ||
                              // #6 rln 20/02/98 ProSTEP ug_exhaust-A.stp entity #18360 (Uclosed BSpline,
                              // but multiplicity of boundary knots != degree + 1)
-                             bs.UMultiplicity(1) != bs.UDegree() + 1 || // #6 //:h4: #6 moved
-                             bs.UMultiplicity(bs.UKnotCount) != bs.UDegree() + 1)
+                             bs.UMultiplicity(1) != bs.UDegree + 1 || // #6 //:h4: #6 moved
+                             bs.UMultiplicity(bs.UKnotCount) != bs.UDegree + 1)
                     { // #6 //:h4
                         int    nbvk = bs.VKnotCount;
                         double v    = bs.VKnot(1);
                         Point3D p1   = surfAdapt.Value(uf, v);
                         Point3D p2   = surfAdapt.Value(ul, v);
-                        _uCloseVal = p1.SquareDistance(p2);
+                        _uCloseVal = p1.SquareDistanceTo(p2);
                         Point3D pm = surfAdapt.Value((uf + ul) / 2.0, v);
-                        umidVal = p1.SquareDistance(pm);
+                        umidVal = p1.SquareDistanceTo(pm);
                         distmin   = _uCloseVal;
                         for (int i = 2; i <= nbvk; i++)
                         {
                             v  = 0.5 * (bs.VKnot(i - 1) + bs.VKnot(i));
                             p1 = bs.Value(uf, v);
                             p2 = bs.Value(ul, v);
-                            double dist = p1.SquareDistance(p2);
+                            double dist = p1.SquareDistanceTo(p2);
                             if (dist > _uCloseVal)
                             {
                                 _uCloseVal = dist;
                                 pm          = bs.Value((uf + ul) / 2.0, v);
-                                umidVal   = p1.SquareDistance(pm);
+                                umidVal   = p1.SquareDistanceTo(pm);
                             }
                             else
                             {
@@ -802,16 +802,16 @@ public class SurfaceAnalysis : Transient
                     else
                     {
                         int nbvp = bs.VPoleCount;
-                        _uCloseVal = bs.Pole(1, 1).SquareDistance(bs.Pole(nbup, 1));
-                        umidVal   = bs.Pole(1, 1).SquareDistance(bs.Pole(nbup / 2 + 1, 1));
+                        _uCloseVal = bs.Pole(1, 1).SquareDistanceTo(bs.Pole(nbup, 1));
+                        umidVal   = bs.Pole(1, 1).SquareDistanceTo(bs.Pole(nbup / 2 + 1, 1));
                         distmin     = _uCloseVal;
                         for (int i = 2; i <= nbvp; i++)
                         {
-                            double dist = bs.Pole(1, i).SquareDistance(bs.Pole(nbup, i));
+                            double dist = bs.Pole(1, i).SquareDistanceTo(bs.Pole(nbup, i));
                             if (dist > _uCloseVal)
                             {
                                 _uCloseVal = dist;
-                                umidVal   = bs.Pole(1, i).SquareDistance(bs.Pole(nbup / 2 + 1, i));
+                                umidVal   = bs.Pole(1, i).SquareDistanceTo(bs.Pole(nbup / 2 + 1, i));
                             }
                             else
                             {
@@ -837,16 +837,16 @@ public class SurfaceAnalysis : Transient
                     else
                     {
                         int nbvp = bz.VPoleCount;
-                        _uCloseVal = bz.Pole(1, 1).SquareDistance(bz.Pole(nbup, 1));
-                        umidVal   = bz.Pole(1, 1).SquareDistance(bz.Pole(nbup / 2 + 1, 1));
+                        _uCloseVal = bz.Pole(1, 1).SquareDistanceTo(bz.Pole(nbup, 1));
+                        umidVal   = bz.Pole(1, 1).SquareDistanceTo(bz.Pole(nbup / 2 + 1, 1));
                         distmin     = _uCloseVal;
                         for (int i = 1; i <= nbvp; i++)
                         {
-                            double dist = bz.Pole(1, i).SquareDistance(bz.Pole(nbup, i));
+                            double dist = bz.Pole(1, i).SquareDistanceTo(bz.Pole(nbup, i));
                             if (dist > _uCloseVal)
                             {
                                 _uCloseVal = dist;
-                                umidVal   = bz.Pole(1, i).SquareDistance(bz.Pole(nbup / 2 + 1, i));
+                                umidVal   = bz.Pole(1, i).SquareDistanceTo(bz.Pole(nbup / 2 + 1, i));
                             }
                             else
                             {
@@ -866,21 +866,21 @@ public class SurfaceAnalysis : Transient
                     int    nbpoints = 101; // can be revised
                     Point3D p1       = surfAdapt.Value(uf, vf);
                     Point3D p2       = surfAdapt.Value(ul, vf);
-                    _uCloseVal = p1.SquareDistance(p2);
+                    _uCloseVal = p1.SquareDistanceTo(p2);
                     Point3D pm = surfAdapt.Value((uf + ul) / 2, vf);
-                    umidVal = p1.SquareDistance(pm);
+                    umidVal = p1.SquareDistanceTo(pm);
                     distmin   = _uCloseVal;
                     for (int i = 1; i < nbpoints; i++)
                     {
                         double vparam = vf + (vl - vf) * i / (nbpoints - 1);
                         p1 = surfAdapt.Value(uf, vparam);
                         p2 = surfAdapt.Value(ul, vparam);
-                        double dist = p1.SquareDistance(p2);
+                        double dist = p1.SquareDistanceTo(p2);
                         if (dist > _uCloseVal)
                         {
                             _uCloseVal = dist;
                             pm          = surfAdapt.Value((uf + ul) / 2, vparam);
-                            umidVal   = p1.SquareDistance(pm);
+                            umidVal   = p1.SquareDistanceTo(pm);
                         }
                         else
                         {
@@ -953,10 +953,10 @@ public class SurfaceAnalysis : Transient
                 case SurfaceOfRevolution:
                 {
                     var        revol = (RevolutionSurface)_surf;
-                    Curve3D crv   = revol.BasisCurve();
-                    Point3D     p1    = crv.Value(crv.FirstParameter());
-                    Point3D     p2    = crv.Value(crv.LastParameter());
-                    _vCloseVal = p1.SquareDistance(p2);
+                    Curve3D crv   = revol.BasisCurve;
+                    Point3D     p1    = crv.Value(crv.FirstParameter);
+                    Point3D     p2    = crv.Value(crv.LastParameter);
+                    _vCloseVal = p1.SquareDistanceTo(p2);
                     break;
                 }
                 case SurfaceKind.BSplineSurface:
@@ -973,28 +973,28 @@ public class SurfaceAnalysis : Transient
                     { // modified by rln on 12/11/97
                         _vCloseVal = RealLast();
                     }
-                    else if (bs.IsVRational || bs.VMultiplicity(1) != bs.VDegree() + 1 || // #6 //:h4
-                             bs.VMultiplicity(bs.VKnotCount) != bs.VDegree() + 1)
+                    else if (bs.IsVRational || bs.VMultiplicity(1) != bs.VDegree + 1 || // #6 //:h4
+                             bs.VMultiplicity(bs.VKnotCount) != bs.VDegree + 1)
                     { // #6 //:h4
                         int    nbuk = bs.UKnotCount;
                         double u    = bs.UKnot(1);
                         Point3D p1   = surfAdapt.Value(u, vf);
                         Point3D p2   = surfAdapt.Value(u, vl);
-                        _vCloseVal = p1.SquareDistance(p2);
+                        _vCloseVal = p1.SquareDistanceTo(p2);
                         Point3D pm = surfAdapt.Value(u, (vf + vl) / 2.0);
-                        vmidVal = p1.SquareDistance(pm);
+                        vmidVal = p1.SquareDistanceTo(pm);
                         distmin  = _vCloseVal;
                         for (int i = 2; i <= nbuk; i++)
                         {
                             u  = 0.5 * (bs.UKnot(i - 1) + bs.UKnot(i));
                             p1 = surfAdapt.Value(u, vf);
                             p2 = surfAdapt.Value(u, vl);
-                            double dist = p1.SquareDistance(p2);
+                            double dist = p1.SquareDistanceTo(p2);
                             if (dist > _vCloseVal)
                             {
                                 _vCloseVal = dist;
                                 pm          = surfAdapt.Value(u, (vf + vl) / 2);
-                                vmidVal    = p1.SquareDistance(pm);
+                                vmidVal    = p1.SquareDistanceTo(pm);
                             }
                             else
                             {
@@ -1008,16 +1008,16 @@ public class SurfaceAnalysis : Transient
                     else
                     {
                         int nbup = bs.UPoleCount;
-                        _vCloseVal = bs.Pole(1, 1).SquareDistance(bs.Pole(1, nbvp));
-                        vmidVal    = bs.Pole(1, 1).SquareDistance(bs.Pole(1, nbvp / 2 + 1));
+                        _vCloseVal = bs.Pole(1, 1).SquareDistanceTo(bs.Pole(1, nbvp));
+                        vmidVal    = bs.Pole(1, 1).SquareDistanceTo(bs.Pole(1, nbvp / 2 + 1));
                         distmin     = _vCloseVal;
                         for (int i = 2; i <= nbup; i++)
                         {
-                            double dist = bs.Pole(i, 1).SquareDistance(bs.Pole(i, nbvp));
+                            double dist = bs.Pole(i, 1).SquareDistanceTo(bs.Pole(i, nbvp));
                             if (dist > _vCloseVal)
                             {
                                 _vCloseVal = dist;
-                                vmidVal    = bs.Pole(i, 1).SquareDistance(bs.Pole(i, nbvp / 2 + 1));
+                                vmidVal    = bs.Pole(i, 1).SquareDistanceTo(bs.Pole(i, nbvp / 2 + 1));
                             }
                             else
                             {
@@ -1043,16 +1043,16 @@ public class SurfaceAnalysis : Transient
                     else
                     {
                         int nbup = bz.UPoleCount;
-                        _vCloseVal = bz.Pole(1, 1).SquareDistance(bz.Pole(1, nbvp));
-                        vmidVal    = bz.Pole(1, 1).SquareDistance(bz.Pole(1, nbvp / 2 + 1));
+                        _vCloseVal = bz.Pole(1, 1).SquareDistanceTo(bz.Pole(1, nbvp));
+                        vmidVal    = bz.Pole(1, 1).SquareDistanceTo(bz.Pole(1, nbvp / 2 + 1));
                         distmin     = _vCloseVal;
                         for (int i = 2; i <= nbup; i++)
                         {
-                            double dist = bz.Pole(i, 1).SquareDistance(bz.Pole(i, nbvp));
+                            double dist = bz.Pole(i, 1).SquareDistanceTo(bz.Pole(i, nbvp));
                             if (dist > _vCloseVal)
                             {
                                 _vCloseVal = dist;
-                                vmidVal    = bz.Pole(i, 1).SquareDistance(bz.Pole(i, nbvp / 2 + 1));
+                                vmidVal    = bz.Pole(i, 1).SquareDistanceTo(bz.Pole(i, nbvp / 2 + 1));
                             }
                             else
                             {
@@ -1073,20 +1073,20 @@ public class SurfaceAnalysis : Transient
                     Point3D p1       = surfAdapt.Value(uf, vf);
                     Point3D p2       = surfAdapt.Value(uf, vl);
                     Point3D pm       = surfAdapt.Value(uf, (vf + vl) / 2);
-                    _vCloseVal = p1.SquareDistance(p2);
-                    vmidVal    = p1.SquareDistance(pm);
+                    _vCloseVal = p1.SquareDistanceTo(p2);
+                    vmidVal    = p1.SquareDistanceTo(pm);
                     distmin     = _vCloseVal;
                     for (int i = 1; i < nbpoints; i++)
                     {
                         double uparam = uf + (ul - uf) * i / (nbpoints - 1);
                         p1 = surfAdapt.Value(uparam, vf);
                         p2 = surfAdapt.Value(uparam, vl);
-                        double dist = p1.SquareDistance(p2);
+                        double dist = p1.SquareDistanceTo(p2);
                         if (dist > _vCloseVal)
                         {
                             _vCloseVal = dist;
                             pm          = surfAdapt.Value(uparam, (vf + vl) / 2);
-                            vmidVal    = p1.SquareDistance(pm);
+                            vmidVal    = p1.SquareDistanceTo(pm);
                         }
                         else
                         {
@@ -1125,7 +1125,7 @@ public class SurfaceAnalysis : Transient
 
         double tol     = global::Kerf.Engine.Foundation.Precision.Confusion();
         double tol2    = tol * tol; //, rs2p=1e10;
-        double u       = p2dPrev.X(), v = p2dPrev.Y();
+        double u       = p2dPrev.X, v = p2dPrev.Y;
         var    rsfirst = new Vector3D(p3D.XYZ() - Value(u, v).XYZ()); // pdn
         for (int i = 0; i < 25; i++)
         {
@@ -1134,7 +1134,7 @@ public class SurfaceAnalysis : Transient
             // normal
             double ru2  = ru * ru, rv2 = rv * rv;
             Vector3D n    = ru ^ rv;
-            double nrm2 = n.SquareMagnitude();
+            double nrm2 = n.SquareMagnitude;
             if (nrm2 < 1e-10 || global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(nrm2))
             {
                 break; // n == 0, use standard
@@ -1170,8 +1170,8 @@ public class SurfaceAnalysis : Transient
             }
 
             // pdn PRO10109 4517: protect against wrong result
-            double rs2 = rs.SquareMagnitude();
-            if (rs2 > rsfirst.SquareMagnitude())
+            double rs2 = rs.SquareMagnitude;
+            if (rs2 > rsfirst.SquareMagnitude)
             {
                 break;
             }
@@ -1221,7 +1221,7 @@ public class SurfaceAnalysis : Transient
                         for (int idx = minIndex; idx <= maxIndex; ++idx)
                         {
                             double knot = bSpline.UKnot(idx);
-                            if (Math.Abs(knot - p2dPrev.X()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (Math.Abs(knot - p2dPrev.X) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 return ValueOfUV(p3D, preci);
                             }
@@ -1236,7 +1236,7 @@ public class SurfaceAnalysis : Transient
                         for (int idx = minIndex; idx <= maxIndex; ++idx)
                         {
                             double knot = bSpline.VKnot(idx);
-                            if (Math.Abs(knot - p2dPrev.Y()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (Math.Abs(knot - p2dPrev.Y) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 return ValueOfUV(p3D, preci);
                             }
@@ -1248,11 +1248,11 @@ public class SurfaceAnalysis : Transient
                 int      res = SurfaceNewton(p2dPrev, p3D, preci, ref sol);
                 if (res != 0)
                 {
-                    double gap = p3D.Distance(Value(sol));
+                    double gap = p3D.DistanceTo(Value(sol));
                     if (res == 2 || //: q6 abv 19 Mar 99: protect against strange attractors
                         (maxpreci > 0.0 && gap - maxpreci > global::Kerf.Engine.Foundation.Precision.Confusion()))
                     { //: q1: check with maxpreci
-                        double u = sol.X(), v = sol.Y();
+                        double u = sol.X, v = sol.Y;
                         _gap = UVFromIso(p3D, preci, ref u, ref v);
                         if (gap >= _gap)
                         {
@@ -1409,7 +1409,7 @@ public class SurfaceAnalysis : Transient
                             // if project point3D on SurfaceOfRevolution Extreme recompute 2d point, but
                             // returns an old distance from 3d to solution :-(
                             Point3D checkPnt = surfAdapt.Value(s, t);
-                            dist2Min = p3D.SquareDistance(checkPnt);
+                            dist2Min = p3D.SquareDistanceTo(checkPnt);
                             // end of WORKAROUND
                             double disSurf = Math.Sqrt(dist2Min); //, disCurv =1.e10;
 
@@ -1423,28 +1423,28 @@ public class SurfaceAnalysis : Transient
                                 var pp = new Point2D(uu, vv);
                                 if (SurfaceNewton(pp, p3D, preci, ref pp) != 0)
                                 { //: q2 abv 16 Mar 99: PRO7226 #412920
-                                    double dist = p3D.Distance(Value(pp));
+                                    double dist = p3D.DistanceTo(Value(pp));
                                     if (dist < disSurf)
                                     {
                                         disSurf = dist;
-                                        s       = uu = pp.X();
-                                        t       = vv = pp.Y();
+                                        s       = uu = pp.X;
+                                        t       = vv = pp.Y;
                                     }
                                 }
 
                                 if (disSurf < 10 * preci)
                                 {
-                                    if (_surf!.Continuity() != C0)
+                                    if (_surf!.Continuity != C0)
                                     {
                                         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
                                         surfAdapt.D1(uu, vv, out Point3D pnt, out Vector3D d1U, out Vector3D d1V);
                                         Vector3D b    = d1U.Crossed(d1V);
                                         var    a    = new Vector3D(pnt, p3D);
                                         double ab   = a.Dot(b);
-                                        double nrm2 = b.SquareMagnitude();
+                                        double nrm2 = b.SquareMagnitude;
                                         if (nrm2 > 1e-10)
                                         {
-                                            double dist = a.SquareMagnitude() - (ab * ab) / nrm2;
+                                            double dist = a.SquareMagnitude - (ab * ab) / nrm2;
                                             possLockal = (dist < tol * tol);
                                         }
                                     }
@@ -1497,7 +1497,7 @@ public class SurfaceAnalysis : Transient
         {
             if (_gap <= 0)
             {
-                _gap = p3D.Distance(surfAdapt.Value(s, t));
+                _gap = p3D.DistanceTo(surfAdapt.Value(s, t));
             }
         }
         else
@@ -1529,7 +1529,7 @@ public class SurfaceAnalysis : Transient
         uu = u;
         vv = v;
         Point3D depart = _adSur!.Value(u, v);
-        theMin = depart.Distance(p3d);
+        theMin = depart.DistanceTo(p3d);
 
         if (theMin < preci / 10)
         {
@@ -1604,8 +1604,8 @@ public class SurfaceAnalysis : Transient
                             continue;
                         }
 
-                        cf = iso.FirstParameter();
-                        cl = iso.LastParameter();
+                        cf = iso.FirstParameter;
+                        cl = iso.LastParameter;
 
                         RestrictBounds(ref cf, ref cl);
                         dist = new CurveAnalysis().Project(iso, p3d, preci, out pntres, out other, cf, cl, false);
@@ -1702,8 +1702,8 @@ public class SurfaceAnalysis : Transient
 
                     if (iso is not null)
                     {
-                        cf = iso.FirstParameter();
-                        cl = iso.LastParameter();
+                        cf = iso.FirstParameter;
+                        cl = iso.LastParameter;
                         RestrictBounds(ref cf, ref cl);
                         dist = new CurveAnalysis().Project(iso, p3d, preci, out pntres, out other, cf, cl, false);
                         if (dist < theMin)
@@ -1734,8 +1734,8 @@ public class SurfaceAnalysis : Transient
 
                     if (iso is not null)
                     {
-                        cf = iso.FirstParameter();
-                        cl = iso.LastParameter();
+                        cf = iso.FirstParameter;
+                        cl = iso.LastParameter;
                         RestrictBounds(ref cf, ref cl);
                         dist = new CurveAnalysis().Project(iso, p3d, preci, out pntres, out other, cf, cl, false);
                         if (dist < theMin)

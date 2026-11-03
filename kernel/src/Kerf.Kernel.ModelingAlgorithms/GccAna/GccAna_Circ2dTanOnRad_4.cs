@@ -56,11 +56,11 @@ public sealed partial class AnalyticCirc2dTanOnRad
         int      nbsol = 0;
         int      sign  = 0;
         Line2D l1    = qualified1.Qualified();
-        Point2D origin1 = l1.Location();
-        Direction2D dir1 = l1.Direction();
-        Direction2D normL1 = new(-dir1.Y(), dir1.X());
-        double   dist1 = l1.Distance(onCirc.Location()) - onCirc.Radius();
-        double   dist2 = l1.Distance(onCirc.Location()) + onCirc.Radius();
+        Point2D origin1 = l1.Location;
+        Direction2D dir1 = l1.Direction;
+        Direction2D normL1 = new(-dir1.Y, dir1.X);
+        double   dist1 = l1.DistanceTo(onCirc.Location) - onCirc.Radius;
+        double   dist2 = l1.DistanceTo(onCirc.Location) + onCirc.Radius;
 
         //=========================================================================
         //  Processing.                                                           +
@@ -113,7 +113,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                 {
                     sign = -sign;
                     Line2D l = new(
-                        new Point2D(origin1.X() - sign * radius * dir1.Y(), origin1.Y() + sign * radius * dir1.X()),
+                        new Point2D(origin1.X - sign * radius * dir1.Y, origin1.Y + sign * radius * dir1.X),
                         dir1);
                     AnalyticIntersection intp = new(l, onCirc);
                     if (intp.IsDone)
@@ -141,9 +141,9 @@ public sealed partial class AnalyticCirc2dTanOnRad
                                 {
                                     _qualifier1[_nbrSol] = Qualifier.Enclosed;
                                 }
-                                _pntcen3[_nbrSol]   = _cirsol[_nbrSol].Location();
+                                _pntcen3[_nbrSol]   = _cirsol[_nbrSol].Location;
                                 _pnttg1sol[_nbrSol] = new Point2D(
-                                    _pntcen3[_nbrSol].XY() + new Xy(sign * radius * dir1.Y(), -sign * radius * dir1.X()));
+                                    _pntcen3[_nbrSol].XY() + new Xy(sign * radius * dir1.Y, -sign * radius * dir1.X));
                                 _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);
                                 _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                                 _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen3[_nbrSol]);

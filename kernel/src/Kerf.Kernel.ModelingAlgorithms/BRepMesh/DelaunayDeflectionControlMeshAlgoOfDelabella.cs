@@ -214,7 +214,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
         for (int i = 0; i < 3; ++i)
         {
             links[i] = new Vector3D(nodesInfo[(i + 1) % 3].Point - nodesInfo[i].Point);
-            if (links[i].SquareMagnitude() < minimalSqLength3d)
+            if (links[i].SquareMagnitude < minimalSqLength3d)
             {
                 return false;
             }
@@ -237,7 +237,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
     private static bool ComputeNormal(in Vector3D link1, in Vector3D link2, ref Vector3D normal)
     {
         Vector3D aNormal = link1 ^ link2;
-        if (aNormal.SquareMagnitude() > Constants.Resolution())
+        if (aNormal.SquareMagnitude > Constants.Resolution())
         {
             normal = aNormal.Normalized();
             return true;
@@ -312,7 +312,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
         if ((global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo1.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref norm1) == 0)
             && (global::Kerf.Engine.Geometry.Library.GeomLib.NormEstim(surf, new Point2D(nodeInfo2.Point2d), global::Kerf.Engine.Foundation.Precision.Confusion(), ref norm2) == 0))
         {
-            double angle = norm1.Angle(norm2);
+            double angle = norm1.AngleTo(norm2);
             if (angle > GetParameters().AngleInterior)
             {
                 return false;
@@ -386,7 +386,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
                     MeshVertex vertex = GetStructure().GetNode(nodes[i]);
                     Point3D point = GetNodesMap()[vertex.Location3d()];
 
-                    if (pnt3d.SquareDistance(point) < _sqMinSize)
+                    if (pnt3d.SquareDistanceTo(point) < _sqMinSize)
                     {
                         return true;
                     }

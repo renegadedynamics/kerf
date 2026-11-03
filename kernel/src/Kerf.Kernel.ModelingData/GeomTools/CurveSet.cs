@@ -79,41 +79,41 @@ public class CurveSet
 
     private static void Print(in Point3D p, TextWriter os, bool compact)
     {
-        Out(os, p.X());
+        Out(os, p.X);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, p.Y());
+        Out(os, p.Y);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, p.Z());
+        Out(os, p.Z);
         os.Write(" ");
     }
 
     private static void Print(in Direction3D d, TextWriter os, bool compact)
     {
-        Out(os, d.X());
+        Out(os, d.X);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, d.Y());
+        Out(os, d.Y);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, d.Z());
+        Out(os, d.Z);
         os.Write(" ");
     }
 
@@ -129,19 +129,19 @@ public class CurveSet
             os.Write("Line");
         }
 
-        Line3D c = l.Lin();
+        Line3D c = l.Line;
         if (!compact)
         {
             os.Write("\n  Origin :");
         }
 
-        Print(c.Location(), os, compact);
+        Print(c.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(c.Direction(), os, compact);
+        Print(c.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n");
@@ -162,37 +162,37 @@ public class CurveSet
             os.Write("Circle");
         }
 
-        Circle3D c = cc.Circ();
+        Circle3D c = cc.Circle;
         if (!compact)
         {
             os.Write("\n  Center :");
         }
 
-        Print(c.Location(), os, compact);
+        Print(c.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(c.Axis().Direction(), os, compact);
+        Print(c.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(c.XAxis().Direction(), os, compact);
+        Print(c.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(c.YAxis().Direction(), os, compact);
+        Print(c.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radius :");
         }
 
-        Out(os, c.Radius());
+        Out(os, c.Radius);
         if (!compact)
         {
             os.Write("\n");
@@ -213,44 +213,44 @@ public class CurveSet
             os.Write("Ellipse");
         }
 
-        Ellipse3D c = e.Elips();
+        Ellipse3D c = e.Ellipse;
         if (!compact)
         {
             os.Write("\n  Center :");
         }
 
-        Print(c.Location(), os, compact);
+        Print(c.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(c.Axis().Direction(), os, compact);
+        Print(c.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(c.XAxis().Direction(), os, compact);
+        Print(c.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(c.YAxis().Direction(), os, compact);
+        Print(c.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radii  :");
         }
 
-        Out(os, c.MajorRadius());
+        Out(os, c.MajorRadius);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, c.MinorRadius());
+        Out(os, c.MinorRadius);
         if (!compact)
         {
             os.Write("\n");
@@ -271,37 +271,37 @@ public class CurveSet
             os.Write("Parabola");
         }
 
-        Parabola3D c = p.Parab();
+        Parabola3D c = p.Parabola;
         if (!compact)
         {
             os.Write("\n  Center :");
         }
 
-        Print(c.Location(), os, compact);
+        Print(c.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(c.Axis().Direction(), os, compact);
+        Print(c.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(c.XAxis().Direction(), os, compact);
+        Print(c.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(c.YAxis().Direction(), os, compact);
+        Print(c.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Focal  :");
         }
 
-        Out(os, c.Focal());
+        Out(os, c.Focal);
         if (!compact)
         {
             os.Write("\n");
@@ -322,44 +322,44 @@ public class CurveSet
             os.Write("Hyperbola");
         }
 
-        Hyperbola3D c = h.Hypr();
+        Hyperbola3D c = h.Hyperbola;
         if (!compact)
         {
             os.Write("\n  Center :");
         }
 
-        Print(c.Location(), os, compact);
+        Print(c.Location, os, compact);
         if (!compact)
         {
             os.Write("\n  Axis   :");
         }
 
-        Print(c.Axis().Direction(), os, compact);
+        Print(c.Axis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  XAxis  :");
         }
 
-        Print(c.XAxis().Direction(), os, compact);
+        Print(c.XAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  YAxis  :");
         }
 
-        Print(c.YAxis().Direction(), os, compact);
+        Print(c.YAxis.Direction, os, compact);
         if (!compact)
         {
             os.Write("\n  Radii  :");
         }
 
-        Out(os, c.MajorRadius());
+        Out(os, c.MajorRadius);
         if (!compact)
         {
             os.Write(",");
         }
 
         os.Write(" ");
-        Out(os, c.MinorRadius());
+        Out(os, c.MinorRadius);
         if (!compact)
         {
             os.Write("\n");
@@ -395,7 +395,7 @@ public class CurveSet
         }
 
         // poles and weights
-        int i, degree = b.Degree();
+        int i, degree = b.Degree;
         if (!compact)
         {
             os.Write("\n  Degree :");
@@ -475,7 +475,7 @@ public class CurveSet
 
         // poles and weights
         int i, degree, nbpoles, nbknots;
-        degree = b.Degree();
+        degree = b.Degree;
         nbpoles = b.PoleCount;
         nbknots = b.KnotCount;
         if (!compact)
@@ -580,16 +580,16 @@ public class CurveSet
             os.Write("Parameters : ");
         }
 
-        Out(os, c.FirstParameter());
+        Out(os, c.FirstParameter);
         os.Write(" ");
-        Out(os, c.LastParameter());
+        Out(os, c.LastParameter);
         os.Write("\n");
         if (!compact)
         {
             os.Write("Basis curve :\n");
         }
 
-        PrintCurve(c.BasisCurve(), os, compact);
+        PrintCurve(c.BasisCurve, os, compact);
     }
 
     private static void Print(OffsetCurve3D c, TextWriter os, bool compact)
@@ -609,21 +609,21 @@ public class CurveSet
             os.Write("Offset : ");
         }
 
-        Out(os, c.Offset());
+        Out(os, c.Offset);
         os.Write("\n");
         if (!compact)
         {
             os.Write("Direction : ");
         }
 
-        Print(c.Direction(), os, compact);
+        Print(c.Direction, os, compact);
         os.Write("\n");
         if (!compact)
         {
             os.Write("Basis curve :\n");
         }
 
-        PrintCurve(c.BasisCurve(), os, compact);
+        PrintCurve(c.BasisCurve, os, compact);
     }
 
     /// <summary>

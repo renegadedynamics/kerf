@@ -197,7 +197,7 @@ public static class BndLib
         //   - If V.X() < 0, x-coordinate -> +Inf, so open Xmax
         if (v.IsParallel(Constants.DX(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.X() > 0.0)
+            if (v.X > 0.0)
             {
                 b.OpenXmin();
             }
@@ -208,7 +208,7 @@ public static class BndLib
         }
         else if (v.IsParallel(Constants.DY(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.Y() > 0.0)
+            if (v.Y > 0.0)
             {
                 b.OpenYmin();
             }
@@ -219,7 +219,7 @@ public static class BndLib
         }
         else if (v.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.Z() > 0.0)
+            if (v.Z > 0.0)
             {
                 b.OpenZmin();
             }
@@ -244,7 +244,7 @@ public static class BndLib
         //   - If V.X() < 0, x-coordinate -> -Inf, so open Xmin
         if (v.IsParallel(Constants.DX(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.X() > 0.0)
+            if (v.X > 0.0)
             {
                 b.OpenXmax();
             }
@@ -255,7 +255,7 @@ public static class BndLib
         }
         else if (v.IsParallel(Constants.DY(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.Y() > 0.0)
+            if (v.Y > 0.0)
             {
                 b.OpenYmax();
             }
@@ -266,7 +266,7 @@ public static class BndLib
         }
         else if (v.IsParallel(Constants.DZ(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.Z() > 0.0)
+            if (v.Z > 0.0)
             {
                 b.OpenZmax();
             }
@@ -319,7 +319,7 @@ public static class BndLib
         //   - If V.X() < 0, x-coordinate -> +Inf, so open Xmax
         if (v.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.X() > 0.0)
+            if (v.X > 0.0)
             {
                 b.OpenXmin();
             }
@@ -330,7 +330,7 @@ public static class BndLib
         }
         else if (v.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.Y() > 0.0)
+            if (v.Y > 0.0)
             {
                 b.OpenYmin();
             }
@@ -354,7 +354,7 @@ public static class BndLib
         //   - If V.X() < 0, x-coordinate -> -Inf, so open Xmin
         if (v.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.X() > 0.0)
+            if (v.X > 0.0)
             {
                 b.OpenXmax();
             }
@@ -365,7 +365,7 @@ public static class BndLib
         }
         else if (v.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
         {
-            if (v.Y() > 0.0)
+            if (v.Y > 0.0)
             {
                 b.OpenYmax();
             }
@@ -417,12 +417,12 @@ public static class BndLib
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2))
             {
-                OpenMinMax(l.Direction(), ref b);
+                OpenMinMax(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, l));
             }
             else
             {
-                OpenMin(l.Direction(), ref b);
+                OpenMin(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, l));
             }
         }
@@ -430,7 +430,7 @@ public static class BndLib
         {
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(p2))
             {
-                OpenMinMax(l.Direction(), ref b);
+                OpenMinMax(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, l));
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2))
@@ -439,7 +439,7 @@ public static class BndLib
             }
             else
             {
-                OpenMax(l.Direction(), ref b);
+                OpenMax(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, l));
             }
         }
@@ -448,11 +448,11 @@ public static class BndLib
             b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p1, l));
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(p2))
             {
-                OpenMin(l.Direction(), ref b);
+                OpenMin(l.Direction, ref b);
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2))
             {
-                OpenMax(l.Direction(), ref b);
+                OpenMax(l.Direction, ref b);
             }
             else
             {
@@ -473,12 +473,12 @@ public static class BndLib
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2))
             {
-                OpenMinMax(l.Direction(), ref b);
+                OpenMinMax(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, l));
             }
             else
             {
-                OpenMin(l.Direction(), ref b);
+                OpenMin(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, l));
             }
         }
@@ -486,7 +486,7 @@ public static class BndLib
         {
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(p2))
             {
-                OpenMinMax(l.Direction(), ref b);
+                OpenMinMax(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, l));
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2))
@@ -495,7 +495,7 @@ public static class BndLib
             }
             else
             {
-                OpenMax(l.Direction(), ref b);
+                OpenMax(l.Direction, ref b);
                 b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p2, l));
             }
         }
@@ -504,11 +504,11 @@ public static class BndLib
             b.Add(global::Kerf.Engine.Geometry.ElCLib.Value(p1, l));
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(p2))
             {
-                OpenMin(l.Direction(), ref b);
+                OpenMin(l.Direction, ref b);
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(p2))
             {
-                OpenMax(l.Direction(), ref b);
+                OpenMax(l.Direction, ref b);
             }
             else
             {
@@ -541,11 +541,11 @@ public static class BndLib
             double tol = Epsilon(1.0);
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, tol, ref utrim1, ref utrim2);
         }
-        double r = c.Radius();
-        Xyz o = c.Location().XYZ();
-        Xyz xd = c.XAxis().Direction().XYZ();
-        Xyz yd = c.YAxis().Direction().XYZ();
-        Frame3D pos = c.Position();
+        double r = c.Radius;
+        Xyz o = c.Location.XYZ();
+        Xyz xd = c.XAxis.Direction.XYZ();
+        Xyz yd = c.YAxis.Direction.XYZ();
+        Frame3D pos = c.Position;
         //
         double tt;
         double xmin, xmax, txmin, txmax;
@@ -679,10 +679,10 @@ public static class BndLib
     /// <summary>Adds the whole 2D circle C to B, then enlarges B by Tol.</summary>
     public static void Add(in Circle2D c, double tol, ref Box2d b)
     {
-        double r = c.Radius();
-        Xy o = c.Location().XY();
-        Xy xd = c.XAxis().Direction().XY();
-        Xy yd = c.YAxis().Direction().XY();
+        double r = c.Radius;
+        Xy o = c.Location.XY();
+        Xy xd = c.XAxis.Direction.XY();
+        Xy yd = c.YAxis.Direction.XY();
         b.Add(new Point2D(o - r * xd - r * yd));
         b.Add(new Point2D(o - r * xd + r * yd));
         b.Add(new Point2D(o + r * xd - r * yd));
@@ -695,11 +695,11 @@ public static class BndLib
     {
         Compute(p1,
                 p2,
-                c.Radius(),
-                c.Radius(),
-                new Point2D(c.XAxis().Direction().XY()),
-                new Point2D(c.YAxis().Direction().XY()),
-                c.Location(),
+                c.Radius,
+                c.Radius,
+                new Point2D(c.XAxis.Direction.XY()),
+                new Point2D(c.YAxis.Direction.XY()),
+                c.Location,
                 ref b);
         b.Enlarge(tol);
     }
@@ -727,12 +727,12 @@ public static class BndLib
             double tol = Epsilon(1.0);
             global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2.0 * M_PI, tol, ref utrim1, ref utrim2);
         }
-        double majR = c.MajorRadius();
-        double minR = c.MinorRadius();
-        Xyz o = c.Location().XYZ();
-        Xyz xd = c.XAxis().Direction().XYZ();
-        Xyz yd = c.YAxis().Direction().XYZ();
-        Frame3D pos = c.Position();
+        double majR = c.MajorRadius;
+        double minR = c.MinorRadius;
+        Xyz o = c.Location.XYZ();
+        Xyz xd = c.XAxis.Direction.XYZ();
+        Xyz yd = c.YAxis.Direction.XYZ();
+        Frame3D pos = c.Position;
         //
         double tt;
         double xmin, xmax, txmin, txmax;
@@ -866,11 +866,11 @@ public static class BndLib
     /// <summary>Adds the whole 2D ellipse C to B, then enlarges B by Tol.</summary>
     public static void Add(in Ellipse2D c, double tol, ref Box2d b)
     {
-        double ra = c.MajorRadius();
-        double rb = c.MinorRadius();
-        Xy xd = c.XAxis().Direction().XY();
-        Xy yd = c.YAxis().Direction().XY();
-        Xy o = c.Location().XY();
+        double ra = c.MajorRadius;
+        double rb = c.MinorRadius;
+        Xy xd = c.XAxis.Direction.XY();
+        Xy yd = c.YAxis.Direction.XY();
+        Xy o = c.Location.XY();
         b.Add(new Point2D(o + ra * xd + rb * yd));
         b.Add(new Point2D(o - ra * xd + rb * yd));
         b.Add(new Point2D(o - ra * xd - rb * yd));
@@ -883,11 +883,11 @@ public static class BndLib
     {
         Compute(p1,
                 p2,
-                c.MajorRadius(),
-                c.MinorRadius(),
-                new Point2D(c.XAxis().Direction().XY()),
-                new Point2D(c.YAxis().Direction().XY()),
-                c.Location(),
+                c.MajorRadius,
+                c.MinorRadius,
+                new Point2D(c.XAxis.Direction.XY()),
+                new Point2D(c.YAxis.Direction.XY()),
+                c.Location,
                 ref b);
         b.Enlarge(tol);
     }
@@ -1162,10 +1162,10 @@ public static class BndLib
 
     private static void ComputeCyl(in Cylinder cyl, double uMin, double uMax, double vMin, double vMax, ref Box b)
     {
-        Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), vMin);
+        Circle3D c = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position, cyl.Radius, vMin);
         Add(c, uMin, uMax, 0.0, ref b);
         //
-        Vector3D t = (vMax - vMin) * new Vector3D(cyl.Axis().Direction());
+        Vector3D t = (vMax - vMin) * new Vector3D(cyl.Axis.Direction);
         c = c.Translated(t);
         Add(c, uMin, uMax, 0.0, ref b);
     }
@@ -1178,7 +1178,7 @@ public static class BndLib
     public static void Add(in Cylinder s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
     {
         // Cache axis direction for infinite cases.
-        Direction3D dir = s.Axis().Direction();
+        Direction3D dir = s.Axis.Direction;
 
         if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMin))
         {
@@ -1241,27 +1241,27 @@ public static class BndLib
 
     private static void ComputeCone(in Cone cone, double uMin, double uMax, double vMin, double vMax, ref Box b)
     {
-        CoordinateSystem pos = cone.Position();
-        double r = cone.RefRadius();
-        double sang = cone.SemiAngle();
+        CoordinateSystem pos = cone.Position;
+        double r = cone.RefRadius;
+        double sang = cone.SemiAngle;
         Circle3D c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(pos, r, sang, vMin);
-        if (c.Radius() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (c.Radius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Add(c, uMin, uMax, 0.0, ref b);
         }
         else
         {
-            b.Add(c.Location());
+            b.Add(c.Location);
         }
         //
         c = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(pos, r, sang, vMax);
-        if (c.Radius() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (c.Radius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Add(c, uMin, uMax, 0.0, ref b);
         }
         else
         {
-            b.Add(c.Location());
+            b.Add(c.Location);
         }
     }
 
@@ -1273,7 +1273,7 @@ public static class BndLib
     public static void Add(in Cone s, double uMin, double uMax, double vMin, double vMax, double tol, ref Box b)
     {
         // Cache axis direction for infinite cases.
-        Direction3D d = s.Axis().Direction();
+        Direction3D d = s.Axis.Direction;
 
         if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMin))
         {
@@ -1336,15 +1336,15 @@ public static class BndLib
 
     private static void ComputeSphere(in Sphere sphere, double uMin, double uMax, double vMin, double vMax, ref Box b)
     {
-        Point3D p = sphere.Location();
-        double r = sphere.Radius();
+        Point3D p = sphere.Location;
+        double r = sphere.Radius;
         double xmin, ymin, zmin, xmax, ymax, zmax;
-        xmin = p.X() - r;
-        xmax = p.X() + r;
-        ymin = p.Y() - r;
-        ymax = p.Y() + r;
-        zmin = p.Z() - r;
-        zmax = p.Z() + r;
+        xmin = p.X - r;
+        xmax = p.X + r;
+        ymin = p.Y - r;
+        ymax = p.Y + r;
+        zmin = p.Z - r;
+        zmax = p.Z + r;
 
         double uper = 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
         double vper = M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -1357,7 +1357,7 @@ public static class BndLib
         {
             double u, v;
             double umax = uMin + 2.0 * M_PI;
-            CoordinateSystem pos = sphere.Position();
+            CoordinateSystem pos = sphere.Position;
             Point3D pExt = p;
             pExt = pExt.WithX(xmin);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
@@ -1374,7 +1374,7 @@ public static class BndLib
             {
                 b.Add(pExt);
             }
-            pExt = pExt.WithX(p.X());
+            pExt = pExt.WithX(p.X);
             //
             pExt = pExt.WithY(ymin);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
@@ -1391,7 +1391,7 @@ public static class BndLib
             {
                 b.Add(pExt);
             }
-            pExt = pExt.WithY(p.Y());
+            pExt = pExt.WithY(p.Y);
             //
             pExt = pExt.WithZ(zmin);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
@@ -1427,16 +1427,16 @@ public static class BndLib
     private static void ComputeDegeneratedTorus(in Torus torus, double uMin, double uMax,
                                                 double vMin, double vMax, ref Box b)
     {
-        Point3D p = torus.Location();
-        double ra = torus.MajorRadius();
-        double ri = torus.MinorRadius();
+        Point3D p = torus.Location;
+        double ra = torus.MajorRadius;
+        double ri = torus.MinorRadius;
         double xmin, ymin, zmin, xmax, ymax, zmax;
-        xmin = p.X() - ra - ri;
-        xmax = p.X() + ra + ri;
-        ymin = p.Y() - ra - ri;
-        ymax = p.Y() + ra + ri;
-        zmin = p.Z() - ri;
-        zmax = p.Z() + ri;
+        xmin = p.X - ra - ri;
+        xmax = p.X + ra + ri;
+        ymin = p.Y - ra - ri;
+        ymax = p.Y + ra + ri;
+        zmin = p.Z - ri;
+        zmax = p.Z + ri;
 
         double phi = Math.Acos(-ra / ri);
 
@@ -1451,7 +1451,7 @@ public static class BndLib
 
         double u, v;
         double umax = uMin + 2.0 * M_PI;
-        CoordinateSystem pos = torus.Position();
+        CoordinateSystem pos = torus.Position;
         Point3D pExt = p;
         pExt = pExt.WithX(xmin);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
@@ -1468,7 +1468,7 @@ public static class BndLib
         {
             b.Add(pExt);
         }
-        pExt = pExt.WithX(p.X());
+        pExt = pExt.WithX(p.X);
         //
         pExt = pExt.WithY(ymin);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
@@ -1485,7 +1485,7 @@ public static class BndLib
         {
             b.Add(pExt);
         }
-        pExt = pExt.WithY(p.Y());
+        pExt = pExt.WithY(p.Y);
         //
         pExt = pExt.WithZ(zmin);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
@@ -1529,15 +1529,15 @@ public static class BndLib
     /// <summary>Adds the whole sphere S to B, then enlarges B by Tol.</summary>
     public static void Add(in Sphere s, double tol, ref Box b)
     {
-        Point3D p = s.Location();
-        double r = s.Radius();
+        Point3D p = s.Location;
+        double r = s.Radius;
         double xmin, ymin, zmin, xmax, ymax, zmax;
-        xmin = p.X() - r;
-        xmax = p.X() + r;
-        ymin = p.Y() - r;
-        ymax = p.Y() + r;
-        zmin = p.Z() - r;
-        zmax = p.Z() + r;
+        xmin = p.X - r;
+        xmax = p.X + r;
+        ymin = p.Y - r;
+        ymax = p.Y + r;
+        zmin = p.Z - r;
+        zmax = p.Z + r;
         b.Update(xmin, ymin, zmin, xmax, ymax, zmax);
         b.Enlarge(tol);
     }
@@ -1562,8 +1562,8 @@ public static class BndLib
         }
         fi2++;
 
-        double ra = s.MajorRadius();
-        double ri = s.MinorRadius();
+        double ra = s.MajorRadius;
+        double ri = s.MinorRadius;
 
         if (fi2 < fi1)
         {
@@ -1578,10 +1578,10 @@ public static class BndLib
         }
 
         // Cache direction vectors.
-        Xyz zDir = s.Axis().Direction().XYZ();
-        Xyz locXYZ = s.Location().XYZ();
-        Point3D xd = new(s.XAxis().Direction().XYZ());
-        Point3D yd = new(s.YAxis().Direction().XYZ());
+        Xyz zDir = s.Axis.Direction.XYZ();
+        Xyz locXYZ = s.Location.XYZ();
+        Point3D xd = new(s.XAxis.Direction.XYZ());
+        Point3D yd = new(s.YAxis.Direction.XYZ());
 
         // Add torus cross-section points by index (0-7), at 45-degree intervals: radius Ra + Ri * aRadiusMult[i],
         // centre offset Ri * aZMult[i] along the axis (the multipliers are XMult and YMult).
@@ -1602,13 +1602,13 @@ public static class BndLib
     /// <summary>Adds the whole torus S to B (the 8 corners of its box), then enlarges B by Tol.</summary>
     public static void Add(in Torus s, double tol, ref Box b)
     {
-        double rMa = s.MajorRadius();
-        double rmi = s.MinorRadius();
+        double rMa = s.MajorRadius;
+        double rmi = s.MinorRadius;
         double r = rMa + rmi;
-        Xyz o = s.Location().XYZ();
-        Xyz xd = s.XAxis().Direction().XYZ();
-        Xyz yd = s.YAxis().Direction().XYZ();
-        Xyz zd = s.Axis().Direction().XYZ();
+        Xyz o = s.Location.XYZ();
+        Xyz xd = s.XAxis.Direction.XYZ();
+        Xyz yd = s.YAxis.Direction.XYZ();
+        Xyz zd = s.Axis.Direction.XYZ();
         // Precompute scaled direction vectors.
         Xyz rXd = r * xd;
         Xyz rYd = r * yd;
@@ -1649,11 +1649,11 @@ public static class BndLib
         eps = Epsilon(1.0);
         iErr = 1;
         //
-        Frame3D pos = aHypr.Position();
-        Xyz xDir = pos.XDirection().XYZ();
-        Xyz yDir = pos.YDirection().XYZ();
-        rmaj = aHypr.MajorRadius();
-        rmin = aHypr.MinorRadius();
+        Frame3D pos = aHypr.Position;
+        Xyz xDir = pos.XDirection.XYZ();
+        Xyz yDir = pos.YDirection.XYZ();
+        rmaj = aHypr.MajorRadius;
+        rmin = aHypr.MinorRadius;
         //
         // Find extrema for each coordinate (X, Y, Z) independently.
         // Each coordinate can have its extremum at a different parameter value.

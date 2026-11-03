@@ -33,7 +33,7 @@ public class LocationSet
     /// </summary>
     public const int MaxLocationItems = 1000;
 
-    private readonly IndexedSet<Placement> _map = new();
+    private readonly IndexedSet<Placement> _map = new(PlacementIdentityComparer.Instance);
 
     /// <summary>Returns an empty set of locations.</summary>
     public LocationSet()
@@ -100,8 +100,8 @@ public class LocationSet
 
     private static void WriteTrsf(in Transform3D t, TextWriter os, bool compact)
     {
-        Xyz v = t.TranslationPart();
-        Matrix3x3 m = t.VectorialPart();
+        Xyz v = t.TranslationXyz();
+        Matrix3x3 m = t.VectorialPart;
 
         if (!compact)
         {
@@ -203,7 +203,7 @@ public class LocationSet
                 os.Write("\n");
             }
 
-            WriteTrsf(l.Transformation(), os, false);
+            WriteTrsf(l.Transformation, os, false);
         }
     }
 
@@ -232,7 +232,7 @@ public class LocationSet
             if (elementary)
             {
                 os.Write("1\n");
-                WriteTrsf(l.Transformation(), os, true);
+                WriteTrsf(l.Transformation, os, true);
             }
             else
             {

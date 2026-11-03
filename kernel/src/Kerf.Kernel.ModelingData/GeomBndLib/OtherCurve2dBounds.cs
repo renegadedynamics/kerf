@@ -53,7 +53,7 @@ public sealed class OtherCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
                 curve.D0(p, out p3);
                 box.Add(p3);
                 Point2D pc = new((p1.XY() + p3.XY()) / 2.0);
-                tol = Max(tol, pc.Distance(p2));
+                tol = Max(tol, pc.DistanceTo(p2));
                 p1 = p3;
             }
         }

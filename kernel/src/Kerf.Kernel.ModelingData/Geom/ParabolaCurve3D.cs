@@ -23,8 +23,8 @@ public class ParabolaCurve3D : ConicCurve3D
     /// <summary>A parabola equal to Prb.</summary>
     public ParabolaCurve3D(in Parabola3D prb)
     {
-        _focalLength = prb.Focal();
-        _pos = prb.Position();
+        _focalLength = prb.Focal;
+        _pos = prb.Position;
     }
 
     /// <summary>A parabola placed by A2 with focal length Focal.</summary>
@@ -43,8 +43,8 @@ public class ParabolaCurve3D : ConicCurve3D
     public ParabolaCurve3D(in Axis3D d, in Point3D f)
     {
         Parabola3D prb = new Parabola3D(d, f);
-        _pos = prb.Position();
-        _focalLength = prb.Focal();
+        _pos = prb.Position;
+        _focalLength = prb.Focal;
     }
 
     /// <summary>A new, unfrozen parabola equal to this one.</summary>
@@ -63,17 +63,17 @@ public class ParabolaCurve3D : ConicCurve3D
     public sealed override bool IsPeriodic => false;
 
     /// <summary>1.</summary>
-    public sealed override double Eccentricity() => 1.0;
+    public sealed override double Eccentricity => 1.0;
 
-    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>The focal distance: from the apex to the focus.</summary>
-    public double Focal() => _focalLength;
+    public double Focal => _focalLength;
 
-    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>The parameter of the parabola: twice the focal length.</summary>
-    public double Parameter() => 2.0 * _focalLength;
+    public double Parameter => 2.0 * _focalLength;
 
     /// <exception cref="ConstructionErrorException">Focal &lt; 0.</exception>
     internal void SetFocal(double focal)
@@ -89,34 +89,37 @@ public class ParabolaCurve3D : ConicCurve3D
     internal void SetParab(in Parabola3D prb)
     {
         CheckMutable();
-        _focalLength = prb.Focal();
-        _pos = prb.Position();
+        _focalLength = prb.Focal;
+        _pos = prb.Position;
     }
 
     /// <summary>The directrix: parallel to the Y axis, at the focal distance on the negative X side.</summary>
-    public Axis3D Directrix()
+    public Axis3D Directrix
     {
-        Parabola3D prb = new Parabola3D(_pos, _focalLength);
-        return prb.Directrix();
+        get
+        {
+            Parabola3D prb = new Parabola3D(_pos, _focalLength);
+            return prb.Directrix;
+        }
     }
 
-    public sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(u, _pos, _focalLength);
+    internal sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(u, _pos, _focalLength);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result = new ResD1();
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD1(u, _pos, _focalLength, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result = new ResD2();
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(u, _pos, _focalLength, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(u, _pos, _focalLength, out result.Point, out result.D1, out result.D2);
@@ -125,7 +128,7 @@ public class ParabolaCurve3D : ConicCurve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">N &lt; 1.</exception>
-    public sealed override Vector3D EvalDN(double u, int n)
+    internal sealed override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -135,37 +138,40 @@ public class ParabolaCurve3D : ConicCurve3D
     }
 
     /// <summary>The focus.</summary>
-    public Point3D Focus()
+    public Point3D Focus
     {
-        double xp, yp, zp, xd, yd, zd;
-        _pos.Location().Coord(out xp, out yp, out zp);
-        _pos.XDirection().Coord(out xd, out yd, out zd);
-        return new Point3D(xp + _focalLength * xd, yp + _focalLength * yd, zp + _focalLength * zd);
+        get
+        {
+            double xp, yp, zp, xd, yd, zd;
+            _pos.Location.Coord(out xp, out yp, out zp);
+            _pos.XDirection.Coord(out xd, out yd, out zd);
+            return new Point3D(xp + _focalLength * xd, yp + _focalLength * yd, zp + _focalLength * zd);
+        }
     }
 
     /// <summary>The non-persistent parabola equal to this one.</summary>
-    public Parabola3D Parab() => new Parabola3D(_pos, _focalLength);
+    public Parabola3D Parabola => new Parabola3D(_pos, _focalLength);
 
     /// <summary>Applies T to this parabola (the focal length is scaled by |T.ScaleFactor()|).</summary>
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _focalLength *= Math.Abs(t.ScaleFactor());
+        _focalLength *= Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 
     /// <summary>U * |T.ScaleFactor()| (U itself when infinite).</summary>
-    public sealed override double TransformedParameter(double u, in Transform3D t)
+    internal sealed override double TransformedParameter(double u, in Transform3D t)
     {
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u))
         {
             return u;
         }
-        return u * Math.Abs(t.ScaleFactor());
+        return u * Math.Abs(t.ScaleFactor);
     }
 
     /// <summary>|T.ScaleFactor()|.</summary>
-    public sealed override double ParametricTransformation(in Transform3D t) => Math.Abs(t.ScaleFactor());
+    internal sealed override double ParametricTransformation(in Transform3D t) => Math.Abs(t.ScaleFactor);
 
     // Non-mutating twins of the Set methods (OCCT.NET)
 

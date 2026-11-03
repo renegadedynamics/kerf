@@ -324,7 +324,7 @@ public partial class Wire : Shape1D
             Tool.Range(closestEdge, out paramMin, out paramMax);
             if (adaptor.IsPeriodic)
                 closestParam = PyMath.Mod(closestParam - paramMin, adaptor.Period()) + paramMin;
-            distanceAlongWire = closestEdge.Orientation() == global::Kerf.Topology.Orientation.Forward
+            distanceAlongWire = closestEdge.Orientation == global::Kerf.Topology.Orientation.Forward
                 ? AbscissaPoint.Length(adaptor, paramMin, closestParam)
                 : AbscissaPoint.Length(adaptor, closestParam, paramMax);
         }
@@ -581,11 +581,11 @@ public partial class Wire : Shape1D
         }
         var output = new List<Wire>();
         {
-            var orientation = TopoShape.Orientation();
+            var orientation = TopoShape.Orientation;
             for (; projection.More(); projection.Next())
             {
                 var projected = projection.Current();
-                output.Add(orientation == projected.Orientation()
+                output.Add(orientation == projected.Orientation
                     ? new Wire(projected)
                     : new Wire(ShapeCasts.Wire(projected.Reversed())));
             }

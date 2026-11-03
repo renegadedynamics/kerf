@@ -78,7 +78,7 @@ public sealed class BuildFaceBuilder
         for (int i = 0; i < nV; i++)
         {
             Shape v = mapVedges.KeyAt(i);
-            if (v.Orientation() == Internal)
+            if (v.Orientation == Internal)
             {
                 continue;
             }
@@ -88,7 +88,7 @@ public sealed class BuildFaceBuilder
             {
                 // Keep INTERNAL edges
                 Shape e = loE.First();
-                Orientation oriE = e.Orientation();
+                Orientation oriE = e.Orientation;
                 if ((oriE == Internal) || (oriE == External))
                 {
                     continue;
@@ -269,7 +269,7 @@ public sealed class BuildFaceBuilder
             BrepBuilder bb = new();
             e.Free(true);
             bb.Remove(e, v);
-            Shape localShape = vref.Oriented(v.Orientation());
+            Shape localShape = vref.Oriented(v.Orientation);
             Vertex newVref = ShapeCasts.Vertex(localShape);
             bb.Add(e, newVref);
             DsBuildTool bt = new();
@@ -323,8 +323,8 @@ public sealed class BuildFaceBuilder
                 ile.Next();
                 Shape e2 = ile.Value();
                 bool same = e1.IsSame(e2);
-                Orientation o1 = e1.Orientation();
-                Orientation o2 = e2.Orientation();
+                Orientation o1 = e1.Orientation;
+                Orientation o2 = e2.Orientation;
                 bool o1co2 = o1 == global::Kerf.Engine.Topology.TopAbs.Complement(o2);
 
                 if (same && o1co2)

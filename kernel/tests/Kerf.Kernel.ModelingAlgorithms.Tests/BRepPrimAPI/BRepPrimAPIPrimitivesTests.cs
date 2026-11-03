@@ -78,7 +78,7 @@ public class BRepPrimAPIPrimitivesTests
         ];
         foreach (Shape aBox in aBoxes)
         {
-            Assert.Equal(ShapeType.Solid, aBox.ShapeType());
+            Assert.Equal(ShapeType.Solid, aBox.Type);
             Assert.Equal((1, 6, 12, 8), Counts(aBox));
             Assert.Equal(24.0, Volume(aBox), 1e-9);
             Assert.Equal(2 * (6 + 8 + 12), Area(aBox), 1e-9);
@@ -135,7 +135,7 @@ public class BRepPrimAPIPrimitivesTests
         // Shell() stores the shell as the result
         Shell aShell = aMaker.Shell();
         Assert.True(aMaker.Shape().IsSame(aShell));
-        Assert.Equal(ShapeType.Shell, aMaker.Shape().ShapeType());
+        Assert.Equal(ShapeType.Shell, aMaker.Shape().Type);
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class BRepPrimAPIPrimitivesTests
         var aMaker = new MakeSphere(2, -Math.PI / 2);
         Face aFace = aMaker.Face();
         var aSurf = (SphericalSurface)Tool.Surface(aFace)!;
-        Assert.Equal(-1.0, aSurf.Position().Direction().Z());
+        Assert.Equal(-1.0, aSurf.Position.Direction.Z);
         Assert.Equal(ZoneVolume(2, -Math.PI / 2, Math.PI / 2, Math.PI / 2), Volume(aMaker.Shape()), 1e-6);
     }
 
@@ -321,7 +321,7 @@ public class BRepPrimAPIPrimitivesTests
         Assert.True(aMap.Contains(aFace));
         Assert.True(aMap.Contains(aShell));
         Assert.True(AllFrozen(aSolid));
-        Assert.True(((Shape)aShell).Closed());
+        Assert.True(((Shape)aShell).IsClosed);
     }
 
     // ------------------------------------------------------------ half-spaces
@@ -343,7 +343,7 @@ public class BRepPrimAPIPrimitivesTests
         // the face itself, its shell turned toward the matter
         Shape aShellAbove = new Iterator(aSolidAbove).Value(), aShellBelow = new Iterator(aSolidBelow).Value();
         Assert.True(new Iterator(aShellAbove).Value().IsSame(aFace));
-        Assert.NotEqual(aShellAbove.Orientation(), aShellBelow.Orientation());
+        Assert.NotEqual(aShellAbove.Orientation, aShellBelow.Orientation);
         aSnapshot.AssertUnchanged(aFace);
     }
 
@@ -357,8 +357,8 @@ public class BRepPrimAPIPrimitivesTests
         Shape aShellOut = new Iterator(anOutside.Shape()).Value();
         Assert.True(aShellIn.IsSame(aShell));
         Assert.True(aShellOut.IsSame(aShell));
-        Assert.Equal(aShell.Orientation(), aShellIn.Orientation());
-        Assert.NotEqual(aShell.Orientation(), aShellOut.Orientation());
+        Assert.Equal(aShell.Orientation, aShellIn.Orientation);
+        Assert.NotEqual(aShell.Orientation, aShellOut.Orientation);
     }
 
     // ------------------------------------------------------------ preview
@@ -375,17 +375,17 @@ public class BRepPrimAPIPrimitivesTests
             return aShape;
         }
 
-        Assert.Equal(ShapeType.Vertex, Preview(new Point3D(1, 2, 3), new Point3D(1, 2, 3)).ShapeType());
+        Assert.Equal(ShapeType.Vertex, Preview(new Point3D(1, 2, 3), new Point3D(1, 2, 3)).Type);
         Shape anEdge = Preview(new Point3D(1, 2, 3), new Point3D(1, 2, 7));
-        Assert.Equal(ShapeType.Edge, anEdge.ShapeType());
+        Assert.Equal(ShapeType.Edge, anEdge.Type);
         Properties aProps = new();
         MassPropertiesBuilder.LinearProperties(anEdge, aProps);
         Assert.Equal(4.0, aProps.Mass(), 1e-9);
         Shape aFace = Preview(new Point3D(1, 2, 3), new Point3D(4, 2, 7));
-        Assert.Equal(ShapeType.Face, aFace.ShapeType());
+        Assert.Equal(ShapeType.Face, aFace.Type);
         Assert.Equal(12.0, Area(aFace), 1e-9);
         Shape aSolid = Preview(new Point3D(1, 2, 3), new Point3D(4, 3, 7));
-        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.Type);
         Assert.Equal(12.0, Volume(aSolid), 1e-9);
     }
 }

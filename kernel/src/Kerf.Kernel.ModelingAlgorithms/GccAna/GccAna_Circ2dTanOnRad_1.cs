@@ -52,15 +52,15 @@ public sealed partial class AnalyticCirc2dTanOnRad
         int                     nbsol = 0;
         NCollection_Array1<int> eps = new(1, 2);
         Line2D                l1 = qualified1.Qualified();
-        Point2D origin1 = l1.Location();
-        Direction2D dir1 = l1.Direction();
-        Direction2D normL1 = new(-dir1.Y(), dir1.X());
+        Point2D origin1 = l1.Location;
+        Direction2D dir1 = l1.Direction;
+        Direction2D normL1 = new(-dir1.Y, dir1.X);
 
         if (radius < 0.0)
         {
             throw new NegativeValueException();
         }
-        else if ((onLine.Direction()).IsParallel(dir1, tol))
+        else if ((onLine.Direction).IsParallel(dir1, tol))
         {
             _wellDone = true;
         }
@@ -85,10 +85,10 @@ public sealed partial class AnalyticCirc2dTanOnRad
                 eps[2] = -1;
                 nbsol  = 2;
             }
-            double dx1 = dir1.X();
-            double dy1 = dir1.Y();
-            double lx1 = origin1.X();
-            double ly1 = origin1.Y();
+            double dx1 = dir1.X;
+            double dy1 = dir1.Y;
+            double lx1 = origin1.X;
+            double ly1 = origin1.Y;
             for (int j = 1; j <= nbsol; j++)
             {
                 Line2D l1para = new(new Point2D(lx1 + eps[j] * radius * dy1, ly1 - eps[j] * radius * dx1), dir1);
@@ -120,12 +120,12 @@ public sealed partial class AnalyticCirc2dTanOnRad
                             if (new Vector2D(center, origin1).Dot(new Vector2D(new Direction2D(-dy1, dx1))) > 0.0)
                             {
                                 _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * new Xy(-dy1, dx1));
-                                _pntcen3[_nbrSol]   = _cirsol[1].Location(); // OCCT: cirsol(1), not cirsol(NbrSol)
+                                _pntcen3[_nbrSol]   = _cirsol[1].Location; // OCCT: cirsol(1), not cirsol(NbrSol)
                             }
                             else
                             {
                                 _pnttg1sol[_nbrSol] = new Point2D(center.XY() - radius * new Xy(-dy1, dx1));
-                                _pntcen3[_nbrSol]   = _cirsol[1].Location(); // OCCT: cirsol(1), not cirsol(NbrSol)
+                                _pntcen3[_nbrSol]   = _cirsol[1].Location; // OCCT: cirsol(1), not cirsol(NbrSol)
                             }
                             _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);

@@ -92,7 +92,7 @@ public sealed class Gluer : MakeShape
     /// <summary>The faces descending from the face <paramref name="f"/> (OCCT's virtual; unfrozen).</summary>
     internal override NCollection_List<Shape> InternalModified(in Shape f)
     {
-        if (f.ShapeType() == ShapeType.Face)
+        if (f.Type == ShapeType.Face)
         {
             NCollection_List<Shape> ls = _gluer.InternalDescendantFaces(ShapeCasts.Face(f));
             if (!ls.IsEmpty())

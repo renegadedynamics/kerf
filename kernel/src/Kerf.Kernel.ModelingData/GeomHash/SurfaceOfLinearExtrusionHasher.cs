@@ -21,8 +21,8 @@ internal readonly struct SurfaceOfLinearExtrusionHasher(double theCompTolerance,
         var curveHasher = new CurveHasher(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            curveHasher.Hash(surface.BasisCurve()),
-            dirHasher.Hash(surface.Direction())
+            curveHasher.Hash(surface.BasisCurve),
+            dirHasher.Hash(surface.Direction)
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,7 +32,7 @@ internal readonly struct SurfaceOfLinearExtrusionHasher(double theCompTolerance,
     {
         var dirHasher = new DirectionHasher(CompTolerance, HashTolerance);
         var curveHasher = new CurveHasher(CompTolerance, HashTolerance);
-        return curveHasher.Equals(surface1.BasisCurve(), surface2.BasisCurve())
-               && dirHasher.IsEqual(surface1.Direction(), surface2.Direction());
+        return curveHasher.Equals(surface1.BasisCurve, surface2.BasisCurve)
+               && dirHasher.IsEqual(surface1.Direction, surface2.Direction);
     }
 }

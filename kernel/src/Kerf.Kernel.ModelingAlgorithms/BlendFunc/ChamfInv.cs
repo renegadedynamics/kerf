@@ -75,8 +75,8 @@ public class ChamfInv : GenChamfInv
         math_Vector sol1 = new(1, 2), sol2 = new(1, 2);
         bool issol;
 
-        sol1[1] = p2d.X();
-        sol1[2] = p2d.Y();
+        sol1[1] = p2d.X;
+        sol1[2] = p2d.Y;
 
         sol2[1] = sol[3];
         sol2[2] = sol[4];
@@ -104,8 +104,8 @@ public class ChamfInv : GenChamfInv
 
         math_Vector x1 = new(1, 2), f1 = new(1, 2), x2 = new(1, 2), f2 = new(1, 2);
 
-        x1[1] = p2d.X();
-        x1[2] = p2d.Y();
+        x1[1] = p2d.X;
+        x1[2] = p2d.Y;
         x2[1] = x[3];
         x2[2] = x[4];
 
@@ -141,8 +141,8 @@ public class ChamfInv : GenChamfInv
         _corde1.SetParam(x[2]);
         _corde2.SetParam(x[2]);
 
-        x1[1] = p2d.X();
-        x1[2] = p2d.Y();
+        x1[1] = p2d.X;
+        x1[2] = p2d.Y;
         x2[1] = x[3];
         x2[2] = x[4];
 
@@ -168,7 +168,7 @@ public class ChamfInv : GenChamfInv
         }
 
         // derivees par rapport a T
-        temp = Vector3D.LinearForm(v2d.X(), d1u, v2d.Y(), d1v);
+        temp = Vector3D.LinearForm(v2d.X, d1u, v2d.Y, d1v);
         if (_first)
         {
             d[1, 1] = nplan.Dot(temp);
@@ -185,10 +185,10 @@ public class ChamfInv : GenChamfInv
         }
 
         // derivees par rapport a W
-        d[1, 2] = df1.X();
-        d[2, 2] = df1.Y();
-        d[3, 2] = df2.X();
-        d[4, 2] = df2.Y();
+        d[1, 2] = df1.X;
+        d[2, 2] = df1.Y;
+        d[3, 2] = df2.X;
+        d[4, 2] = df2.Y;
 
         // derivees par rapport a U et V
         if (_first)

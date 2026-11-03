@@ -64,7 +64,7 @@ public class SplitSurface : Transient
         _resSurfaces = new CompositeSurface();
         _nbResultingRow = 1;
         _nbResultingCol = 1;
-        _surface.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _surface.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
 
         _uSplitValues.Append(u1);
         _uSplitValues.Append(u2);
@@ -91,17 +91,17 @@ public class SplitSurface : Transient
 
         _area = area;
 
-        _surface.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _surface.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         double precision = Kerf.Engine.Foundation.Precision.PConfusion();
         if (_surface.IsUPeriodic && uLast - uFirst <= u2 - u1 + precision)
         {
             u1 = uFirst;
-            u2 = u1 + _surface.UPeriod();
+            u2 = u1 + _surface.UPeriod;
         }
         if (_surface.IsVPeriodic && vLast - vFirst <= v2 - v1 + precision)
         {
             v1 = vFirst;
-            v2 = v1 + _surface.VPeriod();
+            v2 = v1 + _surface.VPeriod;
         }
         double uf, ul, vf, vl;
         if (uFirst > u2 - precision || uLast < u1 - precision)
@@ -239,10 +239,10 @@ public class SplitSurface : Transient
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
         }
 
-        _surface!.Bounds(out double U1, out double U2, out double V1, out double V2);
+        _surface!.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
         if (_surface is RevolutionSurface surfaceRev)
         {
-            Curve3D basCurve = surfaceRev.BasisCurve();
+            Curve3D basCurve = surfaceRev.BasisCurve;
             var spc = new SplitCurve3d();
             spc.Init(basCurve, vFirst, vLast);
             spc.SetSplitValues(_vSplitValues);
@@ -255,8 +255,8 @@ public class SplitSurface : Transient
                 surfaces = new NCollection_HArray2<Surface>(1, _nbResultingRow, 1, _nbResultingCol);
                 for (int nc = 1; nc <= _nbResultingCol; nc++)
                 {
-                    var newSurfaceRev = new RevolutionSurface(spc.GetCurves()!.Value(nc), surfaceRev.Axis());
-                    newSurfaceRev.Bounds(out double u1p, out double u2p, out double v1p, out double v2p);
+                    var newSurfaceRev = new RevolutionSurface(spc.GetCurves()!.Value(nc), surfaceRev.Axis);
+                    newSurfaceRev.ParameterBounds(out double u1p, out double u2p, out double v1p, out double v2p);
                     for (int nc1 = 1; nc1 <= _nbResultingRow; nc1++)
                     {
                         var newSurf = new TrimmedSurface(newSurfaceRev,
@@ -274,8 +274,8 @@ public class SplitSurface : Transient
 
                 for (int nc = 1; nc <= spc.GetCurves()!.Length(); nc++)
                 {
-                    var newSurfaceRev = new RevolutionSurface(spc.GetCurves()!.Value(nc), surfaceRev.Axis());
-                    newSurfaceRev.Bounds(out U1, out U2, out V1, out V2);
+                    var newSurfaceRev = new RevolutionSurface(spc.GetCurves()!.Value(nc), surfaceRev.Axis);
+                    newSurfaceRev.ParameterBounds(out U1, out U2, out V1, out V2);
                     if (uFirst == U1 && uLast == U2)
                     {
                         surfaces.SetValue(1, nc, newSurfaceRev);
@@ -307,7 +307,7 @@ public class SplitSurface : Transient
 
         if (_surface is ExtrusionSurface surfaceExt)
         {
-            Curve3D basCurve = surfaceExt.BasisCurve();
+            Curve3D basCurve = surfaceExt.BasisCurve;
             var spc = new SplitCurve3d();
             spc.Init(basCurve, uFirst, uLast);
             spc.SetSplitValues(_uSplitValues);
@@ -320,8 +320,8 @@ public class SplitSurface : Transient
                 surfaces = new NCollection_HArray2<Surface>(1, _nbResultingRow, 1, _nbResultingCol);
                 for (int nc1 = 1; nc1 <= _nbResultingRow; nc1++)
                 {
-                    var newSurfaceEx = new ExtrusionSurface(spc.GetCurves()!.Value(nc1), surfaceExt.Direction());
-                    newSurfaceEx.Bounds(out double u1p, out double u2p, out double v1p, out double v2p);
+                    var newSurfaceEx = new ExtrusionSurface(spc.GetCurves()!.Value(nc1), surfaceExt.Direction);
+                    newSurfaceEx.ParameterBounds(out double u1p, out double u2p, out double v1p, out double v2p);
                     for (int nc2 = 1; nc2 <= _nbResultingCol; nc2++)
                     {
                         var newSurf = new TrimmedSurface(newSurfaceEx,
@@ -339,8 +339,8 @@ public class SplitSurface : Transient
 
                 for (int nc1 = 1; nc1 <= _nbResultingRow; nc1++)
                 {
-                    var newSurfaceEx = new ExtrusionSurface(spc.GetCurves()!.Value(nc1), surfaceExt.Direction());
-                    newSurfaceEx.Bounds(out U1, out U2, out V1, out V2);
+                    var newSurfaceEx = new ExtrusionSurface(spc.GetCurves()!.Value(nc1), surfaceExt.Direction);
+                    newSurfaceEx.ParameterBounds(out U1, out U2, out V1, out V2);
                     if (vFirst == V1 && vLast == V2)
                     {
                         surfaces.SetValue(nc1, 1, newSurfaceEx);
@@ -376,7 +376,7 @@ public class SplitSurface : Transient
 
         if (_surface is TrimmedSurface tmpRect)
         {
-            Surface theSurf = tmpRect.BasisSurface();
+            Surface theSurf = tmpRect.BasisSurface;
             var sps = new SplitSurface();
             sps.Init(theSurf, uFirst, uLast, vFirst, vLast);
             sps.SetUSplitValues(_uSplitValues);
@@ -389,7 +389,7 @@ public class SplitSurface : Transient
         }
         else if (_surface is OffsetSurface tmpOffset)
         {
-            Surface theSurf = tmpOffset.BasisSurface();
+            Surface theSurf = tmpOffset.BasisSurface;
             var sps = new SplitSurface();
             sps.Init(theSurf, uFirst, uLast, vFirst, vLast);
             sps.SetUSplitValues(_uSplitValues);
@@ -404,7 +404,7 @@ public class SplitSurface : Transient
             {
                 for (int j1 = 1; j1 <= sps.ResSurfaces()!.VPatchCount; j1++)
                 {
-                    var newOffSur = new OffsetSurface(sps.ResSurfaces()!.Patch(i1, j1), tmpOffset.Offset());
+                    var newOffSur = new OffsetSurface(sps.ResSurfaces()!.Patch(i1, j1), tmpOffset.Offset);
                     patches.SetValue(i1, j1, newOffSur);
                 }
             }
@@ -424,7 +424,7 @@ public class SplitSurface : Transient
 
         if (_nbResultingRow == 1 && _nbResultingCol == 1)
         {
-            _surface.Bounds(out U1, out U2, out V1, out V2);
+            _surface.ParameterBounds(out U1, out U2, out V1, out V2);
             bool filled = true;
             if (Math.Abs(U1 - uFirst) < Kerf.Engine.Foundation.Precision.PConfusion()
                 && Math.Abs(U2 - uLast) < Kerf.Engine.Foundation.Precision.PConfusion()

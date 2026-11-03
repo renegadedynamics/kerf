@@ -58,12 +58,12 @@ public sealed class TriangulationHasher : IEqualityComparer<Triangulation?>
         {
             Point3D firstNode = tri.Node(1);
             Point3D lastNode = tri.Node(tri.NodeCount);
-            combined[4] = HashUtils.QuantizedHash(firstNode.X(), factor);
-            combined[5] = HashUtils.QuantizedHash(firstNode.Y(), factor);
-            combined[6] = HashUtils.QuantizedHash(firstNode.Z(), factor);
-            combined[7] = HashUtils.QuantizedHash(lastNode.X(), factor);
-            combined[8] = HashUtils.QuantizedHash(lastNode.Y(), factor);
-            combined[9] = HashUtils.QuantizedHash(lastNode.Z(), factor);
+            combined[4] = HashUtils.QuantizedHash(firstNode.X, factor);
+            combined[5] = HashUtils.QuantizedHash(firstNode.Y, factor);
+            combined[6] = HashUtils.QuantizedHash(firstNode.Z, factor);
+            combined[7] = HashUtils.QuantizedHash(lastNode.X, factor);
+            combined[8] = HashUtils.QuantizedHash(lastNode.Y, factor);
+            combined[9] = HashUtils.QuantizedHash(lastNode.Z, factor);
         }
 
         if (tri.TriangleCount > 0)
@@ -82,10 +82,10 @@ public sealed class TriangulationHasher : IEqualityComparer<Triangulation?>
         {
             Point2D firstUV = tri.UVNode(1);
             Point2D lastUV = tri.UVNode(tri.NodeCount);
-            combined[16] = HashUtils.QuantizedHash(firstUV.X(), factor);
-            combined[17] = HashUtils.QuantizedHash(firstUV.Y(), factor);
-            combined[18] = HashUtils.QuantizedHash(lastUV.X(), factor);
-            combined[19] = HashUtils.QuantizedHash(lastUV.Y(), factor);
+            combined[16] = HashUtils.QuantizedHash(firstUV.X, factor);
+            combined[17] = HashUtils.QuantizedHash(firstUV.Y, factor);
+            combined[18] = HashUtils.QuantizedHash(lastUV.X, factor);
+            combined[19] = HashUtils.QuantizedHash(lastUV.Y, factor);
         }
 
         return HashUtils.HashBytes(combined);
@@ -123,8 +123,8 @@ public sealed class TriangulationHasher : IEqualityComparer<Triangulation?>
         {
             Point3D p1 = tri1.Node(idx);
             Point3D p2 = tri2.Node(idx);
-            if (Math.Abs(p1.X() - p2.X()) > CompTolerance || Math.Abs(p1.Y() - p2.Y()) > CompTolerance
-                || Math.Abs(p1.Z() - p2.Z()) > CompTolerance)
+            if (Math.Abs(p1.X - p2.X) > CompTolerance || Math.Abs(p1.Y - p2.Y) > CompTolerance
+                || Math.Abs(p1.Z - p2.Z) > CompTolerance)
             {
                 return false;
             }
@@ -146,7 +146,7 @@ public sealed class TriangulationHasher : IEqualityComparer<Triangulation?>
             {
                 Point2D u1 = tri1.UVNode(idx);
                 Point2D u2 = tri2.UVNode(idx);
-                if (Math.Abs(u1.X() - u2.X()) > CompTolerance || Math.Abs(u1.Y() - u2.Y()) > CompTolerance)
+                if (Math.Abs(u1.X - u2.X) > CompTolerance || Math.Abs(u1.Y - u2.Y) > CompTolerance)
                 {
                     return false;
                 }

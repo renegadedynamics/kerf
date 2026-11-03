@@ -385,16 +385,16 @@ public sealed class MakeSimpleOffset
         }
         // case when edge lies on the one face
 
-        e.Orientation(Forward);
+        e.Orient(Forward);
         var c2d1 = new EdgeCurve2DAdaptor(e, f1);
         if (couture)
         {
-            e.Orientation(Reversed);
+            e.Orient(Reversed);
         }
         var c2d2 = new EdgeCurve2DAdaptor(e, f2);
 
-        bool rev1 = (f1.Orientation() == Reversed);
-        bool rev2 = (f2.Orientation() == Reversed);
+        bool rev1 = (f1.Orientation == Reversed);
+        bool rev2 = (f2.Orientation == Reversed);
         double f, l, eps;
         Tool.Range(e, out f, out l);
         // OCCT.NET: OCCT's unused local Extrema_LocateExtPC ext is left out
@@ -417,9 +417,9 @@ public sealed class MakeSimpleOffset
 
             // take derivatives of surfaces at the same u, and compute normals
             c2d1.D0(u, out p);
-            hs1.D1(p.X(), p.Y(), out pp1, out du1, out dv1);
+            hs1.D1(p.X, p.Y, out pp1, out du1, out dv1);
             d1 = (du1.Crossed(dv1));
-            norm = d1.Magnitude();
+            norm = d1.Magnitude;
             if (norm > 1.0e-12)
             {
                 d1 /= norm;
@@ -434,9 +434,9 @@ public sealed class MakeSimpleOffset
             }
 
             c2d2.D0(u, out p);
-            hs2.D1(p.X(), p.Y(), out pp2, out du2, out dv2);
+            hs2.D1(p.X, p.Y, out pp2, out du2, out dv2);
             d2 = (du2.Crossed(dv2));
-            norm = d2.Magnitude();
+            norm = d2.Magnitude;
             if (norm > 1.0e-12)
             {
                 d2 /= norm;
@@ -451,7 +451,7 @@ public sealed class MakeSimpleOffset
             }
 
             // Compute angle.
-            double currentAng = d1.Angle(d2);
+            double currentAng = d1.AngleTo(d2);
 
             resAngle = Max(resAngle, currentAng);
         }
@@ -493,12 +493,12 @@ public sealed class MakeSimpleOffset
             }
             if (!found && !f1.IsNull)
             { // is it a sewing edge?
-                Orientation orE = e.Orientation();
+                Orientation orE = e.Orientation;
                 Edge curE;
                 for (ex.Init(f1, ShapeType.Edge); ex.More() && !found; ex.Next())
                 {
                     curE = ShapeCasts.Edge(ex.Current());
-                    if (e.IsSame(curE) && orE != curE.Orientation())
+                    if (e.IsSame(curE) && orE != curE.Orientation)
                     {
                         found = true;
                         couture = true;
@@ -653,7 +653,7 @@ public sealed class MakeSimpleOffset
 
         // Get offset edge. offset edge is reversed to create correct wire.
         Edge newEdge = ShapeCasts.Edge(_builder.InternalModifiedShape(origEdge));
-        newEdge.Orientation(Reversed);
+        newEdge.Orient(Reversed);
 
         Exploration.Vertices(newEdge, out Vertex newV1, out Vertex newV2);
 
@@ -662,7 +662,7 @@ public sealed class MakeSimpleOffset
         // Firstly it is necessary to create copy of original shape with forward direction.
         // This simplifies walls creation.
         Edge origCopy = origEdge;
-        origCopy.Orientation(Forward);
+        origCopy.Orient(Forward);
         Exploration.Vertices(origCopy, out Vertex v1, out Vertex v2);
 
         // To simplify work with map.
@@ -711,7 +711,7 @@ public sealed class MakeSimpleOffset
             _mapVE[forwardV1] = wall2;
 
             // Orient it in reversed direction.
-            wall2.Orientation(Reversed);
+            wall2.Orient(Reversed);
         }
 
         var bb = new BrepBuilder();
@@ -757,7 +757,7 @@ public sealed class MakeSimpleOffset
             thrusecGenerator.Perform(global::Kerf.Engine.Foundation.Precision.PConfusion());
             Surface theSurf = thrusecGenerator.Surface()!;
             // theSurf = new Geom_SurfaceOfLinearExtrusion( TrOffsetCurve, OffsetDir );
-            theSurf.Bounds(out double uf, out double ul, out double vf, out double vl);
+            theSurf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
             Placement loc = new();
             LineCurve2D edgeLine2d, oeLine2d, line2d, line2d2;
             edgeLine2d = new LineCurve2D(new Point2D(0.0, vf), new Direction2D(Direction2D.D.X));

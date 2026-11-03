@@ -243,7 +243,7 @@ public class CSWalking
 
             if (!_comptra)
             {
-                function.Tangent(pt2d.X(), pt2d.Y(), out tgp1, out nor1);
+                function.Tangent(pt2d.X, pt2d.Y, out tgp1, out nor1);
                 double testra = tgp1.Dot(nor1.Crossed(v1));
                 if (Math.Abs(testra) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
@@ -262,14 +262,14 @@ public class CSWalking
 
             if (state1 == BlendStatus.OK || state2 == BlendStatus.OK)
             {
-                _previousP.SetValue(function.PointOnS(), function.PointOnC(), _param, pt2d.X(), pt2d.Y(), pOnC, v1, v2,
+                _previousP.SetValue(function.PointOnS(), function.PointOnC(), _param, pt2d.X, pt2d.Y, pOnC, v1, v2,
                                    v12d);
 
                 return state;
             }
             if (state1 == BlendStatus.StepTooSmall && state2 == BlendStatus.StepTooSmall)
             {
-                _previousP.SetValue(function.PointOnS(), function.PointOnC(), _param, pt2d.X(), pt2d.Y(), pOnC, v1, v2,
+                _previousP.SetValue(function.PointOnS(), function.PointOnC(), _param, pt2d.X, pt2d.Y, pOnC, v1, v2,
                                    v12d);
                 if (state == BlendStatus.OK)
                 {
@@ -318,8 +318,8 @@ public class CSWalking
         tolv = HSurfaceTool.VResolution(_surf, _tolpoint3d);
 
         Vector3D corde = new(prevP, psurf);
-        norme = corde.SquareMagnitude();
-        prevNorme = prevTg.SquareMagnitude();
+        norme = corde.SquareMagnitude;
+        prevNorme = prevTg.SquareMagnitude;
 
         double toler3d = _tolpoint3d;
         if (norme <= toler3d * toler3d || prevNorme <= toler3d * toler3d)
@@ -342,29 +342,29 @@ public class CSWalking
         _previousP.ParametersOnS(out paramu, out paramv);
         previousd2d = _previousP.Tangent2d();
 
-        du = ponsurf.X() - paramu;
-        dv = ponsurf.Y() - paramv;
+        du = ponsurf.X - paramu;
+        dv = ponsurf.Y - paramv;
         duv = du * du + dv * dv;
         if ((Math.Abs(du) < tolu && Math.Abs(dv) < tolv)
-            || (Math.Abs(previousd2d.X()) < tolu && Math.Abs(previousd2d.Y()) < tolv))
+            || (Math.Abs(previousd2d.X) < tolu && Math.Abs(previousd2d.Y) < tolv))
         {
             // the same point may have to be forced
             return BlendStatus.SamePoints; // same 2d point
         }
-        cosi = _sens * (du * previousd2d.X() + dv * previousd2d.Y());
+        cosi = _sens * (du * previousd2d.X + dv * previousd2d.Y);
         if (cosi < 0)
         {
             return BlendStatus.Backward;
         }
 
         cosi = _sens * corde * tgsurf;
-        cosi2 = cosi * cosi / tgsurf.SquareMagnitude() / norme;
+        cosi2 = cosi * cosi / tgsurf.SquareMagnitude / norme;
         if (cosi2 < cosRef3D || cosi < 0.0)
         {
             return BlendStatus.StepTooLarge;
         }
 
-        cosi = _sens * (du * tgonsurf.X() + dv * tgonsurf.Y()) / tgonsurf.Magnitude();
+        cosi = _sens * (du * tgonsurf.X + dv * tgonsurf.Y) / tgonsurf.Magnitude;
         cosi2 = cosi * cosi / duv;
         if (cosi2 < cosRef2D || cosi < 0.0)
         {
@@ -403,8 +403,8 @@ public class CSWalking
         tolu = HCurveTool.Resolution(_curv, _tolpoint3d);
 
         Vector3D corde = new(prevP, pcurv);
-        norme = corde.SquareMagnitude();
-        prevNorme = prevTg.SquareMagnitude();
+        norme = corde.SquareMagnitude;
+        prevNorme = prevTg.SquareMagnitude;
 
         double toler3d = _tolpoint3d;
         if (norme <= toler3d * toler3d)
@@ -434,13 +434,13 @@ public class CSWalking
             return BlendStatus.SamePoints; // same 2d point
         }
 
-        if (tgcurv.Magnitude() <= _tolpoint3d)
+        if (tgcurv.Magnitude <= _tolpoint3d)
         {
             return BlendStatus.SamePoints; // GROS BOBARD EN ATTENDANT
         }
 
         cosi = _sens * corde * tgcurv;
-        cosi2 = cosi * cosi / tgcurv.SquareMagnitude() / norme;
+        cosi2 = cosi * cosi / tgcurv.SquareMagnitude / norme;
         if (cosi2 < cosRef3D || cosi < 0.0)
         {
             return BlendStatus.StepTooLarge;
@@ -475,9 +475,9 @@ public class CSWalking
         Vector3D d1u, d1v, normale, tgrst = new();
 
         HCurve2dTool.D1(a, param, out p2d, out dp2d);
-        HSurfaceTool.D1(_surf, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+        HSurfaceTool.D1(_surf, p2d.X, p2d.Y, out pbid, out d1u, out d1v);
 
-        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X, d1u, dp2d.Y, d1v);
         normale = d1u.Crossed(d1v);
 
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(_previousP.TangentOnS(), tgrst, new Direction3D(normale), ref tLine, ref tArc);
@@ -618,8 +618,8 @@ public class CSWalking
                             _domain.Next();
                         }
                         p2d = HCurve2dTool.Value(_domain.Value(), solrst[1]);
-                        sol[1] = p2d.X();
-                        sol[2] = p2d.Y();
+                        sol[1] = p2d.X;
+                        sol[2] = p2d.Y;
                         sol[3] = solrst[3];
                         func.Set(_param);
                     }

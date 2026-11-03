@@ -34,7 +34,7 @@ public sealed class MakeTrimmedCone : Root
             ExtPElC ext2 = new ExtPElC(p4, l1, 1.0e-7, -2.0e+100, +2.0e+100);
             Point3D p5 = ext1.Point(1).Value();
             Point3D p6 = ext2.Point(1).Value();
-            double d = p6.Distance(p5) / Math.Cos(cone.Value().SemiAngle());
+            double d = p6.DistanceTo(p5) / Math.Cos(cone.Value().SemiAngle);
             _theCone = new TrimmedSurface(cone.Value(), 0.0, 2.0 * M_PI, 0.0, d, true, true);
         }
     }
@@ -49,7 +49,7 @@ public sealed class MakeTrimmedCone : Root
         _theError = cone.Status();
         if (_theError == Done)
         {
-            double d = p2.Distance(p1) / Math.Cos(cone.Value().SemiAngle());
+            double d = p2.DistanceTo(p1) / Math.Cos(cone.Value().SemiAngle);
             _theCone = new TrimmedSurface(cone.Value(), 0.0, 2.0 * M_PI, 0.0, d, true, true);
         }
     }

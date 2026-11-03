@@ -197,7 +197,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
                 aFix.Init(Tool.Surface(theFace)!, 1.0e-7, theMode == Mode.SurfaceAndWires);
                 for (var anIt = new Iterator(theFace); anIt.More(); anIt.Next())
                 {
-                    if (anIt.Value().ShapeType() == ShapeType.Wire)
+                    if (anIt.Value().Type == ShapeType.Wire)
                     {
                         aFix.Add(ShapeCasts.Wire(anIt.Value()));
                     }
@@ -214,7 +214,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
 
     private void Compare(N.TopoDS_Shape theFace, string theWhat, Mode theMode)
     {
-        if (Read(theFace) is not (N.TopoDS_Shape aNS, Shape aPS) || aPS.ShapeType() != ShapeType.Face)
+        if (Read(theFace) is not (N.TopoDS_Shape aNS, Shape aPS) || aPS.Type != ShapeType.Face)
         {
             return;
         }
@@ -446,8 +446,8 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
 
     private static N.gp_Ax2 Ax2At(in Frame3D theAx, double theHeight)
     {
-        Point3D aP = theAx.Location().Translated(new Vector3D(theAx.Direction()) * theHeight);
-        return new N.gp_Ax2(Oracle.ToNative(aP), Oracle.ToNative(theAx.Direction()), Oracle.ToNative(theAx.XDirection()));
+        Point3D aP = theAx.Location.Translated(new Vector3D(theAx.Direction) * theHeight);
+        return new N.gp_Ax2(Oracle.ToNative(aP), Oracle.ToNative(theAx.Direction), Oracle.ToNative(theAx.XDirection));
     }
 
     private static N.TopoDS_Wire CircleWire(in Frame3D theAx, double theHeight, double theRadius, bool theReversed)
@@ -461,7 +461,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
     private static N.TopoDS_Shape? SurfaceFace(Oracle theOracle, int theIndex, out string theWhat)
     {
         Frame3D anAx = theOracle.Ax2();
-        var anAx3 = new N.gp_Ax3(Oracle.ToNative(anAx.Location()), Oracle.ToNative(anAx.Direction()), Oracle.ToNative(anAx.XDirection()));
+        var anAx3 = new N.gp_Ax3(Oracle.ToNative(anAx.Location), Oracle.ToNative(anAx.Direction), Oracle.ToNative(anAx.XDirection));
         double R = theOracle.Real(1.0, 20.0);
         bool aRev1 = theOracle.Int(0, 3) == 0, aRev2 = theOracle.Bool();
         N.Geom_Surface aSurf;
@@ -550,7 +550,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
         int aNb = theOracle.Int(3, 9);
         N.gp_Pnt Point(double theU, double theV)
         {
-            Point3D aP = anAx.Location().Translated(new Vector3D(anAx.XDirection()) * theU).Translated(new Vector3D(anAx.YDirection()) * theV);
+            Point3D aP = anAx.Location.Translated(new Vector3D(anAx.XDirection) * theU).Translated(new Vector3D(anAx.YDirection) * theV);
             return Oracle.ToNative(aP);
         }
         bool anOuterReversed = theOracle.Int(0, 3) == 0;
@@ -577,7 +577,7 @@ public class ShapeFixFaceOracleTests(ITestOutputHelper output) : IDisposable
                 double a = 2.0 * Math.PI * k / Math.Max(1, aNbHoles);
                 double c = aNbHoles == 1 ? 0.0 : 0.45 * R;
                 double hr = R * (aNbHoles == 1 ? 0.3 : 0.15);
-                var aCircleAx = new N.gp_Ax2(Point(c * Math.Cos(a), c * Math.Sin(a)), Oracle.ToNative(anAx.Direction()), Oracle.ToNative(anAx.XDirection()));
+                var aCircleAx = new N.gp_Ax2(Point(c * Math.Cos(a), c * Math.Sin(a)), Oracle.ToNative(anAx.Direction), Oracle.ToNative(anAx.XDirection));
                 using var aCircle = new N.Geom_Circle(aCircleAx, hr);
                 N.TopoDS_Wire aHole = new N.BRepBuilderAPI_MakeWire(new N.BRepBuilderAPI_MakeEdge(aCircle).Edge()).Wire();
                 bool isMisoriented = theOracle.Bool();

@@ -46,7 +46,7 @@ public class Geom2d_BezierCurve_Test
         BezierCurve2D aCopiedCurve = new BezierCurve2D(myOriginalCurve);
 
         // Verify basic properties are identical
-        Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
+        Assert.Equal(myOriginalCurve.Degree, aCopiedCurve.Degree);
         Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
         Assert.Equal(myOriginalCurve.IsRational, aCopiedCurve.IsRational);
         Assert.Equal(myOriginalCurve.IsClosed, aCopiedCurve.IsClosed);
@@ -76,7 +76,7 @@ public class Geom2d_BezierCurve_Test
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
-        Assert.Equal(myOriginalCurve.Degree(), aCopiedCurve.Degree());
+        Assert.Equal(myOriginalCurve.Degree, aCopiedCurve.Degree);
         Assert.Equal(myOriginalCurve.PoleCount, aCopiedCurve.PoleCount);
 
         // Test evaluation at several points
@@ -135,30 +135,30 @@ public class Geom2d_BezierCurve_Test
     public void Evaluation_D1()
     {
         myOriginalCurve.D1(0.5, out _, out Vector2D aV1);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.True(aV1.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_D2()
     {
         myOriginalCurve.D2(0.5, out _, out Vector2D aV1, out _);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.True(aV1.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_DN()
     {
         Vector2D aDN1 = myOriginalCurve.DN(0.5, 1);
-        Assert.True(aDN1.Magnitude() > 0.0);
+        Assert.True(aDN1.Magnitude > 0.0);
         Vector2D aDN4 = myOriginalCurve.DN(0.5, 4);
-        Assert.Equal(0.0, aDN4.Magnitude(), 1e-10);
+        Assert.Equal(0.0, aDN4.Magnitude, 1e-10);
     }
 
     [Fact]
     public void StartEndPoints()
     {
-        Point2D aStart = myOriginalCurve.StartPoint();
-        Point2D anEnd = myOriginalCurve.EndPoint();
+        Point2D aStart = myOriginalCurve.StartPoint;
+        Point2D anEnd = myOriginalCurve.EndPoint;
         Assert.True(aStart.IsEqual(new Point2D(0, 0), 1e-10));
         Assert.True(anEnd.IsEqual(new Point2D(3, 0), 1e-10));
     }
@@ -166,13 +166,13 @@ public class Geom2d_BezierCurve_Test
     [Fact]
     public void Properties()
     {
-        Assert.Equal(3, myOriginalCurve.Degree());
+        Assert.Equal(3, myOriginalCurve.Degree);
         Assert.False(myOriginalCurve.IsPeriodic);
         Assert.False(myOriginalCurve.IsRational);
         Assert.False(myOriginalCurve.IsClosed);
         Assert.True(myOriginalCurve.IsCN(100));
-        Assert.Equal(0.0, myOriginalCurve.FirstParameter());
-        Assert.Equal(1.0, myOriginalCurve.LastParameter());
+        Assert.Equal(0.0, myOriginalCurve.FirstParameter);
+        Assert.Equal(1.0, myOriginalCurve.LastParameter);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class Geom2d_BezierCurve_Test
         Point2D aNewPole = new Point2D(1, 5);
         myOriginalCurve.SetPole(2, aNewPole);
         Assert.True(myOriginalCurve.Pole(2).IsEqual(aNewPole, 1e-10));
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(new Point2D(0, 0), 1e-10));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(new Point2D(0, 0), 1e-10));
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public class Geom2d_BezierCurve_Test
         Assert.Equal(10.0, aCurve.Weight(2));
         Assert.True(aCurve.IsRational);
         Point2D aMidAfter = aCurve.Value(0.5);
-        Assert.True(aMidAfter.Y() > aMidBefore.Y());
+        Assert.True(aMidAfter.Y > aMidBefore.Y);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public class Geom2d_BezierCurve_Test
         int aNbBefore = myOriginalCurve.PoleCount;
         myOriginalCurve.InsertPoleAfter(2, new Point2D(1.5, 2));
         Assert.Equal(aNbBefore + 1, myOriginalCurve.PoleCount);
-        Assert.Equal(4, myOriginalCurve.Degree());
+        Assert.Equal(4, myOriginalCurve.Degree);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class Geom2d_BezierCurve_Test
     {
         Point2D aValBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Increase(5);
-        Assert.Equal(5, myOriginalCurve.Degree());
+        Assert.Equal(5, myOriginalCurve.Degree);
         Point2D aValAfter = myOriginalCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));
     }
@@ -231,18 +231,18 @@ public class Geom2d_BezierCurve_Test
         Point2D aP25 = myOriginalCurve.Value(0.25);
         Point2D aP75 = myOriginalCurve.Value(0.75);
         myOriginalCurve.Segment(0.25, 0.75);
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(aP25, 1e-6));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(aP75, 1e-6));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(aP25, 1e-6));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(aP75, 1e-6));
     }
 
     [Fact]
     public void Reverse()
     {
-        Point2D aStart = myOriginalCurve.StartPoint();
-        Point2D anEnd = myOriginalCurve.EndPoint();
+        Point2D aStart = myOriginalCurve.StartPoint;
+        Point2D anEnd = myOriginalCurve.EndPoint;
         myOriginalCurve.Reverse();
-        Assert.True(myOriginalCurve.StartPoint().IsEqual(anEnd, 1e-10));
-        Assert.True(myOriginalCurve.EndPoint().IsEqual(aStart, 1e-10));
+        Assert.True(myOriginalCurve.StartPoint.IsEqual(anEnd, 1e-10));
+        Assert.True(myOriginalCurve.EndPoint.IsEqual(aStart, 1e-10));
     }
 
     [Fact]
@@ -260,15 +260,15 @@ public class Geom2d_BezierCurve_Test
         Point2D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point2D aPtAfter = myOriginalCurve.Value(0.5);
-        Assert.Equal(aPtBefore.X() + 10.0, aPtAfter.X(), 1e-10);
-        Assert.Equal(aPtBefore.Y() + 20.0, aPtAfter.Y(), 1e-10);
+        Assert.Equal(aPtBefore.X + 10.0, aPtAfter.X, 1e-10);
+        Assert.Equal(aPtBefore.Y + 20.0, aPtAfter.Y, 1e-10);
     }
 
     [Fact]
     public void PolesAccess()
     {
         // OCCT returns a reference to its array; the port returns a PackedList (indexed from 0)
-        IReadOnlyList<Point2D> aPoles = myOriginalCurve.Poles();
+        IReadOnlyList<Point2D> aPoles = myOriginalCurve.Poles;
         Assert.Equal(4, aPoles.Count);
         Assert.True(aPoles[0].IsEqual(new Point2D(0, 0), 1e-10));
     }
@@ -276,14 +276,14 @@ public class Geom2d_BezierCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.WeightsOrNull();
         Assert.Null(aWeights);
     }
 
     [Fact]
     public void MaxDegree()
     {
-        Assert.True(BezierCurve2D.MaxDegree() >= 25);
+        Assert.True(BezierCurve2D.MaxDegree >= 25);
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public class Geom2d_BezierCurve_Test
                                                            Weights3(1.0, 1.0 / Math.Sqrt(2.0), 1.0));
         Assert.True(aCurve.IsRational);
         Point2D aMid = aCurve.Value(0.5);
-        double aRadius = Math.Sqrt(aMid.X() * aMid.X() + aMid.Y() * aMid.Y());
+        double aRadius = Math.Sqrt(aMid.X * aMid.X + aMid.Y * aMid.Y);
         Assert.Equal(1.0, aRadius, 1e-6);
     }
 
@@ -348,11 +348,11 @@ public class Geom2d_BezierCurve_Test
     {
         BezierCurve2D aCurve = new BezierCurve2D(Poles3(new Point2D(0, 0), new Point2D(1, 1), new Point2D(2, 0)),
                                                            Weights3(1.0, 3.0, 2.0));
-        Point2D aStart = aCurve.StartPoint();
-        Point2D anEnd = aCurve.EndPoint();
+        Point2D aStart = aCurve.StartPoint;
+        Point2D anEnd = aCurve.EndPoint;
         aCurve.Reverse();
-        Assert.True(aCurve.StartPoint().IsEqual(anEnd, 1e-10));
-        Assert.True(aCurve.EndPoint().IsEqual(aStart, 1e-10));
+        Assert.True(aCurve.StartPoint.IsEqual(anEnd, 1e-10));
+        Assert.True(aCurve.EndPoint.IsEqual(aStart, 1e-10));
         Assert.Equal(2.0, aCurve.Weight(1));
         Assert.Equal(1.0, aCurve.Weight(3));
     }
@@ -363,8 +363,8 @@ public class Geom2d_BezierCurve_Test
         myOriginalCurve.D3(0.5, out _, out _, out _, out Vector2D aV3);
         // D3 of degree 3 is constant
         myOriginalCurve.D3(0.25, out _, out _, out _, out Vector2D aV3b);
-        Assert.Equal(aV3b.X(), aV3.X(), 1e-8);
-        Assert.Equal(aV3b.Y(), aV3.Y(), 1e-8);
+        Assert.Equal(aV3b.X, aV3.X, 1e-8);
+        Assert.Equal(aV3b.Y, aV3.Y, 1e-8);
     }
 
     [Fact]
@@ -381,7 +381,7 @@ public class Geom2d_BezierCurve_Test
         aPoles[1] = new Point2D(0, 0);
         aPoles[2] = new Point2D(3, 4);
         BezierCurve2D aCurve = new BezierCurve2D(aPoles);
-        Assert.Equal(1, aCurve.Degree());
+        Assert.Equal(1, aCurve.Degree);
         Point2D aMid = aCurve.Value(0.5);
         Assert.True(aMid.IsEqual(new Point2D(1.5, 2.0), 1e-10));
     }
@@ -393,7 +393,7 @@ public class Geom2d_BezierCurve_Test
                                                            Weights3(1.0, 2.0, 1.0));
         Point2D aValBefore = aCurve.Value(0.5);
         aCurve.Increase(5);
-        Assert.Equal(5, aCurve.Degree());
+        Assert.Equal(5, aCurve.Degree);
         Assert.True(aCurve.IsRational);
         Point2D aValAfter = aCurve.Value(0.5);
         Assert.True(aValBefore.IsEqual(aValAfter, 1e-10));

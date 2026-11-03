@@ -266,8 +266,8 @@ public class ALineToWLine
             if (quad.TypeQuadric() == SurfaceKind.Cone)
             {
                 Cone cone = quad.Cone();
-                Point3D apex = cone.Apex();
-                if (apex.SquareDistance(pntOn2S.Value()) > sqTol)
+                Point3D apex = cone.Apex;
+                if (apex.SquareDistanceTo(pntOn2S.Value()) > sqTol)
                 {
                     continue;
                 }
@@ -288,15 +288,15 @@ public class ALineToWLine
             Point2D prevPrevP2d = line.Value(indFirst).ValueOnSurface(isOnFirst);
             Point2D prevP2d = line.Value(indSecond).ValueOnSurface(isOnFirst);
             Direction2D dir = new(new Vector2D(prevPrevP2d, prevP2d));
-            double x0 = prevPrevP2d.X(), y0 = prevPrevP2d.Y();
+            double x0 = prevPrevP2d.X, y0 = prevPrevP2d.Y;
             pntOn2S.ParametersOnSurface(isOnFirst, out double xend, out double yend);
 
-            if (Math.Abs(dir.Y()) < Constants.Resolution())
+            if (Math.Abs(dir.Y) < Constants.Resolution())
             {
                 continue;
             }
 
-            double newXend = dir.X() / dir.Y() * (yend - y0) + x0;
+            double newXend = dir.X / dir.Y * (yend - y0) + x0;
 
             line.SetUV(index, isOnFirst, newXend, yend);
         }
@@ -315,17 +315,17 @@ public class ALineToWLine
             if (quad.TypeQuadric() == SurfaceKind.Cone)
             {
                 Cone cone = quad.Cone();
-                Xyz rVec = pnt3d.XYZ() - cone.Apex().XYZ();
-                Xyz dir = cone.Axis().Direction().XYZ();
+                Xyz rVec = pnt3d.XYZ() - cone.Apex.XYZ();
+                Xyz dir = cone.Axis.Direction.XYZ();
 
-                retVal = Min(retVal, Math.Abs(rVec.Dot(dir) * Math.Tan(cone.SemiAngle())));
+                retVal = Min(retVal, Math.Abs(rVec.Dot(dir) * Math.Tan(cone.SemiAngle)));
             }
             else if (quad.TypeQuadric() == SurfaceKind.Sphere)
             {
                 Sphere sphere = quad.Sphere();
-                Xyz rVec = pnt3d.XYZ() - sphere.Location().XYZ();
-                Xyz dir = sphere.Position().Direction().XYZ();
-                double r = sphere.Radius();
+                Xyz rVec = pnt3d.XYZ() - sphere.Location.XYZ();
+                Xyz dir = sphere.Position.Direction.XYZ();
+                double r = sphere.Radius;
                 double d = rVec.Dot(dir);
                 double delta = r * r - d * d;
                 if (delta <= 0.0)
@@ -510,7 +510,7 @@ public class ALineToWLine
                         isPointValid = true;
                     }
 
-                    tgMagn = tg.Magnitude();
+                    tgMagn = tg.Magnitude;
                     double u1 = 0.0, v1 = 0.0, u2 = 0.0, v2 = 0.0;
                     _quad1.Parameters(pnt3d, ref u1, ref v1);
                     _quad2.Parameters(pnt3d, ref u2, ref v2);
@@ -544,7 +544,7 @@ public class ALineToWLine
                             if ((param - prevParam) < prmTol)
                             {
                                 Point3D pnt3dV = aLine.Value(param);
-                                if (pOn2S.Value().SquareDistance(pnt3dV) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                                if (pOn2S.Value().SquareDistanceTo(pnt3dV) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                                 {
                                     // i-th vertex is the same as a Pole/Apex.
                                     // So, it should be ignored.
@@ -597,8 +597,8 @@ public class ALineToWLine
                         PntOn2S pOn2SNext = new();
                         pOn2SNext.SetValue(pnt3dNext, anU1, aV1, anU2, aV2);
 
-                        if (pOn2SNext.ValueOnSurface(false).SquareDistance(rpt.ValueOnSurface(false)) > M_PI * M_PI
-                            || pOn2SNext.ValueOnSurface(true).SquareDistance(rpt.ValueOnSurface(true)) > M_PI * M_PI)
+                        if (pOn2SNext.ValueOnSurface(false).SquareDistanceTo(rpt.ValueOnSurface(false)) > M_PI * M_PI
+                            || pOn2SNext.ValueOnSurface(true).SquareDistanceTo(rpt.ValueOnSurface(true)) > M_PI * M_PI)
                         {
                             prevLPoint = rpt;
                             prevParam = parameter;
@@ -770,7 +770,7 @@ public class ALineToWLine
 
                         Point3D p2 = aLine.Value(vertexParams[i]);
 
-                        if (p1.SquareDistance(p2) < sqTol)
+                        if (p1.SquareDistanceTo(p2) < sqTol)
                         {
                             PatchPoint lVtx = aLine.Vertex(i);
                             lVtx.SetValue(vertP2S);

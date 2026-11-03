@@ -847,7 +847,7 @@ type T:Occt.BRepOffset_BuildOffsetFaces Kerf.Engine.Offsets.BuildOffsetFaces  # 
 type T:Occt.BRepOffset_Error Kerf.Engine.Offsets.Error  # engine (10D)
 type T:Occt.BRepOffset_Inter2d Kerf.Engine.Offsets.Inter2d  # engine (10D)
 type T:Occt.BRepOffset_Inter3d Kerf.Engine.Offsets.Inter3d  # engine (10D)
-type T:Occt.BRepOffset_Interval Kerf.Engine.Offsets.Interval  # engine (10D)
+type T:Occt.BRepOffset_Interval Kerf.Engine.Offsets.OffsetInterval  # engine (10D); 10L1: Interval is Kerf.Geometry.Interval
 type T:Occt.BRepOffset_MakeLoops Kerf.Engine.Offsets.OffsetMakeLoops  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.BRepOffset_MakeOffset Kerf.Engine.Offsets.MakeOffset  # engine (10D)
 type T:Occt.BRepOffset_MakeSimpleOffset Kerf.Engine.Offsets.MakeSimpleOffset  # engine (10D)

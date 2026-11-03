@@ -245,7 +245,7 @@ public class ShapeHistoryTests
     [Fact]
     public void RecordedPlacementsPreserveLastAndNewGeometry()
     {
-        static global::Kerf.Topology.Shape Snapshot(global::Kerf.Topology.Shape shape) => shape.Located(shape.Location());
+        static global::Kerf.Topology.Shape Snapshot(global::Kerf.Topology.Shape shape) => shape.Located(shape.Placement);
 
         var recorded = CompoundObjects.Box(10, 10, 10) - CompoundObjects.Cylinder(2, 20);
         var originalHistory = recorded.History;

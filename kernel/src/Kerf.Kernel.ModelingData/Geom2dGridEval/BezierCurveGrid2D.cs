@@ -14,7 +14,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// Efficient batch evaluator for 2D Bezier curve grid points: one BSplCLib_Cache built for the single span,
 /// then polynomial evaluation at each parameter.
 /// </summary>
-public sealed class BezierCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class BezierCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly BezierCurve2D? _geom;
 
@@ -33,7 +33,7 @@ public sealed class BezierCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         NCollection_Array1<double> knotSequence = curve.InternalKnotSequence();
         NCollection_Array1<Point2D> poles = curve.InternalPoles();
         NCollection_Array1<double>? weights = curve.InternalWeights();
-        Cache cache = new(curve.Degree(), false, knotSequence, poles, weights);
+        Cache cache = new(curve.Degree, false, knotSequence, poles, weights);
         cache.BuildCache(0.5, knotSequence, poles, weights);
         return cache;
     }
@@ -135,7 +135,7 @@ public sealed class BezierCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 
         // For Bezier curves, derivatives become zero when order exceeds degree
         // OCCT: not for a rational curve, whose derivatives above the degree are generally not zero
-        int degree = _geom.Degree();
+        int degree = _geom.Degree;
         if (n > degree)
         {
             Vector2D zeroVec = new(0.0, 0.0);

@@ -51,28 +51,28 @@ public class ComputeApprox
 
         public PlaneProjector(in CoordinateSystem pos)
         {
-            Point3D loc = pos.Location();
-            _ox = loc.X();
-            _oy = loc.Y();
-            _oz = loc.Z();
+            Point3D loc = pos.Location;
+            _ox = loc.X;
+            _oy = loc.Y;
+            _oz = loc.Z;
 
-            Direction3D xDir = pos.XDirection();
-            _dXx = xDir.X();
-            _dXy = xDir.Y();
-            _dXz = xDir.Z();
+            Direction3D xDir = pos.XDirection;
+            _dXx = xDir.X;
+            _dXy = xDir.Y;
+            _dXz = xDir.Z;
 
-            Direction3D yDir = pos.YDirection();
-            _dYx = yDir.X();
-            _dYy = yDir.Y();
-            _dYz = yDir.Z();
+            Direction3D yDir = pos.YDirection;
+            _dYx = yDir.X;
+            _dYy = yDir.Y;
+            _dYz = yDir.Z;
         }
 
         /// <summary>The 2D point X = (P - Origin) . XDirection, Y = (P - Origin) . YDirection.</summary>
         public Point2D Project(in Point3D p)
         {
-            double dX = p.X() - _ox;
-            double dY = p.Y() - _oy;
-            double dZ = p.Z() - _oz;
+            double dX = p.X - _ox;
+            double dY = p.Y - _oy;
+            double dZ = p.Z - _oz;
             return new Point2D(dX * _dXx + dY * _dXy + dZ * _dXz, dX * _dYx + dY * _dYy + dZ * _dYz);
         }
     }
@@ -199,12 +199,12 @@ public class ComputeApprox
                 Vector3D d1U, d1V;
                 Vector3D t;
                 myCurve.D1(u, out p3d, out t);
-                mySurface.D1(p.X(), p.Y(), out p3d, out d1U, out d1V);
+                mySurface.D1(p.X, p.Y, out p3d, out d1U, out d1V);
 
                 dU = t.Dot(d1U);
                 dV = t.Dot(d1V);
-                double nu = d1U.SquareMagnitude();
-                double nv = d1V.SquareMagnitude();
+                double nu = d1U.SquareMagnitude;
+                double nv = d1V.SquareMagnitude;
 
                 if (nu < Epsilon(1.0) || nv < Epsilon(1.0))
                 {
@@ -277,7 +277,7 @@ public class ComputeApprox
                 vCouture = false;
                 // Calculation of cone parameters for P == ConeApex often produces wrong
                 // values of U
-                Point3D coneApex = cone.Apex();
+                Point3D coneApex = cone.Apex;
                 if (coneApex.XYZ().IsEqual(p1.XYZ(), tol))
                 {
                     w1 += ptol;
@@ -322,9 +322,9 @@ public class ComputeApprox
                         double u1, v1, u, v, Delta = 0.0, d = 0.0, pmin = w1, pmax = w1, dmax = 0.0, uf, ul;
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p1, out u1, out v1);
                         global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, p2, out ul, out v1);
-                        Axis3D ax1 = cone.Axis();
+                        Axis3D ax1 = cone.Axis;
                         Line3D lin = new(ax1);
-                        double r = (lin.Distance(p1) + lin.Distance(p2) + lin.Distance(p)) / 3.0;
+                        double r = (lin.DistanceTo(p1) + lin.DistanceTo(p2) + lin.DistanceTo(p)) / 3.0;
                         double step;
                         myU1 = u1;
                         myU2 = u1;
@@ -513,7 +513,7 @@ public class ComputeApprox
                 {
                     double u1, v1, u, v;
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, p1, out u1, out v1);
-                    double r = cylinder.Radius();
+                    double r = cylinder.Radius;
                     double Delta = 0.0, step;
                     double eps = M_PI, dmax = 0.0, d = 0.0;
                     step = Function_ComputeStep(myCurve, r);
@@ -608,11 +608,11 @@ public class ComputeApprox
                     Transform3D trsf = new();
                     //
                     Circle3D circle = myCurve.Circle();
-                    trsf = trsf.WithTransformation(sp.Position());
+                    trsf = trsf.WithTransformation(sp.Position);
                     circle = circle.Transformed(trsf);
                     //
-                    r = sp.Radius();
-                    Plane3D plane = new(new CoordinateSystem(circle.Position()));
+                    r = sp.Radius;
+                    Plane3D plane = new(new CoordinateSystem(circle.Position));
                     plane.Coefficients(out a, out b, out c, out D);
                     //
                     if (Math.Abs(c) < Tol)
@@ -756,7 +756,7 @@ public class ComputeApprox
                     }
                     else
                     { // 0 or 2 solutions
-                        Point3D center = circle.Location();
+                        Point3D center = circle.Location;
                         double u, v;
                         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(new CoordinateSystem(Constants.XOY()), 1, center, out u, out v);
                         myU1 = u - M_PI;
@@ -787,9 +787,9 @@ public class ComputeApprox
                         // if P1.Z() equals +/- R we are at the vertex: not significant.
                         Point3D pp = p1.Transformed(trsf);
 
-                        if (Math.Abs(pp.X() * pp.X() + pp.Y() * pp.Y() + pp.Z() * pp.Z() - r * r) < Tol)
+                        if (Math.Abs(pp.X * pp.X + pp.Y * pp.Y + pp.Z * pp.Z - r * r) < Tol)
                         {
-                            Point3D center = circle.Location();
+                            Point3D center = circle.Location;
                             double u, v;
                             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(new CoordinateSystem(Constants.XOY()), 1, center, out u, out v);
                             myU1 = u - M_PI;
@@ -808,7 +808,7 @@ public class ComputeApprox
                 {
                     double u1, v1, u, v;
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(sp, p1, out u1, out v1);
-                    double r = sp.Radius();
+                    double r = sp.Radius;
                     double Delta = 0.0, step;
                     double eps = M_PI, dmax = 0.0, d = 0.0;
                     step = Function_ComputeStep(myCurve, r);
@@ -884,7 +884,7 @@ public class ComputeApprox
                 Torus tr = mySurface.Torus();
                 double u1, v1, u, v, dU, dV;
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(tr, p1, out u1, out v1);
-                double r = tr.MinorRadius();
+                double r = tr.MinorRadius;
                 double deltaU = 0.0, deltaV = 0.0, step;
                 double eps = M_PI, dmaxU = 0.0, dmaxV = 0.0;
                 step = Function_ComputeStep(myCurve, r);
@@ -1188,7 +1188,7 @@ public class ComputeApprox
             NCollection_Array1<Point2D> poles = new(1, nbPoles);
 
             // Project poles onto plane using optimized projector (avoids gp_Trsf per point)
-            PlaneProjector proj = new(s.Plane().Position());
+            PlaneProjector proj = new(s.Plane().Position);
             for (int i = 1; i <= nbPoles; i++)
             {
                 poles.SetValue(i, proj.Project(p3d[i]));
@@ -1202,12 +1202,12 @@ public class ComputeApprox
                                                     bs.InternalWeightsArray(),
                                                     knots,
                                                     mults,
-                                                    bs.Degree(),
+                                                    bs.Degree,
                                                     bs.IsPeriodic);
             }
             else
             {
-                _bSpline = new BSplineCurve2D(poles, knots, mults, bs.Degree(), bs.IsPeriodic);
+                _bSpline = new BSplineCurve2D(poles, knots, mults, bs.Degree, bs.IsPeriodic);
             }
         }
         else if (cType == BezierCurve && sType == Plane)
@@ -1219,7 +1219,7 @@ public class ComputeApprox
             NCollection_Array1<Point2D> poles = new(1, nbPoles);
 
             // Project poles onto plane using optimized projector (avoids gp_Trsf per point)
-            PlaneProjector proj = new(s.Plane().Position());
+            PlaneProjector proj = new(s.Plane().Position);
             for (int i = 1; i <= nbPoles; i++)
             {
                 poles.SetValue(i, proj.Project(p3d[i]));
@@ -1341,7 +1341,7 @@ public class ComputeApprox
                 if (fistC == PassPoint || lastC == PassPoint)
                 {
                     // try to smoother the Curve GeomAbs_C1.
-                    int deg = _bSpline.Degree();
+                    int deg = _bSpline.Degree;
                     bool ok = true;
                     double smoothTol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), newTol2d);
                     for (int ij = 2; ij < NbKnots; ij++)
@@ -1430,7 +1430,7 @@ public class ComputeApprox
             {
                 double nbPer;
                 Point2D p2d = f.Value(umid);
-                du = u - p2d.X();
+                du = u - p2d.X;
                 du = (du < 0) ? (du - global::Kerf.Engine.Foundation.Precision.PConfusion()) : (du + global::Kerf.Engine.Foundation.Precision.PConfusion());
                 nbPer = Math.Truncate(du / M_PI); // modf's integral part
                 number = (int)nbPer;

@@ -144,7 +144,7 @@ public sealed class Spliter
                         lsubs.Clear();
                         Vertex vsub = ShapeCasts.Vertex(vtx.Oriented(Forward));
                         Point3D p1 = Tool.Pnt(vsub), p2 = Tool.Pnt(vb);
-                        double d = p1.Distance(p2);
+                        double d = p1.DistanceTo(p2);
                         d = d + Tool.Tolerance(vb);
                         bb.UpdateVertex(vsub, d);
                         lsubs.Append(vsub);
@@ -259,7 +259,7 @@ public sealed class Spliter
 
         NCollection_List<Shape> lres = _map.GetValue(_shape);
 
-        ShapeType typS = _shape.ShapeType();
+        ShapeType typS = _shape.Type;
         if (typS == ShapeType.Face && lres.Extent() >= 2)
         {
             BrepBuilder b = new();
@@ -267,10 +267,10 @@ public sealed class Spliter
             Shell shell = new();
             b.MakeShell(ref shell);
             _res = shell;
-            _res.Orientation(Forward);
+            _res.Orient(Forward);
             for (itl.Initialize(lres); itl.More(); itl.Next())
             {
-                b.Add(_res, itl.Value().Oriented(_shape.Orientation()));
+                b.Add(_res, itl.Value().Oriented(_shape.Orientation));
             }
         }
         else if (typS == ShapeType.Edge && lres.Extent() >= 2)
@@ -280,10 +280,10 @@ public sealed class Spliter
             Wire wire = new();
             b.MakeWire(ref wire);
             _res = wire;
-            _res.Orientation(Forward);
+            _res.Orient(Forward);
             for (itl.Initialize(lres); itl.More(); itl.Next())
             {
-                b.Add(_res, itl.Value().Oriented(_shape.Orientation()));
+                b.Add(_res, itl.Value().Oriented(_shape.Orientation));
             }
         }
         else
@@ -327,11 +327,11 @@ public sealed class Spliter
                     { // tout au meme point
                         Curve3D c = Tool.Curve(e1, out Placement loc, out double f, out _)!;
                         c.D1(f, out Point3D pbid, out Vector3D v1);
-                        v1 = v1.Transformed(loc.Transformation());
+                        v1 = v1.Transformed(loc.Transformation);
 
                         c = Tool.Curve(e2, out loc, out f, out _)!;
                         c.D1(f, out pbid, out Vector3D v2);
-                        v2 = v2.Transformed(loc.Transformation());
+                        v2 = v2.Transformed(loc.Transformation);
                         if (v1.Dot(v2) > 0.0)
                         {
                             lsubs.Append(e2.Oriented(Forward));
@@ -351,7 +351,7 @@ public sealed class Spliter
             {
                 Shape ebase = lsubs.First();
                 lsubs.Clear();
-                lsubs.Append(e1.Oriented(ebase.Orientation()));
+                lsubs.Append(e1.Oriented(ebase.Orientation));
                 theSubs.Substitute(ebase, lsubs);
             }
             else
@@ -471,7 +471,7 @@ public sealed class Spliter
                 Edge edg = ShapeCasts.Edge(exp2.Current());
                 foreach (Shape itms in mapE)
                 {
-                    if (itms.IsSame(edg) && edg.Orientation() == itms.Orientation())
+                    if (itms.IsSame(edg) && edg.Orientation == itms.Orientation)
                     {
                         isFound = true;
                         break;
@@ -667,7 +667,7 @@ public sealed class Spliter
 
         if (!loc.IsIdentity)
         {
-            Geometry3D gg = c.Transformed(loc.Transformation());
+            Geometry3D gg = c.Transformed(loc.Transformation);
             c = (Curve3D)gg;
         }
         Point3D pt = c.Value((f + l) / 2.0);
@@ -681,7 +681,7 @@ public sealed class Spliter
             c = Tool.Curve(edg, out loc, out f, out l)!;
             if (!loc.IsIdentity)
             {
-                Geometry3D gg = c.Transformed(loc.Transformation());
+                Geometry3D gg = c.Transformed(loc.Transformation);
                 c = (Curve3D)gg;
             }
             proj.Init(pt, c, f, l);

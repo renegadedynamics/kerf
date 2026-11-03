@@ -52,14 +52,14 @@ public sealed class EdgeAnalysis
         c3d = Tool.Curve(edge, out Placement l, out cf, out cl);
         if (c3d is not null && !l.IsIdentity)
         {
-            c3d = (Curve3D)c3d.Transformed(l.Transformation());
-            cf = c3d.TransformedParameter(cf, l.Transformation());
-            cl = c3d.TransformedParameter(cl, l.Transformation());
+            c3d = (Curve3D)c3d.Transformed(l.Transformation);
+            cf = c3d.TransformedParameter(cf, l.Transformation);
+            cl = c3d.TransformedParameter(cl, l.Transformation);
         }
 
         if (orient)
         {
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             {
                 double tmp = cf;
                 cf = cl;
@@ -123,7 +123,7 @@ public sealed class EdgeAnalysis
                        bool orient = true)
     {
         c2d = Tool.CurveOnSurface(edge, surface, location, out cf, out cl);
-        if (orient && edge.Orientation() == Reversed)
+        if (orient && edge.Orientation == Reversed)
         {
             double tmp = cf;
             cf = cl;
@@ -172,7 +172,7 @@ public sealed class EdgeAnalysis
     public Vertex FirstVertex(in Edge edge)
     {
         Vertex v;
-        if (edge.Orientation() == Reversed)
+        if (edge.Orientation == Reversed)
         {
             v = Exploration.LastVertex(edge);
             v.Reverse();
@@ -189,7 +189,7 @@ public sealed class EdgeAnalysis
     public Vertex LastVertex(in Edge edge)
     {
         Vertex v;
-        if (edge.Orientation() == Reversed)
+        if (edge.Orientation == Reversed)
         {
             v = Exploration.FirstVertex(edge);
             v.Reverse();
@@ -259,7 +259,7 @@ public sealed class EdgeAnalysis
                     tang = new Vector2D(ptmp.XY() - pos.XY());
                 }
 
-                if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (tang.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     dpnew = 0.0;
                 }
@@ -271,17 +271,17 @@ public sealed class EdgeAnalysis
             // get non-null tangency searching until 3rd derivative, or as straight btw ends
             double par = (atEnd ? cl : cf);
             c2d!.D1(par, out pos, out tang);
-            if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (tang.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 c2d.D2(par, out pos, out Vector2D d1, out tang);
-                if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (tang.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     c2d.D3(par, out pos, out d1, out Vector2D d2, out tang);
-                    if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    if (tang.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         c2d.D0((atEnd ? cf : cl), out Point2D p2);
                         tang = new Vector2D(p2.XY() - pos.XY());
-                        if (tang.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        if (tang.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.PConfusion() * global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             return false;
                         }
@@ -289,7 +289,7 @@ public sealed class EdgeAnalysis
                 }
             }
 
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             {
                 tang = tang.Reversed();
             }
@@ -322,7 +322,7 @@ public sealed class EdgeAnalysis
         {
             //  1er VTX
             Point3D p13d = c3d!.Value(cf);
-            if (p1v.Distance(p13d) > (preci < 0 ? Tool.Tolerance(v1) : preci))
+            if (p1v.DistanceTo(p13d) > (preci < 0 ? Tool.Tolerance(v1) : preci))
             {
                 _status |= (int)ExtendStatus.DONE1; // OCCT ors the enumerator, which equals its encoding for DONE1 and DONE2
             }
@@ -332,7 +332,7 @@ public sealed class EdgeAnalysis
         {
             //  2me VTX
             Point3D p23d = c3d!.Value(cl);
-            if (p2v.Distance(p23d) > (preci < 0 ? Tool.Tolerance(v2) : preci))
+            if (p2v.DistanceTo(p23d) > (preci < 0 ? Tool.Tolerance(v2) : preci))
             {
                 _status |= (int)ExtendStatus.DONE2;
             }
@@ -370,13 +370,13 @@ public sealed class EdgeAnalysis
         if (vtx != 2)
         { //  1er VTX
             Point2D p1uv = c2d!.Value(cf);
-            Point3D p12d = surf!.Value(p1uv.X(), p1uv.Y());
+            Point3D p12d = surf!.Value(p1uv.X, p1uv.Y);
             if (!loc.IsIdentity)
             {
-                p12d = p12d.Transformed(loc.Transformation());
+                p12d = p12d.Transformed(loc.Transformation);
             }
 
-            if (p1v.Distance(p12d) > (preci < 0 ? Tool.Tolerance(v1) : preci))
+            if (p1v.DistanceTo(p12d) > (preci < 0 ? Tool.Tolerance(v1) : preci))
             {
                 _status |= (int)ExtendStatus.DONE1;
             }
@@ -385,13 +385,13 @@ public sealed class EdgeAnalysis
         if (vtx != 1)
         { //  2me VTX
             Point2D p2uv = c2d!.Value(cl);
-            Point3D p22d = surf!.Value(p2uv.X(), p2uv.Y());
+            Point3D p22d = surf!.Value(p2uv.X, p2uv.Y);
             if (!loc.IsIdentity)
             {
-                p22d = p22d.Transformed(loc.Transformation());
+                p22d = p22d.Transformed(loc.Transformation);
             }
 
-            if (p2v.Distance(p22d) > (preci < 0 ? Tool.Tolerance(v2) : preci))
+            if (p2v.DistanceTo(p22d) > (preci < 0 ? Tool.Tolerance(v2) : preci))
             {
                 _status |= (int)ExtendStatus.DONE2;
             }
@@ -432,8 +432,8 @@ public sealed class EdgeAnalysis
         }
         else
         {
-            toler1 = pnt1.SquareDistance(c3d!.Value(a));
-            toler2 = pnt2.SquareDistance(c3d.Value(b));
+            toler1 = pnt1.SquareDistanceTo(c3d!.Value(a));
+            toler2 = pnt2.SquareDistanceTo(c3d.Value(b));
         }
 
         if (checkAll)
@@ -447,14 +447,14 @@ public sealed class EdgeAnalysis
                 }
 
                 Surface s = gc.Surface()!;
-                Placement l = edge.Location() * gc.Location();
+                Placement l = edge.Placement * gc.Location();
                 sae.PCurve(edge, s, l, out Curve2D? pcurve, out a, out b, true);
                 Point2D p1 = pcurve!.Value(a);
                 Point2D p2 = pcurve.Value(b);
-                Point3D P1 = s.Value(p1.X(), p1.Y()).Transformed(l.Transformation());
-                Point3D P2 = s.Value(p2.X(), p2.Y()).Transformed(l.Transformation());
-                toler1 = Max(toler1, pnt1.SquareDistance(P1));
-                toler2 = Max(toler2, pnt2.SquareDistance(P2));
+                Point3D P1 = s.Value(p1.X, p1.Y).Transformed(l.Transformation);
+                Point3D P2 = s.Value(p2.X, p2.Y).Transformed(l.Transformation);
+                toler1 = Max(toler1, pnt1.SquareDistanceTo(P1));
+                toler2 = Max(toler2, pnt2.SquareDistanceTo(P2));
             }
         }
         //: abv 10.06.02: porting C40 -> dev (CC670-12608.stp)
@@ -466,10 +466,10 @@ public sealed class EdgeAnalysis
             {
                 Point2D p1 = pcurve!.Value(a);
                 Point2D p2 = pcurve.Value(b);
-                Point3D P1 = s!.Value(p1.X(), p1.Y()).Transformed(l.Transformation());
-                Point3D P2 = s.Value(p2.X(), p2.Y()).Transformed(l.Transformation());
-                toler1 = Max(toler1, pnt1.SquareDistance(P1));
-                toler2 = Max(toler2, pnt2.SquareDistance(P2));
+                Point3D P1 = s!.Value(p1.X, p1.Y).Transformed(l.Transformation);
+                Point3D P2 = s.Value(p2.X, p2.Y).Transformed(l.Transformation);
+                toler1 = Max(toler1, pnt1.SquareDistanceTo(P1));
+                toler2 = Max(toler2, pnt2.SquareDistanceTo(P2));
             }
             else
             {
@@ -562,8 +562,8 @@ public sealed class EdgeAnalysis
         // #39 rln 17.11.98 S4054, annie_surf.igs entity 39
         return CheckPoints(c3d!.Value(f3d),
                            c3d.Value(l3d),
-                           surface.Value(p2d1.X(), p2d1.Y()).Transformed(location.Transformation()),
-                           surface.Value(p2d2.X(), p2d2.Y()).Transformed(location.Transformation()),
+                           surface.Value(p2d1.X, p2d1.Y).Transformed(location.Transformation),
+                           surface.Value(p2d2.X, p2d2.Y).Transformed(location.Transformation),
                            preci1,
                            preci2);
     }
@@ -571,11 +571,11 @@ public sealed class EdgeAnalysis
     private bool CheckPoints(in Point3D p1A, in Point3D p1B, in Point3D p2A, in Point3D p2B, double preci1, double preci2)
     {
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
-        if (p1A.SquareDistance(p2A) <= preci1 * preci1 && p1B.SquareDistance(p2B) <= preci2 * preci2)
+        if (p1A.SquareDistanceTo(p2A) <= preci1 * preci1 && p1B.SquareDistanceTo(p2B) <= preci2 * preci2)
         {
             return false;
         }
-        else if (p1A.Distance(p2B) + (p1B.Distance(p2A)) < p1A.Distance(p2A) + (p1B.Distance(p2B)))
+        else if (p1A.DistanceTo(p2B) + (p1B.DistanceTo(p2A)) < p1A.DistanceTo(p2A) + (p1B.DistanceTo(p2B)))
         {
             _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
         }
@@ -627,7 +627,7 @@ public sealed class EdgeAnalysis
 
         if (!curveLoc.IsIdentity)
         {
-            Transform3D trsf = curveLoc.Transformation();
+            Transform3D trsf = curveLoc.Transformation;
             c3D = (Curve3D)c3D.Transformed(trsf);
             first = c3D.TransformedParameter(first, trsf);
             last = c3D.TransformedParameter(last, trsf);
@@ -666,7 +666,7 @@ public sealed class EdgeAnalysis
             // If the input face is not null, check that the curve is on its surface
             if (faceSurf is not null)
             {
-                if (faceSurf != s || faceLoc != loc)
+                if (faceSurf != s || !faceLoc.IsEqual(loc))
                 {
                     continue;
                 }
@@ -675,7 +675,7 @@ public sealed class EdgeAnalysis
             isPCurveFound = true;
 
             // Apply transformations for the surface
-            Surface st = (Surface)s!.Transformed(loc.Transformation());
+            Surface st = (Surface)s!.Transformed(loc.Transformation);
 
             // Compute deviation between curves
             var ghpc = new CurveAdaptor2D(pc, f, l);
@@ -702,7 +702,7 @@ public sealed class EdgeAnalysis
             {
                 var ghpc = new CurveAdaptor2D(pc, first, last);
 
-                Surface st = (Surface)faceSurf.Transformed(faceLoc.Transformation());
+                Surface st = (Surface)faceSurf.Transformed(faceLoc.Transformation);
                 var gahs = new SurfaceAdaptor(st);
 
                 var acs = new CurveOnSurface(ghpc, gahs);
@@ -901,19 +901,19 @@ public sealed class EdgeAnalysis
         double period = RealLast();
         if (isPeriodic)
         {
-            period = pc.Period();
+            period = pc.Period;
         }
 
-        double fp = pc.FirstParameter(), lp = pc.LastParameter();
+        double fp = pc.FirstParameter, lp = pc.LastParameter;
         if (pc.GetType() == typeof(TrimmedCurve2D))
         {
-            Curve2D c = ((TrimmedCurve2D)pc).BasisCurve();
-            fp = c.FirstParameter();
-            lp = c.LastParameter();
+            Curve2D c = ((TrimmedCurve2D)pc).BasisCurve;
+            fp = c.FirstParameter;
+            lp = c.LastParameter;
             isPeriodic = c.IsPeriodic;
             if (isPeriodic)
             {
-                period = c.Period();
+                period = c.Period;
             }
         }
 

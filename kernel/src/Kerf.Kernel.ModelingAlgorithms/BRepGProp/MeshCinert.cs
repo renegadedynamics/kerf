@@ -154,7 +154,7 @@ public class MeshCinert : Properties
             }
             else
             {
-                Transform3D tr = loc.Transformation();
+                Transform3D tr = loc.Transformation;
                 for (i = 1; i <= nodes.Length(); ++i)
                 {
                     thePolyg.SetValue(i, nodes.Value(i).Transformed(tr));
@@ -181,7 +181,7 @@ public class MeshCinert : Properties
             }
             else
             {
-                Transform3D tr = loc.Transformation();
+                Transform3D tr = loc.Transformation;
                 for (i = 1; i <= nbNodes; ++i)
                 {
                     thePolyg.SetValue(i, tri!.Node(nodeInds[i]).Transformed(tr));
@@ -204,17 +204,17 @@ public class MeshCinert : Properties
                 for (i = 1; i <= nbNodes; ++i)
                 {
                     Point2D p2d = nodes2D[i];
-                    Point3D p = s!.Value(p2d.X(), p2d.Y());
+                    Point3D p = s!.Value(p2d.X, p2d.Y);
                     thePolyg.SetValue(i, p);
                 }
             }
             else
             {
-                Transform3D tr = loc.Transformation();
+                Transform3D tr = loc.Transformation;
                 for (i = 1; i <= nbNodes; ++i)
                 {
                     Point2D p2d = nodes2D[i];
-                    Point3D p = s!.Value(p2d.X(), p2d.Y());
+                    Point3D p = s!.Value(p2d.X, p2d.Y);
                     p = p.Transformed(tr);
                     thePolyg.SetValue(i, p);
                 }

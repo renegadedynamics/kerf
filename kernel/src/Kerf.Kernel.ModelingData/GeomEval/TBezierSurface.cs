@@ -267,7 +267,7 @@ public sealed class TBezierSurface : BoundedSurface
     }
 
     /// <summary>[0, Pi/alphaU] x [0, Pi/alphaV].</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = M_PI / _alphaU;
@@ -288,7 +288,7 @@ public sealed class TBezierSurface : BoundedSurface
             int ur = _poles.UpperRow();
             for (int j = _poles.LowerCol(); j <= _poles.UpperCol(); ++j)
             {
-                if (_poles.Value(lr, j).Distance(_poles.Value(ur, j)) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (_poles.Value(lr, j).DistanceTo(_poles.Value(ur, j)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return false;
                 }
@@ -308,7 +308,7 @@ public sealed class TBezierSurface : BoundedSurface
             int uc = _poles.UpperCol();
             for (int i = _poles.LowerRow(); i <= _poles.UpperRow(); ++i)
             {
-                if (_poles.Value(i, lc).Distance(_poles.Value(i, uc)) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (_poles.Value(i, lc).DistanceTo(_poles.Value(i, uc)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     return false;
                 }
@@ -321,11 +321,11 @@ public sealed class TBezierSurface : BoundedSurface
 
     public override bool IsVPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCNu(int n) => true;
+    internal override bool IsCNu(int n) => true;
 
-    public override bool IsCNv(int n) => true;
+    internal override bool IsCNv(int n) => true;
 
     /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override Curve3D UIso(double u)
@@ -385,7 +385,7 @@ public sealed class TBezierSurface : BoundedSurface
         EvalTrigBasisDeriv(v, _alphaV, OrderV(), order, basisDeriv);
     }
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
         int nbU = _poles.NbRows();
         int nbV = _poles.NbColumns();
@@ -426,7 +426,7 @@ public sealed class TBezierSurface : BoundedSurface
         return new Point3D(numer / denom);
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
         int nbU = _poles.NbRows();
         int nbV = _poles.NbColumns();
@@ -503,7 +503,7 @@ public sealed class TBezierSurface : BoundedSurface
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
         int nbU = _poles.NbRows();
         int nbV = _poles.NbColumns();
@@ -624,7 +624,7 @@ public sealed class TBezierSurface : BoundedSurface
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
         int nbU = _poles.NbRows();
         int nbV = _poles.NbColumns();
@@ -805,7 +805,7 @@ public sealed class TBezierSurface : BoundedSurface
 
     /// <exception cref="RangeErrorException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
     /// <exception cref="UndefinedDerivative3DException">A rational surface and Nu + Nv &gt; 3.</exception>
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {

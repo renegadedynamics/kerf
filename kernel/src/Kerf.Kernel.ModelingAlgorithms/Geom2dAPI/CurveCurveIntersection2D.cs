@@ -128,8 +128,8 @@ public class CurveCurveIntersection2D
         Standard_NullObject_Raise_if(_curve1 is null, "Geom2dAPI_InterCurveCurve::Segment");
 
         double u1, u2, v1, v2;
-        u1 = _curve1!.FirstParameter();
-        u2 = _curve1.LastParameter();
+        u1 = _curve1!.FirstParameter;
+        u2 = _curve1.LastParameter;
         if (_curve2 is null)
         {
             v1 = u1;
@@ -137,8 +137,8 @@ public class CurveCurveIntersection2D
         }
         else
         {
-            v1 = _curve2.FirstParameter();
-            v2 = _curve2.LastParameter();
+            v1 = _curve2.FirstParameter;
+            v2 = _curve2.LastParameter;
         }
 
         IntersectionSegment2D seg = _intersector.Segment(index);

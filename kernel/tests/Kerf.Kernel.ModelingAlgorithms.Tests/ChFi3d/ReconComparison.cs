@@ -59,8 +59,8 @@ internal static class ReconComparison
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
             Shape S = aDS.Shape(i);
-            if (S.ShapeType() == ShapeType.Solid
-                || (S.ShapeType() == ShapeType.Shell && aDS.ShapeInterferences(i).Extent() > 0))
+            if (S.Type == ShapeType.Solid
+                || (S.Type == ShapeType.Shell && aDS.ShapeInterferences(i).Extent() > 0))
             {
                 aSolids.Add(i);
             }
@@ -87,7 +87,7 @@ internal static class ReconComparison
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
             Shape S = aDS.Shape(i);
-            if (S.ShapeType() != ShapeType.Edge || !aCoup.IsSplit(S, In))
+            if (S.Type != ShapeType.Edge || !aCoup.IsSplit(S, In))
             {
                 continue;
             }

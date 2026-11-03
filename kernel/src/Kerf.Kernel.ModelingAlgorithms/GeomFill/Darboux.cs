@@ -23,7 +23,7 @@ public class Darboux : TrihedronLaw
     /// <summary>Computes (F/|F|)'.</summary>
     private static Vector3D FDeriv(in Vector3D f, in Vector3D df)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (df - f * (f * df) / (norma * norma)) / norma;
         return result;
     }
@@ -31,9 +31,9 @@ public class Darboux : TrihedronLaw
     /// <summary>Computes (F/|F|)''.</summary>
     private static Vector3D DDeriv(in Vector3D f, in Vector3D df, in Vector3D d2F)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (d2F - 2 * df * (f * df) / (norma * norma)) / norma
-                        - f * ((df.SquareMagnitude() + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
+                        - f * ((df.SquareMagnitude + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
                                / (norma * norma * norma));
         return result;
     }
@@ -255,12 +255,12 @@ public class Darboux : TrihedronLaw
         myCurve2d.D1(param, out Point2D c2d, out Vector2D d2d);
 
         Direction3D normalDir = new Direction3D();
-        NormalD0(c2d.X(), c2d.Y(), mySupport, ref normalDir, out _, out _);
+        NormalD0(c2d.X, c2d.Y, mySupport, ref normalDir, out _, out _);
         biNormal = biNormal.WithXYZ(normalDir.XYZ());
 
-        mySupport.D1(c2d.X(), c2d.Y(), out _, out Vector3D dS_du, out Vector3D dS_dv);
+        mySupport.D1(c2d.X, c2d.Y, out _, out Vector3D dS_du, out Vector3D dS_dv);
 
-        tangent = d2d.X() * dS_du + d2d.Y() * dS_dv;
+        tangent = d2d.X * dS_du + d2d.Y * dS_dv;
         tangent = tangent.Normalized();
 
         normal = biNormal;
@@ -277,19 +277,19 @@ public class Darboux : TrihedronLaw
         SurfaceAdaptorBase mySupport = ((CurveOnSurface)_trimmed).GetSurface()!;
 
         myCurve2d.D2(param, out Point2D c2d, out Vector2D d2d, out Vector2D D2_2d);
-        mySupport.D2(c2d.X(), c2d.Y(), out _, out Vector3D dS_du, out Vector3D dS_dv, out Vector3D d2S_du, out Vector3D d2S_dv,
+        mySupport.D2(c2d.X, c2d.Y, out _, out Vector3D dS_du, out Vector3D dS_dv, out Vector3D d2S_du, out Vector3D d2S_dv,
                      out Vector3D d2S_duv);
 
-        f = d2d.X() * dS_du + d2d.Y() * dS_dv;
+        f = d2d.X * dS_du + d2d.Y * dS_dv;
         tangent = f.Normalized();
-        df = D2_2d.X() * dS_du + D2_2d.Y() * dS_dv + d2S_du * d2d.X() * d2d.X()
-             + 2 * d2S_duv * d2d.X() * d2d.Y() + d2S_dv * d2d.Y() * d2d.Y();
+        df = D2_2d.X * dS_du + D2_2d.Y * dS_dv + d2S_du * d2d.X * d2d.X
+             + 2 * d2S_duv * d2d.X * d2d.Y + d2S_dv * d2d.Y * d2d.Y;
         dTangent = FDeriv(f, df);
 
         Direction3D normalDir = new Direction3D();
-        NormalD1(c2d.X(), c2d.Y(), mySupport, ref normalDir, out Vector3D d1UNormal, out Vector3D d1VNormal);
+        NormalD1(c2d.X, c2d.Y, mySupport, ref normalDir, out Vector3D d1UNormal, out Vector3D d1VNormal);
         biNormal = biNormal.WithXYZ(normalDir.XYZ());
-        dBiNormal = d1UNormal * d2d.X() + d1VNormal * d2d.Y();
+        dBiNormal = d1UNormal * d2d.X + d1VNormal * d2d.Y;
 
         normal = biNormal;
         normal ^= tangent;
@@ -307,30 +307,30 @@ public class Darboux : TrihedronLaw
         SurfaceAdaptorBase mySupport = ((CurveOnSurface)_trimmed).GetSurface()!;
 
         myCurve2d.D3(param, out Point2D c2d, out Vector2D d2d, out Vector2D D2_2d, out Vector2D D3_2d);
-        mySupport.D3(c2d.X(), c2d.Y(), out _, out Vector3D dS_du, out Vector3D dS_dv, out Vector3D d2S_du, out Vector3D d2S_dv,
+        mySupport.D3(c2d.X, c2d.Y, out _, out Vector3D dS_du, out Vector3D dS_dv, out Vector3D d2S_du, out Vector3D d2S_dv,
                      out Vector3D d2S_duv, out Vector3D d3S_du, out Vector3D d3S_dv, out Vector3D d3S_duuv, out Vector3D d3S_duvv);
 
-        f = d2d.X() * dS_du + d2d.Y() * dS_dv;
+        f = d2d.X * dS_du + d2d.Y * dS_dv;
         tangent = f.Normalized();
-        df = D2_2d.X() * dS_du + D2_2d.Y() * dS_dv + d2S_du * d2d.X() * d2d.X()
-             + 2 * d2S_duv * d2d.X() * d2d.Y() + d2S_dv * d2d.Y() * d2d.Y();
-        d2F = D3_2d.X() * dS_du + D3_2d.Y() * dS_dv + D2_2d.X() * (d2d.X() * d2S_du + d2d.Y() * d2S_duv)
-              + D2_2d.Y() * (d2d.X() * d2S_duv + d2d.Y() * d2S_dv)
-              + d2d.X() * d2d.X() * (d2d.X() * d3S_du + d2d.Y() * d3S_duuv)
-              + d2d.Y() * d2d.Y() * (d2d.X() * d3S_duvv + d2d.Y() * d3S_dv)
-              + 2 * (d2d.X() * D2_2d.X() * d2S_du + d2d.Y() * D2_2d.Y() * d2S_dv
-                     + d2d.X() * d2d.Y() * (d2d.X() * d3S_duuv + d2d.Y() * d3S_duvv)
-                     + d2S_duv * (D2_2d.X() * d2d.Y() + d2d.X() * D2_2d.Y()));
+        df = D2_2d.X * dS_du + D2_2d.Y * dS_dv + d2S_du * d2d.X * d2d.X
+             + 2 * d2S_duv * d2d.X * d2d.Y + d2S_dv * d2d.Y * d2d.Y;
+        d2F = D3_2d.X * dS_du + D3_2d.Y * dS_dv + D2_2d.X * (d2d.X * d2S_du + d2d.Y * d2S_duv)
+              + D2_2d.Y * (d2d.X * d2S_duv + d2d.Y * d2S_dv)
+              + d2d.X * d2d.X * (d2d.X * d3S_du + d2d.Y * d3S_duuv)
+              + d2d.Y * d2d.Y * (d2d.X * d3S_duvv + d2d.Y * d3S_dv)
+              + 2 * (d2d.X * D2_2d.X * d2S_du + d2d.Y * D2_2d.Y * d2S_dv
+                     + d2d.X * d2d.Y * (d2d.X * d3S_duuv + d2d.Y * d3S_duvv)
+                     + d2S_duv * (D2_2d.X * d2d.Y + d2d.X * D2_2d.Y));
         dTangent = FDeriv(f, df);
         d2Tangent = DDeriv(f, df, d2F);
 
         Direction3D normalDir = new Direction3D();
-        NormalD2(c2d.X(), c2d.Y(), mySupport, ref normalDir, out Vector3D d1UNormal, out Vector3D d1VNormal,
+        NormalD2(c2d.X, c2d.Y, mySupport, ref normalDir, out Vector3D d1UNormal, out Vector3D d1VNormal,
                  out Vector3D d2UNormal, out Vector3D d2VNormal, out Vector3D d2UVNormal);
         biNormal = biNormal.WithXYZ(normalDir.XYZ());
-        dBiNormal = d1UNormal * d2d.X() + d1VNormal * d2d.Y();
-        d2BiNormal = d1UNormal * D2_2d.X() + d1VNormal * D2_2d.Y() + d2UNormal * d2d.X() * d2d.X()
-                     + 2 * d2UVNormal * d2d.X() * d2d.Y() + d2VNormal * d2d.Y() * d2d.Y();
+        dBiNormal = d1UNormal * d2d.X + d1VNormal * d2d.Y;
+        d2BiNormal = d1UNormal * D2_2d.X + d1VNormal * D2_2d.Y + d2UNormal * d2d.X * d2d.X
+                     + 2 * d2UVNormal * d2d.X * d2d.Y + d2VNormal * d2d.Y * d2d.Y;
 
         normal = biNormal;
         normal ^= tangent;

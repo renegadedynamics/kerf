@@ -87,7 +87,7 @@ public sealed class ToolSolidClassifier
             // to generate ON/Solid state when the point is IN/face INTERNAL or EXTERNAL
             return _state;
         }
-        Orientation ofres = fres.Orientation();
+        Orientation ofres = fres.Orientation;
         if (ofres == External)
         {
             if (_state == In)

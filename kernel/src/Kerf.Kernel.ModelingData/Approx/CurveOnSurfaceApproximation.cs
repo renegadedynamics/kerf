@@ -70,11 +70,11 @@ public class CurveOnSurfaceApproximation
                 {
                     _fonct2d.D0(par, out pnt2d);
                     _fonct.D0(par, out pnt);
-                    result[0] = pnt2d.X();
-                    result[1] = pnt2d.Y();
-                    result[2] = pnt.X();
-                    result[3] = pnt.Y();
-                    result[4] = pnt.Z();
+                    result[0] = pnt2d.X;
+                    result[1] = pnt2d.Y;
+                    result[2] = pnt.X;
+                    result[3] = pnt.Y;
+                    result[4] = pnt.Z;
                     break;
                 }
                 case 1:
@@ -83,11 +83,11 @@ public class CurveOnSurfaceApproximation
                     Vector2D v21;
                     _fonct2d.D1(par, out pnt2d, out v21);
                     _fonct.D1(par, out pnt, out v1);
-                    result[0] = v21.X();
-                    result[1] = v21.Y();
-                    result[2] = v1.X();
-                    result[3] = v1.Y();
-                    result[4] = v1.Z();
+                    result[0] = v21.X;
+                    result[1] = v21.Y;
+                    result[2] = v1.X;
+                    result[3] = v1.Y;
+                    result[4] = v1.Z;
                     break;
                 }
                 case 2:
@@ -96,11 +96,11 @@ public class CurveOnSurfaceApproximation
                     Vector2D v21, v22;
                     _fonct2d.D2(par, out pnt2d, out v21, out v22);
                     _fonct.D2(par, out pnt, out v1, out v2);
-                    result[0] = v22.X();
-                    result[1] = v22.Y();
-                    result[2] = v2.X();
-                    result[3] = v2.Y();
-                    result[4] = v2.Z();
+                    result[0] = v22.X;
+                    result[1] = v22.Y;
+                    result[2] = v2.X;
+                    result[3] = v2.Y;
+                    result[4] = v2.Z;
                     break;
                 }
                 default:
@@ -150,26 +150,26 @@ public class CurveOnSurfaceApproximation
             {
                 case 0:
                     pnt = _fonct.Value(par);
-                    result[0] = pnt.X();
-                    result[1] = pnt.Y();
-                    result[2] = pnt.Z();
+                    result[0] = pnt.X;
+                    result[1] = pnt.Y;
+                    result[2] = pnt.Z;
                     break;
                 case 1:
                 {
                     Vector3D v1;
                     _fonct.D1(par, out pnt, out v1);
-                    result[0] = v1.X();
-                    result[1] = v1.Y();
-                    result[2] = v1.Z();
+                    result[0] = v1.X;
+                    result[1] = v1.Y;
+                    result[2] = v1.Z;
                     break;
                 }
                 case 2:
                 {
                     Vector3D v1, v2;
                     _fonct.D2(par, out pnt, out v1, out v2);
-                    result[0] = v2.X();
-                    result[1] = v2.Y();
-                    result[2] = v2.Z();
+                    result[0] = v2.X;
+                    result[1] = v2.Y;
+                    result[2] = v2.Z;
                     break;
                 }
                 default:
@@ -220,24 +220,24 @@ public class CurveOnSurfaceApproximation
                 case 0:
                 {
                     pnt = _fonct2d.Value(par);
-                    result[0] = pnt.X();
-                    result[1] = pnt.Y();
+                    result[0] = pnt.X;
+                    result[1] = pnt.Y;
                     break;
                 }
                 case 1:
                 {
                     Vector2D v1;
                     _fonct2d.D1(par, out pnt, out v1);
-                    result[0] = v1.X();
-                    result[1] = v1.Y();
+                    result[0] = v1.X;
+                    result[1] = v1.Y;
                     break;
                 }
                 case 2:
                 {
                     Vector2D v1, v2;
                     _fonct2d.D2(par, out pnt, out v1, out v2);
-                    result[0] = v2.X();
-                    result[1] = v2.Y();
+                    result[0] = v2.X;
+                    result[1] = v2.Y;
                     break;
                 }
                 default:
@@ -559,14 +559,14 @@ public class CurveOnSurfaceApproximation
         if (type == Line)
         {
             Line2D lin2d = c2D.Line();
-            loc2d = lin2d.Location();
-            dir2d = lin2d.Direction();
+            loc2d = lin2d.Location;
+            dir2d = lin2d.Direction;
             isAppropriateType = true;
         }
         else if (type == BSplineCurve)
         {
             BSplineCurve2D bSpline2d = c2D.BSpline();
-            if (bSpline2d.Degree() != 1 || bSpline2d.PoleCount != 2)
+            if (bSpline2d.Degree != 1 || bSpline2d.PoleCount != 2)
             {
                 return false; // Not a line or uneven parameterization.
             }
@@ -575,7 +575,7 @@ public class CurveOnSurfaceApproximation
 
             // Vector should be non-degenerated.
             Vector2D vec2d = new(bSpline2d.Pole(1), bSpline2d.Pole(2));
-            if (vec2d.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (vec2d.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false; // Degenerated spline.
             }
@@ -586,7 +586,7 @@ public class CurveOnSurfaceApproximation
         else if (type == BezierCurve)
         {
             BezierCurve2D bezier2d = c2D.Bezier();
-            if (bezier2d.Degree() != 1 || bezier2d.PoleCount != 2)
+            if (bezier2d.Degree != 1 || bezier2d.PoleCount != 2)
             {
                 return false; // Not a line or uneven parameterization.
             }
@@ -595,7 +595,7 @@ public class CurveOnSurfaceApproximation
 
             // Vector should be non-degenerated.
             Vector2D vec2d = new(bezier2d.Pole(1), bezier2d.Pole(2));
-            if (vec2d.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (vec2d.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false; // Degenerated spline.
             }
@@ -614,7 +614,7 @@ public class CurveOnSurfaceApproximation
         {
             // Horizontal line. V = const.
             isU = false;
-            param = loc2d.Y();
+            param = loc2d.Y;
             isForward = dir2d.Dot(Constants.DX2d()) > 0.0;
             return true;
         }
@@ -622,7 +622,7 @@ public class CurveOnSurfaceApproximation
         {
             // Vertical line. U = const.
             isU = true;
-            param = loc2d.X();
+            param = loc2d.X;
             isForward = dir2d.Dot(Constants.DY2d()) > 0.0;
             return true;
         }
@@ -657,12 +657,12 @@ public class CurveOnSurfaceApproximation
 
         bool isToTrim = true;
         double u1, u2, v1, v2;
-        surf.Bounds(out u1, out u2, out v1, out v2);
+        surf.ParameterBounds(out u1, out u2, out v1, out v2);
 
         if (isU)
         {
-            double v1Param = Min(f2d.Y(), l2d.Y());
-            double v2Param = Max(f2d.Y(), l2d.Y());
+            double v1Param = Min(f2d.Y, l2d.Y);
+            double v2Param = Max(f2d.Y, l2d.Y);
             if (v2Param < v1 - _tol || v1Param > v2 + _tol)
             {
                 return false;
@@ -693,8 +693,8 @@ public class CurveOnSurfaceApproximation
         }
         else
         {
-            double u1Param = Min(f2d.X(), l2d.X());
-            double u2Param = Max(f2d.X(), l2d.X());
+            double u1Param = Min(f2d.X, l2d.X);
+            double u2Param = Max(f2d.X, l2d.X);
             if (u2Param < u1 - _tol || u1Param > u2 + _tol)
             {
                 return false;
@@ -756,9 +756,9 @@ public class CurveOnSurfaceApproximation
             Point2D pnt2d = c2D.Value(par);
 
             Point3D pntC3D = curve3d.Value(par);
-            Point3D pntC2D = _surf.Value(pnt2d.X(), pnt2d.Y());
+            Point3D pntC2D = _surf.Value(pnt2d.X, pnt2d.Y);
 
-            double sqDeviation = pntC3D.SquareDistance(pntC2D);
+            double sqDeviation = pntC3D.SquareDistanceTo(pntC2D);
             _error3d = Max(sqDeviation, _error3d);
         }
 

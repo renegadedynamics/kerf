@@ -64,11 +64,11 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
     }
 
     /// <summary>The identity matrix.</summary>
-    public static Matrix3x3 Identity() => new(1, 0, 0, 0, 1, 0, 0, 0, 1);
+    public static Matrix3x3 Identity => new(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
     // Copies
 
-    public readonly Matrix3x3 WithCol(int col, in Xyz value)
+    internal readonly Matrix3x3 WithCol(int col, in Xyz value)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -102,9 +102,9 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    public readonly Matrix3x3 WithCols(in Xyz col1, in Xyz col2, in Xyz col3) => new(col1, col2, col3);
+    internal readonly Matrix3x3 WithCols(in Xyz col1, in Xyz col2, in Xyz col3) => new(col1, col2, col3);
 
-    public readonly Matrix3x3 WithCross(in Xyz theRef)
+    internal readonly Matrix3x3 WithCross(in Xyz theRef)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -139,7 +139,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, _m01, _m02, _m10, m11, _m12, _m20, _m21, m22);
     }
 
-    public readonly Matrix3x3 WithDot(in Xyz theRef)
+    internal readonly Matrix3x3 WithDot(in Xyz theRef)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -165,9 +165,9 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    public readonly Matrix3x3 WithIdentity() => Identity();
+    public readonly Matrix3x3 WithIdentity() => Identity;
 
-    public readonly Matrix3x3 WithRotation(in Xyz axis, double ang)
+    internal readonly Matrix3x3 WithRotation(in Xyz axis, double ang)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -203,7 +203,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    public readonly Matrix3x3 WithRow(int row, in Xyz value)
+    internal readonly Matrix3x3 WithRow(int row, in Xyz value)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -236,7 +236,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    public readonly Matrix3x3 WithRows(in Xyz row1, in Xyz row2, in Xyz row3)
+    internal readonly Matrix3x3 WithRows(in Xyz row1, in Xyz row2, in Xyz row3)
     {
         double m00 = _m00;
         double m01 = _m01;
@@ -275,7 +275,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    public readonly Matrix3x3 WithValue(int row, int col, double value)
+    internal readonly Matrix3x3 WithValue(int row, int col, double value)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 3, " ");
         Span<double> m = [_m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22];
@@ -285,7 +285,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 
     // Queries
 
-    public readonly Xyz Column(int col)
+    internal readonly Xyz Column(int col)
     {
         Standard_OutOfRange_Raise_if(col < 1 || col > 3, "gp_Mat::Column() - wrong index");
         if (col == 1)
@@ -301,17 +301,20 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Xyz(_m02, _m12, _m22);
     }
 
-    public readonly double Determinant()
+    public readonly double Determinant
     {
-        double a00 = _m00, a01 = _m01, a02 = _m02;
-        double a10 = _m10, a11 = _m11, a12 = _m12;
-        double a20 = _m20, a21 = _m21, a22 = _m22;
-        return a00 * (a11 * a22 - a21 * a12) - a01 * (a10 * a22 - a20 * a12) + a02 * (a10 * a21 - a20 * a11);
+        get
+        {
+            double a00 = _m00, a01 = _m01, a02 = _m02;
+            double a10 = _m10, a11 = _m11, a12 = _m12;
+            double a20 = _m20, a21 = _m21, a22 = _m22;
+            return a00 * (a11 * a22 - a21 * a12) - a01 * (a10 * a22 - a20 * a12) + a02 * (a10 * a21 - a20 * a11);
+        }
     }
 
-    public readonly Xyz Diagonal() => new(_m00, _m11, _m22);
+    internal readonly Xyz Diagonal() => new(_m00, _m11, _m22);
 
-    public readonly Xyz Row(int row)
+    internal readonly Xyz Row(int row)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 3, "gp_Mat::Row() - wrong index");
         if (row == 1)
@@ -327,19 +330,22 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         return new Xyz(_m20, _m21, _m22);
     }
 
-    public readonly double Value(int row, int col)
+    internal readonly double Value(int row, int col)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 3, " ");
         return Unsafe.Add(ref Unsafe.AsRef(in _m00), (row - 1) * 3 + (col - 1));
     }
 
     /// <summary>The element at a row and column numbered from 1, as OCCT's <c>operator()</c>.</summary>
-    public readonly double this[int row, int col] => Value(row, col);
+    internal readonly double this[int row, int col] => Value(row, col);
 
-    public readonly bool IsSingular()
+    public readonly bool IsSingular
     {
-        double det = Determinant();
-        return (det < 0.0 ? -det : det) <= Constants.Resolution();
+        get
+        {
+            double det = Determinant;
+            return (det < 0.0 ? -det : det) <= Constants.Resolution();
+        }
     }
 
     public readonly Matrix3x3 Added(in Matrix3x3 other)
@@ -514,7 +520,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
     {
         if (n == 0)
         {
-            return Identity();
+            return Identity;
         }
 
         if (n == 1)
@@ -530,7 +536,7 @@ public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
         bool isNegative = n < 0;
         Matrix3x3 aBase = isNegative ? Inverted() : this;
         int power = isNegative ? -n : n;
-        Matrix3x3 result = Identity();
+        Matrix3x3 result = Identity;
         while (power > 0)
         {
             if ((power & 1) != 0)

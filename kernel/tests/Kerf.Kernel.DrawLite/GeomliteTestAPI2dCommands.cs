@@ -48,11 +48,11 @@ internal static class GeomliteTestAPI2dCommands
         }
 
         var P = new Point2D(theDI.Atof(a[2]), theDI.Atof(a[3]));
-        var proj = new ProjectPointOnCurve2D(P, GC, GC.FirstParameter(), GC.LastParameter());
+        var proj = new ProjectPointOnCurve2D(P, GC, GC.FirstParameter, GC.LastParameter);
         for (int i = 1; i <= proj.NbPoints(); i++)
         {
             Point2D aP1 = proj.Point(i);
-            double aDist = P.Distance(aP1);
+            double aDist = P.DistanceTo(aP1);
             string aName = $"ext_{i}";
             if (aDist > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
@@ -94,10 +94,10 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        double U1f = GC1.FirstParameter();
-        double U1l = GC1.LastParameter();
-        double U2f = GC2.FirstParameter();
-        double U2l = GC2.LastParameter();
+        double U1f = GC1.FirstParameter;
+        double U1l = GC1.LastParameter;
+        double U2f = GC2.FirstParameter;
+        double U2l = GC2.LastParameter;
 
         var Ex = new ExtremaCurveCurve2D(GC1, GC2, U1f, U1l, U2f, U2l);
         bool isInfinitySolutions = Ex.Extrema().IsParallel;
@@ -129,7 +129,7 @@ internal static class GeomliteTestAPI2dCommands
             else
             {
                 var L = new LineCurve2D(P1, new Direction2D(new Vector2D(P1, P2)));
-                var CT = new TrimmedCurve2D(L, 0.0, P1.Distance(P2));
+                var CT = new TrimmedCurve2D(L, 0.0, P1.DistanceTo(P2));
                 DrawTrSurf.Set(theDI, aName, CT);
             }
             di.Append(aName).Append("\n");
@@ -218,7 +218,7 @@ internal static class GeomliteTestAPI2dCommands
         {
             // API simplified result
             Point2D P = Intersector.Point(i);
-            di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
+            di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X).Append(" ").Append(P.Y).Append("\n");
             // Intersection extended results from intersection tool
             IntersectionPoint2D aPInt = anIntTool.Point(i);
             di.Append("parameter on the fist: ").Append(aPInt.ParamOnFirst());
@@ -260,11 +260,11 @@ internal static class GeomliteTestAPI2dCommands
             return 1;
         }
 
-        var Intersector = new AnalyticIntersection(aCir1.Circ2d(), aCir2.Circ2d());
+        var Intersector = new AnalyticIntersection(aCir1.Circle, aCir2.Circle);
         for (int i = 1; i <= Intersector.PointCount; i++)
         {
             Point2D P = Intersector.Point(i).Value();
-            di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
+            di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X).Append(" ").Append(P.Y).Append("\n");
             di.Append("parameter on the fist: ").Append(Intersector.Point(i).ParamOnFirst());
             di.Append(" parameter on the second: ").Append(Intersector.Point(i).ParamOnSecond()).Append("\n");
         }
@@ -347,7 +347,7 @@ internal static class GeomliteTestAPI2dCommands
         for (int i = 1; i <= Intersector.PointCount; i++)
         {
             Point2D P = Intersector.Point(i).Value();
-            di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X()).Append(" ").Append(P.Y()).Append("\n");
+            di.Append("Intersection point ").Append(i).Append(" : ").Append(P.X).Append(" ").Append(P.Y).Append("\n");
             di.Append("parameter on the fist: ").Append(Intersector.Point(i).ParamOnFirst());
             if (!Intersector.Point(i).SecondIsImplicit())
             {

@@ -97,7 +97,7 @@ public class ProjectPointOnSurface
     /// <summary>Projects <paramref name="p"/> onto the whole of <paramref name="surface"/> with a tolerance.</summary>
     public void Init(in Point3D p, Surface surface, double tolerance, ExtAlgo projAlgo = ExtAlgo_Grad)
     {
-        surface.Bounds(out double umin, out double usup, out double vmin, out double vsup);
+        surface.ParameterBounds(out double umin, out double usup, out double vmin, out double vsup);
         _geomAdaptor.Load(surface, umin, usup, vmin, vsup);
         _extPS.SetAlgo(projAlgo);
         _extPS.Initialize(_geomAdaptor, umin, usup, vmin, vsup, tolerance, tolerance);

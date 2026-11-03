@@ -589,7 +589,7 @@ public class MeshFormatsTests
         Assert.Equal("Lantern", aRoot.DisplayName);
         Assert.True(aRoot.Product.IsAssembly);
         Assert.Equal(new[] { "LanternPole_Body", "LanternPole_Chain", "LanternPole_Lantern" }, aRoot.Product.Components.Select(c => c.DisplayName));
-        Assert.All(aRoot.Product.Components, c => Assert.Equal(ShapeType.Face, c.Product.Shape.ShapeType()));
+        Assert.All(aRoot.Product.Components, c => Assert.Equal(ShapeType.Face, c.Product.Shape.Type));
         Assert.True(aRoot.Shape.TShape()!.IsFrozen);
     }
 

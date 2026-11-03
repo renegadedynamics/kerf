@@ -92,7 +92,7 @@ public class GeomPlate_BuildPlateSurfaceTests
             {
                 double u = aC3d.FirstParameter() + (aC3d.LastParameter() - aC3d.FirstParameter()) * k / 10;
                 Point2D aUV = aC2d.Value(u);
-                Assert.True(aSurf.Value(aUV.X(), aUV.Y()).Distance(aC3d.Value(u)) < 2.0e-2);
+                Assert.True(aSurf.Value(aUV.X, aUV.Y).DistanceTo(aC3d.Value(u)) < 2.0e-2);
             }
             Assert.InRange(anOrder.Value(i), 1, 4);
         }
@@ -115,7 +115,7 @@ public class GeomPlate_BuildPlateSurfaceTests
         for (int i = 1; i <= aSeq2d.Length(); i++)
         {
             Xy aUV = aSeq2d.Value(i);
-            Assert.True(aBSpl.Value(aUV.X(), aUV.Y()).Distance(new Point3D(aSeq3d.Value(i))) < 2.0e-2);
+            Assert.True(aBSpl.Value(aUV.X(), aUV.Y()).DistanceTo(new Point3D(aSeq3d.Value(i))) < 2.0e-2);
         }
     }
 
@@ -134,7 +134,7 @@ public class GeomPlate_BuildPlateSurfaceTests
         for (int i = 1; i <= aPoints.Length; i++)
         {
             Point2D aUV = aBuilder.PointConstraint(i).Pnt2dOnSurf();
-            Assert.True(aSurf.Value(aUV.X(), aUV.Y()).Distance(aPoints[i - 1]) < 1.0e-6);
+            Assert.True(aSurf.Value(aUV.X, aUV.Y).DistanceTo(aPoints[i - 1]) < 1.0e-6);
         }
         // the initial surface is the average plane, trimmed
         Assert.IsType<TrimmedSurface>(aBuilder.SurfInit());

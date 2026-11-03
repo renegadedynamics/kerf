@@ -55,13 +55,13 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(2.0 * M_PI, aHelix.LastParameter());
         // Test point calculation
         Point3D aP0 = aHelix.Value(0.0);
-        Assert.Equal(1.0, aP0.X()); // RStart = 1.0 by default
-        Assert.Equal(0.0, aP0.Y());
-        Assert.Equal(0.0, aP0.Z());
+        Assert.Equal(1.0, aP0.X); // RStart = 1.0 by default
+        Assert.Equal(0.0, aP0.Y);
+        Assert.Equal(0.0, aP0.Z);
         Point3D aP1 = aHelix.Value(M_PI);
-        Assert.Equal(-1.0, aP1.X());
-        Assert.Equal(0.0, aP1.Y(), 1e-15);
-        Assert.Equal(M_PI / (2.0 * M_PI), aP1.Z()); // Pitch / (2*PI) * t
+        Assert.Equal(-1.0, aP1.X);
+        Assert.Equal(0.0, aP1.Y, 1e-15);
+        Assert.Equal(M_PI / (2.0 * M_PI), aP1.Z); // Pitch / (2*PI) * t
     }
 
     [Fact]
@@ -73,14 +73,14 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(4.0 * M_PI, aHelix.LastParameter());
         // Test point at start
         Point3D aP0 = aHelix.Value(0.0);
-        Assert.Equal(5.0, aP0.X()); // RStart = 5.0
-        Assert.Equal(0.0, aP0.Y());
-        Assert.Equal(0.0, aP0.Z());
+        Assert.Equal(5.0, aP0.X); // RStart = 5.0
+        Assert.Equal(0.0, aP0.Y);
+        Assert.Equal(0.0, aP0.Z);
         // Test point at end (2 full turns)
         Point3D aP1 = aHelix.Value(4.0 * M_PI);
-        AssertDoubleEq(5.0, aP1.X());
-        Assert.Equal(0.0, aP1.Y(), 1e-14);
-        AssertDoubleEq(20.0, aP1.Z()); // 2 turns * pitch(10)
+        AssertDoubleEq(5.0, aP1.X);
+        Assert.Equal(0.0, aP1.Y, 1e-14);
+        AssertDoubleEq(20.0, aP1.Z); // 2 turns * pitch(10)
     }
 
     [Fact]
@@ -91,11 +91,11 @@ public class HelixBRep_BuilderHelixTests
         aHelix.Load(0.0, 2.0 * M_PI, 5.0, 2.0, aTaperAngle, true);
         // At start
         Point3D aP0 = aHelix.Value(0.0);
-        Assert.Equal(2.0, aP0.X());
+        Assert.Equal(2.0, aP0.X);
         // At end - radius should be larger due to taper
         Point3D aP1 = aHelix.Value(2.0 * M_PI);
         double aExpectedRadius = 2.0 + (5.0 / (2.0 * M_PI)) * Math.Tan(aTaperAngle) * (2.0 * M_PI);
-        AssertDoubleEq(aExpectedRadius, aP1.X());
+        AssertDoubleEq(aExpectedRadius, aP1.X);
     }
 
     // Test HelixGeom_BuilderHelixCoil
@@ -112,14 +112,14 @@ public class HelixBRep_BuilderHelixTests
         Curve3D aCurve = aCurves[0];
         Assert.NotNull(aCurve);
         // Test curve endpoints
-        aCurve.D0(aCurve.FirstParameter(), out Point3D aP1);
-        aCurve.D0(aCurve.LastParameter(), out Point3D aP2);
-        Assert.Equal(2.0, aP1.X(), myTolerance);
-        Assert.Equal(0.0, aP1.Y(), myTolerance);
-        Assert.Equal(0.0, aP1.Z(), myTolerance);
-        Assert.Equal(2.0, aP2.X(), myTolerance);
-        Assert.Equal(0.0, aP2.Y(), myTolerance);
-        Assert.Equal(5.0, aP2.Z(), myTolerance);
+        aCurve.D0(aCurve.FirstParameter, out Point3D aP1);
+        aCurve.D0(aCurve.LastParameter, out Point3D aP2);
+        Assert.Equal(2.0, aP1.X, myTolerance);
+        Assert.Equal(0.0, aP1.Y, myTolerance);
+        Assert.Equal(0.0, aP1.Z, myTolerance);
+        Assert.Equal(2.0, aP2.X, myTolerance);
+        Assert.Equal(0.0, aP2.Y, myTolerance);
+        Assert.Equal(5.0, aP2.Z, myTolerance);
     }
 
     // Test HelixGeom_BuilderHelix
@@ -168,7 +168,7 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         Shape aResult = aBuilder.Shape();
         Assert.False(aResult.IsNull);
-        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
+        Assert.Equal(ShapeType.Wire, aResult.Type);
         // Check number of edges
         int aNbEdges = CountShapes(aResult, ShapeType.Edge);
         Assert.True(aNbEdges > 0);
@@ -198,7 +198,7 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         Shape aResult = aBuilder.Shape();
         Assert.False(aResult.IsNull);
-        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
+        Assert.Equal(ShapeType.Wire, aResult.Type);
         int aNbEdges = CountShapes(aResult, ShapeType.Edge);
         Assert.True(aNbEdges > 0);
     }
@@ -232,7 +232,7 @@ public class HelixBRep_BuilderHelixTests
         Assert.Equal(0, aBuilder.ErrorStatus());
         Shape aResult = aBuilder.Shape();
         Assert.False(aResult.IsNull);
-        Assert.Equal(ShapeType.Wire, aResult.ShapeType());
+        Assert.Equal(ShapeType.Wire, aResult.Type);
         int aNbEdges = CountShapes(aResult, ShapeType.Edge);
         Assert.True(aNbEdges > 2); // Should have multiple edges for multiple parts
     }
@@ -271,7 +271,7 @@ public class HelixBRep_BuilderHelixTests
         Assert.NotNull(aBSpline);
         Assert.True(aMaxError <= myTolerance);
         // Test curve properties
-        Assert.True(aBSpline.Degree() > 0);
+        Assert.True(aBSpline.Degree > 0);
         Assert.True(aBSpline.PoleCount > 0);
     }
 

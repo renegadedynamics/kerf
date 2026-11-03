@@ -88,7 +88,7 @@ public sealed class LocalPipe
                         Surface p0 = Tool.Surface(resfac)!;
                         if (p0.GetType() == typeof(TrimmedSurface))
                         {
-                            p0 = ((TrimmedSurface)p0).BasisSurface();
+                            p0 = ((TrimmedSurface)p0).BasisSurface;
                         }
                         if (p0.GetType() == typeof(PlaneSurface))
                         {
@@ -123,20 +123,20 @@ public sealed class LocalPipe
                     Surface p = Tool.Surface(faceRef)!;
                     if (p.GetType() == typeof(TrimmedSurface))
                     {
-                        p = ((TrimmedSurface)p).BasisSurface();
+                        p = ((TrimmedSurface)p).BasisSurface;
                     }
-                    Plane3D plref = ((PlaneSurface)p).Pln();
+                    Plane3D plref = ((PlaneSurface)p).Plane;
 
                     for (int itm = 2; itm <= mapFac.Count; itm++)
                     {
                         p = Tool.Surface(ShapeCasts.Face(mapFac[itm - 1]))!;
                         if (p.GetType() == typeof(TrimmedSurface))
                         {
-                            p = ((TrimmedSurface)p).BasisSurface();
+                            p = ((TrimmedSurface)p).BasisSurface;
                         }
-                        Plane3D pl0 = ((PlaneSurface)p).Pln();
-                        if (pl0.Axis().IsParallel(plref.Axis(), global::Kerf.Engine.Foundation.Precision.Angular())
-                            && plref.Contains(pl0.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+                        Plane3D pl0 = ((PlaneSurface)p).Plane;
+                        if (pl0.Axis.IsParallel(plref.Axis, global::Kerf.Engine.Foundation.Precision.Angular())
+                            && plref.Contains(pl0.Location, global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             facFuse.Append(mapFac[itm - 1]);
                         }
@@ -153,11 +153,11 @@ public sealed class LocalPipe
                         p = Tool.Surface(faceRef)!;
                         if (p.GetType() == typeof(TrimmedSurface))
                         {
-                            p = ((TrimmedSurface)p).BasisSurface();
+                            p = ((TrimmedSurface)p).BasisSurface;
                         }
-                        plref = ((PlaneSurface)p).Pln();
-                        Direction3D dirref = plref.Axis().Direction();
-                        if ((plref.Direct() && orref == Reversed) || (!plref.Direct() && orref == Forward))
+                        plref = ((PlaneSurface)p).Plane;
+                        Direction3D dirref = plref.Axis.Direction;
+                        if ((plref.IsDirect && orref == Reversed) || (!plref.IsDirect && orref == Forward))
                         {
                             dirref = dirref.Reversed();
                         }
@@ -201,12 +201,12 @@ public sealed class LocalPipe
                                 Surface otherP = Tool.Surface(fac)!;
                                 if (otherP.GetType() == typeof(TrimmedSurface))
                                 {
-                                    otherP = ((TrimmedSurface)otherP).BasisSurface();
+                                    otherP = ((TrimmedSurface)otherP).BasisSurface;
                                 }
-                                Plane3D pl = ((PlaneSurface)otherP).Pln();
-                                Direction3D dirpl = pl.Axis().Direction();
+                                Plane3D pl = ((PlaneSurface)otherP).Plane;
+                                Direction3D dirpl = pl.Axis.Direction;
                                 // OCCT: the second test reads the reference plane's Direct (occt-issues.md)
-                                if ((pl.Direct() && orrelat == Reversed) || (!plref.Direct() && orrelat == Forward))
+                                if ((pl.IsDirect && orrelat == Reversed) || (!plref.IsDirect && orrelat == Forward))
                                 {
                                     dirpl = dirpl.Reversed();
                                 }
@@ -246,7 +246,7 @@ public sealed class LocalPipe
                                 b.Add(newWire, mapEd[itm2]);
                             }
                             exp.Init(faceRef.Oriented(Forward), ShapeType.Wire);
-                            newWire.Orientation(exp.Current().Orientation());
+                            newWire.Orient(exp.Current().Orientation);
                             b.Add(newFace, newWire);
                             _map.GetValue(edgpr).Append(newFace);
                             goodfaces.Append(newFace);
@@ -325,7 +325,7 @@ public sealed class LocalPipe
     internal NCollection_List<Shape> InternalShapes(in Shape s0)
     {
         Shape s = s0;
-        ShapeType typS = s.ShapeType();
+        ShapeType typS = s.Type;
         if (typS != ShapeType.Edge && typS != ShapeType.Vertex)
         {
             throw new DomainErrorException();
@@ -391,9 +391,9 @@ public sealed class LocalPipe
                     continue;
                 }
                 BSplineCurve3D c = Writable(c0);
-                maxDeg = Max(maxDeg, c.Degree());
+                maxDeg = Max(maxDeg, c.Degree);
                 P1 = c.Value(p2);
-                if (p1 != c.FirstParameter() || p2 != c.LastParameter())
+                if (p1 != c.FirstParameter || p2 != c.LastParameter)
                 {
                     c.Segment(p1, p2);
                 }
@@ -468,11 +468,11 @@ public sealed class LocalPipe
     private static Orientation Orientation(in Shape sub, in Shape s)
     {
         Explorer exp = new();
-        for (exp.Init(s, sub.ShapeType()); exp.More(); exp.Next())
+        for (exp.Init(s, sub.Type); exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(sub))
             {
-                return exp.Current().Orientation();
+                return exp.Current().Orientation;
             }
         }
         throw new NoSuchObjectException();
@@ -512,9 +512,9 @@ public sealed class LocalPipe
                 continue;
             }
             BSplineCurve3D c = Writable(c0);
-            maxDeg = Max(maxDeg, c.Degree());
+            maxDeg = Max(maxDeg, c.Degree);
             P1 = c.Value(p2);
-            if (p1 != c.FirstParameter() || p2 != c.LastParameter())
+            if (p1 != c.FirstParameter || p2 != c.LastParameter)
             {
                 c.Segment(p1, p2);
             }

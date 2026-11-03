@@ -47,7 +47,7 @@ public class ShapeCustomTests
     }
 
     private static Surface BasisOf(Surface theSurface)
-        => theSurface is TrimmedSurface aRTS ? aRTS.BasisSurface() : theSurface;
+        => theSurface is TrimmedSurface aRTS ? aRTS.BasisSurface : theSurface;
 
     private static Shape Mirrored(in Shape theShape)
     {
@@ -78,7 +78,7 @@ public class ShapeCustomTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
-            Assert.False(((ElementarySurface)Tool.Surface(ShapeCasts.Face(aF))!).Position().Direct());
+            Assert.False(((ElementarySurface)Tool.Surface(ShapeCasts.Face(aF))!).Position.IsDirect);
         }
 
         Shape aResult = Customize.DirectFaces(aBox);
@@ -89,7 +89,7 @@ public class ShapeCustomTests
         Assert.Equal(12, SubShapes(aResult, ShapeType.Edge).Count);
         foreach (Shape aF in SubShapes(aResult, ShapeType.Face))
         {
-            Assert.True(((ElementarySurface)Tool.Surface(ShapeCasts.Face(aF))!).Position().Direct());
+            Assert.True(((ElementarySurface)Tool.Surface(ShapeCasts.Face(aF))!).Position.IsDirect);
         }
         Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(1000.0, VolumeOf(aResult), 6);
@@ -246,7 +246,7 @@ public class ShapeCustomTests
         Assert.True(AllFrozen(aResult));
         Surface aNew = Tool.Surface(ShapeCasts.Face(SubShapes(aResult, ShapeType.Face)[0]))!;
         Assert.IsType<CylindricalSurface>(aNew);
-        Assert.Equal(4.0, ((CylindricalSurface)aNew).Radius(), 12);
+        Assert.Equal(4.0, ((CylindricalSurface)aNew).Radius, 12);
     }
 
     // OCCT's data/brep/bug26359_parabola.brep: a revolution of a parabola (a B-spline) with a degenerated edge at its
@@ -382,7 +382,7 @@ public class ShapeCustomTests
         {
             Surface aS = Tool.Surface(ShapeCasts.Face(aF))!;
             Assert.IsType<BSplineSurface>(aS);
-            Assert.True(((BSplineSurface)aS).UDegree() <= 3 && ((BSplineSurface)aS).VDegree() <= 3);
+            Assert.True(((BSplineSurface)aS).UDegree <= 3 && ((BSplineSurface)aS).VDegree <= 3);
         }
         Assert.Equal(Math.PI * 9 * 7, VolumeOf(aResult), 1);
     }

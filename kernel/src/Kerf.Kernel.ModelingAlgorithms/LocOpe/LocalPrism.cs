@@ -114,7 +114,7 @@ public sealed class LocalPrism
         _lastShape = thePrism.LastShape();
 
         Explorer exp = new();
-        if (theBase.ShapeType() == ShapeType.Face)
+        if (theBase.Type == ShapeType.Face)
         {
             for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
             {
@@ -267,7 +267,7 @@ public sealed class LocalPrism
         scurves.Clear();
         NCollection_Sequence<Point3D> spt = new();
         global::Kerf.Engine.Features.Local.LocOpe.SampleEdges(_firstShape, spt);
-        double height = Math.Sqrt(_vec.X() * _vec.X() + _vec.Y() * _vec.Y() + _vec.Z() * _vec.Z());
+        double height = Math.Sqrt(_vec.X * _vec.X + _vec.Y * _vec.Y + _vec.Z * _vec.Z);
         double u1 = -2 * height;
         double u2 = 2 * height;
 

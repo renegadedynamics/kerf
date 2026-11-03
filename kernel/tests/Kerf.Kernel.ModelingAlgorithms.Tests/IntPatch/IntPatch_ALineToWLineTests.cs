@@ -55,15 +55,15 @@ public class IntPatch_ALineToWLineTests
             {
                 PntOn2S aP = aWL.Point(k);
                 aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-                Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < 1.0e-6, $"line {i} point {k} off S1");
-                Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < 1.0e-6, $"line {i} point {k} off S2");
+                Assert.True(theS1.Value(u1, v1).DistanceTo(aP.Value()) < 1.0e-6, $"line {i} point {k} off S1");
+                Assert.True(theS2.Value(u2, v2).DistanceTo(aP.Value()) < 1.0e-6, $"line {i} point {k} off S2");
             }
             for (int k = 1; k <= aWL.VertexCount; k++)
             {
                 PatchPoint aV = aWL.Vertex(k);
                 double aPar = aV.ParameterOnLine();
                 Assert.InRange(aPar, 1.0, aWL.NbPnts());
-                Assert.True(aWL.Point((int)aPar).Value().Distance(aV.Value()) < 1.0e-6, $"line {i} vertex {k}");
+                Assert.True(aWL.Point((int)aPar).Value().DistanceTo(aV.Value()) < 1.0e-6, $"line {i} vertex {k}");
             }
         }
     }

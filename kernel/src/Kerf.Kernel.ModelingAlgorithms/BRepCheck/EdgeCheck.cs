@@ -142,25 +142,25 @@ public class EdgeCheck : ResultCheck
                         // eap 6 Jun 2002 occ332
                         // better transform C3d instead of transforming Surf upto C3d initial location,
                         // on transformed BSpline surface 'same parameter' may seem wrong
-                        Placement L = _shape.Location() * _cref.Location();
-                        var c3d = (Curve3D)_cref.Curve3D()!.Transformed(L.Transformation());
+                        Placement L = _shape.Placement * _cref.Location();
+                        var c3d = (Curve3D)_cref.Curve3D()!.Transformed(L.Transformation);
                         bool isPeriodic = c3d.IsPeriodic;
                         double period = RealLast();
                         if (isPeriodic)
                         {
-                            period = c3d.Period();
+                            period = c3d.Period;
                         }
 
-                        double f = c3d.FirstParameter(), l = c3d.LastParameter();
+                        double f = c3d.FirstParameter, l = c3d.LastParameter;
                         if (c3d.GetType() == typeof(TrimmedCurve3D))
                         {
-                            Curve3D c = ((TrimmedCurve3D)c3d).BasisCurve();
-                            f = c.FirstParameter();
-                            l = c.LastParameter();
+                            Curve3D c = ((TrimmedCurve3D)c3d).BasisCurve;
+                            f = c.FirstParameter;
+                            l = c.LastParameter;
                             isPeriodic = c.IsPeriodic;
                             if (isPeriodic)
                             {
-                                period = c.Period();
+                                period = c.Period;
                             }
                         }
 
@@ -177,8 +177,8 @@ public class EdgeCheck : ResultCheck
                         else
                         {
                             var gac3d = new CurveAdaptor(c3d,
-                                                              c3d.TransformedParameter(first, L.Transformation()),
-                                                              c3d.TransformedParameter(last, L.Transformation()));
+                                                              c3d.TransformedParameter(first, L.Transformation),
+                                                              c3d.TransformedParameter(last, L.Transformation));
                             _hCurve = gac3d;
                         }
                     }
@@ -186,25 +186,25 @@ public class EdgeCheck : ResultCheck
                     {
                         // curve on surface
                         Surface sref = _cref.Surface()!;
-                        sref = (Surface)sref.Transformed(_cref.Location().Transformation());
+                        sref = (Surface)sref.Transformed(_cref.Location().Transformation);
                         Curve2D pCref = _cref.PCurve()!;
                         bool isPeriodic = pCref.IsPeriodic;
                         double period = RealLast();
                         if (isPeriodic)
                         {
-                            period = pCref.Period();
+                            period = pCref.Period;
                         }
 
-                        double f = pCref.FirstParameter(), l = pCref.LastParameter();
+                        double f = pCref.FirstParameter, l = pCref.LastParameter;
                         if (pCref.GetType() == typeof(TrimmedCurve2D))
                         {
-                            Curve2D c = ((TrimmedCurve2D)pCref).BasisCurve();
-                            f = c.FirstParameter();
-                            l = c.LastParameter();
+                            Curve2D c = ((TrimmedCurve2D)pCref).BasisCurve;
+                            f = c.FirstParameter;
+                            l = c.LastParameter;
                             isPeriodic = c.IsPeriodic;
                             if (isPeriodic)
                             {
-                                period = c.Period();
+                                period = c.Period;
                             }
                         }
 
@@ -276,7 +276,7 @@ public class EdgeCheck : ResultCheck
         var te = (BrepTEdge)_shape.TShape()!;
         double tol = Tool.Tolerance(ShapeCasts.Edge(_shape));
 
-        ShapeType styp = s.ShapeType();
+        ShapeType styp = s.Type;
         var exp = new Explorer(s, ShapeType.Edge);
         for (; exp.More(); exp.Next())
         {
@@ -331,12 +331,12 @@ public class EdgeCheck : ResultCheck
                     CurveAdaptorBase hCurve = _isParallel ? _hCurve.ShallowCopy() : _hCurve;
 
                     var tf = (BrepTFace)s.TShape()!;
-                    Placement floc = s.Location();
+                    Placement floc = s.Placement;
                     Placement tFloc = tf.Location();
                     Surface? su = tf.Surface();
-                    Placement L = (floc * tFloc).Predivided(_shape.Location());
-                    Placement le = _shape.Location() * _cref.Location();
-                    Transform3D etrsf = le.Transformation();
+                    Placement L = (floc * tFloc).Predivided(_shape.Placement);
+                    Placement le = _shape.Placement * _cref.Location();
+                    Transform3D etrsf = le.Transformation;
                     bool pcurvefound = false;
 
                     var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.Curves());
@@ -372,19 +372,19 @@ public class EdgeCheck : ResultCheck
                             double period = RealLast();
                             if (isPeriodic)
                             {
-                                period = pc.Period();
+                                period = pc.Period;
                             }
 
-                            double fp = pc.FirstParameter(), lp = pc.LastParameter();
+                            double fp = pc.FirstParameter, lp = pc.LastParameter;
                             if (pc.GetType() == typeof(TrimmedCurve2D))
                             {
-                                Curve2D c = ((TrimmedCurve2D)pc).BasisCurve();
-                                fp = c.FirstParameter();
-                                lp = c.LastParameter();
+                                Curve2D c = ((TrimmedCurve2D)pc).BasisCurve;
+                                fp = c.FirstParameter;
+                                lp = c.LastParameter;
                                 isPeriodic = c.IsPeriodic;
                                 if (isPeriodic)
                                 {
-                                    period = c.Period();
+                                    period = c.Period;
                                 }
                             }
 
@@ -401,7 +401,7 @@ public class EdgeCheck : ResultCheck
 
                             if (_gctrl)
                             {
-                                var sb = (Surface)su!.Transformed((floc * tFloc).Transformation());
+                                var sb = (Surface)su!.Transformed((floc * tFloc).Transformation);
                                 Curve2D PC = cr.PCurve()!;
                                 var gahs = new SurfaceAdaptor(sb);
                                 var ghpc = new CurveAdaptor2D(PC, f, l);
@@ -462,7 +462,7 @@ public class EdgeCheck : ResultCheck
                         PlaneSurface? p;
                         if (su is TrimmedSurface rts && su.GetType() == typeof(TrimmedSurface))
                         {
-                            p = rts.BasisSurface() as PlaneSurface;
+                            p = rts.BasisSurface as PlaneSurface;
                         }
                         else
                         {
@@ -480,7 +480,7 @@ public class EdgeCheck : ResultCheck
                             // plan en position
                             if (_gctrl)
                             {
-                                p = (PlaneSurface)p.Transformed((floc * tFloc).Transformation()); // eap occ332
+                                p = (PlaneSurface)p.Transformed((floc * tFloc).Transformation); // eap occ332
                                 // on projette Cref sur ce plan
                                 var gahs = new SurfaceAdaptor(p);
 
@@ -493,7 +493,7 @@ public class EdgeCheck : ResultCheck
                                 Curve3D projOnPlane =
                                     global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(new TrimmedCurve3D(c3d, first, last),
                                                                p,
-                                                               p.Position().Direction(),
+                                                               p.Position.Direction,
                                                                true)!;
                                 var projCurve = new CurveAdaptor(projOnPlane);
 
@@ -640,8 +640,8 @@ public class EdgeCheck : ResultCheck
             if (cr.IsCurve3D && !te.Degenerated())
             {
                 //// modified by jgv, 20.03.03 ////
-                Placement loc = _shape.Location() * cr.Location();
-                var c3d = (Curve3D)cr.Curve3D()!.Transformed(loc.Transformation());
+                Placement loc = _shape.Placement * cr.Location();
+                var c3d = (Curve3D)cr.Curve3D()!.Transformed(loc.Transformation);
                 ///////////////////////////////////
                 var gac3d = new CurveAdaptor(c3d, first, last);
                 it = iRep;
@@ -659,8 +659,8 @@ public class EdgeCheck : ResultCheck
                 {
                     Surface sref = cr.Surface()!;
                     //// modified by jgv, 20.03.03 ////
-                    Placement loc = _shape.Location() * cr.Location();
-                    sref = (Surface)sref.Transformed(loc.Transformation());
+                    Placement loc = _shape.Placement * cr.Location();
+                    sref = (Surface)sref.Transformed(loc.Transformation);
                     ///////////////////////////////////
                     Curve2D pCref = cr.PCurve()!;
                     var gahSref = new SurfaceAdaptor(sref);
@@ -673,7 +673,7 @@ public class EdgeCheck : ResultCheck
                 {
                     Surface sref = cr.Surface()!;
                     // OCCT: the second pcurve's surface is placed without the edge's location, unlike the first
-                    sref = (Surface)sref.Transformed(cr.Location().Transformation());
+                    sref = (Surface)sref.Transformed(cr.Location().Transformation);
                     Curve2D pCref = cr.PCurve2()!;
                     var gahSref = new SurfaceAdaptor(sref);
                     var ghpCref = new CurveAdaptor2D(pCref, first, last);
@@ -696,8 +696,8 @@ public class EdgeCheck : ResultCheck
             prm = ((Ncontrol - 1 - i) * first + i * last) / (Ncontrol - 1);
             tol2 = dist2 = 0.0;
             center = theRep[1]!.Value(prm);
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(center.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(center.Y())
-                || global::Kerf.Engine.Foundation.Precision.IsInfinite(center.Z()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(center.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(center.Y)
+                || global::Kerf.Engine.Foundation.Precision.IsInfinite(center.Z))
             {
                 return global::Kerf.Engine.Foundation.Precision.Infinite();
             }
@@ -705,13 +705,13 @@ public class EdgeCheck : ResultCheck
             for (iRep = 2; iRep <= nbRep; iRep++)
             {
                 othP = theRep[iRep]!.Value(prm);
-                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.Y())
-                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.Z()))
+                if (global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.Y)
+                    || global::Kerf.Engine.Foundation.Precision.IsInfinite(othP.Z))
                 {
                     return global::Kerf.Engine.Foundation.Precision.Infinite();
                 }
 
-                dist2 = center.SquareDistance(othP);
+                dist2 = center.SquareDistanceTo(othP);
                 if (dist2 > tolCal)
                 {
                     tolCal = dist2;
@@ -785,8 +785,8 @@ public class EdgeCheck : ResultCheck
             CurveRepresentation cr = it.Value();
             var pt = (PolygonOnTriangulationRepresentation)cr;
 
-            Placement ll = edge.Location() * pt.Location();
-            Transform3D trsf = ll.Transformation();
+            Placement ll = edge.Placement * pt.Location();
+            Transform3D trsf = ll.Transformation;
 
             Triangulation triang = cr.Triangulation()!;
             PolygonOnTriangulation pOnTriag = cr.IsPolygonOnClosedTriangulation
@@ -806,7 +806,7 @@ public class EdgeCheck : ResultCheck
                     Point3D pe = bc.Value(param);
                     Point3D pnt = triang.Node(indices[i]).Transformed(trsf);
 
-                    double sqDist = pe.SquareDistance(pnt);
+                    double sqDist = pe.SquareDistanceTo(pnt);
                     if (sqDist > tol * tol)
                     {
                         return StatusCheck.InvalidPolygonOnTriangulation;
@@ -822,7 +822,7 @@ public class EdgeCheck : ResultCheck
 
                 for (int i = 1; i <= nbNodes; i++)
                 {
-                    if (trsf.Form() == Identity)
+                    if (trsf.Form == Identity)
                     {
                         b.Add(triang.Node(indices[i]));
                     }

@@ -47,5 +47,5 @@ public class HVertex : Transient
     public virtual Orientation Orientation() => _ori;
 
     /// <summary>True if the two vertices are within <c>Precision::Confusion()</c>.</summary>
-    public virtual bool IsSame(HVertex other) => (_pnt.Distance(other.Value()) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+    public virtual bool IsSame(HVertex other) => (_pnt.DistanceTo(other.Value()) <= global::Kerf.Engine.Foundation.Precision.Confusion());
 }

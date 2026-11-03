@@ -111,7 +111,7 @@ public sealed class ShapeClassifier
     {
         _mymre.Clear();
         _mymren = 0;
-        if (_ref.ShapeType() == ShapeType.Face && _sameDomain == 1)
+        if (_ref.Type == ShapeType.Face && _sameDomain == 1)
         {
             Exploration.MapShapes(_ref, ShapeType.Edge, _mymre);
             _mymren = _mymre.Count;
@@ -194,7 +194,7 @@ public sealed class ShapeClassifier
         _edge.Nullify();
         _face.Nullify();
 
-        ShapeType t = _s.ShapeType();
+        ShapeType t = _s.Type;
         if (t < ShapeType.Face)
         { // compsolid .. shell
             FindFace(_s);
@@ -216,7 +216,7 @@ public sealed class ShapeClassifier
             return;
         }
 
-        ShapeType tS = s.ShapeType();
+        ShapeType tS = s.Type;
         Explorer eex = new();
         if (!_face.IsNull)
         {
@@ -302,7 +302,7 @@ public sealed class ShapeClassifier
             // rejection des aretes de myS comme arete de classification
             // (le point de classification doit etre IN S)
             _mapAvS.Clear();
-            ShapeType tAvS = _avS.ShapeType();
+            ShapeType tAvS = _avS.Type;
             if (tAvS == ShapeType.Face)
             {
                 _mapAvS.Add(_avS);
@@ -317,7 +317,7 @@ public sealed class ShapeClassifier
         {
             // tAvS = FACE,EDGE --> map(AvS,EDGE)
             _mapAvS.Clear();
-            ShapeType tAvS = _pAvLS!.First().ShapeType();
+            ShapeType tAvS = _pAvLS!.First().Type;
             if (tAvS == ShapeType.Face)
             {
                 NCollection_List<Shape>.Iterator it = new(_pAvLS);
@@ -340,14 +340,14 @@ public sealed class ShapeClassifier
         }
         else
         {
-            if (_s.ShapeType() == ShapeType.Face)
+            if (_s.Type == ShapeType.Face)
             {
                 _p3Ddef = SolidExplorer.FindAPointInTheFace(ShapeCasts.Face(_s), ref _p3D);
             }
         }
 
-        ShapeType tS = _s.ShapeType();
-        ShapeType tR = _ref.ShapeType();
+        ShapeType tS = _s.Type;
+        ShapeType tR = _ref.Type;
 
         if (tS == ShapeType.Vertex)
         {
@@ -434,7 +434,7 @@ public sealed class ShapeClassifier
         }
 
         // take orientation of reference shape in account
-        Orientation oriRef = _ref.Orientation();
+        Orientation oriRef = _ref.Orientation;
         if (oriRef == External || oriRef == Internal)
         {
             if (_state == In)
@@ -462,7 +462,7 @@ public sealed class ShapeClassifier
         Curve2D? c2D;
         Point2D p2D;
 
-        ShapeType tR = _ref.ShapeType();
+        ShapeType tR = _ref.Type;
 
         if (tR == ShapeType.Face)
         {
@@ -540,7 +540,7 @@ public sealed class ShapeClassifier
         {
             return;
         }
-        ShapeType tR = _ref.ShapeType();
+        ShapeType tR = _ref.Type;
 
         if (tR == ShapeType.Face)
         {
@@ -549,7 +549,7 @@ public sealed class ShapeClassifier
                 Explorer x = new();
                 for (x.Init(_ref, ShapeType.Edge); x.More(); x.Next())
                 {
-                    Orientation o = x.Current().Orientation();
+                    Orientation o = x.Current().Orientation;
                     if (o == External)
                     {
                         _state = Out;
@@ -569,7 +569,7 @@ public sealed class ShapeClassifier
                 _p2D = p2D;
                 _p2Ddef = true;
                 Face f = ShapeCasts.Face(_ref);
-                f.Orientation(Forward);
+                f.Orient(Forward);
                 double tolClass = 1e-8;
                 FClass2d fClass2d = new(f, tolClass);
                 _state = fClass2d.Perform(p2D);
@@ -589,7 +589,7 @@ public sealed class ShapeClassifier
         {
             return;
         }
-        ShapeType tR = _ref.ShapeType();
+        ShapeType tR = _ref.Type;
 
         if (tR == ShapeType.Solid)
         {

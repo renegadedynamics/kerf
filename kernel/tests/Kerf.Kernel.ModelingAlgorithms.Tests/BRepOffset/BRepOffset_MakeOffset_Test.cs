@@ -44,8 +44,8 @@ public class BRepOffset_MakeOffset_Test
     {
         // Create rectangle centered at theCenter in a plane with theNormal
         Frame3D anAxis = new(theCenter, theNormal);
-        Direction3D aXDir = anAxis.XDirection();
-        Direction3D aYDir = anAxis.YDirection();
+        Direction3D aXDir = anAxis.XDirection;
+        Direction3D aYDir = anAxis.YDirection;
 
         double aHalfW = theWidth / 2.0;
         double aHalfH = theHeight / 2.0;
@@ -86,8 +86,8 @@ public class BRepOffset_MakeOffset_Test
     private static Wire MakePolygonalWire(in Point3D theCenter, in Direction3D theNormal, double theRadius, int theNbSides)
     {
         Frame3D anAxis = new(theCenter, theNormal);
-        Direction3D aXDir = anAxis.XDirection();
-        Direction3D aYDir = anAxis.YDirection();
+        Direction3D aXDir = anAxis.XDirection;
+        Direction3D aYDir = anAxis.YDirection;
 
         MakePolygon aPolygon = new();
         for (int i = 0; i <= theNbSides; ++i)

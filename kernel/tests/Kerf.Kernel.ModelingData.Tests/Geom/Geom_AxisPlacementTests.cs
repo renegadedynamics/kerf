@@ -14,49 +14,49 @@ public class Geom_AxisPlacementTests
 
     private static void AssertDir(in Direction3D theExpected, in Direction3D theActual)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), Tol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), Tol);
-        Assert.Equal(theExpected.Z(), theActual.Z(), Tol);
+        Assert.Equal(theExpected.X, theActual.X, Tol);
+        Assert.Equal(theExpected.Y, theActual.Y, Tol);
+        Assert.Equal(theExpected.Z, theActual.Z, Tol);
     }
 
     private static void AssertPnt(in Point3D theExpected, in Point3D theActual)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), Tol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), Tol);
-        Assert.Equal(theExpected.Z(), theActual.Z(), Tol);
+        Assert.Equal(theExpected.X, theActual.X, Tol);
+        Assert.Equal(theExpected.Y, theActual.Y, Tol);
+        Assert.Equal(theExpected.Z, theActual.Z, Tol);
     }
 
     private static void AssertAx2(in Frame3D theExpected, Axis2Placement theActual)
     {
-        AssertPnt(theExpected.Location(), theActual.Location());
-        AssertDir(theExpected.Direction(), theActual.Direction());
-        AssertDir(theExpected.XDirection(), theActual.XDirection());
-        AssertDir(theExpected.YDirection(), theActual.YDirection());
+        AssertPnt(theExpected.Location, theActual.Location());
+        AssertDir(theExpected.Direction, theActual.Direction());
+        AssertDir(theExpected.XDirection, theActual.XDirection());
+        AssertDir(theExpected.YDirection, theActual.YDirection());
         Frame3D A = theActual.Ax2();
-        AssertDir(theExpected.XDirection(), A.XDirection());
+        AssertDir(theExpected.XDirection, A.XDirection);
     }
 
     [Fact]
     public void Axis1Placement_matches_gp_Ax1()
     {
         Axis3D A = new(new Point3D(1, 2, 3), new Direction3D(1, 2, 2));
-        Axis1Placement G = new(A.Location(), A.Direction());
+        Axis1Placement G = new(A.Location, A.Direction);
         Assert.Equal(A, G.Ax1());
         Assert.Equal(A, G.Axis());
 
         Transform3D T = Transform3D.Rotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
         Axis1Placement GT = (Axis1Placement)G.Transformed(T);
         Axis3D AT = A.Transformed(T);
-        AssertPnt(AT.Location(), GT.Location());
-        AssertDir(AT.Direction(), GT.Direction());
+        AssertPnt(AT.Location, GT.Location());
+        AssertDir(AT.Direction, GT.Direction());
 
-        AssertDir(A.Reversed().Direction(), G.Reversed().Direction());
-        Assert.Equal(A.Direction(), G.Direction());
+        AssertDir(A.Reversed().Direction, G.Reversed().Direction());
+        Assert.Equal(A.Direction, G.Direction());
         Assert.Equal(M_PI, G.Angle(G.Reversed()), Tol);
 
         AxisPlacement GD = G.WithDirection(new Direction3D(0, 0, 1));
         AssertDir(new Direction3D(0, 0, 1), GD.Direction());
-        AssertPnt(A.Location(), GD.Location());
+        AssertPnt(A.Location, GD.Location());
         AssertPnt(new Point3D(9, 9, 9), G.WithLocation(new Point3D(9, 9, 9)).Location());
         Assert.Equal(A, G.Axis());
     }

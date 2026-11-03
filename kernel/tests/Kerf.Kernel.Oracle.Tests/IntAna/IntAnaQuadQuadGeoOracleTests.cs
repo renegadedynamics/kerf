@@ -30,17 +30,17 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
     private static CoordinateSystem Settled(Oracle theOracle)
     {
         CoordinateSystem anAx = theOracle.Ax3();
-        var aSettled = new CoordinateSystem(anAx.Location(), Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
-        return anAx.Direct() ? aSettled : aSettled.YReversed();
+        var aSettled = new CoordinateSystem(anAx.Location, Oracle.Settled(anAx.Direction), Oracle.Settled(anAx.XDirection));
+        return anAx.IsDirect ? aSettled : aSettled.YReversed();
     }
 
     private static void SameAxisDirection(Oracle theOracle, N.gp_Dir theNative, in Direction3D thePort, string theWhat)
     {
         // A circle's normal may be reversed by the native builder
-        double aSign = theNative.X() * thePort.X() + theNative.Y() * thePort.Y() + theNative.Z() * thePort.Z() < 0 ? -1 : 1;
-        theOracle.Same(aSign * theNative.X(), thePort.X(), $"{theWhat} normal X");
-        theOracle.Same(aSign * theNative.Y(), thePort.Y(), $"{theWhat} normal Y");
-        theOracle.Same(aSign * theNative.Z(), thePort.Z(), $"{theWhat} normal Z");
+        double aSign = theNative.X() * thePort.X + theNative.Y() * thePort.Y + theNative.Z() * thePort.Z < 0 ? -1 : 1;
+        theOracle.Same(aSign * theNative.X(), thePort.X, $"{theWhat} normal X");
+        theOracle.Same(aSign * theNative.Y(), thePort.Y, $"{theWhat} normal Y");
+        theOracle.Same(aSign * theNative.Z(), thePort.Z, $"{theWhat} normal Z");
     }
 
     private static void Compare(Oracle theOracle, N.Geom_Surface theS1, N.Geom_Surface theS2, QuadQuadGeo thePort,
@@ -72,10 +72,10 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 using var aLoc = aLin.Location();
                 using var aDir = aLin.Direction();
                 Line3D aPort = thePort.Line(1);
-                theOracle.Same(aLoc, aPort.Location(), $"{theWhat} line location");
-                theOracle.Same(aDir.X(), aPort.Direction().X(), $"{theWhat} line direction X");
-                theOracle.Same(aDir.Y(), aPort.Direction().Y(), $"{theWhat} line direction Y");
-                theOracle.Same(aDir.Z(), aPort.Direction().Z(), $"{theWhat} line direction Z");
+                theOracle.Same(aLoc, aPort.Location, $"{theWhat} line location");
+                theOracle.Same(aDir.X(), aPort.Direction.X, $"{theWhat} line direction X");
+                theOracle.Same(aDir.Y(), aPort.Direction.Y, $"{theWhat} line direction Y");
+                theOracle.Same(aDir.Z(), aPort.Direction.Z, $"{theWhat} line direction Z");
                 break;
             }
             case Circle:
@@ -86,9 +86,9 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 using var anAxis = aCirc.Axis();
                 using var aNormal = anAxis.Direction();
                 Circle3D aPort = thePort.Circle(1);
-                theOracle.Same(aLoc, aPort.Location(), $"{theWhat} circle centre");
-                theOracle.Same(aCirc.Radius(), aPort.Radius(), $"{theWhat} circle radius");
-                SameAxisDirection(theOracle, aNormal, aPort.Axis().Direction(), $"{theWhat} circle");
+                theOracle.Same(aLoc, aPort.Location, $"{theWhat} circle centre");
+                theOracle.Same(aCirc.Radius(), aPort.Radius, $"{theWhat} circle radius");
+                SameAxisDirection(theOracle, aNormal, aPort.Axis.Direction, $"{theWhat} circle");
                 break;
             }
             case Ellipse:
@@ -96,9 +96,9 @@ public class IntAnaQuadQuadGeoOracleTests(ITestOutputHelper output)
                 using var aNEllipse = N.Geom_Ellipse.DownCast(aBasis)!;
                 using var aLoc = aNEllipse.Location();
                 Ellipse3D aPort = thePort.Ellipse(1);
-                theOracle.Same(aLoc, aPort.Location(), $"{theWhat} ellipse centre");
-                theOracle.Same(aNEllipse.MajorRadius(), aPort.MajorRadius(), $"{theWhat} ellipse major radius");
-                theOracle.Same(aNEllipse.MinorRadius(), aPort.MinorRadius(), $"{theWhat} ellipse minor radius");
+                theOracle.Same(aLoc, aPort.Location, $"{theWhat} ellipse centre");
+                theOracle.Same(aNEllipse.MajorRadius(), aPort.MajorRadius, $"{theWhat} ellipse major radius");
+                theOracle.Same(aNEllipse.MinorRadius(), aPort.MinorRadius, $"{theWhat} ellipse minor radius");
                 break;
             }
         }

@@ -58,7 +58,7 @@ public class BOPAlgo_BuilderTests
         Assert.False(aBuilder.HasErrors);
 
         Shape aResult = aBuilder.Shape();
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         List<Shape> aSolids = Solids(aResult);
         Assert.Equal(3, aSolids.Count);
 
@@ -90,7 +90,7 @@ public class BOPAlgo_BuilderTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            double aX = aProps.CentreOfMass().X();
+            double aX = aProps.CentreOfMass().X;
             if (Math.Abs(aX) < 1.0e-9)
             {
                 aFaceX0 = anExp.Current();
@@ -104,7 +104,7 @@ public class BOPAlgo_BuilderTests
         Assert.False(aBuilder.IsDeleted(aFaceX0));
         Assert.Equal(2, aBuilder.Modified(aFaceX10).Count);
         // the section edges with B's faces at y = 5 and z = 5 are generated from it
-        Assert.Equal(2, aBuilder.Generated(aFaceX10).Count(s => s.ShapeType() == ShapeType.Edge));
+        Assert.Equal(2, aBuilder.Generated(aFaceX10).Count(s => s.Type == ShapeType.Edge));
 
         // every modified shape is in the result
         Shape aResult = aBuilder.Shape();

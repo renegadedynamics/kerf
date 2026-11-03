@@ -1116,7 +1116,7 @@ public class CafWriter
         StyledItem stePstyle = theOverride;
         if (hasOwn)
         {
-            if (shape.ShapeType() != ShapeType.Compound || isComponent)
+            if (shape.Type != ShapeType.Compound || isComponent)
             { // skip compounds, let subshapes inherit its colors
                 Placement location = new Placement();
                 NCollection_Sequence<Transient> seqRI = new NCollection_Sequence<Transient>();
@@ -1165,7 +1165,7 @@ public class CafWriter
         }
 
         // iterate on subshapes (except vertices :)
-        if (shape.ShapeType() == ShapeType.Edge)
+        if (shape.Type == ShapeType.Edge)
         {
             return;
         }

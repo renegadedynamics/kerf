@@ -52,20 +52,20 @@ public sealed class IsPlanarSurface
                 bool essai = true;
                 Point3D p;
                 Vector3D DU, DV, dn;
-                Direction3D dir = AS.AxeOfRevolution().Direction();
+                Direction3D dir = AS.AxeOfRevolution().Direction;
                 double umin, umax, vmin, vmax;
-                s.Bounds(out umin, out umax, out vmin, out vmax);
+                s.ParameterBounds(out umin, out umax, out vmin, out vmax);
                 s.D1((umin + umax) / 2, (vmin + vmax) / 2, out p, out DU, out DV);
-                if (DU.Magnitude() <= Constants.Resolution() || DV.Magnitude() <= Constants.Resolution())
+                if (DU.Magnitude <= Constants.Resolution() || DV.Magnitude <= Constants.Resolution())
                 {
                     double newU = (umin + umax) / 2 + (umax - umin) * 0.1;
                     double newV = (vmin + vmax) / 2 + (vmax - vmin) * 0.1;
                     s.D1(newU, newV, out p, out DU, out DV);
                 }
                 dn = DU ^ DV;
-                if (dn.Magnitude() > 1.0e-7)
+                if (dn.Magnitude > 1.0e-7)
                 {
-                    double angle = dir.Angle(new Direction3D(dn));
+                    double angle = dir.AngleTo(new Direction3D(dn));
                     if (angle > M_PI / 2)
                     {
                         angle = M_PI - angle;
@@ -99,16 +99,16 @@ public sealed class IsPlanarSurface
                 Vector3D Du, Dv, dn;
                 Point3D p;
 
-                s.Bounds(out umin, out umax, out vmin, out vmax);
+                s.ParameterBounds(out umin, out umax, out vmin, out vmax);
                 s.D1((umin + umax) / 2, (vmin + vmax) / 2, out p, out Du, out Dv);
-                if (Du.Magnitude() <= Constants.Resolution() || Dv.Magnitude() <= Constants.Resolution())
+                if (Du.Magnitude <= Constants.Resolution() || Dv.Magnitude <= Constants.Resolution())
                 {
                     double newU = (umin + umax) / 2 + (umax - umin) * 0.1;
                     double newV = (vmin + vmax) / 2 + (vmax - vmin) * 0.1;
                     s.D1(newU, newV, out p, out Du, out Dv);
                 }
                 dn = Du ^ Dv;
-                norm = dn.Magnitude();
+                norm = dn.Magnitude;
                 if (norm > 1.0e-15)
                 {
                     dn /= norm;
@@ -138,7 +138,7 @@ public sealed class IsPlanarSurface
                 nbU = 8 + 3 * AS.NbUIntervals(CN);
                 nbV = 8 + 3 * AS.NbVIntervals(CN);
                 double umin, umax, vmin, vmax, du, dv, u, v;
-                s.Bounds(out umin, out umax, out vmin, out vmax);
+                s.ParameterBounds(out umin, out umax, out vmin, out vmax);
                 du = (umax - umin) / (nbU - 1);
                 dv = (vmax - vmin) / (nbV - 1);
                 NCollection_Array1<Point3D> pnts = new(1, nbU * nbV);
@@ -185,15 +185,15 @@ public sealed class IsPlanarSurface
             Point3D p;
             Vector3D DU, dv;
             double umin, umax, vmin, vmax;
-            s.Bounds(out umin, out umax, out vmin, out vmax);
+            s.ParameterBounds(out umin, out umax, out vmin, out vmax);
             s.D1((umin + umax) / 2, (vmin + vmax) / 2, out p, out DU, out dv);
 
-            if (DU.SquareMagnitude() > Constants.Resolution() && dv.SquareMagnitude() > Constants.Resolution())
+            if (DU.SquareMagnitude > Constants.Resolution() && dv.SquareMagnitude > Constants.Resolution())
             {
                 // Choose DX as close as possible to DU
                 Direction3D du = new(DU);
-                double angle1 = du.Angle(dx);
-                double angle2 = du.Angle(dy);
+                double angle1 = du.AngleTo(dx);
+                double angle2 = du.AngleTo(dy);
                 if (angle1 > M_PI / 2)
                 {
                     angle1 = M_PI - angle1;
@@ -208,11 +208,11 @@ public sealed class IsPlanarSurface
                     dy = dx;
                     dx = du;
                 }
-                if (dx.Angle(new Direction3D(DU)) > M_PI / 2)
+                if (dx.AngleTo(new Direction3D(DU)) > M_PI / 2)
                 {
                     dx = dx.Reversed();
                 }
-                if (dy.Angle(new Direction3D(dv)) > M_PI / 2)
+                if (dy.AngleTo(new Direction3D(dv)) > M_PI / 2)
                 {
                     dy = dy.Reversed();
                 }
@@ -278,7 +278,7 @@ public sealed class IsPlanarSurface
         for (ii = 1; ii <= nb && b; ii++)
         {
             u = (ii - 1) * du + f;
-            d = plan.Distance(c.Value(u));
+            d = plan.DistanceTo(c.Value(u));
             b = d < tol;
         }
 

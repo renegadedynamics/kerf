@@ -107,19 +107,22 @@ public readonly partial struct Cone : IEquatable<Cone>
     // Queries
 
     /// <summary>The apex of the cone, on the negative side of the main axis when the semi-angle is positive.</summary>
-    public readonly Point3D Apex()
+    public readonly Point3D Apex
     {
-        Xyz coord = _pos.Direction().XYZ();
-        coord.Multiply(-_radius / Math.Tan(_semiAngle));
-        coord.Add(_pos.Location().XYZ());
-        return new Point3D(coord);
+        get
+        {
+            Xyz coord = _pos.Direction.XYZ();
+            coord.Multiply(-_radius / Math.Tan(_semiAngle));
+            coord.Add(_pos.Location.XYZ());
+            return new Point3D(coord);
+        }
     }
 
     /// <summary>True when the coordinate system is right-handed.</summary>
-    public readonly bool Direct() => _pos.Direct();
+    public readonly bool IsDirect => _pos.IsDirect;
 
     /// <summary>The symmetry axis.</summary>
-    public readonly Axis3D Axis() => _pos.Axis();
+    public readonly Axis3D Axis => _pos.Axis;
 
     /// <summary>
     /// The coefficients of the implicit equation in the global system:
@@ -158,19 +161,19 @@ public readonly partial struct Cone : IEquatable<Cone>
         d = t14 * t14 + t24 * t24 - _radius * _radius - t34 * t34 - 2.0 * _radius * t34;
     }
 
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
-    public readonly CoordinateSystem Position() => _pos;
+    public readonly CoordinateSystem Position => _pos;
 
     /// <summary>The radius of the cone in the plane of its coordinate system.</summary>
-    public readonly double RefRadius() => _radius;
+    public readonly double RefRadius => _radius;
 
     /// <summary>The half-angle at the apex, in (-PI/2, PI/2), never 0.</summary>
-    public readonly double SemiAngle() => _semiAngle;
+    public readonly double SemiAngle => _semiAngle;
 
-    public readonly Axis3D XAxis() => new(_pos.Location(), _pos.XDirection());
+    public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
-    public readonly Axis3D YAxis() => new(_pos.Location(), _pos.YDirection());
+    public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
     public readonly Cone Mirrored(in Point3D p)
     {
@@ -219,7 +222,7 @@ public readonly partial struct Cone : IEquatable<Cone>
         CoordinateSystem pos = _pos;
         double radius = _radius;
         pos = pos.Transformed(t);
-        radius *= t.ScaleFactor();
+        radius *= t.ScaleFactor;
         if (radius < 0)
         {
             radius = -radius;

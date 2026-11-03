@@ -221,8 +221,8 @@ public class ApproxAFunction
                     v2 = new Vector2D(res2[val2 + 1], res2[val2 + 2]);
                     v1 *= facteur1;
                     v2 *= facteur2;
-                    diff = Math.Abs(v1.X() - v2.X()) + Math.Abs(v1.Y() - v2.Y());
-                    moy = Math.Abs(v1.X() + v2.X()) + Math.Abs(v1.Y() + v2.Y());
+                    diff = Math.Abs(v1.X - v2.X) + Math.Abs(v1.Y - v2.Y);
+                    moy = Math.Abs(v1.X + v2.X) + Math.Abs(v1.Y + v2.Y);
                     if (diff > moy * 1.0e-9)
                     {
                         prec[idim] = diff * normal1;
@@ -246,8 +246,8 @@ public class ApproxAFunction
                     V2 = new Vector3D(res2[val2 + 1], res2[val2 + 2], res2[val2 + 3]);
                     V1 *= facteur1;
                     V2 *= facteur2;
-                    diff = Math.Abs(V1.X() - V2.X()) + Math.Abs(V1.Y() - V2.Y()) + Math.Abs(V1.Z() - V2.Z());
-                    moy = Math.Abs(V1.X() + V2.X()) + Math.Abs(V1.Y() + V2.Y()) + Math.Abs(V1.Z() + V2.Z());
+                    diff = Math.Abs(V1.X - V2.X) + Math.Abs(V1.Y - V2.Y) + Math.Abs(V1.Z - V2.Z);
+                    moy = Math.Abs(V1.X + V2.X) + Math.Abs(V1.Y + V2.Y) + Math.Abs(V1.Z + V2.Z);
                     if (diff > moy * 1.0e-9)
                     {
                         prec[idim] = diff * normal1;

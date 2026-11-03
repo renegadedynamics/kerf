@@ -30,8 +30,8 @@ public class GeomFill_BSplineCurves_Test
         NCollection_Array1<Point3D> aBezierPoles = new(1, 4);
         aBezierPoles[1] = aV0;
         aBezierPoles[4] = aV1;
-        aBezierPoles[2] = new Point3D(aV0.X(), (5.4 / 13.2) * aV1.Y(), 0);
-        aBezierPoles[3] = new Point3D((6.0 / 6.8) * aV0.X(), aV1.Y(), 0);
+        aBezierPoles[2] = new Point3D(aV0.X, (5.4 / 13.2) * aV1.Y, 0);
+        aBezierPoles[3] = new Point3D((6.0 / 6.8) * aV0.X, aV1.Y, 0);
 
         BezierCurve3D aBezier = new(aBezierPoles);
         BSplineCurve3D anOutlineCurve = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aBezier);
@@ -40,7 +40,7 @@ public class GeomFill_BSplineCurves_Test
         BSplineCurve3D aCurve1;
         {
             NCollection_HArray1<Point2D> aHArray = new(1, 2);
-            aHArray.SetValue(1, new Point2D(-aV1.Y(), 0));
+            aHArray.SetValue(1, new Point2D(-aV1.Y, 0));
             aHArray.SetValue(2, new Point2D(0, aHeight + aHeight / 2));
             Interpolate2D anInterp = new(aHArray, false, 1e-6);
             anInterp.Load(new Vector2D(0, 1), new Vector2D(1, 0));
@@ -53,8 +53,8 @@ public class GeomFill_BSplineCurves_Test
         BSplineCurve3D aCurve2;
         {
             NCollection_HArray1<Point2D> aHArray = new(1, 3);
-            aHArray.SetValue(1, new Point2D(-aV0.X(), 0));
-            aHArray.SetValue(2, new Point2D(-aV0.X() - 2.6, aHeight));
+            aHArray.SetValue(1, new Point2D(-aV0.X, 0));
+            aHArray.SetValue(2, new Point2D(-aV0.X - 2.6, aHeight));
             aHArray.SetValue(3, new Point2D(0, aHeight + aHeight / 2));
             Interpolate2D anInterp = new(aHArray, false, 1e-6);
             anInterp.Perform();

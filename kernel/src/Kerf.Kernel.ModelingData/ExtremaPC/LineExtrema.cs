@@ -36,7 +36,7 @@ public sealed class LineExtrema : global::Kerf.Engine.Extrema.PointCurve.Extrema
     /// <summary>Evaluates point on line at parameter.</summary>
     public Point3D Value(double u)
     {
-        return _line.Location().Translated(u * new Vector3D(_line.Direction()));
+        return _line.Location.Translated(u * new Vector3D(_line.Direction));
     }
 
     /// <summary>Returns true if domain is bounded.</summary>
@@ -53,8 +53,8 @@ public sealed class LineExtrema : global::Kerf.Engine.Extrema.PointCurve.Extrema
         _result.Clear();
 
         // Compute projection parameter: u = (P - O) . Direction
-        Direction3D dir = _line.Direction();
-        Point3D origin = _line.Location();
+        Direction3D dir = _line.Direction;
+        Point3D origin = _line.Location;
         Vector3D vec = new(origin, p);
         double u = vec.Dot(new Vector3D(dir));
 
@@ -79,7 +79,7 @@ public sealed class LineExtrema : global::Kerf.Engine.Extrema.PointCurve.Extrema
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult ext = new();
         ext.Parameter = u;
         ext.Point = ptOnLine;
-        ext.SquareDistance = p.SquareDistance(ptOnLine);
+        ext.SquareDistance = p.SquareDistanceTo(ptOnLine);
         ext.IsMinimum = true;
 
         _result._extrema.Add(ext);

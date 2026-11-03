@@ -90,7 +90,7 @@ public class OffsetSurface : Surface
     }
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The evaluation representation descriptor (may be null). Stored, not copied: don't modify.</summary>
     internal RepSurfaceDesc.Base? EvalRepresentation() => _evalRep;
@@ -122,7 +122,7 @@ public class OffsetSurface : Surface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        s.Bounds(out double uf, out double ul, out double vf, out double vl);
+        s.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
         Surface checkingSurf = (Surface)s.Copy();
         bool isTrimmed = false;
@@ -131,18 +131,18 @@ public class OffsetSurface : Surface
         {
             if (checkingSurf is TrimmedSurface trimS)
             {
-                checkingSurf = trimS.BasisSurface();
+                checkingSurf = trimS.BasisSurface;
                 isTrimmed = true;
             }
 
             if (checkingSurf is OffsetSurface os)
             {
-                checkingSurf = os.BasisSurface();
-                _offsetValue += os.Offset();
+                checkingSurf = os.BasisSurface;
+                _offsetValue += os.Offset;
             }
         }
 
-        _basisSurfContinuity = checkingSurf.Continuity();
+        _basisSurfContinuity = checkingSurf.Continuity;
 
         bool isC0 = !isNotCheckC0 && (_basisSurfContinuity == C0);
 
@@ -153,11 +153,11 @@ public class OffsetSurface : Surface
 
             if (checkingSurf is RevolutionSurface revSurf)
             {
-                curve = revSurf.BasisCurve();
+                curve = revSurf.BasisCurve;
             }
             else if (checkingSurf is ExtrusionSurface leSurf)
             {
-                curve = leSurf.BasisCurve();
+                curve = leSurf.BasisCurve;
             }
 
             if (curve is not null)
@@ -166,12 +166,12 @@ public class OffsetSurface : Surface
                 {
                     if (curve is TrimmedCurve3D trimC)
                     {
-                        curve = trimC.BasisCurve();
+                        curve = trimC.BasisCurve;
                     }
 
                     if (curve is OffsetCurve3D oc)
                     {
-                        curve = oc.BasisCurve();
+                        curve = oc.BasisCurve;
                     }
                 }
             }
@@ -242,13 +242,16 @@ public class OffsetSurface : Surface
     }
 
     /// <summary>The offset value.</summary>
-    public double Offset() => _offsetValue;
+    public double Offset => _offsetValue;
 
     /// <summary>The basis surface, frozen (it is shared with this offset surface; decision 211).</summary>
-    public Surface BasisSurface()
+    public Surface BasisSurface
     {
-        _basisSurf.Freeze();
-        return _basisSurf;
+        get
+        {
+            _basisSurf.Freeze();
+            return _basisSurf;
+        }
     }
 
     // OCCT.NET: the basis surface may have been handed out (and frozen) by BasisSurface(); copy it before
@@ -290,28 +293,31 @@ public class OffsetSurface : Surface
     public sealed override double VReversedParameter(double v) => _basisSurf.VReversedParameter(v);
 
     /// <summary>The bounds of the basis surface.</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2) =>
-        _basisSurf.Bounds(out u1, out u2, out v1, out v2);
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2) =>
+        _basisSurf.ParameterBounds(out u1, out u2, out v1, out v2);
 
     /// <summary>The continuity of the basis surface lowered by one (C0 below C2).</summary>
-    public sealed override Continuity Continuity()
+    public sealed override Continuity Continuity
     {
-        switch (_basisSurfContinuity)
+        get
         {
-            case C2:
-                return C1;
-            case C3:
-                return C2;
-            case CN:
-                return CN;
-            default:
-                break;
+            switch (_basisSurfContinuity)
+            {
+                case C2:
+                    return C1;
+                case C3:
+                    return C2;
+                case CN:
+                    return CN;
+                default:
+                    break;
+            }
+            return C0;
         }
-        return C0;
     }
 
     /// <exception cref="UndefinedValue3DException">The point is undefined at (U, V).</exception>
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         if (RepUtils.TryEvalSurfaceD0(_evalRep, u, v, out Point3D evalRepResult))
         {
@@ -331,7 +337,7 @@ public class OffsetSurface : Surface
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at (U, V).</exception>
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         if (RepUtils.TryEvalSurfaceD1(_evalRep, u, v, out ResD1 evalRepResult))
         {
@@ -354,7 +360,7 @@ public class OffsetSurface : Surface
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at (U, V).</exception>
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         if (RepUtils.TryEvalSurfaceD2(_evalRep, u, v, out ResD2 evalRepResult))
         {
@@ -380,7 +386,7 @@ public class OffsetSurface : Surface
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at (U, V).</exception>
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         if (RepUtils.TryEvalSurfaceD3(_evalRep, u, v, out ResD3 evalRepResult))
         {
@@ -412,7 +418,7 @@ public class OffsetSurface : Surface
     /// <exception cref="UndefinedDerivative3DException">
     /// Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0, or the derivative is undefined at (U, V).
     /// </exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -461,16 +467,16 @@ public class OffsetSurface : Surface
             if (derivativeRequest == 0)
             {
                 p = _surface.Value(_isoPar, parameter);
-                result[0] = p.X();
-                result[1] = p.Y();
-                result[2] = p.Z();
+                result[0] = p.X;
+                result[1] = p.Y;
+                result[2] = p.Z;
             }
             else
             {
                 _surface.D1(_isoPar, parameter, out p, out Vector3D du, out Vector3D dv);
-                result[0] = dv.X();
-                result[1] = dv.Y();
-                result[2] = dv.Z();
+                result[0] = dv.X;
+                result[1] = dv.Y;
+                result[2] = dv.Z;
             }
             returnCode = 0;
         }
@@ -494,16 +500,16 @@ public class OffsetSurface : Surface
             if (derivativeRequest == 0)
             {
                 p = _surface.Value(parameter, _isoPar);
-                result[0] = p.X();
-                result[1] = p.Y();
-                result[2] = p.Z();
+                result[0] = p.X;
+                result[1] = p.Y;
+                result[2] = p.Z;
             }
             else
             {
                 _surface.D1(parameter, _isoPar, out p, out Vector3D du, out Vector3D dv);
-                result[0] = du.X();
-                result[1] = du.Y();
-                result[2] = du.Z();
+                result[0] = du.X;
+                result[1] = du.Y;
+                result[2] = du.Z;
             }
             returnCode = 0;
         }
@@ -526,7 +532,7 @@ public class OffsetSurface : Surface
 
                 _basisSurf.D1(uu, 0.0, out Point3D p, out Vector3D d1U, out Vector3D d1V);
                 Vector3D dir = d1U.Crossed(d1V);
-                if (dir.SquareMagnitude() < Constants.Resolution())
+                if (dir.SquareMagnitude < Constants.Resolution())
                 {
                     return l;
                 }
@@ -540,7 +546,7 @@ public class OffsetSurface : Surface
             NCollection_HArray1<double>? t1 = null, t2 = null;
             NCollection_HArray1<double> t3 = new(1, num3);
             t3.Init(global::Kerf.Engine.Foundation.Precision.Approximation());
-            Bounds(out double u1, out double u2, out double v1, out double v2);
+            ParameterBounds(out double u1, out double u2, out double v1, out double v2);
             const Continuity cont = C1;
             const int maxSeg = 100, maxDeg = 14;
 
@@ -577,7 +583,7 @@ public class OffsetSurface : Surface
             NCollection_HArray1<double>? t1 = null, t2 = null;
             NCollection_HArray1<double> t3 = new(1, num3);
             t3.Init(global::Kerf.Engine.Foundation.Precision.Approximation());
-            Bounds(out double u1, out double u2, out double v1, out double v2);
+            ParameterBounds(out double u1, out double u2, out double v1, out double v2);
             const Continuity cont = C1;
             const int maxSeg = 100, maxDeg = 14;
 
@@ -600,7 +606,7 @@ public class OffsetSurface : Surface
 
     /// <summary>True if the basis surface is C(N + 1) in U.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNu(int n)
+    internal sealed override bool IsCNu(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisSurf.IsCNu(n + 1);
@@ -608,7 +614,7 @@ public class OffsetSurface : Surface
 
     /// <summary>True if the basis surface is C(N + 1) in V.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNv(int n)
+    internal sealed override bool IsCNv(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisSurf.IsCNv(n + 1);
@@ -617,12 +623,12 @@ public class OffsetSurface : Surface
     public sealed override bool IsUPeriodic => _basisSurf.IsUPeriodic;
 
     /// <summary>The U period of the basis surface.</summary>
-    public sealed override double UPeriod() => _basisSurf.UPeriod();
+    public sealed override double UPeriod => _basisSurf.UPeriod;
 
     public sealed override bool IsVPeriodic => _basisSurf.IsVPeriodic;
 
     /// <summary>The V period of the basis surface.</summary>
-    public sealed override double VPeriod() => _basisSurf.VPeriod();
+    public sealed override double VPeriod => _basisSurf.VPeriod;
 
     /// <summary>
     /// The U closure from the kind of basis surface (OCCT doesn't evaluate the surface): an elementary surface's
@@ -638,14 +644,14 @@ public class OffsetSurface : Surface
 
             if (sBasis is TrimmedSurface st)
             {
-                Surface s = st.BasisSurface();
+                Surface s = st.BasisSurface;
                 if (s is ElementarySurface)
                 {
                     uClosed = sBasis.IsUClosed;
                 }
                 else if (s is ExtrusionSurface extru)
                 {
-                    Curve3D c = extru.BasisCurve();
+                    Curve3D c = extru.BasisCurve;
                     if (c is CircleCurve3D || c is EllipseCurve3D)
                     {
                         uClosed = sBasis.IsUClosed;
@@ -672,7 +678,7 @@ public class OffsetSurface : Surface
                 }
                 else if (sBasis is ExtrusionSurface extru)
                 {
-                    Curve3D c = extru.BasisCurve();
+                    Curve3D c = extru.BasisCurve;
                     uClosed = (c is CircleCurve3D || c is EllipseCurve3D);
                 }
                 else if (sBasis is RevolutionSurface)
@@ -698,7 +704,7 @@ public class OffsetSurface : Surface
 
             if (sBasis is TrimmedSurface st)
             {
-                Surface s = st.BasisSurface();
+                Surface s = st.BasisSurface;
                 if (s is ElementarySurface)
                 {
                     vClosed = sBasis.IsVClosed;
@@ -733,14 +739,14 @@ public class OffsetSurface : Surface
         ClearEvalRepresentation();
         OwnBasisSurface();
         _basisSurf.Transform(t);
-        _offsetValue *= t.ScaleFactor();
+        _offsetValue *= t.ScaleFactor;
     }
 
     /// <summary>
     /// The basis surface's transformed parameters, transformed again by the equivalent surface when there is one
     /// (OCCT's error: see occt-issues.md).
     /// </summary>
-    public sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
         _basisSurf.TransformParameters(ref u, ref v, t);
         Surface? equivSurface = DirectRepSurface(this);
@@ -753,7 +759,7 @@ public class OffsetSurface : Surface
     }
 
     /// <summary>The basis surface's parametric transformation.</summary>
-    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t) => _basisSurf.ParametricTransformation(t);
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t) => _basisSurf.ParametricTransformation(t);
 
     /// <summary>
     /// An equivalent non-offset surface if there is one: the basis surface itself (frozen) for a zero offset,
@@ -765,7 +771,7 @@ public class OffsetSurface : Surface
         // Returns an equivalent non-offset surface if it exists for this offset surface.
         if (_offsetValue == 0.0)
         {
-            return BasisSurface(); // Direct case - no offset
+            return BasisSurface; // Direct case - no offset
         }
 
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -778,9 +784,9 @@ public class OffsetSurface : Surface
         if (theType == typeof(TrimmedSurface))
         {
             TrimmedSurface s = (TrimmedSurface)_basisSurf;
-            Base = s.BasisSurface();
+            Base = s.BasisSurface;
             theType = Base.DynamicType();
-            s.Bounds(out u1, out u2, out v1, out v2);
+            s.ParameterBounds(out u1, out u2, out v1, out v2);
             isTrimmed = true;
         }
         else
@@ -795,16 +801,16 @@ public class OffsetSurface : Surface
         {
             PlaneSurface p = (PlaneSurface)Base;
             // Plane normal is already available as Position().Direction().
-            Vector3D t = new Vector3D(p.Position().Direction());
+            Vector3D t = new Vector3D(p.Position.Direction);
             t *= _offsetValue;
             result = (PlaneSurface)p.Translated(t);
         }
         else if (theType == typeof(CylindricalSurface))
         {
             CylindricalSurface c = (CylindricalSurface)Base;
-            CoordinateSystem Axis = c.Position();
-            double sign = Axis.Direct() ? 1.0 : -1.0;
-            double Radius = c.Radius() + sign * _offsetValue;
+            CoordinateSystem Axis = c.Position;
+            double sign = Axis.IsDirect ? 1.0 : -1.0;
+            double Radius = c.Radius + sign * _offsetValue;
             if (Radius >= tol)
             {
                 result = new CylindricalSurface(Axis, Radius);
@@ -820,16 +826,16 @@ public class OffsetSurface : Surface
         else if (theType == typeof(ConicalSurface))
         {
             ConicalSurface c = (ConicalSurface)Base;
-            CoordinateSystem anAxis = c.Position();
-            double sign = anAxis.Direct() ? 1.0 : -1.0;
-            double alpha = c.SemiAngle();
+            CoordinateSystem anAxis = c.Position;
+            double sign = anAxis.IsDirect ? 1.0 : -1.0;
+            double alpha = c.SemiAngle;
             double cos = Math.Cos(alpha);
             double sin = Math.Sin(alpha);
-            double aRadius = c.RefRadius() + sign * _offsetValue * cos;
+            double aRadius = c.RefRadius + sign * _offsetValue * cos;
             if (aRadius >= 0.0)
             {
                 // Translate apex along axis by offset component.
-                Vector3D z = new Vector3D(anAxis.Direction());
+                Vector3D z = new Vector3D(anAxis.Direction);
                 z *= -sign * _offsetValue * sin;
                 anAxis = anAxis.Translated(z);
                 result = new ConicalSurface(anAxis, alpha, aRadius);
@@ -839,9 +845,9 @@ public class OffsetSurface : Surface
         else if (theType == typeof(SphericalSurface))
         {
             SphericalSurface s = (SphericalSurface)Base;
-            CoordinateSystem axis = s.Position();
-            double sign = axis.Direct() ? 1.0 : -1.0;
-            double radius = s.Radius() + sign * _offsetValue;
+            CoordinateSystem axis = s.Position;
+            double sign = axis.IsDirect ? 1.0 : -1.0;
+            double radius = s.Radius + sign * _offsetValue;
             if (radius >= tol)
             {
                 result = new SphericalSurface(axis, radius);
@@ -858,10 +864,10 @@ public class OffsetSurface : Surface
         else if (theType == typeof(ToroidalSurface))
         {
             ToroidalSurface s = (ToroidalSurface)Base;
-            double majorRadius = s.MajorRadius();
-            CoordinateSystem axis = s.Position();
-            double sign = axis.Direct() ? 1.0 : -1.0;
-            double minorRadius = s.MinorRadius() + sign * _offsetValue;
+            double majorRadius = s.MajorRadius;
+            CoordinateSystem axis = s.Position;
+            double sign = axis.IsDirect ? 1.0 : -1.0;
+            double minorRadius = s.MinorRadius + sign * _offsetValue;
             // Only handle non-self-intersecting torus (MinorRadius <= MajorRadius).
             if (minorRadius >= tol && minorRadius <= majorRadius)
             {
@@ -890,7 +896,7 @@ public class OffsetSurface : Surface
     /// If true, UOsculSurf is the local osculating surface along U at (U, V) (frozen, shared), and IsOpposite
     /// tells whether its derivative is opposite to the basis surface's. Both are left unchanged when false.
     /// </summary>
-    public bool UOsculatingSurface(double u, double v, ref bool isOpposite, ref BSplineSurface? uOsculSurf)
+    internal bool UOsculatingSurface(double u, double v, ref bool isOpposite, ref BSplineSurface? uOsculSurf)
     {
         return _oscSurf is not null && _oscSurf.UOsculatingSurface(u, v, ref isOpposite, ref uOsculSurf);
     }
@@ -899,7 +905,7 @@ public class OffsetSurface : Surface
     /// If true, VOsculSurf is the local osculating surface along V at (U, V) (frozen, shared), and IsOpposite
     /// tells whether its derivative is opposite to the basis surface's. Both are left unchanged when false.
     /// </summary>
-    public bool VOsculatingSurface(double u, double v, ref bool isOpposite, ref BSplineSurface? vOsculSurf)
+    internal bool VOsculatingSurface(double u, double v, ref bool isOpposite, ref BSplineSurface? vOsculSurf)
     {
         return _oscSurf is not null && _oscSurf.VOsculatingSurface(u, v, ref isOpposite, ref vOsculSurf);
     }
@@ -908,7 +914,7 @@ public class OffsetSurface : Surface
     internal OsculatingSurface? OsculatingSurface() => _oscSurf;
 
     /// <summary>The continuity of the basis surface (G1 for a G1 C0 basis).</summary>
-    public Continuity GetBasisSurfContinuity() => _basisSurfContinuity;
+    internal Continuity GetBasisSurfContinuity() => _basisSurfContinuity;
 
     // Non-mutating twins (OCCT.NET)
 
@@ -929,7 +935,7 @@ public class OffsetSurface : Surface
     }
 
     /// <summary>A copy evaluated through a copy of theDesc (null: without a representation).</summary>
-    public OffsetSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
+    internal OffsetSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
     {
         RepUtils.ValidateSurfaceDesc(desc, this);
         OffsetSurface copy = (OffsetSurface)Copy();
@@ -938,7 +944,7 @@ public class OffsetSurface : Surface
     }
 
     /// <summary>A copy without an evaluation representation (the twin of ClearEvalRepresentation).</summary>
-    public OffsetSurface WithoutEvalRepresentation()
+    internal OffsetSurface WithoutEvalRepresentation()
     {
         OffsetSurface copy = (OffsetSurface)Copy();
         copy.ClearEvalRepresentation();

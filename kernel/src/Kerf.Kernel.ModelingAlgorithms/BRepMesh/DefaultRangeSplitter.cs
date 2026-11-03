@@ -51,10 +51,10 @@ public class DefaultRangeSplitter
     /// <summary>Registers a border point.</summary>
     public virtual void AddPoint(in Point2D point)
     {
-        _rangeU.first = Min(point.X(), _rangeU.first);
-        _rangeU.second = Max(point.X(), _rangeU.second);
-        _rangeV.first = Min(point.Y(), _rangeV.first);
-        _rangeV.second = Max(point.Y(), _rangeV.second);
+        _rangeU.first = Min(point.X, _rangeU.first);
+        _rangeU.second = Max(point.X, _rangeU.second);
+        _rangeV.first = Min(point.Y, _rangeV.first);
+        _rangeV.second = Max(point.Y, _rangeV.second);
     }
 
     /// <summary>Updates the discrete range of the surface from its geometric range.</summary>
@@ -105,10 +105,10 @@ public class DefaultRangeSplitter
     /// </summary>
     public Point2D Scale(in Point2D point, bool isToFaceBasis)
     {
-        return isToFaceBasis ? new Point2D((point.X() - _rangeU.first) / _delta.first,
-                                            (point.Y() - _rangeV.first) / _delta.second)
-                             : new Point2D(point.X() * _delta.first + _rangeU.first,
-                                            point.Y() * _delta.second + _rangeV.first);
+        return isToFaceBasis ? new Point2D((point.X - _rangeU.first) / _delta.first,
+                                            (point.Y - _rangeV.first) / _delta.second)
+                             : new Point2D(point.X * _delta.first + _rangeU.first,
+                                            point.Y * _delta.second + _rangeV.first);
     }
 
     /// <summary>The nodes generated from the surface and the parameters; none (null) by default.</summary>
@@ -118,7 +118,7 @@ public class DefaultRangeSplitter
     }
 
     /// <summary>The 3D point of the point of the surface's parametric space.</summary>
-    public Point3D Point(in Point2D point2d) => GetSurface().Value(point2d.X(), point2d.Y());
+    public Point3D Point(in Point2D point2d) => GetSurface().Value(point2d.X, point2d.Y);
 
     /// <summary>Computes the parametric tolerance from the lengths along U and V.</summary>
     protected virtual void ComputeTolerance(double lenU, double lenV)
@@ -186,7 +186,7 @@ public class DefaultRangeSplitter
             gFace.D0(dfucur, _rangeV.first, out p12);
             gFace.D0(dfucur, dfvave, out p22);
             gFace.D0(dfucur, _rangeV.second, out p32);
-            longu += (p11.Distance(p12) + p21.Distance(p22) + p31.Distance(p32));
+            longu += (p11.DistanceTo(p12) + p21.DistanceTo(p22) + p31.DistanceTo(p32));
             p11 = p12;
             p21 = p22;
             p31 = p32;
@@ -215,7 +215,7 @@ public class DefaultRangeSplitter
             gFace.D0(_rangeU.first, dfvcur, out p12);
             gFace.D0(dfuave, dfvcur, out p22);
             gFace.D0(_rangeU.second, dfvcur, out p32);
-            longv += (p11.Distance(p12) + p21.Distance(p22) + p31.Distance(p32));
+            longv += (p11.DistanceTo(p12) + p21.DistanceTo(p22) + p31.DistanceTo(p32));
             p11 = p12;
             p21 = p22;
             p31 = p32;

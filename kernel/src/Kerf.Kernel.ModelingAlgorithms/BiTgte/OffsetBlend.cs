@@ -135,7 +135,7 @@ public sealed class OffsetBlend
                             Analyse analyse,
                             bool warningSurBordLibre)
     {
-        ShapeType type = s.ShapeType();
+        ShapeType type = s.Type;
 
         if (type == global::Kerf.Topology.ShapeType.Face)
         {
@@ -220,24 +220,24 @@ public sealed class OffsetBlend
         { // if plane buildcurve3d manage KPart
             if (cTy == Line)
             {
-                Direction2D d = c.Line().Direction();
+                Direction2D d = c.Line().Direction;
                 if (d.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso V.
                     if (sTy == SurfaceKind.Sphere)
                     {
-                        Point2D p = c.Line().Location();
-                        if (Math.Abs(Math.Abs(p.Y()) - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        Point2D p = c.Line().Location;
+                        if (Math.Abs(Math.Abs(p.Y) - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             theBuilder.Degenerated(edge, true);
                         }
                         else
                         {
                             Sphere sph = s.Sphere();
-                            CoordinateSystem axis = sph.Position();
-                            Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius(), p.Y());
-                            Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                            Axis3D axeRev = new(axis.Location(), dRev);
-                            ci = ci.Rotated(axeRev, p.X());
+                            CoordinateSystem axis = sph.Position;
+                            Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius, p.Y);
+                            Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                            Axis3D axeRev = new(axis.Location, dRev);
+                            ci = ci.Rotated(axeRev, p.X);
                             CircleCurve3D circle = new(ci);
                             if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
@@ -249,12 +249,12 @@ public sealed class OffsetBlend
                     else if (sTy == SurfaceKind.Cylinder)
                     {
                         Cylinder cyl = s.Cylinder();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = cyl.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius(), p.Y());
-                        Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                        Axis3D axeRev = new(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = cyl.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius, p.Y);
+                        Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                        Axis3D axeRev = new(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -265,12 +265,12 @@ public sealed class OffsetBlend
                     else if (sTy == SurfaceKind.Cone)
                     {
                         Cone cone = s.Cone();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = cone.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius(), cone.SemiAngle(), p.Y());
-                        Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                        Axis3D axeRev = new(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = cone.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius, cone.SemiAngle, p.Y);
+                        Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                        Axis3D axeRev = new(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -281,12 +281,12 @@ public sealed class OffsetBlend
                     else if (sTy == SurfaceKind.Torus)
                     {
                         Torus tore = s.Torus();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = tore.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.Y());
-                        Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                        Axis3D axeRev = new(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = tore.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius, tore.MinorRadius, p.Y);
+                        Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                        Axis3D axeRev = new(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -300,20 +300,20 @@ public sealed class OffsetBlend
                     if (sTy == SurfaceKind.Sphere)
                     {
                         Sphere sph = s.Sphere();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = sph.Position();
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = sph.Position;
                         // calculate iso 0.
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(axis, sph.Radius(), 0.0);
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(axis, sph.Radius, 0.0);
 
                         // set to sameparameter (rotation of the circle - offset from Y)
-                        Direction3D dRev = axis.XDirection().Crossed(axis.Direction());
-                        Axis3D axeRev = new(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.Y());
+                        Direction3D dRev = axis.XDirection.Crossed(axis.Direction);
+                        Axis3D axeRev = new(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.Y);
 
                         // transformation by iso U ( = P.X())
-                        dRev = axis.XDirection().Crossed(axis.YDirection());
-                        axeRev = new Axis3D(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        dRev = axis.XDirection.Crossed(axis.YDirection);
+                        axeRev = new Axis3D(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new(ci);
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -325,10 +325,10 @@ public sealed class OffsetBlend
                     else if (sTy == SurfaceKind.Cylinder)
                     {
                         Cylinder cyl = s.Cylinder();
-                        Point2D p = c.Line().Location();
-                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position(), cyl.Radius(), p.X());
-                        Vector3D tr = new(l.Direction());
-                        tr = tr.Multiplied(p.Y());
+                        Point2D p = c.Line().Location;
+                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position, cyl.Radius, p.X);
+                        Vector3D tr = new(l.Direction);
+                        tr = tr.Multiplied(p.Y);
                         l = l.Translated(tr);
                         LineCurve3D line = new(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -340,10 +340,10 @@ public sealed class OffsetBlend
                     else if (sTy == SurfaceKind.Cone)
                     {
                         Cone cone = s.Cone();
-                        Point2D p = c.Line().Location();
-                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p.X());
-                        Vector3D tr = new(l.Direction());
-                        tr = tr.Multiplied(p.Y());
+                        Point2D p = c.Line().Location;
+                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position, cone.RefRadius, cone.SemiAngle, p.X);
+                        Vector3D tr = new(l.Direction);
+                        tr = tr.Multiplied(p.Y);
                         l = l.Translated(tr);
                         LineCurve3D line = new(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -481,7 +481,7 @@ public sealed class OffsetBlend
                     tol2 = Tool.Tolerance(vv[i]);
                     tol2 *= tol2;
                     Point3D p1 = Tool.Pnt(vv[i]);
-                    dist = p.SquareDistance(p1);
+                    dist = p.SquareDistanceTo(p1);
                     if (dist <= tol2)
                     {
                         return vv[i];
@@ -514,14 +514,14 @@ public sealed class OffsetBlend
         TrimmedCurve3D? ct = c as TrimmedCurve3D;
         while (ct is not null)
         {
-            c = ct.BasisCurve();
+            c = ct.BasisCurve;
             ct = c as TrimmedCurve3D;
         }
 
         Vertex v1 = new(), v2;
         if (vfOnE.IsNull)
         {
-            Point3D p = c.Value(c.FirstParameter());
+            Point3D p = c.Value(c.FirstParameter);
             b.MakeVertex(ref v1, p, tol);
             v2 = v1;
         }
@@ -529,8 +529,8 @@ public sealed class OffsetBlend
         {
             v1 = v2 = vfOnE;
         }
-        v1.Orientation(Forward);
-        v2.Orientation(global::Kerf.Topology.Orientation.Reversed);
+        v1.Orient(Forward);
+        v2.Orient(global::Kerf.Topology.Orientation.Reversed);
 
         Edge e = new();
         b.MakeEdge(ref e, c, tol);
@@ -538,7 +538,7 @@ public sealed class OffsetBlend
         b.Add(e, v2);
         //  B.UpdateVertex(V1,C->FirstParameter(),E,Tol);
         //  B.UpdateVertex(V2,C->LastParameter(),E,Tol);
-        b.Range(e, cc.FirstParameter(), cc.LastParameter());
+        b.Range(e, cc.FirstParameter, cc.LastParameter);
         return e;
     }
 
@@ -552,11 +552,11 @@ public sealed class OffsetBlend
         {
             if (itld.Value().IsSame(e))
             {
-                orien = itld.Value().Orientation();
+                orien = itld.Value().Orientation;
                 break;
             }
         }
-        if (f.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+        if (f.Orientation == global::Kerf.Topology.Orientation.Reversed)
         {
             orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orien);
         }
@@ -603,13 +603,13 @@ public sealed class OffsetBlend
                 Curve3D cet = Tool.Curve(et, out Placement cLoc, out double ff, out double ll)!;
                 if (cet.GetType() == typeof(TrimmedCurve3D))
                 {
-                    cet = ((TrimmedCurve3D)cet).BasisCurve();
+                    cet = ((TrimmedCurve3D)cet).BasisCurve;
                 }
                 if (cet is not CircleCurve3D circ)
                 {
                     continue;
                 }
-                if (Math.Abs(circ.Radius() - Math.Abs(radius)) > tol)
+                if (Math.Abs(circ.Radius - Math.Abs(radius)) > tol)
                 {
                     continue;
                 }
@@ -774,7 +774,7 @@ public sealed class OffsetBlend
         // Check if the sewing modified the orientation.
         expf.Init(_shape, global::Kerf.Topology.ShapeType.Face);
         Face faceRef = ShapeCasts.Face(expf.Current());
-        Orientation oriRef = faceRef.Orientation();
+        Orientation oriRef = faceRef.Orientation;
         if (sew.IsModified(faceRef))
         {
             faceRef = ShapeCasts.Face(sew.InternalModified(faceRef));
@@ -783,7 +783,7 @@ public sealed class OffsetBlend
         for (; expf.More(); expf.Next())
         {
             Face ff = ShapeCasts.Face(expf.Current());
-            if (faceRef.IsSame(ff) && (ff.Orientation() != oriRef))
+            if (faceRef.IsSame(ff) && (ff.Orientation != oriRef))
             {
                 sewedShape.Reverse();
                 break;
@@ -949,8 +949,8 @@ public sealed class OffsetBlend
         Shape s1 = SupportShape1(index);
         Shape s2 = SupportShape2(index);
 
-        ShapeType type1 = s1.ShapeType();
-        ShapeType type2 = s2.ShapeType();
+        ShapeType type1 = s1.Type;
+        ShapeType type2 = s2.Type;
 
         if (type2 < type1)
         {
@@ -1321,7 +1321,7 @@ public sealed class OffsetBlend
                     Offset of1 = new();
                     Face bigF = new();
 
-                    if (AS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+                    if (AS.Type == global::Kerf.Topology.ShapeType.Face)
                     {
                         Face f = ShapeCasts.Face(_faces[i - 1]);
                         if (touchedByCork.Contains(f))
@@ -1343,7 +1343,7 @@ public sealed class OffsetBlend
                     // Increment the map of created tangents
                     // ------------------------------------
                     NCollection_List<Shape> Let = new();
-                    if (AS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+                    if (AS.Type == global::Kerf.Topology.ShapeType.Face)
                     {
                         _analyse.Edges(ShapeCasts.Face(AS), TypeOfConcavity.Tangential, Let);
                     }
@@ -1404,7 +1404,7 @@ public sealed class OffsetBlend
                     // ---------------------------------------------
                     fini = !Intersect(AS, f1, mapSBox, of1, inter);
 
-                    if (AS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+                    if (AS.Type == global::Kerf.Topology.ShapeType.Face)
                     {
                         b.Add(co, AS);
                     }
@@ -1442,7 +1442,7 @@ public sealed class OffsetBlend
                 NCollection_List<Shape> anc = map.GetValue(e);
                 if (anc.Extent() == 2)
                 {
-                    NCollection_List<Interval> l = _analyse.Type(e);
+                    NCollection_List<OffsetInterval> l = _analyse.Type(e);
                     if (!l.IsEmpty() && l.First().Type() == ot1)
                     {
                         Shape localShapeGen = _mapSF.GetValue(anc.First()).InternalGenerated(e);
@@ -1544,7 +1544,7 @@ public sealed class OffsetBlend
             Face curOF = _mapSF.GetValue(curS).InternalFace();
             lof.Append(curOF);
 
-            if (curS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+            if (curS.Type == global::Kerf.Topology.ShapeType.Face)
             {
                 Face curF = ShapeCasts.Face(curS);
                 Explorer expe = new(curF.Oriented(Forward), ShapeType.Edge);
@@ -1556,7 +1556,7 @@ public sealed class OffsetBlend
                     // disappear are not set)
                     // --------------------------------------------------------------
                     Edge curE = ShapeCasts.Edge(expe.Current());
-                    NCollection_List<Interval> l = _analyse.Type(curE);
+                    NCollection_List<OffsetInterval> l = _analyse.Type(curE);
                     if (!l.IsEmpty() && l.First().Type() != ot)
                     {
                         // a priori doe s not disappear, so it is set
@@ -1564,7 +1564,7 @@ public sealed class OffsetBlend
                         Edge curOE = ShapeCasts.Edge(localShape);
                         //	  const TopoDS_Edge& CurOE =
                         //	    TopoDS::Edge(myMapSF(CurF).Generated(CurE));
-                        _asDes.Add(curOF, curOE.Oriented(curE.Orientation()));
+                        _asDes.Add(curOF, curOE.Oriented(curE.Orientation));
                     }
                     else
                     {
@@ -1576,7 +1576,7 @@ public sealed class OffsetBlend
                             Edge curOE = ShapeCasts.Edge(localShape);
                             //	    const TopoDS_Edge& CurOE =
                             //	      TopoDS::Edge(myMapSF(CurF).Generated(CurE));
-                            _asDes.Add(curOF, curOE.Oriented(curE.Orientation()));
+                            _asDes.Add(curOF, curOE.Oriented(curE.Orientation));
                         }
                     }
                 }
@@ -1594,7 +1594,7 @@ public sealed class OffsetBlend
         foreach (KeyValuePair<Shape, Offset> entry in _mapSF)
         {
             Shape curS = entry.Key;
-            if (curS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+            if (curS.Type == global::Kerf.Topology.ShapeType.Face)
             {
                 continue;
             }
@@ -1754,14 +1754,14 @@ public sealed class OffsetBlend
 
             bool of1isEdge = false;
 
-            if (or1.ShapeType() == ShapeType.Edge)
+            if (or1.Type == ShapeType.Edge)
             {
                 of1isEdge = true;
                 oe1 = ShapeCasts.Edge(or1);
                 gc1 = Tool.Curve(oe1, out loc, out f1, out l1);
-                gc1 = (Curve3D)gc1!.Transformed(loc.Transformation());
+                gc1 = (Curve3D)gc1!.Transformed(loc.Transformation);
             }
-            else if (or1.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+            else if (or1.Type == global::Kerf.Topology.ShapeType.Face)
             {
                 of1 = ShapeCasts.Face(or1);
                 gs1 = Tool.Surface(of1);
@@ -1778,14 +1778,14 @@ public sealed class OffsetBlend
 
             bool of2isEdge = false;
 
-            if (or2.ShapeType() == ShapeType.Edge)
+            if (or2.Type == ShapeType.Edge)
             {
                 of2isEdge = true;
                 oe2 = ShapeCasts.Edge(or2);
                 gc2 = Tool.Curve(oe2, out loc, out f2, out l2);
-                gc2 = (Curve3D)gc2!.Transformed(loc.Transformation());
+                gc2 = (Curve3D)gc2!.Transformed(loc.Transformation);
             }
-            else if (or2.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+            else if (or2.Type == global::Kerf.Topology.ShapeType.Face)
             {
                 of2 = ShapeCasts.Face(or2);
                 gs2 = Tool.Surface(of2);
@@ -1850,8 +1850,8 @@ public sealed class OffsetBlend
                 {
                     CurveOnEdge conE = new(curCutE, oe1);
                     Curve3D c = MakeCurve(conE);
-                    Point3D p1 = c.Value(c.FirstParameter());
-                    Point3D p2 = c.Value(c.LastParameter());
+                    Point3D p1 = c.Value(c.FirstParameter);
+                    Point3D p2 = c.Value(c.LastParameter);
                     vfOnE1 = FindVertex(p1, mapOnV1f, _tol);
                     if (vfOnE1.IsNull)
                     {
@@ -1862,7 +1862,7 @@ public sealed class OffsetBlend
                     {
                         vlOnE1 = FindVertex(p2, mapOnV1f, _tol);
                     }
-                    if (p1.SquareDistance(p2) < _tol * _tol)
+                    if (p1.SquareDistanceTo(p2) < _tol * _tol)
                     {
                         // BRepOffset_Offset manages degenerated KPart
                         // It is REQUIRED that C should be a circle with ZERO radius
@@ -1877,9 +1877,9 @@ public sealed class OffsetBlend
                 {
                     Point2D p2d;
                     p2d = pc1.Value(f1);
-                    Point3D p1 = gs1!.Value(p2d.X(), p2d.Y());
+                    Point3D p1 = gs1!.Value(p2d.X, p2d.Y);
                     p2d = pc1.Value(l1);
-                    Point3D p2 = gs1.Value(p2d.X(), p2d.Y());
+                    Point3D p2 = gs1.Value(p2d.X, p2d.Y);
                     vfOnE1 = FindVertex(p1, mapOnV1f, _tol);
                     vlOnE1 = FindVertex(p2, mapOnV1l, _tol);
                     LibraryMakeEdge mke = new(pc1, gs1, vfOnE1, vlOnE1, f1, l1);
@@ -1900,8 +1900,8 @@ public sealed class OffsetBlend
                 {
                     CurveOnEdge conE = new(curCutE, oe2);
                     Curve3D c = MakeCurve(conE);
-                    Point3D p1 = c.Value(c.FirstParameter());
-                    Point3D p2 = c.Value(c.LastParameter());
+                    Point3D p1 = c.Value(c.FirstParameter);
+                    Point3D p2 = c.Value(c.LastParameter);
                     vfOnE2 = FindVertex(p1, mapOnV1f, _tol);
                     if (vfOnE2.IsNull)
                     {
@@ -1912,7 +1912,7 @@ public sealed class OffsetBlend
                     {
                         vlOnE2 = FindVertex(p2, mapOnV1f, _tol);
                     }
-                    if (p1.SquareDistance(p2) < _tol * _tol)
+                    if (p1.SquareDistanceTo(p2) < _tol * _tol)
                     {
                         // BRepOffset_Offset manages degenerated KParts
                         // It is REQUIRED that C should be a circle with ZERO radius
@@ -1927,9 +1927,9 @@ public sealed class OffsetBlend
                 {
                     Point2D p2d;
                     p2d = pc2.Value(f2);
-                    Point3D p1 = gs2!.Value(p2d.X(), p2d.Y());
+                    Point3D p1 = gs2!.Value(p2d.X, p2d.Y);
                     p2d = pc2.Value(l2);
-                    Point3D p2 = gs2.Value(p2d.X(), p2d.Y());
+                    Point3D p2 = gs2.Value(p2d.X, p2d.Y);
                     vfOnE2 = FindVertex(p1, mapOnV1f, _tol);
                     vlOnE2 = FindVertex(p2, mapOnV1l, _tol);
                     LibraryMakeEdge mke = new(pc2, gs2, vfOnE2, vlOnE2, f2, l2);
@@ -1999,8 +1999,8 @@ public sealed class OffsetBlend
                     }
                 }
 
-                e1.Orientation(orien1);
-                e2.Orientation(orien2);
+                e1.Orient(orien1);
+                e2.Orient(orien2);
 
                 Offset anOffset = new(curCutE, e1, e2, -_radius, e1f, e1l, _nubs, _tol, C2);
                 _mapSF[curCutE] = anOffset;
@@ -2292,7 +2292,7 @@ public sealed class OffsetBlend
                                 //	      occ::handle<Geom2d_Curve> C2d_1 =
                                 //		BRep_Tool::CurveOnSurface(TopoDS::Edge(E.Reversed()),
                                 //					  Face,f,l);
-                                if (e.Orientation() == Forward)
+                                if (e.Orientation == Forward)
                                 {
                                     b.UpdateEdge(oe, c2d, C2d_1, newF, Tool.Tolerance(e));
                                 }
@@ -2325,8 +2325,8 @@ public sealed class OffsetBlend
                                     {
                                         b.MakeVertex(ref ov1);
                                         Point2D p2d = c2d!.Value(Tool.Parameter(v1, e, face));
-                                        s.D0(p2d.X(), p2d.Y(), out Point3D p);
-                                        p = p.Transformed(L.Transformation());
+                                        s.D0(p2d.X, p2d.Y, out Point3D p);
+                                        p = p.Transformed(L.Transformation);
                                         b.UpdateVertex(ov1, p, Tool.Tolerance(v1));
                                         BindCreated(v1);
                                         BindCreated(v1, curF);
@@ -2340,27 +2340,27 @@ public sealed class OffsetBlend
                                     {
                                         b.MakeVertex(ref ov2);
                                         Point2D p2d = c2d!.Value(Tool.Parameter(v2, e, face));
-                                        s.D0(p2d.X(), p2d.Y(), out Point3D p);
-                                        p = p.Transformed(L.Transformation());
+                                        s.D0(p2d.X, p2d.Y, out Point3D p);
+                                        p = p.Transformed(L.Transformation);
                                         b.UpdateVertex(ov2, p, Tool.Tolerance(v2));
                                         BindCreated(v2);
                                         BindCreated(v2, curF);
                                         Created(v2, curF).Append(ov2);
                                     }
-                                    b.Add(oe, ov1.Oriented(v1.Orientation()));
-                                    b.Add(oe, ov2.Oriented(v2.Orientation()));
+                                    b.Add(oe, ov1.Oriented(v1.Orientation));
+                                    b.Add(oe, ov2.Oriented(v2.Orientation));
                                 }
                                 b.UpdateEdge(oe, c2d, newF, Tool.Tolerance(e));
                                 b.Range(oe, f, l);
                                 //	      ComputeCurve3d(OE,C2d,TheSurf,L,BRep_Tool::Tolerance(E));
                                 mapSS[e] = oe;
                             }
-                            b.Add(ow, oe.Oriented(e.Orientation()));
+                            b.Add(ow, oe.Oriented(e.Orientation));
                         }
-                        b.Add(newF, ow.Oriented(w.Orientation()));
+                        b.Add(newF, ow.Oriented(w.Orientation));
                     }
 
-                    newF.Orientation(deboucFace.Orientation());
+                    newF.Orient(deboucFace.Orientation);
 
                     BrepTools.Update(newF);
                     b.Add(_result, newF);
@@ -2413,7 +2413,7 @@ public sealed class OffsetBlend
         // intersection with all already created faces.
         // -----------------------------------------------
         Shape initShape1 = of1.InitialShape();
-        bool f1surBordLibre = initShape1.ShapeType() == ShapeType.Edge && _stopFaces.Contains(initShape1);
+        bool f1surBordLibre = initShape1.Type == ShapeType.Edge && _stopFaces.Contains(initShape1);
 
         HashSet<Shape> done = new(ShapeHasher.Instance);
         // OCCT iterates myMapSF by the shapes' addresses; the port in insertion order.
@@ -2434,7 +2434,7 @@ public sealed class OffsetBlend
 
             // 2 tubes created on free border are not intersected.
             Shape initShape2 = of2.InitialShape();
-            bool f2surBordLibre = initShape2.ShapeType() == ShapeType.Edge && _stopFaces.Contains(initShape2);
+            bool f2surBordLibre = initShape2.Type == ShapeType.Edge && _stopFaces.Contains(initShape2);
 
             if (f1surBordLibre && f2surBordLibre)
             {
@@ -2446,9 +2446,9 @@ public sealed class OffsetBlend
             // -------------------------------------------------------
             Shape itKey = it.Key;
 
-            if (init.ShapeType() == ShapeType.Edge)
+            if (init.Type == ShapeType.Edge)
             {
-                if (itKey.ShapeType() == global::Kerf.Topology.ShapeType.Face && IsInFace(ShapeCasts.Edge(init), ShapeCasts.Face(itKey)))
+                if (itKey.Type == global::Kerf.Topology.ShapeType.Face && IsInFace(ShapeCasts.Edge(init), ShapeCasts.Face(itKey)))
                 {
                     continue;
                 }

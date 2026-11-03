@@ -31,8 +31,8 @@ public class TopClassTests
         {
             ResetFields();
             _done = true;
-            Point2D anO = L.Location();
-            Vector2D aD = new(L.Direction());
+            Point2D anO = L.Location;
+            Vector2D aD = new(L.Direction);
             Vector2D aV = E.V();
             double aDenom = aD.Crossed(aV);
             if (Math.Abs(aDenom) < 1e-12)
@@ -48,8 +48,8 @@ public class TopClassTests
                 return;
             }
 
-            Point2D aPnt = new(anO.X() + t * aD.X(), anO.Y() + t * aD.Y());
-            var aDomLin = new TwoDDomain(anO, 0, Tol, new Point2D(anO.X() + P * aD.X(), anO.Y() + P * aD.Y()), P, Tol);
+            Point2D aPnt = new(anO.X + t * aD.X, anO.Y + t * aD.Y);
+            var aDomLin = new TwoDDomain(anO, 0, Tol, new Point2D(anO.X + P * aD.X, anO.Y + P * aD.Y), P, Tol);
             var aDomEdge = new TwoDDomain(E.P0, 0, 1e-9, E.P1, 1, 1e-9);
             global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out Position2D aPos1, aDomLin, aPnt, t);
             global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out Position2D aPos2, aDomEdge, aPnt, s);
@@ -63,7 +63,7 @@ public class TopClassTests
         public void LocalGeometry(in TestEdge E, double U, out Direction2D T, out Direction2D N, out double C)
         {
             T = new Direction2D(E.V());
-            N = new Direction2D(-T.Y(), T.X());
+            N = new Direction2D(-T.Y, T.X);
             C = 0.0;
         }
     }
@@ -97,7 +97,7 @@ public class TopClassTests
 
             Point2D aTarget = theTargets[myTarget++];
             L = new Line2D(P, new Direction2D(new Vector2D(P, aTarget)));
-            Par = 2.0 * P.Distance(aTarget);
+            Par = 2.0 * P.DistanceTo(aTarget);
             return true;
         }
 

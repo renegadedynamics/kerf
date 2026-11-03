@@ -41,7 +41,7 @@ public class GenExtSS
 
         public override bool Value(math_Vector x, out double f)
         {
-            f = _s1.Value(x[1], x[2]).SquareDistance(_s2.Value(x[3], x[4]));
+            f = _s1.Value(x[1], x[2]).SquareDistanceTo(_s2.Value(x[3], x[4]));
             return true;
         }
 
@@ -62,7 +62,7 @@ public class GenExtSS
 
         public override bool Values(math_Vector x, out double f, math_Vector g)
         {
-            f = _s1.Value(x[1], x[2]).SquareDistance(_s2.Value(x[3], x[4]));
+            f = _s1.Value(x[1], x[2]).SquareDistanceTo(_s2.Value(x[3], x[4]));
 
             _s1.D1(x[1], x[2], out Point3D p1, out Vector3D du1s1, out Vector3D dv1s1);
             _s2.D1(x[3], x[4], out Point3D p2, out Vector3D du2s2, out Vector3D dv2s2);
@@ -318,7 +318,7 @@ public class GenExtSS
                     for (noV2 = 1, v2 = v20; noV2 <= _myvsample; noV2++, v2 += pasV2)
                     {
                         p2 = _mypoints2!.Value(noU2, noV2);
-                        theDist = p1.SquareDistance(p2);
+                        theDist = p1.SquareDistanceTo(p2);
                         if (theDist < distmin)
                         {
                             distmin = theDist;

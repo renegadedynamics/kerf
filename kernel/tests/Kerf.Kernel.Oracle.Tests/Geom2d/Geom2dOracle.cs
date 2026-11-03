@@ -123,11 +123,11 @@ internal static class Geom2dOracle
     /// <summary>Compares the parameter range, closure and periodicity.</summary>
     public static void SameBounds(Oracle theOracle, N.Geom2d_Curve theNative, Curve2D thePort, string theWhat)
     {
-        theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter(), $"{theWhat} FirstParameter");
-        theOracle.Same(theNative.LastParameter(), thePort.LastParameter(), $"{theWhat} LastParameter");
+        theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter, $"{theWhat} FirstParameter");
+        theOracle.Same(theNative.LastParameter(), thePort.LastParameter, $"{theWhat} LastParameter");
         theOracle.Same(theNative.IsClosed(), thePort.IsClosed, $"{theWhat} IsClosed");
         theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} IsPeriodic");
-        theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity(), $"{theWhat} Continuity");
+        theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity, $"{theWhat} Continuity");
     }
 
     /// <summary>A random B-spline: degree 1 to 5, rational or not, periodic or not; a third have uniform knots.</summary>
@@ -213,19 +213,19 @@ internal static class Geom2dOracle
     /// <summary>Compares the whole definition: degree, flags, poles, weights, knots, multiplicities, flat knots.</summary>
     public static void SameStructure(Oracle theOracle, N.Geom2d_BSplineCurve theNative, BSplineCurve2D thePort, string theWhat)
     {
-        theOracle.Same(theNative.Degree(), thePort.Degree(), $"{theWhat} Degree");
+        theOracle.Same(theNative.Degree(), thePort.Degree, $"{theWhat} Degree");
         theOracle.Same(theNative.IsPeriodic(), thePort.IsPeriodic, $"{theWhat} IsPeriodic");
         theOracle.Same(theNative.IsRational(), thePort.IsRational, $"{theWhat} IsRational");
         theOracle.Same(theNative.NbPoles(), thePort.PoleCount, $"{theWhat} NbPoles");
         theOracle.Same(theNative.NbKnots(), thePort.KnotCount, $"{theWhat} NbKnots");
-        theOracle.Same((int)theNative.KnotDistribution(), (int)thePort.KnotDistribution(), $"{theWhat} KnotDistribution");
-        theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity(), $"{theWhat} Continuity");
+        theOracle.Same((int)theNative.KnotDistribution(), (int)thePort.KnotDistribution, $"{theWhat} KnotDistribution");
+        theOracle.Same((int)theNative.Continuity(), (int)thePort.Continuity, $"{theWhat} Continuity");
 
         using (var aNPoles = theNative.Poles())
         using (var aNWeights = theNative.WeightsArray())
         {
-            IReadOnlyList<Point2D> aPoles = thePort.Poles();
-            IReadOnlyList<double> aWeights = thePort.WeightsArray();
+            IReadOnlyList<Point2D> aPoles = thePort.Poles;
+            IReadOnlyList<double> aWeights = thePort.Weights;
             for (int i = 1; i <= thePort.PoleCount; i++)
             {
                 using var aNP = aNPoles.Value(i);
@@ -240,8 +240,8 @@ internal static class Geom2dOracle
         using (var aNKnots = theNative.Knots())
         using (var aNMults = theNative.Multiplicities())
         {
-            IReadOnlyList<double> aKnots = thePort.Knots();
-            IReadOnlyList<int> aMults = thePort.Multiplicities();
+            IReadOnlyList<double> aKnots = thePort.Knots;
+            IReadOnlyList<int> aMults = thePort.Multiplicities;
             for (int i = 1; i <= thePort.KnotCount; i++)
             {
                 theOracle.Same(aNKnots.Value(i), aKnots[i - 1], $"{theWhat} Knots({i})");
@@ -253,7 +253,7 @@ internal static class Geom2dOracle
 
         using (var aNSeq = theNative.KnotSequence())
         {
-            IReadOnlyList<double> aSeq = thePort.KnotSequence();
+            IReadOnlyList<double> aSeq = thePort.KnotSequence;
             theOracle.Same(aNSeq.Length(), aSeq.Count, $"{theWhat} KnotSequence length");
             theOracle.Same(aNSeq.Lower(), thePort.InternalKnotSequence().Lower(), $"{theWhat} KnotSequence lower");
             for (int i = 0; i < aSeq.Count; i++)
@@ -264,19 +264,19 @@ internal static class Geom2dOracle
 
         theOracle.Same(theNative.FirstUKnotIndex(), thePort.FirstUKnotIndex(), $"{theWhat} FirstUKnotIndex");
         theOracle.Same(theNative.LastUKnotIndex(), thePort.LastUKnotIndex(), $"{theWhat} LastUKnotIndex");
-        theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter(), $"{theWhat} FirstParameter");
-        theOracle.Same(theNative.LastParameter(), thePort.LastParameter(), $"{theWhat} LastParameter");
+        theOracle.Same(theNative.FirstParameter(), thePort.FirstParameter, $"{theWhat} FirstParameter");
+        theOracle.Same(theNative.LastParameter(), thePort.LastParameter, $"{theWhat} LastParameter");
         theOracle.Same(theNative.IsClosed(), thePort.IsClosed, $"{theWhat} IsClosed");
         using var aNStart = theNative.StartPoint();
         using var aNEnd = theNative.EndPoint();
-        theOracle.Same(Oracle.FromNative(aNStart), thePort.StartPoint().XY(), $"{theWhat} StartPoint");
-        theOracle.Same(Oracle.FromNative(aNEnd), thePort.EndPoint().XY(), $"{theWhat} EndPoint");
+        theOracle.Same(Oracle.FromNative(aNStart), thePort.StartPoint.XY(), $"{theWhat} StartPoint");
+        theOracle.Same(Oracle.FromNative(aNEnd), thePort.EndPoint.XY(), $"{theWhat} EndPoint");
     }
 
     /// <summary>A random parameter in the curve's range (or slightly outside, for extrapolation).</summary>
     public static double Param(Oracle theOracle, Curve2D theCurve, double theOutside = 0.0)
     {
-        double aF = theCurve.FirstParameter(), aL = theCurve.LastParameter();
+        double aF = theCurve.FirstParameter, aL = theCurve.LastParameter;
         double aD = (aL - aF) * theOutside;
         return theOracle.Real(aF - aD, aL + aD);
     }

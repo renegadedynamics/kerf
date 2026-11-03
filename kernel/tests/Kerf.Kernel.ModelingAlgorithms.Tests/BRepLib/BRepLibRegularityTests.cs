@@ -260,8 +260,8 @@ public class BRepLibRegularityTests
         double aFirst = 0, aLast = 0;
         Assert.True(BrepLibrary.FindValidRange(anE, ref aFirst, ref aLast));
         var aC = new EdgeCurveAdaptor(anE);
-        Assert.Equal(2 * Conf, aC.Value(aFirst).Distance(new Point3D(0, 0, 0)), 1e-10);
-        Assert.Equal(2 * Conf, aC.Value(aLast).Distance(new Point3D(10, 0, 0)), 1e-7);
+        Assert.Equal(2 * Conf, aC.Value(aFirst).DistanceTo(new Point3D(0, 0, 0)), 1e-10);
+        Assert.Equal(2 * Conf, aC.Value(aLast).DistanceTo(new Point3D(10, 0, 0)), 1e-7);
     }
 
     [Fact]
@@ -278,8 +278,8 @@ public class BRepLibRegularityTests
         Assert.True(isToUpdate);
         Assert.NotNull(aC2D);
         Point2D aP = aC2D!.Value(5.0); // the line is parametrised by length
-        Assert.Equal(4.0, aP.X(), 1e-12);
-        Assert.Equal(6.0, aP.Y(), 1e-12);
+        Assert.Equal(4.0, aP.X, 1e-12);
+        Assert.Equal(6.0, aP.Y, 1e-12);
         Assert.Throws<LockedShapeException>(() => BrepLibrary.BuildPCurveForEdgeOnPlane(anE, aF));
 
         Shape aCopy = BrepTools.CopyForWrite(aC, out History aH);
@@ -288,7 +288,7 @@ public class BRepLibRegularityTests
         BrepLibrary.BuildPCurveForEdgesOnPlane(new[] { (Shape)anEc, new Shape() }, aFc);
         BrepLibrary.BuildPCurveForEdgeOnPlane(anEc, aFc, out Curve2D? aStored, out isToUpdate);
         Assert.False(isToUpdate);
-        Assert.Equal(4.0, aStored!.Value(5.0).X(), 1e-12);
+        Assert.Equal(4.0, aStored!.Value(5.0).X, 1e-12);
         Assert.NotNull(aCopy.TShape());
     }
 
@@ -308,7 +308,7 @@ public class BRepLibRegularityTests
 
         // a reversed face gives a reversed face
         BrepLibrary.ExtendFace(ShapeCasts.Face(aF.Reversed()), 0.5, true, true, true, true, out anExt);
-        Assert.Equal(Reversed, anExt.Orientation());
+        Assert.Equal(Reversed, anExt.Orientation);
     }
 
     [Fact]
@@ -340,13 +340,13 @@ public class BRepLibRegularityTests
         BrepLibrary.ExtendFace(aF, 1.0, false, true, false, false, out Face anExt);
         Surface aNew = Tool.Surface(anExt)!;
         Assert.NotSame(aS, aNew);
-        aNew.Bounds(out double u1, out double u2, out _, out _);
+        aNew.ParameterBounds(out double u1, out double u2, out _, out _);
         BrepTools.UVBounds(anExt, out double fu1, out double fu2, out _, out _);
         Assert.Equal(u1, fu1, 1e-12);
         Assert.Equal(u2, fu2, 1e-12);
         // the extended end lies one unit further along the surface
-        Assert.True(aNew.Value(u2, 0.5).Distance(aS.Value(1, 0.5)) > 0.9);
-        Assert.Equal(3.0, ((BezierSurface)aS).Pole(3, 1).X());
+        Assert.True(aNew.Value(u2, 0.5).DistanceTo(aS.Value(1, 0.5)) > 0.9);
+        Assert.Equal(3.0, ((BezierSurface)aS).Pole(3, 1).X);
 
         // a face on a surface that isn't bounded is returned as it is
         Face anOffset = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(new OffsetSurface(Bezier(), 0.1)));
@@ -373,12 +373,12 @@ public class BRepLibRegularityTests
         BrepLibrary.BoundingVertex(aList, ref aC, ref aTol);
         // the sphere through both spheres: radius (0.5 + 1e-7 + 2) / 2
         Assert.Equal(0.5 * (0.5 + Conf + 2), aTol, 1e-12);
-        Assert.Equal(0.5 * (2 - (0.5 - Conf)), aC.X(), 1e-12);
+        Assert.Equal(0.5 * (2 - (0.5 - Conf)), aC.X, 1e-12);
 
         aList.Append(aV3);
         BrepLibrary.BoundingVertex(aList, ref aC, ref aTol);
-        Assert.Equal(2.0 / 3, aC.X(), 1e-12);
-        Assert.Equal(2.0 / 3, aC.Y(), 1e-12);
+        Assert.Equal(2.0 / 3, aC.X, 1e-12);
+        Assert.Equal(2.0 / 3, aC.Y, 1e-12);
         Assert.Equal(Math.Sqrt(20.0 / 9) + Conf, aTol, 1e-12);
     }
 }

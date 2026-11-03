@@ -38,8 +38,8 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
             return;
         }
         theO.Same(true, theN.IsInstance(global::Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())), $"{theWhat} type {Kerf.Engine.Foundation.OcctTypeNames.Of(theP.GetType())}");
-        theO.Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " first");
-        theO.Same(theN.LastParameter(), theP.LastParameter(), theWhat + " last");
+        theO.Same(theN.FirstParameter(), theP.FirstParameter, theWhat + " first");
+        theO.Same(theN.LastParameter(), theP.LastParameter, theWhat + " last");
         theO.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " periodic");
         for (int i = 0; i <= 10; i++)
         {
@@ -50,7 +50,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
         if (theP is BSplineCurve2D aPB)
         {
             using N.Geom2d_BSplineCurve aNB = N.Geom2d_BSplineCurve.DownCast(theN)!;
-            theO.Same(aNB.Degree(), aPB.Degree(), theWhat + " degree");
+            theO.Same(aNB.Degree(), aPB.Degree, theWhat + " degree");
             theO.Same(aNB.NbPoles(), aPB.PoleCount, theWhat + " poles");
             theO.Same(aNB.NbKnots(), aPB.KnotCount, theWhat + " knots");
             theO.Same(aNB.IsRational(), aPB.IsRational, theWhat + " rational");
@@ -71,7 +71,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
     // A bounded range of the curve to evaluate on.
     internal static (double First, double Last) Range(Curve3D theC, double theHalfRange)
     {
-        double aF = theC.FirstParameter(), aL = theC.LastParameter();
+        double aF = theC.FirstParameter, aL = theC.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
         {
             return (-theHalfRange, theHalfRange);
@@ -144,7 +144,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
         TrimmedCurve3D aTrimmedCurve = new(C3D, f, l, true, false);
 
         // Perform projection
-        Curve3D? ProjOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(aTrimmedCurve, GP, GP.Position().Direction(), true);
+        Curve3D? ProjOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(aTrimmedCurve, GP, GP.Position.Direction, true);
 
         global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor HS = new(GP);
         global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor HC = new(ProjOnPlane!);
@@ -154,7 +154,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
 
         if (pc is TrimmedCurve2D TC)
         {
-            pc = TC.BasisCurve();
+            pc = TC.BasisCurve;
         }
 
         return pc;
@@ -177,7 +177,7 @@ public class ProjLibProjectedCurveOracleTests(ITestOutputHelper output)
                 if (aPC.IsPeriodic)
                 {
                     aF0 = anO.Real(-7, 7);
-                    aL0 = aF0 + aPC.Period();
+                    aL0 = aF0 + aPC.Period;
                 }
                 double aF = anO.Real(aF0, aF0 + 0.4 * (aL0 - aF0)), aL = anO.Real(aF0 + 0.6 * (aL0 - aF0), aL0);
                 using (aNC)

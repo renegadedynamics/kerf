@@ -42,7 +42,7 @@ public class ConvertToBSpline : CustomModification
         ss = s;
         if (s is TrimmedSurface rts)
         {
-            ss = rts.BasisSurface();
+            ss = rts.BasisSurface;
         }
         if (ss is OffsetSurface os)
         {
@@ -52,7 +52,7 @@ public class ConvertToBSpline : CustomModification
             }
             else
             {
-                Surface basis = os.BasisSurface();
+                Surface basis = os.BasisSurface;
                 return IsToConvert(basis, out _);
             }
         }
@@ -85,7 +85,7 @@ public class ConvertToBSpline : CustomModification
         tol = 0.0;
         revWires = revFace = false;
         s = Tool.Surface(f, out l);
-        s!.Bounds(out double u1, out double u2, out double v1, out double v2);
+        s!.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         BrepTools.UVBounds(f, out double umin, out double umax, out double vmin, out double vmax);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2))
         {
@@ -106,8 +106,8 @@ public class ConvertToBSpline : CustomModification
         Surface? res;
         if (surf is OffsetSurface os && !_offsetMode)
         {
-            Surface basis = os.BasisSurface();
-            double offset = os.Offset();
+            Surface basis = os.BasisSurface;
+            double offset = os.Offset;
             BSplineSurface? bspl =
                 global::Kerf.Engine.Healing.Construct.ShapeConstruct.InternalConvertSurfaceToBSpline(basis,
                                                                u1,
@@ -115,7 +115,7 @@ public class ConvertToBSpline : CustomModification
                                                                v1,
                                                                v2,
                                                                global::Kerf.Engine.Foundation.Precision.Approximation(),
-                                                               surf.Continuity(),
+                                                               surf.Continuity,
                                                                10000,
                                                                15);
             OffsetSurface nOff = new OffsetSurface(bspl!, offset);
@@ -123,7 +123,7 @@ public class ConvertToBSpline : CustomModification
         }
         else
         {
-            Continuity cnt = surf.Continuity();
+            Continuity cnt = surf.Continuity;
             if (surf is OffsetSurface)
             {
                 cnt = C0; // pdn 30.06.99 because of hang-up in GeomConvert_ApproxSurface
@@ -140,7 +140,7 @@ public class ConvertToBSpline : CustomModification
         }
         if (s is TrimmedSurface rts)
         {
-            rts.Bounds(out double uf, out double ul, out double vf, out double vl);
+            rts.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
             s = new TrimmedSurface(res!, uf, ul, vf, vl);
         }
         else

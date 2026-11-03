@@ -126,35 +126,35 @@ public class Patch : Transient
                 rho = Math.Pow(du, iu) * Math.Pow(dv, iv);
 
                 // F(U0,V0) and its derivatives normalized on (-1,1)
-                valnorm = rho * constraints.Node(_u0, _v0).Point(iu, iv).X();
+                valnorm = rho * constraints.Node(_u0, _v0).Point(iu, iv).X;
                 hcoins.SetValue(1 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u0, _v0).Point(iu, iv).Y();
+                valnorm = rho * constraints.Node(_u0, _v0).Point(iu, iv).Y;
                 hcoins.SetValue(2 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u0, _v0).Point(iu, iv).Z();
+                valnorm = rho * constraints.Node(_u0, _v0).Point(iu, iv).Z;
                 hcoins.SetValue(3 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
 
                 // F(U1,V0) and its derivatives normalized on (-1,1)
-                valnorm = rho * constraints.Node(_u1, _v0).Point(iu, iv).X();
+                valnorm = rho * constraints.Node(_u1, _v0).Point(iu, iv).X;
                 hcoins.SetValue(size + 1 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u1, _v0).Point(iu, iv).Y();
+                valnorm = rho * constraints.Node(_u1, _v0).Point(iu, iv).Y;
                 hcoins.SetValue(size + 2 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u1, _v0).Point(iu, iv).Z();
+                valnorm = rho * constraints.Node(_u1, _v0).Point(iu, iv).Z;
                 hcoins.SetValue(size + 3 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
 
                 // F(U0,V1) and its derivatives normalized on (-1,1)
-                valnorm = rho * constraints.Node(_u0, _v1).Point(iu, iv).X();
+                valnorm = rho * constraints.Node(_u0, _v1).Point(iu, iv).X;
                 hcoins.SetValue(2 * size + 1 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u0, _v1).Point(iu, iv).Y();
+                valnorm = rho * constraints.Node(_u0, _v1).Point(iu, iv).Y;
                 hcoins.SetValue(2 * size + 2 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u0, _v1).Point(iu, iv).Z();
+                valnorm = rho * constraints.Node(_u0, _v1).Point(iu, iv).Z;
                 hcoins.SetValue(2 * size + 3 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
 
                 // F(U1,V1) and its derivatives normalized on (-1,1)
-                valnorm = rho * constraints.Node(_u1, _v1).Point(iu, iv).X();
+                valnorm = rho * constraints.Node(_u1, _v1).Point(iu, iv).X;
                 hcoins.SetValue(3 * size + 1 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u1, _v1).Point(iu, iv).Y();
+                valnorm = rho * constraints.Node(_u1, _v1).Point(iu, iv).Y;
                 hcoins.SetValue(3 * size + 2 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
-                valnorm = rho * constraints.Node(_u1, _v1).Point(iu, iv).Z();
+                valnorm = rho * constraints.Node(_u1, _v1).Point(iu, iv).Z;
                 hcoins.SetValue(3 * size + 3 + ndimen * iu + ndimen * (iordru + 2) * iv, valnorm);
             }
         }
@@ -468,38 +468,38 @@ public class Patch : Transient
 
                 // -F(U0,V0) and its derivatives normalized on (-1,1)
                 ideb = hcoins.Lower() + ndimen * iu + ndimen * (iordru + 2) * iv - 1;
-                valnorm = -rho * constraints.Node(_u0, _v0).Point(iu, iv).X();
+                valnorm = -rho * constraints.Node(_u0, _v0).Point(iu, iv).X;
                 hcoins.SetValue(1 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u0, _v0).Point(iu, iv).Y();
+                valnorm = -rho * constraints.Node(_u0, _v0).Point(iu, iv).Y;
                 hcoins.SetValue(2 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u0, _v0).Point(iu, iv).Z();
+                valnorm = -rho * constraints.Node(_u0, _v0).Point(iu, iv).Z;
                 hcoins.SetValue(3 + ideb, valnorm);
 
                 // -F(U1,V0) and its derivatives normalized on (-1,1)
                 ideb += size;
-                valnorm = -rho * constraints.Node(_u1, _v0).Point(iu, iv).X();
+                valnorm = -rho * constraints.Node(_u1, _v0).Point(iu, iv).X;
                 hcoins.SetValue(1 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u1, _v0).Point(iu, iv).Y();
+                valnorm = -rho * constraints.Node(_u1, _v0).Point(iu, iv).Y;
                 hcoins.SetValue(2 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u1, _v0).Point(iu, iv).Z();
+                valnorm = -rho * constraints.Node(_u1, _v0).Point(iu, iv).Z;
                 hcoins.SetValue(3 + ideb, valnorm);
 
                 // -F(U0,V1) and its derivatives normalized on (-1,1)
                 ideb += size;
-                valnorm = -rho * constraints.Node(_u0, _v1).Point(iu, iv).X();
+                valnorm = -rho * constraints.Node(_u0, _v1).Point(iu, iv).X;
                 hcoins.SetValue(1 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u0, _v1).Point(iu, iv).Y();
+                valnorm = -rho * constraints.Node(_u0, _v1).Point(iu, iv).Y;
                 hcoins.SetValue(2 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u0, _v1).Point(iu, iv).Z();
+                valnorm = -rho * constraints.Node(_u0, _v1).Point(iu, iv).Z;
                 hcoins.SetValue(3 + ideb, valnorm);
 
                 // -F(U1,V1) and its derivatives normalized on (-1,1)
                 ideb += size;
-                valnorm = -rho * constraints.Node(_u1, _v1).Point(iu, iv).X();
+                valnorm = -rho * constraints.Node(_u1, _v1).Point(iu, iv).X;
                 hcoins.SetValue(1 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u1, _v1).Point(iu, iv).Y();
+                valnorm = -rho * constraints.Node(_u1, _v1).Point(iu, iv).Y;
                 hcoins.SetValue(2 + ideb, valnorm);
-                valnorm = -rho * constraints.Node(_u1, _v1).Point(iu, iv).Z();
+                valnorm = -rho * constraints.Node(_u1, _v1).Point(iu, iv).Z;
                 hcoins.SetValue(3 + ideb, valnorm);
             }
         }

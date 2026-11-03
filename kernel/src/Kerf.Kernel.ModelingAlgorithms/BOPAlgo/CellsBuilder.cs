@@ -388,7 +388,7 @@ public class CellsBuilder : BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape s = it.Value();
-            ShapeType type = s.ShapeType();
+            ShapeType type = s.Type;
             if (type != ShapeType.Wire && type != ShapeType.Shell && type != ShapeType.CompSolid)
             {
                 // basic element
@@ -481,7 +481,7 @@ public class CellsBuilder : BooleanBuilder
             //
             if (ls.Extent() == 1)
             {
-                ShapeType type1 = ls.First().ShapeType();
+                ShapeType type1 = ls.First().Type;
                 if (type1 != ShapeType.Wire && type1 != ShapeType.Shell && type1 != ShapeType.CompSolid)
                 {
                     bb.Add(result, ls.First());
@@ -491,10 +491,10 @@ public class CellsBuilder : BooleanBuilder
             //
             // check the shapes of the same material to be of the same type
             NCollection_List<Shape>.Iterator itLS = new(ls);
-            ShapeType type = itLS.Value().ShapeType();
+            ShapeType type = itLS.Value().Type;
             for (itLS.Next(); itLS.More(); itLS.Next())
             {
-                if (type != itLS.Value().ShapeType())
+                if (type != itLS.Value().Type)
                 {
                     break;
                 }
@@ -582,7 +582,7 @@ public class CellsBuilder : BooleanBuilder
                 }
                 //
                 // check if it is not a collection
-                ShapeType type = s.ShapeType();
+                ShapeType type = s.Type;
                 if (type != ShapeType.Wire && type != ShapeType.Shell && type != ShapeType.CompSolid)
                 {
                     bb.Add(result, s);
@@ -810,7 +810,7 @@ public class CellsBuilder : BooleanBuilder
             return bRemoved;
         }
         //
-        ShapeType type = ls.First().ShapeType();
+        ShapeType type = ls.First().Type;
         //
         if (type == ShapeType.Edge || type == ShapeType.Face)
         {
@@ -923,7 +923,7 @@ public class CellsBuilder : BooleanBuilder
                     for (; itIS.More(); itIS.Next())
                     {
                         Shape si = itIS.Value();
-                        if (si.Orientation() == Internal)
+                        if (si.Orientation == Internal)
                         {
                             lsInt.Append(si);
                         }
@@ -1135,7 +1135,7 @@ public class CellsBuilder : BooleanBuilder
     // Adds to theMapKeepBnd the boundary shapes of the area defined by shapes from the list.
     private static void CollectMaterialBoundaries(NCollection_List<Shape> ls, HashSet<Shape> mapKeepBnd)
     {
-        ShapeType type = ls.First().ShapeType();
+        ShapeType type = ls.First().Type;
         ShapeType typeSubsh = (type == ShapeType.Face ? ShapeType.Edge : ShapeType.Vertex);
         IndexedMap<Shape, NCollection_List<Shape>> mapSubSh = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new(ls);

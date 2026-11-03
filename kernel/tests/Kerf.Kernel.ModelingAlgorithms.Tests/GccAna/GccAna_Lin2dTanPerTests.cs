@@ -21,10 +21,10 @@ public class GccAna_Lin2dTanPerTests
     private static void CheckTangency(Lin2dTanPer theAlgo, int theIndex, in Circle2D theC)
     {
         Line2D aSol = theAlgo.ThisSolution(theIndex);
-        Assert.Equal(theC.Radius(), aSol.Distance(theC.Location()), Tol);
+        Assert.Equal(theC.Radius, aSol.DistanceTo(theC.Location), Tol);
         theAlgo.Tangency1(theIndex, out double aPs, out double aPa, out Point2D aT);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aT) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, theC).Distance(aT) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aT) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, theC).DistanceTo(aT) < Tol);
     }
 
     [Fact]
@@ -36,12 +36,12 @@ public class GccAna_Lin2dTanPerTests
         Assert.True(anAlgo.IsDone);
         Assert.Equal(1, anAlgo.SolutionCount);
         Line2D aSol = anAlgo.ThisSolution(1);
-        Assert.Equal(0.0, aSol.Direction().Dot(aL.Direction()), 1.0e-12);
-        Assert.True(aSol.Distance(aP) < Tol);
+        Assert.Equal(0.0, aSol.Direction.Dot(aL.Direction), 1.0e-12);
+        Assert.True(aSol.DistanceTo(aP) < Tol);
         anAlgo.Intersection2(1, out double aPs, out double aPa, out Point2D aI);
-        Assert.True(aL.Distance(aI) < Tol && aSol.Distance(aI) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aI) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL).Distance(aI) < Tol);
+        Assert.True(aL.DistanceTo(aI) < Tol && aSol.DistanceTo(aI) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aI) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL).DistanceTo(aI) < Tol);
         anAlgo.Tangency1(1, out double aPs1, out double aPa1, out Point2D aT);
         Assert.Equal(aP, aT);
         Assert.Equal(0.0, aPs1, Tol);
@@ -56,11 +56,11 @@ public class GccAna_Lin2dTanPerTests
         Lin2dTanPer anAlgo = new(aP, aC);
         Assert.Equal(1, anAlgo.SolutionCount);
         Line2D aSol = anAlgo.ThisSolution(1);
-        Assert.True(aSol.Distance(aC.Location()) < Tol);
+        Assert.True(aSol.DistanceTo(aC.Location) < Tol);
         anAlgo.Intersection2(1, out double aPs, out double aPa, out Point2D aI);
-        Assert.Equal(aC.Radius(), aI.Distance(aC.Location()), Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aI) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).Distance(aI) < Tol);
+        Assert.Equal(aC.Radius, aI.DistanceTo(aC.Location), Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aI) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).DistanceTo(aI) < Tol);
         // OCCT keeps the last intersection point IntAna2d returns, whatever its distance
         AnalyticIntersection anInt = new(aSol, aC);
         Assert.Equal(anInt.Point(anInt.PointCount).Value(), aI);
@@ -75,10 +75,10 @@ public class GccAna_Lin2dTanPerTests
         Assert.Equal(2, anAlgo.SolutionCount);
         for (int i = 1; i <= 2; i++)
         {
-            Assert.Equal(0.0, anAlgo.ThisSolution(i).Direction().Dot(aL.Direction()), 1.0e-12);
+            Assert.Equal(0.0, anAlgo.ThisSolution(i).Direction.Dot(aL.Direction), 1.0e-12);
             CheckTangency(anAlgo, i, aC);
             anAlgo.Intersection2(i, out _, out _, out Point2D aI);
-            Assert.True(aL.Distance(aI) < Tol && anAlgo.ThisSolution(i).Distance(aI) < Tol);
+            Assert.True(aL.DistanceTo(aI) < Tol && anAlgo.ThisSolution(i).DistanceTo(aI) < Tol);
             // OCCT: this constructor never sets the qualifier
             anAlgo.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, aQ);
@@ -96,8 +96,8 @@ public class GccAna_Lin2dTanPerTests
         Assert.Equal(1, anOut.SolutionCount);
         CheckTangency(anEnc, 1, aC);
         CheckTangency(anOut, 1, aC);
-        Assert.Equal(1.0, anEnc.ThisSolution(1).Location().X(), Tol);
-        Assert.Equal(-1.0, anOut.ThisSolution(1).Location().X(), Tol);
+        Assert.Equal(1.0, anEnc.ThisSolution(1).Location.X, Tol);
+        Assert.Equal(-1.0, anOut.ThisSolution(1).Location.X, Tol);
     }
 
     [Fact]
@@ -110,17 +110,17 @@ public class GccAna_Lin2dTanPerTests
             Lin2dTanPer anAlgo = new(aQ, aC2);
             // OCCT: two solutions whatever the qualifier
             Assert.Equal(2, anAlgo.SolutionCount);
-            Direction2D aD = new(new Vector2D(aC1.Location(), aC2.Location()));
+            Direction2D aD = new(new Vector2D(aC1.Location, aC2.Location));
             for (int i = 1; i <= 2; i++)
             {
                 Line2D aSol = anAlgo.ThisSolution(i);
-                Assert.Equal(0.0, aSol.Direction().Dot(aD), 1.0e-12);
+                Assert.Equal(0.0, aSol.Direction.Dot(aD), 1.0e-12);
                 CheckTangency(anAlgo, i, aC1);
                 anAlgo.Intersection2(i, out double aPs, out double aPa, out Point2D aI);
-                Assert.Equal(aC2.Radius(), aI.Distance(aC2.Location()), Tol);
-                Assert.True(aSol.Distance(aI) < Tol);
-                Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC2).Distance(aI) < Tol);
-                Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aI) < Tol);
+                Assert.Equal(aC2.Radius, aI.DistanceTo(aC2.Location), Tol);
+                Assert.True(aSol.DistanceTo(aI) < Tol);
+                Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC2).DistanceTo(aI) < Tol);
+                Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aI) < Tol);
             }
             anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
             Assert.Equal(aQ.IsOutside ? global::Kerf.Engine.Construction.Constraints.Qualifier.Outside : global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing, aQ1);

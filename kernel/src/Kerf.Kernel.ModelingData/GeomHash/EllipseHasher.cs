@@ -21,9 +21,9 @@ internal readonly struct EllipseHasher(double theCompTolerance, double theHashTo
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(ellipse.Position()),
-            HashUtils.Hash((long)HashUtils.Round(ellipse.MajorRadius() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(ellipse.MinorRadius() * factor))
+            axisHasher.Hash(ellipse.Position),
+            HashUtils.Hash((long)HashUtils.Round(ellipse.MajorRadius * factor)),
+            HashUtils.Hash((long)HashUtils.Round(ellipse.MinorRadius * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,8 +32,8 @@ internal readonly struct EllipseHasher(double theCompTolerance, double theHashTo
     public bool IsEqual(EllipseCurve3D ellipse1, EllipseCurve3D ellipse2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(ellipse1.Position(), ellipse2.Position())
-               && Math.Abs(ellipse1.MajorRadius() - ellipse2.MajorRadius()) <= CompTolerance
-               && Math.Abs(ellipse1.MinorRadius() - ellipse2.MinorRadius()) <= CompTolerance;
+        return axisHasher.IsEqual(ellipse1.Position, ellipse2.Position)
+               && Math.Abs(ellipse1.MajorRadius - ellipse2.MajorRadius) <= CompTolerance
+               && Math.Abs(ellipse1.MinorRadius - ellipse2.MinorRadius) <= CompTolerance;
     }
 }

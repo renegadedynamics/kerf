@@ -26,11 +26,11 @@ public sealed class Pnt2dBisec
     {
         _wellDone = false;
         //   if (Point1.Distance(Point2) > gp::Resolution()) {
-        if (point1.Distance(point2) > 1.0e-10)
+        if (point1.DistanceTo(point2) > 1.0e-10)
         {
             Direction2D dir1 = new(point2.XY() - point1.XY());
-            _linsol = new Line2D(new Point2D((point2.X() + point1.X()) / 2.0, (point2.Y() + point1.Y()) / 2.0),
-                                  new Direction2D(-dir1.Y(), dir1.X()));
+            _linsol = new Line2D(new Point2D((point2.X + point1.X) / 2.0, (point2.Y + point1.Y) / 2.0),
+                                  new Direction2D(-dir1.Y, dir1.X));
             _hasSol = true;
             _wellDone = true;
         }

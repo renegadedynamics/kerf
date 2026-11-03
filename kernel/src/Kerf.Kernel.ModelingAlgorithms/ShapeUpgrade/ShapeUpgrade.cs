@@ -46,7 +46,7 @@ public static class ShapeUpgrade
         }
         bs.SetNotPeriodic(); // to have equation NbPoles = NbKnots with Multiplicities - degree - 1
 
-        int deg = bs.Degree();
+        int deg = bs.Degree;
         NCollection_Array1<Point3D> poles = bs.InternalPoles();
         NCollection_Array1<double> weights = bs.InternalWeightsArray();
         NCollection_Array1<double> knots = bs.InternalKnots();
@@ -125,7 +125,7 @@ public static class ShapeUpgrade
 
     private static BSplineCurve3D BSplineCurve2dTo3d(BSplineCurve2D bs)
     {
-        int deg = bs.Degree();
+        int deg = bs.Degree;
         int nbPoles = bs.PoleCount;
         NCollection_Array1<Point2D> poles2d = bs.InternalPoles();
         NCollection_Array1<double> weights = bs.InternalWeightsArray();
@@ -135,7 +135,7 @@ public static class ShapeUpgrade
         var poles3d = new NCollection_Array1<Point3D>(1, nbPoles);
         for (int i = 1; i <= nbPoles; i++)
         {
-            poles3d[i] = new Point3D(poles2d[i].X(), poles2d[i].Y(), 0);
+            poles3d[i] = new Point3D(poles2d[i].X, poles2d[i].Y, 0);
         }
 
         var bs3d = new BSplineCurve3D(poles3d, weights, knots, mults, deg, bs.IsPeriodic);
@@ -144,7 +144,7 @@ public static class ShapeUpgrade
 
     private static BSplineCurve2D BSplineCurve3dTo2d(BSplineCurve3D bs)
     {
-        int deg = bs.Degree();
+        int deg = bs.Degree;
         int nbPoles = bs.PoleCount;
         NCollection_Array1<Point3D> poles3d = bs.InternalPoles();
         NCollection_Array1<double> weights = bs.InternalWeightsArray();
@@ -154,7 +154,7 @@ public static class ShapeUpgrade
         var poles2d = new NCollection_Array1<Point2D>(1, nbPoles);
         for (int i = 1; i <= nbPoles; i++)
         {
-            poles2d[i] = new Point2D(poles3d[i].X(), poles3d[i].Y());
+            poles2d[i] = new Point2D(poles3d[i].X, poles3d[i].Y);
         }
 
         var bs2d = new BSplineCurve2D(poles2d, weights, knots, mults, deg, bs.IsPeriodic);

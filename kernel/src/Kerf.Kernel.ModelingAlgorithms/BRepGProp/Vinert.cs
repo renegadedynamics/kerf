@@ -140,7 +140,7 @@ public class Vinert : Properties
 
     public double Perform(FaceIntegrand s, Domain d, in Point3D o, double eps)
     {
-        ReadOnlySpan<double> coeff = [o.X() - _loc.X(), o.Y() - _loc.Y(), o.Z() - _loc.Z()];
+        ReadOnlySpan<double> coeff = [o.X - _loc.X, o.Y - _loc.Y, o.Z - _loc.Z];
 
         var gauss = new MeasurementGauss(global::Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType.Vinert);
         return _epsilon = gauss.Compute(s, d, _loc, eps, coeff, true, ref _dim, ref _g, ref _inertia);
@@ -149,7 +149,7 @@ public class Vinert : Properties
     public void Perform(FaceIntegrand s, in Point3D o)
     {
         var gauss = new MeasurementGauss(global::Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType.Vinert);
-        ReadOnlySpan<double> coeff = [o.X() - _loc.X(), o.Y() - _loc.Y(), o.Z() - _loc.Z()];
+        ReadOnlySpan<double> coeff = [o.X - _loc.X, o.Y - _loc.Y, o.Z - _loc.Z];
 
         _epsilon = 1.0;
         gauss.Compute(s, _loc, coeff, true, ref _dim, ref _g, ref _inertia);
@@ -158,7 +158,7 @@ public class Vinert : Properties
     public void Perform(FaceIntegrand s, Domain d, in Point3D o)
     {
         var gauss = new MeasurementGauss(global::Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType.Vinert);
-        ReadOnlySpan<double> coeff = [o.X() - _loc.X(), o.Y() - _loc.Y(), o.Z() - _loc.Z()];
+        ReadOnlySpan<double> coeff = [o.X - _loc.X, o.Y - _loc.Y, o.Z - _loc.Z];
 
         _epsilon = 1.0;
         gauss.Compute(s, d, _loc, coeff, true, ref _dim, ref _g, ref _inertia);
@@ -174,7 +174,7 @@ public class Vinert : Properties
     {
         Span<double> coeff = stackalloc double[4];
         pl.Coefficients(out coeff[0], out coeff[1], out coeff[2], out coeff[3]);
-        coeff[3] = coeff[3] - coeff[0] * _loc.X() - coeff[1] * _loc.Y() - coeff[2] * _loc.Z();
+        coeff[3] = coeff[3] - coeff[0] * _loc.X - coeff[1] * _loc.Y - coeff[2] * _loc.Z;
 
         var gauss = new MeasurementGauss(global::Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType.Vinert);
         return _epsilon = gauss.Compute(s, d, _loc, eps, coeff, false, ref _dim, ref _g, ref _inertia);
@@ -185,7 +185,7 @@ public class Vinert : Properties
         var gauss = new MeasurementGauss(global::Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType.Vinert);
         Span<double> coeff = stackalloc double[4];
         pl.Coefficients(out coeff[0], out coeff[1], out coeff[2], out coeff[3]);
-        coeff[3] = coeff[3] - coeff[0] * _loc.X() - coeff[1] * _loc.Y() - coeff[2] * _loc.Z();
+        coeff[3] = coeff[3] - coeff[0] * _loc.X - coeff[1] * _loc.Y - coeff[2] * _loc.Z;
 
         _epsilon = 1.0;
         gauss.Compute(s, _loc, coeff, false, ref _dim, ref _g, ref _inertia);
@@ -196,7 +196,7 @@ public class Vinert : Properties
         var gauss = new MeasurementGauss(global::Kerf.Engine.Measurement.MeasurementGauss.BRepGProp_GaussType.Vinert);
         Span<double> coeff = stackalloc double[4];
         pl.Coefficients(out coeff[0], out coeff[1], out coeff[2], out coeff[3]);
-        coeff[3] = coeff[3] - coeff[0] * _loc.X() - coeff[1] * _loc.Y() - coeff[2] * _loc.Z();
+        coeff[3] = coeff[3] - coeff[0] * _loc.X - coeff[1] * _loc.Y - coeff[2] * _loc.Z;
 
         _epsilon = 1.0;
         gauss.Compute(s, d, _loc, coeff, false, ref _dim, ref _g, ref _inertia);

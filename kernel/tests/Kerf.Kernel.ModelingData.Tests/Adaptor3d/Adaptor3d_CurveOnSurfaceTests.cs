@@ -36,8 +36,8 @@ public class Adaptor3d_CurveOnSurfaceTests
     private static Ref Reference(Surface theS, Curve2D theC, double t)
     {
         theC.D3(t, out Point2D uv, out Vector2D d1, out Vector2D d2, out Vector2D d3);
-        double u = uv.X(), v = uv.Y();
-        double u1 = d1.X(), v1 = d1.Y(), u2 = d2.X(), v2 = d2.Y(), u3 = d3.X(), v3 = d3.Y();
+        double u = uv.X, v = uv.Y;
+        double u1 = d1.X, v1 = d1.Y, u2 = d2.X, v2 = d2.Y, u3 = d3.X, v3 = d3.Y;
         Surface.ResD3 r = theS.EvalD3(u, v);
         Vector3D P = new Vector3D(r.Point.XYZ());
         Vector3D D1 = r.D1U * u1 + r.D1V * v1;
@@ -51,8 +51,8 @@ public class Adaptor3d_CurveOnSurfaceTests
 
     private static void Near(Vector3D theExpected, Vector3D theActual, string theWhat, double theTol = Tol)
     {
-        double aScale = Math.Max(1.0, theExpected.Magnitude());
-        Assert.True((theExpected - theActual).Magnitude() <= theTol * aScale,
+        double aScale = Math.Max(1.0, theExpected.Magnitude);
+        Assert.True((theExpected - theActual).Magnitude <= theTol * aScale,
                     $"{theWhat}: expected {theExpected}, got {theActual}");
     }
 
@@ -139,7 +139,7 @@ public class Adaptor3d_CurveOnSurfaceTests
 
         Assert.Equal(Line, aCOS.GetType());
         Line3D aLin = aCOS.Line();
-        Assert.True(aLin.Location().IsEqual(aPlane.Value(1.0, 2.0), Tol));
+        Assert.True(aLin.Location.IsEqual(aPlane.Value(1.0, 2.0), Tol));
         Assert.Equal(-3.0, aCOS.FirstParameter());
         Assert.Equal(4.0, aCOS.LastParameter());
         Assert.False(aCOS.IsPeriodic);
@@ -155,18 +155,18 @@ public class Adaptor3d_CurveOnSurfaceTests
         CircleCurve2D aCircle = new CircleCurve2D(new Axis2D(new Point2D(1, 2), new Direction2D(1, 1)), 2.5);
         var aCOS = new CurveOnSurface(new CurveAdaptor2D(aCircle), new TestSurfaceAdaptor(aPlane));
         Assert.Equal(Circle, aCOS.GetType());
-        Assert.Equal(2.5, aCOS.Circle().Radius(), 1e-12);
+        Assert.Equal(2.5, aCOS.Circle().Radius, 1e-12);
         Assert.True(aCOS.IsPeriodic);
         Assert.Equal(2 * Math.PI, aCOS.Period());
-        Assert.True(aCOS.Circle().Location().IsEqual(aPlane.Value(1, 2), Tol));
+        Assert.True(aCOS.Circle().Location.IsEqual(aPlane.Value(1, 2), Tol));
         CheckEval(aCOS, aPlane, aCircle, Params(0.0, 2 * Math.PI));
 
         EllipseCurve2D anEllipse = new EllipseCurve2D(new Axis2D(new Point2D(-1, 0.5), new Direction2D(1, -2)), 3.0, 1.0);
         var aCOSE = new CurveOnSurface(new CurveAdaptor2D(anEllipse), new TestSurfaceAdaptor(aPlane));
         Assert.Equal(Ellipse, aCOSE.GetType());
         Ellipse3D anE = aCOSE.Ellipse();
-        Assert.Equal(3.0, anE.MajorRadius(), 1e-12);
-        Assert.Equal(1.0, anE.MinorRadius(), 1e-12);
+        Assert.Equal(3.0, anE.MajorRadius, 1e-12);
+        Assert.Equal(1.0, anE.MinorRadius, 1e-12);
         Assert.True(aCOSE.IsPeriodic);
         // An ellipse goes through the general path; on a plane the second derivatives vanish, so D3 is exact
         // except for OCCT's u' in place of u''' (see Reference).
@@ -357,9 +357,9 @@ public class Adaptor3d_CurveOnSurfaceTests
         public override bool IsURational => false;
         public override bool IsVRational => false;
         public override Point3D EvalD0(double theU, double theV) => theBase.EvalD0(theU, theV);
-        public override Surface.ResD1 EvalD1(double theU, double theV) => theBase.EvalD1(theU, theV);
-        public override Surface.ResD2 EvalD2(double theU, double theV) => theBase.EvalD2(theU, theV);
-        public override Surface.ResD3 EvalD3(double theU, double theV) => theBase.EvalD3(theU, theV);
+        internal override Surface.ResD1 EvalD1(double theU, double theV) => theBase.EvalD1(theU, theV);
+        internal override Surface.ResD2 EvalD2(double theU, double theV) => theBase.EvalD2(theU, theV);
+        internal override Surface.ResD3 EvalD3(double theU, double theV) => theBase.EvalD3(theU, theV);
         public override Vector3D EvalDN(double theU, double theV, int theNu, int theNv) => theBase.EvalDN(theU, theV, theNu, theNv);
     }
 
@@ -401,7 +401,7 @@ public class Adaptor3d_CurveOnSurfaceTests
             }
             else
             {
-                Assert.Equal(1.2, aC.Value(T[i]).X(), 1e-8);
+                Assert.Equal(1.2, aC.Value(T[i]).X, 1e-8);
                 aCrossings++;
             }
         }
@@ -460,10 +460,10 @@ public class Adaptor3d_CurveOnSurfaceTests
         Assert.Equal(BSplineCurve, aCOS.GetType());
         Assert.Equal(3, aCOS.KnotCount);
         BSplineCurve3D a3d = aCOS.BSpline();
-        Assert.Equal(3, a3d.Degree());
+        Assert.Equal(3, a3d.Degree);
         foreach (double t in Params(0, 1))
         {
-            Assert.True(a3d.Value(t).IsEqual(aPlane.Value(aBS.Value(t).X(), aBS.Value(t).Y()), Tol));
+            Assert.True(a3d.Value(t).IsEqual(aPlane.Value(aBS.Value(t).X, aBS.Value(t).Y), Tol));
         }
         CheckEval(aCOS, aPlane, aBS, Params(0, 1, 0.5), theOcctD3: true);
 
@@ -510,7 +510,7 @@ public class Adaptor3d_CurveOnSurfaceTests
         Vector3D aFD = (aCOS.DN(t + h, 2) - aCOS.DN(t - h, 2)) / (2 * h);
         Ref r = Reference(aCyl, aLine, t);
         Near(r.D3, aFD, "chain rule vs finite difference", 1e-6);
-        Assert.True((aCOS.DN(t, 3) - aFD).Magnitude() > 0.1);
+        Assert.True((aCOS.DN(t, 3) - aFD).Magnitude > 0.1);
         Near(r.D3Occt, aCOS.DN(t, 3), "OCCT's formula");
     }
 }

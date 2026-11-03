@@ -516,15 +516,15 @@ public sealed class SweepApproximation
         }
         for (ii = 1; ii <= _num2DSS; ii++)
         {
-            localResult[index] = _poles2d!.Value(ii).X();
-            localResult[index + 1] = _poles2d.Value(ii).Y();
+            localResult[index] = _poles2d!.Value(ii).X;
+            localResult[index + 1] = _poles2d.Value(ii).Y;
             index += 2;
         }
         for (ii = 1; ii <= _num3DSS; ii++, index += 3)
         {
-            localResult[index] = _poles!.Value(ii).X();
-            localResult[index + 1] = _poles.Value(ii).Y();
-            localResult[index + 2] = _poles.Value(ii).Z();
+            localResult[index] = _poles!.Value(ii).X;
+            localResult[index + 1] = _poles.Value(ii).Y;
+            localResult[index + 2] = _poles.Value(ii).Z;
         }
 
         return ok;
@@ -596,15 +596,15 @@ public sealed class SweepApproximation
         }
         for (ii = 1; ii <= _num2DSS; ii++)
         {
-            localResult[index] = _dPoles2d!.Value(ii).X();
-            localResult[index + 1] = _dPoles2d.Value(ii).Y();
+            localResult[index] = _dPoles2d!.Value(ii).X;
+            localResult[index + 1] = _dPoles2d.Value(ii).Y;
             index += 2;
         }
         for (ii = 1; ii <= _num3DSS; ii++, index += 3)
         {
-            localResult[index] = _dPoles!.Value(ii).X();
-            localResult[index + 1] = _dPoles.Value(ii).Y();
-            localResult[index + 2] = _dPoles.Value(ii).Z();
+            localResult[index] = _dPoles!.Value(ii).X;
+            localResult[index + 1] = _dPoles.Value(ii).Y;
+            localResult[index + 2] = _dPoles.Value(ii).Z;
         }
         return ok;
     }
@@ -688,15 +688,15 @@ public sealed class SweepApproximation
         }
         for (ii = 1; ii <= _num2DSS; ii++)
         {
-            localResult[index] = _d2Poles2d!.Value(ii).X();
-            localResult[index + 1] = _d2Poles2d.Value(ii).Y();
+            localResult[index] = _d2Poles2d!.Value(ii).X;
+            localResult[index + 1] = _d2Poles2d.Value(ii).Y;
             index += 2;
         }
         for (ii = 1; ii <= _num3DSS; ii++, index += 3)
         {
-            localResult[index] = _d2Poles!.Value(ii).X();
-            localResult[index + 1] = _d2Poles.Value(ii).Y();
-            localResult[index + 2] = _d2Poles.Value(ii).Z();
+            localResult[index] = _d2Poles!.Value(ii).X;
+            localResult[index + 1] = _d2Poles.Value(ii).Y;
+            localResult[index + 2] = _d2Poles.Value(ii).Z;
         }
 
         return ok;

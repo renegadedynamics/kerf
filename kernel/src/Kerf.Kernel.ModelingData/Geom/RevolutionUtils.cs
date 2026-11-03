@@ -44,12 +44,12 @@ internal static class RevolutionUtils
         p = curvePt;
 
         // Vector from center of rotation to the point on rotated curve
-        Xyz cq = curvePt.XYZ() - axis.Location().XYZ();
-        d1U = new Vector3D(axis.Direction().XYZ().Crossed(cq));
+        Xyz cq = curvePt.XYZ() - axis.Location.XYZ();
+        d1U = new Vector3D(axis.Direction.XYZ().Crossed(cq));
 
         // If the point is placed on the axis of revolution then derivatives on U are undefined.
         // Manually set them to zero.
-        if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (d1U.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
@@ -77,13 +77,13 @@ internal static class RevolutionUtils
         p = curvePt;
 
         // Vector from center of rotation to the point on rotated curve
-        Xyz cq = curvePt.XYZ() - axis.Location().XYZ();
-        Xyz dir = axis.Direction().XYZ();
+        Xyz cq = curvePt.XYZ() - axis.Location.XYZ();
+        Xyz dir = axis.Direction.XYZ();
         d1U = new Vector3D(dir.Crossed(cq));
 
         // If the point is placed on the axis of revolution then derivatives on U are undefined.
         // Manually set them to zero.
-        if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (d1U.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
@@ -123,13 +123,13 @@ internal static class RevolutionUtils
         p = curvePt;
 
         // Vector from center of rotation to the point on rotated curve
-        Xyz cq = curvePt.XYZ() - axis.Location().XYZ();
-        Xyz dir = axis.Direction().XYZ();
+        Xyz cq = curvePt.XYZ() - axis.Location.XYZ();
+        Xyz dir = axis.Direction.XYZ();
         d1U = new Vector3D(dir.Crossed(cq));
 
         // If the point is placed on the axis of revolution then derivatives on U are undefined.
         // Manually set them to zero.
-        if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (d1U.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
@@ -181,7 +181,7 @@ internal static class RevolutionUtils
         {
             // For theDerV == 0: theCurvePtOrDN is (P - AxisLocation) as a vector
             // For theDerV > 0: theCurvePtOrDN is the curve derivative
-            Xyz dir = axis.Direction().XYZ();
+            Xyz dir = axis.Direction.XYZ();
             if (derU % 4 == 1)
             {
                 result = new Vector3D(dir.Crossed(curvePtOrDN.XYZ()));
@@ -310,7 +310,7 @@ internal static class RevolutionUtils
         else if (derV == 0)
         {
             Point3D p = basis.EvalD0(v);
-            curvePtOrDN = new Vector3D(p.XYZ() - axis.Location().XYZ());
+            curvePtOrDN = new Vector3D(p.XYZ() - axis.Location.XYZ());
         }
         else
         {

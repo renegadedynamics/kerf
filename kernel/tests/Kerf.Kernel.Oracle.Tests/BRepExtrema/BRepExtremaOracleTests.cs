@@ -90,8 +90,8 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
 
     private void CompareSupport(Oracle theOracle, N.TopoDS_Shape theN, in Shape theP, Maps theMaps1, Maps theMaps2, string theWhat)
     {
-        theOracle.Same((int)theN.ShapeType(), (int)theP.ShapeType(), theWhat + " type");
-        int aKind = theP.ShapeType() switch
+        theOracle.Same((int)theN.ShapeType(), (int)theP.Type, theWhat + " type");
+        int aKind = theP.Type switch
         {
             ShapeType.Vertex => 0,
             ShapeType.Edge => 1,
@@ -105,7 +105,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         int aPIndex2 = theMaps2.PM[aKind].IndexOf(theP) + 1;
         theOracle.Same(aNIndex, aPIndex, theWhat + " index in shape 1");
         theOracle.Same(aNIndex2, aPIndex2, theWhat + " index in shape 2");
-        theOracle.Same((int)theN.Orientation(), (int)theP.Orientation(), theWhat + " orientation");
+        theOracle.Same((int)theN.Orientation(), (int)theP.Orientation, theWhat + " orientation");
         if (aPIndex == 0 && aPIndex2 == 0)
         {
             // built by the algorithm (the trimmed copy of an infinite edge or face): compare it as a file
@@ -287,7 +287,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
         {
             Direction3D aD = Oracle.Settled(theOracle.Dir());
             using var aND = Oracle.ToNative(aD);
-            if (aND.X() == aD.X() && aND.Y() == aD.Y() && aND.Z() == aD.Z())
+            if (aND.X() == aD.X && aND.Y() == aD.Y && aND.Z() == aD.Z)
             {
                 return aD;
             }
@@ -426,7 +426,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     {
         // native's coordinates read once each, in the recorded order
         double x = theNative.X(), y = theNative.Y(), z = theNative.Z();
-        if (x == 0.0 && y == 0.0 && z == 0.0 && thePort.Distance(new Point3D(0, 0, 0)) > 0.0)
+        if (x == 0.0 && y == 0.0 && z == 0.0 && thePort.DistanceTo(new Point3D(0, 0, 0)) > 0.0)
         {
             myNbOriginPoints++;
             return;

@@ -54,7 +54,7 @@ public sealed class ExportBuilder : ExportRoot
             return;
         }
 
-        switch (aShape.ShapeType())
+        switch (aShape.Type)
         {
             case ShapeType.Shell:
             {
@@ -122,7 +122,7 @@ public sealed class ExportBuilder : ExportRoot
                     }
 
                     StepConnectedFaceSet cfSpms;
-                    if (myShell.Closed())
+                    if (myShell.IsClosed)
                     {
                         cfSpms = new StepClosedShell();
                     }

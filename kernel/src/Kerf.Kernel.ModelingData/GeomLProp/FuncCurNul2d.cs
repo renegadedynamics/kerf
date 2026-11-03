@@ -45,8 +45,8 @@ internal sealed class FuncCurNul2d : FunctionWithDerivative
         double cross13 = deriv1.Crossed(deriv3);
         double dot12 = deriv1.Dot(deriv2);
         double dot23 = deriv2.Dot(deriv3);
-        double norm1 = deriv1.Magnitude();
-        double norm2 = deriv2.Magnitude();
+        double norm1 = deriv1.Magnitude;
+        double norm2 = deriv2.Magnitude;
 
         f = 0.0;
         d = 0.0;

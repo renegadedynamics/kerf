@@ -33,7 +33,7 @@ public class ShapeBinder : BinderOfShape
         {
             return global::Kerf.Topology.ShapeType.Shape;
         }
-        return Result().ShapeType();
+        return Result().Type;
     }
 
     public Vertex Vertex()

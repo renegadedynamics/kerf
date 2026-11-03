@@ -527,6 +527,6 @@ public class GeomBndLib_Curve2dTest
 
         BSplineCurve2D aBSpl = new(aPoles, aKnots, aMults, aDegree);
         CurveAdaptor2D aBSplGA = new(aBSpl);
-        Assert.Equal(23, SamplingHelpers.ComputeNbSamples2d(aBSplGA, aBSpl.FirstParameter(), aBSpl.LastParameter()));
+        Assert.Equal(23, SamplingHelpers.ComputeNbSamples2d(aBSplGA, aBSpl.FirstParameter, aBSpl.LastParameter));
     }
 }

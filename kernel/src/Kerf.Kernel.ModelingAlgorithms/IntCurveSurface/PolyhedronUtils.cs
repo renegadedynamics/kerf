@@ -482,11 +482,11 @@ internal static class PolyhedronUtils
             Point3D p2 = pnts[np2];
             Point3D p3 = pnts[np3];
             boite.SetVoid();
-            if (p1.SquareDistance(p2) > THE_MIN_EDGE_LENGTH_SQUARED)
+            if (p1.SquareDistanceTo(p2) > THE_MIN_EDGE_LENGTH_SQUARED)
             {
-                if (p1.SquareDistance(p3) > THE_MIN_EDGE_LENGTH_SQUARED)
+                if (p1.SquareDistanceTo(p3) > THE_MIN_EDGE_LENGTH_SQUARED)
                 {
-                    if (p2.SquareDistance(p3) > THE_MIN_EDGE_LENGTH_SQUARED)
+                    if (p2.SquareDistanceTo(p3) > THE_MIN_EDGE_LENGTH_SQUARED)
                     {
                         boite.Add(p1);
                         boite.Add(p2);
@@ -505,15 +505,15 @@ internal static class PolyhedronUtils
                                                      in Point3D center)
     {
         // Check for degenerate triangles
-        if (p1.SquareDistance(p2) <= THE_MIN_EDGE_LENGTH_SQUARED)
+        if (p1.SquareDistanceTo(p2) <= THE_MIN_EDGE_LENGTH_SQUARED)
         {
             return 0.0;
         }
-        if (p1.SquareDistance(p3) <= THE_MIN_EDGE_LENGTH_SQUARED)
+        if (p1.SquareDistanceTo(p3) <= THE_MIN_EDGE_LENGTH_SQUARED)
         {
             return 0.0;
         }
-        if (p2.SquareDistance(p3) <= THE_MIN_EDGE_LENGTH_SQUARED)
+        if (p2.SquareDistanceTo(p3) <= THE_MIN_EDGE_LENGTH_SQUARED)
         {
             return 0.0;
         }
@@ -524,7 +524,7 @@ internal static class PolyhedronUtils
         Xyz xyz3 = p1.XYZ() - p3.XYZ();
         Vector3D normalVector = new((xyz1 ^ xyz2) + (xyz2 ^ xyz3) + (xyz3 ^ xyz1));
 
-        double normLen = normalVector.Magnitude();
+        double normLen = normalVector.Magnitude;
         if (normLen < Constants.Resolution())
         {
             return 0.0;

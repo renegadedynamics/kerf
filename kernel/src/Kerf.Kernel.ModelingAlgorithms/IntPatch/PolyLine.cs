@@ -104,17 +104,17 @@ public class PolyLine : Polygo
                         // coefficients of parabola
                         double ax = (tm * v13.X() - v12.X()) / tm1mtm;
                         double bx = (v12.X() - tm * tm * v13.X()) / tm1mtm;
-                        double cx = p1.X();
+                        double cx = p1.X;
                         double ay = (tm * v13.Y() - v12.Y()) / tm1mtm;
                         double By = (v12.Y() - tm * tm * v13.Y()) / tm1mtm;
-                        double cy = p1.Y();
+                        double cy = p1.Y;
                         // equations of lines P1-P2 and P2-P3
                         double a1 = v12.Y() / d12;
                         double b1 = -v12.X() / d12;
-                        double c1 = (p2.X() * p1.Y() - p1.X() * p2.Y()) / d12;
+                        double c1 = (p2.X * p1.Y - p1.X * p2.Y) / d12;
                         double a2 = v23.Y() / d23;
                         double b2 = -v23.X() / d23;
-                        double c2 = (p3.X() * p2.Y() - p2.X() * p3.Y()) / d23;
+                        double c2 = (p3.X * p2.Y - p2.X * p3.Y) / d23;
                         // points on parabola with max deflection
                         double t1 = -0.5 * (a1 * bx + b1 * By) / (a1 * ax + b1 * ay);
                         double t2 = -0.5 * (a2 * bx + b2 * By) / (a2 * ax + b2 * ay);

@@ -23,8 +23,8 @@ internal static class CurveUtils
     /// <summary>|D1 x D2| / |D1|^3, or 0 if the derivatives are collinear or D2 is null.</summary>
     internal static double ComputeCurvature(in Vector3D d1, in Vector3D d2, double tolSq)
     {
-        double dd1 = d1.SquareMagnitude();
-        double dd2 = d2.SquareMagnitude();
+        double dd1 = d1.SquareMagnitude;
+        double dd2 = d2.SquareMagnitude;
 
         if (dd2 <= tolSq)
         {
@@ -44,8 +44,8 @@ internal static class CurveUtils
     /// <inheritdoc cref="ComputeCurvature(in Vector3D, in Vector3D, double)"/>
     internal static double ComputeCurvature(in Vector2D d1, in Vector2D d2, double tolSq)
     {
-        double dd1 = d1.SquareMagnitude();
-        double dd2 = d2.SquareMagnitude();
+        double dd1 = d1.SquareMagnitude;
+        double dd2 = d2.SquareMagnitude;
 
         if (dd2 <= tolSq)
         {

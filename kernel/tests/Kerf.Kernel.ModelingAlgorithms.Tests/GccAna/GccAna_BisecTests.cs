@@ -20,7 +20,7 @@ public class GccAna_BisecTests
 
     private static Circle2D Circ(double x, double y, double r) => new(new Axis2D(new Point2D(x, y), DX), r);
 
-    private static double DistToCirc(in Circle2D theC, in Point2D theP) => Math.Abs(theC.Location().Distance(theP) - theC.Radius());
+    private static double DistToCirc(in Circle2D theC, in Point2D theP) => Math.Abs(theC.Location.DistanceTo(theP) - theC.Radius);
 
     /// <summary>
     /// True if theP is equidistant from the two circles in one of the senses GccAna's bisectors take: the distances to
@@ -28,10 +28,10 @@ public class GccAna_BisecTests
     /// </summary>
     private static bool Equidistant(in Circle2D theC1, in Circle2D theC2, in Point2D theP, double theTol)
     {
-        double d1 = theC1.Location().Distance(theP), d2 = theC2.Location().Distance(theP);
-        foreach (double a in new[] { Math.Abs(d1 - theC1.Radius()), d1 + theC1.Radius() })
+        double d1 = theC1.Location.DistanceTo(theP), d2 = theC2.Location.DistanceTo(theP);
+        foreach (double a in new[] { Math.Abs(d1 - theC1.Radius), d1 + theC1.Radius })
         {
-            foreach (double b in new[] { Math.Abs(d2 - theC2.Radius()), d2 + theC2.Radius() })
+            foreach (double b in new[] { Math.Abs(d2 - theC2.Radius), d2 + theC2.Radius })
             {
                 if (Math.Abs(a - b) < theTol)
                 {
@@ -68,11 +68,11 @@ public class GccAna_BisecTests
         Assert.True(anAlgo.IsDone);
         Assert.True(anAlgo.HasSolution);
         Line2D aL = anAlgo.ThisSolution();
-        Assert.Equal(0.0, aL.Distance(new Point2D(2.5, 0.0)), Tol);
-        Assert.Equal(0.0, aL.Direction().Dot(new Direction2D(aP2.XY() - aP1.XY())), Tol);
+        Assert.Equal(0.0, aL.DistanceTo(new Point2D(2.5, 0.0)), Tol);
+        Assert.Equal(0.0, aL.Direction.Dot(new Direction2D(aP2.XY() - aP1.XY())), Tol);
         foreach (Point2D aP in Samples(new BLine(aL)))
         {
-            Assert.Equal(aP.Distance(aP1), aP.Distance(aP2), Tol);
+            Assert.Equal(aP.DistanceTo(aP1), aP.DistanceTo(aP2), Tol);
         }
     }
 
@@ -95,10 +95,10 @@ public class GccAna_BisecTests
             Assert.True(anAlgo.IsDone);
             ConstraintBisec aB = anAlgo.ThisSolution();
             Assert.Equal(ConstraintCurveType.Par, aB.ArcType());
-            Assert.Equal(0.0, aB.Parabola().Focus().Distance(aP), Tol);
+            Assert.Equal(0.0, aB.Parabola().Focus.DistanceTo(aP), Tol);
             foreach (Point2D aQ in Samples(aB))
             {
-                Assert.Equal(aQ.Distance(aP), aL.Distance(aQ), Tol);
+                Assert.Equal(aQ.DistanceTo(aP), aL.DistanceTo(aQ), Tol);
             }
         }
     }
@@ -110,8 +110,8 @@ public class GccAna_BisecTests
         LinPnt2dBisec anAlgo = new(aL, new Point2D(2, 0));
         ConstraintBisec aB = anAlgo.ThisSolution();
         Assert.Equal(ConstraintCurveType.Lin, aB.ArcType());
-        Assert.Equal(0.0, aB.Line().Direction().Dot(DX), Tol);
-        Assert.Equal(0.0, aB.Line().Distance(new Point2D(2, 0)), Tol);
+        Assert.Equal(0.0, aB.Line().Direction.Dot(DX), Tol);
+        Assert.Equal(0.0, aB.Line().DistanceTo(new Point2D(2, 0)), Tol);
         Assert.Throws<MethodNotImplementedException>(() => aB.Parabola());
     }
 
@@ -124,22 +124,22 @@ public class GccAna_BisecTests
         Assert.True(anAlgo.IsDone);
         Assert.Equal(2, anAlgo.SolutionCount);
         // The first along D1 + D2
-        Assert.True(anAlgo.ThisSolution(1).Direction().IsParallel(new Direction2D(DX.XY() + aL2.Direction().XY()), 1.0e-12));
+        Assert.True(anAlgo.ThisSolution(1).Direction.IsParallel(new Direction2D(DX.XY() + aL2.Direction.XY()), 1.0e-12));
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
             foreach (Point2D aP in Samples(new BLine(aSol)))
             {
-                Assert.Equal(aL1.Distance(aP), aL2.Distance(aP), Tol);
+                Assert.Equal(aL1.DistanceTo(aP), aL2.DistanceTo(aP), Tol);
             }
             anAlgo.Intersection1(i, out double aPs, out double aPa, out Point2D aPnt);
-            Assert.Equal(0.0, aPnt.Distance(new Point2D(1, 0)), Tol);
-            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aPnt), Tol);
-            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL1).Distance(aPnt), Tol);
+            Assert.Equal(0.0, aPnt.DistanceTo(new Point2D(1, 0)), Tol);
+            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aPnt), Tol);
+            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL1).DistanceTo(aPnt), Tol);
             anAlgo.Intersection2(i, out aPs, out aPa, out aPnt);
-            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL2).Distance(aPnt), Tol);
+            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL2).DistanceTo(aPnt), Tol);
         }
-        Assert.Equal(0.0, anAlgo.ThisSolution(1).Direction().Dot(anAlgo.ThisSolution(2).Direction()), Tol);
+        Assert.Equal(0.0, anAlgo.ThisSolution(1).Direction.Dot(anAlgo.ThisSolution(2).Direction), Tol);
         Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
     }
 
@@ -150,8 +150,8 @@ public class GccAna_BisecTests
         Line2D aL2 = new(new Point2D(5, 2), new Direction2D(-1, 0));
         Lin2dBisec anAlgo = new(aL1, aL2);
         Assert.Equal(1, anAlgo.SolutionCount);
-        Assert.Equal(1.0, anAlgo.ThisSolution(1).Location().Y(), Tol);
-        Assert.Equal(0.0, anAlgo.ThisSolution(1).Direction().Crossed(DX), Tol);
+        Assert.Equal(1.0, anAlgo.ThisSolution(1).Location.Y, Tol);
+        Assert.Equal(0.0, anAlgo.ThisSolution(1).Direction.Crossed(DX), Tol);
     }
 
     [Fact]
@@ -178,8 +178,8 @@ public class GccAna_BisecTests
             foreach (Point2D aP in Samples(aB))
             {
                 // the first parabola is equidistant from the line and the circle's near side, the second its far side
-                double aDc = aC.Location().Distance(aP);
-                Assert.Equal(aL.Distance(aP), i == 1 ? Math.Abs(aDc - aC.Radius()) : aDc + aC.Radius(), Tol);
+                double aDc = aC.Location.DistanceTo(aP);
+                Assert.Equal(aL.DistanceTo(aP), i == 1 ? Math.Abs(aDc - aC.Radius) : aDc + aC.Radius, Tol);
             }
         }
         Assert.Throws<OutOfRangeException>(() => anAlgo.ThisSolution(3));
@@ -284,10 +284,10 @@ public class GccAna_BisecTests
             Assert.Equal(aTypes[i], aBs[i].ArcType());
         }
         Assert.Equal(aP, aBs[0].Point());
-        Assert.Equal(3.0, aBs[2].Circle().Radius());
-        Assert.Equal(2.0, aBs[3].Ellipse().MinorRadius());
-        Assert.Equal(3.0, aBs[4].Hyperbola().MajorRadius());
-        Assert.Equal(2.0, aBs[5].Parabola().Focal());
+        Assert.Equal(3.0, aBs[2].Circle().Radius);
+        Assert.Equal(2.0, aBs[3].Ellipse().MinorRadius);
+        Assert.Equal(3.0, aBs[4].Hyperbola().MajorRadius);
+        Assert.Equal(2.0, aBs[5].Parabola().Focal);
         Assert.Throws<MethodNotImplementedException>(() => aBs[0].Line());
         Assert.Throws<MethodNotImplementedException>(() => aBs[1].Circle());
         Assert.Throws<MethodNotImplementedException>(() => aBs[2].Ellipse());

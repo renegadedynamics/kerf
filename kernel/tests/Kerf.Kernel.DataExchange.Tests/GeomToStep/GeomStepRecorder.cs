@@ -38,10 +38,10 @@ internal static class GeomStepRecorder
 
     private static string OneLine(string theText) => theText.Replace('\n', ' ').Replace('\r', ' ').TrimEnd(' ');
 
-    private static string Pnt(in Point3D P) => R(P.X()) + " " + R(P.Y()) + " " + R(P.Z());
-    private static string Pnt(in Point2D P) => R(P.X()) + " " + R(P.Y());
-    private static string Dir(in Direction3D D) => R(D.X()) + " " + R(D.Y()) + " " + R(D.Z());
-    private static string Dir(in Direction2D D) => R(D.X()) + " " + R(D.Y());
+    private static string Pnt(in Point3D P) => R(P.X) + " " + R(P.Y) + " " + R(P.Z);
+    private static string Pnt(in Point2D P) => R(P.X) + " " + R(P.Y);
+    private static string Dir(in Direction3D D) => R(D.X) + " " + R(D.Y) + " " + R(D.Z);
+    private static string Dir(in Direction2D D) => R(D.X) + " " + R(D.Y);
 
     private static StringWriter Writer()
     {
@@ -82,7 +82,7 @@ internal static class GeomStepRecorder
             }
         }
 
-        return aRes.Append(' ').Append(R(T.ScaleFactor())).Append(' ').Append((int)T.Form()).ToString();
+        return aRes.Append(' ').Append(R(T.ScaleFactor)).Append(' ').Append((int)T.Form).ToString();
     }
 
     private static string Trsf2d(in Transform2D T)
@@ -96,7 +96,7 @@ internal static class GeomStepRecorder
             }
         }
 
-        return aRes.Append(' ').Append(R(T.ScaleFactor())).Append(' ').Append((int)T.Form()).ToString();
+        return aRes.Append(' ').Append(R(T.ScaleFactor)).Append(' ').Append((int)T.Form).ToString();
     }
 
     // ---------------------------------------------------------------------------------------------------------
@@ -138,16 +138,16 @@ internal static class GeomStepRecorder
         }
         else if (theEnt is StepAxis1Placement A1)
         {
-            Try(theLines, thePrefix, "ax1", () => Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis1Placement(A1, F), r => Pnt(r.Ax1().Location()) + " " + Dir(r.Ax1().Direction())));
+            Try(theLines, thePrefix, "ax1", () => Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis1Placement(A1, F), r => Pnt(r.Ax1().Location) + " " + Dir(r.Ax1().Direction)));
         }
         else if (theEnt is StepAxis2Placement3d A2)
         {
             Try(theLines, thePrefix, "ax2", () => Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(A2, F),
-                                                       r => Pnt(r.Ax2().Location()) + " " + Dir(r.Ax2().Direction()) + " " + Dir(r.Ax2().XDirection())));
+                                                       r => Pnt(r.Ax2().Location) + " " + Dir(r.Ax2().Direction) + " " + Dir(r.Ax2().XDirection)));
         }
         else if (theEnt is StepAxis2Placement2d A22)
         {
-            Try(theLines, thePrefix, "ax2d", () => Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxisPlacement(A22, F), r => Pnt(r.Ax2d().Location()) + " " + Dir(r.Ax2d().Direction())));
+            Try(theLines, thePrefix, "ax2d", () => Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxisPlacement(A22, F), r => Pnt(r.Ax2d().Location) + " " + Dir(r.Ax2d().Direction)));
         }
         else if (theEnt is StepCartesianTransformationOperator3d T3)
         {
@@ -168,7 +168,7 @@ internal static class GeomStepRecorder
         else if (theEnt is StepSuParameters SU)
         {
             Try(theLines, thePrefix, "su", () => Null(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeAxis2Placement(SU),
-                                                      r => Pnt(r.Ax2().Location()) + " " + Dir(r.Ax2().Direction()) + " " + Dir(r.Ax2().XDirection())));
+                                                      r => Pnt(r.Ax2().Location) + " " + Dir(r.Ax2().Direction) + " " + Dir(r.Ax2().XDirection)));
         }
 
         if (theEnt is StepCurve C)
@@ -267,7 +267,7 @@ internal static class GeomStepRecorder
         if (C is LineCurve3D L)
         {
             X.Make(theId, "line", () => { var m = new GeometryMakeLine(L, F); return M(m, m.Value); });
-            X.Make(theId, "lin", () => { var m = new GeometryMakeLine(L.Lin(), F); return M(m, m.Value); });
+            X.Make(theId, "lin", () => { var m = new GeometryMakeLine(L.Line, F); return M(m, m.Value); });
         }
 
         if (C is ConicCurve3D Co)
@@ -278,13 +278,13 @@ internal static class GeomStepRecorder
         if (C is CircleCurve3D Ci)
         {
             X.Make(theId, "circle", () => { var m = new GeometryMakeCircle(Ci, F); return M(m, m.Value); });
-            X.Make(theId, "circ", () => { var m = new GeometryMakeCircle(Ci.Circ(), F); return M(m, m.Value); });
+            X.Make(theId, "circ", () => { var m = new GeometryMakeCircle(Ci.Circle, F); return M(m, m.Value); });
         }
 
         if (C is EllipseCurve3D E)
         {
             X.Make(theId, "ellipse", () => { var m = new GeometryMakeEllipse(E, F); return M(m, m.Value); });
-            X.Make(theId, "elips", () => { var m = new GeometryMakeEllipse(E.Elips(), F); return M(m, m.Value); });
+            X.Make(theId, "elips", () => { var m = new GeometryMakeEllipse(E.Ellipse, F); return M(m, m.Value); });
         }
 
         if (C is HyperbolaCurve3D H)
@@ -317,7 +317,7 @@ internal static class GeomStepRecorder
         if (C is LineCurve2D L)
         {
             X.Make(theId, "line", () => { var m = new GeometryMakeLine(L, F); return M(m, m.Value); });
-            X.Make(theId, "lin", () => { var m = new GeometryMakeLine(L.Lin2d(), F); return M(m, m.Value); });
+            X.Make(theId, "lin", () => { var m = new GeometryMakeLine(L.Line, F); return M(m, m.Value); });
         }
 
         if (C is ConicCurve2D Co)
@@ -380,7 +380,7 @@ internal static class GeomStepRecorder
         if (S is PlaneSurface P)
         {
             X.Make(theId, "plane", () => { var m = new GeometryMakePlane(P, F); return M(m, m.Value); });
-            X.Make(theId, "pln", () => { var m = new GeometryMakePlane(P.Pln(), F); return M(m, m.Value); });
+            X.Make(theId, "pln", () => { var m = new GeometryMakePlane(P.Plane, F); return M(m, m.Value); });
         }
 
         if (S is CylindricalSurface Cy)

@@ -63,8 +63,8 @@ public class IntSurf_LineOn2S_Test
 
         Assert.Equal(1, aLine.PointCount);
         Assert.Equal(3, aSplit.PointCount);
-        Assert.Equal(0.0, aLine.Value(1).Value().X(), 1e-15);
-        Assert.Equal(1.0, aSplit.Value(1).Value().X(), 1e-15);
+        Assert.Equal(0.0, aLine.Value(1).Value().X, 1e-15);
+        Assert.Equal(1.0, aSplit.Value(1).Value().X, 1e-15);
     }
 }
 
@@ -79,7 +79,7 @@ public class IntSurf_LineOn2STests
         IntSurf_LineOn2S_Test.buildPoint(new Point3D(x, 0, 0), u1, 0, u2, 0);
 
     private static double[] Xs(global::Kerf.Engine.Intersection.Walking.LineOn2S theLine) =>
-        Enumerable.Range(1, theLine.PointCount).Select(i => theLine.Value(i).Value().X()).ToArray();
+        Enumerable.Range(1, theLine.PointCount).Select(i => theLine.Value(i).Value().X).ToArray();
 
     [Fact]
     public void InsertBefore_inserts_or_appends_past_the_end()

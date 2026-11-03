@@ -25,5 +25,12 @@
     <InternalsVisibleTo Include="Kerf.Kernel.DataExchange.Tests" />
     <InternalsVisibleTo Include="Kerf.Kernel.Oracle.Tests" />
     <InternalsVisibleTo Include="Kerf.Kernel.DrawLite" />
+    <InternalsVisibleTo Include="Kerf.Kernel.DrawLite.Tests" />
+    <!-- The benchmarks measure the engine's own algorithms -->
+    <InternalsVisibleTo Include="Kerf.Kernel.Benchmarks" />
+    <InternalsVisibleTo Include="Kerf.Kernel.Bento.Benchmarks" />
+    <!-- The modelling layer (and its tests) until unit 10M moves it onto the public API (decision 1349, question 54) -->
+    <InternalsVisibleTo Include="Kerf.Modeling" />
+    <InternalsVisibleTo Include="Build123d.Tests" />
   </ItemGroup>
 </Project>

@@ -43,28 +43,28 @@ internal sealed class TestLine : Curve3D
 
     public override double ReversedParameter(double U) => -U;
 
-    public override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int N) => true;
+    internal override bool IsCN(int N) => true;
 
-    public override Point3D EvalD0(double U) => myOrigin.Translated(myDir * U);
+    internal override Point3D EvalD0(double U) => myOrigin.Translated(myDir * U);
 
-    public override ResD1 EvalD1(double U) => new ResD1 { Point = EvalD0(U), D1 = myDir };
+    internal override ResD1 EvalD1(double U) => new ResD1 { Point = EvalD0(U), D1 = myDir };
 
-    public override ResD2 EvalD2(double U) => new ResD2 { Point = EvalD0(U), D1 = myDir, D2 = new Vector3D(0, 0, 0) };
+    internal override ResD2 EvalD2(double U) => new ResD2 { Point = EvalD0(U), D1 = myDir, D2 = new Vector3D(0, 0, 0) };
 
-    public override ResD3 EvalD3(double U) =>
+    internal override ResD3 EvalD3(double U) =>
         new ResD3 { Point = EvalD0(U), D1 = myDir, D2 = new Vector3D(0, 0, 0), D3 = new Vector3D(0, 0, 0) };
 
-    public override Vector3D EvalDN(double U, int N) => N == 1 ? myDir : new Vector3D(0, 0, 0);
+    internal override Vector3D EvalDN(double U, int N) => N == 1 ? myDir : new Vector3D(0, 0, 0);
 }
 
 /// <summary>
@@ -85,7 +85,7 @@ internal sealed class TestSaddle : Surface
 
     public override double VReversedParameter(double V) => -V;
 
-    public override void Bounds(out double U1, out double U2, out double V1, out double V2)
+    internal override void ParameterBounds(out double U1, out double U2, out double V1, out double V2)
     {
         U1 = -10;
         U2 = 10;
@@ -105,18 +105,18 @@ internal sealed class TestSaddle : Surface
 
     public override Curve3D VIso(double V) => throw new NotSupportedException();
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCNu(int N) => true;
+    internal override bool IsCNu(int N) => true;
 
-    public override bool IsCNv(int N) => true;
+    internal override bool IsCNv(int N) => true;
 
-    public override Point3D EvalD0(double U, double V) => new Point3D(U, 2 * V, U * V);
+    internal override Point3D EvalD0(double U, double V) => new Point3D(U, 2 * V, U * V);
 
-    public override ResD1 EvalD1(double U, double V) =>
+    internal override ResD1 EvalD1(double U, double V) =>
         new ResD1 { Point = EvalD0(U, V), D1U = new Vector3D(1, 0, V), D1V = new Vector3D(0, 2, U) };
 
-    public override ResD2 EvalD2(double U, double V)
+    internal override ResD2 EvalD2(double U, double V)
     {
         ResD1 a = EvalD1(U, V);
         return new ResD2
@@ -126,7 +126,7 @@ internal sealed class TestSaddle : Surface
         };
     }
 
-    public override ResD3 EvalD3(double U, double V)
+    internal override ResD3 EvalD3(double U, double V)
     {
         ResD2 a = EvalD2(U, V);
         Vector3D z = new Vector3D(0, 0, 0);
@@ -137,7 +137,7 @@ internal sealed class TestSaddle : Surface
         };
     }
 
-    public override Vector3D EvalDN(double U, double V, int Nu, int Nv) => (Nu, Nv) switch
+    internal override Vector3D EvalDN(double U, double V, int Nu, int Nv) => (Nu, Nv) switch
     {
         (1, 0) => new Vector3D(1, 0, V),
         (0, 1) => new Vector3D(0, 2, U),

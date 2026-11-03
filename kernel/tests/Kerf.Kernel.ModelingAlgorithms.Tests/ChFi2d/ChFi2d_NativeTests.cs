@@ -155,7 +155,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(in Point3D theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    private static string Hex(in Point3D theP) => Hex(theP.X) + "," + Hex(theP.Y) + "," + Hex(theP.Z);
 
     private static string ExcName(Exception theE) => "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType());
 
@@ -172,8 +172,8 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         }
         string s = global::Kerf.Engine.Foundation.OcctTypeNames.Of(aC.GetType());
         s += "," + Hex(f) + "," + Hex(l) + "," + Hex(aC.Value(f)) + "," + Hex(aC.Value(0.5 * (f + l))) + "," + Hex(aC.Value(l));
-        s += theE.Orientation() == Orientation.Forward ? ",F"
-           : theE.Orientation() == Orientation.Reversed ? ",R" : ",O";
+        s += theE.Orientation == Orientation.Forward ? ",F"
+           : theE.Orientation == Orientation.Reversed ? ",R" : ",O";
         Exploration.Vertices(theE, out Vertex aV1, out Vertex aV2);
         s += "," + (aV1.IsNull ? "nv" : Hex(Tool.Pnt(aV1)));
         s += "," + (aV2.IsNull ? "nv" : Hex(Tool.Pnt(aV2)));

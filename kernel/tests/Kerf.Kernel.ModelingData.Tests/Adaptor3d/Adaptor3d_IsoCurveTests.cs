@@ -79,7 +79,7 @@ public class Adaptor3d_IsoCurveTests
     };
 
     private static void SameVec(in Vector3D theExpected, in Vector3D theActual, string theWhat)
-        => Assert.True(theExpected.IsEqual(theActual, 1e-12, 1e-12) || (theExpected - theActual).Magnitude() == 0.0,
+        => Assert.True(theExpected.IsEqual(theActual, 1e-12, 1e-12) || (theExpected - theActual).Magnitude == 0.0,
                        $"{theWhat}: {theExpected} {theActual}");
 
     [Theory]
@@ -162,7 +162,7 @@ public class Adaptor3d_IsoCurveTests
                     for (int k = 0; k <= 8; k++)
                     {
                         Point3D P = anIsoC.Value(aF + (aL - aF) * k / 8.0);
-                        Assert.True(aC.Distance(P) < 1e-9, $"{Name} {anIsoC.Iso()} circle at {k}: {aC.Distance(P)}");
+                        Assert.True(aC.DistanceTo(P) < 1e-9, $"{Name} {anIsoC.Iso()} circle at {k}: {aC.DistanceTo(P)}");
                     }
                 }
                 else if (anIsoC.GetType() == Line)
@@ -170,7 +170,7 @@ public class Adaptor3d_IsoCurveTests
                     Line3D aLin = anIsoC.Line();
                     for (int k = 0; k <= 8; k++)
                     {
-                        Assert.True(aLin.Distance(anIsoC.Value(aF + (aL - aF) * k / 8.0)) < 1e-9);
+                        Assert.True(aLin.DistanceTo(anIsoC.Value(aF + (aL - aF) * k / 8.0)) < 1e-9);
                     }
                 }
             }
@@ -223,7 +223,7 @@ public class Adaptor3d_IsoCurveTests
         TestSurfaceAdaptor anExt = MakeSurface("extrusion");
         IsoCurve anEV = new IsoCurve(anExt, IsoV, 1.5);
         Circle3D aC = anEV.Circle();
-        Assert.True(aC.Location().IsEqual(new Point3D(0, 0, 0).Translated(1.5 * new Vector3D(new Direction3D(0.1, 0.2, 1.0))), 1e-12));
+        Assert.True(aC.Location.IsEqual(new Point3D(0, 0, 0).Translated(1.5 * new Vector3D(new Direction3D(0.1, 0.2, 1.0))), 1e-12));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEV.Hyperbola());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEV.Parabola());
     }

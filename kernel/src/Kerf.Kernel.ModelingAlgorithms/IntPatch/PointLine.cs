@@ -101,7 +101,7 @@ public abstract class PointLine : PatchLine
         Vector3D n1 = du1.Crossed(dv1), n2 = du2.Crossed(dv2);
         // Tangent vector to the intersection curve
         Vector3D cTan = n1.Crossed(n2);
-        double sqMagnFDer = cTan.SquareMagnitude();
+        double sqMagnFDer = cTan.SquareMagnitude;
 
         if (sqMagnFDer < 1.0e-8)
         {
@@ -116,19 +116,19 @@ public abstract class PointLine : PatchLine
         {
             // This algorithm is described in NonSingularProcessing() function
             // in ApproxInt_ImpPrmSvSurfaces.gxx file
-            double sqNMagn = n1.SquareMagnitude();
+            double sqNMagn = n1.SquareMagnitude;
             Vector3D tgU = cTan.Crossed(du1), tgV = cTan.Crossed(dv1);
-            double deltaU = tgV.SquareMagnitude() / sqNMagn;
-            double deltaV = tgU.SquareMagnitude() / sqNMagn;
+            double deltaU = tgV.SquareMagnitude / sqNMagn;
+            double deltaV = tgU.SquareMagnitude / sqNMagn;
 
             duS1 = Math.CopySign(Math.Sqrt(deltaU), tgV.Dot(n1));
             dvS1 = -Math.CopySign(Math.Sqrt(deltaV), tgU.Dot(n1));
 
-            sqNMagn = n2.SquareMagnitude();
+            sqNMagn = n2.SquareMagnitude;
             tgU = tgU.WithXYZ(cTan.Crossed(du2).XYZ());
             tgV = tgV.WithXYZ(cTan.Crossed(dv2).XYZ());
-            deltaU = tgV.SquareMagnitude() / sqNMagn;
-            deltaV = tgU.SquareMagnitude() / sqNMagn;
+            deltaU = tgV.SquareMagnitude / sqNMagn;
+            deltaV = tgU.SquareMagnitude / sqNMagn;
 
             duS2 = Math.CopySign(Math.Sqrt(deltaU), tgV.Dot(n2));
             dvS2 = -Math.CopySign(Math.Sqrt(deltaV), tgU.Dot(n2));

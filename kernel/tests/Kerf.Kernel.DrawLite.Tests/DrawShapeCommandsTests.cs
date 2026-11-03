@@ -417,11 +417,11 @@ public class DrawShapeCommandsTests
         Assert.True(i.GetShape("s").IsPartner(anOriginal));
         i.Eval("reset s");
         // as in OCCT, an elementary location of the identity (TopLoc_Location(gp_Trsf()))
-        Assert.Equal(TransformForm.Identity, i.GetShape("s").Location().Transformation().Form());
+        Assert.Equal(TransformForm.Identity, i.GetShape("s").Placement.Transformation.Form);
 
         // tmove sets the location of another shape
         i.Eval($"restore {DataOcc}/solid.brep m; ttranslate m 5 0 0; tmove s m");
-        Assert.Equal(i.GetShape("m").Location().Transformation().TranslationPart(), i.GetShape("s").Location().Transformation().TranslationPart());
+        Assert.Equal(i.GetShape("m").Placement.Transformation.TranslationXyz(), i.GetShape("s").Placement.Transformation.TranslationXyz());
 
         // a scaling or a mirror rebuilds the geometry
         i.Eval("reset s; tscale s 0 0 0 2");
@@ -443,7 +443,7 @@ public class DrawShapeCommandsTests
         Assert.Equal("", i.Eval("bscale b 0 0 0 2"));
         Assert.Equal("Operation is not done: scale is not a valid transformation - scale = 2\n", aLog.ToString());
         Assert.Equal("", i.Eval("fscale b 0 0 0 2"));
-        Assert.Equal(2.0, i.GetShape("b").Location().Transformation().ScaleFactor());
+        Assert.Equal(2.0, i.GetShape("b").Placement.Transformation.ScaleFactor);
 
         aLog.GetStringBuilder().Clear();
         Assert.Equal("", Error(i, "ttranslate nothing 1 2 3"));

@@ -77,16 +77,16 @@ public class SurfCurvConstRadInv : SurfCurvFuncInv
         Point2D p2drst = _rst!.Value(x[3]);
         Point3D pts;
         Vector3D du, dv;
-        _surf.D1(p2drst.X(), p2drst.Y(), out pts, out du, out dv);
+        _surf.D1(p2drst.X, p2drst.Y, out pts, out du, out dv);
         f[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
         Vector3D ns = du.Crossed(dv);
-        double norm = nplan.Crossed(ns).Magnitude();
+        double norm = nplan.Crossed(ns).Magnitude;
         double unsurnorm = 1.0 / norm;
         ns = Vector3D.LinearForm(nplan.Dot(ns), nplan, -1.0, ns);
         ns = ns.Multiplied(unsurnorm);
         Vector3D @ref = new(ptcur, pts);
         @ref = Vector3D.LinearForm(_ray, ns, @ref);
-        f[3] = @ref.SquareMagnitude() - _ray * _ray;
+        f[3] = @ref.SquareMagnitude - _ray * _ray;
         return true;
     }
 
@@ -95,7 +95,7 @@ public class SurfCurvConstRadInv : SurfCurvFuncInv
         Point3D ptgui;
         Vector3D d1gui, d2gui;
         _guide.D2(x[1], out ptgui, out d1gui, out d2gui);
-        double normd1gui = d1gui.Magnitude();
+        double normd1gui = d1gui.Magnitude;
         double unsurnormd1gui = 1.0 / normd1gui;
         Vector3D nplan = d1gui.Multiplied(unsurnormd1gui);
         Vector3D dnplan = new();
@@ -114,24 +114,24 @@ public class SurfCurvConstRadInv : SurfCurvFuncInv
         _rst!.D1(x[3], out p2drst, out d1rst);
         Point3D pts;
         Vector3D d1u, d1v, d2u, d2v, duv;
-        _surf.D2(p2drst.X(), p2drst.Y(), out pts, out d1u, out d1v, out d2u, out d2v, out duv);
+        _surf.D2(p2drst.X, p2drst.Y, out pts, out d1u, out d1v, out d2u, out d2v, out duv);
         d[2, 1] = dnplan.XYZ().Dot(pts.XYZ()) + dtheD;
         d[2, 2] = 0.0;
         Vector3D dwrstpts = new();
-        dwrstpts = Vector3D.LinearForm(d1rst.X(), d1u, d1rst.Y(), d1v);
+        dwrstpts = Vector3D.LinearForm(d1rst.X, d1u, d1rst.Y, d1v);
         d[2, 3] = nplan.XYZ().Dot(dwrstpts.XYZ());
 
         Vector3D nsurf = d1u.Crossed(d1v);
         Vector3D dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
         Vector3D dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
         Vector3D dwrstnsurf = new();
-        dwrstnsurf = Vector3D.LinearForm(d1rst.X(), dunsurf, d1rst.Y(), dvnsurf);
+        dwrstnsurf = Vector3D.LinearForm(d1rst.X, dunsurf, d1rst.Y, dvnsurf);
 
         Vector3D nplancrosnsurf = nplan.Crossed(nsurf);
         Vector3D dwguinplancrosnsurf = dnplan.Crossed(nsurf);
         Vector3D dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
 
-        double norm2 = nplancrosnsurf.SquareMagnitude();
+        double norm2 = nplancrosnsurf.SquareMagnitude;
         double norm = Math.Sqrt(norm2);
         double unsurnorm = 1.0 / norm;
         double raysurnorm = _ray * unsurnorm;
@@ -168,7 +168,7 @@ public class SurfCurvConstRadInv : SurfCurvFuncInv
         Point3D ptgui;
         Vector3D d1gui, d2gui;
         _guide.D2(x[1], out ptgui, out d1gui, out d2gui);
-        double normd1gui = d1gui.Magnitude();
+        double normd1gui = d1gui.Magnitude;
         double unsurnormd1gui = 1.0 / normd1gui;
         Vector3D nplan = d1gui.Multiplied(unsurnormd1gui);
         double theD = -(nplan.XYZ().Dot(ptgui.XYZ()));
@@ -189,25 +189,25 @@ public class SurfCurvConstRadInv : SurfCurvFuncInv
         _rst!.D1(x[3], out p2drst, out d1rst);
         Point3D pts;
         Vector3D d1u, d1v, d2u, d2v, duv;
-        _surf.D2(p2drst.X(), p2drst.Y(), out pts, out d1u, out d1v, out d2u, out d2v, out duv);
+        _surf.D2(p2drst.X, p2drst.Y, out pts, out d1u, out d1v, out d2u, out d2v, out duv);
         f[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
         d[2, 1] = dnplan.XYZ().Dot(pts.XYZ()) + dtheD;
         d[2, 2] = 0.0;
         Vector3D dwrstpts = new();
-        dwrstpts = Vector3D.LinearForm(d1rst.X(), d1u, d1rst.Y(), d1v);
+        dwrstpts = Vector3D.LinearForm(d1rst.X, d1u, d1rst.Y, d1v);
         d[2, 3] = nplan.XYZ().Dot(dwrstpts.XYZ());
 
         Vector3D nsurf = d1u.Crossed(d1v);
         Vector3D dunsurf = d2u.Crossed(d1v).Added(d1u.Crossed(duv));
         Vector3D dvnsurf = d1u.Crossed(d2v).Added(duv.Crossed(d1v));
         Vector3D dwrstnsurf = new();
-        dwrstnsurf = Vector3D.LinearForm(d1rst.X(), dunsurf, d1rst.Y(), dvnsurf);
+        dwrstnsurf = Vector3D.LinearForm(d1rst.X, dunsurf, d1rst.Y, dvnsurf);
 
         Vector3D nplancrosnsurf = nplan.Crossed(nsurf);
         Vector3D dwguinplancrosnsurf = dnplan.Crossed(nsurf);
         Vector3D dwrstnplancrosnsurf = nplan.Crossed(dwrstnsurf);
 
-        double norm2 = nplancrosnsurf.SquareMagnitude();
+        double norm2 = nplancrosnsurf.SquareMagnitude;
         double norm = Math.Sqrt(norm2);
         double unsurnorm = 1.0 / norm;
         double raysurnorm = _ray * unsurnorm;
@@ -228,7 +228,7 @@ public class SurfCurvConstRadInv : SurfCurvFuncInv
         Vector3D corde = new(ptcur, pts);
         Vector3D @ref = new(), dwguiref = new(), dwrstref = new();
         @ref = Vector3D.LinearForm(raysurnorm, temp, corde);
-        f[3] = @ref.SquareMagnitude() - _ray * _ray;
+        f[3] = @ref.SquareMagnitude - _ray * _ray;
         dwguiref = Vector3D.LinearForm(raysurnorm, dwguitemp, -raysurnorm2 * dwguinorm, temp);
         dwrstref = Vector3D.LinearForm(raysurnorm, dwrsttemp, -raysurnorm2 * dwrstnorm, temp, dwrstpts);
 

@@ -84,9 +84,9 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
                 theCurve.Curve(c, P);
                 for (int i = 1; i <= np; i++)
                 {
-                    Value($"curve {c} pole {i} X", aCoords[3 * (i - 1)], P[i].X(), ref theMaxDev);
-                    Value($"curve {c} pole {i} Y", aCoords[3 * (i - 1) + 1], P[i].Y(), ref theMaxDev);
-                    Value($"curve {c} pole {i} Z", aCoords[3 * (i - 1) + 2], P[i].Z(), ref theMaxDev);
+                    Value($"curve {c} pole {i} X", aCoords[3 * (i - 1)], P[i].X, ref theMaxDev);
+                    Value($"curve {c} pole {i} Y", aCoords[3 * (i - 1) + 1], P[i].Y, ref theMaxDev);
+                    Value($"curve {c} pole {i} Z", aCoords[3 * (i - 1) + 2], P[i].Z, ref theMaxDev);
                 }
             }
             else
@@ -95,8 +95,8 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
                 theCurve.Curve(c, P);
                 for (int i = 1; i <= np; i++)
                 {
-                    Value($"curve {c} pole {i} X", aCoords[2 * (i - 1)], P[i].X(), ref theMaxDev);
-                    Value($"curve {c} pole {i} Y", aCoords[2 * (i - 1) + 1], P[i].Y(), ref theMaxDev);
+                    Value($"curve {c} pole {i} X", aCoords[2 * (i - 1)], P[i].X, ref theMaxDev);
+                    Value($"curve {c} pole {i} Y", aCoords[2 * (i - 1) + 1], P[i].Y, ref theMaxDev);
                 }
             }
         }

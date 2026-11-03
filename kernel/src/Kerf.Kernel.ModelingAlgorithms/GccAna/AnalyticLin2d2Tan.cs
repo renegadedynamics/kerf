@@ -58,12 +58,12 @@ public sealed class AnalyticLin2d2Tan
         double tol = Math.Abs(tolerance);
         _wellDone = false;
         _nbrSol = 0;
-        double dist = thePoint1.Distance(thePoint2);
+        double dist = thePoint1.DistanceTo(thePoint2);
         _qualifier1[1] = Qualifier.Noqualifier;
         _qualifier2[1] = Qualifier.Noqualifier;
         if (dist >= tol)
         {
-            Direction2D dir = new(thePoint2.X() - thePoint1.X(), thePoint2.Y() - thePoint1.Y());
+            Direction2D dir = new(thePoint2.X - thePoint1.X, thePoint2.Y - thePoint1.Y);
             _linsol[1] = new Line2D(thePoint1, dir);
             //   ===================================
             _wellDone = true;
@@ -100,21 +100,21 @@ public sealed class AnalyticLin2d2Tan
             throw new BadQualifierException();
         }
         Circle2D c1 = qualified1.Qualified();
-        double r1 = c1.Radius();
+        double r1 = c1.Radius;
 
         if (qualified1.IsEnclosed)
         {
             throw new BadQualifierException();
         }
         // ============================
-        else if (tol < r1 - thePoint.Distance(c1.Location()))
+        else if (tol < r1 - thePoint.DistanceTo(c1.Location))
         {
             _wellDone = true;
         }
-        else if (Math.Abs(thePoint.Distance(c1.Location()) - r1) <= tol)
+        else if (Math.Abs(thePoint.DistanceTo(c1.Location) - r1) <= tol)
         {
-            Direction2D dir = new(new Vector2D(c1.Location(), thePoint));
-            _linsol[1] = new Line2D(thePoint, new Direction2D(-dir.Y(), dir.X()));
+            Direction2D dir = new(new Vector2D(c1.Location, thePoint));
+            _linsol[1] = new Line2D(thePoint, new Direction2D(-dir.Y, dir.X));
             //   =====================================================================
             _qualifier1[1] = qualified1.Qualifier();
             _qualifier2[1] = Qualifier.Noqualifier;
@@ -126,7 +126,7 @@ public sealed class AnalyticLin2d2Tan
         else
         {
             double signe = 1;
-            double dist = thePoint.Distance(c1.Location());
+            double dist = thePoint.DistanceTo(c1.Location);
             double d = dist - Math.Sqrt(dist * dist - r1 * r1);
             if (qualified1.IsEnclosing)
             {
@@ -147,7 +147,7 @@ public sealed class AnalyticLin2d2Tan
             }
             for (int i = 1; i <= _nbrSol; i++)
             {
-                Point2D p1 = c1.Location().Rotated(thePoint, Math.Asin(signe * r1 / dist));
+                Point2D p1 = c1.Location.Rotated(thePoint, Math.Asin(signe * r1 / dist));
                 Direction2D d1 = new(new Vector2D(p1, thePoint));
                 p1 = new Point2D(p1.XY() + d * d1.XY());
                 _linsol[i] = new Line2D(p1, new Direction2D(new Vector2D(p1, thePoint)));
@@ -214,11 +214,11 @@ public sealed class AnalyticLin2d2Tan
         }
         else
         {
-            double r1 = c1.Radius();
-            double r2 = c2.Radius();
+            double r1 = c1.Radius;
+            double r2 = c2.Radius;
             Direction2D d1 = new();
             int signe = 1;
-            double dist = c1.Location().Distance(c2.Location());
+            double dist = c1.Location.DistanceTo(c2.Location);
             if (tol < Max(r1, r2) - dist - Min(r1, r2))
             {
                 _wellDone = true;
@@ -233,14 +233,14 @@ public sealed class AnalyticLin2d2Tan
                     {
                         if (r1 < r2)
                         {
-                            d1 = new Direction2D(new Vector2D(c2.Location(), c1.Location()));
+                            d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
                         }
                         else
                         {
-                            d1 = new Direction2D(new Vector2D(c1.Location(), c2.Location()));
+                            d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
                         }
-                        Point2D p1 = new(c1.Location().XY() + r1 * d1.XY());
-                        _linsol[1] = new Line2D(p1, new Direction2D(-d1.Y(), d1.X()));
+                        Point2D p1 = new(c1.Location.XY() + r1 * d1.XY());
+                        _linsol[1] = new Line2D(p1, new Direction2D(-d1.Y, d1.X));
                         //         =================================================
                         _qualifier1[1] = qualified1.Qualifier();
                         _qualifier2[1] = qualified2.Qualifier();
@@ -251,15 +251,15 @@ public sealed class AnalyticLin2d2Tan
                     }
                     else
                     {
-                        Point2D p1 = c2.Location().Rotated(c1.Location(), Math.Asin((r1 - r2) / dist));
-                        d1 = new Direction2D(new Vector2D(c1.Location(), p1));
-                        p1 = new Point2D((c1.Location().XY() + new Xy(r1 * d1.Y(), -r1 * d1.X())));
+                        Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin((r1 - r2) / dist));
+                        d1 = new Direction2D(new Vector2D(c1.Location, p1));
+                        p1 = new Point2D((c1.Location.XY() + new Xy(r1 * d1.Y, -r1 * d1.X)));
                         _linsol[1] = new Line2D(p1, d1);
                         //         ===========================
                         _qualifier1[1] = qualified1.Qualifier();
                         _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                         _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = new Point2D(c2.Location().XY() + new Xy(r2 * d1.Y(), -r2 * d1.X()));
+                        _pnttg2sol[1] = new Point2D(c2.Location.XY() + new Xy(r2 * d1.Y, -r2 * d1.X));
                         _wellDone = true;
                         _nbrSol = 1;
                     }
@@ -283,9 +283,9 @@ public sealed class AnalyticLin2d2Tan
                     }
                     else if (Math.Abs(dist - r1 - r2) < tol && dist > tol)
                     {
-                        d1 = new Direction2D(new Vector2D(c1.Location(), c2.Location()));
-                        Point2D p1 = new(c1.Location().XY() + r1 * d1.XY());
-                        _linsol[1] = new Line2D(p1, new Direction2D(-d1.Y(), d1.X()));
+                        d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
+                        Point2D p1 = new(c1.Location.XY() + r1 * d1.XY());
+                        _linsol[1] = new Line2D(p1, new Direction2D(-d1.Y, d1.X));
                         //          =================================================
                         _qualifier1[1] = qualified1.Qualifier();
                         _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
@@ -296,15 +296,15 @@ public sealed class AnalyticLin2d2Tan
                     }
                     else
                     {
-                        Point2D p1 = c2.Location().Rotated(c1.Location(), Math.Asin(signe * (r1 + r2) / dist));
-                        d1 = new Direction2D(new Vector2D(c1.Location(), p1));
-                        p1 = new Point2D(c1.Location().XY() + signe * (new Xy(r1 * d1.Y(), -r1 * d1.X())));
+                        Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r1 + r2) / dist));
+                        d1 = new Direction2D(new Vector2D(c1.Location, p1));
+                        p1 = new Point2D(c1.Location.XY() + signe * (new Xy(r1 * d1.Y, -r1 * d1.X)));
                         _linsol[1] = new Line2D(p1, d1);
                         //         ===========================
                         _qualifier1[1] = qualified1.Qualifier();
                         _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                         _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = new Point2D(c2.Location().XY() + signe * (new Xy(-r2 * d1.Y(), r2 * d1.X())));
+                        _pnttg2sol[1] = new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d1.Y, r2 * d1.X)));
                         _wellDone = true;
                         _nbrSol = 1;
                     }
@@ -316,34 +316,34 @@ public sealed class AnalyticLin2d2Tan
                     {
                         if (r1 < r2)
                         {
-                            d1 = new Direction2D(new Vector2D(c2.Location(), c1.Location()));
+                            d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
                         }
                         else
                         {
-                            d1 = new Direction2D(new Vector2D(c1.Location(), c2.Location()));
+                            d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
                         }
-                        _linsol[1] = new Line2D(new Point2D(c1.Location().XY() + r1 * d1.XY()),
+                        _linsol[1] = new Line2D(new Point2D(c1.Location.XY() + r1 * d1.XY()),
                                                  //         =============================================================
-                                                 new Direction2D(d1.Y(), -d1.X()));
+                                                 new Direction2D(d1.Y, -d1.X));
                         //                              =========================
                         _qualifier1[1] = qualified1.Qualifier();
                         _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                        _pnttg1sol[1] = new Point2D(c1.Location().XY() + r1 * d1.XY());
+                        _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * d1.XY());
                         _pnttg2sol[1] = _pnttg1sol[1];
                         _wellDone = true;
                         _nbrSol = 1;
                     }
                     else
                     {
-                        Point2D p1 = c2.Location().Rotated(c1.Location(), Math.Asin((r2 - r1) / dist));
-                        d1 = new Direction2D(new Vector2D(c1.Location(), p1));
-                        p1 = new Point2D(c1.Location().XY() + new Xy(-r1 * d1.Y(), r1 * d1.X()));
+                        Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin((r2 - r1) / dist));
+                        d1 = new Direction2D(new Vector2D(c1.Location, p1));
+                        p1 = new Point2D(c1.Location.XY() + new Xy(-r1 * d1.Y, r1 * d1.X));
                         _linsol[1] = new Line2D(p1, d1);
                         //         ===========================
                         _qualifier1[1] = qualified1.Qualifier();
                         _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                         _pnttg1sol[1] = p1;
-                        _pnttg2sol[1] = new Point2D(c2.Location().XY() + (new Xy(-r2 * d1.Y(), r2 * d1.X())));
+                        _pnttg2sol[1] = new Point2D(c2.Location.XY() + (new Xy(-r2 * d1.Y, r2 * d1.X)));
                         _wellDone = true;
                         _nbrSol = 1;
                     }
@@ -367,43 +367,43 @@ public sealed class AnalyticLin2d2Tan
                         {
                             if (r1 < r2)
                             {
-                                d1 = new Direction2D(new Vector2D(c2.Location(), c1.Location()));
+                                d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
                             }
                             else
                             {
-                                d1 = new Direction2D(new Vector2D(c1.Location(), c2.Location()));
+                                d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
                             }
-                            _linsol[1] = new Line2D(new Point2D(c1.Location().XY() + r1 * d1.XY()),
+                            _linsol[1] = new Line2D(new Point2D(c1.Location.XY() + r1 * d1.XY()),
                                                      //           =============================================================
-                                                     new Direction2D(-d1.Y(), d1.X()));
+                                                     new Direction2D(-d1.Y, d1.X));
                             //                                =========================
                             _qualifier1[1] = qualified1.Qualifier();
                             _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            _pnttg1sol[1] = new Point2D(c1.Location().XY() + r1 * d1.XY());
+                            _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * d1.XY());
                             _pnttg2sol[1] = _pnttg1sol[1];
                             _wellDone = true;
                             _nbrSol = 1;
                         }
                         else
                         {
-                            Point2D p1 = c2.Location().Rotated(c1.Location(), Math.Asin((r1 - r2) / dist));
-                            d1 = new Direction2D(new Vector2D(c1.Location(), p1));
-                            p1 = new Point2D(c1.Location().XY() + new Xy(r1 * d1.Y(), -r1 * d1.X()));
+                            Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin((r1 - r2) / dist));
+                            d1 = new Direction2D(new Vector2D(c1.Location, p1));
+                            p1 = new Point2D(c1.Location.XY() + new Xy(r1 * d1.Y, -r1 * d1.X));
                             _linsol[1] = new Line2D(p1, d1);
                             //           ===========================
                             _qualifier1[1] = qualified1.Qualifier();
                             _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                             _pnttg1sol[1] = p1;
                             _pnttg2sol[1] =
-                                new Point2D(c2.Location().XY() + signe * (new Xy(r2 * d1.Y(), -r2 * d1.X())));
+                                new Point2D(c2.Location.XY() + signe * (new Xy(r2 * d1.Y, -r2 * d1.X)));
                             _wellDone = true;
                             _nbrSol = 1;
                             if (Min(r1, r2) + Max(r1, r2) < dist)
                             {
                                 Point2D p2 =
-                                    c2.Location().Rotated(c1.Location(), Math.Asin(signe * (r1 + r2) / dist));
-                                Direction2D d2 = new(new Vector2D(c1.Location(), p2));
-                                p2 = new Point2D(c1.Location().XY() + signe * (new Xy(r1 * d2.Y(), -r1 * d2.X())));
+                                    c2.Location.Rotated(c1.Location, Math.Asin(signe * (r1 + r2) / dist));
+                                Direction2D d2 = new(new Vector2D(c1.Location, p2));
+                                p2 = new Point2D(c1.Location.XY() + signe * (new Xy(r1 * d2.Y, -r1 * d2.X)));
                                 _linsol[2] = new Line2D(p2, d2);
                                 //             ===========================
                                 // OCCT: writes the first solution's qualifiers (the second's stay unset) and gives the
@@ -411,7 +411,7 @@ public sealed class AnalyticLin2d2Tan
                                 _qualifier1[1] = qualified1.Qualifier();
                                 _qualifier2[1] = qualified1.Qualifier();
                                 _pnttg1sol[2] = p1;
-                                _pnttg2sol[2] = new Point2D(c2.Location().XY() + (new Xy(-r2 * d2.Y(), r2 * d2.X())));
+                                _pnttg2sol[2] = new Point2D(c2.Location.XY() + (new Xy(-r2 * d2.Y, r2 * d2.X)));
                                 _nbrSol = 2;
                             }
                         }
@@ -433,43 +433,43 @@ public sealed class AnalyticLin2d2Tan
                         {
                             if (r1 < r2)
                             {
-                                d1 = new Direction2D(new Vector2D(c2.Location(), c1.Location()));
+                                d1 = new Direction2D(new Vector2D(c2.Location, c1.Location));
                             }
                             else
                             {
-                                d1 = new Direction2D(new Vector2D(c1.Location(), c2.Location()));
+                                d1 = new Direction2D(new Vector2D(c1.Location, c2.Location));
                             }
-                            _linsol[1] = new Line2D(new Point2D(c1.Location().XY() + r1 * d1.XY()),
+                            _linsol[1] = new Line2D(new Point2D(c1.Location.XY() + r1 * d1.XY()),
                                                      //           =============================================================
-                                                     new Direction2D(d1.Y(), -d1.X()));
+                                                     new Direction2D(d1.Y, -d1.X));
                             //                                =========================
                             _qualifier1[1] = qualified1.Qualifier();
                             _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
-                            _pnttg1sol[1] = new Point2D(c1.Location().XY() + r1 * d1.XY());
+                            _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * d1.XY());
                             _pnttg2sol[1] = _pnttg1sol[1];
                             _wellDone = true;
                             _nbrSol = 1;
                         }
                         else
                         {
-                            Point2D p1 = c2.Location().Rotated(c1.Location(), Math.Asin(signe * (r2 - r1) / dist));
-                            d1 = new Direction2D(new Vector2D(c1.Location(), p1));
-                            p1 = new Point2D(c1.Location().XY() + new Xy(-r1 * d1.Y(), r1 * d1.X()));
+                            Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r2 - r1) / dist));
+                            d1 = new Direction2D(new Vector2D(c1.Location, p1));
+                            p1 = new Point2D(c1.Location.XY() + new Xy(-r1 * d1.Y, r1 * d1.X));
                             _linsol[1] = new Line2D(p1, d1);
                             //           ===========================
                             _qualifier1[1] = qualified1.Qualifier();
                             _qualifier2[1] = qualified1.Qualifier(); // OCCT: Qualified1 for the second qualifier
                             _pnttg1sol[1] = p1;
                             _pnttg2sol[1] =
-                                new Point2D(c2.Location().XY() + signe * (new Xy(-r2 * d1.Y(), r2 * d1.X())));
+                                new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d1.Y, r2 * d1.X)));
                             _wellDone = true;
                             _nbrSol = 1;
                             if (Min(r1, r2) + Max(r1, r2) < dist)
                             {
                                 Point2D p2 =
-                                    c2.Location().Rotated(c1.Location(), Math.Asin(signe * (-r2 - r1) / dist));
-                                Direction2D d2 = new(new Vector2D(c1.Location(), p2));
-                                p2 = new Point2D(c1.Location().XY() + signe * (new Xy(-r1 * d2.Y(), r1 * d2.X())));
+                                    c2.Location.Rotated(c1.Location, Math.Asin(signe * (-r2 - r1) / dist));
+                                Direction2D d2 = new(new Vector2D(c1.Location, p2));
+                                p2 = new Point2D(c1.Location.XY() + signe * (new Xy(-r1 * d2.Y, r1 * d2.X)));
                                 _linsol[2] = new Line2D(p2, d2);
                                 //             ===========================
                                 // OCCT: writes the first solution's qualifiers (the second's stay unset)
@@ -477,7 +477,7 @@ public sealed class AnalyticLin2d2Tan
                                 _qualifier2[1] = qualified1.Qualifier();
                                 _pnttg1sol[2] = p2;
                                 _pnttg2sol[2] =
-                                    new Point2D(c2.Location().XY() + signe * (new Xy(r2 * d2.Y(), -r2 * d2.X())));
+                                    new Point2D(c2.Location.XY() + signe * (new Xy(r2 * d2.Y, -r2 * d2.X)));
                                 _nbrSol = 2;
                             }
                         }
@@ -490,22 +490,22 @@ public sealed class AnalyticLin2d2Tan
                 {
                     signe = -signe;
                     _nbrSol++;
-                    Point2D p1 = c2.Location().Rotated(c1.Location(), Math.Asin(signe * (r2 - r1) / dist));
-                    d1 = new Direction2D(new Vector2D(c1.Location(), p1));
-                    p1 = new Point2D(c1.Location().XY() + signe * new Xy(-r1 * d1.Y(), r1 * d1.X()));
+                    Point2D p1 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r2 - r1) / dist));
+                    d1 = new Direction2D(new Vector2D(c1.Location, p1));
+                    p1 = new Point2D(c1.Location.XY() + signe * new Xy(-r1 * d1.Y, r1 * d1.X));
                     _linsol[_nbrSol] = new Line2D(p1, d1);
                     //       ===========================
                     _qualifier1[_nbrSol] = qualified1.Qualifier();
                     _qualifier2[_nbrSol] = qualified1.Qualifier();
                     _pnttg1sol[_nbrSol] = p1;
                     _pnttg2sol[_nbrSol] =
-                        new Point2D(c2.Location().XY() + signe * (new Xy(-r2 * d1.Y(), r2 * d1.X())));
+                        new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d1.Y, r2 * d1.X)));
                     _wellDone = true;
                     if (Min(r1, r2) + Max(r1, r2) < dist)
                     {
-                        Point2D p2 = c2.Location().Rotated(c1.Location(), Math.Asin(signe * (r2 + r1) / dist));
-                        Direction2D d2 = new(new Vector2D(c1.Location(), p2));
-                        p2 = new Point2D(c1.Location().XY() + signe * (new Xy(r1 * d2.Y(), -r1 * d2.X())));
+                        Point2D p2 = c2.Location.Rotated(c1.Location, Math.Asin(signe * (r2 + r1) / dist));
+                        Direction2D d2 = new(new Vector2D(c1.Location, p2));
+                        p2 = new Point2D(c1.Location.XY() + signe * (new Xy(r1 * d2.Y, -r1 * d2.X)));
                         _nbrSol++;
                         _linsol[_nbrSol] = new Line2D(p2, d2);
                         //         ================================
@@ -513,7 +513,7 @@ public sealed class AnalyticLin2d2Tan
                         _qualifier2[_nbrSol] = qualified1.Qualifier();
                         _pnttg1sol[_nbrSol] = p2;
                         _pnttg2sol[_nbrSol] =
-                            new Point2D(c2.Location().XY() + signe * (new Xy(-r2 * d2.Y(), r2 * d2.X())));
+                            new Point2D(c2.Location.XY() + signe * (new Xy(-r2 * d2.Y, r2 * d2.X)));
                     }
                 }
             }

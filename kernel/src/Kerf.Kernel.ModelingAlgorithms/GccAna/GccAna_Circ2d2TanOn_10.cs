@@ -46,25 +46,25 @@ public sealed partial class AnalyticCirc2d2TanOn
         double tol = Math.Abs(tolerance);
         Direction2D dirx = new(Direction2D.D.X);
         Line2D l1 = qualified1.Qualified();
-        Point2D originL1 = l1.Location();
-        Direction2D dirL1 = l1.Direction();
-        Direction2D normL1 = new(-dirL1.Y(), dirL1.X());
+        Point2D originL1 = l1.Location;
+        Direction2D dirL1 = l1.Direction;
+        Direction2D normL1 = new(-dirL1.Y, dirL1.X);
 
         //=========================================================================
         //   Processing of boundary cases.                                          +
         //=========================================================================
 
-        double ron = onCirc.Radius();
-        double distpc = onCirc.Location().Distance(point2);
-        Direction2D dir = new(onCirc.Location().XY() - point2.XY());
+        double ron = onCirc.Radius;
+        double distpc = onCirc.Location.DistanceTo(point2);
+        Direction2D dir = new(onCirc.Location.XY() - point2.XY());
         Point2D pinterm = new(point2.XY() + (distpc + ron) * dir.XY());
-        double dist1 = l1.Distance(pinterm);
+        double dist1 = l1.DistanceTo(pinterm);
 
         // OCCT: pinterm is distpc + Ron from Point2 but its distance to L1 is compared with distpc - Ron, so a circle
         // found here doesn't pass through Point2 unless OnCirc has radius 0
         if (Math.Abs(dist1 - distpc + ron) <= tol)
         {
-            dir = new Direction2D(-dirL1.Y(), dirL1.X());
+            dir = new Direction2D(-dirL1.Y, dirL1.X);
             Direction2D direc = new(originL1.XY() - pinterm.XY());
             if (qualified1.IsOutside)
             {
@@ -104,7 +104,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     _qualifier1[_nbrSol] = Qualifier.Enclosed;
                 }
                 _qualifier2[_nbrSol] = Qualifier.Noqualifier;
-                dc1 = new Direction2D(sign * new Xy(-dirL1.Y(), dirL1.X()));
+                dc1 = new Direction2D(sign * new Xy(-dirL1.Y, dirL1.X));
                 _pnttg1sol[_nbrSol] = new Point2D(pinterm.XY() + dist1 * dc1.XY());
                 _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                 _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);
@@ -143,13 +143,13 @@ public sealed partial class AnalyticCirc2d2TanOn
                     for (int j = 1; j <= intp.PointCount; j++)
                     {
                         Point2D center = intp.Point(j).Value();
-                        double radius = l1.Distance(center);
+                        double radius = l1.DistanceTo(center);
                         //	  int nbsol = 1;
                         bool ok = false;
                         if (qualified1.IsEnclosed)
                         {
-                            if ((((originL1.X() - center.X()) * (-dirL1.Y()))
-                                 + ((originL1.Y() - center.Y()) * (dirL1.X())))
+                            if ((((originL1.X - center.X) * (-dirL1.Y))
+                                 + ((originL1.Y - center.Y) * (dirL1.X)))
                                 <= 0)
                             {
                                 ok = true;
@@ -157,8 +157,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                         }
                         else if (qualified1.IsOutside)
                         {
-                            if ((((originL1.X() - center.X()) * (-dirL1.Y()))
-                                 + ((originL1.Y() - center.Y()) * (dirL1.X())))
+                            if ((((originL1.X - center.X) * (-dirL1.Y))
+                                 + ((originL1.Y - center.Y) * (dirL1.X)))
                                 >= 0)
                             {
                                 ok = true;
@@ -190,7 +190,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                 _qualifier1[_nbrSol] = Qualifier.Enclosed;
                             }
                             _qualifier2[_nbrSol] = Qualifier.Noqualifier;
-                            dc1 = new Direction2D(sign * new Xy(-dirL1.Y(), dirL1.X()));
+                            dc1 = new Direction2D(sign * new Xy(-dirL1.Y, dirL1.X));
                             // OCCT: dist1 (the boundary case's distance) instead of Radius, so the tangency point is
                             // off the line unless the two happen to be equal
                             _pnttg1sol[_nbrSol] = new Point2D(center.XY() + dist1 * dc1.XY());

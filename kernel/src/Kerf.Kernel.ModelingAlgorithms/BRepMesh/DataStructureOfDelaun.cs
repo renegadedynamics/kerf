@@ -598,7 +598,7 @@ public sealed class DataStructureOfDelaun : Transient
                         pnt[i] = new Point3D(node.X(), node.Y(), 0.0);
                     }
 
-                    if (pnt[0].SquareDistance(pnt[1]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (pnt[0].SquareDistanceTo(pnt[1]) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         continue;
                     }

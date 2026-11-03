@@ -40,8 +40,8 @@ public sealed class BSplineSurfaceKnotSplitting
         int lastUIndex = basisSurface.LastUKnotIndex();
         int firstVIndex = basisSurface.FirstVKnotIndex();
         int lastVIndex = basisSurface.LastVKnotIndex();
-        int uDegree = basisSurface.UDegree();
-        int vDegree = basisSurface.VDegree();
+        int uDegree = basisSurface.UDegree;
+        int vDegree = basisSurface.VDegree;
         int i;
 
         if (uContinuityRange == 0)

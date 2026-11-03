@@ -53,7 +53,7 @@ public sealed partial class BuildEdgeBuilder
         if (newV1.IsNull || newV2.IsNull)
         {
             var it = new Iterator();
-            if (edge.Orientation() == Forward || edge.Orientation() == Reversed)
+            if (edge.Orientation == Forward || edge.Orientation == Reversed)
             {
                 it.Initialize(edge, true, true);
             }
@@ -65,14 +65,14 @@ public sealed partial class BuildEdgeBuilder
             for (; it.More(); it.Next())
             {
                 Vertex v = ShapeCasts.Vertex(it.Value());
-                if (v.Orientation() == Forward)
+                if (v.Orientation == Forward)
                 {
                     if (newV1.IsNull)
                     {
                         newV1 = v;
                     }
                 }
-                else if (v.Orientation() == Reversed)
+                else if (v.Orientation == Reversed)
                 {
                     if (newV2.IsNull)
                     {
@@ -86,8 +86,8 @@ public sealed partial class BuildEdgeBuilder
             }
         }
 
-        newV1.Orientation(Forward);
-        newV2.Orientation(Reversed);
+        newV1.Orient(Forward);
+        newV2.Orient(Reversed);
 
         Shape sh = edge.EmptyCopied();
         Edge e = ShapeCasts.Edge(sh);
@@ -147,12 +147,12 @@ public sealed partial class BuildEdgeBuilder
         {
             if (tmpCurve is OffsetCurve3D offset)
             {
-                tmpCurve = offset.BasisCurve();
+                tmpCurve = offset.BasisCurve;
             }
 
             if (tmpCurve is TrimmedCurve3D trimmed)
             {
-                tmpCurve = trimmed.BasisCurve();
+                tmpCurve = trimmed.BasisCurve;
             }
         }
 
@@ -169,12 +169,12 @@ public sealed partial class BuildEdgeBuilder
         {
             if (tmpCurve is OffsetCurve2D offset)
             {
-                tmpCurve = offset.BasisCurve();
+                tmpCurve = offset.BasisCurve;
             }
 
             if (tmpCurve is TrimmedCurve2D trimmed)
             {
-                tmpCurve = trimmed.BasisCurve();
+                tmpCurve = trimmed.BasisCurve;
             }
         }
 
@@ -244,7 +244,7 @@ public sealed partial class BuildEdgeBuilder
                         continue;
                     }
                 }
-                else if (!toGC.IsCurveOnSurface() || surface != toGC.Surface() || l != toGC.Location())
+                else if (!toGC.IsCurveOnSurface() || surface != toGC.Surface() || !l.IsEqual(toGC.Location()))
                 {
                     continue;
                 }
@@ -265,9 +265,9 @@ public sealed partial class BuildEdgeBuilder
                     // 15.11.2002 PTV OCC966
                     if (crv3d is not null && IsPeriodic(crv3d))
                     {
-                        period = crv3d.Period();
-                        crvF = crv3d.FirstParameter();
-                        crvL = crv3d.LastParameter();
+                        period = crv3d.Period;
+                        crvF = crv3d.FirstParameter;
+                        crvL = crv3d.LastParameter;
                         doCheck = true;
                     }
                 }
@@ -277,9 +277,9 @@ public sealed partial class BuildEdgeBuilder
                     // 15.11.2002 PTV OCC966
                     if (crv2d is not null && IsPeriodic(crv2d))
                     {
-                        period = crv2d.Period();
-                        crvF = crv2d.FirstParameter();
-                        crvL = crv2d.LastParameter();
+                        period = crv2d.Period;
+                        crvF = crv2d.FirstParameter;
+                        crvL = crv2d.LastParameter;
                         doCheck = true;
                     }
                 }
@@ -324,8 +324,8 @@ public sealed partial class BuildEdgeBuilder
     /// <remarks>Internal: it writes into <paramref name="toedge"/>, which throws if it is frozen.</remarks>
     internal void CopyPCurves(in Edge toedge, in Edge fromedge)
     {
-        Placement fromLoc = fromedge.Location();
-        Placement toLoc = toedge.Location();
+        Placement fromLoc = fromedge.Placement;
+        Placement toLoc = toedge.Placement;
         // OCCT.NET: frozen: fromedge's list is only read (OCCT takes it with ChangeCurves)
         for (var fromitcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)fromedge.TShape()!).Curves());
              fromitcr.More();
@@ -346,7 +346,7 @@ public sealed partial class BuildEdgeBuilder
                 for (var toitcr = new NCollection_List<CurveRepresentation>.Iterator(tolist); toitcr.More() && !found; toitcr.Next())
                 {
                     toGC = toitcr.Value() as GCurve;
-                    if (toGC is null || !toGC.IsCurveOnSurface() || surface != toGC.Surface() || l != toGC.Location())
+                    if (toGC is null || !toGC.IsCurveOnSurface() || surface != toGC.Surface() || !l.IsEqual(toGC.Location()))
                     {
                         continue;
                     }
@@ -461,7 +461,7 @@ public sealed partial class BuildEdgeBuilder
         }
         else
         { // seam
-            if (edge.Orientation() == Forward)
+            if (edge.Orientation == Forward)
             {
                 b.UpdateEdge(edge, pcurve, c2d, face, 0);
             }
@@ -480,7 +480,7 @@ public sealed partial class BuildEdgeBuilder
     private static int CountPCurves(in Edge edge, in Face face)
     {
         Surface? s = Tool.Surface(face, out Placement L);
-        Placement l = L.Predivided(edge.Location());
+        Placement l = L.Predivided(edge.Placement);
 
         // OCCT.NET: frozen: the list is only read (OCCT takes it with ChangeCurves)
         for (var itcr = new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)edge.TShape()!).Curves());
@@ -548,7 +548,7 @@ public sealed partial class BuildEdgeBuilder
             Shape tmpshape = edge.Reversed();
             Edge erev = ShapeCasts.Edge(tmpshape);
             Curve2D? pcs = Tool.CurveOnSurface(erev, sub, out _, out _);
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             { // because B.UpdateEdge does not check edge orientation
                 b.UpdateEdge(edge, pcs, pc, sub, 0.0);
             }
@@ -572,7 +572,7 @@ public sealed partial class BuildEdgeBuilder
     public Curve2D TransformPCurve(Curve2D pcurve, in Transform2D trans, double uFact, ref double aFirst, ref double aLast)
     {
         Curve2D result = (Curve2D)pcurve.Copy();
-        if (trans.Form() != Identity)
+        if (trans.Form != Identity)
         {
             result.Transform(trans);
             aFirst = result.TransformedParameter(aFirst, trans);
@@ -588,7 +588,7 @@ public sealed partial class BuildEdgeBuilder
         {
             // OCCT.NET: frozen: BasisCurve() freezes the basis it hands out; OCCT changes the basis of its own discarded
             // copy, so the port changes a copy of it
-            result = (Curve2D)thecurve.BasisCurve().Copy();
+            result = (Curve2D)thecurve.BasisCurve.Copy();
         }
 
         GeneralTransform2D tMatu = new GeneralTransform2D();
@@ -642,8 +642,8 @@ public sealed partial class BuildEdgeBuilder
                     bSpline2d = Geom2dConvert2D.CurveToBSplineCurve(tcurve, QuasiAngular);
                 }
 
-                aFirst = bSpline2d.FirstParameter();
-                aLast = bSpline2d.LastParameter();
+                aFirst = bSpline2d.FirstParameter;
+                aLast = bSpline2d.LastParameter;
             }
             else if (result is not BSplineCurve2D)
             {
@@ -716,16 +716,16 @@ public sealed partial class BuildEdgeBuilder
                 if (!IsPeriodic(c3d))
                 {
                     bool isLess = false;
-                    if (f < c3d.FirstParameter())
+                    if (f < c3d.FirstParameter)
                     {
                         isLess = true;
-                        f = c3d.FirstParameter();
+                        f = c3d.FirstParameter;
                     }
 
-                    if (l > c3d.LastParameter())
+                    if (l > c3d.LastParameter)
                     {
                         isLess = true;
-                        l = c3d.LastParameter();
+                        l = c3d.LastParameter;
                     }
 
                     if (isLess)
@@ -793,7 +793,7 @@ public sealed partial class BuildEdgeBuilder
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
     internal void InternalMakeEdge(ref Edge edge, Curve3D curve, in Placement l)
     {
-        InternalMakeEdge(ref edge, curve, l, curve.FirstParameter(), curve.LastParameter());
+        InternalMakeEdge(ref edge, curve, l, curve.FirstParameter, curve.LastParameter);
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
@@ -814,8 +814,8 @@ public sealed partial class BuildEdgeBuilder
 
             Exploration.Vertices(e, out Vertex v1, out Vertex v2);
             Point3D P1 = Tool.Pnt(v1), P2 = Tool.Pnt(v2);
-            b.UpdateVertex(v1, P1.Transformed(l.Transformation()), 0.0);
-            b.UpdateVertex(v2, P2.Transformed(l.Transformation()), 0.0);
+            b.UpdateVertex(v1, P1.Transformed(l.Transformation), 0.0);
+            b.UpdateVertex(v2, P2.Transformed(l.Transformation), 0.0);
         }
 
         edge = e;
@@ -824,7 +824,7 @@ public sealed partial class BuildEdgeBuilder
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
     internal void InternalMakeEdge(ref Edge edge, Curve2D pcurve, in Face face)
     {
-        InternalMakeEdge(ref edge, pcurve, face, pcurve.FirstParameter(), pcurve.LastParameter());
+        InternalMakeEdge(ref edge, pcurve, face, pcurve.FirstParameter, pcurve.LastParameter);
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
@@ -837,7 +837,7 @@ public sealed partial class BuildEdgeBuilder
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
     internal void InternalMakeEdge(ref Edge edge, Curve2D pcurve, Surface s, in Placement l)
     {
-        InternalMakeEdge(ref edge, pcurve, s, l, pcurve.FirstParameter(), pcurve.LastParameter());
+        InternalMakeEdge(ref edge, pcurve, s, l, pcurve.FirstParameter, pcurve.LastParameter);
     }
 
     /// <summary>OCCT's MakeEdge: the new edge, not frozen.</summary>
@@ -859,8 +859,8 @@ public sealed partial class BuildEdgeBuilder
 
             Exploration.Vertices(e, out Vertex v1, out Vertex v2);
             Point3D P1 = Tool.Pnt(v1), P2 = Tool.Pnt(v2);
-            b.UpdateVertex(v1, P1.Transformed(l.Transformation()), 0.0);
-            b.UpdateVertex(v2, P2.Transformed(l.Transformation()), 0.0);
+            b.UpdateVertex(v1, P1.Transformed(l.Transformation), 0.0);
+            b.UpdateVertex(v2, P2.Transformed(l.Transformation), 0.0);
         }
 
         edge = e;

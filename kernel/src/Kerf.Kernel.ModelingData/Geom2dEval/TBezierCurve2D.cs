@@ -272,10 +272,10 @@ public sealed class TBezierCurve2D : BoundedCurve2D
     public bool IsRational => _rational;
 
     /// <summary>The start point C(0).</summary>
-    public override Point2D StartPoint() => EvalD0(0.0);
+    public override Point2D StartPoint => EvalD0(0.0);
 
     /// <summary>The end point C(Pi/alpha).</summary>
-    public override Point2D EndPoint() => EvalD0(M_PI / _alpha);
+    public override Point2D EndPoint => EvalD0(M_PI / _alpha);
 
     /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>
     protected internal override void Reverse()
@@ -291,19 +291,19 @@ public sealed class TBezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>0.</summary>
-    public override double FirstParameter() => 0.0;
+    public override double FirstParameter => 0.0;
 
     /// <summary>Pi/alpha.</summary>
-    public override double LastParameter() => M_PI / _alpha;
+    public override double LastParameter => M_PI / _alpha;
 
     /// <summary>True if the start and end points coincide (within Precision::Confusion()).</summary>
-    public override bool IsClosed => StartPoint().Distance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Confusion();
+    public override bool IsClosed => StartPoint.DistanceTo(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Confusion();
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 
     // Evaluate trigonometric basis functions at parameter theT: {T_0(t), T_1(t), ..., T_{2n}(t)}.
     private void EvalBasis(double t, NCollection_Array1<double> basis)
@@ -403,7 +403,7 @@ public sealed class TBezierCurve2D : BoundedCurve2D
         return new Vector2D(sum);
     }
 
-    public override Point2D EvalD0(double u)
+    internal override Point2D EvalD0(double u)
     {
         CurveBasisEval data;
         if (!_rational)
@@ -415,7 +415,7 @@ public sealed class TBezierCurve2D : BoundedCurve2D
         return new Point2D(data.N0 / data.W0);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
         ResD1 result;
         CurveBasisEval data;
@@ -435,7 +435,7 @@ public sealed class TBezierCurve2D : BoundedCurve2D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
         ResD2 result;
         CurveBasisEval data;
@@ -460,7 +460,7 @@ public sealed class TBezierCurve2D : BoundedCurve2D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
         ResD3 result;
         CurveBasisEval data;
@@ -490,7 +490,7 @@ public sealed class TBezierCurve2D : BoundedCurve2D
     }
 
     /// <exception cref="RangeErrorException">N &lt; 1.</exception>
-    public override Vector2D EvalDN(double u, int n)
+    internal override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {

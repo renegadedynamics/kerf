@@ -21,7 +21,7 @@ public class ProjLibTests
         while (true)
         {
             var aV = new Vector3D(theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5);
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return new Direction3D(aV);
             }
@@ -47,8 +47,8 @@ public class ProjLibTests
     }
 
     private static void AssertSame(in Point3D theExpected, in Point3D theActual, double theTol, string theWhat)
-        => Assert.True(theExpected.Distance(theActual) <= theTol,
-                       $"{theWhat}: expected {theExpected}, got {theActual} (distance {theExpected.Distance(theActual):E3})");
+        => Assert.True(theExpected.DistanceTo(theActual) <= theTol,
+                       $"{theWhat}: expected {theExpected}, got {theActual} (distance {theExpected.DistanceTo(theActual):E3})");
 
     // Plane
 
@@ -63,8 +63,8 @@ public class ProjLibTests
             // A conic in the plane: its axis is the plane's normal (either way), its X direction any in-plane one
             double anA = Real(aRandom, 0, 2 * M_PI);
             Point3D aLoc = global::Kerf.Engine.Geometry.ElSLib.Value(Real(aRandom, -10, 10), Real(aRandom, -10, 10), aPln);
-            Direction3D aX = new(new Vector3D(aPlAx.XDirection()) * Math.Cos(anA) + new Vector3D(aPlAx.YDirection()) * Math.Sin(anA));
-            Direction3D aN = aRandom.Next(2) == 0 ? aPlAx.Direction() : aPlAx.Direction().Reversed();
+            Direction3D aX = new(new Vector3D(aPlAx.XDirection) * Math.Cos(anA) + new Vector3D(aPlAx.YDirection) * Math.Sin(anA));
+            Direction3D aN = aRandom.Next(2) == 0 ? aPlAx.Direction : aPlAx.Direction.Reversed();
             var aCAx = new Frame3D(aLoc, aN, aX);
             double aMaj = Real(aRandom, 1, 10), aMin = Real(aRandom, 0.5, aMaj);
 
@@ -88,7 +88,7 @@ public class ProjLibTests
                 AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin), Back(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin2d)), Tol, $"case {i} line");
             }
 
-            Point3D Back(in Point2D theP) => global::Kerf.Engine.Geometry.ElSLib.Value(theP.X(), theP.Y(), aPln);
+            Point3D Back(in Point2D theP) => global::Kerf.Engine.Geometry.ElSLib.Value(theP.X, theP.Y, aPln);
         }
     }
 
@@ -100,7 +100,7 @@ public class ProjLibTests
         {
             var aPln = new Plane3D(RandomAx3(aRandom));
             Direction3D aD = RandomDir(aRandom);
-            if (aD.IsParallel(aPln.Axis().Direction(), 0.05))
+            if (aD.IsParallel(aPln.Axis.Direction, 0.05))
             {
                 continue;
             }
@@ -114,7 +114,7 @@ public class ProjLibTests
                 Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(-10 + 2 * j, aLin);
                 double aU, aV;
                 global::Kerf.Engine.Geometry.ElSLib.Parameters(aPln, aP, out aU, out aV);
-                Assert.True(aLin2d.Distance(new Point2D(aU, aV)) < Tol, $"case {i}");
+                Assert.True(aLin2d.DistanceTo(new Point2D(aU, aV)) < Tol, $"case {i}");
             }
         }
     }
@@ -157,22 +157,22 @@ public class ProjLibTests
             Point3D aP = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl);
 
             // A generatrix, either way
-            Direction3D aD = aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed();
+            Direction3D aD = aRandom.Next(2) == 0 ? anAx.Direction : anAx.Direction.Reversed();
             var aLin = new Line3D(aP, aD);
             Line2D aLin2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCyl, aLin);
 
             // A parallel, either orientation, starting anywhere
-            Point3D aC = global::Kerf.Engine.Geometry.ElSLib.Value(0, aV, aCyl).Translated(new Vector3D(anAx.XDirection()) * -aR);
+            Point3D aC = global::Kerf.Engine.Geometry.ElSLib.Value(0, aV, aCyl).Translated(new Vector3D(anAx.XDirection) * -aR);
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCyl);
-            var aCirc = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed(),
+            var aCirc = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction : anAx.Direction.Reversed(),
                                                new Direction3D(new Vector3D(aC, aStart))), aR);
             Line2D aCirc2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aCyl, aCirc);
             for (int j = 0; j <= 10; j++)
             {
                 double aT = -3 + 0.6 * j;
                 Point2D aL = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin2d), aCi = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc2d);
-                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin), global::Kerf.Engine.Geometry.ElSLib.Value(aL.X(), aL.Y(), aCyl), Tol, $"case {i} line");
-                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aCi.X(), aCi.Y(), aCyl), Tol, $"case {i} circle");
+                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin), global::Kerf.Engine.Geometry.ElSLib.Value(aL.X, aL.Y, aCyl), Tol, $"case {i} line");
+                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aCi.X, aCi.Y, aCyl), Tol, $"case {i} circle");
             }
         }
     }
@@ -206,8 +206,8 @@ public class ProjLibTests
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, -10, 10);
 
             // A generatrix through a point of the cone (the apex sometimes), either way
-            Point3D aP = aRandom.Next(8) == 0 ? aCone.Apex() : global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone);
-            global::Kerf.Engine.Geometry.ElSLib.ConeD1(aU, aV, aCone.Position(), aCone.RefRadius(), aCone.SemiAngle(), out _, out _, out Vector3D aDv);
+            Point3D aP = aRandom.Next(8) == 0 ? aCone.Apex : global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aCone);
+            global::Kerf.Engine.Geometry.ElSLib.ConeD1(aU, aV, aCone.Position, aCone.RefRadius, aCone.SemiAngle, out _, out _, out Vector3D aDv);
             Direction3D aD = aRandom.Next(2) == 0 ? new Direction3D(aDv) : new Direction3D(aDv).Reversed();
             var aLin = new Line3D(aP, aD);
             var aLinProj = new global::Kerf.Engine.Geometry.Projection.ConeProjector(aCone, aLin);
@@ -220,9 +220,9 @@ public class ProjLibTests
             {
                 continue;
             }
-            Point3D aC = anAx.Location().Translated(new Vector3D(anAx.Direction()) * (aVc * Math.Cos(anAng)));
+            Point3D aC = anAx.Location.Translated(new Vector3D(anAx.Direction) * (aVc * Math.Cos(anAng)));
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aVc, aCone);
-            var aCirc = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed(),
+            var aCirc = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction : anAx.Direction.Reversed(),
                                                new Direction3D(new Vector3D(aC, aStart))), Math.Abs(aRc));
             var aCircProj = new global::Kerf.Engine.Geometry.Projection.ConeProjector(aCone, aCirc);
             Assert.True(aCircProj.IsDone, $"case {i} circle");
@@ -230,8 +230,8 @@ public class ProjLibTests
             {
                 double aT = -3 + 0.6 * j;
                 Point2D aL = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLinProj.Line()), aCi = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCircProj.Line());
-                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin), global::Kerf.Engine.Geometry.ElSLib.Value(aL.X(), aL.Y(), aCone), Tol, $"case {i} line");
-                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aCi.X(), aCi.Y(), aCone), Tol, $"case {i} circle");
+                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aLin), global::Kerf.Engine.Geometry.ElSLib.Value(aL.X, aL.Y, aCone), Tol, $"case {i} line");
+                AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aCi.X, aCi.Y, aCone), Tol, $"case {i} circle");
             }
         }
     }
@@ -259,15 +259,15 @@ public class ProjLibTests
             double aU = Real(aRandom, 0, 2 * M_PI), aV = Real(aRandom, -1.4, 1.4);
 
             // A parallel (iso V), either orientation, starting anywhere
-            Point3D aC = anAx.Location().Translated(new Vector3D(anAx.Direction()) * (aR * Math.Sin(aV)));
+            Point3D aC = anAx.Location.Translated(new Vector3D(anAx.Direction) * (aR * Math.Sin(aV)));
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aSph);
-            var aPar = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed(),
+            var aPar = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction : anAx.Direction.Reversed(),
                                               new Direction3D(new Vector3D(aC, aStart))), aR * Math.Cos(aV));
 
             // A meridian (iso U): a great circle through the poles, starting anywhere
             Direction3D aMerN = new(new Vector3D(global::Kerf.Engine.Geometry.ElSLib.Value(aU, 0, aSph), global::Kerf.Engine.Geometry.ElSLib.Value(aU + M_PI / 2, 0, aSph)));
-            var aMer = new Circle3D(new Frame3D(anAx.Location(), aRandom.Next(2) == 0 ? aMerN : aMerN.Reversed(),
-                                              new Direction3D(new Vector3D(anAx.Location(), aStart))), aR);
+            var aMer = new Circle3D(new Frame3D(anAx.Location, aRandom.Next(2) == 0 ? aMerN : aMerN.Reversed(),
+                                              new Direction3D(new Vector3D(anAx.Location, aStart))), aR);
 
             foreach ((Circle3D aCirc, string aWhat) in new[] { (aPar, "parallel"), (aMer, "meridian") })
             {
@@ -277,19 +277,19 @@ public class ProjLibTests
                 {
                     double aT = -3 + 0.6 * j;
                     Point2D aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aProj.Line());
-                    AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aP.X(), aP.Y(), aSph), Tol, $"case {i} {aWhat}");
+                    AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aP.X, aP.Y, aSph), Tol, $"case {i} {aWhat}");
                 }
 
                 // SetInBounds keeps the curve and puts its first point in the natural bounds
                 aProj.SetInBounds(0.0);
                 Point2D aFirst = global::Kerf.Engine.Geometry.ElCLib.Value(0.0, aProj.Line());
-                Assert.InRange(aFirst.Y(), -M_PI / 2 - 1e-7, M_PI / 2 + 1e-7);
-                Assert.InRange(aFirst.X(), -1e-9, 2 * M_PI + 1e-9);
+                Assert.InRange(aFirst.Y, -M_PI / 2 - 1e-7, M_PI / 2 + 1e-7);
+                Assert.InRange(aFirst.X, -1e-9, 2 * M_PI + 1e-9);
                 for (int j = 0; j <= 10; j++)
                 {
                     double aT = -3 + 0.6 * j;
                     Point2D aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aProj.Line());
-                    AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aP.X(), aP.Y(), aSph), Tol, $"case {i} {aWhat} in bounds");
+                    AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aP.X, aP.Y, aSph), Tol, $"case {i} {aWhat} in bounds");
                 }
             }
         }
@@ -322,13 +322,13 @@ public class ProjLibTests
             Point3D aStart = global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aTor);
 
             // A parallel (iso V)
-            Point3D aC = anAx.Location().Translated(new Vector3D(anAx.Direction()) * (aMin * Math.Sin(aV)));
-            var aPar = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction() : anAx.Direction().Reversed(),
+            Point3D aC = anAx.Location.Translated(new Vector3D(anAx.Direction) * (aMin * Math.Sin(aV)));
+            var aPar = new Circle3D(new Frame3D(aC, aRandom.Next(2) == 0 ? anAx.Direction : anAx.Direction.Reversed(),
                                               new Direction3D(new Vector3D(aC, aStart))), aMaj + aMin * Math.Cos(aV));
 
             // A meridian (iso U): the circle of the minor radius
             Point3D aMc = global::Kerf.Engine.Geometry.ElSLib.Value(aU, 0, aTor).Translated(new Vector3D(global::Kerf.Engine.Geometry.ElSLib.Value(aU, 0, aTor), global::Kerf.Engine.Geometry.ElSLib.Value(aU, M_PI, aTor)) * 0.5);
-            Direction3D aMerN = new(new Vector3D(anAx.Direction()).Crossed(new Vector3D(anAx.Location(), aMc)));
+            Direction3D aMerN = new(new Vector3D(anAx.Direction).Crossed(new Vector3D(anAx.Location, aMc)));
             var aMer = new Circle3D(new Frame3D(aMc, aRandom.Next(2) == 0 ? aMerN : aMerN.Reversed(),
                                               new Direction3D(new Vector3D(aMc, aStart))), aMin);
 
@@ -340,7 +340,7 @@ public class ProjLibTests
                 {
                     double aT = -3 + 0.6 * j;
                     Point2D aP = global::Kerf.Engine.Geometry.ElCLib.Value(aT, aProj.Line());
-                    AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aP.X(), aP.Y(), aTor), 1e-8, $"case {i} {aWhat}");
+                    AssertSame(global::Kerf.Engine.Geometry.ElCLib.Value(aT, aCirc), global::Kerf.Engine.Geometry.ElSLib.Value(aP.X, aP.Y, aTor), 1e-8, $"case {i} {aWhat}");
                 }
             }
         }
@@ -370,8 +370,8 @@ public class ProjLibTests
 
         static void Check(in Point2D theP, double theU, double theV)
         {
-            Assert.Equal(theU, theP.X(), 1e-9);
-            Assert.Equal(theV, theP.Y(), 1e-9);
+            Assert.Equal(theU, theP.X, 1e-9);
+            Assert.Equal(theV, theP.Y, 1e-9);
         }
     }
 
@@ -381,15 +381,15 @@ public class ProjLibTests
         var aProj = new global::Kerf.Engine.Geometry.Projection.Projector();
         aProj.SetType(Line);
         aProj.UFrame(0, 1, 0, 2 * M_PI); // the default line (origin, X) is already in the frame
-        Assert.Equal(0.0, aProj.Line().Location().X());
+        Assert.Equal(0.0, aProj.Line().Location.X);
 
         var aCyl = new global::Kerf.Engine.Geometry.Projection.CylinderProjector(new Cylinder(new CoordinateSystem(), 1.0),
                                         new Line3D(new Point3D(0, 1, 0), new Direction3D(0, 0, 1)));
-        Assert.Equal(M_PI / 2, aCyl.Line().Location().X(), 1e-15);
+        Assert.Equal(M_PI / 2, aCyl.Line().Location.X, 1e-15);
         aCyl.UFrame(0.0, 1.0, 10.0, 2 * M_PI);
-        Assert.Equal(M_PI / 2 + 4 * M_PI, aCyl.Line().Location().X(), 1e-12);
+        Assert.Equal(M_PI / 2 + 4 * M_PI, aCyl.Line().Location.X, 1e-12);
         aCyl.VFrame(0.0, 1.0, 5.0, 2.0);
-        Assert.Equal(6.0, aCyl.Line().Location().Y(), 1e-12);
+        Assert.Equal(6.0, aCyl.Line().Location.Y, 1e-12);
         Assert.False(aCyl.IsPeriodic);
         aCyl.SetPeriodic();
         Assert.True(aCyl.IsPeriodic);

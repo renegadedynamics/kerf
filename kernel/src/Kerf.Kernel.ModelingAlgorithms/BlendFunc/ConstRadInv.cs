@@ -176,22 +176,22 @@ public class ConstRadInv : FuncInv
         Vector3D d1u1, d1v1, d1u2, d1v2;
         if (_first)
         {
-            _surf1.D1(pt2d.X(), pt2d.Y(), out pts1, out d1u1, out d1v1);
+            _surf1.D1(pt2d.X, pt2d.Y, out pts1, out d1u1, out d1v1);
             _surf2.D1(x[3], x[4], out pts2, out d1u2, out d1v2);
         }
         else
         {
             _surf1.D1(x[3], x[4], out pts1, out d1u1, out d1v1);
-            _surf2.D1(pt2d.X(), pt2d.Y(), out pts2, out d1u2, out d1v2);
+            _surf2.D1(pt2d.X, pt2d.Y, out pts2, out d1u2, out d1v2);
         }
 
-        f[1] = (nplan.X() * (pts1.X() + pts2.X()) + nplan.Y() * (pts1.Y() + pts2.Y())
-                + nplan.Z() * (pts1.Z() + pts2.Z()))
+        f[1] = (nplan.X * (pts1.X + pts2.X) + nplan.Y * (pts1.Y + pts2.Y)
+                + nplan.Z * (pts1.Z + pts2.Z))
                  / 2.0
                + theD;
 
         Vector3D ns1 = d1u1.Crossed(d1v1);
-        if (ns1.Magnitude() < Eps)
+        if (ns1.Magnitude < Eps)
         {
             if (_first)
             {
@@ -205,7 +205,7 @@ public class ConstRadInv : FuncInv
         }
 
         Vector3D ns2 = d1u2.Crossed(d1v2);
-        if (ns2.Magnitude() < Eps)
+        if (ns2.Magnitude < Eps)
         {
             if (!_first)
             {
@@ -218,8 +218,8 @@ public class ConstRadInv : FuncInv
             }
         }
 
-        double norm1 = nplan.Crossed(ns1).Magnitude();
-        double norm2 = nplan.Crossed(ns2).Magnitude();
+        double norm1 = nplan.Crossed(ns1).Magnitude;
+        double norm2 = nplan.Crossed(ns2).Magnitude;
         if (norm1 < Eps)
         {
             norm1 = 1;
@@ -234,9 +234,9 @@ public class ConstRadInv : FuncInv
         ns1 = Vector3D.LinearForm(nplan.Dot(ns1) / norm1, nplan, -1.0 / norm1, ns1);
         ns2 = Vector3D.LinearForm(nplan.Dot(ns2) / norm2, nplan, -1.0 / norm2, ns2);
         resul = Vector3D.LinearForm(_ray1, ns1, -1.0, new Vector3D(pts2.XYZ()), -_ray2, ns2, new Vector3D(pts1.XYZ()));
-        f[2] = resul.X();
-        f[3] = resul.Y();
-        f[4] = resul.Z();
+        f[2] = resul.X;
+        f[3] = resul.Y;
+        f[4] = resul.Z;
         return true;
     }
 
@@ -250,7 +250,7 @@ public class ConstRadInv : FuncInv
         double theD;
 
         _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
-        normtgcur = d1cur.Magnitude();
+        normtgcur = d1cur.Magnitude;
         nplan = d1cur.Normalized();
         theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
@@ -262,9 +262,9 @@ public class ConstRadInv : FuncInv
 
         if (_first)
         {
-            _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
+            _surf1.D2(p2d.X, p2d.Y, out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            temp = Vector3D.LinearForm(v2d.X, d1u1, v2d.Y, d1v1);
             d[1, 1] = nplan.Dot(temp) / 2.0;
             temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
@@ -274,8 +274,8 @@ public class ConstRadInv : FuncInv
         else
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-            _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            _surf2.D2(p2d.X, p2d.Y, out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
+            temp = Vector3D.LinearForm(v2d.X, d1u2, v2d.Y, d1v2);
             d[1, 1] = nplan.Dot(temp) / 2.0;
             temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
@@ -284,7 +284,7 @@ public class ConstRadInv : FuncInv
         }
 
         ns1 = d1u1.Crossed(d1v1);
-        if (ns1.Magnitude() < Eps)
+        if (ns1.Magnitude < Eps)
         {
             if (_first)
             {
@@ -298,7 +298,7 @@ public class ConstRadInv : FuncInv
         }
 
         ns2 = d1u2.Crossed(d1v2);
-        if (ns2.Magnitude() < Eps)
+        if (ns2.Magnitude < Eps)
         {
             if (!_first)
             {
@@ -313,8 +313,8 @@ public class ConstRadInv : FuncInv
 
         ncrossns1 = nplan.Crossed(ns1);
         ncrossns2 = nplan.Crossed(ns2);
-        norm1 = ncrossns1.Magnitude();
-        norm2 = ncrossns2.Magnitude();
+        norm1 = ncrossns1.Magnitude;
+        norm2 = ncrossns2.Magnitude;
         if (norm1 < Eps)
         {
             norm1 = 1; // Unsatisfactory, but it is not necessary to stop
@@ -357,18 +357,18 @@ public class ConstRadInv : FuncInv
 
         if (_first)
         {
-            d[2, 1] = v2d.X() * resul1.X() + v2d.Y() * resul2.X();
-            d[3, 1] = v2d.X() * resul1.Y() + v2d.Y() * resul2.Y();
-            d[4, 1] = v2d.X() * resul1.Z() + v2d.Y() * resul2.Z();
+            d[2, 1] = v2d.X * resul1.X + v2d.Y * resul2.X;
+            d[3, 1] = v2d.X * resul1.Y + v2d.Y * resul2.Y;
+            d[4, 1] = v2d.X * resul1.Z + v2d.Y * resul2.Z;
         }
         else
         {
-            d[2, 3] = resul1.X();
-            d[3, 3] = resul1.Y();
-            d[4, 3] = resul1.Z();
-            d[2, 4] = resul2.X();
-            d[3, 4] = resul2.Y();
-            d[4, 4] = resul2.Z();
+            d[2, 3] = resul1.X;
+            d[3, 3] = resul1.Y;
+            d[4, 3] = resul1.Z;
+            d[2, 4] = resul2.X;
+            d[3, 4] = resul2.Y;
+            d[4, 4] = resul2.Z;
         }
 
         // derived compared to w (parameter on guideline)
@@ -381,9 +381,9 @@ public class ConstRadInv : FuncInv
         resul2 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - dnplan.Dot(ns2)), nplan, -_ray2 * ndotns2 / norm2,
                              dnplan, -_ray2 * grosterme / norm2, ns2);
 
-        d[2, 2] = resul1.X() + resul2.X();
-        d[3, 2] = resul1.Y() + resul2.Y();
-        d[4, 2] = resul1.Z() + resul2.Z();
+        d[2, 2] = resul1.X + resul2.X;
+        d[3, 2] = resul1.Y + resul2.Y;
+        d[4, 2] = resul1.Z + resul2.Z;
 
         // Derived compared to u2
         temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
@@ -401,18 +401,18 @@ public class ConstRadInv : FuncInv
 
         if (!_first)
         {
-            d[2, 1] = v2d.X() * resul1.X() + v2d.Y() * resul2.X();
-            d[3, 1] = v2d.X() * resul1.Y() + v2d.Y() * resul2.Y();
-            d[4, 1] = v2d.X() * resul1.Z() + v2d.Y() * resul2.Z();
+            d[2, 1] = v2d.X * resul1.X + v2d.Y * resul2.X;
+            d[3, 1] = v2d.X * resul1.Y + v2d.Y * resul2.Y;
+            d[4, 1] = v2d.X * resul1.Z + v2d.Y * resul2.Z;
         }
         else
         {
-            d[2, 3] = resul1.X();
-            d[3, 3] = resul1.Y();
-            d[4, 3] = resul1.Z();
-            d[2, 4] = resul2.X();
-            d[3, 4] = resul2.Y();
-            d[4, 4] = resul2.Z();
+            d[2, 3] = resul1.X;
+            d[3, 3] = resul1.Y;
+            d[4, 3] = resul1.Z;
+            d[2, 4] = resul2.X;
+            d[3, 4] = resul2.Y;
+            d[4, 4] = resul2.Z;
         }
     }
 
@@ -427,7 +427,7 @@ public class ConstRadInv : FuncInv
         double theD;
 
         _curv.D2(x[2], out Point3D ptcur, out Vector3D d1cur, out Vector3D d2cur);
-        normtgcur = d1cur.Magnitude();
+        normtgcur = d1cur.Magnitude;
         nplan = d1cur.Normalized();
         theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
         dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
@@ -437,9 +437,9 @@ public class ConstRadInv : FuncInv
 
         if (_first)
         {
-            _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
+            _surf1.D2(p2d.X, p2d.Y, out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            temp = Vector3D.LinearForm(v2d.X, d1u1, v2d.Y, d1v1);
             d[1, 1] = nplan.Dot(temp) / 2.0;
             temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
@@ -449,8 +449,8 @@ public class ConstRadInv : FuncInv
         else
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
-            _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            _surf2.D2(p2d.X, p2d.Y, out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
+            temp = Vector3D.LinearForm(v2d.X, d1u2, v2d.Y, d1v2);
             d[1, 1] = nplan.Dot(temp) / 2.0;
             temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
@@ -458,13 +458,13 @@ public class ConstRadInv : FuncInv
             d[1, 4] = nplan.Dot(d1v1) / 2.0;
         }
 
-        f[1] = (nplan.X() * (pts1.X() + pts2.X()) + nplan.Y() * (pts1.Y() + pts2.Y())
-                + nplan.Z() * (pts1.Z() + pts2.Z()))
+        f[1] = (nplan.X * (pts1.X + pts2.X) + nplan.Y * (pts1.Y + pts2.Y)
+                + nplan.Z * (pts1.Z + pts2.Z))
                  / 2.0
                + theD;
 
         ns1 = d1u1.Crossed(d1v1);
-        if (ns1.Magnitude() < Eps)
+        if (ns1.Magnitude < Eps)
         {
             if (_first)
             {
@@ -478,7 +478,7 @@ public class ConstRadInv : FuncInv
         }
 
         ns2 = d1u2.Crossed(d1v2);
-        if (ns2.Magnitude() < Eps)
+        if (ns2.Magnitude < Eps)
         {
             if (!_first)
             {
@@ -493,8 +493,8 @@ public class ConstRadInv : FuncInv
 
         ncrossns1 = nplan.Crossed(ns1);
         ncrossns2 = nplan.Crossed(ns2);
-        norm1 = ncrossns1.Magnitude();
-        norm2 = ncrossns2.Magnitude();
+        norm1 = ncrossns1.Magnitude;
+        norm2 = ncrossns2.Magnitude;
         if (norm1 < Eps)
         {
             norm1 = 1; // Unsatisfactory, but it is not necessary to stop
@@ -513,9 +513,9 @@ public class ConstRadInv : FuncInv
         temp = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
         resul1 = resul1.Subtracted(_ray2 * temp);
 
-        f[2] = resul1.X();
-        f[3] = resul1.Y();
-        f[4] = resul1.Z();
+        f[2] = resul1.X;
+        f[3] = resul1.Y;
+        f[4] = resul1.Z;
 
         DerivativesTail(x, d, d1u1, d1v1, d1u2, d1v2, d2u1, d2v1, d2uv1, d2u2, d2v2, d2uv2, ns1, ns2, nplan, dnplan,
                         ncrossns1, ncrossns2, v2d, norm1, norm2, ndotns1, ndotns2);

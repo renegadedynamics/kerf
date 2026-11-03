@@ -133,7 +133,7 @@ public sealed class ImportTool
 
     public void AddContinuity(Surface geomSurf)
     {
-        switch (geomSurf.Continuity())
+        switch (geomSurf.Continuity)
         {
             case C0:
                 _nbC0Surf++;
@@ -149,7 +149,7 @@ public sealed class ImportTool
 
     public void AddContinuity(Curve3D geomCurve)
     {
-        switch (geomCurve.Continuity())
+        switch (geomCurve.Continuity)
         {
             case C0:
                 _nbC0Cur3++;
@@ -165,7 +165,7 @@ public sealed class ImportTool
 
     public void AddContinuity(Curve2D geomCur2d)
     {
-        switch (geomCur2d.Continuity())
+        switch (geomCur2d.Continuity)
         {
             case C0:
                 _nbC0Cur2++;

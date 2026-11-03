@@ -31,10 +31,10 @@ public sealed class BSplineCurveToBezierCurve2D
             _curve.SetNotPeriodic();
         }
 
-        double uf = _curve.FirstParameter();
-        double ul = _curve.LastParameter();
+        double uf = _curve.FirstParameter;
+        double ul = _curve.LastParameter;
         _curve.Segment(uf, ul);
-        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree());
+        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree);
     }
 
     /// <summary>
@@ -79,7 +79,7 @@ public sealed class BSplineCurveToBezierCurve2D
         }
 
         _curve.Segment(uf, ul);
-        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree());
+        _curve.IncreaseMultiplicity(_curve.FirstUKnotIndex(), _curve.LastUKnotIndex(), _curve.Degree);
     }
 
     /// <summary>A new Bezier curve for arc Index (1 to NbArcs()), oriented as the B-spline.</summary>
@@ -91,7 +91,7 @@ public sealed class BSplineCurveToBezierCurve2D
             throw new OutOfRangeException("Geom2dConvert_BSplineCurveToBezierCurve");
         }
 
-        int deg = _curve.Degree();
+        int deg = _curve.Degree;
 
         NCollection_Array1<Point2D> poles = new(1, deg + 1);
 

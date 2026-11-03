@@ -939,7 +939,7 @@ internal static class BOPTestDebugCommands
             Shape aSx = aItS.Value();
             if (i == 0)
             {
-                if (aSx.ShapeType() != ShapeType.Face)
+                if (aSx.Type != ShapeType.Face)
                 {
                     di.Append(" shape ").Append(i).Append(" is not a face\n");
                     return 1;
@@ -948,7 +948,7 @@ internal static class BOPTestDebugCommands
             }
             else
             {
-                if (aSx.ShapeType() != ShapeType.Edge)
+                if (aSx.Type != ShapeType.Edge)
                 {
                     di.Append(" shape ").Append(i).Append(" is not an edge\n");
                     return 1;

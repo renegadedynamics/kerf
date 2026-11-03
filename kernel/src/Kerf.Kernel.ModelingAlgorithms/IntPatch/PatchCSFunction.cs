@@ -45,11 +45,11 @@ public class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAd
     {
         Point3D psurf = HSurfaceTool.Value(_surface1, x[1], x[2]);
         Point2D p2d = PatchHCurve2dTool.Value(_curve, x[3]);
-        Point3D pcurv = HSurfaceTool.Value(_surface2, p2d.X(), p2d.Y());
+        Point3D pcurv = HSurfaceTool.Value(_surface2, p2d.X, p2d.Y);
 
-        f[1] = psurf.X() - pcurv.X();
-        f[2] = psurf.Y() - pcurv.Y();
-        f[3] = psurf.Z() - pcurv.Z();
+        f[1] = psurf.X - pcurv.X;
+        f[2] = psurf.Y - pcurv.Y;
+        f[3] = psurf.Z - pcurv.Z;
         _f = f[1] * f[1] + f[2] * f[2] + f[3] * f[3];
         _p = new Point3D((psurf.XYZ() + pcurv.XYZ()) / 2.0);
         return true;
@@ -61,18 +61,18 @@ public class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAd
 
         HSurfaceTool.D1(_surface1, x[1], x[2], out _, out Vector3D D1u, out Vector3D D1v);
         PatchHCurve2dTool.D1(_curve, x[3], out Point2D p2d, out Vector2D d2d);
-        HSurfaceTool.D1(_surface2, p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
-        d1w = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        HSurfaceTool.D1(_surface2, p2d.X, p2d.Y, out _, out Vector3D d1u, out Vector3D d1v);
+        d1w = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
-        d[1, 1] = D1u.X();
-        d[1, 2] = D1v.X();
-        d[1, 3] = -d1w.X();
-        d[2, 1] = D1u.Y();
-        d[2, 2] = D1v.Y();
-        d[2, 3] = -d1w.Y();
-        d[3, 1] = D1u.Z();
-        d[3, 2] = D1v.Z();
-        d[3, 3] = -d1w.Z();
+        d[1, 1] = D1u.X;
+        d[1, 2] = D1v.X;
+        d[1, 3] = -d1w.X;
+        d[2, 1] = D1u.Y;
+        d[2, 2] = D1v.Y;
+        d[2, 3] = -d1w.Y;
+        d[3, 1] = D1u.Z;
+        d[3, 2] = D1v.Z;
+        d[3, 3] = -d1w.Z;
         return true;
     }
 
@@ -82,21 +82,21 @@ public class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAd
 
         HSurfaceTool.D1(_surface1, x[1], x[2], out Point3D psurf, out Vector3D D1u, out Vector3D D1v);
         PatchHCurve2dTool.D1(_curve, x[3], out Point2D p2d, out Vector2D d2d);
-        HSurfaceTool.D1(_surface2, p2d.X(), p2d.Y(), out Point3D pcurv, out Vector3D d1u, out Vector3D d1v);
-        d1w = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        HSurfaceTool.D1(_surface2, p2d.X, p2d.Y, out Point3D pcurv, out Vector3D d1u, out Vector3D d1v);
+        d1w = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
-        d[1, 1] = D1u.X();
-        d[1, 2] = D1v.X();
-        d[1, 3] = -d1w.X();
-        d[2, 1] = D1u.Y();
-        d[2, 2] = D1v.Y();
-        d[2, 3] = -d1w.Y();
-        d[3, 1] = D1u.Z();
-        d[3, 2] = D1v.Z();
-        d[3, 3] = -d1w.Z();
-        f[1] = psurf.X() - pcurv.X();
-        f[2] = psurf.Y() - pcurv.Y();
-        f[3] = psurf.Z() - pcurv.Z();
+        d[1, 1] = D1u.X;
+        d[1, 2] = D1v.X;
+        d[1, 3] = -d1w.X;
+        d[2, 1] = D1u.Y;
+        d[2, 2] = D1v.Y;
+        d[2, 3] = -d1w.Y;
+        d[3, 1] = D1u.Z;
+        d[3, 2] = D1v.Z;
+        d[3, 3] = -d1w.Z;
+        f[1] = psurf.X - pcurv.X;
+        f[2] = psurf.Y - pcurv.Y;
+        f[3] = psurf.Z - pcurv.Z;
         _f = f[1] * f[1] + f[2] * f[2] + f[3] * f[3];
         _p = new Point3D((psurf.XYZ() + pcurv.XYZ()) / 2.0);
         return true;

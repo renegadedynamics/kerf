@@ -79,19 +79,19 @@ public class GeomEval_TBezierCurveTest
     {
         TBezierCurve aCurve = createSimpleCurve();
 
-        Point3D aStart = aCurve.EvalD0(aCurve.FirstParameter());
-        Point3D aEnd = aCurve.EvalD0(aCurve.LastParameter());
+        Point3D aStart = aCurve.EvalD0(aCurve.FirstParameter);
+        Point3D aEnd = aCurve.EvalD0(aCurve.LastParameter);
 
-        Assert.Equal(0.0, aStart.Distance(aCurve.StartPoint()), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aEnd.Distance(aCurve.EndPoint()), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aStart.DistanceTo(aCurve.StartPoint), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aEnd.DistanceTo(aCurve.EndPoint), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
     public void ParameterRange()
     {
         TBezierCurve aCurve = createSimpleCurve();
-        Assert.Equal(0.0, aCurve.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(M_PI / 1.0, aCurve.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion()); // Pi/alpha
+        Assert.Equal(0.0, aCurve.FirstParameter, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(M_PI / 1.0, aCurve.LastParameter, global::Kerf.Engine.Foundation.Precision.Confusion()); // Pi/alpha
     }
 
     [Fact]
@@ -106,9 +106,9 @@ public class GeomEval_TBezierCurveTest
 
         Vector3D aFD = new((aP1.XYZ() - aP2.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD1.D1.X(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Y(), aD1.D1.Y(), THE_FD_TOL_D1);
-        Assert.Equal(aFD.Z(), aD1.D1.Z(), THE_FD_TOL_D1);
+        Assert.Equal(aFD.X, aD1.D1.X, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Y, aD1.D1.Y, THE_FD_TOL_D1);
+        Assert.Equal(aFD.Z, aD1.D1.Z, THE_FD_TOL_D1);
     }
 
     [Fact]
@@ -176,9 +176,9 @@ public class GeomEval_TBezierCurveTest
 
         Vector3D aFD = new((aD1Plus.D1.XYZ() - aD1Minus.D1.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD2.D2.X(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Y(), aD2.D2.Y(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Z(), aD2.D2.Z(), THE_FD_TOL_D2);
+        Assert.Equal(aFD.X, aD2.D2.X, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Y, aD2.D2.Y, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Z, aD2.D2.Z, THE_FD_TOL_D2);
     }
 
     [Fact]
@@ -193,9 +193,9 @@ public class GeomEval_TBezierCurveTest
 
         Vector3D aFD = new((aD2Plus.D2.XYZ() - aD2Minus.D2.XYZ()) / (2.0 * global::Kerf.Engine.Foundation.Precision.Confusion()));
 
-        Assert.Equal(aFD.X(), aD3.D3.X(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Y(), aD3.D3.Y(), THE_FD_TOL_D2);
-        Assert.Equal(aFD.Z(), aD3.D3.Z(), THE_FD_TOL_D2);
+        Assert.Equal(aFD.X, aD3.D3.X, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Y, aD3.D3.Y, THE_FD_TOL_D2);
+        Assert.Equal(aFD.Z, aD3.D3.Z, THE_FD_TOL_D2);
     }
 
     [Fact]
@@ -207,9 +207,9 @@ public class GeomEval_TBezierCurveTest
         Curve3D.ResD1 aD1 = aCurve.EvalD1(aU);
         Vector3D aDN = aCurve.EvalDN(aU, 1);
 
-        Assert.Equal(aDN.X(), aD1.D1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aDN.Y(), aD1.D1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aDN.Z(), aD1.D1.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.X, aD1.D1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.Y, aD1.D1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aDN.Z, aD1.D1.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -225,7 +225,7 @@ public class GeomEval_TBezierCurveTest
         {
             Point3D aPT = aTBez.EvalD0(aU);
             Point3D aPC = global::Kerf.Engine.Geometry.ElCLib.Value(aU, aCircle);
-            Assert.Equal(0.0, aPT.Distance(aPC), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(0.0, aPT.DistanceTo(aPC), global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }
 
@@ -243,16 +243,16 @@ public class GeomEval_TBezierCurveTest
             Curve3D.ResD3 aDC;
             global::Kerf.Engine.Geometry.ElCLib.D3(aU, aCircle, out aDC.Point, out aDC.D1, out aDC.D2, out aDC.D3);
 
-            Assert.Equal(0.0, aDT.Point.Distance(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.X(), aDT.D1.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Y(), aDT.D1.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Z(), aDT.D1.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.X(), aDT.D2.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Y(), aDT.D2.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Z(), aDT.D2.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D3.X(), aDT.D3.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D3.Y(), aDT.D3.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D3.Z(), aDT.D3.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(0.0, aDT.Point.DistanceTo(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.X, aDT.D1.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Y, aDT.D1.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Z, aDT.D1.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.X, aDT.D2.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Y, aDT.D2.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Z, aDT.D2.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D3.X, aDT.D3.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D3.Y, aDT.D3.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D3.Z, aDT.D3.Z, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }
 
@@ -270,13 +270,13 @@ public class GeomEval_TBezierCurveTest
             Curve3D.ResD2 aDC;
             global::Kerf.Engine.Geometry.ElCLib.D2(aU, anEllipse, out aDC.Point, out aDC.D1, out aDC.D2);
 
-            Assert.Equal(0.0, aDT.Point.Distance(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.X(), aDT.D1.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Y(), aDT.D1.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D1.Z(), aDT.D1.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.X(), aDT.D2.X(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Y(), aDT.D2.Y(), global::Kerf.Engine.Foundation.Precision.Angular());
-            Assert.Equal(aDC.D2.Z(), aDT.D2.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(0.0, aDT.Point.DistanceTo(aDC.Point), global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.X, aDT.D1.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Y, aDT.D1.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D1.Z, aDT.D1.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.X, aDT.D2.X, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Y, aDT.D2.Y, global::Kerf.Engine.Foundation.Precision.Angular());
+            Assert.Equal(aDC.D2.Z, aDT.D2.Z, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }
 
@@ -284,8 +284,8 @@ public class GeomEval_TBezierCurveTest
     public void EvalD0_MultiplePoints()
     {
         TBezierCurve aCurve = createSimpleCurve();
-        double aFirst = aCurve.FirstParameter();
-        double aLast = aCurve.LastParameter();
+        double aFirst = aCurve.FirstParameter;
+        double aLast = aCurve.LastParameter;
         int aNbSamples = 10;
         double aStep = (aLast - aFirst) / aNbSamples;
 
@@ -296,12 +296,12 @@ public class GeomEval_TBezierCurveTest
             Point3D aPnt = aCurve.EvalD0(aU);
 
             // Verify the point has finite coordinates
-            Assert.True(double.IsFinite(aPnt.X()));
-            Assert.True(double.IsFinite(aPnt.Y()));
-            Assert.True(double.IsFinite(aPnt.Z()));
+            Assert.True(double.IsFinite(aPnt.X));
+            Assert.True(double.IsFinite(aPnt.Y));
+            Assert.True(double.IsFinite(aPnt.Z));
 
             // Verify consecutive points don't jump too far (smoothness check)
-            double aDist = aPrev.Distance(aPnt);
+            double aDist = aPrev.DistanceTo(aPnt);
             Assert.True(aDist < 10.0 * aStep);
 
             aPrev = aPnt;
@@ -325,7 +325,7 @@ public class GeomEval_TBezierCurveTest
             }
             TBezierCurve aCurve = new(aPoles, 0.8);
             TBezierCurve aRational = new(aPoles, aWeights, 0.8);
-            for (double aU = 0.1; aU < aCurve.LastParameter(); aU += 0.43)
+            for (double aU = 0.1; aU < aCurve.LastParameter; aU += 0.43)
             {
                 EvalTestUtils.CheckCurveDerivatives(aCurve, aU, 6);
                 EvalTestUtils.CheckCurveDerivatives(aRational, aU, 6);

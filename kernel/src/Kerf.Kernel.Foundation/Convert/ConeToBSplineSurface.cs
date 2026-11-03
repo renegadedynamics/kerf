@@ -97,8 +97,8 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         _nbVPoles = 2;
         _nbVKnots = 2;
 
-        double r = c.RefRadius();
-        double a = c.SemiAngle();
+        double r = c.RefRadius;
+        double a = c.SemiAngle;
 
         ComputePoles(r, a, u1, u2, v1, v2, _poles);
 
@@ -117,7 +117,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline in the mark of the sphere.
         // and calculate the weight of the bspline.
         double w1;
-        Transform3D trsf = new Transform3D().WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(c.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -156,8 +156,8 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // construction of the cone in the reference mark xOy.
 
-        double r = c.RefRadius();
-        double a = c.SemiAngle();
+        double r = c.RefRadius;
+        double a = c.SemiAngle;
 
         ComputePoles(r, a, 0.0, 2.0 * M_PI, v1, v2, _poles);
 
@@ -179,7 +179,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         // replace bspline in the mark of the cone.
         // and calculate the weight of bspline.
         double w;
-        Transform3D trsf = new Transform3D().WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(c.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {

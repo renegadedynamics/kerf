@@ -659,7 +659,7 @@ public sealed class MakeDraftPrism : Form
                 Surface s = Tool.Surface(fFrom)!;
                 if (s.GetType() == typeof(TrimmedSurface))
                 {
-                    s = ((TrimmedSurface)s).BasisSurface();
+                    s = ((TrimmedSurface)s).BasisSurface;
                 }
                 LibraryMakeFace fac = new(s, global::Kerf.Engine.Foundation.Precision.Confusion());
                 _sFrom = fac.InternalFace();
@@ -1121,14 +1121,14 @@ public sealed class MakeDraftPrism : Form
         Surface s = Tool.Surface(Base)!;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
         }
         if (s is not PlaneSurface p)
         {
             return null;
         }
-        Plane3D pp = p.Pln();
-        Direction3D normale = pp.Position().XDirection() ^ pp.Position().YDirection();
+        Plane3D pp = p.Plane;
+        Direction3D normale = pp.Position.XDirection ^ pp.Position.YDirection;
         Axis3D theAx = new(bar, normale);
         LineCurve3D theLin = new(theAx);
         return theLin;

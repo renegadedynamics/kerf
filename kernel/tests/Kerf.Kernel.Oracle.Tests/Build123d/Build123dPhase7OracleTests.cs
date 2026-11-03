@@ -524,10 +524,10 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
     private static Shape PForward(in Shape theShape)
     {
         Shape aSolid = theShape;
-        if (theShape.ShapeType() == ShapeType.Solid)
+        if (theShape.Type == ShapeType.Solid)
         {
-            var aFlags = new List<Orientation> { theShape.Orientation() };
-            aFlags.AddRange(PChildren(theShape).Select(s => s.Orientation()));
+            var aFlags = new List<Orientation> { theShape.Orientation };
+            aFlags.AddRange(PChildren(theShape).Select(s => s.Orientation));
             if (!aFlags.All(f => f == Orientation.Forward))
             {
                 var aB = new BrepBuilder();

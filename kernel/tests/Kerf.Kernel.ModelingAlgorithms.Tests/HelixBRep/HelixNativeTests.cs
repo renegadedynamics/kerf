@@ -80,11 +80,11 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             return "none";
         }
         var aS = new StringBuilder();
-        aS.Append(CultureInfo.InvariantCulture, $"{aB.Degree()} {aB.PoleCount} {aB.KnotCount}");
+        aS.Append(CultureInfo.InvariantCulture, $"{aB.Degree} {aB.PoleCount} {aB.KnotCount}");
         for (int i = 1; i <= aB.PoleCount; ++i)
         {
             Point3D aP = aB.Pole(i);
-            aS.Append(' ').Append(Hex(aP.X())).Append(' ').Append(Hex(aP.Y())).Append(' ').Append(Hex(aP.Z()));
+            aS.Append(' ').Append(Hex(aP.X)).Append(' ').Append(Hex(aP.Y)).Append(' ').Append(Hex(aP.Z));
         }
         for (int i = 1; i <= aB.KnotCount; ++i)
         {
@@ -237,7 +237,7 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
             try
             {
                 var aBH = new GeometryBuilderHelix();
-                aBH.SetPosition(theAxis.Ax2());
+                aBH.SetPosition(theAxis.Frame);
                 aBH.SetCurveParameters(0.0, aT2, theParts.P[i], aR, aTaper, aCW);
                 aBH.SetTolerance(1.0e-4);
                 aBH.SetApproxParameters(C1, 8, 1000);

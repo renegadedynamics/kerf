@@ -89,7 +89,7 @@ public class NurbsConvert : ModifyShape
                             Vertex newVtx = new();
                             Point3D vPnt = Tool.Pnt(vtx);
                             bb.MakeVertex(ref newVtx, vPnt, eTol + Epsilon(eTol));
-                            newVtx.Orientation(vtx.Orientation());
+                            newVtx.Orient(vtx.Orientation);
                             _vtxToReplace[vtx] = newVtx;
                         }
                     }
@@ -118,7 +118,7 @@ public class NurbsConvert : ModifyShape
 
     internal override Shape InternalModifiedShape(in Shape s)
     {
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             if (_vtxToReplace.ContainsKey(s))
             {
@@ -139,7 +139,7 @@ public class NurbsConvert : ModifyShape
     internal override NCollection_List<Shape> InternalModified(in Shape f)
     {
         _generated.Clear();
-        if (f.ShapeType() == ShapeType.Vertex)
+        if (f.Type == ShapeType.Vertex)
         {
             if (_vtxToReplace.ContainsKey(f))
             {

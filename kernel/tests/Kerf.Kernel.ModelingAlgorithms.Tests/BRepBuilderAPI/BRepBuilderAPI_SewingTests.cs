@@ -175,8 +175,8 @@ public class BRepBuilderAPI_SewingTests
         aSewing.Perform();
 
         Shape aResult = aSewing.SewedShape();
-        Assert.Equal(ShapeType.Shell, aResult.ShapeType());
-        Assert.True(aResult.Closed());
+        Assert.Equal(ShapeType.Shell, aResult.Type);
+        Assert.True(aResult.IsClosed);
         Assert.True(AllFrozen(aResult));
         Assert.Equal(6, Count(aResult, ShapeType.Face));
         Assert.Equal(12, Count(aResult, ShapeType.Edge));
@@ -221,7 +221,7 @@ public class BRepBuilderAPI_SewingTests
         aSewing.Perform();
 
         Shape aResult = aSewing.SewedShape();
-        Assert.Equal(ShapeType.Shell, aResult.ShapeType());
+        Assert.Equal(ShapeType.Shell, aResult.Type);
         aSnap.AssertUnchanged(aBox);
         foreach (Shape aF in aFaces)
         {
@@ -246,7 +246,7 @@ public class BRepBuilderAPI_SewingTests
         aSewing.Add(aF1);
         aSewing.Add(aF2);
         aSewing.Perform();
-        Assert.Equal(ShapeType.Shell, aSewing.SewedShape().ShapeType());
+        Assert.Equal(ShapeType.Shell, aSewing.SewedShape().Type);
         Assert.Equal(1, aSewing.ContigousEdgeCount);
         Assert.Equal(6, aSewing.FreeEdgeCount);
         // The vertices at the gap are merged: their tolerance covers half the gap.
@@ -259,7 +259,7 @@ public class BRepBuilderAPI_SewingTests
         aTight.Add(aF1);
         aTight.Add(aF2);
         aTight.Perform();
-        Assert.Equal(ShapeType.Compound, aTight.SewedShape().ShapeType());
+        Assert.Equal(ShapeType.Compound, aTight.SewedShape().Type);
         Assert.Equal(0, aTight.ContigousEdgeCount);
         Assert.Equal(8, aTight.FreeEdgeCount);
         // Nothing was sewn: the faces are the caller's.
@@ -280,7 +280,7 @@ public class BRepBuilderAPI_SewingTests
         {
             Edge anE = ShapeCasts.Edge(anExp.Current());
             Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
-            if (Math.Abs(Tool.Pnt(aV1).Y()) < 1e-9 && Math.Abs(Tool.Pnt(aV2).Y()) < 1e-9)
+            if (Math.Abs(Tool.Pnt(aV1).Y) < 1e-9 && Math.Abs(Tool.Pnt(aV2).Y) < 1e-9)
             {
                 aTop = anE;
             }
@@ -294,7 +294,7 @@ public class BRepBuilderAPI_SewingTests
         aSewing.Perform();
 
         Shape aResult = aSewing.SewedShape();
-        Assert.Equal(ShapeType.Shell, aResult.ShapeType());
+        Assert.Equal(ShapeType.Shell, aResult.Type);
         Assert.Equal(3, Count(aResult, ShapeType.Face));
         Assert.Equal(3, aSewing.ContigousEdgeCount);
         Assert.Equal(7, aSewing.FreeEdgeCount);
@@ -304,7 +304,7 @@ public class BRepBuilderAPI_SewingTests
         // section is bound to its boundary (occt-issues.md, 6S).
         Assert.Equal(0, NbBoundSections(aSewing, aTop, aA));
         Assert.True(aSewing.IsModifiedSubShape(aTop));
-        Assert.Equal(ShapeType.Wire, aSewing.ModifiedSubShape(aTop).ShapeType());
+        Assert.Equal(ShapeType.Wire, aSewing.ModifiedSubShape(aTop).Type);
 
         // Analysis only (no sewn shape): the two contiguous edges along y = 0 each have a section of A's edge, bound
         // to it.
@@ -431,7 +431,7 @@ public class BRepBuilderAPI_SewingTests
         anAgain.Perform();
         // A new shell (BRepTools_Quilt builds its shells), holding the same faces.
         Shape aResult = anAgain.SewedShape();
-        Assert.Equal(ShapeType.Shell, aResult.ShapeType());
+        Assert.Equal(ShapeType.Shell, aResult.Type);
         Assert.False(anAgain.IsModified(aShell));
         var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShell, ShapeType.Face, aFaces);

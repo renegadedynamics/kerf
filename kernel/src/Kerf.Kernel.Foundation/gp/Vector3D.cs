@@ -73,14 +73,14 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Vector3D(coord);
     }
 
-    public readonly Vector3D WithCoord(int index, double xi)
+    internal readonly Vector3D WithCoord(int index, double xi)
     {
         Xyz coord = _coord;
         coord.SetCoord(index, xi);
         return new Vector3D(coord);
     }
 
-    public readonly Vector3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
+    internal readonly Vector3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
 
     public readonly Vector3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
 
@@ -88,31 +88,31 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
 
     public readonly Vector3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
 
-    public readonly Vector3D WithXYZ(in Xyz coord) => new(coord);
+    internal readonly Vector3D WithXYZ(in Xyz coord) => new(coord);
 
     // Queries
 
-    public readonly double Coord(int index) => _coord.Coord(index);
+    internal readonly double Coord(int index) => _coord.Coord(index);
 
-    public readonly void Coord(out double xv, out double yv, out double zv)
+    internal readonly void Coord(out double xv, out double yv, out double zv)
     {
         xv = _coord.X();
         yv = _coord.Y();
         zv = _coord.Z();
     }
 
-    public readonly double X() => _coord.X();
+    public readonly double X => _coord.X();
 
-    public readonly double Y() => _coord.Y();
+    public readonly double Y => _coord.Y();
 
-    public readonly double Z() => _coord.Z();
+    public readonly double Z => _coord.Z();
 
-    public readonly Xyz XYZ() => _coord;
+    internal readonly Xyz XYZ() => _coord;
 
     public readonly bool IsEqual(in Vector3D other, double linearTolerance, double angularTolerance)
     {
-        double magnitude = Magnitude();
-        double otherMagnitude = other.Magnitude();
+        double magnitude = Magnitude;
+        double otherMagnitude = other.Magnitude;
         if (magnitude <= linearTolerance || otherMagnitude <= linearTolerance)
         {
             double val = Math.Abs(magnitude - otherMagnitude);
@@ -121,32 +121,32 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         else
         {
             double val = Math.Abs(magnitude - otherMagnitude);
-            return val <= linearTolerance && Angle(other) <= angularTolerance;
+            return val <= linearTolerance && AngleTo(other) <= angularTolerance;
         }
     }
 
     public readonly bool IsNormal(in Vector3D other, double angularTolerance)
     {
-        double ang = Math.Abs(M_PI_2 - Angle(other));
+        double ang = Math.Abs(M_PI_2 - AngleTo(other));
         return ang <= angularTolerance;
     }
 
     public readonly bool IsOpposite(in Vector3D other, double angularTolerance)
     {
-        double ang = M_PI - Angle(other);
+        double ang = M_PI - AngleTo(other);
         return ang <= angularTolerance;
     }
 
     public readonly bool IsParallel(in Vector3D other, double angularTolerance)
     {
-        double ang = Angle(other);
+        double ang = AngleTo(other);
         return ang <= angularTolerance || M_PI - ang <= angularTolerance;
     }
 
-    public readonly double Angle(in Vector3D other)
+    public readonly double AngleTo(in Vector3D other)
     {
         gp_VectorWithNullMagnitude_Raise_if(_coord.Modulus() <= Constants.Resolution() || other._coord.Modulus() <= Constants.Resolution(), " ");
-        return new Direction3D(_coord).Angle(new Direction3D(other._coord));
+        return new Direction3D(_coord).AngleTo(new Direction3D(other._coord));
     }
 
     public readonly double AngleWithRef(in Vector3D other, in Vector3D vRef)
@@ -157,9 +157,9 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
         return new Direction3D(_coord).AngleWithRef(new Direction3D(other._coord), new Direction3D(vRef._coord));
     }
 
-    public readonly double Magnitude() => _coord.Modulus();
+    public readonly double Magnitude => _coord.Modulus();
 
-    public readonly double SquareMagnitude() => _coord.SquareModulus();
+    public readonly double SquareMagnitude => _coord.SquareModulus();
 
     public readonly Vector3D Added(in Vector3D other)
     {
@@ -259,7 +259,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     public readonly Vector3D Mirrored(in Axis3D axis)
     {
         Xyz coord = _coord;
-        Xyz directionXYZ = axis.Direction().XYZ();
+        Xyz directionXYZ = axis.Direction.XYZ();
         double origX = coord.X();
         double origY = coord.Y();
         double origZ = coord.Z();
@@ -283,7 +283,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     public readonly Vector3D Mirrored(in Frame3D axis)
     {
         Xyz coord = _coord;
-        Xyz zDir = axis.Direction().XYZ();
+        Xyz zDir = axis.Direction.XYZ();
         Xyz mirXYZ = zDir.Crossed(coord);
 
         if (mirXYZ.Modulus() <= Constants.Resolution())
@@ -303,7 +303,7 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     {
         Xyz coord = _coord;
         Transform3D t = new Transform3D().WithRotation(a1, ang);
-        coord.Multiply(t.VectorialPart());
+        coord.Multiply(t.VectorialPart);
         return new Vector3D(coord);
     }
 
@@ -317,20 +317,20 @@ public readonly partial struct Vector3D : IEquatable<Vector3D>
     public readonly Vector3D Transformed(in Transform3D transformation)
     {
         Xyz coord = _coord;
-        if (transformation.Form() == Identity || transformation.Form() == Translation)
+        if (transformation.Form == Identity || transformation.Form == Translation)
         {
         }
-        else if (transformation.Form() == PntMirror)
+        else if (transformation.Form == PntMirror)
         {
             coord.Reverse();
         }
-        else if (transformation.Form() == global::Kerf.Geometry.TransformForm.Scale)
+        else if (transformation.Form == global::Kerf.Geometry.TransformForm.Scale)
         {
-            coord.Multiply(transformation.ScaleFactor());
+            coord.Multiply(transformation.ScaleFactor);
         }
         else
         {
-            coord.Multiply(transformation.VectorialPart());
+            coord.Multiply(transformation.VectorialPart);
         }
         return new Vector3D(coord);
     }

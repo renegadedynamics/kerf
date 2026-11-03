@@ -41,9 +41,9 @@ public class GeomEval_HypParaboloidSurfaceTest
         CoordinateSystem anAx3 = new();
         HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test EvalD0 at u=1, v=0: P = (1, 0, 1/A^2)
@@ -54,9 +54,9 @@ public class GeomEval_HypParaboloidSurfaceTest
         const double aA = 2.0, aB = 3.0;
         HypParaboloidSurface aSurf = new(anAx3, aA, aB);
         Point3D aP = aSurf.EvalD0(1.0, 0.0);
-        Assert.Equal(1.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0 / (aA * aA), aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion()); // u^2/A^2 = 1/4
+        Assert.Equal(1.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0 / (aA * aA), aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion()); // u^2/A^2 = 1/4
     }
 
     // Test EvalD0 at u=0, v=1: P = (0, 1, -1/B^2)
@@ -67,9 +67,9 @@ public class GeomEval_HypParaboloidSurfaceTest
         const double aA = 2.0, aB = 3.0;
         HypParaboloidSurface aSurf = new(anAx3, aA, aB);
         Point3D aP = aSurf.EvalD0(0.0, 1.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(-1.0 / (aB * aB), aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion()); // -v^2/B^2 = -1/9
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0 / (aB * aB), aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion()); // -v^2/B^2 = -1/9
     }
 
     // Test derivative consistency: compare EvalD1 vs finite difference of EvalD0
@@ -109,13 +109,13 @@ public class GeomEval_HypParaboloidSurfaceTest
         double aExpD2U_Z = 2.0 / (aA * aA);
         double aExpD2V_Z = -2.0 / (aB * aB);
 
-        Assert.Equal(aExpD2U_Z, aD2a.D2U.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aExpD2U_Z, aD2b.D2U.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aExpD2U_Z, aD2c.D2U.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpD2U_Z, aD2a.D2U.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpD2U_Z, aD2b.D2U.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpD2U_Z, aD2c.D2U.Z, global::Kerf.Engine.Foundation.Precision.Angular());
 
-        Assert.Equal(aExpD2V_Z, aD2a.D2V.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aExpD2V_Z, aD2b.D2V.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
-        Assert.Equal(aExpD2V_Z, aD2c.D2V.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpD2V_Z, aD2a.D2V.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpD2V_Z, aD2b.D2V.Z, global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(aExpD2V_Z, aD2c.D2V.Z, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     // Test Bounds: all infinite, not periodic, not closed
@@ -124,7 +124,7 @@ public class GeomEval_HypParaboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HypParaboloidSurface aSurf = new(anAx3, 1.0, 1.0);
-        aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.True(aU1 < -1e10);
         Assert.True(aU2 > 1e10);
         Assert.True(aV1 < -1e10);
@@ -210,10 +210,10 @@ public class GeomEval_HypParaboloidSurfaceTest
 
         Surface.ResD3 aD3 = aSurf.EvalD3(1.0, 1.0);
 
-        Assert.True(aD3.D3U.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.True(aD3.D3V.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.True(aD3.D3UUV.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.True(aD3.D3UVV.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aD3.D3U.Magnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aD3.D3V.Magnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aD3.D3UUV.Magnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aD3.D3UVV.Magnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
     }
 
     // Test D2UV cross derivative is zero since u and v terms are separated
@@ -227,9 +227,9 @@ public class GeomEval_HypParaboloidSurfaceTest
         foreach (double[] aPt in aTestPoints)
         {
             Surface.ResD2 aD2 = aSurf.EvalD2(aPt[0], aPt[1]);
-            Assert.Equal(0.0, aD2.D2UV.X(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-            Assert.Equal(0.0, aD2.D2UV.Y(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-            Assert.Equal(0.0, aD2.D2UV.Z(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+            Assert.Equal(0.0, aD2.D2UV.X, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+            Assert.Equal(0.0, aD2.D2UV.Y, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+            Assert.Equal(0.0, aD2.D2UV.Z, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
         }
     }
 
@@ -244,14 +244,14 @@ public class GeomEval_HypParaboloidSurfaceTest
         Surface.ResD2 aD2 = aSurf.EvalD2(1.5, -2.7);
 
         // D2U = (0, 0, 2/A^2)
-        Assert.Equal(0.0, aD2.D2U.X(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.Equal(0.0, aD2.D2U.Y(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.Equal(2.0 / (aA * aA), aD2.D2U.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(0.0, aD2.D2U.X, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.Equal(0.0, aD2.D2U.Y, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.Equal(2.0 / (aA * aA), aD2.D2U.Z, global::Kerf.Engine.Foundation.Precision.Angular());
 
         // D2V = (0, 0, -2/B^2)
-        Assert.Equal(0.0, aD2.D2V.X(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.Equal(0.0, aD2.D2V.Y(), global::Kerf.Engine.Foundation.Precision.SquareConfusion());
-        Assert.Equal(-2.0 / (aB * aB), aD2.D2V.Z(), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(0.0, aD2.D2V.X, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.Equal(0.0, aD2.D2V.Y, global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.Equal(-2.0 / (aB * aB), aD2.D2V.Z, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     // Test EvalDN consistency with D2 and higher-order zero
@@ -275,7 +275,7 @@ public class GeomEval_HypParaboloidSurfaceTest
 
         // EvalDN(u,v,3,0) should be zero vector
         Vector3D aDN30 = aSurf.EvalDN(aU, aV, 3, 0);
-        Assert.True(aDN30.Magnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aDN30.Magnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion());
     }
 
     // OCCT.NET addition: all partial derivatives up to order 4 against finite differences, off the standard frame.

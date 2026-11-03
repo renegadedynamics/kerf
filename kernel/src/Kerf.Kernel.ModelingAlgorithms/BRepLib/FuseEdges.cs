@@ -60,7 +60,7 @@ public sealed class FuseEdges
             int nbKnots = c.KnotCount;
             NCollection_Array1<int> mults = new(c.InternalMultiplicities());
             NCollection_Array1<double> knots = new(c.InternalKnots());
-            int i, m = c.Degree();
+            int i, m = c.Degree;
             m = m - cont;
 
             if (m < 1)
@@ -138,7 +138,7 @@ public sealed class FuseEdges
         {
             bc = (BSplineCurve3D)bc.Copy();
         }
-        Continuity cont = bc.Continuity();
+        Continuity cont = bc.Continuity;
         // Find new origin
         bc.SetPeriodic();
         int fk = bc.FirstUKnotIndex();
@@ -151,8 +151,8 @@ public sealed class FuseEdges
         for (k = fk; k <= lk; k++)
         {
             Point3D p = bc.Value(bc.Knot(k));
-            double d = pf.SquareDistance(p);
-            if (pf.SquareDistance(p) > eps)
+            double d = pf.SquareDistanceTo(p);
+            if (pf.SquareDistanceTo(p) > eps)
             {
                 if (d < dmin)
                 {
@@ -181,16 +181,16 @@ public sealed class FuseEdges
         }
 
         bc.SetOrigin(porig, global::Kerf.Engine.Foundation.Precision.PConfusion());
-        f = bc.FirstParameter();
-        l = bc.LastParameter();
+        f = bc.FirstParameter;
+        l = bc.LastParameter;
         bc.Segment(f, l);
-        if (cont > Continuity.C0 && bc.Continuity() == Continuity.C0)
+        if (cont > Continuity.C0 && bc.Continuity == Continuity.C0)
         {
             BCSmoothing(bc, 1, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
         c = bc;
-        f = c.FirstParameter();
-        l = c.LastParameter();
+        f = c.FirstParameter;
+        l = c.LastParameter;
     }
 
     /// <summary>
@@ -411,7 +411,7 @@ public sealed class FuseEdges
 
             // if edge not already treated
             if (!mapUniqEdg.Contains(edgecur)
-                && (edgecur.Orientation() == Forward || edgecur.Orientation() == Reversed))
+                && (edgecur.Orientation == Forward || edgecur.Orientation == Reversed))
             {
                 if (_avoidEdg.Contains(edgecur))
                 {
@@ -451,7 +451,7 @@ public sealed class FuseEdges
                 Edge oldEdge = ShapeCasts.Edge(lmapEdg.First());
 
                 // the first edge of the list will be replaced by the result fusion edge
-                if (oldEdge.Orientation() == Reversed)
+                if (oldEdge.Orientation == Reversed)
                 {
                     vl = Exploration.FirstVertex(ShapeCasts.Edge(lmapEdg.First()), true);
                     vf = Exploration.LastVertex(ShapeCasts.Edge(lmapEdg.Last()), true);
@@ -465,13 +465,13 @@ public sealed class FuseEdges
 
                 if (!loc.IsIdentity)
                 {
-                    C = (Curve3D)C.Transformed(loc.Transformation());
+                    C = (Curve3D)C.Transformed(loc.Transformation);
                 }
                 // if the curve is trimmed we get the basis curve to fit the new vertices
                 // otherwise the makeedge will fail.
                 if (C.GetType() == typeof(TrimmedCurve3D))
                 {
-                    C = ((TrimmedCurve3D)C).BasisCurve();
+                    C = ((TrimmedCurve3D)C).BasisCurve;
                 }
 
                 if (_concatBSpl)
@@ -506,16 +506,16 @@ public sealed class FuseEdges
                 if (vf.IsSame(vl) && isBSpline)
                 {
                     // closed edge
-                    f = C.FirstParameter();
-                    l = C.LastParameter();
+                    f = C.FirstParameter;
+                    l = C.LastParameter;
                     Point3D aPf = C.Value(f);
                     Point3D aPl = C.Value(l);
-                    if (aPf.Distance(aPl) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (aPf.DistanceTo(aPl) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         throw new ConstructionErrorException("FuseEdges : Curve must be closed");
                     }
                     Point3D pf = Tool.Pnt(vf);
-                    if (pf.Distance(aPf) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (pf.DistanceTo(aPf) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         MakeClosedCurve(ref C, pf, ref f, ref l);
                     }
@@ -665,7 +665,7 @@ public sealed class FuseEdges
             edgecur = edgeconnex;
             // here take care about internal or external edges. It is non-sense to build
             // the connex list with such edges.
-            ori2 = edgecur.Orientation();
+            ori2 = edgecur.Orientation;
             if (ori2 == External || ori2 == Internal)
             {
                 break;
@@ -688,7 +688,7 @@ public sealed class FuseEdges
             edgecur = edgeconnex;
             // here take care about internal or external edges. It is non-sense to build
             // the connex list with such edges.
-            ori2 = edgecur.Orientation();
+            ori2 = edgecur.Orientation;
             if (ori2 == External || ori2 == Internal)
             {
                 break;
@@ -796,7 +796,7 @@ public sealed class FuseEdges
 
         if (!loc.IsIdentity)
         {
-            Geometry3D gg1 = c1.Transformed(loc.Transformation());
+            Geometry3D gg1 = c1.Transformed(loc.Transformation);
             c1 = (Curve3D)gg1;
         }
         c2 = Tool.Curve(e2, out loc, out f2, out l2);
@@ -809,7 +809,7 @@ public sealed class FuseEdges
 
         if (!loc.IsIdentity)
         {
-            Geometry3D gg2 = c2.Transformed(loc.Transformation());
+            Geometry3D gg2 = c2.Transformed(loc.Transformation);
             c2 = (Curve3D)gg2;
         }
 
@@ -818,13 +818,13 @@ public sealed class FuseEdges
 
         if (typC1 == typeof(TrimmedCurve3D))
         {
-            c1 = ((TrimmedCurve3D)c1).BasisCurve();
+            c1 = ((TrimmedCurve3D)c1).BasisCurve;
             typC1 = c1.GetType();
         }
 
         if (typC2 == typeof(TrimmedCurve3D))
         {
-            c2 = ((TrimmedCurve3D)c2).BasisCurve();
+            c2 = ((TrimmedCurve3D)c2).BasisCurve;
             typC2 = c2.GetType();
         }
 
@@ -845,10 +845,10 @@ public sealed class FuseEdges
         double tolang = global::Kerf.Engine.Foundation.Precision.Angular();
         if (typC1 == typeof(LineCurve3D))
         {
-            Line3D li1 = ((LineCurve3D)c1).Lin();
-            Line3D li2 = ((LineCurve3D)c2).Lin();
-            Direction3D dir1 = li1.Direction();
-            Direction3D dir2 = li2.Direction();
+            Line3D li1 = ((LineCurve3D)c1).Line;
+            Line3D li2 = ((LineCurve3D)c2).Line;
+            Direction3D dir1 = li1.Direction;
+            Direction3D dir2 = li2.Direction;
 
             if (dir1.IsParallel(dir2, tolang))
             {
@@ -858,27 +858,27 @@ public sealed class FuseEdges
                 Point3D pl1 = Tool.Pnt(Exploration.LastVertex(e1, true));
                 Point3D pf2 = Tool.Pnt(Exploration.FirstVertex(e2, true));
                 Point3D pl2 = Tool.Pnt(Exploration.LastVertex(e2, true));
-                return pl1.Distance(pf2) >= tollin || pl2.Distance(pf1) >= tollin;
+                return pl1.DistanceTo(pf2) >= tollin || pl2.DistanceTo(pf1) >= tollin;
             }
             return false;
         }
         else if (typC1 == typeof(CircleCurve3D))
         {
-            Circle3D ci1 = ((CircleCurve3D)c1).Circ();
-            Circle3D ci2 = ((CircleCurve3D)c2).Circ();
-            return Math.Abs(ci1.Radius() - ci2.Radius()) <= tollin
-                   && ci1.Location().SquareDistance(ci2.Location()) <= tollin * tollin
-                   && ci1.Axis().IsParallel(ci2.Axis(), tolang);
+            Circle3D ci1 = ((CircleCurve3D)c1).Circle;
+            Circle3D ci2 = ((CircleCurve3D)c2).Circle;
+            return Math.Abs(ci1.Radius - ci2.Radius) <= tollin
+                   && ci1.Location.SquareDistanceTo(ci2.Location) <= tollin * tollin
+                   && ci1.Axis.IsParallel(ci2.Axis, tolang);
         }
         else if (typC1 == typeof(EllipseCurve3D))
         {
-            Ellipse3D ci1 = ((EllipseCurve3D)c1).Elips();
-            Ellipse3D ci2 = ((EllipseCurve3D)c2).Elips();
+            Ellipse3D ci1 = ((EllipseCurve3D)c1).Ellipse;
+            Ellipse3D ci2 = ((EllipseCurve3D)c2).Ellipse;
 
-            return Math.Abs(ci1.MajorRadius() - ci2.MajorRadius()) <= tollin
-                   && Math.Abs(ci1.MinorRadius() - ci2.MinorRadius()) <= tollin
-                   && ci1.Location().SquareDistance(ci2.Location()) <= tollin * tollin
-                   && ci1.Axis().IsParallel(ci2.Axis(), tolang);
+            return Math.Abs(ci1.MajorRadius - ci2.MajorRadius) <= tollin
+                   && Math.Abs(ci1.MinorRadius - ci2.MinorRadius) <= tollin
+                   && ci1.Location.SquareDistanceTo(ci2.Location) <= tollin * tollin
+                   && ci1.Axis.IsParallel(ci2.Axis, tolang);
         }
         else if (typC1 == typeof(BSplineCurve3D))
         {
@@ -894,19 +894,19 @@ public sealed class FuseEdges
                 c2.D1(f2, out aPf2, out df2);
                 c2.D1(l2, out aPl2, out dl2);
 
-                if (aPl1.Distance(aPf2) <= tollin && dl1.IsParallel(df2, tolang))
+                if (aPl1.DistanceTo(aPf2) <= tollin && dl1.IsParallel(df2, tolang))
                 {
                     return true;
                 }
-                if (aPl2.Distance(aPf1) <= tollin && dl2.IsParallel(df1, tolang))
+                if (aPl2.DistanceTo(aPf1) <= tollin && dl2.IsParallel(df1, tolang))
                 {
                     return true;
                 }
-                if (aPf1.Distance(aPf2) <= tollin && df1.IsParallel(df2, tolang))
+                if (aPf1.DistanceTo(aPf2) <= tollin && df1.IsParallel(df2, tolang))
                 {
                     return true;
                 }
-                if (aPl1.Distance(aPl2) <= tollin && dl1.IsParallel(dl2, tolang))
+                if (aPl1.DistanceTo(aPl2) <= tollin && dl1.IsParallel(dl2, tolang))
                 {
                     return true;
                 }
@@ -940,7 +940,7 @@ public sealed class FuseEdges
             double tol3d = Tool.Tolerance(e1);
             for (int p = 1; p <= nbpoles; p++)
             {
-                if ((p1[p]).Distance(p2[p]) > tol3d)
+                if ((p1[p]).DistanceTo(p2[p]) > tol3d)
                 {
                     return false;
                 }
@@ -1018,7 +1018,7 @@ public sealed class FuseEdges
 
             for (int p = 1; p <= nbpoles; p++)
             {
-                if ((p1[p]).Distance(p2[p]) > tollin)
+                if ((p1[p]).DistanceTo(p2[p]) > tollin)
                 {
                     return false;
                 }
@@ -1100,7 +1100,7 @@ public sealed class FuseEdges
 
                 // modified by NIZNHY-PKV Mon Nov 15 14:59:48 1999 _from
                 Edge fEdge = oldEdge;
-                fEdge.Orientation(Forward);
+                fEdge.Orient(Forward);
 
                 // take care if the edge is on the closing curve of a closed surface. In that case
                 // we get the second pcurve by reversing the edge and calling again CurveOnSurface method
@@ -1110,15 +1110,15 @@ public sealed class FuseEdges
                 {
                     fEdge.Reverse();
                     Face fFace = ShapeCasts.Face(itFac.Value());
-                    fFace.Orientation(Forward);
+                    fFace.Orient(Forward);
                     Curve2D curv2dR = Tool.CurveOnSurface(fEdge, fFace, out cf, out cl)!;
                     if (curv2d!.GetType() == typeof(TrimmedCurve2D))
                     {
-                        curv2d = ((TrimmedCurve2D)curv2d).BasisCurve();
+                        curv2d = ((TrimmedCurve2D)curv2d).BasisCurve;
                     }
                     if (curv2dR.GetType() == typeof(TrimmedCurve2D))
                     {
-                        curv2dR = ((TrimmedCurve2D)curv2dR).BasisCurve();
+                        curv2dR = ((TrimmedCurve2D)curv2dR).BasisCurve;
                     }
 
                     b.UpdateEdge(newEdge, curv2d, curv2dR, surf, loc, Tool.Tolerance(newEdge));
@@ -1128,11 +1128,11 @@ public sealed class FuseEdges
                     // update the new edge
                     if (curv2d!.GetType() == typeof(TrimmedCurve2D))
                     {
-                        curv2d = ((TrimmedCurve2D)curv2d).BasisCurve();
+                        curv2d = ((TrimmedCurve2D)curv2d).BasisCurve;
                     }
                     double f, l;
-                    f = curv2d.FirstParameter();
-                    l = curv2d.LastParameter();
+                    f = curv2d.FirstParameter;
+                    l = curv2d.LastParameter;
                     if (l - f + 2.0 * Epsilon(l - f) < el - ef)
                     {
                         BoundedCurve2D? bcurve = curv2d as BoundedCurve2D;
@@ -1162,8 +1162,8 @@ public sealed class FuseEdges
                         curv2d = concat.InternalBSplineCurve()!;
 
                         // check that new curve 2d is same range
-                        double first2 = curv2d.FirstParameter();
-                        double last2 = curv2d.LastParameter();
+                        double first2 = curv2d.FirstParameter;
+                        double last2 = curv2d.LastParameter;
                         if (Math.Abs(first2 - ef) > global::Kerf.Engine.Foundation.Precision.PConfusion()
                             || Math.Abs(last2 - el) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
@@ -1184,7 +1184,7 @@ public sealed class FuseEdges
                 // the value 0.
                 if (!pcurveRebuilt)
                 {
-                    if (oldEdge.Orientation() == Reversed)
+                    if (oldEdge.Orientation == Reversed)
                     {
                         b.Range(newEdge, cl - el + ef, cl);
                     }

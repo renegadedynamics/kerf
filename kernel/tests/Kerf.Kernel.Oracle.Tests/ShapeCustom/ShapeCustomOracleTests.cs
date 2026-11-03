@@ -262,8 +262,8 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
                 }
                 case 1:
                 {
-                    using N.gp_Pnt aP1 = Oracle.ToNative(aF.Location());
-                    using N.gp_Pnt aP2 = Oracle.ToNative(aF.Location().Translated(new Vector3D(aF.XDirection()) * r));
+                    using N.gp_Pnt aP1 = Oracle.ToNative(aF.Location);
+                    using N.gp_Pnt aP2 = Oracle.ToNative(aF.Location.Translated(new Vector3D(aF.XDirection) * r));
                     anEdge = Shape(new N.BRepBuilderAPI_MakeEdge(aP1, aP2));
                     aCurve = "segment";
                     break;
@@ -274,8 +274,8 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
                     var aPoles = new N.TColgp_Array1OfPnt(1, 5);
                     for (int k = 1; k <= 5; k++)
                     {
-                        Point3D aP = aF.Location().Translated(new Vector3D(aF.XDirection()) * (r + theO.Real(0, 3))
-                                                             + new Vector3D(aF.Direction()) * (k * 2.0));
+                        Point3D aP = aF.Location.Translated(new Vector3D(aF.XDirection) * (r + theO.Real(0, 3))
+                                                             + new Vector3D(aF.Direction) * (k * 2.0));
                         using N.gp_Pnt aNP = Oracle.ToNative(aP);
                         aPoles.SetValue(k, aNP);
                     }
@@ -287,13 +287,13 @@ public class ShapeCustomOracleTests(ITestOutputHelper output)
             }
             if (i % 2 == 0)
             {
-                using N.gp_Vec aV = Oracle.ToNative(new Vector3D(aF.YDirection()) * theO.Real(1, 10));
+                using N.gp_Vec aV = Oracle.ToNative(new Vector3D(aF.YDirection) * theO.Real(1, 10));
                 yield return ($"prism of {aCurve} {i}", Shape(new N.BRepPrimAPI_MakePrism(anEdge, aV)));
             }
             else
             {
                 // about the frame's Z axis, or the axis through the frame's origin along X for a segment (a cone or plane)
-                Axis3D anAxis = new Axis3D(aF.Location(), i % 3 == 1 ? aF.YDirection() : aF.Direction());
+                Axis3D anAxis = new Axis3D(aF.Location, i % 3 == 1 ? aF.YDirection : aF.Direction);
                 using N.gp_Ax1 aNAxis = Oracle.ToNative(anAxis);
                 double anAngle = theO.Int(0, 1) == 0 ? 2 * Math.PI : theO.Real(0.5, 6);
                 yield return ($"revolution of {aCurve} {i}", Shape(new N.BRepPrimAPI_MakeRevol(anEdge, aNAxis, anAngle)));

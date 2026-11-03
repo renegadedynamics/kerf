@@ -26,7 +26,7 @@ public class PointOnCurve : PointRepresentation
 
     /// <summary>A point on the curve <paramref name="c"/>.</summary>
     public override bool IsPointOnCurve(Curve3D? c, in Placement l)
-        => ReferenceEquals(_curve, c) && (Location() == l);
+        => ReferenceEquals(_curve, c) && (Location().IsEqual(l));
 
     public override Curve3D? Curve() => _curve;
 

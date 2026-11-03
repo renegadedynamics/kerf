@@ -39,7 +39,7 @@ public static class IntTools
         if (type == Circle)
         {
             Circle3D crc = c.Circle();
-            aR = crc.Radius();
+            aR = crc.Radius;
             return 0;
         }
 
@@ -70,7 +70,7 @@ public static class IntTools
         //
         //
         Circle3D circ = makeCirc.Value();
-        aR = circ.Radius();
+        aR = circ.Radius;
 
         return 0;
     }
@@ -308,8 +308,8 @@ public static class IntTools
         double first, last;
         CurveKind curveType;
 
-        first = aCurve.FirstParameter();
-        last = aCurve.LastParameter();
+        first = aCurve.FirstParameter;
+        last = aCurve.LastParameter;
 
         CurveAdaptor gac = new();
         gac.Load(aCurve, first, last);

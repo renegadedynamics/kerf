@@ -116,7 +116,7 @@ public class IntCurvesFaceTests
         for (int i = 1; i <= 2; i++)
         {
             Point3D aP = anInter.Pnt(i);
-            Assert.Equal(2.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-7);
+            Assert.Equal(2.0, Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y), 1e-7);
         }
     }
 

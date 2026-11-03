@@ -162,7 +162,7 @@ public class Gradient<MultiLine, ToolLine>
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.CoefsD1(uf, tabCoef, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out pt, out v1);
                 myV = new Vector3D(pt, tabP[k]);
                 fu += myV * v1;
-                dfu += v1.SquareMagnitude();
+                dfu += v1.SquareMagnitude;
             }
             i2 = 0;
             for (k = 1; k <= nbP2d; k++)
@@ -175,7 +175,7 @@ public class Gradient<MultiLine, ToolLine>
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.CoefsD1(uf, tabCoef2d, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out pt2d, out v12d);
                 myV2d = new Vector2D(pt2d, tabP2d[k]);
                 fu += myV2d * v12d;
-                dfu += v12d.SquareMagnitude();
+                dfu += v12d.SquareMagnitude;
             }
 
             if (dfu >= RealEpsilon())

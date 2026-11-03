@@ -122,13 +122,13 @@ public class ApiMakeRevol : MakeSweep
                 {
                     // Make the copy if degenerated edge occurs more then once
                     Shape copyE = edge.EmptyCopied();
-                    copyE.Orientation(Forward);
+                    copyE.Orient(Forward);
                     var vIter = new Iterator(edge.Oriented(Forward), false);
                     for (; vIter.More(); vIter.Next())
                     {
                         bb.Add(copyE, vIter.Value());
                     }
-                    copyE.Orientation(edge.Orientation());
+                    copyE.Orient(edge.Orientation);
                     l.Append(copyE);
                     _degenerated.Append(copyE);
                 }
@@ -192,7 +192,7 @@ public class ApiMakeRevol : MakeSweep
                                 cel.Remove(it);
                                 break;
                             }
-                            if (it.Value().Orientation() == e.Orientation())
+                            if (it.Value().Orientation == e.Orientation)
                             {
                                 // All other occurrences of anE are replaced by any copy
                                 // with suitable orientation
@@ -240,11 +240,11 @@ public class ApiMakeRevol : MakeSweep
         if (c.GetType() == Circle)
         {
             Circle3D circ = c.Circle();
-            Point3D centr = circ.Location();
-            double r2 = circ.Radius();
+            Point3D centr = circ.Location;
+            double r2 = circ.Radius;
             r2 -= global::Kerf.Engine.Foundation.Precision.Confusion();
             r2 *= r2;
-            if (axis.SquareDistance(centr) > r2)
+            if (axis.SquareDistanceTo(centr) > r2)
             {
                 return false;
             }
@@ -288,7 +288,7 @@ public class ApiMakeRevol : MakeSweep
             }
 
             Curve3D c = Tool.Curve(e, out Placement l, out double first, out double last)!;
-            Transform3D tr = l.Transformation();
+            Transform3D tr = l.Transformation;
             c = (Curve3D)c.Copy();
             c = new TrimmedCurve3D(c, first, last);
             c.Transform(tr);
@@ -304,7 +304,7 @@ public class ApiMakeRevol : MakeSweep
             do
             {
                 pp = hc.Value(first + (last - first) / ratio);
-                dist = new Line3D(a).Distance(pp);
+                dist = new Line3D(a).DistanceTo(pp);
                 ratio++;
             } while (dist < global::Kerf.Engine.Foundation.Precision.Confusion() && ratio < 100);
             //
@@ -347,7 +347,7 @@ public class ApiMakeRevol : MakeSweep
         {
             if (History.IsSupportedType(gs))
             {
-                if (gs.ShapeType() == ShapeType.Edge)
+                if (gs.Type == ShapeType.Edge)
                 {
                     bool isDeg = Tool.Degenerated(ShapeCasts.Edge(gs));
                     if (isDeg)

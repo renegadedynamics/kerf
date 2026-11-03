@@ -60,7 +60,7 @@ public sealed class ApproxSeewing
         for (i = 0; i < 2 * nbPoints; i++)
         {
             pnt2 = _ml.Value(u1 + i * dU);
-            dist = pnt1.Distance(pnt2);
+            dist = pnt1.DistanceTo(pnt2);
             length += dist;
             lp[i + 1] = new Point2D(length, u1 + (i * dU));
             pnt1 = pnt2;
@@ -86,12 +86,12 @@ public sealed class ApproxSeewing
         double u, alpha;
         for (i = 2; i < nbPoints; i++)
         {
-            while (lp[index].X() < corde)
+            while (lp[index].X < corde)
             {
                 index++;
             }
-            alpha = (corde - lp[index - 1].X()) / (lp[index].X() - lp[index - 1].X());
-            u = lp[index - 1].Y() + alpha * (lp[index].Y() - lp[index - 1].Y());
+            alpha = (corde - lp[index - 1].X) / (lp[index].X - lp[index - 1].X);
+            u = lp[index - 1].Y + alpha * (lp[index].Y - lp[index - 1].Y);
             MultiPointConstraint mpc = new(1, 2);
             ml.Value3dOnF1OnF2(u, out p3d, out pf1, out pf2);
             mpc.SetPoint(1, p3d);

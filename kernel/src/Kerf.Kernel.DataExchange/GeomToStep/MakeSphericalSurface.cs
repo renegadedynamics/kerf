@@ -30,9 +30,9 @@ public sealed class MakeSphericalSurface : GeometryRoot
         StepAxis2Placement3d position;
         double radius;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(s.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(s.Position, localFactors);
         position = mkAxis2.Value();
-        radius = s.Radius();
+        radius = s.Radius;
         surf = new StepSphericalSurface();
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         surf.Init(name, position, radius / localFactors.LengthFactor());

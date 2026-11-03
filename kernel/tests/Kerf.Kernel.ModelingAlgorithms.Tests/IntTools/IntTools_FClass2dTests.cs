@@ -64,7 +64,7 @@ public class IntTools_FClass2dTests
         Assert.True(new FaceClassifier2D(ClassificationTestShapes.HoledSquare(), 1.0e-7).IsHole);
         Shape aBox = new MakeBox(1, 2, 3).Shape();
         Face aF = ShapeCasts.Face(new Explorer(aBox, ShapeType.Face).Current());
-        aF.Orientation(Orientation.Forward);
+        aF.Orient(Orientation.Forward);
         Assert.False(new FaceClassifier2D(aF, 1.0e-7).IsHole);
     }
 

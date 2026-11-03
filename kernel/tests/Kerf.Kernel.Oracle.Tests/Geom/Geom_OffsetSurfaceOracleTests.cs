@@ -24,12 +24,12 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
 
     private static void SameProperties(Oracle theO, N.Geom_OffsetSurface theN, OffsetSurface theP, string theWhat)
     {
-        theO.Same(theN.Offset(), theP.Offset(), theWhat + " Offset");
+        theO.Same(theN.Offset(), theP.Offset, theWhat + " Offset");
         theO.Same((int)theN.GetBasisSurfContinuity(), (int)theP.GetBasisSurfContinuity(), theWhat + " GetBasisSurfContinuity");
         theO.Same(theN.HasEvalRepresentation(), theP.HasEvalRepresentation, theWhat + " HasEvalRepresentation");
         double aNU1 = 0, aNU2 = 0, aNV1 = 0, aNV2 = 0;
         theN.Bounds(ref aNU1, ref aNU2, ref aNV1, ref aNV2);
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         theO.Same(aNU1, aU1, theWhat + " U1");
         theO.Same(aNU2, aU2, theWhat + " U2");
         theO.Same(aNV1, aV1, theWhat + " V1");
@@ -40,13 +40,13 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
         theO.Same(theN.IsVPeriodic(), theP.IsVPeriodic, theWhat + " IsVPeriodic");
         if (theP.IsUPeriodic)
         {
-            theO.Same(theN.UPeriod(), theP.UPeriod(), theWhat + " UPeriod");
+            theO.Same(theN.UPeriod(), theP.UPeriod, theWhat + " UPeriod");
         }
         if (theP.IsVPeriodic)
         {
-            theO.Same(theN.VPeriod(), theP.VPeriod(), theWhat + " VPeriod");
+            theO.Same(theN.VPeriod(), theP.VPeriod, theWhat + " VPeriod");
         }
-        theO.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
+        theO.Same((int)theN.Continuity(), (int)theP.Continuity, theWhat + " Continuity");
         for (int n = 0; n <= 3; n++)
         {
             theO.Same(theN.IsCNu(n), theP.IsCNu(n), theWhat + " IsCNu");
@@ -67,7 +67,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
         }
 
         using N.Geom_Surface aNB = theN.BasisSurface()!;
-        Surface aB = theP.BasisSurface();
+        Surface aB = theP.BasisSurface;
         Assert.True(aB.IsFrozen, theWhat + " BasisSurface() frozen");
         SameSurfaceEval(theO, aNB, aB, U, V, 2, theWhat + " BasisSurface()");
     }
@@ -76,7 +76,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
     private static void SameEvaluation(Oracle theO, N.Geom_Surface theN, Surface theP, string theWhat, int theCount = 5,
                                        IEnumerable<(double U, double V)>? theExtra = null)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         var aParams = new List<(double, double)>();
         for (int k = 0; k < theCount; k++)
         {
@@ -111,7 +111,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                 var aN = N.Geom_OffsetSurface.DownCast(aNS)!;
                 var aP = (OffsetSurface)aPS;
                 using N.Geom_Surface aNBasisKind = aN.BasisSurface()!;
-                string aWhat = "offset of " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.BasisSurface().GetType());
+                string aWhat = "offset of " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aP.BasisSurface.GetType());
                 SameProperties(anOracle, aN, aP, aWhat);
                 SameEvaluation(anOracle, aN, aP, aWhat);
 
@@ -136,7 +136,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                 (N.gp_Trsf aNT, Transform3D aT) = RandomTrsf(anOracle);
                 using (aNT)
                 {
-                    aP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                    aP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                     double U = Param(anOracle, aU1, aU2), V = Param(anOracle, aV1, aV2);
                     double aNU = U, aNV = V, aPU = U, aPV = V;
                     aN.TransformParameters(ref aNU, ref aNV, aNT);
@@ -175,7 +175,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                 using (aNTrim)
                 {
                     using N.Geom_Surface aNTB = N.Geom_RectangularTrimmedSurface.DownCast(aNTrim)!.BasisSurface()!;
-                    Surface aPTB = ((TrimmedSurface)aPTrim!).BasisSurface();
+                    Surface aPTB = ((TrimmedSurface)aPTrim!).BasisSurface;
                     Assert.Equal(NativeSurfaceKind(aNTB), global::Kerf.Engine.Foundation.OcctTypeNames.Of(aPTB.GetType()));
                     SameEvaluation(anOracle, aNTrim, aPTrim!, aWhat + " trimmed", 3);
                 }
@@ -183,7 +183,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                 // GeomAdaptor_Surface on the offset surface
                 using var aNA = new N.GeomAdaptor_Surface(aN);
                 var aPA = new SurfaceAdaptor(aP);
-                aP.Bounds(out double aAU1, out double aAU2, out double aAV1, out double aAV2);
+                aP.ParameterBounds(out double aAU1, out double aAU2, out double aAV1, out double aAV2);
                 for (int k = 0; k < 3; k++)
                 {
                     SameSurfaceEval(anOracle, aNA, aPA, Param(anOracle, aAU1, aAU2), Param(anOracle, aAV1, aAV2), 3,
@@ -205,7 +205,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
             (N.Geom_Surface aNS, Surface aPS) = RandomOffsetSurface(anOracle);
             using (aNS)
             {
-                aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                aPS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aV1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aV2))
                 {
                     // AdvApprox on an unbounded range: skip (it can't approximate)
@@ -214,7 +214,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                         continue;
                     }
                 }
-                string aWhat = "offset of " + ((OffsetSurface)aPS).BasisSurface().GetType().Name;
+                string aWhat = "offset of " + ((OffsetSurface)aPS).BasisSurface.GetType().Name;
                 GeomIsoCurveCompare.SameIso(anOracle, aNS, aPS, true, Param(anOracle, aU1, aU2), aWhat);
                 GeomIsoCurveCompare.SameIso(anOracle, aNS, aPS, false, Param(anOracle, aV1, aV2), aWhat);
             }
@@ -269,7 +269,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                     aR = 0.0; // collapsed at the other end too
                 }
                 aPoles[i, j] = aRing == 0 || aR == 0.0
-                    ? new Point3D(anApex.X(), anApex.Y(), aRing == 0 ? aH : -aH)
+                    ? new Point3D(anApex.X, anApex.Y, aRing == 0 ? aH : -aH)
                     : new Point3D(aR * Math.Cos(anAng) + theO.Real(-0.2, 0.2), aR * Math.Sin(anAng) + theO.Real(-0.2, 0.2),
                                  aH - aRing * 0.8 + theO.Real(-0.2, 0.2));
             }
@@ -372,7 +372,7 @@ public class Geom_OffsetSurfaceOracleTests(ITestOutputHelper output)
                     {
                         string aWhat = "offset of " + aKinds[aKind];
                         SameProperties(anOracle, aN!, aP!, aWhat);
-                        aP!.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                        aP!.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                         var aSingular = new List<(double, double)>();
                         for (int k = 0; k < 4; k++)
                         {

@@ -99,7 +99,7 @@ public class SurfPointConstRadInv : SurfPointFuncInv
         double theD, dtheD, normd1cur, unsurnormd1cur;
 
         _curv.D2(x[1], out ptcur, out d1cur, out d2cur);
-        normd1cur = d1cur.Magnitude();
+        normd1cur = d1cur.Magnitude;
         unsurnormd1cur = 1.0 / normd1cur;
         nplan = unsurnormd1cur * d1cur;
         //  theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
@@ -127,7 +127,7 @@ public class SurfPointConstRadInv : SurfPointFuncInv
         Vector3D dunplancrosnsurf = nplan.Crossed(dunsurf);
         Vector3D dvnplancrosnsurf = nplan.Crossed(dvnsurf);
 
-        double norm2 = nplancrosnsurf.SquareMagnitude();
+        double norm2 = nplancrosnsurf.SquareMagnitude;
         double norm = Math.Sqrt(norm2);
         double unsurnorm = 1.0 / norm;
         double raysurnorm = _ray * unsurnorm;
@@ -170,7 +170,7 @@ public class SurfPointConstRadInv : SurfPointFuncInv
 
         _curv.D2(x[1], out ptcur, out d1cur, out d2cur);
         _surf.D2(x[2], x[3], out pts, out d1u, out d1v, out d2u, out d2v, out duv);
-        normd1cur = d1cur.Magnitude();
+        normd1cur = d1cur.Magnitude;
         unsurnormd1cur = 1.0 / normd1cur;
         nplan = unsurnormd1cur * d1cur;
         //  theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
@@ -200,7 +200,7 @@ public class SurfPointConstRadInv : SurfPointFuncInv
         Vector3D dunplancrosnsurf = nplan.Crossed(dunsurf);
         Vector3D dvnplancrosnsurf = nplan.Crossed(dvnsurf);
 
-        double norm2 = nplancrosnsurf.SquareMagnitude();
+        double norm2 = nplancrosnsurf.SquareMagnitude;
         double norm = Math.Sqrt(norm2);
         double unsurnorm = 1.0 / norm;
         double raysurnorm = _ray * unsurnorm;
@@ -223,7 +223,7 @@ public class SurfPointConstRadInv : SurfPointFuncInv
 
         Vector3D @ref = new(), dwref = new(), duref = new(), dvref = new(), corde = new(_point, pts);
         @ref = Vector3D.LinearForm(raysurnorm, temp, corde);
-        f[3] = @ref.SquareMagnitude() - _ray * _ray;
+        f[3] = @ref.SquareMagnitude - _ray * _ray;
         dwref = Vector3D.LinearForm(raysurnorm, dwtemp, -raysurnorm2 * dwnorm, temp);
         duref = Vector3D.LinearForm(raysurnorm, dutemp, -raysurnorm2 * dunorm, temp, d1u);
         dvref = Vector3D.LinearForm(raysurnorm, dvtemp, -raysurnorm2 * dvnorm, temp, d1v);

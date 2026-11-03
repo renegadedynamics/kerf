@@ -75,19 +75,19 @@ public sealed class CurveOnEdge : CurveAdaptorBase
         _type = OtherCurve;
         if (curv.GetType() == global::Kerf.Geometry.CurveKind.Line && conF.GetType() == global::Kerf.Geometry.CurveKind.Circle)
         {
-            Axis3D a1 = curv.Line().Position();
-            Axis3D a2 = conF.Circle().Axis();
+            Axis3D a1 = curv.Line().Position;
+            Axis3D a2 = conF.Circle().Axis;
             if (a1.IsCoaxial(a2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
                 _type = global::Kerf.Geometry.CurveKind.Circle;
-                _circ = new Circle3D(conF.Circle().Position(), 0.0);
+                _circ = new Circle3D(conF.Circle().Position, 0.0);
             }
         }
     }
 
-    public override double FirstParameter() => _conF!.FirstParameter();
+    public override double FirstParameter() => _conF!.FirstParameter;
 
-    public override double LastParameter() => _conF!.LastParameter();
+    public override double LastParameter() => _conF!.LastParameter;
 
     public override Point3D EvalD0(double u)
     {

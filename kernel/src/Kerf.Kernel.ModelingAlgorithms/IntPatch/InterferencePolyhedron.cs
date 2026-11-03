@@ -748,7 +748,7 @@ public class InterferencePolyhedron : PolygonInterference
                     {
                         if (ideb != -999)
                         {
-                            double d = piOT[-ideb].Pnt().Distance(piOT[-ifin].Pnt());
+                            double d = piOT[-ideb].Pnt().DistanceTo(piOT[-ifin].Pnt());
                             if (d < _tolerance)
                             {
                                 Insert(piOT[-ideb], piOT[-ifin]);

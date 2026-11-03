@@ -105,7 +105,7 @@ public class CSCircular : CSFunction
         _guide.D2(param, out _, out _d1gui, out _d2gui);
         _law.D1(param, out _prmc, out _dprmc);
 
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
     }
 
@@ -168,7 +168,7 @@ public class CSCircular : CSFunction
             ns = d1u1.Crossed(d1v1);
             ncrossns = _nplan.Crossed(ns);
             ndotns = _nplan.Dot(ns);
-            norm = ncrossns.Magnitude();
+            norm = ncrossns.Magnitude;
             if (norm < Eps)
             {
                 norm = 1.0;
@@ -248,7 +248,7 @@ public class CSCircular : CSFunction
         f[1] = _nplan.XYZ().Dot(_pts.XYZ() - _ptc.XYZ());
 
         Vector3D ns = d1u1.Crossed(d1v1);
-        double norm = _nplan.Crossed(ns).Magnitude();
+        double norm = _nplan.Crossed(ns).Magnitude;
         if (norm < Eps)
         {
             norm = 1.0;
@@ -258,7 +258,7 @@ public class CSCircular : CSFunction
         Vector3D vref = new Vector3D();
         vref = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptc, _pts));
 
-        f[2] = vref.SquareMagnitude() - _ray * _ray;
+        f[2] = vref.SquareMagnitude - _ray * _ray;
 
         _pt2d = new Point2D(x[1], x[2]);
         return true;
@@ -279,7 +279,7 @@ public class CSCircular : CSFunction
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
         if (norm < Eps)
         {
             norm = 1.0;
@@ -322,7 +322,7 @@ public class CSCircular : CSFunction
 
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
         if (norm < Eps)
         {
             norm = 1.0;
@@ -333,7 +333,7 @@ public class CSCircular : CSFunction
         vref = Vector3D.LinearForm(_ray, nsov, new Vector3D(_ptc, _pts));
 
         f[1] = _nplan.XYZ().Dot(_pts.XYZ() - _ptc.XYZ());
-        f[2] = vref.SquareMagnitude() - _ray * _ray;
+        f[2] = vref.SquareMagnitude - _ray * _ray;
 
         d[1, 1] = _nplan.Dot(d1u1);
         d[1, 2] = _nplan.Dot(d1v1);
@@ -422,7 +422,7 @@ public class CSCircular : CSFunction
         _surf.D1(u, v, out _, out Vector3D d1u, out Vector3D d1v);
         nmS = ns = d1u.Crossed(d1v);
 
-        double norm = _nplan.Crossed(ns).Magnitude();
+        double norm = _nplan.Crossed(ns).Magnitude;
         ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
         if (_ray > 0.0)
         {
@@ -450,7 +450,7 @@ public class CSCircular : CSFunction
         _ptc = _curv.Value(w);
 
         ns = d1u1.Crossed(d1v1);
-        norm = _nplan.Crossed(ns).Magnitude();
+        norm = _nplan.Crossed(ns).Magnitude;
         ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
         center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
         c = c.WithRadius(Math.Abs(_ray));
@@ -517,7 +517,7 @@ public class CSCircular : CSFunction
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
         ndotns = _nplan.Dot(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
 
         temp = temp.WithXYZ(_pts.XYZ() - _ptc.XYZ());
         secmember[1] = _dprmc * (_nplan.Dot(d1c)) - dnplan.Dot(temp);
@@ -563,7 +563,7 @@ public class CSCircular : CSFunction
             dnw = Vector3D.LinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
             ns = ns2;
             dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgc, _tgs);
-            norm = resul.Magnitude();
+            norm = resul.Magnitude;
             dn2w = dn2w.Divided(norm);
             ns2 = -resul.Normalized();
             dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
@@ -714,7 +714,7 @@ public class CSCircular : CSFunction
         }
 
         ns = d1u1.Crossed(d1v1);
-        norm = _nplan.Crossed(ns).Magnitude();
+        norm = _nplan.Crossed(ns).Magnitude;
 
         ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
 
@@ -765,7 +765,7 @@ public class CSCircular : CSFunction
         ns = d1u1.Crossed(d1v1);
         ncrossns = _nplan.Crossed(ns);
         ndotns = _nplan.Dot(ns);
-        norm = ncrossns.Magnitude();
+        norm = ncrossns.Magnitude;
         ns2 = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
 
         temp = temp.WithXYZ(_pts.XYZ() - _ptc.XYZ());
@@ -807,7 +807,7 @@ public class CSCircular : CSFunction
             dnw = Vector3D.LinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
             ns = ns2;
             dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgc, _tgs);
-            norm = resul.Magnitude();
+            norm = resul.Magnitude;
             dn2w = dn2w.Divided(norm);
             ns2 = -resul.Normalized();
             dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);

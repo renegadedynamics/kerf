@@ -107,9 +107,9 @@ public class MakeApprox
                         {
                             vpar = parameters[jpar - 1];
                             pnt = _surf.Value(upar, vpar);
-                            result[(jpar - 1) * dimension] = pnt.X();
-                            result[1 + (jpar - 1) * dimension] = pnt.Y();
-                            result[2 + (jpar - 1) * dimension] = pnt.Z();
+                            result[(jpar - 1) * dimension] = pnt.X;
+                            result[1 + (jpar - 1) * dimension] = pnt.Y;
+                            result[2 + (jpar - 1) * dimension] = pnt.Z;
                         }
                         break;
                     case 1:
@@ -119,15 +119,15 @@ public class MakeApprox
                             _surf.D1(upar, vpar, out pnt, out v1, out v2);
                             if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v1.X();
-                                result[1 + (jpar - 1) * dimension] = v1.Y();
-                                result[2 + (jpar - 1) * dimension] = v1.Z();
+                                result[(jpar - 1) * dimension] = v1.X;
+                                result[1 + (jpar - 1) * dimension] = v1.Y;
+                                result[2 + (jpar - 1) * dimension] = v1.Z;
                             }
                             else
                             {
-                                result[(jpar - 1) * dimension] = v2.X();
-                                result[1 + (jpar - 1) * dimension] = v2.Y();
-                                result[2 + (jpar - 1) * dimension] = v2.Z();
+                                result[(jpar - 1) * dimension] = v2.X;
+                                result[1 + (jpar - 1) * dimension] = v2.Y;
+                                result[2 + (jpar - 1) * dimension] = v2.Z;
                             }
                         }
                         break;
@@ -138,21 +138,21 @@ public class MakeApprox
                             _surf.D2(upar, vpar, out pnt, out v1, out v2, out v3, out v4, out v5);
                             if (uOrder == 2)
                             {
-                                result[(jpar - 1) * dimension] = v3.X();
-                                result[1 + (jpar - 1) * dimension] = v3.Y();
-                                result[2 + (jpar - 1) * dimension] = v3.Z();
+                                result[(jpar - 1) * dimension] = v3.X;
+                                result[1 + (jpar - 1) * dimension] = v3.Y;
+                                result[2 + (jpar - 1) * dimension] = v3.Z;
                             }
                             else if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v5.X();
-                                result[1 + (jpar - 1) * dimension] = v5.Y();
-                                result[2 + (jpar - 1) * dimension] = v5.Z();
+                                result[(jpar - 1) * dimension] = v5.X;
+                                result[1 + (jpar - 1) * dimension] = v5.Y;
+                                result[2 + (jpar - 1) * dimension] = v5.Z;
                             }
                             else if (uOrder == 0)
                             {
-                                result[(jpar - 1) * dimension] = v4.X();
-                                result[1 + (jpar - 1) * dimension] = v4.Y();
-                                result[2 + (jpar - 1) * dimension] = v4.Z();
+                                result[(jpar - 1) * dimension] = v4.X;
+                                result[1 + (jpar - 1) * dimension] = v4.Y;
+                                result[2 + (jpar - 1) * dimension] = v4.Z;
                             }
                         }
                         break;
@@ -168,9 +168,9 @@ public class MakeApprox
                         {
                             upar = parameters[jpar - 1];
                             pnt = _surf.Value(upar, vpar);
-                            result[(jpar - 1) * dimension] = pnt.X();
-                            result[1 + (jpar - 1) * dimension] = pnt.Y();
-                            result[2 + (jpar - 1) * dimension] = pnt.Z();
+                            result[(jpar - 1) * dimension] = pnt.X;
+                            result[1 + (jpar - 1) * dimension] = pnt.Y;
+                            result[2 + (jpar - 1) * dimension] = pnt.Z;
                         }
                         break;
                     case 1:
@@ -180,15 +180,15 @@ public class MakeApprox
                             _surf.D1(upar, vpar, out pnt, out v1, out v2);
                             if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v1.X();
-                                result[1 + (jpar - 1) * dimension] = v1.Y();
-                                result[2 + (jpar - 1) * dimension] = v1.Z();
+                                result[(jpar - 1) * dimension] = v1.X;
+                                result[1 + (jpar - 1) * dimension] = v1.Y;
+                                result[2 + (jpar - 1) * dimension] = v1.Z;
                             }
                             else
                             {
-                                result[(jpar - 1) * dimension] = v2.X();
-                                result[1 + (jpar - 1) * dimension] = v2.Y();
-                                result[2 + (jpar - 1) * dimension] = v2.Z();
+                                result[(jpar - 1) * dimension] = v2.X;
+                                result[1 + (jpar - 1) * dimension] = v2.Y;
+                                result[2 + (jpar - 1) * dimension] = v2.Z;
                             }
                         }
                         break;
@@ -199,21 +199,21 @@ public class MakeApprox
                             _surf.D2(upar, vpar, out pnt, out v1, out v2, out v3, out v4, out v5);
                             if (uOrder == 2)
                             {
-                                result[(jpar - 1) * dimension] = v3.X();
-                                result[1 + (jpar - 1) * dimension] = v3.Y();
-                                result[2 + (jpar - 1) * dimension] = v3.Z();
+                                result[(jpar - 1) * dimension] = v3.X;
+                                result[1 + (jpar - 1) * dimension] = v3.Y;
+                                result[2 + (jpar - 1) * dimension] = v3.Z;
                             }
                             else if (uOrder == 1)
                             {
-                                result[(jpar - 1) * dimension] = v5.X();
-                                result[1 + (jpar - 1) * dimension] = v5.Y();
-                                result[2 + (jpar - 1) * dimension] = v5.Z();
+                                result[(jpar - 1) * dimension] = v5.X;
+                                result[1 + (jpar - 1) * dimension] = v5.Y;
+                                result[2 + (jpar - 1) * dimension] = v5.Z;
                             }
                             else if (uOrder == 0)
                             {
-                                result[(jpar - 1) * dimension] = v4.X();
-                                result[1 + (jpar - 1) * dimension] = v4.Y();
-                                result[2 + (jpar - 1) * dimension] = v4.Z();
+                                result[(jpar - 1) * dimension] = v4.X;
+                                result[1 + (jpar - 1) * dimension] = v4.Y;
+                                result[2 + (jpar - 1) * dimension] = v4.Z;
                             }
                         }
                         break;
@@ -290,7 +290,7 @@ public class MakeApprox
                 {
                     //    a l'ordre 0
                     _plate.D0(p2d.X(), p2d.Y(), out pp);
-                    Xyz p3d = new Xyz(pp.X(), pp.Y(), pp.Z());
+                    Xyz p3d = new Xyz(pp.X, pp.Y, pp.Z);
                     seq3d.Append(p3d);
                 }
                 else
@@ -298,7 +298,7 @@ public class MakeApprox
                     //    a l'ordre 1
                     _plate.D1(p2d.X(), p2d.Y(), out pp, out v1h, out v2h);
                     v3h = v1h ^ v2h;
-                    Xyz p3d = new Xyz(v3h.X(), v3h.Y(), v3h.Z());
+                    Xyz p3d = new Xyz(v3h.X, v3h.Y, v3h.Z);
                     seq3d.Append(p3d);
                 }
             }

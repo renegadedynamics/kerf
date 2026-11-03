@@ -200,10 +200,10 @@ public sealed class BoxBndTreeSelectorAnalysis : SpatialTree<int, Box>.Selector
             Point3D p2 = Tool.Pnt(v2);
 
             double tailhead, tailtail, headhead, headtail;
-            tailhead = p1.Distance(_lPnt);
-            tailtail = p2.Distance(_lPnt);
-            headhead = p1.Distance(_fPnt);
-            headtail = p2.Distance(_fPnt);
+            tailhead = p1.DistanceTo(_lPnt);
+            tailtail = p2.DistanceTo(_lPnt);
+            headhead = p1.DistanceTo(_fPnt);
+            headtail = p2.DistanceTo(_fPnt);
             double dm1 = tailhead, dm2 = headtail;
             int res1 = 0, res2 = 0;
             if (tailhead > tailtail)

@@ -59,7 +59,7 @@ public sealed class OffsetWire
 
     private static void EdgeVertices(in Edge e, out Vertex v1, out Vertex v2)
     {
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             Exploration.Vertices(e, out v2, out v1);
         }
@@ -100,7 +100,7 @@ public sealed class OffsetWire
 
         if (c is TrimmedCurve3D ct)
         {
-            c = ct.BasisCurve();
+            c = ct.BasisCurve;
         }
 
         if ((c is CircleCurve3D && Tool.IsClosed(e)) || // closed circle
@@ -113,7 +113,7 @@ public sealed class OffsetWire
             Curve2D oc;
             if (ahc.GetType() == Line)
             {
-                if (e.Orientation() == Forward)
+                if (e.Orientation == Forward)
                 {
                     offset *= -1;
                 }
@@ -122,7 +122,7 @@ public sealed class OffsetWire
             }
             else if (ahc.GetType() == Circle)
             {
-                if (e.Orientation() == Forward)
+                if (e.Orientation == Forward)
                 {
                     offset *= -1;
                 }
@@ -131,9 +131,9 @@ public sealed class OffsetWire
                     offset *= -1;
                 }
                 Circle2D theCirc = ahc.Circle();
-                if (offset > 0.0 || Math.Abs(offset) < theCirc.Radius())
+                if (offset > 0.0 || Math.Abs(offset) < theCirc.Radius)
                 {
-                    oc = new CircleCurve2D(theCirc.Position(), theCirc.Radius() + offset);
+                    oc = new CircleCurve2D(theCirc.Position, theCirc.Radius + offset);
                 }
                 else
                 {
@@ -143,7 +143,7 @@ public sealed class OffsetWire
             }
             else
             {
-                if (e.Orientation() == Forward)
+                if (e.Orientation == Forward)
                 {
                     offset *= -1;
                 }
@@ -155,14 +155,14 @@ public sealed class OffsetWire
             myShape = new LibraryMakeEdge(oc, plane!, f, l).InternalEdge();
             BrepLibrary.BuildCurve3d(ShapeCasts.Edge(myShape));
 
-            myShape.Orientation(e.Orientation());
+            myShape.Orient(e.Orientation);
             myShape.Location(L);
             if (Math.Abs(alt) > Constants.Resolution())
             {
                 FaceSurfaceAdaptor s = new(mySpine, false);
-                Axis3D nor = s.Plane().Axis();
+                Axis3D nor = s.Plane().Axis;
                 Transform3D t = new();
-                Vector3D trans = new(nor.Direction());
+                Vector3D trans = new(nor.Direction);
                 trans = alt * trans;
                 t = t.WithTranslation(trans);
                 myShape.Move(new Placement(t));
@@ -444,7 +444,7 @@ public sealed class OffsetWire
                     if (subst.IsCopied(wire))
                     {
                         Wire newWire = ShapeCasts.Wire(subst.InternalCopy(wire).First());
-                        newWire.Closed(wire.Closed());
+                        newWire.Closed(wire.IsClosed);
                         NCollection_List<Shape> lw = new();
                         lw.Append(newWire);
                         wwmap[wire] = lw;
@@ -508,7 +508,7 @@ public sealed class OffsetWire
             {
                 Shape wire = exp.Current();
 
-                if (!wire.Closed())
+                if (!wire.IsClosed)
                 {
                     _shape.Nullify();
                     _isDone = false;
@@ -529,7 +529,7 @@ public sealed class OffsetWire
         b.MakeCompound(ref compound);
         aShape = compound;
         double ALT = alt;
-        if (spine.Orientation() == Reversed)
+        if (spine.Orientation == Reversed)
         {
             ALT = -alt;
         }
@@ -616,11 +616,11 @@ public sealed class OffsetWire
         if (Math.Abs(alt) > Constants.Resolution())
         {
             double anAlt = alt;
-            if (_workSpine.Orientation() == Reversed)
+            if (_workSpine.Orientation == Reversed)
             {
                 anAlt = -alt;
             }
-            refPlane = (PlaneSurface)refPlane.Translated(anAlt * new Vector3D(refPlane.Axis().Direction()));
+            refPlane = (PlaneSurface)refPlane.Translated(anAlt * new Vector3D(refPlane.Axis.Direction));
         }
 
         //---------------------------------------------------------------
@@ -647,7 +647,7 @@ public sealed class OffsetWire
             for (int ie = 1; ie <= locus.NumberOfElts(ic); ie++)
             {
                 Shape se = link.GeneratingShape(locus.BasicElt(ic, ie));
-                if (se.ShapeType() == ShapeType.Vertex)
+                if (se.Type == ShapeType.Vertex)
                 {
                     if (!se.IsSame(ends[0]) && !se.IsSame(ends[1]))
                     {
@@ -672,11 +672,11 @@ public sealed class OffsetWire
         // Remove possible hanging arcs on vertices
         if (_isOpenResult && _joinType == Arc)
         {
-            if (_map.Count != 0 && _map.KeyAt(0).ShapeType() == ShapeType.Vertex)
+            if (_map.Count != 0 && _map.KeyAt(0).Type == ShapeType.Vertex)
             {
                 _map.RemoveAtSwap(0);
             }
-            if (_map.Count != 0 && _map.KeyAt(_map.Count - 1).ShapeType() == ShapeType.Vertex)
+            if (_map.Count != 0 && _map.KeyAt(_map.Count - 1).Type == ShapeType.Vertex)
             {
                 _map.RemoveLast();
             }
@@ -774,8 +774,8 @@ public sealed class OffsetWire
             {
                 Vertex vc = new();
                 myBuilder.MakeVertex(ref vc);
-                Point2D p2 = bisec.Value().Value(Params.Value(s).X());
-                Point3D pvc = new(p2.X(), p2.Y(), 0.0);
+                Point2D p2 = bisec.Value().Value(Params.Value(s).X);
+                Point3D pvc = new(p2.X, p2.Y, 0.0);
 
                 myBuilder.UpdateVertex(vc, pvc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 vertices.Append(vc);
@@ -845,11 +845,11 @@ public sealed class OffsetWire
                         mapBis.GetValue(e[k]).Append(vertices.Value(ii));
                         if (k == 0)
                         {
-                            mapVerPar.GetValue(e[k]).Append(Params.Value(ii).Y());
+                            mapVerPar.GetValue(e[k]).Append(Params.Value(ii).Y);
                         }
                         else
                         {
-                            mapVerPar.GetValue(e[k]).Append(Params.Value(ii).Z());
+                            mapVerPar.GetValue(e[k]).Append(Params.Value(ii).Z);
                         }
                     }
                 }
@@ -937,7 +937,7 @@ public sealed class OffsetWire
             Vertex newV = ShapeCasts.Vertex(mapVV.ValueAt(ind - 1));
             Point3D p1 = Tool.Pnt(oldV);
             Point3D p2 = Tool.Pnt(newV);
-            myBuilder.UpdateVertex(newV, p1.Distance(p2));
+            myBuilder.UpdateVertex(newV, p1.DistanceTo(p2));
             NCollection_List<Shape> lv = new();
             lv.Append(newV.Oriented(Forward));
             Substitution subst = new();
@@ -951,9 +951,9 @@ public sealed class OffsetWire
                     if (subst.IsCopied(itl.Value()))
                     {
                         NCollection_List<Shape> listSh = subst.InternalCopy(itl.Value());
-                        Orientation saveOr = itl.Value().Orientation();
+                        Orientation saveOr = itl.Value().Orientation;
                         itl.ChangeValue() = listSh.First();
-                        itl.ChangeValue().Orientation(saveOr);
+                        itl.ChangeValue().Orient(saveOr);
                     }
                 }
             }
@@ -972,7 +972,7 @@ public sealed class OffsetWire
             if (mapVertex.Add(v))
             {
                 Point3D p = Tool.Pnt(v);
-                p = refPlane.Value(p.X(), p.Y());
+                p = refPlane.Value(p.X, p.Y);
                 myBuilder.UpdateVertex(v, p, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
@@ -990,13 +990,13 @@ public sealed class OffsetWire
 
             Curve3D theCurve = Tool.Curve(edge, out Placement loc, out double f, out double l)!;
             theCurve = (Curve3D)theCurve.Copy();
-            theCurve.Transform(loc.Transformation());
+            theCurve.Transform(loc.Transformation);
             Point3D f3d = theCurve.Value(f);
             Point3D l3d = theCurve.Value(l);
 
             double dist1, dist2;
-            dist1 = f3d.Distance(tv1.Pnt());
-            dist2 = l3d.Distance(tv2.Pnt());
+            dist1 = f3d.DistanceTo(tv1.Pnt());
+            dist2 = l3d.DistanceTo(tv2.Pnt());
             if (!mapVertex.Contains(v1))
             {
                 tv1.Pnt(f3d);
@@ -1090,7 +1090,7 @@ public sealed class OffsetWire
                     for (iteCuts.Initialize(cuts); iteCuts.More(); iteCuts.Next())
                     {
                         Edge ne = ShapeCasts.Edge(iteCuts.Value());
-                        ne.Orientation(e.Orientation());
+                        ne.Orient(e.Orientation);
                         b.Add(nw, ne);
                         _mapSpine[ne] = e;
                         EdgeVertices(ne, out V1, out V2);
@@ -1146,12 +1146,12 @@ public sealed class OffsetWire
             bool forceAdd = false;
             if (bis is TrimmedCurve2D tc && tc.ChangeBasisCurve().IsPeriodic)
             {
-                Point2D pf = bis.Value(bis.FirstParameter());
-                Point2D pl = bis.Value(bis.LastParameter());
-                forceAdd = pf.Distance(pl) <= global::Kerf.Engine.Foundation.Precision.Confusion();
+                Point2D pf = bis.Value(bis.FirstParameter);
+                Point2D pl = bis.Value(bis.LastParameter);
+                forceAdd = pf.DistanceTo(pl) <= global::Kerf.Engine.Foundation.Precision.Confusion();
             }
 
-            u1 = bis.FirstParameter();
+            u1 = bis.FirstParameter;
 
             if (sOnE)
             {
@@ -1162,7 +1162,7 @@ public sealed class OffsetWire
 
             while (ii <= vertices.Length() && ii <= Params.Length())
             {
-                u2 = Params.Value(ii).X();
+                u2 = Params.Value(ii).X;
                 v2 = ShapeCasts.Vertex(vertices.Value(ii));
 
                 Point2D p = bis.Value((u2 + u1) * 0.5);
@@ -1182,7 +1182,7 @@ public sealed class OffsetWire
             }
 
             // test medium point between the last parameter and the end of the bissectrice.
-            u2 = bis.LastParameter();
+            u2 = bis.LastParameter;
             if (!eOnE)
             {
                 if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(u2))
@@ -1413,7 +1413,7 @@ public sealed class OffsetWire
                 }
             }
             // Sorting
-            if (wire.Closed())
+            if (wire.IsClosed)
             {
                 closedWires.Append(wire);
             }
@@ -1450,28 +1450,28 @@ public sealed class OffsetWire
                 Point3D p1, p2;
                 p1 = Tool.Pnt(v1);
                 p2 = Tool.Pnt(v2);
-                double dist = pf.Distance(p1);
+                double dist = pf.DistanceTo(p1);
                 if (dist < distF)
                 {
                     distF = dist;
                     indexF = i;
                     isFirstF = true;
                 }
-                dist = pf.Distance(p2);
+                dist = pf.DistanceTo(p2);
                 if (dist < distF)
                 {
                     distF = dist;
                     indexF = i;
                     isFirstF = false;
                 }
-                dist = pl.Distance(p1);
+                dist = pl.DistanceTo(p1);
                 if (dist < distL)
                 {
                     distL = dist;
                     indexL = i;
                     isFirstL = true;
                 }
-                dist = pl.Distance(p2);
+                dist = pl.DistanceTo(p2);
                 if (dist < distL)
                 {
                     distL = dist;
@@ -1532,7 +1532,7 @@ public sealed class OffsetWire
                 if (distF <= commonTol)
                 {
                     theEdge.Free(true);
-                    vf.Orientation(theVertex.Orientation());
+                    vf.Orient(theVertex.Orientation);
                     bb.Remove(theEdge, theVertex);
                     bb.Add(theEdge, vf);
                     bb.UpdateVertex(vf, commonTol);
@@ -1580,7 +1580,7 @@ public sealed class OffsetWire
                 if (distL <= commonTol)
                 {
                     theEdge.Free(true);
-                    vl.Orientation(theVertex.Orientation());
+                    vl.Orient(theVertex.Orientation);
                     bb.Remove(theEdge, theVertex);
                     bb.Add(theEdge, vl);
                     bb.UpdateVertex(vl, commonTol);
@@ -1614,11 +1614,11 @@ public sealed class OffsetWire
                 elast = ShapeCasts.Edge(vEmap.GetValue(vl).First());
                 pf = Tool.Pnt(vf);
                 pl = Tool.Pnt(vl);
-                double Dist = pf.Distance(pl);
+                double Dist = pf.DistanceTo(pl);
                 if (Dist <= commonTol)
                 {
                     elast.Free(true);
-                    vf.Orientation(vl.Orientation());
+                    vf.Orient(vl.Orientation);
                     bb.Remove(elast, vl);
                     bb.Add(elast, vf);
                     bb.UpdateVertex(vf, commonTol);
@@ -1646,7 +1646,7 @@ public sealed class OffsetWire
                 }
                 unclosedWires.Remove(indexL);
             }
-            if (Base.Closed())
+            if (Base.IsClosed)
             {
                 closedWires.Append(Base);
                 unclosedWires.Remove(1);
@@ -1762,7 +1762,7 @@ public sealed class OffsetWire
                 {
                     TrimmedCurve2D cc = cuter.Value(1);
 
-                    if (cc.LastParameter() > (l + f) / 2.0)
+                    if (cc.LastParameter > (l + f) / 2.0)
                     {
                         CutCurve(cc, 2, theCurves);
                         theCurves.Append(cuter.Value(2));
@@ -1798,18 +1798,18 @@ public sealed class OffsetWire
             }
             else
             {
-                Point3D p = c!.Value(cc.LastParameter());
+                Point3D p = c!.Value(cc.LastParameter);
 
                 vl = new LibraryMakeVertex(p).InternalVertex();
                 b.UpdateVertex(vl, tol);
             }
             Shape localShape = e.EmptyCopied();
             Edge ne = ShapeCasts.Edge(localShape);
-            ne.Orientation(Forward);
+            ne.Orient(Forward);
             b.Add(ne, vf.Oriented(Forward));
             b.Add(ne, vl.Oriented(Reversed));
-            b.Range(ne, cc.FirstParameter(), cc.LastParameter());
-            cuts.Append(ne.Oriented(e.Orientation()));
+            b.Range(ne, cc.FirstParameter, cc.LastParameter);
+            cuts.Append(ne.Oriented(e.Orientation));
             vf = vl;
         }
 
@@ -1827,8 +1827,8 @@ public sealed class OffsetWire
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion() * 10;
         bool yaCut = false;
 
-        uf = c.FirstParameter();
-        ul = c.LastParameter();
+        uf = c.FirstParameter;
+        ul = c.LastParameter;
         pf = c.Value(uf);
         pl = c.Value(ul);
 
@@ -1839,9 +1839,9 @@ public sealed class OffsetWire
             uc = uf + i * step;
             pc = c.Value(uc);
 
-            if (uc - uf > pTol && pc.Distance(pf) > tol)
+            if (uc - uf > pTol && pc.DistanceTo(pf) > tol)
             {
-                if (ul - uc < pTol || pl.Distance(pc) < tol)
+                if (ul - uc < pTol || pl.DistanceTo(pc) < tol)
                 {
                     continue;
                 }
@@ -1877,7 +1877,7 @@ public sealed class OffsetWire
         Vector2D dx;
         Point2D p;
 
-        if (e.Orientation() == Forward)
+        if (e.Orientation == Forward)
         {
             gc.D1(l, out p, out dx);
             dx = dx.Reversed();
@@ -1911,7 +1911,7 @@ public sealed class OffsetWire
         double f, l;
         double anOffset = offset;
 
-        if (e.Orientation() == Forward)
+        if (e.Orientation == Forward)
         {
             anOffset *= -1;
         }
@@ -1940,13 +1940,13 @@ public sealed class OffsetWire
             // if the offset is greater otr equal to the radius and the side of the
             // concavity of the circle => edge null.
             Circle2D c1 = ac.Circle();
-            Frame2D axes = c1.Axis();
-            Direction2D xd = axes.XDirection();
-            Direction2D yd = axes.YDirection();
-            double crossed = xd.X() * yd.Y() - xd.Y() * yd.X();
+            Frame2D axes = c1.Axis;
+            Direction2D xd = axes.XDirection;
+            Direction2D yd = axes.YDirection;
+            double crossed = xd.X * yd.Y - xd.Y * yd.X;
             double signe = (crossed > 0.0) ? -1.0 : 1.0;
 
-            if (anOffset * signe < ac.Circle().Radius() - global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (anOffset * signe < ac.Circle().Radius - global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 CurveAdaptor2D ahc = new(g2d);
                 OffsetCurveAdaptor2D off = new(ahc, anOffset);
@@ -2025,7 +2025,7 @@ public sealed class OffsetWire
         if (g2dOC is not null)
         {
             Edge oe = new LibraryMakeEdge(g2dOC, refPlane).InternalEdge();
-            oe.Orientation(e.Orientation());
+            oe.Orient(e.Orientation);
             NCollection_List<Shape> ll = new();
             ll.Append(oe);
             map.Add(e, ll);
@@ -2054,7 +2054,7 @@ public sealed class OffsetWire
             }
             else
             {
-                Point3D p = new(pn.X(), pn.Y(), 0.0);
+                Point3D p = new(pn.X, pn.Y, 0.0);
                 b.MakeVertex(ref vn);
                 b.UpdateVertex(vn, p, global::Kerf.Engine.Foundation.Precision.Confusion());
                 mapNodeVertex[aNode] = vn;
@@ -2188,13 +2188,13 @@ public sealed class OffsetWire
 
             if (indOfE == 1) // first edge of open wire
             {
-                if (newEdge.Orientation() == Forward)
+                if (newEdge.Orientation == Forward)
                 {
                     if (toTrimAsOrigin)
                     {
                         fpar = trPar1;
                         Point2D trPnt2d = pCurve!.Value(fpar);
-                        Point3D trPnt = new(trPnt2d.X(), trPnt2d.Y(), 0.0);
+                        Point3D trPnt = new(trPnt2d.X, trPnt2d.Y, 0.0);
                         v1 = new LibraryMakeVertex(trPnt).InternalVertex();
                     }
                     theBuilder.Add(newEdge, v1.Oriented(Forward));
@@ -2207,7 +2207,7 @@ public sealed class OffsetWire
                     {
                         lpar = trPar2;
                         Point2D trPnt2d = pCurve!.Value(lpar);
-                        Point3D trPnt = new(trPnt2d.X(), trPnt2d.Y(), 0.0);
+                        Point3D trPnt = new(trPnt2d.X, trPnt2d.Y, 0.0);
                         v2 = new LibraryMakeVertex(trPnt).InternalVertex();
                     }
                     theBuilder.Add(newEdge, theVer.First().Oriented(Reversed));
@@ -2217,13 +2217,13 @@ public sealed class OffsetWire
             }
             else // last edge of open wire
             {
-                if (newEdge.Orientation() == Forward)
+                if (newEdge.Orientation == Forward)
                 {
                     if (toTrimAsOrigin)
                     {
                         lpar = trPar2;
                         Point2D trPnt2d = pCurve!.Value(lpar);
-                        Point3D trPnt = new(trPnt2d.X(), trPnt2d.Y(), 0.0);
+                        Point3D trPnt = new(trPnt2d.X, trPnt2d.Y, 0.0);
                         v2 = new LibraryMakeVertex(trPnt).InternalVertex();
                     }
                     theBuilder.Add(newEdge, theVer.First().Oriented(Forward));
@@ -2236,7 +2236,7 @@ public sealed class OffsetWire
                     {
                         fpar = trPar1;
                         Point2D trPnt2d = pCurve!.Value(fpar);
-                        Point3D trPnt = new(trPnt2d.X(), trPnt2d.Y(), 0.0);
+                        Point3D trPnt = new(trPnt2d.X, trPnt2d.Y, 0.0);
                         v1 = new LibraryMakeVertex(trPnt).InternalVertex();
                     }
                     theBuilder.Add(newEdge, v1.Oriented(Reversed));
@@ -2253,7 +2253,7 @@ public sealed class OffsetWire
                 Shape localShape = e.EmptyCopied();
                 Edge newEdge = ShapeCasts.Edge(localShape);
 
-                if (newEdge.Orientation() == Reversed)
+                if (newEdge.Orientation == Reversed)
                 {
                     theBuilder.Add(newEdge, theVer.Value(k).Oriented(Reversed));
                     theBuilder.Add(newEdge, theVer.Value(k + 1).Oriented(Forward));
@@ -2274,7 +2274,7 @@ public sealed class OffsetWire
     private static bool IsInnerEdge(in Shape proE, in Face allSpine, out double trPar1, out double trPar2)
     {
         trPar1 = trPar2 = 0.0;
-        if (proE.ShapeType() != ShapeType.Edge)
+        if (proE.Type != ShapeType.Edge)
         {
             return false;
         }
@@ -2323,7 +2323,7 @@ public sealed class OffsetWire
     {
         Point3D pv = Tool.Pnt(aVertex);
         Point2D pv2d = new(), pfirst, plast, pmid;
-        pv2d = pv2d.WithCoord(pv.X(), pv.Y());
+        pv2d = pv2d.WithCoord(pv.X, pv.Y);
 
         Curve2D pCurve;
         CurveRepresentation curveRep = ((BrepTEdge)anEdge.TShape()!).Curves().First();
@@ -2338,9 +2338,9 @@ public sealed class OffsetWire
         double theTol = Tool.Tolerance(aVertex);
         theTol *= 1.5;
 
-        double dist1 = pfirst.Distance(pv2d);
-        double dist2 = plast.Distance(pv2d);
-        double dist3 = pmid.Distance(pv2d);
+        double dist1 = pfirst.DistanceTo(pv2d);
+        double dist2 = plast.DistanceTo(pv2d);
+        double dist3 = pmid.DistanceTo(pv2d);
 
         return dist1 <= theTol && dist2 <= theTol && dist3 <= theTol;
     }
@@ -2363,7 +2363,7 @@ public sealed class OffsetWire
             for (int ie = 1; ie <= locus.NumberOfElts(ic); ie++)
             {
                 Shape se = link.GeneratingShape(locus.BasicElt(ic, ie));
-                if (se.ShapeType() == ShapeType.Edge)
+                if (se.Type == ShapeType.Edge)
                 {
                     if (map.Contains(se))
                     {
@@ -2380,7 +2380,7 @@ public sealed class OffsetWire
                     if (cType != Line && cType != Circle)
                     {
                         bool reverse = false;
-                        if (e.Orientation() == Forward)
+                        if (e.Orientation == Forward)
                         {
                             reverse = true;
                         }
@@ -2404,7 +2404,7 @@ public sealed class OffsetWire
                         if (crv >= eps)
                         {
                             clProps.Tangent(out n);
-                            double x = n.Y(), y = -n.X();
+                            double x = n.Y, y = -n.X;
                             n = n.WithCoord(x, y);
                             if (reverse)
                             {
@@ -2437,7 +2437,7 @@ public sealed class OffsetWire
                         if (crv >= eps)
                         {
                             clProps.Tangent(out n);
-                            double x = n.Y(), y = -n.X();
+                            double x = n.Y, y = -n.X;
                             n = n.WithCoord(x, y);
                             if (reverse)
                             {
@@ -2480,7 +2480,7 @@ public sealed class OffsetWire
         c.D1(uu2, out Point3D pfin, out Vector3D dfin);
 
         double delta = uu2 - uu1;
-        double dist = pdeb.Distance(pfin);
+        double dist = pdeb.DistanceTo(pfin);
 
         if ((delta / dist) > 5.0e-14)
         {
@@ -2518,14 +2518,14 @@ public sealed class OffsetWire
             vdelta = vfin;
         }
 
-        double norme = new Vector3D(pdeb, pdelta).SquareMagnitude();
+        double norme = new Vector3D(pdeb, pdelta).SquareMagnitude;
         double theFleche = 0;
         bool flecheok = false;
         if (norme > eps)
         {
             // Evaluation of the arrow by interpolation. See IntWalk_IWalking::TestDeflection
-            double n1 = vdeb.SquareMagnitude();
-            double n2 = vdelta.SquareMagnitude();
+            double n1 = vdeb.SquareMagnitude;
+            double n2 = vdelta.SquareMagnitude;
             if (n1 > eps && n2 > eps)
             {
                 double normediff = (vdeb.Normalized().XYZ() - vdelta.Normalized().XYZ()).SquareModulus();
@@ -2540,7 +2540,7 @@ public sealed class OffsetWire
         {
             Point3D pmid = new((pdeb.XYZ() + pdelta.XYZ()) / 2.0);
             Point3D pverif = c.Value(udeb + udelta / 2.0);
-            theFleche = pmid.SquareDistance(pverif);
+            theFleche = pmid.SquareDistanceTo(pverif);
         }
 
         if (theFleche < deflection2)

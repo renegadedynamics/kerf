@@ -27,11 +27,11 @@ public class CelGProps : Properties
 
     public void Perform(in Circle3D c, double u1, double u2)
     {
-        c.Location().Coord(out double x0, out double y0, out double z0);
-        c.XAxis().Direction().Coord(out double xa1, out double ya1, out double za1);
-        c.YAxis().Direction().Coord(out double xa2, out double ya2, out double za2);
-        c.Axis().Direction().Coord(out double xa3, out double ya3, out double za3);
-        double ray = c.Radius();
+        c.Location.Coord(out double x0, out double y0, out double z0);
+        c.XAxis.Direction.Coord(out double xa1, out double ya1, out double za1);
+        c.YAxis.Direction.Coord(out double xa2, out double ya2, out double za2);
+        c.Axis.Direction.Coord(out double xa3, out double ya3, out double za3);
+        double ray = c.Radius;
 
         _dim         = ray * Math.Abs(u2 - u1);
         double xloc = ray * (Math.Sin(u2) - Math.Sin(u1)) / (u2 - u1);
@@ -83,14 +83,14 @@ public class CelGProps : Properties
 
     public void Perform(in Line3D c, double u1, double u2)
     {
-        Axis3D pos = c.Position();
+        Axis3D pos = c.Position;
         Point3D p1  = global::Kerf.Engine.Geometry.ElCLib.LineValue(u1, pos);
         _dim        = Math.Abs(u2 - u1);
         Point3D p2  = global::Kerf.Engine.Geometry.ElCLib.LineValue(u2, pos);
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g = _g.WithCoord((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0, (p1.Z() + p2.Z()) / 2.0);
-        pos.Direction().Coord(out double vx, out double vy, out double vz);
-        pos.Location().Coord(out double x0, out double y0, out double z0);
+        _g = _g.WithCoord((p1.X + p2.X) / 2.0, (p1.Y + p2.Y) / 2.0, (p1.Z + p2.Z) / 2.0);
+        pos.Direction.Coord(out double vx, out double vy, out double vz);
+        pos.Location.Coord(out double x0, out double y0, out double z0);
         double alfa1 = (vz * vz + vy * vy) / 3.0;
         double alfa2 = vy * y0 + vz * z0;
         double alfa3 = y0 * y0 + z0 * z0;

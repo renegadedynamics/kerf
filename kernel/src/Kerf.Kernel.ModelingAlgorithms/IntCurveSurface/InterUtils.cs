@@ -52,10 +52,10 @@ internal static class InterUtils
         Line2D lin2d = lineProj.Line();
 
         // make a second line X-axe symmetric to the first one
-        Point2D p1 = lin2d.Location();
-        Point2D p2 = new(p1.XY() + lin2d.Direction().XY());
-        Point2D p1sym = new(p1.X(), -p1.Y());
-        Point2D p2sym = new(p2.X(), -p2.Y());
+        Point2D p1 = lin2d.Location;
+        Point2D p2 = new(p1.XY() + lin2d.Direction.XY());
+        Point2D p1sym = new(p1.X, -p1.Y);
+        Point2D p2sym = new(p2.X, -p2.Y);
         Line2D lin2dsym = new(p1sym, new Direction2D(new Vector2D(p1sym, p2sym)));
 
         // intersect projections
@@ -151,7 +151,7 @@ internal static class InterUtils
 
         double tolang = THE_TOLERANCE_ANGULAIRE;
 
-        if (dirOfExt.IsParallel(line.Direction(), tolang))
+        if (dirOfExt.IsParallel(line.Direction, tolang))
         {
             noIntersection = true;
             return;
@@ -355,14 +355,14 @@ internal static class InterUtils
 
         CurveAdaptorBase basisCurve = SurfaceTool.BasisCurve(surface);
         Axis3D revAx = SurfaceTool.AxeOfRevolution(surface);
-        Vector3D xVec = new(revAx.Direction());
+        Vector3D xVec = new(revAx.Direction);
         double tolAng = global::Kerf.Engine.Foundation.Precision.Angular();
 
         // make plane to project a basis curve
-        Point3D o = revAx.Location();
+        Point3D o = revAx.Location;
         double u = 0.0;
         Point3D p = basisCurve.Value(u);
-        while (o.SquareDistance(p) <= global::Kerf.Engine.Foundation.Precision.PConfusion() || xVec.IsParallel(new Vector3D(o, p), tolAng))
+        while (o.SquareDistanceTo(p) <= global::Kerf.Engine.Foundation.Precision.PConfusion() || xVec.IsParallel(new Vector3D(o, p), tolAng))
         {
             u += 1.0;
             p = basisCurve.Value(u);
@@ -396,10 +396,10 @@ internal static class InterUtils
             return;
         }
         // make plane to project Line
-        if (xVec.IsParallel(new Vector3D(line.Direction()), tolAng))
+        if (xVec.IsParallel(new Vector3D(line.Direction), tolAng))
         {
-            p = line.Location();
-            while (o.SquareDistance(p) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+            p = line.Location;
+            while (o.SquareDistanceTo(p) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 u += 1.0;
                 p = new Point3D(u, u + 1, u + 2); // any not on aXVec
@@ -408,7 +408,7 @@ internal static class InterUtils
         }
         else
         {
-            nVec = xVec.Crossed(new Vector3D(line.Direction()));
+            nVec = xVec.Crossed(new Vector3D(line.Direction));
         }
 
         pln = new Plane3D(new CoordinateSystem(o, new Direction3D(nVec), new Direction3D(xVec)));
@@ -462,7 +462,7 @@ internal static class InterUtils
         {
             Plane3D pln = basSurf.Plane();
             // gp_Dir ^ gp_Dir is a gp_Dir (normalized), converted to gp_Vec
-            Vector3D t = new(pln.Position().XDirection() ^ pln.Position().YDirection());
+            Vector3D t = new(pln.Position.XDirection ^ pln.Position.YDirection);
             t *= offVal;
             pln = pln.Translated(t);
             IntConicQuad linPlane = new(line, pln, THE_TOLERANCE_ANGULAIRE);
@@ -488,10 +488,10 @@ internal static class InterUtils
         {
             Cylinder cyl = basSurf.Cylinder();
 
-            double r = cyl.Radius();
-            CoordinateSystem a = cyl.Position();
+            double r = cyl.Radius;
+            CoordinateSystem a = cyl.Position;
 
-            if (a.Direct())
+            if (a.IsDirect)
             {
                 r += offVal;
             }
@@ -506,7 +506,7 @@ internal static class InterUtils
             }
             else if (r <= -THE_TOLTANGENCY)
             {
-                a = a.Rotated(new Axis3D(a.Location(), a.Direction()), M_PI);
+                a = a.Rotated(new Axis3D(a.Location, a.Direction), M_PI);
                 cyl = cyl.WithPosition(a);
                 cyl = cyl.WithRadius(-r);
             }
@@ -545,12 +545,12 @@ internal static class InterUtils
         else if (typeOfBasSurf == SurfaceKind.Cone)
         {
             Cone con = basSurf.Cone();
-            double ang = con.SemiAngle();
-            double r = con.RefRadius() + offVal * Math.Cos(ang);
-            CoordinateSystem a = con.Position();
+            double ang = con.SemiAngle;
+            double r = con.RefRadius + offVal * Math.Cos(ang);
+            CoordinateSystem a = con.Position;
             if (r >= 0.0)
             {
-                Vector3D z = new(a.Direction());
+                Vector3D z = new(a.Direction);
                 z *= -offVal * Math.Sin(ang);
                 a = a.Translated(z);
                 con = con.WithPosition(a);
@@ -612,7 +612,7 @@ internal static class InterUtils
                 else if (basCurvType == Parabola)
                 {
                     Parabola3D prb = basSurf.BasisCurve().Parabola();
-                    double f = prb.Focal();
+                    double f = prb.Focal;
                     double dU = 2.0e5 * Math.Sqrt(f);
                     u1new = Max(u1, -dU);
                     u2new = Min(u2, dU);
@@ -640,7 +640,7 @@ internal static class InterUtils
             else if (basCurvType == Parabola)
             {
                 Parabola3D prb = basSurf.BasisCurve().Parabola();
-                double f = prb.Focal();
+                double f = prb.Focal;
                 double dV = 2.0e5 * Math.Sqrt(f);
                 v1new = Max(v1new, -dV);
                 v2new = Min(v2new, dV);
@@ -731,9 +731,9 @@ internal static class InterUtils
                     Vector3D ab = new(pa, pb);
                     Vector3D bc = new(pb, pc);
                     Vector3D aCA = new(pc, pa);
-                    double sqAB = ab.SquareMagnitude();
-                    double sqBC = bc.SquareMagnitude();
-                    double sqCA = aCA.SquareMagnitude();
+                    double sqAB = ab.SquareMagnitude;
+                    double sqBC = bc.SquareMagnitude;
+                    double sqCA = aCA.SquareMagnitude;
 
                     if (sqAB >= sqBC && sqAB >= sqCA && sqAB > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
@@ -792,8 +792,8 @@ internal static class InterUtils
         SurfaceTool.D1(surface, u, v, out psurf, out d1U, out d1V);
         nSurf = d1U.Crossed(d1V);
         CurveTool.D1(curve, w, out psurf, out d1U);
-        double norm = nSurf.Magnitude();
-        if (norm > THE_TOLERANCE_ANGULAIRE && d1U.SquareMagnitude() > THE_TOLERANCE_ANGULAIRE)
+        double norm = nSurf.Magnitude;
+        if (norm > THE_TOLERANCE_ANGULAIRE && d1U.SquareMagnitude > THE_TOLERANCE_ANGULAIRE)
         {
             d1U = d1U.Normalized();
             cosDir = nSurf.Dot(d1U);
@@ -948,7 +948,7 @@ internal static class InterUtils
                         for (iV = 1; iV <= 50; iV++)
                         {
                             Point3D p = pntsOnSurface.Value(iU, iV);
-                            double dist = p.SquareDistance(point);
+                            double dist = p.SquareDistanceTo(point);
                             if (dist < distMin)
                             {
                                 distMin = dist;

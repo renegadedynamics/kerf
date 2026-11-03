@@ -240,12 +240,12 @@ internal static class Classifier2d
             Direction2D tang2d, norm2d;
             double curv;
             intersector.LocalGeometry(edge, pClosest.ParamOnSecond(), out tang2d, out norm2d, out curv);
-            Direction3D tang = new(tang2d.X(), tang2d.Y(), 0.0);
-            Direction3D norm = new(norm2d.X(), norm2d.Y(), 0.0);
+            Direction3D tang = new(tang2d.X, tang2d.Y, 0.0);
+            Direction3D norm = new(norm2d.X, norm2d.Y, 0.0);
 
             if (firstTrans)
             {
-                Direction3D dir = new(lin.Direction().X(), lin.Direction().Y(), 0.0);
+                Direction3D dir = new(lin.Direction.X, lin.Direction.Y, 0.0);
                 trans.Reset(dir);
                 firstTrans = false;
             }

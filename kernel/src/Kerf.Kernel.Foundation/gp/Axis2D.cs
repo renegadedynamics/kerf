@@ -48,9 +48,9 @@ public readonly partial struct Axis2D : IEquatable<Axis2D>
 
     // Queries
 
-    public readonly Point2D Location() => _loc;
+    public readonly Point2D Location => _loc;
 
-    public readonly Direction2D Direction() => _vdir;
+    public readonly Direction2D Direction => _vdir;
 
     /// <summary>True when the directions are parallel within the angular tolerance and each location is within the linear tolerance of the other axis.</summary>
     public readonly bool IsCoaxial(in Axis2D other, double angularTolerance, double linearTolerance)
@@ -81,7 +81,7 @@ public readonly partial struct Axis2D : IEquatable<Axis2D>
     public readonly bool IsParallel(in Axis2D other, double angularTolerance) => _vdir.IsParallel(other._vdir, angularTolerance);
 
     /// <summary>The signed angle between the directions, in ]-PI, PI].</summary>
-    public readonly double Angle(in Axis2D other) => _vdir.Angle(other._vdir);
+    public readonly double AngleTo(in Axis2D other) => _vdir.AngleTo(other._vdir);
 
     public readonly Axis2D Reversed()
     {

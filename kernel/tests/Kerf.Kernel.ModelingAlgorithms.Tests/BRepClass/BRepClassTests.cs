@@ -69,8 +69,8 @@ public class BRepClassTests
         Assert.True(anEdge.Face().IsSame(aFace));
         // the edge from (0, 10) to (0, 0): the point is half way along it
         Exploration.Vertices(anEdge.Edge(), out Vertex aV1, out Vertex aV2);
-        Assert.Equal(0.0, Tool.Pnt(aV1).X(), 1e-12);
-        Assert.Equal(0.0, Tool.Pnt(aV2).X(), 1e-12);
+        Assert.Equal(0.0, Tool.Pnt(aV1).X, 1e-12);
+        Assert.Equal(0.0, Tool.Pnt(aV2).X, 1e-12);
         Assert.Equal(5.0, aMiddle.EdgeParameter(), 1e-9);
 
         var aCorner = new FaceClassifier(aFace, new Point2D(10.0, 0.0), 1e-7);
@@ -127,7 +127,7 @@ public class BRepClassTests
         var aP = new Point2D(2, 2);
         Assert.True(anExplorer.Segment(aP, out Line2D aL, out double aPar));
         Assert.True(aPar > 0);
-        Assert.True(aL.Location().IsEqual(aP, 1e-12));
+        Assert.True(aL.Location.IsEqual(aP, 1e-12));
 
         // each other segment is different, until the edges are used up
         int aCount = 1;
@@ -143,7 +143,7 @@ public class BRepClassTests
         // a point far away is brought back towards the face's box
         var aFar = new Point2D(1e300, 1e300);
         Assert.False(anExplorer.CheckPoint(ref aFar));
-        Assert.True(Math.Abs(aFar.X()) < 1e300);
+        Assert.True(Math.Abs(aFar.X) < 1e300);
     }
 
     [Fact]
@@ -214,9 +214,9 @@ public class BRepClassTests
 
         // the local geometry of a line: its direction, no curvature
         anInter.LocalGeometry(anEdge, 3.0, out Direction2D aT, out Direction2D aN, out double aC);
-        Assert.Equal(1.0, aT.X(), 1e-12);
+        Assert.Equal(1.0, aT.X, 1e-12);
         Assert.Equal(0.0, aC);
-        Assert.Equal(-1.0, aN.Y(), 1e-12);
+        Assert.Equal(-1.0, aN.Y, 1e-12);
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public class BRepClassTests
         for (var anExp = new Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {
             Edge anE = ShapeCasts.Edge(anExp.Current());
-            aClassifier.Compare(new ClassifierEdge(anE, aFace), anE.Orientation());
+            aClassifier.Compare(new ClassifierEdge(anE, aFace), anE.Orientation);
         }
 
         Assert.Equal(In, aClassifier.State());

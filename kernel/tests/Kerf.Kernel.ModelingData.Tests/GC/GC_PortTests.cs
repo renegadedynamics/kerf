@@ -51,7 +51,7 @@ public class GC_PortTests
         Assert.True(aCurve.IsFrozen);
         Assert.Same(aCurve, aSegment.Value());
         Assert.Same(aCurve, (TrimmedCurve3D)aSegment);
-        Assert.Equal(5.0, aCurve.LastParameter(), 1e-15);
+        Assert.Equal(5.0, aCurve.LastParameter, 1e-15);
         Assert.Throws<ImmutableObjectException>(() => aCurve.SetTrim(0.0, 1.0));
         Assert.False(((TrimmedCurve3D)aCurve.Copy()).IsFrozen);
 
@@ -80,25 +80,25 @@ public class GC_PortTests
         MakeArcOfCircle2d aMaker = new(aP1, new Vector2D(0.0, 1.0), aP2);
         Assert.True(aMaker.IsDone);
         TrimmedCurve2D anArc = aMaker.Value();
-        Assert.True(anArc.StartPoint().IsEqual(aP1, 1e-12));
-        Assert.True(anArc.EndPoint().IsEqual(aP2, 1e-12));
-        Assert.True(anArc.Value(0.5 * (anArc.FirstParameter() + anArc.LastParameter())).IsEqual(new Point2D(0, 1), 1e-12));
+        Assert.True(anArc.StartPoint.IsEqual(aP1, 1e-12));
+        Assert.True(anArc.EndPoint.IsEqual(aP2, 1e-12));
+        Assert.True(anArc.Value(0.5 * (anArc.FirstParameter + anArc.LastParameter)).IsEqual(new Point2D(0, 1), 1e-12));
     }
 
     [Fact]
     public void Surfaces_AndTrimmedSurfaces()
     {
         Cylinder aCyl = new(new CoordinateSystem(theZAxes), 5.0);
-        Assert.Equal(3.0, new MakeCylindricalSurface(aCyl, 2.0).Value().Radius());
-        Assert.Equal(2.0, new MakeCylindricalSurface(aCyl, new Point3D(0.0, 2.0, 7.0)).Value().Radius(), 1e-15);
+        Assert.Equal(3.0, new MakeCylindricalSurface(aCyl, 2.0).Value().Radius);
+        Assert.Equal(2.0, new MakeCylindricalSurface(aCyl, new Point3D(0.0, 2.0, 7.0)).Value().Radius, 1e-15);
 
         MakeTrimmedCylinder aTrimmed = new(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0, 3.0);
-        aTrimmed.Value().Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aTrimmed.Value().ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((0.0, 2.0 * M_PI, 0.0, 3.0), (aU1, aU2, aV1, aV2));
 
         MakeTrimmedCone aCone = new(new Point3D(0, 0, 0), new Point3D(0, 0, 4), 3.0, 1.0);
         Assert.True(aCone.IsDone);
-        aCone.Value().Bounds(out _, out _, out _, out double aConeV2);
+        aCone.Value().ParameterBounds(out _, out _, out _, out double aConeV2);
         Assert.Equal(Math.Sqrt(4.0 * 4.0 + 2.0 * 2.0), aConeV2, 1e-12);
     }
 

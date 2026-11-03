@@ -392,7 +392,7 @@ public static class RWStl
                 var vec1 = new Vector3D(p1, p2);
                 var vec2 = new Vector3D(p1, p3);
                 Vector3D vNorm = vec1.Crossed(vec2);
-                if (vNorm.SquareMagnitude() > Constants.Resolution())
+                if (vNorm.SquareMagnitude > Constants.Resolution())
                 {
                     vNorm = vNorm.Normalized();
                 }
@@ -403,11 +403,11 @@ public static class RWStl
 
                 // std::scientific << std::setprecision(12)
                 stream.Write(" facet normal ");
-                stream.Write(E12(vNorm.X()));
+                stream.Write(E12(vNorm.X));
                 stream.Write(' ');
-                stream.Write(E12(vNorm.Y()));
+                stream.Write(E12(vNorm.Y));
                 stream.Write(' ');
-                stream.Write(E12(vNorm.Z()));
+                stream.Write(E12(vNorm.Z));
                 stream.Write("\n   outer loop\n");
                 WriteVertex(stream, p1);
                 WriteVertex(stream, p2);
@@ -439,11 +439,11 @@ public static class RWStl
     private static void WriteVertex(TextWriter stream, in Point3D p)
     {
         stream.Write("     vertex ");
-        stream.Write(E12(p.X()));
+        stream.Write(E12(p.X));
         stream.Write(' ');
-        stream.Write(E12(p.Y()));
+        stream.Write(E12(p.Y));
         stream.Write(' ');
-        stream.Write(E12(p.Z()));
+        stream.Write(E12(p.Z));
         stream.Write('\n');
     }
 
@@ -483,7 +483,7 @@ public static class RWStl
                 var vec1 = new Vector3D(p1, p2);
                 var vec2 = new Vector3D(p1, p3);
                 Vector3D vNorm = vec1.Crossed(vec2);
-                if (vNorm.SquareMagnitude() > Constants.Resolution())
+                if (vNorm.SquareMagnitude > Constants.Resolution())
                 {
                     vNorm = vNorm.Normalized();
                 }
@@ -491,29 +491,29 @@ public static class RWStl
                 {
                     vNorm = vNorm.WithCoord(0.0, 0.0, 0.0);
                 }
-                ConvertDouble(vNorm.X(), dataChunk[byteCount..]);
+                ConvertDouble(vNorm.X, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(vNorm.Y(), dataChunk[byteCount..]);
+                ConvertDouble(vNorm.Y, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(vNorm.Z(), dataChunk[byteCount..]);
+                ConvertDouble(vNorm.Z, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p1.X(), dataChunk[byteCount..]);
+                ConvertDouble(p1.X, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p1.Y(), dataChunk[byteCount..]);
+                ConvertDouble(p1.Y, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p1.Z(), dataChunk[byteCount..]);
+                ConvertDouble(p1.Z, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p2.X(), dataChunk[byteCount..]);
+                ConvertDouble(p2.X, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p2.Y(), dataChunk[byteCount..]);
+                ConvertDouble(p2.Y, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p2.Z(), dataChunk[byteCount..]);
+                ConvertDouble(p2.Z, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p3.X(), dataChunk[byteCount..]);
+                ConvertDouble(p3.X, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p3.Y(), dataChunk[byteCount..]);
+                ConvertDouble(p3.Y, dataChunk[byteCount..]);
                 byteCount += 4;
-                ConvertDouble(p3.Z(), dataChunk[byteCount..]);
+                ConvertDouble(p3.Z, dataChunk[byteCount..]);
                 byteCount += 4;
                 dataChunk[byteCount] = 0;
                 dataChunk[byteCount + 1] = 0;

@@ -138,5 +138,5 @@ public partial struct PathPoint : IEquatable<PathPoint>
     public static bool operator !=(in PathPoint left, in PathPoint right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => $"{Constants.Format("IntSurf_PathPoint", _pt.X(), _pt.Y(), _pt.Z())} passing {_ispass} tangent {_istgt} uv {_sequv?.Length() ?? 0}";
+        => $"{Constants.Format("IntSurf_PathPoint", _pt.X, _pt.Y, _pt.Z)} passing {_ispass} tangent {_istgt} uv {_sequv?.Length() ?? 0}";
 }

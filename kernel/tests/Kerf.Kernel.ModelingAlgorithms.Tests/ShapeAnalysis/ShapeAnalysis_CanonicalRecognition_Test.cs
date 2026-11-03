@@ -63,10 +63,10 @@ public class CanonicalRecognitionApproxTest
 
         Assert.True(aResult, "Polyline should be recognized as planar");
 
-        Point3D aOrigin = aResultPlane.Location();
-        Direction3D aNormal = aResultPlane.Axis().Direction();
-        Assert.Equal(1.0, Math.Abs(aNormal.Z()), myTolerance);
-        Assert.Equal(0.0, aOrigin.Z(), myTolerance);
+        Point3D aOrigin = aResultPlane.Location;
+        Direction3D aNormal = aResultPlane.Axis.Direction;
+        Assert.Equal(1.0, Math.Abs(aNormal.Z), myTolerance);
+        Assert.Equal(0.0, aOrigin.Z, myTolerance);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class CanonicalRecognitionApproxTest
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "NURBS face should be recognized as cylinder");
-        Assert.Equal(1.0, aResultCylinder.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultCylinder.Radius, myTolerance);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class CanonicalRecognitionApproxTest
         bool aResult = myRecognizer.IsCone(myTolerance, ref aResultCone);
 
         Assert.True(aResult, "NURBS face should be recognized as cone");
-        Assert.Equal(aHalfAngle, aResultCone.SemiAngle(), myTolerance);
+        Assert.Equal(aHalfAngle, aResultCone.SemiAngle, myTolerance);
     }
 
     [Fact]
@@ -118,7 +118,7 @@ public class CanonicalRecognitionApproxTest
         bool aResult = myRecognizer.IsSphere(myTolerance, ref aResultSphere);
 
         Assert.True(aResult, "NURBS face should be recognized as sphere");
-        Assert.Equal(1.0, aResultSphere.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultSphere.Radius, myTolerance);
     }
 }
 
@@ -164,8 +164,8 @@ public class CanonicalRecognitionBaseCurveTest
         bool aResult = myRecognizer.IsLine(myTolerance, ref aResultLine);
 
         Assert.True(aResult, "Nearly linear Bezier should be recognized as line");
-        Direction3D aLineDir = aResultLine.Direction();
-        Assert.Equal(1.0, Math.Abs(aLineDir.X()), myTolerance);
+        Direction3D aLineDir = aResultLine.Direction;
+        Assert.Equal(1.0, Math.Abs(aLineDir.X), myTolerance);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class CanonicalRecognitionBaseCurveTest
         bool aResult = myRecognizer.IsCircle(myTolerance, ref aResultCircle);
 
         Assert.True(aResult, "Bezier curve should be recognized as circle (matching original TCL test)");
-        Assert.True(aResultCircle.Radius() > 0.0, "Circle radius should be positive");
+        Assert.True(aResultCircle.Radius > 0.0, "Circle radius should be positive");
     }
 
     [Fact]
@@ -198,8 +198,8 @@ public class CanonicalRecognitionBaseCurveTest
         bool aResult = myRecognizer.IsEllipse(1.0e-7, ref aResultEllipse);
 
         Assert.True(aResult, "Ellipse should be recognized as ellipse");
-        Assert.Equal(1.0, aResultEllipse.MajorRadius(), 1.0e-7);
-        Assert.Equal(0.5, aResultEllipse.MinorRadius(), 1.0e-7);
+        Assert.Equal(1.0, aResultEllipse.MajorRadius, 1.0e-7);
+        Assert.Equal(0.5, aResultEllipse.MinorRadius, 1.0e-7);
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class CanonicalRecognitionBaseCurveTest
         bool aResult = myRecognizer.IsCircle(1.0e-7, ref aResultCircle);
 
         Assert.True(aResult, "Multi-segment circle wire should be recognized as circle");
-        Assert.Equal(1.0, aResultCircle.Radius(), 1.0e-7);
+        Assert.Equal(1.0, aResultCircle.Radius, 1.0e-7);
     }
 
     [Fact]
@@ -243,8 +243,8 @@ public class CanonicalRecognitionBaseCurveTest
         bool aResult = myRecognizer.IsEllipse(1.0e-7, ref aResultEllipse);
 
         Assert.True(aResult, "Multi-segment ellipse wire should be recognized as ellipse");
-        Assert.Equal(1.0, aResultEllipse.MajorRadius(), 1.0e-7);
-        Assert.Equal(0.5, aResultEllipse.MinorRadius(), 1.0e-7);
+        Assert.Equal(1.0, aResultEllipse.MajorRadius, 1.0e-7);
+        Assert.Equal(0.5, aResultEllipse.MinorRadius, 1.0e-7);
     }
 }
 
@@ -272,7 +272,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsPlane(myTolerance, ref aResultPlane);
 
         Assert.True(aResult, "Planar face should be recognized as plane");
-        Assert.Equal(1.0, Math.Abs(aResultPlane.Axis().Direction().Z()), myTolerance);
+        Assert.Equal(1.0, Math.Abs(aResultPlane.Axis.Direction.Z), myTolerance);
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Cylindrical surface should be recognized as cylinder");
-        Assert.Equal(1.0, aResultCylinder.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultCylinder.Radius, myTolerance);
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsCone(myTolerance, ref aResultCone);
 
         Assert.True(aResult, "Conical surface should be recognized as cone");
-        Assert.Equal(aSemiAngle, aResultCone.SemiAngle(), myTolerance);
+        Assert.Equal(aSemiAngle, aResultCone.SemiAngle, myTolerance);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsSphere(myTolerance, ref aResultSphere);
 
         Assert.True(aResult, "Spherical surface should be recognized as sphere");
-        Assert.Equal(1.0, aResultSphere.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultSphere.Radius, myTolerance);
     }
 
     [Fact]
@@ -335,7 +335,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsPlane(myTolerance, ref aResultPlane);
 
         Assert.True(aResult, "Sewn planar surface should be recognized as plane");
-        Assert.Equal(1.0, Math.Abs(aResultPlane.Axis().Direction().Z()), myTolerance);
+        Assert.Equal(1.0, Math.Abs(aResultPlane.Axis.Direction.Z), myTolerance);
     }
 
     [Fact]
@@ -351,7 +351,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Sewn cylindrical surface should be recognized as cylinder");
-        Assert.Equal(1.0, aResultCylinder.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultCylinder.Radius, myTolerance);
     }
 
     [Fact]
@@ -368,7 +368,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsCone(myTolerance, ref aResultCone);
 
         Assert.True(aResult, "Sewn conical surface should be recognized as cone");
-        Assert.Equal(aSemiAngle, aResultCone.SemiAngle(), myTolerance);
+        Assert.Equal(aSemiAngle, aResultCone.SemiAngle, myTolerance);
     }
 
     [Fact]
@@ -385,7 +385,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsSphere(myTolerance, ref aResultSphere);
 
         Assert.True(aResult, "Sewn spherical surface should be recognized as sphere");
-        Assert.Equal(1.0, aResultSphere.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultSphere.Radius, myTolerance);
     }
 
     [Fact]
@@ -401,7 +401,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Sewn cylindrical shape should be recognized as cylinder");
-        Assert.Equal(1.0, aResultCylinder.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultCylinder.Radius, myTolerance);
     }
 
     [Fact]
@@ -417,7 +417,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         Assert.NotNull(anIntCurve);
 
         var anExtSurf = new ExtrusionSurface(anIntCurve, new Direction3D(Direction3D.D.Z));
-        anExtSurf.Bounds(out double uMin, out double uMax, out double _, out double _);
+        anExtSurf.ParameterBounds(out double uMin, out double uMax, out double _, out double _);
         Face aNurbsFace = ShapeCasts.Face(CanonicalRecognitionTestUtils.NurbsConverted(Face(anExtSurf, uMin, uMax, -1, 1)));
 
         myRecognizer.SetShape(aNurbsFace);
@@ -425,7 +425,7 @@ public class CanonicalRecognitionBaseSurfaceTest
         bool aResult = myRecognizer.IsCylinder(myTolerance, ref aResultCylinder);
 
         Assert.True(aResult, "Extruded surface should be recognized as cylinder");
-        Assert.Equal(1.0, aResultCylinder.Radius(), myTolerance);
+        Assert.Equal(1.0, aResultCylinder.Radius, myTolerance);
     }
 
     [Fact]

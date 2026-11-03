@@ -288,7 +288,7 @@ public sealed class ShapeImage
             foreach (KeyValuePair<Shape, Shape> mit in _up)
             {
                 Shape aS = mit.Key;
-                if (aS.ShapeType() == t && !m.Contains(aS))
+                if (aS.Type == t && !m.Contains(aS))
                 {
                     Remove(aS);
                     change = true;

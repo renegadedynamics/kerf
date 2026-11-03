@@ -69,7 +69,7 @@ public static class Fill
                 bw.Add(newwire, e.Reversed());
             }
         }
-        newwire.Orientation(Forward);
+        newwire.Orient(Forward);
         newwire.Closed(true);
     }
 
@@ -107,7 +107,7 @@ public static class Fill
         Curve3D c = Tool.Curve(currentEdge, out double first, out double last)!;
 
         Vertex vbid = new(), v0, v1;
-        Orientation currentOrient = currentEdge.Orientation();
+        Orientation currentOrient = currentEdge.Orientation;
         Exploration.Vertices(currentEdge, out Vertex vf, out Vertex vl);
         vbid.Nullify();
 
@@ -121,7 +121,7 @@ public static class Fill
                 // piece of edge
                 m1 = (cutValues.Value(j) - t0) * (last - first) / (t1 - t0) + first;
                 Edge cutE = new LibraryMakeEdge(c, v0, vbid, m0, m1).InternalEdge();
-                cutE.Orientation(currentOrient);
+                cutE.Orient(currentOrient);
                 s.Append(cutE);
                 m0 = m1;
                 v0 = Exploration.LastVertex(cutE);
@@ -129,7 +129,7 @@ public static class Fill
                 {
                     // last piece
                     Edge lastE = new LibraryMakeEdge(c, v0, vl, m0, last).InternalEdge();
-                    lastE.Orientation(currentOrient);
+                    lastE.Orient(currentOrient);
                     s.Append(lastE);
                 }
             }
@@ -144,7 +144,7 @@ public static class Fill
                 // piece of edge
                 m0 = (cutValues.Value(j) - t0) * (last - first) / (t1 - t0) + first;
                 Edge cutE = new LibraryMakeEdge(c, vbid, v1, m0, m1).InternalEdge();
-                cutE.Orientation(currentOrient);
+                cutE.Orient(currentOrient);
                 s.Append(cutE);
                 m1 = m0;
                 v1 = Exploration.FirstVertex(cutE);
@@ -152,7 +152,7 @@ public static class Fill
                 {
                     // last piece
                     Edge lastE = new LibraryMakeEdge(c, vf, v1, first, m1).InternalEdge();
-                    lastE.Orientation(currentOrient);
+                    lastE.Orient(currentOrient);
                     s.Append(lastE);
                 }
             }
@@ -199,7 +199,7 @@ public static class Fill
 
         // compute the location
         bool sameLoc = false;
-        if (L1 == L2)
+        if (L1.IsEqual(L2))
         {
             l = L1;
             L1 = L2 = new Placement();
@@ -211,8 +211,8 @@ public static class Fill
         Vertex v1f, v1l, v2f, v2l;
 
         // create a new Handle
-        if (Math.Abs(f1 - c1.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || Math.Abs(l1 - c1.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (Math.Abs(f1 - c1.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(l1 - c1.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             c1 = new TrimmedCurve3D(c1, f1, l1);
         }
@@ -223,10 +223,10 @@ public static class Fill
         // eventually the curve is concerned
         if (!sameLoc)
         {
-            c1.Transform(L1.Transformation());
+            c1.Transform(L1.Transformation);
         }
         // it is set in the proper direction and its vertices are taken
-        if (edge1.Orientation() == Reversed)
+        if (edge1.Orientation == Reversed)
         {
             Exploration.Vertices(edge1, out v1l, out v1f);
             c1.Reverse();
@@ -237,8 +237,8 @@ public static class Fill
         }
 
         // a new Handle is created
-        if (Math.Abs(f2 - c2.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || Math.Abs(l2 - c2.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (Math.Abs(f2 - c2.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(l2 - c2.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             c2 = new TrimmedCurve3D(c2, f2, l2);
         }
@@ -249,10 +249,10 @@ public static class Fill
         // eventually the curve is concerned
         if (!sameLoc)
         {
-            c2.Transform(L2.Transformation());
+            c2.Transform(L2.Transformation);
         }
         // it is set in the proper direction and its vertices are taken
-        if (edge2.Orientation() == Reversed)
+        if (edge2.Orientation == Reversed)
         {
             Exploration.Vertices(edge2, out v2l, out v2f);
             c2.Reverse();
@@ -276,13 +276,13 @@ public static class Fill
         b.MakeFace(ref face, surf, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // make the missing edges
-        surf.Bounds(out f1, out l1, out f2, out l2);
+        surf.ParameterBounds(out f1, out l1, out f2, out l2);
 
         Edge edge3 = new(), edge4 = new();
 
         iso = surf.UIso(f1);
         tol = Max(Tool.Tolerance(v1f), Tool.Tolerance(v2f));
-        if (iso.Value(f2).Distance(iso.Value(l2)) > tol)
+        if (iso.Value(f2).DistanceTo(iso.Value(l2)) > tol)
         {
             b.MakeEdge(ref edge3, iso, global::Kerf.Engine.Foundation.Precision.Confusion());
         }
@@ -291,9 +291,9 @@ public static class Fill
             b.MakeEdge(ref edge3);
             b.Degenerated(edge3, true);
         }
-        v1f.Orientation(Forward);
+        v1f.Orient(Forward);
         b.Add(edge3, v1f);
-        v2f.Orientation(Reversed);
+        v2f.Orient(Reversed);
         b.Add(edge3, v2f);
         b.Range(edge3, f2, l2);
 
@@ -305,7 +305,7 @@ public static class Fill
         {
             iso = surf.UIso(l1);
             tol = Max(Tool.Tolerance(v1l), Tool.Tolerance(v2l));
-            if (iso.Value(l2).Distance(iso.Value(f2)) > tol)
+            if (iso.Value(l2).DistanceTo(iso.Value(f2)) > tol)
             {
                 b.MakeEdge(ref edge4, iso, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
@@ -314,9 +314,9 @@ public static class Fill
                 b.MakeEdge(ref edge4);
                 b.Degenerated(edge4, true);
             }
-            v1l.Orientation(Forward);
+            v1l.Orient(Forward);
             b.Add(edge4, v1l);
-            v2l.Orientation(Reversed);
+            v2l.Orient(Reversed);
             b.Add(edge4, v2l);
             b.Range(edge4, f2, l2);
         }
@@ -339,7 +339,7 @@ public static class Fill
 
         double t = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        if (edge1.Orientation() == Reversed)
+        if (edge1.Orientation == Reversed)
         {
             b.UpdateEdge(edge1, new LineCurve2D(new Point2D(0, f2), new Direction2D(Direction2D.D.NX)), face, t);
             b.Range(edge1, face, -l1, -f1);
@@ -350,7 +350,7 @@ public static class Fill
             b.Range(edge1, face, f1, l1);
         }
 
-        if (edge2.Orientation() == Reversed)
+        if (edge2.Orientation == Reversed)
         {
             b.UpdateEdge(edge2, new LineCurve2D(new Point2D(0, l2), new Direction2D(Direction2D.D.NX)), face, t);
             b.Range(edge2, face, -l1, -f1);
@@ -429,7 +429,7 @@ public static class Fill
         Explorer ex1 = new();
         Explorer ex2 = new();
 
-        bool closed = wire1.Closed() && wire2.Closed();
+        bool closed = wire1.IsClosed && wire2.IsClosed;
 
         bool thefirst = true;
 
@@ -455,7 +455,7 @@ public static class Fill
 
             // compute the location
             bool sameLoc = false;
-            if (L1 == L2)
+            if (L1.IsEqual(L2))
             {
                 l = L1;
                 L1 = L2 = new Placement();
@@ -466,8 +466,8 @@ public static class Fill
 
             Vertex v1f, v1l, v2f, v2l;
 
-            if (Math.Abs(f1 - c1.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                || Math.Abs(l1 - c1.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Math.Abs(f1 - c1.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(l1 - c1.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 c1 = new TrimmedCurve3D(c1, f1, l1);
             }
@@ -477,9 +477,9 @@ public static class Fill
             }
             if (!sameLoc)
             {
-                c1.Transform(L1.Transformation());
+                c1.Transform(L1.Transformation);
             }
-            if (edge1.Orientation() == Reversed)
+            if (edge1.Orientation == Reversed)
             {
                 Exploration.Vertices(edge1, out v1l, out v1f);
                 c1.Reverse();
@@ -489,8 +489,8 @@ public static class Fill
                 Exploration.Vertices(edge1, out v1f, out v1l);
             }
 
-            if (Math.Abs(f2 - c2.FirstParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                || Math.Abs(l2 - c2.LastParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Math.Abs(f2 - c2.FirstParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(l2 - c2.LastParameter) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 c2 = new TrimmedCurve3D(c2, f2, l2);
             }
@@ -500,9 +500,9 @@ public static class Fill
             }
             if (!sameLoc)
             {
-                c2.Transform(L2.Transformation());
+                c2.Transform(L2.Transformation);
             }
-            if (edge2.Orientation() == Reversed)
+            if (edge2.Orientation == Reversed)
             {
                 Exploration.Vertices(edge2, out v2l, out v2f);
                 c2.Reverse();
@@ -523,14 +523,14 @@ public static class Fill
             b.MakeFace(ref face, surf, global::Kerf.Engine.Foundation.Precision.Confusion());
 
             // make the missing edges
-            surf.Bounds(out f1, out l1, out f2, out l2);
+            surf.ParameterBounds(out f1, out l1, out f2, out l2);
 
             if (thefirst)
             {
                 iso = surf.UIso(f1);
                 //      Tol = std::max(BT.Tolerance(V1f), BT.Tolerance(V2f));
                 tol = Max(Tool.Tolerance(v1f), Tool.Tolerance(v2f));
-                if (iso.Value(f2).Distance(iso.Value(l2)) > tol)
+                if (iso.Value(f2).DistanceTo(iso.Value(l2)) > tol)
                 {
                     b.MakeEdge(ref edge3, iso, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
@@ -539,9 +539,9 @@ public static class Fill
                     b.MakeEdge(ref edge3);
                     b.Degenerated(edge3, true);
                 }
-                v1f.Orientation(Forward);
+                v1f.Orient(Forward);
                 b.Add(edge3, v1f);
-                v2f.Orientation(Reversed);
+                v2f.Orient(Reversed);
                 b.Add(edge3, v2f);
                 b.Range(edge3, f2, l2);
                 if (closed)
@@ -566,7 +566,7 @@ public static class Fill
                 iso = surf.UIso(l1);
                 //      Tol = std::max(BT.Tolerance(V1l), BT.Tolerance(V2l));
                 tol = Max(Tool.Tolerance(v1l), Tool.Tolerance(v2l));
-                if (iso.Value(l2).Distance(iso.Value(f2)) > tol)
+                if (iso.Value(l2).DistanceTo(iso.Value(f2)) > tol)
                 {
                     b.MakeEdge(ref edge4, iso, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
@@ -575,9 +575,9 @@ public static class Fill
                     b.MakeEdge(ref edge4);
                     b.Degenerated(edge4, true);
                 }
-                v1l.Orientation(Forward);
+                v1l.Orient(Forward);
                 b.Add(edge4, v1l);
-                v2l.Orientation(Reversed);
+                v2l.Orient(Reversed);
                 b.Add(edge4, v2l);
                 b.Range(edge4, f2, l2);
             }
@@ -606,7 +606,7 @@ public static class Fill
 
             double t = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-            if (edge1.Orientation() == Reversed)
+            if (edge1.Orientation == Reversed)
             {
                 b.UpdateEdge(edge1, new LineCurve2D(new Point2D(0, f2), new Direction2D(Direction2D.D.NX)), face, t);
                 b.Range(edge1, face, -l1, -f1);
@@ -617,7 +617,7 @@ public static class Fill
                 b.Range(edge1, face, f1, l1);
             }
 
-            if (edge2.Orientation() == Reversed)
+            if (edge2.Orientation == Reversed)
             {
                 b.UpdateEdge(edge2, new LineCurve2D(new Point2D(0, l2), new Direction2D(Direction2D.D.NX)), face, t);
                 b.Range(edge2, face, -l1, -f1);
@@ -679,7 +679,7 @@ public static class Fill
         Face face = new();
 
         // normal to the Spine.
-        if (spine.ShapeType() == global::Kerf.Topology.ShapeType.Face)
+        if (spine.Type == global::Kerf.Topology.ShapeType.Face)
         {
             face = ShapeCasts.Face(spine);
             s = Tool.Surface(ShapeCasts.Face(spine), out l);
@@ -697,7 +697,7 @@ public static class Fill
                 }
             }
         }
-        else if (spine.ShapeType() == ShapeType.Wire)
+        else if (spine.Type == ShapeType.Wire)
         {
             face = new LibraryMakeFace(ShapeCasts.Wire(spine), true).InternalFace();
             s = Tool.Surface(face, out l);
@@ -710,10 +710,10 @@ public static class Fill
 
         if (!l.IsIdentity)
         {
-            s = (Surface)s.Transformed(l.Transformation());
+            s = (Surface)s.Transformed(l.Transformation);
         }
 
-        normal = new Vector3D(((PlaneSurface)s).Pln().Axis().Direction());
+        normal = new Vector3D(((PlaneSurface)s).Plane.Axis.Direction);
 
         // Find vertex of the profile closest to the spine.
         double distMin = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -739,7 +739,7 @@ public static class Fill
             for (; pe.More(); pe.Next())
             {
                 p2 = Tool.Pnt(ShapeCasts.Vertex(pe.Current()));
-                double distP1P2 = p1.SquareDistance(p2);
+                double distP1P2 = p1.SquareDistanceTo(p2);
                 isOnVertex = (distP1P2 <= tol2);
                 if (isOnVertex)
                 {
@@ -772,10 +772,10 @@ public static class Fill
             ce1.D1(par1, out loc1, out tang1);
             if (!l.IsIdentity)
             {
-                tang1 = tang1.Transformed(l.Transformation());
-                loc1 = loc1.Transformed(l.Transformation());
+                tang1 = tang1.Transformed(l.Transformation);
+                loc1 = loc1.Transformed(l.Transformation);
             }
-            if (e1.Orientation() == Reversed)
+            if (e1.Orientation == Reversed)
             {
                 tang1 = tang1.Reversed();
             }
@@ -785,10 +785,10 @@ public static class Fill
             ce2.D1(par2, out loc2, out tang2);
             if (!l.IsIdentity)
             {
-                tang2 = tang2.Transformed(l.Transformation());
-                loc2 = loc2.Transformed(l.Transformation());
+                tang2 = tang2.Transformed(l.Transformation);
+                loc2 = loc2.Transformed(l.Transformation);
             }
-            if (e2.Orientation() == Reversed)
+            if (e2.Orientation == Reversed)
             {
                 tang2 = tang2.Reversed();
             }
@@ -853,7 +853,7 @@ public static class Fill
                         distMin = dist;
                         EdgeCurveAdaptor bac = new(e);
                         bac.D1(par, out loc, out tang);
-                        if (e.Orientation() == Reversed)
+                        if (e.Orientation == Reversed)
                         {
                             tang = tang.Reversed();
                         }
@@ -880,7 +880,7 @@ public static class Fill
     /// <exception cref="NoSuchObjectException">The wire isn't closed.</exception>
     internal static void SearchOrigin(ref Wire w, in Point3D p, in Vector3D dir, double tol)
     {
-        if (!w.Closed())
+        if (!w.IsClosed)
         {
             throw new NoSuchObjectException("BRepFill::SearchOrigin : the wire must be closed");
         }
@@ -893,7 +893,7 @@ public static class Fill
         // Class BRep_Tool without fields and without Constructor :
         //  BRep_Tool BT;
 
-        w.Orientation(Forward); // to avoid composing the orientations
+        w.Orient(Forward); // to avoid composing the orientations
 
         // Calculate the distance
         b.MakeVertex(ref v, p, tol);
@@ -901,12 +901,12 @@ public static class Fill
         if (DSS.IsDone)
         {
             int isol = 1;
-            double dss = p.Distance(DSS.PointOnShape2(isol));
+            double dss = p.DistanceTo(DSS.PointOnShape2(isol));
             for (int iss = 2; iss <= DSS.SolutionCount; iss++)
             {
-                if (dss > p.Distance(DSS.PointOnShape2(iss)))
+                if (dss > p.DistanceTo(DSS.PointOnShape2(iss)))
                 {
-                    dss = p.Distance(DSS.PointOnShape2(iss));
+                    dss = p.DistanceTo(DSS.PointOnShape2(iss));
                     isol = iss;
                 }
             }
@@ -921,13 +921,13 @@ public static class Fill
                 e = ShapeCasts.Edge(supp);
                 Exploration.Vertices(e, out Vertex vf, out Vertex vl);
                 //      dist = P.Distance(BT.Pnt(Vf));
-                dist = p.Distance(Tool.Pnt(vf));
+                dist = p.DistanceTo(Tool.Pnt(vf));
                 if (dist < tol)
                 {
                     v = vl;
                 }
                 //      d = P.Distance(BT.Pnt(Vl));
-                d = p.Distance(Tool.Pnt(vl));
+                d = p.DistanceTo(Tool.Pnt(vl));
                 if ((d < tol) && (d < dist))
                 {
                     v = vf;
@@ -992,11 +992,11 @@ public static class Fill
         }
         EdgeCurveAdaptor ac = new(e);
         ac.D1(theparam, out Point3D _, out Vector3D ve);
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             ve *= -1;
         }
-        angle = ve.Angle(dir);
+        angle = ve.AngleTo(dir);
         if (angle > M_PI)
         {
             angle = 2 * M_PI - angle;
@@ -1123,7 +1123,7 @@ public static class Fill
                 sr.Clear();
                 // the wire is always FORWARD
                 // it is necessary to modify the parameter of cut6 if the edge is REVERSED
-                if (e.Orientation() == Forward)
+                if (e.Orientation == Forward)
                 {
                     for (j = 1; j <= ndec; j++)
                     {
@@ -1146,9 +1146,9 @@ public static class Fill
         }
 
         // result
-        Orientation orien = wire.Orientation();
+        Orientation orien = wire.Orientation;
         Shape localShape = mw.InternalWire();
-        localShape.Orientation(orien);
+        localShape.Orient(orien);
         Wire wres = ShapeCasts.Wire(localShape);
         //  TopoDS_Wire wres = TopoDS::Wire(MW.Wire().Oriented(Orien));
         return wres;

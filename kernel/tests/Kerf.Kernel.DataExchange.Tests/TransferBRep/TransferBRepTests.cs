@@ -268,7 +268,7 @@ public class TransferBRepTests
         Assert.Equal(2, aReader.ShapeCount); // A and C
         Assert.True(aReader.Shape(1).TShape()!.IsFrozen);
         Shape aOne = aReader.OneShape();
-        Assert.Equal(ShapeType.Compound, aOne.ShapeType());
+        Assert.Equal(ShapeType.Compound, aOne.Type);
         Assert.True(aOne.TShape()!.IsFrozen);
         Assert.Equal(0, aReader.TransientCount);
         Assert.True(aReader.ShapeResult(C).IsSame(aReader.Shape(2)));
@@ -279,7 +279,7 @@ public class TransferBRepTests
         Assert.Equal(3, aReader.ShapeCount);
         aReader.Clear();
         Assert.True(aReader.Transfer(2));
-        Assert.Equal(ShapeType.Solid, aReader.OneShape().ShapeType());
+        Assert.Equal(ShapeType.Solid, aReader.OneShape().Type);
         Assert.False(aReader.Transfer(4));
         aReader.ModeNewTransfer() = true;
         global::Kerf.Engine.Exchange.Framework.Transfer.TransientProcess? aBefore = aReader.TransientProcess();

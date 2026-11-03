@@ -58,11 +58,11 @@ public partial struct TransformNLerp : IEquatable<TransformNLerp>
     {
         _trsfStart = start;
         _trsfEnd = end;
-        _locLerpStart = start.TranslationPart();
-        _locLerpEnd = end.TranslationPart();
+        _locLerpStart = start.TranslationXyz();
+        _locLerpEnd = end.TranslationXyz();
         _rotLerp.Init(start.GetRotation(), end.GetRotation());
-        _scaleLerpStart = start.ScaleFactor();
-        _scaleLerpEnd = end.ScaleFactor();
+        _scaleLerpStart = start.ScaleFactor;
+        _scaleLerpEnd = end.ScaleFactor;
     }
 
     // Queries

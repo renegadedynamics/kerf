@@ -32,7 +32,7 @@ public class Adaptor3d_TopolToolTests
         public TestSurfaceAdaptor(Surface theSurf)
         {
             mySurf = theSurf;
-            theSurf.Bounds(out myU1, out myU2, out myV1, out myV2);
+            theSurf.ParameterBounds(out myU1, out myU2, out myV1, out myV2);
         }
 
         public override double FirstUParameter() => myU1;
@@ -50,13 +50,13 @@ public class Adaptor3d_TopolToolTests
             _ => OtherSurface,
         };
 
-        public override Cone Cone() => ((ConicalSurface)mySurf).Cone();
+        public override Cone Cone() => ((ConicalSurface)mySurf).Cone;
         public override global::Kerf.Geometry.BSplineSurface BSpline() => (global::Kerf.Geometry.BSplineSurface)mySurf;
         public override global::Kerf.Geometry.BezierSurface Bezier() => (global::Kerf.Geometry.BezierSurface)mySurf;
         public override int UKnotCount => BSpline().UKnotCount;
         public override int VKnotCount => BSpline().VKnotCount;
-        public override int UDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UDegree() : BSpline().UDegree();
-        public override int VDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VDegree() : BSpline().VDegree();
+        public override int UDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UDegree : BSpline().UDegree;
+        public override int VDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VDegree : BSpline().VDegree;
         public override int UPoleCount => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UPoleCount : BSpline().UPoleCount;
         public override int VPoleCount => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VPoleCount : BSpline().VPoleCount;
 
@@ -226,10 +226,10 @@ public class Adaptor3d_TopolToolTests
             n++;
         }
         Assert.Equal(3, n);
-        TopolTool.GetConeApexParam(cone.Cone(), out double Ua, out double Va);
+        TopolTool.GetConeApexParam(cone.Cone, out double Ua, out double Va);
         Assert.Equal(0.0, Ua);
         Assert.Equal(-2.0 / Math.Sin(Math.PI / 6), Va, 1e-12);
-        Assert.True(cone.Value(Ua, Va).IsEqual(cone.Cone().Apex(), 1e-12));
+        Assert.True(cone.Value(Ua, Va).IsEqual(cone.Cone.Apex, 1e-12));
         Assert.True(last!.Value(last.FirstParameter()).IsEqual(new Point2D(0, Va), 1e-12));
     }
 
@@ -255,9 +255,9 @@ public class Adaptor3d_TopolToolTests
 
         // Uniform sample points (no SamplePnts): (Index / NbU, Index mod NbU) on a grid of step 1/(Nb + 1).
         P.SamplePoint(7, out Point2D p2, out Point3D p3);
-        Assert.Equal(2.0 / 7, p2.X(), 1e-15);
-        Assert.Equal(2.0 / 7, p2.Y(), 1e-15);
-        Assert.True(p3.IsEqual(new Point3D(p2.X(), p2.Y(), 0), 1e-15));
+        Assert.Equal(2.0 / 7, p2.X, 1e-15);
+        Assert.Equal(2.0 / 7, p2.Y, 1e-15);
+        Assert.True(p3.IsEqual(new Point3D(p2.X, p2.Y, 0), 1e-15));
 
         // B-spline: NbKnots * Degree = 4 * 3 = 12 > 8, so the poles are analysed: 5 + sign changes of the second
         // differences.
@@ -287,9 +287,9 @@ public class Adaptor3d_TopolToolTests
 
         // With parameters, SamplePoint's index is 1-based, U first.
         T.SamplePoint(8, out Point2D p2, out Point3D p3);
-        Assert.Equal(U[2], p2.X());
-        Assert.Equal(V[2], p2.Y());
-        Assert.Equal(0.0, p3.Z());
+        Assert.Equal(U[2], p2.X);
+        Assert.Equal(V[2], p2.Y);
+        Assert.Equal(0.0, p3.Z);
     }
 
     [Fact]

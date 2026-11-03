@@ -45,8 +45,8 @@ public class PolygonTool
         boxLin.SetVoid();
         if (domain.IsWhole)
         {
-            boxLin.Set(l2d.Location(), l2d.Direction());
-            boxLin.Add(l2d.Direction().Reversed());
+            boxLin.Set(l2d.Location, l2d.Direction);
+            boxLin.Add(l2d.Direction.Reversed());
             _nbSeg = 1;
             _beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
             _endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -66,7 +66,7 @@ public class PolygonTool
 
         domain.Get(out xmin, out ymin, out xmax, out ymax);
 
-        if (l2d.Direction().XY().X() > 0.0)
+        if (l2d.Direction.XY().X() > 0.0)
         {
             if (domain.IsOpenXmin)
             {
@@ -74,7 +74,7 @@ public class PolygonTool
             }
             else
             {
-                parmin = (xmin - l2d.Location().XY().X()) / l2d.Direction().XY().X();
+                parmin = (xmin - l2d.Location.XY().X()) / l2d.Direction.XY().X();
             }
             if (domain.IsOpenXmax)
             {
@@ -82,11 +82,11 @@ public class PolygonTool
             }
             else
             {
-                parmax = (xmax - l2d.Location().XY().X()) / l2d.Direction().XY().X();
+                parmax = (xmax - l2d.Location.XY().X()) / l2d.Direction.XY().X();
             }
             xToSet = true;
         }
-        else if (l2d.Direction().XY().X() < 0.0)
+        else if (l2d.Direction.XY().X() < 0.0)
         {
             if (domain.IsOpenXmax)
             {
@@ -94,7 +94,7 @@ public class PolygonTool
             }
             else
             {
-                parmin = (xmax - l2d.Location().XY().X()) / l2d.Direction().XY().X();
+                parmin = (xmax - l2d.Location.XY().X()) / l2d.Direction.XY().X();
             }
             if (domain.IsOpenXmin)
             {
@@ -102,22 +102,22 @@ public class PolygonTool
             }
             else
             {
-                parmax = (xmin - l2d.Location().XY().X()) / l2d.Direction().XY().X();
+                parmax = (xmin - l2d.Location.XY().X()) / l2d.Direction.XY().X();
             }
             xToSet = true;
         }
         else
         { // Parallel to axis  X
-            if (l2d.Location().XY().X() < xmin || xmax < l2d.Location().XY().X())
+            if (l2d.Location.XY().X() < xmin || xmax < l2d.Location.XY().X())
             {
                 return;
             }
-            Xmin = l2d.Location().XY().X();
-            Xmax = l2d.Location().XY().X();
+            Xmin = l2d.Location.XY().X();
+            Xmax = l2d.Location.XY().X();
             xToSet = false;
         }
 
-        if (l2d.Direction().XY().Y() > 0.0)
+        if (l2d.Direction.XY().Y() > 0.0)
         {
             if (domain.IsOpenYmin)
             {
@@ -125,7 +125,7 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymin - l2d.Location().XY().Y()) / l2d.Direction().XY().Y();
+                parcur = (ymin - l2d.Location.XY().Y()) / l2d.Direction.XY().Y();
             }
             parmin = Max(parmin, parcur);
             if (domain.IsOpenYmax)
@@ -134,12 +134,12 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymax - l2d.Location().XY().Y()) / l2d.Direction().XY().Y();
+                parcur = (ymax - l2d.Location.XY().Y()) / l2d.Direction.XY().Y();
             }
             parmax = Min(parmax, parcur);
             yToSet = true;
         }
-        else if (l2d.Direction().XY().Y() < 0.0)
+        else if (l2d.Direction.XY().Y() < 0.0)
         {
             if (domain.IsOpenYmax)
             {
@@ -147,7 +147,7 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymax - l2d.Location().XY().Y()) / l2d.Direction().XY().Y();
+                parcur = (ymax - l2d.Location.XY().Y()) / l2d.Direction.XY().Y();
             }
             parmin = Max(parmin, parcur);
             if (domain.IsOpenYmin)
@@ -156,19 +156,19 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymin - l2d.Location().XY().Y()) / l2d.Direction().XY().Y();
+                parcur = (ymin - l2d.Location.XY().Y()) / l2d.Direction.XY().Y();
             }
             parmax = Min(parmax, parcur);
             yToSet = true;
         }
         else
         { // Parallel to axis  Y
-            if (l2d.Location().XY().Y() < ymin || ymax < l2d.Location().XY().Y())
+            if (l2d.Location.XY().Y() < ymin || ymax < l2d.Location.XY().Y())
             {
                 return;
             }
-            Ymin = l2d.Location().XY().Y();
-            Ymax = l2d.Location().XY().Y();
+            Ymin = l2d.Location.XY().Y();
+            Ymax = l2d.Location.XY().Y();
             yToSet = false;
         }
 
@@ -178,16 +178,16 @@ public class PolygonTool
 
         if (xToSet)
         {
-            par1 = l2d.Location().XY().X() + parmin * l2d.Direction().XY().X();
-            par2 = l2d.Location().XY().X() + parmax * l2d.Direction().XY().X();
+            par1 = l2d.Location.XY().X() + parmin * l2d.Direction.XY().X();
+            par2 = l2d.Location.XY().X() + parmax * l2d.Direction.XY().X();
             Xmin = Min(par1, par2);
             Xmax = Max(par1, par2);
         }
 
         if (yToSet)
         {
-            par1 = l2d.Location().XY().Y() + parmin * l2d.Direction().XY().Y();
-            par2 = l2d.Location().XY().Y() + parmax * l2d.Direction().XY().Y();
+            par1 = l2d.Location.XY().Y() + parmin * l2d.Direction.XY().Y();
+            par2 = l2d.Location.XY().Y() + parmax * l2d.Direction.XY().Y();
             Ymin = Min(par1, par2);
             Ymax = Max(par1, par2);
         }
@@ -369,7 +369,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).Value().X();
+                        _xint[nbpi] = inters1.Point(npi).Value().X;
                         if (xmin < _xint[nbpi] && _xint[nbpi] <= xmax)
                         {
                             _yint[nbpi] = ymax;
@@ -392,7 +392,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters2.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters2.Point(npi).Value().Y();
+                        _yint[nbpi] = inters2.Point(npi).Value().Y;
                         if (ymin < _yint[nbpi] && _yint[nbpi] <= ymax)
                         {
                             _xint[nbpi] = xmin;
@@ -415,7 +415,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters3.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters3.Point(npi).Value().X();
+                        _xint[nbpi] = inters3.Point(npi).Value().X;
                         if (xmin <= _xint[nbpi] && _xint[nbpi] < xmax)
                         {
                             _yint[nbpi] = ymin;
@@ -438,7 +438,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters4.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters4.Point(npi).Value().Y();
+                        _yint[nbpi] = inters4.Point(npi).Value().Y;
                         if (ymin <= _yint[nbpi] && _yint[nbpi] < ymax)
                         {
                             _xint[nbpi] = xmax;
@@ -627,7 +627,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).Value().X();
+                        _xint[nbpi] = inters1.Point(npi).Value().X;
                         if (xmin < _xint[nbpi] && _xint[nbpi] <= xmax)
                         {
                             _yint[nbpi] = ymax;
@@ -650,7 +650,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters2.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters2.Point(npi).Value().Y();
+                        _yint[nbpi] = inters2.Point(npi).Value().Y;
                         if (ymin < _yint[nbpi] && _yint[nbpi] <= ymax)
                         {
                             _xint[nbpi] = xmin;
@@ -673,7 +673,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters3.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters3.Point(npi).Value().X();
+                        _xint[nbpi] = inters3.Point(npi).Value().X;
                         if (xmin <= _xint[nbpi] && _xint[nbpi] < xmax)
                         {
                             _yint[nbpi] = ymin;
@@ -696,7 +696,7 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters4.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters4.Point(npi).Value().Y();
+                        _yint[nbpi] = inters4.Point(npi).Value().Y;
                         if (ymin <= _yint[nbpi] && _yint[nbpi] < ymax)
                         {
                             _xint[nbpi] = xmax;
@@ -717,8 +717,8 @@ public class PolygonTool
         boxLin.SetVoid();
         if (domain.IsWhole)
         {
-            boxLin.Set(l.Location(), l.Direction());
-            boxLin.Add(l.Direction().Reversed());
+            boxLin.Set(l.Location, l.Direction);
+            boxLin.Add(l.Direction.Reversed());
             _nbSeg = 1;
             _beginOnCurve[0] = -global::Kerf.Engine.Foundation.Precision.Infinite();
             _endOnCurve[0] = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -738,7 +738,7 @@ public class PolygonTool
 
         domain.Get(out xmin, out ymin, out zmin, out xmax, out ymax, out zmax);
 
-        if (l.Direction().XYZ().X() > 0.0)
+        if (l.Direction.XYZ().X() > 0.0)
         {
             if (domain.IsOpenXmin)
             {
@@ -746,7 +746,7 @@ public class PolygonTool
             }
             else
             {
-                parmin = (xmin - l.Location().XYZ().X()) / l.Direction().XYZ().X();
+                parmin = (xmin - l.Location.XYZ().X()) / l.Direction.XYZ().X();
             }
             if (domain.IsOpenXmax)
             {
@@ -754,11 +754,11 @@ public class PolygonTool
             }
             else
             {
-                parmax = (xmax - l.Location().XYZ().X()) / l.Direction().XYZ().X();
+                parmax = (xmax - l.Location.XYZ().X()) / l.Direction.XYZ().X();
             }
             xToSet = true;
         }
-        else if (l.Direction().XYZ().X() < 0.0)
+        else if (l.Direction.XYZ().X() < 0.0)
         {
             if (domain.IsOpenXmax)
             {
@@ -766,7 +766,7 @@ public class PolygonTool
             }
             else
             {
-                parmin = (xmax - l.Location().XYZ().X()) / l.Direction().XYZ().X();
+                parmin = (xmax - l.Location.XYZ().X()) / l.Direction.XYZ().X();
             }
             if (domain.IsOpenXmin)
             {
@@ -774,22 +774,22 @@ public class PolygonTool
             }
             else
             {
-                parmax = (xmin - l.Location().XYZ().X()) / l.Direction().XYZ().X();
+                parmax = (xmin - l.Location.XYZ().X()) / l.Direction.XYZ().X();
             }
             xToSet = true;
         }
         else
         { // Perpendiculaire a l axe  X
-            if (l.Location().XYZ().X() < xmin || xmax < l.Location().XYZ().X())
+            if (l.Location.XYZ().X() < xmin || xmax < l.Location.XYZ().X())
             {
                 return;
             }
-            Xmin = l.Location().XYZ().X();
-            Xmax = l.Location().XYZ().X();
+            Xmin = l.Location.XYZ().X();
+            Xmax = l.Location.XYZ().X();
             xToSet = false;
         }
 
-        if (l.Direction().XYZ().Y() > 0.0)
+        if (l.Direction.XYZ().Y() > 0.0)
         {
             if (domain.IsOpenYmin)
             {
@@ -797,7 +797,7 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymin - l.Location().XYZ().Y()) / l.Direction().XYZ().Y();
+                parcur = (ymin - l.Location.XYZ().Y()) / l.Direction.XYZ().Y();
             }
             parmin = Max(parmin, parcur);
             if (domain.IsOpenYmax)
@@ -806,12 +806,12 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymax - l.Location().XYZ().Y()) / l.Direction().XYZ().Y();
+                parcur = (ymax - l.Location.XYZ().Y()) / l.Direction.XYZ().Y();
             }
             parmax = Min(parmax, parcur);
             yToSet = true;
         }
-        else if (l.Direction().XYZ().Y() < 0.0)
+        else if (l.Direction.XYZ().Y() < 0.0)
         {
             if (domain.IsOpenYmax)
             {
@@ -819,7 +819,7 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymax - l.Location().XYZ().Y()) / l.Direction().XYZ().Y();
+                parcur = (ymax - l.Location.XYZ().Y()) / l.Direction.XYZ().Y();
             }
             parmin = Max(parmin, parcur);
             if (domain.IsOpenYmin)
@@ -828,23 +828,23 @@ public class PolygonTool
             }
             else
             {
-                parcur = (ymin - l.Location().XYZ().Y()) / l.Direction().XYZ().Y();
+                parcur = (ymin - l.Location.XYZ().Y()) / l.Direction.XYZ().Y();
             }
             parmax = Min(parmax, parcur);
             yToSet = true;
         }
         else
         { // Perpendiculaire a l axe  Y
-            if (l.Location().XYZ().Y() < ymin || ymax < l.Location().XYZ().Y())
+            if (l.Location.XYZ().Y() < ymin || ymax < l.Location.XYZ().Y())
             {
                 return;
             }
-            Ymin = l.Location().XYZ().Y();
-            Ymax = l.Location().XYZ().Y();
+            Ymin = l.Location.XYZ().Y();
+            Ymax = l.Location.XYZ().Y();
             yToSet = false;
         }
 
-        if (l.Direction().XYZ().Z() > 0.0)
+        if (l.Direction.XYZ().Z() > 0.0)
         {
             if (domain.IsOpenZmin)
             {
@@ -852,7 +852,7 @@ public class PolygonTool
             }
             else
             {
-                parcur = (zmin - l.Location().XYZ().Z()) / l.Direction().XYZ().Z();
+                parcur = (zmin - l.Location.XYZ().Z()) / l.Direction.XYZ().Z();
             }
             parmin = Max(parmin, parcur);
             if (domain.IsOpenZmax)
@@ -861,12 +861,12 @@ public class PolygonTool
             }
             else
             {
-                parcur = (zmax - l.Location().XYZ().Z()) / l.Direction().XYZ().Z();
+                parcur = (zmax - l.Location.XYZ().Z()) / l.Direction.XYZ().Z();
             }
             parmax = Min(parmax, parcur);
             zToSet = true;
         }
-        else if (l.Direction().XYZ().Z() < 0.0)
+        else if (l.Direction.XYZ().Z() < 0.0)
         {
             if (domain.IsOpenZmax)
             {
@@ -874,7 +874,7 @@ public class PolygonTool
             }
             else
             {
-                parcur = (zmax - l.Location().XYZ().Z()) / l.Direction().XYZ().Z();
+                parcur = (zmax - l.Location.XYZ().Z()) / l.Direction.XYZ().Z();
             }
             parmin = Max(parmin, parcur);
             if (domain.IsOpenZmin)
@@ -883,19 +883,19 @@ public class PolygonTool
             }
             else
             {
-                parcur = (zmin - l.Location().XYZ().Z()) / l.Direction().XYZ().Z();
+                parcur = (zmin - l.Location.XYZ().Z()) / l.Direction.XYZ().Z();
             }
             parmax = Min(parmax, parcur);
             zToSet = true;
         }
         else
         { // Perpendicular to axis Z
-            if (l.Location().XYZ().Z() < zmin || zmax < l.Location().XYZ().Z())
+            if (l.Location.XYZ().Z() < zmin || zmax < l.Location.XYZ().Z())
             {
                 return;
             }
-            Zmin = l.Location().XYZ().Z();
-            Zmax = l.Location().XYZ().Z();
+            Zmin = l.Location.XYZ().Z();
+            Zmax = l.Location.XYZ().Z();
             zToSet = false;
         }
 
@@ -905,24 +905,24 @@ public class PolygonTool
 
         if (xToSet)
         {
-            par1 = l.Location().XYZ().X() + parmin * l.Direction().XYZ().X();
-            par2 = l.Location().XYZ().X() + parmax * l.Direction().XYZ().X();
+            par1 = l.Location.XYZ().X() + parmin * l.Direction.XYZ().X();
+            par2 = l.Location.XYZ().X() + parmax * l.Direction.XYZ().X();
             Xmin = Min(par1, par2);
             Xmax = Max(par1, par2);
         }
 
         if (yToSet)
         {
-            par1 = l.Location().XYZ().Y() + parmin * l.Direction().XYZ().Y();
-            par2 = l.Location().XYZ().Y() + parmax * l.Direction().XYZ().Y();
+            par1 = l.Location.XYZ().Y() + parmin * l.Direction.XYZ().Y();
+            par2 = l.Location.XYZ().Y() + parmax * l.Direction.XYZ().Y();
             Ymin = Min(par1, par2);
             Ymax = Max(par1, par2);
         }
 
         if (zToSet)
         {
-            par1 = l.Location().XYZ().Z() + parmin * l.Direction().XYZ().Z();
-            par2 = l.Location().XYZ().Z() + parmax * l.Direction().XYZ().Z();
+            par1 = l.Location.XYZ().Z() + parmin * l.Direction.XYZ().Z();
+            par2 = l.Location.XYZ().Z() + parmax * l.Direction.XYZ().Z();
             Zmin = Min(par1, par2);
             Zmax = Max(par1, par2);
         }
@@ -1081,8 +1081,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters1.Point(npi).Y();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _yint[nbpi] = inters1.Point(npi).Y;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (ymin <= _yint[nbpi] && _yint[nbpi] < ymax && zmin <= _zint[nbpi] && _zint[nbpi] < zmax)
                         {
                             _xint[nbpi] = xmin;
@@ -1104,8 +1104,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (xmin < _xint[nbpi] && _xint[nbpi] <= xmax && zmin <= _zint[nbpi] && _zint[nbpi] < zmax)
                         {
                             _yint[nbpi] = ymin;
@@ -1127,8 +1127,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _yint[nbpi] = inters1.Point(npi).Y();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _yint[nbpi] = inters1.Point(npi).Y;
                         if (xmin < _xint[nbpi] && _xint[nbpi] <= xmax && ymin < _yint[nbpi] && _yint[nbpi] <= ymax)
                         {
                             _zint[nbpi] = zmin;
@@ -1150,8 +1150,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters1.Point(npi).Y();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _yint[nbpi] = inters1.Point(npi).Y;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (ymin < _yint[nbpi] && _yint[nbpi] <= ymax && zmin < _zint[nbpi] && _zint[nbpi] <= zmax)
                         {
                             _xint[nbpi] = xmax;
@@ -1173,8 +1173,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (xmin <= _xint[nbpi] && _xint[nbpi] < xmax && zmin < _zint[nbpi] && _zint[nbpi] <= zmax)
                         {
                             _yint[nbpi] = ymax;
@@ -1196,8 +1196,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _yint[nbpi] = inters1.Point(npi).Y();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _yint[nbpi] = inters1.Point(npi).Y;
                         if (xmin <= _xint[nbpi] && _xint[nbpi] < xmax && ymin <= _yint[nbpi] && _yint[nbpi] < ymax)
                         {
                             _zint[nbpi] = zmax;
@@ -1262,8 +1262,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters1.Point(npi).Y();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _yint[nbpi] = inters1.Point(npi).Y;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (ymin <= _yint[nbpi] && _yint[nbpi] < ymax && zmin <= _zint[nbpi] && _zint[nbpi] < zmax)
                         {
                             _xint[nbpi] = xmin;
@@ -1285,8 +1285,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (xmin < _xint[nbpi] && _xint[nbpi] <= xmax && zmin <= _zint[nbpi] && _zint[nbpi] < zmax)
                         {
                             _yint[nbpi] = ymin;
@@ -1308,8 +1308,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _yint[nbpi] = inters1.Point(npi).Y();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _yint[nbpi] = inters1.Point(npi).Y;
                         if (xmin < _xint[nbpi] && _xint[nbpi] <= xmax && ymin < _yint[nbpi] && _yint[nbpi] <= ymax)
                         {
                             _zint[nbpi] = zmin;
@@ -1331,8 +1331,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _yint[nbpi] = inters1.Point(npi).Y();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _yint[nbpi] = inters1.Point(npi).Y;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (ymin < _yint[nbpi] && _yint[nbpi] <= ymax && zmin < _zint[nbpi] && _zint[nbpi] <= zmax)
                         {
                             _xint[nbpi] = xmax;
@@ -1354,8 +1354,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _zint[nbpi] = inters1.Point(npi).Z();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _zint[nbpi] = inters1.Point(npi).Z;
                         if (xmin <= _xint[nbpi] && _xint[nbpi] < xmax && zmin < _zint[nbpi] && _zint[nbpi] <= zmax)
                         {
                             _yint[nbpi] = ymax;
@@ -1377,8 +1377,8 @@ public class PolygonTool
                 {
                     for (npi = 1; npi <= inters1.PointCount; npi++)
                     {
-                        _xint[nbpi] = inters1.Point(npi).X();
-                        _yint[nbpi] = inters1.Point(npi).Y();
+                        _xint[nbpi] = inters1.Point(npi).X;
+                        _yint[nbpi] = inters1.Point(npi).Y;
                         if (xmin <= _xint[nbpi] && _xint[nbpi] < xmax && ymin <= _yint[nbpi] && _yint[nbpi] < ymax)
                         {
                             _zint[nbpi] = zmax;

@@ -42,8 +42,8 @@ public sealed class MakeBSplineCurveWithKnotsAndRationalBSplineCurve : GeometryR
             MakeCartesianPoint mkPoint = new MakeCartesianPoint(p.Value(i), localFactors.LengthFactor());
             listpoints.SetValue(i, mkPoint.Value());
         }
-        Make(bs.Degree(), n, listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(),
-             bs.KnotDistribution(), bs.InternalWeightsArray());
+        Make(bs.Degree, n, listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(),
+             bs.KnotDistribution, bs.InternalWeightsArray());
     }
 
     /// <summary>A 3D B-spline curve with its weights (default factors).</summary>
@@ -67,8 +67,8 @@ public sealed class MakeBSplineCurveWithKnotsAndRationalBSplineCurve : GeometryR
             MakeCartesianPoint mkPoint = new MakeCartesianPoint(p.Value(i), localFactors.LengthFactor());
             listpoints.SetValue(i, mkPoint.Value());
         }
-        Make(bs.Degree(), n, listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(),
-             bs.KnotDistribution(), bs.InternalWeightsArray());
+        Make(bs.Degree, n, listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(),
+             bs.KnotDistribution, bs.InternalWeightsArray());
     }
 
     /// <summary>A 2D B-spline curve with its weights.</summary>

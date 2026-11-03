@@ -12,16 +12,16 @@ public class gp_Vec2dTests
     public void DefaultConstructor()
     {
         Vector2D aVec = new();
-        Assert.Equal(0.0, aVec.X());
-        Assert.Equal(0.0, aVec.Y());
+        Assert.Equal(0.0, aVec.X);
+        Assert.Equal(0.0, aVec.Y);
     }
 
     [Fact]
     public void CoordinateConstructor()
     {
         Vector2D aVec = new(1.0, 2.0);
-        Assert.Equal(1.0, aVec.X());
-        Assert.Equal(2.0, aVec.Y());
+        Assert.Equal(1.0, aVec.X);
+        Assert.Equal(2.0, aVec.Y);
     }
 
     [Fact]
@@ -30,8 +30,8 @@ public class gp_Vec2dTests
         Point2D aP1 = new(1.0, 2.0);
         Point2D aP2 = new(4.0, 6.0);
         Vector2D aVec = new(aP1, aP2);
-        Assert.Equal(3.0, aVec.X());
-        Assert.Equal(4.0, aVec.Y());
+        Assert.Equal(3.0, aVec.X);
+        Assert.Equal(4.0, aVec.Y);
     }
 
     [Fact]
@@ -39,8 +39,8 @@ public class gp_Vec2dTests
     {
         Direction2D aDir = new(0.0, 1.0);
         Vector2D aVec = new(aDir);
-        Assert.Equal(1.0, aVec.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aVec.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aVec.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aVec.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -50,12 +50,12 @@ public class gp_Vec2dTests
         Vector2D aV2 = new(4.0, 5.0);
 
         Vector2D aSum = aV1 + aV2;
-        Assert.Equal(5.0, aSum.X());
-        Assert.Equal(7.0, aSum.Y());
+        Assert.Equal(5.0, aSum.X);
+        Assert.Equal(7.0, aSum.Y);
 
         Vector2D aDiff = aV2 - aV1;
-        Assert.Equal(3.0, aDiff.X());
-        Assert.Equal(3.0, aDiff.Y());
+        Assert.Equal(3.0, aDiff.X);
+        Assert.Equal(3.0, aDiff.Y);
     }
 
     [Fact]
@@ -64,12 +64,12 @@ public class gp_Vec2dTests
         Vector2D aVec = new(2.0, 4.0);
 
         Vector2D aScaled = aVec * 3.0;
-        Assert.Equal(6.0, aScaled.X());
-        Assert.Equal(12.0, aScaled.Y());
+        Assert.Equal(6.0, aScaled.X);
+        Assert.Equal(12.0, aScaled.Y);
 
         Vector2D aDivided = aVec / 2.0;
-        Assert.Equal(1.0, aDivided.X());
-        Assert.Equal(2.0, aDivided.Y());
+        Assert.Equal(1.0, aDivided.X);
+        Assert.Equal(2.0, aDivided.Y);
     }
 
     [Fact]
@@ -103,8 +103,8 @@ public class gp_Vec2dTests
     public void Magnitude()
     {
         Vector2D aVec = new(3.0, 4.0);
-        Assert.Equal(5.0, aVec.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(25.0, aVec.SquareMagnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aVec.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(25.0, aVec.SquareMagnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -112,9 +112,9 @@ public class gp_Vec2dTests
     {
         Vector2D aVec = new(3.0, 4.0);
         Vector2D aNormalized = aVec.Normalized();
-        Assert.Equal(1.0, aNormalized.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.6, aNormalized.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.8, aNormalized.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aNormalized.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.6, aNormalized.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.8, aNormalized.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class gp_Vec2dTests
     {
         Vector2D aV1 = new(1.0, 0.0);
         Vector2D aV2 = new(0.0, 1.0);
-        Assert.Equal(M_PI_2, aV1.Angle(aV2), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(M_PI_2, aV1.AngleTo(aV2), global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     [Fact]
@@ -154,8 +154,8 @@ public class gp_Vec2dTests
     {
         Vector2D aVec = new(1.0, 2.0);
         Vector2D aReversed = aVec.Reversed();
-        Assert.Equal(-1.0, aReversed.X());
-        Assert.Equal(-2.0, aReversed.Y());
+        Assert.Equal(-1.0, aReversed.X);
+        Assert.Equal(-2.0, aReversed.Y);
     }
 
     [Fact]
@@ -165,8 +165,8 @@ public class gp_Vec2dTests
         Vector2D aV2 = new(0.0, 1.0);
         Vector2D aResult = new();
         aResult = Vector2D.LinearForm(2.0, aV1, 3.0, aV2);
-        Assert.Equal(2.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(3.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aResult.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aResult.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

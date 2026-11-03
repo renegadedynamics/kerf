@@ -229,7 +229,7 @@ public class ElSLibTests
     // sin(x) is sin(x + n*PI/2).
     private static global::Kerf.Engine.Geometry.Xyz ReferenceDN(string theSurface, double U, double V, in CoordinateSystem Pos, int Nu, int Nv)
     {
-        global::Kerf.Engine.Geometry.Xyz X = Pos.XDirection().XYZ(), Y = Pos.YDirection().XYZ(), Z = Pos.Direction().XYZ();
+        global::Kerf.Engine.Geometry.Xyz X = Pos.XDirection.XYZ(), Y = Pos.YDirection.XYZ(), Z = Pos.Direction.XYZ();
         double CosUn = Math.Cos(U + Nu * M_PI_2), SinUn = Math.Sin(U + Nu * M_PI_2);
         double CosVn = Math.Cos(V + Nv * M_PI_2), SinVn = Math.Sin(V + Nv * M_PI_2);
         global::Kerf.Engine.Geometry.Xyz Radial = X * CosUn + Y * SinUn;
@@ -352,12 +352,12 @@ public class ElSLibTests
     }
 
     private static Point3D OnLine(in Line3D theL, double theT)
-        => new(theL.Location().XYZ() + theL.Direction().XYZ() * theT);
+        => new(theL.Location.XYZ() + theL.Direction.XYZ() * theT);
 
     private static Point3D OnCircle(in Circle3D theC, double theT)
-        => new(theC.Location().XYZ()
-               + theC.Position().XDirection().XYZ() * (theC.Radius() * Math.Cos(theT))
-               + theC.Position().YDirection().XYZ() * (theC.Radius() * Math.Sin(theT)));
+        => new(theC.Location.XYZ()
+               + theC.Position.XDirection.XYZ() * (theC.Radius * Math.Cos(theT))
+               + theC.Position.YDirection.XYZ() * (theC.Radius * Math.Sin(theT)));
 
     [Theory]
     [MemberData(nameof(Systems))]
@@ -396,12 +396,12 @@ public class ElSLibTests
         CoordinateSystem aPos = new();
         double aV = -Radius / Math.Sin(SAngle) - 2.0;
         Circle3D aC = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(aPos, Radius, SAngle, aV);
-        Assert.Equal(-(Radius + aV * Math.Sin(SAngle)), aC.Radius(), Tol);
+        Assert.Equal(-(Radius + aV * Math.Sin(SAngle)), aC.Radius, Tol);
         AssertNear(global::Kerf.Engine.Geometry.ElSLib.ConeValue(1.0, aV, aPos, Radius, SAngle).XYZ(), OnCircle(aC, 1.0).XYZ());
 
         // A sphere's parallel just past the pole (#23170)
         Circle3D aS = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(aPos, Radius, M_PI_2 + 0.1);
-        Assert.Equal(Radius * Math.Sin(0.1), aS.Radius(), Tol);
-        Assert.Equal(-1.0, aS.Position().Direction().Z(), Tol);
+        Assert.Equal(Radius * Math.Sin(0.1), aS.Radius, Tol);
+        Assert.Equal(-1.0, aS.Position.Direction.Z, Tol);
     }
 }

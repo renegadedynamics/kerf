@@ -291,8 +291,8 @@ internal static class OffsetCurveUtils3D
         const int maxDerivOrder = 3;
 
         isDirectionChange = false;
-        double uinfium = curve.FirstParameter();
-        double usupremum = curve.LastParameter();
+        double uinfium = curve.FirstParameter;
+        double usupremum = curve.LastParameter;
 
         const double divisionFactor = 1.0e-3;
         double du;
@@ -314,7 +314,7 @@ internal static class OffsetCurveUtils3D
         do
         {
             v = curve.EvalDN(theU, ++index);
-        } while ((v.SquareMagnitude() <= tol) && index < maxDerivOrder);
+        } while ((v.SquareMagnitude <= tol) && index < maxDerivOrder);
 
         double u;
 
@@ -396,7 +396,7 @@ internal static class OffsetCurveUtils3D
         do
         {
             v = curve.EvalDN(theU, ++index);
-        } while ((v.SquareMagnitude() <= tol) && index < maxDerivOrder);
+        } while ((v.SquareMagnitude <= tol) && index < maxDerivOrder);
 
         double u;
 
@@ -481,7 +481,7 @@ internal static class OffsetCurveUtils3D
         Vector3D d3 = d3Result.D3;
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             Vector3D dummyD4 = new Vector3D();
             if (!AdjustDerivative(basisCurve, 3, u, ref d1, ref d2, ref d3, ref dummyD4, out isDirectionChange))
@@ -511,7 +511,7 @@ internal static class OffsetCurveUtils3D
         Vector3D d4 = basisCurve.EvalDN(u, 4);
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             if (!AdjustDerivative(basisCurve, 4, u, ref d1, ref d2, ref d3, ref d4, out isDirectionChange))
             {

@@ -54,7 +54,7 @@ internal static class OffsetSurfaceUtils
         public GeomSurfaceBasis(Surface surf) => _surf = surf;
 
         public void Bounds(out double u1, out double u2, out double v1, out double v2) =>
-            _surf.Bounds(out u1, out u2, out v1, out v2);
+            _surf.ParameterBounds(out u1, out u2, out v1, out v2);
 
         public bool IsUPeriodic() => _surf.IsUPeriodic;
 
@@ -117,7 +117,7 @@ internal static class OffsetSurfaceUtils
     /// <summary>True if any coordinate is infinite.</summary>
     internal static bool IsInfiniteCoord(in Vector3D vec)
     {
-        return global::Kerf.Engine.Foundation.Precision.IsInfinite(vec.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vec.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vec.Z());
+        return global::Kerf.Engine.Foundation.Precision.IsInfinite(vec.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vec.Y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vec.Z);
     }
 
     /// <summary>True if the normal magnitude is below the tolerance (singular case).</summary>
@@ -126,8 +126,8 @@ internal static class OffsetSurfaceUtils
         // Normalize derivatives before normal calculation for stability
         Vector3D aD1U = d1U;
         Vector3D aD1V = d1V;
-        double d1UNorm2 = aD1U.SquareMagnitude();
-        double d1VNorm2 = aD1V.SquareMagnitude();
+        double d1UNorm2 = aD1U.SquareMagnitude;
+        double d1VNorm2 = aD1V.SquareMagnitude;
         if (d1UNorm2 > 1.0)
         {
             aD1U /= Math.Sqrt(d1UNorm2);
@@ -138,7 +138,7 @@ internal static class OffsetSurfaceUtils
         }
 
         Vector3D norm = aD1U.Crossed(aD1V);
-        return norm.SquareMagnitude() <= tol * tol;
+        return norm.SquareMagnitude <= tol * tol;
     }
 
     /// <summary>The normalized normal in the non-singular case; false if singular.</summary>
@@ -148,8 +148,8 @@ internal static class OffsetSurfaceUtils
         // Normalize derivatives before normal calculation for stability
         Vector3D aD1U = d1U;
         Vector3D aD1V = d1V;
-        double d1UNorm2 = aD1U.SquareMagnitude();
-        double d1VNorm2 = aD1V.SquareMagnitude();
+        double d1UNorm2 = aD1U.SquareMagnitude;
+        double d1VNorm2 = aD1V.SquareMagnitude;
         if (d1UNorm2 > 1.0)
         {
             aD1U /= Math.Sqrt(d1UNorm2);
@@ -160,7 +160,7 @@ internal static class OffsetSurfaceUtils
         }
 
         normal = aD1U.Crossed(aD1V);
-        if (normal.SquareMagnitude() <= tol * tol)
+        if (normal.SquareMagnitude <= tol * tol)
         {
             return false;
         }
@@ -175,12 +175,12 @@ internal static class OffsetSurfaceUtils
         double scale = (d1U ^ d1V).Dot(normal);
 
         Vector3D n1U = new Vector3D();
-        n1U = n1U.WithX(d2U.Y() * d1V.Z() + d1U.Y() * d2UV.Z() - d2U.Z() * d1V.Y()
-                  - d1U.Z() * d2UV.Y());
-        n1U = n1U.WithY(-(d2U.X() * d1V.Z() + d1U.X() * d2UV.Z() - d2U.Z() * d1V.X()
-                    - d1U.Z() * d2UV.X()));
-        n1U = n1U.WithZ(d2U.X() * d1V.Y() + d1U.X() * d2UV.Y() - d2U.Y() * d1V.X()
-                  - d1U.Y() * d2UV.X());
+        n1U = n1U.WithX(d2U.Y * d1V.Z + d1U.Y * d2UV.Z - d2U.Z * d1V.Y
+                  - d1U.Z * d2UV.Y);
+        n1U = n1U.WithY(-(d2U.X * d1V.Z + d1U.X * d2UV.Z - d2U.Z * d1V.X
+                    - d1U.Z * d2UV.X));
+        n1U = n1U.WithZ(d2U.X * d1V.Y + d1U.X * d2UV.Y - d2U.Y * d1V.X
+                  - d1U.Y * d2UV.X);
         double scaleU = n1U.Dot(normal);
         n1U = n1U.Subtracted(scaleU * normal);
         n1U /= scale;
@@ -195,12 +195,12 @@ internal static class OffsetSurfaceUtils
         double scale = (d1U ^ d1V).Dot(normal);
 
         Vector3D n1V = new Vector3D();
-        n1V = n1V.WithX(d2UV.Y() * d1V.Z() + d2V.Z() * d1U.Y() - d2UV.Z() * d1V.Y()
-                  - d2V.Y() * d1U.Z());
-        n1V = n1V.WithY(-(d2UV.X() * d1V.Z() + d2V.Z() * d1U.X() - d2UV.Z() * d1V.X()
-                    - d2V.X() * d1U.Z()));
-        n1V = n1V.WithZ(d2UV.X() * d1V.Y() + d2V.Y() * d1U.X() - d2UV.Y() * d1V.X()
-                  - d2V.X() * d1U.Y());
+        n1V = n1V.WithX(d2UV.Y * d1V.Z + d2V.Z * d1U.Y - d2UV.Z * d1V.Y
+                  - d2V.Y * d1U.Z);
+        n1V = n1V.WithY(-(d2UV.X * d1V.Z + d2V.Z * d1U.X - d2UV.Z * d1V.X
+                    - d2V.X * d1U.Z));
+        n1V = n1V.WithZ(d2UV.X * d1V.Y + d2V.Y * d1U.X - d2UV.Y * d1V.X
+                  - d2V.X * d1U.Y);
         double scaleV = n1V.Dot(normal);
         n1V = n1V.Subtracted(scaleV * normal);
         n1V /= scale;
@@ -412,8 +412,8 @@ internal static class OffsetSurfaceUtils
                                                    in TBasis basisSurf)
         where TBasis : struct, IBasisSurface
     {
-        bool isReplaceDU = du.SquareMagnitude() < squareTol;
-        bool isReplaceDV = dv.SquareMagnitude() < squareTol;
+        bool isReplaceDU = du.SquareMagnitude < squareTol;
+        bool isReplaceDV = dv.SquareMagnitude < squareTol;
         bool isReplaced = false;
 
         // Only handle case where exactly one derivative is zero
@@ -423,7 +423,7 @@ internal static class OffsetSurfaceUtils
             double step;
             if (isReplaceDV)
             {
-                step = global::Kerf.Engine.Foundation.Precision.Confusion() * du.Magnitude();
+                step = global::Kerf.Engine.Foundation.Precision.Confusion() * du.Magnitude;
                 if (step > uMax - uMin)
                 {
                     step = (uMax - uMin) / 100.0;
@@ -431,7 +431,7 @@ internal static class OffsetSurfaceUtils
             }
             else
             {
-                step = global::Kerf.Engine.Foundation.Precision.Confusion() * dv.Magnitude();
+                step = global::Kerf.Engine.Foundation.Precision.Confusion() * dv.Magnitude;
                 if (step > vMax - vMin)
                 {
                     step = (vMax - vMin) / 100.0;
@@ -464,12 +464,12 @@ internal static class OffsetSurfaceUtils
 
                 Surface.ResD1 d1Result = basisSurf.EvalD1(aU, aV);
 
-                if (isReplaceDU && d1Result.D1U.SquareMagnitude() > squareTol)
+                if (isReplaceDU && d1Result.D1U.SquareMagnitude > squareTol)
                 {
                     du = d1Result.D1U;
                     isReplaced = true;
                 }
-                if (isReplaceDV && d1Result.D1V.SquareMagnitude() > squareTol)
+                if (isReplaceDV && d1Result.D1V.SquareMagnitude > squareTol)
                 {
                     dv = d1Result.D1V;
                     isReplaced = true;
@@ -497,8 +497,8 @@ internal static class OffsetSurfaceUtils
                                     in Vector3D d1V)
     {
         // Check if either U or V is singular (normally one of them is)
-        bool isUSingular = (d1U.SquareMagnitude() < THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL);
-        bool isVSingular = (d1V.SquareMagnitude() < THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL);
+        bool isUSingular = (d1U.SquareMagnitude < THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL);
+        bool isVSingular = (d1V.SquareMagnitude < THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL);
 
         // Compute vector to shift from start point to center of the surface;
         // if surface is periodic or singular in some direction, take shift in that direction zero
@@ -732,8 +732,8 @@ internal static class OffsetSurfaceUtils
             // Check if singular by normalizing derivatives and computing cross product
             Vector3D aD1U = d1U;
             Vector3D aD1V = d1V;
-            double d1UNorm2 = aD1U.SquareMagnitude();
-            double d1VNorm2 = aD1V.SquareMagnitude();
+            double d1UNorm2 = aD1U.SquareMagnitude;
+            double d1VNorm2 = aD1V.SquareMagnitude;
             if (d1UNorm2 > 1.0)
             {
                 aD1U /= Math.Sqrt(d1UNorm2);
@@ -750,7 +750,7 @@ internal static class OffsetSurfaceUtils
             // Query osculating surface only if singular
             OsculatingInfo oscInfo = default;
             BSplineSurface? oscSurf = null;
-            if (norm.SquareMagnitude() <= THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL)
+            if (norm.SquareMagnitude <= THE_D1_MAGNITUDE_TOL * THE_D1_MAGNITUDE_TOL)
             {
                 QueryOsculating(oscQuery, u, v, ref oscInfo, ref oscSurf);
                 isSingular = true;
@@ -768,24 +768,24 @@ internal static class OffsetSurfaceUtils
                 // Compute normal derivatives using inline formulas
                 Vector3D n0 = new Vector3D(norm.XYZ()), n1U = new Vector3D(), n1V = new Vector3D();
                 double scale = (d1U ^ d1V).Dot(n0);
-                n1U = n1U.WithX(aD2U.Y() * d1V.Z() + d1U.Y() * aD2UV.Z() - aD2U.Z() * d1V.Y()
-                          - d1U.Z() * aD2UV.Y());
-                n1U = n1U.WithY((aD2U.X() * d1V.Z() + d1U.X() * aD2UV.Z() - aD2U.Z() * d1V.X()
-                           - d1U.Z() * aD2UV.X())
+                n1U = n1U.WithX(aD2U.Y * d1V.Z + d1U.Y * aD2UV.Z - aD2U.Z * d1V.Y
+                          - d1U.Z * aD2UV.Y);
+                n1U = n1U.WithY((aD2U.X * d1V.Z + d1U.X * aD2UV.Z - aD2U.Z * d1V.X
+                           - d1U.Z * aD2UV.X)
                           * -1.0);
-                n1U = n1U.WithZ(aD2U.X() * d1V.Y() + d1U.X() * aD2UV.Y() - aD2U.Y() * d1V.X()
-                          - d1U.Y() * aD2UV.X());
+                n1U = n1U.WithZ(aD2U.X * d1V.Y + d1U.X * aD2UV.Y - aD2U.Y * d1V.X
+                          - d1U.Y * aD2UV.X);
                 double scaleU = n1U.Dot(n0);
                 n1U = n1U.Subtracted(scaleU * n0);
                 n1U /= scale;
 
-                n1V = n1V.WithX(aD2UV.Y() * d1V.Z() + aD2V.Z() * d1U.Y() - aD2UV.Z() * d1V.Y()
-                          - aD2V.Y() * d1U.Z());
-                n1V = n1V.WithY((aD2UV.X() * d1V.Z() + aD2V.Z() * d1U.X() - aD2UV.Z() * d1V.X()
-                           - aD2V.X() * d1U.Z())
+                n1V = n1V.WithX(aD2UV.Y * d1V.Z + aD2V.Z * d1U.Y - aD2UV.Z * d1V.Y
+                          - aD2V.Y * d1U.Z);
+                n1V = n1V.WithY((aD2UV.X * d1V.Z + aD2V.Z * d1U.X - aD2UV.Z * d1V.X
+                           - aD2V.X * d1U.Z)
                           * -1.0);
-                n1V = n1V.WithZ(aD2UV.X() * d1V.Y() + aD2V.Y() * d1U.X() - aD2UV.Y() * d1V.X()
-                          - aD2V.X() * d1U.Y());
+                n1V = n1V.WithZ(aD2UV.X * d1V.Y + aD2V.Y * d1U.X - aD2UV.Y * d1V.X
+                          - aD2V.X * d1U.Y);
                 double scaleV = n1V.Dot(n0);
                 n1V = n1V.Subtracted(scaleV * n0);
                 n1V /= scale;

@@ -64,7 +64,7 @@ public class HarnessTests
     // The same shape with the children of every compound, compsolid, solid and shell in a random order.
     private static Shape Renumber(Shape theShape, Random theRandom)
     {
-        ShapeType aType = theShape.ShapeType();
+        ShapeType aType = theShape.Type;
         if (aType is not (ShapeType.Compound or ShapeType.CompSolid or ShapeType.Solid or ShapeType.Shell))
         {
             return theShape;
@@ -114,11 +114,11 @@ public class HarnessTests
         {
             aBuilder.Add(aNew, aChild);
         }
-        aNew.Closed(theShape.Closed());
-        aNew.Orientable(theShape.Orientable());
-        aNew.Convex(theShape.Convex());
-        aNew.Infinite(theShape.Infinite());
-        return aNew.Located(theShape.Location()).Oriented(theShape.Orientation());
+        aNew.Closed(theShape.IsClosed);
+        aNew.Orientable(theShape.IsOrientable);
+        aNew.Convex(theShape.IsConvex);
+        aNew.Infinite(theShape.IsInfinite);
+        return aNew.Located(theShape.Placement).Oriented(theShape.Orientation);
     }
 
     // ---- BRep text comparison
@@ -229,7 +229,7 @@ public class HarnessTests
         Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out _);
         Vertex aVertex = ShapeCasts.Vertex(CanonicalShapeComparer.SubShapes(aCopy, ShapeType.Vertex)[0]);
         Point3D aP = Tool.Pnt(aVertex);
-        new BrepBuilder().UpdateVertex(aVertex, new Point3D(aP.X() + 1.0e-12, aP.Y(), aP.Z()), Tool.Tolerance(aVertex));
+        new BrepBuilder().UpdateVertex(aVertex, new Point3D(aP.X + 1.0e-12, aP.Y, aP.Z), Tool.Tolerance(aVertex));
 
         CanonicalComparison anExact = CanonicalShapeComparer.Compare(aBox, aCopy);
         Assert.False(anExact.IsIdentical);

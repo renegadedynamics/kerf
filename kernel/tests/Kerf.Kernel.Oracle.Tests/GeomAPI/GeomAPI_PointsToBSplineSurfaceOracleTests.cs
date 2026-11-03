@@ -48,8 +48,8 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
     private static void SameSurface(Oracle theO, N.Geom_BSplineSurface theNative, BSplineSurface thePort,
                                     string theWhat, double theTolerance)
     {
-        theO.Same(theNative.UDegree(), thePort.UDegree(), $"{theWhat} UDegree");
-        theO.Same(theNative.VDegree(), thePort.VDegree(), $"{theWhat} VDegree");
+        theO.Same(theNative.UDegree(), thePort.UDegree, $"{theWhat} UDegree");
+        theO.Same(theNative.VDegree(), thePort.VDegree, $"{theWhat} VDegree");
         theO.Same(theNative.IsUPeriodic(), thePort.IsUPeriodic, $"{theWhat} UPeriodic");
         theO.Same(theNative.IsVPeriodic(), thePort.IsVPeriodic, $"{theWhat} VPeriodic");
         theO.Same(theNative.NbUPoles(), thePort.UPoleCount, $"{theWhat} NbUPoles");
@@ -115,8 +115,8 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
                 }
                 if (aNoise > 0.0)
                 {
-                    aP = new Point3D(aP.X() + theO.Real(-aNoise, aNoise), aP.Y() + theO.Real(-aNoise, aNoise),
-                                    aP.Z() + theO.Real(-aNoise, aNoise));
+                    aP = new Point3D(aP.X + theO.Real(-aNoise, aNoise), aP.Y + theO.Real(-aNoise, aNoise),
+                                    aP.Z + theO.Real(-aNoise, aNoise));
                 }
                 aPoints[i, j] = aP;
             }

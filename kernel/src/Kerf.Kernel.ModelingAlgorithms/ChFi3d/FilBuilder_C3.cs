@@ -225,7 +225,7 @@ public partial class FilBuilder
                                                         out bidvec, out bidr);
             ChFi3d_ExtrSpineCarac(dStr, cd[fin], i[fin, pivot], p[fin, pivot], jf[fin, deb], sens[fin], out ptestfin,
                                                         out bidvec, out bidr);
-            double distest = ptestdeb.Distance(ptestfin);
+            double distest = ptestdeb.DistanceTo(ptestfin);
             if (distest < (rdp + rfp) * 0.05)
             {
                 filling = true;
@@ -265,7 +265,7 @@ public partial class FilBuilder
         // HSurfaces and other suitable tools are constructed.
         // ----------------------------------------------------------
 
-        Orientation oFac = face[pivot].Orientation();
+        Orientation oFac = face[pivot].Orientation;
         FaceSurfaceAdaptor? fac = new FaceSurfaceAdaptor(face[pivot]);
         Point2D ppp1 = new(), ppp2 = new();
         FaceInterference bid1 = 
@@ -274,7 +274,7 @@ public partial class FilBuilder
         FaceInterference bid2 = 
             cd[pivot].SetOfSurfData().Value(i[pivot, deb]).InterferenceOnS2();
         ppp2 = bid2.PCurveOnSurf().Value(bid2.LastParameter());
-        double uu1 = ppp1.X(), uu2 = ppp2.X(), vv1 = ppp1.Y(), vv2 = ppp2.Y();
+        double uu1 = ppp1.X, uu2 = ppp2.X, vv1 = ppp1.Y, vv2 = ppp2.Y;
         SurfaceAdaptor gasurf = new((dStr.Surface(cd[pivot].SetOfSurfData().Value(i[pivot, deb]).Surf())).Surface(),
                                          uu1, uu2, vv1, vv2);
         SurfaceKind styp = gasurf.GetType();
@@ -313,7 +313,7 @@ public partial class FilBuilder
         cornerset.Append(coin);
         Orientation o1 = default, o2 = default, os1 = default, os2 = default, oo1 = default, oo2 = default;
         int choix = cd[deb].Choix();
-        o1 = face[pivot].Orientation();
+        o1 = face[pivot].Orientation;
         o2 = fdpiv.Orientation();
         oo1 = o1;
         oo2 = o2;
@@ -446,10 +446,10 @@ public partial class FilBuilder
                 //                       - from the face to the surface
                 //
                 math_Vector soldep = new(1, 4);
-                soldep[1] = pfac1.X();
-                soldep[2] = pfac1.Y();
-                soldep[3] = psurf1.X();
-                soldep[4] = psurf1.Y();
+                soldep[1] = pfac1.X;
+                soldep[2] = pfac1.Y;
+                soldep[3] = psurf1.X;
+                soldep[4] = psurf1.Y;
 
                 bool gd1 = false, gd2 = false, gf1 = false, gf2 = false;
                 global::Kerf.Engine.Fillets.Blend.Line? lin = null;
@@ -962,8 +962,8 @@ internal static class FilBuilder_C3
         {
             return false;
         }
-        double scal1 = Math.Abs(bs.Plane().Position().XDirection().Dot(new Direction3D(v)));
-        double scal2 = Math.Abs(bs.Plane().Position().YDirection().Dot(new Direction3D(v)));
+        double scal1 = Math.Abs(bs.Plane().Position.XDirection.Dot(new Direction3D(v)));
+        double scal2 = Math.Abs(bs.Plane().Position.YDirection.Dot(new Direction3D(v)));
         return (scal1 <= global::Kerf.Engine.Foundation.Precision.Confusion() && scal2 <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 

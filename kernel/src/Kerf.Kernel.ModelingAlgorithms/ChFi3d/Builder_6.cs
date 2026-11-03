@@ -70,7 +70,7 @@ public partial class FilletBuilderBase
         data.ChangeSurf(dStr.AddSurface(new DsSurface(surfcoin, _tolapp3d)));
 
         double uFirst = 0.0, uLast = 0.0, vFirst = 0.0, vLast = 0.0;
-        surfcoin.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+        surfcoin.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
         if (!gd1)
         {
             data.ChangeVertexFirstOnS1().SetPoint(surfcoin.Value(uFirst, vFirst));
@@ -280,7 +280,7 @@ public partial class FilletBuilderBase
             Point3D p11 = new(), p21 = new();
             p11 = surf.Pole(1, 1);
             p21 = surf.Pole(surf.UPoleCount, 1);
-            if (p11.Distance(p21) > eps)
+            if (p11.DistanceTo(p21) > eps)
             {
                 // to avoid extending surface with singular boundary
                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref bndSurf, length1, 1, false, false);
@@ -292,7 +292,7 @@ public partial class FilletBuilderBase
             Point3D p12 = new(), p22 = new();
             p12 = surf.Pole(1, surf.VPoleCount);
             p22 = surf.Pole(surf.UPoleCount, surf.VPoleCount);
-            if (p12.Distance(p22) > eps)
+            if (p12.DistanceTo(p22) > eps)
             {
                 // to avoid extending surface with singular boundary
                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref bndSurf, length2, 1, false, true);
@@ -322,7 +322,7 @@ public partial class FilletBuilderBase
         data.ChangeSurf(dStr.AddSurface(new DsSurface(surf, tolget3d)));
 
         double uFirst = 0.0, uLast = 0.0, vFirst = 0.0, vLast = 0.0, pppdeb = 0.0, pppfin = 0.0;
-        surf.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+        surf.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
         EdgeCurve2DAdaptor brc = new();
         EdgeCurveAdaptor cArc = new();
         FaceSurfaceAdaptor? bs1 = (s1 as FaceSurfaceAdaptor);
@@ -348,8 +348,8 @@ public partial class FilletBuilderBase
         pCurveOnFace = new BSplineCurve2D(approx.Curve2dPoles(ion1), approx.Curves2dKnots(), approx.Curves2dMults(),
                                                approx.Curves2dDegree());
 
-        double par1 = pCurveOnFace.FirstParameter();
-        double par2 = pCurveOnFace.LastParameter();
+        double par1 = pCurveOnFace.FirstParameter;
+        double par2 = pCurveOnFace.LastParameter;
         chc.Load(crv3d1, par1, par2);
 
         if (!ChFi3d_CheckSameParameter(checkcurve, pCurveOnFace, s1, tolC1, out tolcheck))
@@ -362,12 +362,12 @@ public partial class FilletBuilderBase
         if (gd1)
         {
             Face forwfac = bs1.Face();
-            forwfac.Orientation(Forward);
+            forwfac.Orient(Forward);
             brc.Initialize(data.VertexFirstOnS1().Arc(), forwfac);
             ref CommonPoint v = ref data.ChangeVertexFirstOnS1();
             cArc.Initialize(v.Arc());
             CompParam(brc, pCurveOnFace, ref uarc, ref utg, v.ParameterOnArc(), v.Parameter());
-            tolcheck = cArc.Value(uarc).Distance(v.Point());
+            tolcheck = cArc.Value(uarc).DistanceTo(v.Point());
             v.SetArc(tolC1 + tolcheck, v.Arc(), uarc, v.TransitionOnArc());
             pppdeb = utg;
         }
@@ -378,12 +378,12 @@ public partial class FilletBuilderBase
         if (gf1)
         {
             Face forwfac = bs1.Face();
-            forwfac.Orientation(Forward);
+            forwfac.Orient(Forward);
             ref CommonPoint v = ref data.ChangeVertexLastOnS1();
             brc.Initialize(v.Arc(), forwfac);
             cArc.Initialize(v.Arc());
             CompParam(brc, pCurveOnFace, ref uarc, ref utg, v.ParameterOnArc(), v.Parameter());
-            tolcheck = cArc.Value(uarc).Distance(v.Point());
+            tolcheck = cArc.Value(uarc).DistanceTo(v.Point());
             v.SetArc(tolC1 + tolcheck, v.Arc(), uarc, v.TransitionOnArc());
             pppfin = utg;
         }
@@ -424,12 +424,12 @@ public partial class FilletBuilderBase
         if (gd2)
         {
             Face forwfac = bs2.Face();
-            forwfac.Orientation(Forward);
+            forwfac.Orient(Forward);
             brc.Initialize(data.VertexFirstOnS2().Arc(), forwfac);
             ref CommonPoint v = ref data.ChangeVertexFirstOnS2();
             cArc.Initialize(v.Arc());
             CompParam(brc, pCurveOnFace, ref uarc, ref utg, v.ParameterOnArc(), v.Parameter());
-            tolcheck = cArc.Value(uarc).Distance(v.Point());
+            tolcheck = cArc.Value(uarc).DistanceTo(v.Point());
             v.SetArc(tolC2 + tolcheck, v.Arc(), uarc, v.TransitionOnArc());
             pppdeb = utg;
         }
@@ -440,12 +440,12 @@ public partial class FilletBuilderBase
         if (gf2)
         {
             Face forwfac = bs2.Face();
-            forwfac.Orientation(Forward);
+            forwfac.Orient(Forward);
             brc.Initialize(data.VertexLastOnS2().Arc(), forwfac);
             ref CommonPoint v = ref data.ChangeVertexLastOnS2();
             cArc.Initialize(v.Arc());
             CompParam(brc, pCurveOnFace, ref uarc, ref utg, v.ParameterOnArc(), v.Parameter());
-            tolcheck = cArc.Value(uarc).Distance(v.Point());
+            tolcheck = cArc.Value(uarc).DistanceTo(v.Point());
             v.SetArc(tolC2 + tolcheck, v.Arc(), uarc, v.TransitionOnArc());
             pppfin = utg;
         }
@@ -508,7 +508,7 @@ public partial class FilletBuilderBase
             Point3D p = new();
             Vector3D du1 = new(), du2 = new(), dv1 = new(), dv2 = new();
 
-            sref.D1(puv.X(), puv.Y(), out p, out du1, out dv1);
+            sref.D1(puv.X, puv.Y, out p, out du1, out dv1);
             du1 = du1.Crossed(dv1);
 
             if (or1 == global::Kerf.Topology.Orientation.Reversed)
@@ -519,7 +519,7 @@ public partial class FilletBuilderBase
             surf.D1(uFirst, param, out p, out du2, out dv2);
             du2 = du2.Crossed(dv2);
 
-            if (du1.Magnitude() <= tolget3d || du2.Magnitude() <= tolget3d)
+            if (du1.Magnitude <= tolget3d || du2.Magnitude <= tolget3d)
             {
                 denom++;
 
@@ -1946,7 +1946,7 @@ internal static class Builder_6
         //(1) It is checked if the provided parameters are good
         //    if pcurves have the same parameters as the spine.
         Point2D point = carc.Value(prefarc);
-        double distini = point.Distance(ctg.Value(preftg));
+        double distini = point.DistanceTo(ctg.Value(preftg));
         if (distini <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             parc = prefarc;
@@ -2037,7 +2037,7 @@ internal static class Builder_6
             return false;
         }
         p2 = pc.Value(param);
-        bp.SetValue(p3d, p3d, w, p1.X(), p1.Y(), p2.X(), p2.Y());
+        bp.SetValue(p3d, p3d, w, p1.X, p1.Y, p2.X, p2.Y);
         return true;
     }
 

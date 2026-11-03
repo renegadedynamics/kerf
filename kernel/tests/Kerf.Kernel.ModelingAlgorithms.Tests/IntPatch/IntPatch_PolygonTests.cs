@@ -32,7 +32,7 @@ public class IntPatch_PolygonTests
         {
             double t = (i - 1) * (Math.PI / 9);
             Assert.Equal(t, aPoly.Parameter(i), 1e-15);
-            Assert.True(aPoly.Point(i).Distance(new Point2D(Math.Cos(t), Math.Sin(t))) < 1e-15);
+            Assert.True(aPoly.Point(i).DistanceTo(new Point2D(Math.Cos(t), Math.Sin(t))) < 1e-15);
         }
         // The deflection: 1.2 times the largest sagitta of a chord, 1 - cos(pi / 18).
         Assert.Equal(1.2 * (1 - Math.Cos(Math.PI / 18)), aPoly.Error(), 1e-12);
@@ -43,7 +43,7 @@ public class IntPatch_PolygonTests
         Assert.Equal(aPoly.Point(3), aE);
 
         aPoly.SetOffset(2 * Math.PI, 0);
-        Assert.Equal(1 + 2 * Math.PI, aPoly.Point(1).X(), 1e-15);
+        Assert.Equal(1 + 2 * Math.PI, aPoly.Point(1).X, 1e-15);
 
         // A full circle is closed; infinite bounds or one sample are refused.
         Assert.True(new PolyArc(aCircle, 12, 0.0, 2 * Math.PI, Box(-1, -1, 1, 1)).Closed());

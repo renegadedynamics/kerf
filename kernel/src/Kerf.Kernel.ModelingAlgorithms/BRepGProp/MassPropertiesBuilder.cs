@@ -59,11 +59,11 @@ public static class MassPropertiesBuilder
         public void ApplyTransform(in Transform3D trsf)
         {
             _loc = _loc.Transformed(trsf);
-            TransformForm form = trsf.Form();
+            TransformForm form = trsf.Form;
             if (form != Identity && form != Translation)
             {
                 // g is a relative offset from loc to center of mass - rotate only.
-                Matrix3x3 r = trsf.VectorialPart();
+                Matrix3x3 r = trsf.VectorialPart;
                 Xyz gxyz = _g.XYZ();
                 gxyz.Multiply(r);
                 _g = _g.WithXYZ(gxyz);
@@ -107,7 +107,7 @@ public static class MassPropertiesBuilder
                     xyz = tri.Node(1).XYZ();
                     if (!locDummy.IsIdentity)
                     {
-                        locDummy.Transformation().Transforms(ref xyz);
+                        locDummy.Transformation.Transforms(ref xyz);
                     }
 
                     break;
@@ -133,7 +133,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         lProps.Assign(new Properties(p));
 
         var bac = new EdgeCurveAdaptor();
@@ -231,7 +231,7 @@ public static class MassPropertiesBuilder
 
             if ((useTriangulation && !noTri) || (noSurf && !noTri))
             {
-                Orientation ori = f.Orientation();
+                Orientation ori = f.Orientation;
                 Triangulation? tri = Tool.Triangulation(f, out locDummy);
                 mg.Perform(tri, locDummy, ori);
                 props.Add(mg);
@@ -288,7 +288,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         sProps.Assign(new Properties(p));
         SurfacePropertiesCore(s, sProps, 1.0, skipShared, useTriangulation);
     }
@@ -310,7 +310,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         sProps.Assign(new Properties(p));
         double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false);
         return errorMax;
@@ -343,7 +343,7 @@ public static class MassPropertiesBuilder
         for (ex.Init(s, ShapeType.Face), i = 1; ex.More(); ex.Next(), i++)
         {
             Face f = ShapeCasts.Face(ex.Current());
-            Orientation ori = f.Orientation();
+            Orientation ori = f.Orientation;
             bool isFwd = ori == Forward;
             bool isRvs = false;
             if (!isFwd)
@@ -479,11 +479,11 @@ public static class MassPropertiesBuilder
             {
                 // Duplicate instance: transform cached properties.
                 SolidCacheEntry cached = solidCache.GetValue(ts);
-                Placement relLoc = solid.Location().Multiplied(cached.Location.Inverted());
+                Placement relLoc = solid.Placement.Multiplied(cached.Location.Inverted());
 
                 // When SkipShared is enabled, skip exact duplicate instances
                 // (same placement and orientation) - matches original face-level dedup behavior.
-                if (skipShared && relLoc.IsIdentity && solid.Orientation() == cached.Orientation)
+                if (skipShared && relLoc.IsIdentity && solid.Orientation == cached.Orientation)
                 {
                     continue;
                 }
@@ -492,8 +492,8 @@ public static class MassPropertiesBuilder
                 // Shape locations may contain scaling or negative determinant
                 // (TopoDS_Shape::Location() does not enforce rigidity by default),
                 // which would produce incorrect volume/inertia with rotation-only transform.
-                Transform3D relTrsf = relLoc.Transformation();
-                if (Math.Abs(Math.Abs(relTrsf.ScaleFactor()) - 1.0) > Placement.ScalePrec()
+                Transform3D relTrsf = relLoc.Transformation;
+                if (Math.Abs(Math.Abs(relTrsf.ScaleFactor) - 1.0) > Placement.ScalePrec()
                     || relTrsf.IsNegative)
                 {
                     // Non-rigid relative transform: fall back to direct face-level computation.
@@ -514,7 +514,7 @@ public static class MassPropertiesBuilder
                     transformed.ApplyTransform(relTrsf);
                 }
 
-                if (solid.Orientation() != cached.Orientation)
+                if (solid.Orientation != cached.Orientation)
                 {
                     transformed.Negate();
                 }
@@ -534,8 +534,8 @@ public static class MassPropertiesBuilder
                 var entry = new SolidCacheEntry
                 {
                     Props = new Properties(solidProps),
-                    Location = solid.Location(),
-                    Orientation = solid.Orientation(),
+                    Location = solid.Placement,
+                    Orientation = solid.Orientation,
                 };
                 solidCache[ts] = entry;
 
@@ -590,7 +590,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         vProps.Assign(new Properties(p));
         if (onlyClosed)
         {
@@ -640,7 +640,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         vProps.Assign(new Properties(p));
         int i;
         double errorMax = 0.0, error = 0.0;
@@ -706,7 +706,7 @@ public static class MassPropertiesBuilder
         for (; exp.More(); exp.Next())
         {
             Face face = ShapeCasts.Face(exp.Current());
-            Orientation ori = face.Orientation();
+            Orientation ori = face.Orientation;
             bool isFwd = ori == Forward;
             bool isRvs = false;
             if (!isFwd)
@@ -784,7 +784,7 @@ public static class MassPropertiesBuilder
         Point3D p = new(0, 0, 0);
         double error = 0.0;
 
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         vProps.Assign(new Properties(p));
 
         if (onlyClosed)
@@ -880,7 +880,7 @@ public static class MassPropertiesBuilder
         for (; exp.More(); exp.Next())
         {
             Face face = ShapeCasts.Face(exp.Current());
-            Orientation ori = face.Orientation();
+            Orientation ori = face.Orientation;
             bool isFwd = ori == Forward;
             bool isRvs = false;
             if (!isFwd)
@@ -951,7 +951,7 @@ public static class MassPropertiesBuilder
         Point3D p = new(0, 0, 0);
         double error = 0.0;
 
-        p = p.Transformed(s.Location().Transformation());
+        p = p.Transformed(s.Placement.Transformation);
         vProps.Assign(new Properties(p));
 
         if (onlyClosed)

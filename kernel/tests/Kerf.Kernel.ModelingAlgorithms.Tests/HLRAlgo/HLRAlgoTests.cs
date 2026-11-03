@@ -26,8 +26,8 @@ public class HLRAlgoTests
         Assert.False(P.Perspective());
         Point2D aP = new();
         P.Project(new Point3D(1, 2, 3), ref aP);
-        Assert.Equal(1.0, aP.X(), Tol);
-        Assert.Equal(2.0, aP.Y(), Tol);
+        Assert.Equal(1.0, aP.X, Tol);
+        Assert.Equal(2.0, aP.Y, Tol);
         P.Project(new Point3D(1, 2, 3), out double X, out double Y, out double Z);
         Assert.Equal((1.0, 2.0, 3.0), (X, Y, Z));
         Assert.ThrowsAny<NoSuchObjectException>(() => P.Focus());
@@ -44,7 +44,7 @@ public class HLRAlgoTests
         Assert.Equal(0.0, Y0, Tol);
         Assert.Equal(0.0, Z0, Tol);
         // moving a point along the view direction changes only the depth
-        Direction3D aZ = View().Direction();
+        Direction3D aZ = View().Direction;
         Point3D aA = new(3, -1, 2);
         Point3D aB = aA.Translated(new Vector3D(aZ).Multiplied(5.0));
         P.Project(aA, out double XA, out double YA, out double ZA);
@@ -70,13 +70,13 @@ public class HLRAlgoTests
         P.Transform(ref aT);
         Point2D aP = new();
         P.Project(aA, ref aP);
-        double R = 1.0 - aT.Z() / f;
-        Assert.Equal(aT.X() / R, aP.X(), Tol);
-        Assert.Equal(aT.Y() / R, aP.Y(), Tol);
+        double R = 1.0 - aT.Z / f;
+        Assert.Equal(aT.X / R, aP.X, Tol);
+        Assert.Equal(aT.Y / R, aP.Y, Tol);
         P.Project(aA, out double X, out double Y, out double Z);
-        Assert.Equal(aP.X(), X, Tol);
-        Assert.Equal(aP.Y(), Y, Tol);
-        Assert.Equal(aT.Z(), Z, Tol);
+        Assert.Equal(aP.X, X, Tol);
+        Assert.Equal(aP.Y, Y, Tol);
+        Assert.Equal(aT.Z, Z, Tol);
 
         // the derivative of the projection, against a finite difference
         Vector3D aD = new(0.4, -1.2, 0.9);
@@ -84,8 +84,8 @@ public class HLRAlgoTests
         const double h = 1e-6;
         Point2D aPh = new();
         P.Project(aA.Translated(aD.Multiplied(h)), ref aPh);
-        Assert.Equal((aPh.X() - aP1.X()) / h, aD1.X(), 1e-4);
-        Assert.Equal((aPh.Y() - aP1.Y()) / h, aD1.Y(), 1e-4);
+        Assert.Equal((aPh.X - aP1.X) / h, aD1.X, 1e-4);
+        Assert.Equal((aPh.Y - aP1.Y) / h, aD1.Y, 1e-4);
     }
 
     [Fact]
@@ -96,8 +96,8 @@ public class HLRAlgoTests
             Point3D aA = new(3, -1, 2);
             Point2D aP = new();
             P.Project(aA, ref aP);
-            Line3D aL = P.Shoot(aP.X(), aP.Y());
-            Assert.True(aL.Distance(aA) < 1e-9, $"{aL.Distance(aA)}");
+            Line3D aL = P.Shoot(aP.X, aP.Y);
+            Assert.True(aL.DistanceTo(aA) < 1e-9, $"{aL.DistanceTo(aA)}");
         }
     }
 
@@ -107,7 +107,7 @@ public class HLRAlgoTests
         AlgorithmProjector P = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)));
         Point2D aP = new();
         P.Project(new Point3D(4, -5, 6), ref aP);
-        Assert.Equal((4.0, -5.0), (aP.X(), aP.Y()));
+        Assert.Equal((4.0, -5.0), (aP.X, aP.Y));
     }
 
     [Fact]
@@ -117,7 +117,7 @@ public class HLRAlgoTests
         AlgorithmProjector P = new(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 1), new Direction3D(1.4142135623730951, -1, 1)));
         Point2D aP = new(-7, -7);
         P.Project(new Point3D(1, 2, 3), ref aP);
-        Assert.Equal((-7.0, -7.0), (aP.X(), aP.Y()));
+        Assert.Equal((-7.0, -7.0), (aP.X, aP.Y));
         P.Project(new Point3D(1, 2, 3), out double X, out double Y, out _);
         Assert.NotEqual(-7.0, X);
         Assert.NotEqual(-7.0, Y);
@@ -132,8 +132,8 @@ public class HLRAlgoTests
         AlgorithmProjector P = new(aTS, false, 0.0);
         AlgorithmProjector PS = P.WithScaled(true);
         Assert.NotEqual(P, PS);
-        Assert.Equal(1.0, P.Transformation().ScaleFactor(), Tol);
-        Assert.Equal(2.0, PS.Transformation().ScaleFactor(), Tol);
+        Assert.Equal(1.0, P.Transformation().ScaleFactor, Tol);
+        Assert.Equal(2.0, PS.Transformation().ScaleFactor, Tol);
         Assert.Equal(aTS, PS.FullTransformation());
         Assert.Equal(PS, P.WithScaled(true));
     }

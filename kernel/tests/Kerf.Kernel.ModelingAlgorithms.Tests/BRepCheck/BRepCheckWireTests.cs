@@ -40,7 +40,7 @@ public class BRepCheckWireTests
         var aB = new BrepBuilder();
         Point3D aP1 = Tool.Pnt(theV1), aP2 = Tool.Pnt(theV2);
         Edge anE = TestShapes.Edge(theV1, theV2);
-        aB.UpdateEdge(anE, new LineCurve2D(new Point2D(aP1.X(), aP1.Y()), new Direction2D(aP2.X() - aP1.X(), aP2.Y() - aP1.Y())),
+        aB.UpdateEdge(anE, new LineCurve2D(new Point2D(aP1.X, aP1.Y), new Direction2D(aP2.X - aP1.X, aP2.Y - aP1.Y)),
                       theFace, Tol);
         return anE;
     }
@@ -275,7 +275,7 @@ public class BRepCheckWireTests
         // in the reversed face, the wire is reversed too (as the analyzer's TopoDS_Iterator gives it)
         Face aR = ShapeCasts.Face(aF.Reversed());
         Wire aRW = ShapeCasts.Wire(new Iterator(aR).Value());
-        Assert.Equal(Reversed, aRW.Orientation());
+        Assert.Equal(Reversed, aRW.Orientation);
         Assert.Equal([StatusCheck.NoError], InFaceStatus(aRW, aR));
         // the forward wire in the reversed face takes the other pcurves of the seam: not closed in 2D
         Assert.Equal([StatusCheck.NotClosed], InFaceStatus(aW, aR));

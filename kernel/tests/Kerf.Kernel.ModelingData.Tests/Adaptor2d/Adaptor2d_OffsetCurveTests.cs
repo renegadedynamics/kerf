@@ -57,8 +57,8 @@ public class Adaptor2d_OffsetCurveTest
         // (OCCT 2D offset uses right-hand normal: Z cross tangent)
         OffsetCurveAdaptor2D anOffset = new OffsetCurveAdaptor2D(myBaseLine, 3.0);
         Point2D aPnt = anOffset.Value(5.0);
-        Assert.Equal(5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(-3.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-3.0, aPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -66,8 +66,8 @@ public class Adaptor2d_OffsetCurveTest
     {
         OffsetCurveAdaptor2D anOffset = new OffsetCurveAdaptor2D(myBaseLine, -2.0);
         Point2D aPnt = anOffset.Value(5.0);
-        Assert.Equal(5.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, aPnt.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aPnt.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aPnt.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -88,8 +88,8 @@ public class Adaptor2d_OffsetCurveTest
         OffsetCurveAdaptor2D anOffset = new OffsetCurveAdaptor2D(myBaseLine, 3.0);
         anOffset.D1(5.0, out _, out Vector2D aVec);
         // First derivative of an offset line is same as the base line direction
-        Assert.Equal(1.0, aVec.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aVec.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aVec.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aVec.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

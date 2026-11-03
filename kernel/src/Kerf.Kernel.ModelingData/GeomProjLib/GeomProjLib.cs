@@ -96,12 +96,12 @@ public static class GeomProjLib
 
         if (c is TrimmedCurve3D cTrim)
         {
-            double u1 = cTrim.FirstParameter();
-            double u2 = cTrim.LastParameter();
+            double u1 = cTrim.FirstParameter;
+            double u2 = cTrim.LastParameter;
             if (!g2dC.IsPeriodic)
             {
-                u1 = Max(u1, g2dC.FirstParameter());
-                u2 = Min(u2, g2dC.LastParameter());
+                u1 = Max(u1, g2dC.FirstParameter);
+                u2 = Min(u2, g2dC.LastParameter);
             }
             g2dC = new TrimmedCurve2D(g2dC, u1, u2);
         }
@@ -119,7 +119,7 @@ public static class GeomProjLib
     {
         double uFirst, uLast, vFirst, vLast;
 
-        s.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+        s.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
         return Curve2d(c, first, last, s, uFirst, uLast, vFirst, vLast, ref tolerance);
     }
 
@@ -138,8 +138,8 @@ public static class GeomProjLib
                                         double vDeb,
                                         double vFin)
     {
-        double first = c.FirstParameter();
-        double last = c.LastParameter();
+        double first = c.FirstParameter;
+        double last = c.LastParameter;
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, uDeb, uFin, vDeb, vFin, ref tol);
     }
@@ -159,8 +159,8 @@ public static class GeomProjLib
                                         double vFin,
                                         ref double tolerance)
     {
-        double first = c.FirstParameter();
-        double last = c.LastParameter();
+        double first = c.FirstParameter;
+        double last = c.LastParameter;
         return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, uDeb, uFin, vDeb, vFin, ref tolerance);
     }
 
@@ -170,8 +170,8 @@ public static class GeomProjLib
     /// </summary>
     public static Curve2D? Curve2d(Curve3D c, Surface s)
     {
-        double first = c.FirstParameter();
-        double last = c.LastParameter();
+        double first = c.FirstParameter;
+        double last = c.LastParameter;
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         return global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, first, last, s, ref tol);
     }
@@ -202,7 +202,7 @@ public static class GeomProjLib
 
         if (AS.GetType() == Plane)
         {
-            ProjectOnPlane proj = new(AS.Plane().Position());
+            ProjectOnPlane proj = new(AS.Plane().Position);
             // OCCT copies AC into a handle: AC itself is used.
             CurveAdaptor hc = ac;
             proj.Load(hc, global::Kerf.Engine.Foundation.Precision.PApproximation());
@@ -244,8 +244,8 @@ public static class GeomProjLib
 
             if (c is TrimmedCurve3D cTrim)
             {
-                double u1 = cTrim.FirstParameter();
-                double u2 = cTrim.LastParameter();
+                double u1 = cTrim.FirstParameter;
+                double u2 = cTrim.LastParameter;
                 gc = new TrimmedCurve3D(gc, u1, u2);
             }
         }
@@ -290,7 +290,7 @@ public static class GeomProjLib
         // OCCT copies AC into a handle: AC itself is used.
         CurveAdaptor hc = new(curve);
 
-        ProjectOnPlane proj = new(plane.Position(), dir);
+        ProjectOnPlane proj = new(plane.Position, dir);
         proj.Load(hc, global::Kerf.Engine.Foundation.Precision.Approximation(), keepParametrization);
 
         Curve3D? gc = null;

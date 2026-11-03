@@ -79,23 +79,23 @@ public sealed class CircleInvoluteCurve2D : Curve2D
     }
 
     /// <summary>0.</summary>
-    public override double FirstParameter() => 0.0;
+    public override double FirstParameter => 0.0;
 
     /// <summary>Precision::Infinite().</summary>
-    public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 
-    public override Point2D EvalD0(double u)
+    internal override Point2D EvalD0(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -105,10 +105,10 @@ public sealed class CircleInvoluteCurve2D : Curve2D
                             + _radius * (sinU - u * cosU) * yd);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -121,10 +121,10 @@ public sealed class CircleInvoluteCurve2D : Curve2D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -139,10 +139,10 @@ public sealed class CircleInvoluteCurve2D : Curve2D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
@@ -160,7 +160,7 @@ public sealed class CircleInvoluteCurve2D : Curve2D
     }
 
     /// <exception cref="RangeErrorException">N &lt; 1.</exception>
-    public override Vector2D EvalDN(double u, int n)
+    internal override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -185,7 +185,7 @@ public sealed class CircleInvoluteCurve2D : Curve2D
         // By Leibniz rule on the t*trig(t) terms:
         // f^(N)(t) = cos(t+N*Pi/2) + t*sin(t+N*Pi/2) + N*sin(t+(N-1)*Pi/2)
         // g^(N)(t) = sin(t+N*Pi/2) - t*cos(t+N*Pi/2) - N*cos(t+(N-1)*Pi/2)
-        Xy xd = _position.Direction().XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
 
         double sinU = Math.Sin(u);

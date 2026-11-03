@@ -63,7 +63,7 @@ public class BRepLibStaticsTests
         {
             double t = f + (l - f) * i / 50.0;
             Point2D aUV = aPC.Value(t);
-            aMax = Math.Max(aMax, aC.Value(t).Distance(aS.Value(aUV.X(), aUV.Y())));
+            aMax = Math.Max(aMax, aC.Value(t).DistanceTo(aS.Value(aUV.X, aUV.Y)));
         }
         return aMax;
     }
@@ -90,8 +90,8 @@ public class BRepLibStaticsTests
         Assert.Equal(0, f, 1e-12);
         Assert.Equal(10, l, 1e-12);
         Point2D aP = aPC.Value(5);
-        Assert.Equal(5, aP.X(), 1e-12);
-        Assert.Equal(0, aP.Y(), 1e-12);
+        Assert.Equal(5, aP.X, 1e-12);
+        Assert.Equal(0, aP.Y, 1e-12);
     }
 
     [Fact]
@@ -370,11 +370,11 @@ public class BRepLibStaticsTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         Solid aSolid = aBox;
         Assert.True(BrepLibrary.OrientClosedSolid(ref aSolid));
-        Assert.Equal(Forward, aSolid.Orientation());
+        Assert.Equal(Forward, aSolid.Orientation);
 
         Solid aReversed = ShapeCasts.Solid(aBox.Reversed());
         Assert.True(BrepLibrary.OrientClosedSolid(ref aReversed));
-        Assert.Equal(Forward, aReversed.Orientation());
+        Assert.Equal(Forward, aReversed.Orientation);
         Assert.True(aReversed.IsSame(aBox));
     }
 
@@ -385,7 +385,7 @@ public class BRepLibStaticsTests
         Solid aSolid = new();
         new BrepBuilder().MakeSolid(ref aSolid);
         Assert.True(BrepLibrary.OrientClosedSolid(ref aSolid));
-        Assert.Equal(Reversed, aSolid.Orientation());
+        Assert.Equal(Reversed, aSolid.Orientation);
     }
 
     [Fact]

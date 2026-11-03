@@ -21,38 +21,38 @@ public readonly partial struct Point2D : IEquatable<Point2D>
 
     // Copies
 
-    public readonly Point2D WithCoord(int index, double xi)
+    internal readonly Point2D WithCoord(int index, double xi)
     {
         Xy coord = _coord;
         coord.SetCoord(index, xi);
         return new Point2D(coord);
     }
 
-    public readonly Point2D WithCoord(double xp, double yp) => new(xp, yp);
+    internal readonly Point2D WithCoord(double xp, double yp) => new(xp, yp);
 
     public readonly Point2D WithX(double x) => new(x, _coord.Y());
 
     public readonly Point2D WithY(double y) => new(_coord.X(), y);
 
-    public readonly Point2D WithXY(in Xy coord) => new(coord);
+    internal readonly Point2D WithXY(in Xy coord) => new(coord);
 
     // Queries
 
-    public readonly double Coord(int index) => _coord.Coord(index);
+    internal readonly double Coord(int index) => _coord.Coord(index);
 
-    public readonly void Coord(out double xp, out double yp) => _coord.Coord(out xp, out yp);
+    internal readonly void Coord(out double xp, out double yp) => _coord.Coord(out xp, out yp);
 
-    public readonly double X() => _coord.X();
+    public readonly double X => _coord.X();
 
-    public readonly double Y() => _coord.Y();
+    public readonly double Y => _coord.Y();
 
-    public readonly Xy XY() => _coord;
+    internal readonly Xy XY() => _coord;
 
-    public readonly Xy Coord() => _coord;
+    internal readonly Xy Coord() => _coord;
 
-    public readonly bool IsEqual(in Point2D other, double linearTolerance) => Distance(other) <= linearTolerance;
+    public readonly bool IsEqual(in Point2D other, double linearTolerance) => DistanceTo(other) <= linearTolerance;
 
-    public readonly double Distance(in Point2D other)
+    public readonly double DistanceTo(in Point2D other)
     {
         Xy xy = other._coord;
         double x = _coord.X() - xy.X();
@@ -60,7 +60,7 @@ public readonly partial struct Point2D : IEquatable<Point2D>
         return Math.Sqrt(x * x + y * y);
     }
 
-    public readonly double SquareDistance(in Point2D other)
+    public readonly double SquareDistanceTo(in Point2D other)
     {
         Xy xy = other._coord;
         double x = _coord.X() - xy.X();
@@ -107,22 +107,22 @@ public readonly partial struct Point2D : IEquatable<Point2D>
     public readonly Point2D Transformed(in Transform2D t)
     {
         Xy coord = _coord;
-        if (t.Form() == Identity)
+        if (t.Form == Identity)
         {
         }
-        else if (t.Form() == Translation)
+        else if (t.Form == Translation)
         {
-            coord.Add(t.TranslationPart());
+            coord.Add(t.TranslationXy());
         }
-        else if (t.Form() == global::Kerf.Geometry.TransformForm.Scale)
+        else if (t.Form == global::Kerf.Geometry.TransformForm.Scale)
         {
-            coord.Multiply(t.ScaleFactor());
-            coord.Add(t.TranslationPart());
+            coord.Multiply(t.ScaleFactor);
+            coord.Add(t.TranslationXy());
         }
-        else if (t.Form() == PntMirror)
+        else if (t.Form == PntMirror)
         {
             coord.Reverse();
-            coord.Add(t.TranslationPart());
+            coord.Add(t.TranslationXy());
         }
         else
         {

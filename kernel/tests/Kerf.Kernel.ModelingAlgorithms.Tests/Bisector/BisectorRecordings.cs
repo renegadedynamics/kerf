@@ -108,9 +108,9 @@ internal static class BisectorRecordings
     public static string Hex(double theValue) =>
         BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X) + "," + Hex(theP.Y);
 
-    private static string Hex(Vector2D theV) => Hex(theV.X()) + "," + Hex(theV.Y());
+    private static string Hex(Vector2D theV) => Hex(theV.X) + "," + Hex(theV.Y);
 
     private static string ExcName(Exception theE) => theE is FailureException ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()) : "!SEH";
 
@@ -161,14 +161,14 @@ internal static class BisectorRecordings
         {
             Tok(theOut, thePre + "G", () => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anAna.Geom2dCurve().GetType()));
         }
-        Tok(theOut, thePre + "F", () => Hex(theT.FirstParameter()));
-        Tok(theOut, thePre + "L", () => Hex(theT.LastParameter()));
+        Tok(theOut, thePre + "F", () => Hex(theT.FirstParameter));
+        Tok(theOut, thePre + "L", () => Hex(theT.LastParameter));
         if (aBis is null)
         {
             return;
         }
-        Tok(theOut, thePre + "BF", () => Hex(aBis.FirstParameter()));
-        Tok(theOut, thePre + "BL", () => Hex(aBis.LastParameter()));
+        Tok(theOut, thePre + "BF", () => Hex(aBis.FirstParameter));
+        Tok(theOut, thePre + "BL", () => Hex(aBis.LastParameter));
         Tok(theOut, thePre + "X", () => (aBis.IsExtendAtStart ? "1" : "0") + (aBis.IsExtendAtEnd ? "1" : "0"));
         Tok(theOut, thePre + "N", () =>
         {
@@ -179,7 +179,7 @@ internal static class BisectorRecordings
             }
             return aS.ToString();
         });
-        Range(theT.FirstParameter(), theT.LastParameter(), out double aA, out double aB);
+        Range(theT.FirstParameter, theT.LastParameter, out double aA, out double aB);
         for (int k = 0; k <= 6; k++)
         {
             double u = aA + k * (aB - aA) / 6.0;
@@ -223,8 +223,8 @@ internal static class BisectorRecordings
     /// <summary>MAT2d_Tool2d's static Domain.</summary>
     public static TwoDDomain Domain(TrimmedCurve2D Bisector1, double Tolerance)
     {
-        double Param1 = Bisector1.FirstParameter();
-        double Param2 = Bisector1.LastParameter();
+        double Param1 = Bisector1.FirstParameter;
+        double Param2 = Bisector1.LastParameter;
         if (Param2 > 10000.0)
         {
             Param2 = 10000.0;
@@ -238,17 +238,17 @@ internal static class BisectorRecordings
             double Limit = 50000.0;
             if (Type1 == typeof(ParabolaCurve2D))
             {
-                Parabola2D gpParabola = ((ParabolaCurve2D)BasisCurve).Parab2d();
-                double Focus = gpParabola.Focal();
+                Parabola2D gpParabola = ((ParabolaCurve2D)BasisCurve).Parabola;
+                double Focus = gpParabola.Focal;
                 double Val1 = Math.Sqrt(Limit * Focus);
                 double Val2 = Math.Sqrt(Limit * Limit);
                 Param2 = (Val1 <= Val2 ? Val1 : Val2);
             }
             else if (Type1 == typeof(HyperbolaCurve2D))
             {
-                Hyperbola2D gpHyperbola = ((HyperbolaCurve2D)BasisCurve).Hypr2d();
-                double Majr = gpHyperbola.MajorRadius();
-                double Minr = gpHyperbola.MinorRadius();
+                Hyperbola2D gpHyperbola = ((HyperbolaCurve2D)BasisCurve).Hyperbola;
+                double Majr = gpHyperbola.MajorRadius;
+                double Minr = gpHyperbola.MinorRadius;
                 double Valu1 = Limit / Majr;
                 double Valu2 = Limit / Minr;
                 double Val1 = Math.Log(Valu1 + Math.Sqrt(Valu1 * Valu1 - 1));
@@ -326,11 +326,11 @@ internal static class BisectorRecordings
                 Bisec aB1 = new(), aB2 = new();
                 try
                 {
-                    Point2D aP1 = aA.Value(aA.LastParameter());
-                    aB1.Perform(aA, aBc, aP1, aA.DN(aA.LastParameter(), 1), aBc.DN(aBc.FirstParameter(), 1).Reversed(),
+                    Point2D aP1 = aA.Value(aA.LastParameter);
+                    aB1.Perform(aA, aBc, aP1, aA.DN(aA.LastParameter, 1), aBc.DN(aBc.FirstParameter, 1).Reversed(),
                                 aSense, (JoinKind)aJoin, aTol, true);
-                    Point2D aP2 = aBc.Value(aBc.LastParameter());
-                    aB2.Perform(aBc, aC, aP2, aBc.DN(aBc.LastParameter(), 1), aC.DN(aC.FirstParameter(), 1).Reversed(),
+                    Point2D aP2 = aBc.Value(aBc.LastParameter);
+                    aB2.Perform(aBc, aC, aP2, aBc.DN(aBc.LastParameter, 1), aC.DN(aC.FirstParameter, 1).Reversed(),
                                 aSense, (JoinKind)aJoin, aTol, true);
                 }
                 catch (FailureException e)

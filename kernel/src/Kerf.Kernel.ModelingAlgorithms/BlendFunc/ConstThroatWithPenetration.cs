@@ -69,7 +69,7 @@ public class ConstThroatWithPenetration : ConstThroat
                 _istangent = true;
             }
 
-            _distmin = Min(_distmin, _pts1.Distance(_pts2));
+            _distmin = Min(_distmin, _pts1.DistanceTo(_pts2));
 
             return true;
         }
@@ -87,7 +87,7 @@ public class ConstThroatWithPenetration : ConstThroat
 
         Vector3D vref = new Vector3D(_ptgui, _pts1);
 
-        f[3] = vref.SquareMagnitude() - _throat * _throat;
+        f[3] = vref.SquareMagnitude - _throat * _throat;
 
         Vector3D vec12 = new Vector3D(_pts1, _pts2);
 

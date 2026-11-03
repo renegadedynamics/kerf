@@ -113,8 +113,8 @@ public class AppCont_LeastSquareTests
                     double t = i / 20.0, u = U0 + t * (U1 - U0);
                     aCurve.Value(1, t, out Point3D aP);
                     aCurve.Value(2, t, out Point2D aP2d);
-                    Assert.True(aP.Distance(PolynomialFunction.P3d(u)) < 1e-10, $"{aFirst}/{aLast} 3d at {t}");
-                    Assert.True(aP2d.Distance(PolynomialFunction.P2d(u)) < 1e-10, $"{aFirst}/{aLast} 2d at {t}");
+                    Assert.True(aP.DistanceTo(PolynomialFunction.P3d(u)) < 1e-10, $"{aFirst}/{aLast} 3d at {t}");
+                    Assert.True(aP2d.DistanceTo(PolynomialFunction.P2d(u)) < 1e-10, $"{aFirst}/{aLast} 2d at {t}");
                 }
                 aLSQ.Error(out double F, out double aMax3d, out double aMax2d);
                 Assert.True(F < 1e-20 && aMax3d < 1e-10 && aMax2d < 1e-10, $"{aFirst}/{aLast}: {F} {aMax3d} {aMax2d}");
@@ -133,7 +133,7 @@ public class AppCont_LeastSquareTests
         Assert.Equal(PolynomialFunction.P3d(U1), aCurve.Pole(1, 5));
         // second pole = first pole + tangent * (U1 - U0) / degree
         Point3D anExpected = PolynomialFunction.P3d(U0).Translated(PolynomialFunction.V3d(U0) * ((U1 - U0) / 4));
-        Assert.True(aCurve.Pole(1, 2).Distance(anExpected) < 1e-15);
+        Assert.True(aCurve.Pole(1, 2).DistanceTo(anExpected) < 1e-15);
     }
 
     [Theory]
@@ -156,13 +156,13 @@ public class AppCont_LeastSquareTests
             double t = i / 40.0, u = U0 + t * (U1 - U0);
             aCurve.Value(1, t, out Point3D aP);
             // radial distance from the unit circle
-            Assert.True(Math.Abs(Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()) - 1.0) < 1e-5);
-            Assert.Equal(0.0, aP.Z());
-            Assert.True(aP.Distance(new Point3D(Math.Cos(u), Math.Sin(u), 0.0)) < 1e-4);
+            Assert.True(Math.Abs(Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y) - 1.0) < 1e-5);
+            Assert.Equal(0.0, aP.Z);
+            Assert.True(aP.DistanceTo(new Point3D(Math.Cos(u), Math.Sin(u), 0.0)) < 1e-4);
         }
         if (theFirst is PassPoint or TangencyPoint)
         {
-            Assert.True(aCurve.Pole(1, 1).Distance(new Point3D(Math.Cos(U0), Math.Sin(U0), 0.0)) < 1e-15);
+            Assert.True(aCurve.Pole(1, 1).DistanceTo(new Point3D(Math.Cos(U0), Math.Sin(U0), 0.0)) < 1e-15);
         }
     }
 

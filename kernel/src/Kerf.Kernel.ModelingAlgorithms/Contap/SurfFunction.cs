@@ -113,7 +113,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
                 //      Adaptor3d_HSurfaceTool::D1(S,U,V,solpt,d1u,d1v);
                 //      myMean = myMean + d1u.Crossed(d1v).Magnitude();
                 SurfProps.Normale(s, u, v, out _solpt, out norm);
-                _mean = _mean + norm.Magnitude();
+                _mean = _mean + norm.Magnitude;
             }
             _mean = _mean / ((double)nbs);
         }
@@ -181,7 +181,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
                 f[1] = _valf = (norm.Dot(new Vector3D(_eye, _solpt))) / _mean;
                 break;
             case ContourTFunction.DraftStd:
-                f[1] = _valf = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude()) / _mean;
+                f[1] = _valf = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude) / _mean;
                 break;
             default:
                 break;
@@ -255,7 +255,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
             }
             break;
             case ContourTFunction.DraftStd:
-                f[1] = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude()) / _mean;
+                f[1] = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude) / _mean;
                 norm = norm.Normalized();
                 grad[1, 1] = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                 grad[1, 2] = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
@@ -338,7 +338,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
                 _d3d = _d3d.WithXYZ(d3dxyz);
 
                 // jag 940616    if (d3d.Magnitude() <= Tolpetit) {
-                if (_d3d.Magnitude() <= _tol)
+                if (_d3d.Magnitude <= _tol)
                 {
                     _tangent = true;
                 }

@@ -111,7 +111,7 @@ public class BRepToolsTests
         var anAdaptor = new FaceSurfaceAdaptor(aFace);
         Assert.Equal(SurfaceKind.Cylinder, anAdaptor.GetType());
         Assert.Equal(3.0, anAdaptor.LastVParameter());
-        Assert.True(anAdaptor.Value(0.0, 1.5).Distance(new Point3D(2, 0, 1.5)) < 1e-15);
+        Assert.True(anAdaptor.Value(0.0, 1.5).DistanceTo(new Point3D(2, 0, 1.5)) < 1e-15);
         Assert.True(anAdaptor.Face() == aFace);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anAdaptor.Tolerance());
     }
@@ -123,9 +123,9 @@ public class BRepToolsTests
         var aLoc = new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)));
         Face aMoved = ShapeCasts.Face(aFace.Moved(aLoc));
         var anAdaptor = new FaceSurfaceAdaptor(aMoved);
-        Assert.True(anAdaptor.Value(0.0, 0.0).Distance(new Point3D(12, 0, 0)) < 1e-15);
+        Assert.True(anAdaptor.Value(0.0, 0.0).DistanceTo(new Point3D(12, 0, 0)) < 1e-15);
         var aCopy = (FaceSurfaceAdaptor)anAdaptor.ShallowCopy();
-        Assert.True(aCopy.Value(0.0, 0.0).Distance(new Point3D(12, 0, 0)) < 1e-15);
+        Assert.True(aCopy.Value(0.0, 0.0).DistanceTo(new Point3D(12, 0, 0)) < 1e-15);
         Assert.True(aCopy.Face() == aMoved);
         // without restriction, the surface's own bounds
         var anUnbounded = new FaceSurfaceAdaptor(aMoved, false);
@@ -139,7 +139,7 @@ public class BRepToolsTests
         Face aFace = FaceAt(aBox, 0);
         var anExp = new Explorer(aFace, ShapeType.Edge);
         Edge anEdge = ShapeCasts.Edge(anExp.Current());
-        Assert.Equal(anEdge.Orientation(), BrepTools.OriEdgeInFace(anEdge, aFace));
+        Assert.Equal(anEdge.Orientation, BrepTools.OriEdgeInFace(anEdge, aFace));
         Assert.True(BrepTools.Compare(anEdge, ShapeCasts.Edge(anEdge.Reversed())));
         Assert.Throws<global::Kerf.Engine.Foundation.ConstructionErrorException>(
             () => BrepTools.OriEdgeInFace(TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0)), aFace));

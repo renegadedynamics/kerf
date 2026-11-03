@@ -19,10 +19,10 @@ public class GccAna_Lin2dTanOblTests
     {
         Line2D aSol = theAlgo.ThisSolution(theIndex);
         theAlgo.Intersection2(theIndex, out double aPs, out double aPa, out Point2D aP);
-        Assert.True(aSol.Distance(aP) < Tol);
-        Assert.True(theLine.Distance(aP) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aP) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, theLine).Distance(aP) < Tol);
+        Assert.True(aSol.DistanceTo(aP) < Tol);
+        Assert.True(theLine.DistanceTo(aP) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aP) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, theLine).DistanceTo(aP) < Tol);
     }
 
     [Fact]
@@ -35,8 +35,8 @@ public class GccAna_Lin2dTanOblTests
         Assert.True(anAlgo.IsDone);
         Assert.Equal(1, anAlgo.SolutionCount);
         Line2D aSol = anAlgo.ThisSolution(1);
-        Assert.Equal(anAngle, aL.Direction().Angle(aSol.Direction()), 1.0e-12);
-        Assert.True(aSol.Distance(aP) < Tol);
+        Assert.Equal(anAngle, aL.Direction.AngleTo(aSol.Direction), 1.0e-12);
+        Assert.True(aSol.DistanceTo(aP) < Tol);
         anAlgo.Tangency1(1, out double aPs, out double aPa, out Point2D aT);
         Assert.Equal(aP, aT);
         Assert.Equal(0.0, aPs, Tol);
@@ -68,11 +68,11 @@ public class GccAna_Lin2dTanOblTests
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = anAlgo.ThisSolution(i);
-            Assert.Equal(anAngle, aL.Direction().Angle(aSol.Direction()), 1.0e-12);
-            Assert.Equal(aC.Radius(), aSol.Distance(aC.Location()), Tol);
+            Assert.Equal(anAngle, aL.Direction.AngleTo(aSol.Direction), 1.0e-12);
+            Assert.Equal(aC.Radius, aSol.DistanceTo(aC.Location), Tol);
             anAlgo.Tangency1(i, out double aPs, out double aPa, out Point2D aT);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aT) < Tol);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).Distance(aT) < Tol);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aT) < Tol);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aC).DistanceTo(aT) < Tol);
         }
         anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
         anAlgo.WhichQualifier(2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
@@ -83,7 +83,7 @@ public class GccAna_Lin2dTanOblTests
         anAlgo.Intersection2(1, out _, out _, out Point2D aP1);
         anAlgo.Intersection2(2, out _, out _, out Point2D aP2);
         Assert.Equal(aP1, aP2);
-        Assert.False(anAlgo.ThisSolution(2).Distance(aP2) < Tol);
+        Assert.False(anAlgo.ThisSolution(2).DistanceTo(aP2) < Tol);
     }
 
     [Fact]
@@ -96,8 +96,8 @@ public class GccAna_Lin2dTanOblTests
         Assert.Equal(1, anEnc.SolutionCount);
         Assert.Equal(1, anOut.SolutionCount);
         // Vertical solutions going up: the circle is on the left of the enclosing one (x = 1)
-        Assert.Equal(1.0, anEnc.ThisSolution(1).Location().X(), Tol);
-        Assert.Equal(-1.0, anOut.ThisSolution(1).Location().X(), Tol);
+        Assert.Equal(1.0, anEnc.ThisSolution(1).Location.X, Tol);
+        Assert.Equal(-1.0, anOut.ThisSolution(1).Location.X, Tol);
         CheckIntersection(anEnc, 1, aL);
         CheckIntersection(anOut, 1, aL);
     }

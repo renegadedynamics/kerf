@@ -52,10 +52,10 @@ public class ProjectOnPlane : CurveAdaptorBase
 
         Point3D point = aCurvePtr.Value(u);
 
-        Vector3D po = new(point, pl.Location());
+        Vector3D po = new(point, pl.Location);
 
-        double alpha = po * new Vector3D(pl.Direction());
-        alpha /= d * pl.Direction();
+        double alpha = po * new Vector3D(pl.Direction);
+        alpha /= d * pl.Direction;
         point = point.WithXYZ(point.XYZ() + alpha * d.XYZ());
 
         return point;
@@ -69,7 +69,7 @@ public class ProjectOnPlane : CurveAdaptorBase
 
         Vector3D vector = aCurvePtr.DN(u, derivativeRequest);
 
-        Direction3D z = pl.Direction();
+        Direction3D z = pl.Direction;
 
         double alpha = vector * new Vector3D(z);
         alpha /= d * z;
@@ -84,12 +84,12 @@ public class ProjectOnPlane : CurveAdaptorBase
         Point3D point;
         Vector3D vector;
 
-        Direction3D z = pl.Direction();
+        Direction3D z = pl.Direction;
 
         aCurvePtr.D1(u, out point, out vector);
 
         // evaluate the point as in `OnPlane_Value`
-        Vector3D po = new(point, pl.Location());
+        Vector3D po = new(point, pl.Location);
         alpha = po * new Vector3D(z);
         alpha /= d * z;
         p = new Point3D();
@@ -123,12 +123,12 @@ public class ProjectOnPlane : CurveAdaptorBase
         Point3D point;
         Vector3D vector1, vector2;
 
-        Direction3D z = pl.Direction();
+        Direction3D z = pl.Direction;
 
         aCurvePtr.D2(u, out point, out vector1, out vector2);
 
         // evaluate the point as in `OnPlane_Value`
-        Vector3D po = new(point, pl.Location());
+        Vector3D po = new(point, pl.Location);
         alpha = po * new Vector3D(z);
         alpha /= d * z;
         p = new Point3D();
@@ -168,12 +168,12 @@ public class ProjectOnPlane : CurveAdaptorBase
         Point3D point;
         Vector3D vector1, vector2, vector3;
 
-        Direction3D z = pl.Direction();
+        Direction3D z = pl.Direction;
 
         aCurvePtr.D3(u, out point, out vector1, out vector2, out vector3);
 
         // evaluate the point as in `OnPlane_Value`
-        Vector3D po = new(point, pl.Location());
+        Vector3D po = new(point, pl.Location);
         alpha = po * new Vector3D(z);
         alpha /= d * z;
         p = new Point3D();
@@ -383,7 +383,7 @@ public class ProjectOnPlane : CurveAdaptorBase
     public ProjectOnPlane(in CoordinateSystem pl)
     {
         _plane = pl;
-        _direction = pl.Direction();
+        _direction = pl.Direction;
         _keepParam = false;
         _firstPar = 0.0;
         _lastPar = 0.0;
@@ -437,10 +437,10 @@ public class ProjectOnPlane : CurveAdaptorBase
 
     private static Point3D ProjectPnt(in CoordinateSystem thePlane, in Direction3D theDir, in Point3D point)
     {
-        Vector3D po = new(point, thePlane.Location());
+        Vector3D po = new(point, thePlane.Location);
 
-        double alpha = po * new Vector3D(thePlane.Direction());
-        alpha /= theDir * thePlane.Direction();
+        double alpha = po * new Vector3D(thePlane.Direction);
+        alpha /= theDir * thePlane.Direction;
 
         Point3D p = new Point3D().WithXYZ(point.XYZ() + alpha * theDir.XYZ());
 
@@ -450,7 +450,7 @@ public class ProjectOnPlane : CurveAdaptorBase
     private static Vector3D ProjectVec(in CoordinateSystem thePlane, in Direction3D theDir, in Vector3D vec)
     {
         Vector3D d = vec;
-        Vector3D z = new(thePlane.Direction());
+        Vector3D z = new(thePlane.Direction);
 
         d -= ((vec * z) / (theDir * new Direction3D(z))) * new Vector3D(theDir);
 
@@ -497,12 +497,12 @@ public class ProjectOnPlane : CurveAdaptorBase
                 //          = f(O) + u * f(Xc)
 
                 Line3D l = _curve.Line();
-                Vector3D xc = ProjectVec(_plane, _direction, new Vector3D(l.Direction()));
+                Vector3D xc = ProjectVec(_plane, _direction, new Vector3D(l.Direction));
 
-                if (xc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (xc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
                 { // line orthogonal to the plane
                     _type = BSplineCurve;
-                    Point3D p = ProjectPnt(_plane, _direction, l.Location());
+                    Point3D p = ProjectPnt(_plane, _direction, l.Location);
                     NCollection_Array1<int> mults = new(1, 2);
                     mults.Init(2);
                     NCollection_Array1<Point3D> poles = new(1, 2);
@@ -516,10 +516,10 @@ public class ProjectOnPlane : CurveAdaptorBase
                     _result = new CurveAdaptor(bsp);
                     //  Modified by Sergey KHROMOV - Tue Jan 29 16:57:30 2002 End
                 }
-                else if (Math.Abs(xc.Magnitude() - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                else if (Math.Abs(xc.Magnitude - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     _type = global::Kerf.Geometry.CurveKind.Line;
-                    Point3D p = ProjectPnt(_plane, _direction, l.Location());
+                    Point3D p = ProjectPnt(_plane, _direction, l.Location);
                     _firstPar = _curve.FirstParameter();
                     _lastPar = _curve.LastParameter();
                     line = new Line3D(p, new Direction3D(xc));
@@ -532,7 +532,7 @@ public class ProjectOnPlane : CurveAdaptorBase
                 else
                 {
                     _type = global::Kerf.Geometry.CurveKind.Line;
-                    Point3D p = ProjectPnt(_plane, _direction, l.Location());
+                    Point3D p = ProjectPnt(_plane, _direction, l.Location);
                     line = new Line3D(p, new Direction3D(xc));
                     double udeb, ufin;
 
@@ -541,8 +541,8 @@ public class ProjectOnPlane : CurveAdaptorBase
                     ufin = _curve.LastParameter();
                     Point3D p1 = ProjectPnt(_plane, _direction, _curve.Value(udeb));
                     Point3D p2 = ProjectPnt(_plane, _direction, _curve.Value(ufin));
-                    _firstPar = new Vector3D(line.Direction()).Dot(new Vector3D(p, p1));
-                    _lastPar = new Vector3D(line.Direction()).Dot(new Vector3D(p, p2));
+                    _firstPar = new Vector3D(line.Direction).Dot(new Vector3D(p, p1));
+                    _lastPar = new Vector3D(line.Direction).Dot(new Vector3D(p, p2));
                     geomLinePtr = new LineCurve3D(line);
                     if (!_keepParam)
                     {
@@ -584,27 +584,27 @@ public class ProjectOnPlane : CurveAdaptorBase
                     //          = f(O) + R1 * std::cos(u) * f(Xc) + R2 * std::sin(u) * f(Yc)
 
                     Circle3D circ = _curve.Circle();
-                    axis = circ.Position();
-                    R1 = R2 = circ.Radius();
+                    axis = circ.Position;
+                    R1 = R2 = circ.Radius;
                 }
                 // [[fallthrough]] from the circle case
                 if (type == global::Kerf.Geometry.CurveKind.Ellipse)
                 {
                     Ellipse3D e = _curve.Ellipse();
-                    axis = e.Position();
-                    R1 = e.MajorRadius();
-                    R2 = e.MinorRadius();
+                    axis = e.Position;
+                    R1 = e.MajorRadius;
+                    R2 = e.MinorRadius;
                 }
 
                 // Common Code  for CIRCLE & ELLIPSE begin here
-                Direction3D x = axis.XDirection();
-                Direction3D y = axis.YDirection();
+                Direction3D x = axis.XDirection;
+                Direction3D y = axis.YDirection;
                 Vector3D vDx = ProjectVec(_plane, _direction, new Vector3D(x));
                 Vector3D vDy = ProjectVec(_plane, _direction, new Vector3D(y));
                 Direction3D dx = new(), dy = new();
 
                 double tol2 = _tolerance * _tolerance;
-                if (vDx.SquareMagnitude() < tol2 || vDy.SquareMagnitude() < tol2 || vDx.CrossSquareMagnitude(vDy) < tol2)
+                if (vDx.SquareMagnitude < tol2 || vDy.SquareMagnitude < tol2 || vDx.CrossSquareMagnitude(vDy) < tol2)
                 {
                     _isApprox = true;
                 }
@@ -613,12 +613,12 @@ public class ProjectOnPlane : CurveAdaptorBase
                 {
                     dx = new Direction3D(vDx);
                     dy = new Direction3D(vDy);
-                    Point3D o = axis.Location();
+                    Point3D o = axis.Location;
                     Point3D p = ProjectPnt(_plane, _direction, o);
                     Point3D px = ProjectPnt(_plane, _direction, o.Translated(R1 * new Vector3D(x)));
                     Point3D py = ProjectPnt(_plane, _direction, o.Translated(R2 * new Vector3D(y)));
-                    double major = p.Distance(px);
-                    double minor = p.Distance(py);
+                    double major = p.DistanceTo(px);
+                    double minor = p.DistanceTo(py);
 
                     if (_keepParam)
                     {
@@ -634,10 +634,10 @@ public class ProjectOnPlane : CurveAdaptorBase
                         // A = Jp^T * Pr(Je), where
                         //   Pr(Je) - projection of axes of original ellipse to the target plane
                         //   Jp - X and Y axes of the target plane
-                        matrA[1, 1] = _plane.XDirection().XYZ().Dot(vDx.XYZ());
-                        matrA[1, 2] = _plane.XDirection().XYZ().Dot(vDy.XYZ());
-                        matrA[2, 1] = _plane.YDirection().XYZ().Dot(vDx.XYZ());
-                        matrA[2, 2] = _plane.YDirection().XYZ().Dot(vDy.XYZ());
+                        matrA[1, 1] = _plane.XDirection.XYZ().Dot(vDx.XYZ());
+                        matrA[1, 2] = _plane.XDirection.XYZ().Dot(vDy.XYZ());
+                        matrA[2, 1] = _plane.YDirection.XYZ().Dot(vDx.XYZ());
+                        matrA[2, 2] = _plane.YDirection.XYZ().Dot(vDy.XYZ());
 
                         Matrix matrDelta2 = new(1, 2, 1, 2, 0.0);
                         //           | 1/MajorRad^2       0       |
@@ -661,10 +661,10 @@ public class ProjectOnPlane : CurveAdaptorBase
                             // projected ellipse (swap eigenvectors in respect to major and minor axes)
                             Matrix eigenVec = eigenCalc.Vectors();
                             Transform2D trsfInPlane = new Transform2D().WithValues(eigenVec[1, 2], eigenVec[1, 1], 0.0, eigenVec[2, 2], eigenVec[2, 1], 0.0);
-                            Transform3D rot = new Transform3D().WithRotation(new Axis3D(p, _plane.Direction()), trsfInPlane.RotationPart());
+                            Transform3D rot = new Transform3D().WithRotation(new Axis3D(p, _plane.Direction), trsfInPlane.RotationAngle);
 
-                            dx = _plane.XDirection().Transformed(rot);
-                            dy = _plane.YDirection().Transformed(rot);
+                            dx = _plane.XDirection.Transformed(rot);
+                            dy = _plane.YDirection.Transformed(rot);
                         }
                         else
                         {
@@ -741,14 +741,14 @@ public class ProjectOnPlane : CurveAdaptorBase
                 //          = f(O) + (u*u)/(4*f) * f(Xc) + u * f(Yc)
 
                 Parabola3D parab = _curve.Parabola();
-                Frame3D axeRef = parab.Position();
-                Vector3D xc = ProjectVec(_plane, _direction, new Vector3D(axeRef.XDirection()));
-                Vector3D yc = ProjectVec(_plane, _direction, new Vector3D(axeRef.YDirection()));
-                Point3D p = ProjectPnt(_plane, _direction, axeRef.Location());
+                Frame3D axeRef = parab.Position;
+                Vector3D xc = ProjectVec(_plane, _direction, new Vector3D(axeRef.XDirection));
+                Vector3D yc = ProjectVec(_plane, _direction, new Vector3D(axeRef.YDirection));
+                Point3D p = ProjectPnt(_plane, _direction, axeRef.Location);
 
                 _isApprox = false;
 
-                if ((Math.Abs(yc.Magnitude() - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()) && (xc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion()))
+                if ((Math.Abs(yc.Magnitude - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion()) && (xc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion()))
                 {
                     _type = global::Kerf.Geometry.CurveKind.Line;
                     line = new Line3D(p, new Direction3D(yc));
@@ -759,11 +759,11 @@ public class ProjectOnPlane : CurveAdaptorBase
                     _type = global::Kerf.Geometry.CurveKind.Parabola;
                     // OCCT: the focal of the image is Focal * |f(Yc)|^2 / |f(Xc)|; this ignores |f(Yc)|, so the
                     // parabola is wrong unless f(Yc) stays unit (ProjLib_ProjectOnPlaneTests).
-                    double f = parab.Focal() / xc.Magnitude();
+                    double f = parab.Focal / xc.Magnitude;
                     Parabola3D projParab = new(new Frame3D(p, new Direction3D(xc ^ yc), new Direction3D(xc)), f);
                     geomParabolaPtr = new ParabolaCurve3D(projParab);
                 }
-                else if (yc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() || yc.IsParallel(xc, global::Kerf.Engine.Foundation.Precision.Angular()))
+                else if (yc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion() || yc.IsParallel(xc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     _isApprox = true;
                 }
@@ -798,37 +798,37 @@ public class ProjectOnPlane : CurveAdaptorBase
                 //          = f(O) + R1 * std::cosh(u) * f(Xc) + R2 * std::sinh(u) * f(Yc)
 
                 Hyperbola3D hypr = _curve.Hyperbola();
-                Frame3D axeRef = hypr.Position();
-                Vector3D xc = ProjectVec(_plane, _direction, new Vector3D(axeRef.XDirection()));
-                Vector3D yc = ProjectVec(_plane, _direction, new Vector3D(axeRef.YDirection()));
-                Point3D p = ProjectPnt(_plane, _direction, axeRef.Location());
-                double r1 = hypr.MajorRadius();
-                double r2 = hypr.MinorRadius();
-                Direction3D z = _plane.Direction();
+                Frame3D axeRef = hypr.Position;
+                Vector3D xc = ProjectVec(_plane, _direction, new Vector3D(axeRef.XDirection));
+                Vector3D yc = ProjectVec(_plane, _direction, new Vector3D(axeRef.YDirection));
+                Point3D p = ProjectPnt(_plane, _direction, axeRef.Location);
+                double r1 = hypr.MajorRadius;
+                double r2 = hypr.MinorRadius;
+                Direction3D z = _plane.Direction;
                 _isApprox = false;
 
-                if (xc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (xc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     _type = global::Kerf.Geometry.CurveKind.Hyperbola;
                     Direction3D x = new Direction3D(yc) ^ z;
-                    hypr = new Hyperbola3D(new Frame3D(p, z, x), 0.0, r2 * yc.Magnitude());
+                    hypr = new Hyperbola3D(new Frame3D(p, z, x), 0.0, r2 * yc.Magnitude);
                     geomHyperbolaPtr = new HyperbolaCurve3D(hypr);
                 }
-                else if (yc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+                else if (yc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     _type = global::Kerf.Geometry.CurveKind.Hyperbola;
-                    hypr = new Hyperbola3D(new Frame3D(p, z, new Direction3D(xc)), r1 * xc.Magnitude(), 0.0);
+                    hypr = new Hyperbola3D(new Frame3D(p, z, new Direction3D(xc)), r1 * xc.Magnitude, 0.0);
                     geomHyperbolaPtr = new HyperbolaCurve3D(hypr);
                 }
                 else if (xc.IsNormal(yc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     _type = global::Kerf.Geometry.CurveKind.Hyperbola;
                     hypr = new Hyperbola3D(new Frame3D(p, new Direction3D(xc ^ yc), new Direction3D(xc)),
-                                       r1 * xc.Magnitude(),
-                                       r2 * yc.Magnitude());
+                                       r1 * xc.Magnitude,
+                                       r2 * yc.Magnitude);
                     geomHyperbolaPtr = new HyperbolaCurve3D(hypr);
                 }
-                else if (yc.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion() || yc.IsParallel(xc, global::Kerf.Engine.Foundation.Precision.Angular()))
+                else if (yc.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion() || yc.IsParallel(xc, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     _isApprox = true;
                 }
@@ -1020,7 +1020,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         }
     }
 
-    public sealed override Curve3D.ResD1 EvalD1(double u)
+    internal sealed override Curve3D.ResD1 EvalD1(double u)
     {
         if (_type != OtherCurve)
         {
@@ -1034,7 +1034,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         }
     }
 
-    public sealed override Curve3D.ResD2 EvalD2(double u)
+    internal sealed override Curve3D.ResD2 EvalD2(double u)
     {
         if (_type != OtherCurve)
         {
@@ -1048,7 +1048,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         }
     }
 
-    public sealed override Curve3D.ResD3 EvalD3(double u)
+    internal sealed override Curve3D.ResD3 EvalD3(double u)
     {
         if (_type != OtherCurve)
         {
@@ -1272,19 +1272,19 @@ public class ProjectOnPlane : CurveAdaptorBase
         Hyperbola3D hypr = new();
         if (_type == global::Kerf.Geometry.CurveKind.Line)
         {
-            lin = ((LineCurve3D)projCurve!).Lin();
+            lin = ((LineCurve3D)projCurve!).Line;
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Parabola)
         {
-            parab = ((ParabolaCurve3D)projCurve!).Parab();
+            parab = ((ParabolaCurve3D)projCurve!).Parabola;
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Hyperbola)
         {
-            hypr = ((HyperbolaCurve3D)projCurve!).Hypr();
+            hypr = ((HyperbolaCurve3D)projCurve!).Hyperbola;
         }
 
-        _firstPar = projCurve!.FirstParameter();
-        _lastPar = projCurve.LastParameter();
+        _firstPar = projCurve!.FirstParameter;
+        _lastPar = projCurve.LastParameter;
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(_curve!.FirstParameter()))
         {
             Point3D p = _curve.Value(_curve.FirstParameter());
@@ -1335,7 +1335,7 @@ public class ProjectOnPlane : CurveAdaptorBase
     {
         //
         // Searching parabola apex as point with maximal curvature
-        double f = _curve!.Parabola().Focal();
+        double f = _curve!.Parabola().Focal;
         CurveKind curType = _type;
         _type = OtherCurve; // To provide correct calculation of derivativesb by projection for
                                      // copy of instance;
@@ -1368,8 +1368,8 @@ public class ProjectOnPlane : CurveAdaptorBase
         Line3D xLine = new(p0, xDir);
         Point3D p1 = Value(t + 10.0 * f);
         //
-        double x = global::Kerf.Engine.Geometry.ElCLib.LineParameter(xLine.Position(), p1);
-        double y = xLine.Distance(p1);
+        double x = global::Kerf.Engine.Geometry.ElCLib.LineParameter(xLine.Position, p1);
+        double y = xLine.DistanceTo(p1);
         double newF = y * y / 4.0 / x;
         Direction3D n = xDir ^ yDir;
         Frame3D a2 = new(p0, n, xDir);
@@ -1416,14 +1416,14 @@ public class ProjectOnPlane : CurveAdaptorBase
             else
             {
                 Hyperbola3D Hypr = _curve!.Hyperbola();
-                Frame3D axeRef = Hypr.Position();
-                Point3D p = ProjectPnt(_plane, _direction, axeRef.Location());
-                Direction3D z = _plane.Direction();
+                Frame3D axeRef = Hypr.Position;
+                Point3D p = ProjectPnt(_plane, _direction, axeRef.Location);
+                Direction3D z = _plane.Direction;
                 Point3D p0 = props.Value();
                 Direction3D xDir = new MakeDir(p, p0).Value();
                 Direction3D yDir = new MakeDir(props.D1()).Value();
                 //
-                double majRad = p.Distance(p0);
+                double majRad = p.DistanceTo(p0);
                 Point3D p1 = Value(t + 1.0);
                 Vector3D v = new(p, p1);
                 double x = v * new Vector3D(xDir);
@@ -1462,8 +1462,8 @@ public class ProjectOnPlane : CurveAdaptorBase
         }
         // OCCT: a failed approximation leaves anApproxCurve null and dereferences it (NullReferenceException in
         // the port).
-        _firstPar = approxCurve!.FirstParameter();
-        _lastPar = approxCurve.LastParameter();
+        _firstPar = approxCurve!.FirstParameter;
+        _lastPar = approxCurve.LastParameter;
         _result = new CurveAdaptor(approxCurve);
     }
 }

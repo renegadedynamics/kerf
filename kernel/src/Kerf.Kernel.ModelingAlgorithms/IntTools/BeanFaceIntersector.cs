@@ -377,9 +377,9 @@ public class BeanFaceIntersector
 
             if (useMinMaxPoints)
             {
-                double ppDistance = point.Distance(pointMin);
+                double ppDistance = point.DistanceTo(pointMin);
                 distance = (ppDistance < distance) ? ppDistance : distance;
-                ppDistance = point.Distance(pointMax);
+                ppDistance = point.DistanceTo(pointMax);
                 distance = (ppDistance < distance) ? ppDistance : distance;
             }
         }
@@ -452,7 +452,7 @@ public class BeanFaceIntersector
 
                 if (useMinMaxPoints)
                 {
-                    double ppDistance = point.Distance(pointMin);
+                    double ppDistance = point.DistanceTo(pointMin);
 
                     if (ppDistance < distance)
                     {
@@ -460,7 +460,7 @@ public class BeanFaceIntersector
                         vParameter = (i >= 2) ? isoParameter : minParameter;
                         distance = ppDistance;
                     }
-                    ppDistance = point.Distance(pointMax);
+                    ppDistance = point.DistanceTo(pointMax);
 
                     if (ppDistance < distance)
                     {
@@ -624,33 +624,33 @@ public class BeanFaceIntersector
             {
                 case Circle:
                     {
-                        dir = _curve.Circle().Axis().Direction();
-                        pLoc = _curve.Circle().Location();
+                        dir = _curve.Circle().Axis.Direction;
+                        pLoc = _curve.Circle().Location;
                         break;
                     }
                 case Ellipse:
                     {
-                        dir = _curve.Ellipse().Axis().Direction();
-                        pLoc = _curve.Ellipse().Location();
+                        dir = _curve.Ellipse().Axis.Direction;
+                        pLoc = _curve.Ellipse().Location;
                         break;
                     }
                 case Hyperbola:
                     {
-                        dir = _curve.Hyperbola().Axis().Direction();
-                        pLoc = _curve.Hyperbola().Location();
+                        dir = _curve.Hyperbola().Axis.Direction;
+                        pLoc = _curve.Hyperbola().Location;
                         break;
                     }
                 case Parabola:
                     {
-                        dir = _curve.Parabola().Axis().Direction();
-                        pLoc = _curve.Parabola().Location();
+                        dir = _curve.Parabola().Axis.Direction;
+                        pLoc = _curve.Parabola().Location;
                         break;
                     }
                 default:
                     return false;
             }
 
-            double angle = dir.Angle(surfPlane.Axis().Direction());
+            double angle = dir.AngleTo(surfPlane.Axis.Direction);
             if (angle > global::Kerf.Engine.Foundation.Precision.Angular())
             {
                 return false;
@@ -658,7 +658,7 @@ public class BeanFaceIntersector
 
             hasIntersection = false;
 
-            double dist = surfPlane.Distance(pLoc);
+            double dist = surfPlane.DistanceTo(pLoc);
             isCoincide = dist < _criteria;
         }
 
@@ -666,21 +666,21 @@ public class BeanFaceIntersector
         else if (st == SurfaceKind.Cylinder)
         {
             Cylinder cylinder = _surface.Cylinder();
-            Axis3D cylAxis = cylinder.Axis();
-            Direction3D cylDir = cylAxis.Direction();
-            double cylRadius = cylinder.Radius();
+            Axis3D cylAxis = cylinder.Axis;
+            Direction3D cylDir = cylAxis.Direction;
+            double cylRadius = cylinder.Radius;
 
             if (ct == Line)
             {
                 Line3D lin = _curve.Line();
-                if (!lin.Direction().IsParallel(cylDir, global::Kerf.Engine.Foundation.Precision.Angular()))
+                if (!lin.Direction.IsParallel(cylDir, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     return false;
                 }
 
                 hasIntersection = false;
 
-                double dist = Math.Abs(lin.Distance(cylAxis.Location()) - cylRadius);
+                double dist = Math.Abs(lin.DistanceTo(cylAxis.Location) - cylRadius);
                 isCoincide = (dist < _criteria);
             }
 
@@ -688,20 +688,20 @@ public class BeanFaceIntersector
             {
                 Circle3D circle = _curve.Circle();
 
-                double angle = cylDir.Angle(circle.Axis().Direction());
+                double angle = cylDir.AngleTo(circle.Axis.Direction);
                 if (angle > global::Kerf.Engine.Foundation.Precision.Angular())
                 {
                     return false;
                 }
 
-                double distLoc = new Line3D(cylAxis).Distance(circle.Location());
-                double dist = distLoc + Math.Abs(circle.Radius() - cylRadius);
+                double distLoc = new Line3D(cylAxis).DistanceTo(circle.Location);
+                double dist = distLoc + Math.Abs(circle.Radius - cylRadius);
                 isCoincide = (dist < _criteria);
 
                 if (!isCoincide)
                 {
-                    hasIntersection = (distLoc - (circle.Radius() + cylRadius)) < _criteria
-                                      && (Math.Abs(circle.Radius() - cylRadius) - distLoc) < _criteria;
+                    hasIntersection = (distLoc - (circle.Radius + cylRadius)) < _criteria
+                                      && (Math.Abs(circle.Radius - cylRadius) - distLoc) < _criteria;
                 }
             }
         }
@@ -710,11 +710,11 @@ public class BeanFaceIntersector
         else if (st == SurfaceKind.Sphere)
         {
             Sphere sph = _surface.Sphere();
-            Point3D sphLoc = sph.Location();
+            Point3D sphLoc = sph.Location;
             if (ct == Line)
             {
                 Line3D lin = _curve.Line();
-                double dist = lin.Distance(sphLoc) - sph.Radius();
+                double dist = lin.DistanceTo(sphLoc) - sph.Radius;
                 hasIntersection = dist < _criteria;
             }
         }
@@ -741,11 +741,11 @@ public class BeanFaceIntersector
         double dis, direc;
 
         p.Coefficients(out a, out b, out c, out d);
-        Point3D orig = l.Location();
-        l.Direction().Coord(out al, out bl, out cl);
+        Point3D orig = l.Location;
+        l.Direction.Coord(out al, out bl, out cl);
 
         direc = a * al + b * bl + c * cl;
-        dis = a * orig.X() + b * orig.Y() + c * orig.Z() + d;
+        dis = a * orig.X + b * orig.Y + c * orig.Z + d;
 
         bool parallel = false, inplane = false;
         if (Math.Abs(direc) < tolang)
@@ -757,12 +757,12 @@ public class BeanFaceIntersector
         {
             Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(_firstParameter, l);
             Point3D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(_lastParameter, l);
-            double d1 = a * p1.X() + b * p1.Y() + c * p1.Z() + d;
+            double d1 = a * p1.X + b * p1.Y + c * p1.Z + d;
             if (d1 < 0)
             {
                 d1 = -d1;
             }
-            double d2 = a * p2.X() + b * p2.Y() + c * p2.Z() + d;
+            double d2 = a * p2.X + b * p2.Y + c * p2.Z + d;
             if (d2 < 0)
             {
                 d2 = -d2;
@@ -791,7 +791,7 @@ public class BeanFaceIntersector
             return;
         }
 
-        Point3D pint = new(orig.X() + t * al, orig.Y() + t * bl, orig.Z() + t * cl);
+        Point3D pint = new(orig.X + t * al, orig.Y + t * bl, orig.Z + t * cl);
 
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(p, pint, out u, out v);
@@ -804,9 +804,9 @@ public class BeanFaceIntersector
         double angle, dt;
         Direction3D dl, dp;
         //
-        dl = l.Position().Direction();
-        dp = p.Position().Direction();
-        angle = Math.Abs(M_PI_2 - dl.Angle(dp));
+        dl = l.Position.Direction;
+        dp = p.Position.Direction;
+        angle = Math.Abs(M_PI_2 - dl.AngleTo(dp));
         //
         dt = IntersectionTools.ComputeIntRange(_beanTolerance, _faceTolerance, angle);
         //
@@ -848,7 +848,7 @@ public class BeanFaceIntersector
             CurveAdaptor gaCurve = new(curve, anarg1, anarg2);
             ExtCS extCS = new();
             extCS.Initialize(_surface, _uMinParameter, _uMaxParameter, _vMinParameter, _vMaxParameter, tol, tol);
-            double first = curve.FirstParameter(), last = curve.LastParameter();
+            double first = curve.FirstParameter, last = curve.LastParameter;
             if (curve.IsPeriodic
                 || (anarg1 >= first - global::Kerf.Engine.Foundation.Precision.PConfusion() && anarg2 <= last + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {

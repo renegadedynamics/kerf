@@ -144,11 +144,11 @@ public sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
                     double param = _curEdgePar * fPar + (1.0 - _curEdgePar) * lPar;
                     e.D1(param, out Point2D pOnC, out Vector2D tanVec);
                     Vector2D linVec = new(p, pOnC);
-                    par = linVec.SquareMagnitude();
+                    par = linVec.SquareMagnitude;
                     if (par > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                     {
                         Direction2D linDir = new(linVec);
-                        double tanMod = tanVec.SquareMagnitude();
+                        double tanMod = tanVec.SquareMagnitude;
                         if (tanMod < global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                         {
                             continue;
@@ -169,10 +169,10 @@ public sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
                         l = new Line2D(p, linDir);
 
                         pOnC = e.Value(fPar);
-                        if (l.SquareDistance(pOnC) > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
+                        if (l.SquareDistanceTo(pOnC) > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                         {
                             pOnC = e.Value(lPar);
-                            if (l.SquareDistance(pOnC) > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
+                            if (l.SquareDistanceTo(pOnC) > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
                             {
                                 _curEdgePar += Probing_Step;
                                 if (_curEdgePar >= Probing_End)

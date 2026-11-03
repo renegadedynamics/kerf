@@ -56,7 +56,7 @@ file static class SurfaceTestUtils
             for (int iV = 1; iV <= theVParams.Length(); ++iV)
             {
                 Point3D aExpected = theSurf.Value(theUParams.Value(iU), theVParams.Value(iV));
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -87,19 +87,19 @@ file static class SurfaceTestUtils
                                 out aD2V, out aD2UV, out aD3U, out aD3V, out aD3UUV, out aD3UVV);
                 }
                 Surface.ResD3 aRes = theGrid.Value(iU, iV);
-                Assert.Equal(0.0, aRes.Point.Distance(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.Point.DistanceTo(aPnt), THE_TOLERANCE);
                 if (theAll)
                 {
-                    Assert.Equal(0.0, (aRes.D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                    Assert.Equal(0.0, (aRes.D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                    Assert.Equal(0.0, (aRes.D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                    Assert.Equal(0.0, (aRes.D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                    Assert.Equal(0.0, (aRes.D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                    Assert.Equal(0.0, (aRes.D1U - aD1U).Magnitude, THE_TOLERANCE);
+                    Assert.Equal(0.0, (aRes.D1V - aD1V).Magnitude, THE_TOLERANCE);
+                    Assert.Equal(0.0, (aRes.D2U - aD2U).Magnitude, THE_TOLERANCE);
+                    Assert.Equal(0.0, (aRes.D2V - aD2V).Magnitude, THE_TOLERANCE);
+                    Assert.Equal(0.0, (aRes.D2UV - aD2UV).Magnitude, THE_TOLERANCE);
                 }
-                Assert.Equal(0.0, (aRes.D3U - aD3U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aRes.D3V - aD3V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aRes.D3UUV - aD3UUV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aRes.D3UVV - aD3UVV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aRes.D3U - aD3U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aRes.D3V - aD3V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aRes.D3UUV - aD3UUV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aRes.D3UVV - aD3UVV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -115,9 +115,9 @@ file static class SurfaceTestUtils
             {
                 theSurf.D1(theUParams.Value(iU), theVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U,
                            out Vector3D aD1V);
-                Assert.Equal(0.0, theGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, theGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -133,12 +133,12 @@ file static class SurfaceTestUtils
             {
                 theSurf.D2(theUParams.Value(iU), theVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U,
                            out Vector3D aD1V, out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
-                Assert.Equal(0.0, theGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (theGrid.Value(iU, iV).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, theGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (theGrid.Value(iU, iV).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -175,9 +175,9 @@ public class GeomGridEval_PlaneTest
             for (int iV = 1; iV <= 4; ++iV)
             {
                 Point3D aPnt = aGrid.Value(iU, iV);
-                Assert.Equal(0.0, aPnt.Z(), THE_TOLERANCE);
-                Assert.Equal(aUParams.Value(iU), aPnt.X(), THE_TOLERANCE);
-                Assert.Equal(aVParams.Value(iV), aPnt.Y(), THE_TOLERANCE);
+                Assert.Equal(0.0, aPnt.Z, THE_TOLERANCE);
+                Assert.Equal(aUParams.Value(iU), aPnt.X, THE_TOLERANCE);
+                Assert.Equal(aVParams.Value(iV), aPnt.Y, THE_TOLERANCE);
             }
         }
     }
@@ -198,13 +198,13 @@ public class GeomGridEval_PlaneTest
         {
             for (int iV = 1; iV <= 3; ++iV)
             {
-                Assert.Equal(3.0, aGrid.Value(iU, iV).Z(), THE_TOLERANCE);
+                Assert.Equal(3.0, aGrid.Value(iU, iV).Z, THE_TOLERANCE);
             }
         }
 
         // Center point (0, 0) should be at origin (1, 2, 3)
-        Assert.Equal(1.0, aGrid.Value(2, 2).X(), THE_TOLERANCE);
-        Assert.Equal(2.0, aGrid.Value(2, 2).Y(), THE_TOLERANCE);
+        Assert.Equal(1.0, aGrid.Value(2, 2).X, THE_TOLERANCE);
+        Assert.Equal(2.0, aGrid.Value(2, 2).Y, THE_TOLERANCE);
     }
 
     [Fact]
@@ -226,8 +226,8 @@ public class GeomGridEval_PlaneTest
         {
             for (int iV = 1; iV <= 4; ++iV)
             {
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1URef).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1VRef).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1URef).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1VRef).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -248,9 +248,9 @@ public class GeomGridEval_PlaneTest
         {
             for (int iV = 1; iV <= 4; ++iV)
             {
-                Assert.Equal(0.0, aGrid.Value(iU, iV).D2U.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).D2V.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).D2UV.Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).D2U.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).D2V.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).D2UV.Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -272,13 +272,13 @@ public class GeomGridEval_PlaneTest
             for (int iV = 1; iV <= 4; ++iV)
             {
                 Surface.ResD3 aRes = aGrid.Value(iU, iV);
-                Assert.Equal(0.0, aRes.D2U.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aRes.D2V.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aRes.D2UV.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aRes.D3U.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aRes.D3V.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aRes.D3UUV.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aRes.D3UVV.Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D2U.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D2V.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D2UV.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D3U.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D3V.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D3UUV.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aRes.D3UVV.Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -307,7 +307,7 @@ public partial class GeomGridEval_SphereTest
         {
             for (int iV = 1; iV <= 5; ++iV)
             {
-                double aDist = aGrid.Value(iU, iV).Distance(new Point3D(0, 0, 0));
+                double aDist = aGrid.Value(iU, iV).DistanceTo(new Point3D(0, 0, 0));
                 Assert.Equal(1.0, aDist, THE_TOLERANCE);
             }
         }
@@ -315,17 +315,17 @@ public partial class GeomGridEval_SphereTest
         // North pole (V = PI/2) should be at (0, 0, 1)
         for (int iU = 1; iU <= 9; ++iU)
         {
-            Assert.Equal(0.0, aGrid.Value(iU, 5).X(), THE_TOLERANCE);
-            Assert.Equal(0.0, aGrid.Value(iU, 5).Y(), THE_TOLERANCE);
-            Assert.Equal(1.0, aGrid.Value(iU, 5).Z(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(iU, 5).X, THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(iU, 5).Y, THE_TOLERANCE);
+            Assert.Equal(1.0, aGrid.Value(iU, 5).Z, THE_TOLERANCE);
         }
 
         // South pole (V = -PI/2) should be at (0, 0, -1)
         for (int iU = 1; iU <= 9; ++iU)
         {
-            Assert.Equal(0.0, aGrid.Value(iU, 1).X(), THE_TOLERANCE);
-            Assert.Equal(0.0, aGrid.Value(iU, 1).Y(), THE_TOLERANCE);
-            Assert.Equal(-1.0, aGrid.Value(iU, 1).Z(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(iU, 1).X, THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(iU, 1).Y, THE_TOLERANCE);
+            Assert.Equal(-1.0, aGrid.Value(iU, 1).Z, THE_TOLERANCE);
         }
     }
 
@@ -346,7 +346,7 @@ public partial class GeomGridEval_SphereTest
         {
             for (int iV = 1; iV <= 9; ++iV)
             {
-                double aDist = aGrid.Value(iU, iV).Distance(aCenter);
+                double aDist = aGrid.Value(iU, iV).DistanceTo(aCenter);
                 Assert.Equal(3.0, aDist, THE_TOLERANCE);
             }
         }
@@ -415,7 +415,7 @@ public class GeomGridEval_OtherSurfaceTest
             for (int iV = 1; iV <= 6; ++iV)
             {
                 Point3D aExpected = aCyl.Value(aUParams.Value(iU), aVParams.Value(iV));
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Distance(aExpected), SurfaceTestUtils.THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).DistanceTo(aExpected), SurfaceTestUtils.THE_TOLERANCE);
             }
         }
     }
@@ -558,7 +558,7 @@ public class GeomGridEval_SurfaceTest
 
         NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.False(aGrid.IsEmpty());
-        Assert.Equal(0.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1, 1).Z, THE_TOLERANCE);
     }
 
     [Fact]

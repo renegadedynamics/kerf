@@ -52,13 +52,13 @@ public class BOPAlgo_RemoveFeaturesTests
         {
             return false;
         }
-        Plane3D aPln = aPlane.Pln();
-        Direction3D aN = aPln.Axis().Direction();
-        Point3D aP = aPln.Location();
+        Plane3D aPln = aPlane.Plane;
+        Direction3D aN = aPln.Axis.Direction;
+        Point3D aP = aPln.Location;
         for (int i = 0; i < 3; ++i)
         {
-            double aComp = i == 0 ? aN.X() : i == 1 ? aN.Y() : aN.Z();
-            double aCoord = i == 0 ? aP.X() : i == 1 ? aP.Y() : aP.Z();
+            double aComp = i == 0 ? aN.X : i == 1 ? aN.Y : aN.Z;
+            double aCoord = i == 0 ? aP.X : i == 1 ? aP.Y : aP.Z;
             if (Math.Abs(Math.Abs(aComp) - 1.0) < 1.0e-12 && (Math.Abs(aCoord) < 1.0e-9 || Math.Abs(aCoord - 10.0) < 1.0e-9))
             {
                 return true;
@@ -125,7 +125,7 @@ public class BOPAlgo_RemoveFeaturesTests
         Assert.False(aRF.HasWarnings);
         Shape aResult = aRF.Shape();
         // the result has the input's type (a Boolean's compound), with one solid
-        Assert.Equal(aShape.ShapeType(), aResult.ShapeType());
+        Assert.Equal(aShape.Type, aResult.Type);
         Assert.Single(SubShapes(aResult, ShapeType.Solid));
         Assert.Equal(1000.0, Volume(aResult), 1.0e-6);
         Assert.Equal(6, SubShapes(aResult, ShapeType.Face).Count);
@@ -138,8 +138,8 @@ public class BOPAlgo_RemoveFeaturesTests
             Assert.True(aRF.IsDeleted(aF));
         }
         Shape aTop = SubShapes(aShape, ShapeType.Face).Single(f => Tool.Surface(ShapeCasts.Face(f)) is PlaneSurface p
-                                                                         && Math.Abs(p.Pln().Location().Z() - 10.0) < 1.0e-9
-                                                                         && Math.Abs(p.Pln().Axis().Direction().Z()) > 0.5);
+                                                                         && Math.Abs(p.Plane.Location.Z - 10.0) < 1.0e-9
+                                                                         && Math.Abs(p.Plane.Axis.Direction.Z) > 0.5);
         Assert.Single(aRF.Modified(aTop));
         Assert.False(aRF.IsDeleted(aTop));
         Assert.True(aRF.HasDeleted);
@@ -149,7 +149,7 @@ public class BOPAlgo_RemoveFeaturesTests
         // where UnifySameDomain added p-curves to its edges: decisions 643 and 766)
         Assert.Equal(aBefore, BRepTextComparison.Write(aShape));
         Shape aSide = SubShapes(aShape, ShapeType.Face).First(f => Tool.Surface(ShapeCasts.Face(f)) is PlaneSurface p
-                                                                         && Math.Abs(p.Pln().Axis().Direction().X()) > 0.5);
+                                                                         && Math.Abs(p.Plane.Axis.Direction.X) > 0.5);
         Assert.False(aRF.IsDeleted(aSide));
         Surface? aSideSurface = Tool.Surface(ShapeCasts.Face(aSide));
         Assert.Contains(SubShapes(aResult, ShapeType.Face), f => f.IsSame(aSide) || ReferenceEquals(Tool.Surface(ShapeCasts.Face(f)), aSideSurface));
@@ -232,7 +232,7 @@ public class BOPAlgo_RemoveFeaturesTests
         Assert.False(aRF.HasErrors);
         Assert.True(aRF.HasWarning(typeof(AlertUnsupportedType)));
         Assert.True(aRF.IsDeleted(anEdge));
-        Assert.Equal(ShapeType.Compound, aRF.Shape().ShapeType());
+        Assert.Equal(ShapeType.Compound, aRF.Shape().Type);
         Assert.Equal(1000.0, Volume(aRF.Shape()), 1.0e-6);
 
         // an empty compound
@@ -264,9 +264,9 @@ public class BOPAlgo_RemoveFeaturesTests
         Assert.False(aSplitter.HasErrors);
         Shape aShape = aSplitter.Shape();
         Shape aFaceX0 = SubShapes(aShape, ShapeType.Face).Single(f => Tool.Surface(ShapeCasts.Face(f)) is PlaneSurface p
-                                                                          && Math.Abs(p.Pln().Axis().Direction().X()) > 0.5
-                                                                          && Math.Abs(p.Pln().Location().X()) < 1.0e-9);
-        Shape anInternal = SubShapes(aFaceX0, ShapeType.Edge).Single(e => e.Orientation() == Orientation.Internal);
+                                                                          && Math.Abs(p.Plane.Axis.Direction.X) > 0.5
+                                                                          && Math.Abs(p.Plane.Location.X) < 1.0e-9);
+        Shape anInternal = SubShapes(aFaceX0, ShapeType.Edge).Single(e => e.Orientation == Orientation.Internal);
         string aBefore = BRepTextComparison.Write(aShape);
 
         RemoveFeaturesAlgorithm aRF = Remove(aShape, FacesOf<CylindricalSurface>(aShape));
@@ -278,7 +278,7 @@ public class BOPAlgo_RemoveFeaturesTests
         // OCCT removes the internal wire from the input's face itself; the port's input is unchanged and the face is
         // modified into a copy without it
         Assert.Equal(aBefore, BRepTextComparison.Write(aShape));
-        Assert.DoesNotContain(SubShapes(aResult, ShapeType.Edge), e => e.Orientation() == Orientation.Internal);
+        Assert.DoesNotContain(SubShapes(aResult, ShapeType.Edge), e => e.Orientation == Orientation.Internal);
         Assert.True(aRF.IsDeleted(anInternal));
         Assert.False(aRF.IsDeleted(aFaceX0));
         Assert.All(aRF.Modified(aFaceX0), f => Assert.Contains(SubShapes(aResult, ShapeType.Face), r => r.IsSame(f)));

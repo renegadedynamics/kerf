@@ -42,14 +42,14 @@ internal static class ComputeDataChAsymPlnPln
     {
         // Creation of the plane which carry the chamfer
         // compute the normals to the planes Pl1 and Pl2
-        CoordinateSystem pos1 = pl1.Position();
-        Direction3D d1 = pos1.XDirection().Crossed(pos1.YDirection());
+        CoordinateSystem pos1 = pl1.Position;
+        Direction3D d1 = pos1.XDirection.Crossed(pos1.YDirection);
         if (or1 == Reversed)
         {
             d1 = d1.Reversed();
         }
-        CoordinateSystem pos2 = pl2.Position();
-        Direction3D d2 = pos2.XDirection().Crossed(pos2.YDirection());
+        CoordinateSystem pos2 = pl2.Position;
+        Direction3D d2 = pos2.XDirection.Crossed(pos2.YDirection);
         if (or2 == Reversed)
         {
             d2 = d2.Reversed();
@@ -67,7 +67,7 @@ internal static class ComputeDataChAsymPlnPln
         {
             return false;
         }
-        Direction3D linAx1 = spine.Direction();
+        Direction3D linAx1 = spine.Direction;
         Direction3D vecTransl1 = linAx1.Crossed(d1);
         if (vecTransl1.Dot(d2) < 0.0)
         {
@@ -92,22 +92,22 @@ internal static class ComputeDataChAsymPlnPln
             dis2 = dis;
         }
         // Compute a point on the plane Pl1 and on the chamfer
-        Point3D p1 = new(p.X() + dis1 * vecTransl1.X(), p.Y() + dis1 * vecTransl1.Y(), p.Z() + dis1 * vecTransl1.Z());
+        Point3D p1 = new(p.X + dis1 * vecTransl1.X, p.Y + dis1 * vecTransl1.Y, p.Z + dis1 * vecTransl1.Z);
         // Point on the plane Pl2 and on the chamfer
-        Point3D p2 = new(p.X() + dis2 * vecTransl2.X(), p.Y() + dis2 * vecTransl2.Y(), p.Z() + dis2 * vecTransl2.Z());
+        Point3D p2 = new(p.X + dis2 * vecTransl2.X, p.Y + dis2 * vecTransl2.Y, p.Z + dis2 * vecTransl2.Z);
         // the middle point of P1 P2 is the origin of the chamfer
-        Point3D po = new((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0, (p1.Z() + p2.Z()) / 2.0);
+        Point3D po = new((p1.X + p2.X) / 2.0, (p1.Y + p2.Y) / 2.0, (p1.Z + p2.Z) / 2.0);
         // compute a second point on the plane Pl2
         Point3D pp = global::Kerf.Engine.Geometry.ElCLib.Value(fint + 10.0, lInt.Line(1));
-        Point3D p22 = new(pp.X() + dis2 * vecTransl2.X(), pp.Y() + dis2 * vecTransl2.Y(),
-                         pp.Z() + dis2 * vecTransl2.Z());
+        Point3D p22 = new(pp.X + dis2 * vecTransl2.X, pp.Y + dis2 * vecTransl2.Y,
+                         pp.Z + dis2 * vecTransl2.Z);
         // Compute the normal vector <AxisPlan> to the chamfer's plane
-        Direction3D v1 = new(p2.X() - p1.X(), p2.Y() - p1.Y(), p2.Z() - p1.Z());
-        Direction3D v2 = new(p22.X() - p1.X(), p22.Y() - p1.Y(), p22.Z() - p1.Z());
+        Direction3D v1 = new(p2.X - p1.X, p2.Y - p1.Y, p2.Z - p1.Z);
+        Direction3D v2 = new(p22.X - p1.X, p22.Y - p1.Y, p22.Z - p1.Z);
         Direction3D axisPlan = v1.Crossed(v2);
         Direction3D xdir = linAx1; // u axis
         CoordinateSystem planAx3 = new(po, axisPlan, xdir);
-        if (planAx3.YDirection().Dot(d2) >= 0.0)
+        if (planAx3.YDirection.Dot(d2) >= 0.0)
         {
             planAx3 = planAx3.YReversed();
         }
@@ -115,14 +115,14 @@ internal static class ComputeDataChAsymPlnPln
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gpl, dStr));
         // About the orientation of the chamfer plane
         // Compute the normal to the face 1
-        Direction3D norpl = pos1.XDirection().Crossed(pos1.YDirection());
+        Direction3D norpl = pos1.XDirection.Crossed(pos1.YDirection);
         Direction3D norface1 = norpl;
         if (of1 == Reversed)
         {
             norface1 = norface1.Reversed();
         }
         // Compute the orientation of the chamfer plane
-        Direction3D norplch = gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection());
+        Direction3D norplch = gpl.Plane.Position.XDirection.Crossed(gpl.Plane.Position.YDirection);
         Direction3D dirCh12 = new(new Vector3D(p1, p2));
         bool toreverse = (norplch.Dot(norface1) <= 0.0);
         if (vecTransl1.Dot(dirCh12) > 0)
@@ -144,7 +144,7 @@ internal static class ComputeDataChAsymPlnPln
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(pos1, p1, out u, out v);
         Point2D p2dPln = new(u, v);
-        Direction2D dir2dPln = new(xdir.Dot(pos1.XDirection()), xdir.Dot(pos1.YDirection()));
+        Direction2D dir2dPln = new(xdir.Dot(pos1.XDirection), xdir.Dot(pos1.YDirection));
         Line2D lin2dPln = new(p2dPln, dir2dPln);
         LineCurve2D gLin2dPln1 = new(lin2dPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(planAx3, p1, out u, out v);
@@ -173,7 +173,7 @@ internal static class ComputeDataChAsymPlnPln
         LineCurve3D gLinPln2 = new(linPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(pos2, p2, out u, out v);
         p2dPln = p2dPln.WithCoord(u, v);
-        dir2dPln = dir2dPln.WithCoord(xdir.Dot(pos2.XDirection()), xdir.Dot(pos2.YDirection()));
+        dir2dPln = dir2dPln.WithCoord(xdir.Dot(pos2.XDirection), xdir.Dot(pos2.YDirection));
         lin2dPln = lin2dPln.WithLocation(p2dPln);
         lin2dPln = lin2dPln.WithDirection(dir2dPln);
         LineCurve2D gLin2dPln2 = new(lin2dPln);
@@ -182,7 +182,7 @@ internal static class ComputeDataChAsymPlnPln
         lin2dPln = lin2dPln.WithLocation(p2dPln);
         lin2dPln = lin2dPln.WithDirection(Constants.DX2d());
         LineCurve2D gLin2dPlnCh2 = new(lin2dPln);
-        norpl = pos2.XDirection().Crossed(pos2.YDirection());
+        norpl = pos2.XDirection.Crossed(pos2.YDirection);
         toreverse = (norplch.Dot(norpl) <= 0.0);
         if (vecTransl2.Dot(dirCh12) < 0)
         {

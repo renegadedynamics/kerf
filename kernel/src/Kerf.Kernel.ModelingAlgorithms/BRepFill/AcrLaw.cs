@@ -69,14 +69,14 @@ public sealed class AcrLaw : LocationLaw
                 ipath++;
                 _edges!.SetValue(ipath, e);
                 c = Tool.Curve(e, out double first, out double last)!;
-                or = e.Orientation();
+                or = e.Orientation;
                 if (or == Reversed)
                 {
                     TrimmedCurve3D cBis = new(c, first, last);
                     cBis.Reverse(); // To avoid damaging the topology
                     c = cBis;
-                    first = c.FirstParameter();
-                    last = c.LastParameter();
+                    first = c.FirstParameter;
+                    last = c.LastParameter;
                 }
                 ac = new CurveAdaptor(c, first, last);
 

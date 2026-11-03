@@ -27,17 +27,17 @@ public sealed class GeometryMakeHyperbola : GeometryRoot
     public GeometryMakeHyperbola(HyperbolaCurve2D c, in Factors localFactors)
     {
         Hyperbola2D gpHyp;
-        gpHyp = c.Hypr2d();
+        gpHyp = c.Hyperbola;
 
         StepHyperbola hStep = new StepHyperbola();
         StepAxis2Placement ax2 = new StepAxis2Placement();
         StepAxis2Placement2d ax2Step;
         double majorR, minorR;
 
-        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(gpHyp.Axis(), localFactors);
+        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(gpHyp.Axis, localFactors);
         ax2Step = mkAxis2.Value();
-        majorR = gpHyp.MajorRadius();
-        minorR = gpHyp.MinorRadius();
+        majorR = gpHyp.MajorRadius;
+        minorR = gpHyp.MinorRadius;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         hStep.Init(name, ax2, majorR, minorR);
@@ -59,17 +59,17 @@ public sealed class GeometryMakeHyperbola : GeometryRoot
     public GeometryMakeHyperbola(HyperbolaCurve3D c, in Factors localFactors)
     {
         Hyperbola3D gpHyp;
-        gpHyp = c.Hypr();
+        gpHyp = c.Hyperbola;
 
         StepHyperbola hStep = new StepHyperbola();
         StepAxis2Placement ax2 = new StepAxis2Placement();
         StepAxis2Placement3d ax2Step;
         double majorR, minorR;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(gpHyp.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(gpHyp.Position, localFactors);
         ax2Step = mkAxis2.Value();
-        majorR = gpHyp.MajorRadius();
-        minorR = gpHyp.MinorRadius();
+        majorR = gpHyp.MajorRadius;
+        minorR = gpHyp.MinorRadius;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         double fact = localFactors.LengthFactor();

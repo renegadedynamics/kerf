@@ -57,8 +57,8 @@ public sealed class Hatcher
     /// </summary>
     public void AddLine(in Direction2D d, double dist)
     {
-        double x = d.X();
-        double y = d.Y();
+        double x = d.X;
+        double y = d.Y;
         Point2D o = new(-y * dist, x * dist);
         Line2D l = new(o, d);
         AddLine(l, global::Kerf.Engine.Classification.Hatching.LineForm.Anyline);
@@ -112,7 +112,7 @@ public sealed class Hatcher
                     {
                         continue;
                     }
-                    double norm = l.Direction() ^ _lines[iLine]._lin.Direction();
+                    double norm = l.Direction ^ _lines[iLine]._lin.Direction;
                     if (linePar - start < _toler)
                     {
                         // on the limit of the trimming segment
@@ -146,19 +146,19 @@ public sealed class Hatcher
     public void Trim(in Point2D p1, in Point2D p2, int index = 0)
     {
         Vector2D v = new(p1, p2);
-        if (Math.Abs(v.X()) > .9 * RealLast())
+        if (Math.Abs(v.X) > .9 * RealLast())
         {
-            v = v.Multiplied(1 / v.X());
+            v = v.Multiplied(1 / v.X);
         }
-        else if (Math.Abs(v.Y()) > .9 * RealLast())
+        else if (Math.Abs(v.Y) > .9 * RealLast())
         {
-            v = v.Multiplied(1 / v.Y());
+            v = v.Multiplied(1 / v.Y);
         }
-        if (v.Magnitude() > _toler)
+        if (v.Magnitude > _toler)
         {
             Direction2D d = new(v);
             Line2D l = new(p1, d);
-            Trim(l, 0, p1.Distance(p2), index);
+            Trim(l, 0, p1.DistanceTo(p2), index);
         }
     }
 
@@ -195,10 +195,10 @@ public sealed class Hatcher
         switch (_lines[i]._form)
         {
             case global::Kerf.Engine.Classification.Hatching.LineForm.Xline:
-                return _lines[i]._lin.Location().X();
+                return _lines[i]._lin.Location.X;
 
             case global::Kerf.Engine.Classification.Hatching.LineForm.Yline:
-                return _lines[i]._lin.Location().Y();
+                return _lines[i]._lin.Location.Y;
 
             case global::Kerf.Engine.Classification.Hatching.LineForm.Anyline:
                 throw new OutOfRangeException("Hatcher : not an X or Y line");

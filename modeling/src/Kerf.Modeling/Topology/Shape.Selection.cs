@@ -89,7 +89,7 @@ public abstract partial class Shape
             + "it is the result of no recorded operation");
         // The record names the sub-shapes where the shape was when it was recorded. If the shape has been
         // relocated since, map each sub-shape back there to look it up.
-        var here = _wrapped.Location();
+        var here = _wrapped.Placement;
         Func<Shape, global::Kerf.Topology.Shape> key;
         if (_historyAt is not { } at || at.IsEqual(here))
             key = s => s.TopoShape;

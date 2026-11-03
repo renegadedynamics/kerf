@@ -31,7 +31,7 @@ public abstract class Point : Geometry3D
     {
         Point3D p1 = this.Pnt();
         Point3D p2 = other.Pnt();
-        return p1.Distance(p2);
+        return p1.DistanceTo(p2);
     }
 
     /// <summary>The square of the distance to Other.</summary>
@@ -39,6 +39,6 @@ public abstract class Point : Geometry3D
     {
         Point3D p1 = this.Pnt();
         Point3D p2 = other.Pnt();
-        return p1.SquareDistance(p2);
+        return p1.SquareDistanceTo(p2);
     }
 }

@@ -286,7 +286,7 @@ public class Bop : ToolsProvider
         for (; it.More(); it.Next())
         {
             Shape s = it.Value();
-            aType = s.ShapeType();
+            aType = s.Type;
             if (aType == type)
             {
                 if (_images.ContainsKey(s))
@@ -616,7 +616,7 @@ public class Bop : ToolsProvider
             for (j = 1; j <= nb; ++j)
             {
                 Shape s = ms[j - 1];
-                type = s.ShapeType();
+                type = s.Type;
                 if (type == ShapeType.Edge)
                 {
                     Edge e = ShapeCasts.Edge(s);
@@ -640,7 +640,7 @@ public class Bop : ToolsProvider
                 else
                 {
                     msIm.Add(s);
-                    if (s.ShapeType() == ShapeType.Solid)
+                    if (s.Type == ShapeType.Solid)
                     {
                         ToolSet st = new();
                         st.Add(s, ShapeType.Face);
@@ -708,7 +708,7 @@ public class Bop : ToolsProvider
             Shape s = mItExp[i - 1];
             //
             bContains = mCheckExp.Contains(s);
-            if (!bContains && s.ShapeType() == ShapeType.Solid)
+            if (!bContains && s.Type == ShapeType.Solid)
             {
                 ToolSet st = new();
                 st.Add(s, ShapeType.Face);
@@ -922,7 +922,7 @@ public class Bop : ToolsProvider
                 }
             }
             //
-            type = sc.ShapeType();
+            type = sc.Type;
             switch (type)
             {
                 case ShapeType.Wire:
@@ -975,7 +975,7 @@ public class Bop : ToolsProvider
                     AlgoTools.OrientFacesOnShell(ref rcb);
                 }
                 //
-                rcb.Orientation(sc.Orientation());
+                rcb.Orient(sc.Orientation);
                 //
                 lcRes.Append(rcb);
             }
@@ -1383,7 +1383,7 @@ public class Bop : ToolsProvider
             for (Iterator itSh = new(solid); itSh.More(); itSh.Next())
             {
                 Shape sh = itSh.Value();
-                if (sh.ShapeType() != ShapeType.Shell)
+                if (sh.Type != ShapeType.Shell)
                 {
                     continue;
                 }
@@ -1391,7 +1391,7 @@ public class Bop : ToolsProvider
                 for (Iterator itF = new(sh); itF.More(); itF.Next())
                 {
                     Shape f = itF.Value();
-                    if (f.Orientation() == Internal)
+                    if (f.Orientation == Internal)
                     {
                         if (_images.TryGetValue(f, out NCollection_List<Shape>? pLFIm))
                         {
@@ -1438,7 +1438,7 @@ public class Bop : ToolsProvider
                         {
                             if (expE.Current().IsSame(e))
                             {
-                                isClosed = expE.Current().Orientation() == Internal;
+                                isClosed = expE.Current().Orientation == Internal;
                                 break;
                             }
                         }
@@ -1472,7 +1472,7 @@ public class Bop : ToolsProvider
                 for (Iterator itSh = new(sIm); itSh.More(); itSh.Next())
                 {
                     Shape sh = itSh.Value();
-                    if (sh.ShapeType() != ShapeType.Shell)
+                    if (sh.Type != ShapeType.Shell)
                     {
                         continue;
                     }
@@ -1480,7 +1480,7 @@ public class Bop : ToolsProvider
                     for (Iterator itF = new(sh); itF.More(); itF.Next())
                     {
                         Shape f = itF.Value();
-                        if (f.Orientation() == Internal)
+                        if (f.Orientation == Internal)
                         {
                             if (!mfInternal.Contains(f))
                             {
@@ -1523,7 +1523,7 @@ public class Bop : ToolsProvider
 
     private static void CollectContainers(in Shape s, NCollection_List<Shape> lsc)
     {
-        ShapeType type = s.ShapeType();
+        ShapeType type = s.Type;
         if (type == ShapeType.Wire || type == ShapeType.Shell || type == ShapeType.CompSolid)
         {
             lsc.Append(s);
@@ -1560,7 +1560,7 @@ public class Bop : ToolsProvider
         for (; itLC.More(); itLC.Next())
         {
             Shape c = itLC.Value();
-            if (c.ShapeType() == type)
+            if (c.Type == type)
             {
                 lc.Append(c);
             }
@@ -1680,7 +1680,7 @@ public class Bop : ToolsProvider
         {
             Shape f = exp.Current();
             //
-            if (f.Orientation() == Internal)
+            if (f.Orientation == Internal)
             {
                 continue;
             }
@@ -1695,7 +1695,7 @@ public class Bop : ToolsProvider
             {
                 NCollection_List<Shape> pLSol = mfs.ValueAt(index - 1);
                 Shape f1 = mfs.KeyAt(index - 1);
-                if (f1.Orientation() != f.Orientation())
+                if (f1.Orientation != f.Orientation)
                 {
                     pLSol.Append(sol);
                 }

@@ -21,8 +21,8 @@ internal readonly struct ParabolaHasher2D(double theCompTolerance, double theHas
         var axisHasher = new AxisPlacement2D(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(parabola.Position()),
-            HashUtils.Hash((long)HashUtils.Round(parabola.Focal() * factor))
+            axisHasher.Hash(parabola.Position),
+            HashUtils.Hash((long)HashUtils.Round(parabola.Focal * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,7 +31,7 @@ internal readonly struct ParabolaHasher2D(double theCompTolerance, double theHas
     public bool IsEqual(ParabolaCurve2D parabola1, ParabolaCurve2D parabola2)
     {
         var axisHasher = new AxisPlacement2D(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(parabola1.Position(), parabola2.Position())
-               && Math.Abs(parabola1.Focal() - parabola2.Focal()) <= CompTolerance;
+        return axisHasher.IsEqual(parabola1.Position, parabola2.Position)
+               && Math.Abs(parabola1.Focal - parabola2.Focal) <= CompTolerance;
     }
 }

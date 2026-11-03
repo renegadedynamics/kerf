@@ -455,7 +455,7 @@ public sealed partial class ImpImpIntersection
                 {
                     case Plane:
                         {
-                            ptreference = (s1.Plane()).Location();
+                            ptreference = (s1.Plane()).Location;
                         }
                         break;
                     case SurfaceKind.Cylinder:

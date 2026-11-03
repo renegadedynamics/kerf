@@ -116,7 +116,7 @@ public sealed class CompatibleWires
         // shielding for particular cases : only one edge circle or ellipse
         // on a closed wire !
 
-        bool wClosed = w.Closed();
+        bool wClosed = w.IsClosed;
         if (!wClosed)
         {
             // it is checked if the vertices are the same.
@@ -145,13 +145,13 @@ public sealed class CompatibleWires
 
                 if (adC.GetType() == Circle)
                 {
-                    bary = adC.Circle().Location();
+                    bary = adC.Circle().Location;
                     isBaryDefined = true;
                 }
 
                 if (adC.GetType() == Ellipse)
                 {
-                    bary = adC.Ellipse().Location();
+                    bary = adC.Ellipse().Location;
                     isBaryDefined = true;
                 }
             }
@@ -170,9 +170,9 @@ public sealed class CompatibleWires
             l = findPlanarSurf.Location();
             if (!l.IsIdentity)
             {
-                s = (Surface)s!.Transformed(l.Transformation());
+                s = (Surface)s!.Transformed(l.Transformation);
             }
-            p = ((PlaneSurface)s!).Pln();
+            p = ((PlaneSurface)s!).Plane;
             p = p.WithLocation(bary);
         }
         else
@@ -219,7 +219,7 @@ public sealed class CompatibleWires
                 Direction3D xDir = new(vec);
                 CoordinateSystem repere = new(bary, nDir, xDir);
                 PlaneSurface gPlan = new(repere);
-                p = gPlan.Pln();
+                p = gPlan.Plane;
             }
         }
 
@@ -305,7 +305,7 @@ public sealed class CompatibleWires
         Curve3D c = Tool.Curve(currentEdge, out double first, out double last)!;
 
         Vertex vbid = new(), v0, v1;
-        Orientation currentOrient = currentEdge.Orientation();
+        Orientation currentOrient = currentEdge.Orientation;
         Exploration.Vertices(currentEdge, out Vertex vf, out Vertex vl);
         vbid.Nullify();
 
@@ -323,7 +323,7 @@ public sealed class CompatibleWires
                     return;
                 }
                 Edge cutE = new LibraryMakeEdge(c, v0, vbid, m0, m1).InternalEdge();
-                cutE.Orientation(currentOrient);
+                cutE.Orient(currentOrient);
                 s.Append(cutE);
                 m0 = m1;
                 v0 = Exploration.LastVertex(cutE);
@@ -335,7 +335,7 @@ public sealed class CompatibleWires
                         return;
                     }
                     Edge lastE = new LibraryMakeEdge(c, v0, vl, m0, last).InternalEdge();
-                    lastE.Orientation(currentOrient);
+                    lastE.Orient(currentOrient);
                     s.Append(lastE);
                 }
             }
@@ -354,7 +354,7 @@ public sealed class CompatibleWires
                     return;
                 }
                 Edge cutE = new LibraryMakeEdge(c, vbid, v1, m0, m1).InternalEdge();
-                cutE.Orientation(currentOrient);
+                cutE.Orient(currentOrient);
                 s.Append(cutE);
                 m1 = m0;
                 v1 = Exploration.FirstVertex(cutE);
@@ -366,7 +366,7 @@ public sealed class CompatibleWires
                         return;
                     }
                     Edge lastE = new LibraryMakeEdge(c, vf, v1, first, m1).InternalEdge();
-                    lastE.Orientation(currentOrient);
+                    lastE.Orient(currentOrient);
                     s.Append(lastE);
                 }
             }
@@ -478,10 +478,10 @@ public sealed class CompatibleWires
         Bounds.Add(w, ref b);
         b.Get(out double x1, out double y1, out double z1, out double x2, out double y2, out double z2);
         Point3D bp1 = new(x1, y1, z1), bp2 = new(x2, y2, z2);
-        double diag = bp1.Distance(bp2);
+        double diag = bp1.DistanceTo(bp2);
         double dernierparam = diag;
         LibraryMakeEdge me = new(droite, 0.0, dernierparam);
-        Edge eCur = new LibraryMakeEdge(droite, 0.0, p1.Distance(p2)).InternalEdge();
+        Edge eCur = new LibraryMakeEdge(droite, 0.0, p1.DistanceTo(p2)).InternalEdge();
 
         // calculate the intersection by BRepExtrema (point of min distance)
         DistanceShapeShape DSS = new(me.InternalEdge(), w);
@@ -490,11 +490,11 @@ public sealed class CompatibleWires
             // choose the solution closest to P2
             int isol = 1;
             Point3D psol = DSS.PointOnShape2(isol);
-            double dss = p2.Distance(psol);
+            double dss = p2.DistanceTo(psol);
             for (int iss = 2; iss <= DSS.SolutionCount; iss++)
             {
                 Point3D pss = DSS.PointOnShape2(iss);
-                double dist = p2.Distance(pss);
+                double dist = p2.DistanceTo(pss);
                 if (dss > dist)
                 {
                     dss = dist;
@@ -937,7 +937,7 @@ public sealed class CompatibleWires
         bool wClosed, allClosed = true, allOpen = true;
         for (i = ideb; i <= ifin; i++)
         {
-            wClosed = _work[i].Closed();
+            wClosed = _work[i].IsClosed;
             if (!wClosed)
             {
                 // check if the vertices are the same.
@@ -1073,8 +1073,8 @@ public sealed class CompatibleWires
         {
             if (PlaneOfWire(ShapeCasts.Wire(_work[i]), out Plane3D p))
             {
-                pos.SetValue(i, p.Location());
-                axe.SetValue(i, new Vector3D(p.Axis().Direction()));
+                pos.SetValue(i, p.Location);
+                axe.SetValue(i, new Vector3D(p.Axis.Direction));
             }
         }
         NCollection_Sequence<Shape> seqV = new();
@@ -1136,7 +1136,7 @@ public sealed class CompatibleWires
                 bool newVertex;
                 Vertex vsol = new();
                 Wire newwire = new();
-                if (pnew.Distance(pos.Value(i - 1)) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (pnew.DistanceTo(pos.Value(i - 1)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     double percent = _percent;
                     newVertex = EdgeIntersectOnWire(pos.Value(i - 1),
@@ -1237,7 +1237,7 @@ public sealed class CompatibleWires
                     bool newVertex;
                     Vertex vsol = new();
                     Wire newwire = new();
-                    if (pnew.Distance(pos.Value(i + 1)) > global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (pnew.DistanceTo(pos.Value(i + 1)) > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         double percent = _percent;
                         newVertex = EdgeIntersectOnWire(pos.Value(i + 1),
@@ -1665,7 +1665,7 @@ public sealed class CompatibleWires
                             {
                                 p2 = Tool.Pnt(vf);
                             }
-                            while (p1.Distance(p2) > 1.0e-3)
+                            while (p1.DistanceTo(p2) > 1.0e-3)
                             {
                                 le.Append(exp2.Current());
                                 exp2.Next();
@@ -1679,7 +1679,7 @@ public sealed class CompatibleWires
                                 {
                                     p2 = Tool.Pnt(vf);
                                 }
-                                if (p1.Distance(p2) <= 1.0e-3)
+                                if (p1.DistanceTo(p2) <= 1.0e-3)
                                 {
                                     le.Append(exp2.Current());
                                     exp2.Next();
@@ -1795,7 +1795,7 @@ public sealed class CompatibleWires
 
         for (i = ideb; i <= ifin; i++)
         {
-            wClosed = _work[i].Closed();
+            wClosed = _work[i].IsClosed;
             if (!wClosed)
             {
                 // check if the vertices are the same.
@@ -1831,8 +1831,8 @@ public sealed class CompatibleWires
             nbSamples = 4;
         }
         PlaneOfWire(ShapeCasts.Wire(_work[ideb]), out Plane3D firstPlane);
-        Point3D prevBary = firstPlane.Location();
-        Vector3D normalOfFirstPlane = new(firstPlane.Axis().Direction());
+        Point3D prevBary = firstPlane.Location;
+        Vector3D normalOfFirstPlane = new(firstPlane.Axis.Direction);
         for (i = ideb + 1; i <= ifin; i++)
         {
             Wire aWire = ShapeCasts.Wire(_work[i]);
@@ -1840,7 +1840,7 @@ public sealed class CompatibleWires
             // Compute offset vector as current bary center projected on first plane
             // to first bary center
             PlaneOfWire(aWire, out Plane3D curPlane);
-            Point3D curBary = curPlane.Location();
+            Point3D curBary = curPlane.Location;
             Vector3D vec = new(prevBary, curBary);
             Vector3D offsetProj = (vec * normalOfFirstPlane) * normalOfFirstPlane;
             curBary = curBary.Translated(-offsetProj); // projected current bary center
@@ -1878,7 +1878,7 @@ public sealed class CompatibleWires
                         Point3D pprev = Tool.Pnt(vprev);
                         Vertex v = ShapeCasts.Vertex(seqVertices[k]);
                         Point3D p = new(Tool.Pnt(v).XYZ() + offset.XYZ());
-                        sumDist += pprev.Distance(p);
+                        sumDist += pprev.DistanceTo(p);
                         if (nbSamples > 0)
                         {
                             Edge prevEdge = ShapeCasts.Edge(prevEseq[n]);
@@ -1891,15 +1891,15 @@ public sealed class CompatibleWires
                             for (nbs = 1; nbs <= nbSamples - 1; nbs++)
                             {
                                 double parOnPrev =
-                                  (prevEdge.Orientation() == Forward)
+                                  (prevEdge.Orientation == Forward)
                                     ? (prevEcurve.FirstParameter() + nbs * sampleOnPrev)
                                     : (prevEcurve.FirstParameter() + (nbSamples - nbs) * sampleOnPrev);
-                                double parOnCur = (curEdge.Orientation() == Forward)
+                                double parOnCur = (curEdge.Orientation == Forward)
                                                     ? (ecurve.FirstParameter() + nbs * sampleOnCur)
                                                     : (ecurve.FirstParameter() + (nbSamples - nbs) * sampleOnCur);
                                 Point3D ponPrev = prevEcurve.Value(parOnPrev);
                                 Point3D ponCur = new(ecurve.Value(parOnCur).XYZ() + offset.XYZ());
-                                sumDist += ponPrev.Distance(ponCur);
+                                sumDist += ponPrev.DistanceTo(ponCur);
                             }
                         }
                     }
@@ -1909,7 +1909,7 @@ public sealed class CompatibleWires
                         Point3D pprev = Tool.Pnt(vprev);
                         Vertex v = ShapeCasts.Vertex(seqVertices[k]);
                         Point3D p = new(Tool.Pnt(v).XYZ() + offset.XYZ());
-                        sumDist += pprev.Distance(p);
+                        sumDist += pprev.DistanceTo(p);
                         if (nbSamples > 0)
                         {
                             Edge prevEdge = ShapeCasts.Edge(prevEseq[n]);
@@ -1922,15 +1922,15 @@ public sealed class CompatibleWires
                             for (nbs = 1; nbs <= nbSamples - 1; nbs++)
                             {
                                 double parOnPrev =
-                                  (prevEdge.Orientation() == Forward)
+                                  (prevEdge.Orientation == Forward)
                                     ? (prevEcurve.FirstParameter() + nbs * sampleOnPrev)
                                     : (prevEcurve.FirstParameter() + (nbSamples - nbs) * sampleOnPrev);
-                                double parOnCur = (curEdge.Orientation() == Forward)
+                                double parOnCur = (curEdge.Orientation == Forward)
                                                     ? (ecurve.FirstParameter() + nbs * sampleOnCur)
                                                     : (ecurve.FirstParameter() + (nbSamples - nbs) * sampleOnCur);
                                 Point3D ponPrev = prevEcurve.Value(parOnPrev);
                                 Point3D ponCur = new(ecurve.Value(parOnCur).XYZ() + offset.XYZ());
-                                sumDist += ponPrev.Distance(ponCur);
+                                sumDist += ponPrev.DistanceTo(ponCur);
                             }
                         }
                     }
@@ -1949,7 +1949,7 @@ public sealed class CompatibleWires
                         Point3D pprev = Tool.Pnt(vprev);
                         Vertex v = ShapeCasts.Vertex(seqVertices[k]);
                         Point3D p = new(Tool.Pnt(v).XYZ() + offset.XYZ());
-                        sumDist += pprev.Distance(p);
+                        sumDist += pprev.DistanceTo(p);
                         if (nbSamples > 0)
                         {
                             int k_cur = k - 1;
@@ -1967,15 +1967,15 @@ public sealed class CompatibleWires
                             for (nbs = 1; nbs <= nbSamples - 1; nbs++)
                             {
                                 double parOnPrev =
-                                  (prevEdge.Orientation() == Forward)
+                                  (prevEdge.Orientation == Forward)
                                     ? (prevEcurve.FirstParameter() + nbs * sampleOnPrev)
                                     : (prevEcurve.FirstParameter() + (nbSamples - nbs) * sampleOnPrev);
-                                double parOnCur = (curEdge.Orientation() == Forward)
+                                double parOnCur = (curEdge.Orientation == Forward)
                                                     ? (ecurve.FirstParameter() + (nbSamples - nbs) * sampleOnCur)
                                                     : (ecurve.FirstParameter() + nbs * sampleOnCur);
                                 Point3D ponPrev = prevEcurve.Value(parOnPrev);
                                 Point3D ponCur = new(ecurve.Value(parOnCur).XYZ() + offset.XYZ());
-                                sumDist += ponPrev.Distance(ponCur);
+                                sumDist += ponPrev.DistanceTo(ponCur);
                             }
                         }
                     }
@@ -1985,7 +1985,7 @@ public sealed class CompatibleWires
                         Point3D pprev = Tool.Pnt(vprev);
                         Vertex v = ShapeCasts.Vertex(seqVertices[k]);
                         Point3D p = new(Tool.Pnt(v).XYZ() + offset.XYZ());
-                        sumDist += pprev.Distance(p);
+                        sumDist += pprev.DistanceTo(p);
                         if (nbSamples > 0)
                         {
                             Edge prevEdge = ShapeCasts.Edge(prevEseq[n]);
@@ -1998,15 +1998,15 @@ public sealed class CompatibleWires
                             for (nbs = 1; nbs <= nbSamples - 1; nbs++)
                             {
                                 double parOnPrev =
-                                  (prevEdge.Orientation() == Forward)
+                                  (prevEdge.Orientation == Forward)
                                     ? (prevEcurve.FirstParameter() + nbs * sampleOnPrev)
                                     : (prevEcurve.FirstParameter() + (nbSamples - nbs) * sampleOnPrev);
-                                double parOnCur = (curEdge.Orientation() == Forward)
+                                double parOnCur = (curEdge.Orientation == Forward)
                                                     ? (ecurve.FirstParameter() + (nbSamples - nbs) * sampleOnCur)
                                                     : (ecurve.FirstParameter() + nbs * sampleOnCur);
                                 Point3D ponPrev = prevEcurve.Value(parOnPrev);
                                 Point3D ponCur = new(ecurve.Value(parOnCur).XYZ() + offset.XYZ());
-                                sumDist += ponPrev.Distance(ponCur);
+                                sumDist += ponPrev.DistanceTo(ponCur);
                             }
                         }
                     }
@@ -2063,7 +2063,7 @@ public sealed class CompatibleWires
             }
 
             newwire.Closed(true);
-            newwire.Orientation(Forward);
+            newwire.Orient(Forward);
             _work[i] = newwire;
 
             prevBary = curBary;
@@ -2105,7 +2105,7 @@ public sealed class CompatibleWires
         int i;
         for (i = ideb; i <= ifin; i++)
         {
-            allOpen = (allOpen && !_work[i].Closed());
+            allOpen = (allOpen && !_work[i].IsClosed);
         }
         if (!allOpen)
         {
@@ -2116,7 +2116,7 @@ public sealed class CompatibleWires
         // init
 
         Wire wire1 = ShapeCasts.Wire(_work[ideb]);
-        wire1.Orientation(Forward);
+        wire1.Orient(Forward);
         Exploration.Vertices(wire1, out vdeb, out vfin);
         pdeb = Tool.Pnt(vdeb);
         pfin = Tool.Pnt(vfin);
@@ -2130,7 +2130,7 @@ public sealed class CompatibleWires
         {
 
             Wire wire = ShapeCasts.Wire(_work[i]);
-            wire.Orientation(Forward);
+            wire.Orient(Forward);
 
             NCollection_Sequence<Shape> seqEdges = new();
             seqEdges.Clear();
@@ -2155,8 +2155,8 @@ public sealed class CompatibleWires
                 // particular case of straight segments
                 Point3D p1 = Tool.Pnt(vdeb), p2 = Tool.Pnt(vfin);
                 double dist1, dist2;
-                dist1 = pdeb.Distance(p1) + pfin.Distance(p2);
-                dist2 = pdeb.Distance(p2) + pfin.Distance(p1);
+                dist1 = pdeb.DistanceTo(p1) + pfin.DistanceTo(p2);
+                dist2 = pdeb.DistanceTo(p2) + pfin.DistanceTo(p1);
                 parcours = (dist2 >= dist1);
             }
 
@@ -2171,7 +2171,7 @@ public sealed class CompatibleWires
                     curve.D0(curve.FirstParameter() + global::Kerf.Engine.Foundation.Precision.Confusion(), out p2);
                 }
                 Vector3D vDebFin0 = new(p1o, p2o), vDebFin = new(p1, p2);
-                double aStraight = vDebFin0.Angle(vDebFin);
+                double aStraight = vDebFin0.AngleTo(vDebFin);
                 parcours = (aStraight < M_PI / 2.0);
             }
 

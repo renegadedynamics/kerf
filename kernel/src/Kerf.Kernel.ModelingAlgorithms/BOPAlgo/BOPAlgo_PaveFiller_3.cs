@@ -397,7 +397,7 @@ public partial class PaveFiller
                             // intersection point.
                             Point3D pOnE1 = new EdgeCurveAdaptor(e1).Value(t1);
                             Point3D pOnE2 = new EdgeCurveAdaptor(e2).Value(t2);
-                            if (pOnE1.Distance(pOnE2) > global::Kerf.Engine.Foundation.Precision.Intersection())
+                            if (pOnE1.DistanceTo(pOnE2) > global::Kerf.Engine.Foundation.Precision.Intersection())
                             {
                                 // No intersection point
                                 continue;
@@ -411,7 +411,7 @@ public partial class PaveFiller
                                 {
                                     Vertex v = ShapeCasts.Vertex(_ds.Shape(nV[j]));
                                     Point3D p = Tool.Pnt(v);
-                                    double distPP = p.Distance(pnew);
+                                    double distPP = p.DistanceTo(pnew);
                                     // Just update the vertex
                                     UpdateVertex(nV[j], distPP);
                                     _vertsToAvoidExtension.Add(nV[j]);
@@ -460,7 +460,7 @@ public partial class PaveFiller
                                 Vertex vx = ShapeCasts.Vertex(_ds.Shape(nVS[k1]));
                                 tolVx = Tool.Tolerance(vx);
                                 px = Tool.Pnt(vx);
-                                d2 = pnew.SquareDistance(px);
+                                d2 = pnew.SquareDistanceTo(px);
                                 //
                                 dt2 = 100.0 * (tolVnew + tolVx) * (tolVnew + tolVx);
                                 //
@@ -1070,7 +1070,7 @@ public partial class PaveFiller
                 pb1.Range(out double t11, out double t12);
                 EdgeCurveAdaptor bac1 = new(e1);
                 bac1.D1((t11 + t12) * 0.5, out Point3D pm, out Vector3D vTgt1);
-                if (vTgt1.SquareMagnitude() < Constants.Resolution())
+                if (vTgt1.SquareMagnitude < Constants.Resolution())
                 {
                     continue;
                 }
@@ -1126,7 +1126,7 @@ public partial class PaveFiller
                             }
 
                             bac2.D1(projPC.LowerDistanceParameter(), out Point3D pm2, out Vector3D vTgt2);
-                            if (vTgt2.SquareMagnitude() < Constants.Resolution())
+                            if (vTgt2.SquareMagnitude < Constants.Resolution())
                             {
                                 continue;
                             }

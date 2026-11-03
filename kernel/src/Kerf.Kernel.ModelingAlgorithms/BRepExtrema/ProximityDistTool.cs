@@ -377,7 +377,7 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
 
         int faceID1 = _set1!.GetShapeIDOfVtx(_proxVtxIdx1);
 
-        if (_shapeList1[faceID1].ShapeType() == ShapeType.Edge)
+        if (_shapeList1[faceID1].Type == ShapeType.Edge)
         {
             NCollection_LinearVector<BVH_Vec3d> vertices1 = _set1.GetVertices();
             int vtxSize = vertices1.Size();
@@ -398,7 +398,7 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
                 _pntStatus1 = ProxPnt_Status.ProxPnt_Status_MIDDLE;
             }
         }
-        else if (_shapeList1[faceID1].ShapeType() == ShapeType.Face)
+        else if (_shapeList1[faceID1].Type == ShapeType.Face)
         {
             int nodeIdx = _set1.GetVtxIdxInShape(_proxVtxIdx1) + 1;
 
@@ -421,7 +421,7 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
         int trgIdx = _proxPrjState.GetTrgIdx();
         int faceID2 = _set2!.GetFaceID(trgIdx);
 
-        if (_shapeList2[faceID2].ShapeType() == ShapeType.Edge)
+        if (_shapeList2[faceID2].Type == ShapeType.Edge)
         {
             if (_proxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_INNER)
             {
@@ -472,7 +472,7 @@ public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, Trian
                 }
             }
         }
-        else if (_shapeList2[faceID2].ShapeType() == ShapeType.Face)
+        else if (_shapeList2[faceID2].Type == ShapeType.Face)
         {
             if (_proxPrjState.GetPrjState() == BVH_PrjState.PrjStateInTriangle_INNER)
             {

@@ -45,13 +45,13 @@ public sealed partial class AnalyticCirc2d2TanRad
         }
         else
         {
-            if (point1.Distance(point2) - radius * 2.0 > tol)
+            if (point1.DistanceTo(point2) - radius * 2.0 > tol)
             {
                 _wellDone = true;
             }
             else
             {
-                if (point1.Distance(point2) - radius * 2.0 > 0.0)
+                if (point1.DistanceTo(point2) - radius * 2.0 > 0.0)
                 {
                     _wellDone = true;
                     _nbrSol   = 1;

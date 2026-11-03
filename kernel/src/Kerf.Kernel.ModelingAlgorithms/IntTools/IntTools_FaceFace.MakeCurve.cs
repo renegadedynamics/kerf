@@ -68,7 +68,7 @@ public partial class FaceFace
             Point3D P1 = p1.Value();
             Point3D P2 = p2.Value();
 
-            if (P1.SquareDistance(P2) < 1.0e-14)
+            if (P1.SquareDistanceTo(P2) < 1.0e-14)
             {
                 bAvoidLineConstructor = false;
             }
@@ -283,7 +283,7 @@ public partial class FaceFace
                             Point3D P1 = newc.Value(fprm);
                             Point3D P2 = newc.Value(period);
 
-                            if (P1.Distance(P2) > _tol)
+                            if (P1.DistanceTo(P2) > _tol)
                             {
                                 double anewpar = fprm;
 
@@ -308,7 +308,7 @@ public partial class FaceFace
                             Point3D P1 = newc.Value(nul);
                             Point3D P2 = newc.Value(lprm);
 
-                            if (P1.Distance(P2) > _tol)
+                            if (P1.DistanceTo(P2) > _tol)
                             {
                                 double anewpar = lprm;
 
@@ -344,8 +344,8 @@ public partial class FaceFace
                         IntersectionCurve curve = new();
                         TrimmedCurve3D tc3D = new(newc, fprm, lprm);
                         curve.SetCurve(tc3D);
-                        fprm = tc3D.FirstParameter();
-                        lprm = tc3D.LastParameter();
+                        fprm = tc3D.FirstParameter;
+                        lprm = tc3D.LastParameter;
                         ////
                         if (typl == PatchLineType.Circle || typl == PatchLineType.Ellipse)
                         { ////
@@ -387,8 +387,8 @@ public partial class FaceFace
                                 IntersectionCurve curve = new();
                                 TrimmedCurve3D tc3D = new(newc, fprm, lprm);
                                 curve.SetCurve(tc3D);
-                                fprm = tc3D.FirstParameter();
-                                lprm = tc3D.LastParameter();
+                                fprm = tc3D.FirstParameter;
+                                lprm = tc3D.LastParameter;
 
                                 if (_approx1)
                                 {
@@ -725,7 +725,7 @@ public partial class FaceFace
                                     int ik;
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
-                                        tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
+                                        tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X, tpoles2d.Value(ik).Y,
                                                                          pln));
                                     }
                                     //
@@ -801,7 +801,7 @@ public partial class FaceFace
                                     int ik;
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
-                                        tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(),
+                                        tpoles.SetValue(ik, global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X, tpoles2d.Value(ik).Y,
                                                                          pln));
                                     }
                                     //
@@ -943,8 +943,8 @@ public partial class FaceFace
                                         else
                                         {
                                             BSplineCurve2D? bs1;
-                                            fprm = bs.FirstParameter();
-                                            lprm = bs.LastParameter();
+                                            fprm = bs.FirstParameter;
+                                            lprm = bs.LastParameter;
 
                                             Curve2D? c2d = null;
                                             double tol = _tolApprox;
@@ -975,8 +975,8 @@ public partial class FaceFace
                                         else
                                         {
                                             BSplineCurve2D? bs2;
-                                            fprm = bs.FirstParameter();
-                                            lprm = bs.LastParameter();
+                                            fprm = bs.FirstParameter;
+                                            lprm = bs.LastParameter;
 
                                             Curve2D? c2d = null;
                                             double tol = _tolApprox;
@@ -1035,8 +1035,8 @@ public partial class FaceFace
                 List<double> arrayOfParameters = new();
 
                 // We consider here that the intersection line is same-parameter-line
-                arrayOfParameters.Add(c3d.FirstParameter());
-                arrayOfParameters.Add(c3d.LastParameter());
+                arrayOfParameters.Add(c3d.FirstParameter);
+                arrayOfParameters.Add(c3d.LastParameter);
 
                 IntSS.TrimILineOnSurfBoundaries(c2d1, c2d2, box1, box2, arrayOfParameters);
 

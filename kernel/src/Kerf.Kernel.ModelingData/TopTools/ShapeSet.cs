@@ -106,7 +106,7 @@ public class ShapeSet
         // OCCT.NET: Add recurses once per level of nesting; throw rather than overflow the stack
         RuntimeHelpers.EnsureSufficientExecutionStack();
 
-        _locations.Add(s.Location());
+        _locations.Add(s.Placement);
         Shape s2 = s;
         s2.Location(new Placement());
         int index = _shapes.IndexOf(s2) + 1;
@@ -210,7 +210,7 @@ public class ShapeSet
         int nbSHAPE = _shapes.Count;
         for (int i = 0; i < nbSHAPE; i++)
         {
-            ShapeType type = _shapes[i].ShapeType();
+            ShapeType type = _shapes[i].Type;
             if (type != global::Kerf.Topology.ShapeType.Shape)
             {
                 counts[ShapeType.Vertex - type]++;
@@ -283,15 +283,15 @@ public class ShapeSet
 
             // Type and flags
 
-            PrintShapeEnum(s.ShapeType(), os, false);
+            PrintShapeEnum(s.Type, os, false);
             os.Write(" ");
             os.Write(s.Free() ? "1" : "0");
             os.Write(s.Modified() ? "1" : "0");
             os.Write(s.Checked() ? "1" : "0");
-            os.Write(s.Orientable() ? "1" : "0");
-            os.Write(s.Closed() ? "1" : "0");
-            os.Write(s.Infinite() ? "1" : "0");
-            os.Write(s.Convex() ? "1" : "0");
+            os.Write(s.IsOrientable ? "1" : "0");
+            os.Write(s.IsClosed ? "1" : "0");
+            os.Write(s.IsInfinite ? "1" : "0");
+            os.Write(s.IsConvex ? "1" : "0");
             // OCCT.NET: the stored Locked bit, not Locked(), which is also true of every frozen shape (design 4.3)
             os.Write(s.TShape()!.LockedFlag() ? "1" : "0");
             os.Write(" " + RuntimeHelpers.GetHashCode(s.TShape()).ToString("X16", CultureInfo.InvariantCulture) + "\n");
@@ -302,12 +302,12 @@ public class ShapeSet
             while (its.More())
             {
                 Shape sub = its.Value();
-                PrintOrientation(sub.Orientation(), os, true);
+                PrintOrientation(sub.Orientation, os, true);
                 Out(os, nbShapes - (_shapes.IndexOf(sub.Located(new Placement())) + 1) + 1);
-                if (!sub.Location().IsIdentity)
+                if (!sub.Placement.IsIdentity)
                 {
                     os.Write("(L");
-                    Out(os, _locations.Index(sub.Location()));
+                    Out(os, _locations.Index(sub.Placement));
                     os.Write(")");
                 }
 
@@ -396,7 +396,7 @@ public class ShapeSet
                 Shape s = _shapes[i - 1];
 
                 // Type
-                PrintShapeEnum(s.ShapeType(), os, true);
+                PrintShapeEnum(s.Type, os, true);
                 os.Write("\n");
 
                 // Geometry
@@ -407,10 +407,10 @@ public class ShapeSet
                 os.Write(s.Free() ? "1" : "0");
                 os.Write(s.Modified() ? "1" : "0");
                 os.Write(s.Checked() ? "1" : "0");
-                os.Write(s.Orientable() ? "1" : "0");
-                os.Write(s.Closed() ? "1" : "0");
-                os.Write(s.Infinite() ? "1" : "0");
-                os.Write(s.Convex() ? "1" : "0");
+                os.Write(s.IsOrientable ? "1" : "0");
+                os.Write(s.IsClosed ? "1" : "0");
+                os.Write(s.IsInfinite ? "1" : "0");
+                os.Write(s.IsConvex ? "1" : "0");
                 os.Write("\n");
 
                 // sub-shapes
@@ -703,11 +703,11 @@ public class ShapeSet
         os.Write("Shape : ");
         Out(os, _shapes.IndexOf(s.Located(new Placement())) + 1);
         os.Write(", ");
-        PrintOrientation(s.Orientation(), os, false);
-        if (!s.Location().IsIdentity)
+        PrintOrientation(s.Orientation, os, false);
+        if (!s.Placement.IsIdentity)
         {
             os.Write(", location : ");
-            Out(os, _locations.Index(s.Location()));
+            Out(os, _locations.Index(s.Placement));
         }
 
         os.Write("\n");
@@ -725,10 +725,10 @@ public class ShapeSet
         }
         else
         {
-            PrintOrientation(s.Orientation(), os, true);
+            PrintOrientation(s.Orientation, os, true);
             Out(os, _shapes.Count - (_shapes.IndexOf(s.Located(new Placement())) + 1) + 1);
             os.Write(" ");
-            Out(os, _locations.Index(s.Location()));
+            Out(os, _locations.Index(s.Placement));
             os.Write(" ");
         }
     }
@@ -774,19 +774,19 @@ public class ShapeSet
             switch (buffer[0])
             {
                 case '+':
-                    s.Orientation(Forward);
+                    s.Orient(Forward);
                     break;
 
                 case '-':
-                    s.Orientation(Reversed);
+                    s.Orient(Reversed);
                     break;
 
                 case 'i':
-                    s.Orientation(Internal);
+                    s.Orient(Internal);
                     break;
 
                 case 'e':
-                    s.Orientation(External);
+                    s.Orient(External);
                     break;
             }
 

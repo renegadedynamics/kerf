@@ -61,7 +61,7 @@ public class BOPAlgo_MakePeriodicTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().X() - theX) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().X - theX) < 1e-9)
             {
                 return anExp.Current();
             }
@@ -115,7 +115,7 @@ public class BOPAlgo_MakePeriodicTests
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
             Point3D aC = aProps.CentreOfMass();
-            bool anIsZ = Math.Abs(aC.Z()) < 1e-9 || Math.Abs(aC.Z() - 10.0) < 1e-9;
+            bool anIsZ = Math.Abs(aC.Z) < 1e-9 || Math.Abs(aC.Z - 10.0) < 1e-9;
             Assert.Equal(anIsZ ? 0 : 1, aMaker.GetTwins(anExp.Current()).Count);
         }
     }

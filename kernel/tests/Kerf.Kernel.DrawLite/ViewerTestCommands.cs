@@ -140,13 +140,13 @@ internal static class ViewerTestCommands
     // AIS
 
     private static bool IsEmpty(in Shape theShape)
-        => theShape.IsNull || (theShape.ShapeType() == ShapeType.Compound && theShape.ChildCount == 0);
+        => theShape.IsNull || (theShape.Type == ShapeType.Compound && theShape.ChildCount == 0);
 
     /// <summary>AIS_Shape::Compute, for its meshing: the shaded mode tessellates the shape (StdPrs_ShadedShape::Add).</summary>
     private static void Compute(DrawInterpreter theDI, AisShape theObject, int theMode)
     {
         Shape aShape = theObject.Shape;
-        if (IsEmpty(aShape) || theMode != AIS_Shaded || (int)aShape.ShapeType() > 4 || !theObject.Drawer.IsAutoTriangulation)
+        if (IsEmpty(aShape) || theMode != AIS_Shaded || (int)aShape.Type > 4 || !theObject.Drawer.IsAutoTriangulation)
         {
             // the wireframe and bounding box modes, and wires, edges and vertices, draw without meshing
             return;

@@ -153,7 +153,7 @@ public class TopLocOracleTests(ITestOutputHelper output)
                 using var aNP = Oracle.ToNative(aP);
                 using var aNTrsf = aNPow.Transformation();
                 using var aNMoved = aNP.Transformed(aNTrsf);
-                anOracle.Same(Oracle.FromNative(aNMoved).XYZ(), aP.Transformed(aL.Powered(aPower).Transformation()).XYZ(),
+                anOracle.Same(Oracle.FromNative(aNMoved).XYZ(), aP.Transformed(aL.Powered(aPower).Transformation).XYZ(),
                               "point moved by a location", ChainTolerance);
             }
         }
@@ -177,7 +177,7 @@ public class TopLocOracleTests(ITestOutputHelper output)
     {
         using (N.gp_Trsf aNTrsf = theNative.Transformation())
         {
-            theOracle.Same(aNTrsf, thePort.Transformation(), theWhat, ChainTolerance);
+            theOracle.Same(aNTrsf, thePort.Transformation, theWhat, ChainTolerance);
         }
 
         N.TopLoc_Location aNative = new N.TopLoc_Location(theNative);

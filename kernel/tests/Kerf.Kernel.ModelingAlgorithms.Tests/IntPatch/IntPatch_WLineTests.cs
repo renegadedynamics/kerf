@@ -115,7 +115,7 @@ public class IntPatch_WLineTests
         aW.SetPoint(2, aV);
         Assert.Same(aCurve, aW.Curve());
         Assert.Equal(aV.PntOn2S(), aW.Point(2));
-        Assert.Equal(7.0, aCurve.Value(2).Value().X());
+        Assert.Equal(7.0, aCurve.Value(2).Value().X);
         Assert.True(aW.IsOutBox(new Point3D(100, 0, 0)));
         Assert.False(aW.IsOutSurf1Box(new Point2D(2, 0)));
     }

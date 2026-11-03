@@ -59,7 +59,7 @@ public sealed class Analyse
     private bool _done; // Status of the algorithm
 
     // Map containing the list of intervals on the edge
-    private readonly Dictionary<Shape, NCollection_List<Interval>> _mapEdgeType = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<OffsetInterval>> _mapEdgeType = new(ShapeHasher.Instance);
     // Ancestors map
     private readonly IndexedMap<Shape, NCollection_List<Shape>> _ancestors = new(ShapeHasher.Instance);
     // Replacement of an edge in the face
@@ -103,10 +103,10 @@ public sealed class Analyse
     //=================================================================================================
 
     private static void EdgeAnalyse(in Edge e, in Face f1, in Face f2, double sinTol,
-                                    NCollection_List<Interval> li)
+                                    NCollection_List<OffsetInterval> li)
     {
         Tool.Range(e, f1, out double f, out double l);
-        Interval i = new();
+        OffsetInterval i = new();
         i.First(f);
         i.Last(l);
         //
@@ -191,7 +191,7 @@ public sealed class Analyse
             // Find the edge in the face 1: this edge will have correct orientation
             Edge edgeInFace1 = new();
             Face aFace1 = face1;
-            aFace1.Orientation(Forward);
+            aFace1.Orient(Forward);
             Explorer explo = new(aFace1, ShapeType.Edge);
             for (; explo.More(); explo.Next())
             {
@@ -209,7 +209,7 @@ public sealed class Analyse
 
             c2d1 = Tool.CurveOnSurface(edgeInFace1, aFace1, out first, out last);
             Face aFace2 = face2;
-            aFace2.Orientation(Forward);
+            aFace2.Orient(Forward);
             edgeInFace1.Reverse();
             c2d2 = Tool.CurveOnSurface(edgeInFace1, aFace2, out first, out last);
         }
@@ -321,7 +321,7 @@ public sealed class Analyse
             Edge e = ShapeCasts.Edge(exp.Current());
             if (!_mapEdgeType.ContainsKey(e))
             {
-                NCollection_List<Interval> li = new();
+                NCollection_List<OffsetInterval> li = new();
                 _mapEdgeType[e] = li;
 
                 NCollection_List<Shape> l = Ancestors(e);
@@ -347,7 +347,7 @@ public sealed class Analyse
                 {
                     Face f = ShapeCasts.Face(l.First());
                     Tool.Range(e, f, out double u1, out double u2);
-                    Interval inter = new(u1, u2, TypeOfConcavity.Other);
+                    OffsetInterval inter = new(u1, u2, TypeOfConcavity.Other);
 
                     if (!BrepTools.IsReallyClosed(e, f))
                     {
@@ -477,7 +477,7 @@ public sealed class Analyse
                 for (NCollection_List<Shape>.Iterator itLVA = new(lva); itLVA.More(); itLVA.Next())
                 {
                     Edge ea = ShapeCasts.Edge(itLVA.Value());
-                    if (!_mapEdgeType.TryGetValue(ea, out NCollection_List<Interval>? pIntervals)
+                    if (!_mapEdgeType.TryGetValue(ea, out NCollection_List<OffsetInterval>? pIntervals)
                         || pIntervals.IsEmpty())
                     {
                         continue;
@@ -679,7 +679,7 @@ public sealed class Analyse
                                 {
                                     if (itx.Value().IsSame(v))
                                     {
-                                        oriInEMin = itx.Value().Orientation();
+                                        oriInEMin = itx.Value().Orientation;
                                         break;
                                     }
                                 }
@@ -688,7 +688,7 @@ public sealed class Analyse
                                 {
                                     if (itx.Value().IsSame(v))
                                     {
-                                        oriInEG = itx.Value().Orientation();
+                                        oriInEG = itx.Value().Orientation;
                                         break;
                                     }
                                 }
@@ -718,7 +718,7 @@ public sealed class Analyse
                             }
                         }
 
-                        _mapEdgeType[eg] = new NCollection_List<Interval>();
+                        _mapEdgeType[eg] = new NCollection_List<OffsetInterval>();
                         if (lega.Extent() == 2)
                         {
                             EdgeAnalyse(eg, ShapeCasts.Face(lega.First()), ShapeCasts.Face(lega.Last()), sinTol,
@@ -757,7 +757,7 @@ public sealed class Analyse
                     lfOpposite.Append(fNew);
                     lfOpposite.Append(fToRemove);
                     _ancestors.Add(eOpposite, lfOpposite);
-                    _mapEdgeType[eOpposite] = new NCollection_List<Interval>();
+                    _mapEdgeType[eOpposite] = new NCollection_List<OffsetInterval>();
                     EdgeAnalyse(eOpposite, fNew, ShapeCasts.Face(fToRemove), sinTol, _mapEdgeType.GetValue(eOpposite));
 
                     if (!_replacement.TryGetValue(fToRemove, out Dictionary<Shape, Shape>? pEEMap))
@@ -883,7 +883,7 @@ public sealed class Analyse
     //=======================================================================
 
     /// <summary>The connectivity type of the edge: its intervals (throws if the edge wasn't analysed).</summary>
-    public NCollection_List<Interval> Type(in Edge e)
+    public NCollection_List<OffsetInterval> Type(in Edge e)
     {
         return _mapEdgeType.GetValue(e);
     }
@@ -900,7 +900,7 @@ public sealed class Analyse
         for (; it.More(); it.Next())
         {
             Edge e = ShapeCasts.Edge(it.Value());
-            if (_mapEdgeType.TryGetValue(e, out NCollection_List<Interval>? pIntervals) && pIntervals.Extent() > 0)
+            if (_mapEdgeType.TryGetValue(e, out NCollection_List<OffsetInterval>? pIntervals) && pIntervals.Extent() > 0)
             {
                 OffsetTool.EdgeVertices(e, out Vertex v1, out Vertex v2);
                 if (v1.IsSame(v))
@@ -933,8 +933,8 @@ public sealed class Analyse
         {
             Edge e = ShapeCasts.Edge(exp.Current());
 
-            NCollection_List<Interval> lint = Type(e);
-            NCollection_List<Interval>.Iterator it = new(lint);
+            NCollection_List<OffsetInterval> lint = Type(e);
+            NCollection_List<OffsetInterval>.Iterator it = new(lint);
             for (; it.More(); it.Next())
             {
                 if (it.Value().Type() == t)
@@ -962,7 +962,7 @@ public sealed class Analyse
         c3dRef = new EdgeCurveAdaptor(edge);
         vRef = c3dRef.DN(uRef, 1);
         CorrectOrientationOfTangent(ref vRef, vertex, edge);
-        if (vRef.SquareMagnitude() < Constants.Resolution())
+        if (vRef.SquareMagnitude < Constants.Resolution())
         {
             return;
         }
@@ -982,7 +982,7 @@ public sealed class Analyse
             c3d = new EdgeCurveAdaptor(curE);
             v = c3d.DN(u, 1);
             CorrectOrientationOfTangent(ref v, vertex, curE);
-            if (v.SquareMagnitude() < Constants.Resolution())
+            if (v.SquareMagnitude < Constants.Resolution())
             {
                 continue;
             }
@@ -1074,7 +1074,7 @@ public sealed class Analyse
         for (NCollection_List<Shape>.Iterator it = new(pLE); it.More(); it.Next())
         {
             Edge e = ShapeCasts.Edge(it.Value());
-            NCollection_List<Interval> li = Type(e);
+            NCollection_List<OffsetInterval> li = Type(e);
             if (!li.IsEmpty() && li.First().Type() == t)
             {
                 // so <NewFace> is attached to G1 by <Face>
@@ -1114,7 +1114,7 @@ public sealed class Analyse
         for (NCollection_List<Shape>.Iterator it = new(pLE); it.More(); it.Next())
         {
             Edge e = ShapeCasts.Edge(it.Value());
-            NCollection_List<Interval> li = Type(e);
+            NCollection_List<OffsetInterval> li = Type(e);
             if (!li.IsEmpty() && (li.First().Type() == t1 || li.First().Type() == t2))
             {
                 // so <NewFace> is attached to G1 by <Face>

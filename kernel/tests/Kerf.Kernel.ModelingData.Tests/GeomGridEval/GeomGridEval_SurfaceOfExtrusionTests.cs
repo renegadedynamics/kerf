@@ -59,12 +59,12 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anExtSurf.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
 
                 // Verify: S(u,v) = C(u) + v * Dir = (u, 0, 0) + v * (0, 0, 1) = (u, 0, v)
-                Assert.Equal(aUParams.Value(i), aGrid.Value(i, j).X(), THE_TOLERANCE);
-                Assert.Equal(0.0, aGrid.Value(i, j).Y(), THE_TOLERANCE);
-                Assert.Equal(aVParams.Value(j), aGrid.Value(i, j).Z(), THE_TOLERANCE);
+                Assert.Equal(aUParams.Value(i), aGrid.Value(i, j).X, THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Y, THE_TOLERANCE);
+                Assert.Equal(aVParams.Value(j), aGrid.Value(i, j).Z, THE_TOLERANCE);
             }
         }
     }
@@ -88,15 +88,15 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anExtSurf.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
 
                 // Check cylindrical radius
-                double aRadius = Math.Sqrt(aGrid.Value(i, j).X() * aGrid.Value(i, j).X()
-                                           + aGrid.Value(i, j).Y() * aGrid.Value(i, j).Y());
+                double aRadius = Math.Sqrt(aGrid.Value(i, j).X * aGrid.Value(i, j).X
+                                           + aGrid.Value(i, j).Y * aGrid.Value(i, j).Y);
                 Assert.Equal(5.0, aRadius, THE_TOLERANCE);
 
                 // Check Z coordinate equals V parameter
-                Assert.Equal(aVParams.Value(j), aGrid.Value(i, j).Z(), THE_TOLERANCE);
+                Assert.Equal(aVParams.Value(j), aGrid.Value(i, j).Z, THE_TOLERANCE);
             }
         }
     }
@@ -120,14 +120,14 @@ public class GeomGridEval_SurfaceOfExtrusionTest
                 anExtSurf.D1(aUParams.Value(i), aVParams.Value(j), out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
 
                 Surface.ResD1 aData = aGridD1.Value(i, j);
-                Assert.Equal(0.0, aData.Point.Distance(aP), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D1V - aD1V).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aData.Point.DistanceTo(aP), THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D1V - aD1V).Magnitude, THE_TOLERANCE);
 
                 // D1V should be the extrusion direction
-                Assert.Equal(0.0, aData.D1V.X(), THE_TOLERANCE);
-                Assert.Equal(0.0, aData.D1V.Y(), THE_TOLERANCE);
-                Assert.Equal(1.0, aData.D1V.Z(), THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D1V.X, THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D1V.Y, THE_TOLERANCE);
+                Assert.Equal(1.0, aData.D1V.Z, THE_TOLERANCE);
             }
         }
     }
@@ -153,16 +153,16 @@ public class GeomGridEval_SurfaceOfExtrusionTest
                              out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
 
                 Surface.ResD2 aData = aGridD2.Value(i, j);
-                Assert.Equal(0.0, aData.Point.Distance(aP), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aData.Point.DistanceTo(aP), THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D2UV - aD2UV).Magnitude, THE_TOLERANCE);
 
                 // D2V and D2UV should be zero for extrusion surface
-                Assert.Equal(0.0, aData.D2V.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aData.D2UV.Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D2V.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D2UV.Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -198,16 +198,16 @@ public class GeomGridEval_SurfaceOfExtrusionTest
                              out Vector3D aD3UVV);
 
                 Surface.ResD3 aData = aGridD3.Value(i, j);
-                Assert.Equal(0.0, aData.Point.Distance(aP), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D3U - aD3U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D3V - aD3V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D3UUV - aD3UUV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aData.D3UVV - aD3UVV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aData.Point.DistanceTo(aP), THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D3U - aD3U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D3V - aD3V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D3UUV - aD3UUV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aData.D3UVV - aD3UVV).Magnitude, THE_TOLERANCE);
 
                 // D3V, D3UUV, D3UVV should all be zero for extrusion surface
-                Assert.Equal(0.0, aData.D3V.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aData.D3UUV.Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, aData.D3UVV.Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D3V.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D3UUV.Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, aData.D3UVV.Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -231,7 +231,7 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anExtSurf.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -256,7 +256,7 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anExtSurf.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -284,7 +284,7 @@ public class GeomGridEval_SurfaceOfExtrusionTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anExtSurf.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }

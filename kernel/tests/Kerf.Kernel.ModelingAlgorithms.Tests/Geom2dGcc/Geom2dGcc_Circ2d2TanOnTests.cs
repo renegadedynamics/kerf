@@ -107,13 +107,13 @@ public class Geom2dGcc_Circ2d2TanOnTests
         for (int i = 1; i <= 2; i++)
         {
             Circle2D aSol = aGcc.ThisSolution(i);
-            Assert.Equal(0, aSol.Location().X(), 1.0e-9);
-            Assert.Equal(2, Math.Abs(aSol.Location().Y()), 1.0e-9);
-            Assert.Equal(Math.Sqrt(13) - 1, aSol.Radius(), 1.0e-9);
+            Assert.Equal(0, aSol.Location.X, 1.0e-9);
+            Assert.Equal(2, Math.Abs(aSol.Location.Y), 1.0e-9);
+            Assert.Equal(Math.Sqrt(13) - 1, aSol.Radius, 1.0e-9);
             aGcc.CenterOn3(i, out double aPar, out Point2D aCen);
-            Assert.True(anEllipse.Value(aPar).Distance(aCen) < 1.0e-9);
+            Assert.True(anEllipse.Value(aPar).DistanceTo(aCen) < 1.0e-9);
             aGcc.Tangency1(i, out _, out _, out Point2D t1);
-            Assert.Equal(1, t1.Distance(c1.Location()), 1.0e-9);
+            Assert.Equal(1, t1.DistanceTo(c1.Location), 1.0e-9);
             aGcc.WhichQualifier(i, out Qualifier q1, out Qualifier q2);
             Assert.Equal((Qualifier.Outside, Qualifier.Outside), (q1, q2));
         }
@@ -132,13 +132,13 @@ public class Geom2dGcc_Circ2d2TanOnTests
         Assert.True(aGcc.IsDone);
         Assert.Equal(1, aGcc.SolutionCount);
         Circle2D aSol = aGcc.ThisSolution(1);
-        Assert.Equal(6.5, aSol.Location().X(), 1.0e-6);
-        Assert.Equal(0, aSol.Location().Y(), 1.0e-6);
-        Assert.Equal(2.5, aSol.Radius(), 1.0e-6);
+        Assert.Equal(6.5, aSol.Location.X, 1.0e-6);
+        Assert.Equal(0, aSol.Location.Y, 1.0e-6);
+        Assert.Equal(2.5, aSol.Radius, 1.0e-6);
         // OCCT's Iter returns 0 for the parameters, and the dispatch doesn't copy the centre's.
         aGcc.Tangency1(1, out double aParSol, out double aParArg, out Point2D t1);
         Assert.Equal((0.0, 0.0), (aParSol, aParArg));
-        Assert.True(t1.Distance(new Point2D(4, 0)) < 1.0e-6);
+        Assert.True(t1.DistanceTo(new Point2D(4, 0)) < 1.0e-6);
         aGcc.CenterOn3(1, out double aParCen, out Point2D aCen);
         Assert.Equal(0.0, aParCen);
         Assert.Equal(new Point2D(), aCen);

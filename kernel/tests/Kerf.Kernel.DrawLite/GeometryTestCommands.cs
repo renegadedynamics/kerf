@@ -203,10 +203,10 @@ internal static class GeometryTestCommands
     {
         string name = $"ext_{i}";
         di.Append(name).Append(" ");
-        if (P.Distance(P1) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (P.DistanceTo(P1) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             var L = new LineCurve3D(P, new Direction3D(new Vector3D(P, P1)));
-            var CT = new TrimmedCurve3D(L, 0.0, P.Distance(P1));
+            var CT = new TrimmedCurve3D(L, 0.0, P.DistanceTo(P1));
             DrawTrSurf.Set(theDI, name, CT);
         }
         else
@@ -264,7 +264,7 @@ internal static class GeometryTestCommands
 
             if (n <= 6)
             {
-                GS.Bounds(out double U1, out double U2, out double V1, out double V2);
+                GS.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
 
                 var proj = new ProjectPointOnSurface(P, GS, U1, U2, V1, V2, aProjAlgo);
                 if (!proj.IsDone)
@@ -299,7 +299,7 @@ internal static class GeometryTestCommands
         }
         else
         {
-            var proj = new ProjectPointOnCurve(P, GC, GC.FirstParameter(), GC.LastParameter());
+            var proj = new ProjectPointOnCurve(P, GC, GC.FirstParameter, GC.LastParameter);
 
             if (proj.NbPoints() == 0)
             {
@@ -341,12 +341,12 @@ internal static class GeometryTestCommands
                 return 1;
             }
 
-            GS1.Bounds(out U1f, out U1l, out V1f, out V1l);
+            GS1.ParameterBounds(out U1f, out U1l, out V1f, out V1l);
         }
         else
         {
-            U1f = GC1.FirstParameter();
-            U1l = GC1.LastParameter();
+            U1f = GC1.FirstParameter;
+            U1l = GC1.LastParameter;
         }
 
         Curve3D? GC2 = DrawTrSurf.GetCurve(theDI, a[2]);
@@ -358,12 +358,12 @@ internal static class GeometryTestCommands
                 return 1;
             }
 
-            GS2.Bounds(out U2f, out U2l, out V2f, out V2l);
+            GS2.ParameterBounds(out U2f, out U2l, out V2f, out V2l);
         }
         else
         {
-            U2f = GC2.FirstParameter();
-            U2l = GC2.LastParameter();
+            U2f = GC2.FirstParameter;
+            U2l = GC2.LastParameter;
         }
 
         var aPnts1 = new List<Point3D>();
@@ -475,15 +475,15 @@ internal static class GeometryTestCommands
         for (int aJ = 1; aJ <= aPntCount; aJ++)
         {
             Point3D aP1 = aPnts1[aJ - 1], aP2 = aPnts2[aJ - 1];
-            if (aP1.Distance(aP2) < 1.0e-16)
+            if (aP1.DistanceTo(aP2) < 1.0e-16)
             {
-                di.Append("Extrema ").Append(aJ).Append(" is point : ").Append(aP1.X()).Append(" ").Append(aP1.Y()).Append(" ")
-                  .Append(aP1.Z()).Append("\n");
+                di.Append("Extrema ").Append(aJ).Append(" is point : ").Append(aP1.X).Append(" ").Append(aP1.Y).Append(" ")
+                  .Append(aP1.Z).Append("\n");
                 continue;
             }
 
             var aL = new LineCurve3D(aP1, new Direction3D(new Vector3D(aP1, aP2)));
-            var aCT = new TrimmedCurve3D(aL, 0.0, aP1.Distance(aP2));
+            var aCT = new TrimmedCurve3D(aL, 0.0, aP1.DistanceTo(aP2));
             string aName = $"ext_{aJ}";
             DrawTrSurf.Set(theDI, aName, aCT);
             di.Append(aName).Append(" ");
@@ -739,9 +739,9 @@ internal static class GeometryTestCommands
             }
             double                ang = theDI.Atof(a[4]) * (Math.PI / 180.0);
             global::Kerf.Engine.Construction.Constraints.Lin2dTanObl ct3 = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
-                                            L.Lin2d(),
+                                            L.Line,
                                             global::Kerf.Engine.Foundation.Precision.Angular(),
-                                            (C1.FirstParameter() + C1.LastParameter()) / 2.0,
+                                            (C1.FirstParameter + C1.LastParameter) / 2.0,
                                             ang);
             if (ct3.IsDone)
             {
@@ -763,8 +763,8 @@ internal static class GeometryTestCommands
             global::Kerf.Engine.Construction.Constraints.Lin2d2Tan ct3 = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(C1)),
                                           global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(new CurveAdaptor2D(C2)),
                                           global::Kerf.Engine.Foundation.Precision.Angular(),
-                                          (C1.FirstParameter() + C1.LastParameter()) / 2.0,
-                                          (C2.FirstParameter() + C2.LastParameter()) / 2.0);
+                                          (C1.FirstParameter + C1.LastParameter) / 2.0,
+                                          (C2.FirstParameter + C2.LastParameter) / 2.0);
             if (ct3.IsDone)
             {
                 for (int i = 1; i <= ct3.SolutionCount; i++)

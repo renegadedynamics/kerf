@@ -148,7 +148,7 @@ public sealed class FreeBoundsFixer
                     if (vertices.ContainsKey(v))
                     {
                         newV = ShapeCasts.Vertex(vertices.GetValue(v));
-                        newV.Orientation(v.Orientation());
+                        newV.Orient(v.Orientation);
                         // OCCT removes and adds vertices of an edge that isn't free (it is in a wire): OCCT's release
                         // build skips the check, which raises TopoDS_FrozenShape in its debug build and in the port. The
                         // port lifts the flag around the edit, as ShapeFix_EdgeConnect does (occt-issues.md).

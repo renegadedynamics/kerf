@@ -36,7 +36,7 @@ public class Geom2dGridEval_HyperbolaTest
         for (int i = 1; i <= 11; ++i)
         {
             Point2D aExpected = aHypr.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -52,8 +52,8 @@ public class Geom2dGridEval_HyperbolaTest
         NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
         // At u=0: P = Center + MajR*cosh(0)*X + MinR*sinh(0)*Y = Center + MajR*X = (3, 0)
-        Assert.Equal(3.0, aGrid.Value(1).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(1).Y(), THE_TOLERANCE);
+        Assert.Equal(3.0, aGrid.Value(1).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Y, THE_TOLERANCE);
     }
 
     [Fact]
@@ -69,8 +69,8 @@ public class Geom2dGridEval_HyperbolaTest
         for (int i = 1; i <= 11; ++i)
         {
             aHypr.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -87,9 +87,9 @@ public class Geom2dGridEval_HyperbolaTest
         for (int i = 1; i <= 11; ++i)
         {
             aHypr.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -106,10 +106,10 @@ public class Geom2dGridEval_HyperbolaTest
         for (int i = 1; i <= 11; ++i)
         {
             aHypr.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude, THE_TOLERANCE);
         }
     }
 }

@@ -21,8 +21,8 @@ public class GeomLib_IsPlanarSurfaceTests
             for (int j = 1; j <= 3; j++)
             {
                 double aZ = (i == 2 && j == 2) ? theNoise : 0.0;
-                Xyz aP = TheAx3.Location().XYZ() + (i + 0.1 * j) * TheAx3.XDirection().XYZ()
-                            + (j * 1.5 - 0.2 * i) * TheAx3.YDirection().XYZ() + aZ * TheAx3.Direction().XYZ();
+                Xyz aP = TheAx3.Location.XYZ() + (i + 0.1 * j) * TheAx3.XDirection.XYZ()
+                            + (j * 1.5 - 0.2 * i) * TheAx3.YDirection.XYZ() + aZ * TheAx3.Direction.XYZ();
                 aPoles[i, j] = new Point3D(aP);
             }
         }
@@ -31,7 +31,7 @@ public class GeomLib_IsPlanarSurfaceTests
 
     private static void AssertNormal(Plane3D thePln, in Direction3D theExpected)
     {
-        Assert.True(thePln.Axis().Direction().IsParallel(theExpected, 1e-9));
+        Assert.True(thePln.Axis.Direction.IsParallel(theExpected, 1e-9));
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class GeomLib_IsPlanarSurfaceTests
         var aPlane = new PlaneSurface(TheAx3);
         var anIs = new IsPlanarSurface(aPlane);
         Assert.True(anIs.IsPlanar);
-        Assert.Equal(aPlane.Pln(), anIs.Plan());
+        Assert.Equal(aPlane.Plane, anIs.Plan());
     }
 
     [Fact]
@@ -66,8 +66,8 @@ public class GeomLib_IsPlanarSurfaceTests
         BSplineSurface aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aTrimmed);
         var anIs = new IsPlanarSurface(aBS);
         Assert.True(anIs.IsPlanar);
-        AssertNormal(anIs.Plan(), TheAx3.Direction());
-        Assert.True(anIs.Plan().Distance(TheAx3.Location()) < 1e-12);
+        AssertNormal(anIs.Plan(), TheAx3.Direction);
+        Assert.True(anIs.Plan().DistanceTo(TheAx3.Location) < 1e-12);
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public class GeomLib_IsPlanarSurfaceTests
         Assert.False(new IsPlanarSurface(aBz).IsPlanar);
         var anIs = new IsPlanarSurface(aBz, 1e-2);
         Assert.True(anIs.IsPlanar);
-        Assert.True(anIs.Plan().Axis().Direction().Angle(TheAx3.Direction()) < 1e-3
-                    || anIs.Plan().Axis().Direction().Angle(TheAx3.Direction()) > M_PI - 1e-3);
+        Assert.True(anIs.Plan().Axis.Direction.AngleTo(TheAx3.Direction) < 1e-3
+                    || anIs.Plan().Axis.Direction.AngleTo(TheAx3.Direction) > M_PI - 1e-3);
         Assert.True(new IsPlanarSurface(PlanarBezier(0.0)).IsPlanar);
     }
 
@@ -88,9 +88,9 @@ public class GeomLib_IsPlanarSurfaceTests
         var anIs = new IsPlanarSurface(PlanarBezier(0.0));
         Assert.True(anIs.IsPlanar);
         PlanarBezier(0.0).D1(0.5, 0.5, out Point3D _, out Vector3D DU, out Vector3D DV);
-        CoordinateSystem aPos = anIs.Plan().Position();
-        Assert.True(aPos.XDirection().Angle(new Direction3D(DU)) <= M_PI / 2);
-        Assert.True(aPos.YDirection().Angle(new Direction3D(DV)) <= M_PI / 2);
+        CoordinateSystem aPos = anIs.Plan().Position;
+        Assert.True(aPos.XDirection.AngleTo(new Direction3D(DU)) <= M_PI / 2);
+        Assert.True(aPos.YDirection.AngleTo(new Direction3D(DV)) <= M_PI / 2);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class GeomLib_IsPlanarSurfaceTests
         var anIs = new IsPlanarSurface(new RevolutionSurface(aSeg, anAxis));
         Assert.True(anIs.IsPlanar);
         AssertNormal(anIs.Plan(), new Direction3D(0, 0, 1));
-        Assert.Equal(0.0, anIs.Plan().Distance(new Point3D(5, 7, 1)), 1e-12);
+        Assert.Equal(0.0, anIs.Plan().DistanceTo(new Point3D(5, 7, 1)), 1e-12);
 
         // A slightly tilted segment sweeps a flat cone: planar within a loose tolerance only
         var aTilted = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 1e-4)), 1, 3);
@@ -161,8 +161,8 @@ public class GeomLib_IsPlanarSurfaceTests
         BSplineSurface aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aTrimmed);
         var anIs = new IsPlanarSurface(new OffsetSurface(aBS, 2.5));
         Assert.True(anIs.IsPlanar);
-        AssertNormal(anIs.Plan(), TheAx3.Direction());
-        Assert.Equal(2.5, anIs.Plan().Distance(TheAx3.Location()), 1e-9);
+        AssertNormal(anIs.Plan(), TheAx3.Direction);
+        Assert.Equal(2.5, anIs.Plan().DistanceTo(TheAx3.Location), 1e-9);
     }
 
     [Fact]

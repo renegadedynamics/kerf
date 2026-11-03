@@ -757,8 +757,8 @@ public sealed class DsDataStructure
     /// </summary>
     internal void FillShapesSameDomain(in Shape s1, in Shape s2, bool refFirst = true)
     {
-        Orientation o1 = s1.Orientation();
-        Orientation o2 = s2.Orientation();
+        Orientation o1 = s1.Orientation;
+        Orientation o2 = s2.Orientation;
 
         int iS1 = AddShape(s1, 1);
         DsShapeData sd1 = _shapes.ValueAt(iS1 - 1);
@@ -841,7 +841,7 @@ public sealed class DsDataStructure
         Shape sr = Shape(r);
         DsShapeData sd = _shapes.GetValue(sr);
         Orientation oSr = sd._orientation;
-        sr.Orientation(oSr);
+        sr.Orient(oSr);
 
         if (r != r1 || todef1)
         { // S1 gets a new reference r

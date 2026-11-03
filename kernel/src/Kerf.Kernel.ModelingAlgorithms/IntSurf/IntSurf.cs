@@ -31,8 +31,8 @@ public static class IntSurf
 
         Vector3D pvect = tgSecond.Crossed(tgFirst);
 
-        double nTgSecond = tgSecond.Magnitude();
-        double nTgFirst = tgFirst.Magnitude();
+        double nTgSecond = tgSecond.Magnitude;
+        double nTgFirst = tgFirst.Magnitude;
         double nTgSecondNTgFirstAngular = nTgSecond * nTgFirst * global::Kerf.Engine.Foundation.Precision.Angular();
 
         if (nTgFirst <= global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -40,7 +40,7 @@ public static class IntSurf
             tFirst.SetValue(true, WalkingTypeTrans.Undecided);
             tSecond.SetValue(true, WalkingTypeTrans.Undecided);
         }
-        else if ((nTgSecond <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (pvect.Magnitude() <= nTgSecondNTgFirstAngular))
+        else if ((nTgSecond <= global::Kerf.Engine.Foundation.Precision.Confusion()) || (pvect.Magnitude <= nTgSecondNTgFirstAngular))
         {
             tFirst.SetValue(true, WalkingSituation.Unknown, tgFirst.Dot(tgSecond) < 0.0);
             tSecond.SetValue(true, WalkingSituation.Unknown, tgFirst.Dot(tgSecond) < 0.0);

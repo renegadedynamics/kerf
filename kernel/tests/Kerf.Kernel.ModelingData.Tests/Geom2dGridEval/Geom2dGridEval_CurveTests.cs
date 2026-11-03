@@ -70,8 +70,8 @@ public class Geom2dGridEval_LineTest
         for (int i = 1; i <= 11; ++i)
         {
             double t = aParams.Value(i);
-            Assert.Equal(t, aGrid.Value(i).X(), THE_TOLERANCE);
-            Assert.Equal(0.0, aGrid.Value(i).Y(), THE_TOLERANCE);
+            Assert.Equal(t, aGrid.Value(i).X, THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Y, THE_TOLERANCE);
         }
     }
 
@@ -86,10 +86,10 @@ public class Geom2dGridEval_LineTest
 
         NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
-        Assert.Equal(0.0, aGrid.Value(1).Distance(new Point2D(1, 2)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).DistanceTo(new Point2D(1, 2)), THE_TOLERANCE);
 
         double d = 5.0 / Math.Sqrt(2.0);
-        Assert.Equal(0.0, aGrid.Value(6).Distance(new Point2D(1 + d, 2 + d)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(6).DistanceTo(new Point2D(1 + d, 2 + d)), THE_TOLERANCE);
     }
 
     [Fact]
@@ -106,8 +106,8 @@ public class Geom2dGridEval_LineTest
         Direction2D aDir = new(1, 2);
         for (int i = 1; i <= 6; ++i)
         {
-            Assert.Equal(aDir.X(), aGrid.Value(i).D1.X(), THE_TOLERANCE);
-            Assert.Equal(aDir.Y(), aGrid.Value(i).D1.Y(), THE_TOLERANCE);
+            Assert.Equal(aDir.X, aGrid.Value(i).D1.X, THE_TOLERANCE);
+            Assert.Equal(aDir.Y, aGrid.Value(i).D1.Y, THE_TOLERANCE);
         }
     }
 
@@ -124,9 +124,9 @@ public class Geom2dGridEval_LineTest
 
         for (int i = 1; i <= 6; ++i)
         {
-            Assert.Equal(0.0, aGridD2.Value(i).D2.Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, aGridD3.Value(i).D2.Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, aGridD3.Value(i).D3.Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGridD2.Value(i).D2.Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, aGridD3.Value(i).D2.Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, aGridD3.Value(i).D3.Magnitude, THE_TOLERANCE);
         }
     }
 }
@@ -156,20 +156,20 @@ public class Geom2dGridEval_CircleTest
 
         NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
-        Assert.Equal(2.0, aGrid.Value(1).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(1).Y(), THE_TOLERANCE);
+        Assert.Equal(2.0, aGrid.Value(1).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Y, THE_TOLERANCE);
 
-        Assert.Equal(0.0, aGrid.Value(2).X(), THE_TOLERANCE);
-        Assert.Equal(2.0, aGrid.Value(2).Y(), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2).X, THE_TOLERANCE);
+        Assert.Equal(2.0, aGrid.Value(2).Y, THE_TOLERANCE);
 
-        Assert.Equal(-2.0, aGrid.Value(3).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(3).Y(), THE_TOLERANCE);
+        Assert.Equal(-2.0, aGrid.Value(3).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(3).Y, THE_TOLERANCE);
 
-        Assert.Equal(0.0, aGrid.Value(4).X(), THE_TOLERANCE);
-        Assert.Equal(-2.0, aGrid.Value(4).Y(), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(4).X, THE_TOLERANCE);
+        Assert.Equal(-2.0, aGrid.Value(4).Y, THE_TOLERANCE);
 
-        Assert.Equal(2.0, aGrid.Value(5).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(5).Y(), THE_TOLERANCE);
+        Assert.Equal(2.0, aGrid.Value(5).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(5).Y, THE_TOLERANCE);
     }
 
     [Fact]
@@ -185,8 +185,8 @@ public class Geom2dGridEval_CircleTest
         for (int i = 1; i <= 9; ++i)
         {
             aGeomCircle.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -203,9 +203,9 @@ public class Geom2dGridEval_CircleTest
         for (int i = 1; i <= 9; ++i)
         {
             aGeomCircle.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -222,10 +222,10 @@ public class Geom2dGridEval_CircleTest
         for (int i = 1; i <= 9; ++i)
         {
             aGeomCircle.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude, THE_TOLERANCE);
         }
     }
 }
@@ -254,7 +254,7 @@ public class Geom2dGridEval_BSplineCurveTest
         for (int i = 1; i <= 11; ++i)
         {
             Point2D aExpected = aCurve.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -271,8 +271,8 @@ public class Geom2dGridEval_BSplineCurveTest
 
         NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
 
-        Assert.Equal(0.0, aGrid.Value(1).Distance(new Point2D(0, 0)), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(2).Distance(new Point2D(4, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).DistanceTo(new Point2D(0, 0)), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2).DistanceTo(new Point2D(4, 0)), THE_TOLERANCE);
     }
 
     [Fact]
@@ -288,8 +288,8 @@ public class Geom2dGridEval_BSplineCurveTest
         for (int i = 1; i <= 11; ++i)
         {
             aCurve.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -306,9 +306,9 @@ public class Geom2dGridEval_BSplineCurveTest
         for (int i = 1; i <= 11; ++i)
         {
             aCurve.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -325,10 +325,10 @@ public class Geom2dGridEval_BSplineCurveTest
         for (int i = 1; i <= 11; ++i)
         {
             aCurve.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -344,7 +344,7 @@ public class Geom2dGridEval_BSplineCurveTest
 
         for (int i = 1; i <= 11; ++i)
         {
-            Assert.Equal(0.0, aGrid.Value(i).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -379,7 +379,7 @@ public class Geom2dGridEval_BSplineCurveTest
         for (int i = 1; i <= 31; ++i)
         {
             Point2D aExpected = aCurve.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 }
@@ -409,7 +409,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 11; ++i)
         {
             Point2D aExpected = aGeomLine.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -429,7 +429,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 17; ++i)
         {
             Point2D aExpected = aGeomCircle.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -449,7 +449,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 13; ++i)
         {
             Point2D aExpected = anEllipse.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -469,7 +469,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 11; ++i)
         {
             Point2D aExpected = aHypr.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -489,7 +489,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 11; ++i)
         {
             Point2D aExpected = aParab.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -509,7 +509,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 21; ++i)
         {
             Point2D aExpected = aCurve.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -534,7 +534,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 11; ++i)
         {
             Point2D aExpected = aBezier.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -554,7 +554,7 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 6; ++i)
         {
             Point2D aExpected = anOffset.Value(aParams.Value(i));
-            Assert.Equal(0.0, aGrid.Value(i).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -570,7 +570,7 @@ public class Geom2dGridEval_CurveTest
 
         NCollection_Array1<Point2D> aGrid = anEval.EvaluateGrid(aParams);
         Assert.Equal(11, aGrid.Size());
-        Assert.Equal(0.0, aGrid.Value(1).X(), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).X, THE_TOLERANCE);
     }
 
     [Fact]
@@ -601,8 +601,8 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 9; ++i)
         {
             aGeomCircle.D1(aParams.Value(i), out Point2D aPnt, out Vector2D aD1);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -621,9 +621,9 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 11; ++i)
         {
             aCurve.D2(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -642,10 +642,10 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 11; ++i)
         {
             aCurve.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -665,10 +665,10 @@ public class Geom2dGridEval_CurveTest
         for (int i = 1; i <= 9; ++i)
         {
             anOffset.D3(aParams.Value(i), out Point2D aPnt, out Vector2D aD1, out Vector2D aD2, out Vector2D aD3);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude, THE_TOLERANCE);
         }
     }
 }

@@ -180,7 +180,7 @@ public static class Exploration
         var ite = new Iterator(e, cumOri);
         while (ite.More())
         {
-            if (ite.Value().Orientation() == Forward)
+            if (ite.Value().Orientation == Forward)
             {
                 return ShapeCasts.Vertex(ite.Value());
             }
@@ -199,7 +199,7 @@ public static class Exploration
         var ite = new Iterator(e, cumOri);
         while (ite.More())
         {
-            if (ite.Value().Orientation() == Reversed)
+            if (ite.Value().Orientation == Reversed)
             {
                 return ShapeCasts.Vertex(ite.Value());
             }
@@ -227,12 +227,12 @@ public static class Exploration
         while (ite.More())
         {
             Shape v = ite.Value();
-            if (v.Orientation() == Forward)
+            if (v.Orientation == Forward)
             {
                 vfirst = ShapeCasts.Vertex(v);
                 isFirstDefined = true;
             }
-            else if (v.Orientation() == Reversed)
+            else if (v.Orientation == Reversed)
             {
                 vlast = ShapeCasts.Vertex(v);
                 isLastDefined = true;
@@ -267,7 +267,7 @@ public static class Exploration
         while (it.More())
         {
             Edge e = ShapeCasts.Edge(it.Value());
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 Exploration.Vertices(e, out v2, out v1);
             }
@@ -277,8 +277,8 @@ public static class Exploration
             }
 
             // add or remove in the vertex map
-            v1.Orientation(Forward);
-            v2.Orientation(Reversed);
+            v1.Orient(Forward);
+            v2.Orient(Reversed);
             if (!vmap.Add(v1))
             {
                 vmap.Remove(v1);
@@ -304,7 +304,7 @@ public static class Exploration
             // OCCT walks the map for the FORWARD key, then for the REVERSED one; with two keys the order doesn't matter
             foreach (Shape key in vmap)
             {
-                if (key.Orientation() == Forward)
+                if (key.Orientation == Forward)
                 {
                     vfirst = ShapeCasts.Vertex(key);
                     break;
@@ -313,7 +313,7 @@ public static class Exploration
 
             foreach (Shape key in vmap)
             {
-                if (key.Orientation() == Reversed)
+                if (key.Orientation == Reversed)
                 {
                     vlast = ShapeCasts.Vertex(key);
                     break;

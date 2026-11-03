@@ -50,7 +50,7 @@ public partial class UnifySameDomain
         Point2D p2d;
         Vector2D vec;
         bAcurve2d.D1(bAcurve2d.FirstParameter(), out p2d, out vec);
-        return (Math.Abs(vec.Y()) > Math.Abs(vec.X()));
+        return (Math.Abs(vec.Y) > Math.Abs(vec.X));
     }
 
     private static bool IsLinear(EdgeCurveAdaptor bAcurve, ref Direction3D dir)
@@ -59,7 +59,7 @@ public partial class UnifySameDomain
 
         if (type == CurveKind.Line)
         {
-            dir = bAcurve.Line().Position().Direction();
+            dir = bAcurve.Line().Position.Direction;
             return true;
         }
 
@@ -192,7 +192,7 @@ public partial class UnifySameDomain
         Point2D firstPnt   = pCurve.Value(first);
         Point2D lastPnt    = pCurve.Value(last);
         var      vec        = new Vector2D(firstPnt, lastPnt);
-        double   sqLen      = vec.SquareMagnitude();
+        double   sqLen      = vec.SquareMagnitude;
         double   sqParamLen = (last - first) * (last - first);
         if (Math.Abs(sqLen - sqParamLen) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -211,7 +211,7 @@ public partial class UnifySameDomain
         {
             double   param = first + i * delta;
             Point2D pnt   = pCurve.Value(param);
-            double   dist  = lin.Distance(pnt);
+            double   dist  = lin.DistanceTo(pnt);
             if (dist > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
@@ -276,11 +276,11 @@ public partial class UnifySameDomain
             if (v1.IsSame(v2) && !Tool.Degenerated(edge))
             {
                 Point2D midP2d = bAcurve2d.Value((bAcurve2d.FirstParameter() + bAcurve2d.LastParameter()) / 2);
-                sqDist = firstP2d.SquareDistance(midP2d);
+                sqDist = firstP2d.SquareDistanceTo(midP2d);
             }
             else
             {
-                sqDist = firstP2d.SquareDistance(lastP2d);
+                sqDist = firstP2d.SquareDistanceTo(lastP2d);
             }
 
             minSize = Min(minSize, sqDist);
@@ -414,7 +414,7 @@ public partial class UnifySameDomain
         var    curveAdaptor = new EdgeCurve2DAdaptor(edge, refFace);
         double firstParam   = curveAdaptor.FirstParameter();
         double lastParam    = curveAdaptor.LastParameter();
-        if (edge.Orientation() != Forward)
+        if (edge.Orientation != Forward)
         {
             (firstParam, lastParam) = (lastParam, firstParam);
         }
@@ -506,7 +506,7 @@ public partial class UnifySameDomain
             }
             curPCurve = new TrimmedCurve2D(curPCurve, edgeStartParam, edgeEndParam);
             edgeNewPCurve[currentEdge] = curPCurve;
-            if (currentEdge.Orientation() == Reversed)
+            if (currentEdge.Orientation == Reversed)
             {
                 (edgeStartParam, edgeEndParam) = (edgeEndParam, edgeStartParam);
             }
@@ -553,7 +553,7 @@ public partial class UnifySameDomain
                         return false;
                     }
                     pCurve = new TrimmedCurve2D(pCurve, edgeStartParam, edgeEndParam);
-                    if (edge.Orientation() == Reversed)
+                    if (edge.Orientation == Reversed)
                     {
                         (edgeStartParam, edgeEndParam) = (edgeEndParam, edgeStartParam);
                     }
@@ -583,8 +583,8 @@ public partial class UnifySameDomain
                     }
                     edgeNewPCurve[edge] = pCurve;
                     currentEdge = edge;
-                    Orientation curOr = global::Kerf.Engine.Topology.TopAbs.Compose(orientation, currentEdge.Orientation());
-                    curParam = (curOr == Forward) ? pCurve.LastParameter() : pCurve.FirstParameter();
+                    Orientation curOr = global::Kerf.Engine.Topology.TopAbs.Compose(orientation, currentEdge.Orientation);
+                    curParam = (curOr == Forward) ? pCurve.LastParameter : pCurve.FirstParameter;
                     curPoint = pCurve.Value(curParam);
                     break;
                 }
@@ -641,7 +641,7 @@ public partial class UnifySameDomain
         for (; itl.More(); itl.Next())
         {
             Face face = ShapeCasts.Face(itl.Value());
-            face.Orientation(Forward);
+            face.Orient(Forward);
             bool e1found = false, e2found = false;
             var  explo   = new Explorer(face, ShapeType.Edge);
             for (; explo.More(); explo.Next())
@@ -650,12 +650,12 @@ public partial class UnifySameDomain
                 if (edge.IsSame(edge1))
                 {
                     e1found         = true;
-                    orOfE1OnFace = edge.Orientation();
+                    orOfE1OnFace = edge.Orientation;
                 }
                 if (edge.IsSame(edge2))
                 {
                     e2found         = true;
-                    orOfE2OnFace = edge.Orientation();
+                    orOfE2OnFace = edge.Orientation;
                 }
                 if (e1found && e2found)
                 {
@@ -703,7 +703,7 @@ public partial class UnifySameDomain
         {
             for (int ind2 = 0; ind2 < 2; ind2++)
             {
-                double sqDist = pointsOnEdge1[ind1].SquareDistance(pointsOnEdge2[ind2]);
+                double sqDist = pointsOnEdge1[ind1].SquareDistanceTo(pointsOnEdge2[ind2]);
                 if (sqDist < minSqDist)
                 {
                     minSqDist = sqDist;
@@ -747,10 +747,10 @@ public partial class UnifySameDomain
             if ((firstVertex.IsSame(curVertex) || lastVertex.IsSame(curVertex))
                 && Tool.IsClosed(edge, frefFace))
             {
-                double   param = (edge.Orientation() == Forward) ? param1 : param2;
+                double   param = (edge.Orientation == Forward) ? param1 : param2;
                 Point2D point = pc.Value(param);
-                double   udiff = Math.Abs(point.X() - curPoint.X());
-                double   vdiff = Math.Abs(point.Y() - curPoint.Y());
+                double   udiff = Math.Abs(point.X - curPoint.X);
+                double   vdiff = Math.Abs(point.Y - curPoint.Y);
                 if ((uperiod != 0.0 && udiff > uperiod / 2) || (vperiod != 0.0 && vdiff > vperiod / 2))
                 {
                     if (lastVertex.IsSame(curVertex) || (uperiod != 0.0 && vperiod != 0.0))
@@ -759,8 +759,8 @@ public partial class UnifySameDomain
                     }
                     else
                     {
-                        Orientation ori = edge.Orientation();
-                        edge.Orientation(Forward);
+                        Orientation ori = edge.Orientation;
+                        edge.Orient(Forward);
                         Curve2D? pc1 = Tool.CurveOnSurface(edge, frefFace, out param1, out param2);
                         edge.Reverse();
                         Curve2D? pc2 = Tool.CurveOnSurface(edge, frefFace, out param1, out param2);
@@ -770,13 +770,13 @@ public partial class UnifySameDomain
                         double        tol  = Tool.Tolerance(edge);
                         Surface? surf = Tool.Surface(frefFace, out Placement loc);
                         bb.UpdateEdge(edge, pc2, pc1, surf, loc, tol);
-                        edge.Orientation(ori);
+                        edge.Orient(ori);
                     }
                     pc    = Tool.CurveOnSurface(edge, frefFace, out param1, out param2)!;
-                    param = (edge.Orientation() == Forward) ? param1 : param2;
+                    param = (edge.Orientation == Forward) ? param1 : param2;
                     point = pc.Value(param);
-                    udiff = Math.Abs(point.X() - curPoint.X());
-                    vdiff = Math.Abs(point.Y() - curPoint.Y());
+                    udiff = Math.Abs(point.X - curPoint.X);
+                    vdiff = Math.Abs(point.Y - curPoint.Y);
                 }
                 if ((uperiod == 0.0 || udiff < uperiod / 2) && (vperiod == 0.0 || vdiff < vperiod / 2))
                 {
@@ -793,7 +793,7 @@ public partial class UnifySameDomain
         if (!seamEdge.IsNull)
         {
             Curve2D pc    = Tool.CurveOnSurface(seamEdge, frefFace, out double param1, out double param2)!;
-            double       param = (seamEdge.Orientation() == Forward) ? param2 : param1;
+            double       param = (seamEdge.Orientation == Forward) ? param2 : param1;
             nextPoint        = pc.Value(param);
         }
     }
@@ -804,8 +804,8 @@ public partial class UnifySameDomain
     {
         double[] coefs = SameSurfCoefs;
 
-        s1.Bounds(out double uf1, out double ul1, out double vf1, out double vl1);
-        s2.Bounds(out double uf2, out double ul2, out double vf2, out double vl2);
+        s1.ParameterBounds(out double uf1, out double ul1, out double vf1, out double vl1);
+        s2.ParameterBounds(out double uf2, out double ul2, out double vf2, out double vl2);
         double pTol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(uf1))
         {
@@ -941,13 +941,13 @@ public partial class UnifySameDomain
         Surface refSurf = Tool.Surface(refFace)!;
         if (refSurf is TrimmedSurface refRTS)
         {
-            refSurf = refRTS.BasisSurface();
+            refSurf = refRTS.BasisSurface;
         }
 
         Surface surfFace = Tool.Surface(face)!;
         if (surfFace is TrimmedSurface faceRTS)
         {
-            surfFace = faceRTS.BasisSurface();
+            surfFace = faceRTS.BasisSurface;
         }
 
         bool toModify = false, toTranslate = false, toRotate = false, X_Reverse = false, Y_Reverse = false,
@@ -961,25 +961,25 @@ public partial class UnifySameDomain
 
         if (elemSurfFace is not null && elemRefSurf is not null)
         {
-            CoordinateSystem axisOfSurfFace = elemSurfFace.Position();
-            CoordinateSystem axisOfRefSurf  = elemRefSurf.Position();
+            CoordinateSystem axisOfSurfFace = elemSurfFace.Position;
+            CoordinateSystem axisOfRefSurf  = elemRefSurf.Position;
 
-            Point3D originRefSurf = axisOfRefSurf.Location();
+            Point3D originRefSurf = axisOfRefSurf.Location;
 
-            double param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(axisOfSurfFace.Axis(), originRefSurf);
+            double param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(axisOfSurfFace.Axis, originRefSurf);
 
             if (Math.Abs(param) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 translation = -param;
             }
 
-            Direction3D vdirSurfFace = axisOfSurfFace.Direction();
-            Direction3D vdirRefSurf  = axisOfRefSurf.Direction();
-            Direction3D xdirSurfFace = axisOfSurfFace.XDirection();
-            Direction3D xdirRefSurf  = axisOfRefSurf.XDirection();
+            Direction3D vdirSurfFace = axisOfSurfFace.Direction;
+            Direction3D vdirRefSurf  = axisOfRefSurf.Direction;
+            Direction3D xdirSurfFace = axisOfSurfFace.XDirection;
+            Direction3D xdirRefSurf  = axisOfRefSurf.XDirection;
 
-            Direction3D crossProd1 = axisOfRefSurf.XDirection() ^ axisOfRefSurf.YDirection();
-            Direction3D crossProd2 = axisOfSurfFace.XDirection() ^ axisOfSurfFace.YDirection();
+            Direction3D crossProd1 = axisOfRefSurf.XDirection ^ axisOfRefSurf.YDirection;
+            Direction3D crossProd2 = axisOfSurfFace.XDirection ^ axisOfSurfFace.YDirection;
             if (crossProd1 * crossProd2 < 0.0)
             {
                 X_Reverse = true;
@@ -994,7 +994,7 @@ public partial class UnifySameDomain
             if (!X_Reverse && !Y_Reverse)
             {
                 Direction3D dirRef = vdirRefSurf;
-                if (!axisOfRefSurf.Direct())
+                if (!axisOfRefSurf.IsDirect)
                 {
                     dirRef = dirRef.Reversed();
                 }
@@ -1002,7 +1002,7 @@ public partial class UnifySameDomain
             }
             else
             {
-                angle = xdirRefSurf.Angle(xdirSurfFace);
+                angle = xdirRefSurf.AngleTo(xdirSurfFace);
             }
 
             toRotate = (Math.Abs(angle) > global::Kerf.Engine.Foundation.Precision.PConfusion());
@@ -1040,7 +1040,7 @@ public partial class UnifySameDomain
                 continue;
             }
 
-            Orientation or = edge.Orientation();
+            Orientation or = edge.Orientation;
 
             double        fpar, lpar;
             Curve2D? pCurveOnRef = Tool.CurveOnSurface(edge, refFace, out fpar, out lpar);
@@ -1057,7 +1057,7 @@ public partial class UnifySameDomain
 
             var pCurves    = new Curve2D?[2];
             var newPCurves = new Curve2D?[2];
-            edge.Orientation(Forward);
+            edge.Orient(Forward);
             pCurves[0] = Tool.CurveOnSurface(edge, face, out fpar, out lpar);
             edge.Reverse();
             pCurves[1] = Tool.CurveOnSurface(edge, face, out fpar, out lpar);
@@ -1104,7 +1104,7 @@ public partial class UnifySameDomain
                 }
             }
 
-            edge.Orientation(Forward);
+            edge.Orient(Forward);
 
             if (nbPcurves == 1)
             {
@@ -1116,13 +1116,13 @@ public partial class UnifySameDomain
                 else
                 {
                     // check: may be it is the same pcurve
-                    refSurf.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+                    refSurf.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
                     double   uperiod      = (refSurf.IsUClosed) ? (umax - umin) : 0.0;
                     double   vperiod      = (refSurf.IsVClosed) ? (vmax - vmin) : 0.0;
                     Point2D p2dOnPCurve1 = pCurveOnRef!.Value(fpar);
                     Point2D p2dOnPCurve2 = newPCurves[0]!.Value(fpar);
-                    if ((uperiod != 0.0 && Math.Abs(p2dOnPCurve1.X() - p2dOnPCurve2.X()) > uperiod / 2)
-                        || (vperiod != 0.0 && Math.Abs(p2dOnPCurve1.Y() - p2dOnPCurve2.Y()) > vperiod / 2))
+                    if ((uperiod != 0.0 && Math.Abs(p2dOnPCurve1.X - p2dOnPCurve2.X) > uperiod / 2)
+                        || (vperiod != 0.0 && Math.Abs(p2dOnPCurve1.Y - p2dOnPCurve2.Y) > vperiod / 2))
                     {
                         Curve2D? nullPCurve = null;
                         bb.UpdateEdge(edge, nullPCurve, refFace, 0.0);
@@ -1164,7 +1164,7 @@ public partial class UnifySameDomain
         for (int i = 1; i <= faces.Length(); i++)
         {
             Face face = ShapeCasts.Face(faces[i]);
-            face.Orientation(Forward);
+            face.Orient(Forward);
             if (face.IsSame(refFace))
             {
                 continue;
@@ -1234,27 +1234,27 @@ public partial class UnifySameDomain
 
         if (inSurface is CylindricalSurface gc)
         {
-            outCylinder = gc.Cylinder();
+            outCylinder = gc.Cylinder;
             isCylinder     = true;
         }
         else if (inSurface is RevolutionSurface rs)
         {
-            Curve3D basis = rs.BasisCurve();
+            Curve3D basis = rs.BasisCurve;
 
             while (basis is TrimmedCurve3D tc)
             {
-                basis = tc.BasisCurve();
+                basis = tc.BasisCurve;
             }
 
             if (basis is LineCurve3D basisLine)
             {
-                Direction3D dir      = rs.Direction();
-                Direction3D basisDir = basisLine.Position().Direction();
+                Direction3D dir      = rs.Direction;
+                Direction3D basisDir = basisLine.Position.Direction;
                 if (basisDir.IsParallel(dir, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // basis line is parallel to the revolution axis: it is a cylinder
-                    Point3D loc   = rs.Location();
-                    double r     = basisLine.Lin().Distance(loc);
+                    Point3D loc   = rs.Location;
+                    double r     = basisLine.Line.DistanceTo(loc);
                     var    cylAx = new CoordinateSystem(loc, dir);
 
                     outCylinder = new Cylinder(cylAx, r);
@@ -1264,22 +1264,22 @@ public partial class UnifySameDomain
         }
         else if (inSurface is ExtrusionSurface les)
         {
-            Curve3D basis = les.BasisCurve();
+            Curve3D basis = les.BasisCurve;
 
             while (basis is TrimmedCurve3D tc)
             {
-                basis = tc.BasisCurve();
+                basis = tc.BasisCurve;
             }
 
             if (basis is CircleCurve3D basisCircle)
             {
-                Direction3D dir      = les.Direction();
-                Direction3D basisDir = basisCircle.Position().Direction();
+                Direction3D dir      = les.Direction;
+                Direction3D basisDir = basisCircle.Position.Direction;
                 if (basisDir.IsParallel(dir, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // basis circle is normal to the extrusion axis: it is a cylinder
-                    Point3D loc   = basisCircle.Location();
-                    double r     = basisCircle.Radius();
+                    Point3D loc   = basisCircle.Location;
+                    double r     = basisCircle.Radius;
                     var    cylAx = new CoordinateSystem(loc, dir);
 
                     outCylinder = new Cylinder(cylAx, r);
@@ -1297,7 +1297,7 @@ public partial class UnifySameDomain
     private static Surface? ClearRts(Surface? aSurface)
     {
         var rts = aSurface as TrimmedSurface;
-        return rts is null ? aSurface : rts.BasisSurface();
+        return rts is null ? aSurface : rts.BasisSurface;
     }
 
     // Gets the normal to surface by the given parameter on edge. Returns True if normal was computed.
@@ -1311,7 +1311,7 @@ public partial class UnifySameDomain
             // Find the edge in the face: it will have correct orientation
             var         edgeInFace = new Edge();
             Face aFace        = face;
-            aFace.Orientation(Forward);
+            aFace.Orient(Forward);
             var explo = new Explorer(aFace, ShapeType.Edge);
             for (; explo.More(); explo.Next())
             {
@@ -1344,21 +1344,21 @@ public partial class UnifySameDomain
         //
         // get D1
         Surface s = Tool.Surface(face, out Placement loc)!;
-        s.D1(p2d.X(), p2d.Y(), out Point3D p3d, out Vector3D du, out Vector3D dv);
+        s.D1(p2d.X, p2d.Y, out Point3D p3d, out Vector3D du, out Vector3D dv);
         //
         // compute normal
         Vector3D vNormal = du.Crossed(dv);
-        if (vNormal.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (vNormal.Magnitude < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;
         }
         //
-        if (face.Orientation() == Reversed)
+        if (face.Orientation == Reversed)
         {
             vNormal = vNormal.Reversed();
         }
         //
-        vNormal = vNormal.Transformed(loc.Transformation());
+        vNormal = vNormal.Transformed(loc.Transformation);
         normal = new Direction3D(vNormal);
         return true;
     }
@@ -1375,7 +1375,7 @@ public partial class UnifySameDomain
         s1 = Tool.Surface(aFace, out Placement l1);
         s2 = Tool.Surface(aCheckedFace, out Placement l2);
 
-        if (ReferenceEquals(s1, s2) && l1 == l2)
+        if (ReferenceEquals(s1, s2) && l1.IsEqual(l2))
         {
             return true;
         }
@@ -1397,8 +1397,8 @@ public partial class UnifySameDomain
                 Plane3D pln1 = planarityChecker1.Plan();
                 Plane3D pln2 = planarityChecker2.Plan();
 
-                if (pln1.Position().Direction().IsParallel(pln2.Position().Direction(), angTol)
-                    && pln1.Distance(pln2) < linTol)
+                if (pln1.Position.Direction.IsParallel(pln2.Position.Direction, angTol)
+                    && pln1.DistanceTo(pln2) < linTol)
                 {
                     PlaneSurface planeOfFaces;
                     if (facePlaneMap.ContainsKey(aFace))
@@ -1458,16 +1458,16 @@ public partial class UnifySameDomain
             var cyl2 = new Cylinder();
             if (GetCylinder(s1, ref cyl1) && GetCylinder(s2, ref cyl2))
             {
-                if (Math.Abs(cyl1.Radius() - cyl2.Radius()) < linTol)
+                if (Math.Abs(cyl1.Radius - cyl2.Radius) < linTol)
                 {
-                    Direction3D dir1 = cyl1.Position().Direction();
-                    Direction3D dir2 = cyl2.Position().Direction();
+                    Direction3D dir1 = cyl1.Position.Direction;
+                    Direction3D dir2 = cyl2.Position.Direction;
                     if (dir1.IsParallel(dir2, global::Kerf.Engine.Foundation.Precision.Angular()))
                     {
-                        Point3D loc1  = cyl1.Location();
-                        Point3D loc2  = cyl2.Location();
+                        Point3D loc1  = cyl1.Location;
+                        Point3D loc2  = cyl2.Location;
                         var    vec12 = new Vector3D(loc1, loc2);
-                        if (vec12.SquareMagnitude() < linTol * linTol
+                        if (vec12.SquareMagnitude < linTol * linTol
                             || vec12.IsParallel(new Vector3D(dir1), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             return true;
@@ -1580,7 +1580,7 @@ public partial class UnifySameDomain
             {
                 continue;
             }
-            if (edge.Orientation() != Forward && edge.Orientation() != Reversed)
+            if (edge.Orientation != Forward && edge.Orientation != Reversed)
             {
                 continue;
             }
@@ -1645,10 +1645,10 @@ public partial class UnifySameDomain
                     }
                     else
                     {
-                        double   param = (curEdge.Orientation() == Forward) ? lpar : fpar;
+                        double   param = (curEdge.Orientation == Forward) ? lpar : fpar;
                         Vector2D curDir = pCurve.EvalD1(param).D1;
                         curDir = curDir.Normalized();
-                        if (curEdge.Orientation() == Reversed)
+                        if (curEdge.Orientation == Reversed)
                         {
                             curDir = curDir.Reversed();
                         }
@@ -1665,14 +1665,14 @@ public partial class UnifySameDomain
                                 // edge has no pcurve on the reference face, skip it as a direction candidate
                                 continue;
                             }
-                            param = (edge.Orientation() == Forward) ? fpar : lpar;
+                            param = (edge.Orientation == Forward) ? fpar : lpar;
                             Vector2D dir = pCurve.EvalD1(param).D1;
                             dir = dir.Normalized();
-                            if (edge.Orientation() == Reversed)
+                            if (edge.Orientation == Reversed)
                             {
                                 dir = dir.Reversed();
                             }
-                            double angle = curDir.Angle(dir);
+                            double angle = curDir.AngleTo(dir);
                             if (angle < minAngle)
                             {
                                 minAngle = angle;

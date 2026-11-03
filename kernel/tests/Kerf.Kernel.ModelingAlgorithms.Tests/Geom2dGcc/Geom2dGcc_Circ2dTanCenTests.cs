@@ -62,12 +62,12 @@ public class Geom2dGcc_Circ2dTanCenTests
         global::Kerf.Engine.Construction.Constraints.Circ2dTanCen aCirc = new(global::Kerf.Engine.Construction.Constraints.Geom2dGcc.Unqualified(anEll), new CartesianPoint2(1, 1), 1e-9);
         Assert.True(aCirc.IsDone);
         Assert.Equal(1, aCirc.SolutionCount);
-        Assert.Equal(1.0, aCirc.ThisSolution(1).Radius(), 1e-9);
+        Assert.Equal(1.0, aCirc.ThisSolution(1).Radius, 1e-9);
         Assert.False(aCirc.IsTheSame1(1));
         aCirc.Tangency1(1, out double aParSol, out double aParArg, out Point2D aPnt);
         Assert.Equal(0.0, aParSol);
-        Assert.True(anEll.Value(aParArg).Distance(aPnt) < 1e-9);
-        Assert.Equal(1.0, aPnt.Distance(new Point2D(1, 1)), 1e-9);
+        Assert.True(anEll.Value(aParArg).DistanceTo(aPnt) < 1e-9);
+        Assert.Equal(1.0, aPnt.DistanceTo(new Point2D(1, 1)), 1e-9);
         aCirc.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
         Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Unqualified, aQ);
     }

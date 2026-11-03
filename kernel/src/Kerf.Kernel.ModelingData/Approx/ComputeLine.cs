@@ -103,7 +103,7 @@ public class ComputeLine<MultiLine, LineTool>
             while (indp <= poles.Upper())
             {
                 firstVec = new Vector3D(poles[1], poles[indp++]);
-                double length = firstVec.Magnitude();
+                double length = firstVec.Magnitude;
                 if (length > Constants.Resolution())
                 {
                     firstVec /= length;
@@ -115,7 +115,7 @@ public class ComputeLine<MultiLine, LineTool>
             while (indp <= poles.Upper())
             {
                 secondVec = new Vector3D(midPnt, poles[indp]);
-                double length = secondVec.Magnitude();
+                double length = secondVec.Magnitude;
                 if (length <= Constants.Resolution())
                 {
                     indp++;
@@ -145,7 +145,7 @@ public class ComputeLine<MultiLine, LineTool>
                         Point3D pnt1 = tabP[1];
                         LineTool.Value(line, k + 1, tabP);
                         Point3D pnt2 = tabP[1];
-                        if (firstPnt.SquareDistance(pnt1) <= sqTol3d || firstPnt.SquareDistance(pnt2) <= sqTol3d)
+                        if (firstPnt.SquareDistanceTo(pnt1) <= sqTol3d || firstPnt.SquareDistanceTo(pnt2) <= sqTol3d)
                         {
                             loopFound = false;
                             break;
@@ -178,7 +178,7 @@ public class ComputeLine<MultiLine, LineTool>
                     Point3D prevPnt = tabP[1];
                     LineTool.Value(line, k, tabP);
                     Point3D curPnt = tabP[1];
-                    double sqDist = prevPnt.SquareDistance(curPnt);
+                    double sqDist = prevPnt.SquareDistanceTo(curPnt);
                     if (sqDist > maxSqDist)
                     {
                         maxSqDist = sqDist;
@@ -205,7 +205,7 @@ public class ComputeLine<MultiLine, LineTool>
                             Point2D prevPnt = tabP2d[indcur - 1];
                             LineTool.Value(line, k, tabP2d);
                             Point2D curPnt = tabP2d[indcur - 1];
-                            double sqDist = prevPnt.SquareDistance(curPnt);
+                            double sqDist = prevPnt.SquareDistanceTo(curPnt);
                             if (sqDist > maxSqDist)
                             {
                                 maxSqDist = sqDist;
@@ -222,7 +222,7 @@ public class ComputeLine<MultiLine, LineTool>
             multiCurve.Curve(1, poles2d);
             double sqNormToler = Epsilon(1.0) * Epsilon(1.0);
             Vector2D firstVec = new(poles2d[1], poles2d[2]), secondVec = new();
-            double vecSqNorm = firstVec.SquareMagnitude();
+            double vecSqNorm = firstVec.SquareMagnitude;
             if (vecSqNorm < sqNormToler)
             {
                 indbad = indfirst + 1;
@@ -234,7 +234,7 @@ public class ComputeLine<MultiLine, LineTool>
             for (int k = 3; k <= poles2d.Upper(); k++)
             {
                 secondVec = secondVec.WithXY(poles2d[k].XY() - midPnt.XY());
-                vecSqNorm = secondVec.SquareMagnitude();
+                vecSqNorm = secondVec.SquareMagnitude;
                 if (vecSqNorm < sqNormToler)
                 {
                     indbad = indfirst + k - 1;
@@ -264,7 +264,7 @@ public class ComputeLine<MultiLine, LineTool>
                         Point2D pnt1 = tabP2d[1];
                         LineTool.Value(line, k + 1, tabP2d);
                         Point2D pnt2 = tabP2d[1];
-                        if (firstPnt.SquareDistance(pnt1) <= sqTol3d || firstPnt.SquareDistance(pnt2) <= sqTol3d)
+                        if (firstPnt.SquareDistanceTo(pnt1) <= sqTol3d || firstPnt.SquareDistanceTo(pnt2) <= sqTol3d)
                         {
                             loopFound = false;
                             break;
@@ -299,7 +299,7 @@ public class ComputeLine<MultiLine, LineTool>
                         Point2D prevPnt = tabP2d[indcur];
                         LineTool.Value(line, k, tabP2d);
                         Point2D curPnt = tabP2d[indcur];
-                        double sqDist = prevPnt.SquareDistance(curPnt);
+                        double sqDist = prevPnt.SquareDistanceTo(curPnt);
                         if (sqDist > maxSqDist)
                         {
                             maxSqDist = sqDist;
@@ -375,9 +375,9 @@ public class ComputeLine<MultiLine, LineTool>
                 j = 1;
                 for (i = tabV.Lower(); i <= tabV.Upper(); i++)
                 {
-                    v[j] = tabV[i].X();
-                    v[j + 1] = tabV[i].Y();
-                    v[j + 2] = tabV[i].Z();
+                    v[j] = tabV[i].X;
+                    v[j + 1] = tabV[i].Y;
+                    v[j + 2] = tabV[i].Z;
                     j += 3;
                 }
             }
@@ -386,8 +386,8 @@ public class ComputeLine<MultiLine, LineTool>
                 j = nbP3d * 3 + 1;
                 for (i = tabV2d.Lower(); i <= tabV2d.Upper(); i++)
                 {
-                    v[j] = tabV2d[i].X();
-                    v[j + 1] = tabV2d[i].Y();
+                    v[j] = tabV2d[i].X;
+                    v[j + 1] = tabV2d[i].Y;
                     j += 2;
                 }
             }
@@ -411,17 +411,17 @@ public class ComputeLine<MultiLine, LineTool>
             for (i = 1; i <= nbP3d; i++)
             {
                 c.D1(i, 0.0, out myP, out myV);
-                v[j] = myV.X();
-                v[j + 1] = myV.Y();
-                v[j + 2] = myV.Z();
+                v[j] = myV.X;
+                v[j + 1] = myV.Y;
+                v[j + 2] = myV.Z;
                 j += 3;
             }
             j = nbP3d * 3 + 1;
             for (i = nbP3d + 1; i <= nbP3d + nbP2d; i++)
             {
                 c.D1(i, 0.0, out myP2d, out myV2d);
-                v[j] = myV2d.X();
-                v[j + 1] = myV2d.Y();
+                v[j] = myV2d.X;
+                v[j + 1] = myV2d.Y;
                 j += 2;
             }
         }
@@ -465,9 +465,9 @@ public class ComputeLine<MultiLine, LineTool>
                 j = 1;
                 for (i = tabV.Lower(); i <= tabV.Upper(); i++)
                 {
-                    v[j] = tabV[i].X();
-                    v[j + 1] = tabV[i].Y();
-                    v[j + 2] = tabV[i].Z();
+                    v[j] = tabV[i].X;
+                    v[j + 1] = tabV[i].Y;
+                    v[j + 2] = tabV[i].Z;
                     j += 3;
                 }
             }
@@ -476,8 +476,8 @@ public class ComputeLine<MultiLine, LineTool>
                 j = nbP3d * 3 + 1;
                 for (i = tabV2d.Lower(); i <= tabV2d.Upper(); i++)
                 {
-                    v[j] = tabV2d[i].X();
-                    v[j + 1] = tabV2d[i].Y();
+                    v[j] = tabV2d[i].X;
+                    v[j + 1] = tabV2d[i].Y;
                     j += 2;
                 }
             }
@@ -501,17 +501,17 @@ public class ComputeLine<MultiLine, LineTool>
             for (i = 1; i <= nbP3d; i++)
             {
                 c.D1(i, 1.0, out myP, out myV);
-                v[j] = myV.X();
-                v[j + 1] = myV.Y();
-                v[j + 2] = myV.Z();
+                v[j] = myV.X;
+                v[j + 1] = myV.Y;
+                v[j + 2] = myV.Z;
                 j += 3;
             }
             j = nbP3d * 3 + 1;
             for (i = nbP3d + 1; i <= nbP3d + nbP2d; i++)
             {
                 c.D1(i, 1.0, out myP2d, out myV2d);
-                v[j] = myV2d.X();
-                v[j + 1] = myV2d.Y();
+                v[j] = myV2d.X;
+                v[j + 1] = myV2d.Y;
                 j += 2;
             }
         }
@@ -574,7 +574,7 @@ public class ComputeLine<MultiLine, LineTool>
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
         else
@@ -583,7 +583,7 @@ public class ComputeLine<MultiLine, LineTool>
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
         return (s * lambda);
@@ -646,7 +646,7 @@ public class ComputeLine<MultiLine, LineTool>
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
         else
@@ -655,7 +655,7 @@ public class ComputeLine<MultiLine, LineTool>
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
 
@@ -1235,13 +1235,13 @@ public class ComputeLine<MultiLine, LineTool>
                 for (j = 1; j <= nbP3d; j++)
                 {
                     Point3D p1 = tabP[j], p2 = tabPP[j];
-                    dist += p2.SquareDistance(p1);
+                    dist += p2.SquareDistanceTo(p1);
                 }
                 for (j = 1; j <= nbP2d; j++)
                 {
                     Point2D p12d = tabP2d[j], p22d = tabPP2d[j];
 
-                    dist += p22d.SquareDistance(p12d);
+                    dist += p22d.SquareDistanceTo(p12d);
                 }
 
                 dist = Math.Sqrt(dist);

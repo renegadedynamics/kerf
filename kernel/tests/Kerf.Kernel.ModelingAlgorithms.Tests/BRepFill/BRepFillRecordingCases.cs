@@ -99,9 +99,9 @@ internal static class BRepFillRecordingCases
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16");
 
-    private static string Hex(Point3D theP) => Hex(theP.X()) + "," + Hex(theP.Y()) + "," + Hex(theP.Z());
+    private static string Hex(Point3D theP) => Hex(theP.X) + "," + Hex(theP.Y) + "," + Hex(theP.Z);
 
-    private static string Hex(Vector3D theV) => Hex(theV.X()) + "," + Hex(theV.Y()) + "," + Hex(theV.Z());
+    private static string Hex(Vector3D theV) => Hex(theV.X) + "," + Hex(theV.Y) + "," + Hex(theV.Z);
 
     private static string Hex(Matrix3x3 theM)
     {
@@ -239,7 +239,7 @@ internal static class BRepFillRecordingCases
             double dx = r.R(-theWiggle, theWiggle);
             double dy = r.R(-theWiggle, theWiggle);
             double dz = r.R(-theWiggle, theWiggle);
-            aPoles[i] = new Point3D(aB.X() + dx, aB.Y() + dy, aB.Z() + dz);
+            aPoles[i] = new Point3D(aB.X + dx, aB.Y + dy, aB.Z + dz);
         }
         NCollection_Array1<double> aK = new(1, 2);
         aK[1] = 0;
@@ -304,12 +304,12 @@ internal static class BRepFillRecordingCases
         for (int i = 0; i < aNE; i++)
         {
             Point3D aQ = Pnt(r, theScale);
-            aP.Add(new Point3D(aQ.X() + 2 * theScale * i, aQ.Y(), aQ.Z()));
+            aP.Add(new Point3D(aQ.X + 2 * theScale * i, aQ.Y, aQ.Z));
         }
         if (!aClosed)
         {
             Point3D aQ = Pnt(r, theScale);
-            aP.Add(new Point3D(aQ.X() + 2 * theScale * aNE, aQ.Y(), aQ.Z()));
+            aP.Add(new Point3D(aQ.X + 2 * theScale * aNE, aQ.Y, aQ.Z));
         }
         foreach (Point3D aQ in aP)
         {
@@ -326,7 +326,7 @@ internal static class BRepFillRecordingCases
             {
                 Point3D aM = new(aP[a].XYZ() * 0.5 + aP[b].XYZ() * 0.5);
                 Point3D aQ = Pnt(r, theScale * 0.5);
-                aC = new MakeArcOfCircle(aP[a], new Point3D(aM.X() + aQ.X(), aM.Y() + aQ.Y(), aM.Z() + aQ.Z()), aP[b]).Value();
+                aC = new MakeArcOfCircle(aP[a], new Point3D(aM.X + aQ.X, aM.Y + aQ.Y, aM.Z + aQ.Z), aP[b]).Value();
             }
             else if (aTyp == 2)
             {
@@ -386,7 +386,7 @@ internal static class BRepFillRecordingCases
             case 2:
                 {
                     Direction3D aD = Dir(r);
-                    Direction3D aN = new CoordinateSystem(new Point3D(0, 0, 0), aD).XDirection();
+                    Direction3D aN = new CoordinateSystem(new Point3D(0, 0, 0), aD).XDirection;
                     aT = new Fixed(new Vector3D(aD), new Vector3D(aN));
                     break;
                 }
@@ -681,7 +681,7 @@ internal static class BRepFillRecordingCases
         foreach (Point2D aQ in aUV)
         {
             Vertex aVx = new();
-            B.MakeVertex(ref aVx, aS.Value(aQ.X(), aQ.Y()), global::Kerf.Engine.Foundation.Precision.Confusion());
+            B.MakeVertex(ref aVx, aS.Value(aQ.X, aQ.Y), global::Kerf.Engine.Foundation.Precision.Confusion());
             aV.Add(aVx);
         }
         MakeWire aMW = new();
@@ -697,7 +697,7 @@ internal static class BRepFillRecordingCases
             }
             else
             {
-                anE = new MakeEdge(aL, aS, aV[i], aV[i + 1], 0, aD.Magnitude()).InternalEdge();
+                anE = new MakeEdge(aL, aS, aV[i], aV[i + 1], 0, aD.Magnitude).InternalEdge();
                 BrepLibrary.BuildCurves3d(anE);
             }
             aMW.Add(anE);
@@ -893,7 +893,7 @@ internal static class BRepFillRecordingCases
         double ox = r.R(-0.5, 0.5);
         double oy = r.R(-0.5, 0.5);
         double oz = r.R(-0.5, 0.5);
-        Point3D aO = new(aQ.X() + ox, aQ.Y() + oy, aQ.Z() + oz);
+        Point3D aO = new(aQ.X + ox, aQ.Y + oy, aQ.Z + oz);
         Shape aSec;
         if (aSecKind == 0)
         {

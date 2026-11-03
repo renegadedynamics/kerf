@@ -64,8 +64,8 @@ public class Geom2d_DirectionTest
     {
         Direction2 aDir   = new Direction2(1.0, 0.0);
         Direction2D                aGpDir = aDir.Dir2d();
-        Assert.Equal(1.0, aGpDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aGpDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aGpDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aGpDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

@@ -110,13 +110,13 @@ public sealed partial class ImpImpIntersection
 
             internal StCoeffsValue(in Cylinder cyl1, in Cylinder cyl2)
             {
-                _mVecA1 = new math_Vector(-cyl1.Radius() * cyl1.XAxis().Direction().XYZ());
-                _mVecA2 = new math_Vector(cyl2.Radius() * cyl2.XAxis().Direction().XYZ());
-                _mVecB1 = new math_Vector(-cyl1.Radius() * cyl1.YAxis().Direction().XYZ());
-                _mVecB2 = new math_Vector(cyl2.Radius() * cyl2.YAxis().Direction().XYZ());
-                _mVecC1 = new math_Vector(cyl1.Axis().Direction().XYZ());
-                _mVecC2 = new math_Vector(cyl2.Axis().Direction().XYZ().Reversed());
-                _mVecD = new math_Vector(cyl2.Location().XYZ() - cyl1.Location().XYZ());
+                _mVecA1 = new math_Vector(-cyl1.Radius * cyl1.XAxis.Direction.XYZ());
+                _mVecA2 = new math_Vector(cyl2.Radius * cyl2.XAxis.Direction.XYZ());
+                _mVecB1 = new math_Vector(-cyl1.Radius * cyl1.YAxis.Direction.XYZ());
+                _mVecB2 = new math_Vector(cyl2.Radius * cyl2.YAxis.Direction.XYZ());
+                _mVecC1 = new math_Vector(cyl1.Axis.Direction.XYZ());
+                _mVecC2 = new math_Vector(cyl2.Axis.Direction.XYZ().Reversed());
+                _mVecD = new math_Vector(cyl2.Location.XYZ() - cyl1.Location.XYZ());
 
                 CoupleOfEquation foundCouple = CoupleOfEquation.COENONE;
 
@@ -1074,8 +1074,8 @@ public sealed partial class ImpImpIntersection
                                          ref BoundRange outBoxS1,
                                          ref BoundRange outBoxS2)
         {
-            Direction3D d1 = cy1.Axis().Direction(), d2 = cy2.Axis().Direction();
-            double r1 = cy1.Radius(), r2 = cy2.Radius();
+            Direction3D d1 = cy1.Axis.Direction, d2 = cy2.Axis.Direction;
+            double r1 = cy1.Radius, r2 = cy2.Radius;
 
             // Let consider a parallelogram. Its edges are parallel to aD1 and aD2.
             // Its altitudes are equal to 2*aR1 and 2*aR2 (diameters of the cylinders).
@@ -1101,7 +1101,7 @@ public sealed partial class ImpImpIntersection
 
             // V-parameters of intersection point of the axes (in case of skewed axes,
             // see comment above).
-            ExtremaLineLine(cy1.Axis(), cy2.Axis(), cosA, sqSinA, out double v01, out double v02);
+            ExtremaLineLine(cy1.Axis, cy2.Axis, cosA, sqSinA, out double v01, out double v02);
 
             outBoxS1.Add(v01 - hdv1);
             outBoxS1.Add(v01 + hdv1);
@@ -1147,9 +1147,9 @@ public sealed partial class ImpImpIntersection
                                         out double par1,
                                         out double par2)
     {
-        Direction3D d1 = c1.Direction(), d2 = c2.Direction();
+        Direction3D d1 = c1.Direction, d2 = c2.Direction;
 
-        Xyz l1L2 = c2.Location().XYZ() - c1.Location().XYZ();
+        Xyz l1L2 = c2.Location.XYZ() - c1.Location.XYZ();
         double d1L = d1.XYZ().Dot(l1L2), d2L = d2.XYZ().Dot(l1L2);
 
         par1 = (d1L - cosA * d2L) / sqSinA;
@@ -1437,11 +1437,11 @@ public sealed partial class ImpImpIntersection
                 if (nbSol == 1)
                 { // Cylinders are tangent to each other by line
                     linsol = inter.Line(1);
-                    ptref = linsol.Location();
+                    ptref = linsol.Location;
 
                     // Radius-vectors
-                    Direction3D crb1 = new(new Vector3D(ptref, cy1.Location()));
-                    Direction3D crb2 = new(new Vector3D(ptref, cy2.Location()));
+                    Direction3D crb1 = new(new Vector3D(ptref, cy1.Location));
+                    Direction3D crb2 = new(new Vector3D(ptref, cy2.Location));
 
                     // outer normal lines
                     Vector3D norm1 = quad1.Normale(ptref);
@@ -1476,7 +1476,7 @@ public sealed partial class ImpImpIntersection
                     }
                     else
                     {
-                        if (cy1.Radius() < cy2.Radius())
+                        if (cy1.Radius < cy2.Radius)
                         {
                             if (norm1.Dot(new Vector3D(crb1)) > 0.0)
                             {
@@ -1526,8 +1526,8 @@ public sealed partial class ImpImpIntersection
                     for (i = 1; i <= nbSol; i++)
                     {
                         linsol = inter.Line(i);
-                        ptref = linsol.Location();
-                        Vector3D lsd = new(linsol.Direction());
+                        ptref = linsol.Location;
+                        Vector3D lsd = new(linsol.Direction);
 
                         // Theoretically, qwe = +/- 1.0.
                         double qwe = lsd.DotCross(quad2.Normale(ptref), quad1.Normale(ptref));
@@ -2006,10 +2006,10 @@ public sealed partial class ImpImpIntersection
     {
         // Check if the point is in the domain or can be inscribed in the domain after adjusting.
 
-        Point3D pt1 = quad1.Value(pntOnSurf1.X(), pntOnSurf1.Y()),
-            pt2 = quad2.Value(pntOnSurf2.X(), pntOnSurf2.Y());
+        Point3D pt1 = quad1.Value(pntOnSurf1.X, pntOnSurf1.Y),
+            pt2 = quad2.Value(pntOnSurf2.X, pntOnSurf2.Y);
 
-        double u1par = pntOnSurf1.X();
+        double u1par = pntOnSurf1.X;
 
         // aU1par always increases. Therefore, we must reduce its
         // value in order to continue creation of WLine.
@@ -2048,19 +2048,19 @@ public sealed partial class ImpImpIntersection
             }
         }
 
-        double u2par = pntOnSurf2.X();
+        double u2par = pntOnSurf2.X;
         if (!InscribePoint(ufSurf2, ulSurf2, ref u2par, tol2D, periodOfSurf1, false))
         {
             return false;
         }
 
-        double v1par = pntOnSurf1.Y();
+        double v1par = pntOnSurf1.Y;
         if ((v1par - vlSurf1 > tol2D) || (vfSurf1 - v1par > tol2D))
         {
             return false;
         }
 
-        double v2par = pntOnSurf2.Y();
+        double v2par = pntOnSurf2.Y;
         if ((v2par - vlSurf2 > tol2D) || (vfSurf2 - v2par > tol2D))
         {
             return false;
@@ -2481,7 +2481,7 @@ public sealed partial class ImpImpIntersection
             // Thus, taking into account the number of valuable digits (15), we provide reliable
             // computations with an error not exceeding R/100."
             const double f = 1.0e+5;
-            double maxV1Range = f * cyl1.Radius(), maxV2Range = f * cyl2.Radius();
+            double maxV1Range = f * cyl1.Radius, maxV2Range = f * cyl2.Radius;
             if ((rangeS1.Delta() > maxV1Range) || (rangeS2.Delta() > maxV2Range))
             {
                 return IntStatus.IntStatus_InfiniteSectionCurve;
@@ -2497,8 +2497,8 @@ public sealed partial class ImpImpIntersection
             //  one radius is much smaller than the other and small cylinder is "inside" big one.
             const double toMuchCoeff = 3.0;
             const double critAngle = M_PI / 18.0; // 10 degree
-            double r1 = cyl1.Radius();
-            double r2 = cyl2.Radius();
+            double r1 = cyl1.Radius;
+            double r2 = cyl2.Radius;
             double rmin = 0.0, rmax = 0.0;
             // Radius criterion
             if (r1 > toMuchCoeff * r2)
@@ -2516,15 +2516,15 @@ public sealed partial class ImpImpIntersection
                 break;
             }
             // Angle criterion
-            Axis3D ax1 = cyl1.Axis();
-            Axis3D ax2 = cyl2.Axis();
+            Axis3D ax1 = cyl1.Axis;
+            Axis3D ax2 = cyl2.Axis;
             if (!ax1.IsNormal(ax2, critAngle))
             {
                 break;
             }
             // Placement criterion
             Line3D l1 = new(ax1), l2 = new(ax2);
-            double dist = l1.Distance(l2);
+            double dist = l1.DistanceTo(l2);
             if (dist > rmax / 2.0)
             {
                 break;
@@ -2565,7 +2565,7 @@ public sealed partial class ImpImpIntersection
         {
             du = 2.0 * M_PI / nbMaxPoints;
         }
-        int nbPts = Min(RealToInt((uSurf1l - uSurf1f) / du) + 1, RealToInt(20.0 * cyl1.Radius()));
+        int nbPts = Min(RealToInt((uSurf1l - uSurf1f) / du) + 1, RealToInt(20.0 * cyl1.Radius));
         int nbPoints = Min(Max(nbMinPoints, nbPts), nbMaxPoints);
         double stepMin = Max(tol2D, global::Kerf.Engine.Foundation.Precision.PConfusion()),
             stepMax = (uSurf1l - uSurf1f > M_PI / 100.0)
@@ -3404,7 +3404,7 @@ public sealed partial class ImpImpIntersection
 
                                     Vector3D dir = new(p1, p2);
 
-                                    if (dir.SquareMagnitude() < sqTol3D)
+                                    if (dir.SquareMagnitude < sqTol3D)
                                     {
                                         break;
                                     }
@@ -3419,14 +3419,14 @@ public sealed partial class ImpImpIntersection
                                     Vector3D n2 = quad2.Normale(p2);
                                     Vector3D tg = n1.Crossed(n2);
 
-                                    if (tg.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                                    if (tg.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                                     {
                                         // Tangent zone
                                         break;
                                     }
 
                                     // Check of the bending
-                                    double angle = dir.Angle(tg);
+                                    double angle = dir.AngleTo(tg);
 
                                     if (angle > M_PI_2)
                                     {

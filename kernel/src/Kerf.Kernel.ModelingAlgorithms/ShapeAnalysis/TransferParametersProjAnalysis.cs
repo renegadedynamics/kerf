@@ -131,7 +131,7 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
             {
                 if (resKnots.Value(j) < maxPar)
                 {
-                    resKnots.SetValue(j, (to2d ? _ac3d.LastParameter() : _curve.LastParameter()) - (len - j) * preci);
+                    resKnots.SetValue(j, (to2d ? _ac3d.LastParameter() : _curve.LastParameter) - (len - j) * preci);
                 }
                 else
                 {
@@ -170,18 +170,18 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
         double              ppar;
         if (to2d)
         {
-            Point3D                   p1   = _curve!.Value(param).Transformed(_location.Inverted().Transformation());
+            Point3D                   p1   = _curve!.Value(param).Transformed(_location.Inverted().Transformation);
             SurfaceAdaptorBase        adS  = _ac3d.GetSurface()!;
             CurveAdaptor2D      ac2d = new CurveAdaptor2D(_curve2d!, first, last);
             CurveOnSurface ad1  = new CurveOnSurface(ac2d, adS);
             projDev = sac.Project(ad1, p1, _precision, out _, out ppar); // pdn
-            linDev  = p1.Distance(ad1.Value(linPar));
+            linDev  = p1.DistanceTo(ad1.Value(linPar));
         }
         else
         {
-            Point3D p1 = _ac3d.Value(param).Transformed(_location.Transformation());
+            Point3D p1 = _ac3d.Value(param).Transformed(_location.Transformation);
             projDev   = sac.Project(_curve!, p1, _precision, out _, out ppar, first, last, false);
-            linDev    = p1.Distance(_curve!.Value(linPar));
+            linDev    = p1.DistanceTo(_curve!.Value(linPar));
         }
 
         if (linDev <= projDev || (linDev < _precision && linDev <= 2 * projDev))
@@ -230,11 +230,11 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
     {
         if (crv is TrimmedCurve2D tmpT)
         {
-            return CorrectParameter(tmpT.BasisCurve(), param);
+            return CorrectParameter(tmpT.BasisCurve, param);
         }
         else if (crv is OffsetCurve2D tmpO)
         {
-            return CorrectParameter(tmpO.BasisCurve(), param);
+            return CorrectParameter(tmpO.BasisCurve, param);
         }
         else if (crv is BSplineCurve2D bspline)
         {
@@ -286,15 +286,15 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
 
         if (is2d)
         {
-            p1 = _ac3d.Value(firstPar).Transformed(_location.Transformation());
-            if (Kerf.Engine.Foundation.Precision.IsInfinite(p1.X()) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Y()) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Z()))
+            p1 = _ac3d.Value(firstPar).Transformed(_location.Transformation);
+            if (Kerf.Engine.Foundation.Precision.IsInfinite(p1.X) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Y) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Z))
             {
                 b.SameRange(newEdge, false);
                 return;
             }
 
-            p2 = _ac3d.Value(lastPar).Transformed(_location.Transformation());
-            if (Kerf.Engine.Foundation.Precision.IsInfinite(p2.X()) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Y()) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Z()))
+            p2 = _ac3d.Value(lastPar).Transformed(_location.Transformation);
+            if (Kerf.Engine.Foundation.Precision.IsInfinite(p2.X) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Y) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Z))
             {
                 b.SameRange(newEdge, false);
                 return;
@@ -310,14 +310,14 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
         else
         {
             p1 = _curve!.Value(firstPar);
-            if (Kerf.Engine.Foundation.Precision.IsInfinite(p1.X()) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Y()) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Z()))
+            if (Kerf.Engine.Foundation.Precision.IsInfinite(p1.X) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Y) || Kerf.Engine.Foundation.Precision.IsInfinite(p1.Z))
             {
                 b.SameRange(newEdge, false);
                 return;
             }
 
             p2 = _curve.Value(lastPar);
-            if (Kerf.Engine.Foundation.Precision.IsInfinite(p2.X()) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Y()) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Z()))
+            if (Kerf.Engine.Foundation.Precision.IsInfinite(p2.X) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Y) || Kerf.Engine.Foundation.Precision.IsInfinite(p2.Z))
             {
                 b.SameRange(newEdge, false);
                 return;
@@ -333,7 +333,7 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
 
         bool                useLinearFirst = (alpha < preci);
         bool                useLinearLast  = (1 - beta < preci);
-        Placement     edgeLoc        = _edge.Location();
+        Placement     edgeLoc        = _edge.Placement;
         CurveAnalysis sac            = new CurveAnalysis();
         double              ppar1, ppar2;
         // OCCT.NET: frozen: ChangeCurves() throws on a frozen edge, as BRep_Builder does
@@ -368,8 +368,8 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
                     double            first = toGC.First();
                     double            last  = toGC.Last();
                     double            len   = last - first;
-                    Point3D            ploc1 = p1.Transformed(loc.Transformation());
-                    Point3D            ploc2 = p2.Transformed(loc.Transformation());
+                    Point3D            ploc1 = p1.Transformed(loc.Transformation);
+                    Point3D            ploc2 = p2.Transformed(loc.Transformation);
                     CurveAdaptor gac   = new CurveAdaptor(c3d, first, last);
                     // CATIA bplseitli.model FAC1155 - Copy: protection for degenerated edges(3d case for
                     // symmetry)
@@ -381,8 +381,8 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
 
                     Point3D pos1 = c3d.Value(linFirst);
                     Point3D pos2 = c3d.Value(linLast);
-                    double d01  = pos1.Distance(ploc1);
-                    double d02  = pos2.Distance(ploc2);
+                    double d01  = pos1.DistanceTo(ploc1);
+                    double d02  = pos2.DistanceTo(ploc2);
                     if (useLinearFirst || useLinear || d01 <= dist1 || (d01 < _precision && d01 <= 2 * dist1))
                     {
                         ppar1 = linFirst;
@@ -442,8 +442,8 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
 
                 // gp_Pnt p1 = Ad1.Value(prevPar);
                 // gp_Pnt p2 = Ad1.Value(currPar);
-                Point3D ploc1 = p1.Transformed(loc.Transformation());
-                Point3D ploc2 = p2.Transformed(loc.Transformation());
+                Point3D ploc1 = p1.Transformed(loc.Transformation);
+                Point3D ploc2 = p2.Transformed(loc.Transformation);
                 // CATIA bplseitli.model FAC1155 - Copy: protection for degenerated edges
                 double linFirst = first + alpha * len;
                 double linLast  = first + beta * len;
@@ -465,8 +465,8 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
 
                 Point3D pos1 = ad1.Value(linFirst);
                 Point3D pos2 = ad1.Value(linLast);
-                double d01  = pos1.Distance(ploc1);
-                double d02  = pos2.Distance(ploc2);
+                double d01  = pos1.DistanceTo(ploc1);
+                double d02  = pos2.DistanceTo(ploc2);
                 if (localLinearFirst || useLinear || d01 <= dist1 || (d01 < _precision && d01 <= 2 * dist1))
                 {
                     ppar1 = linFirst;
@@ -574,13 +574,13 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
     internal static Vertex InternalCopyNMVertex(in Vertex v, in Edge toedge, in Edge fromedge)
     {
         Vertex anewV = new Vertex();
-        if (v.Orientation() != Internal && v.Orientation() != External)
+        if (v.Orientation != Internal && v.Orientation != External)
         {
             return anewV;
         }
 
         Curve3D? c1 = Tool.Curve(fromedge, out Placement fromLoc, out double f1, out double l1);
-        fromLoc        = fromLoc.Predivided(v.Location());
+        fromLoc        = fromLoc.Predivided(v.Placement);
 
         Curve3D? c2 = Tool.Curve(toedge, out double f2, out double l2);
 
@@ -628,7 +628,7 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
                         continue;
                     }
 
-                    Placement l       = fromGC.Location().Predivided(v.Location());
+                    Placement l       = fromGC.Location().Predivided(v.Placement);
                     Surface?   surface1 = fromGC.Surface();
                     Curve2D?   ac2d1    = fromGC.PCurve();
                     if (pr.IsPointOnCurveOnSurface(ac2d1, surface1, l))
@@ -678,7 +678,7 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
         // update tolerance
         bool            needUpdate = false;
         Point3D          pv        = ((BrepTVertex)anewV.TShape()!).Pnt();
-        Placement toLoc      = toedge.Location();
+        Placement toLoc      = toedge.Placement;
         // OCCT.NET: frozen: OCCT iterates toedge's ChangeCurves(); it only reads them
         NCollection_List<CurveRepresentation>.Iterator toitcr =
             new NCollection_List<CurveRepresentation>.Iterator(((BrepTEdge)toedge.TShape()!).Curves());
@@ -690,14 +690,14 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
                 continue;
             }
 
-            Placement l = (toLoc * toGC.Location()).Predivided(v.Location());
+            Placement l = (toLoc * toGC.Location()).Predivided(v.Placement);
             // aL.Predivided(theV.Location());
             Surface surface1 = toGC.Surface()!;
             Curve2D ac2d1    = toGC.PCurve()!;
             Point2D     p2d     = ac2d1.Value(apar);
-            Point3D       p3d     = surface1.Value(p2d.X(), p2d.Y());
-            p3d = p3d.Transformed(l.Transformation());
-            double adist = pv.Distance(p3d);
+            Point3D       p3d     = surface1.Value(p2d.X, p2d.Y);
+            p3d = p3d.Transformed(l.Transformation);
+            double adist = pv.DistanceTo(p3d);
             if (adist > tol)
             {
                 tol       = adist;
@@ -717,14 +717,14 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
     internal static Vertex InternalCopyNMVertex(in Vertex v, in Face toFace, in Face fromFace)
     {
         Vertex anewV = new Vertex();
-        if (v.Orientation() != Internal && v.Orientation() != External)
+        if (v.Orientation != Internal && v.Orientation != External)
         {
             return anewV;
         }
 
         Surface? fromSurf = Tool.Surface(fromFace, out Placement fromLoc);
         Surface? toSurf   = Tool.Surface(toFace, out Placement toLoc);
-        fromLoc                = fromLoc.Predivided(v.Location());
+        fromLoc                = fromLoc.Predivided(v.Placement);
 
         anewV      = ShapeCasts.Vertex(v.EmptyCopied());
         Point3D apv = Tool.Pnt(anewV);
@@ -773,13 +773,13 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
         }
 
         double tol = Tool.Tolerance(anewV);
-        if (!hasRepr || (fromSurf != toSurf || fromLoc != toLoc))
+        if (!hasRepr || (fromSurf != toSurf || !fromLoc.IsEqual(toLoc)))
         {
             Surface?         s        = Tool.Surface(toFace);
             SurfaceAnalysis surfTool = new SurfaceAnalysis(s);
             Point2D              p2d      = surfTool.ValueOfUV(apv, Kerf.Engine.Foundation.Precision.Confusion());
-            apar1                           = p2d.X();
-            apar2                           = p2d.Y();
+            apar1                           = p2d.X;
+            apar2                           = p2d.Y;
 
             if (tol < surfTool.Gap())
             {

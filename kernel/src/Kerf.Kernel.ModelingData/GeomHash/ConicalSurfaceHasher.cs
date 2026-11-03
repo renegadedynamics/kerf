@@ -21,9 +21,9 @@ internal readonly struct ConicalSurfaceHasher(double theCompTolerance, double th
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(cone.Position().Ax2()),
-            HashUtils.Hash((long)HashUtils.Round(cone.RefRadius() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(cone.SemiAngle() * factor))
+            axisHasher.Hash(cone.Position.Frame),
+            HashUtils.Hash((long)HashUtils.Round(cone.RefRadius * factor)),
+            HashUtils.Hash((long)HashUtils.Round(cone.SemiAngle * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,8 +32,8 @@ internal readonly struct ConicalSurfaceHasher(double theCompTolerance, double th
     public bool IsEqual(ConicalSurface cone1, ConicalSurface cone2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(cone1.Position().Ax2(), cone2.Position().Ax2())
-               && Math.Abs(cone1.RefRadius() - cone2.RefRadius()) <= CompTolerance
-               && Math.Abs(cone1.SemiAngle() - cone2.SemiAngle()) <= CompTolerance;
+        return axisHasher.IsEqual(cone1.Position.Frame, cone2.Position.Frame)
+               && Math.Abs(cone1.RefRadius - cone2.RefRadius) <= CompTolerance
+               && Math.Abs(cone1.SemiAngle - cone2.SemiAngle) <= CompTolerance;
     }
 }

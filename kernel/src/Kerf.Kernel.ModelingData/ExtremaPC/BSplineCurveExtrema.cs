@@ -31,7 +31,7 @@ public sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve
     {
         _curve = curve;
         _adaptor = new CurveAdaptor(curve);
-        _domain = new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(curve.FirstParameter(), curve.LastParameter());
+        _domain = new global::Kerf.Engine.Numerics.Utilities.MathUtils.Domain1D(curve.FirstParameter, curve.LastParameter);
         BuildGrid();
     }
 
@@ -107,7 +107,7 @@ public sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve
         double theUMin = _domain.Min;
         double theUMax = _domain.Max;
 
-        int degree = _curve.Degree();
+        int degree = _curve.Degree;
         NCollection_Array1<double> knots = _curve.InternalKnots();
 
         // Use multiplier*(degree+1) samples per span for accurate extrema detection.

@@ -79,9 +79,9 @@ public static class Deflection
         {
             double distF = firstVertex.IsNull
                                 ? -1.0
-                                : Tool.Pnt(firstVertex).Distance(curve!.Value(firstParam));
+                                : Tool.Pnt(firstVertex).DistanceTo(curve!.Value(firstParam));
             double distL =
-                lastVertex.IsNull ? -1.0 : Tool.Pnt(lastVertex).Distance(curve!.Value(lastParam));
+                lastVertex.IsNull ? -1.0 : Tool.Pnt(lastVertex).DistanceTo(curve!.Value(lastParam));
 
             double vertexAdjustDistance = Max(distF, distL);
 

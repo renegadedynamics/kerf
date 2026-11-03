@@ -46,7 +46,7 @@ internal static partial class Build123dPhase7Capture
 
     private static Shape PUnwrap(Shape theShape)
     {
-        while (theShape.ShapeType() == ShapeType.Compound && theShape.ChildCount == 1)
+        while (theShape.Type == ShapeType.Compound && theShape.ChildCount == 1)
         {
             theShape = new Iterator(theShape).Value();
         }
@@ -158,11 +158,11 @@ internal static partial class Build123dPhase7Capture
         for (int i = 1; i <= anIn.Count; i++)
         {
             Shape aS = anIn[i - 1];
-            if (!IsTracked(aS.ShapeType()))
+            if (!IsTracked(aS.Type))
             {
                 continue;
             }
-            aSb.Append(i).Append(":G[").Append(Sorted(theMaker.Generated(aS).Where(x => IsTracked(x.ShapeType())).Select(x => Index(aRes, x))))
+            aSb.Append(i).Append(":G[").Append(Sorted(theMaker.Generated(aS).Where(x => IsTracked(x.Type)).Select(x => Index(aRes, x))))
                .Append("]M[").Append(Sorted(theMaker.Modified(aS).Select(x => Index(aRes, x)))).Append(']')
                .Append(theMaker.IsDeleted(aS) ? "D" : "").Append(aRes.Contains(aS) ? "P" : "").Append('\n');
         }

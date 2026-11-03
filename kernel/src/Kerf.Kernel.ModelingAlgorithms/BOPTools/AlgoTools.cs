@@ -182,9 +182,9 @@ public static partial class AlgoTools
                 if (mnRegular.Contains(s))
                 {
                     bRegular = false;
-                    s.Orientation(Forward);
+                    s.Orient(Forward);
                     lcs.Append(s);
-                    s.Orientation(Reversed);
+                    s.Orient(Reversed);
                     lcs.Append(s);
                 }
                 else
@@ -466,7 +466,7 @@ public static partial class AlgoTools
             Shape ef1 = exp.Current();
             if (ef1.IsSame(anE))
             {
-                or = ef1.Orientation();
+                or = ef1.Orientation;
                 break;
             }
         }
@@ -572,7 +572,7 @@ public static partial class AlgoTools
                                                       IntersectionContext context)
     {
         Containment state = Unknown;
-        ShapeType type = s.ShapeType();
+        ShapeType type = s.Type;
 
         switch (type)
         {
@@ -770,7 +770,7 @@ public static partial class AlgoTools
                 continue;
             }
             //
-            or = e.Orientation();
+            or = e.Orientation;
             if (or == Internal)
             {
                 continue;
@@ -788,7 +788,7 @@ public static partial class AlgoTools
                 // aE is internal edge on aLF.First()
                 Face f1 = ShapeCasts.Face(lf.First());
                 GetEdgeOnFace(e, f1, ref e1);
-                if (e1.Orientation() != Internal)
+                if (e1.Orientation != Internal)
                 {
                     continue;
                 }
@@ -883,17 +883,17 @@ public static partial class AlgoTools
         CoupleOfShape cs1 = new(), cs2 = new();
         //
         GetEdgeOnFace(edge, face1, ref e1);
-        if (e1.Orientation() == Internal)
+        if (e1.Orientation == Internal)
         {
             e2 = e1;
-            e1.Orientation(Forward);
-            e2.Orientation(Reversed);
+            e1.Orient(Forward);
+            e2.Orient(Reversed);
         }
         else if (face1 == face2)
         {
             e2 = e1;
-            e1.Orientation(Forward);
-            e2.Orientation(Reversed);
+            e1.Orient(Forward);
+            e2.Orient(Reversed);
         }
         else
         {
@@ -951,10 +951,10 @@ public static partial class AlgoTools
         //
         AlgoTools2D.EdgeTangent(e1, t, ref vTgt);
         Direction3D dTgt = new(vTgt), dTgt2;
-        or = e1.Orientation();
+        or = e1.Orientation;
         //
         pl = new PlaneSurface(px, dTgt);
-        pl.Bounds(out double umin, out double usup, out double vmin, out double vsup);
+        pl.ParameterBounds(out double umin, out double usup, out double vmin, out double vsup);
         projPL.Init(pl, umin, usup, vmin, vsup);
         //
         bool bSmallFaces = false;
@@ -976,7 +976,7 @@ public static partial class AlgoTools
             Edge e2 = ShapeCasts.Edge(cs.Shape1());
             Face f2 = ShapeCasts.Face(cs.Shape2());
             //
-            dTgt2 = (e2.Orientation() == or) ? dTgt : dTgt.Reversed();
+            dTgt2 = (e2.Orientation == or) ? dTgt : dTgt.Reversed();
             bIsComputed = GetFaceDir(e2, f2, px, t, dTgt2, bSmallFaces, out _, out dbf2, context, projPL, dt3D);
             // OCCT_DEBUG only: a message when the bi-normal direction is incorrect.
             // Angle
@@ -1030,7 +1030,7 @@ public static partial class AlgoTools
         Explorer exp = new();
         //
         bFound = false;
-        or1 = e1.Orientation();
+        or1 = e1.Orientation;
         or1C = global::Kerf.Engine.Topology.TopAbs.Reverse(or1);
         //
         exp.Init(f2, ShapeType.Edge);
@@ -1039,7 +1039,7 @@ public static partial class AlgoTools
             Edge ef2 = ShapeCasts.Edge(exp.Current());
             if (ef2.IsSame(e1))
             {
-                or2 = ef2.Orientation();
+                or2 = ef2.Orientation;
                 if (or2 == or1C)
                 {
                     e2 = ef2;
@@ -1198,7 +1198,7 @@ public static partial class AlgoTools
         bRet = false;
         error = 0; // the edge and face forms always set it
         //
-        type = sp.ShapeType();
+        type = sp.Type;
         switch (type)
         {
             case ShapeType.Edge:
@@ -1267,7 +1267,7 @@ public static partial class AlgoTools
         Surface sfOr = Tool.Surface(fSr)!;
         if (ReferenceEquals(sfSp, sfOr))
         {
-            return fSp.Orientation() != fSr.Orientation();
+            return fSp.Orientation != fSr.Orientation;
         }
         //
         bool bDone = false;
@@ -1308,14 +1308,14 @@ public static partial class AlgoTools
         //
         // Compute normal direction of the split face
         Direction3D dnfSp = new();
-        bDone = AlgoTools3D.GetNormalToSurface(sfSp, p2DFSp.X(), p2DFSp.Y(), ref dnfSp);
+        bDone = AlgoTools3D.GetNormalToSurface(sfSp, p2DFSp.X, p2DFSp.Y, ref dnfSp);
         if (!bDone)
         {
             error = 2;
             return bDone;
         }
         //
-        if (fSp.Orientation() == Reversed)
+        if (fSp.Orientation == Reversed)
         {
             dnfSp = dnfSp.Reversed();
         }
@@ -1342,7 +1342,7 @@ public static partial class AlgoTools
             return bDone;
         }
         //
-        if (fSr.Orientation() == Reversed)
+        if (fSr.Orientation == Reversed)
         {
             dnfOr = dnfOr.Reversed();
         }
@@ -1386,7 +1386,7 @@ public static partial class AlgoTools
         // If the curves are the same, compare orientations only
         if (ReferenceEquals(cSp, cOr))
         {
-            return eSp.Orientation() != eOr.Orientation();
+            return eSp.Orientation != eOr.Orientation;
         }
 
         // Find valid range of the split edge, to ensure that the point for computing
@@ -1465,14 +1465,14 @@ public static partial class AlgoTools
         //
         f = ShapeCasts.Face(aFace);
         ff = f;
-        ff.Orientation(Forward);
+        ff.Orient(Forward);
         //
         s = 0.0;
         itW.Initialize(aW);
         for (; itW.More(); itW.Next())
         {
             Edge e = ShapeCasts.Edge(itW.Value());
-            or = e.Orientation();
+            or = e.Orientation;
             if (or != Forward && or != Reversed)
             {
                 continue;
@@ -1612,7 +1612,7 @@ public static partial class AlgoTools
                 c2Dx1 = aIC.SecondCurve2d();
             }
             //
-            ffwd.Orientation(Forward);
+            ffwd.Orient(Forward);
             //
             c2D = c2Dx1;
             if (c2D is null)
@@ -1667,7 +1667,7 @@ public static partial class AlgoTools
         //
         p1 = Tool.Pnt(aV1);
         //
-        d2 = p1.SquareDistance(aP2);
+        d2 = p1.SquareDistanceTo(aP2);
         if (d2 > tolSum2)
         {
             return 1;
@@ -1693,7 +1693,7 @@ public static partial class AlgoTools
         p1 = Tool.Pnt(aV1);
         p2 = Tool.Pnt(aV2);
         //
-        d2 = p1.SquareDistance(p2);
+        d2 = p1.SquareDistanceTo(p2);
         if (d2 > tolSum2)
         {
             return 1;
@@ -1796,7 +1796,7 @@ public static partial class AlgoTools
                 Shape ex = cSx.Shape1();
                 Shape fx = cSx.Shape2();
                 //
-                or = ex.Orientation();
+                or = ex.Orientation;
                 //
                 if (i == 0)
                 {
@@ -2027,7 +2027,7 @@ public static partial class AlgoTools
         Point3D px = new();
         //
         AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, aT, out aDN, context);
-        if (aF.Orientation() == Reversed)
+        if (aF.Orientation == Reversed)
         {
             aDN = aDN.Reversed();
         }
@@ -2121,7 +2121,7 @@ public static partial class AlgoTools
             aPOut = aProjPL.NearestPoint();
             //
             Vector3D v = new(ps, aPOut);
-            if (v.SquareMagnitude() < eps)
+            if (v.SquareMagnitude < eps)
             {
                 return bRet;
             }
@@ -2175,24 +2175,24 @@ public static partial class AlgoTools
             {
                 case SurfaceKind.Cylinder:
                     {
-                        r = bas.Cylinder().Radius();
+                        r = bas.Cylinder().Radius;
                         break;
                     }
                 case SurfaceKind.Cone:
                     {
-                        Line3D l = new(bas.Cone().Axis());
-                        r = l.Distance(aP);
+                        Line3D l = new(bas.Cone().Axis);
+                        r = l.DistanceTo(aP);
                         break;
                     }
                 case SurfaceKind.Sphere:
                     {
                         dtMin = Max(dtMin, 5.0e-4);
-                        r = bas.Sphere().Radius();
+                        r = bas.Sphere().Radius;
                         break;
                     }
                 case SurfaceKind.Torus:
                     {
-                        r = bas.Torus().MajorRadius();
+                        r = bas.Torus().MajorRadius;
                         break;
                     }
                 default:
@@ -2275,7 +2275,7 @@ public static partial class AlgoTools
             for (NCollection_List<Shape>.Iterator itLS = new(lf); itLS.More(); itLS.Next())
             {
                 Shape f = itLS.Value();
-                orF = f.Orientation();
+                orF = f.Orientation;
                 if (orF == Internal || orF == External)
                 {
                     continue;

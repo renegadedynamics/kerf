@@ -144,12 +144,12 @@ public class BndOBBOracleTests(ITestOutputHelper output)
             aPoints[k] = aKind switch
             {
                 0 => theOracle.Pnt(),                                                      // a cloud
-                1 => anAx.Location().Translated(aU * new Vector3D(anAx.XDirection())      // flat
-                                                 + aV * new Vector3D(anAx.YDirection())),
-                2 => anAx.Location().Translated(aU * new Vector3D(anAx.XDirection())),     // collinear
-                _ => anAx.Location().Translated(aU * new Vector3D(anAx.XDirection())       // a thin slab
-                                                 + aV * new Vector3D(anAx.YDirection())
-                                                 + aW * new Vector3D(anAx.Direction())),
+                1 => anAx.Location.Translated(aU * new Vector3D(anAx.XDirection)      // flat
+                                                 + aV * new Vector3D(anAx.YDirection)),
+                2 => anAx.Location.Translated(aU * new Vector3D(anAx.XDirection)),     // collinear
+                _ => anAx.Location.Translated(aU * new Vector3D(anAx.XDirection)       // a thin slab
+                                                 + aV * new Vector3D(anAx.YDirection)
+                                                 + aW * new Vector3D(anAx.Direction)),
             };
         }
 
@@ -170,10 +170,10 @@ public class BndOBBOracleTests(ITestOutputHelper output)
 
     private static N.Bnd_OBB ToNative(in Frame3D theAx, double theHX, double theHY, double theHZ)
     {
-        using var aC = Oracle.ToNative(theAx.Location());
-        using var aX = Oracle.ToNative(theAx.XDirection());
-        using var aY = Oracle.ToNative(theAx.YDirection());
-        using var aZ = Oracle.ToNative(theAx.Direction());
+        using var aC = Oracle.ToNative(theAx.Location);
+        using var aX = Oracle.ToNative(theAx.XDirection);
+        using var aY = Oracle.ToNative(theAx.YDirection);
+        using var aZ = Oracle.ToNative(theAx.Direction);
         return new N.Bnd_OBB(aC, aX, aY, aZ, theHX, theHY, theHZ);
     }
 

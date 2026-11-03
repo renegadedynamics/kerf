@@ -34,7 +34,7 @@ public sealed class MakeMirror2d
     public MakeMirror2d(in Line2D line)
     {
         _theMirror = new Transformation2();
-        _theMirror.SetMirror(new Axis2D(line.Location(), line.Direction()));
+        _theMirror.SetMirror(new Axis2D(line.Location, line.Direction));
     }
 
     /// <summary>The symmetry with respect to the axis through Point with direction Direc.</summary>

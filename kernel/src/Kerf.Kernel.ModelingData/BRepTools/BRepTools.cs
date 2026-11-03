@@ -98,7 +98,7 @@ public static partial class BrepTools
     public static void AddUVBounds(in Face ff, ref Box2d b)
     {
         Face f = ff;
-        f.Orientation(Forward);
+        f.Orient(Forward);
         var ex = new Explorer(f, ShapeType.Edge);
 
         // fill box for the given face
@@ -118,7 +118,7 @@ public static partial class BrepTools
                 return;
             }
 
-            surf.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+            surf.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
             box.Update(uMin, vMin, uMax, vMax);
         }
 
@@ -161,12 +161,12 @@ public static partial class BrepTools
 
         //
         Surface s = Tool.Surface(aF, out Placement loc)!;
-        s.Bounds(out umin, out umax, out vmin, out vmax);
+        s.ParameterBounds(out umin, out umax, out vmin, out vmax);
 
         if (s.DynamicType() == typeof(TrimmedSurface))
         {
             TrimmedSurface st = (TrimmedSurface)s;
-            s = st.BasisSurface();
+            s = st.BasisSurface;
         }
 
         //
@@ -191,7 +191,7 @@ public static partial class BrepTools
                     {
                         p1 = s.Value(umin, v);
                         p2 = s.Value(umax, v);
-                        if (p1.SquareDistance(p2) > tol2)
+                        if (p1.SquareDistanceTo(p2) > tol2)
                         {
                             isUPeriodic = false;
                             break;
@@ -232,7 +232,7 @@ public static partial class BrepTools
                     {
                         p1 = s.Value(u[ind], v);
                         p2 = s.Value(upp[ind], v);
-                        if (p1.SquareDistance(p2) > tol2)
+                        if (p1.SquareDistanceTo(p2) > tol2)
                         {
                             isUPeriodic = false;
                             break;
@@ -276,7 +276,7 @@ public static partial class BrepTools
                     {
                         p1 = s.Value(u, vmin);
                         p2 = s.Value(u, vmax);
-                        if (p1.SquareDistance(p2) > tol2)
+                        if (p1.SquareDistanceTo(p2) > tol2)
                         {
                             isVPeriodic = false;
                             break;
@@ -317,7 +317,7 @@ public static partial class BrepTools
                     {
                         p1 = s.Value(u, v[ind]);
                         p2 = s.Value(u, vpp[ind]);
-                        if (p1.SquareDistance(p2) > tol2)
+                        if (p1.SquareDistanceTo(p2) > tol2)
                         {
                             isVPeriodic = false;
                             break;
@@ -424,7 +424,7 @@ public static partial class BrepTools
     /// <summary>Updates the shape according to its type.</summary>
     internal static void Update(in Shape s)
     {
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Vertex:
                 Update(ShapeCasts.Vertex(s));
@@ -487,7 +487,7 @@ public static partial class BrepTools
                 return;
             }
 
-            Placement eLoc = loc.Predivided(e.Location());
+            Placement eLoc = loc.Predivided(e.Placement);
             // Edge representations
             NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
             var itLCR = new NCollection_List<CurveRepresentation>.Iterator(lcr);
@@ -514,7 +514,7 @@ public static partial class BrepTools
 
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
-        double l = p1.Distance(p2);
+        double l = p1.DistanceTo(p2);
         if (l <= Tool.Tolerance(v1))
         {
             return true;
@@ -712,7 +712,7 @@ public static partial class BrepTools
                 builder.UpdateEdge(edge, (Curve2D?)null, surface, location, Tool.Tolerance(edge));
             }
 
-            builder.UpdateFace(face, (Surface?)null, face.Location(), Tool.Tolerance(face));
+            builder.UpdateFace(face, (Surface?)null, face.Placement, Tool.Tolerance(face));
         }
 
         for (var edgeIt2 = new Explorer(shape, ShapeType.Edge); edgeIt2.More(); edgeIt2.Next())
@@ -1115,7 +1115,7 @@ public static partial class BrepTools
                     Tool.CurveOnSurface(ShapeCasts.Edge(edge.Reversed()), face, out fpar, out lpar)!;
                 Point2D point1 = pCurve1.Value(fpar);
                 Point2D point2 = pCurve2.Value(fpar);
-                bool isUiso = (Math.Abs(point1.X() - point2.X()) > Math.Abs(point1.Y() - point2.Y()));
+                bool isUiso = (Math.Abs(point1.X - point2.X) > Math.Abs(point1.Y - point2.Y));
                 if (isUiso)
                 {
                     uclosed = true;
@@ -1146,13 +1146,13 @@ public static partial class BrepTools
         //
         if (!c3d.IsPeriodic)
         {
-            first = Max(first, c3d.FirstParameter());
-            last = Min(last, c3d.LastParameter());
+            first = Max(first, c3d.FirstParameter);
+            last = Min(last, c3d.LastParameter);
         }
         if (!c2d.IsPeriodic)
         {
-            first = Max(first, c2d.FirstParameter());
-            last = Min(last, c2d.LastParameter());
+            first = Max(first, c2d.FirstParameter);
+            last = Min(last, c2d.LastParameter);
         }
         CurveAdaptorBase geomAdaptorCurve = new CurveAdaptor(c3d, first, last);
 
@@ -1187,8 +1187,8 @@ public static partial class BrepTools
                     cnt++;
                     c2d.D0(t, out p2d);
                     c3d.D0(t, out pc);
-                    s.D0(p2d.X(), p2d.Y(), out ps);
-                    d = ps.SquareDistance(pc);
+                    s.D0(p2d.X, p2d.Y, out ps);
+                    d = ps.SquareDistanceTo(pc);
                     if (d > dmax)
                     {
                         dmax = d;
@@ -1199,8 +1199,8 @@ public static partial class BrepTools
                     t = last;
                     c2d.D0(t, out p2d);
                     c3d.D0(t, out pc);
-                    s.D0(p2d.X(), p2d.Y(), out ps);
-                    d = ps.SquareDistance(pc);
+                    s.D0(p2d.X, p2d.Y, out ps);
+                    d = ps.SquareDistanceTo(pc);
                     if (d > dmax)
                     {
                         dmax = d;
@@ -1231,7 +1231,7 @@ public static partial class BrepTools
         {
             if (exp.Current().IsSame(e))
             {
-                return exp.Current().Orientation();
+                return exp.Current().Orientation;
             }
         }
 
@@ -1249,7 +1249,7 @@ public static partial class BrepTools
             Shape ss = it.Value();
             FindInternalsToKeep(ss, allNonInternals, allInternals, shapesToKeep);
 
-            if (ss.Orientation() == Internal)
+            if (ss.Orientation == Internal)
             {
                 allInternals.Add(ss);
             }
@@ -1288,7 +1288,7 @@ public static partial class BrepTools
         for (var it = new Iterator(s, true); it.More(); it.Next())
         {
             Shape ss = it.Value();
-            if (ss.Orientation() == Internal)
+            if (ss.Orientation == Internal)
             {
                 if (shapesToKeep is null || !shapesToKeep.Contains(ss))
                 {
@@ -1365,10 +1365,10 @@ public static partial class BrepTools
         for (i = 1; i <= mapS.Count; ++i)
         {
             Shape anS = mapS[i - 1];
-            Placement loc = anS.Location();
-            Transform3D trsf = loc.Transformation();
+            Placement loc = anS.Placement;
+            Transform3D trsf = loc.Transformation;
             bool isBadTrsf = trsf.IsNegative
-                             || (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
+                             || (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec());
 
             if (isBadTrsf)
             {

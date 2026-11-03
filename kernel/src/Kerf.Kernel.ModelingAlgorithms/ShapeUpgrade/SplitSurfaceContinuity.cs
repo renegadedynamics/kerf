@@ -68,7 +68,7 @@ public class SplitSurfaceContinuity : SplitSurface
     {
         if (!segment)
         {
-            _surface!.Bounds(out double uf, out double ul, out double vf, out double vl);
+            _surface!.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
             if (!Kerf.Engine.Foundation.Precision.IsInfinite(uf))
             {
                 _uSplitValues!.SetValue(1, uf);
@@ -93,7 +93,7 @@ public class SplitSurfaceContinuity : SplitSurface
         double vLast = _vSplitValues.Value(_vSplitValues.Length());
         double precision = Kerf.Engine.Foundation.Precision.Confusion();
 
-        if (_surface!.Continuity() < _criterion)
+        if (_surface!.Continuity < _criterion)
         {
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
         }
@@ -104,12 +104,12 @@ public class SplitSurfaceContinuity : SplitSurface
 
         if (_surface is RevolutionSurface surfaceRev)
         {
-            if (surfaceRev.Continuity() >= _criterion && _uSplitValues.Length() == 2
+            if (surfaceRev.Continuity >= _criterion && _uSplitValues.Length() == 2
                 && _vSplitValues.Length() == 2)
             {
                 return;
             }
-            Curve3D basCurve = surfaceRev.BasisCurve();
+            Curve3D basCurve = surfaceRev.BasisCurve;
             var spc = new SplitCurve3dContinuity();
             spc.Init(basCurve, vFirst, vLast);
             spc.SetCriterion(_criterion);
@@ -134,12 +134,12 @@ public class SplitSurfaceContinuity : SplitSurface
         }
         if (_surface is ExtrusionSurface surfaceExt)
         {
-            if (surfaceExt.Continuity() >= _criterion && _uSplitValues.Length() == 2
+            if (surfaceExt.Continuity >= _criterion && _uSplitValues.Length() == 2
                 && _vSplitValues.Length() == 2)
             {
                 return;
             }
-            Curve3D basCurve = surfaceExt.BasisCurve();
+            Curve3D basCurve = surfaceExt.BasisCurve;
             var spc = new SplitCurve3dContinuity();
             spc.Init(basCurve, uFirst, uLast);
             spc.SetCriterion(_criterion);
@@ -174,14 +174,14 @@ public class SplitSurfaceContinuity : SplitSurface
 
         if (_surface is TrimmedSurface tmpRect)
         {
-            if (tmpRect.Continuity() >= _criterion && _uSplitValues.Length() == 2
+            if (tmpRect.Continuity >= _criterion && _uSplitValues.Length() == 2
                 && _vSplitValues.Length() == 2)
             {
                 return;
             }
 
-            tmpRect.Bounds(out double u1, out double u2, out double v1, out double v2);
-            Surface theSurf = tmpRect.BasisSurface();
+            tmpRect.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
+            Surface theSurf = tmpRect.BasisSurface;
             var sps = new SplitSurfaceContinuity();
             sps.Init(theSurf,
                      Math.Max(u1, uFirst),
@@ -217,8 +217,8 @@ public class SplitSurfaceContinuity : SplitSurface
                     basCriterion = CN;
                     break;
             }
-            Surface theSurf = tmpOffset.BasisSurface();
-            if (theSurf.Continuity() >= basCriterion && _uSplitValues.Length() == 2
+            Surface theSurf = tmpOffset.BasisSurface;
+            if (theSurf.Continuity >= basCriterion && _uSplitValues.Length() == 2
                 && _vSplitValues.Length() == 2)
             {
                 return;
@@ -248,14 +248,14 @@ public class SplitSurfaceContinuity : SplitSurface
         {
             return;
         }
-        if (_surface.Continuity() >= _criterion)
+        if (_surface.Continuity >= _criterion)
         {
             return;
         }
 
         // it is a BSplineSurface
-        int uDeg = myBSpline.UDegree();
-        int vDeg = myBSpline.VDegree();
+        int uDeg = myBSpline.UDegree;
+        int vDeg = myBSpline.VDegree;
         int nbUKnots = myBSpline.UKnotCount;
         int uFirstInd = myBSpline.FirstUKnotIndex() + 1, uLastInd = myBSpline.LastUKnotIndex() - 1,
             vFirstInd = myBSpline.FirstVKnotIndex() + 1, vLastInd = myBSpline.LastVKnotIndex() - 1;

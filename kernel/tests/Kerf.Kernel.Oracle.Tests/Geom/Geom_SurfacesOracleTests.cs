@@ -23,9 +23,9 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
 
     private static void SameDir(Oracle theOracle, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
-        theOracle.Same(theN.X(), theP.X(), theWhat + " X");
-        theOracle.Same(theN.Y(), theP.Y(), theWhat + " Y");
-        theOracle.Same(theN.Z(), theP.Z(), theWhat + " Z");
+        theOracle.Same(theN.X(), theP.X, theWhat + " X");
+        theOracle.Same(theN.Y(), theP.Y, theWhat + " Y");
+        theOracle.Same(theN.Z(), theP.Z, theWhat + " Z");
     }
 
     private static void SameAx3(Oracle theOracle, N.gp_Ax3 theN, in CoordinateSystem theP, string theWhat)
@@ -34,10 +34,10 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         using N.gp_Dir aDir = theN.Direction();
         using N.gp_Dir aXDir = theN.XDirection();
         using N.gp_Dir aYDir = theN.YDirection();
-        theOracle.Same(aLoc, theP.Location(), theWhat + " location");
-        SameDir(theOracle, aDir, theP.Direction(), theWhat + " direction");
-        SameDir(theOracle, aXDir, theP.XDirection(), theWhat + " X direction");
-        SameDir(theOracle, aYDir, theP.YDirection(), theWhat + " Y direction");
+        theOracle.Same(aLoc, theP.Location, theWhat + " location");
+        SameDir(theOracle, aDir, theP.Direction, theWhat + " direction");
+        SameDir(theOracle, aXDir, theP.XDirection, theWhat + " X direction");
+        SameDir(theOracle, aYDir, theP.YDirection, theWhat + " Y direction");
     }
 
     /// <summary>D0 to D3, and DN for every order with Nu + Nv from 1 to theMaxN, at (U, V).</summary>
@@ -119,7 +119,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     {
         double aNU1 = 0, aNU2 = 0, aNV1 = 0, aNV2 = 0;
         theN.Bounds(ref aNU1, ref aNU2, ref aNV1, ref aNV2);
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         theOracle.Same(aNU1, aU1, theWhat + " U1");
         theOracle.Same(aNU2, aU2, theWhat + " U2");
         theOracle.Same(aNV1, aV1, theWhat + " V1");
@@ -130,15 +130,15 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
         theOracle.Same(theN.IsVPeriodic(), theP.IsVPeriodic, theWhat + " IsVPeriodic");
         if (theP.IsUPeriodic)
         {
-            theOracle.Same(theN.UPeriod(), theP.UPeriod(), theWhat + " UPeriod");
+            theOracle.Same(theN.UPeriod(), theP.UPeriod, theWhat + " UPeriod");
         }
         if (theP.IsVPeriodic)
         {
-            theOracle.Same(theN.VPeriod(), theP.VPeriod(), theWhat + " VPeriod");
+            theOracle.Same(theN.VPeriod(), theP.VPeriod, theWhat + " VPeriod");
         }
         if (theContinuity)
         {
-            theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
+            theOracle.Same((int)theN.Continuity(), (int)theP.Continuity, theWhat + " Continuity");
             for (int aN = 0; aN <= 3; aN++)
             {
                 theOracle.Same(theN.IsCNu(aN), theP.IsCNu(aN), theWhat + " IsCNu");
@@ -160,7 +160,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     private static void CompareEvaluation(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat,
                                           int theMaxN = 4, double theTol = Oracle.Tolerance, int theCount = 4)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         for (int k = 0; k < theCount; k++)
         {
             double U = Param(theOracle, aU1, aU2);
@@ -168,11 +168,11 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
             // Outside the first period too
             if (k == 0 && theP.IsUPeriodic)
             {
-                U += 3 * theP.UPeriod();
+                U += 3 * theP.UPeriod;
             }
             if (k == 1 && theP.IsVPeriodic)
             {
-                V -= 2 * theP.VPeriod();
+                V -= 2 * theP.VPeriod;
             }
             CompareAt(theOracle, theN, theP, U, V, theWhat, theMaxN, theTol);
         }
@@ -182,7 +182,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     private static void CompareParametricTransformation(Oracle theOracle, N.Geom_Surface theN, Surface theP,
                                                         N.gp_Trsf theNT, in Transform3D theT, string theWhat)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         double U = Param(theOracle, aU1, aU2), V = Param(theOracle, aV1, aV2);
         double aNU = U, aNV = V, aPU = U, aPV = V;
         theN.TransformParameters(ref aNU, ref aNV, theNT);
@@ -242,7 +242,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     {
         using (N.gp_Ax3 aNPos = theN.Position())
         {
-            SameAx3(theOracle, aNPos, theP.Position(), theWhat + " position");
+            SameAx3(theOracle, aNPos, theP.Position, theWhat + " position");
         }
 
         double A1 = 0, A2 = 0, A3 = 0, B1 = 0, B2 = 0, B3 = 0, C1 = 0, C2 = 0, C3 = 0, D = 0;
@@ -265,7 +265,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 using var aNCyl = N.Geom_CylindricalSurface.DownCast(theN)!;
                 aNCyl.Coefficients(ref A1, ref A2, ref A3, ref B1, ref B2, ref B3, ref C1, ref C2, ref C3, ref D);
                 aCyl.Coefficients(out a1, out a2, out a3, out b1, out b2, out b3, out c1, out c2, out c3, out d);
-                theOracle.Same(aNCyl.Radius(), aCyl.Radius(), theWhat + " Radius");
+                theOracle.Same(aNCyl.Radius(), aCyl.Radius, theWhat + " Radius");
                 break;
             }
             case ConicalSurface aCone:
@@ -273,12 +273,12 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 using var aNCone = N.Geom_ConicalSurface.DownCast(theN)!;
                 aNCone.Coefficients(ref A1, ref A2, ref A3, ref B1, ref B2, ref B3, ref C1, ref C2, ref C3, ref D);
                 aCone.Coefficients(out a1, out a2, out a3, out b1, out b2, out b3, out c1, out c2, out c3, out d);
-                theOracle.Same(aNCone.SemiAngle(), aCone.SemiAngle(), theWhat + " SemiAngle");
-                theOracle.Same(aNCone.RefRadius(), aCone.RefRadius(), theWhat + " RefRadius");
-                if (Math.Abs(aCone.SemiAngle()) > 1e-3)
+                theOracle.Same(aNCone.SemiAngle(), aCone.SemiAngle, theWhat + " SemiAngle");
+                theOracle.Same(aNCone.RefRadius(), aCone.RefRadius, theWhat + " RefRadius");
+                if (Math.Abs(aCone.SemiAngle) > 1e-3)
                 {
                     using N.gp_Pnt anApex = aNCone.Apex();
-                    theOracle.Same(anApex, aCone.Apex(), theWhat + " Apex");
+                    theOracle.Same(anApex, aCone.Apex, theWhat + " Apex");
                 }
                 break;
             }
@@ -287,18 +287,18 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 using var aNSph = N.Geom_SphericalSurface.DownCast(theN)!;
                 aNSph.Coefficients(ref A1, ref A2, ref A3, ref B1, ref B2, ref B3, ref C1, ref C2, ref C3, ref D);
                 aSph.Coefficients(out a1, out a2, out a3, out b1, out b2, out b3, out c1, out c2, out c3, out d);
-                theOracle.Same(aNSph.Area(), aSph.Area(), theWhat + " Area");
-                theOracle.Same(aNSph.Volume(), aSph.Volume(), theWhat + " Volume");
+                theOracle.Same(aNSph.Area(), aSph.Area, theWhat + " Area");
+                theOracle.Same(aNSph.Volume(), aSph.Volume, theWhat + " Volume");
                 break;
             }
             default:
             {
                 using var aNTor = N.Geom_ToroidalSurface.DownCast(theN)!;
                 var aTor = (ToroidalSurface)theP;
-                theOracle.Same(aNTor.Area(), aTor.Area(), theWhat + " Area");
-                theOracle.Same(aNTor.Volume(), aTor.Volume(), theWhat + " Volume");
-                theOracle.Same(aNTor.MajorRadius(), aTor.MajorRadius(), theWhat + " MajorRadius");
-                theOracle.Same(aNTor.MinorRadius(), aTor.MinorRadius(), theWhat + " MinorRadius");
+                theOracle.Same(aNTor.Area(), aTor.Area, theWhat + " Area");
+                theOracle.Same(aNTor.Volume(), aTor.Volume, theWhat + " Volume");
+                theOracle.Same(aNTor.MajorRadius(), aTor.MajorRadius, theWhat + " MajorRadius");
+                theOracle.Same(aNTor.MinorRadius(), aTor.MinorRadius, theWhat + " MinorRadius");
                 using var aNCoef = new N.TColStd_Array1OfReal(1, 35);
                 aNTor.Coefficients(aNCoef);
                 var aCoef = new NCollection_Array1<double>(1, 35);
@@ -433,19 +433,19 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     {
         using (N.gp_Dir aNDir = theN.Direction())
         {
-            SameDir(theOracle, aNDir, theP.Direction(), theWhat + " Direction");
+            SameDir(theOracle, aNDir, theP.Direction, theWhat + " Direction");
         }
         if (theP is RevolutionSurface aRev)
         {
             using var aNRev = N.Geom_SurfaceOfRevolution.DownCast(theN)!;
             using N.gp_Pnt aNLoc = aNRev.Location();
-            theOracle.Same(aNLoc, aRev.Location(), theWhat + " Location");
+            theOracle.Same(aNLoc, aRev.Location, theWhat + " Location");
         }
         using N.Geom_Curve aNBasis = theN.BasisCurve()!;
-        Curve3D aBasis = theP.BasisCurve();
-        theOracle.Same(aNBasis.FirstParameter(), aBasis.FirstParameter(), theWhat + " basis first");
-        theOracle.Same(aNBasis.LastParameter(), aBasis.LastParameter(), theWhat + " basis last");
-        double U = theOracle.Real(aBasis.FirstParameter(), aBasis.LastParameter());
+        Curve3D aBasis = theP.BasisCurve;
+        theOracle.Same(aNBasis.FirstParameter(), aBasis.FirstParameter, theWhat + " basis first");
+        theOracle.Same(aNBasis.LastParameter(), aBasis.LastParameter, theWhat + " basis last");
+        double U = theOracle.Real(aBasis.FirstParameter, aBasis.LastParameter);
         CompareCurveAt(theOracle, aNBasis, aBasis, U, theWhat + " basis D0");
     }
 
@@ -477,7 +477,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
                 CompareSweptQueries(anOracle, aN, aP, aWhat);
                 CompareEvaluation(anOracle, aN, aP, aWhat);
                 CompareIso(anOracle, aN, aP, aWhat);
-                aP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                aP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                 double U = Param(anOracle, aU1, aU2), V = Param(anOracle, aV1, aV2);
                 anOracle.Same(aN.UReversedParameter(U), aP.UReversedParameter(U), aWhat + " UReversedParameter");
                 anOracle.Same(aN.VReversedParameter(V), aP.VReversedParameter(V), aWhat + " VReversedParameter");
@@ -585,7 +585,7 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
     private static (N.Geom_RectangularTrimmedSurface Native, TrimmedSurface Port) RandomTrimmed(
         Oracle theOracle, N.Geom_Surface theN, Surface theP)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         int aMode = theOracle.Int(0, 2); // 0: both directions, 1: U only, 2: V only
         bool aUSense = theOracle.Int(0, 1) == 1, aVSense = theOracle.Int(0, 1) == 1;
         (double aTU1, double aTU2) = RandomTrim(theOracle, aU1, aU2, theP.IsUPeriodic);

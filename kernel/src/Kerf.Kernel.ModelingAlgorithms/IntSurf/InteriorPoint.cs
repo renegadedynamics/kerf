@@ -92,6 +92,6 @@ public partial struct InteriorPoint : IEquatable<InteriorPoint>
     public static bool operator !=(in InteriorPoint left, in InteriorPoint right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => Constants.Format("IntSurf_InteriorPoint", _point.X(), _point.Y(), _point.Z(), _paramu, _paramv, _direc.X(), _direc.Y(),
-                     _direc.Z(), _direc2d.X(), _direc2d.Y());
+        => Constants.Format("IntSurf_InteriorPoint", _point.X, _point.Y, _point.Z, _paramu, _paramv, _direc.X, _direc.Y,
+                     _direc.Z, _direc2d.X, _direc2d.Y);
 }

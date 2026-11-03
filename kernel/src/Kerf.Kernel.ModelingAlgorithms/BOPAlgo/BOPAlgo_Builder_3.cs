@@ -260,28 +260,28 @@ public partial class BooleanBuilder
         BrepBuilder bb = new();
         NCollection_List<Shape>.Iterator itS = new();
         //
-        orSd = solid.Orientation();
-        draftSolid.Orientation(orSd);
+        orSd = solid.Orientation;
+        draftSolid.Orient(orSd);
         //
         it1.Initialize(solid);
         for (; it1.More(); it1.Next())
         {
             Shape sh = it1.Value();
-            if (sh.ShapeType() != ShapeType.Shell)
+            if (sh.Type != ShapeType.Shell)
             {
                 continue; // mb internal edges,vertices
             }
             //
-            orSh = sh.Orientation();
+            orSh = sh.Orientation;
             bb.MakeShell(ref shD);
-            shD.Orientation(orSh);
+            shD.Orient(orSh);
             iFlag = 0;
             //
             it2.Initialize(sh);
             for (; it2.More(); it2.Next())
             {
                 Shape f = it2.Value();
-                orF = f.Orientation();
+                orF = f.Orientation;
                 //
                 if (_images.ContainsKey(f))
                 {
@@ -296,7 +296,7 @@ public partial class BooleanBuilder
                             //
                             if (orF == Internal)
                             {
-                                fx.Orientation(orF);
+                                fx.Orient(orF);
                                 lif.Append(fx);
                             }
                             else
@@ -313,7 +313,7 @@ public partial class BooleanBuilder
                         } // if (myShapesSD.IsBound(aFx)) {
                         else
                         {
-                            fx.Orientation(orF);
+                            fx.Orient(orF);
                             if (orF == Internal)
                             {
                                 lif.Append(fx);
@@ -439,9 +439,9 @@ public partial class BooleanBuilder
             {
                 Shape f = it.Value();
                 //
-                f.Orientation(Forward);
+                f.Orient(Forward);
                 sfs.Append(f);
-                f.Orientation(Reversed);
+                f.Orient(Reversed);
                 sfs.Append(f);
             }
             //
@@ -590,7 +590,7 @@ public partial class BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape s = it.Value();
-            type = s.ShapeType();
+            type = s.Type;
             if (type == ShapeType.Wire)
             {
                 itS.Initialize(s);
@@ -614,7 +614,7 @@ public partial class BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape s = it.Value();
-            type = s.ShapeType();
+            type = s.Type;
             if (type == ShapeType.Vertex || type == ShapeType.Edge || type == ShapeType.Wire)
             {
                 if (mFence.Add(s))
@@ -759,7 +759,7 @@ public partial class BooleanBuilder
             for (; it1.More();)
             {
                 Shape si = it1.Value();
-                si.Orientation(Internal);
+                si.Orient(Internal);
                 //
                 state = AlgoTools.ComputeStateByOnePoint(si, sd, 1.0e-11, _context!);
                 //
@@ -824,7 +824,7 @@ public partial class BooleanBuilder
         for (; it.More(); it.Next())
         {
             Shape sx = it.Value();
-            if (sx.ShapeType() != ShapeType.Shell)
+            if (sx.Type != ShapeType.Shell)
             {
                 mx.Add(sx);
             }

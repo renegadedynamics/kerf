@@ -49,7 +49,7 @@ public class ConeProjector : Projector
 
     public override void Project(in Line3D l)
     {
-        Point3D pnt = l.Location(), apex = _cone.Apex();
+        Point3D pnt = l.Location, apex = _cone.Apex;
 
         double deltaV = 0.0;
 
@@ -57,24 +57,24 @@ public class ConeProjector : Projector
         if (pnt.IsEqual(apex, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // Take another point in the line L, which does not coincide with the cone apex.
-            pnt = pnt.Translated(new Vector3D(l.Direction().XYZ()));
+            pnt = pnt.Translated(new Vector3D(l.Direction.XYZ()));
             deltaV = 1.0; // == ||L.Direction()|| == 1.0
         }
 
-        global::Kerf.Engine.Geometry.ElSLib.ConeParameters(_cone.Position(), _cone.RefRadius(), _cone.SemiAngle(), pnt, out u, out v);
+        global::Kerf.Engine.Geometry.ElSLib.ConeParameters(_cone.Position, _cone.RefRadius, _cone.SemiAngle, pnt, out u, out v);
         //
         Point3D p;
         Vector3D vu, vv;
 
-        global::Kerf.Engine.Geometry.ElSLib.ConeD1(u, v, _cone.Position(), _cone.RefRadius(), _cone.SemiAngle(), out p, out vu, out vv);
+        global::Kerf.Engine.Geometry.ElSLib.ConeD1(u, v, _cone.Position, _cone.RefRadius, _cone.SemiAngle, out p, out vu, out vv);
 
         Direction3D dv = new(vv);
-        if (dv.IsParallel(l.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+        if (dv.IsParallel(l.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             // L is parallel to U-isoline of the cone.
             _type = global::Kerf.Geometry.CurveKind.Line;
 
-            double sign = Math.CopySign(1.0, l.Direction().Dot(dv));
+            double sign = Math.CopySign(1.0, l.Direction.Dot(dv));
             Point2D p2d = new(u, v - deltaV * sign);
             Direction2D d2d = new(0.0, sign);
 
@@ -90,22 +90,22 @@ public class ConeProjector : Projector
         // that is not done, and Line() returns the default line instead of throwing
         _type = global::Kerf.Geometry.CurveKind.Line;
 
-        CoordinateSystem conePos = _cone.Position();
-        CoordinateSystem circPos = new(c.Position());
+        CoordinateSystem conePos = _cone.Position;
+        CoordinateSystem circPos = new(c.Position);
         //
-        if (!conePos.Direction().IsParallel(circPos.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+        if (!conePos.Direction.IsParallel(circPos.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             _isDone = false;
             return;
         }
         //
-        Direction3D zCone = conePos.XDirection().Crossed(conePos.YDirection());
-        Direction3D zCir = circPos.XDirection().Crossed(circPos.YDirection());
+        Direction3D zCone = conePos.XDirection.Crossed(conePos.YDirection);
+        Direction3D zCir = circPos.XDirection.Crossed(circPos.YDirection);
 
         double u, v;
-        double x = conePos.XDirection().Dot(circPos.XDirection());
-        double y = conePos.YDirection().Dot(circPos.XDirection());
-        double z = new Vector3D(_cone.Location(), c.Location()).Dot(new Vector3D(conePos.Direction()));
+        double x = conePos.XDirection.Dot(circPos.XDirection);
+        double y = conePos.YDirection.Dot(circPos.XDirection);
+        double z = new Vector3D(_cone.Location, c.Location).Dot(new Vector3D(conePos.Direction));
 
         // to find point U V, we use the code from ElSLib
         // without applying the Trsf to the point (unnecessary round trip).
@@ -115,7 +115,7 @@ public class ConeProjector : Projector
         {
             u = 0.0;
         }
-        else if (-_cone.RefRadius() > z * Math.Tan(_cone.SemiAngle()))
+        else if (-_cone.RefRadius > z * Math.Tan(_cone.SemiAngle))
         {
             u = Math.Atan2(-y, -x);
         }
@@ -128,7 +128,7 @@ public class ConeProjector : Projector
             u += 2 * M_PI;
         }
 
-        v = z / Math.Cos(_cone.SemiAngle());
+        v = z / Math.Cos(_cone.SemiAngle);
 
         Point2D p2d1 = new(u, v);
         Direction2D d2d = new();

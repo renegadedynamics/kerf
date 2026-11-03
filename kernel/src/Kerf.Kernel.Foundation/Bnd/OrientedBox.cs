@@ -767,8 +767,8 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
                 {
                     Point3D p = l[iP];
                     double tol = lt is not null ? lt.Value(iP) : global::Kerf.Engine.Foundation.Precision.Confusion();
-                    Box<double, NCollection_Vec3<double>> box = new(new NCollection_Vec3<double>(p.X() - tol, p.Y() - tol, p.Z() - tol),
-                                                                        new NCollection_Vec3<double>(p.X() + tol, p.Y() + tol, p.Z() + tol));
+                    Box<double, NCollection_Vec3<double>> box = new(new NCollection_Vec3<double>(p.X - tol, p.Y - tol, p.Z - tol),
+                                                                        new NCollection_Vec3<double>(p.X + tol, p.Y + tol, p.Z + tol));
                     _pointBoxSet.Add(p.XYZ(), box);
                 }
 
@@ -820,7 +820,7 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
                 for (int prmInd = 0; prmInd < NbExtremalPoints; prmInd += 2)
                 {
                     Point3D p1 = new(_lExtremalPoints[prmInd]), p2 = new(_lExtremalPoints[prmInd + 1]);
-                    double sqDist = p1.SquareDistance(p2);
+                    double sqDist = p1.SquareDistanceTo(p2);
                     if (sqDist > maxSqDist)
                     {
                         maxSqDist = sqDist;

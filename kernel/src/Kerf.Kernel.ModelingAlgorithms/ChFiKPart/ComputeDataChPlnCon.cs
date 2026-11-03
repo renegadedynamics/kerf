@@ -44,7 +44,7 @@ internal static class ComputeDataChPlnCon
                                                in Circle3D spine, double first, Orientation ofpl,
                                                bool plandab)
     {
-        double angcon = con.SemiAngle();
+        double angcon = con.SemiAngle;
         double Dis1 = dis1, Dis2 = dis2;
         double alpha = Math.PI / 2 - angcon;
         double cosHalfAlpha = Math.Cos(alpha / 2);
@@ -68,14 +68,14 @@ internal static class ComputeDataChPlnCon
         double sincon = Math.Abs(Math.Sin(angcon));
         double angle;
         bool isResol;
-        CoordinateSystem posPl = pln.Position();
-        Direction3D dpl = posPl.XDirection().Crossed(posPl.YDirection());
+        CoordinateSystem posPl = pln.Position;
+        Direction3D dpl = posPl.XDirection.Crossed(posPl.YDirection);
         if (or1 == Reversed)
         {
             dpl = dpl.Reversed();
         }
         // compute the origin of the conical chamfer PtPl
-        Point3D or = con.Location();
+        Point3D or = con.Location;
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(posPl, or, out u, out v);
         // (OCCT_DEBUG pt2dPln left out)

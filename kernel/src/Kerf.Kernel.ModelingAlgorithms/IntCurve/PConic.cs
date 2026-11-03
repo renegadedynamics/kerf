@@ -29,9 +29,9 @@ public struct PConic
 
     public PConic(in Ellipse2D e)
     {
-        _axe = e.Axis();
-        _prm1 = e.MajorRadius();
-        _prm2 = e.MinorRadius();
+        _axe = e.Axis;
+        _prm1 = e.MajorRadius;
+        _prm2 = e.MinorRadius;
         _theEpsX = 0.00000001;
         _theAccuracy = 20;
         _type = Ellipse;
@@ -39,9 +39,9 @@ public struct PConic
 
     public PConic(in Hyperbola2D h)
     {
-        _axe = h.Axis();
-        _prm1 = h.MajorRadius();
-        _prm2 = h.MinorRadius();
+        _axe = h.Axis;
+        _prm1 = h.MajorRadius;
+        _prm2 = h.MinorRadius;
         _theEpsX = 0.00000001;
         _theAccuracy = 50;
         _type = Hyperbola;
@@ -49,8 +49,8 @@ public struct PConic
 
     public PConic(in Circle2D c)
     {
-        _axe = c.Axis();
-        _prm1 = c.Radius();
+        _axe = c.Axis;
+        _prm1 = c.Radius;
         _prm2 = 0.0;
         _theEpsX = 0.00000001;
         _theAccuracy = 20;
@@ -59,8 +59,8 @@ public struct PConic
 
     public PConic(in Parabola2D p)
     {
-        _axe = p.Axis();
-        _prm1 = p.Focal();
+        _axe = p.Axis;
+        _prm1 = p.Focal;
         _prm2 = 0.0;
         _theEpsX = 0.00000001;
         _theAccuracy = 20;
@@ -69,7 +69,7 @@ public struct PConic
 
     public PConic(in Line2D l)
     {
-        _axe = new Frame2D(l.Position());
+        _axe = new Frame2D(l.Position);
         _prm1 = 0.0;
         _prm2 = 0.0;
         _theEpsX = 0.00000001;

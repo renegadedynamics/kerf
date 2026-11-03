@@ -95,7 +95,7 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
                 Face aFace = ShapeCasts.Face(aFaces[f - 1]);
                 for (var anIt = new Iterator(aFace); anIt.More(); anIt.Next())
                 {
-                    if (anIt.Value().ShapeType() != ShapeType.Wire)
+                    if (anIt.Value().Type != ShapeType.Wire)
                     {
                         continue;
                     }

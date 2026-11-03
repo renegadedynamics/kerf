@@ -148,7 +148,7 @@ public class ThruSections : MakeShape
     {
         Explorer explo = new(aFace, ShapeType.Edge);
         Shape edge = explo.Current();
-        Orientation or1 = edge.Orientation();
+        Orientation or1 = edge.Orientation;
 
         IndexedMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, eFmap);
@@ -164,7 +164,7 @@ public class ThruSections : MakeShape
             }
         }
 
-        Orientation or2 = theEdge.Orientation();
+        Orientation or2 = theEdge.Orientation;
         return or1 != or2;
     }
 
@@ -181,7 +181,7 @@ public class ThruSections : MakeShape
         {
             throw new NotDoneException("Thrusections is not build");
         }
-        bool b = shell.Closed();
+        bool b = shell.IsClosed;
         BrepBuilder bb = new();
 
         if (!b)
@@ -459,7 +459,7 @@ public class ThruSections : MakeShape
                                 Shape workingEdge = wexp.Current();
                                 if (workingEdge.IsSame(newEdge))
                                 {
-                                    sign = (workingEdge.Orientation() == Forward) ? 1 : -1;
+                                    sign = (workingEdge.Orientation == Forward) ? 1 : -1;
                                     break;
                                 }
                             }
@@ -779,7 +779,7 @@ public class ThruSections : MakeShape
         for (i = 1; i <= nbSects; i++)
         {
             Wire wire = ShapeCasts.Wire(_wires.Value(i));
-            if (!wire.Closed())
+            if (!wire.IsClosed)
             {
                 // check if the vertices are the same
                 Exploration.Vertices(wire, out Vertex v1, out Vertex v2);
@@ -857,7 +857,7 @@ public class ThruSections : MakeShape
             // return vertices
             edge = ShapeCasts.Edge(shapes[i]);
             Exploration.Vertices(edge, out v1f, out v1l);
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             {
                 Exploration.Vertices(edge, out v1l, out v1f);
             }
@@ -865,7 +865,7 @@ public class ThruSections : MakeShape
 
             edge = ShapeCasts.Edge(shapes[(nbSects - 1) * nbEdges + i]);
             Exploration.Vertices(edge, out v2f, out v2l);
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             {
                 Exploration.Vertices(edge, out v2l, out v2f);
             }
@@ -877,7 +877,7 @@ public class ThruSections : MakeShape
             b.MakeWire(ref w);
 
             // make the missing edges
-            surface.Bounds(out double f1, out double l1, out double f2, out double l2);
+            surface.ParameterBounds(out double f1, out double l1, out double f2, out double l2);
 
             // --- edge 1
             if (w1Point)
@@ -885,15 +885,15 @@ public class ThruSections : MakeShape
                 // copy the degenerated edge
                 Shape localShape = shapes[1].EmptyCopied();
                 edge1 = ShapeCasts.Edge(localShape);
-                edge1.Orientation(Forward);
+                edge1.Orient(Forward);
             }
             else
             {
                 b.MakeEdge(ref edge1, surface.VIso(f2), global::Kerf.Engine.Foundation.Precision.Confusion());
             }
-            v1f.Orientation(Forward);
+            v1f.Orient(Forward);
             b.Add(edge1, v1f);
-            v1l.Orientation(Reversed);
+            v1l.Orient(Reversed);
             b.Add(edge1, v1l);
             b.Range(edge1, f1, l1);
             // processing of looping sections
@@ -915,15 +915,15 @@ public class ThruSections : MakeShape
                     // copy of the degenerated edge
                     Shape localShape = shapes[nbSects * nbEdges].EmptyCopied();
                     edge2 = ShapeCasts.Edge(localShape);
-                    edge2.Orientation(Forward);
+                    edge2.Orient(Forward);
                 }
                 else
                 {
                     b.MakeEdge(ref edge2, surface.VIso(l2), global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
-                v2f.Orientation(Forward);
+                v2f.Orient(Forward);
                 b.Add(edge2, v2f);
-                v2l.Orientation(Reversed);
+                v2l.Orient(Reversed);
                 b.Add(edge2, v2l);
                 b.Range(edge2, f1, l1);
             }
@@ -933,9 +933,9 @@ public class ThruSections : MakeShape
             if (i == 1)
             {
                 b.MakeEdge(ref edge3, surface.UIso(f1), global::Kerf.Engine.Foundation.Precision.Confusion());
-                v1f.Orientation(Forward);
+                v1f.Orient(Forward);
                 b.Add(edge3, v1f);
-                v2f.Orientation(Reversed);
+                v2f.Orient(Reversed);
                 b.Add(edge3, v2f);
                 b.Range(edge3, f2, l2);
                 if (uClosed)
@@ -957,9 +957,9 @@ public class ThruSections : MakeShape
             else
             {
                 b.MakeEdge(ref edge4, surface.UIso(l1), global::Kerf.Engine.Foundation.Precision.Confusion());
-                v1l.Orientation(Forward);
+                v1l.Orient(Forward);
                 b.Add(edge4, v1l);
-                v2l.Orientation(Reversed);
+                v2l.Orient(Reversed);
                 b.Add(edge4, v2l);
                 b.Range(edge4, f2, l2);
             }
@@ -1170,7 +1170,7 @@ public class ThruSections : MakeShape
             TrimmedCurve3D trimCurve = new(curve, first, last);
 
             // special treatment of conic curve
-            if (trimCurve.BasisCurve() is ConicCurve3D)
+            if (trimCurve.BasisCurve is ConicCurve3D)
             {
                 Curve3D curveTrimmed = trimCurve; // to avoid ambiguity
                 ApproxCurve appr = new(curveTrimmed, global::Kerf.Engine.Foundation.Precision.Confusion(), C1, 16, 14);
@@ -1189,7 +1189,7 @@ public class ThruSections : MakeShape
             // apply transformation if needed
             if (!loc.IsIdentity)
             {
-                bsCurve.Transform(loc.Transformation());
+                bsCurve.Transform(loc.Transformation);
             }
 
             // reparameterize to [0,1]
@@ -1199,7 +1199,7 @@ public class ThruSections : MakeShape
         }
 
         // reverse curve if edge is reversed
-        if (edge.Orientation() == Reversed)
+        if (edge.Orientation == Reversed)
         {
             bsCurve.Reverse();
         }
@@ -1398,7 +1398,7 @@ public class ThruSections : MakeShape
         Shape sw = s;         // the key of the maps
         Shape sf = Final(sw); // Kerf: as it stands in the result
 
-        if (s.ShapeType() == ShapeType.Edge)
+        if (s.Type == ShapeType.Edge)
         {
             if (!_edgeNewIndices.ContainsKey(sw))
             {
@@ -1437,7 +1437,7 @@ public class ThruSections : MakeShape
                 }
             }
         }
-        else if (s.ShapeType() == ShapeType.Vertex)
+        else if (s.Type == ShapeType.Vertex)
         {
             if (!_vertexIndex.ContainsKey(sw))
             {
@@ -1558,7 +1558,7 @@ public class ThruSections : MakeShape
 
             // Find the first longitudinal edge
             Face firstFace = ShapeCasts.Face(allFaces.Value(eindex));
-            firstFace.Orientation(Forward);
+            firstFace.Orient(Forward);
             explo.Init(firstFace, ShapeType.Edge);
             Edge edge2 = new();
             FaceSurfaceAdaptor bAsurf = new(firstFace, false);
@@ -1634,7 +1634,7 @@ public class ThruSections : MakeShape
                 {
                     edge2 = ShapeCasts.Edge(itl.Value());
                     if (!edge2.IsSame(firstEdgeInFace) && !Tool.Degenerated(edge2)
-                        && edge2.Orientation() == edgeOr)
+                        && edge2.Orientation == edgeOr)
                     {
                         break;
                     }
@@ -1652,7 +1652,7 @@ public class ThruSections : MakeShape
                                                                              : ShapeCasts.Edge(elist1.First());
                     eindex += _nbEdgesInSection;
                     firstFace = ShapeCasts.Face(allFaces.Value(eindex));
-                    firstFace.Orientation(Forward);
+                    firstFace.Orient(Forward);
                     vEmap.Clear();
                     Exploration.MapShapesAndAncestors(firstFace, ShapeType.Vertex, ShapeType.Edge, vEmap);
                     NCollection_List<Shape> elist2 = vEmap.GetValue(firstVertex);

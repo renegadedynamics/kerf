@@ -15,7 +15,7 @@ public class Adaptor3dBaseTests
     {
         public override Point3D EvalD0(double theU) => new Point3D(theU, 0, 0);
 
-        public override Curve3D.ResD1 EvalD1(double theU) =>
+        internal override Curve3D.ResD1 EvalD1(double theU) =>
             new Curve3D.ResD1 { Point = EvalD0(theU), D1 = new Vector3D(1, 0, 0) };
     }
 

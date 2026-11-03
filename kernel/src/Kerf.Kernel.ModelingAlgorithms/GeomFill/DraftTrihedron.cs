@@ -24,9 +24,9 @@ public class DraftTrihedron : TrihedronLaw
     // computes (F/|F|)''
     private static Vector3D DDeriv(in Vector3D f, in Vector3D df, in Vector3D d2F)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (d2F - 2 * df * (f * df) / (norma * norma)) / norma
-                        - f * ((df.SquareMagnitude() + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
+                        - f * ((df.SquareMagnitude + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
                                / (norma * norma * norma));
         return result;
     }
@@ -49,7 +49,7 @@ public class DraftTrihedron : TrihedronLaw
         _trimmed!.D1(param, out _, out Vector3D t);
         t = t.Normalized();
         Vector3D b = t.Crossed(_b);
-        double normb = b.Magnitude();
+        double normb = b.Magnitude;
         b /= normb;
         if (normb < 1.0e-12)
         {
@@ -82,13 +82,13 @@ public class DraftTrihedron : TrihedronLaw
         _trimmed!.D2(param, out _, out Vector3D t, out Vector3D aux);
 
         double normT, normb;
-        normT = t.Magnitude();
+        normT = t.Magnitude;
         t /= normT;
         dt = Vector3D.LinearForm(-(t.Dot(aux)), t, aux);
         dt /= normT;
 
         Vector3D db = new Vector3D(), b = t.Crossed(_b);
-        normb = b.Magnitude();
+        normb = b.Magnitude;
         if (normb < 1.0e-12)
         {
             return false;
@@ -107,7 +107,7 @@ public class DraftTrihedron : TrihedronLaw
         dNormal = Vector3D.LinearForm(Math.Sqrt(1 - mu * mu), db, mu, dv);
 
         tangent = normal.Crossed(_b);
-        normT = tangent.Magnitude();
+        normT = tangent.Magnitude;
         tangent /= normT;
         aux = dNormal.Crossed(_b);
         dTangent = Vector3D.LinearForm(-(tangent.Dot(aux)), tangent, aux);
@@ -132,14 +132,14 @@ public class DraftTrihedron : TrihedronLaw
         double normT, normb;
 
         d2T = DDeriv(t, aux, aux2);
-        normT = t.Magnitude();
+        normT = t.Magnitude;
         t /= normT;
         dot = t.Dot(aux);
         dt = Vector3D.LinearForm(-dot, t, aux);
         dt /= normT;
 
         Vector3D db = new Vector3D(), d2b, b = t.Crossed(_b);
-        normb = b.Magnitude();
+        normb = b.Magnitude;
         if (normb < 1.0e-12)
         {
             return false;
@@ -165,7 +165,7 @@ public class DraftTrihedron : TrihedronLaw
         d2Normal = Vector3D.LinearForm(rac, d2b, mu, d2v);
 
         tangent = normal.Crossed(_b);
-        normT = tangent.Magnitude();
+        normT = tangent.Magnitude;
 
         aux = dNormal.Crossed(_b);
         aux2 = d2Normal.Crossed(_b);
@@ -258,20 +258,20 @@ public class DraftTrihedron : TrihedronLaw
             switch (theType)
             {
                 case Circle:
-                    theAxe = _curve.Circle().Axis();
+                    theAxe = _curve.Circle().Axis;
                     break;
                 case Ellipse:
-                    theAxe = _curve.Ellipse().Axis();
+                    theAxe = _curve.Ellipse().Axis;
                     break;
                 case Hyperbola:
-                    theAxe = _curve.Hyperbola().Axis();
+                    theAxe = _curve.Hyperbola().Axis;
                     break;
                 case Parabola:
-                    theAxe = _curve.Parabola().Axis();
+                    theAxe = _curve.Parabola().Axis;
                     break;
                 case Line:
                 { // La normale du plan de la courbe est il perpendiculaire a la BiNormale ?
-                    Vector3D v = new Vector3D().WithXYZ(_curve.Line().Direction().XYZ());
+                    Vector3D v = new Vector3D().WithXYZ(_curve.Line().Direction.XYZ());
                     return v.IsParallel(_b, global::Kerf.Engine.Foundation.Precision.Angular());
                 }
                 default:
@@ -279,7 +279,7 @@ public class DraftTrihedron : TrihedronLaw
             }
 
             // La normale du plan de la courbe est il // a la BiNormale ?
-            Vector3D v2 = new Vector3D().WithXYZ(theAxe.Direction().XYZ());
+            Vector3D v2 = new Vector3D().WithXYZ(theAxe.Direction.XYZ());
             return v2.IsParallel(_b, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }

@@ -10,7 +10,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for plane grid points, by the direct formula P(u, v) = Location + u * XDir + v * YDir.
 /// </summary>
-public sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private readonly PlaneSurface? _geom;
 
@@ -37,21 +37,21 @@ public sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
         NCollection_Array2<Point3D> result = new(1, nbU, 1, nbV);
 
         // Extract plane data from geometry
-        Plane3D pln = _geom.Pln();
-        Point3D loc = pln.Location();
-        Direction3D xDir = pln.Position().XDirection();
-        Direction3D yDir = pln.Position().YDirection();
+        Plane3D pln = _geom.Plane;
+        Point3D loc = pln.Location;
+        Direction3D xDir = pln.Position.XDirection;
+        Direction3D yDir = pln.Position.YDirection;
 
         // Pre-extract coordinates for performance
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int iU = 1; iU <= nbU; ++iU)
         {
@@ -82,20 +82,20 @@ public sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
         NCollection_Array2<Surface.ResD1> result = new(1, nbU, 1, nbV);
 
-        Plane3D pln = _geom.Pln();
-        Point3D loc = pln.Location();
-        Direction3D xDir = pln.Position().XDirection();
-        Direction3D yDir = pln.Position().YDirection();
+        Plane3D pln = _geom.Plane;
+        Point3D loc = pln.Location;
+        Direction3D xDir = pln.Position.XDirection;
+        Direction3D yDir = pln.Position.YDirection;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // D1U and D1V are constant for a plane
         Vector3D d1U = new(xx, xy, xz);
@@ -135,20 +135,20 @@ public sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
         NCollection_Array2<Surface.ResD2> result = new(1, nbU, 1, nbV);
 
-        Plane3D pln = _geom.Pln();
-        Point3D loc = pln.Location();
-        Direction3D xDir = pln.Position().XDirection();
-        Direction3D yDir = pln.Position().YDirection();
+        Plane3D pln = _geom.Plane;
+        Point3D loc = pln.Location;
+        Direction3D xDir = pln.Position.XDirection;
+        Direction3D yDir = pln.Position.YDirection;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         Vector3D d1U = new(xx, xy, xz);
         Vector3D d1V = new(yx, yy, yz);
@@ -191,20 +191,20 @@ public sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
         NCollection_Array2<Surface.ResD3> result = new(1, nbU, 1, nbV);
 
-        Plane3D pln = _geom.Pln();
-        Point3D loc = pln.Location();
-        Direction3D xDir = pln.Position().XDirection();
-        Direction3D yDir = pln.Position().YDirection();
+        Plane3D pln = _geom.Plane;
+        Point3D loc = pln.Location;
+        Direction3D xDir = pln.Position.XDirection;
+        Direction3D yDir = pln.Position.YDirection;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         Vector3D d1U = new(xx, xy, xz);
         Vector3D d1V = new(yx, yy, yz);
@@ -258,14 +258,14 @@ public sealed class PlaneGrid : GeomGridEvalGrid.ISurfaceEvaluator
         if (nu == 1 && nv == 0)
         {
             // D1U = XDir
-            Direction3D xDir = _geom.Pln().Position().XDirection();
-            derivative = new Vector3D(xDir.X(), xDir.Y(), xDir.Z());
+            Direction3D xDir = _geom.Plane.Position.XDirection;
+            derivative = new Vector3D(xDir.X, xDir.Y, xDir.Z);
         }
         else if (nu == 0 && nv == 1)
         {
             // D1V = YDir
-            Direction3D yDir = _geom.Pln().Position().YDirection();
-            derivative = new Vector3D(yDir.X(), yDir.Y(), yDir.Z());
+            Direction3D yDir = _geom.Plane.Position.YDirection;
+            derivative = new Vector3D(yDir.X, yDir.Y, yDir.Z);
         }
         // All other derivatives are zero
 

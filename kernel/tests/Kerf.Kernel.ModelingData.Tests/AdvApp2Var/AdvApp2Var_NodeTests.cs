@@ -20,9 +20,9 @@ public class AdvApp2Var_NodeTest
             for (int aVOrder = 0; aVOrder <= 2; ++aVOrder)
             {
                 Point3D aPoint = aNode.Point(aUOrder, aVOrder);
-                Assert.Equal(0.0, aPoint.X());
-                Assert.Equal(0.0, aPoint.Y());
-                Assert.Equal(0.0, aPoint.Z());
+                Assert.Equal(0.0, aPoint.X);
+                Assert.Equal(0.0, aPoint.Y);
+                Assert.Equal(0.0, aPoint.Z);
                 Assert.Equal(0.0, aNode.Error(aUOrder, aVOrder));
             }
         }
@@ -39,9 +39,9 @@ public class AdvApp2Var_NodeTest
         aTarget.Assign(aSource);
         Assert.Equal(1.5, aTarget.Coord().X());
         Assert.Equal(1, aTarget.UOrder());
-        Assert.Equal(2.0, aTarget.Point(1, 0).Y());
+        Assert.Equal(2.0, aTarget.Point(1, 0).Y);
         Assert.Equal(0.25, aTarget.Error(0, 1));
         aSource.SetPoint(1, 0, new Point3D(7, 7, 7));
-        Assert.Equal(2.0, aTarget.Point(1, 0).Y());
+        Assert.Equal(2.0, aTarget.Point(1, 0).Y);
     }
 }

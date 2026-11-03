@@ -63,7 +63,7 @@ public class BRepFill_FillingTests
         aFilling.Build();
         Assert.True(aFilling.IsDone);
         Shape aFace = aFilling.Shape();
-        Assert.Equal(ShapeType.Face, aFace.ShapeType());
+        Assert.Equal(ShapeType.Face, aFace.Type);
         Assert.True(aFace.TShape()!.IsFrozen);
         Assert.True(new Analyzer(aFace).IsValid());
         Assert.True(aFilling.G0Error() < 1.0e-3, $"G0 {aFilling.G0Error()}");

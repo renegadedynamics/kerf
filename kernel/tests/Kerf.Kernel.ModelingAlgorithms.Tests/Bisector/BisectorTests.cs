@@ -21,7 +21,7 @@ public class BisectorTests
     private static TrimmedCurve2D Segment(double x1, double y1, double x2, double y2)
     {
         Point2D p1 = new(x1, y1), p2 = new(x2, y2);
-        return new TrimmedCurve2D(new LineCurve2D(p1, new Direction2D(x2 - x1, y2 - y1)), 0.0, p1.Distance(p2));
+        return new TrimmedCurve2D(new LineCurve2D(p1, new Direction2D(x2 - x1, y2 - y1)), 0.0, p1.DistanceTo(p2));
     }
 
     private static TrimmedCurve2D Arc(double cx, double cy, double r, double u1, double u2) =>
@@ -45,9 +45,9 @@ public class BisectorTests
 
     private static double Dist(Curve2D theC, in Point2D theP)
     {
-        ProjectPointOnCurve2D aProj = new(theP, theC, theC.FirstParameter(), theC.LastParameter());
-        double aD = Math.Min(theP.Distance(theC.Value(theC.FirstParameter())),
-                             theP.Distance(theC.Value(theC.LastParameter())));
+        ProjectPointOnCurve2D aProj = new(theP, theC, theC.FirstParameter, theC.LastParameter);
+        double aD = Math.Min(theP.DistanceTo(theC.Value(theC.FirstParameter)),
+                             theP.DistanceTo(theC.Value(theC.LastParameter)));
         return aProj.NbPoints() > 0 ? Math.Min(aD, aProj.LowerDistance()) : aD;
     }
 
@@ -60,16 +60,16 @@ public class BisectorTests
         aBis.Perform(a, b, new Point2D(2, 0), new Vector2D(1, 0), new Vector2D(0, -1), 1.0, JoinKind.Arc,
                      Tol);
         TrimmedCurve2D aCurve = aBis.Value();
-        global::Kerf.Engine.Offsets.Bisectors.BisecAna anAna = Assert.IsType<global::Kerf.Engine.Offsets.Bisectors.BisecAna>(aCurve.BasisCurve());
+        global::Kerf.Engine.Offsets.Bisectors.BisecAna anAna = Assert.IsType<global::Kerf.Engine.Offsets.Bisectors.BisecAna>(aCurve.BasisCurve);
         Assert.IsType<LineCurve2D>(anAna.Geom2dCurve());
         Assert.Equal(1, anAna.IntervalCount);
         Assert.False(anAna.IsExtendAtStart || anAna.IsExtendAtEnd);
-        Point2D aStart = aCurve.Value(aCurve.FirstParameter());
-        Assert.True(aStart.Distance(new Point2D(2, 0)) < Tol);
-        Point2D aP = aCurve.Value(aCurve.FirstParameter() + Math.Sqrt(2.0));
-        Assert.Equal(1.0, aP.X(), 1e-12);
-        Assert.Equal(1.0, aP.Y(), 1e-12);
-        Assert.Equal(aCurve.FirstParameter() + 1.0, anAna.Parameter(aCurve.Value(aCurve.FirstParameter() + 1.0)), 1e-12);
+        Point2D aStart = aCurve.Value(aCurve.FirstParameter);
+        Assert.True(aStart.DistanceTo(new Point2D(2, 0)) < Tol);
+        Point2D aP = aCurve.Value(aCurve.FirstParameter + Math.Sqrt(2.0));
+        Assert.Equal(1.0, aP.X, 1e-12);
+        Assert.Equal(1.0, aP.Y, 1e-12);
+        Assert.Equal(aCurve.FirstParameter + 1.0, anAna.Parameter(aCurve.Value(aCurve.FirstParameter + 1.0)), 1e-12);
         Assert.ThrowsAny<OutOfRangeException>(() => anAna.IntervalFirst(2));
     }
 
@@ -83,22 +83,22 @@ public class BisectorTests
         aBis.Perform(a, c, new Point2D(-3, -2), new Vector2D(1, 1), new Vector2D(-1, 1), 1.0,
                      JoinKind.Arc, Tol, false);
         TrimmedCurve2D aCurve = aBis.Value();
-        Assert.IsType<global::Kerf.Engine.Offsets.Bisectors.BisecAna>(aCurve.BasisCurve());
+        Assert.IsType<global::Kerf.Engine.Offsets.Bisectors.BisecAna>(aCurve.BasisCurve);
         LineCurve2D aL = new(new Point2D(-2, 1), new Direction2D(1, 0));
         CircleCurve2D aC = new(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 1.0));
         for (int k = 1; k <= 5; k++)
         {
-            Point2D aP = aCurve.Value(aCurve.FirstParameter() + 0.3 * k);
-            double d1 = aL.Lin2d().Distance(aP);
-            double d2 = Math.Abs(aC.Circ2d().Distance(aP));
+            Point2D aP = aCurve.Value(aCurve.FirstParameter + 0.3 * k);
+            double d1 = aL.Line.DistanceTo(aP);
+            double d2 = Math.Abs(aC.Circle.DistanceTo(aP));
             Assert.Equal(d1, d2, 1e-9);
         }
 
         global::Kerf.Engine.Offsets.Bisectors.Bisec aPP = new();
         aPP.Perform(new CartesianPoint2(0, 0), new CartesianPoint2(2, 0), new Point2D(1, 0),
                     new Vector2D(0, 1), new Vector2D(0, -1), 1.0);
-        Point2D aQ = aPP.Value().Value(aPP.Value().FirstParameter() + 3.0);
-        Assert.Equal(1.0, aQ.X(), 1e-12);
+        Point2D aQ = aPP.Value().Value(aPP.Value().FirstParameter + 3.0);
+        Assert.Equal(1.0, aQ.X, 1e-12);
     }
 
     [Fact]
@@ -117,13 +117,13 @@ public class BisectorTests
         global::Kerf.Engine.Offsets.Bisectors.BisecPC aPC = new(aS, new Point2D(1.5, -2.0), -1.0);
         Assert.False(aPC.IsEmpty);
         Assert.False(aPC.IsPeriodic);
-        Assert.Equal(aPC.FirstParameter() + aPC.LastParameter() - 0.25, aPC.ReversedParameter(0.25));
+        Assert.Equal(aPC.FirstParameter + aPC.LastParameter - 0.25, aPC.ReversedParameter(0.25));
         for (int k = 1; k < 10; k++)
         {
-            double u = aPC.FirstParameter() + k * (aPC.LastParameter() - aPC.FirstParameter()) / 10.0;
+            double u = aPC.FirstParameter + k * (aPC.LastParameter - aPC.FirstParameter) / 10.0;
             Point2D aP = aPC.Value(u);
-            Assert.Equal(aP.Distance(new Point2D(1.5, -2.0)), Dist(aS, aP), 1e-7);
-            Assert.Equal(aP.SquareDistance(new Point2D(1.5, -2.0)), aPC.Distance(u), 1e-9);
+            Assert.Equal(aP.DistanceTo(new Point2D(1.5, -2.0)), Dist(aS, aP), 1e-7);
+            Assert.Equal(aP.SquareDistanceTo(new Point2D(1.5, -2.0)), aPC.Distance(u), 1e-9);
             Assert.Equal(u, aPC.LinkCurveBis(aPC.LinkBisCurve(u)));
         }
         Assert.ThrowsAny<MethodNotImplementedException>(() => aPC.Reversed());
@@ -141,7 +141,7 @@ public class BisectorTests
         Assert.True(aCC.Polygon().Length() > 2);
         for (int k = 1; k < 10; k++)
         {
-            double u = aCC.FirstParameter() + k * (aCC.LastParameter() - aCC.FirstParameter()) / 10.0;
+            double u = aCC.FirstParameter + k * (aCC.LastParameter - aCC.FirstParameter) / 10.0;
             Point2D aP = aCC.Value(u);
             Assert.Equal(Dist(aS1, aP), Dist(aS2, aP), 1e-6);
         }
@@ -154,7 +154,7 @@ public class BisectorTests
         global::Kerf.Engine.Offsets.Bisectors.BisecCC aCopy = (global::Kerf.Engine.Offsets.Bisectors.BisecCC)aCC.Copy();
         Assert.NotSame(aCC.Curve(1), aCopy.Curve(1));
         Assert.NotSame(aCC.Polygon(), aCopy.Polygon());
-        Assert.Equal(aCC.Value(aCC.FirstParameter()), aCopy.Value(aCopy.FirstParameter()));
+        Assert.Equal(aCC.Value(aCC.FirstParameter), aCopy.Value(aCopy.FirstParameter));
     }
 
     [Fact]
@@ -172,8 +172,8 @@ public class BisectorTests
         Assert.True(anInter.IsDone);
         Assert.Equal(1, anInter.PointCount);
         Point2D aP = anInter.Point(1).Value();
-        Assert.Equal(1.0, aP.X(), 1e-9);
-        Assert.Equal(1.0, aP.Y(), 1e-9);
+        Assert.Equal(1.0, aP.X, 1e-9);
+        Assert.Equal(1.0, aP.Y, 1e-9);
     }
 
     [Fact]
@@ -229,14 +229,14 @@ public class BisectorTests
                                BisectorRecordings.Domain(aBis.Value(), Tol), Tol, Tol, true);
         global::Kerf.Engine.Offsets.Bisectors.BisecAna anAna = (global::Kerf.Engine.Offsets.Bisectors.BisecAna)aBis.Value().ChangeBasisCurve();
         Assert.False(anAna.IsFrozen);
-        anAna.SetTrim(anAna.FirstParameter(), anAna.FirstParameter() + 1.0);
-        Assert.Equal(anAna.FirstParameter() + 1.0, anAna.LastParameter());
+        anAna.SetTrim(anAna.FirstParameter, anAna.FirstParameter + 1.0);
+        Assert.Equal(anAna.FirstParameter + 1.0, anAna.LastParameter);
 
         // Geom2dCurve hands out the conic frozen; the bisector still re-trims (its trimmed curve is its own).
         Curve2D aConic = anAna.Geom2dCurve();
         Assert.True(aConic.IsFrozen);
-        anAna.SetTrim(anAna.FirstParameter(), anAna.FirstParameter() + 2.0);
-        Assert.Equal(anAna.FirstParameter() + 2.0, anAna.LastParameter());
+        anAna.SetTrim(anAna.FirstParameter, anAna.FirstParameter + 2.0);
+        Assert.Equal(anAna.FirstParameter + 2.0, anAna.LastParameter);
 
         // A frozen bisector refuses to change.
         global::Kerf.Engine.Offsets.Bisectors.BisecAna aFrozen = (global::Kerf.Engine.Offsets.Bisectors.BisecAna)anAna.Copy();

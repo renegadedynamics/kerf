@@ -195,7 +195,7 @@ public static class OneD
         double f1 = first, l1 = last, f2 = first, l2 = last;
         var pcurve1 = Tool.CurveOnSurface(edge, face1, out f1, out l1)!;
         var pcurve2 = Tool.CurveOnSurface(edge, face2, out f2, out l2)!;
-        bool reversedInFace2 = AsBoundedBy(face2, edge).Orientation() == Orientation.Reversed;
+        bool reversedInFace2 = AsBoundedBy(face2, edge).Orientation == Orientation.Reversed;
         var props1 = new FaceIntegrand(face1);
         var props2 = new FaceIntegrand(face2);
         var kinds = new HashSet<Convexity>();
@@ -209,15 +209,15 @@ public static class OneD
             var uv2 = pcurve2.Value(param);
             var normal1 = new Vector3D();
             var normal2 = new Vector3D();
-            props1.Normal(uv1.X(), uv1.Y(), out point, out normal1);
-            props2.Normal(uv2.X(), uv2.Y(), out point, out normal2);
-            if (Math.Min(tangent.Magnitude(), Math.Min(normal1.Magnitude(), normal2.Magnitude())) < 1e-12)
+            props1.Normal(uv1.X, uv1.Y, out point, out normal1);
+            props2.Normal(uv2.X, uv2.Y, out point, out normal2);
+            if (Math.Min(tangent.Magnitude, Math.Min(normal1.Magnitude, normal2.Magnitude)) < 1e-12)
                 continue;
             tangent = tangent.Normalized();
             normal1 = normal1.Normalized();
             normal2 = normal2.Normalized();
             var cross = normal1.Crossed(normal2);
-            if (cross.Magnitude() < sinTolerance)
+            if (cross.Magnitude < sinTolerance)
             {
                 kinds.Add(Convexity.Smooth);
                 continue;
@@ -267,10 +267,10 @@ public static class OneD
     /// <summary>Records the vertices of a rebuilt edge as modified from those at the same points.</summary>
     internal static void RecordMatchingVertices(History history, global::Kerf.Topology.Shape source, global::Kerf.Topology.Shape placed)
     {
-        var placedVertices = ShapeHistory.TrackedSubshapes([placed]).Where(v => v.ShapeType() == global::Kerf.Topology.ShapeType.Vertex).ToList();
+        var placedVertices = ShapeHistory.TrackedSubshapes([placed]).Where(v => v.Type == global::Kerf.Topology.ShapeType.Vertex).ToList();
         foreach (var old in ShapeHistory.TrackedSubshapes([source]))
         {
-            if (old.ShapeType() != global::Kerf.Topology.ShapeType.Vertex)
+            if (old.Type != global::Kerf.Topology.ShapeType.Vertex)
                 continue;
             var oldVertex = ShapeCasts.Vertex(old);
             var oldPoint = Tool.Pnt(oldVertex);
@@ -280,7 +280,7 @@ public static class OneD
                     break;
                 var newVertex = ShapeCasts.Vertex(@new);
                 var newPoint = Tool.Pnt(newVertex);
-                if (newPoint.Distance(oldPoint) < Constants.Tolerance)
+                if (newPoint.DistanceTo(oldPoint) < Constants.Tolerance)
                 {
                     history.AddModified(old, @new);
                     break;
@@ -318,8 +318,8 @@ public static class OneD
             var spline = approximation.Curve();
             var maker = new MakeEdge(spline!);
             // The curve is stored without the placement or direction of its edge
-            var placed = maker.Edge().Located(edge.TopoShape.Location());
-            fitted.Add(new Edge(ShapeCasts.Edge(placed.Oriented(edge.TopoShape.Orientation()))));
+            var placed = maker.Edge().Located(edge.TopoShape.Placement);
+            fitted.Add(new Edge(ShapeCasts.Edge(placed.Oriented(edge.TopoShape.Orientation))));
         }
         // The edges came from the wire with its direction applied, so the new wire winds the same way
         return new Wire(fitted);

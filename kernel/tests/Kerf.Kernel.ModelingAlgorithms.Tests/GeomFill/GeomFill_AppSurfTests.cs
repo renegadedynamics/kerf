@@ -68,7 +68,7 @@ public class GeomFill_AppSurfTests
             for (int s = 0; s <= 10; s++)
             {
                 double t = s / 10.0;
-                Assert.True(aU.Value(t).Distance(aCurves[c - 1].Value(t)) < 1e-12);
+                Assert.True(aU.Value(t).DistanceTo(aCurves[c - 1].Value(t)) < 1e-12);
             }
         }
 
@@ -145,16 +145,16 @@ public class GeomFill_AppSurfTests
         {
             BSplineCurve3D aU = (BSplineCurve3D)aP.Curve(c);
             Assert.Equal(aP.NbPoles(), aU.PoleCount);
-            Assert.Equal(aP.Degree(), aU.Degree());
+            Assert.Equal(aP.Degree(), aU.Degree);
             Assert.Equal(aP.NbKnots(), aU.KnotCount);
             // the same closed curve, reparametrised linearly onto the profile's range
             BSplineCurve3D anOriginal = aLoops[c - 1];
             for (int s = 0; s <= 20; s++)
             {
                 double t = s / 20.0;
-                Point3D aOnU = aU.Value(aU.FirstParameter() + t * (aU.LastParameter() - aU.FirstParameter()));
-                Point3D aOnOriginal = anOriginal.Value(anOriginal.FirstParameter() + t * (anOriginal.LastParameter() - anOriginal.FirstParameter()));
-                Assert.True(aOnU.Distance(aOnOriginal) < 1e-9, $"curve {c} at {t}");
+                Point3D aOnU = aU.Value(aU.FirstParameter + t * (aU.LastParameter - aU.FirstParameter));
+                Point3D aOnOriginal = anOriginal.Value(anOriginal.FirstParameter + t * (anOriginal.LastParameter - anOriginal.FirstParameter));
+                Assert.True(aOnU.DistanceTo(aOnOriginal) < 1e-9, $"curve {c} at {t}");
             }
         }
     }
@@ -173,8 +173,8 @@ public class GeomFill_AppSurfTests
         BSplineSurface aS = (BSplineSurface)aGen.Surface()!;
         Assert.True(aS.IsFrozen);
         Assert.Same(aS, aGen.Surface());
-        Assert.Equal(3, aS.UDegree());
-        Assert.Equal(1, aS.VDegree());
+        Assert.Equal(3, aS.UDegree);
+        Assert.Equal(1, aS.VDegree);
         Assert.Equal(aCurves.Count, aS.VPoleCount);
         for (int j = 0; j < aCurves.Count; j++)
         {
@@ -182,13 +182,13 @@ public class GeomFill_AppSurfTests
             for (int s = 0; s <= 8; s++)
             {
                 double u = s / 8.0;
-                Assert.True(aS.Value(u, j).Distance(aCurves[j].Value(u)) < 1e-12);
+                Assert.True(aS.Value(u, j).DistanceTo(aCurves[j].Value(u)) < 1e-12);
             }
         }
         // between two sections the surface is the segment joining them
         Point3D aMid = aS.Value(0.3, 1.5);
         Point3D aA = aCurves[1].Value(0.3), aB = aCurves[2].Value(0.3);
-        Assert.True(aMid.Distance(new Point3D((aA.XYZ() + aB.XYZ()) * 0.5)) < 1e-12);
+        Assert.True(aMid.DistanceTo(new Point3D((aA.XYZ() + aB.XYZ()) * 0.5)) < 1e-12);
     }
 
     [Fact]
@@ -309,7 +309,7 @@ public class GeomFill_AppSurfTests
             for (int s = 0; s <= 8; s++)
             {
                 double u = s / 8.0;
-                Assert.True(aS.Value(u, v).Distance(aCurves[j].Value(u)) < aTol, $"section {j} at {u}");
+                Assert.True(aS.Value(u, v).DistanceTo(aCurves[j].Value(u)) < aTol, $"section {j} at {u}");
             }
         }
 

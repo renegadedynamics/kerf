@@ -104,22 +104,22 @@ public sealed class FillingMultiLine : Function
             if (first)
             {
                 first = false;
-                umin = Min(p1.X(), p2.X());
-                umax = Max(p1.X(), p2.X());
+                umin = Min(p1.X, p2.X);
+                umax = Max(p1.X, p2.X);
 
-                vmin = Min(p1.Y(), p2.Y());
-                vmax = Max(p1.Y(), p2.Y());
+                vmin = Min(p1.Y, p2.Y);
+                vmax = Max(p1.Y, p2.Y);
             }
             else
             {
-                u = Min(p1.X(), p2.X());
+                u = Min(p1.X, p2.X);
                 umin = Min(umin, u);
-                u = Max(p1.X(), p2.X());
+                u = Max(p1.X, p2.X);
                 umax = Max(umax, u);
 
-                v = Min(p1.Y(), p2.Y());
+                v = Min(p1.Y, p2.Y);
                 vmin = Min(vmin, v);
-                v = Max(p1.Y(), p2.Y());
+                v = Max(p1.Y, p2.Y);
                 vmax = Max(vmax, v);
             }
         }
@@ -129,7 +129,7 @@ public sealed class FillingMultiLine : Function
         Surface s = Tool.Surface(_face1, out l)!;
         if (!l.IsIdentity)
         {
-            s = (Surface)s.Transformed(l.Transformation());
+            s = (Surface)s.Transformed(l.Transformation);
         }
 
         if (_isoU1)
@@ -138,7 +138,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu1 = s.UIso(umin);
                 CurveAdaptor dummy = new(uu1);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu1 = s.UIso(umax);
                 }
@@ -147,7 +147,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu1 = s.UIso(umax);
                 CurveAdaptor dummy = new(uu1);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu1 = s.UIso(umin);
                 }
@@ -160,7 +160,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu1 = s.VIso(vmin);
                 CurveAdaptor dummy = new(uu1);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu1 = s.VIso(vmax);
                 }
@@ -169,7 +169,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu1 = s.VIso(vmax);
                 CurveAdaptor dummy = new(uu1);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu1 = s.VIso(vmin);
                 }
@@ -192,11 +192,11 @@ public sealed class FillingMultiLine : Function
 
         if (uu1.IsPeriodic)
         {
-            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(uu1.FirstParameter(), uu1.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref umin, ref umax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(uu1.FirstParameter, uu1.LastParameter, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref umin, ref umax);
         }
         if (vv1.IsPeriodic)
         {
-            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vv1.FirstParameter(), vv1.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref vmin, ref vmax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vv1.FirstParameter, vv1.LastParameter, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref vmin, ref vmax);
         }
         // end try duplication
 
@@ -215,22 +215,22 @@ public sealed class FillingMultiLine : Function
             if (first)
             {
                 first = false;
-                umin = Min(p1.X(), p2.X());
-                umax = Max(p1.X(), p2.X());
+                umin = Min(p1.X, p2.X);
+                umax = Max(p1.X, p2.X);
 
-                vmin = Min(p1.Y(), p2.Y());
-                vmax = Max(p1.Y(), p2.Y());
+                vmin = Min(p1.Y, p2.Y);
+                vmax = Max(p1.Y, p2.Y);
             }
             else
             {
-                u = Min(p1.X(), p2.X());
+                u = Min(p1.X, p2.X);
                 umin = Min(umin, u);
-                u = Max(p1.X(), p2.X());
+                u = Max(p1.X, p2.X);
                 umax = Max(umax, u);
 
-                v = Min(p1.Y(), p2.Y());
+                v = Min(p1.Y, p2.Y);
                 vmin = Min(vmin, v);
-                v = Max(p1.Y(), p2.Y());
+                v = Max(p1.Y, p2.Y);
                 vmax = Max(vmax, v);
             }
         }
@@ -240,7 +240,7 @@ public sealed class FillingMultiLine : Function
 
         if (!l.IsIdentity)
         {
-            s = (Surface)s.Transformed(l.Transformation());
+            s = (Surface)s.Transformed(l.Transformation);
         }
 
         if (_isoU2)
@@ -249,7 +249,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu2 = s.UIso(umin);
                 CurveAdaptor dummy = new(uu2);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu2 = s.UIso(umax);
                 }
@@ -258,7 +258,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu2 = s.UIso(umax);
                 CurveAdaptor dummy = new(uu2);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu2 = s.UIso(umin);
                 }
@@ -271,7 +271,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu2 = s.VIso(vmin);
                 CurveAdaptor dummy = new(uu2);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu2 = s.VIso(vmax);
                 }
@@ -280,7 +280,7 @@ public sealed class FillingMultiLine : Function
             {
                 uu2 = s.VIso(vmax);
                 CurveAdaptor dummy = new(uu2);
-                if (dummy.GetType() == Circle && dummy.Circle().Radius() < eps)
+                if (dummy.GetType() == Circle && dummy.Circle().Radius < eps)
                 {
                     uu2 = s.VIso(vmin);
                 }
@@ -303,11 +303,11 @@ public sealed class FillingMultiLine : Function
 
         if (uu2.IsPeriodic)
         {
-            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(uu2.FirstParameter(), uu2.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref umin, ref umax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(uu2.FirstParameter, uu2.LastParameter, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref umin, ref umax);
         }
         if (vv2.IsPeriodic)
         {
-            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vv2.FirstParameter(), vv2.LastParameter(), global::Kerf.Engine.Foundation.Precision.PConfusion(), ref vmin, ref vmax);
+            global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(vv2.FirstParameter, vv2.LastParameter, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref vmin, ref vmax);
         }
         // end try duplication
 
@@ -333,14 +333,14 @@ public sealed class FillingMultiLine : Function
             Point2D pnt2 = ValueOnF1(_bis.FirstParameter() + 0.9 * deltaU);
             if (_isoU1)
             {
-                if (Math.Abs(pnt1.Y() - pnt2.Y()) < eps)
+                if (Math.Abs(pnt1.Y - pnt2.Y) < eps)
                 {
                     _kPart = 1;
                 }
             }
             else
             {
-                if (Math.Abs(pnt1.X() - pnt2.X()) < eps)
+                if (Math.Abs(pnt1.X - pnt2.X) < eps)
                 {
                     _kPart = 1;
                 }
@@ -386,57 +386,57 @@ public sealed class FillingMultiLine : Function
             Surface s = Tool.Surface(_face1, out Placement L)!;
             if (!L.IsIdentity)
             {
-                s = (Surface)s.Transformed(L.Transformation());
+                s = (Surface)s.Transformed(L.Transformation);
             }
 
             bool sens;
             if (!_isoU1)
             {
-                curve = s.UIso(pMil.X());
-                sens = p1.Y() < p2.Y();
+                curve = s.UIso(pMil.X);
+                sens = p1.Y < p2.Y;
                 if (sens)
                 {
-                    curve = new TrimmedCurve3D(curve, p1.Y(), p2.Y(), sens);
+                    curve = new TrimmedCurve3D(curve, p1.Y, p2.Y, sens);
                 }
                 else
                 {
-                    curve = new TrimmedCurve3D(curve, p2.Y(), p1.Y(), sens);
+                    curve = new TrimmedCurve3D(curve, p2.Y, p1.Y, sens);
                 }
 
-                f = curve.FirstParameter();
-                l = curve.LastParameter();
+                f = curve.FirstParameter;
+                l = curve.LastParameter;
                 if (sens)
                 {
-                    pCurve1 = new LineCurve2D(new Point2D(pMil.X(), p1.Y() - f), Constants.DY2d());
+                    pCurve1 = new LineCurve2D(new Point2D(pMil.X, p1.Y - f), Constants.DY2d());
                 }
                 else
                 {
-                    pCurve1 = new LineCurve2D(new Point2D(pMil.X(), p1.Y() + f), Constants.DY2d().Reversed());
+                    pCurve1 = new LineCurve2D(new Point2D(pMil.X, p1.Y + f), Constants.DY2d().Reversed());
                 }
                 pCurve1 = new TrimmedCurve2D(pCurve1, f, l);
             }
             else
             {
-                curve = s.VIso(pMil.Y());
-                sens = p1.X() < p2.X();
+                curve = s.VIso(pMil.Y);
+                sens = p1.X < p2.X;
                 if (sens)
                 {
-                    curve = new TrimmedCurve3D(curve, p1.X(), p2.X(), sens);
+                    curve = new TrimmedCurve3D(curve, p1.X, p2.X, sens);
                 }
                 else
                 {
-                    curve = new TrimmedCurve3D(curve, p2.X(), p1.X(), sens);
+                    curve = new TrimmedCurve3D(curve, p2.X, p1.X, sens);
                 }
 
-                f = curve.FirstParameter();
-                l = curve.LastParameter();
+                f = curve.FirstParameter;
+                l = curve.LastParameter;
                 if (sens)
                 {
-                    pCurve1 = new LineCurve2D(new Point2D(p1.X() - f, pMil.Y()), Constants.DX2d());
+                    pCurve1 = new LineCurve2D(new Point2D(p1.X - f, pMil.Y), Constants.DX2d());
                 }
                 else
                 {
-                    pCurve1 = new LineCurve2D(new Point2D(p1.X() + f, pMil.Y()), Constants.DX2d().Reversed());
+                    pCurve1 = new LineCurve2D(new Point2D(p1.X + f, pMil.Y), Constants.DX2d().Reversed());
                 }
                 pCurve1 = new TrimmedCurve2D(pCurve1, f, l);
             }
@@ -447,26 +447,26 @@ public sealed class FillingMultiLine : Function
 
             if (!_isoU2)
             {
-                sens = p1.Y() < p2.Y();
+                sens = p1.Y < p2.Y;
                 if (sens)
                 {
-                    pCurve2 = new LineCurve2D(new Point2D(pMil.X(), (p1.Y() - f)), Constants.DY2d());
+                    pCurve2 = new LineCurve2D(new Point2D(pMil.X, (p1.Y - f)), Constants.DY2d());
                 }
                 else
                 {
-                    pCurve2 = new LineCurve2D(new Point2D(pMil.X(), (p1.Y() + f)), Constants.DY2d().Reversed());
+                    pCurve2 = new LineCurve2D(new Point2D(pMil.X, (p1.Y + f)), Constants.DY2d().Reversed());
                 }
             }
             else
             {
-                sens = p1.X() < p2.X();
+                sens = p1.X < p2.X;
                 if (sens)
                 {
-                    pCurve2 = new LineCurve2D(new Point2D(p1.X() - f, pMil.Y()), Constants.DX2d());
+                    pCurve2 = new LineCurve2D(new Point2D(p1.X - f, pMil.Y), Constants.DX2d());
                 }
                 else
                 {
-                    pCurve2 = new LineCurve2D(new Point2D(p1.X() + f, pMil.Y()), Constants.DX2d().Reversed());
+                    pCurve2 = new LineCurve2D(new Point2D(p1.X + f, pMil.Y), Constants.DX2d().Reversed());
                 }
             }
             pCurve2 = new TrimmedCurve2D(pCurve2, f, l);
@@ -476,19 +476,19 @@ public sealed class FillingMultiLine : Function
             Surface s = Tool.Surface(_face1, out Placement L)!;
             if (!L.IsIdentity)
             {
-                s = (Surface)s.Transformed(L.Transformation());
+                s = (Surface)s.Transformed(L.Transformation);
             }
 
             if (s is TrimmedSurface rts1)
             {
-                s = rts1.BasisSurface();
+                s = rts1.BasisSurface;
             }
 
             PlaneSurface plane = (PlaneSurface)s;
             // eval the 3d curve corresponding to the bissectrice.
-            Point2D p = _bis.Line().Location();
-            Direction2D d = _bis.Line().Direction();
-            LineCurve3D line = new(new Point3D(p.X(), p.Y(), 0.0), new Direction3D(d.X(), d.Y(), 0.0));
+            Point2D p = _bis.Line().Location;
+            Direction2D d = _bis.Line().Direction;
+            LineCurve3D line = new(new Point3D(p.X, p.Y, 0.0), new Direction3D(d.X, d.Y, 0.0));
             TrimmedCurve3D tLine = new(line, _bis.FirstParameter(), _bis.LastParameter());
             curve = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(tLine, plane, Constants.DZ(), false);
 
@@ -499,11 +499,11 @@ public sealed class FillingMultiLine : Function
             s = Tool.Surface(_face2, out L)!;
             if (!L.IsIdentity)
             {
-                s = (Surface)s.Transformed(L.Transformation());
+                s = (Surface)s.Transformed(L.Transformation);
             }
             if (s is TrimmedSurface rts2)
             {
-                s = rts2.BasisSurface();
+                s = rts2.BasisSurface;
             }
             plane = (PlaneSurface)s;
             pCurve2 = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(curve!, plane);
@@ -523,8 +523,8 @@ public sealed class FillingMultiLine : Function
 
         Point2D p2d = ValueOnF1(u);
 
-        Point3D p3d = s.Value(p2d.X(), p2d.Y());
-        p3d = p3d.Transformed(l.Transformation());
+        Point3D p3d = s.Value(p2d.X, p2d.Y);
+        p3d = p3d.Transformed(l.Transformation);
 
         return p3d;
     }
@@ -550,8 +550,8 @@ public sealed class FillingMultiLine : Function
             dist = ext.LowerDistance();
         }
         // Control with `ends`
-        d1 = p.Distance(theU.Value(theU.FirstParameter()));
-        d2 = p.Distance(theU.Value(theU.LastParameter()));
+        d1 = p.DistanceTo(theU.Value(theU.FirstParameter()));
+        d2 = p.DistanceTo(theU.Value(theU.LastParameter()));
 
         if (d1 < dist || d2 < dist || Math.Abs(d1 - dist) < eps || Math.Abs(d2 - dist) < eps)
         {
@@ -559,15 +559,15 @@ public sealed class FillingMultiLine : Function
             {
                 if (theU.GetType() == Circle)
                 {
-                    Vector2D axis = new(theU.Circle().XAxis().Direction());
+                    Vector2D axis = new(theU.Circle().XAxis.Direction);
                     Vector2D d12d = theBis.DN(theBis.FirstParameter(), 1);
-                    double ang = axis.Angle(d12d);
+                    double ang = axis.AngleTo(d12d);
                     if (!theU.Circle().IsDirect)
                     {
                         ang = -ang;
                     }
                     uu = global::Kerf.Engine.Geometry.ElCLib.InPeriod(ang, theU.FirstParameter(), theU.FirstParameter() + 2 * Math.PI);
-                    dist = theU.Circle().Radius();
+                    dist = theU.Circle().Radius;
                 }
                 else
                 {
@@ -592,18 +592,18 @@ public sealed class FillingMultiLine : Function
         Point2D pf = theV.Value(theV.FirstParameter());
         Point2D pl = theV.Value(theV.LastParameter());
 
-        if (Math.Abs(dist - Math.Abs(pf.Y())) < tol)
+        if (Math.Abs(dist - Math.Abs(pf.Y)) < tol)
         {
             vv = theV.FirstParameter();
         }
-        else if (Math.Abs(dist - Math.Abs(pl.Y())) < tol)
+        else if (Math.Abs(dist - Math.Abs(pl.Y)) < tol)
         {
             vv = theV.LastParameter();
         }
         else
         {
             // test if the curve is at the side `negative Y`.
-            if (Min(pf.Y(), pl.Y()) < -tol)
+            if (Min(pf.Y, pl.Y) < -tol)
             {
                 dist = -dist;
             }
@@ -634,12 +634,12 @@ public sealed class FillingMultiLine : Function
                     double vs2 = seg.LastPoint().ParamOnFirst();
                     Point2D ps1 = theV.Value(vs1);
                     Point2D ps2 = theV.Value(vs2);
-                    double alp = (dist - ps1.Y()) / (ps2.Y() - ps1.Y());
+                    double alp = (dist - ps1.Y) / (ps2.Y - ps1.Y);
                     vv = alp * (vs2 - vs1) + vs1;
                 }
                 else
                 {
-                    if (Math.Abs(dist - pl.Y()) < Math.Abs(dist - pf.Y()))
+                    if (Math.Abs(dist - pl.Y) < Math.Abs(dist - pf.Y))
                     {
                         vv = theV.LastParameter();
                     }
@@ -674,8 +674,8 @@ public sealed class FillingMultiLine : Function
         pf2 = ValueOnFace(u, _bis, _u2, _v2, _isoU2);
 
         Surface s = Tool.Surface(_face1, out Placement l)!;
-        p3d = s.Value(pf1.X(), pf1.Y());
-        p3d = p3d.Transformed(l.Transformation());
+        p3d = s.Value(pf1.X, pf1.Y);
+        p3d = p3d.Transformed(l.Transformation);
     }
 
     /// <inheritdoc/>

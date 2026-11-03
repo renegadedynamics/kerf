@@ -108,7 +108,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
 
     // ------------------------------------------------------------ settled placements
 
-    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X() && theN.Y() == theP.Y() && theN.Z() == theP.Z();
+    private static bool Same(N.gp_Dir theN, in Direction3D theP) => theN.X() == theP.X && theN.Y() == theP.Y && theN.Z() == theP.Z;
 
     private static Direction3D FromNative(N.gp_Dir theD) => new(theD.X(), theD.Y(), theD.Z());
 
@@ -135,7 +135,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
             using var aD2 = aN2.Direction();
             using var aX2 = aN2.XDirection();
             using var aY2 = aN2.YDirection();
-            if (Same(aD2, anAx.Direction()) && Same(aX2, anAx.XDirection()) && Same(aY2, anAx.YDirection()))
+            if (Same(aD2, anAx.Direction) && Same(aX2, anAx.XDirection) && Same(aY2, anAx.YDirection))
             {
                 return anAx;
             }
@@ -288,7 +288,7 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         int aForm = theO.Int(0, 3);
         double dx = Size(theO, aForm != 3), dy = Size(theO, aForm != 3), dz = Size(theO, aForm != 3);
         Point3D aP = new(theO.Real(-20, 20), theO.Real(-20, 20), theO.Real(-20, 20));
-        Point3D aP2 = new(aP.X() + dx, aP.Y() + dy, aP.Z() + dz);
+        Point3D aP2 = new(aP.X + dx, aP.Y + dy, aP.Z + dz);
         Frame3D anAx = aForm == 3 ? Ax2(theO) : new Frame3D();
         Case("box" + aForm,
              () =>
@@ -545,8 +545,8 @@ public sealed class BRepPrimAPIPrimitivesOracleTests(ITestOutputHelper output) :
         double a = theO.Real(1, 10), b = theO.Real(1, 10), c = theO.Real(1, 10);
         bool isShell = theO.Bool();
         int aFaceIndex = theO.Int(1, 6);
-        Point3D aRef = new(anAx.Location().X() + theO.Real(-15, 15), anAx.Location().Y() + theO.Real(-15, 15),
-                          anAx.Location().Z() + theO.Real(-15, 15));
+        Point3D aRef = new(anAx.Location.X + theO.Real(-15, 15), anAx.Location.Y + theO.Real(-15, 15),
+                          anAx.Location.Z + theO.Real(-15, 15));
 
         using var aNAx = Oracle.ToNative(anAx);
         using N.BRepBuilderAPI_MakeShape aNBase = aBase switch

@@ -133,7 +133,7 @@ public class ExtremaPC_EllipseTest
         // Verify the closest point is actually on the ellipse
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnEllipse), THE_TOL);
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class ExtremaPC_EllipseTest
         // Verify the point on ellipse
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnEllipse), THE_TOL);
     }
 
     [Fact]
@@ -169,11 +169,11 @@ public class ExtremaPC_EllipseTest
         // Verify the closest point is on the ellipse and distance is reasonable
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnEllipse), THE_TOL);
 
         // Distance to closest point should be less than distance to origin
         double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
-        Assert.True(aMinDist < aPoint.Distance(new Point3D(0, 0, 0)));
+        Assert.True(aMinDist < aPoint.DistanceTo(new Point3D(0, 0, 0)));
     }
 
     [Fact]
@@ -191,11 +191,11 @@ public class ExtremaPC_EllipseTest
         // Verify the closest point is on the ellipse
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[aMinIdx].Parameter, anEllipse);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnEllipse), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnEllipse), THE_TOL);
 
         // Distance to closest point should be less than distance to origin
         double aMinDist = Math.Sqrt(aResult.MinSquareDistance());
-        Assert.True(aMinDist < aPoint.Distance(new Point3D(0, 0, 0)));
+        Assert.True(aMinDist < aPoint.DistanceTo(new Point3D(0, 0, 0)));
     }
 
     //==================================================================================================
@@ -229,7 +229,7 @@ public class ExtremaPC_EllipseTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[i].Parameter, anEllipse);
-            Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnEllipse), THE_TOL);
+            Assert.Equal(0.0, aResult[i].Point.DistanceTo(aPtOnEllipse), THE_TOL);
         }
     }
 
@@ -351,7 +351,7 @@ public class ExtremaPC_EllipseTest
         {
             global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt = aResult[i];
             Point3D aCheck = global::Kerf.Engine.Geometry.ElCLib.Value(anExt.Parameter, anEllipse);
-            Assert.Equal(0.0, aCheck.Distance(anExt.Point), 1e-7);
+            Assert.Equal(0.0, aCheck.DistanceTo(anExt.Point), 1e-7);
         }
     }
 
@@ -522,8 +522,8 @@ public class ExtremaPC_EllipseTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(aResult[i].Parameter, anEllipse);
-            Assert.Equal(0.0, aPtOnEllipse.Distance(aResult[i].Point), THE_TOL);
-            double aExpectedSqDist = aPoint.SquareDistance(aPtOnEllipse);
+            Assert.Equal(0.0, aPtOnEllipse.DistanceTo(aResult[i].Point), THE_TOL);
+            double aExpectedSqDist = aPoint.SquareDistanceTo(aPtOnEllipse);
             Assert.Equal(aExpectedSqDist, aResult[i].SquareDistance, THE_TOL);
         }
     }

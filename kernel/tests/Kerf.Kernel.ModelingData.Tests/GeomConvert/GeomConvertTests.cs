@@ -19,7 +19,7 @@ public class GeomConvertTest
 
         aCircle.D0(0.0, out Point3D aOrigPnt);
         aBSpline.D0(0.0, out Point3D aBSplinePnt);
-        Assert.Equal(0.0, aOrigPnt.Distance(aBSplinePnt), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aOrigPnt.DistanceTo(aBSplinePnt), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -31,7 +31,7 @@ public class GeomConvertTest
         Assert.NotNull(aBSpline);
 
         aBSpline.D0(5.0, out Point3D aPnt);
-        Assert.Equal(0.0, aPnt.Distance(new Point3D(5, 0, 0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.DistanceTo(new Point3D(5, 0, 0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -43,6 +43,6 @@ public class GeomConvertTest
         Assert.NotNull(aBSurf);
 
         aBSurf.D0(5.0, 5.0, out Point3D aPnt);
-        Assert.Equal(0.0, aPnt.Distance(new Point3D(5, 5, 0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aPnt.DistanceTo(new Point3D(5, 5, 0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

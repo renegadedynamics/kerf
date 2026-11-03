@@ -72,7 +72,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Assert.Same(aFirst, aSecond);
 
         Plane3D aCachedPlane = anAdaptor.Plane();
-        Assert.Equal(5.0, aCachedPlane.Location().Z(), THE_TOLERANCE);
+        Assert.Equal(5.0, aCachedPlane.Location.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Surface? aFirst = aCopy.GeomSurfaceTransformed();
         Surface? aSecond = aCopy.GeomSurfaceTransformed();
         Assert.Same(aFirst, aSecond);
-        Assert.Equal(4.0, aCopy.Plane().Location().Z(), THE_TOLERANCE);
+        Assert.Equal(4.0, aCopy.Plane().Location.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
 
         Assert.NotSame(aFirst, aSecond);
-        Assert.Equal(3.0, anAdaptor.Plane().Location().Z(), THE_TOLERANCE);
+        Assert.Equal(3.0, anAdaptor.Plane().Location.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Surface? aSecond = anAdaptor.GeomSurfaceTransformed();
         Assert.NotSame(aFirst, aSecond);
         Assert.Equal(SurfaceKind.Sphere, anAdaptor.GetType());
-        Assert.Equal(3.0, anAdaptor.Sphere().Radius(), THE_TOLERANCE);
+        Assert.Equal(3.0, anAdaptor.Sphere().Radius, THE_TOLERANCE);
     }
 
     [Fact]
@@ -144,9 +144,9 @@ public class GeomAdaptor_TransformedSurfaceTest
         TransformedSurface anAdaptor = new(anExt, createRotationY(M_PI / 2.0));
 
         Direction3D aDirection = anAdaptor.Direction();
-        Assert.Equal(1.0, aDirection.X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aDirection.Y(), THE_TOLERANCE);
-        Assert.Equal(0.0, aDirection.Z(), THE_TOLERANCE);
+        Assert.Equal(1.0, aDirection.X, THE_TOLERANCE);
+        Assert.Equal(0.0, aDirection.Y, THE_TOLERANCE);
+        Assert.Equal(0.0, aDirection.Z, THE_TOLERANCE);
 
         CurveAdaptorBase aCurve = anAdaptor.BasisCurve();
         Assert.NotNull(aCurve);
@@ -162,9 +162,9 @@ public class GeomAdaptor_TransformedSurfaceTest
         TransformedSurface anAdaptor = new(aRev, createRotationY(M_PI / 2.0));
 
         Axis3D aAxis = anAdaptor.AxeOfRevolution();
-        Assert.Equal(1.0, aAxis.Direction().X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aAxis.Direction().Y(), THE_TOLERANCE);
-        Assert.Equal(0.0, aAxis.Direction().Z(), THE_TOLERANCE);
+        Assert.Equal(1.0, aAxis.Direction.X, THE_TOLERANCE);
+        Assert.Equal(0.0, aAxis.Direction.Y, THE_TOLERANCE);
+        Assert.Equal(0.0, aAxis.Direction.Z, THE_TOLERANCE);
 
         CurveAdaptorBase aCurve = anAdaptor.BasisCurve();
         Assert.NotNull(aCurve);
@@ -200,7 +200,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Assert.Equal(0.2, aTrimmed.ToleranceV(), THE_TOLERANCE);
 
         Point3D aPoint = aTrimmed.EvalD0(4.0, 3.0);
-        Assert.Equal(5.0, aPoint.Z(), THE_TOLERANCE);
+        Assert.Equal(5.0, aPoint.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -219,7 +219,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         Assert.Equal(0.15, aTrimmed.ToleranceV(), THE_TOLERANCE);
 
         Point3D aPoint = aTrimmed.EvalD0(2.0, 4.0);
-        Assert.Equal(7.0, aPoint.Z(), THE_TOLERANCE);
+        Assert.Equal(7.0, aPoint.Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class GeomAdaptor_TransformedSurfaceTest
         aVParams.SetValue(2, 1.0);
 
         NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
-        Assert.Equal(5.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
-        Assert.Equal(5.0, aGrid.Value(2, 2).Z(), THE_TOLERANCE);
+        Assert.Equal(5.0, aGrid.Value(1, 1).Z, THE_TOLERANCE);
+        Assert.Equal(5.0, aGrid.Value(2, 2).Z, THE_TOLERANCE);
     }
 }

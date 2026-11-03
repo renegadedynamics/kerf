@@ -144,8 +144,8 @@ public class IntRes2dTests
         var aSemi = new TwoDDomain(new Point2D(1e300, -1e300), -1e300, 1e-7, false);
         Assert.False(aSemi.HasFirstPoint);
         Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastParameter());
-        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastPoint().X());
-        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastPoint().Y());
+        Assert.Equal(global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastPoint().X);
+        Assert.Equal(-global::Kerf.Engine.Foundation.Precision.Infinite(), aSemi.LastPoint().Y);
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => aSemi.FirstPoint());
     }
 

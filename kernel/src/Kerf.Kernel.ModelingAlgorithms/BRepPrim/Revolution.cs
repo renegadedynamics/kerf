@@ -41,7 +41,7 @@ internal class Revolution : OneAxis
     /// <summary>The surface normal should be directed towards the outside.</summary>
     public override Face MakeEmptyLateralFace()
     {
-        RevolutionSurface s = new(_meridian!, Axes().Axis());
+        RevolutionSurface s = new(_meridian!, Axes().Axis);
         Face f = new();
         _builder.Builder().MakeFace(ref f, s, global::Kerf.Engine.Foundation.Precision.Confusion());
         return f;
@@ -52,7 +52,7 @@ internal class Revolution : OneAxis
     {
         Edge e = new();
         Curve3D c = (Curve3D)_meridian!.Copy();
-        Transform3D t = new Transform3D().WithRotation(Axes().Axis(), ang);
+        Transform3D t = new Transform3D().WithRotation(Axes().Axis, ang);
         c.Transform(t);
         _builder.Builder().MakeEdge(ref e, c, global::Kerf.Engine.Foundation.Precision.Confusion());
         return e;

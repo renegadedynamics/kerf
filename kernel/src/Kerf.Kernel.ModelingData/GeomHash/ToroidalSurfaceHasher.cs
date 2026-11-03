@@ -21,9 +21,9 @@ internal readonly struct ToroidalSurfaceHasher(double theCompTolerance, double t
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(torus.Position().Ax2()),
-            HashUtils.Hash((long)HashUtils.Round(torus.MajorRadius() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(torus.MinorRadius() * factor))
+            axisHasher.Hash(torus.Position.Frame),
+            HashUtils.Hash((long)HashUtils.Round(torus.MajorRadius * factor)),
+            HashUtils.Hash((long)HashUtils.Round(torus.MinorRadius * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,8 +32,8 @@ internal readonly struct ToroidalSurfaceHasher(double theCompTolerance, double t
     public bool IsEqual(ToroidalSurface torus1, ToroidalSurface torus2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(torus1.Position().Ax2(), torus2.Position().Ax2())
-               && Math.Abs(torus1.MajorRadius() - torus2.MajorRadius()) <= CompTolerance
-               && Math.Abs(torus1.MinorRadius() - torus2.MinorRadius()) <= CompTolerance;
+        return axisHasher.IsEqual(torus1.Position.Frame, torus2.Position.Frame)
+               && Math.Abs(torus1.MajorRadius - torus2.MajorRadius) <= CompTolerance
+               && Math.Abs(torus1.MinorRadius - torus2.MinorRadius) <= CompTolerance;
     }
 }

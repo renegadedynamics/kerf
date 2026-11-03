@@ -384,7 +384,7 @@ internal static class BOPTestPartitionCommands
                             di.Append("Error: ").Append(a[j]).Append(" is a null shape");
                             return 1;
                         }
-                        if (aS.ShapeType() != ShapeType.Solid)
+                        if (aS.Type != ShapeType.Solid)
                         {
                             di.Append("Error: ").Append(a[j]).Append(" is not a solid");
                             return 1;

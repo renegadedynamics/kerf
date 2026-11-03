@@ -58,8 +58,8 @@ public class Geom_BezierSurfaceTests
     public void CopyConstructorBasicProperties()
     {
         BezierSurface aCopiedSurface = new(myOriginalSurface);
-        Assert.Equal(myOriginalSurface.UDegree(), aCopiedSurface.UDegree());
-        Assert.Equal(myOriginalSurface.VDegree(), aCopiedSurface.VDegree());
+        Assert.Equal(myOriginalSurface.UDegree, aCopiedSurface.UDegree);
+        Assert.Equal(myOriginalSurface.VDegree, aCopiedSurface.VDegree);
         Assert.Equal(myOriginalSurface.UPoleCount, aCopiedSurface.UPoleCount);
         Assert.Equal(myOriginalSurface.VPoleCount, aCopiedSurface.VPoleCount);
         Assert.Equal(myOriginalSurface.IsURational, aCopiedSurface.IsURational);
@@ -84,8 +84,8 @@ public class Geom_BezierSurfaceTests
     {
         BezierSurface? aCopiedSurface = myOriginalSurface.Copy() as BezierSurface;
         Assert.NotNull(aCopiedSurface);
-        Assert.Equal(myOriginalSurface.UDegree(), aCopiedSurface.UDegree());
-        Assert.Equal(myOriginalSurface.VDegree(), aCopiedSurface.VDegree());
+        Assert.Equal(myOriginalSurface.UDegree, aCopiedSurface.UDegree);
+        Assert.Equal(myOriginalSurface.VDegree, aCopiedSurface.VDegree);
         for (double u = 0.0; u <= 1.0; u += 0.5)
         {
             for (double v = 0.0; v <= 1.0; v += 0.5)
@@ -132,29 +132,29 @@ public class Geom_BezierSurfaceTests
     public void Evaluation_D1()
     {
         myOriginalSurface.D1(0.5, 0.5, out _, out Vector3D aD1U, out Vector3D aD1V);
-        Assert.True(aD1U.Magnitude() > 0.0);
-        Assert.True(aD1V.Magnitude() > 0.0);
+        Assert.True(aD1U.Magnitude > 0.0);
+        Assert.True(aD1V.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_D2()
     {
         myOriginalSurface.D2(0.5, 0.5, out _, out Vector3D aD1U, out _, out _, out _, out _);
-        Assert.True(aD1U.Magnitude() > 0.0);
+        Assert.True(aD1U.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_DN()
     {
-        Assert.True(myOriginalSurface.DN(0.5, 0.5, 1, 0).Magnitude() > 0.0);
-        Assert.True(myOriginalSurface.DN(0.5, 0.5, 0, 1).Magnitude() > 0.0);
+        Assert.True(myOriginalSurface.DN(0.5, 0.5, 1, 0).Magnitude > 0.0);
+        Assert.True(myOriginalSurface.DN(0.5, 0.5, 0, 1).Magnitude > 0.0);
     }
 
     [Fact]
     public void Properties()
     {
-        Assert.Equal(2, myOriginalSurface.UDegree());
-        Assert.Equal(2, myOriginalSurface.VDegree());
+        Assert.Equal(2, myOriginalSurface.UDegree);
+        Assert.Equal(2, myOriginalSurface.VDegree);
         Assert.False(myOriginalSurface.IsUPeriodic);
         Assert.False(myOriginalSurface.IsVPeriodic);
         Assert.False(myOriginalSurface.IsURational);
@@ -168,7 +168,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void Bounds()
     {
-        myOriginalSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        myOriginalSurface.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1);
         Assert.Equal(1.0, aU2);
         Assert.Equal(0.0, aV1);
@@ -199,8 +199,8 @@ public class Geom_BezierSurfaceTests
     {
         Point3D aValBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Increase(4, 3);
-        Assert.Equal(4, myOriginalSurface.UDegree());
-        Assert.Equal(3, myOriginalSurface.VDegree());
+        Assert.Equal(4, myOriginalSurface.UDegree);
+        Assert.Equal(3, myOriginalSurface.VDegree);
         Assert.Equal(5, myOriginalSurface.UPoleCount);
         Assert.Equal(4, myOriginalSurface.VPoleCount);
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.5, 0.5), 1e-10));
@@ -218,11 +218,11 @@ public class Geom_BezierSurfaceTests
     public void ExchangeUV()
     {
         Point3D aValBefore = myOriginalSurface.Value(0.3, 0.7);
-        int aUDeg = myOriginalSurface.UDegree();
-        int aVDeg = myOriginalSurface.VDegree();
+        int aUDeg = myOriginalSurface.UDegree;
+        int aVDeg = myOriginalSurface.VDegree;
         myOriginalSurface.ExchangeUV();
-        Assert.Equal(aVDeg, myOriginalSurface.UDegree());
-        Assert.Equal(aUDeg, myOriginalSurface.VDegree());
+        Assert.Equal(aVDeg, myOriginalSurface.UDegree);
+        Assert.Equal(aUDeg, myOriginalSurface.VDegree);
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.7, 0.3), 1e-10));
     }
 
@@ -285,9 +285,9 @@ public class Geom_BezierSurfaceTests
         Point3D aPtBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Transform(aTrsf);
         Point3D aPtAfter = myOriginalSurface.Value(0.5, 0.5);
-        Assert.Equal(aPtBefore.X() + 10.0, aPtAfter.X(), 1e-10);
-        Assert.Equal(aPtBefore.Y() + 20.0, aPtAfter.Y(), 1e-10);
-        Assert.Equal(aPtBefore.Z() + 30.0, aPtAfter.Z(), 1e-10);
+        Assert.Equal(aPtBefore.X + 10.0, aPtAfter.X, 1e-10);
+        Assert.Equal(aPtBefore.Y + 20.0, aPtAfter.Y, 1e-10);
+        Assert.Equal(aPtBefore.Z + 30.0, aPtAfter.Z, 1e-10);
     }
 
     [Fact]
@@ -296,7 +296,7 @@ public class Geom_BezierSurfaceTests
         int aNbUBefore = myOriginalSurface.UPoleCount;
         myOriginalSurface.InsertPoleRowAfter(1, Points(new Point3D(1.5, 1, 0), new Point3D(1.5, 2, 0), new Point3D(1.5, 3, 0)));
         Assert.Equal(aNbUBefore + 1, myOriginalSurface.UPoleCount);
-        Assert.Equal(3, myOriginalSurface.UDegree());
+        Assert.Equal(3, myOriginalSurface.UDegree);
     }
 
     [Fact]
@@ -305,7 +305,7 @@ public class Geom_BezierSurfaceTests
         int aNbVBefore = myOriginalSurface.VPoleCount;
         myOriginalSurface.InsertPoleColAfter(1, Points(new Point3D(1, 1.5, 0), new Point3D(2, 1.5, 0), new Point3D(3, 1.5, 0)));
         Assert.Equal(aNbVBefore + 1, myOriginalSurface.VPoleCount);
-        Assert.Equal(3, myOriginalSurface.VDegree());
+        Assert.Equal(3, myOriginalSurface.VDegree);
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public class Geom_BezierSurfaceTests
         myOriginalSurface.SetPoleRow(2, Points(new Point3D(10, 1, 0), new Point3D(10, 2, 0), new Point3D(10, 3, 0)));
         for (int j = 1; j <= 3; ++j)
         {
-            Assert.Equal(10.0, myOriginalSurface.Pole(2, j).X(), 1e-10);
+            Assert.Equal(10.0, myOriginalSurface.Pole(2, j).X, 1e-10);
         }
     }
 
@@ -342,20 +342,20 @@ public class Geom_BezierSurfaceTests
         myOriginalSurface.SetPoleCol(2, Points(new Point3D(1, 10, 0), new Point3D(2, 10, 0), new Point3D(3, 10, 0)));
         for (int i = 1; i <= 3; ++i)
         {
-            Assert.Equal(10.0, myOriginalSurface.Pole(i, 2).Y(), 1e-10);
+            Assert.Equal(10.0, myOriginalSurface.Pole(i, 2).Y, 1e-10);
         }
     }
 
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        Assert.Null(myOriginalSurface.Weights());
+        Assert.Null(myOriginalSurface.WeightsOrNull());
     }
 
     [Fact]
     public void PolesAccess()
     {
-        Grid<Point3D> aPoles = myOriginalSurface.Poles();
+        Grid<Point3D> aPoles = myOriginalSurface.Poles;
         Assert.Equal(3, aPoles.RowCount);
         Assert.Equal(3, aPoles.ColumnCount);
         Assert.True(aPoles[0, 0].IsEqual(new Point3D(1, 1, 0.2), 1e-10));
@@ -364,7 +364,7 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void MaxDegree()
     {
-        Assert.True(BezierSurface.MaxDegree() >= 25);
+        Assert.True(BezierSurface.MaxDegree >= 25);
     }
 
     [Fact]
@@ -398,8 +398,8 @@ public class Geom_BezierSurfaceTests
     public void Evaluation_D3()
     {
         myOriginalSurface.D3(0.5, 0.5, out _, out _, out _, out _, out _, out _, out Vector3D aD3U, out Vector3D aD3V, out _, out _);
-        Assert.Equal(0.0, aD3U.Magnitude(), 1e-10);
-        Assert.Equal(0.0, aD3V.Magnitude(), 1e-10);
+        Assert.Equal(0.0, aD3U.Magnitude, 1e-10);
+        Assert.Equal(0.0, aD3V.Magnitude, 1e-10);
     }
 
     [Fact]
@@ -446,8 +446,8 @@ public class Geom_BezierSurfaceTests
         BezierSurface aSurf = new(Poles2x2(1.0), Weights2x2(1.0, 2.0, 2.0, 1.0));
         Point3D aValBefore = aSurf.Value(0.5, 0.5);
         aSurf.Increase(3, 3);
-        Assert.Equal(3, aSurf.UDegree());
-        Assert.Equal(3, aSurf.VDegree());
+        Assert.Equal(3, aSurf.UDegree);
+        Assert.Equal(3, aSurf.VDegree);
         Assert.True(aValBefore.IsEqual(aSurf.Value(0.5, 0.5), 1e-10));
     }
 
@@ -531,7 +531,7 @@ public class Geom_BezierSurfaceTests
     {
         Assert.False(myOriginalSurface.IsURational);
         Assert.False(myOriginalSurface.IsVRational);
-        Grid<double> aWeights = myOriginalSurface.WeightsArray();
+        Grid<double> aWeights = myOriginalSurface.Weights;
         Assert.Equal(myOriginalSurface.UPoleCount, aWeights.RowCount);
         Assert.Equal(myOriginalSurface.VPoleCount, aWeights.ColumnCount);
         for (int i = 0; i < aWeights.RowCount; ++i)
@@ -547,7 +547,7 @@ public class Geom_BezierSurfaceTests
     public void WeightsArray_Rational_ReturnsOwning()
     {
         BezierSurface aRational = new(Poles2x2(), Weights2x2(1.0, 2.0, 1.0, 1.0));
-        Grid<double> aWeights = aRational.WeightsArray();
+        Grid<double> aWeights = aRational.Weights;
         Assert.Equal(4, aWeights.Values.Length);
         Assert.Equal(2.0, aWeights[0, 1]);
         Assert.Equal(1.0, aWeights[0, 0]);
@@ -562,10 +562,10 @@ public class Geom_BezierSurfaceTests
     public void IsoCurves_AreBezierCurves()
     {
         BezierCurve3D aU = Assert.IsType<BezierCurve3D>(myOriginalSurface.UIso(0.5));
-        Assert.Equal(myOriginalSurface.VDegree(), aU.Degree());
+        Assert.Equal(myOriginalSurface.VDegree, aU.Degree);
         Assert.False(aU.IsRational);
         BezierCurve3D aV = Assert.IsType<BezierCurve3D>(myOriginalSurface.VIso(0.5));
-        Assert.Equal(myOriginalSurface.UDegree(), aV.Degree());
+        Assert.Equal(myOriginalSurface.UDegree, aV.Degree);
 
         // Weights varying along V only (OCCT's "U rational"): the U iso-curves are rational, the V ones are not
         NCollection_Array2<double> aWeights = new(1, myOriginalSurface.UPoleCount, 1, myOriginalSurface.VPoleCount);
@@ -586,13 +586,13 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void KnotsOfEquivalentBSpline()
     {
-        Assert.Equal(new[] { 0.0, 1.0 }, myOriginalSurface.UKnots());
-        Assert.Equal(new[] { 0.0, 1.0 }, myOriginalSurface.VKnots());
-        Assert.Equal(new[] { 3, 3 }, myOriginalSurface.UMultiplicities());
-        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, myOriginalSurface.VKnotSequence());
+        Assert.Equal(new[] { 0.0, 1.0 }, myOriginalSurface.UKnots);
+        Assert.Equal(new[] { 0.0, 1.0 }, myOriginalSurface.VKnots);
+        Assert.Equal(new[] { 3, 3 }, myOriginalSurface.UMultiplicities);
+        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, myOriginalSurface.VKnotSequence);
         myOriginalSurface.Increase(4, 2);
-        Assert.Equal(new[] { 5, 5 }, myOriginalSurface.UMultiplicities());
-        Assert.Equal(10, myOriginalSurface.UKnotSequence().Count);
+        Assert.Equal(new[] { 5, 5 }, myOriginalSurface.UMultiplicities);
+        Assert.Equal(10, myOriginalSurface.UKnotSequence.Count);
     }
 
     [Fact]
@@ -605,8 +605,8 @@ public class Geom_BezierSurfaceTests
 
         BezierSurface aIncreased = myOriginalSurface.Increased(3, 4);
         Assert.False(aIncreased.IsFrozen);
-        Assert.Equal(4, aIncreased.VDegree());
-        Assert.Equal(2, myOriginalSurface.VDegree());
+        Assert.Equal(4, aIncreased.VDegree);
+        Assert.Equal(2, myOriginalSurface.VDegree);
         Assert.Equal(2, myOriginalSurface.PoleColRemoved(2).VPoleCount);
         Assert.True(myOriginalSurface.Segmented(0.0, 0.5, 0.0, 1.0).Value(1.0, 0.0).IsEqual(myOriginalSurface.Value(0.5, 0.0), 1e-12));
         BezierSurface aWeighted = myOriginalSurface.WithWeight(2, 2, 3.0);

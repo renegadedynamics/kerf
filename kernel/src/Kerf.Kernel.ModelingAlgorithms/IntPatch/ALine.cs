@@ -185,7 +185,7 @@ public class ALine : PatchLine
             if (pmpimpi >= paramMinOnLine)
             {
                 Point3D p1 = Value(pmpimpi);
-                double d1 = p1.Distance(vtx.Value());
+                double d1 = p1.DistanceTo(vtx.Value());
                 if (d1 < tol)
                 {
                     PatchPoint ovtx = vtx;
@@ -197,7 +197,7 @@ public class ALine : PatchLine
             if (pmpimpi <= paramMaxOnLine)
             {
                 Point3D p1 = Value(pmpimpi);
-                double d1 = p1.Distance(vtx.Value());
+                double d1 = p1.DistanceTo(vtx.Value());
                 if (d1 < tol)
                 {
                     PatchPoint ovtx = vtx;
@@ -489,7 +489,7 @@ public class ALine : PatchLine
                 if (vtxn.ParameterOnLine() != paramMaxOnLine)
                 {
                     Point3D pn = Value(paramMaxOnLine);
-                    double d = pn.Distance(vtx0.Value());
+                    double d = pn.DistanceTo(vtx0.Value());
                     if (d <= tol)
                     {
                         PatchPoint ovtx = vtx0;
@@ -506,7 +506,7 @@ public class ALine : PatchLine
                         if (vtx0.ParameterOnLine() != paramMinOnLine)
                         {
                             Point3D p0 = Value(paramMinOnLine);
-                            double d = p0.Distance(vtx0.Value());
+                            double d = p0.DistanceTo(vtx0.Value());
                             if (d <= tol)
                             {
                                 PatchPoint ovtx = vtxn;
@@ -605,7 +605,7 @@ public class ALine : PatchLine
                                    vtXm1.TransitionOnS2());
                     }
 
-                    if (vtx.Value().SquareDistance(vtXm1.Value()) > 1e-12)
+                    if (vtx.Value().SquareDistanceTo(vtXm1.Value()) > 1e-12)
                     {
                         PatchPoint copyVtx = vtXm1;
                         vtXm1.SetParameter(vtx.ParameterOnLine());

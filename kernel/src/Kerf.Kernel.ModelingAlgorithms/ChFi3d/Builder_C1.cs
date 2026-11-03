@@ -302,9 +302,9 @@ public partial class FilletBuilderBase
                 throw new NotDoneException("OneCorner : face at end not found");
             }
 
-            fv.Orientation(Forward);
-            fad.Orientation(Forward);
-            fop.Orientation(Forward);
+            fv.Orient(Forward);
+            fad.Orient(Forward);
+            fop.Orient(Forward);
 
             // The edge that will be extended is returned.
             for (it.Initialize(_veMap[vtx]); it.More() && arcprol.IsNull; it.Next())
@@ -316,7 +316,7 @@ public partial class FilletBuilderBase
                         if (it.Value().IsSame(ex.Current()))
                         {
                             arcprol = ShapeCasts.Edge(it.Value());
-                            oArcprolv = ex.Current().Orientation();
+                            oArcprolv = ex.Current().Orientation;
                             break;
                         }
                     }
@@ -331,7 +331,7 @@ public partial class FilletBuilderBase
             {
                 if (arcprol.IsSame(ex.Current()))
                 {
-                    oArcprolop = ex.Current().Orientation();
+                    oArcprolop = ex.Current().Orientation;
                     break;
                 }
             }
@@ -482,14 +482,14 @@ public partial class FilletBuilderBase
                 ChFi3d_Recale(bs, ref pfac1, ref pfac2, (iFadArc == 1));
             }
 
-            pardeb[1] = pfil1.X();
-            pardeb[2] = pfil1.Y();
-            pardeb[3] = pfac1.X();
-            pardeb[4] = pfac1.Y();
-            parfin[1] = pfil2.X();
-            parfin[2] = pfil2.Y();
-            parfin[3] = pfac2.X();
-            parfin[4] = pfac2.Y();
+            pardeb[1] = pfil1.X;
+            pardeb[2] = pfil1.Y;
+            pardeb[3] = pfac1.X;
+            pardeb[4] = pfac1.Y;
+            parfin[1] = pfil2.X;
+            parfin[2] = pfil2.Y;
+            parfin[3] = pfac2.X;
+            parfin[4] = pfac2.Y;
 
             double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
             ChFi3d_Boite(pfac1, pfac2, out uu1, out uu2, out vv1, out vv2);
@@ -500,8 +500,8 @@ public partial class FilletBuilderBase
                 throw new FailureException("OneCorner : echec calcul intersection");
             }
 
-            udeb = cc.FirstParameter();
-            ufin = cc.LastParameter();
+            udeb = cc.FirstParameter;
+            ufin = cc.LastParameter;
 
             //  determine if the curve has an intersection with edge of sewing
 
@@ -513,7 +513,7 @@ public partial class FilletBuilderBase
                 // double Ubid,Vbid;
                 Curve3D? c = Tool.Curve(edgecouture, out ubid, out vbid);
                 TrimmedCurve3D? ctrim = new TrimmedCurve3D(c, ubid, vbid);
-                CurveAdaptor cur1 = new(ctrim.BasisCurve());
+                CurveAdaptor cur1 = new(ctrim.BasisCurve);
                 CurveAdaptor cur2 = new(cc);
                 ExtCC extCC = new(cur1, cur2);
                 if (extCC.IsDone && extCC.ExtCount != 0)
@@ -565,7 +565,7 @@ public partial class FilletBuilderBase
             {
                 if (exp.Current().IsSame(cv1.Arc()))
                 {
-                    et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation(), cv1.TransitionOnArc()));
+                    et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation, cv1.TransitionOnArc()));
                     break;
                 }
             }
@@ -577,7 +577,7 @@ public partial class FilletBuilderBase
             {
                 if (exp.Current().IsSame(cv2.Arc()))
                 {
-                    et = global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation(), cv2.TransitionOnArc());
+                    et = global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation, cv2.TransitionOnArc());
                     break;
                 }
             }
@@ -678,8 +678,8 @@ public partial class FilletBuilderBase
                     continue;
                 }
                 // OCCT's anOtherPCurve, renamed: C# cannot redeclare it in this scope
-                CurveAdaptor2D otherPCurve2 = new(otherIntrf.PCurve(), otherCur.FirstParameter(),
-                                                        otherCur.LastParameter());
+                CurveAdaptor2D otherPCurve2 = new(otherIntrf.PCurve(), otherCur.FirstParameter,
+                                                        otherCur.LastParameter);
                 intersector.Perform(corkPCurve, otherPCurve2, _tol2d, global::Kerf.Engine.Foundation.Precision.PConfusion());
                 if (intersector.SegmentCount > 0 || intersector.PointCount > 0)
                 {
@@ -708,7 +708,7 @@ public partial class FilletBuilderBase
                     pfac1 = hc.Value(cv[i].ParameterOnArc());
                     pcF = pc.Value(udeb);
                     pcL = pc.Value(ufin);
-                    onfirst = pfac1.Distance(pcF) < pfac1.Distance(pcL);
+                    onfirst = pfac1.DistanceTo(pcF) < pfac1.DistanceTo(pcL);
                     if (onfirst)
                     {
                         pc.D1(udeb, out pcF, out derPc);
@@ -754,7 +754,7 @@ public partial class FilletBuilderBase
                     dStr.ChangeCurveInterferences(indcurv).Append(interfp1);
                     dStr.ChangeCurveInterferences(indcurv).Append(interfp2);
                     int indface = dStr.AddShape(fv);
-                    interfc = ChFi3d_FilCurveInDS(indcurv, indface, hc, cv[i].Arc().Orientation());
+                    interfc = ChFi3d_FilCurveInDS(indcurv, indface, hc, cv[i].Arc().Orientation);
                     dStr.ChangeShapeInterferences(indface).Append(interfc);
                     Edge localEdge = cv[i].Arc();
                     localEdge.Reverse();
@@ -763,7 +763,7 @@ public partial class FilletBuilderBase
                     {
                         throw new ConstructionErrorException("Failed to get p-curve of edge");
                     }
-                    interfc = ChFi3d_FilCurveInDS(indcurv, indface, hcR, localEdge.Orientation());
+                    interfc = ChFi3d_FilCurveInDS(indcurv, indface, hcR, localEdge.Orientation);
                     dStr.ChangeShapeInterferences(indface).Append(interfc);
                     // modify degenerated edge
                     bool degenExist = false;
@@ -795,7 +795,7 @@ public partial class FilletBuilderBase
                         TrimmedCurve2D? tCd = (cd as TrimmedCurve2D);
                         if (tCd is not null)
                         {
-                            cd = tCd.BasisCurve();
+                            cd = tCd.BasisCurve;
                         }
                         Point2D p2d = (firstToPar) ? hc.Value(first) : hc.Value(last);
                         ProjectPointOnCurve2D projector = new(p2d, cd);
@@ -829,7 +829,7 @@ public partial class FilletBuilderBase
             interFv = ChFi3d_FilCurveInDS(icurv2, iShape, c2d2, et);
             dStr.ChangeShapeInterferences(iShape).Append(interFv);
             // interferences of curv1 and curv2 on Isurf
-            if (Fd.Orientation() == fv.Orientation())
+            if (Fd.Orientation() == fv.Orientation)
             {
                 et = global::Kerf.Engine.Topology.TopAbs.Reverse(et);
             }
@@ -896,7 +896,7 @@ public partial class FilletBuilderBase
             {
                 if (vtx.IsSame(ex.Current()))
                 {
-                    oVtx = ex.Current().Orientation();
+                    oVtx = ex.Current().Orientation;
                     break;
                 }
             }
@@ -912,7 +912,7 @@ public partial class FilletBuilderBase
             {
                 if (vtx.IsSame(ex.Current()))
                 {
-                    oVtx = ex.Current().Orientation();
+                    oVtx = ex.Current().Orientation;
                 }
                 else
                 {
@@ -940,14 +940,14 @@ public partial class FilletBuilderBase
             pv2 = p2dbout;
             ChFi3d_Recale(bs, ref pv1, ref pv2, true);
             NCollection_Array1<double> pardeb = new(1, 4), parfin = new(1, 4);
-            pardeb[1] = pop1.X();
-            pardeb[2] = pop1.Y();
-            pardeb[3] = pv1.X();
-            pardeb[4] = pv1.Y();
-            parfin[1] = pop2.X();
-            parfin[2] = pop2.Y();
-            parfin[3] = pv2.X();
-            parfin[4] = pv2.Y();
+            pardeb[1] = pop1.X;
+            pardeb[2] = pop1.Y;
+            pardeb[3] = pv1.X;
+            pardeb[4] = pv1.Y;
+            parfin[1] = pop2.X;
+            parfin[2] = pop2.Y;
+            parfin[3] = pv2.X;
+            parfin[4] = pv2.Y;
             double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
             ChFi3d_Boite(pv1, pv2, out uu1, out uu2, out vv1, out vv2);
             ChFi3d_BoundFac(bs, uu1, uu2, vv1, vv2);
@@ -963,8 +963,8 @@ public partial class FilletBuilderBase
                 throw new FailureException("OneCorner : echec calcul intersection");
             }
 
-            udeb = zob3d.FirstParameter();
-            ufin = zob3d.LastParameter();
+            udeb = zob3d.FirstParameter;
+            ufin = zob3d.LastParameter;
             DsCurve zob = new(zob3d, tolreached);
             int iZob = dStr.AddCurve(zob);
 
@@ -1351,7 +1351,7 @@ public partial class FilletBuilderBase
         {
             if (ishape1 > 0)
             {
-                trafil1 = dStr.Shape(ishape1).Orientation();
+                trafil1 = dStr.Shape(ishape1).Orientation;
             }
             trafil1 = global::Kerf.Engine.Topology.TopAbs.Compose(trafil1, fd.Orientation());
 
@@ -1393,30 +1393,30 @@ public partial class FilletBuilderBase
         Point2D P2d1 = fi1.PCurveOnSurf().Value(fi1.Parameter(isfirst));
         Point2D P2d2 = fi1.PCurveOnSurf().Value(fi1.Parameter(!isfirst));
         Point3D aP1 = new(), aP2 = new();
-        hGs.D0(P2d1.X(), P2d1.Y(), out aP1);
-        hGs.D0(P2d2.X(), P2d2.Y(), out aP2);
-        double fi1Length = aP1.Distance(aP2);
+        hGs.D0(P2d1.X, P2d1.Y, out aP1);
+        hGs.D0(P2d2.X, P2d2.Y, out aP2);
+        double fi1Length = aP1.DistanceTo(aP2);
         //  double eps = Precision::Confusion();
         checkShrink = (fi1Length <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Point2D p2d3 = fi2.PCurveOnSurf().Value(fi2.Parameter(isfirst));
         Point2D p2d4 = fi2.PCurveOnSurf().Value(fi2.Parameter(!isfirst));
-        hGs.D0(p2d3.X(), p2d3.Y(), out aP1);
-        hGs.D0(p2d4.X(), p2d4.Y(), out aP2);
-        double fi2Length = aP1.Distance(aP2);
+        hGs.D0(p2d3.X, p2d3.Y, out aP1);
+        hGs.D0(p2d4.X, p2d4.Y, out aP2);
+        double fi2Length = aP1.DistanceTo(aP2);
         checkShrink = checkShrink || (fi2Length <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         if (checkShrink)
         {
-            if (Math.Abs(P2d2.Y() - p2d4.Y()) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Math.Abs(P2d2.Y - p2d4.Y) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 isUShrink = false;
-                checkShrParam = P2d2.Y();
+                checkShrParam = P2d2.Y;
             }
-            else if (Math.Abs(P2d2.X() - p2d4.X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+            else if (Math.Abs(P2d2.X - p2d4.X) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 isUShrink = true;
-                checkShrParam = P2d2.X();
+                checkShrParam = P2d2.X;
             }
             else
             {
@@ -1500,7 +1500,7 @@ public partial class FilletBuilderBase
             {
                 vt = v1;
             }
-            dist1 = (Tool.Pnt(vt)).Distance(Tool.Pnt(vtx));
+            dist1 = (Tool.Pnt(vt)).DistanceTo(Tool.Pnt(vtx));
             v3 = Exploration.FirstVertex(e);
             v4 = Exploration.LastVertex(e);
             if (v.IsSame(v3))
@@ -1511,7 +1511,7 @@ public partial class FilletBuilderBase
             {
                 vt = v3;
             }
-            dist2 = (Tool.Pnt(vt)).Distance(Tool.Pnt(vtx));
+            dist2 = (Tool.Pnt(vt)).DistanceTo(Tool.Pnt(vtx));
             if (dist2 < dist1)
             {
                 edge[0] = e;
@@ -1553,7 +1553,7 @@ public partial class FilletBuilderBase
             {
                 vt = v1;
             }
-            dist1 = (Tool.Pnt(vt)).Distance(Tool.Pnt(vtx));
+            dist1 = (Tool.Pnt(vt)).DistanceTo(Tool.Pnt(vtx));
             v3 = Exploration.FirstVertex(e);
             v4 = Exploration.LastVertex(e);
             if (v.IsSame(v3))
@@ -1564,7 +1564,7 @@ public partial class FilletBuilderBase
             {
                 vt = v3;
             }
-            dist2 = (Tool.Pnt(vt)).Distance(Tool.Pnt(vtx));
+            dist2 = (Tool.Pnt(vt)).DistanceTo(Tool.Pnt(vtx));
             if (dist2 < dist1)
             {
                 edge[2] = e;
@@ -2028,7 +2028,7 @@ public partial class FilletBuilderBase
                             extend = true;
                             BrepBuilder bre = new();
                             double tol = Tool.Tolerance(f);
-                            bre.MakeFace(ref faceprol[0], sfacemoins1, f.Location(), tol);
+                            bre.MakeFace(ref faceprol[0], sfacemoins1, f.Placement, tol);
                             if (!isOnSame1)
                             {
                                 SurfaceAdaptor asurf = new();
@@ -2075,11 +2075,11 @@ public partial class FilletBuilderBase
                 c = Tool.Curve(e2, out Ubid, out Vbid);
                 TrimmedCurve3D? ctrim = new TrimmedCurve3D(c, Ubid, Vbid);
                 double utrim = 0.0, vtrim = 0.0;
-                utrim = ctrim.BasisCurve().FirstParameter();
-                vtrim = ctrim.BasisCurve().LastParameter();
+                utrim = ctrim.BasisCurve.FirstParameter;
+                vtrim = ctrim.BasisCurve.LastParameter;
                 if (ctrim.IsPeriodic)
                 {
-                    if (Ubid > ctrim.Period())
+                    if (Ubid > ctrim.Period)
                     {
                         Ubid = (utrim + vtrim) / 2;
                         Vbid = vtrim;
@@ -2151,14 +2151,14 @@ public partial class FilletBuilderBase
                         sface = Tool.Surface(Face[nb]);
                         ChFi3d_ExtendSurface(ref sface, ref prolface[nb]);
                         double tol = Tool.Tolerance(f);
-                        bre.MakeFace(ref faceprol[nb], sface, Face[nb].Location(), tol);
+                        bre.MakeFace(ref faceprol[nb], sface, Face[nb].Placement, tol);
                         if (nb != 0 && prolface[nb - 1] == 0)
                         {
                             ChFi3d_ExtendSurface(ref sfacemoins1, ref prolface[nb - 1]);
                             if (prolface[nb - 1] != 0)
                             {
                                 tol = Tool.Tolerance(f);
-                                bre.MakeFace(ref faceprol[nb - 1], sfacemoins1, f.Location(), tol);
+                                bre.MakeFace(ref faceprol[nb - 1], sfacemoins1, f.Placement, tol);
                             }
                         }
                         else
@@ -2207,11 +2207,11 @@ public partial class FilletBuilderBase
                     else
                     {
                         Point3D p = Tool.Pnt(vtx);
-                        double distmin = p.Distance(inters.Point(1).Pnt());
+                        double distmin = p.DistanceTo(inters.Point(1).Pnt());
                         nbp = 1;
                         for (int i = 2; i <= inters.PointCount; i++)
                         {
-                            dist = p.Distance(inters.Point(i).Pnt());
+                            dist = p.DistanceTo(inters.Point(i).Pnt());
                             if (dist < distmin)
                             {
                                 distmin = dist;
@@ -2266,7 +2266,7 @@ public partial class FilletBuilderBase
                         BrepBuilder bre = new();
                         extend = true;
                         double tol = Tool.Tolerance(f);
-                        bre.MakeFace(ref faceprol[nb - 1], sfacemoins1, f.Location(), tol);
+                        bre.MakeFace(ref faceprol[nb - 1], sfacemoins1, f.Placement, tol);
                         SurfaceAdaptor asurf = new();
                         asurf.Load(sfacemoins1);
                         ExtPS ext = new(cv2.Point(), asurf, tol, tol, ExtFlag_MIN);
@@ -2404,14 +2404,14 @@ public partial class FilletBuilderBase
             //       pfac2.SetX(xx2);
             //     }
 
-            pardeb[1] = pfil1.X();
-            pardeb[2] = pfil1.Y();
-            pardeb[3] = pfac1.X();
-            pardeb[4] = pfac1.Y();
-            parfin[1] = pfil2.X();
-            parfin[2] = pfil2.Y();
-            parfin[3] = pfac2.X();
-            parfin[4] = pfac2.Y();
+            pardeb[1] = pfil1.X;
+            pardeb[2] = pfil1.Y;
+            pardeb[3] = pfac1.X;
+            pardeb[4] = pfac1.Y;
+            parfin[1] = pfil2.X;
+            parfin[2] = pfil2.Y;
+            parfin[3] = pfac2.X;
+            parfin[4] = pfac2.Y;
 
             double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
             ChFi3d_Boite(pfac1, pfac2, out uu1, out uu2, out vv1, out vv2);
@@ -2430,8 +2430,8 @@ public partial class FilletBuilderBase
             // storage of information in the data structure
 
             // evaluate tolerances
-            p1 = cc.FirstParameter();
-            p2 = cc.LastParameter();
+            p1 = cc.FirstParameter;
+            p2 = cc.LastParameter;
             double to1 = 0.0, to2 = 0.0;
             Point2D p2d1 = new(), p2d2 = new();
             Point3D P1 = new(), P2 = new(), p3 = new(), p4 = new(), p5 = new(), p6 = new(), p7 = new(), p8 = new();
@@ -2441,14 +2441,14 @@ public partial class FilletBuilderBase
             hBs.D0(parfin[3], parfin[4], out p4);
             pc.D0(p1, out p2d1);
             pc.D0(p2, out p2d2);
-            hBs.D0(p2d1.X(), p2d1.Y(), out p7);
-            hBs.D0(p2d2.X(), p2d2.Y(), out p8);
+            hBs.D0(p2d1.X, p2d1.Y, out p7);
+            hBs.D0(p2d2.X, p2d2.Y, out p8);
             ps.D0(p1, out p2d1);
             ps.D0(p2, out p2d2);
-            hGs.D0(p2d1.X(), p2d1.Y(), out p5);
-            hGs.D0(p2d2.X(), p2d2.Y(), out p6);
-            to1 = Max(P1.Distance(p5) + p3.Distance(p7), tolreached);
-            to2 = Max(P2.Distance(p6) + p4.Distance(p8), tolreached);
+            hGs.D0(p2d1.X, p2d1.Y, out p5);
+            hGs.D0(p2d2.X, p2d2.Y, out p6);
+            to1 = Max(P1.DistanceTo(p5) + p3.DistanceTo(p7), tolreached);
+            to2 = Max(P2.DistanceTo(p6) + p4.DistanceTo(p8), tolreached);
 
             //////////////////////////////////////////////////////////////////////
             // storage in the DS of the intersection curve
@@ -2486,7 +2486,7 @@ public partial class FilletBuilderBase
             }
             else
             {
-                Point3D point = cc.Value(cc.LastParameter());
+                Point3D point = cc.Value(cc.LastParameter);
                 DsPoint tpoint = new(point, to2);
                 indpoint2 = dStr.AddPoint(tpoint);
             }
@@ -2499,9 +2499,9 @@ public partial class FilletBuilderBase
             DsCurve tcurv3d = new(cc, tolreached);
             indcurve[nb - 1] = dStr.AddCurve(tcurv3d);
 
-            interfp1 = ChFi3d_FilPointInDS(Forward, indcurve[nb - 1], indpoint1, cc.FirstParameter(), isvtx1);
+            interfp1 = ChFi3d_FilPointInDS(Forward, indcurve[nb - 1], indpoint1, cc.FirstParameter, isvtx1);
 
-            interfp2 = ChFi3d_FilPointInDS(Reversed, indcurve[nb - 1], indpoint2, cc.LastParameter(), isvtx2);
+            interfp2 = ChFi3d_FilPointInDS(Reversed, indcurve[nb - 1], indpoint2, cc.LastParameter, isvtx2);
 
             dStr.ChangeCurveInterferences(indcurve[nb - 1]).Append(interfp1);
             dStr.ChangeCurveInterferences(indcurve[nb - 1]).Append(interfp2);
@@ -2511,7 +2511,7 @@ public partial class FilletBuilderBase
             //////////////////////////////////////////////////////////////////////
 
             Orientation ori = Forward;
-            orface = Face[nb - 1].Orientation();
+            orface = Face[nb - 1].Orientation;
             if (orface == orsurfdata)
             {
                 orien = global::Kerf.Engine.Topology.TopAbs.Reverse(orcourbe);
@@ -2557,8 +2557,8 @@ public partial class FilletBuilderBase
 
                     if (ContainV(f1, v1) && ContainV(f1, V2))
                     {
-                        dist1 = (Tool.Pnt(v1)).Distance(Tool.Pnt(vtx));
-                        dist2 = (Tool.Pnt(V2)).Distance(Tool.Pnt(vtx));
+                        dist1 = (Tool.Pnt(v1)).DistanceTo(Tool.Pnt(vtx));
+                        dist2 = (Tool.Pnt(V2)).DistanceTo(Tool.Pnt(vtx));
                         if (dist1 < dist2)
                         {
                             ori = Forward;
@@ -2570,8 +2570,8 @@ public partial class FilletBuilderBase
                     }
                     if (ContainV(f2, v1) && ContainV(f2, V2))
                     {
-                        dist1 = (Tool.Pnt(v1)).Distance(Tool.Pnt(vtx));
-                        dist2 = (Tool.Pnt(V2)).Distance(Tool.Pnt(vtx));
+                        dist1 = (Tool.Pnt(v1)).DistanceTo(Tool.Pnt(vtx));
+                        dist2 = (Tool.Pnt(V2)).DistanceTo(Tool.Pnt(vtx));
                         if (dist1 < dist2)
                         {
                             ori = Forward;
@@ -2625,9 +2625,9 @@ public partial class FilletBuilderBase
                             if (c1 is not null)
                             {
                                 Point3D pl = new();
-                                pl = c1.Value(c1.LastParameter());
+                                pl = c1.Value(c1.LastParameter);
                                 // bool sens;
-                                sens = pl.Distance(pext) < tolpt ? 1 : 0; // OCCT: a bool in the int sens
+                                sens = pl.DistanceTo(pext) < tolpt ? 1 : 0; // OCCT: a bool in the int sens
                                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref c1, cv1.Point(), 1, sens != 0);
                                 csau = c1;
                             }
@@ -2637,9 +2637,9 @@ public partial class FilletBuilderBase
                             if (c1 is not null)
                             {
                                 Point3D pl = new();
-                                pl = c1.Value(c1.LastParameter());
+                                pl = c1.Value(c1.LastParameter);
                                 // bool sens;
-                                sens = pl.Distance(pext) < tolpt ? 1 : 0; // OCCT: a bool in the int sens
+                                sens = pl.DistanceTo(pext) < tolpt ? 1 : 0; // OCCT: a bool in the int sens
                                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendCurveToPoint(ref c1, cv2.Point(), 1, sens != 0);
                                 csau = c1;
                             }
@@ -2689,11 +2689,11 @@ public partial class FilletBuilderBase
                     }
                     Curve3D? ct = new TrimmedCurve3D(csau, par1, par2);
                     Orientation orient = default;
-                    cc.D0(cc.FirstParameter(), out P1);
-                    cc.D0(cc.LastParameter(), out P2);
-                    ct.D0(ct.FirstParameter(), out p3);
-                    ct.D0(ct.LastParameter(), out p4);
-                    if (P2.Distance(p3) < tolpt || P1.Distance(p4) < tolpt)
+                    cc.D0(cc.FirstParameter, out P1);
+                    cc.D0(cc.LastParameter, out P2);
+                    ct.D0(ct.FirstParameter, out p3);
+                    ct.D0(ct.LastParameter, out p4);
+                    if (P2.DistanceTo(p3) < tolpt || P1.DistanceTo(p4) < tolpt)
                     {
                         orient = orien;
                     }
@@ -2712,7 +2712,7 @@ public partial class FilletBuilderBase
                         else
                         {
                             Edge localEdge = edgesau;
-                            if (edgesau.Orientation() != orient)
+                            if (edgesau.Orientation != orient)
                             {
                                 localEdge.Reverse();
                             }
@@ -2771,7 +2771,7 @@ public partial class FilletBuilderBase
                     if (oneintersection1 || oneintersection2)
                     {
                         indice = dStr.AddShape(facesau);
-                        if (facesau.Orientation() == Face[0].Orientation())
+                        if (facesau.Orientation == Face[0].Orientation)
                         {
                             orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                         }
@@ -2782,7 +2782,7 @@ public partial class FilletBuilderBase
                         else
                         {
                             Edge localEdge = edgesau;
-                            if (edgesau.Orientation() != orient)
+                            if (edgesau.Orientation != orient)
                             {
                                 localEdge.Reverse();
                             }
@@ -2794,7 +2794,7 @@ public partial class FilletBuilderBase
                     {
                         indice = dStr.AddShape(Face[nb]);
                         dStr.SetNewSurface(Face[nb], sface);
-                        if (Face[nb].Orientation() == Face[nb - 1].Orientation())
+                        if (Face[nb].Orientation == Face[nb - 1].Orientation)
                         {
                             orient = global::Kerf.Engine.Topology.TopAbs.Reverse(orient);
                         }
@@ -2817,7 +2817,7 @@ public partial class FilletBuilderBase
                 { // first time
                     FaceInterference fi = sDprev.InterferenceOnS1();
                     Point2D uv = fi.PCurveOnSurf().Value(fi.Parameter(isfirst));
-                    prevSDParam = isUShrink ? uv.X() : uv.Y();
+                    prevSDParam = isUShrink ? uv.X : uv.Y;
                 }
                 Point2D uv1 = p2d1, uv2 = p2d2;
                 uv1 = uv1.WithCoord(isUShrink ? 1 : 2, prevSDParam);
@@ -2995,9 +2995,9 @@ public partial class FilletBuilderBase
             {
                 IntersectionPoint2D ip = intersector.Point(nb);
                 Point3D Pint = c3d.Value(ip.ParamOnFirst());
-                tol = Max(tol, pvert.Distance(Pint));
+                tol = Max(tol, pvert.DistanceTo(Pint));
                 Pint = cend.Value(ip.ParamOnSecond());
-                tol = Max(tol, pvert.Distance(Pint));
+                tol = Max(tol, pvert.DistanceTo(Pint));
             }
             for (nb = 1; nb <= intersector.SegmentCount; nb++)
             {
@@ -3006,17 +3006,17 @@ public partial class FilletBuilderBase
                 {
                     IntersectionPoint2D ip = @is.FirstPoint();
                     Point3D Pint = c3d.Value(ip.ParamOnFirst());
-                    tol = Max(tol, pvert.Distance(Pint));
+                    tol = Max(tol, pvert.DistanceTo(Pint));
                     Pint = cend.Value(ip.ParamOnSecond());
-                    tol = Max(tol, pvert.Distance(Pint));
+                    tol = Max(tol, pvert.DistanceTo(Pint));
                 }
                 if (@is.HasLastPoint)
                 {
                     IntersectionPoint2D ip = @is.LastPoint();
                     Point3D Pint = c3d.Value(ip.ParamOnFirst());
-                    tol = Max(tol, pvert.Distance(Pint));
+                    tol = Max(tol, pvert.DistanceTo(Pint));
                     Pint = cend.Value(ip.ParamOnSecond());
-                    tol = Max(tol, pvert.Distance(Pint));
+                    tol = Max(tol, pvert.DistanceTo(Pint));
                 }
             }
             pds.Tolerance(tol);
@@ -3142,7 +3142,7 @@ public partial class FilletBuilderBase
         cp1 = surfData.Vertex(isFirst, 1);
         cp2 = surfData.Vertex(isFirst, 2);
 
-        if (cp1.Point().Distance(cp2onArc.Point()) <= tol3d)
+        if (cp1.Point().DistanceTo(cp2onArc.Point()) <= tol3d)
         {
             cp1onArc = cp2;
             is1stCP1OnArc = false;
@@ -3252,14 +3252,14 @@ public partial class FilletBuilderBase
             pCint12 = interSS.LineOnS2(i);
             tolex1 = ChFi3d_EvalTolReached(h1, pCint11, h2, pCint12, cint1);
 
-            cint1.D0(cint1.FirstParameter(), out pext1);
-            cint1.D0(cint1.LastParameter(), out pext2);
+            cint1.D0(cint1.FirstParameter, out pext1);
+            cint1.D0(cint1.LastParameter, out pext2);
 
             //  Modified by skv - Mon Jun  7 18:38:57 2004 OCC5898 Begin
             //     if (aPext1.Distance(aCP1onArc.Point()) <= aTol3d ||
             // 	aPext2.Distance(aCP1onArc.Point()))
-            if (pext1.Distance(cp1onArc.Point()) <= tol3d
-                    || pext2.Distance(cp1onArc.Point()) <= tol3d)
+            if (pext1.DistanceTo(cp1onArc.Point()) <= tol3d
+                    || pext2.DistanceTo(cp1onArc.Point()) <= tol3d)
             {
                 //  Modified by skv - Mon Jun  7 18:38:58 2004 OCC5898 End
                 isFound = true;
@@ -3271,13 +3271,13 @@ public partial class FilletBuilderBase
             return;
         }
 
-        if (pext1.Distance(cp2onArc.Point()) > tol3d && pext1.Distance(cp1onArc.Point()) > tol3d)
+        if (pext1.DistanceTo(cp2onArc.Point()) > tol3d && pext1.DistanceTo(cp1onArc.Point()) > tol3d)
         {
             pext = pext1;
             isPextFound = true;
         }
-        else if (pext2.Distance(cp2onArc.Point()) > tol3d
-                          && pext2.Distance(cp1onArc.Point()) > tol3d)
+        else if (pext2.DistanceTo(cp2onArc.Point()) > tol3d
+                          && pext2.DistanceTo(cp1onArc.Point()) > tol3d)
         {
             pext = pext2;
             isPextFound = true;
@@ -3307,7 +3307,7 @@ public partial class FilletBuilderBase
                 {
                     Point3D projPnt = ext.Point(i).Value();
 
-                    if (pext.Distance(projPnt) <= tol3d)
+                    if (pext.DistanceTo(projPnt) <= tol3d)
                     {
                         par = ext.Point(i).Parameter();
                         isDoSecondSection = true;
@@ -3336,15 +3336,15 @@ public partial class FilletBuilderBase
         {
             double par1 = 0.0;
 
-            cracc.D0(cracc.FirstParameter(), out pext1);
+            cracc.D0(cracc.FirstParameter, out pext1);
 
-            if (pext1.Distance(cp2NotonArc.Point()) <= tol3d)
+            if (pext1.DistanceTo(cp2NotonArc.Point()) <= tol3d)
             {
-                par1 = cracc.FirstParameter();
+                par1 = cracc.FirstParameter;
             }
             else
             {
-                par1 = cracc.LastParameter();
+                par1 = cracc.LastParameter;
             }
 
             if (par1 < par)
@@ -3376,11 +3376,11 @@ public partial class FilletBuilderBase
                 pCint22 = interSS2.LineOnS2(i);
                 tolex2 = ChFi3d_EvalTolReached(h1, pCint21, h2, pCint22, cint2);
 
-                cint2.D0(cint2.FirstParameter(), out pext1);
-                cint2.D0(cint2.LastParameter(), out pext2);
+                cint2.D0(cint2.FirstParameter, out pext1);
+                cint2.D0(cint2.LastParameter, out pext2);
 
-                if (pext1.Distance(cp2onArc.Point()) <= tol3d
-                        || pext2.Distance(cp2onArc.Point()) <= tol3d)
+                if (pext1.DistanceTo(cp2onArc.Point()) <= tol3d
+                        || pext2.DistanceTo(cp2onArc.Point()) <= tol3d)
                 {
                     isFound = true;
                 }
@@ -3393,7 +3393,7 @@ public partial class FilletBuilderBase
         }
         else
         {
-            trCracc = new TrimmedCurve3D(cracc, cracc.FirstParameter(), cracc.LastParameter());
+            trCracc = new TrimmedCurve3D(cracc, cracc.FirstParameter, cracc.LastParameter);
         }
 
         // Storage of the data structure
@@ -3421,7 +3421,7 @@ public partial class FilletBuilderBase
 
         Orientation curOrient = default;
 
-        curOrient = dStr.Shape(indShape).Orientation();
+        curOrient = dStr.Shape(indShape).Orientation;
         curOrient = global::Kerf.Engine.Topology.TopAbs.Compose(curOrient, surfData.Orientation());
         curOrient = global::Kerf.Engine.Topology.TopAbs.Compose(global::Kerf.Engine.Topology.TopAbs.Reverse(fi.Transition()), curOrient);
 
@@ -3514,16 +3514,16 @@ public partial class FilletBuilderBase
         Point2D p2d = new();
         DsSurfaceCurveInterference? interfc = null;
         Orientation orSurf = curOrient;
-        Orientation orFace = face.Orientation();
+        Orientation orFace = face.Orientation;
         int indaFace = dStr.AddShape(face);
         int indPoint = indCP2onArc;
         int indCurve = 0;
 
         fi.PCurveOnFace().D0(fi.LastParameter(), out p2d);
         Surface? stemp2 = Tool.Surface(ShapeCasts.Face(dStr.Shape(indShape)));
-        stemp2.D0(p2d.X(), p2d.Y(), out point2);
+        stemp2.D0(p2d.X, p2d.Y, out point2);
         fi.PCurveOnFace().D0(fi.FirstParameter(), out p2d);
-        stemp2.D0(p2d.X(), p2d.Y(), out point1);
+        stemp2.D0(p2d.X, p2d.Y, out point1);
 
         if (isDoSecondSection)
         {
@@ -3533,10 +3533,10 @@ public partial class FilletBuilderBase
             indPoint = dStr.AddPoint(tpoint);
             indCurve = dStr.AddCurve(tcint2);
 
-            cint2.D0(cint2.FirstParameter(), out pext1);
-            cint2.D0(cint2.LastParameter(), out pext2);
+            cint2.D0(cint2.FirstParameter, out pext1);
+            cint2.D0(cint2.LastParameter, out pext2);
 
-            if (pext1.Distance(pext) <= tol3d)
+            if (pext1.DistanceTo(pext) <= tol3d)
             {
                 indPoint1 = indPoint;
                 indPoint2 = indCP2onArc;
@@ -3548,15 +3548,15 @@ public partial class FilletBuilderBase
             }
 
             // define the orientation of aCint2
-            if (pext1.Distance(point2) > tol3d && pext2.Distance(point1) > tol3d)
+            if (pext1.DistanceTo(point2) > tol3d && pext2.DistanceTo(point1) > tol3d)
             {
                 orSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(orSurf);
             }
 
             // ---------------------------------------------------------------
             // storage of aCint2
-            interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, cint2.FirstParameter());
-            interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, cint2.LastParameter());
+            interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, cint2.FirstParameter);
+            interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, cint2.LastParameter);
             dStr.ChangeCurveInterferences(indCurve).Append(interfp1);
             dStr.ChangeCurveInterferences(indCurve).Append(interfp2);
 
@@ -3579,9 +3579,9 @@ public partial class FilletBuilderBase
             dStr.ChangeShapeInterferences(indaFace).Append(interfc);
         }
 
-        trCracc.D0(trCracc.FirstParameter(), out pext1);
-        trCracc.D0(trCracc.LastParameter(), out pext2);
-        if (pext1.Distance(cp2NotonArc.Point()) <= tol3d)
+        trCracc.D0(trCracc.FirstParameter, out pext1);
+        trCracc.D0(trCracc.LastParameter, out pext2);
+        if (pext1.DistanceTo(cp2NotonArc.Point()) <= tol3d)
         {
             indPoint1 = indCP2NotonArc;
             indPoint2 = indPoint;
@@ -3601,15 +3601,15 @@ public partial class FilletBuilderBase
 
         if (isDoSecondSection)
         {
-            trCracc.D0(trCracc.FirstParameter(), out p1);
-            trCracc.D0(trCracc.LastParameter(), out p2);
-            cint2.D0(cint2.FirstParameter(), out p3);
-            cint2.D0(cint2.LastParameter(), out p4);
-            isToReverse = (p1.Distance(p4) > tol3d && p2.Distance(p3) > tol3d);
+            trCracc.D0(trCracc.FirstParameter, out p1);
+            trCracc.D0(trCracc.LastParameter, out p2);
+            cint2.D0(cint2.FirstParameter, out p3);
+            cint2.D0(cint2.LastParameter, out p4);
+            isToReverse = (p1.DistanceTo(p4) > tol3d && p2.DistanceTo(p3) > tol3d);
         }
         else
         {
-            isToReverse = (pext1.Distance(point2) > tol3d && pext2.Distance(point1) > tol3d);
+            isToReverse = (pext1.DistanceTo(point2) > tol3d && pext2.DistanceTo(point1) > tol3d);
         }
 
         if (isToReverse)
@@ -3622,8 +3622,8 @@ public partial class FilletBuilderBase
         DsCurve tct2 = new(trCracc, tolReached);
 
         indCurve = dStr.AddCurve(tct2);
-        interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, trCracc.FirstParameter());
-        interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, trCracc.LastParameter());
+        interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, trCracc.FirstParameter);
+        interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, trCracc.LastParameter);
         dStr.ChangeCurveInterferences(indCurve).Append(interfp1);
         dStr.ChangeCurveInterferences(indCurve).Append(interfp2);
 
@@ -3645,8 +3645,8 @@ public partial class FilletBuilderBase
         // ---------------------------------------------------------------
         // storage of aCint1
 
-        cint1.D0(cint1.FirstParameter(), out pext1);
-        if (pext1.Distance(cp1onArc.Point()) <= tol3d)
+        cint1.D0(cint1.FirstParameter, out pext1);
+        if (pext1.DistanceTo(cp1onArc.Point()) <= tol3d)
         {
             indPoint1 = indCP1onArc;
             indPoint2 = indPoint;
@@ -3659,20 +3659,20 @@ public partial class FilletBuilderBase
 
         //  definition of the orientation of aCint1
 
-        cint1.D0(cint1.FirstParameter(), out p1);
-        cint1.D0(cint1.LastParameter(), out p2);
-        trCracc.D0(trCracc.FirstParameter(), out p3);
-        trCracc.D0(trCracc.LastParameter(), out p4);
+        cint1.D0(cint1.FirstParameter, out p1);
+        cint1.D0(cint1.LastParameter, out p2);
+        trCracc.D0(trCracc.FirstParameter, out p3);
+        trCracc.D0(trCracc.LastParameter, out p4);
 
-        if (p1.Distance(p4) > tol3d && p2.Distance(p3) > tol3d)
+        if (p1.DistanceTo(p4) > tol3d && p2.DistanceTo(p3) > tol3d)
         {
             orSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(orSurf);
         }
 
         DsCurve tCint1 = new(cint1, tolex1);
         indCurve = dStr.AddCurve(tCint1);
-        interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, cint1.FirstParameter());
-        interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, cint1.LastParameter());
+        interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, cint1.FirstParameter);
+        interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, cint1.LastParameter);
         dStr.ChangeCurveInterferences(indCurve).Append(interfp1);
         dStr.ChangeCurveInterferences(indCurve).Append(interfp2);
 
@@ -3683,7 +3683,7 @@ public partial class FilletBuilderBase
 
         // interference of aCint1 on aFace
 
-        orFace = face.Orientation();
+        orFace = face.Orientation;
 
         if (orFace == orSD1)
         {
@@ -3700,15 +3700,15 @@ public partial class FilletBuilderBase
         // storage of aCline passing through aCP1onArc and aCP2NotonArc
 
         Curve3D? trCline = 
-            new TrimmedCurve3D(cline, cline.FirstParameter(), cline.LastParameter());
+            new TrimmedCurve3D(cline, cline.FirstParameter, cline.LastParameter);
         double tolerance = dStr.Curve(indLine).Tolerance();
         DsCurve tct3 = new(trCline, tolerance);
 
         indCurve = dStr.AddCurve(tct3);
 
-        trCline.D0(trCline.FirstParameter(), out pext1);
+        trCline.D0(trCline.FirstParameter, out pext1);
 
-        if (pext1.Distance(cp1onArc.Point()) < tol3d)
+        if (pext1.DistanceTo(cp1onArc.Point()) < tol3d)
         {
             indPoint1 = indCP1onArc;
             indPoint2 = indCP2NotonArc;
@@ -3720,18 +3720,18 @@ public partial class FilletBuilderBase
         }
         //  definition of the orientation of aTrCline
 
-        trCline.D0(trCline.FirstParameter(), out p1);
-        trCline.D0(trCline.LastParameter(), out p2);
-        cint1.D0(cint1.FirstParameter(), out p3);
-        cint1.D0(cint1.LastParameter(), out p4);
+        trCline.D0(trCline.FirstParameter, out p1);
+        trCline.D0(trCline.LastParameter, out p2);
+        cint1.D0(cint1.FirstParameter, out p3);
+        cint1.D0(cint1.LastParameter, out p4);
 
-        if (p1.Distance(p4) > tol3d && p2.Distance(p3) > tol3d)
+        if (p1.DistanceTo(p4) > tol3d && p2.DistanceTo(p3) > tol3d)
         {
             orSurf = global::Kerf.Engine.Topology.TopAbs.Reverse(orSurf);
         }
 
-        interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, trCline.FirstParameter());
-        interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, trCline.LastParameter());
+        interfp1 = ChFi3d_FilPointInDS(Forward, indCurve, indPoint1, trCline.FirstParameter);
+        interfp2 = ChFi3d_FilPointInDS(Reversed, indCurve, indPoint2, trCline.LastParameter);
         dStr.ChangeCurveInterferences(indCurve).Append(interfp1);
         dStr.ChangeCurveInterferences(indCurve).Append(interfp2);
 
@@ -3742,7 +3742,7 @@ public partial class FilletBuilderBase
 
         // interference de ctlin par rapport a Fvoisin
         indShape = dStr.AddShape(neighborFace);
-        orFace = neighborFace.Orientation();
+        orFace = neighborFace.Orientation;
 
         if (orFace == orSD1)
         {
@@ -3876,14 +3876,14 @@ public partial class FilletBuilderBase
             {
                 if (cv3.Arc().IsSame(arc1))
                 {
-                    if (cv1.Point().Distance(cv3.Point()) < 1.0e-4)
+                    if (cv1.Point().DistanceTo(cv3.Point()) < 1.0e-4)
                     {
                         oksurf = true;
                     }
                 }
                 else if (cv3.Arc().IsSame(arc2))
                 {
-                    if (cv2.Point().Distance(cv3.Point()) < 1.0e-4)
+                    if (cv2.Point().DistanceTo(cv3.Point()) < 1.0e-4)
                     {
                         oksurf = true;
                     }
@@ -3892,13 +3892,13 @@ public partial class FilletBuilderBase
 
             if (cv4.IsOnArc)
             {
-                if (cv1.Point().Distance(cv4.Point()) < 1.0e-4)
+                if (cv1.Point().DistanceTo(cv4.Point()) < 1.0e-4)
                 {
                     oksurf = true;
                 }
                 else if (cv4.Arc().IsSame(arc2))
                 {
-                    if (cv2.Point().Distance(cv4.Point()) < 1.0e-4)
+                    if (cv2.Point().DistanceTo(cv4.Point()) < 1.0e-4)
                     {
                         oksurf = true;
                     }
@@ -4068,8 +4068,8 @@ public partial class FilletBuilderBase
                 throw new NotDoneException("OneCorner : face at end is not found");
             }
 
-            fv.Orientation(Forward);
-            fad.Orientation(Forward);
+            fv.Orient(Forward);
+            fad.Orient(Forward);
 
             // In the same way the edge to be extended is returned.
             for (it.Initialize(_veMap[vtx]); it.More() && arcprol.IsNull; it.Next())
@@ -4081,7 +4081,7 @@ public partial class FilletBuilderBase
                         if (it.Value().IsSame(ex.Current()))
                         {
                             arcprol = ShapeCasts.Edge(it.Value());
-                            oArcprolv = ex.Current().Orientation();
+                            oArcprolv = ex.Current().Orientation;
                             break;
                         }
                     }
@@ -4096,16 +4096,16 @@ public partial class FilletBuilderBase
 
             // Fopbis is the face containing the trace of fillet CP.Arc() which of does not contain Vtx.
             // Normally Fobis is either the same as Fop (cylinder), or Fobis is G1 with Fop.
-            fopbis.Orientation(Forward);
+            fopbis.Orient(Forward);
 
             // Fop calls the 4th face non-used for the vertex
             ChercheFace(_vfMap[vtx], arcprol, fad, fv, fv, ref fopbis);
-            fop.Orientation(Forward);
+            fop.Orient(Forward);
             for (ex.Init(fopbis, ShapeType.Edge); ex.More(); ex.Next())
             {
                 if (arcprol.IsSame(ex.Current()))
                 {
-                    oArcprolop = ex.Current().Orientation();
+                    oArcprolop = ex.Current().Orientation;
                     break;
                 }
             }
@@ -4248,14 +4248,14 @@ public partial class FilletBuilderBase
                 pfil2 = fi2.PCurveOnSurf().Value(fi2.Parameter(!isfirst));
             }
             ChFi3d_Recale(bs, ref pfac1, ref pfac2, (iFadArc == 1));
-            pardeb[1] = pfil1.X();
-            pardeb[2] = pfil1.Y();
-            pardeb[3] = pfac1.X();
-            pardeb[4] = pfac1.Y();
-            parfin[1] = pfil2.X();
-            parfin[2] = pfil2.Y();
-            parfin[3] = pfac2.X();
-            parfin[4] = pfac2.Y();
+            pardeb[1] = pfil1.X;
+            pardeb[2] = pfil1.Y;
+            pardeb[3] = pfac1.X;
+            pardeb[4] = pfac1.Y;
+            parfin[1] = pfil2.X;
+            parfin[2] = pfil2.Y;
+            parfin[3] = pfac2.X;
+            parfin[4] = pfac2.Y;
             double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
             ChFi3d_Boite(pfac1, pfac2, out uu1, out uu2, out vv1, out vv2);
             ChFi3d_BoundFac(bs, uu1, uu2, vv1, vv2);
@@ -4265,8 +4265,8 @@ public partial class FilletBuilderBase
                 throw new FailureException("OneCorner : failed calculation intersection");
             }
 
-            udeb = cc.FirstParameter();
-            ufin = cc.LastParameter();
+            udeb = cc.FirstParameter;
+            ufin = cc.LastParameter;
 
             // check if the curve has an intersection with sewing edge
 
@@ -4278,7 +4278,7 @@ public partial class FilletBuilderBase
                 // double Ubid,Vbid;
                 Curve3D? c = Tool.Curve(edgecouture, out ubid, out vbid);
                 TrimmedCurve3D? ctrim = new TrimmedCurve3D(c, ubid, vbid);
-                CurveAdaptor cur1 = new(ctrim.BasisCurve());
+                CurveAdaptor cur1 = new(ctrim.BasisCurve);
                 CurveAdaptor cur2 = new(cc);
                 ExtCC extCC = new(cur1, cur2);
                 if (extCC.IsDone && extCC.ExtCount != 0)
@@ -4331,7 +4331,7 @@ public partial class FilletBuilderBase
             {
                 if (exp.Current().IsSame(cv1.Arc()))
                 {
-                    et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation(), cv1.TransitionOnArc()));
+                    et = global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation, cv1.TransitionOnArc()));
                     break;
                 }
             }
@@ -4343,7 +4343,7 @@ public partial class FilletBuilderBase
             {
                 if (exp.Current().IsSame(cv2.Arc()))
                 {
-                    et = global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation(), cv2.TransitionOnArc());
+                    et = global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation, cv2.TransitionOnArc());
                     break;
                 }
             }
@@ -4385,7 +4385,7 @@ public partial class FilletBuilderBase
             interFv = ChFi3d_FilCurveInDS(icurv2, iShape, c2d2, et);
             dStr.ChangeShapeInterferences(iShape).Append(interFv);
             // interferences of curv1 and curv2 on Isurf
-            if (fd.Orientation() == fv.Orientation())
+            if (fd.Orientation() == fv.Orientation)
             {
                 et = global::Kerf.Engine.Topology.TopAbs.Reverse(et);
             }
@@ -4450,7 +4450,7 @@ public partial class FilletBuilderBase
             {
                 if (vtx.IsSame(ex.Current()))
                 {
-                    oVtx = ex.Current().Orientation();
+                    oVtx = ex.Current().Orientation;
                     break;
                 }
             }
@@ -4488,7 +4488,7 @@ public partial class FilletBuilderBase
             {
                 if (vtx.IsSame(ex.Current()))
                 {
-                    oVtx2 = ex.Current().Orientation();
+                    oVtx2 = ex.Current().Orientation;
                     break;
                 }
             }
@@ -4496,7 +4496,7 @@ public partial class FilletBuilderBase
             {
                 if (vtx.IsSame(ex.Current()))
                 {
-                    oVtx = ex.Current().Orientation();
+                    oVtx = ex.Current().Orientation;
                     break;
                 }
             }
@@ -4524,7 +4524,7 @@ public partial class FilletBuilderBase
                 {
                     if (arcprolbis.IsSame(ex.Current()))
                     {
-                        oArcprolbis = ex.Current().Orientation();
+                        oArcprolbis = ex.Current().Orientation;
                         break;
                     }
                 }
@@ -4550,14 +4550,14 @@ public partial class FilletBuilderBase
             pv2 = p2dbout;
             ChFi3d_Recale(bs, ref pv1, ref pv2, true);
             NCollection_Array1<double> pardeb = new(1, 4), parfin = new(1, 4);
-            pardeb[1] = pop1.X();
-            pardeb[2] = pop1.Y();
-            pardeb[3] = pv1.X();
-            pardeb[4] = pv1.Y();
-            parfin[1] = pop2.X();
-            parfin[2] = pop2.Y();
-            parfin[3] = pv2.X();
-            parfin[4] = pv2.Y();
+            pardeb[1] = pop1.X;
+            pardeb[2] = pop1.Y;
+            pardeb[3] = pv1.X;
+            pardeb[4] = pv1.Y;
+            parfin[1] = pop2.X;
+            parfin[2] = pop2.Y;
+            parfin[3] = pv2.X;
+            parfin[4] = pv2.Y;
             double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
             ChFi3d_Boite(pv1, pv2, out uu1, out uu2, out vv1, out vv2);
             ChFi3d_BoundFac(bs, uu1, uu2, vv1, vv2);
@@ -4573,8 +4573,8 @@ public partial class FilletBuilderBase
                 throw new FailureException("OneCorner : echec calcul intersection");
             }
 
-            udeb = zob3d.FirstParameter();
-            ufin = zob3d.LastParameter();
+            udeb = zob3d.FirstParameter;
+            ufin = zob3d.LastParameter;
             DsCurve zob = new(zob3d, tolreached);
             int iZob = dStr.AddCurve(zob);
 
@@ -4808,8 +4808,8 @@ internal static class Builder_C1
         double f = fi.FirstParameter();
         double l = fi.LastParameter();
         double delta = 0.1 * (l - f);
-        f = Max(f - delta, pc.FirstParameter());
-        l = Min(l + delta, pc.LastParameter());
+        f = Max(f - delta, pc.FirstParameter);
+        l = Min(l + delta, pc.LastParameter);
         CurveAdaptor2D? hpc = new CurveAdaptor2D(pc, f, l);
         CurveOnSurface c2 = new(hpc, surf);
 
@@ -4829,13 +4829,13 @@ internal static class Builder_C1
                     TrimmedCurve2D? trCurve = (pConF as TrimmedCurve2D);
                     if (trCurve is not null)
                     {
-                        pConF = trCurve.BasisCurve();
+                        pConF = trCurve.BasisCurve;
                     }
                     if (!pConF.IsPeriodic)
                     {
                         if (isfirst)
                         {
-                            double fpar = pConF.FirstParameter();
+                            double fpar = pConF.FirstParameter;
                             if (parltg < fpar)
                             {
                                 parltg = fpar;
@@ -4843,7 +4843,7 @@ internal static class Builder_C1
                         }
                         else
                         {
-                            double lpar = pConF.LastParameter();
+                            double lpar = pConF.LastParameter;
                             if (parltg > lpar)
                             {
                                 parltg = lpar;
@@ -4875,10 +4875,10 @@ internal static class Builder_C1
 
         double length = 0.0, umin = 0.0, umax = 0.0, vmin = 0.0, vmax = 0.0;
         Point3D p1 = new(), p2 = new();
-        s.Bounds(out umin, out umax, out vmin, out vmax);
+        s.ParameterBounds(out umin, out umax, out vmin, out vmax);
         s.D0(umin, vmin, out p1);
         s.D0(umax, vmax, out p2);
-        length = p1.Distance(p2);
+        length = p1.DistanceTo(p2);
 
         BoundedSurface? bs = (s as BoundedSurface);
         global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref bs, length, 1, false, true);
@@ -4922,12 +4922,12 @@ internal static class Builder_C1
             (surf as TrimmedSurface);
         if (ts is not null)
         {
-            surf = ts.BasisSurface();
+            surf = ts.BasisSurface;
         }
         if (surf.IsUPeriodic)
         {
-            double u1 = p1.X(), u2 = p2.X();
-            double uper = surf.UPeriod();
+            double u1 = p1.X, u2 = p2.X;
+            double uper = surf.UPeriod;
             if (Math.Abs(u2 - u1) > 0.5 * uper)
             {
                 if (u2 < u1 && refon1)
@@ -4952,8 +4952,8 @@ internal static class Builder_C1
         }
         if (surf.IsVPeriodic)
         {
-            double v1 = p1.Y(), v2 = p2.Y();
-            double vper = surf.VPeriod();
+            double v1 = p1.Y, v2 = p2.Y;
+            double vper = surf.VPeriod;
             if (Math.Abs(v2 - v1) > 0.5 * vper)
             {
                 if (v2 < v1 && refon1)

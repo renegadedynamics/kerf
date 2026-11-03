@@ -61,11 +61,11 @@ public class GeomFill_LocationGuideTests
         (LocationGuide aLaw, _) = Guided();
         Assert.Equal(SurfacePipeError.PipeOk, aLaw.ComputeAutomaticLaw(out NCollection_HArray1<Point2D> aParAndRad));
         Assert.Equal(21, aParAndRad.Length());
-        Assert.Equal(0.0, aParAndRad[1].X());
-        Assert.Equal(4.0, aParAndRad[21].X());
+        Assert.Equal(0.0, aParAndRad[1].X);
+        Assert.Equal(4.0, aParAndRad[21].X);
         for (int i = 1; i <= 21; i++)
         {
-            Assert.Equal(2.0, aParAndRad[i].Y(), 1e-12);
+            Assert.Equal(2.0, aParAndRad[i].Y, 1e-12);
         }
     }
 

@@ -44,24 +44,24 @@ public class GeomGridEval_EllipseTest
         NCollection_Array1<Point3D> aGrid = anEval.EvaluateGrid(aParams);
 
         // u=0: (3, 0, 0)
-        Assert.Equal(3.0, aGrid.Value(1).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(1).Y(), THE_TOLERANCE);
+        Assert.Equal(3.0, aGrid.Value(1).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(1).Y, THE_TOLERANCE);
 
         // u=PI/2: (0, 2, 0)
-        Assert.Equal(0.0, aGrid.Value(2).X(), THE_TOLERANCE);
-        Assert.Equal(2.0, aGrid.Value(2).Y(), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(2).X, THE_TOLERANCE);
+        Assert.Equal(2.0, aGrid.Value(2).Y, THE_TOLERANCE);
 
         // u=PI: (-3, 0, 0)
-        Assert.Equal(-3.0, aGrid.Value(3).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(3).Y(), THE_TOLERANCE);
+        Assert.Equal(-3.0, aGrid.Value(3).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(3).Y, THE_TOLERANCE);
 
         // u=3PI/2: (0, -2, 0)
-        Assert.Equal(0.0, aGrid.Value(4).X(), THE_TOLERANCE);
-        Assert.Equal(-2.0, aGrid.Value(4).Y(), THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(4).X, THE_TOLERANCE);
+        Assert.Equal(-2.0, aGrid.Value(4).Y, THE_TOLERANCE);
 
         // u=2PI: back to (3, 0, 0)
-        Assert.Equal(3.0, aGrid.Value(5).X(), THE_TOLERANCE);
-        Assert.Equal(0.0, aGrid.Value(5).Y(), THE_TOLERANCE);
+        Assert.Equal(3.0, aGrid.Value(5).X, THE_TOLERANCE);
+        Assert.Equal(0.0, aGrid.Value(5).Y, THE_TOLERANCE);
     }
 
     [Fact]
@@ -76,8 +76,8 @@ public class GeomGridEval_EllipseTest
         for (int i = 1; i <= 9; ++i)
         {
             aCurve.D1(aParams.Value(i), out Point3D aPnt, out Vector3D aD1);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -93,9 +93,9 @@ public class GeomGridEval_EllipseTest
         for (int i = 1; i <= 9; ++i)
         {
             aCurve.D2(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
         }
     }
 
@@ -111,10 +111,10 @@ public class GeomGridEval_EllipseTest
         for (int i = 1; i <= 9; ++i)
         {
             aCurve.D3(aParams.Value(i), out Point3D aPnt, out Vector3D aD1, out Vector3D aD2, out Vector3D aD3);
-            Assert.Equal(0.0, aGrid.Value(i).Point.Distance(aPnt), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude(), THE_TOLERANCE);
-            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude(), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i).Point.DistanceTo(aPnt), THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D1 - aD1).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D2 - aD2).Magnitude, THE_TOLERANCE);
+            Assert.Equal(0.0, (aGrid.Value(i).D3 - aD3).Magnitude, THE_TOLERANCE);
         }
     }
 }

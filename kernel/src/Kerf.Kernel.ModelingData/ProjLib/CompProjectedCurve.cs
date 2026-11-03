@@ -263,9 +263,9 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         v22d = -new Vector2D(new Vector2D(m.Row(1)) * sum, new Vector2D(m.Row(2)) * sum);
 
-        v1 = DS1_u * v12d.X() + DS1_v * v12d.Y();
-        v2 = DS2_u * v12d.X() * v12d.X() + DS1_u * v22d.X() + 2 * DS2_uv * v12d.X() * v12d.Y()
-             + DS2_v * v12d.Y() * v12d.Y() + DS1_v * v22d.Y();
+        v1 = DS1_u * v12d.X + DS1_v * v12d.Y;
+        v2 = DS2_u * v12d.X * v12d.X + DS1_u * v22d.X + 2 * DS2_uv * v12d.X * v12d.Y
+             + DS2_v * v12d.Y * v12d.Y + DS1_v * v22d.Y;
     }
 
     private static bool ExactBound(ref Point3D sol,
@@ -278,8 +278,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     {
         double u0, v0, t, t1, t2, firstU, lastU, firstV, lastV;
         Point2D pOnS;
-        u0 = sol.Y();
-        v0 = sol.Z();
+        u0 = sol.Y;
+        v0 = sol.Z;
         firstU = surface.FirstUParameter();
         lastU = surface.LastUParameter();
         firstV = surface.FirstVParameter();
@@ -289,16 +289,16 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         // these variables are to estimate which boundary has more opportunity
         // to be intersected
         double ru1, ru2, rv1, rv2;
-        D1Core(sol.X(), u0, v0, out d2d, curve, surface);
+        D1Core(sol.X, u0, v0, out d2d, curve, surface);
         // Here we assume that D2d != (0, 0)
-        if (Math.Abs(d2d.X()) < Constants.Resolution())
+        if (Math.Abs(d2d.X) < Constants.Resolution())
         {
             ru1 = global::Kerf.Engine.Foundation.Precision.Infinite();
             ru2 = global::Kerf.Engine.Foundation.Precision.Infinite();
             rv1 = v0 - firstV;
             rv2 = lastV - v0;
         }
-        else if (Math.Abs(d2d.Y()) < Constants.Resolution())
+        else if (Math.Abs(d2d.Y) < Constants.Resolution())
         {
             ru1 = u0 - firstU;
             ru2 = lastU - u0;
@@ -307,10 +307,10 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         }
         else
         {
-            ru1 = new Point2D(u0, v0).Distance(new Point2D(firstU, v0 + (firstU - u0) * d2d.Y() / d2d.X()));
-            ru2 = new Point2D(u0, v0).Distance(new Point2D(lastU, v0 + (lastU - u0) * d2d.Y() / d2d.X()));
-            rv1 = new Point2D(u0, v0).Distance(new Point2D(u0 + (firstV - v0) * d2d.X() / d2d.Y(), firstV));
-            rv2 = new Point2D(u0, v0).Distance(new Point2D(u0 + (lastV - v0) * d2d.X() / d2d.Y(), lastV));
+            ru1 = new Point2D(u0, v0).DistanceTo(new Point2D(firstU, v0 + (firstU - u0) * d2d.Y / d2d.X));
+            ru2 = new Point2D(u0, v0).DistanceTo(new Point2D(lastU, v0 + (lastU - u0) * d2d.Y / d2d.X));
+            rv1 = new Point2D(u0, v0).DistanceTo(new Point2D(u0 + (firstV - v0) * d2d.X / d2d.Y, firstV));
+            rv2 = new Point2D(u0, v0).DistanceTo(new Point2D(u0 + (lastV - v0) * d2d.X / d2d.Y, lastV));
         }
         NCollection_Sequence<Point3D> seq = new();
         seq.Append(new Point3D(firstU, ru1, 2));
@@ -322,7 +322,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             for (j = 1; j <= 4 - i; j++)
             {
-                if (seq.Value(j).Y() < seq.Value(j + 1).Y())
+                if (seq.Value(j).Y < seq.Value(j + 1).Y)
                 {
                     Point3D swp;
                     swp = seq.Value(j + 1);
@@ -332,9 +332,9 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             }
         }
 
-        t = sol.X();
-        t1 = Min(sol.X(), notSol);
-        t2 = Max(sol.X(), notSol);
+        t = sol.X;
+        t1 = Min(sol.X, notSol);
+        t2 = Max(sol.X, notSol);
 
         bool isDone = false;
         while (!seq.IsEmpty())
@@ -342,11 +342,11 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             Point3D p;
             p = seq.Last();
             seq.Remove(seq.Length());
-            PrjResolve prjPS = new(curve, surface, (int)p.Z());
-            if ((int)p.Z() == 2)
+            PrjResolve prjPS = new(curve, surface, (int)p.Z);
+            if ((int)p.Z == 2)
             {
                 prjPS.Perform(t,
-                               p.X(),
+                               p.X,
                                v0,
                                new Point2D(tol, tolV),
                                new Point2D(t1, surface.FirstVParameter()),
@@ -357,7 +357,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                     continue;
                 }
                 pOnS = prjPS.Solution();
-                sol = new Point3D(pOnS.X(), p.X(), pOnS.Y());
+                sol = new Point3D(pOnS.X, p.X, pOnS.Y);
                 isDone = true;
                 break;
             }
@@ -365,7 +365,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             {
                 prjPS.Perform(t,
                                u0,
-                               p.X(),
+                               p.X,
                                new Point2D(tol, tolU),
                                new Point2D(t1, surface.FirstUParameter()),
                                new Point2D(t2, surface.LastUParameter()),
@@ -375,7 +375,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                     continue;
                 }
                 pOnS = prjPS.Solution();
-                sol = new Point3D(pOnS.X(), pOnS.Y(), p.X());
+                sol = new Point3D(pOnS.X, pOnS.Y, p.X);
                 isDone = true;
                 break;
             }
@@ -394,14 +394,14 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     {
         double u0, v0, t;
         Point2D pOnS;
-        u0 = sol.Y();
-        v0 = sol.Z();
+        u0 = sol.Y;
+        v0 = sol.Z;
         PrjResolve prjPS = new(curve, surface, 1);
 
         double aNotSol = notSol;
-        while (Math.Abs(sol.X() - aNotSol) > tol)
+        while (Math.Abs(sol.X - aNotSol) > tol)
         {
-            t = (sol.X() + aNotSol) / 2;
+            t = (sol.X + aNotSol) / 2;
             prjPS.Perform(t,
                            u0,
                            v0,
@@ -414,9 +414,9 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             if (prjPS.IsDone)
             {
                 pOnS = prjPS.Solution();
-                sol = new Point3D(t, pOnS.X(), pOnS.Y());
-                u0 = sol.Y();
-                v0 = sol.Z();
+                sol = new Point3D(t, pOnS.X, pOnS.Y);
+                u0 = sol.Y;
+                v0 = sol.Z;
             }
             else
             {
@@ -740,47 +740,47 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                     Vector2D D;
 
                     if ((_surface.IsUPeriodic
-                         && Math.Abs(uppBorder.X() - lowBorder.X() - _surface.UPeriod())
+                         && Math.Abs(uppBorder.X - lowBorder.X - _surface.UPeriod())
                               < global::Kerf.Engine.Foundation.Precision.Confusion())
                         || (_surface.IsVPeriodic
-                            && Math.Abs(uppBorder.Y() - lowBorder.Y() - _surface.VPeriod())
+                            && Math.Abs(uppBorder.Y - lowBorder.Y - _surface.VPeriod())
                                  < global::Kerf.Engine.Foundation.Precision.Confusion()))
                     {
-                        if ((Math.Abs(u - lowBorder.X()) < _surface.UResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                        if ((Math.Abs(u - lowBorder.X) < _surface.UResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             && _surface.IsUPeriodic)
                         {
                             D1Core(t, u, v, out D, _curve, _surface);
-                            if (D.X() < 0)
+                            if (D.X < 0)
                             {
-                                u = uppBorder.X();
+                                u = uppBorder.X;
                             }
                         }
-                        else if ((Math.Abs(u - uppBorder.X()) < _surface.UResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                        else if ((Math.Abs(u - uppBorder.X) < _surface.UResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                                  && _surface.IsUPeriodic)
                         {
                             D1Core(t, u, v, out D, _curve, _surface);
-                            if (D.X() > 0)
+                            if (D.X > 0)
                             {
-                                u = lowBorder.X();
+                                u = lowBorder.X;
                             }
                         }
 
-                        if ((Math.Abs(v - lowBorder.Y()) < _surface.VResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                        if ((Math.Abs(v - lowBorder.Y) < _surface.VResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             && _surface.IsVPeriodic)
                         {
                             D1Core(t, u, v, out D, _curve, _surface);
-                            if (D.Y() < 0)
+                            if (D.Y < 0)
                             {
-                                v = uppBorder.Y();
+                                v = uppBorder.Y;
                             }
                         }
-                        else if ((Math.Abs(v - uppBorder.Y()) <= _surface.VResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                        else if ((Math.Abs(v - uppBorder.Y) <= _surface.VResolution(global::Kerf.Engine.Foundation.Precision.PConfusion()))
                                  && _surface.IsVPeriodic)
                         {
                             D1Core(t, u, v, out D, _curve, _surface);
-                            if (D.Y() > 0)
+                            if (D.Y > 0)
                             {
-                                v = lowBorder.Y();
+                                v = lowBorder.Y;
                             }
                         }
                     }
@@ -792,7 +792,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         Point3D pOnS;
                         double d;
                         _surface.D0(u, v, out pOnS);
-                        d = cPoint.Distance(pOnS);
+                        d = cPoint.DistanceTo(pOnS);
                         if (d > _maxDist)
                         {
                             _sequence.Clear();
@@ -806,8 +806,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         // Search for exact boundary point
                         Tol = Min(_tolU, _tolV);
                         Vector2D aD;
-                        D1Core(Triple.X(), Triple.Y(), Triple.Z(), out aD, _curve, _surface);
-                        Tol /= Max(Math.Abs(aD.X()), Math.Abs(aD.Y()));
+                        D1Core(Triple.X, Triple.Y, Triple.Z, out aD, _curve, _surface);
+                        Tol /= Max(Math.Abs(aD.X), Math.Abs(aD.Y));
 
                         if (!ExactBound(ref Triple, t - step, Tol, _tolU, _tolV, _curve, _surface))
                         {
@@ -842,7 +842,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             _sequence.Value(_nbCurves).Append(Triple);
             prevTriple = Triple;
 
-            if (Triple.X() == lastU)
+            if (Triple.X == lastU)
             {
                 break; // return;
             }
@@ -850,9 +850,9 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             // Computation of WalkStep
             Vector3D d1, d2;
             double magnD1, magnD2;
-            D2CurvOnSurf(Triple.X(), Triple.Y(), Triple.Z(), out d1, out d2, _curve, _surface);
-            magnD1 = d1.Magnitude();
-            magnD2 = d2.Magnitude();
+            D2CurvOnSurf(Triple.X, Triple.Y, Triple.Z, out d1, out d2, _curve, _surface);
+            magnD1 = d1.Magnitude;
+            magnD2 = d2.Magnitude;
             if (magnD2 < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 walkStep = maxStep;
@@ -864,7 +864,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
             step = walkStep;
 
-            t = Triple.X() + step;
+            t = Triple.X + step;
             if (t > lastU)
             {
                 t = lastU;
@@ -875,12 +875,12 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             // Here we are trying to prolong continuous part
             while (t <= lastU && new_part)
             {
-                u0 = Triple.Y() + (step / prevStep) * (Triple.Y() - prevTriple.Y());
-                v0 = Triple.Z() + (step / prevStep) * (Triple.Z() - prevTriple.Z());
+                u0 = Triple.Y + (step / prevStep) * (Triple.Y - prevTriple.Y);
+                v0 = Triple.Z + (step / prevStep) * (Triple.Z - prevTriple.Z);
                 // adjust U0 to be in [mySurface->FirstUParameter(),mySurface->LastUParameter()]
-                u0 = Min(Max(u0, lowBorder.X()), uppBorder.X());
+                u0 = Min(Max(u0, lowBorder.X), uppBorder.X);
                 // adjust V0 to be in [mySurface->FirstVParameter(),mySurface->LastVParameter()]
-                v0 = Min(Max(v0, lowBorder.Y()), uppBorder.Y());
+                v0 = Min(Max(v0, lowBorder.Y), uppBorder.Y);
 
                 prjPS.Perform(t, u0, v0, tol, lowBorder, uppBorder, FuncTol, true);
                 if (!prjPS.IsDone)
@@ -890,28 +890,28 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         // Search for exact boundary point
                         Tol = Min(_tolU, _tolV);
                         Vector2D D;
-                        D1Core(Triple.X(), Triple.Y(), Triple.Z(), out D, _curve, _surface);
-                        Tol /= Max(Math.Abs(D.X()), Math.Abs(D.Y()));
+                        D1Core(Triple.X, Triple.Y, Triple.Z, out D, _curve, _surface);
+                        Tol /= Max(Math.Abs(D.X), Math.Abs(D.Y));
 
                         if (!ExactBound(ref Triple, t, Tol, _tolU, _tolV, _curve, _surface))
                         {
                             DichExactBound(ref Triple, t, Tol, _tolU, _tolV, _curve, _surface);
                         }
 
-                        if ((Triple.X()
-                             - _sequence.Value(_nbCurves).Value(_sequence.Value(_nbCurves).Length()).X())
+                        if ((Triple.X
+                             - _sequence.Value(_nbCurves).Value(_sequence.Value(_nbCurves).Length()).X)
                             > 1.0e-10)
                         {
                             _sequence.Value(_nbCurves).Append(Triple);
                         }
-                        if ((lastU - Triple.X()) < Tol)
+                        if ((lastU - Triple.X) < Tol)
                         {
                             t = lastU + 1;
                             break;
                         } // return;
 
                         step = searchStep;
-                        t = Triple.X() + step;
+                        t = Triple.X + step;
                         if (t > (lastU - minStep / 2))
                         {
                             step = step + lastU - t;
@@ -924,7 +924,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         // decrease step
                         double saveStep = step;
                         step /= 2.0;
-                        t = Triple.X() + step;
+                        t = Triple.X + step;
                         if (t > (lastU - minStep / 4))
                         {
                             step = step + lastU - t;
@@ -941,7 +941,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                 {
                     prevTriple = Triple;
                     prevStep = step;
-                    Triple = new Point3D(t, prjPS.Solution().X(), prjPS.Solution().Y());
+                    Triple = new Point3D(t, prjPS.Solution().X, prjPS.Solution().Y);
 
                     // Check for possible local traps.
                     UpdateTripleByTrapCriteria(ref Triple);
@@ -951,16 +951,16 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                     {
                         bool isUPossible = false;
                         if (_surface.IsUPeriodic
-                            && (Math.Abs(Triple.Y() - _surface.FirstUParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                                && Math.Abs(Triple.Y() - _surface.LastUParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                            && (Math.Abs(Triple.Y - _surface.FirstUParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                && Math.Abs(Triple.Y - _surface.LastUParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                         {
                             isUPossible = true;
                         }
 
                         bool isVPossible = false;
                         if (_surface.IsVPeriodic
-                            && (Math.Abs(Triple.Z() - _surface.FirstVParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
-                                && Math.Abs(Triple.Z() - _surface.LastVParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                            && (Math.Abs(Triple.Z - _surface.FirstVParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()
+                                && Math.Abs(Triple.Z - _surface.LastVParameter()) > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                         {
                             isVPossible = true;
                         }
@@ -973,8 +973,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         }
                     }
 
-                    if ((Triple.X()
-                         - _sequence.Value(_nbCurves).Value(_sequence.Value(_nbCurves).Length()).X())
+                    if ((Triple.X
+                         - _sequence.Value(_nbCurves).Value(_sequence.Value(_nbCurves).Length()).X)
                         > 1.0e-10)
                     {
                         _sequence.Value(_nbCurves).Append(Triple);
@@ -985,9 +985,9 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         break;
                     } // return;
                     // Computation of WalkStep
-                    D2CurvOnSurf(Triple.X(), Triple.Y(), Triple.Z(), out d1, out d2, _curve, _surface);
-                    magnD1 = d1.Magnitude();
-                    magnD2 = d2.Magnitude();
+                    D2CurvOnSurf(Triple.X, Triple.Y, Triple.Z, out d1, out d2, _curve, _surface);
+                    magnD1 = d1.Magnitude;
+                    magnD2 = d2.Magnitude;
                     if (magnD2 < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         walkStep = maxStep;
@@ -1010,7 +1010,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                     for (int idx = splitIdx; idx < size; ++idx)
                     {
                         double param = splits[idx];
-                        if (Math.Abs(param - Triple.X()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        if (Math.Abs(param - Triple.X) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             // The current point is equal to a split point.
                             new_part = false;
@@ -1023,7 +1023,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         {
                             // The next point crosses the split point.
                             t = param;
-                            step = t - prevTriple.X();
+                            step = t - prevTriple.X;
                         }
                     } // for(int anIdx = aSplitIdx; anIdx < aSize; ++anIdx)
                 }
@@ -1058,11 +1058,11 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         // 2. Removing common parts of bounds
         for (i = 1; i < _nbCurves; i++)
         {
-            if (_sequence.Value(i).Value(_sequence.Value(i).Length()).X()
-                >= _sequence.Value(i + 1).Value(1).X())
+            if (_sequence.Value(i).Value(_sequence.Value(i).Length()).X
+                >= _sequence.Value(i + 1).Value(1).X)
             {
                 _sequence.ChangeValue(i + 1).ChangeValue(1) = _sequence.ChangeValue(i + 1).ChangeValue(1).WithX(
-                    _sequence.Value(i).Value(_sequence.Value(i).Length()).X() + 1.0e-12);
+                    _sequence.Value(i).Value(_sequence.Value(i).Length()).X + 1.0e-12);
             }
         }
 
@@ -1077,9 +1077,9 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                 Point3D pOnC, pOnS, triple;
                 double distance;
                 triple = _sequence.Value(i).Value(j);
-                _curve.D0(triple.X(), out pOnC);
-                _surface.D0(triple.Y(), triple.Z(), out pOnS);
-                distance = pOnC.Distance(pOnS);
+                _curve.D0(triple.X, out pOnC);
+                _surface.D0(triple.Y, triple.Z, out pOnS);
+                distance = pOnC.DistanceTo(pOnS);
                 if (_maxDistance.Value(i) < distance)
                 {
                     _maxDistance.ChangeValue(i) = distance;
@@ -1100,8 +1100,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
             for (j = 1, aveU = 0.0, aveV = 0.0; j <= _sequence.Value(i).Length(); j++)
             {
-                aveU += _sequence.Value(i).Value(j).Y();
-                aveV += _sequence.Value(i).Value(j).Z();
+                aveU += _sequence.Value(i).Value(j).Y;
+                aveV += _sequence.Value(i).Value(j).Z;
             }
             aveU /= _sequence.Value(i).Length();
             aveV /= _sequence.Value(i).Length();
@@ -1109,8 +1109,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             pmoy = pmoy.WithCoord(aveU, aveV);
             for (j = 1; j <= _sequence.Value(i).Length(); j++)
             {
-                pcurr = new Point2D(_sequence.Value(i).Value(j).Y(), _sequence.Value(i).Value(j).Z());
-                if (pcurr.Distance(pmoy) > ((_tolU < _tolV) ? _tolV : _tolU))
+                pcurr = new Point2D(_sequence.Value(i).Value(j).Y, _sequence.Value(i).Value(j).Z);
+                if (pcurr.DistanceTo(pmoy) > ((_tolU < _tolV) ? _tolV : _tolU))
                 {
                     _snglPnts.SetValue(i, false);
                     break;
@@ -1143,8 +1143,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
                 for (j = 1, aveU = 0.0, aveV = 0.0; j <= _sequence.Value(i).Length(); j++)
                 {
-                    aveU += _sequence.Value(i).Value(j).Y();
-                    aveV += _sequence.Value(i).Value(j).Z();
+                    aveU += _sequence.Value(i).Value(j).Y;
+                    aveV += _sequence.Value(i).Value(j).Z;
                 }
                 aveU /= _sequence.Value(i).Length();
                 aveV /= _sequence.Value(i).Length();
@@ -1152,7 +1152,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                 // is i-part U-isoparametric ?
                 for (j = 1; j <= _sequence.Value(i).Length(); j++)
                 {
-                    if (Math.Abs(_sequence.Value(i).Value(j).Y() - aveU) > _tolU)
+                    if (Math.Abs(_sequence.Value(i).Value(j).Y - aveU) > _tolU)
                     {
                         _uIso.SetValue(i, false);
                         break;
@@ -1162,7 +1162,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                 // is i-part V-isoparametric ?
                 for (j = 1; j <= _sequence.Value(i).Length(); j++)
                 {
-                    if (Math.Abs(_sequence.Value(i).Value(j).Z() - aveV) > _tolV)
+                    if (Math.Abs(_sequence.Value(i).Value(j).Z - aveV) > _tolV)
                     {
                         _vIso.SetValue(i, false);
                         break;
@@ -1223,7 +1223,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             if (IsSinglePnt(k, out p2d)) // Part k of the projection is punctual
             {
-                GetSurface()!.D0(p2d.X(), p2d.Y(), out p);
+                GetSurface()!.D0(p2d.X, p2d.Y, out p);
                 if (_proj2d)
                 {
                     _result2dPoint!.SetValue(k, p2d);
@@ -1248,8 +1248,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
                     D0(udeb, out pdeb);
                     D0(ufin, out pfin);
-                    udeb = pdeb.Y();
-                    ufin = pfin.Y();
+                    udeb = pdeb.Y;
+                    ufin = pfin.Y;
                     if (udeb > ufin)
                     {
                         dir = new Direction2D(Direction2D.D.NY);
@@ -1269,8 +1269,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
                     D0(udeb, out pdeb);
                     D0(ufin, out pfin);
-                    udeb = pdeb.X();
-                    ufin = pfin.X();
+                    udeb = pdeb.X;
+                    ufin = pfin.X;
                     if (udeb > ufin)
                     {
                         dir = new Direction2D(Direction2D.D.NX);
@@ -1441,8 +1441,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             throw new NoSuchObjectException();
         }
-        udeb = _sequence.Value(index).Value(1).X();
-        ufin = _sequence.Value(index).Value(_sequence.Value(index).Length()).X();
+        udeb = _sequence.Value(index).Value(1).X;
+        ufin = _sequence.Value(index).Value(_sequence.Value(index).Length()).X;
     }
 
     /// <summary>True if part <paramref name="index"/> projects to a single point, <paramref name="p"/>.</summary>
@@ -1453,7 +1453,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             throw new NoSuchObjectException();
         }
-        p = new Point2D(_sequence.Value(index).Value(1).Y(), _sequence.Value(index).Value(1).Z());
+        p = new Point2D(_sequence.Value(index).Value(1).Y, _sequence.Value(index).Value(1).Z);
         return _snglPnts!.Value(index);
     }
 
@@ -1465,7 +1465,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             throw new NoSuchObjectException();
         }
-        u = _sequence.Value(index).Value(1).Y();
+        u = _sequence.Value(index).Value(1).Y;
         return _uIso!.Value(index);
     }
 
@@ -1477,7 +1477,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             throw new NoSuchObjectException();
         }
-        v = _sequence.Value(index).Value(1).Z();
+        v = _sequence.Value(index).Value(1).Z;
         return _vIso!.Value(index);
     }
 
@@ -1514,7 +1514,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         int end = _sequence.Value(i).Length();
         for (j = 1; j < end; j++)
         {
-            if ((u >= _sequence.Value(i).Value(j).X()) && (u <= _sequence.Value(i).Value(j + 1).X()))
+            if ((u >= _sequence.Value(i).Value(j).X) && (u <= _sequence.Value(i).Value(j + 1).X))
             {
                 break;
             }
@@ -1525,15 +1525,15 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         //  Cubic Interpolation
         if (_sequence.Value(i).Length() < 4
-            || (Math.Abs(u - _sequence.Value(i).Value(j).X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
+            || (Math.Abs(u - _sequence.Value(i).Value(j).X) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
-            u0 = _sequence.Value(i).Value(j).Y();
-            v0 = _sequence.Value(i).Value(j).Z();
+            u0 = _sequence.Value(i).Value(j).Y;
+            v0 = _sequence.Value(i).Value(j).Z;
         }
-        else if (Math.Abs(u - _sequence.Value(i).Value(j + 1).X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+        else if (Math.Abs(u - _sequence.Value(i).Value(j + 1).X) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            u0 = _sequence.Value(i).Value(j + 1).Y();
-            v0 = _sequence.Value(i).Value(j + 1).Z();
+            u0 = _sequence.Value(i).Value(j + 1).Y;
+            v0 = _sequence.Value(i).Value(j + 1).Z;
         }
         else
         {
@@ -1549,15 +1549,15 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             Vector2D i1, i2, i3, i21, i22, i31, y1, y2, y3, y4, res;
             double x1, x2, x3, x4;
 
-            x1 = _sequence.Value(i).Value(j - 1).X();
-            x2 = _sequence.Value(i).Value(j).X();
-            x3 = _sequence.Value(i).Value(j + 1).X();
-            x4 = _sequence.Value(i).Value(j + 2).X();
+            x1 = _sequence.Value(i).Value(j - 1).X;
+            x2 = _sequence.Value(i).Value(j).X;
+            x3 = _sequence.Value(i).Value(j + 1).X;
+            x4 = _sequence.Value(i).Value(j + 2).X;
 
-            y1 = new Vector2D(_sequence.Value(i).Value(j - 1).Y(), _sequence.Value(i).Value(j - 1).Z());
-            y2 = new Vector2D(_sequence.Value(i).Value(j).Y(), _sequence.Value(i).Value(j).Z());
-            y3 = new Vector2D(_sequence.Value(i).Value(j + 1).Y(), _sequence.Value(i).Value(j + 1).Z());
-            y4 = new Vector2D(_sequence.Value(i).Value(j + 2).Y(), _sequence.Value(i).Value(j + 2).Z());
+            y1 = new Vector2D(_sequence.Value(i).Value(j - 1).Y, _sequence.Value(i).Value(j - 1).Z);
+            y2 = new Vector2D(_sequence.Value(i).Value(j).Y, _sequence.Value(i).Value(j).Z);
+            y3 = new Vector2D(_sequence.Value(i).Value(j + 1).Y, _sequence.Value(i).Value(j + 1).Z);
+            y4 = new Vector2D(_sequence.Value(i).Value(j + 2).Y, _sequence.Value(i).Value(j + 2).Z);
 
             i1 = (y1 - y2) / (x1 - x2);
             i2 = (y2 - y3) / (x2 - x3);
@@ -1570,8 +1570,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
             res = y1 + (u - x1) * (i1 + (u - x2) * (i21 + (u - x3) * i31));
 
-            u0 = res.X();
-            v0 = res.Y();
+            u0 = res.X;
+            v0 = res.Y;
 
             if (u0 < _surface.FirstUParameter())
             {
@@ -1637,8 +1637,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     {
         double u, v;
         D0(t, out p);
-        u = p.X();
-        v = p.Y();
+        u = p.X;
+        v = p.Y;
         D1Core(t, u, v, out V, _curve, _surface);
     }
 
@@ -1646,8 +1646,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     {
         double u, v;
         D0(t, out p);
-        u = p.X();
-        v = p.Y();
+        u = p.X;
+        v = p.Y;
         D2Core(t, u, v, out v1, out v2, _curve, _surface);
     }
 
@@ -1820,38 +1820,38 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             {
                 for (j = 1; j < _sequence.Value(i).Length(); j++)
                 {
-                    ul = _sequence.Value(i).Value(j).Y();
-                    ur = _sequence.Value(i).Value(j + 1).Y();
+                    ul = _sequence.Value(i).Value(j).Y;
+                    ur = _sequence.Value(i).Value(j + 1).Y;
 
                     if (Math.Abs(ul - cutPntsU[k]) <= _tolU)
                     {
-                        tUdisc.Append(_sequence.Value(i).Value(j).X());
+                        tUdisc.Append(_sequence.Value(i).Value(j).X);
                     }
                     else if (Math.Abs(ur - cutPntsU[k]) <= _tolU)
                     {
-                        tUdisc.Append(_sequence.Value(i).Value(j + 1).X());
+                        tUdisc.Append(_sequence.Value(i).Value(j + 1).X);
                     }
                     else if ((ul < cutPntsU[k] && cutPntsU[k] < ur) || (ur < cutPntsU[k] && cutPntsU[k] < ul))
                     {
                         double v;
-                        v = (_sequence.Value(i).Value(j).Z() + _sequence.Value(i).Value(j + 1).Z()) / 2;
+                        v = (_sequence.Value(i).Value(j).Z + _sequence.Value(i).Value(j + 1).Z) / 2;
                         PrjResolve solver = new(_curve, _surface, 2);
 
                         Vector2D d;
                         Point3D triple;
                         triple = _sequence.Value(i).Value(j);
-                        D1Core(triple.X(), triple.Y(), triple.Z(), out d, _curve, _surface);
-                        if (Math.Abs(d.X()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                        D1Core(triple.X, triple.Y, triple.Z, out d, _curve, _surface);
+                        if (Math.Abs(d.X) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             tol = _tolU;
                         }
                         else
                         {
-                            tol = Min(_tolU, _tolU / Math.Abs(d.X()));
+                            tol = Min(_tolU, _tolU / Math.Abs(d.X));
                         }
 
-                        tl = _sequence.Value(i).Value(j).X();
-                        tr = _sequence.Value(i).Value(j + 1).X();
+                        tl = _sequence.Value(i).Value(j).X;
+                        tr = _sequence.Value(i).Value(j + 1).X;
 
                         solver.Perform((tl + tr) / 2,
                                        cutPntsU[k],
@@ -1863,7 +1863,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         //
                         if (solver.IsDone)
                         {
-                            tUdisc.Append(solver.Solution().X());
+                            tUdisc.Append(solver.Solution().X);
                         }
                     }
                 }
@@ -1895,38 +1895,38 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                 //      std::cout<<"CutPntsV("<<k<<") = "<<CutPntsV(k)<<std::endl;
                 for (j = 1; j < _sequence.Value(i).Length(); j++)
                 {
-                    vl = _sequence.Value(i).Value(j).Z();
-                    vr = _sequence.Value(i).Value(j + 1).Z();
+                    vl = _sequence.Value(i).Value(j).Z;
+                    vr = _sequence.Value(i).Value(j + 1).Z;
 
                     if (Math.Abs(vl - cutPntsV[k]) <= _tolV)
                     {
-                        tVdisc.Append(_sequence.Value(i).Value(j).X());
+                        tVdisc.Append(_sequence.Value(i).Value(j).X);
                     }
                     else if (Math.Abs(vr - cutPntsV[k]) <= _tolV)
                     {
-                        tVdisc.Append(_sequence.Value(i).Value(j + 1).X());
+                        tVdisc.Append(_sequence.Value(i).Value(j + 1).X);
                     }
                     else if ((vl < cutPntsV[k] && cutPntsV[k] < vr) || (vr < cutPntsV[k] && cutPntsV[k] < vl))
                     {
                         double u;
-                        u = (_sequence.Value(i).Value(j).Y() + _sequence.Value(i).Value(j + 1).Y()) / 2;
+                        u = (_sequence.Value(i).Value(j).Y + _sequence.Value(i).Value(j + 1).Y) / 2;
                         PrjResolve solver = new(_curve, _surface, 3);
 
                         Vector2D d;
                         Point3D triple;
                         triple = _sequence.Value(i).Value(j);
-                        D1Core(triple.X(), triple.Y(), triple.Z(), out d, _curve, _surface);
-                        if (Math.Abs(d.Y()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                        D1Core(triple.X, triple.Y, triple.Z, out d, _curve, _surface);
+                        if (Math.Abs(d.Y) < global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             tol = _tolV;
                         }
                         else
                         {
-                            tol = Min(_tolV, _tolV / Math.Abs(d.Y()));
+                            tol = Min(_tolV, _tolV / Math.Abs(d.Y));
                         }
 
-                        tl = _sequence.Value(i).Value(j).X();
-                        tr = _sequence.Value(i).Value(j + 1).X();
+                        tl = _sequence.Value(i).Value(j).X;
+                        tr = _sequence.Value(i).Value(j + 1).X;
 
                         solver.Perform((tl + tr) / 2,
                                        u,
@@ -1938,7 +1938,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         //
                         if (solver.IsDone)
                         {
-                            tVdisc.Append(solver.Solution().X());
+                            tVdisc.Append(solver.Solution().X);
                         }
                     }
                 }
@@ -2090,8 +2090,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             double vRes = _surface.VResolution(global::Kerf.Engine.Foundation.Precision.Confusion());
             double maxTol = Max(global::Kerf.Engine.Foundation.Precision.PConfusion(), vRes);
 
-            if (Math.Abs(point.Z() - _surface.FirstVParameter()) < maxTol
-                || Math.Abs(point.Z() - _surface.LastVParameter()) < maxTol)
+            if (Math.Abs(point.Z - _surface.FirstVParameter()) < maxTol
+                || Math.Abs(point.Z - _surface.LastVParameter()) < maxTol)
             {
                 isProblemsPossible = true;
             }
@@ -2099,10 +2099,10 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         // 27135 bug. Trap on degenerated edge.
         if (_surface.GetType() == SurfaceKind.Sphere
-            && (Math.Abs(point.Z() - _surface.FirstVParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-                || Math.Abs(point.Z() - _surface.LastVParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-                || Math.Abs(point.Y() - _surface.FirstUParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-                || Math.Abs(point.Y() - _surface.LastUParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
+            && (Math.Abs(point.Z - _surface.FirstVParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(point.Z - _surface.LastVParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(point.Y - _surface.FirstUParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                || Math.Abs(point.Y - _surface.LastUParameter()) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             isProblemsPossible = true;
         }
@@ -2113,8 +2113,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         }
 
         double u, v;
-        bool isDone = InitialPoint(_curve.Value(point.X()),
-                                   point.X(),
+        bool isDone = InitialPoint(_curve.Value(point.X),
+                                   point.X,
                                    _curve,
                                    _surface,
                                    global::Kerf.Engine.Foundation.Precision.PConfusion(),
@@ -2130,14 +2130,14 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         // Restore original position in case of period jump.
         if (_surface.IsUPeriodic
-            && Math.Abs(Math.Abs(u - point.Y()) - _surface.UPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            && Math.Abs(Math.Abs(u - point.Y) - _surface.UPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            u = point.Y();
+            u = point.Y;
         }
         if (_surface.IsVPeriodic
-            && Math.Abs(Math.Abs(v - point.Z()) - _surface.VPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            && Math.Abs(Math.Abs(v - point.Z) - _surface.VPeriod()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
-            v = point.Z();
+            v = point.Z;
         }
         point = point.WithY(u);
         point = point.WithZ(v);

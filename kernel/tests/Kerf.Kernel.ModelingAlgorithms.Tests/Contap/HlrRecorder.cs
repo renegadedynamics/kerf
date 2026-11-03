@@ -47,35 +47,35 @@ internal sealed class HlrRecorder
 
     private void Pnt(Point3D P)
     {
-        Hex(P.X());
-        Hex(P.Y());
-        Hex(P.Z());
+        Hex(P.X);
+        Hex(P.Y);
+        Hex(P.Z);
     }
 
     private void Dir(Direction3D D)
     {
-        Hex(D.X());
-        Hex(D.Y());
-        Hex(D.Z());
+        Hex(D.X);
+        Hex(D.Y);
+        Hex(D.Z);
     }
 
     private void Vec(Vector3D V)
     {
-        Hex(V.X());
-        Hex(V.Y());
-        Hex(V.Z());
+        Hex(V.X);
+        Hex(V.Y);
+        Hex(V.Z);
     }
 
     private void Pnt2d(Point2D P)
     {
-        Hex(P.X());
-        Hex(P.Y());
+        Hex(P.X);
+        Hex(P.Y);
     }
 
     private void Vec2d(Vector2D V)
     {
-        Hex(V.X());
-        Hex(V.Y());
+        Hex(V.X);
+        Hex(V.Y);
     }
 
     private void Trsf(Transform3D T)
@@ -144,8 +144,8 @@ internal sealed class HlrRecorder
             End();
             Line3D aL = P.Shoot(THE_PTS[i, 0], THE_PTS[i, 1]);
             Tag("shoot");
-            Pnt(aL.Location());
-            Dir(aL.Direction());
+            Pnt(aL.Location);
+            Dir(aL.Direction);
             End();
         }
     }
@@ -473,18 +473,18 @@ internal sealed class HlrRecorder
                 if (C.TypeContour() == global::Kerf.Geometry.CurveKind.Circle)
                 {
                     Circle3D aC = C.Circle();
-                    Pnt(aC.Location());
-                    Dir(aC.Axis().Direction());
-                    Dir(aC.XAxis().Direction());
-                    Hex(aC.Radius());
+                    Pnt(aC.Location);
+                    Dir(aC.Axis.Direction);
+                    Dir(aC.XAxis.Direction);
+                    Hex(aC.Radius);
                 }
                 else
                 {
                     for (int i = 1; i <= C.ContourCount; i++)
                     {
                         Line3D aL = C.Line(i);
-                        Pnt(aL.Location());
-                        Dir(aL.Direction());
+                        Pnt(aL.Location);
+                        Dir(aL.Direction);
                     }
                 }
             }
@@ -563,17 +563,17 @@ internal sealed class HlrRecorder
                 case ContourLineType.Lin:
                 {
                     Line3D aL = L.Line();
-                    Pnt(aL.Location());
-                    Dir(aL.Direction());
+                    Pnt(aL.Location);
+                    Dir(aL.Direction);
                     break;
                 }
                 case ContourLineType.Circle:
                 {
                     Circle3D aC = L.Circle();
-                    Pnt(aC.Location());
-                    Dir(aC.Axis().Direction());
-                    Dir(aC.XAxis().Direction());
-                    Hex(aC.Radius());
+                    Pnt(aC.Location);
+                    Dir(aC.Axis.Direction);
+                    Dir(aC.XAxis.Direction);
+                    Hex(aC.Radius);
                     break;
                 }
                 case ContourLineType.Walking:

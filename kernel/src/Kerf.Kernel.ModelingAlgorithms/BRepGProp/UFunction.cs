@@ -97,7 +97,7 @@ public class UFunction : Function
 
         // Volume and additional coefficients computation for ByPlane mode.
         double[] coeff = _coeffs;
-        s = norm.X() * coeff[0] + norm.Y() * coeff[1] + norm.Z() * coeff[2];
+        s = norm.X * coeff[0] + norm.Y * coeff[1] + norm.Z * coeff[2];
         d1 = pmp0.X() * coeff[0] + pmp0.Y() * coeff[1] + pmp0.Z() * coeff[2] - coeff[3];
 
         return s * d1;

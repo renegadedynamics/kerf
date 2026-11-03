@@ -152,8 +152,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         double u0 = theO.Real(0, 3), v = theO.Real(-3, 3);
                         anA = new Point2D(u0, v);
                         aB = new Point2D(u0 + theO.Real(0.3, 3), v);
-                        aF3 = anA.X();
-                        aL3 = aB.X();
+                        aF3 = anA.X;
+                        aL3 = aB.X;
                         break;
                     }
                 default:
@@ -162,8 +162,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         double u0 = theO.Real(0.05, 0.95), v0 = theO.Real(0, 0.4);
                         anA = new Point2D(u0, v0);
                         aB = new Point2D(u0, v0 + theO.Real(0.2, 0.6));
-                        aF3 = anA.Y();
-                        aL3 = aB.Y();
+                        aF3 = anA.Y;
+                        aL3 = aB.Y;
                         break;
                     }
             }
@@ -180,9 +180,9 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 aPoles2d[3] = aB;
                 for (int i = 1; i <= 2; i++)
                 {
-                    Point2D aM = new(anA.X() + (aB.X() - anA.X()) * i / 3.0, anA.Y() + (aB.Y() - anA.Y()) * i / 3.0);
+                    Point2D aM = new(anA.X + (aB.X - anA.X) * i / 3.0, anA.Y + (aB.Y - anA.Y) * i / 3.0);
                     double aD = aKind == SurfaceKind.BSpline ? 0.05 : 0.5;
-                    aPoles2d[i] = new Point2D(aM.X() + theO.Real(-aD, aD), aM.Y() + theO.Real(-aD, aD));
+                    aPoles2d[i] = new Point2D(aM.X + theO.Real(-aD, aD), aM.Y + theO.Real(-aD, aD));
                 }
             }
             double aMove = theO.Int(0, 2) == 0 ? Math.Pow(10, theO.Real(-6, -3)) : 0;
@@ -229,7 +229,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                 {
                     case SurfaceKind.Plane:
                         {
-                            Point3D aPA = aSurf.Value(anE.A.X(), anE.A.Y()), aPB = aSurf.Value(anE.B.X(), anE.B.Y());
+                            Point3D aPA = aSurf.Value(anE.A.X, anE.A.Y), aPB = aSurf.Value(anE.B.X, anE.B.Y);
                             var aPoles = NCollection_Array1<Point3D>.From([aPA, aPB]);
                             var aKnots = NCollection_Array1<double>.From([anE.F3, anE.L3]);
                             var aMults = NCollection_Array1<int>.From([2, 2]);
@@ -240,8 +240,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                     case SurfaceKind.Cylinder:
                         {
                             // the iso v: a circle on the cylinder's exact axes
-                            Frame3D anAx2 = theS.Ax.Ax2();
-                            anAx2 = anAx2.WithLocation(new Point3D(theS.Ax.Location().XYZ() + theS.Ax.Direction().XYZ() * anE.A.Y()));
+                            Frame3D anAx2 = theS.Ax.Frame;
+                            anAx2 = anAx2.WithLocation(new Point3D(theS.Ax.Location.XYZ() + theS.Ax.Direction.XYZ() * anE.A.Y));
                             aC = new CircleCurve3D(anAx2, theS.Radius);
                             using var aNAx2 = Oracle.ToNative(anAx2);
                             aNC = new N.Geom_Circle(aNAx2, theS.Radius);
@@ -249,15 +249,15 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         }
                     default:
                         {
-                            var anIso = (BSplineCurve3D)((BSplineSurface)aSurf).UIso(anE.A.X());
+                            var anIso = (BSplineCurve3D)((BSplineSurface)aSurf).UIso(anE.A.X);
                             var aPoles = new NCollection_Array1<Point3D>(1, anIso.PoleCount);
-                            anIso.Poles(aPoles);
+                            anIso.CopyPolesTo(aPoles);
                             var aKnots = new NCollection_Array1<double>(1, anIso.KnotCount);
-                            anIso.Knots(aKnots);
+                            anIso.CopyKnotsTo(aKnots);
                             var aMults = new NCollection_Array1<int>(1, anIso.KnotCount);
-                            anIso.Multiplicities(aMults);
-                            aC = new BSplineCurve3D(aPoles, aKnots, aMults, anIso.Degree());
-                            aNC = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, anIso.Degree(), false);
+                            anIso.CopyMultiplicitiesTo(aMults);
+                            aC = new BSplineCurve3D(aPoles, aKnots, aMults, anIso.Degree);
+                            aNC = Oracle.ToNativeCurve(aPoles, null, aKnots, aMults, anIso.Degree, false);
                             break;
                         }
                 }
@@ -277,7 +277,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             int aDegree;
             if (anE.Poles2d is null)
             {
-                Point2D aMid = new(anE.A.X() + anE.Bend * (anE.B.X() - anE.A.X()), anE.A.Y() + anE.Bend * (anE.B.Y() - anE.A.Y()));
+                Point2D aMid = new(anE.A.X + anE.Bend * (anE.B.X - anE.A.X), anE.A.Y + anE.Bend * (anE.B.Y - anE.A.Y));
                 aPoles2d = NCollection_Array1<Point2D>.From([anE.A, aMid, anE.B]);
                 aDegree = 2;
             }
@@ -294,8 +294,8 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             aB.UpdateEdge(aPE, aPC, aT.PFace, anE.Tol);
 
             // the vertices at the ends, moved
-            Point3D aP1 = aSurf.Value(anE.A.X(), anE.A.Y()).Translated(anE.Move1);
-            Point3D aP2 = aSurf.Value(anE.B.X(), anE.B.Y()).Translated(anE.Move2);
+            Point3D aP1 = aSurf.Value(anE.A.X, anE.A.Y).Translated(anE.Move1);
+            Point3D aP2 = aSurf.Value(anE.B.X, anE.B.Y).Translated(anE.Move2);
             var aNV1 = new N.TopoDS_Vertex();
             var aNV2 = new N.TopoDS_Vertex();
             Vertex aV1 = new(), aV2 = new();
@@ -682,9 +682,9 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
             bool aNOk = N.BRepLib.OrientClosedSolid(aNS);
             bool aOk = BrepLibrary.OrientClosedSolid(ref aPS);
             Assert.Equal(aNOk, aOk);
-            Assert.Equal((int)aNS.Orientation(), (int)aPS.Orientation());
+            Assert.Equal((int)aNS.Orientation(), (int)aPS.Orientation);
             aCases++;
-            if (aPS.Orientation() == Orientation.Reversed)
+            if (aPS.Orientation == Orientation.Reversed)
             {
                 aReversed++;
             }

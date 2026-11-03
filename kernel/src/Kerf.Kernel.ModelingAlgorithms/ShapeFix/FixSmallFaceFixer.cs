@@ -99,7 +99,7 @@ public class FixSmallFaceFixer : RootFixer
         // gp_Pnt spot;
         // double spotol;
         bool done = false;
-        ShapeType st = _shape.ShapeType();
+        ShapeType st = _shape.Type;
         if (st == ShapeType.Compound || st == ShapeType.CompSolid || st == ShapeType.Solid || st == ShapeType.Shell
             || st == ShapeType.Face)
         {
@@ -153,7 +153,7 @@ public class FixSmallFaceFixer : RootFixer
         bool isWir = false;
         for (var itw = new Iterator(f, false); itw.More(); itw.Next())
         {
-            if (itw.Value().ShapeType() != ShapeType.Wire)
+            if (itw.Value().Type != ShapeType.Wire)
             {
                 continue;
             }
@@ -218,7 +218,7 @@ public class FixSmallFaceFixer : RootFixer
         for (var iter_vert = new Explorer(f, ShapeType.Vertex); iter_vert.More(); iter_vert.Next())
         {
             Vertex v = ShapeCasts.Vertex(iter_vert.Current());
-            if (v.Orientation() == Forward)
+            if (v.Orientation == Forward)
             // smh#8
             {
                 Shape tmpVertexFwd = theSharedVertex.Oriented(Forward);
@@ -259,7 +259,7 @@ public class FixSmallFaceFixer : RootFixer
         {
             return _shape;
         }
-        ShapeType st = _shape.ShapeType();
+        ShapeType st = _shape.Type;
         // BRep_Builder theBuilder;
         bool done = wasdone;
         if (st == ShapeType.Compound || st == ShapeType.CompSolid || st == ShapeType.Solid || st == ShapeType.Shell
@@ -377,10 +377,10 @@ public class FixSmallFaceFixer : RootFixer
         {
             return false;
         }
-        if (e1.Orientation() == Reversed)
+        if (e1.Orientation == Reversed)
         {
             Context()!.Replace(e1tmp, theSharedEdge.Oriented(Reversed));
-            if (f.Orientation() == f1.Orientation())
+            if (f.Orientation == f1.Orientation)
             {
                 Context()!.Replace(e2tmp, theSharedEdge);
             }
@@ -392,7 +392,7 @@ public class FixSmallFaceFixer : RootFixer
         else
         {
             Context()!.Replace(e1tmp, theSharedEdge);
-            if (f.Orientation() == f1.Orientation())
+            if (f.Orientation == f1.Orientation)
             {
                 Context()!.Replace(e2tmp, theSharedEdge.Oriented(Reversed));
             }
@@ -442,7 +442,7 @@ public class FixSmallFaceFixer : RootFixer
         double dev;
         p1 = Tool.Pnt(v1);
         p2 = Tool.Pnt(v3);
-        dev = p1.Distance(p2);
+        dev = p1.DistanceTo(p2);
         var theFirstVer = new Vertex();
         var theSecondVer = new Vertex();
         theBuilder.MakeVertex(ref theFirstVer);
@@ -463,7 +463,7 @@ public class FixSmallFaceFixer : RootFixer
                 thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                 theBuilder.UpdateVertex(theFirstVer, new Point3D(thePosition), dev);
 
-                if (v1.Orientation() == Forward)
+                if (v1.Orientation == Forward)
                 {
                     Context()!.Replace(v1, theFirstVer.Oriented(Forward));
                 }
@@ -471,7 +471,7 @@ public class FixSmallFaceFixer : RootFixer
                 {
                     Context()!.Replace(v1, theFirstVer.Oriented(Reversed));
                 }
-                if (v3.Orientation() == Forward)
+                if (v3.Orientation == Forward)
                 {
                     Context()!.Replace(v3, theFirstVer.Oriented(Forward));
                 }
@@ -491,7 +491,7 @@ public class FixSmallFaceFixer : RootFixer
                     // #ifdef AIX  CKY : applies to all platforms
                     p1 = Tool.Pnt(v2);
                     p2 = Tool.Pnt(v4);
-                    dev = p1.Distance(p2);
+                    dev = p1.DistanceTo(p2);
                     thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                     theBuilder.UpdateVertex(theSecondVer, new Point3D(thePosition), dev);
                 }
@@ -502,7 +502,7 @@ public class FixSmallFaceFixer : RootFixer
             }
             if (!v2.IsSame(theSecondVer))
             {
-                if (v2.Orientation() == Forward)
+                if (v2.Orientation == Forward)
                 {
                     Context()!.Replace(v2, theSecondVer.Oriented(Forward));
                 }
@@ -510,7 +510,7 @@ public class FixSmallFaceFixer : RootFixer
                 {
                     Context()!.Replace(v2, theSecondVer.Oriented(Reversed));
                 }
-                if (v4.Orientation() == Forward)
+                if (v4.Orientation == Forward)
                 {
                     Context()!.Replace(v4, theSecondVer.Oriented(Forward));
                 }
@@ -523,7 +523,7 @@ public class FixSmallFaceFixer : RootFixer
         else
         {
             p2 = Tool.Pnt(v4);
-            dev = p1.Distance(p2);
+            dev = p1.DistanceTo(p2);
             if ((dev <= Tool.Tolerance(v1)) || (dev <= Tool.Tolerance(v4)) || (dev <= tol))
             {
                 if (v1.IsSame(v4))
@@ -537,7 +537,7 @@ public class FixSmallFaceFixer : RootFixer
                     dev = (dev / 2) * 1.0001;
                     thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                     theBuilder.UpdateVertex(theFirstVer, new Point3D(thePosition), dev);
-                    if (v1.Orientation() == Forward)
+                    if (v1.Orientation == Forward)
                     {
                         Context()!.Replace(v1, theFirstVer.Oriented(Forward));
                     }
@@ -545,7 +545,7 @@ public class FixSmallFaceFixer : RootFixer
                     {
                         Context()!.Replace(v1, theFirstVer.Oriented(Reversed));
                     }
-                    if (v4.Orientation() == Forward)
+                    if (v4.Orientation == Forward)
                     {
                         Context()!.Replace(v4, theFirstVer.Oriented(Forward));
                     }
@@ -564,7 +564,7 @@ public class FixSmallFaceFixer : RootFixer
                     {
                         p1 = Tool.Pnt(v2);
                         p2 = Tool.Pnt(v3);
-                        dev = p1.Distance(p2);
+                        dev = p1.DistanceTo(p2);
                         thePosition = (p1.XYZ() + p2.XYZ()) / 2;
                         theBuilder.UpdateVertex(theSecondVer, new Point3D(thePosition), dev);
                     }
@@ -575,7 +575,7 @@ public class FixSmallFaceFixer : RootFixer
                 }
                 if (!v2.IsSame(theSecondVer))
                 {
-                    if (v2.Orientation() == Forward)
+                    if (v2.Orientation == Forward)
                     {
                         Context()!.Replace(v2, theSecondVer.Oriented(Forward));
                     }
@@ -583,7 +583,7 @@ public class FixSmallFaceFixer : RootFixer
                     {
                         Context()!.Replace(v2, theSecondVer.Oriented(Reversed));
                     }
-                    if (v3.Orientation() == Forward)
+                    if (v3.Orientation == Forward)
                     {
                         Context()!.Replace(v3, theSecondVer.Oriented(Forward));
                     }
@@ -657,7 +657,7 @@ public class FixSmallFaceFixer : RootFixer
         {
             return _shape;
         }
-        ShapeType st = _shape.ShapeType();
+        ShapeType st = _shape.Type;
         bool done = false;
         var theBuilder = new BrepBuilder();
         if (st == ShapeType.Compound || st == ShapeType.CompSolid || st == ShapeType.Solid || st == ShapeType.Shell
@@ -752,7 +752,7 @@ public class FixSmallFaceFixer : RootFixer
                         Curve3D? the3dcurve = Tool.Curve(e, out double f, out double l);
                         theBuilder.UpdateEdge(theFirstEdge, the3dcurve, Kerf.Engine.Foundation.Precision.Confusion());
                         theBuilder.UpdateEdge(theSecondEdge, the3dcurve, Kerf.Engine.Foundation.Precision.Confusion());
-                        if (v1.Orientation() == Forward)
+                        if (v1.Orientation == Forward)
                         {
                             theBuilder.Add(theFirstEdge, v1);
                             theBuilder.Add(theFirstEdge, theNewVertex.Oriented(Reversed));
@@ -772,7 +772,7 @@ public class FixSmallFaceFixer : RootFixer
                         // Replace old edge by two new edges
                         var twoedges = new Wire();
                         theBuilder.MakeWire(ref twoedges);
-                        if (e.Orientation() == Forward)
+                        if (e.Orientation == Forward)
                         {
                             theBuilder.Add(twoedges, theFirstEdge.Oriented(Forward));
                             theBuilder.Add(twoedges, theSecondEdge.Oriented(Forward));
@@ -851,7 +851,7 @@ public class FixSmallFaceFixer : RootFixer
                 {
                     Edge ce = ShapeCasts.Edge(itere.Current());
                     Vertex thecontrol;
-                    if (ce.Orientation() == Forward)
+                    if (ce.Orientation == Forward)
                     {
                         thecontrol = Exploration.LastVertex(ce);
                     }

@@ -44,7 +44,7 @@ public class BooleanInputsUnchangedTests
     private static bool Holds(in Shape shape, in Shape sub)
     {
         TShape? tShape = sub.TShape();
-        return SubShapes(shape, sub.ShapeType()).Exists(s => ReferenceEquals(s.TShape(), tShape));
+        return SubShapes(shape, sub.Type).Exists(s => ReferenceEquals(s.TShape(), tShape));
     }
 
     // The face of the shape whose plane is at coordinate theValue on the axis (0: x, 1: y, 2: z)
@@ -54,10 +54,10 @@ public class BooleanInputsUnchangedTests
         {
             if (Tool.Surface(ShapeCasts.Face(f)) is PlaneSurface p)
             {
-                Point3D o = p.Pln().Location();
-                Direction3D d = p.Pln().Axis().Direction();
-                double n = axis == 0 ? d.X() : axis == 1 ? d.Y() : d.Z();
-                double c = axis == 0 ? o.X() : axis == 1 ? o.Y() : o.Z();
+                Point3D o = p.Plane.Location;
+                Direction3D d = p.Plane.Axis.Direction;
+                double n = axis == 0 ? d.X : axis == 1 ? d.Y : d.Z;
+                double c = axis == 0 ? o.X : axis == 1 ? o.Y : o.Z;
                 if (Math.Abs(Math.Abs(n) - 1.0) < 1e-12 && Math.Abs(c - value) < 1e-9)
                 {
                     return f;

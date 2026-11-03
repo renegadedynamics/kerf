@@ -57,37 +57,37 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
             Point2D Puv = c2d.Value(u);
             if (!isUPeriodic)
             {
-                if (Puv.X() < uf - du)
+                if (Puv.X < uf - du)
                 {
-                    dapp = Max(dapp, DSdu * (uf - Puv.X()));
+                    dapp = Max(dapp, DSdu * (uf - Puv.X));
                     continue;
                 }
-                else if (Puv.X() > ul + du)
+                else if (Puv.X > ul + du)
                 {
-                    dapp = Max(dapp, DSdu * (Puv.X() - ul));
+                    dapp = Max(dapp, DSdu * (Puv.X - ul));
                     continue;
                 }
             }
             if (!isVPeriodic)
             {
-                if (Puv.Y() < vf - dv)
+                if (Puv.Y < vf - dv)
                 {
-                    dapp = Max(dapp, DSdv * (vf - Puv.Y()));
+                    dapp = Max(dapp, DSdv * (vf - Puv.Y));
                     continue;
                 }
-                else if (Puv.Y() > vl + dv)
+                else if (Puv.Y > vl + dv)
                 {
-                    dapp = Max(dapp, DSdv * (Puv.Y() - vl));
+                    dapp = Max(dapp, DSdv * (Puv.Y - vl));
                     continue;
                 }
             }
-            Point3D Pcons = surf.Value(Puv.X(), Puv.Y());
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Z()))
+            Point3D Pcons = surf.Value(Puv.X, Puv.Y);
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(Pcons.Z))
             {
                 d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
-            double temp = Pc3d.SquareDistance(Pcons);
+            double temp = Pc3d.SquareDistanceTo(Pcons);
             dist[i + 1] = temp;
             d2 = Max(d2, temp);
         }
@@ -150,7 +150,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
     {
         int aDeg = theO.Int(2, 3);
         NCollection_Array1<Point2D> aPoles = new(1, aDeg + 1);
-        double aDX = theP2.X() - theP1.X(), aDY = theP2.Y() - theP1.Y();
+        double aDX = theP2.X - theP1.X, aDY = theP2.Y - theP1.Y;
         double aLen = Math.Sqrt(aDX * aDX + aDY * aDY);
         double aNX = -aDY / aLen, aNY = aDX / aLen;
         double aPrev = 0.0;
@@ -172,7 +172,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                 aPrev = aFrac;
             }
             double aOff = (i == 1 || i == aDeg + 1) ? 0.0 : theNoise * theO.Real(-1, 1);
-            aPoles[i] = new Point2D(theP1.X() + aFrac * aDX + aOff * aNX, theP1.Y() + aFrac * aDY + aOff * aNY);
+            aPoles[i] = new Point2D(theP1.X + aFrac * aDX + aOff * aNX, theP1.Y + aFrac * aDY + aOff * aNY);
         }
         NCollection_Array1<double> aKnots = NCollection_Array1<double>.From([theT1, theT2]);
         NCollection_Array1<int> aMults = NCollection_Array1<int>.From([aDeg + 1, aDeg + 1]);
@@ -184,35 +184,35 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
     private static N.Geom2d_BSplineCurve ToNative(BSplineCurve2D theC)
     {
         NCollection_Array1<Point2D> aPoles = new(1, theC.PoleCount);
-        theC.Poles(aPoles);
+        theC.CopyPolesTo(aPoles);
         NCollection_Array1<double> aKnots = new(1, theC.KnotCount);
-        theC.Knots(aKnots);
+        theC.CopyKnotsTo(aKnots);
         NCollection_Array1<int> aMults = new(1, theC.KnotCount);
-        theC.Multiplicities(aMults);
+        theC.CopyMultiplicitiesTo(aMults);
         NCollection_Array1<double>? aWeights = null;
         if (theC.IsRational)
         {
             aWeights = new NCollection_Array1<double>(1, theC.PoleCount);
-            theC.Weights(aWeights);
+            theC.CopyWeightsTo(aWeights);
         }
-        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree(), theC.IsPeriodic);
+        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree, theC.IsPeriodic);
     }
 
     private static N.Geom_BSplineCurve ToNative(BSplineCurve3D theC)
     {
         NCollection_Array1<Point3D> aPoles = new(1, theC.PoleCount);
-        theC.Poles(aPoles);
+        theC.CopyPolesTo(aPoles);
         NCollection_Array1<double> aKnots = new(1, theC.KnotCount);
-        theC.Knots(aKnots);
+        theC.CopyKnotsTo(aKnots);
         NCollection_Array1<int> aMults = new(1, theC.KnotCount);
-        theC.Multiplicities(aMults);
+        theC.CopyMultiplicitiesTo(aMults);
         NCollection_Array1<double>? aWeights = null;
         if (theC.IsRational)
         {
             aWeights = new NCollection_Array1<double>(1, theC.PoleCount);
-            theC.Weights(aWeights);
+            theC.CopyWeightsTo(aWeights);
         }
-        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree(), theC.IsPeriodic);
+        return Oracle.ToNativeCurve(aPoles, aWeights, aKnots, aMults, theC.Degree, theC.IsPeriodic);
     }
 
     private static double Noise(Oracle theO, bool theSame) =>
@@ -252,7 +252,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                 {
                     // The angular parametrisation itself
                     return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = aNC3,
-                        PortPC = aCircle2d, NativePC = new N.Geom2d_Circle(Oracle.ToNative(aCircle2d.Position()), r),
+                        PortPC = aCircle2d, NativePC = new N.Geom2d_Circle(Oracle.ToNative(aCircle2d.Position), r),
                         First = a, Last = b, Kind = "plane circle (same)" };
                 }
                 return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = aNC3, PortPC = aPC,
@@ -264,14 +264,14 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
                 Point2D aP1 = new(theO.Real(-5, 5), theO.Real(-5, 5));
                 double ang = theO.Angle(), len = theO.Real(1, 8);
                 double dx = Math.Cos(ang), dy = Math.Sin(ang);
-                LineCurve3D aPC3 = new(new Point3D(aP1.X() + ox, aP1.Y() + oy, oz), new Direction3D(dx, dy, 0));
-                using var aNP = new N.gp_Pnt(aP1.X() + ox, aP1.Y() + oy, oz);
+                LineCurve3D aPC3 = new(new Point3D(aP1.X + ox, aP1.Y + oy, oz), new Direction3D(dx, dy, 0));
+                using var aNP = new N.gp_Pnt(aP1.X + ox, aP1.Y + oy, oz);
                 using var aND = new N.gp_Dir(dx, dy, 0);
                 N.Geom_Line aNC3 = new(aNP, aND);
                 double a = theO.Real(-2, 2), b = a + len;
                 Direction2D aD2 = new(dx, dy);
-                Point2D aS = new(aP1.X() + a * aD2.X(), aP1.Y() + a * aD2.Y());
-                Point2D aE = new(aP1.X() + b * aD2.X(), aP1.Y() + b * aD2.Y());
+                Point2D aS = new(aP1.X + a * aD2.X, aP1.Y + a * aD2.Y);
+                Point2D aE = new(aP1.X + b * aD2.X, aP1.Y + b * aD2.Y);
                 (BSplineCurve2D aPC, N.Geom2d_BSplineCurve aNPC) =
                     WarpedSegment(theO, aS, aE, a, b, !theSame, Noise(theO, theSame));
                 return new EdgeCase { PortS = aPS, NativeS = aNS, PortC3d = aPC3, NativeC3d = aNC3, PortPC = aPC,
@@ -357,7 +357,7 @@ public class ApproxSameParameterOracleTests(ITestOutputHelper output)
     {
         (N.Geom_BSplineSurface aNS, BSplineSurface aPS) =
             AdaptorOracleInputs.RandomBSplineSurface(theO, 1, false, 2);
-        aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aPS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         bool anIsU = theO.Bool();
         double aFix = anIsU ? theO.Real(aU1, aU2) : theO.Real(aV1, aV2);
         double aLo = anIsU ? aV1 : aU1, aHi = anIsU ? aV2 : aU2;

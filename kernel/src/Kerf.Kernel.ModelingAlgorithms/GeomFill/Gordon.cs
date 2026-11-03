@@ -192,7 +192,7 @@ public class Gordon
                 nbSamples = Max(nbSamples, curves.At(curveIdx)!.PoleCount);
             }
         }
-        return Max(nbSamples, BSplineCurve3D.MaxDegree() / 2);
+        return Max(nbSamples, BSplineCurve3D.MaxDegree / 2);
     }
 
     // Returns regularly spaced parameters in the unit interval.
@@ -210,7 +210,7 @@ public class Gordon
     private static BSplineSurface? ApproximateGrid(NCollection_Array2<Point3D> points, double tolerance)
     {
         PointsToBSplineSurface approx = new();
-        approx.Init(points, IsoParametric, 1, BSplineSurface.MaxDegree(), C1,
+        approx.Init(points, IsoParametric, 1, BSplineSurface.MaxDegree, C1,
                       Max(tolerance, global::Kerf.Engine.Foundation.Precision.Confusion()));
         return approx.IsDone ? approx.Surface() : null;
     }
@@ -313,7 +313,7 @@ public class Gordon
         {
             BSplineCurve3D? curve = curves.At(curveIdx);
             if (curve is null
-                || curve.Value(curve.FirstParameter()).Distance(curve.Value(curve.LastParameter())) > aTolerance)
+                || curve.Value(curve.FirstParameter).DistanceTo(curve.Value(curve.LastParameter)) > aTolerance)
             {
                 return false;
             }
@@ -378,10 +378,10 @@ public class Gordon
                                      : SurfaceParameter(surface, true, fixedParameter);
             double v = isProfile ? SurfaceParameter(surface, false, fixedParameter)
                                      : SurfaceParameter(surface, false, parameter);
-            maxDeviation = Max(maxDeviation, adaptor.EvalD0(parameter).Distance(surface.Value(u, v)));
+            maxDeviation = Max(maxDeviation, adaptor.EvalD0(parameter).DistanceTo(surface.Value(u, v)));
         }
 
-        int samplesPerSpan = curve.Degree() + (isProfile ? surface.UDegree() : surface.VDegree());
+        int samplesPerSpan = curve.Degree + (isProfile ? surface.UDegree : surface.VDegree);
         for (int knotIdx = 1; knotIdx < curve.KnotCount; ++knotIdx)
         {
             double first = curve.Knot(knotIdx);

@@ -80,15 +80,15 @@ public class ChFi3dBuilder0Tests
         aBS.Freeze();
         Curve2D? aPc = new TrimmedCurve2D(aBS, 0.25, 0.75);
         // the trimmed curve copies its basis: freeze that copy too, as GeomInt's results are
-        ((TrimmedCurve2D)aPc).BasisCurve().Freeze();
+        ((TrimmedCurve2D)aPc).BasisCurve.Freeze();
         ChFi3d_ReparamPcurv(10.0, 20.0, ref aPc);
         BSplineCurve2D aRes = Assert.IsType<BSplineCurve2D>(aPc);
-        Assert.Equal(10.0, aRes.FirstParameter());
-        Assert.Equal(20.0, aRes.LastParameter());
+        Assert.Equal(10.0, aRes.FirstParameter);
+        Assert.Equal(20.0, aRes.LastParameter);
         Assert.True(aRes.Value(10.0).IsEqual(aBS.Value(0.25), 1.0e-12));
         Assert.True(aRes.Value(20.0).IsEqual(aBS.Value(0.75), 1.0e-12));
-        Assert.Equal(0.0, aBS.FirstParameter());
-        Assert.Equal(1.0, aBS.LastParameter());
+        Assert.Equal(0.0, aBS.FirstParameter);
+        Assert.Equal(1.0, aBS.LastParameter);
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class ChFi3dBuilder0Tests
         Assert.True(CP.Arc().IsSame(E));
         Assert.Equal(2.5, CP.Parameter());
         Assert.True(CP.Vector().IsEqual(new Vector3D(0, 0, -1), 1.0e-15, 1.0e-15));
-        Assert.Equal(global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(Forward, E.Orientation())), CP.TransitionOnArc());
+        Assert.Equal(global::Kerf.Engine.Topology.TopAbs.Reverse(global::Kerf.Engine.Topology.TopAbs.Compose(Forward, E.Orientation)), CP.TransitionOnArc());
         Assert.True(CP.Tolerance() >= Tool.Tolerance(V1));
     }
 

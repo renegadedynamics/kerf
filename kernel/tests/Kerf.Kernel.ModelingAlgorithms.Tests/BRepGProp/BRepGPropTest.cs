@@ -76,9 +76,9 @@ public class BRepGPropTest
         Point3D aCOM = aProps.CentreOfMass();
 
         // Center of mass should be at (5, 5, 5)
-        Assert.Equal(5.0, aCOM.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aCOM.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aCOM.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCOM.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCOM.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCOM.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public class BRepGPropTest
         Edge anEdge = new();
         aBuilder.MakeEdge(ref anEdge);
         aBuilder.UpdateEdge(anEdge, aPCurve, aPlane, new Placement(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        aBuilder.Range(anEdge, aPlane, new Placement(), aPCurve.FirstParameter(), aPCurve.LastParameter());
+        aBuilder.Range(anEdge, aPlane, new Placement(), aPCurve.FirstParameter, aPCurve.LastParameter);
         aBuilder.Degenerated(anEdge, true);
 
         var aProps = new Properties();

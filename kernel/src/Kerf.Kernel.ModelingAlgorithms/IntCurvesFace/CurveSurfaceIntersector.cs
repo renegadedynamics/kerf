@@ -310,7 +310,7 @@ public class CurveSurfaceIntersector : Transient
                         int intState = (currentstate == global::Kerf.Topology.Containment.In) ? 0 : 1;
                         //  Modified by skv - Wed Sep  3 16:14:11 2003 OCC578 End
 
-                        if (transition != TransitionOnCurve.Tangent && _face.Orientation() == Reversed)
+                        if (transition != TransitionOnCurve.Tangent && _face.Orientation == Reversed)
                         {
                             if (transition == TransitionOnCurve.In)
                             {

@@ -70,14 +70,14 @@ public abstract class AxisPlacement : Geometry3D
     }
 
     /// <summary>The angle, in [0, PI], between the main directions of this and Other.</summary>
-    public double Angle(AxisPlacement other) => _axis.Angle(other.Axis());
+    public double Angle(AxisPlacement other) => _axis.AngleTo(other.Axis());
 
     /// <summary>The main axis (origin, main direction).</summary>
     public Axis3D Axis() => _axis;
 
     /// <summary>The main direction.</summary>
-    public Direction3D Direction() => _axis.Direction();
+    public Direction3D Direction() => _axis.Direction;
 
     /// <summary>The origin.</summary>
-    public Point3D Location() => _axis.Location();
+    public Point3D Location() => _axis.Location;
 }

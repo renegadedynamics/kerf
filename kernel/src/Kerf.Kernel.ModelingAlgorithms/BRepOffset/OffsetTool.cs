@@ -85,7 +85,7 @@ public static class OffsetTool
     /// </summary>
     public static void EdgeVertices(in Edge e, out Vertex v1, out Vertex v2)
     {
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             Exploration.Vertices(e, out v2, out v1);
         }
@@ -147,7 +147,7 @@ public static class OffsetTool
 
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
         }
         //---------------
         // Recadre en U.
@@ -161,15 +161,15 @@ public static class OffsetTool
 
         if (s.IsUPeriodic)
         {
-            double period = s.UPeriod();
+            double period = s.UPeriod;
             double eps = period * 1.0e-6;
             Point2D pf = c2d.Value(f);
             Point2D pl = c2d.Value(l);
             Point2D pm = c2d.Value(0.34 * f + 0.66 * l);
-            double minC = Min(pf.X(), pl.X());
-            minC = Min(minC, pm.X());
-            double maxC = Max(pf.X(), pl.X());
-            maxC = Max(maxC, pm.X());
+            double minC = Min(pf.X, pl.X);
+            minC = Min(minC, pm.X);
+            double maxC = Max(pf.X, pl.X);
+            maxC = Max(maxC, pm.X);
             double du = 0.0;
             if (minC < umin - eps)
             {
@@ -209,15 +209,15 @@ public static class OffsetTool
         //------------------
         if (s.IsVPeriodic)
         {
-            double period = s.VPeriod();
+            double period = s.VPeriod;
             double eps = period * 1.0e-6;
             Point2D pf = c2d.Value(f);
             Point2D pl = c2d.Value(l);
             Point2D pm = c2d.Value(0.34 * f + 0.66 * l);
-            double minC = Min(pf.Y(), pl.Y());
-            minC = Min(minC, pm.Y());
-            double maxC = Max(pf.Y(), pl.Y());
-            maxC = Max(maxC, pm.Y());
+            double minC = Min(pf.Y, pl.Y);
+            minC = Min(minC, pm.Y);
+            double maxC = Max(pf.Y, pl.Y);
+            maxC = Max(maxC, pm.Y);
             double dv = 0.0;
             if (minC < vmin - eps)
             {
@@ -300,7 +300,7 @@ public static class OffsetTool
         Type typS = theSurf.GetType();
         if (typS == typeof(global::Kerf.Geometry.OffsetSurface))
         {
-            typS = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface().GetType();
+            typS = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface.GetType();
         }
         if (typS == typeof(global::Kerf.Geometry.BezierSurface) || typS == typeof(global::Kerf.Geometry.BSplineSurface))
         {
@@ -467,25 +467,25 @@ public static class OffsetTool
             parOnC = AlgoTools2D.IntermediatePoint(f, l);
         }
 
-        Vector3D t1 = c.DN(parOnC, 1).Transformed(L.Transformation());
-        if (t1.SquareMagnitude() > Constants.Resolution())
+        Vector3D t1 = c.DN(parOnC, 1).Transformed(L.Transformation);
+        if (t1.SquareMagnitude > Constants.Resolution())
         {
             t1 = t1.Normalized();
         }
 
         Point2D p = c1.Value(parOnC);
 
-        s1.D1(p.X(), p.Y(), out Point3D p3, out Vector3D d1U, out Vector3D d1V);
+        s1.D1(p.X, p.Y, out Point3D p3, out Vector3D d1U, out Vector3D d1V);
         Vector3D dn1 = d1U ^ d1V;
-        if (f1.Orientation() == Reversed)
+        if (f1.Orientation == Reversed)
         {
             dn1 = dn1.Reversed();
         }
 
         p = c2.Value(parOnC);
-        s2.D1(p.X(), p.Y(), out p3, out d1U, out d1V);
+        s2.D1(p.X, p.Y, out p3, out d1U, out d1V);
         Vector3D dn2 = d1U ^ d1V;
-        if (f2.Orientation() == Reversed)
+        if (f2.Orientation == Reversed)
         {
             dn2 = dn2.Reversed();
         }
@@ -510,11 +510,11 @@ public static class OffsetTool
         {
             o2 = Reversed;
         }
-        if (f1.Orientation() == Reversed)
+        if (f1.Orientation == Reversed)
         {
             o1 = global::Kerf.Engine.Topology.TopAbs.Reverse(o1);
         }
-        if (f2.Orientation() == Reversed)
+        if (f2.Orientation == Reversed)
         {
             o2 = global::Kerf.Engine.Topology.TopAbs.Reverse(o2);
         }
@@ -580,15 +580,15 @@ public static class OffsetTool
     private static bool ToSmall(Curve3D c)
     {
         double tol = 10 * global::Kerf.Engine.Foundation.Precision.Confusion();
-        double m = (c.FirstParameter() * 0.668 + c.LastParameter() * 0.332);
-        Point3D p1 = c.Value(c.FirstParameter());
-        Point3D p2 = c.Value(c.LastParameter());
+        double m = (c.FirstParameter * 0.668 + c.LastParameter * 0.332);
+        Point3D p1 = c.Value(c.FirstParameter);
+        Point3D p2 = c.Value(c.LastParameter);
         Point3D p3 = c.Value(m);
-        if (p1.Distance(p2) > tol)
+        if (p1.DistanceTo(p2) > tol)
         {
             return false;
         }
-        if (p2.Distance(p3) > tol)
+        if (p2.DistanceTo(p3) > tol)
         {
             return false;
         }
@@ -599,8 +599,8 @@ public static class OffsetTool
 
     private static bool IsOnSurface(Curve3D c, Surface s, double tolConf, out double tolReached)
     {
-        double f = c.FirstParameter();
-        double l = c.LastParameter();
+        double f = c.FirstParameter;
+        double l = c.LastParameter;
         int n = 5;
         double du = (f - l) / (n - 1); // OCCT: (f - l), so the points sampled run from f away from l
         tolReached = 0.0;
@@ -614,12 +614,12 @@ public static class OffsetTool
         {
             case Plane:
             {
-                CoordinateSystem ax = AS.Plane().Position();
+                CoordinateSystem ax = AS.Plane().Position;
                 for (int i = 0; i < n; i++)
                 {
                     p = c.Value(f + i * du);
                     global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(ax, p, out u, out v);
-                    tolReached = p.Distance(global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, ax));
+                    tolReached = p.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, ax));
                     if (tolReached > tolConf)
                     {
                         return false;
@@ -629,13 +629,13 @@ public static class OffsetTool
             }
             case SurfaceKind.Cylinder:
             {
-                CoordinateSystem ax = AS.Cylinder().Position();
-                double rad = AS.Cylinder().Radius();
+                CoordinateSystem ax = AS.Cylinder().Position;
+                double rad = AS.Cylinder().Radius;
                 for (int i = 0; i < n; i++)
                 {
                     p = c.Value(f + i * du);
                     global::Kerf.Engine.Geometry.ElSLib.CylinderParameters(ax, rad, p, out u, out v);
-                    tolReached = p.Distance(global::Kerf.Engine.Geometry.ElSLib.CylinderValue(u, v, ax, rad));
+                    tolReached = p.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.CylinderValue(u, v, ax, rad));
                     if (tolReached > tolConf)
                     {
                         return false;
@@ -645,14 +645,14 @@ public static class OffsetTool
             }
             case SurfaceKind.Cone:
             {
-                CoordinateSystem ax = AS.Cone().Position();
-                double rad = AS.Cone().RefRadius();
-                double alp = AS.Cone().SemiAngle();
+                CoordinateSystem ax = AS.Cone().Position;
+                double rad = AS.Cone().RefRadius;
+                double alp = AS.Cone().SemiAngle;
                 for (int i = 0; i < n; i++)
                 {
                     p = c.Value(f + i * du);
                     global::Kerf.Engine.Geometry.ElSLib.ConeParameters(ax, rad, alp, p, out u, out v);
-                    tolReached = p.Distance(global::Kerf.Engine.Geometry.ElSLib.ConeValue(u, v, ax, rad, alp));
+                    tolReached = p.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.ConeValue(u, v, ax, rad, alp));
                     if (tolReached > tolConf)
                     {
                         return false;
@@ -662,13 +662,13 @@ public static class OffsetTool
             }
             case SurfaceKind.Sphere:
             {
-                CoordinateSystem ax = AS.Sphere().Position();
-                double rad = AS.Sphere().Radius();
+                CoordinateSystem ax = AS.Sphere().Position;
+                double rad = AS.Sphere().Radius;
                 for (int i = 0; i < n; i++)
                 {
                     p = c.Value(f + i * du);
                     global::Kerf.Engine.Geometry.ElSLib.SphereParameters(ax, rad, p, out u, out v);
-                    tolReached = p.Distance(global::Kerf.Engine.Geometry.ElSLib.SphereValue(u, v, ax, rad));
+                    tolReached = p.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.SphereValue(u, v, ax, rad));
                     if (tolReached > tolConf)
                     {
                         return false;
@@ -678,14 +678,14 @@ public static class OffsetTool
             }
             case SurfaceKind.Torus:
             {
-                CoordinateSystem ax = AS.Torus().Position();
-                double r1 = AS.Torus().MajorRadius();
-                double r2 = AS.Torus().MinorRadius();
+                CoordinateSystem ax = AS.Torus().Position;
+                double r1 = AS.Torus().MajorRadius;
+                double r2 = AS.Torus().MinorRadius;
                 for (int i = 0; i < n; i++)
                 {
                     p = c.Value(f + i * du);
                     global::Kerf.Engine.Geometry.ElSLib.TorusParameters(ax, r1, r2, p, out u, out v);
-                    tolReached = p.Distance(global::Kerf.Engine.Geometry.ElSLib.TorusValue(u, v, ax, r1, r2));
+                    tolReached = p.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.TorusValue(u, v, ax, r1, r2));
                     if (tolReached > tolConf)
                     {
                         return false;
@@ -903,13 +903,13 @@ public static class OffsetTool
         Curve3D c1 = Tool.Curve(e1, out double first1, out double last1)!;
         if (c1.GetType() == typeof(TrimmedCurve3D))
         {
-            c1 = ((TrimmedCurve3D)c1).BasisCurve();
+            c1 = ((TrimmedCurve3D)c1).BasisCurve;
         }
 
         Curve3D c2 = Tool.Curve(e2, out double first2, out double last2)!;
         if (c2.GetType() == typeof(TrimmedCurve3D))
         {
-            c2 = ((TrimmedCurve3D)c2).BasisCurve();
+            c2 = ((TrimmedCurve3D)c2).BasisCurve;
         }
 
         if (c1.GetType() != typeof(BSplineCurve3D) || c2.GetType() != typeof(BSplineCurve3D))
@@ -923,13 +923,13 @@ public static class OffsetTool
         c1.D1(param1, out Point3D pnt1, out Vector3D der1);
         c2.D1(param2, out Point3D pnt2, out Vector3D der2);
 
-        if (der1.Magnitude() <= Constants.Resolution() || der2.Magnitude() <= Constants.Resolution())
+        if (der1.Magnitude <= Constants.Resolution() || der2.Magnitude <= Constants.Resolution())
         {
             angle = M_PI / 2.0;
         }
         else
         {
-            angle = der1.Angle(der2);
+            angle = der1.AngleTo(der2);
         }
 
         return true;
@@ -994,8 +994,8 @@ public static class OffsetTool
             {
                 Surface theSurf = curveRep.Surface()!;
                 Placement theLoc = curveRep.Location();
-                theLoc = anEdge.Location() * theLoc;
-                theSurf = (Surface)theSurf.Transformed(theLoc.Transformation());
+                theLoc = anEdge.Placement * theLoc;
+                theSurf = (Surface)theSurf.Transformed(theLoc.Transformation);
                 Curve2D? projPCurve = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c3d, f, l, theSurf);
                 if (projPCurve is not null)
                 {
@@ -1020,13 +1020,13 @@ public static class OffsetTool
         pCurve1 = Tool.CurveOnSurface(e1, f, out double first1, out double last1)!;
         if (pCurve1.GetType() == typeof(TrimmedCurve2D))
         {
-            pCurve1 = ((TrimmedCurve2D)pCurve1).BasisCurve();
+            pCurve1 = ((TrimmedCurve2D)pCurve1).BasisCurve;
         }
 
         pCurve2 = Tool.CurveOnSurface(e2, f, out double first2, out double last2)!;
         if (pCurve2.GetType() == typeof(TrimmedCurve2D))
         {
-            pCurve2 = ((TrimmedCurve2D)pCurve2).BasisCurve();
+            pCurve2 = ((TrimmedCurve2D)pCurve2).BasisCurve;
         }
 
         if (pCurve1 == pCurve2)
@@ -1045,35 +1045,35 @@ public static class OffsetTool
             if (pCurve1.GetType() == typeof(LineCurve2D))
             {
                 LineCurve2D lin1 = (LineCurve2D)pCurve1;
-                Line2D theLin = lin1.Lin2d();
+                Line2D theLin = lin1.Line;
                 first2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin, p1);
                 last2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theLin, p2);
             }
             else if (pCurve1.GetType() == typeof(CircleCurve2D))
             {
                 CircleCurve2D circ1 = (CircleCurve2D)pCurve1;
-                Circle2D theCirc = circ1.Circ2d();
+                Circle2D theCirc = circ1.Circle;
                 first2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCirc, p1);
                 last2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theCirc, p2);
             }
             else if (pCurve1.GetType() == typeof(EllipseCurve2D))
             {
                 EllipseCurve2D ell1 = (EllipseCurve2D)pCurve1;
-                Ellipse2D theElips = ell1.Elips2d();
+                Ellipse2D theElips = ell1.Ellipse;
                 first2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theElips, p1);
                 last2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theElips, p2);
             }
             else if (pCurve1.GetType() == typeof(ParabolaCurve2D))
             {
                 ParabolaCurve2D parab1 = (ParabolaCurve2D)pCurve1;
-                Parabola2D theParab = parab1.Parab2d();
+                Parabola2D theParab = parab1.Parabola;
                 first2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theParab, p1);
                 last2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theParab, p2);
             }
             else if (pCurve1.GetType() == typeof(HyperbolaCurve2D))
             {
                 HyperbolaCurve2D hypr1 = (HyperbolaCurve2D)pCurve1;
-                Hyperbola2D theHypr = hypr1.Hypr2d();
+                Hyperbola2D theHypr = hypr1.Hyperbola;
                 first2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theHypr, p1);
                 last2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(theHypr, p2);
             }
@@ -1087,7 +1087,7 @@ public static class OffsetTool
             CompCurveToBSplineCurve2D concat2d = new(tc1);
             concat2d.Add(tc2, global::Kerf.Engine.Foundation.Precision.Confusion(), after);
             newPCurve = concat2d.BSplineCurve()!;
-            if (newPCurve.Continuity() < C1)
+            if (newPCurve.Continuity < C1)
             {
                 ApproxCurve2D approx2d = new(newPCurve, tol, continuity, maxSeg, maxDeg);
                 if (approx2d.HasResult)
@@ -1095,8 +1095,8 @@ public static class OffsetTool
                     newPCurve = approx2d.Curve()!;
                 }
             }
-            newFirst = newPCurve.FirstParameter();
-            newLast = newPCurve.LastParameter();
+            newFirst = newPCurve.FirstParameter;
+            newLast = newPCurve.LastParameter;
         }
 
         return newPCurve;
@@ -1123,13 +1123,13 @@ public static class OffsetTool
         c1 = Tool.Curve(e1, out double first1, out double last1)!;
         if (c1.GetType() == typeof(TrimmedCurve3D))
         {
-            c1 = ((TrimmedCurve3D)c1).BasisCurve();
+            c1 = ((TrimmedCurve3D)c1).BasisCurve;
         }
 
         c2 = Tool.Curve(e2, out double first2, out double last2)!;
         if (c2.GetType() == typeof(TrimmedCurve3D))
         {
-            c2 = ((TrimmedCurve3D)c2).BasisCurve();
+            c2 = ((TrimmedCurve3D)c2).BasisCurve;
         }
 
         if (c1 == c2)
@@ -1153,7 +1153,7 @@ public static class OffsetTool
                 return newEdge;
             }
             newCurve = concat.BSplineCurve()!;
-            if (newCurve.Continuity() < global::Kerf.Geometry.Continuity.C1)
+            if (newCurve.Continuity < global::Kerf.Geometry.Continuity.C1)
             {
                 ApproxCurve approx3d = new(newCurve, tol, continuity, maxSeg, maxDeg);
                 if (approx3d.HasResult)
@@ -1161,8 +1161,8 @@ public static class OffsetTool
                     newCurve = approx3d.Curve()!;
                 }
             }
-            fparam = newCurve.FirstParameter();
-            lparam = newCurve.LastParameter();
+            fparam = newCurve.FirstParameter;
+            lparam = newCurve.LastParameter;
         }
 
         BrepBuilder bb = new();
@@ -1523,7 +1523,7 @@ public static class OffsetTool
         Surface surf = Tool.Surface(f1)!;
         if (surf.GetType() == typeof(TrimmedSurface))
         {
-            surf = ((TrimmedSurface)surf).BasisSurface();
+            surf = ((TrimmedSurface)surf).BasisSurface;
         }
         if (surf.GetType() == typeof(PlaneSurface))
         {
@@ -1537,7 +1537,7 @@ public static class OffsetTool
         surf = Tool.Surface(f2)!;
         if (surf.GetType() == typeof(TrimmedSurface))
         {
-            surf = ((TrimmedSurface)surf).BasisSurface();
+            surf = ((TrimmedSurface)surf).BasisSurface;
         }
         if (surf.GetType() == typeof(PlaneSurface))
         {
@@ -1590,7 +1590,7 @@ public static class OffsetTool
                             {
                                 Point3D projectionOnEdge = projector.Point(imin).Value();
                                 Vector3D refToProj = new(refPnt, projectionOnEdge);
-                                double angle = refToProj.Angle(refToMid);
+                                double angle = refToProj.AngleTo(refToMid);
                                 if (angle < minAngle)
                                 {
                                     minAngle = angle;
@@ -1716,7 +1716,7 @@ public static class OffsetTool
                 {
                     Wire wire = ShapeCasts.Wire(wseq[i]);
                     NCollection_Sequence<Shape> localEdgesForConcat = new();
-                    if (wire.Closed())
+                    if (wire.IsClosed)
                     {
                         Vertex startVertex = new();
                         Edge startEdge = new();
@@ -1891,7 +1891,7 @@ public static class OffsetTool
             c = new TrimmedCurve3D(c, f, l);
             if (!L.IsIdentity)
             {
-                c.Transform(L.Transformation());
+                c.Transform(L.Transformation);
             }
             isOk = IsOnSurface(c, bouchon, tolConf, out double tolReached);
 
@@ -1935,18 +1935,18 @@ public static class OffsetTool
         {
             TrimmedSurface rts;
             rts = (TrimmedSurface)s1;
-            if (rts.BasisSurface().GetType() == typeof(PlaneSurface))
+            if (rts.BasisSurface.GetType() == typeof(PlaneSurface))
             {
-                s1 = rts.BasisSurface();
+                s1 = rts.BasisSurface;
             }
         }
         if (s2.GetType() == typeof(TrimmedSurface))
         {
             TrimmedSurface rts;
             rts = (TrimmedSurface)s2;
-            if (rts.BasisSurface().GetType() == typeof(PlaneSurface))
+            if (rts.BasisSurface.GetType() == typeof(PlaneSurface))
             {
-                s2 = rts.BasisSurface();
+                s2 = rts.BasisSurface;
             }
         }
 
@@ -1996,7 +1996,7 @@ public static class OffsetTool
         double pMax = 1.0e2;
         Surface s = Tool.Surface(F, out Placement L)!;
 
-        s.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        s.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
         umin = Max(umin, -pMax);
         vmin = Max(vmin, -pMax);
         umax = Min(umax, pMax);
@@ -2008,35 +2008,35 @@ public static class OffsetTool
         c2d.D1(ce.FirstParameter(), out Point2D p, out Vector2D tang);
         double tx, ty, tmin;
         tx = ty = global::Kerf.Engine.Foundation.Precision.Infinite();
-        if (Math.Abs(tang.X()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (Math.Abs(tang.X) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            tx = Min(Math.Abs((umax - p.X()) / tang.X()), Math.Abs((umin - p.X()) / tang.X()));
+            tx = Min(Math.Abs((umax - p.X) / tang.X), Math.Abs((umin - p.X) / tang.X));
         }
-        if (Math.Abs(tang.Y()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (Math.Abs(tang.Y) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            ty = Min(Math.Abs((vmax - p.Y()) / tang.Y()), Math.Abs((vmin - p.Y()) / tang.Y()));
+            ty = Min(Math.Abs((vmax - p.Y) / tang.Y), Math.Abs((vmin - p.Y) / tang.Y));
         }
         tmin = Min(tx, ty);
         tang = tmin * tang;
-        Point2D pf2d = new(p.X() - tang.X(), p.Y() - tang.Y());
+        Point2D pf2d = new(p.X - tang.X, p.Y - tang.Y);
 
         c2d.D1(ce.LastParameter(), out p, out tang);
         tx = ty = global::Kerf.Engine.Foundation.Precision.Infinite();
-        if (Math.Abs(tang.X()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (Math.Abs(tang.X) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            tx = Min(Math.Abs((umax - p.X()) / tang.X()), Math.Abs((umin - p.X()) / tang.X()));
+            tx = Min(Math.Abs((umax - p.X) / tang.X), Math.Abs((umin - p.X) / tang.X));
         }
-        if (Math.Abs(tang.Y()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (Math.Abs(tang.Y) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            ty = Min(Math.Abs((vmax - p.Y()) / tang.Y()), Math.Abs((vmin - p.Y()) / tang.Y()));
+            ty = Min(Math.Abs((vmax - p.Y) / tang.Y), Math.Abs((vmin - p.Y) / tang.Y));
         }
         tmin = Min(tx, ty);
         tang = tmin * tang;
-        Point2D pl2d = new(p.X() + tang.X(), p.Y() + tang.Y());
+        Point2D pl2d = new(p.X + tang.X, p.Y + tang.Y);
 
         Curve3D cc = Projections.To3d(c2d, new Plane3D(new CoordinateSystem(Constants.XOY())));
-        Point3D pf = new(pf2d.X(), pf2d.Y(), 0.0);
-        Point3D pl = new(pl2d.X(), pl2d.Y(), 0.0);
+        Point3D pf = new(pf2d.X, pf2d.Y, 0.0);
+        Point3D pl = new(pl2d.X, pl2d.Y, 0.0);
 
         BoundedCurve3D? extC = cc as BoundedCurve3D;
         if (extC is null)
@@ -2054,8 +2054,8 @@ public static class OffsetTool
         b.MakeEdge(ref ne);
         //  B.UpdateEdge (NE,CNE2d,F,BRep_Tool::Tolerance(E));
         b.UpdateEdge(ne, cne2d, ef, Tool.Tolerance(e));
-        b.Range(ne, cne2d.FirstParameter(), cne2d.LastParameter());
-        ne.Orientation(e.Orientation());
+        b.Range(ne, cne2d.FirstParameter, cne2d.LastParameter);
+        ne.Orient(e.Orientation);
     }
 
     //=================================================================================================
@@ -2072,7 +2072,7 @@ public static class OffsetTool
         f = c.FirstParameter();
         l = c.LastParameter();
 
-        if (v.Orientation() == Forward)
+        if (v.Orientation == Forward)
         {
             if (Math.Abs(f) < global::Kerf.Engine.Foundation.Precision.Infinite())
             {
@@ -2084,7 +2084,7 @@ public static class OffsetTool
                 }
             }
         }
-        if (v.Orientation() == Reversed)
+        if (v.Orientation == Reversed)
         {
             if (!found && Math.Abs(l) < global::Kerf.Engine.Foundation.Precision.Infinite())
             {
@@ -2207,10 +2207,10 @@ public static class OffsetTool
                     bool currentFind = false;
                     if (itry == 1)
                     {
-                        fl1[0] = c1!.FirstParameter();
-                        fl1[1] = c1.LastParameter();
-                        fl2[0] = c2!.FirstParameter();
-                        fl2[1] = c2.LastParameter();
+                        fl1[0] = c1!.FirstParameter;
+                        fl1[1] = c1.LastParameter;
+                        fl2[0] = c2!.FirstParameter;
+                        fl2[1] = c2.LastParameter;
                     }
                     CurveAdaptor2D ac1 = new(c1!, fl1[0], fl1[1]);
                     CurveAdaptor2D ac2 = new(c2!, fl2[0], fl2[1]);
@@ -2331,15 +2331,15 @@ public static class OffsetTool
                             u2 = (u2on1 + u2on2) / 2.0;
                             Point2D p2d1 = c1!.Value(u1);
                             Point2D p2d2 = c2!.Value(u2);
-                            p2d = p2d.WithX((p2d1.X() + p2d2.X()) / 2.0);
-                            p2d = p2d.WithY((p2d1.Y() + p2d2.Y()) / 2.0);
+                            p2d = p2d.WithX((p2d1.X + p2d2.X) / 2.0);
+                            p2d = p2d.WithY((p2d1.Y + p2d2.Y) / 2.0);
                         }
                     }
                     if (currentFind)
                     {
-                        Point3D p = s.Value(p2d.X(), p2d.Y());
+                        Point3D p = s.Value(p2d.X, p2d.Y);
                         Vertex v = new LibraryMakeVertex(p).InternalVertex();
-                        v.Orientation(Internal);
+                        v.Orient(Internal);
                         Shape localEdgeOrientedE1 = e1.Oriented(Forward);
                         b.UpdateVertex(v, u1, ShapeCasts.Edge(localEdgeOrientedE1), tolConf);
                         localEdgeOrientedE1 = e2.Oriented(Forward);
@@ -2421,7 +2421,7 @@ public static class OffsetTool
             Point3D p1 = ad2.Value(fst);
             Point3D p2 = ad2.Value(lst);
 
-            tmp = p1.Distance(pFirst) + p2.Distance(pLast);
+            tmp = p1.DistanceTo(pFirst) + p2.DistanceTo(pLast);
             if (tmp <= dU)
             {
                 dU = tmp;
@@ -2453,13 +2453,13 @@ public static class OffsetTool
         Surface theSurf = s;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            theSurf = ((TrimmedSurface)s).BasisSurface();
+            theSurf = ((TrimmedSurface)s).BasisSurface;
         }
         if (theSurf.GetType() == typeof(ConicalSurface))
         {
             ConicalSurface conicalS = (ConicalSurface)theSurf;
-            Cone theCone = conicalS.Cone();
-            Point3D theApex = theCone.Apex();
+            Cone theCone = conicalS.Cone;
+            Point3D theApex = theCone.Apex;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theApex, out double uapex, out double vapex);
             if (Math.Abs(vMin - vapex) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
@@ -2598,12 +2598,12 @@ public static class OffsetTool
             }
             if (!vmininf)
             {
-                v00.Orientation(Forward);
+                v00.Orient(Forward);
                 b.Add(eumin, v00);
             }
             if (!vmaxinf)
             {
-                v01.Orientation(Reversed);
+                v01.Orient(Reversed);
                 b.Add(eumin, v01);
             }
             b.Range(eumin, vMin, vMax);
@@ -2628,12 +2628,12 @@ public static class OffsetTool
                 b.UpdateEdge(eumax, lumax, f, tol);
                 if (!vmininf)
                 {
-                    v10.Orientation(Forward);
+                    v10.Orient(Forward);
                     b.Add(eumax, v10);
                 }
                 if (!vmaxinf)
                 {
-                    v11.Orientation(Reversed);
+                    v11.Orient(Reversed);
                     b.Add(eumax, v11);
                 }
                 b.Range(eumax, vMin, vMax);
@@ -2660,12 +2660,12 @@ public static class OffsetTool
             }
             if (!umininf)
             {
-                v00.Orientation(Forward);
+                v00.Orient(Forward);
                 b.Add(evmin, v00);
             }
             if (!umaxinf)
             {
-                v10.Orientation(Reversed);
+                v10.Orient(Reversed);
                 b.Add(evmin, v10);
             }
             b.Range(evmin, uMin, uMax);
@@ -2694,12 +2694,12 @@ public static class OffsetTool
                 b.UpdateEdge(evmax, lvmax, f, tol);
                 if (!umininf)
                 {
-                    v01.Orientation(Forward);
+                    v01.Orient(Forward);
                     b.Add(evmax, v01);
                 }
                 if (!umaxinf)
                 {
-                    v11.Orientation(Reversed);
+                    v11.Orient(Reversed);
                     b.Add(evmax, v11);
                 }
                 b.Range(evmax, uMin, uMax);
@@ -2711,8 +2711,8 @@ public static class OffsetTool
         }
 
         // make the wires and add them to the face
-        eumin.Orientation(Reversed);
-        evmax.Orientation(Reversed);
+        eumin.Orient(Reversed);
+        evmax.Orient(Reversed);
 
         Wire w = new();
 
@@ -2779,7 +2779,7 @@ public static class OffsetTool
         bool surfaceChange = false;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            Surface bs = ((TrimmedSurface)s).BasisSurface();
+            Surface bs = ((TrimmedSurface)s).BasisSurface;
             EnlargeGeometry(ref bs,
                             ref U1,
                             ref U2,
@@ -2820,7 +2820,7 @@ public static class OffsetTool
         }
         else if (s.GetType() == typeof(global::Kerf.Geometry.OffsetSurface))
         {
-            Surface Surf = ((global::Kerf.Geometry.OffsetSurface)s).BasisSurface();
+            Surface Surf = ((global::Kerf.Geometry.OffsetSurface)s).BasisSurface;
             surfaceChange = EnlargeGeometry(ref Surf,
                                             ref U1,
                                             ref U2,
@@ -2843,7 +2843,7 @@ public static class OffsetTool
             // OCCT.NET: OCCT sets the basis surface of S in place, and S is the face's own (frozen) surface: the port
             // sets it on a copy, which S becomes (the face keeps its surface). Where the basis surface is unchanged,
             // OCCT's call changes nothing, and the port keeps S.
-            if (!ReferenceEquals(Surf, ((global::Kerf.Geometry.OffsetSurface)s).BasisSurface()))
+            if (!ReferenceEquals(Surf, ((global::Kerf.Geometry.OffsetSurface)s).BasisSurface))
             {
                 s = ((global::Kerf.Geometry.OffsetSurface)s).WithBasisSurface(Surf);
             }
@@ -2855,7 +2855,7 @@ public static class OffsetTool
             bool enlargeU = globalEnlargeU, enlargeV = true;
             bool enlargeUfirst = enlargeU, enlargeUlast = enlargeU;
             bool enlargeVfirst = globalEnlargeVfirst, enlargeVlast = globalEnlargeVlast;
-            s.Bounds(out double u1, out double u2, out double v1, out double v2);
+            s.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
             if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u2))
             {
                 du_first = du_last = uf2 - uf1;
@@ -2940,7 +2940,7 @@ public static class OffsetTool
                 }
             }
             s = surf;
-            s.Bounds(out U1, out U2, out V1, out V2);
+            s.ParameterBounds(out U1, out U2, out V1, out V2);
             surfaceChange = true;
         }
         else if (s.GetType() == typeof(global::Kerf.Geometry.BezierSurface) || s.GetType() == typeof(global::Kerf.Geometry.BSplineSurface))
@@ -2958,7 +2958,7 @@ public static class OffsetTool
             }
 
             double duf = uf2 - uf1, dvf = vf2 - vf1;
-            s.Bounds(out double u1, out double u2, out double v1, out double v2);
+            s.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
 
             double du_first = 0.0, du_last = 0.0, dv_first = 0.0, dv_last = 0.0;
             Curve3D uiso1, uiso2, viso1, viso2;
@@ -3042,12 +3042,12 @@ public static class OffsetTool
             }
             s = surf;
 
-            s.Bounds(out U1, out U2, out V1, out V2);
+            s.ParameterBounds(out U1, out U2, out V1, out V2);
             surfaceChange = true;
         }
         else
         {
-            s.Bounds(out double uu1, out double uu2, out double vv1, out double vv2);
+            s.ParameterBounds(out double uu1, out double uu2, out double vv1, out double vv2);
             // Pas d extension au dela des bornes de la surface.
             U1 = Max(uu1, U1);
             V1 = Max(vv1, V1);
@@ -3075,7 +3075,7 @@ public static class OffsetTool
         for (i = 1; i <= emap.Count; i++)
         {
             Edge ce = ShapeCasts.Edge(emap[i - 1]);
-            ce.Orientation(Forward);
+            ce.Orient(Forward);
             Curve2D? c2 = Tool.CurveOnSurface(ce, F, out double f, out double l);
             if (c2 is not null)
             {
@@ -3131,7 +3131,7 @@ public static class OffsetTool
         }
         else
         {
-            Tool.Surface(f)!.Bounds(out uMin, out uMax, out vMin, out vMax);
+            Tool.Surface(f)!.ParameterBounds(out uMin, out uMax, out vMin, out vMax);
         }
     }
 
@@ -3157,7 +3157,7 @@ public static class OffsetTool
         Surface theSurf = Tool.Surface(f)!;
         if (theSurf.GetType() == typeof(TrimmedSurface))
         {
-            theSurf = ((TrimmedSurface)theSurf).BasisSurface();
+            theSurf = ((TrimmedSurface)theSurf).BasisSurface;
         }
 
         if (theSurf.GetType() == typeof(ExtrusionSurface)
@@ -3168,7 +3168,7 @@ public static class OffsetTool
             for (; explo.More(); explo.Next())
             {
                 Edge edge = ShapeCasts.Edge(explo.Current());
-                NCollection_List<Interval> l = analyse.Type(edge);
+                NCollection_List<OffsetInterval> l = analyse.Type(edge);
                 if (!l.IsEmpty() || Tool.Degenerated(edge))
                 {
                     // OCCT: L.First() on an empty list (a degenerated edge without intervals) is undefined in OCCT's
@@ -3179,7 +3179,7 @@ public static class OffsetTool
                         Curve2D curve = Tool.CurveOnSurface(edge, f, out double fpar, out double lpar)!;
                         if (curve.GetType() == typeof(TrimmedCurve2D))
                         {
-                            curve = ((TrimmedCurve2D)curve).BasisCurve();
+                            curve = ((TrimmedCurve2D)curve).BasisCurve;
                         }
 
                         LineCurve2D? theLine = null;
@@ -3203,13 +3203,13 @@ public static class OffsetTool
 
                         if (theLine is not null)
                         {
-                            Direction2D theDir = theLine.Direction();
+                            Direction2D theDir = theLine.Direction;
                             if (theDir.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 vbound++;
                                 if (Tool.Degenerated(edge))
                                 {
-                                    if (Math.Abs(theLine.Location().Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                                    if (Math.Abs(theLine.Location.Y - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                     {
                                         enlargeVfirst = false;
                                     }
@@ -3220,26 +3220,26 @@ public static class OffsetTool
                                 }
                                 else
                                 {
-                                    if (theLine.Location().Y() < vfirst)
+                                    if (theLine.Location.Y < vfirst)
                                     {
-                                        vfirst = theLine.Location().Y();
+                                        vfirst = theLine.Location.Y;
                                     }
-                                    if (theLine.Location().Y() > vlast)
+                                    if (theLine.Location.Y > vlast)
                                     {
-                                        vlast = theLine.Location().Y();
+                                        vlast = theLine.Location.Y;
                                     }
                                 }
                             }
                             else if (theDir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 ubound++;
-                                if (theLine.Location().X() < ufirst)
+                                if (theLine.Location.X < ufirst)
                                 {
-                                    ufirst = theLine.Location().X();
+                                    ufirst = theLine.Location.X;
                                 }
-                                if (theLine.Location().X() > ulast)
+                                if (theLine.Location.X > ulast)
                                 {
-                                    ulast = theLine.Location().X();
+                                    ulast = theLine.Location.X;
                                 }
                             }
                         }
@@ -3291,7 +3291,7 @@ public static class OffsetTool
         for (int i = 0; i < edges.Count; i++)
         {
             Edge e = ShapeCasts.Edge(edges[i]);
-            Placement loc = l.Predivided(e.Location());
+            Placement loc = l.Predivided(e.Placement);
             BrepTEdge te = (BrepTEdge)e.TShape()!;
             for (NCollection_List<CurveRepresentation>.Iterator it = new(te.ChangeCurves()); it.More(); it.Next())
             {
@@ -3346,7 +3346,7 @@ public static class OffsetTool
             BrepTools.UVBounds(f, out uf1, out uf2, out vf1, out vf2);
         }
 
-        s.Bounds(out double us1, out double us2, out double vs1, out double vs2);
+        s.ParameterBounds(out double us1, out double us2, out double vs1, out double vs2);
         double coeff;
         if (extensionMode == 1)
         {
@@ -3406,7 +3406,7 @@ public static class OffsetTool
         if (s.IsUPeriodic)
         {
             uperiodic = true;
-            double period = s.UPeriod();
+            double period = s.UPeriod;
             double delta = period - (uf2 - uf1);
             double alpha = 0.1;
             uu1 = uf1 - alpha * delta;
@@ -3419,7 +3419,7 @@ public static class OffsetTool
         if (s.IsVPeriodic)
         {
             vperiodic = true;
-            double period = s.VPeriod();
+            double period = s.VPeriod;
             double delta = period - (vf2 - vf1);
             double alpha = 0.1;
             vv1 = vf1 - alpha * delta;
@@ -3434,13 +3434,13 @@ public static class OffsetTool
         Surface theSurf = s;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            theSurf = ((TrimmedSurface)s).BasisSurface();
+            theSurf = ((TrimmedSurface)s).BasisSurface;
         }
         if (theSurf.GetType() == typeof(ConicalSurface))
         {
             ConicalSurface conicalS = (ConicalSurface)theSurf;
-            Cone theCone = conicalS.Cone();
-            Point3D theApex = theCone.Apex();
+            Cone theCone = conicalS.Cone;
+            Point3D theApex = theCone.Apex;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theApex, out double uapex, out double vapex);
             if (vv1 < vapex && vapex < vv2)
             {
@@ -3504,7 +3504,7 @@ public static class OffsetTool
             bb.UpdateFace(f, s, l, Tool.Tolerance(f));
         }
 
-        nf.Orientation(f.Orientation());
+        nf.Orient(f.Orientation);
         return surfaceChange;
     }
 
@@ -3522,17 +3522,17 @@ public static class OffsetTool
         Point3D p = Tool.Pnt(v);
         bool ok = false;
 
-        if (p.Distance(oc.Value(of)) < tolConf)
+        if (p.DistanceTo(oc.Value(of)) < tolConf)
         {
-            if (of > nf && of < nl && p.Distance(nc.Value(of)) < tolConf)
+            if (of > nf && of < nl && p.DistanceTo(nc.Value(of)) < tolConf)
             {
                 ok = true;
                 u = of;
             }
         }
-        if (p.Distance(oc.Value(ol)) < tolConf)
+        if (p.DistanceTo(oc.Value(ol)) < tolConf)
         {
-            if (ol > nf && ol < nl && p.Distance(nc.Value(ol)) < tolConf)
+            if (ol > nf && ol < nl && p.DistanceTo(nc.Value(ol)) < tolConf)
             {
                 ok = true;
                 u = ol;
@@ -3697,7 +3697,7 @@ public static class OffsetTool
         Shape localShape = ef.EmptyCopied();
         nf = ShapeCasts.Face(localShape);
         //  NF = TopoDS::Face(EF.EmptyCopied());
-        nf.Orientation(Forward);
+        nf.Orient(Forward);
 
         if (surfaceChange)
         {
@@ -3705,14 +3705,14 @@ public static class OffsetTool
             // Mise a jour des pcurves sur la surface de base.
             //------------------------------------------------
             Face fforward = F;
-            fforward.Orientation(Forward);
+            fforward.Orient(Forward);
             IndexedSet<Shape> emap = new(ShapeHasher.Instance);
             Exploration.MapShapes(fforward, ShapeType.Edge, emap);
             double f, l;
             for (int i = 0; i < emap.Count; i++)
             {
                 Edge ce = ShapeCasts.Edge(emap[i]);
-                ce.Orientation(Forward);
+                ce.Orient(Forward);
                 Edge ecs = new(); // patch
                 Curve2D? c2 = Tool.CurveOnSurface(ce, fforward, out f, out l);
                 if (c2 is not null)
@@ -3812,7 +3812,7 @@ public static class OffsetTool
                     ne = ShapeCasts.Edge(lInt1.First());
                     BrepTEdge te = (BrepTEdge)ne.TShape()!;
                     te.Tolerance(te.Tolerance() * 10.0); //????
-                    if (ne.Orientation() == e.Orientation())
+                    if (ne.Orientation == e.Orientation)
                     {
                         build[e] = ne.Oriented(Forward);
                     }
@@ -3869,7 +3869,7 @@ public static class OffsetTool
 
                                 if (!lv.IsEmpty())
                                 {
-                                    if (build.GetValue(e).Orientation() == Forward)
+                                    if (build.GetValue(e).Orientation == Forward)
                                     {
                                         v = ShapeCasts.Vertex(lv.First());
                                     }
@@ -3888,10 +3888,10 @@ public static class OffsetTool
                                 v = ShapeCasts.Vertex(build.GetValue(v1));
                                 if (mve.GetValue(v1).Extent() > 2)
                                 {
-                                    v.Orientation(Forward);
-                                    if (build.GetValue(e).Orientation() == Reversed)
+                                    v.Orient(Forward);
+                                    if (build.GetValue(e).Orientation == Reversed)
                                     {
-                                        v.Orientation(Reversed);
+                                        v.Orient(Reversed);
                                     }
 
                                     ProjectVertexOnEdge(v, ShapeCasts.Edge(build.GetValue(e)), tolConf);
@@ -3909,10 +3909,10 @@ public static class OffsetTool
                         {
                             v = ShapeCasts.Vertex(constShapes.GetValue(v1));
                         }
-                        v.Orientation(Forward);
-                        if (build.GetValue(e).Orientation() == Reversed)
+                        v.Orient(Forward);
+                        if (build.GetValue(e).Orientation == Reversed)
                         {
-                            v.Orientation(Reversed);
+                            v.Orient(Reversed);
                         }
                         if (!TryParameter(e, v, ShapeCasts.Edge(build.GetValue(e)), tolConf))
                         {
@@ -3942,7 +3942,7 @@ public static class OffsetTool
 
                                 if (!lv.IsEmpty())
                                 {
-                                    if (build.GetValue(e).Orientation() == Forward)
+                                    if (build.GetValue(e).Orientation == Forward)
                                     {
                                         v = ShapeCasts.Vertex(lv.Last());
                                     }
@@ -3961,10 +3961,10 @@ public static class OffsetTool
                                 v = ShapeCasts.Vertex(build.GetValue(v2));
                                 if (mve.GetValue(v2).Extent() > 2)
                                 {
-                                    v.Orientation(Reversed);
-                                    if (build.GetValue(e).Orientation() == Reversed)
+                                    v.Orient(Reversed);
+                                    if (build.GetValue(e).Orientation == Reversed)
                                     {
-                                        v.Orientation(Forward);
+                                        v.Orient(Forward);
                                     }
 
                                     ProjectVertexOnEdge(v, ShapeCasts.Edge(build.GetValue(e)), tolConf);
@@ -3982,10 +3982,10 @@ public static class OffsetTool
                         {
                             v = ShapeCasts.Vertex(constShapes.GetValue(v2));
                         }
-                        v.Orientation(Reversed);
-                        if (build.GetValue(e).Orientation() == Reversed)
+                        v.Orient(Reversed);
+                        if (build.GetValue(e).Orientation == Reversed)
                         {
-                            v.Orientation(Forward);
+                            v.Orient(Forward);
                         }
                         if (!TryParameter(e, v, ShapeCasts.Edge(build.GetValue(e)), tolConf))
                         {
@@ -4017,7 +4017,7 @@ public static class OffsetTool
                 {
                     ne = ShapeCasts.Edge(build.GetValue(e));
                     Tool.Range(ne, out f, out l);
-                    or = ne.Orientation();
+                    or = ne.Orientation;
                     //-----------------------------------------------------
                     // Copy pour virer les vertex deja sur la nouvelle edge.
                     //-----------------------------------------------------
@@ -4039,7 +4039,7 @@ public static class OffsetTool
                     //	   TopoDS::Edge  (NE.Oriented(TopAbs_FORWARD)));
                     localEdge = ne.EmptyCopied();
                     ne = ShapeCasts.Edge(localEdge);
-                    ne.Orientation(Forward);
+                    ne.Orient(Forward);
                     if (nv1.IsSame(nv2))
                     {
                         //--------------
@@ -4076,7 +4076,7 @@ public static class OffsetTool
                             //		B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_REVERSED)));
                             b.Range(ne, u1, u2);
                             constShapes[e] = ne;
-                            ne.Orientation(e.Orientation());
+                            ne.Orient(e.Orientation);
                         }
                         else
                         {
@@ -4099,7 +4099,7 @@ public static class OffsetTool
                             //		B.Add (NE,TopoDS::Vertex(NV1.Oriented(TopAbs_REVERSED)));
                             b.Range(ne, u2, u1);
                             constShapes[e] = ne.Oriented(Reversed);
-                            ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation()));
+                            ne.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation));
                         }
                     }
                     else
@@ -4130,7 +4130,7 @@ public static class OffsetTool
                                 b.Range(ne, u1, u2);
                             }
                             constShapes[e] = ne;
-                            ne.Orientation(e.Orientation());
+                            ne.Orient(e.Orientation);
                         }
                         else
                         {
@@ -4144,7 +4144,7 @@ public static class OffsetTool
                                 //		B.Add (NE,TopoDS::Vertex(NV2.Oriented(TopAbs_REVERSED)));
                                 b.Range(ne, u1, u2);
                                 constShapes[e] = ne;
-                                ne.Orientation(e.Orientation());
+                                ne.Orient(e.Orientation);
                             }
                             else
                             {
@@ -4156,7 +4156,7 @@ public static class OffsetTool
                                 //		  B.Add (NE,TopoDS::Vertex(NV1.Oriented(TopAbs_REVERSED)));
                                 b.Range(ne, u2, u1);
                                 constShapes[e] = ne.Oriented(Reversed);
-                                ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation()));
+                                ne.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation));
                             }
                         }
                     }
@@ -4166,14 +4166,14 @@ public static class OffsetTool
                 { // !Build.IsBound(E)
                     ne = ShapeCasts.Edge(constShapes.GetValue(e));
                     BuildPCurves(ne, nf);
-                    or = ne.Orientation();
+                    or = ne.Orientation;
                     if (or == Reversed)
                     {
-                        ne.Orientation(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation()));
+                        ne.Orient(global::Kerf.Engine.Topology.TopAbs.Reverse(e.Orientation));
                     }
                     else
                     {
-                        ne.Orientation(e.Orientation());
+                        ne.Orient(e.Orientation);
                     }
                 }
                 else
@@ -4183,9 +4183,9 @@ public static class OffsetTool
                 }
                 b.Add(nw, ne);
             }
-            b.Add(nf, nw.Oriented(w.Orientation()));
+            b.Add(nf, nw.Oriented(w.Orientation));
         }
-        nf.Orientation(F.Orientation());
+        nf.Orient(F.Orientation);
         BrepTools.Update(nf); // Maj des UVPoints
     }
 
@@ -4198,7 +4198,7 @@ public static class OffsetTool
     public static Shape Deboucle3D(in Shape s, HashSet<Shape> boundary)
     {
         Shape ss = new();
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Shell:
             {
@@ -4215,10 +4215,10 @@ public static class OffsetTool
                     if (lf.Extent() < 2)
                     {
                         Edge edge = ShapeCasts.Edge(map.KeyAt(i - 1));
-                        if (edge.Orientation() == Internal)
+                        if (edge.Orientation == Internal)
                         {
                             Face face = ShapeCasts.Face(lf.First());
-                            if (face.Orientation() != Internal)
+                            if (face.Orientation != Internal)
                             {
                                 continue;
                             }
@@ -4244,7 +4244,7 @@ public static class OffsetTool
                 Shape subShape;
                 int nbSub = 0;
                 BrepBuilder b = new();
-                if (s.ShapeType() == ShapeType.Compound)
+                if (s.Type == ShapeType.Compound)
                 {
                     Compound c = new();
                     b.MakeCompound(ref c);
@@ -4378,19 +4378,19 @@ public static class OffsetTool
             return false;
         }
         //
-        Direction3D dn1 = bas1.Plane().Position().Direction();
-        if (face1.Orientation() == Reversed)
+        Direction3D dn1 = bas1.Plane().Position.Direction;
+        if (face1.Orientation == Reversed)
         {
             dn1 = dn1.Reversed();
         }
         //
-        Direction3D dn2 = bas2.Plane().Position().Direction();
-        if (face2.Orientation() == Reversed)
+        Direction3D dn2 = bas2.Plane().Position.Direction;
+        if (face2.Orientation == Reversed)
         {
             dn2 = dn2.Reversed();
         }
         //
-        double angle = dn1.Angle(dn2);
+        double angle = dn1.AngleTo(dn2);
         return (angle < tolAng);
     }
 
@@ -4433,7 +4433,7 @@ public static class OffsetTool
             Vertex vf = new(), vl = new();
             bb.MakeVertex(ref vf, pf, ic.Tolerance());
             bb.MakeVertex(ref vl, pl, ic.Tolerance());
-            vl.Orientation(Reversed);
+            vl.Orient(Reversed);
             // Add vertices to the edge
             bb.Add(e, vf);
             bb.Add(e, vl);
@@ -4490,24 +4490,24 @@ public static class OffsetTool
                 {
                     EdgeCurveAdaptor bAcurve = new(edge);
                     Point3D pnt = bAcurve.Value(param);
-                    double dist = pntVtx.Distance(pnt);
+                    double dist = pntVtx.DistanceTo(pnt);
                     bb.UpdateVertex(vertex, dist);
                     if (v1.IsSame(v2))
                     {
                         pnt = bAcurve.Value(lpar);
-                        dist = pntVtx.Distance(pnt);
+                        dist = pntVtx.DistanceTo(pnt);
                         bb.UpdateVertex(vertex, dist);
                     }
                 }
                 EdgeCurveAdaptor bAcurveonsurf = new(edge, face);
                 {
                     Point3D pnt = bAcurveonsurf.Value(param);
-                    double dist = pntVtx.Distance(pnt);
+                    double dist = pntVtx.DistanceTo(pnt);
                     bb.UpdateVertex(vertex, dist);
                     if (v1.IsSame(v2))
                     {
                         pnt = bAcurveonsurf.Value(lpar);
-                        dist = pntVtx.Distance(pnt);
+                        dist = pntVtx.DistanceTo(pnt);
                         bb.UpdateVertex(vertex, dist);
                     }
                 }

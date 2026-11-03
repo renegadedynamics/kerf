@@ -132,8 +132,8 @@ public class MinimalVariation : Batten
                 }
             }
 
-            oldDist = _oldP1.Distance(_oldP2);
-            newDist = _newP1.Distance(_newP2);
+            oldDist = _oldP1.DistanceTo(_oldP2);
+            newDist = _newP1.DistanceTo(_newP2);
             fraction = Math.Abs(oldDist - newDist) / (oldDist / 3);
             if (fraction > 1)
             {
@@ -241,7 +241,7 @@ public class MinimalVariation : Batten
         // Definition of constraints of interpolation
         NCollection_Array1<Xy> aDelta = new(1, l);
         Vector2D vOld = new(_oldP1, _oldP2), vNew = new(-(_oldP1.XY() + deltaP1.XY()) + (_oldP2.XY() + deltaP2.XY()));
-        double dAngleRef = vNew.Angle(vOld);
+        double dAngleRef = vNew.AngleTo(vOld);
         double dAngle1 = deltaAngle1 - dAngleRef,
                dAngle2 = dAngleRef - deltaAngle2; // Correction of Delta by the Delta induced by the points.
 
@@ -269,7 +269,7 @@ public class MinimalVariation : Batten
                 {
                     oldSeconde *= _degree * (_degree - 1) / knotGapLSq;
                 }
-                double cPrim = oldDerive.Magnitude();
+                double cPrim = oldDerive.Magnitude;
                 aDelta[kk] = (oldSeconde.Rotated(dAngle1) - oldSeconde
                               + deltaCurvature1 * cPrim * oldDerive.Rotated(M_PI / 2 + dAngle1))
                                .XY();
@@ -298,7 +298,7 @@ public class MinimalVariation : Batten
                 {
                     oldSeconde *= _degree * (_degree - 1) / knotGapUSq;
                 }
-                double cPrim = oldDerive.Magnitude();
+                double cPrim = oldDerive.Magnitude;
                 aDelta[kk] = (oldSeconde.Rotated(dAngle2) - oldSeconde
                               + deltaCurvature2 * cPrim * oldDerive.Rotated(M_PI / 2 + dAngle2))
                                .XY();
@@ -342,15 +342,15 @@ public class MinimalVariation : Batten
         double angle1, angle2, slidingLength,
           alph1 = _oldAngle1 + deltaAngle1, alph2 = _oldAngle2 + deltaAngle2,
           rho1 = _oldCurvature1 + deltaCurvature1, rho2 = _oldCurvature2 + deltaCurvature2,
-          dist = nPoles.Value(nPoles.Upper()).Distance(nPoles.Value(nPoles.Lower())),
+          dist = nPoles.Value(nPoles.Upper()).DistanceTo(nPoles.Value(nPoles.Lower())),
           lReference = SlidingOfReference(dist, alph1, alph2);
         Vector2D ox = new(1, 0),
           p1P2 = new(nPoles.Value(nPoles.Upper()).Coord() - nPoles.Value(nPoles.Lower()).Coord());
 
         // Angles corresponding to axis ox
 
-        angle1 = ox.Angle(p1P2) + alph1;
-        angle2 = -ox.Angle(p1P2) + alph2;
+        angle1 = ox.AngleTo(p1P2) + alph1;
+        angle2 = -ox.AngleTo(p1P2) + alph2;
 
         // Calculation of the length of sliding (imposed or initial);
 
@@ -398,7 +398,7 @@ public class MinimalVariation : Batten
 
         // Minimisation
         Newton newton = new(emvc,
-                                      tolerance * (p1P2.Magnitude() / 10),
+                                      tolerance * (p1P2.Magnitude / 10),
                                       tolerance,
                                       nbIterations,
                                       vConvex);
@@ -426,7 +426,7 @@ public class MinimalVariation : Batten
 
                 if (_newConstraintOrder1 == 0)
                 {
-                    _oldAngle1 = p1P2.Angle(tangente);
+                    _oldAngle1 = p1P2.AngleTo(tangente);
                 }
                 else
                 {
@@ -437,7 +437,7 @@ public class MinimalVariation : Batten
                                     - 2 * _poles.Value(_poles.Lower() + 1).XY()
                                     + _poles.Value(_poles.Lower() + 2).XY());
                 _oldCurvature1 = (((double)_degree - 1) / _degree) * (tangente.Normalized() ^ pseudoNormale)
-                                / tangente.SquareMagnitude();
+                                / tangente.SquareMagnitude;
             }
             else
             {
@@ -450,7 +450,7 @@ public class MinimalVariation : Batten
                 tangente = tangente.WithXY(_poles.Value(_poles.Upper()).XY() - _poles.Value(_poles.Upper() - 1).XY());
                 if (_newConstraintOrder2 == 0)
                 {
-                    _oldAngle2 = (-tangente).Angle(-p1P2);
+                    _oldAngle2 = (-tangente).AngleTo(-p1P2);
                 }
                 else
                 {
@@ -460,7 +460,7 @@ public class MinimalVariation : Batten
                                     - 2 * _poles.Value(_poles.Upper() - 1).XY()
                                     + _poles.Value(_poles.Upper() - 2).XY());
                 _oldCurvature2 = (((double)_degree - 1) / _degree) * (tangente.Normalized() ^ pseudoNormale)
-                                / tangente.SquareMagnitude();
+                                / tangente.SquareMagnitude;
             }
             else
             {
@@ -555,13 +555,13 @@ public class MinimalVariation : Batten
         o.Write(Width7("Old  |   New"));
         o.Write('\n');
         o.Write("  P1    X      |");
-        DumpPair(o, _oldP1.X(), _newP1.X());
+        DumpPair(o, _oldP1.X, _newP1.X);
         o.Write("        Y      |");
-        DumpPair(o, _oldP1.Y(), _newP1.Y());
+        DumpPair(o, _oldP1.Y, _newP1.Y);
         o.Write("  P2    X      |");
-        DumpPair(o, _oldP2.X(), _newP2.X());
+        DumpPair(o, _oldP2.X, _newP2.X);
         o.Write("        Y      |");
-        DumpPair(o, _oldP2.Y(), _newP2.Y());
+        DumpPair(o, _oldP2.Y, _newP2.Y);
         o.Write("      Angle1   |");
         DumpPair(o, _oldAngle1, _newAngle1);
         o.Write("      Angle2   |");

@@ -43,7 +43,7 @@ internal static class TrihedronOracle
                 (N.Geom_Curve aNC, Curve3D aPC, double aRange) = RandomCurve(anOracle, aKind);
                 using (aNC)
                 {
-                    double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+                    double aF = aPC.FirstParameter, aL = aPC.LastParameter;
                     if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL))
                     {
                         aF = anOracle.Real(-aRange, 0);

@@ -40,11 +40,11 @@ public class InterFunc : FunctionWithDerivative
         _curve2d.D0(x, out c);
         if (_fix == 1)
         {
-            f = c.X() - _fixVal;
+            f = c.X - _fixVal;
         }
         else
         {
-            f = c.Y() - _fixVal;
+            f = c.Y - _fixVal;
         }
         return true;
     }
@@ -62,13 +62,13 @@ public class InterFunc : FunctionWithDerivative
         _curve2d.D1(x, out c, out dc);
         if (_fix == 1)
         {
-            f = c.X() - _fixVal;
-            d = dc.X();
+            f = c.X - _fixVal;
+            d = dc.X;
         }
         else
         {
-            f = c.Y() - _fixVal;
-            d = dc.Y();
+            f = c.Y - _fixVal;
+            d = dc.Y;
         }
         return true;
     }

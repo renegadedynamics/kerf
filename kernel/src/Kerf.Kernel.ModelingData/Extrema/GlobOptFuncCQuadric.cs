@@ -86,12 +86,12 @@ public class GlobOptFuncCQuadric : MultipleVarFunction
         if (u >= _uf && u <= _ul && v >= _vf && v <= _vl)
         {
             Point3D ps = _s!.Value(u, v);
-            f = Min(f, cp.SquareDistance(ps));
+            f = Min(f, cp.SquareDistanceTo(ps));
         }
         int i;
         for (i = 0; i < 4; ++i)
         {
-            f = Min(f, cp.SquareDistance(_pTrim[i]));
+            f = Min(f, cp.SquareDistanceTo(_pTrim[i]));
         }
     }
 
@@ -249,12 +249,12 @@ public class GlobOptFuncCQuadric : MultipleVarFunction
         if (u >= _uf && u <= _ul && v >= _vf && v <= _vl)
         {
             Point3D ps = _s!.Value(u, v);
-            f = cp.SquareDistance(ps);
+            f = cp.SquareDistanceTo(ps);
         }
         int i;
         for (i = 0; i < 4; ++i)
         {
-            double fi = cp.SquareDistance(_pTrim[i]);
+            double fi = cp.SquareDistanceTo(_pTrim[i]);
             if (fi < f)
             {
                 f = fi;

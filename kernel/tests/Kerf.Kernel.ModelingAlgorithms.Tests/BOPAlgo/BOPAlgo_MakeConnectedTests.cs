@@ -32,7 +32,7 @@ public class BOPAlgo_MakeConnectedTests
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
-            if (Math.Abs(aProps.CentreOfMass().X() - theX) < 1e-9)
+            if (Math.Abs(aProps.CentreOfMass().X - theX) < 1e-9)
             {
                 return anExp.Current();
             }

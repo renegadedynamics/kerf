@@ -35,15 +35,15 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
 
         _param = x[2];
         _curv.D2(_param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
 
         math_Vector xx = new(1, 4);
         if (_first)
         {
-            xx[1] = p2d.X();
-            xx[2] = p2d.Y();
+            xx[1] = p2d.X;
+            xx[2] = p2d.Y;
             xx[3] = x[3];
             xx[4] = x[4];
         }
@@ -51,8 +51,8 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
         {
             xx[1] = x[3];
             xx[2] = x[4];
-            xx[3] = p2d.X();
-            xx[4] = p2d.Y();
+            xx[3] = p2d.X;
+            xx[4] = p2d.Y;
         }
 
         _surf1.D0(xx[1], xx[2], out _pts1);
@@ -63,7 +63,7 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
 
         Vector3D vref = new Vector3D(_ptgui, _pts1);
 
-        f[3] = vref.SquareMagnitude() - _throat * _throat;
+        f[3] = vref.SquareMagnitude - _throat * _throat;
 
         Vector3D vec12 = new Vector3D(_pts1, _pts2);
 
@@ -82,7 +82,7 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
 
         _param = x[2];
         _curv.D2(_param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
 
@@ -95,8 +95,8 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
 
         if (_first)
         {
-            xx[1] = p2d.X();
-            xx[2] = p2d.Y();
+            xx[1] = p2d.X;
+            xx[2] = p2d.Y;
             xx[3] = x[3];
             xx[4] = x[4];
         }
@@ -104,8 +104,8 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
         {
             xx[1] = x[3];
             xx[2] = x[4];
-            xx[3] = p2d.X();
-            xx[4] = p2d.Y();
+            xx[3] = p2d.X;
+            xx[4] = p2d.Y;
         }
 
         _surf1.D1(xx[1], xx[2], out _pts1, out _d1u1, out _d1v1);
@@ -114,7 +114,7 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
         if (_first)
         {
             // p2d = pts est sur surf1
-            temp = Vector3D.LinearForm(v2d.X(), _d1u1, v2d.Y(), _d1v1);
+            temp = Vector3D.LinearForm(v2d.X, _d1u1, v2d.Y, _d1v1);
             d[1, 1] = _nplan.Dot(temp);
             d[2, 1] = 0.0;
             d[3, 1] = 2 * temp1.Dot(temp);
@@ -132,7 +132,7 @@ public class ConstThroatWithPenetrationInv : ConstThroatInv
         else
         {
             //  p2d = pts est sur surf2
-            temp = Vector3D.LinearForm(v2d.X(), _d1u2, v2d.Y(), _d1v2);
+            temp = Vector3D.LinearForm(v2d.X, _d1u2, v2d.Y, _d1v2);
             d[1, 1] = 0.0;
             d[2, 1] = _nplan.Dot(temp);
             d[3, 1] = 0.0;

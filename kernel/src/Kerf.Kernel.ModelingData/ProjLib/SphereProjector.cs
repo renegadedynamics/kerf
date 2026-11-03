@@ -46,9 +46,9 @@ public class SphereProjector : Projector
 
     private static Point2D EvalPnt2d(in Vector3D p, in Sphere sp)
     {
-        double x = p.Dot(new Vector3D(sp.Position().XDirection()));
-        double y = p.Dot(new Vector3D(sp.Position().YDirection()));
-        double z = p.Dot(new Vector3D(sp.Position().Direction()));
+        double x = p.Dot(new Vector3D(sp.Position.XDirection));
+        double y = p.Dot(new Vector3D(sp.Position.YDirection));
+        double z = p.Dot(new Vector3D(sp.Position.Direction));
         double u, v;
 
         if (Math.Abs(x) > global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(y) > global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -84,18 +84,18 @@ public class SphereProjector : Projector
         //                      Xc & Yc must be perpendicular to Zs ->IsoV;
         //                      O,Zs is in the Plane O,Xc,Yc;       ->IsoU;
 
-        o = _sphere.Location();
-        xc = c.Position().XDirection();
-        yc = c.Position().YDirection();
+        o = _sphere.Location;
+        xc = c.Position.XDirection;
+        yc = c.Position.YDirection;
         zc = xc ^ yc;
-        xs = _sphere.Position().XDirection();
-        ys = _sphere.Position().YDirection();
-        zs = _sphere.Position().Direction();
+        xs = _sphere.Position.XDirection;
+        ys = _sphere.Position.YDirection;
+        zs = _sphere.Position.Direction;
 
         bool isIsoU, isIsoV;
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
-        isIsoU = zc.IsNormal(zs, tol) && o.IsEqual(c.Location(), tol);
+        isIsoU = zc.IsNormal(zs, tol) && o.IsEqual(c.Location, tol);
         isIsoV = xc.IsNormal(zs, tol) && yc.IsNormal(zs, tol);
 
         Point2D p2d1 = new(), p2d2;
@@ -109,31 +109,31 @@ public class SphereProjector : Projector
             p2d2 = EvalPnt2d(new Vector3D(yc), _sphere);
 
             if (isIsoU
-                && (Math.Abs(p2d1.Y() - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-                    || Math.Abs(p2d1.Y() + M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                && (Math.Abs(p2d1.Y - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+                    || Math.Abs(p2d1.Y + M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 // then P1 is on the apex of the sphere and U is undefined
                 // The value of U is given by P2d2.Y() .
-                p2d1 = p2d1.WithX(p2d2.X());
+                p2d1 = p2d1.WithX(p2d2.X);
             }
-            else if (Math.Abs(Math.Abs(p2d1.X() - p2d2.X()) - M_PI) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+            else if (Math.Abs(Math.Abs(p2d1.X - p2d2.X) - M_PI) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // then we have U2 = U1 + PI; V2;
                 // we have to assume that U1 = U2
                 //   so V2 = PI - V2;
-                p2d2 = p2d2.WithX(p2d1.X());
-                if (p2d2.Y() < 0.0)
+                p2d2 = p2d2.WithX(p2d1.X);
+                if (p2d2.Y < 0.0)
                 {
-                    p2d2 = p2d2.WithY(-M_PI - p2d2.Y());
+                    p2d2 = p2d2.WithY(-M_PI - p2d2.Y);
                 }
                 else
                 {
-                    p2d2 = p2d2.WithY(M_PI - p2d2.Y());
+                    p2d2 = p2d2.WithY(M_PI - p2d2.Y);
                 }
             }
             else
             {
-                p2d2 = p2d2.WithX(p2d1.X());
+                p2d2 = p2d2.WithX(p2d1.X);
             }
 
             d2d = new Direction2D(new Vector2D(p2d1, p2d2));
@@ -149,8 +149,8 @@ public class SphereProjector : Projector
             {
                 u += 2 * M_PI;
             }
-            double z = new Vector3D(o, c.Location()).Dot(new Vector3D(zs));
-            double v = Math.Asin(z / _sphere.Radius());
+            double z = new Vector3D(o, c.Location).Dot(new Vector3D(zs));
+            double v = Math.Asin(z / _sphere.Radius);
             p2d1 = new Point2D(u, v);
             d2d = new Direction2D((xc ^ yc).Dot(xs ^ ys), 0.0);
             _isDone = true;
@@ -185,7 +185,7 @@ public class SphereProjector : Projector
         StdFail_NotDone_Raise_if(!_isDone, "ProjLib_Sphere:SetInBounds");
 
         // first set the y of the first point in -pi/2 pi/2
-        double newY, y = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin).Y();
+        double newY, y = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin).Y;
         newY = global::Kerf.Engine.Geometry.ElCLib.InPeriod(y, -M_PI, M_PI);
 
         _lin = _lin.Translated(new Vector2D(0.0, newY - y));
@@ -194,20 +194,20 @@ public class SphereProjector : Projector
         Transform2D trsf = new();
         Axis2D axis;
         double tol = 1.0e-7;
-        Direction2D d2d = _lin.Direction();
+        Direction2D d2d = _lin.Direction;
         //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 Begin
         //   if ((P.Y() > M_PI/2) ||
-        if ((p.Y() - M_PI / 2 > tol) ||
+        if ((p.Y - M_PI / 2 > tol) ||
             //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 End
-            (Math.Abs(p.Y() - M_PI / 2) < tol && d2d.IsEqual(Constants.DY2d(), tol)))
+            (Math.Abs(p.Y - M_PI / 2) < tol && d2d.IsEqual(Constants.DY2d(), tol)))
         {
             axis = new Axis2D(new Point2D(0.0, M_PI / 2.0), Constants.DX2d());
         }
         //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 Begin
         //   else if ((P.Y() < -M_PI/2) ||
-        else if ((p.Y() + M_PI / 2 < -tol) ||
+        else if ((p.Y + M_PI / 2 < -tol) ||
                  //  Modified by skv - Tue Aug  1 16:29:59 2006 OCC13116 End
-                 (Math.Abs(p.Y() + M_PI / 2) < tol && d2d.IsOpposite(Constants.DY2d(), tol)))
+                 (Math.Abs(p.Y + M_PI / 2) < tol && d2d.IsOpposite(Constants.DY2d(), tol)))
         {
             axis = new Axis2D(new Point2D(0.0, -M_PI / 2.0), Constants.DX2d());
         }
@@ -221,7 +221,7 @@ public class SphereProjector : Projector
         _lin = _lin.Translated(new Vector2D(M_PI, 0.0));
 
         // Now we need to adjust the U parameter
-        double newX, x = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin).X();
+        double newX, x = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin).X;
         newX = global::Kerf.Engine.Geometry.ElCLib.InPeriod(x, 0.0, 2.0 * M_PI);
         _lin = _lin.Translated(new Vector2D(newX - x, 0.0));
     }

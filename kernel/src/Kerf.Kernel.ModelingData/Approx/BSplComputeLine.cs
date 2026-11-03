@@ -98,9 +98,9 @@ public class BSplComputeLine<MultiLine, LineTool>
                 j = 1;
                 for (i = tabV.Lower(); i <= tabV.Upper(); i++)
                 {
-                    v[j] = tabV[i].X();
-                    v[j + 1] = tabV[i].Y();
-                    v[j + 2] = tabV[i].Z();
+                    v[j] = tabV[i].X;
+                    v[j + 1] = tabV[i].Y;
+                    v[j + 2] = tabV[i].Z;
                     j += 3;
                 }
             }
@@ -109,8 +109,8 @@ public class BSplComputeLine<MultiLine, LineTool>
                 j = nbP3d * 3 + 1;
                 for (i = tabV2d.Lower(); i <= tabV2d.Upper(); i++)
                 {
-                    v[j] = tabV2d[i].X();
-                    v[j + 1] = tabV2d[i].Y();
+                    v[j] = tabV2d[i].X;
+                    v[j + 1] = tabV2d[i].Y;
                     j += 2;
                 }
             }
@@ -134,17 +134,17 @@ public class BSplComputeLine<MultiLine, LineTool>
             for (i = 1; i <= nbP3d; i++)
             {
                 c.D1(i, 0.0, out myP, out myV);
-                v[j] = myV.X();
-                v[j + 1] = myV.Y();
-                v[j + 2] = myV.Z();
+                v[j] = myV.X;
+                v[j + 1] = myV.Y;
+                v[j + 2] = myV.Z;
                 j += 3;
             }
             j = nbP3d * 3 + 1;
             for (i = nbP3d + 1; i <= nbP3d + nbP2d; i++)
             {
                 c.D1(i, 0.0, out myP2d, out myV2d);
-                v[j] = myV2d.X();
-                v[j + 1] = myV2d.Y();
+                v[j] = myV2d.X;
+                v[j + 1] = myV2d.Y;
                 j += 2;
             }
         }
@@ -188,9 +188,9 @@ public class BSplComputeLine<MultiLine, LineTool>
                 j = 1;
                 for (i = tabV.Lower(); i <= tabV.Upper(); i++)
                 {
-                    v[j] = tabV[i].X();
-                    v[j + 1] = tabV[i].Y();
-                    v[j + 2] = tabV[i].Z();
+                    v[j] = tabV[i].X;
+                    v[j + 1] = tabV[i].Y;
+                    v[j + 2] = tabV[i].Z;
                     j += 3;
                 }
             }
@@ -199,8 +199,8 @@ public class BSplComputeLine<MultiLine, LineTool>
                 j = nbP3d * 3 + 1;
                 for (i = tabV2d.Lower(); i <= tabV2d.Upper(); i++)
                 {
-                    v[j] = tabV2d[i].X();
-                    v[j + 1] = tabV2d[i].Y();
+                    v[j] = tabV2d[i].X;
+                    v[j + 1] = tabV2d[i].Y;
                     j += 2;
                 }
             }
@@ -224,17 +224,17 @@ public class BSplComputeLine<MultiLine, LineTool>
             for (i = 1; i <= nbP3d; i++)
             {
                 c.D1(i, 1.0, out myP, out myV);
-                v[j] = myV.X();
-                v[j + 1] = myV.Y();
-                v[j + 2] = myV.Z();
+                v[j] = myV.X;
+                v[j + 1] = myV.Y;
+                v[j + 2] = myV.Z;
                 j += 3;
             }
             j = nbP3d * 3 + 1;
             for (i = nbP3d + 1; i <= nbP3d + nbP2d; i++)
             {
                 c.D1(i, 1.0, out myP2d, out myV2d);
-                v[j] = myV2d.X();
-                v[j + 1] = myV2d.Y();
+                v[j] = myV2d.X;
+                v[j + 1] = myV2d.Y;
                 j += 2;
             }
         }
@@ -299,7 +299,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
         else
@@ -308,7 +308,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
         return ((s * lambda) * (theknots[2] - theknots[1]) / (theknots[nbknots] - theknots[1]));
@@ -372,7 +372,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
         else
@@ -381,7 +381,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
             myV = myV.WithCoord(v[low], v[low + 1]);
-            lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
+            lambda = (p1P2.Magnitude) / (myV.Magnitude * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
 
@@ -720,13 +720,13 @@ public class BSplComputeLine<MultiLine, LineTool>
                 for (j = 1; j <= nbP3d; j++)
                 {
                     Point3D p1 = tabP[j], p2 = tabPP[j];
-                    dist += p2.SquareDistance(p1);
+                    dist += p2.SquareDistanceTo(p1);
                 }
                 for (j = 1; j <= nbP2d; j++)
                 {
                     Point2D p12d = tabP2d[j], p22d = tabPP2d[j];
 
-                    dist += p22d.SquareDistance(p12d);
+                    dist += p22d.SquareDistanceTo(p12d);
                 }
 
                 dist = Math.Sqrt(dist);
@@ -1302,17 +1302,17 @@ public class BSplComputeLine<MultiLine, LineTool>
         for (i = 1; i <= nbP3d; i++)
         {
             c.D1(i, u, out myP, out myV);
-            v[j] = myV.X();
-            v[j + 1] = myV.Y();
-            v[j + 2] = myV.Z();
+            v[j] = myV.X;
+            v[j + 1] = myV.Y;
+            v[j + 2] = myV.Z;
             j += 3;
         }
         j = nbP3d * 3 + 1;
         for (i = nbP3d + 1; i <= nbP3d + nbP2d; i++)
         {
             c.D1(i, u, out myP2d, out myV2d);
-            v[j] = myV2d.X();
-            v[j + 1] = myV2d.Y();
+            v[j] = myV2d.X;
+            v[j + 1] = myV2d.Y;
             j += 2;
         }
     }

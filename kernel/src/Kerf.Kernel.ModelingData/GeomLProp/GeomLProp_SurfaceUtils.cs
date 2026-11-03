@@ -42,7 +42,7 @@ internal static class SurfaceUtils
             if (cn >= order)
             {
                 // OCCT's array of pointers {&theD1, &theD2}
-                if (order <= 2 && (order == 1 ? d1 : d2).SquareMagnitude() > tolSq)
+                if (order <= 2 && (order == 1 ? d1 : d2).SquareMagnitude > tolSq)
                 {
                     status = Defined;
                     return true;
@@ -86,9 +86,9 @@ internal static class SurfaceUtils
     {
         Vector3D norm = new(normal);
 
-        double e = d1u.SquareMagnitude();
+        double e = d1u.SquareMagnitude;
         double f = d1u.Dot(d1v);
-        double g = d1v.SquareMagnitude();
+        double g = d1v.SquareMagnitude;
 
         double l = norm.Dot(d2u);
         double m = norm.Dot(duv);

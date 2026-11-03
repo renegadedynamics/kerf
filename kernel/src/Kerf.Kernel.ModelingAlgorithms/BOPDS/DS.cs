@@ -226,7 +226,7 @@ public class DS
     private void InitShape(int shapeInfoIndex, in Shape shape)
     {
         ShapeInfo shapeInfo = ChangeShapeInfo(shapeInfoIndex);
-        shapeInfo.SetShapeType(shape.ShapeType());
+        shapeInfo.SetShapeType(shape.Type);
         NCollection_List<int> subShapeIndices = shapeInfo.ChangeSubShapes();
 
         NCollection_IntMap existingSubShapeIndices = new();
@@ -336,7 +336,7 @@ public class DS
         PaveBlock paveBlock = new();
         paveBlock.SetOriginalEdge(edgeIndex);
 
-        if (edge.Orientation() != Internal)
+        if (edge.Orientation != Internal)
         {
             foreach (int vertexIndexIt in vertexIndices)
             {
@@ -614,7 +614,7 @@ public class DS
         for (Iterator shapeIter = new(Shape(index)); shapeIter.More(); shapeIter.Next())
         {
             Shape vertex = shapeIter.Value();
-            if (vertex.ShapeType() == ShapeType.Vertex)
+            if (vertex.Type == ShapeType.Vertex)
             {
                 int vertexIndex = GetSameDomainIndex(Index(vertex));
                 faceInfo.ChangeVerticesIn().Add(vertexIndex);
@@ -690,7 +690,7 @@ public class DS
         for (Iterator faceIter = new(face); faceIter.More(); faceIter.Next())
         {
             Shape subShape = faceIter.Value();
-            if (subShape.ShapeType() == ShapeType.Vertex)
+            if (subShape.Type == ShapeType.Vertex)
             {
                 int vertexIndex = GetSameDomainIndex(Index(subShape));
                 indexMap.Add(vertexIndex);
@@ -1428,7 +1428,7 @@ public class DS
             // Point on the end of shrunk range
             Point3D pointOnEdge = curveAdaptor.Value(parameter[i]);
 
-            if (tol - vertexPoint.Distance(pointOnEdge) > epsilon)
+            if (tol - vertexPoint.DistanceTo(pointOnEdge) > epsilon)
             {
                 return false;
             }
@@ -1447,13 +1447,13 @@ public class DS
         Point3D vertexPoint = Tool.Pnt(vertex);
 
         Edge forwardEdge = edge;
-        forwardEdge.Orientation(Forward);
+        forwardEdge.Orient(Forward);
         Curve3D curve = Tool.Curve(forwardEdge, out double curveStart, out double curveEnd)!;
 
         bool IsMatch(double parameter)
         {
             curve.D0(parameter, out Point3D pointOnCurve);
-            return pointOnCurve.SquareDistance(vertexPoint) < edgeToleranceSqr;
+            return pointOnCurve.SquareDistanceTo(vertexPoint) < edgeToleranceSqr;
         }
 
         // Note: only start and end parameters are checked.
@@ -1510,7 +1510,7 @@ public class DS
                 NCollection_List<int> vertexIndices = edgeInfo.ChangeSubShapes();
 
                 Edge forwardEdge = edge;
-                forwardEdge.Orientation(Forward);
+                forwardEdge.Orient(Forward);
                 Curve3D? forwardEdgeCurve = Tool.Curve(forwardEdge, out double curveStart, out double curveEnd);
 
                 // Process infinite values of the edge curve parameters.
@@ -1521,7 +1521,7 @@ public class DS
                     Vertex vertex = new();
                     BrepBuilder builder = new();
                     builder.MakeVertex(ref vertex, point, edgeTolerance);
-                    vertex.Orientation(Forward);
+                    vertex.Orient(Forward);
 
                     ShapeInfo vertexInfo = new();
                     vertexInfo.SetShape(vertex);
@@ -1622,7 +1622,7 @@ public class DS
             for (Iterator faceIter = new(face); faceIter.More(); faceIter.Next())
             {
                 Shape subShape = faceIter.Value();
-                if (subShape.ShapeType() == ShapeType.Vertex)
+                if (subShape.Type == ShapeType.Vertex)
                 {
                     newSubShapeIndices.Add(Index(subShape));
                 }

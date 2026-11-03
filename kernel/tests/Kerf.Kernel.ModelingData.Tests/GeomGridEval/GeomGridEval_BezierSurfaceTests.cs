@@ -59,7 +59,7 @@ public class GeomGridEval_BezierSurfaceTest
             for (int j = 1; j <= 5; ++j)
             {
                 Vector3D aExpected = theBezier.DN(aParams.Value(i), aParams.Value(j), theNU, theNV);
-                Assert.Equal(0.0, (aGrid.Value(i, j) - aExpected).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j) - aExpected).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -91,7 +91,7 @@ public class GeomGridEval_BezierSurfaceTest
             for (int j = 1; j <= 3; ++j)
             {
                 Point3D aExpected = aBezier.Value(aParams.Value(i), aParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -125,7 +125,7 @@ public class GeomGridEval_BezierSurfaceTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = aBezier.Value(aParams.Value(i), aParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -151,9 +151,9 @@ public class GeomGridEval_BezierSurfaceTest
             for (int j = 1; j <= 5; ++j)
             {
                 aBezier.D1(aParams.Value(i), aParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
-                Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -174,12 +174,12 @@ public class GeomGridEval_BezierSurfaceTest
             {
                 aBezier.D2(aParams.Value(i), aParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
                            out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
-                Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -219,11 +219,11 @@ public class GeomGridEval_BezierSurfaceTest
                            out Vector3D aD3V,
                            out Vector3D aD3UUV,
                            out Vector3D aD3UVV);
-                Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3U - aD3U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3V - aD3V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3UUV - aD3UUV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3UVV - aD3UVV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3U - aD3U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3V - aD3V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3UUV - aD3UUV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3UVV - aD3UVV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -256,7 +256,7 @@ public class GeomGridEval_BezierSurfaceTest
         {
             for (int j = 1; j <= 5; ++j)
             {
-                Assert.Equal(0.0, aGrid.Value(i, j).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -316,7 +316,7 @@ public class GeomGridEval_BezierSurfaceTest
         for (int j = 1; j <= 10; ++j)
         {
             aBezier.D0(aUParams.Value(1), aVParams.Value(j), out Point3D aExpected);
-            Assert.Equal(0.0, aGrid.Value(1, j).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(1, j).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -342,7 +342,7 @@ public class GeomGridEval_BezierSurfaceTest
         for (int i = 1; i <= 10; ++i)
         {
             aBezier.D0(aUParams.Value(i), aVParams.Value(1), out Point3D aExpected);
-            Assert.Equal(0.0, aGrid.Value(i, 1).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i, 1).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -374,7 +374,7 @@ public class GeomGridEval_BezierSurfaceTest
         for (int j = 1; j <= 15; ++j)
         {
             aBezier.D0(aUParams.Value(1), aVParams.Value(j), out Point3D aExpected);
-            Assert.Equal(0.0, aGrid.Value(1, j).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(1, j).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 }

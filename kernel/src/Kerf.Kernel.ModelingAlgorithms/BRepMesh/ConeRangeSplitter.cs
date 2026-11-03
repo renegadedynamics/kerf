@@ -33,8 +33,8 @@ public class ConeRangeSplitter : DefaultRangeSplitter
         (double first, double second) rangeV = GetRangeV();
 
         Cone cone = GetDFace().GetSurface().Cone();
-        double refR = cone.RefRadius();
-        double sAng = cone.SemiAngle();
+        double refR = cone.RefRadius;
+        double sAng = cone.SemiAngle;
         double radius = Max(Math.Abs(refR + rangeV.first * Math.Sin(sAng)),
                              Math.Abs(refR + rangeV.second * Math.Sin(sAng)));
 

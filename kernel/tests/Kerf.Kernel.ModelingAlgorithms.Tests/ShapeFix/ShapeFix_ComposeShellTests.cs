@@ -73,7 +73,7 @@ public class ShapeFix_ComposeShellTests
 
         aSnap.AssertUnchanged(aFace);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Shell, aResult.ShapeType());
+        Assert.Equal(ShapeType.Shell, aResult.Type);
         List<Shape> aFaces = SubShapes(aResult, ShapeType.Face);
         Assert.Equal(2, aFaces.Count);
         // each new face is on its own patch
@@ -85,7 +85,7 @@ public class ShapeFix_ComposeShellTests
         int aNbSplit = 0;
         foreach (Shape anEdge in SubShapes(aFace, ShapeType.Edge))
         {
-            if (aContext.IsRecorded(anEdge) && aContext.Value(anEdge).ShapeType() == ShapeType.Wire)
+            if (aContext.IsRecorded(anEdge) && aContext.Value(anEdge).Type == ShapeType.Wire)
             {
                 aNbSplit++;
             }
@@ -114,14 +114,14 @@ public class ShapeFix_ComposeShellTests
             // the bottom and top edges are split into wires of two edges; the sides, whose vertices the split
             // replaced, are rebuilt with the new vertices (ShapeBuild_ReShape records the rebuilt edge)
             Shape aValue = aContext.InternalValue(anEdge);
-            if (aValue.ShapeType() == ShapeType.Wire)
+            if (aValue.Type == ShapeType.Wire)
             {
                 Assert.Equal(2, SubShapes(aValue, ShapeType.Edge).Count);
                 aNbSplit++;
             }
             else
             {
-                Assert.Equal(ShapeType.Edge, aValue.ShapeType());
+                Assert.Equal(ShapeType.Edge, aValue.Type);
             }
         }
         Assert.Equal(2, aNbSplit);

@@ -38,7 +38,7 @@ public sealed class MakeBSplineCurveWithKnots : GeometryRoot
             MakeCartesianPoint mkPoint = new MakeCartesianPoint(p.Value(i), localFactors.LengthFactor());
             listpoints.SetValue(i, mkPoint.Value());
         }
-        Make(bs.Degree(), listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(), bs.KnotDistribution());
+        Make(bs.Degree, listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(), bs.KnotDistribution);
     }
 
     /// <summary>A 3D B-spline curve (default factors).</summary>
@@ -61,7 +61,7 @@ public sealed class MakeBSplineCurveWithKnots : GeometryRoot
             MakeCartesianPoint mkPoint = new MakeCartesianPoint(p.Value(i), localFactors.LengthFactor());
             listpoints.SetValue(i, mkPoint.Value());
         }
-        Make(bs.Degree(), listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(), bs.KnotDistribution());
+        Make(bs.Degree, listpoints, bs.IsClosed, bs.KnotCount, bs.InternalMultiplicities(), bs.InternalKnots(), bs.KnotDistribution);
     }
 
     /// <summary>A 2D B-spline curve.</summary>

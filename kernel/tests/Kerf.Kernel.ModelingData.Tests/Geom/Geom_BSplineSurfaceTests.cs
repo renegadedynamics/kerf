@@ -56,8 +56,8 @@ public class Geom_BSplineSurfaceTests
     public void CopyConstructorBasicProperties()
     {
         BSplineSurface aCopiedSurface = new(myOriginalSurface);
-        Assert.Equal(myOriginalSurface.UDegree(), aCopiedSurface.UDegree());
-        Assert.Equal(myOriginalSurface.VDegree(), aCopiedSurface.VDegree());
+        Assert.Equal(myOriginalSurface.UDegree, aCopiedSurface.UDegree);
+        Assert.Equal(myOriginalSurface.VDegree, aCopiedSurface.VDegree);
         Assert.Equal(myOriginalSurface.UPoleCount, aCopiedSurface.UPoleCount);
         Assert.Equal(myOriginalSurface.VPoleCount, aCopiedSurface.VPoleCount);
         Assert.Equal(myOriginalSurface.UKnotCount, aCopiedSurface.UKnotCount);
@@ -101,8 +101,8 @@ public class Geom_BSplineSurfaceTests
         Geometry3D aCopiedGeom = myOriginalSurface.Copy();
         BSplineSurface? aCopiedSurface = aCopiedGeom as BSplineSurface;
         Assert.NotNull(aCopiedSurface);
-        Assert.Equal(myOriginalSurface.UDegree(), aCopiedSurface.UDegree());
-        Assert.Equal(myOriginalSurface.VDegree(), aCopiedSurface.VDegree());
+        Assert.Equal(myOriginalSurface.UDegree, aCopiedSurface.UDegree);
+        Assert.Equal(myOriginalSurface.VDegree, aCopiedSurface.VDegree);
         for (double u = 0.0; u <= 1.0; u += 0.5)
         {
             for (double v = 0.0; v <= 1.0; v += 0.5)
@@ -134,29 +134,29 @@ public class Geom_BSplineSurfaceTests
     public void Evaluation_D1()
     {
         myOriginalSurface.D1(0.5, 0.5, out _, out Vector3D aD1U, out Vector3D aD1V);
-        Assert.True(aD1U.Magnitude() > 0.0);
-        Assert.True(aD1V.Magnitude() > 0.0);
+        Assert.True(aD1U.Magnitude > 0.0);
+        Assert.True(aD1V.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_D2()
     {
         myOriginalSurface.D2(0.5, 0.5, out _, out Vector3D aD1U, out _, out _, out _, out _);
-        Assert.True(aD1U.Magnitude() > 0.0);
+        Assert.True(aD1U.Magnitude > 0.0);
     }
 
     [Fact]
     public void Evaluation_DN()
     {
-        Assert.True(myOriginalSurface.DN(0.5, 0.5, 1, 0).Magnitude() > 0.0);
-        Assert.True(myOriginalSurface.DN(0.5, 0.5, 0, 1).Magnitude() > 0.0);
+        Assert.True(myOriginalSurface.DN(0.5, 0.5, 1, 0).Magnitude > 0.0);
+        Assert.True(myOriginalSurface.DN(0.5, 0.5, 0, 1).Magnitude > 0.0);
     }
 
     [Fact]
     public void Properties()
     {
-        Assert.Equal(2, myOriginalSurface.UDegree());
-        Assert.Equal(2, myOriginalSurface.VDegree());
+        Assert.Equal(2, myOriginalSurface.UDegree);
+        Assert.Equal(2, myOriginalSurface.VDegree);
         Assert.False(myOriginalSurface.IsUPeriodic);
         Assert.False(myOriginalSurface.IsVPeriodic);
         Assert.False(myOriginalSurface.IsURational);
@@ -170,7 +170,7 @@ public class Geom_BSplineSurfaceTests
     [Fact]
     public void Bounds()
     {
-        myOriginalSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        myOriginalSurface.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1);
         Assert.Equal(1.0, aU2);
         Assert.Equal(0.0, aV1);
@@ -195,7 +195,7 @@ public class Geom_BSplineSurfaceTests
         Assert.Equal(10.0, aSurf.Weight(2, 2));
         Point3D aValAfter = aSurf.Value(0.5, 0.5);
         // Higher weight at the elevated center pole pulls surface up
-        Assert.True(aValAfter.Z() > aValBefore.Z());
+        Assert.True(aValAfter.Z > aValBefore.Z);
     }
 
     [Fact]
@@ -203,8 +203,8 @@ public class Geom_BSplineSurfaceTests
     {
         Point3D aValBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.IncreaseDegree(4, 3);
-        Assert.Equal(4, myOriginalSurface.UDegree());
-        Assert.Equal(3, myOriginalSurface.VDegree());
+        Assert.Equal(4, myOriginalSurface.UDegree);
+        Assert.Equal(3, myOriginalSurface.VDegree);
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.5, 0.5), 1e-10));
     }
 
@@ -242,7 +242,7 @@ public class Geom_BSplineSurfaceTests
     {
         Point3D aPntBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Segment(0.25, 0.75, 0.25, 0.75);
-        myOriginalSurface.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        myOriginalSurface.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.25, aU1, 1e-10);
         Assert.Equal(0.75, aU2, 1e-10);
         Assert.Equal(0.25, aV1, 1e-10);
@@ -254,11 +254,11 @@ public class Geom_BSplineSurfaceTests
     public void ExchangeUV()
     {
         Point3D aValBefore = myOriginalSurface.Value(0.3, 0.7);
-        int aUDeg = myOriginalSurface.UDegree();
-        int aVDeg = myOriginalSurface.VDegree();
+        int aUDeg = myOriginalSurface.UDegree;
+        int aVDeg = myOriginalSurface.VDegree;
         myOriginalSurface.ExchangeUV();
-        Assert.Equal(aVDeg, myOriginalSurface.UDegree());
-        Assert.Equal(aUDeg, myOriginalSurface.VDegree());
+        Assert.Equal(aVDeg, myOriginalSurface.UDegree);
+        Assert.Equal(aUDeg, myOriginalSurface.VDegree);
         Assert.True(aValBefore.IsEqual(myOriginalSurface.Value(0.7, 0.3), 1e-10));
     }
 
@@ -321,29 +321,29 @@ public class Geom_BSplineSurfaceTests
         Point3D aPtBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Transform(aTrsf);
         Point3D aPtAfter = myOriginalSurface.Value(0.5, 0.5);
-        Assert.Equal(aPtBefore.X() + 10.0, aPtAfter.X(), 1e-10);
-        Assert.Equal(aPtBefore.Y() + 20.0, aPtAfter.Y(), 1e-10);
-        Assert.Equal(aPtBefore.Z() + 30.0, aPtAfter.Z(), 1e-10);
+        Assert.Equal(aPtBefore.X + 10.0, aPtAfter.X, 1e-10);
+        Assert.Equal(aPtBefore.Y + 20.0, aPtAfter.Y, 1e-10);
+        Assert.Equal(aPtBefore.Z + 30.0, aPtAfter.Z, 1e-10);
     }
 
     [Fact]
     public void KnotsAccess()
     {
-        IReadOnlyList<double> aUKnots = myOriginalSurface.UKnots();
+        IReadOnlyList<double> aUKnots = myOriginalSurface.UKnots;
         Assert.Equal(2, aUKnots.Count);
         Assert.Equal(0.0, aUKnots[0]);
         Assert.Equal(1.0, aUKnots[1]);
-        Assert.Equal(2, myOriginalSurface.VKnots().Count);
-        IReadOnlyList<int> aUMults = myOriginalSurface.UMultiplicities();
+        Assert.Equal(2, myOriginalSurface.VKnots.Count);
+        IReadOnlyList<int> aUMults = myOriginalSurface.UMultiplicities;
         Assert.Equal(2, aUMults.Count);
         Assert.Equal(3, aUMults[0]);
-        Assert.Equal(2, myOriginalSurface.VMultiplicities().Count);
+        Assert.Equal(2, myOriginalSurface.VMultiplicities.Count);
     }
 
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        Assert.Null(myOriginalSurface.Weights());
+        Assert.Null(myOriginalSurface.WeightsOrNull());
     }
 
     [Fact]
@@ -403,13 +403,13 @@ public class Geom_BSplineSurfaceTests
         BSplineSurface aSurf = new(aPoles, aWeights, Knots(0, 1), Knots(0, 1), Mults(3, 3), Mults(3, 3), 2, 2);
         Assert.True(aSurf.IsURational);
         Assert.True(aSurf.IsVRational);
-        Grid<double>? aW = aSurf.Weights();
+        Grid<double>? aW = aSurf.WeightsOrNull();
         Assert.NotNull(aW);
         Assert.Equal(3.0, aW.Value[1, 1]);
         Point3D aMid = aSurf.Value(0.5, 0.5);
         // High weight at center should pull surface toward (2,2,0)
-        Assert.Equal(2.0, aMid.X(), 0.1);
-        Assert.Equal(2.0, aMid.Y(), 0.1);
+        Assert.Equal(2.0, aMid.X, 0.1);
+        Assert.Equal(2.0, aMid.Y, 0.1);
     }
 
     [Fact]
@@ -429,7 +429,7 @@ public class Geom_BSplineSurfaceTests
         myOriginalSurface.SetPoleRow(2, aNewRow);
         for (int j = 1; j <= 3; ++j)
         {
-            Assert.Equal(10.0, myOriginalSurface.Pole(2, j).X(), 1e-10);
+            Assert.Equal(10.0, myOriginalSurface.Pole(2, j).X, 1e-10);
         }
     }
 
@@ -440,7 +440,7 @@ public class Geom_BSplineSurfaceTests
         myOriginalSurface.SetPoleCol(2, aNewCol);
         for (int i = 1; i <= 3; ++i)
         {
-            Assert.Equal(10.0, myOriginalSurface.Pole(i, 2).Y(), 1e-10);
+            Assert.Equal(10.0, myOriginalSurface.Pole(i, 2).Y, 1e-10);
         }
     }
 
@@ -551,8 +551,8 @@ public class Geom_BSplineSurfaceTests
     {
         myOriginalSurface.D3(0.5, 0.5, out _, out _, out _, out _, out _, out _, out Vector3D aD3U, out Vector3D aD3V, out _, out _);
         // Degree 2 surface: D3 should be zero
-        Assert.Equal(0.0, aD3U.Magnitude(), 1e-10);
-        Assert.Equal(0.0, aD3V.Magnitude(), 1e-10);
+        Assert.Equal(0.0, aD3U.Magnitude, 1e-10);
+        Assert.Equal(0.0, aD3V.Magnitude, 1e-10);
     }
 
     [Fact]
@@ -635,7 +635,7 @@ public class Geom_BSplineSurfaceTests
     {
         Assert.False(myOriginalSurface.IsURational);
         Assert.False(myOriginalSurface.IsVRational);
-        Grid<double> aWeights = myOriginalSurface.WeightsArray();
+        Grid<double> aWeights = myOriginalSurface.Weights;
         Assert.Equal(myOriginalSurface.UPoleCount, aWeights.RowCount);
         Assert.Equal(myOriginalSurface.VPoleCount, aWeights.ColumnCount);
         for (int i = 0; i < aWeights.RowCount; ++i)
@@ -661,7 +661,7 @@ public class Geom_BSplineSurfaceTests
             }
         }
         BSplineSurface aRational = new(aPoles, aWeightsIn, Knots(0, 1), Knots(0, 1), Mults(3, 3), Mults(3, 3), 2, 2);
-        Grid<double> aWeights = aRational.WeightsArray();
+        Grid<double> aWeights = aRational.Weights;
         Assert.Equal(3, aWeights.RowCount);
         Assert.Equal(3, aWeights.ColumnCount);
         Assert.Equal(2.0, aWeights[1, 1]);
@@ -678,7 +678,7 @@ public class Geom_BSplineSurfaceTests
     {
         // The iso-curves are B-spline curves on the knots of the other direction
         BSplineCurve3D aU = Assert.IsType<BSplineCurve3D>(myOriginalSurface.UIso(0.5));
-        Assert.Equal(2, aU.Degree());
+        Assert.Equal(2, aU.Degree);
         Assert.Equal(3, aU.PoleCount);
         Assert.False(aU.IsRational);
         Assert.IsType<BSplineCurve3D>(myOriginalSurface.VIso(0.5, false));
@@ -746,7 +746,7 @@ public class Geom_BSplineSurfaceTests
         Assert.NotNull(aRemoved);
         Assert.Equal(2, aRemoved.UKnotCount);
         Assert.Equal(3, aInserted.UKnotCount);
-        Assert.Equal(4, myOriginalSurface.DegreeIncreased(4, 2).UDegree());
+        Assert.Equal(4, myOriginalSurface.DegreeIncreased(4, 2).UDegree);
         Assert.Equal(0.25, myOriginalSurface.Segmented(0.25, 0.75, 0.0, 1.0).UKnot(1));
 
         // Resolution caches without counting as a modification
@@ -757,10 +757,10 @@ public class Geom_BSplineSurfaceTests
     [Fact]
     public void ReturnedArrays_AreCopies()
     {
-        Grid<Point3D> aPoles = myOriginalSurface.Poles();
+        Grid<Point3D> aPoles = myOriginalSurface.Poles;
         Assert.True(aPoles[0, 0].IsEqual(myOriginalSurface.Pole(1, 1), 0.0));
         Assert.Equal(myOriginalSurface.UPoleCount * myOriginalSurface.VPoleCount, aPoles.Values.Length);
-        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, myOriginalSurface.UKnotSequence());
+        Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, myOriginalSurface.UKnotSequence);
     }
     [Fact]
     public void EvalRepresentation_DroppedByEdits()
@@ -824,7 +824,7 @@ public class Geom_BSplineSurfaceTests
                 aAdaptor.Value(aUnext, aV); // populate cache from span after
                 Point3D aP2 = aAdaptor.Value(aUknot, aV);
 
-                if (aP1.X() != aP2.X() || aP1.Y() != aP2.Y() || aP1.Z() != aP2.Z())
+                if (aP1.X != aP2.X || aP1.Y != aP2.Y || aP1.Z != aP2.Z)
                 {
                     ++aNbErr;
                 }
@@ -846,7 +846,7 @@ public class Geom_BSplineSurfaceTests
                 aAdaptor.Value(aU, aVnext);
                 Point3D aP2 = aAdaptor.Value(aU, aVknot);
 
-                if (aP1.X() != aP2.X() || aP1.Y() != aP2.Y() || aP1.Z() != aP2.Z())
+                if (aP1.X != aP2.X || aP1.Y != aP2.Y || aP1.Z != aP2.Z)
                 {
                     ++aNbErr;
                 }

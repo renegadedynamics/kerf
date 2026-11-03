@@ -57,7 +57,7 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         for (int i = 1; i <= theLine.MultiPointCount; i++)
         {
             aC.Value(1, aPar[i], out Point3D aP);
-            aMax = Math.Max(aMax, aP.Distance(theLine.Value(i).Point(1)));
+            aMax = Math.Max(aMax, aP.DistanceTo(theLine.Value(i).Point(1)));
         }
         return aMax;
     }
@@ -94,8 +94,8 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         MultiBSpCurve aC = aV.Value();
         aC.Value(1, aV.Parameters()[1], out Point3D aFirst);
         aC.Value(1, aV.Parameters()[30], out Point3D aLast);
-        Assert.True(aFirst.Distance(aLine.Value(1).Point(1)) < 1.0e-10);
-        Assert.True(aLast.Distance(aLine.Value(30).Point(1)) < 1.0e-10);
+        Assert.True(aFirst.DistanceTo(aLine.Value(1).Point(1)) < 1.0e-10);
+        Assert.True(aLast.DistanceTo(aLine.Value(30).Point(1)) < 1.0e-10);
         // the final projection moves the end parameters by rounding only
         Assert.Equal(0.0, aV.Parameters()[1], 1.0e-12);
         Assert.Equal(1.0, aV.Parameters()[30], 1.0e-12);
@@ -147,7 +147,7 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         foreach (int i in new[] { 1, 25 })
         {
             aC.D1(1, aV.Parameters()[i], out Point3D aP, out Vector3D aD);
-            Assert.True(aP.Distance(aLine.Value(i).Point(1)) < 1.0e-10);
+            Assert.True(aP.DistanceTo(aLine.Value(i).Point(1)) < 1.0e-10);
             Assert.True(aD.IsParallel(aLine.Value(i).Tang(1), 1.0e-8), $"tangent at {i}");
         }
     }
@@ -175,12 +175,12 @@ public class AppDef_VariationalTests(ITestOutputHelper output)
         foreach (int i in new[] { 1, 16, 31 })
         {
             aC.D2(1, aV.Parameters()[i], out Point2D aP, out Vector2D aD1, out Vector2D aD2);
-            Assert.True(aP.Distance(aLine.Value(i).Point2d(1)) < 1.0e-9, $"pass point {i}");
+            Assert.True(aP.DistanceTo(aLine.Value(i).Point2d(1)) < 1.0e-9, $"pass point {i}");
             if (i != 16)
             {
                 Assert.True(aD1.IsParallel(aLine.Value(i).Tang2d(1), 1.0e-8), $"tangent at {i}");
                 // curvature of the result
-                double aK = Math.Abs(aD1.Crossed(aD2)) / Math.Pow(aD1.Magnitude(), 3);
+                double aK = Math.Abs(aD1.Crossed(aD2)) / Math.Pow(aD1.Magnitude, 3);
                 Assert.Equal(0.5, aK, 1.0e-6);
             }
         }

@@ -11,25 +11,25 @@ public class ElClibTests
     // Helper function for comparing points with tolerance
     private static void checkPointsEqual(in Point3D theP1, in Point3D theP2, double theTolerance = 1.0e-7)
     {
-        Assert.Equal(theP2.X(), theP1.X(), theTolerance);
-        Assert.Equal(theP2.Y(), theP1.Y(), theTolerance);
-        Assert.Equal(theP2.Z(), theP1.Z(), theTolerance);
+        Assert.Equal(theP2.X, theP1.X, theTolerance);
+        Assert.Equal(theP2.Y, theP1.Y, theTolerance);
+        Assert.Equal(theP2.Z, theP1.Z, theTolerance);
     }
 
     // Helper function for comparing vectors with tolerance
     private static void checkVectorsEqual(in Vector3D theV1, in Vector3D theV2, double theTolerance = 1.0e-7)
     {
-        Assert.Equal(theV2.X(), theV1.X(), theTolerance);
-        Assert.Equal(theV2.Y(), theV1.Y(), theTolerance);
-        Assert.Equal(theV2.Z(), theV1.Z(), theTolerance);
+        Assert.Equal(theV2.X, theV1.X, theTolerance);
+        Assert.Equal(theV2.Y, theV1.Y, theTolerance);
+        Assert.Equal(theV2.Z, theV1.Z, theTolerance);
     }
 
     // Helper function for comparing directions with tolerance
     private static void checkDirectorsEqual(in Direction3D theD1, in Direction3D theD2, double theTolerance = 1.0e-7)
     {
-        Assert.Equal(theD2.X(), theD1.X(), theTolerance);
-        Assert.Equal(theD2.Y(), theD1.Y(), theTolerance);
-        Assert.Equal(theD2.Z(), theD1.Z(), theTolerance);
+        Assert.Equal(theD2.X, theD1.X, theTolerance);
+        Assert.Equal(theD2.Y, theD1.Y, theTolerance);
+        Assert.Equal(theD2.Z, theD1.Z, theTolerance);
     }
 
     [Fact]
@@ -292,8 +292,8 @@ public class ElClibTests
         double aRadius = 2.0;
         Circle2D aCirc2d = new(anAxis2d, aRadius);
         Circle3D aCirc3d = global::Kerf.Engine.Geometry.ElCLib.To3d(anAxis, aCirc2d);
-        Assert.Equal(aRadius, aCirc3d.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        checkPointsEqual(aCirc3d.Location(), aLoc, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aRadius, aCirc3d.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        checkPointsEqual(aCirc3d.Location, aLoc, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -325,25 +325,25 @@ public class ElClibTests
         double aU = 3.0;
 
         Point2D aValue = global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(aU, anAxis, aFocal);
-        Assert.Equal(1.0 + aU, aValue.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, aValue.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0 + aU, aValue.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aValue.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD1(aU, anAxis, aFocal, out Point2D aP, out Vector2D aD1);
-        Assert.Equal(1.0 + aU, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(2.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aD1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0 + aU, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(2.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aD1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(aU, anAxis, aFocal, out aP, out aD1, out Vector2D aD2);
-        Assert.Equal(0.0, aD2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aD2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD2.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         Vector2D aDN1 = global::Kerf.Engine.Geometry.ElCLib.ParabolaDN(aU, anAxis, aFocal, 1);
         Vector2D aDN2 = global::Kerf.Engine.Geometry.ElCLib.ParabolaDN(aU, anAxis, aFocal, 2);
-        Assert.Equal(1.0, aDN1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDN1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDN2.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDN2.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDN1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDN1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDN2.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDN2.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -354,10 +354,10 @@ public class ElClibTests
         double aU = 1.0;
 
         Point3D aValue = global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(aU, anAxis, aFocal);
-        Assert.True(Math.Abs(aValue.X() - (1.0 + aU)) > 1.0);
+        Assert.True(Math.Abs(aValue.X - (1.0 + aU)) > 1.0);
 
         Vector3D aD2 = global::Kerf.Engine.Geometry.ElCLib.ParabolaDN(aU, anAxis, aFocal, 2);
-        Assert.True(aD2.Magnitude() > 1.0);
+        Assert.True(aD2.Magnitude > 1.0);
     }
 
     [Fact]
@@ -368,9 +368,9 @@ public class ElClibTests
         double aU = 1.0;
 
         Point2D aValue = global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(aU, anAxis, aFocal);
-        Assert.True(Math.Abs(aValue.X() - (1.0 + aU)) > 1.0);
+        Assert.True(Math.Abs(aValue.X - (1.0 + aU)) > 1.0);
 
         Vector2D aD2 = global::Kerf.Engine.Geometry.ElCLib.ParabolaDN(aU, anAxis, aFocal, 2);
-        Assert.True(aD2.Magnitude() > 1.0);
+        Assert.True(aD2.Magnitude > 1.0);
     }
 }

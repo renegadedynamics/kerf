@@ -83,7 +83,7 @@ public class GeomHash_PortTests
             default:
             {
                 var aCircle = new CircleCurve3D(Ax2(r), R(r, 1, 5));
-                return new OffsetCurve3D(aCircle, R(r, 0.1, 0.5), aCircle.Position().Direction());
+                return new OffsetCurve3D(aCircle, R(r, 0.1, 0.5), aCircle.Position.Direction);
             }
         }
     }

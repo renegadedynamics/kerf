@@ -24,7 +24,7 @@ public class SphereRangeSplitter : DefaultRangeSplitter
         // Calculate parameters for iteration in V direction
         double step =
             0.7
-            * TangentialDeflection.ArcAngularStep(GetDFace().GetSurface().Sphere().Radius(),
+            * TangentialDeflection.ArcAngularStep(GetDFace().GetSurface().Sphere().Radius,
                                                          GetDFace().GetDeflection(),
                                                          parameters.Angle,
                                                          parameters.MinSize);

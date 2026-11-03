@@ -135,7 +135,7 @@ public partial class PaveFiller
         si.SetShapeType(ShapeType.Edge);
         //
         de = ShapeCasts.Edge(_ds!.Shape(nDE));
-        de.Orientation(Forward);
+        de.Orient(Forward);
         //
         Face df = ShapeCasts.Face(_ds.Shape(nDF));
         //
@@ -156,10 +156,10 @@ public partial class PaveFiller
             if (_ds.IsNewShape(nV1) || nbPB > 1)
             {
                 v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
-                v1.Orientation(Forward);
+                v1.Orient(Forward);
                 //
                 v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
-                v2.Orientation(Reversed);
+                v2.Orient(Reversed);
                 //
                 MakeSplitEdge1(de, df, v1, t1, v2, t2, out sp);
                 //
@@ -217,7 +217,7 @@ public partial class PaveFiller
         }
 
         // Get direction of the curve
-        bool bUDir = Math.Abs(c2DDE.Value(td1).Y() - c2DDE.Value(td2).Y()) < global::Kerf.Engine.Foundation.Precision.PConfusion();
+        bool bUDir = Math.Abs(c2DDE.Value(td1).Y - c2DDE.Value(td2).Y) < global::Kerf.Engine.Foundation.Precision.PConfusion();
         //
         tolCmp = Max(tolCmp, (bUDir ? uRes : vRes));
         //

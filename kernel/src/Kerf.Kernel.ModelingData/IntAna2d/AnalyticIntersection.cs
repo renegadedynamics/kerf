@@ -239,19 +239,19 @@ public class AnalyticIntersection
             double la, mu;
             if (Math.Abs(a1) >= Math.Abs(b1))
             {
-                la = (ys - l1.Location().Y()) / a1;
+                la = (ys - l1.Location.Y) / a1;
             }
             else
             {
-                la = (l1.Location().X() - xs) / b1;
+                la = (l1.Location.X - xs) / b1;
             }
             if (Math.Abs(a2) >= Math.Abs(b2))
             {
-                mu = (ys - l2.Location().Y()) / a2;
+                mu = (ys - l2.Location.Y) / a2;
             }
             else
             {
-                mu = (l2.Location().X() - xs) / b2;
+                mu = (l2.Location.X - xs) / b2;
             }
             _lpnt[0].SetValue(xs, ys, la, mu);
         }
@@ -265,9 +265,9 @@ public class AnalyticIntersection
     {
         // OCCT: the parameters are angles from each X axis counterclockwise, wrong on an indirect circle
         _done = false;
-        double d = c1.Location().Distance(c2.Location());
-        double r1 = c1.Radius();
-        double r2 = c2.Radius();
+        double d = c1.Location.DistanceTo(c2.Location);
+        double r1 = c1.Radius;
+        double r2 = c2.Radius;
         double sum = r1 + r2;
         double dif = Math.Abs(r1 - r2);
 
@@ -300,14 +300,14 @@ public class AnalyticIntersection
             _para = false;
             _iden = false;
             _nbp = 1;
-            Vector2D ax = new(c1.Location(), c2.Location());
-            Vector2D ox1 = new(c1.XAxis().Direction());
-            Vector2D ox2 = new(c2.XAxis().Direction());
+            Vector2D ax = new(c1.Location, c2.Location);
+            Vector2D ox1 = new(c1.XAxis.Direction);
+            Vector2D ox2 = new(c2.XAxis.Direction);
 
-            double xs = (c1.Location().X() * r2 + c2.Location().X() * r1) / sum;
-            double ys = (c1.Location().Y() * r2 + c2.Location().Y() * r1) / sum;
-            double ang1 = ox1.Angle(ax); // Result between -PI and +PI
-            double ang2 = ox2.Angle(ax) + M_PI;
+            double xs = (c1.Location.X * r2 + c2.Location.X * r1) / sum;
+            double ys = (c1.Location.Y * r2 + c2.Location.Y * r1) / sum;
+            double ang1 = ox1.AngleTo(ax); // Result between -PI and +PI
+            double ang2 = ox2.AngleTo(ax) + M_PI;
             if (ang1 < 0)
             {
                 ang1 = 2 * M_PI + ang1;
@@ -320,11 +320,11 @@ public class AnalyticIntersection
             _para = false;
             _iden = false;
             _nbp = 2;
-            Vector2D ax = new(c1.Location(), c2.Location());
-            Vector2D ox1 = new(c1.XAxis().Direction());
-            Vector2D ox2 = new(c2.XAxis().Direction());
-            double ref1 = ox1.Angle(ax); // Result between -PI and +PI
-            double ref2 = ox2.Angle(ax); // Result between -PI and +PI
+            Vector2D ax = new(c1.Location, c2.Location);
+            Vector2D ox1 = new(c1.XAxis.Direction);
+            Vector2D ox2 = new(c2.XAxis.Direction);
+            double ref1 = ox1.AngleTo(ax); // Result between -PI and +PI
+            double ref2 = ox2.AngleTo(ax); // Result between -PI and +PI
 
             double l1 = (d * d + r1 * r1 - r2 * r2) / (2.0 * d);
             if (r1 * r1 - l1 * l1 < 0.0)
@@ -333,11 +333,11 @@ public class AnalyticIntersection
             }
             double h = Math.Sqrt(r1 * r1 - l1 * l1);
 
-            double xs1 = c1.Location().X() + l1 * ax.X() / d - h * ax.Y() / d;
-            double ys1 = c1.Location().Y() + l1 * ax.Y() / d + h * ax.X() / d;
+            double xs1 = c1.Location.X + l1 * ax.X / d - h * ax.Y / d;
+            double ys1 = c1.Location.Y + l1 * ax.Y / d + h * ax.X / d;
 
-            double xs2 = c1.Location().X() + l1 * ax.X() / d + h * ax.Y() / d;
-            double ys2 = c1.Location().Y() + l1 * ax.Y() / d - h * ax.X() / d;
+            double xs2 = c1.Location.X + l1 * ax.X / d + h * ax.Y / d;
+            double ys2 = c1.Location.Y + l1 * ax.Y / d - h * ax.X / d;
 
             double sint1 = h / r1;
             double cost1 = l1 / r1;
@@ -420,16 +420,16 @@ public class AnalyticIntersection
             _para = false;
             _iden = false;
             _nbp = 1;
-            Vector2D ax = new(c1.Location(), c2.Location());
-            if (c1.Radius() < c2.Radius())
+            Vector2D ax = new(c1.Location, c2.Location);
+            if (c1.Radius < c2.Radius)
             {
                 ax = ax.Reversed();
             }
 
-            Vector2D ox1 = new(c1.XAxis().Direction());
-            Vector2D ox2 = new(c2.XAxis().Direction());
-            double ang1 = ox1.Angle(ax); // Result between -PI and +PI
-            double ang2 = ox2.Angle(ax);
+            Vector2D ox1 = new(c1.XAxis.Direction);
+            Vector2D ox2 = new(c2.XAxis.Direction);
+            double ang1 = ox1.AngleTo(ax); // Result between -PI and +PI
+            double ang2 = ox2.AngleTo(ax);
             if (ang1 < 0)
             {
                 ang1 = 2 * M_PI + ang1;
@@ -438,8 +438,8 @@ public class AnalyticIntersection
             {
                 ang2 = 2 * M_PI + ang2;
             } // Normalize to range [0, 2PI]
-            double xs = (c1.Location().X() * r2 - c2.Location().X() * r1) / (r2 - r1);
-            double ys = (c1.Location().Y() * r2 - c2.Location().Y() * r1) / (r2 - r1);
+            double xs = (c1.Location.X * r2 - c2.Location.X * r1) / (r2 - r1);
+            double ys = (c1.Location.Y * r2 - c2.Location.Y * r1) / (r2 - r1);
             _lpnt[0].SetValue(xs, ys, ang1, ang2);
         }
         else
@@ -467,9 +467,9 @@ public class AnalyticIntersection
         Point2D p2D, p2D1, p2D2;
         //
         l.Coefficients(out a, out b, out c0);
-        d = a * c.Location().X() + b * c.Location().Y() + c0;
+        d = a * c.Location.X + b * c.Location.Y + c0;
 
-        if (Math.Abs(d) - c.Radius() > Epsilon(c.Radius()))
+        if (Math.Abs(d) - c.Radius > Epsilon(c.Radius))
         {
             _empt = true;
             _nbp = 0;
@@ -477,13 +477,13 @@ public class AnalyticIntersection
         else
         { // At least 1 solution
             _empt = false;
-            if (Math.Abs(Math.Abs(d) - c.Radius()) <= Epsilon(c.Radius()))
+            if (Math.Abs(Math.Abs(d) - c.Radius) <= Epsilon(c.Radius))
             { // Tangency case
                 double u, xs, ys, ang;
                 //
                 _nbp = 1;
-                xs = c.Location().X() - d * a;
-                ys = c.Location().Y() - d * b;
+                xs = c.Location.X - d * a;
+                ys = c.Location.Y - d * b;
                 //
                 p2D = new Point2D(xs, ys);
                 u = global::Kerf.Engine.Geometry.ElCLib.Parameter(l, p2D);
@@ -494,11 +494,11 @@ public class AnalyticIntersection
             { // 2 intersection points
                 double h, xs1, ys1, xs2, ys2, ang1, ang2, u1, u2;
                 _nbp = 2;
-                h = Math.Sqrt(c.Radius() * c.Radius() - d * d);
-                xs1 = c.Location().X() - d * a - h * b;
-                ys1 = c.Location().Y() - d * b + h * a;
-                xs2 = c.Location().X() - d * a + h * b;
-                ys2 = c.Location().Y() - d * b - h * a;
+                h = Math.Sqrt(c.Radius * c.Radius - d * d);
+                xs1 = c.Location.X - d * a - h * b;
+                ys1 = c.Location.Y - d * b + h * a;
+                xs2 = c.Location.X - d * a + h * b;
+                ys2 = c.Location.Y - d * b - h * a;
                 //
                 p2D1 = new Point2D(xs1, ys1);
                 p2D2 = new Point2D(xs2, ys2);
@@ -532,8 +532,8 @@ public class AnalyticIntersection
 
         conic.Coefficients(out a, out b, out c, out d, out e, out f);
         l.Coefficients(out DR_A, out DR_B, out DR_C);
-        x0 = l.Location().X();
-        y0 = l.Location().Y();
+        x0 = l.Location.X;
+        y0 = l.Location.Y;
 
         // Parameter: L
         // X = Xo - L*DR_B  and  Y = Yo + L*DR_A
@@ -578,7 +578,7 @@ public class AnalyticIntersection
         bool cIsDirect = circle.IsDirect;
         double a, b, c, d, e, f;
         double pcc, pss, p2sc, pc, ps, pcte;
-        double radius = circle.Radius();
+        double radius = circle.Radius;
         double radius_P2 = radius * radius;
         int i;
         double tx, ty, s;
@@ -589,7 +589,7 @@ public class AnalyticIntersection
         _empt = false;
         _iden = false;
 
-        Axis2D Axe_rep = circle.XAxis();
+        Axis2D Axe_rep = circle.XAxis;
 
         conic.Coefficients(out a, out b, out c, out d, out e, out f);
         conic.NewCoefficients(ref a, ref b, ref c, ref d, ref e, ref f, Axe_rep);
@@ -645,8 +645,8 @@ public class AnalyticIntersection
         bool eIsDirect = elips.IsDirect;
         double a, b, c, d, e, f;
         double pcte, ps, pc, p2sc, pcc, pss;
-        double minor_radius = elips.MinorRadius();
-        double major_radius = elips.MajorRadius();
+        double minor_radius = elips.MinorRadius;
+        double major_radius = elips.MajorRadius;
         int i;
         double tx, ty, s;
 
@@ -656,7 +656,7 @@ public class AnalyticIntersection
         _iden = false;
         _empt = false;
 
-        Axis2D Axe_rep = elips.XAxis();
+        Axis2D Axe_rep = elips.XAxis;
 
         conic.Coefficients(out a, out b, out c, out d, out e, out f);
         conic.NewCoefficients(ref a, ref b, ref c, ref d, ref e, ref f, Axe_rep);
@@ -713,8 +713,8 @@ public class AnalyticIntersection
         double px4, px3, px2, px1, px0;
         int i;
         double tx, ty, s;
-        double un_sur_2p = 0.5 / (p.Parameter());
-        Axis2D Axe_rep = p.MirrorAxis();
+        double un_sur_2p = 0.5 / (p.Parameter);
+        Axis2D Axe_rep = p.MirrorAxis;
 
         _done = false;
         _nbp = 0;
@@ -788,8 +788,8 @@ public class AnalyticIntersection
         bool hIsDirect = h.IsDirect;
         double a, b, c, d, e, f;
         double px0, px1, px2, px3, px4;
-        double minor_radius = h.MinorRadius();
-        double major_radius = h.MajorRadius();
+        double minor_radius = h.MinorRadius;
+        double major_radius = h.MajorRadius;
         int i;
         double tx, ty, s;
 
@@ -799,7 +799,7 @@ public class AnalyticIntersection
         _iden = false;
         _empt = false;
 
-        Axis2D Axe_rep = h.XAxis();
+        Axis2D Axe_rep = h.XAxis;
         conic.Coefficients(out a, out b, out c, out d, out e, out f);
         conic.NewCoefficients(ref a, ref b, ref c, ref d, ref e, ref f, Axe_rep);
 

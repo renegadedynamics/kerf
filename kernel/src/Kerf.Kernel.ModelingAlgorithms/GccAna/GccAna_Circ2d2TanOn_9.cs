@@ -39,17 +39,17 @@ public sealed partial class AnalyticCirc2d2TanOn
         double sgn = 1.0;
         double s = 1.0;
         bool ok = false;
-        Direction2D d1 = l1.Direction();
-        Direction2D d2 = l2.Direction();
-        Direction2D dnor1 = new(-d1.Y(), d1.X());
-        Direction2D dnor2 = new(-d2.Y(), d2.X());
-        Xy xYnor1 = new(-d1.Y(), d1.X());
-        Xy xYnor2 = new(-d2.Y(), d2.X());
-        Point2D originL1 = l1.Location();
-        Point2D originL2 = l2.Location();
+        Direction2D d1 = l1.Direction;
+        Direction2D d2 = l2.Direction;
+        Direction2D dnor1 = new(-d1.Y, d1.X);
+        Direction2D dnor2 = new(-d2.Y, d2.X);
+        Xy xYnor1 = new(-d1.Y, d1.X);
+        Xy xYnor2 = new(-d2.Y, d2.X);
+        Point2D originL1 = l1.Location;
+        Point2D originL2 = l2.Location;
         Xy dloc = originL1.XY() - originL2.XY();
         // OCCT: Angle is signed, so every pair of lines turning clockwise from D1 to D2 takes this "parallel" branch
-        if (d1.Angle(d2) <= Constants.Resolution())
+        if (d1.AngleTo(d2) <= Constants.Resolution())
         {
             if (qualified1.IsEnclosed)
             {
@@ -89,7 +89,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                             _nbrSol++;
                             Point2D pt = intp.Point(l).Value();
                             Axis2D axe = new(pt, dirx);
-                            _cirsol[_nbrSol] = new Circle2D(axe, l1.Distance(pt));
+                            _cirsol[_nbrSol] = new Circle2D(axe, l1.DistanceTo(pt));
                             //          ===============================================
                             Direction2D dc1 = new(originL1.XY() - pt.XY());
                             Direction2D dc2 = new(originL2.XY() - pt.XY());
@@ -146,7 +146,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     nbsol = 1;
                     i = 1;
                     j = 1;
-                    if (d1.Angle(d2) >= 0.0)
+                    if (d1.AngleTo(d2) >= 0.0)
                     {
                         sgn = -1.0;
                     }
@@ -163,7 +163,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     nbsol = 1;
                     i = 1;
                     j = 1;
-                    if (d1.Angle(d2) <= 0.0)
+                    if (d1.AngleTo(d2) <= 0.0)
                     {
                         sgn = -1.0;
                     }
@@ -194,7 +194,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     i = 1;
                     j = 2;
                 }
-                if (d1.Angle(d2) >= 0.0)
+                if (d1.AngleTo(d2) >= 0.0)
                 {
                     s = -1.0;
                 }
@@ -215,7 +215,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     i = 1;
                     j = 2;
                 }
-                if (d1.Angle(d2) >= 0.0)
+                if (d1.AngleTo(d2) >= 0.0)
                 {
                     s = -1.0;
                     sgn = -1.0;
@@ -233,7 +233,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     i = 1;
                     j = 2;
                 }
-                if (d1.Angle(d2) >= 0.0)
+                if (d1.AngleTo(d2) >= 0.0)
                 {
                     sgn = -1.0;
                 }
@@ -254,7 +254,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     i = 1;
                     j = 2;
                 }
-                if (d1.Angle(d2) <= 0.0)
+                if (d1.AngleTo(d2) <= 0.0)
                 {
                     s = -1.0;
                     sgn = -1.0;
@@ -283,9 +283,9 @@ public sealed partial class AnalyticCirc2d2TanOn
                         {
                             for (int l = 1; l <= intp.PointCount; l++)
                             {
-                                Vector2D v = new(intp.Point(l).Value(), bis.ThisSolution(k).Location());
-                                if ((kk == 1 && sgn * v.Dot(new Vector2D(bis.ThisSolution(k).Direction())) >= 0.0)
-                                    || (kk == 2 && sgn * s * v.Dot(new Vector2D(bis.ThisSolution(k).Direction())) >= 0.0)
+                                Vector2D v = new(intp.Point(l).Value(), bis.ThisSolution(k).Location);
+                                if ((kk == 1 && sgn * v.Dot(new Vector2D(bis.ThisSolution(k).Direction)) >= 0.0)
+                                    || (kk == 2 && sgn * s * v.Dot(new Vector2D(bis.ThisSolution(k).Direction)) >= 0.0)
                                     || nbsol == 4)
                                 {
                                     _nbrSol++;
@@ -296,7 +296,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                     Axis2D axe = new(pt, dirx);
                                     _cirsol[_nbrSol] = new Circle2D(axe,
                                                                    //              ===============================
-                                                                   l1.Distance(intp.Point(l).Value()));
+                                                                   l1.DistanceTo(intp.Point(l).Value()));
                                     //                                         ===================================
                                     Direction2D dc1 = new(originL1.XY() - pt.XY());
                                     Direction2D dc2 = new(originL2.XY() - pt.XY());
@@ -336,15 +336,15 @@ public sealed partial class AnalyticCirc2d2TanOn
         {
             for (i = 1; i <= _nbrSol; i++)
             {
-                Point2D pbid = _cirsol[i].Location();
-                double radius = _cirsol[i].Radius();
+                Point2D pbid = _cirsol[i].Location;
+                double radius = _cirsol[i].Radius;
                 Direction2D dc2 = new(originL1.XY() - pbid.XY());
-                double sign = dc2.Dot(new Direction2D(-l1.Direction().Y(), l1.Direction().X()));
-                dc2 = new Direction2D(sign * new Xy(-l1.Direction().Y(), l1.Direction().X()));
+                double sign = dc2.Dot(new Direction2D(-l1.Direction.Y, l1.Direction.X));
+                dc2 = new Direction2D(sign * new Xy(-l1.Direction.Y, l1.Direction.X));
                 _pnttg1sol[i] = new Point2D(pbid.XY() + radius * dc2.XY());
                 dc2 = new Direction2D(originL2.XY() - pbid.XY());
-                sign = dc2.Dot(new Direction2D(-l2.Direction().Y(), l2.Direction().X()));
-                dc2 = new Direction2D(sign * new Xy(-l2.Direction().Y(), l2.Direction().X()));
+                sign = dc2.Dot(new Direction2D(-l2.Direction.Y, l2.Direction.X));
+                dc2 = new Direction2D(sign * new Xy(-l2.Direction.Y, l2.Direction.X));
                 _pnttg2sol[i] = new Point2D(pbid.XY() + radius * dc2.XY());
                 _pntcen[i] = pbid;
                 _par1sol[i] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[i], _pnttg1sol[i]);

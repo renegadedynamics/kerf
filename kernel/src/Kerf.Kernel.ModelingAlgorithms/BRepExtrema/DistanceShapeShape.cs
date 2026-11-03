@@ -98,7 +98,7 @@ public sealed class DistanceShapeShape
     }
 
     private static double DistanceInitiale(in Vertex v1, in Vertex v2)
-        => Tool.Pnt(v1).Distance(Tool.Pnt(v2));
+        => Tool.Pnt(v1).DistanceTo(Tool.Pnt(v2));
 
     /// <summary>A pair of sub-shapes to check, with the distance between their boxes.</summary>
     private readonly record struct BRepExtrema_CheckPair(int Index1, int Index2, double Distance);
@@ -173,7 +173,7 @@ public sealed class DistanceShapeShape
                 {
                     Vertex vertex2 = ShapeCasts.Vertex(Map2[idx2 - 1]);
                     Point3D point2 = Tool.Pnt(vertex2);
-                    double dist = point1.Distance(point2);
+                    double dist = point1.DistanceTo(point2);
                     {
                         if (dist < Solution.Dist[index] - Eps)
                         {
@@ -826,8 +826,8 @@ public sealed class DistanceShapeShape
         }
 
         // Treatment of solids
-        bool isSolid1 = (_shape1.ShapeType() == ShapeType.Solid) || (_shape1.ShapeType() == ShapeType.CompSolid);
-        bool isSolid2 = (_shape2.ShapeType() == ShapeType.Solid) || (_shape2.ShapeType() == ShapeType.CompSolid);
+        bool isSolid1 = (_shape1.Type == ShapeType.Solid) || (_shape1.Type == ShapeType.CompSolid);
+        bool isSolid2 = (_shape2.Type == ShapeType.Solid) || (_shape2.Type == ShapeType.CompSolid);
         int rootStepsNum = 9; // By num of DistanceMapMap calls
         rootStepsNum = isSolid1 ? rootStepsNum + 1 : rootStepsNum;
         rootStepsNum = isSolid2 ? rootStepsNum + 1 : rootStepsNum;
@@ -1127,9 +1127,9 @@ public sealed class DistanceShapeShape
             o.Write("the type of the solution on the first shape is " + (int)SupportTypeShape1(i) + '\n');
             o.Write("the type of the solution on the second shape is " + (int)SupportTypeShape2(i) + '\n');
             o.Write("the coordinates of  the point on the first shape are: " + '\n');
-            o.Write("X=" + F(PointOnShape1(i).X()) + " Y=" + F(PointOnShape1(i).Y()) + " Z=" + F(PointOnShape1(i).Z()) + '\n');
+            o.Write("X=" + F(PointOnShape1(i).X) + " Y=" + F(PointOnShape1(i).Y) + " Z=" + F(PointOnShape1(i).Z) + '\n');
             o.Write("the coordinates of  the point on the second shape are: " + '\n');
-            o.Write("X=" + F(PointOnShape2(i).X()) + " Y=" + F(PointOnShape2(i).Y()) + " Z=" + F(PointOnShape2(i).Z()) + '\n');
+            o.Write("X=" + F(PointOnShape2(i).X) + " Y=" + F(PointOnShape2(i).Y) + " Z=" + F(PointOnShape2(i).Z) + '\n');
 
             switch (SupportTypeShape1(i))
             {

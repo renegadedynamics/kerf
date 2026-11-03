@@ -157,7 +157,7 @@ public class Projector
             pFirst = global::Kerf.Engine.Geometry.ElCLib.Value(cFirst, _lin);
             // PLast  = ElCLib::Value(CLast ,myLin);
             // double U = std::min( PFirst.X(), PLast.X());
-            double u = pFirst.X();
+            double u = pFirst.X;
             double newU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uFirst, uFirst + period);
             _lin = _lin.Translated(new Vector2D(newU - u, 0.0));
         }
@@ -184,7 +184,7 @@ public class Projector
             pFirst = global::Kerf.Engine.Geometry.ElCLib.Value(cFirst, _lin);
             // PLast  = ElCLib::Value(CLast ,myLin);
             // double V = std::min( PFirst.Y(), PLast.Y());
-            double v = pFirst.Y();
+            double v = pFirst.Y;
             double newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, vFirst, vFirst + period);
             _lin = _lin.Translated(new Vector2D(0.0, newV - v));
         }

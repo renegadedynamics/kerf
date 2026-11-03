@@ -44,8 +44,8 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
         using (aNC)
         using (aNS)
         {
-            (double aF, double aL) = Range(theO, aPC.FirstParameter(), aPC.LastParameter(), aRange);
-            aPS.Bounds(out double u1, out double u2, out double v1, out double v2);
+            (double aF, double aL) = Range(theO, aPC.FirstParameter, aPC.LastParameter, aRange);
+            aPS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
             (double aU1, double aU2) = Range(theO, u1, u2, 10);
             (double aV1, double aV2) = Range(theO, v1, v2, 10);
 
@@ -165,13 +165,13 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                     (N.Geom_Surface aNS, Surface aPS) = RandomSurface(anOracle, sk);
                     using (aNS)
                     {
-                        aPS.Bounds(out double u1, out double u2, out double v1, out double v2);
+                        aPS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                         (double aU1, double aU2) = Range(anOracle, u1, u2, 10);
                         (double aV1, double aV2) = Range(anOracle, v1, v2, 10);
                         double aU = anOracle.Real(aU1, aU2), aV = anOracle.Real(aV1, aV2);
                         aPS.D1(aU, aV, out Point3D aP, out Vector3D aD1U, out Vector3D aD1V);
                         Vector3D aT = anOracle.Real(-1, 1) * aD1U + anOracle.Real(-1, 1) * aD1V;
-                        if (aT.Magnitude() < 1e-6)
+                        if (aT.Magnitude < 1e-6)
                         {
                             continue;
                         }
@@ -197,11 +197,11 @@ public class GeomAPI_IntCSOracleTests(ITestOutputHelper output)
                         for (int i = 1; i <= aN.NbPoints(); i++)
                         {
                             using N.gp_Pnt aNP = aN.Point(i);
-                            aNTouch |= Oracle.FromNative(aNP).Distance(aP) <= aNear;
+                            aNTouch |= Oracle.FromNative(aNP).DistanceTo(aP) <= aNear;
                         }
                         for (int i = 1; i <= aPI.PointCount; i++)
                         {
-                            aPTouch |= aPI.Point(i).Distance(aP) <= aNear;
+                            aPTouch |= aPI.Point(i).DistanceTo(aP) <= aNear;
                         }
                         if (sk != 4)
                         {

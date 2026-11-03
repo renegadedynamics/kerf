@@ -85,7 +85,7 @@ public class ExtremaOracleTests(ITestOutputHelper output)
                 aUsup = 150.0;
                 using var aNAx1 = new N.gp_Ax1(aNLoc, aNN);
                 aNCurve = new N.Geom_Line(aNAx1);
-                aPort = new ExtPElC(aP, new Line3D(anAx.Axis()), aTol, aUinf, aUsup);
+                aPort = new ExtPElC(aP, new Line3D(anAx.Axis), aTol, aUinf, aUsup);
             }
             else if (aKind == 1)
             {
@@ -158,9 +158,9 @@ public class ExtremaOracleTests(ITestOutputHelper output)
             bool isPeriodic = aKind != 0;
             if (aKind == 0)
             {
-                using var aNAx1 = Oracle.ToNative(anAx.XAxis());
+                using var aNAx1 = Oracle.ToNative(anAx.XAxis);
                 aNCurve = new N.Geom2d_Line(aNAx1);
-                aPort = new ExtPElC2d(aP, new Line2D(anAx.XAxis()), aTol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
+                aPort = new ExtPElC2d(aP, new Line2D(anAx.XAxis), aTol, -global::Kerf.Engine.Foundation.Precision.Infinite(), global::Kerf.Engine.Foundation.Precision.Infinite());
             }
             else if (aKind == 1)
             {

@@ -778,7 +778,7 @@ public class MakeLoops2D : MakeLoops
                 continue;
             }
 
-            double angle = tgt.Angle(tgtRef);
+            double angle = tgt.AngleTo(tgtRef);
             if (_rightWay)
             {
                 angle = -angle;

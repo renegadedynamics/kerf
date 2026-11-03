@@ -66,7 +66,7 @@ public sealed class MakeStepWire : ExportRoot
             return;
         }
 
-        if (aWire.Orientation() == Internal || aWire.Orientation() == External)
+        if (aWire.Orientation == Internal || aWire.Orientation == External)
         {
             var errShape = new ShapeMapper(aWire);
             fp.AddWarning(errShape, " Wire(internal/external) from Non Manifold Topology");
@@ -93,7 +93,7 @@ public sealed class MakeStepWire : ExportRoot
             for (var itW = new WireExplorer(aWire, aTool.CurrentFace()); itW.More(); itW.Next())
             {
                 Edge currentEdge = itW.Current();
-                if (currentEdge.Orientation() == Forward)
+                if (currentEdge.Orientation == Forward)
                 {
                     Exploration.Vertices(currentEdge, out topoDSVertex1, out topoDSVertex2);
                 }
@@ -253,7 +253,7 @@ public sealed class MakeStepWire : ExportRoot
                         orientedEdge = new StepOrientedEdge();
                         epms = mkEdge.Value() as StepEdge;
                         var aName = new TCollection_HAsciiString("");
-                        orientedEdge.Init(aName, epms, (edge.Orientation() == Forward));
+                        orientedEdge.Init(aName, epms, (edge.Orientation == Forward));
                         mySeq.Append(orientedEdge);
                     }
                     else

@@ -57,7 +57,7 @@ public class CafActorWrite : ActorWrite
     /// <summary>Registers shape to be written as assembly The shape should be TopoDS_Compound (else does nothing)</summary>
     public void RegisterAssembly(Shape s)
     {
-        if (!_stdMode && s.ShapeType() == ShapeType.Compound)
+        if (!_stdMode && s.Type == ShapeType.Compound)
         {
             _map.Add(s);
         }

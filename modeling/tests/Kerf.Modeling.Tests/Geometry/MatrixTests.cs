@@ -29,7 +29,7 @@ public class MatrixTests
     static TransformForm Form(Matrix m)
     {
         var g = m.ToGpGTrsf();
-        return g.Form();
+        return g.Form;
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class MatrixTests
 
         // A similarity converts to a gp_Trsf, so it can place a shape
         var g = rotationScaleMirror.ToGpGTrsf();
-        var trsf = g.Trsf();
+        var trsf = g.ToTransform();
     }
 
     static Vector Reconstruct(Matrix matrix)

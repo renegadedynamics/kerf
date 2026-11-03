@@ -55,9 +55,9 @@ public sealed class Lin2dTanOblIter
         CurveAdaptor2D cu1 = qualified1.Qualified();
         double              u1  = ConstraintCurveTool.FirstParameter(cu1);
         double              u2  = ConstraintCurveTool.LastParameter(cu1);
-        Direction2D            dir = theLin.Direction();
-        double              a   = dir.X();
-        double              b   = dir.Y();
+        Direction2D            dir = theLin.Direction;
+        double              a   = dir.X;
+        double              b   = dir.Y;
         Direction2D            theDirection = dir;
         if (Math.Abs(angle) > Math.Abs(tolAng))
         {
@@ -115,8 +115,8 @@ public sealed class Lin2dTanOblIter
                         if (intp.PointCount == 1)
                         {
                             _pntint2sol = intp.Point(1).Value();
-                            _par2sol    = new Vector2D(_linsol.Direction()).Dot(new Vector2D(_linsol.Location(), _pntint2sol));
-                            _pararg2    = new Vector2D(theLin.Direction()).Dot(new Vector2D(theLin.Location(), _pntint2sol));
+                            _par2sol    = new Vector2D(_linsol.Direction).Dot(new Vector2D(_linsol.Location, _pntint2sol));
+                            _pararg2    = new Vector2D(theLin.Direction).Dot(new Vector2D(theLin.Location, _pntint2sol));
                         }
                     }
                 }

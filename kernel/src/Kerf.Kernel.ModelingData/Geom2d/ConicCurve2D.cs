@@ -75,32 +75,32 @@ public abstract class ConicCurve2D : Curve2D
     }
 
     /// <summary>The X axis: the origin of the parametrization.</summary>
-    public Axis2D XAxis() => new Axis2D(_pos.Location(), _pos.XDirection());
+    public Axis2D XAxis => new Axis2D(_pos.Location, _pos.XDirection);
 
     /// <summary>The Y axis, perpendicular to the X axis.</summary>
-    public Axis2D YAxis() => new Axis2D(_pos.Location(), _pos.YDirection());
+    public Axis2D YAxis => new Axis2D(_pos.Location, _pos.YDirection);
 
     /// <summary>The eccentricity: 0 for a circle, in [0, 1) for an ellipse, more than 1 for a hyperbola, 1 for a parabola.</summary>
-    public abstract double Eccentricity();
+    public abstract double Eccentricity { get; }
 
     /// <summary>The centre (circle, ellipse, hyperbola) or apex (parabola).</summary>
-    public Point2D Location() => _pos.Location();
+    public Point2D Location => _pos.Location;
 
     /// <summary>The local coordinate system.</summary>
-    public Frame2D Position() => _pos;
+    public Frame2D Position => _pos;
 
     /// <summary>Reverses the parametrization by reversing the Y direction of the local coordinate system.</summary>
     protected internal override void Reverse()
     {
         CheckMutable();
-        Direction2D temp = _pos.YDirection();
+        Direction2D temp = _pos.YDirection;
         temp = temp.Reversed();
-        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        _pos = _pos.WithAxis(new Frame2D(_pos.Location, _pos.XDirection, temp));
     }
 
     /// <summary>CN: conics are infinitely smooth.</summary>
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
     /// <summary>True.</summary>
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 }

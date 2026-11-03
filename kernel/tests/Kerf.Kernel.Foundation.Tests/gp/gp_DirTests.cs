@@ -14,9 +14,9 @@ public class gp_DirTest
     public void CoordinateConstructor()
     {
         Direction3D aDir = new(0.0, 0.0, 1.0);
-        Assert.Equal(0.0, aDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aDir.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDir.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -24,9 +24,9 @@ public class gp_DirTest
     {
         Xyz aXYZ = new(0.0, 3.0, 4.0);
         Direction3D aDir = new(aXYZ);
-        Assert.Equal(0.0, aDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.6, aDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.8, aDir.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.6, aDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.8, aDir.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -34,9 +34,9 @@ public class gp_DirTest
     {
         Vector3D aVec = new(3.0, 0.0, 0.0);
         Direction3D aDir = new(aVec);
-        Assert.Equal(1.0, aDir.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDir.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDir.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDir.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDir.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -52,7 +52,7 @@ public class gp_DirTest
     {
         Direction3D aD1 = new(1.0, 0.0, 0.0);
         Direction3D aD2 = new(0.0, 1.0, 0.0);
-        Assert.Equal(M_PI_2, aD1.Angle(aD2), global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.Equal(M_PI_2, aD1.AngleTo(aD2), global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
     [Fact]
@@ -107,9 +107,9 @@ public class gp_DirTest
         Direction3D aD1 = new(1.0, 0.0, 0.0);
         Direction3D aD2 = new(0.0, 1.0, 0.0);
         Direction3D aCross = aD1.Crossed(aD2);
-        Assert.Equal(0.0, aCross.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aCross.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aCross.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCross.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCross.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aCross.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -120,8 +120,8 @@ public class gp_DirTest
         Direction3D aC = new(0.0, 0.0, 1.0);
         Direction3D aCrossCross = aA.CrossCrossed(aB, aC);
         // Result should be a valid normalized direction
-        double aMag = Math.Sqrt(aCrossCross.X() * aCrossCross.X() + aCrossCross.Y() * aCrossCross.Y()
-                                + aCrossCross.Z() * aCrossCross.Z());
+        double aMag = Math.Sqrt(aCrossCross.X * aCrossCross.X + aCrossCross.Y * aCrossCross.Y
+                                + aCrossCross.Z * aCrossCross.Z);
         Assert.Equal(1.0, aMag, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
@@ -146,8 +146,8 @@ public class gp_DirTest
         // d_mirror = 2*(d.axis)*axis - d
         // d.axis = (1,0,0).(0,1,0) = 0
         // result = 2*0*(0,1,0) - (1,0,0) = (-1,0,0)
-        Assert.Equal(-1.0, aMirrored.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aMirrored.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aMirrored.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aMirrored.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -156,9 +156,9 @@ public class gp_DirTest
         Direction3D aDir = new(1.0, 0.0, 0.0);
         Axis3D anAxis = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Direction3D aRotated = aDir.Rotated(anAxis, M_PI_2);
-        Assert.Equal(0.0, aRotated.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(1.0, aRotated.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aRotated.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aRotated.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aRotated.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aRotated.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -167,8 +167,8 @@ public class gp_DirTest
         Direction3D aDir = new(1.0, 0.0, 0.0);
         Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI);
         Direction3D aTransformed = aDir.Transformed(aTrsf);
-        Assert.Equal(-1.0, aTransformed.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aTransformed.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-1.0, aTransformed.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aTransformed.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -189,8 +189,8 @@ public class gp_DirTest
 
         // Expected: (-1/sqrt(3), 1/sqrt(3), 1/sqrt(3))
         double aExpected = 1.0 / Math.Sqrt(3.0);
-        Assert.Equal(-aExpected, aToSym.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aExpected, aToSym.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aExpected, aToSym.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-aExpected, aToSym.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aExpected, aToSym.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aExpected, aToSym.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

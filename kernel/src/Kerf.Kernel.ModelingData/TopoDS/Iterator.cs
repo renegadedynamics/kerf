@@ -54,7 +54,7 @@ public sealed class Iterator
     {
         if (cumLoc)
         {
-            _location = s.Location();
+            _location = s.Placement;
         }
         else
         {
@@ -63,7 +63,7 @@ public sealed class Iterator
 
         if (cumOri)
         {
-            _orientation = s.Orientation();
+            _orientation = s.Orientation;
         }
         else
         {
@@ -110,7 +110,7 @@ public sealed class Iterator
     private void UpdateCurrentShape()
     {
         _shape = _iterator.Value();
-        _shape.Orientation(global::Kerf.Engine.Topology.TopAbs.Compose(_orientation, _shape.Orientation()));
+        _shape.Orient(global::Kerf.Engine.Topology.TopAbs.Compose(_orientation, _shape.Orientation));
         if (!_location.IsIdentity)
         {
             _shape.Move(_location, false);

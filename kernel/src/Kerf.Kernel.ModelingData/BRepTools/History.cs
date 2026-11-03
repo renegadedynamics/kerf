@@ -144,7 +144,7 @@ public class History : Transient
     /// <summary>True if the type of the shape is supported by the history: a vertex, an edge, a face or a solid.</summary>
     public static bool IsSupportedType(in Shape shape)
     {
-        ShapeType type = shape.ShapeType();
+        ShapeType type = shape.Type;
         return type == ShapeType.Vertex || type == ShapeType.Edge || type == ShapeType.Face
                || type == ShapeType.Solid;
     }
@@ -287,6 +287,28 @@ public class History : Transient
 
     /// <summary>True if some shape is removed.</summary>
     public bool HasRemoved => _removed.Count != 0;
+
+    /// <summary>
+    /// Every relation, for the public <c>ShapeHistory</c> (unit 10L1): each modified shape with its modifications, each
+    /// generating shape with its generations, then each removed shape, in the maps' order.
+    /// </summary>
+    internal IEnumerable<(Shape Initial, TRelationType Kind, IReadOnlyList<Shape> Results)> Relations()
+    {
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in _shapeToModified)
+        {
+            yield return (pair.Key, TRelationType.TRelationType_Modified, [.. pair.Value]);
+        }
+
+        foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in _shapeToGenerated)
+        {
+            yield return (pair.Key, TRelationType.TRelationType_Generated, [.. pair.Value]);
+        }
+
+        foreach (Shape shape in _removed)
+        {
+            yield return (shape, TRelationType.TRelationType_Removed, []);
+        }
+    }
 
     /// <summary>
     /// Merges the next history (from this history's results to a later algorithm's) into this one, so that it answers

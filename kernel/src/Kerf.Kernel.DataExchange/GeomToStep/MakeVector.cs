@@ -28,7 +28,7 @@ public sealed class MakeVector : GeometryRoot
     {
         Direction3D d = new Direction3D(v);
         double lFactor = localFactors.LengthFactor();
-        Make(new MakeDirection(d), v.Magnitude(), lFactor);
+        Make(new MakeDirection(d), v.Magnitude, lFactor);
     }
 
     /// <summary>A 3D vector (default factors).</summary>
@@ -45,7 +45,7 @@ public sealed class MakeVector : GeometryRoot
     {
         Direction2D d = new Direction2D(v);
         double lFactor = 1.0;
-        Make(new MakeDirection(d), v.Magnitude(), lFactor);
+        Make(new MakeDirection(d), v.Magnitude, lFactor);
     }
 
     /// <summary>A 2D vector.</summary>
@@ -64,7 +64,7 @@ public sealed class MakeVector : GeometryRoot
         v = gVector.Vec();
         Direction3D d = new Direction3D(v);
         double lFactor = localFactors.LengthFactor();
-        Make(new MakeDirection(d), v.Magnitude(), lFactor);
+        Make(new MakeDirection(d), v.Magnitude, lFactor);
     }
 
     /// <summary>A 3D vector (default factors).</summary>
@@ -83,7 +83,7 @@ public sealed class MakeVector : GeometryRoot
         v = gVector.Vec2d();
         Direction2D d = new Direction2D(v);
         double lFactor = 1.0;
-        Make(new MakeDirection(d), v.Magnitude(), lFactor);
+        Make(new MakeDirection(d), v.Magnitude, lFactor);
     }
 
     /// <summary>A 2D vector.</summary>

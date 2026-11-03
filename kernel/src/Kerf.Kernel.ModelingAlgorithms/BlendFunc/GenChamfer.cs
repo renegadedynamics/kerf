@@ -196,8 +196,8 @@ public abstract class GenChamfer : BlendFunction
         poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(sol[3], sol[4]);
         if (!istgt)
         {
-            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(Tangent2dOnS1().X(), Tangent2dOnS1().Y());
-            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(Tangent2dOnS2().X(), Tangent2dOnS2().Y());
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(Tangent2dOnS1().X, Tangent2dOnS1().Y);
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(Tangent2dOnS2().X, Tangent2dOnS2().Y);
         }
 
         poles[low] = PointOnS1();

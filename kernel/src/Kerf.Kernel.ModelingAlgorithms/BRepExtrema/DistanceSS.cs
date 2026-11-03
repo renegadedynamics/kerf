@@ -89,7 +89,7 @@ public sealed class DistanceSS
     {
         foreach (SolutionElem it in seqSol)
         {
-            double dst = it.Point().Distance(pt);
+            double dst = it.Point().DistanceTo(pt);
             if (dst <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return false;
@@ -273,8 +273,8 @@ public sealed class DistanceSS
     {
         bIsInfinit = false;
 
-        ShapeType type1 = s1.ShapeType();
-        ShapeType type2 = s2.ShapeType();
+        ShapeType type1 = s1.Type;
+        ShapeType type2 = s2.Type;
 
         Edge e;
         Face f;
@@ -316,7 +316,7 @@ public sealed class DistanceSS
 
         if (bRestrict)
         {
-            pSurf.Bounds(out u1, out u2, out v1, out v2);
+            pSurf.ParameterBounds(out u1, out u2, out v1, out v2);
             if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u1))
             {
                 bIsTrim = true;
@@ -545,7 +545,7 @@ public sealed class DistanceSS
                 return;
             }
 
-            if (pCurv.Continuity() == C0)
+            if (pCurv.Continuity == C0)
             {
                 double epsP = global::Kerf.Engine.Foundation.Precision.PConfusion();
 
@@ -627,7 +627,7 @@ public sealed class DistanceSS
                     {
                         double parameterOther = arrInterOther[i2];
                         Point3D pntOther = adaptorCurveOther.Value(parameterOther);
-                        double dst = pnt.Distance(pntOther);
+                        double dst = pnt.DistanceTo(pntOther);
                         if ((dst < dstRef - eps) || (Math.Abs(dst - dstRef) < eps))
                         {
                             if (mDstRef > dst)
@@ -656,7 +656,7 @@ public sealed class DistanceSS
             Vertex v = ShapeCasts.Vertex(it.Value());
             double vParam = Tool.Parameter(v, edge);
             if (Math.Abs(vParam - param) < pTol
-                && Tool.Pnt(v).Distance(sol) < Tool.Tolerance(v))
+                && Tool.Pnt(v).DistanceTo(sol) < Tool.Tolerance(v))
             {
                 return true;
             }
@@ -680,12 +680,12 @@ public sealed class DistanceSS
             return;
         }
 
-        switch (s1.ShapeType())
+        switch (s1.Type)
         {
             case ShapeType.Vertex:
             {
                 Vertex v1 = ShapeCasts.Vertex(s1);
-                switch (s2.ShapeType())
+                switch (s2.Type)
                 {
                     case ShapeType.Vertex:
                     {
@@ -713,7 +713,7 @@ public sealed class DistanceSS
             case ShapeType.Edge:
             {
                 Edge e1 = ShapeCasts.Edge(s1);
-                switch (s2.ShapeType())
+                switch (s2.Type)
                 {
                     case ShapeType.Vertex:
                     {
@@ -759,7 +759,7 @@ public sealed class DistanceSS
             case ShapeType.Face:
             {
                 Face f1 = ShapeCasts.Face(s1);
-                switch (s2.ShapeType())
+                switch (s2.Type)
                 {
                     case ShapeType.Vertex:
                     {
@@ -806,7 +806,7 @@ public sealed class DistanceSS
         Point3D p1 = Tool.Pnt(s1);
         Point3D p2 = Tool.Pnt(s2);
 
-        double dst = p1.Distance(p2);
+        double dst = p1.DistanceTo(p2);
         if ((dst < _dstRef - _eps) || (Math.Abs(dst - _dstRef) < _eps))
         {
             if (_dstRef > dst)
@@ -1120,7 +1120,7 @@ public sealed class DistanceSS
             return;
         }
 
-        if (pCurv.Continuity() == C0)
+        if (pCurv.Continuity == C0)
         {
             var seqSolution1 = new NCollection_Sequence<SolutionElem>();
             var seqSolution2 = new NCollection_Sequence<SolutionElem>();

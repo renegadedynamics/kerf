@@ -122,7 +122,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
     private static bool IsDraftable(in Shape theFace) => Tool.Surface(ShapeCasts.Face(theFace)) switch
     {
         PlaneSurface or CylindricalSurface or ConicalSurface => true,
-        TrimmedSurface t => t.BasisSurface() is PlaneSurface or CylindricalSurface or ConicalSurface,
+        TrimmedSurface t => t.BasisSurface is PlaneSurface or CylindricalSurface or ConicalSurface,
         _ => false,
     };
 
@@ -132,12 +132,12 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         Surface? aS = Tool.Surface(ShapeCasts.Face(theFace));
         if (aS is TrimmedSurface t)
         {
-            aS = t.BasisSurface();
+            aS = t.BasisSurface;
         }
         return aS switch
         {
-            PlaneSurface p => Math.Abs(p.Pln().Axis().Direction().Z()) < 1.0e-9,
-            ElementarySurface e and (CylindricalSurface or ConicalSurface) => e.Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1.0e-9),
+            PlaneSurface p => Math.Abs(p.Plane.Axis.Direction.Z) < 1.0e-9,
+            ElementarySurface e and (CylindricalSurface or ConicalSurface) => e.Axis.Direction.IsParallel(new Direction3D(0, 0, 1), 1.0e-9),
             _ => false,
         };
     }
@@ -432,7 +432,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             return "null";
         }
         int anI = theMap.IndexOf(theS) + 1;
-        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
+        return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation == Orientation.Reversed ? "r" : "");
     }
 
     internal Outcome RunNative(ShapeFixOracleRun theRun, Run theCase, N.TopoDS_Shape theInput)
@@ -444,11 +444,11 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         try
         {
             using var aDraft = new N.BRepOffsetAPI_DraftAngle(theInput);
-            using var aDir = new N.gp_Dir(theCase.Dir.X(), theCase.Dir.Y(), theCase.Dir.Z());
-            Point3D aLoc = theCase.Plane.Location();
-            Direction3D aNorm = theCase.Plane.Axis().Direction();
-            using var aPLoc = new N.gp_Pnt(aLoc.X(), aLoc.Y(), aLoc.Z());
-            using var aPDir = new N.gp_Dir(aNorm.X(), aNorm.Y(), aNorm.Z());
+            using var aDir = new N.gp_Dir(theCase.Dir.X, theCase.Dir.Y, theCase.Dir.Z);
+            Point3D aLoc = theCase.Plane.Location;
+            Direction3D aNorm = theCase.Plane.Axis.Direction;
+            using var aPLoc = new N.gp_Pnt(aLoc.X, aLoc.Y, aLoc.Z);
+            using var aPDir = new N.gp_Dir(aNorm.X, aNorm.Y, aNorm.Z);
             using var aPln = new N.gp_Pln(aPLoc, aPDir);
             for (int k = 0; k < theCase.Faces.Length; k++)
             {
@@ -537,7 +537,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             for (int i = 1; i <= anInMap.Count; i++)
             {
                 Shape aS = anInMap[i - 1];
-                if (aS.ShapeType() != ShapeType.Face)
+                if (aS.Type != ShapeType.Face)
                 {
                     continue;
                 }

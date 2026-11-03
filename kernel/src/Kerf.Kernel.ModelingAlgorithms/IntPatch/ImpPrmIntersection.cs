@@ -299,15 +299,15 @@ public partial class ImpPrmIntersection
             int nbSamples = t.NbSamples();
             math_Vector valf = new(1, 1), uVap = new(1, 2);
             t.SamplePoint(1, out Point2D s2d, out _);
-            uVap[1] = s2d.X();
-            uVap[2] = s2d.Y();
+            uVap[1] = s2d.X;
+            uVap[2] = s2d.Y;
             func.Value(uVap, valf);
             double rvalf = Math.CopySign(1.0, valf[1]);
             for (int i = 2; i <= nbSamples; ++i)
             {
                 t.SamplePoint(i, out s2d, out _);
-                uVap[1] = s2d.X();
-                uVap[2] = s2d.Y();
+                uVap[1] = s2d.X;
+                uVap[2] = s2d.Y;
                 func.Value(uVap, valf);
                 if (rvalf * valf[1] < 0.0)
                 {
@@ -624,9 +624,9 @@ public partial class ImpPrmIntersection
                                 currentarc = _solrst.Point(i).Arc();
                                 currentparam = _solrst.Point(i).Parameter();
                                 currentarc.D1(currentparam, out p2d, out d2d);
-                                tgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
-                                double squaremagnitudeVecNormale = vecNormale.SquareMagnitude();
+                                double squaremagnitudeVecNormale = vecNormale.SquareMagnitude;
                                 if (squaremagnitudeVecNormale > 1e-13)
                                 {
                                     dirNormale = new Direction3D(vecNormale);
@@ -730,9 +730,9 @@ public partial class ImpPrmIntersection
                                 currentarc = _solrst.Point(i).Arc();
                                 currentparam = _solrst.Point(i).Parameter();
                                 currentarc.D1(currentparam, out p2d, out d2d);
-                                tgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
-                                double squaremagnitudeVecNormale = vecNormale.SquareMagnitude();
+                                double squaremagnitudeVecNormale = vecNormale.SquareMagnitude;
                                 if (squaremagnitudeVecNormale > 1e-13)
                                 {
                                     dirNormale = new Direction3D(vecNormale);
@@ -824,7 +824,7 @@ public partial class ImpPrmIntersection
                             {
                                 if (dofirst)
                                 {
-                                    if (ptdeb.Value().Distance(ptbis.Value()) <= tolArc)
+                                    if (ptdeb.Value().DistanceTo(ptbis.Value()) <= tolArc)
                                     {
                                         ptdeb.SetMultiple(true);
                                         if (!ptbis.IsMultiple)
@@ -836,7 +836,7 @@ public partial class ImpPrmIntersection
                                 }
                                 if (dolast)
                                 {
-                                    if (ptfin.Value().Distance(ptbis.Value()) <= tolArc)
+                                    if (ptfin.Value().DistanceTo(ptbis.Value()) <= tolArc)
                                     {
                                         ptfin.SetMultiple(true);
                                         if (!ptbis.IsMultiple)
@@ -855,7 +855,7 @@ public partial class ImpPrmIntersection
                             {
                                 if (dofirst)
                                 {
-                                    if (ptdeb.Value().Distance(ptbis.Value()) <= tolArc)
+                                    if (ptdeb.Value().DistanceTo(ptbis.Value()) <= tolArc)
                                     {
                                         ptdeb.SetMultiple(true);
                                         if (!ptbis.IsMultiple)
@@ -867,7 +867,7 @@ public partial class ImpPrmIntersection
                                 }
                                 if (dolast)
                                 {
-                                    if (ptfin.Value().Distance(ptbis.Value()) <= tolArc)
+                                    if (ptfin.Value().DistanceTo(ptbis.Value()) <= tolArc)
                                     {
                                         ptfin.SetMultiple(true);
                                         if (!ptbis.IsMultiple)
@@ -906,7 +906,7 @@ public partial class ImpPrmIntersection
                     tol2 *= tol2;
                     Point3D pf = thesegm.FirstPoint().Value();
                     Point3D pl = thesegm.LastPoint().Value();
-                    if (pf.SquareDistance(pl) <= tol2)
+                    if (pf.SquareDistanceTo(pl) <= tol2)
                     {
                         // segment can be degenerated - check inner point
                         paramf = thesegm.FirstPoint().Parameter();
@@ -915,13 +915,13 @@ public partial class ImpPrmIntersection
                         Point3D pm;
                         if (reversed)
                         {
-                            surf1.D0(_p2d.X(), _p2d.Y(), out pm);
+                            surf1.D0(_p2d.X, _p2d.Y, out pm);
                         }
                         else
                         {
-                            surf2.D0(_p2d.X(), _p2d.Y(), out pm);
+                            surf2.D0(_p2d.X, _p2d.Y, out pm);
                         }
-                        if (pm.SquareDistance(pf) <= tol2)
+                        if (pm.SquareDistanceTo(pf) <= tol2)
                         {
                             // Degenerated
                             continue;
@@ -967,14 +967,14 @@ public partial class ImpPrmIntersection
                     if (!reversed)
                     { //-- typeS1 = Pln || Cyl || Sph || Cone
                         quad.Parameters(_Pp, ref _u1, ref _v1);
-                        _u2 = _p2d.X();
-                        _v2 = _p2d.Y();
+                        _u2 = _p2d.X;
+                        _v2 = _p2d.Y;
                     }
                     else
                     { //-- typeS1 != Pln && Cyl && Sph && Cone
                         quad.Parameters(_Pp, ref _u2, ref _v2);
-                        _u1 = _p2d.X();
-                        _v1 = _p2d.Y();
+                        _u1 = _p2d.X;
+                        _v1 = _p2d.Y;
                     }
                     _thepointAtBeg.SetParameters(_u1, _v1, _u2, _v2);
                     _thepointAtBeg.SetParameter(paramf);
@@ -993,11 +993,11 @@ public partial class ImpPrmIntersection
                     tgline = new Vector3D();
                     if (reversed)
                     {
-                        tgline = Vector3D.LinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
+                        tgline = Vector3D.LinearForm(_d2d.X, d1u1, _d2d.Y, d1v1);
                     }
                     else
                     {
-                        tgline = Vector3D.LinearForm(_d2d.X(), d1u2, _d2d.Y(), d1v2);
+                        tgline = Vector3D.LinearForm(_d2d.X, d1u2, _d2d.Y, d1v2);
                     }
                     _u1 = tgline.DotCross(norm2, norm1);
                     transitionOK = true;
@@ -1035,14 +1035,14 @@ public partial class ImpPrmIntersection
                     if (!reversed)
                     { //-- typeS1 = Pln || Cyl || Sph || Cone
                         quad.Parameters(_Pp, ref _u1, ref _v1);
-                        _u2 = _p2d.X();
-                        _v2 = _p2d.Y();
+                        _u2 = _p2d.X;
+                        _v2 = _p2d.Y;
                     }
                     else
                     { //-- typeS1 != Pln && Cyl && Sph && Cone
                         quad.Parameters(_Pp, ref _u2, ref _v2);
-                        _u1 = _p2d.X();
-                        _v1 = _p2d.Y();
+                        _u1 = _p2d.X;
+                        _v1 = _p2d.Y;
                     }
                     _thepointAtEnd.SetParameters(_u1, _v1, _u2, _v2);
                     _thepointAtEnd.SetParameter(paraml);
@@ -1061,11 +1061,11 @@ public partial class ImpPrmIntersection
                     tgline = new Vector3D();
                     if (reversed)
                     {
-                        tgline = Vector3D.LinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
+                        tgline = Vector3D.LinearForm(_d2d.X, d1u1, _d2d.Y, d1v1);
                     }
                     else
                     {
-                        tgline = Vector3D.LinearForm(_d2d.X(), d1u2, _d2d.Y(), d1v2);
+                        tgline = Vector3D.LinearForm(_d2d.X, d1u2, _d2d.Y, d1v2);
                     }
                     _u1 = tgline.DotCross(norm2, norm1);
                     transitionOK = true;
@@ -1142,10 +1142,10 @@ public partial class ImpPrmIntersection
                         {
                             prm = paramf + (j - 1) * (paraml - paramf) / (nbsample - 1);
                             arcsegm.D0(prm, out p2d);
-                            surf2.D0(p2d.X(), p2d.Y(), out ptpoly);
+                            surf2.D0(p2d.X, p2d.Y, out ptpoly);
 
                             quad.Parameters(ptpoly, ref u1, ref v1);
-                            p2s.SetValue(ptpoly, u1, v1, p2d.X(), p2d.Y());
+                            p2s.SetValue(ptpoly, u1, v1, p2d.X, p2d.Y);
                             Thelin.Add(p2s);
                         }
                     }
@@ -1155,10 +1155,10 @@ public partial class ImpPrmIntersection
                         {
                             prm = paramf + (j - 1) * (paraml - paramf) / (nbsample - 1);
                             arcsegm.D0(prm, out p2d);
-                            surf1.D0(p2d.X(), p2d.Y(), out ptpoly);
+                            surf1.D0(p2d.X, p2d.Y, out ptpoly);
 
                             quad.Parameters(ptpoly, ref u2, ref v2);
-                            p2s.SetValue(ptpoly, p2d.X(), p2d.Y(), u2, v2);
+                            p2s.SetValue(ptpoly, p2d.X, p2d.Y, u2, v2);
                             Thelin.Add(p2s);
                         }
                     }
@@ -1192,7 +1192,7 @@ public partial class ImpPrmIntersection
                             }
                             if (dofirst)
                             {
-                                if (ptdeb.Value().Distance(pStartf.Value()) <= tolArc)
+                                if (ptdeb.Value().DistanceTo(pStartf.Value()) <= tolArc)
                                 {
                                     ptdeb.SetMultiple(true);
                                     if (typ == PatchLineType.Walking)
@@ -1225,7 +1225,7 @@ public partial class ImpPrmIntersection
                                         ptdeb = ((RLine)slinj).Vertex(k);
                                     }
                                 }
-                                if (ptdeb.Value().Distance(pStartl.Value()) <= tolArc)
+                                if (ptdeb.Value().DistanceTo(pStartl.Value()) <= tolArc)
                                 {
                                     ptdeb.SetMultiple(true);
                                     if (typ == PatchLineType.Walking)
@@ -1348,12 +1348,12 @@ public partial class ImpPrmIntersection
                 // aDir can be equal to one of following four values only
                 //(because Reastriction line is boundary of rectangular surface):
                 // either {0, 1} or {0, -1} or {1, 0} or {-1, 0}.
-                Direction2D dir = arc.Line().Direction();
+                Direction2D dir = arc.Line().Direction;
 
                 double tol2d = otherSurf.UResolution(tol3d),
                        period = otherSurf.IsVPeriodic ? otherSurf.VPeriod() : 0.0;
 
-                if (Math.Abs(dir.X()) < 0.5)
+                if (Math.Abs(dir.X) < 0.5)
                 { // Restriction directs along V-direction
                     tol2d = otherSurf.VResolution(tol3d);
                     period = otherSurf.IsUPeriodic ? otherSurf.UPeriod() : 0.0;

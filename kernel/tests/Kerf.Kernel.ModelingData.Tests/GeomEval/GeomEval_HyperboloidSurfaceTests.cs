@@ -63,9 +63,9 @@ public class GeomEval_HyperboloidSurfaceTest
         const double aR1 = 2.0, aR2 = 3.0;
         HyperboloidSurface aSurf = new(anAx3, aR1, aR2);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
-        Assert.Equal(aR1, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aR1, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test EvalD0 at u=PI/2, v=0 for one-sheet: P = (0, R1, 0)
@@ -76,9 +76,9 @@ public class GeomEval_HyperboloidSurfaceTest
         const double aR1 = 2.0, aR2 = 3.0;
         HyperboloidSurface aSurf = new(anAx3, aR1, aR2);
         Point3D aP = aSurf.EvalD0(M_PI / 2.0, 0.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aR1, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aR1, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Two sheets at u=0, v=0: sinh(0)=0, cosh(0)=1 -> P = (0, 0, R1)
@@ -89,9 +89,9 @@ public class GeomEval_HyperboloidSurfaceTest
         const double aR1 = 2.0, aR2 = 3.0;
         HyperboloidSurface aSurf = new(anAx3, aR1, aR2, HyperboloidSurface.SheetMode.TwoSheets);
         Point3D aP = aSurf.EvalD0(0.0, 0.0);
-        Assert.Equal(0.0, aP.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aP.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(aR1, aP.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aP.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(aR1, aP.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Test derivative consistency: compare EvalD1 vs finite difference of EvalD0
@@ -121,7 +121,7 @@ public class GeomEval_HyperboloidSurfaceTest
     {
         CoordinateSystem anAx3 = new();
         HyperboloidSurface aSurf = new(anAx3, 1.0, 1.0);
-        aSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal(0.0, aU1, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(2.0 * M_PI, aU2, global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(aSurf.IsUPeriodic);

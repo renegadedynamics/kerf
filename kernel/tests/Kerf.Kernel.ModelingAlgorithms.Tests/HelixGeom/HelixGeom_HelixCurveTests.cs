@@ -22,27 +22,27 @@ public class HelixGeom_HelixCurveTests
 
         // Test D1
         aHelix.D1(aParam, out Point3D aP, out Vector3D aV1);
-        Assert.Equal(0.0, aP.X(), 1e-15);
-        Assert.Equal(2.0, aP.Y(), 1e-15);
-        Assert.True(aV1.Magnitude() > 0.0);
+        Assert.Equal(0.0, aP.X, 1e-15);
+        Assert.Equal(2.0, aP.Y, 1e-15);
+        Assert.True(aV1.Magnitude > 0.0);
 
         // Test D2
         aHelix.D2(aParam, out aP, out aV1, out Vector3D aV2);
-        Assert.Equal(0.0, aP.X(), 1e-15);
-        Assert.Equal(2.0, aP.Y(), 1e-15);
-        Assert.True(aV2.Magnitude() > 0.0);
+        Assert.Equal(0.0, aP.X, 1e-15);
+        Assert.Equal(2.0, aP.Y, 1e-15);
+        Assert.True(aV2.Magnitude > 0.0);
 
         // Test DN
         Vector3D aVN1 = aHelix.DN(aParam, 1);
         Vector3D aVN2 = aHelix.DN(aParam, 2);
 
-        Assert.Equal(aV1.X(), aVN1.X(), 1e-15);
-        Assert.Equal(aV1.Y(), aVN1.Y(), 1e-15);
-        Assert.Equal(aV1.Z(), aVN1.Z(), 1e-15);
+        Assert.Equal(aV1.X, aVN1.X, 1e-15);
+        Assert.Equal(aV1.Y, aVN1.Y, 1e-15);
+        Assert.Equal(aV1.Z, aVN1.Z, 1e-15);
 
-        Assert.Equal(aV2.X(), aVN2.X(), 1e-15);
-        Assert.Equal(aV2.Y(), aVN2.Y(), 1e-15);
-        Assert.Equal(aV2.Z(), aVN2.Z(), 1e-15);
+        Assert.Equal(aV2.X, aVN2.X, 1e-15);
+        Assert.Equal(aV2.Y, aVN2.Y, 1e-15);
+        Assert.Equal(aV2.Z, aVN2.Z, 1e-15);
     }
 
     [Fact]
@@ -72,11 +72,11 @@ public class HelixGeom_HelixCurveTests
         Point3D aP0 = aHelix.Value(0.0);
         Point3D aP1 = aHelix.Value(M_PI / 2.0);
 
-        Assert.Equal(2.0, aP0.X(), 1e-15);
-        Assert.Equal(0.0, aP0.Y(), 1e-15);
+        Assert.Equal(2.0, aP0.X, 1e-15);
+        Assert.Equal(0.0, aP0.Y, 1e-15);
 
-        Assert.Equal(0.0, aP1.X(), 1e-15);
-        Assert.Equal(-2.0, aP1.Y(), 1e-15); // Negative Y for counter-clockwise
+        Assert.Equal(0.0, aP1.X, 1e-15);
+        Assert.Equal(-2.0, aP1.Y, 1e-15); // Negative Y for counter-clockwise
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class HelixGeom_HelixCurveTests
         Assert.NotNull(aBSpline);
 
         // Check B-spline properties
-        Assert.True(aBSpline.Degree() <= 8);
+        Assert.True(aBSpline.Degree <= 8);
         Assert.True(aBSpline.PoleCount > 0);
     }
 
@@ -168,12 +168,12 @@ public class HelixGeom_HelixCurveTests
             Point3D aOrigPnt = aHelix.Value(aParam);
 
             // Map parameter to B-spline parameter space
-            double aBSplineParam = aBSpline.FirstParameter()
-                                   + i * (aBSpline.LastParameter() - aBSpline.FirstParameter()) / aNbSamples;
+            double aBSplineParam = aBSpline.FirstParameter
+                                   + i * (aBSpline.LastParameter - aBSpline.FirstParameter) / aNbSamples;
 
             aBSpline.D0(aBSplineParam, out Point3D aApproxPnt);
 
-            double aDistance = aOrigPnt.Distance(aApproxPnt);
+            double aDistance = aOrigPnt.DistanceTo(aApproxPnt);
             Assert.True(aDistance <= aMaxError * 2); // Allow some margin
         }
     }
@@ -202,7 +202,7 @@ public class HelixGeom_HelixCurveTests
         Assert.NotNull(aBSplineC2);
 
         // C2 curve should generally have higher degree
-        Assert.True(aBSplineC2.Degree() >= aBSplineC0.Degree());
+        Assert.True(aBSplineC2.Degree >= aBSplineC0.Degree);
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class HelixGeom_HelixCurveTests
         Assert.Equal(aTapered, aHelix.Value(2.0 * M_PI));
         var aFresh = new HelixCurve();
         aFresh.Load(0.0, 2.0 * M_PI, 5.0, 2.0, 0.0, true);
-        Assert.Equal(2.0, aFresh.Value(2.0 * M_PI).X(), 1e-12);
+        Assert.Equal(2.0, aFresh.Value(2.0 * M_PI).X, 1e-12);
     }
 
     /// <summary>Curves() hands out frozen curves; the builder's next Perform makes new ones.</summary>

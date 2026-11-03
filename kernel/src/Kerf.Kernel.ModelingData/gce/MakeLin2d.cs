@@ -50,7 +50,7 @@ public sealed class MakeLin2d : Root
     /// <summary>A line through two points; fails with gce_ConfusedPoints if they are coincident.</summary>
     public MakeLin2d(in Point2D p1, in Point2D p2)
     {
-        if (p1.Distance(p2) >= Constants.Resolution())
+        if (p1.DistanceTo(p2) >= Constants.Resolution())
         {
             _theLin2d = new Line2D(p1, new Direction2D(p2.XY() - p1.XY()));
             _theError = Done;
@@ -64,7 +64,7 @@ public sealed class MakeLin2d : Root
     /// <summary>A line parallel to Line through Point.</summary>
     public MakeLin2d(in Line2D line, in Point2D point)
     {
-        _theLin2d = new Line2D(point, line.Direction());
+        _theLin2d = new Line2D(point, line.Direction);
         _theError = Done;
     }
 
@@ -72,8 +72,8 @@ public sealed class MakeLin2d : Root
     // OCCT: documented as on the right for a positive distance; the code offsets along the left normal
     public MakeLin2d(in Line2D line, double dist)
     {
-        Point2D point = new(line.Location().XY() + dist * new Xy(-line.Direction().Y(), line.Direction().X()));
-        _theLin2d = new Line2D(point, line.Direction());
+        Point2D point = new(line.Location.XY() + dist * new Xy(-line.Direction.Y, line.Direction.X));
+        _theLin2d = new Line2D(point, line.Direction);
         _theError = Done;
     }
 

@@ -72,7 +72,7 @@ public class IntTools_ToolsTests
         Assert.True(IntersectionTools.HasInternalEdge(aWI));
 
         IntersectionTools.MakeFaceFromWireAndFace(aW, ShapeCasts.Face(aF.Reversed()), out Face aFNew);
-        Assert.Equal(Forward, aFNew.Orientation());
+        Assert.Equal(Forward, aFNew.Orientation);
         Assert.Same(Tool.Surface(aF), Tool.Surface(aFNew));
         Assert.False(aFNew.IsSame(aF));
         Assert.Equal(1, new Iterator(aFNew).More() ? 1 : 0);
@@ -114,8 +114,8 @@ public class IntTools_ToolsTests
         NCollection_Sequence<IntersectionCurve> aCvs = new();
         Assert.Equal(0, IntersectionTools.SplitCurve(new IntersectionCurve(new TrimmedCurve3D(aCircle, 0, 3), null, null, 1e-7, 1e-7), aCvs));
         Assert.Equal(2, IntersectionTools.SplitCurve(new IntersectionCurve(aClosed, null, null, 1e-6, 1e-5), aCvs));
-        Assert.Equal(Math.PI, aCvs.Value(1).Curve()!.LastParameter());
-        Assert.Equal(Math.PI, aCvs.Value(2).Curve()!.FirstParameter());
+        Assert.Equal(Math.PI, aCvs.Value(1).Curve()!.LastParameter);
+        Assert.Equal(Math.PI, aCvs.Value(2).Curve()!.FirstParameter);
         Assert.Equal(1e-6, aCvs.Value(2).Tolerance());
         Assert.Equal(1e-5, aCvs.Value(2).TangentialTolerance());
 
@@ -205,7 +205,7 @@ public class IntTools_ToolsTests
         double aT = 0, aTolP = 0, aTmin = 0, aTmax = 0;
         Assert.Equal(0, IntersectionTools.SegPln(aLin, 0, 3, 1e-3, aPln, 1e-2, ref aP, ref aT, ref aTolP, ref aTmin, ref aTmax));
         Assert.Equal(1.5, aT);
-        Assert.Equal(0.5, aP.Z());
+        Assert.Equal(0.5, aP.Z);
         Assert.Equal(1e-3 + 1e-2, aTolP);
         Assert.Equal(1.5 - 1e-2, aTmin);
         Assert.Equal(1.5 + 1e-2, aTmax);

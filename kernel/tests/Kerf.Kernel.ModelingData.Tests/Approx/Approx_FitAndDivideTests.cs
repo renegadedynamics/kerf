@@ -123,7 +123,7 @@ public class Approx_FitAndDivideTests
         for (int i = 0; i <= 10; i++)
         {
             double u = -1.0 + 0.3 * i;
-            Assert.True(Value3d(aCurve, aFirst, aLast, u).Distance(CubicFunction.P(u)) < 1.0e-9);
+            Assert.True(Value3d(aCurve, aFirst, aLast, u).DistanceTo(CubicFunction.P(u)) < 1.0e-9);
         }
     }
 
@@ -166,7 +166,7 @@ public class Approx_FitAndDivideTests
             {
                 double u = aFirst + (aLast - aFirst) * j / 8.0;
                 Point3D aP = Value3d(aCurve, aFirst, aLast, u);
-                Assert.True(aP.Distance(new Point3D(2.0 * Math.Cos(u), 2.0 * Math.Sin(u), 0.0)) < 10.0 * aTol);
+                Assert.True(aP.DistanceTo(new Point3D(2.0 * Math.Cos(u), 2.0 * Math.Sin(u), 0.0)) < 10.0 * aTol);
             }
         }
         Assert.Equal(2.0 * Math.PI, aPrevLast);
@@ -206,7 +206,7 @@ public class Approx_FitAndDivideTests
             MultiCurve aCurve = anApprox.Value(i);
             double u = 0.5 * (aFirst + aLast);
             Point2D aP = Value2d(aCurve, aFirst, aLast, u);
-            Assert.True(aP.Distance(new Point2D(1.5 * Math.Cos(u), 1.5 * Math.Sin(u))) < 10.0 * aTol);
+            Assert.True(aP.DistanceTo(new Point2D(1.5 * Math.Cos(u), 1.5 * Math.Sin(u))) < 10.0 * aTol);
         }
 
         // With one segment allowed, the cutting stops at once with the best curve found.

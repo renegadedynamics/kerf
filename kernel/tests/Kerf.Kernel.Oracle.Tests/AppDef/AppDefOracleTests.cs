@@ -47,8 +47,8 @@ public class AppDefOracleTests(ITestOutputHelper output)
             };
             if (aNoise > 0.0)
             {
-                aP = new Point3D(aP.X() + theOracle.Real(-aNoise, aNoise), aP.Y() + theOracle.Real(-aNoise, aNoise),
-                                aP.Z() + theOracle.Real(-aNoise, aNoise));
+                aP = new Point3D(aP.X + theOracle.Real(-aNoise, aNoise), aP.Y + theOracle.Real(-aNoise, aNoise),
+                                aP.Z + theOracle.Real(-aNoise, aNoise));
             }
             aPoints[i] = aP;
         }

@@ -288,12 +288,12 @@ public class BoundSortBox
         // Calculate the voxel indices for the bounding box: for one dimension, V = (Vmax / Lmax) * L, where
         // Vmax / Lmax is myCoeff(X|Y|Z) and L the distance from the grid start. One is added and subtracted to make
         // sure that the box is inside the voxel coordinates.
-        voxels[0] = Math.Clamp((int)((xMin - gridStart.X()) * _coeffX) - 1, 0, _resolution - 1);
-        voxels[1] = Math.Clamp((int)((yMin - gridStart.Y()) * _coeffY) - 1, 0, _resolution - 1);
-        voxels[2] = Math.Clamp((int)((zMin - gridStart.Z()) * _coeffZ) - 1, 0, _resolution - 1);
-        voxels[3] = Math.Clamp((int)((xMax - gridStart.X()) * _coeffX) + 1, 0, _resolution - 1);
-        voxels[4] = Math.Clamp((int)((yMax - gridStart.Y()) * _coeffY) + 1, 0, _resolution - 1);
-        voxels[5] = Math.Clamp((int)((zmax - gridStart.Z()) * _coeffZ) + 1, 0, _resolution - 1);
+        voxels[0] = Math.Clamp((int)((xMin - gridStart.X) * _coeffX) - 1, 0, _resolution - 1);
+        voxels[1] = Math.Clamp((int)((yMin - gridStart.Y) * _coeffY) - 1, 0, _resolution - 1);
+        voxels[2] = Math.Clamp((int)((zMin - gridStart.Z) * _coeffZ) - 1, 0, _resolution - 1);
+        voxels[3] = Math.Clamp((int)((xMax - gridStart.X) * _coeffX) + 1, 0, _resolution - 1);
+        voxels[4] = Math.Clamp((int)((yMax - gridStart.Y) * _coeffY) + 1, 0, _resolution - 1);
+        voxels[5] = Math.Clamp((int)((zmax - gridStart.Z) * _coeffZ) + 1, 0, _resolution - 1);
     }
 
     // Adds the box stored in myBoxes to the voxel map.

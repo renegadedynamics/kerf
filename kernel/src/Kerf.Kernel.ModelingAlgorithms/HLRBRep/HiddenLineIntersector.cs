@@ -135,7 +135,7 @@ public sealed class HiddenLineIntersector
             {
                 //-- a = a + d * da1;
                 myC1.D1(a1, out pa1, out va1);
-                double qwe = va1.Magnitude();
+                double qwe = va1.Magnitude;
                 if (qwe > 1e-12)
                 {
                     dd = pdist * decalagea1 / qwe;
@@ -160,7 +160,7 @@ public sealed class HiddenLineIntersector
             {
                 //-- b = b - d * db1;
                 myC1.D1(b1, out pb1, out vb1);
-                double qwe = vb1.Magnitude();
+                double qwe = vb1.Magnitude;
                 if (qwe > 1e-12)
                 {
                     dd = pdist * decalageb1 / qwe;
@@ -220,7 +220,7 @@ public sealed class HiddenLineIntersector
             {
                 //-- a = a + d * da2;
                 myC2.D1(a2, out pa2, out va2);
-                double qwe = va2.Magnitude();
+                double qwe = va2.Magnitude;
                 if (qwe > 1e-12)
                 {
                     dd = pdist * decalagea2 / qwe;
@@ -245,7 +245,7 @@ public sealed class HiddenLineIntersector
             {
                 //-- b = b - d * db2;
                 myC2.D1(b2, out pb2, out vb2);
-                double qwe = vb2.Magnitude();
+                double qwe = vb2.Magnitude;
                 if (qwe > 1e-12)
                 {
                     dd = pdist * decalageb2 / qwe;
@@ -290,10 +290,10 @@ public sealed class HiddenLineIntersector
 
             if (enBout)
             {
-                double a1a2 = (da1 != 0 || da2 != 0) ? pa1.Distance(pa2) : RealLast();
-                double a1b2 = (da1 != 0 || db2 != 0) ? pa1.Distance(pb2) : RealLast();
-                double b1a2 = (db1 != 0 || da2 != 0) ? pb1.Distance(pa2) : RealLast();
-                double b1b2 = (db1 != 0 || db2 != 0) ? pb1.Distance(pb2) : RealLast();
+                double a1a2 = (da1 != 0 || da2 != 0) ? pa1.DistanceTo(pa2) : RealLast();
+                double a1b2 = (da1 != 0 || db2 != 0) ? pa1.DistanceTo(pb2) : RealLast();
+                double b1a2 = (db1 != 0 || da2 != 0) ? pb1.DistanceTo(pa2) : RealLast();
+                double b1b2 = (db1 != 0 || db2 != 0) ? pb1.DistanceTo(pb2) : RealLast();
 
                 int cote = 1;
                 double mindist = a1a2; //-- cas 1

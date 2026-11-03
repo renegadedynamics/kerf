@@ -240,7 +240,7 @@ public sealed class TangentialDeflection
     private static double EstimAngl(in Point3D p1, in Point3D pm, in Point3D p2)
     {
         Vector3D v1 = new(p1, pm), v2 = new(pm, p2);
-        double l = v1.Magnitude() * v2.Magnitude();
+        double l = v1.Magnitude * v2.Magnitude;
         if (l > Constants.Resolution())
         {
             return v1.CrossMagnitude(v2) / l;
@@ -275,9 +275,9 @@ public sealed class TangentialDeflection
     {
         Vector3D t, n;
         D2(c, u, out p, out t, out n);
-        double lt = t.Magnitude();
+        double lt = t.Magnitude;
         double lTol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        if (lt > lTol && n.Magnitude() > lTol)
+        if (lt > lTol && n.Magnitude > lTol)
         {
             double lc = n.CrossMagnitude(t);
             double ln = lc / lt;
@@ -315,7 +315,7 @@ public sealed class TangentialDeflection
     private void PerformCircular(CurveAdaptorBase c)
     {
         // akm 8/01/02 : check the radius before divide by it
-        double dfR = c.Circle().Radius();
+        double dfR = c.Circle().Radius;
         double du = TangentialDeflection.ArcAngularStep(dfR,
                                                                _curvatureDeflection,
                                                                _angularDeflection,
@@ -467,13 +467,13 @@ public sealed class TangentialDeflection
                     case BSplineCurve:
                     {
                         BSplineCurve3D bs = c.BSpline();
-                        nbPoints = Max(bs.Degree() + 1, nbPoints);
+                        nbPoints = Max(bs.Degree + 1, nbPoints);
                         break;
                     }
                     case BezierCurve:
                     {
                         BezierCurve3D bz = c.Bezier();
-                        nbPoints = Max(bz.Degree() + 1, nbPoints);
+                        nbPoints = Max(bz.Degree + 1, nbPoints);
                         break;
                     }
                     default:
@@ -833,7 +833,7 @@ public sealed class TangentialDeflection
             {
                 if (umax - u1 > _uTol && u2 - umax > _uTol)
                 {
-                    if (p1.SquareDistance(middlePoint) > minLen2 && p2.SquareDistance(middlePoint) > minLen2)
+                    if (p1.SquareDistanceTo(middlePoint) > minLen2 && p2.SquareDistanceTo(middlePoint) > minLen2)
                     {
                         _parameters.InsertAfter(i, umax);
                         _points.InsertAfter(i, middlePoint);
@@ -904,9 +904,9 @@ public sealed class TangentialDeflection
     {
         Vector3D t, n;
         D2(c, u, out p, out t, out n);
-        double lt = t.Magnitude();
+        double lt = t.Magnitude;
         double lTol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        if (lt > lTol && n.Magnitude() > lTol)
+        if (lt > lTol && n.Magnitude > lTol)
         {
             double lc = n.CrossMagnitude(t);
             double ln = lc / lt;
@@ -944,7 +944,7 @@ public sealed class TangentialDeflection
     private void PerformCircular(Curve2DAdaptorBase c)
     {
         // akm 8/01/02 : check the radius before divide by it
-        double dfR = c.Circle().Radius();
+        double dfR = c.Circle().Radius;
         double du = TangentialDeflection.ArcAngularStep(dfR,
                                                                _curvatureDeflection,
                                                                _angularDeflection,
@@ -1096,13 +1096,13 @@ public sealed class TangentialDeflection
                     case BSplineCurve:
                     {
                         BSplineCurve2D bs = c.BSpline();
-                        nbPoints = Max(bs.Degree() + 1, nbPoints);
+                        nbPoints = Max(bs.Degree + 1, nbPoints);
                         break;
                     }
                     case BezierCurve:
                     {
                         BezierCurve2D bz = c.Bezier();
-                        nbPoints = Max(bz.Degree() + 1, nbPoints);
+                        nbPoints = Max(bz.Degree + 1, nbPoints);
                         break;
                     }
                     default:
@@ -1462,7 +1462,7 @@ public sealed class TangentialDeflection
             {
                 if (umax - u1 > _uTol && u2 - umax > _uTol)
                 {
-                    if (p1.SquareDistance(middlePoint) > minLen2 && p2.SquareDistance(middlePoint) > minLen2)
+                    if (p1.SquareDistanceTo(middlePoint) > minLen2 && p2.SquareDistanceTo(middlePoint) > minLen2)
                     {
                         _parameters.InsertAfter(i, umax);
                         _points.InsertAfter(i, middlePoint);

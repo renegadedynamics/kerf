@@ -23,7 +23,7 @@ namespace Kerf.Geometry;
 /// <remarks>
 /// <para>
 /// OCCT returns its pole, weight and knot arrays by const reference. The port returns them to callers as
-/// <see cref="PackedList{T}"/> copies (<see cref="Poles()"/>, <see cref="Knots()"/>, ...), and gives ported code
+/// <see cref="PackedList{T}"/> copies (<see cref="Poles"/>, <see cref="Knots"/>, ...), and gives ported code
 /// the arrays themselves through internal <c>Internal...()</c> accessors, which must not be modified (decision 131).
 /// The arrays are indexed from 1.
 /// </para>
@@ -49,7 +49,7 @@ public class BSplineCurve2D : BoundedCurve2D
     private bool _maxDerivInvOk = false;
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable (decision 507).</summary>
     internal RepCurveDesc2D.Base? EvalRepresentation() => _evalRep;
@@ -76,7 +76,7 @@ public class BSplineCurve2D : BoundedCurve2D
                                        int degree,
                                        bool periodic)
     {
-        if (degree < 1 || degree > BSplineCurve2D.MaxDegree())
+        if (degree < 1 || degree > BSplineCurve2D.MaxDegree)
         {
             throw new ConstructionErrorException("BSpline curve: invalid degree");
         }
@@ -235,7 +235,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The maximum degree of a B-spline curve: 25.</summary>
-    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
+    public static int MaxDegree => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Raises the degree to Degree, keeping the shape of the curve.</summary>
     /// <exception cref="ConstructionErrorException">Degree is below the current degree or above MaxDegree().</exception>
@@ -247,7 +247,7 @@ public class BSplineCurve2D : BoundedCurve2D
             return;
         }
 
-        if (degree < _deg || degree > BSplineCurve2D.MaxDegree())
+        if (degree < _deg || degree > BSplineCurve2D.MaxDegree)
         {
             throw new ConstructionErrorException("BSpline curve: IncreaseDegree: bad degree value");
         }
@@ -727,7 +727,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>FirstParameter() + LastParameter() - U.</summary>
-    public sealed override double ReversedParameter(double u) => (FirstParameter() + LastParameter() - u);
+    public sealed override double ReversedParameter(double u) => (FirstParameter + LastParameter - u);
 
     // Precision::PConfusion() as a constant, for the default argument of Segment.
     private const double Precision_PConfusion = 1.0e-7 * 0.01;
@@ -757,7 +757,7 @@ public class BSplineCurve2D : BoundedCurve2D
         // define param distance to keep (eap, Apr 18 2002, occ311)
         if (_periodic)
         {
-            double period = LastParameter() - FirstParameter();
+            double period = LastParameter - FirstParameter;
             du = u2 - u1;
             if (du - period > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
@@ -796,7 +796,7 @@ public class BSplineCurve2D : BoundedCurve2D
         //-- DBB
 
         double absUMax = Max(Math.Abs(newU1), Math.Abs(newU2));
-        absUMax = Max(absUMax, Max(Math.Abs(FirstParameter()), Math.Abs(LastParameter())));
+        absUMax = Max(absUMax, Max(Math.Abs(FirstParameter), Math.Abs(LastParameter)));
 
         double eps = Max(Epsilon(absUMax), tolerance);
 
@@ -986,7 +986,7 @@ public class BSplineCurve2D : BoundedCurve2D
     /// Brings the parameter of a periodic curve into [FirstParameter(), LastParameter()] by adding or
     /// subtracting periods; does nothing on a non-periodic curve.
     /// </summary>
-    public void PeriodicNormalization(ref double parameter)
+    internal void PeriodicNormalization(ref double parameter)
     {
         double period;
 
@@ -1401,7 +1401,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>True if the curve is CN (from the multiplicities of its interior knots).</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCN(int n)
+    internal sealed override bool IsCN(int n)
     {
         Standard_RangeError_Raise_if(n < 0, "Geom2d_BSplineCurve::IsCN");
 
@@ -1434,7 +1434,7 @@ public class BSplineCurve2D : BoundedCurve2D
     /// left and right tangents are non-null and within theAngTol radians (and, for a periodic curve whose range
     /// meets the bounds, at the start/end point too).
     /// </summary>
-    public bool IsG1(double tf, double tl, double angTol)
+    internal bool IsG1(double tf, double tl, double angTol)
     {
         if (IsCN(1))
         {
@@ -1442,7 +1442,7 @@ public class BSplineCurve2D : BoundedCurve2D
         }
 
         int start = FirstUKnotIndex() + 1, finish = LastUKnotIndex() - 1;
-        int deg = Degree();
+        int deg = Degree;
         for (int nKnot = start; nKnot <= finish; nKnot++)
         {
             double tpar = Knot(nKnot);
@@ -1467,12 +1467,12 @@ public class BSplineCurve2D : BoundedCurve2D
             LocalD1(tpar, nKnot - 1, nKnot, out p1, out v1);
             LocalD1(tpar, nKnot, nKnot + 1, out p2, out v2);
 
-            if ((v1.SquareMagnitude() <= Constants.Resolution()) || v2.SquareMagnitude() <= Constants.Resolution())
+            if ((v1.SquareMagnitude <= Constants.Resolution()) || v2.SquareMagnitude <= Constants.Resolution())
             {
                 return false;
             }
 
-            if (Math.Abs(v1.Angle(v2)) > angTol)
+            if (Math.Abs(v1.AngleTo(v2)) > angTol)
             {
                 return false;
             }
@@ -1483,7 +1483,7 @@ public class BSplineCurve2D : BoundedCurve2D
             return true;
         }
 
-        double firstParam = FirstParameter(), lastParam = LastParameter();
+        double firstParam = FirstParameter, lastParam = LastParameter;
 
         if (((firstParam - tf) * (tl - firstParam) < 0.0)
             && ((lastParam - tf) * (tl - lastParam) < 0.0))
@@ -1501,12 +1501,12 @@ public class BSplineCurve2D : BoundedCurve2D
         D1(Knot(FirstUKnotIndex()), out p, out v1b);
         D1(Knot(LastUKnotIndex()), out p, out v2b);
 
-        if ((v1b.SquareMagnitude() <= Constants.Resolution()) || v2b.SquareMagnitude() <= Constants.Resolution())
+        if ((v1b.SquareMagnitude <= Constants.Resolution()) || v2b.SquareMagnitude <= Constants.Resolution())
         {
             return false;
         }
 
-        if (Math.Abs(v1b.Angle(v2b)) > angTol)
+        if (Math.Abs(v1b.AngleTo(v2b)) > angTol)
         {
             return false;
         }
@@ -1515,18 +1515,18 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>True if the start and end points are within Precision::Computational() (squared distance).</summary>
-    public sealed override bool IsClosed => StartPoint().SquareDistance(EndPoint()) <= global::Kerf.Engine.Foundation.Precision.Computational();
+    public sealed override bool IsClosed => StartPoint.SquareDistanceTo(EndPoint) <= global::Kerf.Engine.Foundation.Precision.Computational();
 
     /// <summary>True if the curve is periodic.</summary>
     public sealed override bool IsPeriodic => _periodic;
 
     /// <summary>The global continuity, from the highest interior knot multiplicity (C3 at most, or CN).</summary>
-    public sealed override Continuity Continuity() => _smooth;
+    public sealed override Continuity Continuity => _smooth;
 
     /// <summary>The degree.</summary>
-    public int Degree() => _deg;
+    public int Degree => _deg;
 
-    public sealed override Point2D EvalD0(double u)
+    internal sealed override Point2D EvalD0(double u)
     {
         Point2D evalRepResult;
         if (RepUtils2D.TryEvalCurveD0(_evalRep, u, out evalRepResult))
@@ -1547,7 +1547,7 @@ public class BSplineCurve2D : BoundedCurve2D
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 evalRepResult;
         if (RepUtils2D.TryEvalCurveD1(_evalRep, u, out evalRepResult))
@@ -1576,7 +1576,7 @@ public class BSplineCurve2D : BoundedCurve2D
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 evalRepResult;
         if (RepUtils2D.TryEvalCurveD2(_evalRep, u, out evalRepResult))
@@ -1606,7 +1606,7 @@ public class BSplineCurve2D : BoundedCurve2D
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 evalRepResult;
         if (RepUtils2D.TryEvalCurveD3(_evalRep, u, out evalRepResult))
@@ -1638,7 +1638,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -1655,20 +1655,23 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The last pole if the last knot has multiplicity Degree() + 1, the point at LastParameter() otherwise.</summary>
-    public sealed override Point2D EndPoint()
+    public sealed override Point2D EndPoint
     {
-        if (_mults.Value(_knots.Upper()) == _deg + 1)
+        get
         {
-            return _poles.Value(_poles.Upper());
-        }
-        else
-        {
-            return Value(LastParameter());
+            if (_mults.Value(_knots.Upper()) == _deg + 1)
+            {
+                return _poles.Value(_poles.Upper());
+            }
+            else
+            {
+                return Value(LastParameter);
+            }
         }
     }
 
     /// <summary>The index of the knot giving FirstParameter() (1 for a periodic curve).</summary>
-    public int FirstUKnotIndex()
+    internal int FirstUKnotIndex()
     {
         if (_periodic)
         {
@@ -1681,22 +1684,22 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The flat knot of index Degree() + 1.</summary>
-    public sealed override double FirstParameter() => _flatKnots.Value(_deg + 1);
+    public sealed override double FirstParameter => _flatKnots.Value(_deg + 1);
 
     /// <summary>The knot of index Index.</summary>
     /// <exception cref="OutOfRangeException">Index is outside [1, NbKnots()].</exception>
-    public double Knot(int index)
+    internal double Knot(int index)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > _knots.Length(), "Geom2d_BSplineCurve::Knot");
         return _knots.Value(index);
     }
 
     /// <summary>The knot distribution: NonUniform, Uniform, QuasiUniform or PiecewiseBezier.</summary>
-    public BSplKnotDistribution KnotDistribution() => _knotSet;
+    internal BSplKnotDistribution KnotDistribution => _knotSet;
 
     /// <summary>Copies the knots of K's index range into K.</summary>
     /// <exception cref="DomainErrorException">K's range is outside [1, NbKnots()].</exception>
-    public void Knots(NCollection_Array1<double> k)
+    internal void CopyKnotsTo(NCollection_Array1<double> k)
     {
         Standard_DomainError_Raise_if(k.Lower() < _knots.Lower() || k.Upper() > _knots.Upper(),
                                       "Geom2d_BSplineCurve::Knots");
@@ -1707,14 +1710,14 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The knots (a copy; OCCT returns a reference to its array).</summary>
-    public IReadOnlyList<double> Knots() => _knots.ToPackedList();
+    public IReadOnlyList<double> Knots => _knots.ToPackedList();
 
     /// <summary>The knot array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnots() => _knots;
 
     /// <summary>Copies the flat knots of K's index range into K.</summary>
     /// <exception cref="DomainErrorException">K's range is outside the flat knots' range.</exception>
-    public void KnotSequence(NCollection_Array1<double> k)
+    internal void CopyKnotSequenceTo(NCollection_Array1<double> k)
     {
         Standard_DomainError_Raise_if(k.Lower() < _flatKnots.Lower() || k.Upper() > _flatKnots.Upper(),
                                       "Geom2d_BSplineCurve::KnotSequence");
@@ -1725,13 +1728,13 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The flat knots, each knot repeated by its multiplicity (a copy).</summary>
-    public IReadOnlyList<double> KnotSequence() => _flatKnots.ToPackedList();
+    public IReadOnlyList<double> KnotSequence => _flatKnots.ToPackedList();
 
     /// <summary>The flat knot array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<double> InternalKnotSequence() => _flatKnots;
 
     /// <summary>The index of the knot giving LastParameter() (NbKnots() for a periodic curve).</summary>
-    public int LastUKnotIndex()
+    internal int LastUKnotIndex()
     {
         if (_periodic)
         {
@@ -1744,11 +1747,11 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The flat knot of index NbFlatKnots - Degree().</summary>
-    public sealed override double LastParameter() => _flatKnots.Value(_flatKnots.Upper() - _deg);
+    public sealed override double LastParameter => _flatKnots.Value(_flatKnots.Upper() - _deg);
 
     /// <summary>The point of parameter U, computed on the span between the knots FromK1 and ToK2.</summary>
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
-    public Point2D LocalValue(double u, int fromK1, int toK2)
+    internal Point2D LocalValue(double u, int fromK1, int toK2)
     {
         Point2D p;
         LocalD0(u, fromK1, toK2, out p);
@@ -1757,7 +1760,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The point of parameter U, computed on the span between the knots FromK1 and ToK2.</summary>
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
-    public void LocalD0(double U, int fromK1, int toK2, out Point2D p)
+    internal void LocalD0(double U, int fromK1, int toK2, out Point2D p)
     {
         Standard_DomainError_Raise_if(fromK1 == toK2, "Geom2d_BSplineCurve::LocalValue");
 
@@ -1779,7 +1782,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The point and first derivative at U, computed on the span between the knots FromK1 and ToK2.</summary>
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
-    public void LocalD1(double U, int fromK1, int toK2, out Point2D p, out Vector2D v1)
+    internal void LocalD1(double U, int fromK1, int toK2, out Point2D p, out Vector2D v1)
     {
         Standard_DomainError_Raise_if(fromK1 == toK2, "Geom2d_BSplineCurve::LocalD1");
 
@@ -1802,7 +1805,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The point and first two derivatives at U, computed on the span between the knots FromK1 and ToK2.</summary>
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
-    public void LocalD2(double U, int fromK1, int toK2, out Point2D p, out Vector2D v1, out Vector2D v2)
+    internal void LocalD2(double U, int fromK1, int toK2, out Point2D p, out Vector2D v1, out Vector2D v2)
     {
         Standard_DomainError_Raise_if(fromK1 == toK2, "Geom2d_BSplineCurve::LocalD2");
 
@@ -1826,7 +1829,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The point and first three derivatives at U, computed on the span between the knots FromK1 and ToK2.</summary>
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
-    public void LocalD3(double U,
+    internal void LocalD3(double U,
                         int fromK1,
                         int toK2,
                         out Point2D p,
@@ -1857,7 +1860,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The Nth derivative at U, computed on the span between the knots FromK1 and ToK2.</summary>
     /// <exception cref="DomainErrorException">FromK1 == ToK2.</exception>
-    public Vector2D LocalDN(double U, int fromK1, int toK2, int n)
+    internal Vector2D LocalDN(double U, int fromK1, int toK2, int n)
     {
         // OCCT: the message says LocalD3 (cosmetic).
         Standard_DomainError_Raise_if(fromK1 == toK2, "Geom2d_BSplineCurve::LocalD3");
@@ -1884,7 +1887,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The multiplicity of the knot of index Index.</summary>
     /// <exception cref="OutOfRangeException">Index is outside [1, NbKnots()].</exception>
-    public int Multiplicity(int index)
+    internal int Multiplicity(int index)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > _mults.Length(),
                                      "Geom2d_BSplineCurve::Multiplicity");
@@ -1893,7 +1896,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>Copies the multiplicities into M.</summary>
     /// <exception cref="DimensionErrorException">M's length is not NbKnots().</exception>
-    public void Multiplicities(NCollection_Array1<int> m)
+    internal void CopyMultiplicitiesTo(NCollection_Array1<int> m)
     {
         Standard_DimensionError_Raise_if(m.Length() != _mults.Length(),
                                          "Geom2d_BSplineCurve::Multiplicities");
@@ -1901,7 +1904,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The multiplicities (a copy).</summary>
-    public IReadOnlyList<int> Multiplicities() => _mults.ToPackedList();
+    public IReadOnlyList<int> Multiplicities => _mults.ToPackedList();
 
     /// <summary>The multiplicity array itself, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<int> InternalMultiplicities() => _mults;
@@ -1914,7 +1917,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>The pole of index Index.</summary>
     /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
-    public Point2D Pole(int index)
+    internal Point2D Pole(int index)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(), "Geom2d_BSplineCurve::Pole");
         return _poles.Value(index);
@@ -1922,34 +1925,37 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>Copies the poles into P.</summary>
     /// <exception cref="DimensionErrorException">P's length is not NbPoles().</exception>
-    public void Poles(NCollection_Array1<Point2D> p)
+    internal void CopyPolesTo(NCollection_Array1<Point2D> p)
     {
         Standard_DimensionError_Raise_if(p.Length() != _poles.Length(), "Geom2d_BSplineCurve::Poles");
         p.Assign(_poles);
     }
 
     /// <summary>The poles (a copy; OCCT returns a reference to its array).</summary>
-    public IReadOnlyList<Point2D> Poles() => _poles.ToPackedList();
+    public IReadOnlyList<Point2D> Poles => _poles.ToPackedList();
 
     /// <summary>The pole array itself, indexed from 1, for ported code: don't modify it (decision 131).</summary>
     internal NCollection_Array1<Point2D> InternalPoles() => _poles;
 
     /// <summary>The first pole if the first knot has multiplicity Degree() + 1, the point at FirstParameter() otherwise.</summary>
-    public sealed override Point2D StartPoint()
+    public sealed override Point2D StartPoint
     {
-        if (_mults.Value(1) == _deg + 1)
+        get
         {
-            return _poles.Value(1);
-        }
-        else
-        {
-            return Value(FirstParameter());
+            if (_mults.Value(1) == _deg + 1)
+            {
+                return _poles.Value(1);
+            }
+            else
+            {
+                return Value(FirstParameter);
+            }
         }
     }
 
     /// <summary>The weight of the pole of index Index (1 if the curve is not rational).</summary>
     /// <exception cref="OutOfRangeException">Index is outside [1, NbPoles()].</exception>
-    public double Weight(int index)
+    internal double Weight(int index)
     {
         Standard_OutOfRange_Raise_if(index < 1 || index > _poles.Length(),
                                      "Geom2d_BSplineCurve::Weight");
@@ -1965,7 +1971,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>Copies the weights into W (ones if the curve is not rational).</summary>
     /// <exception cref="DimensionErrorException">W's length is not NbPoles().</exception>
-    public void Weights(NCollection_Array1<double> w)
+    internal void CopyWeightsTo(NCollection_Array1<double> w)
     {
         Standard_DimensionError_Raise_if(w.Length() != _poles.Length(), "Geom2d_BSplineCurve::Weights");
         if (IsRational)
@@ -1984,7 +1990,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), or null if the curve is not rational (OCCT's <c>BSplCLib::NoWeights()</c>).</summary>
-    public IReadOnlyList<double>? Weights() => IsRational ? _weights.ToPackedList() : null;
+    internal IReadOnlyList<double>? WeightsOrNull() => IsRational ? _weights.ToPackedList() : null;
 
     /// <summary>The weight array for ported code, or null if the curve is not rational: don't modify it.</summary>
     internal NCollection_Array1<double>? InternalWeights()
@@ -1997,7 +2003,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>The weights (a copy), ones if the curve is not rational.</summary>
-    public IReadOnlyList<double> WeightsArray() => _weights.ToPackedList();
+    public IReadOnlyList<double> Weights => _weights.ToPackedList();
 
     /// <summary>The weight array (shared unit weights if not rational) for ported code: don't modify it.</summary>
     internal NCollection_Array1<double> InternalWeightsArray() => _weights;
@@ -2023,7 +2029,7 @@ public class BSplineCurve2D : BoundedCurve2D
     /// ParametricTolerance of U, or the indexes of the knots around U (0 and 1, or NbKnots and NbKnots + 1,
     /// outside the range).
     /// </summary>
-    public void LocateU(double u,
+    internal void LocateU(double u,
                         double parametricTolerance,
                         out int i1,
                         out int i2,
@@ -2079,7 +2085,7 @@ public class BSplineCurve2D : BoundedCurve2D
     /// The parametric tolerance UTolerance such that |t1 - t0| &lt; UTolerance implies
     /// |C(t1) - C(t0)| &lt; ToleranceUV.
     /// </summary>
-    public void Resolution(double toleranceUV, out double uTolerance)
+    internal void Resolution(double toleranceUV, out double uTolerance)
     {
         // OCCT.NET: a cache filled on a possibly shared curve; the flag is published after the value.
         if (!Volatile.Read(ref _maxDerivInvOk))
@@ -2137,7 +2143,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the multiplicity of the knot of index Index raised to M.</summary>
-    public BSplineCurve2D MultiplicityIncreased(int index, int m)
+    internal BSplineCurve2D MultiplicityIncreased(int index, int m)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.IncreaseMultiplicity(index, m);
@@ -2145,7 +2151,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the multiplicities of the knots of indexes I1 to I2 raised to M.</summary>
-    public BSplineCurve2D MultiplicityIncreased(int i1, int i2, int m)
+    internal BSplineCurve2D MultiplicityIncreased(int i1, int i2, int m)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.IncreaseMultiplicity(i1, i2, m);
@@ -2153,7 +2159,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the multiplicities of the knots of indexes I1 to I2 incremented by Step.</summary>
-    public BSplineCurve2D MultiplicityIncremented(int i1, int i2, int step)
+    internal BSplineCurve2D MultiplicityIncremented(int i1, int i2, int step)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.IncrementMultiplicity(i1, i2, step);
@@ -2161,7 +2167,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knot U inserted (see InsertKnot).</summary>
-    public BSplineCurve2D KnotInserted(double u, int m = 1, double parametricTolerance = 0.0)
+    internal BSplineCurve2D KnotInserted(double u, int m = 1, double parametricTolerance = 0.0)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.InsertKnot(u, m, parametricTolerance);
@@ -2169,7 +2175,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knots Knots inserted (see InsertKnots; Add defaults to false, as in OCCT).</summary>
-    public BSplineCurve2D KnotsInserted(NCollection_Array1<double> knots,
+    internal BSplineCurve2D KnotsInserted(NCollection_Array1<double> knots,
                                              NCollection_Array1<int> mults,
                                              double parametricTolerance = 0.0,
                                              bool add = false)
@@ -2180,14 +2186,14 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the multiplicity of the knot of index Index lowered to M, or null if that changes the curve by more than Tolerance.</summary>
-    public BSplineCurve2D? KnotRemoved(int index, int m, double tolerance)
+    internal BSplineCurve2D? KnotRemoved(int index, int m, double tolerance)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         return copy.RemoveKnot(index, m, tolerance) ? copy : null;
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted after the pole of index Index.</summary>
-    public BSplineCurve2D PoleInsertedAfter(int index, in Point2D p, double weight = 1.0)
+    internal BSplineCurve2D PoleInsertedAfter(int index, in Point2D p, double weight = 1.0)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.InsertPoleAfter(index, p, weight);
@@ -2195,7 +2201,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole P (weight Weight) inserted before the pole of index Index.</summary>
-    public BSplineCurve2D PoleInsertedBefore(int index, in Point2D p, double weight = 1.0)
+    internal BSplineCurve2D PoleInsertedBefore(int index, in Point2D p, double weight = 1.0)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.InsertPoleBefore(index, p, weight);
@@ -2203,7 +2209,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy without the pole of index Index.</summary>
-    public BSplineCurve2D PoleRemoved(int index)
+    internal BSplineCurve2D PoleRemoved(int index)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.RemovePole(index);
@@ -2219,7 +2225,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knot of index Index changed to K.</summary>
-    public BSplineCurve2D WithKnot(int index, double k)
+    internal BSplineCurve2D WithKnot(int index, double k)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetKnot(index, k);
@@ -2227,7 +2233,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knots K.</summary>
-    public BSplineCurve2D WithKnots(NCollection_Array1<double> k)
+    internal BSplineCurve2D WithKnots(NCollection_Array1<double> k)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetKnots(k);
@@ -2235,7 +2241,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knot of index Index raised to multiplicity M and changed to K.</summary>
-    public BSplineCurve2D WithKnot(int index, double k, int m)
+    internal BSplineCurve2D WithKnot(int index, double k, int m)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetKnot(index, k, m);
@@ -2251,7 +2257,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy of this periodic curve with its origin at the knot of index Index.</summary>
-    public BSplineCurve2D WithOrigin(int index)
+    internal BSplineCurve2D WithOrigin(int index)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetOrigin(index);
@@ -2267,7 +2273,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P.</summary>
-    public BSplineCurve2D WithPole(int index, in Point2D p)
+    internal BSplineCurve2D WithPole(int index, in Point2D p)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetPole(index, p);
@@ -2275,7 +2281,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P, of weight W.</summary>
-    public BSplineCurve2D WithPole(int index, in Point2D p, double w)
+    internal BSplineCurve2D WithPole(int index, in Point2D p, double w)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetPole(index, p, w);
@@ -2283,7 +2289,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the weight of the pole of index Index changed to W.</summary>
-    public BSplineCurve2D WithWeight(int index, double w)
+    internal BSplineCurve2D WithWeight(int index, double w)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetWeight(index, w);
@@ -2291,7 +2297,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy whose point of parameter U is moved to P (see MovePoint).</summary>
-    public BSplineCurve2D PointMoved(double u,
+    internal BSplineCurve2D PointMoved(double u,
                                           in Point2D p,
                                           int index1,
                                           int index2,
@@ -2304,7 +2310,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy whose point and tangent at U are moved (see MovePointAndTangent).</summary>
-    public BSplineCurve2D PointAndTangentMoved(double u,
+    internal BSplineCurve2D PointAndTangentMoved(double u,
                                                     in Point2D p,
                                                     in Vector2D tangent,
                                                     double tolerance,
@@ -2319,7 +2325,7 @@ public class BSplineCurve2D : BoundedCurve2D
 
     /// <summary>A copy evaluated through theDesc, which is copied (so later changes to theDesc don't affect it).</summary>
     /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
-    public BSplineCurve2D WithEvalRepresentation(RepCurveDesc2D.Base? desc)
+    internal BSplineCurve2D WithEvalRepresentation(RepCurveDesc2D.Base? desc)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         RepUtils2D.ValidateCurveDesc(desc, this);
@@ -2328,7 +2334,7 @@ public class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy without an evaluation representation.</summary>
-    public BSplineCurve2D WithoutEvalRepresentation()
+    internal BSplineCurve2D WithoutEvalRepresentation()
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.ClearEvalRepresentation();

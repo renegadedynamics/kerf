@@ -39,17 +39,17 @@ public sealed class MeshTool : Transient
 
             _constraint = _constraint.WithLocation(new Point2D(vertex1.Coord()));
             _constraint = _constraint.WithDirection(new Direction2D(new Vector2D(new Point2D(vertex1.Coord()), new Point2D(vertex2.Coord()))));
-            _sign = _constraint.Direction().X() > 0;
+            _sign = _constraint.Direction.X > 0;
         }
 
         /// <summary>Whether the node is strictly above the line (in the sense of its direction's X).</summary>
         public bool IsAbove(int nodeIndex)
         {
             MeshVertex vertex = _structure.GetNode(nodeIndex);
-            Vector2D nodeVec = new(_constraint.Location(), new Point2D(vertex.Coord()));
-            if (nodeVec.SquareMagnitude() > Constants.Resolution())
+            Vector2D nodeVec = new(_constraint.Location, new Point2D(vertex.Coord()));
+            if (nodeVec.SquareMagnitude > Constants.Resolution())
             {
-                double cross = nodeVec.Crossed(new Vector2D(_constraint.Direction()));
+                double cross = nodeVec.Crossed(new Vector2D(_constraint.Direction));
                 if (Math.Abs(cross) > Constants.Resolution())
                 {
                     return _sign ? cross < 0.0 : cross > 0.0;

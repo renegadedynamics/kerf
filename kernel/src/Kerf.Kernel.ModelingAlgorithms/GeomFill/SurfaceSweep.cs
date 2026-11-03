@@ -448,7 +448,7 @@ public sealed class SurfaceSweep
         double vmin;
         double vmax;
 
-        surf.Bounds(out umin, out umax, out vmin, out vmax);
+        surf.ParameterBounds(out umin, out umax, out vmin, out vmax);
 
         // Get and transform the first section
         Curve3D firstSection = sec.ConstantSection();
@@ -461,7 +461,7 @@ public sealed class SurfaceSweep
 
         // Get and transform the last section
         Curve3D lastSection = surf.VIso(vmax);
-        double firstParameter = lastSection.FirstParameter();
+        double firstParameter = lastSection.FirstParameter;
         Point3D pntLastSec = lastSection.Value(firstParameter);
 
         pntLastSec = pntLastSec.Transformed(tfEnd);
@@ -550,14 +550,14 @@ public sealed class SurfaceSweep
                     //  Modified by skv - Thu Feb  5 11:39:08 2004 OCC5073 End
                     Line3D L = ac.Line();
                     L = L.Transformed(tf2);
-                    ds = ds.WithXYZ(L.Position().Direction().XYZ());
+                    ds = ds.WithXYZ(L.Position.Direction.XYZ());
                     ds = ds.Normalized();
                     levier = Math.Abs(ds.Dot(dp));
                     _sError = error + levier * Math.Abs(_last - _first);
                     if (_sError <= tol)
                     {
                         ok = true;
-                        Frame3D axisOfPlane = new Frame3D(L.Location(), new Direction3D(ds ^ dp), new Direction3D(ds));
+                        Frame3D axisOfPlane = new Frame3D(L.Location, new Direction3D(ds ^ dp), new Direction3D(ds));
                         s = new PlaneSurface(new CoordinateSystem(axisOfPlane));
                     }
                     else
@@ -574,16 +574,16 @@ public sealed class SurfaceSweep
                     Circle3D c = ac.Circle();
                     c = c.Transformed(tf2);
 
-                    ds = ds.WithXYZ(c.Position().Direction().XYZ());
+                    ds = ds.WithXYZ(c.Position.Direction.XYZ());
                     ds = ds.Normalized();
-                    levier = Math.Abs(ds.CrossMagnitude(dp)) * c.Radius();
+                    levier = Math.Abs(ds.CrossMagnitude(dp)) * c.Radius;
                     _sError = levier * Math.Abs(_last - _first);
                     if (_sError <= tolProd)
                     {
                         ok = true;
-                        CoordinateSystem axe = new CoordinateSystem(c.Location(), new Direction3D(dp), c.Position().XDirection());
-                        s = new CylindricalSurface(axe, c.Radius());
-                        if (c.Position().Direction().IsOpposite(axe.Direction(), 0.1))
+                        CoordinateSystem axe = new CoordinateSystem(c.Location, new Direction3D(dp), c.Position.XDirection);
+                        s = new CylindricalSurface(axe, c.Radius);
+                        if (c.Position.Direction.IsOpposite(axe.Direction, 0.1))
                         {
                             double f, l;
                             // L'orientation parametrique est inversee
@@ -631,35 +631,35 @@ public sealed class SurfaceSweep
                 section.Translate(_last * dp);
                 ac.Load(section);
                 c = ac.Circle();
-                centre2 = c.Location();
+                centre2 = c.Location;
                 ac.D1(0, out p2, out dsection);
-                r2 = c.Radius();
+                r2 = c.Radius;
 
                 section = _sec.CirclSection(_sFirst);
                 section.Transform(tf2);
                 section.Translate(_first * dp);
                 ac.Load(section);
                 c = ac.Circle();
-                centre1 = c.Location();
+                centre1 = c.Location;
                 p1 = ac.Value(0);
-                r1 = c.Radius();
+                r1 = c.Radius;
 
                 section = _sec.CirclSection(_sFirst - _first * (_sLast - _sFirst) / (_last - _first));
                 section.Transform(tf2);
                 ac.Load(section);
                 c = ac.Circle();
-                centre0 = c.Location();
+                centre0 = c.Location;
 
                 double angle;
                 Vector3D n = new Vector3D(centre1, p1);
-                if (n.Magnitude() < 1.0e-9)
+                if (n.Magnitude < 1.0e-9)
                 {
                     Vector3D bis = new Vector3D(centre2, p2);
                     n = bis;
                 }
                 Vector3D L = new Vector3D(p1, p2), dir = new Vector3D(centre1, centre2);
 
-                angle = L.Angle(dir);
+                angle = L.AngleTo(dir);
                 if ((angle > 0.01) && (angle < M_PI / 2 - 0.01))
                 {
                     if (r2 < r1)
@@ -668,7 +668,7 @@ public sealed class SurfaceSweep
                     }
                     _sError = error;
                     CoordinateSystem axis = new CoordinateSystem(centre0, new Direction3D(dir), new Direction3D(n));
-                    s = new ConicalSurface(axis, angle, c.Radius());
+                    s = new ConicalSurface(axis, angle, c.Radius);
                     // Calcul du glissement parametrique
                     vFirst = _first / Math.Cos(angle);
                     vLast = _last / Math.Cos(angle);
@@ -677,7 +677,7 @@ public sealed class SurfaceSweep
                     uFirst = ac.FirstParameter();
                     uLast = ac.LastParameter();
                     s.VIso(vLast).D1(0, out _, out Vector3D diso);
-                    if (diso.Magnitude() > 1.0e-9 && dsection.Magnitude() > 1.0e-9)
+                    if (diso.Magnitude > 1.0e-9 && dsection.Magnitude > 1.0e-9)
                     {
                         _isUReversed = diso.IsOpposite(dsection, 0.1);
                     }
@@ -713,7 +713,7 @@ public sealed class SurfaceSweep
 
                 dp = ds - v;
                 ds = ds.WithXYZ(v.XYZ() - centre.XYZ());
-                rotRadius = ds.Magnitude();
+                rotRadius = ds.Magnitude;
                 if (rotRadius > 1.0e-15)
                 {
                     ds = ds.Normalized();
@@ -763,10 +763,10 @@ public sealed class SurfaceSweep
                     c = c.Transformed(tf2);
                     Vector3D dc = new Vector3D();
                     // On calcul le centre eventuel
-                    dc = dc.WithXYZ(c.Location().XYZ() - centre.XYZ());
+                    dc = dc.WithXYZ(c.Location.XYZ() - centre.XYZ());
                     centre = new Point3D(centre.XYZ() + ((dc.Dot(dn)) * dn.XYZ()));
-                    dc = dc.WithXYZ(c.Location().XYZ() - centre.XYZ());
-                    Radius = dc.Magnitude(); // grand Rayon du tore
+                    dc = dc.WithXYZ(c.Location.XYZ() - centre.XYZ());
+                    Radius = dc.Magnitude; // grand Rayon du tore
                     if ((Radius > tol) && (dc.Dot(ds) < 0))
                     {
                         isGoodSide = false;
@@ -778,13 +778,13 @@ public sealed class SurfaceSweep
 
                     // On verifie d'abord que le plan de la section est // a
                     // l'axe de rotation
-                    Vector3D nc = new Vector3D().WithXYZ(c.Position().Direction().XYZ());
+                    Vector3D nc = new Vector3D().WithXYZ(c.Position.Direction.XYZ());
                     nc = nc.Normalized();
                     error = Math.Abs(nc.Dot(dn));
                     // Puis on evalue l'erreur commise sur la section,
                     // en pivotant son plan ( pour contenir l'axe de rotation)
                     error += Math.Abs(nc.Dot(ds));
-                    error *= c.Radius();
+                    error *= c.Radius;
                     if (error <= tol)
                     {
                         _sError = error;
@@ -794,9 +794,9 @@ public sealed class SurfaceSweep
                             // (2.1.a) Sphere
                             double f = uFirst, l = uLast, aRadius = 0.0;
                             _sError = error;
-                            centre = centre.BaryCentered(1.0, c.Location(), 1.0);
+                            centre = centre.BaryCentered(1.0, c.Location, 1.0);
                             CoordinateSystem axisOfSphere = new CoordinateSystem(centre, new Direction3D(dn), new Direction3D(ds));
-                            aRadius = c.Radius();
+                            aRadius = c.Radius;
                             Sphere theSphere = new Sphere(axisOfSphere, aRadius);
                             s = new SphericalSurface(theSphere);
                             // Pour les spheres on ne peut pas controler le parametre
@@ -806,8 +806,8 @@ public sealed class SurfaceSweep
                             double lpar = ac.LastParameter();
                             Curve3D theSection = new TrimmedCurve3D(section, fpar, lpar);
                             theSection.Transform(tf2);
-                            Point3D firstPoint = theSection.Value(theSection.FirstParameter());
-                            Point3D lastPoint = theSection.Value(theSection.LastParameter());
+                            Point3D firstPoint = theSection.Value(theSection.FirstParameter);
+                            Point3D lastPoint = theSection.Value(theSection.LastParameter);
                             double ufirstOnSec, vfirstOnSec, ulastOnSec, vlastOnSec;
                             global::Kerf.Engine.Geometry.ElSLib.Parameters(theSphere, firstPoint, out ufirstOnSec, out vfirstOnSec);
                             global::Kerf.Engine.Geometry.ElSLib.Parameters(theSphere, lastPoint, out ulastOnSec, out vlastOnSec);
@@ -850,7 +850,7 @@ public sealed class SurfaceSweep
                         {
                             // (2.1.b) Tore
                             CoordinateSystem axisOfTore = new CoordinateSystem(centre, new Direction3D(dn), new Direction3D(dc));
-                            s = new ToroidalSurface(axisOfTore, Radius, c.Radius());
+                            s = new ToroidalSurface(axisOfTore, Radius, c.Radius);
 
                             // Pour les tores on ne peut pas controler le parametre
                             // V (donc U car  myExchUV = true)
@@ -858,9 +858,9 @@ public sealed class SurfaceSweep
                             CircleCurve3D? iso;
                             iso = s.UIso(0.0) as CircleCurve3D;
                             Frame3D axeiso;
-                            axeiso = iso!.Circ().Position();
+                            axeiso = iso!.Circle.Position;
 
-                            if (c.Position().Direction().IsOpposite(axeiso.Direction(), 0.1))
+                            if (c.Position.Direction.IsOpposite(axeiso.Direction, 0.1))
                             {
                                 double f, l;
                                 // L'orientation parametrique est inversee
@@ -872,7 +872,7 @@ public sealed class SurfaceSweep
                             }
                             // On calcul le "glissement" parametrique.
                             double rot;
-                            rot = c.Position().XDirection().AngleWithRef(axeiso.XDirection(), axeiso.Direction());
+                            rot = c.Position.XDirection.AngleWithRef(axeiso.XDirection, axeiso.Direction);
                             uFirst -= rot;
                             uLast -= rot;
 
@@ -896,7 +896,7 @@ public sealed class SurfaceSweep
                 {
                     Line3D L = ac.Line();
                     L = L.Transformed(tf2);
-                    Vector3D dl = new Vector3D().WithXYZ(L.Direction().XYZ());
+                    Vector3D dl = new Vector3D().WithXYZ(L.Direction.XYZ());
                     levier = Max(Math.Abs(ac.FirstParameter()), ac.LastParameter());
                     // si la line est ortogonale au cercle de rotation
                     _sError = error + levier * Math.Abs(dl.Dot(dp));
@@ -910,11 +910,11 @@ public sealed class SurfaceSweep
 
                         // Calcul du centre du vecteur supportant la "XDirection"
                         Point3D centreOfSurf;
-                        Vector3D o1O2 = new Vector3D(centre, L.Location()), trans;
+                        Vector3D o1O2 = new Vector3D(centre, L.Location), trans;
                         trans = dn;
                         trans *= dn.Dot(o1O2);
                         centreOfSurf = centre.Translated(trans);
-                        ds = ds.WithXYZ(L.Location().XYZ() - centreOfSurf.XYZ());
+                        ds = ds.WithXYZ(L.Location.XYZ() - centreOfSurf.XYZ());
 
                         error = _sError;
                         error += (dl.XYZ()).CrossMagnitude(dn.XYZ()) * levier;
@@ -924,19 +924,19 @@ public sealed class SurfaceSweep
                             // si la line est orthogonale au plan de rotation
                             _sError = error;
                             //
-                            CoordinateSystem axis = new CoordinateSystem(centreOfSurf, dir.Direction());
-                            if (ds.SquareMagnitude() > Constants.Resolution())
+                            CoordinateSystem axis = new CoordinateSystem(centreOfSurf, dir.Direction);
+                            if (ds.SquareMagnitude > Constants.Resolution())
                             {
                                 axis = axis.WithXDirection(new Direction3D(ds));
                             }
-                            s = new CylindricalSurface(axis, L.Distance(centreOfSurf));
+                            s = new CylindricalSurface(axis, L.DistanceTo(centreOfSurf));
                             ok = true;
                             _exchUV = true;
                         }
                         else
                         {
                             // On evalue l'angle du cone
-                            double angle = Math.Abs(dir.Angle(L));
+                            double angle = Math.Abs(dir.AngleTo(L));
                             if (angle > M_PI / 2)
                             {
                                 angle = M_PI - angle;
@@ -954,8 +954,8 @@ public sealed class SurfaceSweep
                             {
                                 // (2.2.b) Cone
                                 // si les 2 droites ne sont pas orthogonales
-                                double radius = centreOfSurf.Distance(L.Location());
-                                CoordinateSystem axis = new CoordinateSystem(centreOfSurf, dir.Direction(), new Direction3D(ds));
+                                double radius = centreOfSurf.DistanceTo(L.Location);
+                                CoordinateSystem axis = new CoordinateSystem(centreOfSurf, dir.Direction, new Direction3D(ds));
                                 s = new ConicalSurface(axis, angle, radius);
                                 _exchUV = true;
                                 ok = true;

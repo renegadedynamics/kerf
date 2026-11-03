@@ -42,7 +42,7 @@ public abstract partial class Shape
         {
             if (IsEmpty)
                 throw new InvalidOperationException("Cannot determine geometry type of an empty shape");
-            switch (_wrapped.ShapeType())
+            switch (_wrapped.Type)
             {
                 case global::Kerf.Topology.ShapeType.Edge:
                 {
@@ -99,7 +99,7 @@ public abstract partial class Shape
         get
         {
             NeedsGeometry("location");
-            return new Location(_wrapped.Location());
+            return new Location(_wrapped.Placement);
         }
     }
 
@@ -406,7 +406,7 @@ public abstract partial class Shape
         for (; inter.More(); inter.Next())
         {
             var point = inter.Pnt();
-            found.Add((inter.Face(), Math.Abs(origin.SquareDistance(point))));
+            found.Add((inter.Face(), Math.Abs(origin.SquareDistanceTo(point))));
         }
         return new ShapeList<Face>(found.OrderBy(f => f.Distance).Select(f => (Face)CastLike(f.Face)));
     }
@@ -441,14 +441,14 @@ public abstract partial class Shape
             var poly = Tool.Triangulation(face.TopoFace, out loc);
             if (poly is null)
                 continue;
-            var trsf = loc.Transformation();
-            bool reverse = face.TopoShape.Orientation() == global::Kerf.Topology.Orientation.Reversed;
+            var trsf = loc.Transformation;
+            bool reverse = face.TopoShape.Orientation == global::Kerf.Topology.Orientation.Reversed;
             int nodes = poly.NodeCount;
             for (int i = 1; i <= nodes; i++)
             {
                 var node = poly.Node(i);
                 var placed = node.Transformed(trsf);
-                vertices.Add(new Vector(placed.X(), placed.Y(), placed.Z()));
+                vertices.Add(new Vector(placed.X, placed.Y, placed.Z));
             }
             for (int i = 1; i <= poly.TriangleCount; i++)
             {

@@ -284,14 +284,14 @@ public class TopoDS_TShapeTests
         Edge anEdge = new MakeEdge(new Point3D(0.0, 0.0, 0.0), new Point3D(0.0, 0.0, 1.0)).InternalEdge();
 
         // Check initial flag value (should be false by default)
-        bool anInitialValue = anEdge.Infinite();
+        bool anInitialValue = anEdge.IsInfinite;
         Assert.False(anInitialValue);
 
         // Set the flag to true
         anEdge.Infinite(true);
 
         // Verify the flag was set correctly
-        bool aCurrentValue = anEdge.Infinite();
+        bool aCurrentValue = anEdge.IsInfinite;
         Assert.True(aCurrentValue);
     }
 
@@ -300,11 +300,11 @@ public class TopoDS_TShapeTests
     {
         // TopoDS_TShape: Free, Modified, Orientable; TCompound and TSolid aren't orientable; TVertex is closed and convex
         Vertex aV = new MakeVertex(new Point3D()).InternalVertex();
-        Assert.True(aV.Free() && aV.Modified() && aV.Orientable() && aV.Closed() && aV.Convex());
+        Assert.True(aV.Free() && aV.Modified() && aV.IsOrientable && aV.IsClosed && aV.IsConvex);
         Solid aSolid = new();
         new Builder().MakeSolid(ref aSolid);
-        Assert.False(aSolid.Orientable());
-        Assert.False(aSolid.Closed());
-        Assert.False(aSolid.Locked() || aSolid.Checked() || aSolid.Infinite() || aSolid.Convex());
+        Assert.False(aSolid.IsOrientable);
+        Assert.False(aSolid.IsClosed);
+        Assert.False(aSolid.Locked() || aSolid.Checked() || aSolid.IsInfinite || aSolid.IsConvex);
     }
 }

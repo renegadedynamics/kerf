@@ -120,7 +120,7 @@ public class Profiler
         Curve3D theCurve = curve;
         if (theCurve.GetType() == typeof(TrimmedCurve3D))
         {
-            theCurve = ((TrimmedCurve3D)theCurve).BasisCurve();
+            theCurve = ((TrimmedCurve3D)theCurve).BasisCurve;
         }
         if (theCurve is ConicCurve3D)
         {
@@ -183,7 +183,7 @@ public class Profiler
             }
 
             // evaluate the max degree
-            myDegree = Max(myDegree, c.Degree());
+            myDegree = Max(myDegree, c.Degree);
 
             // Calcul de Max ( Ufin - Udeb) sur l ensemble des courbes.
             if ((u2 - u1) > ecartMax)
@@ -266,7 +266,7 @@ public class Profiler
         }
 
         BSplineCurve3D c = (BSplineCurve3D)_sequence[1];
-        return c.Degree();
+        return c.Degree;
     }
 
     public bool IsPeriodic => _isPeriodic;

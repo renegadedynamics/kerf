@@ -522,7 +522,7 @@ public sealed class BrepBuilder : Builder
 
         tf.Surface(s);
         tf.Tolerance(tol);
-        tf.Location(l.Predivided(f.Location()));
+        tf.Location(l.Predivided(f.Placement));
         f.TShape()!.Modified(true);
     }
 
@@ -644,7 +644,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         UpdateCurves(te.ChangeCurves(), c, l);
 
@@ -678,7 +678,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         UpdateCurves(te.ChangeCurves(), c, s, l);
 
@@ -704,7 +704,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         UpdateCurves(te.ChangeCurves(), c, s, l, pf, pl);
 
@@ -729,7 +729,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         UpdateCurves(te.ChangeCurves(), c1, c2, s, l);
 
@@ -756,7 +756,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         UpdateCurves(te.ChangeCurves(), c1, c2, s, l, pf, pl);
 
@@ -807,7 +807,7 @@ public sealed class BrepBuilder : Builder
             itcr.Next();
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
         Polygon3DRepresentation p3d = new Polygon3DRepresentation(p, l, toFreeze);
         lcr.Append(p3d);
 
@@ -839,7 +839,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         bool isModified = false;
 
@@ -912,7 +912,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         bool isModified = false;
 
@@ -960,7 +960,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
 
@@ -1005,7 +1005,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateEdge");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
 
@@ -1070,8 +1070,8 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::Continuity");
         }
 
-        Placement l1 = L1.Predivided(e.Location());
-        Placement l2 = L2.Predivided(e.Location());
+        Placement l1 = L1.Predivided(e.Placement);
+        Placement l2 = L2.Predivided(e.Placement);
 
         UpdateCurves(te.ChangeCurves(), s1, s2, l1, l2, c);
 
@@ -1117,7 +1117,7 @@ public sealed class BrepBuilder : Builder
         if (d)
         {
             // set a null 3d curve
-            UpdateCurves(te.ChangeCurves(), (Curve3D?)null, e.Location());
+            UpdateCurves(te.ChangeCurves(), (Curve3D?)null, e.Placement);
         }
 
         te.Modified(true);
@@ -1160,7 +1160,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::Range");
         }
 
-        Placement l = L.Predivided(e.Location());
+        Placement l = L.Predivided(e.Placement);
 
         NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
         var itcr = new NCollection_List<CurveRepresentation>.Iterator(lcr);
@@ -1208,12 +1208,12 @@ public sealed class BrepBuilder : Builder
 
             if (cr.IsCurveOnSurface())
             {
-                UpdateEdge(eout, cr.PCurve(), cr.Surface(), ein.Location() * cr.Location(), tol);
+                UpdateEdge(eout, cr.PCurve(), cr.Surface(), ein.Placement * cr.Location(), tol);
             }
 
             else if (cr.IsCurveOnClosedSurface)
             {
-                UpdateEdge(eout, cr.PCurve(), cr.PCurve2(), cr.Surface(), ein.Location() * cr.Location(), tol);
+                UpdateEdge(eout, cr.PCurve(), cr.PCurve2(), cr.Surface(), ein.Placement * cr.Location(), tol);
             }
 
             if (cr.IsRegularity())
@@ -1221,8 +1221,8 @@ public sealed class BrepBuilder : Builder
                 Continuity(eout,
                            cr.Surface(),
                            cr.Surface2(),
-                           ein.Location() * cr.Location(),
-                           ein.Location() * cr.Location2(),
+                           ein.Placement * cr.Location(),
+                           ein.Placement * cr.Location2(),
                            cr.Continuity());
             }
 
@@ -1253,7 +1253,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateVertex");
         }
 
-        tv.Pnt(p.Transformed(v.Location().Inverted().Transformation()));
+        tv.Pnt(p.Transformed(v.Placement.Inverted().Transformation));
         tv.UpdateTolerance(tol);
         tv.Modified(true);
     }
@@ -1275,7 +1275,7 @@ public sealed class BrepBuilder : Builder
             throw new LockedShapeException("BRep_Builder::UpdateVertex");
         }
 
-        Placement l = e.Location().Predivided(v.Location());
+        Placement l = e.Placement.Predivided(v.Placement);
 
         // Search the vertex in the edge
         Orientation ori = Internal;
@@ -1288,7 +1288,7 @@ public sealed class BrepBuilder : Builder
 
         if (!itv.More() && te.Degenerated())
         {
-            ori = v.Orientation();
+            ori = v.Orientation;
         }
 
         while (itv.More())
@@ -1296,8 +1296,8 @@ public sealed class BrepBuilder : Builder
             Shape vcur = itv.Value();
             if (v.IsSame(vcur))
             {
-                ori = vcur.Orientation();
-                if (ori == v.Orientation())
+                ori = vcur.Orientation;
+                if (ori == v.Orientation)
                 {
                     break;
                 }
@@ -1383,7 +1383,7 @@ public sealed class BrepBuilder : Builder
         }
 
         // Find the curve representation
-        Placement l = L.Predivided(v.Location());
+        Placement l = L.Predivided(v.Placement);
 
         BrepTVertex tv = (BrepTVertex)v.TShape()!;
         BrepTEdge te = (BrepTEdge)e.TShape()!;
@@ -1404,7 +1404,7 @@ public sealed class BrepBuilder : Builder
 
         if (!itv.More() && te.Degenerated())
         {
-            ori = v.Orientation();
+            ori = v.Orientation;
         }
 
         while (itv.More())
@@ -1412,8 +1412,8 @@ public sealed class BrepBuilder : Builder
             Shape vcur = itv.Value();
             if (v.IsSame(vcur))
             {
-                ori = vcur.Orientation();
-                if (ori == v.Orientation())
+                ori = vcur.Orientation;
+                if (ori == v.Orientation)
                 {
                     break;
                 }
@@ -1478,7 +1478,7 @@ public sealed class BrepBuilder : Builder
         }
 
         Surface? s = Tool.Surface(f, out Placement l);
-        l = l.Predivided(ve.Location());
+        l = l.Predivided(ve.Placement);
         NCollection_List<PointRepresentation> lpr = tv.ChangePoints();
         UpdatePoints(lpr, u, v, s, l);
 

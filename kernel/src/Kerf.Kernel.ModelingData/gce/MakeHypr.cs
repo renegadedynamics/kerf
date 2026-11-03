@@ -32,14 +32,14 @@ public sealed class MakeHypr : Root
         double distS1 = vecS1.Modulus();
         double distS2 = vecS2.Modulus();
         if (distS1 <= Constants.Resolution() || distS2 <= Constants.Resolution()
-            || s1.Distance(s2) <= Constants.Resolution())
+            || s1.DistanceTo(s2) <= Constants.Resolution())
         {
             _theError = ConfusedPoints;
             return;
         }
         Direction3D xAxis = new(vecS1);
         Line3D line = new(center, xAxis);
-        double minorDist = line.Distance(s2);
+        double minorDist = line.DistanceTo(s2);
         if (minorDist <= Constants.Resolution())
         {
             _theError = ColinearPoints;

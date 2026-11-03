@@ -45,8 +45,8 @@ public class ExtPElC2d
         Point2D or, myP;
         _nbExt = 0;
 
-        Vector2D v1 = new(l.Direction());
-        or = l.Location();
+        Vector2D v1 = new(l.Direction);
+        or = l.Location;
         Vector2D v = new(or, p);
         double mydist = v1.Dot(v);
         if ((mydist >= uinf - tol) && (mydist <= usup + tol))
@@ -54,7 +54,7 @@ public class ExtPElC2d
             _nbExt = 1;
             myP = or.Translated(mydist * v1);
             POnCurv2d myPOnCurve = new(mydist, myP);
-            _sqDist[0] = p.SquareDistance(myP);
+            _sqDist[0] = p.SquareDistanceTo(myP);
             _point[0] = myPOnCurve;
             _isMin[0] = true;
         }
@@ -64,7 +64,7 @@ public class ExtPElC2d
 
     public void Perform(in Point2D p, in Circle2D c, double tol, double uinf, double usup)
     {
-        Point2D oc = c.Location();
+        Point2D oc = c.Location;
         _nbExt = 0;
 
         if (oc.IsEqual(p, global::Kerf.Engine.Foundation.Precision.Confusion()))
@@ -78,7 +78,7 @@ public class ExtPElC2d
 
             _done = true;
             Direction2D v = new(new Vector2D(p, oc));
-            radius = c.Radius();
+            radius = c.Radius;
             p1 = oc.Translated(radius * new Vector2D(v));
             u1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, p1);
             u2 = u1 + M_PI;
@@ -90,20 +90,20 @@ public class ExtPElC2d
             {
                 u1 = uinf;
                 p1 = new Point2D(oc.XY()
-                                  + radius * (Math.Cos(u1) * c.XAxis().Direction().XY() + Math.Sin(u1) * c.YAxis().Direction().XY()));
+                                  + radius * (Math.Cos(u1) * c.XAxis.Direction.XY() + Math.Sin(u1) * c.YAxis.Direction.XY()));
             }
 
             if (((u2 - 2 * M_PI - uinf) < tol) && ((u2 - 2 * M_PI - uinf) > -tol))
             {
                 u2 = uinf;
                 p2 = new Point2D(oc.XY()
-                                  + radius * (Math.Cos(u2) * c.XAxis().Direction().XY() + Math.Sin(u2) * c.YAxis().Direction().XY()));
+                                  + radius * (Math.Cos(u2) * c.XAxis.Direction.XY() + Math.Sin(u2) * c.YAxis.Direction.XY()));
             }
 
             if (((uinf - u1) < tol) && ((u1 - usup) < tol))
             {
                 POnCurv2d myPOnCurve = new(u1, p1);
-                _sqDist[0] = p.SquareDistance(p1);
+                _sqDist[0] = p.SquareDistanceTo(p1);
                 _point[0] = myPOnCurve;
                 _isMin[0] = true;
                 _nbExt++;
@@ -112,7 +112,7 @@ public class ExtPElC2d
             if (((uinf - u2) < tol) && ((u2 - usup) < tol))
             {
                 POnCurv2d myPOnCurve = new(u2, p2);
-                _sqDist[_nbExt] = p.SquareDistance(p2);
+                _sqDist[_nbExt] = p.SquareDistanceTo(p2);
                 _point[_nbExt] = myPOnCurve;
                 _isMin[_nbExt] = true; // OCCT: the opposite point is a maximum
                 _nbExt++;
@@ -127,11 +127,11 @@ public class ExtPElC2d
         _done = false;
         _nbExt = 0;
         Point2D or;
-        or = e.Location();
+        or = e.Location;
 
         int noSol, nbSol;
-        double a = e.MajorRadius();
-        double b = e.MinorRadius();
+        double a = e.MajorRadius;
+        double b = e.MinorRadius;
         Vector2D v = new(or, p);
 
         if (or.IsEqual(p, global::Kerf.Engine.Foundation.Precision.Confusion()) && (Math.Abs(a - b) <= tol))
@@ -140,8 +140,8 @@ public class ExtPElC2d
         }
         else
         {
-            double x = v.Dot(new Vector2D(e.XAxis().Direction()));
-            double y = v.Dot(new Vector2D(e.YAxis().Direction()));
+            double x = v.Dot(new Vector2D(e.XAxis.Direction));
+            double y = v.Dot(new Vector2D(e.YAxis.Direction));
 
             TrigonometricFunctionRoots sol = new(0.0, (b * b - a * a) / 2.0, -b * y, a * x, 0.0, uinf, usup);
 
@@ -157,7 +157,7 @@ public class ExtPElC2d
             {
                 us = sol.Value(noSol);
                 cu = global::Kerf.Engine.Geometry.ElCLib.Value(us, e);
-                _sqDist[_nbExt] = cu.SquareDistance(p);
+                _sqDist[_nbExt] = cu.SquareDistanceTo(p);
                 _isMin[_nbExt] = (noSol == 0); // OCCT: always false (NoSol starts at 1)
                 _point[_nbExt] = new POnCurv2d(us, cu);
                 _nbExt++;
@@ -170,16 +170,16 @@ public class ExtPElC2d
 
     public void Perform(in Point2D p, in Hyperbola2D h, double tol, double uinf, double usup)
     {
-        Point2D o = h.Location();
+        Point2D o = h.Location;
         _done = false;
         _nbExt = 0;
 
-        double R = h.MajorRadius();
-        double r = h.MinorRadius();
+        double R = h.MajorRadius;
+        double r = h.MinorRadius;
         Vector2D oPp = new(o, p);
         double tol2 = tol * tol;
-        double x = oPp.Dot(new Vector2D(h.XAxis().Direction()));
-        double y = oPp.Dot(new Vector2D(h.YAxis().Direction()));
+        double x = oPp.Dot(new Vector2D(h.XAxis.Direction));
+        double y = oPp.Dot(new Vector2D(h.YAxis.Direction));
         double c1 = (R * R + r * r) / 4.0;
         DirectPolynomialRoots sol = new(c1, -(x * R + y * r) / 2.0, 0.0, (x * R - y * r) / 2.0, -c1);
         if (!sol.IsDone)
@@ -204,7 +204,7 @@ public class ExtPElC2d
                     dejaEnr = false;
                     for (noExt = 0; noExt < _nbExt; noExt++)
                     {
-                        if (tbExt[noExt].SquareDistance(cu) < tol2)
+                        if (tbExt[noExt].SquareDistanceTo(cu) < tol2)
                         {
                             dejaEnr = true;
                             break;
@@ -213,7 +213,7 @@ public class ExtPElC2d
                     if (!dejaEnr)
                     {
                         tbExt[_nbExt] = cu;
-                        _sqDist[_nbExt] = cu.SquareDistance(p);
+                        _sqDist[_nbExt] = cu.SquareDistanceTo(p);
                         _isMin[_nbExt] = (noSol == 0); // OCCT: always false (NoSol starts at 1)
                         _point[_nbExt] = new POnCurv2d(us, cu);
                         _nbExt++;
@@ -230,13 +230,13 @@ public class ExtPElC2d
     {
         _done = false;
         _nbExt = 0;
-        Point2D o = c.Location();
+        Point2D o = c.Location;
 
         double tol2 = tol * tol;
-        double f = c.Focal();
+        double f = c.Focal;
         Vector2D oPp = new(o, p);
-        double x = oPp.Dot(new Vector2D(c.MirrorAxis().Direction()));
-        double y = oPp.Dot(new Vector2D(c.Axis().YAxis().Direction()));
+        double x = oPp.Dot(new Vector2D(c.MirrorAxis.Direction));
+        double y = oPp.Dot(new Vector2D(c.Axis.YAxis.Direction));
 
         DirectPolynomialRoots sol = new(1.0 / (4.0 * f), 0.0, 2.0 * f - x, -2.0 * f * y);
         if (!sol.IsDone)
@@ -258,7 +258,7 @@ public class ExtPElC2d
                 dejaEnr = false;
                 for (noExt = 0; noExt < _nbExt; noExt++)
                 {
-                    if (tbExt[noExt].SquareDistance(cu) < tol2)
+                    if (tbExt[noExt].SquareDistanceTo(cu) < tol2)
                     {
                         dejaEnr = true;
                         break;
@@ -267,7 +267,7 @@ public class ExtPElC2d
                 if (!dejaEnr)
                 {
                     tbExt[_nbExt] = cu;
-                    _sqDist[_nbExt] = cu.SquareDistance(p);
+                    _sqDist[_nbExt] = cu.SquareDistanceTo(p);
                     _isMin[_nbExt] = (noSol == 0); // OCCT: always false (NoSol starts at 1)
                     _point[_nbExt] = new POnCurv2d(us, cu);
                     _nbExt++;

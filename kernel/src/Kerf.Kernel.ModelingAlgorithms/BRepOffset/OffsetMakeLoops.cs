@@ -83,7 +83,7 @@ public sealed class OffsetMakeLoops
                     NCollection_List<Shape> lce = image.Image(e);
                     for (itLCE.Initialize(lce); itLCE.More(); itLCE.Next())
                     {
-                        Shape ce = itLCE.Value().Oriented(e.Orientation());
+                        Shape ce = itLCE.Value().Oriented(e.Orientation);
                         loops.AddConstEdge(ShapeCasts.Edge(ce));
                     }
                 }
@@ -162,7 +162,7 @@ public sealed class OffsetMakeLoops
                         {
                             Shape newV = _verVerMap.GetValue(v);
                             e.Free(true);
-                            newV.Orientation(v.Orientation());
+                            newV.Orient(v.Orientation);
                             BrepTVertex tv = (BrepTVertex)v.TShape()!;
                             BrepTVertex newTV = (BrepTVertex)newV.TShape()!;
                             if (tv.Tolerance() > newTV.Tolerance())
@@ -296,7 +296,7 @@ public sealed class OffsetMakeLoops
                     NCollection_List<Shape> lce = image.Image(e);
                     for (itLCE.Initialize(lce); itLCE.More(); itLCE.Next())
                     {
-                        Shape ce = itLCE.Value().Oriented(e.Orientation());
+                        Shape ce = itLCE.Value().Oriented(e.Orientation);
                         if (mapExtent.Contains(e))
                         {
                             loops.AddConstEdge(ShapeCasts.Edge(ce));
@@ -432,7 +432,7 @@ public sealed class OffsetMakeLoops
                         {
                             Shape newV = _verVerMap.GetValue(v);
                             e.Free(true);
-                            newV.Orientation(v.Orientation());
+                            newV.Orient(v.Orientation);
                             BrepTVertex tv = (BrepTVertex)v.TShape()!;
                             BrepTVertex newTV = (BrepTVertex)newV.TShape()!;
                             if (tv.Tolerance() > newTV.Tolerance())
@@ -502,7 +502,7 @@ public sealed class OffsetMakeLoops
                         NCollection_List<Shape> lce = image.Image(e);
                         if (lce.Extent() == 1 && lce.First().IsSame(e))
                         {
-                            Shape localShape = lce.First().Oriented(e.Orientation());
+                            Shape localShape = lce.First().Oriented(e.Orientation);
                             Edge ce = ShapeCasts.Edge(localShape);
                             //	    TopoDS_Edge CE = TopoDS::Edge(LCE.First().Oriented(E.Orientation()));
                             loops.AddConstEdge(ce);
@@ -514,7 +514,7 @@ public sealed class OffsetMakeLoops
                         toRebuild = true;
                         for (itLCE.Initialize(lce); itLCE.More(); itLCE.Next())
                         {
-                            Shape localShape = itLCE.Value().Oriented(e.Orientation());
+                            Shape localShape = itLCE.Value().Oriented(e.Orientation);
                             Edge ce = ShapeCasts.Edge(localShape);
                             //	    TopoDS_Edge CE = TopoDS::Edge(itLCE.Value().Oriented(E.Orientation()));
                             Exploration.Vertices(e, out ov1, out ov2);
@@ -550,7 +550,7 @@ public sealed class OffsetMakeLoops
                             if (monv.ContainsKey(ov1))
                             {
                                 Vertex vv = ShapeCasts.Vertex(monv.GetValue(ov1));
-                                vv.Orientation(Forward);
+                                vv.Orient(Forward);
                                 lv.Append(vv);
                                 Shape localShape = vv.Oriented(Internal);
                                 b.UpdateVertex(ShapeCasts.Vertex(localShape), f, e, Tool.Tolerance(vv));
@@ -558,7 +558,7 @@ public sealed class OffsetMakeLoops
                             if (monv.ContainsKey(ov2))
                             {
                                 Vertex vv = ShapeCasts.Vertex(monv.GetValue(ov2));
-                                vv.Orientation(Reversed);
+                                vv.Orient(Reversed);
                                 lv.Append(vv);
                                 Shape localShape = vv.Oriented(Internal);
                                 b.UpdateVertex(ShapeCasts.Vertex(localShape), l, e, Tool.Tolerance(vv));
@@ -644,7 +644,7 @@ public sealed class OffsetMakeLoops
                         {
                             Shape newV = _verVerMap.GetValue(v);
                             e.Free(true);
-                            newV.Orientation(v.Orientation());
+                            newV.Orient(v.Orientation);
                             BrepTVertex tv = (BrepTVertex)v.TShape()!;
                             BrepTVertex newTV = (BrepTVertex)newV.TShape()!;
                             if (tv.Tolerance() > newTV.Tolerance())

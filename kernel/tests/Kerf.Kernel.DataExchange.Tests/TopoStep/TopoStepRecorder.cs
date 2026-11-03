@@ -227,7 +227,7 @@ internal static class TopoStepRecorder
                 int aNbShells = 0;
                 for (var anIt = new Iterator(aSolid); anIt.More(); anIt.Next())
                 {
-                    aNbShells += anIt.Value().ShapeType() == ShapeType.Shell ? 1 : 0;
+                    aNbShells += anIt.Value().Type == ShapeType.Shell ? 1 : 0;
                 }
 
                 Convert(aLines, theDump, "msb-solid", i, aTag, FP =>
@@ -274,7 +274,7 @@ internal static class TopoStepRecorder
                     var M = new MakeShellBasedSurfaceModel(aShell, FP, F);
                     return (M.IsDone, M.IsDone ? M.Value() : null);
                 });
-                if (aShell.Closed() && FacetedTool.CheckTopoDSShape(aShell) == FacetedError.FacetedDone)
+                if (aShell.IsClosed && FacetedTool.CheckTopoDSShape(aShell) == FacetedError.FacetedDone)
                 {
                     Convert(aLines, theDump, "fb-shell", i, aTag, FP =>
                     {

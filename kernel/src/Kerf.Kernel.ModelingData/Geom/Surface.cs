@@ -15,13 +15,13 @@ namespace Kerf.Geometry;
 /// (u, v), continuity, closure and periodicity in each direction, parameter bounds, iso-curves, and how the
 /// parameters change when the surface is transformed or reversed. Every surface is at least C0.
 /// </summary>
-public abstract class Surface : Geometry3D
+public abstract partial class Surface : Geometry3D
 {
     // Results with public fields, written through out parameters across the engine: 10L replaces them (geometry.md,
     // CurveDerivatives), so KERF0003 is off for them until then.
 #pragma warning disable KERF0003
     /// <summary>Result of D1 evaluation: point and first partial derivatives.</summary>
-    public struct ResD1
+    internal struct ResD1
     {
         public Point3D Point;
         public Vector3D D1U;
@@ -29,7 +29,7 @@ public abstract class Surface : Geometry3D
     }
 
     /// <summary>Result of D2 evaluation: point and partial derivatives up to the second order.</summary>
-    public struct ResD2
+    internal struct ResD2
     {
         public Point3D Point;
         public Vector3D D1U;
@@ -40,7 +40,7 @@ public abstract class Surface : Geometry3D
     }
 
     /// <summary>Result of D3 evaluation: point and partial derivatives up to the third order.</summary>
-    public struct ResD3
+    internal struct ResD3
     {
         public Point3D Point;
         public Vector3D D1U;
@@ -87,20 +87,20 @@ public abstract class Surface : Geometry3D
     /// Changes (U, V) into the parameters, on the surface transformed by T, of the transform of the point (U, V).
     /// Leaves them unchanged here; redefined by planes, cylinders, cones, revolved and extruded surfaces.
     /// </summary>
-    public virtual void TransformParameters(ref double u, ref double v, in Transform3D t) { }
+    internal virtual void TransformParameters(ref double u, ref double v, in Transform3D t) { }
 
     /// <summary>
     /// The 2D transformation of (U, V) giving the parameters of the transformed point on the surface transformed
     /// by T: the identity here, redefined by some surfaces.
     /// </summary>
-    public virtual GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal virtual GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
         GeneralTransform2D dummy = new GeneralTransform2D();
         return dummy;
     }
 
     /// <summary>The parametric bounds; may be <c>Precision::Infinite()</c> for an infinite surface.</summary>
-    public abstract void Bounds(out double u1, out double u2, out double v1, out double v2);
+    internal abstract void ParameterBounds(out double u1, out double u2, out double v1, out double v2);
 
     /// <summary>True if the surface is closed in the U direction.</summary>
     public abstract bool IsUClosed { get; }
@@ -113,12 +113,15 @@ public abstract class Surface : Geometry3D
 
     /// <summary>The period in the U direction.</summary>
     /// <exception cref="NoSuchObjectException">The surface is not U-periodic.</exception>
-    public virtual double UPeriod()
+    public virtual double UPeriod
     {
-        Standard_NoSuchObject_Raise_if(!IsUPeriodic, "Geom_Surface::UPeriod");
-        double u1, u2, v1, v2;
-        Bounds(out u1, out u2, out v1, out v2);
-        return (u2 - u1);
+        get
+        {
+            Standard_NoSuchObject_Raise_if(!IsUPeriodic, "Geom_Surface::UPeriod");
+            double u1, u2, v1, v2;
+            ParameterBounds(out u1, out u2, out v1, out v2);
+            return (u2 - u1);
+        }
     }
 
     /// <summary>True if the surface is periodic in the V direction.</summary>
@@ -126,12 +129,15 @@ public abstract class Surface : Geometry3D
 
     /// <summary>The period in the V direction.</summary>
     /// <exception cref="NoSuchObjectException">The surface is not V-periodic.</exception>
-    public virtual double VPeriod()
+    public virtual double VPeriod
     {
-        Standard_NoSuchObject_Raise_if(!IsVPeriodic, "Geom_Surface::VPeriod");
-        double u1, u2, v1, v2;
-        Bounds(out u1, out u2, out v1, out v2);
-        return (v2 - v1);
+        get
+        {
+            Standard_NoSuchObject_Raise_if(!IsVPeriodic, "Geom_Surface::VPeriod");
+            double u1, u2, v1, v2;
+            ParameterBounds(out u1, out u2, out v1, out v2);
+            return (v2 - v1);
+        }
     }
 
     /// <summary>The U iso-parametric curve.</summary>
@@ -141,36 +147,36 @@ public abstract class Surface : Geometry3D
     public abstract Curve3D VIso(double v);
 
     /// <summary>The global continuity of the surface (the lower of the U and V continuities).</summary>
-    public abstract Continuity Continuity();
+    public abstract Continuity Continuity { get; }
 
     /// <summary>True if the surface is at least CN in the U direction.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public abstract bool IsCNu(int n);
+    internal abstract bool IsCNu(int n);
 
     /// <summary>True if the surface is at least CN in the V direction.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public abstract bool IsCNv(int n);
+    internal abstract bool IsCNv(int n);
 
     /// <summary>The point of parameters (U, V). Throws on failure.</summary>
-    public abstract Point3D EvalD0(double u, double v);
+    internal abstract Point3D EvalD0(double u, double v);
 
     /// <summary>The point and first partial derivatives at (U, V). Throws if the surface is not C1.</summary>
-    public abstract ResD1 EvalD1(double u, double v);
+    internal abstract ResD1 EvalD1(double u, double v);
 
     /// <summary>The point and partial derivatives up to the second order. Throws if the surface is not C2.</summary>
-    public abstract ResD2 EvalD2(double u, double v);
+    internal abstract ResD2 EvalD2(double u, double v);
 
     /// <summary>The point and partial derivatives up to the third order. Throws if the surface is not C3.</summary>
-    public abstract ResD3 EvalD3(double u, double v);
+    internal abstract ResD3 EvalD3(double u, double v);
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V). Throws on failure.</summary>
-    public abstract Vector3D EvalDN(double u, double v, int nu, int nv);
+    internal abstract Vector3D EvalDN(double u, double v, int nu, int nv);
 
     /// <summary>The point of parameters (U, V).</summary>
-    public void D0(double u, double v, out Point3D p) => p = EvalD0(u, v);
+    internal void D0(double u, double v, out Point3D p) => p = EvalD0(u, v);
 
     /// <summary>The point and first partial derivatives.</summary>
-    public void D1(double u, double v, out Point3D p, out Vector3D d1U, out Vector3D d1V)
+    internal void D1(double u, double v, out Point3D p, out Vector3D d1U, out Vector3D d1V)
     {
         ResD1 r = EvalD1(u, v);
         p = r.Point;
@@ -179,7 +185,7 @@ public abstract class Surface : Geometry3D
     }
 
     /// <summary>The point and partial derivatives up to the second order.</summary>
-    public void D2(double u, double v, out Point3D p, out Vector3D d1U, out Vector3D d1V,
+    internal void D2(double u, double v, out Point3D p, out Vector3D d1U, out Vector3D d1V,
                    out Vector3D d2U, out Vector3D d2V, out Vector3D d2UV)
     {
         ResD2 r = EvalD2(u, v);
@@ -192,7 +198,7 @@ public abstract class Surface : Geometry3D
     }
 
     /// <summary>The point and partial derivatives up to the third order.</summary>
-    public void D3(double u, double v, out Point3D p, out Vector3D d1U, out Vector3D d1V,
+    internal void D3(double u, double v, out Point3D p, out Vector3D d1U, out Vector3D d1V,
                    out Vector3D d2U, out Vector3D d2V, out Vector3D d2UV,
                    out Vector3D d3U, out Vector3D d3V, out Vector3D d3UUV, out Vector3D d3UVV)
     {
@@ -210,8 +216,8 @@ public abstract class Surface : Geometry3D
     }
 
     /// <summary>The derivative of order Nu in U and Nv in V.</summary>
-    public Vector3D DN(double u, double v, int nu, int nv) => EvalDN(u, v, nu, nv);
+    internal Vector3D DN(double u, double v, int nu, int nv) => EvalDN(u, v, nu, nv);
 
     /// <summary>The point of parameters (U, V).</summary>
-    public Point3D Value(double u, double v) => EvalD0(u, v);
+    internal Point3D Value(double u, double v) => EvalD0(u, v);
 }

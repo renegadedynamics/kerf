@@ -43,7 +43,7 @@ public readonly struct CompBezierCurvesTraits3d : ICompBezierCurvesTraits<Point3
 
     public static Vector3D Vec(in Point3D p1, in Point3D p2) => new(p1, p2);
 
-    public static double SquareMagnitude(in Vector3D v) => v.SquareMagnitude();
+    public static double SquareMagnitude(in Vector3D v) => v.SquareMagnitude;
 
     public static bool IsParallel(in Vector3D v1, in Vector3D v2, double angularTolerance)
         => v1.IsParallel(v2, angularTolerance);
@@ -60,7 +60,7 @@ public readonly struct CompBezierCurvesTraits2d : ICompBezierCurvesTraits<Point2
 
     public static Vector2D Vec(in Point2D p1, in Point2D p2) => new(p1, p2);
 
-    public static double SquareMagnitude(in Vector2D v) => v.SquareMagnitude();
+    public static double SquareMagnitude(in Vector2D v) => v.SquareMagnitude;
 
     public static bool IsParallel(in Vector2D v1, in Vector2D v2, double angularTolerance)
         => v1.IsParallel(v2, angularTolerance);

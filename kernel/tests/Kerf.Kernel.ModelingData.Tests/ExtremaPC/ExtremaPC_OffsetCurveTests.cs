@@ -196,7 +196,7 @@ public class ExtremaPC_OffsetCurveTest
         Point3D aOffsetPt = anAdaptor.Value(50.0);
 
         // Point near the offset line
-        Point3D aPoint = new(50.0, aOffsetPt.Y() + 5.0, 0.0);
+        Point3D aPoint = new(50.0, aOffsetPt.Y + 5.0, 0.0);
 
         global::Kerf.Engine.Extrema.PointCurve.OffsetCurveExtrema anEval = new(anAdaptor);
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -300,7 +300,7 @@ public class ExtremaPC_OffsetCurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             double aStoredSqDist = aResult[i].SquareDistance;
-            double aComputedSqDist = aPoint.SquareDistance(aResult[i].Point);
+            double aComputedSqDist = aPoint.SquareDistanceTo(aResult[i].Point);
             Assert.Equal(aComputedSqDist, aStoredSqDist, THE_TOL);
         }
     }
@@ -328,7 +328,7 @@ public class ExtremaPC_OffsetCurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             double aStoredSqDist = aResult[i].SquareDistance;
-            double aComputedSqDist = aPoint.SquareDistance(aResult[i].Point);
+            double aComputedSqDist = aPoint.SquareDistanceTo(aResult[i].Point);
 
             Assert.Equal(aComputedSqDist, aStoredSqDist, THE_TOL); // "Distance mismatch at extremum " << i
         }

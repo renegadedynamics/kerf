@@ -100,8 +100,8 @@ public class IntTools_FaceFaceTests
         Assert.True(aFF12.Face1().IsSame(aCyl) && aFF21.Face1().IsSame(aCyl)); // the faces as sorted
         Curve2D aOnPln = aFF12.Lines().Value(1).FirstCurve2d()!;
         Curve2D aOnPln21 = aFF21.Lines().Value(1).SecondCurve2d()!;
-        double t = 0.5 * (aOnPln.FirstParameter() + aOnPln.LastParameter());
-        Assert.Equal(0.0, aOnPln.Value(t).Distance(aOnPln21.Value(t)), 12);
+        double t = 0.5 * (aOnPln.FirstParameter + aOnPln.LastParameter);
+        Assert.Equal(0.0, aOnPln.Value(t).DistanceTo(aOnPln21.Value(t)), 12);
     }
 
     // OCCT: PerformPlanes clears the first 2D curve where it means the second, so a plane/plane line computed with
@@ -131,7 +131,7 @@ public class IntTools_FaceFaceTests
         Assert.Equal(1, aFF.Points().Length());
         PntOn2Faces aP = aFF.Points().Value(1);
         Assert.True(aP.P1().Face().IsSame(aSph)); // in the caller's order
-        Assert.Equal(0.0, aP.P1().Pnt().Distance(new Point3D(0.3, 0.2, 0.0)), 6);
+        Assert.Equal(0.0, aP.P1().Pnt().DistanceTo(new Point3D(0.3, 0.2, 0.0)), 6);
         aFF.Perform(aSph, aPln);
         Assert.Equal(2, aFF.Points().Length());
     }
@@ -168,7 +168,7 @@ public class IntTools_FaceFaceTests
     {
         Surface aSph = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new SphericalSurface(new CoordinateSystem(), 1.0));
         Face aF = new MakeFace(aSph, 1.0e-7).Face();
-        aSph.Bounds(out double u1, out _, out double v1, out double v2);
+        aSph.ParameterBounds(out double u1, out _, out double v1, out double v2);
         LineOn2S aLine = new();
         PntOn2S aP = new();
         // at the pole (V = the upper bound, a degenerated row of poles)

@@ -27,17 +27,17 @@ public sealed class LinPnt2dBisec
     {
         _wellDone = false;
 
-        double xdir = line1.Direction().X();
-        double ydir = line1.Direction().Y();
-        double xloc = line1.Location().X();
-        double yloc = line1.Location().Y();
-        double dist = line1.Distance(point2);
+        double xdir = line1.Direction.X;
+        double ydir = line1.Direction.Y;
+        double xloc = line1.Location.X;
+        double yloc = line1.Location.Y;
+        double dist = line1.DistanceTo(point2);
 
         //   if ( dist > gp::Resolution()) {
         if (dist > 1.0e-10)
         {
-            double xpoint2 = point2.X();
-            double ypoint2 = point2.Y();
+            double xpoint2 = point2.X;
+            double ypoint2 = point2.Y;
             if ((-ydir * (xpoint2 - xloc) + xdir * (ypoint2 - yloc)) > 0.0)
             {
                 Axis2D axeparab = new(new Point2D(point2.XY() - dist / 2.0 * new Xy(-ydir, xdir)),

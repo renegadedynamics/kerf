@@ -87,14 +87,14 @@ public class SnglrFunc : CurveAdaptorBase
         return new Point3D((res.D1 * _ratio).Crossed(res.D2).XYZ());
     }
 
-    public sealed override Curve3D.ResD1 EvalD1(double u)
+    internal sealed override Curve3D.ResD1 EvalD1(double u)
     {
         Curve3D.ResD3 res = _hCurve.EvalD3(u);
         Vector3D dc = res.D1 * _ratio;
         return new Curve3D.ResD1 { Point = new Point3D(dc.Crossed(res.D2).XYZ()), D1 = dc.Crossed(res.D3) };
     }
 
-    public sealed override Curve3D.ResD2 EvalD2(double u)
+    internal sealed override Curve3D.ResD2 EvalD2(double u)
     {
         Curve3D.ResD3 res = _hCurve.EvalD3(u);
         Vector3D d4 = _hCurve.EvalDN(u, 4);
@@ -106,7 +106,7 @@ public class SnglrFunc : CurveAdaptorBase
         };
     }
 
-    public sealed override Curve3D.ResD3 EvalD3(double u)
+    internal sealed override Curve3D.ResD3 EvalD3(double u)
     {
         Curve3D.ResD3 res = _hCurve.EvalD3(u);
         Vector3D d4 = _hCurve.EvalDN(u, 4);

@@ -48,7 +48,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
         double   tol  = Math.Abs(tolerance);
         _wellDone      = false;
         _nbrSol        = 0;
-        double dp1lin = onLine.Distance(point1);
+        double dp1lin = onLine.DistanceTo(point1);
 
         if (radius < 0.0)
         {
@@ -63,13 +63,13 @@ public sealed partial class AnalyticCirc2dTanOnRad
             }
             double xc;
             double yc;
-            double x1    = point1.X();
-            double y1    = point1.Y();
+            double x1    = point1.X;
+            double y1    = point1.Y;
             double xbid  = 0;
-            double xdir  = (onLine.Direction()).X();
-            double ydir  = (onLine.Direction()).Y();
-            double lxloc = (onLine.Location()).X();
-            double lyloc = (onLine.Location()).Y();
+            double xdir  = (onLine.Direction).X;
+            double ydir  = (onLine.Direction).Y;
+            double lxloc = (onLine.Location).X;
+            double lyloc = (onLine.Location).Y;
             if (Math.Abs(dp1lin - radius) < tol)
             {
                 _wellDone = true;
@@ -90,7 +90,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                 }
                 _theSame1[_nbrSol]  = 0;
                 _pnttg1sol[_nbrSol] = point1;
-                _pntcen3[_nbrSol]   = _cirsol[_nbrSol].Location();
+                _pntcen3[_nbrSol]   = _cirsol[_nbrSol].Location;
                 _pararg1[_nbrSol]   = 0.0;
                 _par1sol[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                 _parcen3[_nbrSol]   = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[_nbrSol]);
@@ -98,13 +98,13 @@ public sealed partial class AnalyticCirc2dTanOnRad
             else if (dp1lin < tol)
             {
                 // OCCT: qualifier1 is not set on this path (uninitialised in OCCT, GccEnt_unqualified here)
-                _pntcen3[1] = new Point2D(point1.X() + radius * xdir, point1.Y() + radius * ydir);
-                _pntcen3[2] = new Point2D(point1.X() - radius * xdir, point1.Y() - radius * ydir);
+                _pntcen3[1] = new Point2D(point1.X + radius * xdir, point1.Y + radius * ydir);
+                _pntcen3[2] = new Point2D(point1.X - radius * xdir, point1.Y - radius * ydir);
                 _pntcen3[1] = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[1]), onLine);
                 _pntcen3[2] = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[2]), onLine);
-                Axis2D axe = new(_pntcen3[1], onLine.Direction());
+                Axis2D axe = new(_pntcen3[1], onLine.Direction);
                 _cirsol[1]    = new Circle2D(axe, radius);
-                axe          = new Axis2D(_pntcen3[2], onLine.Direction());
+                axe          = new Axis2D(_pntcen3[2], onLine.Direction);
                 _cirsol[2]    = new Circle2D(axe, radius);
                 _theSame1[1]  = 0;
                 _pnttg1sol[1] = point1;
@@ -157,7 +157,7 @@ public sealed partial class AnalyticCirc2dTanOnRad
                             _qualifier1[_nbrSol] = Qualifier.Noqualifier;
                             _theSame1[_nbrSol]   = 0;
                             _pnttg1sol[_nbrSol]  = point1;
-                            _pntcen3[_nbrSol]    = _cirsol[_nbrSol].Location();
+                            _pntcen3[_nbrSol]    = _cirsol[_nbrSol].Location;
                             _pararg1[_nbrSol]    = 0.0;
                             _par1sol[_nbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _parcen3[_nbrSol]    = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen3[_nbrSol]);

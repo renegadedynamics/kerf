@@ -212,8 +212,8 @@ public class TopExpTests
         Wire aClosed = ShapeCasts.Wire(aWireExp.Current());
         Exploration.Vertices(aClosed, out Vertex aV1, out Vertex aV2);
         Assert.True(aV1.IsSame(aV2));
-        Assert.Equal(Forward, aV1.Orientation());
-        Assert.Equal(Reversed, aV2.Orientation());
+        Assert.Equal(Forward, aV1.Orientation);
+        Assert.Equal(Reversed, aV2.Orientation);
 
         // an open wire of two segments
         Vertex aA = TestShapes.Vertex(new Point3D(0, 0, 0));

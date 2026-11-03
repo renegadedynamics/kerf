@@ -186,6 +186,6 @@ public class ShapeFix_WireVertexTests
         Wire aResult = sfwv.InternalWire();
         Assert.False(aResult.TShape()!.IsFrozen);
         Assert.True(ReferenceEquals(sbwd.Edge(1).TShape(), aFirst.TShape())); // in place: the same edges
-        Assert.Equal(ShapeType.Edge, sbwd.Edge(1).ShapeType());
+        Assert.Equal(ShapeType.Edge, sbwd.Edge(1).Type);
     }
 }

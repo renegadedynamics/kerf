@@ -36,7 +36,7 @@ public class MakeHalfSpace : MakeShape
         double prec = Constants.Resolution();
         SLProps props = new(new FaceSurfaceAdaptor(face), u, v, 2, prec);
         Direction3D normal = props.Normal();
-        if (face.Orientation() == Reversed)
+        if (face.Orientation == Reversed)
         {
             normal = normal.Reversed();
         }
@@ -58,7 +58,7 @@ public class MakeHalfSpace : MakeShape
                 {
                     Curve2D? c2d = Tool.CurveOnSurface(edge, f, out _, out _);
                     Point2D p2d = c2d!.Value(par);
-                    Direction3D norm = GetNormalOnFace(f, p2d.X(), p2d.Y());
+                    Direction3D norm = GetNormalOnFace(f, p2d.X, p2d.Y);
                     sum += norm.XYZ();
                 }
             }
@@ -85,7 +85,7 @@ public class MakeHalfSpace : MakeShape
                 if (ex1.Current().IsSame(ver))
                 {
                     Point2D p2d = Tool.Parameters(ver, f);
-                    Direction3D norm = GetNormalOnFace(f, p2d.X(), p2d.Y());
+                    Direction3D norm = GetNormalOnFace(f, p2d.X, p2d.Y);
                     sum += norm.XYZ();
                 }
             }

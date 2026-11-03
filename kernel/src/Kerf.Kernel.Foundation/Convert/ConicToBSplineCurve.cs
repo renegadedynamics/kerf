@@ -267,8 +267,8 @@ public class ConicToBSplineCurve
         for (int i = evalPoles.Lower(); i <= evalPoles.Upper(); i++)
         {
             int idx = (i - evalPoles.Lower()) * 2;
-            coeffs[idx] = evalPoles[i].X();
-            coeffs[idx + 1] = evalPoles[i].Y();
+            coeffs[idx] = evalPoles[i].X;
+            coeffs[idx + 1] = evalPoles[i].Y;
         }
         //
         //   rational_function_coeff represent a rational approximation

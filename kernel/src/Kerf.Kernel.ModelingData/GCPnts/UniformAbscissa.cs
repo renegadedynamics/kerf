@@ -194,7 +194,7 @@ public sealed class UniformAbscissa
         {
             case Circle:
             {
-                return c.Circle().Radius();
+                return c.Circle().Radius;
             }
             case Line:
             {
@@ -205,7 +205,7 @@ public sealed class UniformAbscissa
             {
                 if (!c.IsRational)
                 {
-                    return c.DN(0.0, 1).Magnitude();
+                    return c.DN(0.0, 1).Magnitude;
                 }
                 return RealLast();
             }
@@ -526,7 +526,7 @@ public sealed class UniformAbscissa
         {
             case Circle:
             {
-                return c.Circle().Radius();
+                return c.Circle().Radius;
             }
             case Line:
             {
@@ -537,7 +537,7 @@ public sealed class UniformAbscissa
             {
                 if (!c.IsRational)
                 {
-                    return c.DN(0.0, 1).Magnitude();
+                    return c.DN(0.0, 1).Magnitude;
                 }
                 return RealLast();
             }

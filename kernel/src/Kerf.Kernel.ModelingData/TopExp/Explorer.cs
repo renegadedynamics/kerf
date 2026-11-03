@@ -80,7 +80,7 @@ public sealed class Explorer
         }
         else
         {
-            ShapeType ty = s.ShapeType();
+            ShapeType ty = s.Type;
 
             if (ty > _toFind)
             {
@@ -106,7 +106,7 @@ public sealed class Explorer
     {
         if (_stackTop < 0)
         {
-            ShapeType ty = _shape.ShapeType();
+            ShapeType ty = _shape.Type;
             if (IsSameType(ty, _toFind))
             {
                 _hasMore = false;
@@ -133,7 +133,7 @@ public sealed class Explorer
             if (topIter.More())
             {
                 Shape shapTop = topIter.Value();
-                ShapeType ty = shapTop.ShapeType();
+                ShapeType ty = shapTop.Type;
                 if (IsSameType(ty, _toFind))
                 {
                     _hasMore = true;

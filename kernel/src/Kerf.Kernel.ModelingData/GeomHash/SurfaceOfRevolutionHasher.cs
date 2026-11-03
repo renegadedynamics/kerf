@@ -19,12 +19,12 @@ internal readonly struct SurfaceOfRevolutionHasher(double theCompTolerance, doub
         var pointHasher = new PointHasher(CompTolerance, HashTolerance);
         var dirHasher = new DirectionHasher(CompTolerance, HashTolerance);
         var curveHasher = new CurveHasher(CompTolerance, HashTolerance);
-        Axis3D axis = surface.Axis();
+        Axis3D axis = surface.Axis;
         ReadOnlySpan<ulong> hashes =
         [
-            curveHasher.Hash(surface.BasisCurve()),
-            pointHasher.Hash(axis.Location()),
-            dirHasher.Hash(axis.Direction())
+            curveHasher.Hash(surface.BasisCurve),
+            pointHasher.Hash(axis.Location),
+            dirHasher.Hash(axis.Direction)
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -35,10 +35,10 @@ internal readonly struct SurfaceOfRevolutionHasher(double theCompTolerance, doub
         var pointHasher = new PointHasher(CompTolerance, HashTolerance);
         var dirHasher = new DirectionHasher(CompTolerance, HashTolerance);
         var curveHasher = new CurveHasher(CompTolerance, HashTolerance);
-        Axis3D axis1 = surface1.Axis();
-        Axis3D axis2 = surface2.Axis();
-        return curveHasher.Equals(surface1.BasisCurve(), surface2.BasisCurve())
-               && pointHasher.IsEqual(axis1.Location(), axis2.Location())
-               && dirHasher.IsEqual(axis1.Direction(), axis2.Direction());
+        Axis3D axis1 = surface1.Axis;
+        Axis3D axis2 = surface2.Axis;
+        return curveHasher.Equals(surface1.BasisCurve, surface2.BasisCurve)
+               && pointHasher.IsEqual(axis1.Location, axis2.Location)
+               && dirHasher.IsEqual(axis1.Direction, axis2.Direction);
     }
 }

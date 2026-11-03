@@ -17,14 +17,14 @@ public class ProjLibOracleTests(ITestOutputHelper output)
     private static CoordinateSystem SettledAx3(Oracle theOracle)
     {
         CoordinateSystem anAx = theOracle.Ax3();
-        var aSettled = new CoordinateSystem(anAx.Location(), Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
-        return anAx.Direct() ? aSettled : aSettled.YReversed();
+        var aSettled = new CoordinateSystem(anAx.Location, Oracle.Settled(anAx.Direction), Oracle.Settled(anAx.XDirection));
+        return anAx.IsDirect ? aSettled : aSettled.YReversed();
     }
 
     private static Frame3D SettledAx2(Oracle theOracle)
     {
         Frame3D anAx = theOracle.Ax2();
-        return new Frame3D(anAx.Location(), Oracle.Settled(anAx.Direction()), Oracle.Settled(anAx.XDirection()));
+        return new Frame3D(anAx.Location, Oracle.Settled(anAx.Direction), Oracle.Settled(anAx.XDirection));
     }
 
     private static void SamePosition(Oracle theOracle, N.Geom2d_Curve theNative, in Frame2D thePort, string theWhat)
@@ -34,11 +34,11 @@ public class ProjLibOracleTests(ITestOutputHelper output)
         using var aLoc = aPos.Location();
         using var aX = aPos.XDirection();
         using var aY = aPos.YDirection();
-        theOracle.Same(aLoc, thePort.Location(), $"{theWhat} location");
-        theOracle.Same(aX.X(), thePort.XDirection().X(), $"{theWhat} X direction X");
-        theOracle.Same(aX.Y(), thePort.XDirection().Y(), $"{theWhat} X direction Y");
-        theOracle.Same(aY.X(), thePort.YDirection().X(), $"{theWhat} Y direction X");
-        theOracle.Same(aY.Y(), thePort.YDirection().Y(), $"{theWhat} Y direction Y");
+        theOracle.Same(aLoc, thePort.Location, $"{theWhat} location");
+        theOracle.Same(aX.X(), thePort.XDirection.X, $"{theWhat} X direction X");
+        theOracle.Same(aX.Y(), thePort.XDirection.Y, $"{theWhat} X direction Y");
+        theOracle.Same(aY.X(), thePort.YDirection.X, $"{theWhat} Y direction X");
+        theOracle.Same(aY.Y(), thePort.YDirection.Y, $"{theWhat} Y direction Y");
     }
 
     [Fact]
@@ -57,17 +57,17 @@ public class ProjLibOracleTests(ITestOutputHelper output)
 
             // Line
             {
-                var aLin = new Line3D(aCAx.Axis());
-                using var aNAx1 = Oracle.ToNative(aCAx.Axis());
+                var aLin = new Line3D(aCAx.Axis);
+                using var aNAx1 = Oracle.ToNative(aCAx.Axis);
                 using var aNC = new N.Geom_Line(aNAx1);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 using var aNLine = N.Geom2d_Line.DownCast(aN2d)!;
                 using var aNLoc = aNLine.Location();
                 using var aNDir = aNLine.Direction();
                 Line2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, aLin);
-                anOracle.Same(aNLoc, aPort.Location(), $"case {i} line location");
-                anOracle.Same(aNDir.X(), aPort.Direction().X(), $"case {i} line direction X");
-                anOracle.Same(aNDir.Y(), aPort.Direction().Y(), $"case {i} line direction Y");
+                anOracle.Same(aNLoc, aPort.Location, $"case {i} line location");
+                anOracle.Same(aNDir.X(), aPort.Direction.X, $"case {i} line direction X");
+                anOracle.Same(aNDir.Y(), aPort.Direction.Y, $"case {i} line direction Y");
             }
 
             // Circle
@@ -76,8 +76,8 @@ public class ProjLibOracleTests(ITestOutputHelper output)
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 using var aNCirc = N.Geom2d_Circle.DownCast(aN2d)!;
                 Circle2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Circle3D(aCAx, aMaj));
-                SamePosition(anOracle, aN2d, aPort.Position(), $"case {i} circle");
-                anOracle.Same(aNCirc.Radius(), aPort.Radius(), $"case {i} circle radius");
+                SamePosition(anOracle, aN2d, aPort.Position, $"case {i} circle");
+                anOracle.Same(aNCirc.Radius(), aPort.Radius, $"case {i} circle radius");
             }
 
             // Ellipse
@@ -86,9 +86,9 @@ public class ProjLibOracleTests(ITestOutputHelper output)
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 using var aNElips = N.Geom2d_Ellipse.DownCast(aN2d)!;
                 Ellipse2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Ellipse3D(aCAx, aMaj, aMin));
-                SamePosition(anOracle, aN2d, aPort.Axis(), $"case {i} ellipse");
-                anOracle.Same(aNElips.MajorRadius(), aPort.MajorRadius(), $"case {i} ellipse major radius");
-                anOracle.Same(aNElips.MinorRadius(), aPort.MinorRadius(), $"case {i} ellipse minor radius");
+                SamePosition(anOracle, aN2d, aPort.Axis, $"case {i} ellipse");
+                anOracle.Same(aNElips.MajorRadius(), aPort.MajorRadius, $"case {i} ellipse major radius");
+                anOracle.Same(aNElips.MinorRadius(), aPort.MinorRadius, $"case {i} ellipse minor radius");
             }
 
             // Parabola and hyperbola: Geom2d_Parabola and Geom2d_Hyperbola aren't bound, so only the position
@@ -96,13 +96,13 @@ public class ProjLibOracleTests(ITestOutputHelper output)
                 using var aNC = new N.Geom_Parabola(aNCAx, aMin);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 Parabola2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Parabola3D(aCAx, aMin));
-                SamePosition(anOracle, aN2d, aPort.Axis(), $"case {i} parabola");
+                SamePosition(anOracle, aN2d, aPort.Axis, $"case {i} parabola");
             }
             {
                 using var aNC = new N.Geom_Hyperbola(aNCAx, aMaj, aMin);
                 using var aN2d = N.GeomAPI.To2d(aNC, aNPln)!;
                 Hyperbola2D aPort = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(aPln, new Hyperbola3D(aCAx, aMaj, aMin));
-                SamePosition(anOracle, aN2d, aPort.Axis(), $"case {i} hyperbola");
+                SamePosition(anOracle, aN2d, aPort.Axis, $"case {i} hyperbola");
             }
         }
         anOracle.Report("ProjLib_Plane through GeomAPI::To2d");

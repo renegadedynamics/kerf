@@ -67,7 +67,7 @@ public class SplitCurve2dContinuity : SplitCurve2d
     /// <summary>Computes the splitting values and corrects the curve where it can.</summary>
     public override void Compute()
     {
-        if (_curve!.Continuity() < _criterion)
+        if (_curve!.Continuity < _criterion)
         {
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
         }
@@ -80,7 +80,7 @@ public class SplitCurve2dContinuity : SplitCurve2d
         double last = _splitValues.Value(_splitValues.Length());
         if (_curve is TrimmedCurve2D tmp)
         {
-            Curve2D basCurve = tmp.BasisCurve();
+            Curve2D basCurve = tmp.BasisCurve;
             var spc = new SplitCurve2dContinuity();
             //    spc.Init(BasCurve,Max(First,tmp->FirstParameter()),Min(Last,tmp->LastParameter()));
             spc.Init(basCurve, first, last);
@@ -111,7 +111,7 @@ public class SplitCurve2dContinuity : SplitCurve2d
                     basCriterion = CN;
                     break;
             }
-            Curve2D basCurve = tmpOffset.BasisCurve();
+            Curve2D basCurve = tmpOffset.BasisCurve;
             // double Offset = tmp->Offset(); // Offset not used (skl)
             var spc = new SplitCurve2dContinuity();
             //    spc.Init(BasCurve,Max(tmp->FirstParameter(),First),Min(tmp->LastParameter(),Last));
@@ -133,7 +133,7 @@ public class SplitCurve2dContinuity : SplitCurve2d
         }
 
         _nbCurves = 1;
-        int deg = myBSpline.Degree();
+        int deg = myBSpline.Degree;
         int nbKnots = myBSpline.KnotCount;
         if (nbKnots <= 2)
         {

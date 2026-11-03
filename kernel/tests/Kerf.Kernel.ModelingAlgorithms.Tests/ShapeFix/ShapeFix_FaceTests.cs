@@ -104,7 +104,7 @@ public class ShapeFix_FaceTests
 
         aSnap.AssertUnchanged(aFace);
         AssertFrozen(aResult);
-        Assert.Equal(ShapeType.Face, aResult.ShapeType());
+        Assert.Equal(ShapeType.Face, aResult.Type);
         Assert.Equal(3, Count(aResult, ShapeType.Edge)); // two circles and the seam
         Assert.True(new Analyzer(aResult).IsValid());
 
@@ -263,7 +263,7 @@ public class ShapeFix_FaceTests
 
         aSnap.AssertUnchanged(aFace);
         AssertFrozen(aResult);
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.Equal(2, Count(aResult, ShapeType.Face));
         // the caller's wires, untouched, are in the new faces
         Assert.True(HasTShapeOf(aResult, aW1, ShapeType.Wire));
@@ -321,7 +321,7 @@ public class ShapeFix_FaceTests
         {
             Assert.True(HasTShapeOf(aResult, anEdge, ShapeType.Edge));
         }
-        Assert.Equal(Forward, aResult.Orientation());
+        Assert.Equal(Forward, aResult.Orientation);
     }
 
     [Fact]

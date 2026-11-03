@@ -85,8 +85,8 @@ public class IntCurvePolyPolyTests
     private static void CheckOnCurves(IntersectionPoint2D P, Curve2DAdaptorBase C1, Curve2DAdaptorBase C2,
                                       double theTol = 1.0e-6)
     {
-        Assert.True(C1.Value(P.ParamOnFirst()).Distance(P.Value()) < theTol);
-        Assert.True(C2.Value(P.ParamOnSecond()).Distance(P.Value()) < theTol);
+        Assert.True(C1.Value(P.ParamOnFirst()).DistanceTo(P.Value()) < theTol);
+        Assert.True(C2.Value(P.ParamOnSecond()).DistanceTo(P.Value()) < theTol);
     }
 
     private static List<IntersectionPoint2D> SortedByX(Intersection2D I)
@@ -96,7 +96,7 @@ public class IntCurvePolyPolyTests
         {
             aList.Add(I.Point(i));
         }
-        aList.Sort((a, b) => a.Value().X().CompareTo(b.Value().X()));
+        aList.Sort((a, b) => a.Value().X.CompareTo(b.Value().X));
         return aList;
     }
 
@@ -110,8 +110,8 @@ public class IntCurvePolyPolyTests
         Assert.Equal(1, anInter.PointCount);
         Assert.Equal(0, anInter.SegmentCount);
         IntersectionPoint2D P = anInter.Point(1);
-        Assert.Equal(1.0, P.Value().X(), 1e-9);
-        Assert.Equal(1.0, P.Value().Y(), 1e-9);
+        Assert.Equal(1.0, P.Value().X, 1e-9);
+        Assert.Equal(1.0, P.Value().Y, 1e-9);
         Assert.Equal(0.5, P.ParamOnFirst(), 1e-9);
         Assert.Equal(0.5, P.ParamOnSecond(), 1e-9);
         Assert.Equal(Position2D.Middle, P.TransitionOfFirst().PositionOnCurve());
@@ -133,8 +133,8 @@ public class IntCurvePolyPolyTests
         double[] anX = [0.5, 1.5, 2.5];
         for (int i = 0; i < 3; i++)
         {
-            Assert.Equal(anX[i], aPnts[i].Value().X(), 1e-9);
-            Assert.Equal(1.0, aPnts[i].Value().Y(), 1e-9);
+            Assert.Equal(anX[i], aPnts[i].Value().X, 1e-9);
+            Assert.Equal(1.0, aPnts[i].Value().Y, 1e-9);
             Assert.Equal(anX[i], aPnts[i].ParamOnFirst(), 1e-9);
             Assert.Equal((anX[i] + 1.0) / 5.0, aPnts[i].ParamOnSecond(), 1e-9);
             CheckOnCurves(aPnts[i], c1, c2);
@@ -155,8 +155,8 @@ public class IntCurvePolyPolyTests
         Position2D[] aPos = [Position2D.Head, Position2D.Middle, Position2D.End];
         for (int i = 0; i < 3; i++)
         {
-            Assert.Equal(3.0 * aT[i], aPnts[i].Value().X(), 1e-8);
-            Assert.Equal(0.0, aPnts[i].Value().Y(), 1e-8);
+            Assert.Equal(3.0 * aT[i], aPnts[i].Value().X, 1e-8);
+            Assert.Equal(0.0, aPnts[i].Value().Y, 1e-8);
             Assert.Equal(aT[i], aPnts[i].ParamOnFirst(), 1e-8);
             Assert.Equal(aPos[i], aPnts[i].TransitionOfFirst().PositionOnCurve());
             Assert.Equal(Position2D.Middle, aPnts[i].TransitionOfSecond().PositionOnCurve());
@@ -177,8 +177,8 @@ public class IntCurvePolyPolyTests
         double[] aT = [0.25, 0.75];
         for (int i = 0; i < 2; i++)
         {
-            Assert.Equal(2.0 * aT[i], aPnts[i].Value().X(), 1e-8);
-            Assert.Equal(0.75, aPnts[i].Value().Y(), 1e-8);
+            Assert.Equal(2.0 * aT[i], aPnts[i].Value().X, 1e-8);
+            Assert.Equal(0.75, aPnts[i].Value().Y, 1e-8);
             Assert.Equal(aT[i], aPnts[i].ParamOnFirst(), 1e-8);
             Assert.Equal(aT[i], aPnts[i].ParamOnSecond(), 1e-8);
             CheckOnCurves(aPnts[i], c1, c2);
@@ -197,11 +197,11 @@ public class IntCurvePolyPolyTests
         // Both x(t) are the same function of t (equally spaced poles, same knots): count the sign changes of
         // y1(t) - y2(t).
         int aChanges = 0;
-        double aPrev = c1.Value(0).Y() - c2.Value(0).Y();
+        double aPrev = c1.Value(0).Y - c2.Value(0).Y;
         for (int i = 1; i <= 10000; i++)
         {
             double t = i / 10000.0;
-            double d = c1.Value(t).Y() - c2.Value(t).Y();
+            double d = c1.Value(t).Y - c2.Value(t).Y;
             if (d * aPrev < 0)
             {
                 aChanges++;
@@ -233,10 +233,10 @@ public class IntCurvePolyPolyTests
         for (int i = 1; i <= 2; i++)
         {
             IntersectionPoint2D P = anInter.Point(i);
-            Assert.Equal(0.5, P.Value().X(), 1e-8);
-            Assert.Equal(aY, Math.Abs(P.Value().Y()), 1e-8);
-            double anExpected1 = P.Value().Y() > 0 ? Math.PI / 3 : -Math.PI / 3;
-            double anExpected2 = P.Value().Y() > 0 ? 2 * Math.PI / 3 : 4 * Math.PI / 3;
+            Assert.Equal(0.5, P.Value().X, 1e-8);
+            Assert.Equal(aY, Math.Abs(P.Value().Y), 1e-8);
+            double anExpected1 = P.Value().Y > 0 ? Math.PI / 3 : -Math.PI / 3;
+            double anExpected2 = P.Value().Y > 0 ? 2 * Math.PI / 3 : 4 * Math.PI / 3;
             // The trimmed curves' parameters are the circles' angles, up to the period (OCCT adjusts the trim).
             Assert.Equal(0.0, Math.IEEERemainder(P.ParamOnFirst() - anExpected1, 2 * Math.PI), 1e-8);
             Assert.Equal(0.0, Math.IEEERemainder(P.ParamOnSecond() - anExpected2, 2 * Math.PI), 1e-8);
@@ -256,13 +256,13 @@ public class IntCurvePolyPolyTests
         for (int i = 1; i <= anInter.PointCount; i++)
         {
             IntersectionPoint2D P = anInter.Point(i);
-            Assert.True(P.Value().Distance(new Point2D(1, 1)) < 1e-3);
+            Assert.True(P.Value().DistanceTo(new Point2D(1, 1)) < 1e-3);
         }
         for (int i = 1; i <= anInter.SegmentCount; i++)
         {
             IntersectionSegment2D S = anInter.Segment(i);
-            Assert.True(S.FirstPoint().Value().Distance(new Point2D(1, 1)) < 1e-3);
-            Assert.True(S.LastPoint().Value().Distance(new Point2D(1, 1)) < 1e-3);
+            Assert.True(S.FirstPoint().Value().DistanceTo(new Point2D(1, 1)) < 1e-3);
+            Assert.True(S.LastPoint().Value().DistanceTo(new Point2D(1, 1)) < 1e-3);
         }
     }
 
@@ -275,7 +275,7 @@ public class IntCurvePolyPolyTests
 
         Assert.Equal(1, anInter.SegmentCount);
         IntersectionSegment2D S = anInter.Segment(1);
-        double x0 = S.FirstPoint().Value().X(), x1 = S.LastPoint().Value().X();
+        double x0 = S.FirstPoint().Value().X, x1 = S.LastPoint().Value().X;
         Assert.Equal(1.0, Math.Min(x0, x1), 1e-7);
         Assert.Equal(2.0, Math.Max(x0, x1), 1e-7);
         Assert.False(S.IsOpposite);
@@ -305,8 +305,8 @@ public class IntCurvePolyPolyTests
 
         Assert.Equal(1, anInter.PointCount);
         IntersectionPoint2D P = anInter.Point(1);
-        Assert.Equal(1.0, P.Value().X(), 1e-9);
-        Assert.Equal(0.0, P.Value().Y(), 1e-9);
+        Assert.Equal(1.0, P.Value().X, 1e-9);
+        Assert.Equal(0.0, P.Value().Y, 1e-9);
         Assert.Equal(Position2D.End, P.TransitionOfFirst().PositionOnCurve());
         Assert.Equal(Position2D.Head, P.TransitionOfSecond().PositionOnCurve());
         Assert.Equal(1.0, P.ParamOnFirst(), 1e-9);
@@ -342,8 +342,8 @@ public class IntCurvePolyPolyTests
         Assert.True(anInter.IsDone);
         Assert.Equal(1, anInter.PointCount);
         IntersectionPoint2D P = anInter.Point(1);
-        Assert.Equal(1.0, P.Value().X(), 1e-9);
-        Assert.Equal(1.0, P.Value().Y(), 1e-9);
+        Assert.Equal(1.0, P.Value().X, 1e-9);
+        Assert.Equal(1.0, P.Value().Y, 1e-9);
         double u = Math.Min(P.ParamOnFirst(), P.ParamOnSecond());
         double v = Math.Max(P.ParamOnFirst(), P.ParamOnSecond());
         Assert.Equal(0.5, u, 1e-9);
@@ -366,7 +366,7 @@ public class IntCurvePolyPolyTests
         double d = Math.Sqrt(60.0) / 20.0;
         Assert.Equal(0.5 - d, u, 1e-8);
         Assert.Equal(0.5 + d, v, 1e-8);
-        Assert.True(c.Value(u).Distance(c.Value(v)) < 1e-8);
+        Assert.True(c.Value(u).DistanceTo(c.Value(v)) < 1e-8);
     }
 
     [Fact]
@@ -418,8 +418,8 @@ public class IntCurvePolyPolyTests
         Assert.Equal(0.2 + 0.25 * 0.05, aPoly.ApproxParamOnCurve(1, 0.25), 1e-12);
 
         aPoly.Segment(1, out Point2D aBegin, out Point2D anEnd);
-        Assert.True(aBegin.Distance(c.Value(0.2)) < 1e-15);
-        Assert.True(anEnd.Distance(c.Value(0.25)) < 1e-12);
+        Assert.True(aBegin.DistanceTo(c.Value(0.2)) < 1e-15);
+        Assert.True(anEnd.DistanceTo(c.Value(0.25)) < 1e-12);
         Assert.ThrowsAny<OutOfRangeException>(() => aPoly.Segment(15, out _, out _));
 
         // The deflection bounds the distance between the curve and its polygon, and the box holds the curve.
@@ -434,7 +434,7 @@ public class IntCurvePolyPolyTests
         {
             aPoly.Segment(s, out Point2D a, out Point2D b);
             Line2D L = new(a, new Direction2D(new Vector2D(a, b)));
-            aMaxDev = Math.Max(aMaxDev, L.Distance(c.Value(0.2 + (s - 0.5) * 0.05)));
+            aMaxDev = Math.Max(aMaxDev, L.DistanceTo(c.Value(0.2 + (s - 0.5) * 0.05)));
         }
         Assert.True(aMaxDev > 0.0);
         Assert.True(aPoly.DeflectionOverEstimation() >= aMaxDev);
@@ -451,8 +451,8 @@ public class IntCurvePolyPolyTests
         Assert.True(aPoly.Closed());
         Assert.Equal(5, aPoly.SegmentCount);
         aPoly.Segment(5, out Point2D aBegin, out Point2D anEnd);
-        Assert.Equal(4.0, aBegin.X(), 1e-15);
-        Assert.Equal(0.0, anEnd.X(), 1e-15);
+        Assert.Equal(4.0, aBegin.X, 1e-15);
+        Assert.Equal(0.0, anEnd.X, 1e-15);
         aPoly.SetDeflectionOverEstimation(0.5);
         Assert.Equal(0.5, aPoly.DeflectionOverEstimation());
         Assert.False(aPoly.Bounding().IsOut(new Point2D(2, 0.4)));
@@ -521,8 +521,8 @@ public class IntCurvePolyPolyTests
         math_Vector V = new(1, 2);
         Assert.True(F.Value(X, V));
         Point2D P1 = c1.Value(0.3), P2 = c2.Value(0.7);
-        Assert.Equal(P1.X() - P2.X(), V[1], 1e-15);
-        Assert.Equal(P1.Y() - P2.Y(), V[2], 1e-15);
+        Assert.Equal(P1.X - P2.X, V[1], 1e-15);
+        Assert.Equal(P1.Y - P2.Y, V[2], 1e-15);
 
         Matrix D = new(1, 2, 1, 2);
         Assert.True(F.Derivatives(X, D));

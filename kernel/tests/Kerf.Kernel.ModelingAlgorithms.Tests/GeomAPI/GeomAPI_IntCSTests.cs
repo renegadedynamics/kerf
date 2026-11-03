@@ -33,8 +33,8 @@ public class GeomAPI_IntCSTests
         {
             theInter.Parameters(i, out double U, out double V, out double W);
             Point3D aP = theInter.Point(i);
-            Assert.True(aP.Distance(theC.Value(W)) <= theTol, $"point {i} off the curve");
-            Assert.True(aP.Distance(theS.Value(U, V)) <= theTol, $"point {i} off the surface: {aP} vs {theS.Value(U, V)}");
+            Assert.True(aP.DistanceTo(theC.Value(W)) <= theTol, $"point {i} off the curve");
+            Assert.True(aP.DistanceTo(theS.Value(U, V)) <= theTol, $"point {i} off the surface: {aP} vs {theS.Value(U, V)}");
         }
     }
 
@@ -86,7 +86,7 @@ public class GeomAPI_IntCSTests
 
         Assert.Equal(2, anInter.PointCount);
         double x = Math.Sqrt(4.0 - 0.25);
-        double[] aXs = [anInter.Point(1).X(), anInter.Point(2).X()];
+        double[] aXs = [anInter.Point(1).X, anInter.Point(2).X];
         Array.Sort(aXs);
         Assert.Equal(-x, aXs[0], 1e-12);
         Assert.Equal(x, aXs[1], 1e-12);
@@ -97,7 +97,7 @@ public class GeomAPI_IntCSTests
         for (int i = 1; i <= 2; i++)
         {
             CurveSurfaceIntersectionPoint aPt = aHInter.Point(i);
-            Assert.Equal(aPt.Pnt().X() < 0 ? TransitionOnCurve.In : TransitionOnCurve.Out, aPt.Transition());
+            Assert.Equal(aPt.Pnt().X < 0 ? TransitionOnCurve.In : TransitionOnCurve.Out, aPt.Transition());
         }
     }
 
@@ -128,7 +128,7 @@ public class GeomAPI_IntCSTests
         double[] aXs = new double[4];
         for (int i = 1; i <= 4; i++)
         {
-            aXs[i - 1] = anInter.Point(i).X();
+            aXs[i - 1] = anInter.Point(i).X;
         }
         Array.Sort(aXs);
         Assert.Equal(-4.0, aXs[0], 1e-9);
@@ -185,10 +185,10 @@ public class GeomAPI_IntCSTests
 
         // Count the sign changes of z - 0.5 along the curve
         int aChanges = 0;
-        double aPrev = aCurve.Value(0.0).Z() - 0.5;
+        double aPrev = aCurve.Value(0.0).Z - 0.5;
         for (int i = 1; i <= 1000; i++)
         {
-            double z = aCurve.Value(i / 1000.0).Z() - 0.5;
+            double z = aCurve.Value(i / 1000.0).Z - 0.5;
             if (Math.Sign(z) != Math.Sign(aPrev))
             {
                 aChanges++;
@@ -200,7 +200,7 @@ public class GeomAPI_IntCSTests
         CheckPoints(anInter, aCurve, aPlane, 1e-7);
         for (int i = 1; i <= anInter.PointCount; i++)
         {
-            Assert.Equal(0.5, anInter.Point(i).Z(), 1e-7);
+            Assert.Equal(0.5, anInter.Point(i).Z, 1e-7);
         }
     }
 
@@ -282,7 +282,7 @@ public class GeomAPI_IntCSTests
         for (int i = 1; i <= 2; i++)
         {
             Point3D aP = anInter.Point(i);
-            Assert.Equal(2.0, Math.Sqrt(aP.X() * aP.X() + aP.Y() * aP.Y()), 1e-7);
+            Assert.Equal(2.0, Math.Sqrt(aP.X * aP.X + aP.Y * aP.Y), 1e-7);
         }
     }
 

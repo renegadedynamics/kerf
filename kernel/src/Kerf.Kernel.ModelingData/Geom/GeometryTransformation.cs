@@ -150,10 +150,10 @@ public class GeometryTransformation : Transient
     public bool IsNegative => _gpTrsf.IsNegative;
 
     /// <summary>The nature of the transformation.</summary>
-    public TransformForm Form() => _gpTrsf.Form();
+    public TransformForm Form() => _gpTrsf.Form;
 
     /// <summary>The scale factor.</summary>
-    public double ScaleFactor() => _gpTrsf.ScaleFactor();
+    public double ScaleFactor() => _gpTrsf.ScaleFactor;
 
     /// <summary>The transformation as a <see cref="Transform3D"/>.</summary>
     public Transform3D Trsf() => _gpTrsf;

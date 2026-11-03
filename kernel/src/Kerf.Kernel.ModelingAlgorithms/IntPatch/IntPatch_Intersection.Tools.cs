@@ -215,7 +215,7 @@ public partial class PatchIntersection
         else // OffsetSurface
         {
             global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs;
-            Surface bs = gos.BasisSurface();
+            Surface bs = gos.BasisSurface;
             Curve3D gcbs = bs.UIso(u);
             CurveAdaptor gac = new(gcbs);
             CurveKind gact = gac.GetType();
@@ -313,7 +313,7 @@ public partial class PatchIntersection
         else // OffsetSurface
         {
             global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs;
-            Surface bs = gos.BasisSurface();
+            Surface bs = gos.BasisSurface;
             Curve3D gcbs = bs.VIso(v);
             CurveAdaptor gac = new(gcbs);
             CurveKind gact = gac.GetType();
@@ -423,7 +423,7 @@ public partial class PatchIntersection
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs1;
-                Surface bs = gos.BasisSurface();
+                Surface bs = gos.BasisSurface;
                 c1 = bs.UIso(ms1[0]);
             }
             CurveAdaptor gac = new(c1);
@@ -441,7 +441,7 @@ public partial class PatchIntersection
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs1;
-                Surface bs = gos.BasisSurface();
+                Surface bs = gos.BasisSurface;
                 c1 = bs.VIso(ms1[1]);
             }
             CurveAdaptor gac = new(c1);
@@ -463,7 +463,7 @@ public partial class PatchIntersection
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs2;
-                Surface bs = gos.BasisSurface();
+                Surface bs = gos.BasisSurface;
                 c2 = bs.UIso(ms2[0]);
             }
             CurveAdaptor gac = new(c2);
@@ -481,7 +481,7 @@ public partial class PatchIntersection
             else
             {
                 global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs2;
-                Surface bs = gos.BasisSurface();
+                Surface bs = gos.BasisSurface;
                 c2 = bs.VIso(ms2[1]);
             }
             CurveAdaptor gac = new(c2);
@@ -666,7 +666,7 @@ public partial class PatchIntersection
         else
         {
             global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs1;
-            Surface bs = gos.BasisSurface();
+            Surface bs = gos.BasisSurface;
             visoS1 = bs.VIso(vm1);
             uisoS1 = bs.UIso(um1);
         }
@@ -678,7 +678,7 @@ public partial class PatchIntersection
         else
         {
             global::Kerf.Geometry.OffsetSurface gos = (global::Kerf.Geometry.OffsetSurface)gs2;
-            Surface bs = gos.BasisSurface();
+            Surface bs = gos.BasisSurface;
             visoS2 = bs.VIso(vm2);
             uisoS2 = bs.UIso(um2);
         }

@@ -82,7 +82,7 @@ public class SolidExplorer
                                            ref Vector3D vecD1V)
     {
         Face face = _face;
-        face.Orientation(Forward);
+        face.Orient(Forward);
 
         Vector2D t;
         Point2D p;
@@ -98,9 +98,9 @@ public class SolidExplorer
 
             c.D1((c.LastParameter() - c.FirstParameter()) * param_ + c.FirstParameter(), out p, out t);
 
-            double x = t.X();
-            double y = t.Y();
-            if (edge.Orientation() == Forward)
+            double x = t.X;
+            double y = t.Y;
+            if (edge.Orientation == Forward)
             {
                 t = t.WithCoord(-y, x);
             }
@@ -116,7 +116,7 @@ public class SolidExplorer
             var fClassifier = new FacePassiveClassifier();
 
             t = t.Normalized();
-            p = p.WithCoord(p.X() + tolInit * t.X(), p.Y() + tolInit * t.Y());
+            p = p.WithCoord(p.X + tolInit * t.X, p.Y + tolInit * t.Y);
             fClassifier.Reset(new Line2D(p, new Direction2D(t)), paramInit, RealEpsilon()); //-- Length and Tolerance #######
 
             var otherfaceexplorer = new Explorer();
@@ -125,10 +125,10 @@ public class SolidExplorer
                  otherfaceexplorer.Next(), ++nbEdges)
             {
                 Edge otherEdge = ShapeCasts.Edge(otherfaceexplorer.Current());
-                if (otherEdge.Orientation() != External && otherEdge != edge)
+                if (otherEdge.Orientation != External && otherEdge != edge)
                 {
                     var aEdge = new ClassifierEdge(otherEdge, face);
-                    fClassifier.Compare(aEdge, otherEdge.Orientation());
+                    fClassifier.Compare(aEdge, otherEdge.Orientation);
                     if (fClassifier.ClosestIntersection() != 0)
                     {
                         if (paramInit > fClassifier.Parameter())
@@ -143,7 +143,7 @@ public class SolidExplorer
             if (nbEdges == 1)
             {
                 var aEdge = new ClassifierEdge(edge, face);
-                fClassifier.Compare(aEdge, edge.Orientation());
+                fClassifier.Compare(aEdge, edge.Orientation);
                 if (fClassifier.ClosestIntersection() != 0)
                 {
                     if (paramInit > fClassifier.Parameter())
@@ -157,8 +157,8 @@ public class SolidExplorer
             while (aPointExist)
             {
                 paramInit *= 0.41234;
-                u_ = p.X() + paramInit * t.X();
-                v_ = p.Y() + paramInit * t.Y();
+                u_ = p.X + paramInit * t.X;
+                v_ = p.Y + paramInit * t.Y;
 
                 // Additional check
                 var classifier = new FClass2d(face, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -223,7 +223,7 @@ public class SolidExplorer
                                            in Point2D p2d)
     {
         // first find if the point is near an edge/vertex
-        Point3D p3d = surf.Value(p2d.X(), p2d.Y());
+        Point3D p3d = surf.Value(p2d.X, p2d.Y);
         var selectorPoint = new BndBoxTreeSelectorPoint(_mapEV);
         selectorPoint.SetCurrentPoint(p3d);
         int selsVE = _tree.Select(selectorPoint);
@@ -290,7 +290,7 @@ public class SolidExplorer
                 if (isInside && (ClassifyUVPoint(theIntersector, surf, new Point2D(u_, v_)) == In))
                 {
                     surf.D1(u_, v_, out Point3D pnt, out vecD1U, out vecD1V);
-                    if (pnt.SquareDistance(APoint_) < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (pnt.SquareDistanceTo(APoint_) < global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         return true;
                     }
@@ -567,7 +567,7 @@ public class SolidExplorer
                 v1 = surf.FirstVParameter();
                 u2 = surf.LastUParameter();
                 v2 = surf.LastVParameter();
-                face.Orientation(Forward);
+                face.Orient(Forward);
                 //
                 // avoid process faces from uncorrected shells
                 double eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -649,7 +649,7 @@ public class SolidExplorer
                     {
                         aPoint = (ext.Point(iNear)).Value();
                         Vector3D v = new(p, aPoint);
-                        _Par = v.Magnitude();
+                        _Par = v.Magnitude;
                         l = new Line3D(p, new Direction3D(v));
                         ptfound = true;
                         return 0;
@@ -682,12 +682,12 @@ public class SolidExplorer
                     {
                         ++nbPointsOK;
                         Vector3D v = new(p, aPoint);
-                        par = v.Magnitude();
-                        if (par > Constants.Resolution() && vecD1U.Magnitude() > Constants.Resolution()
-                            && vecD1V.Magnitude() > Constants.Resolution())
+                        par = v.Magnitude;
+                        if (par > Constants.Resolution() && vecD1U.Magnitude > Constants.Resolution()
+                            && vecD1V.Magnitude > Constants.Resolution())
                         {
                             Vector3D norm = vecD1U.Crossed(vecD1V);
-                            double tt = norm.Magnitude();
+                            double tt = norm.Magnitude;
                             if (tt > Constants.Resolution())
                             {
                                 tt = Math.Abs(norm.Dot(v)) / (tt * par);
@@ -727,7 +727,7 @@ public class SolidExplorer
                     {
                         //-- This case takes place when the point is on the solid
                         //-- and this solid is reduced to a face
-                        Point3D pBidon = new(p.X() + 1.0, p.Y(), p.Z());
+                        Point3D pBidon = new(p.X + 1.0, p.Y, p.Z);
                         Vector3D v = new(p, pBidon);
                         par = 1.0;
                         _Par = par;
@@ -788,7 +788,7 @@ public class SolidExplorer
                 _paramOnEdge *= 0.5;
                 if (_paramOnEdge < 0.0001)
                 {
-                    Point3D pBidon = new(p.X() + 1.0, p.Y(), p.Z());
+                    Point3D pBidon = new(p.X + 1.0, p.Y, p.Z);
                     Vector3D v = new(p, pBidon);
                     par = 1.0;
                     _Par = par;
@@ -817,7 +817,7 @@ public class SolidExplorer
                                ref int indexPoint)
     {
         Face face = _face;
-        face.Orientation(Forward);
+        face.Orient(Forward);
         var surf = new FaceSurfaceAdaptor();
         surf.Initialize(face);
         double u1, v1, u2, v2; //,u,v;
@@ -907,7 +907,7 @@ public class SolidExplorer
         {
             Shape f = expF.Current();
             //
-            Orientation orF = f.Orientation();
+            Orientation orF = f.Orientation;
             if (orF == Internal || orF == External)
             {
                 continue;
@@ -919,7 +919,7 @@ public class SolidExplorer
             {
                 Shape e = expE.Current();
                 //
-                Orientation orE = e.Orientation();
+                Orientation orE = e.Orientation;
                 if (orE == Internal || orE == External)
                 {
                     continue;

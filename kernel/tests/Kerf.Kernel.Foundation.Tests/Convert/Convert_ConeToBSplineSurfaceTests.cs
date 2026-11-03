@@ -96,8 +96,8 @@ public class Convert_ConeToBSplineSurfaceTest
                 // Verify the point lies on the cone:
                 // For a cone with axis Z, semi-angle a, reference radius R:
                 // r(z) = R + z * tan(a), distance from axis = r
-                double aDistFromAxis = Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y());
-                double aExpectedR = aRadius + aPnt.Z() * Math.Tan(aSemiAngle);
+                double aDistFromAxis = Math.Sqrt(aPnt.X * aPnt.X + aPnt.Y * aPnt.Y);
+                double aExpectedR = aRadius + aPnt.Z * Math.Tan(aSemiAngle);
                 Assert.Equal(aExpectedR, aDistFromAxis, aTol);
             }
         }

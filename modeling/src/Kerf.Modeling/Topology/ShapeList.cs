@@ -166,7 +166,7 @@ public sealed class ShapeList<T> : IReadOnlyList<T>, IEquatable<ShapeList<T>> wh
         var expanded = new List<Shape>();
         foreach (var shape in this)
         {
-            switch (shape.TopoShape.ShapeType())
+            switch (shape.TopoShape.Type)
             {
                 case global::Kerf.Topology.ShapeType.Compound:
                     expanded.AddRange(new ShapeList<Shape>(shape is Compound c ? c.Children() : []).Expand());

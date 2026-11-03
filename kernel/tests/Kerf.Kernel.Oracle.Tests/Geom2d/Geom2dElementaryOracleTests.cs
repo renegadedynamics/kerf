@@ -81,9 +81,9 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
             using var aNative = new N.Geom2d_Circle(aNAx, aR, aSense);
             var aPort = new CircleCurve2D(anAx, aR, aSense);
             CheckCurve(anOracle, aNative, aPort, "Circle", false);
-            anOracle.Same(aNative.Radius(), aPort.Radius(), "Circle Radius");
-            anOracle.Same(aNative.Eccentricity(), aPort.Eccentricity(), "Circle Eccentricity");
-            anOracle.Same(aNative.Period(), aPort.Period(), "Circle Period");
+            anOracle.Same(aNative.Radius(), aPort.Radius, "Circle Radius");
+            anOracle.Same(aNative.Eccentricity(), aPort.Eccentricity, "Circle Eccentricity");
+            anOracle.Same(aNative.Period(), aPort.Period, "Circle Period");
         }
 
         anOracle.Report("Geom2d_Circle");
@@ -104,14 +104,14 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
             var aPort = new EllipseCurve2D(anAx, aMaj, aMin, aSense);
             CheckCurve(anOracle, aNative, aPort, "Ellipse", false);
 
-            anOracle.Same(aNative.Eccentricity(), aPort.Eccentricity(), "Ellipse Eccentricity");
-            anOracle.Same(aNative.Focal(), aPort.Focal(), "Ellipse Focal");
-            anOracle.Same(aNative.Parameter(), aPort.Parameter(), "Ellipse Parameter");
+            anOracle.Same(aNative.Eccentricity(), aPort.Eccentricity, "Ellipse Eccentricity");
+            anOracle.Same(aNative.Focal(), aPort.Focal, "Ellipse Focal");
+            anOracle.Same(aNative.Parameter(), aPort.Parameter, "Ellipse Parameter");
             using (var aF1 = aNative.Focus1())
             using (var aF2 = aNative.Focus2())
             {
-                anOracle.Same(Oracle.FromNative(aF1), aPort.Focus1().XY(), "Ellipse Focus1");
-                anOracle.Same(Oracle.FromNative(aF2), aPort.Focus2().XY(), "Ellipse Focus2");
+                anOracle.Same(Oracle.FromNative(aF1), aPort.Focus1.XY(), "Ellipse Focus1");
+                anOracle.Same(Oracle.FromNative(aF2), aPort.Focus2.XY(), "Ellipse Focus2");
             }
             using (var aD1 = aNative.Directrix1())
             using (var aD2 = aNative.Directrix2())
@@ -120,10 +120,10 @@ public class Geom2dElementaryOracleTests(ITestOutputHelper output)
             using (var aD2P = aD2.Location())
             using (var aD2D = aD2.Direction())
             {
-                anOracle.Same(Oracle.FromNative(aD1P), aPort.Directrix1().Location().XY(), "Ellipse Directrix1 P");
-                anOracle.Same(Oracle.FromNative(aD1D), aPort.Directrix1().Direction().XY(), "Ellipse Directrix1 D");
-                anOracle.Same(Oracle.FromNative(aD2P), aPort.Directrix2().Location().XY(), "Ellipse Directrix2 P");
-                anOracle.Same(Oracle.FromNative(aD2D), aPort.Directrix2().Direction().XY(), "Ellipse Directrix2 D");
+                anOracle.Same(Oracle.FromNative(aD1P), aPort.Directrix1.Location.XY(), "Ellipse Directrix1 P");
+                anOracle.Same(Oracle.FromNative(aD1D), aPort.Directrix1.Direction.XY(), "Ellipse Directrix1 D");
+                anOracle.Same(Oracle.FromNative(aD2P), aPort.Directrix2.Location.XY(), "Ellipse Directrix2 P");
+                anOracle.Same(Oracle.FromNative(aD2D), aPort.Directrix2.Direction.XY(), "Ellipse Directrix2 D");
             }
         }
 

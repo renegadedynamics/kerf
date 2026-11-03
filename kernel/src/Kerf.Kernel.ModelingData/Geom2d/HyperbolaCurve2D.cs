@@ -34,9 +34,9 @@ public class HyperbolaCurve2D : ConicCurve2D
     /// <summary>The hyperbola equal to H.</summary>
     public HyperbolaCurve2D(in Hyperbola2D h)
     {
-        _majorRadius = h.MajorRadius();
-        _minorRadius = h.MinorRadius();
-        _pos = h.Axis();
+        _majorRadius = h.MajorRadius;
+        _minorRadius = h.MinorRadius;
+        _pos = h.Axis;
     }
 
     /// <summary>The hyperbola whose major axis is MajorAxis; Sense gives the orientation (true: counterclockwise).</summary>
@@ -68,9 +68,9 @@ public class HyperbolaCurve2D : ConicCurve2D
     internal void SetHypr2d(in Hyperbola2D h)
     {
         CheckMutable();
-        _majorRadius = h.MajorRadius();
-        _minorRadius = h.MinorRadius();
-        _pos = h.Axis();
+        _majorRadius = h.MajorRadius;
+        _minorRadius = h.MinorRadius;
+        _pos = h.Axis;
     }
 
     internal void SetMajorRadius(double majorRadius)
@@ -100,16 +100,16 @@ public class HyperbolaCurve2D : ConicCurve2D
     }
 
     /// <summary>The hyperbola as a gp_Hypr2d.</summary>
-    public Hyperbola2D Hypr2d() => new Hyperbola2D(_pos, _majorRadius, _minorRadius);
+    public Hyperbola2D Hyperbola => new Hyperbola2D(_pos, _majorRadius, _minorRadius);
 
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
     /// <summary>-Precision::Infinite().</summary>
-    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>False.</summary>
     public sealed override bool IsClosed => false;
@@ -119,18 +119,24 @@ public class HyperbolaCurve2D : ConicCurve2D
 
     /// <summary>The first asymptote (see gp_Hypr2d::Asymptote1, which has an OCCT bug: occt-issues.md).</summary>
     /// <exception cref="ConstructionErrorException">MajorRadius is 0.</exception>
-    public Axis2D Asymptote1()
+    public Axis2D Asymptote1
     {
-        Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
-        return hv.Asymptote1();
+        get
+        {
+            Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
+            return hv.Asymptote1;
+        }
     }
 
     /// <summary>The second asymptote (see gp_Hypr2d::Asymptote2, which has an OCCT bug: occt-issues.md).</summary>
     /// <exception cref="ConstructionErrorException">MajorRadius is 0.</exception>
-    public Axis2D Asymptote2()
+    public Axis2D Asymptote2
     {
-        Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
-        return hv.Asymptote2();
+        get
+        {
+            Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
+            return hv.Asymptote2;
+        }
     }
 
     /// <summary>The conjugate branch on the positive side of the Y axis.</summary>
@@ -148,55 +154,70 @@ public class HyperbolaCurve2D : ConicCurve2D
     }
 
     /// <summary>The directrix on the positive side of the X axis.</summary>
-    public Axis2D Directrix1()
+    public Axis2D Directrix1
     {
-        Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
-        return hv.Directrix1();
+        get
+        {
+            Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
+            return hv.Directrix1;
+        }
     }
 
     /// <summary>The directrix on the negative side of the X axis (see gp_Hypr2d::Directrix2, occt-issues.md).</summary>
-    public Axis2D Directrix2()
+    public Axis2D Directrix2
     {
-        Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
-        return hv.Directrix2();
+        get
+        {
+            Hyperbola2D hv = new Hyperbola2D(_pos, _majorRadius, _minorRadius);
+            return hv.Directrix2;
+        }
     }
 
     /// <summary>sqrt(MajorRadius^2 + MinorRadius^2) / MajorRadius.</summary>
     /// <exception cref="DomainErrorException">MajorRadius is 0.</exception>
-    public sealed override double Eccentricity()
+    public sealed override double Eccentricity
     {
-        Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), " ");
-        return (Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius)) / _majorRadius;
+        get
+        {
+            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), " ");
+            return (Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius)) / _majorRadius;
+        }
     }
 
     /// <summary>The distance between the foci.</summary>
-    public double Focal() => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+    public double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public Point2D Focus1()
+    public Point2D Focus1
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        Xy pxy = _pos.XDirection().XY();
-        pxy.Multiply(c);
-        pxy.Add(_pos.Location().XY());
-        return new Point2D(pxy);
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            Xy pxy = _pos.XDirection.XY();
+            pxy.Multiply(c);
+            pxy.Add(_pos.Location.XY());
+            return new Point2D(pxy);
+        }
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public Point2D Focus2()
+    public Point2D Focus2
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        Xy pxy = _pos.XDirection().XY();
-        pxy.Multiply(-c);
-        pxy.Add(_pos.Location().XY());
-        return new Point2D(pxy);
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            Xy pxy = _pos.XDirection.XY();
+            pxy.Multiply(-c);
+            pxy.Add(_pos.Location.XY());
+            return new Point2D(pxy);
+        }
     }
 
     /// <summary>The major radius.</summary>
-    public double MajorRadius() => _majorRadius;
+    public double MajorRadius => _majorRadius;
 
     /// <summary>The minor radius.</summary>
-    public double MinorRadius() => _minorRadius;
+    public double MinorRadius => _minorRadius;
 
     /// <summary>The other branch, symmetric about the Y axis.</summary>
     public Hyperbola2D OtherBranch()
@@ -207,29 +228,32 @@ public class HyperbolaCurve2D : ConicCurve2D
 
     /// <summary>MinorRadius^2 / MajorRadius.</summary>
     /// <exception cref="DomainErrorException">MajorRadius is 0.</exception>
-    public double Parameter()
+    public double Parameter
     {
-        Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), " ");
-        return (_minorRadius * _minorRadius) / _majorRadius;
+        get
+        {
+            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), " ");
+            return (_minorRadius * _minorRadius) / _majorRadius;
+        }
     }
 
-    public sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(u, _pos, _majorRadius, _minorRadius);
+    internal sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(u, _pos, _majorRadius, _minorRadius);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElCLib.HyperbolaD1(u, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElCLib.HyperbolaD2(u, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElCLib.HyperbolaD3(u,
@@ -244,7 +268,7 @@ public class HyperbolaCurve2D : ConicCurve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -257,8 +281,8 @@ public class HyperbolaCurve2D : ConicCurve2D
     protected internal sealed override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor());
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor());
+        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 

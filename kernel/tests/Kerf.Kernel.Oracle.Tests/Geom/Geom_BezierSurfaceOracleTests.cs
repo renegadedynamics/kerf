@@ -55,14 +55,14 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
     {
         theOracle.Same(theN.NbUPoles(), theP.UPoleCount, theWhat + " NbUPoles");
         theOracle.Same(theN.NbVPoles(), theP.VPoleCount, theWhat + " NbVPoles");
-        theOracle.Same(theN.UDegree(), theP.UDegree(), theWhat + " UDegree");
-        theOracle.Same(theN.VDegree(), theP.VDegree(), theWhat + " VDegree");
+        theOracle.Same(theN.UDegree(), theP.UDegree, theWhat + " UDegree");
+        theOracle.Same(theN.VDegree(), theP.VDegree, theWhat + " VDegree");
         theOracle.Same(theN.IsURational(), theP.IsURational, theWhat + " IsURational");
         theOracle.Same(theN.IsVRational(), theP.IsVRational, theWhat + " IsVRational");
         theOracle.Same(theN.IsUClosed(), theP.IsUClosed, theWhat + " IsUClosed");
         theOracle.Same(theN.IsVClosed(), theP.IsVClosed, theWhat + " IsVClosed");
         theOracle.Same(theN.IsUPeriodic(), theP.IsUPeriodic, theWhat + " IsUPeriodic");
-        theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
+        theOracle.Same((int)theN.Continuity(), (int)theP.Continuity, theWhat + " Continuity");
         for (int i = 1; i <= theP.UPoleCount; i++)
         {
             for (int j = 1; j <= theP.VPoleCount; j++)
@@ -75,12 +75,12 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
 
         using (N.TColStd_Array1OfInteger aNM = theN.UMultiplicities())
         {
-            theOracle.Same(aNM.Value(aNM.Lower()), theP.UMultiplicities()[0], theWhat + " UMultiplicities");
+            theOracle.Same(aNM.Value(aNM.Lower()), theP.UMultiplicities[0], theWhat + " UMultiplicities");
         }
 
         using (N.TColStd_Array1OfReal aNK = theN.VKnotSequence())
         {
-            IReadOnlyList<double> aK = theP.VKnotSequence();
+            IReadOnlyList<double> aK = theP.VKnotSequence;
             theOracle.Same(aNK.Length(), aK.Count, theWhat + " VKnotSequence length");
             for (int k = 0; k < aK.Count; k++)
             {
@@ -304,7 +304,7 @@ public class Geom_BezierSurfaceOracleTests(ITestOutputHelper output)
             case 4:
             {
                 theWhat = "Increase";
-                int aUD = Math.Min(theP.UDegree() + theOracle.Int(0, 3), 12), aVD = Math.Min(theP.VDegree() + theOracle.Int(0, 3), 12);
+                int aUD = Math.Min(theP.UDegree + theOracle.Int(0, 3), 12), aVD = Math.Min(theP.VDegree + theOracle.Int(0, 3), 12);
                 return Both(() => theN.Increase(aUD, aVD), () => theP.Increase(aUD, aVD), theWhat);
             }
             case 5:

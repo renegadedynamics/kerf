@@ -105,7 +105,7 @@ public class ConnectedShapes : SelectExplore
             {
                 continue;
             }
-            if (sh.ShapeType() != type)
+            if (sh.Type != type)
             {
                 continue;
             }

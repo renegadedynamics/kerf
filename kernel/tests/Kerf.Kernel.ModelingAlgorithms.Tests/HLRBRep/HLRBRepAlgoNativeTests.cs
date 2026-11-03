@@ -211,9 +211,9 @@ public class HLRBRepAlgoNativeTests(ITestOutputHelper output)
                 double Ny = double.Parse(theHead[4], CultureInfo.InvariantCulture);
                 double Nz = double.Parse(theHead[5], CultureInfo.InvariantCulture);
                 Frame3D aAxes = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Nx, Ny, Nz));
-                Direction3D aDX = aAxes.XDirection();
+                Direction3D aDX = aAxes.XDirection;
                 ReflectLines aReflector = new(theInputs[0]);
-                aReflector.SetAxes(Nx, Ny, Nz, 0.0, 0.0, 0.0, aDX.X(), aDX.Y(), aDX.Z());
+                aReflector.SetAxes(Nx, Ny, Nz, 0.0, 0.0, 0.0, aDX.X, aDX.Y, aDX.Z);
                 aReflector.Perform();
                 aResults.Add(("Result", aReflector.GetResult()));
                 aResults.Add(("Sharp3d", aReflector.GetCompoundOf3dEdges(TypeOfResultingEdge.Sharp, true, true)));

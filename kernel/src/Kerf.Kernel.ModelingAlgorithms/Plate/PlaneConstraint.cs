@@ -20,9 +20,9 @@ public class PlaneConstraint
     public PlaneConstraint(in Xy point2d, in Plane3D pln, int iu = 0, int iv = 0)
     {
         _lsc = new LinearScalarConstraint(1, 1);
-        Xyz point = pln.Location().XYZ();
+        Xyz point = pln.Location.XYZ();
         _lsc.SetPPC(1, new PinpointConstraint(point2d, point, iu, iv));
-        Xyz dir = pln.Axis().Direction().XYZ();
+        Xyz dir = pln.Axis.Direction.XYZ();
         dir.Normalize();
         _lsc.SetCoeff(1, 1, dir);
     }

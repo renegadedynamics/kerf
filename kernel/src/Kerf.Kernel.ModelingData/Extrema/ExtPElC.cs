@@ -46,15 +46,15 @@ public class ExtPElC
     {
         _done = false;
         _nbExt = 0;
-        Vector3D v1 = new(l.Direction());
-        Point3D or = l.Location();
+        Vector3D v1 = new(l.Direction);
+        Point3D or = l.Location;
         Vector3D v = new(or, p);
         double mydist = v1.Dot(v);
         if ((mydist >= uinf - tol) && (mydist <= usup + tol))
         {
             Point3D myP = or.Translated(mydist * v1);
             POnCurv myPOnCurve = new(mydist, myP);
-            _sqDist[0] = p.SquareDistance(myP);
+            _sqDist[0] = p.SquareDistanceTo(myP);
             _point[0] = myPOnCurve;
             _isMin[0] = true;
             _nbExt = 1;
@@ -99,20 +99,20 @@ public class ExtPElC
 
         // 1- Projection of the point P in the plane of circle -> Pp ...
 
-        Point3D o = c.Location();
-        Vector3D axe = new(c.Axis().Direction());
+        Point3D o = c.Location;
+        Vector3D axe = new(c.Axis.Direction);
         Vector3D trsl = axe.Multiplied(-(new Vector3D(o, p).Dot(axe)));
         Point3D pp = p.Translated(trsl);
 
         // 2- Calculate u solutions in [0.,2.*PI] ...
 
         Vector3D oPp = new(o, pp);
-        if (oPp.Magnitude() < tol)
+        if (oPp.Magnitude < tol)
         {
             return;
         }
         Span<double> usol = stackalloc double[2];
-        usol[0] = c.XAxis().Direction().AngleWithRef(new Direction3D(oPp), new Direction3D(axe)); // -M_PI<U1<M_PI
+        usol[0] = c.XAxis.Direction.AngleWithRef(new Direction3D(oPp), new Direction3D(axe)); // -M_PI<U1<M_PI
 
         double angTol = global::Kerf.Engine.Foundation.Precision.Angular();
         if (usol[0] + M_PI < angTol)
@@ -129,7 +129,7 @@ public class ExtPElC
         double myuinf = uinf;
         // double TolU = Tol*C.Radius();
         double tolU, r;
-        r = c.Radius();
+        r = c.Radius;
         tolU = global::Kerf.Engine.Foundation.Precision.Infinite();
         if (r > Constants.Resolution())
         {
@@ -157,7 +157,7 @@ public class ExtPElC
             if (((uinf - us) < tolU) && ((us - usup) < tolU))
             {
                 cu = global::Kerf.Engine.Geometry.ElCLib.Value(us, c);
-                _sqDist[_nbExt] = cu.SquareDistance(p);
+                _sqDist[_nbExt] = cu.SquareDistanceTo(p);
                 _isMin[_nbExt] = (noSol == 0);
                 _point[_nbExt] = new POnCurv(us, cu);
                 _nbExt++;
@@ -198,18 +198,18 @@ public class ExtPElC
 
         // 1- Projection of point P in the plane of the ellipse -> Pp ...
 
-        Point3D o = c.Location();
-        Vector3D axe = new(c.Axis().Direction());
+        Point3D o = c.Location;
+        Vector3D axe = new(c.Axis.Direction);
         Vector3D trsl = axe.Multiplied(-(new Vector3D(o, p).Dot(axe)));
         Point3D pp = p.Translated(trsl);
 
         // 2- Calculation of solutions ...
 
         int noSol, nbSol;
-        double a = c.MajorRadius();
-        double b = c.MinorRadius();
+        double a = c.MajorRadius;
+        double b = c.MinorRadius;
         Vector3D oPp = new(o, pp);
-        double oPpMagn = oPp.Magnitude();
+        double oPpMagn = oPp.Magnitude;
         if (oPpMagn < tol)
         {
             if (Math.Abs(a - b) < tol)
@@ -217,8 +217,8 @@ public class ExtPElC
                 return;
             }
         }
-        double x = oPp.Dot(new Vector3D(c.XAxis().Direction()));
-        double y = oPp.Dot(new Vector3D(c.YAxis().Direction()));
+        double x = oPp.Dot(new Vector3D(c.XAxis.Direction));
+        double y = oPp.Dot(new Vector3D(c.YAxis.Direction));
 
         double ko2 = (b * b - a * a) / 2.0, ko3 = -b * y, ko4 = a * x;
         if (Math.Abs(ko3) < 1.0e-16 * Max(Math.Abs(ko2), Math.Abs(ko3)))
@@ -240,10 +240,10 @@ public class ExtPElC
         {
             us = sol.Value(noSol);
             cu = global::Kerf.Engine.Geometry.ElCLib.Value(us, c);
-            _sqDist[_nbExt] = cu.SquareDistance(p);
+            _sqDist[_nbExt] = cu.SquareDistanceTo(p);
             _point[_nbExt] = new POnCurv(us, cu);
             cu = global::Kerf.Engine.Geometry.ElCLib.Value(us + 0.1, c);
-            _isMin[_nbExt] = _sqDist[_nbExt] < cu.SquareDistance(p);
+            _isMin[_nbExt] = _sqDist[_nbExt] < cu.SquareDistanceTo(p);
             _nbExt++;
         }
         _done = true;
@@ -290,19 +290,19 @@ public class ExtPElC
 
         // 1- Projection of point P in the plane of hyperbola -> Pp ...
 
-        Point3D o = c.Location();
-        Vector3D axe = new(c.Axis().Direction());
+        Point3D o = c.Location;
+        Vector3D axe = new(c.Axis.Direction);
         Vector3D trsl = axe.Multiplied(-(new Vector3D(o, p).Dot(axe)));
         Point3D pp = p.Translated(trsl);
 
         // 2- Calculation of solutions ...
 
         double tol2 = tol * tol;
-        double R = c.MajorRadius();
-        double r = c.MinorRadius();
+        double R = c.MajorRadius;
+        double r = c.MinorRadius;
         Vector3D oPp = new(o, pp);
-        double x = oPp.Dot(new Vector3D(c.XAxis().Direction()));
-        double y = oPp.Dot(new Vector3D(c.YAxis().Direction()));
+        double x = oPp.Dot(new Vector3D(c.XAxis.Direction));
+        double y = oPp.Dot(new Vector3D(c.YAxis.Direction));
 
         double c1 = (R * R + r * r) / 4.0;
         DirectPolynomialRoots sol = new(c1, -(x * R + y * r) / 2.0, 0.0, (x * R - y * r) / 2.0, -c1);
@@ -328,7 +328,7 @@ public class ExtPElC
                     dejaEnr = false;
                     for (noExt = 0; noExt < _nbExt; noExt++)
                     {
-                        if (tbExt[noExt].SquareDistance(cu) < tol2)
+                        if (tbExt[noExt].SquareDistanceTo(cu) < tol2)
                         {
                             dejaEnr = true;
                             break;
@@ -337,8 +337,8 @@ public class ExtPElC
                     if (!dejaEnr)
                     {
                         tbExt[_nbExt] = cu;
-                        _sqDist[_nbExt] = cu.SquareDistance(p);
-                        _isMin[_nbExt] = _sqDist[_nbExt] < p.SquareDistance(global::Kerf.Engine.Geometry.ElCLib.Value(us + 1, c));
+                        _sqDist[_nbExt] = cu.SquareDistanceTo(p);
+                        _isMin[_nbExt] = _sqDist[_nbExt] < p.SquareDistanceTo(global::Kerf.Engine.Geometry.ElCLib.Value(us + 1, c));
                         _point[_nbExt] = new POnCurv(us, cu);
                         _nbExt++;
                     }
@@ -380,17 +380,17 @@ public class ExtPElC
 
         // 1- Projection of point P in the plane of the parabola -> Pp ...
 
-        Point3D o = c.Location();
-        Vector3D axe = new(c.Axis().Direction());
+        Point3D o = c.Location;
+        Vector3D axe = new(c.Axis.Direction);
         Vector3D trsl = axe.Multiplied(-(new Vector3D(o, p).Dot(axe)));
         Point3D pp = p.Translated(trsl);
 
         // 2- Calculation of solutions ...
 
-        double f = c.Focal();
+        double f = c.Focal;
         Vector3D oPp = new(o, pp);
-        double x = oPp.Dot(new Vector3D(c.XAxis().Direction()));
-        double y = oPp.Dot(new Vector3D(c.YAxis().Direction()));
+        double x = oPp.Dot(new Vector3D(c.XAxis.Direction));
+        double y = oPp.Dot(new Vector3D(c.YAxis.Direction));
         DirectPolynomialRoots sol = new(1.0 / (4.0 * f), 0.0, 2.0 * f - x, -2.0 * f * y);
         if (!sol.IsDone)
         {
@@ -411,7 +411,7 @@ public class ExtPElC
                 dejaEnr = false;
                 for (noExt = 0; noExt < _nbExt; noExt++)
                 {
-                    if (tbExt[noExt].SquareDistance(cu) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (tbExt[noExt].SquareDistanceTo(cu) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         dejaEnr = true;
                         break;
@@ -420,8 +420,8 @@ public class ExtPElC
                 if (!dejaEnr)
                 {
                     tbExt[_nbExt] = cu;
-                    _sqDist[_nbExt] = cu.SquareDistance(p);
-                    _isMin[_nbExt] = _sqDist[_nbExt] < p.SquareDistance(global::Kerf.Engine.Geometry.ElCLib.Value(us + 1, c));
+                    _sqDist[_nbExt] = cu.SquareDistanceTo(p);
+                    _isMin[_nbExt] = _sqDist[_nbExt] < p.SquareDistanceTo(global::Kerf.Engine.Geometry.ElCLib.Value(us + 1, c));
                     _point[_nbExt] = new POnCurv(us, cu);
                     _nbExt++;
                 }

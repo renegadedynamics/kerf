@@ -270,10 +270,10 @@ public class TopologyOracleTests(ITestOutputHelper output)
                 theOracle.Same(aS.N.Free(), aS.P.Free(), "Free");
                 theOracle.Same(aS.N.Modified(), aS.P.Modified(), "Modified");
                 theOracle.Same(aS.N.Checked(), aS.P.Checked(), "Checked");
-                theOracle.Same(aS.N.Orientable(), aS.P.Orientable(), "Orientable");
-                theOracle.Same(aS.N.Closed(), aS.P.Closed(), "Closed");
-                theOracle.Same(aS.N.Infinite(), aS.P.Infinite(), "Infinite");
-                theOracle.Same(aS.N.Convex(), aS.P.Convex(), "Convex");
+                theOracle.Same(aS.N.Orientable(), aS.P.IsOrientable, "Orientable");
+                theOracle.Same(aS.N.Closed(), aS.P.IsClosed, "Closed");
+                theOracle.Same(aS.N.Infinite(), aS.P.IsInfinite, "Infinite");
+                theOracle.Same(aS.N.Convex(), aS.P.IsConvex, "Convex");
                 theOracle.Same(aS.N.Locked(), theStoredLocked ? aS.P.TShape()!.LockedFlag() : aS.P.Locked(), "Locked (unfrozen)");
             }
         }
@@ -296,13 +296,13 @@ public class TopologyOracleTests(ITestOutputHelper output)
                 var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
                 foreach (Twin<N.TopoDS_Shape, Shape> aS in aShapes)
                 {
-                    theOracle.Same((int)aS.N.ShapeType(), (int)aS.P.ShapeType(), "ShapeType");
-                    theOracle.Same((int)aS.N.Orientation(), (int)aS.P.Orientation(), "Orientation");
+                    theOracle.Same((int)aS.N.ShapeType(), (int)aS.P.Type, "ShapeType");
+                    theOracle.Same((int)aS.N.Orientation(), (int)aS.P.Orientation, "Orientation");
                     theOracle.Same(aS.N.NbChildren(), aS.P.ChildCount, "NbChildren");
-                    theOracle.Same(aS.N.Location().IsIdentity(), aS.P.Location().IsIdentity, "Location.IsIdentity");
+                    theOracle.Same(aS.N.Location().IsIdentity(), aS.P.Placement.IsIdentity, "Location.IsIdentity");
                     using (N.gp_Trsf aNT = aS.N.Location().Transformation())
                     {
-                        theOracle.Same(aNT, aS.P.Location().Transformation(), "Location");
+                        theOracle.Same(aNT, aS.P.Placement.Transformation, "Location");
                     }
 
                     theOracle.Same(aNMap.Add(aS.N), aMap.Add(aS.P) + 1, "IndexedMapOfShape.Add");
@@ -355,10 +355,10 @@ public class TopologyOracleTests(ITestOutputHelper output)
             {
                 N.TopoDS_Shape aN = aNAll.FindKey(i);
                 Shape aP = anAll[i - 1];
-                theOracle.Same((int)aN.ShapeType(), (int)aP.ShapeType(), "MapShapes (all) type");
-                theOracle.Same((int)aN.Orientation(), (int)aP.Orientation(), "MapShapes (all) orientation");
+                theOracle.Same((int)aN.ShapeType(), (int)aP.Type, "MapShapes (all) type");
+                theOracle.Same((int)aN.Orientation(), (int)aP.Orientation, "MapShapes (all) orientation");
                 using N.gp_Trsf aNT = aN.Location().Transformation();
-                theOracle.Same(aNT, aP.Location().Transformation(), "MapShapes (all) location");
+                theOracle.Same(aNT, aP.Placement.Transformation, "MapShapes (all) location");
             }
         }
 
@@ -416,7 +416,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
             return;
         }
 
-        theOracle.Same((int)theN.Orientation(), (int)theP.Orientation(), theWhat + " orientation");
+        theOracle.Same((int)theN.Orientation(), (int)theP.Orientation, theWhat + " orientation");
         using N.gp_Pnt aNP = N.BRep_Tool.Pnt(theN);
         theOracle.Same(aNP, Tool.Pnt(theP), theWhat);
         theOracle.Same(N.BRep_Tool.Tolerance(theN), Tool.Tolerance(theP), theWhat + " tolerance");
@@ -489,7 +489,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
         theOracle.Same(aNC is null, aC is null, "Curve is null");
         using (N.gp_Trsf aNT = aNLoc.Transformation())
         {
-            theOracle.Same(aNT, aLoc.Transformation(), "Curve location");
+            theOracle.Same(aNT, aLoc.Transformation, "Curve location");
         }
 
         theOracle.Same(aNF2, f2, "Curve.First");

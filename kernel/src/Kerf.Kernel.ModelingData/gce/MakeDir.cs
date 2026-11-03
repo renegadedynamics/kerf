@@ -19,7 +19,7 @@ public sealed class MakeDir : Root
     /// <summary>A direction from two points; fails with gce_ConfusedPoints if they are coincident.</summary>
     public MakeDir(in Point3D p1, in Point3D p2)
     {
-        if (p1.Distance(p2) <= Constants.Resolution())
+        if (p1.DistanceTo(p2) <= Constants.Resolution())
         {
             _theError = ConfusedPoints;
         }
@@ -47,7 +47,7 @@ public sealed class MakeDir : Root
     /// <summary>The normalised vector V; fails with gce_NullVector if its magnitude is too small.</summary>
     public MakeDir(in Vector3D v)
     {
-        if (v.Magnitude() <= Constants.Resolution())
+        if (v.Magnitude <= Constants.Resolution())
         {
             _theError = NullVector;
         }

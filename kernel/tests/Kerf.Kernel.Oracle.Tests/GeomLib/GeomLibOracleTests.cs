@@ -51,7 +51,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
     // A finite box inside the surface's bounds.
     private static (double U1, double U2, double V1, double V2) Box(Oracle theO, Surface theS)
     {
-        theS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2))
         {
             aU1 = -4;
@@ -90,11 +90,11 @@ public class GeomLibOracleTests(ITestOutputHelper output)
                 double aFix = anIsU ? theO.Real(u1, u2) : theO.Real(v1, v2);
                 Point2D aS = anIsU ? new Point2D(aFix, aFwd ? v1 : v2) : new Point2D(aFwd ? u1 : u2, aFix);
                 Point2D aE = anIsU ? new Point2D(aFix, aFwd ? v2 : v1) : new Point2D(aFwd ? u2 : u1, aFix);
-                double aLen = aS.Distance(aE);
+                double aLen = aS.DistanceTo(aE);
                 if (theO.Bool())
                 {
                     double dx = anIsU ? 0.0 : (aFwd ? 1.0 : -1.0), dy = anIsU ? (aFwd ? 1.0 : -1.0) : 0.0;
-                    Point2D aP = new(aS.X() - c * dx, aS.Y() - c * dy);
+                    Point2D aP = new(aS.X - c * dx, aS.Y - c * dy);
                     using var aNP = Oracle.ToNative(aP);
                     using var aND = new N.gp_Dir2d(dx, dy);
                     return new PCurve { Port = new LineCurve2D(aP, new Direction2D(dx, dy)), Native = new N.Geom2d_Line(aNP, aND),
@@ -111,14 +111,14 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             {
                 Point2D aS = new(theO.Real(u1, u2), theO.Real(v1, v2));
                 Point2D aE = new(theO.Real(u1, u2), theO.Real(v1, v2));
-                double dx = aE.X() - aS.X(), dy = aE.Y() - aS.Y();
+                double dx = aE.X - aS.X, dy = aE.Y - aS.Y;
                 double aLen = Math.Sqrt(dx * dx + dy * dy);
                 if (aLen < 1e-3)
                 {
                     aE = new Point2D(u2, v2);
                     aS = new Point2D(u1, v1);
-                    dx = aE.X() - aS.X();
-                    dy = aE.Y() - aS.Y();
+                    dx = aE.X - aS.X;
+                    dy = aE.Y - aS.Y;
                     aLen = Math.Sqrt(dx * dx + dy * dy);
                 }
                 Direction2D aD = new(dx, dy);
@@ -171,7 +171,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
         {
             using var aNBSpline = N.Geom_BSplineCurve.DownCast(theN);
             Assert.True(aNBSpline is not null, $"{theWhat}: native result is not a B-spline");
-            theO.Same(aNBSpline!.Degree(), aBSpline.Degree(), theWhat + " degree");
+            theO.Same(aNBSpline!.Degree(), aBSpline.Degree, theWhat + " degree");
             theO.Same(aNBSpline.IsRational(), aBSpline.IsRational, theWhat + " IsRational");
             theO.Same(aNBSpline.IsPeriodic(), aBSpline.IsPeriodic, theWhat + " IsPeriodic");
             theO.Same(aNBSpline.NbPoles(), aBSpline.PoleCount, theWhat + " NbPoles");
@@ -217,7 +217,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             {
                 // On a plane, any 2D curve (BRepLib calls GeomLib::To3d on the stored pcurve)
                 (N.Geom2d_Curve aNC, Curve2D aC, string aCKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
-                (double f, double l) = TestAdaptorOracleTests.Bounds(anOracle, aC.FirstParameter(), aC.LastParameter(),
+                (double f, double l) = TestAdaptorOracleTests.Bounds(anOracle, aC.FirstParameter, aC.LastParameter,
                                                                      aC.IsPeriodic);
                 if (anOracle.Bool())
                 {
@@ -260,12 +260,12 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             CurveOnSurface CurveOnSurface = new(AnAdaptor3dCurve2d, AnAdaptor3dSurface);
             Curve3D? NewCurvePtr = null;
             double aMaxDev = -1.0;
-            PlaneSurface? P = aPS is TrimmedSurface RT ? RT.BasisSurface() as PlaneSurface : aPS as PlaneSurface;
+            PlaneSurface? P = aPS is TrimmedSurface RT ? RT.BasisSurface as PlaneSurface : aPS as PlaneSurface;
             if (P is not null)
             {
                 // BRepLib's own plane branch: To3d of the stored pcurve (GeomLib::BuildCurve3d's plane branch would
                 // read the adaptor's curve, which is the basis of a trimmed pcurve)
-                NewCurvePtr = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(P.Position().Ax2(), aPC.Port);
+                NewCurvePtr = global::Kerf.Engine.Geometry.Library.GeomLib.To3d(P.Position.Frame, aPC.Port);
             }
             else
             {
@@ -307,7 +307,7 @@ public class GeomLibOracleTests(ITestOutputHelper output)
             using var aNSOwner = aNS;
             (N.Geom2d_Curve aNC, Curve2D aC, string aCKind) = TestAdaptorOracleTests.RandomCurve2d(anOracle);
             using var aNCOwner = aNC;
-            (double f, double l) = TestAdaptorOracleTests.Bounds(anOracle, aC.FirstParameter(), aC.LastParameter(),
+            (double f, double l) = TestAdaptorOracleTests.Bounds(anOracle, aC.FirstParameter, aC.LastParameter,
                                                                  aC.IsPeriodic);
             N.Geom2d_Curve aNPC = aNC;
             Curve2D aPPC = aC;

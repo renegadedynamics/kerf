@@ -258,7 +258,7 @@ public class ModelPreProcessor : ModelAlgo
             // Calculate the step by parameter of the curve.
             Point2D fPntOfIPC1 = ipc1.GetPoint(0);
             Point2D lPntOfIPC1 = ipc1.GetPoint(ipc1.ParametersNb() - 1);
-            double mod = Math.Abs(fPntOfIPC1.Y() - lPntOfIPC1.Y());
+            double mod = Math.Abs(fPntOfIPC1.Y - lPntOfIPC1.Y);
 
             if (mod < Constants.Resolution())
             {
@@ -285,9 +285,9 @@ public class ModelPreProcessor : ModelAlgo
             }
 
             // Select the correct pcurve of the seam-edge.
-            Point2D fPntOfPC1 = pc1.Value(pc1.FirstParameter());
+            Point2D fPntOfPC1 = pc1.Value(pc1.FirstParameter);
 
-            if (Math.Abs(lPntOfIPC1.X() - fPntOfPC1.X()) > global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (Math.Abs(lPntOfIPC1.X - fPntOfPC1.X) > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 (pc1, pc2) = (pc2, pc1);
             }

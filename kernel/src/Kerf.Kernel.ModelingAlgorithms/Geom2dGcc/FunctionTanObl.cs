@@ -30,7 +30,7 @@ public sealed class FunctionTanObl : FunctionWithDerivative
     public override bool Value(double x, out double fval)
     {
         ConstraintCurveTool.D1(_theCurv, x, out _, out Vector2D vect);
-        double normeD1 = vect.Magnitude();
+        double normeD1 = vect.Magnitude;
         fval           = _theDirection.XY().Crossed(vect.XY()) / normeD1;
         return true;
     }
@@ -38,7 +38,7 @@ public sealed class FunctionTanObl : FunctionWithDerivative
     public override bool Derivative(double x, out double deriv)
     {
         ConstraintCurveTool.D2(_theCurv, x, out _, out Vector2D vec1, out Vector2D vec2);
-        double normeD1 = vec1.Magnitude();
+        double normeD1 = vec1.Magnitude;
         deriv          = _theDirection.XY().Crossed(vec2.XY()) / normeD1
                 - vec1.XY().Dot(vec2.XY()) * _theDirection.XY().Crossed(vec1.XY()) / normeD1;
         return true;
@@ -47,7 +47,7 @@ public sealed class FunctionTanObl : FunctionWithDerivative
     public override bool Values(double x, out double fval, out double deriv)
     {
         ConstraintCurveTool.D2(_theCurv, x, out _, out Vector2D vec1, out Vector2D vec2);
-        double normeD1 = vec1.Magnitude();
+        double normeD1 = vec1.Magnitude;
         fval           = _theDirection.XY().Crossed(vec1.XY()) / normeD1;
         deriv          = _theDirection.XY().Crossed(vec2.XY()) / normeD1
                 - vec1.XY().Dot(vec2.XY()) * _theDirection.XY().Crossed(vec1.XY()) / normeD1;

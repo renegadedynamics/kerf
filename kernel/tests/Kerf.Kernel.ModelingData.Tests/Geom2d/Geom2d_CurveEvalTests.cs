@@ -39,12 +39,12 @@ public class Geom2d_CurveEvalTest
 
         // EvalD0
         Point2D aD0 = aCurve.EvalD0(aU);
-        double aDist = aD0.Distance(new Point2D(0.0, 0.0));
+        double aDist = aD0.DistanceTo(new Point2D(0.0, 0.0));
         Assert.Equal(4.0, aDist, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // EvalD1
         Curve2D.ResD1 aD1 = aCurve.EvalD1(aU);
-        Assert.Equal(0.0, aD1.Point.Distance(aD0), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aD1.Point.DistanceTo(aD0), global::Kerf.Engine.Foundation.Precision.Confusion());
         // D1 should be perpendicular to radius
         Vector2D aRadial = new Vector2D(new Point2D(0.0, 0.0), aD1.Point);
         Assert.Equal(0.0, aRadial.Dot(aD1.D1), 1.0e-10);
@@ -63,7 +63,7 @@ public class Geom2d_CurveEvalTest
         OffsetCurve2D anOffset = new OffsetCurve2D(aBasis, -3.0);
 
         Point2D aResult = anOffset.EvalD0(0.0);
-        Assert.Equal(0.0, aResult.Distance(new Point2D(0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.DistanceTo(new Point2D(0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // BSplineCurve 2D consistency tests
@@ -78,15 +78,15 @@ public class Geom2d_CurveEvalTest
                                                  new Point2D(5.0, 3.0),
                                                  new Point2D(7.0, 0.0));
 
-        double aFirst = aCurve.FirstParameter();
-        double aLast = aCurve.LastParameter();
+        double aFirst = aCurve.FirstParameter;
+        double aLast = aCurve.LastParameter;
         double aMid = (aFirst + aLast) / 2.0;
 
         // Compare EvalD1 with old D1 wrapper
         Curve2D.ResD1 aEvalResult = aCurve.EvalD1(aMid);
         aCurve.D1(aMid, out Point2D aOldP, out Vector2D aOldV1);
-        Assert.Equal(0.0, aEvalResult.Point.Distance(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, (aEvalResult.D1 - aOldV1).Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aEvalResult.Point.DistanceTo(aOldP), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, (aEvalResult.D1 - aOldV1).Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // Ellipse 2D tests
@@ -99,10 +99,10 @@ public class Geom2d_CurveEvalTest
         double aU = M_PI / 4.0;
 
         Curve2D.ResD2 aD2 = aCurve.EvalD2(aU);
-        Assert.True(aD2.D2.Magnitude() > 0.0);
+        Assert.True(aD2.D2.Magnitude > 0.0);
 
         Curve2D.ResD3 aD3 = aCurve.EvalD3(aU);
-        Assert.True(aD3.D3.Magnitude() > 0.0);
+        Assert.True(aD3.D3.Magnitude > 0.0);
     }
 
     // Line 2D tests
@@ -114,12 +114,12 @@ public class Geom2d_CurveEvalTest
 
         // DN(U, 1) should return the direction
         Vector2D aDN1 = aCurve.EvalDN(5.0, 1);
-        Assert.Equal(1.0, aDN1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aDN1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(1.0, aDN1.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDN1.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // DN(U, 2) should return zero for a line
         Vector2D aDN2 = aCurve.EvalDN(5.0, 2);
-        Assert.Equal(0.0, aDN2.Magnitude(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aDN2.Magnitude, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     // BSplineCurve 2D EvalDN invalid N test
@@ -131,7 +131,7 @@ public class Geom2d_CurveEvalTest
         BSplineCurve2D aCurve =
             MakeBSpline(new Point2D(0.0, 0.0), new Point2D(1.0, 1.0), new Point2D(2.0, 0.0));
 
-        double aMid = (aCurve.FirstParameter() + aCurve.LastParameter()) / 2.0;
+        double aMid = (aCurve.FirstParameter + aCurve.LastParameter) / 2.0;
         Assert.ThrowsAny<UndefinedDerivative2DException>(() => aCurve.EvalDN(aMid, 0));
         Assert.ThrowsAny<UndefinedDerivative2DException>(() => aCurve.EvalDN(aMid, -1));
     }
@@ -151,6 +151,6 @@ public class Geom2d_CurveEvalTest
 
         Curve2D.ResD1 aResult = anOffset.EvalD1(0.0);
         // The point should be near the center
-        Assert.Equal(0.0, aResult.Point.Distance(new Point2D(0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aResult.Point.DistanceTo(new Point2D(0.0, 0.0)), global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }

@@ -52,9 +52,9 @@ public class ShapeAnalysis_FreeBoundsTest
         theData.Edge2 = anEdgeMaker2.Edge();
         theData.Edge3 = anEdgeMaker3.Edge();
         theData.InternalEdge = aNonManifoldMaker.Edge();
-        theData.InternalEdge.Orientation(Internal);
+        theData.InternalEdge.Orient(Internal);
         theData.ExternalEdge = aNonManifoldMaker.Edge();
-        theData.ExternalEdge.Orientation(External);
+        theData.ExternalEdge.Orient(External);
 
         aBuilder.MakeWire(ref theData.Loop);
         aBuilder.Add(theData.Loop, theData.Edge1);
@@ -86,16 +86,16 @@ public class ShapeAnalysis_FreeBoundsTest
             {
                 ++aNbEdges;
                 ++aNbWireEdges;
-                if (anExp.Current().Orientation() == Internal)
+                if (anExp.Current().Orientation == Internal)
                 {
                     ++aNbInternalEdges;
                 }
-                else if (anExp.Current().Orientation() == External)
+                else if (anExp.Current().Orientation == External)
                 {
                     ++aNbExternalEdges;
                 }
             }
-            if (aNbWireEdges == 3 && aWire.Closed())
+            if (aNbWireEdges == 3 && aWire.IsClosed)
             {
                 hasClosedLoop = true;
             }

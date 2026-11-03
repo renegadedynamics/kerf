@@ -135,41 +135,41 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
             {
                 using N.gp_Pln aN = theN.Plane();
                 using N.gp_Ax3 aNA = aN.Position();
-                SameAx3(theO, aNA, theP.Plane().Position(), theWhat + " Plane");
+                SameAx3(theO, aNA, theP.Plane().Position, theWhat + " Plane");
                 break;
             }
             case SurfaceKind.Cylinder:
             {
                 using N.gp_Cylinder aN = theN.Cylinder();
                 using N.gp_Ax3 aNA = aN.Position();
-                SameAx3(theO, aNA, theP.Cylinder().Position(), theWhat + " Cylinder");
-                theO.Same(aN.Radius(), theP.Cylinder().Radius(), theWhat + " Cylinder radius");
+                SameAx3(theO, aNA, theP.Cylinder().Position, theWhat + " Cylinder");
+                theO.Same(aN.Radius(), theP.Cylinder().Radius, theWhat + " Cylinder radius");
                 break;
             }
             case SurfaceKind.Cone:
             {
                 using N.gp_Cone aN = theN.Cone();
                 using N.gp_Ax3 aNA = aN.Position();
-                SameAx3(theO, aNA, theP.Cone().Position(), theWhat + " Cone");
-                theO.Same(aN.RefRadius(), theP.Cone().RefRadius(), theWhat + " Cone radius");
-                theO.Same(aN.SemiAngle(), theP.Cone().SemiAngle(), theWhat + " Cone angle");
+                SameAx3(theO, aNA, theP.Cone().Position, theWhat + " Cone");
+                theO.Same(aN.RefRadius(), theP.Cone().RefRadius, theWhat + " Cone radius");
+                theO.Same(aN.SemiAngle(), theP.Cone().SemiAngle, theWhat + " Cone angle");
                 break;
             }
             case SurfaceKind.Sphere:
             {
                 using N.gp_Sphere aN = theN.Sphere();
                 using N.gp_Ax3 aNA = aN.Position();
-                SameAx3(theO, aNA, theP.Sphere().Position(), theWhat + " Sphere");
-                theO.Same(aN.Radius(), theP.Sphere().Radius(), theWhat + " Sphere radius");
+                SameAx3(theO, aNA, theP.Sphere().Position, theWhat + " Sphere");
+                theO.Same(aN.Radius(), theP.Sphere().Radius, theWhat + " Sphere radius");
                 break;
             }
             case SurfaceKind.Torus:
             {
                 using N.gp_Torus aN = theN.Torus();
                 using N.gp_Ax3 aNA = aN.Position();
-                SameAx3(theO, aNA, theP.Torus().Position(), theWhat + " Torus");
-                theO.Same(aN.MajorRadius(), theP.Torus().MajorRadius(), theWhat + " Torus major");
-                theO.Same(aN.MinorRadius(), theP.Torus().MinorRadius(), theWhat + " Torus minor");
+                SameAx3(theO, aNA, theP.Torus().Position, theWhat + " Torus");
+                theO.Same(aN.MajorRadius(), theP.Torus().MajorRadius, theWhat + " Torus major");
+                theO.Same(aN.MinorRadius(), theP.Torus().MinorRadius, theWhat + " Torus minor");
                 break;
             }
             case SurfaceKind.BezierSurface:
@@ -334,7 +334,7 @@ public class GeomAdaptor_SurfaceOracleTests(ITestOutputHelper output)
                     CompareAdaptors(anOracle, aNA, aPA, aWhat);
 
                     // random bounds within the surface's, with and without snapping tolerances
-                    aPS.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                    aPS.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                     (double aUF, double aUL) = Bounds(anOracle, aU1, aU2);
                     (double aVF, double aVL) = Bounds(anOracle, aV1, aV2);
                     double aTolU = anOracle.Bool() ? 0.0 : anOracle.Real(1e-9, 1e-4);

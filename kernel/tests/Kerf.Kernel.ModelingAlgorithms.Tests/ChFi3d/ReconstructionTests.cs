@@ -41,7 +41,7 @@ public class ReconstructionTests
         Assert.Same(aRun.HDS, aRun.Builder.DataStructure());
         Assert.Single(aRun.Builder.NewFaces(1));
         Assert.Empty(aRun.Builder.NewFaces(2)); // a second copy of the surface, without interferences
-        Assert.Equal(ShapeType.Face, aRun.Builder.NewFaces(1).First().ShapeType());
+        Assert.Equal(ShapeType.Face, aRun.Builder.NewFaces(1).First().Type);
         for (int iC = 1; iC <= aDS.NbCurves(); iC++)
         {
             // curves 3 and 4 have no points: no edge, as natively
@@ -52,17 +52,17 @@ public class ReconstructionTests
 
         // the solid merged: one solid, of one closed shell, of seven faces
         Shape aSolid = aDS.Shape(1);
-        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.Type);
         NCollection_List<Shape> aMerged = aRun.Builder.Merged(aSolid, In);
         Assert.Single(aMerged);
-        Assert.Equal(ShapeType.Solid, aMerged.First().ShapeType());
+        Assert.Equal(ShapeType.Solid, aMerged.First().Type);
         Assert.Equal(7, ReconComparison.Count(aMerged.First(), ShapeType.Face));
         Assert.Equal(1.0e6 - (100.0 - 25.0 * Math.PI) * 100.0, ReconComparison.Volume(aMerged.First()), 6);
         // the solid and its shell are split too, as the HBuilder answers (decision 1161: BRepFilletAPI's history)
         Assert.True(aRun.Builder.IsSplit(aSolid, In));
         Assert.True(aRun.Builder.Splits(aSolid, In).First().IsSame(aMerged.First()));
         Shape aShell = aDS.Shape(14);
-        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Equal(ShapeType.Shell, aShell.Type);
         Assert.Single(aRun.Builder.Splits(aShell, In));
         Assert.Empty(aRun.Builder.Merged(aSolid, Out));
         Assert.Empty(aRun.Builder.Merged(aSolid, On));
@@ -79,7 +79,7 @@ public class ReconstructionTests
         for (int i = 1; i <= aDS.NbShapes(); i++)
         {
             Shape E = aDS.Shape(i);
-            if (E.ShapeType() != ShapeType.Edge)
+            if (E.Type != ShapeType.Edge)
             {
                 continue;
             }
@@ -184,10 +184,10 @@ public class ReconstructionTests
     {
         ReconComparison.Run aRun = Box("shell_box_without_top");
         Shape aShell = aRun.HDS.DS().Shape(1);
-        Assert.Equal(ShapeType.Shell, aShell.ShapeType());
+        Assert.Equal(ShapeType.Shell, aShell.Type);
         NCollection_List<Shape> aMerged = aRun.Builder.Merged(aShell, In);
         Assert.Single(aMerged);
-        Assert.Equal(ShapeType.Shell, aMerged.First().ShapeType());
+        Assert.Equal(ShapeType.Shell, aMerged.First().Type);
         Assert.False(Tool.IsClosed(aMerged.First()));
     }
 

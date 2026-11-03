@@ -78,7 +78,7 @@ public sealed class Offset
                 Vertex v2 = ShapeCasts.Vertex(vertices[j]);
                 Point3D p1 = Tool.Pnt(v1);
                 Point3D p2 = Tool.Pnt(v2);
-                double dist = p1.SquareDistance(p2);
+                double dist = p1.SquareDistanceTo(p2);
                 if (dist > maxDist)
                 {
                     maxDist = dist;
@@ -98,7 +98,7 @@ public sealed class Offset
         var b = new BrepBuilder();
         if (c is TrimmedCurve3D bc)
         {
-            b.UpdateEdge(e, bc.BasisCurve(), l, tol);
+            b.UpdateEdge(e, bc.BasisCurve, l, tol);
         }
         else
         {
@@ -114,7 +114,7 @@ public sealed class Offset
         var b = new BrepBuilder();
         if (c is TrimmedCurve2D bc)
         {
-            b.UpdateEdge(e, bc.BasisCurve(), f, tol);
+            b.UpdateEdge(e, bc.BasisCurve, f, tol);
         }
         else
         {
@@ -131,7 +131,7 @@ public sealed class Offset
         Curve2D? nc1, nc2;
         if (c1 is TrimmedCurve2D bc1)
         {
-            nc1 = bc1.BasisCurve();
+            nc1 = bc1.BasisCurve;
         }
         else
         {
@@ -139,7 +139,7 @@ public sealed class Offset
         }
         if (c2 is TrimmedCurve2D bc2)
         {
-            nc2 = bc2.BasisCurve();
+            nc2 = bc2.BasisCurve;
         }
         else
         {
@@ -172,24 +172,24 @@ public sealed class Offset
         { // if plane buildcurve3d manage KPart
             if (cTy == Line)
             {
-                Direction2D d = c.Line().Direction();
+                Direction2D d = c.Line().Direction;
                 if (d.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                 { // Iso V.
                     if (sTy == SurfaceKind.Sphere)
                     {
-                        Point2D p = c.Line().Location();
-                        if (Math.Abs(Math.Abs(p.Y()) - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+                        Point2D p = c.Line().Location;
+                        if (Math.Abs(Math.Abs(p.Y) - M_PI / 2.0) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             theBuilder.Degenerated(edge, true);
                         }
                         else
                         {
                             Sphere sph = s.Sphere();
-                            CoordinateSystem axis = sph.Position();
-                            Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius(), p.Y());
-                            Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                            var axeRev = new Axis3D(axis.Location(), dRev);
-                            ci = ci.Rotated(axeRev, p.X());
+                            CoordinateSystem axis = sph.Position;
+                            Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius, p.Y);
+                            Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                            var axeRev = new Axis3D(axis.Location, dRev);
+                            ci = ci.Rotated(axeRev, p.X);
                             CircleCurve3D circle = new CircleCurve3D(ci);
                             if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
@@ -202,12 +202,12 @@ public sealed class Offset
                     else if (sTy == SurfaceKind.Cylinder)
                     {
                         Cylinder cyl = s.Cylinder();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = cyl.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius(), p.Y());
-                        Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                        var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = cyl.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius, p.Y);
+                        Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                        var axeRev = new Axis3D(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new CircleCurve3D(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -219,12 +219,12 @@ public sealed class Offset
                     else if (sTy == SurfaceKind.Cone)
                     {
                         Cone cone = s.Cone();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = cone.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius(), cone.SemiAngle(), p.Y());
-                        Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                        var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = cone.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius, cone.SemiAngle, p.Y);
+                        Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                        var axeRev = new Axis3D(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new CircleCurve3D(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -236,12 +236,12 @@ public sealed class Offset
                     else if (sTy == SurfaceKind.Torus)
                     {
                         Torus tore = s.Torus();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = tore.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.Y());
-                        Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
-                        var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = tore.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius, tore.MinorRadius, p.Y);
+                        Direction3D dRev = axis.XDirection.Crossed(axis.YDirection);
+                        var axeRev = new Axis3D(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new CircleCurve3D(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -256,20 +256,20 @@ public sealed class Offset
                     if (sTy == SurfaceKind.Sphere)
                     {
                         Sphere sph = s.Sphere();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = sph.Position();
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = sph.Position;
                         // calculate iso 0.
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(axis, sph.Radius(), 0.0);
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereUIso(axis, sph.Radius, 0.0);
 
                         // set to sameparameter (rotation of circle - offset of Y)
-                        Direction3D dRev = axis.XDirection().Crossed(axis.Direction());
-                        var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.Y());
+                        Direction3D dRev = axis.XDirection.Crossed(axis.Direction);
+                        var axeRev = new Axis3D(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.Y);
 
                         // transformation en iso U ( = P.X())
-                        dRev = axis.XDirection().Crossed(axis.YDirection());
-                        axeRev = new Axis3D(axis.Location(), dRev);
-                        ci = ci.Rotated(axeRev, p.X());
+                        dRev = axis.XDirection.Crossed(axis.YDirection);
+                        axeRev = new Axis3D(axis.Location, dRev);
+                        ci = ci.Rotated(axeRev, p.X);
                         CircleCurve3D circle = new CircleCurve3D(ci);
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -282,10 +282,10 @@ public sealed class Offset
                     else if (sTy == SurfaceKind.Cylinder)
                     {
                         Cylinder cyl = s.Cylinder();
-                        Point2D p = c.Line().Location();
-                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position(), cyl.Radius(), p.X());
-                        var tr = new Vector3D(l.Direction());
-                        tr = tr.Multiplied(p.Y());
+                        Point2D p = c.Line().Location;
+                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position, cyl.Radius, p.X);
+                        var tr = new Vector3D(l.Direction);
+                        tr = tr.Multiplied(p.Y);
                         l = l.Translated(tr);
                         LineCurve3D line = new LineCurve3D(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -298,10 +298,10 @@ public sealed class Offset
                     else if (sTy == SurfaceKind.Cone)
                     {
                         Cone cone = s.Cone();
-                        Point2D p = c.Line().Location();
-                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p.X());
-                        var tr = new Vector3D(l.Direction());
-                        tr = tr.Multiplied(p.Y());
+                        Point2D p = c.Line().Location;
+                        Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position, cone.RefRadius, cone.SemiAngle, p.X);
+                        var tr = new Vector3D(l.Direction);
+                        tr = tr.Multiplied(p.Y);
                         l = l.Translated(tr);
                         LineCurve3D line = new LineCurve3D(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -314,10 +314,10 @@ public sealed class Offset
                     else if (sTy == SurfaceKind.Torus)
                     {
                         Torus tore = s.Torus();
-                        Point2D p = c.Line().Location();
-                        CoordinateSystem axis = tore.Position();
-                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.X());
-                        ci = ci.Rotated(ci.Axis(), p.Y());
+                        Point2D p = c.Line().Location;
+                        CoordinateSystem axis = tore.Position;
+                        Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(axis, tore.MajorRadius, tore.MinorRadius, p.X);
+                        ci = ci.Rotated(ci.Axis, p.Y);
                         CircleCurve3D circle = new CircleCurve3D(ci);
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -420,7 +420,7 @@ public sealed class Offset
     {
         _shape = face;
         double myOffset = offset;
-        if (face.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+        if (face.Orientation == global::Kerf.Topology.Orientation.Reversed)
         {
             myOffset *= -1.0;
         }
@@ -429,7 +429,7 @@ public sealed class Offset
         // On detrime les surfaces, evite des recopies dans les extensions.
         if (s is TrimmedSurface rt)
         {
-            s = rt.BasisSurface();
+            s = rt.BasisSurface;
         }
         bool isTransformed = false;
         if ((s is global::Kerf.Geometry.BSplineSurface || s is ExtrusionSurface || s is RevolutionSurface
@@ -437,24 +437,24 @@ public sealed class Offset
             && !L.IsIdentity)
         {
             s = (Surface)s.Copy();
-            s.Transform(L.Transformation());
+            s.Transform(L.Transformation);
             isTransformed = true;
         }
         // particular case of cone
         if (s is ConicalSurface co)
         {
-            Point3D Apex = co.Apex();
-            global::Kerf.Engine.Geometry.ElSLib.Parameters(co.Cone(), Apex, out double uc, out double vc);
+            Point3D Apex = co.Apex;
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(co.Cone, Apex, out double uc, out double vc);
             BrepTools.UVBounds(face, out double uu1, out double uu2, out double vv1, out double vv2);
-            if (vv2 < vc && co.SemiAngle() > 0)
+            if (vv2 < vc && co.SemiAngle > 0)
             {
                 myOffset *= -1;
             }
-            else if (vv1 > vc && co.SemiAngle() < 0)
+            else if (vv1 > vc && co.SemiAngle < 0)
             {
                 myOffset *= -1;
             }
-            if (!co.Position().Direct())
+            if (!co.Position.IsDirect)
             {
                 myOffset *= -1;
             }
@@ -487,13 +487,13 @@ public sealed class Offset
 
                     Point2D fPnt2d = c2d.Value(aF), lPnt2d = c2d.Value(aL);
 
-                    Point3D fPnt = s.Value(fPnt2d.X(), fPnt2d.Y()),
-                           lPnt = s.Value(lPnt2d.X(), lPnt2d.Y());
+                    Point3D fPnt = s.Value(fPnt2d.X, fPnt2d.Y),
+                           lPnt = s.Value(lPnt2d.X, lPnt2d.Y);
 
                     //  aFPnt.SquareDistance(aLPnt) > Precision::SquareConfusion() -
                     // is a sufficient condition of troubles: non-singular case, but edge is degenerated.
                     // So, normal handling of degenerated edges is not applicable in case of non-singular point.
-                    if (fPnt.SquareDistance(lPnt) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                    if (fPnt.SquareDistanceTo(lPnt) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         degEdges.Append(edge);
                     }
@@ -507,7 +507,7 @@ public sealed class Offset
                 Curve2D curve = Tool.CurveOnSurface(theDegEdge, face, out fpar, out lpar)!;
                 Point2D fp2d = curve.Value(fpar);
                 Point2D lp2d = curve.Value(lpar);
-                if (Math.Abs(fp2d.X() - lp2d.X()) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
+                if (Math.Abs(fp2d.X - lp2d.X) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                 {
                     uisoDegen = true;
                 }
@@ -529,7 +529,7 @@ public sealed class Offset
                 {
                     if (uisoDegen)
                     {
-                        if (Math.Abs(fp2d.X() - uf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (Math.Abs(fp2d.X - uf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             uminDegen = true;
                         }
@@ -540,7 +540,7 @@ public sealed class Offset
                     }
                     else
                     {
-                        if (Math.Abs(fp2d.Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (Math.Abs(fp2d.Y - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             vminDegen = true;
                         }
@@ -552,8 +552,8 @@ public sealed class Offset
                 }
                 if (theSurf.GetType() == typeof(ConicalSurface))
                 {
-                    Cone theCone = ((ConicalSurface)theSurf).Cone();
-                    Point3D apex = theCone.Apex();
+                    Cone theCone = ((ConicalSurface)theSurf).Cone;
+                    Point3D apex = theCone.Apex;
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, apex, out double uapex, out double vapex);
                     if (vminDegen)
                     {
@@ -576,7 +576,7 @@ public sealed class Offset
                         Curve3D uiso = theSurf.UIso(uf1);
                         if (OffsetTool.Gabarit(uiso) > tolApex)
                         {
-                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface();
+                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface;
                             Point3D papex, pfirst, pquart, pmid;
                             papex = basisSurf.Value(uf1, vf1);
                             pfirst = theSurf.Value(uf1, vf1);
@@ -588,13 +588,13 @@ public sealed class Offset
                             var lineGeneratrix = new LineCurve3D(pfirst, new Direction3D(dirGeneratrix));
                             var theExtrema = new ExtremaCurveCurve(lineGeneratrix, lineApex);
                             theExtrema.NearestPoints(out Point3D pint1, out Point3D pint2);
-                            double length = pfirst.Distance(pint1);
+                            double length = pfirst.DistanceTo(pint1);
                             if (offsetOutside)
                             {
                                 BoundedSurface surf = new TrimmedSurface(theSurf, uf1, uf2, vf1, vf2);
                                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref surf, length, 1, true, false);
                                 theSurf = surf;
-                                theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                                theSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                                 minApex = theSurf.Value(aU1, vf1);
                             }
                             else
@@ -613,7 +613,7 @@ public sealed class Offset
                         Curve3D uiso = theSurf.UIso(uf2);
                         if (OffsetTool.Gabarit(uiso) > tolApex)
                         {
-                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface();
+                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface;
                             Point3D papex, pfirst, pquart, pmid;
                             papex = basisSurf.Value(uf2, vf1);
                             pfirst = theSurf.Value(uf2, vf1);
@@ -625,13 +625,13 @@ public sealed class Offset
                             var lineGeneratrix = new LineCurve3D(pfirst, new Direction3D(dirGeneratrix));
                             var theExtrema = new ExtremaCurveCurve(lineGeneratrix, lineApex);
                             theExtrema.NearestPoints(out Point3D pint1, out Point3D pint2);
-                            double length = pfirst.Distance(pint1);
+                            double length = pfirst.DistanceTo(pint1);
                             if (offsetOutside)
                             {
                                 BoundedSurface surf = new TrimmedSurface(theSurf, uf1, uf2, vf1, vf2);
                                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref surf, length, 1, true, true);
                                 theSurf = surf;
-                                theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                                theSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                                 maxApex = theSurf.Value(aU2, vf1);
                             }
                             else
@@ -650,7 +650,7 @@ public sealed class Offset
                         Curve3D viso = theSurf.VIso(vf1);
                         if (OffsetTool.Gabarit(viso) > tolApex)
                         {
-                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface();
+                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface;
                             Point3D papex, pfirst, pquart, pmid;
                             papex = basisSurf.Value(uf1, vf1);
                             pfirst = theSurf.Value(uf1, vf1);
@@ -662,13 +662,13 @@ public sealed class Offset
                             var lineGeneratrix = new LineCurve3D(pfirst, new Direction3D(dirGeneratrix));
                             var theExtrema = new ExtremaCurveCurve(lineGeneratrix, lineApex);
                             theExtrema.NearestPoints(out Point3D pint1, out Point3D pint2);
-                            double length = pfirst.Distance(pint1);
+                            double length = pfirst.DistanceTo(pint1);
                             if (offsetOutside)
                             {
                                 BoundedSurface surf = new TrimmedSurface(theSurf, uf1, uf2, vf1, vf2);
                                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref surf, length, 1, false, false);
                                 theSurf = surf;
-                                theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                                theSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                                 minApex = theSurf.Value(uf1, aV1);
                             }
                             else
@@ -689,7 +689,7 @@ public sealed class Offset
                         Curve3D viso = theSurf.VIso(vf2);
                         if (OffsetTool.Gabarit(viso) > tolApex)
                         {
-                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface();
+                            Surface basisSurf = ((global::Kerf.Geometry.OffsetSurface)theSurf).BasisSurface;
                             Point3D papex, pfirst, pquart, pmid;
                             papex = basisSurf.Value(uf1, vf2);
                             pfirst = theSurf.Value(uf1, vf2);
@@ -701,13 +701,13 @@ public sealed class Offset
                             var lineGeneratrix = new LineCurve3D(pfirst, new Direction3D(dirGeneratrix));
                             var theExtrema = new ExtremaCurveCurve(lineGeneratrix, lineApex);
                             theExtrema.NearestPoints(out Point3D pint1, out Point3D pint2);
-                            double length = pfirst.Distance(pint1);
+                            double length = pfirst.DistanceTo(pint1);
                             if (offsetOutside)
                             {
                                 BoundedSurface surf = new TrimmedSurface(theSurf, uf1, uf2, vf1, vf2);
                                 global::Kerf.Engine.Geometry.Library.GeomLib.ExtendSurfByLength(ref surf, length, 1, false, true);
                                 theSurf = surf;
-                                theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+                                theSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
                                 maxApex = theSurf.Value(uf1, aV2);
                             }
                             else
@@ -748,7 +748,7 @@ public sealed class Offset
         //  TopoDS_Face CurFace = TopoDS::Face(Face.Oriented(TopAbs_FORWARD));
 
         var vonDegen = new HashSet<Shape>(ShapeHasher.Instance);
-        theSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
+        theSurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
 
         var exp = new Explorer(curFace, ShapeType.Edge);
         for (; exp.More(); exp.Next())
@@ -812,7 +812,7 @@ public sealed class Offset
                     Curve2D? C2d_1 = Tool.CurveOnSurface(ShapeCasts.Edge(localShape), curFace, out f, out l);
                     //	occ::handle<Geom2d_Curve> C2d_1 =
                     //	  BRep_Tool::CurveOnSurface(TopoDS::Edge(E.Reversed()),CurFace,f,l);
-                    if (e.Orientation() == Forward)
+                    if (e.Orientation == Forward)
                     {
                         UpdateEdge(oe, C2d, C2d_1, _face, Tool.Tolerance(e));
                     }
@@ -830,7 +830,7 @@ public sealed class Offset
                     p2d2 = C2d.Value(Tool.Parameter(V2, eforward, curFace));
                     if (vonDegen.Contains(V1))
                     {
-                        if (Math.Abs(p2d1.Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (Math.Abs(p2d1.Y - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             p1 = minApex;
                             vstart = v1;
@@ -843,16 +843,16 @@ public sealed class Offset
                     }
                     else
                     {
-                        theSurf.D0(p2d1.X(), p2d1.Y(), out p1);
+                        theSurf.D0(p2d1.X, p2d1.Y, out p1);
                         if (!L.IsIdentity && !isTransformed)
                         {
-                            p1 = p1.Transformed(L.Transformation());
+                            p1 = p1.Transformed(L.Transformation);
                         }
-                        vstart = p2d1.Y();
+                        vstart = p2d1.Y;
                     }
                     if (vonDegen.Contains(V2))
                     {
-                        if (Math.Abs(p2d2.Y() - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (Math.Abs(p2d2.Y - vf1) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             p2 = minApex;
                             vend = v1;
@@ -865,12 +865,12 @@ public sealed class Offset
                     }
                     else
                     {
-                        theSurf.D0(p2d2.X(), p2d2.Y(), out p2);
+                        theSurf.D0(p2d2.X, p2d2.Y, out p2);
                         if (!L.IsIdentity && !isTransformed)
                         {
-                            p2 = p2.Transformed(L.Transformation());
+                            p2 = p2.Transformed(L.Transformation);
                         }
-                        vend = p2d2.Y();
+                        vend = p2d2.Y;
                     }
                     // E a-t-il ume image dans la Map des Created ?
                     if (created.ContainsKey(e))
@@ -905,8 +905,8 @@ public sealed class Offset
                             myBuilder.UpdateVertex(ov2, p2, Tool.Tolerance(V2));
                             mapSS[V2] = ov2;
                         }
-                        myBuilder.Add(oe, ov1.Oriented(V1.Orientation()));
-                        myBuilder.Add(oe, ov2.Oriented(V2.Orientation()));
+                        myBuilder.Add(oe, ov1.Oriented(V1.Orientation));
+                        myBuilder.Add(oe, ov2.Oriented(V2.Orientation));
                         if (Tool.Degenerated(e))
                         {
                             myBuilder.Degenerated(oe, true);
@@ -925,11 +925,11 @@ public sealed class Offset
                         }
                         C2d = new LineCurve2D(p2d1, new Direction2D(new Vector2D(p2d1, p2d2)));
                         f = 0.0;
-                        l = p2d1.Distance(p2d2);
+                        l = p2d1.DistanceTo(p2d2);
                         if (mapSS.ContainsKey(e)) // seam edge
                         {
                             Curve2D? C2d_1 = Tool.CurveOnSurface(oe, _face, out f, out l);
-                            if (e.Orientation() == Forward)
+                            if (e.Orientation == Forward)
                             {
                                 UpdateEdge(oe, C2d, C2d_1, _face, Tool.Tolerance(e));
                             }
@@ -960,7 +960,7 @@ public sealed class Offset
                                 p2d2 = p2d2.WithY(vend);
                             }
                             C2d_1 = new LineCurve2D(p2d1, new Direction2D(new Vector2D(p2d1, p2d2)));
-                            if (e.Orientation() == Forward)
+                            if (e.Orientation == Forward)
                             {
                                 UpdateEdge(oe, C2d, C2d_1, _face, Tool.Tolerance(e));
                             }
@@ -989,12 +989,12 @@ public sealed class Offset
                     }
                     mapSS[e] = oe;
                 }
-                myBuilder.Add(ow, oe.Oriented(e.Orientation()));
+                myBuilder.Add(ow, oe.Oriented(e.Orientation));
             }
-            myBuilder.Add(_face, ow.Oriented(w.Orientation()));
+            myBuilder.Add(_face, ow.Oriented(w.Orientation));
         }
 
-        _face.Orientation(face.Orientation());
+        _face.Orient(face.Orientation);
 
         BrepTools.Update(_face);
     }
@@ -1049,7 +1049,7 @@ public sealed class Offset
 
         Curve3D cp = Tool.Curve(path, out loc, out f[0], out l[0])!;
         cp = new TrimmedCurve3D(cp, f[0], l[0]);
-        cp.Transform(loc.Transformation());
+        cp.Transform(loc.Transformation);
         var hcp = new CurveAdaptor(cp);
 
         Curve3D? c1 = Tool.Curve(edge1, out loc, out f[1], out l[1]);
@@ -1060,7 +1060,7 @@ public sealed class Offset
         {
             c1is3D = false;
             Tool.CurveOnSurface(edge1, out Curve2D? c12d, out Surface? s1, out loc, out f[1], out l[1]);
-            s1 = (Surface)s1!.Transformed(loc.Transformation());
+            s1 = (Surface)s1!.Transformed(loc.Transformation);
             c12d = new TrimmedCurve2D(c12d!, f[1], l[1]);
             var hs1 = new SurfaceAdaptor(s1);
             var hc1 = new CurveAdaptor2D(c12d);
@@ -1070,12 +1070,12 @@ public sealed class Offset
         else
         {
             c1 = new TrimmedCurve3D(c1, f[1], l[1]);
-            c1.Transform(loc.Transformation());
+            c1.Transform(loc.Transformation);
             hEdge1 = new CurveAdaptor(c1);
             var ac1 = new CurveAdaptor(c1);
             if (ac1.GetType() == Circle)
             {
-                c1Denerated = (ac1.Circle().Radius() < global::Kerf.Engine.Foundation.Precision.Confusion());
+                c1Denerated = (ac1.Circle().Radius < global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -1087,7 +1087,7 @@ public sealed class Offset
         {
             c2is3D = false;
             Tool.CurveOnSurface(edge2, out Curve2D? c12d, out Surface? s1, out loc, out f[2], out l[2]);
-            s1 = (Surface)s1!.Transformed(loc.Transformation());
+            s1 = (Surface)s1!.Transformed(loc.Transformation);
             c12d = new TrimmedCurve2D(c12d!, f[2], l[2]);
             var hs1 = new SurfaceAdaptor(s1);
             var hc1 = new CurveAdaptor2D(c12d);
@@ -1097,12 +1097,12 @@ public sealed class Offset
         else
         {
             c2 = new TrimmedCurve3D(c2, f[2], l[2]);
-            c2.Transform(loc.Transformation());
+            c2.Transform(loc.Transformation);
             hEdge2 = new CurveAdaptor(c2);
             var ac2 = new CurveAdaptor(c2);
             if (ac2.GetType() == Circle)
             {
-                c2Denerated = (ac2.Circle().Radius() < global::Kerf.Engine.Foundation.Precision.Confusion());
+                c2Denerated = (ac2.Circle().Radius < global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
 
@@ -1117,7 +1117,7 @@ public sealed class Offset
 
         Surface s = pipe.InternalSurface()!;
         bool exchUV = pipe.ExchangeUV();
-        s.Bounds(out double f1, out double l1, out double f2, out double l2);
+        s.ParameterBounds(out double f1, out double l1, out double f2, out double l2);
 
         // Perform the face
         double pathTol = Tool.Tolerance(path);
@@ -1450,7 +1450,7 @@ public sealed class Offset
 
         BrepTools.Update(_face);
 
-        if (edge1.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+        if (edge1.Orientation == global::Kerf.Topology.Orientation.Reversed)
         {
             _face.Reverse();
         }
@@ -1508,7 +1508,7 @@ public sealed class Offset
 
         Point3D farestCorner = GetFarestCorner(theWire);
         Plane3D thePlane = new MakePln(origin, baryCenter, farestCorner).Value();
-        Direction3D vdir = thePlane.Axis().Direction();
+        Direction3D vdir = thePlane.Axis.Direction;
 
         var axis = new CoordinateSystem(origin, vdir, new Direction3D(xdir));
 
@@ -1549,7 +1549,7 @@ public sealed class Offset
                 c = Tool.Curve(e, out loc, out f, out l);
             }
             c = new TrimmedCurve3D(c!, f, l);
-            c.Transform(loc.Transformation());
+            c.Transform(loc.Transformation);
 
             Curve2D pCurve = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, s)!;
             // check if the first point of PCurve in is the canonical boundaries
@@ -1558,12 +1558,12 @@ public sealed class Offset
             //                         V` = +/- PI + 2 k` PI
             Point2D p2d = pCurve.Value(f);
             bool isToAdjust = false;
-            if (p2d.Y() < -M_PI / 2.0)
+            if (p2d.Y < -M_PI / 2.0)
             {
                 isToAdjust = true;
                 pCurve.Mirror(new Axis2D(new Point2D(0.0, -M_PI / 2.0), Constants.DX2d()));
             }
-            else if (p2d.Y() > M_PI / 2.0)
+            else if (p2d.Y > M_PI / 2.0)
             {
                 isToAdjust = true;
                 pCurve.Mirror(new Axis2D(new Point2D(0.0, M_PI / 2.0), Constants.DX2d()));
@@ -1572,7 +1572,7 @@ public sealed class Offset
             {
                 // set the u firstpoint in [0,2*pi]
                 var tr = new Vector2D(M_PI, 0.0);
-                if (p2d.X() > M_PI)
+                if (p2d.X > M_PI)
                 {
                     tr = tr.Reversed();
                 }
@@ -1607,7 +1607,7 @@ public sealed class Offset
 
         Curve3D cp = Tool.Curve(edge, out Placement loc, out double f, out double l)!;
         cp = new TrimmedCurve3D(cp, f, l);
-        cp.Transform(loc.Transformation());
+        cp.Transform(loc.Transformation);
 
         var pipe = new SurfacePipe(cp, myOffset);
         pipe.Perform();
@@ -1660,7 +1660,7 @@ public sealed class Offset
     {
         Shape aShape = new();
 
-        switch (_shape.ShapeType())
+        switch (_shape.Type)
         {
             case global::Kerf.Topology.ShapeType.Face:
             {
@@ -1670,7 +1670,7 @@ public sealed class Offset
                 {
                     if (shape.IsSame(exp.Current()))
                     {
-                        if (_shape.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                        if (_shape.Orientation == global::Kerf.Topology.Orientation.Reversed)
                         {
                             aShape = expo.Current().Reversed();
                         }
@@ -1696,7 +1696,7 @@ public sealed class Offset
 
                 if (v2.IsSame(shape))
                 {
-                    if (expf.Current().Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                    if (expf.Current().Orientation == global::Kerf.Topology.Orientation.Reversed)
                     {
                         aShape = expo.Current().Reversed();
                     }
@@ -1708,7 +1708,7 @@ public sealed class Offset
                 else
                 {
                     expo.Next();
-                    if (expf.Current().Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                    if (expf.Current().Orientation == global::Kerf.Topology.Orientation.Reversed)
                     {
                         aShape = expo.Current().Reversed();
                     }
@@ -1717,7 +1717,7 @@ public sealed class Offset
                         aShape = expo.Current();
                     }
                 }
-                if (_face.Orientation() == global::Kerf.Topology.Orientation.Reversed)
+                if (_face.Orientation == global::Kerf.Topology.Orientation.Reversed)
                 {
                     aShape.Reverse();
                 }

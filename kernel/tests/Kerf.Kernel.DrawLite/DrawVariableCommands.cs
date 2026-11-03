@@ -339,9 +339,9 @@ internal static class DrawVariableCommands
             var T = new Transform3D();
             T = T.Inverted();
             P = P.Transformed(T);
-            theDI.SetNumber(a[2], P.X());
-            theDI.SetNumber(a[3], P.Y());
-            theDI.SetNumber(a[4], P.Z());
+            theDI.SetNumber(a[2], P.X);
+            theDI.SetNumber(a[3], P.Y);
+            theDI.SetNumber(a[4], P.Z);
         }
         else
         {

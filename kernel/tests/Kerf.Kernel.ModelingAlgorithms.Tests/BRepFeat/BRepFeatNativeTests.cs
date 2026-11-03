@@ -85,7 +85,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
     private static string Q(double theValue) =>
         ((long)Math.Round(theValue * 1e6, MidpointRounding.AwayFromZero)).ToString(CultureInfo.InvariantCulture) + ";";
 
-    private static string P(Point3D p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
+    private static string P(Point3D p) => Q(p.X) + Q(p.Y) + Q(p.Z);
 
     private static List<Shape> Map(in Shape theShape, ShapeType theType)
     {
@@ -339,7 +339,7 @@ public class BRepFeatNativeTests(ITestOutputHelper output)
                         {
                             var aProps = new Properties();
                             MassPropertiesBuilder.SurfaceProperties(aF, aProps);
-                            if (aProps.CentreOfMass().Distance(aC) < 1e-7)
+                            if (aProps.CentreOfMass().DistanceTo(aC) < 1e-7)
                             {
                                 aFnew = ShapeCasts.Face(aF);
                             }

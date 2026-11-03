@@ -59,14 +59,14 @@ public sealed partial class AnalyticCirc2d3Tan
         Circle2D c1 = qualified1.Qualified();
         Line2D l2 = qualified2.Qualified();
         Line2D l3 = qualified3.Qualified();
-        double r1 = c1.Radius();
-        Point2D center1 = c1.Location();
-        Point2D origin2 = l2.Location();
-        Direction2D dir2 = l2.Direction();
-        Direction2D normL2 = new(-dir2.Y(), dir2.X());
-        Point2D origin3 = l3.Location();
-        Direction2D dir3 = l3.Direction();
-        Direction2D normL3 = new(-dir3.Y(), dir3.X());
+        double r1 = c1.Radius;
+        Point2D center1 = c1.Location;
+        Point2D origin2 = l2.Location;
+        Direction2D dir2 = l2.Direction;
+        Direction2D normL2 = new(-dir2.Y, dir2.X);
+        Point2D origin3 = l3.Location;
+        Direction2D dir3 = l3.Direction;
+        Direction2D normL3 = new(-dir3.Y, dir3.X);
 
         NCollection_Array1<double> radius = new(1, 2);
         CircLin2dBisec bis1 = new(c1, l2);
@@ -97,9 +97,9 @@ public sealed partial class AnalyticCirc2d3Tan
                             for (int j = 1; j <= intp.PointCount; j++)
                             {
                                 Point2D center = intp.Point(j).Value();
-                                double dist1 = center.Distance(center1);
-                                double dist2 = l2.Distance(center);
-                                double dist3 = l3.Distance(center);
+                                double dist1 = center.DistanceTo(center1);
+                                double dist2 = l2.DistanceTo(center);
+                                double dist3 = l3.DistanceTo(center);
                                 int nbsol1 = 0;
                                 int nbsol3 = 0;
                                 bool ok = false;
@@ -136,8 +136,8 @@ public sealed partial class AnalyticCirc2d3Tan
                                 }
                                 if (qualified2.IsEnclosed && ok)
                                 {
-                                    if ((((origin2.X() - center.X()) * (-dir2.Y()))
-                                         + ((origin2.Y() - center.Y()) * (dir2.X())))
+                                    if ((((origin2.X - center.X) * (-dir2.Y))
+                                         + ((origin2.Y - center.Y) * (dir2.X)))
                                         <= 0)
                                     {
                                         for (int ii = 1; ii <= nbsol1; ii++)
@@ -152,8 +152,8 @@ public sealed partial class AnalyticCirc2d3Tan
                                 }
                                 else if (qualified2.IsOutside && ok)
                                 {
-                                    if ((((origin2.X() - center.X()) * (-dir2.Y()))
-                                         + ((origin2.Y() - center.Y()) * (dir2.X())))
+                                    if ((((origin2.X - center.X) * (-dir2.Y))
+                                         + ((origin2.Y - center.Y) * (dir2.X)))
                                         >= 0)
                                     {
                                         for (int ii = 1; ii <= nbsol1; ii++)
@@ -179,8 +179,8 @@ public sealed partial class AnalyticCirc2d3Tan
                                 }
                                 if (qualified3.IsEnclosed && ok)
                                 {
-                                    if ((((origin3.X() - center.X()) * (-dir3.Y()))
-                                         + ((origin3.Y() - center.Y()) * (dir3.X())))
+                                    if ((((origin3.X - center.X) * (-dir3.Y))
+                                         + ((origin3.Y - center.Y) * (dir3.X)))
                                         <= 0)
                                     {
                                         if (Math.Abs(dist3 - radius[1]) < tol)
@@ -192,8 +192,8 @@ public sealed partial class AnalyticCirc2d3Tan
                                 }
                                 else if (qualified3.IsOutside && ok)
                                 {
-                                    if ((((origin3.X() - center.X()) * (-dir3.Y()))
-                                         + ((origin3.Y() - center.Y()) * (dir3.X())))
+                                    if ((((origin3.X - center.X) * (-dir3.Y))
+                                         + ((origin3.Y - center.Y) * (dir3.X)))
                                         >= 0)
                                     {
                                         if (Math.Abs(dist3 - radius[1]) < tol)
@@ -218,7 +218,7 @@ public sealed partial class AnalyticCirc2d3Tan
                                         _nbrSol++;
                                         _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[m]);
                                         //                 ==========================================================
-                                        double distcc1 = center.Distance(center1);
+                                        double distcc1 = center.DistanceTo(center1);
                                         if (!qualified1.IsUnqualified)
                                         {
                                             _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -261,7 +261,7 @@ public sealed partial class AnalyticCirc2d3Tan
                                         {
                                             _qualifier3[_nbrSol] = Qualifier.Enclosed;
                                         }
-                                        if (center.Distance(center1) <= tolerance
+                                        if (center.DistanceTo(center1) <= tolerance
                                             && Math.Abs(radius[m] - r1) <= tolerance)
                                         {
                                             _theSame1[_nbrSol] = 1;
@@ -277,14 +277,14 @@ public sealed partial class AnalyticCirc2d3Tan
                                         _theSame2[_nbrSol] = 0;
                                         _theSame3[_nbrSol] = 0;
                                         Direction2D dc = new(origin2.XY() - center.XY());
-                                        double sign = dc.Dot(new Direction2D(-dir2.Y(), dir2.X()));
-                                        dc = new Direction2D(sign * new Xy(-dir2.Y(), dir2.X()));
+                                        double sign = dc.Dot(new Direction2D(-dir2.Y, dir2.X));
+                                        dc = new Direction2D(sign * new Xy(-dir2.Y, dir2.X));
                                         _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius[m] * dc.XY());
                                         _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
                                         _pararg2[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l2, _pnttg2sol[_nbrSol]);
                                         dc = new Direction2D(origin3.XY() - center.XY());
-                                        sign = dc.Dot(new Direction2D(-dir3.Y(), dir3.X()));
-                                        dc = new Direction2D(sign * new Xy(-dir3.Y(), dir3.X()));
+                                        sign = dc.Dot(new Direction2D(-dir3.Y, dir3.X));
+                                        dc = new Direction2D(sign * new Xy(-dir3.Y, dir3.X));
                                         _pnttg3sol[_nbrSol] = new Point2D(center.XY() + radius[m] * dc.XY());
                                         _par3sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg3sol[_nbrSol]);
                                         _pararg3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l3, _pnttg3sol[_nbrSol]);

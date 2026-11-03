@@ -89,18 +89,18 @@ public class PlateG1Criterion : Criterion
                 v2s = v2s.WithCoord(2, digit[1]);
                 v2s = v2s.WithCoord(3, digit[2]);
                 v3s = v1s ^ v2s;
-                if (v3s.Angle(v3h) > (M_PI / 2))
+                if (v3s.AngleTo(v3h) > (M_PI / 2))
                 {
-                    if ((M_PI - v3s.Angle(v3h)) > ang)
+                    if ((M_PI - v3s.AngleTo(v3h)) > ang)
                     {
-                        ang = (M_PI - v3s.Angle(v3h));
+                        ang = (M_PI - v3s.AngleTo(v3h));
                     }
                 }
                 else
                 {
-                    if (v3s.Angle(v3h) > ang)
+                    if (v3s.AngleTo(v3h) > ang)
                     {
-                        ang = v3s.Angle(v3h);
+                        ang = v3s.AngleTo(v3h);
                     }
                 }
             }

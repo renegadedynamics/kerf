@@ -74,41 +74,41 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             {
                 using N.gp_Lin aNL = theN.Line();
                 using N.gp_Ax1 aNA = aNL.Position();
-                SameAx1(theO, aNA, theP.Line().Position(), theWhat + " Line");
+                SameAx1(theO, aNA, theP.Line().Position, theWhat + " Line");
                 break;
             }
             case CurveKind.Circle:
             {
                 using N.gp_Circ aNC = theN.Circle();
                 using N.gp_Ax2 aNA = aNC.Position();
-                SameAx2(theO, aNA, theP.Circle().Position(), theWhat + " Circle");
-                theO.Same(aNC.Radius(), theP.Circle().Radius(), theWhat + " Circle radius");
+                SameAx2(theO, aNA, theP.Circle().Position, theWhat + " Circle");
+                theO.Same(aNC.Radius(), theP.Circle().Radius, theWhat + " Circle radius");
                 break;
             }
             case CurveKind.Ellipse:
             {
                 using N.gp_Elips aNE = theN.Ellipse();
                 using N.gp_Ax2 aNA = aNE.Position();
-                SameAx2(theO, aNA, theP.Ellipse().Position(), theWhat + " Ellipse");
-                theO.Same(aNE.MajorRadius(), theP.Ellipse().MajorRadius(), theWhat + " Ellipse major");
-                theO.Same(aNE.MinorRadius(), theP.Ellipse().MinorRadius(), theWhat + " Ellipse minor");
+                SameAx2(theO, aNA, theP.Ellipse().Position, theWhat + " Ellipse");
+                theO.Same(aNE.MajorRadius(), theP.Ellipse().MajorRadius, theWhat + " Ellipse major");
+                theO.Same(aNE.MinorRadius(), theP.Ellipse().MinorRadius, theWhat + " Ellipse minor");
                 break;
             }
             case CurveKind.Hyperbola:
             {
                 using N.gp_Hypr aNH = theN.Hyperbola();
                 using N.gp_Ax2 aNA = aNH.Position();
-                SameAx2(theO, aNA, theP.Hyperbola().Position(), theWhat + " Hyperbola");
-                theO.Same(aNH.MajorRadius(), theP.Hyperbola().MajorRadius(), theWhat + " Hyperbola major");
-                theO.Same(aNH.MinorRadius(), theP.Hyperbola().MinorRadius(), theWhat + " Hyperbola minor");
+                SameAx2(theO, aNA, theP.Hyperbola().Position, theWhat + " Hyperbola");
+                theO.Same(aNH.MajorRadius(), theP.Hyperbola().MajorRadius, theWhat + " Hyperbola major");
+                theO.Same(aNH.MinorRadius(), theP.Hyperbola().MinorRadius, theWhat + " Hyperbola minor");
                 break;
             }
             case CurveKind.Parabola:
             {
                 using N.gp_Parab aNPa = theN.Parabola();
                 using N.gp_Ax2 aNA = aNPa.Position();
-                SameAx2(theO, aNA, theP.Parabola().Position(), theWhat + " Parabola");
-                theO.Same(aNPa.Focal(), theP.Parabola().Focal(), theWhat + " Parabola focal");
+                SameAx2(theO, aNA, theP.Parabola().Position, theWhat + " Parabola");
+                theO.Same(aNPa.Focal(), theP.Parabola().Focal, theWhat + " Parabola focal");
                 break;
             }
             case CurveKind.BezierCurve:
@@ -132,9 +132,9 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             {
                 using N.Geom_OffsetCurve aNO = theN.OffsetCurve()!;
                 OffsetCurve3D aPO = theP.OffsetCurve();
-                theO.Same(aNO.Offset(), aPO.Offset(), theWhat + " OffsetCurve offset");
+                theO.Same(aNO.Offset(), aPO.Offset, theWhat + " OffsetCurve offset");
                 using N.gp_Dir aND = aNO.Direction();
-                SameDir(theO, aND, aPO.Direction(), theWhat + " OffsetCurve direction");
+                SameDir(theO, aND, aPO.Direction, theWhat + " OffsetCurve direction");
                 break;
             }
         }
@@ -175,7 +175,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
             }
             if (aBS.IsPeriodic)
             {
-                aParams.Add(Param(theO, aF, aL, theRange) + aBS.Period() * theO.Int(-2, 2));
+                aParams.Add(Param(theO, aF, aL, theRange) + aBS.Period * theO.Int(-2, 2));
             }
         }
         // shuffled, then a few repeated in place (same span)
@@ -205,7 +205,7 @@ public class GeomAdaptor_CurveOracleTests(ITestOutputHelper output)
                     var aPA = new CurveAdaptor(aPC);
                     CompareAdaptors(anOracle, aNA, aPA, aRange, aWhat);
 
-                    double aF = aPC.FirstParameter(), aL = aPC.LastParameter();
+                    double aF = aPC.FirstParameter, aL = aPC.LastParameter;
                     if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aF) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aL) || aPC.IsPeriodic && anOracle.Bool())
                     {
                         aF = anOracle.Real(-aRange, 0);

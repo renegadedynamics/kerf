@@ -145,7 +145,7 @@ public class OutLiner : Transient
                     for (itS.Initialize(_ds.EdgeSplE(E)); itS.More(); itS.Next())
                     {
                         Edge newE = ShapeCasts.Edge(itS.Value());
-                        newE.Orientation(E.Orientation());
+                        newE.Orient(E.Orientation);
                         _ds.AddOldS(newE, E);
                         b.Add(w, newE);
                     }
@@ -167,7 +167,7 @@ public class OutLiner : Transient
             for (itE.Initialize(_ds.FaceIntL(f)); itE.More(); itE.Next())
             {
                 Edge E = ShapeCasts.Edge(itE.Value());
-                E.Orientation(Internal);
+                E.Orient(Internal);
 
                 // Check, if outline edge coincides with face boundary
                 EdgeCurveAdaptor C = new(E);
@@ -232,7 +232,7 @@ public class OutLiner : Transient
                     for (itS.Initialize(_ds.EdgeSplE(E)); itS.More(); itS.Next())
                     {
                         Shape newE = itS.Value();
-                        newE.Orientation(Internal);
+                        newE.Orient(Internal);
                         if (w.IsNull)
                         {
                             b.MakeWire(ref w);
@@ -264,14 +264,14 @@ public class OutLiner : Transient
             for (itE.Initialize(_ds.FaceIsoL(f)); itE.More(); itE.Next())
             {
                 Edge e = ShapeCasts.Edge(itE.Value());
-                e.Orientation(Internal);
+                e.Orient(Internal);
                 if (_ds.EdgeHasSplE(e))
                 { // normally IsoLines are never split.
                     NCollection_List<Shape>.Iterator itS = new();
                     for (itS.Initialize(_ds.EdgeSplE(e)); itS.More(); itS.Next())
                     {
                         Shape newE = itS.Value();
-                        newE.Orientation(Internal);
+                        newE.Orient(Internal);
                         if (w.IsNull)
                         {
                             b.MakeWire(ref w);
@@ -316,7 +316,7 @@ public class OutLiner : Transient
 
             Shell theShell = new();
             b.MakeShell(ref theShell);
-            theShell.Closed(exshell.Current().Closed());
+            theShell.Closed(exshell.Current().IsClosed);
 
             for (exface.Init(exshell.Current(), ShapeType.Face); exface.More(); exface.Next())
             {

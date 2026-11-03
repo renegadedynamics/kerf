@@ -96,8 +96,8 @@ public class ShapeBuildTests
         PlaneSurface aP = ShapeBuildBuilder.PlaneXOY();
         Assert.Same(aP, ShapeBuildBuilder.PlaneXOY());
         Assert.True(aP.IsFrozen);
-        Assert.True(aP.Axis().Direction().IsEqual(new Direction3D(0, 0, 1), 0));
-        Assert.Equal(0.0, aP.Location().Z());
+        Assert.True(aP.Axis.Direction.IsEqual(new Direction3D(0, 0, 1), 0));
+        Assert.Equal(0.0, aP.Location.Z);
     }
 
     [Fact]
@@ -115,12 +115,12 @@ public class ShapeBuildTests
         Assert.Equal(1.0, Tool.Tolerance(aV));
         // neither: the smallest sphere around both
         aV = sbv.CombineVertex(TestShapes.Vertex(new Point3D(0, 0, 0)), TestShapes.Vertex(new Point3D(1, 0, 0)), 1.0);
-        Assert.Equal(0.5, Tool.Pnt(aV).X(), 1e-15);
+        Assert.Equal(0.5, Tool.Pnt(aV).X, 1e-15);
         Assert.Equal(0.5 * (1 + 2 * global::Kerf.Engine.Foundation.Precision.Confusion()), Tool.Tolerance(aV), 1e-15);
         // different tolerances: the centre moves towards the larger sphere
         aV = sbv.CombineVertex(new Point3D(0, 0, 0), new Point3D(2, 0, 0), 0.0, 1.0, 1.0);
         Assert.Equal(1.5, Tool.Tolerance(aV));
-        Assert.Equal(1.5, Tool.Pnt(aV).X(), 1e-15);
+        Assert.Equal(1.5, Tool.Pnt(aV).X, 1e-15);
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class ShapeBuildTests
         Edge aBuilt = sbe.Curve3dBuilt(aFrozenPOnly, out bool isDone);
         Assert.True(isDone);
         Curve3D aC = Tool.Curve(aBuilt, out f, out l)!;
-        Assert.True(aC.Value(l).Distance(new Point3D(4, 0, 0)) < 1e-7);
+        Assert.True(aC.Value(l).DistanceTo(new Point3D(4, 0, 0)) < 1e-7);
         _ = aPF;
     }
 
@@ -306,8 +306,8 @@ public class ShapeBuildTests
         l = Math.PI / 2;
         aRes = sbe.TransformPCurve(aCircle, anId, 2, ref f, ref l);
         BSplineCurve2D aBS = Assert.IsType<BSplineCurve2D>(aRes);
-        Assert.True(aBS.Value(f).Distance(new Point2D(2, 0)) < 1e-6);
-        Assert.True(aBS.Value(l).Distance(new Point2D(0, 1)) < 1e-6);
+        Assert.True(aBS.Value(f).DistanceTo(new Point2D(2, 0)) < 1e-6);
+        Assert.True(aBS.Value(l).DistanceTo(new Point2D(0, 1)) < 1e-6);
 
         // a Bezier curve: its poles scaled
         var aBez = new BezierCurve2D(NCollection_Array1<Point2D>.From([new Point2D(1, 0), new Point2D(2, 1), new Point2D(3, 0)]));
@@ -346,7 +346,7 @@ public class ShapeBuildTests
         Assert.Equal(new Point3D(0, 0, 5), Tool.Pnt(aV1));
         Assert.Equal(new Point3D(3, 0, 5), Tool.Pnt(aV2));
         Curve3D aC = Tool.Curve(anE, out double f, out double l)!;
-        Assert.Equal(5.0, aC.Value(l).Z());
+        Assert.Equal(5.0, aC.Value(l).Z);
         Assert.Equal((0.0, 3.0), (f, l));
 
         // an empty range fails: the edge is unchanged

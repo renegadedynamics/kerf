@@ -148,7 +148,7 @@ public sealed class QuasiUniformAbscissa
         for (int i = 0; i < 2 * nbPoints; ++i)
         {
             p2 = c.Value(u1 + i * dU);
-            double dist = p1.Distance(p2);
+            double dist = p1.DistanceTo(p2);
             length += dist;
             lp[i + 1] = new Point2D(length, u1 + (i * dU));
             p1 = p2;
@@ -175,12 +175,12 @@ public sealed class QuasiUniformAbscissa
             _params.SetValue(1, u1);
             for (int i = 2; i < nbPoints; ++i)
             {
-                while (lp[index].X() < corde)
+                while (lp[index].X < corde)
                 {
                     ++index;
                 }
-                double alpha = (corde - lp[index - 1].X()) / (lp[index].X() - lp[index - 1].X());
-                double u = lp[index - 1].Y() + alpha * (lp[index].Y() - lp[index - 1].Y());
+                double alpha = (corde - lp[index - 1].X) / (lp[index].X - lp[index - 1].X);
+                double u = lp[index - 1].Y + alpha * (lp[index].Y - lp[index - 1].Y);
                 _params.SetValue(i, u);
                 corde = i * dCorde;
             }
@@ -227,7 +227,7 @@ public sealed class QuasiUniformAbscissa
         for (int i = 0; i < 2 * nbPoints; ++i)
         {
             p2 = c.Value(u1 + i * dU);
-            double dist = p1.Distance(p2);
+            double dist = p1.DistanceTo(p2);
             length += dist;
             lp[i + 1] = new Point2D(length, u1 + (i * dU));
             p1 = p2;
@@ -254,12 +254,12 @@ public sealed class QuasiUniformAbscissa
             _params.SetValue(1, u1);
             for (int i = 2; i < nbPoints; ++i)
             {
-                while (lp[index].X() < corde)
+                while (lp[index].X < corde)
                 {
                     ++index;
                 }
-                double alpha = (corde - lp[index - 1].X()) / (lp[index].X() - lp[index - 1].X());
-                double u = lp[index - 1].Y() + alpha * (lp[index].Y() - lp[index - 1].Y());
+                double alpha = (corde - lp[index - 1].X) / (lp[index].X - lp[index - 1].X);
+                double u = lp[index - 1].Y + alpha * (lp[index].Y - lp[index - 1].Y);
                 _params.SetValue(i, u);
                 corde = i * dCorde;
             }

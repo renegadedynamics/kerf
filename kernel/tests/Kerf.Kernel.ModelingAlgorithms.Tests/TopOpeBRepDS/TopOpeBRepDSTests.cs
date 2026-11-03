@@ -153,7 +153,7 @@ public class TopOpeBRepDSTests
         Assert.Equal(0, DS.SameDomainInd(1));
         Assert.Equal(DsConfig.Unshgeometry, DS.SameDomainOri(5));
 
-        Assert.Equal(F1.Orientation(), DS.Shape(1).Orientation());
+        Assert.Equal(F1.Orientation, DS.Shape(1).Orientation);
         Assert.Equal(1, DS.Shape(F1.Reversed()));
         Assert.True(DS.Shape(3).IsNull);
         Assert.False(DS.HasGeometry(F1));
@@ -245,8 +245,8 @@ public class TopOpeBRepDSTests
         for (global::Kerf.Engine.Topology.Explorer ex = new(theBox, ShapeType.Face); ex.More(); ex.Next())
         {
             FaceSurfaceAdaptor S = new(global::Kerf.Engine.Topology.ShapeCasts.Face(ex.Current()));
-            if (S.GetType() == SurfaceKind.Plane && Math.Abs(S.Plane().Axis().Direction().Z()) > 0.5
-                && Math.Abs(S.Plane().Location().Z() - z) < 1.0e-9)
+            if (S.GetType() == SurfaceKind.Plane && Math.Abs(S.Plane().Axis.Direction.Z) > 0.5
+                && Math.Abs(S.Plane().Location.Z - z) < 1.0e-9)
             {
                 return ex.Current();
             }

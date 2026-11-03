@@ -33,7 +33,7 @@ public class LocalAnalysis_SurfaceContinuityTests
         Assert.True(c.IsC1());
 
         c = new global::Kerf.Engine.Measurement.SurfaceContinuity(s_s1, 0.0, 0.0, s_s2, 0.0, 0.1, C0);
-        Assert.Equal(new Point3D(1, 0, 0).Distance(s_s2.Value(0.0, 0.1)), c.C0Value());
+        Assert.Equal(new Point3D(1, 0, 0).DistanceTo(s_s2.Value(0.0, 0.1)), c.C0Value());
         Assert.False(c.IsC0());
     }
 
@@ -128,7 +128,7 @@ public class LocalAnalysis_SurfaceContinuityTests
 
         c = new global::Kerf.Engine.Measurement.SurfaceContinuity(aTrimmed, aLine, 0.5, s_s1, s_s2, G1);
         Assert.True(c.IsDone);
-        Assert.Equal(s_s1.Value(0.5, 0.0).Distance(s_s2.Value(0.5, 0.0)), c.C0Value());
+        Assert.Equal(s_s1.Value(0.5, 0.0).DistanceTo(s_s2.Value(0.5, 0.0)), c.C0Value());
     }
 
     [Fact]

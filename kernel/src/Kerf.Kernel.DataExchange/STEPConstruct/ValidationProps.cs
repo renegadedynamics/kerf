@@ -76,7 +76,7 @@ public class ValidationProps : ConstructTool
         }
 
         // for Compounds, search for SDR
-        else if (shape.ShapeType() == ShapeType.Compound)
+        else if (shape.Type == ShapeType.Compound)
         {
             ProductDefinition prodDef = null;
             if (FinderProcess().FindTypedTransient(mapper, typeof(ProductDefinition), ref prodDef))
@@ -388,7 +388,7 @@ public class ValidationProps : ConstructTool
     {
         TCollection_HAsciiString cpName = new TCollection_HAsciiString("centre point");
         StepCartesianPoint cp = new StepCartesianPoint();
-        cp.Init3D(cpName, pnt.X(), pnt.Y(), pnt.Z());
+        cp.Init3D(cpName, pnt.X, pnt.Y, pnt.Z);
 
         return AddProp(shape, cp, "centroid", instance);
     }

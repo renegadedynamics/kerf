@@ -186,7 +186,7 @@ public readonly struct TheHCurveTool : IIntersectionCurveTool<CurveAdaptorBase>
         }
 
         int nbsu = ui2 - ui1 + 1;
-        nbsu += (nbsu - 1) * (bc.Degree() - 1);
+        nbsu += (nbsu - 1) * (bc.Degree - 1);
         bool bUniform = false;
         if (nbsu < nbMin)
         {
@@ -215,7 +215,7 @@ public readonly struct TheHCurveTool : IIntersectionCurveTool<CurveAdaptorBase>
         }
         else
         {
-            nbi = bc.Degree();
+            nbi = bc.Degree;
             k = 0;
             t1 = u0;
             for (int i = ui1 + 1; i <= ui2; ++i)
@@ -269,7 +269,7 @@ public readonly struct TheHCurveTool : IIntersectionCurveTool<CurveAdaptorBase>
                 t2 = pars[k];
                 Point3D p2 = bc.Value(t2);
 
-                if (p1.SquareDistance(p2) <= tol)
+                if (p1.SquareDistanceTo(p2) <= tol)
                 {
                     continue;
                 }
@@ -286,7 +286,7 @@ public readonly struct TheHCurveTool : IIntersectionCurveTool<CurveAdaptorBase>
                     }
 
                     Point3D pp = bc.Value(pars[l]);
-                    double d = lin.SquareDistance(pp);
+                    double d = lin.SquareDistanceTo(pp);
 
                     if (d <= defl2)
                     {

@@ -45,10 +45,10 @@ public class IntAna2d_AnaIntersectionTest
             Assert.True(anInter.IsDone);
             Assert.Equal(1, anInter.PointCount);
             IntPoint aP = anInter.Point(1);
-            Assert.Equal(0.0, aL1.Distance(aP.Value()), Tol);
-            Assert.Equal(0.0, aL2.Distance(aP.Value()), Tol);
-            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aL1).Distance(aP.Value()), Tol);
-            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aL2).Distance(aP.Value()), Tol);
+            Assert.Equal(0.0, aL1.DistanceTo(aP.Value()), Tol);
+            Assert.Equal(0.0, aL2.DistanceTo(aP.Value()), Tol);
+            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aL1).DistanceTo(aP.Value()), Tol);
+            Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aL2).DistanceTo(aP.Value()), Tol);
             Assert.Throws<OutOfRangeException>(() => anInter.Point(2));
         }
 
@@ -79,17 +79,17 @@ public class IntAna2d_AnaIntersectionTest
             {
                 aCrossings++;
                 IntPoint aP = anInter.Point(j);
-                Assert.Equal(0.0, aC1.Distance(aP.Value()), Tol);
-                Assert.Equal(0.0, aC2.Distance(aP.Value()), Tol);
+                Assert.Equal(0.0, aC1.DistanceTo(aP.Value()), Tol);
+                Assert.Equal(0.0, aC2.DistanceTo(aP.Value()), Tol);
                 // OCCT measures the parameters from the X axes counterclockwise, whatever the sense of the circles
                 // (occt-issues.md), so they are right for direct circles only
                 if (aC1.IsDirect)
                 {
-                    Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(aP.Value()), 1e-6);
+                    Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).DistanceTo(aP.Value()), 1e-6);
                 }
                 if (aC2.IsDirect)
                 {
-                    Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aC2).Distance(aP.Value()), 1e-6);
+                    Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aC2).DistanceTo(aP.Value()), 1e-6);
                 }
             }
         }
@@ -120,8 +120,8 @@ public class IntAna2d_AnaIntersectionTest
             for (int j = 1; j <= anInter.PointCount; j++)
             {
                 IntPoint aP = anInter.Point(j);
-                Assert.Equal(0.0, aC.Distance(aP.Value()), Tol);
-                Assert.Equal(0.0, aL.Distance(aP.Value()), Tol);
+                Assert.Equal(0.0, aC.DistanceTo(aP.Value()), Tol);
+                Assert.Equal(0.0, aL.DistanceTo(aP.Value()), Tol);
                 Assert.True(aConic.Point(j).SecondIsImplicit());
                 Assert.Throws<DomainErrorException>(() => aConic.Point(j).ParamOnSecond());
             }
@@ -160,10 +160,10 @@ public class IntAna2d_AnaIntersectionTest
             for (int j = 1; j <= theInter.PointCount; j++)
             {
                 IntPoint aP = theInter.Point(j);
-                global::Kerf.Engine.Geometry.Xy aGrad = theConic.Grad(aP.Value().X(), aP.Value().Y());
+                global::Kerf.Engine.Geometry.Xy aGrad = theConic.Grad(aP.Value().X, aP.Value().Y);
                 // Distance to the implicit curve, to first order
-                Assert.Equal(0.0, theConic.Value(aP.Value().X(), aP.Value().Y()) / Math.Max(1.0, aGrad.Modulus()), 1e-6);
-                Assert.Equal(0.0, theCurve(aP.ParamOnFirst()).Distance(aP.Value()), 1e-6);
+                Assert.Equal(0.0, theConic.Value(aP.Value().X, aP.Value().Y) / Math.Max(1.0, aGrad.Modulus()), 1e-6);
+                Assert.Equal(0.0, theCurve(aP.ParamOnFirst()).DistanceTo(aP.Value()), 1e-6);
             }
         }
     }
@@ -177,9 +177,9 @@ public class IntAna2d_AnaIntersectionTest
         var anInter = new AnalyticIntersection(aC1, aC2);
         Assert.Equal(2, anInter.PointCount);
         IntPoint aP = anInter.Point(1);
-        Assert.Equal(0.0, aP.Value().Distance(new Point2D(3, 4)), 1e-12);
+        Assert.Equal(0.0, aP.Value().DistanceTo(new Point2D(3, 4)), 1e-12);
         Assert.Equal(Math.Atan2(4, 3), aP.ParamOnFirst(), 1e-12);
-        Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(new Point2D(3, -4)), 1e-12);
+        Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).DistanceTo(new Point2D(3, -4)), 1e-12);
     }
 
     [Fact]

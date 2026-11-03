@@ -80,8 +80,8 @@ public sealed partial class AnalyticCirc2d2TanRad
         bool                          invers = false;
         Circle2D                     c1     = qualified1.Qualified();
         Circle2D                     c2     = qualified2.Qualified();
-        double                        r1     = c1.Radius();
-        double                        r2     = c2.Radius();
+        double                        r1     = c1.Radius;
+        double                        r2     = c2.Radius;
         double                        rbid   = 0.0;
         int                           signe  = 0;
         double                        r3;
@@ -90,21 +90,21 @@ public sealed partial class AnalyticCirc2d2TanRad
         c[1]           = c1;
         c[2]           = c2;
         int      nbsol = 0;
-        Point2D center1 = c1.Location();
-        Point2D center2 = c2.Location();
+        Point2D center1 = c1.Location;
+        Point2D center2 = c2.Location;
         Point2D center3 = new();
         if (radius < 0.0)
         {
             throw new NegativeValueException();
         }
-        else if (c[2].Location().IsEqual(c[1].Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+        else if (c[2].Location.IsEqual(c[1].Location, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             _wellDone = true;
         }
         else
         {
-            Direction2D dir1 = new(c[2].Location().XY() - c[1].Location().XY());
-            dist = (center2).Distance(center1);
+            Direction2D dir1 = new(c[2].Location.XY() - c[1].Location.XY());
+            dist = (center2).DistanceTo(center1);
             if ((qualified1.IsEnclosed) && qualified2.IsEnclosed)
             {
                 //   =========================================================
@@ -154,8 +154,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                        c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), Math.Abs(radius - r2));
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                        c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), Math.Abs(radius - r2));
                         nbsol = 1;
                     }
                 }
@@ -192,7 +192,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                         r3           = r2;
                         _theSame2[1]  = 1;
                         _theSame1[1]  = 0;
-                        _pnttg1sol[1] = new Point2D(c[2].Location().XY() + r3 * dir1.XY());
+                        _pnttg1sol[1] = new Point2D(c[2].Location.XY() + r3 * dir1.XY());
                     }
                     else if (Math.Abs(radius - r1) <= tol)
                     {
@@ -200,11 +200,11 @@ public sealed partial class AnalyticCirc2d2TanRad
                         r3           = r1;
                         _theSame1[1]  = 1;
                         _theSame2[1]  = 0;
-                        _pnttg2sol[1] = new Point2D(c[2].Location().XY() + r3 * dir1.XY());
+                        _pnttg2sol[1] = new Point2D(c[2].Location.XY() + r3 * dir1.XY());
                     }
                     _wellDone = true;
                     _nbrSol   = 1;
-                    Axis2D axe = new(c[2].Location(), dirx);
+                    Axis2D axe = new(c[2].Location, dirx);
                     _cirsol[1] = new Circle2D(axe, radius);
                     //       =================================
                     _qualifier1[1] = qualified1.Qualifier();
@@ -236,8 +236,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                        c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), Math.Abs(radius - r2));
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                        c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), Math.Abs(radius - r2));
                         nbsol = 1;
                     }
                 }
@@ -307,8 +307,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                        c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), radius + r2);
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                        c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), radius + r2);
                         nbsol = 1;
                     }
                 }
@@ -361,10 +361,10 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[3]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                        c[4]  = new Circle2D(new Axis2D(c[2].Location(), dirx), radius + r2);
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                        c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), Math.Abs(radius - r2));
+                        c[3]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                        c[4]  = new Circle2D(new Axis2D(c[2].Location, dirx), radius + r2);
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                        c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), Math.Abs(radius - r2));
                         nbsol = 2;
                     }
                 }
@@ -422,7 +422,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                             _theSame2[1]  = 1;
                             _pnttg1sol[1] = new Point2D(center1.XY() - r1 * dir1.XY());
                         }
-                        Axis2D axe = new(c[1].Location(), dirx);
+                        Axis2D axe = new(c[1].Location, dirx);
                         _cirsol[1] = new Circle2D(axe, radius);
                         //         =================================
                         _qualifier1[1] = qualified1.Qualifier();
@@ -430,8 +430,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                        c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), Math.Abs(radius - r2));
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                        c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), Math.Abs(radius - r2));
                         nbsol = 1;
                     }
                 }
@@ -483,8 +483,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                 }
                 else
                 {
-                    c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                    c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), radius + r2);
+                    c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                    c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), radius + r2);
                     nbsol = 1;
                 }
             }
@@ -517,7 +517,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     if (Math.Abs(r1 - radius) <= tol)
                     {
                         _theSame1[1] = 1;
-                        if ((Math.Abs(radius - r2) <= tol) && (center1.Distance(center2) <= tol))
+                        if ((Math.Abs(radius - r2) <= tol) && (center1.DistanceTo(center2) <= tol))
                         {
                             _theSame2[1] = 1;
                         }
@@ -539,10 +539,10 @@ public sealed partial class AnalyticCirc2d2TanRad
                 }
                 else
                 {
-                    c[3]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                    c[4]  = new Circle2D(new Axis2D(c[2].Location(), dirx), radius + r2);
-                    c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r1));
-                    c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), Math.Abs(radius - r2));
+                    c[3]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                    c[4]  = new Circle2D(new Axis2D(c[2].Location, dirx), radius + r2);
+                    c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r1));
+                    c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), Math.Abs(radius - r2));
                     nbsol = 2;
                 }
             }
@@ -597,8 +597,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), radius + r1);
-                        c[2]  = new Circle2D(new Axis2D(c[2].Location(), dirx), radius + r2);
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), radius + r1);
+                        c[2]  = new Circle2D(new Axis2D(c[2].Location, dirx), radius + r2);
                         nbsol = 1;
                     }
                 }
@@ -656,10 +656,10 @@ public sealed partial class AnalyticCirc2d2TanRad
                     }
                     else
                     {
-                        c[3]  = new Circle2D(new Axis2D(c[1].Location(), dirx), radius + r1);
-                        c[4]  = new Circle2D(new Axis2D(c[2].Location(), dirx), radius + r2);
-                        c[1]  = new Circle2D(new Axis2D(c[1].Location(), dirx), radius + r1);
-                        c[2]  = new Circle2D(new Axis2D(c[1].Location(), dirx), Math.Abs(radius - r2)); // OCCT: centred on C(1), not C(2)
+                        c[3]  = new Circle2D(new Axis2D(c[1].Location, dirx), radius + r1);
+                        c[4]  = new Circle2D(new Axis2D(c[2].Location, dirx), radius + r2);
+                        c[1]  = new Circle2D(new Axis2D(c[1].Location, dirx), radius + r1);
+                        c[2]  = new Circle2D(new Axis2D(c[1].Location, dirx), Math.Abs(radius - r2)); // OCCT: centred on C(1), not C(2)
                         nbsol = 2;
                     }
                 }
@@ -717,8 +717,8 @@ public sealed partial class AnalyticCirc2d2TanRad
                                 //             =======================================================
                                 dir1 = new Direction2D(center.XY() - center1.XY());
                                 Direction2D dir2 = new(center.XY() - center2.XY());
-                                double   distcc1 = center.Distance(center1);
-                                double   distcc2 = center.Distance(center2);
+                                double   distcc1 = center.DistanceTo(center1);
+                                double   distcc2 = center.DistanceTo(center2);
                                 if (!qualified1.IsUnqualified)
                                 {
                                     _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -751,11 +751,11 @@ public sealed partial class AnalyticCirc2d2TanRad
                                 {
                                     _qualifier2[_nbrSol] = Qualifier.Enclosing;
                                 }
-                                if ((center.Distance(center1) > r1) && (radius < center.Distance(center1) + r1))
+                                if ((center.DistanceTo(center1) > r1) && (radius < center.DistanceTo(center1) + r1))
                                 {
                                     _pnttg1sol[_nbrSol] = new Point2D(center.XY() - radius * dir1.XY());
                                 }
-                                else if ((center.Distance(center1) < r1) && (radius < r1))
+                                else if ((center.DistanceTo(center1) < r1) && (radius < r1))
                                 {
                                     _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * dir1.XY());
                                 }
@@ -763,11 +763,11 @@ public sealed partial class AnalyticCirc2d2TanRad
                                 {
                                     _pnttg1sol[_nbrSol] = new Point2D(center.XY() - radius * dir1.XY());
                                 }
-                                if ((center.Distance(center2) > r2) && (radius < center.Distance(center2) + r2))
+                                if ((center.DistanceTo(center2) > r2) && (radius < center.DistanceTo(center2) + r2))
                                 {
                                     _pnttg2sol[_nbrSol] = new Point2D(center.XY() - radius * dir2.XY());
                                 }
-                                else if ((center.Distance(center2) < r2) && (radius < r2))
+                                else if ((center.DistanceTo(center2) < r2) && (radius < r2))
                                 {
                                     _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius * dir2.XY());
                                 }

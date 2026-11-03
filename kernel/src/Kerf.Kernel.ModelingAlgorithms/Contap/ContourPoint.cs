@@ -209,5 +209,5 @@ public partial struct ContourPoint : IEquatable<ContourPoint>
     public static bool operator !=(in ContourPoint left, in ContourPoint right) => !left.Equals(right);
 
     public override readonly string ToString()
-        => $"{Constants.Format("Contap_Point", _pt.X(), _pt.Y(), _pt.Z(), _uparam, _vparam, _paraline)} onarc {_onarc} vertex {_isvtx}";
+        => $"{Constants.Format("Contap_Point", _pt.X, _pt.Y, _pt.Z, _uparam, _vparam, _paraline)} onarc {_onarc} vertex {_isvtx}";
 }

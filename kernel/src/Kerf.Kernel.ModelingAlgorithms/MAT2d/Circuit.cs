@@ -77,9 +77,9 @@ public sealed class Circuit : Transient
         {
             TrimmedCurve2D curve;
             curve = (TrimmedCurve2D)figItem.Value(i).First();
-            Point2D p1 = curve.StartPoint();
+            Point2D p1 = curve.StartPoint;
             curve = (TrimmedCurve2D)figItem.Value(i).Last();
-            Point2D p2 = curve.EndPoint();
+            Point2D p2 = curve.EndPoint;
             if (isClosed.Value(i))
             {
                 open[i] = false;
@@ -200,8 +200,8 @@ public sealed class Circuit : Transient
                         return false; // Flat.
                     }
                     tolAng = 1.0E-8;
-                    double u1 = c1.LastParameter() - nbTest * du;
-                    double u2 = c2.FirstParameter() + nbTest * du;
+                    double u1 = c1.LastParameter - nbTest * du;
+                    double u2 = c2.FirstParameter + nbTest * du;
                     Direction2D dir1 = new(c1.DN(u1, 1));
                     Direction2D dir2 = new(c2.DN(u2, 1));
                     dotProd = dir1.Dot(dir2);
@@ -214,13 +214,13 @@ public sealed class Circuit : Transient
             // re-entrant.
             double d;
             double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-            double milC1 = (c1.LastParameter() + c1.FirstParameter()) * 0.5;
-            double milC2 = (c2.LastParameter() + c2.FirstParameter()) * 0.5;
-            Point2D p = c1.Value(c1.LastParameter());
+            double milC1 = (c1.LastParameter + c1.FirstParameter) * 0.5;
+            double milC2 = (c2.LastParameter + c2.FirstParameter) * 0.5;
+            Point2D p = c1.Value(c1.LastParameter);
             Point2D p1 = c1.Value(milC1);
             Point2D p2 = c2.Value(milC2);
 
-            d = Min(p1.Distance(p), p2.Distance(p));
+            d = Min(p1.DistanceTo(p), p2.DistanceTo(p));
             d /= 10;
 
             if (direction < 0.0)
@@ -230,8 +230,8 @@ public sealed class Circuit : Transient
 
             CurveAdaptor2D hc1 = new(c1);
             CurveAdaptor2D hc2 = new(c2);
-            OffsetCurveAdaptor2D oc1 = new(hc1, d, milC1, c1.LastParameter());
-            OffsetCurveAdaptor2D oc2 = new(hc2, d, c2.FirstParameter(), milC2);
+            OffsetCurveAdaptor2D oc1 = new(hc1, d, milC1, c1.LastParameter);
+            OffsetCurveAdaptor2D oc2 = new(hc2, d, c2.FirstParameter, milC2);
             GInter intersect = new();
             intersect.Perform(oc1, oc2, tol, tol);
 
@@ -243,8 +243,8 @@ public sealed class Circuit : Transient
             {
                 while (nbTest <= 10)
                 {
-                    double u1 = c1.LastParameter() - nbTest * du;
-                    double u2 = c2.FirstParameter() + nbTest * du;
+                    double u1 = c1.LastParameter - nbTest * du;
+                    double u2 = c2.FirstParameter + nbTest * du;
                     Direction2D dir1 = new(c1.DN(u1, 1));
                     Direction2D dir2 = new(c2.DN(u2, 1));
                     dotProd = dir1.Dot(dir2);
@@ -365,16 +365,16 @@ public sealed class Circuit : Transient
         TrimmedCurve2D curve;
 
         curve = (TrimmedCurve2D)line.First();
-        line.InsertBefore(1, new CartesianPoint2(curve.StartPoint()));
+        line.InsertBefore(1, new CartesianPoint2(curve.StartPoint));
         curve = (TrimmedCurve2D)line.Last();
-        line.Append(new CartesianPoint2(curve.EndPoint()));
+        line.Append(new CartesianPoint2(curve.EndPoint));
 
         for (int i = 2; i <= line.Length() - 2; i++)
         {
             if (Math.Abs(CrossProd(line.Value(i), line.Value(i + 1), out double dotProd)) > 1.0E-8 || dotProd < 0.0)
             {
                 curve = (TrimmedCurve2D)line.Value(i);
-                line.InsertAfter(i, new CartesianPoint2(curve.EndPoint()));
+                line.InsertAfter(i, new CartesianPoint2(curve.EndPoint));
                 i++;
             }
         }
@@ -544,7 +544,7 @@ public sealed class Circuit : Transient
             if (insert)
             {
                 curve = (TrimmedCurve2D)line.Value(isuiv);
-                line.InsertAfter(i, new CartesianPoint2(curve.StartPoint()));
+                line.InsertAfter(i, new CartesianPoint2(curve.StartPoint));
                 i++;
             }
         }
@@ -598,8 +598,8 @@ public sealed class Circuit : Transient
     {
         TrimmedCurve2D curve;
 
-        Vector2D vect1 = new(c1.PointOnSecond().X() - c1.PointOnFirst().X(),
-            c1.PointOnSecond().Y() - c1.PointOnFirst().Y());
+        Vector2D vect1 = new(c1.PointOnSecond().X - c1.PointOnFirst().X,
+            c1.PointOnSecond().Y - c1.PointOnFirst().Y);
         curve = (TrimmedCurve2D)line.Value(c1.IndexItemOnFirst());
         Vector2D vect2 = curve.DN(c1.ParameterOnFirst(), 1);
         if ((vect1 ^ vect2) > 0.0)
@@ -673,9 +673,9 @@ public sealed class Circuit : Transient
         TrimmedCurve2D curve;
 
         curve = (TrimmedCurve2D)geom1;
-        Direction2D dir1 = new(curve.DN(curve.LastParameter(), 1));
+        Direction2D dir1 = new(curve.DN(curve.LastParameter, 1));
         curve = (TrimmedCurve2D)geom2;
-        Direction2D dir2 = new(curve.DN(curve.FirstParameter(), 1));
+        Direction2D dir2 = new(curve.DN(curve.FirstParameter, 1));
         dotProd = dir1.Dot(dir2);
         return dir1 ^ dir2;
     }

@@ -59,7 +59,7 @@ internal static class MatRecordings
     public static string Hex(double theValue) =>
         BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X) + "," + Hex(theP.Y);
 
     private static string ExcName(Exception theE) => theE is FailureException ? "!" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(theE.GetType()) : "!SEH";
 
@@ -211,19 +211,19 @@ internal static class MatRecordings
             return "null";
         }
         string aName;
-        if (theS.ShapeType() == ShapeType.Edge)
+        if (theS.Type == ShapeType.Edge)
         {
             aName = "E" + (theEdges.IndexOf(theS) + 1).ToString(CultureInfo.InvariantCulture);
         }
-        else if (theS.ShapeType() == ShapeType.Vertex)
+        else if (theS.Type == ShapeType.Vertex)
         {
             aName = "V" + (theVerts.IndexOf(theS) + 1).ToString(CultureInfo.InvariantCulture);
         }
         else
         {
-            aName = "S" + ((int)theS.ShapeType()).ToString(CultureInfo.InvariantCulture);
+            aName = "S" + ((int)theS.Type).ToString(CultureInfo.InvariantCulture);
         }
-        return aName + anOri[(int)theS.Orientation()];
+        return aName + anOri[(int)theS.Orientation];
     }
 
     private static string GeomName(Geometry2D? theG)
@@ -235,8 +235,8 @@ internal static class MatRecordings
         string aName = global::Kerf.Engine.Foundation.OcctTypeNames.Of(theG.GetType());
         if (theG is TrimmedCurve2D aT)
         {
-            aName += "/" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aT.ChangeBasisCurve().GetType()) + "," + Hex(aT.FirstParameter()) + ","
-                     + Hex(aT.LastParameter());
+            aName += "/" + global::Kerf.Engine.Foundation.OcctTypeNames.Of(aT.ChangeBasisCurve().GetType()) + "," + Hex(aT.FirstParameter) + ","
+                     + Hex(aT.LastParameter);
         }
         if (theG is CartesianPoint2 aP)
         {
@@ -260,7 +260,7 @@ internal static class MatRecordings
             Tok(theOut, thePre + "G", () => global::Kerf.Engine.Foundation.OcctTypeNames.Of(anAna.Geom2dCurve().GetType()));
         }
         theOut.Add(thePre + "T:" + aKind);
-        double f = aC.FirstParameter(), l = aC.LastParameter();
+        double f = aC.FirstParameter, l = aC.LastParameter;
         theOut.Add(thePre + "R:" + Hex(f) + "," + Hex(l));
         double[] aFrac = [0.0, 0.25, 0.5, 0.75, 1.0];
         double[] aStep = [0.0, 0.5, 1.0, 2.0, 5.0];

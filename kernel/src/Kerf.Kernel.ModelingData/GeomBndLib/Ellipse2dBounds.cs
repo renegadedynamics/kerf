@@ -30,10 +30,10 @@ public sealed class Ellipse2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full ellipse.</summary>
-    public Box2d Box(double tol) => Box(_geom.Elips2d(), tol);
+    public Box2d Box(double tol) => Box(_geom.Ellipse, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
-    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Elips2d(), u1, u2, tol);
+    public Box2d Box(double u1, double u2, double tol) => Box(_geom.Ellipse, u1, u2, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box2d BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -42,11 +42,11 @@ public sealed class Ellipse2dBounds : Curve2dBounds.ICurve2dEvaluator
     public static Box2d Box(in Ellipse2D elips, double tol)
     {
         Box2d box = new();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
-        Xy o = elips.Location().XY();
-        Xy xd = elips.XAxis().Direction().XY();
-        Xy yd = elips.YAxis().Direction().XY();
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
+        Xy o = elips.Location.XY();
+        Xy xd = elips.XAxis.Direction.XY();
+        Xy yd = elips.YAxis.Direction.XY();
 
         Span<double> min = stackalloc double[2];
         Span<double> max = stackalloc double[2];
@@ -67,11 +67,11 @@ public sealed class Ellipse2dBounds : Curve2dBounds.ICurve2dEvaluator
     public static Box2d Box(in Ellipse2D elips, double u1, double u2, double tol)
     {
         Box2d box = new();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
-        Xy o = elips.Location().XY();
-        Xy xd = elips.XAxis().Direction().XY();
-        Xy yd = elips.YAxis().Direction().XY();
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
+        Xy o = elips.Location.XY();
+        Xy xd = elips.XAxis.Direction.XY();
+        Xy yd = elips.YAxis.Direction.XY();
 
         if (u2 - u1 >= 2.0 * M_PI - global::Kerf.Engine.Foundation.Precision.PConfusion())
         {

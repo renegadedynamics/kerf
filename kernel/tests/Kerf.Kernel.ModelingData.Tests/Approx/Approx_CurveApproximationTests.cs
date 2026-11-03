@@ -43,12 +43,12 @@ public class Approx_CurveApproximationTests
         BSplineCurve3D aCurve = anApprox.Curve()!;
         Assert.True(aCurve.IsFrozen);
         Assert.Same(aCurve, anApprox.Curve());
-        Assert.Equal(0.3, aCurve.FirstParameter(), 1e-14);
-        Assert.Equal(4.0, aCurve.LastParameter(), 1e-14);
+        Assert.Equal(0.3, aCurve.FirstParameter, 1e-14);
+        Assert.Equal(4.0, aCurve.LastParameter, 1e-14);
         for (int i = 0; i <= 40; i++)
         {
             double t = 0.3 + 3.7 * i / 40.0;
-            Assert.True(aCurve.Value(t).Distance(anEllipse.Value(t)) < 1e-6);
+            Assert.True(aCurve.Value(t).DistanceTo(anEllipse.Value(t)) < 1e-6);
         }
         Assert.Contains("NbSegments", anApprox.ToString());
     }
@@ -68,8 +68,8 @@ public class Approx_CurveApproximationTests
         {
             double t = 0.5 + 2.0 * i / 20.0;
             Point2D aP = aCurve.Value(t), aQ = aCircle.Value(t);
-            Assert.True(Math.Abs(aP.X() - aQ.X()) < 1e-7);
-            Assert.True(Math.Abs(aP.Y() - aQ.Y()) < 1e-5);
+            Assert.True(Math.Abs(aP.X - aQ.X) < 1e-7);
+            Assert.True(Math.Abs(aP.Y - aQ.Y) < 1e-5);
         }
     }
 
@@ -90,8 +90,8 @@ public class Approx_CurveApproximationTests
         {
             double t = 6.0 * i / 30.0;
             Point2D anUV = aLine.Value(t);
-            Assert.True(aC3d.Value(t).Distance(aCyl.Value(anUV.X(), anUV.Y())) < 1e-6);
-            Assert.True(aPC.Value(t).Distance(anUV) < 1e-6);
+            Assert.True(aC3d.Value(t).DistanceTo(aCyl.Value(anUV.X, anUV.Y)) < 1e-6);
+            Assert.True(aPC.Value(t).DistanceTo(anUV) < 1e-6);
         }
 
         anApprox.Perform(30, 12, C2, false, true);
@@ -112,11 +112,11 @@ public class Approx_CurveApproximationTests
         anApprox.Perform(10, 5, C1, true);
         Assert.True(anApprox.IsDone);
         BSplineCurve3D aC3d = anApprox.Curve3d()!;
-        Assert.Equal(1, aC3d.Degree());
-        Assert.Equal(0.0, aC3d.FirstParameter(), 1e-14);
-        Assert.Equal(4.0, aC3d.LastParameter(), 1e-14);
-        Assert.True(aC3d.Value(0.0).Distance(aCyl.Value(1.0, 3.0)) < 1e-12);
-        Assert.True(aC3d.Value(4.0).Distance(aCyl.Value(1.0, -1.0)) < 1e-12);
+        Assert.Equal(1, aC3d.Degree);
+        Assert.Equal(0.0, aC3d.FirstParameter, 1e-14);
+        Assert.Equal(4.0, aC3d.LastParameter, 1e-14);
+        Assert.True(aC3d.Value(0.0).DistanceTo(aCyl.Value(1.0, 3.0)) < 1e-12);
+        Assert.True(aC3d.Value(4.0).DistanceTo(aCyl.Value(1.0, -1.0)) < 1e-12);
         Assert.True(anApprox.MaxError3d() < 1e-12);
         Assert.Null(anApprox.Curve2d());
     }
@@ -154,7 +154,7 @@ public class Approx_CurveApproximationTests
         {
             double t = 0.5 + 2.0 * i / 40.0;
             Point2D anUV = aNew.Value(t);
-            Assert.True(aCyl.Value(anUV.X(), anUV.Y()).Distance(aC3d.Value(t)) <= aSP.TolReached());
+            Assert.True(aCyl.Value(anUV.X, anUV.Y).DistanceTo(aC3d.Value(t)) <= aSP.TolReached());
         }
         // The caller's pcurve isn't touched
         Assert.False(aPC.IsFrozen);
@@ -182,7 +182,7 @@ public class Approx_CurveApproximationTests
         {
             double t = 0.2 + 2.6 * i / 40.0;
             Point2D anUV = aNew.Value(t);
-            Assert.True(aPlane.Value(anUV.X(), anUV.Y()).Distance(aC3d.Value(t)) <= aSP.TolReached());
+            Assert.True(aPlane.Value(anUV.X, anUV.Y).DistanceTo(aC3d.Value(t)) <= aSP.TolReached());
         }
         Assert.True(aSP.TolReached() < 1e-5);
     }
@@ -196,7 +196,7 @@ public class Approx_CurveApproximationTests
             new Point2D(0, 0), new Point2D(2.5, 0), new Point2D(3.0, 0), new Point2D(6.0, 0)]);
         BSplineCurve2D aPC = new(aPoles, NCollection_Array1<double>.From([0.0, 1.0, 4.0, 6.0]),
                                       NCollection_Array1<int>.From([2, 1, 1, 2]), 1);
-        Assert.Equal(C0, aPC.Continuity());
+        Assert.Equal(C0, aPC.Continuity);
         SameParameter aSP = new(new CurveAdaptor(aLine, 0.0, 6.0), aPC, new SurfaceAdaptor(aPlane), 1e-7);
         Assert.False(aSP.IsSameParameter);
         Assert.True(aSP.IsDone);
@@ -205,7 +205,7 @@ public class Approx_CurveApproximationTests
         {
             double t = 6.0 * i / 60.0;
             Point2D anUV = aNew.Value(t);
-            Assert.True(aPlane.Value(anUV.X(), anUV.Y()).Distance(aLine.Value(t)) <= aSP.TolReached());
+            Assert.True(aPlane.Value(anUV.X, anUV.Y).DistanceTo(aLine.Value(t)) <= aSP.TolReached());
         }
     }
 }

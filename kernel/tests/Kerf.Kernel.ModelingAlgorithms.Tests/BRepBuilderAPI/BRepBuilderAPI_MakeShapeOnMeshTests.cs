@@ -47,7 +47,7 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
         aMaker.Build();
         Assert.True(aMaker.IsDone);
         Shape aShape = aMaker.Shape();
-        Assert.Equal(ShapeType.Compound, aShape.ShapeType());
+        Assert.Equal(ShapeType.Compound, aShape.Type);
         Assert.True(aShape.TShape()!.IsFrozen);
         Assert.Equal(2, Count(aShape, ShapeType.Face));
         Assert.Equal(5, Count(aShape, ShapeType.Edge));
@@ -57,9 +57,9 @@ public class BRepBuilderAPI_MakeShapeOnMeshTests
         for (var anExp = new Explorer(aShape, ShapeType.Face); anExp.More(); anExp.Next())
         {
             var aSurf = new FaceSurfaceAdaptor(ShapeCasts.Face(anExp.Current()));
-            Direction3D aNorm = aSurf.Plane().Axis().Direction();
-            double aSign = anExp.Current().Orientation() == Orientation.Reversed ? -1 : 1;
-            Assert.Equal(1.0, aSign * aNorm.Z(), 12);
+            Direction3D aNorm = aSurf.Plane().Axis.Direction;
+            double aSign = anExp.Current().Orientation == Orientation.Reversed ? -1 : 1;
+            Assert.Equal(1.0, aSign * aNorm.Z, 12);
         }
         Assert.True(new Analyzer(aShape).IsValid());
     }

@@ -29,8 +29,8 @@ public class Geom_OffsetCurve_Test
         OffsetCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basic properties are identical
-        Assert.Equal(myOriginalCurve.Offset(), aCopiedCurve.Offset());
-        Assert.True(myOriginalCurve.Direction().IsEqual(aCopiedCurve.Direction(), 1e-10));
+        Assert.Equal(myOriginalCurve.Offset, aCopiedCurve.Offset);
+        Assert.True(myOriginalCurve.Direction.IsEqual(aCopiedCurve.Direction, 1e-10));
         Assert.Equal(myOriginalCurve.IsPeriodic, aCopiedCurve.IsPeriodic);
         Assert.Equal(myOriginalCurve.IsClosed, aCopiedCurve.IsClosed);
     }
@@ -41,15 +41,15 @@ public class Geom_OffsetCurve_Test
         OffsetCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Verify basis curves are equivalent but independent
-        Curve3D anOrigBasis = myOriginalCurve.BasisCurve();
-        Curve3D aCopyBasis = aCopiedCurve.BasisCurve();
+        Curve3D anOrigBasis = myOriginalCurve.BasisCurve;
+        Curve3D aCopyBasis = aCopiedCurve.BasisCurve;
 
         // They should be different objects
         Assert.NotSame(anOrigBasis, aCopyBasis);
 
         // But functionally equivalent
-        Assert.Equal(anOrigBasis.FirstParameter(), aCopyBasis.FirstParameter());
-        Assert.Equal(anOrigBasis.LastParameter(), aCopyBasis.LastParameter());
+        Assert.Equal(anOrigBasis.FirstParameter, aCopyBasis.FirstParameter);
+        Assert.Equal(anOrigBasis.LastParameter, aCopyBasis.LastParameter);
     }
 
     [Fact]
@@ -60,11 +60,11 @@ public class Geom_OffsetCurve_Test
         Assert.NotNull(aCopiedCurve);
 
         // Verify the copy is functionally identical
-        Assert.Equal(myOriginalCurve.Offset(), aCopiedCurve.Offset());
+        Assert.Equal(myOriginalCurve.Offset, aCopiedCurve.Offset);
 
         // Test evaluation at several points
-        double anUFirst = myOriginalCurve.FirstParameter();
-        double anULast = myOriginalCurve.LastParameter();
+        double anUFirst = myOriginalCurve.FirstParameter;
+        double anULast = myOriginalCurve.LastParameter;
         double aStep = (anULast - anUFirst) / 4.0;
 
         for (double u = anUFirst; u <= anULast; u += aStep)
@@ -81,13 +81,13 @@ public class Geom_OffsetCurve_Test
         OffsetCurve3D aCopiedCurve = new(myOriginalCurve);
 
         // Store original offset value
-        double anOrigOffset = aCopiedCurve.Offset();
+        double anOrigOffset = aCopiedCurve.Offset;
 
         // Modify the original curve
         myOriginalCurve.SetOffsetValue(10.0);
 
         // Verify the copied curve is not affected
-        Assert.Equal(anOrigOffset, aCopiedCurve.Offset());
-        Assert.NotEqual(myOriginalCurve.Offset(), aCopiedCurve.Offset());
+        Assert.Equal(anOrigOffset, aCopiedCurve.Offset);
+        Assert.NotEqual(myOriginalCurve.Offset, aCopiedCurve.Offset);
     }
 }

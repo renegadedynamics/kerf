@@ -556,7 +556,7 @@ public sealed class TranslateFace : ImportRoot
             else if (faceLoop is StepPolyLoop)
             {
                 StepPolyLoop polyLoop = faceLoop as StepPolyLoop;
-                resultFace.Orientation(faceSurface.SameSense() ? Forward : Reversed);
+                resultFace.Orient(faceSurface.SameSense() ? Forward : Reversed);
                 var polyLoopTranslator = new TranslatePolyLoop();
                 polyLoopTranslator.SetPrecision(Precision()); // gka
                 polyLoopTranslator.SetMaxTol(MaxTol());
@@ -564,7 +564,7 @@ public sealed class TranslateFace : ImportRoot
                 if (polyLoopTranslator.IsDone)
                 {
                     Wire polyLoopWire = ShapeCasts.Wire(polyLoopTranslator.InternalValue());
-                    polyLoopWire.Orientation(faceBound.Orientation() ? Forward : Reversed);
+                    polyLoopWire.Orient(faceBound.Orientation() ? Forward : Reversed);
                     faceBuilder.Add(resultFace, polyLoopWire);
                 }
                 else
@@ -596,11 +596,11 @@ public sealed class TranslateFace : ImportRoot
                     // the wire orientation has to be explicitly reversed
                     if (faceBound.Orientation())
                     {
-                        edgeLoopWire.Orientation(sameSense ? Forward : Reversed);
+                        edgeLoopWire.Orient(sameSense ? Forward : Reversed);
                     }
                     else
                     {
-                        edgeLoopWire.Orientation(sameSense ? Reversed : Forward);
+                        edgeLoopWire.Orient(sameSense ? Reversed : Forward);
                     }
 
                     // -----------------------------
@@ -632,7 +632,7 @@ public sealed class TranslateFace : ImportRoot
             }
         }
 
-        resultFace.Orientation(faceSurface.SameSense() ? Forward : Reversed);
+        resultFace.Orient(faceSurface.SameSense() ? Forward : Reversed);
         topoDSTool.Bind(faceSurface, resultFace);
 
         // Register face in NM tool (ssv; 14.11.2010)

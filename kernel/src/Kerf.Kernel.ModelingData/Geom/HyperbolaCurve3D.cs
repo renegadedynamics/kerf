@@ -24,9 +24,9 @@ public class HyperbolaCurve3D : ConicCurve3D
     /// <summary>A hyperbola equal to H.</summary>
     public HyperbolaCurve3D(in Hyperbola3D h)
     {
-        _majorRadius = h.MajorRadius();
-        _minorRadius = h.MinorRadius();
-        _pos = h.Position();
+        _majorRadius = h.MajorRadius;
+        _minorRadius = h.MinorRadius;
+        _pos = h.Position;
     }
 
     /// <summary>A hyperbola placed by A with the given radii.</summary>
@@ -54,20 +54,20 @@ public class HyperbolaCurve3D : ConicCurve3D
 
     public sealed override bool IsPeriodic => false;
 
-    public sealed override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    public sealed override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public sealed override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
-    public double MajorRadius() => _majorRadius;
+    public double MajorRadius => _majorRadius;
 
-    public double MinorRadius() => _minorRadius;
+    public double MinorRadius => _minorRadius;
 
     internal void SetHypr(in Hyperbola3D h)
     {
         CheckMutable();
-        _majorRadius = h.MajorRadius();
-        _minorRadius = h.MinorRadius();
-        _pos = h.Position();
+        _majorRadius = h.MajorRadius;
+        _minorRadius = h.MinorRadius;
+        _pos = h.Position;
     }
 
     /// <exception cref="ConstructionErrorException">MajorRadius &lt; 0.</exception>
@@ -99,25 +99,31 @@ public class HyperbolaCurve3D : ConicCurve3D
     }
 
     /// <summary>The non-persistent hyperbola equal to this one.</summary>
-    public Hyperbola3D Hypr() => new Hyperbola3D(_pos, _majorRadius, _minorRadius);
+    public Hyperbola3D Hyperbola => new Hyperbola3D(_pos, _majorRadius, _minorRadius);
 
     /// <summary>-U.</summary>
     public sealed override double ReversedParameter(double u) => (-u);
 
     /// <summary>The first asymptote (see gp_Hypr).</summary>
     /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
-    public Axis3D Asymptote1()
+    public Axis3D Asymptote1
     {
-        Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
-        return hv.Asymptote1();
+        get
+        {
+            Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
+            return hv.Asymptote1;
+        }
     }
 
     /// <summary>The second asymptote (see gp_Hypr).</summary>
     /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
-    public Axis3D Asymptote2()
+    public Axis3D Asymptote2
     {
-        Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
-        return hv.Asymptote2();
+        get
+        {
+            Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
+            return hv.Asymptote2;
+        }
     }
 
     /// <summary>The conjugate branch on the positive side of the Y axis.</summary>
@@ -135,36 +141,42 @@ public class HyperbolaCurve3D : ConicCurve3D
     }
 
     /// <summary>The first directrix (see gp_Hypr).</summary>
-    public Axis3D Directrix1()
+    public Axis3D Directrix1
     {
-        Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
-        return hv.Directrix1();
+        get
+        {
+            Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
+            return hv.Directrix1;
+        }
     }
 
     /// <summary>The second directrix (see gp_Hypr).</summary>
-    public Axis3D Directrix2()
+    public Axis3D Directrix2
     {
-        Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
-        return hv.Directrix2();
+        get
+        {
+            Hyperbola3D hv = new Hyperbola3D(_pos, _majorRadius, _minorRadius);
+            return hv.Directrix2;
+        }
     }
 
-    public sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(u, _pos, _majorRadius, _minorRadius);
+    internal sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(u, _pos, _majorRadius, _minorRadius);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result = new ResD1();
         global::Kerf.Engine.Geometry.ElCLib.HyperbolaD1(u, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result = new ResD2();
         global::Kerf.Engine.Geometry.ElCLib.HyperbolaD2(u, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.HyperbolaD3(u,
@@ -179,7 +191,7 @@ public class HyperbolaCurve3D : ConicCurve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">N &lt; 1.</exception>
-    public sealed override Vector3D EvalDN(double u, int n)
+    internal sealed override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -190,33 +202,42 @@ public class HyperbolaCurve3D : ConicCurve3D
 
     /// <summary>sqrt(a² + b²) / a.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
-    public sealed override double Eccentricity()
+    public sealed override double Eccentricity
     {
-        Standard_ConstructionError_Raise_if(_majorRadius == 0.0, " ");
-        return (Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius)) / _majorRadius;
+        get
+        {
+            Standard_ConstructionError_Raise_if(_majorRadius == 0.0, " ");
+            return (Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius)) / _majorRadius;
+        }
     }
 
     /// <summary>The distance between the foci.</summary>
-    public double Focal() => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+    public double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public Point3D Focus1()
+    public Point3D Focus1
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        double xp, yp, zp, xd, yd, zd;
-        _pos.Location().Coord(out xp, out yp, out zp);
-        _pos.XDirection().Coord(out xd, out yd, out zd);
-        return new Point3D(xp + c * xd, yp + c * yd, zp + c * zd);
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            double xp, yp, zp, xd, yd, zd;
+            _pos.Location.Coord(out xp, out yp, out zp);
+            _pos.XDirection.Coord(out xd, out yd, out zd);
+            return new Point3D(xp + c * xd, yp + c * yd, zp + c * zd);
+        }
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public Point3D Focus2()
+    public Point3D Focus2
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        double xp, yp, zp, xd, yd, zd;
-        _pos.Location().Coord(out xp, out yp, out zp);
-        _pos.XDirection().Coord(out xd, out yd, out zd);
-        return new Point3D(xp - c * xd, yp - c * yd, zp - c * zd);
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            double xp, yp, zp, xd, yd, zd;
+            _pos.Location.Coord(out xp, out yp, out zp);
+            _pos.XDirection.Coord(out xd, out yd, out zd);
+            return new Point3D(xp - c * xd, yp - c * yd, zp - c * zd);
+        }
     }
 
     /// <summary>The branch symmetric to this one about the Y axis.</summary>
@@ -228,18 +249,21 @@ public class HyperbolaCurve3D : ConicCurve3D
 
     /// <summary>The parameter of the hyperbola: b² / a.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is 0.</exception>
-    public double Parameter()
+    public double Parameter
     {
-        Standard_ConstructionError_Raise_if(_majorRadius == 0.0, " ");
-        return (_minorRadius * _minorRadius) / _majorRadius;
+        get
+        {
+            Standard_ConstructionError_Raise_if(_majorRadius == 0.0, " ");
+            return (_minorRadius * _minorRadius) / _majorRadius;
+        }
     }
 
     /// <summary>Applies T to this hyperbola (the radii are scaled by |T.ScaleFactor()|).</summary>
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor());
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor());
+        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 

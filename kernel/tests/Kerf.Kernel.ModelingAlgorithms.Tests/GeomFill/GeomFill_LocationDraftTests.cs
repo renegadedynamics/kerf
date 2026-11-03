@@ -67,13 +67,13 @@ public class GeomFill_LocationDraftTests
             Matrix3x3 M = new();
             Vector3D V = new();
             Assert.True(aLaw.D0(t, ref M, ref V, aPoles));
-            Point3D aOnSurf = aPlane.Value(aPoles[1].X(), aPoles[1].Y());
-            Assert.Equal(t, aPoles[2].Y());
+            Point3D aOnSurf = aPlane.Value(aPoles[1].X, aPoles[1].Y);
+            Assert.Equal(t, aPoles[2].Y);
             // the generatrix: from the curve's point along cos(a) B + sin(a) N
             Vector3D D = Math.Cos(Angle) * new Vector3D(M.Column(2)) + Math.Sin(Angle) * new Vector3D(M.Column(1));
-            Point3D aOnGen = aCircle.Value(t).Translated(aPoles[2].X() * D.Normalized());
-            Assert.True(aOnSurf.Distance(aOnGen) < 1e-6, $"t = {t}: {aOnSurf} and {aOnGen}");
-            Assert.Equal(-4.0, aOnGen.Z(), 1e-6);
+            Point3D aOnGen = aCircle.Value(t).Translated(aPoles[2].X * D.Normalized());
+            Assert.True(aOnSurf.DistanceTo(aOnGen) < 1e-6, $"t = {t}: {aOnSurf} and {aOnGen}");
+            Assert.Equal(-4.0, aOnGen.Z, 1e-6);
         }
     }
 
@@ -102,9 +102,9 @@ public class GeomFill_LocationDraftTests
         aLaw.SetStopSurf(new SurfaceAdaptor(new PlaneSurface(new Point3D(0, 0, -4), new Direction3D(0.2, 0.1, 1))));
         Assert.True(aLaw.IsIntersec);
         (Vector2D aSurf, Vector2D aCurve, Vector2D aFDSurf, Vector2D aFDCurve) = PoleDerivatives(aLaw, 1.7);
-        Assert.True(aFDSurf.Subtracted(aSurf).Magnitude() < 1e-6, $"{aFDSurf} and {aSurf}");
-        Assert.True(aFDCurve.Subtracted(aCurve).Magnitude() < 1e-6, $"{aFDCurve} and {aCurve}");
-        Assert.Equal(1.0, aCurve.Y());
+        Assert.True(aFDSurf.Subtracted(aSurf).Magnitude < 1e-6, $"{aFDSurf} and {aSurf}");
+        Assert.True(aFDCurve.Subtracted(aCurve).Magnitude < 1e-6, $"{aFDCurve} and {aCurve}");
+        Assert.Equal(1.0, aCurve.Y);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class GeomFill_LocationDraftTests
         // OCCT: FunctionDraft::DerivT differentiates the generatrix P + w (cos(a) B + sin(a) N) as
         // P' + w sin(a) N', without w cos(a) B'; along a circle B' is not zero, so the trace's derivative is off
         (Vector2D aSurf, _, Vector2D aFDSurf, _) = PoleDerivatives(Draft(), 1.1);
-        Assert.True(aFDSurf.Subtracted(aSurf).Magnitude() > 0.1, $"{aFDSurf} and {aSurf}");
+        Assert.True(aFDSurf.Subtracted(aSurf).Magnitude > 0.1, $"{aFDSurf} and {aSurf}");
     }
 
     [Fact]
@@ -127,8 +127,8 @@ public class GeomFill_LocationDraftTests
         Matrix3x3 M = new(), DM = new(), D2M = new();
         Vector3D V = new(), DV = new(), D2V = new();
         Assert.True(aLaw.D2(t, ref M, ref V, ref DM, ref DV, ref D2M, ref D2V, P, DP, D2P));
-        Assert.Equal(0.0, D2P[2].Y());
-        Assert.Equal(1.0, DP[2].Y());
+        Assert.Equal(0.0, D2P[2].Y);
+        Assert.Equal(1.0, DP[2].Y);
 
         // the matrices are those of the trihedron, as without a stop surface
         LocationDraft aFree = Draft(false);

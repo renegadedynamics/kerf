@@ -92,7 +92,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return aMap.Count;
     }
 
-    private static char TypeChar(in Shape theShape) => theShape.IsNull ? 'n' : theShape.ShapeType() switch
+    private static char TypeChar(in Shape theShape) => theShape.IsNull ? 'n' : theShape.Type switch
     {
         ShapeType.Compound => 'C',
         ShapeType.CompSolid => 'c',

@@ -243,7 +243,7 @@ public partial class BooleanBuilder
                     for (; itW.More(); itW.Next())
                     {
                         Iterator itE = new(itW.Value());
-                        hasInternals = itE.More() && (itE.Value().Orientation() == Internal);
+                        hasInternals = itE.More() && (itE.Value().Orientation == Internal);
                         if (hasInternals)
                         {
                             break;
@@ -277,9 +277,9 @@ public partial class BooleanBuilder
 
             mFence.Clear();
             //
-            oriF = f.Orientation();
+            oriF = f.Orientation;
             ff = f;
-            ff.Orientation(Forward);
+            ff.Orient(Forward);
             //
             // 1. Fill the edges set for the face aFF -> LE
             le.Clear();
@@ -289,16 +289,16 @@ public partial class BooleanBuilder
             for (; exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
-                oriE = e.Orientation();
+                oriE = e.Orientation;
                 //
                 if (!_images.ContainsKey(e))
                 {
                     if (oriE == Internal)
                     {
                         ee = e;
-                        ee.Orientation(Forward);
+                        ee.Orient(Forward);
                         le.Append(ee);
-                        ee.Orientation(Reversed);
+                        ee.Orient(Reversed);
                         le.Append(ee);
                     }
                     else
@@ -335,16 +335,16 @@ public partial class BooleanBuilder
                     sp = ShapeCasts.Edge(it.Value());
                     if (bIsDegenerated)
                     {
-                        sp.Orientation(oriE);
+                        sp.Orient(oriE);
                         le.Append(sp);
                         continue;
                     }
                     //
                     if (oriE == Internal)
                     {
-                        sp.Orientation(Forward);
+                        sp.Orient(Forward);
                         le.Append(sp);
-                        sp.Orientation(Reversed);
+                        sp.Orient(Reversed);
                         le.Append(sp);
                         continue;
                     }
@@ -369,15 +369,15 @@ public partial class BooleanBuilder
                                 }
                             }
                             //
-                            sp.Orientation(Forward);
+                            sp.Orient(Forward);
                             le.Append(sp);
-                            sp.Orientation(Reversed);
+                            sp.Orient(Reversed);
                             le.Append(sp);
                         } // if (aMFence.Add(aSp))
                         continue;
                     } // if (bIsClosed){
                     //
-                    sp.Orientation(oriE);
+                    sp.Orient(oriE);
                     bToReverse = AlgoTools.IsSplitToReverseWithWarn(sp, e, _context, _report);
                     if (bToReverse)
                     {
@@ -400,9 +400,9 @@ public partial class BooleanBuilder
                 }
                 sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 //
-                sp.Orientation(Forward);
+                sp.Orient(Forward);
                 le.Append(sp);
-                sp.Orientation(Reversed);
+                sp.Orient(Reversed);
                 le.Append(sp);
             }
             //
@@ -414,9 +414,9 @@ public partial class BooleanBuilder
                 nSp = pb.Edge();
                 sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 //
-                sp.Orientation(Forward);
+                sp.Orient(Forward);
                 le.Append(sp);
-                sp.Orientation(Reversed);
+                sp.Orient(Reversed);
                 le.Append(sp);
             }
             //
@@ -463,7 +463,7 @@ public partial class BooleanBuilder
         for (k = 1; k <= nbBF; ++k)
         {
             Face f = ShapeCasts.Face(_ds.Shape(facesIm.KeyAt(k - 1)));
-            oriF = f.Orientation();
+            oriF = f.Orientation;
             NCollection_List<Shape> lfr = facesIm.ValueAt(k - 1);
             //
             NCollection_List<Shape> pLFIm = _images.SetValueRef(f, new NCollection_List<Shape>());
@@ -473,7 +473,7 @@ public partial class BooleanBuilder
                 ref Shape fr = ref it.ChangeValue();
                 if (oriF == Reversed)
                 {
-                    fr.Orientation(Reversed);
+                    fr.Orient(Reversed);
                 }
                 pLFIm.Append(fr);
             }
@@ -872,7 +872,7 @@ public partial class BooleanBuilder
             for (; itLV.More(); itLV.Next())
             {
                 Vertex v = ShapeCasts.Vertex(_ds.Shape(itLV.Value()));
-                v.Orientation(Internal);
+                v.Orient(Internal);
 
                 NCollection_List<Shape>.Iterator itLFIm = new(pLFIm);
                 for (; itLFIm.More(); itLFIm.Next())
@@ -980,7 +980,7 @@ public partial class BooleanBuilder
         for (; itW.More(); itW.Next())
         {
             Shape w = itW.Value();
-            if (w.ShapeType() != ShapeType.Wire)
+            if (w.Type != ShapeType.Wire)
             {
                 continue;
             }
@@ -999,7 +999,7 @@ public partial class BooleanBuilder
             {
                 Edge e = ShapeCasts.Edge(itE.Value());
 
-                Orientation oriE = e.Orientation();
+                Orientation oriE = e.Orientation;
                 if (oriE == Internal)
                 {
                     // The internal edges could split the original face on halves.
@@ -1050,7 +1050,7 @@ public partial class BooleanBuilder
                         return new Face();
                     }
 
-                    sp.Orientation(oriE);
+                    sp.Orient(oriE);
                     if (bIsDegenerated)
                     {
                         bb.Add(newWire, sp);
@@ -1074,12 +1074,12 @@ public partial class BooleanBuilder
                 }
             }
 
-            newWire.Orientation(w.Orientation());
+            newWire.Orient(w.Orientation);
             newWire.Closed(Tool.IsClosed(newWire));
             bb.Add(draftFace, newWire);
         }
 
-        if (face.Orientation() == Reversed)
+        if (face.Orientation == Reversed)
         {
             draftFace.Reverse();
         }

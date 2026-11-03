@@ -93,7 +93,7 @@ public sealed class MakeStepFace : ExportRoot
             return;
         }
 
-        if (aFace.Orientation() == Internal || aFace.Orientation() == External)
+        if (aFace.Orientation == Internal || aFace.Orientation == External)
         {
             fp.AddWarning(errShape, " Face from Non Manifold Topology");
             _error = MakeFaceError.NonManifoldFace;
@@ -136,7 +136,7 @@ public sealed class MakeStepFace : ExportRoot
             TrimmedSurface rts = su as TrimmedSurface;
             if (rts is not null)
             {
-                su = rts.BasisSurface();
+                su = rts.BasisSurface;
             }
 
             // Surfaces with indirect Axes are already reversed
@@ -158,31 +158,31 @@ public sealed class MakeStepFace : ExportRoot
                     offsetSu = su as OffsetSurface;
                 }
 
-                if ((spms is StepToroidalSurface) || ((surfaceIsOffset) && offsetSu.BasisSurface() is ToroidalSurface))
+                if ((spms is StepToroidalSurface) || ((surfaceIsOffset) && offsetSu.BasisSurface is ToroidalSurface))
                 {
                     ToroidalSurface ts;
                     if (surfaceIsOffset)
                     {
-                        ts = offsetSu.BasisSurface() as ToroidalSurface;
+                        ts = offsetSu.BasisSurface as ToroidalSurface;
                     }
                     else
                     {
                         ts = su as ToroidalSurface;
                     }
 
-                    double R = ts.MajorRadius();
-                    double r = ts.MinorRadius();
+                    double R = ts.MajorRadius;
+                    double r = ts.MinorRadius;
                     if (R < r) // if torus is degenerate or base surface is degenerate, make revolution instead
                     {
-                        CoordinateSystem ax3 = ts.Position();
-                        Point3D pos = ax3.Location();
-                        Direction3D dir = ax3.Direction();
-                        Direction3D x = ax3.XDirection();
+                        CoordinateSystem ax3 = ts.Position;
+                        Point3D pos = ax3.Location;
+                        Direction3D dir = ax3.Direction;
+                        Direction3D x = ax3.XDirection;
 
                         // create basis curve
                         global::Kerf.Engine.Healing.ShapeAlgo.AlgoContainer().GetFaceUVBounds(aFace, out double uf, out double ul, out double vf, out double vl);
-                        Frame3D ax2 = new Frame3D(new Point3D(pos.XYZ() + x.XYZ() * ts.MajorRadius()), x ^ dir, x);
-                        Curve3D basisCurve = new CircleCurve3D(ax2, ts.MinorRadius());
+                        Frame3D ax2 = new Frame3D(new Point3D(pos.XYZ() + x.XYZ() * ts.MajorRadius), x ^ dir, x);
+                        Curve3D basisCurve = new CircleCurve3D(ax2, ts.MinorRadius);
 
                         // convert basis curve to bspline in order to avoid self-intersecting
                         // surface of revolution (necessary e.g. for CATIA)
@@ -193,8 +193,8 @@ public sealed class MakeStepFace : ExportRoot
                         }
 
                         // create surface of revolution
-                        Axis3D axis = ax3.Axis();
-                        if (!ax3.Direct())
+                        Axis3D axis = ax3.Axis;
+                        if (!ax3.IsDirect)
                         {
                             axis = axis.Reversed();
                         }
@@ -268,13 +268,13 @@ public sealed class MakeStepFace : ExportRoot
                 // toujours les sous-shapes d'un shape de maniere FORWARD !
                 // la modif (on ajoute : si context faceted ... sinon) est a verifier
                 // aupres des autres editeurs de CFAO de la Round Table.
-                if (!aTool.Faceted() && aFace.Orientation() == Reversed)
+                if (!aTool.Faceted() && aFace.Orientation == Reversed)
                 {
-                    faceBound.Init(name, loop, (currentWire.Orientation() == Reversed));
+                    faceBound.Init(name, loop, (currentWire.Orientation == Reversed));
                 }
                 else
                 {
-                    faceBound.Init(name, loop, (currentWire.Orientation() == Forward));
+                    faceBound.Init(name, loop, (currentWire.Orientation == Forward));
                 }
 
                 mySeq.Append(faceBound);
@@ -344,7 +344,7 @@ public sealed class MakeStepFace : ExportRoot
                         if (su is TrimmedSurface)
                         {
                             TrimmedSurface alocalRTS = su as TrimmedSurface;
-                            c2dMapped = Units.RadianToDegree(c2d, alocalRTS.BasisSurface(), localFactors.LengthFactor(),
+                            c2dMapped = Units.RadianToDegree(c2d, alocalRTS.BasisSurface, localFactors.LengthFactor(),
                                                                          localFactors.FactorRadianDegree());
                         }
                         else
@@ -423,7 +423,7 @@ public sealed class MakeStepFace : ExportRoot
                 // The underlying surface has always a direct axis (see above)
                 var name = new TCollection_HAsciiString("");
 
-                fpms.Init(name, bounds, spms, aFace.Orientation() == Forward);
+                fpms.Init(name, bounds, spms, aFace.Orientation == Forward);
 
                 aTool.Bind(aFace, fpms);
                 _error = MakeFaceError.FaceDone;

@@ -138,7 +138,7 @@ public sealed class MakeLinearForm : RibSlot
         Vector3D nulldir = new(0, 0, 0);
         if (!_dir1.IsEqual(nulldir, _tol, _tol))
         {
-            double ang = _dir1.Angle(_dir);
+            double ang = _dir1.AngleTo(_dir);
             if (ang != M_PI)
             {
                 _statusError = StatusError.BadDirect;
@@ -179,7 +179,7 @@ public sealed class MakeLinearForm : RibSlot
         Solid bndBox = bndbox.InternalSolid();
 
         // ---Construction of the face workplane (section bounding box)
-        LibraryMakeFace planeF = new(_pln.Pln(), -6.0 * _bnd, 6.0 * _bnd, -6.0 * _bnd, 6.0 * _bnd);
+        LibraryMakeFace planeF = new(_pln.Plane, -6.0 * _bnd, 6.0 * _bnd, -6.0 * _bnd, 6.0 * _bnd);
         Face planeFace = ShapeCasts.Face(planeF.InternalShape());
 
         Common planeS = new(bndBox, planeFace);
@@ -187,7 +187,7 @@ public sealed class MakeLinearForm : RibSlot
         Shape planeSect = planeS.InternalShape();
         EXP.Init(planeSect, ShapeType.Wire);
         Wire www = ShapeCasts.Wire(EXP.Current());
-        LibraryMakeFace bndface = new(_pln.Pln(), www, true);
+        LibraryMakeFace bndface = new(_pln.Plane, www, true);
         Face bndFace = ShapeCasts.Face(bndface.InternalShape());
 
         // ---Find support faces of the rib
@@ -234,7 +234,7 @@ public sealed class MakeLinearForm : RibSlot
             Surface s = Tool.Surface(firstFace)!;
             if (s.GetType() == typeof(TrimmedSurface))
             {
-                s = ((TrimmedSurface)s).BasisSurface();
+                s = ((TrimmedSurface)s).BasisSurface;
             }
             if (s.GetType() == typeof(PlaneSurface) || s.GetType() == typeof(CylindricalSurface))
             {
@@ -249,13 +249,13 @@ public sealed class MakeLinearForm : RibSlot
         // is too expensive - improve
         if (sliding)
         {
-            Point3D p1 = new(_firstPnt.X() + _dir.X(), _firstPnt.Y() + _dir.Y(), _firstPnt.Z() + _dir.Z());
+            Point3D p1 = new(_firstPnt.X + _dir.X, _firstPnt.Y + _dir.Y, _firstPnt.Z + _dir.Z);
             LibraryMakeEdge ee1 = new(_firstPnt, p1);
             ExtCF ext1 = new(ee1.InternalEdge(), firstFace);
             if (ext1.ExtCount == 1
                 && ext1.SquareDistance(1) <= Tool.Tolerance(firstFace) * Tool.Tolerance(firstFace))
             {
-                Point3D p2 = new(_lastPnt.X() + _dir.X(), _lastPnt.Y() + _dir.Y(), _lastPnt.Z() + _dir.Z());
+                Point3D p2 = new(_lastPnt.X + _dir.X, _lastPnt.Y + _dir.Y, _lastPnt.Z + _dir.Z);
                 LibraryMakeEdge ee2 = new(_lastPnt, p2);
                 ExtCF ext2 = new(ee2.InternalEdge(), lastFace); // ExtCF : curves and surfaces
                 sliding = ext2.ExtCount == 1
@@ -271,13 +271,13 @@ public sealed class MakeLinearForm : RibSlot
         {
             if (sliding)
             {
-                Point3D p1 = new(_firstPnt.X() + _dir1.X(), _firstPnt.Y() + _dir1.Y(), _firstPnt.Z() + _dir1.Z());
+                Point3D p1 = new(_firstPnt.X + _dir1.X, _firstPnt.Y + _dir1.Y, _firstPnt.Z + _dir1.Z);
                 LibraryMakeEdge ee1 = new(_firstPnt, p1);
                 ExtCF ext1 = new(ee1.InternalEdge(), firstFace);
                 if (ext1.ExtCount == 1
                     && ext1.SquareDistance(1) <= Tool.Tolerance(firstFace) * Tool.Tolerance(firstFace))
                 {
-                    Point3D p2 = new(_lastPnt.X() + _dir1.X(), _lastPnt.Y() + _dir1.Y(), _lastPnt.Z() + _dir1.Z());
+                    Point3D p2 = new(_lastPnt.X + _dir1.X, _lastPnt.Y + _dir1.Y, _lastPnt.Z + _dir1.Z);
                     LibraryMakeEdge ee2 = new(_lastPnt, p2);
                     ExtCF ext2 = new(ee2.InternalEdge(), lastFace);
                     sliding = ext2.ExtCount == 1
@@ -380,7 +380,7 @@ public sealed class MakeLinearForm : RibSlot
                         LibraryMakeEdge e = new(cc, v1, v2.InternalVertex());
                         ee1 = ShapeCasts.Edge(e.InternalShape());
                     }
-                    Shape localShape = ee1.Oriented(E.Orientation());
+                    Shape localShape = ee1.Oriented(E.Orientation);
                     ee1 = ShapeCasts.Edge(localShape);
                     if (counter == 1)
                     {
@@ -423,7 +423,7 @@ public sealed class MakeLinearForm : RibSlot
                         }
                         LibraryMakeEdge E1 = new(ccc, v1, v2);
                         Edge e11 = ShapeCasts.Edge(E1.InternalShape());
-                        Shape localShape = e11.Oriented(E.Orientation());
+                        Shape localShape = e11.Oriented(E.Orientation);
                         e11 = ShapeCasts.Edge(localShape);
                         thePreviousEdge = e11;
                         _lfMap.GetValue(E).Append(e11);
@@ -452,7 +452,7 @@ public sealed class MakeLinearForm : RibSlot
                             LibraryMakeEdge e = new(cc, v1, v2.InternalVertex());
                             ee = ShapeCasts.Edge(e.InternalShape());
                         }
-                        Shape localShape = ee.Oriented(E.Orientation());
+                        Shape localShape = ee.Oriented(E.Orientation);
                         ee = ShapeCasts.Edge(localShape);
                         bb.Add(w, ee);
                         _lfMap.GetValue(E).Append(ee);
@@ -483,14 +483,14 @@ public sealed class MakeLinearForm : RibSlot
                 Point3D fp, lp;
                 Curve3D ccc = Tool.Curve(edg, out double f, out double l)!;
                 TrimmedCurve3D cc = new(ccc, f, l);
-                if (edg.Orientation() == Reversed)
+                if (edg.Orientation == Reversed)
                 {
                     cc.Reverse();
                 }
 
-                fp = cc.Value(cc.FirstParameter());
-                lp = cc.Value(cc.LastParameter());
-                double dist = fp.Distance(theLastPnt);
+                fp = cc.Value(cc.FirstParameter);
+                lp = cc.Value(cc.LastParameter);
+                double dist = fp.DistanceTo(theLastPnt);
                 if (dist <= _tol)
                 {
                     sens = 1;
@@ -498,7 +498,7 @@ public sealed class MakeLinearForm : RibSlot
                 }
                 else
                 {
-                    dist = lp.Distance(theLastPnt);
+                    dist = lp.DistanceTo(theLastPnt);
                     if (dist <= _tol)
                     {
                         sens = 2;
@@ -507,12 +507,12 @@ public sealed class MakeLinearForm : RibSlot
                     }
                 }
                 int firstFlag = 0;
-                if (sens == 1 && lp.Distance(_firstPnt) <= _tol)
+                if (sens == 1 && lp.DistanceTo(_firstPnt) <= _tol)
                 {
                     firstOK = true;
                     firstFlag = 1;
                 }
-                else if (sens == 2 && fp.Distance(_firstPnt) <= _tol)
+                else if (sens == 2 && fp.DistanceTo(_firstPnt) <= _tol)
                 {
                     firstOK = true;
                     firstFlag = 2;
@@ -520,8 +520,8 @@ public sealed class MakeLinearForm : RibSlot
                 if (lastOK)
                 {
                     Edge eeee;
-                    double fpar = cc.FirstParameter();
-                    double lpar = cc.LastParameter();
+                    double fpar = cc.FirstParameter;
+                    double lpar = cc.LastParameter;
                     if (!firstOK)
                     {
                         if (thePreviousEdge.IsNull)
@@ -771,7 +771,7 @@ public sealed class MakeLinearForm : RibSlot
         using WorkingOverlay.Scope scope = _contourOverlay?.Enter() ?? default;
         Vector3D nulldir = new(0, 0, 0);
 
-        double length = _dir.Magnitude() + _dir1.Magnitude();
+        double length = _dir.Magnitude + _dir1.Magnitude;
 
         _gluedF.Clear();
 
@@ -910,10 +910,10 @@ public sealed class MakeLinearForm : RibSlot
             p2 = Tool.Pnt(v2);
             t1 = Tool.Tolerance(v1);
             t2 = Tool.Tolerance(v2);
-            c1f = p1.Distance(firstpoint) <= t1;
-            c2f = p2.Distance(firstpoint) <= t2;
-            c1l = p1.Distance(lastpoint) <= t1;
-            c2l = p2.Distance(lastpoint) <= t2;
+            c1f = p1.DistanceTo(firstpoint) <= t1;
+            c2f = p2.DistanceTo(firstpoint) <= t2;
+            c1l = p1.DistanceTo(lastpoint) <= t1;
+            c2l = p2.DistanceTo(lastpoint) <= t2;
             if (c1f || c2f || c1l || c2l)
             {
                 eb = ec;
@@ -1017,7 +1017,7 @@ public sealed class MakeLinearForm : RibSlot
                                     if (perp.IsDone)
                                     {
                                         Point3D pe2 = perp.Point(1);
-                                        if (pe1.Distance(pe2) <= Tool.Tolerance(rfe))
+                                        if (pe1.DistanceTo(pe2) <= Tool.Tolerance(rfe))
                                         {
                                             result = true;
                                         }
@@ -1057,8 +1057,8 @@ public sealed class MakeLinearForm : RibSlot
                 t2 = Tool.Tolerance(v2);
                 p1 = Tool.Pnt(v1);
                 p2 = Tool.Pnt(v2);
-                v1OK = p1.Distance(ptprev) <= t1;
-                v2OK = p2.Distance(ptprev) <= t2;
+                v1OK = p1.DistanceTo(ptprev) <= t1;
+                v2OK = p2.DistanceTo(ptprev) <= t2;
                 if (v1OK || v2OK)
                 {
                     break;
@@ -1069,7 +1069,7 @@ public sealed class MakeLinearForm : RibSlot
             {
                 if (!firstOK)
                 {
-                    dp = p2.Distance(firstpoint);
+                    dp = p2.DistanceTo(firstpoint);
                     if (dp <= 2 * t2)
                     {
                         firstOK = true;
@@ -1078,7 +1078,7 @@ public sealed class MakeLinearForm : RibSlot
                 }
                 if (!lastOK)
                 {
-                    dp = p2.Distance(lastpoint);
+                    dp = p2.DistanceTo(lastpoint);
                     if (dp <= 2 * t2)
                     {
                         lastOK = true;
@@ -1090,7 +1090,7 @@ public sealed class MakeLinearForm : RibSlot
             {
                 if (!firstOK)
                 {
-                    dp = p1.Distance(firstpoint);
+                    dp = p1.DistanceTo(firstpoint);
                     if (dp <= 2 * t1)
                     {
                         firstOK = true;
@@ -1099,7 +1099,7 @@ public sealed class MakeLinearForm : RibSlot
                 }
                 if (!lastOK)
                 {
-                    dp = p1.Distance(lastpoint);
+                    dp = p1.DistanceTo(lastpoint);
                     if (dp <= 2 * t1)
                     {
                         lastOK = true;

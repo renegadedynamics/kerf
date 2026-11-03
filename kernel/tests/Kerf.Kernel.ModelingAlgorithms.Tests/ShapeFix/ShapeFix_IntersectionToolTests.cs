@@ -76,7 +76,7 @@ public class ShapeFix_IntersectionToolTests
         for (int i = 1; i <= sewd.EdgeCount; i++)
         {
             Point3D anEnd = Tool.Pnt(sae.LastVertex(sewd.Edge(i)));
-            if (anEnd.Distance(new Point3D(1, 1, 0)) < 1.0e-9)
+            if (anEnd.DistanceTo(new Point3D(1, 1, 0)) < 1.0e-9)
             {
                 aNbAtCross++;
                 int j = i == sewd.EdgeCount ? 1 : i + 1;

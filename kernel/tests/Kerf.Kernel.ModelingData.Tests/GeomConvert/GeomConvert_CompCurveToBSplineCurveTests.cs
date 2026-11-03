@@ -26,7 +26,7 @@ public class GeomConvert_CompCurveToBSplineCurveTest
     }
 
     private static void ExpectNear(in Point3D theA, in Point3D theB)
-        => Assert.Equal(0.0, theA.Distance(theB), global::Kerf.Engine.Foundation.Precision.Confusion());
+        => Assert.Equal(0.0, theA.DistanceTo(theB), global::Kerf.Engine.Foundation.Precision.Confusion());
 
     [Fact]
     public void ConcatenateClampedBSplines()
@@ -41,8 +41,8 @@ public class GeomConvert_CompCurveToBSplineCurveTest
 
         BSplineCurve3D? aResult = aConcat.BSplineCurve();
         Assert.NotNull(aResult);
-        ExpectNear(aResult.StartPoint(), new Point3D(0, 0, 0));
-        ExpectNear(aResult.EndPoint(), new Point3D(6, 0, 0));
+        ExpectNear(aResult.StartPoint, new Point3D(0, 0, 0));
+        ExpectNear(aResult.EndPoint, new Point3D(6, 0, 0));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class GeomConvert_CompCurveToBSplineCurveTest
         CircleCurve3D aGeomCircle = new(aCirc);
         TrimmedCurve3D aArc1 = new(aGeomCircle, 0.0, Math.PI / 2.0);
         TrimmedCurve3D aArc2 = new(aGeomCircle, Math.PI / 2.0, Math.PI);
-        ExpectNear(aArc1.EndPoint(), aArc2.StartPoint());
+        ExpectNear(aArc1.EndPoint, aArc2.StartPoint);
 
         CompCurveToBSplineCurve aConcat = new(aArc1);
         bool isAdded = aConcat.Add(aArc2, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -61,8 +61,8 @@ public class GeomConvert_CompCurveToBSplineCurveTest
 
         BSplineCurve3D? aResult = aConcat.BSplineCurve();
         Assert.NotNull(aResult);
-        ExpectNear(aResult.StartPoint(), new Point3D(5, 0, 0));
-        ExpectNear(aResult.EndPoint(), new Point3D(-5, 0, 0));
+        ExpectNear(aResult.StartPoint, new Point3D(5, 0, 0));
+        ExpectNear(aResult.EndPoint, new Point3D(-5, 0, 0));
     }
 
     [Fact]
@@ -78,8 +78,8 @@ public class GeomConvert_CompCurveToBSplineCurveTest
 
         BSplineCurve3D? aResult = aConcat.BSplineCurve();
         Assert.NotNull(aResult);
-        ExpectNear(aResult.StartPoint(), new Point3D(0, 0, 0));
-        ExpectNear(aResult.EndPoint(), new Point3D(6, 0, 0));
+        ExpectNear(aResult.StartPoint, new Point3D(0, 0, 0));
+        ExpectNear(aResult.EndPoint, new Point3D(6, 0, 0));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public class GeomConvert_CompCurveToBSplineCurveTest
         aMults[4] = 4;
         BSplineCurve3D aCurve1 = new(aPoles, aKnots, aMults, 3);
 
-        Point3D aCurve1End = aCurve1.EndPoint();
+        Point3D aCurve1End = aCurve1.EndPoint;
         BSplineCurve3D aCurve2 = Bezier3(aCurve1End, new Point3D(6, -1, 0), new Point3D(7, -1, 0), new Point3D(8, 0, 0));
 
         CompCurveToBSplineCurve aConcat = new(aCurve1);
@@ -124,8 +124,8 @@ public class GeomConvert_CompCurveToBSplineCurveTest
 
         BSplineCurve3D? aResult = aConcat.BSplineCurve();
         Assert.NotNull(aResult);
-        ExpectNear(aResult.StartPoint(), aCurve1.StartPoint());
-        ExpectNear(aResult.EndPoint(), new Point3D(8, 0, 0));
+        ExpectNear(aResult.StartPoint, aCurve1.StartPoint);
+        ExpectNear(aResult.EndPoint, new Point3D(8, 0, 0));
     }
 
     [Fact]
@@ -141,8 +141,8 @@ public class GeomConvert_CompCurveToBSplineCurveTest
 
         BSplineCurve3D? aResult = aConcat.BSplineCurve();
         Assert.NotNull(aResult);
-        ExpectNear(aResult.StartPoint(), new Point3D(0, 0, 0));
-        ExpectNear(aResult.EndPoint(), new Point3D(6, 0, 0));
+        ExpectNear(aResult.StartPoint, new Point3D(0, 0, 0));
+        ExpectNear(aResult.EndPoint, new Point3D(6, 0, 0));
     }
 
     [Fact]

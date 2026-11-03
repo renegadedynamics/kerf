@@ -23,9 +23,9 @@ public class GProp_PEquationTest
         Assert.True(anEq.IsPoint);
 
         Point3D aP = anEq.Point();
-        Assert.Equal(1.0, aP.X(), Conf);
-        Assert.Equal(2.0, aP.Y(), Conf);
-        Assert.Equal(3.0, aP.Z(), Conf);
+        Assert.Equal(1.0, aP.X, Conf);
+        Assert.Equal(2.0, aP.Y, Conf);
+        Assert.Equal(3.0, aP.Z, Conf);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class GProp_PEquationTest
         Assert.True(anEq.IsLinear);
 
         Line3D aLin = anEq.Line();
-        Assert.Equal(1.0, Math.Abs(aLin.Direction().X()), Conf);
+        Assert.Equal(1.0, Math.Abs(aLin.Direction.X), Conf);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class GProp_PEquationTest
         Assert.True(anEq.IsPlanar);
 
         Plane3D aPln = anEq.Plane();
-        Assert.Equal(1.0, Math.Abs(aPln.Axis().Direction().Z()), Conf);
+        Assert.Equal(1.0, Math.Abs(aPln.Axis.Direction.Z), Conf);
     }
 
     [Fact]
@@ -72,9 +72,9 @@ public class GProp_PEquationTest
         Assert.True(anEq.IsSpace);
 
         anEq.Box(out Point3D _, out Vector3D aV1, out Vector3D aV2, out Vector3D aV3);
-        Assert.True(aV1.Magnitude() > Conf);
-        Assert.True(aV2.Magnitude() > Conf);
-        Assert.True(aV3.Magnitude() > Conf);
+        Assert.True(aV1.Magnitude > Conf);
+        Assert.True(aV2.Magnitude > Conf);
+        Assert.True(aV3.Magnitude > Conf);
     }
 
     // OCCT.NET additions.
@@ -92,7 +92,7 @@ public class GProp_PEquationTest
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Plane());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Point());
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.NoSuchObjectException>(() => anEq.Box(out _, out _, out _, out _));
-        Assert.Equal(1.0, anEq.Barycentre().X(), Conf);
+        Assert.Equal(1.0, anEq.Barycentre().X, Conf);
         Assert.Equal(2.0, anEq.Extent(3), Conf); // sorted by decreasing moment: the line is the last axis
     }
 }

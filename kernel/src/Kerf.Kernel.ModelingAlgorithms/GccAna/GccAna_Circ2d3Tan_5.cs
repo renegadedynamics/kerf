@@ -56,11 +56,11 @@ public sealed partial class AnalyticCirc2d3Tan
 
         Circle2D c1 = qualified1.Qualified();
         Line2D l2 = qualified2.Qualified();
-        double r1 = c1.Radius();
-        Point2D center1 = c1.Location();
-        Point2D origin2 = l2.Location();
-        Direction2D dir2 = l2.Direction();
-        Direction2D normL2 = new(-dir2.Y(), dir2.X());
+        double r1 = c1.Radius;
+        Point2D center1 = c1.Location;
+        Point2D origin2 = l2.Location;
+        Direction2D dir2 = l2.Direction;
+        Direction2D normL2 = new(-dir2.Y, dir2.X);
 
         NCollection_Array1<double> radius = new(1, 2);
         CircLin2dBisec bis1 = new(c1, l2);
@@ -104,9 +104,9 @@ public sealed partial class AnalyticCirc2d3Tan
                         for (int j = 1; j <= intp.PointCount; j++)
                         {
                             Point2D center = intp.Point(j).Value();
-                            double dist1 = center.Distance(c1.Location());
-                            double dist2 = l2.Distance(center);
-                            double dist3 = center.Distance(point3);
+                            double dist1 = center.DistanceTo(c1.Location);
+                            double dist2 = l2.DistanceTo(center);
+                            double dist3 = center.DistanceTo(point3);
                             int nbsol1 = 0;
                             int nbsol3 = 0;
                             bool ok = false;
@@ -143,8 +143,8 @@ public sealed partial class AnalyticCirc2d3Tan
                             }
                             if (qualified2.IsEnclosed && ok)
                             {
-                                if ((((l2.Location().X() - center.X()) * (-l2.Direction().Y()))
-                                     + ((l2.Location().Y() - center.Y()) * (l2.Direction().X())))
+                                if ((((l2.Location.X - center.X) * (-l2.Direction.Y))
+                                     + ((l2.Location.Y - center.Y) * (l2.Direction.X)))
                                     <= 0)
                                 {
                                     for (int ii = 1; ii <= nbsol1; ii++)
@@ -159,8 +159,8 @@ public sealed partial class AnalyticCirc2d3Tan
                             }
                             else if (qualified2.IsOutside && ok)
                             {
-                                if ((((l2.Location().X() - center.X()) * (-l2.Direction().Y()))
-                                     + ((l2.Location().Y() - center.Y()) * (l2.Direction().X())))
+                                if ((((l2.Location.X - center.X) * (-l2.Direction.Y))
+                                     + ((l2.Location.Y - center.Y) * (l2.Direction.X)))
                                     >= 0)
                                 {
                                     for (int ii = 1; ii <= nbsol1; ii++)
@@ -210,7 +210,7 @@ public sealed partial class AnalyticCirc2d3Tan
                                     _nbrSol++;
                                     _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
                                     //               ==========================================================
-                                    double distcc1 = center.Distance(center1);
+                                    double distcc1 = center.DistanceTo(center1);
                                     if (!qualified1.IsUnqualified)
                                     {
                                         _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -241,7 +241,7 @@ public sealed partial class AnalyticCirc2d3Tan
                                         _qualifier2[_nbrSol] = Qualifier.Enclosed;
                                     }
                                     _qualifier3[_nbrSol] = Qualifier.Noqualifier;
-                                    if (center.Distance(c1.Location()) <= tolerance
+                                    if (center.DistanceTo(c1.Location) <= tolerance
                                         && Math.Abs(radius[k] - r1) <= tolerance)
                                     {
                                         _theSame1[_nbrSol] = 1;
@@ -252,7 +252,7 @@ public sealed partial class AnalyticCirc2d3Tan
                                         //  modified by NIZHNY-EAP Mon Nov  1 13:48:21 1999 ___BEGIN___
                                         //                   gp_Dir2d dc(C1.Location().XY()-Center.XY());
                                         // OCCT: the reversed direction puts the tangency point on the far side of the solution unless it is enclosed in C1
-                                        Direction2D dc1 = new(center.XY() - c1.Location().XY());
+                                        Direction2D dc1 = new(center.XY() - c1.Location.XY());
                                         //  modified by NIZHNY-EAP Mon Nov  1 13:48:55 1999 ___END___
                                         _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc1.XY());
                                         _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
@@ -260,9 +260,9 @@ public sealed partial class AnalyticCirc2d3Tan
                                     }
                                     _theSame2[_nbrSol] = 0;
                                     _theSame3[_nbrSol] = 0;
-                                    Direction2D dc = new(l2.Location().XY() - center.XY());
-                                    double sign = dc.Dot(new Direction2D(-l2.Direction().Y(), l2.Direction().X()));
-                                    dc = new Direction2D(sign * new Xy(-l2.Direction().Y(), l2.Direction().X()));
+                                    Direction2D dc = new(l2.Location.XY() - center.XY());
+                                    double sign = dc.Dot(new Direction2D(-l2.Direction.Y, l2.Direction.X));
+                                    dc = new Direction2D(sign * new Xy(-l2.Direction.Y, l2.Direction.X));
                                     _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius[k] * dc.XY());
                                     _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
                                     _pararg2[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l2, _pnttg2sol[_nbrSol]);

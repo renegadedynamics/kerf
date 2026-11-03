@@ -46,7 +46,7 @@ public sealed class Domain
         _explorer.Next();
         while (_explorer.More())
         {
-            Orientation or = _explorer.Current().Orientation();
+            Orientation or = _explorer.Current().Orientation;
             if ((or == Forward) || (or == Reversed))
             {
                 return;

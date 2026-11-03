@@ -42,15 +42,15 @@ public partial class IntSS
         double eps = global::Kerf.Engine.Foundation.Precision.PConfusion(); // 1.e-9
         double epsilon = Epsilon(10.0); // 1.77e-15
         //
-        aS.Bounds(out double umin, out double umax, out _, out _);
-        double period = aS.UPeriod();
+        aS.ParameterBounds(out double umin, out double umax, out _, out _);
+        double period = aS.UPeriod;
 
-        double t1 = aC2D.FirstParameter();
-        double t2 = aC2D.LastParameter();
+        double t1 = aC2D.FirstParameter;
+        double t2 = aC2D.LastParameter;
         double tx = t1 + 0.467 * (t2 - t1);
         Point2D px = aC2D.Value(tx);
         //
-        double ux = px.X();
+        double ux = px.X;
         if (Math.Abs(ux) < epsilon)
         {
             ux = 0.0;
@@ -143,7 +143,7 @@ public partial class IntSS
     private static void GetSegmentBoundary(in IntersectionSegment2D segm, Curve2D curve,
                                            List<double> arrayOfParameters)
     {
-        double u1 = curve.FirstParameter(), u2 = curve.LastParameter();
+        double u1 = curve.FirstParameter, u2 = curve.LastParameter;
 
         if (segm.HasFirstPoint)
         {
@@ -208,20 +208,20 @@ public partial class IntSS
         Point3D p1, p2;
 
         ahc2d.D0(firstPar, out p2d);
-        gahs.D0(p2d.X(), p2d.Y(), out p1);
+        gahs.D0(p2d.X, p2d.Y, out p1);
 
         ahc2d.D0(lastPar, out p2d);
-        gahs.D0(p2d.X(), p2d.Y(), out p2);
+        gahs.D0(p2d.X, p2d.Y, out p2);
 
-        if (p1.SquareDistance(p2) > sqTol)
+        if (p1.SquareDistanceTo(p2) > sqTol)
         {
             return false;
         }
 
         ahc2d.D0(0.5 * (firstPar + lastPar), out p2d);
-        gahs.D0(p2d.X(), p2d.Y(), out p2);
+        gahs.D0(p2d.X, p2d.Y, out p2);
 
-        return p1.SquareDistance(p2) <= sqTol;
+        return p1.SquareDistanceTo(p2) <= sqTol;
     }
 
     /// <summary>Makes the Geom curves of the line of index Index of the intersector (with their 2D curves on
@@ -422,8 +422,8 @@ public partial class IntSS
                         //
                         _sline.Append(tc3D);
                         //
-                        fprm = tc3D.FirstParameter();
-                        lprm = tc3D.LastParameter();
+                        fprm = tc3D.FirstParameter;
+                        lprm = tc3D.LastParameter;
                         ////
                         if (myApprox1)
                         {
@@ -467,8 +467,8 @@ public partial class IntSS
                                 TrimmedCurve3D tc3D = new(newc, fprm, lprm);
                                 //
                                 _sline.Append(tc3D);
-                                fprm = tc3D.FirstParameter();
-                                lprm = tc3D.LastParameter();
+                                fprm = tc3D.FirstParameter;
+                                lprm = tc3D.LastParameter;
 
                                 if (myApprox1)
                                 {
@@ -749,7 +749,7 @@ public partial class IntSS
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
                                         tpoles.SetValue(ik,
-                                                        global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(), pln));
+                                                        global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X, tpoles2d.Value(ik).Y, pln));
                                     }
                                     //
                                     BSplineCurve3D bs = new(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
@@ -808,7 +808,7 @@ public partial class IntSS
                                     for (ik = 1; ik <= nbpoles; ik++)
                                     {
                                         tpoles.SetValue(ik,
-                                                        global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X(), tpoles2d.Value(ik).Y(), pln));
+                                                        global::Kerf.Engine.Geometry.ElSLib.Value(tpoles2d.Value(ik).X, tpoles2d.Value(ik).Y, pln));
                                     }
                                     //
                                     BSplineCurve3D bs = new(tpoles, mbspc.Knots(), mbspc.Multiplicities(),
@@ -866,10 +866,10 @@ public partial class IntSS
                                     check.FixTangent(true, true);
                                     //
                                     // Check IsClosed()
-                                    double dist = Max(bs.StartPoint().XYZ().SquareModulus(),
-                                                       bs.EndPoint().XYZ().SquareModulus());
+                                    double dist = Max(bs.StartPoint.XYZ().SquareModulus(),
+                                                       bs.EndPoint.XYZ().SquareModulus());
                                     double eps = Epsilon(dist);
-                                    if (bs.StartPoint().SquareDistance(bs.EndPoint()) < 2.0 * eps)
+                                    if (bs.StartPoint.SquareDistanceTo(bs.EndPoint) < 2.0 * eps)
                                     {
                                         // Avoid creating B-splines containing two coincident poles only
                                         if (mbspc.Degree() == 1 && nbpoles == 2)
@@ -957,8 +957,8 @@ public partial class IntSS
                 List<double> arrayOfParameters = new();
 
                 // We consider here that the intersection line is same-parameter-line
-                arrayOfParameters.Add(c3d.FirstParameter());
-                arrayOfParameters.Add(c3d.LastParameter());
+                arrayOfParameters.Add(c3d.FirstParameter);
+                arrayOfParameters.Add(c3d.LastParameter);
 
                 TrimILineOnSurfBoundaries(c2d1, c2d2, box1, box2, arrayOfParameters);
 
@@ -1039,8 +1039,8 @@ public partial class IntSS
             ahc2d = rl.ArcOnS1()!;
             rl.ParamOnS1(out tf, out tl);
             c2d1 = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(ahc2d);
-            tf = Max(tf, c2d1.FirstParameter());
-            tl = Min(tl, c2d1.LastParameter());
+            tf = Max(tf, c2d1.FirstParameter);
+            tl = Min(tl, c2d1.LastParameter);
             c2d1 = new TrimmedCurve2D(c2d1, tf, tl);
         }
         else if (rl.IsArcOnS2)
@@ -1049,8 +1049,8 @@ public partial class IntSS
             ahc2d = rl.ArcOnS2()!;
             rl.ParamOnS2(out tf, out tl);
             c2d2 = global::Kerf.Engine.Geometry.Adaptors.Geom2dAdaptor.MakeCurve(ahc2d);
-            tf = Max(tf, c2d2.FirstParameter());
-            tl = Min(tl, c2d2.LastParameter());
+            tf = Max(tf, c2d2.FirstParameter);
+            tl = Min(tl, c2d2.LastParameter);
             c2d2 = new TrimmedCurve2D(c2d2, tf, tl);
         }
         else
@@ -1128,8 +1128,8 @@ public partial class IntSS
                 // First, last knots can differ from f, l because of numerical error
                 // of projection and approximation
                 // The same checking as in Geom2d_TrimmedCurve
-                if ((curve2d.FirstParameter() - first > global::Kerf.Engine.Foundation.Precision.PConfusion())
-                    || (last - curve2d.LastParameter() > global::Kerf.Engine.Foundation.Precision.PConfusion()))
+                if ((curve2d.FirstParameter - first > global::Kerf.Engine.Foundation.Precision.PConfusion())
+                    || (last - curve2d.LastParameter > global::Kerf.Engine.Foundation.Precision.PConfusion()))
                 {
                     BSplineCurve2D bspl = (curve2d as BSplineCurve2D)!;
                     NCollection_Array1<double> aKnots = new(bspl.InternalKnots());
@@ -1168,7 +1168,7 @@ public partial class IntSS
                     {
                         Point2D p2d2 = new(u, v);
 
-                        if (p2d1.Distance(p2d2) > Constants.Resolution())
+                        if (p2d1.DistanceTo(p2d2) > Constants.Resolution())
                         {
                             NCollection_Array1<Point2D> poles = new(1, 2);
                             NCollection_Array1<double> knots = new(1, 2);
@@ -1184,8 +1184,8 @@ public partial class IntSS
                             // Check same parameter in middle point .begin
                             Point3D pMid = curve.Value(0.5 * (first + last));
                             Point2D pmidcurve2d = new(0.5 * (p2d1.XY() + p2d2.XY()));
-                            Point3D pc = anAS.Value(pmidcurve2d.X(), pmidcurve2d.Y());
-                            double dist = pMid.Distance(pc);
+                            Point3D pc = anAS.Value(pmidcurve2d.X, pmidcurve2d.Y);
+                            double dist = pMid.DistanceTo(pc);
                             tol = Max(dist, tol);
                             // Check same parameter in middle point .end
                         }
@@ -1201,11 +1201,11 @@ public partial class IntSS
             bool bAdjust;
             //
             eps = global::Kerf.Engine.Foundation.Precision.PConfusion();
-            period = surface.UPeriod();
+            period = surface.UPeriod;
             //
             tm = 0.5 * (first + last);
             Point2D pm = curve2d.Value(tm);
-            u0 = pm.X();
+            u0 = pm.X;
             //
             bAdjust = global::Kerf.Engine.Intersection.Surfaces.GeomInt.AdjustPeriodic(u0, umin, umax, period, out _, out du, eps);
             if (bAdjust)
@@ -1229,7 +1229,7 @@ public partial class IntSS
             return;
         }
         //
-        s.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        s.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
 
         BuildPCurves(f, l, umin, umax, vmin, vmax, ref tol, s, c, ref c2d);
     }

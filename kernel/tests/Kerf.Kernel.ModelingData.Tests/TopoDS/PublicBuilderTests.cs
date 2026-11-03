@@ -70,7 +70,7 @@ public class PublicBuilderTests
         new BrepBuilder().MakeFace(ref aFace, aTri);
         aFace.TShape()!.FreezeGraph();
 
-        Assert.Equal(ShapeType.Face, aFace.ShapeType());
+        Assert.Equal(ShapeType.Face, aFace.Type);
         Assert.False(Tool.IsGeometric(aFace));
         Assert.Same(aTri, Tool.Triangulation(aFace, out _));
         Assert.True(aFace.TShape()!.IsFrozen);

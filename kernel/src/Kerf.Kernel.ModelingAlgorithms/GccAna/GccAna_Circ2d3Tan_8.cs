@@ -52,9 +52,9 @@ public sealed partial class AnalyticCirc2d3Tan
         //=========================================================================
 
         Line2D l1 = qualified1.Qualified();
-        Point2D origin1 = l1.Location();
-        Direction2D dir1 = l1.Direction();
-        Direction2D normL1 = new(-dir1.Y(), dir1.X());
+        Point2D origin1 = l1.Location;
+        Direction2D dir1 = l1.Direction;
+        Direction2D normL1 = new(-dir1.Y, dir1.X);
 
         if (point2.IsEqual(point3, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
@@ -86,14 +86,14 @@ public sealed partial class AnalyticCirc2d3Tan
                     for (int j = 1; j <= intp.PointCount; j++)
                     {
                         Point2D center = intp.Point(j).Value();
-                        double dist1 = l1.Distance(center);
-                        double dist2 = center.Distance(point2);
+                        double dist1 = l1.DistanceTo(center);
+                        double dist2 = center.DistanceTo(point2);
 
                         double radius = 0;
                         int nbsol3 = 0;
                         bool ok = false;
-                        double difference = (((origin1.X() - center.X()) * (-dir1.Y()))
-                                             + ((origin1.Y() - center.Y()) * (dir1.X())));
+                        double difference = (((origin1.X - center.X) * (-dir1.Y))
+                                             + ((origin1.Y - center.Y) * (dir1.X)));
                         if ((qualified1.IsEnclosed && difference <= 0)
                             || (qualified1.IsOutside && difference >= 0) || (qualified1.IsUnqualified))
                         {
@@ -135,8 +135,8 @@ public sealed partial class AnalyticCirc2d3Tan
                                 _qualifier3[_nbrSol] = Qualifier.Noqualifier;
                                 _theSame1[_nbrSol] = 0;
                                 Direction2D dc = new(origin1.XY() - center.XY());
-                                double sign = dc.Dot(new Direction2D(-dir1.Y(), dir1.X()));
-                                dc = new Direction2D(sign * new Xy(-dir1.Y(), dir1.X()));
+                                double sign = dc.Dot(new Direction2D(-dir1.Y, dir1.X));
+                                dc = new Direction2D(sign * new Xy(-dir1.Y, dir1.X));
                                 _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * dc.XY());
                                 _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                                 _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);

@@ -182,7 +182,7 @@ public sealed class PipeShell : Transient
                 continue;
             }
 
-            Orientation currentEdgeOrientation = currentEdge.Orientation();
+            Orientation currentEdgeOrientation = currentEdge.Orientation;
             Shape adjFace = edgeFaceMap.GetValue(currentEdge).First();
             for (Explorer adjFaceExplorer = new(adjFace, ShapeType.Edge); adjFaceExplorer.More(); adjFaceExplorer.Next())
             {
@@ -190,7 +190,7 @@ public sealed class PipeShell : Transient
                 Shape adjEdge = adjFaceExplorer.Current();
                 if (adjEdge.IsSame(currentEdge))
                 {
-                    return currentEdgeOrientation != adjEdge.Orientation();
+                    return currentEdgeOrientation != adjEdge.Orientation;
                 }
             }
         }
@@ -222,7 +222,7 @@ public sealed class PipeShell : Transient
         _maxSegments = 100;
 
         // Attention to closed non-declared wire !
-        if (!_spine.Closed())
+        if (!_spine.IsClosed)
         {
             Exploration.Vertices(_spine, out Vertex vf, out Vertex vl);
             if (vf.IsSame(vl))
@@ -292,8 +292,8 @@ public sealed class PipeShell : Transient
     {
         _trihedron = Trihedron.IsFixed;
         Vector3D v1 = new(), v2 = new();
-        v1 = v1.WithXYZ(axe.Direction().XYZ());
-        v2 = v2.WithXYZ(axe.XDirection().XYZ());
+        v1 = v1.WithXYZ(axe.Direction.XYZ());
+        v2 = v2.WithXYZ(axe.XDirection.XYZ());
         Fixed tLaw = new(v1, v2);
         CurveAndTrihedron loc = new(tLaw);
         _location = new Edge3DLaw(_spine, loc);
@@ -355,7 +355,7 @@ public sealed class PipeShell : Transient
         // Reorganization of the guide (pb of orientation and origin)
         Wire theGuide;
         theGuide = auxiliarySpine;
-        bool spClose = _spine.Closed(), guideClose = auxiliarySpine.Closed();
+        bool spClose = _spine.IsClosed, guideClose = auxiliarySpine.IsClosed;
 
         if (keepContact == TypeOfContact.ContactOnBorder)
         {
@@ -531,7 +531,7 @@ public sealed class PipeShell : Transient
                 for (j = 1; j <= intersector.PointCount; j++)
                 {
                     Point3D pint = intersector.Point(j).Pnt();
-                    double dist = baryCenter.Distance(pint);
+                    double dist = baryCenter.DistanceTo(pint);
                     if (dist < minDist)
                     {
                         minDist = dist;
@@ -541,18 +541,18 @@ public sealed class PipeShell : Transient
             }
 
             // Correct <ParAndRad> according to <InitialWidth>
-            double initialWidth = pointsOnSpines[0].Distance(pointsOnSpines[1]);
+            double initialWidth = pointsOnSpines[0].DistanceTo(pointsOnSpines[1]);
             int nbParRad = parAndRad.Upper();
             for (i = 1; i <= nbParRad; i++)
             {
                 Point2D parRad = parAndRad.Value(i);
-                parRad = parRad.WithY(parRad.Y() / initialWidth);
+                parRad = parRad.WithY(parRad.Y / initialWidth);
                 parAndRad.SetValue(i, parRad);
             }
 
             _law = new Interpol();
 
-            bool isPeriodic = (Math.Abs(parAndRad.Value(1).Y() - parAndRad.Value(nbParRad).Y()) < global::Kerf.Engine.Foundation.Precision.Confusion());
+            bool isPeriodic = (Math.Abs(parAndRad.Value(1).Y - parAndRad.Value(nbParRad).Y) < global::Kerf.Engine.Foundation.Precision.Confusion());
 
             ((Interpol)_law).Set(parAndRad.Array1(), isPeriodic);
         }
@@ -861,14 +861,14 @@ public sealed class PipeShell : Transient
         {
             throw new NotDoneException("PipeShell is not built");
         }
-        bool b = _shape.Closed();
+        bool b = _shape.IsClosed;
         BrepBuilder bs = new();
 
         if (!b)
         {
             if (!_first.IsNull && !_last.IsNull)
             {
-                b = (_first.Closed() && _last.Closed());
+                b = (_first.IsClosed && _last.IsClosed);
             }
             if (b)
             {
@@ -1367,7 +1367,7 @@ public sealed class PipeShell : Transient
                 bb.MakeShell(ref shell);
                 Vertex[] vertex = new Vertex[2];
                 Exploration.Vertices(originalEdge, out vertex[0], out vertex[1]);
-                int signOfAnEdge = (originalEdge.Orientation() == Forward) ? 1 : -1;
+                int signOfAnEdge = (originalEdge.Orientation == Forward) ? 1 : -1;
 
                 // For each non-degenerated inde-th edge of <aSection>
                 // we find inde-th edge in <theWire>
@@ -1394,7 +1394,7 @@ public sealed class PipeShell : Transient
                 for (; iter.More(); iter.Next())
                 {
                     Edge newEdge = ShapeCasts.Edge(iter.Value());
-                    signOfANewEdge = (newEdge.Orientation() == Forward) ? 1 : -1;
+                    signOfANewEdge = (newEdge.Orientation == Forward) ? 1 : -1;
                     int indE = _section!.IndexOfEdge(newEdge);
                     signOfIndex = (indE > 0) ? 1 : -1;
                     indE = Math.Abs(indE);
@@ -1583,7 +1583,7 @@ public sealed class PipeShell : Transient
                 for (int i = 1; i <= faces.UpperRow(); i++)
                 {
                     Shape face = faces.Value(i, inde);
-                    if (face.ShapeType() == ShapeType.Face)
+                    if (face.Type == ShapeType.Face)
                     {
                         flist.Append(face);
                     }
@@ -1599,7 +1599,7 @@ public sealed class PipeShell : Transient
                 {
                     continue;
                 }
-                if (vshape.ShapeType() == ShapeType.Edge || vshape.ShapeType() == ShapeType.Face)
+                if (vshape.Type == ShapeType.Edge || vshape.Type == ShapeType.Face)
                 {
                     listVshapes.Append(vshape);
                 }
@@ -1609,7 +1609,7 @@ public sealed class PipeShell : Transient
                     for (; itvshape.More(); itvshape.Next())
                     {
                         Shape subshape = itvshape.Value();
-                        if (subshape.ShapeType() == ShapeType.Edge || subshape.ShapeType() == ShapeType.Face)
+                        if (subshape.Type == ShapeType.Edge || subshape.Type == ShapeType.Face)
                         {
                             listVshapes.Append(subshape);
                         }
@@ -1659,14 +1659,14 @@ public sealed class PipeShell : Transient
         {
             Shape bottomEdge = vEdges.Value(i, vEdges.LowerCol());
 
-            if (!bottomEdge.IsNull && (bottomEdge.ShapeType() == ShapeType.Edge))
+            if (!bottomEdge.IsNull && (bottomEdge.Type == ShapeType.Edge))
             {
                 b.Add(bottomWire, bottomEdge);
                 bfoundbottom = true;
             }
             Shape topEdge = vEdges.Value(i, vEdges.UpperCol());
 
-            if (!topEdge.IsNull && (topEdge.ShapeType() == ShapeType.Edge))
+            if (!topEdge.IsNull && (topEdge.Type == ShapeType.Edge))
             {
                 b.Add(topWire, topEdge);
                 bfoundtop = true;

@@ -198,8 +198,8 @@ internal sealed class Sweep
     //=======================================================================
     private static Curve2D? Couture(in Edge e, Surface s, in Placement L)
     {
-        Placement l = L.Predivided(e.Location());
-        bool eisreversed = (e.Orientation() == Reversed);
+        Placement l = L.Predivided(e.Placement);
+        bool eisreversed = (e.Orientation == Reversed);
 
         // find the representation (OCCT reads ChangeCurves(); the port only reads the list)
         NCollection_List<CurveRepresentation>.Iterator itcr = new(((BrepTEdge)e.TShape()!).Curves());
@@ -249,7 +249,7 @@ internal sealed class Sweep
             pcurv.Value(t).Coord(out double u, out double v);
             Point3D pS = s.Value(u, v);
             Point3D pC = c3d.Value(t);
-            double d2 = pS.SquareDistance(pC);
+            double d2 = pS.SquareDistanceTo(pC);
             tolreached = Max(tolreached, d2);
         }
         tolreached = Math.Sqrt(tolreached);
@@ -403,7 +403,7 @@ internal sealed class Sweep
                 if (pCurveExists[j])
                 {
                     Point3D pntFromFace = bAcurve[j].Value(param);
-                    double sqDist = pnt.SquareDistance(pntFromFace);
+                    double sqDist = pnt.SquareDistanceTo(pntFromFace);
                     if (sqDist > maxSqDist)
                     {
                         maxSqDist = sqDist;
@@ -425,7 +425,7 @@ internal sealed class Sweep
     {
         Vector2D uRef = new(1, 0), vRef = new(0, 1);
         bool isuiso, isfirst, isopposite;
-        s.Bounds(out double uFirst, out _, out double vFirst, out _);
+        s.ParameterBounds(out double uFirst, out _, out double vFirst, out _);
         Curve2D c;
 
         c = Tool.CurveOnSurface(e, s, new Placement(), out double f, out double l)!;
@@ -435,15 +435,15 @@ internal sealed class Sweep
 
         if (isuiso)
         {
-            isfirst = (Math.Abs(p.X() - uFirst) < global::Kerf.Engine.Foundation.Precision.Confusion());
+            isfirst = (Math.Abs(p.X - uFirst) < global::Kerf.Engine.Foundation.Precision.Confusion());
             isopposite = d.IsOpposite(vRef, 0.1);
-            e.Orientation(Reversed);
+            e.Orient(Reversed);
         }
         else
         {
-            isfirst = (Math.Abs(p.Y() - vFirst) < global::Kerf.Engine.Foundation.Precision.Confusion());
+            isfirst = (Math.Abs(p.Y - vFirst) < global::Kerf.Engine.Foundation.Precision.Confusion());
             isopposite = d.IsOpposite(uRef, 0.1);
-            e.Orientation(Forward);
+            e.Orient(Forward);
         }
 
         if (!isfirst)
@@ -629,10 +629,10 @@ internal sealed class Sweep
           // and construct face Plane
             Point3D pnt;
             Vector3D du, dv, ns, np;
-            s.Bounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
+            s.ParameterBounds(out double ufirst, out double ulast, out double vfirst, out double vlast);
             s.D1((ufirst + ulast) / 2.0, (vfirst + vlast) / 2.0, out pnt, out du, out dv);
             ns = du ^ dv;
-            np = new Vector3D(thePlane!.Pln().Axis().Direction());
+            np = new Vector3D(thePlane!.Plane.Axis.Direction);
             if (ns.Dot(np) < 0.0)
             {
                 if (thePlane.IsFrozen)
@@ -704,19 +704,19 @@ internal sealed class Sweep
         tol2 = Tool.Tolerance(vl);
         tol = Max(tol1, tol2);
 
-        if (vf.IsSame(vl) || (p1.Distance(p2) < tol))
+        if (vf.IsSame(vl) || (p1.DistanceTo(p2) < tol))
         {
             // Degenerated case
             c2d.D0(f, out Point2D p2d);
-            s.D0(p2d.X(), p2d.Y(), out p);
-            d = p1.Distance(p);
+            s.D0(p2d.X, p2d.Y, out p);
+            d = p1.DistanceTo(p);
             if (d > tol)
             {
                 tol = d;
             }
             c2d.D0(l, out p2d);
-            s.D0(p2d.X(), p2d.Y(), out p);
-            d = p2.Distance(p);
+            s.D0(p2d.X, p2d.Y, out p);
+            d = p2.DistanceTo(p);
             if (d > tol)
             {
                 tol = d;
@@ -736,14 +736,14 @@ internal sealed class Sweep
         }
 
         c3d!.D0(f, out p);
-        d = p1.Distance(p);
+        d = p1.DistanceTo(p);
         if (d > tol1)
         {
             b.UpdateVertex(vf, d);
         }
 
         c3d.D0(l, out p);
-        d = p2.Distance(p);
+        d = p2.DistanceTo(p);
         if (d > tol2)
         {
             b.UpdateVertex(vl, d);
@@ -762,7 +762,7 @@ internal sealed class Sweep
         if (AlgoTools.IsMicroEdge(e, nullCtx))
         {
             Vertex v = vf;
-            b.UpdateVertex(v, p1.Distance(p2));
+            b.UpdateVertex(v, p1.DistanceTo(p2));
             b.MakeEdge(ref e);
             b.UpdateEdge(e, c2d, s, new Placement(), tol);
             b.Add(e, ShapeCasts.Vertex(v.Oriented(Forward)));
@@ -800,12 +800,12 @@ internal sealed class Sweep
         e2 = ShapeCasts.Edge(el);
 
         Exploration.Vertices(e1, out vf, out vl);
-        vf.Orientation(Forward);
-        vl.Orientation(Forward);
+        vf.Orient(Forward);
+        vl.Orient(Forward);
 
         Exploration.Vertices(e2, out V1, out V2);
-        V1.Orientation(Reversed);
-        V2.Orientation(Reversed);
+        V1.Orient(Reversed);
+        V2.Orient(Reversed);
 
         b.MakeEdge(ref e3);
         b.MakeEdge(ref e4);
@@ -839,7 +839,7 @@ internal sealed class Sweep
         // Indeed, both Prof1 and Prof2 are the same curves but in different positions
         // Prof1's param domain may equals to Prof2's param domain *(-1), which means EF.Orientation() ==
         // EL.Orientation()
-        bool bSameCurveDomain = ef.Orientation() != el.Orientation();
+        bool bSameCurveDomain = ef.Orientation != el.Orientation;
         Point3D P1, P2, p;
 
         // Choose the angle of opening
@@ -856,7 +856,7 @@ internal sealed class Sweep
         double maxDist = RealFirst();
         for (int i = 0; i < 3; i++)
         {
-            double dist = p1[i].X() * p1[i].X() + p1[i].Z() * p1[i].Z();
+            double dist = p1[i].X * p1[i].X + p1[i].Z * p1[i].Z;
             if (dist > maxDist)
             {
                 maxDist = dist;
@@ -866,16 +866,16 @@ internal sealed class Sweep
 
         double[] prm2 = [f2, 0.5 * (f2 + l2), l2];
         Point3D p2 = prof2.Value(prm2[bSameCurveDomain ? maxIdx : 2 - maxIdx]).Transformed(tf);
-        Vector2D v1 = new(p1[maxIdx].Z(), p1[maxIdx].X());
-        Vector2D v2 = new(p2.Z(), p2.X());
-        if (v1.SquareMagnitude() <= Constants.Resolution() || v2.SquareMagnitude() <= Constants.Resolution())
+        Vector2D v1 = new(p1[maxIdx].Z, p1[maxIdx].X);
+        Vector2D v2 = new(p2.Z, p2.X);
+        if (v1.SquareMagnitude <= Constants.Resolution() || v2.SquareMagnitude <= Constants.Resolution())
         {
             return false;
         }
 
-        angle = v1.Angle(v2);
+        angle = v1.AngleTo(v2);
 
-        Axis3D axe = new(Axe.Location(), Axe.YDirection());
+        Axis3D axe = new(Axe.Location, Axe.YDirection);
 
         if (angle < 0)
         {
@@ -891,7 +891,7 @@ internal sealed class Sweep
         bool toReverseResult = false;
         Vector3D d1u;
         d1u = surf.DN(0, prm[maxIdx], 1, 0);
-        if (d1u.Angle(tangentOnPart1) > M_PI / 2)
+        if (d1u.AngleTo(tangentOnPart1) > M_PI / 2)
         { // Invert everything
             toReverseResult = true;
         }
@@ -910,11 +910,11 @@ internal sealed class Sweep
 
         // It is required to control the direction and the range.
         c2.D0(f1, out p2d);
-        surf.D0(p2d.X(), p2d.Y(), out P1);
+        surf.D0(p2d.X, p2d.Y, out P1);
         c2.D0(l1, out p2d);
-        surf.D0(p2d.X(), p2d.Y(), out P2);
+        surf.D0(p2d.X, p2d.Y, out P2);
         p = Tool.Pnt(V1);
-        if (p.Distance(P2) + tol < p.Distance(P1))
+        if (p.DistanceTo(P2) + tol < p.DistanceTo(P1))
         {
             // E2 is parsed in the direction opposite to E1
             c2.Reverse();
@@ -925,8 +925,8 @@ internal sealed class Sweep
         }
         global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                           c2,
-                          c2.FirstParameter(),
-                          c2.LastParameter(),
+                          c2.FirstParameter,
+                          c2.LastParameter,
                           f2,
                           l2,
                           ref c3);
@@ -1050,10 +1050,10 @@ internal sealed class Sweep
         {
             Vector3D d1U, d1V, n1, n2;
             c1.D0(prm[i], out p2d);
-            surf.D1(p2d.X(), p2d.Y(), out p, out d1U, out d1V);
+            surf.D1(p2d.X, p2d.Y, out p, out d1U, out d1V);
             n1 = d1U ^ d1V;
 
-            if (n1.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (n1.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 continue;
             }
@@ -1061,15 +1061,15 @@ internal sealed class Sweep
             c1 = Tool.CurveOnSurface(e1, ShapeCasts.Face(F1), out f2, out l2)!;
             c1.D0(prm[i], out p2d);
             FaceSurfaceAdaptor AS = new(ShapeCasts.Face(F1));
-            AS.D1(p2d.X(), p2d.Y(), out p, out d1U, out d1V);
+            AS.D1(p2d.X, p2d.Y, out p, out d1U, out d1V);
             n2 = d1U ^ d1V;
 
-            if (n2.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (n2.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 continue;
             }
 
-            angle = n1.Angle(n2);
+            angle = n1.AngleTo(n2);
 
             break;
         }
@@ -1079,13 +1079,13 @@ internal sealed class Sweep
             return false;
         }
 
-        if ((F1.Orientation() == Reversed) ^ (angle > M_PI / 2))
+        if ((F1.Orientation == Reversed) ^ (angle > M_PI / 2))
         {
-            result.Orientation(Reversed);
+            result.Orient(Reversed);
         }
         else
         {
-            result.Orientation(Forward);
+            result.Orient(Forward);
         }
 
         if (toReverseResult)
@@ -1172,7 +1172,7 @@ internal sealed class Sweep
         Edge e = new();
         BrepBuilder b = new();
         b.MakeEdge(ref e);
-        vertex.Orientation(Forward);
+        vertex.Orient(Forward);
         b.Add(e, vertex);
         b.Add(e, vertex.Reversed());
         b.Degenerated(e, true);
@@ -1209,8 +1209,8 @@ internal sealed class Sweep
             {
                 tol = Tol;
             }
-            iso.D0((iso.FirstParameter() + iso.LastParameter()) / 2, out Point3D p);
-            if (p.Distance(Tool.Pnt(v)) < tol)
+            iso.D0((iso.FirstParameter + iso.LastParameter) / 2, out Point3D p);
+            if (p.DistanceTo(Tool.Pnt(v)) < tol)
             {
                 CurveAdaptor ac = new(iso);
                 sing = AbscissaPoint.Length(ac, tol / 4) < tol;
@@ -1231,8 +1231,8 @@ internal sealed class Sweep
             Point3D P1, P2;
             double p1, p2, p11, p12, p21, p22;
             bool fwd = false;
-            p1 = iso.FirstParameter();
-            p2 = iso.LastParameter();
+            p1 = iso.FirstParameter;
+            p2 = iso.LastParameter;
             P1 = iso.Value(p1);
             P2 = iso.Value(p2);
 
@@ -1241,10 +1241,10 @@ internal sealed class Sweep
 
             BrepBuilder bb = new();
 
-            p11 = P1.Distance(Tool.Pnt(ShapeCasts.Vertex(vFirst)));
-            p22 = P2.Distance(Tool.Pnt(ShapeCasts.Vertex(vLast)));
-            p12 = P1.Distance(Tool.Pnt(ShapeCasts.Vertex(vLast)));
-            p21 = P2.Distance(Tool.Pnt(ShapeCasts.Vertex(vFirst)));
+            p11 = P1.DistanceTo(Tool.Pnt(ShapeCasts.Vertex(vFirst)));
+            p22 = P2.DistanceTo(Tool.Pnt(ShapeCasts.Vertex(vLast)));
+            p12 = P1.DistanceTo(Tool.Pnt(ShapeCasts.Vertex(vLast)));
+            p21 = P2.DistanceTo(Tool.Pnt(ShapeCasts.Vertex(vFirst)));
 
             if (p11 < p12 && p22 < p21)
             {
@@ -1281,16 +1281,16 @@ internal sealed class Sweep
                 mkE.Init(iso,
                          ShapeCasts.Vertex(vFirst),
                          ShapeCasts.Vertex(vLast),
-                         iso.FirstParameter(),
-                         iso.LastParameter());
+                         iso.FirstParameter,
+                         iso.LastParameter);
             }
             else
             {
                 mkE.Init(iso,
                          ShapeCasts.Vertex(vLast),
                          ShapeCasts.Vertex(vFirst),
-                         iso.FirstParameter(),
-                         iso.LastParameter());
+                         iso.FirstParameter,
+                         iso.LastParameter);
             }
 
             if (!mkE.IsDone)
@@ -1304,16 +1304,16 @@ internal sealed class Sweep
         // Associate 2d
         LineCurve2D l;
         Placement loc = new();
-        s.Bounds(out double umin, out _, out double vmin, out _);
+        s.ParameterBounds(out double umin, out _, out double vmin, out _);
         if (isUiso)
         {
-            Point2D p = new(valIso, vmin - iso.FirstParameter());
+            Point2D p = new(valIso, vmin - iso.FirstParameter);
             Vector2D v = new(0.0, 1.0);
             l = new LineCurve2D(p, new Direction2D(v));
         }
         else
         {
-            Point2D p = new(umin - iso.FirstParameter(), valIso);
+            Point2D p = new(umin - iso.FirstParameter, valIso);
             Vector2D v = new(1.0, 0.0);
             l = new LineCurve2D(p, new Direction2D(v));
         }
@@ -1321,7 +1321,7 @@ internal sealed class Sweep
         b.UpdateEdge(e, l, s, loc, global::Kerf.Engine.Foundation.Precision.Confusion());
         if (sing)
         {
-            b.Range(e, s, loc, iso.FirstParameter(), iso.LastParameter());
+            b.Range(e, s, loc, iso.FirstParameter, iso.LastParameter);
         }
 
         double maxTol = 1.0e-4;
@@ -1345,7 +1345,7 @@ internal sealed class Sweep
         Curve2D cl;
         Placement loc = new();
         double f2d, l2d;
-        s.Bounds(out double uFirst, out double uLast, out double vFirst, out double vLast);
+        s.ParameterBounds(out double uFirst, out double uLast, out double vFirst, out double vLast);
 
         bool sing = false;
         Curve3D iso;
@@ -1362,8 +1362,8 @@ internal sealed class Sweep
         if (vf.IsSame(vl))
         { // Singular case ?
             double tol = Tool.Tolerance(vf);
-            iso.D0((iso.FirstParameter() + iso.LastParameter()) / 2, out Point3D pmid);
-            if (pmid.Distance(Tool.Pnt(vf)) < tol)
+            iso.D0((iso.FirstParameter + iso.LastParameter) / 2, out Point3D pmid);
+            if (pmid.DistanceTo(Tool.Pnt(vf)) < tol)
             {
                 CurveAdaptor ac = new(iso);
                 sing = AbscissaPoint.Length(ac, tol / 4) < tol;
@@ -1400,8 +1400,8 @@ internal sealed class Sweep
         {
             // Test distances between "FirstPoint" and "Vertex"
             p2d = cl.Value(f2d);
-            pOnS = s.Value(p2d.X(), p2d.Y());
-            reverse = pOnS.Distance(Tool.Pnt(vl)) < pOnS.Distance(Tool.Pnt(vf));
+            pOnS = s.Value(p2d.X, p2d.Y);
+            reverse = pOnS.DistanceTo(Tool.Pnt(vl)) < pOnS.DistanceTo(Tool.Pnt(vf));
         }
         else if (!sing)
         {
@@ -1411,16 +1411,16 @@ internal sealed class Sweep
 
             c3d.D1(first, out pOnS, out Vector3D dC3d);
             cl.D1(f2d, out p2d, out Vector2D v2d);
-            s.D1(p2d.X(), p2d.Y(), out pOnS, out Vector3D du, out Vector3D dv);
-            v3d = Vector3D.LinearForm(v2d.X(), du, v2d.Y(), dv);
-            reverse = (dC3d.Angle(v3d) > Tol);
+            s.D1(p2d.X, p2d.Y, out pOnS, out Vector3D du, out Vector3D dv);
+            v3d = Vector3D.LinearForm(v2d.X, du, v2d.Y, dv);
+            reverse = (dC3d.AngleTo(v3d) > Tol);
         }
         if (reverse)
         { // Return curve 2d
             cl = new TrimmedCurve2D(l, f2d, l2d);
             cl.Reverse();
-            f2d = cl.FirstParameter();
-            l2d = cl.LastParameter();
+            f2d = cl.FirstParameter;
+            l2d = cl.LastParameter;
         }
 
         if (sing)
@@ -1445,15 +1445,15 @@ internal sealed class Sweep
         Vertex v2;
 
         p2d = cl.Value(first);
-        pOnS = s.Value(p2d.X(), p2d.Y());
+        pOnS = s.Value(p2d.X, p2d.Y);
         v2 = Exploration.FirstVertex(E);
-        r = pOnS.Distance(Tool.Pnt(v2));
+        r = pOnS.DistanceTo(Tool.Pnt(v2));
         b.UpdateVertex(v2, r);
 
         p2d = cl.Value(last);
-        pOnS = s.Value(p2d.X(), p2d.Y());
+        pOnS = s.Value(p2d.X, p2d.Y);
         v2 = Exploration.LastVertex(E);
-        r = pOnS.Distance(Tool.Pnt(v2));
+        r = pOnS.DistanceTo(Tool.Pnt(v2));
         b.UpdateVertex(v2, r);
 
         // Update Edge
@@ -1471,7 +1471,7 @@ internal sealed class Sweep
         { // Sewing edge
             Edge e = E;
             Oriente(s, ref e);
-            if (e.Orientation() == Reversed)
+            if (e.Orientation == Reversed)
             {
                 b.UpdateEdge(E, cl, pCurve, s, loc, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
@@ -1500,14 +1500,14 @@ internal sealed class Sweep
         Curve3D iso;
         Point3D p1, p2, p3;
 
-        s.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+        s.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
 
         // Check the length of Iso-U
         t = (umin + umax) / 2;
         s.D0(t, vmin, out p1);
         s.D0(t, (vmin + vmax) / 2, out p2);
         s.D0(t, vmax, out p3);
-        b = ((p1.Distance(p2) + p2.Distance(p3)) < tol);
+        b = ((p1.DistanceTo(p2) + p2.DistanceTo(p3)) < tol);
 
         for (ii = 1, dt = (umax - umin) / (nb + 1); b && (ii <= nb); ii++)
         {
@@ -1528,7 +1528,7 @@ internal sealed class Sweep
         s.D0(umin, t, out p1);
         s.D0((umin + umax) / 2, t, out p2);
         s.D0(umax, t, out p3);
-        b = ((p1.Distance(p2) + p2.Distance(p3)) < tol);
+        b = ((p1.DistanceTo(p2) + p2.DistanceTo(p3)) < tol);
 
         for (ii = 1, dt = (vmax - vmin) / (nb + 1); b && (ii <= nb); ii++)
         {
@@ -1775,11 +1775,11 @@ internal sealed class Sweep
             {
                 if (sweep.UReversed())
                 {
-                    s.Bounds(out first, out last, out bid, out val);
+                    s.ParameterBounds(out first, out last, out bid, out val);
                 }
                 else
                 {
-                    s.Bounds(out first, out last, out val, out bid);
+                    s.ParameterBounds(out first, out last, out val, out bid);
                 }
                 iso = s.VIso(val);
             }
@@ -1787,11 +1787,11 @@ internal sealed class Sweep
             {
                 if (sweep.UReversed())
                 {
-                    s.Bounds(out bid, out val, out first, out last);
+                    s.ParameterBounds(out bid, out val, out first, out last);
                 }
                 else
                 {
-                    s.Bounds(out val, out bid, out first, out last);
+                    s.ParameterBounds(out val, out bid, out first, out last);
                 }
                 iso = s.UIso(val);
             }
@@ -1807,7 +1807,7 @@ internal sealed class Sweep
                     Vertex v = ShapeCasts.Vertex(_vEdges.Value(1, 1));
                     _vEdges.SetValue(1, ipath + 1, v);
                     iso.D0(last, out p1);
-                    tol = p1.Distance(Tool.Pnt(v));
+                    tol = p1.DistanceTo(Tool.Pnt(v));
                     b.UpdateVertex(v, tol);
                 }
                 else
@@ -1827,7 +1827,7 @@ internal sealed class Sweep
             {
                 iso.D0(first, out p1);
                 Vertex v = ShapeCasts.Vertex(_vEdges.Value(1, ipath));
-                tol = p1.Distance(Tool.Pnt(v));
+                tol = p1.DistanceTo(Tool.Pnt(v));
                 b.UpdateVertex(v, tol);
             }
             if (ipath == 1)
@@ -1847,8 +1847,8 @@ internal sealed class Sweep
             mkE.Init(iso,
                      ShapeCasts.Vertex(_vEdges.Value(1, ipath)),
                      ShapeCasts.Vertex(_vEdges.Value(1, ipath + 1)),
-                     iso.FirstParameter(),
-                     iso.LastParameter());
+                     iso.FirstParameter,
+                     iso.LastParameter);
             if (!mkE.IsDone)
             { // Error of construction !!
                 return false;
@@ -2012,7 +2012,7 @@ internal sealed class Sweep
                 e = _sec.CurrentEdge();
                 Exploration.Vertices(e, out Vertex vfirst, out Vertex vlast);
                 vEdge[isec, 1] = e;
-                if (e.Orientation() == Reversed)
+                if (e.Orientation == Reversed)
                 {
                     vertex[isec + 1, 1] = vfirst; // TopExp::FirstVertex(E);
                 }
@@ -2087,7 +2087,7 @@ internal sealed class Sweep
                     int j;
                     if (rails.ContainsKey(vfirst))
                     {
-                        int ind = (e.Orientation() == Reversed) ? isec + 1 : isec;
+                        int ind = (e.Orientation == Reversed) ? isec + 1 : isec;
                         NCollection_HArray2<Shape> rail = rails.GetValue(vfirst);
                         for (j = 1; j <= nbPath; j++)
                         {
@@ -2100,7 +2100,7 @@ internal sealed class Sweep
                     }
                     if (rails.ContainsKey(vlast))
                     {
-                        int ind = (e.Orientation() == Forward) ? isec + 1 : isec;
+                        int ind = (e.Orientation == Forward) ? isec + 1 : isec;
                         NCollection_HArray2<Shape> rail = rails.GetValue(vlast);
                         for (j = 1; j <= nbPath; j++)
                         {
@@ -2114,7 +2114,7 @@ internal sealed class Sweep
                 }
             }
 
-            if (vEdge[1, 1].Orientation() == Reversed)
+            if (vEdge[1, 1].Orientation == Reversed)
             {
                 vertex[1, 1] = Exploration.LastVertex(ShapeCasts.Edge(vEdge[1, 1]));
             }
@@ -2142,7 +2142,7 @@ internal sealed class Sweep
                 ureverse = uReverse[isec, 1];
                 exuv = exchUV[isec, 1];
             }
-            s.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+            s.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
 
             // Choice of parameters
             if (ureverse)
@@ -2207,7 +2207,7 @@ internal sealed class Sweep
 
                 if (vertex[isec + 1, nbPath + 1].IsNull)
                 {
-                    if (vEdge[isec, nbPath + 1].Orientation() == Reversed)
+                    if (vEdge[isec, nbPath + 1].Orientation == Reversed)
                     {
                         vertex[isec + 1, nbPath + 1] = Exploration.FirstVertex(ShapeCasts.Edge(vEdge[isec, nbPath + 1]));
                     }
@@ -2221,7 +2221,7 @@ internal sealed class Sweep
 
             if (vertex[1, nbPath + 1].IsNull)
             {
-                if (vEdge[1, nbPath + 1].Orientation() == Reversed)
+                if (vEdge[1, nbPath + 1].Orientation == Reversed)
                 {
                     vertex[1, nbPath + 1] = Exploration.LastVertex(ShapeCasts.Edge(vEdge[1, nbPath + 1]));
                 }
@@ -2248,7 +2248,7 @@ internal sealed class Sweep
                 ureverse = uReverse[isec, nbPath];
                 exuv = exchUV[isec, nbPath];
             }
-            s.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+            s.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
 
             // Choice of parametres
             if (ureverse)
@@ -2314,7 +2314,7 @@ internal sealed class Sweep
 
                 s = tabS[isec, ipath]!;
                 exuv = exchUV[isec, ipath];
-                s.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+                s.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
                 if (uReverse[isec, ipath])
                 {
                     double aux2;
@@ -2500,7 +2500,7 @@ internal sealed class Sweep
                         {
                             Point3D p1 = Tool.Pnt(ShapeCasts.Vertex(vertex[1, ipath]));
                             Point3D p2 = Tool.Pnt(ShapeCasts.Vertex(vertex[1, ipath + 1]));
-                            if (p1.Distance(p2) <= _tol3d)
+                            if (p1.DistanceTo(p2) <= _tol3d)
                             {
                                 vertex[1, ipath + 1] = vertex[1, ipath];
                             }
@@ -2695,7 +2695,7 @@ internal sealed class Sweep
                         _vEdges!.SetValue(isec, iPath, vEdge[isec, ipath]);
                     }
                     if ((ipath <= nbPath) && (isec <= nbLaw) && !_faces!.Value(isec, iPath).IsNull
-                        && _faces.Value(isec, iPath).ShapeType() == ShapeType.Face)
+                        && _faces.Value(isec, iPath).Type == ShapeType.Face)
                     {
                         b.Add(comp, _faces.Value(isec, iPath));
                     }
@@ -2966,7 +2966,7 @@ internal sealed class Sweep
                 for (isec = 1; isec <= nbLaw; isec++)
                 {
                     Shape face = _faces.Value(isec, ipath);
-                    if (!face.IsNull && (face.ShapeType() == ShapeType.Face))
+                    if (!face.IsNull && (face.Type == ShapeType.Face))
                     {
                         b.Add(shell, face);
                         nbFaces++;
@@ -2984,7 +2984,7 @@ internal sealed class Sweep
             for (; it.More(); it.Next())
             {
                 Shape face = it.Value();
-                if (!face.IsNull && (face.ShapeType() == ShapeType.Face))
+                if (!face.IsNull && (face.Type == ShapeType.Face))
                 {
                     b.Add(shell, face);
                 }
@@ -3087,7 +3087,7 @@ internal sealed class Sweep
                     if (i1 != 0)
                     {
                         Shape shape1 = _faces.Value(i1, jj);
-                        if (shape1.ShapeType() == ShapeType.Face)
+                        if (shape1.Type == ShapeType.Face)
                         {
                             face1 = ShapeCasts.Face(shape1);
                         }
@@ -3095,7 +3095,7 @@ internal sealed class Sweep
                     if (i2 != 0)
                     {
                         Shape shape2 = _faces.Value(i2, jj);
-                        if (shape2.ShapeType() == ShapeType.Face)
+                        if (shape2.Type == ShapeType.Face)
                         {
                             face2 = ShapeCasts.Face(shape2);
                         }
@@ -3112,7 +3112,7 @@ internal sealed class Sweep
                 for (jj = 1; jj <= nbPath; jj++)
                 {
                     Shape aFace = _faces.Value(ii, jj);
-                    if (!aFace.IsNull && aFace.ShapeType() == ShapeType.Face)
+                    if (!aFace.IsNull && aFace.Type == ShapeType.Face)
                     {
                         bb.Add(_tapes[ii], aFace);
                     }
@@ -3220,7 +3220,7 @@ internal sealed class Sweep
         _loc.Law(i2).GetCurve()!.D1(f, out p2, out T2);
         T2 = T2.Normalized();
 
-        if (T1.Angle(T2) < _angMin)
+        if (T1.AngleTo(T2) < _angMin)
         {
             isTangent = true;
             Vector3D t1, t2, v = new();
@@ -3232,18 +3232,18 @@ internal sealed class Sweep
             _loc.Law(i2).D0(l, ref m, ref v); // OCCT: the next law's frame at its end, not its start
             t2 = new Vector3D(m.Column(3));
 
-            if (t1.Angle(t2) < _angMin)
+            if (t1.AngleTo(t2) < _angMin)
             {
                 return true;
             }
             sortant = t2 - t1;
         }
 
-        if (T1.Angle(T2) >= M_PI - angularTol)
+        if (T1.AngleTo(T2) >= M_PI - angularTol)
         {
             return false;
         }
-        if ((theTransition == TransitionStyle.Right) && (T1.Angle(T2) > _angMax))
+        if ((theTransition == TransitionStyle.Right) && (T1.AngleTo(T2) > _angMax))
         {
             theTransition = TransitionStyle.Round;
         }
@@ -3285,7 +3285,7 @@ internal sealed class Sweep
         Vector3D normal = T2 + T1;
         Face planeF = new();
 
-        if (normal.Magnitude() > Constants.Resolution())
+        if (normal.Magnitude > Constants.Resolution())
         {
             Plane3D pl = new(p1, new Direction3D(normal));
             LibraryMakeFace fMaker = new(pl);
@@ -3503,7 +3503,7 @@ internal sealed class Sweep
             _loc.Law(i2).D0(f, ref m2, ref v2);
             t2 = t2.WithXYZ(m2.Column(3));
 
-            double alpha = t1.Angle(t2);
+            double alpha = t1.AngleTo(t2);
             if ((alpha > _angMax) || (alpha < _angMin))
             {
                 // Angle too great => No "straight" connection
@@ -3550,7 +3550,7 @@ internal sealed class Sweep
         {
             tol = _tol3d;
         }
-        if (Tool.Pnt(v1).Distance(Tool.Pnt(v2)) <= tol)
+        if (Tool.Pnt(v1).DistanceTo(Tool.Pnt(v2)) <= tol)
         {
             V2 = V1;
             return true;
@@ -3575,7 +3575,7 @@ internal sealed class Sweep
         p2 = Tool.Pnt(theV);
 
         double tol = Tool.Tolerance(vv);
-        tol += p1.Distance(p2);
+        tol += p1.DistanceTo(p2);
 
         if (tol > Tool.Tolerance(theV))
         {
@@ -3654,7 +3654,7 @@ internal sealed class Sweep
                 GCurve gc = (GCurve)curveRep;
                 Curve2D? pCurve = gc.PCurve();
                 Surface? surf = gc.Surface();
-                Placement loc = aNewEdge.Location() * gc.Location();
+                Placement loc = aNewEdge.Placement * gc.Location();
                 bb.UpdateEdge(anEdge, pCurve, surf, loc, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
@@ -3671,8 +3671,8 @@ internal sealed class Sweep
         w2.Location(identity);
         if (toReverse)
         {
-            w2.Orientation(Forward);
-            w1.Orientation(Reversed);
+            w2.Orient(Forward);
+            w1.Orient(Reversed);
         }
         bb.Add(edgeFORWARD, w1);
         bb.Add(edgeFORWARD, w2);

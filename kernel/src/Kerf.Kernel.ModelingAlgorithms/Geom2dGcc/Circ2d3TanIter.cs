@@ -104,16 +104,16 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol             = circ.ThisSolution(1);
-                Point2D centre    = _cirsol.Location();
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                Point2D centre    = _cirsol.Location;
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -142,17 +142,17 @@ public sealed class Circ2d3TanIter
                 Tol = 1.0e-12;
                 if (dot1 <= Tol && dot2 <= Tol && dot3 <= Tol)
                 {
-                    double angle1 = vec1.Angle(tan1);
+                    double angle1 = vec1.AngleTo(tan1);
                     if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
                             || (qualified1.IsOutside && angle1 >= 0.0)
                             || (qualified1.IsEnclosed && angle1 <= 0.0))
                     {
-                        angle1 = vec2.Angle(tan2);
+                        angle1 = vec2.AngleTo(tan2);
                         if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 <= 0.0)
                                 || (qualified2.IsOutside && angle1 >= 0)
                                 || (qualified2.IsEnclosed && angle1 <= 0.0))
                         {
-                            angle1 = vec3.Angle(tan3);
+                            angle1 = vec3.AngleTo(tan3);
                             if (qualified3.IsUnqualified || (qualified3.IsEnclosing && angle1 <= 0.0)
                                     || (qualified3.IsOutside && angle1 >= 0)
                                     || (qualified3.IsEnclosed && angle1 <= 0.0))
@@ -165,10 +165,10 @@ public sealed class Circ2d3TanIter
                                 _pnttg1sol  = point1;
                                 _pararg2    = ufirst[2];
                                 _pnttg2sol  = point2;
-                                _par2sol    = _pnttg2sol.Distance(_pnttg1sol);
+                                _par2sol    = _pnttg2sol.DistanceTo(_pnttg1sol);
                                 _pnttg3sol  = point3;
                                 _pararg3    = ufirst[3];
-                                _par3sol    = _pnttg3sol.Distance(_pnttg1sol);
+                                _par3sol    = _pnttg3sol.DistanceTo(_pnttg1sol);
                                 _wellDone   = true;
                             }
                         }
@@ -229,8 +229,8 @@ public sealed class Circ2d3TanIter
         {
             root.Root(ufirst);
             func.Value(ufirst, umin);
-            Point2D centre1 = c1.Location();
-            double   r1 = c1.Radius();
+            Point2D centre1 = c1.Location;
+            double   r1 = c1.Radius;
             Point2D point1 = new(centre1.XY() + r1 * new Xy(Math.Cos(ufirst[1]), Math.Sin(ufirst[1])));
             Vector2D tan1 = new(new Xy(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1])));
             Point2D point2 = new(), point3 = new();
@@ -242,18 +242,18 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
-                double   dist      = centre1.Distance(centre);
-                double   rsol      = _cirsol.Radius();
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                Point2D centre = _cirsol.Location;
+                double   dist      = centre1.DistanceTo(centre);
+                double   rsol      = _cirsol.Radius;
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -286,12 +286,12 @@ public sealed class Circ2d3TanIter
                             || (qualified1.IsOutside && dist >= rsol)
                             || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
                     {
-                        double angle1 = vec2.Angle(tan2);
+                        double angle1 = vec2.AngleTo(tan2);
                         if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 <= 0.0)
                                 || (qualified2.IsOutside && angle1 >= 0)
                                 || (qualified2.IsEnclosed && angle1 <= 0.0))
                         {
-                            angle1 = vec3.Angle(tan3);
+                            angle1 = vec3.AngleTo(tan3);
                             if (qualified3.IsUnqualified || (qualified3.IsEnclosing && angle1 <= 0.0)
                                     || (qualified3.IsOutside && angle1 >= 0)
                                     || (qualified3.IsEnclosed && angle1 <= 0.0))
@@ -368,12 +368,12 @@ public sealed class Circ2d3TanIter
         {
             root.Root(ufirst);
             func.Value(ufirst, umin);
-            Point2D centre1 = c1.Location();
-            double   r1 = c1.Radius();
+            Point2D centre1 = c1.Location;
+            double   r1 = c1.Radius;
             Point2D point1 = new(centre1.XY() + r1 * new Xy(Math.Cos(ufirst[1]), Math.Sin(ufirst[1])));
             Vector2D tan1 = new(new Xy(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1])));
-            Point2D centre2 = c2.Location();
-            double   r2 = c2.Radius();
+            Point2D centre2 = c2.Location;
+            double   r2 = c2.Radius;
             Point2D point2 = new(centre2.XY() + r2 * new Xy(Math.Cos(ufirst[2]), Math.Sin(ufirst[2])));
             Vector2D tan2 = new(new Xy(-Math.Sin(ufirst[2]), Math.Cos(ufirst[2])));
             Point2D point3 = new();
@@ -383,18 +383,18 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
-                double   dist      = centre1.Distance(centre);
-                double   rsol      = _cirsol.Radius();
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                Point2D centre = _cirsol.Location;
+                double   dist      = centre1.DistanceTo(centre);
+                double   rsol      = _cirsol.Radius;
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -427,13 +427,13 @@ public sealed class Circ2d3TanIter
                             || (qualified1.IsOutside && dist >= rsol)
                             || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
                     {
-                        dist = centre2.Distance(centre); // OCCT: the second circle is tested with Qualified1, not Qualified2
+                        dist = centre2.DistanceTo(centre); // OCCT: the second circle is tested with Qualified1, not Qualified2
                         if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r2 && dist <= rsol)
                                 || (qualified1.IsOutside && dist >= rsol)
                                 || (qualified1.IsEnclosed && rsol <= r2 && dist <= rsol))
                         {
                             Vector2D vec = new(point3, centre);
-                            double   angle1 = vec.Angle(tan3);
+                            double   angle1 = vec.AngleTo(tan3);
                             if (qualified3.IsUnqualified || (qualified3.IsEnclosing && angle1 <= 0.0)
                                     || (qualified3.IsOutside && angle1 >= 0)
                                     || (qualified3.IsEnclosed && angle1 <= 0.0))
@@ -509,8 +509,8 @@ public sealed class Circ2d3TanIter
         {
             root.Root(ufirst);
             func.Value(ufirst, umin);
-            Point2D centre1 = l1.Location();
-            Point2D point1 = new(centre1.XY() + ufirst[1] * l1.Direction().XY());
+            Point2D centre1 = l1.Location;
+            Point2D point1 = new(centre1.XY() + ufirst[1] * l1.Direction.XY());
             Point2D point2 = new(), point3 = new();
             Vector2D tan2 = new(), tan3 = new();
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2);
@@ -519,23 +519,23 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
+                Point2D centre = _cirsol.Location;
 
                 // creation vaariables intermediaires pour WNT
-                Xy  dummy1 = centre.XY() - l1.Location().XY();
-                Xy  dummy2 = new(-l1.Direction().Y(), l1.Direction().X());
+                Xy  dummy1 = centre.XY() - l1.Location.XY();
+                Xy  dummy2 = new(-l1.Direction.Y, l1.Direction.X);
                 double pscal = dummy1.Dot(dummy2);
 
-                Vector2D tan1 = new(l1.Direction().XY());
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                Vector2D tan1 = new(l1.Direction.XY());
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -568,13 +568,13 @@ public sealed class Circ2d3TanIter
                             || (qualified1.IsEnclosed && pscal >= 0.0))
                     {
                         Vector2D vec = new(point2, centre);
-                        double   angle1 = vec.Angle(tan2);
+                        double   angle1 = vec.AngleTo(tan2);
                         if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 <= 0.0)
                                 || (qualified2.IsOutside && angle1 >= 0)
                                 || (qualified2.IsEnclosed && angle1 <= 0.0))
                         {
                             vec    = new Vector2D(point3, centre);
-                            angle1 = vec.Angle(tan3);
+                            angle1 = vec.AngleTo(tan3);
                             if (qualified3.IsUnqualified || (qualified3.IsEnclosing && angle1 <= 0.0)
                                     || (qualified3.IsOutside && angle1 >= 0)
                                     || (qualified3.IsEnclosed && angle1 <= 0.0))
@@ -649,10 +649,10 @@ public sealed class Circ2d3TanIter
         {
             root.Root(ufirst);
             func.Value(ufirst, umin);
-            Point2D centre1 = l1.Location();
-            Point2D point1 = new(centre1.XY() + ufirst[1] * l1.Direction().XY());
-            Point2D centre2 = l2.Location();
-            Point2D point2 = new(centre2.XY() + ufirst[2] * l2.Direction().XY());
+            Point2D centre1 = l1.Location;
+            Point2D point1 = new(centre1.XY() + ufirst[1] * l1.Direction.XY());
+            Point2D centre2 = l2.Location;
+            Point2D point2 = new(centre2.XY() + ufirst[2] * l2.Direction.XY());
             Point2D point3 = new();
             Vector2D tan3 = new();
             ConstraintCurveTool.D1(cu3, ufirst[3], out point3, out tan3);
@@ -660,22 +660,22 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
-                double   pscal = centre.XY().Dot(new Xy(-l1.Direction().Y(), l1.Direction().X())); // OCCT: the side of L1 from the origin, not from a point of L1 (the next test likewise for L2)
+                Point2D centre = _cirsol.Location;
+                double   pscal = centre.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X)); // OCCT: the side of L1 from the origin, not from a point of L1 (the next test likewise for L2)
                 if (qualified1.IsUnqualified || (qualified1.IsOutside && pscal <= 0.0)
                         || (qualified1.IsEnclosed && pscal >= 0.0))
                 {
-                    Vector2D tan1 = new(l1.Direction().XY());
-                    Vector2D tan2 = new(l2.Direction().XY());
-                    double   normetan1 = tan1.Magnitude();
-                    double   normetan2 = tan2.Magnitude();
-                    double   normetan3 = tan3.Magnitude();
+                    Vector2D tan1 = new(l1.Direction.XY());
+                    Vector2D tan2 = new(l2.Direction.XY());
+                    double   normetan1 = tan1.Magnitude;
+                    double   normetan2 = tan2.Magnitude;
+                    double   normetan3 = tan3.Magnitude;
                     Vector2D vec1 = new(point1, centre);
                     Vector2D vec2 = new(point2, centre);
                     Vector2D vec3 = new(point3, centre);
-                    double   normevec1 = vec1.Magnitude();
-                    double   normevec2 = vec2.Magnitude();
-                    double   normevec3 = vec3.Magnitude();
+                    double   normevec1 = vec1.Magnitude;
+                    double   normevec2 = vec2.Magnitude;
+                    double   normevec3 = vec3.Magnitude;
                     double   dot1, dot2, dot3;
                     if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                     {
@@ -707,7 +707,7 @@ public sealed class Circ2d3TanIter
                         if (qualified2.IsUnqualified || (qualified2.IsOutside && pscal <= 0.0)
                                 || (qualified2.IsEnclosed && pscal >= 0.0))
                         {
-                            double angle1 = vec3.Angle(tan3);
+                            double angle1 = vec3.AngleTo(tan3);
                             if (qualified3.IsUnqualified || (qualified3.IsEnclosing && angle1 <= 0.0)
                                     || (qualified3.IsOutside && angle1 >= 0)
                                     || (qualified3.IsEnclosed && angle1 <= 0.0))
@@ -791,17 +791,17 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
+                Point2D centre = _cirsol.Location;
                 Vector2D tan3 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -830,11 +830,11 @@ public sealed class Circ2d3TanIter
                 Tol = 1.0e-12;
                 if (dot1 <= Tol && dot2 <= Tol && dot3 <= Tol)
                 {
-                    double angle1 = vec1.Angle(tan1);
+                    double angle1 = vec1.AngleTo(tan1);
                     if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
                             || (qualified1.IsOutside && angle1 >= 0) || (qualified1.IsEnclosed && angle1 <= 0.0))
                     {
-                        angle1 = vec2.Angle(tan2); // OCCT: the second test below checks Qualified1 again, not Qualified2
+                        angle1 = vec2.AngleTo(tan2); // OCCT: the second test below checks Qualified1 again, not Qualified2
                         if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
                                 || (qualified1.IsOutside && angle1 >= 0)
                                 || (qualified1.IsEnclosed && angle1 <= 0.0))
@@ -914,18 +914,18 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
+                Point2D centre = _cirsol.Location;
                 Vector2D tan2 = new(-Math.Sin(ufirst[2]), Math.Cos(ufirst[2]));
                 Vector2D tan1 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point2, centre);
                 Vector2D vec2 = new(Point3, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -954,7 +954,7 @@ public sealed class Circ2d3TanIter
                 Tol = 1.0e-12;
                 if (dot1 <= Tol && dot2 <= Tol && dot3 <= Tol)
                 {
-                    double angle1 = vec1.Angle(tan1);
+                    double angle1 = vec1.AngleTo(tan1);
                     if (qualified1.IsUnqualified || (qualified1.IsEnclosing && angle1 <= 0.0)
                             || (qualified1.IsOutside && angle1 >= 0) || (qualified1.IsEnclosed && angle1 <= 0.0))
                     {
@@ -1025,8 +1025,8 @@ public sealed class Circ2d3TanIter
         {
             root.Root(ufirst);
             func.Value(ufirst, umin);
-            Point2D centre1 = l1.Location();
-            Point2D point1 = new(centre1.XY() + ufirst[2] * l1.Direction().XY());
+            Point2D centre1 = l1.Location;
+            Point2D point1 = new(centre1.XY() + ufirst[2] * l1.Direction.XY());
             Point2D point2 = new();
             Vector2D tan2 = new();
             ConstraintCurveTool.D1(cu2, ufirst[2], out point2, out tan2); // OCCT: Cu2's parameter is Ufirst(3); Ufirst(2) is the one on L1
@@ -1034,19 +1034,19 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
-                double   pscal = centre.XY().Dot(new Xy(-l1.Direction().Y(), l1.Direction().X())); // OCCT: the side of L1 from the origin, not from a point of L1
-                Vector2D tan1 = new(l1.Direction().XY());
+                Point2D centre = _cirsol.Location;
+                double   pscal = centre.XY().Dot(new Xy(-l1.Direction.Y, l1.Direction.X)); // OCCT: the side of L1 from the origin, not from a point of L1
+                Vector2D tan1 = new(l1.Direction.XY());
                 Vector2D tan3 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -1078,7 +1078,7 @@ public sealed class Circ2d3TanIter
                     if (qualified1.IsUnqualified || (qualified1.IsOutside && pscal <= 0.0)
                             || (qualified1.IsEnclosed && pscal >= 0.0))
                     {
-                        double angle1 = vec2.Angle(tan2);
+                        double angle1 = vec2.AngleTo(tan2);
                         if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 <= 0.0)
                                 || (qualified2.IsOutside && angle1 >= 0)
                                 || (qualified2.IsEnclosed && angle1 <= 0.0))
@@ -1153,11 +1153,11 @@ public sealed class Circ2d3TanIter
         {
             func.Value(ufirst, umin);
             root.Root(ufirst);
-            Point2D centre1 = c1.Location();
-            double   r1 = c1.Radius();
+            Point2D centre1 = c1.Location;
+            double   r1 = c1.Radius;
             Point2D point1 = new(centre1.XY() + r1 * new Xy(Math.Cos(ufirst[1]), Math.Sin(ufirst[1])));
-            Point2D centre2 = l2.Location();
-            Point2D point2 = new(centre2.XY() + ufirst[2] * l2.Direction().XY());
+            Point2D centre2 = l2.Location;
+            Point2D point2 = new(centre2.XY() + ufirst[2] * l2.Direction.XY());
             Point2D point3 = new();
             Vector2D tan3 = new();
             ConstraintCurveTool.D1(cu3, ufirst[3], out point3, out tan3);
@@ -1165,18 +1165,18 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
+                Point2D centre = _cirsol.Location;
                 Vector2D tan1 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
-                Vector2D tan2 = new(l2.Direction().XY());
-                double   normetan1 = tan1.Magnitude();
-                double   normetan2 = tan2.Magnitude();
-                double   normetan3 = tan3.Magnitude();
+                Vector2D tan2 = new(l2.Direction.XY());
+                double   normetan1 = tan1.Magnitude;
+                double   normetan2 = tan2.Magnitude;
+                double   normetan3 = tan3.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution() && normetan1 >= Constants.Resolution())
                 {
@@ -1205,17 +1205,17 @@ public sealed class Circ2d3TanIter
                 Tol = 1.0e-12;
                 if (dot1 <= Tol && dot2 <= Tol && dot3 <= Tol)
                 {
-                    double dist = centre1.Distance(centre);
-                    double rsol = _cirsol.Radius();
+                    double dist = centre1.DistanceTo(centre);
+                    double rsol = _cirsol.Radius;
                     if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r1 && dist <= rsol)
                             || (qualified1.IsOutside && dist >= rsol)
                             || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
                     {
-                        double pscal = centre.XY().Dot(new Xy(-l2.Direction().Y(), l2.Direction().X())); // OCCT: the side of L2 from the origin, not from a point of L2
+                        double pscal = centre.XY().Dot(new Xy(-l2.Direction.Y, l2.Direction.X)); // OCCT: the side of L2 from the origin, not from a point of L2
                         if (qualified2.IsUnqualified || (qualified2.IsOutside && pscal <= 0.0)
                                 || (qualified2.IsEnclosed && pscal >= 0.0))
                         {
-                            double angle1 = vec3.Angle(tan3);
+                            double angle1 = vec3.AngleTo(tan3);
                             if (qualified3.IsUnqualified || (qualified3.IsEnclosing && angle1 <= 0.0)
                                     || (qualified3.IsOutside && angle1 >= 0)
                                     || (qualified3.IsEnclosed && angle1 <= 0.0))
@@ -1290,8 +1290,8 @@ public sealed class Circ2d3TanIter
         {
             root.Root(ufirst);
             func.Value(ufirst, umin);
-            Point2D centre1 = c1.Location();
-            double   r1 = c1.Radius();
+            Point2D centre1 = c1.Location;
+            double   r1 = c1.Radius;
             Point2D point1 = new(centre1.XY() + r1 * new Xy(Math.Cos(ufirst[1]), Math.Sin(ufirst[1])));
             Point2D point2 = new();
             //     gp_Vec2d Tan2,Nor2;
@@ -1301,16 +1301,16 @@ public sealed class Circ2d3TanIter
             if (circ.IsDone)
             {
                 _cirsol = circ.ThisSolution(1);
-                Point2D centre = _cirsol.Location();
+                Point2D centre = _cirsol.Location;
                 Vector2D tan1 = new(-Math.Sin(ufirst[1]), Math.Cos(ufirst[1]));
                 Vector2D tan3 = new(-Math.Sin(ufirst[3]), Math.Cos(ufirst[3])); // OCCT: the point's circle parameter is Ufirst(2) (likewise above)
-                double   normetan2 = tan2.Magnitude();
+                double   normetan2 = tan2.Magnitude;
                 Vector2D vec1 = new(point1, centre);
                 Vector2D vec2 = new(point2, centre);
                 Vector2D vec3 = new(point3, centre);
-                double   normevec1 = vec1.Magnitude();
-                double   normevec2 = vec2.Magnitude();
-                double   normevec3 = vec3.Magnitude();
+                double   normevec1 = vec1.Magnitude;
+                double   normevec2 = vec2.Magnitude;
+                double   normevec3 = vec3.Magnitude;
                 double   dot1, dot2, dot3;
                 if (normevec1 >= Constants.Resolution())
                 {
@@ -1339,13 +1339,13 @@ public sealed class Circ2d3TanIter
                 Tol = 1.0e-12;
                 if (dot1 <= Tol && dot2 <= Tol && dot3 <= Tol)
                 {
-                    double dist = centre1.Distance(centre);
-                    double rsol = _cirsol.Radius();
+                    double dist = centre1.DistanceTo(centre);
+                    double rsol = _cirsol.Radius;
                     if (qualified1.IsUnqualified || (qualified1.IsEnclosing && rsol >= r1 && dist <= rsol)
                             || (qualified1.IsOutside && dist >= rsol)
                             || (qualified1.IsEnclosed && rsol <= r1 && dist <= rsol))
                     {
-                        double angle1 = vec2.Angle(tan2);
+                        double angle1 = vec2.AngleTo(tan2);
                         if (qualified2.IsUnqualified || (qualified2.IsEnclosing && angle1 <= 0.0)
                                 || (qualified2.IsOutside && angle1 >= 0)
                                 || (qualified2.IsEnclosed && angle1 <= 0.0))

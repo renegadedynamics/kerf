@@ -48,13 +48,13 @@ internal static partial class TopoUtil
     {
         if (obj.IsNull)
             throw new ArgumentException("Null TopoDS_Shape object");
-        return obj.ShapeType();
+        return obj.Type;
     }
 
     /// <summary>
     /// The name of the native binding's wrapper class for a shape (<c>TopoDS_Edge</c> for an edge), as messages name it.
     /// </summary>
-    internal static string TypeName(global::Kerf.Topology.Shape obj) => obj.IsNull ? "TopoDS_Shape" : obj.ShapeType() switch
+    internal static string TypeName(global::Kerf.Topology.Shape obj) => obj.IsNull ? "TopoDS_Shape" : obj.Type switch
     {
         global::Kerf.Topology.ShapeType.Vertex => "TopoDS_Vertex",
         global::Kerf.Topology.ShapeType.Edge => "TopoDS_Edge",
@@ -146,7 +146,7 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The dimension of a shape: 0 to 3, or null for a compound of mixed dimension.</summary>
-    internal static int? Dim(global::Kerf.Topology.Shape shape) => shape.IsNull ? null : shape.ShapeType() switch
+    internal static int? Dim(global::Kerf.Topology.Shape shape) => shape.IsNull ? null : shape.Type switch
     {
         global::Kerf.Topology.ShapeType.Vertex => 0,
         global::Kerf.Topology.ShapeType.Edge or global::Kerf.Topology.ShapeType.Wire => 1,
@@ -304,8 +304,8 @@ internal static partial class TopoUtil
     /// <summary>The Location that carries <paramref name="source"/>'s frame onto <paramref name="target"/>'s.</summary>
     internal static Placement RelocationBetween(global::Kerf.Topology.Shape source, global::Kerf.Topology.Shape target)
     {
-        var s = source.Location();
-        var t = target.Location();
+        var s = source.Placement;
+        var t = target.Placement;
         var inverse = s.Inverted();
         return t.Multiplied(inverse);
     }

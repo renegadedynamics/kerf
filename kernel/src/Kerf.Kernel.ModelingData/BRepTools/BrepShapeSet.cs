@@ -117,7 +117,7 @@ public class BrepShapeSet : ShapeSet
     {
         // Add the geometry
 
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             BrepTVertex tv = (BrepTVertex)s.TShape()!;
             NCollection_List<PointRepresentation>.Iterator itrp = new(tv.Points());
@@ -146,7 +146,7 @@ public class BrepShapeSet : ShapeSet
                 itrp.Next();
             }
         }
-        else if (s.ShapeType() == ShapeType.Edge)
+        else if (s.Type == ShapeType.Edge)
         {
             // Add the curve geometry
             BrepTEdge te = (BrepTEdge)s.TShape()!;
@@ -223,7 +223,7 @@ public class BrepShapeSet : ShapeSet
             }
         }
 
-        else if (s.ShapeType() == ShapeType.Face)
+        else if (s.Type == ShapeType.Face)
         {
             // Add the surface geometry
             bool needNormals = _withNormals;
@@ -387,7 +387,7 @@ public class BrepShapeSet : ShapeSet
     {
         // Dump the geometry
 
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             // Dump the point geometry
             Vertex v = ShapeCasts.Vertex(s);
@@ -396,11 +396,11 @@ public class BrepShapeSet : ShapeSet
             os.Write("\n");
             Point3D p = Tool.Pnt(v);
             os.Write("    - Point 3D : ");
-            Out(os, p.X());
+            Out(os, p.X);
             os.Write(", ");
-            Out(os, p.Y());
+            Out(os, p.Y);
             os.Write(", ");
-            Out(os, p.Z());
+            Out(os, p.Z);
             os.Write("\n");
 
             BrepTVertex tv = (BrepTVertex)s.TShape()!;
@@ -446,7 +446,7 @@ public class BrepShapeSet : ShapeSet
             }
         }
 
-        else if (s.ShapeType() == ShapeType.Edge)
+        else if (s.Type == ShapeType.Edge)
         {
             BrepTEdge te = (BrepTEdge)s.TShape()!;
             Point2D pf, pl;
@@ -528,26 +528,26 @@ public class BrepShapeSet : ShapeSet
                     CurveOnSurfaceRepresentation cos = (CurveOnSurfaceRepresentation)cr;
                     cos.UVPoints(out pf, out pl);
                     os.Write("  UV Points : ");
-                    Out(os, pf.X());
+                    Out(os, pf.X);
                     os.Write(", ");
-                    Out(os, pf.Y());
+                    Out(os, pf.Y);
                     os.Write(" ");
-                    Out(os, pl.X());
+                    Out(os, pl.X);
                     os.Write(", ");
-                    Out(os, pl.Y());
+                    Out(os, pl.Y);
                     os.Write("\n");
                     if (cr.IsCurveOnClosedSurface)
                     {
                         CurveOnClosedSurface cocs = (CurveOnClosedSurface)cr;
                         cocs.UVPoints2(out pf, out pl);
                         os.Write("  UV Points : ");
-                        Out(os, pf.X());
+                        Out(os, pf.X);
                         os.Write(", ");
-                        Out(os, pf.Y());
+                        Out(os, pf.Y);
                         os.Write(" ");
-                        Out(os, pl.X());
+                        Out(os, pl.X);
                         os.Write(", ");
-                        Out(os, pl.Y());
+                        Out(os, pl.Y);
                         os.Write("\n");
                     }
                 }
@@ -612,7 +612,7 @@ public class BrepShapeSet : ShapeSet
             }
         }
 
-        else if (s.ShapeType() == ShapeType.Face)
+        else if (s.Type == ShapeType.Face)
         {
             Face f = ShapeCasts.Face(s);
             if (Tool.NaturalRestriction(f))
@@ -629,10 +629,10 @@ public class BrepShapeSet : ShapeSet
                 os.Write("\n");
                 os.Write("    - Surface : ");
                 Out(os, _surfaces.Index(tf.Surface()));
-                if (!s.Location().IsIdentity)
+                if (!s.Placement.IsIdentity)
                 {
                     os.Write(" location ");
-                    Out(os, Locations().Index(s.Location()));
+                    Out(os, Locations().Index(s.Placement));
                 }
 
                 os.Write("\n");
@@ -643,7 +643,7 @@ public class BrepShapeSet : ShapeSet
                 // Dump the triangulation
                 os.Write("    - Triangulation : ");
                 Out(os, _triangulations.IndexOf(tf.Triangulation()!) + 1);
-                if (!s.Location().IsIdentity)
+                if (!s.Placement.IsIdentity)
                 {
                     os.Write(" location ");
                     Out(os, Locations().Index(tf.Location()));
@@ -665,18 +665,18 @@ public class BrepShapeSet : ShapeSet
     {
         // Write the geometry
 
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             // Write the point geometry
             Vertex v = ShapeCasts.Vertex(s);
             Out(os, Tool.Tolerance(v));
             os.Write("\n");
             Point3D p = Tool.Pnt(v);
-            Out(os, p.X());
+            Out(os, p.X);
             os.Write(" ");
-            Out(os, p.Y());
+            Out(os, p.Y);
             os.Write(" ");
-            Out(os, p.Z());
+            Out(os, p.Z);
             os.Write("\n");
 
             BrepTVertex tv = (BrepTVertex)s.TShape()!;
@@ -719,7 +719,7 @@ public class BrepShapeSet : ShapeSet
             os.Write("0 0\n"); // end representations
         }
 
-        else if (s.ShapeType() == ShapeType.Edge)
+        else if (s.Type == ShapeType.Edge)
         {
             // Write the curve geometry
 
@@ -805,13 +805,13 @@ public class BrepShapeSet : ShapeSet
                             cos.UVPoints(out pf, out pl);
                         }
 
-                        Out(os, pf.X());
+                        Out(os, pf.X);
                         os.Write(" ");
-                        Out(os, pf.Y());
+                        Out(os, pf.Y);
                         os.Write(" ");
-                        Out(os, pl.X());
+                        Out(os, pl.X);
                         os.Write(" ");
-                        Out(os, pl.Y());
+                        Out(os, pl.Y);
                         os.Write("\n");
                     }
                 }
@@ -880,7 +880,7 @@ public class BrepShapeSet : ShapeSet
             os.Write("0\n"); // end of the list of representations
         }
 
-        else if (s.ShapeType() == ShapeType.Face)
+        else if (s.Type == ShapeType.Face)
         {
             BrepTFace tf = (BrepTFace)s.TShape()!;
             Face f = ShapeCasts.Face(s);
@@ -1689,31 +1689,31 @@ public class BrepShapeSet : ShapeSet
 
                 if (!compact)
                 {
-                    Setw(os, 17, nodes[j].X());
+                    Setw(os, 17, nodes[j].X);
                 }
                 else
                 {
-                    Out(os, nodes[j].X());
+                    Out(os, nodes[j].X);
                 }
 
                 os.Write(" ");
                 if (!compact)
                 {
-                    Setw(os, 17, nodes[j].Y());
+                    Setw(os, 17, nodes[j].Y);
                 }
                 else
                 {
-                    Out(os, nodes[j].Y());
+                    Out(os, nodes[j].Y);
                 }
 
                 os.Write(" ");
                 if (!compact)
                 {
-                    Setw(os, 17, nodes[j].Z());
+                    Setw(os, 17, nodes[j].Z);
                 }
                 else
                 {
-                    Out(os, nodes[j].Z());
+                    Out(os, nodes[j].Z);
                 }
 
                 if (!compact)
@@ -1904,31 +1904,31 @@ public class BrepShapeSet : ShapeSet
 
                 if (!compact)
                 {
-                    Setw(os, 17, node.X());
+                    Setw(os, 17, node.X);
                 }
                 else
                 {
-                    Out(os, node.X());
+                    Out(os, node.X);
                 }
 
                 os.Write(" ");
                 if (!compact)
                 {
-                    Setw(os, 17, node.Y());
+                    Setw(os, 17, node.Y);
                 }
                 else
                 {
-                    Out(os, node.Y());
+                    Out(os, node.Y);
                 }
 
                 os.Write(" ");
                 if (!compact)
                 {
-                    Setw(os, 17, node.Z());
+                    Setw(os, 17, node.Z);
                 }
                 else
                 {
-                    Out(os, node.Z());
+                    Out(os, node.Z);
                 }
 
                 if (!compact)
@@ -1959,21 +1959,21 @@ public class BrepShapeSet : ShapeSet
 
                     if (!compact)
                     {
-                        Setw(os, 17, node2d.X());
+                        Setw(os, 17, node2d.X);
                     }
                     else
                     {
-                        Out(os, node2d.X());
+                        Out(os, node2d.X);
                     }
 
                     os.Write(" ");
                     if (!compact)
                     {
-                        Setw(os, 17, node2d.Y());
+                        Setw(os, 17, node2d.Y);
                     }
                     else
                     {
-                        Out(os, node2d.Y());
+                        Out(os, node2d.Y);
                     }
 
                     if (!compact)

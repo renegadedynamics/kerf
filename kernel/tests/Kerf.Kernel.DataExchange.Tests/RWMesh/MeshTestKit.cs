@@ -74,8 +74,8 @@ internal static class MeshTestKit
                 {
                     continue;
                 }
-                Transform3D aTrsf = aLoc.Transformation();
-                bool toSwap = (aFace.Orientation() == Orientation.Reversed) ^ (aTrsf.VectorialPart().Determinant() < 0);
+                Transform3D aTrsf = aLoc.Transformation;
+                bool toSwap = (aFace.Orientation == Orientation.Reversed) ^ (aTrsf.VectorialPart.Determinant < 0);
                 for (int i = 1; i <= aTri.TriangleCount; i++)
                 {
                     aTri.Triangle(i).Get(out int a, out int b, out int c);
@@ -112,7 +112,7 @@ internal static class MeshTestKit
             double aR = Math.Round(v, 2);
             return (aR == 0 ? 0.0 : aR).ToString("F2", CultureInfo.InvariantCulture);
         }
-        return r(theP.X()) + "," + r(theP.Y()) + "," + r(theP.Z());
+        return r(theP.X) + "," + r(theP.Y) + "," + r(theP.Z);
     }
 
     public static int CountShapes(in Shape theShape, ShapeType theType)

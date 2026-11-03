@@ -151,8 +151,8 @@ public sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Clamps the V range to the basis curve's bounds, as both of OCCT's methods do inline.</summary>
     private static void ClampVRange(Curve3D aBasisCurve, double vMin, double vMax, out double aVMin, out double aVMax)
     {
-        double vFirst = aBasisCurve.FirstParameter();
-        double vLast = aBasisCurve.LastParameter();
+        double vFirst = aBasisCurve.FirstParameter;
+        double vLast = aBasisCurve.LastParameter;
         aVMin = global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(vMin) ? vFirst : vMin;
         aVMax = global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(vMax) ? vLast : vMax;
         if (!aBasisCurve.IsPeriodic)
@@ -185,7 +185,7 @@ public sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for full surface.</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return Box(u1, u2, v1, v2, tol);
     }
 
@@ -194,10 +194,10 @@ public sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
     {
         try
         {
-            Curve3D basisCurve = _geom.BasisCurve();
-            Axis3D axis = _geom.Axis();
-            Point3D origin = axis.Location();
-            Direction3D axisDir = axis.Direction();
+            Curve3D basisCurve = _geom.BasisCurve;
+            Axis3D axis = _geom.Axis;
+            Point3D origin = axis.Location;
+            Direction3D axisDir = axis.Direction;
 
             // Clamp V range to basis curve bounds.
             ClampVRange(basisCurve, vMin, vMax, out double aVMin, out double aVMax);
@@ -226,7 +226,7 @@ public sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute precise bounding box for full surface.</summary>
     public Box BoxOptimal(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return BoxOptimal(u1, u2, v1, v2, tol);
     }
 
@@ -235,10 +235,10 @@ public sealed class SurfaceOfRevolutionBounds : SurfaceBounds.ISurfaceEvaluator
     {
         try
         {
-            Curve3D basisCurve = _geom.BasisCurve();
-            Axis3D axis = _geom.Axis();
-            Point3D origin = axis.Location();
-            Direction3D axisDir = axis.Direction();
+            Curve3D basisCurve = _geom.BasisCurve;
+            Axis3D axis = _geom.Axis;
+            Point3D origin = axis.Location;
+            Direction3D axisDir = axis.Direction;
 
             // Clamp V range to basis curve bounds.
             ClampVRange(basisCurve, vMin, vMax, out double aVMin, out double aVMax);

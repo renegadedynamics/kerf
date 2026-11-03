@@ -42,7 +42,7 @@ public class gp_QuaternionTest
             Matrix3x3 aR = aQuat2.GetMatrix();
             Matrix3x3 aDiff = aR * aRinv - aI;
             // Round-trip failed for Euler sequence aNames[i - gp_Extrinsic_XYZ]
-            Assert.True(aDiff.Determinant() <= 1e-5, aNames[i - (int)Extrinsic_XYZ]);
+            Assert.True(aDiff.Determinant <= 1e-5, aNames[i - (int)Extrinsic_XYZ]);
         }
     }
 
@@ -124,12 +124,12 @@ public class gp_QuaternionTest
         const double aGamma = 90.0 / 180.0 * M_PI;
 
         // Build the rotated frame step by step (yaw-pitch-roll convention)
-        Quaternion3 aRotZ = new(new Vector3D(aWorld.Direction()), aAlpha);
-        Vector3D aRotY = aRotZ.Multiply(new Vector3D(aWorld.YDirection()));
-        Vector3D aRotX = aRotZ.Multiply(new Vector3D(aWorld.XDirection()));
+        Quaternion3 aRotZ = new(new Vector3D(aWorld.Direction), aAlpha);
+        Vector3D aRotY = aRotZ.Multiply(new Vector3D(aWorld.YDirection));
+        Vector3D aRotX = aRotZ.Multiply(new Vector3D(aWorld.XDirection));
 
         Quaternion3 aRotYaw = new(aRotY, aBeta);
-        Vector3D aRotZ2 = aRotYaw.Multiply(new Vector3D(aWorld.Direction()));
+        Vector3D aRotZ2 = aRotYaw.Multiply(new Vector3D(aWorld.Direction));
         Vector3D aRotX2 = aRotYaw.Multiply(aRotX);
 
         Quaternion3 aRotRoll = new(aRotX2, aGamma);

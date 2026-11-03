@@ -177,11 +177,11 @@ public static class LineTool
 
             if ((i % 2) == 0)
             {
-                adist = (i < 2) ? Math.Abs(lastPoint.X() - umin) : Math.Abs(lastPoint.X() - umax);
+                adist = (i < 2) ? Math.Abs(lastPoint.X - umin) : Math.Abs(lastPoint.X - umax);
             }
             else
             {
-                adist = (i < 2) ? Math.Abs(lastPoint.Y() - vmin) : Math.Abs(lastPoint.Y() - vmax);
+                adist = (i < 2) ? Math.Abs(lastPoint.Y - vmin) : Math.Abs(lastPoint.Y - vmax);
             }
             double anoffset = adist * otherVec.Dot(anormvec) / adot1;
 
@@ -195,7 +195,7 @@ public static class LineTool
                 double dotX, angleX, pc;
                 //
                 dotX = vec.Dot(acurvec);
-                angleX = vec.Angle(acurvec);
+                angleX = vec.AngleTo(acurvec);
                 pc = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 //
                 if (dotX > 0.0 && Math.Abs(angleX) < pc)
@@ -203,7 +203,7 @@ public static class LineTool
                     //
                     if ((i % 2) == 0)
                     {
-                        if ((acurpoint.Y() >= vmin) && (acurpoint.Y() <= vmax))
+                        if ((acurpoint.Y >= vmin) && (acurpoint.Y <= vmax))
                         {
                             newPoint = acurpoint;
                             return true;
@@ -211,7 +211,7 @@ public static class LineTool
                     }
                     else
                     {
-                        if ((acurpoint.X() >= umin) && (acurpoint.X() <= umax))
+                        if ((acurpoint.X >= umin) && (acurpoint.X <= umax))
                         {
                             newPoint = acurpoint;
                             return true;
@@ -413,11 +413,11 @@ public static class LineTool
         tol = global::Kerf.Engine.Foundation.Precision.Confusion();
         //
         surf1 = surface1.Surface()!;
-        surf1.Bounds(out umin, out umax, out vmin, out vmax);
+        surf1.ParameterBounds(out umin, out umax, out vmin, out vmax);
         prj1.Init(surf1, umin, umax, vmin, vmax);
         //
         surf2 = surface2.Surface()!;
-        surf2.Bounds(out umin, out umax, out vmin, out vmax);
+        surf2.ParameterBounds(out umin, out umax, out vmin, out vmax);
         prj2.Init(surf2, umin, umax, vmin, vmax);
         //
         //
@@ -432,7 +432,7 @@ public static class LineTool
             for (i = 0; i < 2; i++)
             { // exploration Surface 1,2
                 SurfaceAdaptor gaSurface = (i == 0) ? surface1 : surface2;
-                gaSurface.Surface()!.Bounds(out umin, out umax, out vmin, out vmax);
+                gaSurface.Surface()!.ParameterBounds(out umin, out umax, out vmin, out vmax);
                 //
                 for (j = 0; j < 2; j++)
                 { // exploration of coordinate U,V
@@ -665,7 +665,7 @@ public static class LineTool
                                 bCheckAngle1 = true;
                                 newVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(anewU, anewV));
 
-                                if (newVec.SquareMagnitude() < (Constants.Resolution() * Constants.Resolution()))
+                                if (newVec.SquareMagnitude < (Constants.Resolution() * Constants.Resolution()))
                                 {
                                     newP.SetValue((surfit == 0), anewU, anewV);
                                     bCheckAngle1 = false;
@@ -676,7 +676,7 @@ public static class LineTool
                                 bCheckAngle2 = true;
                                 newVec = new Vector2D(new Point2D(nU1, nV1), new Point2D(u, v));
 
-                                if (newVec.SquareMagnitude() < (Constants.Resolution() * Constants.Resolution()))
+                                if (newVec.SquareMagnitude < (Constants.Resolution() * Constants.Resolution()))
                                 {
                                     bCheckAngle2 = false;
                                 }
@@ -705,13 +705,13 @@ public static class LineTool
                                     }
                                     Vector2D vecOld = new(new Point2D(nU2, nV2), new Point2D(nU1, nV1));
 
-                                    if (vecOld.SquareMagnitude() <= (Constants.Resolution() * Constants.Resolution()))
+                                    if (vecOld.SquareMagnitude <= (Constants.Resolution() * Constants.Resolution()))
                                     {
                                         continue;
                                     }
                                     else
                                     {
-                                        double angle = newVec.Angle(vecOld);
+                                        double angle = newVec.AngleTo(vecOld);
 
                                         if ((Math.Abs(angle) < (M_PI * 0.25)) && (newVec.Dot(vecOld) > 0.0))
                                         {
@@ -782,7 +782,7 @@ public static class LineTool
                             ap2 = ap2.WithX(nU2);
                             ap2 = ap2.WithY(nV2);
 
-                            if (ap1.SquareDistance(ap2) > (Constants.Resolution() * Constants.Resolution()))
+                            if (ap1.SquareDistanceTo(ap2) > (Constants.Resolution() * Constants.Resolution()))
                             {
                                 break;
                             }
@@ -798,7 +798,7 @@ public static class LineTool
                             ProjectPointOnSurf projector = (surfit == 0) ? prj2 : prj1;
                             SurfaceAdaptor surface = (surfit == 0) ? surface1 : surface2;
 
-                            Point3D p3d = surface.Value(anewpoint.X(), anewpoint.Y());
+                            Point3D p3d = surface.Value(anewpoint.X, anewpoint.Y);
                             projector.Perform(p3d);
 
                             if (projector.IsDone)
@@ -809,11 +809,11 @@ public static class LineTool
 
                                     if (surfit == 0)
                                     {
-                                        newP.SetValue(p3d, anewpoint.X(), anewpoint.Y(), foundU, foundV);
+                                        newP.SetValue(p3d, anewpoint.X, anewpoint.Y, foundU, foundV);
                                     }
                                     else
                                     {
-                                        newP.SetValue(p3d, foundU, foundV, anewpoint.X(), anewpoint.Y());
+                                        newP.SetValue(p3d, foundU, foundV, anewpoint.X, anewpoint.Y);
                                     }
                                 }
                             }

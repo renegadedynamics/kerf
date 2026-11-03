@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// P(u, v) = Center + (R + r * cos(v)) * (cos(u) * XDir + sin(u) * YDir) + r * sin(v) * ZDir. The trigonometric
 /// values of U are computed once per U parameter.
 /// </summary>
-public sealed class TorusGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class TorusGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private struct Data
     {
@@ -45,27 +45,27 @@ public sealed class TorusGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Torus torus = _geom!.Torus();
-        Point3D center = torus.Location();
-        Direction3D xDir = torus.Position().XDirection();
-        Direction3D yDir = torus.Position().YDirection();
-        Direction3D zDir = torus.Position().Direction();
+        Torus torus = _geom!.Torus;
+        Point3D center = torus.Location;
+        Direction3D xDir = torus.Position.XDirection;
+        Direction3D yDir = torus.Position.YDirection;
+        Direction3D zDir = torus.Position.Direction;
         return new Data
         {
-            CX = center.X(),
-            CY = center.Y(),
-            CZ = center.Z(),
-            XX = xDir.X(),
-            XY = xDir.Y(),
-            XZ = xDir.Z(),
-            YX = yDir.X(),
-            YY = yDir.Y(),
-            YZ = yDir.Z(),
-            ZX = zDir.X(),
-            ZY = zDir.Y(),
-            ZZ = zDir.Z(),
-            MajorRadius = torus.MajorRadius(),
-            MinorRadius = torus.MinorRadius(),
+            CX = center.X,
+            CY = center.Y,
+            CZ = center.Z,
+            XX = xDir.X,
+            XY = xDir.Y,
+            XZ = xDir.Z,
+            YX = yDir.X,
+            YY = yDir.Y,
+            YZ = yDir.Z,
+            ZX = zDir.X,
+            ZY = zDir.Y,
+            ZZ = zDir.Z,
+            MajorRadius = torus.MajorRadius,
+            MinorRadius = torus.MinorRadius,
         };
     }
 

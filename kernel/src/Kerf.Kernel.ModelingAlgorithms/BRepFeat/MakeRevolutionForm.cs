@@ -107,7 +107,7 @@ public sealed class MakeRevolutionForm : RibSlot
             lineLast = RealLast();
         }
 
-        Curve2D ln2d = Projections.To2d(line, plane.Pln())!;
+        Curve2D ln2d = Projections.To2d(line, plane.Plane)!;
 
         Explorer exx = new();
         double Rad = RealLast();
@@ -117,7 +117,7 @@ public sealed class MakeRevolutionForm : RibSlot
         {
             Edge e = ShapeCasts.Edge(exx.Current());
             Curve3D c = Tool.Curve(e, out double f, out double l)!;
-            Curve2D c2d = Projections.To2d(c, plane.Pln())!;
+            Curve2D c2d = Projections.To2d(c, plane.Plane)!;
             ExtremaCurveCurve2D extr = new(ln2d, c2d, lineFirst, lineLast, f, l);
             double L = RealLast();
             if (extr.NbExtrema() >= 1)
@@ -222,7 +222,7 @@ public sealed class MakeRevolutionForm : RibSlot
         Solid bndBox = bndbox.InternalSolid();
 
         // ---Construction of the working plane face (section bounding box)
-        LibraryMakeFace planeF = new(_pln.Pln(), -6.0 * _bnd, 6.0 * _bnd, -6.0 * _bnd, 6.0 * _bnd);
+        LibraryMakeFace planeF = new(_pln.Plane, -6.0 * _bnd, 6.0 * _bnd, -6.0 * _bnd, 6.0 * _bnd);
         Face planeFace = ShapeCasts.Face(planeF.InternalShape());
 
         Common planeS = new(bndBox, planeFace);
@@ -230,7 +230,7 @@ public sealed class MakeRevolutionForm : RibSlot
         Shape planeSect = planeS.InternalShape();
         EXP.Init(planeSect, ShapeType.Wire);
         Wire www = ShapeCasts.Wire(EXP.Current());
-        LibraryMakeFace bndface = new(_pln.Pln(), www, true);
+        LibraryMakeFace bndface = new(_pln.Plane, www, true);
         Face bndFace = ShapeCasts.Face(bndface.InternalShape());
 
         // ---Find base faces of the rib
@@ -276,7 +276,7 @@ public sealed class MakeRevolutionForm : RibSlot
             Surface s = Tool.Surface(firstFace)!;
             if (s.GetType() == typeof(TrimmedSurface))
             {
-                s = ((TrimmedSurface)s).BasisSurface();
+                s = ((TrimmedSurface)s).BasisSurface;
             }
             if (s.GetType() != typeof(PlaneSurface) && s.GetType() != typeof(CylindricalSurface)
                 && s.GetType() != typeof(ConicalSurface) && s.GetType() != typeof(ToroidalSurface))
@@ -290,7 +290,7 @@ public sealed class MakeRevolutionForm : RibSlot
             Surface ss = Tool.Surface(lastFace)!;
             if (ss.GetType() == typeof(TrimmedSurface))
             {
-                ss = ((TrimmedSurface)ss).BasisSurface();
+                ss = ((TrimmedSurface)ss).BasisSurface;
             }
             if (ss.GetType() != typeof(PlaneSurface) && ss.GetType() != typeof(CylindricalSurface)
                 && ss.GetType() != typeof(ConicalSurface) && ss.GetType() != typeof(ToroidalSurface))
@@ -327,7 +327,7 @@ public sealed class MakeRevolutionForm : RibSlot
             double lastRayon = proj1.Distance(1);
             Point3D lastCenter = proj1.Point(1);
 
-            Vector3D axv = new(_axe.Direction());
+            Vector3D axv = new(_axe.Direction);
             Frame3D ax2 = new(firstCenter, new Direction3D(axv));
             Frame3D ax2p = new(lastCenter, new Direction3D(axv));
             Circle3D theFC = new(ax2, firstRayon);
@@ -374,16 +374,16 @@ public sealed class MakeRevolutionForm : RibSlot
                 else
                 {
                     CircleCurve3D c1 = (CircleCurve3D)firstCrv;
-                    Circle3D circ = c1.Circ();
+                    Circle3D circ = c1.Circle;
                     firstCircle = circ;
-                    Axis3D circax = firstCircle.Axis();
+                    Axis3D circax = firstCircle.Axis;
                     if (!circax.IsCoaxial(_axe, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                     {
                         sliding = false;
                     }
                     else
                     {
-                        if (Math.Abs(firstCircle.Radius() - firstRayon) >= global::Kerf.Engine.Foundation.Precision.Confusion())
+                        if (Math.Abs(firstCircle.Radius - firstRayon) >= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             sliding = false;
                         }
@@ -401,16 +401,16 @@ public sealed class MakeRevolutionForm : RibSlot
                 else
                 {
                     CircleCurve3D c1 = (CircleCurve3D)lastCrv;
-                    Circle3D circ = c1.Circ();
+                    Circle3D circ = c1.Circle;
                     lastCircle = circ;
-                    Axis3D circax = lastCircle.Axis();
+                    Axis3D circax = lastCircle.Axis;
                     if (!circax.IsCoaxial(_axe, global::Kerf.Engine.Foundation.Precision.Confusion(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                     {
                         sliding = false;
                     }
                     else
                     {
-                        double rad = lastCircle.Radius();
+                        double rad = lastCircle.Radius;
                         if (Math.Abs(rad - lastRayon) >= global::Kerf.Engine.Foundation.Precision.Confusion())
                         {
                             sliding = false;
@@ -509,7 +509,7 @@ public sealed class MakeRevolutionForm : RibSlot
                         LibraryMakeEdge e = new(cc, v1, v2.InternalVertex());
                         ee1 = ShapeCasts.Edge(e.InternalShape());
                     }
-                    Shape localShape = ee1.Oriented(E.Orientation());
+                    Shape localShape = ee1.Oriented(E.Orientation);
                     ee1 = ShapeCasts.Edge(localShape);
                     if (counter == 1)
                     {
@@ -552,7 +552,7 @@ public sealed class MakeRevolutionForm : RibSlot
                         }
                         LibraryMakeEdge E1 = new(ccc, v1, v2);
                         Edge e11 = ShapeCasts.Edge(E1.InternalShape());
-                        Shape localShape = e11.Oriented(E.Orientation());
+                        Shape localShape = e11.Oriented(E.Orientation);
                         e11 = ShapeCasts.Edge(localShape);
                         thePreviousEdge = e11;
                         _lfMap.GetValue(E).Append(e11);
@@ -581,7 +581,7 @@ public sealed class MakeRevolutionForm : RibSlot
                             LibraryMakeEdge e = new(cc, v1, v2.InternalVertex());
                             ee = ShapeCasts.Edge(e.InternalShape());
                         }
-                        Shape localShape = ee.Oriented(E.Orientation());
+                        Shape localShape = ee.Oriented(E.Orientation);
                         ee = ShapeCasts.Edge(localShape);
                         bb.Add(w, ee);
                         _lfMap.GetValue(E).Append(ee);
@@ -612,14 +612,14 @@ public sealed class MakeRevolutionForm : RibSlot
                 Point3D fp, lp;
                 Curve3D ccc = Tool.Curve(edg, out double f, out double l)!;
                 TrimmedCurve3D cc = new(ccc, f, l);
-                if (edg.Orientation() == Reversed)
+                if (edg.Orientation == Reversed)
                 {
                     cc.Reverse();
                 }
 
-                fp = cc.Value(cc.FirstParameter());
-                lp = cc.Value(cc.LastParameter());
-                double dist = fp.Distance(theLastPnt);
+                fp = cc.Value(cc.FirstParameter);
+                lp = cc.Value(cc.LastParameter);
+                double dist = fp.DistanceTo(theLastPnt);
                 if (dist <= _tol)
                 {
                     sens = 1;
@@ -627,7 +627,7 @@ public sealed class MakeRevolutionForm : RibSlot
                 }
                 else
                 {
-                    dist = lp.Distance(theLastPnt);
+                    dist = lp.DistanceTo(theLastPnt);
                     if (dist <= _tol)
                     {
                         sens = 2;
@@ -636,12 +636,12 @@ public sealed class MakeRevolutionForm : RibSlot
                     }
                 }
                 int firstFlag = 0;
-                if (sens == 1 && lp.Distance(_firstPnt) <= _tol)
+                if (sens == 1 && lp.DistanceTo(_firstPnt) <= _tol)
                 {
                     firstOK = true;
                     firstFlag = 1;
                 }
-                else if (sens == 2 && fp.Distance(_firstPnt) <= _tol)
+                else if (sens == 2 && fp.DistanceTo(_firstPnt) <= _tol)
                 {
                     firstOK = true;
                     firstFlag = 2;
@@ -649,8 +649,8 @@ public sealed class MakeRevolutionForm : RibSlot
                 if (lastOK)
                 {
                     Edge eeee;
-                    double fpar = cc.FirstParameter();
-                    double lpar = cc.LastParameter();
+                    double fpar = cc.FirstParameter;
+                    double lpar = cc.LastParameter;
                     if (!firstOK)
                     {
                         if (thePreviousEdge.IsNull)
@@ -808,7 +808,7 @@ public sealed class MakeRevolutionForm : RibSlot
                 Vertex v2 = Exploration.LastVertex(e, true);
 
                 Curve3D ln = Tool.Curve(e, out double f, out double l)!;
-                Curve2D l2d = Projections.To2d(ln, plane.Pln())!;
+                Curve2D l2d = Projections.To2d(ln, plane.Plane)!;
                 CurveCurveIntersection2D intcc = new(l2d, ln2d, global::Kerf.Engine.Foundation.Precision.Confusion());
                 Vertex vv = new();
                 vv.Nullify();
@@ -816,7 +816,7 @@ public sealed class MakeRevolutionForm : RibSlot
                 if (intcc.NbPoints() > 0)
                 {
                     Point2D p = intcc.Point(1);
-                    _pln.D0(p.X(), p.Y(), out Point3D point);
+                    _pln.D0(p.X, p.Y, out Point3D point);
                     double par = IntPar(ln, point);
                     if (f <= par && l >= par)
                     {
@@ -859,18 +859,18 @@ public sealed class MakeRevolutionForm : RibSlot
             }
 
             wiwiwi.Closed(Tool.IsClosed(wiwiwi));
-            LibraryMakeFace newbndface = new(_pln.Pln(), wiwiwi, true);
+            LibraryMakeFace newbndface = new(_pln.Plane, wiwiwi, true);
             Face newBndFace = ShapeCasts.Face(newbndface.InternalShape());
 
             FClass2d cl = new(newBndFace, global::Kerf.Engine.Foundation.Precision.Confusion());
-            global::Kerf.Engine.Geometry.ElSLib.Parameters(_pln.Pln(), checkPnt, out double paru, out double parv);
+            global::Kerf.Engine.Geometry.ElSLib.Parameters(_pln.Plane, checkPnt, out double paru, out double parv);
             Point2D checkpnt2d = new(paru, parv);
             if (cl.Perform(checkpnt2d, true) == Out)
             {
                 Cut c = new(bndFace, newBndFace);
                 Explorer exp = new(c.InternalShape(), ShapeType.Wire);
                 Wire curWire = ShapeCasts.Wire(exp.Current());
-                LibraryMakeFace ff = new(_pln.Pln(), curWire, true);
+                LibraryMakeFace ff = new(_pln.Plane, curWire, true);
                 newBndFace = ShapeCasts.Face(ff.InternalShape());
             }
 
@@ -1054,7 +1054,7 @@ public sealed class MakeRevolutionForm : RibSlot
 
         _gluedF.Clear();
 
-        Plane3D pln0 = _pln!.Pln();
+        Plane3D pln0 = _pln!.Plane;
         LibraryMakeFace f = new(pln0);
 
         Vector3D vec1 = _height1 * new Vector3D(Normal(f.InternalFace(), pt));
@@ -1276,11 +1276,11 @@ public sealed class MakeRevolutionForm : RibSlot
             tolV1 = Tool.Tolerance(v1);
             tolV2 = Tool.Tolerance(v2);
 
-            if (fp.Distance(firstpoint) <= tolV1 || fp.Distance(lastpoint) <= tolV1)
+            if (fp.DistanceTo(firstpoint) <= tolV1 || fp.DistanceTo(lastpoint) <= tolV1)
             {
                 firstOK = true;
             }
-            if (lp.Distance(firstpoint) <= tolV2 || lp.Distance(lastpoint) <= tolV2)
+            if (lp.DistanceTo(firstpoint) <= tolV2 || lp.DistanceTo(lastpoint) <= tolV2)
             {
                 lastOK = true;
             }
@@ -1317,14 +1317,14 @@ public sealed class MakeRevolutionForm : RibSlot
             lp = p2;
             p3 = Tool.Pnt(v3);
             p4 = Tool.Pnt(v4);
-            if (p1.Distance(firstpoint) <= Tool.Tolerance(v1))
+            if (p1.DistanceTo(firstpoint) <= Tool.Tolerance(v1))
             {
-                if (p3.Distance(lastpoint) <= Tool.Tolerance(v3))
+                if (p3.DistanceTo(lastpoint) <= Tool.Tolerance(v3))
                 {
                     firstOK = true;
                     lastpoint = p4;
                 }
-                else if (p4.Distance(lastpoint) <= Tool.Tolerance(v4))
+                else if (p4.DistanceTo(lastpoint) <= Tool.Tolerance(v4))
                 {
                     firstOK = true;
                     lastpoint = p3;
@@ -1334,14 +1334,14 @@ public sealed class MakeRevolutionForm : RibSlot
                     e1.Nullify();
                 }
             }
-            else if (p1.Distance(lastpoint) <= Tool.Tolerance(v1))
+            else if (p1.DistanceTo(lastpoint) <= Tool.Tolerance(v1))
             {
-                if (p3.Distance(firstpoint) <= Tool.Tolerance(v3))
+                if (p3.DistanceTo(firstpoint) <= Tool.Tolerance(v3))
                 {
                     firstOK = true;
                     firstpoint = p4;
                 }
-                else if (p4.Distance(firstpoint) <= Tool.Tolerance(v4))
+                else if (p4.DistanceTo(firstpoint) <= Tool.Tolerance(v4))
                 {
                     firstOK = true;
                     firstpoint = p3;
@@ -1351,14 +1351,14 @@ public sealed class MakeRevolutionForm : RibSlot
                     e1.Nullify();
                 }
             }
-            else if (p2.Distance(firstpoint) <= Tool.Tolerance(v2))
+            else if (p2.DistanceTo(firstpoint) <= Tool.Tolerance(v2))
             {
-                if (p3.Distance(lastpoint) <= Tool.Tolerance(v3))
+                if (p3.DistanceTo(lastpoint) <= Tool.Tolerance(v3))
                 {
                     lastOK = true;
                     lastpoint = p4;
                 }
-                else if (p4.Distance(lastpoint) <= Tool.Tolerance(v4))
+                else if (p4.DistanceTo(lastpoint) <= Tool.Tolerance(v4))
                 {
                     lastOK = true;
                     lastpoint = p3;
@@ -1368,14 +1368,14 @@ public sealed class MakeRevolutionForm : RibSlot
                     e1.Nullify();
                 }
             }
-            else if (p2.Distance(lastpoint) <= Tool.Tolerance(v2))
+            else if (p2.DistanceTo(lastpoint) <= Tool.Tolerance(v2))
             {
-                if (p3.Distance(firstpoint) <= Tool.Tolerance(v3))
+                if (p3.DistanceTo(firstpoint) <= Tool.Tolerance(v3))
                 {
                     lastOK = true;
                     firstpoint = p4;
                 }
-                else if (p4.Distance(firstpoint) <= Tool.Tolerance(v4))
+                else if (p4.DistanceTo(firstpoint) <= Tool.Tolerance(v4))
                 {
                     lastOK = true;
                     firstpoint = p3;
@@ -1406,11 +1406,11 @@ public sealed class MakeRevolutionForm : RibSlot
             fp = Tool.Pnt(v1);
             lp = Tool.Pnt(v2);
 
-            if (fp.Distance(firstpoint) <= Tool.Tolerance(v1) || fp.Distance(lastpoint) <= Tool.Tolerance(v1))
+            if (fp.DistanceTo(firstpoint) <= Tool.Tolerance(v1) || fp.DistanceTo(lastpoint) <= Tool.Tolerance(v1))
             {
                 firstOK = true;
             }
-            if (lp.Distance(firstpoint) <= Tool.Tolerance(v2) || lp.Distance(lastpoint) <= Tool.Tolerance(v2))
+            if (lp.DistanceTo(firstpoint) <= Tool.Tolerance(v2) || lp.DistanceTo(lastpoint) <= Tool.Tolerance(v2))
             {
                 lastOK = true;
             }
@@ -1450,8 +1450,8 @@ public sealed class MakeRevolutionForm : RibSlot
                 ptpreprev = Tool.Pnt(vpreprevious);
             }
 
-            if ((!vprevious.IsNull && ptprev.Distance(pt) <= _tol)
-                || (!vpreprevious.IsNull && ptpreprev.Distance(pt) <= _tol))
+            if ((!vprevious.IsNull && ptprev.DistanceTo(pt) <= _tol)
+                || (!vpreprevious.IsNull && ptpreprev.DistanceTo(pt) <= _tol))
             {
                 falseside = false;
                 return false;
@@ -1509,8 +1509,8 @@ public sealed class MakeRevolutionForm : RibSlot
                 edg1 = ShapeCasts.Edge(Ex.Current());
                 Point3D ppp1 = Tool.Pnt(Exploration.FirstVertex(edg1, true));
                 Point3D ppp2 = Tool.Pnt(Exploration.LastVertex(edg1, true));
-                if (ppp1.Distance(Tool.Pnt(v1)) <= Tool.Tolerance(v1)
-                    || ppp2.Distance(Tool.Pnt(v1)) <= Tool.Tolerance(v1))
+                if (ppp1.DistanceTo(Tool.Pnt(v1)) <= Tool.Tolerance(v1)
+                    || ppp2.DistanceTo(Tool.Pnt(v1)) <= Tool.Tolerance(v1))
                 {
                     break;
                 }
@@ -1539,7 +1539,7 @@ public sealed class MakeRevolutionForm : RibSlot
             {
                 tol = tol1;
             }
-            double dist = pp.Distance(fp);
+            double dist = pp.DistanceTo(fp);
             if (dist <= tol)
             {
                 vpreprevious = vprevious;
@@ -1555,7 +1555,7 @@ public sealed class MakeRevolutionForm : RibSlot
 
             fp = Tool.Pnt(v1);
 
-            if (fp.Distance(firstpoint) <= Tool.Tolerance(v1) || fp.Distance(lastpoint) <= Tool.Tolerance(v1))
+            if (fp.DistanceTo(firstpoint) <= Tool.Tolerance(v1) || fp.DistanceTo(lastpoint) <= Tool.Tolerance(v1))
             {
                 firstOK = true;
             }
@@ -1584,8 +1584,8 @@ public sealed class MakeRevolutionForm : RibSlot
                 ptpreprev = Tool.Pnt(vpreprevious);
             }
 
-            if ((!vprevious.IsNull && ptprev.Distance(pt) <= _tol)
-                || (!vpreprevious.IsNull && ptpreprev.Distance(pt) <= _tol))
+            if ((!vprevious.IsNull && ptprev.DistanceTo(pt) <= _tol)
+                || (!vpreprevious.IsNull && ptpreprev.DistanceTo(pt) <= _tol))
             {
                 falseside = false;
                 return false;
@@ -1644,8 +1644,8 @@ public sealed class MakeRevolutionForm : RibSlot
                 edg2 = ShapeCasts.Edge(Ex.Current());
                 Point3D ppp1 = Tool.Pnt(Exploration.FirstVertex(edg2, true));
                 Point3D ppp2 = Tool.Pnt(Exploration.LastVertex(edg2, true));
-                if (ppp1.Distance(Tool.Pnt(v2)) <= Tool.Tolerance(v2)
-                    || ppp2.Distance(Tool.Pnt(v2)) <= Tool.Tolerance(v2))
+                if (ppp1.DistanceTo(Tool.Pnt(v2)) <= Tool.Tolerance(v2)
+                    || ppp2.DistanceTo(Tool.Pnt(v2)) <= Tool.Tolerance(v2))
                 {
                     break;
                 }
@@ -1667,7 +1667,7 @@ public sealed class MakeRevolutionForm : RibSlot
             vert = Exploration.FirstVertex(edg2, true);
             Point3D pp = Tool.Pnt(vert);
             fp = Tool.Pnt(v2);
-            if (pp.Distance(fp) <= Tool.Tolerance(v2))
+            if (pp.DistanceTo(fp) <= Tool.Tolerance(v2))
             {
                 vpreprevious = vprevious;
                 vprevious = v2;
@@ -1679,7 +1679,7 @@ public sealed class MakeRevolutionForm : RibSlot
             }
             fp = Tool.Pnt(v2);
 
-            if (fp.Distance(firstpoint) <= Tool.Tolerance(v2) || fp.Distance(lastpoint) <= Tool.Tolerance(v2))
+            if (fp.DistanceTo(firstpoint) <= Tool.Tolerance(v2) || fp.DistanceTo(lastpoint) <= Tool.Tolerance(v2))
             {
                 lastOK = true;
             }

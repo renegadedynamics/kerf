@@ -30,7 +30,7 @@ public class GeomConvert_SurfToAnaSurfTests
     /// <summary>Largest distance from samples of theS (on its bounds) to theAna.</summary>
     private static double Deviation(Surface theS, Surface theAna)
     {
-        theS.Bounds(out double U1, out double U2, out double V1, out double V2);
+        theS.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
         double aMax = 0;
         for (int i = 0; i <= 10; i++)
         {
@@ -52,8 +52,8 @@ public class GeomConvert_SurfToAnaSurfTests
         var aResCyl = Assert.IsType<CylindricalSurface>(aRes);
         Assert.NotSame(aCyl, aResCyl);
         Assert.Equal(0.0, aGap);
-        Assert.Equal(2.0, aResCyl.Radius());
-        Assert.Equal(TheAx3, aResCyl.Position());
+        Assert.Equal(2.0, aResCyl.Radius);
+        Assert.Equal(TheAx3, aResCyl.Position);
     }
 
     [Fact]
@@ -63,8 +63,8 @@ public class GeomConvert_SurfToAnaSurfTests
         Surface? aRes = Convert(aBS, 1e-6, out double aGap);
         var aPlane = Assert.IsType<PlaneSurface>(aRes);
         Assert.True(aGap < 1e-9);
-        Assert.True(aPlane.Pln().Axis().Direction().IsParallel(TheAx3.Direction(), 1e-9));
-        Assert.True(aPlane.Pln().Distance(TheAx3.Location()) < 1e-9);
+        Assert.True(aPlane.Plane.Axis.Direction.IsParallel(TheAx3.Direction, 1e-9));
+        Assert.True(aPlane.Plane.DistanceTo(TheAx3.Location) < 1e-9);
     }
 
     [Fact]
@@ -73,8 +73,8 @@ public class GeomConvert_SurfToAnaSurfTests
         global::Kerf.Geometry.BSplineSurface aBS = AsBSpline(new CylindricalSurface(TheAx3, 2.5), 0.3, 2.5, -1, 3);
         Surface? aRes = Convert(aBS, 1e-4, out double aGap);
         var aCyl = Assert.IsType<CylindricalSurface>(aRes);
-        Assert.Equal(2.5, aCyl.Radius(), 1e-6);
-        Assert.True(aCyl.Axis().Direction().IsParallel(TheAx3.Direction(), 1e-6));
+        Assert.Equal(2.5, aCyl.Radius, 1e-6);
+        Assert.True(aCyl.Axis.Direction.IsParallel(TheAx3.Direction, 1e-6));
         Assert.True(aGap <= 1e-4);
         Assert.True(Deviation(aBS, aCyl) < 1e-4);
     }
@@ -85,7 +85,7 @@ public class GeomConvert_SurfToAnaSurfTests
         global::Kerf.Geometry.BSplineSurface aBS = AsBSpline(new ConicalSurface(TheAx3, 0.4, 2), 0.1, 3, 0.5, 4);
         Surface? aRes = Convert(aBS, 1e-4, out double aGap);
         var aCone = Assert.IsType<ConicalSurface>(aRes);
-        Assert.Equal(0.4, aCone.SemiAngle(), 1e-6);
+        Assert.Equal(0.4, aCone.SemiAngle, 1e-6);
         Assert.True(aGap <= 1e-4);
         Assert.True(Deviation(aBS, aCone) < 1e-4);
     }
@@ -96,8 +96,8 @@ public class GeomConvert_SurfToAnaSurfTests
         global::Kerf.Geometry.BSplineSurface aBS = AsBSpline(new SphericalSurface(TheAx3, 3), 0.2, 2.2, -0.8, 0.9);
         Surface? aRes = Convert(aBS, 1e-4, out double aGap);
         var aSph = Assert.IsType<SphericalSurface>(aRes);
-        Assert.Equal(3.0, aSph.Radius(), 1e-6);
-        Assert.True(aSph.Location().Distance(TheAx3.Location()) < 1e-6);
+        Assert.Equal(3.0, aSph.Radius, 1e-6);
+        Assert.True(aSph.Location.DistanceTo(TheAx3.Location) < 1e-6);
         Assert.True(aGap <= 1e-4);
     }
 
@@ -107,8 +107,8 @@ public class GeomConvert_SurfToAnaSurfTests
         global::Kerf.Geometry.BSplineSurface aBS = AsBSpline(new ToroidalSurface(TheAx3, 6, 1.5), 0.2, 2.2, 0.3, 2.0);
         Surface? aRes = Convert(aBS, 1e-4, out double aGap);
         var aTor = Assert.IsType<ToroidalSurface>(aRes);
-        Assert.Equal(6.0, aTor.MajorRadius(), 1e-6);
-        Assert.Equal(1.5, aTor.MinorRadius(), 1e-6);
+        Assert.Equal(6.0, aTor.MajorRadius, 1e-6);
+        Assert.Equal(1.5, aTor.MinorRadius, 1e-6);
         Assert.True(aGap <= 1e-4);
     }
 
@@ -119,13 +119,13 @@ public class GeomConvert_SurfToAnaSurfTests
         var aPar = new TrimmedCurve3D(new LineCurve3D(new Point3D(2, 0, 0), new Direction3D(0, 0, 1)), 0, 5);
         var aCyl = Assert.IsType<CylindricalSurface>(
             Convert(new RevolutionSurface(aPar, anAxis), 1e-5, out double aGap1));
-        Assert.Equal(2.0, aCyl.Radius(), 1e-9);
+        Assert.Equal(2.0, aCyl.Radius, 1e-9);
         Assert.True(aGap1 < 1e-9);
 
         var aTilted = new TrimmedCurve3D(new LineCurve3D(new Point3D(2, 0, 0), new Direction3D(0.3, 0, 1)), 0, 5);
         var aCone = Assert.IsType<ConicalSurface>(
             Convert(new RevolutionSurface(aTilted, anAxis), 1e-5, out double aGap2));
-        Assert.Equal(Math.Atan(0.3), aCone.SemiAngle(), 1e-9);
+        Assert.Equal(Math.Atan(0.3), aCone.SemiAngle, 1e-9);
         Assert.True(aGap2 < 1e-9);
     }
 
@@ -136,14 +136,14 @@ public class GeomConvert_SurfToAnaSurfTests
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0)), 1);
         var aRev = new TrimmedSurface(new RevolutionSurface(aCircle, anAxis), 0.1, 2, 0.2, 2.5);
         var aTor = Assert.IsType<ToroidalSurface>(Convert(aRev, 1e-5, out _));
-        Assert.Equal(5.0, aTor.MajorRadius(), 1e-9);
-        Assert.Equal(1.0, aTor.MinorRadius(), 1e-9);
+        Assert.Equal(5.0, aTor.MajorRadius, 1e-9);
+        Assert.Equal(1.0, aTor.MinorRadius, 1e-9);
 
         var aCentred = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0)), 2);
         var aSphRev = new TrimmedSurface(new RevolutionSurface(aCentred, anAxis),
                                                          0.1, 2, 0.2, 1.3);
         var aSph = Assert.IsType<SphericalSurface>(Convert(aSphRev, 1e-5, out _));
-        Assert.Equal(2.0, aSph.Radius(), 1e-9);
+        Assert.Equal(2.0, aSph.Radius, 1e-9);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class GeomConvert_SurfToAnaSurfTests
         var anExt = new TrimmedSurface(new ExtrusionSurface(aCircle, new Direction3D(0, 0, 1)),
                                                        0.5, 2.5, -1, 2);
         var aCyl = Assert.IsType<CylindricalSurface>(Convert(anExt, 1e-5, out double aGap));
-        Assert.Equal(3.0, aCyl.Radius(), 1e-9);
+        Assert.Equal(3.0, aCyl.Radius, 1e-9);
         Assert.True(aGap < 1e-9);
     }
 
@@ -196,12 +196,12 @@ public class GeomConvert_SurfToAnaSurfTests
     public void SubRange_SegmentsACopy_NotTheCallersSurface()
     {
         global::Kerf.Geometry.BSplineSurface aBS = AsBSpline(new CylindricalSurface(TheAx3, 2.5), 0.3, 2.5, -1, 3);
-        aBS.Bounds(out double U1, out double U2, out double V1, out double V2);
+        aBS.ParameterBounds(out double U1, out double U2, out double V1, out double V2);
         aBS.Freeze();
         var aConv = new global::Kerf.Engine.Geometry.Conversion.SurfToAnaSurf(aBS);
         var aCyl = Assert.IsType<CylindricalSurface>(aConv.ConvertToAnalytical(1e-4, U1 + 0.2, U2 - 0.3, V1 + 0.5, V2));
-        Assert.Equal(2.5, aCyl.Radius(), 1e-6);
-        aBS.Bounds(out double U1b, out double U2b, out double V1b, out double V2b);
+        Assert.Equal(2.5, aCyl.Radius, 1e-6);
+        aBS.ParameterBounds(out double U1b, out double U2b, out double V1b, out double V2b);
         Assert.Equal((U1, U2, V1, V2), (U1b, U2b, V1b, V2b));
     }
 
@@ -209,7 +209,7 @@ public class GeomConvert_SurfToAnaSurfTests
     public void IsSame_And_IsCanonical()
     {
         var aCyl1 = new CylindricalSurface(TheAx3, 2);
-        var aCyl2 = new CylindricalSurface(TheAx3.Translated(new Vector3D(TheAx3.Direction()) * 5), 2);
+        var aCyl2 = new CylindricalSurface(TheAx3.Translated(new Vector3D(TheAx3.Direction) * 5), 2);
         var aCyl3 = new CylindricalSurface(TheAx3, 2.1);
         Assert.True(global::Kerf.Engine.Geometry.Conversion.SurfToAnaSurf.IsSame(aCyl1, aCyl2, 1e-7));
         Assert.False(global::Kerf.Engine.Geometry.Conversion.SurfToAnaSurf.IsSame(aCyl1, aCyl3, 1e-7));

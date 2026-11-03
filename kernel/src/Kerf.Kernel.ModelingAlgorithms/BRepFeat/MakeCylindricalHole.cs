@@ -92,10 +92,10 @@ public sealed class MakeCylindricalHole : FeatureBuilder
         // It is not possible to use infinite cylinder for topological operations.
         BoxParameters(aObject, _axis, out double pMin, out double pMax);
         double heigth = 2.0 * (pMax - pMin);
-        Xyz theOrig = _axis.Location().XYZ();
-        theOrig += ((3.0 * pMin - pMax) / 2.0) * _axis.Direction().XYZ();
+        Xyz theOrig = _axis.Location.XYZ();
+        theOrig += ((3.0 * pMin - pMax) / 2.0) * _axis.Direction.XYZ();
         Point3D p1_ao1 = new(theOrig);
-        Frame3D a1_ao1 = new(p1_ao1, _axis.Direction());
+        Frame3D a1_ao1 = new(p1_ao1, _axis.Direction);
         PrimitiveCylinder theCylinder = new(a1_ao1, radius, heigth);
 
         // Probably it is better to make cut directly
@@ -549,10 +549,10 @@ public sealed class MakeCylindricalHole : FeatureBuilder
         }
 
         double heigth = 3.0 * (length - pMin) / 2.0;
-        Xyz theOrig = _axis.Location().XYZ();
-        theOrig += ((3.0 * pMin - length) / 2.0) * _axis.Direction().XYZ();
+        Xyz theOrig = _axis.Location.XYZ();
+        theOrig += ((3.0 * pMin - length) / 2.0) * _axis.Direction.XYZ();
         Point3D p5_ao1 = new(theOrig);
-        Frame3D a5_ao1 = new(p5_ao1, _axis.Direction());
+        Frame3D a5_ao1 = new(p5_ao1, _axis.Direction);
         PrimitiveCylinder theCylinder = new(a5_ao1, radius, heigth);
 
         BrepBuilder b = new();
@@ -700,7 +700,7 @@ public sealed class MakeCylindricalHole : FeatureBuilder
             if (!Tool.Degenerated(e))
             {
                 c = Tool.Curve(e, out Placement l, out double first, out double last)!;
-                c = (Curve3D)c.Transformed(l.Transformation());
+                c = (Curve3D)c.Transformed(l.Transformation);
 
                 for (i = 1; i <= 11; i++)
                 {
@@ -759,7 +759,7 @@ public sealed class MakeCylindricalHole : FeatureBuilder
         {
             return false;
         }
-        double angle = axis.Direction().Angle(normF);
+        double angle = axis.Direction.AngleTo(normF);
         if (Math.Abs(M_PI / 2.0 - angle) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return false;
@@ -789,9 +789,9 @@ public sealed class MakeCylindricalHole : FeatureBuilder
 
         // create cylinder along the axis (myAxis);
         // from 'First - offF' to 'Last + offL' params
-        Xyz theOrig = pntInfoFirst.Pnt().XYZ() - offF * axis.Direction().XYZ();
+        Xyz theOrig = pntInfoFirst.Pnt().XYZ() - offF * axis.Direction.XYZ();
         Point3D p2_ao1 = new(theOrig);
-        Frame3D a2_ao1 = new(p2_ao1, axis.Direction());
+        Frame3D a2_ao1 = new(p2_ao1, axis.Direction);
         PrimitiveCylinder theCylinder = new(a2_ao1, radius, heigth + offF + offL);
         cyl = theCylinder.Shell();
         cylTopF = theCylinder.TopFace();

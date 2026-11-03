@@ -64,10 +64,10 @@ public sealed class MakeParab2d : Root
     /// </summary>
     public MakeParab2d(in Point2D s, in Point2D center, bool sense = true)
     {
-        if (s.Distance(center) >= Constants.Resolution())
+        if (s.DistanceTo(center) >= Constants.Resolution())
         {
             Direction2D xAxis = new(s.XY() - center.XY());
-            _theParab2d = new Parabola2D(new Axis2D(center, xAxis), s.Distance(center), sense);
+            _theParab2d = new Parabola2D(new Axis2D(center, xAxis), s.DistanceTo(center), sense);
             _theError = Done;
         }
         else

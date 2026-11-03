@@ -64,8 +64,8 @@ public sealed class CustomCurve
         {
             bool set = true;
             // if degree+1 at ends, first change it to 1 by rearranging knots
-            if (bSpl.Multiplicity(1) == bSpl.Degree() + 1
-                && bSpl.Multiplicity(bSpl.KnotCount) == bSpl.Degree() + 1)
+            if (bSpl.Multiplicity(1) == bSpl.Degree + 1
+                && bSpl.Multiplicity(bSpl.KnotCount) == bSpl.Degree + 1)
             {
                 NCollection_Array1<Point3D> oldPoles = bSpl.InternalPoles();
                 NCollection_Array1<double> oldWeights = bSpl.InternalWeightsArray();
@@ -86,17 +86,17 @@ public sealed class CustomCurve
                     newKnots[i] = oldKnots[i - 1];
                     newMults[i] = oldMults[i - 1];
                 }
-                newMults[2] = newMults[nbKnots + 1] = bSpl.Degree();
+                newMults[2] = newMults[nbKnots + 1] = bSpl.Degree;
                 BSplineCurve3D res = new BSplineCurve3D(oldPoles,
                                                               oldWeights,
                                                               newKnots,
                                                               newMults,
-                                                              bSpl.Degree(),
+                                                              bSpl.Degree,
                                                               bSpl.IsPeriodic);
                 bSpl = res;
             }
-            else if (bSpl.Multiplicity(1) > bSpl.Degree()
-                     || bSpl.Multiplicity(bSpl.KnotCount) > bSpl.Degree() + 1)
+            else if (bSpl.Multiplicity(1) > bSpl.Degree
+                     || bSpl.Multiplicity(bSpl.KnotCount) > bSpl.Degree + 1)
             {
                 set = false;
             }

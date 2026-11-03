@@ -82,7 +82,7 @@ public class ComputeApproxOnPolarSurface
         {
             trimF = surf.FirstUParameter(); // Trimmed first
             trimL = surf.LastUParameter(); // Trimmed last
-            s.Bounds(out baseF, out baseL, out dummyF, out dummyL); // Non-trimmed values.
+            s.ParameterBounds(out baseF, out baseL, out dummyF, out dummyL); // Non-trimmed values.
             if (Math.Abs(baseF - trimF) + Math.Abs(baseL - trimL) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // Param space reduced.
@@ -103,7 +103,7 @@ public class ComputeApproxOnPolarSurface
         {
             trimF = surf.FirstVParameter(); // Trimmed first
             trimL = surf.LastVParameter(); // Trimmed last
-            s.Bounds(out dummyF, out dummyL, out baseF, out baseL); // Non-trimmed values.
+            s.ParameterBounds(out dummyF, out dummyL, out baseF, out baseL); // Non-trimmed values.
             if (Math.Abs(baseF - trimF) + Math.Abs(baseL - trimL) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // Param space reduced.
@@ -124,12 +124,12 @@ public class ComputeApproxOnPolarSurface
         surf.D1(u, v, out projPnt, out su, out sv);
         Vector3D baseVec = new(aBasePnt, projPnt);
 
-        if (su.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (su.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             su = su.Normalized();
         }
 
-        if (sv.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (sv.SquareMagnitude > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             sv = sv.Normalized();
         }
@@ -143,8 +143,8 @@ public class ComputeApproxOnPolarSurface
     {
         Point2D p2d = data.InitCurve2d.Value(theU);
         Point3D p = data.myCurve.Value(theU);
-        Point3D surfPnt = data.mySurf.Value(p2d.X(), p2d.Y());
-        double surfPntDist = surfPnt.SquareDistance(p);
+        Point3D surfPnt = data.mySurf.Value(p2d.X, p2d.Y);
+        double surfPntDist = surfPnt.SquareDistanceTo(p);
 
         double uinf, usup, vinf, vsup;
         uinf = data.mySurf.FirstUParameter();
@@ -153,32 +153,32 @@ public class ComputeApproxOnPolarSurface
         vsup = data.mySurf.LastVParameter();
 
         // Check case when curve is close to co-parametrized isoline on surf.
-        if (Math.Abs(p2d.X() - uinf) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || Math.Abs(p2d.X() - usup) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (Math.Abs(p2d.X - uinf) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(p2d.X - usup) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             // V isoline.
             Point3D aPnt;
-            data.mySurf.D0(p2d.X(), theU, out aPnt);
-            if (aPnt.SquareDistance(p) < surfPntDist)
+            data.mySurf.D0(p2d.X, theU, out aPnt);
+            if (aPnt.SquareDistanceTo(p) < surfPntDist)
             {
                 p2d = p2d.WithY(theU);
             }
         }
 
-        if (Math.Abs(p2d.Y() - vinf) < global::Kerf.Engine.Foundation.Precision.PConfusion()
-            || Math.Abs(p2d.Y() - vsup) < global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (Math.Abs(p2d.Y - vinf) < global::Kerf.Engine.Foundation.Precision.PConfusion()
+            || Math.Abs(p2d.Y - vsup) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             // U isoline.
             Point3D aPnt;
-            data.mySurf.D0(theU, p2d.Y(), out aPnt);
-            if (aPnt.SquareDistance(p) < surfPntDist)
+            data.mySurf.D0(theU, p2d.Y, out aPnt);
+            if (aPnt.SquareDistanceTo(p) < surfPntDist)
             {
                 p2d = p2d.WithX(theU);
             }
         }
 
         int decalU = 0, decalV = 0;
-        double u0 = p2d.X(), v0 = p2d.Y();
+        double u0 = p2d.X, v0 = p2d.Y;
 
         SurfaceKind type = data.mySurf.GetType();
         if ((type != SurfaceKind.BSplineSurface) && (type != SurfaceKind.BezierSurface)
@@ -539,13 +539,13 @@ public class ComputeApproxOnPolarSurface
         if (_projIsDone)
         {
             Point2D p2dproj, p2d, p2dBis;
-            p2dproj = bsc!.StartPoint();
+            p2dproj = bsc!.StartPoint;
             p2d = initialCurve2d.Value(initialCurve2d.FirstParameter());
             p2dBis = initialCurve2dBis.Value(initialCurve2dBis.FirstParameter());
 
             double dist, distBis;
-            dist = p2dproj.Distance(p2d);
-            distBis = p2dproj.Distance(p2dBis);
+            dist = p2dproj.DistanceTo(p2d);
+            distBis = p2dproj.DistanceTo(p2dBis);
             if (dist < distBis)
             {
                 // myBSpline2d is the pcurve that is found. It is translated to obtain myCurve2d
@@ -569,8 +569,8 @@ public class ComputeApproxOnPolarSurface
                                               double vJump)
     {
         int deg, deg1, deg2;
-        deg1 = c1.Degree();
-        deg2 = c2.Degree();
+        deg1 = c1.Degree;
+        deg2 = c2.Degree;
 
         if (deg1 < deg2)
         {
@@ -632,8 +632,8 @@ public class ComputeApproxOnPolarSurface
         for (i = 2; i <= np2; i++)
         {
             count++;
-            p[count] = p[count].WithX(p2[i].X() + uJump);
-            p[count] = p[count].WithY(p2[i].Y() + vJump);
+            p[count] = p[count].WithX(p2[i].X + uJump);
+            p[count] = p[count].WithY(p2[i].Y + vJump);
         }
 
         BSplineCurve2D bs = new(p, k, m, deg);
@@ -773,8 +773,8 @@ public class ComputeApproxOnPolarSurface
                     // NullReferenceException).
                     Point2D fp2d = g2dC!.Value(firstinter), lp2d = g2dC.Value(secondinter);
                     Point3D fps, lps, fpc, lpc;
-                    s.D0(fp2d.X(), fp2d.Y(), out fps);
-                    s.D0(lp2d.X(), lp2d.Y(), out lps);
+                    s.D0(fp2d.X, fp2d.Y, out fps);
+                    s.D0(lp2d.X, lp2d.Y, out lps);
                     curve.D0(firstinter, out fpc);
                     curve.D0(secondinter, out lpc);
                     // OCC217
@@ -806,7 +806,7 @@ public class ComputeApproxOnPolarSurface
                 }
 
                 int nbK2d = bsc2d.KnotCount;
-                int deg = bsc2d.Degree();
+                int deg = bsc2d.Degree;
 
                 for (i = 2; i <= nbInter; i++)
                 {
@@ -825,8 +825,8 @@ public class ComputeApproxOnPolarSurface
                     {
                         Point2D fp2d = g2dC!.Value(iinter), lp2d = g2dC.Value(ip1inter);
                         Point3D fps, lps, fpc, lpc;
-                        s.D0(fp2d.X(), fp2d.Y(), out fps);
-                        s.D0(lp2d.X(), lp2d.Y(), out lps);
+                        s.D0(fp2d.X, fp2d.Y, out fps);
+                        s.D0(lp2d.X, lp2d.Y, out lps);
                         curve.D0(iinter, out fpc);
                         curve.D0(ip1inter, out lpc);
                         // OCC217
@@ -851,7 +851,7 @@ public class ComputeApproxOnPolarSurface
                         lOfBSpline2d.Append(bsc2d);
 
                         nbK2d += bsc2d.KnotCount - 1; // unused but set for debug
-                        deg = Max(deg, bsc2d.Degree());
+                        deg = Max(deg, bsc2d.Degree);
                     }
                     else
                     {
@@ -875,15 +875,15 @@ public class ComputeApproxOnPolarSurface
                     Point2D c2Beg = bs.Pole(1); // Beginning of C2.
                     double uJump = 0.0, vJump = 0.0;
 
-                    if (uPeriod > 0.0 && Math.Abs(c1End.X() - c2Beg.X()) > (uPeriod) / 2.01)
+                    if (uPeriod > 0.0 && Math.Abs(c1End.X - c2Beg.X) > (uPeriod) / 2.01)
                     {
-                        double multCoeff = c2Beg.X() < c1End.X() ? 1.0 : -1.0;
+                        double multCoeff = c2Beg.X < c1End.X ? 1.0 : -1.0;
                         uJump = (uPeriod) * multCoeff;
                     }
 
-                    if (vPeriod != 0.0 && Math.Abs(c1End.Y() - c2Beg.Y()) > (vPeriod) / 2.01)
+                    if (vPeriod != 0.0 && Math.Abs(c1End.Y - c2Beg.Y) > (vPeriod) / 2.01)
                     {
-                        double multCoeff = c2Beg.Y() < c1End.Y() ? 1.0 : -1.0;
+                        double multCoeff = c2Beg.Y < c1End.Y ? 1.0 : -1.0;
                         vJump = (vPeriod) * multCoeff;
                     }
 
@@ -1166,7 +1166,7 @@ public class ComputeApproxOnPolarSurface
                             bool isSame = false;
                             for (j = 1; j <= sols.Length(); j++)
                             {
-                                if (p2d.SquareDistance(sols.Value(j)) <= 1.0e-18)
+                                if (p2d.SquareDistanceTo(sols.Value(j)) <= 1.0e-18)
                                 {
                                     isSame = true;
                                     break;
@@ -1208,7 +1208,7 @@ public class ComputeApproxOnPolarSurface
                             for (j = i + 1; j <= nbSols; j++)
                             {
                                 Point2D p2 = sols.Value(j);
-                                double dist2 = p1.SquareDistance(p2);
+                                double dist2 = p1.SquareDistanceTo(p2);
                                 if (dist2 > dist2Max)
                                 {
                                     dist2Max = dist2;
@@ -1293,8 +1293,8 @@ public class ComputeApproxOnPolarSurface
                                         if (asV.Dot(atV) > 0.0)
                                         {
                                             isChosen = true;
-                                            u = p1.X();
-                                            v = p1.Y();
+                                            u = p1.X;
+                                            v = p1.Y;
                                             pts2d[1] = pts2d[1].WithCoord(u, v);
                                             _projIsDone = true;
                                             break;
@@ -1437,7 +1437,7 @@ public class ComputeApproxOnPolarSurface
                                             {
                                                 for (int vInd = 0; vInd < sizeV; vInd++)
                                                 {
-                                                    double sQdist = p.SquareDistance(new Point2D(upar[uInd], vpar[vInd]));
+                                                    double sQdist = p.SquareDistanceTo(new Point2D(upar[uInd], vpar[vInd]));
                                                     if (sQdist < sQdistMin)
                                                     {
                                                         sQdistMin = sQdist;
@@ -1666,8 +1666,8 @@ public class ComputeApproxOnPolarSurface
             _bSpline = bSpline;
             // jgv: put the curve into parametric range
             Point2D midPoint =
-                bSpline.Value(0.5 * (bSpline.FirstParameter() + bSpline.LastParameter()));
-            double testU = midPoint.X(), testV = midPoint.Y();
+                bSpline.Value(0.5 * (bSpline.FirstParameter + bSpline.LastParameter));
+            double testU = midPoint.X, testV = midPoint.Y;
             double sense = 0.0;
             if (uperiod != 0.0)
             {
@@ -1700,8 +1700,8 @@ public class ComputeApproxOnPolarSurface
                     testV += sense * vperiod;
                 }
             }
-            Vector2D offset = new(testU - midPoint.X(), testV - midPoint.Y());
-            if (Math.Abs(offset.X()) > Constants.Resolution() || Math.Abs(offset.Y()) > Constants.Resolution())
+            Vector2D offset = new(testU - midPoint.X, testV - midPoint.Y);
+            if (Math.Abs(offset.X) > Constants.Resolution() || Math.Abs(offset.Y) > Constants.Resolution())
             {
                 bSpline.Translate(offset);
             }
@@ -1762,11 +1762,11 @@ public class ComputeApproxOnPolarSurface
                                                        pWeights,
                                                        knots,
                                                        mults,
-                                                       bsc.Degree(),
+                                                       bsc.Degree,
                                                        bsc.IsPeriodic);
                     }
                 }
-                return new BSplineCurve2D(poles2d, knots, mults, bsc.Degree(), bsc.IsPeriodic);
+                return new BSplineCurve2D(poles2d, knots, mults, bsc.Degree, bsc.IsPeriodic);
             }
             if (theTypeC == BezierCurve)
             {
@@ -1792,11 +1792,11 @@ public class ComputeApproxOnPolarSurface
                                                        pWeights,
                                                        knots,
                                                        mults,
-                                                       bc.Degree(),
+                                                       bc.Degree,
                                                        bc.IsPeriodic);
                     }
                 }
-                return new BSplineCurve2D(poles2d, knots, mults, bc.Degree(), bc.IsPeriodic);
+                return new BSplineCurve2D(poles2d, knots, mults, bc.Degree, bc.IsPeriodic);
             }
         }
         if (theTypeS == SurfaceKind.BSplineSurface)
@@ -1804,7 +1804,7 @@ public class ComputeApproxOnPolarSurface
             global::Kerf.Geometry.BSplineSurface bss = surf.BSpline();
             // OCCT: MaxDegree() is the static maximal degree of B-spline surfaces (25), not this surface's degree, so
             // this condition is never true and the bilinear-surface branch is dead code.
-            if ((global::Kerf.Geometry.BSplineSurface.MaxDegree() == 1) && (bss.UPoleCount == 2) && (bss.VPoleCount == 2))
+            if ((global::Kerf.Geometry.BSplineSurface.MaxDegree == 1) && (bss.UPoleCount == 2) && (bss.VPoleCount == 2))
             {
                 Point3D p11 = bss.Pole(1, 1);
                 Point3D p12 = bss.Pole(1, 2);
@@ -1812,7 +1812,7 @@ public class ComputeApproxOnPolarSurface
                 Point3D p22 = bss.Pole(2, 2);
                 Vector3D v1 = new(p11, p12);
                 Vector3D v2 = new(p21, p22);
-                if (v1.IsEqual(v2, tol3d, tol3d / (p11.Distance(p12) * 180 / M_PI)))
+                if (v1.IsEqual(v2, tol3d, tol3d / (p11.DistanceTo(p12) * 180 / M_PI)))
                 {
                     // OCCT: the square distances are truncated to int (Dist2Min is an int), and the extrema start from
                     // the mean of the corners' X and Y coordinates, not from parameters.
@@ -1829,7 +1829,7 @@ public class ComputeApproxOnPolarSurface
                             dist2Min = IntegerLast();
 
                             GenLocateExtPS extrloc = new(surf, tolU, tolV);
-                            extrloc.Perform(bsc.Pole(i), (p11.X() + p22.X()) / 2, (p11.Y() + p22.Y()) / 2);
+                            extrloc.Perform(bsc.Pole(i), (p11.X + p22.X) / 2, (p11.Y + p22.Y) / 2);
 
                             if (extrloc.IsDone)
                             {
@@ -1864,10 +1864,10 @@ public class ComputeApproxOnPolarSurface
                                                                bsc.InternalWeightsArray(),
                                                                knots,
                                                                mults,
-                                                               bsc.Degree(),
+                                                               bsc.Degree,
                                                                bsc.IsPeriodic);
                             }
-                            return new BSplineCurve2D(poles2d, knots, mults, bsc.Degree(), bsc.IsPeriodic);
+                            return new BSplineCurve2D(poles2d, knots, mults, bsc.Degree, bsc.IsPeriodic);
                         }
                     }
                     if (theTypeC == BezierCurve)
@@ -1924,10 +1924,10 @@ public class ComputeApproxOnPolarSurface
                                                                bc.InternalWeightsArray(),
                                                                knots,
                                                                mults,
-                                                               bc.Degree(),
+                                                               bc.Degree,
                                                                bc.IsPeriodic);
                             }
-                            return new BSplineCurve2D(poles2d, knots, mults, bc.Degree(), bc.IsPeriodic);
+                            return new BSplineCurve2D(poles2d, knots, mults, bc.Degree, bc.IsPeriodic);
                         }
                     }
                 }
@@ -1937,7 +1937,7 @@ public class ComputeApproxOnPolarSurface
         {
             global::Kerf.Geometry.BezierSurface bs = surf.Bezier();
             // OCCT: as above, MaxDegree() is static (25): this branch is dead code.
-            if ((global::Kerf.Geometry.BezierSurface.MaxDegree() == 1) && (bs.UPoleCount == 2) && (bs.VPoleCount == 2))
+            if ((global::Kerf.Geometry.BezierSurface.MaxDegree == 1) && (bs.UPoleCount == 2) && (bs.VPoleCount == 2))
             {
                 Point3D p11 = bs.Pole(1, 1);
                 Point3D p12 = bs.Pole(1, 2);
@@ -1945,7 +1945,7 @@ public class ComputeApproxOnPolarSurface
                 Point3D p22 = bs.Pole(2, 2);
                 Vector3D v1 = new(p11, p12);
                 Vector3D v2 = new(p21, p22);
-                if (v1.IsEqual(v2, tol3d, tol3d / (p11.Distance(p12) * 180 / M_PI)))
+                if (v1.IsEqual(v2, tol3d, tol3d / (p11.DistanceTo(p12) * 180 / M_PI)))
                 {
                     // OCCT: as for the B-spline surface above.
                     int dist2Min = IntegerLast();
@@ -1962,7 +1962,7 @@ public class ComputeApproxOnPolarSurface
                             dist2Min = IntegerLast();
 
                             GenLocateExtPS extrloc = new(surf, tolU, tolV);
-                            extrloc.Perform(bsc.Pole(i), (p11.X() + p22.X()) / 2, (p11.Y() + p22.Y()) / 2);
+                            extrloc.Perform(bsc.Pole(i), (p11.X + p22.X) / 2, (p11.Y + p22.Y) / 2);
 
                             if (extrloc.IsDone)
                             {
@@ -1997,10 +1997,10 @@ public class ComputeApproxOnPolarSurface
                                                                bsc.InternalWeightsArray(),
                                                                knots,
                                                                mults,
-                                                               bsc.Degree(),
+                                                               bsc.Degree,
                                                                bsc.IsPeriodic);
                             }
-                            return new BSplineCurve2D(poles2d, knots, mults, bsc.Degree(), bsc.IsPeriodic);
+                            return new BSplineCurve2D(poles2d, knots, mults, bsc.Degree, bsc.IsPeriodic);
                         }
                     }
                     if (theTypeC == BezierCurve)
@@ -2056,10 +2056,10 @@ public class ComputeApproxOnPolarSurface
                                                                bc.InternalWeightsArray(),
                                                                knots,
                                                                mults,
-                                                               bc.Degree(),
+                                                               bc.Degree,
                                                                bc.IsPeriodic);
                             }
-                            return new BSplineCurve2D(poles2d, knots, mults, bc.Degree(), bc.IsPeriodic);
+                            return new BSplineCurve2D(poles2d, knots, mults, bc.Degree, bc.IsPeriodic);
                         }
                     }
                 }

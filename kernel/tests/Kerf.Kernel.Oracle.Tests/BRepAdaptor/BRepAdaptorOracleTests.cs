@@ -118,14 +118,14 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
 
         // the vertices where the port's curves put them (both sides use these coordinates)
         Point3D aP1 = aBS.Value(f), aP2 = aBS.Value(l);
-        Point3D aP0 = new Point3D(aP1.X() - theOracle.Real(1, 3), aP1.Y() + theOracle.Real(-1, 1), aP1.Z());
+        Point3D aP0 = new Point3D(aP1.X - theOracle.Real(1, 3), aP1.Y + theOracle.Real(-1, 1), aP1.Z);
         Twin<N.TopoDS_Vertex, Vertex> aV0 = aTwins.Vertex(aP0), aV1 = aTwins.Vertex(aP1, 1e-6), aV2 = aTwins.Vertex(aP2, 1e-6);
         Twin<N.TopoDS_Edge, Edge> aLine = aTwins.Segment(aV0, aP0, aV1, aP1);
         Twin<N.TopoDS_Edge, Edge> aSpline = aTwins.EdgeOn(aNBS, aBS, new Placement(), null, f, l, aV1, aV2);
 
         // an arc of a circle in a plane through aP2: centre aP2 + r X, from angle Pi
         double r = theOracle.Real(0.5, 3), anArc = theOracle.Real(0.5, 2.5);
-        Point3D aCentre = new Point3D(aP2.X() + r, aP2.Y(), aP2.Z());
+        Point3D aCentre = new Point3D(aP2.X + r, aP2.Y, aP2.Z);
         using var aNC = Oracle.ToNative(aCentre);
         using var aNZ = new N.gp_Dir(0, 0, 1);
         using var aNXd = new N.gp_Dir(1, 0, 0);
@@ -276,11 +276,11 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                 using N.gp_Lin aNL = theN.Line();
                 Line3D aL = theP.Line();
                 using N.gp_Pnt aNLoc = aNL.Location();
-                theOracle.Same(aNLoc, aL.Location(), theWhat + " Line.Location");
+                theOracle.Same(aNLoc, aL.Location, theWhat + " Line.Location");
                 using N.gp_Dir aND = aNL.Direction();
-                theOracle.Same(aND.X(), aL.Direction().X(), theWhat + " Line.Direction");
-                theOracle.Same(aND.Y(), aL.Direction().Y(), theWhat + " Line.Direction");
-                theOracle.Same(aND.Z(), aL.Direction().Z(), theWhat + " Line.Direction");
+                theOracle.Same(aND.X(), aL.Direction.X, theWhat + " Line.Direction");
+                theOracle.Same(aND.Y(), aL.Direction.Y, theWhat + " Line.Direction");
+                theOracle.Same(aND.Z(), aL.Direction.Z, theWhat + " Line.Direction");
                 break;
             }
             case Circle:
@@ -288,8 +288,8 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                 using N.gp_Circ aNCi = theN.Circle();
                 Circle3D aCi = theP.Circle();
                 using N.gp_Pnt aNLoc = aNCi.Location();
-                theOracle.Same(aNLoc, aCi.Location(), theWhat + " Circle.Location");
-                theOracle.Same(aNCi.Radius(), aCi.Radius(), theWhat + " Circle.Radius");
+                theOracle.Same(aNLoc, aCi.Location, theWhat + " Circle.Location");
+                theOracle.Same(aNCi.Radius(), aCi.Radius, theWhat + " Circle.Radius");
                 break;
             }
             case BSplineCurve:
@@ -407,8 +407,8 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
                 if (aPrev is not null)
                 {
                     theCounts.Junctions++;
-                    double u1 = aPrev.Edge().Orientation() == Reversed ? aPrev.FirstParameter() : aPrev.LastParameter();
-                    double u2 = aPE.Orientation() == Reversed ? aPC.LastParameter() : aPC.FirstParameter();
+                    double u1 = aPrev.Edge().Orientation == Reversed ? aPrev.FirstParameter() : aPrev.LastParameter();
+                    double u2 = aPE.Orientation == Reversed ? aPC.LastParameter() : aPC.FirstParameter();
                     bool isNThrow = false, isPThrow = false;
                     N.GeomAbs_Shape aNCont = N.GeomAbs_Shape.GeomAbs_C0;
                     Continuity aPCont = Continuity.C0;
@@ -501,7 +501,7 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             theOracle.Same(aNU, aPU, theWhat + " Edge.UonE");
             using N.gp_Pnt aNP = N.BRep_Tool.Pnt(N.TopExp.FirstVertex(aNE, true));
             theOracle.Same(aNP, Tool.Pnt(Exploration.FirstVertex(aPE, true)), theWhat + " Edge");
-            theOracle.Same((int)aNE.Orientation(), (int)aPE.Orientation(), theWhat + " Edge.Orientation");
+            theOracle.Same((int)aNE.Orientation(), (int)aPE.Orientation, theWhat + " Edge.Orientation");
         }
     }
 
@@ -533,9 +533,9 @@ public class BRepAdaptorOracleTests(ITestOutputHelper output)
             {
                 using N.gp_Dir aNN = aNP.Normal();
                 Direction3D aPN = aP.Normal();
-                theOracle.Same(aNN.X(), aPN.X(), "SLProps.Normal");
-                theOracle.Same(aNN.Y(), aPN.Y(), "SLProps.Normal");
-                theOracle.Same(aNN.Z(), aPN.Z(), "SLProps.Normal");
+                theOracle.Same(aNN.X(), aPN.X, "SLProps.Normal");
+                theOracle.Same(aNN.Y(), aPN.Y, "SLProps.Normal");
+                theOracle.Same(aNN.Z(), aPN.Z, "SLProps.Normal");
             }
 
             bool isC = aNP.IsCurvatureDefined();

@@ -28,14 +28,14 @@ public sealed class BSplineCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
     Curve2D? Curve2dBounds.ICurve2dEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box2d Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box2d Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
     public Box2d Box(double u1, double u2, double tol)
     {
         BSplineCurve2D curve = _geom;
-        double aU1 = curve.FirstParameter();
-        double aU2 = curve.LastParameter();
+        double aU1 = curve.FirstParameter;
+        double aU2 = curve.LastParameter;
         double trim1 = Max(u1, aU1);
         double trim2 = Min(u2, aU2);
         if (trim2 < trim1)

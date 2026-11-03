@@ -55,13 +55,13 @@ public class BuildAveragePlane
         _nbBoundPoints = nbBoundPoints;
         Vector3D oz = DefPlan(nOption);
 
-        if (oz.SquareMagnitude() > 0)
+        if (oz.SquareMagnitude > 0)
         {
             if (pOption == 1)
             {
                 _plane = new PlaneSurface(_g, new Direction3D(oz));
-                _ox = new Vector3D(_plane.Pln().XAxis().Direction());
-                _oy = new Vector3D(_plane.Pln().YAxis().Direction());
+                _ox = new Vector3D(_plane.Plane.XAxis.Direction);
+                _oy = new Vector3D(_plane.Plane.YAxis.Direction);
             }
             else
             {
@@ -72,7 +72,7 @@ public class BuildAveragePlane
                 _plane = new PlaneSurface(triedre);
             }
             int i, nb = _pts.Length();
-            Plane3D p = _plane.Pln();
+            Plane3D p = _plane.Plane;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(p, _g, out _umax, out _vmax);
             _umin = _umax;
             _vmin = _vmax;
@@ -124,10 +124,10 @@ public class BuildAveragePlane
         else if (nn == 2)
         {
             bestVec = normals.Value(1) + normals.Value(2);
-            double sqMagn = bestVec.SquareMagnitude();
+            double sqMagn = bestVec.SquareMagnitude;
             if (sqMagn < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
-                double sq1 = normals.Value(1).SquareMagnitude(), sq2 = normals.Value(2).SquareMagnitude();
+                double sq1 = normals.Value(1).SquareMagnitude, sq2 = normals.Value(2).SquareMagnitude;
 
                 if (sq1 > sq2)
                 {
@@ -150,7 +150,7 @@ public class BuildAveragePlane
             {
                 for (j = i + 1; j <= nn; j++)
                 {
-                    double angle = normals.Value(i).Angle(normals.Value(j));
+                    double angle = normals.Value(i).AngleTo(normals.Value(j));
                     if (angle > maxAngle)
                     {
                         maxAngle = angle;
@@ -176,7 +176,7 @@ public class BuildAveragePlane
                     double step = maxAngle / nint;
                     Vec = normals.Value(i) + normals.Value(j);
 
-                    double sqMagn = Vec.SquareMagnitude();
+                    double sqMagn = Vec.SquareMagnitude;
 
                     if (sqMagn < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
@@ -236,22 +236,22 @@ public class BuildAveragePlane
         }
         global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(ptsArray, out axe2, out isSingular);
         Direction3D bestDir = new Direction3D(bestVec);
-        Direction3D xDir = bestDir ^ axe2.XDirection();
+        Direction3D xDir = bestDir ^ axe2.XDirection;
         xDir ^= bestDir;
 
-        CoordinateSystem axe3 = new CoordinateSystem(axe2.Location(), bestDir, xDir);
+        CoordinateSystem axe3 = new CoordinateSystem(axe2.Location, bestDir, xDir);
         _plane = new PlaneSurface(axe3);
 
         // Initializing myUmin, myVmin, myUmax, myVmax
-        Plane3D pln = _plane.Pln();
-        global::Kerf.Engine.Geometry.ElSLib.Parameters(pln, axe2.Location(), out _umax, out _vmax);
+        Plane3D pln = _plane.Plane;
+        global::Kerf.Engine.Geometry.ElSLib.Parameters(pln, axe2.Location, out _umax, out _vmax);
         _umin = _umax;
         _vmin = _vmax;
         double u, v;
         for (i = 1; i <= _pts.Length(); i++)
         {
-            Vector3D vec = new Vector3D(pln.Location(), _pts.Value(i));
-            Vector3D normVec = new Vector3D(pln.Axis().Direction());
+            Vector3D vec = new Vector3D(pln.Location, _pts.Value(i));
+            Vector3D normVec = new Vector3D(pln.Axis.Direction);
             normVec = (vec * normVec) * normVec;
 
             global::Kerf.Engine.Geometry.ElSLib.Parameters(pln, _pts.Value(i).Translated(-normVec), out u, out v);
@@ -273,8 +273,8 @@ public class BuildAveragePlane
             }
         }
         // Initializing myOX, myOY
-        _ox = new Vector3D(_plane.Pln().XAxis().Direction());
-        _oy = new Vector3D(_plane.Pln().YAxis().Direction());
+        _ox = new Vector3D(_plane.Plane.XAxis.Direction);
+        _oy = new Vector3D(_plane.Plane.YAxis.Direction);
     }
 
     /// <summary>The average plane (frozen).</summary>
@@ -320,10 +320,10 @@ public class BuildAveragePlane
             bool isSingular;
             global::Kerf.Engine.Geometry.Library.GeomLib.AxeOfInertia(_pts.Array1(), out axe, out isSingular, _tol);
 
-            _ox = new Vector3D(axe.XDirection());
-            _oy = new Vector3D(axe.YDirection());
+            _ox = new Vector3D(axe.XDirection);
+            _oy = new Vector3D(axe.YDirection);
 
-            oz = new Vector3D(axe.Direction());
+            oz = new Vector3D(axe.Direction);
 
             if (_nbBoundPoints != 0 && _pts.Length() != _nbBoundPoints)
             {
@@ -342,7 +342,7 @@ public class BuildAveragePlane
                     a = a.WithCoord(3, a.Coord(3) + d.Coord(3));
                 }
                 Vector3D oz1 = a;
-                double theAngle = oz.Angle(oz1);
+                double theAngle = oz.AngleTo(oz1);
                 if (theAngle > M_PI / 2)
                 {
                     theAngle = M_PI - theAngle;
@@ -492,13 +492,13 @@ public class BuildAveragePlane
     public bool IsPlane()
     {
         Vector3D oz = _ox ^ _oy;
-        return oz.SquareMagnitude() != 0;
+        return oz.SquareMagnitude != 0;
     }
 
     public bool IsLine()
     {
         Vector3D oz = _ox ^ _oy;
-        return oz.SquareMagnitude() == 0;
+        return oz.SquareMagnitude == 0;
     }
 
     /// <summary>
@@ -532,7 +532,7 @@ public class BuildAveragePlane
             }
             // 2
             cross = newNormals.Value(1) ^ newNormals.Value(2);
-            if (cross.SquareMagnitude() <= squareTol)
+            if (cross.SquareMagnitude <= squareTol)
             {
                 return false;
             }
@@ -560,13 +560,13 @@ public class BuildAveragePlane
             int ii = normals.Length() + 1;
             for (j = 1; j <= ii - 1; j++)
             {
-                if (normals.Value(j).SquareMagnitude() == 0.0)
+                if (normals.Value(j).SquareMagnitude == 0.0)
                 {
                     continue;
                 }
                 // 4
                 cross = newNormals.Value(i) ^ normals.Value(j);
-                if (cross.SquareMagnitude() <= squareTol)
+                if (cross.SquareMagnitude <= squareTol)
                 {
                     normals.Assign(saveNormals);
                     bset.Assign(saveBset);
@@ -587,7 +587,7 @@ public class BuildAveragePlane
                         }
                         cross1 = normals.Value(ind1) ^ newNormals.Value(i);
                         cross2 = normals.Value(ind2) ^ newNormals.Value(i);
-                        if (cross1.SquareMagnitude() <= squareTol || cross2.SquareMagnitude() <= squareTol)
+                        if (cross1.SquareMagnitude <= squareTol || cross2.SquareMagnitude <= squareTol)
                         {
                             normals.Assign(saveNormals);
                             bset.Assign(saveBset);
@@ -605,7 +605,7 @@ public class BuildAveragePlane
                         }
                         else
                         {
-                            if (newNormals.Value(i).Angle(normals.Value(ind1)) > newNormals.Value(i).Angle(normals.Value(ind2)))
+                            if (newNormals.Value(i).AngleTo(normals.Value(ind1)) > newNormals.Value(i).AngleTo(normals.Value(ind2)))
                             {
                                 b2set[k]._ind2 = ind1;
                                 b2set[k]._ind1 = ii;
@@ -639,7 +639,7 @@ public class BuildAveragePlane
                         }
                         cross1 = normals.Value(ind1) ^ newNormals.Value(i);
                         cross2 = normals.Value(ind2) ^ newNormals.Value(i);
-                        if (cross1.SquareMagnitude() <= squareTol || cross2.SquareMagnitude() <= squareTol)
+                        if (cross1.SquareMagnitude <= squareTol || cross2.SquareMagnitude <= squareTol)
                         {
                             normals.Assign(saveNormals);
                             bset.Assign(saveBset);
@@ -657,7 +657,7 @@ public class BuildAveragePlane
                         }
                         else
                         {
-                            if (newNormals.Value(i).Angle(normals.Value(ind1)) > newNormals.Value(i).Angle(normals.Value(ind2)))
+                            if (newNormals.Value(i).AngleTo(normals.Value(ind1)) > newNormals.Value(i).AngleTo(normals.Value(ind2)))
                             {
                                 b2set[k]._ind2 = ind1;
                                 b2set[k]._ind1 = ii;
@@ -683,7 +683,7 @@ public class BuildAveragePlane
                 bool isGEnull = true;
                 for (k = 1; k <= normals.Length(); k++)
                 {
-                    if (normals.Value(k).SquareMagnitude() == 0.0)
+                    if (normals.Value(k).SquareMagnitude == 0.0)
                     {
                         continue;
                     }
@@ -716,7 +716,7 @@ public class BuildAveragePlane
             // 8
             for (j = 1; j <= normals.Length(); j++)
             {
-                if (normals.Value(j).SquareMagnitude() == 0.0)
+                if (normals.Value(j).SquareMagnitude == 0.0)
                 {
                     continue;
                 }

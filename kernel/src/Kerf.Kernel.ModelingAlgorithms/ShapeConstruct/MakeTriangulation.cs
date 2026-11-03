@@ -284,8 +284,8 @@ public sealed class MakeTriangulation : MakeShape
                         {
                             Vertex v1 = sae.FirstVertex(ShapeCasts.Edge(theEdges.Value(lindex)));
                             Vertex v2 = sae.FirstVertex(ShapeCasts.Edge(theEdges.Value(rindex)));
-                            v1.Orientation(Forward);
-                            v2.Orientation(Reversed);
+                            v1.Orient(Forward);
+                            v2.Orient(Reversed);
                             theLEdge = new MakeEdge(v1, v2).InternalEdge();
                             theSLEdge = theLEdge;
                         }
@@ -433,7 +433,7 @@ public sealed class MakeTriangulation : MakeShape
         }
         else
         {
-            if (_shape.ShapeType() == ShapeType.Face)
+            if (_shape.Type == ShapeType.Face)
             {
                 Face firstFace = ShapeCasts.Face(_shape);
                 Shell theShell = new();

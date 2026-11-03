@@ -120,13 +120,13 @@ public class CurveAdaptorBase : Transient
     public virtual Point3D EvalD0(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD0");
 
     /// <summary>The point and first derivative at U. Throws on failure.</summary>
-    public virtual Curve3D.ResD1 EvalD1(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD1");
+    internal virtual Curve3D.ResD1 EvalD1(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD1");
 
     /// <summary>The point and first two derivatives at U. Throws on failure.</summary>
-    public virtual Curve3D.ResD2 EvalD2(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD2");
+    internal virtual Curve3D.ResD2 EvalD2(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD2");
 
     /// <summary>The point and first three derivatives at U. Throws on failure.</summary>
-    public virtual Curve3D.ResD3 EvalD3(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD3");
+    internal virtual Curve3D.ResD3 EvalD3(double u) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalD3");
 
     /// <summary>The derivative of order N at U. Throws on failure.</summary>
     public virtual Vector3D EvalDN(double u, int n) => throw new MethodNotImplementedException("Adaptor3d_Curve::EvalDN");

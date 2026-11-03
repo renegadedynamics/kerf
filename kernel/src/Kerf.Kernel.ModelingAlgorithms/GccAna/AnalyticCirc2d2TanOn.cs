@@ -90,15 +90,15 @@ public sealed partial class AnalyticCirc2d2TanOn
         }
         Circle2D c1 = qualified1.Qualified();
         Circle2D c2 = qualified2.Qualified();
-        double r1 = c1.Radius();
-        double r2 = c2.Radius();
+        double r1 = c1.Radius;
+        double r2 = c2.Radius;
         Direction2D dirx = new(Direction2D.D.X);
-        Point2D center1 = c1.Location();
-        Point2D center2 = c2.Location();
+        Point2D center1 = c1.Location;
+        Point2D center2 = c2.Location;
         NCollection_Array1<double> radius = new(1, 2);
 
-        double dist1 = onLine.Distance(center1);
-        double dist2 = onLine.Distance(center2);
+        double dist1 = onLine.DistanceTo(center1);
+        double dist2 = onLine.DistanceTo(center2);
         double d1 = dist1 + r1;
         double d2 = dist2 + r2;
         double d3 = dist1 - r1;
@@ -154,8 +154,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                         _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[i]);
                         //        ==========================================================
                         _wellDone = true;
-                        double distcc1 = center.Distance(center1);
-                        double distcc2 = center.Distance(center2);
+                        double distcc1 = center.DistanceTo(center1);
+                        double distcc2 = center.DistanceTo(center2);
                         if (!qualified1.IsUnqualified)
                         {
                             _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -196,7 +196,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                         _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg1sol[_nbrSol]);
                         _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
                         _pararg2[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c2, _pnttg2sol[_nbrSol]);
-                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+                        _pntcen[_nbrSol] = _cirsol[_nbrSol].Location;
                         _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onLine, _pntcen[_nbrSol]);
                     }
                 }
@@ -243,13 +243,13 @@ public sealed partial class AnalyticCirc2d2TanOn
                             for (int j = 1; j <= intp.PointCount; j++)
                             {
                                 Point2D center = intp.Point(j).Value();
-                                dist1 = center.Distance(center1);
-                                dist2 = center.Distance(center2);
+                                dist1 = center.DistanceTo(center1);
+                                dist2 = center.DistanceTo(center2);
                                 nbsol = 0;
                                 int nsol = 0;
                                 int nnsol = 0;
-                                r1 = c1.Radius();
-                                r2 = c2.Radius();
+                                r1 = c1.Radius;
+                                r2 = c2.Radius;
                                 if (qualified1.IsEnclosed)
                                 {
                                     if (dist1 - r1 < tol)
@@ -325,8 +325,8 @@ public sealed partial class AnalyticCirc2d2TanOn
                                         _nbrSol++;
                                         _cirsol[_nbrSol] = new Circle2D(new Axis2D(center, dirx), radius[k]);
                                         //                ==========================================================
-                                        double distcc1 = center.Distance(center1);
-                                        double distcc2 = center.Distance(center2);
+                                        double distcc1 = center.DistanceTo(center1);
+                                        double distcc2 = center.DistanceTo(center2);
                                         // OCCT: the qualifiers of unqualified arguments are computed with Radius(i),
                                         // i the bisector's index, instead of Radius(k); past Radius's two elements
                                         // OCCT's range check throws Standard_OutOfRange, as the port does
@@ -362,7 +362,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                         {
                                             _qualifier2[_nbrSol] = Qualifier.Enclosing;
                                         }
-                                        if (center.Distance(center1) <= tol && Math.Abs(radius[k] - c1.Radius()) <= tol)
+                                        if (center.DistanceTo(center1) <= tol && Math.Abs(radius[k] - c1.Radius) <= tol)
                                         {
                                             _theSame1[_nbrSol] = 1;
                                         }
@@ -375,7 +375,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                                             // OCCT: the parameter on C1 is that of the second tangency point
                                             _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(c1, _pnttg2sol[_nbrSol]);
                                         }
-                                        if (center.Distance(center2) <= tol && Math.Abs(radius[k] - c2.Radius()) <= tol)
+                                        if (center.DistanceTo(center2) <= tol && Math.Abs(radius[k] - c2.Radius) <= tol)
                                         {
                                             _theSame2[_nbrSol] = 1;
                                         }

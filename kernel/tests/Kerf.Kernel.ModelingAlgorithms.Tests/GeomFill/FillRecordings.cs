@@ -104,9 +104,9 @@ internal static class FillRecordings
 
         public void Add(Point3D theP)
         {
-            Add(theP.X());
-            Add(theP.Y());
-            Add(theP.Z());
+            Add(theP.X);
+            Add(theP.Y);
+            Add(theP.Z);
         }
 
         public string Str() => Int(myN) + "," + myH.ToString("x", CultureInfo.InvariantCulture);
@@ -119,7 +119,7 @@ internal static class FillRecordings
             theW.Put("srf:null");
             return;
         }
-        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + Int(theS.UPoleCount) + ","
+        theW.Put("sdeg:" + Int(theS.UDegree) + "," + Int(theS.VDegree) + "," + Int(theS.UPoleCount) + ","
                  + Int(theS.VPoleCount) + "," + (theS.IsURational ? "1" : "0") + (theS.IsVRational ? "1" : "0"));
         Digest aP = new(), aW = new();
         for (int i = 1; i <= theS.UPoleCount; i++)
@@ -143,7 +143,7 @@ internal static class FillRecordings
         }
         theW.Put("suk:" + aU);
         theW.Put("svk:" + aV);
-        theS.Bounds(out double u1, out double u2, out double v1, out double v2);
+        theS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         string aD = "";
         for (int i = 0; i <= 2; i++)
         {
@@ -163,7 +163,7 @@ internal static class FillRecordings
             theW.Put("srf:null");
             return;
         }
-        theW.Put("sdeg:" + Int(theS.UDegree()) + "," + Int(theS.VDegree()) + "," + (theS.IsURational ? "1" : "0")
+        theW.Put("sdeg:" + Int(theS.UDegree) + "," + Int(theS.VDegree) + "," + (theS.IsURational ? "1" : "0")
                  + (theS.IsVRational ? "1" : "0"));
         Digest aP = new(), aW = new();
         for (int i = 1; i <= theS.UPoleCount; i++)

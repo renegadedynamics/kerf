@@ -67,8 +67,8 @@ public class IntConicQuad
 
         _nbpts = 0;
 
-        l.Direction().Coord(out lx, out ly, out lz);
-        l.Location().Coord(out lx0, out ly0, out lz0);
+        l.Direction.Coord(out lx, out ly, out lz);
+        l.Location.Coord(out lx0, out ly0, out lz0);
 
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out qCte);
 
@@ -131,9 +131,9 @@ public class IntConicQuad
 
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out qCte);
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref qCte,
-                             new CoordinateSystem(c.Position()));
+                             new CoordinateSystem(c.Position));
 
-        double r = c.Radius();
+        double r = c.Radius;
         double rr = r * r;
 
         double P_CosCos = rr * qxx; //-- Cos Cos
@@ -166,7 +166,7 @@ public class IntConicQuad
                 {
                     double t = circQuadPol.Value(i);
                     _paramonc[i - 1] = t;
-                    _pnts[i - 1] = global::Kerf.Engine.Geometry.ElCLib.CircleValue(t, c.Position(), r);
+                    _pnts[i - 1] = global::Kerf.Engine.Geometry.ElCLib.CircleValue(t, c.Position, r);
                 }
             }
         }
@@ -198,10 +198,10 @@ public class IntConicQuad
 
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out qCte);
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref qCte,
-                             new CoordinateSystem(e.Position()));
+                             new CoordinateSystem(e.Position));
 
-        double R = e.MajorRadius();
-        double r = e.MinorRadius();
+        double R = e.MajorRadius;
+        double r = e.MinorRadius;
 
         double P_CosCos = R * R * qxx; //-- Cos Cos
         double P_SinSin = r * r * qyy; //-- Sin Sin
@@ -232,7 +232,7 @@ public class IntConicQuad
                 {
                     double t = elipsQuadPol.Value(i);
                     _paramonc[i - 1] = t;
-                    _pnts[i - 1] = global::Kerf.Engine.Geometry.ElCLib.EllipseValue(t, e.Position(), R, r);
+                    _pnts[i - 1] = global::Kerf.Engine.Geometry.ElCLib.EllipseValue(t, e.Position, R, r);
                 }
             }
         }
@@ -264,9 +264,9 @@ public class IntConicQuad
 
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out qCte);
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref qCte,
-                             new CoordinateSystem(p.Position()));
+                             new CoordinateSystem(p.Position));
 
-        double f = p.Focal();
+        double f = p.Focal;
         double Un_Sur_2p = 0.25 / f;
 
         double a4 = qxx * Un_Sur_2p * Un_Sur_2p;
@@ -292,7 +292,7 @@ public class IntConicQuad
                 {
                     double t = parabQuadPol.Value(i);
                     _paramonc[i - 1] = t;
-                    _pnts[i - 1] = global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(t, p.Position(), f);
+                    _pnts[i - 1] = global::Kerf.Engine.Geometry.ElCLib.ParabolaValue(t, p.Position, f);
                 }
             }
         }
@@ -324,10 +324,10 @@ public class IntConicQuad
 
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out qCte);
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref qCte,
-                             new CoordinateSystem(h.Position()));
+                             new CoordinateSystem(h.Position));
 
-        double R = h.MajorRadius();
-        double r = h.MinorRadius();
+        double R = h.MajorRadius;
+        double r = h.MinorRadius;
 
         double RR = R * R;
         double rr = r * r;
@@ -359,7 +359,7 @@ public class IntConicQuad
                     {
                         double lnt = Math.Log(t);
                         _paramonc[bonnessolutions] = lnt;
-                        _pnts[bonnessolutions] = global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(lnt, h.Position(), R, r);
+                        _pnts[bonnessolutions] = global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(lnt, h.Position, R, r);
                         bonnessolutions++;
                     }
                 }
@@ -415,11 +415,11 @@ public class IntConicQuad
         double dis, direc;
 
         p.Coefficients(out a, out b, out c, out d);
-        Point3D orig = l.Location();
-        l.Direction().Coord(out al, out bl, out cl);
+        Point3D orig = l.Location;
+        l.Direction.Coord(out al, out bl, out cl);
 
         direc = a * al + b * bl + c * cl;
-        dis = a * orig.X() + b * orig.Y() + c * orig.Z() + d;
+        dis = a * orig.X + b * orig.Y + c * orig.Z + d;
         //
         _parallel = false;
         if (Math.Abs(direc) < tolang)
@@ -430,9 +430,9 @@ public class IntConicQuad
                 // check the distance from bounding point of the line to the plane
                 Point3D p1 = new(), p2 = new();
                 //
-                p1 = p1.WithCoord(orig.X() - dis * a, orig.Y() - dis * b, orig.Z() - dis * c);
-                p2 = p2.WithCoord(p1.X() + len * al, p1.Y() + len * bl, p1.Z() + len * cl);
-                if (p.Distance(p2) > tol)
+                p1 = p1.WithCoord(orig.X - dis * a, orig.Y - dis * b, orig.Z - dis * c);
+                p2 = p2.WithCoord(p1.X + len * al, p1.Y + len * bl, p1.Z + len * cl);
+                if (p.DistanceTo(p2) > tol)
                 {
                     _parallel = false;
                 }
@@ -448,9 +448,9 @@ public class IntConicQuad
             _inquadric = false;
             _nbpts = 1;
             _paramonc[0] = -dis / direc;
-            _pnts[0] = _pnts[0].WithCoord(orig.X() + _paramonc[0] * al,
-                             orig.Y() + _paramonc[0] * bl,
-                             orig.Z() + _paramonc[0] * cl);
+            _pnts[0] = _pnts[0].WithCoord(orig.X + _paramonc[0] * al,
+                             orig.Y + _paramonc[0] * bl,
+                             orig.Z + _paramonc[0] * cl);
         }
         _done = true;
     }
@@ -459,7 +459,7 @@ public class IntConicQuad
     {
         _done = false;
 
-        Plane3D plconic = new(new CoordinateSystem(c.Position()));
+        Plane3D plconic = new(new CoordinateSystem(c.Position));
         QuadQuadGeo intP = new(plconic, p, tolang, tol);
         if (!intP.IsDone)
         {
@@ -468,7 +468,7 @@ public class IntConicQuad
         if (intP.TypeInter() == Empty)
         {
             _parallel = true;
-            double distmax = p.Distance(c.Location()) + c.Radius() * tolang;
+            double distmax = p.DistanceTo(c.Location) + c.Radius * tolang;
             _inquadric = distmax < tol;
             _done = true;
         }
@@ -483,18 +483,18 @@ public class IntConicQuad
             _parallel = false;
             Line3D ligsol = intP.Line(1);
 
-            Vector3D v0 = new(plconic.Location(), ligsol.Location());
-            Vector3D axex = new(plconic.Position().XDirection());
-            Vector3D axey = new(plconic.Position().YDirection());
+            Vector3D v0 = new(plconic.Location, ligsol.Location);
+            Vector3D axex = new(plconic.Position.XDirection);
+            Vector3D axey = new(plconic.Position.YDirection);
 
             Point2D orig = new(axex.Dot(v0), axey.Dot(v0));
-            Vector2D dire = new(axex.Dot(new Vector3D(ligsol.Direction())), axey.Dot(new Vector3D(ligsol.Direction())));
+            Vector2D dire = new(axex.Dot(new Vector3D(ligsol.Direction)), axey.Dot(new Vector3D(ligsol.Direction)));
 
             Line2D ligs = new(orig, new Direction2D(dire));
             Point2D pnt2dBid = new(0.0, 0.0);
             Direction2D dir2dBid = new(Direction2D.D.X);
             Axis2D ax2dBid = new(pnt2dBid, dir2dBid);
-            Circle2D cir = new(ax2dBid, c.Radius());
+            Circle2D cir = new(ax2dBid, c.Radius);
 
             AnalyticIntersection int2d = new(ligs, cir);
 
@@ -507,11 +507,11 @@ public class IntConicQuad
             for (int i = 1; i <= _nbpts; i++)
             {
                 Point2D resul = int2d.Point(i).Value();
-                double x = resul.X();
-                double y = resul.Y();
-                _pnts[i - 1] = _pnts[i - 1].WithCoord(plconic.Location().X() + x * axex.X() + y * axey.X(),
-                                     plconic.Location().Y() + x * axex.Y() + y * axey.Y(),
-                                     plconic.Location().Z() + x * axex.Z() + y * axey.Z());
+                double x = resul.X;
+                double y = resul.Y;
+                _pnts[i - 1] = _pnts[i - 1].WithCoord(plconic.Location.X + x * axex.X + y * axey.X,
+                                     plconic.Location.Y + x * axex.Y + y * axey.Y,
+                                     plconic.Location.Z + x * axex.Z + y * axey.Z);
                 _paramonc[i - 1] = int2d.Point(i).ParamOnSecond();
             }
             _done = true;

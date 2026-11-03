@@ -1786,7 +1786,7 @@ public static class BRepAlgoAPI_CutTests
             Assert.Equal(2, countSubShapes(aResult1, ShapeType.Face));
             Assert.Equal(1, countSubShapes(aResult1, ShapeType.Shell));
             Assert.Equal(1, countSubShapes(aResult1, ShapeType.Solid));
-            Assert.Equal(ShapeType.Compound, aResult1.ShapeType());
+            Assert.Equal(ShapeType.Compound, aResult1.Type);
 
             Properties aProps2 = new();
             MassPropertiesBuilder.SurfaceProperties(aResult2, aProps2);
@@ -1794,7 +1794,7 @@ public static class BRepAlgoAPI_CutTests
             Assert.Equal(2, countSubShapes(aResult2, ShapeType.Face));
             Assert.Equal(1, countSubShapes(aResult2, ShapeType.Shell));
             Assert.Equal(1, countSubShapes(aResult2, ShapeType.Solid));
-            Assert.Equal(ShapeType.Compound, aResult2.ShapeType());
+            Assert.Equal(ShapeType.Compound, aResult2.Type);
         }
     }
 }

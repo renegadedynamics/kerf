@@ -34,22 +34,22 @@ public class MakeBox : MakeShape
         Point3D P = p;
         if (dx < 0)
         {
-            P = P.WithX(P.X() + dx);
+            P = P.WithX(P.X + dx);
         }
         if (dy < 0)
         {
-            P = P.WithY(P.Y() + dy);
+            P = P.WithY(P.Y + dy);
         }
         if (dz < 0)
         {
-            P = P.WithZ(P.Z() + dz);
+            P = P.WithZ(P.Z + dz);
         }
         return P;
     }
 
     private static Point3D Pmin(in Point3D p1, in Point3D p2)
     {
-        return new Point3D(Min(p1.X(), p2.X()), Min(p1.Y(), p2.Y()), Min(p1.Z(), p2.Z()));
+        return new Point3D(Min(p1.X, p2.X), Min(p1.Y, p2.Y), Min(p1.Z, p2.Z));
     }
 
     /// <summary>Default constructor.</summary>
@@ -80,9 +80,9 @@ public class MakeBox : MakeShape
     public MakeBox(in Point3D p1, in Point3D p2)
     {
         _wedge = new Wedge(new Frame3D(Pmin(p1, p2), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
-                                     Math.Abs(p2.X() - p1.X()),
-                                     Math.Abs(p2.Y() - p1.Y()),
-                                     Math.Abs(p2.Z() - p1.Z()));
+                                     Math.Abs(p2.X - p1.X),
+                                     Math.Abs(p2.Y - p1.Y),
+                                     Math.Abs(p2.Z - p1.Z));
     }
 
     /// <summary>A box with Ax2 (the left corner and the axes) and size dx, dy, dz.</summary>
@@ -113,9 +113,9 @@ public class MakeBox : MakeShape
     public void Init(in Point3D pnt1, in Point3D pnt2)
     {
         _wedge = new Wedge(new Frame3D(Pmin(pnt1, pnt2), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X)),
-                                     Math.Abs(pnt2.X() - pnt1.X()),
-                                     Math.Abs(pnt2.Y() - pnt1.Y()),
-                                     Math.Abs(pnt2.Z() - pnt1.Z()));
+                                     Math.Abs(pnt2.X - pnt1.X),
+                                     Math.Abs(pnt2.Y - pnt1.Y),
+                                     Math.Abs(pnt2.Z - pnt1.Z));
     }
 
     /// <summary>Inits a box with Ax2 (the left corner and the axes) and size theDX, theDY, theDZ.</summary>

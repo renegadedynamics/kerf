@@ -26,8 +26,8 @@ public class GeomFill_GordonTests
     }
 
     private static string Snapshot(BSplineCurve3D theCurve) =>
-        string.Join(";", theCurve.Poles().ToArray().Select(p => p.ToString()))
-        + "|" + string.Join(";", theCurve.Knots().ToArray()) + "|" + theCurve.Degree() + "|" + theCurve.IsPeriodic;
+        string.Join(";", theCurve.Poles.ToArray().Select(p => p.ToString()))
+        + "|" + string.Join(";", theCurve.Knots.ToArray()) + "|" + theCurve.Degree + "|" + theCurve.IsPeriodic;
 
     [Fact]
     public void CompactParameters_sorts_and_merges_values_within_the_resolution()
@@ -121,15 +121,15 @@ public class GeomFill_GordonTests
         Assert.False(isVClosed);
 
         // profiles ordered by y, each running in +x; guides ordered by x, each in +y
-        Assert.Equal(0.0, aProfiles[1]!.StartPoint().Y(), 1.0e-12);
-        Assert.Equal(0.5, aProfiles[2]!.StartPoint().Y(), 1.0e-12);
-        Assert.Equal(1.0, aProfiles[3]!.StartPoint().Y(), 1.0e-12);
+        Assert.Equal(0.0, aProfiles[1]!.StartPoint.Y, 1.0e-12);
+        Assert.Equal(0.5, aProfiles[2]!.StartPoint.Y, 1.0e-12);
+        Assert.Equal(1.0, aProfiles[3]!.StartPoint.Y, 1.0e-12);
         for (int i = 1; i <= 3; ++i)
         {
-            Assert.Equal(0.0, aProfiles[i]!.StartPoint().X(), 1.0e-12);
+            Assert.Equal(0.0, aProfiles[i]!.StartPoint.X, 1.0e-12);
         }
-        Assert.Equal(0.0, aGuides[1]!.StartPoint().X(), 1.0e-12);
-        Assert.Equal(1.0, aGuides[2]!.StartPoint().X(), 1.0e-12);
+        Assert.Equal(0.0, aGuides[1]!.StartPoint.X, 1.0e-12);
+        Assert.Equal(1.0, aGuides[2]!.StartPoint.X, 1.0e-12);
         for (int i = 1; i <= 3; ++i)
         {
             Assert.Equal(0.0, aProfileParams[i, 1], 1.0e-12);
@@ -142,7 +142,7 @@ public class GeomFill_GordonTests
         NCollection_Array2<Point3D> aGrid = aNetwork.IntersectionPoints();
         Assert.Equal(2, aGrid.ColLength());
         Assert.Equal(3, aGrid.RowLength());
-        Assert.True(aGrid[2, 3].Distance(new Point3D(1, 1, 0)) < 1.0e-12);
+        Assert.True(aGrid[2, 3].DistanceTo(new Point3D(1, 1, 0)) < 1.0e-12);
         NCollection_Array2<double> aWeights = aNetwork.IntersectionWeights();
         Assert.All(aWeights.AsSpan().ToArray(), w => Assert.Equal(1.0, w));
     }
@@ -188,10 +188,10 @@ public class GeomFill_GordonTests
         for (int i = 0; i <= 20; ++i)
         {
             double t = i / 20.0;
-            Assert.True(aResult!.Value(t).Distance(aCurve.Value(aLaw.Value(t))) < 1.0e-12);
+            Assert.True(aResult!.Value(t).DistanceTo(aCurve.Value(aLaw.Value(t))) < 1.0e-12);
         }
         // the curve itself is not changed
-        Assert.Equal(1.0, aCurve.LastParameter());
+        Assert.Equal(1.0, aCurve.LastParameter);
         Assert.Equal(3, aCurve.PoleCount);
     }
 
@@ -236,7 +236,7 @@ public class GeomFill_GordonTests
         // a second Perform from the same seeds gives the same poles
         BSplineSurface aCopy = (BSplineSurface)aSurface.Copy();
         aGordon.Perform();
-        Assert.Equal(aCopy.Poles().Values.ToArray(), aGordon.Surface().Poles().Values.ToArray());
+        Assert.Equal(aCopy.Poles.Values.ToArray(), aGordon.Surface().Poles.Values.ToArray());
     }
 
     [Fact]
@@ -301,8 +301,8 @@ public class GeomFill_GordonTests
             double t = k / 10.0;
             for (int i = 0; i < 3; ++i)
             {
-                Assert.True(aSurface.Value(t, aV[i + 1]).Distance(aProfileCurves[i].Value(t)) < 1.0e-9);
-                Assert.True(aSurface.Value(aU[i + 1], t).Distance(aGuideCurves[i].Value(t)) < 1.0e-9);
+                Assert.True(aSurface.Value(t, aV[i + 1]).DistanceTo(aProfileCurves[i].Value(t)) < 1.0e-9);
+                Assert.True(aSurface.Value(aU[i + 1], t).DistanceTo(aGuideCurves[i].Value(t)) < 1.0e-9);
             }
         }
     }

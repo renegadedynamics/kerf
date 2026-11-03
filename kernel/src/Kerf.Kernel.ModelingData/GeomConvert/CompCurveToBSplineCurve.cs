@@ -76,13 +76,13 @@ public sealed class CompCurveToBSplineCurve
         // Use actual curve endpoints instead of poles for proper G0 continuity check.
         // G0 continuity (positional continuity) requires curves to share endpoints.
         // For non-clamped or periodic B-splines, first/last poles may not coincide with endpoints.
-        Point3D curveStart = _curve.StartPoint();
-        Point3D curveEnd = _curve.EndPoint();
-        Point3D bsStart = bs.StartPoint();
-        Point3D bsEnd = bs.EndPoint();
+        Point3D curveStart = _curve.StartPoint;
+        Point3D curveEnd = _curve.EndPoint;
+        Point3D bsStart = bs.StartPoint;
+        Point3D bsEnd = bs.EndPoint;
 
-        avant = ((curveStart.Distance(bsStart) < _tol) || (curveStart.Distance(bsEnd) < _tol));
-        apres = ((curveEnd.Distance(bsStart) < _tol) || (curveEnd.Distance(bsEnd) < _tol));
+        avant = ((curveStart.DistanceTo(bsStart) < _tol) || (curveStart.DistanceTo(bsEnd) < _tol));
+        apres = ((curveEnd.DistanceTo(bsStart) < _tol) || (curveEnd.DistanceTo(bsEnd) < _tol));
 
         // Will myCurve be (or become) closed?
         if (avant && apres)
@@ -110,7 +110,7 @@ public sealed class CompCurveToBSplineCurve
         // Append after?
         if (apres)
         {
-            if (curveEnd.Distance(bsEnd) < _tol)
+            if (curveEnd.DistanceTo(bsEnd) < _tol)
             {
                 bs.Reverse();
             }
@@ -121,7 +121,7 @@ public sealed class CompCurveToBSplineCurve
         // Prepend before?
         else if (avant)
         {
-            if (curveStart.Distance(bsStart) < _tol)
+            if (curveStart.DistanceTo(bsStart) < _tol)
             {
                 bs.Reverse();
             }
@@ -138,13 +138,13 @@ public sealed class CompCurveToBSplineCurve
                      int minM)
     {
         // Harmonize the degrees.
-        int deg = Max(firstCurve.Degree(), secondCurve.Degree());
-        if (firstCurve.Degree() < deg)
+        int deg = Max(firstCurve.Degree, secondCurve.Degree);
+        if (firstCurve.Degree < deg)
         {
             firstCurve.IncreaseDegree(deg);
         }
 
-        if (secondCurve.Degree() < deg)
+        if (secondCurve.Degree < deg)
         {
             secondCurve.IncreaseDegree(deg);
         }
@@ -163,8 +163,8 @@ public sealed class CompCurveToBSplineCurve
         // Reparameterization ratio (C1 if possible)
         if (withRatio)
         {
-            l1 = firstCurve.DN(firstCurve.LastParameter(), 1).Magnitude();
-            l2 = secondCurve.DN(secondCurve.FirstParameter(), 1).Magnitude();
+            l1 = firstCurve.DN(firstCurve.LastParameter, 1).Magnitude;
+            l2 = secondCurve.DN(secondCurve.FirstParameter, 1).Magnitude;
 
             if ((l1 > global::Kerf.Engine.Foundation.Precision.Confusion()) && (l2 > global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
@@ -216,7 +216,7 @@ public sealed class CompCurveToBSplineCurve
             mults[ii] = firstCurve.Multiplicity(ii);
         }
 
-        mults[nbK1] = firstCurve.Degree();
+        mults[nbK1] = firstCurve.Degree;
         for (ii = 2, jj = nbK1 + 1; ii <= nbK2; ii++, jj++)
         {
             noeuds[jj] = ratio2 * secondCurve.Knot(ii) - delta2;

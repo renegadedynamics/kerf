@@ -125,7 +125,7 @@ public class ArrayOfNodes : NCollection_AliasedArray
         else
         {
             ref NCollection_Vec3<float> vec3 = ref ChangeValue<NCollection_Vec3<float>>(index);
-            vec3.SetValues((float)value.X(), (float)value.Y(), (float)value.Z());
+            vec3.SetValues((float)value.X, (float)value.Y, (float)value.Z);
         }
     }
 

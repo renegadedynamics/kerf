@@ -154,7 +154,7 @@ public class TransformedCurve : CurveAdaptorBase
     }
 
     /// <summary>D1 evaluation. Applies transformation after evaluation.</summary>
-    public sealed override Curve3D.ResD1 EvalD1(double u)
+    internal sealed override Curve3D.ResD1 EvalD1(double u)
     {
         Curve3D.ResD1 res;
         if (_conSurf is null)
@@ -171,7 +171,7 @@ public class TransformedCurve : CurveAdaptorBase
     }
 
     /// <summary>D2 evaluation. Applies transformation after evaluation.</summary>
-    public sealed override Curve3D.ResD2 EvalD2(double u)
+    internal sealed override Curve3D.ResD2 EvalD2(double u)
     {
         Curve3D.ResD2 res;
         if (_conSurf is null)
@@ -189,7 +189,7 @@ public class TransformedCurve : CurveAdaptorBase
     }
 
     /// <summary>D3 evaluation. Applies transformation after evaluation.</summary>
-    public sealed override Curve3D.ResD3 EvalD3(double u)
+    internal sealed override Curve3D.ResD3 EvalD3(double u)
     {
         Curve3D.ResD3 res;
         if (_conSurf is null)
@@ -328,7 +328,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             bc = _conSurf.Bezier();
         }
-        return _trsf.Form() == Identity ? bc : (BezierCurve3D)bc.Transformed(_trsf);
+        return _trsf.Form == Identity ? bc : (BezierCurve3D)bc.Transformed(_trsf);
     }
 
     /// <summary>The B-spline curve: the shared one for the identity, a transformed copy otherwise.</summary>
@@ -343,7 +343,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             bs = _conSurf.BSpline();
         }
-        return _trsf.Form() == Identity ? bs : (BSplineCurve3D)bs.Transformed(_trsf);
+        return _trsf.Form == Identity ? bs : (BSplineCurve3D)bs.Transformed(_trsf);
     }
 
     /// <summary>The offset curve: the shared one for the identity, a transformed copy otherwise.</summary>
@@ -355,6 +355,6 @@ public class TransformedCurve : CurveAdaptorBase
             throw new NoSuchObjectException("GeomAdaptor_TransformedCurve::OffsetCurve");
         }
         OffsetCurve3D offC = _curve.OffsetCurve();
-        return _trsf.Form() == Identity ? offC : (OffsetCurve3D)offC.Transformed(_trsf);
+        return _trsf.Form == Identity ? offC : (OffsetCurve3D)offC.Transformed(_trsf);
     }
 }

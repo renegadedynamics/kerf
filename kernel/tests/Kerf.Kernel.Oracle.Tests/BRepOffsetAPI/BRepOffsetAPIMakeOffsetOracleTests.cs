@@ -93,7 +93,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     // ---- inputs ----
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
-        => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
+        => theAx.Location.Translated(new Vector3D(theAx.XDirection) * theU + new Vector3D(theAx.YDirection) * theV);
 
     private static Edge Segment(in Point3D theA, in Point3D theB) => new MakeEdge(theA, theB).Edge();
 
@@ -104,7 +104,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
     private static Edge Bulge(in Frame3D theAx, in Point3D theA, in Point3D theB, double theBulge)
     {
         var aSide = new Vector3D(theA, theB);
-        Vector3D aNormal = new Vector3D(theAx.Direction()).Crossed(aSide);
+        Vector3D aNormal = new Vector3D(theAx.Direction).Crossed(aSide);
         return Arc(theA, theA.Translated(aSide * 0.5).Translated(aNormal * theBulge), theB);
     }
 
@@ -386,7 +386,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             Shape aPlane = new();
             if (!isArcs && new MakeFace(aWire, true).Error() != FaceError.FaceDone)
             {
-                aPlane = new MakeFace(new Plane3D(anAx.Location(), anAx.Direction())).Face();
+                aPlane = new MakeFace(new Plane3D(anAx.Location, anAx.Direction)).Face();
             }
             JoinKind aJoin = Join(anOracle);
             bool isOpen = anOracle.Bool();
@@ -431,7 +431,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             string sp = "", sn = "";
             for (int k = 1; k <= aP.NbPoints(); k++)
             {
-                sp += $"{aP.Point(k).X():R},{aP.Point(k).Y():R};";
+                sp += $"{aP.Point(k).X:R},{aP.Point(k).Y:R};";
             }
             for (int k = 1; k <= aN.NbPoints(); k++)
             {

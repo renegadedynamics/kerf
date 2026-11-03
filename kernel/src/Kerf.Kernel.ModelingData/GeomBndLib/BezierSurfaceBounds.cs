@@ -54,7 +54,7 @@ public sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
         double pTol = global::Kerf.Engine.Foundation.Precision.Parametric(global::Kerf.Engine.Foundation.Precision.Confusion());
 
         // Check if the parameters match the full surface bounds.
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         if (Math.Abs(uMin - u1) <= pTol && Math.Abs(vMin - v1) <= pTol
             && Math.Abs(uMax - u2) <= pTol && Math.Abs(vMax - v2) <= pTol)
         {
@@ -95,7 +95,7 @@ public sealed class BezierSurfaceBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute precise bounding box for full surface.</summary>
     public Box BoxOptimal(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return BoxOptimal(u1, u2, v1, v2, tol);
     }
 

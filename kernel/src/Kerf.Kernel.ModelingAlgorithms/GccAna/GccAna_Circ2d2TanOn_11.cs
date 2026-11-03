@@ -36,10 +36,10 @@ public sealed partial class AnalyticCirc2d2TanOn
         _nbrSol = 0;
         Direction2D dirx = new(Direction2D.D.X);
         double tol = Math.Abs(tolerance);
-        double dist = point1.Distance(point2);
-        double dp1cen = point1.Distance(onCirc.Location());
-        double dp2cen = point2.Distance(onCirc.Location());
-        double r = onCirc.Radius();
+        double dist = point1.DistanceTo(point2);
+        double dp1cen = point1.DistanceTo(onCirc.Location);
+        double dp2cen = point2.DistanceTo(onCirc.Location);
+        double r = onCirc.Radius;
         Circle2D c1 = onCirc;
         if (dist < tol || Math.Abs(dp1cen + 2 * r - dp2cen) < tol
             || Math.Abs(dp2cen + 2 * r - dp1cen) < tol)
@@ -48,19 +48,19 @@ public sealed partial class AnalyticCirc2d2TanOn
             return;
         }
         Line2D l1 = new(new Point2D((point1.XY() + point2.XY()) / 2.0),
-                          new Direction2D(point1.Y() - point2.Y(), point2.X() - point1.X()));
+                          new Direction2D(point1.Y - point2.Y, point2.X - point1.X));
         // OCCT: never true, since the same conditions returned above (and the inner branches test the same one)
         if (Math.Abs(dp1cen + 2 * r - dp2cen) < tol || Math.Abs(dp2cen + 2 * r - dp1cen) < tol)
         {
             if (Math.Abs(dp1cen + 2 * r - dp2cen) < tol)
             {
-                c1 = new Circle2D(new Axis2D(onCirc.Location(), dirx),
-                                   onCirc.Radius() + Math.Abs(dp2cen - dp1cen - 2.0 * r));
+                c1 = new Circle2D(new Axis2D(onCirc.Location, dirx),
+                                   onCirc.Radius + Math.Abs(dp2cen - dp1cen - 2.0 * r));
             }
             else if (Math.Abs(dp1cen + 2 * r - dp2cen) < tol)
             {
-                c1 = new Circle2D(new Axis2D(onCirc.Location(), dirx),
-                                   onCirc.Radius() + Math.Abs(dp2cen - dp1cen - 2.0 * r));
+                c1 = new Circle2D(new Axis2D(onCirc.Location, dirx),
+                                   onCirc.Radius + Math.Abs(dp2cen - dp1cen - 2.0 * r));
             }
         }
         AnalyticIntersection intp = new(l1, c1);
@@ -72,7 +72,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                 {
                     _nbrSol++;
                     Axis2D axe = new(intp.Point(i).Value(), dirx);
-                    _cirsol[_nbrSol] = new Circle2D(axe, point1.Distance(intp.Point(i).Value()));
+                    _cirsol[_nbrSol] = new Circle2D(axe, point1.DistanceTo(intp.Point(i).Value()));
                     //      ======================================================================
                     _qualifier1[_nbrSol] = Qualifier.Noqualifier;
                     _qualifier2[_nbrSol] = Qualifier.Noqualifier;
@@ -82,7 +82,7 @@ public sealed partial class AnalyticCirc2d2TanOn
                     _pnttg2sol[_nbrSol] = point2;
                     _pararg2[_nbrSol] = 0.0;
                     _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
-                    _pntcen[_nbrSol] = _cirsol[_nbrSol].Location();
+                    _pntcen[_nbrSol] = _cirsol[_nbrSol].Location;
                     _parcen3[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(onCirc, _pntcen[_nbrSol]);
                 }
             }

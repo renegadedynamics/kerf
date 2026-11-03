@@ -47,10 +47,10 @@ internal static class BRepTestBoundingCommands
                 continue;
             }
 
-            if (aShape.ShapeType() == ShapeType.Vertex)
+            if (aShape.Type == ShapeType.Vertex)
             {
                 Point3D aPnt = Tool.Pnt(ShapeCasts.Vertex(aShape));
-                di.Append(a[i]).Append(" (x,y,z) : ").Append(aPnt.X()).Append(" ").Append(aPnt.Y()).Append(" ").Append(aPnt.Z()).Append("\n");
+                di.Append(a[i]).Append(" (x,y,z) : ").Append(aPnt.X).Append(" ").Append(aPnt.Y).Append(" ").Append(aPnt.Z).Append("\n");
             }
         }
 
@@ -258,24 +258,24 @@ internal static class BRepTestBoundingCommands
                 {
                     if (useOldSyntax)
                     {
-                        theResult.Append(aMin.X()).Append(" ").Append(aMin.Y()).Append(" ").Append(aMin.Z()).Append(" ")
-                                 .Append(aMax.X()).Append(" ").Append(aMax.Y()).Append(" ").Append(aMax.Z()).Append("\n");
+                        theResult.Append(aMin.X).Append(" ").Append(aMin.Y).Append(" ").Append(aMin.Z).Append(" ")
+                                 .Append(aMax.X).Append(" ").Append(aMax.Y).Append(" ").Append(aMax.Z).Append("\n");
                     }
                     else
                     {
                         theResult.Append("Axes-aligned bounding box\n");
-                        theResult.Append("X-range: ").Append(aMin.X()).Append(" ").Append(aMax.X()).Append("\n")
-                                 .Append("Y-range: ").Append(aMin.Y()).Append(" ").Append(aMax.Y()).Append("\n")
-                                 .Append("Z-range: ").Append(aMin.Z()).Append(" ").Append(aMax.Z()).Append("\n");
+                        theResult.Append("X-range: ").Append(aMin.X).Append(" ").Append(aMax.X).Append("\n")
+                                 .Append("Y-range: ").Append(aMin.Y).Append(" ").Append(aMax.Y).Append("\n")
+                                 .Append("Z-range: ").Append(aMin.Z).Append(" ").Append(aMax.Z).Append("\n");
                         if (anAABB.IsOpen && anAABB.HasFinitePart)
                         {
                             Box aFinitAabb = anAABB.FinitePart();
                             Point3D aFinMin = aFinitAabb.CornerMin();
                             Point3D aFinMax = aFinitAabb.CornerMax();
                             theResult.Append("Finite part\n");
-                            theResult.Append("X-range: ").Append(aFinMin.X()).Append(" ").Append(aFinMax.X()).Append("\n")
-                                     .Append("Y-range: ").Append(aFinMin.Y()).Append(" ").Append(aFinMax.Y()).Append("\n")
-                                     .Append("Z-range: ").Append(aFinMin.Z()).Append(" ").Append(aFinMax.Z()).Append("\n");
+                            theResult.Append("X-range: ").Append(aFinMin.X).Append(" ").Append(aFinMax.X).Append("\n")
+                                     .Append("Y-range: ").Append(aFinMin.Y).Append(" ").Append(aFinMax.Y).Append("\n")
+                                     .Append("Z-range: ").Append(aFinMin.Z).Append(" ").Append(aFinMax.Z).Append("\n");
                         }
                     }
                 }
@@ -288,12 +288,12 @@ internal static class BRepTestBoundingCommands
                 // save DRAW variables
                 if (anOutVars[0].Length != 0)
                 {
-                    theDI.SetNumber(anOutVars[0], aMin.X());
-                    theDI.SetNumber(anOutVars[1], aMin.Y());
-                    theDI.SetNumber(anOutVars[2], aMin.Z());
-                    theDI.SetNumber(anOutVars[3], aMax.X());
-                    theDI.SetNumber(anOutVars[4], aMax.Y());
-                    theDI.SetNumber(anOutVars[5], aMax.Z());
+                    theDI.SetNumber(anOutVars[0], aMin.X);
+                    theDI.SetNumber(anOutVars[1], aMin.Y);
+                    theDI.SetNumber(anOutVars[2], aMin.Z);
+                    theDI.SetNumber(anOutVars[3], aMax.X);
+                    theDI.SetNumber(anOutVars[4], aMax.Y);
+                    theDI.SetNumber(anOutVars[5], aMax.Z);
                 }
             }
 
@@ -413,11 +413,11 @@ internal static class BRepTestBoundingCommands
             Is3d = false;
             if (IsOptimal)
             {
-                Add2dCurve.AddOptimal(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
+                Add2dCurve.AddOptimal(C2d, C2d.FirstParameter, C2d.LastParameter, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
             }
             else
             {
-                Add2dCurve.Add(C2d, C2d.FirstParameter(), C2d.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
+                Add2dCurve.Add(C2d, C2d.FirstParameter, C2d.LastParameter, global::Kerf.Engine.Foundation.Precision.Confusion(), ref B2d);
             }
         }
         else

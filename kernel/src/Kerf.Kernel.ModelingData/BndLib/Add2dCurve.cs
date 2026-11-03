@@ -58,8 +58,8 @@ public static class Add2dCurve
     /// <summary>Adds the bounding box of the curve C, over its own range, enlarged by Tol, to B.</summary>
     public static void Add(Curve2D aC2D, double aTol, ref Box2d aBox2D)
     {
-        double t1 = aC2D.FirstParameter();
-        double t2 = aC2D.LastParameter();
+        double t1 = aC2D.FirstParameter;
+        double t2 = aC2D.LastParameter;
         Add(aC2D, t1, t2, aTol, ref aBox2D);
     }
 

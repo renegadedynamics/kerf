@@ -160,7 +160,7 @@ public static partial class ShapeConstruct
         Surface s = surf;
         if (surf is TrimmedSurface RTS)
         {
-            s = RTS.BasisSurface();
+            s = RTS.BasisSurface;
         }
 
         // use GeomConvert for direct conversion of analytic surfaces
@@ -172,7 +172,7 @@ public static partial class ShapeConstruct
 
         if (s is ExtrusionSurface extr)
         {
-            Curve3D basis = extr.BasisCurve();
+            Curve3D basis = extr.BasisCurve;
             // gp_Dir direction = extr->Direction(); // direction not used (skl)
 
             Continuity cnt = (continuity > C2 ? C2 : continuity);
@@ -204,20 +204,20 @@ public static partial class ShapeConstruct
             vknots[2] = vl;
             vmults[1] = vmults[2] = 2;
 
-            BSplineSurface bspline = new(resPoles, resWeigth, knots, vknots, mults, vmults, bspl.Degree(), 1,
+            BSplineSurface bspline = new(resPoles, resWeigth, knots, vknots, mults, vmults, bspl.Degree, 1,
                                               bspl.IsPeriodic, false);
             return bspline;
         }
 
         if (s is RevolutionSurface revol)
         {
-            Curve3D basis = revol.BasisCurve();
+            Curve3D basis = revol.BasisCurve;
             if (basis is OffsetCurve3D)
             {
-                Continuity cnt = basis.Continuity();
+                Continuity cnt = basis.Continuity;
                 cnt = (cnt > C2 ? C2 : cnt);
                 BSplineCurve3D bspl = InternalConvertCurveToBSpline(basis, vf, vl, tol3d, cnt, maxSegments, maxDegree)!;
-                Axis3D axis = revol.Axis();
+                Axis3D axis = revol.Axis;
                 RevolutionSurface newRevol = new(bspl, axis);
                 s = newRevol;
             }
@@ -278,7 +278,7 @@ public static partial class ShapeConstruct
             Surface? geomSurf = Tool.Surface(face);
             while (geomSurf is TrimmedSurface trimmed)
             {
-                geomSurf = trimmed.BasisSurface();
+                geomSurf = trimmed.BasisSurface;
             }
             if (geomSurf is PlaneSurface)
             {
@@ -330,11 +330,11 @@ public static partial class ShapeConstruct
                     }
                     newf = first;
                     newl = last;
-                    resOrient = Edge.Orientation();
+                    resOrient = Edge.Orientation;
                 }
                 else
                 {
-                    if (!InternalJoinCurves(crvRes1!, c2d!, resOrient, Edge.Orientation(), ref newf, ref newl, ref first,
+                    if (!InternalJoinCurves(crvRes1!, c2d!, resOrient, Edge.Orientation, ref newf, ref newl, ref first,
                                             ref last, out Curve2D? newCrv, out _, out _))
                     {
                         break;
@@ -344,7 +344,7 @@ public static partial class ShapeConstruct
                     {
                         double newf2 = newf, newl2 = newl;
 
-                        if (!InternalJoinCurves(crvRes2!, c2d2!, resOrient, Edge.Orientation(), ref newf2, ref newl2,
+                        if (!InternalJoinCurves(crvRes2!, c2d2!, resOrient, Edge.Orientation, ref newf2, ref newl2,
                                                 ref first2, ref last2, out Curve2D? newCrv2, out _, out _))
                         {
                             break;
@@ -352,8 +352,8 @@ public static partial class ShapeConstruct
                         crvRes2 = newCrv2;
                     }
                     crvRes1 = newCrv;
-                    double fp2d = newCrv!.FirstParameter();
-                    double lp2d = newCrv.LastParameter();
+                    double fp2d = newCrv!.FirstParameter;
+                    double lp2d = newCrv.LastParameter;
                     newl += (last - first);
                     if (fp2d > newf)
                     {
@@ -415,7 +415,7 @@ public static partial class ShapeConstruct
     // OCCT's SegmentCurve template: segments the (unfrozen) B-spline to [first, last] when its range is wider.
     private static void SegmentCurve(BSplineCurve3D curve, double first, double last)
     {
-        if (curve.FirstParameter() < first - global::Kerf.Engine.Foundation.Precision.PConfusion() || curve.LastParameter() > last + global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (curve.FirstParameter < first - global::Kerf.Engine.Foundation.Precision.PConfusion() || curve.LastParameter > last + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (curve.IsPeriodic)
             {
@@ -423,14 +423,14 @@ public static partial class ShapeConstruct
             }
             else
             {
-                curve.Segment(Max(curve.FirstParameter(), first), Min(curve.LastParameter(), last));
+                curve.Segment(Max(curve.FirstParameter, first), Min(curve.LastParameter, last));
             }
         }
     }
 
     private static void SegmentCurve(BSplineCurve2D curve, double first, double last)
     {
-        if (curve.FirstParameter() < first - global::Kerf.Engine.Foundation.Precision.PConfusion() || curve.LastParameter() > last + global::Kerf.Engine.Foundation.Precision.PConfusion())
+        if (curve.FirstParameter < first - global::Kerf.Engine.Foundation.Precision.PConfusion() || curve.LastParameter > last + global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (curve.IsPeriodic)
             {
@@ -438,7 +438,7 @@ public static partial class ShapeConstruct
             }
             else
             {
-                curve.Segment(Max(curve.FirstParameter(), first), Min(curve.LastParameter(), last));
+                curve.Segment(Max(curve.FirstParameter, first), Min(curve.LastParameter, last));
             }
         }
     }
@@ -447,14 +447,14 @@ public static partial class ShapeConstruct
     private static void GetReversedParameters(in Point3D p11, in Point3D p12, in Point3D p21, in Point3D p22, out bool isRev1,
                                               out bool isRev2)
     {
-        GetReversedParameters(p11.Distance(p21), p12.Distance(p21), p11.Distance(p22), p22.Distance(p12), out isRev1,
+        GetReversedParameters(p11.DistanceTo(p21), p12.DistanceTo(p21), p11.DistanceTo(p22), p22.DistanceTo(p12), out isRev1,
                               out isRev2);
     }
 
     private static void GetReversedParameters(in Point2D p11, in Point2D p12, in Point2D p21, in Point2D p22,
                                               out bool isRev1, out bool isRev2)
     {
-        GetReversedParameters(p11.Distance(p21), p12.Distance(p21), p11.Distance(p22), p22.Distance(p12), out isRev1,
+        GetReversedParameters(p11.DistanceTo(p21), p12.DistanceTo(p21), p11.DistanceTo(p22), p22.DistanceTo(p12), out isRev1,
                               out isRev2);
     }
 
@@ -623,13 +623,13 @@ public static partial class ShapeConstruct
         // protection against invalid topology Housing(sam1296.brep(face 707) - bugmergeedges4.brep)
         if (isError)
         {
-            Point2D pp1 = bsplc12d.Value(bsplc12d.FirstParameter());
-            Point2D pp2 = bsplc12d.Value(bsplc12d.LastParameter());
-            Point2D pp3 = bsplc12d.Value((bsplc12d.FirstParameter() + bsplc12d.LastParameter()) * 0.5);
+            Point2D pp1 = bsplc12d.Value(bsplc12d.FirstParameter);
+            Point2D pp2 = bsplc12d.Value(bsplc12d.LastParameter);
+            Point2D pp3 = bsplc12d.Value((bsplc12d.FirstParameter + bsplc12d.LastParameter) * 0.5);
 
-            double leng = pp1.Distance(pp2);
-            bool isCircle = (leng < pp1.Distance(pp3) + global::Kerf.Engine.Foundation.Precision.PConfusion());
-            if ((pp1.Distance(bsplc22d.Pole(1)) < leng) && !isCircle)
+            double leng = pp1.DistanceTo(pp2);
+            bool isCircle = (leng < pp1.DistanceTo(pp3) + global::Kerf.Engine.Foundation.Precision.PConfusion());
+            if ((pp1.DistanceTo(bsplc22d.Pole(1)) < leng) && !isCircle)
             {
                 return false;
             }

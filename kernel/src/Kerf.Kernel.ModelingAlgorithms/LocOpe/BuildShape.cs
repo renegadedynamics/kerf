@@ -54,7 +54,7 @@ public sealed class BuildShape
 
         for (itl.Initialize(l); itl.More(); itl.Next())
         {
-            if (itl.Value().ShapeType() == ShapeType.Face && !mapF.Contains(itl.Value()))
+            if (itl.Value().Type == ShapeType.Face && !mapF.Contains(itl.Value()))
             {
                 mapF.Add(itl.Value());
                 b.Add(c, itl.Value());
@@ -96,7 +96,7 @@ public sealed class BuildShape
 
                 for (j = 1; j <= mapF.Count; j++)
                 {
-                    orient = mapF[j - 1].Orientation();
+                    orient = mapF[j - 1].Orientation;
                     if (orient == Internal || orient == External)
                     {
                         manifold = false;
@@ -125,7 +125,7 @@ public sealed class BuildShape
                     {
                         for (j = 1; j <= mapF.Count; j++)
                         {
-                            if (mapF[j - 1].Orientation() == Internal || mapF[j - 1].Orientation() == External)
+                            if (mapF[j - 1].Orientation == Internal || mapF[j - 1].Orientation == External)
                             {
                                 b.Add(newSh, mapF[j - 1]);
                                 mapIf.Remove(j);
@@ -148,7 +148,7 @@ public sealed class BuildShape
                     for (k = 1; k <= theMapEFbis.Count; k++)
                     {
                         Edge ed = ShapeCasts.Edge(theMapEFbis.KeyAt(k - 1));
-                        Orientation oriEd = ed.Orientation();
+                        Orientation oriEd = ed.Orientation;
                         if (oriEd != Internal && oriEd != External)
                         {
                             int nbfac = theMapEFbis.ValueAt(k - 1).Extent();
@@ -364,7 +364,7 @@ public sealed class BuildShape
         {
             Shape edg = exp.Current();
 
-            Orientation ored1 = edg.Orientation(), ored2 = Forward;
+            Orientation ored1 = edg.Orientation, ored2 = Forward;
 
             if (ored1 == Internal || ored1 == External)
             {
@@ -384,7 +384,7 @@ public sealed class BuildShape
                 }
                 if (exp2.More())
                 {
-                    ored2 = exp2.Current().Orientation();
+                    ored2 = exp2.Current().Orientation;
                     break;
                 }
             }

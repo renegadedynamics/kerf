@@ -42,7 +42,7 @@ public class ApiInterpolate
         bool result = true;
         for (ii = pointArray.Lower(); result && ii < pointArray.Upper(); ii++)
         {
-            distance_squared = pointArray.Value(ii).SquareDistance(pointArray.Value(ii + 1));
+            distance_squared = pointArray.Value(ii).SquareDistanceTo(pointArray.Value(ii + 1));
             result = (distance_squared >= tolerance_squared);
         }
         return result;
@@ -61,7 +61,7 @@ public class ApiInterpolate
         {
             if (tangentFlags.Value(index))
             {
-                distance_squared = tangents.Value(ii).SquareMagnitude();
+                distance_squared = tangents.Value(ii).SquareMagnitude;
                 result = (distance_squared >= tolerance_squared);
             }
             index += 1;
@@ -101,14 +101,14 @@ public class ApiInterpolate
         index = 2;
         for (ii = pointsArray.Lower(); ii < pointsArray.Upper(); ii++)
         {
-            distance = pointsArray.Value(ii).Distance(pointsArray.Value(ii + 1));
+            distance = pointsArray.Value(ii).DistanceTo(pointsArray.Value(ii + 1));
             // OCCT reads the parameter at the point index ii, right only for points indexed from 1
             parametersPtr.SetValue(index, parametersPtr.Value(ii) + distance);
             index += 1;
         }
         if (periodicFlag)
         {
-            distance = pointsArray.Value(pointsArray.Upper()).Distance(pointsArray.Value(pointsArray.Lower()));
+            distance = pointsArray.Value(pointsArray.Upper()).DistanceTo(pointsArray.Value(pointsArray.Lower()));
             parametersPtr.SetValue(index, parametersPtr.Value(ii) + distance);
         }
     }

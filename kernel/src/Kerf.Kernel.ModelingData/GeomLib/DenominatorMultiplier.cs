@@ -48,8 +48,8 @@ public sealed class DenominatorMultiplier
         NCollection_Array1<int> surface_u_mults = _surface.InternalUMultiplicities();
         NCollection_Array1<double> surface_v_knots = _surface.InternalVKnots();
         NCollection_Array1<int> surface_v_mults = _surface.InternalVMultiplicities();
-        int udegree = _surface.UDegree();
-        int vdegree = _surface.VDegree();
+        int udegree = _surface.UDegree;
+        int vdegree = _surface.VDegree;
         SurfaceBSplSLib.HomogeneousD1(_surface.UKnot(_surface.LastUKnotIndex()),
                                vParameter,
                                0,

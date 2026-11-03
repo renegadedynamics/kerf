@@ -83,7 +83,7 @@ public sealed class CanonicalRecognitionAnalysis
 
     private void Init(in Shape shape)
     {
-        ShapeType t = shape.ShapeType();
+        ShapeType t = shape.Type;
         switch (t)
         {
             case ShapeType.Shell:
@@ -174,7 +174,7 @@ public sealed class CanonicalRecognitionAnalysis
     /// </summary>
     public bool IsPlane(double tol, ref Plane3D pln)
     {
-        CoordinateSystem pos = pln.Position();
+        CoordinateSystem pos = pln.Position;
         NCollection_Array1<double> aParams = new(1, 1);
         //
         SurfaceKind target = Plane;
@@ -190,7 +190,7 @@ public sealed class CanonicalRecognitionAnalysis
             if (fndSurf.Found())
             {
                 var plane = fndSurf.Surface() as PlaneSurface;
-                pln = plane!.Pln();
+                pln = plane!.Plane;
                 _gap = fndSurf.ToleranceReached();
                 _status = 0;
                 return true;
@@ -210,9 +210,9 @@ public sealed class CanonicalRecognitionAnalysis
     /// </summary>
     public bool IsCylinder(double tol, ref Cylinder cyl)
     {
-        CoordinateSystem pos = cyl.Position();
+        CoordinateSystem pos = cyl.Position;
         NCollection_Array1<double> aParams = new(1, 1);
-        aParams[1] = cyl.Radius();
+        aParams[1] = cyl.Radius;
         //
         SurfaceKind target = SurfaceKind.Cylinder;
         if (IsElementarySurf(target, tol, ref pos, aParams))
@@ -227,7 +227,7 @@ public sealed class CanonicalRecognitionAnalysis
             // Sample cylinder does not seem to be set, least square method is not applicable.
             return false;
         }
-        if (_shape.ShapeType() == ShapeType.Edge || _shape.ShapeType() == ShapeType.Wire)
+        if (_shape.Type == ShapeType.Edge || _shape.Type == ShapeType.Wire)
         {
             // Try to build surface by least square method;
             Wire wire = MakeWireOf(_shape);
@@ -249,10 +249,10 @@ public sealed class CanonicalRecognitionAnalysis
     /// </summary>
     public bool IsCone(double tol, ref Cone cone)
     {
-        CoordinateSystem pos = cone.Position();
+        CoordinateSystem pos = cone.Position;
         NCollection_Array1<double> aParams = new(1, 2);
-        aParams[1] = cone.SemiAngle();
-        aParams[2] = cone.RefRadius();
+        aParams[1] = cone.SemiAngle;
+        aParams[2] = cone.RefRadius;
         //
         SurfaceKind target = SurfaceKind.Cone;
         if (IsElementarySurf(target, tol, ref pos, aParams))
@@ -268,7 +268,7 @@ public sealed class CanonicalRecognitionAnalysis
             // Sample cone does not seem to be set, least square method is not applicable.
             return false;
         }
-        if (_shape.ShapeType() == ShapeType.Edge || _shape.ShapeType() == ShapeType.Wire)
+        if (_shape.Type == ShapeType.Edge || _shape.Type == ShapeType.Wire)
         {
             // Try to build surface by least square method;
             Wire wire = MakeWireOf(_shape);
@@ -291,9 +291,9 @@ public sealed class CanonicalRecognitionAnalysis
     /// </summary>
     public bool IsSphere(double tol, ref Sphere sphere)
     {
-        CoordinateSystem pos = sphere.Position();
+        CoordinateSystem pos = sphere.Position;
         NCollection_Array1<double> aParams = new(1, 1);
-        aParams[1] = sphere.Radius();
+        aParams[1] = sphere.Radius;
         //
         SurfaceKind target = SurfaceKind.Sphere;
         if (IsElementarySurf(target, tol, ref pos, aParams))
@@ -308,7 +308,7 @@ public sealed class CanonicalRecognitionAnalysis
             // Sample sphere does not seem to be set, least square method is not applicable.
             return false;
         }
-        if (_shape.ShapeType() == ShapeType.Edge || _shape.ShapeType() == ShapeType.Wire)
+        if (_shape.Type == ShapeType.Edge || _shape.Type == ShapeType.Wire)
         {
             // Try to build surface by least square method;
             Wire wire = MakeWireOf(_shape);
@@ -328,7 +328,7 @@ public sealed class CanonicalRecognitionAnalysis
     private static Wire MakeWireOf(in Shape shape)
     {
         Wire wire = new();
-        if (shape.ShapeType() == ShapeType.Edge)
+        if (shape.Type == ShapeType.Edge)
         {
             BrepBuilder bb = new();
             bb.MakeWire(ref wire);
@@ -431,7 +431,7 @@ public sealed class CanonicalRecognitionAnalysis
         bool isOK = IsConic(target, tol, ref pos, aParams);
         if (isOK)
         {
-            lin = lin.WithPosition(pos.Axis());
+            lin = lin.WithPosition(pos.Axis);
         }
         return isOK;
     }
@@ -496,7 +496,7 @@ public sealed class CanonicalRecognitionAnalysis
         //
         if (!loc.IsIdentity)
         {
-            anaSurf.Transform(loc.Transformation()); // a new surface of the converter
+            anaSurf.Transform(loc.Transformation); // a new surface of the converter
         }
         //
         gap = conv.Gap();
@@ -586,7 +586,7 @@ public sealed class CanonicalRecognitionAnalysis
             //
             if (!loc.IsIdentity)
             {
-                anaSurf.Transform(loc.Transformation()); // a new surface of the converter
+                anaSurf.Transform(loc.Transformation); // a new surface of the converter
             }
             //
             gaps.Add(conv.Gap());
@@ -739,8 +739,8 @@ public sealed class CanonicalRecognitionAnalysis
         double aTol = Kerf.Engine.Foundation.Precision.Confusion();
         MultipleVarFunction pFunc;
         FuncSphereLSDist funcSph = new(points!);
-        FuncCylinderLSDist funcCyl = new(points!, pos.Direction());
-        FuncConeLSDist funcCon = new(points!, pos.Direction());
+        FuncCylinderLSDist funcCyl = new(points!, pos.Direction);
+        FuncConeLSDist funcCon = new(points!, pos.Direction);
         if (target == SurfaceKind.Sphere)
         {
             pFunc = funcSph;
@@ -782,10 +782,10 @@ public sealed class CanonicalRecognitionAnalysis
         {
             // Set search direction for location to be perpendicular to axis to avoid
             // searching along axis
-            Direction3D dir = pos.Direction();
-            Plane3D pln = new(pos.Location(), dir);
-            Direction3D uDir = pln.Position().XDirection();
-            Direction3D vDir = pln.Position().YDirection();
+            Direction3D dir = pos.Direction;
+            Plane3D pln = new(pos.Location, dir);
+            Direction3D uDir = pln.Position.XDirection;
+            Direction3D vDir = pln.Position.YDirection;
             for (i = 1; i <= 3; ++i)
             {
                 dirMatrix[i, 1] = uDir.Coord(i);
@@ -847,7 +847,7 @@ public sealed class CanonicalRecognitionAnalysis
             {
                 anaCurv = (Curve3D)anaCurv.Copy();
             }
-            anaCurv.Transform(loc.Transformation());
+            anaCurv.Transform(loc.Transformation);
         }
         //
         gap = conv.Gap();
@@ -917,20 +917,20 @@ public sealed class CanonicalRecognitionAnalysis
         if (target == Line)
         {
             Line3D lin = gac.Line();
-            pos = pos.WithAxis(lin.Position());
+            pos = pos.WithAxis(lin.Position);
         }
         else if (target == Circle)
         {
             Circle3D circ = gac.Circle();
-            pos = circ.Position();
-            theParams[1] = circ.Radius();
+            pos = circ.Position;
+            theParams[1] = circ.Radius;
         }
         else if (target == Ellipse)
         {
             Ellipse3D elips = gac.Ellipse();
-            pos = elips.Position();
-            theParams[1] = elips.MajorRadius();
-            theParams[2] = elips.MinorRadius();
+            pos = elips.Position;
+            theParams[1] = elips.MajorRadius;
+            theParams[2] = elips.MinorRadius;
         }
         else
         {
@@ -960,8 +960,8 @@ public sealed class CanonicalRecognitionAnalysis
             aTol = Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        Axis3D aRef = refPos.Axis();
-        Axis3D ax1 = pos.Axis();
+        Axis3D aRef = refPos.Axis;
+        Axis3D ax1 = pos.Axis;
         Axis3D ax1Rev = ax1.Reversed();
 
         return aRef.IsCoaxial(ax1, angTol, aTol) || aRef.IsCoaxial(ax1Rev, angTol, aTol);
@@ -990,26 +990,26 @@ public sealed class CanonicalRecognitionAnalysis
         if (target == Plane)
         {
             Plane3D pln = gas.Plane();
-            pos = pln.Position();
+            pos = pln.Position;
         }
         else if (target == SurfaceKind.Cylinder)
         {
             Cylinder cyl = gas.Cylinder();
-            pos = cyl.Position();
-            theParams[1] = cyl.Radius();
+            pos = cyl.Position;
+            theParams[1] = cyl.Radius;
         }
         else if (target == SurfaceKind.Cone)
         {
             Cone con = gas.Cone();
-            pos = con.Position();
-            theParams[1] = con.SemiAngle();
-            theParams[2] = con.RefRadius();
+            pos = con.Position;
+            theParams[1] = con.SemiAngle;
+            theParams[2] = con.RefRadius;
         }
         else if (target == SurfaceKind.Sphere)
         {
             Sphere sph = gas.Sphere();
-            pos = sph.Position();
-            theParams[1] = sph.Radius();
+            pos = sph.Position;
+            theParams[1] = sph.Radius;
         }
         else
         {
@@ -1032,8 +1032,8 @@ public sealed class CanonicalRecognitionAnalysis
         //
         if (target == SurfaceKind.Sphere)
         {
-            Point3D refLoc = refPos.Location(), loc = pos.Location();
-            return refLoc.SquareDistance(loc) <= tol * tol;
+            Point3D refLoc = refPos.Location, loc = pos.Location;
+            return refLoc.SquareDistanceTo(loc) <= tol * tol;
         }
         //
         double angTol = tol / (2.0 * M_PI);
@@ -1043,8 +1043,8 @@ public sealed class CanonicalRecognitionAnalysis
             aTol = Kerf.Engine.Foundation.Precision.Infinite();
         }
 
-        Axis3D aRef = refPos.Axis();
-        Axis3D ax1 = pos.Axis();
+        Axis3D aRef = refPos.Axis;
+        Axis3D ax1 = pos.Axis;
         Axis3D ax1Rev = ax1.Reversed();
         if (!(aRef.IsCoaxial(ax1, angTol, aTol) || aRef.IsCoaxial(ax1Rev, angTol, aTol)))
         {
@@ -1055,9 +1055,9 @@ public sealed class CanonicalRecognitionAnalysis
         {
             Cone refCone = new(refPos, refParams[1], refParams[2]);
             Cone cone = new(pos, theParams[1], theParams[2]);
-            Point3D refApex = refCone.Apex();
-            Point3D apex = cone.Apex();
-            return refApex.SquareDistance(apex) <= tol * tol;
+            Point3D refApex = refCone.Apex;
+            Point3D apex = cone.Apex;
+            return refApex.SquareDistanceTo(apex) <= tol * tol;
         }
 
         return true;
@@ -1075,13 +1075,13 @@ public sealed class CanonicalRecognitionAnalysis
         //
         if (target == SurfaceKind.Sphere)
         {
-            Point3D refLoc = refPos.Location(), loc = pos.Location();
-            devPars += refLoc.Distance(loc);
+            Point3D refLoc = refPos.Location, loc = pos.Location;
+            devPars += refLoc.DistanceTo(loc);
         }
         else
         {
-            Direction3D refDir = refPos.Direction();
-            Direction3D dir = pos.Direction();
+            Direction3D refDir = refPos.Direction;
+            Direction3D dir = pos.Direction;
             double angDev = (1.0 - Math.Abs(refDir * dir));
             devPars += angDev;
         }
@@ -1158,8 +1158,8 @@ public sealed class CanonicalRecognitionAnalysis
                                    NCollection_Array1<double> theParams)
     {
         double gap = 0.0;
-        Xyz loc = pos.Location().XYZ();
-        Vector3D dir = new(pos.Direction());
+        Xyz loc = pos.Location.XYZ();
+        Vector3D dir = new(pos.Direction);
 
         int i;
         if (target == SurfaceKind.Sphere)
@@ -1178,7 +1178,7 @@ public sealed class CanonicalRecognitionAnalysis
             {
                 Vector3D d = new(points.Value(i) - loc);
                 d = d.Crossed(dir);
-                gap = Max(gap, Math.Abs((d.Magnitude() - r)));
+                gap = Max(gap, Math.Abs((d.Magnitude - r)));
             }
         }
         else if (target == SurfaceKind.Cone)
@@ -1190,7 +1190,7 @@ public sealed class CanonicalRecognitionAnalysis
                 Point3D pi = new(points.Value(i));
                 global::Kerf.Engine.Geometry.ElSLib.ConeParameters(pos, r, ang, pi, out double u, out double v);
                 global::Kerf.Engine.Geometry.ElSLib.ConeD0(u, v, pos, r, ang, out Point3D pp);
-                gap = Max(gap, pi.SquareDistance(pp));
+                gap = Max(gap, pi.SquareDistanceTo(pp));
             }
             gap = Math.Sqrt(gap);
         }
@@ -1204,9 +1204,9 @@ public sealed class CanonicalRecognitionAnalysis
     {
         if (target == SurfaceKind.Sphere || target == SurfaceKind.Cylinder)
         {
-            startPoint[1] = pos.Location().X();
-            startPoint[2] = pos.Location().Y();
-            startPoint[3] = pos.Location().Z();
+            startPoint[1] = pos.Location.X;
+            startPoint[2] = pos.Location.Y;
+            startPoint[3] = pos.Location.Z;
             startPoint[4] = theParams[1];
             double dr = relDev * theParams[1];
             double dxyz = dr;
@@ -1221,9 +1221,9 @@ public sealed class CanonicalRecognitionAnalysis
         }
         if (target == SurfaceKind.Cone)
         {
-            startPoint[1] = pos.Location().X();
-            startPoint[2] = pos.Location().Y();
-            startPoint[3] = pos.Location().Z();
+            startPoint[1] = pos.Location.X;
+            startPoint[2] = pos.Location.Y;
+            startPoint[3] = pos.Location.Z;
             startPoint[4] = theParams[1]; // SemiAngle
             startPoint[5] = theParams[2]; // Radius
             double dr = relDev * theParams[2];

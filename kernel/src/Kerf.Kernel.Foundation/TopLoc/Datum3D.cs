@@ -38,7 +38,7 @@ public class Datum3D : Transient
     public Transform3D Trsf() => _trsf;
 
     /// <summary>The form of the transformation.</summary>
-    public TransformForm Form() => _trsf.Form();
+    public TransformForm Form() => _trsf.Form;
 
     /// <summary>Writes this datum (its identity and the rows of its transformation) to S.</summary>
     /// <remarks>

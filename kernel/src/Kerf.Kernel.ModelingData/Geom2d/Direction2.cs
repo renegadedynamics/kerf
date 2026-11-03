@@ -55,19 +55,19 @@ public class Direction2 : GeometryVector2D
     internal void SetX(double x)
     {
         CheckMutable();
-        double d = Math.Sqrt(x * x + _gpVec2d.Y() * _gpVec2d.Y());
+        double d = Math.Sqrt(x * x + _gpVec2d.Y * _gpVec2d.Y);
         Standard_ConstructionError_Raise_if(d <= Constants.Resolution(),
                                             "Geom2d_Direction::SetX() - input vector has zero length");
-        _gpVec2d = new Vector2D(x / d, _gpVec2d.Y() / d);
+        _gpVec2d = new Vector2D(x / d, _gpVec2d.Y / d);
     }
 
     internal void SetY(double y)
     {
         CheckMutable();
-        double d = Math.Sqrt(_gpVec2d.X() * _gpVec2d.X() + y * y);
+        double d = Math.Sqrt(_gpVec2d.X * _gpVec2d.X + y * y);
         Standard_ConstructionError_Raise_if(d <= Constants.Resolution(),
                                             "Geom2d_Direction::SetY() - input vector has zero length");
-        _gpVec2d = new Vector2D(_gpVec2d.X() / d, y / d);
+        _gpVec2d = new Vector2D(_gpVec2d.X / d, y / d);
     }
 
     /// <summary>The direction as a <see cref="Direction2D"/>.</summary>

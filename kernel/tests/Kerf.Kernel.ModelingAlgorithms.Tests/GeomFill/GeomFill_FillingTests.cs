@@ -84,7 +84,7 @@ public class GeomFill_FillingTests
         {
             for (int j = 1; j <= 3; j++)
             {
-                Assert.True(aP[i, j].Distance(G(i, j)) < 1e-14, $"{i},{j}");
+                Assert.True(aP[i, j].DistanceTo(G(i, j)) < 1e-14, $"{i},{j}");
             }
         }
     }
@@ -111,7 +111,7 @@ public class GeomFill_FillingTests
         {
             for (int j = 1; j <= 4; j++)
             {
-                Assert.True(aP[i, j].Distance(new Point3D(i - 1, j - 1, 0)) < 1e-14, $"{i},{j}");
+                Assert.True(aP[i, j].DistanceTo(new Point3D(i - 1, j - 1, 0)) < 1e-14, $"{i},{j}");
             }
         }
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.DomainErrorException>(() => new Coons(P1, P2, Row(new Point3D()), P4));
@@ -210,7 +210,7 @@ public class GeomFill_FillingTests
         double aMax = 0;
         for (int k = 0; k <= 20; k++)
         {
-            double t = theC.FirstParameter() + (theC.LastParameter() - theC.FirstParameter()) * k / 20.0;
+            double t = theC.FirstParameter + (theC.LastParameter - theC.FirstParameter) * k / 20.0;
             ProjectPointOnSurface aProj = new(theC.Value(t), theS);
             aMax = Math.Max(aMax, aProj.LowerDistance());
         }
@@ -228,20 +228,20 @@ public class GeomFill_FillingTests
         {
             c.Freeze(); // frozen inputs: the filling works on copies
         }
-        string[] aBefore = C.Select(c => string.Join(";", c.Poles())).ToArray();
+        string[] aBefore = C.Select(c => string.Join(";", c.Poles)).ToArray();
         BSplineCurves aFill = new(C[0], C[1], C[2], C[3], theStyle);
         BSplineSurface aS = aFill.Surface()!;
         Assert.True(aS.IsFrozen);
         Assert.Same(aS, aFill.Surface());
-        Assert.Equal(aBefore, C.Select(c => string.Join(";", c.Poles())).ToArray());
+        Assert.Equal(aBefore, C.Select(c => string.Join(";", c.Poles)).ToArray());
         foreach (BSplineCurve3D c in C)
         {
             Assert.True(MaxDistanceToSurface(c, aS) < 1e-7);
         }
         // the first curve is the boundary v = V1
-        aS.Bounds(out double u1, out double u2, out double v1, out _);
-        Assert.True(aS.Value(u1, v1).Distance(new Point3D(0, 0, 0)) < 1e-12);
-        Assert.True(aS.Value(u2, v1).Distance(new Point3D(4, 0, 0)) < 1e-12);
+        aS.ParameterBounds(out double u1, out double u2, out double v1, out _);
+        Assert.True(aS.Value(u1, v1).DistanceTo(new Point3D(0, 0, 0)) < 1e-12);
+        Assert.True(aS.Value(u2, v1).DistanceTo(new Point3D(4, 0, 0)) < 1e-12);
     }
 
     [Fact]
@@ -264,7 +264,7 @@ public class GeomFill_FillingTests
         BSplineCurve3D C1 = BS(new Point3D(0, 0, 0), new Point3D(1, 0, 1), new Point3D(2, 0, 0));
         BSplineCurve3D C2 = BS(new Point3D(0, 3, 1), new Point3D(1, 3, 0), new Point3D(2, 3, 2), new Point3D(3, 3, 1));
         BSplineSurface aRuled = new BSplineCurves(C1, C2, FillingStyle.StretchStyle).Surface()!;
-        Assert.Equal(1, aRuled.VDegree());
+        Assert.Equal(1, aRuled.VDegree);
         Assert.True(MaxDistanceToSurface(C1, aRuled) < 1e-7);
         Assert.True(MaxDistanceToSurface(C2, aRuled) < 1e-7);
 
@@ -286,7 +286,7 @@ public class GeomFill_FillingTests
         BSplineCurve3D C2 = BS(new Point3D(2, 0, 0), new Point3D(2, 1, 1), new Point3D(2, 2, 0));
         C1.Freeze();
         BSplineSurface aS = new BSplineCurves(C1, C2, FillingStyle.CurvedStyle).Surface()!;
-        Assert.Equal(new Point3D(0, 0, 0), C1.StartPoint());
+        Assert.Equal(new Point3D(0, 0, 0), C1.StartPoint);
         // the copy is not reversed: the poles are C1's translated by C2's poles from C2's start
         Assert.Equal(new Point3D(0, 0, 0), aS.Pole(1, 1));
         Assert.Equal(new Point3D(0, 2, 0), aS.Pole(1, 3));
@@ -304,7 +304,7 @@ public class GeomFill_FillingTests
         BSplineCurve3D L4 = BS(new Point3D(0, 1, 0), new Point3D(0, 0, 0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.ConstructionErrorException>(() => new BSplineCurves(L1, L2, L3, L4, FillingStyle.CoonsStyle));
         BSplineSurface aPlane = new BSplineCurves(L1, L2, L3, L4, FillingStyle.StretchStyle).Surface()!;
-        Assert.True(aPlane.Value(0.5, 0.5).Distance(new Point3D(0.5, 0.5, 0)) < 1e-15);
+        Assert.True(aPlane.Value(0.5, 0.5).DistanceTo(new Point3D(0.5, 0.5, 0)) < 1e-15);
     }
 
     private static BezierCurve3D BZ(params Point3D[] thePoles) => new(Row(thePoles));
@@ -328,7 +328,7 @@ public class GeomFill_FillingTests
         }
         if (theStyle == FillingStyle.CoonsStyle)
         {
-            Assert.True(aS.UDegree() >= 3 && aS.VDegree() >= 3);
+            Assert.True(aS.UDegree >= 3 && aS.VDegree >= 3);
         }
         BezierSurface a3 = new BezierCurves(C1, C2, C3, theStyle).Surface()!;
         Assert.True(MaxDistanceToSurface(C2, a3) < 1e-7);
@@ -378,9 +378,9 @@ public class GeomFill_FillingTests
     {
         const double h = 1e-6;
         theB.D1(theW, out Point3D P, out Vector3D V);
-        Assert.True(P.Distance(theB.Value(theW)) < 1e-14);
+        Assert.True(P.DistanceTo(theB.Value(theW)) < 1e-14);
         Vector3D aFd = new Vector3D(theB.Value(theW - h), theB.Value(theW + h)).Divided(2 * h);
-        Assert.True(V.Subtracted(aFd).Magnitude() < theTol, $"{V} {aFd}");
+        Assert.True(V.Subtracted(aFd).Magnitude < theTol, $"{V} {aFd}");
     }
 
     [Fact]
@@ -404,8 +404,8 @@ public class GeomFill_FillingTests
         Point3D aStart = B.Value(0), anEnd = B.Value(1);
         B.Reparametrize(0.0, 1.0, false, false, 1.0, 1.0, true);
         B.Points(out Point3D P1, out Point3D P2);
-        Assert.True(P1.Distance(anEnd) < 1e-9);
-        Assert.True(P2.Distance(aStart) < 1e-9);
+        Assert.True(P1.DistanceTo(anEnd) < 1e-9);
+        Assert.True(P2.DistanceTo(aStart) < 1e-9);
         CheckD1(B, 0.3, 1e-5);
     }
 
@@ -420,18 +420,18 @@ public class GeomFill_FillingTests
             foreach (double w in new[] { 0.0, 0.3, 0.8 })
             {
                 Vector3D N = B.Norm(w);
-                Assert.Equal(1.0, N.Magnitude(), 12);
+                Assert.Equal(1.0, N.Magnitude, 12);
                 double u = k switch { 0 => w, 1 => 1, 2 => w, _ => 0 };
                 double v = k switch { 0 => 0, 1 => w, 2 => 1, _ => w };
                 S.D1(u, v, out Point3D P, out Vector3D DU, out Vector3D DV);
-                Assert.True(N.Subtracted(DU.Crossed(DV).Normalized()).Magnitude() < 1e-12);
-                Assert.True(B.Value(w).Distance(P) < 1e-12);
+                Assert.True(N.Subtracted(DU.Crossed(DV).Normalized()).Magnitude < 1e-12);
+                Assert.True(B.Value(w).DistanceTo(P) < 1e-12);
 
                 B.D1Norm(w, out Vector3D N1, out Vector3D DN);
-                Assert.True(N1.Subtracted(N).Magnitude() < 1e-12);
+                Assert.True(N1.Subtracted(N).Magnitude < 1e-12);
                 const double h = 1e-6;
                 Vector3D aFd = B.Norm(w + h).Subtracted(B.Norm(w - h)).Divided(2 * h);
-                Assert.True(DN.Subtracted(aFd).Magnitude() < 1e-5, $"{DN} {aFd}");
+                Assert.True(DN.Subtracted(aFd).Magnitude < 1e-5, $"{DN} {aFd}");
             }
             CheckD1(B, 0.5, 1e-6);
         }
@@ -445,7 +445,7 @@ public class GeomFill_FillingTests
         Assert.Equal(new Point3D(1, 2, 3), B.Value(0.7));
         B.D1(1.0, out Point3D P, out Vector3D V);
         Assert.Equal(new Point3D(1, 2, 3), P);
-        Assert.Equal(0.0, V.Magnitude());
+        Assert.Equal(0.0, V.Magnitude);
         B.Reparametrize(0, 1, true, true, 2, 2, true);
         B.Bounds(out double f, out double l);
         Assert.Equal(0.0, f);
@@ -461,8 +461,8 @@ public class GeomFill_FillingTests
         BSplineSurface S = Patch();
         Boundary[] B = [.. Enumerable.Range(0, 4).Select(k => FillRecordings.MakeBound(S, k, 1, 1e-4, 1e-2))];
         CoonsAlgPatch K = new(B[0], B[1], B[2], B[3]);
-        Assert.True(K.Corner(0).Distance(S.Value(0, 0)) < 1e-12);
-        Assert.True(K.Corner(2).Distance(S.Value(1, 1)) < 1e-12);
+        Assert.True(K.Corner(0).DistanceTo(S.Value(0, 0)) < 1e-12);
+        Assert.True(K.Corner(2).DistanceTo(S.Value(1, 1)) < 1e-12);
         Assert.Same(B[2], K.Bound(2));
         K.Func(out LawsFunction f1, out LawsFunction f2);
         Assert.Same(f1, K.Func(0));
@@ -477,14 +477,14 @@ public class GeomFill_FillingTests
             foreach (double v in new[] { 0.3, 0.7 })
             {
                 Vector3D aDuvFd = K.D1U(u, v + h).Subtracted(K.D1U(u, v - h)).Divided(2 * h);
-                Assert.True(K.DUV(u, v).Subtracted(aDuvFd).Magnitude() < 1e-5);
+                Assert.True(K.DUV(u, v).Subtracted(aDuvFd).Magnitude < 1e-5);
                 Vector3D aDvuFd = K.D1V(u + h, v).Subtracted(K.D1V(u - h, v)).Divided(2 * h);
-                Assert.True(K.DUV(u, v).Subtracted(aDvuFd).Magnitude() < 1e-5);
+                Assert.True(K.DUV(u, v).Subtracted(aDvuFd).Magnitude < 1e-5);
             }
         }
         // on the boundaries, D1U along v = 0 is the bound's derivative
         B[0].D1(0.4, out _, out Vector3D aT);
-        Assert.True(K.D1U(0.4, 0.0).Subtracted(aT).Magnitude() < 1e-12);
+        Assert.True(K.D1U(0.4, 0.0).Subtracted(aT).Magnitude < 1e-12);
 
         // OCCT evaluates bounds 0 and 2 at V in Value (occt-issues.md): the value at (u, v) depends on u only
         // through the blending of bounds 1 and 3
@@ -494,7 +494,7 @@ public class GeomFill_FillingTests
                             + B[3].Value(0.5).XYZ() * (1 - a1) - K.Corner(0).XYZ() * (a0 * (1 - a1))
                             - K.Corner(1).XYZ() * (a0 * a1) - K.Corner(2).XYZ() * (a1 * (1 - a0))
                             - K.Corner(3).XYZ() * ((1 - a0) * (1 - a1));
-        Assert.True(aBug.Distance(new Point3D(anExpected)) < 1e-12);
+        Assert.True(aBug.DistanceTo(new Point3D(anExpected)) < 1e-12);
     }
 
     [Fact]
@@ -510,13 +510,13 @@ public class GeomFill_FillingTests
             foreach (double w in new[] { 0.25, 0.6 })
             {
                 Vector3D V = T.Value(w);
-                Assert.True(Math.Abs(V.Dot(B[i].Norm(w))) < 1e-10 * Math.Max(1, V.Magnitude()));
+                Assert.True(Math.Abs(V.Dot(B[i].Norm(w))) < 1e-10 * Math.Max(1, V.Magnitude));
                 T.D1(w, out Vector3D T1, out Vector3D DT);
-                Assert.True(T1.Subtracted(V).Magnitude() < 1e-12);
-                Assert.True(DT.Subtracted(T.D1(w)).Magnitude() < 1e-12);
+                Assert.True(T1.Subtracted(V).Magnitude < 1e-12);
+                Assert.True(DT.Subtracted(T.D1(w)).Magnitude < 1e-12);
                 const double h = 1e-6;
                 Vector3D aFd = T.Value(w + h).Subtracted(T.Value(w - h)).Divided(2 * h);
-                Assert.True(DT.Subtracted(aFd).Magnitude() < 1e-4, $"{i} {w}: {DT} {aFd}");
+                Assert.True(DT.Subtracted(aFd).Magnitude < 1e-4, $"{i} {w}: {DT} {aFd}");
             }
         }
     }
@@ -583,7 +583,7 @@ public class GeomFill_FillingTests
         {
             Vector3D aN = du.Crossed(dv).Normalized();
             Vector3D aSN = F.Boundary(0).Norm(0.5);
-            Assert.True(Math.Min(aN.Angle(aSN), Math.PI - aN.Angle(aSN)) < 0.05);
+            Assert.True(Math.Min(aN.AngleTo(aSN), Math.PI - aN.AngleTo(aSN)) < 0.05);
         }
         double[] r = new double[12];
         Assert.Equal(0, F.Eval(0.5, 0, r));
@@ -604,7 +604,7 @@ public class GeomFill_FillingTests
         Boundary Side(Point2D theA, Point2D theB)
         {
             LineCurve2D aL = new(theA, new Direction2D(new Vector2D(theA, theB)));
-            CurveOnSurface aCoS = new(new CurveAdaptor2D(aL, 0.0, theA.Distance(theB)),
+            CurveOnSurface aCoS = new(new CurveAdaptor2D(aL, 0.0, theA.DistanceTo(theB)),
                                                 new SurfaceAdaptor(aPlane));
             return new BoundWithSurf(aCoS, 1e-4, 1e-2);
         }
@@ -620,16 +620,16 @@ public class GeomFill_FillingTests
                 Assert.True(MaxBoundaryGap(F, R, i) < 1e-3, $"bound {i}");
             }
         }
-        Assert.True(Math.Abs(R.Value(0.3, 0.4).Z()) < 1e-6); // planar
+        Assert.True(Math.Abs(R.Value(0.3, 0.4).Z) < 1e-6); // planar
 
         // SetDomain on a constrained boundary, then ReBuild: a new surface, the old one unchanged
         BoundWithSurf aB0 = (BoundWithSurf)F.Boundary(0);
-        string aBefore = string.Join(";", R.Poles());
+        string aBefore = string.Join(";", R.Poles);
         F.SetDomain(0.5, aB0);
         F.ReBuild();
         BSplineSurface R2 = F.Surface()!;
         Assert.NotSame(R, R2);
-        Assert.Equal(aBefore, string.Join(";", R.Poles()));
+        Assert.Equal(aBefore, string.Join(";", R.Poles));
         Assert.True(MaxBoundaryGap(F, R2, 0) < 1e-3);
     }
 }

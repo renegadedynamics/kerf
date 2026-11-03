@@ -60,7 +60,7 @@ public class ConstThroat : GenChamfer
     {
         _param = param;
         _curv.D2(_param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
     }
@@ -109,7 +109,7 @@ public class ConstThroat : GenChamfer
                 _istangent = true;
             }
 
-            _distmin = Min(_distmin, _pts1.Distance(_pts2));
+            _distmin = Min(_distmin, _pts1.DistanceTo(_pts2));
 
             return true;
         }
@@ -128,12 +128,12 @@ public class ConstThroat : GenChamfer
         Point3D ptmid = new Point3D((_pts1.XYZ() + _pts2.XYZ()) / 2);
         Vector3D vmid = new Vector3D(_ptgui, ptmid);
 
-        f[3] = vmid.SquareMagnitude() - _throat * _throat;
+        f[3] = vmid.SquareMagnitude - _throat * _throat;
 
         Vector3D vref1 = new Vector3D(_ptgui, _pts1);
         Vector3D vref2 = new Vector3D(_ptgui, _pts2);
 
-        f[4] = vref1.SquareMagnitude() - vref2.SquareMagnitude();
+        f[4] = vref1.SquareMagnitude - vref2.SquareMagnitude;
 
         return true;
     }

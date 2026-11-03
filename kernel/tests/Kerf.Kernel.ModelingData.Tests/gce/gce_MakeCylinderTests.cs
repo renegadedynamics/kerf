@@ -20,10 +20,10 @@ public class gce_MakeCylinderTest
         Assert.Equal(Done, aMaker.Status());
 
         Cylinder aCylinder = aMaker.Value();
-        Assert.Equal(5.0, aCylinder.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aCylinder.Axis().Direction().IsParallel(aAxis.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()));
+        Assert.Equal(5.0, aCylinder.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aCylinder.Axis.Direction.IsParallel(aAxis.Direction, global::Kerf.Engine.Foundation.Precision.Angular()));
 
-        double aDot = aCylinder.Axis().Direction().XYZ().Dot(aCylinder.Position().XDirection().XYZ());
+        double aDot = aCylinder.Axis.Direction.XYZ().Dot(aCylinder.Position.XDirection.XYZ());
         Assert.Equal(0.0, aDot, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 
@@ -39,10 +39,10 @@ public class gce_MakeCylinderTest
         Assert.Equal(Done, aMaker.Status());
 
         Cylinder aCylinder = aMaker.Value();
-        Assert.Equal(5.0, aCylinder.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aCylinder.Axis().Direction().IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
+        Assert.Equal(5.0, aCylinder.Radius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aCylinder.Axis.Direction.IsParallel(new Direction3D(aP2.XYZ() - aP1.XYZ()), global::Kerf.Engine.Foundation.Precision.Angular()));
 
-        double aDot = aCylinder.Axis().Direction().XYZ().Dot(aCylinder.Position().XDirection().XYZ());
+        double aDot = aCylinder.Axis.Direction.XYZ().Dot(aCylinder.Position.XDirection.XYZ());
         Assert.Equal(0.0, aDot, global::Kerf.Engine.Foundation.Precision.Angular());
     }
 

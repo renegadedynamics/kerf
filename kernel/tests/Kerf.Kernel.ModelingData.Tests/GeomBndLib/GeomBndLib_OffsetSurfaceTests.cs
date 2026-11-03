@@ -49,12 +49,12 @@ public class GeomBndLib_OffsetSurfaceTest
                 double aV = theVMin + j * aVStep;
                 Point3D aPnt = theSurf.Value(aU, aV);
                 string aWhere = $"Point outside box at U={aU} V={aV}";
-                GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.X(), aXmin - Conf, aWhere);
-                GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.X(), aXmax + Conf, aWhere);
-                GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.Y(), aYmin - Conf, aWhere);
-                GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.Y(), aYmax + Conf, aWhere);
-                GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.Z(), aZmin - Conf, aWhere);
-                GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.Z(), aZmax + Conf, aWhere);
+                GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.X, aXmin - Conf, aWhere);
+                GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.X, aXmax + Conf, aWhere);
+                GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.Y, aYmin - Conf, aWhere);
+                GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.Y, aYmax + Conf, aWhere);
+                GeomBndLibSurfaceTestUtils.ExpectGE(aPnt.Z, aZmin - Conf, aWhere);
+                GeomBndLibSurfaceTestUtils.ExpectLE(aPnt.Z, aZmax + Conf, aWhere);
             }
         }
     }

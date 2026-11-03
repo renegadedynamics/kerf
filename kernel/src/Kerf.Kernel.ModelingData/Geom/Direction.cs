@@ -63,28 +63,28 @@ public class Direction : GeometryVector3D
     internal void SetX(double x)
     {
         CheckMutable();
-        double d = Math.Sqrt(x * x + _gpVec.Y() * _gpVec.Y() + _gpVec.Z() * _gpVec.Z());
+        double d = Math.Sqrt(x * x + _gpVec.Y * _gpVec.Y + _gpVec.Z * _gpVec.Z);
         Standard_ConstructionError_Raise_if(d <= Constants.Resolution(),
                                             "Geom_Direction::SetX() - input vector has zero length");
-        _gpVec = new Vector3D(x / d, _gpVec.Y() / d, _gpVec.Z() / d);
+        _gpVec = new Vector3D(x / d, _gpVec.Y / d, _gpVec.Z / d);
     }
 
     internal void SetY(double y)
     {
         CheckMutable();
-        double d = Math.Sqrt(_gpVec.X() * _gpVec.X() + y * y + _gpVec.Z() * _gpVec.Z());
+        double d = Math.Sqrt(_gpVec.X * _gpVec.X + y * y + _gpVec.Z * _gpVec.Z);
         Standard_ConstructionError_Raise_if(d <= Constants.Resolution(),
                                             "Geom_Direction::SetY() - input vector has zero length");
-        _gpVec = new Vector3D(_gpVec.X() / d, y / d, _gpVec.Z() / d);
+        _gpVec = new Vector3D(_gpVec.X / d, y / d, _gpVec.Z / d);
     }
 
     internal void SetZ(double z)
     {
         CheckMutable();
-        double d = Math.Sqrt(_gpVec.X() * _gpVec.X() + _gpVec.Y() * _gpVec.Y() + z * z);
+        double d = Math.Sqrt(_gpVec.X * _gpVec.X + _gpVec.Y * _gpVec.Y + z * z);
         Standard_ConstructionError_Raise_if(d <= Constants.Resolution(),
                                             "Geom_Direction::SetZ() - input vector has zero length");
-        _gpVec = new Vector3D(_gpVec.X() / d, _gpVec.Y() / d, z / d);
+        _gpVec = new Vector3D(_gpVec.X / d, _gpVec.Y / d, z / d);
     }
 
     /// <summary>Replaces this direction by this ^ Other.</summary>

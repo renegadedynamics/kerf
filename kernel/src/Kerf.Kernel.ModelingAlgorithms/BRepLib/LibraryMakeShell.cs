@@ -36,7 +36,7 @@ public class LibraryMakeShell : LibraryMakeShape
     /// <summary>A shell on the whole surface.</summary>
     public LibraryMakeShell(Surface s, bool segment = false)
     {
-        s.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+        s.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
         Init(s, uMin, uMax, vMin, vMax, segment);
     }
 
@@ -53,7 +53,7 @@ public class LibraryMakeShell : LibraryMakeShape
         if (s.GetType() == typeof(TrimmedSurface))
         {
             var rts = (TrimmedSurface)s;
-            bs = rts.BasisSurface();
+            bs = rts.BasisSurface;
         }
         _error = LibraryShellError.EmptyShell;
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
@@ -150,12 +150,12 @@ public class LibraryMakeShell : LibraryMakeShape
                 b.MakeEdge(ref etop);
                 if (!vlt.IsNull)
                 {
-                    vlt.Orientation(Forward);
+                    vlt.Orient(Forward);
                     b.Add(etop, vlt);
                 }
                 if (!vrt.IsNull)
                 {
-                    vrt.Orientation(Reversed);
+                    vrt.Orient(Reversed);
                     b.Add(etop, vrt);
                 }
                 fbotedges[iu] = botedges[iu] = etop;
@@ -189,12 +189,12 @@ public class LibraryMakeShell : LibraryMakeShape
                 b.MakeEdge(ref eright);
                 if (!vrb.IsNull)
                 {
-                    vrb.Orientation(Forward);
+                    vrb.Orient(Forward);
                     b.Add(eright, vrb);
                 }
                 if (!vrt.IsNull)
                 {
-                    vrt.Orientation(Reversed);
+                    vrt.Orient(Reversed);
                     b.Add(eright, vrt);
                 }
             }
@@ -261,12 +261,12 @@ public class LibraryMakeShell : LibraryMakeShape
                         b.MakeEdge(ref eright);
                         if (!vrb.IsNull)
                         {
-                            vrb.Orientation(Forward);
+                            vrb.Orient(Forward);
                             b.Add(eright, vrb);
                         }
                         if (!vrt.IsNull)
                         {
-                            vrt.Orientation(Reversed);
+                            vrt.Orient(Reversed);
                             b.Add(eright, vrt);
                         }
                     }
@@ -308,12 +308,12 @@ public class LibraryMakeShell : LibraryMakeShape
                         b.MakeEdge(ref etop);
                         if (!vlt.IsNull)
                         {
-                            vlt.Orientation(Forward);
+                            vlt.Orient(Forward);
                             b.Add(etop, vlt);
                         }
                         if (!vrt.IsNull)
                         {
-                            vrt.Orientation(Reversed);
+                            vrt.Orient(Reversed);
                             b.Add(etop, vrt);
                         }
                     }
@@ -345,22 +345,22 @@ public class LibraryMakeShell : LibraryMakeShape
 
                 if (!eleft.IsNull)
                 {
-                    eleft.Orientation(Reversed);
+                    eleft.Orient(Reversed);
                     b.Add(w, eleft);
                 }
                 if (!ebot.IsNull)
                 {
-                    ebot.Orientation(Forward);
+                    ebot.Orient(Forward);
                     b.Add(w, ebot);
                 }
                 if (!eright.IsNull)
                 {
-                    eright.Orientation(Forward);
+                    eright.Orient(Forward);
                     b.Add(w, eright);
                 }
                 if (!etop.IsNull)
                 {
-                    etop.Orientation(Reversed);
+                    etop.Orient(Reversed);
                     b.Add(w, etop);
                 }
 

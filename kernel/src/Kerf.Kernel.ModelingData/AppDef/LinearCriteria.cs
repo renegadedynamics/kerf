@@ -441,7 +441,7 @@ public class LinearCriteria : SmoothCriterion
             for (ipnt = 1; ipnt <= myNbP3d; ipnt++)
             {
                 p3d = p3d.WithCoord(basePoint[c0 + 1], basePoint[c0 + 2], basePoint[c0 + 3]);
-                sqrDist = p3d.SquareDistance(tabP3d[ipnt]);
+                sqrDist = p3d.SquareDistanceTo(tabP3d[ipnt]);
                 dist = Math.Sqrt(sqrDist);
                 maxError = Max(maxError, dist);
                 quadraticError += sqrDist;
@@ -460,7 +460,7 @@ public class LinearCriteria : SmoothCriterion
             for (ipnt = 1; ipnt <= myNbP2d; ipnt++)
             {
                 p2d = p2d.WithCoord(basePoint[c0 + 1], basePoint[c0 + 2]);
-                sqrDist = p2d.SquareDistance(tabP2d[ipnt]);
+                sqrDist = p2d.SquareDistanceTo(tabP2d[ipnt]);
                 dist = Math.Sqrt(sqrDist);
                 maxError = Max(maxError, dist);
                 quadraticError += sqrDist;

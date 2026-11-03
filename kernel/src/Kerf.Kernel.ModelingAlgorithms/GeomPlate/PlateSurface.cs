@@ -65,20 +65,20 @@ public class PlateSurface : Surface
         return (-v);
     }
 
-    public override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
     }
 
-    public override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal override GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
         return new GeneralTransform2D();
     }
 
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         if (_surfinit.DynamicType() == typeof(PlateSurface))
         {
-            _surfinit.Bounds(out u1, out u2, out v1, out v2);
+            _surfinit.ParameterBounds(out u1, out u2, out v1, out v2);
         }
         else
         {
@@ -95,29 +95,29 @@ public class PlateSurface : Surface
 
     public override bool IsUPeriodic => false;
 
-    public override double UPeriod() => 0.0; // OCCT returns false
+    public override double UPeriod => 0.0; // OCCT returns false
 
     public override bool IsVPeriodic => false;
 
-    public override double VPeriod() => 0.0; // OCCT returns false
+    public override double VPeriod => 0.0; // OCCT returns false
 
     public override Curve3D UIso(double u) => null!; // OCCT returns a null handle
 
     public override Curve3D VIso(double v) => null!; // OCCT returns a null handle
 
-    public override Continuity Continuity() => default; // GeomAbs_Shape(), GeomAbs_C0
+    public override Continuity Continuity => default; // GeomAbs_Shape(), GeomAbs_C0
 
-    public override bool IsCNu(int n)
+    internal override bool IsCNu(int n)
     {
         throw new FailureException("IsCNu");
     }
 
-    public override bool IsCNv(int n)
+    internal override bool IsCNv(int n)
     {
         throw new FailureException("IsCNv");
     }
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
         Point3D surfP = _surfinit.EvalD0(u, v);
         Xy p1 = new Xy(u, v);
@@ -125,7 +125,7 @@ public class PlateSurface : Surface
         return new Point3D(p3 + surfP.XYZ());
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
         ResD1 surfD1 = _surfinit.EvalD1(u, v);
         Xy p1 = new Xy(u, v);
@@ -139,7 +139,7 @@ public class PlateSurface : Surface
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
         ResD2 surfD2 = _surfinit.EvalD2(u, v);
         Xy p1 = new Xy(u, v);
@@ -159,12 +159,12 @@ public class PlateSurface : Surface
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
         throw new UndefinedDerivative3DException("GeomPlate_Surface::EvalD3");
     }
 
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         throw new UndefinedDerivative3DException("GeomPlate_Surface::EvalDN");
     }

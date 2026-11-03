@@ -65,11 +65,11 @@ public class LeastSquare
 
                 for (int j = 1; j <= _nbP; j++)
                 {
-                    currDist += tabP[j].Distance(prevP[j]);
+                    currDist += tabP[j].DistanceTo(prevP[j]);
                 }
                 for (int j = 1; j <= _nbP2d; j++)
                 {
-                    currDist += tabP2d[j].Distance(prevP2d[j]);
+                    currDist += tabP2d[j].DistanceTo(prevP2d[j]);
                 }
 
                 // from the third iteration
@@ -276,7 +276,7 @@ public class LeastSquare
                 i2 = 1;
                 for (k = 1; k <= _nbP; k++)
                 {
-                    if (fixP[k].Distance(tabP[k]) > 0.1)
+                    if (fixP[k].DistanceTo(tabP[k]) > 0.1)
                     {
                         fixP[k].Coord(out _poles[1, i2], out _poles[1, i2 + 1], out _poles[1, i2 + 2]);
                     }
@@ -288,7 +288,7 @@ public class LeastSquare
                 }
                 for (k = 1; k <= _nbP2d; k++)
                 {
-                    if (fixP2d[k].Distance(tabP2d[k]) > 0.1)
+                    if (fixP2d[k].DistanceTo(tabP2d[k]) > 0.1)
                     {
                         fixP2d[k].Coord(out _poles[1, i2], out _poles[1, i2 + 1]);
                     }
@@ -318,7 +318,7 @@ public class LeastSquare
                 i2 = 1;
                 for (k = 1; k <= _nbP; k++)
                 {
-                    if (fixP[k].Distance(tabP[k]) > 0.1)
+                    if (fixP[k].DistanceTo(tabP[k]) > 0.1)
                     {
                         fixP[k].Coord(out _poles[classe, i2], out _poles[classe, i2 + 1], out _poles[classe, i2 + 2]);
                     }
@@ -330,7 +330,7 @@ public class LeastSquare
                 }
                 for (k = 1; k <= _nbP2d; k++)
                 {
-                    if (fixP2d[k].Distance(tabP2d[k]) > 0.1)
+                    if (fixP2d[k].DistanceTo(tabP2d[k]) > 0.1)
                     {
                         fixP2d[k].Coord(out _poles[classe, i2], out _poles[classe, i2 + 1]);
                     }
@@ -393,16 +393,16 @@ public class LeastSquare
                 {
                     i2plus1 = i2 + 1;
                     i2plus2 = i2 + 2;
-                    _poles[2, i2] = _poles[1, i2] + tabV[k].X() * coeff;
-                    _poles[2, i2plus1] = _poles[1, i2plus1] + tabV[k].Y() * coeff;
-                    _poles[2, i2plus2] = _poles[1, i2plus2] + tabV[k].Z() * coeff;
+                    _poles[2, i2] = _poles[1, i2] + tabV[k].X * coeff;
+                    _poles[2, i2plus1] = _poles[1, i2plus1] + tabV[k].Y * coeff;
+                    _poles[2, i2plus2] = _poles[1, i2plus2] + tabV[k].Z * coeff;
                     i2 += 3;
                 }
                 for (k = 1; k <= _nbP2d; k++)
                 {
                     i2plus1 = i2 + 1;
-                    _poles[2, i2] = _poles[1, i2] + tabV2d[k].X() * coeff;
-                    _poles[2, i2plus1] = _poles[1, i2plus1] + tabV2d[k].Y() * coeff;
+                    _poles[2, i2] = _poles[1, i2] + tabV2d[k].X * coeff;
+                    _poles[2, i2plus1] = _poles[1, i2plus1] + tabV2d[k].Y * coeff;
                     i2 += 2;
                 }
 
@@ -427,16 +427,16 @@ public class LeastSquare
                 {
                     i2plus1 = i2 + 1;
                     i2plus2 = i2 + 2;
-                    _poles[cl1, i2] = _poles[classe, i2] - tabV[k].X() * coeff;
-                    _poles[cl1, i2plus1] = _poles[classe, i2plus1] - tabV[k].Y() * coeff;
-                    _poles[cl1, i2plus2] = _poles[classe, i2plus2] - tabV[k].Z() * coeff;
+                    _poles[cl1, i2] = _poles[classe, i2] - tabV[k].X * coeff;
+                    _poles[cl1, i2plus1] = _poles[classe, i2plus1] - tabV[k].Y * coeff;
+                    _poles[cl1, i2plus2] = _poles[classe, i2plus2] - tabV[k].Z * coeff;
                     i2 += 3;
                 }
                 for (k = 1; k <= _nbP2d; k++)
                 {
                     i2plus1 = i2 + 1;
-                    _poles[cl1, i2] = _poles[classe, i2] - tabV2d[k].X() * coeff;
-                    _poles[cl1, i2plus1] = _poles[classe, i2plus1] - tabV2d[k].Y() * coeff;
+                    _poles[cl1, i2] = _poles[classe, i2] - tabV2d[k].X * coeff;
+                    _poles[cl1, i2plus1] = _poles[classe, i2plus1] - tabV2d[k].Y * coeff;
                     i2 += 2;
                 }
 

@@ -221,7 +221,7 @@ public sealed class SameParameter
             vector = new Vector3D(a_point, aPoint);
 
             func = vector.Dot(d1);
-            if (Math.Abs(func) < tolerance * d1.Magnitude())
+            if (Math.Abs(func) < tolerance * d1.Magnitude)
             {
                 not_done = 0;
                 status = true;
@@ -265,13 +265,13 @@ public sealed class SameParameter
                 d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Y())
-                || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Z()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Y)
+                || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Z))
             {
                 d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
-            d2 = Max(d2, pc3d.SquareDistance(pcons));
+            d2 = Max(d2, pc3d.SquareDistanceTo(pcons));
         }
 
         const double mult = 1.0 + 0.05; //
@@ -333,7 +333,7 @@ public sealed class SameParameter
             }
             tprev = tcons[0];
             Point3D pcons = cons.Value(tcons[0]);
-            double temp = Pc3d.SquareDistance(pcons);
+            double temp = Pc3d.SquareDistanceTo(pcons);
             if (temp > d2)
             {
                 d2 = temp;
@@ -703,12 +703,12 @@ public sealed class SameParameter
         Point3D pcons, pc3d;
         data.COnS.D0(data.C2dPF, out pcons);
         _c3d.D0(data.C3dPF, out pc3d);
-        double dist2 = pcons.SquareDistance(pc3d);
+        double dist2 = pcons.SquareDistanceTo(pc3d);
         double dmax2 = dist2;
 
         data.COnS.D0(data.C2dPL, out pcons);
         _c3d.D0(data.C3dPL, out pc3d);
-        dist2 = pcons.SquareDistance(pc3d);
+        dist2 = pcons.SquareDistanceTo(pc3d);
         dmax2 = Max(dmax2, dist2);
 
         LocateExtPC projector = new();
@@ -722,7 +722,7 @@ public sealed class SameParameter
         {
             data.COnS.D0(data.PC2d[ii], out pcons);
             _c3d.D0(data.PC3d[ii], out pc3d);
-            dist2 = pcons.SquareDistance(pc3d);
+            dist2 = pcons.SquareDistanceTo(pc3d);
 
             // Same parameter point.
             bool isUseParam = (dist2 <= tol2 && // Good distance.
@@ -781,7 +781,7 @@ public sealed class SameParameter
             for (int i = 1; i <= nbExt; i++)
             {
                 Point3D p = pr.Point(i).Value();
-                double aDist2 = p.SquareDistance(pcons);
+                double aDist2 = p.SquareDistanceTo(pcons);
                 if (aDist2 < curDistMin)
                 {
                     curDistMin = aDist2;
@@ -822,10 +822,10 @@ public sealed class SameParameter
         double paramFirst = _c3d.FirstParameter();
         cOnS.D1(paramFirst, out pntCOnS, out vecConS);
         _c3d.D1(paramFirst, out pnt, out vec);
-        double magnitude = vecConS.Magnitude();
+        double magnitude = vecConS.Magnitude;
         if (magnitude > smallMagnitude)
         {
-            firstTangent = vec.Magnitude() / magnitude;
+            firstTangent = vec.Magnitude / magnitude;
         }
         else
         {
@@ -837,10 +837,10 @@ public sealed class SameParameter
         cOnS.D1(paramLast, out pntCOnS, out vecConS);
         _c3d.D1(paramLast, out pnt, out vec);
 
-        magnitude = vecConS.Magnitude();
+        magnitude = vecConS.Magnitude;
         if (magnitude > smallMagnitude)
         {
-            lastTangent = vec.Magnitude() / magnitude;
+            lastTangent = vec.Magnitude / magnitude;
         }
         else
         {

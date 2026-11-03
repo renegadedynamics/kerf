@@ -39,13 +39,13 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public Vector(Xyz xyz) : this(xyz.X(), xyz.Y(), xyz.Z()) { }
 
     /// <summary>A vector from an OCCT gp_Pnt.</summary>
-    public Vector(Point3D pnt) : this(pnt.X(), pnt.Y(), pnt.Z()) { }
+    public Vector(Point3D pnt) : this(pnt.X, pnt.Y, pnt.Z) { }
 
     /// <summary>A vector from an OCCT gp_Vec.</summary>
-    public Vector(Vector3D vec) : this(vec.X(), vec.Y(), vec.Z()) { }
+    public Vector(Vector3D vec) : this(vec.X, vec.Y, vec.Z) { }
 
     /// <summary>A vector from an OCCT gp_Dir.</summary>
-    public Vector(Direction3D dir) : this(dir.X(), dir.Y(), dir.Z()) { }
+    public Vector(Direction3D dir) : this(dir.X, dir.Y, dir.Z) { }
 
     /// <summary>The point a vertex is at.</summary>
     public Vector(Vertex vertex) => this = vertex.ToVector();
@@ -121,7 +121,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     {
         var a = ToGpVec();
         var b = v.ToGpVec();
-        return a.Angle(b) * Constants.RadToDeg;
+        return a.AngleTo(b) * Constants.RadToDeg;
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public readonly struct Vector : IEquatable<Vector>, IFormattable, IGeometry
     public double DistanceToPlane(Plane plane)
     {
         var p = ToGpPnt();
-        return plane.Pln.Distance(p);
+        return plane.Pln.DistanceTo(p);
     }
 
     /// <summary>The distance from a plane, positive on the side its Z direction points to.</summary>

@@ -334,8 +334,8 @@ public partial struct B3f : IEquatable<B3f>
     public readonly B3f Transformed(in Transform3D trsf)
     {
         B3f result = new();
-        TransformForm form = trsf.Form();
-        double scale = trsf.ScaleFactor();
+        TransformForm form = trsf.Form;
+        double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
         if (form == Identity)
         {
@@ -343,9 +343,9 @@ public partial struct B3f : IEquatable<B3f>
         }
         else if (form == Translation || form == PntMirror || form == Scale)
         {
-            result._center[0] = (RealType)(_center[0] * scale + trsf.TranslationPart().X());
-            result._center[1] = (RealType)(_center[1] * scale + trsf.TranslationPart().Y());
-            result._center[2] = (RealType)(_center[2] * scale + trsf.TranslationPart().Z());
+            result._center[0] = (RealType)(_center[0] * scale + trsf.TranslationXyz().X());
+            result._center[1] = (RealType)(_center[1] * scale + trsf.TranslationXyz().Y());
+            result._center[2] = (RealType)(_center[2] * scale + trsf.TranslationXyz().Z());
             result._hSize[0] = (RealType)(_hSize[0] * scaleAbs);
             result._hSize[1] = (RealType)(_hSize[1] * scaleAbs);
             result._hSize[2] = (RealType)(_hSize[2] * scaleAbs);
@@ -358,7 +358,7 @@ public partial struct B3f : IEquatable<B3f>
             result._center[1] = (RealType)center.Y();
             result._center[2] = (RealType)center.Z();
             Span<double> mat = stackalloc double[9];
-            trsf.HVectorialPart().CopyTo(mat);
+            trsf.RotationPart.CopyTo(mat);
             result._hSize[0] =
                 (RealType)(scaleAbs
                            * (Math.Abs(mat[0]) * _hSize[0] + Math.Abs(mat[1]) * _hSize[1]
@@ -471,17 +471,17 @@ public partial struct B3f : IEquatable<B3f>
     public readonly bool IsOut(in B3f box, in Transform3D trsf)
     {
         bool result = false;
-        TransformForm form = trsf.Form();
-        double scale = trsf.ScaleFactor();
+        TransformForm form = trsf.Form;
+        double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
         if (form == Translation || form == Identity || form == PntMirror || form == Scale)
         {
             result =
-                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationPart().X()) - _center[0])
+                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXyz().X()) - _center[0])
                      > (RealType)(box._hSize[0] * scaleAbs) + _hSize[0]
-                 || Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationPart().Y()) - _center[1])
+                 || Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationXyz().Y()) - _center[1])
                      > (RealType)(box._hSize[1] * scaleAbs) + _hSize[1]
-                 || Math.Abs((RealType)(box._center[2] * scale + trsf.TranslationPart().Z()) - _center[2])
+                 || Math.Abs((RealType)(box._center[2] * scale + trsf.TranslationXyz().Z()) - _center[2])
                      > (RealType)(box._hSize[2] * scaleAbs) + _hSize[2]);
         }
         else
@@ -489,7 +489,7 @@ public partial struct B3f : IEquatable<B3f>
             // theBox is transformed and we check the resulting (enlarged) box against
             // 'this' box.
             Span<double> mat = stackalloc double[9];
-            trsf.HVectorialPart().CopyTo(mat);
+            trsf.RotationPart.CopyTo(mat);
             Xyz center = new((double)box._center[0], (double)box._center[1], (double)box._center[2]);
             trsf.Transforms(ref center);
             Span<double> dist =
@@ -555,10 +555,10 @@ public partial struct B3f : IEquatable<B3f>
 
         Span<double> inter0 = [-RealLast(), RealLast()];
         Span<double> inter1 = [-RealLast(), RealLast()];
-        Xyz dir = line.Direction().XYZ();
-        Xyz diff = new((double)_center[0] - line.Location().X(),
-                           (double)_center[1] - line.Location().Y(),
-                           (double)_center[2] - line.Location().Z());
+        Xyz dir = line.Direction.XYZ();
+        Xyz diff = new((double)_center[0] - line.Location.X,
+                           (double)_center[1] - line.Location.Y,
+                           (double)_center[2] - line.Location.Z);
         double hSize = (double)_hSize[0] + overthickness;
         if (dir.X() > res)
         {
@@ -643,8 +643,8 @@ public partial struct B3f : IEquatable<B3f>
             return true;
         }
 
-        Xyz origin = plane.Location().XYZ();
-        Xyz dir = plane.Direction().XYZ();
+        Xyz origin = plane.Location.XYZ();
+        Xyz dir = plane.Direction.XYZ();
         Xyz boxCenter = new((double)_center[0], (double)_center[1], (double)_center[2]);
         double dist0 = (boxCenter - origin) * dir;
         double dist1 = // proj of HSize on aDir
@@ -663,17 +663,17 @@ public partial struct B3f : IEquatable<B3f>
     public readonly bool IsIn(in B3f box, in Transform3D trsf)
     {
         bool result = false;
-        TransformForm form = trsf.Form();
-        double scale = trsf.ScaleFactor();
+        TransformForm form = trsf.Form;
+        double scale = trsf.ScaleFactor;
         double scaleAbs = Math.Abs(scale);
         if (form == Translation || form == Identity || form == PntMirror || form == Scale)
         {
             result =
-                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationPart().X()) - _center[0])
+                (Math.Abs((RealType)(box._center[0] * scale + trsf.TranslationXyz().X()) - _center[0])
                      < (RealType)(box._hSize[0] * scaleAbs) - _hSize[0]
-                 && Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationPart().Y()) - _center[1])
+                 && Math.Abs((RealType)(box._center[1] * scale + trsf.TranslationXyz().Y()) - _center[1])
                      < (RealType)(box._hSize[1] * scaleAbs) - _hSize[1]
-                 && Math.Abs((RealType)(box._center[2] * scale + trsf.TranslationPart().Z()) - _center[2])
+                 && Math.Abs((RealType)(box._center[2] * scale + trsf.TranslationXyz().Z()) - _center[2])
                      < (RealType)(box._hSize[2] * scaleAbs) - _hSize[2]);
         }
         else
@@ -681,7 +681,7 @@ public partial struct B3f : IEquatable<B3f>
             // theBox is rotated, scaled and translated. We apply the reverse
             // translation and scaling then check against the rotated box 'this'
             Span<double> mat = stackalloc double[9];
-            trsf.HVectorialPart().CopyTo(mat);
+            trsf.RotationPart.CopyTo(mat);
             Xyz center = new((double)box._center[0], (double)box._center[1], (double)box._center[2]);
             trsf.Transforms(ref center);
             Span<double> dist =

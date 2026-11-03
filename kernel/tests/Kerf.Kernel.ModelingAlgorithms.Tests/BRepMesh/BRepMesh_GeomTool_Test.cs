@@ -53,7 +53,7 @@ public class BRepMesh_GeomTool_Test
                                                                           aParams);
         Point2D anIntPnt = new(anIntCoord);
 
-        double aDiff = anIntPnt.Distance(Constants.Origin2d());
+        double aDiff = anIntPnt.DistanceTo(Constants.Origin2d());
         Assert.Equal(GeomTool.IntFlag.Cross, anIntFlag);
         Assert.True(aDiff <= global::Kerf.Engine.Foundation.Precision.PConfusion(), "BRepMesh_GeomTool failed to intersect two lines at origin");
 
@@ -66,7 +66,7 @@ public class BRepMesh_GeomTool_Test
                                                 false,
                                                 ref anIntPnt);
 
-        aDiff = anIntPnt.Distance(Constants.Origin2d());
+        aDiff = anIntPnt.DistanceTo(Constants.Origin2d());
         Assert.Equal(GeomTool.IntFlag.Cross, anIntFlag);
         Assert.True(aDiff <= global::Kerf.Engine.Foundation.Precision.PConfusion(), "BRepMesh_GeomTool failed to intersect two segments at origin");
     }

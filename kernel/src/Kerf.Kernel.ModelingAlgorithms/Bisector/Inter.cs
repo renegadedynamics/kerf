@@ -44,8 +44,8 @@ public sealed class Inter : Intersection2D
     //===================================================================================
     private static LineCurve2D ConstructSegment(in Point2D pMin, in Point2D pMax, double uMin, double uMax)
     {
-        Direction2D dir = new(pMax.X() - pMin.X(), pMax.Y() - pMin.Y());
-        LineCurve2D l = new(new Point2D(pMin.X() - uMin * dir.X(), pMin.Y() - uMin * dir.Y()), dir);
+        Direction2D dir = new(pMax.X - pMin.X, pMax.Y - pMin.Y);
+        LineCurve2D l = new(new Point2D(pMin.X - uMin * dir.X, pMin.Y - uMin * dir.Y), dir);
         return l;
     }
 
@@ -343,7 +343,7 @@ public sealed class Inter : Intersection2D
         Transition trans1 = new(), trans2 = new();
         IntersectionPoint2D pointInterSol = new();
 
-        Line2D l1 = bis1.Lin2d();
+        Line2D l1 = bis1.Line;
         Point2D pf = bis2.Value(d2.FirstParameter());
         Point2D pl = bis2.Value(d2.LastParameter());
         //  Modified by skv - Mon May  5 14:43:28 2003 OCC616 Begin
@@ -356,7 +356,7 @@ public sealed class Inter : Intersection2D
             bisecAlgo = true;
         }
 
-        if (l1.Distance(pf) < tol)
+        if (l1.DistanceTo(pf) < tol)
         {
             double u1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, pf);
             //  Modified by skv - Mon May  5 14:48:12 2003 OCC616 Begin
@@ -373,7 +373,7 @@ public sealed class Inter : Intersection2D
             }
         }
 
-        if (l1.Distance(pl) < tol)
+        if (l1.DistanceTo(pl) < tol)
         {
             double u1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, pl);
             //  Modified by skv - Mon May  5 15:05:48 2003 OCC616 Begin

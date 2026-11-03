@@ -52,7 +52,7 @@ public class OffsetInputsUnchangedTests
         {
             var props = new Kerf.Engine.Measurement.Properties();
             Kerf.Engine.Measurement.MassPropertiesBuilder.SurfaceProperties(f, props);
-            return Math.Abs(props.CentreOfMass().Z() - value) < 1e-9;
+            return Math.Abs(props.CentreOfMass().Z - value) < 1e-9;
         }));
 
     [Fact]

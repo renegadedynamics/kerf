@@ -57,7 +57,7 @@ public class ConstructionInputsUnchangedTests
     private static bool Holds(in Shape shape, in Shape sub)
     {
         TShape? tShape = sub.TShape();
-        return SubShapes(shape, sub.ShapeType()).Exists(s => ReferenceEquals(s.TShape(), tShape));
+        return SubShapes(shape, sub.Type).Exists(s => ReferenceEquals(s.TShape(), tShape));
     }
 
     private static void AssertHoldsAll(in Shape result, in Shape input, ShapeType type)

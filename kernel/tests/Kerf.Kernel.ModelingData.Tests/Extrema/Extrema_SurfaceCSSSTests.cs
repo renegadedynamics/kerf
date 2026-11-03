@@ -87,7 +87,7 @@ public class Extrema_SurfaceCSSSTests
             Point3D aP = theC.Value(theC.FirstParameter() + (theC.LastParameter() - theC.FirstParameter()) * k / (4 * theN));
             foreach (Point3D aQ in aSPnts)
             {
-                aMin = Math.Min(aMin, aP.SquareDistance(aQ));
+                aMin = Math.Min(aMin, aP.SquareDistanceTo(aQ));
             }
         }
         return aMin;
@@ -115,7 +115,7 @@ public class Extrema_SurfaceCSSSTests
         {
             foreach (Point3D aQ in aG2)
             {
-                aMin = Math.Min(aMin, aP.SquareDistance(aQ));
+                aMin = Math.Min(aMin, aP.SquareDistanceTo(aQ));
             }
         }
         return aMin;
@@ -129,14 +129,14 @@ public class Extrema_SurfaceCSSSTests
         thePS.Parameter(out double u, out double v);
         theS.D1(u, v, out Point3D aPS, out Vector3D aDU, out Vector3D aDV);
         Vector3D aD = new(aPS, aPC);
-        if (aD.Magnitude() < 1e-7)
+        if (aD.Magnitude < 1e-7)
         {
             return;
         }
         // At the bounds a component may be non-zero; the tests choose interior extrema.
-        Assert.True(Math.Abs(aD.Dot(aDT)) < theTol * aDT.Magnitude() * Math.Max(1.0, aD.Magnitude()), "C' not normal");
-        Assert.True(Math.Abs(aD.Dot(aDU)) < theTol * aDU.Magnitude() * Math.Max(1.0, aD.Magnitude()), "Su not normal");
-        Assert.True(Math.Abs(aD.Dot(aDV)) < theTol * aDV.Magnitude() * Math.Max(1.0, aD.Magnitude()), "Sv not normal");
+        Assert.True(Math.Abs(aD.Dot(aDT)) < theTol * aDT.Magnitude * Math.Max(1.0, aD.Magnitude), "C' not normal");
+        Assert.True(Math.Abs(aD.Dot(aDU)) < theTol * aDU.Magnitude * Math.Max(1.0, aD.Magnitude), "Su not normal");
+        Assert.True(Math.Abs(aD.Dot(aDV)) < theTol * aDV.Magnitude * Math.Max(1.0, aD.Magnitude), "Sv not normal");
     }
 
     [Fact]
@@ -152,7 +152,7 @@ public class Extrema_SurfaceCSSSTests
         X[2] = 1.3;
         X[3] = 0.7;
         Assert.True(aF.Value(X, out double F0));
-        Assert.Equal(aC.Value(1.1).SquareDistance(aS.Value(1.3, 0.7)), F0, 1e-14);
+        Assert.Equal(aC.Value(1.1).SquareDistanceTo(aS.Value(1.3, 0.7)), F0, 1e-14);
 
         math_Vector G = new(1, 3);
         Matrix H = new(1, 3, 1, 3);
@@ -299,7 +299,7 @@ public class Extrema_SurfaceCSSSTests
         aF.GetStateNumber();
         aF.GetStateNumber();
         Assert.Equal(1, aF.ExtCount);
-        Assert.Equal(aC.Value(1.3).SquareDistance(aS.Value(1.7, 0.6)), aF.SquareDistance(1), 1e-14);
+        Assert.Equal(aC.Value(1.3).SquareDistanceTo(aS.Value(1.7, 0.6)), aF.SquareDistance(1), 1e-14);
         Assert.Equal(1.3, aF.PointOnCurve(1).Parameter());
 
         Assert.Throws<TypeMismatchException>(() => new FuncExtCS().Value(X, F));
@@ -359,8 +359,8 @@ public class Extrema_SurfaceCSSSTests
         Assert.Equal(9.0, aMin, 1e-8);
         Assert.Equal(10.0, anExt.PointOnCurve(aIMin).Parameter(), 1e-5);
         Point3D aPS = anExt.PointOnSurface(aIMin).Value();
-        Assert.Equal(0.0, aPS.X(), 1e-5);
-        Assert.Equal(2.0, aPS.Y(), 1e-5);
+        Assert.Equal(0.0, aPS.X, 1e-5);
+        Assert.Equal(2.0, aPS.Y, 1e-5);
     }
 
     [Fact]
@@ -377,7 +377,7 @@ public class Extrema_SurfaceCSSSTests
         {
             aMin = Math.Min(aMin, anExt.SquareDistance(i));
             AssertStationaryCS(aC, aS, anExt.PointOnCurve(i), anExt.PointOnSurface(i));
-            Assert.Equal(anExt.PointOnCurve(i).Value().SquareDistance(anExt.PointOnSurface(i).Value()),
+            Assert.Equal(anExt.PointOnCurve(i).Value().SquareDistanceTo(anExt.PointOnSurface(i).Value()),
                 anExt.SquareDistance(i), 1e-12);
         }
         Assert.True(aMin <= aSampled + 1e-9, $"{aMin} > sampled {aSampled}");
@@ -417,7 +417,7 @@ public class Extrema_SurfaceCSSSTests
         Assert.True(anExt.IsDone);
         Assert.True(anExt.ExtCount >= 1);
         Assert.Equal(0.0, anExt.SquareDistance(1), 1e-12);
-        Assert.Equal(0.0, anExt.PointOnSurface(1).Value().Z(), 1e-7);
+        Assert.Equal(0.0, anExt.PointOnSurface(1).Value().Z, 1e-7);
     }
 
     [Fact]
@@ -445,8 +445,8 @@ public class Extrema_SurfaceCSSSTests
         GenLocateExtSS anExt = new(aS1, aS2, 0.2, 0.1, M_PI - 0.2, -0.1, 1e-10, 1e-10);
         Assert.True(anExt.IsDone);
         Assert.Equal(4.0, anExt.SquareDistance(), 1e-10);
-        Assert.Equal(1.0, anExt.PointOnS1().Value().X(), 1e-7);
-        Assert.Equal(3.0, anExt.PointOnS2().Value().X(), 1e-7);
+        Assert.Equal(1.0, anExt.PointOnS1().Value().X, 1e-7);
+        Assert.Equal(3.0, anExt.PointOnS2().Value().X, 1e-7);
     }
 
     [Fact]
@@ -462,7 +462,7 @@ public class Extrema_SurfaceCSSSTests
         {
             aMin = Math.Min(aMin, anExt.SquareDistance(i));
             aMax = Math.Max(aMax, anExt.SquareDistance(i));
-            Assert.Equal(anExt.PointOnS1(i).Value().SquareDistance(anExt.PointOnS2(i).Value()), anExt.SquareDistance(i),
+            Assert.Equal(anExt.PointOnS1(i).Value().SquareDistanceTo(anExt.PointOnS2(i).Value()), anExt.SquareDistance(i),
                 1e-10);
         }
         Assert.Equal(4.0, aMin, 1e-7); // (5 - 1 - 2)^2
@@ -508,7 +508,7 @@ public class Extrema_SurfaceCSSSTests
         {
             aMin = Math.Min(aMin, anExt.SquareDistance(i));
             anExt.Points(i, out POnSurf aP1, out POnSurf aP2);
-            Assert.Equal(aP1.Value().SquareDistance(aP2.Value()), anExt.SquareDistance(i), 1e-9);
+            Assert.Equal(aP1.Value().SquareDistanceTo(aP2.Value()), anExt.SquareDistance(i), 1e-9);
         }
         double aSampled = SampledMinSS(aS1, aS2);
         Assert.True(aMin <= aSampled + 1e-9, $"{aMin} > sampled {aSampled}");

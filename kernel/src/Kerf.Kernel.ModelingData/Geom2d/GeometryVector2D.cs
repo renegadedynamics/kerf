@@ -35,7 +35,7 @@ public abstract class GeometryVector2D : Geometry2D
 
     /// <summary>The angle from this vector to Other, in [-PI, PI].</summary>
     /// <exception cref="NullVectorException">Either vector has a null magnitude.</exception>
-    public double Angle(GeometryVector2D other) => _gpVec2d.Angle(other.Vec2d());
+    public double Angle(GeometryVector2D other) => _gpVec2d.AngleTo(other.Vec2d());
 
     /// <summary>The coordinates.</summary>
     public void Coord(out double x, out double y) => _gpVec2d.Coord(out x, out y);
@@ -47,10 +47,10 @@ public abstract class GeometryVector2D : Geometry2D
     public abstract double SquareMagnitude();
 
     /// <summary>The X coordinate.</summary>
-    public double X() => _gpVec2d.X();
+    public double X() => _gpVec2d.X;
 
     /// <summary>The Y coordinate.</summary>
-    public double Y() => _gpVec2d.Y();
+    public double Y() => _gpVec2d.Y;
 
     /// <summary>The cross product this ^ Other (a scalar in 2D).</summary>
     public abstract double Crossed(GeometryVector2D other);

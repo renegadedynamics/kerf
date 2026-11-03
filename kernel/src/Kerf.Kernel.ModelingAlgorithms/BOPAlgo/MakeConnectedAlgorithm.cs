@@ -447,7 +447,7 @@ public class MakeConnectedAlgorithm : Options
 
         // Define the element type and the material type
         ShapeType elemType;
-        ShapeType materialType = lShapes.First().ShapeType();
+        ShapeType materialType = lShapes.First().Type;
         if (materialType == ShapeType.Solid || materialType == ShapeType.CompSolid)
         {
             elemType = ShapeType.Face;

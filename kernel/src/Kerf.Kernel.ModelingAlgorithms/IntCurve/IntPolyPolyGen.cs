@@ -365,7 +365,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
 
                             TheCurveTool.D1(c1, u, out p1, out tan1);
                             TheCurveTool.D1(c1, v, out p2, out tan2);
-                            double dist = p1.Distance(p2);
+                            double dist = p1.DistanceTo(p2);
                             double epsX1 = 10.0 * TheCurveTool.EpsX(c1);
 
                             if (Math.Abs(u - v) <= epsX1)
@@ -405,20 +405,20 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                                 //-----------------------------------------------------------------
                                 //-- Calculate Positions of Points on the curve
                                 //--
-                                if (p1.Distance(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
+                                if (p1.DistanceTo(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
                                 {
                                     pos1 = Position2D.Head;
                                 }
-                                else if (p1.Distance(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
+                                else if (p1.DistanceTo(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
                                 {
                                     pos1 = Position2D.End;
                                 }
 
-                                if (p2.Distance(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
+                                if (p2.DistanceTo(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
                                 {
                                     pos2 = Position2D.Head;
                                 }
-                                else if (p2.Distance(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
+                                else if (p2.DistanceTo(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
                                 {
                                     pos2 = Position2D.End;
                                 }
@@ -525,9 +525,9 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
 
             TheCurveTool.D0(c1, polyUInf, out p1);
             TheCurveTool.D0(c1, polyVInf, out p2);
-            double distmemesens = p1.SquareDistance(p2);
+            double distmemesens = p1.SquareDistanceTo(p2);
             TheCurveTool.D0(c1, polyVSup, out p2);
-            double distdiffsens = p1.SquareDistance(p2);
+            double distdiffsens = p1.SquareDistanceTo(p2);
             if (distmemesens > distdiffsens)
             {
                 double qwerty = polyVInf;
@@ -546,19 +546,19 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
             TheCurveTool.D1(c1, polyUInf, out p1, out tan1);
             TheCurveTool.D1(c1, polyVInf, out p2, out tan2);
 
-            if (p1.Distance(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
+            if (p1.DistanceTo(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
             {
                 pos1 = Position2D.Head;
             }
-            else if (p1.Distance(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
+            else if (p1.DistanceTo(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
             {
                 pos1 = Position2D.End;
             }
-            if (p2.Distance(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
+            if (p2.DistanceTo(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
             {
                 pos2 = Position2D.Head;
             }
-            else if (p2.Distance(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
+            else if (p2.DistanceTo(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
             {
                 pos2 = Position2D.End;
             }
@@ -607,19 +607,19 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                 pos1 = Position2D.Middle;
                 pos2 = Position2D.Middle;
 
-                if (p1.Distance(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
+                if (p1.DistanceTo(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
                 {
                     pos1 = Position2D.Head;
                 }
-                else if (p1.Distance(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
+                else if (p1.DistanceTo(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
                 {
                     pos1 = Position2D.End;
                 }
-                if (p2.Distance(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
+                if (p2.DistanceTo(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
                 {
                     pos2 = Position2D.Head;
                 }
-                else if (p2.Distance(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
+                else if (p2.DistanceTo(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
                 {
                     pos2 = Position2D.End;
                 }
@@ -703,7 +703,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
 
         //----------------------------------------------------------------------
         //-- Head On 1   :        Head1 <-> P2
-        if (p2.Distance(d1.FirstPoint()) <= d1.FirstTolerance())
+        if (p2.DistanceTo(d1.FirstPoint()) <= d1.FirstTolerance())
         {
             pos1 = Position2D.Head;
             headOn1 = true;
@@ -712,7 +712,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
         }
         //----------------------------------------------------------------------
         //-- End On 1   :         End1 <-> P2
-        else if (p2.Distance(d1.LastPoint()) <= d1.LastTolerance())
+        else if (p2.DistanceTo(d1.LastPoint()) <= d1.LastTolerance())
         {
             pos1 = Position2D.End;
             endOn1 = true;
@@ -722,7 +722,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
 
         //----------------------------------------------------------------------
         //-- Head On 2   :        Head2 <-> P1
-        else if (p1.Distance(d2.FirstPoint()) <= d2.FirstTolerance())
+        else if (p1.DistanceTo(d2.FirstPoint()) <= d2.FirstTolerance())
         {
             pos2 = Position2D.Head;
             headOn2 = true;
@@ -731,7 +731,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
         }
         //----------------------------------------------------------------------
         //-- End On 2   :        End2 <-> P1
-        else if (p1.Distance(d2.LastPoint()) <= d2.LastTolerance())
+        else if (p1.DistanceTo(d2.LastPoint()) <= d2.LastTolerance())
         {
             pos2 = Position2D.End;
             endOn2 = true;
@@ -773,7 +773,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                     p2 = d2.FirstPoint();
                     if (pos1 != Position2D.Middle)
                     {
-                        p1 = p1.WithCoord(0.5 * (p1.X() + p2.X()), 0.5 * (p1.Y() + p2.Y()));
+                        p1 = p1.WithCoord(0.5 * (p1.X + p2.X), 0.5 * (p1.Y + p2.Y));
                     }
                     else
                     {
@@ -787,7 +787,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                     p2 = d2.LastPoint();
                     if (pos1 != Position2D.Middle)
                     {
-                        p1 = p1.WithCoord(0.5 * (p1.X() + p2.X()), 0.5 * (p1.Y() + p2.Y()));
+                        p1 = p1.WithCoord(0.5 * (p1.X + p2.X), 0.5 * (p1.Y + p2.Y));
                     }
                     else
                     {
@@ -999,7 +999,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
             eip.Roots(out u, out v);
             TheCurveTool.D1(c1, u, out p1, out tan1);
             TheCurveTool.D1(c2, v, out p2, out tan2);
-            double dist = p1.Distance(p2);
+            double dist = p1.DistanceTo(p2);
             if (eip.RootCount == 0 && dist > tolConf)
             {
                 Transition trans = new();
@@ -1016,7 +1016,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                 v = pInt.ParamOnSecond();
                 TheCurveTool.D1(c1, u, out p1, out tan1);
                 TheCurveTool.D1(c2, v, out p2, out tan2);
-                dist = p1.Distance(p2);
+                dist = p1.DistanceTo(p2);
             }
             //-----------------------------------------------------------------
             //-- It is checked if the point (u,v) does not exist already
@@ -1045,20 +1045,20 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                 //-----------------------------------------------------------------
                 //-- Calculate the Positions of Points on the curve
                 //--
-                if (p1.Distance(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
+                if (p1.DistanceTo(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
                 {
                     pos1 = Position2D.Head;
                 }
-                else if (p1.Distance(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
+                else if (p1.DistanceTo(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
                 {
                     pos1 = Position2D.End;
                 }
 
-                if (p2.Distance(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
+                if (p2.DistanceTo(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
                 {
                     pos2 = Position2D.Head;
                 }
-                else if (p2.Distance(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
+                else if (p2.DistanceTo(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
                 {
                     pos2 = Position2D.End;
                 }
@@ -1162,9 +1162,9 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
 
             TheCurveTool.D0(c1, polyUInf, out p1);
             TheCurveTool.D0(c2, polyVInf, out p2);
-            double distmemesens = p1.SquareDistance(p2);
+            double distmemesens = p1.SquareDistanceTo(p2);
             TheCurveTool.D0(c2, polyVSup, out p2);
-            double distdiffsens = p1.SquareDistance(p2);
+            double distdiffsens = p1.SquareDistanceTo(p2);
             if (distmemesens > distdiffsens)
             {
                 double qwerty = polyVInf;
@@ -1206,19 +1206,19 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                 TheCurveTool.D1(c1, polyUInf, out p1, out tan1);
                 TheCurveTool.D1(c2, polyVInf, out p2, out tan2);
 
-                if (p1.Distance(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
+                if (p1.DistanceTo(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
                 {
                     pos1 = Position2D.Head;
                 }
-                else if (p1.Distance(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
+                else if (p1.DistanceTo(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
                 {
                     pos1 = Position2D.End;
                 }
-                if (p2.Distance(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
+                if (p2.DistanceTo(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
                 {
                     pos2 = Position2D.Head;
                 }
-                else if (p2.Distance(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
+                else if (p2.DistanceTo(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
                 {
                     pos2 = Position2D.End;
                 }
@@ -1268,19 +1268,19 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                     pos1 = Position2D.Middle;
                     pos2 = Position2D.Middle;
 
-                    if (p1.Distance(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
+                    if (p1.DistanceTo(_domainOnCurve1.FirstPoint()) <= _domainOnCurve1.FirstTolerance())
                     {
                         pos1 = Position2D.Head;
                     }
-                    else if (p1.Distance(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
+                    else if (p1.DistanceTo(_domainOnCurve1.LastPoint()) <= _domainOnCurve1.LastTolerance())
                     {
                         pos1 = Position2D.End;
                     }
-                    if (p2.Distance(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
+                    if (p2.DistanceTo(_domainOnCurve2.FirstPoint()) <= _domainOnCurve2.FirstTolerance())
                     {
                         pos2 = Position2D.Head;
                     }
-                    else if (p2.Distance(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
+                    else if (p2.DistanceTo(_domainOnCurve2.LastPoint()) <= _domainOnCurve2.LastTolerance())
                     {
                         pos2 = Position2D.End;
                     }
@@ -1376,8 +1376,8 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
             return;
         }
         //
-        bool isSmall1 = (t1l - t1f) <= pTol1 || p1f.SquareDistance(p1l) / 4.0 <= tol2;
-        bool isSmall2 = (t2l - t2f) <= pTol2 || p2f.SquareDistance(p2l) / 4.0 <= tol2;
+        bool isSmall1 = (t1l - t1f) <= pTol1 || p1f.SquareDistanceTo(p1l) / 4.0 <= tol2;
+        bool isSmall2 = (t2l - t2f) <= pTol2 || p2f.SquareDistanceTo(p2l) / 4.0 <= tol2;
 
         if ((isSmall1 && isSmall2) || (count > maxCount))
         {

@@ -48,7 +48,7 @@ public partial struct PPoint2D : IEquatable<PPoint2D>
     }
 
     /// <summary>The distance between the two points.</summary>
-    public readonly double Dist(in PPoint2D oth) => _point.Distance(oth._point);
+    public readonly double Dist(in PPoint2D oth) => _point.DistanceTo(oth._point);
 
     /// <summary>The parameter.</summary>
     public readonly double Parameter() => _parameter;

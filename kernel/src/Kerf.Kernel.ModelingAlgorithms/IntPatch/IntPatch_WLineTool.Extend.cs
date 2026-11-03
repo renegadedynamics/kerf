@@ -130,7 +130,7 @@ public static partial class WLineTool
         Point3D p1 = s1.Value(u1, v1);
         Point3D p2 = s2.Value(u2, v2);
 
-        return (p1.SquareDistance(p2) <= tol * tol);
+        return (p1.SquareDistanceTo(p2) <= tol * tol);
     }
 
     // Adds thePOn2S to the begin of theWline.
@@ -228,9 +228,9 @@ public static partial class WLineTool
     {
         double sqToler = toler3D * toler3D;
         IntPatchWT_WLsConnectionType retVal = IntPatchWT_WLsConnectionType.IntPatchWT_NotConnected;
-        if (vec3.SquareMagnitude() <= sqToler)
+        if (vec3.SquareMagnitude <= sqToler)
         {
-            if ((vec1.Angle(vec2) > myMaxConcatAngle))
+            if ((vec1.AngleTo(vec2) > myMaxConcatAngle))
             {
                 return retVal;
             }
@@ -239,8 +239,8 @@ public static partial class WLineTool
                 retVal = IntPatchWT_WLsConnectionType.IntPatchWT_Common;
             }
         }
-        else if ((vec1.Angle(vec2) > myMaxConcatAngle) || (vec1.Angle(vec3) > myMaxConcatAngle)
-                 || (vec2.Angle(vec3) > myMaxConcatAngle))
+        else if ((vec1.AngleTo(vec2) > myMaxConcatAngle) || (vec1.AngleTo(vec3) > myMaxConcatAngle)
+                 || (vec2.AngleTo(vec3) > myMaxConcatAngle))
         {
             return retVal;
         }
@@ -761,7 +761,7 @@ public static partial class WLineTool
                         Point3D pt = itr.Value();
                         if ((checkResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast)) == 0)
                         {
-                            if (pt.SquareDistance(pntFWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistanceTo(pntFWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 checkResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisFirstLast;
                             }
@@ -769,7 +769,7 @@ public static partial class WLineTool
 
                         if ((checkResult & (IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast)) == 0)
                         {
-                            if (pt.SquareDistance(pntLWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistanceTo(pntLWL1.Value().Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 checkResult |= IntPatchWT_DisLastFirst | IntPatchWT_DisLastLast;
                             }
@@ -777,7 +777,7 @@ public static partial class WLineTool
 
                         if ((checkResult & (IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst)) == 0)
                         {
-                            if (pt.SquareDistance(pntFWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistanceTo(pntFWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 checkResult |= IntPatchWT_DisFirstFirst | IntPatchWT_DisLastFirst;
                             }
@@ -785,7 +785,7 @@ public static partial class WLineTool
 
                         if ((checkResult & (IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast)) == 0)
                         {
-                            if (pt.SquareDistance(pntLWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                            if (pt.SquareDistanceTo(pntLWL2.Value()) < global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
                                 checkResult |= IntPatchWT_DisFirstLast | IntPatchWT_DisLastLast;
                             }

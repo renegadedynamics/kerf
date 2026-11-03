@@ -16,16 +16,16 @@ public class IntSurf_Quadric_Test
         Cone aCone = new(new CoordinateSystem(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0), new Direction3D(1.0, 0.0, 0.0)),
                             0.5, 0.0);
         SurfaceQuadric aQuadric = new(aCone);
-        Point3D anApex = aCone.Apex();
+        Point3D anApex = aCone.Apex;
 
         Vector3D aGradient = aQuadric.Gradient(anApex);
-        Assert.True(aGradient.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aGradient.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion());
 
         double aDist = 1.0;
         Vector3D aGrad = new(1.0, 0.0, 0.0);
         aQuadric.ValAndGrad(anApex, ref aDist, ref aGrad);
         Assert.Equal(0.0, aDist, global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aGrad.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion());
+        Assert.True(aGrad.SquareMagnitude <= global::Kerf.Engine.Foundation.Precision.SquareConfusion());
     }
 }
 
@@ -69,7 +69,7 @@ public class IntSurf_QuadricTests
             {
                 Point3D aP = aQ.Value(u, v);
                 Assert.Equal(0.0, aQ.Distance(aP), 1e-12);
-                Assert.Equal(0.0, QuadricTool.Value(aQ, aP.X(), aP.Y(), aP.Z()), 1e-12);
+                Assert.Equal(0.0, QuadricTool.Value(aQ, aP.X, aP.Y, aP.Z), 1e-12);
             }
         }
     }
@@ -83,9 +83,9 @@ public class IntSurf_QuadricTests
         foreach (Point3D aP in new[] { new Point3D(3.0, 1.0, 2.0), new Point3D(-2.0, 0.5, -1.0), new Point3D(0.7, 4.0, 1.5) })
         {
             Vector3D aGrad = aQ.Gradient(aP);
-            Vector3D aFD = new((aQ.Distance(new Point3D(aP.X() + h, aP.Y(), aP.Z())) - aQ.Distance(new Point3D(aP.X() - h, aP.Y(), aP.Z()))) / (2 * h),
-                             (aQ.Distance(new Point3D(aP.X(), aP.Y() + h, aP.Z())) - aQ.Distance(new Point3D(aP.X(), aP.Y() - h, aP.Z()))) / (2 * h),
-                             (aQ.Distance(new Point3D(aP.X(), aP.Y(), aP.Z() + h)) - aQ.Distance(new Point3D(aP.X(), aP.Y(), aP.Z() - h))) / (2 * h));
+            Vector3D aFD = new((aQ.Distance(new Point3D(aP.X + h, aP.Y, aP.Z)) - aQ.Distance(new Point3D(aP.X - h, aP.Y, aP.Z))) / (2 * h),
+                             (aQ.Distance(new Point3D(aP.X, aP.Y + h, aP.Z)) - aQ.Distance(new Point3D(aP.X, aP.Y - h, aP.Z))) / (2 * h),
+                             (aQ.Distance(new Point3D(aP.X, aP.Y, aP.Z + h)) - aQ.Distance(new Point3D(aP.X, aP.Y, aP.Z - h))) / (2 * h));
             if (theKind != 3)
             {
                 // the cone's "distance" is measured along the axis' normal, not orthogonally: only its sign agrees
@@ -97,7 +97,7 @@ public class IntSurf_QuadricTests
             aQ.ValAndGrad(aP, ref aDist, ref aG2);
             Assert.Equal(aQ.Distance(aP), aDist, 1e-14);
             Assert.True(aG2.IsEqual(aGrad, 1e-14, 1e-12));
-            QuadricTool.Gradient(aQ, aP.X(), aP.Y(), aP.Z(), out Vector3D aG3);
+            QuadricTool.Gradient(aQ, aP.X, aP.Y, aP.Z, out Vector3D aG3);
             Assert.Equal(aGrad, aG3);
         }
     }
@@ -134,22 +134,22 @@ public class IntSurf_QuadricTests
         Cylinder aCyl = new(Frame, 2.0);
         SurfaceQuadric aQ = new(aCyl);
         Assert.Equal(SurfaceKind.Cylinder, aQ.TypeQuadric());
-        Assert.Equal(2.0, aQ.Cylinder().Radius());
+        Assert.Equal(2.0, aQ.Cylinder().Radius);
         Assert.Equal(4.0e-6, QuadricTool.Tolerance(aQ));
         Assert.Equal(6.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Sphere(Frame, 3.0))));
         Assert.Equal(1.0e-6, QuadricTool.Tolerance(new SurfaceQuadric(new Plane3D(Frame))));
 
         Cone aCone = new(Frame, 0.4, 1.5);
         SurfaceQuadric aQc = new(aCone);
-        Assert.Equal(0.4, aQc.Cone().SemiAngle());
-        Assert.Equal(1.5, aQc.Cone().RefRadius());
+        Assert.Equal(0.4, aQc.Cone().SemiAngle);
+        Assert.Equal(1.5, aQc.Cone().RefRadius);
 
         // SetValue rebuilds the whole quadric, as the constructor does
         SurfaceQuadric aQs = new(new Plane3D(Frame));
         aQs.SetValue(aCyl);
         Assert.Equal(aQ, aQs);
         SurfaceQuadric aQt = new(new Torus(Frame, 4.0, 1.0));
-        Assert.Equal(4.0, aQt.Torus().MajorRadius());
-        Assert.Equal(1.0, aQt.Torus().MinorRadius());
+        Assert.Equal(4.0, aQt.Torus().MajorRadius);
+        Assert.Equal(1.0, aQt.Torus().MinorRadius);
     }
 }

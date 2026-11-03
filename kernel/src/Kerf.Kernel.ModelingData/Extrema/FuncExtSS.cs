@@ -131,25 +131,25 @@ public class FuncExtSS : FunctionSetWithDerivatives
         f[3] = p1P2.Dot(du2s2);
         f[4] = p1P2.Dot(dv2s2);
 
-        df[1, 1] = du1s1.SquareMagnitude() + p1P2.Dot(du1u1s1);
+        df[1, 1] = du1s1.SquareMagnitude + p1P2.Dot(du1u1s1);
         df[1, 2] = dv1s1.Dot(du1s1) + p1P2.Dot(du1v1s1);
         df[1, 3] = -du2s2.Dot(du1s1);
         df[1, 4] = -dv2s2.Dot(du1s1);
 
         df[2, 1] = df[1, 2]; // Du1s1.Dot(Dv1s1) + P1P2.Dot(Du1v1s1);
-        df[2, 2] = dv1s1.SquareMagnitude() + p1P2.Dot(dv1v1s1);
+        df[2, 2] = dv1s1.SquareMagnitude + p1P2.Dot(dv1v1s1);
         df[2, 3] = -du2s2.Dot(dv1s1);
         df[2, 4] = -dv2s2.Dot(dv1s1);
 
         df[3, 1] = -df[1, 3]; // Du1s1.Dot(Du2s2);
         df[3, 2] = -df[2, 3]; // Dv1s1.Dot(Du2s2);
-        df[3, 3] = -du2s2.SquareMagnitude() + p1P2.Dot(du2u2s2);
+        df[3, 3] = -du2s2.SquareMagnitude + p1P2.Dot(du2u2s2);
         df[3, 4] = -dv2s2.Dot(du2s2) + p1P2.Dot(du2v2s2);
 
         df[4, 1] = -df[1, 4]; // Du1s1.Dot(Dv2s2);
         df[4, 2] = -df[2, 4]; // Dv1s1.Dot(Dv2s2);
         df[4, 3] = df[3, 4]; // -Du2s2.Dot(Dv2s2) + P1P2.Dot(Du2v2s2);
-        df[4, 4] = -dv2s2.SquareMagnitude() + p1P2.Dot(dv2v2s2);
+        df[4, 4] = -dv2s2.SquareMagnitude + p1P2.Dot(dv2v2s2);
 
         return true;
     }
@@ -162,7 +162,7 @@ public class FuncExtSS : FunctionSetWithDerivatives
             throw new TypeMismatchException();
         }
 
-        _sqDist.Append(_p1.SquareDistance(_p2));
+        _sqDist.Append(_p1.SquareDistanceTo(_p2));
         _point1.Append(new POnSurf(_u1, _v1, _p1));
         _point2.Append(new POnSurf(_u2, _v2, _p2));
         return 0;

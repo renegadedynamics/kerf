@@ -61,8 +61,8 @@ public class IntWalkPWalkingTests
         {
             PntOn2S aP = theWalk.Value(i);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-            Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"point {i} off surface 1");
-            Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"point {i} off surface 2");
+            Assert.True(theS1.Value(u1, v1).DistanceTo(aP.Value()) < theTol, $"point {i} off surface 1");
+            Assert.True(theS2.Value(u2, v2).DistanceTo(aP.Value()) < theTol, $"point {i} off surface 2");
         }
     }
 
@@ -80,14 +80,14 @@ public class IntWalkPWalkingTests
         for (int i = 1; i <= aWalk.PointCount; i++)
         {
             Point3D aP = aWalk.Value(i).Value();
-            Assert.True(Math.Abs(aP.X()) < 1.0e-7 && Math.Abs(aP.Z()) < 1.0e-7, $"point {i} off the Y axis");
+            Assert.True(Math.Abs(aP.X) < 1.0e-7 && Math.Abs(aP.Z) < 1.0e-7, $"point {i} off the Y axis");
         }
 
         // The line runs along Y in both directions from the origin, to the planes' borders at |y| = 10
         double aYmin = double.MaxValue, aYmax = double.MinValue;
         for (int i = 1; i <= aWalk.PointCount; i++)
         {
-            double y = aWalk.Value(i).Value().Y();
+            double y = aWalk.Value(i).Value().Y;
             aYmin = Math.Min(aYmin, y);
             aYmax = Math.Max(aYmax, y);
         }
@@ -110,10 +110,10 @@ public class IntWalkPWalkingTests
         for (int i = 1; i <= aWalk.PointCount; i++)
         {
             Point3D aP = aWalk.Value(i).Value();
-            Assert.True(Math.Abs(aP.X() - 2.0) < 1.0e-6 && Math.Abs(aP.Y() - Math.Sqrt(21.0)) < 1.0e-6,
+            Assert.True(Math.Abs(aP.X - 2.0) < 1.0e-6 && Math.Abs(aP.Y - Math.Sqrt(21.0)) < 1.0e-6,
                         $"point {i} off the generator");
-            aZmin = Math.Min(aZmin, aP.Z());
-            aZmax = Math.Max(aZmax, aP.Z());
+            aZmin = Math.Min(aZmin, aP.Z);
+            aZmax = Math.Max(aZmax, aP.Z);
         }
         Assert.True(aZmin < -9.0 && aZmax > 9.0, $"z in [{aZmin}, {aZmax}]");
 
@@ -146,7 +146,7 @@ public class IntWalkPWalkingTests
         {
             PntOn2S aP = aWalk.Value(i);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-            aSig.AddRange([aP.Value().X(), aP.Value().Y(), aP.Value().Z(), u1, v1, u2, v2]);
+            aSig.AddRange([aP.Value().X, aP.Value().Y, aP.Value().Z, u1, v1, u2, v2]);
         }
         return aSig;
     }

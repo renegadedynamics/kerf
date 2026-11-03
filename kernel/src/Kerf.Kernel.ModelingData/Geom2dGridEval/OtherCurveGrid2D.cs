@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <remarks>
 /// OCCT keeps a reference to the adaptor, which must outlive the evaluator; the port keeps the adaptor object.
 /// </remarks>
-public sealed class OtherCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class OtherCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly Curve2DAdaptorBase _curve;
 

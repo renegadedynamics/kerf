@@ -33,7 +33,7 @@ public class BRepLibMeshTests
         foreach (Face aF in BRepGPropTestShapes.Faces(theShape))
         {
             Face aFwd = ShapeCasts.Face(aF.Oriented(Forward));
-            Plane3D aPln = ((PlaneSurface)Tool.Surface(aFwd)!).Pln();
+            Plane3D aPln = ((PlaneSurface)Tool.Surface(aFwd)!).Plane;
             var aVertices = new List<Vertex>();
             for (var anExp = new Explorer(aFwd, ShapeType.Edge); anExp.More(); anExp.Next())
             {
@@ -178,9 +178,9 @@ public class BRepLibMeshTests
         aB.UpdateFace(aF, aTri);
         BrepLibrary.UpdateDeflection(aF);
         // the inner link (1, 3): its midpoint (0.5, 0.5, 0.5) against the surface at (pi / 4, 0.5)
-        double aLink = new Point3D(0.5, 0.5, 0.5).Distance(aCyl.Value(Math.PI / 4, 0.5));
+        double aLink = new Point3D(0.5, 0.5, 0.5).DistanceTo(aCyl.Value(Math.PI / 4, 0.5));
         // the triangle midpoints: ((1 + 0 + 0) / 3, (0 + 1 + 1) / 3) against (pi / 6, 1 / 3) and the other
-        double aMid = new Point3D(1.0 / 3, 2.0 / 3, 1.0 / 3).Distance(aCyl.Value(Math.PI / 3, 1.0 / 3));
+        double aMid = new Point3D(1.0 / 3, 2.0 / 3, 1.0 / 3).DistanceTo(aCyl.Value(Math.PI / 3, 1.0 / 3));
         Assert.Equal(Math.Max(aLink, aMid), Triangulation(aF).Deflection(), 1e-12);
     }
 
@@ -197,8 +197,8 @@ public class BRepLibMeshTests
             Face aNewF = ShapeCasts.Face(aH.Modified(aF)[0]);
             Triangulation aNew = Triangulation(aNewF);
             Assert.True(aNew.HasNormals);
-            Direction3D aN = ((PlaneSurface)Tool.Surface(aNewF)!).Pln().Axis().Direction();
-            if (aNewF.Orientation() == Reversed)
+            Direction3D aN = ((PlaneSurface)Tool.Surface(aNewF)!).Plane.Axis.Direction;
+            if (aNewF.Orientation == Reversed)
             {
                 aN = aN.Reversed();
             }
@@ -249,7 +249,7 @@ public class BRepLibMeshTests
         Triangulation aWithNormals = ToolTriangulatedShape.NormalsComputed(aF, aT)!;
         Assert.NotSame(aT, aWithNormals);
         Assert.False(aT.HasNormals);
-        Direction3D aN = ((PlaneSurface)Tool.Surface(aF)!).Pln().Axis().Direction();
+        Direction3D aN = ((PlaneSurface)Tool.Surface(aF)!).Plane.Axis.Direction;
         for (int i = 1; i <= aWithNormals.NodeCount; i++)
         {
             Assert.True(aWithNormals.Normal(i).IsEqual(aN, 1e-6));
@@ -306,10 +306,10 @@ public class BRepLibMeshTests
         Assert.Equal(24, aCloud.Points.Count);
         foreach ((Point3D aP, Vector3D aN, _, _) in aCloud.Points)
         {
-            double[] c = [aP.X(), aP.Y(), aP.Z()];
+            double[] c = [aP.X, aP.Y, aP.Z];
             Assert.All(c, x => Assert.InRange(x, -1e-12, 1 + 1e-12));
             Assert.Contains(c, x => Math.Abs(x) < 1e-12 || Math.Abs(x - 1) < 1e-12);
-            Assert.Equal(1.0, aN.Magnitude(), 1e-12);
+            Assert.Equal(1.0, aN.Magnitude, 1e-12);
         }
 
         // the same seed for every face: the same draws, so the same run gives the same points
@@ -323,7 +323,7 @@ public class BRepLibMeshTests
         Assert.True(aFar.GeneratePointsByDensity(0.3));
         foreach ((Point3D aP, Vector3D aN, _, _) in aFar.Points)
         {
-            double[] c = [aP.X(), aP.Y(), aP.Z()];
+            double[] c = [aP.X, aP.Y, aP.Z];
             Assert.All(c, x => Assert.InRange(x, -0.5 - 1e-12, 1.5 + 1e-12));
         }
         aBefore.AssertUnchanged(aBox);
@@ -350,7 +350,7 @@ public class BRepLibMeshTests
         Assert.Equal(24, aCloud.Points.Count);
         foreach ((Point3D aP, Vector3D aN, _, Shape aF) in aCloud.Points)
         {
-            Direction3D aFaceN = ((PlaneSurface)Tool.Surface(ShapeCasts.Face(aF))!).Pln().Axis().Direction();
+            Direction3D aFaceN = ((PlaneSurface)Tool.Surface(ShapeCasts.Face(aF))!).Plane.Axis.Direction;
             Assert.True(new Direction3D(aN).IsParallel(aFaceN, 1e-6));
         }
         aBefore.AssertUnchanged(aBox);

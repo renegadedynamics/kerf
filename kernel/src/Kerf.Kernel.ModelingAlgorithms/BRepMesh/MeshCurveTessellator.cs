@@ -88,7 +88,7 @@ public class MeshCurveTessellator : CurveTessellator
 
         double preciseAngDef = 0.5 * _dEdge.GetAngularDeflection();
         double preciseLinDef = 0.5 * _dEdge.GetDeflection();
-        if (_edge.Orientation() == Internal)
+        if (_edge.Orientation == Internal)
         {
             preciseLinDef *= 0.5;
         }
@@ -202,7 +202,7 @@ public class MeshCurveTessellator : CurveTessellator
         for (; vertexIt.More(); vertexIt.Next())
         {
             Vertex vertex = ShapeCasts.Vertex(vertexIt.Current());
-            if (vertex.Orientation() != Internal)
+            if (vertex.Orientation != Internal)
             {
                 continue;
             }
@@ -217,7 +217,7 @@ public class MeshCurveTessellator : CurveTessellator
         Point3D aPoint = Tool.Pnt(vertex);
         double tolerance = Tool.Tolerance(vertex);
 
-        return (point.SquareDistance(aPoint) < tolerance * tolerance);
+        return (point.SquareDistanceTo(aPoint) < tolerance * tolerance);
     }
 
     /// <inheritdoc/>
@@ -253,15 +253,15 @@ public class MeshCurveTessellator : CurveTessellator
 
         curve.GetCurve()!.D0(parameter, out Point2D uv);
         // Point lies within the surface range - nothing to do.
-        if (uv.X() > _faceRangeU[0] && uv.X() < _faceRangeU[1] && uv.Y() > _faceRangeV[0]
-            && uv.Y() < _faceRangeV[1])
+        if (uv.X > _faceRangeU[0] && uv.X < _faceRangeU[1] && uv.Y > _faceRangeV[0]
+            && uv.Y < _faceRangeV[1])
         {
             return true;
         }
 
-        surface.D0(uv.X(), uv.Y(), out Point3D pntOnSurf);
+        surface.D0(uv.X, uv.Y, out Point3D pntOnSurf);
 
-        return (point.SquareDistance(pntOnSurf) < _edgeSqTol);
+        return (point.SquareDistanceTo(pntOnSurf) < _edgeSqTol);
     }
 
     private void SplitSegment(Surface surf,
@@ -285,8 +285,8 @@ public class MeshCurveTessellator : CurveTessellator
             return;
         }
 
-        if ((curve2d.FirstParameter() - first > global::Kerf.Engine.Foundation.Precision.PConfusion())
-            || (last - curve2d.LastParameter() > global::Kerf.Engine.Foundation.Precision.PConfusion()))
+        if ((curve2d.FirstParameter - first > global::Kerf.Engine.Foundation.Precision.PConfusion())
+            || (last - curve2d.LastParameter > global::Kerf.Engine.Foundation.Precision.PConfusion()))
         {
             // E.g. test bugs moddata_3 bug30133
             return;
@@ -295,16 +295,16 @@ public class MeshCurveTessellator : CurveTessellator
         curve2d.D0(first, out uvf);
         curve2d.D0(last, out uvl);
 
-        p3dF = surf.Value(uvf.X(), uvf.Y());
-        p3dL = surf.Value(uvl.X(), uvl.Y());
+        p3dF = surf.Value(uvf.X, uvf.Y);
+        p3dL = surf.Value(uvl.X, uvl.Y);
 
-        if (p3dF.SquareDistance(p3dL) < _squareMinSize)
+        if (p3dF.SquareDistanceTo(p3dL) < _squareMinSize)
         {
             return;
         }
 
         uvm = new Point2D((uvf.XY() + uvl.XY()) * 0.5);
-        midP3dFromSurf = surf.Value(uvm.X(), uvm.Y());
+        midP3dFromSurf = surf.Value(uvm.X, uvm.Y);
 
         Xyz vec1 = midP3dFromSurf.XYZ() - p3dF.XYZ();
         if (vec1.SquareModulus() < _squareMinSize)

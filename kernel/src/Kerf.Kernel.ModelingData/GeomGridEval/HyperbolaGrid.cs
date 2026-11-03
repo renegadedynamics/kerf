@@ -11,7 +11,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for hyperbola grid points: P(u) = C + MajR * cosh(u) * X + MinR * sinh(u) * Y.
 /// </summary>
-public sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private readonly HyperbolaCurve3D? _geom;
 
@@ -35,22 +35,22 @@ public sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Point3D> result = new(1, nb);
 
-        Hyperbola3D hypr = _geom.Hypr();
-        Point3D center = hypr.Location();
-        Direction3D xDir = hypr.XAxis().Direction();
-        Direction3D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola3D hypr = _geom.Hyperbola;
+        Point3D center = hypr.Location;
+        Direction3D xDir = hypr.XAxis.Direction;
+        Direction3D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -78,22 +78,22 @@ public sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD1> result = new(1, nb);
 
-        Hyperbola3D hypr = _geom.Hypr();
-        Point3D center = hypr.Location();
-        Direction3D xDir = hypr.XAxis().Direction();
-        Direction3D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola3D hypr = _geom.Hyperbola;
+        Point3D center = hypr.Location;
+        Direction3D xDir = hypr.XAxis.Direction;
+        Direction3D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -127,22 +127,22 @@ public sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD2> result = new(1, nb);
 
-        Hyperbola3D hypr = _geom.Hypr();
-        Point3D center = hypr.Location();
-        Direction3D xDir = hypr.XAxis().Direction();
-        Direction3D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola3D hypr = _geom.Hyperbola;
+        Point3D center = hypr.Location;
+        Direction3D xDir = hypr.XAxis.Direction;
+        Direction3D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -180,22 +180,22 @@ public sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve3D.ResD3> result = new(1, nb);
 
-        Hyperbola3D hypr = _geom.Hypr();
-        Point3D center = hypr.Location();
-        Direction3D xDir = hypr.XAxis().Direction();
-        Direction3D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola3D hypr = _geom.Hyperbola;
+        Point3D center = hypr.Location;
+        Direction3D xDir = hypr.XAxis.Direction;
+        Direction3D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double cz = center.Z();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double cx = center.X;
+        double cy = center.Y;
+        double cz = center.Z;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -237,18 +237,18 @@ public sealed class HyperbolaGrid : GeomGridEvalGrid.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector3D> result = new(1, nb);
 
-        Hyperbola3D hypr = _geom.Hypr();
-        Direction3D xDir = hypr.XAxis().Direction();
-        Direction3D yDir = hypr.YAxis().Direction();
-        double majR = hypr.MajorRadius();
-        double minR = hypr.MinorRadius();
+        Hyperbola3D hypr = _geom.Hyperbola;
+        Direction3D xDir = hypr.XAxis.Direction;
+        Direction3D yDir = hypr.YAxis.Direction;
+        double majR = hypr.MajorRadius;
+        double minR = hypr.MinorRadius;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double xz = xDir.Z();
-        double yx = yDir.X();
-        double yy = yDir.Y();
-        double yz = yDir.Z();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double xz = xDir.Z;
+        double yx = yDir.X;
+        double yy = yDir.Y;
+        double yz = yDir.Z;
 
         // Hyperbola derivatives are cyclic with period 2:
         // D0 = MajR * cosh(u) * X + MinR * sinh(u) * Y  -> coefficients: (cosh, sinh)

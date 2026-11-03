@@ -101,7 +101,7 @@ internal static class BRepTestCommands
                         return 0;
                     }
 
-                    T = SL.Location().Transformation();
+                    T = SL.Placement.Transformation;
                     last = n - 1;
                     isBasic = true;
                     break;
@@ -147,7 +147,7 @@ internal static class BRepTestCommands
             }
         }
 
-        if (T.Form() == TransformForm.Identity || isBasic || isForced)
+        if (T.Form == TransformForm.Identity || isBasic || isForced)
         {
             bool isException = !isForced;
             var L = new Placement(T);
@@ -166,7 +166,7 @@ internal static class BRepTestCommands
                 }
                 catch (global::Kerf.Engine.Foundation.DomainErrorException)
                 {
-                    theDI.Output.WriteLine($"Operation is not done: {aName} is not a valid transformation - scale = {DrawFormat.AsciiString(T.ScaleFactor())}");
+                    theDI.Output.WriteLine($"Operation is not done: {aName} is not a valid transformation - scale = {DrawFormat.AsciiString(T.ScaleFactor)}");
                     return 0;
                 }
             }
@@ -467,9 +467,9 @@ internal static class BRepTestCommands
         if (n >= 5)
         {
             int shift = n - 5;
-            theDI.SetNumber(a[shift + 2], P.X());
-            theDI.SetNumber(a[shift + 3], P.Y());
-            theDI.SetNumber(a[shift + 4], P.Z());
+            theDI.SetNumber(a[shift + 2], P.X);
+            theDI.SetNumber(a[shift + 3], P.Y);
+            theDI.SetNumber(a[shift + 4], P.Z);
         }
 
         PrincipalProperties Pr = G.PrincipalProperties();
@@ -487,9 +487,9 @@ internal static class BRepTestCommands
             }
 
             aSStream1.Append("Center of gravity : \n");
-            aSStream1.Append("X = ").Append(W(P.X())).Append('\n');
-            aSStream1.Append("Y = ").Append(W(P.Y())).Append('\n');
-            aSStream1.Append("Z = ").Append(W(P.Z())).Append('\n');
+            aSStream1.Append("X = ").Append(W(P.X)).Append('\n');
+            aSStream1.Append("Y = ").Append(W(P.Y)).Append('\n');
+            aSStream1.Append("Z = ").Append(W(P.Z)).Append('\n');
             aSStream1.Append('\n');
             aSStream1.Append("Matrix of Inertia : \n");
             for (int r = 1; r <= 3; r++)
@@ -517,9 +517,9 @@ internal static class BRepTestCommands
             }
 
             di.Append("Center of gravity : \n");
-            di.Append("X = ").Append(P.X()).Append("\n");
-            di.Append("Y = ").Append(P.Y()).Append("\n");
-            di.Append("Z = ").Append(P.Z()).Append("\n\n");
+            di.Append("X = ").Append(P.X).Append("\n");
+            di.Append("Y = ").Append(P.Y).Append("\n");
+            di.Append("Z = ").Append(P.Z).Append("\n\n");
             di.Append("Matrix of Inertia :\n");
             for (int r = 1; r <= 3; r++)
             {
@@ -591,24 +591,24 @@ internal static class BRepTestCommands
             Point3D P = G.CentreOfMass();
             if (n > 6)
             {
-                theDI.SetNumber(a[6], P.X());
+                theDI.SetNumber(a[6], P.X);
             }
 
             if (n > 7)
             {
-                theDI.SetNumber(a[7], P.Y());
+                theDI.SetNumber(a[7], P.Y);
             }
 
             if (n > 8)
             {
-                theDI.SetNumber(a[8], P.Z());
+                theDI.SetNumber(a[8], P.Z);
             }
 
             var aSStream1 = new StringBuilder();
             aSStream1.Append("Center of gravity : \n");
-            aSStream1.Append("X = ").Append(W(P.X())).Append('\n');
-            aSStream1.Append("Y = ").Append(W(P.Y())).Append('\n');
-            aSStream1.Append("Z = ").Append(W(P.Z())).Append('\n');
+            aSStream1.Append("X = ").Append(W(P.X)).Append('\n');
+            aSStream1.Append("Y = ").Append(W(P.Y)).Append('\n');
+            aSStream1.Append("Z = ").Append(W(P.Z)).Append('\n');
             aSStream1.Append('\n');
             if (IFlag)
             {

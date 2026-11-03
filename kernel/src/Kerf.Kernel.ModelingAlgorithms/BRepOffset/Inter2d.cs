@@ -452,7 +452,7 @@ public static class Inter2d
                 else
                 {
                     Point2D p2d = inter2d.Point(i).Value();
-                    p3d = bAsurf.Value(p2d.X(), p2d.Y());
+                    p3d = bAsurf.Value(p2d.X, p2d.Y);
                 }
                 resPoints.Append(p3d);
                 resParamsOnE1.Append(inter2d.Point(i).ParamOnFirst());
@@ -471,15 +471,15 @@ public static class Inter2d
 
                 Point3D p = resPoints[i]; // ponc1.Value();
                 Vertex newVertex = new LibraryMakeVertex(p).InternalVertex();
-                newVertex.Orientation(Internal);
+                newVertex.Orient(Internal);
                 b.UpdateVertex(newVertex, t1, e1, tol);
                 b.UpdateVertex(newVertex, t2, e2, tol);
                 Point3D p1 = ce1.Value(t1);
                 Point3D p2 = ce2.Value(t2);
                 double dist1, dist2, dist3;
-                dist1 = p1.Distance(p);
-                dist2 = p2.Distance(p);
-                dist3 = p1.Distance(p2);
+                dist1 = p1.DistanceTo(p);
+                dist2 = p2.DistanceTo(p);
+                dist3 = p1.DistanceTo(p2);
                 dist1 = Max(dist1, dist2);
                 dist1 = Max(dist1, dist3);
                 b.UpdateVertex(newVertex, dist1);
@@ -497,11 +497,11 @@ public static class Inter2d
                     pce2.D1(t2, out _, out Vector2D V2);
                     v1or = V1;
                     v2or = V2;
-                    if (e1.Orientation() == Reversed)
+                    if (e1.Orientation == Reversed)
                     {
                         v1or = v1or.Reversed();
                     }
-                    if (e2.Orientation() == Reversed)
+                    if (e2.Orientation == Reversed)
                     {
                         v2or = v2or.Reversed();
                     }
@@ -554,7 +554,7 @@ public static class Inter2d
                 //
                 Point3D p1 = Tool.Pnt(v1v[j]);
                 Point3D p2 = Tool.Pnt(v2v[k]);
-                double dist = p1.Distance(p2);
+                double dist = p1.DistanceTo(p2);
                 if (dist < tolConf)
                 {
                     double aTol = Max(Tool.Tolerance(v1v[j]), Tool.Tolerance(v2v[k]));
@@ -566,8 +566,8 @@ public static class Inter2d
                     b.UpdateVertex(ShapeCasts.Vertex(localShape), u1, e1, aTol);
                     b.UpdateVertex(ShapeCasts.Vertex(localShape), u2, e2, aTol);
                     //
-                    lv1.Prepend(v.Oriented(v1v[j].Orientation()));
-                    lv2.Prepend(v.Oriented(v2v[k].Orientation()));
+                    lv1.Prepend(v.Oriented(v1v[j].Orientation));
+                    lv2.Prepend(v.Oriented(v2v[k].Orientation));
                 }
             }
         }
@@ -708,7 +708,7 @@ public static class Inter2d
         if ((gac1.GetType() == Line) && (gac2.GetType() == Line))
         {
             // Just quickly check if lines coincide
-            double angle = Math.Abs(gac1.Line().Direction().Angle(gac2.Line().Direction()));
+            double angle = Math.Abs(gac1.Line().Direction.AngleTo(gac2.Line().Direction));
             if (angle <= 1.0e-8 || M_PI - angle <= 1.0e-8)
             {
                 coincide = true;
@@ -742,7 +742,7 @@ public static class Inter2d
             else
             {
                 Point2D p2d = inter2d.Point(i).Value();
-                p3d = bAsurf.Value(p2d.X(), p2d.Y());
+                p3d = bAsurf.Value(p2d.X, p2d.Y);
             }
             resPoints.Append(p3d);
             resParamsOnE1.Append(inter2d.Point(i).ParamOnFirst());
@@ -761,15 +761,15 @@ public static class Inter2d
 
             Point3D p = resPoints[i]; // ponc1.Value();
             Vertex newVertex = new LibraryMakeVertex(p).InternalVertex();
-            newVertex.Orientation(Internal);
+            newVertex.Orient(Internal);
             b.UpdateVertex(newVertex, t1, e1, tol);
             b.UpdateVertex(newVertex, t2, e2, tol);
             Point3D p1 = ce1.Value(t1);
             Point3D p2 = ce2.Value(t2);
             double dist1, dist2, dist3;
-            dist1 = p1.Distance(p);
-            dist2 = p2.Distance(p);
-            dist3 = p1.Distance(p2);
+            dist1 = p1.DistanceTo(p);
+            dist2 = p2.DistanceTo(p);
+            dist3 = p1.DistanceTo(p2);
             dist1 = Max(dist1, dist2);
             dist1 = Max(dist1, dist3);
             b.UpdateVertex(newVertex, dist1);
@@ -787,11 +787,11 @@ public static class Inter2d
                 pce2.D1(t2, out _, out Vector2D v2);
                 v1or = v1;
                 v2or = v2;
-                if (e1.Orientation() == Reversed)
+                if (e1.Orientation == Reversed)
                 {
                     v1or = v1or.Reversed();
                 }
-                if (e2.Orientation() == Reversed)
+                if (e2.Orientation == Reversed)
                 {
                     v2or = v2or.Reversed();
                 }
@@ -853,7 +853,7 @@ public static class Inter2d
                 //
                 Point3D p1 = Tool.Pnt(v1v[j]);
                 Point3D p2 = Tool.Pnt(v2v[k]);
-                double dist = p1.Distance(p2);
+                double dist = p1.DistanceTo(p2);
                 if (dist < tolConf)
                 {
                     Vertex v = new LibraryMakeVertex(p1).InternalVertex();
@@ -862,8 +862,8 @@ public static class Inter2d
                     Shape localShape = v.Oriented(Internal);
                     b.UpdateVertex(ShapeCasts.Vertex(localShape), u1, e1, tol);
                     b.UpdateVertex(ShapeCasts.Vertex(localShape), u2, e2, tol);
-                    lv1.Prepend(v.Oriented(v1v[j].Orientation()));
-                    lv2.Prepend(v.Oriented(v2v[k].Orientation()));
+                    lv1.Prepend(v.Oriented(v1v[j].Orientation));
+                    lv2.Prepend(v.Oriented(v2v[k].Orientation));
                 }
             }
         }
@@ -926,7 +926,7 @@ public static class Inter2d
                 for (it1LV1.Initialize(lv1); it1LV1.More(); it1LV1.Next())
                 {
                     Point3D p = Tool.Pnt(ShapeCasts.Vertex(it1LV1.Value()));
-                    double d = p.SquareDistance(pref);
+                    double d = p.SquareDistanceTo(pref);
                     if (d < dmin)
                     {
                         dmin = d;
@@ -953,7 +953,7 @@ public static class Inter2d
             for (; itl.More(); itl.Next())
             {
                 Shape newVertex = itl.Value();
-                newVertex.Orientation(Forward);
+                newVertex.Orient(Forward);
                 if (imageVV.HasImage(vref))
                 {
                     imageVV.Add(vref.Oriented(Forward), newVertex);
@@ -1009,11 +1009,11 @@ public static class Inter2d
         newPCurve = aPCurve;
         if (newPCurve.GetType() == typeof(TrimmedCurve2D))
         {
-            newPCurve = ((TrimmedCurve2D)newPCurve).BasisCurve();
+            newPCurve = ((TrimmedCurve2D)newPCurve).BasisCurve;
         }
 
-        double firstPar = newPCurve.FirstParameter();
-        double lastPar = newPCurve.LastParameter();
+        double firstPar = newPCurve.FirstParameter;
+        double lastPar = newPCurve.LastParameter;
 
         if (newPCurve is BoundedCurve2D && (firstPar > anEf - a2Offset || lastPar < anEl + a2Offset))
         {
@@ -1041,8 +1041,8 @@ public static class Inter2d
             }
         }
 
-        firstPar = aPCurve.FirstParameter();
-        lastPar = aPCurve.LastParameter();
+        firstPar = aPCurve.FirstParameter;
+        lastPar = aPCurve.LastParameter;
         TrimmedCurve2D trCurve = new(aPCurve, firstPar, lastPar);
 
         // The curve is not prolonged on begin or end.
@@ -1131,16 +1131,16 @@ public static class Inter2d
             {
                 nbPCurves++;
                 Curve2D theCurve = curveRep.PCurve()!;
-                firstPar = theCurve.FirstParameter();
-                lastPar = theCurve.LastParameter();
+                firstPar = theCurve.FirstParameter;
+                lastPar = theCurve.LastParameter;
 
                 if (theCurve is BoundedCurve2D && (firstPar > ef - a2Offset || lastPar < el + a2Offset))
                 {
                     if (ExtendPCurve(theCurve, ef, el, a2Offset, out Curve2D? newPCurve))
                     {
                         curveRep.PCurve(newPCurve);
-                        firstPar = newPCurve!.FirstParameter();
-                        lastPar = newPCurve.LastParameter();
+                        firstPar = newPCurve!.FirstParameter;
+                        lastPar = newPCurve.LastParameter;
                         if (curveRep.IsCurveOnClosedSurface)
                         {
                             Curve2D pCurve2 = curveRep.PCurve2()!;
@@ -1153,7 +1153,7 @@ public static class Inter2d
                 }
                 else if (theCurve.IsPeriodic)
                 {
-                    double delta = (theCurve.Period() - (el - ef)) * 0.5;
+                    double delta = (theCurve.Period - (el - ef)) * 0.5;
                     delta *= 0.95;
                     firstPar = ef - delta;
                     lastPar = el + delta;
@@ -1166,7 +1166,7 @@ public static class Inter2d
                 // check FirstPar and LastPar: the pcurve should be in its surface
                 theCurve = curveRep.PCurve()!;
                 Surface theSurf = curveRep.Surface()!;
-                theSurf.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+                theSurf.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
                 NCollection_Sequence<Curve2D> boundLines = new();
                 if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(vmin))
                 {
@@ -1202,7 +1202,7 @@ public static class Inter2d
                         {
                             IntersectionPoint2D ip = intCC.Point(j);
                             Point2D point = ip.Value();
-                            if (point.X() >= umin && point.X() <= umax && point.Y() >= vmin && point.Y() <= vmax)
+                            if (point.X >= umin && point.X <= umax && point.Y >= vmin && point.Y <= vmax)
                             {
                                 params_.Append(ip.ParamOnFirst());
                             }
@@ -1214,8 +1214,8 @@ public static class Inter2d
                             {
                                 IntersectionPoint2D ip = is_.FirstPoint();
                                 Point2D point = ip.Value();
-                                if (point.X() >= umin && point.X() <= umax && point.Y() >= vmin
-                                    && point.Y() <= vmax)
+                                if (point.X >= umin && point.X <= umax && point.Y >= vmin
+                                    && point.Y <= vmax)
                                 {
                                     params_.Append(ip.ParamOnFirst());
                                 }
@@ -1224,8 +1224,8 @@ public static class Inter2d
                             {
                                 IntersectionPoint2D ip = is_.LastPoint();
                                 Point2D point = ip.Value();
-                                if (point.X() >= umin && point.X() <= umax && point.Y() >= vmin
-                                    && point.Y() <= vmax)
+                                if (point.X >= umin && point.X <= umax && point.Y >= vmin
+                                    && point.Y <= vmax)
                                 {
                                     params_.Append(ip.ParamOnFirst());
                                 }
@@ -1238,8 +1238,8 @@ public static class Inter2d
                     if (params_.Length() == 1)
                     {
                         Point2D pntFirst = theCurve.Value(firstPar);
-                        if (pntFirst.X() >= umin && pntFirst.X() <= umax && pntFirst.Y() >= vmin
-                            && pntFirst.Y() <= vmax)
+                        if (pntFirst.X >= umin && pntFirst.X <= umax && pntFirst.Y >= vmin
+                            && pntFirst.Y <= vmax)
                         {
                             if (lastPar > params_[1])
                             {
@@ -1302,7 +1302,7 @@ public static class Inter2d
         Curve3D? c3d = Tool.Curve(ne, out double f, out double l);
         if (nbPCurves != 0)
         {
-            minLoc = e.Location() * minLoc;
+            minLoc = e.Placement * minLoc;
             if (c3d is not null)
             {
                 if (minPC!.IsClosed)
@@ -1312,7 +1312,7 @@ public static class Inter2d
                 }
                 else if (c3d.IsPeriodic)
                 {
-                    double delta = (c3d.Period() - (l - f)) * 0.5;
+                    double delta = (c3d.Period - (l - f)) * 0.5;
                     delta *= 0.95;
                     f -= delta;
                     l += delta;
@@ -1325,12 +1325,12 @@ public static class Inter2d
                 {
                     f = firstParOnPC;
                     l = lastParOnPC;
-                    Transform3D minLocTrsf = minLoc.Transformation();
+                    Transform3D minLocTrsf = minLoc.Transformation;
                     ProjectPointOnCurve projector = new();
                     if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(firstParOnPC))
                     {
                         Point2D p2d1 = minPC.Value(firstParOnPC);
-                        Point3D p1 = minSurf!.Value(p2d1.X(), p2d1.Y());
+                        Point3D p1 = minSurf!.Value(p2d1.X, p2d1.Y);
                         p1 = p1.Transformed(minLocTrsf);
                         projector.Init(p1, c3d);
                         if (projector.NbPoints() > 0)
@@ -1342,7 +1342,7 @@ public static class Inter2d
                     if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(lastParOnPC))
                     {
                         Point2D p2d2 = minPC.Value(lastParOnPC);
-                        Point3D p2 = minSurf!.Value(p2d2.X(), p2d2.Y());
+                        Point3D p2 = minSurf!.Value(p2d2.X, p2d2.Y);
                         p2 = p2.Transformed(minLocTrsf);
                         projector.Init(p2, c3d);
                         if (projector.NbPoints() > 0)
@@ -1360,7 +1360,7 @@ public static class Inter2d
             }
             else if (!Tool.Degenerated(e)) // no 3d curve
             {
-                minSurf = (Surface)minSurf!.Transformed(minLoc.Transformation());
+                minSurf = (Surface)minSurf!.Transformed(minLoc.Transformation);
                 double max_deviation = 0.0;
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(firstParOnPC) || global::Kerf.Engine.Foundation.Precision.IsInfinite(lastParOnPC))
                 {
@@ -1375,7 +1375,7 @@ public static class Inter2d
                                  || minSurf.GetType() == typeof(ConicalSurface))
                         {
                             LineCurve2D theLine = (LineCurve2D)minPC;
-                            Direction2D lineDir = theLine.Direction();
+                            Direction2D lineDir = theLine.Direction;
                             if (lineDir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 isLine = true;
@@ -1384,8 +1384,8 @@ public static class Inter2d
                         if (isLine)
                         {
                             Point2D p2d1 = minPC.Value(0.0), p2d2 = minPC.Value(1.0);
-                            Point3D p1 = minSurf.Value(p2d1.X(), p2d1.Y());
-                            Point3D p2 = minSurf.Value(p2d2.X(), p2d2.Y());
+                            Point3D p1 = minSurf.Value(p2d1.X, p2d1.Y);
+                            Point3D p2 = minSurf.Value(p2d2.X, p2d2.Y);
                             Vector3D vec = new(p1, p2);
                             c3d = new LineCurve3D(p1, new Direction3D(vec));
                         }
@@ -1430,7 +1430,7 @@ public static class Inter2d
                             Placement theLoc = curveRep.Location();
                             // OCCT: MinSurf was replaced above by its transformed copy, so this test never holds and
                             // the pcurve the 3D curve was built from is checked (and maybe projected) as well
-                            if (theCurve == minPC && theSurf == minSurf && theLoc == minLoc)
+                            if (theCurve == minPC && theSurf == minSurf && theLoc.IsEqual(minLoc))
                             {
                                 continue;
                             }
@@ -1439,21 +1439,21 @@ public static class Inter2d
                             if (Math.Abs(firstPar - firstParOnPC) > global::Kerf.Engine.Foundation.Precision.PConfusion()
                                 || Math.Abs(lastPar - lastParOnPC) > global::Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                theLoc = e.Location() * theLoc;
-                                theSurf = (Surface)theSurf.Transformed(theLoc.Transformation());
+                                theLoc = e.Placement * theLoc;
+                                theSurf = (Surface)theSurf.Transformed(theLoc.Transformation);
 
                                 if (theCurve.GetType() == typeof(LineCurve2D) && theSurf is BoundedSurface)
                                 {
-                                    Direction2D theDir = ((LineCurve2D)theCurve).Direction();
+                                    Direction2D theDir = ((LineCurve2D)theCurve).Direction;
                                     if (theDir.IsParallel(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular())
                                         || theDir.IsParallel(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                                     {
-                                        theSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
-                                        Point2D origin = ((LineCurve2D)theCurve).Location();
-                                        if (Math.Abs(origin.X() - u1) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                            || Math.Abs(origin.X() - u2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                            || Math.Abs(origin.Y() - v1) <= global::Kerf.Engine.Foundation.Precision.Confusion()
-                                            || Math.Abs(origin.Y() - v2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
+                                        theSurf.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
+                                        Point2D origin = ((LineCurve2D)theCurve).Location;
+                                        if (Math.Abs(origin.X - u1) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(origin.X - u2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(origin.Y - v1) <= global::Kerf.Engine.Foundation.Precision.Confusion()
+                                            || Math.Abs(origin.Y - v2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                                         {
                                             BrepLibrary.SameParameter(ne, global::Kerf.Engine.Foundation.Precision.Confusion(), true);
                                             break;
@@ -1494,8 +1494,8 @@ public static class Inter2d
         }
         else // no pcurves
         {
-            double firstPar = c3d!.FirstParameter();
-            double lastPar = c3d.LastParameter();
+            double firstPar = c3d!.FirstParameter;
+            double lastPar = c3d.LastParameter;
 
             if (c3d is BoundedCurve3D && (firstPar > ef - a2Offset || lastPar < el + a2Offset))
             {
@@ -1541,13 +1541,13 @@ public static class Inter2d
                 }
 
                 c3d = compCurve.BSplineCurve()!;
-                firstPar = c3d.FirstParameter();
-                lastPar = c3d.LastParameter();
+                firstPar = c3d.FirstParameter;
+                lastPar = c3d.LastParameter;
                 bb.UpdateEdge(ne, c3d, global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else if (c3d.IsPeriodic)
             {
-                double delta = (c3d.Period() - (el - ef)) * 0.5;
+                double delta = (c3d.Period - (el - ef)) * 0.5;
                 delta *= 0.95;
                 firstPar = ef - delta;
                 lastPar = el + delta;
@@ -1579,17 +1579,17 @@ public static class Inter2d
         Point3D p = Tool.Pnt(v);
         bool ok = false;
 
-        if (p.Distance(oc.Value(of)) < tolConf)
+        if (p.DistanceTo(oc.Value(of)) < tolConf)
         {
-            if (of >= nf + parTol && of <= nl + parTol && p.Distance(nc.Value(of)) < tolConf)
+            if (of >= nf + parTol && of <= nl + parTol && p.DistanceTo(nc.Value(of)) < tolConf)
             {
                 ok = true;
                 u = of;
             }
         }
-        if (p.Distance(oc.Value(ol)) < tolConf)
+        if (p.DistanceTo(oc.Value(ol)) < tolConf)
         {
-            if (ol >= nf + parTol && ol <= nl + parTol && p.Distance(nc.Value(ol)) < tolConf)
+            if (ol >= nf + parTol && ol <= nl + parTol && p.DistanceTo(nc.Value(ol)) < tolConf)
             {
                 ok = true;
                 u = ol;
@@ -1770,7 +1770,7 @@ public static class Inter2d
                 for (itL.Initialize(l); itL.More(); itL.Next())
                 {
                     Edge ei = ShapeCasts.Edge(itL.Value());
-                    if (ei.Orientation() != Forward && ei.Orientation() != Reversed)
+                    if (ei.Orientation != Forward && ei.Orientation != Reversed)
                     {
                         continue;
                     }
@@ -1868,7 +1868,7 @@ public static class Inter2d
                     choice = 2;
                     ne1 = build.GetValue(curE);
                     ne2 = mes.GetValue(neo);
-                    ne2.Orientation(nextE.Orientation());
+                    ne2.Orient(nextE.Orientation);
                     GetEdgesOrientedInFace(ne1, fio, asDes, ne1seq);
                     ne2seq.Append(ne2);
                     or1 = Reversed;
@@ -1879,7 +1879,7 @@ public static class Inter2d
                     choice = 3;
                     ne1 = build.GetValue(nextE);
                     ne2 = mes.GetValue(ceo);
-                    ne2.Orientation(curE.Orientation());
+                    ne2.Orient(curE.Orientation);
                     GetEdgesOrientedInFace(ne1, fio, asDes, ne1seq);
                     ne2seq.Append(ne2);
                     or1 = Forward;
@@ -1906,11 +1906,11 @@ public static class Inter2d
                         e2 = ShapeCasts.Edge(ne2seq.Last());
                     }
 
-                    if (e1.Orientation() == Reversed)
+                    if (e1.Orientation == Reversed)
                     {
                         or1 = global::Kerf.Engine.Topology.TopAbs.Reverse(or1);
                     }
-                    if (e2.Orientation() == Reversed)
+                    if (e2.Orientation == Reversed)
                     {
                         or2 = global::Kerf.Engine.Topology.TopAbs.Reverse(or2);
                     }

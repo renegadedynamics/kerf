@@ -32,9 +32,9 @@ public class Extrema_ExtPC_Test
         Point3D aProj = aExtPC.Point(1).Value();
 
         // Check projected point coordinates
-        Assert.Equal(-1725.97, aProj.X(), 1.0e-2);
-        Assert.Equal(843.257, aProj.Y(), 1.0e-2);
-        Assert.Equal(0.0, aProj.Z(), 1.0e-10);
+        Assert.Equal(-1725.97, aProj.X, 1.0e-2);
+        Assert.Equal(843.257, aProj.Y, 1.0e-2);
+        Assert.Equal(0.0, aProj.Z, 1.0e-10);
 
         // Compute parameters on cylinder
         Frame3D aCylAxis = new(new Point3D(0, 2103.87, 0), global::Kerf.Engine.Geometry.Constants.DY().Reversed(), global::Kerf.Engine.Geometry.Constants.DX().Reversed());

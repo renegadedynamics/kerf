@@ -30,11 +30,11 @@ public class Convert_ParabolaToBSplineCurveTest
 
         // Use ElCLib to evaluate the reference point on the parabola
         Point2D aExpPnt = global::Kerf.Engine.Geometry.ElCLib.Value(theParam, theParab);
-        double aExpX = aExpPnt.X();
-        double aExpY = aExpPnt.Y();
+        double aExpX = aExpPnt.X;
+        double aExpY = aExpPnt.Y;
 
-        Assert.Equal(aExpX, aBSPnt.X(), 1.0e-10);
-        Assert.Equal(aExpY, aBSPnt.Y(), 1.0e-10);
+        Assert.Equal(aExpX, aBSPnt.X, 1.0e-10);
+        Assert.Equal(aExpY, aBSPnt.Y, 1.0e-10);
     }
     [Fact]
     public void BasicConversion()

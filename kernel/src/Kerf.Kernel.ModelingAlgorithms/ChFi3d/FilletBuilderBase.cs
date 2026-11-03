@@ -530,7 +530,7 @@ public abstract partial class FilletBuilderBase
                 for (; i <= n; i++)
                 {
                     Shape s = dStr.Shape(i);
-                    if (s.ShapeType() != ShapeType.Edge)
+                    if (s.Type != ShapeType.Edge)
                     {
                         continue;
                     }
@@ -576,7 +576,7 @@ public abstract partial class FilletBuilderBase
                             // However there is a problem for compound of open Shell.
                             while (its.More())
                             {
-                                ShapeType letype = curshape.ShapeType();
+                                ShapeType letype = curshape.Type;
                                 if (letype == ShapeType.Shell)
                                 {
                                     Explorer expsh2 = new(its.Value(), ShapeType.Shell);
@@ -905,7 +905,7 @@ public abstract partial class FilletBuilderBase
         {
             return _generated;
         }
-        if (eouV.ShapeType() != ShapeType.Edge && eouV.ShapeType() != ShapeType.Vertex)
+        if (eouV.Type != ShapeType.Edge && eouV.Type != ShapeType.Vertex)
         {
             return _generated;
         }

@@ -20,9 +20,9 @@ internal readonly struct AxisPlacement2D(double theCompTolerance, double theHash
         var directionHasher = new DirectionHasher2D(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            pointHasher.Hash(axisPlacement.Location()),
-            directionHasher.Hash(axisPlacement.XDirection()),
-            directionHasher.Hash(axisPlacement.YDirection())
+            pointHasher.Hash(axisPlacement.Location),
+            directionHasher.Hash(axisPlacement.XDirection),
+            directionHasher.Hash(axisPlacement.YDirection)
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -32,8 +32,8 @@ internal readonly struct AxisPlacement2D(double theCompTolerance, double theHash
     {
         var pointHasher = new PointHasher2D(CompTolerance, HashTolerance);
         var directionHasher = new DirectionHasher2D(CompTolerance, HashTolerance);
-        return pointHasher.IsEqual(axisPlacement1.Location(), axisPlacement2.Location())
-               && directionHasher.IsEqual(axisPlacement1.XDirection(), axisPlacement2.XDirection())
-               && directionHasher.IsEqual(axisPlacement1.YDirection(), axisPlacement2.YDirection());
+        return pointHasher.IsEqual(axisPlacement1.Location, axisPlacement2.Location)
+               && directionHasher.IsEqual(axisPlacement1.XDirection, axisPlacement2.XDirection)
+               && directionHasher.IsEqual(axisPlacement1.YDirection, axisPlacement2.YDirection);
     }
 }

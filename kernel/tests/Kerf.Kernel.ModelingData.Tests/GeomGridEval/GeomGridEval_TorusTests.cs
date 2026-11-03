@@ -50,7 +50,7 @@ public partial class GeomGridEval_TorusTest
             for (int iV = 1; iV <= 9; ++iV)
             {
                 Point3D aExpected = aSurf.Value(aUParams.Value(iU), aVParams.Value(iV));
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).DistanceTo(aExpected), THE_TOLERANCE);
             }
         }
     }
@@ -71,9 +71,9 @@ public partial class GeomGridEval_TorusTest
             for (int iV = 1; iV <= 9; ++iV)
             {
                 aSurf.D1(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -95,12 +95,12 @@ public partial class GeomGridEval_TorusTest
             {
                 aSurf.D2(aUParams.Value(iU), aVParams.Value(iV), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
                          out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -132,16 +132,16 @@ public partial class GeomGridEval_TorusTest
                          out Vector3D aD3V,
                          out Vector3D aD3UUV,
                          out Vector3D aD3UVV);
-                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3U - aD3U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3V - aD3V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UUV - aD3UUV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UVV - aD3UVV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(iU, iV).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3U - aD3U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3V - aD3V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UUV - aD3UUV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(iU, iV).D3UVV - aD3UVV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -162,7 +162,7 @@ public partial class GeomGridEval_TorusTest
             for (int iV = 1; iV <= 4; ++iV)
             {
                 Vector3D aExpected = aSurf.DN(aUParams.Value(iU), aVParams.Value(iV), 4, 0);
-                Assert.Equal(0.0, (aD4U.Value(iU, iV) - aExpected).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aD4U.Value(iU, iV) - aExpected).Magnitude, THE_TOLERANCE);
             }
         }
     }

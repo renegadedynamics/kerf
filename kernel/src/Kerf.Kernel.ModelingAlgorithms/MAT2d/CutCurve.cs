@@ -44,8 +44,8 @@ public sealed class CutCurve
 
         if (sommets.IsDone && !sommets.IsEmpty)
         {
-            uf = c.FirstParameter();
-            ul = c.LastParameter();
+            uf = c.FirstParameter;
+            ul = c.LastParameter;
             pf = c.Value(uf);
             pl = c.Value(ul);
 
@@ -54,9 +54,9 @@ public sealed class CutCurve
                 uc = sommets.Parameter(i);
 
                 pc = c.Value(uc);
-                if (uc - uf > pTol && pc.Distance(pf) > tol)
+                if (uc - uf > pTol && pc.DistanceTo(pf) > tol)
                 {
-                    if (ul - uc < pTol || pl.Distance(pc) < tol)
+                    if (ul - uc < pTol || pl.DistanceTo(pc) < tol)
                     {
                         break;
                     }

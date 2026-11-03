@@ -78,7 +78,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     private static Face Face(in Wire theWire) => new MakeFace(theWire, true).Face();
 
     private static Point3D OnPlane(in Frame3D theAx, double theU, double theV)
-        => theAx.Location().Translated(new Vector3D(theAx.XDirection()) * theU + new Vector3D(theAx.YDirection()) * theV);
+        => theAx.Location.Translated(new Vector3D(theAx.XDirection) * theU + new Vector3D(theAx.YDirection) * theV);
 
     // A polygon around the origin of the plane (theArcs: some sides arcs of circles)
     private static Face Profile(Oracle theOracle, bool theArcs, out double theSize)
@@ -112,7 +112,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             {
                 // an arc through a point off the middle of the side
                 var aSide = new Vector3D(a, b);
-                Vector3D aNormal = new Vector3D(anAx.Direction()).Crossed(aSide);
+                Vector3D aNormal = new Vector3D(anAx.Direction).Crossed(aSide);
                 Point3D aMid = a.Translated(aSide * 0.5).Translated(aNormal * theOracle.Real(-0.3, 0.3));
                 aWire.Add(new MakeEdge(new MakeArcOfCircle(a, aMid, b).Value()).Edge());
             }

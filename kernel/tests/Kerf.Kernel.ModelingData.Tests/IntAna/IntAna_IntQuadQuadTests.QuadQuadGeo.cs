@@ -75,7 +75,7 @@ public partial class IntAna_IntQuadQuad_Test
         Assert.Equal(1, anInter.SolutionCount);
 
         Point3D aP = anInter.Point(1);
-        Assert.Equal(aR1, new Line3D(aCyl1.Axis()).Distance(aP), 1.0e-7);
-        Assert.Equal(aR2, new Line3D(aCyl2.Axis()).Distance(aP), 1.0e-7);
+        Assert.Equal(aR1, new Line3D(aCyl1.Axis).DistanceTo(aP), 1.0e-7);
+        Assert.Equal(aR2, new Line3D(aCyl2.Axis).DistanceTo(aP), 1.0e-7);
     }
 }

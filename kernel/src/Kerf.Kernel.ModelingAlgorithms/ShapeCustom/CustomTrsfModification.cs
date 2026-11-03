@@ -34,7 +34,7 @@ public class CustomTrsfModification : TrsfModification
                                     out bool revFace)
     {
         bool result = base.NewSurface(f, out s, out l, out tol, out revWires, out revFace);
-        tol = ((BrepTFace)f.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());
+        tol = ((BrepTFace)f.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor);
         return result;
     }
 
@@ -42,7 +42,7 @@ public class CustomTrsfModification : TrsfModification
     public override bool NewCurve(in Edge e, out Curve3D? c, out Placement l, out double tol)
     {
         bool result = base.NewCurve(e, out c, out l, out tol);
-        tol = ((BrepTEdge)e.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());
+        tol = ((BrepTEdge)e.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor);
         return result;
     }
 
@@ -50,7 +50,7 @@ public class CustomTrsfModification : TrsfModification
     public override bool NewPoint(in Vertex v, out Point3D p, out double tol)
     {
         bool result = base.NewPoint(v, out p, out tol);
-        tol = ((BrepTVertex)v.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());
+        tol = ((BrepTVertex)v.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor);
         return result;
     }
 
@@ -63,7 +63,7 @@ public class CustomTrsfModification : TrsfModification
                                     out double tol)
     {
         bool result = base.NewCurve2d(e, f, newE, newF, out c, out tol);
-        tol = ((BrepTEdge)e.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());
+        tol = ((BrepTEdge)e.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor);
         return result;
     }
 
@@ -71,7 +71,7 @@ public class CustomTrsfModification : TrsfModification
     public override bool NewParameter(in Vertex v, in Edge e, ref double p, ref double tol)
     {
         bool result = base.NewParameter(v, e, ref p, ref tol);
-        tol = ((BrepTVertex)v.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor());
+        tol = ((BrepTVertex)v.TShape()!).Tolerance() * Math.Abs(Trsf().ScaleFactor);
         return result;
     }
 }

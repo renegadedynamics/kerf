@@ -132,7 +132,7 @@ public partial class FilBuilder
             dir2 = dir2.Reversed();
         }
         double ang1 = 0.0;
-        ang1 = Math.Abs(dir1.Angle(dir2));
+        ang1 = Math.Abs(dir1.AngleTo(dir2));
         if (ang1 < M_PI / 180.0)
         {
             PerformMoreThreeCorner(index, 2);
@@ -230,7 +230,7 @@ public partial class FilBuilder
         surf1 = dStr.Surface(sd1.Surf()).Surface();
         sd2 = seqFil2.ChangeValue(isd2);
         surf2 = dStr.Surface(sd2.Surf()).Surface();
-        Orientation oFaCo = faCo.Orientation();
+        Orientation oFaCo = faCo.Orientation;
         // The concavities are analyzed and the opposite face and the
         // eventual intersection of 2 pcurves on this face are found.
 
@@ -277,7 +277,7 @@ public partial class FilBuilder
             parCP2 = cp2.ParameterOnArc();
             Point3D tst1 = hpivot.Value(parCP1);
             Point3D tst2 = hpivot.Value(parCP2);
-            sameparam = tst1.Distance(tst2) <= _tolapp3d;
+            sameparam = tst1.DistanceTo(tst2) <= _tolapp3d;
         }
         FaceSurfaceAdaptor? hFaCo = new FaceSurfaceAdaptor();
         FaceSurfaceAdaptor? hFaPiv = null;
@@ -395,7 +395,7 @@ public partial class FilBuilder
                     int bid = 0;
                     Orientation ori = oFaCo;
                     Orientation oriS = st1.Orientation(iFaCo1);
-                    Orientation off1 = ff1.Orientation();
+                    Orientation off1 = ff1.Orientation;
                     Orientation oriSFF1 = st1.Orientation(iFaArc1);
                     bid = 1;
                     bid = global::Kerf.Engine.Fillets.ChFi3d.NextSide(ref ori, ref off1, oriS, oriSFF1, bid);
@@ -463,14 +463,14 @@ public partial class FilBuilder
                             hFaPiv = hbrs1;
                             resetcp1 = true;
                         }
-                        faPiv.Orientation(Forward);
+                        faPiv.Orient(Forward);
                         pcpivot.Initialize(pivot, faPiv);
                         Explorer expl = new();
                         for (expl.Init(faPiv, ShapeType.Edge); expl.More(); expl.Next())
                         {
                             if (expl.Current().IsSame(pivot))
                             {
-                                pctrans = expl.Current().Orientation();
+                                pctrans = expl.Current().Orientation;
                                 break;
                             }
                         }
@@ -732,15 +732,15 @@ public partial class FilBuilder
                 if (surFopsam.IsUClosed)
                 {
                     double uperiod = surFopsam.LastUParameter() - surFopsam.FirstUParameter();
-                    if (Math.Abs(ppfacsam.X() - ppfacdif.X()) > uperiod / 2)
+                    if (Math.Abs(ppfacsam.X - ppfacdif.X) > uperiod / 2)
                     {
-                        if (ppfacdif.X() < ppfacsam.X())
+                        if (ppfacdif.X < ppfacsam.X)
                         {
-                            ppfacdif = ppfacdif.WithX(ppfacdif.X() + uperiod);
+                            ppfacdif = ppfacdif.WithX(ppfacdif.X + uperiod);
                         }
                         else
                         {
-                            ppfacdif = ppfacdif.WithX(ppfacdif.X() - uperiod);
+                            ppfacdif = ppfacdif.WithX(ppfacdif.X - uperiod);
                         }
                     }
                 }
@@ -909,9 +909,9 @@ internal static class FilBuilder_C2
         {
             return false;
         }
-        Direction3D df = fac.Plane().Position().Direction();
-        Direction3D ds1 = s1.Plane().Position().Direction();
-        Direction3D ds2 = s2.Plane().Position().Direction();
+        Direction3D df = fac.Plane().Position.Direction;
+        Direction3D ds1 = s1.Plane().Position.Direction;
+        Direction3D ds2 = s2.Plane().Position.Direction;
         if (Math.Abs(df.Dot(ds1)) >= tolesp || Math.Abs(df.Dot(ds2)) >= tolesp)
         {
             return false;

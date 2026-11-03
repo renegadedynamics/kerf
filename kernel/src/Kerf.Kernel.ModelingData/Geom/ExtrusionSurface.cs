@@ -33,11 +33,11 @@ public class ExtrusionSurface : SweptSurface
     {
         _basisCurve = (Curve3D)c.Copy();
         _direction = v;
-        _smooth = c.Continuity();
+        _smooth = c.Continuity;
     }
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The evaluation representation descriptor (may be null). Stored, not copied: don't modify.</summary>
     internal RepSurfaceDesc.Base? EvalRepresentation() => _evalRep;
@@ -58,7 +58,7 @@ public class ExtrusionSurface : SweptSurface
     }
 
     /// <summary>A copy evaluated through a copy of theDesc (null: without a representation).</summary>
-    public ExtrusionSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
+    internal ExtrusionSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
     {
         RepUtils.ValidateSurfaceDesc(desc, this);
         ExtrusionSurface copy = (ExtrusionSurface)Copy();
@@ -79,7 +79,7 @@ public class ExtrusionSurface : SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _smooth = c.Continuity();
+        _smooth = c.Continuity;
         _basisCurve = (Curve3D)c.Copy();
     }
 
@@ -123,15 +123,15 @@ public class ExtrusionSurface : SweptSurface
     public sealed override double VReversedParameter(double v) => (-v);
 
     /// <summary>U between the bounds of the basis curve; V infinite.</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         v1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
         v2 = global::Kerf.Engine.Foundation.Precision.Infinite();
-        u1 = _basisCurve!.FirstParameter();
-        u2 = _basisCurve.LastParameter();
+        u1 = _basisCurve!.FirstParameter;
+        u2 = _basisCurve.LastParameter;
     }
 
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         Point3D evalRepResult;
         if (RepUtils.TryEvalSurfaceD0(_evalRep, u, v, out evalRepResult))
@@ -145,7 +145,7 @@ public class ExtrusionSurface : SweptSurface
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 evalRepResult;
         if (RepUtils.TryEvalSurfaceD1(_evalRep, u, v, out evalRepResult))
@@ -165,7 +165,7 @@ public class ExtrusionSurface : SweptSurface
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 evalRepResult;
         if (RepUtils.TryEvalSurfaceD2(_evalRep, u, v, out evalRepResult))
@@ -189,7 +189,7 @@ public class ExtrusionSurface : SweptSurface
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 evalRepResult;
         if (RepUtils.TryEvalSurfaceD3(_evalRep, u, v, out evalRepResult))
@@ -219,7 +219,7 @@ public class ExtrusionSurface : SweptSurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -264,14 +264,14 @@ public class ExtrusionSurface : SweptSurface
 
     /// <summary>True if the basis curve is CN.</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCNu(int n)
+    internal sealed override bool IsCNu(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisCurve!.IsCN(n);
     }
 
     /// <summary>True.</summary>
-    public sealed override bool IsCNv(int n) => true;
+    internal sealed override bool IsCNv(int n) => true;
 
     /// <summary>Transforms the direction and the basis curve.</summary>
     protected internal sealed override void Transform(in Transform3D t)
@@ -296,22 +296,22 @@ public class ExtrusionSurface : SweptSurface
     public sealed override bool IsVPeriodic => false;
 
     /// <summary>U changed into the transformed parameter of the basis curve; V scaled by |T.ScaleFactor()| unless infinite.</summary>
-    public sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
         u = _basisCurve!.TransformedParameter(u, t);
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor());
+            v *= Math.Abs(t.ScaleFactor);
         }
     }
 
     /// <summary>The product of an affinity along U (the basis curve's) and one along V (the scale factor).</summary>
-    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
         // transformation in the V Direction
         GeneralTransform2D tv = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        tv = tv.WithAffinity(axis, Math.Abs(t.ScaleFactor()));
+        tv = tv.WithAffinity(axis, Math.Abs(t.ScaleFactor));
         // transformation in the U Direction
         GeneralTransform2D tu = new GeneralTransform2D();
         axis = new Axis2D(Constants.Origin2d(), Constants.DY2d());

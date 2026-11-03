@@ -129,7 +129,7 @@ internal static class DrawTrSurfCommands
 
                 var O = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
                 last -= 3;
-                var D = new Direction3D(P.X(), P.Y(), P.Z());
+                var D = new Direction3D(P.X, P.Y, P.Z);
                 if (a[0][0] == 'l')
                 {
                     T = T.WithMirror(new Axis3D(O, D));
@@ -137,7 +137,7 @@ internal static class DrawTrSurfCommands
                 else if (a[0][0] == 's')
                 {
                     var Pl = new Plane3D(O, D);
-                    T = T.WithMirror(Pl.Position().Ax2());
+                    T = T.WithMirror(Pl.Position.Frame);
                 }
             }
         }
@@ -234,7 +234,7 @@ internal static class DrawTrSurfCommands
 
                 var O = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
                 last -= 2;
-                var D = new Direction2D(P.X(), P.Y());
+                var D = new Direction2D(P.X, P.Y);
                 T = T.WithMirror(new Axis2D(O, D));
             }
         }

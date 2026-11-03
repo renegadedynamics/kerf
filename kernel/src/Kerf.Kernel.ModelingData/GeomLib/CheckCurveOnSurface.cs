@@ -223,7 +223,7 @@ public sealed class CheckCurveOnSurface
 
                 Point3D p1 = _curve1.Value(x), p2 = _curve2.Value(x);
 
-                fVal = -1.0 * p1.SquareDistance(p2);
+                fVal = -1.0 * p1.SquareDistanceTo(p2);
             }
             catch (FailureException)
             {
@@ -281,7 +281,7 @@ public sealed class CheckCurveOnSurface
                 if (withDeriv2)
                 {
                     Vector3D vec3 = dcc2 - dcc1;
-                    deriv2 = -2.0 * (vec2.SquareMagnitude() + vec1.Dot(vec3));
+                    deriv2 = -2.0 * (vec2.SquareMagnitude + vec1.Dot(vec3));
                 }
             }
             catch (FailureException)
@@ -346,18 +346,18 @@ public sealed class CheckCurveOnSurface
                 Circle3D circle = curve.Circle();
                 return new Coefficients
                 {
-                    Origin = circle.Location().XYZ(),
-                    Cos = circle.XAxis().Direction().XYZ() * circle.Radius(),
-                    Sin = circle.YAxis().Direction().XYZ() * circle.Radius(),
+                    Origin = circle.Location.XYZ(),
+                    Cos = circle.XAxis.Direction.XYZ() * circle.Radius,
+                    Sin = circle.YAxis.Direction.XYZ() * circle.Radius,
                 };
             }
 
             Ellipse3D ellipse = curve.Ellipse();
             return new Coefficients
             {
-                Origin = ellipse.Location().XYZ(),
-                Cos = ellipse.XAxis().Direction().XYZ() * ellipse.MajorRadius(),
-                Sin = ellipse.YAxis().Direction().XYZ() * ellipse.MinorRadius(),
+                Origin = ellipse.Location.XYZ(),
+                Cos = ellipse.XAxis.Direction.XYZ() * ellipse.MajorRadius,
+                Sin = ellipse.YAxis.Direction.XYZ() * ellipse.MinorRadius,
             };
         }
 
@@ -745,12 +745,12 @@ public sealed class CheckCurveOnSurface
 
             if (bs3DCurv is not null)
             {
-                nbParticles = Max(nbParticles, bs3DCurv.Degree());
+                nbParticles = Max(nbParticles, bs3DCurv.Degree);
             }
 
             if (bs2DCurv is not null)
             {
-                nbParticles = Max(nbParticles, bs2DCurv.Degree());
+                nbParticles = Max(nbParticles, bs2DCurv.Degree);
             }
         }
         catch (FailureException)

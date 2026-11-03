@@ -337,7 +337,7 @@ internal static class BRepTestModifyCommands
             return 1;
         }
 
-        if (S.ShapeType() != ShapeType.Solid)
+        if (S.Type != ShapeType.Solid)
         {
             return 1;
         }
@@ -437,7 +437,7 @@ internal static class BRepTestModifyCommands
         }
 
         var aMShapes = new HashSet<Shape>(ShapeHasher.Instance);
-        var anExp = new Explorer(aShape, aSubShape.ShapeType());
+        var anExp = new Explorer(aShape, aSubShape.Type);
         for (; anExp.More(); anExp.Next())
         {
             Shape aSS = anExp.Current();

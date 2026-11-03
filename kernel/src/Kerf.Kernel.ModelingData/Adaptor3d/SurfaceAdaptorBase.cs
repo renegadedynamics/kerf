@@ -178,15 +178,15 @@ public class SurfaceAdaptorBase : Transient
     public virtual Point3D EvalD0(double u, double v) => throw new MethodNotImplementedException("Adaptor3d_Surface::EvalD0");
 
     /// <summary>The point and first partial derivatives at (U, V). Throws on failure.</summary>
-    public virtual Surface.ResD1 EvalD1(double u, double v) =>
+    internal virtual Surface.ResD1 EvalD1(double u, double v) =>
         throw new MethodNotImplementedException("Adaptor3d_Surface::EvalD1");
 
     /// <summary>The point and partial derivatives up to the second order at (U, V). Throws on failure.</summary>
-    public virtual Surface.ResD2 EvalD2(double u, double v) =>
+    internal virtual Surface.ResD2 EvalD2(double u, double v) =>
         throw new MethodNotImplementedException("Adaptor3d_Surface::EvalD2");
 
     /// <summary>The point and partial derivatives up to the third order at (U, V). Throws on failure.</summary>
-    public virtual Surface.ResD3 EvalD3(double u, double v) =>
+    internal virtual Surface.ResD3 EvalD3(double u, double v) =>
         throw new MethodNotImplementedException("Adaptor3d_Surface::EvalD3");
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V). Throws on failure.</summary>

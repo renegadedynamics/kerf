@@ -167,7 +167,7 @@ public class FeatureInputsUnchangedTests
         // the cylinder's seam makes the draft correct the wires of the modifier's result in a working overlay
         Shape input = kind == "box side" ? new MakeBox(10, 10, 10).Shape() : new ApiMakeCylinder(5, 10).Shape();
         Face face = ShapeCasts.Face(SubShapes(input, ShapeType.Face).First(f =>
-            Tool.Surface(ShapeCasts.Face(f)) is not PlaneSurface p || Math.Abs(p.Pln().Axis().Direction().Z()) < 1e-9));
+            Tool.Surface(ShapeCasts.Face(f)) is not PlaneSurface p || Math.Abs(p.Plane.Axis.Direction.Z) < 1e-9));
         Shape result = Untouched([input], () =>
         {
             var draft = new DraftAngle(input);

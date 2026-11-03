@@ -205,7 +205,7 @@ public sealed class MakeRevol : Form
 
         if (!_skface.IsNull || _slface.Count != 0)
         {
-            if (_lShape.ShapeType() == ShapeType.Wire)
+            if (_lShape.Type == ShapeType.Wire)
             {
                 Explorer ex1 = new(vraiRevol, ShapeType.Face);
                 for (; ex1.More(); ex1.Next())
@@ -814,12 +814,12 @@ public sealed class MakeRevol : Form
 
         if (s1.GetType() == typeof(TrimmedSurface))
         {
-            s1 = ((TrimmedSurface)s1).BasisSurface();
+            s1 = ((TrimmedSurface)s1).BasisSurface;
         }
 
         if (s2.GetType() == typeof(TrimmedSurface))
         {
-            s2 = ((TrimmedSurface)s2).BasisSurface();
+            s2 = ((TrimmedSurface)s2).BasisSurface;
         }
 
         if (s1.GetType() != s2.GetType())
@@ -833,10 +833,10 @@ public sealed class MakeRevol : Form
             s1 = Tool.Surface(f1)!; // to apply the location.
             s2 = Tool.Surface(f2)!;
             // OCCT: a trimmed plane gives a null plane here (an access violation natively)
-            Plane3D pl1 = (s1 as PlaneSurface)!.Pln();
-            Plane3D pl2 = (s2 as PlaneSurface)!.Pln();
+            Plane3D pl1 = (s1 as PlaneSurface)!.Plane;
+            Plane3D pl2 = (s2 as PlaneSurface)!.Plane;
 
-            if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))
+            if (pl1.Position.IsCoplanar(pl2.Position, tollin, tolang))
             {
                 valRet = true;
             }

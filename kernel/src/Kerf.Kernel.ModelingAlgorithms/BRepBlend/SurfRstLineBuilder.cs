@@ -1041,7 +1041,7 @@ public class SurfRstLineBuilder
             wpoint = lastrst;
         }
         p2drst = _rst.Value(wpoint);
-        Point3D thepoint = _surf2.Value(p2drst.X(), p2drst.Y());
+        Point3D thepoint = _surf2.Value(p2drst.X, p2drst.Y);
 
         finvP.Set(thepoint);
         math_Vector toler = new(1, 3), infb = new(1, 3), supb = new(1, 3);
@@ -1125,7 +1125,7 @@ public class SurfRstLineBuilder
         arc.D1(param, out p2d, out dp2d);
         if (onFirst)
         {
-            _surf1.D1(p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            _surf1.D1(p2d.X, p2d.Y, out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = _previousP.TangentOnS1();
@@ -1137,7 +1137,7 @@ public class SurfRstLineBuilder
         }
         else
         {
-            _surf2.D1(p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            _surf2.D1(p2d.X, p2d.Y, out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = _previousP.TangentOnS2();
@@ -1148,7 +1148,7 @@ public class SurfRstLineBuilder
             }
         }
 
-        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X, d1u, dp2d.Y, d1v);
         normale = d1u.Crossed(d1v);
 
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(tgline, tgrst, new Direction3D(normale), ref tLine, ref tArc);
@@ -1240,10 +1240,10 @@ public class SurfRstLineBuilder
         }
         double norme, prevNorme = 0.0;
         Vector3D corde = new(prevP, psurf);
-        norme = corde.SquareMagnitude();
+        norme = corde.SquareMagnitude;
         if (!prevpointistangent)
         {
-            prevNorme = prevTg.SquareMagnitude();
+            prevNorme = prevTg.SquareMagnitude;
         }
 
         double toler3d = 0.01 * _tolpoint3d;
@@ -1275,7 +1275,7 @@ public class SurfRstLineBuilder
         {
             // Check if it is necessary to control the sign of prevtg*Tgsurf
             cosi = _sens * corde * tgsurf;
-            cosi2 = cosi * cosi / tgsurf.SquareMagnitude() / norme;
+            cosi2 = cosi * cosi / tgsurf.SquareMagnitude / norme;
             if (cosi2 < cosRef3D || cosi < 0.0)
             {
                 return BlendStatus.StepTooLarge;
@@ -1325,10 +1325,10 @@ public class SurfRstLineBuilder
         }
         double norme, prevNorme = 0.0;
         Vector3D corde = new(prevP, psurf);
-        norme = corde.SquareMagnitude();
+        norme = corde.SquareMagnitude;
         if (!prevpointistangent)
         {
-            prevNorme = prevTg.SquareMagnitude();
+            prevNorme = prevTg.SquareMagnitude;
         }
 
         double toler3d = 0.01 * _tolpoint3d;
@@ -1360,7 +1360,7 @@ public class SurfRstLineBuilder
         {
             // Check if it is necessary to control the sign of prevtg*Tgsurf
             cosi = _sens * corde * tgsurf;
-            cosi2 = cosi * cosi / tgsurf.SquareMagnitude() / norme;
+            cosi2 = cosi * cosi / tgsurf.SquareMagnitude / norme;
             if (cosi2 < cosRef3D || cosi < 0.0)
             {
                 return BlendStatus.StepTooLarge;
@@ -1413,7 +1413,7 @@ public class SurfRstLineBuilder
             pt2drst = func.Pnt2dOnRst();
             if (curpointistangent)
             {
-                curpoint.SetValue(pts, ptrst, _param, _sol[1], _sol[2], pt2drst.X(), pt2drst.Y(), _sol[3]);
+                curpoint.SetValue(pts, ptrst, _param, _sol[1], _sol[2], pt2drst.X, pt2drst.Y, _sol[3]);
             }
             else
             {
@@ -1422,7 +1422,7 @@ public class SurfRstLineBuilder
                 tg2ds = func.Tangent2dOnS();
                 tg2drst = func.Tangent2dOnRst();
 
-                curpoint.SetValue(pts, ptrst, _param, _sol[1], _sol[2], pt2drst.X(), pt2drst.Y(), _sol[3], tgs, tgrst,
+                curpoint.SetValue(pts, ptrst, _param, _sol[1], _sol[2], pt2drst.X, pt2drst.Y, _sol[3], tgs, tgrst,
                                   tg2ds, tg2drst);
             }
             if (testDeflection)

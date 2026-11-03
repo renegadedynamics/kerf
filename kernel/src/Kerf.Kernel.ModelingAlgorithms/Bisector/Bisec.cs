@@ -81,9 +81,9 @@ public sealed class Bisec
             {
                 bs = (BSplineCurve2D)afirstcurve;
             }
-            if (bs.Degree() == 1 && bs.PoleCount == 2)
+            if (bs.Degree == 1 && bs.PoleCount == 2)
             {
-                if (bs.Pole(1).Distance(bs.Pole(2)) < 1.0e-4)
+                if (bs.Pole(1).DistanceTo(bs.Pole(2)) < 1.0e-4)
                 {
                     afirstcurve1 = new MakeSegment2d(bs.Pole(1), bs.Pole(2)).Value();
                     type1 = typeof(LineCurve2D);
@@ -102,9 +102,9 @@ public sealed class Bisec
             {
                 bs = (BSplineCurve2D)asecondcurve;
             }
-            if (bs.Degree() == 1 && bs.PoleCount == 2)
+            if (bs.Degree == 1 && bs.PoleCount == 2)
             {
-                if (bs.Pole(1).Distance(bs.Pole(2)) < 1.0e-4)
+                if (bs.Pole(1).DistanceTo(bs.Pole(2)) < 1.0e-4)
                 {
                     asecondcurve1 = new MakeSegment2d(bs.Pole(1), bs.Pole(2)).Value();
                     type2 = typeof(LineCurve2D);
@@ -145,7 +145,7 @@ public sealed class Bisec
                 //------------------------------------------------------------------
                 // Half-Staight.
                 //------------------------------------------------------------------
-                Direction2D n = new(-adirection * afirstvector.Y(), adirection * afirstvector.X());
+                Direction2D n = new(-adirection * afirstvector.Y, adirection * afirstvector.X);
                 LineCurve2D l = new(apoint, n);
                 TrimmedCurve2D bisL = new(l, 0, global::Kerf.Engine.Foundation.Precision.Infinite());
                 BisecAna bisAna = new();
@@ -167,14 +167,14 @@ public sealed class Bisec
                     // bissectrice is empty. a point is projected at the end of the guide curve.
                     // Construction of a false bissectrice.
                     //  modified by NIZHNY-EAP Mon Feb 21 12:00:13 2000 ___BEGIN___
-                    Point2D p1 = afirstcurve1.Value(afirstcurve1.LastParameter());
-                    Point2D p2 = asecondcurve1.Value(asecondcurve1.FirstParameter());
+                    Point2D p1 = afirstcurve1.Value(afirstcurve1.LastParameter);
+                    Point2D p2 = asecondcurve1.Value(asecondcurve1.FirstParameter);
                     Point2D pm = new(.5 * (p1.XY() + p2.XY()));
                     double nx, ny;
-                    if (pm.Distance(apoint) > 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (pm.DistanceTo(apoint) > 10.0 * global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        nx = apoint.X() - pm.X();
-                        ny = apoint.Y() - pm.Y();
+                        nx = apoint.X - pm.X;
+                        ny = apoint.Y - pm.Y;
                         if (adirection < 0)
                         {
                             nx = -nx;
@@ -184,12 +184,12 @@ public sealed class Bisec
                     else
                     {
                         Direction2D dir1 = new(afirstvector), dir2 = new(asecondvector);
-                        nx = -dir1.X() - dir2.X();
-                        ny = -dir1.Y() - dir2.Y();
+                        nx = -dir1.X - dir2.X;
+                        ny = -dir1.Y - dir2.Y;
                         if (Math.Abs(nx) <= Constants.Resolution() && Math.Abs(ny) <= Constants.Resolution())
                         {
-                            nx = -afirstvector.Y();
-                            ny = afirstvector.X();
+                            nx = -afirstvector.Y;
+                            ny = afirstvector.X;
                         }
                     }
                     Direction2D n = new(adirection * nx, adirection * ny);
@@ -205,15 +205,15 @@ public sealed class Bisec
                 }
                 else
                 {
-                    uFirst = bisCC.FirstParameter();
-                    uLast = bisCC.LastParameter();
+                    uFirst = bisCC.FirstParameter;
+                    uLast = bisCC.LastParameter;
                     bis = bisCC;
                     ReplaceByLineIfIsToSmall(ref bis, ref uFirst, ref uLast);
                 }
             }
         }
-        uFirst = Max(uFirst, bis.FirstParameter());
-        uLast = Min(uLast, bis.LastParameter());
+        uFirst = Max(uFirst, bis.FirstParameter);
+        uLast = Min(uLast, bis.LastParameter);
         _thebisector = new TrimmedCurve2D(bis, uFirst, uLast);
     }
 
@@ -264,7 +264,7 @@ public sealed class Bisec
 
             if (oncurve)
             {
-                if (global::Kerf.Engine.Offsets.Bisectors.Bisector.IsConvex(afirstcurve, adirection) || IsMaxRC(afirstcurve, afirstcurve.LastParameter(), ref rc))
+                if (global::Kerf.Engine.Offsets.Bisectors.Bisector.IsConvex(afirstcurve, adirection) || IsMaxRC(afirstcurve, afirstcurve.LastParameter, ref rc))
                 {
                     isLine = true;
                 }
@@ -274,7 +274,7 @@ public sealed class Bisec
                 //------------------------------------------------------------------
                 // Half-Right.
                 //------------------------------------------------------------------
-                Direction2D n = new(-adirection * afirstvector.Y(), adirection * afirstvector.X());
+                Direction2D n = new(-adirection * afirstvector.Y, adirection * afirstvector.X);
                 LineCurve2D l = new(apoint, n);
                 TrimmedCurve2D bisL = new(l, 0, rc);
                 BisecAna bisAna = new();
@@ -296,11 +296,11 @@ public sealed class Bisec
                 if (bisPC.IsEmpty)
                 {
                     Direction2D dir1 = new(afirstvector), dir2 = new(asecondvector);
-                    double nx = -dir1.X() - dir2.X(), ny = -dir1.Y() - dir2.Y();
+                    double nx = -dir1.X - dir2.X, ny = -dir1.Y - dir2.Y;
                     if (Math.Abs(nx) <= Constants.Resolution() && Math.Abs(ny) <= Constants.Resolution())
                     {
-                        nx = -afirstvector.Y();
-                        ny = afirstvector.X();
+                        nx = -afirstvector.Y;
+                        ny = afirstvector.X;
                     }
                     Direction2D n = new(adirection * nx, adirection * ny);
                     LineCurve2D l = new(apoint, n);
@@ -315,11 +315,11 @@ public sealed class Bisec
                 {
                     //  Modified by Sergey KHROMOV - Wed Mar  6 17:01:08 2002 End
                     uFirst = bisPC.Parameter(apoint);
-                    uLast = bisPC.LastParameter();
+                    uLast = bisPC.LastParameter;
                     if (uFirst >= uLast)
                     {
                         // Extrapolate by line
-                        Vector2D v = new(bisPC.Value(bisPC.FirstParameter()), bisPC.Value(uLast));
+                        Vector2D v = new(bisPC.Value(bisPC.FirstParameter), bisPC.Value(uLast));
                         Direction2D n = new(v);
                         LineCurve2D l = new(apoint, n);
                         TrimmedCurve2D bisL = new(l, 0, rc);
@@ -336,13 +336,13 @@ public sealed class Bisec
                 }
             }
         }
-        if (uFirst < bis.FirstParameter())
+        if (uFirst < bis.FirstParameter)
         {
-            uFirst = bis.FirstParameter();
+            uFirst = bis.FirstParameter;
         }
-        if (uLast > bis.LastParameter())
+        if (uLast > bis.LastParameter)
         {
-            uLast = bis.LastParameter();
+            uLast = bis.LastParameter;
         }
         _thebisector = new TrimmedCurve2D(bis, uFirst, uLast);
     }
@@ -395,7 +395,7 @@ public sealed class Bisec
             if (oncurve)
             {
                 if (global::Kerf.Engine.Offsets.Bisectors.Bisector.IsConvex(asecondcurve, adirection)
-                    || IsMaxRC(asecondcurve, asecondcurve.FirstParameter(), ref rc))
+                    || IsMaxRC(asecondcurve, asecondcurve.FirstParameter, ref rc))
                 {
                     isLine = true;
                 }
@@ -405,7 +405,7 @@ public sealed class Bisec
                 //------------------------------------------------------------------
                 // Half-Staight.
                 //------------------------------------------------------------------
-                Direction2D n = new(-adirection * afirstvector.Y(), adirection * afirstvector.X());
+                Direction2D n = new(-adirection * afirstvector.Y, adirection * afirstvector.X);
                 LineCurve2D l = new(apoint, n);
                 TrimmedCurve2D bisL = new(l, 0, rc);
                 BisecAna bisAna = new();
@@ -425,11 +425,11 @@ public sealed class Bisec
                 if (bisPC.IsEmpty)
                 {
                     Direction2D dir1 = new(afirstvector), dir2 = new(asecondvector);
-                    double nx = -dir1.X() - dir2.X(), ny = -dir1.Y() - dir2.Y();
+                    double nx = -dir1.X - dir2.X, ny = -dir1.Y - dir2.Y;
                     if (Math.Abs(nx) <= Constants.Resolution() && Math.Abs(ny) <= Constants.Resolution())
                     {
-                        nx = -afirstvector.Y();
-                        ny = afirstvector.X();
+                        nx = -afirstvector.Y;
+                        ny = afirstvector.X;
                     }
                     Direction2D n = new(adirection * nx, adirection * ny);
                     LineCurve2D l = new(apoint, n);
@@ -444,11 +444,11 @@ public sealed class Bisec
                 {
                     //  Modified by Sergey KHROMOV - Thu Feb 21 16:49:58 2002 End
                     uFirst = bisPC.Parameter(apoint);
-                    uLast = bisPC.LastParameter();
+                    uLast = bisPC.LastParameter;
                     if (uFirst >= uLast)
                     {
                         // Extrapolate by line
-                        Vector2D v = new(bisPC.Value(bisPC.FirstParameter()), bisPC.Value(uLast));
+                        Vector2D v = new(bisPC.Value(bisPC.FirstParameter), bisPC.Value(uLast));
                         Direction2D n = new(v);
                         LineCurve2D l = new(apoint, n);
                         TrimmedCurve2D bisL = new(l, 0, rc);
@@ -466,8 +466,8 @@ public sealed class Bisec
             }
         }
 
-        uFirst = Max(uFirst, bis.FirstParameter());
-        uLast = Min(uLast, bis.LastParameter());
+        uFirst = Max(uFirst, bis.FirstParameter);
+        uLast = Min(uLast, bis.LastParameter);
         _thebisector = new TrimmedCurve2D(bis, uFirst, uLast);
     }
 
@@ -511,7 +511,7 @@ public sealed class Bisec
         Point2D pf = bis.Value(uFirst);
         Point2D pl = bis.Value(uLast);
 
-        if (pf.Distance(pl) > global::Kerf.Engine.Foundation.Precision.Confusion() * 10.0)
+        if (pf.DistanceTo(pl) > global::Kerf.Engine.Foundation.Precision.Confusion() * 10.0)
         {
             return;
         }
@@ -530,12 +530,12 @@ public sealed class Bisec
     private static bool IsMaxRC(Curve2D c, double u, ref double r)
     {
         double kf, kl;
-        double us = c.FirstParameter();
-        double ul = c.LastParameter();
+        double us = c.FirstParameter;
+        double ul = c.LastParameter;
         double norm2;
 
         c.D2(us, out Point2D _, out Vector2D d1, out Vector2D d2);
-        norm2 = d1.SquareMagnitude();
+        norm2 = d1.SquareMagnitude;
         if (norm2 < Constants.Resolution())
         {
             kf = 0.0;
@@ -546,7 +546,7 @@ public sealed class Bisec
         }
 
         c.D2(ul, out Point2D _, out d1, out d2);
-        norm2 = d1.SquareMagnitude();
+        norm2 = d1.SquareMagnitude;
         if (norm2 < Constants.Resolution())
         {
             kl = 0.0;

@@ -46,7 +46,7 @@ public class DrawPipeCommandsTests(ITestOutputHelper output)
         i.Eval("line l 0 0 0 0 0 1; trim l l 0 10; circle c 0 0 0 0 0 1 2");
         Assert.Equal("Accuracy of approximation = 0\n", i.Eval("tuyau r2 l c"));
         var aCyl = Geometry<TrimmedSurface>(i, "r2");
-        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface());
+        Assert.IsType<CylindricalSurface>(aCyl.BasisSurface);
 
         // two sections on a planar convex path
         i.Eval("circle arc 0 20 0 20; trim arc arc -1.5707963267948966 -0.5");
@@ -57,7 +57,7 @@ public class DrawPipeCommandsTests(ITestOutputHelper output)
         // a pipe on an edge between two guide lines: the parallel lines of a cylinder
         i.Eval("line g1 2 0 0 0 0 1; trim g1 g1 0 10; line g2 0 2 0 0 0 1; trim g2 g2 0 10");
         Assert.Equal("", i.Eval("tuyau r4 l g1 g2 2"));
-        Assert.IsType<CylindricalSurface>(Geometry<TrimmedSurface>(i, "r4").BasisSurface());
+        Assert.IsType<CylindricalSurface>(Geometry<TrimmedSurface>(i, "r4").BasisSurface);
 
         // wrong arguments: a C++ command returning 1
         Assert.ThrowsAny<DrawException>(() => i.Eval("tuyau r5 path"));

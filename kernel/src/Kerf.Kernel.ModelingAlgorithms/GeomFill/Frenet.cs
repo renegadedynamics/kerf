@@ -33,7 +33,7 @@ public class Frenet : TrihedronLaw
     /// <summary>Computes (F/|F|)'.</summary>
     private static Vector3D FDeriv(in Vector3D f, in Vector3D df)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (df - f * (f * df) / (norma * norma)) / norma;
         return result;
     }
@@ -41,9 +41,9 @@ public class Frenet : TrihedronLaw
     /// <summary>Computes (F/|F|)''.</summary>
     private static Vector3D DDeriv(in Vector3D f, in Vector3D df, in Vector3D d2F)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (d2F - 2 * df * (f * df) / (norma * norma)) / norma
-                        - f * ((df.SquareMagnitude() + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
+                        - f * ((df.SquareMagnitude + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
                                / (norma * norma * norma));
         return result;
     }
@@ -52,7 +52,7 @@ public class Frenet : TrihedronLaw
     private static double CosAngle(in Vector3D v1, in Vector3D v2)
     {
         double tol = Constants.Resolution();
-        double m1 = v1.Magnitude(), m2 = v2.Magnitude();
+        double m1 = v1.Magnitude, m2 = v2.Magnitude;
         if ((m1 <= tol) || (m2 <= tol))
         { // Vectors are codirectional
             return 1.0;
@@ -156,8 +156,8 @@ public class Frenet : TrihedronLaw
 
                 if (isConst.Value(i))
                 {
-                    if (Math.Abs(c.X() - c1.X()) > tol || Math.Abs(c.Y() - c1.Y()) > tol
-                        || Math.Abs(c.Z() - c1.Z()) > tol)
+                    if (Math.Abs(c.X - c1.X) > tol || Math.Abs(c.Y - c1.Y) > tol
+                        || Math.Abs(c.Z - c1.Z) > tol)
                     {
                         isConst[i] = false;
                     }
@@ -301,11 +301,11 @@ public class Frenet : TrihedronLaw
             for (i = 1; i <= _sngl.Length(); i++)
             {
                 func.D2(_sngl.Value(i), out c, out snglDer, out snglDer2);
-                if ((norm = snglDer.Magnitude()) > Constants.Resolution())
+                if ((norm = snglDer.Magnitude) > Constants.Resolution())
                 {
                     _snglLen[i] = Min(NullTol / norm, MaxSingular);
                 }
-                else if ((norm = snglDer2.Magnitude()) > Constants.Resolution())
+                else if ((norm = snglDer2.Magnitude) > Constants.Resolution())
                 {
                     _snglLen[i] = Min(Math.Sqrt(2 * NullTol / norm), MaxSingular);
                 }
@@ -323,11 +323,11 @@ public class Frenet : TrihedronLaw
                 double u11, u12, u21, u22;
                 for (i = 2; i <= _sngl.Length(); i++)
                 {
-                    u12 = tmpSeq.Last().X() + tmpSeq.Last().Y();
+                    u12 = tmpSeq.Last().X + tmpSeq.Last().Y;
                     u21 = _sngl.Value(i) - _snglLen.Value(i);
                     if (u12 >= u21)
                     {
-                        u11 = tmpSeq.Last().X() - tmpSeq.Last().Y();
+                        u11 = tmpSeq.Last().X - tmpSeq.Last().Y;
                         u22 = _sngl.Value(i) + _snglLen.Value(i);
                         tmpSeq[tmpSeq.Length()] = new Point2D((u11 + u22) / 2, (u22 - u11) / 2);
                     }
@@ -340,8 +340,8 @@ public class Frenet : TrihedronLaw
                 _snglLen = new NCollection_HArray1<double>(1, tmpSeq.Length());
                 for (i = 1; i <= _sngl.Length(); i++)
                 {
-                    _sngl[i] = tmpSeq[i].X();
-                    _snglLen[i] = tmpSeq[i].Y();
+                    _sngl[i] = tmpSeq[i].X;
+                    _snglLen[i] = tmpSeq[i].Y;
                 }
             }
             _isSngl = true;
@@ -362,7 +362,7 @@ public class Frenet : TrihedronLaw
 
         Vector3D axis = tangent.Crossed(newTangent);
 
-        double nt = axis.Magnitude();
+        double nt = axis.Magnitude;
         if (nt <= tol)
         {
             // No rotation required
@@ -373,7 +373,7 @@ public class Frenet : TrihedronLaw
             axis /= nt; // Normalization
         }
 
-        double px = axis.X(), py = axis.Y(), pz = axis.Z();
+        double px = axis.X, py = axis.Y, pz = axis.Z;
         double cAng = CosAngle(tangent, newTangent); // cosine
         double addCAng = 1.0 - cAng;
         double sAng = Math.Sqrt(1.0 - cAng * cAng); // sine
@@ -439,7 +439,7 @@ public class Frenet : TrihedronLaw
         double uinfium = _trimmed.FirstParameter();
         double usupremum = _trimmed.LastParameter();
         double delta = (usupremum - uinfium) * divisionFactor;
-        double ndu = tangent.Magnitude();
+        double ndu = tangent.Magnitude;
 
         if (ndu <= tol)
         {
@@ -451,7 +451,7 @@ public class Frenet : TrihedronLaw
             do
             {
                 tn = _trimmed.DN(param, ++index);
-                ndu = tn.Magnitude();
+                ndu = tn.Magnitude;
                 isDeriveFound = ndu > tol;
             } while (!isDeriveFound && index < MaxDerivOrder);
 
@@ -513,7 +513,7 @@ public class Frenet : TrihedronLaw
                 }
             } // else of "if(IsDeriveFound)" condition
 
-            ndu = tn.Magnitude();
+            ndu = tn.Magnitude;
             Point3D pt = _p;
 
             double dPar = 10.0 * delta;
@@ -546,11 +546,11 @@ public class Frenet : TrihedronLaw
             tangent = tangent / ndu;
             biNormal = tangent.Crossed(biNormal);
 
-            norm = biNormal.Magnitude();
+            norm = biNormal.Magnitude;
             if (norm <= Constants.Resolution())
             {
                 Frame3D axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(tangent));
-                biNormal = biNormal.WithXYZ(axe.YDirection().XYZ());
+                biNormal = biNormal.WithXYZ(axe.YDirection.XYZ());
             }
             else
             {
@@ -581,11 +581,11 @@ public class Frenet : TrihedronLaw
         _trimmed!.D3(theParam, out _p, out Vector3D dc1, out Vector3D dc2, out Vector3D dc3);
         tangent = dc1.Normalized();
 
-        if (tangent.Crossed(dc2).Magnitude() <= Constants.Resolution())
+        if (tangent.Crossed(dc2).Magnitude <= Constants.Resolution())
         {
             Frame3D axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(tangent));
-            normal = normal.WithXYZ(axe.XDirection().XYZ());
-            biNormal = biNormal.WithXYZ(axe.YDirection().XYZ());
+            normal = normal.WithXYZ(axe.XDirection.XYZ());
+            biNormal = biNormal.WithXYZ(axe.YDirection.XYZ());
             dTangent = dTangent.WithCoord(0, 0, 0);
             dNormal = dNormal.WithCoord(0, 0, 0);
             dBiNormal = dBiNormal.WithCoord(0, 0, 0);
@@ -630,11 +630,11 @@ public class Frenet : TrihedronLaw
 
         tangent = dc1.Normalized();
 
-        if (tangent.Crossed(dc2).Magnitude() <= Constants.Resolution())
+        if (tangent.Crossed(dc2).Magnitude <= Constants.Resolution())
         {
             Frame3D axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(tangent));
-            normal = normal.WithXYZ(axe.XDirection().XYZ());
-            biNormal = biNormal.WithXYZ(axe.YDirection().XYZ());
+            normal = normal.WithXYZ(axe.XDirection.XYZ());
+            biNormal = biNormal.WithXYZ(axe.YDirection.XYZ());
             dTangent = dTangent.WithCoord(0, 0, 0);
             dNormal = dNormal.WithCoord(0, 0, 0);
             dBiNormal = dBiNormal.WithCoord(0, 0, 0);
@@ -802,7 +802,7 @@ public class Frenet : TrihedronLaw
         for (i = 1; i <= maxN; i++)
         {
             tangent = _trimmed!.DN(u, i);
-            if (tangent.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (tangent.Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 break;
             }
@@ -818,12 +818,12 @@ public class Frenet : TrihedronLaw
         for (; i <= maxN; i++)
         {
             biNormal = tangent.Crossed(_trimmed!.DN(u, i));
-            double magn = biNormal.Magnitude();
+            double magn = biNormal.Magnitude;
             if (magn > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 // modified by jgv, 12.08.03 for OCC605 ////
                 Vector3D nextBiNormal = tangent.Crossed(_trimmed.DN(u, i + 1));
-                if (nextBiNormal.Magnitude() > magn)
+                if (nextBiNormal.Magnitude > magn)
                 {
                     i++;
                     biNormal = nextBiNormal;
@@ -841,11 +841,11 @@ public class Frenet : TrihedronLaw
 
         D0(u + h, ref t, ref N, ref bn);
 
-        if (tangent.Angle(t) > M_PI / 2)
+        if (tangent.AngleTo(t) > M_PI / 2)
         {
             tFlag = -1;
         }
-        if (biNormal.Angle(bn) > M_PI / 2)
+        if (biNormal.AngleTo(bn) > M_PI / 2)
         {
             bnFlag = -1;
         }

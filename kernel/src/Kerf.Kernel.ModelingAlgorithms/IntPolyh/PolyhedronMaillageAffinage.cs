@@ -1844,8 +1844,8 @@ public sealed partial class PolyhedronMaillageAffinage
         Vector3D ve = new(edge.X(), edge.Y(), edge.Z());
         Vector3D vc = new(cote.X(), cote.Y(), cote.Z());
         //
-        de = ve.SquareMagnitude();
-        dc = vc.SquareMagnitude();
+        de = ve.SquareMagnitude;
+        dc = vc.SquareMagnitude;
         //
         if (de > SquareMyConfusionPrecision)
         {
@@ -3557,7 +3557,7 @@ public sealed partial class PolyhedronMaillageAffinage
                 }
 
                 p2 = aS.Value(u, v);
-                d2 = p1.SquareDistance(p2);
+                d2 = p1.SquareDistanceTo(p2);
                 if (d2 > aTol2)
                 {
                     return bRet;
@@ -3590,7 +3590,7 @@ public sealed partial class PolyhedronMaillageAffinage
                 }
 
                 p2 = aS.Value(u, v);
-                d2 = p1.SquareDistance(p2);
+                d2 = p1.SquareDistanceTo(p2);
                 if (d2 > aTol2)
                 {
                     return bRet;

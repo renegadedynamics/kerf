@@ -44,7 +44,7 @@ public static class CustomCurve2d
         {
             for (int j = i + 1; j <= nbPoles; j++)
             {
-                double dist = poles[i].SquareDistance(poles[j]);
+                double dist = poles[i].SquareDistanceTo(poles[j]);
                 if (dist > dMax)
                 {
                     dMax = dist;
@@ -68,7 +68,7 @@ public static class CustomCurve2d
         double max = 0.0;
         for (i = 1; i <= nbPoles; i++)
         {
-            double dist = alin.SquareDistance(poles[i]);
+            double dist = alin.SquareDistanceTo(poles[i]);
             if (dist > tol2)
             {
                 return false;
@@ -101,7 +101,7 @@ public static class CustomCurve2d
         Point2D p1 = curve.Value(c1);
         Point2D p2 = curve.Value(c2);
         double dPreci = tolerance * tolerance;
-        if (p1.SquareDistance(p2) < dPreci)
+        if (p1.SquareDistanceTo(p2) < dPreci)
         {
             return line2d; // it is not a line
         }
@@ -153,7 +153,7 @@ public static class CustomCurve2d
         while (isToRemove && nbK > 2)
         {
             int mult = aBSpline2d.Multiplicity(knotIndx);
-            int degMult = aBSpline2d.Degree() - mult;
+            int degMult = aBSpline2d.Degree - mult;
             if ((degMult > 1) && aBSpline2d.IsCN(degMult))
             {
                 double u = aBSpline2d.Knot(knotIndx);

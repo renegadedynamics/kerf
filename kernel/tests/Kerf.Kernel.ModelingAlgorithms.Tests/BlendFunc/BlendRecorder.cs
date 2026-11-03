@@ -47,28 +47,28 @@ internal sealed partial class BlendRecorder
 
     private void Pnt(Point3D P)
     {
-        Hex(P.X());
-        Hex(P.Y());
-        Hex(P.Z());
+        Hex(P.X);
+        Hex(P.Y);
+        Hex(P.Z);
     }
 
     private void Vec(Vector3D V)
     {
-        Hex(V.X());
-        Hex(V.Y());
-        Hex(V.Z());
+        Hex(V.X);
+        Hex(V.Y);
+        Hex(V.Z);
     }
 
     private void Pnt2d(Point2D P)
     {
-        Hex(P.X());
-        Hex(P.Y());
+        Hex(P.X);
+        Hex(P.Y);
     }
 
     private void Vec2d(Vector2D V)
     {
-        Hex(V.X());
-        Hex(V.Y());
+        Hex(V.X);
+        Hex(V.Y);
     }
 
     private void Vector(string theTag, math_Vector V)
@@ -622,17 +622,17 @@ internal sealed partial class BlendRecorder
                 Circle3D aCirc = new();
                 aConstRad.Section(C.W, C.X0[0], C.X0[1], C.X0[2], C.X0[3], out double aPdeb, out double aPfin, ref aCirc);
                 Tag("circle");
-                Pnt(aCirc.Location());
-                Vec(new Vector3D(aCirc.Axis().Direction()));
-                Vec(new Vector3D(aCirc.XAxis().Direction()));
-                Hex(aCirc.Radius());
+                Pnt(aCirc.Location);
+                Vec(new Vector3D(aCirc.Axis.Direction));
+                Vec(new Vector3D(aCirc.XAxis.Direction));
+                Hex(aCirc.Radius);
                 Hex(aPdeb);
                 Hex(aPfin);
                 End();
                 Axis3D anAx = aConstRad.AxeRot(C.W);
                 Tag("axerot");
-                Pnt(anAx.Location());
-                Vec(new Vector3D(anAx.Direction()));
+                Pnt(anAx.Location);
+                Vec(new Vector3D(anAx.Direction));
                 End();
 
                 Line($"case evolrad {ip} {choix}");
@@ -801,9 +801,9 @@ internal sealed partial class BlendRecorder
                 Circle3D aCirc = new();
                 aCS.Section(3.0, X3[1], X3[2], X3[3], out double aPdeb, out double aPfin, ref aCirc);
                 Tag("circle");
-                Pnt(aCirc.Location());
-                Vec(new Vector3D(aCirc.Axis().Direction()));
-                Hex(aCirc.Radius());
+                Pnt(aCirc.Location);
+                Vec(new Vector3D(aCirc.Axis.Direction));
+                Hex(aCirc.Radius);
                 Hex(aPdeb);
                 Hex(aPfin);
                 End();
@@ -871,7 +871,7 @@ internal sealed partial class BlendRecorder
             Edge E = Sp.Edges(i);
             Tag("edge");
             Int(i);
-            Int((int)E.Orientation());
+            Int((int)E.Orientation);
             Hex(Sp.FirstParameter(i));
             Hex(Sp.LastParameter(i));
             Hex(Sp.Length(i));
@@ -896,18 +896,18 @@ internal sealed partial class BlendRecorder
             {
                 Line3D L = Sp.Line();
                 Tag("line");
-                Pnt(L.Location());
-                Vec(new Vector3D(L.Direction()));
+                Pnt(L.Location);
+                Vec(new Vector3D(L.Direction));
                 End();
             }
             else if (Sp.GetType() == Circle)
             {
                 Circle3D C = Sp.Circle();
                 Tag("circ");
-                Pnt(C.Location());
-                Vec(new Vector3D(C.Axis().Direction()));
-                Vec(new Vector3D(C.XAxis().Direction()));
-                Hex(C.Radius());
+                Pnt(C.Location);
+                Vec(new Vector3D(C.Axis.Direction));
+                Vec(new Vector3D(C.XAxis.Direction));
+                Hex(C.Radius);
                 End();
             }
         }
@@ -934,8 +934,8 @@ internal sealed partial class BlendRecorder
     {
         BSplineCurve3D aBS = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0), QuasiAngular);
-        aBS.SetPole(2, new Point3D(aBS.Pole(2).X() * 1.3, aBS.Pole(2).Y() * 0.8, 0.0));
-        double f = aBS.FirstParameter(), l = aBS.LastParameter(), m = 0.4 * f + 0.6 * l;
+        aBS.SetPole(2, new Point3D(aBS.Pole(2).X * 1.3, aBS.Pole(2).Y * 0.8, 0.0));
+        double f = aBS.FirstParameter, l = aBS.LastParameter, m = 0.4 * f + 0.6 * l;
         MakeWire aW = new();
         aW.Add(new MakeEdge(aBS, f, m).Edge());
         aW.Add(new MakeEdge(aBS, m, l).Edge());
@@ -1082,8 +1082,8 @@ internal sealed partial class BlendRecorder
             aBS.SetPeriodic();
             ElSpine anEls = new();
             anEls.SetCurve(aBS);
-            anEls.FirstParameter(aBS.FirstParameter());
-            anEls.LastParameter(aBS.LastParameter());
+            anEls.FirstParameter(aBS.FirstParameter);
+            anEls.LastParameter(aBS.LastParameter);
             anEls.SetPeriodic(true);
             anEls.SetFirstPointAndTgt(new Point3D(1, 2, 3), new Vector3D(0, 1, 0));
             anEls.AddVertexWithTangent(new Axis3D(new Point3D(4, 0, 0), new Direction3D(0, 1, 0)));

@@ -16,8 +16,8 @@ public class GceOracleTests(ITestOutputHelper output)
         using var aNP = theNative.Location();
         using var aND = theNative.Direction();
         using var aNDXYZ = aND.XYZ();
-        theOracle.Same(Oracle.FromNative(aNP).XYZ(), thePort.Location().XYZ(), $"{theWhat} location");
-        theOracle.Same(Oracle.FromNative(aNDXYZ), thePort.Direction().XYZ(), $"{theWhat} direction");
+        theOracle.Same(Oracle.FromNative(aNP).XYZ(), thePort.Location.XYZ(), $"{theWhat} location");
+        theOracle.Same(Oracle.FromNative(aNDXYZ), thePort.Direction.XYZ(), $"{theWhat} direction");
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public class GceOracleTests(ITestOutputHelper output)
             using var aNCirc = aNCircle!.Circ();
             Circle3D aCirc = aPort.Value();
 
-            anOracle.Same(aNCirc.Radius(), aCirc.Radius(), "radius", 1e-9);
+            anOracle.Same(aNCirc.Radius(), aCirc.Radius, "radius", 1e-9);
             using var aNPos = aNCirc.Position();
             using var aNLoc = aNPos.Location();
             using var aNZ = aNPos.Direction();
@@ -111,9 +111,9 @@ public class GceOracleTests(ITestOutputHelper output)
             using var aNZXYZ = aNZ.XYZ();
             using var aNXXYZ = aNX.XYZ();
             // The center is the middle of two nearly intersecting bisectors: a few ulps of the coordinates
-            anOracle.Same(Oracle.FromNative(aNLoc).XYZ(), aCirc.Location().XYZ(), "center", 1e-9);
-            anOracle.Same(Oracle.FromNative(aNZXYZ), aCirc.Axis().Direction().XYZ(), "normal", 1e-9);
-            anOracle.Same(Oracle.FromNative(aNXXYZ), aCirc.XAxis().Direction().XYZ(), "X direction", 1e-9);
+            anOracle.Same(Oracle.FromNative(aNLoc).XYZ(), aCirc.Location.XYZ(), "center", 1e-9);
+            anOracle.Same(Oracle.FromNative(aNZXYZ), aCirc.Axis.Direction.XYZ(), "normal", 1e-9);
+            anOracle.Same(Oracle.FromNative(aNXXYZ), aCirc.XAxis.Direction.XYZ(), "X direction", 1e-9);
         }
 
         anOracle.Report("gce_MakeCirc(P1, P2, P3)");

@@ -57,12 +57,12 @@ public class Geom2dGcc_Circ2dTanOnRadTests
         for (int i = 1; i <= aCirc.SolutionCount; i++)
         {
             Circle2D aSol = aCirc.ThisSolution(i);
-            Assert.Equal(0.4, aSol.Radius());
+            Assert.Equal(0.4, aSol.Radius);
             aCirc.CenterOn3(i, out double aParCen, out _);
-            Assert.True(anEll.Value(aParCen).Distance(aSol.Location()) < 1e-7);
+            Assert.True(anEll.Value(aParCen).DistanceTo(aSol.Location) < 1e-7);
             aCirc.Tangency1(i, out _, out double aParArg, out Point2D aPnt);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, c1).Distance(aPnt) < 1e-9);
-            double aD = aSol.Location().Distance(c1.Location());
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aParArg, c1).DistanceTo(aPnt) < 1e-9);
+            double aD = aSol.Location.DistanceTo(c1.Location);
             Assert.True(Math.Abs(aD - 1.4) < 1e-7 || Math.Abs(aD - 0.6) < 1e-7);
             aCirc.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
             Assert.Equal(Math.Abs(aD - 1.4) < 1e-7 ? global::Kerf.Engine.Construction.Constraints.Qualifier.Outside : global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed, aQ);
@@ -106,7 +106,7 @@ public class Geom2dGcc_Circ2dTanOnRadTests
         for (int i = 1; i <= aCirc.SolutionCount; i++)
         {
             Circle2D aSol = aCirc.ThisSolution(i);
-            Assert.Equal(1.0, aSol.Location().Distance(aP), 1e-7);
+            Assert.Equal(1.0, aSol.Location.DistanceTo(aP), 1e-7);
             aCirc.Tangency1(i, out _, out _, out Point2D aPnt);
             Assert.Equal(aP, aPnt);
             aCirc.WhichQualifier(i, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);

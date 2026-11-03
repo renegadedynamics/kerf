@@ -62,7 +62,7 @@ public sealed class FindPlane
                                               out double last);
             if (c3d is not null)
             {
-                var c3dptr = (Curve3D)c3d.Transformed(loc.Transformation());
+                var c3dptr = (Curve3D)c3d.Transformed(loc.Transformation);
 
                 Type cType = c3dptr.GetType();
 
@@ -79,7 +79,7 @@ public sealed class FindPlane
                     {
                         found = true;
                         var co = (ConicCurve3D)c3dptr;
-                        p = new PlaneSurface(new CoordinateSystem(co.Position()));
+                        p = new PlaneSurface(new CoordinateSystem(co.Position));
                     }
                 }
                 else if (cType == typeof(BezierCurve3D))
@@ -127,7 +127,7 @@ public sealed class FindPlane
                 Point3D p1 = new();
                 for (int i = 2; i <= points.Length(); i++)
                 {
-                    double dist = p0.SquareDistance(points[i]);
+                    double dist = p0.SquareDistanceTo(points[i]);
                     if (dist > disMax)
                     {
                         disMax = dist;
@@ -143,7 +143,7 @@ public sealed class FindPlane
                     for (int j = 2; j <= points.Length(); j++)
                     {
                         v3 = v1 ^ new Vector3D(p0, points[j]);
-                        double pro = v3.SquareMagnitude();
+                        double pro = v3.SquareMagnitude;
                         if (pro > proMax)
                         {
                             proMax = pro;
@@ -151,7 +151,7 @@ public sealed class FindPlane
                         }
                     }
 
-                    if (p0.SquareDistance(p2) > tol2)
+                    if (p0.SquareDistanceTo(p2) > tol2)
                     {
                         Direction3D d1 = new(v1), d2 = new(new Vector3D(p0, p2));
                         if (!d1.IsParallel(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -167,10 +167,10 @@ public sealed class FindPlane
         if (found)
         {
             // test if all points are on the plane
-            Plane3D pln = p!.Pln();
+            Plane3D pln = p!.Plane;
             for (int i = 1; i <= points.Length(); i++)
             {
-                if (pln.SquareDistance(points[i]) > tol2)
+                if (pln.SquareDistanceTo(points[i]) > tol2)
                 {
                     found = false;
                     break;

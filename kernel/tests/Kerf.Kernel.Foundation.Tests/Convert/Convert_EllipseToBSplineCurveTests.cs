@@ -58,26 +58,26 @@ public class Convert_EllipseToBSplineCurveTest
 
         // Verify first pole matches ellipse point at U1
         NCollection_Array1<Point2D> aPoles = aConv.Poles();
-        double aMajR = anElips.MajorRadius();
-        double aMinR = anElips.MinorRadius();
-        Point2D aCenter = anElips.Location();
-        Direction2D aXDir = anElips.XAxis().Direction();
-        Direction2D aYDir = anElips.YAxis().Direction();
+        double aMajR = anElips.MajorRadius;
+        double aMinR = anElips.MinorRadius;
+        Point2D aCenter = anElips.Location;
+        Direction2D aXDir = anElips.XAxis.Direction;
+        Direction2D aYDir = anElips.YAxis.Direction;
 
         double aFirstX =
-            aCenter.X() + aMajR * Math.Cos(aU1) * aXDir.X() + aMinR * Math.Sin(aU1) * aYDir.X();
+            aCenter.X + aMajR * Math.Cos(aU1) * aXDir.X + aMinR * Math.Sin(aU1) * aYDir.X;
         double aFirstY =
-            aCenter.Y() + aMajR * Math.Cos(aU1) * aXDir.Y() + aMinR * Math.Sin(aU1) * aYDir.Y();
-        Assert.Equal(aFirstX, aPoles[1].X(), 1.0e-10);
-        Assert.Equal(aFirstY, aPoles[1].Y(), 1.0e-10);
+            aCenter.Y + aMajR * Math.Cos(aU1) * aXDir.Y + aMinR * Math.Sin(aU1) * aYDir.Y;
+        Assert.Equal(aFirstX, aPoles[1].X, 1.0e-10);
+        Assert.Equal(aFirstY, aPoles[1].Y, 1.0e-10);
 
         // Verify last pole matches ellipse point at U2
         double aLastX =
-            aCenter.X() + aMajR * Math.Cos(aU2) * aXDir.X() + aMinR * Math.Sin(aU2) * aYDir.X();
+            aCenter.X + aMajR * Math.Cos(aU2) * aXDir.X + aMinR * Math.Sin(aU2) * aYDir.X;
         double aLastY =
-            aCenter.Y() + aMajR * Math.Cos(aU2) * aXDir.Y() + aMinR * Math.Sin(aU2) * aYDir.Y();
-        Assert.Equal(aLastX, aPoles[aConv.PoleCount].X(), 1.0e-10);
-        Assert.Equal(aLastY, aPoles[aConv.PoleCount].Y(), 1.0e-10);
+            aCenter.Y + aMajR * Math.Cos(aU2) * aXDir.Y + aMinR * Math.Sin(aU2) * aYDir.Y;
+        Assert.Equal(aLastX, aPoles[aConv.PoleCount].X, 1.0e-10);
+        Assert.Equal(aLastY, aPoles[aConv.PoleCount].Y, 1.0e-10);
 
         // Verify all weights are positive
         NCollection_Array1<double> aWeights = aConv.Weights();

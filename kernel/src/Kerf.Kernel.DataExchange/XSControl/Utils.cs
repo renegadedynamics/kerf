@@ -255,7 +255,7 @@ public class Utils
         {
             return global::Kerf.Topology.ShapeType.Shape;
         }
-        ShapeType res = shape.ShapeType();
+        ShapeType res = shape.Type;
         if (!compound || res != global::Kerf.Topology.ShapeType.Compound)
         {
             return res;
@@ -268,7 +268,7 @@ public class Utils
             {
                 continue;
             }
-            ShapeType typ = sh.ShapeType();
+            ShapeType typ = sh.Type;
             if (typ == global::Kerf.Topology.ShapeType.Compound)
             {
                 typ = ShapeType(sh, compound);
@@ -315,7 +315,7 @@ public class Utils
         {
             return shape;
         }
-        ShapeType typ = shape.ShapeType();
+        ShapeType typ = shape.Type;
         Shape sh = default, sh0;
         int nb = 0;
 
@@ -333,7 +333,7 @@ public class Utils
                     continue;
                 }
                 sh = sh0;
-                typ = sh.ShapeType();
+                typ = sh.Type;
                 if (typ == global::Kerf.Topology.ShapeType.Compound && !compound)
                 {
                     for (Iterator it2 = new Iterator(sh); it2.More(); it2.Next())

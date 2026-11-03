@@ -48,7 +48,7 @@ internal static class PolygonUtils
                 Point3D p1 = pnts.Value(i);
                 Point3D p2 = pnts.Value(i + 1);
                 Line3D l = new(p1, new Direction3D(new Vector3D(p1, p2)));
-                double t = l.Distance(pm);
+                double t = l.DistanceTo(pm);
                 if (t > deflection)
                 {
                     deflection = t;
@@ -95,7 +95,7 @@ internal static class PolygonUtils
                 Point3D p1 = pnts.Value(i);
                 Point3D p2 = pnts.Value(i + 1);
                 Line3D l = new(p1, new Direction3D(new Vector3D(p1, p2)));
-                double t = l.Distance(pm);
+                double t = l.DistanceTo(pm);
                 if (t > deflection)
                 {
                     deflection = t;

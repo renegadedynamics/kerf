@@ -48,7 +48,7 @@ public partial class ImpPrmIntersection
 
         SurfaceKind type = qSurf.GetType();
 
-        if ((type == SurfaceKind.Cone) && (qSurf.Cone().Apex().SquareDistance(p3d) < tol3D * tol3D))
+        if ((type == SurfaceKind.Cone) && (qSurf.Cone().Apex.SquareDistanceTo(p3d) < tol3D * tol3D))
         {
             return SpecPntType.SPntPoleSeamU;
         }
@@ -56,13 +56,13 @@ public partial class ImpPrmIntersection
         {
             double sqTol = tol3D * tol3D;
             Point3D p = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, M_PI_2, qSurf.Sphere());
-            if (p.SquareDistance(p3d) < sqTol)
+            if (p.SquareDistanceTo(p3d) < sqTol)
             {
                 return SpecPntType.SPntPoleSeamU;
             }
 
             p = global::Kerf.Engine.Geometry.ElSLib.Value(0.0, -M_PI_2, qSurf.Sphere());
-            if (p.SquareDistance(p3d) < sqTol)
+            if (p.SquareDistanceTo(p3d) < sqTol)
             {
                 return SpecPntType.SPntPoleSeamU;
             }
@@ -148,8 +148,8 @@ public partial class ImpPrmIntersection
                 ispassing = (arcorien == Internal || arcorien == External);
 
                 thearc.D0(theparam, out p2d);
-                x[1] = p2d.X();
-                x[2] = p2d.Y();
+                x[1] = p2d.X;
+                x[2] = p2d.Y;
                 pPoint.SetValue(pStart.Value(), x[1], x[2]);
 
                 func.Values(x, f, d);
@@ -177,7 +177,7 @@ public partial class ImpPrmIntersection
                                                     && (arcorien == Internal || arcorien == External);
 
                                         thearc.D0(theparam, out p2d);
-                                        pPoint.AddUV(p2d.X(), p2d.Y());
+                                        pPoint.AddUV(p2d.X, p2d.Y);
                                         destination.SetValue(k, seqlength + 1);
                                     }
                                 }
@@ -196,7 +196,7 @@ public partial class ImpPrmIntersection
 
                     pSurf.D1(x[1], x[2], out _, out d1u, out d1v);
                     thearc.D1(theparam, out p2d, out d2d);
-                    v2 = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                    v2 = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
                     v1 = d1u.Crossed(d1v);
 
                     test = vectg.Dot(v1.Crossed(v2));
@@ -267,12 +267,12 @@ public partial class ImpPrmIntersection
                                         pPoint.AddUV(x[1], x[2]);
 
                                         thearc.D1(theparam, out p2d, out d2d);
-                                        pPoint.AddUV(p2d.X(), p2d.Y());
+                                        pPoint.AddUV(p2d.X, p2d.Y);
 
                                         if (arcorien == Forward || arcorien == Reversed)
                                         {
                                             ispassing = false;
-                                            v2 = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            v2 = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
                                             test = vectg.Dot(v1.Crossed(v2));
                                             vtxorien = domain.Orientation(pStart.Vertex());
@@ -607,7 +607,7 @@ public partial class ImpPrmIntersection
 
                 PatchPoint pk = pLine.Vertex(k);
 
-                if (pi.Value().Distance(pk.Value()) <= tol3D)
+                if (pi.Value().DistanceTo(pk.Value()) <= tol3D)
                 {
                     // suggest the points are equal;
                     // test 2d parameters on surface
@@ -925,7 +925,7 @@ public partial class ImpPrmIntersection
 
             if (ip > startp)
             {
-                double dp = line.Value(ip).Value().Distance(line.Value(ip - 1).Value());
+                double dp = line.Value(ip).Value().DistanceTo(line.Value(ip - 1).Value());
                 d3D += dp;
             }
         }
@@ -977,7 +977,7 @@ public partial class ImpPrmIntersection
         if (quad.TypeQuadric() == SurfaceKind.Cone)
         {
             double uapx = 0.0, vapx = 0.0;
-            quad.Parameters(quad.Cone().Apex(), ref uapx, ref vapx);
+            quad.Parameters(quad.Cone().Apex, ref uapx, ref vapx);
 
             if (Math.Abs(Math.Abs(u1) - Math.Abs(u2)) > M_PI / 32.0)
             {
@@ -1099,7 +1099,7 @@ public partial class ImpPrmIntersection
                     v.ParametersOnS1(out uv, out vv);
                 }
                 Point2D a2DV = new(uv, vv);
-                double dist = a2DV.Distance(a2DPF);
+                double dist = a2DV.DistanceTo(a2DPF);
                 if (dist < distMinF)
                 {
                     distMinF = dist;
@@ -1113,7 +1113,7 @@ public partial class ImpPrmIntersection
                 {
                     double ucv = (Math.Abs(uv) < Math.Abs(2.0 * M_PI - uv)) ? (2.0 * M_PI) : 0.0;
                     Point2D a2DCV = new(ucv, vv);
-                    double cDist = a2DCV.Distance(a2DPF);
+                    double cDist = a2DCV.DistanceTo(a2DPF);
                     if (cDist < distMinF)
                     {
                         distMinF = cDist;
@@ -1144,7 +1144,7 @@ public partial class ImpPrmIntersection
                     v.ParametersOnS1(out uv, out vv);
                 }
                 Point2D a2DV = new(uv, vv);
-                double dist = a2DV.Distance(a2DPL);
+                double dist = a2DV.DistanceTo(a2DPL);
                 if (dist < distMinL)
                 {
                     distMinL = dist;
@@ -1158,7 +1158,7 @@ public partial class ImpPrmIntersection
                 {
                     double ucv = (Math.Abs(uv) < Math.Abs(2.0 * M_PI - uv)) ? (2.0 * M_PI) : 0.0;
                     Point2D a2DCV = new(ucv, vv);
-                    double cDist = a2DCV.Distance(a2DPL);
+                    double cDist = a2DCV.DistanceTo(a2DPL);
                     if (cDist < distMinL)
                     {
                         distMinL = cDist;
@@ -1219,7 +1219,7 @@ public partial class ImpPrmIntersection
                                 vrtF.SetValue(true, ucv, vv);
                             }
                         }
-                        double dist3D = vrtF.Value().Distance(pf.Value());
+                        double dist3D = vrtF.Value().DistanceTo(pf.Value());
                         if (dist3D > 1.5e-7 && distMinF > tol2D)
                         {
                             addFirst = true;
@@ -1280,7 +1280,7 @@ public partial class ImpPrmIntersection
                                 vrtL.SetValue(true, ucv, vv);
                             }
                         }
-                        double dist3D = vrtL.Value().Distance(pl.Value());
+                        double dist3D = vrtL.Value().DistanceTo(pl.Value());
                         if (dist3D > 1.5e-7 && distMinL > tol2D)
                         {
                             addLast = true;
@@ -1301,7 +1301,7 @@ public partial class ImpPrmIntersection
         bool result = false;
         if (addFirst)
         {
-            double df = line.Value(1).Value().Distance(vrtF.Value());
+            double df = line.Value(1).Value().DistanceTo(vrtF.Value());
             if ((d3DF * 2.0) > df && df > 1.5e-7)
             {
                 line.InsertBefore(1, vrtF);
@@ -1310,7 +1310,7 @@ public partial class ImpPrmIntersection
         }
         if (addLast)
         {
-            double dl = line.Value(line.PointCount).Value().Distance(vrtL.Value());
+            double dl = line.Value(line.PointCount).Value().DistanceTo(vrtL.Value());
             if ((d3DL * 2.0) > dl && dl > 1.5e-7)
             {
                 line.Add(vrtL);
@@ -2138,12 +2138,12 @@ public partial class ImpPrmIntersection
 
             Line2D lin1 = arc.Line(), lin2 = anArc.Line();
 
-            if (!lin1.Direction().IsParallel(lin2.Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+            if (!lin1.Direction.IsParallel(lin2.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 return false;
             }
 
-            double dist = arc.Line().Distance(anArc.Line());
+            double dist = arc.Line().DistanceTo(anArc.Line());
             if ((dist < toler2D) || (Math.Abs(dist - period) < toler2D))
             {
                 double rf = arc.FirstParameter(), rl = arc.LastParameter();
@@ -2198,7 +2198,7 @@ public partial class ImpPrmIntersection
 
             Point2D pmin = global::Kerf.Engine.Geometry.ElCLib.Value(rParam, arcLin);
 
-            double dist = ploc.Distance(pmin);
+            double dist = ploc.DistanceTo(pmin);
             if ((dist < toler2D) || (Math.Abs(dist - period) < toler2D))
             { // Considered point is in Restriction line.
                 // Go to the next point.
@@ -2209,7 +2209,7 @@ public partial class ImpPrmIntersection
             // intersection point (i.e. if aPloc is in tangent zone between
             // two intersected surfaces).
 
-            double ul = pmin.X(), vl = pmin.Y();
+            double ul = pmin.X, vl = pmin.Y;
 
             double u, v;
             double dU = ul - uf, dV = vl - vf;

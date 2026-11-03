@@ -112,7 +112,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
         _nbUKnots = nbUSpans + 1;
         _nbVKnots = nbVSpans + 1;
 
-        double r = sph.Radius();
+        double r = sph.Radius;
 
         ComputePoles(r, u1, u2, v1, v2, _poles);
 
@@ -134,7 +134,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline in the reference of the sphere.
         // and calculate the weight of the bspline.
         double w1, w2;
-        Transform3D trsf = new Transform3D().WithTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(sph.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -184,7 +184,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
         _isUPeriodic = !uTrim;
         _isVPeriodic = false;
 
-        double r = sph.Radius();
+        double r = sph.Radius;
 
         double w1, w2, cosU, cosV;
 
@@ -250,7 +250,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // Replace the bspline in the mark of the sphere.
         // and calculate the weight of bspline.
-        Transform3D trsf = new Transform3D().WithTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(sph.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -298,7 +298,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // Construction of the sphere in the reference mark xOy.
 
-        double r = sph.Radius();
+        double r = sph.Radius;
 
         ComputePoles(r, 0.0, 2.0 * M_PI, -M_PI / 2.0, M_PI / 2.0, _poles);
 
@@ -318,7 +318,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // Replace the bspline in the mark of the sphere.
         // and calculate the weight of the bspline.
-        Transform3D trsf = new Transform3D().WithTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(sph.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {

@@ -487,9 +487,9 @@ public sealed class CurvilinearParameter
         for (int i = 1; i <= maxNumber; i++)
         {
             pntVW = c2D.Value(firstU + (i - 1) * (lastU - firstU) / (maxNumber - 1));
-            s.D1(pntVW.X(), pntVW.Y(), out _, out Vector3D dS_dv, out Vector3D dS_dw);
-            Max_dS_dv = Max(Max_dS_dv, dS_dv.Magnitude());
-            Max_dS_dw = Max(Max_dS_dw, dS_dw.Magnitude());
+            s.D1(pntVW.X, pntVW.Y, out _, out Vector3D dS_dv, out Vector3D dS_dw);
+            Max_dS_dv = Max(Max_dS_dv, dS_dv.Magnitude);
+            Max_dS_dw = Max(Max_dS_dw, dS_dw.Magnitude);
         }
         tolV = tol / (4.0 * Max_dS_dv);
         tolW = tol / (4.0 * Max_dS_dw);

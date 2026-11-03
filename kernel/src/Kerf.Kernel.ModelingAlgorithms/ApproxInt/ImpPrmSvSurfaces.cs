@@ -57,7 +57,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
     {
         Vector3D aDU = du, aDV = dv;
 
-        double sqMagnDU = aDU.SquareMagnitude(), sqMagnDV = aDV.SquareMagnitude();
+        double sqMagnDU = aDU.SquareMagnitude, sqMagnDV = aDV.SquareMagnitude;
 
         if (sqMagnDU < sqLinTol)
         {
@@ -75,7 +75,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
         // Here aDU and aDV vectors have magnitude 1.0.
 
-        if (aDU.Crossed(aDV).SquareMagnitude() < angTol * angTol)
+        if (aDU.Crossed(aDV).SquareMagnitude < angTol * angTol)
         {
             return true;
         }
@@ -111,9 +111,9 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         // Attention: @ \sin theAngTol \approx theAngTol @ (for cross-product)
 
         // Really, vector theTg3D has to be normalized (if theIsTo3DTgCompute == FALSE).
-        double sqTan = tg3D.SquareMagnitude();
+        double sqTan = tg3D.SquareMagnitude;
 
-        double sqMagnDU = du.SquareMagnitude(), sqMagnDV = dv.SquareMagnitude();
+        double sqMagnDU = du.SquareMagnitude, sqMagnDV = dv.SquareMagnitude;
 
         // There are some reasons of singularity
 
@@ -148,7 +148,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // theTg3D is already defined.
                 // Here we check only, if this tangent is parallel to theDV.
 
-                if (dv.Crossed(tg3D).SquareMagnitude() < angTol * angTol * sqMagnDV * sqTan)
+                if (dv.Crossed(tg3D).SquareMagnitude < angTol * angTol * sqMagnDV * sqTan)
                 {
                     // theTg3D is parallel to theDV
 
@@ -190,7 +190,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // theTg3D is already defined.
                 // Here we check only, if this tangent is parallel to theDU.
 
-                if (du.Crossed(tg3D).SquareMagnitude() < angTol * angTol * sqMagnDU * sqTan)
+                if (du.Crossed(tg3D).SquareMagnitude < angTol * angTol * sqMagnDU * sqTan)
                 {
                     // theTg3D is parallel to theDU
 
@@ -225,7 +225,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
             if (isTo3DTgCompute)
             {
                 tg2D = tg2D.WithCoord(1.0 / lenSum, 1.0 / lenSum);
-                tg3D = du * tg2D.X() + dv * tg2D.Y();
+                tg3D = du * tg2D.X + dv * tg2D.Y;
             }
             else
             {
@@ -233,7 +233,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // Here we check only, if this tangent is parallel to theDU
                 //(and theDV together).
 
-                if (du.Crossed(tg3D).SquareMagnitude() < angTol * angTol * sqMagnDU * sqTan)
+                if (du.Crossed(tg3D).SquareMagnitude < angTol * angTol * sqMagnDU * sqTan)
                 {
                     // theTg3D is parallel to theDU
 
@@ -261,7 +261,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // based on array of Walking-points).
 
                 tg2D = tg2D.WithCoord(1.0 / lenSum, -1.0 / lenSum);
-                tg3D = du * tg2D.X() + dv * tg2D.Y();
+                tg3D = du * tg2D.X + dv * tg2D.Y;
             }
             else
             {
@@ -269,7 +269,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // Here we check only, if this tangent is parallel to theDU
                 //(and theDV together).
 
-                if (du.Crossed(tg3D).SquareMagnitude() < angTol * angTol * sqMagnDU * sqTan)
+                if (du.Crossed(tg3D).SquareMagnitude < angTol * angTol * sqMagnDU * sqTan)
                 {
                     // theTg3D is parallel to theDU
 
@@ -311,7 +311,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                                               double angTol, ref Vector2D tg2D)
     {
         Vector3D normal = du.Crossed(dv);
-        double sqMagn = normal.SquareMagnitude();
+        double sqMagn = normal.SquareMagnitude;
 
         if (IsSingular(du, dv, linTol, angTol))
         {
@@ -331,8 +331,8 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         // else it is singular case).
 
         Vector3D tgU = tg3D.Crossed(du), tgV = tg3D.Crossed(dv);
-        double deltaU = tgV.SquareMagnitude() / sqMagn;
-        double deltaV = tgU.SquareMagnitude() / sqMagn;
+        double deltaU = tgV.SquareMagnitude / sqMagn;
+        double deltaV = tgU.SquareMagnitude / sqMagn;
 
         tg2D = tg2D.WithCoord(Math.CopySign(Math.Sqrt(deltaU), tgV.Dot(normal)),
                          -Math.CopySign(Math.Sqrt(deltaV), tgU.Dot(normal)));
@@ -455,8 +455,8 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
         if (_myHasBeenComputed)
         {
-            if ((_myParOnS1.X() == u1) && (_myParOnS1.Y() == v1) && (_myParOnS2.X() == u2)
-                && (_myParOnS2.Y() == v2))
+            if ((_myParOnS1.X == u1) && (_myParOnS1.Y == v1) && (_myParOnS2.X == u2)
+                && (_myParOnS2.Y == v2))
             {
                 return (_myIsTangent); // OCCT: a cached result leaves the outputs as given
             }
@@ -475,8 +475,8 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
         if (_myHasBeenComputedbis)
         {
-            if ((_myParOnS1bis.X() == u1) && (_myParOnS1bis.Y() == v1) && (_myParOnS2bis.X() == u2)
-                && (_myParOnS2bis.Y() == v2))
+            if ((_myParOnS1bis.X == u1) && (_myParOnS1bis.Y == v1) && (_myParOnS2bis.X == u2)
+                && (_myParOnS2bis.Y == v2))
             {
                 Vector3D tv = _myTg;
                 Vector2D TV1 = _myTguv1;
@@ -619,8 +619,8 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // Normals to the surfaces
                 Vector3D normalPrm = d1uPrm.Crossed(d1vPrm), normalImp = qSurf.Normale(_myPnt);
 
-                double sqMagnPrm = normalPrm.SquareMagnitude(),
-                       sqMagnImp = normalImp.SquareMagnitude();
+                double sqMagnPrm = normalPrm.SquareMagnitude,
+                       sqMagnImp = normalImp.SquareMagnitude;
 
                 bool isPrmSingular = false, isImpSingular = false;
 
@@ -683,7 +683,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     tg = normalImp.Crossed(normalPrm);
                 }
 
-                double sqMagnTg = tg.SquareMagnitude();
+                double sqMagnTg = tg.SquareMagnitude;
 
                 if (sqMagnTg < nullValue)
                 {

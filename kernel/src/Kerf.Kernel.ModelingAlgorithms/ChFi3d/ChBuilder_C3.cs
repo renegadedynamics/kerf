@@ -291,14 +291,14 @@ public partial class ChBuilder
 
         //  p3d[fin] = HSpiv->Value(p2d[fin].X(),p2d[fin].Y());
         //  p3d[deb] = HSpiv->Value(p2d[deb].X(),p2d[deb].Y());
-        fac.D1(p2d[pivot].X(), p2d[pivot].Y(), out p3d[pivot], out deru, out derv);
+        fac.D1(p2d[pivot].X, p2d[pivot].Y, out p3d[pivot], out deru, out derv);
         Vector3D norpl = deru.Crossed(derv);
         //  if (!c1triangle)
-        p3d[3] = fac.Value(p2d[3].X(), p2d[3].Y());
+        p3d[3] = fac.Value(p2d[3].X, p2d[3].Y);
 
-        double distMin = (p3d[3]).Distance(p3d[fin]);
-        double distTmp = (p3d[pivot]).Distance(p3d[deb]);
-        double distDebFin = (p3d[pivot]).Distance(p3d[3]);
+        double distMin = (p3d[3]).DistanceTo(p3d[fin]);
+        double distTmp = (p3d[pivot]).DistanceTo(p3d[deb]);
+        double distDebFin = (p3d[pivot]).DistanceTo(p3d[3]);
 
         if (distTmp > distMin)
         {
@@ -348,7 +348,7 @@ public partial class ChBuilder
             //    gp_Dir xdir(gp_Vec(p3d[fin],p3d[deb]));
             Direction3D xdir = new Direction3D(new Vector3D(p3d[fin], p3d[deb]));
             CoordinateSystem planAx3 = new(p3d[pivot], ndir, xdir);
-            if (planAx3.YDirection().Dot(new Direction3D(v1)) <= 0.0)
+            if (planAx3.YDirection.Dot(new Direction3D(v1)) <= 0.0)
             {
                 planAx3 = planAx3.YReversed();
             }
@@ -357,11 +357,11 @@ public partial class ChBuilder
 
             // on oriente coin
             Vector3D norface = norpl;
-            if (face[pivot].Orientation() == Reversed)
+            if (face[pivot].Orientation == Reversed)
             {
                 norface = norface.Reversed();
             }
-            Vector3D norcoin = new(gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection()));
+            Vector3D norcoin = new(gpl.Plane.Position.XDirection.Crossed(gpl.Plane.Position.YDirection));
             if (norcoin.Dot(norface) <= 0.0)
             {
                 coin.ChangeOrientation() = Reversed;
@@ -499,8 +499,8 @@ public partial class ChBuilder
             {
                 igcface = ChFiKPart_IndexCurveInDS(gcface, dStr);
                 fi1.SetInterference(igcface, trans, facepc1, facepc2);
-                fi1.SetFirstParameter(gcface.FirstParameter());
-                fi1.SetLastParameter(gcface.LastParameter());
+                fi1.SetFirstParameter(gcface.FirstParameter);
+                fi1.SetLastParameter(gcface.LastParameter);
             }
             // sur le pivot
             if (norcoin.Dot(norpiv) <= 0.0)
@@ -513,8 +513,8 @@ public partial class ChBuilder
             }
             igcpiv = ChFiKPart_IndexCurveInDS(gcpiv, dStr);
             fi2.SetInterference(igcpiv, trans, pivpc1, pivpc2);
-            fi2.SetFirstParameter(gcpiv.FirstParameter());
-            fi2.SetLastParameter(gcpiv.LastParameter());
+            fi2.SetFirstParameter(gcpiv.FirstParameter);
+            fi2.SetLastParameter(gcpiv.LastParameter);
 
             _done = true;
         }
@@ -624,8 +624,8 @@ public partial class ChBuilder
             Point2D pp1 = new(), pp2 = new();
             if (c1plan)
             {
-                p1deb = dStr.Curve(icf).Curve().FirstParameter();
-                p2deb = dStr.Curve(icf).Curve().LastParameter();
+                p1deb = dStr.Curve(icf).Curve().FirstParameter;
+                p2deb = dStr.Curve(icf).Curve().LastParameter;
             }
             else
             {
@@ -653,8 +653,8 @@ public partial class ChBuilder
             // last points
             if (c1plan)
             {
-                p1fin = dStr.Curve(icl).Curve().FirstParameter();
-                p2fin = dStr.Curve(icl).Curve().LastParameter();
+                p1fin = dStr.Curve(icl).Curve().FirstParameter;
+                p2fin = dStr.Curve(icl).Curve().LastParameter;
             }
             else
             {
@@ -828,8 +828,8 @@ internal static class ChBuilder_C3
         Vector3D vecAC = new(pntA, pntC);
         Vector3D vecAD = new(pntA, pntD);
 
-        double nor2AB = vecAB.SquareMagnitude();
-        double nor2AC = vecAC.SquareMagnitude();
+        double nor2AB = vecAB.SquareMagnitude;
+        double nor2AC = vecAC.SquareMagnitude;
         double proABAC = vecAB.Dot(vecAC);
 
         double alpha = nor2AB * nor2AC - proABAC * proABAC;
@@ -845,7 +845,7 @@ internal static class ChBuilder_C3
         double alpha2 = proACAD * nor2AB - proABAC * proABAD;
         Vector3D vecDABC = alpha1 * vecAB + alpha2 * vecAC - alpha * vecAD;
 
-        return (vecDABC.Magnitude() / alpha) < global::Kerf.Engine.Foundation.Precision.Confusion();
+        return (vecDABC.Magnitude / alpha) < global::Kerf.Engine.Foundation.Precision.Confusion();
     }
 
     internal static SurfaceAdaptor? BoundSurf(Surface? s, in Point2D pdeb, in Point2D pfin)
@@ -856,7 +856,7 @@ internal static class ChBuilder_C3
 
         double uu1 = 0.0, uu2 = 0.0, vv1 = 0.0, vv2 = 0.0;
         double uuu1 = 0.0, uuu2 = 0.0, vvv1 = 0.0, vvv2 = 0.0;
-        s.Bounds(out uuu1, out uuu2, out vvv1, out vvv2);
+        s.ParameterBounds(out uuu1, out uuu2, out vvv1, out vvv2);
         ChFi3d_Boite(pdeb, pfin, out uu1, out uu2, out vv1, out vv2);
         double step = Max((uu2 - uu1), (vv2 - vv1));
         step *= 0.2;
@@ -886,8 +886,8 @@ internal static class ChBuilder_C3
         NCollection_Array1<double> pardeb = new(1, 4), parfin = new(1, 4);
         double u = 0.0, v = 0.0;
         Point3D pbidon = new();
-        u = p2ddeb.X();
-        v = p2ddeb.Y();
+        u = p2ddeb.X;
+        v = p2ddeb.Y;
         gSD.D1(u, v, out pbidon, out derudeb, out dervdeb);
 
         pardeb[1] = u;
@@ -900,8 +900,8 @@ internal static class ChBuilder_C3
         ptcoindeb = ptcoindeb.WithCoord(u, v);
 
         // compute parfin
-        u = p2dfin.X();
-        v = p2dfin.Y();
+        u = p2dfin.X;
+        v = p2dfin.Y;
         parfin[1] = u;
         parfin[2] = v;
         //  gp_Pnt2d pf2(u,v);

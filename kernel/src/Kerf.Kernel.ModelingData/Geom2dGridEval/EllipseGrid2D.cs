@@ -12,7 +12,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// Efficient batch evaluator for 2D ellipse grid points:
 /// P(u) = Center + MajorR * cos(u) * XDir + MinorR * sin(u) * YDir.
 /// </summary>
-public sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     private readonly EllipseCurve2D? _geom;
 
@@ -36,19 +36,19 @@ public sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Point2D> result = new(1, nb);
 
-        Ellipse2D elips = _geom.Elips2d();
-        Point2D center = elips.Location();
-        Direction2D xDir = elips.XAxis().Direction();
-        Direction2D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse2D elips = _geom.Ellipse;
+        Point2D center = elips.Location;
+        Direction2D xDir = elips.XAxis.Direction;
+        Direction2D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -75,19 +75,19 @@ public sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD1> result = new(1, nb);
 
-        Ellipse2D elips = _geom.Elips2d();
-        Point2D center = elips.Location();
-        Direction2D xDir = elips.XAxis().Direction();
-        Direction2D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse2D elips = _geom.Ellipse;
+        Point2D center = elips.Location;
+        Direction2D xDir = elips.XAxis.Direction;
+        Direction2D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -118,19 +118,19 @@ public sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD2> result = new(1, nb);
 
-        Ellipse2D elips = _geom.Elips2d();
-        Point2D center = elips.Location();
-        Direction2D xDir = elips.XAxis().Direction();
-        Direction2D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse2D elips = _geom.Ellipse;
+        Point2D center = elips.Location;
+        Direction2D xDir = elips.XAxis.Direction;
+        Direction2D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -163,19 +163,19 @@ public sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Curve2D.ResD3> result = new(1, nb);
 
-        Ellipse2D elips = _geom.Elips2d();
-        Point2D center = elips.Location();
-        Direction2D xDir = elips.XAxis().Direction();
-        Direction2D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse2D elips = _geom.Ellipse;
+        Point2D center = elips.Location;
+        Direction2D xDir = elips.XAxis.Direction;
+        Direction2D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double cx = center.X();
-        double cy = center.Y();
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double cx = center.X;
+        double cy = center.Y;
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -210,16 +210,16 @@ public sealed class EllipseGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         int nb = theParams.Length();
         NCollection_Array1<Vector2D> result = new(1, nb);
 
-        Ellipse2D elips = _geom.Elips2d();
-        Direction2D xDir = elips.XAxis().Direction();
-        Direction2D yDir = elips.YAxis().Direction();
-        double majR = elips.MajorRadius();
-        double minR = elips.MinorRadius();
+        Ellipse2D elips = _geom.Ellipse;
+        Direction2D xDir = elips.XAxis.Direction;
+        Direction2D yDir = elips.YAxis.Direction;
+        double majR = elips.MajorRadius;
+        double minR = elips.MinorRadius;
 
-        double xx = xDir.X();
-        double xy = xDir.Y();
-        double yx = yDir.X();
-        double yy = yDir.Y();
+        double xx = xDir.X;
+        double xy = xDir.Y;
+        double yx = yDir.X;
+        double yy = yDir.Y;
 
         // Ellipse derivatives are cyclic with period 4:
         // D1 = -MajR * sin(u) * X + MinR * cos(u) * Y  -> coefficients: (-sin, cos)

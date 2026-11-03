@@ -51,8 +51,8 @@ public sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.Extre
         _result.Clear();
 
         // Step 1: Project point P onto the circle plane
-        Point3D center = _circle.Location();
-        Direction3D axis = _circle.Axis().Direction();
+        Point3D center = _circle.Location;
+        Direction3D axis = _circle.Axis.Direction;
         Vector3D toP = new(center, p);
         double height = toP.Dot(new Vector3D(axis));
         Vector3D trsl = new Vector3D(axis) * (-height);
@@ -60,20 +60,20 @@ public sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.Extre
 
         // Step 2: Check for degenerate case - point projects to center
         Vector3D oPp = new(center, pp);
-        double oPpMag = oPp.Magnitude();
+        double oPpMag = oPp.Magnitude;
 
         if (oPpMag < tol)
         {
             // Point is on the circle axis - all points on circle are equidistant
             _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.InfiniteSolutions;
-            double radius = _circle.Radius();
+            double radius = _circle.Radius;
             _result.InfiniteSquareDistance = radius * radius + height * height;
             return _result;
         }
 
         // Step 3: Compute the angle of the closest point
         // Us1 corresponds to minimum distance (closest point)
-        double us1 = _circle.XAxis().Direction().AngleWithRef(new Direction3D(oPp), axis);
+        double us1 = _circle.XAxis.Direction.AngleWithRef(new Direction3D(oPp), axis);
 
         // Handle angle boundaries
         double angTol = global::Kerf.Engine.Foundation.Precision.Angular();
@@ -95,7 +95,7 @@ public sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.Extre
         {
             double theUMin = _domain.Value.Min;
 
-            double radius = _circle.Radius();
+            double radius = _circle.Radius;
             if (radius > Constants.Resolution())
             {
                 tolU = tol / radius;
@@ -140,7 +140,7 @@ public sealed class CircleExtrema : global::Kerf.Engine.Extrema.PointCurve.Extre
             global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult ext = new();
             ext.Parameter = u;
             ext.Point = curvePt;
-            ext.SquareDistance = p.SquareDistance(curvePt);
+            ext.SquareDistance = p.SquareDistanceTo(curvePt);
             ext.IsMinimum = (i == 0); // First solution is minimum, second is maximum
 
             _result._extrema.Add(ext);

@@ -398,7 +398,7 @@ public sealed class WiresOnShape : Transient
                 if (isProjected)
                 {
                     Shape sh = _map.GetValue(vtx);
-                    if (sh.ShapeType() != global::Kerf.Topology.ShapeType.Edge)
+                    if (sh.Type != global::Kerf.Topology.ShapeType.Edge)
                     {
                         continue;
                     }
@@ -445,7 +445,7 @@ public sealed class WiresOnShape : Transient
         //  Modified by Sergey KHROMOV - Mon Feb 12 16:26:50 2001 Begin
         foreach (KeyValuePair<Shape, Shape> ite in _map)
         {
-            if (ite.Key.ShapeType() == global::Kerf.Topology.ShapeType.Edge)
+            if (ite.Key.Type == global::Kerf.Topology.ShapeType.Edge)
             {
                 _mapEF.Add(ite.Key, ite.Value);
             }
@@ -522,7 +522,7 @@ public sealed class WiresOnShape : Transient
         vs = new Vertex();
         if (_map.ContainsKey(vw))
         {
-            if (_map.GetValue(vw).ShapeType() == ShapeType.Vertex)
+            if (_map.GetValue(vw).Type == ShapeType.Vertex)
             {
                 vs = ShapeCasts.Vertex(_map.GetValue(vw));
                 return true;
@@ -549,7 +549,7 @@ public sealed class WiresOnShape : Transient
     {
         ed = new Edge();
         prm = 0.0; // OCCT: unchanged
-        if (!_map.ContainsKey(v) || _map.GetValue(v).ShapeType() == ShapeType.Vertex)
+        if (!_map.ContainsKey(v) || _map.GetValue(v).Type == ShapeType.Vertex)
         {
             return false;
         }
@@ -575,7 +575,7 @@ public sealed class WiresOnShape : Transient
     {
         ed = new Edge();
         prm = 0.0; // OCCT: unchanged
-        if (!_map.ContainsKey(v) || _map.GetValue(v).ShapeType() == ShapeType.Vertex)
+        if (!_map.ContainsKey(v) || _map.GetValue(v).Type == ShapeType.Vertex)
         {
             return false;
         }
@@ -588,7 +588,7 @@ public sealed class WiresOnShape : Transient
 
         Shape shape = _mapEF.GetValue(edgeFrom);
         Curve3D? c = Tool.Curve(ed, out _, out _);
-        if (c is null && shape.ShapeType() == ShapeType.Face)
+        if (c is null && shape.Type == ShapeType.Face)
         {
             Face face = ShapeCasts.Face(shape);
             double vtx_param = Tool.Parameter(v, edgeFrom);
@@ -639,10 +639,10 @@ public sealed class WiresOnShape : Transient
                         continue;
                     }
                     c.D0(curPar, out Point3D curPBound);
-                    curDist = curPBound.SquareDistance(toproj);
+                    curDist = curPBound.SquareDistanceTo(toproj);
                 }
 
-                else if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(p2d.X()))
+                else if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(p2d.X))
                 {
                     Curve2D? c2d = Tool.CurveOnSurface(edg, F, out f, out l);
                     if (c2d is null)
@@ -657,14 +657,14 @@ public sealed class WiresOnShape : Transient
                     }
                     Curve2D pc = Tool.CurveOnSurface(edg, F, out f, out l)!;
                     pc.D0(curPar, out Point2D pProj);
-                    surf.D0(pProj.X(), pProj.Y(), out Point3D curPBound);
-                    curDist = curPBound.SquareDistance(toproj);
+                    surf.D0(pProj.X, pProj.Y, out Point3D curPBound);
+                    curDist = curPBound.SquareDistanceTo(toproj);
                 }
 
                 if (curDist < dmin)
                 {
                     edge = edg;
-                    edge.Orientation(edg.Orientation());
+                    edge.Orient(edg.Orientation);
                     dmin = curDist;
                     param = curPar;
                 }
@@ -700,15 +700,15 @@ public sealed class WiresOnShape : Transient
                 double dvmax = 0.01 * (adSurf.LastVParameter() - adSurf.FirstVParameter());
 
                 Point2D pcur = p2d;
-                double dumin = Math.Abs(pcur.X() - pBound2d.X());
-                double dvmin = Math.Abs(pcur.Y() - pBound2d.Y());
+                double dumin = Math.Abs(pcur.X - pBound2d.X);
+                double dvmin = Math.Abs(pcur.Y - pBound2d.Y);
                 if (dumin > dumax && adSurf.IsUPeriodic)
                 {
-                    double x1 = pBound2d.X();
+                    double x1 = pBound2d.X;
                     double shift = ShapeAnalysisAnalysis.AdjustToPeriod(x1, adSurf.FirstUParameter(), adSurf.LastUParameter());
                     x1 += shift;
                     pBound2d = pBound2d.WithX(x1);
-                    double x2 = p2d.X();
+                    double x2 = p2d.X;
                     shift = ShapeAnalysisAnalysis.AdjustToPeriod(x2, adSurf.FirstUParameter(), adSurf.LastUParameter());
                     x2 += shift;
                     dumin = Math.Abs(x2 - x1);
@@ -722,11 +722,11 @@ public sealed class WiresOnShape : Transient
 
                 if (dvmin > dvmax && adSurf.IsVPeriodic)
                 {
-                    double y1 = pBound2d.Y();
+                    double y1 = pBound2d.Y;
                     double shift = ShapeAnalysisAnalysis.AdjustToPeriod(y1, adSurf.FirstVParameter(), adSurf.LastVParameter());
                     y1 += shift;
                     pBound2d = pBound2d.WithY(y1);
-                    double y2 = p2d.Y();
+                    double y2 = p2d.Y;
                     shift = ShapeAnalysisAnalysis.AdjustToPeriod(y2, adSurf.FirstVParameter(), adSurf.LastVParameter());
                     y2 += shift;
                     dvmin = Math.Abs(y1 - y2);
@@ -756,9 +756,9 @@ public sealed class WiresOnShape : Transient
                 }
 
                 // added check by 3D the same as in the BRepCheck_Wire::SelfIntersect
-                surf.D0(pBound2d.X(), pBound2d.Y(), out Point3D pBound);
-                surf.D0(p2d.X(), p2d.Y(), out Point3D pv2d);
-                double distPoints_3D = pv2d.SquareDistance(pBound);
+                surf.D0(pBound2d.X, pBound2d.Y, out Point3D pBound);
+                surf.D0(p2d.X, p2d.Y, out Point3D pv2d);
+                double distPoints_3D = pv2d.SquareDistanceTo(pBound);
                 double maxDist = Max(distPoints_3D, dist3d * dist3d);
 
                 BrepBuilder b = new();
@@ -783,7 +783,7 @@ public sealed class WiresOnShape : Transient
         Curve3D c = Tool.Curve(edge, out Placement loc, out double f, out double l)!;
         if (!loc.IsIdentity)
         {
-            Geometry3D gg = c.Transformed(loc.Transformation());
+            Geometry3D gg = c.Transformed(loc.Transformation);
             c = (Curve3D)gg;
         }
         proj.Init(toproj, c, f, l);
@@ -820,7 +820,7 @@ public sealed class WiresOnShape : Transient
 
         if (s is TrimmedSurface trimmed)
         {
-            s = trimmed.BasisSurface();
+            s = trimmed.BasisSurface;
         }
 
         if (s.GetType() == typeof(PlaneSurface))
@@ -837,11 +837,11 @@ public sealed class WiresOnShape : Transient
         {
             aC2d.D0((f + l) * 0.5, out Point2D p2d);
             bool isIn = true;
-            if ((p2d.X() < umin - global::Kerf.Engine.Foundation.Precision.PConfusion()) || (p2d.X() > umax + global::Kerf.Engine.Foundation.Precision.PConfusion()))
+            if ((p2d.X < umin - global::Kerf.Engine.Foundation.Precision.PConfusion()) || (p2d.X > umax + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 isIn = false;
             }
-            if ((p2d.Y() < vmin - global::Kerf.Engine.Foundation.Precision.PConfusion()) || (p2d.Y() > vmax + global::Kerf.Engine.Foundation.Precision.PConfusion()))
+            if ((p2d.Y < vmin - global::Kerf.Engine.Foundation.Precision.PConfusion()) || (p2d.Y > vmax + global::Kerf.Engine.Foundation.Precision.PConfusion()))
             {
                 isIn = false;
             }
@@ -855,7 +855,7 @@ public sealed class WiresOnShape : Transient
         Curve3D c = Tool.Curve(edg, out Placement loc, out f, out l)!;
         if (!loc.IsIdentity)
         {
-            Geometry3D gg = c.Transformed(loc.Transformation());
+            Geometry3D gg = c.Transformed(loc.Transformation);
             c = (Curve3D)gg;
         }
 
@@ -889,9 +889,9 @@ public sealed class WiresOnShape : Transient
 
         Point2D pf = c2d.Value(f);
         Point2D pl = c2d.Value(l);
-        s.D0(pf.X(), pf.Y(), out Point3D PF);
-        s.D0(pl.X(), pl.Y(), out Point3D PL);
-        if (edg.Orientation() == Reversed)
+        s.D0(pf.X, pf.Y, out Point3D PF);
+        s.D0(pl.X, pl.Y, out Point3D PL);
+        if (edg.Orientation == Reversed)
         {
             v1 = Exploration.LastVertex(edg);
             v1.Reverse();
@@ -900,7 +900,7 @@ public sealed class WiresOnShape : Transient
         {
             v1 = Exploration.FirstVertex(edg);
         }
-        if (edg.Orientation() == Reversed)
+        if (edg.Orientation == Reversed)
         {
             v2 = Exploration.FirstVertex(edg);
             v2.Reverse();
@@ -918,19 +918,19 @@ public sealed class WiresOnShape : Transient
             double old2 = Tool.Tolerance(v2);
             Point3D pnt1 = Tool.Pnt(v1);
             Point3D pnt2 = Tool.Pnt(v2);
-            double tol1 = pnt1.Distance(PF);
-            double tol2 = pnt2.Distance(PL);
+            double tol1 = pnt1.DistanceTo(PF);
+            double tol2 = pnt2.DistanceTo(PL);
             b.UpdateVertex(v1, Max(old1, tol1));
             b.UpdateVertex(v2, Max(old2, tol2));
         }
 
         if (s.IsUPeriodic)
         {
-            double up = s.UPeriod();
+            double up = s.UPeriod;
             double tolu = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(up);
             int nbtra = 0;
-            double theUmin = Min(pf.X(), pl.X());
-            double theUmax = Max(pf.X(), pl.X());
+            double theUmin = Min(pf.X, pl.X);
+            double theUmax = Max(pf.X, pl.X);
 
             if (theUmin < umin - tolu)
             {
@@ -958,11 +958,11 @@ public sealed class WiresOnShape : Transient
 
         if (s.IsVPeriodic)
         {
-            double vp = s.VPeriod();
+            double vp = s.VPeriod;
             double tolv = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(vp);
             int nbtra = 0;
-            double theVmin = Min(pf.Y(), pl.Y());
-            double theVmax = Max(pf.Y(), pl.Y());
+            double theVmin = Min(pf.Y, pl.Y);
+            double theVmax = Max(pf.Y, pl.Y);
 
             if (theVmin < vmin - tolv)
             {
@@ -1046,7 +1046,7 @@ public sealed class WiresOnShape : Transient
                 s = Tool.Surface(fac, out _)!;
                 if (s is TrimmedSurface trimmed)
                 {
-                    s = trimmed.BasisSurface();
+                    s = trimmed.BasisSurface;
                 }
                 if (s.GetType() == typeof(PlaneSurface))
                 {
@@ -1057,7 +1057,7 @@ public sealed class WiresOnShape : Transient
                 c = Tool.Curve(efrom, out loc, out f, out l)!;
                 if (!loc.IsIdentity)
                 {
-                    Geometry3D gg = c.Transformed(loc.Transformation());
+                    Geometry3D gg = c.Transformed(loc.Transformation);
                     c = (Curve3D)gg;
                 }
 
@@ -1086,11 +1086,11 @@ public sealed class WiresOnShape : Transient
 
                 if (s.IsUPeriodic)
                 {
-                    double up = s.UPeriod();
+                    double up = s.UPeriod;
                     double tolu = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(up);
                     int nbtra = 0;
-                    double theUmin = Min(pf.X(), pl.X());
-                    double theUmax = Max(pf.X(), pl.X());
+                    double theUmin = Min(pf.X, pl.X);
+                    double theUmax = Max(pf.X, pl.X);
 
                     if (theUmin < umin - tolu)
                     {
@@ -1119,11 +1119,11 @@ public sealed class WiresOnShape : Transient
 
                 if (s.IsVPeriodic)
                 {
-                    double vp = s.VPeriod();
+                    double vp = s.VPeriod;
                     double tolv = global::Kerf.Engine.Foundation.Precision.PConfusion(); // Epsilon(vp);
                     int nbtra = 0;
-                    double theVmin = Min(pf.Y(), pl.Y());
-                    double theVmax = Max(pf.Y(), pl.Y());
+                    double theVmin = Min(pf.Y, pl.Y);
+                    double theVmax = Max(pf.Y, pl.Y);
 
                     if (theVmin < vmin - tolv)
                     {
@@ -1180,14 +1180,14 @@ public sealed class WiresOnShape : Transient
             Point2D ptf = c2dtf.Value(f); // sur courbe frw
             Point2D ptr = c2dtr.Value(f); // sur courbe rev
 
-            bool isoU = (Math.Abs(ptf.Y() - ptr.Y()) < Epsilon(ptf.X())); // meme V
+            bool isoU = (Math.Abs(ptf.Y - ptr.Y) < Epsilon(ptf.X)); // meme V
 
             // Efrom et Eto dans le meme sens???
 
             c = Tool.Curve(efrom, out loc, out f, out l)!;
             if (!loc.IsIdentity)
             {
-                Geometry3D gg = c.Transformed(loc.Transformation());
+                Geometry3D gg = c.Transformed(loc.Transformation);
                 c = (Curve3D)gg;
             }
 
@@ -1203,7 +1203,7 @@ public sealed class WiresOnShape : Transient
             c = Tool.Curve(eto, out loc, out f, out l)!;
             if (!loc.IsIdentity)
             {
-                Geometry3D gg = c.Transformed(loc.Transformation());
+                Geometry3D gg = c.Transformed(loc.Transformation);
                 c = (Curve3D)gg;
             }
 
@@ -1216,13 +1216,13 @@ public sealed class WiresOnShape : Transient
                 s = Tool.Surface(fac)!;
                 if (s is TrimmedSurface trimmed)
                 {
-                    s = trimmed.BasisSurface();
+                    s = trimmed.BasisSurface;
                 }
 
                 c = Tool.Curve(efrom, out loc, out f, out l)!;
                 if (!loc.IsIdentity)
                 {
-                    Geometry3D gg = c.Transformed(loc.Transformation());
+                    Geometry3D gg = c.Transformed(loc.Transformation);
                     c = (Curve3D)gg;
                 }
 
@@ -1262,25 +1262,25 @@ public sealed class WiresOnShape : Transient
             {
                 if (sameOri != 0.0)
                 {
-                    if (Math.Abs(ptf.X() - p2f.X()) > Epsilon(ptf.X()))
+                    if (Math.Abs(ptf.X - p2f.X) > Epsilon(ptf.X))
                     {
-                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(ptf.X() - p2f.X(), 0.0));
+                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(ptf.X - p2f.X, 0.0));
                     }
-                    if (Math.Abs(ptr.X() - p2r.X()) > Epsilon(ptr.X()))
+                    if (Math.Abs(ptr.X - p2r.X) > Epsilon(ptr.X))
                     {
-                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(ptr.X() - p2r.X(), 0.0));
+                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(ptr.X - p2r.X, 0.0));
                     }
                 }
                 else
                 {
-                    if (Math.Abs(ptr.X() - p2f.X()) > Epsilon(ptr.X()))
+                    if (Math.Abs(ptr.X - p2f.X) > Epsilon(ptr.X))
                     {
-                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(ptr.X() - p2f.X(), 0.0));
+                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(ptr.X - p2f.X, 0.0));
                     }
 
-                    if (Math.Abs(ptf.X() - p2r.X()) > Epsilon(ptf.X()))
+                    if (Math.Abs(ptf.X - p2r.X) > Epsilon(ptf.X))
                     {
-                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(ptf.X() - p2r.X(), 0.0));
+                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(ptf.X - p2r.X, 0.0));
                     }
                 }
 
@@ -1291,24 +1291,24 @@ public sealed class WiresOnShape : Transient
             { // !isoU soit isoV
                 if (sameOri != 0.0)
                 {
-                    if (Math.Abs(ptf.Y() - p2f.Y()) > Epsilon(ptf.Y()))
+                    if (Math.Abs(ptf.Y - p2f.Y) > Epsilon(ptf.Y))
                     {
-                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(0.0, ptf.Y() - p2f.Y()));
+                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(0.0, ptf.Y - p2f.Y));
                     }
-                    if (Math.Abs(ptr.Y() - p2r.Y()) > Epsilon(ptr.Y()))
+                    if (Math.Abs(ptr.Y - p2r.Y) > Epsilon(ptr.Y))
                     {
-                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(0.0, ptr.Y() - p2r.Y()));
+                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(0.0, ptr.Y - p2r.Y));
                     }
                 }
                 else
                 {
-                    if (Math.Abs(ptr.Y() - p2f.Y()) > Epsilon(ptr.Y()))
+                    if (Math.Abs(ptr.Y - p2f.Y) > Epsilon(ptr.Y))
                     {
-                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(0.0, ptr.Y() - p2f.Y()));
+                        c2dff = (Curve2D)c2dff.Translated(new Vector2D(0.0, ptr.Y - p2f.Y));
                     }
-                    if (Math.Abs(ptf.Y() - p2r.Y()) > Epsilon(ptf.Y()))
+                    if (Math.Abs(ptf.Y - p2r.Y) > Epsilon(ptf.Y))
                     {
-                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(0.0, ptf.Y() - p2r.Y()));
+                        c2dfr = (Curve2D)c2dfr.Translated(new Vector2D(0.0, ptf.Y - p2r.Y));
                     }
                 }
                 // on est bien en V, recalage si periodique en U a faire
@@ -1428,10 +1428,10 @@ public sealed class WiresOnShape : Transient
                     Point3D point = curve!.Value(intPar);
                     Point3D pointInt = theCurve.Value(theIntPar);
 
-                    if (pointInt.SquareDistance(thePnt[0]) > tolVExt[0]
-                        && pointInt.SquareDistance(thePnt[1]) > tolVExt[1]
-                        && point.SquareDistance(thePnt[0]) > tolVExt[0]
-                        && point.SquareDistance(thePnt[1]) > tolVExt[1])
+                    if (pointInt.SquareDistanceTo(thePnt[0]) > tolVExt[0]
+                        && pointInt.SquareDistanceTo(thePnt[1]) > tolVExt[1]
+                        && point.SquareDistanceTo(thePnt[0]) > tolVExt[0]
+                        && point.SquareDistanceTo(thePnt[1]) > tolVExt[1])
                     {
                         splitPars.Append(theIntPar);
                         if (dist > distMax)
@@ -1467,7 +1467,7 @@ public sealed class WiresOnShape : Transient
         {
             Point3D pnt1 = theCurve.Value(splitPars[i]);
             Point3D pnt2 = theCurve.Value(splitPars[i + 1]);
-            if (pnt1.SquareDistance(pnt2) <= global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (pnt1.SquareDistanceTo(pnt2) <= global::Kerf.Engine.Foundation.Precision.Confusion() * global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 splitPars.Remove(i + 1);
             }
@@ -1485,7 +1485,7 @@ public sealed class WiresOnShape : Transient
         double firstPar = thePar[0], lastPar;
         for (i = 1; i <= splitPars.Length() + 1; i++)
         {
-            firstVertex.Orientation(Forward);
+            firstVertex.Orient(Forward);
             if (i <= splitPars.Length())
             {
                 lastPar = splitPars[i];
@@ -1499,16 +1499,16 @@ public sealed class WiresOnShape : Transient
                 lastPar = thePar[1];
                 lastVertex = theVertices[1];
             }
-            lastVertex.Orientation(Reversed);
+            lastVertex.Orient(Reversed);
 
             Shape localShape = edge.EmptyCopied();
-            Orientation orient = localShape.Orientation();
-            localShape.Orientation(Forward);
+            Orientation orient = localShape.Orientation;
+            localShape.Orient(Forward);
             Edge newEdge = ShapeCasts.Edge(localShape);
             bb.Range(newEdge, firstPar, lastPar);
             bb.Add(newEdge, firstVertex);
             bb.Add(newEdge, lastVertex);
-            newEdge.Orientation(orient);
+            newEdge.Orient(orient);
             EdgeAnalysis sae = new();
             double amaxdev = 0.0;
             if (sae.CheckSameParameter(newEdge, face, ref amaxdev))

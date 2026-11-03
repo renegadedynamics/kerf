@@ -73,7 +73,7 @@ public sealed class Evolved
 
     private static void EdgeVertices(in Edge e, out Vertex v1, out Vertex v2)
     {
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             Exploration.Vertices(e, out v2, out v1);
         }
@@ -114,7 +114,7 @@ public sealed class Evolved
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
 
-        if (Math.Abs(p1.Y() - p2.Y()) < BRepFill_Confusion())
+        if (Math.Abs(p1.Y - p2.Y) < BRepFill_Confusion())
         {
             // It is a Line ?
             Curve3D? gc = Tool.Curve(e, out Placement _, out double _, out double _);
@@ -132,7 +132,7 @@ public sealed class Evolved
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
 
-        if (Math.Abs(p1.Z() - p2.Z()) < BRepFill_Confusion())
+        if (Math.Abs(p1.Z - p2.Z) < BRepFill_Confusion())
         {
             // It is a Line ?
             Curve3D? gc = Tool.Curve(e, out Placement _, out double _, out double _);
@@ -160,7 +160,7 @@ public sealed class Evolved
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
 
-        if (p1.Y() < -tol || p2.Y() < -tol)
+        if (p1.Y < -tol || p2.Y < -tol)
         {
             theSide = 4;
         }
@@ -256,8 +256,8 @@ public sealed class Evolved
         Placement lSpine = FindLocation(_spine);
         Transform3D t = new Transform3D().WithTransformation(axeProf);
         Placement lProfile = new(t);
-        Placement initLS = _spine.Location();
-        Placement initLP = _profile.Location();
+        Placement initLS = _spine.Placement;
+        Placement initLP = _profile.Placement;
         TransformInitWork(lSpine, lProfile);
 
         //------------------------------------------------------------------
@@ -439,7 +439,7 @@ public sealed class Evolved
     private static void IsInversed(in Shape s, in Edge e1, in Edge e2, bool[] inverse)
     {
         inverse[0] = inverse[1] = false;
-        if (s.ShapeType() != ShapeType.Edge)
+        if (s.Type != ShapeType.Edge)
         {
             return;
         }
@@ -447,7 +447,7 @@ public sealed class Evolved
         Point3D p;
         Vector3D ds, dc1, dc2;
         EdgeCurveAdaptor cs = new(ShapeCasts.Edge(s));
-        if (s.Orientation() == Forward)
+        if (s.Orientation == Forward)
         {
             cs.D1(cs.FirstParameter(), out p, out ds);
         }
@@ -460,7 +460,7 @@ public sealed class Evolved
         if (!Tool.Degenerated(e1))
         {
             EdgeCurveAdaptor c1 = new(ShapeCasts.Edge(e1));
-            if (e1.Orientation() == Forward)
+            if (e1.Orientation == Forward)
             {
                 c1.D1(c1.FirstParameter(), out p, out dc1);
             }
@@ -479,7 +479,7 @@ public sealed class Evolved
         if (!Tool.Degenerated(e2))
         {
             EdgeCurveAdaptor c2 = new(ShapeCasts.Edge(e2));
-            if (e2.Orientation() == Forward)
+            if (e2.Orientation == Forward)
             {
                 c2.D1(c2.FirstParameter(), out p, out dc2);
             }
@@ -506,12 +506,12 @@ public sealed class Evolved
     // WARNING: Not finished. Done only for circles.
     private static bool ConcaveSide(in Shape s, in Face F)
     {
-        if (s.ShapeType() == ShapeType.Vertex)
+        if (s.Type == ShapeType.Vertex)
         {
             return false;
         }
 
-        if (s.ShapeType() == ShapeType.Edge)
+        if (s.Type == ShapeType.Edge)
         {
             Curve2D? g2d = Tool.CurveOnSurface(ShapeCasts.Edge(s), F, out double f, out double l);
 
@@ -519,7 +519,7 @@ public sealed class Evolved
             if (ac.GetType() == Circle)
             {
                 bool direct = ac.Circle().IsDirect;
-                if (s.Orientation() == Reversed)
+                if (s.Orientation == Reversed)
                 {
                     direct = (!direct);
                 }
@@ -683,11 +683,11 @@ public sealed class Evolved
                 //--------------------------------------------------------
                 if (node1.OnBasicElt())
                 {
-                    if (S[0].ShapeType() == ShapeType.Vertex)
+                    if (S[0].Type == ShapeType.Vertex)
                     {
                         node1 = currentArc.FirstElement().StartArc()!.FirstNode();
                     }
-                    else if (S[1].ShapeType() == ShapeType.Vertex)
+                    else if (S[1].Type == ShapeType.Vertex)
                     {
                         node1 = currentArc.SecondElement().StartArc()!.FirstNode();
                     }
@@ -805,13 +805,13 @@ public sealed class Evolved
                     //-------------------------------------
                     myBuilder.MakeEdge(ref currentEdge, cBis, BRepFill_Confusion());
 
-                    myBuilder.UpdateVertex(v1, cBis!.Value(cBis.FirstParameter()), BRepFill_Confusion());
-                    myBuilder.UpdateVertex(v2, cBis.Value(cBis.LastParameter()), BRepFill_Confusion());
+                    myBuilder.UpdateVertex(v1, cBis!.Value(cBis.FirstParameter), BRepFill_Confusion());
+                    myBuilder.UpdateVertex(v2, cBis.Value(cBis.LastParameter), BRepFill_Confusion());
 
                     myBuilder.Add(currentEdge, v1.Oriented(Forward));
                     myBuilder.Add(currentEdge, v2.Oriented(Reversed));
 
-                    myBuilder.Range(currentEdge, cBis.FirstParameter(), cBis.LastParameter());
+                    myBuilder.Range(currentEdge, cBis.FirstParameter, cBis.LastParameter);
                     myBuilder.UpdateEdge(currentEdge, pCurve1, f[0], BRepFill_Confusion());
                     myBuilder.UpdateEdge(currentEdge, pCurve2, f[1], BRepFill_Confusion());
 
@@ -832,21 +832,21 @@ public sealed class Evolved
                     // skin => same orientation E[0] , inverted orientation E[2]
                     // if contreskin it is inverted.
                     //--------------------------------------------------------------
-                    e[0].Orientation(BrepTools.OriEdgeInFace(e[0], f[0]));
-                    e[2].Orientation(BrepTools.OriEdgeInFace(e[2], f[1]));
+                    e[0].Orient(BrepTools.OriEdgeInFace(e[0], f[0]));
+                    e[2].Orient(BrepTools.OriEdgeInFace(e[2], f[1]));
 
                     if (DistanceToOZ(vf) < DistanceToOZ(vl))
                     {
                         // Skin
-                        mapBis.GetValue(f[0]).Append(currentEdge.Oriented(e[0].Orientation()));
-                        currentEdge.Orientation(global::Kerf.Engine.Topology.TopAbs.Complement(e[2].Orientation()));
+                        mapBis.GetValue(f[0]).Append(currentEdge.Oriented(e[0].Orientation));
+                        currentEdge.Orient(global::Kerf.Engine.Topology.TopAbs.Complement(e[2].Orientation));
                         mapBis.GetValue(f[1]).Append(currentEdge);
                     }
                     else
                     {
                         // Contreskin
-                        mapBis.GetValue(f[1]).Append(currentEdge.Oriented(e[2].Orientation()));
-                        currentEdge.Orientation(global::Kerf.Engine.Topology.TopAbs.Complement(e[0].Orientation()));
+                        mapBis.GetValue(f[1]).Append(currentEdge.Oriented(e[2].Orientation));
+                        currentEdge.Orient(global::Kerf.Engine.Topology.TopAbs.Complement(e[0].Orientation));
                         mapBis.GetValue(f[0]).Append(currentEdge);
                     }
                 }
@@ -873,11 +873,11 @@ public sealed class Evolved
                                 mapBis.GetValue(e[k]).Append(vOnF.Value(ii));
                                 if (k == 0)
                                 {
-                                    mapVerPar.GetValue(e[k]).Append(parOnF.Value(ii).Y());
+                                    mapVerPar.GetValue(e[k]).Append(parOnF.Value(ii).Y);
                                 }
                                 else
                                 {
-                                    mapVerPar.GetValue(e[k]).Append(parOnF.Value(ii).Z());
+                                    mapVerPar.GetValue(e[k]).Append(parOnF.Value(ii).Z);
                                 }
                             }
                         }
@@ -900,11 +900,11 @@ public sealed class Evolved
                                 mapBis.GetValue(e[k]).Append(vOnL.Value(ii));
                                 if (k == 1)
                                 {
-                                    mapVerPar.GetValue(e[k]).Append(parOnL.Value(ii).Y());
+                                    mapVerPar.GetValue(e[k]).Append(parOnL.Value(ii).Y);
                                 }
                                 else
                                 {
-                                    mapVerPar.GetValue(e[k]).Append(parOnL.Value(ii).Z());
+                                    mapVerPar.GetValue(e[k]).Append(parOnL.Value(ii).Z);
                                 }
                             }
                         }
@@ -1163,7 +1163,7 @@ public sealed class Evolved
 
                 if (!rest.IsNull)
                 {
-                    if (rest.ShapeType() == ShapeType.Wire)
+                    if (rest.Type == ShapeType.Wire)
                     {
                         if (toReverse)
                         {
@@ -1525,7 +1525,7 @@ public sealed class Evolved
         {
             Wire nw = new();
             b.MakeWire(ref nw);
-            bool isClosed = iteF.Value().Closed();
+            bool isClosed = iteF.Value().IsClosed;
 
             for (Iterator iteW = new(iteF.Value()); iteW.More(); iteW.Next())
             {
@@ -1630,7 +1630,7 @@ public sealed class Evolved
         Point3D p1 = Tool.Pnt(v10);
         Point3D p2 = Tool.Pnt(v20);
         Point3D p3 = Tool.Pnt(v21);
-        if (p1.Distance(p3) < p1.Distance(p2))
+        if (p1.DistanceTo(p3) < p1.DistanceTo(p2))
         {
             oo = Reversed;
         }
@@ -1883,7 +1883,7 @@ public sealed class Evolved
                         computeOrientation = true;
                     }
 
-                    Orientation or = es.Orientation();
+                    Orientation or = es.Orientation;
                     if (toReverse)
                     {
                         or = global::Kerf.Engine.Topology.TopAbs.Reverse(or);
@@ -1894,7 +1894,7 @@ public sealed class Evolved
             }
 
             Point3D pv = Tool.Pnt(v[i]);
-            bool isOut = pv.Y() < 0;
+            bool isOut = pv.Y < 0;
 
             for (expSpine.Init(_spine, ShapeType.Vertex); expSpine.More(); expSpine.Next())
             {
@@ -1918,11 +1918,11 @@ public sealed class Evolved
                             Vector3D prod = ppc.Crossed(vc);
                             if (isOut)
                             {
-                                toReverse = prod.Z() < 0.0;
+                                toReverse = prod.Z < 0.0;
                             }
                             else
                             {
-                                toReverse = prod.Z() > 0.0;
+                                toReverse = prod.Z > 0.0;
                             }
                             Orientation or = Forward;
                             if (toReverse)
@@ -2095,24 +2095,24 @@ public sealed class Evolved
             EdgeVertices(profExp.Current(), out Vertex vf, out Vertex vl);
             EdgeVertices(genProfExp.Current(), out Vertex vfg, out Vertex vlg);
 
-            Orientation or = genProfExp.Current().Orientation();
+            Orientation or = genProfExp.Current().Orientation;
 
             if (firstVertex)
             {
                 _map.GetValue(vLast)[vf] = new NCollection_List<Shape>();
                 Shape rv0 = rev.Shape(vfg);
-                Orientation oo0 = rv0.Orientation();
+                Orientation oo0 = rv0.Orientation;
                 _map.GetValue(vLast).GetValue(vf).Append(rv0.Oriented(oo0));
                 firstVertex = false;
             }
             _map.GetValue(vLast)[profExp.Current()] = new NCollection_List<Shape>();
             Shape rf = rev.Shape(genProfExp.Current());
-            Orientation oo = global::Kerf.Engine.Topology.TopAbs.Compose(rf.Orientation(), or);
+            Orientation oo = global::Kerf.Engine.Topology.TopAbs.Compose(rf.Orientation, or);
 
             _map.GetValue(vLast).GetValue(profExp.Current()).Append(rf.Oriented(oo));
             _map.GetValue(vLast)[vl] = new NCollection_List<Shape>();
             Shape rv = rev.Shape(vlg);
-            oo = rv.Orientation();
+            oo = rv.Orientation;
             _map.GetValue(vLast).GetValue(vl).Append(rv.Oriented(oo));
         }
     }
@@ -2137,11 +2137,11 @@ public sealed class Evolved
 
         if (!l.IsIdentity)
         {
-            s = (Surface)s.Transformed(l.Transformation());
+            s = (Surface)s.Transformed(l.Transformation);
         }
 
         PlaneSurface p = (PlaneSurface)s;
-        CoordinateSystem axis = p.Position();
+        CoordinateSystem axis = p.Position;
 
         Transform3D t = new();
         CoordinateSystem axeRef = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
@@ -2253,7 +2253,7 @@ public sealed class Evolved
         Surface s = Tool.Surface(F, out Placement _)!;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            Surface sb = ((TrimmedSurface)s).BasisSurface();
+            Surface sb = ((TrimmedSurface)s).BasisSurface;
             if (sb.GetType() == typeof(PlaneSurface))
             {
                 return;
@@ -2281,7 +2281,7 @@ public sealed class Evolved
             {
                 Edge ce = we.Current();
                 EdgeVertices(ce, out v1, out v2);
-                if (ce.Orientation() == Reversed)
+                if (ce.Orientation == Reversed)
                 {
                     Tool.UVPoints(ce, F, out p2, out p1);
                 }
@@ -2302,7 +2302,7 @@ public sealed class Evolved
                         change = true;
                         Vector2D v = new(prevP, p1);
                         LineCurve2D c2d = new(prevP, new Direction2D(v));
-                        double f = 0, l = prevP.Distance(p1);
+                        double f = 0, l = prevP.DistanceTo(p1);
                         Edge ne = new LibraryMakeEdge(c2d, s).InternalEdge();
                         b.Degenerated(ne, true);
                         b.Add(ne, v1.Oriented(Forward));
@@ -2322,7 +2322,7 @@ public sealed class Evolved
                     change = true;
                     Vector2D v = new(p2, pf);
                     LineCurve2D c2d = new(p2, new Direction2D(v));
-                    double f = 0, l = p2.Distance(pf);
+                    double f = 0, l = p2.DistanceTo(pf);
                     Edge ne = new LibraryMakeEdge(c2d, s).InternalEdge();
                     b.Degenerated(ne, true);
                     b.Add(ne, vf.Oriented(Forward));
@@ -2386,11 +2386,11 @@ public sealed class Evolved
             }
             Shape localShape = face.EmptyCopied();
             Face faceCut = ShapeCasts.Face(localShape);
-            faceCut.Orientation(Forward);
+            faceCut.Orient(Forward);
             BrepTools.Update(faceCut);
             AddDegeneratedEdge(faceCut, goodWire);
             theBuilder.Add(faceCut, goodWire);
-            faceCut.Orientation(face.Orientation());
+            faceCut.Orient(face.Orientation);
             s.Append(faceCut);
         }
     }
@@ -2407,7 +2407,7 @@ public sealed class Evolved
             throw new ConstructionErrorException("ConstructionError in PutProfilAt");
         }
 
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             if (!atStart)
             {
@@ -2430,8 +2430,8 @@ public sealed class Evolved
                 c2d.D1(first, out p, out d1);
             }
         }
-        Point3D p3d = new(p.X(), p.Y(), 0.0);
-        Vector3D v3d = new(d1.X(), d1.Y(), 0.0);
+        Point3D p3d = new(p.X, p.Y, 0.0);
+        Vector3D v3d = new(d1.X, d1.Y, 0.0);
 
         CoordinateSystem ax = new(p3d, Constants.DZ(), new Direction3D(v3d));
         Transform3D trans = new Transform3D().WithTransformation(ax, axeRef);
@@ -2516,7 +2516,7 @@ public sealed class Evolved
             Shape localShape = edge.EmptyCopied();
             Edge newEdge = ShapeCasts.Edge(localShape);
 
-            if (newEdge.Orientation() == Reversed)
+            if (newEdge.Orientation == Reversed)
             {
                 theBuilder.Add(newEdge, theVer.Value(k).Oriented(Reversed));
                 theBuilder.Add(newEdge, theVer.Value(k + 1).Oriented(Forward));
@@ -2553,7 +2553,7 @@ public sealed class Evolved
 
         if (!vs.IsNull)
         {
-            u1 = bis.FirstParameter();
+            u1 = bis.FirstParameter;
             v1 = vs;
         }
         while (iOnF <= vOnF.Length() || iOnL <= vOnL.Length())
@@ -2562,15 +2562,15 @@ public sealed class Evolved
             // Return the smallest parameter on the bissectrice
             // corresponding to the current positions IOnF,IOnL.
             //---------------------------------------------------------
-            if (iOnL > vOnL.Length() || (iOnF <= vOnF.Length() && parOnF.Value(iOnF).X() < parOnL.Value(iOnL).X()))
+            if (iOnL > vOnL.Length() || (iOnF <= vOnF.Length() && parOnF.Value(iOnF).X < parOnL.Value(iOnL).X))
             {
-                u2 = parOnF.Value(iOnF).X();
+                u2 = parOnF.Value(iOnF).X;
                 v2 = vOnF.Value(iOnF);
                 iOnF++;
             }
             else
             {
-                u2 = parOnL.Value(iOnL).X();
+                u2 = parOnL.Value(iOnL).X;
                 v2 = vOnL.Value(iOnL);
                 iOnL++;
             }
@@ -2596,7 +2596,7 @@ public sealed class Evolved
 
         if (!ve.IsNull)
         {
-            u2 = bis.LastParameter();
+            u2 = bis.LastParameter;
             v2 = ve;
             if (!v2.IsSame(v1))
             {
@@ -2729,13 +2729,13 @@ public sealed class Evolved
     private static double DistanceToOZ(in Vertex v)
     {
         Point3D pv3d = Tool.Pnt(v);
-        return Math.Abs(pv3d.Y());
+        return Math.Abs(pv3d.Y);
     }
 
     private static double Altitud(in Vertex v)
     {
         Point3D pv3d = Tool.Pnt(v);
-        return pv3d.Z();
+        return pv3d.Z;
     }
 
     // OCCT hands on the locus's own trimmed curve (Bisector_Bisec::Value) unless its basis is a BisecAna; the port does
@@ -2751,7 +2751,7 @@ public sealed class Evolved
             if (basBis.GetType() == typeof(BisecAna))
             {
                 bis = ((BisecAna)basBis).Geom2dCurve();
-                bis = new TrimmedCurve2D(bis, trBis.FirstParameter(), trBis.LastParameter());
+                bis = new TrimmedCurve2D(bis, trBis.FirstParameter, trBis.LastParameter);
             }
         }
     }
@@ -2772,10 +2772,10 @@ public sealed class Evolved
         // Return the curve associated to each Edge
         c = Tool.Curve(e, out Placement L, out double f, out double l)!;
         ct = new TrimmedCurve3D(c, f, l);
-        ct.Transform(L.Transformation());
+        ct.Transform(L.Transformation);
 
         // project it in the plane and return the associated PCurve
-        Direction3D normal = plane.Pln().Axis().Direction();
+        Direction3D normal = plane.Plane.Axis.Direction;
         c = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(ct, plane, normal, false)!;
         c2d = global::Kerf.Engine.Geometry.Projection.GeomProjLib.Curve2d(c, plane)!;
 
@@ -2784,8 +2784,8 @@ public sealed class Evolved
 
         double u1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
         double u2 = global::Kerf.Engine.Foundation.Precision.Infinite();
-        f = c2d.FirstParameter();
-        l = c2d.LastParameter();
+        f = c2d.FirstParameter;
+        l = c2d.LastParameter;
 
         Box2d b = new();
         CurveAdaptor2D ac2d = new(c2d);
@@ -2864,8 +2864,8 @@ public sealed class Evolved
                     vv = new LibraryMakeVertex(c.Value(param)).InternalVertex();
 
                     Edge ee0 = new LibraryMakeEdge(c, vf, vv).InternalEdge();
-                    ee0.Orientation(e.Orientation());
-                    if (ee0.Orientation() == Forward)
+                    ee0.Orient(e.Orientation);
+                    if (ee0.Orientation == Forward)
                     {
                         cuts.Append(ee0);
                     }
@@ -2882,8 +2882,8 @@ public sealed class Evolved
         }
 
         Edge ee = new LibraryMakeEdge(c, vf, vl).InternalEdge();
-        ee.Orientation(e.Orientation());
-        if (ee.Orientation() == Forward)
+        ee.Orient(e.Orientation);
+        if (ee.Orientation == Forward)
         {
             cuts.Append(ee);
         }
@@ -2919,8 +2919,8 @@ public sealed class Evolved
             Point2D p1 = ct2d.Value(m1);
             Point2D p2 = ct2d.Value(m2);
 
-            Vertex vl1 = new LibraryMakeVertex(new Point3D(p1.X(), p1.Y(), 0.0)).InternalVertex();
-            Vertex vl2 = new LibraryMakeVertex(new Point3D(p2.X(), p2.Y(), 0.0)).InternalVertex();
+            Vertex vl1 = new LibraryMakeVertex(new Point3D(p1.X, p1.Y, 0.0)).InternalVertex();
+            Vertex vl2 = new LibraryMakeVertex(new Point3D(p2.X, p2.Y, 0.0)).InternalVertex();
             Shape localShape1 = e.EmptyCopied();
             Shape localShape2 = e.EmptyCopied();
             Shape localShape3 = e.EmptyCopied();
@@ -2928,9 +2928,9 @@ public sealed class Evolved
             Edge me = ShapeCasts.Edge(localShape2);
             Edge le = ShapeCasts.Edge(localShape3);
 
-            fe.Orientation(Forward);
-            me.Orientation(Forward);
-            le.Orientation(Forward);
+            fe.Orient(Forward);
+            me.Orient(Forward);
+            le.Orient(Forward);
 
             b.Add(fe, v1);
             b.Add(fe, vl1.Oriented(Reversed));
@@ -2944,9 +2944,9 @@ public sealed class Evolved
             b.Add(le, v2);
             b.Range(le, m2, l);
 
-            cuts.Append(fe.Oriented(e.Orientation()));
-            cuts.Append(me.Oriented(e.Orientation()));
-            cuts.Append(le.Oriented(e.Orientation()));
+            cuts.Append(fe.Oriented(e.Orientation));
+            cuts.Append(me.Oriented(e.Orientation));
+            cuts.Append(le.Oriented(e.Orientation));
             //--------
             // Return.
             //--------
@@ -2981,16 +2981,16 @@ public sealed class Evolved
                 }
                 else
                 {
-                    Point2D p = cc.Value(cc.LastParameter());
-                    vl = new LibraryMakeVertex(new Point3D(p.X(), p.Y(), 0.0)).InternalVertex();
+                    Point2D p = cc.Value(cc.LastParameter);
+                    vl = new LibraryMakeVertex(new Point3D(p.X, p.Y, 0.0)).InternalVertex();
                 }
                 Shape localShape = e.EmptyCopied();
                 Edge ne = ShapeCasts.Edge(localShape);
-                ne.Orientation(Forward);
+                ne.Orient(Forward);
                 b.Add(ne, vf.Oriented(Forward));
                 b.Add(ne, vl.Oriented(Reversed));
-                b.Range(ne, cc.FirstParameter(), cc.LastParameter());
-                cuts.Append(ne.Oriented(e.Orientation()));
+                b.Range(ne, cc.FirstParameter, cc.LastParameter);
+                cuts.Append(ne.Oriented(e.Orientation));
                 vf = vl;
             }
         }

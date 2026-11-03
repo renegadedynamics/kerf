@@ -89,23 +89,23 @@ public sealed class ArchimedeanSpiralCurve2D : Curve2D
     }
 
     /// <summary>0.</summary>
-    public override double FirstParameter() => 0.0;
+    public override double FirstParameter => 0.0;
 
     /// <summary>Precision::Infinite().</summary>
-    public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 
-    public override Point2D EvalD0(double u)
+    internal override Point2D EvalD0(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double r = _initialRadius + _growthRate * u;
         double cosU = Math.Cos(u);
@@ -113,10 +113,10 @@ public sealed class ArchimedeanSpiralCurve2D : Curve2D
         return new Point2D(o + r * cosU * xd + r * sinU * yd);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double r = _initialRadius + _growthRate * u;
         double b = _growthRate;
@@ -130,10 +130,10 @@ public sealed class ArchimedeanSpiralCurve2D : Curve2D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double r = _initialRadius + _growthRate * u;
         double b = _growthRate;
@@ -149,10 +149,10 @@ public sealed class ArchimedeanSpiralCurve2D : Curve2D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
-        Xy o = _position.Location().XY();
-        Xy xd = _position.Direction().XY();
+        Xy o = _position.Location.XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
         double r = _initialRadius + _growthRate * u;
         double b = _growthRate;
@@ -171,7 +171,7 @@ public sealed class ArchimedeanSpiralCurve2D : Curve2D
     }
 
     /// <exception cref="RangeErrorException">N &lt; 1.</exception>
-    public override Vector2D EvalDN(double u, int n)
+    internal override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -181,7 +181,7 @@ public sealed class ArchimedeanSpiralCurve2D : Curve2D
         // By Leibniz rule: d^N/dt^N[r(t)*f(t)] = sum_{k=0}^{N} C(N,k)*r^(k)*f^(N-k)
         // where r(t) = a + b*t, r' = b, r^(k) = 0 for k >= 2.
         // So only k=0 and k=1 contribute: = r(t)*f^(N)(t) + N*b*f^(N-1)(t)
-        Xy xd = _position.Direction().XY();
+        Xy xd = _position.Direction.XY();
         Xy yd = new(-xd.Y(), xd.X());
 
         double r = _initialRadius + _growthRate * u;

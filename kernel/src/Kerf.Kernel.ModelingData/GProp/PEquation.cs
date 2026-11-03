@@ -85,9 +85,9 @@ public sealed class PEquation
         _axes[1] = new Vector3D(vecs[1, 2], vecs[2, 2], vecs[3, 2]);
         _axes[2] = new Vector3D(vecs[1, 3], vecs[2, 3], vecs[3, 3]);
 
-        double xg = _g.X();
-        double yg = _g.Y();
-        double zg = _g.Z();
+        double xg = _g.X;
+        double yg = _g.Y;
+        double zg = _g.Z;
 
         double max1 = RealFirst(), min1 = RealLast();
         double max2 = RealFirst(), min2 = RealLast();
@@ -95,11 +95,11 @@ public sealed class PEquation
 
         for (int i = pnts.Lower(); i <= pnts.Upper(); ++i)
         {
-            double dx = pnts[i].X() - xg;
-            double dy = pnts[i].Y() - yg;
-            double dz = pnts[i].Z() - zg;
+            double dx = pnts[i].X - xg;
+            double dy = pnts[i].Y - yg;
+            double dz = pnts[i].Z - zg;
 
-            double d1 = dx * _axes[0].X() + dy * _axes[0].Y() + dz * _axes[0].Z();
+            double d1 = dx * _axes[0].X + dy * _axes[0].Y + dz * _axes[0].Z;
             if (d1 > max1)
             {
                 max1 = d1;
@@ -109,7 +109,7 @@ public sealed class PEquation
                 min1 = d1;
             }
 
-            double d2 = dx * _axes[1].X() + dy * _axes[1].Y() + dz * _axes[1].Z();
+            double d2 = dx * _axes[1].X + dy * _axes[1].Y + dz * _axes[1].Z;
             if (d2 > max2)
             {
                 max2 = d2;
@@ -119,7 +119,7 @@ public sealed class PEquation
                 min2 = d2;
             }
 
-            double d3 = dx * _axes[2].X() + dy * _axes[2].Y() + dz * _axes[2].Z();
+            double d3 = dx * _axes[2].X + dy * _axes[2].Y + dz * _axes[2].Z;
             if (d3 > max3)
             {
                 max3 = d3;

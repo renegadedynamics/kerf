@@ -26,7 +26,7 @@ public class PointOnCurveOnSurface : PointsOnSurface
 
     /// <summary>A point on the 2D curve <paramref name="pc"/> on the surface <paramref name="s"/>.</summary>
     public override bool IsPointOnCurveOnSurface(Curve2D? pc, Surface? s, in Placement l)
-        => ReferenceEquals(_pCurve, pc) && ReferenceEquals(Surface(), s) && (Location() == l);
+        => ReferenceEquals(_pCurve, pc) && ReferenceEquals(Surface(), s) && (Location().IsEqual(l));
 
     public override Curve2D? PCurve() => _pCurve;
 

@@ -148,7 +148,7 @@ public sealed class DPrism
 
                 for (it.Initialize(lffs); it.More(); it.Next())
                 {
-                    if (it.Value().ShapeType() == ShapeType.Edge)
+                    if (it.Value().Type == ShapeType.Edge)
                     {
                         break;
                     }
@@ -163,7 +163,7 @@ public sealed class DPrism
                     Explorer exp = new();
                     for (it.Initialize(lffs); it.More(); it.Next())
                     {
-                        if (it.Value().ShapeType() == ShapeType.Face)
+                        if (it.Value().Type == ShapeType.Face)
                         {
                             exp.Init(it.Value().Oriented(Forward), ShapeType.Wire);
                             Shape theWire = exp.Current();
@@ -172,7 +172,7 @@ public sealed class DPrism
                                 Surface s = Tool.Surface(ShapeCasts.Face(it.Value()))!;
                                 if (s.GetType() == typeof(TrimmedSurface))
                                 {
-                                    s = ((TrimmedSurface)s).BasisSurface();
+                                    s = ((TrimmedSurface)s).BasisSurface;
                                 }
                                 if (s.GetType() != typeof(PlaneSurface))
                                 {
@@ -180,8 +180,8 @@ public sealed class DPrism
                                 }
 
                                 b.MakeFace(ref newFace, s, Tool.Tolerance(ShapeCasts.Face(it.Value())));
-                                newFace.Orientation(Forward);
-                                orref = theWire.Orientation();
+                                newFace.Orient(Forward);
+                                orref = theWire.Orientation;
                                 for (exp.Init(theWire.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                                 {
                                     if (!exp.Current().IsSame(removedEdge))
@@ -196,7 +196,7 @@ public sealed class DPrism
                                 {
                                     if (!exp.Current().IsSame(removedEdge))
                                     {
-                                        if (theWire.Orientation() != orref)
+                                        if (theWire.Orientation != orref)
                                         { // Les 2 faces planes ont des normales opposees
                                             b.Add(newWire, exp.Current());
                                         }
@@ -221,7 +221,7 @@ public sealed class DPrism
                     {
                         for (it.Initialize(lffs); it.More(); it.Next())
                         {
-                            if (view.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
+                            if (view.Add(it.Value()) && it.Value().Type == ShapeType.Face)
                             {
                                 lcomplete.Append(it.Value());
                             }
@@ -232,7 +232,7 @@ public sealed class DPrism
                 {
                     for (it.Initialize(lffs); it.More(); it.Next())
                     {
-                        if (view.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
+                        if (view.Add(it.Value()) && it.Value().Type == ShapeType.Face)
                         {
                             lcomplete.Append(it.Value());
                         }
@@ -245,7 +245,7 @@ public sealed class DPrism
                     NCollection_List<Shape> ls2 = _dPrism.InternalGeneratedShapes(expS2.Current(), _profile2);
                     for (it.Initialize(ls2); it.More(); it.Next())
                     {
-                        if (view.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
+                        if (view.Add(it.Value()) && it.Value().Type == ShapeType.Face)
                         {
                             lcomplete.Append(it.Value());
                         }
@@ -360,7 +360,7 @@ public sealed class DPrism
                     NCollection_List<Shape> ls2 = _dPrism.InternalGeneratedShapes(expS2.Current(), _profile2);
                     for (it.Initialize(ls2); it.More(); it.Next())
                     {
-                        if (view.Add(it.Value()) && it.Value().ShapeType() == ShapeType.Face)
+                        if (view.Add(it.Value()) && it.Value().Type == ShapeType.Face)
                         {
                             lcomplete.Append(it.Value());
                         }
@@ -501,20 +501,20 @@ public sealed class DPrism
         Exploration.Vertices(_profile2, out Vertex v1, out Vertex v2);
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
-        double dy = p2.Y() - p1.Y();
-        double dz = p2.Z() - p1.Z();
+        double dy = p2.Y - p1.Y;
+        double dz = p2.Z - p1.Z;
         scurves.Clear();
         Surface s = Tool.Surface(_spine)!;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
         }
 
         PlaneSurface pp = s as PlaneSurface ?? throw new ConstructionErrorException();
 
-        Plane3D p = pp.Pln();
-        Direction3D normale = p.Axis().Direction();
-        if (!p.Direct())
+        Plane3D p = pp.Plane;
+        Direction3D normale = p.Axis.Direction;
+        if (!p.IsDirect)
         {
             normale = normale.Reversed();
         }
@@ -534,7 +534,7 @@ public sealed class DPrism
             if (!Tool.Degenerated(edg))
             {
                 Curve3D c = Tool.Curve(edg, out Placement loc, out double f, out double l)!;
-                c = (Curve3D)c.Transformed(loc.Transformation());
+                c = (Curve3D)c.Transformed(loc.Transformation);
                 double u1 = -2 * Math.Abs(_height);
                 double u2 = 2 * Math.Abs(_height);
 
@@ -542,7 +542,7 @@ public sealed class DPrism
                 {
                     prm = ((Nechant - i) * f + i * l) / Nechant;
                     c.D1(prm, out Point3D pt, out Vector3D d1);
-                    if (exp.Current().Orientation() == Reversed)
+                    if (exp.Current().Orientation == Reversed)
                     {
                         d1 = d1.Reversed();
                     }
@@ -564,23 +564,23 @@ public sealed class DPrism
         Exploration.Vertices(_profile2, out Vertex v1, out Vertex v2);
         Point3D p1 = Tool.Pnt(v1);
         Point3D p2 = Tool.Pnt(v2);
-        double dz = p2.Z() - p1.Z();
+        double dz = p2.Z - p1.Z;
 
         Surface s = Tool.Surface(_spine)!;
         if (s.GetType() == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
         }
 
         PlaneSurface pp = s as PlaneSurface ?? throw new ConstructionErrorException();
 
-        Plane3D p = pp.Pln();
-        Direction3D normale = p.Axis().Direction();
-        if (!p.Direct())
+        Plane3D p = pp.Plane;
+        Direction3D normale = p.Axis.Direction;
+        if (!p.IsDirect)
         {
             normale = normale.Reversed();
         }
-        if (_spine.Orientation() == Reversed)
+        if (_spine.Orientation == Reversed)
         {
             // OCCT_DEBUG trace left out
             //    Normale.Reverse();  //cts20871

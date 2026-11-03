@@ -124,7 +124,7 @@ public class Analyzer
             }
         }
 
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Edge:
             {
@@ -176,7 +176,7 @@ public class Analyzer
         }
 
         ResultCheck? hr = null;
-        switch (shape.ShapeType())
+        switch (shape.Type)
         {
             case ShapeType.Vertex:
                 hr = new VertexCheck(ShapeCasts.Vertex(shape));
@@ -357,7 +357,7 @@ public class Analyzer
             for (int shapeIter = 0; shapeIter < vector.Length; ++shapeIter)
             {
                 Shape shape = vector[shapeIter];
-                ShapeType type = shape.ShapeType();
+                ShapeType type = shape.Type;
                 ResultCheck? result = _map.GetValue(shape);
                 switch (type)
                 {

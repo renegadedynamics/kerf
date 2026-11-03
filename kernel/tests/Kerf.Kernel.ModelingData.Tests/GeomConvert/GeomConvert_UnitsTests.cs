@@ -14,7 +14,7 @@ public class GeomConvert_UnitsTests
     private const double RadToDeg = 180.0 / Math.PI;
 
     private static void AssertNear(in Point2D theExpected, in Point2D theActual, double theTol = 1e-12)
-        => Assert.True(theExpected.Distance(theActual) <= theTol, $"{theExpected} vs {theActual}");
+        => Assert.True(theExpected.DistanceTo(theActual) <= theTol, $"{theExpected} vs {theActual}");
 
     [Fact]
     public void DegreeToRadian_LineOnCylinder()
@@ -23,14 +23,14 @@ public class GeomConvert_UnitsTests
         var aLine = new LineCurve2D(new Point2D(180.0, 2.0), new Direction2D(0.0, 1.0));
         aLine.Freeze();
         var aRes = Assert.IsType<LineCurve2D>(Units.DegreeToRadian(aLine, aCyl, 10.0, DegToRad));
-        AssertNear(new Point2D(Math.PI, 20.0), aRes.Location());
-        Assert.True(aRes.Direction().IsEqual(new Direction2D(0.0, 1.0), 1e-15));
+        AssertNear(new Point2D(Math.PI, 20.0), aRes.Location);
+        Assert.True(aRes.Direction.IsEqual(new Direction2D(0.0, 1.0), 1e-15));
         Assert.NotSame(aLine, aRes);
-        Assert.Equal(180.0, aLine.Location().X());
+        Assert.Equal(180.0, aLine.Location.X);
 
         // And back
         var aBack = Assert.IsType<LineCurve2D>(Units.RadianToDegree(aRes, aCyl, 10.0, RadToDeg));
-        AssertNear(new Point2D(180.0, 2.0), aBack.Location(), 1e-12);
+        AssertNear(new Point2D(180.0, 2.0), aBack.Location, 1e-12);
     }
 
     [Fact]
@@ -52,12 +52,12 @@ public class GeomConvert_UnitsTests
         var aRes = Assert.IsType<BSplineCurve2D>(Units.DegreeToRadian(aBSpline, aSphere, 1.0, DegToRad));
         AssertNear(new Point2D(0.0, -Math.PI / 4), aRes.Pole(1));
         AssertNear(new Point2D(Math.PI, 30.0 * DegToRad), aRes.Pole(3));
-        Assert.Equal(90.0, aBSpline.Pole(2).X());
+        Assert.Equal(90.0, aBSpline.Pole(2).X);
 
         var aCone = new ConicalSurface(new CoordinateSystem(Constants.XOY()), 0.3, 1.0);
         var aConeRes = Assert.IsType<BSplineCurve2D>(Units.DegreeToRadian(aBSpline, aCone, 2.0, DegToRad));
         AssertNear(new Point2D(Math.PI / 2, 0.0), aConeRes.Pole(2));
-        Assert.Equal(-45.0 * 2.0 / Math.Cos(0.3), aConeRes.Pole(1).Y(), 12);
+        Assert.Equal(-45.0 * 2.0 / Math.Cos(0.3), aConeRes.Pole(1).Y, 12);
 
         var aConeBack = Assert.IsType<BSplineCurve2D>(Units.RadianToDegree(aConeRes, aCone, 2.0, RadToDeg));
         AssertNear(aBSpline.Pole(1), aConeBack.Pole(1), 1e-11);
@@ -69,10 +69,10 @@ public class GeomConvert_UnitsTests
         var aPlane = new PlaneSurface(new CoordinateSystem(Constants.XOY()));
         var aCircle = new CircleCurve2D(new Axis2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0)), 3.0);
         var aScaled = Assert.IsType<CircleCurve2D>(Units.DegreeToRadian(aCircle, aPlane, 10.0, DegToRad));
-        Assert.Equal(30.0, aScaled.Radius(), 12);
-        AssertNear(new Point2D(10.0, 20.0), aScaled.Location());
+        Assert.Equal(30.0, aScaled.Radius, 12);
+        AssertNear(new Point2D(10.0, 20.0), aScaled.Location);
         var aBack = Assert.IsType<CircleCurve2D>(Units.RadianToDegree(aScaled, aPlane, 10.0, RadToDeg));
-        Assert.Equal(3.0, aBack.Radius(), 12);
+        Assert.Equal(3.0, aBack.Radius, 12);
 
         // A B-spline surface: the curve is returned as a copy
         var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
@@ -83,7 +83,7 @@ public class GeomConvert_UnitsTests
         var aBez = new BezierSurface(aPoles);
         var aCopy = Assert.IsType<CircleCurve2D>(Units.DegreeToRadian(aCircle, aBez, 10.0, DegToRad));
         Assert.NotSame(aCircle, aCopy);
-        Assert.Equal(3.0, aCopy.Radius());
+        Assert.Equal(3.0, aCopy.Radius);
     }
 
     [Fact]
@@ -91,8 +91,8 @@ public class GeomConvert_UnitsTests
     {
         var aLine = new LineCurve2D(new Point2D(1.0, 2.0), new Direction2D(1.0, 1.0));
         var aMirror = Assert.IsType<LineCurve2D>(Units.MirrorPCurve(aLine));
-        AssertNear(new Point2D(1.0, -2.0), aMirror.Location());
-        Assert.True(aMirror.Direction().IsEqual(new Direction2D(1.0, -1.0), 1e-15));
+        AssertNear(new Point2D(1.0, -2.0), aMirror.Location);
+        Assert.True(aMirror.Direction.IsEqual(new Direction2D(1.0, -1.0), 1e-15));
     }
 
     [Fact]
@@ -106,9 +106,9 @@ public class GeomConvert_UnitsTests
         Assert.Equal(aRef.PoleCount, aRes.PoleCount);
         for (int i = 0; i <= 8; i++)
         {
-            double aU = aRef.FirstParameter() + i * (aRef.LastParameter() - aRef.FirstParameter()) / 8;
+            double aU = aRef.FirstParameter + i * (aRef.LastParameter - aRef.FirstParameter) / 8;
             Point2D aP = aRef.Value(aU);
-            AssertNear(new Point2D(aP.X() * DegToRad, aP.Y() * 10.0), aRes.Value(aU), 1e-12);
+            AssertNear(new Point2D(aP.X * DegToRad, aP.Y * 10.0), aRes.Value(aU), 1e-12);
         }
     }
 }

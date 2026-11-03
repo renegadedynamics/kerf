@@ -114,5 +114,5 @@ public partial struct IntersectionPoint2D : IEquatable<IntersectionPoint2D>
         => !left.Equals(right);
 
     public override readonly string ToString()
-        => $"{Constants.Format("IntRes2d_IntersectionPoint", _pt.X(), _pt.Y(), _p1, _p2)} {_trans1} {_trans2}";
+        => $"{Constants.Format("IntRes2d_IntersectionPoint", _pt.X, _pt.Y, _p1, _p2)} {_trans1} {_trans2}";
 }

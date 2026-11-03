@@ -93,7 +93,7 @@ internal abstract class Trsf : NumLinearRegularSweep
         double ta = 0.00175; // environ 0.1 degre
         Continuity cont;
         BrepBuilder b = _builder.Builder();
-        if (aGenS.ShapeType() == ShapeType.Edge)
+        if (aGenS.Type == ShapeType.Edge)
         {
             if (HasShape(aGenS, aDirS))
             {
@@ -123,7 +123,7 @@ internal abstract class Trsf : NumLinearRegularSweep
                     NumShape dirv = _dirShapeTool.Shape(2);
                     if (GDDShapeIsToAdd(Shape(aGenS, aDirS), Shape(aGenS, dirv), aGenS, aDirS, dirv))
                     {
-                        cont = Tool.Curve(E, out Placement _, out double _, out double _)!.Continuity();
+                        cont = Tool.Curve(E, out Placement _, out double _, out double _)!.Continuity;
                         if (cont >= G1)
                         {
                             Shape s_wnt = Shape(aGenS, dirv);
@@ -136,7 +136,7 @@ internal abstract class Trsf : NumLinearRegularSweep
                 }
             }
         }
-        else if (aGenS.ShapeType() == ShapeType.Wire)
+        else if (aGenS.Type == ShapeType.Wire)
         {
             Edge E1, E2;
             var e1 = new EdgeCurveAdaptor();

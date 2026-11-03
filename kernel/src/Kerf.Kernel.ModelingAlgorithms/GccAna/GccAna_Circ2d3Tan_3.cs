@@ -63,27 +63,27 @@ public sealed partial class AnalyticCirc2d3Tan
         Line2D l1 = qualified1.Qualified();
         Line2D l2 = qualified2.Qualified();
         Line2D l3 = qualified3.Qualified();
-        Point2D origin1 = l1.Location();
-        Direction2D dir1 = l1.Direction();
-        Direction2D normL1 = new(-dir1.Y(), dir1.X());
-        Point2D origin2 = l2.Location();
-        Direction2D dir2 = l2.Direction();
-        Direction2D normL2 = new(-dir2.Y(), dir2.X());
-        Point2D origin3 = l3.Location();
-        Direction2D dir3 = l3.Direction();
-        Direction2D normL3 = new(-dir3.Y(), dir3.X());
-        double xloc1 = origin1.X();
-        double xloc2 = origin2.X();
-        double xloc3 = origin3.X();
-        double yloc1 = origin1.Y();
-        double yloc2 = origin2.Y();
-        double yloc3 = origin3.Y();
-        double xdir1 = dir1.X();
-        double xdir2 = dir2.X();
-        double xdir3 = dir3.X();
-        double ydir1 = dir1.Y();
-        double ydir2 = dir2.Y();
-        double ydir3 = dir3.Y();
+        Point2D origin1 = l1.Location;
+        Direction2D dir1 = l1.Direction;
+        Direction2D normL1 = new(-dir1.Y, dir1.X);
+        Point2D origin2 = l2.Location;
+        Direction2D dir2 = l2.Direction;
+        Direction2D normL2 = new(-dir2.Y, dir2.X);
+        Point2D origin3 = l3.Location;
+        Direction2D dir3 = l3.Direction;
+        Direction2D normL3 = new(-dir3.Y, dir3.X);
+        double xloc1 = origin1.X;
+        double xloc2 = origin2.X;
+        double xloc3 = origin3.X;
+        double yloc1 = origin1.Y;
+        double yloc2 = origin2.Y;
+        double yloc3 = origin3.Y;
+        double xdir1 = dir1.X;
+        double xdir2 = dir2.X;
+        double xdir3 = dir3.X;
+        double ydir1 = dir1.Y;
+        double ydir2 = dir2.Y;
+        double ydir3 = dir3.Y;
         Lin2dBisec bisec1 = new(l1, l2);
         Lin2dBisec bisec2 = new(l1, l3);
         int ncote1 = 0;
@@ -108,12 +108,12 @@ public sealed partial class AnalyticCirc2d3Tan
                             {
                                 nbsol++;
                                 double radius =
-                                  (l1.Distance(intp.Point(k).Value()) + l2.Distance(intp.Point(k).Value())
-                                   + l3.Distance(intp.Point(k).Value()))
+                                  (l1.DistanceTo(intp.Point(k).Value()) + l2.DistanceTo(intp.Point(k).Value())
+                                   + l3.DistanceTo(intp.Point(k).Value()))
                                   / 3.0;
                                 Point2D center = intp.Point(k).Value();
-                                double cx = center.X();
-                                double cy = center.Y();
+                                double cx = center.X;
+                                double cy = center.Y;
                                 _cirsol[nbsol] = new Circle2D(new Axis2D(center, dirx), radius);
                                 //             ======================================================
                                 Direction2D dc1 = new(origin1.XY() - center.XY());
@@ -487,35 +487,35 @@ public sealed partial class AnalyticCirc2d3Tan
                     for (int j3 = 1; j3 <= ncote3; j3++)
                     {
                         if ((cote2[j2]
-                               * ((_cirsol[i].Location().X() - origin2.X()) * (-dir2.Y())
-                                  + (_cirsol[i].Location().Y() - origin2.Y()) * (dir2.X()))
+                               * ((_cirsol[i].Location.X - origin2.X) * (-dir2.Y)
+                                  + (_cirsol[i].Location.Y - origin2.Y) * (dir2.X))
                              > 0.0)
                             && (cote3[j3]
-                                  * ((_cirsol[i].Location().X() - origin3.X()) * (-dir3.Y())
-                                     + (_cirsol[i].Location().Y() - origin3.Y()) * (dir3.X()))
+                                  * ((_cirsol[i].Location.X - origin3.X) * (-dir3.Y)
+                                     + (_cirsol[i].Location.Y - origin3.Y) * (dir3.X))
                                 > 0.0)
                             && (cote1[j1]
-                                  * ((_cirsol[i].Location().X() - origin1.X()) * (-dir1.Y())
-                                     + (_cirsol[i].Location().Y() - origin1.Y()) * (dir1.X()))
+                                  * ((_cirsol[i].Location.X - origin1.X) * (-dir1.Y)
+                                     + (_cirsol[i].Location.Y - origin1.Y) * (dir1.X))
                                 > 0.0))
                         {
                             _nbrSol++;
                             // OCCT: qualifier1..3 are not copied to the new slot with the circle
                             _cirsol[_nbrSol] = _cirsol[i];
                             //           =====================================
-                            double radius = _cirsol[_nbrSol].Radius();
-                            Point2D center = _cirsol[_nbrSol].Location();
+                            double radius = _cirsol[_nbrSol].Radius;
+                            Point2D center = _cirsol[_nbrSol].Location;
                             Direction2D dc = new(origin1.XY() - center.XY());
-                            double sign = dc.Dot(new Direction2D(-dir1.Y(), dir1.X()));
-                            dc = new Direction2D(sign * new Xy(-dir1.Y(), dir1.X()));
+                            double sign = dc.Dot(new Direction2D(-dir1.Y, dir1.X));
+                            dc = new Direction2D(sign * new Xy(-dir1.Y, dir1.X));
                             _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius * dc.XY());
                             dc = new Direction2D(origin2.XY() - center.XY());
-                            sign = dc.Dot(new Direction2D(-dir2.Y(), dir2.X()));
-                            dc = new Direction2D(sign * new Xy(-dir2.Y(), dir2.X()));
+                            sign = dc.Dot(new Direction2D(-dir2.Y, dir2.X));
+                            dc = new Direction2D(sign * new Xy(-dir2.Y, dir2.X));
                             _pnttg2sol[_nbrSol] = new Point2D(center.XY() + radius * dc.XY());
                             dc = new Direction2D(origin3.XY() - center.XY());
-                            sign = dc.Dot(new Direction2D(-dir3.Y(), dir3.X()));
-                            dc = new Direction2D(sign * new Xy(-dir3.Y(), dir3.X()));
+                            sign = dc.Dot(new Direction2D(-dir3.Y, dir3.X));
+                            dc = new Direction2D(sign * new Xy(-dir3.Y, dir3.X));
                             _pnttg3sol[_nbrSol] = new Point2D(center.XY() + radius * dc.XY());
                             _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
                             _pararg1[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, _pnttg1sol[_nbrSol]);

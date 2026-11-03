@@ -48,7 +48,7 @@ public class CurveContinuity
 
     private void CurvC0(CLProps curv1, CLProps curv2)
     {
-        _contC0 = (curv1.Value()).Distance(curv2.Value());
+        _contC0 = (curv1.Value()).DistanceTo(curv2.Value());
     }
 
     private void CurvC1(CLProps curv1, CLProps curv2)
@@ -58,8 +58,8 @@ public class CurveContinuity
         v1 = curv1.D1();
         v2 = curv2.D1();
         double norm1, norm2;
-        norm1 = v1.Magnitude();
-        norm2 = v2.Magnitude();
+        norm1 = v1.Magnitude;
+        norm2 = v2.Magnitude;
 
         if ((norm1 > _myepsnul) && (norm2 > _myepsnul))
         {
@@ -71,7 +71,7 @@ public class CurveContinuity
             {
                 _lambda1 = norm1 / norm2;
             }
-            ang = v1.Angle(v2);
+            ang = v1.AngleTo(v2);
             if (ang > M_PI / 2)
             {
                 _contC1 = M_PI - ang;
@@ -96,10 +96,10 @@ public class CurveContinuity
         v2 = curv2.D1();
         v12 = curv1.D2();
         v22 = curv2.D2();
-        norm1 = v1.Magnitude();
-        norm2 = v2.Magnitude();
-        norm12 = v12.Magnitude();
-        norm22 = v22.Magnitude();
+        norm1 = v1.Magnitude;
+        norm2 = v2.Magnitude;
+        norm12 = v12.Magnitude;
+        norm22 = v22.Magnitude;
 
         if ((norm1 > _myepsnul) && (norm2 > _myepsnul))
         {
@@ -115,7 +115,7 @@ public class CurveContinuity
                     _lambda1 = norm1 / norm2;
                     _lambda2 = norm12 / norm22;
                 }
-                ang = v12.Angle(v22);
+                ang = v12.AngleTo(v22);
                 if (ang > M_PI / 2)
                 {
                     _contC2 = M_PI - ang;
@@ -145,7 +145,7 @@ public class CurveContinuity
         {
             curv1.Tangent(out Direction3D tang1);
             curv2.Tangent(out Direction3D tang2);
-            ang = tang1.Angle(tang2);
+            ang = tang1.AngleTo(tang2);
             if (ang > M_PI / 2)
             {
                 _contG1 = M_PI - ang;
@@ -178,7 +178,7 @@ public class CurveContinuity
                 _ = curv2.D1();
                 curv1.Normal(out Direction3D d1);
                 curv2.Normal(out Direction3D d2);
-                ang = d1.Angle(d2);
+                ang = d1.AngleTo(d2);
                 if (ang > M_PI / 2)
                 {
                     _contG2 = M_PI - ang;

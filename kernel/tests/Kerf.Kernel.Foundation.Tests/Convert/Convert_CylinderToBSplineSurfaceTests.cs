@@ -115,11 +115,11 @@ public class Convert_CylinderToBSplineSurfaceTest
                             out Point3D aPnt);
 
                 // Verify the point lies on the cylinder: distance from Z axis = R
-                double aDistFromAxis = Math.Sqrt(aPnt.X() * aPnt.X() + aPnt.Y() * aPnt.Y());
+                double aDistFromAxis = Math.Sqrt(aPnt.X * aPnt.X + aPnt.Y * aPnt.Y);
                 Assert.Equal(aRadius, aDistFromAxis, aTol);
                 // Verify Z is within the V range
-                Assert.True(aPnt.Z() >= aV1 - aTol);
-                Assert.True(aPnt.Z() <= aV2 + aTol);
+                Assert.True(aPnt.Z >= aV1 - aTol);
+                Assert.True(aPnt.Z <= aV2 + aTol);
             }
         }
     }

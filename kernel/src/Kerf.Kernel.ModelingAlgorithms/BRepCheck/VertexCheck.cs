@@ -94,7 +94,7 @@ public class VertexCheck : ResultCheck
         Point3D prep = tv.Pnt();
         Point3D controlp;
 
-        ShapeType styp = s.ShapeType();
+        ShapeType styp = s.Type;
         switch (styp)
         {
             case ShapeType.Edge:
@@ -115,16 +115,16 @@ public class VertexCheck : ResultCheck
                         }
                         else
                         {
-                            if ((vFind.Orientation() == Forward && vf.Orientation() == Reversed)
-                                || (vFind.Orientation() == Reversed && vf.Orientation() == Forward))
+                            if ((vFind.Orientation == Forward && vf.Orientation == Reversed)
+                                || (vFind.Orientation == Reversed && vf.Orientation == Forward))
                             {
                                 // the vertex on the edge is at once F and R
                                 multiple = true;
                             }
 
-                            if (vFind.Orientation() != Forward && vFind.Orientation() != Reversed)
+                            if (vFind.Orientation != Forward && vFind.Orientation != Reversed)
                             {
-                                if (vf.Orientation() == Forward || vf.Orientation() == Reversed)
+                                if (vf.Orientation == Forward || vf.Orientation == Reversed)
                                 {
                                     vFind = vf;
                                 }
@@ -136,7 +136,7 @@ public class VertexCheck : ResultCheck
                 }
 
                 // VFind is not null for sure
-                Orientation orv = vFind.Orientation();
+                Orientation orv = vFind.Orientation;
 
                 double tol = Tool.Tolerance(ShapeCasts.Vertex(_shape));
                 tol = Max(tol, Tool.Tolerance(e)); // to check
@@ -144,7 +144,7 @@ public class VertexCheck : ResultCheck
 
                 var te = (BrepTEdge)e.TShape()!;
                 var itcr = new NCollection_List<CurveRepresentation>.Iterator(te.Curves());
-                Placement eloc = e.Location();
+                Placement eloc = e.Placement;
 
                 var itpr = new NCollection_List<PointRepresentation>.Iterator();
                 while (itcr.More())
@@ -152,7 +152,7 @@ public class VertexCheck : ResultCheck
                     // For each CurveRepresentation, the provided parameter is checked
                     CurveRepresentation cr = itcr.Value();
                     Placement loc = cr.Location();
-                    Placement l = (eloc * loc).Predivided(_shape.Location());
+                    Placement l = (eloc * loc).Predivided(_shape.Placement);
 
                     if (cr.IsCurve3D)
                     {
@@ -166,8 +166,8 @@ public class VertexCheck : ResultCheck
                                 if (pr.IsPointOnCurve(c, l))
                                 {
                                     controlp = c.Value(pr.Parameter());
-                                    controlp = controlp.Transformed(l.Transformation());
-                                    if (prep.SquareDistance(controlp) > tol)
+                                    controlp = controlp.Transformed(l.Transformation);
+                                    if (prep.SquareDistanceTo(controlp) > tol)
                                     {
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
                                     }
@@ -182,8 +182,8 @@ public class VertexCheck : ResultCheck
                                 if (orv == Forward || multiple)
                                 {
                                     controlp = c.Value(gc.First());
-                                    controlp = controlp.Transformed(l.Transformation());
-                                    if (prep.SquareDistance(controlp) > tol)
+                                    controlp = controlp.Transformed(l.Transformation);
+                                    if (prep.SquareDistanceTo(controlp) > tol)
                                     {
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
                                     }
@@ -192,8 +192,8 @@ public class VertexCheck : ResultCheck
                                 if (orv == Reversed || multiple)
                                 {
                                     controlp = c.Value(gc.Last());
-                                    controlp = controlp.Transformed(l.Transformation());
-                                    if (prep.SquareDistance(controlp) > tol)
+                                    controlp = controlp.Transformed(l.Transformation);
+                                    if (prep.SquareDistanceTo(controlp) > tol)
                                     {
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
                                     }
@@ -218,9 +218,9 @@ public class VertexCheck : ResultCheck
                             if (pr.IsPointOnCurveOnSurface(pc, su, l))
                             {
                                 Point2D p2d = pc.Value(pr.Parameter());
-                                controlp = su.Value(p2d.X(), p2d.Y());
-                                controlp = controlp.Transformed(l.Transformation());
-                                if (prep.SquareDistance(controlp) > tol)
+                                controlp = su.Value(p2d.X, p2d.Y);
+                                controlp = controlp.Transformed(l.Transformation);
+                                if (prep.SquareDistanceTo(controlp) > tol)
                                 {
                                     BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurveOnSurface);
                                 }
@@ -229,9 +229,9 @@ public class VertexCheck : ResultCheck
                             if (pc2 is not null && pr.IsPointOnCurveOnSurface(pc2, su, l))
                             {
                                 Point2D p2d = pc2.Value(pr.Parameter());
-                                controlp = su.Value(p2d.X(), p2d.Y());
-                                controlp = controlp.Transformed(l.Transformation());
-                                if (prep.SquareDistance(controlp) > tol)
+                                controlp = su.Value(p2d.X, p2d.Y);
+                                controlp = controlp.Transformed(l.Transformation);
+                                if (prep.SquareDistanceTo(controlp) > tol)
                                 {
                                     BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurveOnSurface);
                                 }
@@ -254,10 +254,10 @@ public class VertexCheck : ResultCheck
             case ShapeType.Face:
             {
                 var tf = (BrepTFace)s.TShape()!;
-                Placement floc = s.Location();
+                Placement floc = s.Placement;
                 Placement tFloc = tf.Location();
                 Surface? su = tf.Surface();
-                Placement l = (floc * tFloc).Predivided(_shape.Location());
+                Placement l = (floc * tFloc).Predivided(_shape.Placement);
 
                 double tol = Tool.Tolerance(ShapeCasts.Vertex(_shape));
                 tol = Max(tol, Tool.Tolerance(ShapeCasts.Face(s))); // to check
@@ -270,8 +270,8 @@ public class VertexCheck : ResultCheck
                     if (pr.IsPointOnSurface(su, l))
                     {
                         controlp = su!.Value(pr.Parameter(), pr.Parameter2());
-                        controlp = controlp.Transformed(l.Transformation());
-                        if (prep.SquareDistance(controlp) > tol)
+                        controlp = controlp.Transformed(l.Transformation);
+                        if (prep.SquareDistanceTo(controlp) > tol)
                         {
                             BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnSurface);
                         }
@@ -335,17 +335,17 @@ public class VertexCheck : ResultCheck
             else if (pr.IsPointOnCurveOnSurface())
             {
                 Point2D puv = pr.PCurve()!.Value(pr.Parameter());
-                controlp = pr.Surface()!.Value(puv.X(), puv.Y());
+                controlp = pr.Surface()!.Value(puv.X, puv.Y);
             }
             else if (pr.IsPointOnSurface())
             {
                 controlp = pr.Surface()!.Value(pr.Parameter(), pr.Parameter2());
             }
 
-            controlp = controlp.Transformed(loc.Transformation());
-            if (prep.SquareDistance(controlp) > tol)
+            controlp = controlp.Transformed(loc.Transformation);
+            if (prep.SquareDistanceTo(controlp) > tol)
             {
-                tol = prep.SquareDistance(controlp);
+                tol = prep.SquareDistanceTo(controlp);
             }
 
             itpr.Next();

@@ -115,7 +115,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
         }
 
         public string Of(in Shape theS) =>
-            theS.IsNull ? "-" : $"{(myMap.IndexOf(theS) + 1)}o{(int)theS.Orientation()}";
+            theS.IsNull ? "-" : $"{(myMap.IndexOf(theS) + 1)}o{(int)theS.Orientation}";
     }
 
     private static string Results(IEnumerable<CheckResult> theResults, ShapeIndex theIndex)

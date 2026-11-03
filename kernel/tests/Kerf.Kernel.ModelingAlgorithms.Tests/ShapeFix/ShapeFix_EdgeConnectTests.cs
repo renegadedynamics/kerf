@@ -58,13 +58,13 @@ public class ShapeFix_EdgeConnectTests
         Assert.Equal(2, anEdges.Count);
         Vertex aShared = Exploration.LastVertex(anEdges[0]);
         Assert.True(aShared.IsSame(Exploration.FirstVertex(anEdges[1])));
-        Assert.Equal(1.0001, Tool.Pnt(aShared).X(), 1e-12);
+        Assert.Equal(1.0001, Tool.Pnt(aShared).X, 1e-12);
         Assert.Equal(1.0e-4 * 1.0001, Tool.Tolerance(aShared), 1e-12);
         // e1's far vertex is the caller's
         Assert.True(Exploration.FirstVertex(anEdges[0]).IsSame(Exploration.FirstVertex(e1)));
         // e2's vertex list was edited (one removed, one added): KeepUnchanged pairs children by position, so its far
         // vertex stays an (equal) copy
-        Assert.Equal(2.0, Tool.Pnt(Exploration.LastVertex(anEdges[1])).X());
+        Assert.Equal(2.0, Tool.Pnt(Exploration.LastVertex(anEdges[1])).X);
     }
 
     [Fact]

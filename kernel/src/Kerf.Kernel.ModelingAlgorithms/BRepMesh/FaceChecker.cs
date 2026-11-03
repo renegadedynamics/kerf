@@ -258,7 +258,7 @@ public class FaceChecker : Transient
             if (intStatus == Cross)
             {
                 double angle = new Vector2D(new Point2D(_segment.Point1.XY()), new Point2D(_segment.Point2.XY()))
-                                    .Angle(new Vector2D(new Point2D(segment.Point1.XY()), new Point2D(segment.Point2.XY())));
+                                    .AngleTo(new Vector2D(new Point2D(segment.Point1.XY()), new Point2D(segment.Point2.XY())));
 
                 if (Math.Abs(angle) < MaxTangentAngle)
                 {

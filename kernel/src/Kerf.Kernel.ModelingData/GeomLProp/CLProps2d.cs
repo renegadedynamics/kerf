@@ -139,7 +139,7 @@ public class CLProps2d
                         return false;
                 }
 
-                if (v.SquareMagnitude() > tolSq)
+                if (v.SquareMagnitude > tolSq)
                 {
                     _significantFirstDerivativeOrder = order;
                     _tangentStatus = Defined;
@@ -264,8 +264,8 @@ public class CLProps2d
         const double THE_DIVISION_FACTOR = 1.0e-3;
         const double THE_MIN_STEP = 1.0e-7;
 
-        double usupremum = _curve!.LastParameter();
-        double uinfimum = _curve.FirstParameter();
+        double usupremum = _curve!.LastParameter;
+        double uinfimum = _curve.FirstParameter;
 
         double du;
         if ((usupremum >= RealLast()) || (uinfimum <= RealFirst()))

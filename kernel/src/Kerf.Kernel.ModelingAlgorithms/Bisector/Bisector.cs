@@ -17,7 +17,7 @@ public static class Bisector
     /// </summary>
     public static bool IsConvex(Curve2D cu, double sign)
     {
-        double u1 = (cu.LastParameter() + cu.FirstParameter()) / 2.0;
+        double u1 = (cu.LastParameter + cu.FirstParameter) / 2.0;
         cu.D2(u1, out Point2D _, out Vector2D v1, out Vector2D v2);
         double tol = 1.0e-5;
         return sign * (v1 ^ v2) < tol;

@@ -64,8 +64,8 @@ public class Geom2dAPI_InterpolateTest
         {
             Point2D aPtOnCurveWithScale = aCurveWithScale.EvalD0(aCurveWithScale.Knot(anIndex));
             Point2D aPt = aPointsArray[anIndex];
-            Assert.Equal(aPt.X(), aPtOnCurveWithScale.X(), aTol);
-            Assert.Equal(aPt.Y(), aPtOnCurveWithScale.Y(), aTol);
+            Assert.Equal(aPt.X, aPtOnCurveWithScale.X, aTol);
+            Assert.Equal(aPt.Y, aPtOnCurveWithScale.Y, aTol);
         }
     }
 }

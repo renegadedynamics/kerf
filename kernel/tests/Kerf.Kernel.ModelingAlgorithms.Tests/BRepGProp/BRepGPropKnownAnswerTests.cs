@@ -26,9 +26,9 @@ public class BRepGPropKnownAnswerTests
 
     private static void AssertPnt(in Point3D theExpected, in Point3D theActual, double theTol = Tol)
     {
-        Assert.Equal(theExpected.X(), theActual.X(), theTol);
-        Assert.Equal(theExpected.Y(), theActual.Y(), theTol);
-        Assert.Equal(theExpected.Z(), theActual.Z(), theTol);
+        Assert.Equal(theExpected.X, theActual.X, theTol);
+        Assert.Equal(theExpected.Y, theActual.Y, theTol);
+        Assert.Equal(theExpected.Z, theActual.Z, theTol);
     }
 
     private static void AssertMat(in Matrix3x3 theExpected, in Matrix3x3 theActual, double theTol)
@@ -93,7 +93,7 @@ public class BRepGPropKnownAnswerTests
     public void Located_box_moves_its_centre_and_turns_its_inertia()
     {
         Placement aLoc = RigidLocation();
-        Transform3D aT = aLoc.Transformation();
+        Transform3D aT = aLoc.Transformation;
         Shape aBox = TestShapes.Frozen(TestShapes.Box(2, 3, 4));
         Shape aMoved = aBox.Moved(aLoc);
 
@@ -101,7 +101,7 @@ public class BRepGPropKnownAnswerTests
         Properties aV = MassPropertiesBuilder.VolumeProperties(aMoved);
         Assert.Equal(24.0, aV.Mass(), 1e-11);
         AssertPnt(aRef.CentreOfMass().Transformed(aT), aV.CentreOfMass(), 1e-11);
-        Matrix3x3 aR = aT.VectorialPart();
+        Matrix3x3 aR = aT.VectorialPart;
         AssertMat(aR.Multiplied(aRef.MatrixOfInertia()).Multiplied(aR.Transposed()), aV.MatrixOfInertia(), 1e-9);
 
         Assert.Equal(52.0, MassPropertiesBuilder.SurfaceProperties(aMoved).Mass(), 1e-11);
@@ -145,7 +145,7 @@ public class BRepGPropKnownAnswerTests
         Properties aV = MassPropertiesBuilder.VolumeProperties(aC);
         Assert.Equal(18.0, aV.Mass(), 1e-11);
         var aC0 = new Point3D(0.5, 1, 1.5);
-        Xyz anExpected = (aC0.XYZ() + aC0.Transformed(aL1.Transformation()).XYZ() + aC0.Transformed(aL2.Transformation()).XYZ()) / 3.0;
+        Xyz anExpected = (aC0.XYZ() + aC0.Transformed(aL1.Transformation).XYZ() + aC0.Transformed(aL2.Transformation).XYZ()) / 3.0;
         AssertPnt(new Point3D(anExpected), aV.CentreOfMass(), 1e-11);
 
         // the same as adding the instances one by one
@@ -407,8 +407,8 @@ public class BRepGPropKnownAnswerTests
         Placement aLoc = RigidLocation();
         Properties aVL = MassPropertiesBuilder.VolumeProperties(aMeshed.Moved(aLoc), false, false, true);
         Assert.Equal(6.0, aVL.Mass(), 1e-11);
-        AssertPnt(new Point3D(0.5, 1, 1.5).Transformed(aLoc.Transformation()), aVL.CentreOfMass(), 1e-11);
-        Matrix3x3 aR = aLoc.Transformation().VectorialPart();
+        AssertPnt(new Point3D(0.5, 1, 1.5).Transformed(aLoc.Transformation), aVL.CentreOfMass(), 1e-11);
+        Matrix3x3 aR = aLoc.Transformation.VectorialPart;
         AssertMat(aR.Multiplied(aV.MatrixOfInertia()).Multiplied(aR.Transposed()), aVL.MatrixOfInertia(), 1e-9);
 
         var aScale = new Placement(Transform3D.Scale(new Point3D(1, 1, 1), 2.0));
@@ -504,8 +504,8 @@ public class BRepGPropKnownAnswerTests
         Assert.Equal(3.0, v2, 1e-12);
         aBF.Normal(0.0, 1.0, out Point3D aP, out Vector3D aN);
         AssertPnt(new Point3D(2, 0, 1), aP, 1e-12);
-        Assert.True(aN.X() > 0); // outward, length r
-        Assert.Equal(2.0, aN.Magnitude(), 1e-12);
+        Assert.True(aN.X > 0); // outward, length r
+        Assert.Equal(2.0, aN.Magnitude, 1e-12);
         Assert.Equal(18, aBF.UIntegrationOrder());
         Assert.Equal(18, aBF.VIntegrationOrder());
         Assert.Equal(3, aBF.SUIntSubs());
@@ -519,7 +519,7 @@ public class BRepGPropKnownAnswerTests
         // reversed: the normal turns
         var aBR = new FaceIntegrand(ShapeCasts.Face(aLateral.Reversed()));
         aBR.Normal(0.0, 1.0, out _, out Vector3D aNR);
-        Assert.True(aNR.X() < 0);
+        Assert.True(aNR.X < 0);
 
         // the boundary arcs: the edges' pcurves, and the sides of the UV rectangle
         var aBD = new Domain(aLateral);
@@ -535,7 +535,7 @@ public class BRepGPropKnownAnswerTests
         aBF.Load(true, IsoU);
         Assert.Equal(0.0, aBF.FirstParameter());
         Assert.Equal(3.0, aBF.LastParameter(), 1e-15);
-        AssertPnt(new Point3D(0, 3, 0), new Point3D(aBF.Value2d(0).X(), aBF.Value2d(0).Y(), 0), 1e-15);
+        AssertPnt(new Point3D(0, 3, 0), new Point3D(aBF.Value2d(0).X, aBF.Value2d(0).Y, 0), 1e-15);
         NCollection_HArray1<double> aU = aBF.GetUKnots(0.5, 1.5);
         Assert.Equal(2, aU.Length());
         Assert.Equal(1.5, aU[2]);
@@ -571,7 +571,7 @@ public class BRepGPropKnownAnswerTests
         var anOrientations = new List<Orientation>();
         for (; aD.More(); aD.Next())
         {
-            anOrientations.Add(aD.Value().Orientation());
+            anOrientations.Add(aD.Value().Orientation);
         }
 
         // OCCT's Domain checks only from Next: the first edge comes even if INTERNAL

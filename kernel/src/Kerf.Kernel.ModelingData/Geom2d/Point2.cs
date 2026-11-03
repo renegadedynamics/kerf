@@ -28,7 +28,7 @@ public abstract class Point2 : Geometry2D
     {
         Point2D p1 = this.Pnt2d();
         Point2D p2 = other.Pnt2d();
-        return p1.Distance(p2);
+        return p1.DistanceTo(p2);
     }
 
     /// <summary>The square of the distance to Other.</summary>
@@ -36,6 +36,6 @@ public abstract class Point2 : Geometry2D
     {
         Point2D p1 = this.Pnt2d();
         Point2D p2 = other.Pnt2d();
-        return p1.SquareDistance(p2);
+        return p1.SquareDistanceTo(p2);
     }
 }

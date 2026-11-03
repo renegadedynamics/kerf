@@ -60,7 +60,7 @@ public class GuideTrihedronAC : TrihedronWithGuide
         // OCCT TODO: finding #8 - no zero-magnitude guard before Normalized()/Magnitude().
         normal = n.Normalized();
         b = to.Crossed(normal);
-        biNormal = b / b.Magnitude();
+        biNormal = b / b.Magnitude;
         tangent = normal.Crossed(biNormal);
         tangent = tangent.Normalized();
 
@@ -86,7 +86,7 @@ public class GuideTrihedronAC : TrihedronWithGuide
         _curPointOnGuide = pg;
 
         Vector3D n = new Vector3D(p, pg), dn = new Vector3D();
-        double norm = n.Magnitude();
+        double norm = n.Magnitude;
         if (norm < 1.0e-12)
         {
             norm = 1;
@@ -94,14 +94,14 @@ public class GuideTrihedronAC : TrihedronWithGuide
         n /= norm;
 
         // OCCT TODO: finding #8 - no zero-magnitude guard before TG.Magnitude()/L division.
-        dtg = (_orig2 - _orig1) * (to.Magnitude() / tg.Magnitude()) * (_lguide / _l);
+        dtg = (_orig2 - _orig1) * (to.Magnitude / tg.Magnitude) * (_lguide / _l);
         dn = Vector3D.LinearForm(dtg, tg, -1, to);
         dn /= norm;
 
         // triedre
         normal = n;
         b = to.Crossed(normal);
-        double normB = b.Magnitude();
+        double normB = b.Magnitude;
         b /= normB;
 
         biNormal = b;
@@ -137,15 +137,15 @@ public class GuideTrihedronAC : TrihedronWithGuide
         _trimG!.D2(tG, out Point3D pg, out Vector3D tg, out Vector3D dtg);
         _curPointOnGuide = pg;
 
-        double nTo = to.Magnitude();
-        double n2To = to.SquareMagnitude();
-        double ntg = tg.Magnitude();
-        double n2Tp = tg.SquareMagnitude();
+        double nTo = to.Magnitude;
+        double n2To = to.SquareMagnitude;
+        double ntg = tg.Magnitude;
+        double n2Tp = tg.SquareMagnitude;
         double d2tp_dt2, dtg_dt;
         dtg_dt = (_orig2 - _orig1) * (nTo / ntg) * (_lguide / _l);
 
         Vector3D n = new Vector3D(p, pg); // vecteur definissant la normale
-        double norm = n.Magnitude(), ndn;
+        double norm = n.Magnitude, ndn;
         // derivee de n par rapport a Param
         Vector3D dn = new Vector3D(), d2n = new Vector3D();
         dn = Vector3D.LinearForm(dtg_dt, tg, -1, to);
@@ -169,7 +169,7 @@ public class GuideTrihedronAC : TrihedronWithGuide
         Vector3D tn, dtn = new Vector3D(), d2TN = new Vector3D();
         tn = to.Crossed(normal);
 
-        double norma = tn.Magnitude();
+        double norma = tn.Magnitude;
         if (norma > 1.0e-9)
         {
             tn /= norma;
@@ -192,9 +192,9 @@ public class GuideTrihedronAC : TrihedronWithGuide
         dTangent = Vector3D.LinearForm(normal.Crossed(dBiNormal), dNormal.Crossed(biNormal));
 
         // derivee seconde du triedre
-        double tn2 = tn.SquareMagnitude();
+        double tn2 = tn.SquareMagnitude;
 
-        d2Normal = Vector3D.LinearForm(-2 * ndn, dn, 3 * ndn * ndn - (dn.SquareMagnitude() + n.Dot(d2n)), n, d2n);
+        d2Normal = Vector3D.LinearForm(-2 * ndn, dn, 3 * ndn * ndn - (dn.SquareMagnitude + n.Dot(d2n)), n, d2n);
 
         d2TN = Vector3D.LinearForm(1, d2To.Crossed(normal), 2, dTo.Crossed(dNormal), to.Crossed(d2Normal));
         d2TN /= norma;

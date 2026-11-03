@@ -186,8 +186,8 @@ public partial class PatchLineConstructor
                             Point2D pvF = new Point2D(vFu1, vFv1);
                             Point2D pvL = new Point2D(vLu1, vLv1);
                             Point2D pPm = new Point2D(u1, v1);
-                            double dpvFpPm = pvF.Distance(pPm);
-                            double dpvLpPm = pvL.Distance(pPm);
+                            double dpvFpPm = pvF.DistanceTo(pPm);
+                            double dpvLpPm = pvL.DistanceTo(pPm);
                             if (dpvFpPm > dpvLpPm)
                             {
                                 du = (vFu1 + u1) * 0.5;
@@ -208,8 +208,8 @@ public partial class PatchLineConstructor
                             Point2D pvF = new Point2D(vFu2, vFv2);
                             Point2D pvL = new Point2D(vLu2, vLv2);
                             Point2D pPm = new Point2D(u2, v2);
-                            double dpvFpPm = pvF.Distance(pPm);
-                            double dpvLpPm = pvL.Distance(pPm);
+                            double dpvFpPm = pvF.DistanceTo(pPm);
+                            double dpvLpPm = pvL.DistanceTo(pPm);
                             if (dpvFpPm > dpvLpPm)
                             {
                                 du = (vFu2 + u2) * 0.5;
@@ -479,7 +479,7 @@ public partial class PatchLineConstructor
 
                         Point3D p0 = vtx1.Value();
                         Point2D px2d = rLine.ArcOnS1()!.Value(u);
-                        Point3D px = mySurf1.Value(px2d.X(), px2d.Y());
+                        Point3D px = mySurf1.Value(px2d.X, px2d.Y);
                         Vector3D p0Px = new Vector3D(p0, px);
 
                         vtx1.PntOn2S().Parameters(out double U1, out double V1, out double U2, out double V2);
@@ -568,7 +568,7 @@ public partial class PatchLineConstructor
 
                         Point3D p0 = vtx1.Value();
                         Point2D px2d = rLine.ArcOnS2()!.Value(u);
-                        Point3D px = mySurf2.Value(px2d.X(), px2d.Y());
+                        Point3D px = mySurf2.Value(px2d.X, px2d.Y);
                         Vector3D p0Px = new Vector3D(p0, px);
 
                         vtx1.PntOn2S().Parameters(out double U1, out double V1, out _, out _);

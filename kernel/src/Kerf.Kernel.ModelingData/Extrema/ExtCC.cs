@@ -199,7 +199,7 @@ public class ExtCC
         }
         else
         {
-            _mydist11 = _p1f.SquareDistance(_p2f);
+            _mydist11 = _p1f.SquareDistanceTo(_p2f);
         }
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u11) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u22))
         {
@@ -207,7 +207,7 @@ public class ExtCC
         }
         else
         {
-            _mydist12 = _p1f.SquareDistance(_p2l);
+            _mydist12 = _p1f.SquareDistanceTo(_p2l);
         }
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u12) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u21))
         {
@@ -215,7 +215,7 @@ public class ExtCC
         }
         else
         {
-            _mydist21 = _p1l.SquareDistance(_p2f);
+            _mydist21 = _p1l.SquareDistanceTo(_p2f);
         }
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(u12) || global::Kerf.Engine.Foundation.Precision.IsInfinite(u22))
         {
@@ -223,7 +223,7 @@ public class ExtCC
         }
         else
         {
-            _mydist22 = _p1l.SquareDistance(_p2l);
+            _mydist22 = _p1l.SquareDistanceTo(_p2l);
         }
 
         // Depending on the types of curves, the algorithm is chosen:
@@ -459,7 +459,7 @@ public class ExtCC
 
                 Line3D lin1 = _c[0]!.Line();
                 Line3D lin2 = _c[1]!.Line();
-                bool isOpposite = (lin1.Direction().Dot(lin2.Direction()) < 0.0);
+                bool isOpposite = (lin1.Direction.Dot(lin2.Direction) < 0.0);
 
                 BoundRange range2 = new(ut21, ut22);
                 BoundRange projRng12 = new();
@@ -602,7 +602,7 @@ public class ExtCC
             BoundRange projRng1 = new();
 
             // Precision of the calculation depends on circles radii
-            double precision = Max(Epsilon(_c[0]!.Circle().Radius()), Epsilon(_c[1]!.Circle().Radius()));
+            double precision = Max(Epsilon(_c[0]!.Circle().Radius), Epsilon(_c[1]!.Circle().Radius));
 
             // Project arc of the 1st circle between points theUt11 and theUt12 to the
             // 2nd circle. It is necessary to chose correct arc from two possible ones.

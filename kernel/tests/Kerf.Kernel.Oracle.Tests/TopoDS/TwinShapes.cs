@@ -41,12 +41,12 @@ internal sealed class TwinShapes
     public Twin<N.TopoDS_Edge, Edge> Segment(Twin<N.TopoDS_Vertex, Vertex> theV1, in Point3D theP1,
                                                     Twin<N.TopoDS_Vertex, Vertex> theV2, in Point3D theP2)
     {
-        double dx = theP2.X() - theP1.X(), dy = theP2.Y() - theP1.Y(), dz = theP2.Z() - theP1.Z();
+        double dx = theP2.X - theP1.X, dy = theP2.Y - theP1.Y, dz = theP2.Z - theP1.Z;
         using var aNP = Oracle.ToNative(theP1);
         using var aND = new N.gp_Dir(dx, dy, dz);
         var aNLine = new N.Geom_Line(aNP, aND);
         var aLine = new LineCurve3D(theP1, new Direction3D(dx, dy, dz));
-        double aLength = theP1.Distance(theP2);
+        double aLength = theP1.DistanceTo(theP2);
         return EdgeOn(aNLine, aLine, new Placement(), null, 0.0, aLength, theV1, theV2);
     }
 
@@ -94,7 +94,7 @@ internal sealed class TwinShapes
         var aNPlane = new N.Geom_Plane(aNAx);
         var aPlane = new PlaneSurface(new CoordinateSystem(theOrigin, new Direction3D(theNormal.X(), theNormal.Y(), theNormal.Z()),
                                                new Direction3D(theXDir.X(), theXDir.Y(), theXDir.Z())));
-        Plane3D aPln = aPlane.Pln();
+        Plane3D aPln = aPlane.Plane;
 
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, aNPlane, Tol);
@@ -156,7 +156,7 @@ internal sealed class TwinShapes
         var aNPlane = new N.Geom_Plane(aNAx);
         var aPlane = new PlaneSurface(new CoordinateSystem(theOrigin, new Direction3D(theNormal.X(), theNormal.Y(), theNormal.Z()),
                                                new Direction3D(theXDir.X(), theXDir.Y(), theXDir.Z())));
-        Plane3D aPln = aPlane.Pln();
+        Plane3D aPln = aPlane.Plane;
 
         var aNF = new N.TopoDS_Face();
         myN.MakeFace(aNF, aNPlane, Tol);
@@ -307,7 +307,7 @@ internal sealed class TwinShapes
     public Twin<N.TopoDS_Face, Face> CylinderFace(double r, double h, in Placement theL, N.TopLoc_Location theNL)
     {
         double aTwoPi = 2.0 * Math.PI;
-        Transform3D aT = theL.Transformation();
+        Transform3D aT = theL.Transformation;
         Point3D aP0 = new Point3D(r, 0, 0).Transformed(aT), aP1 = new Point3D(r, 0, h).Transformed(aT);
         // the vertices are where the located curves put them; both sides use the port's coordinates
         Twin<N.TopoDS_Vertex, Vertex> aV0 = Vertex(aP0, 1e-6), aV1 = Vertex(aP1, 1e-6);

@@ -33,7 +33,7 @@ public sealed class MakeMirror
     public MakeMirror(in Line3D line)
     {
         _theMirror = new GeometryTransformation();
-        _theMirror.SetMirror(new Axis3D(line.Location(), line.Direction()));
+        _theMirror.SetMirror(new Axis3D(line.Location, line.Direction));
     }
 
     /// <summary>The symmetry with respect to the axis through Point with direction Direc.</summary>
@@ -54,7 +54,7 @@ public sealed class MakeMirror
     public MakeMirror(in Plane3D plane)
     {
         _theMirror = new GeometryTransformation();
-        _theMirror.SetMirror(plane.Position().Ax2());
+        _theMirror.SetMirror(plane.Position.Frame);
     }
 
     /// <summary>The constructed transformation (frozen).</summary>

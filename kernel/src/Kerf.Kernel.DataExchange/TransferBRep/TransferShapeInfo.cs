@@ -26,7 +26,7 @@ public static class TransferShapeInfo
         {
             return "TopoDS_Shape";
         }
-        switch (ent.ShapeType())
+        switch (ent.Type)
         {
             case ShapeType.Vertex:
                 return "TopoDS_Vertex";

@@ -94,7 +94,7 @@ public sealed class TopoStepTests
         Assert.False(aBuilder.InternalValue().TShape()!.IsFrozen);
         Shape aSolid = aBuilder.Value();
         Assert.True(aSolid.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Solid, aSolid.ShapeType());
+        Assert.Equal(ShapeType.Solid, aSolid.Type);
         var aProps = new Properties();
         MassPropertiesBuilder.VolumeProperties(aSolid, aProps);
         Assert.Equal(6000.0, aProps.Mass(), 1e-6);
@@ -118,8 +118,8 @@ public sealed class TopoStepTests
         double w1 = 0.8, w2 = 0.2;
         global::Kerf.Engine.Exchange.Step.Import.GeometricTool.UpdateParam3d(ref aRef, ref w1, ref w2, 1e-7, true);
         Assert.NotSame(aCurve, aRef);
-        Assert.Equal(new Point3D(0, 0, 0), aCurve.StartPoint()); // the shared curve unchanged
-        Assert.Equal(new Point3D(10, 0, 0), ((BSplineCurve3D)aRef).StartPoint());
+        Assert.Equal(new Point3D(0, 0, 0), aCurve.StartPoint); // the shared curve unchanged
+        Assert.Equal(new Point3D(10, 0, 0), ((BSplineCurve3D)aRef).StartPoint);
         Assert.True(w1 < w2);
     }
 

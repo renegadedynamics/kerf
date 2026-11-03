@@ -132,8 +132,8 @@ public class BRepMeshGeomToolTests
             Assert.True(aTool.Value(i, aSurf, out double aParam, out Point3D aPnt, out Point2D aUV));
             Assert.Equal(aRef.Parameter(i), aParam);
             Assert.True(aPnt.IsEqual(aRef.Value(i), 0.0));
-            Assert.Equal(aPnt.X(), aUV.X(), 1e-12);
-            Assert.Equal(aPnt.Y(), aUV.Y(), 1e-12);
+            Assert.Equal(aPnt.X, aUV.X, 1e-12);
+            Assert.Equal(aPnt.Y, aUV.Y, 1e-12);
         }
 
         // AddPoint inserts in parameter order and replaces within PConfusion.
@@ -153,15 +153,15 @@ public class BRepMeshGeomToolTests
         for (int i = 1; i <= aV.PointCount; i++)
         {
             Assert.True(aV.Value(i, 3.0, out double aParam, out Point3D aPnt, out Point2D aUV));
-            Assert.Equal(aParam, aUV.X());
-            Assert.Equal(3.0, aUV.Y());
+            Assert.Equal(aParam, aUV.X);
+            Assert.Equal(3.0, aUV.Y);
             Assert.True(aPnt.IsEqual(aCylSurf.Value(aParam, 3.0), 1e-12));
         }
 
         GeomTool aU = new(aCylSurf, IsoU, 1.0, 0.0, 10.0, 0.1, 0.5);
         Assert.True(aU.Value(1, 1.0, out double aP1, out _, out Point2D aUV1));
-        Assert.Equal(1.0, aUV1.X());
-        Assert.Equal(aP1, aUV1.Y());
+        Assert.Equal(1.0, aUV1.X);
+        Assert.Equal(aP1, aUV1.Y);
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public class BRepMeshGeomToolTests
             Deflection.ComputeDeflection(aDEdge, 10.0, aParams);
             Assert.Equal(0.05, aDEdge.GetDeflection());
             Assert.Equal(0.3, aDEdge.GetAngularDeflection());
-            aDWire.AddEdge(aDEdge, anExp.Current().Orientation());
+            aDWire.AddEdge(aDEdge, anExp.Current().Orientation);
             aSum += aDEdge.GetDeflection();
             aNb++;
         }

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// When the offset surface has an equivalent elementary surface (Geom_OffsetSurface.Surface()), that surface is
 /// evaluated instead.
 /// </summary>
-public sealed class OffsetSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class OffsetSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private readonly OffsetSurface? _geom;
     private readonly Surface? _basis;
@@ -29,8 +29,8 @@ public sealed class OffsetSurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         _offset = 0.0;
         if (_geom is not null)
         {
-            _offset = _geom.Offset();
-            _basis = _geom.BasisSurface();
+            _offset = _geom.Offset;
+            _basis = _geom.BasisSurface;
         }
     }
 

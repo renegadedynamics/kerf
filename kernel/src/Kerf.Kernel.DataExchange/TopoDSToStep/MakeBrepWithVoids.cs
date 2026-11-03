@@ -58,7 +58,7 @@ public sealed class MakeBrepWithVoids : ExportRoot
         int nbshapes = 0;
         for (it.Initialize(aSolid); it.More(); it.Next())
         {
-            if (it.Value().ShapeType() == ShapeType.Shell)
+            if (it.Value().Type == ShapeType.Shell)
             {
                 nbshapes++;
             }
@@ -67,7 +67,7 @@ public sealed class MakeBrepWithVoids : ExportRoot
         using var ps = new ProgressScope(progress, null, nbshapes);
         for (it.Initialize(aSolid); it.More() && ps.More(); it.Next())
         {
-            if (it.Value().ShapeType() == ShapeType.Shell)
+            if (it.Value().Type == ShapeType.Shell)
             {
                 Shell currentShell = ShapeCasts.Shell(it.Value());
                 if (!outShell.IsNull && !outShell.IsEqual(currentShell))

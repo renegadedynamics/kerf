@@ -32,9 +32,9 @@ public class GProp_ElementaryTests
 
     private static void AssertPnt(Point3D theP, double theX, double theY, double theZ, double theTol = Tol)
     {
-        Assert.Equal(theX, theP.X(), theTol);
-        Assert.Equal(theY, theP.Y(), theTol);
-        Assert.Equal(theZ, theP.Z(), theTol);
+        Assert.Equal(theX, theP.X, theTol);
+        Assert.Equal(theY, theP.Y, theTol);
+        Assert.Equal(theZ, theP.Z, theTol);
     }
 
     // ---- HOperator and GProp_GProps -------------------------------------------------------------------------
@@ -295,9 +295,9 @@ public class GProp_ElementaryTests
         // Half a torus (Teta in [0, pi]): the surface class puts the centre at y = 2 RMaj / pi; the volume class
         // reads cos(Alpha2) and sin(Alpha2) for Teta2, so with Alpha2 = 2 pi its centre stays at y = 0.
         var aHalfS = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
-        Assert.Equal(2.0 * RMaj / Math.PI, aHalfS.CentreOfMass().Y(), Tol);
+        Assert.Equal(2.0 * RMaj / Math.PI, aHalfS.CentreOfMass().Y, Tol);
         var aHalfV = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
-        Assert.Equal(0.0, aHalfV.CentreOfMass().Y(), Tol);
+        Assert.Equal(0.0, aHalfV.CentreOfMass().Y, Tol);
     }
 
     [Fact]

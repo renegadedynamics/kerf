@@ -904,7 +904,7 @@ public abstract class Form : MakeShape
                     // case of revolutions
                     if (c.IsPeriodic)
                     {
-                        double period = c.Period();
+                        double period = c.Period;
                         prmax = prmax2;
                         if (flag1)
                         {
@@ -1150,7 +1150,7 @@ public abstract class Form : MakeShape
                     {
                         if (c.IsPeriodic)
                         {
-                            double period = c.Period();
+                            double period = c.Period;
                             global::Kerf.Engine.Features.BRepFeat.ParametricMinMax(it.Value(), c, out double pr, out prmax1, out double prb, out prbmax1, out flag2, true);
                             if (flag2)
                             {
@@ -1293,7 +1293,7 @@ public abstract class Form : MakeShape
             for (; ite.More(); ite.Next())
             {
                 Shape sh = ite.Value();
-                if (!IsSameInHistory(sh, f) && sh.ShapeType() == f.ShapeType())
+                if (!IsSameInHistory(sh, f) && sh.Type == f.Type)
                 {
                     _generated.Append(sh);
                 }
@@ -1311,7 +1311,7 @@ public abstract class Form : MakeShape
         {
             return _generated;
         }
-        if (_map.ContainsKey(s) && s.ShapeType() != ShapeType.Face)
+        if (_map.ContainsKey(s) && s.Type != ShapeType.Face)
         { // check if filter on face or not
             NCollection_List<Shape>.Iterator ite = new(_map.GetValue(s));
             for (; ite.More(); ite.Next())
@@ -1462,7 +1462,7 @@ public abstract class Form : MakeShape
             Surface s = Tool.Surface(fac)!;
             if (s is TrimmedSurface trimmed)
             {
-                s = trimmed.BasisSurface();
+                s = trimmed.BasisSurface;
             }
 
             if (s.GetType() == typeof(PlaneSurface) || s.GetType() == typeof(CylindricalSurface)
@@ -1533,7 +1533,7 @@ public abstract class Form : MakeShape
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itdm in _map)
         {
             Shape orig = itdm.Key;
-            if (skipFace && orig.ShapeType() == ShapeType.Face)
+            if (skipFace && orig.Type == ShapeType.Face)
             {
                 continue;
             }
@@ -1548,7 +1548,7 @@ public abstract class Form : MakeShape
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
                 Shape sh = it.Value();
-                if (sh.ShapeType() != ShapeType.Face)
+                if (sh.Type != ShapeType.Face)
                 {
                     continue;
                 }

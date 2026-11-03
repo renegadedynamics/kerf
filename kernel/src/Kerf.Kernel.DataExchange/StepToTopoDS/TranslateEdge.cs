@@ -248,18 +248,18 @@ public sealed class TranslateEdge : ImportRoot
         if (myTranVertex1.IsDone)
         {
             v1 = ShapeCasts.Vertex(myTranVertex1.InternalValue());
-            v1.Orientation(Forward);
+            v1.Orient(Forward);
         }
 
         if (vend == vstart)
         {
             v2 = v1;
-            v2.Orientation(Reversed);
+            v2.Orient(Reversed);
         }
         else if (myTranVertex2.IsDone)
         {
             v2 = ShapeCasts.Vertex(myTranVertex2.InternalValue());
-            v2.Orientation(Reversed);
+            v2.Orient(Reversed);
         }
 
         _done = true;
@@ -386,20 +386,20 @@ public sealed class TranslateEdge : ImportRoot
         //: d5: instead of AdjustCurve above which is incorrect if U1 and U2 are not ends
         var ca = new CurveAdaptor(c1);
         Point3D pU1 = ca.Value(u1), pU2 = ca.Value(u2);
-        temp1 = pU1.Distance(pv1);
-        temp2 = pU2.Distance(pv2);
+        temp1 = pU1.DistanceTo(pv1);
+        temp2 = pU2.DistanceTo(pv2);
         if (temp1 > preci || temp2 > preci)
         {
             // #25415: handling of special case found on some STEP files produced by FPX Expert 2013 (PCB
             // design system): edge curve is line displaced from its true position but with correct
             // direction; we can shift the line in this case so that it passes through vertices correctly
             if (Math.Abs(temp1 - temp2) < preci
-                && Math.Abs(u2 - u1 - pnt1.Distance(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
+                && Math.Abs(u2 - u1 - pnt1.DistanceTo(pnt2)) < Kerf.Engine.Foundation.Precision.Confusion()
                 && c1 is LineCurve3D)
             {
                 LineCurve3D line = c1 as LineCurve3D;
-                Line3D lin = line.Lin();
-                Point3D origin = new Point3D(pnt1.XYZ() - lin.Position().Direction().XYZ() * u1);
+                Line3D lin = line.Line;
+                Point3D origin = new Point3D(pnt1.XYZ() - lin.Position.Direction.XYZ() * u1);
                 lin = lin.WithLocation(origin);
                 c1 = new LineCurve3D(lin);
                 tp.AddWarning(c3D, "Poor result from projection vertex / line 3d, line shifted");
@@ -464,7 +464,7 @@ public sealed class TranslateEdge : ImportRoot
                         Line3D alin = new Line3D(p1, adir);
                         c1 = new LineCurve3D(alin);
                         u1 = 0.0;
-                        u2 = p1.Distance(p2);
+                        u2 = p1.DistanceTo(p2);
                         e = MakeEdge(c1, v1, v2, u1, u2); //,preci
                     }
                     else

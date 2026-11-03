@@ -15,9 +15,9 @@ public class GeomLProp_PortTests
 {
     private static void SameVec(in Vector3D theA, in Vector3D theB)
     {
-        Assert.Equal(theA.X(), theB.X());
-        Assert.Equal(theA.Y(), theB.Y());
-        Assert.Equal(theA.Z(), theB.Z());
+        Assert.Equal(theA.X, theB.X);
+        Assert.Equal(theA.Y, theB.Y);
+        Assert.Equal(theA.Z, theB.Z);
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class GeomLProp_PortTests
         {
             Curve3D aCurve = GeomHash_PortTests.Curve(aRand, i % 11);
             var anAdaptor = new CurveAdaptor(aCurve);
-            double aFirst = Max(aCurve.FirstParameter(), -10.0), aLast = Min(aCurve.LastParameter(), 10.0);
+            double aFirst = Max(aCurve.FirstParameter, -10.0), aLast = Min(aCurve.LastParameter, 10.0);
             for (int j = 0; j <= 4; j++)
             {
                 double aU = aFirst + (aLast - aFirst) * j / 4.0;
@@ -62,12 +62,12 @@ public class GeomLProp_PortTests
         Assert.Equal(aCircle2d.Curvature(), aCircle3d.Curvature());
         aCircle2d.CentreOfCurvature(out Point2D aC2);
         aCircle3d.CentreOfCurvature(out Point3D aC3);
-        Assert.Equal(aC2.X(), aC3.X());
-        Assert.Equal(aC2.Y(), aC3.Y());
+        Assert.Equal(aC2.X, aC3.X);
+        Assert.Equal(aC2.Y, aC3.Y);
         aCircle2d.Normal(out Direction2D aN2);
         aCircle3d.Normal(out Direction3D aN3);
-        Assert.Equal(aN2.X(), aN3.X());
-        Assert.Equal(aN2.Y(), aN3.Y());
+        Assert.Equal(aN2.X, aN3.X);
+        Assert.Equal(aN2.Y, aN3.Y);
         Assert.True(aCompared > 2000);
     }
 
@@ -85,8 +85,8 @@ public class GeomLProp_PortTests
         var aProps = new global::Kerf.Engine.Geometry.Properties.CLProps(aCurve, 0.0, 2, 1e-7);
         Assert.True(aProps.IsTangentDefined());
         aProps.Tangent(out Direction3D aTangent);
-        Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.X(), 1e-15);
-        Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.Y(), 1e-15);
+        Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.X, 1e-15);
+        Assert.Equal(1.0 / Math.Sqrt(2.0), aTangent.Y, 1e-15);
         Assert.Equal(RealLast(), aProps.Curvature());
         Assert.ThrowsAny<global::Kerf.Engine.Geometry.Properties.NotDefinedException>(() => aProps.Normal(out _));
 
@@ -182,9 +182,9 @@ public class GeomLProp_PortTests
         Assert.Equal(0.0, aCylinder.GaussianCurvature(), 1e-15);
         Assert.False(aCylinder.IsUmbilic());
         aCylinder.CurvatureDirections(out Direction3D aMax, out Direction3D aMin);
-        Assert.Equal(1.0, Math.Abs(aMax.Z()), 1e-15);
-        Assert.Equal(0.0, aMin.Z(), 1e-15);
-        Assert.Equal(new Direction3D(Math.Cos(1.0), Math.Sin(1.0), 0.0).X(), aCylinder.Normal().X(), 1e-15);
+        Assert.Equal(1.0, Math.Abs(aMax.Z), 1e-15);
+        Assert.Equal(0.0, aMin.Z, 1e-15);
+        Assert.Equal(new Direction3D(Math.Cos(1.0), Math.Sin(1.0), 0.0).X, aCylinder.Normal().X, 1e-15);
 
         // a cone at its apex: no normal, no curvature
         var aCone = new global::Kerf.Engine.Geometry.Properties.SLProps(new ConicalSurface(anAx3, 0.5, 0.0), 0.0, 0.0, 2, 1e-7);

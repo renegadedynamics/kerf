@@ -92,7 +92,7 @@ public class RWStlNativeTests(ITestOutputHelper output)
         for (int i = 1; i <= theTri.NodeCount; ++i)
         {
             Point3D aP = theTri.Node(i);
-            aDump.Append(Hex(aP.X())).Append(' ').Append(Hex(aP.Y())).Append(' ').Append(Hex(aP.Z())).Append('\n');
+            aDump.Append(Hex(aP.X)).Append(' ').Append(Hex(aP.Y)).Append(' ').Append(Hex(aP.Z)).Append('\n');
         }
         for (int i = 1; i <= theTri.TriangleCount; ++i)
         {

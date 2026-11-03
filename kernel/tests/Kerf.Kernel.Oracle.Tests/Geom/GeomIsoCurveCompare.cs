@@ -54,9 +54,9 @@ internal static class GeomIsoCurveCompare
 
     private static void SameDir(Oracle theOracle, N.gp_Dir theN, in Direction3D theP, string theWhat)
     {
-        theOracle.Same(theN.X(), theP.X(), theWhat + " X");
-        theOracle.Same(theN.Y(), theP.Y(), theWhat + " Y");
-        theOracle.Same(theN.Z(), theP.Z(), theWhat + " Z");
+        theOracle.Same(theN.X(), theP.X, theWhat + " X");
+        theOracle.Same(theN.Y(), theP.Y, theWhat + " Y");
+        theOracle.Same(theN.Z(), theP.Z, theWhat + " Z");
     }
 
     /// <summary>The class and the definition of the curve.</summary>
@@ -71,8 +71,8 @@ internal static class GeomIsoCurveCompare
                 using N.gp_Ax1 aNPos = aNLine.Position();
                 using N.gp_Pnt aNLoc = aNPos.Location();
                 using N.gp_Dir aNDir = aNPos.Direction();
-                theOracle.Same(aNLoc, aLine.Position().Location(), theWhat + " line location");
-                SameDir(theOracle, aNDir, aLine.Position().Direction(), theWhat + " line direction");
+                theOracle.Same(aNLoc, aLine.Position.Location, theWhat + " line location");
+                SameDir(theOracle, aNDir, aLine.Position.Direction, theWhat + " line direction");
                 break;
             }
             case CircleCurve3D aCircle:
@@ -82,23 +82,23 @@ internal static class GeomIsoCurveCompare
                 using N.gp_Pnt aNLoc = aNPos.Location();
                 using N.gp_Dir aNDir = aNPos.Direction();
                 using N.gp_Dir aNXDir = aNPos.XDirection();
-                theOracle.Same(aNCircle.Radius(), aCircle.Radius(), theWhat + " circle radius");
-                theOracle.Same(aNLoc, aCircle.Position().Location(), theWhat + " circle location");
-                SameDir(theOracle, aNDir, aCircle.Position().Direction(), theWhat + " circle direction");
-                SameDir(theOracle, aNXDir, aCircle.Position().XDirection(), theWhat + " circle X direction");
+                theOracle.Same(aNCircle.Radius(), aCircle.Radius, theWhat + " circle radius");
+                theOracle.Same(aNLoc, aCircle.Position.Location, theWhat + " circle location");
+                SameDir(theOracle, aNDir, aCircle.Position.Direction, theWhat + " circle direction");
+                SameDir(theOracle, aNXDir, aCircle.Position.XDirection, theWhat + " circle X direction");
                 break;
             }
             case TrimmedCurve3D aTrimmed:
             {
                 using var aNTrimmed = N.Geom_TrimmedCurve.DownCast(theN)!;
                 using N.Geom_Curve aNBasis = aNTrimmed.BasisCurve()!;
-                SameDefinition(theOracle, aNBasis, aTrimmed.BasisCurve(), theWhat + " basis");
+                SameDefinition(theOracle, aNBasis, aTrimmed.BasisCurve, theWhat + " basis");
                 break;
             }
             case BezierCurve3D aBezier:
             {
                 using var aNBezier = N.Geom_BezierCurve.DownCast(theN)!;
-                theOracle.Same(aNBezier.Degree(), aBezier.Degree(), theWhat + " Bezier degree");
+                theOracle.Same(aNBezier.Degree(), aBezier.Degree, theWhat + " Bezier degree");
                 theOracle.Same(aNBezier.IsRational(), aBezier.IsRational, theWhat + " Bezier IsRational");
                 for (int i = 1; i <= aBezier.PoleCount; i++)
                 {
@@ -111,7 +111,7 @@ internal static class GeomIsoCurveCompare
             case BSplineCurve3D aBSpline:
             {
                 using var aNBSpline = N.Geom_BSplineCurve.DownCast(theN)!;
-                theOracle.Same(aNBSpline.Degree(), aBSpline.Degree(), theWhat + " B-spline degree");
+                theOracle.Same(aNBSpline.Degree(), aBSpline.Degree, theWhat + " B-spline degree");
                 theOracle.Same(aNBSpline.IsRational(), aBSpline.IsRational, theWhat + " B-spline IsRational");
                 theOracle.Same(aNBSpline.NbPoles(), aBSpline.PoleCount, theWhat + " B-spline NbPoles");
                 theOracle.Same(aNBSpline.NbKnots(), aBSpline.KnotCount, theWhat + " B-spline NbKnots");
@@ -213,16 +213,16 @@ internal static class GeomIsoCurveCompare
     {
         SameDefinition(theOracle, theN, theP, theWhat);
 
-        double aF = theP.FirstParameter(), aL = theP.LastParameter();
+        double aF = theP.FirstParameter, aL = theP.LastParameter;
         theOracle.Same(theN.FirstParameter(), aF, theWhat + " FirstParameter");
         theOracle.Same(theN.LastParameter(), aL, theWhat + " LastParameter");
         theOracle.Same(theN.IsClosed(), theP.IsClosed, theWhat + " IsClosed");
         theOracle.Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " IsPeriodic");
         if (theP.IsPeriodic)
         {
-            theOracle.Same(theN.Period(), theP.Period(), theWhat + " Period");
+            theOracle.Same(theN.Period(), theP.Period, theWhat + " Period");
         }
-        theOracle.Same((int)theN.Continuity(), (int)theP.Continuity(), theWhat + " Continuity");
+        theOracle.Same((int)theN.Continuity(), (int)theP.Continuity, theWhat + " Continuity");
         for (int k = 0; k <= 3; k++)
         {
             theOracle.Same(theN.IsCN(k), theP.IsCN(k), theWhat + " IsCN");
@@ -247,7 +247,7 @@ internal static class GeomIsoCurveCompare
     /// </summary>
     internal static void SameIsos(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat)
     {
-        theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         foreach (bool aU in new[] { true, false })
         {
             double aF = aU ? aU1 : aV1, aL = aU ? aU2 : aV2;

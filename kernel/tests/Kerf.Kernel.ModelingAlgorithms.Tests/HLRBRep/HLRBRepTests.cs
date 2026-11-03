@@ -72,14 +72,14 @@ public class HLRBRepTests
                 Point2D aExpected = new();
                 P.Project(C.Value3D(p3), ref aExpected);
                 Point2D a2d = C.Value(p3);
-                Assert.True(a2d.Distance(aExpected) < 1e-9);
+                Assert.True(a2d.DistanceTo(aExpected) < 1e-9);
             }
             // D1 against a finite difference of D0
             double pm = 0.5 * (f3 + l3), h = 1e-6;
             C.D1(pm, out Point2D _, out Vector2D V);
             Point2D aA = C.Value(pm - h), aB = C.Value(pm + h);
-            Assert.True(Math.Abs(V.X() - (aB.X() - aA.X()) / (2 * h)) < 1e-5);
-            Assert.True(Math.Abs(V.Y() - (aB.Y() - aA.Y()) / (2 * h)) < 1e-5);
+            Assert.True(Math.Abs(V.X - (aB.X - aA.X) / (2 * h)) < 1e-5);
+            Assert.True(Math.Abs(V.Y - (aB.Y - aA.Y) / (2 * h)) < 1e-5);
         }
     }
 
@@ -104,7 +104,7 @@ public class HLRBRepTests
                 // the 2D parameter is the ellipse's own parameter
                 double p2 = f + (l - f) * t;
                 Point2D aOnEllipse = global::Kerf.Engine.Geometry.ElCLib.Value(p2, El);
-                Assert.True(aOnEllipse.Distance(C.Value(C.Parameter3d(p2))) < 1e-9);
+                Assert.True(aOnEllipse.DistanceTo(C.Value(C.Parameter3d(p2))) < 1e-9);
             }
         }
         Assert.True(nbEllipses >= 2); // the circles' arcs, split at the silhouette's ends
@@ -144,7 +144,7 @@ public class HLRBRepTests
         aCopy.Status().HideAll();
         Assert.True(aCopy.Status().AllHidden());
         Assert.False(aSource.Status().AllHidden());
-        Assert.Equal(aSource.Geometry().Value(0.5).X(), aCopy.Geometry().Value(0.5).X());
+        Assert.Equal(aSource.Geometry().Value(0.5).X, aCopy.Geometry().Value(0.5).X);
     }
 
     [Fact]
@@ -307,6 +307,6 @@ public class HLRBRepTests
         I.Perform(new Line3D(new Point3D(-10, 0, 0), new Direction3D(1, 0, 0)), 100.0);
         Assert.True(I.IsDone());
         Assert.Equal(2, I.NbPoints());
-        Assert.Equal(5.0, Math.Abs(I.CSPoint(1).Pnt().X()), 9);
+        Assert.Equal(5.0, Math.Abs(I.CSPoint(1).Pnt().X), 9);
     }
 }

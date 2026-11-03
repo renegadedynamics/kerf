@@ -282,7 +282,7 @@ public class WireEdgeClassifier : CompositeClassifier
         } // ex1
 
         bool resta = state == Unknown;
-        resta = resta && (b2.ShapeType() == ShapeType.Wire) && (b1.ShapeType() == ShapeType.Wire);
+        resta = resta && (b2.Type == ShapeType.Wire) && (b1.Type == ShapeType.Wire);
         if (resta)
         {
             // classifying first point of B2's first edge not in B1's edges, in face bounded by B1
@@ -341,7 +341,7 @@ public class WireEdgeClassifier : CompositeClassifier
     /// <summary>Prepares a classification involving the wire (or edge) <paramref name="b"/>: ResetElement on its first edge.</summary>
     public override void ResetShape(in Shape b)
     {
-        if (b.ShapeType() == ShapeType.Edge)
+        if (b.Type == ShapeType.Edge)
         {
             ResetElement(b);
         }
@@ -423,14 +423,14 @@ public class WireEdgeClassifier : CompositeClassifier
 
             Vector2D v2d = new(_point2d, p2d);
             Line2D l2d = new(_point2d, new Direction2D(v2d));
-            double dist = _point2d.Distance(p2d);
+            double dist = _point2d.DistanceTo(p2d);
             double tol2d = global::Kerf.Engine.Foundation.Precision.PConfusion(); // NYI : a voir
             _fpc.Reset(l2d, dist, tol2d);
             _firstCompare = false;
         }
 
         _bcEdge.ChangeEdge() = e;
-        Orientation eori = e.Orientation();
+        Orientation eori = e.Orientation;
         _fpc.Compare(_bcEdge, eori);
         return bRet;
     }

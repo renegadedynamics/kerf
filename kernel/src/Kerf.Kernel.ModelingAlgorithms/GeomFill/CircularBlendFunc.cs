@@ -172,12 +172,12 @@ public class CircularBlendFunc : SweepFunction
         p1 = _curve1.Value(tFirst);
         p2 = _curve1.Value((tFirst + tLast) / 2.0);
         p3 = _curve1.Value(tLast);
-        l1 = p1.Distance(p2) + p2.Distance(p3);
+        l1 = p1.DistanceTo(p2) + p2.DistanceTo(p3);
 
         p1 = _curve2.Value(tFirst);
         p2 = _curve2.Value((tFirst + tLast) / 2.0);
         p3 = _curve2.Value(tLast);
-        l2 = p1.Distance(p2) + p2.Distance(p3);
+        l2 = p1.DistanceTo(p2) + p2.DistanceTo(p3);
 
         double l;
         if (l1 > l2)
@@ -225,7 +225,7 @@ public class CircularBlendFunc : SweepFunction
                 {
                     _minang = angle;
                 }
-                _distmin = Min(_distmin, p1.Distance(p2));
+                _distmin = Min(_distmin, p1.DistanceTo(p2));
                 _bary = new Point3D(_bary.XYZ() + ((p1.XYZ() + p2.XYZ())));
             }
         }
@@ -258,7 +258,7 @@ public class CircularBlendFunc : SweepFunction
                 {
                     _minang = angle;
                 }
-                _distmin = Min(_distmin, p1.Distance(p2));
+                _distmin = Min(_distmin, p1.DistanceTo(p2));
                 _bary = new Point3D(_bary.XYZ() + ((p1.XYZ() + p2.XYZ())));
             }
         }
@@ -363,8 +363,8 @@ public class CircularBlendFunc : SweepFunction
         }
 
         // Normalisation
-        invnorm1 = ((double)1) / ns1.Magnitude();
-        invnorm2 = ((double)1) / ns2.Magnitude();
+        invnorm1 = ((double)1) / ns1.Magnitude;
+        invnorm2 = ((double)1) / ns2.Magnitude;
 
         ns1 *= invnorm1;
         dns1 = Vector3D.LinearForm(-dns1.Dot(ns1), ns1, dns1);
@@ -379,7 +379,7 @@ public class CircularBlendFunc : SweepFunction
         dCenter = Vector3D.LinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
         dCenter *= 0.5;
 
-        invnormp = ((double)1) / nplan.Magnitude();
+        invnormp = ((double)1) / nplan.Magnitude;
         nplan *= invnormp;
         dnplan = Vector3D.LinearForm(-dnplan.Dot(nplan), nplan, dnplan);
         dnplan *= invnormp;
@@ -457,12 +457,12 @@ public class CircularBlendFunc : SweepFunction
         }
 
         // Normalisation
-        invnorm1 = ((double)1) / ns1.Magnitude();
-        invnorm2 = ((double)1) / ns2.Magnitude();
+        invnorm1 = ((double)1) / ns1.Magnitude;
+        invnorm2 = ((double)1) / ns2.Magnitude;
 
         ns1 *= invnorm1;
         sc = dns1.Dot(ns1);
-        d2ns1 = Vector3D.LinearForm(3 * sc * sc * invnorm1 - d2ns1.Dot(ns1) - invnorm1 * dns1.SquareMagnitude(),
+        d2ns1 = Vector3D.LinearForm(3 * sc * sc * invnorm1 - d2ns1.Dot(ns1) - invnorm1 * dns1.SquareMagnitude,
                             ns1,
                             -2 * sc * invnorm1,
                             dns1,
@@ -473,7 +473,7 @@ public class CircularBlendFunc : SweepFunction
 
         ns2 *= invnorm2;
         sc = dns2.Dot(ns2);
-        d2ns2 = Vector3D.LinearForm(3 * sc * sc * invnorm2 - d2ns2.Dot(ns2) - invnorm2 * dns2.SquareMagnitude(),
+        d2ns2 = Vector3D.LinearForm(3 * sc * sc * invnorm2 - d2ns2.Dot(ns2) - invnorm2 * dns2.SquareMagnitude,
                             ns2,
                             -2 * sc * invnorm2,
                             dns2,
@@ -489,10 +489,10 @@ public class CircularBlendFunc : SweepFunction
         d2Center = Vector3D.LinearForm(_radius, d2ns1, _radius, d2ns2, 1, d2P1, d2P2);
         d2Center *= 0.5;
 
-        invnormp = ((double)1) / nplan.Magnitude();
+        invnormp = ((double)1) / nplan.Magnitude;
         nplan *= invnormp;
         sc = dnplan.Dot(nplan);
-        d2nplan = Vector3D.LinearForm(3 * sc * sc * invnormp - d2nplan.Dot(nplan) - invnormp * dnplan.SquareMagnitude(),
+        d2nplan = Vector3D.LinearForm(3 * sc * sc * invnormp - d2nplan.Dot(nplan) - invnormp * dnplan.SquareMagnitude,
                               nplan,
                               -2 * sc * invnormp,
                               dnplan,

@@ -339,8 +339,8 @@ public partial class PrmPrmIntersection
 
                                             PntOn2S verPointDebut = verwline.Point(1);
                                             PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                            if ((point3dDebut.Distance(verPointDebut.Value()) <= tolTangency)
-                                                && (point3dFin.Distance(verPointFin.Value()) <= tolTangency))
+                                            if ((point3dDebut.DistanceTo(verPointDebut.Value()) <= tolTangency)
+                                                && (point3dFin.DistanceTo(verPointFin.Value()) <= tolTangency))
                                             {
                                                 rejetLigne = true;
                                                 break;
@@ -518,8 +518,8 @@ public partial class PrmPrmIntersection
 
                                         PntOn2S verPointDebut = verwline.Point(1);
                                         PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                        if ((point3dDebut.Distance(verPointDebut.Value()) < tolTangency)
-                                            || (point3dFin.Distance(verPointFin.Value()) < tolTangency))
+                                        if ((point3dDebut.DistanceTo(verPointDebut.Value()) < tolTangency)
+                                            || (point3dFin.DistanceTo(verPointFin.Value()) < tolTangency))
                                         {
                                             rejetLigne = true;
                                             break;
@@ -774,8 +774,8 @@ public partial class PrmPrmIntersection
                                             WLine verwline = (WLine)_sLin.Value(ver);
                                             PntOn2S verPointDebut = verwline.Point(1);
                                             PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                            if ((point3dDebut.Distance(verPointDebut.Value()) < tolTangency)
-                                                || (point3dFin.Distance(verPointFin.Value()) < tolTangency))
+                                            if ((point3dDebut.DistanceTo(verPointDebut.Value()) < tolTangency)
+                                                || (point3dFin.DistanceTo(verPointFin.Value()) < tolTangency))
                                             {
                                                 rejetLigne = true;
                                                 break;
@@ -906,8 +906,8 @@ public partial class PrmPrmIntersection
                                         WLine verwline = (WLine)_sLin.Value(ver);
                                         PntOn2S verPointDebut = verwline.Point(1);
                                         PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                        if ((point3dDebut.Distance(verPointDebut.Value()) < tolTangency)
-                                            || (point3dFin.Distance(verPointFin.Value()) < tolTangency))
+                                        if ((point3dDebut.DistanceTo(verPointDebut.Value()) < tolTangency)
+                                            || (point3dFin.DistanceTo(verPointFin.Value()) < tolTangency))
                                         {
                                             rejetLigne = true;
                                             break;
@@ -1010,7 +1010,7 @@ public partial class PrmPrmIntersection
 
             PntOn2S pOn2SDeb = wline.Point(1);
             PntOn2S pOn2SFin = wline.Point(wline.NbPnts());
-            if ((pOn2SDeb.Value()).Distance(pOn2SFin.Value()) <= tolTangency)
+            if ((pOn2SDeb.Value()).DistanceTo(pOn2SFin.Value()) <= tolTangency)
             {
                 pOn2SDeb.Parameters(out double u1t, out double v1t, out double u2t, out double v2t);
                 PatchPoint vtx = new();
@@ -1537,8 +1537,8 @@ public partial class PrmPrmIntersection
 
                                 PntOn2S verPointDebut = verwline.Point(1);
                                 PntOn2S verPointFin = verwline.Point(verwline.NbPnts());
-                                if ((point3dDebut.Distance(verPointDebut.Value()) <= tolTangency)
-                                    && (point3dFin.Distance(verPointFin.Value()) <= tolTangency))
+                                if ((point3dDebut.DistanceTo(verPointDebut.Value()) <= tolTangency)
+                                    && (point3dFin.DistanceTo(verPointFin.Value()) <= tolTangency))
                                 {
                                     rejetLigne = true;
                                     break;

@@ -84,7 +84,7 @@ public partial class WireFixer
         // 15.11.2002 PTV OCC966
         if (CurveAnalysis.IsPeriodic(c))
         {
-            double t     = c.Period();
+            double t     = c.Period;
             double shift = -Math.Truncate(first / t) * t;
             if (first < 0.0)
             {
@@ -145,7 +145,7 @@ public partial class WireFixer
 
         // Check gap in 3d space
         Point3D cpnt1 = C1!.Value(clast1), cpnt2 = C2!.Value(cfirst2);
-        double gap = cpnt1.Distance(cpnt2);
+        double gap = cpnt1.DistanceTo(cpnt2);
         if (!convert && gap <= preci)
         {
             return false;
@@ -155,8 +155,8 @@ public partial class WireFixer
         // Second phase: collecting data necessary for further analysis
         //=============
 
-        bool reversed1 = (e1.Orientation() == Reversed),
-             reversed2 = (e2.Orientation() == Reversed);
+        bool reversed1 = (e1.Orientation == Reversed),
+             reversed2 = (e2.Orientation == Reversed);
 
         Vertex v1 = sae.LastVertex(e1), v2 = sae.FirstVertex(e2);
         Point3D        vpnt = (v1.IsSame(v2))
@@ -195,13 +195,13 @@ public partial class WireFixer
         {
             if (c1 is TrimmedCurve3D tc1)
             {
-                c1       = tc1.BasisCurve();
+                c1       = tc1.BasisCurve;
                 trimmed1 = true;
             }
             else if (c1 is OffsetCurve3D oc)
             {
-                c1 = oc.BasisCurve();
-                offval1 += oc.Offset() * oc.Direction().XYZ();
+                c1 = oc.BasisCurve;
+                offval1 += oc.Offset * oc.Direction.XYZ();
                 offset1 = true;
             }
             else
@@ -216,13 +216,13 @@ public partial class WireFixer
         {
             if (c2 is TrimmedCurve3D tc2)
             {
-                c2       = tc2.BasisCurve();
+                c2       = tc2.BasisCurve;
                 trimmed2 = true;
             }
             else if (c2 is OffsetCurve3D oc)
             {
-                c2 = oc.BasisCurve();
-                offval2 += oc.Offset() * oc.Direction().XYZ();
+                c2 = oc.BasisCurve;
+                offval2 += oc.Offset * oc.Direction.XYZ();
                 offset2 = true;
             }
             else
@@ -245,7 +245,7 @@ public partial class WireFixer
         if (convert)
         {
             // Check that gap satisfies the precision - in this case no conversion produced
-            if (cpnt1.Distance(vpnt) < preci && cpnt2.Distance(vpnt) < preci)
+            if (cpnt1.DistanceTo(vpnt) < preci && cpnt2.DistanceTo(vpnt) < preci)
             {
                 return false;
             }
@@ -261,11 +261,11 @@ public partial class WireFixer
                 // bool trim = false;  // skl
                 if (j == 1)
                 {
-                    if (cpnt1.Distance(vpnt) < preci)
+                    if (cpnt1.DistanceTo(vpnt) < preci)
                     {
                         if (n1 == n2)
                         {
-                            if (cpnt2.Distance(vpnt) < preci)
+                            if (cpnt2.DistanceTo(vpnt) < preci)
                             {
                                 continue;
                             }
@@ -281,7 +281,7 @@ public partial class WireFixer
                 }
                 else
                 {
-                    if (cpnt2.Distance(vpnt) < preci)
+                    if (cpnt2.DistanceTo(vpnt) < preci)
                     {
                         continue;
                     }
@@ -299,7 +299,7 @@ public partial class WireFixer
                 {
                     bsp = (BSplineCurve3D)c.Copy();
                     // take segment if trim and range differ
-                    double fbsp = bsp.FirstParameter(), lbsp = bsp.LastParameter();
+                    double fbsp = bsp.FirstParameter, lbsp = bsp.LastParameter;
                     bool   segment = false;
                     if (first > fbsp)
                     {
@@ -338,8 +338,8 @@ public partial class WireFixer
                         if (!CurveAnalysis.IsPeriodic(c))
                         {
                             tc = new TrimmedCurve3D(c,
-                                                       Max(first, c.FirstParameter()),
-                                                       Min(last, c.LastParameter()));
+                                                       Max(first, c.FirstParameter),
+                                                       Min(last, c.LastParameter));
                         }
                         else
                         {
@@ -375,7 +375,7 @@ public partial class WireFixer
 
             if (bsp1 is not null)
             {
-                if (bsp1.Degree() == 1)
+                if (bsp1.Degree == 1)
                 {
                     bsp1.IncreaseDegree(2); // gka
                 }
@@ -395,14 +395,14 @@ public partial class WireFixer
                         bsp1.SetPole(bsp1.PoleCount, vpnt);
                     }
                 }
-                first1 = bsp1.FirstParameter();
-                last1  = bsp1.LastParameter();
+                first1 = bsp1.FirstParameter;
+                last1  = bsp1.LastParameter;
                 c1     = bsp1;
                 done1  = true;
             }
             if (bsp2 is not null)
             {
-                if (bsp2.Degree() == 1)
+                if (bsp2.Degree == 1)
                 {
                     bsp2.IncreaseDegree(2); // gka
                 }
@@ -414,8 +414,8 @@ public partial class WireFixer
                 {
                     bsp2.SetPole(1, vpnt);
                 }
-                first2 = bsp2.FirstParameter();
-                last2  = bsp2.LastParameter();
+                first2 = bsp2.FirstParameter;
+                last2  = bsp2.LastParameter;
                 c2     = bsp2;
                 done2  = true;
             }
@@ -438,8 +438,8 @@ public partial class WireFixer
                 double domfirst1 = first1, domlast1 = last1;
                 if (c1 is BSplineCurve3D || c1 is BezierCurve3D)
                 {
-                    domfirst1 = c1.FirstParameter();
-                    domlast1  = c1.LastParameter();
+                    domfirst1 = c1.FirstParameter;
+                    domlast1  = c1.LastParameter;
                 }
                 else if (c1 is LineCurve3D || c1 is ParabolaCurve3D || c1 is HyperbolaCurve3D)
                 {
@@ -461,8 +461,8 @@ public partial class WireFixer
                 double domfirst2 = first2, domlast2 = last2;
                 if (c2 is BSplineCurve3D || c2 is BezierCurve3D)
                 {
-                    domfirst2 = c2.FirstParameter();
-                    domlast2  = c2.LastParameter();
+                    domfirst2 = c2.FirstParameter;
+                    domlast2  = c2.LastParameter;
                 }
                 else if (c2 is LineCurve3D || c2 is ParabolaCurve3D || c2 is HyperbolaCurve3D)
                 {
@@ -494,7 +494,7 @@ public partial class WireFixer
                     double dist, mindist = -1.0;
                     for (int i = 1; i <= proj.NbPoints(); i++)
                     {
-                        dist = vpnt.Distance(proj.Point(i));
+                        dist = vpnt.DistanceTo(proj.Point(i));
                         if (mindist > dist || mindist < 0.0)
                         {
                             index   = i;
@@ -510,7 +510,7 @@ public partial class WireFixer
                     double dist, mindist = -1.0;
                     for (int i = 1; i <= proj.NbPoints(); i++)
                     {
-                        dist = vpnt.Distance(proj.Point(i));
+                        dist = vpnt.DistanceTo(proj.Point(i));
                         if (mindist > dist || mindist < 0.0)
                         {
                             index   = i;
@@ -524,10 +524,10 @@ public partial class WireFixer
                 u2 = AdjustOnPeriodic3d(c2, !reversed2, first2, last2, u2);
                 // Check points to satisfy distance criterium
                 Point3D p1 = c1.Value(u1), p2 = c2.Value(u2);
-                if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                if (p1.DistanceTo(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
                     && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                     && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
-                        || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
+                        || (cpnt1.DistanceTo(p1) <= gap) || (cpnt2.DistanceTo(p2) <= gap)))
                 {
                     ipar1 = u1;
                     ipar2 = u2;
@@ -576,7 +576,7 @@ public partial class WireFixer
                                 uu2 = AdjustOnPeriodic3d(c2, !reversed2, first2, last2, uu2);
                                 pp1 = c1.Value(uu1);
                                 pp2 = c2.Value(uu2);
-                                if (pp1.Distance(pp2) < Kerf.Engine.Foundation.Precision.Confusion())
+                                if (pp1.DistanceTo(pp2) < Kerf.Engine.Foundation.Precision.Confusion())
                                 {
                                     // assume intersection
                                     pardist = Math.Abs(cfirst1 - uu1);
@@ -602,7 +602,7 @@ public partial class WireFixer
                                     pp1 = new Point3D((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
                                     extr.Parameters(index2, out uu1, out uu2);
                                     pp2 = new Point3D((c1.Value(uu1).XYZ() + c2.Value(uu2).XYZ()) * 0.5);
-                                    if (pp2.Distance(vpnt) < pp1.Distance(vpnt))
+                                    if (pp2.DistanceTo(vpnt) < pp1.DistanceTo(vpnt))
                                     {
                                         index1 = index2;
                                     }
@@ -619,10 +619,10 @@ public partial class WireFixer
                             // Check points to satisfy distance criterium
                             pp1 = c1.Value(uu1);
                             pp2 = c2.Value(uu2);
-                            if (pp1.Distance(pp2) <= gap && Math.Abs(cfirst1 - uu1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                            if (pp1.DistanceTo(pp2) <= gap && Math.Abs(cfirst1 - uu1) > Kerf.Engine.Foundation.Precision.PConfusion()
                                 && Math.Abs(clast2 - uu2) > Kerf.Engine.Foundation.Precision.PConfusion()
                                 && (((uu1 > first1) && (uu1 < last1)) || ((uu2 > first2) && (uu2 < last2))
-                                    || (cpnt1.Distance(pp1) <= gap) || (cpnt2.Distance(pp2) <= gap)))
+                                    || (cpnt1.DistanceTo(pp1) <= gap) || (cpnt2.DistanceTo(pp2) <= gap)))
                             {
                                 ipar1 = uu1;
                                 ipar2 = uu2;
@@ -740,8 +740,8 @@ public partial class WireFixer
                 // To keep NM vertices belonging initial edges
                 for (var itv = new Iterator(e1, false); itv.More(); itv.Next())
                 {
-                    if (itv.Value().Orientation() == Internal
-                        || itv.Value().Orientation() == External)
+                    if (itv.Value().Orientation == Internal
+                        || itv.Value().Orientation == External)
                     {
                         Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
@@ -770,8 +770,8 @@ public partial class WireFixer
                 // To keep NM vertices belonging initial edges
                 for (var itv = new Iterator(e2, false); itv.More(); itv.Next())
                 {
-                    if (itv.Value().Orientation() == Internal
-                        || itv.Value().Orientation() == External)
+                    if (itv.Value().Orientation == Internal
+                        || itv.Value().Orientation == External)
                     {
                         Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
@@ -799,7 +799,7 @@ public partial class WireFixer
         // 15.11.2002 PTV OCC966
         if (CurveAnalysis.IsPeriodic(pc))
         {
-            double t     = pc.Period();
+            double t     = pc.Period;
             double shift = -Math.Truncate(first / t) * t;
             if (first < 0.0)
             {
@@ -868,7 +868,7 @@ public partial class WireFixer
 
         // Check gap in 2d space
         Point2D cpnt1 = PC1!.Value(clast1), cpnt2 = PC2!.Value(cfirst2);
-        double   gap = cpnt1.Distance(cpnt2);
+        double   gap = cpnt1.DistanceTo(cpnt2);
         if (gap <= preci)
         {
             return false;
@@ -878,8 +878,8 @@ public partial class WireFixer
         // Second phase: collecting data necessary for further analysis
         //=============
 
-        bool reversed1 = (e1.Orientation() == Reversed),
-             reversed2 = (e2.Orientation() == Reversed);
+        bool reversed1 = (e1.Orientation == Reversed),
+             reversed2 = (e2.Orientation == Reversed);
 
         double first1, last1, first2, last2;
         if (reversed1)
@@ -913,13 +913,13 @@ public partial class WireFixer
         {
             if (pc1 is TrimmedCurve2D tc1)
             {
-                pc1      = tc1.BasisCurve();
+                pc1      = tc1.BasisCurve;
                 trimmed1 = true;
             }
             else if (pc1 is OffsetCurve2D oc)
             {
-                pc1 = oc.BasisCurve();
-                offval1 += oc.Offset();
+                pc1 = oc.BasisCurve;
+                offval1 += oc.Offset;
                 offset1 = true;
             }
             else
@@ -934,13 +934,13 @@ public partial class WireFixer
         {
             if (pc2 is TrimmedCurve2D tc2)
             {
-                pc2      = tc2.BasisCurve();
+                pc2      = tc2.BasisCurve;
                 trimmed2 = true;
             }
             else if (pc2 is OffsetCurve2D oc)
             {
-                pc2 = oc.BasisCurve();
-                offval2 += oc.Offset();
+                pc2 = oc.BasisCurve;
+                offval2 += oc.Offset;
                 offset2 = true;
             }
             else
@@ -994,7 +994,7 @@ public partial class WireFixer
                 {
                     bsp = (BSplineCurve2D)pc.Copy();
                     // take segment if trim and range differ
-                    double fbsp = bsp.FirstParameter(), lbsp = bsp.LastParameter();
+                    double fbsp = bsp.FirstParameter, lbsp = bsp.LastParameter;
                     bool   segment = false;
                     if (first > fbsp)
                     {
@@ -1039,8 +1039,8 @@ public partial class WireFixer
                         if (!CurveAnalysis.IsPeriodic(pc))
                         {
                             c = new TrimmedCurve2D(pc,
-                                                        Max(first, pc.FirstParameter()),
-                                                        Min(last, pc.LastParameter()));
+                                                        Max(first, pc.FirstParameter),
+                                                        Min(last, pc.LastParameter));
                         }
                         else
                         {
@@ -1077,7 +1077,7 @@ public partial class WireFixer
 
             if (bsp1 is not null)
             {
-                if (bsp1.Degree() == 1)
+                if (bsp1.Degree == 1)
                 {
                     bsp1.IncreaseDegree(2);
                 }
@@ -1097,14 +1097,14 @@ public partial class WireFixer
                         bsp1.SetPole(bsp1.PoleCount, mpnt);
                     }
                 }
-                first1 = bsp1.FirstParameter();
-                last1  = bsp1.LastParameter();
+                first1 = bsp1.FirstParameter;
+                last1  = bsp1.LastParameter;
                 pc1    = bsp1;
                 done1  = true;
             }
             if (bsp2 is not null)
             {
-                if (bsp2.Degree() == 1)
+                if (bsp2.Degree == 1)
                 {
                     bsp2.IncreaseDegree(2);
                 }
@@ -1116,8 +1116,8 @@ public partial class WireFixer
                 {
                     bsp2.SetPole(1, mpnt);
                 }
-                first2 = bsp2.FirstParameter();
-                last2  = bsp2.LastParameter();
+                first2 = bsp2.FirstParameter;
+                last2  = bsp2.LastParameter;
                 pc2    = bsp2;
                 done2  = true;
             }
@@ -1140,8 +1140,8 @@ public partial class WireFixer
                 double domfirst1 = first1, domlast1 = last1;
                 if (pc1 is BSplineCurve2D || pc1 is BezierCurve2D)
                 {
-                    domfirst1 = pc1.FirstParameter();
-                    domlast1  = pc1.LastParameter();
+                    domfirst1 = pc1.FirstParameter;
+                    domlast1  = pc1.LastParameter;
                 }
                 else if (pc1 is LineCurve2D || pc1 is ParabolaCurve2D || pc1 is HyperbolaCurve2D)
                 {
@@ -1163,8 +1163,8 @@ public partial class WireFixer
                 double domfirst2 = first2, domlast2 = last2;
                 if (pc2 is BSplineCurve2D || pc2 is BezierCurve2D)
                 {
-                    domfirst2 = pc2.FirstParameter();
-                    domlast2  = pc2.LastParameter();
+                    domfirst2 = pc2.FirstParameter;
+                    domlast2  = pc2.LastParameter;
                 }
                 else if (pc2 is LineCurve2D || pc2 is ParabolaCurve2D || pc2 is HyperbolaCurve2D)
                 {
@@ -1298,7 +1298,7 @@ public partial class WireFixer
                                 }
                             }
                             Point2D mpnt = new Point2D((cpnt1.XY() + cpnt2.XY()) * 0.5);
-                            if (pt2.Distance(mpnt) < pt1.Distance(mpnt))
+                            if (pt2.DistanceTo(mpnt) < pt1.DistanceTo(mpnt))
                             {
                                 index1 = index2;
                                 flag1  = flag2;
@@ -1325,10 +1325,10 @@ public partial class WireFixer
                         double u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, ip.ParamOnSecond());
                         // Check points to satisfy distance criterium
                         Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
-                        if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                        if (p1.DistanceTo(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
                             && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                             && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
-                                || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
+                                || (cpnt1.DistanceTo(p1) <= gap) || (cpnt2.DistanceTo(p2) <= gap)))
                         {
                             ipar1 = u1;
                             ipar2 = u2;
@@ -1350,10 +1350,10 @@ public partial class WireFixer
                         u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, u2);
                         // Check points to satisfy distance criterium
                         Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
-                        if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                        if (p1.DistanceTo(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
                             && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                             && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
-                                || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
+                                || (cpnt1.DistanceTo(p1) <= gap) || (cpnt2.DistanceTo(p2) <= gap)))
                         {
                             ipar1 = u1;
                             ipar2 = u2;
@@ -1375,7 +1375,7 @@ public partial class WireFixer
                         double dist, mindist = -1.0;
                         for (int i = 1; i <= proj.NbPoints(); i++)
                         {
-                            dist = cpnt2.Distance(proj.Point(i));
+                            dist = cpnt2.DistanceTo(proj.Point(i));
                             if (mindist > dist || mindist < 0.0)
                             {
                                 index   = i;
@@ -1392,7 +1392,7 @@ public partial class WireFixer
                         double dist, mindist = -1.0;
                         for (int i = 1; i <= proj.NbPoints(); i++)
                         {
-                            dist = cpnt1.Distance(proj.Point(i));
+                            dist = cpnt1.DistanceTo(proj.Point(i));
                             if (mindist > dist || mindist < 0.0)
                             {
                                 index   = i;
@@ -1423,7 +1423,7 @@ public partial class WireFixer
                             double dist, mindist = -1.0;
                             for (int i = 1; i <= proj.NbPoints(); i++)
                             {
-                                dist = mpnt.Distance(proj.Point(i));
+                                dist = mpnt.DistanceTo(proj.Point(i));
                                 if (mindist > dist || mindist < 0.0)
                                 {
                                     index   = i;
@@ -1440,7 +1440,7 @@ public partial class WireFixer
                             double dist, mindist = -1.0;
                             for (int i = 1; i <= proj.NbPoints(); i++)
                             {
-                                dist = mpnt.Distance(proj.Point(i));
+                                dist = mpnt.DistanceTo(proj.Point(i));
                                 if (mindist > dist || mindist < 0.0)
                                 {
                                     index   = i;
@@ -1453,7 +1453,7 @@ public partial class WireFixer
                     }
                     else
                     {
-                        if (cpnt1.Distance(ipnt2) < cpnt2.Distance(ipnt1))
+                        if (cpnt1.DistanceTo(ipnt2) < cpnt2.DistanceTo(ipnt1))
                         {
                             u1 = ipar1;
                         }
@@ -1467,10 +1467,10 @@ public partial class WireFixer
                     u2 = AdjustOnPeriodic2d(pc2, !reversed2, first2, last2, u2);
                     // Check points to satisfy distance criterium
                     Point2D p1 = pc1.Value(u1), p2 = pc2.Value(u2);
-                    if (p1.Distance(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
+                    if (p1.DistanceTo(p2) <= gap && Math.Abs(cfirst1 - u1) > Kerf.Engine.Foundation.Precision.PConfusion()
                         && Math.Abs(clast2 - u2) > Kerf.Engine.Foundation.Precision.PConfusion()
                         && (((u1 > first1) && (u1 < last1)) || ((u2 > first2) && (u2 < last2))
-                            || (cpnt1.Distance(p1) <= gap) || (cpnt2.Distance(p2) <= gap)))
+                            || (cpnt1.DistanceTo(p1) <= gap) || (cpnt2.DistanceTo(p2) <= gap)))
                     {
                         ipar1 = u1;
                         ipar2 = u2;
@@ -1483,7 +1483,7 @@ public partial class WireFixer
                     if (ipar1 < first1 || ipar1 > last1 || ipar2 < first2 || ipar2 > last2)
                     {
                         // Check whether new points lie inside the surface bounds
-                        _analyzer.Surface()!.Surface()!.Bounds(out double umin, out double umax, out double vmin, out double vmax);
+                        _analyzer.Surface()!.Surface()!.ParameterBounds(out double umin, out double umax, out double vmin, out double vmax);
                         if (Kerf.Engine.Foundation.Precision.IsInfinite(umin) || Kerf.Engine.Foundation.Precision.IsInfinite(umax)
                             || Kerf.Engine.Foundation.Precision.IsInfinite(vmin) || Kerf.Engine.Foundation.Precision.IsInfinite(vmax))
                         {
@@ -1532,8 +1532,8 @@ public partial class WireFixer
                             // iterate on bounding lines
                             for (int k = 1; k <= 2; k++)
                             {
-                                u = ipnt.X();
-                                v = ipnt.Y();
+                                u = ipnt.X;
+                                v = ipnt.Y;
 
                                 @out = true;
                                 if (k == 1)
@@ -1576,7 +1576,7 @@ public partial class WireFixer
                                     // Intersect pcurve with bounding line
                                     var lin  = new LineCurve2D(P1, new Direction2D(new Vector2D(P1, P2)));
                                     var acl  = new CurveAdaptor2D(lin);
-                                    var dlin = new TwoDDomain(P1, 0.0, tolint, P2, P1.Distance(P2), tolint);
+                                    var dlin = new TwoDDomain(P1, 0.0, tolint, P2, P1.DistanceTo(P2), tolint);
 
                                     Curve2D pc;
                                     double       fpar, lpar;
@@ -1848,8 +1848,8 @@ public partial class WireFixer
                 // To keep NM vertices belonging initial edges
                 for (var itv = new Iterator(e1, false); itv.More(); itv.Next())
                 {
-                    if (itv.Value().Orientation() == Internal
-                        || itv.Value().Orientation() == External)
+                    if (itv.Value().Orientation == Internal
+                        || itv.Value().Orientation == External)
                     {
                         Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =
@@ -1877,8 +1877,8 @@ public partial class WireFixer
                 // To keep NM vertices belonging initial edges
                 for (var itv = new Iterator(e2, false); itv.More(); itv.Next())
                 {
-                    if (itv.Value().Orientation() == Internal
-                        || itv.Value().Orientation() == External)
+                    if (itv.Value().Orientation == Internal
+                        || itv.Value().Orientation == External)
                     {
                         Vertex oldV = ShapeCasts.Vertex(itv.Value());
                         Vertex anewV =

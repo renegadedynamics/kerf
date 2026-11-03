@@ -197,14 +197,14 @@ public class EdgeProjAuxFixer : Transient
         var  sa     = new SurfaceAdaptor(theSurface);
         var  myHSur = new SurfaceAdaptor(theSurface);
 
-        cf = theCurve2d.FirstParameter();
-        cl = theCurve2d.LastParameter();
+        cf = theCurve2d.FirstParameter;
+        cl = theCurve2d.LastParameter;
         // pdn cutting pcurve by surface bounds
         if (Kerf.Engine.Foundation.Precision.IsInfinite(cf) || Kerf.Engine.Foundation.Precision.IsInfinite(cl))
         {
             if (theCurve2d is LineCurve2D)
             {
-                theSurface.Bounds(out double uf, out double ul, out double vf, out double vl);
+                theSurface.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
                 // Correct surface limits for extrusion/revolution surfaces based on hyperbola
                 // 23 is ln(1.0e+10)
                 if (sa.GetType() == SurfaceOfExtrusion)
@@ -228,28 +228,28 @@ public class EdgeProjAuxFixer : Transient
                 {
                     double   cfi, cli;
                     var      lin = (LineCurve2D)theCurve2d;
-                    Point2D pnt = lin.Location();
-                    Direction2D dir = lin.Direction();
-                    if (dir.Y() == 0)
+                    Point2D pnt = lin.Location;
+                    Direction2D dir = lin.Direction;
+                    if (dir.Y == 0)
                     {
                         parU = true;
-                        cfi  = (uf - pnt.X()) / dir.X();
-                        cli  = (ul - pnt.X()) / dir.X();
+                        cfi  = (uf - pnt.X) / dir.X;
+                        cli  = (ul - pnt.X) / dir.X;
                     }
-                    else if (dir.X() == 0)
+                    else if (dir.X == 0)
                     {
                         parV = true;
-                        cfi  = (vf - pnt.Y()) / dir.Y();
-                        cli  = (vl - pnt.Y()) / dir.Y();
+                        cfi  = (vf - pnt.Y) / dir.Y;
+                        cli  = (vl - pnt.Y) / dir.Y;
                     }
                     else
                     { // common case
                         double xfi, xli, yfi, yli;
-                        xfi = (uf - pnt.X()) / dir.X();
-                        xli = (ul - pnt.X()) / dir.X();
-                        yfi = (vf - pnt.Y()) / dir.Y();
-                        yli = (vl - pnt.Y()) / dir.Y();
-                        if (dir.X() * dir.Y() > 0)
+                        xfi = (uf - pnt.X) / dir.X;
+                        xli = (ul - pnt.X) / dir.X;
+                        yfi = (vf - pnt.Y) / dir.Y;
+                        yli = (vl - pnt.Y) / dir.Y;
+                        if (dir.X * dir.Y > 0)
                         {
                             cfi = (Math.Abs(xli - xfi) < Math.Abs(xli - yfi) ? xfi : yfi);
                             cli = (Math.Abs(xfi - xli) < Math.Abs(xfi - yli) ? xli : yli);
@@ -274,16 +274,16 @@ public class EdgeProjAuxFixer : Transient
                 else if (!Kerf.Engine.Foundation.Precision.IsInfinite(uf) && !Kerf.Engine.Foundation.Precision.IsInfinite(ul))
                 {
                     var      lin = (LineCurve2D)theCurve2d;
-                    Direction2D dir = lin.Direction();
-                    if (dir.X() != 0)
+                    Direction2D dir = lin.Direction;
+                    if (dir.X != 0)
                     {
-                        if (dir.Y() == 0)
+                        if (dir.Y == 0)
                         {
                             parU = true;
                         }
-                        Point2D pnt = lin.Location(); // szv#4:S4163:12Mar99 moved
-                        double   cfi = (uf - pnt.X()) / dir.X();
-                        double   cli = (ul - pnt.X()) / dir.X();
+                        Point2D pnt = lin.Location; // szv#4:S4163:12Mar99 moved
+                        double   cfi = (uf - pnt.X) / dir.X;
+                        double   cli = (ul - pnt.X) / dir.X;
                         if (cfi < cli)
                         {
                             cf = cfi;
@@ -377,7 +377,7 @@ public class EdgeProjAuxFixer : Transient
             return;
         }
         //: abv 29.08.01: SAT: fix for closed case
-        if (cOnS.Value(uinf).Distance(cOnS.Value(usup)) < Kerf.Engine.Foundation.Precision.Confusion())
+        if (cOnS.Value(uinf).DistanceTo(cOnS.Value(usup)) < Kerf.Engine.Foundation.Precision.Confusion())
         {
             // 18.11.2002 SKL OCC630 compare values with tolerance Precision::PConfusion() instead of "=="
             if (Math.Abs(_firstParam - uinf) < Kerf.Engine.Foundation.Precision.PConfusion()
@@ -396,7 +396,7 @@ public class EdgeProjAuxFixer : Transient
         // pdn adjust parameters in periodic case
         if (parU || parV)
         {
-            theSurface.Bounds(out double uf, out double ul, out double vf, out double vl);
+            theSurface.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
             double period = (parU ? ul - uf : vl - vf);
             w1 += ShapeAnalysisAnalysis.AdjustToPeriod(w1, 0, period);
             _firstParam = w1;
@@ -464,8 +464,8 @@ public class EdgeProjAuxFixer : Transient
         var cOnS = new CurveOnSurface(myHCur, myHSur);
 
         //: S4136  double preci = BRepAPI::Precision();
-        double uinf = theCurve2d.FirstParameter();
-        double usup = theCurve2d.LastParameter();
+        double uinf = theCurve2d.FirstParameter;
+        double usup = theCurve2d.LastParameter;
 
         // ----------------------------------------------
         // --- topological limit == geometric limit ? ---
@@ -494,7 +494,7 @@ public class EdgeProjAuxFixer : Transient
         double w1 = cOnS.FirstParameter();
         double w2 = cOnS.LastParameter();
 
-        if ((!Kerf.Engine.Foundation.Precision.IsInfinite(w1) && !Kerf.Engine.Foundation.Precision.IsInfinite(w2) && theCurve2d.Continuity() != C0)
+        if ((!Kerf.Engine.Foundation.Precision.IsInfinite(w1) && !Kerf.Engine.Foundation.Precision.IsInfinite(w2) && theCurve2d.Continuity != C0)
             || IsIso(theCurve2d))
         {
             // szv#4:S4163:12Mar99 optimized
@@ -518,8 +518,8 @@ public class EdgeProjAuxFixer : Transient
             return;
         }
 
-        double cf = curve2d.FirstParameter();
-        double cl = curve2d.LastParameter();
+        double cf = curve2d.FirstParameter;
+        double cl = curve2d.LastParameter;
         //: S4136  double preci = BRepAPI::Precision();
         double preci2d = Kerf.Engine.Foundation.Precision.PConfusion(); //: S4136: Parametric(preci, 0.01);
 
@@ -548,7 +548,7 @@ public class EdgeProjAuxFixer : Transient
         // the curve is closed within the 'file' 2D tolerance
         else if (curve2d is BSplineCurve2D bSpline2d)
         {
-            if (bSpline2d.StartPoint().Distance(bSpline2d.EndPoint()) <= preci2d)
+            if (bSpline2d.StartPoint.DistanceTo(bSpline2d.EndPoint) <= preci2d)
             {
                 if (Math.Abs(_firstParam - cl) <= preci2d)
                 {

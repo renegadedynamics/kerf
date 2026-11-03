@@ -279,7 +279,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         theOracle.Same(theN.Length, theP.Count, theWhat + " count");
         var aNKeys = theN.Select(n => (theShapes.FindIndex(s => s.N.IsSame(n)), (int)n.Orientation())).OrderBy(k => k).ToList();
-        var aKeys = theP.Select(p => (theShapes.FindIndex(s => s.P.IsSame(p)), (int)p.Orientation())).OrderBy(k => k).ToList();
+        var aKeys = theP.Select(p => (theShapes.FindIndex(s => s.P.IsSame(p)), (int)p.Orientation)).OrderBy(k => k).ToList();
         theOracle.Same(true, aNKeys.SequenceEqual(aKeys), theWhat + " elements");
     }
 
@@ -312,7 +312,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         var aTwins = new TwinShapes();
         (N.Geom_BSplineSurface aNS, BSplineSurface aS) = AdaptorOracleInputs.RandomBSplineSurface(theOracle, 0, false);
-        aS.Bounds(out double u1, out double u2, out double v1, out double v2);
+        aS.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         Twin<N.TopoDS_Vertex, Vertex> V(double u, double v) => aTwins.Vertex(aS.Value(u, v), 1e-6);
         Twin<N.TopoDS_Vertex, Vertex> v11 = V(u1, v1), v21 = V(u2, v1), v22 = V(u2, v2), v12 = V(u1, v2);
         Twin<N.TopoDS_Edge, Edge> e1 = aTwins.EdgeOn(aNS.VIso(v1)!, aS.VIso(v1), new Placement(), null, u1, u2, v11, v21);
@@ -386,7 +386,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     {
         (N.TopLoc_Location aNL, Placement aL) = TopologyOracleTests.RandomLocation(theOracle);
         using N.gp_Trsf aNRigid = aNL.Transformation();
-        Transform3D aRigid = aL.Transformation();
+        Transform3D aRigid = aL.Transformation;
         var aNT = new N.gp_Trsf();
         var aT = new Transform3D();
         Point3D aP = theOracle.Pnt();
@@ -407,10 +407,10 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
             case 2:
             {
                 Vector3D aV = theOracle.Vec();
-                using var aND = new N.gp_Dir(aV.X(), aV.Y(), aV.Z());
+                using var aND = new N.gp_Dir(aV.X, aV.Y, aV.Z);
                 using var aNAx = new N.gp_Ax2(aNP, aND);
                 aNT.SetMirror(aNAx);
-                aT = aT.WithMirror(new Frame3D(aP, new Direction3D(aV.X(), aV.Y(), aV.Z())));
+                aT = aT.WithMirror(new Frame3D(aP, new Direction3D(aV.X, aV.Y, aV.Z)));
                 break;
             }
             default:
@@ -431,9 +431,9 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
         Vector3D aV = theOracle.Vec();
         using var aNM = new N.gp_Mat(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
-        using var aNV = new N.gp_XYZ(aV.X(), aV.Y(), aV.Z());
+        using var aNV = new N.gp_XYZ(aV.X, aV.Y, aV.Z);
         return (new N.gp_GTrsf(aNM, aNV),
-                new GeneralTransform3D(new Matrix3x3(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]), new Xyz(aV.X(), aV.Y(), aV.Z())));
+                new GeneralTransform3D(new Matrix3x3(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]), new Xyz(aV.X, aV.Y, aV.Z)));
     }
 
     // Comparisons
@@ -503,11 +503,11 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     internal static void CompareImage(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theResult, N.TopoDS_Shape theN,
                                      in Shape theP, string theWhat)
     {
-        theOracle.Same((int)theN.ShapeType(), (int)theP.ShapeType(), theWhat + " type");
-        theOracle.Same((int)theN.Orientation(), (int)theP.Orientation(), theWhat + " orientation");
+        theOracle.Same((int)theN.ShapeType(), (int)theP.Type, theWhat + " type");
+        theOracle.Same((int)theN.Orientation(), (int)theP.Orientation, theWhat + " orientation");
         using (N.gp_Trsf aNT = theN.Location().Transformation())
         {
-            theOracle.Same(aNT, theP.Location().Transformation(), theWhat + " location");
+            theOracle.Same(aNT, theP.Placement.Transformation, theWhat + " location");
         }
 
         var aNMap = new N.TopTools_IndexedMapOfShape();
@@ -532,7 +532,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
             using (N.gp_Trsf aNTrsf = aNLoc.Transformation())
             {
-                theOracle.Same(aNTrsf, aLoc.Transformation(), "triangulation location");
+                theOracle.Same(aNTrsf, aLoc.Transformation, "triangulation location");
             }
 
             theOracle.Same(aNT.NbNodes(), aT.NodeCount, "triangulation nodes");

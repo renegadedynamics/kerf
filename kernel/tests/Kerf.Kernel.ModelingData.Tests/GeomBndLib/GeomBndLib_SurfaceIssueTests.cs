@@ -60,7 +60,7 @@ public class GeomBndLib_SurfaceIssueTest
 
         Box aBox = new SurfaceBounds(aBezier).Box(0.1, 0.65, 0.0, 1.0, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        Assert.Equal(5.0, aBezier.Value(0.5, 0.5).Z(), 1e-12);
+        Assert.Equal(5.0, aBezier.Value(0.5, 0.5).Z, 1e-12);
         Assert.True(aBox.GetZMax() < 4.98, $"Zmax {aBox.GetZMax()}");
     }
 }

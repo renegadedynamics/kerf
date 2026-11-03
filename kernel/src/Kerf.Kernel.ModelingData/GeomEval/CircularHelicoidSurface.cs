@@ -86,7 +86,7 @@ public sealed class CircularHelicoidSurface : ElementarySurface
     }
 
     /// <summary>Infinite bounds for both parameters.</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
         u2 = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -114,30 +114,30 @@ public sealed class CircularHelicoidSurface : ElementarySurface
         throw new MethodNotImplementedException("GeomEval_CircularHelicoidSurface::VIso");
     }
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         double zComp = _pitch * u / (2.0 * M_PI);
 
         return new Point3D(o + v * cosU * xd + v * sinU * yd + zComp * zd);
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         double zComp = _pitch * u / (2.0 * M_PI);
         double zRate = _pitch / (2.0 * M_PI);
@@ -154,15 +154,15 @@ public sealed class CircularHelicoidSurface : ElementarySurface
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         double zComp = _pitch * u / (2.0 * M_PI);
         double zRate = _pitch / (2.0 * M_PI);
@@ -184,15 +184,15 @@ public sealed class CircularHelicoidSurface : ElementarySurface
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
         double cosU = Math.Cos(u);
         double sinU = Math.Sin(u);
 
-        Xyz o = _pos.Location().XYZ();
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz o = _pos.Location.XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         double zComp = _pitch * u / (2.0 * M_PI);
         double zRate = _pitch / (2.0 * M_PI);
@@ -221,7 +221,7 @@ public sealed class CircularHelicoidSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -237,9 +237,9 @@ public sealed class CircularHelicoidSurface : ElementarySurface
             return new Vector3D(0.0, 0.0, 0.0);
         }
 
-        Xyz xd = _pos.XDirection().XYZ();
-        Xyz yd = _pos.YDirection().XYZ();
-        Xyz zd = _pos.Direction().XYZ();
+        Xyz xd = _pos.XDirection.XYZ();
+        Xyz yd = _pos.YDirection.XYZ();
+        Xyz zd = _pos.Direction.XYZ();
 
         // d^Nu/du^Nu[cos(u)] = cos(u + Nu*Pi/2)
         // d^Nu/du^Nu[sin(u)] = sin(u + Nu*Pi/2)

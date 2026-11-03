@@ -145,13 +145,13 @@ public class PcfOfEpcOfExtPC : FunctionWithDerivative
         CurveTool.D1(_c!, _u, out _pc, out d1c);
 
         // OCCT tests X and Y only, never Z
-        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(d1c.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(d1c.Y()))
+        if (global::Kerf.Engine.Foundation.Precision.IsInfinite(d1c.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(d1c.Y))
         {
             f = global::Kerf.Engine.Foundation.Precision.Infinite();
             return false;
         }
 
-        double ndu = d1c.Magnitude();
+        double ndu = d1c.Magnitude;
 
         if (_maxDerivOrder != 0)
         {
@@ -178,7 +178,7 @@ public class PcfOfEpcOfExtPC : FunctionWithDerivative
                 do
                 {
                     v = CurveTool.DN(_c!, _u, ++n);
-                    ndu = v.Magnitude();
+                    ndu = v.Magnitude;
                     isDeriveFound = (ndu > _tol);
                 } while (!isDeriveFound && n < _maxDerivOrder);
 
@@ -243,7 +243,7 @@ public class PcfOfEpcOfExtPC : FunctionWithDerivative
                         d1c = v1 - 4 * v2 + 3 * v3;
                     }
                 }
-                ndu = d1c.Magnitude();
+                ndu = d1c.Magnitude;
             }
         }
 
@@ -294,7 +294,7 @@ public class PcfOfEpcOfExtPC : FunctionWithDerivative
 
         CurveTool.D2(_c!, _u, out _pc, out Vector3D d1c, out Vector3D d2c);
 
-        double ndu = d1c.Magnitude();
+        double ndu = d1c.Magnitude;
         if (ndu <= _tol) // Singular case
         {
             // Derivative is approximated by three points
@@ -367,7 +367,7 @@ public class PcfOfEpcOfExtPC : FunctionWithDerivative
         {
             throw new TypeMismatchException();
         }
-        _sqDist.Append(_pc.SquareDistance(_p));
+        _sqDist.Append(_pc.SquareDistanceTo(_p));
 
         // It is necessary to always compute myD1f.
         _d1Init = true;
@@ -447,12 +447,12 @@ public class PcfOfEpcOfExtPC : FunctionWithDerivative
 
             CurveTool.D1(_c!, u, out _, out Vector3D vDer);
 
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vDer.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vDer.Y()))
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(vDer.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vDer.Y))
             {
                 continue;
             }
 
-            double vm = vDer.Magnitude();
+            double vm = vDer.Magnitude;
             if (vm > max)
             {
                 max = vm;

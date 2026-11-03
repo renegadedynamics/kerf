@@ -470,7 +470,7 @@ public class ExtremaPC_ExtendedGeometryTest
         Point3D aMinPoint = aNewResult[aMinIdx].Point;
 
         // Verify the distance is consistent
-        double aComputedSqDist = aPoint.SquareDistance(aMinPoint);
+        double aComputedSqDist = aPoint.SquareDistanceTo(aMinPoint);
         Assert.Equal(aNewResult[aMinIdx].SquareDistance, aComputedSqDist, THE_TOL);
     }
 

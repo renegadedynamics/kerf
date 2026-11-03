@@ -207,8 +207,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         for (int i = 1; i <= theNb; i++)
         {
             aPoles[i] = aP;
-            aP = new Point3D(aP.X() + theO.Real(-theScale, theScale), aP.Y() + theO.Real(-theScale, theScale),
-                            aP.Z() + theO.Real(-theScale, theScale));
+            aP = new Point3D(aP.X + theO.Real(-theScale, theScale), aP.Y + theO.Real(-theScale, theScale),
+                            aP.Z + theO.Real(-theScale, theScale));
         }
         return aPoles;
     }
@@ -270,8 +270,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     var aC = theO.Bool()
                                  ? new BSplineCurve3D(aPoles, theO.Weights(aNbPoles, true), aKnots, aMults, aDeg)
                                  : new BSplineCurve3D(aPoles, aKnots, aMults, aDeg);
-                    theU1 = aC.FirstParameter();
-                    theU2 = aC.LastParameter();
+                    theU1 = aC.FirstParameter;
+                    theU2 = aC.LastParameter;
                     if (theO.Bool())
                     {
                         double aLen = theU2 - theU1;
@@ -294,8 +294,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     // a trimmed curve of another kind
                     Curve3D aBasis = Curve(theO, theO.Int(0, 4), out double a1, out double a2, out _);
                     var aT = new TrimmedCurve3D(aBasis, a1, a2);
-                    theU1 = aT.FirstParameter();
-                    theU2 = aT.LastParameter();
+                    theU1 = aT.FirstParameter;
+                    theU2 = aT.LastParameter;
                     return aT;
                 }
         }
@@ -351,7 +351,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 var aB = new MakeVertex(anO.Pnt()).Vertex();
                 aE1 = new MakeEdge(aA, aB).Edge();
                 Point3D aPA = Tool.Pnt(aA), aPB = Tool.Pnt(aB);
-                Point3D aMid = new((aPA.X() + aPB.X()) / 2 + anO.Real(1, 5), (aPA.Y() + aPB.Y()) / 2, (aPA.Z() + aPB.Z()) / 2 + 3);
+                Point3D aMid = new((aPA.X + aPB.X) / 2 + anO.Real(1, 5), (aPA.Y + aPB.Y) / 2, (aPA.Z + aPB.Z) / 2 + 3);
                 var aArc = new MakeArcOfCircle(aPA, aMid, aPB).Value();
                 aE2 = new MakeEdge(aArc, aA, aB).Edge();
                 aKind = "shared ends";
@@ -434,8 +434,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
         {
             double anA = 2 * Math.PI * (i + theO.Real(0, 0.6)) / theNb;
             double aRi = aR * theO.Real(0.6, 1.2);
-            aPnts[i] = new Point3D(anAx.Location().XYZ() + anAx.XDirection().XYZ() * (aRi * Math.Cos(anA))
-                                  + anAx.YDirection().XYZ() * (aRi * Math.Sin(anA)) + anAx.Direction().XYZ() * theO.Real(-2, 2));
+            aPnts[i] = new Point3D(anAx.Location.XYZ() + anAx.XDirection.XYZ() * (aRi * Math.Cos(anA))
+                                  + anAx.YDirection.XYZ() * (aRi * Math.Sin(anA)) + anAx.Direction.XYZ() * theO.Real(-2, 2));
         }
         return aPnts;
     }
@@ -479,9 +479,9 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                     {
                         for (int i = 0; i + 1 < aPnts.Length; i++)
                         {
-                            Point3D aM = new((aPnts[i].X() + aPnts[i + 1].X()) / 2 + theO.Real(-2, 2),
-                                            (aPnts[i].Y() + aPnts[i + 1].Y()) / 2 + theO.Real(-2, 2),
-                                            (aPnts[i].Z() + aPnts[i + 1].Z()) / 2 + theO.Real(-2, 2));
+                            Point3D aM = new((aPnts[i].X + aPnts[i + 1].X) / 2 + theO.Real(-2, 2),
+                                            (aPnts[i].Y + aPnts[i + 1].Y) / 2 + theO.Real(-2, 2),
+                                            (aPnts[i].Z + aPnts[i + 1].Z) / 2 + theO.Real(-2, 2));
                             aMW.Add(new MakeEdge(new MakeArcOfCircle(aPnts[i], aM, aPnts[i + 1]).Value()).Edge());
                         }
                     }
@@ -497,8 +497,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                         Point3D a1 = aPnts[i], a2 = aPnts[(i + 1) % aPnts.Length];
                         var aPoles = new NCollection_Array1<Point3D>(1, 4);
                         aPoles[1] = a1;
-                        aPoles[2] = new Point3D(a1.X() + theO.Real(-3, 3), a1.Y() + theO.Real(-3, 3), a1.Z() + theO.Real(-3, 3));
-                        aPoles[3] = new Point3D(a2.X() + theO.Real(-3, 3), a2.Y() + theO.Real(-3, 3), a2.Z() + theO.Real(-3, 3));
+                        aPoles[2] = new Point3D(a1.X + theO.Real(-3, 3), a1.Y + theO.Real(-3, 3), a1.Z + theO.Real(-3, 3));
+                        aPoles[3] = new Point3D(a2.X + theO.Real(-3, 3), a2.Y + theO.Real(-3, 3), a2.Z + theO.Real(-3, 3));
                         aPoles[4] = a2;
                         aMW.Add(new MakeEdge(new BezierCurve3D(aPoles)).Edge());
                     }
@@ -593,8 +593,8 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             for (int i = 0; i < aNb; i++)
             {
                 double anA = 2 * Math.PI * (i + anO.Real(0, 0.5)) / aNb;
-                aSpinePnts[i] = new Point3D(anAx.Location().XYZ() + anAx.XDirection().XYZ() * (aR * Math.Cos(anA))
-                                           + anAx.YDirection().XYZ() * (aR * Math.Sin(anA)));
+                aSpinePnts[i] = new Point3D(anAx.Location.XYZ() + anAx.XDirection.XYZ() * (aR * Math.Cos(anA))
+                                           + anAx.YDirection.XYZ() * (aR * Math.Sin(anA)));
                 aMP.Add(aSpinePnts[i]);
             }
             aMP.Close();
@@ -625,7 +625,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
                 aStart = new Point3D(a.XYZ() * (1 - t) + b.XYZ() * t);
                 if (aMode == 2)
                 {
-                    aStart = new Point3D(aStart.XYZ() + anAx.Direction().XYZ() * anO.Real(0.5, 5));
+                    aStart = new Point3D(aStart.XYZ() + anAx.Direction.XYZ() * anO.Real(0.5, 5));
                 }
             }
             var aPP = new MakePolygon();
@@ -633,7 +633,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             int aNbP = anO.Int(1, 3);
             for (int i = 0; i < aNbP; i++)
             {
-                aPP.Add(new Point3D(aStart.X() + anO.Real(-5, 5), aStart.Y() + anO.Real(-5, 5), aStart.Z() + anO.Real(-5, 5)));
+                aPP.Add(new Point3D(aStart.X + anO.Real(-5, 5), aStart.Y + anO.Real(-5, 5), aStart.Z + anO.Real(-5, 5)));
             }
             Wire aProfile = aPP.Wire();
             double aTol = anO.Int(0, 2) switch { 0 => 1e-7, 1 => 1e-3, _ => 1.0 };
@@ -642,7 +642,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             aSpine = aP[0];
             aProfile = ShapeCasts.Wire(aP[1]);
             string aBefore = BRepTextComparison.Write(anInput);
-            string aWhat = $"Axe case {aCase} (mode {aMode}, {Kerf.Engine.Foundation.OcctTypeNames.Of(aSpine.ShapeType())})";
+            string aWhat = $"Axe case {aCase} (mode {aMode}, {Kerf.Engine.Foundation.OcctTypeNames.Of(aSpine.Type)})";
             aTally.Cases++;
 
             using var aNAx = new N.gp_Ax3();
@@ -680,20 +680,20 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
             }
             using N.gp_Pnt aNL = aNAx.Location();
             using N.gp_Dir aND = aNAx.Direction(), aNX = aNAx.XDirection(), aNY = aNAx.YDirection();
-            Point3D aPL = aPAx.Location();
-            Direction3D aPD = aPAx.Direction(), aPX = aPAx.XDirection(), aPY = aPAx.YDirection();
-            CompareDouble(aTally, aWhat + " Loc.X", aNL.X(), aPL.X());
-            CompareDouble(aTally, aWhat + " Loc.Y", aNL.Y(), aPL.Y());
-            CompareDouble(aTally, aWhat + " Loc.Z", aNL.Z(), aPL.Z());
-            CompareDouble(aTally, aWhat + " Dir.X", aND.X(), aPD.X());
-            CompareDouble(aTally, aWhat + " Dir.Y", aND.Y(), aPD.Y());
-            CompareDouble(aTally, aWhat + " Dir.Z", aND.Z(), aPD.Z());
-            CompareDouble(aTally, aWhat + " XDir.X", aNX.X(), aPX.X());
-            CompareDouble(aTally, aWhat + " XDir.Y", aNX.Y(), aPX.Y());
-            CompareDouble(aTally, aWhat + " XDir.Z", aNX.Z(), aPX.Z());
-            CompareDouble(aTally, aWhat + " YDir.X", aNY.X(), aPY.X());
-            CompareDouble(aTally, aWhat + " YDir.Y", aNY.Y(), aPY.Y());
-            CompareDouble(aTally, aWhat + " YDir.Z", aNY.Z(), aPY.Z());
+            Point3D aPL = aPAx.Location;
+            Direction3D aPD = aPAx.Direction, aPX = aPAx.XDirection, aPY = aPAx.YDirection;
+            CompareDouble(aTally, aWhat + " Loc.X", aNL.X(), aPL.X);
+            CompareDouble(aTally, aWhat + " Loc.Y", aNL.Y(), aPL.Y);
+            CompareDouble(aTally, aWhat + " Loc.Z", aNL.Z(), aPL.Z);
+            CompareDouble(aTally, aWhat + " Dir.X", aND.X(), aPD.X);
+            CompareDouble(aTally, aWhat + " Dir.Y", aND.Y(), aPD.Y);
+            CompareDouble(aTally, aWhat + " Dir.Z", aND.Z(), aPD.Z);
+            CompareDouble(aTally, aWhat + " XDir.X", aNX.X(), aPX.X);
+            CompareDouble(aTally, aWhat + " XDir.Y", aNX.Y(), aPX.Y);
+            CompareDouble(aTally, aWhat + " XDir.Z", aNX.Z(), aPX.Z);
+            CompareDouble(aTally, aWhat + " YDir.X", aNY.X(), aPY.X);
+            CompareDouble(aTally, aWhat + " YDir.Y", aNY.Y(), aPY.Y);
+            CompareDouble(aTally, aWhat + " YDir.Z", aNY.Z(), aPY.Z);
         }
         output.WriteLine($"profile from a vertex {aModes[0]}, from an edge {aModes[1]}, away {aModes[2]}");
         Finish(aTally);

@@ -56,7 +56,7 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     public readonly Hyperbola3D WithLocation(in Point3D p)
     {
         Frame3D pos = _pos;
-        pos = new Frame3D(p, pos.Direction(), pos.XDirection());
+        pos = new Frame3D(p, pos.Direction, pos.XDirection);
         return new Hyperbola3D(pos, _majorRadius, _minorRadius);
     }
 
@@ -91,125 +91,149 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
 
     /// <summary>The first asymptote, of direction <c>XDir + (Minor / Major) * YDir</c>.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is zero.</exception>
-    public readonly Axis3D Asymptote1()
+    public readonly Axis3D Asymptote1
     {
-        Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
-        Vector3D v1 = new(_pos.YDirection());
-        v1 = v1.Multiplied(_minorRadius / _majorRadius);
-        Vector3D v = new(_pos.XDirection());
-        v = v.Added(v1);
-        return new Axis3D(_pos.Location(), new Direction3D(v));
+        get
+        {
+            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
+            Vector3D v1 = new(_pos.YDirection);
+            v1 = v1.Multiplied(_minorRadius / _majorRadius);
+            Vector3D v = new(_pos.XDirection);
+            v = v.Added(v1);
+            return new Axis3D(_pos.Location, new Direction3D(v));
+        }
     }
 
     /// <summary>The second asymptote, of direction <c>XDir - (Minor / Major) * YDir</c>.</summary>
     /// <exception cref="ConstructionErrorException">The major radius is zero.</exception>
-    public readonly Axis3D Asymptote2()
+    public readonly Axis3D Asymptote2
     {
-        // OCCT: the message names Asymptote1
-        Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
-        Vector3D v1 = new(_pos.YDirection());
-        v1 = v1.Multiplied(-_minorRadius / _majorRadius);
-        Vector3D v = new(_pos.XDirection());
-        v = v.Added(v1);
-        return new Axis3D(_pos.Location(), new Direction3D(v));
+        get
+        {
+            // OCCT: the message names Asymptote1
+            Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
+            Vector3D v1 = new(_pos.YDirection);
+            v1 = v1.Multiplied(-_minorRadius / _majorRadius);
+            Vector3D v = new(_pos.XDirection);
+            v = v.Added(v1);
+            return new Axis3D(_pos.Location, new Direction3D(v));
+        }
     }
 
     /// <summary>The main axis: the normal to the hyperbola's plane through its centre.</summary>
-    public readonly Axis3D Axis() => _pos.Axis();
+    public readonly Axis3D Axis => _pos.Axis;
 
     /// <summary>The branch on the positive side of the Y axis: major and minor radii swapped.</summary>
     public readonly Hyperbola3D ConjugateBranch1()
-        => new(new Frame3D(_pos.Location(), _pos.Direction(), _pos.YDirection()), _minorRadius, _majorRadius);
+        => new(new Frame3D(_pos.Location, _pos.Direction, _pos.YDirection), _minorRadius, _majorRadius);
 
     /// <summary>The branch on the negative side of the Y axis: major and minor radii swapped.</summary>
     public readonly Hyperbola3D ConjugateBranch2()
     {
-        Direction3D d = _pos.YDirection();
+        Direction3D d = _pos.YDirection;
         d = d.Reversed();
-        return new Hyperbola3D(new Frame3D(_pos.Location(), _pos.Direction(), d), _minorRadius, _majorRadius);
+        return new Hyperbola3D(new Frame3D(_pos.Location, _pos.Direction, d), _minorRadius, _majorRadius);
     }
 
     /// <summary>The first directrix, on the positive side of the major axis, parallel to the minor axis.</summary>
     /// <exception cref="DomainErrorException">The major radius is zero.</exception>
-    public readonly Axis3D Directrix1()
+    public readonly Axis3D Directrix1
     {
-        double e = Eccentricity();
-        Xyz orig = _pos.XDirection().XYZ();
-        orig.Multiply(_majorRadius / e);
-        orig.Add(_pos.Location().XYZ());
-        return new Axis3D(new Point3D(orig), _pos.YDirection());
+        get
+        {
+            double e = Eccentricity;
+            Xyz orig = _pos.XDirection.XYZ();
+            orig.Multiply(_majorRadius / e);
+            orig.Add(_pos.Location.XYZ());
+            return new Axis3D(new Point3D(orig), _pos.YDirection);
+        }
     }
 
     /// <summary>The second directrix, symmetric to the first about the minor axis.</summary>
     /// <exception cref="DomainErrorException">The major radius is zero.</exception>
-    public readonly Axis3D Directrix2()
+    public readonly Axis3D Directrix2
     {
-        double e = Eccentricity();
-        Xyz orig = _pos.XDirection().XYZ();
-        orig.Multiply(-_majorRadius / e);
-        orig.Add(_pos.Location().XYZ());
-        return new Axis3D(new Point3D(orig), _pos.YDirection());
+        get
+        {
+            double e = Eccentricity;
+            Xyz orig = _pos.XDirection.XYZ();
+            orig.Multiply(-_majorRadius / e);
+            orig.Add(_pos.Location.XYZ());
+            return new Axis3D(new Point3D(orig), _pos.YDirection);
+        }
     }
 
     /// <summary>sqrt(Major^2 + Minor^2) / Major, greater than 1.</summary>
     /// <exception cref="DomainErrorException">The major radius is zero.</exception>
-    public readonly double Eccentricity()
+    public readonly double Eccentricity
     {
-        Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Eccentricity() - major radius is zero");
-        return Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius) / _majorRadius;
+        get
+        {
+            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Eccentricity() - major radius is zero");
+            return Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius) / _majorRadius;
+        }
     }
 
     /// <summary>The distance between the two foci.</summary>
-    public readonly double Focal() => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+    public readonly double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public readonly Point3D Focus1()
+    public readonly Point3D Focus1
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        Point3D pp = _pos.Location();
-        Direction3D dd = _pos.XDirection();
-        return new Point3D(pp.X() + c * dd.X(), pp.Y() + c * dd.Y(), pp.Z() + c * dd.Z());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            Point3D pp = _pos.Location;
+            Direction3D dd = _pos.XDirection;
+            return new Point3D(pp.X + c * dd.X, pp.Y + c * dd.Y, pp.Z + c * dd.Z);
+        }
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public readonly Point3D Focus2()
+    public readonly Point3D Focus2
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
-        Point3D pp = _pos.Location();
-        Direction3D dd = _pos.XDirection();
-        return new Point3D(pp.X() - c * dd.X(), pp.Y() - c * dd.Y(), pp.Z() - c * dd.Z());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius + _minorRadius * _minorRadius);
+            Point3D pp = _pos.Location;
+            Direction3D dd = _pos.XDirection;
+            return new Point3D(pp.X - c * dd.X, pp.Y - c * dd.Y, pp.Z - c * dd.Z);
+        }
     }
 
     /// <summary>The centre of the hyperbola.</summary>
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
-    public readonly double MajorRadius() => _majorRadius;
+    public readonly double MajorRadius => _majorRadius;
 
-    public readonly double MinorRadius() => _minorRadius;
+    public readonly double MinorRadius => _minorRadius;
 
     /// <summary>The other branch, on the negative side of the major axis.</summary>
     public readonly Hyperbola3D OtherBranch()
     {
-        Direction3D d = _pos.XDirection();
+        Direction3D d = _pos.XDirection;
         d = d.Reversed();
-        return new Hyperbola3D(new Frame3D(_pos.Location(), _pos.Direction(), d), _majorRadius, _minorRadius);
+        return new Hyperbola3D(new Frame3D(_pos.Location, _pos.Direction, d), _majorRadius, _minorRadius);
     }
 
     /// <summary>The focal parameter, Minor^2 / Major.</summary>
     /// <exception cref="DomainErrorException">The major radius is zero.</exception>
-    public readonly double Parameter()
+    public readonly double Parameter
     {
-        Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Parameter() - major radius is zero");
-        return (_minorRadius * _minorRadius) / _majorRadius;
+        get
+        {
+            Standard_DomainError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Parameter() - major radius is zero");
+            return (_minorRadius * _minorRadius) / _majorRadius;
+        }
     }
 
-    public readonly Frame3D Position() => _pos;
+    public readonly Frame3D Position => _pos;
 
     /// <summary>The major axis.</summary>
-    public readonly Axis3D XAxis() => new(_pos.Location(), _pos.XDirection());
+    public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
     /// <summary>The minor axis.</summary>
-    public readonly Axis3D YAxis() => new(_pos.Location(), _pos.YDirection());
+    public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
     public readonly Hyperbola3D Mirrored(in Point3D p)
     {
@@ -265,13 +289,13 @@ public readonly partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         Frame3D pos = _pos;
         double majorRadius = _majorRadius;
         double minorRadius = _minorRadius;
-        majorRadius *= t.ScaleFactor();
+        majorRadius *= t.ScaleFactor;
         if (majorRadius < 0)
         {
             majorRadius = -majorRadius;
         }
 
-        minorRadius *= t.ScaleFactor();
+        minorRadius *= t.ScaleFactor;
         if (minorRadius < 0)
         {
             minorRadius = -minorRadius;

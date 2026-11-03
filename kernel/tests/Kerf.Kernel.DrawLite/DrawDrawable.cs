@@ -53,8 +53,8 @@ public sealed class DrawShape(in Shape theShape) : DrawDrawable
             return;
         }
 
-        theResult.Append("shape ").Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(Shape.ShapeType())).Append(" ")
-                 .Append(global::Kerf.Engine.Topology.TopAbs.ShapeOrientationToString(Shape.Orientation()));
+        theResult.Append("shape ").Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(Shape.Type)).Append(" ")
+                 .Append(global::Kerf.Engine.Topology.TopAbs.ShapeOrientationToString(Shape.Orientation));
         if (Shape.Free())
         {
             theResult.Append(" Free");
@@ -65,22 +65,22 @@ public sealed class DrawShape(in Shape theShape) : DrawDrawable
             theResult.Append(" Modified");
         }
 
-        if (Shape.Orientable())
+        if (Shape.IsOrientable)
         {
             theResult.Append(" Orientable");
         }
 
-        if (Shape.Closed())
+        if (Shape.IsClosed)
         {
             theResult.Append(" Closed");
         }
 
-        if (Shape.Infinite())
+        if (Shape.IsInfinite)
         {
             theResult.Append(" Infinite");
         }
 
-        if (Shape.Convex())
+        if (Shape.IsConvex)
         {
             theResult.Append(" Convex");
         }
@@ -167,11 +167,11 @@ public sealed class DrawGeometry : DrawDrawable
                 break;
             case Point3D aPoint:
                 theStream.Write(string.Create(CultureInfo.InvariantCulture,
-                                              $"Point : {DrawFormat.Scientific(aPoint.X(), 15)}, {DrawFormat.Scientific(aPoint.Y(), 15)}, {DrawFormat.Scientific(aPoint.Z(), 15)}\n"));
+                                              $"Point : {DrawFormat.Scientific(aPoint.X, 15)}, {DrawFormat.Scientific(aPoint.Y, 15)}, {DrawFormat.Scientific(aPoint.Z, 15)}\n"));
                 break;
             case Point2D aPoint:
                 theStream.Write(string.Create(CultureInfo.InvariantCulture,
-                                              $"Point 2d : {DrawFormat.Scientific(aPoint.X(), 15)}, {DrawFormat.Scientific(aPoint.Y(), 15)}\n"));
+                                              $"Point 2d : {DrawFormat.Scientific(aPoint.X, 15)}, {DrawFormat.Scientific(aPoint.Y, 15)}\n"));
                 break;
             case global::Kerf.Engine.Meshing.Polygon3D aPolygon:
                 global::Kerf.Engine.Meshing.Poly.Dump(aPolygon, theStream);
@@ -199,10 +199,10 @@ public sealed class DrawGeometry : DrawDrawable
                 global::Kerf.Engine.Exchange.Brep.SurfaceSet.PrintSurface(aSurface, theStream, true);
                 break;
             case Point3D aPoint:
-                theStream.Write($"1 {DrawFormat.Scientific(aPoint.X(), 15)} {DrawFormat.Scientific(aPoint.Y(), 15)} {DrawFormat.Scientific(aPoint.Z(), 15)}\n");
+                theStream.Write($"1 {DrawFormat.Scientific(aPoint.X, 15)} {DrawFormat.Scientific(aPoint.Y, 15)} {DrawFormat.Scientific(aPoint.Z, 15)}\n");
                 break;
             case Point2D aPoint:
-                theStream.Write($"0 {DrawFormat.Scientific(aPoint.X(), 15)} {DrawFormat.Scientific(aPoint.Y(), 15)}\n");
+                theStream.Write($"0 {DrawFormat.Scientific(aPoint.X, 15)} {DrawFormat.Scientific(aPoint.Y, 15)}\n");
                 break;
             case global::Kerf.Engine.Meshing.Polygon3D aPolygon:
                 global::Kerf.Engine.Meshing.Poly.Write(aPolygon, theStream);

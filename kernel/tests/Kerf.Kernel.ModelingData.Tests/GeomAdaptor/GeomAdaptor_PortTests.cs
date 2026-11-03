@@ -43,29 +43,29 @@ public class GeomAdaptor_PortTests
         var aParallel = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new LineCurve3D(new Axis3D(new Point3D(3, 0, 0), new Direction3D(0, 0, 1))), -2, 2);
         var aCyl = new global::Kerf.Engine.Geometry.Adaptors.RevolutionSurfaceAdaptor(aParallel, ZAxis);
         Assert.Equal(SurfaceKind.Cylinder, aCyl.GetType());
-        Assert.Equal(3.0, aCyl.Cylinder().Radius(), 12);
+        Assert.Equal(3.0, aCyl.Cylinder().Radius, 12);
 
         // a line normal to the axis: a plane
         var aNormal = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new LineCurve3D(new Axis3D(new Point3D(1, 0, 2), new Direction3D(1, 0, 0))), 0, 5);
         var aPln = new global::Kerf.Engine.Geometry.Adaptors.RevolutionSurfaceAdaptor(aNormal, ZAxis);
         Assert.Equal(SurfaceKind.Plane, aPln.GetType());
-        Assert.Equal(2.0, aPln.Plane().Location().Z(), 12);
+        Assert.Equal(2.0, aPln.Plane().Location.Z, 12);
 
         // a line crossing the axis: a cone
         var aSlant = new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new LineCurve3D(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 1))), 0.5, 3);
         var aCone = new global::Kerf.Engine.Geometry.Adaptors.RevolutionSurfaceAdaptor(aSlant, ZAxis);
         Assert.Equal(SurfaceKind.Cone, aCone.GetType());
-        Assert.Equal(Math.PI / 4, Math.Abs(aCone.Cone().SemiAngle()), 12);
+        Assert.Equal(Math.PI / 4, Math.Abs(aCone.Cone().SemiAngle), 12);
 
         // a circle centred on the axis, in a plane containing it: a sphere; off the axis: a torus
         var aMeridian = new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0));
         var aSph = new global::Kerf.Engine.Geometry.Adaptors.RevolutionSurfaceAdaptor(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new CircleCurve3D(aMeridian, 2)), ZAxis);
         Assert.Equal(SurfaceKind.Sphere, aSph.GetType());
-        Assert.Equal(2.0, aSph.Sphere().Radius(), 12);
+        Assert.Equal(2.0, aSph.Sphere().Radius, 12);
         var aTorusMeridian = new Frame3D(new Point3D(5, 0, 0), new Direction3D(0, 1, 0), new Direction3D(1, 0, 0));
         var aTor = new global::Kerf.Engine.Geometry.Adaptors.RevolutionSurfaceAdaptor(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new CircleCurve3D(aTorusMeridian, 1)), ZAxis);
         Assert.Equal(SurfaceKind.Torus, aTor.GetType());
-        Assert.Equal(5.0, aTor.Torus().MajorRadius(), 12);
+        Assert.Equal(5.0, aTor.Torus().MajorRadius, 12);
 
         // a B-spline curve: a general surface of revolution, evaluated as Geom_SurfaceOfRevolution
         var aGen = new global::Kerf.Engine.Geometry.Adaptors.RevolutionSurfaceAdaptor(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(Cubic()), ZAxis);
@@ -89,12 +89,12 @@ public class GeomAdaptor_PortTests
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         var aCyl = new global::Kerf.Engine.Geometry.Adaptors.SurfaceOfLinearExtrusion(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(aCircle), new Direction3D(0, 0, -1));
         Assert.Equal(SurfaceKind.Cylinder, aCyl.GetType());
-        Assert.Equal(-1.0, aCyl.Cylinder().Position().Direction().Z(), 12); // reversed to the direction
+        Assert.Equal(-1.0, aCyl.Cylinder().Position.Direction.Z, 12); // reversed to the direction
 
         var aLine = new LineCurve3D(new Axis3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         var aPln = new global::Kerf.Engine.Geometry.Adaptors.SurfaceOfLinearExtrusion(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(aLine), new Direction3D(0, 1, 0));
         Assert.Equal(SurfaceKind.Plane, aPln.GetType());
-        Assert.Equal(1.0, Math.Abs(aPln.Plane().Axis().Direction().Z()), 12);
+        Assert.Equal(1.0, Math.Abs(aPln.Plane().Axis.Direction.Z), 12);
 
         var aGen = new global::Kerf.Engine.Geometry.Adaptors.SurfaceOfLinearExtrusion(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(Cubic()), new Direction3D(0, 1, 1));
         Assert.Equal(SurfaceKind.SurfaceOfExtrusion, aGen.GetType());
@@ -121,19 +121,19 @@ public class GeomAdaptor_PortTests
         BSplineCurve3D aCopy = Assert.IsType<BSplineCurve3D>(aWhole);
         Assert.NotSame(aC, aCopy);
         TrimmedCurve3D aTrim = Assert.IsType<TrimmedCurve3D>(global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(aC, 0.2, 0.7)));
-        Assert.Equal(0.2, aTrim.FirstParameter());
-        Assert.Equal(0.7, aTrim.LastParameter());
+        Assert.Equal(0.2, aTrim.FirstParameter);
+        Assert.Equal(0.7, aTrim.LastParameter);
 
         var aCyl = new CylindricalSurface(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1)), 2);
         Surface aS = global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeSurface(new global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor(aCyl, 0, 1, -1, 1));
         TrimmedSurface aT = Assert.IsType<TrimmedSurface>(aS);
-        Assert.IsType<CylindricalSurface>(aT.BasisSurface());
+        Assert.IsType<CylindricalSurface>(aT.BasisSurface);
         Assert.IsType<CylindricalSurface>(global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeSurface(new global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor(aCyl, 0, 1, -1, 1), false));
 
         var anOff = new OffsetSurface(aCyl, 0.5);
         // an offset of the trimmed basis, whose bounds are already the adaptor's
         var anOffS = Assert.IsType<OffsetSurface>(global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeSurface(new global::Kerf.Engine.Geometry.Adaptors.SurfaceAdaptor(anOff, 0, 1, -1, 1)));
-        Assert.IsType<TrimmedSurface>(anOffS.BasisSurface());
+        Assert.IsType<TrimmedSurface>(anOffS.BasisSurface);
         Assert.True(anOffS.Value(0.5, 0.5).IsEqual(anOff.Value(0.5, 0.5), 1e-12));
 
         Assert.Throws<DomainErrorException>(() => global::Kerf.Engine.Geometry.Adaptors.GeomAdaptor.MakeCurve(new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(new OffsetCurve3D(aC, 1, new Direction3D(0, 1, 0)))));

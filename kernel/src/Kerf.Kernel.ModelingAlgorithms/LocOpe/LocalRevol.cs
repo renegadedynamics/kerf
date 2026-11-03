@@ -102,7 +102,7 @@ public sealed class LocalRevol
         _lastShape = theRevol.LastShape();
 
         Explorer exp = new();
-        if (theBase.ShapeType() == ShapeType.Face)
+        if (theBase.Type == ShapeType.Face)
         {
             for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
             {
@@ -261,8 +261,8 @@ public sealed class LocalRevol
             Circle3D cax = new();
             if (FindCircle(_axis, pvt, ref cax))
             {
-                Frame3D a2 = cax.Position();
-                double r = cax.Radius();
+                Frame3D a2 = cax.Position;
+                double r = cax.Radius;
                 CircleCurve3D ci = new(a2, r);
                 scurves.Append(ci);
             }
@@ -286,8 +286,8 @@ public sealed class LocalRevol
         CircleCurve3D? theCi = null;
         if (FindCircle(_axis, bar, ref cax))
         {
-            Frame3D a2 = cax.Position();
-            double r = cax.Radius();
+            Frame3D a2 = cax.Position;
+            double r = cax.Radius;
             theCi = new CircleCurve3D(a2, r);
         }
         return theCi;
@@ -296,14 +296,14 @@ public sealed class LocalRevol
     /// <summary>The circle around the axis through the point (false when the point is on the axis).</summary>
     internal static bool FindCircle(in Axis3D ax, in Point3D pt, ref Circle3D ci)
     {
-        Direction3D dax = ax.Direction();
-        Vector3D op = new(ax.Location(), pt);
+        Direction3D dax = ax.Direction;
+        Vector3D op = new(ax.Location, pt);
 
         double prm = op.Dot(new Vector3D(dax));
 
-        Point3D prj = new(ax.Location().XYZ().Added(prm * dax.XYZ()));
+        Point3D prj = new(ax.Location.XYZ().Added(prm * dax.XYZ()));
         Vector3D axx = new(prj, pt);
-        double radius = axx.Magnitude();
+        double radius = axx.Magnitude;
         if (radius < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             return false;

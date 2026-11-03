@@ -13,7 +13,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// P(u, v) = Center + (RefRadius + v * sin(Ang)) * (cos(u) * XDir + sin(u) * YDir) + v * cos(Ang) * ZDir. The
 /// trigonometric values of U are computed once per U parameter.
 /// </summary>
-public sealed class ConeGrid : GeomGridEvalGrid.ISurfaceEvaluator
+internal sealed class ConeGrid : GeomGridEvalGrid.ISurfaceEvaluator
 {
     private struct Data
     {
@@ -46,28 +46,28 @@ public sealed class ConeGrid : GeomGridEvalGrid.ISurfaceEvaluator
 
     private Data ExtractData()
     {
-        Cone cone = _geom!.Cone();
-        Point3D center = cone.Location();
-        Direction3D xDir = cone.Position().XDirection();
-        Direction3D yDir = cone.Position().YDirection();
-        Direction3D zDir = cone.Position().Direction();
+        Cone cone = _geom!.Cone;
+        Point3D center = cone.Location;
+        Direction3D xDir = cone.Position.XDirection;
+        Direction3D yDir = cone.Position.YDirection;
+        Direction3D zDir = cone.Position.Direction;
         return new Data
         {
-            CX = center.X(),
-            CY = center.Y(),
-            CZ = center.Z(),
-            XX = xDir.X(),
-            XY = xDir.Y(),
-            XZ = xDir.Z(),
-            YX = yDir.X(),
-            YY = yDir.Y(),
-            YZ = yDir.Z(),
-            ZX = zDir.X(),
-            ZY = zDir.Y(),
-            ZZ = zDir.Z(),
-            RefRadius = cone.RefRadius(),
-            SinAng = Math.Sin(cone.SemiAngle()),
-            CosAng = Math.Cos(cone.SemiAngle()),
+            CX = center.X,
+            CY = center.Y,
+            CZ = center.Z,
+            XX = xDir.X,
+            XY = xDir.Y,
+            XZ = xDir.Z,
+            YX = yDir.X,
+            YY = yDir.Y,
+            YZ = yDir.Z,
+            ZX = zDir.X,
+            ZY = zDir.Y,
+            ZZ = zDir.Z,
+            RefRadius = cone.RefRadius,
+            SinAng = Math.Sin(cone.SemiAngle),
+            CosAng = Math.Cos(cone.SemiAngle),
         };
     }
 

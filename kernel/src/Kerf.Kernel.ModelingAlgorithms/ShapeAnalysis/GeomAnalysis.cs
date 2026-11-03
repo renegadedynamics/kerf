@@ -80,7 +80,7 @@ public static class GeomAnalysis
         {
             for (int i = pnts.Lower(); i <= pnts.Upper(); ++i)
             {
-                double d = pln.Distance(pnts[i]);
+                double d = pln.DistanceTo(pnts[i]);
                 if (maxDist < d)
                 {
                     maxDist = d;
@@ -160,12 +160,12 @@ public static class GeomAnalysis
         {
             trsf = trsf.WithScale(new Point3D(0, 0, 0), mm); // OCCT: SetScale resets the transformation, dropping the rotation set above (occt-issues.md)
         }
-        Vector3D tp = new(gtrsf.TranslationPart());
+        Vector3D tp = new(gtrsf.TranslationXyz());
         if (unit != 1.0)
         {
             tp = tp.Multiplied(unit);
         }
-        if (tp.X() != 0 || tp.Y() != 0 || tp.Z() != 0)
+        if (tp.X != 0 || tp.Y != 0 || tp.Z != 0)
         {
             trsf = trsf.WithTranslationPart(tp);
         }

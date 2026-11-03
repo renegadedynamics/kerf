@@ -182,8 +182,8 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
         double newFirst, newLast;
         NCollection_Array1<double> tk = bSpline.InternalKnots();
         NCollection_Array1<int> tm = bSpline.InternalMultiplicities();
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpline.Degree(), tk, tm, u1, bSpline.IsPeriodic, 1, nb, out index1, out newFirst);
-        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpline.Degree(), tk, tm, u2, bSpline.IsPeriodic, 1, nb, out index2, out newLast);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpline.Degree, tk, tm, u1, bSpline.IsPeriodic, 1, nb, out index1, out newFirst);
+        global::Kerf.Engine.Geometry.Splines.BSplCLib.LocateParameter(bSpline.Degree, tk, tm, u2, bSpline.IsPeriodic, 1, nb, out index2, out newLast);
         if (Math.Abs(newFirst - tk[index1 + 1]) < global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             if (index1 < nb)
@@ -216,7 +216,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                     multMax = tm[i];
                 }
             }
-            multMax = bSpline.Degree() - multMax;
+            multMax = bSpline.Degree - multMax;
         }
         if (multMax <= 0)
         {
@@ -257,7 +257,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
         {
             throw new NullObjectException();
         }
-        LoadCore(curve, curve.FirstParameter(), curve.LastParameter());
+        LoadCore(curve, curve.FirstParameter, curve.LastParameter);
     }
 
     /// <summary>Loads the curve between theUFirst and theULast.</summary>
@@ -298,32 +298,32 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             Type theType = c.DynamicType();
             if (theType == typeof(TrimmedCurve2D))
             {
-                Load(((TrimmedCurve2D)c).BasisCurve(), uFirst, uLast);
+                Load(((TrimmedCurve2D)c).BasisCurve, uFirst, uLast);
             }
             else if (theType == typeof(CircleCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Circle;
-                _curveData = ((CircleCurve2D)c).Circ2d();
+                _curveData = ((CircleCurve2D)c).Circle;
             }
             else if (theType == typeof(LineCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Line;
-                _curveData = ((LineCurve2D)c).Lin2d();
+                _curveData = ((LineCurve2D)c).Line;
             }
             else if (theType == typeof(EllipseCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Ellipse;
-                _curveData = ((EllipseCurve2D)c).Elips2d();
+                _curveData = ((EllipseCurve2D)c).Ellipse;
             }
             else if (theType == typeof(ParabolaCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Parabola;
-                _curveData = ((ParabolaCurve2D)c).Parab2d();
+                _curveData = ((ParabolaCurve2D)c).Parabola;
             }
             else if (theType == typeof(HyperbolaCurve2D))
             {
                 _typeCurve = global::Kerf.Geometry.CurveKind.Hyperbola;
-                _curveData = ((HyperbolaCurve2D)c).Hypr2d();
+                _curveData = ((HyperbolaCurve2D)c).Hyperbola;
             }
             else if (theType == typeof(BezierCurve2D))
             {
@@ -346,11 +346,11 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                 _typeCurve = OffsetCurve;
                 OffsetCurve2D offsetCurve = (OffsetCurve2D)_curve;
                 // Create nested adaptor for base curve and store offset data
-                Curve2D baseCurve = offsetCurve.BasisCurve();
+                Curve2D baseCurve = offsetCurve.BasisCurve;
 
                 OffsetData offsetData = new OffsetData();
                 offsetData.BasisAdaptor = new CurveAdaptor2D(baseCurve, uFirst, uLast);
-                offsetData.Offset = offsetCurve.Offset();
+                offsetData.Offset = offsetCurve.Offset;
                 offsetData.EvalRep = offsetCurve.EvalRepresentation();
                 _curveData = offsetData;
             }
@@ -429,7 +429,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                 return 1;
             }
 
-            int degree = bSpline.Degree();
+            int degree = bSpline.Degree;
             int cont;
 
             switch (s)
@@ -485,7 +485,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                     baseS = CN;
                     break;
             }
-            CurveAdaptor2D adaptor = new CurveAdaptor2D(((OffsetCurve2D)_curve!).BasisCurve(),
+            CurveAdaptor2D adaptor = new CurveAdaptor2D(((OffsetCurve2D)_curve!).BasisCurve,
                                                                     _first,
                                                                     _last);
             myNbIntervals = adaptor.NbIntervals(baseS);
@@ -514,7 +514,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                 return;
             }
 
-            int degree = bSpline.Degree();
+            int degree = bSpline.Degree;
             int cont;
 
             switch (s)
@@ -571,7 +571,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                     break;
             }
 
-            CurveAdaptor2D adaptor = new CurveAdaptor2D(((OffsetCurve2D)_curve!).BasisCurve(),
+            CurveAdaptor2D adaptor = new CurveAdaptor2D(((OffsetCurve2D)_curve!).BasisCurve,
                                                                     _first,
                                                                     _last);
             myNbIntervals = adaptor.NbIntervals(baseS);
@@ -603,7 +603,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             {
                 Point2D pd = Value(_first);
                 Point2D pf = Value(_last);
-                return (pd.Distance(pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                return (pd.DistanceTo(pf) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             else
             {
@@ -614,7 +614,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
 
     public override bool IsPeriodic => _curve!.IsPeriodic;
 
-    public override double Period() => _curve!.LastParameter() - _curve.FirstParameter();
+    public override double Period() => _curve!.LastParameter - _curve.FirstParameter;
 
     // Rebuilds the B-spline cache for the span of theParameter
     private void RebuildCache(double parameter)
@@ -624,7 +624,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             // Create cache for Bezier
             BezierData bezierData = (BezierData)_curveData!;
             BezierCurve2D bezier = (BezierCurve2D)_curve!;
-            int deg = bezier.Degree();
+            int deg = bezier.Degree;
             // OCCT wraps BSplCLib::FlatBezierKnots(aDeg) in an array; the curve's shared flat knots are the same values.
             NCollection_Array1<double> flatKnots = bezier.InternalKnotSequence();
             if (bezierData.Cache is null)
@@ -644,7 +644,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             BSplineCurve2D bSpline = bSplineData.Curve!;
             if (bSplineData.Cache is null)
             {
-                bSplineData.Cache = new Cache(bSpline.Degree(),
+                bSplineData.Cache = new Cache(bSpline.Degree,
                                                         bSpline.IsPeriodic,
                                                         bSpline.InternalKnotSequence(),
                                                         bSpline.InternalPoles(),
@@ -801,7 +801,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
     }
 
     /// <summary>The point and first derivative at U.</summary>
-    public sealed override Curve2D.ResD1 EvalD1(double u)
+    internal sealed override Curve2D.ResD1 EvalD1(double u)
     {
         double U = u;
         Curve2D.ResD1 result;
@@ -897,7 +897,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
     }
 
     /// <summary>The point and first two derivatives at U.</summary>
-    public sealed override Curve2D.ResD2 EvalD2(double u)
+    internal sealed override Curve2D.ResD2 EvalD2(double u)
     {
         double U = u;
         Curve2D.ResD2 result;
@@ -997,7 +997,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
     }
 
     /// <summary>The point and first three derivatives at U.</summary>
-    public sealed override Curve2D.ResD3 EvalD3(double u)
+    internal sealed override Curve2D.ResD3 EvalD3(double u)
     {
         double U = u;
         Curve2D.ResD3 result;
@@ -1169,7 +1169,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                 return ruv;
             case global::Kerf.Geometry.CurveKind.Circle:
                 {
-                    double r = ((Circle2D)_curveData!).Radius();
+                    double r = ((Circle2D)_curveData!).Radius;
                     if (r > ruv / 2.0)
                     {
                         return 2 * Math.Asin(ruv / (2 * r));
@@ -1181,7 +1181,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
                 }
             case global::Kerf.Geometry.CurveKind.Ellipse:
                 {
-                    return ruv / ((Ellipse2D)_curveData!).MajorRadius();
+                    return ruv / ((Ellipse2D)_curveData!).MajorRadius;
                 }
             case BezierCurve:
                 {
@@ -1246,11 +1246,11 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
     {
         if (_typeCurve == BezierCurve)
         {
-            return ((BezierCurve2D)_curve!).Degree();
+            return ((BezierCurve2D)_curve!).Degree;
         }
         else if (_typeCurve == BSplineCurve)
         {
-            return ((BSplineData)_curveData!).Curve!.Degree();
+            return ((BSplineData)_curveData!).Curve!.Degree;
         }
         else
         {
@@ -1338,7 +1338,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
         else if (curve.IsKind<BSplineCurve2D>())
         {
             nbs = ((BSplineCurve2D)curve).KnotCount;
-            nbs *= ((BSplineCurve2D)curve).Degree();
+            nbs *= ((BSplineCurve2D)curve).Degree;
             if (nbs < 2.0)
             {
                 nbs = 2;
@@ -1346,13 +1346,13 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
         }
         else if (curve.IsKind<OffsetCurve2D>())
         {
-            Curve2D aCurve = ((OffsetCurve2D)curve).BasisCurve();
+            Curve2D aCurve = ((OffsetCurve2D)curve).BasisCurve;
             return Max(nbs, NbPoints(aCurve));
         }
 
         else if (curve.IsKind<TrimmedCurve2D>())
         {
-            Curve2D aCurve = ((TrimmedCurve2D)curve).BasisCurve();
+            Curve2D aCurve = ((TrimmedCurve2D)curve).BasisCurve;
             return Max(nbs, NbPoints(aCurve));
         }
         if (nbs > 300)

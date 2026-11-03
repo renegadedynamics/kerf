@@ -71,17 +71,17 @@ public sealed class CircLin2dBisec
         }
 
         ConstraintBisec bissol;
-        double xdir = _line.Direction().X();
-        double ydir = _line.Direction().Y();
-        double xloc = _line.Location().X();
-        double yloc = _line.Location().Y();
-        double xcencir = _circle.Location().X();
-        double ycencir = _circle.Location().Y();
-        double r1 = _circle.Radius();
-        double dist = _line.Distance(_circle.Location());
-        if ((Math.Abs(_line.Distance(_circle.Location()) - _circle.Radius()) <= Constants.Resolution()) && (index == 1))
+        double xdir = _line.Direction.X;
+        double ydir = _line.Direction.Y;
+        double xloc = _line.Location.X;
+        double yloc = _line.Location.Y;
+        double xcencir = _circle.Location.X;
+        double ycencir = _circle.Location.Y;
+        double r1 = _circle.Radius;
+        double dist = _line.DistanceTo(_circle.Location);
+        if ((Math.Abs(_line.DistanceTo(_circle.Location) - _circle.Radius) <= Constants.Resolution()) && (index == 1))
         {
-            Line2D biscirlin1 = new(_circle.Location(), new Direction2D(-ydir, xdir));
+            Line2D biscirlin1 = new(_circle.Location, new Direction2D(-ydir, xdir));
             bissol = new BLine(biscirlin1);
         }
         else

@@ -15,8 +15,8 @@ namespace Kerf.Geometry;
 public abstract class BoundedCurve3D : Curve3D
 {
     /// <summary>The end point of the curve.</summary>
-    public abstract Point3D EndPoint();
+    public abstract Point3D EndPoint { get; }
 
     /// <summary>The start point of the curve.</summary>
-    public abstract Point3D StartPoint();
+    public abstract Point3D StartPoint { get; }
 }

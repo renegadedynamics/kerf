@@ -58,7 +58,7 @@ public class PatchArcFunction : FunctionWithDerivative, IArcFunction
     public override bool Value(double x, out double f)
     {
         Point2D p2d = _arc!.Value(x);
-        _surf!.D0(p2d.X(), p2d.Y(), out _ptsol);
+        _surf!.D0(p2d.X, p2d.Y, out _ptsol);
         f = _quad.Distance(_ptsol);
         return true;
     }
@@ -67,8 +67,8 @@ public class PatchArcFunction : FunctionWithDerivative, IArcFunction
     {
         Vector3D v = new();
         _arc!.D1(x, out Point2D p2d, out Vector2D d2d);
-        _surf!.D1(p2d.X(), p2d.Y(), out _ptsol, out Vector3D d1u, out Vector3D d1v);
-        v = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        _surf!.D1(p2d.X, p2d.Y, out _ptsol, out Vector3D d1u, out Vector3D d1v);
+        v = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
         d = v.Dot(_quad.Gradient(_ptsol));
         return true;
     }
@@ -79,8 +79,8 @@ public class PatchArcFunction : FunctionWithDerivative, IArcFunction
         Vector3D v2 = new();
         f = 0.0;
         _arc!.D1(x, out Point2D p2d, out Vector2D d2d);
-        _surf!.D1(p2d.X(), p2d.Y(), out _ptsol, out Vector3D d1u, out Vector3D d1v);
-        v1 = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        _surf!.D1(p2d.X, p2d.Y, out _ptsol, out Vector3D d1u, out Vector3D d1v);
+        v1 = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
         _quad.ValAndGrad(_ptsol, ref f, ref v2);
         d = v1.Dot(v2);
         return true;

@@ -127,7 +127,7 @@ internal static partial class Builder_0
         sens = 1;
         Vertex vref;
         Edge e = spine.Edges(1);
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             vref = Exploration.LastVertex(e);
         }
@@ -142,7 +142,7 @@ internal static partial class Builder_0
         else
         {
             Edge e1 = spine.Edges(spine.EdgeCount);
-            if (e1.Orientation() == Reversed)
+            if (e1.Orientation == Reversed)
             {
                 vref = Exploration.FirstVertex(e1);
             }
@@ -178,7 +178,7 @@ internal static partial class Builder_0
         sens = 1;
         Vertex vref;
         Edge e = spine.Edges(1);
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             vref = Exploration.LastVertex(e);
         }
@@ -193,7 +193,7 @@ internal static partial class Builder_0
         else
         {
             Edge e1 = spine.Edges(spine.EdgeCount);
-            if (e1.Orientation() == Reversed)
+            if (e1.Orientation == Reversed)
             {
                 vref = Exploration.FirstVertex(e1);
             }
@@ -239,8 +239,8 @@ internal static partial class Builder_0
     {
         double distmax = 0.0;
 
-        double f = c.FirstParameter();
-        double l = c.LastParameter();
+        double f = c.FirstParameter;
+        double l = c.LastParameter;
         int nbp = 45;
         double step = 1.0 / (nbp - 1);
         for (int i = 0; i < nbp; i++)
@@ -253,17 +253,17 @@ internal static partial class Builder_0
             pc2.Value(t).Coord(out u, out v);
             Point3D pS2 = s2.Value(u, v);
             Point3D pC = c.Value(t);
-            double d = pS1.SquareDistance(pC);
+            double d = pS1.SquareDistanceTo(pC);
             if (d > distmax)
             {
                 distmax = d;
             }
-            d = pS2.SquareDistance(pC);
+            d = pS2.SquareDistanceTo(pC);
             if (d > distmax)
             {
                 distmax = d;
             }
-            d = pS1.SquareDistance(pS2);
+            d = pS1.SquareDistanceTo(pS2);
             if (d > distmax)
             {
                 distmax = d;
@@ -291,7 +291,7 @@ internal static partial class Builder_0
         }
         if (res is TrimmedSurface tr)
         {
-            res = tr.BasisSurface();
+            res = tr.BasisSurface;
         }
 
         double U1 = hs.FirstUParameter(), U2 = hs.LastUParameter();
@@ -300,7 +300,7 @@ internal static partial class Builder_0
         {
             // Protection against Construction Errors
             double u1, u2, v1, v2;
-            res.Bounds(out u1, out u2, out v1, out v2);
+            res.ParameterBounds(out u1, out u2, out v1, out v2);
             if (!res.IsUPeriodic)
             {
                 if (U1 < u1)
@@ -342,7 +342,7 @@ internal static partial class Builder_0
         int mult, ii;
         int nbK = bs.KnotCount;
 
-        for (mult = bs.Degree(); mult > multMin; mult--)
+        for (mult = bs.Degree; mult > multMin; mult--)
         {
             tol *= 0.5; // Progressive reduction
             for (ii = nbK; ii > 1; ii--)

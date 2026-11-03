@@ -92,7 +92,7 @@ public class BRepFill_EvolvedTests
         Explorer aProfileEdges = new(aProfile, ShapeType.Edge);
         ISchematiqList<Shape> aGenerated = aMaker.GeneratedShapes(aSpineEdges.Current(), aProfileEdges.Current());
         Assert.Single(aGenerated);
-        Assert.Equal(ShapeType.Face, aGenerated[0].ShapeType());
+        Assert.Equal(ShapeType.Face, aGenerated[0].Type);
         Assert.True(aGenerated[0].TShape()!.IsFrozen);
         Assert.Empty(aMaker.GeneratedShapes(aProfileEdges.Current(), aSpineEdges.Current()));
 
@@ -110,7 +110,7 @@ public class BRepFill_EvolvedTests
 
         MakeEvolved aMaker = new(aFace, aProfile, global::Kerf.Geometry.JoinKind.Arc, true, true);
         Shape aResult = aMaker.Shape();
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
         Assert.True(new Analyzer(aResult).IsValid());
         Assert.Equal(500.0, Volume(aResult), 1.0e-9);
         Assert.False(aMaker.Top().IsNull);

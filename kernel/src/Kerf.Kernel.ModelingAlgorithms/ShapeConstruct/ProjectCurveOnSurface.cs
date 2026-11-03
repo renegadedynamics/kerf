@@ -262,20 +262,20 @@ public class ProjectCurveOnSurface : Transient
         {
             if (surf is TrimmedSurface rts)
             {
-                plane = rts.BasisSurface() as PlaneSurface;
+                plane = rts.BasisSurface as PlaneSurface;
             }
             else
             {
                 if (surf is OffsetSurface os)
                 {
-                    plane = os.BasisSurface() as PlaneSurface;
+                    plane = os.BasisSurface as PlaneSurface;
                 }
             }
         }
 
         if (plane is not null)
         {
-            Curve3D? projOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(c3D, plane, plane.Position().Direction(), true);
+            Curve3D? projOnPlane = global::Kerf.Engine.Geometry.Projection.GeomProjLib.ProjectOnPlane(c3D, plane, plane.Position.Direction, true);
             CurveAdaptor hc = new(projOnPlane!);
             ProjectedCurve proj = new(_surf.Adaptor3d()!, hc);
 
@@ -287,7 +287,7 @@ public class ProjectCurveOnSurface : Transient
 
             if (result is TrimmedCurve2D tc)
             {
-                result = tc.BasisCurve();
+                result = tc.BasisCurve;
             }
 
             return result;
@@ -306,7 +306,7 @@ public class ProjectCurveOnSurface : Transient
         for (int j = 0; j < nbCache; ++j)
         {
             (Point3D first, Point2D second) cachePnt = _cache[j];
-            if (cachePnt.first.SquareDistance(point) < aTol2)
+            if (cachePnt.first.SquareDistanceTo(point) < aTol2)
             {
                 result = aProjector.NextValueOfUV(cachePnt.second, point, aTolWorking, aTol2, aTolWorking);
                 aSavedPointNum = index;
@@ -396,14 +396,14 @@ public class ProjectCurveOnSurface : Transient
 
             if (isPeriodicU)
             {
-                isRecompute = FixPeriodicityTroubles(p2d, 1, _surf.Surface()!.UPeriod(), savedPointNum,
-                                                        savedPoint.X());
+                isRecompute = FixPeriodicityTroubles(p2d, 1, _surf.Surface()!.UPeriod, savedPointNum,
+                                                        savedPoint.X);
             }
 
             if (isPeriodicV)
             {
-                isRecompute = FixPeriodicityTroubles(p2d, 2, _surf.Surface()!.VPeriod(), savedPointNum,
-                                                        savedPoint.Y());
+                isRecompute = FixPeriodicityTroubles(p2d, 2, _surf.Surface()!.VPeriod, savedPointNum,
+                                                        savedPoint.Y);
             }
         }
 
@@ -436,13 +436,13 @@ public class ProjectCurveOnSurface : Transient
                 Xy curPoint = p2d[0].XY() + vec.XY() * (theParams[i] - theParams[1]);
                 surf.D1(curPoint.X(), curPoint.Y(), out Point3D curP, out Vector3D du, out Vector3D dv);
                 Vector3D normalVec = du ^ dv;
-                if (normalVec.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+                if (normalVec.SquareMagnitude < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                 {
                     isNormalCheck = false;
                     break;
                 }
                 Line3D normalLine = new(curP, new Direction3D(normalVec));
-                double dist = normalLine.Distance(points[i]);
+                double dist = normalLine.DistanceTo(points[i]);
                 if (dist > tolWorking)
                 {
                     return null;
@@ -452,13 +452,13 @@ public class ProjectCurveOnSurface : Transient
 
         if (!isNormalCheck)
         {
-            double firstPointDist = _surf.Surface()!.Value(p2d[0].X(), p2d[0].Y()).SquareDistance(points[1]);
+            double firstPointDist = _surf.Surface()!.Value(p2d[0].X, p2d[0].Y).SquareDistanceTo(points[1]);
             tol2 = Max(tol2, tol2 * 2 * firstPointDist);
             for (i = 2; i < nb; i++)
             {
                 Xy curPoint = p2d[0].XY() + vec.XY() * (theParams[i] - theParams[1]);
                 surf.D0(curPoint.X(), curPoint.Y(), out Point3D curP);
-                double dist1 = curP.SquareDistance(points[i]);
+                double dist1 = curP.SquareDistanceTo(points[i]);
 
                 if (Math.Abs(firstPointDist - dist1) > tol2)
                 {
@@ -468,7 +468,7 @@ public class ProjectCurveOnSurface : Transient
         }
 
         // Check if pcurve can be represented by Geom2d_Line
-        double lLength = vec0.Magnitude();
+        double lLength = vec0.Magnitude;
         if (Math.Abs(lLength - dPar) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
         {
             Xy dirL = vec0.XY() / lLength;
@@ -511,8 +511,8 @@ public class ProjectCurveOnSurface : Transient
             // Fill cache
             bool changeCycle1 = false;
             if (_cache.Length != 0
-                && _cache[0].first.Distance(points[1]) > _cache[0].first.Distance(points[nbPnt])
-                && _cache[0].first.Distance(points[nbPnt]) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                && _cache[0].first.DistanceTo(points[1]) > _cache[0].first.DistanceTo(points[nbPnt])
+                && _cache[0].first.DistanceTo(points[nbPnt]) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 changeCycle1 = true;
             }
@@ -548,7 +548,7 @@ public class ProjectCurveOnSurface : Transient
             isAnalytic = false;
         }
 
-        surface.Bounds(out double uf, out double ul, out double vf, out double vl);
+        surface.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
         isoClosed = false;
 
         NCollection_Array1<double> pout = new(1, nbPnt);
@@ -570,26 +570,26 @@ public class ProjectCurveOnSurface : Transient
         {
             if (isoTypeU)
             {
-                isoValue = valueP1.X();
-                isoPar1 = valueP1.Y();
-                isoPar2 = valueP2.Y();
+                isoValue = valueP1.X;
+                isoPar1 = valueP1.Y;
+                isoPar2 = valueP2.Y;
                 isoClosed = _surf.IsVClosed(_preci);
                 parf = vf;
                 parl = vl;
             }
             else
             {
-                isoValue = valueP1.Y();
-                isoPar1 = valueP1.X();
-                isoPar2 = valueP2.X();
+                isoValue = valueP1.Y;
+                isoPar1 = valueP1.X;
+                isoPar2 = valueP2.X;
                 isoClosed = _surf.IsUClosed(_preci);
                 parf = uf;
                 parl = ul;
             }
             if (!isoPar2d3d && !isAnalytic)
             {
-                cf = cIso!.FirstParameter();
-                cl = cIso.LastParameter();
+                cf = cIso!.FirstParameter;
+                cl = cIso.LastParameter;
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(cf))
                 {
                     cf = -1000;
@@ -651,15 +651,15 @@ public class ProjectCurveOnSurface : Transient
                         valueP2 = valueTmp;
                         if (isoTypeU)
                         {
-                            isoValue = valueP1.X();
-                            isoPar1 = valueP1.Y();
-                            isoPar2 = valueP2.Y();
+                            isoValue = valueP1.X;
+                            isoPar1 = valueP1.Y;
+                            isoPar2 = valueP2.Y;
                         }
                         else
                         {
-                            isoValue = valueP1.Y();
-                            isoPar1 = valueP1.X();
-                            isoPar2 = valueP2.X();
+                            isoValue = valueP1.Y;
+                            isoPar1 = valueP1.X;
+                            isoPar2 = valueP2.X;
                         }
                     }
                 }
@@ -675,9 +675,9 @@ public class ProjectCurveOnSurface : Transient
         Point2D savedPoint = new();
 
         if (_cache.Length != 0
-            && _cache[0].first.Distance(points[1]) > _cache[0].first.Distance(points[nbPnt]))
+            && _cache[0].first.DistanceTo(points[1]) > _cache[0].first.DistanceTo(points[nbPnt]))
         {
-            if (_cache[0].first.Distance(points[nbPnt]) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (_cache[0].first.DistanceTo(points[nbPnt]) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 changeCycle = true;
             }
@@ -784,7 +784,7 @@ public class ProjectCurveOnSurface : Transient
                             for (; j < nbCache; ++j)
                             {
                                 (Point3D first, Point2D second) cachePnt = _cache[j];
-                                if (cachePnt.first.SquareDistance(p3d) < _preci * _preci)
+                                if (cachePnt.first.SquareDistanceTo(p3d) < _preci * _preci)
                                 {
                                     p2d = _surf.NextValueOfUV(cachePnt.second, p3d, _preci, global::Kerf.Engine.Foundation.Precision.Confusion() + gap);
                                     if (pntIndex == 1)
@@ -812,13 +812,13 @@ public class ProjectCurveOnSurface : Transient
 
             if (nbPnt > 23 && ii > 2 && ii < nbPnt)
             {
-                if (Math.Abs(p2d.X() - prevP2d.X()) > 0.95 * up && prevP3d.Distance(p3d) < _preci
+                if (Math.Abs(p2d.X - prevP2d.X) > 0.95 * up && prevP3d.DistanceTo(p3d) < _preci
                     && !_surf.IsUClosed(_preci) && _surf.NbSingularities(_preci) > 0
                     && surface is BSplineSurface)
                 {
                     needResolveUJump = true;
                 }
-                if (Math.Abs(p2d.Y() - prevP2d.Y()) > 0.95 * vp && prevP3d.Distance(p3d) < _preci
+                if (Math.Abs(p2d.Y - prevP2d.Y) > 0.95 * vp && prevP3d.DistanceTo(p3d) < _preci
                     && !_surf.IsVClosed(_preci) && _surf.NbSingularities(_preci) > 0
                     && surface is BSplineSurface)
                 {
@@ -863,11 +863,11 @@ public class ProjectCurveOnSurface : Transient
             {
                 break;
             }
-            if (preci <= global::Kerf.Engine.Foundation.Precision.Confusion() && pointFirst.Distance(aP3d) <= aTolFirst)
+            if (preci <= global::Kerf.Engine.Foundation.Precision.Confusion() && pointFirst.DistanceTo(aP3d) <= aTolFirst)
             {
                 CorrectExtremity(c3D, theParams, points2d, true, firstP2d, isUiso);
             }
-            if (preci <= global::Kerf.Engine.Foundation.Precision.Confusion() && pointLast.Distance(aP3d) <= aTolLast)
+            if (preci <= global::Kerf.Engine.Foundation.Precision.Confusion() && pointLast.DistanceTo(aP3d) <= aTolLast)
             {
                 CorrectExtremity(c3D, theParams, points2d, false, firstP2d, isUiso);
             }
@@ -880,7 +880,7 @@ public class ProjectCurveOnSurface : Transient
 
         if (_surf.IsUClosed(_preci) || needResolveUJump)
         {
-            double prevX, firstX = points2d[1].X();
+            double prevX, firstX = points2d[1].X;
             if (!isFromCache)
             {
                 while (firstX < uf)
@@ -898,12 +898,12 @@ public class ProjectCurveOnSurface : Transient
             if (surface.IsUPeriodic && isFromCache)
             {
                 double minParam = uf, maxParam = ul;
-                while (minParam > savedPoint.X())
+                while (minParam > savedPoint.X)
                 {
                     minParam -= up;
                     maxParam -= up;
                 }
-                while (maxParam < savedPoint.X())
+                while (maxParam < savedPoint.X)
                 {
                     minParam += up;
                     maxParam += up;
@@ -919,7 +919,7 @@ public class ProjectCurveOnSurface : Transient
 
             for (int pntIter = 2; pntIter <= points2d.Length(); ++pntIter)
             {
-                double curX = points2d[pntIter].X();
+                double curX = points2d[pntIter].X;
                 dist2d = Math.Abs(curX - prevX);
                 if (dist2d > (up / 2))
                 {
@@ -953,7 +953,7 @@ public class ProjectCurveOnSurface : Transient
                 {
                     for (int pntIter = 1; pntIter <= points2d.Length(); ++pntIter)
                     {
-                        points2d[pntIter] = points2d[pntIter].WithX(points2d[pntIter].X() + shiftX);
+                        points2d[pntIter] = points2d[pntIter].WithX(points2d[pntIter].X + shiftX);
                     }
                 }
             }
@@ -962,7 +962,7 @@ public class ProjectCurveOnSurface : Transient
         // Handle V-closed surfaces
         if (_surf.IsVClosed(_preci) || needResolveVJump || surface is SphericalSurface)
         {
-            double prevY, firstY = points2d[1].Y();
+            double prevY, firstY = points2d[1].Y;
             if (!isFromCache)
             {
                 while (firstY < vf)
@@ -980,12 +980,12 @@ public class ProjectCurveOnSurface : Transient
             if (surface.IsVPeriodic && isFromCache)
             {
                 double minParam = vf, maxParam = vl;
-                while (minParam > savedPoint.Y())
+                while (minParam > savedPoint.Y)
                 {
                     minParam -= vp;
                     maxParam -= vp;
                 }
-                while (maxParam < savedPoint.Y())
+                while (maxParam < savedPoint.Y)
                 {
                     minParam += vp;
                     maxParam += vp;
@@ -1001,7 +1001,7 @@ public class ProjectCurveOnSurface : Transient
 
             for (int pntIter = 2; pntIter <= points2d.Length(); ++pntIter)
             {
-                double curY = points2d[pntIter].Y();
+                double curY = points2d[pntIter].Y;
                 dist2d = Math.Abs(curY - prevY);
                 if (dist2d > (vp / 2))
                 {
@@ -1035,7 +1035,7 @@ public class ProjectCurveOnSurface : Transient
                 {
                     for (int pntIter = 1; pntIter <= points2d.Length(); ++pntIter)
                     {
-                        points2d[pntIter] = points2d[pntIter].WithY(points2d[pntIter].Y() + shiftY);
+                        points2d[pntIter] = points2d[pntIter].WithY(points2d[pntIter].Y + shiftY);
                     }
                 }
             }
@@ -1046,7 +1046,7 @@ public class ProjectCurveOnSurface : Transient
         {
             for (int pntIter = 2; pntIter <= points2d.Length(); ++pntIter)
             {
-                dist2d = Math.Abs(points2d[pntIter].Y() - points2d[pntIter - 1].Y());
+                dist2d = Math.Abs(points2d[pntIter].Y - points2d[pntIter - 1].Y);
                 if (dist2d > (vp / 2))
                 {
                     bool prevOnFirst = false;
@@ -1054,10 +1054,10 @@ public class ProjectCurveOnSurface : Transient
                     bool currOnFirst = false;
                     bool currOnLast = false;
 
-                    double distPrevVF = Math.Abs(points2d[pntIter - 1].Y() - vf);
-                    double distPrevVL = Math.Abs(points2d[pntIter - 1].Y() - vl);
-                    double distCurrVF = Math.Abs(points2d[pntIter].Y() - vf);
-                    double distCurrVL = Math.Abs(points2d[pntIter].Y() - vl);
+                    double distPrevVF = Math.Abs(points2d[pntIter - 1].Y - vf);
+                    double distPrevVL = Math.Abs(points2d[pntIter - 1].Y - vl);
+                    double distCurrVF = Math.Abs(points2d[pntIter].Y - vf);
+                    double distCurrVL = Math.Abs(points2d[pntIter].Y - vl);
 
                     double theMin = distPrevVF;
                     prevOnFirst = true;
@@ -1116,7 +1116,7 @@ public class ProjectCurveOnSurface : Transient
                     bool start = true;
                     for (ind = 1; ind <= points2d.Length(); ind++)
                     {
-                        double curX = points2d[ind].X();
+                        double curX = points2d[ind].X;
                         if (_surf.IsDegenerated(points[ind], global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             continue;
@@ -1139,7 +1139,7 @@ public class ProjectCurveOnSurface : Transient
                             points2d[ind - 1] = points2d[ind - 1].WithX(PrevX);
                             for (int j = ind - 2; j > 0; j--)
                             {
-                                double curX = points2d[j].X();
+                                double curX = points2d[j].X;
                                 while (curX < PrevX - dU)
                                 {
                                     curX += up;
@@ -1157,7 +1157,7 @@ public class ProjectCurveOnSurface : Transient
                             points2d[ind] = points2d[ind].WithX(PrevX);
                             for (int j = ind + 1; j <= points2d.Length(); j++)
                             {
-                                double curX = points2d[j].X();
+                                double curX = points2d[j].X;
                                 while (curX < PrevX - dU)
                                 {
                                     curX += up;
@@ -1185,7 +1185,7 @@ public class ProjectCurveOnSurface : Transient
                     bool start = true;
                     for (ind = 1; ind <= points2d.Length(); ind++)
                     {
-                        double curY = points2d[ind].Y();
+                        double curY = points2d[ind].Y;
                         if (_surf.IsDegenerated(points[ind], global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
                             continue;
@@ -1208,7 +1208,7 @@ public class ProjectCurveOnSurface : Transient
                             points2d[ind - 1] = points2d[ind - 1].WithY(PrevY);
                             for (int j = ind - 2; j > 0; j--)
                             {
-                                double curY = points2d[j].Y();
+                                double curY = points2d[j].Y;
                                 while (curY < PrevY - dV)
                                 {
                                     curY += vp;
@@ -1226,7 +1226,7 @@ public class ProjectCurveOnSurface : Transient
                             points2d[ind] = points2d[ind].WithY(PrevY);
                             for (int j = ind + 1; j <= points2d.Length(); j++)
                             {
-                                double curY = points2d[j].Y();
+                                double curY = points2d[j].Y;
                                 while (curY < PrevY - dV)
                                 {
                                     curY += vp;
@@ -1316,8 +1316,8 @@ public class ProjectCurveOnSurface : Transient
             }
         }
 
-        Point2D finishPoint = (isUIso) ? new Point2D(finishCoord, secondPointOfLine.Y())
-                                           : new Point2D(secondPointOfLine.X(), finishCoord);
+        Point2D finishPoint = (isUIso) ? new Point2D(finishCoord, secondPointOfLine.Y)
+                                           : new Point2D(secondPointOfLine.X, finishCoord);
 
         for (;;)
         {
@@ -1327,12 +1327,12 @@ public class ProjectCurveOnSurface : Transient
             }
 
             Vector2D vec = new(firstPointOfLine, secondPointOfLine);
-            double sqMagnitude = vec.SquareMagnitude();
+            double sqMagnitude = vec.SquareMagnitude;
             if (sqMagnitude <= 1.0e-32)
             {
                 break;
             }
-            dir = dir.WithCoord(vec.X(), vec.Y());
+            dir = dir.WithCoord(vec.X, vec.Y);
 
             Line2D line = new(firstPointOfLine, dir);
             IntConicConic intersector = new(isoLine, dom1, line, dom2, 1.0e-10, 1.0e-10);
@@ -1343,8 +1343,8 @@ public class ProjectCurveOnSurface : Transient
             }
             else
             {
-                finishPoint = (isUIso) ? new Point2D(finishCoord, secondPointOfLine.Y())
-                                          : new Point2D(secondPointOfLine.X(), finishCoord);
+                finishPoint = (isUIso) ? new Point2D(finishCoord, secondPointOfLine.Y)
+                                          : new Point2D(secondPointOfLine.X, finishCoord);
             }
 
             Point2D prevPoint = firstPointOfLine;
@@ -1568,7 +1568,7 @@ public class ProjectCurveOnSurface : Transient
             for (int i = 1; i <= numberPnt; i++)
             {
                 Point2D pnt2d = tmpPnts2d[i];
-                points3d[i] = points3d[i].WithCoord(pnt2d.X(), pnt2d.Y(), 0);
+                points3d[i] = points3d[i].WithCoord(pnt2d.X, pnt2d.Y, 0);
                 @params[i] = tmpParams[i];
             }
 
@@ -1581,14 +1581,14 @@ public class ProjectCurveOnSurface : Transient
 
             for (int i = 1; i <= nbPoles; i++)
             {
-                poles2d[i] = poles2d[i].WithCoord(poles3d[i].X(), poles3d[i].Y());
+                poles2d[i] = poles2d[i].WithCoord(poles3d[i].X, poles3d[i].Y);
             }
 
             NCollection_Array1<double> weights = crv3d.InternalWeightsArray();
             NCollection_Array1<double> knots = crv3d.InternalKnots();
             NCollection_Array1<int> multiplicities = crv3d.InternalMultiplicities();
 
-            c2D = new BSplineCurve2D(poles2d, weights, knots, multiplicities, crv3d.Degree(), crv3d.IsPeriodic);
+            c2D = new BSplineCurve2D(poles2d, weights, knots, multiplicities, crv3d.Degree, crv3d.IsPeriodic);
             return c2D;
         }
         catch (FailureException)
@@ -1620,7 +1620,7 @@ public class ProjectCurveOnSurface : Transient
         for (int i = firstElem + 1; i <= lastElem; i++)
         {
             Point3D curr = points.Value(i);
-            double curDist2 = prev.SquareDistance(curr);
+            double curDist2 = prev.SquareDistanceTo(curr);
             if (curDist2 < Constants.Resolution())
             {
                 nbPntDropped++;
@@ -1703,7 +1703,7 @@ public class ProjectCurveOnSurface : Transient
         for (int i = firstElem + 1; i <= lastElem; i++)
         {
             Point2D curr = points2d.Value(i);
-            double curDist2 = prev.SquareDistance(curr);
+            double curDist2 = prev.SquareDistanceTo(curr);
             if (curDist2 < Constants.Resolution())
             {
                 nbPntDropped++;
@@ -1789,7 +1789,7 @@ public class ProjectCurveOnSurface : Transient
 
             if (_surf.Surface() is TrimmedSurface sTrim)
             {
-                sTrim.Bounds(out u1, out u2, out v1, out v2);
+                sTrim.ParameterBounds(out u1, out u2, out v1, out v2);
             }
 
             Point3D pt;
@@ -1895,7 +1895,7 @@ public class ProjectCurveOnSurface : Transient
                     mp[i] = 0;
                     int k = (i == 0 ? 1 : nbPnt);
 
-                    currd2[i] = points[k].SquareDistance(ext1);
+                    currd2[i] = points[k].SquareDistanceTo(ext1);
                     if (currd2[i] <= prec * prec && !ptEQext1)
                     {
                         mp[i] = 1;
@@ -1904,7 +1904,7 @@ public class ProjectCurveOnSurface : Transient
                         continue;
                     }
 
-                    currd2[i] = points[k].SquareDistance(ext2);
+                    currd2[i] = points[k].SquareDistanceTo(ext2);
                     if (currd2[i] <= prec * prec && !ptEQext2)
                     {
                         mp[i] = 2;
@@ -1923,8 +1923,8 @@ public class ProjectCurveOnSurface : Transient
                         continue;
                     }
 
-                    double cf1 = cI.FirstParameter();
-                    double cl1 = cI.LastParameter();
+                    double cf1 = cI.FirstParameter;
+                    double cl1 = cI.LastParameter;
                     if (global::Kerf.Engine.Foundation.Precision.IsInfinite(cf1))
                     {
                         cf1 = -1000;
@@ -2044,8 +2044,8 @@ public class ProjectCurveOnSurface : Transient
                     double prevParam = tpar[0];
                     double cf, cl;
                     bool isoByDistance = true;
-                    cf = cIso!.FirstParameter();
-                    cl = cIso.LastParameter();
+                    cf = cIso!.FirstParameter;
+                    cl = cIso.LastParameter;
                     if (global::Kerf.Engine.Foundation.Precision.IsInfinite(cf))
                     {
                         cf = -1000;
@@ -2137,8 +2137,8 @@ public class ProjectCurveOnSurface : Transient
         {
             int nbPolesU = surface.UPoleCount;
             int nbPolesV = surface.VPoleCount;
-            int degreeU = surface.UDegree();
-            int degreeV = surface.VDegree();
+            int degreeU = surface.UDegree;
+            int degreeV = surface.VDegree;
 
             // Check if surface is clamped (end multiplicities = degree + 1)
             int firstUMult = surface.UMultiplicity(1);
@@ -2191,7 +2191,7 @@ public class ProjectCurveOnSurface : Transient
         {
             for (int i = 0; i < _corners3d.Count; ++i)
             {
-                if (_corners3d[i].SquareDistance(point) < tolSq)
+                if (_corners3d[i].SquareDistanceTo(point) < tolSq)
                 {
                     uv = _corners2d[i];
                     return true;
@@ -2210,7 +2210,7 @@ public class ProjectCurveOnSurface : Transient
         // Recursively unwrap trimmed curves
         while (aCurve is TrimmedCurve3D trimmed)
         {
-            aCurve = trimmed.BasisCurve();
+            aCurve = trimmed.BasisCurve;
         }
 
         return aCurve as BSplineCurve3D;
@@ -2221,16 +2221,16 @@ public class ProjectCurveOnSurface : Transient
     {
         if (surf.IsUPeriodic)
         {
-            double uPeriod = surf.UPeriod();
-            double newU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(secondPoint.X(), firstPoint.X() - uPeriod / 2,
-                                           firstPoint.X() + uPeriod / 2);
+            double uPeriod = surf.UPeriod;
+            double newU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(secondPoint.X, firstPoint.X - uPeriod / 2,
+                                           firstPoint.X + uPeriod / 2);
             secondPoint = secondPoint.WithX(newU);
         }
         if (surf.IsVPeriodic)
         {
-            double vPeriod = surf.VPeriod();
-            double newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(secondPoint.Y(), firstPoint.Y() - vPeriod / 2,
-                                           firstPoint.Y() + vPeriod / 2);
+            double vPeriod = surf.VPeriod;
+            double newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(secondPoint.Y, firstPoint.Y - vPeriod / 2,
+                                           firstPoint.Y + vPeriod / 2);
             secondPoint = secondPoint.WithY(newV);
         }
     }
@@ -2423,7 +2423,7 @@ public class ProjectCurveOnSurface : Transient
             {
                 double param = firstParam + step * intIdx;
                 c3DAdaptor.D0(param, out Point3D p3d2);
-                double dist = p3d2.Distance(p3d1);
+                double dist = p3d2.DistanceTo(p3d1);
 
                 length3d += dist;
                 p3d1 = p3d2;
@@ -2480,7 +2480,7 @@ public class ProjectCurveOnSurface : Transient
                     usedKnots++;
                 }
             }
-            int minPnt = usedKnots * (bSpline.Degree() + 1);
+            int minPnt = usedKnots * (bSpline.Degree + 1);
             while (nbPini < minPnt)
             {
                 nbPini += THE_NCONTROL - 1;

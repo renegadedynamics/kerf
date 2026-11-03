@@ -23,7 +23,7 @@ public class PointOnSurface : PointsOnSurface
 
     /// <summary>A point on the surface <paramref name="s"/>.</summary>
     public override bool IsPointOnSurface(Surface? s, in Placement l)
-        => ReferenceEquals(Surface(), s) && (Location() == l);
+        => ReferenceEquals(Surface(), s) && (Location().IsEqual(l));
 
     public override double Parameter2() => _parameter2;
 

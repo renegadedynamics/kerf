@@ -68,35 +68,35 @@ public sealed class SineWaveCurve : Curve3D
     }
 
     /// <summary>-Precision::Infinite().</summary>
-    public override double FirstParameter() => -global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double FirstParameter => -global::Kerf.Engine.Foundation.Precision.Infinite();
 
     /// <summary>Precision::Infinite().</summary>
-    public override double LastParameter() => global::Kerf.Engine.Foundation.Precision.Infinite();
+    public override double LastParameter => global::Kerf.Engine.Foundation.Precision.Infinite();
 
     public override bool IsClosed => false;
 
     public override bool IsPeriodic => false;
 
-    public override Continuity Continuity() => CN;
+    public override Continuity Continuity => CN;
 
-    public override bool IsCN(int n) => true;
+    internal override bool IsCN(int n) => true;
 
-    public override Point3D EvalD0(double u)
+    internal override Point3D EvalD0(double u)
     {
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
 
         double arg = _omega * u + _phase;
 
         return new Point3D(o + u * xd + _amplitude * Math.Sin(arg) * yd);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
 
         double arg = _omega * u + _phase;
 
@@ -109,11 +109,11 @@ public sealed class SineWaveCurve : Curve3D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
 
         double arg = _omega * u + _phase;
         double om2 = _omega * _omega;
@@ -128,11 +128,11 @@ public sealed class SineWaveCurve : Curve3D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
-        Xyz o = _position.Location().XYZ();
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
+        Xyz o = _position.Location.XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
 
         double arg = _omega * u + _phase;
         double om2 = _omega * _omega;
@@ -150,15 +150,15 @@ public sealed class SineWaveCurve : Curve3D
     }
 
     /// <exception cref="RangeErrorException">N &lt; 1.</exception>
-    public override Vector3D EvalDN(double u, int n)
+    internal override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
             throw new RangeErrorException("GeomEval_SineWaveCurve::EvalDN: N must be >= 1");
         }
 
-        Xyz xd = _position.XDirection().XYZ();
-        Xyz yd = _position.YDirection().XYZ();
+        Xyz xd = _position.XDirection.XYZ();
+        Xyz yd = _position.YDirection.XYZ();
 
         // d^N/dt^N[t] = 1 if N=1, 0 if N>=2
         // d^N/dt^N[A*sin(omega*t+phi)] = A*omega^N*sin(omega*t+phi+N*Pi/2)

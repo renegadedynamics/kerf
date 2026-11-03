@@ -43,9 +43,9 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
                     aP[i] = new Point3D(anOracle.Real(-10, 10), anOracle.Real(-10, 10), 0);
                 }
             }
-            while (Math.Abs(new Vector3D(aP[0], aP[1]).Crossed(new Vector3D(aP[0], aP[2])).Z()) < 10);
+            while (Math.Abs(new Vector3D(aP[0], aP[1]).Crossed(new Vector3D(aP[0], aP[2])).Z) < 10);
 
-            if (new Vector3D(aP[0], aP[1]).Crossed(new Vector3D(aP[0], aP[2])).Z() < 0)
+            if (new Vector3D(aP[0], aP[1]).Crossed(new Vector3D(aP[0], aP[2])).Z < 0)
             {
                 (aP[1], aP[2]) = (aP[2], aP[1]);
             }
@@ -82,14 +82,14 @@ public class BRepLibValidateEdgeOracleTests(ITestOutputHelper output)
             for (int i = 0; i < 3; i++)
             {
                 Point3D aP1 = aP[i], aP2 = aP[(i + 1) % 3];
-                double dx = aP2.X() - aP1.X(), dy = aP2.Y() - aP1.Y();
-                double aLength = aP1.Distance(aP2);
+                double dx = aP2.X - aP1.X, dy = aP2.Y - aP1.Y;
+                double aLength = aP1.DistanceTo(aP2);
 
                 // the pcurve: the edge's image moved by about the tolerance and turned slightly (or exact)
                 double anOffset = anOracle.Int(0, 2) != 0 ? 0.0 : anEdgeTol * anOracle.Real(0.2, 2.0);
                 double anAngle = anOracle.Bool() ? 0.0 : anEdgeTol * anOracle.Real(-0.6, 0.6) / aLength;
                 double aDirAngle = anOracle.Angle();
-                double u0 = aP1.X() + anOffset * Math.Cos(aDirAngle), v0 = aP1.Y() + anOffset * Math.Sin(aDirAngle);
+                double u0 = aP1.X + anOffset * Math.Cos(aDirAngle), v0 = aP1.Y + anOffset * Math.Sin(aDirAngle);
                 double aCos = Math.Cos(anAngle), aSin = Math.Sin(anAngle);
                 double du = dx * aCos - dy * aSin, dv = dx * aSin + dy * aCos;
 

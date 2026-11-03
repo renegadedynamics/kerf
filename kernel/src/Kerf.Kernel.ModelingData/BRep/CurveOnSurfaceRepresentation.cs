@@ -21,7 +21,7 @@ public class CurveOnSurfaceRepresentation : GCurve
 
     /// <summary>The pcurve <paramref name="pc"/> on <paramref name="s"/> with location <paramref name="l"/> (both frozen here).</summary>
     public CurveOnSurfaceRepresentation(Curve2D pc, Surface? s, in Placement l)
-        : base(l, pc.FirstParameter(), pc.LastParameter())
+        : base(l, pc.FirstParameter, pc.LastParameter)
     {
         pc.Freeze(); // OCCT.NET: attached geometry is frozen
         s?.Freeze();
@@ -61,8 +61,8 @@ public class CurveOnSurfaceRepresentation : GCurve
     {
         // should be D0 NYI
         Point2D p2d = _pCurve!.Value(u);
-        p = _surface!.Value(p2d.X(), p2d.Y());
-        p = p.Transformed(_location.Transformation());
+        p = _surface!.Value(p2d.X, p2d.Y);
+        p = p.Transformed(_location.Transformation);
     }
 
     /// <summary>True.</summary>
@@ -70,7 +70,7 @@ public class CurveOnSurfaceRepresentation : GCurve
 
     /// <summary>A curve in the parametric space of <paramref name="s"/> with location <paramref name="l"/>.</summary>
     public override bool IsCurveOnSurface(Surface? s, in Placement l)
-        => ReferenceEquals(s, _surface) && (l == _location);
+        => ReferenceEquals(s, _surface) && (l.IsEqual(_location));
 
     public override Surface? Surface() => _surface;
 

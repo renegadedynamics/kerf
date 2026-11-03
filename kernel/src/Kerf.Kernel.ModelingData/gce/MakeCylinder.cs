@@ -42,11 +42,11 @@ public sealed class MakeCylinder : Root
         }
         else
         {
-            Direction3D d = axis.Direction();
+            Direction3D d = axis.Direction;
             Direction3D direc = new();
-            double x = d.X();
-            double y = d.Y();
-            double z = d.Z();
+            double x = d.X;
+            double y = d.Y;
+            double z = d.Z;
             if (Math.Abs(x) > Constants.Resolution())
             {
                 direc = new Direction3D(-y, x, 0.0);
@@ -59,7 +59,7 @@ public sealed class MakeCylinder : Root
             {
                 direc = new Direction3D(z, 0.0, -x);
             }
-            _theCylinder = new Cylinder(new CoordinateSystem(new Frame3D(axis.Location(), d, direc)), radius);
+            _theCylinder = new Cylinder(new CoordinateSystem(new Frame3D(axis.Location, d, direc)), radius);
             _theError = Done;
         }
     }
@@ -67,7 +67,7 @@ public sealed class MakeCylinder : Root
     /// <summary>A cylinder whose axis and radius are those of a circle.</summary>
     public MakeCylinder(in Circle3D circ)
     {
-        _theCylinder = new Cylinder(new CoordinateSystem(circ.Position()), circ.Radius());
+        _theCylinder = new Cylinder(new CoordinateSystem(circ.Position), circ.Radius);
         _theError = Done;
     }
 
@@ -79,7 +79,7 @@ public sealed class MakeCylinder : Root
     {
         // P1 and P2 define the cylinder axis, the distance from P3 to the axis
         // gives the cylinder radius.
-        if (p1.Distance(p2) < Constants.Resolution())
+        if (p1.DistanceTo(p2) < Constants.Resolution())
         {
             _theError = ConfusedPoints;
         }
@@ -87,9 +87,9 @@ public sealed class MakeCylinder : Root
         {
             Direction3D d1 = new(p2.XYZ() - p1.XYZ());
             Direction3D d2 = new();
-            double x = d1.X();
-            double y = d1.Y();
-            double z = d1.Z();
+            double x = d1.X;
+            double y = d1.Y;
+            double z = d1.Z;
             if (Math.Abs(x) > Constants.Resolution())
             {
                 d2 = new Direction3D(-y, x, 0.0);
@@ -102,7 +102,7 @@ public sealed class MakeCylinder : Root
             {
                 d2 = new Direction3D(z, 0.0, -x);
             }
-            _theCylinder = new Cylinder(new CoordinateSystem(new Frame3D(p1, d1, d2)), new Line3D(p1, d1).Distance(p3));
+            _theCylinder = new Cylinder(new CoordinateSystem(new Frame3D(p1, d1, d2)), new Line3D(p1, d1).DistanceTo(p3));
             _theError = Done;
         }
     }
@@ -113,7 +113,7 @@ public sealed class MakeCylinder : Root
     /// </summary>
     public MakeCylinder(in Cylinder cyl, double dist)
     {
-        double rad = cyl.Radius() + dist;
+        double rad = cyl.Radius + dist;
         if (rad < 0.0)
         {
             _theError = NegativeRadius;
@@ -129,8 +129,8 @@ public sealed class MakeCylinder : Root
     /// <summary>A cylinder coaxial to Cyl through the point P.</summary>
     public MakeCylinder(in Cylinder cyl, in Point3D p)
     {
-        Line3D l = new(cyl.Axis());
-        double rad = l.Distance(p);
+        Line3D l = new(cyl.Axis);
+        double rad = l.DistanceTo(p);
         _theCylinder = cyl;
         _theCylinder = _theCylinder.WithRadius(rad);
         _theError = Done;

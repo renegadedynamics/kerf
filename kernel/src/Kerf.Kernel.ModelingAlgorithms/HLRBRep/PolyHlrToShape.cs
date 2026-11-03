@@ -200,7 +200,7 @@ public class PolyHlrToShape
                 {
                     Point2D firstP2d = bp.P1();
                     Point2D lastP2d = bp.P2();
-                    if (firstP2d.SquareDistance(lastP2d) > 1.0e-20)
+                    if (firstP2d.SquareDistanceTo(lastP2d) > 1.0e-20)
                     {
                         b.Add(result, new LibraryMakeEdge2d(bp.P1(), bp.P2()).InternalEdge());
                         added = true;

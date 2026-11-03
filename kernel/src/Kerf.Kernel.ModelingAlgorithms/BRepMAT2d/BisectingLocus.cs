@@ -200,16 +200,16 @@ public sealed class BisectingLocus
 
         Curve2D bis = _tool.GeomBis(anArc.GeomIndex()).Value();
 
-        if (bis.FirstParameter() <= -global::Kerf.Engine.Foundation.Precision.Infinite())
+        if (bis.FirstParameter <= -global::Kerf.Engine.Foundation.Precision.Infinite())
         {
             reverse = true;
         }
-        else if (bis.LastParameter() < global::Kerf.Engine.Foundation.Precision.Infinite())
+        else if (bis.LastParameter < global::Kerf.Engine.Foundation.Precision.Infinite())
         {
-            Point2D pf = bis.Value(bis.FirstParameter());
-            Point2D pl = bis.Value(bis.LastParameter());
+            Point2D pf = bis.Value(bis.FirstParameter);
+            Point2D pl = bis.Value(bis.LastParameter);
             Point2D pNode = GeomElt(anArc.FirstNode());
-            if (pNode.SquareDistance(pf) > pNode.SquareDistance(pl))
+            if (pNode.SquareDistanceTo(pf) > pNode.SquareDistanceTo(pl))
             {
                 reverse = true;
             }

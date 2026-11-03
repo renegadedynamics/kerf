@@ -99,11 +99,11 @@ internal static class GeometryTestContinuityCommands
 
         ord = theDI.Atoi(a[1]);
 
-        surf1.Bounds(out u1, out u2, out v1, out v2);
+        surf1.ParameterBounds(out u1, out u2, out v1, out v2);
         b1 = Within(U1, u1, u2);
         b3 = Within(V1, v1, v2);
 
-        surf2.Bounds(out u1, out u2, out v1, out v2);
+        surf2.ParameterBounds(out u1, out u2, out v1, out v2);
         b2 = Within(U2, u1, u2);
         b4 = Within(V2, v1, v2);
 
@@ -219,11 +219,11 @@ internal static class GeometryTestContinuityCommands
 
         ord = theDI.Atoi(a[1]);
 
-        surf1.Bounds(out u1, out u2, out v1, out v2);
+        surf1.ParameterBounds(out u1, out u2, out v1, out v2);
         b1 = Within(U1, u1, u2);
         b3 = Within(V1, v1, v2);
 
-        surf2.Bounds(out u1, out u2, out v1, out v2);
+        surf2.ParameterBounds(out u1, out u2, out v1, out v2);
         b2 = Within(U2, u1, u2);
         b4 = Within(V2, v1, v2);
 
@@ -319,12 +319,12 @@ internal static class GeometryTestContinuityCommands
 
         ord = theDI.Atoi(a[1]);
 
-        u1 = curv1.FirstParameter();
-        u2 = curv1.LastParameter();
+        u1 = curv1.FirstParameter;
+        u2 = curv1.LastParameter;
         b1 = Within(U1, u1, u2);
 
-        u1 = curv2.FirstParameter();
-        u2 = curv2.LastParameter();
+        u1 = curv2.FirstParameter;
+        u2 = curv2.LastParameter;
         b2 = Within(U2, u1, u2);
 
         if (!(b1 && b2))
@@ -424,12 +424,12 @@ internal static class GeometryTestContinuityCommands
 
         ord = theDI.Atoi(a[1]);
 
-        u1 = curv1.FirstParameter();
-        u2 = curv1.LastParameter();
+        u1 = curv1.FirstParameter;
+        u2 = curv1.LastParameter;
         b1 = Within(U1, u1, u2);
 
-        u1 = curv2.FirstParameter();
-        u2 = curv2.LastParameter();
+        u1 = curv2.FirstParameter;
+        u2 = curv2.LastParameter;
         b2 = Within(U2, u1, u2);
 
         if (!(b1 && b2))
@@ -533,12 +533,12 @@ internal static class GeometryTestContinuityCommands
             }
             else
             {
-                theResult.Append(theArgv[1]).Append(" has ").Append(aContName[(int)GC2d.Continuity()]).Append(" continuity.\n");
+                theResult.Append(theArgv[1]).Append(" has ").Append(aContName[(int)GC2d.Continuity]).Append(" continuity.\n");
             }
         }
         else
         {
-            theResult.Append(theArgv[1]).Append(" has ").Append(aContName[(int)GC3d.Continuity()]).Append(" continuity.\n");
+            theResult.Append(theArgv[1]).Append(" has ").Append(aContName[(int)GC3d.Continuity]).Append(" continuity.\n");
         }
 
         return 0;
@@ -560,7 +560,7 @@ internal static class GeometryTestContinuityCommands
             return 1;
         }
 
-        theResult.Append(theArgv[1]).Append(" has ").Append(aContName[(int)GS1.Continuity()]).Append(" continuity.\n");
+        theResult.Append(theArgv[1]).Append(" has ").Append(aContName[(int)GS1.Continuity]).Append(" continuity.\n");
 
         return 0;
     }

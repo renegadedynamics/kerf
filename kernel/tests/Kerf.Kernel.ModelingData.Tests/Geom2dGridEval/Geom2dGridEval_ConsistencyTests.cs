@@ -175,7 +175,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
     {
         return theKind switch
         {
-            "Line" => new LineCurve2D(new Axis2D(RandomAx22d(theRnd).Location(), RandomAx22d(theRnd).XDirection())),
+            "Line" => new LineCurve2D(new Axis2D(RandomAx22d(theRnd).Location, RandomAx22d(theRnd).XDirection)),
             "Circle" => new CircleCurve2D(RandomAx22d(theRnd), 0.1 + 10 * theRnd.NextDouble()),
             "Ellipse" => RandomEllipse(theRnd),
             "Hyperbola" => new HyperbolaCurve2D(RandomAx22d(theRnd), 3 + 5 * theRnd.NextDouble(),
@@ -198,8 +198,8 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
 
     private static (double First, double Last) Range(Curve2D theCurve)
     {
-        double aFirst = theCurve.FirstParameter();
-        double aLast = theCurve.LastParameter();
+        double aFirst = theCurve.FirstParameter;
+        double aLast = theCurve.LastParameter;
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aFirst) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aLast))
         {
             return Basis(theCurve) is HyperbolaCurve2D ? (-3.0, 3.0) : (-10.0, 10.0);
@@ -214,11 +214,11 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         {
             if (aBasis is TrimmedCurve2D aTrimmed)
             {
-                aBasis = aTrimmed.BasisCurve();
+                aBasis = aTrimmed.BasisCurve;
             }
             else if (aBasis is OffsetCurve2D anOffset)
             {
-                aBasis = anOffset.BasisCurve();
+                aBasis = anOffset.BasisCurve;
             }
             else
             {
@@ -232,15 +232,15 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         Curve2D aCurve = theCurve;
         while (aCurve is TrimmedCurve2D aTrimmed)
         {
-            aCurve = aTrimmed.BasisCurve();
+            aCurve = aTrimmed.BasisCurve;
         }
         // An offset curve's DN above 3 is its basis's DN, in the grid as in Geom2d_OffsetCurve
         int aFirstDelegatedN = aCurve is OffsetCurve2D ? 4 : 1;
         Curve2D aBasis = Basis(theCurve);
         return aBasis switch
         {
-            BSplineCurve2D aBS => new DnInfo(true, aBS.IsRational, aBS.Degree(), aFirstDelegatedN),
-            BezierCurve2D aBz => new DnInfo(false, aBz.IsRational, aBz.Degree(), aFirstDelegatedN),
+            BSplineCurve2D aBS => new DnInfo(true, aBS.IsRational, aBS.Degree, aFirstDelegatedN),
+            BezierCurve2D aBz => new DnInfo(false, aBz.IsRational, aBz.Degree, aFirstDelegatedN),
             _ => new DnInfo(false, false, int.MaxValue, aFirstDelegatedN),
         };
     }
@@ -310,8 +310,8 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                 // OCCT: zero above the degree, although a rational curve's derivatives aren't
                 for (int i = 1; i <= aNb; ++i)
                 {
-                    Assert.Equal(0.0, aDN.Value(i).X());
-                    Assert.Equal(0.0, aDN.Value(i).Y());
+                    Assert.Equal(0.0, aDN.Value(i).X);
+                    Assert.Equal(0.0, aDN.Value(i).Y);
                 }
                 continue;
             }
@@ -494,7 +494,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         aParams.SetValue(1, 0.5);
         Vector2D aGrid = new BSplineCurveGrid2D(aCurve).EvaluateGridDN(aParams, 1).Value(1);
         Vector2D aPoint = aCurve.EvalDN(0.5, 1);
-        Assert.True((aGrid - aPoint).Magnitude() > 1e-3); // the span [3, 4] extrapolated to 0.5
+        Assert.True((aGrid - aPoint).Magnitude > 1e-3); // the span [3, 4] extrapolated to 0.5
 
         // What OCCT computes: BSplCLib::DN with knot index 4
         global::Kerf.Engine.Geometry.Splines.BSplCLib.DN(0.5, 1, 4, 3, false, aCurve.InternalPoles(), null, aKnots, aMults, out Vector2D aSpan4);
@@ -524,8 +524,8 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
         NCollection_Array1<double> aParams = new(1, 1);
         aParams.SetValue(1, 0.5);
         Vector2D aGrid = new BezierCurveGrid2D(aBezier).EvaluateGridDN(aParams, 3).Value(1);
-        Assert.Equal(0.0, aGrid.Magnitude());
-        Assert.True(aBezier.EvalDN(0.5, 3).Magnitude() > 0.1);
+        Assert.Equal(0.0, aGrid.Magnitude);
+        Assert.True(aBezier.EvalDN(0.5, 3).Magnitude > 0.1);
     }
 
     // OCCT's Geom2dGridEval_Parabola builds YDir as the mirror axis turned by +90 degrees: on a parabola whose
@@ -539,7 +539,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
             Frame2D anAxes = RandomAx22d(aRnd, false);
             double aFocal = 0.1 + 5 * aRnd.NextDouble();
             ParabolaCurve2D anIndirect = new(anAxes, aFocal);
-            ParabolaCurve2D aDirect = new(new Frame2D(anAxes.Location(), anAxes.XDirection(), true), aFocal);
+            ParabolaCurve2D aDirect = new(new Frame2D(anAxes.Location, anAxes.XDirection, true), aFocal);
             NCollection_Array1<double> aParams = SortedParams(aRnd, -10, 10, 20, null);
 
             NCollection_Array1<Curve2D.ResD3> aGrid = new ParabolaGrid2D(anIndirect).EvaluateGridD3(aParams);
@@ -548,12 +548,12 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                 double aU = aParams.Value(i);
                 Curve2D.ResD3 aRef = aDirect.EvalD3(aU);
                 double aScale = Math.Max(1.0, aRef.Point.XY().Modulus());
-                Assert.True(aGrid.Value(i).Point.Distance(aRef.Point) <= 1e-12 * aScale);
-                Assert.True((aGrid.Value(i).D1 - aRef.D1).Magnitude() <= 1e-12 * Math.Max(1.0, aRef.D1.Magnitude()));
-                Assert.True((aGrid.Value(i).D2 - aRef.D2).Magnitude() <= 1e-12);
+                Assert.True(aGrid.Value(i).Point.DistanceTo(aRef.Point) <= 1e-12 * aScale);
+                Assert.True((aGrid.Value(i).D1 - aRef.D1).Magnitude <= 1e-12 * Math.Max(1.0, aRef.D1.Magnitude));
+                Assert.True((aGrid.Value(i).D2 - aRef.D2).Magnitude <= 1e-12);
                 if (Math.Abs(aU) > 1e-3)
                 {
-                    Assert.True(aGrid.Value(i).Point.Distance(anIndirect.EvalD0(aU)) > 1e-6);
+                    Assert.True(aGrid.Value(i).Point.DistanceTo(anIndirect.EvalD0(aU)) > 1e-6);
                 }
             }
         }
@@ -606,7 +606,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
 
         Assert.Equal(new Point2D(2.5, 2), aParab.EvalD0(1.5));
         NCollection_Array1<Point2D> aGrid = new ParabolaGrid2D(aParab).EvaluateGrid(aParams);
-        Assert.True(double.IsNaN(aGrid.Value(1).X())); // 0 * inf
-        Assert.True(double.IsInfinity(aGrid.Value(2).X()));
+        Assert.True(double.IsNaN(aGrid.Value(1).X)); // 0 * inf
+        Assert.True(double.IsInfinity(aGrid.Value(2).X));
     }
 }

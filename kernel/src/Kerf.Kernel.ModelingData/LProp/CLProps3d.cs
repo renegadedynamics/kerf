@@ -139,7 +139,7 @@ public class CLProps3d
                         return false;
                 }
 
-                if (v.SquareMagnitude() > tolSq)
+                if (v.SquareMagnitude > tolSq)
                 {
                     _significantFirstDerivativeOrder = order;
                     _tangentStatus = Defined;

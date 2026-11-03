@@ -53,7 +53,7 @@ public class DrawConstructionCommandsTests
         i.Eval("vertex v1 0 0 0; vertex v2 3 4 0; edge e v1 v2; polyvertex pv v1 v2");
         Assert.Equal(new Point3D(3, 4, 0), Tool.Pnt(ShapeCasts.Vertex(i.GetShape("v2"))));
         Edge e = ShapeCasts.Edge(i.GetShape("e"));
-        Assert.Equal(5.0, Tool.Curve(e, out double f, out double l)!.Value(l).Distance(new Point3D()) - f, 12);
+        Assert.Equal(5.0, Tool.Curve(e, out double f, out double l)!.Value(l).DistanceTo(new Point3D()) - f, 12);
         Assert.Equal(1, Count(i.GetShape("pv"), ShapeType.Edge));
 
         // vertex on an edge's curve, at a point
@@ -66,7 +66,7 @@ public class DrawConstructionCommandsTests
 
         i.Eval("polyline p 0 0 0 1 0 0 1 1 0 0 1 0 0 0 0");
         Shape p = i.GetShape("p");
-        Assert.Equal(ShapeType.Wire, p.ShapeType());
+        Assert.Equal(ShapeType.Wire, p.Type);
         Assert.Equal(4, Count(p, ShapeType.Edge));
         Assert.Equal(4, Count(p, ShapeType.Vertex));
         Assert.Equal("", Error(i, "polyline q 0 0 0 1 0"));
@@ -104,7 +104,7 @@ public class DrawConstructionCommandsTests
         Tool.CurveOnSurface(ShapeCasts.Edge(i.GetShape("s2")), out Curve2D? aC, out Surface? aS, out _, out _, out _);
         Assert.NotNull(aC);
         Assert.IsType<CylindricalSurface>(aS);
-        Assert.Equal(ShapeType.Edge, i.GetShape("p2").ShapeType());
+        Assert.Equal(ShapeType.Edge, i.GetShape("p2").Type);
 
         Assert.Equal("nothing is not a curve or polygon 3d\n", Error(i, "mkedge x nothing"));
         Assert.Equal("", Error(i, "mkedge x l 1 2 3"));
@@ -146,8 +146,8 @@ public class DrawConstructionCommandsTests
     {
         (DrawInterpreter i, StringWriter o) = Load();
         i.Eval("plane pl; mkface f pl 0 1 0 2; mkshell sh pl 0 1 0 2; mksurface s f");
-        Assert.Equal(ShapeType.Face, i.GetShape("f").ShapeType());
-        Assert.Equal(ShapeType.Shell, i.GetShape("sh").ShapeType());
+        Assert.Equal(ShapeType.Face, i.GetShape("f").Type);
+        Assert.Equal(ShapeType.Shell, i.GetShape("sh").Type);
         BrepTools.UVBounds(ShapeCasts.Face(i.GetShape("f")), out double u1, out double u2, out double v1, out double v2);
         Assert.Equal((0.0, 1.0, 0.0, 2.0), (u1, u2, v1, v2));
         Assert.IsType<PlaneSurface>(((DrawGeometry)i.GetDrawable("s")!).Geometry);
@@ -155,7 +155,7 @@ public class DrawConstructionCommandsTests
         // a face bounded by a wire, an infinite face, a shell of a whole sphere
         i.Eval("polyline w 0 0 0 1 0 0 1 1 0 0 1 0 0 0 0; mkface fw pl w; mkface fi pl; sphere sp 1; mkshell ss sp");
         Assert.Equal(1, Count(i.GetShape("fw"), ShapeType.Wire));
-        Assert.Equal(ShapeType.Shell, i.GetShape("ss").ShapeType());
+        Assert.Equal(ShapeType.Shell, i.GetShape("ss").Type);
         Assert.Equal("", Error(i, "mkface x nothing"));
         Assert.Equal("nothing is not a surface\n", o.ToString());
 
@@ -176,7 +176,7 @@ public class DrawConstructionCommandsTests
         // a 2 x 1 rectangle closed by the last segment
         i.Eval("profile r X 2 Y 1 X -2");
         Shape r = i.GetShape("r");
-        Assert.Equal(ShapeType.Face, r.ShapeType());
+        Assert.Equal(ShapeType.Face, r.Type);
         Assert.Equal(4, Count(r, ShapeType.Edge));
         var aProps = new Properties();
         MassPropertiesBuilder.SurfaceProperties(r, aProps);
@@ -184,7 +184,7 @@ public class DrawConstructionCommandsTests
 
         // an open wire raised to z = 1; an arc; the codes' errors
         i.Eval("profile w O 0 0 1 X 1 Y 1 WW");
-        Assert.Equal(ShapeType.Wire, i.GetShape("w").ShapeType());
+        Assert.Equal(ShapeType.Wire, i.GetShape("w").Type);
         Assert.Equal(2, Count(i.GetShape("w"), ShapeType.Edge));
         i.Eval("profile c F 1 0 C 1 180 X -2");
         aProps = new Properties();
@@ -206,7 +206,7 @@ public class DrawConstructionCommandsTests
         i.Eval("vertex v1 0 0 0; vertex v2 3 4 0");
         Assert.Equal("\"distmini\" command returns:\nd_val d \nOutput is complete.\n", i.Eval("distmini d v1 v2"));
         Assert.Equal(5.0, Number(i, "d_val"));
-        Assert.Equal(ShapeType.Edge, i.GetShape("d").ShapeType());
+        Assert.Equal(ShapeType.Edge, i.GetShape("d").Type);
 
         // two parallel segments: the two ends are solutions; touching shapes give vertices
         i.Eval("line l 0 0 0 1 0 0; line l2 0 1 0 1 0 0; mkedge e1 l 0 1; mkedge e2 l2 0 1");
@@ -215,7 +215,7 @@ public class DrawConstructionCommandsTests
         i.Eval("vertex m 0.5 0 0");
         i.Eval("distmini t e1 m");
         Assert.Equal(0.0, Number(i, "t_val"));
-        Assert.Equal(ShapeType.Vertex, i.GetShape("t").ShapeType());
+        Assert.Equal(ShapeType.Vertex, i.GetShape("t").Type);
 
         Assert.Equal("Syntax error at '-bad'", Error(i, "distmini y e1 e2 -BAD"));
         Assert.Equal("", Error(i, "distmini y e1"));
@@ -236,7 +236,7 @@ public class DrawConstructionCommandsTests
 
         i.Eval($"restore {DataOcc}/solid.brep s");
         Assert.Equal("Compound of overlapped sub-faces: s_overlapped\n", i.Eval("selfintersect s"));
-        Assert.Equal(ShapeType.Compound, i.GetShape("s_overlapped").ShapeType());
+        Assert.Equal(ShapeType.Compound, i.GetShape("s_overlapped").Type);
     }
 
     [Fact]
@@ -273,7 +273,7 @@ public class DrawConstructionCommandsTests
         Assert.Equal("null shapes\n", i.Eval("issubshape nothing s"));
 
         i.Eval("polyline w 0 0 0 1 0 0 1 1 0 0 1 0 0 0 0; wexplo w");
-        Assert.Equal(ShapeType.Edge, i.GetShape("WEDGE_4").ShapeType());
+        Assert.Equal(ShapeType.Edge, i.GetShape("WEDGE_4").Type);
         Assert.Equal(" a plane is found \n", i.Eval("findplane w pl"));
         Assert.IsType<PlaneSurface>(((DrawGeometry)i.GetDrawable("pl")!).Geometry);
     }
@@ -323,14 +323,14 @@ public class DrawConstructionCommandsTests
         (DrawInterpreter i, _) = Load();
         i.Eval("line l 0 0 0 1 0 0; point p 1 2 3; circle c 0 0 0 1; point q 1 2");
         Assert.Equal("l p ", i.Eval("translate l p 0 0 5"));
-        Assert.Equal(new Point3D(0, 0, 5), ((LineCurve3D)((DrawGeometry)i.GetDrawable("l")!).Geometry).Lin().Location());
+        Assert.Equal(new Point3D(0, 0, 5), ((LineCurve3D)((DrawGeometry)i.GetDrawable("l")!).Geometry).Line.Location);
         Assert.Equal(new Point3D(1, 2, 8), (Point3D)((DrawGeometry)i.GetDrawable("p")!).Geometry);
 
         // pmirror and pscale leave the point's coordinates in the list of names, as OCCT does
         Assert.Equal("p 0 0 0 ", i.Eval("pmirror p 0 0 0"));
         Assert.Equal(new Point3D(-1, -2, -8), (Point3D)((DrawGeometry)i.GetDrawable("p")!).Geometry);
         Assert.Equal("c 0 0 0 ", i.Eval("pscale c 0 0 0 2"));
-        Assert.Equal(2.0, ((CircleCurve3D)((DrawGeometry)i.GetDrawable("c")!).Geometry).Radius());
+        Assert.Equal(2.0, ((CircleCurve3D)((DrawGeometry)i.GetDrawable("c")!).Geometry).Radius);
         Assert.Equal("c ", i.Eval("rotate c 0 0 0 1 0 0 90"));
         Assert.Equal("c ", i.Eval("lmirror c 0 0 0 0 0 1"));
         Assert.Equal("c ", i.Eval("smirror c 0 0 0 0 0 1"));
@@ -340,7 +340,7 @@ public class DrawConstructionCommandsTests
         Assert.Equal(new Point2D(2, 3), (Point2D)((DrawGeometry)i.GetDrawable("q")!).Geometry);
         i.Eval("line l2 0 0 1 0; 2drotate l2 0 0 90; 2dpmirror q 0 0; 2dlmirror q 0 0 1 0; 2dpscale q 0 0 2");
         Assert.Equal(new Point2D(-4, 6), (Point2D)((DrawGeometry)i.GetDrawable("q")!).Geometry);
-        Assert.Equal(0.0, ((LineCurve2D)((DrawGeometry)i.GetDrawable("l2")!).Geometry).Direction().X(), 15);
+        Assert.Equal(0.0, ((LineCurve2D)((DrawGeometry)i.GetDrawable("l2")!).Geometry).Direction.X, 15);
     }
 
     [Fact]

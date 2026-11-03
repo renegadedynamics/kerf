@@ -17,7 +17,7 @@ public class Extrema_ElementaryTest
         while (true)
         {
             var aV = new Vector3D(theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5, theRandom.NextDouble() - 0.5);
-            if (aV.Magnitude() > 0.1)
+            if (aV.Magnitude > 0.1)
             {
                 return new Direction3D(aV);
             }
@@ -34,7 +34,7 @@ public class Extrema_ElementaryTest
     private static void AssertNormal(in Point3D theP, in Point3D theC, in Vector3D theTangent)
     {
         var aV = new Vector3D(theC, theP);
-        Assert.Equal(0.0, aV.Dot(theTangent) / Math.Max(1.0, aV.Magnitude() * theTangent.Magnitude()), 1e-7);
+        Assert.Equal(0.0, aV.Dot(theTangent) / Math.Max(1.0, aV.Magnitude * theTangent.Magnitude), 1e-7);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class Extrema_ElementaryTest
             Point3D aP = RandomPnt(aRandom);
             double aR = 1 + 30 * aRandom.NextDouble();
 
-            var aLin = new Line3D(anAx.Axis());
+            var aLin = new Line3D(anAx.Axis);
             Check(new ExtPElC(aP, aLin, 1e-7, -1000, 1000), theU => { global::Kerf.Engine.Geometry.ElCLib.D1(theU, aLin, out Point3D aC, out Vector3D aT); return (aC, aT); }, 1);
 
             var aCirc = new Circle3D(anAx, aR);
@@ -95,8 +95,8 @@ public class Extrema_ElementaryTest
                 {
                     POnCurv aPOn = theExt.Point(j);
                     (Point3D aC, Vector3D aT) = theD1(aPOn.Parameter());
-                    Assert.Equal(0.0, aC.Distance(aPOn.Value()), 1e-7);
-                    Assert.Equal(aP.SquareDistance(aPOn.Value()), theExt.SquareDistance(j), 1e-6);
+                    Assert.Equal(0.0, aC.DistanceTo(aPOn.Value()), 1e-7);
+                    Assert.Equal(aP.SquareDistanceTo(aPOn.Value()), theExt.SquareDistance(j), 1e-6);
                     AssertNormal(aP, aC, aT);
                 }
             }
@@ -132,8 +132,8 @@ public class Extrema_ElementaryTest
             Assert.True(anExt.IsMin(1) && anExt.IsMin(2));
             for (int j = 1; j <= 2; j++)
             {
-                Assert.Equal(0.0, aCirc.Distance(anExt.Point(j).Value()), 1e-9);
-                Assert.Equal(aP.SquareDistance(anExt.Point(j).Value()), anExt.SquareDistance(j), 1e-6);
+                Assert.Equal(0.0, aCirc.DistanceTo(anExt.Point(j).Value()), 1e-9);
+                Assert.Equal(aP.SquareDistanceTo(anExt.Point(j).Value()), anExt.SquareDistance(j), 1e-6);
             }
 
             var anElips = new Ellipse2D(anAx, aR + 4, aR);
@@ -142,7 +142,7 @@ public class Extrema_ElementaryTest
             for (int j = 1; j <= anExtE.ExtCount; j++)
             {
                 global::Kerf.Engine.Geometry.ElCLib.D1(anExtE.Point(j).Parameter(), anElips, out Point2D aC, out Vector2D aT);
-                Assert.Equal(0.0, new Vector2D(aC, aP).Dot(aT) / Math.Max(1.0, aC.Distance(aP) * aT.Magnitude()), 1e-7);
+                Assert.Equal(0.0, new Vector2D(aC, aP).Dot(aT) / Math.Max(1.0, aC.DistanceTo(aP) * aT.Magnitude), 1e-7);
                 // OCCT never marks an extremum of an ellipse as a minimum (occt-issues.md)
                 Assert.False(anExtE.IsMin(j));
             }
@@ -184,8 +184,8 @@ public class Extrema_ElementaryTest
                     Torus aTor => global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, aTor),
                     _ => throw new InvalidOperationException(),
                 };
-                Assert.Equal(0.0, aS.Distance(aPOn.Value()), 1e-7);
-                Assert.Equal(theP.SquareDistance(aPOn.Value()), theExt.SquareDistance(j), 1e-6);
+                Assert.Equal(0.0, aS.DistanceTo(aPOn.Value()), 1e-7);
+                Assert.Equal(theP.SquareDistanceTo(aPOn.Value()), theExt.SquareDistance(j), 1e-6);
             }
         }
     }
@@ -203,9 +203,9 @@ public class Extrema_ElementaryTest
             Assert.False(anExt.IsParallel);
             Assert.Equal(1, anExt.ExtCount);
             anExt.Points(1, out POnCurv aP1, out POnCurv aP2);
-            Assert.Equal(aL1.Distance(aL2), Math.Sqrt(anExt.SquareDistance(1)), 1e-8);
-            Assert.Equal(0.0, aL1.Distance(aP1.Value()), 1e-8);
-            Assert.Equal(0.0, aL2.Distance(aP2.Value()), 1e-8);
+            Assert.Equal(aL1.DistanceTo(aL2), Math.Sqrt(anExt.SquareDistance(1)), 1e-8);
+            Assert.Equal(0.0, aL1.DistanceTo(aP1.Value()), 1e-8);
+            Assert.Equal(0.0, aL2.DistanceTo(aP2.Value()), 1e-8);
 
             // Line and circle: each pair is a normal pair
             var aCirc = new Circle3D(RandomAx2(aRandom), 1 + 20 * aRandom.NextDouble());
@@ -215,9 +215,9 @@ public class Extrema_ElementaryTest
             {
                 anExtLC.Points(j, out POnCurv aPL, out POnCurv aPC);
                 global::Kerf.Engine.Geometry.ElCLib.D1(aPC.Parameter(), aCirc, out Point3D aC, out Vector3D aT);
-                Assert.Equal(0.0, aC.Distance(aPC.Value()), 1e-7);
+                Assert.Equal(0.0, aC.DistanceTo(aPC.Value()), 1e-7);
                 AssertNormal(aPL.Value(), aC, aT);
-                AssertNormal(aPC.Value(), aPL.Value(), new Vector3D(aL1.Direction()));
+                AssertNormal(aPC.Value(), aPL.Value(), new Vector3D(aL1.Direction));
             }
         }
 
@@ -242,8 +242,8 @@ public class Extrema_ElementaryTest
         var anExt = new ExtElC2d(aL1, aL2, global::Kerf.Engine.Foundation.Precision.Angular());
         Assert.False(anExt.IsParallel);
         anExt.Points(1, out POnCurv2d aP1, out POnCurv2d aP2);
-        Assert.Equal(0.0, aP1.Value().Distance(new Point2D(-1, 0)), 1e-12);
-        Assert.Equal(0.0, aP2.Value().Distance(new Point2D(-1, 0)), 1e-12);
+        Assert.Equal(0.0, aP1.Value().DistanceTo(new Point2D(-1, 0)), 1e-12);
+        Assert.Equal(0.0, aP2.Value().DistanceTo(new Point2D(-1, 0)), 1e-12);
 
         var aParallel = new ExtElC2d(aL1, new Line2D(new Point2D(0, 2), new Direction2D(-1, 0)), global::Kerf.Engine.Foundation.Precision.Angular());
         Assert.True(aParallel.IsParallel);

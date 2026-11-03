@@ -1114,7 +1114,7 @@ public class RstRstLineBuilder
             upoint = lastrst1;
         }
         p2drst1 = _rst1.Value(upoint);
-        Point3D thepoint = _surf1.Value(p2drst1.X(), p2drst1.Y());
+        Point3D thepoint = _surf1.Value(p2drst1.X, p2drst1.Y);
 
         finvP.Set(thepoint);
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
@@ -1178,7 +1178,7 @@ public class RstRstLineBuilder
             vpoint = lastrst2;
         }
         p2drst2 = _rst2.Value(vpoint);
-        Point3D thepoint = _surf2.Value(p2drst2.X(), p2drst2.Y());
+        Point3D thepoint = _surf2.Value(p2drst2.X, p2drst2.Y);
 
         finvP.Set(thepoint);
         math_Vector toler = new(1, 2), infb = new(1, 2), supb = new(1, 2);
@@ -1261,7 +1261,7 @@ public class RstRstLineBuilder
         arc.D1(param, out p2d, out dp2d);
         if (onFirst)
         {
-            _surf1.D1(p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            _surf1.D1(p2d.X, p2d.Y, out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = _previousP.TangentOnC1();
@@ -1273,7 +1273,7 @@ public class RstRstLineBuilder
         }
         else
         {
-            _surf2.D1(p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
+            _surf2.D1(p2d.X, p2d.Y, out pbid, out d1u, out d1v);
             if (!computetranstionaveclacorde)
             {
                 tgline = _previousP.TangentOnC2();
@@ -1284,7 +1284,7 @@ public class RstRstLineBuilder
             }
         }
 
-        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X, d1u, dp2d.Y, d1v);
         normale = d1u.Crossed(d1v);
 
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(tgline, tgrst, new Direction3D(normale), ref tLine, ref tArc);
@@ -1378,10 +1378,10 @@ public class RstRstLineBuilder
         double norme;
         double prevNorme = 0.0;
         Vector3D corde = new(prevP, psurf);
-        norme = corde.SquareMagnitude();
+        norme = corde.SquareMagnitude;
         if (!prevpointistangent)
         {
-            prevNorme = prevTg.SquareMagnitude();
+            prevNorme = prevTg.SquareMagnitude;
         }
 
         double toler3d = 0.01 * _tolpoint3d;
@@ -1413,7 +1413,7 @@ public class RstRstLineBuilder
         {
             // Check if it is necessary to control the sign of prevtg*Tgsurf
             cosi = _sens * corde * tgsurf;
-            cosi2 = cosi * cosi / tgsurf.SquareMagnitude() / norme;
+            cosi2 = cosi * cosi / tgsurf.SquareMagnitude / norme;
             if (cosi2 < cosRef3D || cosi < 0.0)
             {
                 return BlendStatus.StepTooLarge;
@@ -1465,10 +1465,10 @@ public class RstRstLineBuilder
         double norme;
         double prevNorme = 0.0;
         Vector3D corde = new(prevP, psurf);
-        norme = corde.SquareMagnitude();
+        norme = corde.SquareMagnitude;
         if (!prevpointistangent)
         {
-            prevNorme = prevTg.SquareMagnitude();
+            prevNorme = prevTg.SquareMagnitude;
         }
 
         double toler3d = 0.01 * _tolpoint3d;
@@ -1500,7 +1500,7 @@ public class RstRstLineBuilder
         {
             // Check if it is necessary to control the sign of prevtg*Tgsurf
             cosi = _sens * corde * tgsurf;
-            cosi2 = cosi * cosi / tgsurf.SquareMagnitude() / norme;
+            cosi2 = cosi * cosi / tgsurf.SquareMagnitude / norme;
             if (cosi2 < cosRef3D || cosi < 0.0)
             {
                 return BlendStatus.StepTooLarge;
@@ -1555,7 +1555,7 @@ public class RstRstLineBuilder
 
             if (curpointistangent)
             {
-                curpoint.SetValue(ptrst1, ptrst2, _param, pt2drst1.X(), pt2drst1.Y(), pt2drst2.X(), pt2drst2.Y(), _sol[1],
+                curpoint.SetValue(ptrst1, ptrst2, _param, pt2drst1.X, pt2drst1.Y, pt2drst2.X, pt2drst2.Y, _sol[1],
                                   _sol[2]);
             }
             else
@@ -1564,7 +1564,7 @@ public class RstRstLineBuilder
                 tgrst2 = func.TangentOnRst2();
                 tg2drst1 = func.Tangent2dOnRst1();
                 tg2drst2 = func.Tangent2dOnRst2();
-                curpoint.SetValue(ptrst1, ptrst2, _param, pt2drst1.X(), pt2drst1.Y(), pt2drst2.X(), pt2drst2.Y(), _sol[1],
+                curpoint.SetValue(ptrst1, ptrst2, _param, pt2drst1.X, pt2drst1.Y, pt2drst2.X, pt2drst2.Y, _sol[1],
                                   _sol[2], tgrst1, tgrst2, tg2drst1, tg2drst2);
             }
             if (testDeflection)

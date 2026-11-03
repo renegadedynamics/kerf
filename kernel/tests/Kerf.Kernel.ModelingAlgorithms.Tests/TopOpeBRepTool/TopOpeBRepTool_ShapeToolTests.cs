@@ -121,6 +121,6 @@ public class TopOpeBRepTool_ShapeToolTests
         double aTol = ToolShapeTool.EdgeData(aCircle, 0.0, ref T, ref N, ref aCurv);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Angular(), aTol);
         Assert.Equal(0.5, aCurv, 1.0e-12);
-        Assert.Equal(1.0, N.Z());
+        Assert.Equal(1.0, N.Z);
     }
 }

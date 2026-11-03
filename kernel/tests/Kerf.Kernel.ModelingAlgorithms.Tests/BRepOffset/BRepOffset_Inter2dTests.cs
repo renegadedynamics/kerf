@@ -84,7 +84,7 @@ public class BRepOffset_Inter2dTests
         Assert.False(aLV[0].IsSame(aV1));
         Assert.False(aLV[0].IsSame(aV2));
         Vertex aVNew = global::Kerf.Engine.Topology.ShapeCasts.Vertex(aLV[0]);
-        Assert.InRange(Tool.Pnt(aVNew).X(), 4.0 - 1.0e-3, 4.0001 + 1.0e-3);
+        Assert.InRange(Tool.Pnt(aVNew).X, 4.0 - 1.0e-3, 4.0001 + 1.0e-3);
         Assert.True(Tool.Parameter(global::Kerf.Engine.Topology.ShapeCasts.Vertex(aVNew.Oriented(Orientation.Internal)), aE, out double aT));
         Assert.InRange(aT, 4.0, 4.0001);
     }

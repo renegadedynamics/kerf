@@ -71,8 +71,8 @@ public sealed class SurfaceCustom
             { // Bezier :
                 nUP = theBezierS.UPoleCount;
                 nVP = theBezierS.VPoleCount;
-                uDeg = theBezierS.UDegree();
-                vDeg = theBezierS.VDegree();
+                uDeg = theBezierS.UDegree;
+                vDeg = theBezierS.VDegree;
             }
             else
             {
@@ -83,11 +83,11 @@ public sealed class SurfaceCustom
         { // BSpline :
             nUP = theBSplneS.UPoleCount;
             nVP = theBSplneS.VPoleCount;
-            uDeg = theBSplneS.UDegree();
-            vDeg = theBSplneS.VDegree();
+            uDeg = theBSplneS.UDegree;
+            vDeg = theBSplneS.VDegree;
         }
 
-        _surf!.Bounds(out u1, out u2, out v1, out v2);
+        _surf!.ParameterBounds(out u1, out u2, out v1, out v2);
         NCollection_Array1<Point3D> p1 = new(1, 3), p2 = new(1, 3), p3 = new(1, 3);
         NCollection_Array1<double> r = new(1, 3);
         Point3D origPnt, resPnt;
@@ -154,7 +154,7 @@ public sealed class SurfaceCustom
             Vector3D nnew = unew.Crossed(vnew);
             if (nold.Dot(nnew) < 0.0)
             {
-                CoordinateSystem ax3 = pln.Position();
+                CoordinateSystem ax3 = pln.Position;
                 ax3 = ax3.ZReversed();
                 ax3 = ax3.XReversed();
                 pln = new Plane3D(ax3);
@@ -208,10 +208,10 @@ public sealed class SurfaceCustom
 
                 iso.D0(u1, out p1[i]);
                 iso.D0(0.5 * (u1 + u2), out p2[i]);
-                p3[i] = p3[i].WithCoord(0.5 * (p1[i].X() + p2[i].X()),
-                               0.5 * (p1[i].Y() + p2[i].Y()),
-                               0.5 * (p1[i].Z() + p2[i].Z()));
-                r[i] = p3[i].Distance(p1[i]);
+                p3[i] = p3[i].WithCoord(0.5 * (p1[i].X + p2[i].X),
+                               0.5 * (p1[i].Y + p2[i].Y),
+                               0.5 * (p1[i].Z + p2[i].Z));
+                r[i] = p3[i].DistanceTo(p1[i]);
             }
 
             // OCCT: the last iso built, at parameter 0 rather than U1 (occt-issues.md)
@@ -223,7 +223,7 @@ public sealed class SurfaceCustom
             CoordinateSystem aAx3 = new CoordinateSystem(p3[1], dir, new Direction3D(xVec));
             //  CKY  3-FEV-1997 : verification du sens de description
             // C++ converts origD1U to a gp_Dir implicitly
-            if (aAx3.YDirection().Dot(new Direction3D(origD1U)) < 0)
+            if (aAx3.YDirection.Dot(new Direction3D(origD1U)) < 0)
             {
                 aAx3 = aAx3.YReversed(); //  mais X reste !
             }
@@ -254,7 +254,7 @@ public sealed class SurfaceCustom
                 else
                 {
                     Vector3D vec2 = new Vector3D(p1[1], p1[2]);
-                    double angle = vec.Angle(vec2);
+                    double angle = vec.AngleTo(vec2);
                     if (r[1] < r[2])
                     {
                         ConicalSurface anObject = new ConicalSurface(aAx3, angle, r[1]);
@@ -310,22 +310,22 @@ public sealed class SurfaceCustom
 
                     iso.D0(v1, out p1[i]);
                     iso.D0(0.5 * (v1 + v2), out p2[i]);
-                    p3[i] = p3[i].WithCoord(0.5 * (p1[i].X() + p2[i].X()),
-                                   0.5 * (p1[i].Y() + p2[i].Y()),
-                                   0.5 * (p1[i].Z() + p2[i].Z()));
-                    r[i] = p3[i].Distance(p1[i]);
+                    p3[i] = p3[i].WithCoord(0.5 * (p1[i].X + p2[i].X),
+                                   0.5 * (p1[i].Y + p2[i].Y),
+                                   0.5 * (p1[i].Z + p2[i].Z));
+                    r[i] = p3[i].DistanceTo(p1[i]);
                 }
                 if ((Math.Abs(r[1] - r[2]) < tol) && (Math.Abs(r[1] - r[3]) < tol))
                 {
-                    Point3D p10 = new Point3D(0.5 * (p3[1].X() + p3[2].X()),
-                                            0.5 * (p3[1].Y() + p3[2].Y()),
-                                            0.5 * (p3[1].Z() + p3[2].Z()));
+                    Point3D p10 = new Point3D(0.5 * (p3[1].X + p3[2].X),
+                                            0.5 * (p3[1].Y + p3[2].Y),
+                                            0.5 * (p3[1].Z + p3[2].Z));
                     Vector3D vec = new Vector3D(p10, p3[1]);
                     Vector3D vec2 = new Vector3D(p10, p3[3]);
                     double rr1 = r[1], rr2 = r[2], rr3;
                     vec = vec.Crossed(vec2);
 
-                    if (vec.Magnitude() <= Constants.Resolution())
+                    if (vec.Magnitude <= Constants.Resolution())
                     {
                         vec = vec.WithCoord(0.0, 0.0, 1.0);
                     }
@@ -333,7 +333,7 @@ public sealed class SurfaceCustom
                     Direction3D dir = new Direction3D(vec);
 
                     CoordinateSystem aAx3 = new CoordinateSystem(p10, dir);
-                    rr1 = p10.Distance(p3[1]);
+                    rr1 = p10.DistanceTo(p3[1]);
                     //          modif empirique (pourtant NON DEMONTREE) : inverser roles RR1,RR2
                     //          CKY, 24-JAN-1997
                     if (rr1 < rr2)
@@ -424,7 +424,7 @@ public sealed class SurfaceCustom
 
                 newSurf!.D0(s, t, out p3d2);
 
-                dis = p3d.Distance(p3d2);
+                dis = p3d.DistanceTo(p3d2);
                 if (dis > _gap)
                 {
                     _gap = dis;
@@ -481,8 +481,8 @@ public sealed class SurfaceCustom
         {
             bool set = true;
             // if degree+1 at ends, first change it to 1 by rearranging knots
-            if (bSpl.UMultiplicity(1) == bSpl.UDegree() + 1
-                && bSpl.UMultiplicity(bSpl.UKnotCount) == bSpl.UDegree() + 1)
+            if (bSpl.UMultiplicity(1) == bSpl.UDegree + 1
+                && bSpl.UMultiplicity(bSpl.UKnotCount) == bSpl.UDegree + 1)
             {
                 NCollection_Array2<Point3D> oldPoles = bSpl.InternalPoles();
                 NCollection_Array2<double> oldWeights = bSpl.InternalWeightsArray();
@@ -505,21 +505,21 @@ public sealed class SurfaceCustom
                     newUKnots[i] = oldUKnots[i - 1];
                     newUMults[i] = oldUMults[i - 1];
                 }
-                newUMults[2] = newUMults[nbUKnots + 1] = bSpl.UDegree();
+                newUMults[2] = newUMults[nbUKnots + 1] = bSpl.UDegree;
                 global::Kerf.Geometry.BSplineSurface res = new global::Kerf.Geometry.BSplineSurface(oldPoles,
                                                                   oldWeights,
                                                                   newUKnots,
                                                                   oldVKnots,
                                                                   newUMults,
                                                                   oldVMults,
-                                                                  bSpl.UDegree(),
-                                                                  bSpl.VDegree(),
+                                                                  bSpl.UDegree,
+                                                                  bSpl.VDegree,
                                                                   bSpl.IsUPeriodic,
                                                                   bSpl.IsVPeriodic);
                 bSpl = res;
             }
-            else if (bSpl.UMultiplicity(1) > bSpl.UDegree()
-                     || bSpl.UMultiplicity(bSpl.UKnotCount) > bSpl.UDegree() + 1)
+            else if (bSpl.UMultiplicity(1) > bSpl.UDegree
+                     || bSpl.UMultiplicity(bSpl.UKnotCount) > bSpl.UDegree + 1)
             {
                 set = false;
             }
@@ -540,8 +540,8 @@ public sealed class SurfaceCustom
         {
             bool set = true;
             // if degree+1 at ends, first change it to 1 by rearranging knots
-            if (bSpl.VMultiplicity(1) == bSpl.VDegree() + 1
-                && bSpl.VMultiplicity(bSpl.VKnotCount) == bSpl.VDegree() + 1)
+            if (bSpl.VMultiplicity(1) == bSpl.VDegree + 1
+                && bSpl.VMultiplicity(bSpl.VKnotCount) == bSpl.VDegree + 1)
             {
                 NCollection_Array2<Point3D> oldPoles = bSpl.InternalPoles();
                 NCollection_Array2<double> oldWeights = bSpl.InternalWeightsArray();
@@ -564,21 +564,21 @@ public sealed class SurfaceCustom
                     newVKnots[i] = oldVKnots[i - 1];
                     newVMults[i] = oldVMults[i - 1];
                 }
-                newVMults[2] = newVMults[nbVKnots + 1] = bSpl.VDegree();
+                newVMults[2] = newVMults[nbVKnots + 1] = bSpl.VDegree;
                 global::Kerf.Geometry.BSplineSurface res = new global::Kerf.Geometry.BSplineSurface(oldPoles,
                                                                   oldWeights,
                                                                   oldUKnots,
                                                                   newVKnots,
                                                                   oldUMults,
                                                                   newVMults,
-                                                                  bSpl.UDegree(),
-                                                                  bSpl.VDegree(),
+                                                                  bSpl.UDegree,
+                                                                  bSpl.VDegree,
                                                                   bSpl.IsUPeriodic,
                                                                   bSpl.IsVPeriodic);
                 bSpl = res;
             }
-            else if (bSpl.VMultiplicity(1) > bSpl.VDegree()
-                     || bSpl.VMultiplicity(bSpl.VKnotCount) > bSpl.VDegree() + 1)
+            else if (bSpl.VMultiplicity(1) > bSpl.VDegree
+                     || bSpl.VMultiplicity(bSpl.VKnotCount) > bSpl.VDegree + 1)
             {
                 set = false;
             }

@@ -24,8 +24,8 @@ public class Geom2dHatch_IntersectorTest
         anIntersector.LocalGeometry(aCurveAdaptor, 0.0, out Direction2D aTang, out Direction2D _, out double aCurv);
 
         // Circle tangent at param=0 is (0,1), normal is (-1,0), curvature is 1.0.
-        Assert.Equal(0.0, aTang.X(), 1.0e-10);
-        Assert.Equal(1.0, aTang.Y(), 1.0e-10);
+        Assert.Equal(0.0, aTang.X, 1.0e-10);
+        Assert.Equal(1.0, aTang.Y, 1.0e-10);
         Assert.Equal(1.0, aCurv, 1.0e-10);
     }
 
@@ -41,12 +41,12 @@ public class Geom2dHatch_IntersectorTest
 
         anIntersector.LocalGeometry(aCurveAdaptor, 0.5, out Direction2D aTang, out Direction2D aNorm, out double aCurv);
 
-        Assert.Equal(1.0, aTang.X(), 1.0e-10);
-        Assert.Equal(0.0, aTang.Y(), 1.0e-10);
+        Assert.Equal(1.0, aTang.X, 1.0e-10);
+        Assert.Equal(0.0, aTang.Y, 1.0e-10);
         Assert.Equal(0.0, aCurv, 1.0e-10);
         // Normal should be perpendicular to tangent.
-        Assert.Equal(0.0, aNorm.X(), 1.0e-10);
-        Assert.Equal(1.0, Math.Abs(aNorm.Y()), 1.0e-10);
+        Assert.Equal(0.0, aNorm.X, 1.0e-10);
+        Assert.Equal(1.0, Math.Abs(aNorm.Y), 1.0e-10);
     }
 
     // Regression test for bug #24: LocalGeometry with undefined tangent
@@ -85,9 +85,9 @@ public class Geom2dHatch_IntersectorTest
         // Curvature should be initialized to 0 for degenerate case.
         Assert.Equal(0.0, aCurv, 1.0e-10);
         // Tang and Norm should be valid unit directions (magnitude == 1).
-        double aTangMag = Math.Sqrt(aTang.X() * aTang.X() + aTang.Y() * aTang.Y());
+        double aTangMag = Math.Sqrt(aTang.X * aTang.X + aTang.Y * aTang.Y);
         Assert.Equal(1.0, aTangMag, 1.0e-10);
-        double aNormMag = Math.Sqrt(aNorm.X() * aNorm.X() + aNorm.Y() * aNorm.Y());
+        double aNormMag = Math.Sqrt(aNorm.X * aNorm.X + aNorm.Y * aNorm.Y);
         Assert.Equal(1.0, aNormMag, 1.0e-10);
     }
 }

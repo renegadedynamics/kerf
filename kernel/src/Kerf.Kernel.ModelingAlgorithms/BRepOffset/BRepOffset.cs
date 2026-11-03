@@ -36,16 +36,16 @@ public static class BRepOffset
         if (theType == typeof(PlaneSurface))
         {
             PlaneSurface p = (PlaneSurface)surface;
-            Vector3D t = new(p.Position().XDirection() ^ p.Position().YDirection());
+            Vector3D t = new(p.Position.XDirection ^ p.Position.YDirection);
             t *= offset;
             result = p.Translated(t) as PlaneSurface;
         }
         else if (theType == typeof(CylindricalSurface))
         {
             CylindricalSurface c = (CylindricalSurface)surface;
-            double radius = c.Radius();
-            CoordinateSystem axis = c.Position();
-            if (axis.Direct())
+            double radius = c.Radius;
+            CoordinateSystem axis = c.Position;
+            if (axis.IsDirect)
             {
                 radius += offset;
             }
@@ -59,7 +59,7 @@ public static class BRepOffset
             }
             else if (radius <= -tol)
             {
-                axis = axis.Rotated(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis = axis.Rotated(new Axis3D(axis.Location, axis.Direction), M_PI);
                 result = new CylindricalSurface(axis, Math.Abs(radius));
                 status = OffsetStatus.Reversed;
             }
@@ -71,22 +71,22 @@ public static class BRepOffset
         else if (theType == typeof(ConicalSurface))
         {
             ConicalSurface c = (ConicalSurface)surface;
-            double alpha = c.SemiAngle();
-            double radius = c.RefRadius() + offset * Math.Cos(alpha);
-            CoordinateSystem axis = c.Position();
+            double alpha = c.SemiAngle;
+            double radius = c.RefRadius + offset * Math.Cos(alpha);
+            CoordinateSystem axis = c.Position;
             if (radius >= 0.0)
             {
-                Vector3D z = new(axis.Direction());
+                Vector3D z = new(axis.Direction);
                 z *= -offset * Math.Sin(alpha);
                 axis = axis.Translated(z);
             }
             else
             {
                 radius = -radius;
-                Vector3D z = new(axis.Direction());
+                Vector3D z = new(axis.Direction);
                 z *= -offset * Math.Sin(alpha);
                 axis = axis.Translated(z);
-                axis = axis.Rotated(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis = axis.Rotated(new Axis3D(axis.Location, axis.Direction), M_PI);
                 alpha = -alpha;
             }
             result = new ConicalSurface(axis, alpha, radius);
@@ -94,9 +94,9 @@ public static class BRepOffset
         else if (theType == typeof(SphericalSurface))
         {
             SphericalSurface s = (SphericalSurface)surface;
-            double radius = s.Radius();
-            CoordinateSystem axis = s.Position();
-            if (axis.Direct())
+            double radius = s.Radius;
+            CoordinateSystem axis = s.Position;
+            if (axis.IsDirect)
             {
                 radius += offset;
             }
@@ -110,7 +110,7 @@ public static class BRepOffset
             }
             else if (radius <= -tol)
             {
-                axis = axis.Rotated(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis = axis.Rotated(new Axis3D(axis.Location, axis.Direction), M_PI);
                 axis = axis.ZReversed();
                 result = new SphericalSurface(axis, -radius);
                 status = OffsetStatus.Reversed;
@@ -123,12 +123,12 @@ public static class BRepOffset
         else if (theType == typeof(ToroidalSurface))
         {
             ToroidalSurface s = (ToroidalSurface)surface;
-            double majorRadius = s.MajorRadius();
-            double minorRadius = s.MinorRadius();
-            CoordinateSystem axis = s.Position();
+            double majorRadius = s.MajorRadius;
+            double minorRadius = s.MinorRadius;
+            CoordinateSystem axis = s.Position;
             if (minorRadius < majorRadius)
             { // A FINIR
-                if (axis.Direct())
+                if (axis.IsDirect)
                 {
                     minorRadius += offset;
                 }
@@ -162,8 +162,8 @@ public static class BRepOffset
         else if (theType == typeof(TrimmedSurface))
         {
             TrimmedSurface s = (TrimmedSurface)surface;
-            s.Bounds(out double u1, out double u2, out double v1, out double v2);
-            Surface off = global::Kerf.Engine.Offsets.BRepOffset.Surface(s.BasisSurface(), offset, out status, allowC0);
+            s.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
+            Surface off = global::Kerf.Engine.Offsets.BRepOffset.Surface(s.BasisSurface, offset, out status, allowC0);
             result = new TrimmedSurface(off, u1, u2, v1, v2);
         }
         else if (theType == typeof(OffsetSurface))
@@ -257,7 +257,7 @@ public static class BRepOffset
                                           colStart[iSide] + iPole * colStep[iSide]];
 
                     // distance from CG
-                    double distCG = center.Distance(pole);
+                    double distCG = center.DistanceTo(pole);
                     if (distCG > Constants.Resolution())
                     {
                         isCollapsed = false;
@@ -273,7 +273,7 @@ public static class BRepOffset
                     for (int iDegen = 0; iDegen < isDegenerated.Length;
                          degPntIt.Next(), degTolIt.Next(), ++iDegen)
                     {
-                        if (isDegenerated[iDegen] && degPntIt.Value().Distance(pole) >= degTolIt.Value())
+                        if (isDegenerated[iDegen] && degPntIt.Value().DistanceTo(pole) >= degTolIt.Value())
                         {
                             isDegenerated[iDegen] = false;
                         }

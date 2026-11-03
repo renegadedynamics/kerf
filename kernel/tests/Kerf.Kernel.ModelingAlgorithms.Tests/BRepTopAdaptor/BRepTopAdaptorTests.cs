@@ -93,12 +93,12 @@ public class BRepTopAdaptorTests
                 Assert.IsType<TopologyHVertex>(aV);
                 Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aTool.Tol3d(aV));
                 Point3D aP = aTool.Pnt(aV);
-                Assert.Equal(0.0, aP.Z(), 1e-12);
+                Assert.Equal(0.0, aP.Z, 1e-12);
                 double aParam = aV.Parameter(anArc);
                 Assert.True(aParam >= anArc.FirstParameter() - 1e-9 && aParam <= anArc.LastParameter() + 1e-9);
                 Assert.True(aV.Resolution(anArc) > 0.0);
                 Assert.True(aV.IsSame(aV));
-                Assert.Equal(RealFirst(), aV.Value().X());
+                Assert.Equal(RealFirst(), aV.Value().X);
                 aNbVertices++;
             }
 
@@ -117,8 +117,8 @@ public class BRepTopAdaptorTests
         Assert.Equal(10, aTool.NbSamplesV());
         Assert.Equal(100, aTool.NbSamples());
         aTool.SamplePoint(0, out Point2D aP2d, out Point3D aP3d);
-        Assert.Equal(aP2d.X(), aP3d.X(), 1e-12);
-        Assert.Equal(aP2d.Y(), aP3d.Y(), 1e-12);
+        Assert.Equal(aP2d.X, aP3d.X, 1e-12);
+        Assert.Equal(aP2d.Y, aP3d.Y, 1e-12);
     }
 
     [Fact]

@@ -157,9 +157,9 @@ public sealed class WireVertexFixer
             // Et remettre ce vtx en commun
             // OCCT: unlike Fix, the edges' old vertices aren't removed (the edges end up with both) and the edges aren't
             // made Free first, so on the edges of a wire (not free) B.Add throws TopoDS_FrozenShape
-            v1.Orientation(e2.Orientation());
+            v1.Orient(e2.Orientation);
             b.Add(e2, v1);
-            v1.Orientation(e1.Orientation());
+            v1.Orient(e1.Orientation);
             v1.Reverse();
             b.Add(e1, v1);
             _analyzer.SetSameVertex(i); // conclusion
@@ -262,7 +262,7 @@ public sealed class WireVertexFixer
         for (i = 1; i <= nb; i++)
         {
             Edge e1 = ShapeCasts.Edge(ef.Value(i));
-            e1.Orientation(Forward);
+            e1.Orient(Forward);
             Exploration.Vertices(e1, out Vertex va, out Vertex vb);
             e1.Free(true);
             b.Remove(e1, va);
@@ -294,14 +294,14 @@ public sealed class WireVertexFixer
             {
                 b.UpdateVertex(v1, upre, e1, prec);
                 b.UpdateVertex(v1, ufol, e2, prec);
-                v1.Orientation(Forward);
+                v1.Orient(Forward);
                 //    V1.Orientation (E2.Orientation());
             }
 
             //    Comme on a deshabille les edges, il faut tout remettre
             e2.Free(true); // sur place
             b.Add(e2, v1);
-            v1.Orientation(Reversed);
+            v1.Orient(Reversed);
             //    V1.Orientation (E1.Orientation());    V1.Reverse();
             e1.Free(true); // sur place
             b.Add(e1, v1);

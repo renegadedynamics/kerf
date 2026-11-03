@@ -27,16 +27,16 @@ public sealed class MakeParabola : GeometryRoot
     public MakeParabola(ParabolaCurve2D c, in Factors localFactors)
     {
         Parabola2D gpPar;
-        gpPar = c.Parab2d();
+        gpPar = c.Parabola;
 
         StepParabola pStep = new StepParabola();
         StepAxis2Placement ax2 = new StepAxis2Placement();
         StepAxis2Placement2d ax2Step;
         double focal;
 
-        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(gpPar.Axis(), localFactors);
+        MakeAxis2Placement2d mkAxis2 = new MakeAxis2Placement2d(gpPar.Axis, localFactors);
         ax2Step = mkAxis2.Value();
-        focal = gpPar.Focal();
+        focal = gpPar.Focal;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         pStep.Init(name, ax2, focal);
@@ -58,16 +58,16 @@ public sealed class MakeParabola : GeometryRoot
     public MakeParabola(ParabolaCurve3D c, in Factors localFactors)
     {
         Parabola3D gpPar;
-        gpPar = c.Parab();
+        gpPar = c.Parabola;
 
         StepParabola pStep = new StepParabola();
         StepAxis2Placement ax2 = new StepAxis2Placement();
         StepAxis2Placement3d ax2Step;
         double focal;
 
-        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(gpPar.Position(), localFactors);
+        Axis2Placement3dMaker mkAxis2 = new Axis2Placement3dMaker(gpPar.Position, localFactors);
         ax2Step = mkAxis2.Value();
-        focal = gpPar.Focal();
+        focal = gpPar.Focal;
         ax2.SetValue(ax2Step);
         TCollection_HAsciiString name = new TCollection_HAsciiString("");
         pStep.Init(name, ax2, focal / localFactors.LengthFactor());

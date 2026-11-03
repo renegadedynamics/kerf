@@ -314,7 +314,7 @@ public abstract partial class Shape3D : Shape
         }
         if (solid.IsNull)
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error");
-        if (solid.ShapeType() == global::Kerf.Topology.ShapeType.Solid)
+        if (solid.Type == global::Kerf.Topology.ShapeType.Solid)
             solid = ThreeD.ForwardSolid(ShapeCasts.Solid(solid));
         var result = CastLike(solid);
         // The solid can be inverted: if so, reverse it
@@ -380,10 +380,10 @@ internal static class ThreeD
     /// </summary>
     internal static global::Kerf.Topology.Shape ForwardSolid(global::Kerf.Topology.Solid solid)
     {
-        var flags = new List<Orientation> { solid.Orientation() };
+        var flags = new List<Orientation> { solid.Orientation };
         var shells = new Iterator(solid, true, true);
         for (; shells.More(); shells.Next())
-            flags.Add(shells.Value().Orientation());
+            flags.Add(shells.Value().Orientation);
         if (flags.All(f => f == Orientation.Forward))
             return solid;
         var forwardShells = new List<global::Kerf.Topology.Shape>();

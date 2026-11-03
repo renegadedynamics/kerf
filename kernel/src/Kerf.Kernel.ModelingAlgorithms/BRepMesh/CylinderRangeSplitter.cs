@@ -27,7 +27,7 @@ public class CylinderRangeSplitter : DefaultRangeSplitter
     {
         base.Reset(dFace, parameters);
 
-        double radius = GetDFace().GetSurface().Cylinder().Radius();
+        double radius = GetDFace().GetSurface().Cylinder().Radius;
         _du = TangentialDeflection.ArcAngularStep(radius,
                                                           GetDFace().GetDeflection(),
                                                           parameters.Angle,
@@ -40,7 +40,7 @@ public class CylinderRangeSplitter : DefaultRangeSplitter
         (double first, double second) rangeU = GetRangeU();
         (double first, double second) rangeV = GetRangeV();
 
-        double radius = GetDFace().GetSurface().Cylinder().Radius();
+        double radius = GetDFace().GetSurface().Cylinder().Radius;
 
         int nbU = 0;
         int nbV = 0;

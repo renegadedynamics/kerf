@@ -102,8 +102,8 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         MassPropertiesBuilder.SurfaceProperties(theFace, aProps);
         Point3D aC = aProps.CentreOfMass();
         double aSize = Math.Sqrt(aProps.Mass()) / 6;
-        Direction3D aN = aPln.Axis().Direction(), aX = aPln.XAxis().Direction();
-        if (theFace.Orientation() == Orientation.Reversed)
+        Direction3D aN = aPln.Axis.Direction, aX = aPln.XAxis.Direction;
+        if (theFace.Orientation == Orientation.Reversed)
         {
             aN = aN.Reversed();
         }
@@ -158,7 +158,7 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
         aLines.Add($"volume {Q(aVolume.Mass())} valid {new Analyzer(theShape).IsValid()}");
         return string.Join("\n", aLines);
 
-        static string P(Point3D p) => Q(p.X()) + Q(p.Y()) + Q(p.Z());
+        static string P(Point3D p) => Q(p.X) + Q(p.Y) + Q(p.Z);
     }
 
     private static void CheckDPrism(ShapeFixOracleRun theRun, string theDir, ref int theNumber, string theWhat,

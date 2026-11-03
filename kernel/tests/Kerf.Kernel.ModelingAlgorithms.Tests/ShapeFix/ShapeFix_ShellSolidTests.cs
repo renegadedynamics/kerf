@@ -182,7 +182,7 @@ public class ShapeFix_ShellTests
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aShell);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Shell, aResult.ShapeType());
+        Assert.Equal(ShapeType.Shell, aResult.Type);
         Assert.True(ShapeFixShapes.IsOriented(aResult));
         Assert.True(Tool.IsClosed(aResult));
         Assert.True(ReferenceEquals(aFix.Shell().TShape(), aResult.TShape()));
@@ -230,8 +230,8 @@ public class ShapeFix_ShellTests
         aFix.Perform();
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aShell);
-        Assert.False(aShell.Closed());
-        Assert.True(aResult.Closed());
+        Assert.False(aShell.IsClosed);
+        Assert.True(aResult.IsClosed);
         Assert.False(ReferenceEquals(aResult.TShape(), aShell.TShape()));
         foreach (Shape aF in ShapeFixShapes.SubShapes(aShell, ShapeType.Face))
         {
@@ -253,7 +253,7 @@ public class ShapeFix_ShellTests
         Assert.True(aFix.Perform());
         Assert.Equal(2, aFix.ShellCount);
         Shape aResult = aFix.Shape();
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.Equal(2, ShapeFixShapes.Count(aResult, ShapeType.Shell));
         Assert.Equal(12, ShapeFixShapes.Count(aResult, ShapeType.Face));
         Assert.True(ShapeFixShapes.IsOriented(aResult));
@@ -268,7 +268,7 @@ public class ShapeFix_ShellTests
         aFix.Init(aShell);
         Assert.True(aFix.Perform());
         Shape aResult = aFix.Shape();
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.Equal(2, aFix.ShellCount);
         Assert.Equal(7, ShapeFixShapes.Count(aResult, ShapeType.Face));
 
@@ -366,7 +366,7 @@ public class ShapeFix_SolidTests
         Solid aSolid = aFix.SolidFromShell(aShell);
         Assert.False(aFix.Status(ExtendStatus.DONE2));
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aSolid), 9);
-        Assert.Equal(Forward, new Iterator(aSolid).Value().Orientation());
+        Assert.Equal(Forward, new Iterator(aSolid).Value().Orientation);
     }
 
     [Fact]
@@ -383,7 +383,7 @@ public class ShapeFix_SolidTests
         Shape aResult = aFix.Shape();
         aSnap.AssertUnchanged(aSolid);
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Solid, aResult.ShapeType());
+        Assert.Equal(ShapeType.Solid, aResult.Type);
         Assert.Equal(1000.0, ShapeFixShapes.Volume(aResult), 9);
         Assert.True(ReferenceEquals(aFix.Solid().TShape(), aResult.TShape()));
         foreach (Shape aF in ShapeFixShapes.SubShapes(aSolid, ShapeType.Face))
@@ -414,13 +414,13 @@ public class ShapeFix_SolidTests
         aFix.Init(aSolid);
         Assert.True(aFix.Perform());
         Assert.True(aFix.Status(ExtendStatus.DONE3));
-        Assert.Equal(ShapeType.Shell, aFix.Shape().ShapeType());
+        Assert.Equal(ShapeType.Shell, aFix.Shape().Type);
 
         SolidFixer aFix2 = Fixer();
         aFix2.CreateOpenSolidMode() = true;
         aFix2.Init(aSolid);
         aFix2.Perform();
-        Assert.Equal(ShapeType.Solid, aFix2.Shape().ShapeType());
+        Assert.Equal(ShapeType.Solid, aFix2.Shape().Type);
         Assert.Equal(5, ShapeFixShapes.Count(aFix2.Shape(), ShapeType.Face));
     }
 
@@ -449,7 +449,7 @@ public class ShapeFix_SolidTests
         aFix.Init(aSolid);
         aFix.Perform();
         Shape aResult = aFix.Shape();
-        Assert.Equal(ShapeType.Compound, aResult.ShapeType());
+        Assert.Equal(ShapeType.Compound, aResult.Type);
         Assert.Equal(2, ShapeFixShapes.Count(aResult, ShapeType.Solid));
         Assert.Equal(1064.0, ShapeFixShapes.Volume(aResult), 9);
     }

@@ -640,23 +640,23 @@ public class HiddenLineData : Transient
                 ec.D1(ec.Parameter3d(ec.LastParameter()), out pt, out Vector3D tg2);
                 tg1 = tg1.Transformed(t);
                 tg2 = tg2.Transformed(t);
-                if (Abs(tg1.X()) + Abs(tg1.Y()) < _toler * 10)
+                if (Abs(tg1.X) + Abs(tg1.Y) < _toler * 10)
                 {
                     ver1 = true;
                 }
                 else
                 {
                     Direction3D dir1 = new(tg1);
-                    ver1 = Abs(dir1.X()) + Abs(dir1.Y()) < _toler * 10;
+                    ver1 = Abs(dir1.X) + Abs(dir1.Y) < _toler * 10;
                 }
-                if (Abs(tg2.X()) + Abs(tg2.Y()) < _toler * 10)
+                if (Abs(tg2.X) + Abs(tg2.Y) < _toler * 10)
                 {
                     ver2 = true;
                 }
                 else
                 {
                     Direction3D dir2 = new(tg2);
-                    ver2 = Abs(dir2.X()) + Abs(dir2.Y()) < _toler * 10;
+                    ver2 = Abs(dir2.X) + Abs(dir2.Y) < _toler * 10;
                 }
             }
             ed.VerAtSta(ed.Vertical() || ver1);
@@ -765,11 +765,11 @@ public class HiddenLineData : Transient
                                 nm = nm.Transformed(t);
                                 if (_proj.Value.Perspective())
                                 {
-                                    r = nm.Z() * _proj.Value.Focus() - (nm.X() * pt.X() + nm.Y() * pt.Y() + nm.Z() * pt.Z());
+                                    r = nm.Z * _proj.Value.Focus() - (nm.X * pt.X + nm.Y * pt.Y + nm.Z * pt.Z);
                                 }
                                 else
                                 {
-                                    r = nm.Z();
+                                    r = nm.Z;
                                 }
                                 if (Abs(r) > _toler * 10)
                                 {
@@ -1355,7 +1355,7 @@ public class HiddenLineData : Transient
         }
         else
         {
-            nm = new Direction2D(-tg.Y(), tg.X());
+            nm = new Direction2D(-tg.Y, tg.X);
         }
     }
 
@@ -1378,7 +1378,7 @@ public class HiddenLineData : Transient
         }
         else
         {
-            nm = new Direction2D(-tg.Y(), tg.X());
+            nm = new Direction2D(-tg.Y, tg.X);
         }
     }
 
@@ -1405,7 +1405,7 @@ public class HiddenLineData : Transient
                 {
                     Point2D p2d = new();
                     _proj.Value.Project(pbid, ref p2d);
-                    v = new Direction3D(p2d.X(), p2d.Y(), -_proj.Value.Focus());
+                    v = new Direction3D(p2d.X, p2d.Y, -_proj.Value.Focus());
                 }
                 else
                 {
@@ -1417,7 +1417,7 @@ public class HiddenLineData : Transient
                     nrmFace = nrmFace.Reversed();
                 }
 
-                double scal = (tngEdge.SquareMagnitude() > 1.0e-10) ? nrmFace.Dot(new Direction3D(tngEdge)) : 0.0;
+                double scal = (tngEdge.SquareMagnitude > 1.0e-10) ? nrmFace.Dot(new Direction3D(tngEdge)) : 0.0;
 
                 if (scal > _toler * 10)
                 {
@@ -1597,7 +1597,7 @@ public class HiddenLineData : Transient
                         {
                             Point2D p2d = new();
                             _proj.Value.Project(pt, ref p2d);
-                            v = new Direction3D(p2d.X(), p2d.Y(), -_proj.Value.Focus());
+                            v = new Direction3D(p2d.X, p2d.Y, -_proj.Value.Focus());
                         }
                         else
                         {
@@ -1620,17 +1620,17 @@ public class HiddenLineData : Transient
                             pt = pt.Transformed(t);
                             nm = nm.Transformed(t);
                             nm = nm.Crossed(tg);
-                            if (tg.Magnitude() < Constants.Resolution())
+                            if (tg.Magnitude < Constants.Resolution())
                             {
                                 // OCCT_DEBUG trace left out
                             }
                             if (_proj.Value.Perspective())
                             {
-                                r = nm.Z() * _proj.Value.Focus() - (nm.X() * pt.X() + nm.Y() * pt.Y() + nm.Z() * pt.Z());
+                                r = nm.Z * _proj.Value.Focus() - (nm.X * pt.X + nm.Y * pt.Y + nm.Z * pt.Z);
                             }
                             else
                             {
-                                r = nm.Z();
+                                r = nm.Z;
                             }
                             _feOri = (r > 0) ? Forward : Reversed;
                             if (!fd.Cut() && fd.Closed() && firstInversion)
@@ -1692,11 +1692,11 @@ public class HiddenLineData : Transient
                             nm = nm.Transformed(t);
                             if (_proj.Value.Perspective())
                             {
-                                r = nm.Z() * _proj.Value.Focus() - (nm.X() * pt.X() + nm.Y() * pt.Y() + nm.Z() * pt.Z());
+                                r = nm.Z * _proj.Value.Focus() - (nm.X * pt.X + nm.Y * pt.Y + nm.Z * pt.Z);
                             }
                             else
                             {
-                                r = nm.Z();
+                                r = nm.Z;
                             }
                             if (r < 0)
                             {
@@ -1837,7 +1837,7 @@ public class HiddenLineData : Transient
 
         // OCCT's debug dump of the point (a function-scope static flag never set) is left out
 
-        Line3D l = _proj.Value.Shoot(psta.X(), psta.Y());
+        Line3D l = _proj.Value.Shoot(psta.X, psta.Y);
         double wLim = global::Kerf.Engine.Geometry.ElCLib.Parameter(l, pLim);
         _intersector.Perform(l, wLim);
         if (_intersector.IsDone())
@@ -2090,7 +2090,7 @@ public class HiddenLineData : Transient
                     {
                         douteux = true;
                         _feGeom.D2(psav, out ptsav, out tgsav, out nmsav);
-                        if (tgsav.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+                        if (tgsav.SquareMagnitude <= DERIVEE_PREMIERE_NULLE)
                         {
                             tgsav = nmsav;
                         }
@@ -2105,7 +2105,7 @@ public class HiddenLineData : Transient
                     {
                         douteux = true;
                         _feGeom.D2(psav, out ptsav, out tgsav, out nmsav);
-                        if (tgsav.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+                        if (tgsav.SquareMagnitude <= DERIVEE_PREMIERE_NULLE)
                         {
                             tgsav = nmsav;
                         }
@@ -2141,7 +2141,7 @@ public class HiddenLineData : Transient
                     {
                         douteux = true;
                         _leGeom.D2(psav, out ptsav, out tgsav, out nmsav);
-                        if (tgsav.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+                        if (tgsav.SquareMagnitude <= DERIVEE_PREMIERE_NULLE)
                         {
                             tgsav = nmsav;
                         }
@@ -2154,7 +2154,7 @@ public class HiddenLineData : Transient
                     {
                         douteux = true;
                         _leGeom.D2(psav, out ptsav, out tgsav, out nmsav);
-                        if (tgsav.SquareMagnitude() <= DERIVEE_PREMIERE_NULLE)
+                        if (tgsav.SquareMagnitude <= DERIVEE_PREMIERE_NULLE)
                         {
                             tgsav = nmsav;
                         }

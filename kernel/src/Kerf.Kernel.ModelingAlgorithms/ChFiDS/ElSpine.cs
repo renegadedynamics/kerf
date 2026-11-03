@@ -152,17 +152,17 @@ public sealed class ElSpine : CurveAdaptorBase
         return _curve.EvalD0(absC);
     }
 
-    public override Curve3D.ResD1 EvalD1(double absC)
+    internal override Curve3D.ResD1 EvalD1(double absC)
     {
         return _curve.EvalD1(absC);
     }
 
-    public override Curve3D.ResD2 EvalD2(double absC)
+    internal override Curve3D.ResD2 EvalD2(double absC)
     {
         return _curve.EvalD2(absC);
     }
 
-    public override Curve3D.ResD3 EvalD3(double absC)
+    internal override Curve3D.ResD3 EvalD3(double absC)
     {
         return _curve.EvalD3(absC);
     }

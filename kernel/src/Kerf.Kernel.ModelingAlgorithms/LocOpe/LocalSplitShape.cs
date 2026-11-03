@@ -117,7 +117,7 @@ public sealed class LocalSplitShape
         Explorer exp = new();
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itm in _map)
         {
-            if (itm.Key.ShapeType() == ShapeType.Wire && !itm.Value.IsEmpty())
+            if (itm.Key.Type == ShapeType.Wire && !itm.Value.IsEmpty())
             {
                 for (exp.Init(itm.Key, ShapeType.Edge); exp.More(); exp.Next())
                 {
@@ -175,9 +175,9 @@ public sealed class LocalSplitShape
         }
         Edge edg = ShapeCasts.Edge(itl.Value());
         le.Remove(itl);
-        if (v.Orientation() == Forward || v.Orientation() == Reversed)
+        if (v.Orientation == Forward || v.Orientation == Reversed)
         {
-            edg.Orientation(Forward);
+            edg.Orient(Forward);
             Exploration.Vertices(edg, out Vertex curV1, out Vertex curV2);
             double par1 = Tool.Parameter(curV1, edg);
 
@@ -187,12 +187,12 @@ public sealed class LocalSplitShape
             Edge e1 = ShapeCasts.Edge(localShape);
             localShape = edg.EmptyCopied();
             Edge e2 = ShapeCasts.Edge(localShape);
-            e1.Orientation(Forward);
-            e2.Orientation(Forward);
+            e1.Orient(Forward);
+            e2.Orient(Forward);
             Vertex newVtx = v;
             double tolSplitV = Tool.Tolerance(v);
 
-            curV1.Orientation(Forward);
+            curV1.Orient(Forward);
 
             b.Add(e1, curV1);
             // for degenerated edges tolerance of vertices should be set to maximal value
@@ -201,14 +201,14 @@ public sealed class LocalSplitShape
                                                          : Tool.Tolerance(curV1));
 
             b.UpdateVertex(curV1, par1, e1, tolV1);
-            newVtx.Orientation(Reversed);
+            newVtx.Orient(Reversed);
             b.Add(e1, newVtx);
             b.UpdateVertex(newVtx, p, e1, Tool.Tolerance(v));
-            newVtx.Orientation(Forward);
+            newVtx.Orient(Forward);
             b.Add(e2, newVtx);
             b.UpdateVertex(newVtx, p, e2, Tool.Tolerance(v));
 
-            curV2.Orientation(Reversed);
+            curV2.Orient(Reversed);
             b.Add(e2, curV2);
 
             // for degenerated edges tolerance of vertices should be set to maximal value
@@ -305,7 +305,7 @@ public sealed class LocalSplitShape
         }
 
         Face faceRef = ShapeCasts.Face(itl.Value());
-        faceRef.Orientation(Forward);
+        faceRef.Orient(Forward);
         lf.Remove(itl);
 
         NCollection_List<Shape> newWires = new();
@@ -393,7 +393,7 @@ public sealed class LocalSplitShape
             }
             for (;;)
             {
-                if (mw.InternalWire().Closed())
+                if (mw.InternalWire().IsClosed)
                 {
                     break;
                 }
@@ -413,7 +413,7 @@ public sealed class LocalSplitShape
                     wexp.Init(curWire, faceRef);
                 }
             }
-            if (mw.InternalWire().Closed())
+            if (mw.InternalWire().IsClosed)
             {
                 newWires.Append(mw.InternalWire());
                 theStartVertex = ShapeCasts.Vertex(breakVertices.First());
@@ -439,7 +439,7 @@ public sealed class LocalSplitShape
                 {
                     sectionsTimes.Remove(sectionWire);
                 }
-                if (mw.InternalWire().Closed())
+                if (mw.InternalWire().IsClosed)
                 {
                     newWires.Append(mw.InternalWire());
                     if (sectionsTimes.Count == 0)
@@ -521,7 +521,7 @@ public sealed class LocalSplitShape
         {
             Shape localFace = faceRef.EmptyCopied();
             Face newFace = ShapeCasts.Face(localFace);
-            newFace.Orientation(Forward);
+            newFace.Orient(Forward);
             bb.Add(newFace, itl.Value());
             newFaces.Append(newFace);
         }
@@ -679,10 +679,10 @@ public sealed class LocalSplitShape
 
         BrepBuilder b = new();
 
-        Orientation orWire = w.Orientation();
+        Orientation orWire = w.Orientation;
         Shape localFace = f.EmptyCopied();
         Face newFace = ShapeCasts.Face(localFace);
-        newFace.Orientation(Forward);
+        newFace.Orient(Forward);
         b.Add(newFace, w);
         FClass2d classif = new(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         if (classif.PerformInfinitePoint() == In)
@@ -690,18 +690,18 @@ public sealed class LocalSplitShape
             // le wire donne defini un trou
             localFace = f.EmptyCopied();
             newFace = ShapeCasts.Face(localFace);
-            newFace.Orientation(Forward);
+            newFace.Orient(Forward);
             orWire = global::Kerf.Engine.Topology.TopAbs.Reverse(orWire);
             b.Add(newFace, w.Oriented(orWire));
         }
 
         Face faceRef = ShapeCasts.Face(itl.Value());
-        faceRef.Orientation(Forward);
+        faceRef.Orient(Forward);
         lf.Remove(itl);
 
         localFace = faceRef.EmptyCopied();
         Face newRef = ShapeCasts.Face(localFace);
-        newRef.Orientation(Forward);
+        newRef.Orient(Forward);
 
         // On suppose que les edges du wire ont des courbes 2d.
         // Comme on ne change pas de surface de base, pas besoin d`UpdateEdge.
@@ -789,7 +789,7 @@ public sealed class LocalSplitShape
                 continue;
             }
 
-            fac.Orientation(Forward);
+            fac.Orient(Forward);
             bool ffound = false;
             bool lfound = false;
             for (exp.Init(fac, ShapeType.Wire); exp.More(); exp.Next())
@@ -828,7 +828,7 @@ public sealed class LocalSplitShape
         }
 
         Face faceRef = ShapeCasts.Face(itl.Value());
-        faceRef.Orientation(Forward);
+        faceRef.Orient(Forward);
         lf.Remove(itl);
         BrepBuilder b = new();
 
@@ -855,16 +855,16 @@ public sealed class LocalSplitShape
             Orientation orient;
             Wire newW1 = new(), newW2 = new();
             b.MakeWire(ref newW1);
-            newW1.Orientation(Forward);
+            newW1.Orient(Forward);
             b.MakeWire(ref newW2);
-            newW2.Orientation(Forward);
+            newW2.Orient(Forward);
 
             int nbE = 0;
             for (exp.Init(w.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
                 nbE++;
                 Edge edg = ShapeCasts.Edge(exp.Current());
-                orient = edg.Orientation();
+                orient = edg.Orientation;
                 wiresFirst.Append(edg);
                 wiresFirst.Append(edg.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(orient)));
                 _dblE.Add(edg);
@@ -896,15 +896,15 @@ public sealed class LocalSplitShape
                 if (exp2.More())
                 {
                     lastEdge = edg;
-                    lastEdge.Orientation(edg.Orientation());
+                    lastEdge.Orient(edg.Orientation);
                     break;
                 }
             }
 
-            Shape localFace = faceRef.Oriented(wfirst.Orientation());
+            Shape localFace = faceRef.Oriented(wfirst.Orientation);
             c2d = Tool.CurveOnSurface(lastEdge, ShapeCasts.Face(localFace), out f, out l)!;
 
-            if (lastEdge.Orientation() == Forward)
+            if (lastEdge.Orientation == Forward)
             {
                 pfirst = c2d.Value(f);
             }
@@ -930,11 +930,11 @@ public sealed class LocalSplitShape
                 if (exp2.More())
                 {
                     lastEdge = edg;
-                    lastEdge.Orientation(edg.Orientation());
+                    lastEdge.Orient(edg.Orientation);
                     break;
                 }
             }
-            localFace = faceRef.Oriented(wfirst.Orientation());
+            localFace = faceRef.Oriented(wfirst.Orientation);
             GetDirection(lastEdge, ShapeCasts.Face(localFace), out plast, out dlast, false);
 
             bool cond = true;
@@ -958,7 +958,7 @@ public sealed class LocalSplitShape
                 {
                     Edge edg = ShapeCasts.Edge(lexp1.Value());
 
-                    orient = edg.Orientation();
+                    orient = edg.Orientation;
                     Exploration.Vertices(edg, out vdeb, out vfin);
 
                     if ((orient == Forward && vlast.IsSame(vdeb))
@@ -977,13 +977,13 @@ public sealed class LocalSplitShape
                 if (nbPoss == 1)
                 {
                     nextEdge = ShapeCasts.Edge(possE[0]);
-                    Shape localFaceTemp = faceRef.Oriented(wfirst.Orientation());
+                    Shape localFaceTemp = faceRef.Oriented(wfirst.Orientation);
                     GetDirection(nextEdge, ShapeCasts.Face(localFaceTemp), out plast, out dlast, false);
                 }
                 else if (nbPoss > 1)
                 {
                     // Faire choix en U,V...
-                    Shape localFaceTemp = faceRef.Oriented(wfirst.Orientation());
+                    Shape localFaceTemp = faceRef.Oriented(wfirst.Orientation);
 
                     if (!ChoixUV(lastEdge, ShapeCasts.Face(localFaceTemp), possE, ref nextEdge, ref plast, ref dlast))
                     {
@@ -1007,7 +1007,7 @@ public sealed class LocalSplitShape
                     mapE.Add(nextEdge);
                     lastEdge = nextEdge;
 
-                    if (lastEdge.Orientation() == Forward)
+                    if (lastEdge.Orientation == Forward)
                     {
                         vlast = Exploration.LastVertex(lastEdge);
                     }
@@ -1070,7 +1070,7 @@ public sealed class LocalSplitShape
             Iterator itE = new(newW1, false);
             for (; itE.More(); itE.Next())
             {
-                if (itE.Value().ShapeType() != ShapeType.Edge)
+                if (itE.Value().Type != ShapeType.Edge)
                 {
                     continue;
                 }
@@ -1100,10 +1100,10 @@ public sealed class LocalSplitShape
             Face newF1, newF2;
             localFace = faceRef.EmptyCopied();
             newF1 = ShapeCasts.Face(localFace);
-            newF1.Orientation(Forward);
+            newF1.Orient(Forward);
             localFace = faceRef.EmptyCopied();
             newF2 = ShapeCasts.Face(localFace);
-            newF2.Orientation(Forward);
+            newF2.Orient(Forward);
 
             // modifs JAG 97.05.28
 
@@ -1161,10 +1161,10 @@ public sealed class LocalSplitShape
             Wire newWire = new();
             Face newFace;
             b.MakeWire(ref newWire);
-            newWire.Orientation(Forward);
+            newWire.Orient(Forward);
             Orientation orient, orRelat;
 
-            if (wfirst.Orientation() == wlast.Orientation())
+            if (wfirst.Orientation == wlast.Orientation)
             {
                 orRelat = Forward;
             }
@@ -1189,7 +1189,7 @@ public sealed class LocalSplitShape
             for (exp.Init(wlast.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge edg = ShapeCasts.Edge(exp.Current());
-                orient = global::Kerf.Engine.Topology.TopAbs.Compose(edg.Orientation(), orRelat);
+                orient = global::Kerf.Engine.Topology.TopAbs.Compose(edg.Orientation, orRelat);
                 b.Add(newWire, edg.Oriented(orient));
             }
 
@@ -1197,7 +1197,7 @@ public sealed class LocalSplitShape
             for (exp.Init(w.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge edg = ShapeCasts.Edge(exp.Current());
-                orient = edg.Orientation();
+                orient = edg.Orientation;
                 b.Add(newWire, edg.Oriented(orient));
                 b.Add(newWire, edg.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(orient)));
                 _dblE.Add(edg.Oriented(orient));
@@ -1207,13 +1207,13 @@ public sealed class LocalSplitShape
 
             Shape localFace = faceRef.EmptyCopied();
             newFace = ShapeCasts.Face(localFace);
-            faceRef.Orientation(Forward);
+            faceRef.Orient(Forward);
             for (exp.Init(faceRef.Oriented(Forward), ShapeType.Wire); exp.More(); exp.Next())
             {
                 Wire wir = ShapeCasts.Wire(exp.Current());
                 if (wir.IsSame(wfirst))
                 {
-                    b.Add(newFace, newWire.Oriented(wir.Orientation()));
+                    b.Add(newFace, newWire.Oriented(wir.Orientation));
                 }
                 else if (!wir.IsSame(wlast))
                 {
@@ -1286,7 +1286,7 @@ public sealed class LocalSplitShape
         _left = new NCollection_List<Shape>(); // OCCT clears the list it returned before
 
         Face theFace = ShapeCasts.Face(exp.Current());
-        Orientation orFace = theFace.Orientation();
+        Orientation orFace = theFace.Orientation;
         NCollection_List<Shape>.Iterator itl = new(), itl2 = new();
 
         for (expw.Init(w, ShapeType.Edge); expw.More(); expw.Next())
@@ -1296,11 +1296,11 @@ public sealed class LocalSplitShape
             for (itl.Initialize(_map.GetValue(theFace)); itl.More(); itl.Next())
             {
                 Face fac = ShapeCasts.Face(itl.Value());
-                fac.Orientation(orFace);
+                fac.Orient(orFace);
                 for (expf.Init(fac, ShapeType.Edge); expf.More(); expf.Next())
                 {
                     Edge edgbis = ShapeCasts.Edge(expf.Current());
-                    if (edgbis.IsSame(edg) && edgbis.Orientation() == edg.Orientation())
+                    if (edgbis.IsSame(edg) && edgbis.Orientation == edg.Orientation)
                     {
                         for (itl2.Initialize(_left); itl2.More(); itl2.Next())
                         {
@@ -1370,7 +1370,7 @@ public sealed class LocalSplitShape
         {
             NCollection_List<Shape> thelist = new();
             _map[s] = thelist;
-            if (s.ShapeType() != ShapeType.Vertex)
+            if (s.Type != ShapeType.Vertex)
             {
                 for (Iterator theIterator = new(s); theIterator.More(); theIterator.Next())
                 {
@@ -1418,7 +1418,7 @@ public sealed class LocalSplitShape
 
     private bool Rebuild(in Shape s)
     {
-        if (s.ShapeType() == ShapeType.Face)
+        if (s.Type == ShapeType.Face)
         {
             UpdateToleraces(ShapeCasts.Face(s), _map);
         }
@@ -1441,14 +1441,14 @@ public sealed class LocalSplitShape
             Orientation orient;
             for (it.Initialize(s); it.More(); it.Next())
             {
-                orient = it.Value().Orientation();
+                orient = it.Value().Orientation;
                 for (itr.Initialize(_map.GetValue(it.Value())); itr.More(); itr.Next())
                 {
                     b.Add(result, itr.Value().Oriented(orient));
                 }
             }
             // Assign "Closed" flag for Wires and Shells only
-            if (result.ShapeType() == ShapeType.Wire || result.ShapeType() == ShapeType.Shell)
+            if (result.Type == ShapeType.Wire || result.Type == ShapeType.Shell)
             {
                 result.Closed(Tool.IsClosed(result));
             }
@@ -1466,11 +1466,11 @@ public sealed class LocalSplitShape
         bool isSame = true;
         if (bas.IsUPeriodic)
         {
-            isSame = (Math.Abs(p1.X() - p2.X()) < bas.UPeriod() * 0.5);
+            isSame = (Math.Abs(p1.X - p2.X) < bas.UPeriod() * 0.5);
         }
         if (bas.IsVPeriodic)
         {
-            isSame = (isSame && (Math.Abs(p1.Y() - p2.Y()) < bas.VPeriod() * 0.5));
+            isSame = (isSame && (Math.Abs(p1.Y - p2.Y) < bas.VPeriod() * 0.5));
         }
         return isSame;
     }
@@ -1482,7 +1482,7 @@ public sealed class LocalSplitShape
         Shape localShape = f.EmptyCopied();
         Face newFace = ShapeCasts.Face(localShape);
 
-        newFace.Orientation(Forward);
+        newFace.Orient(Forward);
         b.Add(newFace, w2);
         FClass2d classif = new(newFace, global::Kerf.Engine.Foundation.Precision.PConfusion());
         bool reversed = false;
@@ -1589,7 +1589,7 @@ public sealed class LocalSplitShape
     {
         Curve2D c2d = Tool.CurveOnSurface(edge, face, out double first, out double last)!;
 
-        Orientation or = edge.Orientation();
+        Orientation or = edge.Orientation;
         bool takeFirst = ((or == Forward && isFirstEnd) || (or == Reversed && !isFirstEnd));
 
         double dpar = (last - first) * 0.01;
@@ -1620,7 +1620,7 @@ public sealed class LocalSplitShape
                                 ref Vector2D dlst)
     {
         FaceSurfaceAdaptor surf = new(f, false); // no restriction
-        surf.D0(plst.X(), plst.Y(), out Point3D aPlst);
+        surf.D0(plst.X, plst.Y, out Point3D aPlst);
 
         Direction2D ref2d = new(dlst);
 
@@ -1637,11 +1637,11 @@ public sealed class LocalSplitShape
                 continue;
             }
 
-            surf.D0(p2d.X(), p2d.Y(), out Point3D pCur);
+            surf.D0(p2d.X, p2d.Y, out Point3D pCur);
 
             if (!last.IsSame(edge))
             {
-                ang = ref2d.Angle(new Direction2D(v2d));
+                ang = ref2d.AngleTo(new Direction2D(v2d));
             }
             else
             {
@@ -1729,7 +1729,7 @@ public sealed class LocalSplitShape
             {
                 vec = vec.Reversed();
             }
-            angle = vec.Angle(refVec);
+            angle = vec.AngleTo(refVec);
             if (angle < 0.0)
             {
                 angle += 2.0 * Math.PI;

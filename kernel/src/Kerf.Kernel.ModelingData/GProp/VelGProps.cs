@@ -51,11 +51,11 @@ public class VelGProps : Properties
 
     public void Perform(in Cylinder s, double alpha1, double alpha2, double z1, double z2)
     {
-        s.Location().Coord(out double x0, out double y0, out double z0);
-        double rayon = s.Radius();
-        s.Position().XDirection().Coord(out double xa1, out double ya1, out double za1);
-        s.Position().YDirection().Coord(out double xa2, out double ya2, out double za2);
-        s.Position().Direction().Coord(out double xa3, out double ya3, out double za3);
+        s.Location.Coord(out double x0, out double y0, out double z0);
+        double rayon = s.Radius;
+        s.Position.XDirection.Coord(out double xa1, out double ya1, out double za1);
+        s.Position.YDirection.Coord(out double xa2, out double ya2, out double za2);
+        s.Position.Direction.Coord(out double xa3, out double ya3, out double za3);
         _dim         = rayon * rayon * (z2 - z1) / 2.0;
         double sa2  = Math.Sin(alpha2);
         double sa1  = Math.Sin(alpha1);
@@ -123,14 +123,14 @@ public class VelGProps : Properties
 
     public void Perform(in Cone s, double alpha1, double alpha2, double z1, double z2)
     {
-        s.Location().Coord(out double x0, out double y0, out double z0);
-        s.Position().XDirection().Coord(out double xa1, out double ya1, out double za1);
-        s.Position().YDirection().Coord(out double xa2, out double ya2, out double za2);
-        s.Position().Direction().Coord(out double xa3, out double ya3, out double za3);
-        double t     = s.SemiAngle();
+        s.Location.Coord(out double x0, out double y0, out double z0);
+        s.Position.XDirection.Coord(out double xa1, out double ya1, out double za1);
+        s.Position.YDirection.Coord(out double xa2, out double ya2, out double za2);
+        s.Position.Direction.Coord(out double xa3, out double ya3, out double za3);
+        double t     = s.SemiAngle;
         double cnt   = Math.Cos(t);
         double snt   = Math.Sin(t);
-        double r     = s.RefRadius();
+        double r     = s.RefRadius;
         double sn2   = Math.Sin(alpha2);
         double sn1   = Math.Sin(alpha1);
         double cn2   = Math.Cos(alpha2);
@@ -207,11 +207,11 @@ public class VelGProps : Properties
 
     public void Perform(in Sphere s, double teta1, double teta2, double alpha1, double alpha2)
     {
-        s.Location().Coord(out double x0, out double y0, out double z0);
-        s.Position().XDirection().Coord(out double xa1, out double ya1, out double za1);
-        s.Position().YDirection().Coord(out double xa2, out double ya2, out double za2);
-        s.Position().Direction().Coord(out double xa3, out double ya3, out double za3);
-        double r    = s.Radius();
+        s.Location.Coord(out double x0, out double y0, out double z0);
+        s.Position.XDirection.Coord(out double xa1, out double ya1, out double za1);
+        s.Position.YDirection.Coord(out double xa2, out double ya2, out double za2);
+        s.Position.Direction.Coord(out double xa3, out double ya3, out double za3);
+        double r    = s.Radius;
         double cnt1 = Math.Cos(teta1);
         double snt1 = Math.Sin(teta1);
         double cnt2 = Math.Cos(teta2);
@@ -285,12 +285,12 @@ public class VelGProps : Properties
 
     public void Perform(in Torus s, double teta1, double teta2, double alpha1, double alpha2)
     {
-        s.Location().Coord(out double x0, out double y0, out double z0);
-        s.Position().XDirection().Coord(out double xa1, out double ya1, out double za1);
-        s.Position().YDirection().Coord(out double xa2, out double ya2, out double za2);
-        s.Position().Direction().Coord(out double xa3, out double ya3, out double za3);
-        double rMax = s.MajorRadius();
-        double rmin = s.MinorRadius();
+        s.Location.Coord(out double x0, out double y0, out double z0);
+        s.Position.XDirection.Coord(out double xa1, out double ya1, out double za1);
+        s.Position.YDirection.Coord(out double xa2, out double ya2, out double za2);
+        s.Position.Direction.Coord(out double xa3, out double ya3, out double za3);
+        double rMax = s.MajorRadius;
+        double rmin = s.MinorRadius;
         double cnt1 = Math.Cos(teta1);
         double snt1 = Math.Sin(teta1);
         // OCCT: Teta2, not Alpha2.

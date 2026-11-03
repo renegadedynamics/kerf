@@ -50,7 +50,7 @@ public class PolygonOnTriangulationRepresentation : CurveRepresentation
 
     /// <summary>A polygon in the definition of <paramref name="t"/> with location <paramref name="l"/>.</summary>
     public override bool IsPolygonOnTriangulation(Triangulation? t, in Placement l)
-        => ReferenceEquals(t, _triangulation) && (l == _location);
+        => ReferenceEquals(t, _triangulation) && (l.IsEqual(_location));
 
     internal override void PolygonOnTriangulation(PolygonOnTriangulation? p)
     {

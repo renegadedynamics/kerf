@@ -239,7 +239,7 @@ public class FastSewing : Transient
                     continue;
                 }
 
-                surf.Bounds(out double uf, out double ul, out double vf, out double vl);
+                surf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
                 if (global::Kerf.Engine.Foundation.Precision.IsInfinite(uf) || global::Kerf.Engine.Foundation.Precision.IsInfinite(ul) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vf)
                     || global::Kerf.Engine.Foundation.Precision.IsInfinite(vl))
                 {
@@ -275,7 +275,7 @@ public class FastSewing : Transient
             return false;
         }
 
-        surface.Bounds(out double uf, out double ul, out double vf, out double vl);
+        surface.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(uf) || global::Kerf.Engine.Foundation.Precision.IsInfinite(ul) || global::Kerf.Engine.Foundation.Precision.IsInfinite(vf)
             || global::Kerf.Engine.Foundation.Precision.IsInfinite(vl))
         {
@@ -414,7 +414,7 @@ public class FastSewing : Transient
         const int nbPoints = 4;
         FS_Face face = _faceVec[surfID];
         Surface surf = Tool.Surface(face.SrcFace)!;
-        surf.Bounds(out double uf, out double ul, out double vf, out double vl);
+        surf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
         Point3D[] pnts = [surf.Value(uf, vf),
                           surf.Value(ul, vf),
@@ -566,7 +566,7 @@ public class FastSewing : Transient
                 continue;
             }
 
-            surf.Bounds(out double uf, out double ul, out double vf, out double vl);
+            surf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
             box.Add(surf.Value(uf, vf));
             box.Add(surf.Value(ul, vf));
@@ -660,7 +660,7 @@ public class FastSewing : Transient
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
             Surface surf = Tool.Surface(SrcFace, out Placement location)!;
 
-            surf.Bounds(out double uf, out double ul, out double vf, out double vl);
+            surf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
             var b = new BrepBuilder();
             b.MakeWire(ref myWire);
@@ -676,7 +676,7 @@ public class FastSewing : Transient
 
                 if (fsEdge.IsDegenerated)
                 {
-                    topE.Orientation(ori);
+                    topE.Orient(ori);
                     b.Add(myWire, topE);
                     continue;
                 }
@@ -688,14 +688,14 @@ public class FastSewing : Transient
                     Curve2D a2dCurv = Get2DCurve(edge, uf, ul, vf, vl);
                     Point3D pref = a3dCurv.Value(firstPar);
                     Point2D p2df = a2dCurv.Value(firstPar), p2dl = a2dCurv.Value(lastPar);
-                    Point3D p3df = surf.Value(p2df.X(), p2df.Y());
-                    Point3D p3dl = surf.Value(p2dl.X(), p2dl.Y());
+                    Point3D p3df = surf.Value(p2df.X, p2df.Y);
+                    Point3D p3dl = surf.Value(p2dl.X, p2dl.Y);
 
-                    p3df = p3df.Transformed(location.Transformation());
-                    p3dl = p3dl.Transformed(location.Transformation());
+                    p3df = p3df.Transformed(location.Transformation);
+                    p3dl = p3dl.Transformed(location.Transformation);
 
-                    double sqD1 = p3df.SquareDistance(pref);
-                    double sqD2 = p3dl.SquareDistance(pref);
+                    double sqD1 = p3df.SquareDistanceTo(pref);
+                    double sqD2 = p3dl.SquareDistanceTo(pref);
 
                     if (sqD2 < sqD1)
                     {
@@ -706,7 +706,7 @@ public class FastSewing : Transient
                     b.UpdateEdge(topE, a2dCurv, surf, location, toler);
                 }
 
-                topE.Orientation(ori);
+                topE.Orient(ori);
 
                 b.Add(myWire, topE);
             }
@@ -776,8 +776,8 @@ public class FastSewing : Transient
             Vertex v1 = vertexVec[_vertices[0]].TopoVert;
             Vertex v2 = vertexVec[_vertices[1]].TopoVert;
 
-            v1.Orientation(Forward);
-            v2.Orientation(Reversed);
+            v1.Orient(Forward);
+            v2.Orient(Reversed);
 
             Curve3D a3dCurv;
 
@@ -786,7 +786,7 @@ public class FastSewing : Transient
             // 3D-curves in 1st and 2nd faces are considered to be in same-range
             Surface surf = Tool.Surface(face.SrcFace, out Placement location)!;
 
-            surf.Bounds(out double uf, out double ul, out double vf, out double vl);
+            surf.ParameterBounds(out double uf, out double ul, out double vf, out double vl);
 
             int edgeID = -1;
             for (int ind = 0; ind < 4; ind++)
@@ -805,7 +805,7 @@ public class FastSewing : Transient
             if (IsDegenerated)
             {
                 Curve2D a2dCurv = Get2DCurve(edgeID, uf, ul, vf, vl);
-                double fPar = a2dCurv.FirstParameter(), lPar = a2dCurv.LastParameter();
+                double fPar = a2dCurv.FirstParameter, lPar = a2dCurv.LastParameter;
 
                 builder.MakeEdge(ref TopoEdge);
                 builder.UpdateEdge(TopoEdge, a2dCurv, surf, location, tol);
@@ -837,7 +837,7 @@ public class FastSewing : Transient
             builder.MakeEdge(ref TopoEdge, a3dCurv, tol);
             builder.Add(TopoEdge, v1);
             builder.Add(TopoEdge, v2);
-            builder.Range(TopoEdge, a3dCurv.FirstParameter(), a3dCurv.LastParameter());
+            builder.Range(TopoEdge, a3dCurv.FirstParameter, a3dCurv.LastParameter);
         }
     }
 
@@ -871,7 +871,7 @@ public class FastSewing : Transient
         public CellFilterAction Inspect(int id)
         {
             Point3D pt = _vecOfVertexes[id].myPnt;
-            double sqDist = pt.SquareDistance(_point);
+            double sqDist = pt.SquareDistanceTo(_point);
             if (sqDist < _sqToler)
             {
                 _sqToler = sqDist;

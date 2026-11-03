@@ -56,10 +56,10 @@ public class CylinderProjector : Projector
 
     private static Point2D EvalPnt2d(in Point3D p, in Cylinder cy)
     {
-        Vector3D op = new(cy.Location(), p);
-        double x = op.Dot(new Vector3D(cy.Position().XDirection()));
-        double y = op.Dot(new Vector3D(cy.Position().YDirection()));
-        double z = op.Dot(new Vector3D(cy.Position().Direction()));
+        Vector3D op = new(cy.Location, p);
+        double x = op.Dot(new Vector3D(cy.Position.XDirection));
+        double y = op.Dot(new Vector3D(cy.Position.YDirection));
+        double z = op.Dot(new Vector3D(cy.Position.Direction));
         double u;
 
         if (Math.Abs(x) > global::Kerf.Engine.Foundation.Precision.PConfusion() || Math.Abs(y) > global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -77,7 +77,7 @@ public class CylinderProjector : Projector
     {
         // Check the line is parallel to the axis of cylinder.
         // In other cases, the projection is wrong.
-        if (l.Direction().XYZ().CrossSquareMagnitude(_cylinder.Position().Direction().XYZ())
+        if (l.Direction.XYZ().CrossSquareMagnitude(_cylinder.Position.Direction.XYZ())
             > global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return;
@@ -85,12 +85,12 @@ public class CylinderProjector : Projector
 
         _type = global::Kerf.Geometry.CurveKind.Line;
 
-        Point2D p2d = EvalPnt2d(l.Location(), _cylinder);
-        if (p2d.X() < 0.0)
+        Point2D p2d = EvalPnt2d(l.Location, _cylinder);
+        if (p2d.X < 0.0)
         {
-            p2d = p2d.WithX(p2d.X() + 2 * M_PI);
+            p2d = p2d.WithX(p2d.X + 2 * M_PI);
         }
-        double signe = l.Direction().Dot(_cylinder.Position().Direction());
+        double signe = l.Direction.Dot(_cylinder.Position.Direction);
         signe = (signe > 0.0) ? 1.0 : -1.0;
         Direction2D d2d = new(0.0, signe);
 
@@ -102,9 +102,9 @@ public class CylinderProjector : Projector
     {
         // Check the circle's normal is parallel to the axis of cylinder.
         // In other cases, the projection is wrong.
-        CoordinateSystem cylPos = _cylinder.Position();
-        Frame3D circPos = c.Position();
-        if (cylPos.Direction().XYZ().CrossSquareMagnitude(circPos.Direction().XYZ())
+        CoordinateSystem cylPos = _cylinder.Position;
+        Frame3D circPos = c.Position;
+        if (cylPos.Direction.XYZ().CrossSquareMagnitude(circPos.Direction.XYZ())
             > global::Kerf.Engine.Foundation.Precision.Angular() * global::Kerf.Engine.Foundation.Precision.Angular())
         {
             return;
@@ -112,16 +112,16 @@ public class CylinderProjector : Projector
 
         _type = global::Kerf.Geometry.CurveKind.Line;
 
-        Direction3D zCyl = cylPos.XDirection().Crossed(cylPos.YDirection());
+        Direction3D zCyl = cylPos.XDirection.Crossed(cylPos.YDirection);
 
-        double u = cylPos.XDirection().AngleWithRef(circPos.XDirection(), zCyl);
+        double u = cylPos.XDirection.AngleWithRef(circPos.XDirection, zCyl);
 
-        Vector3D op = new(_cylinder.Location(), c.Location());
-        double v = op.Dot(new Vector3D(cylPos.Direction()));
+        Vector3D op = new(_cylinder.Location, c.Location);
+        double v = op.Dot(new Vector3D(cylPos.Direction));
 
         Point2D p2d1 = new(u, v);
         Direction2D d2d = new();
-        if (zCyl.Dot(circPos.Direction()) > 0.0)
+        if (zCyl.Dot(circPos.Direction) > 0.0)
         {
             d2d = d2d.WithCoord(1.0, 0.0);
         }

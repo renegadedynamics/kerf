@@ -43,8 +43,8 @@ public class BOPTools_ParallelContextTests
             Point2D aP2D = new();
             int iErr = AlgoTools3D.PointInFace(theFace, ref aP, ref aP2D, aCtx);
             Result.Add(iErr);
-            Result.Add(BitConverter.DoubleToInt64Bits(aP.X()));
-            Result.Add(BitConverter.DoubleToInt64Bits(aP2D.Y()));
+            Result.Add(BitConverter.DoubleToInt64Bits(aP.X));
+            Result.Add(BitConverter.DoubleToInt64Bits(aP2D.Y));
             Result.Add((long)aCtx.StatePointFace(theFace, aP2D));
             foreach (Point3D aPnt in thePoints)
             {

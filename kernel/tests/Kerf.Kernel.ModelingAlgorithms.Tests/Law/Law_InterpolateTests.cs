@@ -140,7 +140,7 @@ public class Law_InterpolateTests
         aLaw.Set(aPnts);
         for (int i = 1; i <= 4; i++)
         {
-            Assert.Equal(aPnts[i].Y(), aLaw.Value(aPnts[i].X()), 1.0e-7);
+            Assert.Equal(aPnts[i].Y, aLaw.Value(aPnts[i].X), 1.0e-7);
         }
         aLaw.Set(aPnts, 1.0, -2.0);
         aLaw.D1(0.0, out _, out double D);

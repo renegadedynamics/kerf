@@ -49,7 +49,7 @@ public class BRepMesh_BaseMeshAlgoTest
         BrepBuilder aBuilder = new();
         Vertex aVertex = new();
         aBuilder.MakeVertex(ref aVertex, aProjection.Point(1), global::Kerf.Engine.Foundation.Precision.Confusion());
-        aVertex.Orientation(Orientation.Internal);
+        aVertex.Orient(Orientation.Internal);
 
         aBuilder.UpdateVertex(aVertex, aU, aV, theFace, global::Kerf.Engine.Foundation.Precision.Confusion());
         aBuilder.Add(theFace, aVertex);
@@ -64,9 +64,9 @@ public class BRepMesh_BaseMeshAlgoTest
 
         for (int i = 1; i <= theTri.NodeCount; ++i)
         {
-            Point3D aPoint = theTri.Node(i).Transformed(theLoc.Transformation());
-            if (Math.Abs(aPoint.X()) > aMaxValidCoord || Math.Abs(aPoint.Y()) > aMaxValidCoord
-                || Math.Abs(aPoint.Z()) > aMaxValidCoord)
+            Point3D aPoint = theTri.Node(i).Transformed(theLoc.Transformation);
+            if (Math.Abs(aPoint.X) > aMaxValidCoord || Math.Abs(aPoint.Y) > aMaxValidCoord
+                || Math.Abs(aPoint.Z) > aMaxValidCoord)
             {
                 return false;
             }
@@ -96,8 +96,8 @@ public class BRepMesh_BaseMeshAlgoTest
 
         for (int i = 1; i <= theTri.NodeCount; ++i)
         {
-            Point3D aNode = theTri.Node(i).Transformed(theLoc.Transformation());
-            double aDist2 = thePoint.SquareDistance(aNode);
+            Point3D aNode = theTri.Node(i).Transformed(theLoc.Transformation);
+            double aDist2 = thePoint.SquareDistanceTo(aNode);
             if (aDist2 < aMinDistSq)
             {
                 aMinDistSq = aDist2;

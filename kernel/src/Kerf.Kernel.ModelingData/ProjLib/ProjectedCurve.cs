@@ -99,7 +99,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
             for (t = u1; t <= u2; t = t + step)
             {
                 s.D1(t, param, out p, out d1U, out d1V);
-                d1NormMax = Max(d1NormMax, d1U.Magnitude());
+                d1NormMax = Max(d1NormMax, d1U.Magnitude);
             }
 
             if (d1NormMax > tolMax || d1NormMax < tolMin)
@@ -114,7 +114,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
             for (t = v1; t <= v2; t = t + step)
             {
                 s.D1(param, t, out p, out d1U, out d1V);
-                d1NormMax = Max(d1NormMax, d1V.Magnitude());
+                d1NormMax = Max(d1NormMax, d1V.Magnitude);
             }
 
             if (d1NormMax > tolMax || d1NormMax < tolMin)
@@ -140,7 +140,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
 
         Point3D p = myCurve.Value(f);
 
-        if (p.Distance(pole) <= tolConf)
+        if (p.DistanceTo(pole) <= tolConf)
         {
             isTrimmed[0] = true;
             f = f + dt;
@@ -149,7 +149,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
         }
 
         p = myCurve.Value(l);
-        if (p.Distance(pole) <= tolConf)
+        if (p.DistanceTo(pole) <= tolConf)
         {
             isTrimmed[1] = true;
             l = l - dt;
@@ -173,7 +173,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
     {
         _ = t;
         _ = dt;
-        double theParam = (firstOrLast == 0) ? aRes!.FirstParameter() : aRes!.LastParameter();
+        double theParam = (firstOrLast == 0) ? aRes!.FirstParameter : aRes!.LastParameter;
 
         Point2D pBnd;
         Vector2D vBnd;
@@ -223,12 +223,12 @@ public class ProjectedCurve : Curve2DAdaptorBase
         }
         else
         {
-            double u1x = boundLin.Direction().X();
-            double u1y = boundLin.Direction().Y();
-            double u2x = lin.Direction().X();
-            double u2y = lin.Direction().Y();
-            double uo21x = lin.Location().X() - boundLin.Location().X();
-            double uo21y = lin.Location().Y() - boundLin.Location().Y();
+            double u1x = boundLin.Direction.X;
+            double u1y = boundLin.Direction.Y;
+            double u2x = lin.Direction.X;
+            double u2y = lin.Direction.Y;
+            double uo21x = lin.Location.X - boundLin.Location.X;
+            double uo21y = lin.Location.Y - boundLin.Location.Y;
 
             double d = u1y * u2x - u1x * u2y;
 
@@ -549,14 +549,14 @@ public class ProjectedCurve : Curve2DAdaptorBase
                     const double vmin = -vmax;
                     const double minang = 1.0e-5 * M_PI;
                     Sphere sph = _surface.Sphere();
-                    double r = sph.Radius();
+                    double r = sph.Radius;
                     double f = _curve.FirstParameter();
                     double l = _curve.LastParameter();
 
                     Point3D pf = _curve.Value(f);
                     Point3D pl = _curve.Value(l);
-                    Point3D loc = sph.Position().Location();
-                    double maxdist = Max(pf.Distance(loc), pl.Distance(loc));
+                    Point3D loc = sph.Position.Location;
+                    double maxdist = Max(pf.DistanceTo(loc), pl.DistanceTo(loc));
                     tolConf = Max(r * minang, Math.Abs(r - maxdist));
 
                     // Surface has pole at V = Vmin and Vmax
@@ -651,8 +651,8 @@ public class ProjectedCurve : Curve2DAdaptorBase
                         Curve2D? newCurve2d = null;
                         global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                           res,
-                                          res!.FirstParameter(),
-                                          res.LastParameter(),
+                                          res!.FirstParameter,
+                                          res.LastParameter,
                                           firstPar,
                                           lastPar,
                                           ref newCurve2d);
@@ -676,8 +676,8 @@ public class ProjectedCurve : Curve2DAdaptorBase
                 {
                     // Check possible singularity
 
-                    Point3D p = _surface.AxeOfRevolution().Location();
-                    Direction3D n = _surface.AxeOfRevolution().Direction();
+                    Point3D p = _surface.AxeOfRevolution().Location;
+                    Direction3D n = _surface.AxeOfRevolution().Direction;
 
                     Line3D L = new(p, n);
 
@@ -686,7 +686,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
                     dt = (l - f) * eps;
 
                     p = _curve.Value(f);
-                    if (L.Distance(p) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (L.DistanceTo(p) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         isTrimmed[0] = true;
                         f = f + dt;
@@ -713,7 +713,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
                     }
 
                     p = _curve.Value(l);
-                    if (L.Distance(p) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (L.DistanceTo(p) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
                         isTrimmed[1] = true;
                         l = l - dt;
@@ -817,8 +817,8 @@ public class ProjectedCurve : Curve2DAdaptorBase
                         Curve2D? newCurve2d = null;
                         global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                           res,
-                                          res!.FirstParameter(),
-                                          res.LastParameter(),
+                                          res!.FirstParameter,
+                                          res.LastParameter,
                                           firstPar,
                                           lastPar,
                                           ref newCurve2d);
@@ -826,7 +826,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
                         if (continuity == C0)
                         {
                             // try to smoother the Curve GeomAbs_C1.
-                            int deg = res!.Degree();
+                            int deg = res!.Degree;
                             bool ok = true;
                             double smoothTol = Max(global::Kerf.Engine.Foundation.Precision.Confusion(), newTol2d);
                             for (int ij = 2; ij < res.KnotCount; ij++)
@@ -885,8 +885,8 @@ public class ProjectedCurve : Curve2DAdaptorBase
                 Curve2D? newCurve2d = null;
                 global::Kerf.Engine.Geometry.Library.GeomLib.SameRange(global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                   res,
-                                  res!.FirstParameter(),
-                                  res.LastParameter(),
+                                  res!.FirstParameter,
+                                  res.LastParameter,
                                   firstPar,
                                   lastPar,
                                   ref newCurve2d);
@@ -946,7 +946,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
                     // A curve this projection built (or the result of an earlier Perform, which OCCT translates
                     // again): unfrozen until handed out.
                     BSplineCurve2D res = _result.InternalBSpline()!;
-                    int deg = res.Degree();
+                    int deg = res.Degree;
 
                     for (int knotIdx = res.FirstUKnotIndex(); knotIdx < res.LastUKnotIndex(); knotIdx++)
                     {
@@ -988,7 +988,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
                     }
                     if (maxIdx != 0)
                     {
-                        Point2D firstPnt = res.Value(res.FirstParameter());
+                        Point2D firstPnt = res.Value(res.FirstParameter);
                         Point2D secondPnt = firstPnt;
                         secondPnt = secondPnt.WithCoord(idx, firstPnt.Coord(idx) - surfPeriod[idx - 1] * maxIdx);
                         res.Translate(new Vector2D(firstPnt, secondPnt));
@@ -1190,11 +1190,11 @@ public class ProjectedCurve : Curve2DAdaptorBase
                                        "ProjLib_ProjectedCurve:Degree");
         if (GetType() == BSplineCurve)
         {
-            return _result.InternalBSpline()!.Degree();
+            return _result.InternalBSpline()!.Degree;
         }
         else if (GetType() == BezierCurve)
         {
-            return _result.InternalBezier()!.Degree();
+            return _result.InternalBezier()!.Degree;
         }
 
         // porting WNT

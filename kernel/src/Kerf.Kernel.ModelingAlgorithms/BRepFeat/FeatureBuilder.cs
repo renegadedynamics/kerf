@@ -265,7 +265,7 @@ public class FeatureBuilder : Bop
         //
         foreach (Shape s in _shapes)
         {
-            if (s.ShapeType() == ShapeType.Face)
+            if (s.Type == ShapeType.Face)
             {
                 ToolSet st = new();
                 st.Add(s, ShapeType.Edge);
@@ -314,9 +314,9 @@ public class FeatureBuilder : Bop
                 continue;
             }
             //
-            oriF = f.Orientation();
+            oriF = f.Orientation;
             ff = f;
-            ff.Orientation(Forward);
+            ff.Orient(Forward);
 
             IndexedSet<PaveBlock> mpbIn = fi.PaveBlocksIn();
             IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
@@ -328,7 +328,7 @@ public class FeatureBuilder : Bop
             for (; exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
-                oriE = e.Orientation();
+                oriE = e.Orientation;
                 bIsDegenerated = Tool.Degenerated(e);
                 bIsClosed = Tool.IsClosed(e, f);
                 if (_images.ContainsKey(e))
@@ -408,16 +408,16 @@ public class FeatureBuilder : Bop
 
                         if (bIsDegenerated)
                         {
-                            sp.Orientation(oriE);
+                            sp.Orient(oriE);
                             le.Append(sp);
                             continue;
                         }
                         //
                         if (oriE == Internal)
                         {
-                            sp.Orientation(Forward);
+                            sp.Orient(Forward);
                             le.Append(sp);
-                            sp.Orientation(Reversed);
+                            sp.Orient(Reversed);
                             le.Append(sp);
                             continue;
                         }
@@ -429,14 +429,14 @@ public class FeatureBuilder : Bop
                                 AlgoTools3D.DoSplitSEAMOnFace(sp, ff);
                             }
                             //
-                            sp.Orientation(Forward);
+                            sp.Orient(Forward);
                             le.Append(sp);
-                            sp.Orientation(Reversed);
+                            sp.Orient(Reversed);
                             le.Append(sp);
                             continue;
                         } // if (bIsClosed){
                         //
-                        sp.Orientation(oriE);
+                        sp.Orient(oriE);
                         bToReverse = AlgoTools.IsSplitToReverse(sp, e, _context);
                         if (bToReverse)
                         {
@@ -466,9 +466,9 @@ public class FeatureBuilder : Bop
                     continue;
                 }
                 //
-                sp.Orientation(Forward);
+                sp.Orient(Forward);
                 le.Append(sp);
-                sp.Orientation(Reversed);
+                sp.Orient(Reversed);
                 le.Append(sp);
             }
             // section edges
@@ -482,9 +482,9 @@ public class FeatureBuilder : Bop
                     continue;
                 }
                 //
-                sp.Orientation(Forward);
+                sp.Orient(Forward);
                 le.Append(sp);
-                sp.Orientation(Reversed);
+                sp.Orient(Reversed);
                 le.Append(sp);
             }
 
@@ -510,7 +510,7 @@ public class FeatureBuilder : Bop
                 //
                 ToolSet sTx = mst[mst.Add(st)];
                 sx = sTx.Shape();
-                sx.Orientation(oriF);
+                sx.Orient(oriF);
                 lfIm.Append(sx);
                 //
                 if (!_origins.TryGetValue(sx, out NCollection_List<Shape>? pLOr))
@@ -631,7 +631,7 @@ public class FeatureBuilder : Bop
         }
 
         aE = ShapeCasts.Edge(e);
-        aE.Orientation(Forward);
+        aE.Orient(Forward);
         //
         aLIm.Clear();
         //
@@ -669,10 +669,10 @@ public class FeatureBuilder : Bop
             }
             //
             v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
-            v1.Orientation(Forward);
+            v1.Orient(Forward);
             //
             v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
-            v2.Orientation(Reversed);
+            v2.Orient(Reversed);
             //
             AlgoTools.MakeSplitEdge(aE, v1, t1, v2, t2, out Edge sp);
             AlgoTools2D.BuildPCurveForEdgeOnFace(sp, f, _context);

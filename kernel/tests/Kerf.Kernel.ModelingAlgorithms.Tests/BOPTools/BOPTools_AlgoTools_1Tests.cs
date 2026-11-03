@@ -92,8 +92,8 @@ public class BOPTools_AlgoTools_1Tests
                 continue;
             }
             Exploration.Vertices(aE, out Vertex aV1, out Vertex aV2);
-            Assert.True(Tool.Pnt(aV1).Distance(aC.Value(aT1)) <= Tool.Tolerance(aV1), theFile);
-            Assert.True(Tool.Pnt(aV2).Distance(aC.Value(aT2)) <= Tool.Tolerance(aV2), theFile);
+            Assert.True(Tool.Pnt(aV1).DistanceTo(aC.Value(aT1)) <= Tool.Tolerance(aV1), theFile);
+            Assert.True(Tool.Pnt(aV2).DistanceTo(aC.Value(aT2)) <= Tool.Tolerance(aV2), theFile);
         }
     }
 
@@ -132,7 +132,7 @@ public class BOPTools_AlgoTools_1Tests
         foreach (Shape aS in aMap)
         {
             // BRep_Tool.Tolerance reads at least Precision::Confusion
-            Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aS.ShapeType() == ShapeType.Edge ? Tool.Tolerance(ShapeCasts.Edge(aS)) : Tool.Tolerance(ShapeCasts.Vertex(aS)));
+            Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), aS.Type == ShapeType.Edge ? Tool.Tolerance(ShapeCasts.Edge(aS)) : Tool.Tolerance(ShapeCasts.Vertex(aS)));
         }
         // a maximal tolerance below every needed one changes nothing
         Shape aShape2 = ShrunkCopy("bottle.brep");

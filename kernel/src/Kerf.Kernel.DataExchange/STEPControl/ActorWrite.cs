@@ -49,7 +49,7 @@ public class ActorWrite : ActorOfFinderProcess
 
     private static bool HasGeometry(in Shape shape)
     {
-        ShapeType type = shape.ShapeType();
+        ShapeType type = shape.Type;
 
         if (type == ShapeType.Vertex)
         {
@@ -114,7 +114,7 @@ public class ActorWrite : ActorOfFinderProcess
         for (; it.More(); it.Next())
         {
             Shape directChild = it.Value();
-            if (directChild.ShapeType() != ShapeType.Compound)
+            if (directChild.Type != ShapeType.Compound)
             {
                 brepBuilder.Add(directShapes, directChild);
             }
@@ -148,7 +148,7 @@ public class ActorWrite : ActorOfFinderProcess
     // shape; the port gives a shell that isn't closed as a copy (the same faces) marked closed (decision 1269)
     private static Shell ClosedShell(Shell shell)
     {
-        if (shell.Closed())
+        if (shell.IsClosed)
         {
             return shell;
         }
@@ -222,7 +222,7 @@ public class ActorWrite : ActorOfFinderProcess
         foreach (KeyValuePair<Shape, Shape> shapeShapeIt in context.Map())
         {
             Shape orig = shapeShapeIt.Key, res = shapeShapeIt.Value;
-            if (orig.ShapeType() != ShapeType.Face)
+            if (orig.Type != ShapeType.Face)
             {
                 continue;
             }
@@ -251,7 +251,7 @@ public class ActorWrite : ActorOfFinderProcess
         {
             return false;
         }
-        switch (shape.ShapeType())
+        switch (shape.Type)
         {
             case ShapeType.Compound:
                 {
@@ -383,7 +383,7 @@ public class ActorWrite : ActorOfFinderProcess
         //  theShape = TopoDSToStep::DirectFaces(mapper->Value());
         theShape = mapper.Value(); // pour une reconnaissance c est bien assez
 
-        if (theShape.ShapeType() == ShapeType.Compound)
+        if (theShape.Type == ShapeType.Compound)
         {
             Explorer solidExp = new Explorer(), shellExp = new Explorer(), faceExp = new Explorer();
 
@@ -400,15 +400,15 @@ public class ActorWrite : ActorOfFinderProcess
                 yaface = true;
             }
         }
-        else if (theShape.ShapeType() == ShapeType.Solid)
+        else if (theShape.Type == ShapeType.Solid)
         {
             yasolid = true;
         }
-        else if (theShape.ShapeType() == ShapeType.Shell)
+        else if (theShape.Type == ShapeType.Shell)
         {
             yashell = true;
         }
-        else if (theShape.ShapeType() == ShapeType.Face)
+        else if (theShape.Type == ShapeType.Face)
         {
             yaface = true;
         }
@@ -553,20 +553,20 @@ public class ActorWrite : ActorOfFinderProcess
     // subshape
     public virtual bool IsAssembly(StepModel model, ref Shape s)
     {
-        if (GroupMode() == 0 || s.ShapeType() != ShapeType.Compound)
+        if (GroupMode() == 0 || s.Type != ShapeType.Compound)
         {
             return false;
         }
         // PTV 16.09.2002  OCC725 for storing compound of vertices
         if (model.InternalParameters.WriteVertexMode == 0)
         { // bug 23950
-            if (s.ShapeType() == ShapeType.Compound)
+            if (s.Type == ShapeType.Compound)
             {
                 bool isOnlyVertices = true;
                 Iterator itr = new Iterator(s);
                 for (; itr.More(); itr.Next())
                 {
-                    if (itr.Value().ShapeType() != ShapeType.Vertex)
+                    if (itr.Value().Type != ShapeType.Vertex)
                     {
                         isOnlyVertices = false;
                         break;
@@ -678,7 +678,7 @@ public class ActorWrite : ActorOfFinderProcess
         // [BEGIN] Separate manifold topology from non-manifold in group mode 0 (ssv; 18.11.2010)
         bool isNMMode = stepModel.InternalParameters.WriteNonmanifold;
         Binder nmBinder = null;
-        if (isNMMode && GroupMode() == 0 && theShape.ShapeType() == ShapeType.Compound)
+        if (isNMMode && GroupMode() == 0 && theShape.Type == ShapeType.Compound)
         {
             Compound nmCompound = new Compound();
             Compound manifoldCompound = new Compound();
@@ -713,11 +713,11 @@ public class ActorWrite : ActorOfFinderProcess
                     for (; it.More(); it.Next())
                     {
                         Shape subShape = it.Value();
-                        if (subShape.ShapeType() == ShapeType.Compound && !IsManifoldShape(subShape))
+                        if (subShape.Type == ShapeType.Compound && !IsManifoldShape(subShape))
                         {
                             nmCompound = ShapeCasts.Compound(subShape);
                         }
-                        else if (subShape.ShapeType() == ShapeType.Compound)
+                        else if (subShape.Type == ShapeType.Compound)
                         {
                             listOfShapes.Add(subShape);
                         }
@@ -750,7 +750,7 @@ public class ActorWrite : ActorOfFinderProcess
             for (Iterator iter = new Iterator(nmCompound); iter.More(); iter.Next())
             {
                 Shape subShape = iter.Value();
-                if (subShape.ShapeType() == ShapeType.Solid)
+                if (subShape.Type == ShapeType.Solid)
                 {
                     for (Iterator subIter = new Iterator(subShape); subIter.More(); subIter.Next())
                     {
@@ -759,7 +759,7 @@ public class ActorWrite : ActorOfFinderProcess
                         nonManifoldGroup.Append(subShell);
                     }
                 }
-                else if (!isManifold && (subShape.ShapeType() == ShapeType.Shell))
+                else if (!isManifold && (subShape.Type == ShapeType.Shell))
                 {
                     repItemSeq1.Append(subShape);
                     nonManifoldGroup.Append(subShape);
@@ -823,7 +823,7 @@ public class ActorWrite : ActorOfFinderProcess
         bool isSeparateVertices = stepModel.InternalParameters.WriteVertexMode == 0; // bug 23950
         // PTV 16.09.2002 OCC725 separate shape from solo vertices.
         bool isOnlyVertices = false;
-        if (theShape.ShapeType() == ShapeType.Compound && isSeparateVertices)
+        if (theShape.Type == ShapeType.Compound && isSeparateVertices)
         {
             Compound newShape = new Compound(), compOfVrtx = new Compound();
             BrepBuilder builder = new BrepBuilder();
@@ -858,7 +858,7 @@ public class ActorWrite : ActorOfFinderProcess
             }
         }
 
-        if (theShape.ShapeType() == ShapeType.Compound)
+        if (theShape.Type == ShapeType.Compound)
         {
             Explorer solidExp = new Explorer(), shellExp = new Explorer(), faceExp = new Explorer();
             if (mymode != ModelType.GeometricCurveSet)
@@ -897,19 +897,19 @@ public class ActorWrite : ActorOfFinderProcess
                 }
             }
         }
-        else if (theShape.ShapeType() == ShapeType.Solid)
+        else if (theShape.Type == ShapeType.Solid)
         {
             repItemSeq.Append(ShapeCasts.Solid(theShape));
         }
-        else if (theShape.ShapeType() == ShapeType.Shell)
+        else if (theShape.Type == ShapeType.Shell)
         {
             repItemSeq.Append(ShapeCasts.Shell(theShape));
         }
-        else if (theShape.ShapeType() == ShapeType.Face)
+        else if (theShape.Type == ShapeType.Face)
         {
             repItemSeq.Append(ShapeCasts.Face(theShape));
         }
-        else if (theShape.ShapeType() == ShapeType.CompSolid)
+        else if (theShape.Type == ShapeType.CompSolid)
         {
             fp.AddWarning(start, "NonManifold COMPSOLID was translated like a set of SOLIDs");
             if (GroupMode() > 0)
@@ -957,7 +957,7 @@ public class ActorWrite : ActorOfFinderProcess
 
             if (mymode == ModelType.AsIs)
             {
-                switch (xShape.ShapeType())
+                switch (xShape.Type)
                 {
                     case ShapeType.Solid:
                         trmode = ModelType.ManifoldSolidBrep;
@@ -1005,7 +1005,7 @@ public class ActorWrite : ActorOfFinderProcess
             {
                 case ModelType.ManifoldSolidBrep:
                     {
-                        if (shape.ShapeType() == ShapeType.Solid)
+                        if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
 
@@ -1014,7 +1014,7 @@ public class ActorWrite : ActorOfFinderProcess
                             int nbShells = 0;
                             for (Iterator It = new Iterator(solid); It.More(); It.Next())
                             {
-                                if (It.Value().ShapeType() == ShapeType.Shell)
+                                if (It.Value().Type == ShapeType.Shell)
                                 {
                                     nbShells++;
                                 }
@@ -1044,7 +1044,7 @@ public class ActorWrite : ActorOfFinderProcess
                                 }
                             }
                         }
-                        else if (shape.ShapeType() == ShapeType.Shell)
+                        else if (shape.Type == ShapeType.Shell)
                         {
                             Shell shell = ShapeCasts.Shell(shape);
                             ManifoldSolidBrepMaker mkManifoldSolidBrep = new ManifoldSolidBrepMaker(shell, fp, localFactors, ps1.Next());
@@ -1059,7 +1059,7 @@ public class ActorWrite : ActorOfFinderProcess
                     }
                 case ModelType.BrepWithVoids:
                     {
-                        if (shape.ShapeType() == ShapeType.Solid)
+                        if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
                             MakeBrepWithVoids mkBRepWithVoids = new MakeBrepWithVoids(solid, fp, localFactors, ps1.Next());
@@ -1088,7 +1088,7 @@ public class ActorWrite : ActorOfFinderProcess
                             }
                             return binder;
                         }
-                        if (shape.ShapeType() == ShapeType.Solid)
+                        if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
                             MakeFacetedBrep mkFacetedBrep = new MakeFacetedBrep(solid, fp, localFactors, ps1.Next());
@@ -1117,7 +1117,7 @@ public class ActorWrite : ActorOfFinderProcess
                             }
                             return binder;
                         }
-                        if (shape.ShapeType() == ShapeType.Solid)
+                        if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
                             MakeFacetedBrepAndBrepWithVoids mkFacetedBrepAndBrepWithVoids =
@@ -1133,7 +1133,7 @@ public class ActorWrite : ActorOfFinderProcess
                     }
                 case ModelType.ShellBasedSurfaceModel:
                     {
-                        if (shape.ShapeType() == ShapeType.Solid)
+                        if (shape.Type == ShapeType.Solid)
                         {
                             Solid solid = ShapeCasts.Solid(shape);
                             MakeShellBasedSurfaceModel mkShellBasedSurfaceModel =
@@ -1145,7 +1145,7 @@ public class ActorWrite : ActorOfFinderProcess
                                 itemTess = mkShellBasedSurfaceModel.TessellatedValue();
                             }
                         }
-                        else if (shape.ShapeType() == ShapeType.Shell)
+                        else if (shape.Type == ShapeType.Shell)
                         {
                             Shell shell = ShapeCasts.Shell(shape);
                             // Non-manifold topology is stored via NMSSR containing series of SBSM (ssv; 13.11.2010)
@@ -1158,7 +1158,7 @@ public class ActorWrite : ActorOfFinderProcess
                                 itemTess = mkShellBasedSurfaceModel.TessellatedValue();
                             }
                         }
-                        else if (shape.ShapeType() == ShapeType.Face)
+                        else if (shape.Type == ShapeType.Face)
                         {
                             Face face = ShapeCasts.Face(shape);
                             MakeShellBasedSurfaceModel mkShellBasedSurfaceModel =
@@ -1182,7 +1182,7 @@ public class ActorWrite : ActorOfFinderProcess
                         }
                         // PTV 22.08.2002 OCC609 ------------------------- begin --------------------
                         // modified by PTV 16.09.2002 OCC725
-                        else if (shape.ShapeType() == ShapeType.Compound || shape.ShapeType() == ShapeType.Vertex)
+                        else if (shape.Type == ShapeType.Compound || shape.Type == ShapeType.Vertex)
                         {
                             // it is compound with solo vertices.
                             int nbVrtx = 0;
@@ -1190,7 +1190,7 @@ public class ActorWrite : ActorOfFinderProcess
                             Explorer exp = new Explorer(shape, ShapeType.Vertex);
                             for (; exp.More(); exp.Next())
                             {
-                                if (exp.Current().ShapeType() != ShapeType.Vertex)
+                                if (exp.Current().Type != ShapeType.Vertex)
                                 {
                                     continue;
                                 }
@@ -1208,7 +1208,7 @@ public class ActorWrite : ActorOfFinderProcess
                                 for (exp.ReInit(); exp.More(); exp.Next())
                                 {
                                     Shape vertex = exp.Current();
-                                    if (vertex.ShapeType() != ShapeType.Vertex)
+                                    if (vertex.Type != ShapeType.Vertex)
                                     {
                                         continue;
                                     }
@@ -1290,7 +1290,7 @@ public class ActorWrite : ActorOfFinderProcess
             return binder;
         }
         StepShapeRepresentation shapeRep = null;
-        if (theShape.ShapeType() == ShapeType.Shape)
+        if (theShape.Type == ShapeType.Shape)
         { // for external references
             shapeRep = new StepShapeRepresentation();
         }
@@ -1573,10 +1573,10 @@ public class ActorWrite : ActorOfFinderProcess
         for (Iterator iter = new Iterator(theShape); iter.More(); iter.Next())
         {
             Shape subShape = iter.Value();
-            if (subShape.ShapeType() != ShapeType.Vertex || !isSeparateVertices)
+            if (subShape.Type != ShapeType.Vertex || !isSeparateVertices)
             {
                 // Store non-manifold topology as shells (ssv; 10.11.2010)
-                if (!isManifold && subShape.ShapeType() == ShapeType.Solid)
+                if (!isManifold && subShape.Type == ShapeType.Solid)
                 {
                     for (Iterator subIter = new Iterator(subShape); subIter.More(); subIter.Next())
                     {
@@ -1585,7 +1585,7 @@ public class ActorWrite : ActorOfFinderProcess
                         nonManifoldGroup.Append(subShell);
                     }
                 }
-                else if (!isManifold && (subShape.ShapeType() == ShapeType.Shell || subShape.ShapeType() == ShapeType.Face))
+                else if (!isManifold && (subShape.Type == ShapeType.Shell || subShape.Type == ShapeType.Face))
                 {
                     repItemSeq.Append(subShape);
                     nonManifoldGroup.Append(subShape);
@@ -1691,9 +1691,9 @@ public class ActorWrite : ActorOfFinderProcess
         bool isShapeLocated = false;
         if (GroupMode() > 0)
         {
-            Placement shloc = shape.Location();
+            Placement shloc = shape.Placement;
             isShapeLocated = !shloc.IsIdentity;
-            loc = shloc.Transformation();
+            loc = shloc.Transformation;
             Placement shident = new Placement();
             sh0.Location(shident);
             mapper = global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.ShapeMapper(fp, sh0);
@@ -1741,7 +1741,7 @@ public class ActorWrite : ActorOfFinderProcess
         ConstructAssembly mkitem = new ConstructAssembly();
 
         // make location for assembly placement
-        if (Math.Abs(loc.ScaleFactor() - 1.0) > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (Math.Abs(loc.ScaleFactor - 1.0) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             if (stepModel.InternalParameters.WriteScalingTrsf)
             {
@@ -1752,7 +1752,7 @@ public class ActorWrite : ActorOfFinderProcess
                 fp.AddWarning(start, "The shape has a scaling factor, skipped");
             }
         }
-        if (Math.Abs(loc.ScaleFactor() - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion() || !stepModel.InternalParameters.WriteScalingTrsf)
+        if (Math.Abs(loc.ScaleFactor - 1.0) < global::Kerf.Engine.Foundation.Precision.Confusion() || !stepModel.InternalParameters.WriteScalingTrsf)
         {
             // create a new axis2placement3d
             Axis2Placement3dMaker mkax = new Axis2Placement3dMaker(loc, localFactors);

@@ -82,8 +82,8 @@ public static class HCurve2dTool
         {
             BSplineCurve2D bsc = c.BSpline();
             nbs = bsc.KnotCount;
-            nbs *= bsc.Degree();
-            nbs *= bsc.LastParameter() - bsc.FirstParameter();
+            nbs *= bsc.Degree;
+            nbs *= bsc.LastParameter - bsc.FirstParameter;
             nbs /= u1 - u0;
             if (nbs < 2.0)
             {

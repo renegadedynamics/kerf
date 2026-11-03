@@ -642,9 +642,9 @@ public partial class Solid : Shape3D
                     {
                         var p1 = extrema.PointOnShape1(i);
                         var p2 = extrema.PointOnShape2(i);
-                        if (p1.Distance(p2) > tolerance)
+                        if (p1.DistanceTo(p2) > tolerance)
                             continue;
-                        var vertex = new Vertex(p1.X(), p1.Y(), p1.Z());
+                        var vertex = new Vertex(p1.X, p1.Y, p1.Z);
                         if (!IsDuplicate(vertex, results))
                             results.Add(vertex);
                     }

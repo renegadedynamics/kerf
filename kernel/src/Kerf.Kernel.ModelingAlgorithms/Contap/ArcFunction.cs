@@ -66,7 +66,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
                 //      Adaptor3d_HSurfaceTool::D1(S,U,V,solpt,d1u,d1v);
                 //      myMean = myMean + d1u.Crossed(d1v).Magnitude();
                 SurfProps.Normale(s, u, v, out _solpt, out norm);
-                _mean = _mean + norm.Magnitude();
+                _mean = _mean + norm.Magnitude;
             }
             _mean = _mean / ((double)nbs);
         }
@@ -116,7 +116,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
         Point2D pt2d = ContourHCurve2dTool.Value(_arc!, u);
         //  Adaptor3d_HSurfaceTool::D1(mySurf,pt2d.X(),pt2d.Y(),solpt,d1u,d1v);
         //  gp_Vec norm(d1u.Crossed(d1v));
-        SurfProps.Normale(_surf!, pt2d.X(), pt2d.Y(), out _solpt, out Vector3D norm);
+        SurfProps.Normale(_surf!, pt2d.X, pt2d.Y, out _solpt, out Vector3D norm);
 
         switch (_type)
         {
@@ -127,7 +127,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
                 f = (norm.Dot(new Vector3D(_eye, _solpt))) / _mean;
                 break;
             case ContourTFunction.DraftStd:
-                f = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude()) / _mean;
+                f = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude) / _mean;
                 break;
             case ContourTFunction.DraftPrs:
             default:
@@ -142,7 +142,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
         //  gp_Vec d1u,d1v,d2u,d2v,d2uv;
         ContourHCurve2dTool.D1(_arc!, u, out Point2D pt2d, out Vector2D d2d);
         //  Adaptor3d_HSurfaceTool::D2(mySurf,pt2d.X(),pt2d.Y(),solpt,d1u,d1v,d2u,d2v,d2uv);
-        SurfProps.NormAndDn(_surf!, pt2d.X(), pt2d.Y(), out _solpt, out Vector3D norm, out Vector3D dnu,
+        SurfProps.NormAndDn(_surf!, pt2d.X, pt2d.Y, out _solpt, out Vector3D norm, out Vector3D dnu,
                                    out Vector3D dnv);
 
         switch (_type)
@@ -169,7 +169,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
             default:
                 break;
         }
-        d = d2d.X() * dfu + d2d.Y() * dfv;
+        d = d2d.X * dfu + d2d.Y * dfv;
         return true;
     }
 
@@ -181,7 +181,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
         ContourHCurve2dTool.D1(_arc!, u, out Point2D pt2d, out Vector2D d2d);
         //  Adaptor3d_HSurfaceTool::D2(mySurf,pt2d.X(),pt2d.Y(),solpt,d1u,d1v,d2u,d2v,d2uv);
         //  gp_Vec norm(d1u.Crossed(d1v));
-        SurfProps.NormAndDn(_surf!, pt2d.X(), pt2d.Y(), out _solpt, out Vector3D norm, out Vector3D dnu,
+        SurfProps.NormAndDn(_surf!, pt2d.X, pt2d.Y, out _solpt, out Vector3D norm, out Vector3D dnu,
                                    out Vector3D dnv);
 
         switch (_type)
@@ -200,7 +200,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
             }
             break;
             case ContourTFunction.DraftStd:
-                f = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude()) / _mean;
+                f = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude) / _mean;
                 norm = norm.Normalized();
                 dfu = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                 dfv = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
@@ -210,7 +210,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
                 break;
         }
 
-        d = d2d.X() * dfu + d2d.Y() * dfv;
+        d = d2d.X * dfu + d2d.Y * dfv;
         return true;
     }
 

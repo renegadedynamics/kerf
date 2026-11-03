@@ -76,7 +76,7 @@ public partial class FilletBuilderBase
         // Modif against Vertex isolated on spine
         Edge support = bc.Edge();
         Exploration.Vertices(support, out bout1, out bout2);
-        if (support.Orientation() == Reversed)
+        if (support.Orientation == Reversed)
         {
             boutemp = bout2;
             bout2 = bout1;
@@ -89,7 +89,7 @@ public partial class FilletBuilderBase
         // finmodif
         double edf = bc.FirstParameter(), edl = bc.LastParameter();
         double edglen = edl - edf;
-        if (spine.Edges(iedge).Orientation() == Forward)
+        if (spine.Edges(iedge).Orientation == Forward)
         {
             bc.D1(wtg + edf, out ped, out ded);
         }
@@ -104,12 +104,12 @@ public partial class FilletBuilderBase
         Point2D pp1 = new(), pp2 = new();
         pp1 = sd.InterferenceOnS1().PCurveOnSurf().Value(wtg);
         pp2 = sd.InterferenceOnS2().PCurveOnSurf().Value(wtg);
-        p1 = surf.Value(pp1.X(), pp1.Y());
-        p2 = surf.Value(pp2.X(), pp2.Y());
+        p1 = surf.Value(pp1.X, pp1.Y);
+        p2 = surf.Value(pp2.X, pp2.Y);
         bool tron = false;
-        double ang = dsp.Angle(ded);
-        double dis1 = psp.Distance(ped);
-        double dis2 = p1.Distance(p2);
+        double ang = dsp.AngleTo(ded);
+        double dis1 = psp.DistanceTo(ped);
+        double dis2 = p1.DistanceTo(p2);
         if (ang > M_PI / 18.0)
         {
             tron = true;
@@ -232,7 +232,7 @@ public partial class FilletBuilderBase
                 }
                 else
                 {
-                    ie = h1.AddElement(Bc, Bc.Edge().Orientation());
+                    ie = h1.AddElement(Bc, Bc.Edge().Orientation);
                 }
                 m1[ie] = I1.Value();
             }
@@ -264,7 +264,7 @@ public partial class FilletBuilderBase
                 }
                 else
                 {
-                    ie = h2.AddElement(Bc, Bc.Edge().Orientation());
+                    ie = h2.AddElement(Bc, Bc.Edge().Orientation);
                 }
                 m2[ie] = I2.Value();
             }
@@ -286,7 +286,7 @@ public partial class FilletBuilderBase
         EdgeCurveAdaptor bc = spine.CurrentElementarySpine(iedge);
         Edge support = bc.Edge();
         Exploration.Vertices(support, out bout1, out bout2);
-        if (support.Orientation() == Reversed)
+        if (support.Orientation == Reversed)
         {
             boutemp = bout2;
             bout2 = bout1;
@@ -937,7 +937,7 @@ internal static class Builder_SpKP
             v = Exploration.LastVertex(arc);
         }
         filPoint.SetVertex(v);
-        filPoint.SetArc(global::Kerf.Engine.Foundation.Precision.PIntersection(), arc, pe.Parameter(), global::Kerf.Engine.Topology.TopAbs.Compose(arc.Orientation(), or));
+        filPoint.SetArc(global::Kerf.Engine.Foundation.Precision.PIntersection(), arc, pe.Parameter(), global::Kerf.Engine.Topology.TopAbs.Compose(arc.Orientation, or));
     }
 
     internal static FaceInterference CpInterf(DsDataStructure dStr, in FaceInterference fi)
@@ -1017,7 +1017,7 @@ internal static class Builder_SpKP
             case Line:
                 return u;
             case Circle:
-                return c.Circle().Radius() * u;
+                return c.Circle().Radius * u;
             default:
                 return 0;
         }
@@ -1085,7 +1085,7 @@ internal static class Builder_SpKP
 
             while (!found && !fini)
             {
-                Orientation o = spine.Edges(ii).Orientation();
+                Orientation o = spine.Edges(ii).Orientation;
                 bool first = ((o == Forward && sens == 1) || (o == Reversed && sens == -1));
                 ce.Initialize(spine.Edges(ii));
                 double tolc = ce.Resolution(tol);
@@ -1340,7 +1340,7 @@ internal static class Builder_SpKP
             }
             else
             {
-                pons.SetArc(pitol, e, pe.Parameter(), CompTra(cd.Interference(ons).Transition(), e.Orientation(), isFirst));
+                pons.SetArc(pitol, e, pe.Parameter(), CompTra(cd.Interference(ons).Transition(), e.Orientation, isFirst));
             }
             Curve2D? pcadj = cd.Interference(ons).PCurveOnSurf();
             pcadj.Value(ponH).Coord(out x, out y);

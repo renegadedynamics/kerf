@@ -149,7 +149,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
 
             aContexts.Sort();
             string anOwn = Statuses(aResult.Status());
-            string aLine = $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aSub.ShapeType())}: {anOwn}; " + string.Join("; ", aContexts.Select(c => $"in {c.Item1}: {c.Item2}"));
+            string aLine = $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aSub.Type)}: {anOwn}; " + string.Join("; ", aContexts.Select(c => $"in {c.Item1}: {c.Item2}"));
             bool isFaulty = anOwn != "NoError" || aContexts.Any(c => c.Item2 != "NoError");
             if (!theFaultsOnly || isFaulty)
             {

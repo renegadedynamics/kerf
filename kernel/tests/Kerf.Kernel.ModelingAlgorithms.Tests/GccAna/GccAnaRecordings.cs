@@ -98,15 +98,15 @@ internal static class GccAnaRecordings
 
     private static string Hex(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x", CultureInfo.InvariantCulture);
 
-    private static string Hex(Point2D theP) => Hex(theP.X()) + "," + Hex(theP.Y());
+    private static string Hex(Point2D theP) => Hex(theP.X) + "," + Hex(theP.Y);
 
-    private static string Hex(Direction2D theD) => Hex(theD.X()) + "," + Hex(theD.Y());
+    private static string Hex(Direction2D theD) => Hex(theD.X) + "," + Hex(theD.Y);
 
-    private static string Hex(Frame2D theA) => Hex(theA.Location()) + "," + Hex(theA.XDirection()) + "," + Hex(theA.YDirection());
+    private static string Hex(Frame2D theA) => Hex(theA.Location) + "," + Hex(theA.XDirection) + "," + Hex(theA.YDirection);
 
-    private static string Hex(Circle2D theC) => Hex(theC.Position()) + "," + Hex(theC.Radius());
+    private static string Hex(Circle2D theC) => Hex(theC.Position) + "," + Hex(theC.Radius);
 
-    private static string Hex(Line2D theL) => Hex(theL.Location()) + "," + Hex(theL.Direction());
+    private static string Hex(Line2D theL) => Hex(theL.Location) + "," + Hex(theL.Direction);
 
     private static string Q(Qualifier p) => ((int)p).ToString(CultureInfo.InvariantCulture);
 
@@ -133,17 +133,17 @@ internal static class GccAnaRecordings
             case ConstraintCurveType.Ell:
                 {
                     Ellipse2D anE = theB.Ellipse();
-                    return "Ell," + Hex(anE.Axis()) + "," + Hex(anE.MajorRadius()) + "," + Hex(anE.MinorRadius());
+                    return "Ell," + Hex(anE.Axis) + "," + Hex(anE.MajorRadius) + "," + Hex(anE.MinorRadius);
                 }
             case ConstraintCurveType.Hpr:
                 {
                     Hyperbola2D aH = theB.Hyperbola();
-                    return "Hpr," + Hex(aH.Axis()) + "," + Hex(aH.MajorRadius()) + "," + Hex(aH.MinorRadius());
+                    return "Hpr," + Hex(aH.Axis) + "," + Hex(aH.MajorRadius) + "," + Hex(aH.MinorRadius);
                 }
             case ConstraintCurveType.Par:
                 {
                     Parabola2D aP = theB.Parabola();
-                    return "Par," + Hex(aP.Axis()) + "," + Hex(aP.Focal());
+                    return "Par," + Hex(aP.Axis) + "," + Hex(aP.Focal);
                 }
             case ConstraintCurveType.Pnt:
                 return "Pnt," + Hex(theB.Point());

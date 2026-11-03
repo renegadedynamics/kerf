@@ -25,26 +25,26 @@ public class Convert_HyperbolaToBSplineCurveTest
 
         // Verify first pole matches hyperbola point at U1
         NCollection_Array1<Point2D> aPoles = aConv.Poles();
-        double aMajR = aHypr.MajorRadius();
-        double aMinR = aHypr.MinorRadius();
-        Point2D aCenter = aHypr.Location();
-        Direction2D aXDir = aHypr.XAxis().Direction();
-        Direction2D aYDir = aHypr.YAxis().Direction();
+        double aMajR = aHypr.MajorRadius;
+        double aMinR = aHypr.MinorRadius;
+        Point2D aCenter = aHypr.Location;
+        Direction2D aXDir = aHypr.XAxis.Direction;
+        Direction2D aYDir = aHypr.YAxis.Direction;
 
         double aFirstX =
-            aCenter.X() + aMajR * Math.Cosh(aU1) * aXDir.X() + aMinR * Math.Sinh(aU1) * aYDir.X();
+            aCenter.X + aMajR * Math.Cosh(aU1) * aXDir.X + aMinR * Math.Sinh(aU1) * aYDir.X;
         double aFirstY =
-            aCenter.Y() + aMajR * Math.Cosh(aU1) * aXDir.Y() + aMinR * Math.Sinh(aU1) * aYDir.Y();
-        Assert.Equal(aFirstX, aPoles[1].X(), 1.0e-10);
-        Assert.Equal(aFirstY, aPoles[1].Y(), 1.0e-10);
+            aCenter.Y + aMajR * Math.Cosh(aU1) * aXDir.Y + aMinR * Math.Sinh(aU1) * aYDir.Y;
+        Assert.Equal(aFirstX, aPoles[1].X, 1.0e-10);
+        Assert.Equal(aFirstY, aPoles[1].Y, 1.0e-10);
 
         // Verify last pole matches hyperbola point at U2
         double aLastX =
-            aCenter.X() + aMajR * Math.Cosh(aU2) * aXDir.X() + aMinR * Math.Sinh(aU2) * aYDir.X();
+            aCenter.X + aMajR * Math.Cosh(aU2) * aXDir.X + aMinR * Math.Sinh(aU2) * aYDir.X;
         double aLastY =
-            aCenter.Y() + aMajR * Math.Cosh(aU2) * aXDir.Y() + aMinR * Math.Sinh(aU2) * aYDir.Y();
-        Assert.Equal(aLastX, aPoles[aConv.PoleCount].X(), 1.0e-10);
-        Assert.Equal(aLastY, aPoles[aConv.PoleCount].Y(), 1.0e-10);
+            aCenter.Y + aMajR * Math.Cosh(aU2) * aXDir.Y + aMinR * Math.Sinh(aU2) * aYDir.Y;
+        Assert.Equal(aLastX, aPoles[aConv.PoleCount].X, 1.0e-10);
+        Assert.Equal(aLastY, aPoles[aConv.PoleCount].Y, 1.0e-10);
 
         // Verify all weights are positive
         NCollection_Array1<double> aWeights = aConv.Weights();
@@ -83,26 +83,26 @@ public class Convert_HyperbolaToBSplineCurveTest
 
         // Verify first pole matches hyperbola point at U1
         NCollection_Array1<Point2D> aPoles = aConv.Poles();
-        double aMajR = aHypr.MajorRadius();
-        double aMinR = aHypr.MinorRadius();
-        Point2D aCenter = aHypr.Location();
-        Direction2D aXDir = aHypr.XAxis().Direction();
-        Direction2D aYDir = aHypr.YAxis().Direction();
+        double aMajR = aHypr.MajorRadius;
+        double aMinR = aHypr.MinorRadius;
+        Point2D aCenter = aHypr.Location;
+        Direction2D aXDir = aHypr.XAxis.Direction;
+        Direction2D aYDir = aHypr.YAxis.Direction;
 
         double aFirstX =
-            aCenter.X() + aMajR * Math.Cosh(aU1) * aXDir.X() + aMinR * Math.Sinh(aU1) * aYDir.X();
+            aCenter.X + aMajR * Math.Cosh(aU1) * aXDir.X + aMinR * Math.Sinh(aU1) * aYDir.X;
         double aFirstY =
-            aCenter.Y() + aMajR * Math.Cosh(aU1) * aXDir.Y() + aMinR * Math.Sinh(aU1) * aYDir.Y();
-        Assert.Equal(aFirstX, aPoles[1].X(), 1.0e-10);
-        Assert.Equal(aFirstY, aPoles[1].Y(), 1.0e-10);
+            aCenter.Y + aMajR * Math.Cosh(aU1) * aXDir.Y + aMinR * Math.Sinh(aU1) * aYDir.Y;
+        Assert.Equal(aFirstX, aPoles[1].X, 1.0e-10);
+        Assert.Equal(aFirstY, aPoles[1].Y, 1.0e-10);
 
         // Verify last pole matches hyperbola point at U2
         double aLastX =
-            aCenter.X() + aMajR * Math.Cosh(aU2) * aXDir.X() + aMinR * Math.Sinh(aU2) * aYDir.X();
+            aCenter.X + aMajR * Math.Cosh(aU2) * aXDir.X + aMinR * Math.Sinh(aU2) * aYDir.X;
         double aLastY =
-            aCenter.Y() + aMajR * Math.Cosh(aU2) * aXDir.Y() + aMinR * Math.Sinh(aU2) * aYDir.Y();
-        Assert.Equal(aLastX, aPoles[aConv.PoleCount].X(), 1.0e-10);
-        Assert.Equal(aLastY, aPoles[aConv.PoleCount].Y(), 1.0e-10);
+            aCenter.Y + aMajR * Math.Cosh(aU2) * aXDir.Y + aMinR * Math.Sinh(aU2) * aYDir.Y;
+        Assert.Equal(aLastX, aPoles[aConv.PoleCount].X, 1.0e-10);
+        Assert.Equal(aLastY, aPoles[aConv.PoleCount].Y, 1.0e-10);
 
         // Verify all weights are positive
         NCollection_Array1<double> aWeights = aConv.Weights();

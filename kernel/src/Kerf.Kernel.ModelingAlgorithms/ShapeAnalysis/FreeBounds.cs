@@ -191,7 +191,7 @@ public sealed class FreeBounds
         int i; // svv #1
         for (i = 1; i <= edges.Length(); i++)
         {
-            Orientation orientation = edges.Value(i).Orientation();
+            Orientation orientation = edges.Value(i).Orientation;
             if (orientation == Internal || orientation == External)
             {
                 continue;
@@ -208,7 +208,7 @@ public sealed class FreeBounds
 
         for (i = 1; i <= iwires.Length(); i++)
         {
-            if (iwires.Value(i).Orientation() == Reversed)
+            if (iwires.Value(i).Orientation == Reversed)
             {
                 edges[edgeIndices[i - 1]].Reverse();
             }
@@ -691,7 +691,7 @@ public sealed class FreeBounds
 
         for (int iw = 1; iw <= wires.Length(); iw++)
         {
-            if (wires.Value(iw).Closed())
+            if (wires.Value(iw).IsClosed)
             {
                 b.Add(closed, wires.Value(iw));
             }
@@ -717,8 +717,8 @@ public sealed class FreeBounds
         {
             b.Add(aNew, it.Value());
         }
-        aNew.Location(compound.Location(), false);
-        aNew.Orientation(compound.Orientation());
+        aNew.Location(compound.Placement, false);
+        aNew.Orient(compound.Orientation);
         return aNew;
     }
 

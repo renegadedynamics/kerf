@@ -30,7 +30,7 @@ public class GlobOptFuncCS : MultipleVarFunctionWithHessian
 
     private void ValueCore(double cu, double su, double sv, out double f)
     {
-        f = _c.Value(cu).SquareDistance(_s.Value(su, sv));
+        f = _c.Value(cu).SquareDistanceTo(_s.Value(su, sv));
     }
 
     private void GradientCore(double cu, double su, double sv, math_Vector g)
@@ -38,11 +38,11 @@ public class GlobOptFuncCS : MultipleVarFunctionWithHessian
         _c.D1(cu, out Point3D cd0, out Vector3D cd1);
         _s.D1(su, sv, out Point3D sd0, out Vector3D sd1U, out Vector3D sd1V);
 
-        g[1] = +(cd0.X() - sd0.X()) * cd1.X() + (cd0.Y() - sd0.Y()) * cd1.Y() + (cd0.Z() - sd0.Z()) * cd1.Z();
-        g[2] = -(cd0.X() - sd0.X()) * sd1U.X() - (cd0.Y() - sd0.Y()) * sd1U.Y()
-               - (cd0.Z() - sd0.Z()) * sd1U.Z();
-        g[3] = -(cd0.X() - sd0.X()) * sd1V.X() - (cd0.Y() - sd0.Y()) * sd1V.Y()
-               - (cd0.Z() - sd0.Z()) * sd1V.Z();
+        g[1] = +(cd0.X - sd0.X) * cd1.X + (cd0.Y - sd0.Y) * cd1.Y + (cd0.Z - sd0.Z) * cd1.Z;
+        g[2] = -(cd0.X - sd0.X) * sd1U.X - (cd0.Y - sd0.Y) * sd1U.Y
+               - (cd0.Z - sd0.Z) * sd1U.Z;
+        g[3] = -(cd0.X - sd0.X) * sd1V.X - (cd0.Y - sd0.Y) * sd1V.Y
+               - (cd0.Z - sd0.Z) * sd1V.Z;
     }
 
     private void Hessian(double cu, double su, double sv, Matrix h)
@@ -51,31 +51,31 @@ public class GlobOptFuncCS : MultipleVarFunctionWithHessian
         _s.D2(su, sv, out Point3D sd0, out Vector3D sd1U, out Vector3D sd1V, out Vector3D sd2UU, out Vector3D sd2VV,
             out Vector3D sd2UV);
 
-        h[1, 1] = +cd1.X() * cd1.X() + cd1.Y() * cd1.Y() + cd1.Z() * cd1.Z()
-                  + (cd0.X() - sd0.X()) * cd2.X() + (cd0.Y() - sd0.Y()) * cd2.Y()
-                  + (cd0.Z() - sd0.Z()) * cd2.Z();
+        h[1, 1] = +cd1.X * cd1.X + cd1.Y * cd1.Y + cd1.Z * cd1.Z
+                  + (cd0.X - sd0.X) * cd2.X + (cd0.Y - sd0.Y) * cd2.Y
+                  + (cd0.Z - sd0.Z) * cd2.Z;
 
-        h[1, 2] = -cd1.X() * sd1U.X() - cd1.Y() * sd1U.Y() - cd1.Z() * sd1U.Z();
+        h[1, 2] = -cd1.X * sd1U.X - cd1.Y * sd1U.Y - cd1.Z * sd1U.Z;
 
-        h[1, 3] = -cd1.X() * sd1V.X() - cd1.Y() * sd1V.Y() - cd1.Z() * sd1V.Z();
+        h[1, 3] = -cd1.X * sd1V.X - cd1.Y * sd1V.Y - cd1.Z * sd1V.Z;
 
         h[2, 1] = h[1, 2];
 
-        h[2, 2] = +sd1U.X() * sd1U.X() + sd1U.Y() * sd1U.Y() + sd1U.Z() * sd1U.Z()
-                  - (cd0.X() - sd0.X()) * sd2UU.X() - (cd0.Y() - sd0.Y()) * sd2UU.Y()
-                  - (cd0.Z() - sd0.Z()) * sd2UU.Z();
+        h[2, 2] = +sd1U.X * sd1U.X + sd1U.Y * sd1U.Y + sd1U.Z * sd1U.Z
+                  - (cd0.X - sd0.X) * sd2UU.X - (cd0.Y - sd0.Y) * sd2UU.Y
+                  - (cd0.Z - sd0.Z) * sd2UU.Z;
 
-        h[2, 3] = +sd1U.X() * sd1V.X() + sd1U.Y() * sd1V.Y() + sd1U.Z() * sd1V.Z()
-                  - (cd0.X() - sd0.X()) * sd2UV.X() - (cd0.Y() - sd0.Y()) * sd2UV.Y()
-                  - (cd0.Z() - sd0.Z()) * sd2UV.Z();
+        h[2, 3] = +sd1U.X * sd1V.X + sd1U.Y * sd1V.Y + sd1U.Z * sd1V.Z
+                  - (cd0.X - sd0.X) * sd2UV.X - (cd0.Y - sd0.Y) * sd2UV.Y
+                  - (cd0.Z - sd0.Z) * sd2UV.Z;
 
         h[3, 1] = h[1, 3];
 
         h[3, 2] = h[2, 3];
 
-        h[3, 3] = +sd1V.X() * sd1V.X() + sd1V.Y() * sd1V.Y() + sd1V.Z() * sd1V.Z()
-                  - (cd0.X() - sd0.X()) * sd2VV.X() - (cd0.Y() - sd0.Y()) * sd2VV.Y()
-                  - (cd0.Z() - sd0.Z()) * sd2VV.Z();
+        h[3, 3] = +sd1V.X * sd1V.X + sd1V.Y * sd1V.Y + sd1V.Z * sd1V.Z
+                  - (cd0.X - sd0.X) * sd2VV.X - (cd0.Y - sd0.Y) * sd2VV.Y
+                  - (cd0.Z - sd0.Z) * sd2VV.Z;
     }
 
     private bool CheckInputData(math_Vector x, out double cu, out double su, out double sv)

@@ -152,8 +152,8 @@ public sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
     {
         if (!aBasisCurve.IsPeriodic)
         {
-            double first = aBasisCurve.FirstParameter();
-            double last = aBasisCurve.LastParameter();
+            double first = aBasisCurve.FirstParameter;
+            double last = aBasisCurve.LastParameter;
             if (aCurveU1 < first)
             {
                 aCurveU1 = first;
@@ -182,7 +182,7 @@ public sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute bounding box for full surface.</summary>
     public Box Box(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return Box(u1, u2, v1, v2, tol);
     }
 
@@ -192,8 +192,8 @@ public sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
         try
         {
             // P(U, V) = BasisCurve(U) + V * Direction
-            Curve3D basisCurve = _geom.BasisCurve();
-            Direction3D dir = _geom.Direction();
+            Curve3D basisCurve = _geom.BasisCurve;
+            Direction3D dir = _geom.Direction;
             Xyz dirXYZ = dir.XYZ();
 
             double curveU1 = uMin;
@@ -223,7 +223,7 @@ public sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
     /// <summary>Compute precise bounding box for full surface.</summary>
     public Box BoxOptimal(double tol)
     {
-        _geom.Bounds(out double u1, out double u2, out double v1, out double v2);
+        _geom.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         return BoxOptimal(u1, u2, v1, v2, tol);
     }
 
@@ -233,8 +233,8 @@ public sealed class SurfaceOfExtrusionBounds : SurfaceBounds.ISurfaceEvaluator
         try
         {
             // Use the tight basis curve box for a more precise result.
-            Curve3D basisCurve = _geom.BasisCurve();
-            Direction3D dir = _geom.Direction();
+            Curve3D basisCurve = _geom.BasisCurve;
+            Direction3D dir = _geom.Direction;
             Xyz dirXYZ = dir.XYZ();
 
             double curveU1 = uMin;

@@ -150,7 +150,7 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
     public void Value(int index, NCollection_Array1<Point3D> tabPnt)
     {
         Point3D p = _line!.Point(index).Value();
-        tabPnt[1] = tabPnt[1].WithCoord(p.X() + _xo, p.Y() + _yo, p.Z() + _zo);
+        tabPnt[1] = tabPnt[1].WithCoord(p.X + _xo, p.Y + _yo, p.Z + _zo);
     }
 
     /// <summary>The 2d points of the MultiPoint <paramref name="index"/>.</summary>
@@ -333,7 +333,7 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
             V1[i] = v1;
             U2[i] = u2;
             V2[i] = v2;
-            ac[i] = ac[i - 1] + (_line.Point(i - 1).Value()).Distance(_line.Point(i).Value());
+            ac[i] = ac[i - 1] + (_line.Point(i - 1).Value()).DistanceTo(_line.Point(i).Value());
         }
 
         //-------------------------------------------------------------
@@ -469,13 +469,13 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
             temp.Point(i).Parameters(out u1, out v1, out u2, out v2);
             //-- Turn P1A P1B P1C
             p1C = p1C.WithCoord(u1, v1);
-            du = p1B.X() - p1A.X();
-            dv = p1B.Y() - p1A.Y();
+            du = p1B.X - p1A.X;
+            dv = p1B.Y - p1A.Y;
             duv2 = 0.25 * (du * du + dv * dv);
-            u1 = p1B.X() + du;
-            v1 = p1B.Y() + dv;
-            du = p1C.X() - u1;
-            dv = p1C.Y() - v1;
+            u1 = p1B.X + du;
+            v1 = p1B.Y + dv;
+            du = p1C.X - u1;
+            dv = p1C.Y - v1;
             d = du * du + dv * dv;
             if (d > duv2)
             {
@@ -485,13 +485,13 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
 
             //-- Turn P2A P2B P2C
             p2C = p2C.WithCoord(u2, v2);
-            du = p2B.X() - p2A.X();
-            dv = p2B.Y() - p2A.Y();
+            du = p2B.X - p2A.X;
+            dv = p2B.Y - p2A.Y;
             duv2 = 0.25 * (du * du + dv * dv);
-            u2 = p2B.X() + du;
-            v2 = p2B.Y() + dv;
-            du = p2C.X() - u2;
-            dv = p2C.Y() - v2;
+            u2 = p2B.X + du;
+            v2 = p2B.Y + dv;
+            du = p2C.X - u2;
+            dv = p2C.Y - v2;
             d = du * du + dv * dv;
             if (d > duv2)
             {
@@ -579,8 +579,8 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
             if (!isNewPointInvalid && _ptrOnmySvSurfaces.SeekPoint(umid1, vmid1, umid2, vmid2, ref midPoint))
             {
                 Point3D newPnt = midPoint.Value();
-                double sqDistNewPrev = newPnt.SquareDistance(prevPnt);
-                double sqDistNewCur = newPnt.SquareDistance(curPnt);
+                double sqDistNewPrev = newPnt.SquareDistanceTo(prevPnt);
+                double sqDistNewCur = newPnt.SquareDistanceTo(curPnt);
                 isNewPointInvalid = (sqDistNewPrev <= sqTol3d || sqDistNewCur <= sqTol3d);
                 if (!isNewPointInvalid)
                 {
@@ -637,8 +637,8 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
         {
             Value(ind, arr1, arr2);
             theOut.Write(string.Create(CultureInfo.InvariantCulture,
-                                       $"{ind,4}  [{F(arr1[1].X())} {F(arr1[1].Y())} {F(arr1[1].Z())}]  "
-                                       + $"[{F(arr2[1].X())} {F(arr2[1].Y())}]  [{F(arr2[2].X())} {F(arr2[2].Y())}]\n"));
+                                       $"{ind,4}  [{F(arr1[1].X)} {F(arr1[1].Y)} {F(arr1[1].Z)}]  "
+                                       + $"[{F(arr2[1].X)} {F(arr2[1].Y)}]  [{F(arr2[2].X)} {F(arr2[2].Y)}]\n"));
         }
     }
 

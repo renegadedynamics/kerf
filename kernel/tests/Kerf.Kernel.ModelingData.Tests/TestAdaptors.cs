@@ -14,14 +14,14 @@ namespace Kerf.Kernel.ModelingData.Tests;
 /// </summary>
 internal sealed class TestCurveAdaptor(Curve3D theCurve, double theFirst, double theLast) : CurveAdaptorBase
 {
-    public TestCurveAdaptor(Curve3D theCurve) : this(theCurve, theCurve.FirstParameter(), theCurve.LastParameter()) { }
+    public TestCurveAdaptor(Curve3D theCurve) : this(theCurve, theCurve.FirstParameter, theCurve.LastParameter) { }
 
     public Curve3D Curve() => theCurve;
 
     public override CurveAdaptorBase ShallowCopy() => new TestCurveAdaptor(theCurve, theFirst, theLast);
     public override double FirstParameter() => theFirst;
     public override double LastParameter() => theLast;
-    public override Continuity Continuity() => theCurve.Continuity();
+    public override Continuity Continuity() => theCurve.Continuity;
     public override int NbIntervals(Continuity S) => 1;
 
     public override void Intervals(NCollection_Array1<double> T, Continuity S)
@@ -33,7 +33,7 @@ internal sealed class TestCurveAdaptor(Curve3D theCurve, double theFirst, double
     public override CurveAdaptorBase Trim(double First, double Last, double Tol) => new TestCurveAdaptor(theCurve, First, Last);
     public override bool IsClosed => theCurve.IsClosed;
     public override bool IsPeriodic => theCurve.IsPeriodic;
-    public override double Period() => theCurve.Period();
+    public override double Period() => theCurve.Period;
     public override double Resolution(double R3d) => global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
 
     public override CurveKind GetType() => theCurve switch
@@ -49,21 +49,21 @@ internal sealed class TestCurveAdaptor(Curve3D theCurve, double theFirst, double
         _ => OtherCurve,
     };
 
-    public override Line3D Line() => ((LineCurve3D)theCurve).Lin();
-    public override Circle3D Circle() => ((CircleCurve3D)theCurve).Circ();
-    public override Ellipse3D Ellipse() => ((EllipseCurve3D)theCurve).Elips();
-    public override Hyperbola3D Hyperbola() => ((HyperbolaCurve3D)theCurve).Hypr();
-    public override Parabola3D Parabola() => ((ParabolaCurve3D)theCurve).Parab();
-    public override int Degree() => theCurve is BezierCurve3D B ? B.Degree() : ((BSplineCurve3D)theCurve).Degree();
+    public override Line3D Line() => ((LineCurve3D)theCurve).Line;
+    public override Circle3D Circle() => ((CircleCurve3D)theCurve).Circle;
+    public override Ellipse3D Ellipse() => ((EllipseCurve3D)theCurve).Ellipse;
+    public override Hyperbola3D Hyperbola() => ((HyperbolaCurve3D)theCurve).Hyperbola;
+    public override Parabola3D Parabola() => ((ParabolaCurve3D)theCurve).Parabola;
+    public override int Degree() => theCurve is BezierCurve3D B ? B.Degree : ((BSplineCurve3D)theCurve).Degree;
     public override bool IsRational => theCurve is BezierCurve3D B ? B.IsRational : theCurve is BSplineCurve3D S && S.IsRational;
     public override int PoleCount => theCurve is BezierCurve3D B ? B.PoleCount : ((BSplineCurve3D)theCurve).PoleCount;
     public override int KnotCount => ((BSplineCurve3D)theCurve).KnotCount;
     public override BezierCurve3D Bezier() => (BezierCurve3D)theCurve;
     public override BSplineCurve3D BSpline() => (BSplineCurve3D)theCurve;
     public override Point3D EvalD0(double theU) => theCurve.EvalD0(theU);
-    public override Curve3D.ResD1 EvalD1(double theU) => theCurve.EvalD1(theU);
-    public override Curve3D.ResD2 EvalD2(double theU) => theCurve.EvalD2(theU);
-    public override Curve3D.ResD3 EvalD3(double theU) => theCurve.EvalD3(theU);
+    internal override Curve3D.ResD1 EvalD1(double theU) => theCurve.EvalD1(theU);
+    internal override Curve3D.ResD2 EvalD2(double theU) => theCurve.EvalD2(theU);
+    internal override Curve3D.ResD3 EvalD3(double theU) => theCurve.EvalD3(theU);
     public override Vector3D EvalDN(double theU, int theN) => theCurve.EvalDN(theU, theN);
 }
 
@@ -89,7 +89,7 @@ internal sealed class TestSurfaceAdaptor : SurfaceAdaptorBase
     public TestSurfaceAdaptor(Surface theSurf)
     {
         mySurf = theSurf;
-        theSurf.Bounds(out myU1, out myU2, out myV1, out myV2);
+        theSurf.ParameterBounds(out myU1, out myU2, out myV1, out myV2);
     }
 
     public Surface Surface() => mySurf;
@@ -99,8 +99,8 @@ internal sealed class TestSurfaceAdaptor : SurfaceAdaptorBase
     public override double LastUParameter() => myU2;
     public override double FirstVParameter() => myV1;
     public override double LastVParameter() => myV2;
-    public override Continuity UContinuity() => mySurf.Continuity();
-    public override Continuity VContinuity() => mySurf.Continuity();
+    public override Continuity UContinuity() => mySurf.Continuity;
+    public override Continuity VContinuity() => mySurf.Continuity;
 
     /// <summary>Interior interval bounds in U (strictly between the first and last parameters), if any.</summary>
     public double[] UBreaks { get; init; } = [];
@@ -130,9 +130,9 @@ internal sealed class TestSurfaceAdaptor : SurfaceAdaptorBase
     public override bool IsUClosed => mySurf.IsUClosed;
     public override bool IsVClosed => mySurf.IsVClosed;
     public override bool IsUPeriodic => mySurf.IsUPeriodic;
-    public override double UPeriod() => mySurf.UPeriod();
+    public override double UPeriod() => mySurf.UPeriod;
     public override bool IsVPeriodic => mySurf.IsVPeriodic;
-    public override double VPeriod() => mySurf.VPeriod();
+    public override double VPeriod() => mySurf.VPeriod;
     public override double UResolution(double R3d) => global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
     public override double VResolution(double R3d) => global::Kerf.Engine.Foundation.Precision.Parametric(R3d);
 
@@ -150,13 +150,13 @@ internal sealed class TestSurfaceAdaptor : SurfaceAdaptorBase
         _ => OtherSurface,
     };
 
-    public override Plane3D Plane() => ((PlaneSurface)mySurf).Pln();
-    public override Cylinder Cylinder() => ((CylindricalSurface)mySurf).Cylinder();
-    public override Cone Cone() => ((ConicalSurface)mySurf).Cone();
-    public override Sphere Sphere() => ((SphericalSurface)mySurf).Sphere();
-    public override Torus Torus() => ((ToroidalSurface)mySurf).Torus();
-    public override int UDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UDegree() : ((global::Kerf.Geometry.BSplineSurface)mySurf).UDegree();
-    public override int VDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VDegree() : ((global::Kerf.Geometry.BSplineSurface)mySurf).VDegree();
+    public override Plane3D Plane() => ((PlaneSurface)mySurf).Plane;
+    public override Cylinder Cylinder() => ((CylindricalSurface)mySurf).Cylinder;
+    public override Cone Cone() => ((ConicalSurface)mySurf).Cone;
+    public override Sphere Sphere() => ((SphericalSurface)mySurf).Sphere;
+    public override Torus Torus() => ((ToroidalSurface)mySurf).Torus;
+    public override int UDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UDegree : ((global::Kerf.Geometry.BSplineSurface)mySurf).UDegree;
+    public override int VDegree() => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VDegree : ((global::Kerf.Geometry.BSplineSurface)mySurf).VDegree;
     public override int UPoleCount => mySurf is global::Kerf.Geometry.BezierSurface B ? B.UPoleCount : ((global::Kerf.Geometry.BSplineSurface)mySurf).UPoleCount;
     public override int VPoleCount => mySurf is global::Kerf.Geometry.BezierSurface B ? B.VPoleCount : ((global::Kerf.Geometry.BSplineSurface)mySurf).VPoleCount;
     public override int UKnotCount => ((global::Kerf.Geometry.BSplineSurface)mySurf).UKnotCount;
@@ -165,12 +165,12 @@ internal sealed class TestSurfaceAdaptor : SurfaceAdaptorBase
     public override bool IsVRational => mySurf is global::Kerf.Geometry.BezierSurface B ? B.IsVRational : ((global::Kerf.Geometry.BSplineSurface)mySurf).IsVRational;
     public override global::Kerf.Geometry.BezierSurface Bezier() => (global::Kerf.Geometry.BezierSurface)mySurf;
     public override global::Kerf.Geometry.BSplineSurface BSpline() => (global::Kerf.Geometry.BSplineSurface)mySurf;
-    public override Axis3D AxeOfRevolution() => ((RevolutionSurface)mySurf).Axis();
-    public override Direction3D Direction() => ((SweptSurface)mySurf).Direction();
-    public override CurveAdaptorBase BasisCurve() => new TestCurveAdaptor(((SweptSurface)mySurf).BasisCurve());
+    public override Axis3D AxeOfRevolution() => ((RevolutionSurface)mySurf).Axis;
+    public override Direction3D Direction() => ((SweptSurface)mySurf).Direction;
+    public override CurveAdaptorBase BasisCurve() => new TestCurveAdaptor(((SweptSurface)mySurf).BasisCurve);
     public override Point3D EvalD0(double theU, double theV) => mySurf.EvalD0(theU, theV);
-    public override global::Kerf.Geometry.Surface.ResD1 EvalD1(double theU, double theV) => mySurf.EvalD1(theU, theV);
-    public override global::Kerf.Geometry.Surface.ResD2 EvalD2(double theU, double theV) => mySurf.EvalD2(theU, theV);
-    public override global::Kerf.Geometry.Surface.ResD3 EvalD3(double theU, double theV) => mySurf.EvalD3(theU, theV);
+    internal override global::Kerf.Geometry.Surface.ResD1 EvalD1(double theU, double theV) => mySurf.EvalD1(theU, theV);
+    internal override global::Kerf.Geometry.Surface.ResD2 EvalD2(double theU, double theV) => mySurf.EvalD2(theU, theV);
+    internal override global::Kerf.Geometry.Surface.ResD3 EvalD3(double theU, double theV) => mySurf.EvalD3(theU, theV);
     public override Vector3D EvalDN(double theU, double theV, int theNu, int theNv) => mySurf.EvalDN(theU, theV, theNu, theNv);
 }

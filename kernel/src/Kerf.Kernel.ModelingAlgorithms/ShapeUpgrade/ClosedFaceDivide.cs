@@ -48,7 +48,7 @@ public class ClosedFaceDivide : FaceDivide
             return false;
         }
 
-        if (_result.IsNull || _result.ShapeType() != ShapeType.Face)
+        if (_result.IsNull || _result.Type != ShapeType.Face)
         {
             _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL3);
             return false;
@@ -71,7 +71,7 @@ public class ClosedFaceDivide : FaceDivide
 
         for (var iter = new Iterator(face); iter.More() && !doSplit; iter.Next())
         {
-            if (iter.Value().ShapeType() != ShapeType.Wire)
+            if (iter.Value().Type != ShapeType.Wire)
             {
                 continue;
             }
@@ -162,7 +162,7 @@ public class ClosedFaceDivide : FaceDivide
             double u1, u2, v1, v2;
             if (uclosed)
             {
-                surf.Bounds(out u1, out u2, out v1, out v2);
+                surf.ParameterBounds(out u1, out u2, out v1, out v2);
                 var gas = new SurfaceAdaptor(surf);
                 double toler = gas.UResolution(Precision());
                 if ((u2 - u1) - (ul - uf) < toler)
@@ -186,7 +186,7 @@ public class ClosedFaceDivide : FaceDivide
 
             if (vclosed && !doSplit)
             {
-                surf.Bounds(out u1, out u2, out v1, out v2);
+                surf.ParameterBounds(out u1, out u2, out v1, out v2);
                 var gas = new SurfaceAdaptor(surf);
                 double toler = gas.VResolution(Precision());
                 if ((v2 - v1) - (vl - vf) < toler)

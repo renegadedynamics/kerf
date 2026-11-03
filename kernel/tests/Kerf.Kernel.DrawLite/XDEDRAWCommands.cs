@@ -151,7 +151,7 @@ internal static class XDEDRAWCommands
         {
             theLog.Append("INSTANCE ");
         }
-        theLog.Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theShape.ShapeType()));
+        theLog.Append(global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(theShape.Type));
     }
 
     private static void dumpRefNameDeep(ExchangeDocument theDoc, StringBuilder theLog, in Label theLabel, in Shape theShape, bool deep)
@@ -168,9 +168,9 @@ internal static class XDEDRAWCommands
         {
             // the TShape's and the location's addresses: their identities here
             theLog.Append('(').Append(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(theShape.TShape()!).ToString("x", CultureInfo.InvariantCulture));
-            if (!theShape.Location().IsIdentity)
+            if (!theShape.Placement.IsIdentity)
             {
-                theLog.Append(", ").Append(theShape.Location().HashCode().ToString("x", CultureInfo.InvariantCulture));
+                theLog.Append(", ").Append(theShape.Placement.HashCode().ToString("x", CultureInfo.InvariantCulture));
             }
             theLog.Append(") ");
         }
@@ -936,7 +936,7 @@ internal static class XDEDRAWCommands
             di.Append("Label ").Append(argv[2]).Append(" doesn't contain XCAFDoc_Location attribute\n");
             return 1;
         }
-        Transform3D aTrsf = aDoc.GetLocation(aLabel).Transformation();
+        Transform3D aTrsf = aDoc.GetLocation(aLabel).Transformation;
         di.Append("Transformation (3 rows * 4 columns matrix):");
         for (int i = 1; i <= 3; i++)
         {

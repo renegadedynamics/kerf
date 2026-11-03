@@ -39,7 +39,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         return theBasis switch
         {
             BSplineCurve3D => theOrder >= 1,
-            BezierCurve3D aBz => aBz.IsRational && theOrder > aBz.Degree(),
+            BezierCurve3D aBz => aBz.IsRational && theOrder > aBz.Degree,
             _ => false,
         };
     }
@@ -226,7 +226,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             case 0:
                 return new LineCurve3D(RandomPnt(theRnd, 10.0), RandomDir(theRnd));
             case 1:
-                return new CircleCurve3D(RandomAx3(theRnd).Ax2(), Uniform(theRnd, 0.5, 10.0));
+                return new CircleCurve3D(RandomAx3(theRnd).Frame, Uniform(theRnd, 0.5, 10.0));
             case 2:
             case 3:
                 return RandomBSplineCurve(theRnd, theKind == 3);
@@ -297,7 +297,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
 
     private static (double U1, double U2, double V1, double V2) Range(Surface theSurf)
     {
-        theSurf.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        theSurf.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(aU1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(aU2))
         {
             aU1 = -20.0;
@@ -322,7 +322,7 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
         // Swept surfaces evaluate their basis curve with GeomGridEval_Curve: their grid can only equal the
         // surface's point evaluation where the curve's grid equals the curve's point evaluation. Record, per
         // curve parameter and order, whether it does.
-        Curve3D? aBasis = (theSurf as SweptSurface)?.BasisCurve();
+        Curve3D? aBasis = (theSurf as SweptSurface)?.BasisCurve;
         bool isRevolution = theSurf is RevolutionSurface;
         NCollection_Array1<double> aCurveParams = isRevolution ? theV : theU;
         bool[,] aCurveExact = new bool[aCurveParams.Length() + 1, 4];
@@ -349,8 +349,8 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
             }
         }
         bool isRational = theSurf is BezierSurface aBz && (aBz.IsURational || aBz.IsVRational);
-        int aUDeg = (theSurf as BezierSurface)?.UDegree() ?? int.MaxValue;
-        int aVDeg = (theSurf as BezierSurface)?.VDegree() ?? int.MaxValue;
+        int aUDeg = (theSurf as BezierSurface)?.UDegree ?? int.MaxValue;
+        int aVDeg = (theSurf as BezierSurface)?.VDegree ?? int.MaxValue;
         NCollection_Array2<Point3D> aD0 = theEval.EvaluateGrid(theU, theV);
         NCollection_Array2<Surface.ResD1> aD1 = theEval.EvaluateGridD1(theU, theV);
         NCollection_Array2<Surface.ResD2> aD2 = theEval.EvaluateGridD2(theU, theV);
@@ -435,8 +435,8 @@ public class GeomGridEval_AnalyticSurfaceConsistencyTest
                         if (isRational && (anOrders[k].Item1 > aUDeg || anOrders[k].Item2 > aVDeg))
                         {
                             // OCCT returns zero above the degrees, also for rational surfaces (occt-issues.md)
-                            Assert.Equal(0.0, aDN[k]!.Value(i, j).Magnitude());
-                            myRationalAboveDegreeNonZero |= aRefVec.Magnitude() > 1e-3;
+                            Assert.Equal(0.0, aDN[k]!.Value(i, j).Magnitude);
+                            myRationalAboveDegreeNonZero |= aRefVec.Magnitude > 1e-3;
                             continue;
                         }
                         Compare(aP + "DN", aDN[k]!.Value(i, j), aRefVec);

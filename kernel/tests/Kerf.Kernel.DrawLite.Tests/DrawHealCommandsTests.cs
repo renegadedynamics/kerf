@@ -214,7 +214,7 @@ public class DrawHealCommandsTests
 
         i.Eval("ttranslate b 1 2 3");
         Assert.Equal("", i.Eval("removeloc r b"));
-        Assert.True(i.GetShape("r").Location().IsIdentity);
+        Assert.True(i.GetShape("r").Placement.IsIdentity);
         Assert.Contains("FACE      : 6", i.Eval("nbshapes r"), StringComparison.Ordinal);
 
         i.Eval("copytranslate ct b 10 0 0");

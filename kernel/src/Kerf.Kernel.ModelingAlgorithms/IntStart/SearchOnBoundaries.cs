@@ -397,7 +397,7 @@ public class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegmen
         if (curve.GetType() == Circle)
         {
             Circle3D circ = curve.Circle();
-            if (circ.Radius() <= global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (circ.Radius <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 return true;
             }
@@ -411,7 +411,7 @@ public class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegmen
         if (typeQuad == SurfaceKind.Cone)
         {
             Cone cone = quadric.Cone();
-            double semiAngle = Math.Abs(cone.SemiAngle());
+            double semiAngle = Math.Abs(cone.SemiAngle);
             if (semiAngle < 0.02 || semiAngle > 1.55)
             {
                 return true;
@@ -914,7 +914,7 @@ public class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegmen
                             {
                                 para = min.Location();
                                 Point2D p2d = a.Value(para);
-                                aPnt = func.Surface().Value(p2d.X(), p2d.Y());
+                                aPnt = func.Surface().Value(p2d.X, p2d.Y);
                             }
                         }
 
@@ -1217,16 +1217,16 @@ public class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegmen
         Curve3D cEdge = Tool.Curve(e, out f, out l)!;
 
         Cylinder cyl = aQuadric.Cylinder();
-        Axis3D ax1 = cyl.Axis();
+        Axis3D ax1 = cyl.Axis;
         Line3D lin = new(ax1);
         LineCurve3D cAxis = new(lin);
-        r = cyl.Radius();
+        r = cyl.Radius;
 
-        u1f = cAxis.FirstParameter();
-        u1l = cAxis.LastParameter();
+        u1f = cAxis.FirstParameter;
+        u1l = cAxis.LastParameter;
 
-        u2f = cEdge.FirstParameter();
-        u2l = cEdge.LastParameter();
+        u2f = cEdge.FirstParameter;
+        u2l = cEdge.LastParameter;
 
         CurveAdaptor c1 = new(), c2 = new();
 
@@ -1252,7 +1252,7 @@ public class SearchOnBoundaries<TheSOBTool, TheFunction, ThePathPoint, TheSegmen
 
         uEgde = pc2.Parameter();
 
-        dist = pEdge.Distance(p1);
+        dist = pEdge.DistanceTo(p1);
         rRel = Math.Abs(dist - r) / r;
         if (rRel > tolBoundary)
         {

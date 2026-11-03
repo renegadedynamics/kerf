@@ -52,8 +52,8 @@ public class IntPatch_ALineTests
         {
             double t = aFirst + (aLast - aFirst) * i / 10.0;
             Point3D aP = aLine.Value(t);
-            Assert.Equal(1.0, aP.X() * aP.X() + aP.Y() * aP.Y(), 1.0e-9);
-            Assert.Equal(4.0, aP.SquareDistance(new Point3D(0.5, 0, 0)), 1.0e-9);
+            Assert.Equal(1.0, aP.X * aP.X + aP.Y * aP.Y, 1.0e-9);
+            Assert.Equal(4.0, aP.SquareDistanceTo(new Point3D(0.5, 0, 0)), 1.0e-9);
 
             Assert.True(aLine.D1(t, out Point3D aPd, out Vector3D aDu));
             Assert.True(aPd.IsEqual(aP, 1.0e-12));

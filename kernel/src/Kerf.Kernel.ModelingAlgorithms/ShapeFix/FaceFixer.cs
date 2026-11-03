@@ -87,7 +87,7 @@ public partial class FaceFixer : RootFixer
 
     private static bool IsSurfaceUVInfinite(Surface surf)
     {
-        surf.Bounds(out double uMin, out double uMax, out double vMin, out double vMax);
+        surf.ParameterBounds(out double uMin, out double uMax, out double vMin, out double vMax);
 
         return (Kerf.Engine.Foundation.Precision.IsInfinite(uMin) || Kerf.Engine.Foundation.Precision.IsInfinite(uMax) || Kerf.Engine.Foundation.Precision.IsInfinite(vMin)
                 || Kerf.Engine.Foundation.Precision.IsInfinite(vMax));
@@ -188,7 +188,7 @@ public partial class FaceFixer : RootFixer
         _fwd   = fwd;
         if (!fwd)
         {
-            _face.Orientation(Reversed);
+            _face.Orient(Reversed);
         }
         Loaded();
     }
@@ -203,7 +203,7 @@ public partial class FaceFixer : RootFixer
         {
             _surf = new SurfaceAnalysis(surface);
         }
-        _fwd   = (face.Orientation() != Reversed);
+        _fwd   = (face.Orientation != Reversed);
         _face  = face;
         _shape = _face;
         Loaded();
@@ -319,11 +319,11 @@ public partial class FaceFixer : RootFixer
                         isAbandonedSplit = true;
                         break;
                     }
-                    if (e1.Orientation() == Reversed)
+                    if (e1.Orientation == Reversed)
                     {
                         a1 = b1;
                     }
-                    if (e2.Orientation() == Reversed)
+                    if (e2.Orientation == Reversed)
                     {
                         b2 = a2;
                     }
@@ -332,7 +332,7 @@ public partial class FaceFixer : RootFixer
                     var adaptor = new SurfaceAdaptor(Tool.Surface(face)!);
                     double tol = Max(Tool.Tolerance(V0), Tool.Tolerance(V1));
                     double maxResolution = 2 * Max(adaptor.UResolution(tol), adaptor.VResolution(tol));
-                    if (v0.SquareDistance(v1) < maxResolution)
+                    if (v0.SquareDistanceTo(v1) < maxResolution)
                     {
                         // new wire is closed, put it into sequence
                         aResWires.Append(sewd1.InternalWire());
@@ -375,7 +375,7 @@ public partial class FaceFixer : RootFixer
         if (Context() is not null)
         {
             Shape applied = Context()!.InternalApply(_face);
-            if (applied.IsNull || applied.ShapeType() != global::Kerf.Topology.ShapeType.Face)
+            if (applied.IsNull || applied.Type != global::Kerf.Topology.ShapeType.Face)
             {
                 _result = applied;
                 return false;
@@ -411,7 +411,7 @@ public partial class FaceFixer : RootFixer
             }
             Shape emptyCopied = s.EmptyCopied();
             Face  tmpFace     = ShapeCasts.Face(emptyCopied);
-            tmpFace.Orientation(Forward);
+            tmpFace.Orient(Forward);
 
             // skl 29.03.2010 (OCC21623)
             if (_autoCorrectPrecisionMode != 0)
@@ -430,7 +430,7 @@ public partial class FaceFixer : RootFixer
 
             for (var iter = new Iterator(s, false); iter.More(); iter.Next())
             {
-                if (iter.Value().ShapeType() != ShapeType.Wire)
+                if (iter.Value().Type != ShapeType.Wire)
                 {
                     b.Add(tmpFace, iter.Value());
                     continue;
@@ -485,7 +485,7 @@ public partial class FaceFixer : RootFixer
             theAdvFixWire.FixSelfIntersectionMode() = usFixSelfIntersectionMode;
             if (!_fwd)
             {
-                tmpFace.Orientation(Reversed);
+                tmpFace.Orient(Reversed);
             }
 
             if (@fixed)
@@ -551,10 +551,10 @@ public partial class FaceFixer : RootFixer
                 }
                 Shape emptyCopied = s.EmptyCopied();
                 Face  tmpFace     = ShapeCasts.Face(emptyCopied);
-                tmpFace.Orientation(Forward);
+                tmpFace.Orient(Forward);
                 for (var iter = new Iterator(s, false); iter.More(); iter.Next())
                 {
-                    if (iter.Value().ShapeType() != ShapeType.Wire)
+                    if (iter.Value().Type != ShapeType.Wire)
                     {
                         b.Add(tmpFace, iter.Value());
                         continue;
@@ -630,7 +630,7 @@ public partial class FaceFixer : RootFixer
                 {
                     if (!_fwd)
                     {
-                        tmpFace.Orientation(Reversed);
+                        tmpFace.Orient(Reversed);
                     }
                     if (!isReplaced && !initFace.IsSame(_result) && Context() is not null)
                     { // gka 06.09.04 BUG 6555
@@ -653,17 +653,17 @@ public partial class FaceFixer : RootFixer
                 }
                 Shape emptyCopied = s.EmptyCopied();
                 Face  tmpFace     = ShapeCasts.Face(emptyCopied);
-                tmpFace.Orientation(Forward);
+                tmpFace.Orient(Forward);
                 var wires = new NCollection_Sequence<Shape>();
                 int nbw = 0;
                 for (var iter = new Iterator(s, false); iter.More(); iter.Next())
                 {
-                    if (iter.Value().ShapeType() != ShapeType.Wire)
+                    if (iter.Value().Type != ShapeType.Wire)
                     {
                         b.Add(tmpFace, iter.Value());
                         continue;
                     }
-                    if (iter.Value().Orientation() != Forward && iter.Value().Orientation() != Reversed)
+                    if (iter.Value().Orientation != Forward && iter.Value().Orientation != Reversed)
                     {
                         b.Add(tmpFace, ShapeCasts.Wire(iter.Value()));
                         continue;
@@ -855,26 +855,26 @@ public partial class FaceFixer : RootFixer
             {
                 Point2D interval = intervals[i];
                 // ACIS907, OCC921 a054a.sat (face 124)
-                double shift = ShapeAnalysisAnalysis.AdjustByPeriod((j != 0 ? toAddI.X() : toAddI.Y()),
-                                                            0.5 * (interval.X() + interval.Y()),
+                double shift = ShapeAnalysisAnalysis.AdjustByPeriod((j != 0 ? toAddI.X : toAddI.Y),
+                                                            0.5 * (interval.X + interval.Y),
                                                             period);
-                var toAdd = new Point2D(toAddI.X() + shift, toAddI.Y() + shift);
-                if (toAdd.Y() <= interval.X() || toAdd.X() >= interval.Y())
+                var toAdd = new Point2D(toAddI.X + shift, toAddI.Y + shift);
+                if (toAdd.Y <= interval.X || toAdd.X >= interval.Y)
                 {
                     continue;
                 }
-                if (toAdd.X() > interval.X())
+                if (toAdd.X > interval.X)
                 {
-                    if (toAdd.Y() < interval.Y())
+                    if (toAdd.Y < interval.Y)
                     {
                         intervals.InsertBefore(i, interval);
-                        intervals.ChangeValue(i + 1) = intervals.ChangeValue(i + 1).WithX(toAdd.Y()); // i++...
+                        intervals.ChangeValue(i + 1) = intervals.ChangeValue(i + 1).WithX(toAdd.Y); // i++...
                     }
-                    intervals.ChangeValue(i) = intervals.ChangeValue(i).WithY(toAdd.X());
+                    intervals.ChangeValue(i) = intervals.ChangeValue(i).WithY(toAdd.X);
                 }
-                else if (toAdd.Y() < interval.Y())
+                else if (toAdd.Y < interval.Y)
                 {
-                    intervals.ChangeValue(i) = intervals.ChangeValue(i).WithX(toAdd.Y());
+                    intervals.ChangeValue(i) = intervals.ChangeValue(i).WithX(toAdd.Y);
                 }
                 else
                 {
@@ -892,12 +892,12 @@ public partial class FaceFixer : RootFixer
         for (int i = 1; i <= intervals.Length(); i++)
         {
             Point2D interval = intervals[i];
-            if (interval.Y() - interval.X() <= max)
+            if (interval.Y - interval.X <= max)
             {
                 continue;
             }
-            max   = interval.Y() - interval.X();
-            shift = interval.X() + 0.5 * max;
+            max   = interval.Y - interval.X;
+            shift = interval.X + 0.5 * max;
         }
         return shift;
     }
@@ -935,8 +935,8 @@ public partial class FaceFixer : RootFixer
         var wi = new Iterator(_face, false);
         for (; wi.More(); wi.Next())
         {
-            if (wi.Value().ShapeType() == ShapeType.Wire
-                && (wi.Value().Orientation() == Forward || wi.Value().Orientation() == Reversed))
+            if (wi.Value().Type == ShapeType.Wire
+                && (wi.Value().Orientation == Forward || wi.Value().Orientation == Reversed))
             {
                 ws.Append(wi.Value());
             }
@@ -952,7 +952,7 @@ public partial class FaceFixer : RootFixer
             var faceBuilder = new MakeFace(_surf.Surface()!, Kerf.Engine.Foundation.Precision.Confusion());
 
             Face newFace = faceBuilder.InternalFace();
-            newFace.Orientation(_face.Orientation());
+            newFace.Orient(_face.Orientation);
 
             Context()?.Replace(_face, newFace);
 
@@ -1024,18 +1024,18 @@ public partial class FaceFixer : RootFixer
         }
 
         // Adjust all other wires to be inside outer one
-        var center = new Point2D(shift.X() + 0.5 * (sul - suf), shift.Y() + 0.5 * (svl - svf));
+        var center = new Point2D(shift.X + 0.5 * (sul - suf), shift.Y + 0.5 * (svl - svf));
         for (i = 1; i <= nb; i++)
         {
             Wire wire = ShapeCasts.Wire(ws.Value(i));
             var sh = new Point2D(0.0, 0.0);
             if (_surf.IsUClosed())
             {
-                sh = sh.WithX(ShapeAnalysisAnalysis.AdjustByPeriod(centers[i].X(), center.X(), sul - suf));
+                sh = sh.WithX(ShapeAnalysisAnalysis.AdjustByPeriod(centers[i].X, center.X, sul - suf));
             }
             if (_surf.IsVClosed())
             {
-                sh = sh.WithY(ShapeAnalysisAnalysis.AdjustByPeriod(centers[i].Y(), center.Y(), svl - svf));
+                sh = sh.WithY(ShapeAnalysisAnalysis.AdjustByPeriod(centers[i].Y, center.Y, svl - svf));
             }
             Shift2dWire(wire, _face, new Vector2D(sh.XY()), _surf);
         }
@@ -1047,7 +1047,7 @@ public partial class FaceFixer : RootFixer
         ftmp.Location(l);
         for (wi.Initialize(ftmp, false); wi.More(); wi.Next())
         {
-            if (wi.Value().ShapeType() != ShapeType.Wire)
+            if (wi.Value().Type != ShapeType.Wire)
             {
                 continue;
             }
@@ -1116,7 +1116,7 @@ public partial class FaceFixer : RootFixer
         // Create resulting face
         var b = new BrepBuilder();
         Shape s2 = _face.EmptyCopied();
-        s2.Orientation(Forward);
+        s2.Orient(Forward);
         for (i = 1; i <= ws.Length(); i++)
         {
             b.Add(s2, ws.Value(i));
@@ -1127,7 +1127,7 @@ public partial class FaceFixer : RootFixer
         }
         if (!_fwd)
         {
-            s2.Orientation(Reversed);
+            s2.Orient(Reversed);
         }
         Context()?.Replace(_face, s2);
         _face = ShapeCasts.Face(s2);
@@ -1212,8 +1212,8 @@ public partial class FaceFixer : RootFixer
         var verySmallWires = new NCollection_Sequence<Shape>();
         for (var wi = new Iterator(_face, false); wi.More(); wi.Next())
         {
-            if (wi.Value().ShapeType() == ShapeType.Vertex
-                || (wi.Value().Orientation() != Forward && wi.Value().Orientation() != Reversed))
+            if (wi.Value().Type == ShapeType.Vertex
+                || (wi.Value().Orientation != Forward && wi.Value().Orientation != Reversed))
             {
                 allSubShapes.Append(wi.Value());
                 // ws.Append (wi.Value());
@@ -1287,7 +1287,7 @@ public partial class FaceFixer : RootFixer
             // make face with only one wire (ws.Value(1))
             Shape dummy = _face.EmptyCopied();
             Face af = ShapeCasts.Face(dummy);
-            af.Orientation(Forward);
+            af.Orient(Forward);
             b.Add(af, ws.Value(1));
 
             if (!isAddNaturalBounds && !ShapeAnalysisAnalysis.IsOuterBound(af))
@@ -1345,8 +1345,8 @@ public partial class FaceFixer : RootFixer
                         continue;
                     }
                     var gac = new CurveAdaptor2D();
-                    double first = cw.FirstParameter();
-                    double last  = cw.LastParameter();
+                    double first = cw.FirstParameter;
+                    double last  = cw.LastParameter;
                     if (cw is BSplineCurve2D && (cf < first || cl > last))
                     {
                         // avoiding problems with segment in Bnd_Box
@@ -1389,7 +1389,7 @@ public partial class FaceFixer : RootFixer
                 Box2d box1 = wireBoxes.Value(i);
                 Shape dummy = _face.EmptyCopied();
                 Face af = ShapeCasts.Face(dummy);
-                af.Orientation(Forward);
+                af.Orient(Forward);
                 b.Add(af, aw);
                 // PTV OCC945 06.11.2002 files ie_exhaust-A.stp (entities 3782,  3787)
                 // tolerance is too big. It is seems that to identify placement of 2d point
@@ -1411,7 +1411,7 @@ public partial class FaceFixer : RootFixer
                         continue;
                     }
                     Containment stb = Unknown;
-                    if (sh2.ShapeType() == ShapeType.Vertex)
+                    if (sh2.Type == ShapeType.Vertex)
                     {
                         wireIt--;
                         Point3D p = Tool.Pnt(ShapeCasts.Vertex(sh2));
@@ -1422,17 +1422,17 @@ public partial class FaceFixer : RootFixer
                             var p2d1 = new Point2D();
                             if (uclosed)
                             {
-                                p2d1 = p2d1.WithCoord(p2d.X() + uRange, p2d.Y());
+                                p2d1 = p2d1.WithCoord(p2d.X + uRange, p2d.Y);
                                 stb = clas.Perform(p2d1, false);
                             }
                             if (stb == staout && vclosed)
                             {
-                                p2d1 = p2d1.WithCoord(p2d.X(), p2d.Y() + vRange);
+                                p2d1 = p2d1.WithCoord(p2d.X, p2d.Y + vRange);
                                 stb = clas.Perform(p2d1, false);
                             }
                         }
                     }
-                    else if (sh2.ShapeType() == ShapeType.Wire)
+                    else if (sh2.Type == ShapeType.Wire)
                     {
                         checkShift = true;
                         Wire bw = ShapeCasts.Wire(sh2);
@@ -1479,21 +1479,21 @@ public partial class FaceFixer : RootFixer
                                 checkShift = false;
                                 if (uclosed)
                                 {
-                                    unp1 = unp1.WithCoord(unp.X() + uRange, unp.Y());
+                                    unp1 = unp1.WithCoord(unp.X + uRange, unp.Y);
                                     found = (staout != clas.Perform(unp1, false));
                                     if (!found)
                                     {
-                                        unp1 = unp1.WithX(unp.X() - uRange);
+                                        unp1 = unp1.WithX(unp.X - uRange);
                                         found = (staout != clas.Perform(unp1, false));
                                     }
                                 }
                                 if (vclosed && !found)
                                 {
-                                    unp1 = unp1.WithCoord(unp.X(), unp.Y() + vRange);
+                                    unp1 = unp1.WithCoord(unp.X, unp.Y + vRange);
                                     found = (staout != clas.Perform(unp1, false));
                                     if (!found)
                                     {
-                                        unp1 = unp1.WithY(unp.Y() - vRange);
+                                        unp1 = unp1.WithY(unp.Y - vRange);
                                         found = (staout != clas.Perform(unp1, false));
                                     }
                                 }
@@ -1504,7 +1504,7 @@ public partial class FaceFixer : RootFixer
                                     {
                                         for (double dY = -1.0; dY <= 1.0 && !found; dY += 2.0)
                                         {
-                                            unp1 = unp1.WithCoord(unp.X() + uRange * dX, unp.Y() + vRange * dY);
+                                            unp1 = unp1.WithCoord(unp.X + uRange * dX, unp.Y + vRange * dY);
                                             found = (staout != clas.Perform(unp1, false));
                                         }
                                     }
@@ -1627,7 +1627,7 @@ public partial class FaceFixer : RootFixer
         if (done)
         {
             Shape s = _face.EmptyCopied();
-            s.Orientation(Forward);
+            s.Orient(Forward);
             int i = 1;
             for (; i <= nb; i++)
             {
@@ -1639,8 +1639,8 @@ public partial class FaceFixer : RootFixer
                 for (i = 1; i <= nbAll; i++)
                 {
                     Shape s2 = allSubShapes.Value(i);
-                    if (s2.ShapeType() != ShapeType.Wire
-                        || (s2.Orientation() != Forward && s2.Orientation() != Reversed))
+                    if (s2.Type != ShapeType.Wire
+                        || (s2.Orientation != Forward && s2.Orientation != Reversed))
                     {
                         b.Add(s, s2);
                     }
@@ -1649,7 +1649,7 @@ public partial class FaceFixer : RootFixer
 
             if (!_fwd)
             {
-                s.Orientation(Reversed);
+                s.Orient(Reversed);
             }
             Context()?.Replace(_face, s);
             _face = ShapeCasts.Face(s);
@@ -1821,8 +1821,8 @@ public partial class FaceFixer : RootFixer
         var seqNonManif = new NCollection_Sequence<Shape>();
         for (var wi = new Iterator(_face, false); wi.More(); wi.Next())
         {
-            if (wi.Value().ShapeType() != ShapeType.Wire
-                || (wi.Value().Orientation() != Forward && wi.Value().Orientation() != Reversed))
+            if (wi.Value().Type != ShapeType.Wire
+                || (wi.Value().Orientation != Forward && wi.Value().Orientation != Reversed))
             {
                 seqNonManif.Append(wi.Value());
                 continue;
@@ -1889,7 +1889,7 @@ public partial class FaceFixer : RootFixer
 
         var b = new BrepBuilder();
         var torSurf = _surf.Surface() as ToroidalSurface;
-        bool isDegeneratedTor = (torSurf is null ? false : torSurf.MajorRadius() < torSurf.MinorRadius());
+        bool isDegeneratedTor = (torSurf is null ? false : torSurf.MajorRadius < torSurf.MinorRadius);
         // if the second wire is not null, we don't need mark the torus as degenerated
         // and should process it as a regular one.
         if (isDegeneratedTor && !w2.IsNull)
@@ -1913,8 +1913,8 @@ public partial class FaceFixer : RootFixer
 
             if (ismodeu != 0 && isDegeneratedTor)
             {
-                double ra  = torSurf!.MajorRadius();
-                double ri  = torSurf.MinorRadius();
+                double ra  = torSurf!.MajorRadius;
+                double ri  = torSurf.MinorRadius;
                 double phi = Math.Acos(-ra / ri);
                 p = p.WithCoord(0.0, (ismodeu > 0 ? M_PI + phi : phi));
 
@@ -1932,11 +1932,11 @@ public partial class FaceFixer : RootFixer
             else if (ismodev != 0 && _surf.Surface() is global::Kerf.Geometry.BSplineSurface)
             {
                 double uCoord;
-                if (_surf.Value(suf, svf).Distance(_surf.Value(suf, (svf + svl) / 2)) < Kerf.Engine.Foundation.Precision.Confusion())
+                if (_surf.Value(suf, svf).DistanceTo(_surf.Value(suf, (svf + svl) / 2)) < Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     uCoord = suf;
                 }
-                else if (_surf.Value(sul, svf).Distance(_surf.Value(sul, (svf + svl) / 2)) < Kerf.Engine.Foundation.Precision.Confusion())
+                else if (_surf.Value(sul, svf).DistanceTo(_surf.Value(sul, (svf + svl) / 2)) < Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     uCoord = sul;
                 }
@@ -1952,11 +1952,11 @@ public partial class FaceFixer : RootFixer
             else if (ismodeu != 0 && _surf.Surface() is global::Kerf.Geometry.BSplineSurface)
             {
                 double vCoord;
-                if (_surf.Value(suf, svf).Distance(_surf.Value((suf + sul) / 2, svf)) < Kerf.Engine.Foundation.Precision.Confusion())
+                if (_surf.Value(suf, svf).DistanceTo(_surf.Value((suf + sul) / 2, svf)) < Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     vCoord = svf;
                 }
-                else if (_surf.Value(sul, svl).Distance(_surf.Value((suf + sul) / 2, svl)) < Kerf.Engine.Foundation.Precision.Confusion())
+                else if (_surf.Value(sul, svl).DistanceTo(_surf.Value((suf + sul) / 2, svl)) < Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     vCoord = svl;
                 }
@@ -1982,10 +1982,10 @@ public partial class FaceFixer : RootFixer
             b.UpdateEdge(edge, line, _face, Kerf.Engine.Foundation.Precision.Confusion());
             b.Range(edge, _face, 0.0, range);
             var v = new Vertex();
-            b.MakeVertex(ref v, _surf.Value(p.X(), p.Y()), Kerf.Engine.Foundation.Precision.Confusion());
-            v.Orientation(Forward);
+            b.MakeVertex(ref v, _surf.Value(p.X, p.Y), Kerf.Engine.Foundation.Precision.Confusion());
+            v.Orient(Forward);
             b.Add(edge, v);
-            v.Orientation(Reversed);
+            v.Orient(Reversed);
             b.Add(edge, v);
             b.MakeWire(ref w2);
             b.Add(w2, edge);
@@ -2038,7 +2038,7 @@ public partial class FaceFixer : RootFixer
         //: abv 29.08.01: reconstruct face taking into account reversing
         Shape dummy = _face.EmptyCopied();
         Face tmpF = ShapeCasts.Face(dummy);
-        tmpF.Orientation(Forward);
+        tmpF.Orient(Forward);
         for (i = 1; i <= ws.Length(); i++)
         {
             Wire wire = ShapeCasts.Wire(ws.Value(i));
@@ -2056,7 +2056,7 @@ public partial class FaceFixer : RootFixer
                 // accordingly
                 Shape curface = tmpF.EmptyCopied();
                 b.Add(curface, wire);
-                curface.Orientation(_face.Orientation());
+                curface.Orient(_face.Orientation);
                 if (ShapeAnalysisAnalysis.IsOuterBound(ShapeCasts.Face(curface)))
                 {
                     wire.Reverse();
@@ -2065,7 +2065,7 @@ public partial class FaceFixer : RootFixer
             b.Add(tmpF, wire);
         }
 
-        tmpF.Orientation(_face.Orientation());
+        tmpF.Orient(_face.Orientation);
 
         // A special kind of FixShifted is necessary for torus-like
         // surfaces to adjust wires by period ALONG the missing SEAM direction
@@ -2080,7 +2080,7 @@ public partial class FaceFixer : RootFixer
             m1[2 * coord + 1] = Max(m1[2 * coord + 1], m2[2 * coord + 1] + shiftw2);
             for (var it = new Iterator(tmpF, false); it.More(); it.Next())
             {
-                if (it.Value().ShapeType() != ShapeType.Wire)
+                if (it.Value().Type != ShapeType.Wire)
                 {
                     continue;
                 }
@@ -2153,29 +2153,29 @@ public partial class FaceFixer : RootFixer
             bool skipU = !uclosed;
             if (uclosed && ismodeu != 0)
             {
-                pos1 = pos1.WithX(pos1.X() + ShapeAnalysisAnalysis.AdjustByPeriod(pos1.X(), suf, uRange));
-                if (foundU == 2 && Math.Abs(pos1.X()) > Math.Abs(uf))
+                pos1 = pos1.WithX(pos1.X + ShapeAnalysisAnalysis.AdjustByPeriod(pos1.X, suf, uRange));
+                if (foundU == 2 && Math.Abs(pos1.X) > Math.Abs(uf))
                 {
                     skipU = true;
                 }
-                else if (foundU == 0 || (foundU == 1 && Math.Abs(pos1.X()) < Math.Abs(uf)))
+                else if (foundU == 0 || (foundU == 1 && Math.Abs(pos1.X) < Math.Abs(uf)))
                 {
                     foundU = 1;
-                    uf     = pos1.X();
+                    uf     = pos1.X;
                 }
             }
             bool skipV = !vclosed;
             if (vclosed && ismodeu == 0)
             {
-                pos1 = pos1.WithY(pos1.Y() + ShapeAnalysisAnalysis.AdjustByPeriod(pos1.Y(), svf, vRange));
-                if (foundV == 2 && Math.Abs(pos1.Y()) > Math.Abs(vf))
+                pos1 = pos1.WithY(pos1.Y + ShapeAnalysisAnalysis.AdjustByPeriod(pos1.Y, svf, vRange));
+                if (foundV == 2 && Math.Abs(pos1.Y) > Math.Abs(vf))
                 {
                     skipV = true;
                 }
-                else if (foundV == 0 || (foundV == 1 && Math.Abs(pos1.Y()) < Math.Abs(vf)))
+                else if (foundV == 0 || (foundV == 1 && Math.Abs(pos1.Y) < Math.Abs(vf)))
                 {
                     foundV = 1;
-                    vf     = pos1.Y();
+                    vf     = pos1.Y;
                 }
             }
             if (skipU && skipV)
@@ -2200,22 +2200,22 @@ public partial class FaceFixer : RootFixer
                 Point2D pos2 = new Point2D(c2d!.Value(f).XY());
                 if (uclosed && ismodeu != 0)
                 {
-                    pos2 = pos2.WithX(pos2.X() + ShapeAnalysisAnalysis.AdjustByPeriod(pos2.X(), pos1.X(), uRange));
-                    if (Math.Abs(pos2.X() - pos1.X()) < Kerf.Engine.Foundation.Precision.PConfusion()
-                        && (foundU != 2 || Math.Abs(pos1.X()) < Math.Abs(uf)))
+                    pos2 = pos2.WithX(pos2.X + ShapeAnalysisAnalysis.AdjustByPeriod(pos2.X, pos1.X, uRange));
+                    if (Math.Abs(pos2.X - pos1.X) < Kerf.Engine.Foundation.Precision.PConfusion()
+                        && (foundU != 2 || Math.Abs(pos1.X) < Math.Abs(uf)))
                     {
                         foundU = 2;
-                        uf     = pos1.X();
+                        uf     = pos1.X;
                     }
                 }
                 if (vclosed && ismodeu == 0)
                 {
-                    pos2 = pos2.WithY(pos2.Y() + ShapeAnalysisAnalysis.AdjustByPeriod(pos2.Y(), pos1.Y(), vRange));
-                    if (Math.Abs(pos2.Y() - pos1.Y()) < Kerf.Engine.Foundation.Precision.PConfusion()
-                        && (foundV != 2 || Math.Abs(pos1.Y()) < Math.Abs(vf)))
+                    pos2 = pos2.WithY(pos2.Y + ShapeAnalysisAnalysis.AdjustByPeriod(pos2.Y, pos1.Y, vRange));
+                    if (Math.Abs(pos2.Y - pos1.Y) < Kerf.Engine.Foundation.Precision.PConfusion()
+                        && (foundV != 2 || Math.Abs(pos1.Y) < Math.Abs(vf)))
                     {
                         foundV = 2;
-                        vf     = pos1.Y();
+                        vf     = pos1.Y;
                     }
                 }
             }
@@ -2345,14 +2345,14 @@ public partial class FaceFixer : RootFixer
 
         Shape emptyCopy = _face.EmptyCopied();
         Face face = ShapeCasts.Face(emptyCopy);
-        face.Orientation(Forward);
+        face.Orient(Forward);
 
         double tolerance3d = base.Precision();
         for (var wIt = new Iterator(_face, false); wIt.More(); wIt.Next())
         {
             Shape shape = wIt.Value();
-            if (shape.ShapeType() != ShapeType.Wire && shape.Orientation() != Forward
-                && shape.Orientation() != Reversed)
+            if (shape.Type != ShapeType.Wire && shape.Orientation != Forward
+                && shape.Orientation != Reversed)
             {
                 continue;
             }
@@ -2360,9 +2360,9 @@ public partial class FaceFixer : RootFixer
             // OCCT: the test is && where || is meant, so a FORWARD or REVERSED vertex (or an INTERNAL wire) gets here, and
             // TopoDS::Wire, unchecked in OCCT's release build, reinterprets the vertex as a wire: it has no edge, is not
             // small, and is kept. The port reinterprets it the same way rather than throw.
-            Wire wire = shape.ShapeType() == ShapeType.Wire
+            Wire wire = shape.Type == ShapeType.Wire
                 ? ShapeCasts.Wire(shape)
-                : new Wire(shape.TShape(), shape.Location(), shape.Orientation());
+                : new Wire(shape.TShape(), shape.Placement, shape.Orientation);
             var analyzer = new WireAnalysis(wire, _face, tolerance3d);
             if (analyzer.CheckSmallArea(wire))
             {
@@ -2391,7 +2391,7 @@ public partial class FaceFixer : RootFixer
 
             return false;
         }
-        face.Orientation(_face.Orientation());
+        face.Orient(_face.Orientation);
         Context()?.Replace(_face, face);
 
         _face = face;
@@ -2614,7 +2614,7 @@ public partial class FaceFixer : RootFixer
         {
             Shape emptyCopied = _face.EmptyCopied();
             Face tmpFace = ShapeCasts.Face(emptyCopied);
-            tmpFace.Orientation(Forward);
+            tmpFace.Orient(Forward);
 
             for (i = 1; i <= aResWires.Length() && isClosed; i++)
             {
@@ -2689,8 +2689,8 @@ public partial class FaceFixer : RootFixer
             {
                 var box = new Box2d();
                 var gac = new CurveAdaptor2D();
-                double first = c2d!.FirstParameter();
-                double last  = c2d.LastParameter();
+                double first = c2d!.FirstParameter;
+                double last  = c2d.LastParameter;
                 if (c2d is BSplineCurve2D && (cf < first || cl > last))
                 {
                     // pdn avoiding problems with segment in Bnd_Box
@@ -2734,17 +2734,17 @@ public partial class FaceFixer : RootFixer
             _face = ShapeCasts.Face(s);
         }
 
-        Orientation ori = _face.Orientation();
+        Orientation ori = _face.Orientation;
         Shape emptyCopied = _face.EmptyCopied();
         Face face = ShapeCasts.Face(emptyCopied);
-        face.Orientation(Forward);
+        face.Orient(Forward);
         int nbWires = 0;
         var b = new BrepBuilder();
 
         for (var it = new Iterator(_face, false); it.More(); it.Next())
         {
-            if (it.Value().ShapeType() != ShapeType.Wire
-                || (it.Value().Orientation() != Forward && it.Value().Orientation() != Reversed))
+            if (it.Value().Type != ShapeType.Wire
+                || (it.Value().Orientation != Forward && it.Value().Orientation != Reversed))
             {
                 continue;
             }
@@ -2757,8 +2757,8 @@ public partial class FaceFixer : RootFixer
         bool isFixed = false;
         for (var wi = new Iterator(_face, false); wi.More(); wi.Next())
         {
-            if (wi.Value().ShapeType() != ShapeType.Wire
-                || (wi.Value().Orientation() != Forward && wi.Value().Orientation() != Reversed))
+            if (wi.Value().Type != ShapeType.Wire
+                || (wi.Value().Orientation != Forward && wi.Value().Orientation != Reversed))
             {
                 b.Add(face, wi.Value());
                 continue;
@@ -2769,8 +2769,8 @@ public partial class FaceFixer : RootFixer
             {
                 Edge e1 = sewd.Edge(1);
                 Edge e2 = sewd.Edge(2);
-                e1.Orientation(Forward);
-                e2.Orientation(Forward);
+                e1.Orient(Forward);
+                e2.Orient(Forward);
                 if (!(e1 == e2))
                 {
                     b.Add(face, wire);
@@ -2787,7 +2787,7 @@ public partial class FaceFixer : RootFixer
         }
         if (isFixed)
         {
-            face.Orientation(ori);
+            face.Orient(ori);
             Context()?.Replace(_face, face);
             _face = face;
         }
@@ -2819,8 +2819,8 @@ public partial class FaceFixer : RootFixer
         for (var iter = new Iterator(s, false); iter.More(); iter.Next())
         {
             Shape shape = iter.Value();
-            if (shape.ShapeType() != ShapeType.Wire
-                || (shape.Orientation() != Forward && shape.Orientation() != Reversed))
+            if (shape.Type != ShapeType.Wire
+                || (shape.Orientation != Forward && shape.Orientation != Reversed))
             {
                 continue;
             }
@@ -2848,7 +2848,7 @@ public partial class FaceFixer : RootFixer
                 // create face
                 Shape emptyCopied = s.EmptyCopied();
                 Face tmpFace = ShapeCasts.Face(emptyCopied);
-                tmpFace.Orientation(Forward);
+                tmpFace.Orient(Forward);
                 b.Add(tmpFace, wire);
                 nbWiresNew++;
                 NCollection_List<Shape> intWires = mapWires.GetValue(wire);
@@ -2857,7 +2857,7 @@ public partial class FaceFixer : RootFixer
                 {
                     Shape shapeEmptyCopied = tmpFace.EmptyCopied();
                     Face face = ShapeCasts.Face(shapeEmptyCopied);
-                    face.Orientation(Forward);
+                    face.Orient(Forward);
                     b.Add(face, liter.Value());
                     var clas = new FClass2d(face, Kerf.Engine.Foundation.Precision.PConfusion());
                     Containment staout = clas.PerformInfinitePoint();
@@ -2873,7 +2873,7 @@ public partial class FaceFixer : RootFixer
                 }
                 if (!_fwd)
                 {
-                    tmpFace.Orientation(Reversed);
+                    tmpFace.Orient(Reversed);
                 }
                 faces.Append(tmpFace);
             }
@@ -2941,8 +2941,8 @@ public partial class FaceFixer : RootFixer
 
             Point2D uvFirst = c2d.Value(pFirst), uvLast = c2d.Value(pLast);
 
-            double uFirst = uvFirst.X(), uLast = uvLast.X();
-            double vFirst = uvFirst.Y(), vLast = uvLast.Y();
+            double uFirst = uvFirst.X, uLast = uvLast.X;
+            double vFirst = uvFirst.Y, vLast = uvLast.Y;
 
             double curMaxU = Max(uFirst, uLast), curMinU = Min(uFirst, uLast);
             double curMaxV = Max(vFirst, vLast), curMinV = Min(vFirst, vLast);
@@ -3013,8 +3013,8 @@ public partial class FaceFixer : RootFixer
         for (var wireIt = new Iterator(_face, false); wireIt.More(); wireIt.Next())
         {
             Shape subSh = wireIt.Value();
-            if (subSh.ShapeType() != ShapeType.Wire
-                || (subSh.Orientation() != Forward && subSh.Orientation() != Reversed))
+            if (subSh.Type != ShapeType.Wire
+                || (subSh.Orientation != Forward && subSh.Orientation != Reversed))
             {
                 continue;
             }
@@ -3057,8 +3057,8 @@ public partial class FaceFixer : RootFixer
         var coneBaseCirc = (CircleCurve3D)coneBaseCrv;
 
         // Retrieve conical props
-        double coneBaseR = coneBaseCirc.Radius();
-        double semiAngle = coneSurf.SemiAngle();
+        double coneBaseR = coneBaseCirc.Radius;
+        double semiAngle = coneSurf.SemiAngle;
 
         if (Math.Abs(semiAngle) <= Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -3070,7 +3070,7 @@ public partial class FaceFixer : RootFixer
         double apexV    = -coneBaseH;
 
         // Get apex vertex
-        Vertex apex = new MakeVertex(coneSurf.Apex()).InternalVertex();
+        Vertex apex = new MakeVertex(coneSurf.Apex).InternalVertex();
 
         // ====================================
         //  Build degenerated edge in the apex
@@ -3129,14 +3129,14 @@ public partial class FaceFixer : RootFixer
 
         // Assemble new face
         Face newFace = ShapeCasts.Face(_face.EmptyCopied());
-        newFace.Orientation(Forward);
+        newFace.Orient(Forward);
         var faceBuilder = new BrepBuilder();
         for (int i = 1; i <= newWireSeq.Length(); i++)
         {
             Wire newWire = ShapeCasts.Wire(newWireSeq.Value(i));
             faceBuilder.Add(newFace, newWire);
         }
-        newFace.Orientation(_face.Orientation());
+        newFace.Orient(_face.Orientation);
 
         // Adjust the resulting state of the healing tool
         _result = newFace;

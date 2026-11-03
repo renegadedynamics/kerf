@@ -21,8 +21,8 @@ internal readonly struct SphericalSurfaceHasher(double theCompTolerance, double 
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(sphere.Position().Ax2()),
-            HashUtils.Hash((long)HashUtils.Round(sphere.Radius() * factor))
+            axisHasher.Hash(sphere.Position.Frame),
+            HashUtils.Hash((long)HashUtils.Round(sphere.Radius * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,7 +31,7 @@ internal readonly struct SphericalSurfaceHasher(double theCompTolerance, double 
     public bool IsEqual(SphericalSurface sphere1, SphericalSurface sphere2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(sphere1.Position().Ax2(), sphere2.Position().Ax2())
-               && Math.Abs(sphere1.Radius() - sphere2.Radius()) <= CompTolerance;
+        return axisHasher.IsEqual(sphere1.Position.Frame, sphere2.Position.Frame)
+               && Math.Abs(sphere1.Radius - sphere2.Radius) <= CompTolerance;
     }
 }

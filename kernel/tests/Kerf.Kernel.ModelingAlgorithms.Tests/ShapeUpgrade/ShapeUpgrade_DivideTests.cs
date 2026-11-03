@@ -178,11 +178,11 @@ public class ShapeUpgrade_DivideTests
         aSnap.AssertUnchanged(anEdge);
         Assert.True(AllFrozen(aRes));
         Assert.True(aTool.Status(ExtendStatus.DONE1));
-        Assert.Equal(ShapeType.Wire, aRes.ShapeType());
+        Assert.Equal(ShapeType.Wire, aRes.Type);
         Assert.Equal(2, Count(aRes, ShapeType.Edge));
         for (var anExp = new Explorer(aRes, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            Assert.True(Tool.Curve(ShapeCasts.Edge(anExp.Current()), out _, out _)!.Continuity() >= C1);
+            Assert.True(Tool.Curve(ShapeCasts.Edge(anExp.Current()), out _, out _)!.Continuity >= C1);
         }
     }
 
@@ -223,7 +223,7 @@ public class ShapeUpgrade_DivideTests
             if (!Tool.Degenerated(anE))
             {
                 Curve3D? aC = Tool.Curve(anE, out double cf, out double cl);
-                Assert.True(aC is BezierCurve3D, $"{aC?.GetType().Name} {cf} {cl} {(aC as TrimmedCurve3D)?.BasisCurve().GetType().Name}");
+                Assert.True(aC is BezierCurve3D, $"{aC?.GetType().Name} {cf} {cl} {(aC as TrimmedCurve3D)?.BasisCurve.GetType().Name}");
             }
         }
         Assert.Equal(Area(aCyl), Area(aRes), 3);
@@ -344,8 +344,8 @@ public class ShapeUpgrade_DivideTests
 
         Assert.Equal(2, aSeq!.Length());
         Assert.Equal(3, aCurve.KnotCount);
-        Assert.Equal(new Point3D(2, 0, 0).X(), ((BSplineCurve3D)aSeq.Value(1)).EndPoint().X(), 12);
-        Assert.Equal(new Point3D(2, 0, 0).X(), ((BSplineCurve3D)aSeq.Value(2)).StartPoint().X(), 12);
+        Assert.Equal(new Point3D(2, 0, 0).X, ((BSplineCurve3D)aSeq.Value(1)).EndPoint.X, 12);
+        Assert.Equal(new Point3D(2, 0, 0).X, ((BSplineCurve3D)aSeq.Value(2)).StartPoint.X, 12);
 
         // a C1 curve: false, the sequence untouched
         NCollection_HSequence<BoundedCurve3D>? aNone = null;
@@ -371,7 +371,7 @@ public class ShapeUpgrade_DivideTests
         Assert.True(aTool.Status(ExtendStatus.DONE3));
         Assert.Equal(4, aTool.SplitValues()!.Length());
         Assert.Equal(3, aTool.GetCurves()!.Length());
-        Assert.Equal(0.5, aTool.GetCurves()!.Value(1).LastParameter(), 12);
+        Assert.Equal(0.5, aTool.GetCurves()!.Value(1).LastParameter, 12);
         Assert.Equal(3, aCurve.KnotCount);
     }
 

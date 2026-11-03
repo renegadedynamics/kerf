@@ -125,7 +125,7 @@ public class WireframeFixer : RootFixer
 
         double prec = (Precision() > 0.0) ? Precision() : Kerf.Engine.Foundation.Precision.Confusion();
         var    cont = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
-        if (_shape.ShapeType() == ShapeType.Compound)
+        if (_shape.Type == ShapeType.Compound)
         {
             bool locModified = false;
             var  c           = new Compound();
@@ -135,12 +135,12 @@ public class WireframeFixer : RootFixer
             for (var it = new Iterator(savShape); it.More(); it.Next())
             {
                 Shape    shape1 = it.Value();
-                Placement l = shape1.Location(), nullLoc = new();
+                Placement l = shape1.Placement, nullLoc = new();
                 shape1.Location(nullLoc);
                 Shape res;
                 if (cont.ContainsKey(shape1))
                 {
-                    res = cont.GetValue(shape1).Oriented(shape1.Orientation());
+                    res = cont.GetValue(shape1).Oriented(shape1.Orientation);
                 }
                 else
                 {
@@ -158,7 +158,7 @@ public class WireframeFixer : RootFixer
             }
             if (locModified)
             {
-                c.Orientation(savShape.Orientation());
+                c.Orient(savShape.Orientation);
                 context.Replace(savShape, c);
             }
             _shape = context.InternalApply(savShape);
@@ -174,13 +174,13 @@ public class WireframeFixer : RootFixer
             // smh#8
             Shape tmpF = context.InternalApply(expf1.Current());
             face              = ShapeCasts.Face(tmpF);
-            if (face.Orientation() == Reversed)
+            if (face.Orientation == Reversed)
             {
-                face.Orientation(Forward);
+                face.Orient(Forward);
             }
             for (var itw = new Iterator(face); itw.More(); itw.Next())
             {
-                if (itw.Value().ShapeType() != ShapeType.Wire)
+                if (itw.Value().Type != ShapeType.Wire)
                 {
                     continue;
                 }
@@ -251,13 +251,13 @@ public class WireframeFixer : RootFixer
             for (var expf2 = new Explorer(_shape, ShapeType.Face); expf2.More(); expf2.Next())
             {
                 face = ShapeCasts.Face(expf2.Current());
-                if (face.Orientation() == Reversed)
+                if (face.Orientation == Reversed)
                 {
-                    face.Orientation(Forward);
+                    face.Orient(Forward);
                 }
                 for (var itw = new Iterator(face); itw.More(); itw.Next())
                 {
-                    if (itw.Value().ShapeType() != ShapeType.Wire)
+                    if (itw.Value().Type != ShapeType.Wire)
                     {
                         continue;
                     }
@@ -313,7 +313,7 @@ public class WireframeFixer : RootFixer
         var  b      = new BrepBuilder();
         b.MakeEdge(ref newedge);
         double first1, first2, last1, last2;
-        newedge.Orientation(Forward);
+        newedge.Orient(Forward);
         try
         {
             if (!sae.Curve3d(e1, out Curve3D? c3d1, out double cf1, out double cl1, false))
@@ -329,7 +329,7 @@ public class WireframeFixer : RootFixer
             b.Add(newedge, v22.Oriented(Reversed));
 
             //     double newf,newl;
-            if (!global::Kerf.Engine.Healing.Construct.ShapeConstruct.InternalJoinCurves(c3d1!, c3d2!, e1.Orientation(), e2.Orientation(), ref cf1, ref cl1, ref cf2,
+            if (!global::Kerf.Engine.Healing.Construct.ShapeConstruct.InternalJoinCurves(c3d1!, c3d2!, e1.Orientation, e2.Orientation, ref cf1, ref cl1, ref cf2,
                                                    ref cl2, out Curve3D? cRes, out bool isRev1, out bool isRev2))
             {
                 return replaceFirst;
@@ -343,8 +343,8 @@ public class WireframeFixer : RootFixer
 
             double             newf        = cf1;
             double             newl        = cl1 + cl2 - cf2;
-            Orientation orEdge1     = e1.Orientation();
-            Orientation orEdge2     = e2.Orientation();
+            Orientation orEdge1     = e1.Orientation;
+            Orientation orEdge2     = e2.Orientation;
             bool               ismanifold  = (orEdge1 == Forward || orEdge1 == Reversed);
             bool               ismanifold2 = (orEdge2 == Forward || orEdge2 == Reversed);
             if (ismanifold != ismanifold2)
@@ -354,16 +354,16 @@ public class WireframeFixer : RootFixer
 
             if (ismanifold)
             {
-                orEdge1 = ((!isRev1 && e1.Orientation() == Forward) || (isRev1 && e1.Orientation() == Reversed)
+                orEdge1 = ((!isRev1 && e1.Orientation == Forward) || (isRev1 && e1.Orientation == Reversed)
                                ? Forward
                                : Reversed);
-                orEdge2 = ((!isRev2 && e2.Orientation() == Forward) || (isRev2 && e2.Orientation() == Reversed)
+                orEdge2 = ((!isRev2 && e2.Orientation == Forward) || (isRev2 && e2.Orientation == Reversed)
                                ? Forward
                                : Reversed);
             }
             b.UpdateEdge(newedge, cRes, Math.Max(Tool.Tolerance(e1), Tool.Tolerance(e2)));
-            double fp = cRes!.FirstParameter();
-            double lp = cRes.LastParameter();
+            double fp = cRes!.FirstParameter;
+            double lp = cRes.LastParameter;
             if (fp > newf)
             {
                 newf = fp;
@@ -403,8 +403,8 @@ public class WireframeFixer : RootFixer
                 {
                     replaceFirst = false;
                 }
-                double fp2d = c2dRes!.FirstParameter();
-                double lp2d = c2dRes.LastParameter();
+                double fp2d = c2dRes!.FirstParameter;
+                double lp2d = c2dRes.LastParameter;
                 // B.UpdateEdge(newedge,C2dRes,face,0);
                 double newf1 = first1;
                 double newl1 = last1 + (last2 - first2);
@@ -449,7 +449,7 @@ public class WireframeFixer : RootFixer
                 b.Range(newedge, face, newf1, newl1);
                 if (!ismanifold)
                 {
-                    newedge.Orientation(replaceFirst ? orEdge1 : orEdge2);
+                    newedge.Orient(replaceFirst ? orEdge1 : orEdge2);
                 }
             }
             b.SameRange(newedge, false);
@@ -500,7 +500,7 @@ public class WireframeFixer : RootFixer
         }
         ReShapeBuilder context = Context()!;
         var                cont     = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
-        if (_shape.ShapeType() == ShapeType.Compound)
+        if (_shape.Type == ShapeType.Compound)
         {
             bool locModified = false;
             var  c           = new Compound();
@@ -510,12 +510,12 @@ public class WireframeFixer : RootFixer
             for (var it = new Iterator(savShape); it.More(); it.Next())
             {
                 Shape    shape1 = it.Value();
-                Placement l = shape1.Location(), nullLoc = new();
+                Placement l = shape1.Placement, nullLoc = new();
                 shape1.Location(nullLoc);
                 Shape res;
                 if (cont.ContainsKey(shape1))
                 {
-                    res = cont.GetValue(shape1).Oriented(shape1.Orientation());
+                    res = cont.GetValue(shape1).Oriented(shape1.Orientation);
                 }
                 else
                 {
@@ -540,7 +540,7 @@ public class WireframeFixer : RootFixer
             }
             if (locModified)
             {
-                c.Orientation(savShape.Orientation());
+                c.Orient(savShape.Orientation);
                 context.Replace(savShape, c);
             }
             _shape = context.InternalApply(savShape);
@@ -584,13 +584,13 @@ public class WireframeFixer : RootFixer
             var         theEdgeList = new NCollection_List<Shape>();
             Face facet       = ShapeCasts.Face(expf1.Current());
             face = facet;
-            if (facet.Orientation() == Reversed)
+            if (facet.Orientation == Reversed)
             {
                 face = ShapeCasts.Face(facet.Oriented(Forward));
             }
             for (var itw = new Iterator(face); itw.More(); itw.Next())
             {
-                if (itw.Value().ShapeType() != ShapeType.Wire)
+                if (itw.Value().Type != ShapeType.Wire)
                 {
                     continue;
                 }
@@ -785,12 +785,12 @@ public class WireframeFixer : RootFixer
                         //   face = TopoDS::Face(facet.Oriented(TopAbs_FORWARD));
                         for (var itw = new Iterator(face); itw.More(); itw.Next())
                         {
-                            if (itw.Value().ShapeType() != ShapeType.Wire)
+                            if (itw.Value().Type != ShapeType.Wire)
                             {
                                 continue;
                             }
                             Wire wire = ShapeCasts.Wire(itw.Value());
-                            if (face.Orientation() == Reversed)
+                            if (face.Orientation == Reversed)
                             {
                                 face = ShapeCasts.Face(facet.Oriented(Forward));
                             }
@@ -834,40 +834,40 @@ public class WireframeFixer : RootFixer
                                         // double Ang1, Ang2;
                                         c1!.D1(last1, out _, out Vector3D vec1);
                                         c2!.D1(first2, out _, out Vector3D vec2);
-                                        if (edge1.Orientation() == Reversed)
+                                        if (edge1.Orientation == Reversed)
                                         {
                                             vec1 = vec1.Reversed();
                                         }
-                                        if (edge2.Orientation() == Reversed)
+                                        if (edge2.Orientation == Reversed)
                                         {
                                             vec2 = vec2.Reversed();
                                         }
                                         double tol2 = Kerf.Engine.Foundation.Precision.SquareConfusion();
-                                        if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
+                                        if (vec1.SquareMagnitude < tol2 || vec2.SquareMagnitude < tol2)
                                         {
                                             ang1 = Math.PI / 2.0;
                                         }
                                         else
                                         {
-                                            ang1 = Math.Abs(vec1.Angle(vec2));
+                                            ang1 = Math.Abs(vec1.AngleTo(vec2));
                                         }
                                         c2.D1(last2, out _, out vec1);
                                         c3!.D1(first3, out _, out vec2);
-                                        if (edge2.Orientation() == Reversed)
+                                        if (edge2.Orientation == Reversed)
                                         {
                                             vec1 = vec1.Reversed();
                                         }
-                                        if (edge3.Orientation() == Reversed)
+                                        if (edge3.Orientation == Reversed)
                                         {
                                             vec2 = vec2.Reversed();
                                         }
-                                        if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
+                                        if (vec1.SquareMagnitude < tol2 || vec2.SquareMagnitude < tol2)
                                         {
                                             ang2 = Math.PI / 2.0;
                                         }
                                         else
                                         {
-                                            ang2 = Math.Abs(vec1.Angle(vec2));
+                                            ang2 = Math.Abs(vec1.AngleTo(vec2));
                                         }
                                         // isLimAngle = (theLimitAngle != -1 && std::min(Ang1,Ang2) > theLimitAngle);
                                         // take_next = (Ang2<Ang1);
@@ -971,7 +971,7 @@ public class WireframeFixer : RootFixer
                                             // aF = aF.Oriented(TopAbs_FORWARD);
                                             for (var iw = new Iterator(f); iw.More(); iw.Next())
                                             {
-                                                if (iw.Value().ShapeType() != ShapeType.Wire)
+                                                if (iw.Value().Type != ShapeType.Wire)
                                                 {
                                                     continue;
                                                 }
@@ -1033,8 +1033,8 @@ public class WireframeFixer : RootFixer
                                             var aItv = new Iterator(edge1, false);
                                             for (; aItv.More(); aItv.Next())
                                             {
-                                                if (aItv.Value().Orientation() == Internal
-                                                    || aItv.Value().Orientation() == External)
+                                                if (aItv.Value().Orientation == Internal
+                                                    || aItv.Value().Orientation == External)
                                                 {
                                                     Vertex oldV = ShapeCasts.Vertex(aItv.Value());
                                                     Vertex anewV =
@@ -1047,8 +1047,8 @@ public class WireframeFixer : RootFixer
 
                                             for (aItv.Initialize(edge2, false); aItv.More(); aItv.Next())
                                             {
-                                                if (aItv.Value().Orientation() == Internal
-                                                    || aItv.Value().Orientation() == External)
+                                                if (aItv.Value().Orientation == Internal
+                                                    || aItv.Value().Orientation == External)
                                                 {
                                                     var           b    = new BrepBuilder();
                                                     Vertex oldV = ShapeCasts.Vertex(aItv.Value());
@@ -1254,7 +1254,7 @@ public class WireframeFixer : RootFixer
                                             c3d.D0(l1, out Point3D p2);
                                             c3d.D0((f1 + l1) * 0.5, out Point3D p3);
 
-                                            if (p1.Distance(p3) > p1.Distance(p2))
+                                            if (p1.DistanceTo(p3) > p1.DistanceTo(p2))
                                             {
                                                 index++;
                                                 continue;
@@ -1332,7 +1332,7 @@ public class WireframeFixer : RootFixer
                                 context.Replace(wire, sfw.InternalWire());
                             }
                         }
-                        face.Orientation(facet.Orientation());
+                        face.Orient(facet.Orientation);
                         Shape anewShape = context.InternalApply(face);
                         var          iter     = new Iterator(anewShape);
                         if (!iter.More())
@@ -1386,40 +1386,40 @@ public class WireframeFixer : RootFixer
                             // double Ang1, Ang2;
                             c1!.D1(last1, out _, out Vector3D vec1);
                             c2!.D1(first2, out _, out Vector3D vec2);
-                            if (edge1.Orientation() == Reversed)
+                            if (edge1.Orientation == Reversed)
                             {
                                 vec1 = vec1.Reversed();
                             }
-                            if (edge2.Orientation() == Reversed)
+                            if (edge2.Orientation == Reversed)
                             {
                                 vec2 = vec2.Reversed();
                             }
                             double tol2 = Kerf.Engine.Foundation.Precision.SquareConfusion();
-                            if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
+                            if (vec1.SquareMagnitude < tol2 || vec2.SquareMagnitude < tol2)
                             {
                                 ang1 = Math.PI / 2.0;
                             }
                             else
                             {
-                                ang1 = Math.Abs(vec1.Angle(vec2));
+                                ang1 = Math.Abs(vec1.AngleTo(vec2));
                             }
                             c2.D1(last2, out _, out vec1);
                             c3!.D1(first3, out _, out vec2);
-                            if (edge2.Orientation() == Reversed)
+                            if (edge2.Orientation == Reversed)
                             {
                                 vec1 = vec1.Reversed();
                             }
-                            if (edge3.Orientation() == Reversed)
+                            if (edge3.Orientation == Reversed)
                             {
                                 vec2 = vec2.Reversed();
                             }
-                            if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
+                            if (vec1.SquareMagnitude < tol2 || vec2.SquareMagnitude < tol2)
                             {
                                 ang2 = Math.PI / 2.0;
                             }
                             else
                             {
-                                ang2 = Math.Abs(vec1.Angle(vec2));
+                                ang2 = Math.Abs(vec1.AngleTo(vec2));
                             }
                             // isLimAngle = (theLimitAngle != -1 && std::min(Ang1,Ang2) > theLimitAngle);
                             // take_next = (Ang2<Ang1);
@@ -1521,7 +1521,7 @@ public class WireframeFixer : RootFixer
                                 // aF = aF.Oriented(TopAbs_FORWARD);
                                 for (var iw = new Iterator(f); iw.More(); iw.Next())
                                 {
-                                    if (iw.Value().ShapeType() != ShapeType.Wire)
+                                    if (iw.Value().Type != ShapeType.Wire)
                                     {
                                         continue;
                                     }
@@ -1582,8 +1582,8 @@ public class WireframeFixer : RootFixer
                                 var aItv = new Iterator(edge1, false);
                                 for (; aItv.More(); aItv.Next())
                                 {
-                                    if (aItv.Value().Orientation() == Internal
-                                        || aItv.Value().Orientation() == External)
+                                    if (aItv.Value().Orientation == Internal
+                                        || aItv.Value().Orientation == External)
                                     {
                                         var           b    = new BrepBuilder();
                                         Vertex oldV = ShapeCasts.Vertex(aItv.Value());
@@ -1596,8 +1596,8 @@ public class WireframeFixer : RootFixer
 
                                 for (aItv.Initialize(edge2, false); aItv.More(); aItv.Next())
                                 {
-                                    if (aItv.Value().Orientation() == Internal
-                                        || aItv.Value().Orientation() == External)
+                                    if (aItv.Value().Orientation == Internal
+                                        || aItv.Value().Orientation == External)
                                     {
                                         var           b    = new BrepBuilder();
                                         Vertex oldV = ShapeCasts.Vertex(aItv.Value());
@@ -1803,7 +1803,7 @@ public class WireframeFixer : RootFixer
                                 c3d.D0(l1, out Point3D p2);
                                 c3d.D0((f1 + l1) * 0.5, out Point3D p3);
 
-                                if (p1.Distance(p3) > p1.Distance(p2))
+                                if (p1.DistanceTo(p3) > p1.DistanceTo(p2))
                                 {
                                     index++;
                                     continue;

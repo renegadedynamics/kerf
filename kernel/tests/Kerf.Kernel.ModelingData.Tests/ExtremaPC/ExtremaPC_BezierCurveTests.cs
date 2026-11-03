@@ -245,7 +245,7 @@ public class ExtremaPC_BezierCurveTest
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBezier.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
 
         // Minimum distance should be less than distance to endpoints (both at 2)
         Assert.True(Math.Sqrt(aResult.MinSquareDistance()) < 2.0);
@@ -267,8 +267,8 @@ public class ExtremaPC_BezierCurveTest
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBezier.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     //==================================================================================================
@@ -292,7 +292,7 @@ public class ExtremaPC_BezierCurveTest
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBezier.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
     }
 
     [Fact]
@@ -313,7 +313,7 @@ public class ExtremaPC_BezierCurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnCurve = aBezier.Value(aResult[i].Parameter);
-            Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnCurve), THE_TOL);
+            Assert.Equal(0.0, aResult[i].Point.DistanceTo(aPtOnCurve), THE_TOL);
         }
     }
 
@@ -334,7 +334,7 @@ public class ExtremaPC_BezierCurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnCurve = aBezier.Value(aResult[i].Parameter);
-            Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnCurve), THE_TOL);
+            Assert.Equal(0.0, aResult[i].Point.DistanceTo(aPtOnCurve), THE_TOL);
         }
     }
 
@@ -362,7 +362,7 @@ public class ExtremaPC_BezierCurveTest
         for (int i = 0; i < aResult.ExtCount; ++i)
         {
             Point3D aPtOnCurve = aBezier.Value(aResult[i].Parameter);
-            Assert.Equal(0.0, aResult[i].Point.Distance(aPtOnCurve), THE_TOL);
+            Assert.Equal(0.0, aResult[i].Point.DistanceTo(aPtOnCurve), THE_TOL);
         }
     }
 
@@ -424,8 +424,8 @@ public class ExtremaPC_BezierCurveTest
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBezier.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     //==================================================================================================
@@ -448,8 +448,8 @@ public class ExtremaPC_BezierCurveTest
         // Verify closest point is on the curve and distance is consistent
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBezier.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
-        Assert.Equal(aPoint.SquareDistance(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
+        Assert.Equal(aPoint.SquareDistanceTo(aPtOnCurve), aResult[aMinIdx].SquareDistance, THE_TOL);
     }
 
     [Fact]
@@ -548,7 +548,7 @@ public class ExtremaPC_BezierCurveTest
         // Verify closest point is on the curve
         int aMinIdx = aResult.MinIndex();
         Point3D aPtOnCurve = aBezier.Value(aResult[aMinIdx].Parameter);
-        Assert.Equal(0.0, aResult[aMinIdx].Point.Distance(aPtOnCurve), THE_TOL);
+        Assert.Equal(0.0, aResult[aMinIdx].Point.DistanceTo(aPtOnCurve), THE_TOL);
 
         // Distance should be large (curve is near origin, point is at (100,100,100))
         // Minimum distance should be at least sqrt(100^2+99^2+100^2) ~= 172
@@ -561,7 +561,7 @@ public class ExtremaPC_BezierCurveTest
         BezierCurve3D aBezier =
             createCubicBezier(new Point3D(0, 0, 0), new Point3D(1, 1, 0), new Point3D(2, 1, 0), new Point3D(3, 0, 0));
         Point3D aOnCurve = aBezier.Value(0.5);
-        Point3D aPoint = new(aOnCurve.X(), aOnCurve.Y() + 1e-8, aOnCurve.Z());
+        Point3D aPoint = new(aOnCurve.X, aOnCurve.Y + 1e-8, aOnCurve.Z);
 
         global::Kerf.Engine.Extrema.PointCurve.BezierCurveExtrema anEval = new(aBezier);
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Result aResult = anEval.PerformWithEndpoints(aPoint, THE_TOL);
@@ -644,7 +644,7 @@ public class ExtremaPC_BezierCurveTest
             double aU = aResult[i].Parameter;
             Point3D aCurvePt = aBezier.Value(aU);
 
-            double aExpectedSqDist = aPoint.SquareDistance(aCurvePt);
+            double aExpectedSqDist = aPoint.SquareDistanceTo(aCurvePt);
             Assert.Equal(aExpectedSqDist, aSqDist, THE_TOL);
         }
     }

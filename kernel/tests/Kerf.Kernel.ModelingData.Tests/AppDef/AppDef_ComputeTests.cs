@@ -22,7 +22,7 @@ public class AppDef_ComputeTests
             for (int i = aPar.Lower(); i <= aPar.Upper(); i++)
             {
                 aC.Value(1, aPar[i], out Point3D aP);
-                aMax = Math.Max(aMax, aP.Distance(thePoints[i]));
+                aMax = Math.Max(aMax, aP.DistanceTo(thePoints[i]));
             }
         }
         return aMax;
@@ -39,7 +39,7 @@ public class AppDef_ComputeTests
         for (int i = aPar.Lower(); i <= aPar.Upper(); i++)
         {
             aC.Value(1, aPar[i], out Point3D aP);
-            aMax = Math.Max(aMax, aP.Distance(thePoints[i]));
+            aMax = Math.Max(aMax, aP.DistanceTo(thePoints[i]));
         }
         return aMax;
     }
@@ -72,7 +72,7 @@ public class AppDef_ComputeTests
         Assert.Equal(1, aComputer.MultiCurveCount);
         Assert.Equal(3, aComputer.Value().Degree());
         aComputer.Value().Value(1, 0.3, out Point3D aP);
-        Assert.True(aP.Distance(Cubic(0.3)) < 1e-12);
+        Assert.True(aP.DistanceTo(Cubic(0.3)) < 1e-12);
     }
 
     [Theory]
@@ -102,7 +102,7 @@ public class AppDef_ComputeTests
         {
             aComputer.Value(c - 1).Value(1, 1.0, out Point3D aEnd);
             aComputer.Value(c).Value(1, 0.0, out Point3D aStart);
-            Assert.True(aEnd.Distance(aStart) < 1e-9);
+            Assert.True(aEnd.DistanceTo(aStart) < 1e-9);
             Assert.Equal(aComputer.Parameters(c - 1).Upper(), aComputer.Parameters(c).Lower());
         }
 
@@ -110,7 +110,7 @@ public class AppDef_ComputeTests
         MultiBSpCurve aSpline = aComputer.SplineValue();
         Assert.Equal(aComputer.MultiCurveCount + 1, aSpline.Knots().Length());
         aSpline.Value(1, aSpline.Knots()[aSpline.Knots().Upper()], out Point3D aLast);
-        Assert.True(aLast.Distance(aPnts[aPnts.Upper()]) < 1e-9);
+        Assert.True(aLast.DistanceTo(aPnts[aPnts.Upper()]) < 1e-9);
     }
 
     [Fact]
@@ -131,8 +131,8 @@ public class AppDef_ComputeTests
         MultiCurve aC = aComputer.Value();
         Assert.Equal(2, aC.Dimension(1));
         aC.Value(1, 0.5, out Point2D aP);
-        Assert.Equal(0.5, aP.X(), 1e-9);
-        Assert.Equal(0.125, aP.Y(), 1e-9);
+        Assert.Equal(0.5, aP.X, 1e-9);
+        Assert.Equal(0.125, aP.Y, 1e-9);
     }
 
     [Fact]
@@ -158,8 +158,8 @@ public class AppDef_ComputeTests
         MultiCurve aLastCurve = aComputer.Value(aComputer.MultiCurveCount);
         aFirst.Value(1, 0.0, out Point3D aP0);
         aLastCurve.Value(1, 1.0, out Point3D aP1);
-        Assert.True(aP0.Distance(aPnts[1]) < 1e-9);
-        Assert.True(aP1.Distance(aPnts[20]) < 1e-9);
+        Assert.True(aP0.DistanceTo(aPnts[1]) < 1e-9);
+        Assert.True(aP1.DistanceTo(aPnts[20]) < 1e-9);
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public class AppDef_ComputeTests
         Assert.Equal(1, aComputer.MultiCurveCount);
         Assert.Equal(3, aComputer.Value().Degree());
         aComputer.Value().Value(1, 0.7, out Point3D aP);
-        Assert.True(aP.Distance(Cubic(0.7)) < 1e-12);
+        Assert.True(aP.DistanceTo(Cubic(0.7)) < 1e-12);
     }
 
     [Fact]
@@ -198,8 +198,8 @@ public class AppDef_ComputeTests
         Assert.Equal(6, aSpline.NbPoles());
         aSpline.Value(1, aSpline.Knots()[1], out Point3D aStart);
         aSpline.Value(1, aSpline.Knots()[3], out Point3D aEnd);
-        Assert.True(aStart.Distance(new Point3D(0, 0, 0)) < 1e-12);
-        Assert.True(aEnd.Distance(new Point3D(6, 2, 2)) < 1e-12);
+        Assert.True(aStart.DistanceTo(new Point3D(0, 0, 0)) < 1e-12);
+        Assert.True(aEnd.DistanceTo(new Point3D(6, 2, 2)) < 1e-12);
 
         // One curve: a Bezier on [0, 1].
         aTrans.Reset();

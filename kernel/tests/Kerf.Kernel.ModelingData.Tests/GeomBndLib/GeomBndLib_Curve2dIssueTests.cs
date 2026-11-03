@@ -22,7 +22,7 @@ public class GeomBndLib_Curve2dIssueTest
         Box2d aBox = new Curve2dBounds(aParab).Box(-6.0, 6.0, 0.0);
 
         var (aXmin, _, _, _) = aBox.Get();
-        Assert.Equal(-Math.Sqrt(2.0), aParab.Value(4.0).X(), 1e-12);
+        Assert.Equal(-Math.Sqrt(2.0), aParab.Value(4.0).X, 1e-12);
         Assert.Equal(-Math.Sqrt(2.0), aXmin, 1e-12);
         for (int i = 0; i <= 120; i++)
         {

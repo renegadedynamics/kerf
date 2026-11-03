@@ -53,10 +53,10 @@ public sealed class Polygon2DHasher : IEqualityComparer<Polygon2D?>
         if (poly.NodeCount > 0)
         {
             NCollection_Array1<Point2D> nodes = poly.Nodes();
-            combined[2] = HashUtils.QuantizedHash(nodes.First().X(), factor);
-            combined[3] = HashUtils.QuantizedHash(nodes.First().Y(), factor);
-            combined[4] = HashUtils.QuantizedHash(nodes.Last().X(), factor);
-            combined[5] = HashUtils.QuantizedHash(nodes.Last().Y(), factor);
+            combined[2] = HashUtils.QuantizedHash(nodes.First().X, factor);
+            combined[3] = HashUtils.QuantizedHash(nodes.First().Y, factor);
+            combined[4] = HashUtils.QuantizedHash(nodes.Last().X, factor);
+            combined[5] = HashUtils.QuantizedHash(nodes.Last().Y, factor);
         }
 
         return HashUtils.HashBytes(combined);
@@ -86,7 +86,7 @@ public sealed class Polygon2DHasher : IEqualityComparer<Polygon2D?>
         {
             Point2D p1 = nodes1.Value(idx);
             Point2D p2 = nodes2.Value(idx);
-            if (Math.Abs(p1.X() - p2.X()) > CompTolerance || Math.Abs(p1.Y() - p2.Y()) > CompTolerance)
+            if (Math.Abs(p1.X - p2.X) > CompTolerance || Math.Abs(p1.Y - p2.Y) > CompTolerance)
             {
                 return false;
             }

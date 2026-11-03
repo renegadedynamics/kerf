@@ -143,10 +143,10 @@ public sealed class FilletApi
             Point3D p12 = ac1.Value(ac1.LastParameter());
             Point3D p21 = ac2.Value(ac2.FirstParameter());
             Point3D p22 = ac2.Value(ac2.LastParameter());
-            if (p11.SquareDistance(p21) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                || p11.SquareDistance(p22) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                || p12.SquareDistance(p21) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
-                || p12.SquareDistance(p22) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+            if (p11.SquareDistanceTo(p21) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                || p11.SquareDistanceTo(p22) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                || p12.SquareDistanceTo(p21) < global::Kerf.Engine.Foundation.Precision.SquareConfusion()
+                || p12.SquareDistanceTo(p22) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 ret = true;
             }

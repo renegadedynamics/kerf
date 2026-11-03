@@ -61,14 +61,14 @@ internal static class XdeDocDump
         theOut.Add($"L {theLabel.Entry()} {aKind}");
         if (theDoc.GetShape(theLabel, out Shape aShape))
         {
-            theOut.Add($"T {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aShape.ShapeType())} {Count(aShape, ShapeType.Solid)} "
+            theOut.Add($"T {Kerf.Engine.Topology.TopAbs.ShapeTypeToString(aShape.Type)} {Count(aShape, ShapeType.Solid)} "
                        + $"{Count(aShape, ShapeType.Shell)} {Count(aShape, ShapeType.Face)} "
                        + $"{Count(aShape, ShapeType.Edge)} {Count(aShape, ShapeType.Vertex)}");
         }
         if (theDoc.GetReferredShape(theLabel, out Label aReferred))
         {
             theOut.Add("P " + aReferred.Entry());
-            Transform3D aTrsf = theDoc.GetLocation(theLabel).Transformation();
+            Transform3D aTrsf = theDoc.GetLocation(theLabel).Transformation;
             var aBuilder = new StringBuilder("O");
             for (int r = 1; r <= 3; r++)
             {
@@ -118,7 +118,7 @@ internal static class XdeDocDump
         }
         if (aProps?.Centroid is Point3D aPnt)
         {
-            theOut.Add($"G {R17(aPnt.X())} {R17(aPnt.Y())} {R17(aPnt.Z())}");
+            theOut.Add($"G {R17(aPnt.X)} {R17(aPnt.Y)} {R17(aPnt.Z)}");
         }
         foreach (Label aChild in theDoc.Children(theLabel))
         {

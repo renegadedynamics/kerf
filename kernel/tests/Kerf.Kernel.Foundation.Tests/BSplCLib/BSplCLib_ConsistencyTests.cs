@@ -145,7 +145,7 @@ public class BSplCLib_ConsistencyTest
                 if (c.Degree >= 2)
                 {
                     Xyz aFd = (B.XYZ() - A.XYZ()) / (u1 - u0);
-                    double aScale = Math.Max(1.0, V.Magnitude());
+                    double aScale = Math.Max(1.0, V.Magnitude);
                     Assert.True((aFd - V.XYZ()).Modulus() <= 1e-3 * aScale || IsNearKnot(c, u), $"{aFd} vs {V}");
                 }
             }
@@ -482,24 +482,24 @@ public class BSplCLib_ConsistencyTest
             NCollection_Array1<Point3D> aP3 = new(1, c.Poles.Length());
             for (int i = 1; i <= c.Poles.Length(); i++)
             {
-                aP2[i] = new Point2D(c.Poles[i].X(), c.Poles[i].Y());
-                aP3[i] = new Point3D(c.Poles[i].X(), c.Poles[i].Y(), 0.0);
+                aP2[i] = new Point2D(c.Poles[i].X, c.Poles[i].Y);
+                aP3[i] = new Point3D(c.Poles[i].X, c.Poles[i].Y, 0.0);
             }
             global::Kerf.Engine.Geometry.Splines.Cache aCache = new(c.Degree, c.Periodic, c.FlatKnots, aP2, c.Weights);
             foreach (double u in Params(c))
             {
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u, 0, c.Degree, c.Periodic, aP3, c.Weights, c.FlatKnots, null, out Point3D P, out Vector3D V1, out Vector3D V2);
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.D2(u, 0, c.Degree, c.Periodic, aP2, c.Weights, c.FlatKnots, null, out Point2D Q, out Vector2D W1, out Vector2D W2);
-                AssertNear(new Xyz(Q.X(), Q.Y(), 0), P.XYZ(), Tol);
-                AssertNear(new Xyz(W1.X(), W1.Y(), 0), V1.XYZ(), 1e-8);
-                AssertNear(new Xyz(W2.X(), W2.Y(), 0), V2.XYZ(), 1e-7);
+                AssertNear(new Xyz(Q.X, Q.Y, 0), P.XYZ(), Tol);
+                AssertNear(new Xyz(W1.X, W1.Y, 0), V1.XYZ(), 1e-8);
+                AssertNear(new Xyz(W2.X, W2.Y, 0), V2.XYZ(), 1e-7);
                 if (!aCache.IsCacheValid(u))
                 {
                     aCache.BuildCache(u, c.FlatKnots, aP2, c.Weights);
                 }
                 aCache.D1(u, out Point2D CQ, out Vector2D CW);
-                AssertNear(new Xyz(CQ.X(), CQ.Y(), 0), P.XYZ(), Tol);
-                AssertNear(new Xyz(CW.X(), CW.Y(), 0), V1.XYZ(), 1e-8);
+                AssertNear(new Xyz(CQ.X, CQ.Y, 0), P.XYZ(), Tol);
+                AssertNear(new Xyz(CW.X, CW.Y, 0), V1.XYZ(), 1e-8);
             }
         }
     }
@@ -521,7 +521,7 @@ public class BSplCLib_ConsistencyTest
                 double v = Math.Min(u + aUTol, c.Knots.Last());
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(u, 0, c.Degree, false, c.Poles, c.Weights, c.FlatKnots, null, out Point3D P);
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(v, 0, c.Degree, false, c.Poles, c.Weights, c.FlatKnots, null, out Point3D Q);
-                Assert.True(P.Distance(Q) <= 1.0e-3 * (1 + 1e-9));
+                Assert.True(P.DistanceTo(Q) <= 1.0e-3 * (1 + 1e-9));
             }
         }
     }

@@ -32,9 +32,9 @@ public class EllipseCurve2D : ConicCurve2D
     /// <summary>The ellipse equal to E.</summary>
     public EllipseCurve2D(in Ellipse2D e)
     {
-        _majorRadius = e.MajorRadius();
-        _minorRadius = e.MinorRadius();
-        _pos = e.Axis();
+        _majorRadius = e.MajorRadius;
+        _minorRadius = e.MinorRadius;
+        _pos = e.Axis;
     }
 
     /// <summary>The ellipse whose major axis is MajorAxis; Sense gives the orientation (true: counterclockwise).</summary>
@@ -66,9 +66,9 @@ public class EllipseCurve2D : ConicCurve2D
     internal void SetElips2d(in Ellipse2D e)
     {
         CheckMutable();
-        _majorRadius = e.MajorRadius();
-        _minorRadius = e.MinorRadius();
-        _pos = e.Axis();
+        _majorRadius = e.MajorRadius;
+        _minorRadius = e.MinorRadius;
+        _pos = e.Axis;
     }
 
     internal void SetMajorRadius(double majorRadius)
@@ -98,83 +98,101 @@ public class EllipseCurve2D : ConicCurve2D
     }
 
     /// <summary>The ellipse as a gp_Elips2d.</summary>
-    public Ellipse2D Elips2d() => new Ellipse2D(_pos, _majorRadius, _minorRadius);
+    public Ellipse2D Ellipse => new Ellipse2D(_pos, _majorRadius, _minorRadius);
 
     /// <summary>2*PI - U.</summary>
     public sealed override double ReversedParameter(double u) => (2.0 * M_PI - u);
 
     /// <summary>The first directrix: parallel to the Y axis at distance MajorRadius/e from the centre, on the positive X side.</summary>
     /// <exception cref="ConstructionErrorException">The eccentricity is 0 (a circle).</exception>
-    public Axis2D Directrix1()
+    public Axis2D Directrix1
     {
-        Ellipse2D ev = new Ellipse2D(_pos, _majorRadius, _minorRadius);
-        return ev.Directrix1();
+        get
+        {
+            Ellipse2D ev = new Ellipse2D(_pos, _majorRadius, _minorRadius);
+            return ev.Directrix1;
+        }
     }
 
     /// <summary>The second directrix, the symmetric of the first about the Y axis.</summary>
     /// <exception cref="ConstructionErrorException">The eccentricity is 0 (a circle).</exception>
-    public Axis2D Directrix2()
+    public Axis2D Directrix2
     {
-        Ellipse2D ev = new Ellipse2D(_pos, _majorRadius, _minorRadius);
-        return ev.Directrix2();
+        get
+        {
+            Ellipse2D ev = new Ellipse2D(_pos, _majorRadius, _minorRadius);
+            return ev.Directrix2;
+        }
     }
 
     /// <summary>sqrt(MajorRadius^2 - MinorRadius^2) / MajorRadius, or 0 if MajorRadius is 0.</summary>
-    public sealed override double Eccentricity()
+    public sealed override double Eccentricity
     {
-        if (_majorRadius == 0.0)
+        get
         {
-            return 0.0;
-        }
-        else
-        {
-            return (Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius)) / _majorRadius;
+            if (_majorRadius == 0.0)
+            {
+                return 0.0;
+            }
+            else
+            {
+                return (Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius)) / _majorRadius;
+            }
         }
     }
 
     /// <summary>The distance between the foci.</summary>
-    public double Focal() => 2.0 * Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
+    public double Focal => 2.0 * Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
 
     /// <summary>The focus on the positive side of the major axis.</summary>
-    public Point2D Focus1()
+    public Point2D Focus1
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
-        return new Point2D(_pos.Location().X() + c * _pos.XDirection().X(),
-                            _pos.Location().Y() + c * _pos.XDirection().Y());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
+            return new Point2D(_pos.Location.X + c * _pos.XDirection.X,
+                                _pos.Location.Y + c * _pos.XDirection.Y);
+        }
     }
 
     /// <summary>The focus on the negative side of the major axis.</summary>
-    public Point2D Focus2()
+    public Point2D Focus2
     {
-        double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
-        return new Point2D(_pos.Location().X() - c * _pos.XDirection().X(),
-                            _pos.Location().Y() - c * _pos.XDirection().Y());
+        get
+        {
+            double c = Math.Sqrt(_majorRadius * _majorRadius - _minorRadius * _minorRadius);
+            return new Point2D(_pos.Location.X - c * _pos.XDirection.X,
+                                _pos.Location.Y - c * _pos.XDirection.Y);
+        }
     }
 
     /// <summary>The major radius.</summary>
-    public double MajorRadius() => _majorRadius;
+    public double MajorRadius => _majorRadius;
 
     /// <summary>The minor radius.</summary>
-    public double MinorRadius() => _minorRadius;
+    public double MinorRadius => _minorRadius;
 
     /// <summary>The parameter of the ellipse (MinorRadius^2 / MajorRadius), or 0 if MajorRadius is 0.</summary>
-    public double Parameter()
+    public double Parameter
     {
-        if (_majorRadius == 0.0)
+        get
         {
-            return 0.0;
-        }
-        else
-        {
-            return (_minorRadius * _minorRadius) / _majorRadius;
+            if (_majorRadius == 0.0)
+            {
+                return 0.0;
+            }
+            else
+            {
+                return (_minorRadius * _minorRadius) / _majorRadius;
+            }
         }
     }
 
     /// <summary>0.</summary>
-    public sealed override double FirstParameter() => 0.0;
+    public sealed override double FirstParameter => 0.0;
 
     /// <summary>2*PI.</summary>
-    public sealed override double LastParameter() => 2.0 * M_PI;
+    public sealed override double LastParameter => 2.0 * M_PI;
 
     /// <summary>True.</summary>
     public sealed override bool IsClosed => true;
@@ -182,23 +200,23 @@ public class EllipseCurve2D : ConicCurve2D
     /// <summary>True.</summary>
     public sealed override bool IsPeriodic => true;
 
-    public sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.EllipseValue(u, _pos, _majorRadius, _minorRadius);
+    internal sealed override Point2D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.EllipseValue(u, _pos, _majorRadius, _minorRadius);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElCLib.EllipseD1(u, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElCLib.EllipseD2(u, _pos, _majorRadius, _minorRadius, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElCLib.EllipseD3(u,
@@ -213,7 +231,7 @@ public class EllipseCurve2D : ConicCurve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -226,8 +244,8 @@ public class EllipseCurve2D : ConicCurve2D
     protected internal sealed override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor());
-        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor());
+        _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor);
+        _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 

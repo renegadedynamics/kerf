@@ -58,10 +58,10 @@ public sealed class PurgeLocations
                 break;
             }
 
-            Transform3D trsf = loc.Transformation();
+            Transform3D trsf = loc.Transformation;
             bool isBadTrsf =
                 trsf.IsNegative
-                || (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
+                || (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec());
             if (isBadTrsf)
             {
                 badTrsfInds.Add(ind);
@@ -79,7 +79,7 @@ public sealed class PurgeLocations
         for (inds = 1; inds <= nbShapes; ++inds)
         {
             Shape s = _mapShapes[inds - 1];
-            int locInd = _locations.Index(s.Location());
+            int locInd = _locations.Index(s.Placement);
             if (locInd == 0)
             {
                 continue;
@@ -122,7 +122,7 @@ public sealed class PurgeLocations
     private bool PurgeLocation(in Shape s, out Shape res)
     {
         bool isDone = true;
-        Placement refLoc = s.Location();
+        Placement refLoc = s.Placement;
         bool isEmpty = refLoc.IsIdentity;
         if (isEmpty)
         {
@@ -139,10 +139,10 @@ public sealed class PurgeLocations
             Transform3D trsf = fd.Trsf();
             int fp = refLoc.FirstPower();
             bool isBad = trsf.IsNegative
-                         || (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
+                         || (Math.Abs(Math.Abs(trsf.ScaleFactor) - 1.0) > Placement.ScalePrec());
             Placement loc = new Placement(fd);
             loc = loc.Powered(fp);
-            trsf = loc.Transformation();
+            trsf = loc.Transformation;
             if (isBad)
             {
                 TrsfModification modification = new TrsfModification(trsf);
@@ -172,7 +172,7 @@ public sealed class PurgeLocations
     private void AddShape(in Shape s)
     {
         _mapShapes.Add(s);
-        _locations.Add(s.Location());
+        _locations.Add(s.Placement);
 
         var it = new Iterator(s, false, false);
         while (it.More())

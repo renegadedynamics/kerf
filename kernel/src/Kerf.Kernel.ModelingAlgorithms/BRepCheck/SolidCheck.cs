@@ -181,9 +181,9 @@ public class SolidCheck : ResultCheck
         {
             Shape sx = it.Value();
             //
-            if (sx.ShapeType() != ShapeType.Shell)
+            if (sx.Type != ShapeType.Shell)
             {
-                or = sx.Orientation();
+                or = sx.Orientation;
                 if (or != Internal)
                 {
                     BRepCheckCheck.Add(lst, StatusCheck.BadOrientationOfSubshape);
@@ -201,7 +201,7 @@ public class SolidCheck : ResultCheck
             for (; !bFound && itF.More(); itF.Next())
             {
                 Shape f = itF.Value();
-                or = f.Orientation();
+                or = f.Orientation;
                 if (or == Internal)
                 {
                     bFound = !bFound;

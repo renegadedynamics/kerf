@@ -844,10 +844,10 @@ public class BooleanOracleTests(ITestOutputHelper output)
 
     private static Frame3D Moved(in Frame3D theA, double dx, double dy, double dz, double theAngle = 0)
     {
-        Point3D aP = theA.Location().Translated(new Vector3D(theA.XDirection()) * dx + new Vector3D(theA.YDirection()) * dy
-                                               + new Vector3D(theA.Direction()) * dz);
-        Frame3D aMoved = new Frame3D(aP, theA.Direction(), theA.XDirection());
-        return theAngle == 0 ? aMoved : aMoved.Rotated(new Axis3D(aP, theA.Direction()), theAngle);
+        Point3D aP = theA.Location.Translated(new Vector3D(theA.XDirection) * dx + new Vector3D(theA.YDirection) * dy
+                                               + new Vector3D(theA.Direction) * dz);
+        Frame3D aMoved = new Frame3D(aP, theA.Direction, theA.XDirection);
+        return theAngle == 0 ? aMoved : aMoved.Rotated(new Axis3D(aP, theA.Direction), theAngle);
     }
 
     private static N.TopoDS_Shape Box(in Frame3D theA, double dx, double dy, double dz)
@@ -977,7 +977,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 default:
                 {
                     Frame3D aG = Frame(theO, false);
-                    aG = new Frame3D(aF.Location().Translated(new Vector3D(theO.Real(-3, 3), theO.Real(-3, 3), theO.Real(-3, 3))), aG.Direction(), aG.XDirection());
+                    aG = new Frame3D(aF.Location.Translated(new Vector3D(theO.Real(-3, 3), theO.Real(-3, 3), theO.Real(-3, 3))), aG.Direction, aG.XDirection);
                     aName = "random";
                     N.TopoDS_Shape First(int k, in Frame3D theA) => k switch
                     {

@@ -52,7 +52,7 @@ public class GeomGridEval_OffsetSurfaceTest
             for (int j = 1; j <= 3; ++j)
             {
                 Vector3D aExpected = anOffset.DN(aUParams.Value(i), aVParams.Value(j), theNU, theNV);
-                Assert.Equal(0.0, (aGrid.Value(i, j) - aExpected).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j) - aExpected).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -75,8 +75,8 @@ public class GeomGridEval_OffsetSurfaceTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anOffset.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
-                Assert.Equal(10.0, aGrid.Value(i, j).Z(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
+                Assert.Equal(10.0, aGrid.Value(i, j).Z, THE_TOLERANCE);
             }
         }
     }
@@ -98,11 +98,11 @@ public class GeomGridEval_OffsetSurfaceTest
             for (int j = 1; j <= 5; ++j)
             {
                 Point3D aExpected = anOffset.Value(aUParams.Value(i), aVParams.Value(j));
-                Assert.Equal(0.0, aGrid.Value(i, j).Distance(aExpected), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).DistanceTo(aExpected), THE_TOLERANCE);
 
                 // Check radius from Z axis
-                double aDist = Math.Sqrt(aGrid.Value(i, j).X() * aGrid.Value(i, j).X()
-                                         + aGrid.Value(i, j).Y() * aGrid.Value(i, j).Y());
+                double aDist = Math.Sqrt(aGrid.Value(i, j).X * aGrid.Value(i, j).X
+                                         + aGrid.Value(i, j).Y * aGrid.Value(i, j).Y);
                 Assert.Equal(7.0, aDist, THE_TOLERANCE);
             }
         }
@@ -124,9 +124,9 @@ public class GeomGridEval_OffsetSurfaceTest
             for (int j = 1; j <= 3; ++j)
             {
                 anOffset.D1(aUParams.Value(i), aVParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V);
-                Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -145,7 +145,7 @@ public class GeomGridEval_OffsetSurfaceTest
         NCollection_Array2<Point3D> aGrid = anEval.EvaluateGrid(aUParams, aVParams);
         Assert.Equal(3, aGrid.RowLength());
         Assert.Equal(3, aGrid.ColLength());
-        Assert.Equal(5.0, aGrid.Value(1, 1).Z(), THE_TOLERANCE);
+        Assert.Equal(5.0, aGrid.Value(1, 1).Z, THE_TOLERANCE);
     }
 
     [Fact]
@@ -165,12 +165,12 @@ public class GeomGridEval_OffsetSurfaceTest
             {
                 anOffset.D2(aUParams.Value(i), aVParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
                             out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV);
-                Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -194,16 +194,16 @@ public class GeomGridEval_OffsetSurfaceTest
                 anAdaptor.D3(aUParams.Value(i), aVParams.Value(j), out Point3D aPnt, out Vector3D aD1U, out Vector3D aD1V,
                              out Vector3D aD2U, out Vector3D aD2V, out Vector3D aD2UV, out Vector3D aD3U, out Vector3D aD3V,
                              out Vector3D aD3UUV, out Vector3D aD3UVV);
-                Assert.Equal(0.0, aGrid.Value(i, j).Point.Distance(aPnt), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2U - aD2U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2V - aD2V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D2UV - aD2UV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3U - aD3U).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3V - aD3V).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3UUV - aD3UUV).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGrid.Value(i, j).D3UVV - aD3UVV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid.Value(i, j).Point.DistanceTo(aPnt), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1U - aD1U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D1V - aD1V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2U - aD2U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2V - aD2V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D2UV - aD2UV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3U - aD3U).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3V - aD3V).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3UUV - aD3UUV).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGrid.Value(i, j).D3UVV - aD3UVV).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -252,8 +252,8 @@ public class GeomGridEval_OffsetSurfaceTest
             {
                 Vector3D aExpectedU = anOffset.DN(aUParams.Value(i), aVParams.Value(j), 1, 0);
                 Vector3D aExpectedV = anOffset.DN(aUParams.Value(i), aVParams.Value(j), 0, 1);
-                Assert.Equal(0.0, (aGridU.Value(i, j) - aExpectedU).Magnitude(), THE_TOLERANCE);
-                Assert.Equal(0.0, (aGridV.Value(i, j) - aExpectedV).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, (aGridU.Value(i, j) - aExpectedU).Magnitude, THE_TOLERANCE);
+                Assert.Equal(0.0, (aGridV.Value(i, j) - aExpectedV).Magnitude, THE_TOLERANCE);
             }
         }
 
@@ -263,7 +263,7 @@ public class GeomGridEval_OffsetSurfaceTest
         {
             for (int j = 1; j <= 5; ++j)
             {
-                Assert.Equal(0.0, aGrid2U.Value(i, j).Magnitude(), THE_TOLERANCE);
+                Assert.Equal(0.0, aGrid2U.Value(i, j).Magnitude, THE_TOLERANCE);
             }
         }
     }
@@ -288,7 +288,7 @@ public class GeomGridEval_OffsetSurfaceTest
         for (int j = 1; j <= 15; ++j)
         {
             anOffset.D0(aUParams.Value(1), aVParams.Value(j), out Point3D aExpected);
-            Assert.Equal(0.0, aGrid.Value(1, j).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(1, j).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -312,7 +312,7 @@ public class GeomGridEval_OffsetSurfaceTest
         for (int i = 1; i <= 15; ++i)
         {
             anOffset.D0(aUParams.Value(i), aVParams.Value(1), out Point3D aExpected);
-            Assert.Equal(0.0, aGrid.Value(i, 1).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(i, 1).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 
@@ -332,7 +332,7 @@ public class GeomGridEval_OffsetSurfaceTest
         for (int j = 1; j <= 20; ++j)
         {
             anOffset.D0(aUParams.Value(1), aVParams.Value(j), out Point3D aExpected);
-            Assert.Equal(0.0, aGrid.Value(1, j).Distance(aExpected), THE_TOLERANCE);
+            Assert.Equal(0.0, aGrid.Value(1, j).DistanceTo(aExpected), THE_TOLERANCE);
         }
     }
 }

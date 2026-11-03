@@ -289,7 +289,7 @@ public class GeomFill_Gordon_Test
                                              double theTol)
     {
         Point3D aSurfPt = theSurf.Value(theU, theV);
-        double aDist = aSurfPt.Distance(theExpected);
+        double aDist = aSurfPt.DistanceTo(theExpected);
         Assert.True(aDist < theTol, $"Surface point at ({theU}, {theV}) differs from expected by {aDist}");
     }
 
@@ -375,7 +375,7 @@ public class GeomFill_Gordon_Test
             {
                 double aParam = (double)aSampleIdx / THE_NB_SAMPLES;
                 double aU = aUMin + aParam * (aUMax - aUMin);
-                Assert.True(theSurface.Value(aU, aV).Distance(theNetwork.Profiles.At(aProfileIdx).Value(aParam)) <= theTolerance);
+                Assert.True(theSurface.Value(aU, aV).DistanceTo(theNetwork.Profiles.At(aProfileIdx).Value(aParam)) <= theTolerance);
             }
         }
         for (int aGuideIdx = 0; aGuideIdx < theNetwork.Guides.Size(); ++aGuideIdx)
@@ -385,7 +385,7 @@ public class GeomFill_Gordon_Test
             {
                 double aParam = (double)aSampleIdx / THE_NB_SAMPLES;
                 double aV = aVMin + aParam * (aVMax - aVMin);
-                Assert.True(theSurface.Value(aU, aV).Distance(theNetwork.Guides.At(aGuideIdx).Value(aParam)) <= theTolerance);
+                Assert.True(theSurface.Value(aU, aV).DistanceTo(theNetwork.Guides.At(aGuideIdx).Value(aParam)) <= theTolerance);
             }
         }
     }
@@ -572,7 +572,7 @@ public class GeomFill_Gordon_Test
 
         Point3D aMidSingle = aSingleThread.Surface().Value(0.5, 0.5);
         Point3D aMidPar = aParallel.Surface().Value(0.5, 0.5);
-        Assert.True(aMidSingle.Distance(aMidPar) < 1.0e-9);
+        Assert.True(aMidSingle.DistanceTo(aMidPar) < 1.0e-9);
     }
 
     [Fact]
@@ -584,7 +584,7 @@ public class GeomFill_Gordon_Test
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
         Point3D aMidPt = aSurf.Value(UMid(aSurf), VMid(aSurf));
-        Assert.Equal(0.3, aMidPt.Z(), 1.0e-6);
+        Assert.Equal(0.3, aMidPt.Z, 1.0e-6);
     }
 
     [Fact]
@@ -627,9 +627,9 @@ public class GeomFill_Gordon_Test
             double aU = aSurface.UKnot(1) + aRatio * (aSurface.UKnot(aSurface.UKnotCount) - aSurface.UKnot(1));
             double aProfile1Param = aRatio <= 0.5 ? 0.8 * aRatio : 1.2 * aRatio - 0.2;
             double aProfile3Param = aRatio <= 0.5 ? 1.2 * aRatio : 0.2 + 0.8 * aRatio;
-            Assert.True(aSurface.Value(aU, aSurface.VKnot(1)).Distance(aProfiles[1].Value(aProfile1Param)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
-            Assert.True(aSurface.Value(aU, aMiddleProfileV).Distance(aProfiles[2].Value(aRatio)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
-            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.VKnotCount)).Distance(aProfiles[3].Value(aProfile3Param))
+            Assert.True(aSurface.Value(aU, aSurface.VKnot(1)).DistanceTo(aProfiles[1].Value(aProfile1Param)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.True(aSurface.Value(aU, aMiddleProfileV).DistanceTo(aProfiles[2].Value(aRatio)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.VKnotCount)).DistanceTo(aProfiles[3].Value(aProfile3Param))
                         <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
 
@@ -638,7 +638,7 @@ public class GeomFill_Gordon_Test
         {
             double aRatio = (double)aSampleIdx / THE_NB_SAMPLES;
             double aV = aSurface.VKnot(1) + aRatio * (aSurface.VKnot(aSurface.VKnotCount) - aSurface.VKnot(1));
-            Assert.True(aSurface.Value(aGuideU, aV).Distance(aGuides[2].Value(aRatio)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.True(aSurface.Value(aGuideU, aV).DistanceTo(aGuides[2].Value(aRatio)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
 
@@ -693,24 +693,24 @@ public class GeomFill_Gordon_Test
 
         BSplineCurve3D aFirstProfile = (BSplineCurve3D)aProfiles[1];
         BSplineCurve3D aSecondProfile = (BSplineCurve3D)aProfiles[2];
-        Point3D aFirstSeam = aFirstProfile.Value(aFirstProfile.FirstParameter());
-        ProjectPointOnCurve aSeamProjection = new(new Point3D(aFirstSeam.X(), 1.0, aFirstSeam.Z()), aSecondProfile);
+        Point3D aFirstSeam = aFirstProfile.Value(aFirstProfile.FirstParameter);
+        ProjectPointOnCurve aSeamProjection = new(new Point3D(aFirstSeam.X, 1.0, aFirstSeam.Z), aSecondProfile);
         Assert.True(aSeamProjection.NbPoints() > 0);
         // OCCT changes the (frozen) interpolated curve in place: the port uses the twin.
         aSecondProfile = aSecondProfile.WithOrigin(aSeamProjection.LowerDistanceParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
         aProfiles[2] = aSecondProfile;
-        double aFirstProfileMiddle = 0.5 * (aFirstProfile.FirstParameter() + aFirstProfile.LastParameter());
-        double aSecondProfileMiddle = 0.5 * (aSecondProfile.FirstParameter() + aSecondProfile.LastParameter());
-        Point3D aSecondSeam = aSecondProfile.Value(aSecondProfile.FirstParameter());
+        double aFirstProfileMiddle = 0.5 * (aFirstProfile.FirstParameter + aFirstProfile.LastParameter);
+        double aSecondProfileMiddle = 0.5 * (aSecondProfile.FirstParameter + aSecondProfile.LastParameter);
+        Point3D aSecondSeam = aSecondProfile.Value(aSecondProfile.FirstParameter);
         Point3D aFirstMiddle = aFirstProfile.Value(aFirstProfileMiddle);
         Point3D aSecondMiddle = aSecondProfile.Value(aSecondProfileMiddle);
-        Assert.True(aFirstSeam.Distance(new Point3D(aSecondSeam.X(), aFirstSeam.Y(), aSecondSeam.Z())) <= global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.True(aFirstMiddle.Distance(new Point3D(aSecondMiddle.X(), aFirstMiddle.Y(), aSecondMiddle.Z())) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFirstSeam.DistanceTo(new Point3D(aSecondSeam.X, aFirstSeam.Y, aSecondSeam.Z)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFirstMiddle.DistanceTo(new Point3D(aSecondMiddle.X, aFirstMiddle.Y, aSecondMiddle.Z)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         NCollection_Array1<Curve3D> aGuides =
-          Curves(makeLinearBSpline(aFirstProfile.Value(aFirstProfile.FirstParameter()), aSecondProfile.Value(aSecondProfile.FirstParameter())),
+          Curves(makeLinearBSpline(aFirstProfile.Value(aFirstProfile.FirstParameter), aSecondProfile.Value(aSecondProfile.FirstParameter)),
                  makeLinearBSpline(aFirstProfile.Value(aFirstProfileMiddle), aSecondProfile.Value(aSecondProfileMiddle)),
-                 makeLinearBSpline(aFirstProfile.Value(aFirstProfile.FirstParameter()), aSecondProfile.Value(aSecondProfile.FirstParameter())));
+                 makeLinearBSpline(aFirstProfile.Value(aFirstProfile.FirstParameter), aSecondProfile.Value(aSecondProfile.FirstParameter)));
 
         Gordon aGordon = new();
         aGordon.Init(aProfiles, aGuides, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -725,17 +725,17 @@ public class GeomFill_Gordon_Test
         double aMiddleV = VMid(aSurface);
         Surface.ResD1 aFirstSeamD1 = aSurface.EvalD1(aSurface.UKnot(1), aMiddleV);
         Surface.ResD1 aLastSeamD1 = aSurface.EvalD1(aSurface.UKnot(aSurface.UKnotCount), aMiddleV);
-        Assert.True(aFirstSeamD1.D1U.Angle(aLastSeamD1.D1U) <= global::Kerf.Engine.Foundation.Precision.Angular());
+        Assert.True(aFirstSeamD1.D1U.AngleTo(aLastSeamD1.D1U) <= global::Kerf.Engine.Foundation.Precision.Angular());
 
         const int THE_NB_SAMPLES = 16;
         for (int aSampleIdx = 0; aSampleIdx <= THE_NB_SAMPLES; ++aSampleIdx)
         {
             double aRatio = (double)aSampleIdx / THE_NB_SAMPLES;
             double aU = aSurface.UKnot(1) + aRatio * (aSurface.UKnot(aSurface.UKnotCount) - aSurface.UKnot(1));
-            double aFirstProfileParam = aFirstProfile.FirstParameter() + aRatio * (aFirstProfile.LastParameter() - aFirstProfile.FirstParameter());
-            double aSecondProfileParam = aSecondProfile.FirstParameter() + aRatio * (aSecondProfile.LastParameter() - aSecondProfile.FirstParameter());
-            Assert.True(aSurface.Value(aU, aSurface.VKnot(1)).Distance(aFirstProfile.Value(aFirstProfileParam)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
-            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.VKnotCount)).Distance(aSecondProfile.Value(aSecondProfileParam))
+            double aFirstProfileParam = aFirstProfile.FirstParameter + aRatio * (aFirstProfile.LastParameter - aFirstProfile.FirstParameter);
+            double aSecondProfileParam = aSecondProfile.FirstParameter + aRatio * (aSecondProfile.LastParameter - aSecondProfile.FirstParameter);
+            Assert.True(aSurface.Value(aU, aSurface.VKnot(1)).DistanceTo(aFirstProfile.Value(aFirstProfileParam)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+            Assert.True(aSurface.Value(aU, aSurface.VKnot(aSurface.VKnotCount)).DistanceTo(aSecondProfile.Value(aSecondProfileParam))
                         <= global::Kerf.Engine.Foundation.Precision.Confusion());
         }
     }
@@ -763,7 +763,7 @@ public class GeomFill_Gordon_Test
         Point3D aFirstCenter = aGordon.Surface().Value(0.5, 0.5);
         aGordon.Perform();
         Assert.True(aGordon.IsDone, aGordon.Status().ToString());
-        Assert.True(aFirstCenter.Distance(aGordon.Surface().Value(0.5, 0.5)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.True(aFirstCenter.DistanceTo(aGordon.Surface().Value(0.5, 0.5)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -797,15 +797,15 @@ public class GeomFill_Gordon_Test
         {
             double aU = aUMin + i * (aUMax - aUMin) / THE_NB_SAMPLES;
             Point3D aSurfPt = aSurf.Value(aU, aVMin);
-            Assert.Equal(0.0, aSurfPt.Y(), 0.01);
-            Assert.Equal(0.0, aSurfPt.Z(), 0.01);
+            Assert.Equal(0.0, aSurfPt.Y, 0.01);
+            Assert.Equal(0.0, aSurfPt.Z, 0.01);
         }
         for (int i = 0; i <= THE_NB_SAMPLES; ++i)
         {
             double aU = aUMin + i * (aUMax - aUMin) / THE_NB_SAMPLES;
             Point3D aSurfPt = aSurf.Value(aU, aVMax);
-            Assert.Equal(1.0, aSurfPt.Y(), 0.01);
-            Assert.Equal(0.0, aSurfPt.Z(), 0.01);
+            Assert.Equal(1.0, aSurfPt.Y, 0.01);
+            Assert.Equal(0.0, aSurfPt.Z, 0.01);
         }
     }
 
@@ -826,11 +826,11 @@ public class GeomFill_Gordon_Test
         double aYMin = RealLast(), aYMax = -RealLast();
         for (int i = 0; i < 4; ++i)
         {
-            Assert.Equal(0.0, aCorners[i].Z(), 0.01);
-            aXMin = Math.Min(aXMin, aCorners[i].X());
-            aXMax = Math.Max(aXMax, aCorners[i].X());
-            aYMin = Math.Min(aYMin, aCorners[i].Y());
-            aYMax = Math.Max(aYMax, aCorners[i].Y());
+            Assert.Equal(0.0, aCorners[i].Z, 0.01);
+            aXMin = Math.Min(aXMin, aCorners[i].X);
+            aXMax = Math.Max(aXMax, aCorners[i].X);
+            aYMin = Math.Min(aYMin, aCorners[i].Y);
+            aYMax = Math.Max(aYMax, aCorners[i].Y);
         }
         Assert.Equal(0.0, aXMin, 0.01);
         Assert.Equal(1.0, aXMax, 0.01);
@@ -854,8 +854,8 @@ public class GeomFill_Gordon_Test
         double aVMid = VMid(aSurf);
         Point3D aP1 = aSurf.Value(aUMid * 0.5, aVMid);
         Point3D aP2 = aSurf.Value(aUMid * 1.5, aVMid);
-        Assert.Equal(0.6328125, aP1.Z(), 1.0e-9);
-        Assert.Equal(-0.6328125, aP2.Z(), 1.0e-9);
+        Assert.Equal(0.6328125, aP1.Z, 1.0e-9);
+        Assert.Equal(-0.6328125, aP2.Z, 1.0e-9);
     }
 
     [Fact]
@@ -867,7 +867,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(0.5, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
+        Assert.Equal(0.5, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.05);
     }
 
     [Fact]
@@ -888,11 +888,11 @@ public class GeomFill_Gordon_Test
         for (int i = 0; i <= THE_NB; ++i)
         {
             double aU = aUMin + i * (aUMax - aUMin) / THE_NB;
-            Assert.Equal(0.0, aSurf.Value(aU, aVMin).Y(), 0.01);
-            Assert.Equal(1.0, aSurf.Value(aU, aVMax).Y(), 0.01);
+            Assert.Equal(0.0, aSurf.Value(aU, aVMin).Y, 0.01);
+            Assert.Equal(1.0, aSurf.Value(aU, aVMax).Y, 0.01);
             double aV = aVMin + i * (aVMax - aVMin) / THE_NB;
-            Assert.Equal(0.0, aSurf.Value(aUMin, aV).X(), 0.01);
-            Assert.Equal(1.0, aSurf.Value(aUMax, aV).X(), 0.01);
+            Assert.Equal(0.0, aSurf.Value(aUMin, aV).X, 0.01);
+            Assert.Equal(1.0, aSurf.Value(aUMax, aV).X, 0.01);
         }
     }
 
@@ -908,9 +908,9 @@ public class GeomFill_Gordon_Test
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
         Point3D aMidPt = aSurf.Value(UMid(aSurf), VMid(aSurf));
-        Assert.Equal(500.0, aMidPt.X(), 1.0);
-        Assert.Equal(500.0, aMidPt.Y(), 1.0);
-        Assert.Equal(0.0, aMidPt.Z(), 1.0);
+        Assert.Equal(500.0, aMidPt.X, 1.0);
+        Assert.Equal(500.0, aMidPt.Y, 1.0);
+        Assert.Equal(0.0, aMidPt.Z, 1.0);
     }
 
     [Fact]
@@ -949,7 +949,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(0.0, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.01);
+        Assert.Equal(0.0, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.01);
     }
 
     [Fact]
@@ -964,7 +964,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(0.0, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.5);
+        Assert.Equal(0.0, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.5);
     }
 
     [Fact]
@@ -1023,7 +1023,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(0.35, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
+        Assert.Equal(0.35, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.05);
     }
 
     [Fact]
@@ -1047,7 +1047,7 @@ public class GeomFill_Gordon_Test
         {
             double aU = aUMin + i * aStep;
             aSurf.D1(aU, aV, out Point3D _, out Vector3D aDU, out Vector3D _);
-            double aDUChange = aDU.Subtracted(aPrevDU).Magnitude();
+            double aDUChange = aDU.Subtracted(aPrevDU).Magnitude;
             Assert.True(aDUChange < THE_DERIV_TOL, $"DU jump at U={aU}: {aDUChange}");
             aPrevDU = aDU;
         }
@@ -1080,7 +1080,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(0.3, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
+        Assert.Equal(0.3, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.05);
     }
 
     [Fact]
@@ -1094,7 +1094,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         Point3D aMid2 = aGordon.Surface().Value(UMid(aGordon.Surface()), VMid(aGordon.Surface()));
-        Assert.Equal(0.0, aMid1.Distance(aMid2), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aMid1.DistanceTo(aMid2), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(Gordon.ResultStatus.Done, aGordon.Report().Status);
     }
 
@@ -1126,7 +1126,7 @@ public class GeomFill_Gordon_Test
                 double aX = (double)j / (THE_NB - 1);
                 double aY = (double)i / (THE_NB - 1);
                 Point3D aSurfPt = aSurf.Value(aUMin + aX * (aUMax - aUMin), aVMin + aY * (aVMax - aVMin));
-                Assert.Equal(0.0, aSurfPt.Z(), 0.02);
+                Assert.Equal(0.0, aSurfPt.Z, 0.02);
             }
         }
     }
@@ -1148,8 +1148,8 @@ public class GeomFill_Gordon_Test
         {
             double aT = i / 10.0;
             double aU = aUMin + aT * (aUMax - aUMin);
-            Assert.True(aSurf.Value(aU, aVMin).Distance(aProfiles[1].Value(aT)) < 0.05);
-            Assert.True(aSurf.Value(aU, aVMax).Distance(aProfiles[2].Value(aT)) < 0.05);
+            Assert.True(aSurf.Value(aU, aVMin).DistanceTo(aProfiles[1].Value(aT)) < 0.05);
+            Assert.True(aSurf.Value(aU, aVMax).DistanceTo(aProfiles[2].Value(aT)) < 0.05);
         }
     }
 
@@ -1164,7 +1164,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(aZ, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.01);
+        Assert.Equal(aZ, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.01);
     }
 
     [Fact]
@@ -1184,7 +1184,7 @@ public class GeomFill_Gordon_Test
             for (int j = 0; j <= 5; ++j)
             {
                 Point3D aPt = aSurf.Value(aUMin + i * (aUMax - aUMin) / 5.0, aVMin + j * (aVMax - aVMin) / 5.0);
-                Assert.Equal(aPt.X() + aPt.Y(), aPt.Z(), 0.05);
+                Assert.Equal(aPt.X + aPt.Y, aPt.Z, 0.05);
             }
         }
     }
@@ -1200,8 +1200,8 @@ public class GeomFill_Gordon_Test
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
         Point3D aMidPt = aSurf.Value(UMid(aSurf), VMid(aSurf));
-        Assert.Equal(1.0, aMidPt.X(), 0.1);
-        Assert.Equal(1.5, aMidPt.Y(), 0.1);
+        Assert.Equal(1.0, aMidPt.X, 0.1);
+        Assert.Equal(1.5, aMidPt.Y, 0.1);
     }
 
     [Fact]
@@ -1213,7 +1213,7 @@ public class GeomFill_Gordon_Test
         aGordon.Perform();
         Assert.True(aGordon.IsDone);
         BSplineSurface aSurf = aGordon.Surface();
-        Assert.Equal(0.6, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z(), 0.05);
+        Assert.Equal(0.6, aSurf.Value(UMid(aSurf), VMid(aSurf)).Z, 0.05);
     }
 
     private static NCollection_Array1<double> Halves() => Reals(0.0, 0.5, 1.0);
@@ -1436,8 +1436,8 @@ public class GeomFill_Gordon_Test
                 double aV = aVMin + aVParam * (aVMax - aVMin);
                 Point3D aProfilePoint = aProfiles.At(0).Value(aUParam);
                 Point3D aGuidePoint = aGuides.At(0).Value(aVParam);
-                Point3D anExpectedPoint = new(aProfilePoint.X(), aGuidePoint.Y(), 0.0);
-                aMaxDeviation = Math.Max(aMaxDeviation, aSurface.Value(aU, aV).Distance(anExpectedPoint));
+                Point3D anExpectedPoint = new(aProfilePoint.X, aGuidePoint.Y, 0.0);
+                aMaxDeviation = Math.Max(aMaxDeviation, aSurface.Value(aU, aV).DistanceTo(anExpectedPoint));
             }
         }
         Assert.True(aMaxDeviation <= 0.002);
@@ -1521,7 +1521,7 @@ public class GeomFill_Gordon_Test
             Point3D aCenter = aGordon.Surface().Value(0.5, 0.5);
             if (aFirstCenter is { } aFirst)
             {
-                Assert.Equal(0.0, aFirst.Distance(aCenter), global::Kerf.Engine.Foundation.Precision.Confusion());
+                Assert.Equal(0.0, aFirst.DistanceTo(aCenter), global::Kerf.Engine.Foundation.Precision.Confusion());
             }
             aFirstCenter = aCenter;
         }
@@ -1617,7 +1617,7 @@ public class GeomFill_Gordon_Test
             {
                 double aU = (double)aUIdx / THE_NB_SAMPLES;
                 double aV = (double)aVIdx / THE_NB_SAMPLES;
-                Assert.True(aSerial.Surface().Value(aU, aV).Distance(aParallel.Surface().Value(aU, aV)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                Assert.True(aSerial.Surface().Value(aU, aV).DistanceTo(aParallel.Surface().Value(aU, aV)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
     }
@@ -1642,7 +1642,7 @@ public class GeomFill_Gordon_Test
             {
                 double aU = (double)aUIdx / THE_NB_SAMPLES;
                 double aV = (double)aVIdx / THE_NB_SAMPLES;
-                Assert.True(aFirstSurface.Value(aU, aV).Distance(aGordon.Surface().Value(aU, aV)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                Assert.True(aFirstSurface.Value(aU, aV).DistanceTo(aGordon.Surface().Value(aU, aV)) <= global::Kerf.Engine.Foundation.Precision.Confusion());
             }
         }
     }
@@ -1658,7 +1658,7 @@ public class GeomFill_Gordon_Test
     {
         NCollection_Array1<Curve3D> aProfiles = Curves(makeClosedBSplineProfile(0.0, 1.0, 1.0), makeClosedBSplineProfile(1.0, 1.15, 0.85));
         Assert.False(((BSplineCurve3D)aProfiles[1]).IsPeriodic);
-        Assert.True(aProfiles[1].Value(aProfiles[1].FirstParameter()).Distance(aProfiles[1].Value(aProfiles[1].LastParameter()))
+        Assert.True(aProfiles[1].Value(aProfiles[1].FirstParameter).DistanceTo(aProfiles[1].Value(aProfiles[1].LastParameter))
                     <= global::Kerf.Engine.Foundation.Precision.Confusion());
 
         NCollection_Array1<double> aGuideParameters = Reals(0.12, 0.34, 0.59, 0.83);

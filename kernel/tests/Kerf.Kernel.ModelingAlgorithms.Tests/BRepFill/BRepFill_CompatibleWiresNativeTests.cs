@@ -152,7 +152,7 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
             for (int i = 0; i < anInEdges.Count; i++)
             {
                 aOut.Append(string.Join(",", aCW.GeneratedShapes(ShapeCasts.Edge(anInEdges[i]))
-                                              .Select(s => anOutEdges.IndexOf(s) + 1 + Orient(s.Orientation()))));
+                                              .Select(s => anOutEdges.IndexOf(s) + 1 + Orient(s.Orientation))));
                 aOut.Append(';');
             }
             aOut.Append('\n');

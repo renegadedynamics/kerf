@@ -41,7 +41,7 @@ public static class TheCurveLocatorOfTheProjPCurOfGInter
         for (int noSample = 1; noSample < nbU; noSample++, u += pasU)
         {
             pt = Geom2dCurveTool.Value(c, u);
-            dist2 = pt.SquareDistance(p);
+            dist2 = pt.SquareDistanceTo(p);
             if (dist2 < dist2Min)
             {
                 dist2Min = dist2;
@@ -93,7 +93,7 @@ public static class TheCurveLocatorOfTheProjPCurOfGInter
         for (int noSample = 1; noSample < nbU; noSample++, u += pasU)
         {
             pt = Geom2dCurveTool.Value(c, u);
-            dist2 = pt.SquareDistance(p);
+            dist2 = pt.SquareDistanceTo(p);
             if (dist2 < dist2Min)
             {
                 dist2Min = dist2;

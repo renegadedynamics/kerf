@@ -240,7 +240,7 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
                 for (int k = 0; k < aNArray.Length; k++)
                 {
                     anOracle.Same(aNFaces.FindIndex(aNArray[k]), aPFaces.IndexOf(aPList[k]) + 1, $"{aWhat}: sorted face {k}");
-                    anOracle.Same((int)aNArray[k].Orientation(), (int)aPList[k].Orientation(), $"{aWhat}: sorted face {k}");
+                    anOracle.Same((int)aNArray[k].Orientation(), (int)aPList[k].Orientation, $"{aWhat}: sorted face {k}");
                     aValues += 2;
                 }
             }
@@ -405,8 +405,8 @@ public class BRepLibRegularityOracleTests(ITestOutputHelper output) : IDisposabl
             anAx3 = new CoordinateSystem(theOracle.Pnt(), Oracle.Settled(theOracle.Dir()));
             using N.gp_Ax3 aNCheck = Oracle.ToNative(anAx3);
             using N.gp_Dir aNX = aNCheck.XDirection(), aNY = aNCheck.YDirection(), aNZ = aNCheck.Direction();
-            if (Oracle.FromNative(aNX.XYZ()) == anAx3.XDirection().XYZ() && Oracle.FromNative(aNY.XYZ()) == anAx3.YDirection().XYZ()
-                && Oracle.FromNative(aNZ.XYZ()) == anAx3.Direction().XYZ())
+            if (Oracle.FromNative(aNX.XYZ()) == anAx3.XDirection.XYZ() && Oracle.FromNative(aNY.XYZ()) == anAx3.YDirection.XYZ()
+                && Oracle.FromNative(aNZ.XYZ()) == anAx3.Direction.XYZ())
             {
                 break;
             }

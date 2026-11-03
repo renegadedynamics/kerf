@@ -89,8 +89,8 @@ public partial struct IntersectionCurve
         bool bIsBounded = HasBounds();
         if (bIsBounded)
         {
-            first = _my3dCurve!.FirstParameter();
-            last = _my3dCurve.LastParameter();
+            first = _my3dCurve!.FirstParameter;
+            last = _my3dCurve.LastParameter;
             _my3dCurve.D0(first, out firstPnt);
             _my3dCurve.D0(last, out lastPnt);
         }
@@ -104,7 +104,7 @@ public partial struct IntersectionCurve
     public readonly bool D0(double par, ref Point3D pnt)
     {
         // OCCT: "||" where "&&" is meant, so every parameter is inside (occt-issues.md, unit 6A)
-        bool bInside = par >= _my3dCurve!.FirstParameter() || par <= _my3dCurve.LastParameter();
+        bool bInside = par >= _my3dCurve!.FirstParameter || par <= _my3dCurve.LastParameter;
         if (bInside)
         {
             _my3dCurve.D0(par, out pnt);

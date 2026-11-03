@@ -14,10 +14,10 @@ public readonly partial struct Transform3D
     /// <summary>The 3D transformation that applies <paramref name="t"/> in the XY plane and leaves Z unchanged.</summary>
     public Transform3D(in Transform2D t)
     {
-        _scale = t.ScaleFactor();
-        _shape = t.Form();
-        _loc = new Xyz(t.TranslationPart().X(), t.TranslationPart().Y(), 0.0);
-        Matrix2x2 m = t.HVectorialPart();
+        _scale = t.ScaleFactor;
+        _shape = t.Form;
+        _loc = new Xyz(t.TranslationXy().X(), t.TranslationXy().Y(), 0.0);
+        Matrix2x2 m = t.RotationPart;
         _matrix = new Matrix3x3(m[1, 1], m[1, 2], 0.0,
                                 m[2, 1], m[2, 2], 0.0,
                                 0.0, 0.0, 1.0);

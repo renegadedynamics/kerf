@@ -54,8 +54,8 @@ public sealed class AnalyticLin2dTanObl
     /// <summary>The line through ThePoint making the angle TheAngle with TheLine.</summary>
     public AnalyticLin2dTanObl(in Point2D thePoint, in Line2D theLine, double theAngle) : this(1)
     {
-        double cosa = theLine.Direction().X();
-        double sina = theLine.Direction().Y();
+        double cosa = theLine.Direction.X;
+        double sina = theLine.Direction.Y;
         _linsol[1] = new Line2D(thePoint,
                                  // ==============================
                                  new Direction2D(cosa * Math.Cos(theAngle) - sina * Math.Sin(theAngle),
@@ -110,8 +110,8 @@ public sealed class AnalyticLin2dTanObl
         {
             throw new BadQualifierException();
         }
-        double cosa = theLine.Direction().X();
-        double sina = theLine.Direction().Y();
+        double cosa = theLine.Direction.X;
+        double sina = theLine.Direction.Y;
         if (qualified1.IsEnclosed)
         {
             // ============================
@@ -120,13 +120,13 @@ public sealed class AnalyticLin2dTanObl
         else
         {
             Circle2D c1 = qualified1.Qualified();
-            double r1 = c1.Radius();
+            double r1 = c1.Radius;
             if (qualified1.IsEnclosing)
             {
                 //   =============================
                 Xy xy = new(Math.Cos(theAngle) * cosa - Math.Sin(theAngle) * sina,
                                Math.Cos(theAngle) * sina + Math.Sin(theAngle) * cosa);
-                _pnttg1sol[1] = new Point2D(c1.Location().XY() + r1 * new Xy(xy.Y(), -xy.X()));
+                _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * new Xy(xy.Y(), -xy.X()));
                 _linsol[1] = new Line2D(_pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[1] = qualified1.Qualifier();
@@ -149,7 +149,7 @@ public sealed class AnalyticLin2dTanObl
                 //   ================================
                 Xy xy = new(Math.Cos(theAngle) * cosa - Math.Sin(theAngle) * sina,
                                Math.Cos(theAngle) * sina + Math.Sin(theAngle) * cosa);
-                _pnttg1sol[1] = new Point2D(c1.Location().XY() + r1 * new Xy(-xy.Y(), xy.X()));
+                _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * new Xy(-xy.Y(), xy.X()));
                 _linsol[1] = new Line2D(_pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[1] = qualified1.Qualifier();
@@ -172,7 +172,7 @@ public sealed class AnalyticLin2dTanObl
                 //   ====================================
                 Xy xy = new(Math.Cos(theAngle) * cosa - Math.Sin(theAngle) * sina,
                                Math.Cos(theAngle) * sina + Math.Sin(theAngle) * cosa);
-                _pnttg1sol[1] = new Point2D(c1.Location().XY() + r1 * new Xy(xy.Y(), -xy.X()));
+                _pnttg1sol[1] = new Point2D(c1.Location.XY() + r1 * new Xy(xy.Y(), -xy.X()));
                 _linsol[1] = new Line2D(_pnttg1sol[1], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[1] = Qualifier.Enclosing;
@@ -189,7 +189,7 @@ public sealed class AnalyticLin2dTanObl
                         }
                     }
                 }
-                _pnttg1sol[2] = new Point2D(c1.Location().XY() + r1 * new Xy(-xy.Y(), xy.X()));
+                _pnttg1sol[2] = new Point2D(c1.Location.XY() + r1 * new Xy(-xy.Y(), xy.X()));
                 _linsol[2] = new Line2D(_pnttg1sol[2], new Direction2D(xy));
                 //     ===============================================
                 _qualifier1[2] = Qualifier.Outside;

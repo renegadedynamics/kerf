@@ -143,7 +143,7 @@ public class GeomFill_CorrectedFrenetTests
         CorrectedFrenet aLaw = Law(Helix());
         Vector3D aT = new(), aN = new(), aB = new();
         aLaw.GetAverageLaw(ref aT, ref aN, ref aB);
-        Assert.True(aT.Magnitude() > 0.1);
+        Assert.True(aT.Magnitude > 0.1);
         AssertNear(aT.Crossed(aN), aB, 1.0e-12, "B = T ^ N");
     }
 
@@ -190,8 +190,8 @@ public class GeomFill_CorrectedFrenetTests
         AssertNear(new Vector3D(0, 0, 1), new Vector3D(M.Column(3)), 1.0e-2, "T");
         Assert.Equal(1.0, Math.Abs(M.Column(1).X()), 1.0e-3);
         Point3D aOnGuide = aTri.CurrentPointOnGuide();
-        Assert.Equal(2.0, aOnGuide.X(), 1.0e-9);
-        Assert.Equal(1.5, aOnGuide.Z(), 2.0e-2);
+        Assert.Equal(2.0, aOnGuide.X, 1.0e-9);
+        Assert.Equal(1.5, aOnGuide.Z, 2.0e-2);
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public class GeomFill_CorrectedFrenetTests
             Assert.True(aLaw.SampleCount < 12_000, $"offset {k}: {aLaw.SampleCount} samples");
             foreach (double t in new[] { 0.13, 0.5, 0.77 })
             {
-                double u = anOffset.FirstParameter() + t * (anOffset.LastParameter() - anOffset.FirstParameter());
+                double u = anOffset.FirstParameter + t * (anOffset.LastParameter - anOffset.FirstParameter);
                 AssertOrthonormal(D0(aLaw, u), 1.0e-9);
             }
         }

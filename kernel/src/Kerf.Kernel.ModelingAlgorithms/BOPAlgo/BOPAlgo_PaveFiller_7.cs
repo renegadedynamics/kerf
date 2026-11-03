@@ -364,13 +364,13 @@ public partial class PaveFiller
                 pb.Range(out t1, out t2);
                 //
                 e = ShapeCasts.Edge(_ds.Shape(nE));
-                e.Orientation(Forward);
+                e.Orient(Forward);
                 //
                 v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
-                v1.Orientation(Forward);
+                v1.Orient(Forward);
                 //
                 v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
-                v2.Orientation(Reversed);
+                v2.Orient(Reversed);
                 //
                 SplitEdgeAlgorithm bse =  new SplitEdgeAlgorithm();
                 vbse.Add(bse);
@@ -447,13 +447,13 @@ public partial class PaveFiller
         si.SetShapeType(ShapeType.Edge);
         //
         e = ShapeCasts.Edge(_ds!.Shape(nE));
-        e.Orientation(Forward);
+        e.Orient(Forward);
         //
         v1 = ShapeCasts.Vertex(_ds.Shape(nV1));
-        v1.Orientation(Forward);
+        v1.Orient(Forward);
         //
         v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
-        v2.Orientation(Reversed);
+        v2.Orient(Reversed);
         //
         AlgoTools.MakeSplitEdge(e, v1, aT1, v2, aT2, out sp);
         //
@@ -505,7 +505,7 @@ public partial class PaveFiller
             nF1 = fi.Index();
             //
             f1F = ShapeCasts.Face(_ds.Shape(nF1));
-            f1F.Orientation(Forward);
+            f1F.Orient(Forward);
             // In
             IndexedSet<PaveBlock> mpbIn = fi.PaveBlocksIn();
             nbPBIn = mpbIn.Count;
@@ -573,16 +573,16 @@ public partial class PaveFiller
                             Edge ez;
                             //
                             ez = ex;
-                            ez.Orientation(Forward);
+                            ez.Orient(Forward);
                             //
                             pBx.Indices(out nV1x, out nV2x);
                             pBx.Range(out t1x, out t2x);
                             //
                             v1x = ShapeCasts.Vertex(_ds.Shape(nV1x));
-                            v1x.Orientation(Forward);
+                            v1x.Orient(Forward);
                             //
                             v2x = ShapeCasts.Vertex(_ds.Shape(nV2x));
-                            v2x.Orientation(Reversed);
+                            v2x.Orient(Reversed);
                             //
                             mpc.SetData(ez, v1x, t1x, v2x, t2x);
                             //
@@ -622,10 +622,10 @@ public partial class PaveFiller
                 ff.Indices(out nF[0], out nF[1]);
                 //
                 aFf[0] = ShapeCasts.Face(_ds.Shape(nF[0]));
-                aFf[0].Orientation(Forward);
+                aFf[0].Orient(Forward);
                 //
                 aFf[1] = ShapeCasts.Face(_ds.Shape(nF[1]));
-                aFf[1].Orientation(Forward);
+                aFf[1].Orient(Forward);
                 //
                 for (k = 0; k < nbC; ++k)
                 {
@@ -723,7 +723,7 @@ public partial class PaveFiller
         BrepBuilder bb = new();
         //
         ef = aE;
-        ef.Orientation(Forward);
+        ef.Orient(Forward);
         //
         Exploration.Vertices(ef, out v[0], out v[1]);
         //
@@ -740,7 +740,7 @@ public partial class PaveFiller
             c2D.D0(t[j], out p2Dx);
             p2Dx.Coord(out ux, out vx);
             s.D0(ux, vx, out p3Dx);
-            d2 = p3D.SquareDistance(p3Dx);
+            d2 = p3D.SquareDistanceTo(p3Dx);
             if (d2 > tolV2)
             {
                 d = Math.Sqrt(d2);
@@ -850,7 +850,7 @@ public partial class PaveFiller
         grts = s as TrimmedSurface;
         if (grts is not null)
         {
-            gp = grts.BasisSurface() as PlaneSurface;
+            gp = grts.BasisSurface as PlaneSurface;
         }
         else
         {

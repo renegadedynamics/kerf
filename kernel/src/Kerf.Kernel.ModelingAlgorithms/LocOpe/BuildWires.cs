@@ -50,7 +50,7 @@ public sealed class BuildWires
         for (; itl.More(); itl.Next())
         {
             Shape edg = itl.Value();
-            if (theMap.Add(edg) && edg.ShapeType() == ShapeType.Edge)
+            if (theMap.Add(edg) && edg.Type == ShapeType.Edge)
             {
                 b.Add(c, edg.Oriented(Forward)); // orientation importante pour
                 // appel a TopExp::Vertices
@@ -138,7 +138,7 @@ public sealed class BuildWires
                 for (j = 1; j <= mapE.Count; j++)
                 {
                     Edge edg = ShapeCasts.Edge(mapE[j - 1]);
-                    if (edg.Orientation() == Forward)
+                    if (edg.Orientation == Forward)
                     {
                         vf = Exploration.FirstVertex(edg);
                     }

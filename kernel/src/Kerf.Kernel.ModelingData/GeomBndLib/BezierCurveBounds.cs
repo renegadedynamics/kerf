@@ -28,7 +28,7 @@ public sealed class BezierCurveBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>Compute bounding box for arc [theU1, theU2].</summary>
     public Box Box(double u1, double u2, double tol)
@@ -36,7 +36,7 @@ public sealed class BezierCurveBounds : CurveBounds.ICurveEvaluator
         const double weakness = 1.5;
         CurveAdaptor gaCurve = new(_geom);
         Box sampledBox = new();
-        double deflection = SplineHelpers.FillBox(ref sampledBox, gaCurve, u1, u2, _geom.Degree());
+        double deflection = SplineHelpers.FillBox(ref sampledBox, gaCurve, u1, u2, _geom.Degree);
         sampledBox.Enlarge(weakness * deflection);
         Box box = new();
         SplineHelpers.ReduceSplineBox(_geom.InternalPoles(), sampledBox, ref box);

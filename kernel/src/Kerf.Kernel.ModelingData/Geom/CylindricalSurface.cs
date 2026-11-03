@@ -36,8 +36,8 @@ public class CylindricalSurface : ElementarySurface
     /// <summary>A cylinder from a gp cylinder.</summary>
     public CylindricalSurface(in Cylinder c)
     {
-        _radius = c.Radius();
-        _pos = c.Position();
+        _radius = c.Radius;
+        _pos = c.Position;
     }
 
     public sealed override Geometry3D Copy()
@@ -54,7 +54,7 @@ public class CylindricalSurface : ElementarySurface
     public sealed override double VReversedParameter(double v) => (-v);
 
     /// <summary>The radius.</summary>
-    public double Radius() => _radius;
+    public double Radius => _radius;
 
     /// <summary>True.</summary>
     public sealed override bool IsUClosed => true;
@@ -71,8 +71,8 @@ public class CylindricalSurface : ElementarySurface
     internal void SetCylinder(in Cylinder c)
     {
         CheckMutable();
-        _radius = c.Radius();
-        _pos = c.Position();
+        _radius = c.Radius;
+        _pos = c.Position;
     }
 
     /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
@@ -104,7 +104,7 @@ public class CylindricalSurface : ElementarySurface
     }
 
     /// <summary>U in [0, 2*PI], V infinite.</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = 2.0 * M_PI;
@@ -116,7 +116,7 @@ public class CylindricalSurface : ElementarySurface
     /// The coefficients of the implicit equation in the absolute system:
     /// A1.X**2 + A2.Y**2 + A3.Z**2 + 2.(B1.X.Y + B2.X.Z + B3.Y.Z) + 2.(C1.X + C2.Y + C3.Z) + D = 0.
     /// </summary>
-    public void Coefficients(out double a1,
+    internal void Coefficients(out double a1,
                              out double a2,
                              out double a3,
                              out double b1,
@@ -149,23 +149,23 @@ public class CylindricalSurface : ElementarySurface
     }
 
     /// <summary>The non-persistent gp cylinder with the same geometry.</summary>
-    public Cylinder Cylinder() => new Cylinder(_pos, _radius);
+    public Cylinder Cylinder => new Cylinder(_pos, _radius);
 
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         Point3D p;
         global::Kerf.Engine.Geometry.ElSLib.CylinderD0(u, v, _pos, _radius, out p);
         return p;
     }
 
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 result;
         global::Kerf.Engine.Geometry.ElSLib.CylinderD1(u, v, _pos, _radius, out result.Point, out result.D1U, out result.D1V);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 result;
         global::Kerf.Engine.Geometry.ElSLib.CylinderD2(u,
@@ -181,7 +181,7 @@ public class CylindricalSurface : ElementarySurface
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 result;
         global::Kerf.Engine.Geometry.ElSLib.CylinderD3(u,
@@ -202,7 +202,7 @@ public class CylindricalSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -235,25 +235,25 @@ public class CylindricalSurface : ElementarySurface
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor());
+        _radius = _radius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 
     /// <summary>V scaled by |T.ScaleFactor()| (unless infinite); U unchanged.</summary>
-    public sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
+    internal sealed override void TransformParameters(ref double u, ref double v, in Transform3D t)
     {
         if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(v))
         {
-            v *= Math.Abs(t.ScaleFactor());
+            v *= Math.Abs(t.ScaleFactor);
         }
     }
 
     /// <summary>An affinity of ratio |T.ScaleFactor()| along V.</summary>
-    public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
+    internal sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor()));
+        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor));
         return t2;
     }
 }

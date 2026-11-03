@@ -211,7 +211,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         }
         if (aS is TrimmedSurface aTrimmed)
         {
-            aS = aTrimmed.BasisSurface();
+            aS = aTrimmed.BasisSurface;
         }
         return aS is PlaneSurface;
     }
@@ -296,7 +296,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 if (!aV.IsNull)
                 {
                     Point3D aP = Tool.Pnt(aV);
-                    anEnds[k] = Q(aP.X()) + Q(aP.Y()) + Q(aP.Z());
+                    anEnds[k] = Q(aP.X) + Q(aP.Y) + Q(aP.Z);
                 }
             }
             if (string.CompareOrdinal(anEnds[1], anEnds[0]) < 0)
@@ -310,7 +310,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             Vertex aV = ShapeCasts.Vertex(aMap[i]);
             Point3D aP = Tool.Pnt(aV);
-            aLines.Add($"V {Q(aP.X())}{Q(aP.Y())}{Q(aP.Z())} {Q(Tool.Tolerance(aV))}");
+            aLines.Add($"V {Q(aP.X)}{Q(aP.Y)}{Q(aP.Z)} {Q(Tool.Tolerance(aV))}");
         }
         aLines.Sort(StringComparer.Ordinal);
         string aJoined = string.Concat(aLines.Select(l => l + "\n"));
@@ -337,8 +337,8 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         string aRes = " " + theCurves.Length().ToString(CultureInfo.InvariantCulture);
         if (theBary is LineCurve3D aLine)
         {
-            Point3D aP = aLine.Lin().Location();
-            aRes += $" {D(aP.X())} {D(aP.Y())} {D(aP.Z())}";
+            Point3D aP = aLine.Line.Location;
+            aRes += $" {D(aP.X)} {D(aP.Y)} {D(aP.Z)}";
         }
         return aRes;
     }
@@ -416,7 +416,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 Edge anE2 = anEdges[anEdges.Count / 2];
                 Middle(anE1, out double aPrm1, out Point3D aP1);
                 Middle(anE2, out double aPrm2, out Point3D aP2);
-                if (aP1.Distance(aP2) < 1e-3)
+                if (aP1.DistanceTo(aP2) < 1e-3)
                 {
                     return null;
                 }
@@ -444,12 +444,12 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 Surface aSurf = Tool.Surface(aF)!;
                 if (aSurf is TrimmedSurface aTrimmed)
                 {
-                    aSurf = aTrimmed.BasisSurface();
+                    aSurf = aTrimmed.BasisSurface;
                 }
-                Plane3D aPln = ((PlaneSurface)aSurf).Pln();
-                Point3D aC = Tool.Surface(aF)!.Value(aUV.X(), aUV.Y());
+                Plane3D aPln = ((PlaneSurface)aSurf).Plane;
+                Point3D aC = Tool.Surface(aF)!.Value(aUV.X, aUV.Y);
                 double aR = 0.1 * Math.Min(u2 - u1, v2 - v1);
-                var aCirc = new Circle3D(new Frame3D(aC, aPln.Axis().Direction()), aR);
+                var aCirc = new Circle3D(new Frame3D(aC, aPln.Axis.Direction), aR);
                 Wire aW = new MakeWire(new MakeEdge(aCirc).Edge()).Wire();
                 var aSplit = new LocalSplitShape(S);
                 bool isOk = aSplit.Add(aW, aF);
@@ -519,9 +519,9 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                     for (var anExp = new Explorer(aF, ShapeType.Vertex); anExp.More(); anExp.Next())
                     {
                         Point3D aP = Tool.Pnt(ShapeCasts.Vertex(anExp.Current()));
-                        aMin[0] = Min(aMin[0], aP.X());
-                        aMin[1] = Min(aMin[1], aP.Y());
-                        aMin[2] = Min(aMin[2], aP.Z());
+                        aMin[0] = Min(aMin[0], aP.X);
+                        aMin[1] = Min(aMin[1], aP.Y);
+                        aMin[2] = Min(aMin[2], aP.Z);
                     }
                     if (aMin[0] > 1e99)
                     {
@@ -590,7 +590,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 double aZMin = 1e100;
                 for (var anExp = new Explorer(aF, ShapeType.Vertex); anExp.More(); anExp.Next())
                 {
-                    aZMin = Min(aZMin, Tool.Pnt(ShapeCasts.Vertex(anExp.Current())).Z());
+                    aZMin = Min(aZMin, Tool.Pnt(ShapeCasts.Vertex(anExp.Current())).Z);
                 }
                 var aDrafts = new SplitDrafts(S);
                 aDrafts.Perform(aF, new MakeWire(anE).Wire(), Constants.DZ(), new Plane3D(new Point3D(0, 0, aZMin), Constants.DZ()),

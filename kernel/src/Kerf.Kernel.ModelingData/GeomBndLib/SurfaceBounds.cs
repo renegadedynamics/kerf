@@ -42,7 +42,7 @@ public sealed class SurfaceBounds
     private static Surface? UnwrapSurface(Surface? surf)
     {
         TrimmedSurface? trim = surf as TrimmedSurface;
-        return trim is null ? surf : UnwrapSurface(trim.BasisSurface());
+        return trim is null ? surf : UnwrapSurface(trim.BasisSurface);
     }
 
     /// <summary>Construct from an adaptor surface.</summary>
@@ -106,7 +106,7 @@ public sealed class SurfaceBounds
         if (surf is TrimmedSurface trim)
         {
             _adaptorOwned = new SurfaceAdaptor(surf);
-            if (!InitFromSurface(trim.BasisSurface()))
+            if (!InitFromSurface(trim.BasisSurface))
             {
                 _evaluator = new OtherSurfaceBounds(_adaptorOwned);
             }

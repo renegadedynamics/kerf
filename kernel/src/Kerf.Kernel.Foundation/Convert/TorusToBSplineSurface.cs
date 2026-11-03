@@ -112,8 +112,8 @@ public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
         _nbUKnots = nbUSpans + 1;
         _nbVKnots = nbVSpans + 1;
 
-        double R = t.MajorRadius();
-        double r = t.MinorRadius();
+        double R = t.MajorRadius;
+        double r = t.MinorRadius;
 
         ComputePoles(R, r, u1, u2, v1, v2, _poles);
 
@@ -135,7 +135,7 @@ public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline in the reference of the torus.
         // and calculate the weight of the bspline.
         double w1, w2;
-        Transform3D trsf = new Transform3D().WithTransformation(t.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(t.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -184,8 +184,8 @@ public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
         _isUPeriodic = !uTrim;
         _isVPeriodic = uTrim;
 
-        double R = t.MajorRadius();
-        double r = t.MinorRadius();
+        double R = t.MajorRadius;
+        double r = t.MinorRadius;
 
         double w1, w2, cosU, cosV;
 
@@ -250,7 +250,7 @@ public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // Replace the bspline in the reference of the torus.
         // and calculate the weight of the bspline.
-        Transform3D trsf = new Transform3D().WithTransformation(t.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(t.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -298,8 +298,8 @@ public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // Construction of the Torus in the reference mark xOy.
 
-        double R = t.MajorRadius();
-        double r = t.MinorRadius();
+        double R = t.MajorRadius;
+        double r = t.MinorRadius;
 
         ComputePoles(R, r, 0.0, 2.0 * M_PI, 0.0, 2.0 * M_PI, _poles);
 
@@ -314,7 +314,7 @@ public class TorusToBSplineSurface : ElementarySurfaceToBSplineSurface
 
         // Replace the bspline in the mark of the torus.
         // and calculate the weight of the bspline.
-        Transform3D trsf = new Transform3D().WithTransformation(t.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(t.Position, new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {

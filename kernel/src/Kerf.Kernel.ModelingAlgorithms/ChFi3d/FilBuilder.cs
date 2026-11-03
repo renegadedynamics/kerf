@@ -180,7 +180,7 @@ public partial class FilBuilder : FilletBuilderBase
             FilSpine? spine = (sp as FilSpine);
 
             Edge E_wnt = E;
-            E_wnt.Orientation(Forward);
+            E_wnt.Orient(Forward);
             spine.SetEdges(E_wnt);
             if (PerformElement(spine, -1, dummy))
             {
@@ -451,26 +451,26 @@ public partial class FilBuilder : FilletBuilderBase
         switch (typ)
         {
             case SurfaceKind.Cylinder: {
-                u1 = p1f.X();
-                u2 = p2f.X();
-                v1 = Max(p1f.Y(), p2f.Y());
-                v2 = Min(p1l.Y(), p2l.Y());
+                u1 = p1f.X;
+                u2 = p2f.X;
+                v1 = Max(p1f.Y, p2f.Y);
+                v2 = Min(p1l.Y, p2l.Y);
                 sec = new NCollection_HArray1<CircSection>(1, 2);
                 Cylinder cy = AS.Cylinder();
                 ref CircSection sec1 = ref sec.ChangeValue(1);
                 ref CircSection sec2 = ref sec.ChangeValue(2);
-                sec1.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cy.Position(), cy.Radius(), v1), u1, u2);
-                sec2.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cy.Position(), cy.Radius(), v2), u1, u2);
+                sec1.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cy.Position, cy.Radius, v1), u1, u2);
+                sec2.Set(global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cy.Position, cy.Radius, v2), u1, u2);
             }
             break;
             case SurfaceKind.Torus: {
-                v1 = p1f.Y();
-                v2 = p2f.Y();
-                u1 = Max(p1f.X(), p2f.X());
-                u2 = Min(p1l.X(), p2l.X());
+                v1 = p1f.Y;
+                v2 = p2f.Y;
+                u1 = Max(p1f.X, p2f.X);
+                u2 = Min(p1l.X, p2l.X);
                 double ang = (u2 - u1);
                 Torus to = AS.Torus();
-                double majr = to.MajorRadius(), minr = to.MinorRadius();
+                double majr = to.MajorRadius, minr = to.MinorRadius;
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
                 {
@@ -481,18 +481,18 @@ public partial class FilBuilder : FilletBuilderBase
                 {
                     ref CircSection isec = ref sec.ChangeValue(i);
                     double u = u1 + (i - 1) * (u2 - u1) / (n - 1);
-                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.TorusUIso(to.Position(), majr, minr, u), v1, v2);
+                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.TorusUIso(to.Position, majr, minr, u), v1, v2);
                 }
             }
             break;
             case SurfaceKind.Sphere: {
-                v1 = p1f.Y();
-                v2 = p2f.Y();
-                u1 = Max(p1f.X(), p2f.X());
-                u2 = Min(p1l.X(), p2l.X());
+                v1 = p1f.Y;
+                v2 = p2f.Y;
+                u1 = Max(p1f.X, p2f.X);
+                u2 = Min(p1l.X, p2l.X);
                 double ang = (u2 - u1);
                 Sphere sp = AS.Sphere();
-                double rad = sp.Radius();
+                double rad = sp.Radius;
                 int n = (int)(36.0 * ang / M_PI + 1);
                 if (n < 2)
                 {
@@ -503,7 +503,7 @@ public partial class FilBuilder : FilletBuilderBase
                 {
                     ref CircSection isec = ref sec.ChangeValue(i);
                     double u = u1 + (i - 1) * (u2 - u1) / (n - 1);
-                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.SphereUIso(sp.Position(), rad, u), v1, v2);
+                    isec.Set(global::Kerf.Engine.Geometry.ElSLib.SphereUIso(sp.Position, rad, u), v1, v2);
                 }
             }
             break;
@@ -1157,7 +1157,7 @@ public partial class FilBuilder : FilletBuilderBase
         }
         bool gd1 = false, gd2 = false, gf1 = false, gf2 = false, maybesingular = false;
         global::Kerf.Engine.Fillets.Blend.Line? lin = null;
-        Orientation or = s1.Face().Orientation();
+        Orientation or = s1.Face().Orientation;
         double pFirst = first;
         if (intf != 0)
         {
@@ -1279,7 +1279,7 @@ public partial class FilBuilder : FilletBuilderBase
                 spine.SetErrorStatus(ErrorStatus.WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            Orientation or = hs2.Face().Orientation();
+            Orientation or = hs2.Face().Orientation;
             _done = CompleteData(data, func, lin, hs1, hs2, or, true);
             if (!_done)
             {
@@ -1318,7 +1318,7 @@ public partial class FilBuilder : FilletBuilderBase
                 spine.SetErrorStatus(ErrorStatus.WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            Orientation or = hs2.Face().Orientation();
+            Orientation or = hs2.Face().Orientation;
             _done = CompleteData(data, func, lin, hs1, hs2, or, true);
             if (!_done)
             {
@@ -1380,7 +1380,7 @@ public partial class FilBuilder : FilletBuilderBase
                 spine.SetErrorStatus(ErrorStatus.WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            Orientation or = hs1.Face().Orientation();
+            Orientation or = hs1.Face().Orientation;
             _done = CompleteData(data, func, lin, hs1, hs2, or, false);
             if (!_done)
             {
@@ -1420,7 +1420,7 @@ public partial class FilBuilder : FilletBuilderBase
                 spine.SetErrorStatus(ErrorStatus.WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            Orientation or = hs1.Face().Orientation();
+            Orientation or = hs1.Face().Orientation;
             _done = CompleteData(data, func, lin, hs1, hs2, or, false);
             if (!_done)
             {
@@ -1490,7 +1490,7 @@ public partial class FilBuilder : FilletBuilderBase
                 spine.SetErrorStatus(ErrorStatus.WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            Orientation or = hs1.Face().Orientation();
+            Orientation or = hs1.Face().Orientation;
             _done = CompleteData(data, func, lin, hs1, hs2, or);
             if (!_done)
             {
@@ -1542,7 +1542,7 @@ public partial class FilBuilder : FilletBuilderBase
                 spine.SetErrorStatus(ErrorStatus.WalkingFailure);
                 throw new FailureException("PerformSurf : Failed processing!");
             }
-            Orientation or = hs1.Face().Orientation();
+            Orientation or = hs1.Face().Orientation;
             _done = CompleteData(data, func, lin, hs1, hs2, or);
             if (!_done)
             {
@@ -1573,7 +1573,7 @@ public partial class FilBuilder : FilletBuilderBase
 
         iSurf = @ref.Surf();
         Surface? surf = dStr.Surface(iSurf).Surface();
-        surf.Bounds(out uFirst, out uLast, out vFirst, out vLast);
+        surf.ParameterBounds(out uFirst, out uLast, out vFirst, out vLast);
         Curve3D? courbe1 = surf.UIso(uFirst);
         Curve3D? courbe2 = surf.UIso(uLast);
         SearchSing fonc = new(courbe1, courbe2);
@@ -1598,10 +1598,10 @@ public partial class FilBuilder : FilletBuilderBase
         }
         p = line.Point(ii);
         b = p.Parameter();
-        courant = p.PointOnS1().Distance(p.PointOnS2());
+        courant = p.PointOnS1().DistanceTo(p.PointOnS2());
         p = line.Point(ii - 1);
         a = p.Parameter();
-        precedant = p.PointOnS1().Distance(p.PointOnS2());
+        precedant = p.PointOnS1().DistanceTo(p.PointOnS2());
         ii++;
 
         // (1.2) Find a minimum by "points"
@@ -1615,7 +1615,7 @@ public partial class FilBuilder : FilletBuilderBase
 
             BlendPoint pnt = line.Point(ii);
             c = pnt.Parameter();
-            suivant = pnt.PointOnS1().Distance(pnt.PointOnS2());
+            suivant = pnt.PointOnS1().DistanceTo(pnt.PointOnS2());
             if ((courant < precedant) && (courant < suivant))
             {
                 // (1.3) Find the exact minimum
@@ -1688,7 +1688,7 @@ public partial class FilBuilder : FilletBuilderBase
                 courbe1.D0(t, out p1);
                 courbe2.D0(t, out p2);
                 p3d = p3d.WithXYZ((p1.XYZ() + p2.XYZ()) / 2);
-                vertexTol = p1.Distance(p2);
+                vertexTol = p1.DistanceTo(p2);
                 vertexTol += Max(c1.Tolerance(), c2.Tolerance());
 
                 sd.ChangeVertexLastOnS1().SetPoint(p3d);

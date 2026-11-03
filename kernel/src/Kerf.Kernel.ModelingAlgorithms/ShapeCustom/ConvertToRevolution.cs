@@ -33,11 +33,11 @@ public class ConvertToRevolution : CustomModification
         {
             if (s is TrimmedSurface rts)
             {
-                es = rts.BasisSurface() as ElementarySurface;
+                es = rts.BasisSurface as ElementarySurface;
             }
             else if (s is OffsetSurface os)
             {
-                es = os.BasisSurface() as ElementarySurface;
+                es = os.BasisSurface as ElementarySurface;
             }
             if (es is null)
             {
@@ -83,38 +83,38 @@ public class ConvertToRevolution : CustomModification
           }
         */
 
-        CoordinateSystem ax3 = es!.Position();
-        Point3D pos = ax3.Location();
-        Direction3D dir = ax3.Direction();
-        Direction3D x = ax3.XDirection();
+        CoordinateSystem ax3 = es!.Position;
+        Point3D pos = ax3.Location;
+        Direction3D dir = ax3.Direction;
+        Direction3D x = ax3.XDirection;
 
         // create basis line to rotate
         Curve3D? basisCurve = null;
         if (es is SphericalSurface ss)
         {
             Frame3D ax2 = new Frame3D(pos, x.Crossed(dir), x);
-            CircleCurve3D circ = new CircleCurve3D(ax2, ss.Radius());
+            CircleCurve3D circ = new CircleCurve3D(ax2, ss.Radius);
             basisCurve = new TrimmedCurve3D(circ, -M_PI / 2.0, M_PI / 2.0);
         }
         else if (es is ToroidalSurface ts)
         {
-            Frame3D ax2 = new Frame3D(new Point3D(pos.XYZ() + x.XYZ() * ts.MajorRadius()), x.Crossed(dir), x);
-            basisCurve = new CircleCurve3D(ax2, ts.MinorRadius());
+            Frame3D ax2 = new Frame3D(new Point3D(pos.XYZ() + x.XYZ() * ts.MajorRadius), x.Crossed(dir), x);
+            basisCurve = new CircleCurve3D(ax2, ts.MinorRadius);
         }
         else if (es is CylindricalSurface cs)
         {
-            Axis3D ax1 = new Axis3D(new Point3D(pos.XYZ() + x.XYZ() * cs.Radius()), dir);
+            Axis3D ax1 = new Axis3D(new Point3D(pos.XYZ() + x.XYZ() * cs.Radius), dir);
             basisCurve = new LineCurve3D(ax1);
         }
         else if (es is ConicalSurface coS)
         {
-            Direction3D n = new Direction3D(dir.XYZ() + x.XYZ() * Math.Tan(coS.SemiAngle()));
-            Axis3D ax1 = new Axis3D(new Point3D(pos.XYZ() + x.XYZ() * coS.RefRadius()), n);
+            Direction3D n = new Direction3D(dir.XYZ() + x.XYZ() * Math.Tan(coS.SemiAngle));
+            Axis3D ax1 = new Axis3D(new Point3D(pos.XYZ() + x.XYZ() * coS.RefRadius), n);
             basisCurve = new LineCurve3D(ax1);
         }
 
         // create revolution with proper U parametrization
-        Axis3D axis = ax3.Axis();
+        Axis3D axis = ax3.Axis;
 
         // if the surface is indirect (taking into account locations), reverse dir
 
@@ -126,7 +126,7 @@ public class ConvertToRevolution : CustomModification
           bool isdir = Ax3.Direct();
           if ( ( neg != det ) == isdir ) Axis.Reverse();
         */
-        if (!ax3.Direct())
+        if (!ax3.IsDirect)
         {
             axis = axis.Reversed();
         }
@@ -142,12 +142,12 @@ public class ConvertToRevolution : CustomModification
         {
             if (s is TrimmedSurface rts)
             {
-                rts.Bounds(out double u1, out double u2, out double v1, out double v2);
+                rts.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
                 s = new TrimmedSurface(rev, u1, u2, v1, v2);
             }
             else if (s is OffsetSurface os)
             {
-                s = new OffsetSurface(rev, os.Offset());
+                s = new OffsetSurface(rev, os.Offset);
             }
             else
             {

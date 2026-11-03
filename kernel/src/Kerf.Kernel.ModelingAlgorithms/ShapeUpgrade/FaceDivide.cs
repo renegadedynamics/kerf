@@ -105,7 +105,7 @@ public class FaceDivide : UpgradeTool
         }
 
         // myResult should be face; else return with FAIL
-        if (_result.IsNull || _result.ShapeType() != ShapeType.Face)
+        if (_result.IsNull || _result.Type != ShapeType.Face)
         {
             _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL3);
             return false;
@@ -123,7 +123,7 @@ public class FaceDivide : UpgradeTool
         }
 
         // make little extension to ensure all pcurves fit inside new surface bounds
-        surf.Bounds(out double sUf, out double sUl, out double sVf, out double sVl);
+        surf.ParameterBounds(out double sUf, out double sUl, out double sVf, out double sVl);
         if (!surf.IsUPeriodic)
         {
             double dU = (ul - uf) * 0.01;
@@ -213,7 +213,7 @@ public class FaceDivide : UpgradeTool
             Shape s = Context()!.InternalApply(explf.Current(), ShapeType.Shape);
 
             // S should be face; else return with FAIL
-            if (s.IsNull || s.ShapeType() != ShapeType.Face)
+            if (s.IsNull || s.Type != ShapeType.Face)
             {
                 _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL3);
                 return false;
@@ -225,7 +225,7 @@ public class FaceDivide : UpgradeTool
             {
                 // TopoDS_Wire wire = TopoDS::Wire ( wi.Value() );
                 //  modifications already defined in context are to be applied inside SplitWire
-                if (wi.Value().ShapeType() != ShapeType.Wire)
+                if (wi.Value().Type != ShapeType.Wire)
                 {
                     continue;
                 }

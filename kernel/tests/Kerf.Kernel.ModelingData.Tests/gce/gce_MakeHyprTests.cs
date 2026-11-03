@@ -19,8 +19,8 @@ public class gce_MakeHyprTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola3D aHypr = aMaker.Value();
-        Assert.Equal(10.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -31,8 +31,8 @@ public class gce_MakeHyprTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola3D aHypr = aMaker.Value();
-        Assert.Equal(3.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(7.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -87,8 +87,8 @@ public class gce_MakeHyprTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola3D aHypr = aMaker.Value();
-        Assert.Equal(10.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -103,8 +103,8 @@ public class gce_MakeHyprTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola3D aHypr = aMaker.Value();
-        Assert.Equal(3.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(7.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -179,8 +179,8 @@ public class gce_MakeHypr2dTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola2D aHypr = aMaker.Value();
-        Assert.Equal(10.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -191,8 +191,8 @@ public class gce_MakeHypr2dTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola2D aHypr = aMaker.Value();
-        Assert.Equal(3.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(7.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -231,8 +231,8 @@ public class gce_MakeHypr2dTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola2D aHypr = aMaker.Value();
-        Assert.Equal(10.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(10.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -247,8 +247,8 @@ public class gce_MakeHypr2dTest
         Assert.Equal(Done, aMaker.Status());
 
         Hyperbola2D aHypr = aMaker.Value();
-        Assert.Equal(3.0, aHypr.MajorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(7.0, aHypr.MinorRadius(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aHypr.MajorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(7.0, aHypr.MinorRadius, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

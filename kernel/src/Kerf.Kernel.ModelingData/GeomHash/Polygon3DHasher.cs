@@ -55,12 +55,12 @@ public sealed class Polygon3DHasher : IEqualityComparer<Polygon3D?>
         if (poly.NodeCount > 0)
         {
             NCollection_Array1<Point3D> nodes = poly.Nodes();
-            combined[3] = HashUtils.QuantizedHash(nodes.First().X(), factor);
-            combined[4] = HashUtils.QuantizedHash(nodes.First().Y(), factor);
-            combined[5] = HashUtils.QuantizedHash(nodes.First().Z(), factor);
-            combined[6] = HashUtils.QuantizedHash(nodes.Last().X(), factor);
-            combined[7] = HashUtils.QuantizedHash(nodes.Last().Y(), factor);
-            combined[8] = HashUtils.QuantizedHash(nodes.Last().Z(), factor);
+            combined[3] = HashUtils.QuantizedHash(nodes.First().X, factor);
+            combined[4] = HashUtils.QuantizedHash(nodes.First().Y, factor);
+            combined[5] = HashUtils.QuantizedHash(nodes.First().Z, factor);
+            combined[6] = HashUtils.QuantizedHash(nodes.Last().X, factor);
+            combined[7] = HashUtils.QuantizedHash(nodes.Last().Y, factor);
+            combined[8] = HashUtils.QuantizedHash(nodes.Last().Z, factor);
             if (poly.HasParameters)
             {
                 NCollection_Array1<double> aParams = poly.Parameters();
@@ -101,8 +101,8 @@ public sealed class Polygon3DHasher : IEqualityComparer<Polygon3D?>
         {
             Point3D p1 = nodes1.Value(idx);
             Point3D p2 = nodes2.Value(idx);
-            if (Math.Abs(p1.X() - p2.X()) > CompTolerance || Math.Abs(p1.Y() - p2.Y()) > CompTolerance
-                || Math.Abs(p1.Z() - p2.Z()) > CompTolerance)
+            if (Math.Abs(p1.X - p2.X) > CompTolerance || Math.Abs(p1.Y - p2.Y) > CompTolerance
+                || Math.Abs(p1.Z - p2.Z) > CompTolerance)
             {
                 return false;
             }

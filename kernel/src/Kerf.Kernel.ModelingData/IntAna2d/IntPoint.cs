@@ -111,6 +111,6 @@ public partial struct IntPoint : IEquatable<IntPoint>
 
     public override readonly string ToString()
         => _myimplicit
-               ? Constants.Format("IntAna2d_IntPoint", _myp.X(), _myp.Y(), _myu1)
-               : Constants.Format("IntAna2d_IntPoint", _myp.X(), _myp.Y(), _myu1, _myu2);
+               ? Constants.Format("IntAna2d_IntPoint", _myp.X, _myp.Y, _myu1)
+               : Constants.Format("IntAna2d_IntPoint", _myp.X, _myp.Y, _myu1, _myu2);
 }

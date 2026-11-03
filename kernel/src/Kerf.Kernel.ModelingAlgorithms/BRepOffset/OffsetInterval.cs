@@ -15,14 +15,14 @@ namespace Kerf.Engine.Offsets;
 /// A value type (OCCT's class is used by value). OCCT's default constructor leaves the fields uninitialised;
 /// <c>default</c> here is (0, 0, <see cref="TypeOfConcavity.Concave"/>).
 /// </remarks>
-public partial struct Interval : IEquatable<Interval>
+public partial struct OffsetInterval : IEquatable<OffsetInterval>
 {
     private double _f;
     private double _l;
     private TypeOfConcavity _type;
 
     /// <summary>The range [<paramref name="u1"/>, <paramref name="u2"/>] of type <paramref name="type"/>.</summary>
-    public Interval(double u1, double u2, TypeOfConcavity type)
+    public OffsetInterval(double u1, double u2, TypeOfConcavity type)
     {
         _f = u1;
         _l = u2;
@@ -45,26 +45,26 @@ public partial struct Interval : IEquatable<Interval>
     public readonly TypeOfConcavity Type() => _type;
 
     /// <summary>A copy with the first parameter <paramref name="u"/>.</summary>
-    public readonly Interval WithFirst(double u) => new(u, _l, _type);
+    public readonly OffsetInterval WithFirst(double u) => new(u, _l, _type);
 
     /// <summary>A copy with the last parameter <paramref name="u"/>.</summary>
-    public readonly Interval WithLast(double u) => new(_f, u, _type);
+    public readonly OffsetInterval WithLast(double u) => new(_f, u, _type);
 
     /// <summary>A copy with the type <paramref name="t"/>.</summary>
-    public readonly Interval WithType(TypeOfConcavity t) => new(_f, _l, t);
+    public readonly OffsetInterval WithType(TypeOfConcavity t) => new(_f, _l, t);
 
     /// <inheritdoc/>
-    public readonly bool Equals(Interval other) => _f.Equals(other._f) && _l.Equals(other._l) && _type == other._type;
+    public readonly bool Equals(OffsetInterval other) => _f.Equals(other._f) && _l.Equals(other._l) && _type == other._type;
 
     /// <inheritdoc/>
-    public override readonly bool Equals(object? obj) => obj is Interval other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is OffsetInterval other && Equals(other);
 
     /// <inheritdoc/>
     public override readonly int GetHashCode() => HashCode.Combine(_f, _l, _type);
 
-    public static bool operator ==(Interval left, Interval right) => left.Equals(right);
+    public static bool operator ==(OffsetInterval left, OffsetInterval right) => left.Equals(right);
 
-    public static bool operator !=(Interval left, Interval right) => !left.Equals(right);
+    public static bool operator !=(OffsetInterval left, OffsetInterval right) => !left.Equals(right);
 
     /// <inheritdoc/>
     public override readonly string ToString() => Constants.Format("BRepOffset_Interval", _f, _l)[..^1] + ", " + _type + ")";

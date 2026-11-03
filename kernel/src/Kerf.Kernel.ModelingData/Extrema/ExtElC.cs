@@ -118,7 +118,7 @@ public class ExtElC
             _sqDist[idx] = RealLast();
         }
 
-        Direction3D d1 = c1.Position().Direction(), d2 = c2.Position().Direction();
+        Direction3D d1 = c1.Position.Direction, d2 = c2.Position.Direction;
         double cosA = d1.Dot(d2);
         double sqSinA = 1.0 - cosA * cosA;
         double u1 = 0.0, u2 = 0.0;
@@ -128,7 +128,7 @@ public class ExtElC
         }
         else
         {
-            Xyz l1L2 = c2.Location().XYZ() - c1.Location().XYZ();
+            Xyz l1L2 = c2.Location.XYZ() - c1.Location.XYZ();
             double d1L = d1.XYZ().Dot(l1L2), d2L = d2.XYZ().Dot(l1L2);
             u1 = (d1L - cosA * d2L) / sqSinA;
             u2 = (cosA * d1L - d2L) / sqSinA;
@@ -138,7 +138,7 @@ public class ExtElC
 
         if (_isPar)
         {
-            _sqDist[0] = c2.SquareDistance(c1.Location());
+            _sqDist[0] = c2.SquareDistanceTo(c1.Location);
             _nbExt = 1;
             _done = true;
             return;
@@ -147,7 +147,7 @@ public class ExtElC
         // Here myIsPar == false;
 
         Point3D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1), p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
-        _sqDist[_nbExt] = p1.SquareDistance(p2);
+        _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
         _point[2 * _nbExt] = new POnCurv(u1, p1);
         _point[2 * _nbExt + 1] = new POnCurv(u2, p2);
         _nbExt = 1;
@@ -157,7 +157,7 @@ public class ExtElC
     /// <summary>Computes the extrema when the line and the circle are in one plane.</summary>
     protected bool PlanarLineCircleExtrema(in Line3D lin, in Circle3D circ)
     {
-        Direction3D dirC = circ.Axis().Direction(), dirL = lin.Direction();
+        Direction3D dirC = circ.Axis.Direction, dirL = lin.Direction;
 
         if (Math.Abs(dirC.Dot(dirL)) > global::Kerf.Engine.Foundation.Precision.Angular())
         {
@@ -169,12 +169,12 @@ public class ExtElC
         // Therefore, we are looking for extremas and
         // intersections in 2D-space.
 
-        Xyz cLoc = circ.Location().XYZ();
-        Xyz dCx = circ.Position().XDirection().XYZ(),
-               dCy = circ.Position().YDirection().XYZ();
+        Xyz cLoc = circ.Location.XYZ();
+        Xyz dCx = circ.Position.XDirection.XYZ(),
+               dCy = circ.Position.YDirection.XYZ();
 
-        Xyz lLoc = lin.Location().XYZ();
-        Xyz lDir = lin.Direction().XYZ();
+        Xyz lLoc = lin.Location.XYZ();
+        Xyz lDir = lin.Direction.XYZ();
 
         Xyz vecCL = lLoc - cLoc;
 
@@ -182,7 +182,7 @@ public class ExtElC
         Point2D pc = new(0.0, 0.0);
 
         Frame2D circAxis = new(pc, new Direction2D(Direction2D.D.X), new Direction2D(Direction2D.D.Y));
-        Circle2D circ2d = new(circAxis, circ.Radius());
+        Circle2D circ2d = new(circAxis, circ.Radius);
 
         Point2D pl = new(vecCL.Dot(dCx), vecCL.Dot(dCy));
         Direction2D dl = new(lDir.Dot(dCx), lDir.Dot(dCy));
@@ -223,10 +223,10 @@ public class ExtElC
                 circPar = inters.Point(delta).ParamOnSecond();
             }
 
-            Point3D pOnL = global::Kerf.Engine.Geometry.ElCLib.LineValue(linPar, lin.Position()),
-                   pOnC = global::Kerf.Engine.Geometry.ElCLib.CircleValue(circPar, circ.Position(), circ.Radius());
+            Point3D pOnL = global::Kerf.Engine.Geometry.ElCLib.LineValue(linPar, lin.Position),
+                   pOnC = global::Kerf.Engine.Geometry.ElCLib.CircleValue(circPar, circ.Position, circ.Radius);
 
-            _sqDist[_nbExt] = pOnL.SquareDistance(pOnC);
+            _sqDist[_nbExt] = pOnL.SquareDistanceTo(pOnC);
             _point[2 * _nbExt].SetValues(linPar, pOnL);
             _point[2 * _nbExt + 1].SetValues(circPar, pOnC);
             _nbExt++;
@@ -288,11 +288,11 @@ public class ExtElC
         }
 
         // Calculate T1 in the reference of the circle ...
-        d = c1.Direction();
+        d = c1.Direction;
         d1 = d;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
-        z2 = c2.Axis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
+        z2 = c2.Axis.Direction;
         dx = d.Dot(x2);
         dy = d.Dot(y2);
         dz = d.Dot(z2);
@@ -302,12 +302,12 @@ public class ExtElC
         d.Coord(out dx, out dy, out dz);
         //
         // Calculate V in the reference frame of the circle:
-        Point3D o1 = c1.Location();
-        Point3D o2 = c2.Location();
+        Point3D o1 = c1.Location;
+        Point3D o2 = c2.Location;
         Vector3D o2O1 = new(o2, o1);
         //
         tolRO2O1 = Constants.Resolution();
-        ro2O1 = o2O1.Magnitude();
+        ro2O1 = o2O1.Magnitude;
         if (ro2O1 > tolRO2O1)
         {
             Direction3D do2O1 = new();
@@ -327,7 +327,7 @@ public class ExtElC
         aTol = 1.0e-12;
         // Calculate the coefficients of the equation by Cos and Sin ...
         // [divided by R]
-        r = c2.Radius();
+        r = c2.Radius;
         a5 = r * dx * dy;
         a1 = -2.0 * a5;
         a2 = 0.5 * r * (dx * dx - dy * dy); // /2.;
@@ -380,7 +380,7 @@ public class ExtElC
             p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
             u1 = (new Vector3D(o1, p2)).Dot(new Vector3D(d1));
             p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-            _sqDist[_nbExt] = p1.SquareDistance(p2);
+            _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
             _point[2 * _nbExt].SetValues(u1, p1);
             _point[2 * _nbExt + 1].SetValues(u2, p2);
             _nbExt++;
@@ -431,27 +431,27 @@ public class ExtElC
         }
 
         // Calculate T1 the reference of the ellipse ...
-        Direction3D d = c1.Direction();
+        Direction3D d = c1.Direction;
         Direction3D d1 = d;
         Direction3D x2, y2, z2;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
-        z2 = c2.Axis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
+        z2 = c2.Axis.Direction;
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double dz = d.Dot(z2);
         d = d.WithCoord(dx, dy, dz);
 
         // Calculate V ...
-        Point3D o1 = c1.Location();
-        Point3D o2 = c2.Location();
+        Point3D o1 = c1.Location;
+        Point3D o2 = c2.Location;
         Vector3D o2O1 = new(o2, o1);
         o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
 
         // Calculate the coefficients of the equation by Cos and Sin ...
-        double majR = c2.MajorRadius();
-        double minR = c2.MinorRadius();
+        double majR = c2.MajorRadius;
+        double minR = c2.MinorRadius;
         double a5 = majR * minR * dx * dy;
         double a1 = -2.0 * a5;
         double R2 = majR * majR;
@@ -492,8 +492,8 @@ public class ExtElC
         if (sol.InfiniteRoots())
         {
             _isPar = true;
-            Point3D p = global::Kerf.Engine.Geometry.ElCLib.EllipseValue(0.0, c2.Position(), c2.MajorRadius(), c2.MinorRadius());
-            _sqDist[0] = c1.SquareDistance(p);
+            Point3D p = global::Kerf.Engine.Geometry.ElCLib.EllipseValue(0.0, c2.Position, c2.MajorRadius, c2.MinorRadius);
+            _sqDist[0] = c1.SquareDistanceTo(p);
             _nbExt = 1;
             _done = true;
             return;
@@ -509,7 +509,7 @@ public class ExtElC
             p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
             u1 = (new Vector3D(o1, p2)).Dot(new Vector3D(d1));
             p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-            _sqDist[_nbExt] = p1.SquareDistance(p2);
+            _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
             _point[2 * _nbExt] = new POnCurv(u1, p1);
             _point[2 * _nbExt + 1] = new POnCurv(u2, p2);
             _nbExt++;
@@ -563,20 +563,20 @@ public class ExtElC
         }
 
         // Calculate T1 in the reference of the hyperbola...
-        Direction3D d = c1.Direction();
+        Direction3D d = c1.Direction;
         Direction3D d1 = d;
         Direction3D x2, y2, z2;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
-        z2 = c2.Axis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
+        z2 = c2.Axis.Direction;
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double dz = d.Dot(z2);
         d = d.WithCoord(dx, dy, dz);
 
         // Calculate V ...
-        Point3D o1 = c1.Location();
-        Point3D o2 = c2.Location();
+        Point3D o1 = c1.Location;
+        Point3D o2 = c2.Location;
         Vector3D o2O1 = new(o2, o1);
         o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
@@ -584,8 +584,8 @@ public class ExtElC
         double vy = vxyz.Y();
 
         // Calculate coefficients of the equation by v
-        double R = c2.MajorRadius();
-        double r = c2.MinorRadius();
+        double R = c2.MajorRadius;
+        double r = c2.MinorRadius;
         double a = -2 * R * r * dx * dy;
         double b = -R * R * dx * dx - r * r * dy * dy + R * R + r * r;
         double a1 = a + b;
@@ -612,7 +612,7 @@ public class ExtElC
                 p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
                 u1 = (new Vector3D(o1, p2)).Dot(new Vector3D(d1));
                 p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-                _sqDist[_nbExt] = p1.SquareDistance(p2);
+                _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
                 _point[2 * _nbExt] = new POnCurv(u1, p1);
                 _point[2 * _nbExt + 1] = new POnCurv(u2, p2);
                 _nbExt++;
@@ -664,26 +664,26 @@ public class ExtElC
         }
 
         // Calculate T1 in the reference of the parabola...
-        Direction3D d = c1.Direction();
+        Direction3D d = c1.Direction;
         Direction3D d1 = d;
         Direction3D x2, y2, z2;
-        x2 = c2.XAxis().Direction();
-        y2 = c2.YAxis().Direction();
-        z2 = c2.Axis().Direction();
+        x2 = c2.XAxis.Direction;
+        y2 = c2.YAxis.Direction;
+        z2 = c2.Axis.Direction;
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double dz = d.Dot(z2);
         d = d.WithCoord(dx, dy, dz);
 
         // Calculate V ...
-        Point3D o1 = c1.Location();
-        Point3D o2 = c2.Location();
+        Point3D o1 = c1.Location;
+        Point3D o2 = c2.Location;
         Vector3D o2O1 = new(o2, o1);
         o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
 
         // Calculate coefficients of the equation by y
-        double p = c2.Parameter();
+        double p = c2.Parameter;
         double a1 = (1 - dx * dx) / (2.0 * p * p);
         double a2 = (-3.0 * dx * dy / (2.0 * p));
         double a3 = (1 - dy * dy + vxyz.X() / p);
@@ -705,7 +705,7 @@ public class ExtElC
             p2 = global::Kerf.Engine.Geometry.ElCLib.Value(u2, c2);
             u1 = (new Vector3D(o1, p2)).Dot(new Vector3D(d1));
             p1 = global::Kerf.Engine.Geometry.ElCLib.Value(u1, c1);
-            _sqDist[_nbExt] = p1.SquareDistance(p2);
+            _sqDist[_nbExt] = p1.SquareDistanceTo(p2);
             _point[2 * _nbExt] = new POnCurv(u1, p1);
             _point[2 * _nbExt + 1] = new POnCurv(u2, p2);
             _nbExt++;
@@ -736,14 +736,14 @@ public class ExtElC
         tolD = global::Kerf.Engine.Foundation.Precision.Confusion();
         tolD2 = tolD * tolD;
         //
-        pc1 = c1.Location();
-        dc1 = c1.Axis().Direction();
+        pc1 = c1.Location;
+        dc1 = c1.Axis.Direction;
 
-        pc2 = c2.Location();
-        dc2 = c2.Axis().Direction();
+        pc2 = c2.Location;
+        dc2 = c2.Axis.Direction;
         Plane3D plc1 = new(pc1, dc1);
         //
-        d2 = plc1.SquareDistance(pc2);
+        d2 = plc1.SquareDistanceTo(pc2);
         bIsSamePlane = dc1.IsParallel(dc2, tolA) && d2 < tolD2;
         if (!bIsSamePlane)
         {
@@ -753,7 +753,7 @@ public class ExtElC
         // Here, both circles are in the same plane.
 
         //
-        aDC2 = pc1.SquareDistance(pc2);
+        aDC2 = pc1.SquareDistanceTo(pc2);
         bIsSameAxe = aDC2 < tolD2;
         //
         if (bIsSameAxe)
@@ -761,7 +761,7 @@ public class ExtElC
             _isPar = true;
             _nbExt = 1;
             _done = true;
-            double dr = c1.Radius() - c2.Radius();
+            double dr = c1.Radius - c2.Radius;
             _sqDist[0] = dr * dr;
             return;
         }
@@ -774,8 +774,8 @@ public class ExtElC
         //
         _done = true;
         //
-        r1 = c1.Radius();
-        r2 = c2.Radius();
+        r1 = c1.Radius;
+        r2 = c2.Radius;
         //
         j1 = 0;
         j2 = 1;
@@ -789,13 +789,13 @@ public class ExtElC
             aC2 = c1;
         }
         //
-        r1 = aC1.Radius(); // max radius
-        r2 = aC2.Radius(); // min radius
+        r1 = aC1.Radius; // max radius
+        r2 = aC2.Radius; // min radius
         //
-        pc1 = aC1.Location();
-        pc2 = aC2.Location();
+        pc1 = aC1.Location;
+        pc2 = aC2.Location;
         //
-        d12 = pc1.Distance(pc2);
+        d12 = pc1.DistanceTo(pc2);
         Vector3D vec12 = new(pc1, pc2);
         Direction3D dir12 = new(vec12);
         //
@@ -815,21 +815,21 @@ public class ExtElC
         // P11, P21
         _point[j1].SetValues(t11, p11);
         _point[j2].SetValues(t21, p21);
-        _sqDist[0] = p11.SquareDistance(p21);
+        _sqDist[0] = p11.SquareDistanceTo(p21);
         // P11, P22
         _point[2 * 1 + j1].SetValues(t11, p11);
         _point[2 * 1 + j2].SetValues(t22, p22);
-        _sqDist[1] = p11.SquareDistance(p22);
+        _sqDist[1] = p11.SquareDistanceTo(p22);
         //
         // P12, P21
         _point[2 * 2 + j1].SetValues(t12, p12);
         _point[2 * 2 + j2].SetValues(t21, p21);
-        _sqDist[2] = p12.SquareDistance(p21);
+        _sqDist[2] = p12.SquareDistanceTo(p21);
         //
         // P12, P22
         _point[2 * 3 + j1].SetValues(t12, p12);
         _point[2 * 3 + j2].SetValues(t22, p22);
-        _sqDist[3] = p12.SquareDistance(p22);
+        _sqDist[3] = p12.SquareDistanceTo(p22);
         //
         // 2. Check for intersections
         bOut = d12 > (r1 + r2 + tolD);
@@ -855,7 +855,7 @@ public class ExtElC
             pl1 = new Point3D(pt.XYZ() + beta * dLt.XYZ());
             pl2 = new Point3D(pt.XYZ() - beta * dLt.XYZ());
             //
-            dist2 = pl1.SquareDistance(pl2);
+            dist2 = pl1.SquareDistanceTo(pl2);
             bNbExt6 = dist2 > tolD2;
             //
             _nbExt = 5; // just in case. see pkv/900/L4 for details

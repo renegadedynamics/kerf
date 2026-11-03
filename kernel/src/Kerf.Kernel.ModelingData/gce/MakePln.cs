@@ -40,7 +40,7 @@ public sealed class MakePln : Root
     /// <summary>A plane through P1, normal to P1P2; fails with gce_ConfusedPoints if they coincide.</summary>
     public MakePln(in Point3D p1, in Point3D p2)
     {
-        if (p1.Distance(p2) <= Constants.Resolution())
+        if (p1.DistanceTo(p2) <= Constants.Resolution())
         {
             _theError = ConfusedPoints;
         }
@@ -90,22 +90,22 @@ public sealed class MakePln : Root
     /// <summary>A plane parallel to Pl at the signed distance Dist (along its normal when positive).</summary>
     public MakePln(in Plane3D pl, double dist)
     {
-        Point3D center = new(pl.Location().XYZ() + dist * pl.Axis().Direction().XYZ());
-        _thePln = new Plane3D(new CoordinateSystem(center, pl.Axis().Direction(), pl.XAxis().Direction()));
+        Point3D center = new(pl.Location.XYZ() + dist * pl.Axis.Direction.XYZ());
+        _thePln = new Plane3D(new CoordinateSystem(center, pl.Axis.Direction, pl.XAxis.Direction));
         _theError = Done;
     }
 
     /// <summary>A plane parallel to Pl through Point.</summary>
     public MakePln(in Plane3D pl, in Point3D point)
     {
-        _thePln = new Plane3D(new CoordinateSystem(point, pl.Axis().Direction(), pl.XAxis().Direction()));
+        _thePln = new Plane3D(new CoordinateSystem(point, pl.Axis.Direction, pl.XAxis.Direction));
         _theError = Done;
     }
 
     /// <summary>A plane through the location of Axis, normal to its direction.</summary>
     public MakePln(in Axis3D axis)
     {
-        _thePln = new Plane3D(axis.Location(), axis.Direction());
+        _thePln = new Plane3D(axis.Location, axis.Direction);
         _theError = Done;
     }
 

@@ -100,9 +100,9 @@ public partial struct PolyhedronPoint : IEquatable<PolyhedronPoint>, IPolyhedron
 
         Point3D ptXYZ = mySurface.Value(_u, _v);
 
-        _x = ptXYZ.X();
-        _y = ptXYZ.Y();
-        _z = ptXYZ.Z();
+        _x = ptXYZ.X;
+        _y = ptXYZ.Y;
+        _z = ptXYZ.Z;
     }
 
     /// <summary>Makes this the cross product of a and b (U, V unchanged).</summary>

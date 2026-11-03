@@ -75,13 +75,13 @@ public class BRepLib_FuseEdgesTests
             Assert.Equal(2.0, pl - pf, 1e-12);
             Point3D aP3 = aC.Value(f);
             Point2D aP2 = aPC.Value(pf);
-            Point3D aOnPlane = Tool.Surface(aF)!.Value(aP2.X(), aP2.Y());
-            Assert.True(aP3.Distance(aOnPlane) < Conf);
+            Point3D aOnPlane = Tool.Surface(aF)!.Value(aP2.X, aP2.Y);
+            Assert.True(aP3.DistanceTo(aOnPlane) < Conf);
         }
 
         Shape aResult = aFuse.Shape();
         Assert.True(aResult.TShape()!.IsFrozen);
-        Assert.Equal(ShapeType.Face, aResult.ShapeType());
+        Assert.Equal(ShapeType.Face, aResult.Type);
         Assert.Equal(4, Count(aResult, ShapeType.Edge));
         Assert.Equal(4, Count(aResult, ShapeType.Vertex));
         var aVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
@@ -140,7 +140,7 @@ public class BRepLib_FuseEdgesTests
         var aProps = new Properties();
         MassPropertiesBuilder.SurfaceProperties(aResult, aProps);
         Assert.Equal(aProps0.Mass(), aProps.Mass(), 1e-10);
-        Assert.True(aProps0.CentreOfMass().Distance(aProps.CentreOfMass()) < 1e-9);
+        Assert.True(aProps0.CentreOfMass().DistanceTo(aProps.CentreOfMass()) < 1e-9);
 
         // each fused edge's 3D ends are its vertices
         for (var anExp = new Explorer(aResult, ShapeType.Edge); anExp.More(); anExp.Next())
@@ -148,8 +148,8 @@ public class BRepLib_FuseEdgesTests
             Edge anE = ShapeCasts.Edge(anExp.Current());
             var aC = new EdgeCurveAdaptor(anE);
             Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
-            Assert.True(aC.Value(aC.FirstParameter()).Distance(Tool.Pnt(aV1)) < Conf);
-            Assert.True(aC.Value(aC.LastParameter()).Distance(Tool.Pnt(aV2)) < Conf);
+            Assert.True(aC.Value(aC.FirstParameter()).DistanceTo(Tool.Pnt(aV1)) < Conf);
+            Assert.True(aC.Value(aC.LastParameter()).DistanceTo(Tool.Pnt(aV2)) < Conf);
         }
         aBefore.AssertUnchanged(aF);
     }
@@ -184,7 +184,7 @@ public class BRepLib_FuseEdgesTests
         Vertex aV1 = TestShapes.Vertex(new Point3D(r, 0, h));
         var aCircle = new CircleCurve3D(new Frame3D(new Point3D(), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r);
         Edge anArc1 = TestShapes.Edge(aCircle, 0, Math.PI, aV0, aVPi);
-        Edge anArc2 = TestShapes.Edge(new CircleCurve3D(aCircle.Circ()), Math.PI, aTwoPi, aVPi, aV0);
+        Edge anArc2 = TestShapes.Edge(new CircleCurve3D(aCircle.Circle), Math.PI, aTwoPi, aVPi, aV0);
         Edge aTop = TestShapes.Edge(new CircleCurve3D(new Frame3D(new Point3D(0, 0, h), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)), r),
                                            0, aTwoPi, aV1, aV1);
         Edge aSeam = TestShapes.Edge(new LineCurve3D(new Point3D(r, 0, 0), new Direction3D(0, 0, 1)), 0, h, aV0, aV1);
@@ -222,8 +222,8 @@ public class BRepLib_FuseEdgesTests
         Curve2D aPC = Tool.CurveOnSurface(aFused, ShapeCasts.Face(aResult), out double pf, out double pl)!;
         Assert.Equal(f, pf);
         Assert.Equal(l, pl);
-        Assert.Equal(0.0, aPC.Value(pf).X(), 1e-12);
-        Assert.Equal(0.0, aPC.Value(pf).Y(), 1e-12);
+        Assert.Equal(0.0, aPC.Value(pf).X, 1e-12);
+        Assert.Equal(0.0, aPC.Value(pf).Y, 1e-12);
 
         var aProps0 = new Properties();
         MassPropertiesBuilder.SurfaceProperties(aF, aProps0);
@@ -281,14 +281,14 @@ public class BRepLib_FuseEdgesTests
         aFuse.SetConcatBSpl();
         Assert.Equal(1, aFuse.NbVertices());
         Shape aResult = aFuse.Shape();
-        Assert.Equal(global::Kerf.Topology.ShapeType.Wire, aResult.ShapeType());
+        Assert.Equal(global::Kerf.Topology.ShapeType.Wire, aResult.Type);
         Assert.Equal(1, Count(aResult, ShapeType.Edge));
 
         Edge anE = ShapeCasts.Edge(Assert.Single(aFuse.ResultEdges().Values));
         BSplineCurve3D aC = Assert.IsType<BSplineCurve3D>(Tool.Curve(anE, out double f, out double l));
         Assert.True(aC.IsFrozen);
-        Assert.True(aC.Value(f).Distance(new Point3D(0, 0, 0)) < Conf);
-        Assert.True(aC.Value(l).Distance(new Point3D(4, 0, 0)) < Conf);
+        Assert.True(aC.Value(f).DistanceTo(new Point3D(0, 0, 0)) < Conf);
+        Assert.True(aC.Value(l).DistanceTo(new Point3D(4, 0, 0)) < Conf);
         // the junction is on the concatenated curve
         var anExt = new ProjectPointOnCurve(new Point3D(2, 1, 0), aC);
         Assert.True(anExt.LowerDistance() < Conf);
@@ -325,7 +325,7 @@ public class BRepLib_FuseEdgesTests
         aW = TestShapes.Frozen(aW);
         Assert.True(aC.IsFrozen);
         ShapeSnapshot aBefore = ShapeSnapshot.Of(aW);
-        double aFirst = aC.FirstParameter();
+        double aFirst = aC.FirstParameter;
 
         var aFuse = new FuseEdges(aW);
         Assert.Equal(1, aFuse.NbVertices());
@@ -335,11 +335,11 @@ public class BRepLib_FuseEdgesTests
         Assert.NotSame(aC, aNewC);
         Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
         Assert.True(aV1.IsSame(aV2));
-        Assert.True(aNewC.Value(f).Distance(Tool.Pnt(aV1)) < Conf);
-        Assert.True(aNewC.Value(l).Distance(Tool.Pnt(aV1)) < Conf);
+        Assert.True(aNewC.Value(f).DistanceTo(Tool.Pnt(aV1)) < Conf);
+        Assert.True(aNewC.Value(l).DistanceTo(Tool.Pnt(aV1)) < Conf);
         Assert.Equal(1, Count(aResult, ShapeType.Edge));
 
-        Assert.Equal(aFirst, aC.FirstParameter());
+        Assert.Equal(aFirst, aC.FirstParameter);
         aBefore.AssertUnchanged(aW);
     }
 
@@ -379,10 +379,10 @@ public class BRepLib_FuseEdgesTests
             var aPoles = new NCollection_Array1<Point2D>(1, theC.PoleCount);
             for (int i = 1; i <= theC.PoleCount; i++)
             {
-                aPoles[i] = new Point2D(theC.Pole(i).X(), theC.Pole(i).Y());
+                aPoles[i] = new Point2D(theC.Pole(i).X, theC.Pole(i).Y);
             }
             return new BSplineCurve2D(aPoles, NCollection_Array1<double>.From([0.0, 1.0]),
-                                           NCollection_Array1<int>.From([theC.PoleCount, theC.PoleCount]), theC.Degree());
+                                           NCollection_Array1<int>.From([theC.PoleCount, theC.PoleCount]), theC.Degree);
         }
         aB.UpdateEdge(anE1, To2d(aC1), aF, global::Kerf.Engine.Foundation.Precision.Confusion());
         aB.UpdateEdge(anE2, To2d(aC2), aF, global::Kerf.Engine.Foundation.Precision.Confusion());

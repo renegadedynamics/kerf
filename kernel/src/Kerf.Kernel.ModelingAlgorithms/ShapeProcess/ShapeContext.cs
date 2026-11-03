@@ -213,7 +213,7 @@ public class ShapeContext : ProcessContext
     {
         Shape r = s;
         // gka  -modification to keep history for shape with location (OCC21617)
-        Placement shLoc = s.Location();
+        Placement shLoc = s.Placement;
         var nullLoc = new Placement();
         r.Location(nullLoc);
 
@@ -231,7 +231,7 @@ public class ShapeContext : ProcessContext
                 // it is supposed that map is created for r having FORWARD orientation
                 // hence, if it is reversed, result should be reversed too
                 // INTERNAL or EXTERNAL orientations are not allowed
-                if (r.Orientation() != Forward)
+                if (r.Orientation != Forward)
                 {
                     res.Reverse();
                 }
@@ -239,10 +239,10 @@ public class ShapeContext : ProcessContext
             // Treat special case: if S was split, r will be a compound of
             // resulting shapes, each to be checked separately
             // It is supposed that repl does not contain such splitting
-            else if (r.ShapeType() < s.ShapeType())
+            else if (r.Type < s.Type)
             {
                 Shape result = r.EmptyCopied();
-                result.Orientation(Forward); // protect against INTERNAL or EXTERNAL shapes
+                result.Orient(Forward); // protect against INTERNAL or EXTERNAL shapes
                 bool modif = false;
                 var b = new BrepBuilder();
                 for (var it = new Iterator(r, false); it.More(); it.Next())
@@ -264,7 +264,7 @@ public class ShapeContext : ProcessContext
                 }
                 if (modif)
                 {
-                    if (result.ShapeType() == ShapeType.Wire || result.ShapeType() == ShapeType.Shell)
+                    if (result.Type == ShapeType.Wire || result.Type == ShapeType.Shell)
                     {
                         result.Closed(Tool.IsClosed(result));
                     }
@@ -300,7 +300,7 @@ public class ShapeContext : ProcessContext
             }
         }
 
-        if (until == global::Kerf.Topology.ShapeType.Shape || s.ShapeType() >= until)
+        if (until == global::Kerf.Topology.ShapeType.Shape || s.Type >= until)
         {
             return;
         }
@@ -358,9 +358,9 @@ public class ShapeContext : ProcessContext
                 // Treat special case: if S was split, r will be a compound of
                 // resulting shapes, recursive procedure should be applied
             }
-            else if (r.ShapeType() < s.ShapeType())
+            else if (r.Type < s.Type)
             {
-                res = repl.InternalApply(r, (ShapeType)((int)s.ShapeType() + 1));
+                res = repl.InternalApply(r, (ShapeType)((int)s.Type + 1));
                 if (res != r)
                 {
                     map[aS] = res;
@@ -392,7 +392,7 @@ public class ShapeContext : ProcessContext
             } while (!next.IsNull && cur != next);
         }
 
-        if (until == global::Kerf.Topology.ShapeType.Shape || s.ShapeType() >= until)
+        if (until == global::Kerf.Topology.ShapeType.Shape || s.Type >= until)
         {
             return;
         }
@@ -413,7 +413,7 @@ public class ShapeContext : ProcessContext
         if (_map.ContainsKey(_shape))
         {
             _result = _map.GetValue(_shape);
-            _result.Location(_shape.Location(), false);
+            _result.Location(_shape.Placement, false);
         }
         // OCCT_DEBUG: the map dumped, left out
     }
@@ -441,7 +441,7 @@ public class ShapeContext : ProcessContext
         {
             map[s] = res;
         }
-        if (until == global::Kerf.Topology.ShapeType.Shape || s.ShapeType() >= until)
+        if (until == global::Kerf.Topology.ShapeType.Shape || s.Type >= until)
         {
             return;
         }
@@ -523,7 +523,7 @@ public class ShapeContext : ProcessContext
         foreach (KeyValuePair<Shape, Shape> it in map)
         {
             Shape keyshape = it.Key, valueshape = it.Value;
-            if (keyshape.ShapeType() == ShapeType.Shell)
+            if (keyshape.Type == ShapeType.Shell)
             {
                 if (valueshape.IsNull)
                 {
@@ -534,13 +534,13 @@ public class ShapeContext : ProcessContext
                     ss++;
                 }
             }
-            else if (keyshape.ShapeType() == ShapeType.Face)
+            else if (keyshape.Type == ShapeType.Face)
             {
                 if (valueshape.IsNull)
                 {
                     fn++;
                 }
-                else if (valueshape.ShapeType() == ShapeType.Shell)
+                else if (valueshape.Type == ShapeType.Shell)
                 {
                     fs++;
                 }

@@ -48,13 +48,13 @@ internal sealed class Rotation : Trsf
             double u = first * (1.0 - t) + last * t;
             Point3D pc3d = c3d.Value(u);
             Point2D uv = c.Value(u);
-            Point3D pcons = surf.Value(uv.X(), uv.Y());
-            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.X()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Y()) || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Z()))
+            Point3D pcons = surf.Value(uv.X, uv.Y);
+            if (global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.X) || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Y) || global::Kerf.Engine.Foundation.Precision.IsInfinite(pcons.Z))
             {
                 d2 = global::Kerf.Engine.Foundation.Precision.Infinite();
                 break;
             }
-            double temp = pc3d.SquareDistance(pcons);
+            double temp = pc3d.SquareDistanceTo(pcons);
             if (temp > d2)
             {
                 d2 = temp;
@@ -112,7 +112,7 @@ internal sealed class Rotation : Trsf
         Vertex v = new();
         if (aDirV.Index() == 2)
         {
-            p = p.Transformed(_location.Transformation());
+            p = p.Transformed(_location.Transformation);
         }
         ////// modified by jgv, 1.10.01, for buc61005 //////
         // myBuilder.Builder().MakeVertex(V,P,Precision::Confusion());
@@ -130,9 +130,9 @@ internal sealed class Rotation : Trsf
     {
         Edge e = new();
         Point3D p = Tool.Pnt(ShapeCasts.Vertex(aGenV));
-        Direction3D dirz = _axe.Direction();
+        Direction3D dirz = _axe.Direction;
         var v = new Vector3D(dirz);
-        Point3D o = _axe.Location();
+        Point3D o = _axe.Location;
         o = o.Translated(v.Dot(new Vector3D(o, p)) * v);
         if (o.IsEqual(p, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
@@ -148,7 +148,7 @@ internal sealed class Rotation : Trsf
         else
         {
             var axis = new Frame3D(o, dirz, new Direction3D(new Vector3D(o, p)));
-            var gc = new CircleCurve3D(axis, o.Distance(p));
+            var gc = new CircleCurve3D(axis, o.DistanceTo(p));
             double tol = Tool.Tolerance(ShapeCasts.Vertex(aGenV));
             _builder.Builder().MakeEdge(ref e, gc, tol);
         }
@@ -171,10 +171,10 @@ internal sealed class Rotation : Trsf
             Curve3D? c = (Curve3D)Tool.Curve(ShapeCasts.Edge(aGenE), out Placement loc, out _, out _)!.Copy();
             if (c is not null)
             {
-                c.Transform(loc.Transformation());
+                c.Transform(loc.Transformation);
                 if (aDirV.Index() == 2)
                 {
-                    c.Transform(_location.Transformation());
+                    c.Transform(_location.Transformation);
                 }
             }
             _builder.Builder().MakeEdge(ref e, c, Tool.Tolerance(ShapeCasts.Edge(aGenE)));
@@ -192,7 +192,7 @@ internal sealed class Rotation : Trsf
     {
         // Glue the parameter of vertices directly included in cap faces.
         Point2D pnt2d = Tool.Parameters(ShapeCasts.Vertex(aGenV), ShapeCasts.Face(aGenF));
-        _builder.Builder().UpdateVertex(ShapeCasts.Vertex(aNewVertex), pnt2d.X(), pnt2d.Y(), ShapeCasts.Face(aNewFace),
+        _builder.Builder().UpdateVertex(ShapeCasts.Vertex(aNewVertex), pnt2d.X, pnt2d.Y, ShapeCasts.Face(aNewFace),
                                          global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
@@ -207,7 +207,7 @@ internal sealed class Rotation : Trsf
             ori = Reversed;
         }
         Vertex V_wnt = ShapeCasts.Vertex(aNewVertex);
-        V_wnt.Orientation(ori);
+        V_wnt.Orient(ori);
         _builder.Builder().UpdateVertex(V_wnt, param, ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
 
@@ -215,7 +215,7 @@ internal sealed class Rotation : Trsf
                                                 in Shape aGenV, in NumShape aDirV)
     {
         Vertex vbid = ShapeCasts.Vertex(aNewVertex);
-        vbid.Orientation(aGenV.Orientation());
+        vbid.Orient(aGenV.Orientation);
         _builder.Builder().UpdateVertex(vbid, Tool.Parameter(ShapeCasts.Vertex(aGenV), ShapeCasts.Edge(aGenE)),
                                          ShapeCasts.Edge(aNewEdge), global::Kerf.Engine.Foundation.Precision.PConfusion());
     }
@@ -225,11 +225,11 @@ internal sealed class Rotation : Trsf
         double toler;
         Face f = new();
         Surface s;
-        if (aGenS.ShapeType() == ShapeType.Edge)
+        if (aGenS.Type == ShapeType.Edge)
         {
             Curve3D c = Tool.Curve(ShapeCasts.Edge(aGenS), out Placement l, out double first, out double last)!;
             toler = Tool.Tolerance(ShapeCasts.Edge(aGenS));
-            Transform3D tr = l.Transformation();
+            Transform3D tr = l.Transformation;
             c = (Curve3D)c.Copy();
             //// modified by jgv, 9.12.03 ////
             c = new TrimmedCurve3D(c, first, last);
@@ -283,12 +283,12 @@ internal sealed class Rotation : Trsf
         {
             s = Tool.Surface(ShapeCasts.Face(aGenS), out Placement l)!;
             toler = Tool.Tolerance(ShapeCasts.Face(aGenS));
-            Transform3D tr = l.Transformation();
+            Transform3D tr = l.Transformation;
             s = (Surface)s.Copy();
             s.Transform(tr);
             if (aDirS.Index() == 2)
             {
-                s.Transform(_location.Transformation());
+                s.Transform(_location.Transformation);
             }
         }
         _builder.Builder().MakeFace(ref f, s, toler);
@@ -316,27 +316,27 @@ internal sealed class Rotation : Trsf
         if (AS.GetType() == Plane)
         {
             Plane3D pln = AS.Plane();
-            CoordinateSystem ax3 = pln.Position();
+            CoordinateSystem ax3 = pln.Position;
             Curve3D? c = Tool.Curve(ShapeCasts.Edge(aNewEdge), out loc, out _, out _);
             LineCurve3D? GL = c as LineCurve3D;
             if (GL is null)
             {
                 if (c is TrimmedCurve3D trimmedCurve)
                 {
-                    GL = trimmedCurve.BasisCurve() as LineCurve3D;
+                    GL = trimmedCurve.BasisCurve as LineCurve3D;
                     if (GL is null)
                     {
                         throw new ConstructionErrorException("BRepSweep_Rotation::SetGeneratingPCurve");
                     }
                 }
             }
-            Line3D gl = GL!.Lin();
-            gl = gl.Transformed(loc.Transformation());
-            point = gl.Location();
-            Direction3D dir = gl.Direction();
+            Line3D gl = GL!.Line;
+            gl = gl.Transformed(loc.Transformation);
+            point = gl.Location;
+            Direction3D dir = gl.Direction;
             global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(ax3, point, out u, out v);
             pnt2d = pnt2d.WithCoord(u, v);
-            dir2d = dir2d.WithCoord(dir.Dot(ax3.XDirection()), dir.Dot(ax3.YDirection()));
+            dir2d = dir2d.WithCoord(dir.Dot(ax3.XDirection), dir.Dot(ax3.YDirection));
             l = l.WithLocation(pnt2d);
             l = l.WithDirection(dir2d);
         }
@@ -346,7 +346,7 @@ internal sealed class Rotation : Trsf
             var bc = new EdgeCurveAdaptor(ShapeCasts.Edge(aNewEdge));
             double U = bc.FirstParameter();
             point = bc.Value(U);
-            if (point.Distance(tor.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+            if (point.DistanceTo(tor.Location) < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 v = Math.PI;
                 //  modified by NIZHNY-EAP Wed Mar  1 17:49:29 2000 ___BEGIN___
@@ -354,7 +354,7 @@ internal sealed class Rotation : Trsf
             }
             else
             {
-                global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), point, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position, tor.MajorRadius, tor.MinorRadius, point, out u, out v);
             }
             //    u = 0.;
             v = global::Kerf.Engine.Geometry.ElCLib.InPeriod(v, 0.0, 2 * Math.PI);
@@ -383,7 +383,7 @@ internal sealed class Rotation : Trsf
             var bc = new EdgeCurveAdaptor(ShapeCasts.Edge(aNewEdge));
             double U = bc.FirstParameter();
             point = bc.Value(U);
-            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position(), sph.Radius(), point, out u, out v);
+            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position, sph.Radius, point, out u, out v);
             u = 0.0;
             if (aDirV.Index() == 2)
             {
@@ -422,9 +422,9 @@ internal sealed class Rotation : Trsf
             case Plane:
             {
                 Plane3D pln = AS.Plane();
-                CoordinateSystem ax3 = pln.Position();
-                Point3D p1 = pln.Location();
-                double r = p1.Distance(p2);
+                CoordinateSystem ax3 = pln.Position;
+                Point3D p1 = pln.Location;
+                double r = p1.DistanceTo(p2);
                 global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(ax3, p2, out u, out v);
                 var dx2d = new Direction2D(u, v);
                 var axe = new Frame2D(Constants.Origin2d(), dx2d, Constants.DY2d());
@@ -436,7 +436,7 @@ internal sealed class Rotation : Trsf
             case SurfaceKind.Cone:
             {
                 Cone cone = AS.Cone();
-                global::Kerf.Engine.Geometry.ElSLib.ConeParameters(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p2, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.ConeParameters(cone.Position, cone.RefRadius, cone.SemiAngle, p2, out u, out v);
                 p22d = p22d.WithCoord(0.0, v);
                 var l = new Line2D(p22d, Constants.DX2d());
                 var gl = new LineCurve2D(l);
@@ -446,7 +446,7 @@ internal sealed class Rotation : Trsf
             case SurfaceKind.Sphere:
             {
                 Sphere sph = AS.Sphere();
-                global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position(), sph.Radius(), p2, out u, out v);
+                global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position, sph.Radius, p2, out u, out v);
                 p22d = p22d.WithCoord(0.0, v);
                 var l = new Line2D(p22d, Constants.DX2d());
                 var gl = new LineCurve2D(l);
@@ -460,7 +460,7 @@ internal sealed class Rotation : Trsf
                 Torus tor = AS.Torus();
                 var bc = new EdgeCurveAdaptor(ShapeCasts.Edge(aGenE));
                 p1 = bc.Value(bc.FirstParameter());
-                if (p1.Distance(tor.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (p1.DistanceTo(tor.Location) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     v1 = Math.PI;
                     //  modified by NIZHNY-EAP Thu Mar  2 09:43:26 2000 ___BEGIN___
@@ -469,22 +469,22 @@ internal sealed class Rotation : Trsf
                 }
                 else
                 {
-                    global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), p1, out u1, out v1);
+                    global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position, tor.MajorRadius, tor.MinorRadius, p1, out u1, out v1);
                 }
                 p2 = bc.Value(bc.LastParameter());
-                if (p2.Distance(tor.Location()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                if (p2.DistanceTo(tor.Location) < global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     v2 = Math.PI;
                 }
                 else
                 {
-                    global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position(), tor.MajorRadius(), tor.MinorRadius(), p2, out u2, out v2);
+                    global::Kerf.Engine.Geometry.ElSLib.TorusParameters(tor.Position, tor.MajorRadius, tor.MinorRadius, p2, out u2, out v2);
                 }
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(0.0, 2 * Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref v1, ref v2);
                 //  modified by NIZHNY-EAP Thu Mar  2 15:29:04 2000 ___BEGIN___
                 u2 = u1 + _ang;
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(-Math.PI, Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref u1, ref u2);
-                if (aGenV.Orientation() == Forward)
+                if (aGenV.Orientation == Forward)
                 {
                     p22d = p22d.WithCoord(u1, v1);
                 }
@@ -520,8 +520,8 @@ internal sealed class Rotation : Trsf
         tol2 = global::Kerf.Engine.Foundation.Precision.Confusion();
         tol2 = tol2 * tol2;
         //
-        Point3D pAxeLoc = _axe.Location();
-        Direction3D pAxeDir = _axe.Direction();
+        Point3D pAxeLoc = _axe.Location;
+        Direction3D pAxeDir = _axe.Direction;
         //
         u1 = surf.FirstUParameter();
         u2 = surf.LastUParameter();
@@ -535,7 +535,7 @@ internal sealed class Rotation : Trsf
         //
         var v = new Vector3D(pAxeLoc, p);
         v = v.Crossed(new Vector3D(pAxeDir));
-        mv2 = v.SquareMagnitude();
+        mv2 = v.SquareMagnitude;
         if (mv2 < tol2)
         {
             tx = 0.43213918;
@@ -556,8 +556,8 @@ internal sealed class Rotation : Trsf
                                          in Shape aSubGenS, in NumShape aDirS)
     {
         bool res = true;
-        if (aNewShape.ShapeType() == ShapeType.Face && aNewSubShape.ShapeType() == ShapeType.Edge
-            && aGenS.ShapeType() == ShapeType.Edge && aSubGenS.ShapeType() == ShapeType.Vertex
+        if (aNewShape.Type == ShapeType.Face && aNewSubShape.Type == ShapeType.Edge
+            && aGenS.Type == ShapeType.Edge && aSubGenS.Type == ShapeType.Vertex
             && aDirS.Type() == ShapeType.Edge)
         {
             var AS = new SurfaceAdaptor(Tool.Surface(ShapeCasts.Face(aNewShape), out Placement _)!);
@@ -579,13 +579,13 @@ internal sealed class Rotation : Trsf
     public override bool GDDShapeIsToAdd(in Shape aNewShape, in Shape aNewSubShape, in Shape aGenS,
                                          in NumShape aDirS, in NumShape aSubDirS)
     {
-        if (aNewShape.ShapeType() == ShapeType.Solid && aNewSubShape.ShapeType() == ShapeType.Face
-            && aGenS.ShapeType() == ShapeType.Face && aDirS.Type() == ShapeType.Edge && aSubDirS.Type() == ShapeType.Vertex)
+        if (aNewShape.Type == ShapeType.Solid && aNewSubShape.Type == ShapeType.Face
+            && aGenS.Type == ShapeType.Face && aDirS.Type() == ShapeType.Edge && aSubDirS.Type() == ShapeType.Vertex)
         {
             return (Math.Abs(_ang - 2 * Math.PI) > global::Kerf.Engine.Foundation.Precision.Angular());
         }
-        else if (aNewShape.ShapeType() == ShapeType.Face && aNewSubShape.ShapeType() == ShapeType.Edge
-                 && aGenS.ShapeType() == ShapeType.Edge && aDirS.Type() == ShapeType.Edge && aSubDirS.Type() == ShapeType.Vertex)
+        else if (aNewShape.Type == ShapeType.Face && aNewSubShape.Type == ShapeType.Edge
+                 && aGenS.Type == ShapeType.Edge && aDirS.Type() == ShapeType.Edge && aSubDirS.Type() == ShapeType.Vertex)
         {
             var AS = new SurfaceAdaptor(Tool.Surface(ShapeCasts.Face(aNewShape), out Placement _)!);
             if (AS.GetType() == Plane)
@@ -606,8 +606,8 @@ internal sealed class Rotation : Trsf
     public override bool SeparatedWires(in Shape aNewShape, in Shape aNewSubShape, in Shape aGenS,
                                         in Shape aSubGenS, in NumShape aDirS)
     {
-        if (aNewShape.ShapeType() == ShapeType.Face && aNewSubShape.ShapeType() == ShapeType.Edge
-            && aGenS.ShapeType() == ShapeType.Edge && aSubGenS.ShapeType() == ShapeType.Vertex
+        if (aNewShape.Type == ShapeType.Face && aNewSubShape.Type == ShapeType.Edge
+            && aGenS.Type == ShapeType.Edge && aSubGenS.Type == ShapeType.Vertex
             && aDirS.Type() == ShapeType.Edge)
         {
             var AS = new SurfaceAdaptor(Tool.Surface(ShapeCasts.Face(aNewShape), out Placement _)!);
@@ -636,7 +636,7 @@ internal sealed class Rotation : Trsf
 
     public override bool HasShape(in Shape aGenS, in NumShape aDirS)
     {
-        if (aDirS.Type() == ShapeType.Edge && aGenS.ShapeType() == ShapeType.Edge)
+        if (aDirS.Type() == ShapeType.Edge && aGenS.Type == ShapeType.Edge)
         {
             // Verify that the edge has entrails
             Edge edge = ShapeCasts.Edge(aGenS);
@@ -678,7 +678,7 @@ internal sealed class Rotation : Trsf
 
     public override bool IsInvariant(in Shape aGenS)
     {
-        if (aGenS.ShapeType() == ShapeType.Edge)
+        if (aGenS.Type == ShapeType.Edge)
         {
             var c = new EdgeCurveAdaptor(ShapeCasts.Edge(aGenS));
             if (c.GetType() == Line || c.GetType() == BSplineCurve || c.GetType() == BezierCurve)
@@ -692,13 +692,13 @@ internal sealed class Rotation : Trsf
                     }
 
                     double tol = Max(Tool.Tolerance(v1), Tool.Tolerance(v2));
-                    var lin = new Line3D(_axe.Location(), _axe.Direction());
+                    var lin = new Line3D(_axe.Location, _axe.Direction);
                     if (c.GetType() == BSplineCurve)
                     {
                         BSplineCurve3D bs = c.BSpline()!;
                         for (int i = 1; i <= bs.PoleCount; i++)
                         {
-                            if (lin.Distance(bs.Pole(i)) > tol)
+                            if (lin.DistanceTo(bs.Pole(i)) > tol)
                             {
                                 return false;
                             }
@@ -709,7 +709,7 @@ internal sealed class Rotation : Trsf
                         BezierCurve3D bz = c.Bezier()!;
                         for (int i = 1; i <= bz.PoleCount; i++)
                         {
-                            if (lin.Distance(bz.Pole(i)) > tol)
+                            if (lin.DistanceTo(bz.Pole(i)) > tol)
                             {
                                 return false;
                             }
@@ -719,11 +719,11 @@ internal sealed class Rotation : Trsf
                 }
             }
         }
-        else if (aGenS.ShapeType() == ShapeType.Vertex)
+        else if (aGenS.Type == ShapeType.Vertex)
         {
             Point3D p = Tool.Pnt(ShapeCasts.Vertex(aGenS));
-            var lin = new Line3D(_axe.Location(), _axe.Direction());
-            return (lin.Distance(p) <= Tool.Tolerance(ShapeCasts.Vertex(aGenS)));
+            var lin = new Line3D(_axe.Location, _axe.Direction);
+            return (lin.DistanceTo(p) <= Tool.Tolerance(ShapeCasts.Vertex(aGenS)));
         }
         return false;
     }

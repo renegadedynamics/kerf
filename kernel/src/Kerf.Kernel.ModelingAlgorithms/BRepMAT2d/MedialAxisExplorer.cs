@@ -61,7 +61,7 @@ public sealed class MedialAxisExplorer
         Clear();
         _shape = aFace;
         Face f = ShapeCasts.Face(aFace);
-        f.Orientation(Forward);
+        f.Orient(Forward);
         Explorer exp = new(f, ShapeType.Wire);
         Surface surf = Tool.Surface(f)!;
         // OCCT.NET: InternalFace, unfrozen: the wires are added to it.
@@ -93,7 +93,7 @@ public sealed class MedialAxisExplorer
 
         // Checks the connection and creates a new spine.
         NewContour();
-        _isClosed[_currentContour] = spine.Closed();
+        _isClosed[_currentContour] = spine.IsClosed;
 
         Edge firstEdge = exp.Current();
         Edge prevEdge = firstEdge;
@@ -113,13 +113,13 @@ public sealed class MedialAxisExplorer
         c2d = Tool.CurveOnSurface(firstEdge, aFace, out uFirst, out uLast)!;
         ct2d = new TrimmedCurve2D(c2d, uFirst, uLast);
 
-        if (firstEdge.Orientation() == Reversed)
+        if (firstEdge.Orientation == Reversed)
         {
             ct2d.Reverse();
         }
 
-        pFirst = ct2d.Value(ct2d.FirstParameter());
-        pLast = ct2d.Value(ct2d.LastParameter());
+        pFirst = ct2d.Value(ct2d.FirstParameter);
+        pLast = ct2d.Value(ct2d.LastParameter);
 
         Add(ct2d);
         firstCurve = ct2d;
@@ -134,13 +134,13 @@ public sealed class MedialAxisExplorer
             c2d = Tool.CurveOnSurface(edge, aFace, out uFirst, out uLast)!;
             ct2d = new TrimmedCurve2D(c2d, uFirst, uLast);
 
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             {
                 ct2d.Reverse();
             }
 
-            pCurFirst = ct2d.Value(ct2d.FirstParameter());
-            d = pLast.Distance(pCurFirst);
+            pCurFirst = ct2d.Value(ct2d.FirstParameter);
+            d = pLast.DistanceTo(pCurFirst);
 
             if (d > tolConf)
             {
@@ -161,7 +161,7 @@ public sealed class MedialAxisExplorer
                     Vertex vf = Exploration.FirstVertex(edge);
                     Vertex vl = Exploration.LastVertex(edge);
 
-                    if (edge.Orientation() == Forward)
+                    if (edge.Orientation == Forward)
                     {
                         newEdge = MakeEdge(ct2d, aNewFace, vf, vl);
                     }
@@ -170,12 +170,12 @@ public sealed class MedialAxisExplorer
                         newEdge = MakeEdge(ct2d.Reversed(), aNewFace, vf, vl);
                     }
 
-                    newEdge.Orientation(edge.Orientation());
+                    newEdge.Orient(edge.Orientation);
                     oldNewE.GetValueRef(edge) = newEdge;
                 }
                 else
                 {
-                    Point2D p = ct2d.Value(ct2d.FirstParameter());
+                    Point2D p = ct2d.Value(ct2d.FirstParameter);
 
                     cPrev = AdjustCurveEnd(cPrev, p, false);
                     _curves.ChangeValue(_currentContour).ChangeValue(nbC) = cPrev;
@@ -184,7 +184,7 @@ public sealed class MedialAxisExplorer
                     Vertex vf = Exploration.FirstVertex(prevEdge);
                     Vertex vl = Exploration.LastVertex(prevEdge);
 
-                    if (prevEdge.Orientation() == Forward)
+                    if (prevEdge.Orientation == Forward)
                     {
                         newEdge = MakeEdge(cPrev, aNewFace, vf, vl);
                     }
@@ -193,18 +193,18 @@ public sealed class MedialAxisExplorer
                         newEdge = MakeEdge(cPrev.Reversed(), aNewFace, vf, vl);
                     }
 
-                    newEdge.Orientation(prevEdge.Orientation());
+                    newEdge.Orient(prevEdge.Orientation);
                     oldNewE.GetValueRef(prevEdge) = newEdge;
                 }
             }
 
-            pLast = ct2d.Value(ct2d.LastParameter());
+            pLast = ct2d.Value(ct2d.LastParameter);
             Add(ct2d);
             prevEdge = edge;
         }
 
         // The distance between the first and the last point of the wire, if it is closed.
-        if (_isClosed[_currentContour] && pLast.Distance(pFirst) > tolConf)
+        if (_isClosed[_currentContour] && pLast.DistanceTo(pFirst) > tolConf)
         {
             isModif = true;
 
@@ -222,7 +222,7 @@ public sealed class MedialAxisExplorer
                 Vertex vf = Exploration.FirstVertex(firstEdge);
                 Vertex vl = Exploration.LastVertex(firstEdge);
 
-                if (firstEdge.Orientation() == Forward)
+                if (firstEdge.Orientation == Forward)
                 {
                     newEdge = MakeEdge(firstCurve, aNewFace, vf, vl);
                 }
@@ -231,12 +231,12 @@ public sealed class MedialAxisExplorer
                     newEdge = MakeEdge(firstCurve.Reversed(), aNewFace, vf, vl);
                 }
 
-                newEdge.Orientation(firstEdge.Orientation());
+                newEdge.Orient(firstEdge.Orientation);
                 oldNewE.GetValueRef(firstEdge) = newEdge;
             }
             else
             {
-                Point2D p = firstCurve.Value(firstCurve.FirstParameter());
+                Point2D p = firstCurve.Value(firstCurve.FirstParameter);
 
                 cPrev = AdjustCurveEnd(cPrev, p, false);
                 _curves.ChangeValue(_currentContour).ChangeValue(nbC) = cPrev;
@@ -245,7 +245,7 @@ public sealed class MedialAxisExplorer
                 Vertex vf = Exploration.FirstVertex(prevEdge);
                 Vertex vl = Exploration.LastVertex(prevEdge);
 
-                if (prevEdge.Orientation() == Forward)
+                if (prevEdge.Orientation == Forward)
                 {
                     newEdge = MakeEdge(cPrev, aNewFace, vf, vl);
                 }
@@ -254,7 +254,7 @@ public sealed class MedialAxisExplorer
                     newEdge = MakeEdge(cPrev.Reversed(), aNewFace, vf, vl);
                 }
 
-                newEdge.Orientation(prevEdge.Orientation());
+                newEdge.Orient(prevEdge.Orientation);
                 oldNewE.GetValueRef(prevEdge) = newEdge;
             }
         }
@@ -379,8 +379,8 @@ public sealed class MedialAxisExplorer
         Edge newEdge = new();
         BrepBuilder builder = new();
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
-        double fPar = curve.FirstParameter();
-        double lPar = curve.LastParameter();
+        double fPar = curve.FirstParameter;
+        double lPar = curve.LastParameter;
 
         builder.MakeEdge(ref newEdge);
         builder.UpdateEdge(newEdge, curve, face, tol);
@@ -450,12 +450,12 @@ public sealed class MedialAxisExplorer
             // A new line.
             if (isFirst)
             {
-                Point2D aP = c2d.Value(c2d.LastParameter());
+                Point2D aP = c2d.Value(c2d.LastParameter);
                 return new MakeSegment2d(p, aP).Value();
             }
             else
             {
-                Point2D aP = c2d.Value(c2d.FirstParameter());
+                Point2D aP = c2d.Value(c2d.FirstParameter);
                 return new MakeSegment2d(aP, p).Value();
             }
         }
@@ -467,12 +467,12 @@ public sealed class MedialAxisExplorer
             if (isFirst)
             {
                 bCurve.SetPole(1, p);
-                return new TrimmedCurve2D(bCurve, bCurve.FirstParameter(), bCurve.LastParameter());
+                return new TrimmedCurve2D(bCurve, bCurve.FirstParameter, bCurve.LastParameter);
             }
             else
             {
                 bCurve.SetPole(bCurve.PoleCount, p);
-                return new TrimmedCurve2D(bCurve, bCurve.FirstParameter(), bCurve.LastParameter());
+                return new TrimmedCurve2D(bCurve, bCurve.FirstParameter, bCurve.LastParameter);
             }
         }
     }

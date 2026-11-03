@@ -116,17 +116,17 @@ internal static class TextDump
             {
                 return "null";
             }
-            string s = TypeNames[(int)S.ShapeType()] + " " + OriNames[(int)S.Orientation()];
-            int k = (int)S.ShapeType() < 8 ? (_inMaps[(int)S.ShapeType()].IndexOf(S) + 1) : 0;
+            string s = TypeNames[(int)S.Type] + " " + OriNames[(int)S.Orientation];
+            int k = (int)S.Type < 8 ? (_inMaps[(int)S.Type].IndexOf(S) + 1) : 0;
             if (k > 0)
             {
                 return s + " in " + I(k);
             }
             s += " new";
-            if (S.ShapeType() == ShapeType.Vertex)
+            if (S.Type == ShapeType.Vertex)
             {
                 Point3D p = Tool.Pnt(ShapeCasts.Vertex(S));
-                s += " " + R(p.X()) + " " + R(p.Y()) + " " + R(p.Z());
+                s += " " + R(p.X) + " " + R(p.Y) + " " + R(p.Z);
             }
             return s;
         }
@@ -292,7 +292,7 @@ internal static class TextDump
                     continue;
                 }
                 DsPoint p = _ds.Point(i);
-                W("point " + I(i) + " " + R(p.Point().X()) + " " + R(p.Point().Y()) + " " + R(p.Point().Z()) + " " + R(p.Tolerance())
+                W("point " + I(i) + " " + R(p.Point().X) + " " + R(p.Point().Y) + " " + R(p.Point().Z) + " " + R(p.Tolerance())
                   + " keep " + (p.Keep() ? "1" : "0") + "\n");
                 List(_ds.PointInterferences(i));
             }
@@ -355,7 +355,7 @@ internal static class TextDump
             for (int i = 1; i <= nS; i++)
             {
                 Shape s = _ds.Shape(i, false);
-                if (s.ShapeType() == ShapeType.Face && !inFaces.Contains(s))
+                if (s.Type == ShapeType.Face && !inFaces.Contains(s))
                 {
                     faces.Add(s);
                 }

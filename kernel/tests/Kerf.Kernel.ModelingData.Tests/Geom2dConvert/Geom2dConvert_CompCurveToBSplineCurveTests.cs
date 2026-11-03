@@ -18,8 +18,8 @@ public class Geom2dConvert_CompCurveToBSplineCurveTest
         CircleCurve2D aCirc = new MakeCircle2d(new Point2D(0, 0), 50).Value();
         Assert.NotNull(aCirc);
 
-        double aF = aCirc.FirstParameter();
-        double aL = aCirc.LastParameter();
+        double aF = aCirc.FirstParameter;
+        double aL = aCirc.LastParameter;
         const int aNb = 10;
         double aDelta = (aF + aL) / aNb;
 

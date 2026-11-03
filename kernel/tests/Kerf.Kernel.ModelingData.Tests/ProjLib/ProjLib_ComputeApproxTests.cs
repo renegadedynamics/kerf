@@ -25,17 +25,17 @@ public class ProjLib_ComputeApproxTests
     {
         Assert.NotNull(thePCurve);
         double aFirst = theCurve.FirstParameter(), aLast = theCurve.LastParameter();
-        Assert.Equal(aFirst, thePCurve.FirstParameter(), 1.0e-9);
-        Assert.Equal(aLast, thePCurve.LastParameter(), 1.0e-9);
+        Assert.Equal(aFirst, thePCurve.FirstParameter, 1.0e-9);
+        Assert.Equal(aLast, thePCurve.LastParameter, 1.0e-9);
         Point2D aPrev = thePCurve.Value(aFirst);
         for (int i = 0; i <= theNb; i++)
         {
             double t = aFirst + (aLast - aFirst) * i / theNb;
             Point2D aUV = thePCurve.Value(t);
-            Point3D aP = theSurf.Value(aUV.X(), aUV.Y());
-            double aDist = aP.Distance(theCurve.Value(t));
+            Point3D aP = theSurf.Value(aUV.X, aUV.Y);
+            double aDist = aP.DistanceTo(theCurve.Value(t));
             Assert.True(aDist <= theTol, $"distance {aDist} at t = {t}, tol {theTol}, {aFirst}..{aLast}, knots {(thePCurve as BSplineCurve2D)?.KnotCount}");
-            Assert.True(aUV.Distance(aPrev) < 1.0, $"jump at t = {t}");
+            Assert.True(aUV.DistanceTo(aPrev) < 1.0, $"jump at t = {t}");
             aPrev = aUV;
         }
     }
@@ -104,19 +104,19 @@ public class ProjLib_ComputeApproxTests
         Assert.NotNull(aRes);
         Assert.Null(aProj.Bezier());
         Assert.Equal(aC.PoleCount, aRes.PoleCount);
-        Assert.Equal(aC.Degree(), aRes.Degree());
+        Assert.Equal(aC.Degree, aRes.Degree);
         Assert.Equal(thePeriodic, aRes.IsPeriodic);
         Assert.Equal(theRational, aRes.IsRational);
         // No approximation: the tolerance is unchanged.
         Assert.Equal(1.0e-7, aProj.Tolerance());
-        Plane3D aP = aPln.Pln();
+        Plane3D aP = aPln.Plane;
         for (int i = 0; i <= 20; i++)
         {
-            double t = aC.FirstParameter() + (aC.LastParameter() - aC.FirstParameter()) * i / 20;
+            double t = aC.FirstParameter + (aC.LastParameter - aC.FirstParameter) * i / 20;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(aP, aC.Value(t), out double u, out double v);
             Point2D aUV = aRes.Value(t);
-            Assert.Equal(u, aUV.X(), 1.0e-12);
-            Assert.Equal(v, aUV.Y(), 1.0e-12);
+            Assert.Equal(u, aUV.X, 1.0e-12);
+            Assert.Equal(v, aUV.Y, 1.0e-12);
         }
     }
 
@@ -139,28 +139,28 @@ public class ProjLib_ComputeApproxTests
         BezierCurve2D? aRes = aProj.Bezier();
         Assert.NotNull(aRes);
         Assert.Equal(theRational, aRes.IsRational);
-        Plane3D aP = aPln.Pln();
+        Plane3D aP = aPln.Plane;
         for (int i = 0; i <= 10; i++)
         {
             double t = i / 10.0;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(aP, aC.Value(t), out double u, out double v);
-            Assert.Equal(u, aRes.Value(t).X(), 1.0e-12);
-            Assert.Equal(v, aRes.Value(t).Y(), 1.0e-12);
+            Assert.Equal(u, aRes.Value(t).X, 1.0e-12);
+            Assert.Equal(v, aRes.Value(t).Y, 1.0e-12);
         }
     }
 
     [Fact]
     public void Plane_OffsetCurve_Approximated()
     {
-        var aBase = new CircleCurve3D(new Frame3D(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), 2.0);
-        var aC = new TrimmedCurve3D(new OffsetCurve3D(aBase, 0.5, Tilted.Direction()), 0.3, 4.0);
+        var aBase = new CircleCurve3D(new Frame3D(Tilted.Location, Tilted.Direction, Tilted.XDirection), 2.0);
+        var aC = new TrimmedCurve3D(new OffsetCurve3D(aBase, 0.5, Tilted.Direction), 0.3, 4.0);
         Approx(aC, new PlaneSurface(Tilted));
     }
 
     [Fact]
     public void Plane_Circle_Approximated()
     {
-        var aC = new CircleCurve3D(new Frame3D(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), 2.0);
+        var aC = new CircleCurve3D(new Frame3D(Tilted.Location, Tilted.Direction, Tilted.XDirection), 2.0);
         Approx(aC, new PlaneSurface(Tilted));
     }
 
@@ -171,8 +171,8 @@ public class ProjLib_ComputeApproxTests
         var aC = new TrimmedCurve3D(aCyl.VIso(1.5), 5.0, 7.5);
         BSplineCurve2D aRes = Approx(aC, aCyl);
         // The pcurve is continuous across the seam: from U = 5 to U = 7.5.
-        Assert.Equal(5.0, aRes.Value(5.0).X(), 1.0e-6);
-        Assert.Equal(7.5, aRes.Value(7.5).X(), 1.0e-6);
+        Assert.Equal(5.0, aRes.Value(5.0).X, 1.0e-6);
+        Assert.Equal(7.5, aRes.Value(7.5).X, 1.0e-6);
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class ProjLib_ComputeApproxTests
         var aCyl = new CylindricalSurface(Std, 2.0);
         // The section of the cylinder by a tilted plane through the axis: an ellipse of minor radius 2.
         Direction3D aN = new(0.0, -0.5, 1.0);
-        double aMaj = 2.0 / aN.Z();
+        double aMaj = 2.0 / aN.Z;
         var aC = new EllipseCurve3D(new Frame3D(new Point3D(0, 0, 1), aN, new Direction3D(0.0, 1.0, 0.5)), aMaj, 2.0);
         Approx(aC, aCyl);
     }
@@ -191,7 +191,7 @@ public class ProjLib_ComputeApproxTests
     {
         var aCyl = new CylindricalSurface(Std, 2.0);
         Direction3D aN = new(0.0, -0.5, 1.0);
-        double aMaj = 2.0 / aN.Z();
+        double aMaj = 2.0 / aN.Z;
         var anEl = new EllipseCurve3D(new Frame3D(new Point3D(0, 0, 1), aN, new Direction3D(0.0, 1.0, 0.5)), aMaj, 2.0);
         Approx(new TrimmedCurve3D(anEl, 1.0, 4.0), aCyl);
         Approx(new TrimmedCurve3D(anEl, 4.0, 7.0), aCyl);
@@ -216,7 +216,7 @@ public class ProjLib_ComputeApproxTests
         BSplineCurve3D aC = Helix(aCyl, 4.0, 6.0);
         BSplineCurve2D aRes = Approx(aC, aCyl);
         // Continuous across the seam: the U span is the helix's (6 cos(atan 0.4) = 5.57), not wrapped.
-        Assert.Equal(6.0 / Math.Sqrt(1.16), aRes.Value(aC.LastParameter()).X() - aRes.Value(aC.FirstParameter()).X(), 1.0e-6);
+        Assert.Equal(6.0 / Math.Sqrt(1.16), aRes.Value(aC.LastParameter).X - aRes.Value(aC.FirstParameter).X, 1.0e-6);
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class ProjLib_ComputeApproxTests
         {
             double t = 9.0 * i / 400;
             Point2D aUV = aRes.Value(t);
-            aMax = Max(aMax, aS.Value(aUV.X(), aUV.Y()).Distance(aC.Value(t)));
+            aMax = Max(aMax, aS.Value(aUV.X, aUV.Y).DistanceTo(aC.Value(t)));
         }
         Assert.True(aMax > 2.9, $"max distance {aMax}");
 
@@ -283,21 +283,21 @@ public class ProjLib_ComputeApproxTests
         Point3D aCenter = new(0.5 * (x1 + x2), 0.0, 0.2 * 0.5 * (x1 + x2) + 1.0);
         Direction3D aN = new(-0.2, 0.0, 1.0);
         var anEl = new EllipseCurve3D(new Frame3D(aCenter, aN, new Direction3D(1.0, 0.0, 0.2)),
-                                    0.5 * (x1 - x2) * Math.Sqrt(1.04), 1.0 + aTan * aCenter.Z());
+                                    0.5 * (x1 - x2) * Math.Sqrt(1.04), 1.0 + aTan * aCenter.Z);
         var aS = new SurfaceAdaptor(aCone);
         var aProj = new ComputeApprox(new CurveAdaptor(anEl), aS, 1.0e-6);
         BSplineCurve2D? aRes = aProj.BSpline();
         Assert.NotNull(aRes);
-        Cone aCo = aCone.Cone();
+        Cone aCo = aCone.Cone;
         for (int i = 0; i <= 40; i++)
         {
             double t = 2 * M_PI * i / 40;
             global::Kerf.Engine.Geometry.ElSLib.Parameters(aCo, anEl.Value(t), out double u, out double v);
             Point2D aUV = aRes.Value(t);
-            double du = aUV.X() - u;
+            double du = aUV.X - u;
             du -= 2 * M_PI * Math.Round(du / (2 * M_PI));
             Assert.True(Math.Abs(du) < 1.0e-4, $"u at t = {t}");
-            Assert.Equal(v, aUV.Y(), 1.0e-4);
+            Assert.Equal(v, aUV.Y, 1.0e-4);
         }
     }
 
@@ -323,7 +323,7 @@ public class ProjLib_ComputeApproxTests
         var aSph = new SphericalSurface(Std, 2.0);
         Direction3D aN = new(1.0, 0.1, 0.4);
         double aR = 0.8, aD = Math.Sqrt(4.0 - aR * aR);
-        var aCirc = new CircleCurve3D(new Frame3D(new Point3D(aD * aN.X(), aD * aN.Y(), aD * aN.Z()), aN), aR);
+        var aCirc = new CircleCurve3D(new Frame3D(new Point3D(aD * aN.X, aD * aN.Y, aD * aN.Z), aN), aR);
         Approx(aCirc, aSph);
         Approx(new TrimmedCurve3D(aCirc, 1.0, 4.0), aSph);
     }
@@ -346,11 +346,11 @@ public class ProjLib_ComputeApproxTests
         var aSph = new SphericalSurface(Std, 2.0);
         Direction3D aN = new(1.0, 0.0, 1.0);
         // The plane through the pole (0, 0, 2) with normal aN; its circle has center at the foot from the origin.
-        double aDist = 2.0 * aN.Z();
-        Point3D aCenter = new(aDist * aN.X(), aDist * aN.Y(), aDist * aN.Z());
+        double aDist = 2.0 * aN.Z;
+        Point3D aCenter = new(aDist * aN.X, aDist * aN.Y, aDist * aN.Z);
         double aR = Math.Sqrt(4.0 - aDist * aDist);
         var aCirc = new CircleCurve3D(new Frame3D(aCenter, aN, new Direction3D(-1.0, 0.0, 1.0)), aR);
-        Assert.True(aCirc.Value(0.0).Distance(new Point3D(0, 0, 2)) < 1.0e-12);
+        Assert.True(aCirc.Value(0.0).DistanceTo(new Point3D(0, 0, 2)) < 1.0e-12);
         // An arc away from the pole (the pole is at parameter 0).
         var aC = new TrimmedCurve3D(aCirc, 0.5, 2 * M_PI - 0.5);
         var aS = new SurfaceAdaptor(aSph);
@@ -426,7 +426,7 @@ public class ProjLib_ComputeApproxTests
         aProj.Perform(aC, aS);
         BSplineCurve2D? aRes = aProj.BSpline();
         Assert.NotNull(aRes);
-        Assert.True(aRes.Degree() <= 4);
+        Assert.True(aRes.Degree <= 4);
         CheckOnCurve(aRes, aS, aC, 1.0e-3);
 
         // PassPoint ends: the knots are removed where the tolerance allows (C1 smoothing).

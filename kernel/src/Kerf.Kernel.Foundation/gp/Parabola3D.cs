@@ -42,15 +42,15 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     public Parabola3D(in Axis3D d, in Point3D f)
     {
         Line3D droite = new(d);
-        _focalLength = droite.Distance(f) / 2.0;
-        Axis3D ax = droite.Normal(f).Position();
-        Axis3D ay = droite.Position();
-        Direction3D dd = ax.Direction();
-        _pos = new Frame3D(new Point3D(f.X() - _focalLength * dd.X(),
-                                    f.Y() - _focalLength * dd.Y(),
-                                    f.Z() - _focalLength * dd.Z()),
-                         ax.Direction().Crossed(ay.Direction()),
-                         ax.Direction());
+        _focalLength = droite.DistanceTo(f) / 2.0;
+        Axis3D ax = droite.Normal(f).Position;
+        Axis3D ay = droite.Position;
+        Direction3D dd = ax.Direction;
+        _pos = new Frame3D(new Point3D(f.X - _focalLength * dd.X,
+                                    f.Y - _focalLength * dd.Y,
+                                    f.Z - _focalLength * dd.Z),
+                         ax.Direction.Crossed(ay.Direction),
+                         ax.Direction);
     }
 
     // Copies
@@ -87,43 +87,49 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     // Queries
 
     /// <summary>The main axis: the normal to the parabola's plane through its apex.</summary>
-    public readonly Axis3D Axis() => _pos.Axis();
+    public readonly Axis3D Axis => _pos.Axis;
 
     /// <summary>The directrix: parallel to the Y axis, at the focal length from the apex on the negative X side.</summary>
-    public readonly Axis3D Directrix()
+    public readonly Axis3D Directrix
     {
-        Point3D pp = _pos.Location();
-        Direction3D dd = _pos.XDirection();
-        Point3D p = new(pp.X() - _focalLength * dd.X(),
-                        pp.Y() - _focalLength * dd.Y(),
-                        pp.Z() - _focalLength * dd.Z());
-        return new Axis3D(p, _pos.YDirection());
+        get
+        {
+            Point3D pp = _pos.Location;
+            Direction3D dd = _pos.XDirection;
+            Point3D p = new(pp.X - _focalLength * dd.X,
+                            pp.Y - _focalLength * dd.Y,
+                            pp.Z - _focalLength * dd.Z);
+            return new Axis3D(p, _pos.YDirection);
+        }
     }
 
     /// <summary>The distance between the apex and the focus.</summary>
-    public readonly double Focal() => _focalLength;
+    public readonly double Focal => _focalLength;
 
-    public readonly Point3D Focus()
+    public readonly Point3D Focus
     {
-        Point3D pp = _pos.Location();
-        Direction3D dd = _pos.XDirection();
-        return new Point3D(pp.X() + _focalLength * dd.X(),
-                          pp.Y() + _focalLength * dd.Y(),
-                          pp.Z() + _focalLength * dd.Z());
+        get
+        {
+            Point3D pp = _pos.Location;
+            Direction3D dd = _pos.XDirection;
+            return new Point3D(pp.X + _focalLength * dd.X,
+                              pp.Y + _focalLength * dd.Y,
+                              pp.Z + _focalLength * dd.Z);
+        }
     }
 
     /// <summary>The apex.</summary>
-    public readonly Point3D Location() => _pos.Location();
+    public readonly Point3D Location => _pos.Location;
 
     /// <summary>The distance between the focus and the directrix: twice the focal length.</summary>
-    public readonly double Parameter() => 2.0 * _focalLength;
+    public readonly double Parameter => 2.0 * _focalLength;
 
-    public readonly Frame3D Position() => _pos;
+    public readonly Frame3D Position => _pos;
 
     /// <summary>The axis of symmetry.</summary>
-    public readonly Axis3D XAxis() => new(_pos.Location(), _pos.XDirection());
+    public readonly Axis3D XAxis => new(_pos.Location, _pos.XDirection);
 
-    public readonly Axis3D YAxis() => new(_pos.Location(), _pos.YDirection());
+    public readonly Axis3D YAxis => new(_pos.Location, _pos.YDirection);
 
     public readonly Parabola3D Mirrored(in Point3D p)
     {
@@ -171,7 +177,7 @@ public readonly partial struct Parabola3D : IEquatable<Parabola3D>
     {
         Frame3D pos = _pos;
         double focalLength = _focalLength;
-        focalLength *= t.ScaleFactor();
+        focalLength *= t.ScaleFactor;
         if (focalLength < 0)
         {
             focalLength = -focalLength;

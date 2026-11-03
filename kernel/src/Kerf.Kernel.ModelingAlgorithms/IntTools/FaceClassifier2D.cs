@@ -107,7 +107,7 @@ public sealed class FaceClassifier2D
         //
         _toluv = tolUV;
         _face = aFace;
-        _face.Orientation(Forward);
+        _face.Orient(Forward);
         FaceSurfaceAdaptor surf = new();
         surf.Initialize(aFace, false);
         //
@@ -153,7 +153,7 @@ public sealed class FaceClassifier2D
             {
                 nbEdges--;
                 edge = wExp.Current();
-                or = edge.Orientation();
+                or = edge.Orientation;
                 if (or != Forward && or != Reversed)
                 {
                     continue;
@@ -217,7 +217,7 @@ public sealed class FaceClassifier2D
                     {
                         double U = pfbid + i * du / nbsteps;
                         Point3D p3db = c3d.Value(U);
-                        double r2 = p3da.SquareDistance(p3db);
+                        double r2 = p3da.SquareDistanceTo(p3db);
                         if (r2 > prec2)
                         {
                             degenerated = false;
@@ -292,21 +292,21 @@ public sealed class FaceClassifier2D
                     //
                     u = prms[iX];
                     P2d = c.Value(u);
-                    if (P2d.X() < _umin)
+                    if (P2d.X < _umin)
                     {
-                        _umin = P2d.X();
+                        _umin = P2d.X;
                     }
-                    if (P2d.X() > _umax)
+                    if (P2d.X > _umax)
                     {
-                        _umax = P2d.X();
+                        _umax = P2d.X;
                     }
-                    if (P2d.Y() < _vmin)
+                    if (P2d.Y < _vmin)
                     {
-                        _vmin = P2d.Y();
+                        _vmin = P2d.Y;
                     }
-                    if (P2d.Y() > _vmax)
+                    if (P2d.Y > _vmax)
                     {
-                        _vmax = P2d.Y();
+                        _vmax = P2d.Y;
                     }
                     //
                     dstX = RealLast();
@@ -317,7 +317,7 @@ public sealed class FaceClassifier2D
                         {
                             if (ancienpnt3dinitialise)
                             {
-                                dstX = p3d.SquareDistance(ancienpnt3d);
+                                dstX = p3d.SquareDistanceTo(ancienpnt3d);
                             }
                         }
                     }
@@ -331,7 +331,7 @@ public sealed class FaceClassifier2D
                             Point3D midP3d;
                             //
                             midP3d = c3d.Value(0.5 * (u + prms[iX - 1]));
-                            dstX1 = p3d.SquareDistance(midP3d);
+                            dstX1 = p3d.SquareDistanceTo(midP3d);
                             if (dstX1 < prCf2)
                             {
                                 isRealCurve3d = false;
@@ -358,8 +358,8 @@ public sealed class FaceClassifier2D
                         Line2D lin = new(seqPnt2d[ii - 2], new Direction2D(new Vector2D(seqPnt2d[ii - 2], seqPnt2d[ii])));
                         ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, seqPnt2d[ii - 1]);
                         pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, lin);
-                        dU = Math.Abs(pp.X() - seqPnt2d[ii - 1].X());
-                        dV = Math.Abs(pp.Y() - seqPnt2d[ii - 1].Y());
+                        dU = Math.Abs(pp.X - seqPnt2d[ii - 1].X);
+                        dV = Math.Abs(pp.Y - seqPnt2d[ii - 1].Y);
                         if (dU > flecheU)
                         {
                             flecheU = dU;
@@ -459,7 +459,7 @@ public sealed class FaceClassifier2D
                         for (wExp.Init(ShapeCasts.Wire(expF.Current()), _face); wExp.More(); wExp.Next())
                         {
                             edge = wExp.Current();
-                            or = edge.Orientation();
+                            or = edge.Orientation;
                             if (or == Forward || or == Reversed)
                             {
                                 Tool.Range(edge, _face, out pfbid, out plbid);
@@ -496,8 +496,8 @@ public sealed class FaceClassifier2D
                                     Line2D lin = new(seqPnt2d[ii - 2], new Direction2D(new Vector2D(seqPnt2d[ii - 2], seqPnt2d[ii])));
                                     double ul = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, seqPnt2d[ii - 1]);
                                     Point2D pp = global::Kerf.Engine.Geometry.ElCLib.Value(ul, lin);
-                                    double dU = Math.Abs(pp.X() - seqPnt2d[ii - 1].X());
-                                    double dV = Math.Abs(pp.Y() - seqPnt2d[ii - 1].Y());
+                                    double dU = Math.Abs(pp.X - seqPnt2d[ii - 1].X);
+                                    double dV = Math.Abs(pp.Y - seqPnt2d[ii - 1].Y);
                                     if (dU > flecheU)
                                     {
                                         flecheU = dU;
@@ -632,8 +632,8 @@ public sealed class FaceClassifier2D
         }
 
         //-- U1 is the First Param and U2 is in this case U1+Period
-        double u = _Puv.X();
-        double v = _Puv.Y();
+        double u = _Puv.X;
+        double v = _Puv.Y;
         double uu = u;
         double vv = v;
         Containment status = Unknown;
@@ -801,8 +801,8 @@ public sealed class FaceClassifier2D
         }
 
         //-- U1 is the First Param and U2 in this case is U1+Period
-        double u = _Puv.X();
-        double v = _Puv.Y();
+        double u = _Puv.X;
+        double v = _Puv.Y;
         double uu = u, vv = v;
 
         FaceSurfaceAdaptor surf = new();

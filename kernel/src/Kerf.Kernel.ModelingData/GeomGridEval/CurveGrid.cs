@@ -20,7 +20,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// uninitialised state (a null curve or an unknown Geom_Curve subclass), which gives empty results. OCCT's
 /// protected <c>initialization</c> overloads are private: the class is sealed.
 /// </remarks>
-public sealed class CurveGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class CurveGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private GeomGridEvalGrid.ICurveEvaluator? _evaluator;
     private CurveKind _curveType;
@@ -53,7 +53,7 @@ public sealed class CurveGrid : GeomGridEvalGrid.ICurveEvaluator
         Curve3D result = curve;
         while (result is TrimmedCurve3D trimmed)
         {
-            result = trimmed.BasisCurve();
+            result = trimmed.BasisCurve;
         }
         return result;
     }

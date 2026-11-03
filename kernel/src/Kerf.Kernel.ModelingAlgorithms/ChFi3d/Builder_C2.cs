@@ -159,7 +159,7 @@ public partial class FilletBuilderBase
         }
         Point3D psp1 = hpivot.Value(parCP1);
         Point3D psp2 = hpivot.Value(parCP2);
-        double sameparam = (psp1.Distance(psp2) < 10.0 * _tolapp3d) ? 1.0 : 0.0; // OCCT: a bool in a double
+        double sameparam = (psp1.DistanceTo(psp2) < 10.0 * _tolapp3d) ? 1.0 : 0.0; // OCCT: a bool in a double
 
         Face ff1 = ShapeCasts.Face(dStr.Shape(fd1.Index(iFaArc1)));
         Face ff2 = ShapeCasts.Face(dStr.Shape(fd2.Index(iFaArc2)));
@@ -198,11 +198,11 @@ public partial class FilletBuilderBase
             ChFi3d_ComputesIntPC(fd1.Interference(iFaCo1), fd2.Interference(iFaCo2), hs1, hs2, ref uIntPC1, ref uIntPC2);
             Point2D uv = new();
             uv = fd1.Interference(iFaCo1).PCurveOnSurf().Value(uIntPC1);
-            pardeb[1] = uv.X();
-            pardeb[2] = uv.Y();
+            pardeb[1] = uv.X;
+            pardeb[2] = uv.Y;
             uv = fd2.Interference(iFaCo2).PCurveOnSurf().Value(uIntPC2);
-            pardeb[3] = uv.X();
-            pardeb[4] = uv.Y();
+            pardeb[3] = uv.X;
+            pardeb[4] = uv.Y;
             Point3D pFaCo = hs1.Value(pardeb[1], pardeb[2]);
 
             // Side arc, calculation of Parfin.
@@ -211,11 +211,11 @@ public partial class FilletBuilderBase
 
             ChFi3d_ComputesIntPC(fd1.Interference(iFaArc1), fd2.Interference(iFaArc2), hs1, hs2, ref uIntArc1, ref uIntArc2);
             uv = fd1.Interference(iFaArc1).PCurveOnSurf().Value(uIntArc1);
-            parfin[1] = uv.X();
-            parfin[2] = uv.Y();
+            parfin[1] = uv.X;
+            parfin[2] = uv.Y;
             uv = fd2.Interference(iFaArc2).PCurveOnSurf().Value(uIntArc2);
-            parfin[3] = uv.X();
-            parfin[4] = uv.Y();
+            parfin[3] = uv.X;
+            parfin[4] = uv.Y;
 
             if (fd1.Surf() == fd2.Surf())
             {
@@ -238,8 +238,8 @@ public partial class FilletBuilderBase
                 return _done;
             }
             // CornerData are updated with results of the intersection.
-            double wFirst = gc.FirstParameter();
-            double wLast = gc.LastParameter();
+            double wFirst = gc.FirstParameter;
+            double wLast = gc.LastParameter;
             int ipoin1 = 0;
             int ipoin2 = 0;
             ref CommonPoint cpco1 = ref fd1.ChangeVertex(isfirst1, iFaCo1);
@@ -313,7 +313,7 @@ public partial class FilletBuilderBase
             {
                 if (expl.Current().IsSame(vtx))
                 {
-                    parcrois = (expl.Current().Orientation() == Forward);
+                    parcrois = (expl.Current().Orientation == Forward);
                     break;
                 }
             }
@@ -368,12 +368,12 @@ public partial class FilletBuilderBase
                                                       ref uIntPCBig);
             Point2D uVi = new();
             uVi = bigFD.Interference(iFaCoBig).PCurveOnSurf().Value(uIntPCBig);
-            pardeb[3] = uVi.X();
-            pardeb[4] = uVi.Y();
+            pardeb[3] = uVi.X;
+            pardeb[4] = uVi.Y;
             uVi = smaFD.Interference(iFaCoSma).PCurveOnSurf().Value(uIntPCSma);
-            pardeb[1] = uVi.X();
-            pardeb[2] = uVi.Y();
-            Point3D pFaCo = smaHS.Value(uVi.X(), uVi.Y());
+            pardeb[1] = uVi.X;
+            pardeb[2] = uVi.Y;
+            Point3D pFaCo = smaHS.Value(uVi.X, uVi.Y);
 
             // Parfin (parameters of point PMil)
             // OCCT holds a reference: it sees the SetParameter below
@@ -411,11 +411,11 @@ public partial class FilletBuilderBase
                 _done = false;
                 return _done;
             }
-            parfin[3] = uVi.X();
-            parfin[4] = uVi.Y();
+            parfin[3] = uVi.X;
+            parfin[4] = uVi.Y;
             uVi = fiArcSma.PCurveOnSurf().Value(wi);
-            parfin[1] = uVi.X();
-            parfin[2] = uVi.Y();
+            parfin[1] = uVi.X;
+            parfin[2] = uVi.Y;
             Point3D pMil = smaHS.Value(parfin[1], parfin[2]);
 
             double tolreached = 0.0;
@@ -426,8 +426,8 @@ public partial class FilletBuilderBase
                 return _done;
             }
             // SmaCD is updated, for it this is all.
-            double wFirst = gc.FirstParameter();
-            double wLast = gc.LastParameter();
+            double wFirst = gc.FirstParameter;
+            double wLast = gc.LastParameter;
             int ipointCo = 0, ipointMil = 0, ipointArc = 0;
             ref CommonPoint psmaco = ref smaFD.ChangeVertex(isfirstSma, iFaCoSma);
             ref CommonPoint pbigco = ref bigFD.ChangeVertex(isfirstBig, iFaCoBig);
@@ -471,7 +471,7 @@ public partial class FilletBuilderBase
 
             // the transition of curves of intersection on the Big
             Orientation tra = bigFD.InterferenceOnS1().Transition();
-            Orientation ofac = dStr.Shape(bigFD.IndexOfS1()).Orientation();
+            Orientation ofac = dStr.Shape(bigFD.IndexOfS1()).Orientation;
             Orientation ofil = bigFD.Orientation();
             Orientation tracurv = global::Kerf.Engine.Topology.TopAbs.Compose(ofac, ofil);
             tracurv = global::Kerf.Engine.Topology.TopAbs.Compose(tracurv, tra);
@@ -513,8 +513,8 @@ public partial class FilletBuilderBase
             double lsma = fiArcSma.LastParameter();
             double deltSma = 0.05 * (lsma - fsma);
             Curve2D? pcpc = smaFD.Interference(iFaArcSma).PCurveOnFace();
-            fsma = Max(pcpc.FirstParameter(), wi - deltSma);
-            lsma = Min(pcpc.LastParameter(), wi + deltSma);
+            fsma = Max(pcpc.FirstParameter, wi - deltSma);
+            lsma = Min(pcpc.LastParameter, wi + deltSma);
             if (lsma < fsma)
             {
                 _done = false;
@@ -530,18 +530,18 @@ public partial class FilletBuilderBase
                 _done = false;
                 return _done;
             }
-            pardeb[3] = uVi.X();
-            pardeb[4] = uVi.Y();
+            pardeb[3] = uVi.X;
+            pardeb[4] = uVi.Y;
             uVi = smaFD.Interference(iFaArcSma).PCurveOnFace().Value(wi);
-            pardeb[1] = uVi.X();
-            pardeb[2] = uVi.Y();
+            pardeb[1] = uVi.X;
+            pardeb[2] = uVi.Y;
             Point2D ppff1 = uVi;
 
             // Parfin (parameters of the point cpend)
             double ptg = bigFD.Interference(iFaArcBig).Parameter(isfirstBig);
             uVi = bigFD.Interference(iFaArcBig).PCurveOnSurf().Value(ptg);
-            parfin[3] = uVi.X();
-            parfin[4] = uVi.Y();
+            parfin[3] = uVi.X;
+            parfin[4] = uVi.Y;
             ref CommonPoint cpend = ref bigFD.ChangeVertex(isfirstBig, iFaArcBig);
             Edge etest = cpend.Arc();
             if (Tool.IsClosed(etest, f))
@@ -550,8 +550,8 @@ public partial class FilletBuilderBase
             }
             EdgeCurve2DAdaptor arc = new(etest, f);
             uVi = arc.Value(cpend.ParameterOnArc());
-            parfin[1] = uVi.X();
-            parfin[2] = uVi.Y();
+            parfin[1] = uVi.X;
+            parfin[2] = uVi.Y;
             Point2D ppff2 = uVi;
 
             // Intersection.
@@ -569,8 +569,8 @@ public partial class FilletBuilderBase
             }
 
             // End of update of the BigCD and the DS.
-            wFirst = gc.FirstParameter();
-            wLast = gc.LastParameter();
+            wFirst = gc.FirstParameter;
+            wLast = gc.LastParameter;
             iCurv = dStr.AddCurve(new DsCurve(gc, tolreached));
             cpend.SetTolerance(Max(cpend.Tolerance(), tolreached));
             ipointArc = ChFi3d_IndexPointInDS(cpend, dStr);
@@ -590,7 +590,7 @@ public partial class FilletBuilderBase
             int iShape = dStr.AddShape(f);
             if (smaFD.Surf() == bigFD.Surf())
             {
-                tracurv = global::Kerf.Engine.Topology.TopAbs.Compose(etest.Orientation(), cpend.TransitionOnArc());
+                tracurv = global::Kerf.Engine.Topology.TopAbs.Compose(etest.Orientation, cpend.TransitionOnArc());
             }
             else
             {
@@ -599,7 +599,7 @@ public partial class FilletBuilderBase
                 {
                     if (exp.Current().IsSame(etest))
                     {
-                        tracurv = global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation(), cpend.TransitionOnArc());
+                        tracurv = global::Kerf.Engine.Topology.TopAbs.Compose(exp.Current().Orientation, cpend.TransitionOnArc());
                         break;
                     }
                 }
@@ -665,7 +665,7 @@ internal static class Builder_C2
         SurfaceAdaptor s2 = hs2;
         Surface? surf = s1.Surface();
         double ud = 0.0, uf = 0.0, vd = 0.0, vf = 0.0;
-        surf.Bounds(out ud, out uf, out vd, out vf);
+        surf.ParameterBounds(out ud, out uf, out vd, out vf);
         double milmoins = 0.51 * vd + 0.49 * vf, milplus = 0.49 * vd + 0.51 * vf;
         if (p1 < p2)
         {

@@ -102,7 +102,7 @@ internal static partial class Builder_0
         // Add vertex with tangent
         if (es.IsPeriodic)
         {
-            double parForElSpine = (e.Orientation() == Forward) ? first : last;
+            double parForElSpine = (e.Orientation == Forward) ? first : last;
             cv.D1(parForElSpine, out Point3D pntForElSpine, out Vector3D dirForElSpine);
             es.AddVertexWithTangent(new Axis3D(pntForElSpine, new Direction3D(dirForElSpine)));
         }
@@ -114,7 +114,7 @@ internal static partial class Builder_0
             spine.Parameter(IF, nwf, out pared, false);
         }
         //
-        if (e.Orientation() == Reversed)
+        if (e.Orientation == Reversed)
         {
             double sov = first;
             first = cv.ReversedParameter(last);
@@ -221,7 +221,7 @@ internal static partial class Builder_0
         //
         // Smoothing of the curve
         iToApproxByC2 = 0;
-        aContinuity = tc.Continuity();
+        aContinuity = tc.Continuity;
         bIsSmooth = ChFi3d_IsSmooth(tc);
         if (aContinuity < C2 && !bIsSmooth)
         {
@@ -263,7 +263,7 @@ internal static partial class Builder_0
             //
             cv = Tool.Curve(e, out first, out last)!;
             // Add vertex with tangent
-            double parForElSpine = (e.Orientation() == Forward) ? first : last;
+            double parForElSpine = (e.Orientation == Forward) ? first : last;
             cv.D1(parForElSpine, out Point3D pntForElSpine, out Vector3D dirForElSpine);
             es.AddVertexWithTangent(new Axis3D(pntForElSpine, new Direction3D(dirForElSpine)));
             /////////////////////////
@@ -279,7 +279,7 @@ internal static partial class Builder_0
                 {
                     pared = last;
                 }
-                if (e.Orientation() == Reversed)
+                if (e.Orientation == Reversed)
                 {
                     double sov = first;
                     first = cv.ReversedParameter(last);
@@ -305,7 +305,7 @@ internal static partial class Builder_0
             CurveCleaner(bs, Math.Abs(wl - wf) * 1.0e-4, 0);
             //
             // Smoothing of the curve
-            aContinuity = tc.Continuity();
+            aContinuity = tc.Continuity;
             bIsSmooth = ChFi3d_IsSmooth(tc);
             if (aContinuity < C2 && !bIsSmooth)
             {
@@ -384,7 +384,7 @@ internal static partial class Builder_0
                 caredeb = newc!.KnotCount - bSpline.KnotCount;
             }
             bSpline = newc!;
-            localWF = bSpline.FirstParameter();
+            localWF = bSpline.FirstParameter;
         }
         //
         if (!es.IsPeriodic && !pFin.IsEqual(bSpline.Pole(bSpline.PoleCount), tol))
@@ -415,17 +415,17 @@ internal static partial class Builder_0
                 carefin = newc!.KnotCount - bSpline.KnotCount;
             }
             bSpline = newc!;
-            localWL = bSpline.LastParameter();
+            localWL = bSpline.LastParameter;
         }
         //
         // Reparametrisation et segmentation sur le domaine de la Spine.
-        if (Math.Abs(bSpline.FirstParameter() - wf) < tol)
+        if (Math.Abs(bSpline.FirstParameter - wf) < tol)
         {
-            wf = bSpline.FirstParameter();
+            wf = bSpline.FirstParameter;
         }
-        if (Math.Abs(bSpline.LastParameter() - wl) < tol)
+        if (Math.Abs(bSpline.LastParameter - wl) < tol)
         {
-            wl = bSpline.LastParameter();
+            wl = bSpline.LastParameter;
         }
         //
         if ((localWF < wf) || (localWL > wl))
@@ -441,7 +441,7 @@ internal static partial class Builder_0
             c1 = (BSplineCurve3D)bSpline.Copy();
             global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToC1BSplineCurve(ref c1, tol, 0.1);
             // Il faut s'assurer que l'origine n'a pas bouge (cts21158)
-            if (c1.FirstParameter() == bSpline.FirstParameter())
+            if (c1.FirstParameter == bSpline.FirstParameter)
             {
                 bSpline = c1;
             }
@@ -454,7 +454,7 @@ internal static partial class Builder_0
         int fk, lk, multMax, ii;
         // Deformation eventuelle pour rendre la spine C2.
         // ou C3 pour des approx C2
-        if ((caredeb != 0 || carefin != 0) && bSpline.Degree() < 8)
+        if ((caredeb != 0 || carefin != 0) && bSpline.Degree < 8)
         {
             bSpline.IncreaseDegree(8);
         }
@@ -476,24 +476,24 @@ internal static partial class Builder_0
         //
         if (continuity == C3)
         {
-            if (bSpline.Degree() < 7)
+            if (bSpline.Degree < 7)
             {
                 bSpline.IncreaseDegree(7);
             }
-            multMax = bSpline.Degree() - 3;
+            multMax = bSpline.Degree - 3;
         }
         else
         {
-            if (bSpline.Degree() < 5)
+            if (bSpline.Degree < 5)
             {
                 bSpline.IncreaseDegree(5);
             }
-            multMax = bSpline.Degree() - 2;
+            multMax = bSpline.Degree - 2;
         }
         // correction C2 or C3 (if possible)
         CurveCleaner(bSpline, Math.Abs(wl - wf) * 1.0e-4, 1);
         CurveCleaner(bSpline, Math.Abs(wl - wf) * 1.0e-2, multMax);
-        int multMin = Math.Max(bSpline.Degree() - 4, 1);
+        int multMin = Math.Max(bSpline.Degree - 4, 1);
         for (ii = fk; ii <= lk; ii++)
         {
             if (bSpline.Multiplicity(ii) > multMax)
@@ -532,7 +532,7 @@ internal static partial class Builder_0
             v1 = v1.Normalized();
             es.FirstPointAndTgt(out pDeb, out vrefDeb);
             double scaldeb = vrefDeb.Dot(v1);
-            double disdeb = pDeb.Distance(p1);
+            double disdeb = pDeb.DistanceTo(p1);
             if ((Math.Abs(wf - localWF) < 1.0e-12) && ((scaldeb <= 0.9999999) || disdeb >= tol))
             {
                 // Yes if there was no extension and the tangent is not the good one.
@@ -542,7 +542,7 @@ internal static partial class Builder_0
             v2 = v2.Normalized();
             es.LastPointAndTgt(out pFin, out vrefFin);
             double scalfin = vrefFin.Dot(v2);
-            double disfin = pFin.Distance(p2);
+            double disfin = pFin.DistanceTo(p2);
             if ((Math.Abs(wl - localWL) < 1.0e-12) && ((scalfin <= 0.9999999) || disfin >= tol))
             {
                 // the same at the end
@@ -570,7 +570,7 @@ internal static partial class Builder_0
     /// <summary>A C2 B-spline through 101 points of <paramref name="c"/>.</summary>
     internal static BSplineCurve3D ChFi3d_ApproxByC2(Curve3D c)
     {
-        double first = c.FirstParameter(), last = c.LastParameter();
+        double first = c.FirstParameter, last = c.LastParameter;
         int nbPoints = 101;
 
         NCollection_Array1<Point3D> points = new(1, nbPoints);
@@ -658,12 +658,12 @@ internal static partial class Builder_0
                     c.D0(t, out p1);
                     lProp.CentreOfCurvature(out p2);
                     Vector3D vec = new(p1, p2);
-                    double angle = prevVec.Angle(vec);
+                    double angle = prevVec.AngleTo(vec);
                     if (angle > Math.PI / 3.0)
                     {
                         return false;
                     }
-                    double ratio = vec.Magnitude() / prevVec.Magnitude();
+                    double ratio = vec.Magnitude / prevVec.Magnitude;
                     if (ratio < 1.0)
                     {
                         ratio = 1.0 / ratio;

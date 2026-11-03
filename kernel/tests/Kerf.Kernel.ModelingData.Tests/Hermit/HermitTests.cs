@@ -70,11 +70,11 @@ public class HermitTest
 
         // The result a(u) * D(u) should have value 1 at endpoints
         // For uniform weights D(u)=1 everywhere, so a(0)=1, a(1)=1
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
-        Assert.Equal(1.0, aP0.Y(), 1.0e-6);
-        Assert.Equal(1.0, aP1.Y(), 1.0e-6);
+        Assert.Equal(1.0, aP0.Y, 1.0e-6);
+        Assert.Equal(1.0, aP1.Y, 1.0e-6);
     }
 
     [Fact]
@@ -88,11 +88,11 @@ public class HermitTest
         Assert.NotNull(aResult);
 
         // a(0) should be 1/w(0) = 0.5, a(1) should be 1/w(1) = 1/3
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
-        Assert.Equal(0.5, aP0.Y(), 1.0e-4);
-        Assert.Equal(1.0 / 3.0, aP1.Y(), 1.0e-4);
+        Assert.Equal(0.5, aP0.Y, 1.0e-4);
+        Assert.Equal(1.0 / 3.0, aP1.Y, 1.0e-4);
     }
 
     [Fact]
@@ -105,12 +105,12 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
         // a(u)*D(u) = 1 at endpoints => a(0) = 1/w(0) = 2, a(1) = 1/w(1) = 0.2
-        Assert.Equal(1.0 / 0.5, aP0.Y(), 1.0e-4);
-        Assert.Equal(1.0 / 5.0, aP1.Y(), 1.0e-4);
+        Assert.Equal(1.0 / 0.5, aP0.Y, 1.0e-4);
+        Assert.Equal(1.0 / 5.0, aP1.Y, 1.0e-4);
     }
 
     [Fact]
@@ -123,11 +123,11 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
-        Assert.Equal(1.0 / 5.0, aP0.Y(), 1.0e-4);
-        Assert.Equal(1.0 / 0.5, aP1.Y(), 1.0e-4);
+        Assert.Equal(1.0 / 5.0, aP0.Y, 1.0e-4);
+        Assert.Equal(1.0 / 0.5, aP1.Y, 1.0e-4);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class HermitTest
         Assert.NotNull(aResult);
         for (int i = 1; i <= aResult.PoleCount; ++i)
         {
-            Assert.True(aResult.Pole(i).Y() > 0.0, $"Pole {i} Y should be positive");
+            Assert.True(aResult.Pole(i).Y > 0.0, $"Pole {i} Y should be positive");
         }
     }
 
@@ -154,11 +154,11 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
-        Assert.Equal(1.0, aP0.Y(), 1.0e-6);
-        Assert.Equal(1.0, aP1.Y(), 1.0e-6);
+        Assert.Equal(1.0, aP0.Y, 1.0e-6);
+        Assert.Equal(1.0, aP1.Y, 1.0e-6);
     }
 
     [Fact]
@@ -170,11 +170,11 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
-        Assert.Equal(0.5, aP0.Y(), 1.0e-4);
-        Assert.Equal(1.0 / 3.0, aP1.Y(), 1.0e-4);
+        Assert.Equal(0.5, aP0.Y, 1.0e-4);
+        Assert.Equal(1.0 / 3.0, aP1.Y, 1.0e-4);
     }
 
     [Fact]
@@ -187,11 +187,11 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
-        Assert.Equal(1.0 / 0.5, aP0.Y(), 1.0e-4);
-        Assert.Equal(1.0 / 5.0, aP1.Y(), 1.0e-4);
+        Assert.Equal(1.0 / 0.5, aP0.Y, 1.0e-4);
+        Assert.Equal(1.0 / 5.0, aP1.Y, 1.0e-4);
     }
 
     [Fact]
@@ -236,12 +236,12 @@ public class HermitTest
 
         Assert.NotNull(aResult);
 
-        Point2D aP0 = aResult.Value(aResult.FirstParameter());
-        Point2D aP1 = aResult.Value(aResult.LastParameter());
+        Point2D aP0 = aResult.Value(aResult.FirstParameter);
+        Point2D aP1 = aResult.Value(aResult.LastParameter);
 
         // Both endpoints should yield the same value: 1/w = 0.5
-        Assert.Equal(0.5, aP0.Y(), 1.0e-4);
-        Assert.Equal(0.5, aP1.Y(), 1.0e-4);
+        Assert.Equal(0.5, aP0.Y, 1.0e-4);
+        Assert.Equal(0.5, aP1.Y, 1.0e-4);
     }
 
     // Added: Hermit only reads the curve it is given, so a frozen curve works.

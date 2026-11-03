@@ -41,15 +41,15 @@ public class GeomFill_TrihedronTests
 
     internal static void AssertNear(in Vector3D theExpected, in Vector3D theActual, double theTol, string theWhat)
     {
-        Assert.True(theExpected.Subtracted(theActual).Magnitude() <= theTol,
+        Assert.True(theExpected.Subtracted(theActual).Magnitude <= theTol,
                     $"{theWhat}: expected {theExpected}, got {theActual}");
     }
 
     internal static void AssertOrthonormal(in Frame theF, double theTol = Tol)
     {
-        Assert.Equal(1.0, theF.T.Magnitude(), theTol);
-        Assert.Equal(1.0, theF.N.Magnitude(), theTol);
-        Assert.Equal(1.0, theF.B.Magnitude(), theTol);
+        Assert.Equal(1.0, theF.T.Magnitude, theTol);
+        Assert.Equal(1.0, theF.N.Magnitude, theTol);
+        Assert.Equal(1.0, theF.B.Magnitude, theTol);
         Assert.Equal(0.0, theF.T.Dot(theF.N), theTol);
         Assert.Equal(0.0, theF.T.Dot(theF.B), theTol);
         Assert.Equal(0.0, theF.N.Dot(theF.B), theTol);
@@ -71,7 +71,7 @@ public class GeomFill_TrihedronTests
         AssertNear(aD.T, aD1b.T, Tol, "D2 first derivative of the tangent");
 
         Frame aP = D0(theLaw, theParam + theH), aM = D0(theLaw, theParam - theH);
-        double aScale = Math.Max(1.0, aD.T.Magnitude() + aD.N.Magnitude() + aD.B.Magnitude());
+        double aScale = Math.Max(1.0, aD.T.Magnitude + aD.N.Magnitude + aD.B.Magnitude);
         AssertNear((aP.T - aM.T) / (2 * theH), aD.T, theTol * aScale, "DTangent");
         AssertNear((aP.N - aM.N) / (2 * theH), aD.N, theTol * aScale, "DNormal");
         AssertNear((aP.B - aM.B) / (2 * theH), aD.B, theTol * aScale, "DBiNormal");
@@ -82,7 +82,7 @@ public class GeomFill_TrihedronTests
         }
         (_, Frame aDP) = D1(theLaw, theParam + theH);
         (_, Frame aDM) = D1(theLaw, theParam - theH);
-        double aScale2 = Math.Max(1.0, aDD.T.Magnitude() + aDD.N.Magnitude() + aDD.B.Magnitude());
+        double aScale2 = Math.Max(1.0, aDD.T.Magnitude + aDD.N.Magnitude + aDD.B.Magnitude);
         AssertNear((aDP.T - aDM.T) / (2 * theH), aDD.T, theTol * aScale2, "D2Tangent");
         AssertNear((aDP.N - aDM.N) / (2 * theH), aDD.N, theTol * aScale2, "D2Normal");
         AssertNear((aDP.B - aDM.B) / (2 * theH), aDD.B, theTol * aScale2, "D2BiNormal");
@@ -144,7 +144,7 @@ public class GeomFill_TrihedronTests
         AssertOrthonormal(aF);
         AssertNear(new Vector3D(new Direction3D(1, 1, 0)), aF.T, Tol, "tangent");
         (_, Frame aD) = D1(aLaw, 3.0);
-        Assert.Equal(0.0, aD.T.Magnitude() + aD.N.Magnitude() + aD.B.Magnitude(), 0.0);
+        Assert.Equal(0.0, aD.T.Magnitude + aD.N.Magnitude + aD.B.Magnitude, 0.0);
     }
 
     [Fact]
@@ -184,11 +184,11 @@ public class GeomFill_TrihedronTests
         {
             Frame aF = D0(aLaw, u);
             AssertOrthonormal(aF);
-            Assert.Equal(1.0, Math.Abs(aF.B.Z()), 1.0e-9);
+            Assert.Equal(1.0, Math.Abs(aF.B.Z), 1.0e-9);
             AssertNear(new Vector3D(new Direction3D(aC.DN(u, 1))), aF.T, 1.0e-9, "tangent");
         }
         // On a planar curve the binormal flips across the inflexion.
-        Assert.True(D0(aLaw, 0.2).B.Z() * D0(aLaw, 0.8).B.Z() < 0);
+        Assert.True(D0(aLaw, 0.2).B.Z * D0(aLaw, 0.8).B.Z < 0);
         var (aF1, _) = D1(aLaw, 0.5);
         AssertOrthonormal(aF1);
         var (aF2, _, _) = D2(aLaw, 0.5);
@@ -206,7 +206,7 @@ public class GeomFill_TrihedronTests
         AssertOrthonormal(aF);
         AssertNear(new Vector3D(new Direction3D(2, 1, 0)), aF.T, Tol, "tangent");
         (_, Frame aD) = D1(aLaw, 0.3);
-        Assert.Equal(0.0, aD.T.Magnitude() + aD.N.Magnitude() + aD.B.Magnitude(), 0.0);
+        Assert.Equal(0.0, aD.T.Magnitude + aD.N.Magnitude + aD.B.Magnitude, 0.0);
     }
 
     [Fact]
@@ -349,7 +349,7 @@ public class GeomFill_TrihedronTests
             Frame aF = D0(aLaw, t);
             AssertOrthonormal(aF);
             aL2d.D0(t, out Point2D aUV);
-            Vector3D aRadial = new(Math.Cos(aUV.X()), Math.Sin(aUV.X()), 0);
+            Vector3D aRadial = new(Math.Cos(aUV.X), Math.Sin(aUV.X), 0);
             AssertNear(aRadial, aF.B, Tol, "cylinder normal");
             AssertDerivatives(aLaw, t);
         }
@@ -372,7 +372,7 @@ public class GeomFill_TrihedronTests
         }
         // a rotation-minimising frame turns little between neighbours
         Frame a1 = D0(aLaw, 0.5), a2 = D0(aLaw, 0.5001);
-        Assert.True(a1.N.Subtracted(a2.N).Magnitude() < 1.0e-3);
+        Assert.True(a1.N.Subtracted(a2.N).Magnitude < 1.0e-3);
         var (_, aD, aDD) = D2(aLaw, 0.5);
         Assert.Equal(new Frame(new Vector3D(), new Vector3D(), new Vector3D()), aD);
         Assert.Equal(new Frame(new Vector3D(), new Vector3D(), new Vector3D()), aDD);
@@ -443,8 +443,8 @@ public class GeomFill_TrihedronTests
         (_, Frame aDP) = D1(aLaw, u + h);
         (_, Frame aDM) = D1(aLaw, u - h);
         Vector3D anError = aDD.B - (aDP.B - aDM.B) / (2 * h);
-        Assert.True(anError.Magnitude() > 1.0e-2);
-        Assert.True(anError.Crossed(aF.B).Magnitude() < 1.0e-3 * anError.Magnitude());
+        Assert.True(anError.Magnitude > 1.0e-2);
+        Assert.True(anError.Crossed(aF.B).Magnitude < 1.0e-3 * anError.Magnitude);
     }
 
     [Fact]

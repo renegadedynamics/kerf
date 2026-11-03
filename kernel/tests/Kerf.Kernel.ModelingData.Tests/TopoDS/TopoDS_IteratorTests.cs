@@ -64,7 +64,7 @@ public class TopoDS_IteratorTests
         int aCount = 0;
         for (var anIt = new Iterator(aCompound); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Vertex, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Vertex, anIt.Value().Type);
             ++aCount;
         }
 
@@ -93,7 +93,7 @@ public class TopoDS_IteratorTests
         int aCount = 0;
         for (var anIt = new Iterator(aWire); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Edge, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Edge, anIt.Value().Type);
             ++aCount;
         }
 
@@ -108,7 +108,7 @@ public class TopoDS_IteratorTests
         int aCount = 0;
         for (var anIt = new Iterator(anEdge); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Vertex, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Vertex, anIt.Value().Type);
             ++aCount;
         }
 
@@ -140,12 +140,12 @@ public class TopoDS_IteratorTests
         // With cumOri=true (default), child orientation should be composed
         var anIt1 = new Iterator(aCompound, true, true);
         Assert.True(anIt1.More());
-        Orientation anOri1 = anIt1.Value().Orientation();
+        Orientation anOri1 = anIt1.Value().Orientation;
 
         // With cumOri=false, child orientation should be original
         var anIt2 = new Iterator(aCompound, false, true);
         Assert.True(anIt2.More());
-        Orientation anOri2 = anIt2.Value().Orientation();
+        Orientation anOri2 = anIt2.Value().Orientation;
 
         // Orientations should differ when compound is reversed
         Assert.NotEqual(anOri1, anOri2);
@@ -204,14 +204,14 @@ public class TopoDS_IteratorTests
         int aShellCount = 0;
         for (var anIt = new Iterator(aBox); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Shell, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Shell, anIt.Value().Type);
             ++aShellCount;
 
             // Iterate over shell's children (should be 6 faces)
             int aFaceCount = 0;
             for (var anIt2 = new Iterator(anIt.Value()); anIt2.More(); anIt2.Next())
             {
-                Assert.Equal(ShapeType.Face, anIt2.Value().ShapeType());
+                Assert.Equal(ShapeType.Face, anIt2.Value().Type);
                 ++aFaceCount;
             }
 
@@ -260,7 +260,7 @@ public class TopoDS_IteratorTests
 
         anIt.Initialize(aCompound);
         Assert.True(anIt.More());
-        Assert.Equal(ShapeType.Vertex, anIt.Value().ShapeType());
+        Assert.Equal(ShapeType.Vertex, anIt.Value().Type);
     }
 
     [Fact]
@@ -295,12 +295,12 @@ public class TopoDS_IteratorTests
         // With cumLoc=true (default), child should have composed location
         var anIt1 = new Iterator(aCompound, true, true);
         Assert.True(anIt1.More());
-        Placement aChildLoc1 = anIt1.Value().Location();
+        Placement aChildLoc1 = anIt1.Value().Placement;
 
         // With cumLoc=false, child should have original location
         var anIt2 = new Iterator(aCompound, true, false);
         Assert.True(anIt2.More());
-        Placement aChildLoc2 = anIt2.Value().Location();
+        Placement aChildLoc2 = anIt2.Value().Placement;
 
         // Locations should differ
         Assert.NotEqual(aChildLoc1.IsIdentity, aChildLoc2.IsIdentity);
@@ -328,7 +328,7 @@ public class TopoDS_IteratorTests
         int aOuterCount = 0;
         for (var anIt = new Iterator(aOuter); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Compound, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Compound, anIt.Value().Type);
             ++aOuterCount;
         }
 
@@ -359,7 +359,7 @@ public class TopoDS_IteratorTests
         int aWireCount = 0;
         for (var anIt = new Iterator(aFace); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Wire, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Wire, anIt.Value().Type);
             ++aWireCount;
         }
 
@@ -399,7 +399,7 @@ public class TopoDS_IteratorTests
         int aFaceCount = 0;
         for (var anIt = new Iterator(aShell); anIt.More(); anIt.Next())
         {
-            Assert.Equal(ShapeType.Face, anIt.Value().ShapeType());
+            Assert.Equal(ShapeType.Face, anIt.Value().Type);
             ++aFaceCount;
         }
 

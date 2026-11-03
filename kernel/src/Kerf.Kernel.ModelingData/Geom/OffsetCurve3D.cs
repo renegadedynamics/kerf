@@ -35,7 +35,7 @@ public class OffsetCurve3D : Curve3D
     private Continuity _basisCurveContinuity;
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The evaluation representation descriptor (may be null). Stored, not copied: don't modify.</summary>
     internal RepCurveDesc.Base? EvalRepresentation() => _evalRep;
@@ -105,7 +105,7 @@ public class OffsetCurve3D : Curve3D
     public sealed override double ReversedParameter(double u) => _basisCurve.ReversedParameter(u);
 
     /// <summary>The reference direction.</summary>
-    public Direction3D Direction() => _direction;
+    public Direction3D Direction => _direction;
 
     internal void SetDirection(in Direction3D v)
     {
@@ -124,7 +124,7 @@ public class OffsetCurve3D : Curve3D
     public sealed override bool IsPeriodic => _basisCurve.IsPeriodic;
 
     /// <summary>The period of the basis curve.</summary>
-    public sealed override double Period() => _basisCurve.Period();
+    public sealed override double Period => _basisCurve.Period;
 
     /// <summary>
     /// Changes the basis curve (a copy of C, with nested offsets folded into this one's offset and direction).
@@ -134,7 +134,7 @@ public class OffsetCurve3D : Curve3D
     {
         CheckMutable();
         ClearEvalRepresentation();
-        double uf = c.FirstParameter(), ul = c.LastParameter();
+        double uf = c.FirstParameter, ul = c.LastParameter;
         Curve3D checkingCurve = (Curve3D)c.Copy();
         bool isTrimmed = false;
 
@@ -142,32 +142,32 @@ public class OffsetCurve3D : Curve3D
         {
             if (checkingCurve is TrimmedCurve3D trimC)
             {
-                checkingCurve = trimC.BasisCurve();
+                checkingCurve = trimC.BasisCurve;
                 isTrimmed = true;
             }
 
             if (checkingCurve is OffsetCurve3D oc)
             {
-                checkingCurve = oc.BasisCurve();
-                double prevOff = oc.Offset();
-                Vector3D v1 = new Vector3D(oc.Direction());
+                checkingCurve = oc.BasisCurve;
+                double prevOff = oc.Offset;
+                Vector3D v1 = new Vector3D(oc.Direction);
                 Vector3D v2 = new Vector3D(_direction);
                 Vector3D vdir = prevOff * v1 + _offsetValue * v2;
 
                 if (_offsetValue >= 0.0)
                 {
-                    _offsetValue = vdir.Magnitude();
+                    _offsetValue = vdir.Magnitude;
                     _direction = _direction.WithXYZ(vdir.XYZ());
                 }
                 else
                 {
-                    _offsetValue = -vdir.Magnitude();
+                    _offsetValue = -vdir.Magnitude;
                     _direction = _direction.WithXYZ((-vdir).XYZ());
                 }
             }
         }
 
-        _basisCurveContinuity = checkingCurve.Continuity();
+        _basisCurveContinuity = checkingCurve.Continuity;
 
         bool isC0 = !isNotCheckC0 && (_basisCurveContinuity == C0);
 
@@ -200,45 +200,51 @@ public class OffsetCurve3D : Curve3D
     }
 
     /// <summary>The basis curve, frozen (it is shared with this offset curve; decision 127).</summary>
-    public Curve3D BasisCurve()
+    public Curve3D BasisCurve
     {
-        _basisCurve.Freeze();
-        return _basisCurve;
+        get
+        {
+            _basisCurve.Freeze();
+            return _basisCurve;
+        }
     }
 
     /// <summary>The continuity of the basis curve lowered by one (C1 gives C0, G1 and G2 are kept).</summary>
-    public sealed override Continuity Continuity()
+    public sealed override Continuity Continuity
     {
-        Continuity offsetShape = C0;
-        switch (_basisCurveContinuity)
+        get
         {
-            case C0:
-                offsetShape = C0;
-                break;
-            case C1:
-                offsetShape = C0;
-                break;
-            case C2:
-                offsetShape = C1;
-                break;
-            case C3:
-                offsetShape = C2;
-                break;
-            case CN:
-                offsetShape = CN;
-                break;
-            case G1:
-                offsetShape = G1;
-                break;
-            case G2:
-                offsetShape = G2;
-                break;
+            Continuity offsetShape = C0;
+            switch (_basisCurveContinuity)
+            {
+                case C0:
+                    offsetShape = C0;
+                    break;
+                case C1:
+                    offsetShape = C0;
+                    break;
+                case C2:
+                    offsetShape = C1;
+                    break;
+                case C3:
+                    offsetShape = C2;
+                    break;
+                case CN:
+                    offsetShape = CN;
+                    break;
+                case G1:
+                    offsetShape = G1;
+                    break;
+                case G2:
+                    offsetShape = G2;
+                    break;
+            }
+            return offsetShape;
         }
-        return offsetShape;
     }
 
     /// <exception cref="UndefinedValue3DException">The normal is undefined at theU.</exception>
-    public sealed override Point3D EvalD0(double u)
+    internal sealed override Point3D EvalD0(double u)
     {
         if (RepUtils.TryEvalCurveD0(_evalRep, u, out Point3D evalRepResult))
         {
@@ -254,7 +260,7 @@ public class OffsetCurve3D : Curve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivative is undefined at theU.</exception>
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         if (RepUtils.TryEvalCurveD1(_evalRep, u, out ResD1 evalRepResult))
         {
@@ -271,7 +277,7 @@ public class OffsetCurve3D : Curve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at theU.</exception>
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         if (RepUtils.TryEvalCurveD2(_evalRep, u, out ResD2 evalRepResult))
         {
@@ -282,7 +288,7 @@ public class OffsetCurve3D : Curve3D
         Vector3D d1 = basisD3.D1, d2 = basisD3.D2, d3 = basisD3.D3;
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             Vector3D dummyD4 = new Vector3D();
             if (!OffsetCurveUtils3D.AdjustDerivative(_basisCurve,
@@ -312,7 +318,7 @@ public class OffsetCurve3D : Curve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">The derivatives are undefined at theU.</exception>
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         if (RepUtils.TryEvalCurveD3(_evalRep, u, out ResD3 evalRepResult))
         {
@@ -325,7 +331,7 @@ public class OffsetCurve3D : Curve3D
         Vector3D d4 = d4Basis;
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             if (!OffsetCurveUtils3D.AdjustDerivative(_basisCurve,
                                                         4,
@@ -356,7 +362,7 @@ public class OffsetCurve3D : Curve3D
 
     /// <summary>The derivative of order N; above 3, the basis curve's (as in OCCT).</summary>
     /// <exception cref="UndefinedDerivative3DException">N &lt; 1, or the derivative is undefined at U.</exception>
-    public sealed override Vector3D EvalDN(double u, int n)
+    internal sealed override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -387,12 +393,12 @@ public class OffsetCurve3D : Curve3D
         }
     }
 
-    public sealed override double FirstParameter() => _basisCurve.FirstParameter();
+    public sealed override double FirstParameter => _basisCurve.FirstParameter;
 
-    public sealed override double LastParameter() => _basisCurve.LastParameter();
+    public sealed override double LastParameter => _basisCurve.LastParameter;
 
     /// <summary>The offset value.</summary>
-    public double Offset() => _offsetValue;
+    public double Offset => _offsetValue;
 
     /// <summary>True if the end points are within Precision::Computational() (squared distance).</summary>
     public sealed override bool IsClosed
@@ -400,15 +406,15 @@ public class OffsetCurve3D : Curve3D
         get
         {
             Point3D pf, pl;
-            D0(FirstParameter(), out pf);
-            D0(LastParameter(), out pl);
-            return pf.SquareDistance(pl) <= global::Kerf.Engine.Foundation.Precision.Computational();
+            D0(FirstParameter, out pf);
+            D0(LastParameter, out pl);
+            return pf.SquareDistanceTo(pl) <= global::Kerf.Engine.Foundation.Precision.Computational();
         }
     }
 
     /// <summary>True if the basis curve is C(N + 1).</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCN(int n)
+    internal sealed override bool IsCN(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisCurve.IsCN(n + 1);
@@ -422,17 +428,17 @@ public class OffsetCurve3D : Curve3D
         OwnBasisCurve();
         _basisCurve.Transform(t);
         _direction = _direction.Transformed(t);
-        _offsetValue *= t.ScaleFactor();
+        _offsetValue *= t.ScaleFactor;
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double u, in Transform3D t) => _basisCurve.TransformedParameter(u, t);
+    internal sealed override double TransformedParameter(double u, in Transform3D t) => _basisCurve.TransformedParameter(u, t);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in Transform3D t) => _basisCurve.ParametricTransformation(t);
+    internal sealed override double ParametricTransformation(in Transform3D t) => _basisCurve.ParametricTransformation(t);
 
     /// <summary>The continuity of the basis curve (G1 for a G1 C0 B-spline).</summary>
-    public Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
+    internal Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
 
     // Non-mutating twins (OCCT.NET)
 
@@ -459,7 +465,7 @@ public class OffsetCurve3D : Curve3D
     }
 
     /// <summary>A copy evaluated through a copy of theDesc (null: without a representation).</summary>
-    public OffsetCurve3D WithEvalRepresentation(RepCurveDesc.Base? desc)
+    internal OffsetCurve3D WithEvalRepresentation(RepCurveDesc.Base? desc)
     {
         RepUtils.ValidateCurveDesc(desc, this);
         OffsetCurve3D copy = (OffsetCurve3D)Copy();
@@ -468,7 +474,7 @@ public class OffsetCurve3D : Curve3D
     }
 
     /// <summary>A copy without an evaluation representation (the twin of ClearEvalRepresentation).</summary>
-    public OffsetCurve3D WithoutEvalRepresentation()
+    internal OffsetCurve3D WithoutEvalRepresentation()
     {
         OffsetCurve3D copy = (OffsetCurve3D)Copy();
         copy.ClearEvalRepresentation();

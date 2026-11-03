@@ -29,10 +29,10 @@ public sealed class LineBounds : CurveBounds.ICurveEvaluator
     Curve3D? CurveBounds.ICurveEvaluator.CurveGeometry() => _geom;
 
     /// <summary>Compute bounding box for line segment [theU1, theU2].</summary>
-    public Box Box(double u1, double u2, double tol) => Box(_geom.Lin(), u1, u2, tol);
+    public Box Box(double u1, double u2, double tol) => Box(_geom.Line, u1, u2, tol);
 
     /// <summary>Compute bounding box for full curve.</summary>
-    public Box Box(double tol) => Box(_geom.FirstParameter(), _geom.LastParameter(), tol);
+    public Box Box(double tol) => Box(_geom.FirstParameter, _geom.LastParameter, tol);
 
     /// <summary>For analytical curves, BoxOptimal is same as Box.</summary>
     public Box BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
@@ -49,12 +49,12 @@ public sealed class LineBounds : CurveBounds.ICurveEvaluator
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
             {
-                InfiniteHelpers.OpenMinMax(lin.Direction(), ref box);
+                InfiniteHelpers.OpenMinMax(lin.Direction, ref box);
                 box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, lin));
             }
             else
             {
-                InfiniteHelpers.OpenMin(lin.Direction(), ref box);
+                InfiniteHelpers.OpenMin(lin.Direction, ref box);
                 box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, lin));
             }
         }
@@ -62,7 +62,7 @@ public sealed class LineBounds : CurveBounds.ICurveEvaluator
         {
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
             {
-                InfiniteHelpers.OpenMinMax(lin.Direction(), ref box);
+                InfiniteHelpers.OpenMinMax(lin.Direction, ref box);
                 box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, lin));
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
@@ -71,7 +71,7 @@ public sealed class LineBounds : CurveBounds.ICurveEvaluator
             }
             else
             {
-                InfiniteHelpers.OpenMax(lin.Direction(), ref box);
+                InfiniteHelpers.OpenMax(lin.Direction, ref box);
                 box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u2, lin));
             }
         }
@@ -80,11 +80,11 @@ public sealed class LineBounds : CurveBounds.ICurveEvaluator
             box.Add(global::Kerf.Engine.Geometry.ElCLib.Value(u1, lin));
             if (global::Kerf.Engine.Foundation.Precision.IsNegativeInfinite(u2))
             {
-                InfiniteHelpers.OpenMin(lin.Direction(), ref box);
+                InfiniteHelpers.OpenMin(lin.Direction, ref box);
             }
             else if (global::Kerf.Engine.Foundation.Precision.IsPositiveInfinite(u2))
             {
-                InfiniteHelpers.OpenMax(lin.Direction(), ref box);
+                InfiniteHelpers.OpenMax(lin.Direction, ref box);
             }
             else
             {

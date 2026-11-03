@@ -78,11 +78,11 @@ internal static class KPartRecorder
 
         internal void L(string s) => OS.Write(s + "\n");
 
-        internal void P3(string theTag, in Point3D P) => L(theTag + " " + R(P.X()) + " " + R(P.Y()) + " " + R(P.Z()));
+        internal void P3(string theTag, in Point3D P) => L(theTag + " " + R(P.X) + " " + R(P.Y) + " " + R(P.Z));
 
-        internal void V3(string theTag, in Vector3D V) => L(theTag + " " + R(V.X()) + " " + R(V.Y()) + " " + R(V.Z()));
+        internal void V3(string theTag, in Vector3D V) => L(theTag + " " + R(V.X) + " " + R(V.Y) + " " + R(V.Z));
 
-        internal void P2(string theTag, in Point2D P) => L(theTag + " " + R(P.X()) + " " + R(P.Y()));
+        internal void P2(string theTag, in Point2D P) => L(theTag + " " + R(P.X) + " " + R(P.Y));
 
         internal void Real(string theTag, double v) => L(theTag + " " + R(v));
 
@@ -408,7 +408,7 @@ internal static class KPartRecorder
             FaceSurfaceAdaptor H2 = new(FaceOf(S, f2));
             DsDataStructure DStr = new();
             SurfData Data = new();
-            bool ok = ComputeData.ComputeCorner(DStr, Data, HS, H1, H2, F.Orientation(), OS, OS1, OS2, 10.0);
+            bool ok = ComputeData.ComputeCorner(DStr, Data, HS, H1, H2, F.Orientation, OS, OS1, OS2, 10.0);
             o.L("ok " + (ok ? 1 : 0));
             o.SurfData(Data);
             o.DS(DStr);
@@ -592,7 +592,7 @@ internal static class KPartRecorder
             Point2D p2d = new();
             double w = wc;
             bool ok = ChFi3d_IntCS(aCyl, aLin, ref p2d, ref w);
-            o.L("intcs " + (ok ? 1 : 0) + " " + Out.R(p2d.X()) + " " + Out.R(p2d.Y()) + " " + Out.R(w));
+            o.L("intcs " + (ok ? 1 : 0) + " " + Out.R(p2d.X) + " " + Out.R(p2d.Y) + " " + Out.R(w));
         }
         SurfaceAdaptor aPln = new(new PlaneSurface(new Plane3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0.2))));
         CurveAdaptor aCir = new(new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0,

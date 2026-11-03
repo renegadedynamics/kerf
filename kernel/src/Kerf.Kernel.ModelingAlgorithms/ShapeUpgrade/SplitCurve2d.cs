@@ -31,7 +31,7 @@ public class SplitCurve2d : SplitCurve
     /// <summary>Initializes with the curve over its whole range.</summary>
     public void Init(Curve2D c)
     {
-        Init(c, c.FirstParameter(), c.LastParameter());
+        Init(c, c.FirstParameter, c.LastParameter);
     }
 
     /// <summary>Initializes with a copy of the curve, bounded by the parameters (clipped to a non-periodic curve's domain).</summary>
@@ -46,13 +46,13 @@ public class SplitCurve2d : SplitCurve
         Curve2D curve = _curve;
         if (curve is TrimmedCurve2D trimmed)
         {
-            curve = trimmed.BasisCurve();
+            curve = trimmed.BasisCurve;
         }
         // 15.11.2002 PTV OCC966
         if (!CurveAnalysis.IsPeriodic(c))
         {
-            double fP = curve.FirstParameter();
-            double lP = curve.LastParameter();
+            double fP = curve.FirstParameter;
+            double lP = curve.LastParameter;
             if (Math.Abs(firstPar - fP) < precision)
             {
                 firstPar = fP;
@@ -97,7 +97,7 @@ public class SplitCurve2d : SplitCurve
         }
         if (_curve is TrimmedCurve2D tmp)
         {
-            Curve2D basCurve = tmp.BasisCurve();
+            Curve2D basCurve = tmp.BasisCurve;
             var spc = new SplitCurve2d();
             spc.Init(basCurve, first, last);
             spc.SetSplitValues(_splitValues);
@@ -119,8 +119,8 @@ public class SplitCurve2d : SplitCurve
         }
         else if (_curve is OffsetCurve2D tmpOffset)
         {
-            Curve2D basCurve = tmpOffset.BasisCurve();
-            double offset = tmpOffset.Offset();
+            Curve2D basCurve = tmpOffset.BasisCurve;
+            double offset = tmpOffset.Offset;
             var spc = new SplitCurve2d();
             spc.Init(basCurve, first, last);
             spc.SetSplitValues(_splitValues);
@@ -141,8 +141,8 @@ public class SplitCurve2d : SplitCurve
         if (_nbCurves == 1)
         {
             bool filled = true;
-            if (Math.Abs(_curve!.FirstParameter() - first) < Kerf.Engine.Foundation.Precision.PConfusion()
-                && Math.Abs(_curve.LastParameter() - last) < Kerf.Engine.Foundation.Precision.PConfusion())
+            if (Math.Abs(_curve!.FirstParameter - first) < Kerf.Engine.Foundation.Precision.PConfusion()
+                && Math.Abs(_curve.LastParameter - last) < Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 _resultingCurves.SetValue(1, _curve);
             }

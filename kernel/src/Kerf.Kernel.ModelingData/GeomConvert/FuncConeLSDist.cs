@@ -58,7 +58,7 @@ public sealed class FuncConeLSDist : MultipleVarFunction
             global::Kerf.Engine.Geometry.ElSLib.ConeParameters(pos, r, semiAngle, pi, out u, out v);
             Point3D pp;
             global::Kerf.Engine.Geometry.ElSLib.ConeD0(u, v, pos, r, semiAngle, out pp);
-            f += pi.SquareDistance(pp);
+            f += pi.SquareDistanceTo(pp);
         }
 
         return true;

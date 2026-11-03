@@ -157,9 +157,9 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
 
     private static void Same(Tally theTally, N.gp_Pnt theNative, in Point3D thePort, string theWhat)
     {
-        Same(theTally, theNative.X(), thePort.X(), theWhat + ".X");
-        Same(theTally, theNative.Y(), thePort.Y(), theWhat + ".Y");
-        Same(theTally, theNative.Z(), thePort.Z(), theWhat + ".Z");
+        Same(theTally, theNative.X(), thePort.X, theWhat + ".X");
+        Same(theTally, theNative.Y(), thePort.Y, theWhat + ".Y");
+        Same(theTally, theNative.Z(), thePort.Z, theWhat + ".Z");
     }
 
     private void Finish(Tally theTally)
@@ -249,7 +249,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
                                    ? new N.BRepBuilderAPI_MakeVertex(aP1).Vertex()
                                    : new N.BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
             Compare(theTally, $"{theWhat} solution {i}", aNative, aPort);
-            if (aPort.ShapeType() == ShapeType.Vertex)
+            if (aPort.Type == ShapeType.Vertex)
             {
                 Same(theTally, aP1, Tool.Pnt(ShapeCasts.Vertex(aPort)), $"{theWhat} {aNames[i]}");
             }
@@ -273,7 +273,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
     // coordinates at 0 (and the vertex's text). The native calls are made as recorded; only the verdict changes.
     private static bool IsOriginForAShortEdge(List<string> theDifferences, string theCoordinates, in Shape thePort)
     {
-        if (theDifferences.Count == 0 || thePort.ShapeType() != ShapeType.Vertex)
+        if (theDifferences.Count == 0 || thePort.Type != ShapeType.Vertex)
         {
             return false;
         }
@@ -849,13 +849,13 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
             using var anExp = new N.TopExp_Explorer(aShape, N.TopAbs_ShapeEnum.TopAbs_SOLID);
             if (anExp.More())
             {
-                Run(aDI, aDI.GetShape("s").ShapeType() == ShapeType.Solid ? "copy s so" : "explode s so; copy s_1 so");
+                Run(aDI, aDI.GetShape("s").Type == ShapeType.Solid ? "copy s so" : "explode s so; copy s_1 so");
                 N.TopoDS_Solid aSolid = N.TopoDS.Solid(anExp.Current());
                 N.BRepLib.OrientClosedSolid(aSolid);
                 Run(aDI, "solidorientation so");
                 Compare(aTally, $"{aName} solidorientation", aSolid, aDI.GetShape("so"));
                 aTally.Values++;
-                Assert.Equal((int)aSolid.Orientation(), (int)aDI.GetShape("so").Orientation());
+                Assert.Equal((int)aSolid.Orientation(), (int)aDI.GetShape("so").Orientation);
             }
         }
 

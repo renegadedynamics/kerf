@@ -238,7 +238,7 @@ public partial class BooleanBuilder : BuilderShape
                 }
 
                 // Check if the shape is a solid or collection of them
-                if (s.ShapeType() != ShapeType.Solid)
+                if (s.Type != ShapeType.Solid)
                 {
                     NCollection_List<Shape> ls = new();
                     HashSet<Shape> mFence0 = new(ShapeHasher.Instance);
@@ -248,7 +248,7 @@ public partial class BooleanBuilder : BuilderShape
                     for (; it.More(); it.Next())
                     {
                         Shape sx = it.Value();
-                        if (sx.ShapeType() != ShapeType.Solid && sx.ShapeType() != ShapeType.CompSolid)
+                        if (sx.Type != ShapeType.Solid && sx.Type != ShapeType.CompSolid)
                         {
                             aReport.AddAlert(Fail, new AlertUnsupportedType(s));
                             return;
@@ -291,7 +291,7 @@ public partial class BooleanBuilder : BuilderShape
                     for (; expF.More(); expF.Next())
                     {
                         Shape f = expF.Current();
-                        if (f.Orientation() != Forward && f.Orientation() != Reversed)
+                        if (f.Orientation != Forward && f.Orientation != Reversed)
                         {
                             continue;
                         }
@@ -556,7 +556,7 @@ public partial class BooleanBuilder : BuilderShape
                         for (Iterator it = new(s); it.More(); it.Next())
                         {
                             Shape sInt = it.Value();
-                            if (sInt.Orientation() == Internal)
+                            if (sInt.Orientation == Internal)
                             {
                                 inParts.Append(sInt); // vertex or edge
                             }
@@ -564,7 +564,7 @@ public partial class BooleanBuilder : BuilderShape
                             {
                                 // shell treatment
                                 Iterator itInt = new(sInt);
-                                if (itInt.More() && itInt.Value().Orientation() == Internal)
+                                if (itInt.More() && itInt.Value().Orientation == Internal)
                                 {
                                     inParts.Append(sInt);
                                 }

@@ -75,72 +75,72 @@ public class BinarySurfaceSet
     private static void Write(OStream os, PlaneSurface s)
     {
         os = os << Plane;
-        Plane3D p = s.Pln();
-        os = os << p.Location(); // Pnt
-        os = os << p.Axis().Direction();
-        os = os << p.XAxis().Direction();
-        os = os << p.YAxis().Direction();
+        Plane3D p = s.Plane;
+        os = os << p.Location; // Pnt
+        os = os << p.Axis.Direction;
+        os = os << p.XAxis.Direction;
+        os = os << p.YAxis.Direction;
     }
 
     private static void Write(OStream os, CylindricalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Cylinder;
-        Cylinder p = s.Cylinder();
-        os = os << p.Location(); // Pnt
-        os = os << p.Axis().Direction();
-        os = os << p.XAxis().Direction();
-        os = os << p.YAxis().Direction();
-        os = os << p.Radius();
+        Cylinder p = s.Cylinder;
+        os = os << p.Location; // Pnt
+        os = os << p.Axis.Direction;
+        os = os << p.XAxis.Direction;
+        os = os << p.YAxis.Direction;
+        os = os << p.Radius;
     }
 
     private static void Write(OStream os, ConicalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Cone;
-        Cone p = s.Cone();
-        os = os << p.Location(); // Pnt
-        os = os << p.Axis().Direction();
-        os = os << p.XAxis().Direction();
-        os = os << p.YAxis().Direction();
-        os = os << p.RefRadius();
-        os = os << p.SemiAngle();
+        Cone p = s.Cone;
+        os = os << p.Location; // Pnt
+        os = os << p.Axis.Direction;
+        os = os << p.XAxis.Direction;
+        os = os << p.YAxis.Direction;
+        os = os << p.RefRadius;
+        os = os << p.SemiAngle;
     }
 
     private static void Write(OStream os, SphericalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Sphere;
-        Sphere p = s.Sphere();
-        os = os << p.Location(); // Pnt
-        os = os << p.Position().Axis().Direction();
-        os = os << p.XAxis().Direction();
-        os = os << p.YAxis().Direction();
-        os = os << p.Radius();
+        Sphere p = s.Sphere;
+        os = os << p.Location; // Pnt
+        os = os << p.Position.Axis.Direction;
+        os = os << p.XAxis.Direction;
+        os = os << p.YAxis.Direction;
+        os = os << p.Radius;
     }
 
     private static void Write(OStream os, ToroidalSurface s)
     {
         os = os << global::Kerf.Engine.Exchange.Brep.Binary.BinarySurfaceSet.Torus;
-        Torus p = s.Torus();
-        os = os << p.Location(); // Pnt
-        os = os << p.Axis().Direction();
-        os = os << p.XAxis().Direction();
-        os = os << p.YAxis().Direction();
-        os = os << p.MajorRadius();
-        os = os << p.MinorRadius();
+        Torus p = s.Torus;
+        os = os << p.Location; // Pnt
+        os = os << p.Axis.Direction;
+        os = os << p.XAxis.Direction;
+        os = os << p.YAxis.Direction;
+        os = os << p.MajorRadius;
+        os = os << p.MinorRadius;
     }
 
     private static void Write(OStream os, ExtrusionSurface s)
     {
         os = os << Linearextrusion;
-        os = os << s.Direction();
-        BinaryCurveSet.WriteCurve(s.BasisCurve(), os);
+        os = os << s.Direction;
+        BinaryCurveSet.WriteCurve(s.BasisCurve, os);
     }
 
     private static void Write(OStream os, RevolutionSurface s)
     {
         os = os << Revolution;
-        os = os << s.Location();
-        os = os << s.Direction();
-        BinaryCurveSet.WriteCurve(s.BasisCurve(), os);
+        os = os << s.Location;
+        os = os << s.Direction;
+        BinaryCurveSet.WriteCurve(s.BasisCurve, os);
     }
 
     private static void Write(OStream os, BezierSurface s)
@@ -153,8 +153,8 @@ public class BinarySurfaceSet
 
         // poles and weights
         int i, j, udegree, vdegree;
-        udegree = s.UDegree();
-        vdegree = s.VDegree();
+        udegree = s.UDegree;
+        vdegree = s.VDegree;
         os = os << (char)udegree;
         os = os << (char)vdegree;
         for (i = 1; i <= udegree + 1; i++)
@@ -184,8 +184,8 @@ public class BinarySurfaceSet
 
         // poles and weights
         int i, j, udegree, vdegree, nbupoles, nbvpoles, nbuknots, nbvknots;
-        udegree = s.UDegree();
-        vdegree = s.VDegree();
+        udegree = s.UDegree;
+        vdegree = s.VDegree;
         nbupoles = s.UPoleCount;
         nbvpoles = s.VPoleCount;
         nbuknots = s.UKnotCount;
@@ -224,16 +224,16 @@ public class BinarySurfaceSet
     private static void Write(OStream os, TrimmedSurface s)
     {
         os = os << Rectangular;
-        s.Bounds(out double u1, out double u2, out double v1, out double v2);
+        s.ParameterBounds(out double u1, out double u2, out double v1, out double v2);
         os = os << u1 << u2 << v1 << v2;
-        WriteSurface(s.BasisSurface(), os);
+        WriteSurface(s.BasisSurface, os);
     }
 
     private static void Write(OStream os, OffsetSurface s)
     {
         os = os << Offset;
-        os = os << s.Offset();
-        WriteSurface(s.BasisSurface(), os);
+        os = os << s.Offset;
+        WriteSurface(s.BasisSurface, os);
     }
 
     /// <summary>Writes a surface (its type byte, then its data).</summary>

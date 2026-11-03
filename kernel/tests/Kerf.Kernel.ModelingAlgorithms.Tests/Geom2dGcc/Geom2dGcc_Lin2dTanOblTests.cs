@@ -52,14 +52,14 @@ public class Geom2dGcc_Lin2dTanOblTests
         for (int i = 1; i <= 2; i++)
         {
             Line2D aSol = aLin.ThisSolution(i);
-            Assert.Equal(M_PI / 4, Math.Abs(DX.Angle(aSol.Direction())), 1e-9);
+            Assert.Equal(M_PI / 4, Math.Abs(DX.AngleTo(aSol.Direction)), 1e-9);
             aLin.Tangency1(i, out _, out double a1, out Point2D t1);
             Geom2dGcc_Lin2d2TanTests.CheckTangent(aSol, anEll, a1, t1, 1e-6);
             aLin.Intersection2(i, out double p2, out double a2, out Point2D t2);
-            Assert.True(aLine.Distance(t2) < 1e-9);
-            Assert.True(aSol.Distance(t2) < 1e-9);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(a2, aLine).Distance(t2) < 1e-9);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(p2, aSol).Distance(t2) < 1e-9);
+            Assert.True(aLine.DistanceTo(t2) < 1e-9);
+            Assert.True(aSol.DistanceTo(t2) < 1e-9);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(a2, aLine).DistanceTo(t2) < 1e-9);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(p2, aSol).DistanceTo(t2) < 1e-9);
         }
     }
 

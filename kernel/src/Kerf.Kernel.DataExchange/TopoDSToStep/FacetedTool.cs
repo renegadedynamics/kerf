@@ -37,10 +37,10 @@ public static class FacetedTool
             {
                 BSplineSurface bsplS = su as BSplineSurface;
                 int uDeg, vDeg, nUPol, nVPol;
-                uDeg = bsplS.UDegree();
+                uDeg = bsplS.UDegree;
                 if (uDeg == 1)
                 {
-                    vDeg = bsplS.VDegree();
+                    vDeg = bsplS.VDegree;
                     if (vDeg == 1)
                     {
                         nUPol = bsplS.UPoleCount;
@@ -66,10 +66,10 @@ public static class FacetedTool
             {
                 BezierSurface bzS = su as BezierSurface;
                 int uDeg, vDeg, nUPol, nVPol;
-                uDeg = bzS.UDegree();
+                uDeg = bzS.UDegree;
                 if (uDeg == 1)
                 {
-                    vDeg = bzS.VDegree();
+                    vDeg = bzS.VDegree;
                     if (vDeg == 1)
                     {
                         nUPol = bzS.UPoleCount;
@@ -114,7 +114,7 @@ public static class FacetedTool
                 else if (c2d is BSplineCurve2D)
                 {
                     BSplineCurve2D bspl2d = c2d as BSplineCurve2D;
-                    if ((bspl2d.Degree() != 1) || (bspl2d.PoleCount != 2))
+                    if ((bspl2d.Degree != 1) || (bspl2d.PoleCount != 2))
                     {
                         return FacetedError.PCurveNotLinear;
                     }
@@ -122,7 +122,7 @@ public static class FacetedTool
                 else if (c2d is BezierCurve2D)
                 {
                     BezierCurve2D bzC2d = c2d as BezierCurve2D;
-                    if ((bzC2d.Degree() != 1) || (bzC2d.PoleCount != 2))
+                    if ((bzC2d.Degree != 1) || (bzC2d.PoleCount != 2))
                     {
                         return FacetedError.PCurveNotLinear;
                     }

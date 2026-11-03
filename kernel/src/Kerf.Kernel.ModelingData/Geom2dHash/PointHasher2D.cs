@@ -21,8 +21,8 @@ internal readonly struct PointHasher2D(double theCompTolerance, double theHashTo
         // Round each component to tolerance precision before hashing
         ReadOnlySpan<ulong> hashes =
         [
-            HashUtils.Hash((long)HashUtils.Round(point.X() * factor)),
-            HashUtils.Hash((long)HashUtils.Round(point.Y() * factor))
+            HashUtils.Hash((long)HashUtils.Round(point.X * factor)),
+            HashUtils.Hash((long)HashUtils.Round(point.Y * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -30,7 +30,7 @@ internal readonly struct PointHasher2D(double theCompTolerance, double theHashTo
     // Compares two 2D points with fixed tolerance.
     public bool IsEqual(in Point2D point1, in Point2D point2)
     {
-        return Math.Abs(point1.X() - point2.X()) <= CompTolerance
-               && Math.Abs(point1.Y() - point2.Y()) <= CompTolerance;
+        return Math.Abs(point1.X - point2.X) <= CompTolerance
+               && Math.Abs(point1.Y - point2.Y) <= CompTolerance;
     }
 }

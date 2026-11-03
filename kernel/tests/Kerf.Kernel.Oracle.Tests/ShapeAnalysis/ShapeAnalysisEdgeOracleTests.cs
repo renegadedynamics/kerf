@@ -145,12 +145,12 @@ public class ShapeAnalysisEdgeOracleTests(ITestOutputHelper output) : IDisposabl
         if (!aPV1.IsNull)
         {
             o.Same(N.BRep_Tool.Pnt(aNV1), Tool.Pnt(aPV1), w + ", FirstVertex");
-            o.Same((int)aNV1.Orientation(), (int)aPV1.Orientation(), w + ", FirstVertex orientation");
+            o.Same((int)aNV1.Orientation(), (int)aPV1.Orientation, w + ", FirstVertex orientation");
         }
         if (!aPV2.IsNull)
         {
             o.Same(N.BRep_Tool.Pnt(aNV2), Tool.Pnt(aPV2), w + ", LastVertex");
-            o.Same((int)aNV2.Orientation(), (int)aPV2.Orientation(), w + ", LastVertex orientation");
+            o.Same((int)aNV2.Orientation(), (int)aPV2.Orientation, w + ", LastVertex orientation");
         }
 
         // bounds and end tangents of the pcurve

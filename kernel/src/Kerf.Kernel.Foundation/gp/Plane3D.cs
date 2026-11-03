@@ -28,9 +28,9 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
     /// <summary>The plane through <paramref name="p"/> with normal <paramref name="v"/>; the X direction is chosen.</summary>
     public Plane3D(in Point3D p, in Direction3D v)
     {
-        double a = v.X();
-        double b = v.Y();
-        double c = v.Z();
+        double a = v.X;
+        double b = v.Y;
+        double c = v.Z;
         double absA = Math.Abs(a);
         double absB = Math.Abs(b);
         double absC = Math.Abs(c);
@@ -155,100 +155,100 @@ public readonly partial struct Plane3D : IEquatable<Plane3D>
     /// </summary>
     public readonly void Coefficients(out double a, out double b, out double c, out double d)
     {
-        Direction3D dir = _position.Direction();
-        if (_position.Direct())
+        Direction3D dir = _position.Direction;
+        if (_position.IsDirect)
         {
-            a = dir.X();
-            b = dir.Y();
-            c = dir.Z();
+            a = dir.X;
+            b = dir.Y;
+            c = dir.Z;
         }
         else
         {
-            a = -dir.X();
-            b = -dir.Y();
-            c = -dir.Z();
+            a = -dir.X;
+            b = -dir.Y;
+            c = -dir.Z;
         }
 
-        Point3D p = _position.Location();
-        d = -(a * p.X() + b * p.Y() + c * p.Z());
+        Point3D p = _position.Location;
+        d = -(a * p.X + b * p.Y + c * p.Z);
     }
 
     /// <summary>True when the coordinate system is right-handed.</summary>
-    public readonly bool Direct() => _position.Direct();
+    public readonly bool IsDirect => _position.IsDirect;
 
     /// <summary>The normal axis through the plane's origin.</summary>
-    public readonly Axis3D Axis() => _position.Axis();
+    public readonly Axis3D Axis => _position.Axis;
 
-    public readonly Point3D Location() => _position.Location();
+    public readonly Point3D Location => _position.Location;
 
-    public readonly CoordinateSystem Position() => _position;
+    public readonly CoordinateSystem Position => _position;
 
-    public readonly double Distance(in Point3D p) => Math.Abs(SignedDistance(p));
+    public readonly double DistanceTo(in Point3D p) => Math.Abs(SignedDistance(p));
 
     /// <summary>The distance to a line parallel to the plane; 0 when the line is not parallel.</summary>
-    public readonly double Distance(in Line3D l) => Math.Abs(SignedDistance(l));
+    public readonly double DistanceTo(in Line3D l) => Math.Abs(SignedDistance(l));
 
     /// <summary>The distance to a parallel plane; 0 when the planes are not parallel.</summary>
-    public readonly double Distance(in Plane3D other) => Math.Abs(SignedDistance(other));
+    public readonly double DistanceTo(in Plane3D other) => Math.Abs(SignedDistance(other));
 
     /// <summary>The signed distance, positive on the side the normal points to.</summary>
     public readonly double SignedDistance(in Point3D p)
     {
-        Point3D loc = _position.Location();
-        Direction3D dir = _position.Direction();
-        return (dir.X() * (p.X() - loc.X()) + dir.Y() * (p.Y() - loc.Y())
-                + dir.Z() * (p.Z() - loc.Z()));
+        Point3D loc = _position.Location;
+        Direction3D dir = _position.Direction;
+        return (dir.X * (p.X - loc.X) + dir.Y * (p.Y - loc.Y)
+                + dir.Z * (p.Z - loc.Z));
     }
 
     public readonly double SignedDistance(in Line3D l)
     {
-        if (!_position.Direction().IsNormal(l.Direction(), Constants.Resolution()))
+        if (!_position.Direction.IsNormal(l.Direction, Constants.Resolution()))
         {
             return 0.0;
         }
 
-        return SignedDistance(l.Location());
+        return SignedDistance(l.Location);
     }
 
     public readonly double SignedDistance(in Plane3D other)
     {
-        if (!_position.Direction().IsParallel(other._position.Direction(), Constants.Resolution()))
+        if (!_position.Direction.IsParallel(other._position.Direction, Constants.Resolution()))
         {
             return 0.0;
         }
 
-        return SignedDistance(other._position.Location());
+        return SignedDistance(other._position.Location);
     }
 
-    public readonly double SquareDistance(in Point3D p)
+    public readonly double SquareDistanceTo(in Point3D p)
     {
-        double d = Distance(p);
+        double d = DistanceTo(p);
         return d * d;
     }
 
-    public readonly double SquareDistance(in Line3D l)
+    public readonly double SquareDistanceTo(in Line3D l)
     {
-        double d = Distance(l);
+        double d = DistanceTo(l);
         return d * d;
     }
 
-    public readonly double SquareDistance(in Plane3D other)
+    public readonly double SquareDistanceTo(in Plane3D other)
     {
-        double d = Distance(other);
+        double d = DistanceTo(other);
         return d * d;
     }
 
     /// <summary>The X axis: the U parameter direction through the origin.</summary>
-    public readonly Axis3D XAxis() => new(_position.Location(), _position.XDirection());
+    public readonly Axis3D XAxis => new(_position.Location, _position.XDirection);
 
     /// <summary>The Y axis: the V parameter direction through the origin.</summary>
-    public readonly Axis3D YAxis() => new(_position.Location(), _position.YDirection());
+    public readonly Axis3D YAxis => new(_position.Location, _position.YDirection);
 
-    public readonly bool Contains(in Point3D p, double linearTolerance) => Distance(p) <= linearTolerance;
+    public readonly bool Contains(in Point3D p, double linearTolerance) => DistanceTo(p) <= linearTolerance;
 
     public readonly bool Contains(in Line3D l, double linearTolerance, double angularTolerance)
-        => Contains(l.Location(), linearTolerance)
-           && _position.Direction().IsNormal(l.Direction(), angularTolerance);
+        => Contains(l.Location, linearTolerance)
+           && _position.Direction.IsNormal(l.Direction, angularTolerance);
 
     public readonly Plane3D Mirrored(in Point3D p) => new(_position.Mirrored(p));
 

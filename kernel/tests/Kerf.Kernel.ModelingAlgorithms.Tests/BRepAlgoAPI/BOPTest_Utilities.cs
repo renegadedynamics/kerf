@@ -192,7 +192,7 @@ public static class BOPTest_Utilities
             {
                 // Y command: translate along Y
                 double aDY = double.Parse(theCommands[i + 1], System.Globalization.CultureInfo.InvariantCulture);
-                aCurrentPt = aCurrentPt.WithY(aCurrentPt.Y() + aDY);
+                aCurrentPt = aCurrentPt.WithY(aCurrentPt.Y + aDY);
                 aPoints.Add(aCurrentPt);
                 i++; // Skip next parameter
             }
@@ -212,7 +212,7 @@ public static class BOPTest_Utilities
         List<Point3D> a3DPoints = [];
         foreach (Point2D aPt2d in aPoints)
         {
-            a3DPoints.Add(global::Kerf.Engine.Geometry.ElSLib.Value(aPt2d.X(), aPt2d.Y(), thePlane));
+            a3DPoints.Add(global::Kerf.Engine.Geometry.ElSLib.Value(aPt2d.X, aPt2d.Y, thePlane));
         }
 
         return CreatePolygonWire(a3DPoints, true);
@@ -241,7 +241,7 @@ public static class BOPTest_Utilities
                     {
                         // O command sets the origin of the plane coordinate system
                         Point3D aNewOrigin = new(op.@params[0], op.@params[1], op.@params[2]);
-                        CoordinateSystem aNewAx3 = new(aNewOrigin, aWorkingPlane.Axis().Direction(), aWorkingPlane.XAxis().Direction());
+                        CoordinateSystem aNewAx3 = new(aNewOrigin, aWorkingPlane.Axis.Direction, aWorkingPlane.XAxis.Direction);
                         aWorkingPlane = new Plane3D(aNewAx3);
 
                         // Profile still starts at (0,0) in the new plane coordinate system
@@ -266,7 +266,7 @@ public static class BOPTest_Utilities
                         Direction3D aXDirection = new(aXDir);
 
                         // Use the current plane's origin but new orientation
-                        CoordinateSystem aNewAx3 = new(aWorkingPlane.Location(), aNormalDir, aXDirection);
+                        CoordinateSystem aNewAx3 = new(aWorkingPlane.Location, aNormalDir, aXDirection);
                         aWorkingPlane = new Plane3D(aNewAx3);
                     }
                     break;
@@ -291,10 +291,10 @@ public static class BOPTest_Utilities
                             aFirstSet = true;
                         }
 
-                        Point2D aNewPt = new(aCurrentPt.X() + op.@params[0], aCurrentPt.Y());
+                        Point2D aNewPt = new(aCurrentPt.X + op.@params[0], aCurrentPt.Y);
                         // Add line segment
-                        Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
-                        Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aNewPt.X(), aNewPt.Y(), aWorkingPlane);
+                        Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X, aCurrentPt.Y, aWorkingPlane);
+                        Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aNewPt.X, aNewPt.Y, aWorkingPlane);
                         aMakeWire.Add(new MakeEdge(aPt1, aPt2).Edge());
                         aCurrentPt = aNewPt;
                         aCurrentDir = new Vector2D(op.@params[0] > 0 ? 1 : -1, 0);
@@ -312,10 +312,10 @@ public static class BOPTest_Utilities
                             aFirstSet = true;
                         }
 
-                        Point2D aNewPt = new(aCurrentPt.X(), aCurrentPt.Y() + op.@params[0]);
+                        Point2D aNewPt = new(aCurrentPt.X, aCurrentPt.Y + op.@params[0]);
                         // Add line segment
-                        Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
-                        Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aNewPt.X(), aNewPt.Y(), aWorkingPlane);
+                        Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X, aCurrentPt.Y, aWorkingPlane);
+                        Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aNewPt.X, aNewPt.Y, aWorkingPlane);
                         aMakeWire.Add(new MakeEdge(aPt1, aPt2).Edge());
                         aCurrentPt = aNewPt;
                         aCurrentDir = new Vector2D(0, op.@params[0] > 0 ? 1 : -1);
@@ -334,14 +334,14 @@ public static class BOPTest_Utilities
                         {
                             // Create a full circle centered at current point (0,0 if not set)
                             Point2D aCenter2D = aFirstSet ? aCurrentPt : new Point2D(0, 0);
-                            Point3D aCenter3D = global::Kerf.Engine.Geometry.ElSLib.Value(aCenter2D.X(), aCenter2D.Y(), aWorkingPlane);
+                            Point3D aCenter3D = global::Kerf.Engine.Geometry.ElSLib.Value(aCenter2D.X, aCenter2D.Y, aWorkingPlane);
 
                             // Create full circle
-                            Circle3D aCirc = new(new Frame3D(aCenter3D, aWorkingPlane.Axis().Direction()), aRadius);
+                            Circle3D aCirc = new(new Frame3D(aCenter3D, aWorkingPlane.Axis.Direction), aRadius);
                             aMakeWire.Add(new MakeEdge(aCirc).Edge());
 
                             // Set current point to a point on the circle
-                            aCurrentPt = new Point2D(aCenter2D.X() + aRadius, aCenter2D.Y());
+                            aCurrentPt = new Point2D(aCenter2D.X + aRadius, aCenter2D.Y);
                             aCurrentDir = new Vector2D(0, 1); // Tangent direction
                             aFirstSet = true;
                         }
@@ -357,20 +357,20 @@ public static class BOPTest_Utilities
                             }
 
                             // Create arc from current point
-                            Vector2D aNormal = new(-aCurrentDir.Y(), aCurrentDir.X());
+                            Vector2D aNormal = new(-aCurrentDir.Y, aCurrentDir.X);
                             Point2D aCenter = aCurrentPt.Translated(aNormal * aRadius);
 
                             // Calculate end point
-                            double aStartAngle = Math.Atan2(aCurrentPt.Y() - aCenter.Y(), aCurrentPt.X() - aCenter.X());
+                            double aStartAngle = Math.Atan2(aCurrentPt.Y - aCenter.Y, aCurrentPt.X - aCenter.X);
                             double aEndAngle = aStartAngle + aAngleRad;
-                            Point2D aEndPt = new(aCenter.X() + aRadius * Math.Cos(aEndAngle), aCenter.Y() + aRadius * Math.Sin(aEndAngle));
+                            Point2D aEndPt = new(aCenter.X + aRadius * Math.Cos(aEndAngle), aCenter.Y + aRadius * Math.Sin(aEndAngle));
 
                             // Create 3D arc
-                            Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
-                            Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aEndPt.X(), aEndPt.Y(), aWorkingPlane);
-                            Point3D aCenter3D = global::Kerf.Engine.Geometry.ElSLib.Value(aCenter.X(), aCenter.Y(), aWorkingPlane);
+                            Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X, aCurrentPt.Y, aWorkingPlane);
+                            Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aEndPt.X, aEndPt.Y, aWorkingPlane);
+                            Point3D aCenter3D = global::Kerf.Engine.Geometry.ElSLib.Value(aCenter.X, aCenter.Y, aWorkingPlane);
 
-                            Circle3D aCirc = new(new Frame3D(aCenter3D, aWorkingPlane.Axis().Direction()), aRadius);
+                            Circle3D aCirc = new(new Frame3D(aCenter3D, aWorkingPlane.Axis.Direction), aRadius);
                             aMakeWire.Add(new MakeEdge(aCirc, aPt1, aPt2).Edge());
 
                             aCurrentPt = aEndPt;
@@ -401,8 +401,8 @@ public static class BOPTest_Utilities
         if (aFirstSet && !aCurrentPt.IsEqual(aFirstPt, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // Add closing edge back to start
-            Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X(), aCurrentPt.Y(), aWorkingPlane);
-            Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aFirstPt.X(), aFirstPt.Y(), aWorkingPlane);
+            Point3D aPt1 = global::Kerf.Engine.Geometry.ElSLib.Value(aCurrentPt.X, aCurrentPt.Y, aWorkingPlane);
+            Point3D aPt2 = global::Kerf.Engine.Geometry.ElSLib.Value(aFirstPt.X, aFirstPt.Y, aWorkingPlane);
             aMakeWire.Add(new MakeEdge(aPt1, aPt2).Edge());
         }
 
@@ -429,9 +429,9 @@ public static class BOPTest_Utilities
         List<Point3D> aPoints =
         [
             theCorner,
-            new Point3D(theCorner.X() + theX, theCorner.Y(), theCorner.Z()),
-            new Point3D(theCorner.X() + theX, theCorner.Y() + theY, theCorner.Z()),
-            new Point3D(theCorner.X(), theCorner.Y() + theY, theCorner.Z()),
+            new Point3D(theCorner.X + theX, theCorner.Y, theCorner.Z),
+            new Point3D(theCorner.X + theX, theCorner.Y + theY, theCorner.Z),
+            new Point3D(theCorner.X, theCorner.Y + theY, theCorner.Z),
         ];
         return CreatePolygonWire(aPoints, true);
     }
@@ -573,7 +573,7 @@ public static class BOPTest_Utilities
     {
         // Use DRAW pcylinder approach exactly:
         // S = BRepPrimAPI_MakeCylinder(P->Pln().Position().Ax2(), radius, height);
-        Frame3D anAx2 = thePlane.Position().Ax2();
+        Frame3D anAx2 = thePlane.Position.Frame;
 
         ApiMakeCylinder aCylinderMaker = new(anAx2, theRadius, theHeight);
         aCylinderMaker.Build();

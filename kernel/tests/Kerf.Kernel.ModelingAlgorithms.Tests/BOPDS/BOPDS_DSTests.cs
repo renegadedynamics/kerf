@@ -393,7 +393,7 @@ public class BOPDS_DSTests
                 EdgeCurveAdaptor aC2 = new(ShapeCasts.Edge(aDS.Shape(e2)));
                 Point3D a1F = aC1.Value(aC1.FirstParameter()), a1L = aC1.Value(aC1.LastParameter());
                 Point3D a2F = aC2.Value(aC2.FirstParameter()), a2L = aC2.Value(aC2.LastParameter());
-                if (a1F.Distance(a2F) < 1e-9 && a1L.Distance(a2L) < 1e-9)
+                if (a1F.DistanceTo(a2F) < 1e-9 && a1L.DistanceTo(a2L) < 1e-9)
                 {
                     (nE1, nE2) = (e1, e2);
                 }

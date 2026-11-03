@@ -134,11 +134,11 @@ public class BRepBuilderAPITests
         Assert.False(aMP.InternalLastVertex().TShape()!.IsFrozen);
         aMP.Close();
         Wire aW = aMP.Wire();
-        Assert.True(aW.Closed());
+        Assert.True(aW.IsClosed);
         Assert.Equal(3, Count(aW, ShapeType.Edge));
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
         Assert.True(AllFrozen(aW));
-        Assert.True(aMP.FirstVertex().IsSame(aMP.LastVertex()) || Tool.Pnt(aMP.FirstVertex()).Distance(new Point3D(0, 0, 0)) == 0);
+        Assert.True(aMP.FirstVertex().IsSame(aMP.LastVertex()) || Tool.Pnt(aMP.FirstVertex()).DistanceTo(new Point3D(0, 0, 0)) == 0);
         Assert.True(aMP.Shape().IsSame(aW));
     }
 
@@ -287,7 +287,7 @@ public class BRepBuilderAPITests
         Assert.True(aT.IsDone);
         Shape aR = aT.Shape();
         Assert.True(aR.IsPartner(aBox));
-        Assert.Equal(aTrsf, aR.Location().Transformation());
+        Assert.Equal(aTrsf, aR.Placement.Transformation);
         Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
         Shape aImage = aT.ModifiedShape(aFace);
         Assert.True(aImage.IsPartner(aFace));
@@ -324,7 +324,7 @@ public class BRepBuilderAPITests
         {
             Vertex aV = ShapeCasts.Vertex(aT.ModifiedShape(anExp.Current()));
             Point3D anOld = Tool.Pnt(ShapeCasts.Vertex(anExp.Current()));
-            Assert.True(Tool.Pnt(aV).IsEqual(new Point3D(anOld.X() / 2, anOld.Y() / 2, anOld.Z() / 2), 1e-12));
+            Assert.True(Tool.Pnt(aV).IsEqual(new Point3D(anOld.X / 2, anOld.Y / 2, anOld.Z / 2), 1e-12));
         }
         aSnap.AssertUnchanged(aBox);
 
@@ -477,7 +477,7 @@ public class BRepBuilderAPITests
         var aC = new EdgeCurveAdaptor(anE);
         Assert.Equal(BSplineCurve, aC.GetType());
         Point3D aP = aC.Value(aC.FirstParameter());
-        Assert.Equal(3.0, aP.X(), 1e-9);
+        Assert.Equal(3.0, aP.X, 1e-9);
         Assert.True(aGT.ModifiedShape(aCircle).IsSame(anE));
         // Modified: OCCT's list of the last converted shape's image
         Assert.True(Assert.Single(aGT.Modified(aCircle)).IsSame(anE));
@@ -525,8 +525,8 @@ public class BRepBuilderAPITests
         Assert.True(aFP.Found());
         PlaneSurface aPl = aFP.Plane()!;
         Assert.True(aPl.IsFrozen);
-        Assert.True(aPl.Pln().Axis().Direction().IsParallel(new Direction3D(0, 0, 1), 1e-12));
-        Assert.Equal(0.0, aPl.Pln().Distance(new Point3D(0.3, 0.7, 1)), 1e-12);
+        Assert.True(aPl.Plane.Axis.Direction.IsParallel(new Direction3D(0, 0, 1), 1e-12));
+        Assert.Equal(0.0, aPl.Plane.DistanceTo(new Point3D(0.3, 0.7, 1)), 1e-12);
 
         Wire aSkew = new MakePolygon(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0.5),
                                                            new Point3D(0, 1, 0), true).Wire();
@@ -537,7 +537,7 @@ public class BRepBuilderAPITests
         Edge aCirc = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 5), new Direction3D(1, 0, 0)), 2)).Edge();
         var aFC = new FindPlane(aCirc);
         Assert.True(aFC.Found());
-        Assert.True(aFC.Plane()!.Pln().Axis().Direction().IsParallel(new Direction3D(1, 0, 0), 1e-12));
+        Assert.True(aFC.Plane()!.Plane.Axis.Direction.IsParallel(new Direction3D(1, 0, 0), 1e-12));
         Assert.False(new FindPlane().Found());
     }
 }

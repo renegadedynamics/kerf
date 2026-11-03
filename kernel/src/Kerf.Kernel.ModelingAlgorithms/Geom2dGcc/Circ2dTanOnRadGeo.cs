@@ -268,8 +268,8 @@ public sealed class Circ2dTanOnRadGeo
         }
         NCollection_Array1<double> cote1   = new(1, 2);
         Circle2D                  c1      = qualified1.Qualified();
-        Point2D                   center1 = c1.Location();
-        double                     r1      = c1.Radius();
+        Point2D                   center1 = c1.Location;
+        double                     r1      = c1.Radius;
 
         if (radius < 0.0)
         {
@@ -299,7 +299,7 @@ public sealed class Circ2dTanOnRadGeo
             TheIntConicCurveOfGInter intp = new();
             for (int jcote1 = 1; jcote1 <= nbrcote1; jcote1++)
             {
-                Circle2D       circ = new(c1.XAxis(), r1 + cote1[jcote1]);
+                Circle2D       circ = new(c1.XAxis, r1 + cote1[jcote1]);
                 TwoDDomain d1   = new(global::Kerf.Engine.Geometry.ElCLib.Value(0.0, circ),
                                            0.0,
                                            tol,
@@ -326,7 +326,7 @@ public sealed class Circ2dTanOnRadGeo
                             Point2D center = intp.Point(i).Value();
                             _cirsol[_nbrSol]  = new Circle2D(new Axis2D(center, dirx), radius);
                             //           =======================================================
-                            double distcc1 = center.Distance(center1);
+                            double distcc1 = center.DistanceTo(center1);
                             if (!qualified1.IsUnqualified)
                             {
                                 _qualifier1[_nbrSol] = qualified1.Qualifier();
@@ -383,9 +383,9 @@ public sealed class Circ2dTanOnRadGeo
         int                        nbrcote1 = 0;
         NCollection_Array1<double> cote1    = new(1, 2);
         Line2D                   l1       = qualified1.Qualified();
-        Point2D                   origin1  = l1.Location();
-        Direction2D                   dir1     = l1.Direction();
-        Direction2D                   norm1    = new(-dir1.Y(), dir1.X());
+        Point2D                   origin1  = l1.Location;
+        Direction2D                   dir1     = l1.Direction;
+        Direction2D                   norm1    = new(-dir1.Y, dir1.X);
 
         if (radius < 0.0)
         {

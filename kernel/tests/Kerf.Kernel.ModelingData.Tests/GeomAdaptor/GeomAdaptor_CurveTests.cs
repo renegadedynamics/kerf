@@ -192,8 +192,8 @@ public class GeomAdaptor_Curve_Test
         CurveAdaptor anAdaptor = new();
         anAdaptor.Load(myCircle);
 
-        Assert.Equal(myCircle.FirstParameter(), anAdaptor.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(myCircle.LastParameter(), anAdaptor.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(myCircle.FirstParameter, anAdaptor.FirstParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(myCircle.LastParameter, anAdaptor.LastParameter(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.True(anAdaptor.IsPeriodic);
     }
 

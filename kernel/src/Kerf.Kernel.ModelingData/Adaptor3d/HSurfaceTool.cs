@@ -148,7 +148,7 @@ public static class HSurfaceTool
             if (c.GetType() == OffsetCurve)
             {
                 OffsetCurve3D oc = c.OffsetCurve();
-                c = new CurveAdaptor(oc.BasisCurve());
+                c = new CurveAdaptor(oc.BasisCurve);
             }
 
             if (c.GetType() == BSplineCurve)

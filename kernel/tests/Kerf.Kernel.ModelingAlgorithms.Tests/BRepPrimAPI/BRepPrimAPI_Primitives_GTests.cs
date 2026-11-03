@@ -351,9 +351,9 @@ public class BRepPrimAPI_MakeSphereTest
         Point3D aCOM = aProps.CentreOfMass();
 
         // Center of mass of full sphere should be at origin
-        Assert.Equal(0.0, aCOM.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aCOM.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(0.0, aCOM.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCOM.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCOM.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(0.0, aCOM.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 }
 
@@ -432,16 +432,16 @@ public class BRepPrimAPI_MakeTorusTest
         var aTorusSurf = aSurface as ToroidalSurface;
         Assert.NotNull(aTorusSurf);
 
-        Assert.Equal(R1, aTorusSurf.MajorRadius(), 1e-10);
-        Assert.Equal(R2, aTorusSurf.MinorRadius(), 1e-10);
+        Assert.Equal(R1, aTorusSurf.MajorRadius, 1e-10);
+        Assert.Equal(R2, aTorusSurf.MinorRadius, 1e-10);
 
         // At V = PI/2 (top of tube), Z should be +R2
         aTorusSurf.D0(0.0, M_PI_2, out Point3D aPnt);
-        Assert.Equal(R2, aPnt.Z(), 1e-10);
+        Assert.Equal(R2, aPnt.Z, 1e-10);
 
         // At V = -PI/2 (bottom of tube), Z should be -R2
         aTorusSurf.D0(0.0, -M_PI_2, out aPnt);
-        Assert.Equal(-R2, aPnt.Z(), 1e-10);
+        Assert.Equal(-R2, aPnt.Z, 1e-10);
     }
 
     // Bug 33133 original report: V range symmetric around 0 (-PI/2 to +PI/2) works.

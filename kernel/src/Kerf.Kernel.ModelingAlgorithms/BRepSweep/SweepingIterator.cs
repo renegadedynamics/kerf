@@ -29,5 +29,5 @@ internal sealed class SweepingIterator
 
     public Shape Value() => _iterator.Value();
 
-    public Orientation Orientation() => Value().Orientation();
+    public Orientation Orientation() => Value().Orientation;
 }

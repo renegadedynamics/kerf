@@ -21,7 +21,7 @@ namespace Kerf.Geometry;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Arrays: <see cref="Poles()"/>, <see cref="Weights()"/> and <see cref="WeightsArray"/> return new copies (OCCT
+/// Arrays: <see cref="Poles"/>, <see cref="WeightsOrNull()"/> and <see cref="Weights"/> return new copies (OCCT
 /// returns references to the surface's arrays); the knots, multiplicities and knot sequences of the equivalent
 /// B-spline are immutable <see cref="PackedList{T}"/>s. Code inside OCCT.NET uses the internal <c>Internal*</c>
 /// accessors, which return the stored (or shared static) arrays: don't modify them.
@@ -44,7 +44,7 @@ public class BezierSurface : BoundedSurface
     private volatile bool _maxDerivInvOk = false;
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The evaluation representation descriptor (may be null). Stored, not copied: don't modify.</summary>
     internal RepSurfaceDesc.Base? EvalRepresentation() => _evalRep;
@@ -379,7 +379,7 @@ public class BezierSurface : BoundedSurface
         _maxDerivInvOk = false;
         int nbUPoles = surfacePoles.ColLength();
         int nbVPoles = surfacePoles.RowLength();
-        if (nbUPoles < 2 || nbUPoles > MaxDegree() + 1 || nbVPoles < 2 || nbVPoles > MaxDegree() + 1)
+        if (nbUPoles < 2 || nbUPoles > MaxDegree + 1 || nbVPoles < 2 || nbVPoles > MaxDegree + 1)
         {
             throw new ConstructionErrorException();
         }
@@ -401,7 +401,7 @@ public class BezierSurface : BoundedSurface
         _maxDerivInvOk = false;
         int nbUPoles = surfacePoles.ColLength();
         int nbVPoles = surfacePoles.RowLength();
-        if (nbUPoles < 2 || nbUPoles > MaxDegree() + 1 || nbVPoles < 2 || nbVPoles > MaxDegree() + 1
+        if (nbUPoles < 2 || nbUPoles > MaxDegree + 1 || nbVPoles < 2 || nbVPoles > MaxDegree + 1
             || nbVPoles != poleWeights.RowLength() || nbUPoles != poleWeights.ColLength())
         {
             throw new ConstructionErrorException();
@@ -462,7 +462,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The maximum degree in each direction: 25.</summary>
-    public static int MaxDegree() => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
+    public static int MaxDegree => global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxDegree();
 
     /// <summary>Exchanges the U and V parametric directions; the poles grid is transposed.</summary>
     internal void ExchangeUV()
@@ -511,14 +511,14 @@ public class BezierSurface : BoundedSurface
     internal void Increase(int uDeg, int vDeg)
     {
         CheckMutable();
-        if (uDeg < UDegree() || uDeg > BezierSurface.MaxDegree() || vDeg < VDegree()
-            || vDeg > BezierSurface.MaxDegree())
+        if (uDeg < UDegree || uDeg > BezierSurface.MaxDegree || vDeg < VDegree
+            || vDeg > BezierSurface.MaxDegree)
         {
             throw new ConstructionErrorException();
         }
 
-        int oldUDeg = UDegree();
-        int oldVDeg = VDegree();
+        int oldUDeg = UDegree;
+        int oldVDeg = VDegree;
         int incUDeg = uDeg - oldUDeg;
         int incVDeg = vDeg - oldVDeg;
         if (incUDeg == 0 && incVDeg == 0)
@@ -533,7 +533,7 @@ public class BezierSurface : BoundedSurface
             NCollection_Array1<int> nmults = new NCollection_Array1<int>(1, 2);
             if (_uRational || _vRational)
             {
-                NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, uDeg + 1, 1, VDegree() + 1);
+                NCollection_Array2<double> nweights = new NCollection_Array2<double>(1, uDeg + 1, 1, VDegree + 1);
 
                 SurfaceBSplSLib.IncreaseDegree(true,
                                         oldUDeg,
@@ -915,8 +915,8 @@ public class BezierSurface : BoundedSurface
         CheckMutable();
         bool rat = (_uRational || _vRational);
 
-        int minDegree = UDegree() <= VDegree() ? UDegree() : VDegree();
-        int maxDegree = UDegree() > VDegree() ? UDegree() : VDegree();
+        int minDegree = UDegree <= VDegree ? UDegree : VDegree;
+        int maxDegree = UDegree > VDegree ? UDegree : VDegree;
 
         NCollection_Array2<Point3D> coefs = new NCollection_Array2<Point3D>(1, maxDegree + 1, 1, minDegree + 1);
         NCollection_Array2<double> wCoefs = new NCollection_Array2<double>();
@@ -938,8 +938,8 @@ public class BezierSurface : BoundedSurface
                                 vspanlenght_11,
                                 false,
                                 false,
-                                UDegree(),
-                                VDegree(),
+                                UDegree,
+                                VDegree,
                                 0,
                                 0,
                                 InternalUKnotSequence(),
@@ -957,8 +957,8 @@ public class BezierSurface : BoundedSurface
                                 vspanlenght_11,
                                 false,
                                 false,
-                                UDegree(),
-                                VDegree(),
+                                UDegree,
+                                VDegree,
                                 0,
                                 0,
                                 InternalUKnotSequence(),
@@ -971,12 +971,12 @@ public class BezierSurface : BoundedSurface
 
         // When udeg <= vdeg, u and v are interchanged in the coefficients,
         // so everything needs to be transposed.
-        if (UDegree() <= VDegree())
+        if (UDegree <= VDegree)
         {
-            NCollection_Array2<Point3D> transposed = new NCollection_Array2<Point3D>(1, UDegree() + 1, 1, VDegree() + 1);
-            for (int ii = 1; ii <= UDegree() + 1; ii++)
+            NCollection_Array2<Point3D> transposed = new NCollection_Array2<Point3D>(1, UDegree + 1, 1, VDegree + 1);
+            for (int ii = 1; ii <= UDegree + 1; ii++)
             {
-                for (int jj = 1; jj <= VDegree() + 1; jj++)
+                for (int jj = 1; jj <= VDegree + 1; jj++)
                 {
                     transposed[ii, jj] = coefs[jj, ii];
                 }
@@ -985,10 +985,10 @@ public class BezierSurface : BoundedSurface
 
             if (rat)
             {
-                NCollection_Array2<double> wTransposed = new NCollection_Array2<double>(1, UDegree() + 1, 1, VDegree() + 1);
-                for (int ii = 1; ii <= UDegree() + 1; ii++)
+                NCollection_Array2<double> wTransposed = new NCollection_Array2<double>(1, UDegree + 1, 1, VDegree + 1);
+                for (int ii = 1; ii <= UDegree + 1; ii++)
                 {
-                    for (int jj = 1; jj <= VDegree() + 1; jj++)
+                    for (int jj = 1; jj <= VDegree + 1; jj++)
                     {
                         wTransposed[ii, jj] = wCoefs[jj, ii];
                     }
@@ -1362,7 +1362,7 @@ public class BezierSurface : BoundedSurface
     public sealed override double VReversedParameter(double v) => (1.0 - v);
 
     /// <summary>The parametric bounds: [0, 1] x [0, 1].</summary>
-    public sealed override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal sealed override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = 0.0;
         u2 = 1.0;
@@ -1371,10 +1371,10 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>CN.</summary>
-    public sealed override Continuity Continuity() => CN;
+    public sealed override Continuity Continuity => CN;
 
     /// <summary>The point of parameters (U, V).</summary>
-    public sealed override Point3D EvalD0(double u, double v)
+    internal sealed override Point3D EvalD0(double u, double v)
     {
         Point3D evalRepResult;
         if (RepUtils.TryEvalSurfaceD0(_evalRep, u, v, out evalRepResult))
@@ -1427,7 +1427,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The point and first derivatives at (U, V).</summary>
-    public sealed override ResD1 EvalD1(double u, double v)
+    internal sealed override ResD1 EvalD1(double u, double v)
     {
         ResD1 evalRepResult;
         if (RepUtils.TryEvalSurfaceD1(_evalRep, u, v, out evalRepResult))
@@ -1484,7 +1484,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The point and derivatives up to the second order at (U, V).</summary>
-    public sealed override ResD2 EvalD2(double u, double v)
+    internal sealed override ResD2 EvalD2(double u, double v)
     {
         ResD2 evalRepResult;
         if (RepUtils.TryEvalSurfaceD2(_evalRep, u, v, out evalRepResult))
@@ -1549,7 +1549,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The point and derivatives up to the third order at (U, V).</summary>
-    public sealed override ResD3 EvalD3(double u, double v)
+    internal sealed override ResD3 EvalD3(double u, double v)
     {
         ResD3 evalRepResult;
         if (RepUtils.TryEvalSurfaceD3(_evalRep, u, v, out evalRepResult))
@@ -1621,7 +1621,7 @@ public class BezierSurface : BoundedSurface
 
     /// <summary>The derivative of order Nu in U and Nv in V at (U, V).</summary>
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal sealed override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         Vector3D evalRepResult;
         if (RepUtils.TryEvalSurfaceDN(_evalRep, u, v, nu, nv, out evalRepResult))
@@ -1690,7 +1690,7 @@ public class BezierSurface : BoundedSurface
 
     /// <summary>The pole (UIndex, VIndex).</summary>
     /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
-    public Point3D Pole(int uIndex, int vIndex)
+    internal Point3D Pole(int uIndex, int vIndex)
     {
         Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
                                          || vIndex > _poles.RowLength(),
@@ -1698,9 +1698,9 @@ public class BezierSurface : BoundedSurface
         return _poles[uIndex, vIndex];
     }
 
-    /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles()"/>).</summary>
+    /// <summary>Copies the poles into P (deprecated in OCCT: use <see cref="Poles"/>).</summary>
     /// <exception cref="DimensionErrorException">P is not NbUPoles x NbVPoles.</exception>
-    internal void Poles(NCollection_Array2<Point3D> p)
+    internal void CopyPolesTo(NCollection_Array2<Point3D> p)
     {
         Standard_DimensionError_Raise_if(p.RowLength() != _poles.RowLength() || p.ColLength() != _poles.ColLength(),
                                          " ");
@@ -1708,10 +1708,10 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The poles, NbUPoles rows by NbVPoles columns, indexed from 0 (a copy).</summary>
-    public Grid<Point3D> Poles() => _poles.ToGrid();
+    public Grid<Point3D> Poles => _poles.ToGrid();
 
     /// <summary>The degree in U: NbUPoles - 1.</summary>
-    public int UDegree() => (_poles.ColLength() - 1);
+    public int UDegree => (_poles.ColLength() - 1);
 
     /// <summary>The U iso-curve (a Bezier curve in V) at U.</summary>
     public sealed override Curve3D UIso(double u)
@@ -1758,7 +1758,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The degree in V: NbVPoles - 1.</summary>
-    public int VDegree() => (_poles.RowLength() - 1);
+    public int VDegree => (_poles.RowLength() - 1);
 
     /// <summary>The V iso-curve (a Bezier curve in U) at V.</summary>
     public sealed override Curve3D VIso(double v)
@@ -1807,7 +1807,7 @@ public class BezierSurface : BoundedSurface
 
     /// <summary>The weight of the pole (UIndex, VIndex): 1 for a non-rational surface.</summary>
     /// <exception cref="OutOfRangeException">An index out of the pole grid.</exception>
-    public double Weight(int uIndex, int vIndex)
+    internal double Weight(int uIndex, int vIndex)
     {
         Standard_OutOfRange_Raise_if(uIndex < 1 || uIndex > _poles.ColLength() || vIndex < 1
                                          || vIndex > _poles.RowLength(),
@@ -1824,7 +1824,7 @@ public class BezierSurface : BoundedSurface
 
     /// <summary>Copies the weights into W, all 1 for a non-rational surface (deprecated in OCCT).</summary>
     /// <exception cref="DimensionErrorException">W is not NbUPoles x NbVPoles.</exception>
-    internal void Weights(NCollection_Array2<double> w)
+    internal void CopyWeightsTo(NCollection_Array2<double> w)
     {
         Standard_DimensionError_Raise_if(w.RowLength() != _poles.RowLength() || w.ColLength() != _poles.ColLength(),
                                          " ");
@@ -1838,18 +1838,18 @@ public class BezierSurface : BoundedSurface
         }
     }
 
-    /// <summary>The weights, indexed from 0 as <see cref="Poles()"/> (a copy), or null if the surface is non-rational
+    /// <summary>The weights, indexed from 0 as <see cref="Poles"/> (a copy), or null if the surface is non-rational
     /// in both directions.</summary>
-    public Grid<double>? Weights() => (_uRational || _vRational) ? _weights.ToGrid() : null;
+    internal Grid<double>? WeightsOrNull() => (_uRational || _vRational) ? _weights.ToGrid() : null;
 
-    /// <summary>The weights, all 1 for a non-rational surface, indexed from 0 as <see cref="Poles()"/> (a copy).</summary>
-    public Grid<double> WeightsArray() => _weights.ToGrid();
-
-    /// <summary>True.</summary>
-    public sealed override bool IsCNu(int n) => true;
+    /// <summary>The weights, all 1 for a non-rational surface, indexed from 0 as <see cref="Poles"/> (a copy).</summary>
+    public Grid<double> Weights => _weights.ToGrid();
 
     /// <summary>True.</summary>
-    public sealed override bool IsCNv(int n) => true;
+    internal sealed override bool IsCNu(int n) => true;
+
+    /// <summary>True.</summary>
+    internal sealed override bool IsCNv(int n) => true;
 
     /// <summary>True if the weights vary in the U direction.</summary>
     public bool IsURational => _uRational;
@@ -1883,7 +1883,7 @@ public class BezierSurface : BoundedSurface
             int j = _poles.LowerCol();
             while (closed && j <= _poles.UpperCol())
             {
-                closed = (_poles[lower, j].Distance(_poles[upper, j]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                closed = (_poles[lower, j].DistanceTo(_poles[upper, j]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
                 j++;
             }
             return closed;
@@ -1901,7 +1901,7 @@ public class BezierSurface : BoundedSurface
             int i = _poles.LowerRow();
             while (closed && i <= _poles.UpperRow())
             {
-                closed = (_poles[i, lower].Distance(_poles[i, upper]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
+                closed = (_poles[i, lower].DistanceTo(_poles[i, upper]) <= global::Kerf.Engine.Foundation.Precision.Confusion());
                 i++;
             }
             return closed;
@@ -1918,7 +1918,7 @@ public class BezierSurface : BoundedSurface
     /// The parametric tolerances in U and V matching the 3D tolerance Tolerance3D (computed once and cached, as in
     /// OCCT; the cache is not part of the surface's value, so this works on a frozen surface).
     /// </summary>
-    public void Resolution(double tolerance3D, out double uTolerance, out double vTolerance)
+    internal void Resolution(double tolerance3D, out double uTolerance, out double vTolerance)
     {
         if (!_maxDerivInvOk)
         {
@@ -2068,22 +2068,22 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>The U knots of the equivalent B-spline surface: (0, 1).</summary>
-    public IReadOnlyList<double> UKnots() => InternalUKnots().ToPackedList();
+    public IReadOnlyList<double> UKnots => InternalUKnots().ToPackedList();
 
     /// <summary>The V knots of the equivalent B-spline surface: (0, 1).</summary>
-    public IReadOnlyList<double> VKnots() => InternalVKnots().ToPackedList();
+    public IReadOnlyList<double> VKnots => InternalVKnots().ToPackedList();
 
     /// <summary>The U multiplicities of the equivalent B-spline surface: (UDegree + 1, UDegree + 1).</summary>
-    public IReadOnlyList<int> UMultiplicities() => InternalUMultiplicities().ToPackedList();
+    public IReadOnlyList<int> UMultiplicities => InternalUMultiplicities().ToPackedList();
 
     /// <summary>The V multiplicities of the equivalent B-spline surface: (VDegree + 1, VDegree + 1).</summary>
-    public IReadOnlyList<int> VMultiplicities() => InternalVMultiplicities().ToPackedList();
+    public IReadOnlyList<int> VMultiplicities => InternalVMultiplicities().ToPackedList();
 
     /// <summary>The U flat knots of the equivalent B-spline surface.</summary>
-    public IReadOnlyList<double> UKnotSequence() => InternalUKnotSequence().ToPackedList();
+    public IReadOnlyList<double> UKnotSequence => InternalUKnotSequence().ToPackedList();
 
     /// <summary>The V flat knots of the equivalent B-spline surface.</summary>
-    public IReadOnlyList<double> VKnotSequence() => InternalVKnotSequence().ToPackedList();
+    public IReadOnlyList<double> VKnotSequence => InternalVKnotSequence().ToPackedList();
 
     //=============================================================================================
     // Internal access to the stored arrays and non-mutating twins (OCCT.NET)
@@ -2117,7 +2117,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a column of poles inserted after VIndex.</summary>
-    public BezierSurface PoleColInsertedAfter(int vIndex, NCollection_Array1<Point3D> cPoles)
+    internal BezierSurface PoleColInsertedAfter(int vIndex, NCollection_Array1<Point3D> cPoles)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleColAfter(vIndex, cPoles);
@@ -2125,7 +2125,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a column of weighted poles inserted after VIndex.</summary>
-    public BezierSurface PoleColInsertedAfter(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface PoleColInsertedAfter(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleColAfter(vIndex, cPoles, cPoleWeights);
@@ -2133,7 +2133,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a column of poles inserted before VIndex.</summary>
-    public BezierSurface PoleColInsertedBefore(int vIndex, NCollection_Array1<Point3D> cPoles)
+    internal BezierSurface PoleColInsertedBefore(int vIndex, NCollection_Array1<Point3D> cPoles)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleColBefore(vIndex, cPoles);
@@ -2141,7 +2141,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a column of weighted poles inserted before VIndex.</summary>
-    public BezierSurface PoleColInsertedBefore(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface PoleColInsertedBefore(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleColBefore(vIndex, cPoles, cPoleWeights);
@@ -2149,7 +2149,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a row of poles inserted after UIndex.</summary>
-    public BezierSurface PoleRowInsertedAfter(int uIndex, NCollection_Array1<Point3D> cPoles)
+    internal BezierSurface PoleRowInsertedAfter(int uIndex, NCollection_Array1<Point3D> cPoles)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleRowAfter(uIndex, cPoles);
@@ -2157,7 +2157,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a row of weighted poles inserted after UIndex.</summary>
-    public BezierSurface PoleRowInsertedAfter(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface PoleRowInsertedAfter(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleRowAfter(uIndex, cPoles, cPoleWeights);
@@ -2165,7 +2165,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a row of poles inserted before UIndex.</summary>
-    public BezierSurface PoleRowInsertedBefore(int uIndex, NCollection_Array1<Point3D> cPoles)
+    internal BezierSurface PoleRowInsertedBefore(int uIndex, NCollection_Array1<Point3D> cPoles)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleRowBefore(uIndex, cPoles);
@@ -2173,7 +2173,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy with a row of weighted poles inserted before UIndex.</summary>
-    public BezierSurface PoleRowInsertedBefore(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface PoleRowInsertedBefore(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.InsertPoleRowBefore(uIndex, cPoles, cPoleWeights);
@@ -2181,7 +2181,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy without the column of poles VIndex.</summary>
-    public BezierSurface PoleColRemoved(int vIndex)
+    internal BezierSurface PoleColRemoved(int vIndex)
     {
         BezierSurface copy = CopyBezier();
         copy.RemovePoleCol(vIndex);
@@ -2189,7 +2189,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy without the row of poles UIndex.</summary>
-    public BezierSurface PoleRowRemoved(int uIndex)
+    internal BezierSurface PoleRowRemoved(int uIndex)
     {
         BezierSurface copy = CopyBezier();
         copy.RemovePoleRow(uIndex);
@@ -2204,63 +2204,63 @@ public class BezierSurface : BoundedSurface
         return copy;
     }
 
-    public BezierSurface WithPole(int uIndex, int vIndex, in Point3D p)
+    internal BezierSurface WithPole(int uIndex, int vIndex, in Point3D p)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPole(uIndex, vIndex, p);
         return copy;
     }
 
-    public BezierSurface WithPole(int uIndex, int vIndex, in Point3D p, double weight)
+    internal BezierSurface WithPole(int uIndex, int vIndex, in Point3D p, double weight)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPole(uIndex, vIndex, p, weight);
         return copy;
     }
 
-    public BezierSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles)
+    internal BezierSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPoleCol(vIndex, cPoles);
         return copy;
     }
 
-    public BezierSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface WithPoleCol(int vIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPoleCol(vIndex, cPoles, cPoleWeights);
         return copy;
     }
 
-    public BezierSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles)
+    internal BezierSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPoleRow(uIndex, cPoles);
         return copy;
     }
 
-    public BezierSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface WithPoleRow(int uIndex, NCollection_Array1<Point3D> cPoles, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPoleRow(uIndex, cPoles, cPoleWeights);
         return copy;
     }
 
-    public BezierSurface WithWeight(int uIndex, int vIndex, double weight)
+    internal BezierSurface WithWeight(int uIndex, int vIndex, double weight)
     {
         BezierSurface copy = CopyBezier();
         copy.SetWeight(uIndex, vIndex, weight);
         return copy;
     }
 
-    public BezierSurface WithWeightCol(int vIndex, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface WithWeightCol(int vIndex, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.SetWeightCol(vIndex, cPoleWeights);
         return copy;
     }
 
-    public BezierSurface WithWeightRow(int uIndex, NCollection_Array1<double> cPoleWeights)
+    internal BezierSurface WithWeightRow(int uIndex, NCollection_Array1<double> cPoleWeights)
     {
         BezierSurface copy = CopyBezier();
         copy.SetWeightRow(uIndex, cPoleWeights);
@@ -2268,7 +2268,7 @@ public class BezierSurface : BoundedSurface
     }
 
     /// <summary>A copy evaluated through a copy of theDesc (null: without a representation).</summary>
-    public BezierSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
+    internal BezierSurface WithEvalRepresentation(RepSurfaceDesc.Base? desc)
     {
         RepUtils.ValidateSurfaceDesc(desc, this);
         BezierSurface copy = CopyBezier();

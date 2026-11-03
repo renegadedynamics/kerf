@@ -55,12 +55,12 @@ public class IntAna_IntQuadQuadPropertyTests
             case 0:
                 {
                     Sphere aS = new(anAx, 1.0 + 3.0 * theRnd.NextDouble());
-                    return (new Quadric(aS), P => Math.Abs(P.Distance(aS.Location()) - aS.Radius()), "sphere");
+                    return (new Quadric(aS), P => Math.Abs(P.DistanceTo(aS.Location) - aS.Radius), "sphere");
                 }
             case 1:
                 {
                     Cylinder aC = new(anAx, 0.5 + 2.5 * theRnd.NextDouble());
-                    return (new Quadric(aC), P => Math.Abs(new Line3D(aC.Axis()).Distance(P) - aC.Radius()),
+                    return (new Quadric(aC), P => Math.Abs(new Line3D(aC.Axis).DistanceTo(P) - aC.Radius),
                             "cylinder");
                 }
             case 2:
@@ -71,7 +71,7 @@ public class IntAna_IntQuadQuadPropertyTests
             default:
                 {
                     Plane3D aPl = new(anAx);
-                    return (new Quadric(aPl), P => aPl.Distance(P), "plane");
+                    return (new Quadric(aPl), P => aPl.DistanceTo(P), "plane");
                 }
         }
     }
@@ -81,7 +81,7 @@ public class IntAna_IntQuadQuadPropertyTests
     private static double ConeDistance(in Cone theCone, in Point3D theP)
     {
         global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theP, out double aU, out double aV);
-        return theP.Distance(global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, theCone));
+        return theP.DistanceTo(global::Kerf.Engine.Geometry.ElSLib.Value(aU, aV, theCone));
     }
 
     private static void CheckCurves(IntQuadQuad theInt, Func<Point3D, double> theDist1,
@@ -109,7 +109,7 @@ public class IntAna_IntQuadQuadPropertyTests
                 if (aC.D1u(aT, out Point3D aPd, out Vector3D aV))
                 {
                     Assert.Equal(aP, aPd);
-                    double aMag = aV.Magnitude();
+                    double aMag = aV.Magnitude;
                     if (aMag > 1.0e-3)
                     {
                         // A forward difference of step 1e-6 of the domain: tangent to first order
@@ -125,7 +125,7 @@ public class IntAna_IntQuadQuadPropertyTests
                 {
                     Assert.True(aPar >= aPrev, theCase);
                     aPrev = aPar;
-                    Assert.True(aC.Value(aPar).Distance(aP) < 1.0e-4, $"{theCase}: FindParameter gave {aPar} for {aT}");
+                    Assert.True(aC.Value(aPar).DistanceTo(aP) < 1.0e-4, $"{theCase}: FindParameter gave {aPar} for {aT}");
                 }
                 if (!aParams.IsEmpty())
                 {
@@ -153,8 +153,8 @@ public class IntAna_IntQuadQuadPropertyTests
             Assert.False(anInt.IdenticalElements());
             Assert.Equal(0, anInt.PntCount);
             aNbCurves += anInt.CurveCount;
-            Line3D anAxis = new(aCyl.Axis());
-            CheckCurves(anInt, P => Math.Abs(anAxis.Distance(P) - aCyl.Radius()), aDist,
+            Line3D anAxis = new(aCyl.Axis);
+            CheckCurves(anInt, P => Math.Abs(anAxis.DistanceTo(P) - aCyl.Radius), aDist,
                         P => CylinderNormal(aCyl, P), ref aNbPoints, ref aNbFound, $"cylinder/{aName} #{anIter}");
             // OCCT links curves only after a cone intersection
             for (int i = 1; i <= anInt.CurveCount; i++)
@@ -199,7 +199,7 @@ public class IntAna_IntQuadQuadPropertyTests
                     anInt.Curve(j).Domain(out double aFirstJ, out double aLastJ);
                     Point3D aPi = anInt.Curve(i).Value(aLastI);
                     Point3D aPj = anInt.Curve(j).Value(anOpposite ? aLastJ : aFirstJ);
-                    Assert.True(aPi.Distance(aPj) < 1.0e-9);
+                    Assert.True(aPi.DistanceTo(aPj) < 1.0e-9);
                 }
             }
         }
@@ -211,14 +211,14 @@ public class IntAna_IntQuadQuadPropertyTests
     private static Direction3D CylinderNormal(in Cylinder theCyl, in Point3D theP)
     {
         global::Kerf.Engine.Geometry.ElSLib.Parameters(theCyl, theP, out double aU, out double aV);
-        global::Kerf.Engine.Geometry.ElSLib.CylinderD1(aU, aV, theCyl.Position(), theCyl.Radius(), out _, out Vector3D aDu, out Vector3D aDv);
+        global::Kerf.Engine.Geometry.ElSLib.CylinderD1(aU, aV, theCyl.Position, theCyl.Radius, out _, out Vector3D aDu, out Vector3D aDv);
         return new Direction3D(aDu.Crossed(aDv));
     }
 
     private static Direction3D ConeNormal(in Cone theCone, in Point3D theP)
     {
         global::Kerf.Engine.Geometry.ElSLib.Parameters(theCone, theP, out double aU, out double aV);
-        global::Kerf.Engine.Geometry.ElSLib.ConeD1(aU, aV, theCone.Position(), theCone.RefRadius(), theCone.SemiAngle(), out _, out Vector3D aDu,
+        global::Kerf.Engine.Geometry.ElSLib.ConeD1(aU, aV, theCone.Position, theCone.RefRadius, theCone.SemiAngle, out _, out Vector3D aDu,
                       out Vector3D aDv);
         return new Direction3D(aDu.Crossed(aDv));
     }
@@ -252,8 +252,8 @@ public class IntAna_IntQuadQuadPropertyTests
         Assert.Equal(0.0, aFirst);
         Assert.Equal(2 * M_PI, aLast);
         Point3D aP = aC.Value(1.0);
-        Assert.Equal(4.0, aP.Z(), 1e-12);
-        Assert.Equal(3.0 * Math.Cos(1.0), aP.X(), 1e-12);
+        Assert.Equal(4.0, aP.Z, 1e-12);
+        Assert.Equal(3.0 * Math.Cos(1.0), aP.X, 1e-12);
         Assert.ThrowsAny<DomainErrorException>(() => aC.Value(7.0));
 
         Curve aTrimmed = aC.WithDomain(1.0, 2.0).WithIsFirstOpen(true).WithIsLastOpen(true);
@@ -289,10 +289,10 @@ public class IntAna_IntQuadQuadPropertyTests
             for (int k = 0; k <= 100; k++)
             {
                 Point3D aP = aC.Value(aFirst + (aLast - aFirst) * k / 100);
-                Assert.Equal(2.0, aP.Distance(aSph.Location()), 1e-6);
-                Assert.Equal(1.0, new Line3D(aCyl.Axis()).Distance(aP), 1e-6);
-                aMinNorth = Math.Min(aMinNorth, aP.Distance(new Point3D(0, 0, 2)));
-                aMinSouth = Math.Min(aMinSouth, aP.Distance(new Point3D(0, 0, -2)));
+                Assert.Equal(2.0, aP.DistanceTo(aSph.Location), 1e-6);
+                Assert.Equal(1.0, new Line3D(aCyl.Axis).DistanceTo(aP), 1e-6);
+                aMinNorth = Math.Min(aMinNorth, aP.DistanceTo(new Point3D(0, 0, 2)));
+                aMinSouth = Math.Min(aMinSouth, aP.DistanceTo(new Point3D(0, 0, -2)));
             }
         }
         Assert.True(aMinNorth < 1e-6, $"{aMinNorth}");

@@ -71,7 +71,7 @@ internal sealed class OsculatingSurface
             double u1, u2, v1, v2;
 
             int i;
-            bs.Bounds(out u1, out u2, out v1, out v2);
+            bs.ParameterBounds(out u1, out u2, out v1, out v2);
             _along[0] = IsQPunctual(bs, v1, IsoV, tolMin, tol);
             _along[1] = IsQPunctual(bs, v2, IsoV, tolMin, tol);
             _along[2] = IsQPunctual(bs, u1, IsoU, tolMin, tol);
@@ -90,16 +90,16 @@ internal sealed class OsculatingSurface
                     {
                         uKnots.SetValue(i, (i - 1));
                         vKnots.SetValue(i, (i - 1));
-                        uMults.SetValue(i, bzS.UDegree() + 1);
-                        vMults.SetValue(i, bzS.VDegree() + 1);
+                        uMults.SetValue(i, bzS.UDegree + 1);
+                        vMults.SetValue(i, bzS.VDegree + 1);
                     }
                     initSurf = new BSplineSurface(bzS.InternalPoles(),
                                                        uKnots,
                                                        vKnots,
                                                        uMults,
                                                        vMults,
-                                                       bzS.UDegree(),
-                                                       bzS.VDegree(),
+                                                       bzS.UDegree,
+                                                       bzS.VDegree,
                                                        bzS.IsUPeriodic,
                                                        bzS.IsVPeriodic);
                 }
@@ -113,7 +113,7 @@ internal sealed class OsculatingSurface
                     ClearOsculFlags();
                 }
 
-                if ((IsAlongU && initSurf.VDegree() > 1) || (IsAlongV && initSurf.UDegree() > 1))
+                if ((IsAlongU && initSurf.VDegree > 1) || (IsAlongV && initSurf.UDegree > 1))
                 {
                     int k;
                     bool isQPunc;
@@ -348,7 +348,7 @@ internal sealed class OsculatingSurface
         {
             int nu = 1, nv = 1;
             t = false;
-            _basisSurf!.Bounds(out _, out _, out _, out _);
+            _basisSurf!.ParameterBounds(out _, out _, out _, out _);
             int nbUK, nbVK;
             bool isToSkipSecond = false;
             if (_basisSurf is BSplineSurface bSur)
@@ -415,7 +415,7 @@ internal sealed class OsculatingSurface
         {
             int nu = 1, nv = 1;
             t = false;
-            _basisSurf!.Bounds(out _, out _, out _, out _);
+            _basisSurf!.ParameterBounds(out _, out _, out _, out _);
             int nbUK, nbVK;
             bool isToSkipSecond = false;
             if (_basisSurf is BSplineSurface bSur)
@@ -480,8 +480,8 @@ internal sealed class OsculatingSurface
         // for cache
         int minDegree, maxDegree;
         double udeg, vdeg;
-        udeg = bs.UDegree();
-        vdeg = bs.VDegree();
+        udeg = bs.UDegree;
+        vdeg = bs.VDegree;
         if ((IsAlongU && vdeg <= 1) || (IsAlongV && udeg <= 1))
         {
             osculSurf = false;
@@ -573,8 +573,8 @@ internal sealed class OsculatingSurface
                                 vspanlength,
                                 bs.IsUPeriodic,
                                 bs.IsVPeriodic,
-                                bs.UDegree(),
-                                bs.VDegree(),
+                                bs.UDegree,
+                                bs.VDegree,
                                 uLocalIndex,
                                 vLocalIndex,
                                 uFlatKnts,
@@ -618,9 +618,9 @@ internal sealed class OsculatingSurface
                 {
                     for (m = 1; m <= (int)vdeg; m++)
                     {
-                        coefficients[index++] = oscCoeff[n, m].X();
-                        coefficients[index++] = oscCoeff[n, m].Y();
-                        coefficients[index++] = oscCoeff[n, m].Z();
+                        coefficients[index++] = oscCoeff[n, m].X;
+                        coefficients[index++] = oscCoeff[n, m].Y;
+                        coefficients[index++] = oscCoeff[n, m].Z;
                     }
                 }
             }
@@ -656,9 +656,9 @@ internal sealed class OsculatingSurface
                 {
                     for (m = 1; m <= (int)vdeg + 1; m++)
                     {
-                        coefficients[index++] = oscCoeff[n, m].X();
-                        coefficients[index++] = oscCoeff[n, m].Y();
-                        coefficients[index++] = oscCoeff[n, m].Z();
+                        coefficients[index++] = oscCoeff[n, m].X;
+                        coefficients[index++] = oscCoeff[n, m].Y;
+                        coefficients[index++] = oscCoeff[n, m].Z;
                     }
                 }
             }
@@ -706,7 +706,7 @@ internal sealed class OsculatingSurface
     {
         double u1, u2, v1, v2, t;
         bool along = true;
-        s.Bounds(out u1, out u2, out v1, out v2);
+        s.ParameterBounds(out u1, out u2, out v1, out v2);
         Vector3D d1U, d1V;
         Point3D p;
         double step, d1NormMax;
@@ -717,7 +717,7 @@ internal sealed class OsculatingSurface
             for (t = u1; t <= u2; t = t + step)
             {
                 s.D1(t, param, out p, out d1U, out d1V);
-                d1NormMax = Math.Max(d1NormMax, d1U.Magnitude());
+                d1NormMax = Math.Max(d1NormMax, d1U.Magnitude);
             }
 
             if (d1NormMax > tolMax || d1NormMax < tolMin)
@@ -732,7 +732,7 @@ internal sealed class OsculatingSurface
             for (t = v1; t <= v2; t = t + step)
             {
                 s.D1(param, t, out p, out d1U, out d1V);
-                d1NormMax = Math.Max(d1NormMax, d1V.Magnitude());
+                d1NormMax = Math.Max(d1NormMax, d1V.Magnitude);
             }
             if (d1NormMax > tolMax || d1NormMax < tolMin)
             {

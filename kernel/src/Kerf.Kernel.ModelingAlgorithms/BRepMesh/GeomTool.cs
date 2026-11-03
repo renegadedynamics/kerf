@@ -204,7 +204,7 @@ public sealed class GeomTool
         }
 
         Face face = surface.Face();
-        Orientation ori = face.Orientation();
+        Orientation ori = face.Orientation;
         if (ori == Reversed)
         {
             normal = normal.Reversed();
@@ -383,13 +383,13 @@ public sealed class GeomTool
     public static double SquareDeflectionOfSegment(in Point3D firstPoint, in Point3D lastPoint, in Point3D midPoint)
     {
         // 23.03.2010 skl for OCC21645 - change precision for comparison
-        if (firstPoint.SquareDistance(lastPoint) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (firstPoint.SquareDistanceTo(lastPoint) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             Line3D lin = new(firstPoint, new Direction3D(new Vector3D(firstPoint, lastPoint)));
-            return lin.SquareDistance(midPoint);
+            return lin.SquareDistanceTo(midPoint);
         }
 
-        return firstPoint.SquareDistance(midPoint);
+        return firstPoint.SquareDistanceTo(midPoint);
     }
 
     /// <summary>

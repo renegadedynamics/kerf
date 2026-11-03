@@ -36,8 +36,8 @@ public class DistBetweenPCurvesGen<TheCurve, TheCurveTool> : FunctionSetWithDeri
     {
         TheCurveTool.D0(_thecurve1, x[1], out Point2D p1);
         TheCurveTool.D0(_thecurve2, x[2], out Point2D p2);
-        f[1] = p1.X() - p2.X();
-        f[2] = p1.Y() - p2.Y();
+        f[1] = p1.X - p2.X;
+        f[2] = p1.Y - p2.Y;
         return (true);
     }
 
@@ -45,12 +45,12 @@ public class DistBetweenPCurvesGen<TheCurve, TheCurveTool> : FunctionSetWithDeri
     {
         Vector2D t;
         TheCurveTool.D1(_thecurve1, x[1], out _, out t);
-        d.Value(1, 1) = t.X();
-        d.Value(2, 1) = t.Y();
+        d.Value(1, 1) = t.X;
+        d.Value(2, 1) = t.Y;
 
         TheCurveTool.D1(_thecurve2, x[2], out _, out t);
-        d.Value(1, 2) = -(t.X());
-        d.Value(2, 2) = -(t.Y());
+        d.Value(1, 2) = -(t.X);
+        d.Value(2, 2) = -(t.Y);
 
         return (true);
     }
@@ -61,15 +61,15 @@ public class DistBetweenPCurvesGen<TheCurve, TheCurveTool> : FunctionSetWithDeri
         Point2D p1, p2;
 
         TheCurveTool.D1(_thecurve1, x[1], out p1, out t);
-        d.Value(1, 1) = t.X();
-        d.Value(2, 1) = t.Y();
+        d.Value(1, 1) = t.X;
+        d.Value(2, 1) = t.Y;
 
         TheCurveTool.D1(_thecurve2, x[2], out p2, out t);
-        d.Value(1, 2) = -(t.X());
-        d.Value(2, 2) = -(t.Y());
+        d.Value(1, 2) = -(t.X);
+        d.Value(2, 2) = -(t.Y);
 
-        f.Value(1) = p1.X() - p2.X();
-        f.Value(2) = p1.Y() - p2.Y();
+        f.Value(1) = p1.X - p2.X;
+        f.Value(2) = p1.Y - p2.Y;
 
         return (true);
     }

@@ -444,7 +444,7 @@ public sealed class ExchangeDocument
         {
             return false;
         }
-        if (!shape.Location().IsIdentity)
+        if (!shape.Placement.IsIdentity)
         {
             if (findInstance && FindShape(shape, out label, true))
             {
@@ -607,10 +607,10 @@ public sealed class ExchangeDocument
             return found.Index;
         }
         int shapeIndex = NewChild(ShapesIndex);
-        if (!shape.Location().IsIdentity)
+        if (!shape.Placement.IsIdentity)
         {
             int referred = AddShapeCore(shape.Located(new Placement()), makeAssembly);
-            MakeReference(shapeIndex, referred, shape.Location());
+            MakeReference(shapeIndex, referred, shape.Placement);
             return shapeIndex;
         }
 
@@ -618,9 +618,9 @@ public sealed class ExchangeDocument
         if (AutoNaming)
         {
             // SetLabelNameByShape: the shape type, as TopAbs::Print writes it
-            SetAutoName(shapeIndex, global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(shape.ShapeType()));
+            SetAutoName(shapeIndex, global::Kerf.Engine.Topology.TopAbs.ShapeTypeToString(shape.Type));
         }
-        if (makeAssembly && shape.ShapeType() == ShapeType.Compound)
+        if (makeAssembly && shape.Type == ShapeType.Compound)
         {
             _nodes[shapeIndex].IsAssembly = true;
             if (AutoNaming)
@@ -632,7 +632,7 @@ public sealed class ExchangeDocument
                 Shape comp = it.Value();
                 int compIndex = AddShapeCore(comp.Located(new Placement()), makeAssembly);
                 int aRef = NewChild(shapeIndex);
-                MakeReference(aRef, compIndex, comp.Location());
+                MakeReference(aRef, compIndex, comp.Placement);
             }
             // the compound given is its components' compound already; searching the components' labels above may
             // have remade it from the components added so far (unit 8G1): it is set back
@@ -649,7 +649,7 @@ public sealed class ExchangeDocument
             {
                 Shape sub = map[i];
                 _subShapes[sub] = shapeIndex;
-                if (!sub.Location().IsIdentity)
+                if (!sub.Placement.IsIdentity)
                 {
                     _subShapes[sub.Located(new Placement())] = shapeIndex;
                 }
@@ -756,7 +756,7 @@ public sealed class ExchangeDocument
     public Label AddComponent(in Label assembly, in Shape component, bool expand = false)
     {
         Label compLabel = AddShape(component.Located(new Placement()), expand);
-        return AddComponent(assembly, compLabel, component.Location());
+        return AddComponent(assembly, compLabel, component.Placement);
     }
 
     /// <summary>Remakes the assemblies' compounds from their components (<c>XCAFDoc_ShapeTool::UpdateAssemblies</c>).</summary>
@@ -845,7 +845,7 @@ public sealed class ExchangeDocument
     public Placement GetLocation(in Label label)
     {
         Node node = NodeOf(label);
-        return node.Referred >= 0 ? node.RefLocation : node.Shape.IsNull ? new Placement() : node.Shape.Location();
+        return node.Referred >= 0 ? node.RefLocation : node.Shape.IsNull ? new Placement() : node.Shape.Placement;
     }
 
     /// <summary>The label a reference refers to; false if the label isn't a reference.</summary>
@@ -897,8 +897,8 @@ public sealed class ExchangeDocument
 
     // XCAFDoc_ShapeTool.cxx's IsSame: the same TShape, orientation and location
     private static bool IsSameInstance(in Shape shape1, in Shape shape2)
-        => ReferenceEquals(shape1.TShape(), shape2.TShape()) && shape1.Orientation() == shape2.Orientation()
-           && shape1.Location().IsEqual(shape2.Location());
+        => ReferenceEquals(shape1.TShape(), shape2.TShape()) && shape1.Orientation == shape2.Orientation
+           && shape1.Placement.IsEqual(shape2.Placement);
 
     // XCAFDoc_ShapeTool.cxx's checkForShape: the component, or a chain of components up the assemblies, placing the
     // shape where the given shape is
@@ -917,7 +917,7 @@ public sealed class ExchangeDocument
         }
         Placement supLoc = GetLocation(Label(superUserL));
         Placement compLoc = GetLocation(Label(userL));
-        compLoc = compLoc.Multiplied(curSh.Location());
+        compLoc = compLoc.Multiplied(curSh.Placement);
         supLoc = supLoc.Multiplied(compLoc);
         Shape copySh = curSh.Located(supLoc);
         if (IsSameInstance(shape, copySh))
@@ -1112,7 +1112,7 @@ public sealed class ExchangeDocument
         {
             bool isDefined = false;
             // the sub-shape without its location: take it with its location in the main shape
-            if (sub.Location().IsIdentity)
+            if (sub.Placement.IsIdentity)
             {
                 for (var it = new Iterator(GetShape(shapeLabel)); it.More() && !isDefined; it.Next())
                 {

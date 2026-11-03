@@ -48,16 +48,16 @@ public sealed class GeomToStepTests
         Assert.True(C.IsDone);
         var aBack = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeCurve(C.Value(), Inches) as CircleCurve3D;
         Assert.NotNull(aBack);
-        Assert.Equal(7.5, aBack.Radius(), 1e-12);
-        Assert.True(aBack.Location().Distance(Tilted.Location()) < 1e-12);
+        Assert.Equal(7.5, aBack.Radius, 1e-12);
+        Assert.True(aBack.Location.DistanceTo(Tilted.Location) < 1e-12);
 
         var aTorus = new ToroidalSurface(new CoordinateSystem(Tilted), 6, 1.5);
         var S = new MakeSurface(aTorus);
         Assert.True(S.IsDone);
         var aTorusBack = global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeSurface(S.Value()) as ToroidalSurface;
         Assert.NotNull(aTorusBack);
-        Assert.Equal(6, aTorusBack.MajorRadius());
-        Assert.Equal(1.5, aTorusBack.MinorRadius());
+        Assert.Equal(6, aTorusBack.MajorRadius);
+        Assert.Equal(1.5, aTorusBack.MinorRadius);
     }
 
     [Fact]
@@ -128,6 +128,6 @@ public sealed class GeomToStepTests
         Transform3D aBack = new Transform3D();
         Assert.True(global::Kerf.Engine.Exchange.Step.Import.Geometry.StepToGeom.MakeTransformation3d(anOperator, ref aBack));
         Point3D P = new Point3D(0.25, 4, -1);
-        Assert.True(P.Transformed(T).Distance(P.Transformed(aBack)) < 1e-12);
+        Assert.True(P.Transformed(T).DistanceTo(P.Transformed(aBack)) < 1e-12);
     }
 }

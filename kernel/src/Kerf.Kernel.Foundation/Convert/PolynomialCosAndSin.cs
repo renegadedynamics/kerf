@@ -22,7 +22,7 @@ internal static class PolynomialCosAndSin
         {
             double ptest = (umax + umin) / 2.0;
             global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(ptest, tPoles, global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), out Point2D valP);
-            double theta = Math.Atan2(valP.Y(), valP.X());
+            double theta = Math.Atan2(valP.Y, valP.X);
             if (theta < 0.0)
             {
                 theta += 2.0 * M_PI;
@@ -136,14 +136,14 @@ internal static class PolynomialCosAndSin
         Point2D pdeb = new(1.0, 0.0);
         Point2D pfin = new(cosD, sinD);
 
-        double dtg = newTPoles[1].Distance(newTPoles[2]);
+        double dtg = newTPoles[1].DistanceTo(newTPoles[2]);
         newTPoles[1] = pdeb;
         Xy theXY = new(0.0, dtg);
         pdeb = new Point2D(pdeb.XY() + theXY);
         newTPoles[2] = pdeb;
 
         // readjustment to Euclid
-        dtg = newTPoles[num_poles].Distance(newTPoles[num_poles - 1]);
+        dtg = newTPoles[num_poles].DistanceTo(newTPoles[num_poles - 1]);
         newTPoles[num_poles] = pfin;
         theXY.SetCoord(dtg * sinD, -dtg * cosD);
         pfin = new Point2D(pfin.XY() + theXY);
@@ -158,8 +158,8 @@ internal static class PolynomialCosAndSin
 
         for (ii = 1; ii <= num_poles; ii++)
         {
-            cosNumerator[ii] = newTPoles[ii].X();
-            sinNumerator[ii] = newTPoles[ii].Y();
+            cosNumerator[ii] = newTPoles[ii].X;
+            sinNumerator[ii] = newTPoles[ii].Y;
             denominator[ii] = 1.0;
         }
     }

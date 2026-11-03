@@ -19,7 +19,7 @@ public class IntImpParGenTests
     /// <summary>The circle of center <c>C</c> and radius <c>R</c>, as an implicit curve (counterclockwise from +X).</summary>
     public readonly struct TestCircleTool(Point2D C, double R) : global::Kerf.Engine.Intersection.Implicit.IImpTool
     {
-        public Point2D Value(double U) => new(C.X() + R * Math.Cos(U), C.Y() + R * Math.Sin(U));
+        public Point2D Value(double U) => new(C.X + R * Math.Cos(U), C.Y + R * Math.Sin(U));
 
         public void D1(double U, out Point2D P, out Vector2D T)
         {
@@ -33,17 +33,17 @@ public class IntImpParGenTests
             N = new Vector2D(-R * Math.Cos(U), -R * Math.Sin(U));
         }
 
-        public double Distance(in Point2D P) => P.Distance(C) - R;
+        public double Distance(in Point2D P) => P.DistanceTo(C) - R;
 
         public Vector2D GradDistance(in Point2D P)
         {
             Vector2D aV = new(C, P);
-            return aV.Divided(aV.Magnitude());
+            return aV.Divided(aV.Magnitude);
         }
 
         public double FindParameter(in Point2D P)
         {
-            double aU = Math.Atan2(P.Y() - C.Y(), P.X() - C.X());
+            double aU = Math.Atan2(P.Y - C.Y, P.X - C.X);
             return aU < 0 ? aU + 2 * Math.PI : aU;
         }
     }
@@ -51,7 +51,7 @@ public class IntImpParGenTests
     /// <summary>The segment <c>P0 + t V</c>.</summary>
     public readonly record struct TestSegment(Point2D P0, Vector2D V)
     {
-        public Point2D Value(double t) => new(P0.X() + t * V.X(), P0.Y() + t * V.Y());
+        public Point2D Value(double t) => new(P0.X + t * V.X, P0.Y + t * V.Y);
     }
 
     public readonly struct TestSegmentTool : global::Kerf.Engine.Intersection.Implicit.IParTool<TestSegment>,
@@ -71,7 +71,7 @@ public class IntImpParGenTests
         }
 
         public static double FindParameter(in TestSegment C, in Point2D Pnt, double Tol)
-            => new Vector2D(C.P0, Pnt).Dot(C.V) / C.V.SquareMagnitude();
+            => new Vector2D(C.P0, Pnt).Dot(C.V) / C.V.SquareMagnitude;
 
         public static double FindParameter(in TestSegment C, in Point2D Pnt, double LowParameter,
                                            double HighParameter, double Tol)
@@ -234,8 +234,8 @@ public class IntImpParGenTests
         IntersectionPoint2D aExit = anInter.Point(1);
         Assert.Equal(Math.PI / 6, aExit.ParamOnFirst(), 9);
         Assert.Equal((2 + aX) / 4, aExit.ParamOnSecond(), 9);
-        Assert.Equal(aX, aExit.Value().X(), 9);
-        Assert.Equal(0.5, aExit.Value().Y(), 9);
+        Assert.Equal(aX, aExit.Value().X, 9);
+        Assert.Equal(0.5, aExit.Value().Y, 9);
         Assert.Equal(TypeTrans.In, aExit.TransitionOfFirst().TransitionType());
         Assert.Equal(TypeTrans.Out, aExit.TransitionOfSecond().TransitionType());
         Assert.Equal(Position2D.Middle, aExit.TransitionOfSecond().PositionOnCurve());

@@ -836,7 +836,7 @@ public partial class PWalking
             surf2.D1(u20, v20, out pt, out Vector3D du2, out Vector3D dv2);
 
             Vector3D n1 = du1.Crossed(dv1), n2 = du2.Crossed(dv2);
-            double dp = n1.Dot(n2), sq1 = n1.SquareMagnitude(), sq2 = n2.SquareMagnitude();
+            double dp = n1.Dot(n2), sq1 = n1.SquareMagnitude, sq2 = n2.SquareMagnitude;
 
             if ((sq1 < RealSmall()) || (sq2 < RealSmall()))
             {

@@ -10,7 +10,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// <summary>
 /// Efficient batch evaluator for line grid points, by the direct formula P(t) = Location + t * Direction.
 /// </summary>
-public sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
+internal sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
 {
     private readonly LineCurve3D? _geom;
 
@@ -34,17 +34,17 @@ public sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
         NCollection_Array1<Point3D> result = new(1, theParams.Length());
 
         // Extract line data
-        Line3D lin = _geom.Lin();
-        Point3D loc = lin.Location();
-        Direction3D dir = lin.Direction();
+        Line3D lin = _geom.Line;
+        Point3D loc = lin.Location;
+        Direction3D dir = lin.Direction;
 
         // Pre-extract coordinates for vectorization potential
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double dirX = dir.X();
-        double dirY = dir.Y();
-        double dirZ = dir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double dirX = dir.X;
+        double dirY = dir.Y;
+        double dirZ = dir.Z;
 
         for (int i = theParams.Lower(); i <= theParams.Upper(); ++i)
         {
@@ -65,16 +65,16 @@ public sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
 
         NCollection_Array1<Curve3D.ResD1> result = new(1, theParams.Length());
 
-        Line3D lin = _geom.Lin();
-        Point3D loc = lin.Location();
-        Direction3D dir = lin.Direction();
+        Line3D lin = _geom.Line;
+        Point3D loc = lin.Location;
+        Direction3D dir = lin.Direction;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double dirX = dir.X();
-        double dirY = dir.Y();
-        double dirZ = dir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double dirX = dir.X;
+        double dirY = dir.Y;
+        double dirZ = dir.Z;
 
         // D1 is constant for a line
         Vector3D d1 = new(dirX, dirY, dirZ);
@@ -101,16 +101,16 @@ public sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
 
         NCollection_Array1<Curve3D.ResD2> result = new(1, theParams.Length());
 
-        Line3D lin = _geom.Lin();
-        Point3D loc = lin.Location();
-        Direction3D dir = lin.Direction();
+        Line3D lin = _geom.Line;
+        Point3D loc = lin.Location;
+        Direction3D dir = lin.Direction;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double dirX = dir.X();
-        double dirY = dir.Y();
-        double dirZ = dir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double dirX = dir.X;
+        double dirY = dir.Y;
+        double dirZ = dir.Z;
 
         Vector3D d1 = new(dirX, dirY, dirZ);
         Vector3D d2 = new(0, 0, 0); // Second derivative is zero for a line
@@ -138,16 +138,16 @@ public sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
 
         NCollection_Array1<Curve3D.ResD3> result = new(1, theParams.Length());
 
-        Line3D lin = _geom.Lin();
-        Point3D loc = lin.Location();
-        Direction3D dir = lin.Direction();
+        Line3D lin = _geom.Line;
+        Point3D loc = lin.Location;
+        Direction3D dir = lin.Direction;
 
-        double locX = loc.X();
-        double locY = loc.Y();
-        double locZ = loc.Z();
-        double dirX = dir.X();
-        double dirY = dir.Y();
-        double dirZ = dir.Z();
+        double locX = loc.X;
+        double locY = loc.Y;
+        double locZ = loc.Z;
+        double dirX = dir.X;
+        double dirY = dir.Y;
+        double dirZ = dir.Z;
 
         Vector3D d1 = new(dirX, dirY, dirZ);
         Vector3D zero = new(0, 0, 0);
@@ -179,8 +179,8 @@ public sealed class LineGrid : GeomGridEvalGrid.ICurveEvaluator
         if (n == 1)
         {
             // D1 is constant for a line (the direction)
-            Direction3D dir = _geom.Lin().Direction();
-            Vector3D d1 = new(dir.X(), dir.Y(), dir.Z());
+            Direction3D dir = _geom.Line.Direction;
+            Vector3D d1 = new(dir.X, dir.Y, dir.Z);
             for (int i = 1; i <= theParams.Length(); ++i)
             {
                 result.SetValue(i, d1);

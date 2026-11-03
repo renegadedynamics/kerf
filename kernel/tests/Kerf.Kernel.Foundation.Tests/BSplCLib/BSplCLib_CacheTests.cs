@@ -302,10 +302,10 @@ public class BSplCLib_CacheTest
             global::Kerf.Engine.Geometry.Splines.BSplCLib.D3(u, 0, aDegree, false, aPoles, null, aKnots, aMults, out Point3D aDirectPnt, out Vector3D aDirectTan, out Vector3D aDirectCurv, out Vector3D aDirectTors);
 
             // Compare the X coordinates of point, tangent, curvature and torsion
-            Assert.Equal(aDirectPnt.X(), aCachePnt.X(), THE_TOLERANCE);
-            Assert.Equal(aDirectTan.X(), aCacheTan.X(), THE_TOLERANCE);
-            Assert.Equal(aDirectCurv.X(), aCacheCurv.X(), THE_TOLERANCE);
-            Assert.Equal(aDirectTors.X(), aCacheTors.X(), THE_TOLERANCE);
+            Assert.Equal(aDirectPnt.X, aCachePnt.X, THE_TOLERANCE);
+            Assert.Equal(aDirectTan.X, aCacheTan.X, THE_TOLERANCE);
+            Assert.Equal(aDirectCurv.X, aCacheCurv.X, THE_TOLERANCE);
+            Assert.Equal(aDirectTors.X, aCacheTors.X, THE_TOLERANCE);
         }
     }
 }

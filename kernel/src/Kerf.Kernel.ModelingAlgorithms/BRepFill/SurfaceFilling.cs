@@ -279,9 +279,9 @@ public class SurfaceFilling
         {
             Edge anEdge = ShapeCasts.Edge(exp.Current());
             Curve3D? c = Tool.Curve(anEdge, out Placement l, out double f, out double la);
-            if (ReferenceEquals(c, curve) && l == loc && f == first && la == last)
+            if (ReferenceEquals(c, curve) && l.IsEqual(loc) && f == first && la == last)
             {
-                return ShapeCasts.Edge(anEdge.Oriented(edge.Orientation()));
+                return ShapeCasts.Edge(anEdge.Oriented(edge.Orientation));
             }
         }
         return edge;
@@ -332,7 +332,7 @@ public class SurfaceFilling
                         throw new FailureException("Add");
                     }
                     surface = (Surface)surface.Copy();
-                    surface.Transform(loc.Transformation());
+                    surface.Transform(loc.Transformation);
                     SurfaceAdaptor surf = new SurfaceAdaptor(surface);
                     CurveAdaptor2D curve2d = new CurveAdaptor2D(c2d!);
 
@@ -432,7 +432,7 @@ public class SurfaceFilling
                         {
                             for (j = 0; j < 2; j++)
                             {
-                                double dist = P_wire[i].Distance(Tool.Pnt(V_edge[j]));
+                                double dist = P_wire[i].DistanceTo(Tool.Pnt(V_edge[j]));
                                 if (dist < Tool.Tolerance(V_wire[i]) && dist < Tool.Tolerance(V_edge[j]))
                                 {
                                     mw.Add(curEdge);
@@ -487,7 +487,7 @@ public class SurfaceFilling
                 {
                     break;
                 }
-                s = modified[0].Oriented(s.Orientation());
+                s = modified[0].Oriented(s.Orientation);
             }
             return s;
         }
@@ -556,7 +556,7 @@ public class SurfaceFilling
                 Wire curWire = ShapeCasts.Wire(wireSeq.Value(i));
                 Exploration.Vertices(curWire, out vfirst, out vlast);
 
-                double angle = finVec.Angle(new Vector3D(Tool.Pnt(theVertex), Tool.Pnt(vfirst)));
+                double angle = finVec.AngleTo(new Vector3D(Tool.Pnt(theVertex), Tool.Pnt(vfirst)));
                 if (angle < minAngle)
                 {
                     minAngle = angle;
@@ -564,7 +564,7 @@ public class SurfaceFilling
                     minInd = i;
                     isLast = true;
                 }
-                angle = finVec.Angle(new Vector3D(Tool.Pnt(theVertex), Tool.Pnt(vlast)));
+                angle = finVec.AngleTo(new Vector3D(Tool.Pnt(theVertex), Tool.Pnt(vlast)));
                 if (angle < minAngle)
                 {
                     minAngle = angle;
@@ -725,7 +725,7 @@ public class SurfaceFilling
         {
             Edge initEdge = _boundary.Value(i)._edge;
             Edge edge = initEdge;
-            edge.Orientation(Forward);
+            edge.Orient(Forward);
             if (_oldNewMap.ContainsKey(edge))
             {
                 edge = ShapeCasts.Edge(_oldNewMap.GetValue(edge));
@@ -762,9 +762,9 @@ public class SurfaceFilling
                 _oldNewMap[v2.Oriented(Forward)] = newV2;
             }
 
-            newV1.Orientation(Forward);
+            newV1.Orient(Forward);
             bb.Add(newEdge, newV1);
-            newV2.Orientation(Reversed);
+            newV2.Orient(Reversed);
             bb.Add(newEdge, newV2);
             Placement loc = new Placement();
             bb.UpdateEdge(newEdge, curveOnPlate, surface, loc, dmax);

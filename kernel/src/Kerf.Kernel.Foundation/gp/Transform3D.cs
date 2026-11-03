@@ -46,7 +46,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     public Transform3D()
     {
         _scale = 1.0;
-        _shape = Identity;
+        _shape = TransformForm.Identity;
         _matrix = new Matrix3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
         _loc = new Xyz(0.0, 0.0, 0.0);
     }
@@ -111,12 +111,12 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         Xyz loc = _loc;
         shape = Ax1Mirror;
         scale = 1;
-        loc = a1.Location().XYZ();
-        matrix = matrix.WithDot(a1.Direction().XYZ());
+        loc = a1.Location.XYZ();
+        matrix = matrix.WithDot(a1.Direction.XYZ());
         matrix = matrix.Multiplied(-2);
         matrix = matrix.WithDiagonal(matrix.Value(1, 1) + 1, matrix.Value(2, 2) + 1, matrix.Value(3, 3) + 1);
         loc.Multiply(matrix);
-        loc.Add(a1.Location().XYZ());
+        loc.Add(a1.Location.XYZ());
         matrix = matrix.Multiplied(-1);
         return new Transform3D(scale, shape, matrix, loc);
     }
@@ -129,12 +129,12 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         Xyz loc = _loc;
         shape = Ax2Mirror;
         scale = -1;
-        loc = a2.Location().XYZ();
-        matrix = matrix.WithDot(a2.Direction().XYZ());
+        loc = a2.Location.XYZ();
+        matrix = matrix.WithDot(a2.Direction.XYZ());
         matrix = matrix.Multiplied(2);
         matrix = matrix.WithDiagonal(matrix.Value(1, 1) - 1, matrix.Value(2, 2) - 1, matrix.Value(3, 3) - 1);
         loc.Multiply(matrix);
-        loc.Add(a2.Location().XYZ());
+        loc.Add(a2.Location.XYZ());
         return new Transform3D(scale, shape, matrix, loc);
     }
 
@@ -146,11 +146,11 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         Xyz loc = _loc;
         shape = global::Kerf.Geometry.TransformForm.Rotation;
         scale = 1.0;
-        loc = a1.Location().XYZ();
-        matrix = matrix.WithRotation(a1.Direction().XYZ(), ang);
+        loc = a1.Location.XYZ();
+        matrix = matrix.WithRotation(a1.Direction.XYZ(), ang);
         loc.Reverse();
         loc.Multiply(matrix);
-        loc.Add(a1.Location().XYZ());
+        loc.Add(a1.Location.XYZ());
         return new Transform3D(scale, shape, matrix, loc);
     }
 
@@ -183,7 +183,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
         switch (shape)
         {
-            case Identity:
+            case TransformForm.Identity:
                 if (hasRotation)
                 {
                     shape = global::Kerf.Geometry.TransformForm.Rotation;
@@ -193,7 +193,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
             case global::Kerf.Geometry.TransformForm.Rotation:
                 if (!hasRotation)
                 {
-                    shape = Identity;
+                    shape = TransformForm.Identity;
                 }
 
                 break;
@@ -238,19 +238,19 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         shape = CompoundTrsf;
         scale = 1.0;
         // matrix from ToA2 to XOY
-        newMatrix = newMatrix.WithCol(1, toA2.XDirection().XYZ());
-        newMatrix = newMatrix.WithCol(2, toA2.YDirection().XYZ());
-        newMatrix = newMatrix.WithCol(3, toA2.Direction().XYZ());
-        loc = toA2.Location().XYZ();
+        newMatrix = newMatrix.WithCol(1, toA2.XDirection.XYZ());
+        newMatrix = newMatrix.WithCol(2, toA2.YDirection.XYZ());
+        newMatrix = newMatrix.WithCol(3, toA2.Direction.XYZ());
+        loc = toA2.Location.XYZ();
 
         // matrix XOY to FromA1
-        Xyz xDir = fromA1.XDirection().XYZ();
-        Xyz yDir = fromA1.YDirection().XYZ();
-        Xyz zDir = fromA1.Direction().XYZ();
+        Xyz xDir = fromA1.XDirection.XYZ();
+        Xyz yDir = fromA1.YDirection.XYZ();
+        Xyz zDir = fromA1.Direction.XYZ();
 
         Matrix3x3 ma1 = new(xDir, yDir, zDir);
         ma1 = ma1.Transposed();
-        Xyz ma1loc = fromA1.Location().XYZ();
+        Xyz ma1loc = fromA1.Location.XYZ();
         ma1loc.Multiply(ma1);
         ma1loc.Reverse();
 
@@ -270,18 +270,18 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         shape = CompoundTrsf;
         scale = 1.0;
         // matrix from XOY to ToA2
-        newMatrix = newMatrix.WithRows(toA2.XDirection().XYZ(), toA2.YDirection().XYZ(), toA2.Direction().XYZ());
-        loc = toA2.Location().XYZ();
+        newMatrix = newMatrix.WithRows(toA2.XDirection.XYZ(), toA2.YDirection.XYZ(), toA2.Direction.XYZ());
+        loc = toA2.Location.XYZ();
         loc.Multiply(newMatrix);
         loc.Reverse();
 
         // matrix FromA1 to XOY
-        Xyz xDir = fromA1.XDirection().XYZ();
-        Xyz yDir = fromA1.YDirection().XYZ();
-        Xyz zDir = fromA1.Direction().XYZ();
+        Xyz xDir = fromA1.XDirection.XYZ();
+        Xyz yDir = fromA1.YDirection.XYZ();
+        Xyz zDir = fromA1.Direction.XYZ();
 
         Matrix3x3 ma1 = new(xDir, yDir, zDir);
-        Xyz ma1loc = fromA1.Location().XYZ();
+        Xyz ma1loc = fromA1.Location.XYZ();
 
         // matrix * MA1 => FromA1 ToA2
         ma1loc.Multiply(newMatrix);
@@ -298,8 +298,8 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         Xyz loc = _loc;
         shape = CompoundTrsf;
         scale = 1.0;
-        matrix = matrix.WithRows(a3.XDirection().XYZ(), a3.YDirection().XYZ(), a3.Direction().XYZ());
-        loc = a3.Location().XYZ();
+        matrix = matrix.WithRows(a3.XDirection.XYZ(), a3.YDirection.XYZ(), a3.Direction.XYZ());
+        loc = a3.Location.XYZ();
         loc.Multiply(matrix);
         loc.Reverse();
         return new Transform3D(scale, shape, matrix, loc);
@@ -353,7 +353,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
         switch (shape)
         {
-            case Identity:
+            case TransformForm.Identity:
                 if (!locnull)
                 {
                     shape = global::Kerf.Geometry.TransformForm.Translation;
@@ -363,7 +363,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
             case global::Kerf.Geometry.TransformForm.Translation:
                 if (locnull)
                 {
-                    shape = Identity;
+                    shape = TransformForm.Identity;
                 }
 
                 break;
@@ -396,7 +396,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
         switch (shape)
         {
-            case Identity:
+            case TransformForm.Identity:
             case global::Kerf.Geometry.TransformForm.Translation:
                 if (!unit)
                 {
@@ -426,14 +426,14 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
 
                 if (unit)
                 {
-                    shape = Identity;
+                    shape = TransformForm.Identity;
                 }
 
                 break;
             case global::Kerf.Geometry.TransformForm.Scale:
                 if (unit)
                 {
-                    shape = Identity;
+                    shape = TransformForm.Identity;
                 }
 
                 if (munit)
@@ -450,7 +450,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, _matrix, _loc);
     }
 
-    public readonly Transform3D WithForm(TransformForm p)
+    internal readonly Transform3D WithForm(TransformForm p)
     {
         TransformForm shape = _shape;
         shape = p;
@@ -471,7 +471,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         Xyz col4 = new(a14, a24, a34);
         // compute the determinant
         Matrix3x3 m = new(col1, col2, col3);
-        double s = m.Determinant();
+        double s = m.Determinant;
         Standard_ConstructionError_Raise_if(Math.Abs(s) < Constants.Resolution(), "gp_Trsf::SetValues, null determinant");
         if (s > 0)
         {
@@ -524,14 +524,14 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     /// <summary>True when the determinant of the vectorial part is negative (the transformation mirrors).</summary>
     public readonly bool IsNegative => _scale < 0.0;
 
-    public readonly TransformForm Form() => _shape;
+    public readonly TransformForm Form => _shape;
 
-    public readonly double ScaleFactor() => _scale;
+    public readonly double ScaleFactor => _scale;
 
-    public readonly Xyz TranslationPart() => _loc;
+    public readonly Xyz TranslationXyz() => _loc;
 
     /// <summary>The rotation as an axis and an angle. Always true, as in OCCT.</summary>
-    public readonly bool GetRotation(out Xyz axis, out double angle)
+    internal readonly bool GetRotation(out Xyz axis, out double angle)
     {
         Quaternion3 q = GetRotation();
         q.GetVectorAndAngle(out Vector3D vec, out angle);
@@ -539,34 +539,37 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return true;
     }
 
-    public readonly Quaternion3 GetRotation() => new(_matrix);
+    internal readonly Quaternion3 GetRotation() => new(_matrix);
 
     /// <summary>The matrix multiplied by the scale factor.</summary>
-    public readonly Matrix3x3 VectorialPart()
+    public readonly Matrix3x3 VectorialPart
     {
-        if (_scale == 1.0)
+        get
         {
-            return _matrix;
-        }
+            if (_scale == 1.0)
+            {
+                return _matrix;
+            }
 
-        Matrix3x3 m = _matrix;
-        if (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror)
-        {
-            m = m.WithDiagonal(_scale * m._m00, _scale * m._m11, _scale * m._m22);
-        }
-        else
-        {
-            m = m.Multiplied(_scale);
-        }
+            Matrix3x3 m = _matrix;
+            if (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror)
+            {
+                m = m.WithDiagonal(_scale * m._m00, _scale * m._m11, _scale * m._m22);
+            }
+            else
+            {
+                m = m.Multiplied(_scale);
+            }
 
-        return m;
+            return m;
+        }
     }
 
     /// <summary>The matrix without the scale factor.</summary>
-    public readonly Matrix3x3 HVectorialPart() => _matrix;
+    public readonly Matrix3x3 RotationPart => _matrix;
 
     /// <summary>The coefficient at a row (1 to 3) and column (1 to 4) of the 3x4 matrix, scale included.</summary>
-    public readonly double Value(int row, int col)
+    internal readonly double Value(int row, int col)
     {
         Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 4, " ");
         if (col < 4)
@@ -586,7 +589,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         Xyz loc = _loc;
         // -1
         // X' = scale * R * X + T  =>  X = (R / scale) * (X' - T)
-        if (_shape == Identity)
+        if (_shape == TransformForm.Identity)
         {
         }
         else if (_shape == global::Kerf.Geometry.TransformForm.Translation || _shape == PntMirror)
@@ -617,10 +620,10 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         TransformForm shape = _shape;
         Matrix3x3 matrix = _matrix;
         Xyz loc = _loc;
-        if (t._shape == Identity)
+        if (t._shape == TransformForm.Identity)
         {
         }
-        else if (shape == Identity)
+        else if (shape == TransformForm.Identity)
         {
             shape = t._shape;
             scale = t._scale;
@@ -754,10 +757,10 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         TransformForm shape = _shape;
         Matrix3x3 matrix = _matrix;
         Xyz loc = _loc;
-        if (t._shape == Identity)
+        if (t._shape == TransformForm.Identity)
         {
         }
-        else if (shape == Identity)
+        else if (shape == TransformForm.Identity)
         {
             shape = t._shape;
             scale = t._scale;
@@ -883,7 +886,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         TransformForm shape = _shape;
         Matrix3x3 matrix = _matrix;
         Xyz loc = _loc;
-        if (shape == Identity)
+        if (shape == TransformForm.Identity)
         {
         }
         else
@@ -891,7 +894,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
             if (n == 0)
             {
                 scale = 1.0;
-                shape = Identity;
+                shape = TransformForm.Identity;
                 matrix = matrix.WithIdentity();
                 loc = new Xyz(0.0, 0.0, 0.0);
             }
@@ -1000,7 +1003,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
                 {
                     if (IsEven(n))
                     {
-                        shape = Identity;
+                        shape = TransformForm.Identity;
                         scale = 1.0;
                         matrix = matrix.WithIdentity();
                         loc.SetX(0);
@@ -1040,7 +1043,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         return new Transform3D(scale, shape, matrix, loc);
     }
 
-    public readonly void Transforms(ref double x, ref double y, ref double z)
+    internal readonly void Transforms(ref double x, ref double y, ref double z)
     {
         Xyz triplet = new(x, y, z);
         triplet.Multiply(_matrix);
@@ -1055,7 +1058,7 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
         z = triplet.Z();
     }
 
-    public readonly void Transforms(ref Xyz coord)
+    internal readonly void Transforms(ref Xyz coord)
     {
         coord.Multiply(_matrix);
         if (_scale != 1.0)
@@ -1075,14 +1078,14 @@ public readonly partial struct Transform3D : IEquatable<Transform3D>
     }
 
     /// <summary>The 4x4 matrix, row by row, as OCCT's <c>GetMat4</c>.</summary>
-    public readonly void GetMat4(Span<double> mat)
+    internal readonly void GetMat4(Span<double> mat)
     {
         if (mat.Length < 16)
         {
             throw new ArgumentException("A 4x4 matrix needs 16 elements.", nameof(mat));
         }
 
-        if (_shape == Identity)
+        if (_shape == TransformForm.Identity)
         {
             mat[..16].Clear();
             mat[0] = mat[5] = mat[10] = mat[15] = 1.0;

@@ -48,28 +48,28 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
 
         public void Same(N.gp_Pnt theN, in Point3D theP, string theWhat)
         {
-            Same(theN.X(), theP.X(), theWhat + ".X");
-            Same(theN.Y(), theP.Y(), theWhat + ".Y");
-            Same(theN.Z(), theP.Z(), theWhat + ".Z");
+            Same(theN.X(), theP.X, theWhat + ".X");
+            Same(theN.Y(), theP.Y, theWhat + ".Y");
+            Same(theN.Z(), theP.Z, theWhat + ".Z");
         }
 
         public void Same(N.gp_Vec theN, in Vector3D theP, string theWhat)
         {
-            Same(theN.X(), theP.X(), theWhat + ".X");
-            Same(theN.Y(), theP.Y(), theWhat + ".Y");
-            Same(theN.Z(), theP.Z(), theWhat + ".Z");
+            Same(theN.X(), theP.X, theWhat + ".X");
+            Same(theN.Y(), theP.Y, theWhat + ".Y");
+            Same(theN.Z(), theP.Z, theWhat + ".Z");
         }
 
         public void Same(N.gp_Pnt2d theN, in Point2D theP, string theWhat)
         {
-            Same(theN.X(), theP.X(), theWhat + ".X");
-            Same(theN.Y(), theP.Y(), theWhat + ".Y");
+            Same(theN.X(), theP.X, theWhat + ".X");
+            Same(theN.Y(), theP.Y, theWhat + ".Y");
         }
 
         public void Same(N.gp_Vec2d theN, in Vector2D theP, string theWhat)
         {
-            Same(theN.X(), theP.X(), theWhat + ".X");
-            Same(theN.Y(), theP.Y(), theWhat + ".Y");
+            Same(theN.X(), theP.X, theWhat + ".X");
+            Same(theN.Y(), theP.Y, theWhat + ".Y");
         }
 
         // the parameters to evaluate at: the finite bounds and random ones between (or around 0 when infinite)
@@ -89,13 +89,13 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
 
         public void SameCurve(N.Geom_Curve theN, Curve3D theP, string theWhat)
         {
-            Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " First");
-            Same(theN.LastParameter(), theP.LastParameter(), theWhat + " Last");
+            Same(theN.FirstParameter(), theP.FirstParameter, theWhat + " First");
+            Same(theN.LastParameter(), theP.LastParameter, theWhat + " Last");
             Same(theN.IsPeriodic(), theP.IsPeriodic, theWhat + " IsPeriodic");
             using var aNP = new N.gp_Pnt();
             using var aNV1 = new N.gp_Vec();
             using var aNV2 = new N.gp_Vec();
-            foreach (double U in Parameters(theP.FirstParameter(), theP.LastParameter()))
+            foreach (double U in Parameters(theP.FirstParameter, theP.LastParameter))
             {
                 theN.D2(U, aNP, aNV1, aNV2);
                 theP.D2(U, out Point3D P, out Vector3D V1, out Vector3D V2);
@@ -107,12 +107,12 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
 
         public void SameCurve(N.Geom2d_Curve theN, Curve2D theP, string theWhat)
         {
-            Same(theN.FirstParameter(), theP.FirstParameter(), theWhat + " First");
-            Same(theN.LastParameter(), theP.LastParameter(), theWhat + " Last");
+            Same(theN.FirstParameter(), theP.FirstParameter, theWhat + " First");
+            Same(theN.LastParameter(), theP.LastParameter, theWhat + " Last");
             using var aNP = new N.gp_Pnt2d();
             using var aNV1 = new N.gp_Vec2d();
             using var aNV2 = new N.gp_Vec2d();
-            foreach (double U in Parameters(theP.FirstParameter(), theP.LastParameter()))
+            foreach (double U in Parameters(theP.FirstParameter, theP.LastParameter))
             {
                 theN.D2(U, aNP, aNV1, aNV2);
                 theP.D2(U, out Point2D P, out Vector2D V1, out Vector2D V2);
@@ -126,7 +126,7 @@ public class DrawLiteGeometryOracleTests(ITestOutputHelper output)
         {
             double aNU1 = 0, aNU2 = 0, aNV1 = 0, aNV2 = 0;
             theN.Bounds(ref aNU1, ref aNU2, ref aNV1, ref aNV2);
-            theP.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+            theP.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
             Same(aNU1, aU1, theWhat + " U1");
             Same(aNU2, aU2, theWhat + " U2");
             Same(aNV1, aV1, theWhat + " V1");

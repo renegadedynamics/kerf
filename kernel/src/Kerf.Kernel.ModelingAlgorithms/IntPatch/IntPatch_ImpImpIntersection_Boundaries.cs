@@ -46,7 +46,7 @@ public sealed partial class ImpImpIntersection
         for (double _theta = u0alin + dtheta; _theta <= u1alin - dtheta; _theta += dtheta)
         {
             Point3D p = alin.Value(_theta);
-            double d = p.Distance(pSurf);
+            double d = p.DistanceTo(pSurf);
             if (d < distmin)
             {
                 thetamin = _theta;
@@ -63,7 +63,7 @@ public sealed partial class ImpImpIntersection
             quadSurf.Parameters(pp0, ref ua0, ref va0);
             thearc.D1(theparameteronarc, out Point2D p2d, out Vector2D d2d);
             Vector2D paPr = new(new Point2D(ua0, va0), p2d);
-            distinit = paPr.Magnitude();
+            distinit = paPr.Magnitude;
         }
         theta = thetamin;
         //-- recherche a partir de theta et theparameteronarc
@@ -86,7 +86,7 @@ public sealed partial class ImpImpIntersection
             thearc.D1(theparameteronarc, out Point2D p2d, out Vector2D d2d);
             Vector2D paPr = new(new Point2D(ua0, va0), p2d);
 
-            double pbd = paPr.Magnitude();
+            double pbd = paPr.Magnitude;
             if (bestdist > pbd)
             {
                 bestdist = pbd;
@@ -94,12 +94,12 @@ public sealed partial class ImpImpIntersection
                 besttheta = theta;
             }
 
-            d1a = d1a.WithCoord(-d1a.X(), -d1a.Y());
+            d1a = d1a.WithCoord(-d1a.X, -d1a.Y);
 
-            double d = d1a.X() * d2d.Y() - d1a.Y() * d2d.X();
+            double d = d1a.X * d2d.Y - d1a.Y * d2d.X;
 
-            double da = (-paPr.X()) * d2d.Y() - (-paPr.Y()) * d2d.X();
-            double dr = d1a.X() * (-paPr.Y()) - d1a.Y() * (-paPr.X());
+            double da = (-paPr.X) * d2d.Y - (-paPr.Y) * d2d.X;
+            double dr = d1a.X * (-paPr.Y) - d1a.Y * (-paPr.X);
             if (Math.Abs(d) > 1e-15)
             {
                 da /= d;
@@ -107,30 +107,30 @@ public sealed partial class ImpImpIntersection
             }
             else
             {
-                if (Math.Abs(paPr.X()) > Math.Abs(paPr.Y()))
+                if (Math.Abs(paPr.X) > Math.Abs(paPr.Y))
                 {
-                    double xx = paPr.X();
+                    double xx = paPr.X;
                     xx *= 0.5;
-                    if (d1a.X() != 0.0)
+                    if (d1a.X != 0.0)
                     {
-                        da = -xx / d1a.X();
+                        da = -xx / d1a.X;
                     }
-                    if (d2d.X() != 0.0)
+                    if (d2d.X != 0.0)
                     {
-                        dr = -xx / d2d.X();
+                        dr = -xx / d2d.X;
                     }
                 }
                 else
                 {
-                    double yy = paPr.Y();
+                    double yy = paPr.Y;
                     yy *= 0.5;
-                    if (d1a.Y() != 0.0)
+                    if (d1a.Y != 0.0)
                     {
-                        da = -yy / d1a.Y();
+                        da = -yy / d1a.Y;
                     }
-                    if (d2d.Y() != 0.0)
+                    if (d2d.Y != 0.0)
                     {
-                        dr = -yy / d2d.Y();
+                        dr = -yy / d2d.Y;
                     }
                 }
             }
@@ -420,8 +420,8 @@ public sealed partial class ImpImpIntersection
                     currentarc = currentpointonrst.Arc();
                     currentparameter = currentpointonrst.Parameter();
                     currentarc.D1(currentparameter, out p2d, out d2d);
-                    quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                    vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                    quadSurf.D1(p2d.X, p2d.Y, ref ptbid, ref d1u, ref d1v);
+                    vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
                     goon = MultiplePoint(listpnt,
                                          domain,
                                          quadSurf,
@@ -466,7 +466,7 @@ public sealed partial class ImpImpIntersection
                             Vector3D norm1 = quadSurf.Normale(psurf);
                             Vector3D norm2 = otherQuad.Normale(psurf);
                             //
-                            if (norm1.Magnitude() > Constants.Resolution() && norm2.Magnitude() > Constants.Resolution())
+                            if (norm1.Magnitude > Constants.Resolution() && norm2.Magnitude > Constants.Resolution())
                             {
                                 if (norm1.IsParallel(norm2, tolAng))
                                 {
@@ -498,8 +498,8 @@ public sealed partial class ImpImpIntersection
                             currentarc = currentpointonrst.Arc();
                             //-- currentparameter = currentpointonrst.Parameter();
                             currentarc.D1(currentparameter, out p2d, out d2d);
-                            quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                            vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                            quadSurf.D1(p2d.X, p2d.Y, ref ptbid, ref d1u, ref d1v);
+                            vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
                             PatchLine lin = slin.Value(linenumber);
                             theType = lin.ArcType();
@@ -527,8 +527,8 @@ public sealed partial class ImpImpIntersection
                                 //-- non la tolerance qui a servi au FindLine
                                 solpnt.SetValue(psurf, vertTol, false);
 
-                                u1 = p2d.X();
-                                v1 = p2d.Y();
+                                u1 = p2d.X;
+                                v1 = p2d.Y;
                                 otherQuad.Parameters(psurf, ref u2, ref v2);
 
                                 if (onFirst)
@@ -552,7 +552,7 @@ public sealed partial class ImpImpIntersection
                                     //-- goon = false; ????
                                 }
 
-                                if (normale.SquareMagnitude() < 1e-16)
+                                if (normale.SquareMagnitude < 1e-16)
                                 {
                                     transline.SetValue(true, WalkingTypeTrans.Undecided);
                                     transarc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -592,8 +592,8 @@ public sealed partial class ImpImpIntersection
                                                     currentparameter = currentpointonrst.Parameter();
 
                                                     currentarc.D1(currentparameter, out p2d, out d2d);
-                                                    vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
-                                                    if (normale.SquareMagnitude() < 1e-16)
+                                                    vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
+                                                    if (normale.SquareMagnitude < 1e-16)
                                                     {
                                                         transline.SetValue(true, WalkingTypeTrans.Undecided);
                                                         transarc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -682,7 +682,7 @@ public sealed partial class ImpImpIntersection
                 if (intpt.IsMultiple
                     && ((onFirst && !intpt.IsOnDomS1) || (!onFirst && !intpt.IsOnDomS2)))
                 {
-                    if (point.Distance(intpt.Value()) <= intpt.Tolerance())
+                    if (point.DistanceTo(intpt.Value()) <= intpt.Tolerance())
                     {
                         retvalue = false;
                         bool foo = SingleLine(point, slinValueii, intpt.Tolerance(), ref paraint, ref vtgint);
@@ -704,11 +704,11 @@ public sealed partial class ImpImpIntersection
                         currentarc = currentpointonrst.Arc();
                         currentparameter = currentpointonrst.Parameter();
                         currentarc.D1(currentparameter, out Point2D p2d, out Vector2D d2d);
-                        quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                        vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                        quadSurf.D1(p2d.X, p2d.Y, ref ptbid, ref d1u, ref d1v);
+                        vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
 
                         //-- Si la normale est nulle (apex d un cone) On simule une transition UNKNOWN
-                        if (normale.SquareMagnitude() < 1e-16)
+                        if (normale.SquareMagnitude < 1e-16)
                         {
                             transline.SetValue(true, WalkingTypeTrans.Undecided);
                             transarc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -743,8 +743,8 @@ public sealed partial class ImpImpIntersection
                                             currentparameter = otherpt.Parameter();
 
                                             currentarc.D1(currentparameter, out p2d, out d2d);
-                                            vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
-                                            if (normale.SquareMagnitude() < 1e-16)
+                                            vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
+                                            if (normale.SquareMagnitude < 1e-16)
                                             {
                                                 transline.SetValue(true, WalkingTypeTrans.Undecided);
                                                 transarc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -825,7 +825,7 @@ public sealed partial class ImpImpIntersection
             intpt = VertexOf(lin, theType, jj);
             if (!intpt.IsOnDomS2)
             {
-                if (currentpointonrst.Value().Distance(intpt.Value()) <= intpt.Tolerance())
+                if (currentpointonrst.Value().DistanceTo(intpt.Value()) <= intpt.Tolerance())
                 {
                     retvalue = false;
                     if (!currentpointonrst.IsNew())
@@ -841,9 +841,9 @@ public sealed partial class ImpImpIntersection
                     currentarc = currentpointonrst.Arc();
                     currentparameter = currentpointonrst.Parameter();
                     currentarc.D1(currentparameter, out Point2D p2d, out Vector2D d2d);
-                    quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                    vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
-                    if (normale.SquareMagnitude() < 1e-16)
+                    quadSurf.D1(p2d.X, p2d.Y, ref ptbid, ref d1u, ref d1v);
+                    vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
+                    if (normale.SquareMagnitude < 1e-16)
                     {
                         transline.SetValue(true, WalkingTypeTrans.Undecided);
                         transarc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -874,8 +874,8 @@ public sealed partial class ImpImpIntersection
                                         currentarc = currentpointonrst.Arc();
                                         currentparameter = currentpointonrst.Parameter();
                                         currentarc.D1(currentparameter, out p2d, out d2d);
-                                        vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
-                                        if (normale.SquareMagnitude() < 1e-16)
+                                        vtgrst = Vector3D.LinearForm(d2d.X, d1u, d2d.Y, d1v);
+                                        if (normale.SquareMagnitude < 1e-16)
                                         {
                                             transline.SetValue(true, WalkingTypeTrans.Undecided);
                                             transarc.SetValue(true, WalkingTypeTrans.Undecided);
@@ -986,7 +986,7 @@ public sealed partial class ImpImpIntersection
                         if (para <= upper && para >= lower)
                         {
                             pt = global::Kerf.Engine.Geometry.ElCLib.Value(para, ((GLine)lin).Line());
-                            sqDist = psurf.SquareDistance(pt);
+                            sqDist = psurf.SquareDistanceTo(pt);
                             if ((sqDist < sqTol) && (sqDist < sqDistMin))
                             {
                                 sqDistMin = sqDist;
@@ -1004,7 +1004,7 @@ public sealed partial class ImpImpIntersection
                             || (para - 2.0 * M_PI <= upper && para - 2.0 * M_PI >= lower))
                         {
                             pt = global::Kerf.Engine.Geometry.ElCLib.Value(para, ((GLine)lin).Circle());
-                            sqDist = psurf.SquareDistance(pt);
+                            sqDist = psurf.SquareDistanceTo(pt);
                             if ((sqDist < sqTol) && (sqDist < sqDistMin))
                             {
                                 sqDistMin = sqDist;
@@ -1022,7 +1022,7 @@ public sealed partial class ImpImpIntersection
                             || (para - 2.0 * M_PI <= upper && para - 2.0 * M_PI >= lower))
                         {
                             pt = global::Kerf.Engine.Geometry.ElCLib.Value(para, ((GLine)lin).Ellipse());
-                            sqDist = psurf.SquareDistance(pt);
+                            sqDist = psurf.SquareDistanceTo(pt);
                             if ((sqDist < sqTol) && (sqDist < sqDistMin))
                             {
                                 sqDistMin = sqDist;
@@ -1048,10 +1048,10 @@ public sealed partial class ImpImpIntersection
                                 double parabis = para + 0.0000001;
 
                                 pt = global::Kerf.Engine.Geometry.ElCLib.Value(para, parab);
-                                sqDist = psurf.SquareDistance(pt);
+                                sqDist = psurf.SquareDistanceTo(pt);
 
                                 Point3D ptbis = global::Kerf.Engine.Geometry.ElCLib.Value(parabis, parab);
-                                double distbis = psurf.Distance(ptbis);
+                                double distbis = psurf.DistanceTo(ptbis);
                                 double dist = Math.Sqrt(sqDist);
                                 double ddist = distbis - dist;
 
@@ -1084,7 +1084,7 @@ public sealed partial class ImpImpIntersection
                         if (para <= upper && para >= lower)
                         {
                             pt = global::Kerf.Engine.Geometry.ElCLib.Value(para, ((GLine)lin).Hyperbola());
-                            sqDist = psurf.SquareDistance(pt);
+                            sqDist = psurf.SquareDistanceTo(pt);
                             if ((sqDist < sqTol) && (sqDist < sqDistMin))
                             {
                                 sqDistMin = sqDist;
@@ -1109,7 +1109,7 @@ public sealed partial class ImpImpIntersection
                             for (var itr = new NCollection_List<double>.Iterator(aLParams); itr.More(); itr.Next())
                             {
                                 pt = alin.Value(itr.Value());
-                                double sqD = psurf.SquareDistance(pt);
+                                double sqD = psurf.SquareDistanceTo(pt);
                                 if (sqD < sqDist)
                                 {
                                     sqDist = sqD;
@@ -1138,7 +1138,7 @@ public sealed partial class ImpImpIntersection
                                                                        quadSurf1,
                                                                        lower,
                                                                        upper);
-                            sqDist = copiePsurf.SquareDistance(psurf);
+                            sqDist = copiePsurf.SquareDistanceTo(psurf);
                             if (intersectIsOk)
                             {
                                 if (sqDist < sqTol)
@@ -1174,7 +1174,7 @@ public sealed partial class ImpImpIntersection
         {
             case PatchLineType.Lin:
                 lParams.Append(paraInt);
-                vtgtint = new Vector3D(((GLine)slin[lineIdx]).Line().Direction());
+                vtgtint = new Vector3D(((GLine)slin[lineIdx]).Line().Direction);
                 break;
             case PatchLineType.Circle:
                 lParams.Append(paraInt);
@@ -1288,7 +1288,7 @@ public sealed partial class ImpImpIntersection
                 break;
         }
 
-        if (psurf.Distance(ptproj) <= tol)
+        if (psurf.DistanceTo(ptproj) <= tol)
         {
             paraint = parproj;
             vtgtint = tgint;

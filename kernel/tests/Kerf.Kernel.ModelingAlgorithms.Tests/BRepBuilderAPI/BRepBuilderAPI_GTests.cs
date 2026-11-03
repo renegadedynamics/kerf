@@ -368,9 +368,9 @@ public class BRepBuilderAPI_TransformTest
 
         Point3D aCenterOfMass = VolumeProps(aResult).CentreOfMass();
 
-        Assert.Equal(105.0, aCenterOfMass.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aCenterOfMass.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aCenterOfMass.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(105.0, aCenterOfMass.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCenterOfMass.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCenterOfMass.Z, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -388,8 +388,8 @@ public class BRepBuilderAPI_TransformTest
 
         Point3D aCenterOfMass = VolumeProps(aResult).CentreOfMass();
 
-        Assert.Equal(-5.0, aCenterOfMass.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(5.0, aCenterOfMass.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(-5.0, aCenterOfMass.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(5.0, aCenterOfMass.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public class BRepBuilderAPI_TransformTest
 
         Point3D aCenterOfMass = VolumeProps(aResult).CentreOfMass();
 
-        Assert.True(aCenterOfMass.X() < 0.0, "Center of mass X should be negative after mirroring through YZ plane");
+        Assert.True(aCenterOfMass.X < 0.0, "Center of mass X should be negative after mirroring through YZ plane");
     }
 
     [Fact]

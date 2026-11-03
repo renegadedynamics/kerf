@@ -130,7 +130,7 @@ public class ShapeFixer : RootFixer
         int                savFixVertexTolMode     = _fixVertexTolMode;
         FaceFixer      fft                     = FixFaceTool();
         savFixSmallAreaWireMode = fft.FixSmallAreaWireMode();
-        if (savFixSmallAreaWireMode == -1 && _shape.ShapeType() == ShapeType.Face)
+        if (savFixSmallAreaWireMode == -1 && _shape.Type == ShapeType.Face)
         {
             fft.FixSmallAreaWireMode() = 1;
         }
@@ -141,7 +141,7 @@ public class ShapeFixer : RootFixer
 
         // gka fix for sharing assembly
         Placement nullLoc = new(), l;
-        l = _shape.Location();
+        l = _shape.Placement;
         Shape shapeNullLoc = _shape;
         bool         isRecorded   = context.IsNewShape(_shape);
         shapeNullLoc.Location(nullLoc);
@@ -161,7 +161,7 @@ public class ShapeFixer : RootFixer
             ShapeFixFixer.FixVertexPosition(ref s, Precision(), context);
         }
 
-        st = s.ShapeType();
+        st = s.Type;
 
         // Open progress indication scope for the following fix stages:
         // - Fix on Solid or Shell;
@@ -264,7 +264,7 @@ public class ShapeFixer : RootFixer
                 bool          savTopoMode   = sfw.ModifyTopologyMode();
                 bool          savClosedMode = sfw.ClosedWireMode();
                 sfw.ModifyTopologyMode() = true;
-                if (!s.Closed())
+                if (!s.IsClosed)
                 {
                     sfw.ClosedWireMode() = false;
                 }

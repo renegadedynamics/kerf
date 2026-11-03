@@ -273,10 +273,10 @@ public class BRepCheckTests
         Assert.Equal(2, aCheck.NbConnectedSet(aSets));
         foreach (Shape aSet in aSets)
         {
-            Assert.Equal(ShapeType.Shell, aSet.ShapeType());
+            Assert.Equal(ShapeType.Shell, aSet.Type);
             Assert.Equal(6, Faces(aSet).Count);
             Assert.True(aSet.TShape()!.IsFrozen);
-            Assert.True(aSet.Closed());
+            Assert.True(aSet.IsClosed);
             Assert.Equal(StatusCheck.NoError, new ShellCheck(ShapeCasts.Shell(aSet)).Closed());
         }
     }

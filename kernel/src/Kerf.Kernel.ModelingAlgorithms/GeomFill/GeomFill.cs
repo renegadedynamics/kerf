@@ -43,9 +43,9 @@ public static class GeomFill
         bool trim1 = false, trim2 = false;
         if (curve1 is TrimmedCurve3D ctrim1)
         {
-            theCurve1 = ctrim1.BasisCurve();
-            a1 = ctrim1.FirstParameter();
-            b1 = ctrim1.LastParameter();
+            theCurve1 = ctrim1.BasisCurve;
+            a1 = ctrim1.FirstParameter;
+            b1 = ctrim1.LastParameter;
             trim1 = true;
         }
         else
@@ -54,9 +54,9 @@ public static class GeomFill
         }
         if (curve2 is TrimmedCurve3D ctrim2)
         {
-            theCurve2 = ctrim2.BasisCurve();
-            a2 = ctrim2.FirstParameter();
-            b2 = ctrim2.LastParameter();
+            theCurve2 = ctrim2.BasisCurve;
+            a2 = ctrim2.FirstParameter;
+            b2 = ctrim2.LastParameter;
             trim2 = true;
         }
         else
@@ -68,14 +68,14 @@ public static class GeomFill
         // Les deux courbes sont des droites.
         if (theCurve1 is LineCurve3D line1 && theCurve2 is LineCurve3D line2 && trim1 && trim2)
         {
-            Line3D l1 = line1.Lin();
-            Line3D l2 = line2.Lin();
-            Direction3D d1 = l1.Direction();
-            Direction3D d2 = l2.Direction();
+            Line3D l1 = line1.Line;
+            Line3D l2 = line2.Line;
+            Direction3D d1 = l1.Direction;
+            Direction3D d2 = l2.Direction;
 
             if (d1.IsParallel(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
-                Vector3D p1P2 = new Vector3D(l1.Location(), l2.Location());
+                Vector3D p1P2 = new Vector3D(l1.Location, l2.Location);
                 double proj = p1P2.Dot(new Vector3D(d1));
 
                 if (d1.IsEqual(d2, global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -83,9 +83,9 @@ public static class GeomFill
                     if (Math.Abs(a1 - proj - a2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
                         && Math.Abs(b1 - proj - b2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        CoordinateSystem ax = new CoordinateSystem(l1.Location(), d1.Crossed(new Direction3D(p1P2)), d1);
+                        CoordinateSystem ax = new CoordinateSystem(l1.Location, d1.Crossed(new Direction3D(p1P2)), d1);
                         PlaneSurface p = new PlaneSurface(ax);
-                        double v = p1P2.Dot(new Vector3D(ax.YDirection()));
+                        double v = p1P2.Dot(new Vector3D(ax.YDirection));
                         surf = new TrimmedSurface(p, a1, b1, Min(0.0, v), Max(0.0, v));
                         isDone = true;
                     }
@@ -95,9 +95,9 @@ public static class GeomFill
                     if (Math.Abs(a1 - proj + b2) <= global::Kerf.Engine.Foundation.Precision.Confusion()
                         && Math.Abs(b1 - proj + a2) <= global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        CoordinateSystem ax = new CoordinateSystem(l1.Location(), d1.Crossed(new Direction3D(p1P2)), d1);
+                        CoordinateSystem ax = new CoordinateSystem(l1.Location, d1.Crossed(new Direction3D(p1P2)), d1);
                         PlaneSurface p = new PlaneSurface(ax);
-                        double v = p1P2.Dot(new Vector3D(ax.YDirection()));
+                        double v = p1P2.Dot(new Vector3D(ax.YDirection));
                         surf = new TrimmedSurface(p, a1, b1, Min(0.0, v), Max(0.0, v));
                         isDone = true;
                     }
@@ -108,26 +108,26 @@ public static class GeomFill
         // Les deux courbes sont des cercles.
         else if (theCurve1 is CircleCurve3D circle1 && theCurve2 is CircleCurve3D circle2)
         {
-            Circle3D c1 = circle1.Circ();
-            Circle3D c2 = circle2.Circ();
+            Circle3D c1 = circle1.Circle;
+            Circle3D c2 = circle2.Circle;
 
-            CoordinateSystem A1 = new CoordinateSystem(c1.Position());
-            CoordinateSystem A2 = new CoordinateSystem(c2.Position());
+            CoordinateSystem A1 = new CoordinateSystem(c1.Position);
+            CoordinateSystem A2 = new CoordinateSystem(c2.Position);
 
             // first, A1 & A2 must be coaxials
-            if (A1.Axis().IsCoaxial(A2.Axis(), global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
+            if (A1.Axis.IsCoaxial(A2.Axis, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
-                double v = new Vector3D(A1.Location(), A2.Location()).Dot(new Vector3D(A1.Direction()));
+                double v = new Vector3D(A1.Location, A2.Location).Dot(new Vector3D(A1.Direction));
                 if (!trim1 && !trim2)
                 {
-                    if (Math.Abs(c1.Radius() - c2.Radius()) < global::Kerf.Engine.Foundation.Precision.Confusion())
+                    if (Math.Abs(c1.Radius - c2.Radius) < global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        CylindricalSurface c = new CylindricalSurface(A1, c1.Radius());
+                        CylindricalSurface c = new CylindricalSurface(A1, c1.Radius);
                         surf = new TrimmedSurface(c, Min(0.0, v), Max(0.0, v), false);
                     }
                     else
                     {
-                        double rad = c2.Radius() - c1.Radius();
+                        double rad = c2.Radius - c1.Radius;
                         double ang = Math.Atan(rad / v);
                         if (ang < 0.0)
                         {
@@ -135,7 +135,7 @@ public static class GeomFill
                             v = -v;
                             ang = -ang;
                         }
-                        ConicalSurface c = new ConicalSurface(A1, ang, c1.Radius());
+                        ConicalSurface c = new ConicalSurface(A1, ang, c1.Radius);
                         v /= Math.Cos(ang);
                         surf = new TrimmedSurface(c, Min(0.0, v), Max(0.0, v), false);
                     }
@@ -313,7 +313,7 @@ public static class GeomFill
         // afin d'eviter des tolerances d'approximation tendant vers 0 !
         BSplineCurve3D ctoBspl = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(sect, tConv);
         double dist;
-        dist = ctoBspl.Pole(1).Distance(ctoBspl.Pole(2)) + spatialTol;
+        dist = ctoBspl.Pole(1).DistanceTo(ctoBspl.Pole(2)) + spatialTol;
         return dist * angularTol / 2;
     }
 

@@ -46,12 +46,12 @@ public sealed class SurfaceSectionPlacement
     private static void Tangente(CurveAdaptorBase path, double param, out Point3D p, out Vector3D tang)
     {
         path.D1(param, out p, out tang);
-        double norm = tang.Magnitude();
+        double norm = tang.Magnitude;
 
         for (int ii = 2; (ii < 12) && (norm < global::Kerf.Engine.Foundation.Precision.Confusion()); ii++)
         {
             tang = path.DN(param, ii);
-            norm = tang.Magnitude();
+            norm = tang.Magnitude;
         }
 
         if (norm > 100 * Constants.Resolution())
@@ -92,7 +92,7 @@ public sealed class SurfaceSectionPlacement
     private static double EvalAngle(in Vector3D v1, in Vector3D v2)
     {
         double angle;
-        angle = v1.Angle(v2);
+        angle = v1.AngleTo(v2);
         if (angle > M_PI / 2)
         {
             angle = M_PI - angle;
@@ -201,19 +201,19 @@ public sealed class SurfaceSectionPlacement
             {
                 case Circle:
                     _isplan = true;
-                    _theAxe = _adpSection.Circle().Axis();
+                    _theAxe = _adpSection.Circle().Axis;
                     break;
                 case Ellipse:
                     _isplan = true;
-                    _theAxe = _adpSection.Ellipse().Axis();
+                    _theAxe = _adpSection.Ellipse().Axis;
                     break;
                 case Hyperbola:
                     _isplan = true;
-                    _theAxe = _adpSection.Hyperbola().Axis();
+                    _theAxe = _adpSection.Hyperbola().Axis;
                     break;
                 case Parabola:
                     _isplan = true;
-                    _theAxe = _adpSection.Parabola().Axis();
+                    _theAxe = _adpSection.Parabola().Axis;
                     break;
                 case Line:
                     nbPoles = 0; // Pas de Plan !!
@@ -239,10 +239,10 @@ public sealed class SurfaceSectionPlacement
                     Curve3D curve = _adpSection.Curve()!;
                     if (curve.GetType() == typeof(TrimmedCurve3D))
                     {
-                        curve = ((TrimmedCurve3D)curve).BasisCurve();
+                        curve = ((TrimmedCurve3D)curve).BasisCurve;
                     }
-                    double ufirst = curve.FirstParameter();
-                    double period = curve.Period();
+                    double ufirst = curve.FirstParameter;
+                    double period = curve.Period;
                     double u1 = ufirst + Math.Floor((first - ufirst) / period) * period;
                     double u2 = u1 + period;
                     if (Math.Abs(first - u1) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -342,8 +342,8 @@ public sealed class SurfaceSectionPlacement
                 if (!issing)
                 {
                     _isplan = true;
-                    _theAxe = _theAxe.WithLocation(axe.Location());
-                    _theAxe = _theAxe.WithDirection(axe.Direction());
+                    _theAxe = _theAxe.WithLocation(axe.Location);
+                    _theAxe = _theAxe.WithDirection(axe.Direction);
                 }
             }
 
@@ -386,11 +386,11 @@ public sealed class SurfaceSectionPlacement
             double distaux = 0.0, taux = 0.0, alpha;
             Point3D ponPath, ponSec, p;
             Vector3D vRef = new Vector3D(), dp1;
-            vRef = vRef.WithXYZ(_theAxe.Direction().XYZ());
+            vRef = vRef.WithXYZ(_theAxe.Direction.XYZ());
 
             Tangente(path, _pathParam, out ponPath, out dp1);
             ponSec = _adpSection.Value(_secParam);
-            _dist = ponPath.Distance(ponSec);
+            _dist = ponPath.DistanceTo(ponSec);
             if (_dist > tol)
             { // On Cherche un meilleur point sur la section
                 _ext.Perform(ponPath);
@@ -413,19 +413,19 @@ public sealed class SurfaceSectionPlacement
             {
                 // (1.1) Distances Point-Plan
                 double distPlan;
-                Vector3D v1 = new Vector3D(ponPath, _theAxe.Location());
+                Vector3D v1 = new Vector3D(ponPath, _theAxe.Location);
                 distPlan = Math.Abs(v1.Dot(vRef));
                 if (distPlan <= intTol)
                 {
-                    distCenter = v1.Magnitude();
+                    distCenter = v1.Magnitude;
                 }
 
                 Point3D plast = path.Value(path.LastParameter());
-                v1 = v1.WithXYZ(_theAxe.Location().XYZ() - plast.XYZ());
+                v1 = v1.WithXYZ(_theAxe.Location.XYZ() - plast.XYZ());
                 distPlan = Math.Abs(v1.Dot(vRef));
                 if (distPlan <= intTol)
                 {
-                    double dist = v1.Magnitude();
+                    double dist = v1.Magnitude;
                     if (dist < distCenter)
                     {
                         distCenter = dist;
@@ -435,7 +435,7 @@ public sealed class SurfaceSectionPlacement
                 }
 
                 // (1.2) Intersection Plan-courbe
-                CoordinateSystem axe = new CoordinateSystem(_theAxe.Location(), _theAxe.Direction());
+                CoordinateSystem axe = new CoordinateSystem(_theAxe.Location, _theAxe.Direction);
                 PlaneSurface plan = new PlaneSurface(axe);
                 SurfaceAdaptor adplan = new SurfaceAdaptor(plan);
                 HInter intersector = new HInter();
@@ -448,7 +448,7 @@ public sealed class SurfaceSectionPlacement
                     {
                         w = intersector.Point(ii).W();
                         p = path.Value(w);
-                        dist = p.Distance(_theAxe.Location());
+                        dist = p.DistanceTo(_theAxe.Location);
                         if (dist < distCenter)
                         {
                             distCenter = dist;
@@ -463,9 +463,9 @@ public sealed class SurfaceSectionPlacement
                     // profile.
                     Point3D firstPoint = path.Value(path.FirstParameter());
                     Point3D lastPoint = path.Value(path.LastParameter());
-                    Plane3D plane = plan.Pln();
-                    double firstDistance = plane.SquareDistance(firstPoint);
-                    double lastDistance = plane.SquareDistance(lastPoint);
+                    Plane3D plane = plan.Plane;
+                    double firstDistance = plane.SquareDistanceTo(firstPoint);
+                    double lastDistance = plane.SquareDistanceTo(lastPoint);
 
                     if (((Math.Abs(firstDistance) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                          && Math.Abs(lastDistance) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
@@ -478,7 +478,7 @@ public sealed class SurfaceSectionPlacement
                         _pathParam = path.LastParameter();
                         Tangente(path, _pathParam, out ponPath, out dp1);
                         ponSec = _adpSection.Value(_secParam);
-                        _dist = ponPath.Distance(ponSec);
+                        _dist = ponPath.DistanceTo(ponSec);
                         if (_dist > tol)
                         { // On Cherche un meilleur point sur la section
                             _ext.Perform(ponPath);
@@ -600,7 +600,7 @@ public sealed class SurfaceSectionPlacement
         if (_isPoint)
         {
             Point3D ponPath = path.Value(_pathParam);
-            _dist = ponPath.Distance(_point);
+            _dist = ponPath.DistanceTo(_point);
             _angleMax = M_PI / 2;
         }
         else
@@ -609,11 +609,11 @@ public sealed class SurfaceSectionPlacement
 
             Point3D ponPath, ponSec;
             Vector3D vRef = new Vector3D(), dp1;
-            vRef = vRef.WithXYZ(_theAxe.Direction().XYZ());
+            vRef = vRef.WithXYZ(_theAxe.Direction.XYZ());
 
             Tangente(path, _pathParam, out ponPath, out dp1);
             ponSec = _adpSection.Value(_secParam);
-            _dist = ponPath.Distance(ponSec);
+            _dist = ponPath.DistanceTo(ponSec);
             if (_dist > tol)
             { // On Cherche un meilleur point sur la section
                 _ext.Perform(ponPath);
@@ -687,13 +687,13 @@ public sealed class SurfaceSectionPlacement
                 throw new FailureException("Illegal usage: can't rotate non-planar profile");
             }
 
-            Direction3D profileNormal = _theAxe.Direction();
-            Direction3D spineStartDir = paxe.Direction();
+            Direction3D profileNormal = _theAxe.Direction;
+            Direction3D spineStartDir = paxe.Direction;
             if (!profileNormal.IsParallel(spineStartDir, global::Kerf.Engine.Foundation.Precision.Angular()))
             {
                 Direction3D dirAxeOfRotation = profileNormal ^ spineStartDir;
                 angle = profileNormal.AngleWithRef(spineStartDir, dirAxeOfRotation);
-                Axis3D axeOfRotation = new Axis3D(_theAxe.Location(), dirAxeOfRotation);
+                Axis3D axeOfRotation = new Axis3D(_theAxe.Location, dirAxeOfRotation);
                 rot = rot.WithRotation(axeOfRotation, angle);
             }
             pSection = pSection.Transformed(rot);
@@ -772,7 +772,7 @@ public sealed class SurfaceSectionPlacement
                 pathNormal = pathNormal.WithXYZ(m.Column(1));
                 pathNormal = pathNormal.Normalized();
                 bn = t ^ pathNormal;
-                if (bn.Magnitude() > eps)
+                if (bn.Magnitude > eps)
                 {
                     bn = bn.Normalized();
                 }

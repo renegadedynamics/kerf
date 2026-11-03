@@ -27,12 +27,12 @@ internal static class OffsetCurveUtils2D
     /// </summary>
     internal static bool CalculateD0(ref Point2D value, in Vector2D d1, double offset)
     {
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             return false;
         }
 
-        Direction2D normal = new Direction2D(d1.Y(), -d1.X());
+        Direction2D normal = new Direction2D(d1.Y, -d1.X);
         value = new Point2D(value.XY().Added(normal.XY() * offset));
         return true;
     }
@@ -48,8 +48,8 @@ internal static class OffsetCurveUtils2D
 
         // P'(u) = p'(u) + (Offset / R**2) * (DNdir/DU * R -  Ndir * (DR/R))
 
-        Xy ndir = new Xy(d1.Y(), -d1.X());
-        Xy dNdir = new Xy(d2.Y(), -d2.X());
+        Xy ndir = new Xy(d1.Y, -d1.X);
+        Xy dNdir = new Xy(d2.Y, -d2.X);
         double r2 = ndir.SquareModulus();
         double r = Math.Sqrt(r2);
         double r3 = r * r2;
@@ -99,9 +99,9 @@ internal static class OffsetCurveUtils2D
         // P"(u) = p"(u) + (Offset / R) * (D2Ndir/DU - DNdir * (2.0 * Dr/ R**2) +
         //         Ndir * ( (3.0 * Dr**2 / R**4) - (D2r / R**2)))
 
-        Xy ndir = new Xy(d1.Y(), -d1.X());
-        Xy dNdir = new Xy(d2.Y(), -d2.X());
-        Xy d2Ndir = new Xy(d3.Y(), -d3.X());
+        Xy ndir = new Xy(d1.Y, -d1.X);
+        Xy dNdir = new Xy(d2.Y, -d2.X);
+        Xy d2Ndir = new Xy(d3.Y, -d3.X);
         double r2 = ndir.SquareModulus();
         double r = Math.Sqrt(r2);
         double r3 = r2 * r;
@@ -178,10 +178,10 @@ internal static class OffsetCurveUtils2D
         //          (D3r/R2) * Ndir + (6.0 * Dr * Dr / R4) * Ndir +
         //          (6.0 * Dr * D2r / R4) * Ndir - (15.0 * Dr* Dr* Dr /R6) * Ndir
 
-        Xy ndir = new Xy(d1.Y(), -d1.X());
-        Xy dNdir = new Xy(d2.Y(), -d2.X());
-        Xy d2Ndir = new Xy(d3.Y(), -d3.X());
-        Xy d3Ndir = new Xy(d4.Y(), -d4.X());
+        Xy ndir = new Xy(d1.Y, -d1.X);
+        Xy dNdir = new Xy(d2.Y, -d2.X);
+        Xy d2Ndir = new Xy(d3.Y, -d3.X);
+        Xy d3Ndir = new Xy(d4.Y, -d4.X);
         double r2 = ndir.SquareModulus();
         double r = Math.Sqrt(r2);
         double r3 = r2 * r;
@@ -275,8 +275,8 @@ internal static class OffsetCurveUtils2D
         const int maxDerivOrder = 3;
 
         isDirectionChange = false;
-        double uinfium = curve.FirstParameter();
-        double usupremum = curve.LastParameter();
+        double uinfium = curve.FirstParameter;
+        double usupremum = curve.LastParameter;
 
         const double divisionFactor = 1.0e-3;
         double du;
@@ -298,7 +298,7 @@ internal static class OffsetCurveUtils2D
         do
         {
             v = curve.EvalDN(theU, ++index);
-        } while ((v.SquareMagnitude() <= tol) && index < maxDerivOrder);
+        } while ((v.SquareMagnitude <= tol) && index < maxDerivOrder);
 
         double u;
 
@@ -373,7 +373,7 @@ internal static class OffsetCurveUtils2D
         do
         {
             v = curve.EvalDN(theU, ++index);
-        } while ((v.SquareMagnitude() <= tol) && index < maxDerivOrder);
+        } while ((v.SquareMagnitude <= tol) && index < maxDerivOrder);
 
         double u;
 
@@ -448,7 +448,7 @@ internal static class OffsetCurveUtils2D
         Vector2D d3 = d3Result.D3;
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             Vector2D dummyD4 = new Vector2D();
             if (!AdjustDerivative(basisCurve, 3, u, ref d1, ref d2, ref d3, ref dummyD4, out isDirectionChange))
@@ -477,7 +477,7 @@ internal static class OffsetCurveUtils2D
         Vector2D d4 = basisCurve.EvalDN(u, 4);
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             if (!AdjustDerivative(basisCurve, 4, u, ref d1, ref d2, ref d3, ref d4, out isDirectionChange))
             {
@@ -552,7 +552,7 @@ internal static class OffsetCurveUtils2D
         Vector2D d3 = d3Result.D3;
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             Vector2D dummyD4 = new Vector2D();
             if (!AdjustDerivative(basisCurve, 3, u, ref d1, ref d2, ref d3, ref dummyD4, out isDirectionChange))
@@ -581,7 +581,7 @@ internal static class OffsetCurveUtils2D
         Vector2D d4 = basisCurve.EvalDN(u, 4);
 
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             if (!AdjustDerivative(basisCurve, 4, u, ref d1, ref d2, ref d3, ref d4, out isDirectionChange))
             {

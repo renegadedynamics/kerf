@@ -89,8 +89,8 @@ public sealed class GeometryBuilderHelix : BuilderHelixGen
                     Point3D p1, pi = new();
 
                     Curve3D c1 = _curves[1];
-                    c1.D0(c1.FirstParameter(), out p1);
-                    pi = pi.WithCoord(p1.X(), p1.Y(), p1.Z() + (i - 1) * _pitch);
+                    c1.D0(c1.FirstParameter, out p1);
+                    pi = pi.WithCoord(p1.X, p1.Y, p1.Z + (i - 1) * _pitch);
                     ci = (Curve3D)c1.Translated(p1, pi);
 
                     _curves.Append(ci);

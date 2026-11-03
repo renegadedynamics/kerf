@@ -40,7 +40,7 @@ public class GeomConvert_PortTests
         {
             Point3D aP = theExpected.Value(theU1 + (theU2 - theU1) * i / 20.0);
             Point3D aQ = theActual.Value(theV1 + (theV2 - theV1) * i / 20.0);
-            Assert.True(aP.Distance(aQ) < theTol, $"point {i}: {aP} vs {aQ}");
+            Assert.True(aP.DistanceTo(aQ) < theTol, $"point {i}: {aP} vs {aQ}");
         }
     }
 
@@ -51,17 +51,17 @@ public class GeomConvert_PortTests
         BSplineCurve3D aWhole = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aCircle);
         Assert.True(aWhole.IsPeriodic);
         Assert.False(aWhole.IsFrozen);
-        Assert.True(aWhole.StartPoint().Distance(aCircle.Value(0.0)) < Tol);
+        Assert.True(aWhole.StartPoint.DistanceTo(aCircle.Value(0.0)) < Tol);
         for (int i = 0; i <= 20; i++)
         {
-            Assert.Equal(4.0, aWhole.Value(i * 0.3).Distance(P(1, 2, 3)), 1e-12);
+            Assert.Equal(4.0, aWhole.Value(i * 0.3).DistanceTo(P(1, 2, 3)), 1e-12);
         }
 
         // An arc of 6.2 radians with RationalC1: two halves joined by GeomConvert_CompCurveToBSplineCurve
         BSplineCurve3D aLong = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new TrimmedCurve3D(aCircle, 0.0, 6.2), RationalC1);
-        Assert.True(aLong.StartPoint().Distance(aCircle.Value(0.0)) < Tol);
-        Assert.True(aLong.EndPoint().Distance(aCircle.Value(6.2)) < Tol);
-        Assert.True(aLong.Continuity() >= C1);
+        Assert.True(aLong.StartPoint.DistanceTo(aCircle.Value(0.0)) < Tol);
+        Assert.True(aLong.EndPoint.DistanceTo(aCircle.Value(6.2)) < Tol);
+        Assert.True(aLong.Continuity >= C1);
     }
 
     [Fact]
@@ -74,7 +74,7 @@ public class GeomConvert_PortTests
         BSplineCurve3D aResult = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(aTrimmed);
         Assert.False(aResult.IsFrozen);
         AssertSamePoints(aPeriodic, 0.5, 2.5, aResult, 0.5, 2.5, Tol);
-        Assert.Equal(3.0, aPeriodic.LastParameter());
+        Assert.Equal(3.0, aPeriodic.LastParameter);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class GeomConvert_PortTests
         for (int i = 0; i <= 10; i++)
         {
             double aU = 0.3 * i;
-            Assert.True(aResult.Value(aU).Distance(anOffset.Value(aU)) < 1e-3);
+            Assert.True(aResult.Value(aU).DistanceTo(anOffset.Value(aU)) < 1e-3);
         }
 
         Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(new LineCurve3D(P(0, 0), new Direction3D(1, 0, 0))));
@@ -99,17 +99,17 @@ public class GeomConvert_PortTests
     {
         BSplineCurve3D aC = Cubic();
         BSplineCurve3D aPart = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 3);
-        Assert.Equal(1.0, aPart.FirstParameter());
-        Assert.Equal(2.0, aPart.LastParameter());
+        Assert.Equal(1.0, aPart.FirstParameter);
+        Assert.Equal(2.0, aPart.LastParameter);
         AssertSamePoints(aC, 1.0, 2.0, aPart, 1.0, 2.0, Tol);
 
         BSplineCurve3D aReversed = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 3, 2);
-        Assert.True(aReversed.StartPoint().Distance(aC.Value(2.0)) < Tol);
-        Assert.True(aReversed.EndPoint().Distance(aC.Value(1.0)) < Tol);
+        Assert.True(aReversed.StartPoint.DistanceTo(aC.Value(2.0)) < Tol);
+        Assert.True(aReversed.EndPoint.DistanceTo(aC.Value(1.0)) < Tol);
 
         BSplineCurve3D aByParams = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2.5, 0.5, 1e-9);
-        Assert.True(aByParams.StartPoint().Distance(aC.Value(2.5)) < Tol);
-        Assert.True(aByParams.EndPoint().Distance(aC.Value(0.5)) < Tol);
+        Assert.True(aByParams.StartPoint.DistanceTo(aC.Value(2.5)) < Tol);
+        Assert.True(aByParams.EndPoint.DistanceTo(aC.Value(0.5)) < Tol);
 
         // GeomConvert throws Standard_DomainError for both (Geom2dConvert: Standard_OutOfRange for the second)
         Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineCurve(aC, 2, 2));
@@ -137,20 +137,20 @@ public class GeomConvert_PortTests
     {
         BSplineSurface aS = BiCubic();
         BSplineSurface aKnots = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 3, 2, 1, 2);
-        aKnots.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aKnots.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((1.0, 3.0, 0.0, 2.0), (aU1, aU2, aV1, aV2));
         // reversed in U: the parameter u of the result is 4 - u on S
-        Assert.True(aKnots.Value(1.5, 0.5).Distance(aS.Value(2.5, 0.5)) < Tol);
+        Assert.True(aKnots.Value(1.5, 0.5).DistanceTo(aS.Value(2.5, 0.5)) < Tol);
 
         BSplineSurface aU = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 2, true);
-        aU.Bounds(out aU1, out aU2, out _, out _);
+        aU.ParameterBounds(out aU1, out aU2, out _, out _);
         Assert.Equal((0.0, 1.0), (aU1, aU2));
 
         BSplineSurface aParams = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 0.5, 2.5, 1.5, 0.5, 1e-9);
-        Assert.True(aParams.Value(1.0, 1.0).Distance(aS.Value(1.0, 1.0)) < Tol);
-        aParams.Bounds(out _, out _, out aV1, out aV2);
+        Assert.True(aParams.Value(1.0, 1.0).DistanceTo(aS.Value(1.0, 1.0)) < Tol);
+        aParams.ParameterBounds(out _, out _, out aV1, out aV2);
         // reversed in V
-        Assert.True(aParams.Value(1.0, aV1).Distance(aS.Value(1.0, 1.5)) < Tol);
+        Assert.True(aParams.Value(1.0, aV1).DistanceTo(aS.Value(1.0, 1.5)) < Tol);
 
         Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 1, 1, 2));
         Assert.ThrowsAny<DomainErrorException>(() => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1, 4, false));
@@ -164,10 +164,10 @@ public class GeomConvert_PortTests
         // (occt-issues.md): the V range is not reversed, the U one is.
         BSplineSurface aS = BiCubic();
         BSplineSurface aSplit = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SplitBSplineSurface(aS, 1.5, 0.5, false, 1e-9);
-        aSplit.Bounds(out double aU1, out double aU2, out double aV1, out double aV2);
+        aSplit.ParameterBounds(out double aU1, out double aU2, out double aV1, out double aV2);
         Assert.Equal((0.5, 1.5), (aV1, aV2));
-        Assert.True(aSplit.Value(aU1, 0.5).Distance(aS.Value(3.0, 0.5)) < Tol);
-        Assert.True(aSplit.Value(aU2, 1.5).Distance(aS.Value(0.0, 1.5)) < Tol);
+        Assert.True(aSplit.Value(aU1, 0.5).DistanceTo(aS.Value(3.0, 0.5)) < Tol);
+        Assert.True(aSplit.Value(aU2, 1.5).DistanceTo(aS.Value(0.0, 1.5)) < Tol);
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public class GeomConvert_PortTests
         Assert.Equal([0.0, 1.0, 2.0, 3.0], aKnots.AsSpan().ToArray());
         for (int i = 1; i <= 3; i++)
         {
-            Assert.Equal(3, anArcs[i].Degree());
+            Assert.Equal(3, anArcs[i].Degree);
             AssertSamePoints(aC, i - 1.0, i, anArcs[i], 0.0, 1.0, Tol);
             Assert.NotSame(anArcs[i], aConv.Arc(i));
             Assert.False(anArcs[i].IsFrozen);
@@ -226,7 +226,7 @@ public class GeomConvert_PortTests
         {
             BezierCurve3D anArc = aRConv.Arc(i);
             Assert.True(anArc.IsRational);
-            Assert.Equal(2.0, anArc.Value(0.37).Distance(P(0, 0)), 1e-12);
+            Assert.Equal(2.0, anArc.Value(0.37).DistanceTo(P(0, 0)), 1e-12);
         }
     }
 
@@ -262,12 +262,12 @@ public class GeomConvert_PortTests
 
         Assert.True(aComp.Add(aLast, 1e-7, true));
         Assert.True(aComp.Add(aFirst, 1e-7));
-        Assert.Equal(1.0, aHandedOut.FirstParameter());
-        Assert.Equal(2.0, aHandedOut.LastParameter());
+        Assert.Equal(1.0, aHandedOut.FirstParameter);
+        Assert.Equal(2.0, aHandedOut.LastParameter);
 
         BSplineCurve3D aResult = aComp.BSplineCurve()!;
-        Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
-        Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
+        Assert.True(aResult.StartPoint.DistanceTo(aC.StartPoint) < Tol);
+        Assert.True(aResult.EndPoint.DistanceTo(aC.EndPoint) < Tol);
         // The C2 junctions are merged back: the original knots
         Assert.Equal(4, aResult.KnotCount);
 
@@ -277,13 +277,13 @@ public class GeomConvert_PortTests
         Assert.Equal(2, aKept.BSplineCurve()!.Multiplicity(2));
 
         // A lower degree is raised; WithRatio false keeps the added curve's parametrisation length
-        TrimmedCurve3D aLine = new(new LineCurve3D(aC.EndPoint(), new Direction3D(1, 0, 0)), 0.0, 10.0);
+        TrimmedCurve3D aLine = new(new LineCurve3D(aC.EndPoint, new Direction3D(1, 0, 0)), 0.0, 10.0);
         global::Kerf.Engine.Geometry.Conversion.CompCurveToBSplineCurve aWithLine = new(aC);
         Assert.True(aWithLine.Add(aLine, 1e-7, true, false));
         BSplineCurve3D aJoined = aWithLine.BSplineCurve()!;
-        Assert.Equal(3, aJoined.Degree());
-        Assert.Equal(13.0, aJoined.LastParameter(), 1e-12);
-        Assert.True(aJoined.EndPoint().Distance(aLine.EndPoint()) < Tol);
+        Assert.Equal(3, aJoined.Degree);
+        Assert.Equal(13.0, aJoined.LastParameter, 1e-12);
+        Assert.True(aJoined.EndPoint.DistanceTo(aLine.EndPoint) < Tol);
     }
 
     [Fact]
@@ -320,8 +320,8 @@ public class GeomConvert_PortTests
         Assert.True(aResult[0].IsPeriodic);
         for (int i = 0; i <= 40; i++)
         {
-            double aU = aResult[0].FirstParameter() + (aResult[0].LastParameter() - aResult[0].FirstParameter()) * i / 40.0;
-            Assert.Equal(2.0, aResult[0].Value(aU).Distance(P(0, 0, 1)), 1e-7);
+            double aU = aResult[0].FirstParameter + (aResult[0].LastParameter - aResult[0].FirstParameter) * i / 40.0;
+            Assert.Equal(2.0, aResult[0].Value(aU).DistanceTo(P(0, 0, 1)), 1e-7);
         }
     }
 
@@ -378,8 +378,8 @@ public class GeomConvert_PortTests
         global::Kerf.Engine.Geometry.Conversion.GeomConvert.ConcatC1(aCurves, NCollection_Array1<double>.From([1e-7, 1e-12, 1e-7], 0), out _,
                              out NCollection_HArray1<BSplineCurve3D> aResult, ref isClosed, 1e-4);
         Assert.Equal(2, aResult.Length());
-        Assert.True(aResult[1].StartPoint().Distance(P(2, 1)) < Tol);
-        Assert.True(aResult[1].EndPoint().Distance(P(2, 0)) < Tol);
+        Assert.True(aResult[1].StartPoint.DistanceTo(P(2, 1)) < Tol);
+        Assert.True(aResult[1].EndPoint.DistanceTo(P(2, 0)) < Tol);
     }
 
     [Fact]
@@ -401,8 +401,8 @@ public class GeomConvert_PortTests
         Assert.Equal(0, anIndices[0]);
         Assert.Equal(2, anIndices[1]);
         Assert.Equal(0, anIndices[2]);
-        Assert.True(aResult[0].StartPoint().Distance(aPts[0]) < Tol);
-        Assert.True(aResult[0].EndPoint().Distance(aPts[2]) < Tol);
+        Assert.True(aResult[0].StartPoint.DistanceTo(aPts[0]) < Tol);
+        Assert.True(aResult[0].EndPoint.DistanceTo(aPts[2]) < Tol);
         Assert.Same(aCurves[2], aResult[1]);
     }
 
@@ -436,8 +436,8 @@ public class GeomConvert_PortTests
         Assert.Equal(2.0, anOriginals[0].Weight(1));
         Assert.Equal(1.0, aCurves[0].Weight(1));
         Assert.Equal(0.5, aCurves[0].Weight(3));
-        Assert.True(aResult[0].StartPoint().Distance(P(0, 0)) < Tol);
-        Assert.True(aResult[0].EndPoint().Distance(P(8, 0)) < Tol);
+        Assert.True(aResult[0].StartPoint.DistanceTo(P(0, 0)) < Tol);
+        Assert.True(aResult[0].EndPoint.DistanceTo(P(8, 0)) < Tol);
     }
 
     [Fact]
@@ -453,9 +453,9 @@ public class GeomConvert_PortTests
         Assert.NotSame(aC0, aResult);
         Assert.False(aResult.IsFrozen);
         Assert.Equal(3, aC0.Multiplicity(2));
-        Assert.True(aResult.Continuity() >= C1);
-        Assert.True(aResult.StartPoint().Distance(aC.StartPoint()) < Tol);
-        Assert.True(aResult.EndPoint().Distance(aC.EndPoint()) < Tol);
+        Assert.True(aResult.Continuity >= C1);
+        Assert.True(aResult.StartPoint.DistanceTo(aC.StartPoint) < Tol);
+        Assert.True(aResult.EndPoint.DistanceTo(aC.EndPoint) < Tol);
 
         // Nothing to do: still a new curve (GeomConvert, unlike Geom2dConvert, always goes through the concatenation)
         BSplineCurve3D aSmooth = aC;
@@ -471,8 +471,8 @@ public class GeomConvert_PortTests
                                           NCollection_Array1<double>.From([0.0, 1.0, 2.0]), NCollection_Array1<int>.From([2, 1, 2]), 1);
         global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aPolyline, out NCollection_HArray1<BSplineCurve3D> aTab, 1e-7);
         Assert.Equal(2, aTab.Length());
-        Assert.True(aTab[0].EndPoint().Distance(P(1, 0)) < Tol);
-        Assert.True(aTab[1].StartPoint().Distance(P(1, 0)) < Tol);
+        Assert.True(aTab[0].EndPoint.DistanceTo(P(1, 0)) < Tol);
+        Assert.True(aTab[1].StartPoint.DistanceTo(P(1, 0)) < Tol);
 
         BSplineCurve3D aC = Cubic();
         global::Kerf.Engine.Geometry.Conversion.GeomConvert.C0BSplineToArrayOfC1BSplineCurve(aC, out aTab, 1e-7);
@@ -494,13 +494,13 @@ public class GeomConvert_PortTests
         for (int i = 0; i <= 30; i++)
         {
             double aU = 0.1 * i;
-            Assert.True(aCurve.Value(aU).Distance(anOffset.Value(aU)) < 1e-5);
+            Assert.True(aCurve.Value(aU).DistanceTo(anOffset.Value(aU)) < 1e-5);
         }
 
         global::Kerf.Engine.Geometry.Conversion.ApproxCurve aPart = new(new CurveAdaptor(anOffset, 0.5, 2.0), 1e-5, C1, 20, 9);
         Assert.True(aPart.HasResult);
-        Assert.Equal(0.5, aPart.Curve()!.FirstParameter());
-        Assert.Equal(2.0, aPart.Curve()!.LastParameter());
+        Assert.Equal(0.5, aPart.Curve()!.FirstParameter);
+        Assert.Equal(2.0, aPart.Curve()!.LastParameter);
         Assert.StartsWith("******* Dump of ApproxCurve *******\n*******Error   ", aPart.ToString());
     }
 
@@ -519,7 +519,7 @@ public class GeomConvert_PortTests
             for (int j = 0; j <= 4; j++)
             {
                 double aU = 0.5 * i, aV = 0.5 * j;
-                Assert.True(aSurface.Value(aU, aV).Distance(anOffset.Value(aU, aV)) < 1e-3);
+                Assert.True(aSurface.Value(aU, aV).DistanceTo(anOffset.Value(aU, aV)) < 1e-3);
             }
         }
 
@@ -528,7 +528,7 @@ public class GeomConvert_PortTests
         // Through SurfaceToBSplineSurface: an unfrozen copy for the caller
         BSplineSurface aConverted = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(anOffset);
         Assert.False(aConverted.IsFrozen);
-        Assert.True(aConverted.Value(1.0, 1.0).Distance(anOffset.Value(1.0, 1.0)) < 1e-3);
+        Assert.True(aConverted.Value(1.0, 1.0).DistanceTo(anOffset.Value(1.0, 1.0)) < 1e-3);
     }
 
     [Fact]
@@ -545,14 +545,14 @@ public class GeomConvert_PortTests
         {
             double aT = i / 8.0;
             Point3D aOnR = aR.Value(4.0 * aT, 0.5 + 1.5 * aT);
-            Assert.Equal(1.0, Math.Sqrt(Math.Pow(Math.Sqrt(aOnR.X() * aOnR.X() + aOnR.Y() * aOnR.Y()) - 5.0, 2) + aOnR.Z() * aOnR.Z()), 1e-12);
-            Assert.True(anE.Value(0.5 + 2 * aT, -1 + 3 * aT).Distance(anExtru.Value(0.5 + 2 * aT, -1 + 3 * aT)) < Tol);
+            Assert.Equal(1.0, Math.Sqrt(Math.Pow(Math.Sqrt(aOnR.X * aOnR.X + aOnR.Y * aOnR.Y) - 5.0, 2) + aOnR.Z * aOnR.Z), 1e-12);
+            Assert.True(anE.Value(0.5 + 2 * aT, -1 + 3 * aT).DistanceTo(anExtru.Value(0.5 + 2 * aT, -1 + 3 * aT)) < Tol);
         }
 
         Assert.ThrowsAny<DomainErrorException>(
             () => global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new CylindricalSurface(new CoordinateSystem(Constants.XOY()), 1.0)));
         BSplineSurface aSphere = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new SphericalSurface(new CoordinateSystem(Constants.XOY()), 3.0));
         Assert.True(aSphere.IsUPeriodic);
-        Assert.Equal(3.0, aSphere.Value(1.0, 0.3).Distance(P(0, 0)), 1e-12);
+        Assert.Equal(3.0, aSphere.Value(1.0, 0.3).DistanceTo(P(0, 0)), 1e-12);
     }
 }

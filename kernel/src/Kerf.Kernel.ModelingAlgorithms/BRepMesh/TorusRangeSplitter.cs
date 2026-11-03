@@ -34,8 +34,8 @@ public class TorusRangeSplitter : UVParamRangeSplitter
         double diffV = rangeV.second - rangeV.first;
 
         Torus torus = GetDFace().GetSurface().Torus();
-        double r = torus.MinorRadius();
-        double R = torus.MajorRadius();
+        double r = torus.MinorRadius;
+        double R = torus.MajorRadius;
 
         double oldDv = TangentialDeflection.ArcAngularStep(r,
                                                                   GetDFace().GetDeflection(),
@@ -122,8 +122,8 @@ public class TorusRangeSplitter : UVParamRangeSplitter
     public override void AddPoint(in Point2D point)
     {
         base.AddPoint(point);
-        GetParametersU().Add(point.X());
-        GetParametersV().Add(point.Y());
+        GetParametersU().Add(point.X);
+        GetParametersV().Add(point.Y);
     }
 
     // The parameters, sorted, without those closer than the scaled average step to one already taken.

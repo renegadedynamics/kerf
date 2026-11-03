@@ -49,10 +49,10 @@ public abstract class ComplexCurve : Curve3D
     public override double ReversedParameter(double u) => (1 - u);
 
     /// <summary>Returns 0.</summary>
-    public override double FirstParameter() => 0;
+    public override double FirstParameter => 0;
 
     /// <summary>Returns 1.</summary>
-    public override double LastParameter() => 1;
+    public override double LastParameter => 1;
 
     public override bool IsClosed => _closed;
 
@@ -60,19 +60,19 @@ public abstract class ComplexCurve : Curve3D
     public override bool IsPeriodic => false;
 
     /// <summary>Returns GeomAbs_C0.</summary>
-    public override Continuity Continuity() => C0;
+    public override Continuity Continuity => C0;
 
     /// <summary>Returns false if N &gt; 0.</summary>
-    public override bool IsCN(int n) => n <= 0;
+    internal override bool IsCN(int n) => n <= 0;
 
     /// <summary>The point at U: found on the segment holding U, at its local parameter.</summary>
-    public override Point3D EvalD0(double u)
+    internal override Point3D EvalD0(double u)
     {
         int ind = LocateParameter(u, out double uOut);
         return Curve(ind).EvalD0(uOut);
     }
 
-    public override ResD1 EvalD1(double u)
+    internal override ResD1 EvalD1(double u)
     {
         int   ind   = LocateParameter(u, out double uOut);
         ResD1 result = Curve(ind).EvalD1(uOut);
@@ -80,7 +80,7 @@ public abstract class ComplexCurve : Curve3D
         return result;
     }
 
-    public override ResD2 EvalD2(double u)
+    internal override ResD2 EvalD2(double u)
     {
         int   ind   = LocateParameter(u, out double uOut);
         ResD2 result = Curve(ind).EvalD2(uOut);
@@ -89,7 +89,7 @@ public abstract class ComplexCurve : Curve3D
         return result;
     }
 
-    public override ResD3 EvalD3(double u)
+    internal override ResD3 EvalD3(double u)
     {
         int   ind   = LocateParameter(u, out double uOut);
         ResD3 result = Curve(ind).EvalD3(uOut);
@@ -99,7 +99,7 @@ public abstract class ComplexCurve : Curve3D
         return result;
     }
 
-    public override Vector3D EvalDN(double u, int n)
+    internal override Vector3D EvalDN(double u, int n)
     {
         int    ind   = LocateParameter(u, out double uOut);
         Vector3D result = Curve(ind).EvalDN(uOut, n);
@@ -124,12 +124,12 @@ public abstract class ComplexCurve : Curve3D
         {
             if (i == 1)
             {
-                _closed = Value(FirstParameter()).IsEqual(Value(LastParameter()), preci);
+                _closed = Value(FirstParameter).IsEqual(Value(LastParameter), preci);
             }
 
             ok &= Curve(i)
-                    .Value(Curve(i).LastParameter())
-                    .IsEqual(Curve(i + 1).Value(Curve(i + 1).FirstParameter()), preci);
+                    .Value(Curve(i).LastParameter)
+                    .IsEqual(Curve(i + 1).Value(Curve(i + 1).FirstParameter), preci);
         }
 
         return ok;

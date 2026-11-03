@@ -124,11 +124,11 @@ public sealed class TranslatePolyLoop : ImportRoot
                     v = new Vector3D(gp1.Pnt(), gp2.Pnt());
                     l = new LineCurve3D(gp1.Pnt(), new Direction3D(v));
                     b.MakeEdge(ref e, l, Kerf.Engine.Foundation.Precision.Confusion()); //: S4136: preci
-                    v1.Orientation(Forward);
-                    v2.Orientation(Reversed);
+                    v1.Orient(Forward);
+                    v2.Orient(Reversed);
                     b.Add(e, v1);
                     b.Add(e, v2);
-                    magn = v.Magnitude();
+                    magn = v.Magnitude;
                     b.UpdateVertex(v1, 0.0, e, 0.0);  //: S4136: preci
                     b.UpdateVertex(v2, magn, e, 0.0); //: S4136: preci
                 }
@@ -139,7 +139,7 @@ public sealed class TranslatePolyLoop : ImportRoot
                     //  Il faut qu en finale l edge soit vue
                     //  - via sa premiere face, orientation combinee = celle de cette premiere face
                     //  - via sa deuxieme face, orientation combinee INVERSE de la precedente
-                    if (topoFace.Orientation() == Forward)
+                    if (topoFace.Orientation == Forward)
                     {
                         e.Reverse();
                     }
@@ -149,7 +149,7 @@ public sealed class TranslatePolyLoop : ImportRoot
 
                 Point2D v2p1 = stsu.ValueOfUV(gp1.Pnt(), Precision());
                 Point2D v2p2 = stsu.ValueOfUV(gp2.Pnt(), Precision());
-                if (e.Orientation() == Forward)
+                if (e.Orientation == Forward)
                 {
                     v2d = new Vector2D(v2p1, v2p2);
                     l2d = new LineCurve2D(v2p1, new Direction2D(v2d));
@@ -162,7 +162,7 @@ public sealed class TranslatePolyLoop : ImportRoot
 
                 b.UpdateEdge(e, l2d, topoFace, 0.0);
                 Edge eb = e; // pour le binding : cumul des orientations !
-                eb.Orientation(topoFace.Orientation());
+                eb.Orient(topoFace.Orientation);
                 if (!isbound)
                 {
                     aTool.BindEdge(pp, eb);

@@ -19,7 +19,7 @@ public class ConstantBiNormal : TrihedronLaw
     /// <summary>Computes (F/|F|)'.</summary>
     private static Vector3D FDeriv(in Vector3D f, in Vector3D df)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (df - f * (f * df) / (norma * norma)) / norma;
         return result;
     }
@@ -27,9 +27,9 @@ public class ConstantBiNormal : TrihedronLaw
     /// <summary>Computes (F/|F|)''.</summary>
     private static Vector3D DDeriv(in Vector3D f, in Vector3D df, in Vector3D d2F)
     {
-        double norma = f.Magnitude();
+        double norma = f.Magnitude;
         Vector3D result = (d2F - 2 * df * (f * df) / (norma * norma)) / norma
-                        - f * ((df.SquareMagnitude() + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
+                        - f * ((df.SquareMagnitude + f * d2F - 3 * (f * df) * (f * df) / (norma * norma))
                                / (norma * norma * norma));
         return result;
     }
@@ -67,7 +67,7 @@ public class ConstantBiNormal : TrihedronLaw
         // else T = (N^BN).Normalized ; N = BN^T
         _frenet.D0(param, ref tangent, ref normal, ref biNormal);
         biNormal = _bn;
-        if (biNormal.Crossed(tangent).Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (biNormal.Crossed(tangent).Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             normal = biNormal.Crossed(tangent).Normalized();
             tangent = normal.Crossed(biNormal);
@@ -87,7 +87,7 @@ public class ConstantBiNormal : TrihedronLaw
         _frenet.D1(param, ref tangent, ref dTangent, ref normal, ref dNormal, ref biNormal, ref dBiNormal);
         biNormal = _bn;
         dBiNormal = new Vector3D(0, 0, 0);
-        if (biNormal.Crossed(tangent).Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (biNormal.Crossed(tangent).Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             f = biNormal.Crossed(tangent);
             df = biNormal.Crossed(dTangent);
@@ -120,7 +120,7 @@ public class ConstantBiNormal : TrihedronLaw
         biNormal = _bn;
         dBiNormal = new Vector3D(0, 0, 0);
         d2BiNormal = new Vector3D(0, 0, 0);
-        if (biNormal.Crossed(tangent).Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (biNormal.Crossed(tangent).Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             f = biNormal.Crossed(tangent);
             df = biNormal.Crossed(dTangent);
@@ -160,7 +160,7 @@ public class ConstantBiNormal : TrihedronLaw
     {
         _frenet.GetAverageLaw(ref aTangent, ref aNormal, ref aBiNormal);
         aBiNormal = _bn;
-        if (aBiNormal.Crossed(aTangent).Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
+        if (aBiNormal.Crossed(aTangent).Magnitude > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             aNormal = aBiNormal.Crossed(aTangent).Normalized();
             aTangent = aNormal.Crossed(aBiNormal);
@@ -185,27 +185,27 @@ public class ConstantBiNormal : TrihedronLaw
             {
                 case Circle:
                 {
-                    theAxe = _curve.Circle().Axis();
+                    theAxe = _curve.Circle().Axis;
                     break;
                 }
                 case Ellipse:
                 {
-                    theAxe = _curve.Ellipse().Axis();
+                    theAxe = _curve.Ellipse().Axis;
                     break;
                 }
                 case Hyperbola:
                 {
-                    theAxe = _curve.Hyperbola().Axis();
+                    theAxe = _curve.Hyperbola().Axis;
                     break;
                 }
                 case Parabola:
                 {
-                    theAxe = _curve.Parabola().Axis();
+                    theAxe = _curve.Parabola().Axis;
                     break;
                 }
                 case Line:
                 { // Is the normal of the plane of the curve perpendicular to the binormal?
-                    Vector3D v0 = new Vector3D().WithXYZ(_curve.Line().Direction().XYZ());
+                    Vector3D v0 = new Vector3D().WithXYZ(_curve.Line().Direction.XYZ());
                     return v0.IsNormal(_bn, global::Kerf.Engine.Foundation.Precision.Angular());
                 }
                 default:
@@ -213,7 +213,7 @@ public class ConstantBiNormal : TrihedronLaw
             }
 
             // Is the normal of the plane of the curve parallel to the binormal?
-            Vector3D v = new Vector3D().WithXYZ(theAxe.Direction().XYZ());
+            Vector3D v = new Vector3D().WithXYZ(theAxe.Direction.XYZ());
             return v.IsParallel(_bn, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }

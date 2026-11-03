@@ -91,20 +91,20 @@ public static class Geom2dAdaptor
 
         // trim the curve if necassary.
         if (c2D is not null
-            && ((hc.FirstParameter() != c2D.FirstParameter())
-                || (hc.LastParameter() != c2D.LastParameter())))
+            && ((hc.FirstParameter() != c2D.FirstParameter)
+                || (hc.LastParameter() != c2D.LastParameter)))
         {
 
             if (c2D.IsPeriodic
-                || (hc.FirstParameter() >= c2D.FirstParameter()
-                    && hc.LastParameter() <= c2D.LastParameter()))
+                || (hc.FirstParameter() >= c2D.FirstParameter
+                    && hc.LastParameter() <= c2D.LastParameter))
             {
                 c2D = new TrimmedCurve2D(c2D, hc.FirstParameter(), hc.LastParameter());
             }
             else
             {
-                double tf = Max(hc.FirstParameter(), c2D.FirstParameter());
-                double tl = Min(hc.LastParameter(), c2D.LastParameter());
+                double tf = Max(hc.FirstParameter(), c2D.FirstParameter);
+                double tl = Min(hc.LastParameter(), c2D.LastParameter);
                 c2D = new TrimmedCurve2D(c2D, tf, tl);
             }
         }

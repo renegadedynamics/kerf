@@ -73,7 +73,7 @@ public sealed class FindEdgesInFace
         ts = s.GetType();
         if (ts == typeof(TrimmedSurface))
         {
-            s = ((TrimmedSurface)s).BasisSurface();
+            s = ((TrimmedSurface)s).BasisSurface;
             ts = s.GetType();
         }
 
@@ -109,11 +109,11 @@ public sealed class FindEdgesInFace
             }
 
             c = Tool.Curve(edg, out Placement loc, out f, out l)!;
-            c = (Curve3D)c.Transformed(loc.Transformation());
+            c = (Curve3D)c.Transformed(loc.Transformation);
             tc = c.GetType();
             if (tc == typeof(TrimmedCurve3D))
             {
-                c = ((TrimmedCurve3D)c).BasisCurve();
+                c = ((TrimmedCurve3D)c).BasisCurve;
                 tc = c.GetType();
             }
             if (tc != typeof(LineCurve3D) && tc != typeof(CircleCurve3D))
@@ -122,16 +122,16 @@ public sealed class FindEdgesInFace
             }
             if (ts == typeof(PlaneSurface))
             {
-                pl = ((PlaneSurface)s).Pln();
+                pl = ((PlaneSurface)s).Plane;
             }
             else
             {
-                cy = ((CylindricalSurface)s).Cylinder();
+                cy = ((CylindricalSurface)s).Cylinder;
             }
 
             if (tc == typeof(LineCurve3D))
             {
-                Line3D li = ((LineCurve3D)c).Lin();
+                Line3D li = ((LineCurve3D)c).Line;
                 if (ts == typeof(PlaneSurface))
                 {
                     if (pl.Contains(li, tol, tolAng))
@@ -141,7 +141,7 @@ public sealed class FindEdgesInFace
                 }
                 else
                 { // Ts == STANDARD_TYPE(Geom_CylindricalSurface)
-                    if (cy.Axis().IsParallel(li.Position(), tolAng) && Math.Abs(li.Distance(cy.Location()) - cy.Radius()) < tol)
+                    if (cy.Axis.IsParallel(li.Position, tolAng) && Math.Abs(li.DistanceTo(cy.Location) - cy.Radius) < tol)
                     {
                         toAdd = true;
                     }
@@ -149,17 +149,17 @@ public sealed class FindEdgesInFace
             }
             else
             { // Tt == STANDARD_TYPE(Geom_Circle)
-                Circle3D ci = ((CircleCurve3D)c).Circ();
+                Circle3D ci = ((CircleCurve3D)c).Circle;
                 if (ts == typeof(PlaneSurface))
                 {
-                    if (pl.Position().IsCoplanar(new CoordinateSystem(ci.Position()), tol, tolAng))
+                    if (pl.Position.IsCoplanar(new CoordinateSystem(ci.Position), tol, tolAng))
                     {
                         toAdd = true;
                     }
                 }
                 else
                 {
-                    if (Math.Abs(cy.Radius() - ci.Radius()) < tol && cy.Axis().IsCoaxial(ci.Axis(), tolAng, tol))
+                    if (Math.Abs(cy.Radius - ci.Radius) < tol && cy.Axis.IsCoaxial(ci.Axis, tolAng, tol))
                     {
                         toAdd = true;
                     }

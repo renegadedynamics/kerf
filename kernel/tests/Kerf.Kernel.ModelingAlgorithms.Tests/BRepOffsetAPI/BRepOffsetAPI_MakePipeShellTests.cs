@@ -49,15 +49,15 @@ public class BRepOffsetAPI_MakePipeShellTests
 
         Frame3D anOrigin = new(new Point3D(5000.0, -300.0, 1000.0), new Direction3D(0.0, -1.0, -1.0));
 
-        Plane3D aCirc1Plane = new(anOrigin.Location(), anOrigin.Direction());
+        Plane3D aCirc1Plane = new(anOrigin.Location, anOrigin.Direction);
         Circle3D aFaceCircle = new(anOrigin, aRadiusL);
         Circle3D anOutFaceCircle = new(anOrigin, aRadiusL + theWallThickness);
 
-        Point3D aCircCenter = anOrigin.Location().Translated(theMajorRadius * new Vector3D(anOrigin.XDirection()));
-        Axis3D aCircAxis = new(aCircCenter, anOrigin.YDirection());
+        Point3D aCircCenter = anOrigin.Location.Translated(theMajorRadius * new Vector3D(anOrigin.XDirection));
+        Axis3D aCircAxis = new(aCircCenter, anOrigin.YDirection);
         Plane3D aCirc2Plane = aCirc1Plane.Rotated(aCircAxis, aBendAngle);
 
-        Frame3D aSpineAxis = new(aCircCenter, anOrigin.YDirection(), anOrigin.XDirection().Reversed());
+        Frame3D aSpineAxis = new(aCircCenter, anOrigin.YDirection, anOrigin.XDirection.Reversed());
         Circle3D aSpineCircle = new(aSpineAxis, theMajorRadius);
 
         Wire aWire1 = new MakeWire(new MakeEdge(aFaceCircle).Edge()).Wire();
@@ -67,10 +67,10 @@ public class BRepOffsetAPI_MakePipeShellTests
 
         Linear aLaw1 = new();
         Linear aLaw2 = new();
-        aLaw1.Set(aSpineCurve.FirstParameter(), 1.0, aSpineCurve.LastParameter(), aRadiusR / aRadiusL);
-        aLaw2.Set(aSpineCurve.FirstParameter(),
+        aLaw1.Set(aSpineCurve.FirstParameter, 1.0, aSpineCurve.LastParameter, aRadiusR / aRadiusL);
+        aLaw2.Set(aSpineCurve.FirstParameter,
                   1.0,
-                  aSpineCurve.LastParameter(),
+                  aSpineCurve.LastParameter,
                   (aRadiusR + theWallThickness) / (aRadiusL + theWallThickness));
 
         MakeEdge aMkEdge = new(aSpineCurve);

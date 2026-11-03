@@ -191,9 +191,9 @@ public static class BRepCheckCheck
             Span<double> x = stackalloc double[5];
             //
             Ellipse3D el3D = aAC3D.Ellipse();
-            el3D.Location().Coord(out x[0], out x[1], out x[2]);
-            x[3] = el3D.MajorRadius();
-            x[4] = el3D.MinorRadius();
+            el3D.Location.Coord(out x[0], out x[1], out x[2]);
+            x[3] = el3D.MajorRadius;
+            x[4] = el3D.MinorRadius;
             xEmax = -1.0;
             for (int i = 0; i < 5; ++i)
             {
@@ -228,8 +228,8 @@ public static class BRepCheckCheck
             Cone cone = aAHSurf.Cone();
             Span<double> x = stackalloc double[4];
             //
-            cone.Location().Coord(out x[0], out x[1], out x[2]);
-            x[3] = cone.RefRadius();
+            cone.Location.Coord(out x[0], out x[1], out x[2]);
+            x[3] = cone.RefRadius;
             xEmax = -1.0;
             for (int i = 0; i < 4; ++i)
             {

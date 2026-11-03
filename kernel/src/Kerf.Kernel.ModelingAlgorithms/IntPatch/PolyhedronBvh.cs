@@ -137,11 +137,11 @@ public class PolyhedronBvh : PrimitiveSet<double, BVH_Vec3d>
         switch (axis)
         {
             case 0:
-                return (pnt1.X() + pnt2.X() + pnt3.X()) / 3.0;
+                return (pnt1.X + pnt2.X + pnt3.X) / 3.0;
             case 1:
-                return (pnt1.Y() + pnt2.Y() + pnt3.Y()) / 3.0;
+                return (pnt1.Y + pnt2.Y + pnt3.Y) / 3.0;
             case 2:
-                return (pnt1.Z() + pnt2.Z() + pnt3.Z()) / 3.0;
+                return (pnt1.Z + pnt2.Z + pnt3.Z) / 3.0;
             default:
                 return 0.0;
         }

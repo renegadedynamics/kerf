@@ -74,7 +74,7 @@ public class ConvertCurve3dToBezier : SplitCurve3d
         double last = _splitValues.Value(_splitValues.Length());
         if (_curve is TrimmedCurve3D tmp)
         {
-            Curve3D basCurve = tmp.BasisCurve();
+            Curve3D basCurve = tmp.BasisCurve;
             var converter = new ConvertCurve3dToBezier();
             converter.Init(basCurve, first, last);
             converter.SetSplitValues(_splitValues);
@@ -150,9 +150,9 @@ public class ConvertCurve3dToBezier : SplitCurve3d
                     var t3d = new TrimmedCurve3D(_curve, first, last);
                     bSpline = global::Kerf.Engine.Geometry.Conversion.GeomConvert.CurveToBSplineCurve(t3d, QuasiAngular);
                 }
-                shift = first - bSpline.FirstParameter();
-                first = bSpline.FirstParameter();
-                last = bSpline.LastParameter();
+                shift = first - bSpline.FirstParameter;
+                first = bSpline.FirstParameter;
+                last = bSpline.LastParameter;
             }
             else if (_curve is not BSplineCurve3D)
             {
@@ -163,8 +163,8 @@ public class ConvertCurve3dToBezier : SplitCurve3d
                 bSpline = (BSplineCurve3D)_curve;
             }
 
-            double bf = bSpline.FirstParameter();
-            double bl = bSpline.LastParameter();
+            double bf = bSpline.FirstParameter;
+            double bl = bSpline.LastParameter;
             if (Math.Abs(first - bf) < precision)
             {
                 first = bf;

@@ -22,12 +22,12 @@ public class GC_MakeParabola2d_Test
         const double aCompareTol = 1.0e-12;
         MakeParabola2d aPrb = new(theAxes, theFocus, theSense);
         Assert.NotNull(aPrb.Value());
-        Parabola2D aParab = aPrb.Value().Parab2d();
-        Point2D aVert = aParab.Location();
-        Assert.Equal(theExpectedFocal, aParab.Focal(), aCompareTol);
-        Assert.Equal(theExpectedVertX, aVert.X(), aCompareTol);
-        Assert.Equal(theExpectedVertY, aVert.Y(), aCompareTol);
-        Assert.Equal(theExpectedParam, aParab.Parameter(), aCompareTol);
+        Parabola2D aParab = aPrb.Value().Parabola;
+        Point2D aVert = aParab.Location;
+        Assert.Equal(theExpectedFocal, aParab.Focal, aCompareTol);
+        Assert.Equal(theExpectedVertX, aVert.X, aCompareTol);
+        Assert.Equal(theExpectedVertY, aVert.Y, aCompareTol);
+        Assert.Equal(theExpectedParam, aParab.Parameter, aCompareTol);
         aParab.Coefficients(out double aF0, out double aF1, out double aF2, out double aF3, out double aF4,
                             out double aF5);
         double[] aF = [aF0, aF1, aF2, aF3, aF4, aF5];

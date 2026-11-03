@@ -18,21 +18,21 @@ public class GccAna_Circ2dTanCenTests
     private static void CheckCircle(AnalyticCirc2dTanCen theAlgo, int theIndex, in Circle2D theArg, in Point2D theCentre)
     {
         Circle2D aSol = theAlgo.ThisSolution(theIndex);
-        Assert.Equal(theCentre, aSol.Location());
-        double d = theArg.Location().Distance(theCentre);
+        Assert.Equal(theCentre, aSol.Location);
+        double d = theArg.Location.DistanceTo(theCentre);
         theAlgo.WhichQualifier(theIndex, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
         double anExpected = aQ switch
         {
-            global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed => theArg.Radius() - d,
-            global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing => theArg.Radius() + d,
-            _ => d - theArg.Radius(),
+            global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosed => theArg.Radius - d,
+            global::Kerf.Engine.Construction.Constraints.Qualifier.Enclosing => theArg.Radius + d,
+            _ => d - theArg.Radius,
         };
-        Assert.Equal(anExpected, aSol.Radius(), Tol);
+        Assert.Equal(anExpected, aSol.Radius, Tol);
         theAlgo.Tangency1(theIndex, out double aPs, out double aPa, out Point2D aT);
-        Assert.Equal(theArg.Radius(), aT.Distance(theArg.Location()), Tol);
-        Assert.Equal(aSol.Radius(), aT.Distance(theCentre), Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aT) < Tol);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, theArg).Distance(aT) < Tol);
+        Assert.Equal(theArg.Radius, aT.DistanceTo(theArg.Location), Tol);
+        Assert.Equal(aSol.Radius, aT.DistanceTo(theCentre), Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aT) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, theArg).DistanceTo(aT) < Tol);
     }
 
     [Fact]
@@ -45,8 +45,8 @@ public class GccAna_Circ2dTanCenTests
         Assert.Equal(2, anAlgo.SolutionCount);
         CheckCircle(anAlgo, 1, aC, aP);
         CheckCircle(anAlgo, 2, aC, aP);
-        Assert.Equal(4.0, anAlgo.ThisSolution(1).Radius(), Tol);
-        Assert.Equal(6.0, anAlgo.ThisSolution(2).Radius(), Tol);
+        Assert.Equal(4.0, anAlgo.ThisSolution(1).Radius, Tol);
+        Assert.Equal(6.0, anAlgo.ThisSolution(2).Radius, Tol);
         anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ1);
         anAlgo.WhichQualifier(2, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ2);
         Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Outside, aQ1);
@@ -108,7 +108,7 @@ public class GccAna_Circ2dTanCenTests
         Circle2D aC = Circ(1, 2, 3);
         AnalyticCirc2dTanCen anAlgo = new(global::Kerf.Engine.Construction.Constraints.GccEnt.Enclosing(aC), new Point2D(1, 2), 1.0e-9);
         Assert.Equal(1, anAlgo.SolutionCount);
-        Assert.Equal(3.0, anAlgo.ThisSolution(1).Radius());
+        Assert.Equal(3.0, anAlgo.ThisSolution(1).Radius);
         Assert.True(anAlgo.IsTheSame1(1));
     }
 
@@ -131,12 +131,12 @@ public class GccAna_Circ2dTanCenTests
             Assert.True(anAlgo.IsDone);
             Assert.Equal(1, anAlgo.SolutionCount);
             Circle2D aSol = anAlgo.ThisSolution(1);
-            Assert.Equal(aL.Distance(aP), aSol.Radius(), Tol);
+            Assert.Equal(aL.DistanceTo(aP), aSol.Radius, Tol);
             anAlgo.Tangency1(1, out double aPs, out double aPa, out Point2D aT);
-            Assert.True(aL.Distance(aT) < Tol);
-            Assert.Equal(aSol.Radius(), aT.Distance(aP), Tol);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).Distance(aT) < Tol);
-            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL).Distance(aT) < Tol);
+            Assert.True(aL.DistanceTo(aT) < Tol);
+            Assert.Equal(aSol.Radius, aT.DistanceTo(aP), Tol);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, aSol).DistanceTo(aT) < Tol);
+            Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPa, aL).DistanceTo(aT) < Tol);
             anAlgo.WhichQualifier(1, out global::Kerf.Engine.Construction.Constraints.Qualifier aQ);
             Assert.Equal(global::Kerf.Engine.Construction.Constraints.Qualifier.Noqualifier, aQ);
         }
@@ -156,10 +156,10 @@ public class GccAna_Circ2dTanCenTests
     {
         AnalyticCirc2dTanCen anAlgo = new(new Point2D(4, 5), new Point2D(1, 1));
         Assert.Equal(1, anAlgo.SolutionCount);
-        Assert.Equal(5.0, anAlgo.ThisSolution(1).Radius(), Tol);
+        Assert.Equal(5.0, anAlgo.ThisSolution(1).Radius, Tol);
         anAlgo.Tangency1(1, out double aPs, out double aPa, out Point2D aT);
         Assert.Equal(new Point2D(4, 5), aT);
-        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, anAlgo.ThisSolution(1)).Distance(aT) < Tol);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aPs, anAlgo.ThisSolution(1)).DistanceTo(aT) < Tol);
         Assert.Equal(0.0, aPa);
     }
 

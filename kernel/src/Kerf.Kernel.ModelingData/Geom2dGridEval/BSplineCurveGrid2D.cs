@@ -19,7 +19,7 @@ namespace Kerf.Engine.Geometry.Evaluation.Grid;
 /// The runs are counted over consecutive parameters, so ascending parameters make the most of the cache; any
 /// order gives correct values.
 /// </remarks>
-public sealed class BSplineCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
+internal sealed class BSplineCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 {
     // Threshold for using cache vs direct evaluation.
     private const int THE_CACHE_THRESHOLD = 4;
@@ -42,7 +42,7 @@ public sealed class BSplineCurveGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
             Weights = geom.InternalWeights();
             Knots = geom.InternalKnots();
             Mults = geom.InternalMultiplicities();
-            Degree = geom.Degree();
+            Degree = geom.Degree;
             IsPeriodic = geom.IsPeriodic;
         }
     }

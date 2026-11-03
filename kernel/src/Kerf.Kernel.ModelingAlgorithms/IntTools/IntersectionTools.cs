@@ -36,7 +36,7 @@ public static partial class IntersectionTools
         p1 = Tool.Pnt(aV1);
         p2 = Tool.Pnt(aV2);
         tolSum = tolSum * tolSum;
-        d = p1.SquareDistance(p2);
+        d = p1.SquareDistanceTo(p2);
         if (d < tolSum)
         {
             return 0;
@@ -53,7 +53,7 @@ public static partial class IntersectionTools
         for (; exp.More(); exp.Next())
         {
             Edge e = ShapeCasts.Edge(exp.Current());
-            Orientation or = e.Orientation();
+            Orientation or = e.Orientation;
             if (or == Internal)
             {
                 return bFlag;
@@ -70,7 +70,7 @@ public static partial class IntersectionTools
     {
         Face ff;
         ff = aF;
-        ff.Orientation(Forward);
+        ff.Orient(Forward);
         aFNew = ShapeCasts.Face(ff.EmptyCopied());
         BrepBuilder bb = new();
         bb.Add(aFNew, aW);
@@ -106,7 +106,7 @@ public static partial class IntersectionTools
             _ = Tool.Tolerance(v);
             tolV2 = 1.0e-12; // OCCT: the vertex's tolerance is computed, then overwritten
             pv = Tool.Pnt(v);
-            d2 = pv.SquareDistance(pt);
+            d2 = pv.SquareDistanceTo(pt);
             if (d2 < tolV2)
             {
                 return true;
@@ -127,7 +127,7 @@ public static partial class IntersectionTools
         tolV = Tool.Tolerance(aV);
         tolV2 = tolV * tolV;
         pv = Tool.Pnt(aV);
-        d2 = pv.SquareDistance(pt);
+        d2 = pv.SquareDistanceTo(pt);
         return d2 < tolV2;
     }
 
@@ -174,7 +174,7 @@ public static partial class IntersectionTools
 
         sumTol = tol1 + tol2;
         sumTol = sumTol * sumTol;
-        d2 = p1.SquareDistance(p2);
+        d2 = p1.SquareDistanceTo(p2);
         bRet = d2 < sumTol;
         return bRet;
     }
@@ -193,7 +193,7 @@ public static partial class IntersectionTools
         //
         pv = Tool.Pnt(aV);
         //
-        d = pv.SquareDistance(aP);
+        d = pv.SquareDistanceTo(aP);
         tolV = tolV * tolV;
         bRet = (d <= tolV);
         return bRet;
@@ -235,8 +235,8 @@ public static partial class IntersectionTools
         double f, l, mid;
 
         //
-        f = c3D.FirstParameter();
-        l = c3D.LastParameter();
+        f = c3D.FirstParameter;
+        l = c3D.LastParameter;
         mid = 0.5 * (f + l);
         CurveAdaptor gac = new(c3D);
         CurveKind ct = gac.GetType();
@@ -296,7 +296,7 @@ public static partial class IntersectionTools
             //
             if (c3D is TrimmedCurve3D gtc)
             {
-                c3D = gtc.BasisCurve();
+                c3D = gtc.BasisCurve;
                 aSIn[i].SetCurve(c3D); // OCCT writes into its const input
             }
             IntersectionCurve ic = aSIn[i];
@@ -311,8 +311,8 @@ public static partial class IntersectionTools
                 return;
             }
             //
-            Line3D lin = gLine.Lin();
-            d2 = lin.Direction();
+            Line3D lin = gLine.Line;
+            d2 = lin.Direction;
             if (i == 1)
             {
                 aSOut.Append(ic);
@@ -333,10 +333,10 @@ public static partial class IntersectionTools
     public static bool IsDirsCoinside(in Direction3D d1, in Direction3D d2)
     {
         bool bFlag;
-        Point3D p1 = new(d1.X(), d1.Y(), d1.Z());
-        Point3D p2 = new(d2.X(), d2.Y(), d2.Z());
+        Point3D p1 = new(d1.X, d1.Y, d1.Z);
+        Point3D p2 = new(d2.X, d2.Y, d2.Z);
         double dLim = 0.0002, d;
-        d = p1.Distance(p2);
+        d = p1.DistanceTo(p2);
         bFlag = (d < dLim || Math.Abs(2.0 - d) < dLim);
         return bFlag;
     }
@@ -347,9 +347,9 @@ public static partial class IntersectionTools
         bool bFlag;
         double d;
         //
-        Point3D p1 = new(d1.X(), d1.Y(), d1.Z());
-        Point3D p2 = new(d2.X(), d2.Y(), d2.Z());
-        d = p1.Distance(p2);
+        Point3D p1 = new(d1.X, d1.Y, d1.Z);
+        Point3D p2 = new(d2.X, d2.Y, d2.Z);
+        d = p1.DistanceTo(p2);
         bFlag = (d < dLim || Math.Abs(2.0 - d) < dLim);
         return bFlag;
     }
@@ -366,8 +366,8 @@ public static partial class IntersectionTools
             return false;
         }
 
-        f = aC3D.FirstParameter();
-        l = aC3D.LastParameter();
+        f = aC3D.FirstParameter;
+        l = aC3D.LastParameter;
 
         aC3D.D0(f, out p1);
         aC3D.D0(l, out p2);
@@ -375,7 +375,7 @@ public static partial class IntersectionTools
         //
         pc = global::Kerf.Engine.Foundation.Precision.Confusion();
         pc = pc * pc;
-        dist = p1.SquareDistance(p2);
+        dist = p1.SquareDistanceTo(p2);
         bRet = dist < pc;
         return bRet;
     }
@@ -403,15 +403,15 @@ public static partial class IntersectionTools
         tolMin = aTolBase;
         tolMax = aTolBase;
         //
-        tf = ct3D.FirstParameter();
-        tl = ct3D.LastParameter();
+        tf = ct3D.FirstParameter;
+        tl = ct3D.LastParameter;
         //
         CurveAdaptor gac = new(ct3D);
         CurveKind cType = gac.GetType();
         //
         if (cType == Parabola)
         {
-            Curve3D c3DBase = ct3D.BasisCurve();
+            Curve3D c3DBase = ct3D.BasisCurve;
             ParabolaTolerance(c3DBase, tf, tl, aTolBase, ref tolMin, ref tolMax);
             tolReached = tolMax;
         }
@@ -434,11 +434,11 @@ public static partial class IntersectionTools
         int nbPoints;
         double focal, x1, x2, tol1, tol2;
         Point3D pf, pl;
-        Parabola3D parab = gp.Parab();
-        Axis3D xAxis = parab.XAxis();
+        Parabola3D parab = gp.Parabola;
+        Axis3D xAxis = parab.XAxis;
         LineCurve3D gAxis = new(xAxis);
 
-        focal = gp.Focal();
+        focal = gp.Focal;
         if (focal == 0.0)
         {
             return;
@@ -617,20 +617,20 @@ public static partial class IntersectionTools
         iRet = 0;
         tol = tolLin + tolPln;
         //
-        CoordinateSystem posPln = pln.Position();
-        Direction3D dirPln = posPln.Direction();
-        Point3D locPln = posPln.Location();
+        CoordinateSystem posPln = pln.Position;
+        Direction3D dirPln = posPln.Direction;
+        Point3D locPln = posPln.Location;
         //
-        Direction3D dirLin = lin.Direction();
-        Point3D locLin = lin.Location();
+        Direction3D dirLin = lin.Direction;
+        Point3D locLin = lin.Location;
         //
         p1 = p1.WithXYZ(locLin.XYZ() + tLin1 * dirLin.XYZ());
-        dist1 = dirPln.X() * (p1.X() - locPln.X()) + dirPln.Y() * (p1.Y() - locPln.Y())
-                 + dirPln.Z() * (p1.Z() - locPln.Z());
+        dist1 = dirPln.X * (p1.X - locPln.X) + dirPln.Y * (p1.Y - locPln.Y)
+                 + dirPln.Z * (p1.Z - locPln.Z);
         //
         p2 = p2.WithXYZ(locLin.XYZ() + tLin2 * dirLin.XYZ());
-        dist2 = dirPln.X() * (p2.X() - locPln.X()) + dirPln.Y() * (p2.Y() - locPln.Y())
-                 + dirPln.Z() * (p2.Z() - locPln.Z());
+        dist2 = dirPln.X * (p2.X - locPln.X) + dirPln.Y * (p2.Y - locPln.Y)
+                 + dirPln.Z * (p2.Z - locPln.Z);
         //
         if (dist1 < tol && dist2 < tol)
         {
@@ -645,8 +645,8 @@ public static partial class IntersectionTools
         }
         //
         pln.Coefficients(out double a, out double b, out double c, out double d);
-        e = a * locLin.X() + b * locLin.Y() + c * locLin.Z() + d;
-        h = a * dirLin.X() + b * dirLin.Y() + c * dirLin.Z();
+        e = a * locLin.X + b * locLin.Y + c * locLin.Z + d;
+        h = a * dirLin.X + b * dirLin.Y + c * dirLin.Z;
         aTP = -e / h;
         if (aTP < tLin1 - tol || aTP > tLin2 + tol)
         {

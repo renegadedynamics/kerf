@@ -141,7 +141,7 @@ public class BuilderSolid : BuilderArea
                     continue;
                 }
                 //
-                orE = e.Orientation();
+                orE = e.Orientation;
                 //
                 Face f1 = ShapeCasts.Face(lf.First());
                 if (nbF == 1)
@@ -749,7 +749,7 @@ public class BuilderSolid : BuilderArea
             // make a new shell
             Shell shell = new();
             bb.MakeShell(ref shell);
-            ff.Orientation(Internal);
+            ff.Orient(Internal);
             bb.Add(shell, ff);
             //
             Iterator itAddedF = new(shell);
@@ -768,7 +768,7 @@ public class BuilderSolid : BuilderArea
                         Shape fl = itF.Value();
                         if (addedFacesMap.Add(fl))
                         {
-                            fl.Orientation(Internal);
+                            fl.Orient(Internal);
                             bb.Add(shell, fl);
                         }
                     }
@@ -783,7 +783,7 @@ public class BuilderSolid : BuilderArea
     // TopoDS_Solid reference to it (a reinterpret cast): the port makes the same unchecked solid of the shell's TShape.
     private static bool IsHole(in Shape s2, IntersectionContext context)
     {
-        Solid pS2 = new(s2.TShape(), s2.Location(), s2.Orientation());
+        Solid pS2 = new(s2.TShape(), s2.Placement, s2.Orientation);
         SolidClassifier clsf = context.SolidClassifier(pS2);
         //
         clsf.PerformInfinitePoint(RealSmall());
@@ -798,7 +798,7 @@ public class BuilderSolid : BuilderArea
         Explorer exp = new();
         Containment state;
         //
-        Solid pS2 = new(s2.TShape(), s2.Location(), s2.Orientation());
+        Solid pS2 = new(s2.TShape(), s2.Placement, s2.Orientation);
         //
         exp.Init(s1, ShapeType.Face);
         if (!exp.More())

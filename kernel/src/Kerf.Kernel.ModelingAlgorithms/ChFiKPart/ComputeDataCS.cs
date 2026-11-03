@@ -20,25 +20,25 @@ internal static class ComputeDataCS
                                                ref Cylinder cyl, ref Circle3D circ, out double first,
                                                out double last)
     {
-        CoordinateSystem ax = s1.Plane().Position();
-        Vector3D v1 = new(ax.XDirection());
-        Vector3D v2 = new(ax.YDirection());
-        s2.D1(p1S2.X(), p1S2.Y(), out Point3D p, out Vector3D du, out Vector3D dv);
-        Vector3D v = new(p, s1.Value(p1S1.X(), p1S1.Y()));
+        CoordinateSystem ax = s1.Plane().Position;
+        Vector3D v1 = new(ax.XDirection);
+        Vector3D v2 = new(ax.YDirection);
+        s2.D1(p1S2.X, p1S2.Y, out Point3D p, out Vector3D du, out Vector3D dv);
+        Vector3D v = new(p, s1.Value(p1S1.X, p1S1.Y));
         v = v.Dot(v1) * v1 + v.Dot(v2) * v2;
         v = v.Normalized();
-        Point3D p2 = s2.Value(p2S2.X(), p2S2.Y());
+        Point3D p2 = s2.Value(p2S2.X, p2S2.Y);
         Vector3D vorien = new(p, p2);
         Point3D cent = new();
         Direction3D dx = new(v);
         if (v.Dot(vorien) >= 0.0)
         {
-            cent = cent.WithCoord(p.X() + r * v.X(), p.Y() + r * v.Y(), p.Z() + r * v.Z());
+            cent = cent.WithCoord(p.X + r * v.X, p.Y + r * v.Y, p.Z + r * v.Z);
             dx = dx.Reversed();
         }
         else
         {
-            cent = cent.WithCoord(p.X() - r * v.X(), p.Y() - r * v.Y(), p.Z() - r * v.Z());
+            cent = cent.WithCoord(p.X - r * v.X, p.Y - r * v.Y, p.Z - r * v.Z);
         }
         Direction3D dy = new(new Vector3D(cent, p2));
         dy = (dx ^ dy) ^ dx;

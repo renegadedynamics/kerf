@@ -60,11 +60,11 @@ public class IntPatch_LineConstructorTests
             double f = aG.FirstPoint().ParameterOnLine(), l = aG.LastPoint().ParameterOnLine();
             Assert.True(l > f);
             Point3D aMid = global::Kerf.Engine.Geometry.ElCLib.Value(0.5 * (f + l), aG.Circle());
-            Assert.True(Math.Abs(aMid.X()) <= 1 && Math.Abs(aMid.Y()) <= 1, $"arc {i} is outside the square");
+            Assert.True(Math.Abs(aMid.X) <= 1 && Math.Abs(aMid.Y) <= 1, $"arc {i} is outside the square");
             foreach (double t in new[] { f, l })
             {
                 Point3D aP = global::Kerf.Engine.Geometry.ElCLib.Value(t, aG.Circle());
-                Assert.True(Math.Abs(Math.Max(Math.Abs(aP.X()), Math.Abs(aP.Y())) - 1.0) < 1e-9,
+                Assert.True(Math.Abs(Math.Max(Math.Abs(aP.X), Math.Abs(aP.Y)) - 1.0) < 1e-9,
                             $"arc {i} doesn't end on the square");
             }
         }
@@ -153,8 +153,8 @@ public class IntPatch_LineConstructorTests
                 aNbParts++;
                 double f = aPart.FirstPoint().ParameterOnLine(), l = aPart.LastPoint().ParameterOnLine();
                 Point3D aMid = aPart.Value(0.5 * (f + l));
-                Assert.True(Math.Abs(aMid.Distance(new Point3D()) - 1.0) < 1e-7, "off the sphere");
-                double dx = aMid.X() - 0.6, dy = aMid.Y() - 0.1;
+                Assert.True(Math.Abs(aMid.DistanceTo(new Point3D()) - 1.0) < 1e-7, "off the sphere");
+                double dx = aMid.X - 0.6, dy = aMid.Y - 0.1;
                 Assert.True(Math.Abs(Math.Sqrt(dx * dx + dy * dy) - 0.5) < 1e-7, "off the cylinder");
             }
         }

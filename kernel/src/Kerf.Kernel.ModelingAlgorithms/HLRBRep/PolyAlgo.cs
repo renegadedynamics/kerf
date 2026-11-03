@@ -336,12 +336,12 @@ public class PolyAlgo : Transient
         bool isClosed = false;
         Transform3D projTrsf = _proj.Transformation();
         {
-            Xyz trsfVec = projTrsf.TranslationPart();
+            Xyz trsfVec = projTrsf.TranslationXyz();
             _tLoc[0] = trsfVec.X();
             _tLoc[1] = trsfVec.Y();
             _tLoc[2] = trsfVec.Z();
 
-            Matrix3x3 trsfMat = projTrsf.VectorialPart();
+            Matrix3x3 trsfMat = projTrsf.VectorialPart;
             _tMat[0, 0] = trsfMat.Value(1, 1);
             _tMat[0, 1] = trsfMat.Value(1, 2);
             _tMat[0, 2] = trsfMat.Value(1, 3);
@@ -354,12 +354,12 @@ public class PolyAlgo : Transient
         }
         {
             Transform3D trsfInv = _proj.InvertedTransformation();
-            Xyz trsfInvVec = trsfInv.TranslationPart();
+            Xyz trsfInvVec = trsfInv.TranslationXyz();
             _tiLo[0] = trsfInvVec.X();
             _tiLo[1] = trsfInvVec.Y();
             _tiLo[2] = trsfInvVec.Z();
 
-            Matrix3x3 trsfInvMat = trsfInv.VectorialPart();
+            Matrix3x3 trsfInvMat = trsfInv.VectorialPart;
             _tiMa[0, 0] = trsfInvMat.Value(1, 1);
             _tiMa[0, 1] = trsfInvMat.Value(1, 2);
             _tiMa[0, 2] = trsfInvMat.Value(1, 3);
@@ -374,7 +374,7 @@ public class PolyAlgo : Transient
         {
             if (!isoledF)
             {
-                isClosed = shape.Closed();
+                isClosed = shape.IsClosed;
                 if (!isClosed)
                 {
                     IndexedSet<Shape> em = new(ShapeHasher.Instance);
@@ -386,7 +386,7 @@ public class PolyAlgo : Transient
                     {
                         Edge edge = ShapeCasts.Edge(edgeExp.Current());
                         int edgeIndex = em.IndexOf(edge) + 1;
-                        Orientation edgeOrient = edge.Orientation();
+                        Orientation edgeOrient = edge.Orientation;
                         if (!Tool.Degenerated(edge))
                         {
                             if (edgeOrient == Forward)
@@ -455,16 +455,16 @@ public class PolyAlgo : Transient
                     {
                         iFace++;
                         int faceIndex = _fMap.IndexOf(face) + 1;
-                        bool isReversed = face.Orientation() == Reversed;
-                        Transform3D tt = loc.Transformation();
+                        bool isReversed = face.Orientation == Reversed;
+                        Transform3D tt = loc.Transformation;
                         tt = tt.PreMultiplied(projTrsf);
                         {
-                            Xyz tTrsfVec = tt.TranslationPart();
+                            Xyz tTrsfVec = tt.TranslationXyz();
                             _ttLo[0] = tTrsfVec.X();
                             _ttLo[1] = tTrsfVec.Y();
                             _ttLo[2] = tTrsfVec.Z();
 
-                            Matrix3x3 tTrsfMat = tt.VectorialPart();
+                            Matrix3x3 tTrsfMat = tt.VectorialPart;
                             _ttMa[0, 0] = tTrsfMat.Value(1, 1);
                             _ttMa[0, 1] = tTrsfMat.Value(1, 2);
                             _ttMa[0, 2] = tTrsfMat.Value(1, 3);
@@ -486,7 +486,7 @@ public class PolyAlgo : Transient
                         {
                             if (surf is TrimmedSurface rectTrimSurf)
                             {
-                                surf = rectTrimSurf.BasisSurface();
+                                surf = rectTrimSurf.BasisSurface;
                             }
                             SurfaceAdaptor surfAdapt = new(surf);
                             aPid.Planar(surfAdapt.GetType() == Plane);
@@ -1142,15 +1142,15 @@ public class PolyAlgo : Transient
             if (polyg is not null)
             {
                 NCollection_Array1<Point3D> pol = polyg.Nodes();
-                Transform3D tt = loc.Transformation();
+                Transform3D tt = loc.Transformation;
                 Transform3D projTrsf = _proj.Transformation();
                 tt = tt.PreMultiplied(projTrsf);
                 {
-                    Xyz tTrsfVec = tt.TranslationPart();
+                    Xyz tTrsfVec = tt.TranslationXyz();
                     _ttLo[0] = tTrsfVec.X();
                     _ttLo[1] = tTrsfVec.Y();
                     _ttLo[2] = tTrsfVec.Z();
-                    Matrix3x3 tTrsfMat = tt.VectorialPart();
+                    Matrix3x3 tTrsfMat = tt.VectorialPart;
                     _ttMa[0, 0] = tTrsfMat.Value(1, 1);
                     _ttMa[0, 1] = tTrsfMat.Value(1, 2);
                     _ttMa[0, 2] = tTrsfMat.Value(1, 3);
@@ -1324,9 +1324,9 @@ public class PolyAlgo : Transient
         {
             u3 = u1 + (u2 - u1) * coef3;
             Point3D p3 = _bCurv.Value(u3);
-            xti3 = x3 = p3.X();
-            yti3 = y3 = p3.Y();
-            zti3 = z3 = p3.Z();
+            xti3 = x3 = p3.X;
+            yti3 = y3 = p3.Y;
+            zti3 = z3 = p3.Z;
             TMultiply(ref x3, ref y3, ref z3);
             return true;
         }
@@ -1816,13 +1816,13 @@ public class PolyAlgo : Transient
             _bSurf.Initialize(face, false);
             _gSurf = Tool.Surface(face, out loc);
             {
-                Transform3D tt = loc.Transformation();
+                Transform3D tt = loc.Transformation;
                 tt = tt.PreMultiplied(projTrsf);
-                Xyz tTrsfVec = tt.TranslationPart();
+                Xyz tTrsfVec = tt.TranslationXyz();
                 _ttLo[0] = tTrsfVec.X();
                 _ttLo[1] = tTrsfVec.Y();
                 _ttLo[2] = tTrsfVec.Z();
-                Matrix3x3 tTrsfMat = tt.VectorialPart();
+                Matrix3x3 tTrsfMat = tt.VectorialPart;
                 _ttMa[0, 0] = tTrsfMat.Value(1, 1);
                 _ttMa[0, 1] = tTrsfMat.Value(1, 2);
                 _ttMa[0, 2] = tTrsfMat.Value(1, 3);
@@ -1864,18 +1864,18 @@ public class PolyAlgo : Transient
                             if (_gSurf is not null)
                             {
                                 Point3D pt3 = _gSurf.Value(u3, v3);
-                                x3 = pt3.X();
-                                y3 = pt3.Y();
-                                z3 = pt3.Z();
+                                x3 = pt3.X;
+                                y3 = pt3.Y;
+                                z3 = pt3.Z;
                             }
                             else
                             {
                                 // simple averaging - this could be improved
                                 double coef2 = 1.0 - coef3;
                                 Point3D pt3 = new Point3D(coef2 * nod1RValues.Point + coef3 * nod2RValues.Point);
-                                x3 = pt3.X();
-                                y3 = pt3.Y();
-                                z3 = pt3.Z();
+                                x3 = pt3.X;
+                                y3 = pt3.Y;
+                                z3 = pt3.Z;
                             }
                             TTMultiply(ref x3, ref y3, ref z3);
                         }

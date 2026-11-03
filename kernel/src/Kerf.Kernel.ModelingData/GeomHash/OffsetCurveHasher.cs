@@ -22,9 +22,9 @@ internal readonly struct OffsetCurveHasher(double theCompTolerance, double theHa
         var curveHasher = new CurveHasher(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            curveHasher.Hash(curve.BasisCurve()),
-            HashUtils.Hash((long)HashUtils.Round(curve.Offset() * factor)),
-            dirHasher.Hash(curve.Direction())
+            curveHasher.Hash(curve.BasisCurve),
+            HashUtils.Hash((long)HashUtils.Round(curve.Offset * factor)),
+            dirHasher.Hash(curve.Direction)
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -34,8 +34,8 @@ internal readonly struct OffsetCurveHasher(double theCompTolerance, double theHa
     {
         var dirHasher = new DirectionHasher(CompTolerance, HashTolerance);
         var curveHasher = new CurveHasher(CompTolerance, HashTolerance);
-        return curveHasher.Equals(curve1.BasisCurve(), curve2.BasisCurve())
-               && Math.Abs(curve1.Offset() - curve2.Offset()) <= CompTolerance
-               && dirHasher.IsEqual(curve1.Direction(), curve2.Direction());
+        return curveHasher.Equals(curve1.BasisCurve, curve2.BasisCurve)
+               && Math.Abs(curve1.Offset - curve2.Offset) <= CompTolerance
+               && dirHasher.IsEqual(curve1.Direction, curve2.Direction);
     }
 }

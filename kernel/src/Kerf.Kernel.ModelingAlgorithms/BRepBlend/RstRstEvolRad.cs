@@ -212,7 +212,7 @@ public class RstRstEvolRad : RstRstFunction
         _d1gui = new Vector3D(0.0, 0.0, 0.0);
         _nplan = new Vector3D(0.0, 0.0, 0.0);
         _tguide.D2(param, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _nplan.WithXYZ(_d1gui.Normalized().XYZ());
         Xyz nplanXYZ = _nplan.XYZ();
         Xyz ptguiXYZ = _ptgui.XYZ();
@@ -307,10 +307,10 @@ public class RstRstEvolRad : RstRstFunction
                 _tgrst2 = secmember[2] * d21;
 
                 double a, b;
-                _surf1.D1(_pt2drst1.X(), _pt2drst1.Y(), out bid, out d1urst1, out d1vrst1);
+                _surf1.D1(_pt2drst1.X, _pt2drst1.Y, out bid, out d1urst1, out d1vrst1);
                 T3dto2d(out a, out b, _tgrst1, d1urst1, d1vrst1);
                 _tg2drst1 = _tg2drst1.WithCoord(a, b);
-                _surf2.D1(_pt2drst2.X(), _pt2drst2.Y(), out bid, out d1urst2, out d1vrst2);
+                _surf2.D1(_pt2drst2.X, _pt2drst2.Y, out bid, out d1urst2, out d1vrst2);
                 T3dto2d(out a, out b, _tgrst1, d1urst2, d1vrst2); // OCCT: tgrst1 where tgrst2 is meant
                 _tg2drst2 = _tg2drst2.WithCoord(a, b);
             }
@@ -353,7 +353,7 @@ public class RstRstEvolRad : RstRstFunction
             {
                 _minang = angle;
             }
-            _distmin = Min(_distmin, _ptrst1.Distance(_ptrst2));
+            _distmin = Min(_distmin, _ptrst1.DistanceTo(_ptrst2));
 
             return true;
         }
@@ -437,7 +437,7 @@ public class RstRstEvolRad : RstRstFunction
 
         CenterCircleRst1Rst2(ptTmp1, ptTmp2, _nplan, ref center, out notUsed);
 
-        norm = _nplan.Crossed(nRst1).Magnitude();
+        norm = _nplan.Crossed(nRst1).Magnitude;
         unsurnorm = 1.0 / norm;
 
         nRst1InPlane = Vector3D.LinearForm(_nplan.Dot(nRst1) * unsurnorm, _nplan, -unsurnorm, nRst1);
@@ -451,7 +451,7 @@ public class RstRstEvolRad : RstRstFunction
 
         tgRst1 = _nplan.Crossed(centptrst);
 
-        norm = _nplan.Crossed(nRst2).Magnitude();
+        norm = _nplan.Crossed(nRst2).Magnitude;
         unsurnorm = 1.0 / norm;
         nRst2InPlane = Vector3D.LinearForm(_nplan.Dot(nRst2) * unsurnorm, _nplan, -unsurnorm, nRst2);
         centptrst = centptrst.WithXYZ(ptTmp2.XYZ() - center.XYZ());
@@ -521,7 +521,7 @@ public class RstRstEvolRad : RstRstFunction
 
         // Calculate the center of the circle
         vdMed = rst1rst2.Crossed(np);
-        norm2 = rst1rst2.SquareMagnitude();
+        norm2 = rst1rst2.SquareMagnitude;
         dist = _ray * _ray - 0.25 * norm2;
 
         if (_choix > 2)
@@ -705,10 +705,10 @@ public class RstRstEvolRad : RstRstFunction
 
         _ptrst1 = _cons1.Value(u);
         _ptrst2 = _cons2.Value(v);
-        _distmin = Min(_distmin, _ptrst1.Distance(_ptrst2));
+        _distmin = Min(_distmin, _ptrst1.DistanceTo(_ptrst2));
 
-        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(pt2d1.X(), pt2d1.Y());
-        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(pt2d2.X(), pt2d2.Y());
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(pt2d1.X, pt2d1.Y);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(pt2d2.X, pt2d2.Y);
 
         // Linear case
         if (_sShape == SectionShape.Linear)
@@ -756,7 +756,7 @@ public class RstRstEvolRad : RstRstFunction
         bool istgt;
 
         _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
-        _normtg = _d1gui.Magnitude();
+        _normtg = _d1gui.Magnitude;
         _nplan = _d1gui.Normalized();
         dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
         _tevol.D1(prm, out _ray, out _dray);
@@ -810,7 +810,7 @@ public class RstRstEvolRad : RstRstFunction
             return false;
         }
 
-        normmed = med.Magnitude();
+        normmed = med.Magnitude;
         med = med.Normalized();
         Vector3D n1 = new(center, _ptrst1), n2 = new(center, _ptrst2);
 
@@ -822,7 +822,7 @@ public class RstRstEvolRad : RstRstFunction
 
             Vector3D d1rst1rst2;
 
-            norm2 = rst1rst2.SquareMagnitude();
+            norm2 = rst1rst2.SquareMagnitude;
             d1rst1rst2 = _tgrst2 - _tgrst1;
             dist = _ray * _ray - 0.25 * norm2;
             double invdray = _dray / _ray;
@@ -869,16 +869,16 @@ public class RstRstEvolRad : RstRstFunction
 
         // Tops 2d
 
-        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(_pt2drst1.X(), _pt2drst1.Y());
-        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(_pt2drst2.X(), _pt2drst2.Y());
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(_pt2drst1.X, _pt2drst1.Y);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(_pt2drst2.X, _pt2drst2.Y);
         if (!istgt)
         {
             double a, b;
-            _surf1.D1(_pt2drst1.X(), _pt2drst1.Y(), out notUsed, out d1urst, out d1vrst);
+            _surf1.D1(_pt2drst1.X, _pt2drst1.Y, out notUsed, out d1urst, out d1vrst);
             T3dto2d(out a, out b, _tgrst1, d1urst, d1vrst);
             dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(a, b);
 
-            _surf2.D1(_pt2drst2.X(), _pt2drst2.Y(), out notUsed, out d1urst, out d1vrst);
+            _surf2.D1(_pt2drst2.X, _pt2drst2.Y, out notUsed, out d1urst, out d1vrst);
             T3dto2d(out a, out b, _tgrst2, d1urst, d1vrst);
             dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(a, b);
         }

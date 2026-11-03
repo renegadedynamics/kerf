@@ -33,7 +33,7 @@ public class ParabolaToBSplineCurve : ConicToBSplineCurve
         double uf = Min(u1, u2);
         double ul = Max(u1, u2);
 
-        double p = prb.Parameter();
+        double p = prb.Parameter;
 
         _isPeriodic = false;
         _knots[1] = uf;
@@ -45,9 +45,9 @@ public class ParabolaToBSplineCurve : ConicToBSplineCurve
         _weights[2] = 1.0;
         _weights[3] = 1.0;
 
-        Direction2D ox = prb.Axis().XDirection();
-        Direction2D oy = prb.Axis().YDirection();
-        double s = (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0) ? 1 : -1;
+        Direction2D ox = prb.Axis.XDirection;
+        Direction2D oy = prb.Axis.YDirection;
+        double s = (ox.X * oy.Y - ox.Y * oy.X > 0.0) ? 1 : -1;
 
         // poles expressed in the reference mark
         _poles[1] = new Point2D((uf * uf) / (2.0 * p), s * uf);
@@ -55,7 +55,7 @@ public class ParabolaToBSplineCurve : ConicToBSplineCurve
         _poles[3] = new Point2D((ul * ul) / (2.0 * p), s * ul);
 
         // replace the bspline in the mark of the parabola
-        Transform2D trsf = new Transform2D().WithTransformation(prb.Axis().XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(prb.Axis.XAxis, Constants.OX2d());
         _poles[1] = _poles[1].Transformed(trsf);
         _poles[2] = _poles[2].Transformed(trsf);
         _poles[3] = _poles[3].Transformed(trsf);

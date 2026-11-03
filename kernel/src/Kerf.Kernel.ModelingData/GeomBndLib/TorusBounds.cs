@@ -29,7 +29,7 @@ public sealed class TorusBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double tol)
     {
         Box box = new();
-        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus(), tol, ref box);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus, tol, ref box);
         return box;
     }
 
@@ -37,7 +37,7 @@ public sealed class TorusBounds : SurfaceBounds.ISurfaceEvaluator
     public Box Box(double uMin, double uMax, double vMin, double vMax, double tol)
     {
         Box box = new();
-        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus(), uMin, uMax, vMin, vMax, tol, ref box);
+        global::Kerf.Engine.Geometry.Bounds.BndLib.Add(_geom.Torus, uMin, uMax, vMin, vMax, tol, ref box);
         return box;
     }
 

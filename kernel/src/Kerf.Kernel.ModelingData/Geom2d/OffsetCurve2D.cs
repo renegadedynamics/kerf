@@ -33,7 +33,7 @@ public class OffsetCurve2D : Curve2D
     private Continuity _basisCurveContinuity;
 
     /// <summary>True if an evaluation representation is attached.</summary>
-    public bool HasEvalRepresentation => _evalRep is not null;
+    internal bool HasEvalRepresentation => _evalRep is not null;
 
     /// <summary>The attached evaluation representation, or null. Internal: descriptors are mutable (decision 507).</summary>
     internal RepCurveDesc2D.Base? EvalRepresentation() => _evalRep;
@@ -106,7 +106,7 @@ public class OffsetCurve2D : Curve2D
     {
         CheckMutable();
         ClearEvalRepresentation();
-        double uf = c.FirstParameter(), ul = c.LastParameter();
+        double uf = c.FirstParameter, ul = c.LastParameter;
         Curve2D checkingCurve = c;
         bool isTrimmed = false;
 
@@ -114,18 +114,18 @@ public class OffsetCurve2D : Curve2D
         {
             if (checkingCurve is TrimmedCurve2D trimC)
             {
-                checkingCurve = trimC.BasisCurve();
+                checkingCurve = trimC.BasisCurve;
                 isTrimmed = true;
             }
 
             if (checkingCurve is OffsetCurve2D oc)
             {
-                checkingCurve = oc.BasisCurve();
-                _offsetValue += oc.Offset();
+                checkingCurve = oc.BasisCurve;
+                _offsetValue += oc.Offset;
             }
         }
 
-        _basisCurveContinuity = checkingCurve.Continuity();
+        _basisCurveContinuity = checkingCurve.Continuity;
 
         bool isC0 = !isNotCheckC0 && (_basisCurveContinuity == C0);
 
@@ -168,45 +168,51 @@ public class OffsetCurve2D : Curve2D
     }
 
     /// <summary>The basis curve, frozen (it may be shared).</summary>
-    public Curve2D BasisCurve()
+    public Curve2D BasisCurve
     {
-        _basisCurve.Freeze();
-        return _basisCurve;
+        get
+        {
+            _basisCurve.Freeze();
+            return _basisCurve;
+        }
     }
 
     /// <summary>The continuity of the basis curve lowered by one (C0 for a C1 basis, G1 for a G1 B-spline basis).</summary>
-    public sealed override Continuity Continuity()
+    public sealed override Continuity Continuity
     {
-        Continuity offsetShape = C0;
-        switch (_basisCurveContinuity)
+        get
         {
-            case C0:
-                offsetShape = C0;
-                break;
-            case C1:
-                offsetShape = C0;
-                break;
-            case C2:
-                offsetShape = C1;
-                break;
-            case C3:
-                offsetShape = C2;
-                break;
-            case CN:
-                offsetShape = CN;
-                break;
-            case G1:
-                offsetShape = G1;
-                break;
-            case G2:
-                offsetShape = G2;
-                break;
+            Continuity offsetShape = C0;
+            switch (_basisCurveContinuity)
+            {
+                case C0:
+                    offsetShape = C0;
+                    break;
+                case C1:
+                    offsetShape = C0;
+                    break;
+                case C2:
+                    offsetShape = C1;
+                    break;
+                case C3:
+                    offsetShape = C2;
+                    break;
+                case CN:
+                    offsetShape = CN;
+                    break;
+                case G1:
+                    offsetShape = G1;
+                    break;
+                case G2:
+                    offsetShape = G2;
+                    break;
+            }
+            return offsetShape;
         }
-        return offsetShape;
     }
 
     /// <exception cref="UndefinedValue2DException">The basis curve's first derivative is null.</exception>
-    public sealed override Point2D EvalD0(double u)
+    internal sealed override Point2D EvalD0(double u)
     {
         Point2D evalRepResult;
         if (RepUtils2D.TryEvalCurveD0(_evalRep, u, out evalRepResult))
@@ -224,7 +230,7 @@ public class OffsetCurve2D : Curve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">The derivative can't be computed.</exception>
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 evalRepResult;
         if (RepUtils2D.TryEvalCurveD1(_evalRep, u, out evalRepResult))
@@ -243,7 +249,7 @@ public class OffsetCurve2D : Curve2D
     }
 
     /// <exception cref="UndefinedDerivative2DException">The derivatives can't be computed.</exception>
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 evalRepResult;
         if (RepUtils2D.TryEvalCurveD2(_evalRep, u, out evalRepResult))
@@ -255,7 +261,7 @@ public class OffsetCurve2D : Curve2D
         Point2D value = basisD3.Point;
         Vector2D d1 = basisD3.D1, d2 = basisD3.D2, d3 = basisD3.D3;
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             Vector2D dummyD4 = new Vector2D();
             if (!OffsetCurveUtils2D.AdjustDerivative(_basisCurve,
@@ -279,7 +285,7 @@ public class OffsetCurve2D : Curve2D
 
     /// <exception cref="UndefinedDerivative2DException">The derivatives can't be computed.</exception>
     /// <remarks>OCCT's D2 and D3 here are wrong where the basis curve's speed varies (occt-issues.md).</remarks>
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 evalRepResult;
         if (RepUtils2D.TryEvalCurveD3(_evalRep, u, out evalRepResult))
@@ -293,7 +299,7 @@ public class OffsetCurve2D : Curve2D
         Vector2D d1 = basisD3.D1, d2 = basisD3.D2, d3 = basisD3.D3;
         Vector2D d4 = d4Basis;
         bool isDirectionChange = false;
-        if (d1.SquareMagnitude() <= Constants.Resolution())
+        if (d1.SquareMagnitude <= Constants.Resolution())
         {
             if (!OffsetCurveUtils2D.AdjustDerivative(_basisCurve,
                                                           4,
@@ -322,7 +328,7 @@ public class OffsetCurve2D : Curve2D
 
     /// <summary>The Nth derivative: through EvalD1 to EvalD3 up to N = 3, the basis curve's derivative above.</summary>
     /// <exception cref="UndefinedDerivative2DException">N &lt; 1, or the derivative can't be computed.</exception>
-    public sealed override Vector2D EvalDN(double u, int n)
+    internal sealed override Vector2D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -355,13 +361,13 @@ public class OffsetCurve2D : Curve2D
     }
 
     /// <summary>The basis curve's first parameter.</summary>
-    public sealed override double FirstParameter() => _basisCurve.FirstParameter();
+    public sealed override double FirstParameter => _basisCurve.FirstParameter;
 
     /// <summary>The basis curve's last parameter.</summary>
-    public sealed override double LastParameter() => _basisCurve.LastParameter();
+    public sealed override double LastParameter => _basisCurve.LastParameter;
 
     /// <summary>The offset value.</summary>
-    public double Offset() => _offsetValue;
+    public double Offset => _offsetValue;
 
     /// <summary>True if the points at the first and last parameters are within Precision::Computational() (squared distance).</summary>
     public sealed override bool IsClosed
@@ -369,15 +375,15 @@ public class OffsetCurve2D : Curve2D
         get
         {
             Point2D pf, pl;
-            D0(FirstParameter(), out pf);
-            D0(LastParameter(), out pl);
-            return pf.SquareDistance(pl) <= global::Kerf.Engine.Foundation.Precision.Computational();
+            D0(FirstParameter, out pf);
+            D0(LastParameter, out pl);
+            return pf.SquareDistanceTo(pl) <= global::Kerf.Engine.Foundation.Precision.Computational();
         }
     }
 
     /// <summary>True if the basis curve is C(N + 1).</summary>
     /// <exception cref="RangeErrorException">N &lt; 0.</exception>
-    public sealed override bool IsCN(int n)
+    internal sealed override bool IsCN(int n)
     {
         Standard_RangeError_Raise_if(n < 0, " ");
         return _basisCurve.IsCN(n + 1);
@@ -387,7 +393,7 @@ public class OffsetCurve2D : Curve2D
     public sealed override bool IsPeriodic => _basisCurve.IsPeriodic;
 
     /// <summary>The basis curve's period.</summary>
-    public sealed override double Period() => _basisCurve.Period();
+    public sealed override double Period => _basisCurve.Period;
 
     /// <summary>Transforms the basis curve and scales the offset by |T.ScaleFactor()|.</summary>
     protected internal sealed override void Transform(in Transform2D t)
@@ -396,19 +402,19 @@ public class OffsetCurve2D : Curve2D
         ClearEvalRepresentation();
         OwnBasisCurve();
         _basisCurve.Transform(t);
-        _offsetValue *= Math.Abs(t.ScaleFactor());
+        _offsetValue *= Math.Abs(t.ScaleFactor);
     }
 
     /// <summary>The basis curve's transformed parameter.</summary>
-    public sealed override double TransformedParameter(double u, in Transform2D t) =>
+    internal sealed override double TransformedParameter(double u, in Transform2D t) =>
         _basisCurve.TransformedParameter(u, t);
 
     /// <summary>The basis curve's parametric transformation.</summary>
-    public sealed override double ParametricTransformation(in Transform2D t) =>
+    internal sealed override double ParametricTransformation(in Transform2D t) =>
         _basisCurve.ParametricTransformation(t);
 
     /// <summary>The continuity of the basis curve (G1 for a C0 B-spline accepted as G1).</summary>
-    public Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
+    internal Continuity GetBasisCurveContinuity() => _basisCurveContinuity;
 
     // Non-mutating twins of the mutators (OCCT.NET)
 
@@ -430,7 +436,7 @@ public class OffsetCurve2D : Curve2D
 
     /// <summary>A copy evaluated through theDesc, which is copied (so later changes to theDesc don't affect it).</summary>
     /// <exception cref="ProgramErrorException">The descriptor is invalid.</exception>
-    public OffsetCurve2D WithEvalRepresentation(RepCurveDesc2D.Base? desc)
+    internal OffsetCurve2D WithEvalRepresentation(RepCurveDesc2D.Base? desc)
     {
         OffsetCurve2D copy = new OffsetCurve2D(this);
         RepUtils2D.ValidateCurveDesc(desc, this);
@@ -439,7 +445,7 @@ public class OffsetCurve2D : Curve2D
     }
 
     /// <summary>A copy without an evaluation representation.</summary>
-    public OffsetCurve2D WithoutEvalRepresentation()
+    internal OffsetCurve2D WithoutEvalRepresentation()
     {
         OffsetCurve2D copy = new OffsetCurve2D(this);
         copy.ClearEvalRepresentation();

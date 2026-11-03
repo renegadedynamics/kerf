@@ -79,8 +79,8 @@ public static class EdgeFaceTool
         {
             EdgeCurve2DAdaptor pc = new(e.Curve().Edge(), f.Surface().Face());
             pc.D0(par, out Point2D p2d);
-            u = p2d.X();
-            v = p2d.Y();
+            u = p2d.X;
+            v = p2d.Y;
         }
         return true;
     }

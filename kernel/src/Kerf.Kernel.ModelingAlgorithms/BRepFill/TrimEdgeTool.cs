@@ -56,7 +56,7 @@ public sealed class TrimEdgeTool
             if (bt == typeof(BisecAna))
             {
                 bis = ((BisecAna)basBis).Geom2dCurve();
-                bis = new TrimmedCurve2D(bis, trBis.FirstParameter(), trBis.LastParameter());
+                bis = new TrimmedCurve2D(bis, trBis.FirstParameter, trBis.LastParameter);
             }
         }
     }
@@ -111,7 +111,7 @@ public sealed class TrimEdgeTool
             {
                 Point3D p1 = seq.Value(i);
                 Point3D p2 = seq.Value(i + 1);
-                if (p2.X() < p1.X())
+                if (p2.X < p1.X)
                 {
                     seq.Exchange(i, i + 1);
                     invert = true;
@@ -324,13 +324,13 @@ public sealed class TrimEdgeTool
                 double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= _bis.FirstParameter() && par <= _bis.LastParameter())
                 {
-                    d = anL.SquareDistance(aP);
+                    d = anL.SquareDistanceTo(aP);
                 }
                 ac1.D0(ac1.LastParameter(), out aP);
                 par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= _bis.FirstParameter() && par <= _bis.LastParameter())
                 {
-                    d = Min(anL.SquareDistance(aP), d);
+                    d = Min(anL.SquareDistanceTo(aP), d);
                 }
                 isFar1 = d > dmax;
                 //
@@ -339,13 +339,13 @@ public sealed class TrimEdgeTool
                 par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= _bis.FirstParameter() && par <= _bis.LastParameter())
                 {
-                    d = anL.SquareDistance(aP);
+                    d = anL.SquareDistanceTo(aP);
                 }
                 ac2.D0(ac2.LastParameter(), out aP);
                 par = global::Kerf.Engine.Geometry.ElCLib.Parameter(anL, aP);
                 if (par >= _bis.FirstParameter() && par <= _bis.LastParameter())
                 {
-                    d = Min(anL.SquareDistance(aP), d);
+                    d = Min(anL.SquareDistanceTo(aP), d);
                 }
                 isFar2 = d > dmax;
                 //
@@ -372,12 +372,12 @@ public sealed class TrimEdgeTool
         if (Params.Length() == 0 && points2.Length() == 1)
         {
             double dmin, dmax = 0.25 * _offset * _offset;
-            double tBis = points2[1].X();
+            double tBis = points2[1].X;
             Point2D pBis = _bis.Value(tBis);
 
             double t = ac1.FirstParameter();
             Point2D pc = ac1.Value(t);
-            dmin = pc.SquareDistance(pBis);
+            dmin = pc.SquareDistanceTo(pBis);
             Point3D p = new(tBis, t, 0.0);
             if (dmin < dmax)
             {
@@ -386,7 +386,7 @@ public sealed class TrimEdgeTool
 
             t = ac1.LastParameter();
             pc = ac1.Value(t);
-            double dmin1 = pc.SquareDistance(pBis);
+            double dmin1 = pc.SquareDistanceTo(pBis);
             if (dmin > dmin1 && dmin1 < dmax)
             {
                 p = p.WithY(t);
@@ -403,12 +403,12 @@ public sealed class TrimEdgeTool
         else if (Params.Length() == 1 && points2.Length() == 0)
         {
             double dmin, dmax = 0.25 * _offset * _offset;
-            double tBis = Params[1].X();
+            double tBis = Params[1].X;
             Point2D pBis = _bis.Value(tBis);
 
             double t = ac2.FirstParameter();
             Point2D pc = ac2.Value(t);
-            dmin = pc.SquareDistance(pBis);
+            dmin = pc.SquareDistanceTo(pBis);
             Point3D p = new(tBis, t, 0.0);
             if (dmin < dmax)
             {
@@ -417,7 +417,7 @@ public sealed class TrimEdgeTool
 
             t = ac2.LastParameter();
             pc = ac2.Value(t);
-            double dmin1 = pc.SquareDistance(pBis);
+            double dmin1 = pc.SquareDistanceTo(pBis);
             if (dmin > dmin1 && dmin1 < dmax)
             {
                 p = p.WithY(t);
@@ -447,7 +447,7 @@ public sealed class TrimEdgeTool
             for (i = 1; i <= nbPoints; i++)
             {
                 pSeq = Params[i];
-                pSeq = pSeq.WithZ(points2.Value(i).Y());
+                pSeq = pSeq.WithZ(points2.Value(i).Y);
                 Params.SetValue(i, pSeq);
             }
             return;
@@ -458,7 +458,7 @@ public sealed class TrimEdgeTool
         {
             p1 = Params[i];
             p2 = points2[i];
-            double p1xP2x = Math.Abs(p1.X() - p2.X());
+            double p1xP2x = Math.Abs(p1.X - p2.X);
 
             if (p1xP2x > tol)
             {
@@ -468,7 +468,7 @@ public sealed class TrimEdgeTool
                 }
                 else
                 {
-                    if (p1.X() < p2.X())
+                    if (p1.X < p2.X)
                     {
                         Params.Remove(i);
                     }
@@ -498,8 +498,8 @@ public sealed class TrimEdgeTool
         // Now we define: if there are more than one point of intersection
         // is it Ok ?
         double init_fpar = RealFirst(), init_lpar = RealLast();
-        if (nbPoints > 1 && joinType == global::Kerf.Geometry.JoinKind.Intersection && initShape1.ShapeType() != ShapeType.Vertex
-            && initShape2.ShapeType() != ShapeType.Vertex)
+        if (nbPoints > 1 && joinType == global::Kerf.Geometry.JoinKind.Intersection && initShape1.Type != ShapeType.Vertex
+            && initShape2.Type != ShapeType.Vertex)
         {
             // definition of initial first and last parameters:
             // this is inverse procedure to extension of parameters
@@ -546,7 +546,7 @@ public sealed class TrimEdgeTool
             int imin = 1;
             for (i = 2; i <= nbPoints; i++)
             {
-                if (Params[i].X() < Params[imin].X())
+                if (Params[i].X < Params[imin].X)
                 {
                     imin = i;
                 }
@@ -558,7 +558,7 @@ public sealed class TrimEdgeTool
             points2.Clear();
             for (i = 1; i <= paramsCopy.Length(); i++)
             {
-                if (imin == i || (paramsCopy[i].Y() >= init_fpar && paramsCopy[i].Y() <= init_lpar))
+                if (imin == i || (paramsCopy[i].Y >= init_fpar && paramsCopy[i].Y <= init_lpar))
                 {
                     Params.Append(paramsCopy[i]);
                     points2.Append(points2Copy[i]);
@@ -570,7 +570,7 @@ public sealed class TrimEdgeTool
         for (i = 1; i <= nbPoints; i++)
         {
             pSeq = Params[i];
-            pSeq = pSeq.WithZ(points2.Value(i).Y());
+            pSeq = pSeq.WithZ(points2.Value(i).Y);
             Params.SetValue(i, pSeq);
         }
     }
@@ -604,11 +604,11 @@ public sealed class TrimEdgeTool
             Point2D p;
             if (start)
             {
-                p = ac1.Value(Params.First().Y());
+                p = ac1.Value(Params.First().Y);
             }
             else
             {
-                p = ac1.Value(Params.Last().Y());
+                p = ac1.Value(Params.Last().Y);
             }
             toProj = !pBis.IsEqual(p, tol);
         }
@@ -657,11 +657,11 @@ public sealed class TrimEdgeTool
         double dist = RealLast();
         if (_isPoint1)
         {
-            dist = p.Distance(_p1);
+            dist = p.DistanceTo(_p1);
         }
         else if (_isPoint2)
         {
-            dist = p.Distance(_p2);
+            dist = p.DistanceTo(_p2);
         }
         else
         {
@@ -673,9 +673,9 @@ public sealed class TrimEdgeTool
 
             // Check of distances between P and first and last point of the first curve
             // should be performed in any case, despite of the results of projection.
-            Point2D pf = _c1!.Value(_c1.FirstParameter());
-            Point2D pl = _c1.Value(_c1.LastParameter());
-            double distMin = Min(p.Distance(pf), p.Distance(pl));
+            Point2D pf = _c1!.Value(_c1.FirstParameter);
+            Point2D pl = _c1.Value(_c1.LastParameter);
+            double distMin = Min(p.DistanceTo(pf), p.DistanceTo(pl));
 
             if (dist > distMin)
             {

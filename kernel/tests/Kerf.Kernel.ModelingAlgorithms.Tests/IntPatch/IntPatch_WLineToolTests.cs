@@ -27,15 +27,15 @@ public class IntPatch_WLineToolTests
         {
             PntOn2S aP = theWL.Point(k);
             aP.Parameters(out double u1, out double v1, out double u2, out double v2);
-            Assert.True(theS1.Value(u1, v1).Distance(aP.Value()) < theTol, $"point {k} off S1");
-            Assert.True(theS2.Value(u2, v2).Distance(aP.Value()) < theTol, $"point {k} off S2");
+            Assert.True(theS1.Value(u1, v1).DistanceTo(aP.Value()) < theTol, $"point {k} off S1");
+            Assert.True(theS2.Value(u2, v2).DistanceTo(aP.Value()) < theTol, $"point {k} off S2");
         }
         for (int k = 1; k <= theWL.VertexCount; k++)
         {
             PatchPoint aV = theWL.Vertex(k);
             int anIdx = (int)aV.ParameterOnLine();
             Assert.True(anIdx >= 1 && anIdx <= theWL.NbPnts(), $"vertex {k} off the line");
-            Assert.True(theWL.Point(anIdx).Value().Distance(aV.Value()) < theTol, $"vertex {k} not at its point");
+            Assert.True(theWL.Point(anIdx).Value().DistanceTo(aV.Value()) < theTol, $"vertex {k} not at its point");
         }
     }
 

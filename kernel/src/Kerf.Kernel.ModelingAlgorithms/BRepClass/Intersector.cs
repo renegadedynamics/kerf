@@ -82,7 +82,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         }
         else
         {
-            Point2D pntF = l.Location();
+            Point2D pntF = l.Location;
             Point2D pntL = global::Kerf.Engine.Geometry.ElCLib.Value(p, l);
             statusInter = box.IsOut(pntF, pntL);
         }
@@ -98,7 +98,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
                                 double fin,
                                 double deb)
     {
-        var extPC2d = new ExtPC2d(l.Location(), cur);
+        var extPC2d = new ExtPC2d(l.Location, cur);
         double minDist = RealLast();
         int minInd = 0;
         if (extPC2d.IsDone)
@@ -202,13 +202,13 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         l.Coefficients(out a, out b, out c);
 
         double at1 = fin;
-        if (e.Edge().Orientation() != Forward)
+        if (e.Edge().Orientation != Forward)
         {
             at1 = deb;
         }
 
         double at2 = ldeb;
-        if (e.NextEdge().Orientation() != Forward)
+        if (e.NextEdge().Orientation != Forward)
         {
             at2 = lfin;
         }
@@ -226,10 +226,10 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
             return;
         }
 
-        x1 = p1.X();
-        y1 = p1.Y();
-        x2 = p2.X();
-        y2 = p2.Y();
+        x1 = p1.X;
+        y1 = p1.Y;
+        x2 = p2.X;
+        y2 = p2.Y;
         double fv = a * x1 + b * y1 + c;
         double sv = a * x2 + b * y2 + c;
 
@@ -273,8 +273,8 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
             if (cur.Curve()!.IsPeriodic)
             {
                 de.SetEquivalentParameters(cur.FirstParameter(),
-                                            cur.FirstParameter() + cur.Curve()!.LastParameter()
-                                            - cur.Curve()!.FirstParameter());
+                                            cur.FirstParameter() + cur.Curve()!.LastParameter
+                                            - cur.Curve()!.FirstParameter);
             }
 
             inter = new GInter(cga,
@@ -311,7 +311,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         {
             Add2dCurve.Add(c2D, deb, fin, 0.0, ref bond);
             bond.SetGap(tolZ);
-            pntF = l.Location();
+            pntF = l.Location;
         }
 
         //
@@ -365,7 +365,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         //
         if (p != RealLast())
         {
-            dl.SetValues(l.Location(),
+            dl.SetValues(l.Location,
                          0.0,
                          global::Kerf.Engine.Foundation.Precision.PConfusion(),
                          global::Kerf.Engine.Geometry.ElCLib.Value(p, l),
@@ -374,7 +374,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         }
         else
         {
-            dl.SetValues(l.Location(), 0.0, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
+            dl.SetValues(l.Location, 0.0, global::Kerf.Engine.Foundation.Precision.PConfusion(), true);
         }
 
         var de = new TwoDDomain(pdeb, deb, toldeb, pfin, fin, tolfin);
@@ -382,8 +382,8 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         if (c.Curve()!.IsPeriodic)
         {
             de.SetEquivalentParameters(c.FirstParameter(),
-                                       c.FirstParameter() + c.Curve()!.LastParameter()
-                                       - c.Curve()!.FirstParameter());
+                                       c.FirstParameter() + c.Curve()!.LastParameter
+                                       - c.Curve()!.FirstParameter);
         }
 
         var gl = new LineCurve2D(l);
@@ -433,7 +433,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         }
         else
         {
-            norm = norm.WithCoord(tang.Y(), -tang.X());
+            norm = norm.WithCoord(tang.Y, -tang.X);
         }
     }
 
@@ -457,7 +457,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
             aC.D1(aT, out Point2D _, out Vector2D v2D);
             Direction2D d2D = new(v2D);
             //
-            tolX = uRes * d2D.Y() + vRes * d2D.X();
+            tolX = uRes * d2D.Y + vRes * d2D.X;
             if (tolX < 0.0)
             {
                 tolX = -tolX;
@@ -505,7 +505,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
             chord = chord.Reversed();
         }
 
-        double sqLength = chord.SquareMagnitude();
+        double sqLength = chord.SquareMagnitude;
         if (sqLength > global::Kerf.Engine.Foundation.Precision.SquarePConfusion())
         {
             tangent = new Direction2D(chord);

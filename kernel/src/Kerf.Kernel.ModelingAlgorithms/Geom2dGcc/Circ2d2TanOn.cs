@@ -86,18 +86,18 @@ public sealed class Circ2d2TanOn
                 if (type1 == Circle)
                 {
                     CircleCurve2D ccc1 = (cc1 as CircleCurve2D)!;
-                    Circle2D                  c1 = ccc1.Circ2d();
+                    Circle2D                  c1 = ccc1.Circle;
                     QualifiedCirc       qc1 = new QualifiedCirc(c1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D ccc2 = (cc2 as CircleCurve2D)!;
-                        Circle2D                  c2 = ccc2.Circ2d();
+                        Circle2D                  c2 = ccc2.Circle;
                         if (type3 == Circle)
                         {
                             CircleCurve2D cCon = (con as CircleCurve2D)!;
                             AnalyticCirc2d2TanOn        circAna = new(qc1,
                                                                                     new QualifiedCirc(c2, qualified2.Qualifier()),
-                                                                                    cCon.Circ2d(),
+                                                                                    cCon.Circle,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -115,7 +115,7 @@ public sealed class Circ2d2TanOn
                             LineCurve2D lLon = (con as LineCurve2D)!;
                             AnalyticCirc2d2TanOn      circAna = new(qc1,
                                                                                     new QualifiedCirc(c2, qualified2.Qualifier()),
-                                                                                    lLon.Lin2d(),
+                                                                                    lLon.Line,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -132,13 +132,13 @@ public sealed class Circ2d2TanOn
                     else
                     {
                         LineCurve2D ll2 = (cc2 as LineCurve2D)!;
-                        Line2D                 l2 = ll2.Lin2d();
+                        Line2D                 l2 = ll2.Line;
                         if (type3 == Circle)
                         {
                             CircleCurve2D cCon = (con as CircleCurve2D)!;
                             AnalyticCirc2d2TanOn        circAna = new(qc1,
                                                                                     new QualifiedLin(l2, qualified2.Qualifier()),
-                                                                                    cCon.Circ2d(),
+                                                                                    cCon.Circle,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -156,7 +156,7 @@ public sealed class Circ2d2TanOn
                             LineCurve2D lLon = (con as LineCurve2D)!;
                             AnalyticCirc2d2TanOn      circAna = new(qc1,
                                                                                     new QualifiedLin(l2, qualified2.Qualifier()),
-                                                                                    lLon.Lin2d(),
+                                                                                    lLon.Line,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -174,18 +174,18 @@ public sealed class Circ2d2TanOn
                 else
                 {
                     LineCurve2D ll1 = (cc1 as LineCurve2D)!;
-                    Line2D                 l1 = ll1.Lin2d();
+                    Line2D                 l1 = ll1.Line;
                     QualifiedLin      ql1 = new QualifiedLin(l1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D ccc2 = (cc2 as CircleCurve2D)!;
-                        Circle2D                  c2 = ccc2.Circ2d();
+                        Circle2D                  c2 = ccc2.Circle;
                         if (type3 == Circle)
                         {
                             CircleCurve2D cCon = (con as CircleCurve2D)!;
                             AnalyticCirc2d2TanOn        circAna = new(new QualifiedCirc(c2, qualified2.Qualifier()),
                                                                                     ql1,
-                                                                                    cCon.Circ2d(),
+                                                                                    cCon.Circle,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -204,7 +204,7 @@ public sealed class Circ2d2TanOn
                             LineCurve2D lLon = (con as LineCurve2D)!;
                             AnalyticCirc2d2TanOn      circAna = new(new QualifiedCirc(c2, qualified2.Qualifier()),
                                                                                     ql1,
-                                                                                    lLon.Lin2d(),
+                                                                                    lLon.Line,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -222,13 +222,13 @@ public sealed class Circ2d2TanOn
                     else
                     {
                         LineCurve2D ll2 = (cc2 as LineCurve2D)!;
-                        Line2D                 l2 = ll2.Lin2d();
+                        Line2D                 l2 = ll2.Line;
                         if (type3 == Circle)
                         {
                             CircleCurve2D cCon = (con as CircleCurve2D)!;
                             AnalyticCirc2d2TanOn        circAna = new(ql1,
                                                                                     new QualifiedLin(l2, qualified2.Qualifier()),
-                                                                                    cCon.Circ2d(),
+                                                                                    cCon.Circle,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -246,7 +246,7 @@ public sealed class Circ2d2TanOn
                             LineCurve2D lLon = (con as LineCurve2D)!;
                             AnalyticCirc2d2TanOn      circAna = new(ql1,
                                                                                     new QualifiedLin(l2, qualified2.Qualifier()),
-                                                                                    lLon.Lin2d(),
+                                                                                    lLon.Line,
                                                                                     tolerance);
                             _wellDone = circAna.IsDone;
                             if (_wellDone)
@@ -272,12 +272,12 @@ public sealed class Circ2d2TanOn
                 if (type1 == Circle)
                 {
                     CircleCurve2D ccc1 = (cc1 as CircleCurve2D)!;
-                    Circle2D                  c1 = ccc1.Circ2d();
+                    Circle2D                  c1 = ccc1.Circle;
                     QualifiedCirc       qc1 = new QualifiedCirc(c1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D ccc2 = (cc2 as CircleCurve2D)!;
-                        Circle2D                  c2 = ccc2.Circ2d();
+                        Circle2D                  c2 = ccc2.Circle;
                         QualifiedCirc       qc2 = new QualifiedCirc(c2, qualified2.Qualifier());
                         Circ2d2TanOnGeo  circGeo = new(qc1, qc2, onCurve, tolerance);
                         _wellDone = circGeo.IsDone;
@@ -294,7 +294,7 @@ public sealed class Circ2d2TanOn
                     else
                     {
                         LineCurve2D  ll2 = (cc2 as LineCurve2D)!;
-                        Line2D                  l2 = ll2.Lin2d();
+                        Line2D                  l2 = ll2.Line;
                         QualifiedLin       ql2 = new QualifiedLin(l2, qualified2.Qualifier());
                         Circ2d2TanOnGeo circGeo = new(qc1, ql2, onCurve, tolerance);
                         _wellDone = circGeo.IsDone;
@@ -312,12 +312,12 @@ public sealed class Circ2d2TanOn
                 else
                 {
                     LineCurve2D ll1 = (cc1 as LineCurve2D)!;
-                    Line2D                 l1 = ll1.Lin2d();
+                    Line2D                 l1 = ll1.Line;
                     QualifiedLin      ql1 = new QualifiedLin(l1, qualified1.Qualifier());
                     if (type2 == Circle)
                     {
                         CircleCurve2D ccc2 = (cc2 as CircleCurve2D)!;
-                        Circle2D                  c2 = ccc2.Circ2d();
+                        Circle2D                  c2 = ccc2.Circle;
                         QualifiedCirc       qc2 = new QualifiedCirc(c2, qualified2.Qualifier());
                         Circ2d2TanOnGeo  circGeo = new(qc2, ql1, onCurve, tolerance);
                         _wellDone = circGeo.IsDone;
@@ -335,7 +335,7 @@ public sealed class Circ2d2TanOn
                     else
                     {
                         LineCurve2D  ll2 = (cc2 as LineCurve2D)!;
-                        Line2D                  l2 = ll2.Lin2d();
+                        Line2D                  l2 = ll2.Line;
                         QualifiedLin       ql2 = new QualifiedLin(l2, qualified2.Qualifier());
                         Circ2d2TanOnGeo circGeo = new(ql1, ql2, onCurve, tolerance);
                         _wellDone = circGeo.IsDone;
@@ -362,7 +362,7 @@ public sealed class Circ2d2TanOn
                 {
                     CircleCurve2D cCon = (con as CircleCurve2D)!;
                     Circ2d2TanOnIter
-                        circ = new(qc1, qc2, cCon.Circ2d(), param1, param2, paramOn, tolerance);
+                        circ = new(qc1, qc2, cCon.Circle, param1, param2, paramOn, tolerance);
                     _wellDone = circ.IsDone;
                     if (_wellDone)
                     {
@@ -394,7 +394,7 @@ public sealed class Circ2d2TanOn
                 {
                     LineCurve2D lLon = (con as LineCurve2D)!;
                     Circ2d2TanOnIter
-                        circ = new(qc1, qc2, lLon.Lin2d(), param1, param2, paramOn, tolerance);
+                        circ = new(qc1, qc2, lLon.Line, param1, param2, paramOn, tolerance);
                     _wellDone = circ.IsDone;
                     if (_wellDone)
                     {
@@ -495,12 +495,12 @@ public sealed class Circ2d2TanOn
                 if (type1 == Circle)
                 {
                     CircleCurve2D ccc1 = (cc1 as CircleCurve2D)!;
-                    Circle2D                  c1 = ccc1.Circ2d();
+                    Circle2D                  c1 = ccc1.Circle;
                     QualifiedCirc       qc1 = new(c1, qualified1.Qualifier());
                     if (type3 == Circle)
                     {
                         CircleCurve2D cCon = (con as CircleCurve2D)!;
-                        AnalyticCirc2d2TanOn        circAna = new(qc1, pnt, cCon.Circ2d(), tolerance);
+                        AnalyticCirc2d2TanOn        circAna = new(qc1, pnt, cCon.Circle, tolerance);
                         _wellDone = circAna.IsDone;
                         if (_wellDone)
                         {
@@ -515,7 +515,7 @@ public sealed class Circ2d2TanOn
                     else if (type3 == Line)
                     {
                         LineCurve2D cCon = (con as LineCurve2D)!;
-                        AnalyticCirc2d2TanOn      circAna = new(qc1, pnt, cCon.Lin2d(), tolerance);
+                        AnalyticCirc2d2TanOn      circAna = new(qc1, pnt, cCon.Line, tolerance);
                         _wellDone = circAna.IsDone;
                         if (_wellDone)
                         {
@@ -531,12 +531,12 @@ public sealed class Circ2d2TanOn
                 else
                 {
                     LineCurve2D lll1 = (cc1 as LineCurve2D)!;
-                    Line2D                 l1 = lll1.Lin2d();
+                    Line2D                 l1 = lll1.Line;
                     QualifiedLin      ql1 = new(l1, qualified1.Qualifier());
                     if (type3 == Circle)
                     {
                         CircleCurve2D cCon = (con as CircleCurve2D)!;
-                        AnalyticCirc2d2TanOn        circAna = new(ql1, pnt, cCon.Circ2d(), tolerance);
+                        AnalyticCirc2d2TanOn        circAna = new(ql1, pnt, cCon.Circle, tolerance);
                         _wellDone = circAna.IsDone;
                         if (_wellDone)
                         {
@@ -551,7 +551,7 @@ public sealed class Circ2d2TanOn
                     else if (type3 == Line)
                     {
                         LineCurve2D lLon = (con as LineCurve2D)!;
-                        AnalyticCirc2d2TanOn      circAna = new(ql1, pnt, lLon.Lin2d(), tolerance);
+                        AnalyticCirc2d2TanOn      circAna = new(ql1, pnt, lLon.Line, tolerance);
                         _wellDone = circAna.IsDone;
                         if (_wellDone)
                         {
@@ -574,7 +574,7 @@ public sealed class Circ2d2TanOn
                 if (type1 == Circle)
                 {
                     CircleCurve2D ccc1 = (cc1 as CircleCurve2D)!;
-                    Circle2D                  c1 = ccc1.Circ2d();
+                    Circle2D                  c1 = ccc1.Circle;
                     QualifiedCirc       qc1 = new(c1, qualified1.Qualifier());
                     Circ2d2TanOnGeo  circGeo = new(qc1, point.Pnt2d(), onCurve, tolerance);
                     _wellDone = circGeo.IsDone;
@@ -591,7 +591,7 @@ public sealed class Circ2d2TanOn
                 else
                 {
                     LineCurve2D  lll1 = (cc1 as LineCurve2D)!;
-                    Line2D                  l1 = lll1.Lin2d();
+                    Line2D                  l1 = lll1.Line;
                     QualifiedLin       ql1 = new(l1, qualified1.Qualifier());
                     Circ2d2TanOnGeo circGeo = new(ql1, point.Pnt2d(), onCurve, tolerance);
                     _wellDone = circGeo.IsDone;
@@ -617,7 +617,7 @@ public sealed class Circ2d2TanOn
                     CircleCurve2D cCon = (con as CircleCurve2D)!;
                     Circ2d2TanOnIter circ = new(qc1,
                                                                                     point.Pnt2d(),
-                                                                                    cCon.Circ2d(),
+                                                                                    cCon.Circle,
                                                                                     param1,
                                                                                     paramOn,
                                                                                     tolerance);
@@ -646,7 +646,7 @@ public sealed class Circ2d2TanOn
                     LineCurve2D   lLon = (con as LineCurve2D)!;
                     Circ2d2TanOnIter circ = new(qc1,
                                                                                     point.Pnt2d(),
-                                                                                    lLon.Lin2d(),
+                                                                                    lLon.Line,
                                                                                     param1,
                                                                                     paramOn,
                                                                                     tolerance);
@@ -737,7 +737,7 @@ public sealed class Circ2d2TanOn
             if (type3 == Circle)
             {
                 CircleCurve2D cCon = (con as CircleCurve2D)!;
-                AnalyticCirc2d2TanOn        circAna = new(pnt1, pnt2, cCon.Circ2d(), tolerance);
+                AnalyticCirc2d2TanOn        circAna = new(pnt1, pnt2, cCon.Circle, tolerance);
                 _wellDone = circAna.IsDone;
                 if (_wellDone)
                 {
@@ -752,7 +752,7 @@ public sealed class Circ2d2TanOn
             else
             {
                 LineCurve2D lLon = (con as LineCurve2D)!;
-                AnalyticCirc2d2TanOn      circAna = new(pnt1, pnt2, lLon.Lin2d(), tolerance);
+                AnalyticCirc2d2TanOn      circAna = new(pnt1, pnt2, lLon.Line, tolerance);
                 _wellDone = circAna.IsDone;
                 if (_wellDone)
                 {

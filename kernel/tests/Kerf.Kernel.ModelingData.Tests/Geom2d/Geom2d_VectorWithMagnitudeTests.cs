@@ -163,8 +163,8 @@ public class Geom2d_VectorWithMagnitudeTest
     public void Vec2d()
     {
         Vector2D aVec = myVec1.Vec2d();
-        Assert.Equal(3.0, aVec.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
-        Assert.Equal(4.0, aVec.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(3.0, aVec.X, global::Kerf.Engine.Foundation.Precision.Confusion());
+        Assert.Equal(4.0, aVec.Y, global::Kerf.Engine.Foundation.Precision.Confusion());
     }
 
     [Fact]

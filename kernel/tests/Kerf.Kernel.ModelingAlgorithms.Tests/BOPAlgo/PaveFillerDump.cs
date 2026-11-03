@@ -30,9 +30,9 @@ internal static class PaveFillerDump
 {
     private static string H(double theValue) => BitConverter.DoubleToInt64Bits(theValue).ToString("x16");
 
-    private static string P(Point3D theP) => H(theP.X()) + " " + H(theP.Y()) + " " + H(theP.Z());
+    private static string P(Point3D theP) => H(theP.X) + " " + H(theP.Y) + " " + H(theP.Z);
 
-    private static string P2(Point2D theP) => H(theP.X()) + " " + H(theP.Y());
+    private static string P2(Point2D theP) => H(theP.X) + " " + H(theP.Y);
 
     private static string Sorted(IEnumerable<int> theValues) => string.Join(",", theValues.OrderBy(x => x));
 
@@ -69,7 +69,7 @@ internal static class PaveFillerDump
             ShapeInfo aSI = theDS.ShapeInfo(i);
             Shape aS = aSI.Shape();
             ShapeType aType = aSI.ShapeType();
-            aB.Append("s ").Append(i).Append(' ').Append((int)aType).Append(' ').Append((int)aS.Orientation());
+            aB.Append("s ").Append(i).Append(' ').Append((int)aType).Append(' ').Append((int)aS.Orientation);
             List<int> aSub = [.. aSI.SubShapes()];
             aB.Append(" sub ").Append(i < aNbSrc ? Sorted(aSub) : string.Join(",", aSub));
             if (aType == ShapeType.Vertex)

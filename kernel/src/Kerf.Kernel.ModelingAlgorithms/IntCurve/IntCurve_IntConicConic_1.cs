@@ -13,6 +13,7 @@ using static Kerf.Engine.Intersection.Curves.IntConicConic_Tool;
 using static Kerf.Engine.Intersection.TwoD.Position2D;
 using static Kerf.Engine.Intersection.TwoD.Situation;
 using static Kerf.Engine.Intersection.TwoD.TypeTrans;
+using Interval = Kerf.Engine.Intersection.Curves.IntConicConic_Tool.Interval;
 
 namespace Kerf.Engine.Intersection.Curves;
 
@@ -47,10 +48,10 @@ public sealed partial class IntConicConic
         //--  Puis on intersecte l intervalle avec le domaine de C2
         //--  Enfin, on cherche l intervalle correspondant sur C1
         //--
-        double c2inf = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(circle2.Axis(),
-                                              global::Kerf.Engine.Geometry.ElCLib.CircleValue(c1DomainAndRes.Binf, circle1.Axis(), circle1.Radius()));
-        double c2sup = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(circle2.Axis(),
-                                              global::Kerf.Engine.Geometry.ElCLib.CircleValue(c1DomainAndRes.Bsup, circle1.Axis(), circle1.Radius()));
+        double c2inf = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(circle2.Axis,
+                                              global::Kerf.Engine.Geometry.ElCLib.CircleValue(c1DomainAndRes.Binf, circle1.Axis, circle1.Radius));
+        double c2sup = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(circle2.Axis,
+                                              global::Kerf.Engine.Geometry.ElCLib.CircleValue(c1DomainAndRes.Bsup, circle1.Axis, circle1.Radius));
 
         PeriodicInterval c2Inter = new(c2inf, c2sup);
 
@@ -87,9 +88,9 @@ public sealed partial class IntConicConic
             if (!c2InterAndDomain[i].IsNull)
             {
                 double c1inf = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(
-                    circle1.Axis(), global::Kerf.Engine.Geometry.ElCLib.CircleValue(c2InterAndDomain[i].Binf, circle2.Axis(), circle2.Radius()));
+                    circle1.Axis, global::Kerf.Engine.Geometry.ElCLib.CircleValue(c2InterAndDomain[i].Binf, circle2.Axis, circle2.Radius));
                 double c1sup = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(
-                    circle1.Axis(), global::Kerf.Engine.Geometry.ElCLib.CircleValue(c2InterAndDomain[i].Bsup, circle2.Axis(), circle2.Radius()));
+                    circle1.Axis, global::Kerf.Engine.Geometry.ElCLib.CircleValue(c2InterAndDomain[i].Bsup, circle2.Axis, circle2.Radius));
 
                 solutionC1[nbSolTotal] = new PeriodicInterval(c1inf, c1sup);
                 if (!identCircles)
@@ -127,9 +128,9 @@ public sealed partial class IntConicConic
                                                           out int nbsol)
     {
         double C1_binf1, C1_binf2 = 0, C1_bsup1, C1_bsup2 = 0;
-        double dO1O2 = (c1.Location()).Distance(c2.Location());
-        double r1 = c1.Radius();
-        double r2 = c2.Radius();
+        double dO1O2 = (c1.Location).DistanceTo(c2.Location);
+        double r1 = c1.Radius;
+        double r2 = c2.Radius;
         double absR1mR2 = Math.Abs(r1 - r2);
         //----------------------------------------------------------------
         if (dO1O2 > (r1 + r2 + tol))
@@ -271,17 +272,17 @@ public sealed partial class IntConicConic
         //--    Les calculs ont ete fait dans le repere x1,y1, (O1,O2)
         //--    On se ramene au repere propre a C1
 
-        Vector2D axe1 = new(c1.XAxis().Direction());
-        Vector2D axeO1O2 = new(c1.Location(), c2.Location());
+        Vector2D axe1 = new(c1.XAxis.Direction);
+        Vector2D axeO1O2 = new(c1.Location, c2.Location);
 
         double dAngle1;
-        if (axeO1O2.Magnitude() <= Constants.Resolution())
+        if (axeO1O2.Magnitude <= Constants.Resolution())
         {
-            dAngle1 = axe1.Angle(new Vector2D(c2.XAxis().Direction()));
+            dAngle1 = axe1.AngleTo(new Vector2D(c2.XAxis.Direction));
         }
         else
         {
-            dAngle1 = axe1.Angle(axeO1O2);
+            dAngle1 = axe1.AngleTo(axeO1O2);
         }
 
         if (!c1.IsDirect)
@@ -338,8 +339,8 @@ public sealed partial class IntConicConic
         //--  Enfin, on cherche l intervalle correspondant sur C1
         //--
 
-        double linf = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, global::Kerf.Engine.Geometry.ElCLib.CircleValue(cDomainAndRes.Binf, circle.Axis(), circle.Radius()));
-        double lsup = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, global::Kerf.Engine.Geometry.ElCLib.CircleValue(cDomainAndRes.Bsup, circle.Axis(), circle.Radius()));
+        double linf = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, global::Kerf.Engine.Geometry.ElCLib.CircleValue(cDomainAndRes.Binf, circle.Axis, circle.Radius));
+        double lsup = global::Kerf.Engine.Geometry.ElCLib.Parameter(line, global::Kerf.Engine.Geometry.ElCLib.CircleValue(cDomainAndRes.Bsup, circle.Axis, circle.Radius));
 
         Interval lInter = new(linf, lsup); //-- Necessairement Borne
 
@@ -407,8 +408,8 @@ public sealed partial class IntConicConic
                                                         ref PeriodicInterval cInt2,
                                                         out int nbsol)
     {
-        double dO1O2 = line.Distance(circle.Location());
-        double r = circle.Radius();
+        double dO1O2 = line.DistanceTo(circle.Location);
+        double r = circle.Radius;
         double rmTol = r - tol;
         double binf1, binf2 = 0, bsup1, bsup2 = 0;
 
@@ -496,12 +497,12 @@ public sealed partial class IntConicConic
         //--    Les calculs ont ete fait dans le repere x1,y1, (O1,O2)
         //--    On se ramene au repere propre a C1
 
-        double dAngle1 = circle.XAxis().Direction().Angle(line.Direction());
+        double dAngle1 = circle.XAxis.Direction.AngleTo(line.Direction);
 
         double a, b, c, d;
         line.Coefficients(out a, out b, out c);
 
-        d = a * circle.Location().X() + b * circle.Location().Y() + c;
+        d = a * circle.Location.X + b * circle.Location.Y + c;
 
         if (d > 0.0)
         {
@@ -672,12 +673,12 @@ public sealed partial class IntConicConic
                                                       ref double sinDemiAngle,
                                                       out int nbsol)
     {
-        double u1x = l1.Direction().X();
-        double u1y = l1.Direction().Y();
-        double u2x = l2.Direction().X();
-        double u2y = l2.Direction().Y();
-        double uo21x = l2.Location().X() - l1.Location().X();
-        double uo21y = l2.Location().Y() - l1.Location().Y();
+        double u1x = l1.Direction.X;
+        double u1y = l1.Direction.Y;
+        double u2x = l2.Direction.X;
+        double u2y = l2.Direction.Y;
+        double uo21x = l2.Location.X - l1.Location.X;
+        double uo21y = l2.Location.Y - l1.Location.Y;
 
         double d = u1y * u2x - u1x * u2y;
 
@@ -850,8 +851,8 @@ public sealed partial class IntConicConic
         //-- On determine si des intervalles sont reduit a des points
         //--      ( Rayon * Intervalle.Length()    <    Tol   )
         //--
-        double r1 = circle1.Radius();
-        double r2 = circle2.Radius();
+        double r1 = circle1.Radius;
+        double r2 = circle2.Radius;
         double tol2 = tol + tol; //---- Pour eviter de toujours retourner
                                  // des segments
         int i;
@@ -875,14 +876,14 @@ public sealed partial class IntConicConic
         //----------------------------------------------------------------------
         //-- Traitement des intervalles (ou des points obtenus)
         //--
-        Frame2D axis2C1 = circle1.Axis();
-        Frame2D axis2C2 = circle2.Axis();
+        Frame2D axis2C1 = circle1.Axis;
+        Frame2D axis2C2 = circle2.Axis;
         Point2D p1a, p1b, p2a, p2b;
         Vector2D tan1, tan2, norm1, norm2;
         Transition t1a = new(), t1b = new(), t2a = new(), t2b = new();
         Position2D pos1a, pos1b, pos2a, pos2b;
 
-        bool isOpposite = (circle1.Location().SquareDistance(circle2.Location())) > (r1 * r1 + r2 * r2);
+        bool isOpposite = (circle1.Location.SquareDistanceTo(circle2.Location)) > (r1 * r1 + r2 * r2);
 
         for (i = 0; i < nbSolTotal; i++)
         {
@@ -950,7 +951,7 @@ public sealed partial class IntConicConic
                 global::Kerf.Engine.Geometry.ElCLib.CircleD2(c1inf, axis2C1, r1, out Point2D p1, out _, out _);
                 global::Kerf.Engine.Geometry.ElCLib.CircleD2(c2inf, axis2C2, r2, out Point2D p2, out _, out _);
 
-                if (p1.SquareDistance(p2) > tol2 * tol2)
+                if (p1.SquareDistanceTo(p2) > tol2 * tol2)
                 { // there are not any solutions in given parametric range.
                     continue;
                 }
@@ -1234,14 +1235,14 @@ public sealed partial class IntConicConic
                                            in TwoDDomain domain2,
                                            double tol)
     {
-        bool isFirst1 = (domain1.HasFirstPoint && l2.Distance(domain1.FirstPoint()) < tol);
-        bool isLast1 = (domain1.HasLastPoint && l2.Distance(domain1.LastPoint()) < tol);
+        bool isFirst1 = (domain1.HasFirstPoint && l2.DistanceTo(domain1.FirstPoint()) < tol);
+        bool isLast1 = (domain1.HasLastPoint && l2.DistanceTo(domain1.LastPoint()) < tol);
         if (isFirst1 && isLast1)
         {
             return true;
         }
-        bool isFirst2 = (domain2.HasFirstPoint && l1.Distance(domain2.FirstPoint()) < tol);
-        bool isLast2 = (domain2.HasLastPoint && l1.Distance(domain2.LastPoint()) < tol);
+        bool isFirst2 = (domain2.HasFirstPoint && l1.DistanceTo(domain2.FirstPoint()) < tol);
+        bool isLast2 = (domain2.HasLastPoint && l1.DistanceTo(domain2.LastPoint()) < tol);
         return isFirst2 && isLast2;
     }
 
@@ -1268,8 +1269,8 @@ public sealed partial class IntConicConic
 
         LineLineGeometricIntersection(l1, l2, tol, ref u1, ref u2, ref halfSinL1L2, out nbsol);
 
-        Vector2D tan1 = new(l1.Direction());
-        Vector2D tan2 = new(l2.Direction());
+        Vector2D tan1 = new(l1.Direction);
+        Vector2D tan2 = new(l2.Direction);
 
         double cosT1T2 = tan1.Dot(tan2);
         bool isOpposite = cosT1T2 < 0.0;
@@ -1305,7 +1306,7 @@ public sealed partial class IntConicConic
             //--
             if (domain1.HasFirstPoint)
             {
-                if (l2.Distance(domain1.FirstPoint()) < domain1.FirstTolerance())
+                if (l2.DistanceTo(domain1.FirstPoint()) < domain1.FirstTolerance())
                 {
                     if (u1inf > domain1.FirstParameter())
                     {
@@ -1319,7 +1320,7 @@ public sealed partial class IntConicConic
             }
             if (domain1.HasLastPoint)
             {
-                if (l2.Distance(domain1.LastPoint()) < domain1.LastTolerance())
+                if (l2.DistanceTo(domain1.LastPoint()) < domain1.LastTolerance())
                 {
                     if (u1inf > domain1.LastParameter())
                     {
@@ -1333,7 +1334,7 @@ public sealed partial class IntConicConic
             }
             if (domain2.HasFirstPoint)
             {
-                if (l1.Distance(domain2.FirstPoint()) < domain2.FirstTolerance())
+                if (l1.DistanceTo(domain2.FirstPoint()) < domain2.FirstTolerance())
                 {
                     double p = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, domain2.FirstPoint());
                     if (u1inf > p)
@@ -1348,7 +1349,7 @@ public sealed partial class IntConicConic
             }
             if (domain2.HasLastPoint)
             {
-                if (l1.Distance(domain2.LastPoint()) < domain2.LastTolerance())
+                if (l1.DistanceTo(domain2.LastPoint()) < domain2.LastTolerance())
                 {
                     double p = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, domain2.LastPoint());
                     if (u1inf > p)
@@ -1832,7 +1833,7 @@ public sealed partial class IntConicConic
                 int resHasLastPoint = 0;
                 // ParamStart2 and ParamEnd2 are uninitialised in OCCT where they are not used.
                 double paramStart = 0.0, paramStart2 = 0.0, paramEnd = 0.0, paramEnd2 = 0.0;
-                double org2SurL1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, l2.Location());
+                double org2SurL1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(l1, l2.Location);
                 //== 3 : L1 et L2 bornent
                 //== 2 :       L2 borne
                 //== 1 : L1 borne
@@ -2092,8 +2093,8 @@ public sealed partial class IntConicConic
         //-- On agrandit artificiellement les domaines
         double binfModif = cDomain.Binf;
         double bsupModif = cDomain.Bsup;
-        binfModif -= CIRC_Domain.FirstTolerance() / circle.Radius();
-        bsupModif += CIRC_Domain.LastTolerance() / circle.Radius();
+        binfModif -= CIRC_Domain.FirstTolerance() / circle.Radius;
+        bsupModif += CIRC_Domain.LastTolerance() / circle.Radius;
         deltat = bsupModif - binfModif;
         if (deltat <= PIpPI)
         {
@@ -2168,7 +2169,7 @@ public sealed partial class IntConicConic
         //-- On determine si des intervalles sont reduit a des points
         //--      ( Rayon * Intervalle.Length()    <    TolConf   )   ### Modif 19 Nov Tol-->TolConf
         //--
-        double r = circle.Radius();
+        double r = circle.Radius;
         int i;
         double maxTol = tolConf;
         if (maxTol < tol)
@@ -2196,8 +2197,8 @@ public sealed partial class IntConicConic
         //--
         if (nbSolTotal != 0)
         {
-            Frame2D circleAxis = circle.Axis();
-            Axis2D lineAxis = line.Position();
+            Frame2D circleAxis = circle.Axis;
+            Axis2D lineAxis = line.Position;
             Point2D p1a, p2a, p1b, p2b;
             Vector2D tan1, tan2, norm1;
             Vector2D norm2 = new(0.0, 0.0);
@@ -2423,15 +2424,15 @@ public sealed partial class IntConicConic
                                                          ref PeriodicInterval eInt2,
                                                          out int nbsol)
     {
-        Frame2D elAxis = ellipse.Axis();
-        Transform2D tr = new Transform2D().WithTransformation(elAxis.XAxis());
+        Frame2D elAxis = ellipse.Axis;
+        Transform2D tr = new Transform2D().WithTransformation(elAxis.XAxis);
         Ellipse2D tEllipse = ellipse.Transformed(tr);
         Line2D tLine = line.Transformed(tr);
-        double dy = tLine.Position().Direction().Y();
+        double dy = tLine.Position.Direction.Y;
         bool isVert = Math.Abs(dy) > 1.0 - 2.0 * Epsilon(1.0);
         //
-        double a = tEllipse.MajorRadius();
-        double b = tEllipse.MinorRadius();
+        double a = tEllipse.MajorRadius;
+        double b = tEllipse.MinorRadius;
         double a2 = a * a;
         double b2 = b * b;
         //
@@ -2445,7 +2446,7 @@ public sealed partial class IntConicConic
         tLine.Coefficients(out anA, out aB, out aC);
         if (isVert)
         {
-            aC += aB * tLine.Position().Location().Y();
+            aC += aB * tLine.Position.Location.Y;
             aB = 0.0;
         }
         //
@@ -2661,8 +2662,8 @@ public sealed partial class IntConicConic
         //
         double binfModif = eDomain.Binf;
         double bsupModif = eDomain.Bsup;
-        binfModif -= de.FirstTolerance() / e.MinorRadius();
-        bsupModif += de.LastTolerance() / e.MinorRadius();
+        binfModif -= de.FirstTolerance() / e.MinorRadius;
+        bsupModif += de.LastTolerance() / e.MinorRadius;
         deltat = bsupModif - binfModif;
         if (deltat <= PIpPI)
         {
@@ -2725,7 +2726,7 @@ public sealed partial class IntConicConic
         //----------------------------------------------------------------------
         //-- Calculation of Transitions at Positions.
         //----------------------------------------------------------------------
-        double r = e.MinorRadius();
+        double r = e.MinorRadius;
         int i;
         double maxTol = tolConf;
         if (maxTol < tol)
@@ -2751,15 +2752,15 @@ public sealed partial class IntConicConic
         //
         if (nbSolTotal != 0)
         {
-            Frame2D ellipseAxis = e.Axis();
-            Axis2D lineAxis = l.Position();
+            Frame2D ellipseAxis = e.Axis;
+            Axis2D lineAxis = l.Position;
             Point2D p1a, p2a, p1b, p2b;
             Vector2D tan1, tan2, norm1;
             Vector2D norm2 = new(0.0, 0.0);
             Transition t1a = new(), t2a = new(), t1b = new(), t2b = new();
             Position2D pos1a, pos1b, pos2a, pos2b;
 
-            global::Kerf.Engine.Geometry.ElCLib.EllipseD1(solutionEllipse[0].Binf, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1a,
+            global::Kerf.Engine.Geometry.ElCLib.EllipseD1(solutionEllipse[0].Binf, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1a,
                              out tan1);
             global::Kerf.Engine.Geometry.ElCLib.LineD1(solutionLine[0].Binf, lineAxis, out p2a, out tan2);
 
@@ -2812,7 +2813,7 @@ public sealed partial class IntConicConic
                     lsup = T;
                 }
 
-                global::Kerf.Engine.Geometry.ElCLib.EllipseD2(solutionEllipse[i].Binf, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1a,
+                global::Kerf.Engine.Geometry.ElCLib.EllipseD2(solutionEllipse[i].Binf, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1a,
                                  out tan1, out norm1);
                 global::Kerf.Engine.Geometry.ElCLib.LineD1(linf, lineAxis, out p2a, out tan2);
 
@@ -2826,7 +2827,7 @@ public sealed partial class IntConicConic
                     p1a = de.LastPoint();
                     linf = global::Kerf.Engine.Geometry.ElCLib.Parameter(l, p1a);
 
-                    global::Kerf.Engine.Geometry.ElCLib.EllipseD2(einf, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1a, out tan1,
+                    global::Kerf.Engine.Geometry.ElCLib.EllipseD2(einf, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1a, out tan1,
                                      out norm1);
                     global::Kerf.Engine.Geometry.ElCLib.LineD1(linf, lineAxis, out p2a, out tan2);
                     global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out pos1a, de, p1a, einf);
@@ -2839,7 +2840,7 @@ public sealed partial class IntConicConic
                     p1a = de.FirstPoint();
                     linf = global::Kerf.Engine.Geometry.ElCLib.Parameter(l, p1a);
 
-                    global::Kerf.Engine.Geometry.ElCLib.EllipseD2(einf, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1a, out tan1,
+                    global::Kerf.Engine.Geometry.ElCLib.EllipseD2(einf, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1a, out tan1,
                                      out norm1);
                     global::Kerf.Engine.Geometry.ElCLib.LineD1(linf, lineAxis, out p2a, out tan2);
                     global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out pos1a, de, p1a, einf);
@@ -2856,7 +2857,7 @@ public sealed partial class IntConicConic
                 if ((solutionLine[i].Length() + solutionEllipse[i].Length()) > 0.0)
                 {
                     // OCCT evaluates the ellipse at Binf, not Bsup, for the end of the interval (as is).
-                    global::Kerf.Engine.Geometry.ElCLib.EllipseD2(solutionEllipse[i].Binf, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1b,
+                    global::Kerf.Engine.Geometry.ElCLib.EllipseD2(solutionEllipse[i].Binf, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1b,
                                      out tan1, out norm1);
                     global::Kerf.Engine.Geometry.ElCLib.LineD1(lsup, lineAxis, out p2b, out tan2);
 
@@ -2870,7 +2871,7 @@ public sealed partial class IntConicConic
                         esup = dl.LastParameter();
                         p1b = de.LastPoint();
                         lsup = global::Kerf.Engine.Geometry.ElCLib.Parameter(l, p1b);
-                        global::Kerf.Engine.Geometry.ElCLib.EllipseD2(esup, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1b, out tan1,
+                        global::Kerf.Engine.Geometry.ElCLib.EllipseD2(esup, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1b, out tan1,
                                          out norm1);
                         global::Kerf.Engine.Geometry.ElCLib.LineD1(lsup, lineAxis, out p2b, out tan2);
 
@@ -2883,7 +2884,7 @@ public sealed partial class IntConicConic
                         esup = de.FirstParameter();
                         p1b = de.FirstPoint();
                         lsup = global::Kerf.Engine.Geometry.ElCLib.Parameter(l, p1b);
-                        global::Kerf.Engine.Geometry.ElCLib.EllipseD2(esup, ellipseAxis, e.MajorRadius(), e.MinorRadius(), out p1b, out tan1,
+                        global::Kerf.Engine.Geometry.ElCLib.EllipseD2(esup, ellipseAxis, e.MajorRadius, e.MinorRadius, out p1b, out tan1,
                                          out norm1);
                         global::Kerf.Engine.Geometry.ElCLib.LineD1(lsup, lineAxis, out p2b, out tan2);
 

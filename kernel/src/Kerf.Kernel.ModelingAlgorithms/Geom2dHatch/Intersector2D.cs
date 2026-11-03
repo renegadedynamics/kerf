@@ -96,11 +96,11 @@ public sealed class Intersector2D : GInter, IIntersector<CurveAdaptor2D>
         TwoDDomain dl = new();
         if (p != RealLast())
         {
-            dl.SetValues(l.Location(), 0.0, tol, global::Kerf.Engine.Geometry.ElCLib.Value(p, l), p, tol);
+            dl.SetValues(l.Location, 0.0, tol, global::Kerf.Engine.Geometry.ElCLib.Value(p, l), p, tol);
         }
         else
         {
-            dl.SetValues(l.Location(), 0.0, tol, true);
+            dl.SetValues(l.Location, 0.0, tol, true);
         }
 
         TwoDDomain de = new(c.Value(c.FirstParameter()),
@@ -142,7 +142,7 @@ public sealed class Intersector2D : GInter, IIntersector<CurveAdaptor2D>
         else
         {
             norm = new Direction2D();
-            norm = norm.WithCoord(tang.Y(), -tang.X());
+            norm = norm.WithCoord(tang.Y, -tang.X);
         }
     }
 }

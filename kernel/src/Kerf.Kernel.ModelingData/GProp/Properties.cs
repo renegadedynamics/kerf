@@ -91,7 +91,7 @@ public class Properties
         {
             throw new DomainErrorException();
         }
-        if (_loc.Distance(item._loc) <= Constants.Resolution())
+        if (_loc.DistanceTo(item._loc) <= Constants.Resolution())
         {
             Xyz gxyz = (item._g.XYZ()).Multiplied(item._dim * density);
             _g = _g.WithXYZ(_g.XYZ().Multiplied(_dim));
@@ -177,16 +177,16 @@ public class Properties
         // 3] then computes the scalar product between this vector and
         //    A.Direction()
 
-        if (_loc.Distance(a.Location()) <= Constants.Resolution())
+        if (_loc.DistanceTo(a.Location) <= Constants.Resolution())
         {
-            return (a.Direction().XYZ()).Dot((a.Direction().XYZ()).Multiplied(_inertia));
+            return (a.Direction.XYZ()).Dot((a.Direction.XYZ()).Multiplied(_inertia));
         }
         else
         {
             Matrix3x3 axisInertia = MatrixOfInertia();
-            global::Kerf.Engine.Measurement.GProp.HOperator(new Point3D(_loc.XYZ() + _g.XYZ()), a.Location(), _dim, out Matrix3x3 hMat);
+            global::Kerf.Engine.Measurement.GProp.HOperator(new Point3D(_loc.XYZ() + _g.XYZ()), a.Location, _dim, out Matrix3x3 hMat);
             axisInertia = axisInertia + hMat;
-            return (a.Direction().XYZ()).Dot((a.Direction().XYZ()).Multiplied(axisInertia));
+            return (a.Direction.XYZ()).Dot((a.Direction.XYZ()).Multiplied(axisInertia));
         }
     }
 

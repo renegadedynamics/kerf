@@ -52,10 +52,10 @@ public class ExtElCS
         _isPar = false;
         _nbExt = 0;
 
-        if (c.Direction().IsNormal(s.Axis().Direction(), global::Kerf.Engine.Foundation.Precision.Angular()))
+        if (c.Direction.IsNormal(s.Axis.Direction, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             _sqDist = new NCollection_HArray1<double>(1, 1);
-            _sqDist.SetValue(1, s.SquareDistance(c));
+            _sqDist.SetValue(1, s.SquareDistanceTo(c));
             _isPar = true;
             _nbExt = 1;
         }
@@ -73,12 +73,12 @@ public class ExtElCS
         _nbExt = 0;
         _isPar = false;
 
-        CoordinateSystem pos = s.Position();
+        CoordinateSystem pos = s.Position;
 
         bool isParallel = false;
 
-        double radius = s.Radius();
-        ExtElC extrem = new(new Line3D(pos.Axis()), c, global::Kerf.Engine.Foundation.Precision.Angular());
+        double radius = s.Radius;
+        ExtElC extrem = new(new Line3D(pos.Axis), c, global::Kerf.Engine.Foundation.Precision.Angular());
         if (extrem.IsParallel)
         {
             isParallel = true;
@@ -93,7 +93,7 @@ public class ExtElCS
             Point3D pc = myPOnC2.Value();
 
             // line intersects the cylinder
-            if (radius - ponAxis.Distance(pc) > global::Kerf.Engine.Foundation.Precision.PConfusion())
+            if (radius - ponAxis.DistanceTo(pc) > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 Quadric theQuadric = new(s);
                 IntConicQuad inters = new(c, theQuadric);
@@ -140,7 +140,7 @@ public class ExtElCS
                     {
                         _point1.SetValue(i, myPOnC2);
                         _point2.SetValue(i, exPS.Point(i));
-                        _sqDist.SetValue(i, (myPOnC2.Value()).SquareDistance(exPS.Point(i).Value()));
+                        _sqDist.SetValue(i, (myPOnC2.Value()).SquareDistanceTo(exPS.Point(i).Value()));
                     }
                 }
             }
@@ -208,7 +208,7 @@ public class ExtElCS
         _isPar = false;
         int startIdx = 0;
 
-        Point3D center = s.Location();
+        Point3D center = s.Location;
 
         ExtPElC extrem = new(center, c, global::Kerf.Engine.Foundation.Precision.Angular(), RealFirst(), RealLast());
 
@@ -216,7 +216,7 @@ public class ExtElCS
         if (extrem.IsDone && extrem.ExtCount > 0)
         {
             POnCurv myPOnC1 = extrem.Point(1);
-            if (myPOnC1.Value().Distance(center) <= s.Radius())
+            if (myPOnC1.Value().DistanceTo(center) <= s.Radius)
             {
                 IntConicQuad linSphere = new(c, new Quadric(s));
                 if (linSphere.IsDone)
@@ -238,7 +238,7 @@ public class ExtElCS
 
                         _point1.SetValue(i, cPnt);
                         _point2.SetValue(i, sPnt);
-                        _sqDist.SetValue(i, (cPnt.Value()).SquareDistance(sPnt.Value()));
+                        _sqDist.SetValue(i, (cPnt.Value()).SquareDistanceTo(sPnt.Value()));
                     }
                 }
             }
@@ -262,7 +262,7 @@ public class ExtElCS
                 {
                     _point1!.SetValue(i, myPOnC1);
                     _point2!.SetValue(i, exPS.Point(i - startIdx));
-                    _sqDist!.SetValue(i, (myPOnC1.Value()).SquareDistance(exPS.Point(i - startIdx).Value()));
+                    _sqDist!.SetValue(i, (myPOnC1.Value()).SquareDistanceTo(exPS.Point(i - startIdx).Value()));
                 }
             }
         }
@@ -297,9 +297,9 @@ public class ExtElCS
         _isPar = false;
         _nbExt = 0;
 
-        Frame3D pos = c.Position();
-        Direction3D nCirc = pos.Direction();
-        Direction3D nPln = s.Axis().Direction();
+        Frame3D pos = c.Position;
+        Direction3D nCirc = pos.Direction;
+        Direction3D nPln = s.Axis.Direction;
 
         bool isParallel = false;
 
@@ -312,7 +312,7 @@ public class ExtElCS
             Direction3D extLine = nCirc ^ nPln;
             extLine = extLine ^ nCirc;
             //
-            Direction3D xDir = pos.XDirection();
+            Direction3D xDir = pos.XDirection;
             Span<double> T = stackalloc double[2];
             T[0] = xDir.AngleWithRef(extLine, nCirc);
             if (T[0] < 0.0)
@@ -351,14 +351,14 @@ public class ExtElCS
                 POnSurf pOnS = new();
                 for (i = 0; i < 2; ++i)
                 {
-                    pc = global::Kerf.Engine.Geometry.ElCLib.CircleValue(T[i], c.Position(), c.Radius());
+                    pc = global::Kerf.Engine.Geometry.ElCLib.CircleValue(T[i], c.Position, c.Radius);
                     pOnC.SetValues(T[i], pc);
                     _point1.SetValue(i + 1, pOnC);
-                    global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(s.Position(), pc, out u, out v);
-                    pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, s.Position());
+                    global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(s.Position, pc, out u, out v);
+                    pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, s.Position);
                     pOnS.SetParameters(u, v, pp);
                     _point2.SetValue(i + 1, pOnS);
-                    _sqDist.SetValue(i + 1, pc.SquareDistance(pp));
+                    _sqDist.SetValue(i + 1, pc.SquareDistanceTo(pp));
                 }
                 //
                 if (_nbExt > 2)
@@ -367,14 +367,14 @@ public class ExtElCS
                     for (i = 1; i <= inter.PointCount; ++i)
                     {
                         double t = inter.ParamOnConic(i);
-                        pc = global::Kerf.Engine.Geometry.ElCLib.CircleValue(t, c.Position(), c.Radius());
+                        pc = global::Kerf.Engine.Geometry.ElCLib.CircleValue(t, c.Position, c.Radius);
                         pOnC.SetValues(t, pc);
                         _point1.SetValue(i + 2, pOnC);
-                        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(s.Position(), pc, out u, out v);
-                        pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, s.Position());
+                        global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(s.Position, pc, out u, out v);
+                        pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, s.Position);
                         pOnS.SetParameters(u, v, pp);
                         _point2.SetValue(i + 2, pOnS);
-                        _sqDist.SetValue(i + 2, pc.SquareDistance(pp));
+                        _sqDist.SetValue(i + 2, pc.SquareDistanceTo(pp));
                     }
                 }
             }
@@ -383,7 +383,7 @@ public class ExtElCS
         if (isParallel)
         {
             _sqDist = new NCollection_HArray1<double>(1, 1);
-            _sqDist.SetValue(1, s.SquareDistance(c.Location()));
+            _sqDist.SetValue(1, s.SquareDistanceTo(c.Location));
             _isPar = true;
             _nbExt = 1;
         }
@@ -404,7 +404,7 @@ public class ExtElCS
         _nbExt = 0;
 
         // Get an axis line of the cylinder.
-        Line3D axis = new(s.Axis());
+        Line3D axis = new(s.Axis);
 
         // Compute extrema between the circle and the line.
         ExtElC extC = new(axis, c, 0.0);
@@ -426,7 +426,7 @@ public class ExtElCS
             int i;
             int curI = 1;
             double tolConf = global::Kerf.Engine.Foundation.Precision.Confusion();
-            double cylRad = s.Radius();
+            double cylRad = s.Radius;
 
             // Check whether two objects have intersection points
             Quadric cylQuad = new(s);
@@ -535,7 +535,7 @@ public class ExtElCS
                 }
             }
 
-            dist = Math.Sqrt(dist) - s.Radius();
+            dist = Math.Sqrt(dist) - s.Radius;
             _sqDist.SetValue(1, dist * dist);
         }
     }
@@ -568,7 +568,7 @@ public class ExtElCS
         _isPar = false;
         _nbExt = 0;
 
-        if (new Line3D(c.Axis()).SquareDistance(s.Location()) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
+        if (new Line3D(c.Axis).SquareDistanceTo(s.Location) < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             // Circle and sphere are parallel
             _isPar = true;
@@ -576,16 +576,16 @@ public class ExtElCS
             _nbExt = 1;
 
             // Compute distance from circle to the sphere
-            double sqDistLoc = c.Location().SquareDistance(s.Location());
-            double sqDist = sqDistLoc + c.Radius() * c.Radius();
-            double dist = Math.Sqrt(sqDist) - s.Radius();
+            double sqDistLoc = c.Location.SquareDistanceTo(s.Location);
+            double sqDist = sqDistLoc + c.Radius * c.Radius;
+            double dist = Math.Sqrt(sqDist) - s.Radius;
             _sqDist = new NCollection_HArray1<double>(1, 1);
             _sqDist.SetValue(1, dist * dist);
             return;
         }
 
         // Intersect sphere with circle's plane
-        Plane3D cPln = new(c.Location(), c.Axis().Direction());
+        Plane3D cPln = new(c.Location, c.Axis.Direction);
         QuadQuadGeo inter = new(cPln, s);
         if (!inter.IsDone)
         {
@@ -606,7 +606,7 @@ public class ExtElCS
             _point2 = new NCollection_HArray1<POnSurf>(1, 1);
 
             // Compute parameter on circle
-            double t = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, s.Location());
+            double t = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, s.Location);
             // Compute point on circle
             Point3D pOnC = global::Kerf.Engine.Geometry.ElCLib.Value(t, c);
 
@@ -619,7 +619,7 @@ public class ExtElCS
             // Save solution
             _point1.SetValue(1, new POnCurv(t, pOnC));
             _point2.SetValue(1, new POnSurf(u, v, pOnS));
-            _sqDist.SetValue(1, pOnC.SquareDistance(pOnS));
+            _sqDist.SetValue(1, pOnC.SquareDistanceTo(pOnS));
             return;
         }
 
@@ -687,7 +687,7 @@ public class ExtElCS
             // Save solution
             _point1.SetValue(iSol, p1);
             _point2.SetValue(iSol, new POnSurf(u, v, pOnS));
-            _sqDist.SetValue(iSol, p1.Value().SquareDistance(pOnS));
+            _sqDist.SetValue(iSol, p1.Value().SquareDistanceTo(pOnS));
         }
     }
 
@@ -717,39 +717,39 @@ public class ExtElCS
         _isPar = false;
         _nbExt = 0;
 
-        Frame3D pos = c.Position();
-        Direction3D nHypr = pos.Direction();
-        Direction3D nPln = s.Axis().Direction();
+        Frame3D pos = c.Position;
+        Direction3D nHypr = pos.Direction;
+        Direction3D nPln = s.Axis.Direction;
 
         if (nHypr.IsParallel(nPln, global::Kerf.Engine.Foundation.Precision.Angular()))
         {
             _sqDist = new NCollection_HArray1<double>(1, 1);
-            _sqDist.SetValue(1, s.SquareDistance(c.Location()));
+            _sqDist.SetValue(1, s.SquareDistanceTo(c.Location));
             _isPar = true;
             _nbExt = 1;
         }
         else
         {
-            Direction3D xDir = pos.XDirection();
-            Direction3D yDir = pos.YDirection();
+            Direction3D xDir = pos.XDirection;
+            Direction3D yDir = pos.YDirection;
 
-            double a = c.MinorRadius() * (nPln.Dot(yDir));
-            double b = c.MajorRadius() * (nPln.Dot(xDir));
+            double a = c.MinorRadius * (nPln.Dot(yDir));
+            double b = c.MajorRadius * (nPln.Dot(xDir));
 
             if (Math.Abs(b) > Math.Abs(a))
             {
                 double t = -0.5 * Math.Log((a + b) / (b - a));
-                Point3D ph = global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(t, pos, c.MajorRadius(), c.MinorRadius());
+                Point3D ph = global::Kerf.Engine.Geometry.ElCLib.HyperbolaValue(t, pos, c.MajorRadius, c.MinorRadius);
                 POnCurv pc = new(t, ph);
                 _point1 = new NCollection_HArray1<POnCurv>(1, 1);
                 _point1.SetValue(1, pc);
 
                 _sqDist = new NCollection_HArray1<double>(1, 1);
-                _sqDist.SetValue(1, s.SquareDistance(ph));
+                _sqDist.SetValue(1, s.SquareDistanceTo(ph));
 
                 double u, v;
-                global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(s.Position(), ph, out u, out v);
-                Point3D pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, s.Position());
+                global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(s.Position, ph, out u, out v);
+                Point3D pp = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(u, v, s.Position);
                 POnSurf ps = new(u, v, pp);
                 _point2 = new NCollection_HArray1<POnSurf>(1, 1);
                 _point2.SetValue(1, ps);

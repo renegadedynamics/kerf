@@ -111,7 +111,7 @@ public class DiscreteTrihedron : TrihedronLaw
         {
             double param = _knots.Value(i);
             _trimmed.D1(param, out Point3D pnt, out Vector3D tangent);
-            norm = tangent.Magnitude();
+            norm = tangent.Magnitude;
             if (norm < TolConf)
             {
                 double subdelta = (_knots.Value(i + 1) - _knots.Value(i)) / nbSamples;
@@ -133,9 +133,9 @@ public class DiscreteTrihedron : TrihedronLaw
             else
             {
                 Frame3D lastAxis = _trihedrons.Value(_trihedrons.Length());
-                Vector3D lastTangent = new Vector3D(lastAxis.Direction());
+                Vector3D lastTangent = new Vector3D(lastAxis.Direction);
                 Vector3D axisOfRotation = lastTangent ^ tangent;
-                if (axisOfRotation.Magnitude() <= Constants.Resolution()) // tangents are equal or opposite
+                if (axisOfRotation.Magnitude <= Constants.Resolution()) // tangents are equal or opposite
                 {
                     double scalarProduct = lastTangent * tangent;
                     if (scalarProduct > 0.0)
@@ -216,7 +216,7 @@ public class DiscreteTrihedron : TrihedronLaw
             else //<Param> is between knots
             {
                 _trimmed!.D1(param, out _point, out tangent);
-                double norm = tangent.Magnitude();
+                double norm = tangent.Magnitude;
                 if (norm < TolConf)
                 {
                     double subdelta = (_knots.Value(index + 1) - param) / nbSamples;
@@ -230,9 +230,9 @@ public class DiscreteTrihedron : TrihedronLaw
 
                 Direction3D tangDir = new Direction3D(tangent); // normalize;
                 tangent = new Vector3D(tangDir);
-                Vector3D prevTangent = new Vector3D(prevAxis.Direction());
+                Vector3D prevTangent = new Vector3D(prevAxis.Direction);
                 Vector3D axisOfRotation = prevTangent ^ tangent;
-                if (axisOfRotation.Magnitude() <= Constants.Resolution()) // tangents are equal
+                if (axisOfRotation.Magnitude <= Constants.Resolution()) // tangents are equal
                 {
                     // we assume that tangents can not be opposite
                     theAxis = prevAxis;
@@ -246,9 +246,9 @@ public class DiscreteTrihedron : TrihedronLaw
                 theAxis = theAxis.WithDirection(tangDir); // to prevent accumulation of floating computations error
             } // end of else (Param is between knots)
 
-            tangent = new Vector3D(theAxis.Direction());
-            normal = new Vector3D(theAxis.XDirection());
-            biNormal = new Vector3D(theAxis.YDirection());
+            tangent = new Vector3D(theAxis.Direction);
+            normal = new Vector3D(theAxis.XDirection);
+            biNormal = new Vector3D(theAxis.YDirection);
         }
         return true;
     }

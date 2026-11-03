@@ -118,7 +118,7 @@ public sealed class AsDes : Transient
         {
             if (it.Value().IsSame(oldS))
             {
-                Orientation o = it.Value().Orientation();
+                Orientation o = it.Value().Orientation;
                 if (ms.Add(newS.Oriented(o)))
                 {
                     l.InsertBefore(newS.Oriented(o), it);

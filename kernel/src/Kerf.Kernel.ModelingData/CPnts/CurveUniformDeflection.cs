@@ -70,7 +70,7 @@ public sealed class CurveUniformDeflection
     {
         ((Curve2DAdaptorBase)c).D0(u, out Point2D p);
         pp = new Point3D();
-        pp = pp.WithCoord(p.X(), p.Y(), 0.0);
+        pp = pp.WithCoord(p.X, p.Y, 0.0);
     }
 
     private static void D23d(object c, double u, out Point3D p, out Vector3D v1, out Vector3D v2)
@@ -84,9 +84,9 @@ public sealed class CurveUniformDeflection
         pp = new Point3D();
         vv1 = new Vector3D();
         vv2 = new Vector3D();
-        pp = pp.WithCoord(p.X(), p.Y(), 0.0);
-        vv1 = vv1.WithCoord(v1.X(), v1.Y(), 0.0);
-        vv2 = vv2.WithCoord(v2.X(), v2.Y(), 0.0);
+        pp = pp.WithCoord(p.X, p.Y, 0.0);
+        vv1 = vv1.WithCoord(v1.X, v1.Y, 0.0);
+        vv2 = vv2.WithCoord(v2.X, v2.Y, 0.0);
     }
 
     private void Perform()
@@ -115,8 +115,8 @@ public sealed class CurveUniformDeflection
                 D22d(_curve!, _firstParam, out _points[_nbPoints], out v1, out v2);
             }
             p = _points[_nbPoints];
-            normD1 = v1.Magnitude();
-            if (normD1 < _tolCur || v2.Magnitude() < _tolCur)
+            normD1 = v1.Magnitude;
+            if (normD1 < _tolCur || v2.Magnitude < _tolCur)
             {
                 // singularity on the tangent or null curvature
                 _du = Min(_dwmax, 1.5 * _du);
@@ -151,7 +151,7 @@ public sealed class CurveUniformDeflection
                     D02d(_curve!, _firstParam + (_du / 2.0), out p1);
                 }
                 v1 = new Vector3D(_points[_nbPoints], p);
-                normD1 = v1.Magnitude();
+                normD1 = v1.Magnitude;
                 if (normD1 >= _deflection)
                 {
                     v2 = new Vector3D(_points[_nbPoints], p1);
@@ -207,7 +207,7 @@ public sealed class CurveUniformDeflection
                     }
                     p = _points[0];
                     vv = new Vector3D(p1, p);
-                    normD1 = vv.Magnitude();
+                    normD1 = vv.Magnitude;
                     if (normD1 < _deflection)
                     {
                         _params[1] = _lastParam;

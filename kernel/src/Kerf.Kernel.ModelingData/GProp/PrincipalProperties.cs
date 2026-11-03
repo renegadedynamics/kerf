@@ -147,6 +147,6 @@ public partial struct PrincipalProperties : IEquatable<PrincipalProperties>
         => !left.Equals(right);
 
     public override readonly string ToString()
-        => Constants.Format("GProp_PrincipalProps", _i1, _i2, _i3, _r1, _r2, _r3, _v1.X(), _v1.Y(), _v1.Z(), _v2.X(), _v2.Y(), _v2.Z(),
-                     _v3.X(), _v3.Y(), _v3.Z(), _g.X(), _g.Y(), _g.Z());
+        => Constants.Format("GProp_PrincipalProps", _i1, _i2, _i3, _r1, _r2, _r3, _v1.X, _v1.Y, _v1.Z, _v2.X, _v2.Y, _v2.Z,
+                     _v3.X, _v3.Y, _v3.Z, _g.X, _g.Y, _g.Z);
 }

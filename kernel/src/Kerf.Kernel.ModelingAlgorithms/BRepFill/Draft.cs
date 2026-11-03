@@ -153,7 +153,7 @@ public sealed class Draft
         Vector3D v = new(p1, p2);
 
         law.CurvilinearBounds(law.LawCount, out f, out l);
-        r = v.Magnitude() / l;
+        r = v.Magnitude / l;
 
         int ii, ind;
         int nb = (int)(4 + (10 * r));
@@ -203,7 +203,7 @@ public sealed class Draft
         _faces = null;
         _sections = null;
 
-        switch (s.ShapeType())
+        switch (s.Type)
         {
             case ShapeType.Wire:
             {
@@ -262,7 +262,7 @@ public sealed class Draft
         }
 
         // Attention to closed non declared wires !
-        if (!_wire.Closed())
+        if (!_wire.IsClosed)
         {
             Exploration.Vertices(_wire, out Vertex vf, out Vertex vl);
             if (vf.IsSame(vl))
@@ -451,7 +451,7 @@ public sealed class Draft
         _loc.Law(1).D0((f + l) / 2, ref m, ref bid);
         Direction3D bn = new(m.Column(2));
 
-        double ang = _dir.Angle(bn);
+        double ang = _dir.AngleTo(bn);
         if (ang > M_PI / 2)
         {
             d = d.Reversed();
@@ -502,13 +502,13 @@ public sealed class Draft
             v = sf.FirstVParameter();
             sf.D1(u, v, out Point3D p, out Vector3D v1, out Vector3D v2);
             V = v1.Crossed(v2);
-            if (f.Orientation() == Reversed)
+            if (f.Orientation == Reversed)
             {
                 V = V.Reversed();
             }
-            if (V.Magnitude() > 1.0e-10)
+            if (V.Magnitude > 1.0e-10)
             {
-                @out = _dir.Angle(new Direction3D(V)) > M_PI / 2;
+                @out = _dir.AngleTo(new Direction3D(V)) > M_PI / 2;
             }
             if (@out == _isInternal)
             {
@@ -545,7 +545,7 @@ public sealed class Draft
         Solid sol1 = new(), sol2 = new();
         Containment state1 = Out, state2 = Out;
 
-        if (_shape.ShapeType() == ShapeType.Solid)
+        if (_shape.Type == ShapeType.Solid)
         {
             sol1 = ShapeCasts.Solid(_shape);
             issolid = true;
@@ -556,7 +556,7 @@ public sealed class Draft
             b.Add(sol1, _shape); // shell => solid (for fusion)
         }
 
-        switch (stopShape.ShapeType())
+        switch (stopShape.Type)
         {
             case ShapeType.Compound:
             {
@@ -614,7 +614,7 @@ public sealed class Draft
             return false;
         }
 
-        if (stopShape.ShapeType() != ShapeType.Solid)
+        if (stopShape.Type != ShapeType.Solid)
         {
             // It is required to choose the state by the geometry
 
@@ -656,22 +656,22 @@ public sealed class Draft
                 // Find a normal.
                 // OCCT dereferences the second pcurve without a check.
                 c2d!.D0((f + l) / 2, out Point2D p2d);
-                SLProps sp = new(s!, p2d.X(), p2d.Y(), 1, 1.0e-12);
+                SLProps sp = new(s!, p2d.X, p2d.Y, 1, 1.0e-12);
                 if (!sp.IsNormalDefined)
                 {
                     c2d.D0((3 * f + l) / 4, out p2d);
-                    sp.SetParameters(p2d.X(), p2d.Y());
+                    sp.SetParameters(p2d.X, p2d.Y);
                     if (!sp.IsNormalDefined)
                     {
                         c2d.D0((f + 3 * l) / 4, out p2d);
-                        sp.SetParameters(p2d.X(), p2d.Y());
+                        sp.SetParameters(p2d.X, p2d.Y);
                     }
                 }
 
                 if (sp.IsNormalDefined)
                 {
                     // Subtract State1
-                    if (_dir.Angle(sp.Normal()) < M_PI / 2)
+                    if (_dir.AngleTo(sp.Normal()) < M_PI / 2)
                     {
                         state1 = In;
                     }
@@ -849,7 +849,7 @@ public sealed class Draft
     {
         bool toAss;
         bool ok = false;
-        toAss = (_top.ShapeType() != ShapeType.Wire);
+        toAss = (_top.Type != ShapeType.Wire);
 
         if ((!toAss) || (!_done))
         {
@@ -872,12 +872,12 @@ public sealed class Draft
         {
             Shape res;
             res = ass.InternalSewedShape();
-            if ((res.ShapeType() == global::Kerf.Topology.ShapeType.Shell) || (res.ShapeType() == ShapeType.Solid))
+            if ((res.Type == global::Kerf.Topology.ShapeType.Shell) || (res.Type == ShapeType.Solid))
             {
                 _shape = res;
                 ok = true;
             }
-            else if (res.ShapeType() == ShapeType.Compound)
+            else if (res.Type == ShapeType.Compound)
             {
                 Iterator it = new(res);
                 res = it.Value();
@@ -909,7 +909,7 @@ public sealed class Draft
                 }
             }
 
-            if (_shape.Closed())
+            if (_shape.IsClosed)
             { // Make a Solid
                 Solid solid = new();
                 BrepBuilder bs = new();

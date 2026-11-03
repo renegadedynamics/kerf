@@ -68,7 +68,7 @@ public class BOPAlgo_MakerVolumeTests
         MakerVolume aMV = Make(Faces(BoxA(), BoxB()));
         Assert.False(aMV.HasErrors);
         Shape aR = aMV.Shape();
-        Assert.Equal(ShapeType.Compound, aR.ShapeType());
+        Assert.Equal(ShapeType.Compound, aR.Type);
         Assert.Equal(3, Count(aR, ShapeType.Solid));
         Assert.Equal(1875.0, Volume(aR), 1.0e-6);
         Assert.True(aR.TShape()!.IsFrozen);
@@ -79,7 +79,7 @@ public class BOPAlgo_MakerVolumeTests
     {
         MakerVolume aMV = Make(Faces(BoxA()));
         Shape aR = aMV.Shape();
-        Assert.Equal(ShapeType.Solid, aR.ShapeType());
+        Assert.Equal(ShapeType.Solid, aR.Type);
         Assert.Equal(1000.0, Volume(aR), 1.0e-6);
         Assert.False(aMV.Box().IsNull);
     }

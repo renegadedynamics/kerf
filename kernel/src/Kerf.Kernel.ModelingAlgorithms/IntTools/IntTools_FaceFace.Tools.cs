@@ -91,7 +91,7 @@ public partial class FaceFace
         Surface surface;
         //
         surface = Tool.Surface(face)!;
-        surface.Bounds(out uinf, out usup, out vinf, out vsup);
+        surface.ParameterBounds(out uinf, out usup, out vinf, out vsup);
         delta = tolerance;
         enlarge = false;
         //
@@ -99,7 +99,7 @@ public partial class FaceFace
         //
         if (surface is TrimmedSurface trimmed)
         {
-            Surface basisSurface = trimmed.BasisSurface();
+            Surface basisSurface = trimmed.BasisSurface;
 
             if (basisSurface is TrimmedSurface || basisSurface is global::Kerf.Geometry.OffsetSurface)
             {
@@ -109,7 +109,7 @@ public partial class FaceFace
         //
         if (surface is global::Kerf.Geometry.OffsetSurface offset)
         {
-            Surface basisSurface = offset.BasisSurface();
+            Surface basisSurface = offset.BasisSurface;
 
             if (basisSurface is TrimmedSurface || basisSurface is global::Kerf.Geometry.OffsetSurface)
             {
@@ -193,11 +193,11 @@ public partial class FaceFace
                     {
                         if (i == 0)
                         {
-                            edge.Orientation(Forward);
+                            edge.Orient(Forward);
                         }
                         else
                         {
-                            edge.Orientation(Reversed);
+                            edge.Orient(Reversed);
                         }
                         Curve2D? curve = Tool.CurveOnSurface(edge, face, out f, out l);
 
@@ -217,8 +217,8 @@ public partial class FaceFace
                         Direction2D vDir = new(Direction2D.D.Y);
                         double angularTolerance = global::Kerf.Engine.Foundation.Precision.Angular();
 
-                        correctU = correctU || line.Position().Direction().IsParallel(vDir, angularTolerance);
-                        correctV = correctV || line.Position().Direction().IsParallel(uDir, angularTolerance);
+                        correctU = correctU || line.Position.Direction.IsParallel(vDir, angularTolerance);
+                        correctV = correctV || line.Position.Direction.IsParallel(uDir, angularTolerance);
 
                         Point2D pp1 = curve.Value(f);
                         box.Add(pp1);
@@ -283,11 +283,11 @@ public partial class FaceFace
         double u1, u2, v1, v2;
 
         ProjectPointOnSurface prj1 = new();
-        surf1.Bounds(out u1, out u2, out v1, out v2);
+        surf1.ParameterBounds(out u1, out u2, out v1, out v2);
         prj1.Init(surf1, u1, u2, v1, v2);
 
         ProjectPointOnSurface prj2 = new();
-        surf2.Bounds(out u1, out u2, out v1, out v2);
+        surf2.ParameterBounds(out u1, out u2, out v1, out v2);
         prj2.Init(surf2, u1, u2, v1, v2);
 
         while (state == On)
@@ -368,8 +368,8 @@ public partial class FaceFace
 
         if (!pCurve.IsClosed && !pCurve.IsPeriodic)
         {
-            pf = pCurve.FirstParameter();
-            pl = pCurve.LastParameter();
+            pf = pCurve.FirstParameter;
+            pl = pCurve.LastParameter;
             pntf = pCurve.Value(pf);
             pntl = pCurve.Value(pl);
             pca.Load(pCurve);
@@ -401,7 +401,7 @@ public partial class FaceFace
     private static bool ApproxWithPCurves(in Cylinder cyl, in Sphere sph)
     {
         bool bRes = true;
-        double r1 = cyl.Radius(), r2 = sph.Radius();
+        double r1 = cyl.Radius, r2 = sph.Radius;
         //
         {
             double d2, rc2, eps;
@@ -410,22 +410,22 @@ public partial class FaceFace
             eps = 1.0E-7;
             rc2 = r1 * r1;
             //
-            CoordinateSystem ax3Sph = sph.Position();
-            Point3D locSph = ax3Sph.Location();
-            Direction3D dirSph = ax3Sph.Direction();
+            CoordinateSystem ax3Sph = sph.Position;
+            Point3D locSph = ax3Sph.Location;
+            Direction3D dirSph = ax3Sph.Direction;
             //
-            Axis3D ax1Cyl = cyl.Axis();
+            Axis3D ax1Cyl = cyl.Axis;
             Line3D linCyl = new(ax1Cyl);
             //
             apexSph = apexSph.WithXYZ(locSph.XYZ() + r2 * dirSph.XYZ());
-            d2 = linCyl.SquareDistance(apexSph);
+            d2 = linCyl.SquareDistanceTo(apexSph);
             if (Math.Abs(d2 - rc2) < eps)
             {
                 return !bRes;
             }
             //
             apexSph = apexSph.WithXYZ(locSph.XYZ() - r2 * dirSph.XYZ());
-            d2 = linCyl.SquareDistance(apexSph);
+            d2 = linCyl.SquareDistanceTo(apexSph);
             if (Math.Abs(d2 - rc2) < eps)
             {
                 return !bRes;
@@ -437,9 +437,9 @@ public partial class FaceFace
         {
             return bRes;
         }
-        Line3D cylAx = new(cyl.Axis());
+        Line3D cylAx = new(cyl.Axis);
 
-        double dist = cylAx.Distance(sph.Location());
+        double dist = cylAx.DistanceTo(sph.Location);
         double dRel = Math.Abs(dist - r1) / r2;
 
         if (dRel > 0.2)
@@ -447,11 +447,11 @@ public partial class FaceFace
             return bRes;
         }
 
-        double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(cylAx, sph.Location());
+        double par = global::Kerf.Engine.Geometry.ElCLib.Parameter(cylAx, sph.Location);
         Point3D p = global::Kerf.Engine.Geometry.ElCLib.Value(par, cylAx);
-        Vector3D v = new(p, sph.Location());
+        Vector3D v = new(p, sph.Location);
 
-        double dd = v.Dot(new Vector3D(sph.Position().XDirection()));
+        double dd = v.Dot(new Vector3D(sph.Position.XDirection));
 
         if (dist < r1 && dd > 0.0)
         {
@@ -583,9 +583,9 @@ public partial class FaceFace
         double angle, dt;
         Direction3D d1, d2;
         //
-        d1 = pln1.Position().Direction();
-        d2 = pln2.Position().Direction();
-        angle = d1.Angle(d2);
+        d1 = pln1.Position.Direction;
+        d2 = pln2.Position.Direction;
+        angle = d1.AngleTo(d2);
         //
         dt = IntersectionTools.ComputeIntRange(tolF1, tolF2, angle);
         double tangTol = Math.Sqrt(dt * dt + tolF1 * tolF1);
@@ -788,8 +788,8 @@ public partial class FaceFace
             cylinder = (ts1 == SurfaceKind.Cylinder) ? aHS1.Cylinder() : aHS2.Cylinder();
             torus = (ts1 == SurfaceKind.Torus) ? aHS1.Torus() : aHS2.Torus();
             //
-            rc = cylinder.Radius();
-            rt = torus.MinorRadius();
+            rc = cylinder.Radius;
+            rt = torus.MinorRadius;
             dR = rc - rt;
             if (dR < 0.0)
             {
@@ -826,8 +826,8 @@ public partial class FaceFace
             cylinder = (ts1 == SurfaceKind.Cylinder) ? aHS1.Cylinder() : aHS2.Cylinder();
             torus = (ts1 == SurfaceKind.Torus) ? aHS1.Torus() : aHS2.Torus();
             //
-            rc = cylinder.Radius();
-            rt = torus.MinorRadius();
+            rc = cylinder.Radius;
+            rt = torus.MinorRadius;
             dR = rc - rt;
             if (dR < 0.0)
             {
@@ -1015,14 +1015,14 @@ public partial class FaceFace
         ctx.UVBounds(aFace, out umin, out umax, out vmin, out vmax);
         double tolU = Max((umax - umin) * 0.01, global::Kerf.Engine.Foundation.Precision.Confusion());
         double tolV = Max((vmax - vmin) * 0.01, global::Kerf.Engine.Foundation.Precision.Confusion());
-        double fp = aPC.FirstParameter();
-        double lp = aPC.LastParameter();
+        double fp = aPC.FirstParameter;
+        double lp = aPC.LastParameter;
 
         // adjust domain for periodic surfaces
         Surface surf = Tool.Surface(aFace, out _)!;
         if (surf is TrimmedSurface trimmed)
         {
-            surf = trimmed.BasisSurface();
+            surf = trimmed.BasisSurface;
         }
         Point2D pnt = aPC.Value((fp + lp) / 2);
         double u, v;
@@ -1030,7 +1030,7 @@ public partial class FaceFace
         //
         if (surf.IsUPeriodic)
         {
-            double per = surf.UPeriod();
+            double per = surf.UPeriod;
             int nshift = (int)((u - umin) / per);
             if (u < umin + per * nshift)
             {
@@ -1041,7 +1041,7 @@ public partial class FaceFace
         }
         if (surf.IsVPeriodic)
         {
-            double per = surf.VPeriod();
+            double per = surf.VPeriod;
             int nshift = (int)((v - vmin) / per);
             if (v < vmin + per * nshift)
             {

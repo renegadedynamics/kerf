@@ -29,8 +29,8 @@ public sealed class MakeSurfaceOfRevolution : GeometryRoot
         StepCurve sweptCurve;
         StepAxis1Placement axisPosition;
 
-        MakeCurve mkSwept = new MakeCurve(s.BasisCurve(), localFactors);
-        MakeAxis1Placement mkAxis1 = new MakeAxis1Placement(s.Axis(), localFactors);
+        MakeCurve mkSwept = new MakeCurve(s.BasisCurve, localFactors);
+        MakeAxis1Placement mkAxis1 = new MakeAxis1Placement(s.Axis, localFactors);
         sweptCurve = mkSwept.Value();
         axisPosition = mkAxis1.Value();
         surf = new StepSurfaceOfRevolution();

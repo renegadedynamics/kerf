@@ -29,7 +29,7 @@ public class GeomConvert_CurveToAnaCurveTests
         Transform3D aT = Transform3D.Transformation(new CoordinateSystem(thePosition), new CoordinateSystem(Constants.XOY()));
         for (int i = aPoles2d.Lower(); i <= aPoles2d.Upper(); i++)
         {
-            aPoles[i] = new Point3D(aPoles2d[i].X(), aPoles2d[i].Y(), 0.0).Transformed(aT);
+            aPoles[i] = new Point3D(aPoles2d[i].X, aPoles2d[i].Y, 0.0).Transformed(aT);
         }
 
         return new BSplineCurve3D(aPoles, theConvert.Weights(), theConvert.Knots(), theConvert.Multiplicities(),
@@ -75,15 +75,15 @@ public class GeomConvert_CurveToAnaCurveTests
         Line3D aLin = CurveToAnaCurve.GetLine(new Point3D(1, 2, 3), new Point3D(1, 2, 7), out double cf, out double cl);
         Assert.Equal(0.0, cf, 12);
         Assert.Equal(4.0, cl, 12);
-        Assert.True(aLin.Direction().IsEqual(new Direction3D(0, 0, 1), 1e-12));
+        Assert.True(aLin.Direction.IsEqual(new Direction3D(0, 0, 1), 1e-12));
 
         var aCirc = new Circle3D();
         var aP0 = new Point3D(3, 1, 0);
         Assert.True(CurveToAnaCurve.GetCircle(ref aCirc, aP0, new Point3D(1, 3, 0), new Point3D(-1, 1, 0)));
-        Assert.Equal(2.0, aCirc.Radius(), 12);
-        Assert.True(aCirc.Location().Distance(new Point3D(1, 1, 0)) < 1e-12);
+        Assert.Equal(2.0, aCirc.Radius, 12);
+        Assert.True(aCirc.Location.DistanceTo(new Point3D(1, 1, 0)) < 1e-12);
         // The X axis points to P0
-        Assert.True(aCirc.XAxis().Direction().IsEqual(new Direction3D(1, 0, 0), 1e-12));
+        Assert.True(aCirc.XAxis.Direction.IsEqual(new Direction3D(1, 0, 0), 1e-12));
 
         var aSame = new Circle3D();
         Assert.False(CurveToAnaCurve.GetCircle(ref aSame, new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0)));
@@ -118,20 +118,20 @@ public class GeomConvert_CurveToAnaCurveTests
     {
         BSplineCurve3D anArc = CircleArc(2.5, 0.4, 2.9);
         double cf = 0, cl = 0, aDev = -1;
-        Curve3D? aRes = CurveToAnaCurve.ComputeCircle(anArc, 1e-7, anArc.FirstParameter(), anArc.LastParameter(),
+        Curve3D? aRes = CurveToAnaCurve.ComputeCircle(anArc, 1e-7, anArc.FirstParameter, anArc.LastParameter,
                                                                      ref cf, ref cl, ref aDev);
         CircleCurve3D aCircle = Assert.IsType<CircleCurve3D>(aRes);
-        Assert.Equal(2.5, aCircle.Radius(), 10);
-        Assert.True(aCircle.Location().Distance(s_Ax2.Location()) < 1e-10);
+        Assert.Equal(2.5, aCircle.Radius, 10);
+        Assert.True(aCircle.Location.DistanceTo(s_Ax2.Location) < 1e-10);
         Assert.True(aDev < 1e-10);
         Assert.Equal(0.0, cf, 12); // the X axis is put at the start point
         Assert.Equal(2.5, cl, 9);
-        Assert.True(aCircle.Value(cl).Distance(anArc.Value(anArc.LastParameter())) < 1e-9);
+        Assert.True(aCircle.Value(cl).DistanceTo(anArc.Value(anArc.LastParameter)) < 1e-9);
 
         // Too strict a tolerance for a perturbed arc
         BSplineCurve3D aPerturbed = anArc.WithPole(3, anArc.Pole(3).Translated(new Vector3D(0.0, 0.0, 0.01)));
-        Assert.Null(CurveToAnaCurve.ComputeCircle(aPerturbed, 1e-5, aPerturbed.FirstParameter(),
-                                                              aPerturbed.LastParameter(), ref cf, ref cl, ref aDev));
+        Assert.Null(CurveToAnaCurve.ComputeCircle(aPerturbed, 1e-5, aPerturbed.FirstParameter,
+                                                              aPerturbed.LastParameter, ref cf, ref cl, ref aDev));
     }
 
     [Fact]
@@ -139,15 +139,15 @@ public class GeomConvert_CurveToAnaCurveTests
     {
         BSplineCurve3D anArc = EllipseArc(3.0, 1.2, 0.3, 2.5);
         double cf = 0, cl = 0, aDev = -1;
-        Curve3D? aRes = CurveToAnaCurve.ComputeEllipse(anArc, 1e-6, anArc.FirstParameter(), anArc.LastParameter(),
+        Curve3D? aRes = CurveToAnaCurve.ComputeEllipse(anArc, 1e-6, anArc.FirstParameter, anArc.LastParameter,
                                                                       ref cf, ref cl, ref aDev);
         EllipseCurve3D anEllipse = Assert.IsType<EllipseCurve3D>(aRes);
-        Assert.Equal(3.0, anEllipse.MajorRadius(), 7);
-        Assert.Equal(1.2, anEllipse.MinorRadius(), 7);
-        Assert.True(anEllipse.Location().Distance(new Point3D(1.0, -2.0, 0.5)) < 1e-7);
+        Assert.Equal(3.0, anEllipse.MajorRadius, 7);
+        Assert.Equal(1.2, anEllipse.MinorRadius, 7);
+        Assert.True(anEllipse.Location.DistanceTo(new Point3D(1.0, -2.0, 0.5)) < 1e-7);
         Assert.True(aDev < 1e-6);
-        Assert.True(anEllipse.Value(cf).Distance(anArc.Value(anArc.FirstParameter())) < 1e-6);
-        Assert.True(anEllipse.Value(cl).Distance(anArc.Value(anArc.LastParameter())) < 1e-6);
+        Assert.True(anEllipse.Value(cf).DistanceTo(anArc.Value(anArc.FirstParameter)) < 1e-6);
+        Assert.True(anEllipse.Value(cl).DistanceTo(anArc.Value(anArc.LastParameter)) < 1e-6);
 
         // A circle is not taken for an ellipse
         BSplineCurve3D aCircle = CircleArc(2.0, 0.0, 2.0);
@@ -161,9 +161,9 @@ public class GeomConvert_CurveToAnaCurveTests
         // (occt-issues.md): the same arc rotated by 60 degrees is not recognised
         BSplineCurve3D anArc = EllipseArc(3.0, 1.2, 0.3, 2.5, Math.PI / 3);
         double cf = 0, cl = 0, aDev = -1;
-        Assert.Null(CurveToAnaCurve.ComputeEllipse(anArc, 1e-6, anArc.FirstParameter(), anArc.LastParameter(),
+        Assert.Null(CurveToAnaCurve.ComputeEllipse(anArc, 1e-6, anArc.FirstParameter, anArc.LastParameter,
                                                                ref cf, ref cl, ref aDev));
-        Assert.Null(CurveToAnaCurve.ComputeEllipse(anArc, 1e-1, anArc.FirstParameter(), anArc.LastParameter(),
+        Assert.Null(CurveToAnaCurve.ComputeEllipse(anArc, 1e-1, anArc.FirstParameter, anArc.LastParameter,
                                                                ref cf, ref cl, ref aDev));
     }
 
@@ -171,7 +171,7 @@ public class GeomConvert_CurveToAnaCurveTests
     public void ComputeCurve_ConversionTypes()
     {
         BSplineCurve3D anEllipse = EllipseArc(3.0, 1.2, 0.3, 2.5);
-        double aU1 = anEllipse.FirstParameter(), aU2 = anEllipse.LastParameter();
+        double aU1 = anEllipse.FirstParameter, aU2 = anEllipse.LastParameter;
         double aGap = 0.0;
 
         Curve3D? aMin = CurveToAnaCurve.ComputeCurve(anEllipse, 1e-6, aU1, aU2, out _, out _, ref aGap);
@@ -209,7 +209,7 @@ public class GeomConvert_CurveToAnaCurveTests
         Curve3D? aRes = null;
         Assert.True(aConv.ConvertToAnalytical(1e-7, ref aRes, 0.7, 1.5, out double aNewF, out double aNewL));
         CircleCurve3D aResCircle = Assert.IsType<CircleCurve3D>(aRes);
-        Assert.Same(aTrimmed.BasisCurve(), aResCircle);
+        Assert.Same(aTrimmed.BasisCurve, aResCircle);
         Assert.Equal(0.7, aNewF);
         Assert.Equal(1.5, aNewL);
         Assert.Equal(0.0, aConv.Gap());
@@ -234,7 +234,7 @@ public class GeomConvert_CurveToAnaCurveTests
         Curve3D? aRes = CurveToAnaCurve.ComputeCurve(aBezier, 1.0e-3, 0.0, 1.0, out _, out _, ref aGap,
                                                                     Target, Line);
         LineCurve3D aLine = Assert.IsType<LineCurve3D>(aRes);
-        Assert.Equal(1.0, Math.Abs(aLine.Lin().Direction().X()), 1e-3);
+        Assert.Equal(1.0, Math.Abs(aLine.Line.Direction.X), 1e-3);
     }
 
     [Fact]
@@ -245,7 +245,7 @@ public class GeomConvert_CurveToAnaCurveTests
         Curve3D? aRes = CurveToAnaCurve.ComputeCurve(aBezier, 1.0e-3, 0.0, 1.0, out _, out _, ref aGap,
                                                                     Target, Circle);
         CircleCurve3D aCircle = Assert.IsType<CircleCurve3D>(aRes);
-        Assert.True(aCircle.Radius() > 0.0);
+        Assert.True(aCircle.Radius > 0.0);
     }
 
     [Fact]
@@ -256,11 +256,11 @@ public class GeomConvert_CurveToAnaCurveTests
         BSplineCurve3D aBSpline = Lift(new EllipseToBSplineCurve(new Ellipse2D(Constants.OX2d(), 1.0, 0.5)), anAx2)
             .WithPeriodic();
         double aGap = 0.0;
-        Curve3D? aRes = CurveToAnaCurve.ComputeCurve(aBSpline, 1.0e-3, aBSpline.FirstParameter(),
-                                                                    aBSpline.LastParameter(), out _, out _, ref aGap,
+        Curve3D? aRes = CurveToAnaCurve.ComputeCurve(aBSpline, 1.0e-3, aBSpline.FirstParameter,
+                                                                    aBSpline.LastParameter, out _, out _, ref aGap,
                                                                     Target, Ellipse);
         EllipseCurve3D anEllipse = Assert.IsType<EllipseCurve3D>(aRes);
-        Assert.Equal(1.0, anEllipse.MajorRadius(), 1e-3);
-        Assert.Equal(0.5, anEllipse.MinorRadius(), 1e-3);
+        Assert.Equal(1.0, anEllipse.MajorRadius, 1e-3);
+        Assert.Equal(0.5, anEllipse.MinorRadius, 1e-3);
     }
 }

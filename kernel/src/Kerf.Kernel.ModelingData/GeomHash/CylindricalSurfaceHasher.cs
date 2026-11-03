@@ -21,8 +21,8 @@ internal readonly struct CylindricalSurfaceHasher(double theCompTolerance, doubl
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
         ReadOnlySpan<ulong> hashes =
         [
-            axisHasher.Hash(cylinder.Position().Ax2()),
-            HashUtils.Hash((long)HashUtils.Round(cylinder.Radius() * factor))
+            axisHasher.Hash(cylinder.Position.Frame),
+            HashUtils.Hash((long)HashUtils.Round(cylinder.Radius * factor))
         ];
         return HashUtils.HashBytes(hashes);
     }
@@ -31,7 +31,7 @@ internal readonly struct CylindricalSurfaceHasher(double theCompTolerance, doubl
     public bool IsEqual(CylindricalSurface cylinder1, CylindricalSurface cylinder2)
     {
         var axisHasher = new AxisPlacement(CompTolerance, HashTolerance);
-        return axisHasher.IsEqual(cylinder1.Position().Ax2(), cylinder2.Position().Ax2())
-               && Math.Abs(cylinder1.Radius() - cylinder2.Radius()) <= CompTolerance;
+        return axisHasher.IsEqual(cylinder1.Position.Frame, cylinder2.Position.Frame)
+               && Math.Abs(cylinder1.Radius - cylinder2.Radius) <= CompTolerance;
     }
 }

@@ -113,10 +113,10 @@ public class FuncPSNorm : FunctionSetWithDerivatives
 
         Vector3D pPs = new(_p, _ps);
 
-        df[1, 1] = dus.SquareMagnitude() + pPs.Dot(duus);
+        df[1, 1] = dus.SquareMagnitude + pPs.Dot(duus);
         df[1, 2] = dvs.Dot(dus) + pPs.Dot(duvs);
         df[2, 1] = df[1, 2];
-        df[2, 2] = dvs.SquareMagnitude() + pPs.Dot(dvvs);
+        df[2, 2] = dvs.SquareMagnitude + pPs.Dot(dvvs);
 
         // 3. Value
         f[1] = pPs.Dot(dus);
@@ -148,7 +148,7 @@ public class FuncPSNorm : FunctionSetWithDerivatives
         {
             return 0;
         }
-        _sqDist.Append(_ps.SquareDistance(_p));
+        _sqDist.Append(_ps.SquareDistanceTo(_p));
         _point.Append(new POnSurf(_u, _v, _ps));
         return 0;
     }

@@ -20,7 +20,7 @@ public sealed class MakeMirror2d
     public MakeMirror2d(in Axis2D axis) => _theMirror2d = _theMirror2d.WithMirror(axis);
 
     /// <summary>An axial symmetry about a line.</summary>
-    public MakeMirror2d(in Line2D line) => _theMirror2d = _theMirror2d.WithMirror(new Axis2D(line.Location(), line.Direction()));
+    public MakeMirror2d(in Line2D line) => _theMirror2d = _theMirror2d.WithMirror(new Axis2D(line.Location, line.Direction));
 
     /// <summary>An axial symmetry about the axis through a point with a direction.</summary>
     public MakeMirror2d(in Point2D point, in Direction2D direc) => _theMirror2d = _theMirror2d.WithMirror(new Axis2D(point, direc));

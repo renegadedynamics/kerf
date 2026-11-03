@@ -53,7 +53,7 @@ internal static class TestShapes
         var aB = new BrepBuilder();
         Point3D aP1 = theC.Value(p1), aP2 = theC.Value(p2);
         Vertex aV1 = Vertex(aP1);
-        Vertex aV2 = aP1.Distance(aP2) <= global::Kerf.Engine.Foundation.Precision.Confusion() ? aV1 : Vertex(aP2);
+        Vertex aV2 = aP1.DistanceTo(aP2) <= global::Kerf.Engine.Foundation.Precision.Confusion() ? aV1 : Vertex(aP2);
         return Edge(theC, p1, p2, aV1, aV2);
     }
 
@@ -71,13 +71,13 @@ internal static class TestShapes
 
     /// <summary>A segment from <paramref name="theP1"/> to <paramref name="theP2"/> (a line parametrised by length).</summary>
     public static Edge Edge(in Point3D theP1, in Point3D theP2)
-        => Edge(new LineCurve3D(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0.0, theP1.Distance(theP2));
+        => Edge(new LineCurve3D(theP1, new Direction3D(new Vector3D(theP1, theP2))), 0.0, theP1.DistanceTo(theP2));
 
     /// <summary>A segment between two vertices.</summary>
     public static Edge Edge(in Vertex theV1, in Vertex theV2)
     {
         Point3D aP1 = Tool.Pnt(theV1), aP2 = Tool.Pnt(theV2);
-        return Edge(new LineCurve3D(aP1, new Direction3D(new Vector3D(aP1, aP2))), 0.0, aP1.Distance(aP2), theV1, theV2);
+        return Edge(new LineCurve3D(aP1, new Direction3D(new Vector3D(aP1, aP2))), 0.0, aP1.DistanceTo(aP2), theV1, theV2);
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ internal static class TestShapes
         var aB = new BrepBuilder();
         Point3D aP0 = Tool.Pnt(theVertices[theIndices[0]]);
         PlaneSurface aPlane = thePlane ?? new PlaneSurface(aP0, theNormal);
-        Plane3D aPln = aPlane.Pln();
+        Plane3D aPln = aPlane.Plane;
         Face aF = new Face();
         aB.MakeFace(ref aF, aPlane, global::Kerf.Engine.Foundation.Precision.Confusion());
         Wire aW = new Wire();

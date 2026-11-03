@@ -110,7 +110,7 @@ public class ExtPC2d
         else
         {
             _pf = Curve2dTool.Value(_c!, _myuinf);
-            _mydist1 = p.SquareDistance(_pf);
+            _mydist1 = p.SquareDistanceTo(_pf);
         }
 
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(_myusup))
@@ -120,7 +120,7 @@ public class ExtPC2d
         else
         {
             _pl = Curve2dTool.Value(_c!, _myusup);
-            _mydist2 = p.SquareDistance(_pl);
+            _mydist2 = p.SquareDistanceTo(_pl);
         }
 
         Curve2DAdaptorBase curve = _c!;
@@ -213,7 +213,7 @@ public class ExtPC2d
                     lastUsedKnot = firstIdx + 1;
                 }
 
-                _mysample = bSpline.Degree() + 1;
+                _mysample = bSpline.Degree + 1;
 
                 if (_mysample == 2)
                 {
@@ -242,7 +242,7 @@ public class ExtPC2d
                         double val2 = v.Dot(base2);
                         if (idx == firstUsedKnot)
                         {
-                            min1 = p.SquareDistance(p1);
+                            min1 = p.SquareDistanceTo(p1);
                         }
                         else
                         {
@@ -254,7 +254,7 @@ public class ExtPC2d
                                 pmin = p1;
                             }
                         }
-                        min2 = p.SquareDistance(p2);
+                        min2 = p.SquareDistanceTo(p2);
                         double minSqDist = Min(min1, min2);
                         double minDer = Min(Math.Abs(val1), Math.Abs(val2));
                         if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(val1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(val2)))
@@ -308,12 +308,12 @@ public class ExtPC2d
                         for (int pntIdx = 0; pntIdx < _mysample; pntIdx++)
                         {
                             double currentParam = f + step * pntIdx;
-                            val[valIdx] = Curve2dTool.Value(curve, currentParam).SquareDistance(p);
+                            val[valIdx] = Curve2dTool.Value(curve, currentParam).SquareDistanceTo(p);
                             param[valIdx] = currentParam;
                             valIdx++;
                         }
                     }
-                    val[valIdx] = Curve2dTool.Value(curve, _myusup).SquareDistance(p);
+                    val[valIdx] = Curve2dTool.Value(curve, _myusup).SquareDistanceTo(p);
                     param[valIdx] = _myusup;
 
                     _extPC.Initialize(curve);
@@ -451,7 +451,7 @@ public class ExtPC2d
                         s1 = (new Vector2D(p, pp)) * v1;
                         if (s1 * s2 < 0.0)
                         {
-                            _sqDist.Append(pp.SquareDistance(p));
+                            _sqDist.Append(pp.SquareDistanceTo(p));
                             _myismin.Append((s1 < 0.0));
                             _mypoint.Append(new POnCurv2d(_myintuinf, pp));
                         }

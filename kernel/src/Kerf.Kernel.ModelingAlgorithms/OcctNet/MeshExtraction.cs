@@ -161,16 +161,16 @@ public static class MeshExtraction
                                      ? tri
                                      : ToolTriangulatedShape.NormalsComputed(face, tri)!;
             bool isWritten = ReferenceEquals(aTri, tri) && !tri.HasNormals;
-            Transform3D trsf = location.Transformation();
-            bool isReversed = face.Orientation() == Reversed;
+            Transform3D trsf = location.Transformation;
+            bool isReversed = face.Orientation == Reversed;
             // Winding follows the surface's natural normal: flipped for a reversed face, and again by a mirroring location
             bool toFlip = isReversed != trsf.IsNegative;
             for (int i = 1; i <= aTri.NodeCount; ++i)
             {
                 Point3D p = aTri.Node(i).Transformed(trsf);
-                Positions[_nodeFloats] = (float)p.X();
-                Positions[_nodeFloats + 1] = (float)p.Y();
-                Positions[_nodeFloats + 2] = (float)p.Z();
+                Positions[_nodeFloats] = (float)p.X;
+                Positions[_nodeFloats + 1] = (float)p.Y;
+                Positions[_nodeFloats + 2] = (float)p.Z;
                 Direction3D n = isWritten
                                     ? new Direction3D(Normals[_nodeFloats], Normals[_nodeFloats + 1], Normals[_nodeFloats + 2])
                                     : aTri.Normal(i);
@@ -179,9 +179,9 @@ public static class MeshExtraction
                 {
                     n = n.Reversed();
                 }
-                Normals[_nodeFloats] = (float)n.X();
-                Normals[_nodeFloats + 1] = (float)n.Y();
-                Normals[_nodeFloats + 2] = (float)n.Z();
+                Normals[_nodeFloats] = (float)n.X;
+                Normals[_nodeFloats + 1] = (float)n.Y;
+                Normals[_nodeFloats + 2] = (float)n.Z;
                 _nodeFloats += 3;
             }
             for (int i = 1; i <= aTri.TriangleCount; ++i)
@@ -196,9 +196,9 @@ public static class MeshExtraction
 
         private void AddPoint(in Point3D p)
         {
-            _points.Add((float)p.X());
-            _points.Add((float)p.Y());
-            _points.Add((float)p.Z());
+            _points.Add((float)p.X);
+            _points.Add((float)p.Y);
+            _points.Add((float)p.Z);
         }
 
         public void AddEdge(in Edge edge, IndexedMap<Shape, NCollection_List<Shape>> edgeFaces,
@@ -225,7 +225,7 @@ public static class MeshExtraction
                     {
                         continue;
                     }
-                    Transform3D trsf = location.Transformation();
+                    Transform3D trsf = location.Transformation;
                     for (int i = 1; i <= polygon.NodeCount; ++i)
                     {
                         AddPoint(tri.Node(polygon.Node(i)).Transformed(trsf));
@@ -240,7 +240,7 @@ public static class MeshExtraction
                 Polygon3D? polygon = Tool.Polygon3D(edge, out Placement location);
                 if (polygon is not null)
                 {
-                    Transform3D trsf = location.Transformation();
+                    Transform3D trsf = location.Transformation;
                     NCollection_Array1<Point3D> nodes = polygon.Nodes();
                     for (int i = 1; i <= polygon.NodeCount; ++i)
                     {
@@ -259,7 +259,7 @@ public static class MeshExtraction
                 }
             }
             // Polygons follow the curve's parameter: reversed to run the way the edge does
-            if (edge.Orientation() == Reversed)
+            if (edge.Orientation == Reversed)
             {
                 int count = (_points.Count - start) / 3;
                 for (int i = 0; i < count / 2; ++i)

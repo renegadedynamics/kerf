@@ -138,7 +138,7 @@ public static class Legacy2D
             }
             else
             {
-                c2 = (Curve3D)c1!.Transformed(eloc.Transformation());
+                c2 = (Curve3D)c1!.Transformed(eloc.Transformation);
             }
             double f = 0.0, l = 0.0;
             if (trim3d)

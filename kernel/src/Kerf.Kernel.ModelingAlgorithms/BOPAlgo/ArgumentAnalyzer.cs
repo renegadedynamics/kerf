@@ -502,7 +502,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                                         double tolerance = Tool.Tolerance(ShapeCasts.Vertex(v));
                                         Shape supportShape = dist.SupportOnShape2(ii);
 
-                                        switch (supportShape.ShapeType())
+                                        switch (supportShape.Type)
                                         {
                                             case ShapeType.Vertex:
                                             {
@@ -593,7 +593,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                 Face face = ShapeCasts.Face(exp.Current());
 
                 Face ff = face;
-                ff.Orientation(Forward);
+                ff.Orient(Forward);
                 Explorer expE = new(ff, ShapeType.Edge);
                 int nbstartedges = 0;
                 ls.Clear();
@@ -601,14 +601,14 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                 for (; expE.More(); expE.Next())
                 {
                     Edge e = ShapeCasts.Edge(expE.Current());
-                    Orientation oriE = e.Orientation();
+                    Orientation oriE = e.Orientation;
                     //
                     if (oriE == Internal)
                     {
                         Edge ee = e;
-                        ee.Orientation(Forward);
+                        ee.Orient(Forward);
                         ls.Append(ee);
-                        ee.Orientation(Reversed);
+                        ee.Orient(Reversed);
                         ls.Append(ee);
                     }
                     else
@@ -767,7 +767,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                     Vertex v2 = ShapeCasts.Vertex(s2);
                     Point3D p1 = Tool.Pnt(v1);
                     Point3D p2 = Tool.Pnt(v2);
-                    double dist = p1.Distance(p2);
+                    double dist = p1.DistanceTo(p2);
 
                     if (dist <= (Tool.Tolerance(v1) + Tool.Tolerance(v2)))
                     {
@@ -914,7 +914,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                     continue;
                 }
                 Curve3D? c = Tool.Curve(e, out _, out _);
-                if (c!.Continuity() == Continuity.C0)
+                if (c!.Continuity == Continuity.C0)
                 {
                     ms.Add(e);
                 }
@@ -925,7 +925,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
             {
                 Face f = ShapeCasts.Face(exp.Current());
                 Surface surf = Tool.Surface(f)!;
-                if (surf.Continuity() == Continuity.C0)
+                if (surf.Continuity == Continuity.C0)
                 {
                     ms.Add(f);
                 }

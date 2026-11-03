@@ -115,7 +115,7 @@ public sealed class HypParaboloidSurface : ElementarySurface
     }
 
     /// <summary>U and V in [-Precision::Infinite(), Precision::Infinite()].</summary>
-    public override void Bounds(out double u1, out double u2, out double v1, out double v2)
+    internal override void ParameterBounds(out double u1, out double u2, out double v1, out double v2)
     {
         u1 = -global::Kerf.Engine.Foundation.Precision.Infinite();
         u2 = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -143,28 +143,28 @@ public sealed class HypParaboloidSurface : ElementarySurface
         throw new MethodNotImplementedException("GeomEval_HypParaboloidSurface::VIso");
     }
 
-    public override Point3D EvalD0(double u, double v)
+    internal override Point3D EvalD0(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double a2 = _a * _a;
         double b2 = _b * _b;
         double zComp = u * u / a2 - v * v / b2;
 
-        return new Point3D(o.X() + u * xDir.X() + v * yDir.X() + zComp * zDir.X(),
-                          o.Y() + u * xDir.Y() + v * yDir.Y() + zComp * zDir.Y(),
-                          o.Z() + u * xDir.Z() + v * yDir.Z() + zComp * zDir.Z());
+        return new Point3D(o.X + u * xDir.X + v * yDir.X + zComp * zDir.X,
+                          o.Y + u * xDir.Y + v * yDir.Y + zComp * zDir.Y,
+                          o.Z + u * xDir.Z + v * yDir.Z + zComp * zDir.Z);
     }
 
-    public override ResD1 EvalD1(double u, double v)
+    internal override ResD1 EvalD1(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double a2 = _a * _a;
         double b2 = _b * _b;
@@ -175,29 +175,29 @@ public sealed class HypParaboloidSurface : ElementarySurface
         ResD1 result;
 
         // P = O + U*XD + V*YD + (U^2/A^2 - V^2/B^2)*ZD
-        result.Point = new Point3D(o.X() + u * xDir.X() + v * yDir.X() + zComp * zDir.X(),
-                                   o.Y() + u * xDir.Y() + v * yDir.Y() + zComp * zDir.Y(),
-                                   o.Z() + u * xDir.Z() + v * yDir.Z() + zComp * zDir.Z());
+        result.Point = new Point3D(o.X + u * xDir.X + v * yDir.X + zComp * zDir.X,
+                                   o.Y + u * xDir.Y + v * yDir.Y + zComp * zDir.Y,
+                                   o.Z + u * xDir.Z + v * yDir.Z + zComp * zDir.Z);
 
         // dP/du = XD + (2U/A^2)*ZD
-        result.D1U = new Vector3D(xDir.X() + zdU * zDir.X(),
-                                 xDir.Y() + zdU * zDir.Y(),
-                                 xDir.Z() + zdU * zDir.Z());
+        result.D1U = new Vector3D(xDir.X + zdU * zDir.X,
+                                 xDir.Y + zdU * zDir.Y,
+                                 xDir.Z + zdU * zDir.Z);
 
         // dP/dv = YD - (2V/B^2)*ZD
-        result.D1V = new Vector3D(yDir.X() + zdV * zDir.X(),
-                                 yDir.Y() + zdV * zDir.Y(),
-                                 yDir.Z() + zdV * zDir.Z());
+        result.D1V = new Vector3D(yDir.X + zdV * zDir.X,
+                                 yDir.Y + zdV * zDir.Y,
+                                 yDir.Z + zdV * zDir.Z);
 
         return result;
     }
 
-    public override ResD2 EvalD2(double u, double v)
+    internal override ResD2 EvalD2(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double a2 = _a * _a;
         double b2 = _b * _b;
@@ -210,25 +210,25 @@ public sealed class HypParaboloidSurface : ElementarySurface
         ResD2 result;
 
         // P
-        result.Point = new Point3D(o.X() + u * xDir.X() + v * yDir.X() + zComp * zDir.X(),
-                                   o.Y() + u * xDir.Y() + v * yDir.Y() + zComp * zDir.Y(),
-                                   o.Z() + u * xDir.Z() + v * yDir.Z() + zComp * zDir.Z());
+        result.Point = new Point3D(o.X + u * xDir.X + v * yDir.X + zComp * zDir.X,
+                                   o.Y + u * xDir.Y + v * yDir.Y + zComp * zDir.Y,
+                                   o.Z + u * xDir.Z + v * yDir.Z + zComp * zDir.Z);
 
         // dP/du = XD + (2U/A^2)*ZD
-        result.D1U = new Vector3D(xDir.X() + zdU * zDir.X(),
-                                 xDir.Y() + zdU * zDir.Y(),
-                                 xDir.Z() + zdU * zDir.Z());
+        result.D1U = new Vector3D(xDir.X + zdU * zDir.X,
+                                 xDir.Y + zdU * zDir.Y,
+                                 xDir.Z + zdU * zDir.Z);
 
         // dP/dv = YD - (2V/B^2)*ZD
-        result.D1V = new Vector3D(yDir.X() + zdV * zDir.X(),
-                                 yDir.Y() + zdV * zDir.Y(),
-                                 yDir.Z() + zdV * zDir.Z());
+        result.D1V = new Vector3D(yDir.X + zdV * zDir.X,
+                                 yDir.Y + zdV * zDir.Y,
+                                 yDir.Z + zdV * zDir.Z);
 
         // d2P/du2 = (2/A^2)*ZD
-        result.D2U = new Vector3D(zd2U * zDir.X(), zd2U * zDir.Y(), zd2U * zDir.Z());
+        result.D2U = new Vector3D(zd2U * zDir.X, zd2U * zDir.Y, zd2U * zDir.Z);
 
         // d2P/dv2 = -(2/B^2)*ZD
-        result.D2V = new Vector3D(zd2V * zDir.X(), zd2V * zDir.Y(), zd2V * zDir.Z());
+        result.D2V = new Vector3D(zd2V * zDir.X, zd2V * zDir.Y, zd2V * zDir.Z);
 
         // d2P/dudv = 0
         result.D2UV = new Vector3D(0.0, 0.0, 0.0);
@@ -236,12 +236,12 @@ public sealed class HypParaboloidSurface : ElementarySurface
         return result;
     }
 
-    public override ResD3 EvalD3(double u, double v)
+    internal override ResD3 EvalD3(double u, double v)
     {
-        Point3D o = _pos.Location();
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Point3D o = _pos.Location;
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double a2 = _a * _a;
         double b2 = _b * _b;
@@ -254,25 +254,25 @@ public sealed class HypParaboloidSurface : ElementarySurface
         ResD3 result;
 
         // P
-        result.Point = new Point3D(o.X() + u * xDir.X() + v * yDir.X() + zComp * zDir.X(),
-                                   o.Y() + u * xDir.Y() + v * yDir.Y() + zComp * zDir.Y(),
-                                   o.Z() + u * xDir.Z() + v * yDir.Z() + zComp * zDir.Z());
+        result.Point = new Point3D(o.X + u * xDir.X + v * yDir.X + zComp * zDir.X,
+                                   o.Y + u * xDir.Y + v * yDir.Y + zComp * zDir.Y,
+                                   o.Z + u * xDir.Z + v * yDir.Z + zComp * zDir.Z);
 
         // dP/du
-        result.D1U = new Vector3D(xDir.X() + zdU * zDir.X(),
-                                 xDir.Y() + zdU * zDir.Y(),
-                                 xDir.Z() + zdU * zDir.Z());
+        result.D1U = new Vector3D(xDir.X + zdU * zDir.X,
+                                 xDir.Y + zdU * zDir.Y,
+                                 xDir.Z + zdU * zDir.Z);
 
         // dP/dv
-        result.D1V = new Vector3D(yDir.X() + zdV * zDir.X(),
-                                 yDir.Y() + zdV * zDir.Y(),
-                                 yDir.Z() + zdV * zDir.Z());
+        result.D1V = new Vector3D(yDir.X + zdV * zDir.X,
+                                 yDir.Y + zdV * zDir.Y,
+                                 yDir.Z + zdV * zDir.Z);
 
         // d2P/du2 = (2/A^2)*ZD
-        result.D2U = new Vector3D(zd2U * zDir.X(), zd2U * zDir.Y(), zd2U * zDir.Z());
+        result.D2U = new Vector3D(zd2U * zDir.X, zd2U * zDir.Y, zd2U * zDir.Z);
 
         // d2P/dv2 = -(2/B^2)*ZD
-        result.D2V = new Vector3D(zd2V * zDir.X(), zd2V * zDir.Y(), zd2V * zDir.Z());
+        result.D2V = new Vector3D(zd2V * zDir.X, zd2V * zDir.Y, zd2V * zDir.Z);
 
         // d2P/dudv = 0
         result.D2UV = new Vector3D(0.0, 0.0, 0.0);
@@ -287,7 +287,7 @@ public sealed class HypParaboloidSurface : ElementarySurface
     }
 
     /// <exception cref="UndefinedDerivative3DException">Nu + Nv &lt; 1, Nu &lt; 0 or Nv &lt; 0.</exception>
-    public override Vector3D EvalDN(double u, double v, int nu, int nv)
+    internal override Vector3D EvalDN(double u, double v, int nu, int nv)
     {
         if (nu + nv < 1 || nu < 0 || nv < 0)
         {
@@ -295,9 +295,9 @@ public sealed class HypParaboloidSurface : ElementarySurface
                 "GeomEval_HypParaboloidSurface::EvalDN: invalid derivative order");
         }
 
-        Direction3D xDir = _pos.XDirection();
-        Direction3D yDir = _pos.YDirection();
-        Direction3D zDir = _pos.Direction();
+        Direction3D xDir = _pos.XDirection;
+        Direction3D yDir = _pos.YDirection;
+        Direction3D zDir = _pos.Direction;
 
         double a2 = _a * _a;
         double b2 = _b * _b;
@@ -350,9 +350,9 @@ public sealed class HypParaboloidSurface : ElementarySurface
             // else 0 for Nv >= 3
         }
 
-        return new Vector3D(xCoeff * xDir.X() + yCoeff * yDir.X() + zCoeff * zDir.X(),
-                          xCoeff * xDir.Y() + yCoeff * yDir.Y() + zCoeff * zDir.Y(),
-                          xCoeff * xDir.Z() + yCoeff * yDir.Z() + zCoeff * zDir.Z());
+        return new Vector3D(xCoeff * xDir.X + yCoeff * yDir.X + zCoeff * zDir.X,
+                          xCoeff * xDir.Y + yCoeff * yDir.Y + zCoeff * zDir.Y,
+                          xCoeff * xDir.Z + yCoeff * yDir.Z + zCoeff * zDir.Z);
     }
 
     /// <summary>Not supported: throws <see cref="MethodNotImplementedException"/>.</summary>

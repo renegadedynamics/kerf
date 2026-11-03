@@ -22,8 +22,8 @@ public class CircleCurve3D : ConicCurve3D
     /// <summary>A circle equal to C.</summary>
     public CircleCurve3D(in Circle3D c)
     {
-        _radius = c.Radius();
-        _pos = c.Position();
+        _radius = c.Radius;
+        _pos = c.Position;
     }
 
     /// <summary>A circle of radius R placed by A2.</summary>
@@ -54,20 +54,20 @@ public class CircleCurve3D : ConicCurve3D
     public sealed override double ReversedParameter(double u) => (2.0 * M_PI - u);
 
     /// <summary>0.</summary>
-    public sealed override double Eccentricity() => 0.0;
+    public sealed override double Eccentricity => 0.0;
 
-    public sealed override double FirstParameter() => 0.0;
+    public sealed override double FirstParameter => 0.0;
 
-    public sealed override double LastParameter() => 2.0 * M_PI;
+    public sealed override double LastParameter => 2.0 * M_PI;
 
     /// <summary>The non-persistent circle equal to this one.</summary>
-    public Circle3D Circ() => new Circle3D(_pos, _radius);
+    public Circle3D Circle => new Circle3D(_pos, _radius);
 
     internal void SetCirc(in Circle3D c)
     {
         CheckMutable();
-        _radius = c.Radius();
-        _pos = c.Position();
+        _radius = c.Radius;
+        _pos = c.Position;
     }
 
     /// <exception cref="ConstructionErrorException">R &lt; 0.</exception>
@@ -81,25 +81,25 @@ public class CircleCurve3D : ConicCurve3D
         _radius = r;
     }
 
-    public double Radius() => _radius;
+    public double Radius => _radius;
 
-    public sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(u, _pos, _radius);
+    internal sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.CircleValue(u, _pos, _radius);
 
-    public sealed override ResD1 EvalD1(double u)
+    internal sealed override ResD1 EvalD1(double u)
     {
         ResD1 result = new ResD1();
         global::Kerf.Engine.Geometry.ElCLib.CircleD1(u, _pos, _radius, out result.Point, out result.D1);
         return result;
     }
 
-    public sealed override ResD2 EvalD2(double u)
+    internal sealed override ResD2 EvalD2(double u)
     {
         ResD2 result = new ResD2();
         global::Kerf.Engine.Geometry.ElCLib.CircleD2(u, _pos, _radius, out result.Point, out result.D1, out result.D2);
         return result;
     }
 
-    public sealed override ResD3 EvalD3(double u)
+    internal sealed override ResD3 EvalD3(double u)
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.CircleD3(u, _pos, _radius, out result.Point, out result.D1, out result.D2, out result.D3);
@@ -107,7 +107,7 @@ public class CircleCurve3D : ConicCurve3D
     }
 
     /// <exception cref="UndefinedDerivative3DException">N &lt; 1.</exception>
-    public sealed override Vector3D EvalDN(double u, int n)
+    internal sealed override Vector3D EvalDN(double u, int n)
     {
         if (n < 1)
         {
@@ -120,7 +120,7 @@ public class CircleCurve3D : ConicCurve3D
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _radius = _radius * Math.Abs(t.ScaleFactor());
+        _radius = _radius * Math.Abs(t.ScaleFactor);
         _pos = _pos.Transformed(t);
     }
 
