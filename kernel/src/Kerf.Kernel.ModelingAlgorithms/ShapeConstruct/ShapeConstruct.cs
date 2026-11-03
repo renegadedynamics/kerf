@@ -379,7 +379,7 @@ public static partial class ShapeConstruct
             // the documentation. No caller in OCCT reads it.
             return (i <= edges.Length());
         }
-        catch (FailureException) when (!edge.IsNull && !edge.TShape()!.IsFrozen)
+        catch (FailureException) when (!edge.IsNull && !WorkingOverlay.IsReadOnly(edge.TShape()!))
         {
             // OCCT.NET: a frozen edge's exception goes through (decision 423's pattern)
         }
@@ -663,9 +663,9 @@ public static partial class ShapeConstruct
 
     /// <summary>
     /// The functional twin of <c>JoinPCurves</c>: <paramref name="edge"/> with the pcurves of
-    /// <paramref name="edges"/> on <paramref name="face"/> joined into its pcurve on that face, run on an exact
-    /// copy for write (decision 420's pattern): the result is frozen and is the edge itself when nothing was written
-    /// (a plane). <paramref name="isDone"/> is JoinPCurves' result, inverted as in OCCT (false when all were joined).
+    /// <paramref name="edges"/> on <paramref name="face"/> joined into its pcurve on that face, run on the edge in a
+    /// working overlay (Kerf unit 10H4): the result is frozen and is the edge itself when nothing was written (a
+    /// plane). <paramref name="isDone"/> is JoinPCurves' result, inverted as in OCCT (false when all were joined).
     /// </summary>
     public static Edge PCurvesJoined(NCollection_HSequence<Shape> edges, in Face face,
                                             in Edge edge, out bool isDone)
@@ -676,9 +676,10 @@ public static partial class ShapeConstruct
             return edge;
         }
 
-        Edge copy = ShapeCasts.Edge(BrepTools.ExactCopyForWrite(edge, out _));
-        isDone = JoinPCurves(edges, face, copy);
-        Shape result = BrepTools.KeepUnchanged(edge, copy, out _);
+        Edge work = ShapeCasts.Edge(WorkingOverlay.WithUnfrozenCopied(edge, out Dictionary<TShape, TShape>? copies));
+        using var overlay = WorkingOverlay.Begin(work);
+        isDone = JoinPCurves(edges, face, work);
+        Shape result = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies);
         result.TShape()!.FreezeGraph();
         return ShapeCasts.Edge(result);
     }

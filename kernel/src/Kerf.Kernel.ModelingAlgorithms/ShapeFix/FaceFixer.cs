@@ -54,11 +54,13 @@ namespace Kerf.Engine.Healing.Fixes;
 /// default, 0 off, 1 on. Fixes may change the face into a shell or a compound of faces (<see cref="Result"/>).
 /// </para>
 /// <para>
-/// The fixes edit the face in place, as OCCT's. A face holding frozen shapes (any face a caller holds, or one built
-/// from a caller's wires) is copied at the first fix (<see cref="CopyAtEntry"/>, decision 583), so the
-/// caller's shapes never change; <see cref="Face"/> and <see cref="Result"/> give back the caller's own sub-shapes
-/// wherever the fixes left them unchanged, re-key the context to the caller's shapes and freeze what they return.
-/// Set the context before the first fix. After a public result, a further fix copies again.
+/// The fixes edit the face in place, as OCCT's, in a working overlay (Kerf unit 10H4) that takes the writes into frozen
+/// shapes (any face a caller holds, or one built from a caller's wires), so the caller's shapes never change. The
+/// overlay is this tool's from the first fix to <see cref="Face"/> or <see cref="Result"/>, entered by each fix, or,
+/// when the tool runs inside another operation's overlay (ShapeFix_Shell's), that one. <see cref="Face"/> and
+/// <see cref="Result"/> give the faces with new TShapes for what changed and the caller's own sub-shapes for the rest,
+/// record in the context the sub-shapes changed in place, and freeze what they return. Set the context before the
+/// first fix. After a public result, a further fix starts a new overlay.
 /// </para>
 /// </remarks>
 public partial class FaceFixer : RootFixer
@@ -241,8 +243,8 @@ public partial class FaceFixer : RootFixer
 
     /// <summary>
     /// Adds a wire to the face being built (it must lie on the face's surface). The face loaded by
-    /// <see cref="Init(in Face)"/> is the caller's: when it is frozen, the wire is added to a copy of it that
-    /// shares its sub-shapes (<c>// OCCT.NET: frozen</c>; OCCT adds it to the caller's face).
+    /// <see cref="Init(in Face)"/> is the caller's: the wire is added to it in the working overlay of the fixes, as OCCT
+    /// adds it to the caller's face.
     /// </summary>
     public void Add(in Wire wire)
     {
@@ -250,23 +252,11 @@ public partial class FaceFixer : RootFixer
         {
             return;
         }
+        using WorkingOverlay.Scope work = EnterWork();
         var b = new BrepBuilder();
-        if (_face.TShape()!.IsFrozen)
-        {
-            // OCCT.NET: frozen. A shallow copy of the frozen face, holding its sub-shapes as they are.
-            Face copy = ShapeCasts.Face(_face.EmptyCopied());
-            TShape tShape = copy.TShape()!;
-            for (var it = new Iterator(_face, false, false); it.More(); it.Next())
-            {
-                tShape._shapes.Append(it.Value());
-            }
-            _face = copy;
-            _shape = _face;
-        }
         // szv#4:S4163:12Mar99 SGI warns
         Shape fc = _face.Oriented(Forward); //: l2 abv 10 Jan 99: Oriented()
         b.Add(fc, wire);
-        Loaded();
     }
 
     /// <summary>
@@ -375,7 +365,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool Perform(ProgressRange progress = default)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         _fixWire.SetContext(Context());
         WireFixer theAdvFixWire = _fixWire;
@@ -917,7 +907,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixAddNaturalBound()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixAddNaturalBoundCore();
     }
 
@@ -1149,7 +1139,7 @@ public partial class FaceFixer : RootFixer
     /// <summary>Fixes the orientation of the wires on the face. Returns true if a wire was reversed.</summary>
     public bool FixOrientation()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         var mapWires = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         mapWires.Clear();
         return FixOrientationCore(mapWires);
@@ -1202,7 +1192,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixOrientation(NCollection_DataMap<Shape, NCollection_List<Shape>> mapWires)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixOrientationCore(mapWires);
     }
 
@@ -1736,7 +1726,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixMissingSeam()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixMissingSeamCore();
     }
 
@@ -2336,7 +2326,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixSmallAreaWire(bool isRemoveSmallFace)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixSmallAreaWireCore(isRemoveSmallFace);
     }
 
@@ -2482,7 +2472,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixLoopWire(NCollection_Sequence<Shape> aResWires)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixLoopWireCore(aResWires);
     }
 
@@ -2718,7 +2708,7 @@ public partial class FaceFixer : RootFixer
     /// <summary>Fixes the intersections between the wires of the face. Returns true if done.</summary>
     public bool FixIntersectingWires()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixIntersectingWiresCore();
     }
 
@@ -2731,7 +2721,7 @@ public partial class FaceFixer : RootFixer
     /// <summary>Removes the wires made of two coincident edges (a face must keep another wire). Returns true if done.</summary>
     public bool FixWiresTwoCoincEdges()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixWiresTwoCoincEdgesCore();
     }
 
@@ -2811,7 +2801,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixSplitFace(NCollection_DataMap<Shape, NCollection_List<Shape>> mapWires)
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixSplitFaceCore(mapWires);
     }
 
@@ -2997,7 +2987,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     public bool FixPeriodicDegenerated()
     {
-        EnterWork();
+        using WorkingOverlay.Scope work = EnterWork();
         return FixPeriodicDegeneratedCore();
     }
 

@@ -10,6 +10,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Conversion;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -737,7 +738,7 @@ public sealed partial class BuildEdgeBuilder
                 return true;
             }
         }
-        catch (FailureException) when (!edge.TShape()!.IsFrozen)
+        catch (FailureException) when (!WorkingOverlay.IsReadOnly(edge.TShape()!))
         {
         }
 

@@ -40,12 +40,14 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <see cref="LastFixStatus"/>. The modes (<c>...Mode()</c>) are three-position flags: -1 is the default, 0 off, 1 on.
 /// </para>
 /// <para>
-/// The fixes edit the edges of the loaded wire in place, as OCCT's. A loaded wire holding frozen shapes (any wire a
-/// caller holds) is copied at the first fix (<see cref="CopyAtEntry"/>, decision 583), so the caller's wire
-/// never changes; <see cref="Wire"/> and <see cref="WireAPIMake"/> give back the caller's own edges and vertices
-/// wherever the fixes left them unchanged, record in the context the ones changed in place, and freeze what they
-/// return. Set the context before the first fix. After a public result, a further fix copies again. The edges of
-/// <see cref="WireData"/> are the working copies between the first fix and the result.
+/// The fixes edit the edges of the loaded wire in place, as OCCT's, in a working overlay (Kerf unit 10H4) that takes
+/// the writes into frozen shapes (any wire a caller holds), so the caller's wire never changes. The overlay is this
+/// tool's from the first fix to <see cref="Wire"/> or <see cref="WireAPIMake"/>, entered by each fix, or, when the
+/// tool runs inside another operation's overlay (ShapeFix_Face's), that one. <see cref="Wire"/> and
+/// <see cref="WireAPIMake"/> give new TShapes for the edges and vertices the fixes changed and the caller's own for the
+/// rest, record in the context the ones changed in place, and freeze what they return. Set the context before the
+/// first fix. After a public result, a further fix starts a new overlay. Between the first fix and the result, the
+/// edges of <see cref="WireData"/> show the fixes' changes only to the fixes: read them after a result.
 /// </para>
 /// </remarks>
 public partial class WireFixer : RootFixer
@@ -140,8 +142,8 @@ public partial class WireFixer : RootFixer
     public WireAnalysis Analyzer() => _analyzer;
 
     /// <summary>
-    /// Returns the working wire data: the loaded edges, which the fixes edit (between the first fix and a public
-    /// result, copies of a frozen wire's edges).
+    /// Returns the working wire data: the loaded edges, which the fixes edit (in their working overlay between the
+    /// first fix and a public result).
     /// </summary>
     public ExtendWireData? WireData() => _analyzer.WireData();
 
@@ -371,7 +373,7 @@ public partial class WireFixer : RootFixer
         _analyzer = saw;
         _shape.Nullify();
         //  SetPrecision ( saw.Precision() );
-        _toEnter = true; // OCCT.NET: frozen
+        _toEnter = true; // Kerf: a new working overlay at the next fix (unit 10H4)
     }
 
     /// <summary>Loads a wire (the context, if any, applied to it first).</summary>
@@ -388,7 +390,7 @@ public partial class WireFixer : RootFixer
 
         _analyzer.Load(w);
         _shape   = wire;
-        _toEnter = true; // OCCT.NET: frozen
+        _toEnter = true; // Kerf: a new working overlay at the next fix (unit 10H4)
     }
 
     /// <summary>Loads a wire data object (the context, if any, applied to its edges).</summary>
@@ -401,7 +403,7 @@ public partial class WireFixer : RootFixer
             UpdateWire();
         }
         _shape.Nullify();
-        _toEnter = true; // OCCT.NET: frozen
+        _toEnter = true; // Kerf: a new working overlay at the next fix (unit 10H4)
     }
 
     /// <summary>Returns the number of edges in the working wire.</summary>
@@ -422,7 +424,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool Perform(ProgressRange progress = default)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         ClearStatuses();
         if (!IsLoaded)
         {
@@ -615,7 +617,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixReorder(bool modeBoth = false)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusReorder = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded)
         {
@@ -669,7 +671,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public int FixSmall(bool lockvtx, double precsmall = 0.0)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusSmall = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded)
         {
@@ -688,7 +690,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Applies FixConnected(num) to all the edges (from the last), connecting them by their vertices.</summary>
     public bool FixConnected(double prec = -1.0)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusConnected = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded)
         {
@@ -734,7 +736,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixEdgeCurves()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusEdgeCurves = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded)
         {
@@ -1137,7 +1139,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Applies FixDegenerated(num) to all the edges, and removes duplicated degenerated edges.</summary>
     public bool FixDegenerated()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusDegenerated = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -1185,7 +1187,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixSelfIntersection()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusSelfIntersection = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -1330,7 +1332,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Applies FixLacking(num) to all the edges (from the first, or the second on an open wire).</summary>
     public bool FixLacking(bool force = false)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusLacking = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -1352,7 +1354,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixClosed(double prec = -1.0)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusClosed = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded || NbEdges() < 1)
         {
@@ -1399,7 +1401,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Reorders the edges in the wire as the given wire order says.</summary>
     public bool FixReorder(WireOrderAnalysis wi)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded)
         {
@@ -1455,7 +1457,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixSmall(int num, bool lockvtx, double precsmall)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded || NbEdges() <= 1)
         {
@@ -1528,7 +1530,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixConnected(int num, double prec, bool updateWire = true)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded || NbEdges() <= 0)
         {
@@ -1665,7 +1667,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Fixes the seam edge <paramref name="num"/>: makes its two pcurves the analyser's seam pair.</summary>
     public bool FixSeam(int num)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -1713,7 +1715,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixShifted()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -2126,7 +2128,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixDegenerated(int num)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -3538,7 +3540,7 @@ public partial class WireFixer : RootFixer
     /// </summary>
     public bool FixLacking(int num, bool force = false)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -3890,7 +3892,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Fixes notched edges (an edge going back along its neighbour): splits it and removes the notch.</summary>
     public bool FixNotchedEdges()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {
@@ -4182,7 +4184,7 @@ public partial class WireFixer : RootFixer
     /// <summary>Fixes tails (thin spikes between adjacent edges), with the maximal angle and width set.</summary>
     public bool FixTails()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         if (_maxTailWidth < 0 || !IsReady)
         {
             return false;

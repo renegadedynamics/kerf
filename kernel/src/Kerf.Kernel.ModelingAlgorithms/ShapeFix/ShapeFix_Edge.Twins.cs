@@ -24,9 +24,11 @@ public partial class EdgeFixer
             isDone = fix(edge);
             return edge;
         }
-        using var overlay = WorkingOverlay.Begin(edge, _context);
-        isDone = fix(edge);
-        Shape result = overlay.Finish(edge);
+        // an unfrozen edge (ported code's) is copied, so that the fix doesn't write into the caller's (unit 10H4)
+        Edge work = ShapeCasts.Edge(WorkingOverlay.WithUnfrozenCopied(edge, out Dictionary<TShape, TShape>? copies));
+        using var overlay = WorkingOverlay.Begin(work, _context);
+        isDone = fix(work);
+        Shape result = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(work), copies);
         result.TShape()!.FreezeGraph();
         return ShapeCasts.Edge(result);
     }

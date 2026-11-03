@@ -26,9 +26,10 @@ namespace Kerf.Engine.Healing.Fixes;
 /// </summary>
 /// <remarks>
 /// A working object (decision 21). <see cref="Init"/> only records the solid. <see cref="Perform"/> edits the shapes it
-/// works on in place, as OCCT's: a solid holding frozen shapes (any solid a caller holds) is copied first
-/// (<see cref="CopyAtEntry"/>, decision 583), the caller's solid never changes, and at the end the copies left
-/// unchanged are the caller's own again, in the results and in the context. <see cref="Solid"/>, <see cref="Shape"/> and
+/// works on in place, as OCCT's, in a working overlay (Kerf unit 10H4) that takes the writes into frozen shapes (any
+/// solid a caller holds), so the caller's solid never changes; at the end the results hold new TShapes for what changed
+/// and the caller's own for the rest, and the context answers for the caller's shapes. Inside another operation's
+/// overlay (ShapeFix_Shape's) it runs in place in that one. <see cref="Solid"/>, <see cref="Shape"/> and
 /// <see cref="SolidFromShell"/> freeze what they return; ported code reads the internal forms.
 /// </remarks>
 public class SolidFixer : RootFixer
@@ -394,18 +395,12 @@ public class SolidFixer : RootFixer
         {
             SetContext(new ReShapeBuilder());
         }
-        var entry = new CopyAtEntry(_shape, Context());
-        _shape = entry.Shape();
-        _solid = entry.Copied(_solid);
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shape, Context());
         bool status = PerformCore(progress);
-        if (entry.IsCopied)
+        if (overlay is not null)
         {
-            _shape = entry.Finish(_shape, [_solid]);
-            _solid = entry.Final(_solid);
-        }
-        else
-        {
-            entry.Finish(_shape);
+            _shape = overlay.Finish(_shape, [_solid]);
+            _solid = overlay.Final(_solid);
         }
         return status;
     }
@@ -609,7 +604,7 @@ public class SolidFixer : RootFixer
     internal Solid InternalSolidFromShell(in Shell shell)
     {
         Shell sh = shell;
-        if (!sh.Free() && !sh.TShape()!.IsFrozen) // OCCT.NET: frozen: a frozen shell keeps its Free flag
+        if (!sh.Free() && !WorkingOverlay.IsReadOnly(sh.TShape()!)) // OCCT.NET: frozen: a frozen shell keeps its Free flag outside an overlay
         {
             sh.Free(true);
         }
@@ -629,7 +624,7 @@ public class SolidFixer : RootFixer
                 //         Ensuite, inverser C-A-D REPRENDRE LES SHELLS
                 //         (l inversion du solide n est pas bien prise en compte)
                 sh = shell;
-                if (!sh.Free() && !sh.TShape()!.IsFrozen) // OCCT.NET: frozen
+                if (!sh.Free() && !WorkingOverlay.IsReadOnly(sh.TShape()!)) // OCCT.NET: frozen
                 {
                     sh.Free(true);
                 }

@@ -32,7 +32,7 @@ public partial class WireFixer
     /// <summary>Fixes the gaps between the 3d curves of adjacent edges (see <see cref="FixGap3d"/>).</summary>
     public bool FixGaps3d()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusGaps3d = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         // if ( !IsReady() ) return false;
 
@@ -57,7 +57,7 @@ public partial class WireFixer
     /// <summary>Fixes the gaps between the pcurves of adjacent edges (see <see cref="FixGap2d"/>).</summary>
     public bool FixGaps2d()
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _statusGaps2d = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         //  if ( !IsReady() ) return false;
 
@@ -110,7 +110,7 @@ public partial class WireFixer
     /// </summary>
     public bool FixGap3d(int num, bool convert = false)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         //  if ( !IsReady() ) return false;
 
@@ -826,7 +826,7 @@ public partial class WireFixer
     /// </summary>
     public bool FixGap2d(int num, bool convert = false)
     {
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
         _lastFixStatus = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsReady)
         {

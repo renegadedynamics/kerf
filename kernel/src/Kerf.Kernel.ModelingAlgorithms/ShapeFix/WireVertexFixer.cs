@@ -24,11 +24,11 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <remarks>
 /// <para>
 /// A working object (decision 21). <see cref="Fix"/> and <see cref="FixSame"/> write into the edges of the wire data
-/// in place (vertices removed and added, tolerances and parameters raised), as OCCT's. When the loaded edges hold
-/// frozen shapes (any wire a caller holds), the first fix copies them (<see cref="CopyAtEntry"/>, decision
-/// 583) and works on the copies, so the caller's wire never changes; <see cref="Wire"/> gives back the caller's own
-/// edges and vertices wherever the fixes left them unchanged, and freezes. A fix after <see cref="Wire"/> copies
-/// again.
+/// in place (vertices removed and added, tolerances and parameters raised), as OCCT's, in a working overlay (Kerf unit
+/// 10H4) that takes the writes into frozen shapes (any wire a caller holds), so the caller's wire never changes: this
+/// tool's own from the first fix to <see cref="Wire"/>, or, inside another operation's overlay, that one.
+/// <see cref="Wire"/> gives new TShapes for the edges and vertices the fixes changed and the caller's own for the rest,
+/// and freezes. A fix after <see cref="Wire"/> starts a new overlay.
 /// </para>
 /// <para>
 /// OCCT copies the analyser given to <see cref="Init(WireVertexAnalysis)"/> (a value whose arrays and wire data
@@ -39,10 +39,11 @@ public sealed class WireVertexFixer
 {
     private WireVertexAnalysis _analyzer;
 
-    // OCCT.NET: the copy of the loaded edges, from the first fix to the public result (null when they hold no frozen
-    // shape), and whether the loaded edges must be checked before the next fix.
-    private CopyAtEntry? _entry;
-    private bool                   _toEnter;
+    // Kerf: the working overlay of the loaded edges, from the first fix to the public result (unit 10H4): this tool's
+    // own (detached) or the current operation's, which it doesn't finish; and whether the next fix starts a new one.
+    private WorkingOverlay? _overlay;
+    private bool _ownsOverlay;
+    private bool _toEnter;
 
     // ied_modif_for_compil_Nov-19-1998
 
@@ -72,7 +73,7 @@ public sealed class WireVertexFixer
         _analyzer.SetPrecision(preci);
         _analyzer.Analyze();
         _toEnter = true;
-        _entry   = null;
+        _overlay = null;
     }
 
     /// <summary>Loads all the data on a wire, already analysed by ShapeAnalysis_WireVertex.</summary>
@@ -80,7 +81,7 @@ public sealed class WireVertexFixer
     {
         _analyzer = sawv;
         _toEnter  = true;
-        _entry    = null;
+        _overlay  = null;
     }
 
     /// <summary>Returns the internal analyzer.</summary>
@@ -117,7 +118,7 @@ public sealed class WireVertexFixer
         {
             return 0;
         }
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
 
         int nbfix = 0;
         var b     = new BrepBuilder();
@@ -203,7 +204,7 @@ public sealed class WireVertexFixer
         {
             return 0;
         }
-        EnterWork(); // OCCT.NET: frozen
+        using WorkingOverlay.Scope work = EnterWork(); // Kerf: the working overlay (unit 10H4)
 
         var b = new BrepBuilder();
 
@@ -317,49 +318,38 @@ public sealed class WireVertexFixer
         return nbfix;
     }
 
-    // OCCT.NET: before a fix writes, copies the loaded edges if they hold frozen shapes (after Init or a public result).
-    private void EnterWork()
+    // Kerf: before a fix writes, takes the overlay the fixes work in (after Init or a public result) and enters it.
+    private WorkingOverlay.Scope EnterWork()
     {
-        if (!_toEnter)
+        if (_toEnter)
         {
-            return;
+            _toEnter     = false;
+            _overlay     = WorkingOverlay.Writing;
+            _ownsOverlay = false;
+            ExtendWireData? sbwd = _analyzer.WireData();
+            if (_overlay is null && sbwd is not null)
+            {
+                _overlay     = WorkingOverlay.Detached(EdgesCompound(sbwd));
+                _ownsOverlay = true;
+            }
         }
-        _toEnter = false;
-        _entry   = null;
-        ExtendWireData? sbwd = _analyzer.WireData();
-        if (sbwd is null)
-        {
-            return;
-        }
-        Compound edges = EdgesCompound(sbwd);
-        if (!BrepTools.HoldsFrozen(edges))
-        {
-            return;
-        }
-        _entry = new CopyAtEntry(edges);
-        SetEdges(sbwd, _entry.Shape());
-
-        // The copy clears the Free flag of the edges it puts in the compound; give each copy its original's (a cache
-        // bit, which KeepUnchanged ignores), so FixSame's B.Add accepts or refuses an edge as OCCT does on the original.
-        var original = new Iterator(edges, false, false);
-        for (var copy = new Iterator(_entry.Shape(), false, false); copy.More(); copy.Next(), original.Next())
-        {
-            copy.Value().TShape()!.Free(original.Value().TShape()!.Free());
-        }
+        return _overlay?.Enter() ?? default;
     }
 
-    // OCCT.NET: before the public result, gives back the caller's edges and vertices the fixes left unchanged.
+    // Kerf: before the public result, finishes this tool's overlay: new TShapes for the edges and vertices the fixes
+    // changed, the caller's own for the rest.
     private void EndWork()
     {
         _toEnter = true;
-        CopyAtEntry? entry = _entry;
-        _entry = null;
+        WorkingOverlay? overlay = _ownsOverlay ? _overlay : null;
+        _overlay     = null;
+        _ownsOverlay = false;
         ExtendWireData? sbwd = _analyzer.WireData();
-        if (entry is null || sbwd is null)
+        if (overlay is null || sbwd is null)
         {
             return;
         }
-        Shape final = entry.Finish(EdgesCompound(sbwd));
+        Shape final = overlay.Finish(EdgesCompound(sbwd));
         SetEdges(sbwd, final);
     }
 
