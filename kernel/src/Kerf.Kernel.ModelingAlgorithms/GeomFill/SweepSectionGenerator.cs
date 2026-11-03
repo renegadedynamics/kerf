@@ -291,13 +291,10 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
                     // Eval the Rotation between (i-1) section and the i-th.
                     rot = rot.WithRotation(new Axis3D(p, new Direction3D(d1Ref ^ d1)), d1Ref.AngleWithRef(d1, d1Ref ^ d1));
                 }
-                else if (d1Ref.IsOpposite(d1, global::Kerf.Engine.Foundation.Precision.Angular()))
-                {
-                    // OCCT: TR is set only here (the braces put "TR = Rot * Trans" in the opposite-tangents branch), so
-                    // the rotations and translations computed above are dropped (occt-issues.md).
-                    // TR is the transformation between (i-1) section and the i-th.
-                    tr = rot * trans;
-                }
+                // (opposite tangents: no rotation is defined)
+                // TR is the transformation between (i-1) section and the i-th, at each section (OCCT set it only for
+                // opposite tangents, so the sections stayed at the first one's place: decision 16722)
+                tr = rot * trans;
                 // cumulTR is the transformation between <myFirstSec> and
                 // the i-th section.
                 cumulTR = tr * cumulTR;

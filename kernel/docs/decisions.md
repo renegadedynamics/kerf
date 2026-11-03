@@ -15081,3 +15081,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        Test: a groove turned about the box's top back edge, a quarter annulus, the same with Perform(Until) on the back
        face, and with PerformUntilAngle at 135° up to the back face and up to the infinite plane through it (OCCT: no
        groove for the plane).
+16722. **GeomFill_SweepSectionGenerator moves its sections along the path** (unit 5L2's Perform row, types 1 to 3).
+       `TR = Rot * Trans` sat in the branch for opposite tangents, so every section of a circle, a constant or an
+       evolving section along a non-circular path stayed at the first one's place. It is set at each section (opposite
+       tangents, where no rotation is defined, translate). GeomFill_Pipe uses only type 0. Test: a circle of radius 1.5
+       along a 3D B-spline: each section is the circle about the path's point at its parameter, across the tangent.
+       The sweep recordings' secgen cases of those types (18 of 40) move to plan 3.2's third level: only the sections'
+       poles and derivatives differ.
