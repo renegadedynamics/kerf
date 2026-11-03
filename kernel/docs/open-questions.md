@@ -228,7 +228,7 @@ The numbers in brackets are the plan's (section 7).
     recommendations for 53 to 59, 61, 63 and 65; 56 as 10D proposed (the modelling layer uses the kernel's shapes);
     60 a root-level `Kerf.Color` in sRGB; 62 `Placement` compares by value, the engine by identity; 64 reversed: SVG
     line drawings (hidden-line removal) and PNG shaded pictures (a managed renderer), in Kerf and in Bento (decision
-    1327).
+    1349).
 
 ## Earlier judgement calls worth a look
 

@@ -13825,9 +13825,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 
 ## Phase 10: the owner's answers to questions 53 to 65 (10D's API design)
 
-### 15201. The owner's answers to questions 53 to 65
-
-Agreed on 3 November 2026. They settle 10D's draft (kernel/docs/api) for 10E and 10L:
+1349. **The owner's answers to questions 53 to 65**, agreed on 3 November 2026. They settle 10D's draft (kernel/docs/api) for 10E and 10L:
 
 - **53, operations:** each area's operations are static methods on an `<Area>Operations` class and also C# 14 extension
   members, so `BooleanOperations.Fuse(a, b)` and `a.Fuse(b)` both work. design-rules.md's `Booleans.Fuse` example
