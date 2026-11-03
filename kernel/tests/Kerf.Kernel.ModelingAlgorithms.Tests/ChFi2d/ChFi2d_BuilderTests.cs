@@ -244,6 +244,130 @@ public class ChFi2d_BuilderTests
         Assert.Equal(ConstructionError.IsDone, aDirect.Status());
     }
 
+    // The fillet of radius theR of the corner of e1 and e2 (in that order) in the plane z = 0: its arc, and e1 and e2
+    // shrunk to it, each ending where the arc does; the arc tangent to both (its centre at theR from the line, at the
+    // circle's radius plus or minus theR from the circle's centre).
+    private static void CheckFillet(Edge theE1, Edge theE2, double theR)
+    {
+        var anAlgo = new AnaFilletAlgo(theE1, theE2, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        Assert.True(anAlgo.Perform(theR));
+        Edge M1 = new(), M2 = new();
+        Edge anArc = anAlgo.Result(ref M1, ref M2);
+        Assert.False(anArc.IsNull || M1.IsNull || M2.IsNull);
+        var aFillet = new EdgeCurveAdaptor(anArc);
+        Assert.Equal(theR, aFillet.Circle().Radius(), 1.0e-9);
+        Point3D aCentre = aFillet.Circle().Location();
+        foreach (Edge anE in new[] { theE1, theE2 })
+        {
+            var aC = new EdgeCurveAdaptor(anE);
+            double aGap = aC.GetType() == CurveKind.Line
+                              ? aC.Line().Distance(aCentre)
+                              : Math.Abs(Math.Abs(aC.Circle().Location().Distance(aCentre) - aC.Circle().Radius()));
+            Assert.Equal(theR, aGap, 1.0e-9);
+        }
+        // the arc's ends are the shrunk edges' ends at the corner
+        Point3D aStart = aFillet.Value(aFillet.FirstParameter()), anEnd = aFillet.Value(aFillet.LastParameter());
+        bool Touches(Edge theEdge, Point3D theP)
+        {
+            var aC = new EdgeCurveAdaptor(theEdge);
+            return aC.Value(aC.FirstParameter()).Distance(theP) < 1.0e-7 || aC.Value(aC.LastParameter()).Distance(theP) < 1.0e-7;
+        }
+        Assert.True((Touches(M1, aStart) && Touches(M2, anEnd)) || (Touches(M1, anEnd) && Touches(M2, aStart)));
+    }
+
+    [Fact]
+    public void A_fillet_of_a_moved_arc()
+    {
+        // a quarter arc of radius 5 about the origin, moved by (10, 0, 0): from (15, 0) to (10, 5), then up the line
+        // x = 10. OCCT's isCW took the arc's middle point without the edge's location, and its shrinking projected the
+        // located ends on the curve without it (occt-issues.md, unit 5R's ChFi2d_AnaFilletAlgo isCW row; decision
+        // 16715).
+        var aCircle = new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 5.0);
+        Edge anArc = new MakeEdge(aCircle, 0.0, Math.PI / 2).Edge();
+        Edge aMoved = ShapeCasts.Edge(anArc.Moved(new Placement(Transform3D.Translation(new Vector3D(10, 0, 0)))));
+        Edge aLine = new MakeEdge(new Point3D(10, 5, 0), new Point3D(10, 15, 0)).Edge();
+        CheckFillet(aMoved, aLine, 1.0);
+        // the same arc built in place
+        Edge aPlaced = new MakeEdge(new CircleCurve3D(new Frame3D(new Point3D(10, 0, 0), new Direction3D(0, 0, 1)), 5.0), 0.0, Math.PI / 2).Edge();
+        CheckFillet(aPlaced, aLine, 1.0);
+    }
+
+    [Fact]
+    public void A_fillet_of_edges_of_different_orientations()
+    {
+        // the second edge runs from (10, 10) to the corner and is reversed in the wire: shrunk, it keeps (10, 10) and
+        // the fillet's end, (10, 2). OCCT chose its ends by the first edge's orientation, and kept the corner's part
+        // (occt-issues.md, unit 5R's ChFi2d_AnaFilletAlgo::Perform row; decision 1473).
+        Edge E1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge E2 = ShapeCasts.Edge(new MakeEdge(new Point3D(10, 10, 0), new Point3D(10, 0, 0)).Edge().Reversed());
+        CheckFillet(E1, E2, 2.0);
+        var anAlgo = new AnaFilletAlgo(E1, E2, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        Assert.True(anAlgo.Perform(2.0));
+        Edge M1 = new(), M2 = new();
+        anAlgo.Result(ref M1, ref M2);
+        var aC2 = new EdgeCurveAdaptor(M2);
+        Point3D[] anEnds = [aC2.Value(aC2.FirstParameter()), aC2.Value(aC2.LastParameter())];
+        Assert.Contains(anEnds, p => p.Distance(new Point3D(10, 10, 0)) < 1.0e-9);
+        Assert.Contains(anEnds, p => p.Distance(new Point3D(10, 2, 0)) < 1.0e-9);
+        var aC1 = new EdgeCurveAdaptor(M1);
+        Assert.True(aC1.Value(aC1.FirstParameter()).Distance(new Point3D(0, 0, 0)) < 1.0e-9);
+        Assert.True(aC1.Value(aC1.LastParameter()).Distance(new Point3D(8, 0, 0)) < 1.0e-9);
+    }
+
+    [Fact]
+    public void A_face_with_a_hole_keeps_its_hole()
+    {
+        // a square of 10 with a square hole of 4: a fillet of radius 2 on an outer corner, a chamfer of 1 by 1 on an
+        // inner one, then the fillet removed. Each result has its two wires, closed, and the area of the cut corners
+        // (OCCT put every edge into one wire: occt-issues.md, unit 5R's ChFi2d_Builder::BuildNewWire row; decision
+        // 16717)
+        var aPoly = new MakePolygon();
+        foreach (Point3D aP in new[] { new Point3D(3, 3, 0), new Point3D(3, 7, 0), new Point3D(7, 7, 0), new Point3D(7, 3, 0) })
+        {
+            aPoly.Add(aP);
+        }
+        aPoly.Close();
+        var aMaker = new MakeFace(Square());
+        aMaker.Add(aPoly.Wire());
+        Face aHoled = aMaker.Face();
+        Assert.Equal(84.0, Area(aHoled), 1.0e-9);
+
+        // (a removal leaves the closed flags unset, as OCCT's did)
+        void CheckWires(in Shape theFace, double theArea, bool theFlagged = true)
+        {
+            List<Shape> aWires = Sub(theFace, ShapeType.Wire);
+            Assert.Equal(2, aWires.Count);
+            Assert.All(aWires, w => Assert.True(!theFlagged || ShapeCasts.Wire(w).Closed()));
+            Assert.Equal(theArea, Area(theFace), 1.0e-9);
+            Assert.True(new Analyzer(theFace).IsValid());
+        }
+
+        Vertex Corner(in Shape theFace, Point3D theP)
+            => Sub(theFace, ShapeType.Vertex).Select(s => ShapeCasts.Vertex(s)).Single(v => Tool.Pnt(v).IsEqual(theP, 1.0e-9));
+
+        var aFillet = new MakeFillet2D(aHoled);
+        Edge aFilletEdge = aFillet.AddFillet(Corner(aHoled, new Point3D(10, 10, 0)), 2.0);
+        aFillet.Build();
+        Assert.True(aFillet.IsDone);
+        CheckWires(aFillet.Shape(), 84.0 - 4.0 * (1.0 - Math.PI / 4.0));
+
+        // removed again
+        aFillet.RemoveFillet(aFilletEdge);
+        aFillet.Build();
+        CheckWires(aFillet.Shape(), 84.0, false);
+
+        // a chamfer on the hole's corner (3, 3): the face gains the corner's triangle
+        Vertex anInner = Corner(aHoled, new Point3D(3, 3, 0));
+        IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aHoled, ShapeType.Vertex, ShapeType.Edge, aMap);
+        NCollection_List<Shape> anEdges = aMap.GetValue(anInner);
+        var aChamfer = new MakeFillet2D(aHoled);
+        aChamfer.AddChamfer(ShapeCasts.Edge(anEdges.First()), ShapeCasts.Edge(anEdges.Last()), 1.0, 1.0);
+        aChamfer.Build();
+        Assert.True(aChamfer.IsDone);
+        CheckWires(aChamfer.Shape(), 84.0 + 0.5);
+    }
+
     [Fact]
     public void FilletAPI_and_ChamferAPI_on_two_segments()
     {

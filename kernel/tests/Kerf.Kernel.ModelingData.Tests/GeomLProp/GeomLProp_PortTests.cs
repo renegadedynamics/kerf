@@ -146,19 +146,24 @@ public class GeomLProp_PortTests
     }
 
     /// <summary>
-    /// OCCT compares Degree - Multiplicity (the order of continuity at a knot) with its own scale, on which 2 is C1 and
-    /// 4 is C2 (occt-issues.md): a C2 knot is reported C1 at best, a C1 knot C0.
+    /// At an inner knot a cubic is C(3 - multiplicity): the junction of the curve with itself there is reported so
+    /// (OCCT compared Degree - Multiplicity with its own scale, on which 2 is C1 and 4 is C2, and reported a C2 knot C1
+    /// at best, a C1 knot C0: occt-issues.md, decision 1466).
     /// </summary>
     [Fact]
-    public void Continuity_at_a_BSpline_knot_is_reported_lower_as_in_OCCT()
+    public void Continuity_at_a_BSpline_knot_is_the_knots()
     {
-        // a cubic with a simple knot is C2 there: OCCT compares first derivatives only
+        // a cubic with a simple knot is C2 there
         BSplineCurve3D aC2 = CubicWithKnot(1);
-        Assert.Equal(C1, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
+        Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC2, aC2, 0.5, 0.5, false, false));
 
-        // with a double knot it is C1: OCCT compares nothing
+        // with a double knot, C1
         BSplineCurve3D aC1 = CubicWithKnot(2);
-        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
+        Assert.Equal(C1, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.5, 0.5, false, false));
+
+        // with a triple knot, C0
+        BSplineCurve3D aC0 = CubicWithKnot(3);
+        Assert.Equal(C0, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC0, aC0, 0.5, 0.5, false, false));
 
         // away from the knot (not a B-spline knot: cont 5, n 3) both are C2
         Assert.Equal(C2, global::Kerf.Engine.Geometry.Properties.GeomLProp.Continuity(aC1, aC1, 0.25, 0.25, false, false));
@@ -201,23 +206,29 @@ public class GeomLProp_PortTests
     }
 
     /// <summary>
-    /// OCCT passes the curvature fields by value before computing them (occt-issues.md): asked before
-    /// IsCurvatureDefined, MaxCurvature and the others return the previous value, 0 on a new object, and IsUmbilic
-    /// compares the previous values. The oracle tests confirm it against native OCCT.
+    /// The curvatures asked before IsCurvatureDefined are the point's: a sphere of radius 2 and a cylinder of radius 4
+    /// (OCCT passed the curvature fields by value before computing them, so it returned the previous point's, 0 on a
+    /// new object, and IsUmbilic compared those: occt-issues.md, decision 1467).
     /// </summary>
     [Fact]
-    public void Curvatures_asked_first_return_the_previous_value_as_in_OCCT()
+    public void Curvatures_asked_first_are_the_points()
     {
         var aSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aProps = new global::Kerf.Engine.Geometry.Properties.SLProps(aSphere, 0.4, 0.3, 2, 1e-7);
-        Assert.Equal(0.0, aProps.MaxCurvature());
+        Assert.Equal(-0.5, aProps.MaxCurvature(), 1e-15);
         Assert.Equal(-0.5, aProps.MaxCurvature(), 1e-15);
 
         var aCylinder = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0);
         var aCylProps = new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
-        Assert.True(aCylProps.IsUmbilic()); // compares 0 and 0
         Assert.False(aCylProps.IsUmbilic());
-        aCylProps.SetParameters(1.0, 1.0);
-        Assert.Equal(-0.25, aCylProps.MinCurvature(), 1e-15); // the previous parameters' value, the same here
+        Assert.Equal(0.0, new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7).GaussianCurvature(), 1e-15);
+        Assert.Equal(-0.125, new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7).MeanCurvature(), 1e-15);
+
+        // a new point on the same object: the sphere's, not the cylinder's
+        var aMoved = new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
+        Assert.Equal(-0.25, aMoved.MinCurvature(), 1e-15);
+        aMoved.SetSurface(aSphere);
+        aMoved.SetParameters(1.0, 0.5);
+        Assert.Equal(-0.5, aMoved.MinCurvature(), 1e-15);
     }
 }

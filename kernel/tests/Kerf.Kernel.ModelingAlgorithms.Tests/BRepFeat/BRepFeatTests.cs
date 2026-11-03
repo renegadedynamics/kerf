@@ -151,6 +151,51 @@ public class BRepFeatTests
     }
 
     [Fact]
+    public void MakeRevol_UntilAndAngle_StopsAtTheUntilFace()
+    {
+        // a groove: the rectangle x in [3, 7], y in [14, 18] on the top face turned about the top back edge (y = 20,
+        // z = 30) into the box, up to the back face y = 20: a quarter annulus of radii 2 and 6, 4 wide. Up to that face,
+        // or to the infinite plane through it, at an angle beyond it: the same groove (OCCT's PerformUntilAngle had
+        // Perform(Until)'s branches the other way round: occt-issues.md, unit 7I's BRepFeat_MakeRevol row; decision
+        // 16721)
+        Shape aBox = LocOpeTests.Box();
+        Face aTop = LocOpeTests.TopFace(aBox);
+        Face aRect = Rect(3, 7, 14, 18, 30);
+        Shape aBack = new Explorer(aBox, ShapeType.Face).Current();
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            var aProps = new Properties();
+            MassPropertiesBuilder.SurfaceProperties(anExp.Current(), aProps);
+            if (Math.Abs(aProps.CentreOfMass().Y() - 20) < 1e-9)
+            {
+                aBack = anExp.Current();
+            }
+        }
+        var anAxis = new Axis3D(new Point3D(0, 20, 30), new Direction3D(1, 0, 0));
+        double anExpected = 6000 - Math.PI / 4 * (36 - 4) * 4;
+
+        var anUntil = new MakeRevol(aBox, aRect, aTop, anAxis, 0, true);
+        anUntil.Perform(aBack);
+        Assert.True(anUntil.IsDone);
+        Assert.Equal(anExpected, Volume(anUntil.Shape()), 6);
+
+        var anAngle = new MakeRevol(aBox, aRect, aTop, anAxis, 0, true);
+        anAngle.PerformUntilAngle(aBack, 0.75 * Math.PI);
+        Assert.True(anAngle.IsDone);
+        Assert.True(new Analyzer(anAngle.Shape()).IsValid());
+        Assert.Equal(anExpected, Volume(anAngle.Shape()), 6);
+
+        // up to the infinite plane y = 20 (a face without wires): the same groove, where OCCT glued and left the box
+        var aB = new global::Kerf.Engine.Topology.Brep.BrepBuilder();
+        Face anInfinite = new();
+        aB.MakeFace(ref anInfinite, new PlaneSurface(new Plane3D(new Point3D(0, 20, 0), new Direction3D(0, 1, 0))), 1e-7);
+        var aPlaneUntil = new MakeRevol(aBox, aRect, aTop, anAxis, 0, true);
+        aPlaneUntil.PerformUntilAngle(anInfinite, 0.75 * Math.PI);
+        Assert.True(aPlaneUntil.IsDone);
+        Assert.Equal(anExpected, Volume(aPlaneUntil.Shape()), 6);
+    }
+
+    [Fact]
     public void MakeCylindricalHole_Blind_And_Through()
     {
         Shape aBox = LocOpeTests.Box();

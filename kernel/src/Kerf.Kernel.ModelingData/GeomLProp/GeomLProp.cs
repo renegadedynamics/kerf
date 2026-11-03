@@ -46,6 +46,10 @@ public static class GeomLProp
         return cont;
     }
 
+    // The order of continuity at a knot on GeomAbsToInteger's scale: C0, C1, C2, C3 and above.
+    private static int OrderToInteger(int theOrder)
+        => theOrder <= 0 ? 0 : theOrder == 1 ? 2 : theOrder == 2 ? 4 : 5;
+
     /// <summary>
     /// The regularity at the junction of C1 at u1 and C2 at u2 (r1, r2: whether each curve is taken reversed), with
     /// the linear and angular tolerances tl and ta used to compare the derivatives: C0, G1, C1 or C2. Throws
@@ -85,9 +89,9 @@ public static class GeomLProp
             curve2 = trimmed.BasisCurve();
         }
 
-        // OCCT: Degree() - Multiplicity() is the order of continuity at the knot (0 for C0, 1 for C1, 2 for C2), but
-        // it is compared below with GeomAbsToInteger's scale (2 for C1, 4 for C2): a C1 knot gives n = 0 and a C2
-        // knot n = 1, so a junction at an inner knot is reported one or two levels lower than it is
+        // At an inner knot, Degree() - Multiplicity() is the order of continuity (0 for C0, 1 for C1, 2 for C2),
+        // taken to GeomAbsToInteger's scale (decision 1466; OCCT compared the order itself with that scale, so a
+        // junction at a knot was reported one or two levels lower than it is)
         if (curve1.IsKind(typeof(BSplineCurve3D)))
         {
             BSplineCurve3D bSplineCurve = (BSplineCurve3D)curve1;
@@ -96,7 +100,7 @@ public static class GeomLProp
 
             if (index1 > 1 && index2 < bSplineCurve.KnotCount && index1 == index2)
             {
-                cont1 = bSplineCurve.Degree() - bSplineCurve.Multiplicity(index1);
+                cont1 = OrderToInteger(bSplineCurve.Degree() - bSplineCurve.Multiplicity(index1));
             }
             else
             {
@@ -112,7 +116,7 @@ public static class GeomLProp
 
             if (index1 > 1 && index2 < bSplineCurve.KnotCount && index1 == index2)
             {
-                cont2 = bSplineCurve.Degree() - bSplineCurve.Multiplicity(index1);
+                cont2 = OrderToInteger(bSplineCurve.Degree() - bSplineCurve.Multiplicity(index1));
             }
             else
             {

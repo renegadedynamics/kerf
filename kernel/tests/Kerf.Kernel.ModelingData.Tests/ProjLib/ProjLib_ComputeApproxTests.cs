@@ -199,10 +199,14 @@ public class ProjLib_ComputeApproxTests
 
     // A B-spline approximation, within 1e-9, of a helix on the cylinder (the 2D line through (u0, 0.12) with
     // direction (1, 0.4), on [0, len]). The method assumes the curve lies on the surface (Function_D1's tangents).
-    private static BSplineCurve3D Helix(CylindricalSurface theCyl, double theU0, double theLen)
+    private static BSplineCurve3D Helix(Surface theSurf, double theU0, double theLen)
+        => Helix(theSurf, new Point2D(theU0, 0.12), new Direction2D(1.0, 0.4), theLen);
+
+    // The same for the 2D line through theStart along theDir.
+    private static BSplineCurve3D Helix(Surface theSurf, Point2D theStart, Direction2D theDir, double theLen)
     {
-        var aLine = new LineCurve2D(new Point2D(theU0, 0.12), new Direction2D(1.0, 0.4));
-        var aCOnS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0.0, theLen), new SurfaceAdaptor(theCyl));
+        var aLine = new LineCurve2D(theStart, theDir);
+        var aCOnS = new CurveOnSurface(new CurveAdaptor2D(aLine, 0.0, theLen), new SurfaceAdaptor(theSurf));
         BSplineCurve3D? aC = new global::Kerf.Engine.Geometry.Conversion.ApproxCurve(aCOnS, 1.0e-9, Continuity.C2, 100, 12).Curve();
         Assert.NotNull(aC);
         return aC;
@@ -219,32 +223,45 @@ public class ProjLib_ComputeApproxTests
         Assert.Equal(6.0 / Math.Sqrt(1.16), aRes.Value(aC.LastParameter()).X() - aRes.Value(aC.FirstParameter()).X(), 1.0e-6);
     }
 
-    [Fact]
-    public void Cylinder_HelixOfMoreThanATurn_WrongResult_OcctBug()
+    // The pcurve of a curve winding more than a turn follows it: on the curve within the reached tolerance, no jump,
+    // and its parametric span the analytic one. OCCT (occt-issues.md, unit 3E's ProjLib_ComputeApprox row) kept a
+    // window of 2π around the middle of the curve's U range, so the image wrapped inside the curve and the
+    // approximation bridged the jump: a tiny reached tolerance, a result off by up to the diameter (decision 1459).
+    private static void CheckWinding(Surface theSurf, Point2D theStart, Direction2D theDir, double theLen)
     {
-        // OCCT: Function_SetUVBounds finds the U range of the curve (here 8.4 radians), then, as it isn't within
-        // [0, 2 PI], replaces it with a window of width 2 PI around its middle: the parametric image wraps inside
-        // the curve, and the approximation bridges the jump. The reached tolerance is tiny, but the result is off by
-        // up to the diameter.
-        var aCyl = new CylindricalSurface(Std, 1.5);
-        BSplineCurve3D aC = Helix(aCyl, 0.3, 9.0);
-        var aS = new SurfaceAdaptor(aCyl);
-        var aProj = new ComputeApprox(new CurveAdaptor(aC), aS, 1.0e-6);
-        BSplineCurve2D? aRes = aProj.BSpline();
-        Assert.NotNull(aRes);
-        Assert.True(aProj.Tolerance() < 1.0e-9);
-        double aMax = 0.0;
-        for (int i = 0; i <= 400; i++)
-        {
-            double t = 9.0 * i / 400;
-            Point2D aUV = aRes.Value(t);
-            aMax = Max(aMax, aS.Value(aUV.X(), aUV.Y()).Distance(aC.Value(t)));
-        }
-        Assert.True(aMax > 2.9, $"max distance {aMax}");
+        BSplineCurve3D aC = Helix(theSurf, theStart, theDir, theLen);
+        BSplineCurve2D aRes = Approx(aC, theSurf);
+        Vector2D aSpan = new(aRes.Value(aC.FirstParameter()), aRes.Value(aC.LastParameter()));
+        Assert.Equal(theLen * theDir.X(), aSpan.X(), 1.0e-6);
+        Assert.Equal(theLen * theDir.Y(), aSpan.Y(), 1.0e-6);
+    }
 
-        // Under a turn the projection is right.
+    [Fact]
+    public void Cylinder_HelixOfMoreThanATurn_FollowsTheHelix()
+    {
+        var aCyl = new CylindricalSurface(Std, 1.5);
+        // 8.4 radians, then three and a half turns, from either side of the seam
+        CheckWinding(aCyl, new Point2D(0.3, 0.12), new Direction2D(1.0, 0.4), 9.0);
+        CheckWinding(new CylindricalSurface(Tilted, 1.5), new Point2D(5.0, 0.12), new Direction2D(1.0, 0.2), 22.5);
+        // turning the other way
+        CheckWinding(aCyl, new Point2D(1.0, 0.12), new Direction2D(-1.0, 0.3), 15.0);
+
+        // Under a turn the projection is as before.
         BSplineCurve3D aShort = Helix(aCyl, 0.3, 6.0);
         Approx(aShort, aCyl);
+    }
+
+    [Fact]
+    public void Cone_SpiralOfMoreThanATurn_FollowsTheSpiral()
+        => CheckWinding(new ConicalSurface(Tilted, M_PI / 6.0, 1.0), new Point2D(0.3, 0.5), new Direction2D(1.0, 0.1), 14.0);
+
+    [Fact]
+    public void Torus_CoilOfMoreThanATurn_FollowsTheCoil()
+    {
+        var aTor = new ToroidalSurface(Std, 3.0, 1.0);
+        // around the tube five times over a third of the ring, then around the ring more than once
+        CheckWinding(aTor, new Point2D(0.3, 0.12), new Direction2D(0.07, 1.0), 31.0);
+        CheckWinding(aTor, new Point2D(0.3, 0.12), new Direction2D(1.0, 0.05), 8.0);
     }
 
     [Fact]

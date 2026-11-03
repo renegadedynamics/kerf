@@ -479,7 +479,9 @@ public sealed class MeasurementGauss
                                 ref double outMass)
     {
         global::Kerf.Engine.Measurement.MeasurementGauss.Convert(inertia, ref outGravityCenter, ref outMatrixOfInertia, ref outMass);
-        if (Math.Abs(inertia.Mass) >= EPS_DIM && isByPoint)
+        // a region bounded by a plane has its mass and centre too (decision 1468; OCCT tested isByPoint here as well,
+        // so it cleared them)
+        if (Math.Abs(inertia.Mass) >= EPS_DIM)
         {
             double invMass = 1.0 / inertia.Mass;
             if (isByPoint)
@@ -499,7 +501,6 @@ public sealed class MeasurementGauss
         }
         else
         {
-            // OCCT: a region bounded by a plane always gets a null mass and centre here (occt-issues.md)
             outMass = 0.0;
             outGravityCenter = outGravityCenter.WithCoord(0.0, 0.0, 0.0);
         }

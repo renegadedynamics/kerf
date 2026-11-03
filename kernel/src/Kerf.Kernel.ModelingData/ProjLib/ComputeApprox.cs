@@ -91,7 +91,9 @@ public class ComputeApprox
                                            double v1,
                                            double v2,
                                            bool uCouture,
-                                           bool vCouture)
+                                           bool vCouture,
+                                           Winding? uWinding = null,
+                                           Winding? vWinding = null)
     {
         double s = 0.0, t = 0.0;
 
@@ -136,7 +138,11 @@ public class ComputeApprox
 
         if (uCouture)
         {
-            if (s < u1 || s > u2)
+            if (uWinding is not null)
+            {
+                s = uWinding.Unwrap(u, s);
+            }
+            else if (s < u1 || s > u2)
             {
                 s = global::Kerf.Engine.Geometry.ElCLib.InPeriod(s, u1, u2);
             }
@@ -158,7 +164,11 @@ public class ComputeApprox
                     s = global::Kerf.Engine.Geometry.ElCLib.InPeriod(s, u1, u2);
                 }
             }
-            if (t < v1 || t > v2)
+            if (vWinding is not null)
+            {
+                t = vWinding.Unwrap(u, t);
+            }
+            else if (t < v1 || t > v2)
             {
                 t = global::Kerf.Engine.Geometry.ElCLib.InPeriod(t, v1, v2);
             }
@@ -177,14 +187,16 @@ public class ComputeApprox
                                     double v1,
                                     double v2,
                                     bool uCouture,
-                                    bool vCouture)
+                                    bool vCouture,
+                                    Winding? uWinding,
+                                    Winding? vWinding)
     {
         Point3D p3d;
         double dU, dV;
 
         // D is left unset on failure in OCCT; the port gives a zero vector (decision 32).
         d = new Vector2D();
-        p = Function_Value(u, myCurve, mySurface, u1, u2, v1, v2, uCouture, vCouture);
+        p = Function_Value(u, myCurve, mySurface, u1, u2, v1, v2, uCouture, vCouture, uWinding, vWinding);
 
         SurfaceKind type = mySurface.GetType();
 
@@ -252,8 +264,12 @@ public class ComputeApprox
                                              ref bool uCouture,
                                              ref bool vCouture,
                                              CurveAdaptorBase myCurve,
-                                             SurfaceAdaptorBase mySurface)
+                                             SurfaceAdaptorBase mySurface,
+                                             out Winding? uWinding,
+                                             out Winding? vWinding)
     {
+        uWinding = null;
+        vWinding = null;
         double w1, w2, w;
         Point3D p1, p2, p;
         //
@@ -341,6 +357,7 @@ public class ComputeApprox
                         //
                         bool isclandper = (!(myCurve.IsClosed) && !(myCurve.IsPeriodic));
                         bool isFirst = true;
+                        var aUTrack = new Winding(w1, u1);
                         for (double par = w1 + step; par <= w2; par += step)
                         {
                             if (!isclandper)
@@ -372,6 +389,9 @@ public class ComputeApprox
                                     }
                                     else
                                     {
+                                        // the new turn replaces the previous one (OCCT added both, so a second
+                                        // crossing of the seam unwrapped wrongly: decision 1459)
+                                        u -= Delta;
                                         Delta -= 2 * M_PI;
                                     }
                                 }
@@ -399,6 +419,9 @@ public class ComputeApprox
                                     }
                                     else
                                     {
+                                        // the new turn replaces the previous one (OCCT added both, so a second
+                                        // crossing of the seam unwrapped wrongly: decision 1459)
+                                        u -= Delta;
                                         Delta += 2 * M_PI;
                                     }
                                 }
@@ -416,6 +439,11 @@ public class ComputeApprox
                                 myU2 = u;
                                 pmax = par;
                             }
+                            if (isFirst)
+                            {
+                                aUTrack.ResetFirst(u1);
+                            }
+                            aUTrack.Add(par, u);
                             u1 = u;
                             isFirst = false;
                         } // for(double par = W1 + Step; par <= W2; par += Step)
@@ -431,7 +459,12 @@ public class ComputeApprox
                             myU2 += dmax * .5;
                         }
 
-                        if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
+                        if (aUTrack.IsMoreThanATurn(dmax))
+                        {
+                            uWinding = aUTrack;
+                            uCouture = true;
+                        }
+                        else if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
                         {
                             uCouture = false;
                         }
@@ -520,6 +553,7 @@ public class ComputeApprox
                     myU1 = u1;
                     myU2 = u1;
                     double pmin = w1, pmax = w1, plim = w2 + .1 * step;
+                    var aUTrack = new Winding(w1, u1);
                     for (double par = w1 + step; par <= plim; par += step)
                     {
                         p = myCurve.Value(par);
@@ -551,6 +585,7 @@ public class ComputeApprox
                             myU2 = u;
                             pmax = par;
                         }
+                        aUTrack.Add(par, u);
                         u1 = u;
                     }
 
@@ -565,7 +600,12 @@ public class ComputeApprox
                         myU2 += dmax * .5;
                     }
 
-                    if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
+                    if (aUTrack.IsMoreThanATurn(dmax))
+                    {
+                        uWinding = aUTrack;
+                        uCouture = true;
+                    }
+                    else if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
                     {
                         uCouture = false;
                     }
@@ -815,6 +855,7 @@ public class ComputeApprox
                     myU1 = u1;
                     myU2 = u1;
                     double pmin = w1, pmax = w1, plim = w2 + .1 * step;
+                    var aUTrack = new Winding(w1, u1);
                     for (double par = w1 + step; par <= plim; par += step)
                     {
                         p = myCurve.Value(par);
@@ -846,6 +887,7 @@ public class ComputeApprox
                             myU2 = u;
                             pmax = par;
                         }
+                        aUTrack.Add(par, u);
                         u1 = u;
                     }
 
@@ -860,7 +902,12 @@ public class ComputeApprox
                         myU2 += dmax * .5;
                     }
 
-                    if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
+                    if (aUTrack.IsMoreThanATurn(dmax))
+                    {
+                        uWinding = aUTrack;
+                        uCouture = true;
+                    }
+                    else if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
                     {
                         myU1 = 0.0;
                         myU2 = 2.0 * M_PI;
@@ -893,6 +940,8 @@ public class ComputeApprox
                 myV1 = v1;
                 myV2 = v1;
                 double pminU = w1, pmaxU = w1, pminV = w1, pmaxV = w1, plim = w2 + .1 * step;
+                var aUTrack = new Winding(w1, u1);
+                var aVTrack = new Winding(w1, v1);
                 for (double par = w1 + step; par <= plim; par += step)
                 {
                     p = myCurve.Value(par);
@@ -951,6 +1000,8 @@ public class ComputeApprox
                         myV2 = v;
                         pmaxV = par;
                     }
+                    aUTrack.Add(par, u);
+                    aVTrack.Add(par, v);
                     u1 = u;
                     v1 = v;
                 }
@@ -976,7 +1027,12 @@ public class ComputeApprox
                     myV2 += dmaxV * .5;
                 }
 
-                if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
+                if (aUTrack.IsMoreThanATurn(dmaxU))
+                {
+                    uWinding = aUTrack;
+                    uCouture = true;
+                }
+                else if ((myU1 >= 0.0 && myU1 <= 2 * M_PI) && (myU2 >= 0.0 && myU2 <= 2 * M_PI))
                 {
                     myU1 = 0.0;
                     myU2 = 2.0 * M_PI;
@@ -989,7 +1045,12 @@ public class ComputeApprox
                     myU2 = u + M_PI;
                     uCouture = true;
                 }
-                if ((myV1 >= 0.0 && myV1 <= 2 * M_PI) && (myV2 >= 0.0 && myV2 <= 2 * M_PI))
+                if (aVTrack.IsMoreThanATurn(dmaxV))
+                {
+                    vWinding = aVTrack;
+                    vCouture = true;
+                }
+                else if ((myV1 >= 0.0 && myV1 <= 2 * M_PI) && (myV2 >= 0.0 && myV2 <= 2 * M_PI))
                 {
                     vCouture = false;
                 }
@@ -1012,6 +1073,56 @@ public class ComputeApprox
         }
     }
 
+    /// <summary>
+    /// The angular parameter of a curve winding more than a period around the surface (a helix of several turns on a
+    /// cylinder, a coil on a torus), from Function_SetUVBounds's samples, unwrapped. A point's parameter, known modulo
+    /// 2π, is taken at the turn the samples predict (decision 1459). OCCT kept a window of 2π around the middle of
+    /// the range, so the curve's image wrapped inside it and the approximation bridged the jump.
+    /// </summary>
+    private sealed class Winding
+    {
+        private readonly List<double> _params = [];
+        private readonly List<double> _values = [];
+
+        public Winding(double theParam, double theValue)
+        {
+            Add(theParam, theValue);
+        }
+
+        public void ResetFirst(double theValue)
+        {
+            _values[0] = theValue;
+        }
+
+        public void Add(double theParam, double theValue)
+        {
+            _params.Add(theParam);
+            _values.Add(theValue);
+        }
+
+        // True if the samples span more than a turn, by more than half the largest step between samples (a closed
+        // curve's samples span a turn, and the last can overshoot the end by a tenth of a step)
+        public bool IsMoreThanATurn(double theMaxStep)
+            => _values.Max() - _values.Min() > 2 * M_PI + 0.5 * theMaxStep;
+
+        public double Unwrap(double theParam, double theValue)
+        {
+            int i = _params.BinarySearch(theParam);
+            double aPredicted;
+            if (i >= 0)
+            {
+                aPredicted = _values[i];
+            }
+            else
+            {
+                int j = Math.Clamp(~i, 1, _params.Count - 1);
+                double aT = (theParam - _params[j - 1]) / (_params[j] - _params[j - 1]);
+                aPredicted = _values[j - 1] + aT * (_values[j] - _values[j - 1]);
+            }
+            return theValue + 2 * M_PI * Math.Round((aPredicted - theValue) / (2 * M_PI));
+        }
+    }
+
     /// <summary>OCCT's file-local class ProjLib_Function: the 2D point of the projection at a parameter.</summary>
     private sealed class ProjLib_Function : Function
     {
@@ -1022,6 +1133,7 @@ public class ComputeApprox
 
         public double myU1, myU2, myV1, myV2;
         public bool UCouture, VCouture;
+        private readonly Winding? _uWinding, _vWinding;
 
         public ProjLib_Function(CurveAdaptorBase c, SurfaceAdaptorBase s)
         {
@@ -1035,7 +1147,7 @@ public class ComputeApprox
             VCouture = false;
             _nbPnt = 0;
             _nbPnt2d = 1;
-            Function_SetUVBounds(ref myU1, ref myU2, ref myV1, ref myV2, ref UCouture, ref VCouture, _curve, _surface);
+            Function_SetUVBounds(ref myU1, ref myU2, ref myV1, ref myV2, ref UCouture, ref VCouture, _curve, _surface, out _uWinding, out _vWinding);
             _isPeriodic[0] = _surface.IsUPeriodic;
             _isPeriodic[1] = _surface.IsVPeriodic;
 
@@ -1071,13 +1183,13 @@ public class ComputeApprox
         public override bool Value(double t, NCollection_Array1<Point2D> pnt2d, NCollection_Array1<Point3D> pnt)
         {
             pnt2d[1] =
-                Function_Value(t, _curve, _surface, myU1, myU2, myV1, myV2, UCouture, VCouture);
+                Function_Value(t, _curve, _surface, myU1, myU2, myV1, myV2, UCouture, VCouture, _uWinding, _vWinding);
             return true;
         }
 
         public Point2D Value(double t)
         {
-            return Function_Value(t, _curve, _surface, myU1, myU2, myV1, myV2, UCouture, VCouture);
+            return Function_Value(t, _curve, _surface, myU1, myU2, myV1, myV2, UCouture, VCouture, _uWinding, _vWinding);
         }
 
         public override bool D1(double t, NCollection_Array1<Vector2D> vec2d, NCollection_Array1<Vector3D> vec)
@@ -1094,7 +1206,9 @@ public class ComputeApprox
                                     myV1,
                                     myV2,
                                     UCouture,
-                                    VCouture);
+                                    VCouture,
+                                    _uWinding,
+                                    _vWinding);
             vec2d[1] = aVec2d;
             return isOk;
         }

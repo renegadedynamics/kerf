@@ -109,7 +109,9 @@ public class Ecc2d
     /// <summary>Computes the minimal distances.</summary>
     public void Perform()
     {
-        // OCCT doesn't clear myPoints1 and myPoints2: a second Perform appends to the first one's solutions
+        // a second Perform replaces the first one's solutions (OCCT appended to them: decision 1461)
+        _points1.Clear();
+        _points2.Clear();
         _done = false;
         _parallel = false;
 

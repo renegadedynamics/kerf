@@ -14932,3 +14932,183 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (decision 1453),
          and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
          printer; the tool now parenthesises in a string).
+
+## Phase 10: unit 10K2, OCCT's bugs: construction, properties, extrema and projection
+
+1459. **The pcurve of a curve winding more than a turn follows it** (occt-issues.md, unit 6A's ProjLib_ComputeApprox
+       row). Function_SetUVBounds unwraps the curve's angular parameter along samples; when the range came out wider than
+       a period OCCT still kept a window of 2π about its middle, so the image wrapped inside the curve and the
+       approximation bridged the jump: a helix of more than a turn on a cylinder (threads) got a pcurve off by up to the
+       diameter, with a tiny reported tolerance. The sampled, unwrapped parameters are now kept (`Winding`) when they span
+       more than a turn (by more than half a sampling step, so a closed curve, whose samples span one turn, keeps its
+       window), for the cylinder, the cone, the sphere and both directions of the torus, and a point's parameter,
+       known modulo 2π, is taken at the turn the samples predict. Curves within a turn are as before. The
+       cone's sampling also added the old turn to the new one at a second crossing of the seam; it now replaces it, as
+       the cylinder's does. Tests: helices of 1.3 to 3.5 turns on cylinders either way round, a conical spiral and two
+       toroidal coils, each pcurve on the curve within the reached tolerance and its parametric span the analytic one
+       (the pinned `Cylinder_HelixOfMoreThanATurn_WrongResult_OcctBug` rewritten). No recording moved.
+1460. **A free part of a projection after an isoparametric one gets its own pcurve** (unit 6A's
+       ProjLib_CompProjectedCurve::Perform row). Perform cleared its 2D approximation flag for an isoparametric part and
+       never restored it, so every later free part got the iso line again. Each part now starts from the requested
+       flags. The pinned test asserts the free part's pcurve is the polyline's projection.
+1461. **Curve-curve extrema replace their solutions on a second Perform** (unit 3B's Extrema_GGenExtCC row). The 3D
+       and 2D ECC appended a run's solutions to the previous run's, so an Extrema_ExtCC reused on other curves reported
+       the old curves' solutions too. Perform clears them. The pinned test asserts a second run gives the first run's
+       solutions only, and a reused ExtCC what a new one gives.
+1462. **GeomAPI_ExtremaCurveCurve's total distance keeps the nearest end pair** (unit 3F's TotalPerform row). Each end
+       pair was compared with the first total distance, never updated, so a later, farther pair could replace a nearer
+       one (√8 for √2 on two perpendicular segments). The comparison is with the best so far; the pinned test asserts √2
+       between (1, 0, 0) and (0, 1, 0).
+1463. **GeomAPI_ExtremaCurveCurve on ranges keeps the ranges for the total distance** (unit 3F's Init row). Init with
+       ranges loaded the whole curves, so the total methods paired the ranges' end points with the curves' own end
+       parameters and projected onto the whole curves. The adaptors are loaded on the ranges; the pinned test asserts √2
+       at parameters (1, 1) on ranges [1, 2] of segments [0, 3].
+1464. **2D circle intersections give each circle's own parameters** (occt-issues.md, phase 1's IntAna2d row).
+       IntAna2d_AnaIntersection measured both parameters counterclockwise from each X axis whatever the circle's sense,
+       and left an external tangency's parameter on the second circle at 2π. The parameter on an indirect circle is
+       now 2π − a, in [0, 2π[, and 2π becomes 0. Tests: random circle pairs of both senses, each parameter giving the
+       point on its circle (the pinned test rewritten); an indirect tangency. The IntAna2d oracle's circle pairs move to
+       plan 3.2's third level for those parameters: native's a is accepted where the port's is 2π − a on an indirect
+       circle, or 0 for native's 2π.
+1465. **A parabola projected on a plane gets the right focal** (unit 6A's ProjLib_ProjectOnPlane::Load row). The
+       image of the parabola u ↦ O + u²/(4f) Xc + u Yc is O' + u²/(4f) f(Xc) + u f(Yc), a parabola of focal
+       f |f(Yc)|² / |f(Xc)| in the parameter u |f(Yc)|; OCCT dropped |f(Yc)|². The focal is now right, and where the
+       parameter must be kept (`KeepParam`) and |f(Yc)| isn't 1 the projection is approximated, as for a skew projection.
+       The pinned test asserts focal 0.5 cos² on a plane tilted about the parabola's axis, the image of sampled points,
+       and the kept parameter.
+1466. **GeomLProp::Continuity reports a junction at a B-spline knot at its order** (unit 3C's GeomLProp::Continuity
+       row). At an inner knot Degree − Multiplicity is the order of continuity, which OCCT compared with
+       GeomAbsToInteger's scale (2 for C1, 4 for C2), so a C2 knot compared first derivatives only and a C1 knot nothing.
+       The order is taken to that scale. Concatenation (GeomConvert, BRepAlgo) joins curves at their ends, never at an
+       inner knot, so its results don't move. The pinned test asserts C2, C1 and C0 at a cubic's simple, double and
+       triple knots.
+1467. **Curvatures asked before IsCurvatureDefined are the point's** (unit 3C's LProp_SurfaceUtils row).
+       MaxCurvature, MinCurvature, MeanCurvature, GaussianCurvature and IsUmbilic read the curvature fields before calling
+       IsCurvatureDefined, which computes them, so a first call returned the previous point's values (0 on a new object).
+       They compute first, in GeomLProp's SLProps, LProp's SLProps3d (BRepLProp's) and HLRBRep's copy. Test: a sphere's
+       and a cylinder's curvatures asked first (the pinned test rewritten). The SLProps oracle's first calls move to plan
+       3.2's third level: a difference is intended when the port's first value is the one it gives after
+       IsCurvatureDefined, which is then compared with native's; `Curvature_asked_first_returns_the_stale_value` keeps
+       native's stale value and asserts the port's.
+1468. **BRepGProp_Vinert by a plane reports its volume and centre** (unit 3H's BRepGProp_Gauss::convert row). The
+       test `|Mass| >= EPS_DIM && IsByPoint` sent every region bounded by a plane to the branch that clears the mass and
+       centre. The plane branch is reached now. Test: the region between a unit cube's top face and the plane z = 0 is
+       the cube, mass 1, centre (0.5, 0.5, 0.5), central inertia 1/6, for two location points (the pinned test
+       rewritten). Found on the way, left as it is: Vinert and VinertGK by plane both measure from the plane's mirror
+       image through the origin (they take a x + b y + c z − d where the plane is a x + b y + c z + d = 0), which a
+       closed shell doesn't notice (its volume by any plane is the solid's) and an open one does; not a listed row, so
+       it is recorded here for the module's rewrite. BRepGProp's statics by plane use VinertGK on shells.
+1469. **A natural face's V knots are its V bounds** (unit 3H's BRepGProp_Face::VKnots row). For planes, cylinders,
+       cones and the default case OCCT wrote the U bounds as the V knots, so the adaptive (Eps) integration of a natural
+       face started its V subdivision at U values. The V bounds are written. Test: natural cylinder and cone faces'
+       knots, and their adaptive areas against the closed forms. The BRepGProp face-tool oracle moves to plan 3.2's third
+       level for those knots (native's are its U bounds, the port's its V bounds); the properties' recordings didn't
+       move.
+1470. **A continuous least-squares approximation with free ends is done** (unit 2D's AppCont_LeastSquare row). The
+       constructor set `myDone` only after solving a constrained system, so with both ends free Approx_ComputeCLine
+       (FitAndDivide) reported "not done" though the poles were computed. It is done. The row's other case, constraints
+       that fix every pole (tangency at both ends of a cubic), is left: FitAndDivide then goes on to degree 4, a valid
+       result, and accepting degree 3 would move every tangent-constrained approximation of the default degrees with no
+       error to correct. Tests: the pinned polynomial test asserts IsDone for every pair of constraints; a cubic with
+       free ends is approximated by FitAndDivide.
+1471. **GProp's elementary curves, surfaces and solids get closed-form properties** (phase 1's GProp_CelGProps,
+       SelGProps and VelGProps rows, eight). OCCT built their matrices of inertia as P V Λ (each eigenvector scaled by its
+       value) where P V Λ Vᵀ Pᵀ was meant, kept the centre of mass absolute where GProp_GProps reads it relative to the
+       location point, computed a line's Izz with Ixx's coefficients, a cone's area with an extra cos t and its volume
+       not the frustum's, a cylinder's axial moment twice, the sin·cos terms of cones with the wrong sign, and a torus'
+       centre from cos and sin of alpha2. No OCCT algorithm uses them; they are public API, so they are fixed rather than
+       hidden. Each Perform now gives the item's mass, first moment and second moments in its own frame in closed form
+       (GProp.FromRevolution, FromLocalMoments: items of revolution about the frame's axis, with the meridian's six
+       integrals; TrigMoment, PolyMoment and TorusMoment for those), and turns them into the centre relative to the
+       location point and the matrix of inertia there. The solids are the sectors between the patch and the axis (the
+       cylinder, the cone), the centre (the sphere) or the tube's axis circle (the torus). The tests check full shapes in
+       a tilted frame, located elsewhere, against the textbook values (ring, rod, cylindrical shell and solid, cone
+       shell and solid, spherical shell and ball, torus shell and solid, half tori's centres) and partial patches
+       against the integrals by Simpson's rule; GProp_ElementaryTests' twelve tests that checked the right values
+       where OCCT had them and pinned its errors elsewhere are replaced by six.
+1472. **A 2D fillet of a moved arc goes the right way** (unit 5R's ChFi2d_AnaFilletAlgo isCW row). isCW took the
+       arc's middle point on the curve without the edge's location and its ends with it, so a moved arc's sense came out
+       at random; the shrinking of the neighbours then projected their located ends onto their curves without the
+       location, so it failed for any moved edge. The middle point is the adaptor's, and the shrunk edges are made on the
+       placed curves. Test: a quarter arc moved by (10, 0, 0) and a segment, filleted: an arc of the radius tangent to
+       both, the shrunk edges ending where it does; the same arc built in place gives the same.
+1473. **The right neighbour of a 2D fillet is trimmed by its own orientation** (unit 5R's ChFi2d_AnaFilletAlgo::Perform
+       row). The second edge's kept end was chosen by the first edge's orientation, so a reversed second edge kept the
+       corner's part. Test: a forward segment and a reversed one: the second is shrunk to (10, 2)–(10, 10).
+1474. **A 2D fillet or chamfer of a face with holes keeps its wires** (unit 5R's ChFi2d_Builder BuildNewWire row).
+       BuildNewWire, and the removal of a fillet or chamfer, put every edge of the face into one wire, closed as the
+       face's first wire, so a face with holes came back with one wire of outer and inner edges. The face is rebuilt wire
+       by wire, the outer wire first (`RebuildFace`), each keeping its closed flag. Test: a square with a square hole, a
+       fillet on an outer corner, its removal, and a chamfer on a hole's corner: two closed wires, a valid face, the
+       areas of the cut corners. build123d.NET chamfered each wire of a face alone to avoid it (`Face.Chamfer2D` over
+       `EditWires`); it now chamfers the face with MakeFillet2d, as build123d did before its own workaround.
+       `Face.Fillet2D` keeps its wire-by-wire construction, which is build123d's own wire fillet, not a workaround.
+       Each wire's closed flag is set as OCCT set its one wire's (the reference face's first wire's after a fillet or
+       chamfer, unset after a removal), so faces without holes come out as before. The MakeFillet2d oracle's
+       rectangles with a hole (30 of 120) move to plan 3.2's third level: two wires where native has one, with as many
+       edges and the same area.
+1475. **A distance-angle chamfer between a plane and a cylinder doesn't depend on the axis direction** (unit 7N1's
+       ChFiKPart_ComputeData_ChAsymPlnCyl row). MakeChAsym projected the guide's point on the cylinder's axis with
+       gp_XYZ::Multiplied(gp_XYZ), a product coordinate by coordinate, where the dot product is meant; right only for an
+       axis along X, Y or Z. Test: half a cylinder chamfered by 1 at 30° on a generatrix edge, about Z and about a tilted
+       axis: the same volume.
+1476. **NurbsConvert and GTransform of a meshed face keep its surface** (unit 3K's BRepTools_Modifier::Rebuild row).
+       When a modification kept a face's surface (NurbsConvert on a B-spline or Bezier face) but gave it a new
+       triangulation, the modifier made the face a bare triangulation, so a meshed shape (as Bento's are, for display)
+       lost its B-spline and Bezier faces' surfaces. The face is made on its own surface with the new triangulation; a
+       face that had no surface stays bare. The pinned test asserts the converted face's surface, mesh, area and
+       validity. The GTransform oracle on native shapes moves to plan 3.2's third level for those faces: native's have
+       no surface, the port's do; their geometry wasn't compared before either.
+1477. **BRepLib::ExtendFace keeps a located face's place: not a bug** (unit 3I's ExtendFace general-branch row,
+       settled). The row read `BRep_Tool::Surface(theF)` as the surface without the face's location; that overload
+       returns the surface transformed by it (a copy when the location isn't the identity), in OCCT and in the port, so
+       the extended face of a moved Bezier face contains it in place. The test written for the row passes before and
+       after; it stays (`ExtendFace_of_a_located_Bezier_face_keeps_its_place`), and the marker's first sentence goes.
+1478. **BRepLib::ExtendFace tests the VMin bound for the VMin extension** (unit 3I's ExtendFace row). It tested aSVMax,
+       so a bounded surface infinite at VMin (a trimmed extrusion) was extended on its infinite side, which threw, and
+       one infinite at VMax only wasn't extended at VMin. A surface bounded at both ends, the usual case, is as before.
+       Test: an extrusion trimmed to v in ]-∞, 1], extended at VMin: unchanged, no exception.
+1479. **Rational Coons fillings keep their boundaries' weights** (unit 5L3's GeomFill_Coons::Init row). The poles put
+       P2 in the first column and P4 in the last, the weights W4 and W2, and blended the inner weights so; through
+       GeomFill_BSplineCurves and BezierCurves the left and right boundaries of a rational filling left their curves.
+       The weights follow the poles. Tests: the pinned column test asserts W2 first; four rational cubics filled in
+       the Coons style lie on the surface. The filling recordings (COONS and the BSC and BZC Coons cases, 109 of 400)
+       move to plan 3.2's third level: only the weights and the derivatives evaluated with them differ, the poles are
+       native's.
+1480. **A revolved feature up to a face at an angle chooses as Perform(Until) does** (unit 7I's BRepFeat_MakeRevol
+       PerformUntilAngle row). Its branches were the other way round from Perform(Until): a bounded face went to the
+       cut, an infinite face (a plane, cylinder or cone without wires) to the gluing, which left the support as it was.
+       Test: a groove turned about the box's top back edge, a quarter annulus, the same with Perform(Until) on the back
+       face, and with PerformUntilAngle at 135° up to the back face and up to the infinite plane through it (OCCT: no
+       groove for the plane).
+1481. **GeomFill_SweepSectionGenerator moves its sections along the path** (unit 5L2's Perform row, types 1 to 3).
+       `TR = Rot * Trans` sat in the branch for opposite tangents, so every section of a circle, a constant or an
+       evolving section along a non-circular path stayed at the first one's place. It is set at each section (opposite
+       tangents, where no rotation is defined, translate). GeomFill_Pipe uses only type 0. Test: a circle of radius 1.5
+       along a 3D B-spline: each section is the circle about the path's point at its parameter, across the tangent.
+       The sweep recordings' secgen cases of those types (18 of 40) move to plan 3.2's third level: only the sections'
+       poles and derivatives differ.
+1482. **AdvApp2Var's error estimate: reclassified to touch** (unit 2D's AdvApp2Var_ApproxF2var::mma2ce1_ row). The fix
+       is one line (the U Jacobi maxima written at ipt4, not over the V ones at ipt5), and it does what the row says on
+       the row's own case: sin(u)cos(v) at C0 is approximated within its tolerance instead of degree 1 in V a unit off.
+       It was tried and left out of this unit. It moves every surface approximated through AdvApp2Var: six native
+       suites (pipes, evolved sweeps, two fillet corner patches through GeomPlate, ShapeCustom's BSplineRestriction,
+       ShapeProcess's operators), two oracle suites (GeomConvert's offsets, BSplineRestriction), each by a few cases;
+       the Draw-lite groups this unit runs didn't move. Checked against the surfaces they approximate (points of the
+       result projected back), the trimmed offsets' approximations are no better with it: of three, one stays at
+       1.3e-3, one at 2e-6, and the third went from 0.3 off with OCCT's estimate to 1.5 off with the corrected one, at
+       degree 14 and 106 × 132 poles. So the estimate isn't the only fault on that path, and a fix that moves results
+       broadly without a shown benefit waits for AdvApp2Var's own review (with a geometric check of its results, as
+       here, rather than recordings). The pinned `SinCos_C0_ReproducesOcctsUnderestimatedError` stays as it was.
+1483. **The tests.** ModelingData 3,149 → 3,146 (GProp_ElementaryTests' twelve replaced by six; three new),
+       ModelingAlgorithms 4,814 → 4,824 (9 skipped; ten new), the oracle 383, DataExchange 276 (1 skipped), the modelling
+       layer 1,884: all pass. The tests rewritten to the corrected behaviour are the ones the decisions above name. The
+       recordings moved to plan 3.2's third level, each with its reason: IntAna2d's circle pairs (16706), SLProps' first
+       calls (16711), BRepGProp's face tool (16710), the GTransform oracle on native shapes (16719), the MakeFillet2d
+       oracle's rectangles with a hole (16717), the filling recordings' rational Coons cases (16720) and the sweep
+       recordings' secgen cases (16722). Draw-lite's cases for these rows (the fillet2d, chamfer, feat, nproject and
+       mkface groups, geometry/project, lowalgos' extcc, extcs, 2dinter and 2dapprox grids, bugs/filling, and the bugs
+       cases using the fillet, chamfer, feature, filling, projection, extrema, properties and continuity commands:
+       2,833 cases, 1,552 OK) were run before and after: no case's status changed, and no override was needed. Working
+       across worktrees, one `git stash` of this unit's crossed with 10K3's (stashes are shared between worktrees):
+       each got its own back; the units avoid `git stash` from here.

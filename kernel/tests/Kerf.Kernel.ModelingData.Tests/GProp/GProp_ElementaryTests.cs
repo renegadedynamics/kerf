@@ -147,170 +147,285 @@ public class GProp_ElementaryTests
 
     // ---- Curves, surfaces and solids ---------------------------------------------------------------------------
     //
-    // OCCT never uses GProp_CelGProps, GProp_SelGProps or GProp_VelGProps, and their inertia is wrong (see
-    // docs/occt-issues.md): the port reproduces it. These tests check the masses and centres of mass against
-    // the analytical values where OCCT gets them right, and pin the reproduced errors elsewhere.
+    // GProp_CelGProps, GProp_SelGProps and GProp_VelGProps against closed forms (rings, rods, shells and solids of
+    // cylinders, cones, spheres and tori) and, for partial patches, against the integrals computed here by Simpson's
+    // rule. OCCT got their matrices of inertia wrong (P V L for P V L V^T P^T), kept the centres absolute where
+    // GProp_GProps reads them relative to the location point, and had wrong line Izz, cone area and volume, cylinder
+    // axial moment and torus centre (occt-issues.md, unit 1's GProp rows; decision 1471).
+
+    private static readonly CoordinateSystem Tilted = new(new Point3D(1.0, -2.0, 0.5), new Direction3D(0.2, -0.3, 1.0), new Direction3D(1.0, 0.0, -0.2));
+    private static readonly Point3D Loc = new(3.0, 1.0, -2.0);
+
+    private static Axis3D AxisOf(CoordinateSystem theFrame) => new(theFrame.Location(), theFrame.Direction());
+
+    // An axis through the centre of mass perpendicular to the frame's axis.
+    private static Axis3D Across(CoordinateSystem theFrame, Point3D theCentre) => new(theCentre, theFrame.XDirection());
+
+    // The mass, centre and central matrix of inertia (absolute axes) of the measure theJ on the parameter box, by
+    // Simpson's rule with theN intervals on each side that isn't degenerate.
+    private static (double M, Point3D G, double[,] I) Integrate(Func<double, double, double, Point3D> thePoint,
+                                                               Func<double, double, double, double> theJ,
+                                                               double theA1, double theA2, double theB1, double theB2,
+                                                               double theC1, double theC2, int theN = 60)
+    {
+        static (double[] X, double[] W) Rule(double t1, double t2, int n)
+        {
+            if (t1 == t2)
+            {
+                return ([t1], [1.0]);
+            }
+            double h = (t2 - t1) / n;
+            double[] x = new double[n + 1], w = new double[n + 1];
+            for (int i = 0; i <= n; i++)
+            {
+                x[i] = t1 + i * h;
+                w[i] = h / 3.0 * (i == 0 || i == n ? 1.0 : i % 2 == 1 ? 4.0 : 2.0);
+            }
+            return (x, w);
+        }
+
+        (double[] aX, double[] aWa) = Rule(theA1, theA2, theN);
+        (double[] aY, double[] aWb) = Rule(theB1, theB2, theN);
+        (double[] aZ, double[] aWc) = Rule(theC1, theC2, theN);
+        double aM = 0.0;
+        double[] aS1 = new double[3];
+        double[,] aS2 = new double[3, 3];
+        for (int i = 0; i < aX.Length; i++)
+        {
+            for (int j = 0; j < aY.Length; j++)
+            {
+                for (int k = 0; k < aZ.Length; k++)
+                {
+                    double w = aWa[i] * aWb[j] * aWc[k] * theJ(aX[i], aY[j], aZ[k]);
+                    Point3D p = thePoint(aX[i], aY[j], aZ[k]);
+                    double[] q = [p.X(), p.Y(), p.Z()];
+                    aM += w;
+                    for (int r = 0; r < 3; r++)
+                    {
+                        aS1[r] += w * q[r];
+                        for (int c = 0; c < 3; c++)
+                        {
+                            aS2[r, c] += w * q[r] * q[c];
+                        }
+                    }
+                }
+            }
+        }
+        double[] g = [aS1[0] / aM, aS1[1] / aM, aS1[2] / aM];
+        double[,] aCentral = new double[3, 3];
+        for (int r = 0; r < 3; r++)
+        {
+            for (int c = 0; c < 3; c++)
+            {
+                aCentral[r, c] = aS2[r, c] - aM * g[r] * g[c];
+            }
+        }
+        double aTrace = aCentral[0, 0] + aCentral[1, 1] + aCentral[2, 2];
+        double[,] anI = new double[3, 3];
+        for (int r = 0; r < 3; r++)
+        {
+            for (int c = 0; c < 3; c++)
+            {
+                anI[r, c] = (r == c ? aTrace : 0.0) - aCentral[r, c];
+            }
+        }
+        return (aM, new Point3D(g[0], g[1], g[2]), anI);
+    }
+
+    private static void AssertSame(global::Kerf.Engine.Measurement.Properties theProps,
+                                   (double M, Point3D G, double[,] I) theRef, double theRelTol = 1e-6)
+    {
+        double aScale = Math.Abs(theRef.M);
+        Assert.Equal(theRef.M, theProps.Mass(), theRelTol * aScale);
+        Assert.True(theProps.CentreOfMass().Distance(theRef.G) < 1e-5, $"centre {theProps.CentreOfMass().X()} {theProps.CentreOfMass().Y()} {theProps.CentreOfMass().Z()}");
+        Matrix3x3 aMat = theProps.MatrixOfInertia();
+        double aNorm = Math.Abs(theRef.I[0, 0]) + Math.Abs(theRef.I[1, 1]) + Math.Abs(theRef.I[2, 2]);
+        for (int r = 0; r < 3; r++)
+        {
+            for (int c = 0; c < 3; c++)
+            {
+                Assert.True(Math.Abs(theRef.I[r, c] - aMat.Value(r + 1, c + 1)) < theRelTol * aNorm,
+                            $"I({r + 1}, {c + 1}): {aMat.Value(r + 1, c + 1)}, expected {theRef.I[r, c]}");
+            }
+        }
+    }
+
+    // The point (w cos u, w sin u, h) of the frame
+    private static Point3D InFrame(CoordinateSystem theFrame, double theW, double theU, double theH)
+        => theFrame.Location().Translated(new Vector3D(theFrame.XDirection()) * (theW * Math.Cos(theU))
+                                          + new Vector3D(theFrame.YDirection()) * (theW * Math.Sin(theU))
+                                          + new Vector3D(theFrame.Direction()) * theH);
 
     [Fact]
-    public void Circle_Full()
+    public void Circle_ring_and_arc()
     {
         const double R = 2.0;
-        var aCirc = new Circle3D(Constants.XOY(), R);
-        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, Constants.Origin());
-        Assert.Equal(2.0 * Math.PI * R, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
-        // The right matrix is diag(pi R^3, pi R^3, 2 pi R^3). OCCT builds P V L (eigenvectors scaled by their
-        // values) instead of P V L V^T P^T, and math_Jacobi sorts the values, so the columns come out permuted.
-        Matrix3x3 aMat = aProps.MatrixOfInertia();
-        double aR3 = R * R * R;
-        Assert.Equal(2.0 * Math.PI * aR3, aMat.Value(1, 3), Tol);
-        Assert.Equal(Math.PI * aR3, aMat.Value(2, 1), Tol);
-        Assert.Equal(Math.PI * aR3, aMat.Value(3, 2), Tol);
-        Assert.Equal(0.0, aMat.Value(1, 1), Tol);
+        var aCirc = new Circle3D(new Frame3D(Tilted.Location(), Tilted.Direction(), Tilted.XDirection()), R);
+        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, Loc);
+        double m = 2.0 * Math.PI * R;
+        Assert.Equal(m, aProps.Mass(), Tol);
+        Assert.True(aProps.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        // a ring: m R^2 about its axis, m R^2 / 2 about a diameter
+        Assert.Equal(m * R * R, aProps.MomentOfInertia(AxisOf(Tilted)), Tol);
+        Assert.Equal(m * R * R / 2.0, aProps.MomentOfInertia(Across(Tilted, Tilted.Location())), Tol);
+
+        // a quarter arc: its centroid at 2 R sqrt(2) / pi from the centre, on the bisector
+        var anArc = new global::Kerf.Engine.Measurement.CelGProps(new Circle3D(Constants.XOY(), 3.0), 0.0, Math.PI / 2.0, Loc);
+        Assert.Equal(1.5 * Math.PI, anArc.Mass(), Tol);
+        AssertPnt(anArc.CentreOfMass(), 6.0 / Math.PI, 6.0 / Math.PI, 0.0);
+
+        aProps.Perform(aCirc, 0.4, 2.9);
+        AssertSame(aProps, Integrate((u, _, _) => InFrame(Tilted, R, u, 0.0), (_, _, _) => R, 0.4, 2.9, 0, 0, 0, 0, 200));
     }
 
     [Fact]
-    public void Circle_QuarterArc()
+    public void Line_rod()
     {
-        const double R = 3.0;
-        var aCirc = new Circle3D(Constants.XOY(), R);
-        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, 0.0, Math.PI / 2.0, Constants.Origin());
-        Assert.Equal(Math.PI * R / 2.0, aProps.Mass(), Tol);
-        // Centroid of a quarter arc: 2R/pi on each axis.
-        AssertPnt(aProps.CentreOfMass(), 2.0 * R / Math.PI, 2.0 * R / Math.PI, 0.0);
-    }
-
-    [Fact]
-    public void Circle_LocationNotOrigin()
-    {
-        // OCCT stores the absolute centre in g, which GProp_GProps reads as relative to the location point, so the
-        // centre of mass comes out shifted by the location.
-        var aCirc = new Circle3D(Constants.XOY(), 1.0);
-        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aCirc, new Point3D(1.0, 2.0, 3.0));
-        AssertPnt(aProps.CentreOfMass(), 1.0, 2.0, 3.0);
-    }
-
-    [Fact]
-    public void Line_Segment()
-    {
+        // a rod of length 6 along X from (1, 2, 3): central moments 0 about its axis, L^3 / 12 = 18 across it (OCCT
+        // computed Izz with Ixx's coefficients: 30)
         var aLin = new Line3D(new Point3D(1.0, 2.0, 3.0), new Direction3D(1.0, 0.0, 0.0));
-        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aLin, 0.0, 6.0, Constants.Origin());
+        var aProps = new global::Kerf.Engine.Measurement.CelGProps(aLin, 0.0, 6.0, Loc);
         Assert.Equal(6.0, aProps.Mass(), Tol);
         AssertPnt(aProps.CentreOfMass(), 4.0, 2.0, 3.0);
-        // Thin rod of length L = 6 along x through (., 2, 3): central moments 0, L^3/12 + ..., about the centre.
-        Matrix3x3 aMat = aProps.MatrixOfInertia();
-        Assert.Equal(0.0, aMat.Value(1, 1), Tol);
-        Assert.Equal(18.0, aMat.Value(2, 2), Tol);
-        Assert.Equal(0.0, aMat.Value(1, 2), Tol);
-        // The rod's central Izz is L^3/12 = 18. OCCT computes the u^2 and u terms of Izz with Ixx's y and z
-        // coefficients (alfa2 = Vy Y0 + Vz Z0, alfa3 = Y0^2 + Z0^2), which gives 30 here.
-        Assert.Equal(30.0, aMat.Value(3, 3), Tol);
+        AssertMat(aProps.MatrixOfInertia(), 0.0, 18.0, 18.0);
+
+        // a tilted one
+        var aTilted = new Line3D(Tilted.Location(), Tilted.Direction());
+        var aT = new global::Kerf.Engine.Measurement.CelGProps(aTilted, -1.0, 3.0, Loc);
+        Assert.Equal(4.0, aT.Mass(), Tol);
+        Assert.True(aT.CentreOfMass().Distance(Tilted.Location().Translated(new Vector3D(Tilted.Direction()))) < Tol);
+        Assert.Equal(0.0, aT.MomentOfInertia(new Axis3D(aT.CentreOfMass(), Tilted.Direction())), Tol);
+        Assert.Equal(64.0 / 12.0, aT.MomentOfInertia(new Axis3D(aT.CentreOfMass(), Tilted.XDirection())), Tol);
     }
 
     [Fact]
-    public void Cylinder_Lateral()
+    public void Cylinder_shell_and_solid()
     {
-        const double R = 2.0;
-        const double H = 5.0;
-        var aCyl = new Cylinder(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
-        Assert.Equal(2.0 * Math.PI * R * H, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, H / 2.0);
+        const double R = 2.0, H = 5.0;
+        var aCyl = new Cylinder(Tilted, R);
+        Point3D aCentre = Tilted.Location().Translated(new Vector3D(Tilted.Direction()) * (H / 2.0));
+
+        var aShell = new global::Kerf.Engine.Measurement.SelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Loc);
+        double m = 2.0 * Math.PI * R * H;
+        Assert.Equal(m, aShell.Mass(), Tol);
+        Assert.True(aShell.CentreOfMass().Distance(aCentre) < Tol);
+        Assert.Equal(m * R * R, aShell.MomentOfInertia(AxisOf(Tilted)), 1e-8);
+        Assert.Equal(m * (R * R / 2.0 + H * H / 12.0), aShell.MomentOfInertia(Across(Tilted, aCentre)), 1e-8);
+
+        // the solid's axial moment is m R^2 / 2 (OCCT: m R^2)
+        var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Loc);
+        double v = Math.PI * R * R * H;
+        Assert.Equal(v, aSolid.Mass(), Tol);
+        Assert.True(aSolid.CentreOfMass().Distance(aCentre) < Tol);
+        Assert.Equal(v * R * R / 2.0, aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-8);
+        Assert.Equal(v * (3.0 * R * R + H * H) / 12.0, aSolid.MomentOfInertia(Across(Tilted, aCentre)), 1e-8);
+
+        aShell.Perform(aCyl, 0.5, 2.5, -1.0, 2.0);
+        AssertSame(aShell, Integrate((u, z, _) => InFrame(Tilted, R, u, z), (_, _, _) => R, 0.5, 2.5, -1.0, 2.0, 0, 0));
+        aSolid.Perform(aCyl, 0.5, 2.5, -1.0, 2.0);
+        AssertSame(aSolid, Integrate((u, z, r) => InFrame(Tilted, r, u, z), (_, _, r) => r, 0.5, 2.5, -1.0, 2.0, 0.0, R, 40));
     }
 
     [Fact]
-    public void Sphere_Area()
+    public void Cone_shell_and_solid()
+    {
+        // a cone from its apex (reference radius 0) along its generatrix to L: height h = L cos t, base radius
+        // a = L sin t
+        double t = Math.PI / 6.0, L = 2.0, h = L * Math.Cos(t), a = L * Math.Sin(t);
+        var aCone = new Cone(Tilted, t, 0.0);
+        Point3D Axial(double theZ) => Tilted.Location().Translated(new Vector3D(Tilted.Direction()) * theZ);
+
+        // the lateral area pi a L (OCCT multiplied it by cos t), its centroid at 2 h / 3
+        var aShell = new global::Kerf.Engine.Measurement.SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Loc);
+        Assert.Equal(Math.PI * a * L, aShell.Mass(), Tol);
+        Assert.True(aShell.CentreOfMass().Distance(Axial(2.0 * h / 3.0)) < Tol);
+        Assert.Equal(aShell.Mass() * a * a / 2.0, aShell.MomentOfInertia(AxisOf(Tilted)), 1e-9);
+
+        // the solid: pi a^2 h / 3, its centroid at 3 h / 4, moments 3 m a^2 / 10 about the axis and
+        // m (3 a^2 / 20 + 3 h^2 / 80) across it (OCCT's volume was pi L^2 cos t sin t (2R + L sin t))
+        var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Loc);
+        double m = Math.PI * a * a * h / 3.0;
+        Assert.Equal(m, aSolid.Mass(), Tol);
+        Point3D aCentre = Axial(3.0 * h / 4.0);
+        Assert.True(aSolid.CentreOfMass().Distance(aCentre) < Tol);
+        Assert.Equal(3.0 * m * a * a / 10.0, aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-9);
+        Assert.Equal(m * (3.0 * a * a / 20.0 + 3.0 * h * h / 80.0), aSolid.MomentOfInertia(Across(Tilted, aCentre)), 1e-9);
+
+        // a frustum's patch
+        double R0 = 1.0, sn = Math.Sin(t), cs = Math.Cos(t);
+        var aFrustum = new Cone(Tilted, t, R0);
+        aShell.Perform(aFrustum, 0.5, 2.5, -0.5, 1.5);
+        AssertSame(aShell, Integrate((u, v, _) => InFrame(Tilted, R0 + v * sn, u, v * cs), (_, v, _) => R0 + v * sn, 0.5, 2.5, -0.5, 1.5, 0, 0));
+        aSolid.Perform(aFrustum, 0.5, 2.5, -0.5, 1.5);
+        AssertSame(aSolid, Integrate((u, v, s) => InFrame(Tilted, s * (R0 + v * sn), u, v * cs),
+                                     (_, v, s) => (R0 + v * sn) * (R0 + v * sn) * s * cs, 0.5, 2.5, -0.5, 1.5, 0.0, 1.0, 40));
+    }
+
+    [Fact]
+    public void Sphere_shell_and_solid()
     {
         const double R = 1.5;
-        var aSph = new Sphere(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
-        Assert.Equal(4.0 * Math.PI * R * R, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
+        var aSph = new Sphere(Tilted, R);
+        var aShell = new global::Kerf.Engine.Measurement.SelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Loc);
+        double m = 4.0 * Math.PI * R * R;
+        Assert.Equal(m, aShell.Mass(), Tol);
+        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.Equal(2.0 / 3.0 * m * R * R, aShell.MomentOfInertia(AxisOf(Tilted)), 1e-9);
+        Assert.Equal(2.0 / 3.0 * m * R * R, aShell.MomentOfInertia(Across(Tilted, Tilted.Location())), 1e-9);
 
-        // Upper hemisphere: centroid at R/2.
-        aProps.Perform(aSph, 0.0, 2.0 * Math.PI, 0.0, Math.PI / 2.0);
-        Assert.Equal(2.0 * Math.PI * R * R, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, R / 2.0);
+        // the upper hemisphere's centroid at R / 2
+        aShell.Perform(aSph, 0.0, 2.0 * Math.PI, 0.0, Math.PI / 2.0);
+        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location().Translated(new Vector3D(Tilted.Direction()) * (R / 2.0))) < Tol);
+
+        var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Loc);
+        double v = 4.0 / 3.0 * Math.PI * R * R * R;
+        Assert.Equal(v, aSolid.Mass(), Tol);
+        Assert.True(aSolid.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.Equal(0.4 * v * R * R, aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-9);
+
+        aShell.Perform(aSph, 0.5, 2.5, -0.3, 1.2);
+        AssertSame(aShell, Integrate((u, w, _) => InFrame(Tilted, R * Math.Cos(w), u, R * Math.Sin(w)), (_, w, _) => R * R * Math.Cos(w),
+                                     0.5, 2.5, -0.3, 1.2, 0, 0));
+        aSolid.Perform(aSph, 0.5, 2.5, -0.3, 1.2);
+        AssertSame(aSolid, Integrate((u, w, r) => InFrame(Tilted, r * Math.Cos(w), u, r * Math.Sin(w)), (_, w, r) => r * r * Math.Cos(w),
+                                     0.5, 2.5, -0.3, 1.2, 0.0, R, 40));
     }
 
     [Fact]
-    public void Torus_Area()
+    public void Torus_shell_and_solid()
     {
-        const double RMaj = 4.0;
-        const double RMin = 1.0;
-        var aTor = new Torus(new CoordinateSystem(Constants.XOY()), RMaj, RMin);
-        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
-        Assert.Equal(4.0 * Math.PI * Math.PI * RMaj * RMin, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
-    }
+        const double RMaj = 3.0, RMin = 1.0;
+        var aTor = new Torus(Tilted, RMaj, RMin);
 
-    [Fact]
-    public void Cone_Lateral()
-    {
-        // A cone of reference radius R and semi-angle t, from v = 0 to v = L along its generatrix.
-        const double R = 1.0;
-        const double L = 2.0;
-        double t = Math.PI / 6.0;
-        var aCone = new Cone(new CoordinateSystem(Constants.XOY()), t, R);
-        var aProps = new global::Kerf.Engine.Measurement.SelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
-        // The area is pi (R + R2) L; OCCT multiplies it by cos(t).
-        double aR2 = R + L * Math.Sin(t);
-        Assert.Equal(Math.PI * (R + aR2) * L * Math.Cos(t), aProps.Mass(), Tol);
-    }
+        // the shell: 4 pi^2 R r, moments m (R^2 + 3 r^2 / 2) about the axis, m (R^2 / 2 + 5 r^2 / 4) across it
+        var aShell = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Loc);
+        double m = 4.0 * Math.PI * Math.PI * RMaj * RMin;
+        Assert.Equal(m, aShell.Mass(), 1e-9);
+        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.Equal(m * (RMaj * RMaj + 1.5 * RMin * RMin), aShell.MomentOfInertia(AxisOf(Tilted)), 1e-8);
+        Assert.Equal(m * (RMaj * RMaj / 2.0 + 1.25 * RMin * RMin), aShell.MomentOfInertia(Across(Tilted, Tilted.Location())), 1e-8);
 
-    [Fact]
-    public void Cylinder_Volume()
-    {
-        const double R = 2.0;
-        const double H = 3.0;
-        var aCyl = new Cylinder(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aCyl, 0.0, 2.0 * Math.PI, 0.0, H, Constants.Origin());
-        double aM = Math.PI * R * R * H;
-        Assert.Equal(aM, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, H / 2.0);
-        // The axial moment is M R^2 / 2; OCCT gives M R^2.
-        Assert.Equal(aM * R * R, aProps.MatrixOfInertia().Value(3, 3), Tol);
-    }
+        // the solid: 2 pi^2 R r^2, moments m (R^2 + 3 r^2 / 4) and m (R^2 / 2 + 5 r^2 / 8)
+        var aSolid = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Loc);
+        double v = 2.0 * Math.PI * Math.PI * RMaj * RMin * RMin;
+        Assert.Equal(v, aSolid.Mass(), 1e-9);
+        Assert.True(aSolid.CentreOfMass().Distance(Tilted.Location()) < Tol);
+        Assert.Equal(v * (RMaj * RMaj + 0.75 * RMin * RMin), aSolid.MomentOfInertia(AxisOf(Tilted)), 1e-8);
+        Assert.Equal(v * (RMaj * RMaj / 2.0 + 0.625 * RMin * RMin), aSolid.MomentOfInertia(Across(Tilted, Tilted.Location())), 1e-8);
 
-    [Fact]
-    public void Sphere_Volume()
-    {
-        const double R = 2.0;
-        var aSph = new Sphere(new CoordinateSystem(Constants.XOY()), R);
-        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aSph, 0.0, 2.0 * Math.PI, -Math.PI / 2.0, Math.PI / 2.0, Constants.Origin());
-        Assert.Equal(4.0 / 3.0 * Math.PI * R * R * R, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
-    }
+        // half of it, u in [0, pi]: the shell's centroid at 2 (R + r^2 / (2R)) / pi from the axis, the solid's at
+        // 2 (R + r^2 / (4R)) / pi (OCCT's solid kept it on the axis, reading cos and sin of alpha2 for teta2)
+        Vector3D aY = new(Tilted.YDirection());
+        aShell.Perform(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI);
+        Assert.True(aShell.CentreOfMass().Distance(Tilted.Location().Translated(aY * (2.0 * (RMaj + RMin * RMin / (2.0 * RMaj)) / Math.PI))) < Tol);
+        aSolid.Perform(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI);
+        Assert.True(aSolid.CentreOfMass().Distance(Tilted.Location().Translated(aY * (2.0 * (RMaj + RMin * RMin / (4.0 * RMaj)) / Math.PI))) < Tol);
 
-    [Fact]
-    public void Torus_Volume()
-    {
-        const double RMaj = 3.0;
-        const double RMin = 1.0;
-        var aTor = new Torus(new CoordinateSystem(Constants.XOY()), RMaj, RMin);
-        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, 2.0 * Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
-        Assert.Equal(2.0 * Math.PI * Math.PI * RMaj * RMin * RMin, aProps.Mass(), Tol);
-        AssertPnt(aProps.CentreOfMass(), 0.0, 0.0, 0.0);
-
-        // Half a torus (Teta in [0, pi]): the surface class puts the centre at y = 2 RMaj / pi; the volume class
-        // reads cos(Alpha2) and sin(Alpha2) for Teta2, so with Alpha2 = 2 pi its centre stays at y = 0.
-        var aHalfS = new global::Kerf.Engine.Measurement.SelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
-        Assert.Equal(2.0 * RMaj / Math.PI, aHalfS.CentreOfMass().Y(), Tol);
-        var aHalfV = new global::Kerf.Engine.Measurement.VelGProps(aTor, 0.0, Math.PI, 0.0, 2.0 * Math.PI, Constants.Origin());
-        Assert.Equal(0.0, aHalfV.CentreOfMass().Y(), Tol);
-    }
-
-    [Fact]
-    public void Cone_Volume()
-    {
-        const double R = 1.0;
-        const double L = 2.0;
-        double t = Math.PI / 6.0;
-        var aCone = new Cone(new CoordinateSystem(Constants.XOY()), t, R);
-        var aProps = new global::Kerf.Engine.Measurement.VelGProps(aCone, 0.0, 2.0 * Math.PI, 0.0, L, Constants.Origin());
-        // The frustum's volume is pi h (R^2 + R R2 + R2^2) / 3 with h = L cos(t); OCCT computes
-        // pi L^2 cos(t) sin(t) (2R + L sin(t)), the lateral area's formula times L sin(t).
-        double aExpected = Math.PI * L * L * Math.Cos(t) * Math.Sin(t) * (2.0 * R + L * Math.Sin(t));
-        Assert.Equal(aExpected, aProps.Mass(), Tol);
+        aShell.Perform(aTor, 0.5, 2.5, -0.7, 2.0);
+        AssertSame(aShell, Integrate((u, w, _) => InFrame(Tilted, RMaj + RMin * Math.Cos(w), u, RMin * Math.Sin(w)),
+                                     (_, w, _) => RMin * (RMaj + RMin * Math.Cos(w)), 0.5, 2.5, -0.7, 2.0, 0, 0));
+        aSolid.Perform(aTor, 0.5, 2.5, -0.7, 2.0);
+        AssertSame(aSolid, Integrate((u, w, r) => InFrame(Tilted, RMaj + r * Math.Cos(w), u, r * Math.Sin(w)),
+                                     (_, w, r) => r * (RMaj + r * Math.Cos(w)), 0.5, 2.5, -0.7, 2.0, 0.0, RMin, 40));
     }
 }

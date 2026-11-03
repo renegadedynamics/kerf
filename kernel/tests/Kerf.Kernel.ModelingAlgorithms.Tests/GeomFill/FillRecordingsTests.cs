@@ -20,7 +20,7 @@ public class FillRecordingsTests(ITestOutputHelper output)
     {
         List<FillRecordings.Case> aCases = FillRecordings.Cases.Where(c => c.Kind == theKind).ToList();
         Assert.NotEmpty(aCases);
-        int aTokens = 0, aBad = 0;
+        int aTokens = 0, aBad = 0, anIntended = 0;
         foreach (FillRecordings.Case aCase in aCases)
         {
             List<string> aPort = FillRecordings.Run(aCase);
@@ -30,7 +30,11 @@ public class FillRecordingsTests(ITestOutputHelper output)
             {
                 aSame = aPort[i] == aCase.Native[i];
             }
-            if (!aSame)
+            if (!aSame && IsCoonsWeights(aPort, aCase.Native))
+            {
+                anIntended++;
+            }
+            else if (!aSame)
             {
                 aBad++;
                 output.WriteLine($"case {aCases.IndexOf(aCase)}: {aPort.Count} tokens, native {aCase.Native.Length}");
@@ -46,7 +50,18 @@ public class FillRecordingsTests(ITestOutputHelper output)
                 }
             }
         }
-        output.WriteLine($"{theKind}: {aCases.Count} cases, {aTokens} tokens, {aBad} cases differ");
+        output.WriteLine($"{theKind}: {aCases.Count} cases, {aTokens} tokens, {aBad} cases differ, {anIntended} intended differences");
         Assert.Equal(0, aBad);
+    }
+
+    // Plan 3.2's third level (occt-issues.md, unit 5L3's GeomFill_Coons::Init row; Kerf unit 10K2, decision 1479): a
+    // rational Coons filling's weights follow its poles, where native swapped the left and right boundaries' weights;
+    // only the weights (wt, swt) and the derivatives evaluated with them (sd1) differ, the poles are native's.
+    private static bool IsCoonsWeights(List<string> thePort, string[] theNative)
+    {
+        static string Key(string theToken) => theToken[..Math.Max(0, theToken.IndexOf(':'))];
+        return thePort.Count == theNative.Length
+               && Enumerable.Range(0, thePort.Count).All(i => thePort[i] == theNative[i]
+                                                             || (Key(thePort[i]) == Key(theNative[i]) && Key(thePort[i]) is "wt" or "swt" or "sd1"));
     }
 }

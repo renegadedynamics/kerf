@@ -81,16 +81,13 @@ public class IntAna2d_AnaIntersectionTest
                 IntPoint aP = anInter.Point(j);
                 Assert.Equal(0.0, aC1.Distance(aP.Value()), Tol);
                 Assert.Equal(0.0, aC2.Distance(aP.Value()), Tol);
-                // OCCT measures the parameters from the X axes counterclockwise, whatever the sense of the circles
-                // (occt-issues.md), so they are right for direct circles only
-                if (aC1.IsDirect)
-                {
-                    Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(aP.Value()), 1e-6);
-                }
-                if (aC2.IsDirect)
-                {
-                    Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aC2).Distance(aP.Value()), 1e-6);
-                }
+                // the parameters, in [0, 2PI[, give the point on either circle, direct or indirect (OCCT measured them
+                // counterclockwise whatever the sense: occt-issues.md, decision 1464)
+                Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(aP.Value()), 1e-6);
+                Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnSecond(), aC2).Distance(aP.Value()), 1e-6);
+                Assert.InRange(aP.ParamOnFirst(), 0.0, 2 * Math.PI);
+                Assert.True(aP.ParamOnFirst() < 2 * Math.PI && aP.ParamOnSecond() < 2 * Math.PI);
+                Assert.InRange(aP.ParamOnSecond(), 0.0, 2 * Math.PI);
             }
         }
 
@@ -169,17 +166,28 @@ public class IntAna2d_AnaIntersectionTest
     }
 
     [Fact]
-    public void Indirect_circles_get_counterclockwise_parameters()
+    public void Indirect_circles_get_their_own_parameters()
     {
-        // Reproduces OCCT (occt-issues.md): the parameter on an indirect circle is measured counterclockwise
+        // The parameter on an indirect circle is measured clockwise, as the circle runs (OCCT measured it
+        // counterclockwise: occt-issues.md, decision 1464)
         var aC1 = new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 5, false);
         var aC2 = new Circle2D(new Axis2D(new Point2D(6, 0), new Direction2D(1, 0)), 5);
         var anInter = new AnalyticIntersection(aC1, aC2);
         Assert.Equal(2, anInter.PointCount);
         IntPoint aP = anInter.Point(1);
         Assert.Equal(0.0, aP.Value().Distance(new Point2D(3, 4)), 1e-12);
-        Assert.Equal(Math.Atan2(4, 3), aP.ParamOnFirst(), 1e-12);
-        Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(new Point2D(3, -4)), 1e-12);
+        Assert.Equal(2 * Math.PI - Math.Atan2(4, 3), aP.ParamOnFirst(), 1e-12);
+        Assert.Equal(0.0, global::Kerf.Engine.Geometry.ElCLib.Value(aP.ParamOnFirst(), aC1).Distance(new Point2D(3, 4)), 1e-12);
+
+        // externally tangent, the second circle indirect: the point (5, 0) is at 0 on the first, PI on the second
+        var aC3 = new Circle2D(new Axis2D(new Point2D(10, 0), new Direction2D(1, 0)), 5, false);
+        var aTangent = new AnalyticIntersection(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 5), aC3);
+        Assert.Equal(1, aTangent.PointCount);
+        Assert.Equal(0.0, aTangent.Point(1).ParamOnFirst(), 1e-12);
+        Assert.Equal(Math.PI, aTangent.Point(1).ParamOnSecond(), 1e-12);
+        // and with the second circle's axis along -X the point is at its angle 0, not 2PI
+        var aC4 = new Circle2D(new Axis2D(new Point2D(10, 0), new Direction2D(-1, 0)), 5);
+        Assert.Equal(0.0, new AnalyticIntersection(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 5), aC4).Point(1).ParamOnSecond(), 1e-12);
     }
 
     [Fact]

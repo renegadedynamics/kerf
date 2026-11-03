@@ -317,9 +317,9 @@ internal static class ComputeDataChAsymPlnCyl
         Point3D loc = axCyl.Location();
         Vector3D locSp = new(loc, orSpine);
         Xyz temp = axCyl.Direction().XYZ();
-        // OCCT: gp_XYZ::Multiplied(gp_XYZ) multiplies coordinate by coordinate (it is not the dot product), so OrCyl
-        // is the projection on the axis only when the axis is parallel to a coordinate axis (occt-issues 7N1).
-        temp = temp.Multiplied(locSp.XYZ().Multiplied(temp));
+        // the projection on the axis: the axis times the dot product (OCCT multiplied coordinate by coordinate, right
+        // only for an axis parallel to a coordinate axis: decision 1475)
+        temp = temp.Multiplied(locSp.XYZ().Dot(temp));
         orCyl = orCyl.WithXYZ((loc.XYZ()).Added(temp));
         // construction of POnPln
         Vector3D vecTranslPln, tmp;

@@ -101,6 +101,24 @@ public class Approx_FitAndDivideTests
     }
 
     [Fact]
+    public void Cubic_WithFreeEnds_IsApproximated()
+    {
+        // An unconstrained continuous approximation is done: one curve through the cubic (OCCT's AppCont_LeastSquare
+        // reported not done with free ends, and so did Approx_ComputeCLine: occt-issues.md, decision 1470)
+        CubicFunction aFunc = new(-1.0, 2.0);
+        FitAndDivide anApprox = new(aFunc, 3, 8, 1.0e-6, 1.0e-6, false, NoConstraint, NoConstraint);
+        Assert.True(anApprox.IsAllApproximated);
+        Assert.True(anApprox.IsToleranceReached);
+        Assert.Equal(1, anApprox.MultiCurveCount);
+        MultiCurve aCurve = anApprox.Value(1);
+        for (int i = 0; i <= 10; i++)
+        {
+            double u = -1.0 + 0.3 * i;
+            Assert.True(Value3d(aCurve, -1.0, 2.0, u).Distance(CubicFunction.P(u)) < 1.0e-9);
+        }
+    }
+
+    [Fact]
     public void Cubic_IsReproducedByOneCurve()
     {
         CubicFunction aFunc = new(-1.0, 2.0);

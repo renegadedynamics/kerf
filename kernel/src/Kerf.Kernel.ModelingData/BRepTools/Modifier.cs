@@ -290,12 +290,22 @@ public sealed class Modifier
                         b.UpdateFace(ShapeCasts.Face(result), triangulation);
                     }
                     else
-                    { // create new face with bare triangulation
-                        // OCCT: also when the modification keeps the face's surface (NurbsConvert on a B-spline or
-                        // Bezier face returns false from NewSurface), so a meshed face loses its surface
-                        // (occt-issues.md)
+                    { // create new face with the new triangulation, on the face's own surface if it has one (a
+                      // modification keeping the surface, as NurbsConvert does a B-spline or Bezier face's), bare
+                      // otherwise (decision 1476; OCCT made it bare, so a meshed face lost its surface)
                         Face resultF = ShapeCasts.Face(result);
-                        b.MakeFace(ref resultF, triangulation);
+                        Face sF = ShapeCasts.Face(s);
+                        Surface? aSurface = Tool.Surface(sF, out Placement aSurfaceLoc);
+                        if (aSurface is not null)
+                        {
+                            b.MakeFace(ref resultF, aSurface, aSurfaceLoc.Predivided(s.Location()), Tool.Tolerance(sF));
+                            b.UpdateFace(resultF, triangulation);
+                            b.NaturalRestriction(resultF, Tool.NaturalRestriction(sF));
+                        }
+                        else
+                        {
+                            b.MakeFace(ref resultF, triangulation);
+                        }
                         result = resultF;
                         result.Location(s.Location(), false);
                     }

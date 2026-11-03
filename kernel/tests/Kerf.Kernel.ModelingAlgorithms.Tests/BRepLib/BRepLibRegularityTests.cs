@@ -333,6 +333,45 @@ public class BRepLibRegularityTests
     }
 
     [Fact]
+    public void ExtendFace_of_a_located_Bezier_face_keeps_its_place()
+    {
+        // a Bezier face moved and turned: its extension contains it, in place
+        Face aBase = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(Bezier()));
+        Transform3D aT = Transform3D.Rotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.8)
+                                    .Multiplied(Transform3D.Translation(new Vector3D(5, -3, 2)));
+        Face aF = ShapeCasts.Face(aBase.Moved(new Placement(aT)));
+        BrepLibrary.ExtendFace(aF, 1.0, true, true, true, true, out Face anExt);
+        Surface aNew = Tool.Surface(anExt)!;
+        var aFace = new FaceSurfaceAdaptor(aF);
+        for (int i = 0; i <= 4; i++)
+        {
+            for (int j = 0; j <= 4; j++)
+            {
+                double u = aFace.FirstUParameter() + (aFace.LastUParameter() - aFace.FirstUParameter()) * i / 4;
+                double v = aFace.FirstVParameter() + (aFace.LastVParameter() - aFace.FirstVParameter()) * j / 4;
+                Assert.True(new global::Kerf.Engine.Geometry.Api.ProjectPointOnSurface(aFace.Value(u, v), aNew).LowerDistance() < 1e-7);
+            }
+        }
+    }
+
+    [Fact]
+    public void ExtendFace_at_VMin_tests_the_VMin_bound()
+    {
+        // an extrusion of a segment trimmed to v in ]-infinity, 1]: VMin is infinite, so it isn't extended (OCCT
+        // tested VMax for the VMin extension and extended the infinite side, which threw: occt-issues.md, unit 3I's
+        // BRepLib::ExtendFace row; decision 1478)
+        var aLine = new TrimmedCurve3D(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 0, 2);
+        var anExtrusion = new ExtrusionSurface(aLine, new Direction3D(0, 0, 1));
+        var aTrimmed = new TrimmedSurface(anExtrusion, 0, 2, -2e100, 1);
+        Face aF = new LibraryMakeFace(aTrimmed, 0, 2, -2e100, 1, 1e-7).Face();
+        BrepLibrary.ExtendFace(aF, 0.5, false, false, true, false, out Face anExt);
+        BrepTools.UVBounds(anExt, out _, out double u2, out double v1, out double v2);
+        Assert.Equal(2.0, u2, 1e-9);
+        Assert.True(v1 <= -1e100);
+        Assert.Equal(1.0, v2, 1e-9);
+    }
+
+    [Fact]
     public void ExtendFace_of_a_Bezier_face_extends_its_surface()
     {
         Face aF = TestShapes.Frozen(BRepGPropTestShapes.NaturalFace(Bezier()));
