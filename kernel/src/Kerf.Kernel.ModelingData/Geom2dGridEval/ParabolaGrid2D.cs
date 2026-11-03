@@ -43,7 +43,7 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         Parabola2D parab = _geom.Parab2d();
         Point2D center = parab.Location();
         Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = new(-xDir.Y(), xDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 16812)
         double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double cx = center.X();
@@ -80,7 +80,7 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         Parabola2D parab = _geom.Parab2d();
         Point2D center = parab.Location();
         Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = new(-xDir.Y(), xDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 16812)
         double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double cx = center.X();
@@ -123,7 +123,7 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         Parabola2D parab = _geom.Parab2d();
         Point2D center = parab.Location();
         Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = new(-xDir.Y(), xDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 16812)
         double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double cx = center.X();
@@ -168,7 +168,7 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
         Parabola2D parab = _geom.Parab2d();
         Point2D center = parab.Location();
         Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = new(-xDir.Y(), xDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 16812)
         double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double cx = center.X();
@@ -213,7 +213,7 @@ public sealed class ParabolaGrid2D : Geom2dGridEvalGrid2D.ICurveEvaluator
 
         Parabola2D parab = _geom.Parab2d();
         Direction2D xDir = parab.MirrorAxis().Direction();
-        Direction2D yDir = new(-xDir.Y(), xDir.X()); // OCCT: ignores the sense of the parabola's axes
+        Direction2D yDir = parab.Axis().YDirection(); // the frame's, with its sense (OCCT turned X by +90 degrees; Kerf decision 16812)
         double focal = parab.Focal(); // OCCT: no case for a zero focal length (ElCLib: a line)
 
         double xx = xDir.X();

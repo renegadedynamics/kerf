@@ -15040,3 +15040,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        2·radius·T34. The test that pinned the wrong terms checks that a cone's points, off the origin with a reference
        radius, satisfy its equation and gp_Cone's. `Geom_SurfacesOracleTests.Elementary_surfaces` moves to plan 3.2's
        third level for the cone's linear and constant terms, compared with gp_Cone's.
+16812. **The grid evaluation of an indirect 2D parabola follows its frame** (occt-issues.md, Geom2dGridEval_Parabola).
+       The five evaluators take the frame's Y direction, where OCCT turned X by +90° whatever the frame's sense. The
+       test that pinned the mirroring checks the indirect parabola's grid against its own evaluation, its points
+       equidistant from focus and directrix, on the side of the mirror axis the frame's Y says.
