@@ -15068,3 +15068,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        so a bounded surface infinite at VMin (a trimmed extrusion) was extended on its infinite side, which threw, and
        one infinite at VMax only wasn't extended at VMin. A surface bounded at both ends, the usual case, is as before.
        Test: an extrusion trimmed to v in ]-∞, 1], extended at VMin: unchanged, no exception.
+16720. **Rational Coons fillings keep their boundaries' weights** (unit 5L3's GeomFill_Coons::Init row). The poles put
+       P2 in the first column and P4 in the last, the weights W4 and W2, and blended the inner weights so; through
+       GeomFill_BSplineCurves and BezierCurves the left and right boundaries of a rational filling left their curves.
+       The weights follow the poles. Tests: the pinned column test asserts W2 first; four rational cubics filled in
+       the Coons style lie on the surface. The filling recordings (COONS and the BSC and BZC Coons cases, 109 of 400)
+       move to plan 3.2's third level: only the weights and the derivatives evaluated with them differ, the poles are
+       native's.

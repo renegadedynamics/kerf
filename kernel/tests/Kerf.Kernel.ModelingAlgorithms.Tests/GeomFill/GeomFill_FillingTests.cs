@@ -142,9 +142,10 @@ public class GeomFill_FillingTests
     }
 
     [Fact]
-    public void Coons_rational_weights_follow_OCCTs_column_order()
+    public void Coons_rational_weights_follow_the_poles()
     {
-        // OCCT: the poles' first column is P2 but the weights' is W4 (occt-issues.md)
+        // the poles' first column is P2, and so is the weights': W2 (OCCT put W4 there: occt-issues.md, unit 5L3's
+        // GeomFill_Coons::Init row; decision 16720)
         NCollection_Array1<Point3D> P1 = Row(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(2, 0, 0));
         NCollection_Array1<Point3D> P3 = Row(new Point3D(0, 2, 0), new Point3D(1, 2, 0), new Point3D(2, 2, 0));
         NCollection_Array1<Point3D> P2 = Row(new Point3D(0, 0, 0), new Point3D(0, 1, 0), new Point3D(0, 2, 0));
@@ -153,8 +154,45 @@ public class GeomFill_FillingTests
         Coons F = new(P1, P2, P3, P4, W, W2, W, W4);
         NCollection_Array2<double> aW = new(1, 3, 1, 3);
         F.Weights(aW);
-        Assert.Equal(7.0, aW[1, 2]);
-        Assert.Equal(5.0, aW[3, 2]);
+        Assert.Equal(5.0, aW[1, 2]);
+        Assert.Equal(7.0, aW[3, 2]);
+    }
+
+    // A rational cubic from theP0 to theP3 through the poles given, with the weights given.
+    private static BSplineCurve3D RBS(Point3D[] thePoles, double[] theWeights)
+    {
+        NCollection_Array1<double> aK = new(1, 2), aW = new(1, 4);
+        NCollection_Array1<int> aM = new(1, 2);
+        aK[1] = 0;
+        aK[2] = 1;
+        aM[1] = aM[2] = 4;
+        for (int i = 1; i <= 4; i++)
+        {
+            aW[i] = theWeights[i - 1];
+        }
+        return new BSplineCurve3D(Row(thePoles), aW, aK, aM, 3);
+    }
+
+    [Fact]
+    public void BSplineCurves_Coons_of_rational_boundaries_keeps_them()
+    {
+        // four rational cubics round (0,0) -> (4,0) -> (4,3) -> (0,3), each side's weights its own: the Coons filling's
+        // boundaries are the curves (with OCCT's weights, the sides' weights were swapped and two boundaries left the
+        // curves)
+        BSplineCurve3D[] C =
+        [
+            RBS([new Point3D(0, 0, 0), new Point3D(1, -1, 1), new Point3D(3, -1, -1), new Point3D(4, 0, 0)], [1, 2, 0.5, 1]),
+            RBS([new Point3D(4, 0, 0), new Point3D(5, 1, 1), new Point3D(5, 2, -1), new Point3D(4, 3, 0)], [1, 3, 0.7, 1]),
+            RBS([new Point3D(4, 3, 0), new Point3D(3, 4, 1), new Point3D(1, 4, 0.5), new Point3D(0, 3, 0)], [1, 0.6, 1.8, 1]),
+            RBS([new Point3D(0, 3, 0), new Point3D(-1, 2, -1), new Point3D(-1, 1, 1), new Point3D(0, 0, 0)], [1, 4, 0.3, 1]),
+        ];
+        BSplineSurface aS = new BSplineCurves(C[0], C[1], C[2], C[3], FillingStyle.CoonsStyle).Surface()!;
+        Assert.True(aS.IsURational || aS.IsVRational);
+        foreach (BSplineCurve3D c in C)
+        {
+            // (the projections on this saddle-like surface are good to 1e-5)
+            Assert.True(MaxDistanceToSurface(c, aS) < 1e-4, $"{MaxDistanceToSurface(c, aS)}");
+        }
     }
 
     [Fact]

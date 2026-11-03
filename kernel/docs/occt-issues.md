@@ -1172,7 +1172,7 @@ Gordon.
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| `GeomFill_Coons::Init`, rational form | The poles put P2 in column 1 and P4 in column NU, the weights W4 in column 1 and W2 in column NU | Through BSplineCurves/BezierCurves, which pass (P1, P4, P3, P2, W1, W4, W3, W2), rational Coons fillings get the left and right boundary weights swapped. Kept, pinned by a test | fix K3 |
+| `GeomFill_Coons::Init`, rational form | The poles put P2 in column 1 and P4 in column NU, the weights W4 in column 1 and W2 in column NU | Through BSplineCurves/BezierCurves, which pass (P1, P4, P3, P2, W1, W4, W3, W2), rational Coons fillings get the left and right boundary weights swapped. Kept, pinned by a test | fixed (decision 16720) |
 | `GeomFill_CoonsAlgPatch::Value` | Evaluates bounds 0 and 2 at V instead of U | A wrong point; `D1U`, `D1V` and `DUV` are right, and ConstrainedFilling uses only those. Kept, pinned by a test | touch |
 | `GeomFill_BSplineCurves::Init`, `GeomFill_BezierCurves::Init` (two curves, CurvedStyle) | When CC1's end is CC2's start, calls `C1->Reverse()` on the caller's curve, not on its copy | The result is built from the unreversed copy, so it is right, but the caller's curve is reversed (a second call sees it so). The port leaves the caller's curve alone (decision 846) | settled |
 | `GeomFill_ConstrainedFilling::MatchKnots` | After SetDomain, the `ind[]` searches compare `dom` with the multiplicities `nm[]->Value(i)` instead of the knots `nk[]` | The knot is not found and the tangency mixing index keeps its default. Kept | touch |
