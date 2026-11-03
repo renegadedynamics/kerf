@@ -355,10 +355,10 @@ public class Geom_BezierSurfaceTests
     [Fact]
     public void PolesAccess()
     {
-        NCollection_Array2<Point3D> aPoles = myOriginalSurface.Poles();
-        Assert.Equal(3, aPoles.ColLength());
-        Assert.Equal(3, aPoles.RowLength());
-        Assert.True(aPoles[1, 1].IsEqual(new Point3D(1, 1, 0.2), 1e-10));
+        Grid<Point3D> aPoles = myOriginalSurface.Poles();
+        Assert.Equal(3, aPoles.RowCount);
+        Assert.Equal(3, aPoles.ColumnCount);
+        Assert.True(aPoles[0, 0].IsEqual(new Point3D(1, 1, 0.2), 1e-10));
     }
 
     [Fact]
@@ -531,30 +531,26 @@ public class Geom_BezierSurfaceTests
     {
         Assert.False(myOriginalSurface.IsURational);
         Assert.False(myOriginalSurface.IsVRational);
-        NCollection_Array2<double> aWeights = myOriginalSurface.WeightsArray();
-        Assert.Equal(myOriginalSurface.UPoleCount, aWeights.ColLength());
-        Assert.Equal(myOriginalSurface.VPoleCount, aWeights.RowLength());
-        for (int i = aWeights.LowerRow(); i <= aWeights.UpperRow(); ++i)
+        Grid<double> aWeights = myOriginalSurface.WeightsArray();
+        Assert.Equal(myOriginalSurface.UPoleCount, aWeights.RowCount);
+        Assert.Equal(myOriginalSurface.VPoleCount, aWeights.ColumnCount);
+        for (int i = 0; i < aWeights.RowCount; ++i)
         {
-            for (int j = aWeights.LowerCol(); j <= aWeights.UpperCol(); ++j)
+            for (int j = 0; j < aWeights.ColumnCount; ++j)
             {
                 Assert.Equal(1.0, aWeights[i, j]);
             }
         }
-        // The port returns a copy (OCCT: the same shared unit-weights view each time)
-        Assert.NotSame(aWeights, myOriginalSurface.WeightsArray());
     }
 
     [Fact]
     public void WeightsArray_Rational_ReturnsOwning()
     {
         BezierSurface aRational = new(Poles2x2(), Weights2x2(1.0, 2.0, 1.0, 1.0));
-        NCollection_Array2<double> aWeights = aRational.WeightsArray();
-        Assert.Equal(4, aWeights.Size());
-        Assert.True(aWeights.IsDeletable());
-        Assert.Equal(2.0, aWeights[1, 2]);
-        Assert.Equal(1.0, aWeights[1, 1]);
-        aWeights[1, 2] = 5.0;
+        Grid<double> aWeights = aRational.WeightsArray();
+        Assert.Equal(4, aWeights.Values.Length);
+        Assert.Equal(2.0, aWeights[0, 1]);
+        Assert.Equal(1.0, aWeights[0, 0]);
         Assert.Equal(2.0, aRational.Weight(1, 2));
     }
 
@@ -578,7 +574,7 @@ public class Geom_BezierSurfaceTests
         {
             aWeights[i, 2] = 3.0;
         }
-        BezierSurface aRational = new(myOriginalSurface.Poles(), aWeights);
+        BezierSurface aRational = new(new NCollection_Array2<Point3D>(myOriginalSurface.InternalPoles()), aWeights);
         Assert.True(aRational.IsURational);
         Assert.False(aRational.IsVRational);
         Assert.True(((BezierCurve3D)aRational.UIso(0.4)).IsRational);

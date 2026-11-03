@@ -219,6 +219,9 @@ public class NCollection_Array2<T> : Transient
     /// <summary>The elements row by row, without copying.</summary>
     public Span<T> AsSpan() => new(_data, _offset, _sizeRow * _sizeCol);
 
+    /// <summary>A copy of the values as a public grid, indexed from 0 (unit 10J).</summary>
+    internal global::Kerf.Geometry.Grid<T> ToGrid() => new(AsSpan().ToArray(), _sizeRow, _sizeCol);
+
     /// <summary>The storage (row by row from the offset), for views sharing it (OCCT's <c>&amp;ChangeFirst()</c>).</summary>
     internal (T[] Data, int Offset) Storage() => (_data, _offset);
 

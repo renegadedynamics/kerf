@@ -403,9 +403,9 @@ public class Geom_BSplineSurfaceTests
         BSplineSurface aSurf = new(aPoles, aWeights, Knots(0, 1), Knots(0, 1), Mults(3, 3), Mults(3, 3), 2, 2);
         Assert.True(aSurf.IsURational);
         Assert.True(aSurf.IsVRational);
-        NCollection_Array2<double>? aW = aSurf.Weights();
+        Grid<double>? aW = aSurf.Weights();
         Assert.NotNull(aW);
-        Assert.Equal(3.0, aW[2, 2]);
+        Assert.Equal(3.0, aW.Value[1, 1]);
         Point3D aMid = aSurf.Value(0.5, 0.5);
         // High weight at center should pull surface toward (2,2,0)
         Assert.Equal(2.0, aMid.X(), 0.1);
@@ -635,18 +635,16 @@ public class Geom_BSplineSurfaceTests
     {
         Assert.False(myOriginalSurface.IsURational);
         Assert.False(myOriginalSurface.IsVRational);
-        NCollection_Array2<double> aWeights = myOriginalSurface.WeightsArray();
-        Assert.Equal(myOriginalSurface.UPoleCount, aWeights.ColLength());
-        Assert.Equal(myOriginalSurface.VPoleCount, aWeights.RowLength());
-        for (int i = aWeights.LowerRow(); i <= aWeights.UpperRow(); ++i)
+        Grid<double> aWeights = myOriginalSurface.WeightsArray();
+        Assert.Equal(myOriginalSurface.UPoleCount, aWeights.RowCount);
+        Assert.Equal(myOriginalSurface.VPoleCount, aWeights.ColumnCount);
+        for (int i = 0; i < aWeights.RowCount; ++i)
         {
-            for (int j = aWeights.LowerCol(); j <= aWeights.UpperCol(); ++j)
+            for (int j = 0; j < aWeights.ColumnCount; ++j)
             {
                 Assert.Equal(1.0, aWeights[i, j]);
             }
         }
-        // The port returns a copy (OCCT: the same shared unit-weights view each time)
-        Assert.NotSame(aWeights, myOriginalSurface.WeightsArray());
     }
 
     [Fact]
@@ -663,14 +661,11 @@ public class Geom_BSplineSurfaceTests
             }
         }
         BSplineSurface aRational = new(aPoles, aWeightsIn, Knots(0, 1), Knots(0, 1), Mults(3, 3), Mults(3, 3), 2, 2);
-        NCollection_Array2<double> aWeights = aRational.WeightsArray();
-        Assert.Equal(3, aWeights.ColLength());
-        Assert.Equal(3, aWeights.RowLength());
-        Assert.True(aWeights.IsDeletable());
-        Assert.Equal(2.0, aWeights[2, 2]);
-        Assert.Equal(1.0, aWeights[1, 1]);
-        // A copy: changing it doesn't change the surface
-        aWeights[2, 2] = 5.0;
+        Grid<double> aWeights = aRational.WeightsArray();
+        Assert.Equal(3, aWeights.RowCount);
+        Assert.Equal(3, aWeights.ColumnCount);
+        Assert.Equal(2.0, aWeights[1, 1]);
+        Assert.Equal(1.0, aWeights[0, 0]);
         Assert.Equal(2.0, aRational.Weight(2, 2));
     }
 
@@ -692,7 +687,7 @@ public class Geom_BSplineSurfaceTests
         NCollection_Array2<double> aWeights = new(1, 3, 1, 3);
         aWeights.Init(1.0);
         aWeights[2, 1] = aWeights[2, 2] = aWeights[2, 3] = 2.0;
-        BSplineSurface aRational = new(myOriginalSurface.Poles(), aWeights, Knots(0, 1), Knots(0, 1), Mults(3, 3),
+        BSplineSurface aRational = new(new NCollection_Array2<Point3D>(myOriginalSurface.InternalPoles()), aWeights, Knots(0, 1), Knots(0, 1), Mults(3, 3),
                                             Mults(3, 3), 2, 2);
         Assert.True(((BSplineCurve3D)aRational.VIso(0.5)).IsRational);
         // Equal weights: CheckRational (the default) makes the curve non-rational; without it, rational
@@ -762,9 +757,9 @@ public class Geom_BSplineSurfaceTests
     [Fact]
     public void ReturnedArrays_AreCopies()
     {
-        NCollection_Array2<Point3D> aPoles = myOriginalSurface.Poles();
-        aPoles[1, 1] = new Point3D(100, 100, 100);
-        Assert.False(myOriginalSurface.Pole(1, 1).IsEqual(new Point3D(100, 100, 100), 1.0));
+        Grid<Point3D> aPoles = myOriginalSurface.Poles();
+        Assert.True(aPoles[0, 0].IsEqual(myOriginalSurface.Pole(1, 1), 0.0));
+        Assert.Equal(myOriginalSurface.UPoleCount * myOriginalSurface.VPoleCount, aPoles.Values.Length);
         Assert.Equal(new[] { 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 }, myOriginalSurface.UKnotSequence());
     }
     [Fact]

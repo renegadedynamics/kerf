@@ -236,7 +236,7 @@ public class GeomFill_GordonTests
         // a second Perform from the same seeds gives the same poles
         BSplineSurface aCopy = (BSplineSurface)aSurface.Copy();
         aGordon.Perform();
-        Assert.Equal(aCopy.Poles().AsSpan().ToArray(), aGordon.Surface().Poles().AsSpan().ToArray());
+        Assert.Equal(aCopy.Poles().Values.ToArray(), aGordon.Surface().Poles().Values.ToArray());
     }
 
     [Fact]
