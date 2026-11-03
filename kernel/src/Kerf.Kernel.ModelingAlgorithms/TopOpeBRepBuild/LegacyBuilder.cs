@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -162,14 +163,14 @@ public class LegacyBuilder
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vElists = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> vElists = new(ShapeHasher.Instance);
         vElists.Clear();
         Exploration.MapShapesAndAncestors(aWire, ShapeType.Vertex, ShapeType.Edge, vElists);
-        int nbVer = vElists.Extent(), i;
+        int nbVer = vElists.Count, i;
 
         for (i = 1; i <= nbVer; i++)
         {
-            NCollection_List<Shape> elist = vElists.FindFromIndex(i);
+            NCollection_List<Shape> elist = vElists.ValueAt(i - 1);
             if (elist.Extent() == 1)
             {
                 Shape edge = elist.First();

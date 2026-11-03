@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
@@ -32,9 +33,9 @@ public class BOPAlgo_RemoveFeaturesTests
 
     internal static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return [.. Enumerable.Range(1, aMap.Extent()).Select(aMap.FindKey)];
+        return [.. aMap];
     }
 
     // The faces of theShape whose surface is of the given kind.

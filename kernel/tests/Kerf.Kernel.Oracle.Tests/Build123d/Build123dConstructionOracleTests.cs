@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Constraints;
 using Kerf.Engine.Construction.Filling;
@@ -742,11 +743,11 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         }, o =>
         {
             var aB = new MakeFillet2D(ShapeCasts.Face(o[0]));
-            var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var aMap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(o[0], ShapeType.Vertex, ShapeType.Edge, aMap);
             for (int i = 1; i <= aNbV; i++)
             {
-                NCollection_List<Shape> aList = aMap.FindFromKey(o[i]);
+                NCollection_List<Shape> aList = aMap.GetValue(o[i]);
                 Shape e1 = aList.First(), e2 = aList.Last();
                 if (hasReference && e2.IsSame(o[^1]))
                 {

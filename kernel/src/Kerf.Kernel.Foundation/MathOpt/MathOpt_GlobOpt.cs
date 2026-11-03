@@ -99,21 +99,21 @@ public static partial class MathOpt
         RandomGenerator rng = new(config.Seed);
 
         // Population: vector of candidate solutions
-        NCollection_DynamicArray<math_Vector> population = new();
+        List<math_Vector> population = new();
         math_Vector fitness = new(0, nbPop - 1);
 
         // Initialize population
         for (int memberIdx = 0; memberIdx < nbPop; ++memberIdx)
         {
-            population.Append(new math_Vector(lower, upper));
+            population.Add(new math_Vector(lower, upper));
             for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
             {
                 double randVal = rng.NextReal();
-                population.ChangeValue(memberIdx)[dimIdx] =
+                population[memberIdx][dimIdx] =
                   lowerBounds[dimIdx] + randVal * (upperBounds[dimIdx] - lowerBounds[dimIdx]);
             }
 
-            if (!func.Value(population.Value(memberIdx), out double fitVal))
+            if (!func.Value(population[memberIdx], out double fitVal))
             {
                 fitVal = double.MaxValue;
             }
@@ -166,15 +166,15 @@ public static partial class MathOpt
                     {
                         // Mutation: DE/rand/1
                         double mutVal =
-                          population.Value(idxA)[dimIdx]
-                          + mutScale * (population.Value(idxB)[dimIdx] - population.Value(idxC)[dimIdx]);
+                          population[idxA][dimIdx]
+                          + mutScale * (population[idxB][dimIdx] - population[idxC][dimIdx]);
                         // Clamp to bounds
                         trial[dimIdx] =
                           global::Kerf.Engine.Numerics.Utilities.MathUtils.Clamp(mutVal, lowerBounds[dimIdx], upperBounds[dimIdx]);
                     }
                     else
                     {
-                        trial[dimIdx] = population.Value(memberIdx)[dimIdx];
+                        trial[dimIdx] = population[memberIdx][dimIdx];
                     }
                 }
 
@@ -186,7 +186,7 @@ public static partial class MathOpt
 
                 if (trialFitness <= fitness[memberIdx])
                 {
-                    population.ChangeValue(memberIdx).Initialized(trial);
+                    population[memberIdx].Initialized(trial);
                     fitness[memberIdx] = trialFitness;
 
                     if (trialFitness < bestValue)
@@ -211,7 +211,7 @@ public static partial class MathOpt
         }
 
         // Polish the best solution using coordinate-wise Brent's method
-        math_Vector polished = new(population.Value(bestIdx));
+        math_Vector polished = new(population[bestIdx]);
         double polishedValue = bestValue;
         if (config.PolishBudgetPerDim > 0)
         {
@@ -355,7 +355,7 @@ public static partial class MathOpt
                                                        math_Vector upperBounds,
                                                        GlobalConfig config,
                                                        PSOConfig? psoConfig,
-                                                       NCollection_DynamicArray<PSOSeedParticle>? seeds = null,
+                                                       List<PSOSeedParticle>? seeds = null,
                                                        PSOStats? stats = null)
         where Function : IVectorFunction
     {

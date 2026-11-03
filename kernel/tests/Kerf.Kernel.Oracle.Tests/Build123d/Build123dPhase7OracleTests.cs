@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing;
@@ -273,13 +274,13 @@ public sealed partial class Build123dPhase7OracleTests(ITestOutputHelper output)
     private static string Keyed(string theHistory, string theResultText)
     {
         Shape aResult = BooleanOracleTests.ReadPort(theResultText);
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, aMap);
         CanonicalKeys aKeys = CanonicalKeys.Build(aResult);
         return System.Text.RegularExpressions.Regex.Replace(theHistory, @"([GM]|left |right )\[([^\]]*)\]", m =>
             m.Groups[1].Value + "[" + string.Join(' ', m.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                                                          .Select(s => (I: int.Parse(s.TrimEnd('r'), CultureInfo.InvariantCulture), R: s.EndsWith('r')))
-                                                         .Select(t => (t.I > 0 ? aKeys.Key(aMap[t.I]) : "out") + (t.R ? "r" : ""))
+                                                         .Select(t => (t.I > 0 ? aKeys.Key(aMap[t.I - 1]) : "out") + (t.R ? "r" : ""))
                                                          .Order(StringComparer.Ordinal)) + "]");
     }
 

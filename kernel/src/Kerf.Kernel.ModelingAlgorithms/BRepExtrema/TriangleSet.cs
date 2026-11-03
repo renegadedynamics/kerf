@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2014-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bvh;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -33,16 +34,16 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     protected NCollection_LinearVector<NCollection_Vec3<double>> _vertexArray = new();
 
     /// <summary>The index of the shape of each vertex.</summary>
-    protected NCollection_DynamicArray<int> _shapeIdxOfVtxVec = new();
+    protected List<int> _shapeIdxOfVtxVec = new();
 
     /// <summary>The number of vertices of each shape.</summary>
-    protected NCollection_DynamicArray<int> _numVtxInShapeVec = new();
+    protected List<int> _numVtxInShapeVec = new();
 
     /// <summary>The number of triangles of each shape.</summary>
-    protected NCollection_DynamicArray<int> _numTrgInShapeVec = new();
+    protected List<int> _numTrgInShapeVec = new();
 
     /// <summary>The triangles' indices after (key) and before (value) swapping.</summary>
-    protected NCollection_DataMap<int, int> _trgIdxMap = new();
+    protected Dictionary<int, int> _trgIdxMap = new();
 
     /// <summary>An empty triangle set.</summary>
     public TriangleSet()
@@ -52,7 +53,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     }
 
     /// <summary>A triangle set of the given shapes.</summary>
-    public TriangleSet(NCollection_DynamicArray<Shape> faces)
+    public TriangleSet(List<Shape> faces)
         : base(new LinearBuilder<double, NCollection_Vec3<double>>(BVH_Constants_LeafNodeSizeDefault, BVH_Constants_MaxTreeDepth))
     {
         // Set default builder - linear BVH (LBVH)
@@ -104,24 +105,24 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     public override void Swap(int index1, int index2)
     {
         (_triangles[index1], _triangles[index2]) = (_triangles[index2], _triangles[index1]);
-        (_trgIdxMap[index1], _trgIdxMap[index2]) = (_trgIdxMap[index2], _trgIdxMap[index1]);
+        (_trgIdxMap.GetValueRef(index1), _trgIdxMap.GetValueRef(index2)) = (_trgIdxMap.GetValue(index2), _trgIdxMap.GetValue(index1));
     }
 
     /// <summary>The shape index of the given triangle.</summary>
     public int GetFaceID(int index) => _triangles[index].W();
 
     /// <summary>The shape index of the given vertex.</summary>
-    public int GetShapeIDOfVtx(int index) => _shapeIdxOfVtxVec.Value(index);
+    public int GetShapeIDOfVtx(int index) => _shapeIdxOfVtxVec[index];
 
     /// <summary>The index of a vertex of the whole set in the triangulation of its shape.</summary>
     public int GetVtxIdxInShape(int index)
     {
-        int shID = _shapeIdxOfVtxVec.Value(index);
+        int shID = _shapeIdxOfVtxVec[index];
         int numVertices = 0;
 
         for (int sIdx = 0; sIdx < shID; sIdx++)
         {
-            numVertices += _numVtxInShapeVec.Value(sIdx);
+            numVertices += _numVtxInShapeVec[sIdx];
         }
 
         return index - numVertices;
@@ -137,10 +138,10 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 
         for (int sIdx = 0; sIdx < shID; sIdx++)
         {
-            numTriangles += _numTrgInShapeVec.Value(sIdx);
+            numTriangles += _numTrgInShapeVec[sIdx];
         }
 
-        return _trgIdxMap[index] - numTriangles;
+        return _trgIdxMap.GetValue(index) - numTriangles;
     }
 
     /// <summary>All the vertices: the set's own array (OCCT's const reference).</summary>
@@ -182,12 +183,12 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
     /// Initialises the set from the shapes (faces with triangulations, edges with 3D polygons) and builds its BVH.
     /// As in OCCT, it stops at the first shape without a mesh and still returns true.
     /// </summary>
-    public bool Init(NCollection_DynamicArray<Shape> shapes)
+    public bool Init(List<Shape> shapes)
     {
         Clear();
 
         bool isOK = true; // OCCT: isOK stops the loop at a shape without a mesh, but Init returns true regardless
-        for (int shapeIdx = 0; shapeIdx < shapes.Length() && isOK; ++shapeIdx)
+        for (int shapeIdx = 0; shapeIdx < shapes.Count && isOK; ++shapeIdx)
         {
             if (shapes[shapeIdx].ShapeType() == ShapeType.Face)
             {
@@ -204,7 +205,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
         // OCCT reserves aNumTrg buckets (ReSize): the port's map grows by itself
         for (int trgIdx = 0; trgIdx < numTrg; ++trgIdx)
         {
-            _trgIdxMap.Bind(trgIdx, trgIdx);
+            _trgIdxMap[trgIdx] = trgIdx;
         }
 
         MarkDirty(); // needs BVH rebuilding
@@ -239,7 +240,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
                                                          index));
         }
 
-        _numTrgInShapeVec.SetValue(index, triangulation.TriangleCount);
+        _numTrgInShapeVec.SetAt(index, triangulation.TriangleCount);
 
         return true;
     }
@@ -276,9 +277,9 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
             vertex = vertex.Transformed(trsf);
 
             _vertexArray.Append(new NCollection_Vec3<double>(vertex.X(), vertex.Y(), vertex.Z()));
-            _shapeIdxOfVtxVec.Append(index);
+            _shapeIdxOfVtxVec.Add(index);
         }
 
-        _numVtxInShapeVec.SetValue(index, nodes.Length());
+        _numVtxInShapeVec.SetAt(index, nodes.Length());
     }
 }

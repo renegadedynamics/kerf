@@ -232,14 +232,14 @@ public sealed class FreeBounds
     /// </summary>
     public static NCollection_HSequence<Shape> ConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared)
     {
-        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         return ConnectWiresToWires(iwires, toler, shared, map);
     }
 
     /// <summary>The connection, as <see cref="ConnectWiresToWires(NCollection_HSequence{Shape}, double, bool)"/>, unfrozen (ported code).</summary>
     internal static NCollection_HSequence<Shape> InternalConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared)
     {
-        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         return InternalConnectWiresToWires(iwires, toler, shared, map);
     }
 
@@ -257,7 +257,7 @@ public sealed class FreeBounds
     /// new vertices connecting them. The wires and the new vertices are frozen.
     /// </summary>
     public static NCollection_HSequence<Shape> ConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
-                                                                          NCollection_DataMap<Shape, Shape> vertices)
+                                                                          Dictionary<Shape, Shape> vertices)
     {
         NCollection_HSequence<Shape> owires = InternalConnectWiresToWires(iwires, toler, shared, vertices);
         foreach (KeyValuePair<Shape, Shape> pair in vertices)
@@ -271,14 +271,14 @@ public sealed class FreeBounds
     [Obsolete("Use ConnectWiresToWires() returning the sequence instead")]
     public static void ConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
                                            out NCollection_HSequence<Shape> owires,
-                                           NCollection_DataMap<Shape, Shape> vertices)
+                                           Dictionary<Shape, Shape> vertices)
     {
         owires = ConnectWiresToWires(iwires, toler, shared, vertices);
     }
 
     /// <summary>The connection with the vertex map, unfrozen (ported code).</summary>
     internal static NCollection_HSequence<Shape> InternalConnectWiresToWires(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
-                                                                                    NCollection_DataMap<Shape, Shape> vertices)
+                                                                                    Dictionary<Shape, Shape> vertices)
     {
         ConnectWiresToWiresImpl(iwires, toler, shared, out NCollection_HSequence<Shape> owires, vertices);
         return owires;
@@ -286,7 +286,7 @@ public sealed class FreeBounds
 
     private static void ConnectWiresToWiresImpl(NCollection_HSequence<Shape>? iwires, double toler, bool shared,
                                                 out NCollection_HSequence<Shape> owires,
-                                                NCollection_DataMap<Shape, Shape> vertices)
+                                                Dictionary<Shape, Shape> vertices)
     {
         if (iwires is null || iwires.Length() == 0)
         {
@@ -439,8 +439,8 @@ public sealed class FreeBounds
                             var sbv = new VertexBuilder();
                             v = sbv.InternalCombineVertex(vprev, vfol);
                         }
-                        vertices.Bind(vprev, v);
-                        vertices.Bind(vfol, v);
+                        vertices[vprev] = v;
+                        vertices[vfol] = v;
 
                         var sbe = new BuildEdgeBuilder();
                         if (saw.EdgeCount < 2)

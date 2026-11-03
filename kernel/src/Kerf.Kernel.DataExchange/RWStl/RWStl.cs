@@ -47,37 +47,37 @@ public static class RWStl
     // RWStl.cxx's Reader: collects the nodes and triangles into a triangulation
     private class Reader : global::Kerf.Engine.Exchange.Stl.Reader
     {
-        private readonly NCollection_DynamicArray<Xyz> _nodes = new();
-        private readonly NCollection_DynamicArray<Triangle1> _triangles = new();
+        private readonly List<Xyz> _nodes = new();
+        private readonly List<Triangle1> _triangles = new();
 
         //! Add new node
         public override int AddNode(in Xyz pnt)
         {
-            _nodes.Append(pnt);
-            return _nodes.Length();
+            _nodes.Add(pnt);
+            return _nodes.Count;
         }
 
         //! Add new triangle
         public override void AddTriangle(int node1, int node2, int node3)
         {
-            _triangles.Append(new Triangle1(node1, node2, node3));
+            _triangles.Add(new Triangle1(node1, node2, node3));
         }
 
         //! Creates Poly_Triangulation from collected data
         public Triangulation? GetTriangulation()
         {
-            if (_triangles.IsEmpty())
+            if (_triangles.Count == 0)
             {
                 return null;
             }
 
-            var poly = new Triangulation(_nodes.Length(), _triangles.Length(), false);
-            for (int nodeIter = 0; nodeIter < _nodes.Length(); ++nodeIter)
+            var poly = new Triangulation(_nodes.Count, _triangles.Count, false);
+            for (int nodeIter = 0; nodeIter < _nodes.Count; ++nodeIter)
             {
                 poly.SetNode(nodeIter + 1, new Point3D(_nodes[nodeIter]));
             }
 
-            for (int triIter = 0; triIter < _triangles.Length(); ++triIter)
+            for (int triIter = 0; triIter < _triangles.Count; ++triIter)
             {
                 poly.SetTriangle(triIter + 1, _triangles[triIter]);
             }

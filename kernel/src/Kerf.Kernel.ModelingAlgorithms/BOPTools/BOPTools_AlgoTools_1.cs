@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -43,7 +44,7 @@ public static partial class AlgoTools
     /// sub-shapes in <paramref name="aMapToAvoid"/> are not changed. Writes into the shape's edges and vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectTolerances(in Shape aShape, NCollection_IndexedMap<Shape> aMapToAvoid, double aMaxTol = 0.0001,
+    public static void CorrectTolerances(in Shape aShape, IndexedSet<Shape> aMapToAvoid, double aMaxTol = 0.0001,
                                          bool bRunParallel = false)
     {
         CorrectPointOnCurve(aShape, aMapToAvoid, aMaxTol, bRunParallel);
@@ -55,7 +56,7 @@ public static partial class AlgoTools
     /// grows to cover its distance to the points of its edges' 3D curves. Writes into the shape's vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectPointOnCurve(in Shape aS, NCollection_IndexedMap<Shape> aMapToAvoid, double aMaxTol = 0.0001,
+    public static void CorrectPointOnCurve(in Shape aS, IndexedSet<Shape> aMapToAvoid, double aMaxTol = 0.0001,
                                            bool bRunParallel = false)
     {
         Explorer exp = new();
@@ -84,7 +85,7 @@ public static partial class AlgoTools
     /// of their pcurves from their 3D curves. Writes into the shape's edges and vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectCurveOnSurface(in Shape aS, NCollection_IndexedMap<Shape> aMapToAvoid, double aMaxTol = 0.0001,
+    public static void CorrectCurveOnSurface(in Shape aS, IndexedSet<Shape> aMapToAvoid, double aMaxTol = 0.0001,
                                              bool bRunParallel = false)
     {
         Explorer expF = new(), expE = new();
@@ -128,7 +129,7 @@ public static partial class AlgoTools
     /// each edge and vertex of a face at least the face's. Writes into the shape's edges and vertices.
     /// </summary>
     /// <remarks><paramref name="bRunParallel"/> is ignored: the corrections run serially (decision 6430).</remarks>
-    public static void CorrectShapeTolerances(in Shape aShape, NCollection_IndexedMap<Shape> aMapToAvoid,
+    public static void CorrectShapeTolerances(in Shape aShape, IndexedSet<Shape> aMapToAvoid,
                                               bool bRunParallel = false)
     {
         Explorer exp = new();
@@ -195,7 +196,7 @@ public static partial class AlgoTools
     {
         private double _maxTol = 1.0e-7;
         private Edge _edge;
-        private NCollection_IndexedMap<Shape>? _mypMapToAvoid;
+        private IndexedSet<Shape>? _mypMapToAvoid;
 
         internal void SetEdge(in Edge aE) => _edge = aE;
 
@@ -205,7 +206,7 @@ public static partial class AlgoTools
 
         internal double MaxTol() => _maxTol;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(IndexedSet<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -217,11 +218,11 @@ public static partial class AlgoTools
     private sealed class BOPTools_CWT : BooleanParallel.ISolver
     {
         private Face _face;
-        private NCollection_IndexedMap<Shape>? _mypMapToAvoid;
+        private IndexedSet<Shape>? _mypMapToAvoid;
 
         internal void SetFace(in Face aF) => _face = aF;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(IndexedSet<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -235,7 +236,7 @@ public static partial class AlgoTools
         private double _maxTol = 1.0e-7;
         private Edge _edge;
         private Face _face;
-        private NCollection_IndexedMap<Shape>? _mypMapToAvoid;
+        private IndexedSet<Shape>? _mypMapToAvoid;
 
         internal void SetEdge(in Edge aE) => _edge = aE;
 
@@ -243,7 +244,7 @@ public static partial class AlgoTools
 
         internal void SetMaxTol(double aMaxTol) => _maxTol = aMaxTol;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(IndexedSet<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -255,11 +256,11 @@ public static partial class AlgoTools
     private sealed class BOPTools_CVT : BooleanParallel.ISolver
     {
         private Edge _edge;
-        private NCollection_IndexedMap<Shape>? _mypMapToAvoid;
+        private IndexedSet<Shape>? _mypMapToAvoid;
 
         internal void SetEdge(in Edge aE) => _edge = aE;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(IndexedSet<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -271,11 +272,11 @@ public static partial class AlgoTools
     private sealed class BOPTools_CET : BooleanParallel.ISolver
     {
         private Face _face;
-        private NCollection_IndexedMap<Shape>? _mypMapToAvoid;
+        private IndexedSet<Shape>? _mypMapToAvoid;
 
         internal void SetFace(in Face aF) => _face = aF;
 
-        internal void SetMapToAvoid(NCollection_IndexedMap<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
+        internal void SetMapToAvoid(IndexedSet<Shape> aMapToAvoid) => _mypMapToAvoid = aMapToAvoid;
 
         public void Perform()
         {
@@ -285,7 +286,7 @@ public static partial class AlgoTools
     }
 
     // Correct tolerances for Vertices on Edge
-    private static void CheckEdge(in Edge ed, double aMaxTol, NCollection_IndexedMap<Shape> aMapToAvoid)
+    private static void CheckEdge(in Edge ed, double aMaxTol, IndexedSet<Shape> aMapToAvoid)
     {
         Edge e = ed;
         e.Orientation(Forward);
@@ -373,9 +374,9 @@ public static partial class AlgoTools
     }
 
     // Compute edge length and cache it in the map
-    private static double MapEdgeLength(in Edge edge, NCollection_DataMap<Shape, double> mapEdgeLen)
+    private static double MapEdgeLength(in Edge edge, Dictionary<Shape, double> mapEdgeLen)
     {
-        if (!mapEdgeLen.Find(edge, out double len))
+        if (!mapEdgeLen.TryGetValue(edge, out double len))
         {
             len = 0.0;
             if (!Tool.Degenerated(edge))
@@ -383,7 +384,7 @@ public static partial class AlgoTools
                 EdgeCurveAdaptor curve = new(edge);
                 len = AbscissaPoint.Length(curve);
             }
-            mapEdgeLen.Bind(edge, len);
+            mapEdgeLen[edge] = len;
         }
         return len;
     }
@@ -401,7 +402,7 @@ public static partial class AlgoTools
     }
 
     private static double IntersectCurves2d(in Vertex v, Surface s, in EdgeData eData1, in EdgeData eData2,
-                                            NCollection_DataMap<Shape, double> mapEdgeLen)
+                                            Dictionary<Shape, double> mapEdgeLen)
     {
         GInter inter = new();
         // Range of the first edge
@@ -501,14 +502,14 @@ public static partial class AlgoTools
         return maxDist;
     }
 
-    private static void CorrectWires(in Face aFx, NCollection_IndexedMap<Shape> aMapToAvoid)
+    private static void CorrectWires(in Face aFx, IndexedSet<Shape> aMapToAvoid)
     {
         int i, nbV;
         double tol, tol2, d2, d2max;
         Point3D p, pv;
         Point2D p2D;
         Face f;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new();
         //
         f = aFx;
@@ -518,11 +519,11 @@ public static partial class AlgoTools
         Exploration.MapShapesAndUniqueAncestors(f, ShapeType.Vertex, ShapeType.Edge, mve, true);
 
         // OCCT's NCollection_DataMap<TopoDS_Shape, double> hashes with std::hash and compares with operator== (orientation included)
-        NCollection_DataMap<Shape, double> mapEdgeLen = new(EqualityComparer<Shape>.Default);
-        nbV = mve.Extent();
+        Dictionary<Shape, double> mapEdgeLen = new(EqualityComparer<Shape>.Default);
+        nbV = mve.Count;
         for (i = 1; i <= nbV; ++i)
         {
-            Vertex v = ShapeCasts.Vertex(mve.FindKey(i));
+            Vertex v = ShapeCasts.Vertex(mve.KeyAt(i - 1));
             pv = Tool.Pnt(v);
             tol = Tool.Tolerance(v);
             tol2 = tol * tol;
@@ -530,7 +531,7 @@ public static partial class AlgoTools
             d2max = -1.0;
             // Save edge's data to avoid its recalculation during intersection of 2d curves
             List<EdgeData> lePars = [];
-            NCollection_List<Shape> le = mve.FindFromIndex(i);
+            NCollection_List<Shape> le = mve.ValueAt(i - 1);
             it.Initialize(le);
             for (; it.More(); it.Next())
             {
@@ -592,7 +593,7 @@ public static partial class AlgoTools
     }
 
     private static void CorrectEdgeTolerance(in Edge myShape, in Face s, double aMaxTol,
-                                             NCollection_IndexedMap<Shape> aMapToAvoid)
+                                             IndexedSet<Shape> aMapToAvoid)
     {
         //
         // 1. Minimum of conditions to Perform
@@ -823,7 +824,7 @@ public static partial class AlgoTools
         } // end of  2. Tolerances in InContext
     }
 
-    private static void CorrectVertexTolerance(in Edge aE, NCollection_IndexedMap<Shape> aMapToAvoid)
+    private static void CorrectVertexTolerance(in Edge aE, IndexedSet<Shape> aMapToAvoid)
     {
         double tolE, tolV;
         Iterator it = new();
@@ -841,7 +842,7 @@ public static partial class AlgoTools
         }
     }
 
-    private static void UpdateEdges(in Face aF, NCollection_IndexedMap<Shape> aMapToAvoid)
+    private static void UpdateEdges(in Face aF, IndexedSet<Shape> aMapToAvoid)
     {
         double tolF, tolE, tolV;
         Iterator itF = new(), itW = new();
@@ -878,7 +879,7 @@ public static partial class AlgoTools
     }
 
     // The only write site of the corrections: grows the edge's or vertex's tolerance (never shrinks it).
-    private static void UpdateShape(in Shape aS, double aTol, NCollection_IndexedMap<Shape> aMapToAvoid)
+    private static void UpdateShape(in Shape aS, double aTol, IndexedSet<Shape> aMapToAvoid)
     {
         if (aMapToAvoid.Contains(aS))
         {

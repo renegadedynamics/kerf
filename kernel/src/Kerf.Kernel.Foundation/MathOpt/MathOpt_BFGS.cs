@@ -304,13 +304,13 @@ public static partial class MathOpt
         }
 
         // Storage for {s, y} pairs (circular buffer)
-        NCollection_DynamicArray<math_Vector> sVec = new();
-        NCollection_DynamicArray<math_Vector> yVec = new();
+        List<math_Vector> sVec = new();
+        List<math_Vector> yVec = new();
         math_Vector rhoVec = new(0, m - 1, 0.0);
         for (int i = 0; i < m; ++i)
         {
-            sVec.Append(new math_Vector(1, n));
-            yVec.Append(new math_Vector(1, n));
+            sVec.Add(new math_Vector(1, n));
+            yVec.Add(new math_Vector(1, n));
         }
         int head = 0;  // Index of oldest entry
         int count = 0; // Number of stored pairs
@@ -351,10 +351,10 @@ public static partial class MathOpt
             for (int k = count - 1; k >= 0; --k)
             {
                 int idx = (head + k) % m;
-                alphaVec[idx] = rhoVec[idx] * global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(sVec.Value(idx), q);
+                alphaVec[idx] = rhoVec[idx] * global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(sVec[idx], q);
                 for (int i = 1; i <= n; ++i)
                 {
-                    q[i] -= alphaVec[idx] * yVec.Value(idx)[i];
+                    q[i] -= alphaVec[idx] * yVec[idx][i];
                 }
             }
 
@@ -363,7 +363,7 @@ public static partial class MathOpt
             if (count > 0)
             {
                 int lastIdx = (head + count - 1) % m;
-                double yy = global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(yVec.Value(lastIdx), yVec.Value(lastIdx));
+                double yy = global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(yVec[lastIdx], yVec[lastIdx]);
                 if (yy > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
                 {
                     gamma = 1.0 / (rhoVec[lastIdx] * yy);
@@ -381,10 +381,10 @@ public static partial class MathOpt
             for (int k = 0; k < count; ++k)
             {
                 int idx = (head + k) % m;
-                double beta = rhoVec[idx] * global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(yVec.Value(idx), r);
+                double beta = rhoVec[idx] * global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(yVec[idx], r);
                 for (int i = 1; i <= n; ++i)
                 {
-                    r[i] += (alphaVec[idx] - beta) * sVec.Value(idx)[i];
+                    r[i] += (alphaVec[idx] - beta) * sVec[idx][i];
                 }
             }
 
@@ -456,11 +456,11 @@ public static partial class MathOpt
             int newIdx = (head + count) % m;
             for (int i = 1; i <= n; ++i)
             {
-                sVec.ChangeValue(newIdx)[i] = xNew[lower + i - 1] - x[lower + i - 1];
-                yVec.ChangeValue(newIdx)[i] = gradNew[lower + i - 1] - grad[lower + i - 1];
+                sVec[newIdx][i] = xNew[lower + i - 1] - x[lower + i - 1];
+                yVec[newIdx][i] = gradNew[lower + i - 1] - grad[lower + i - 1];
             }
 
-            double sy = global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(sVec.Value(newIdx), yVec.Value(newIdx));
+            double sy = global::Kerf.Engine.Numerics.Utilities.MathUtils.DotProduct(sVec[newIdx], yVec[newIdx]);
             if (sy > global::Kerf.Engine.Numerics.Utilities.MathUtils.THE_ZERO_TOL)
             {
                 rhoVec[newIdx] = 1.0 / sy;

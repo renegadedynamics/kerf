@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Sweeping;
 using Kerf.Engine.Foundation;
@@ -57,7 +58,7 @@ public sealed class Evolved
     private bool _spineType;
 #pragma warning restore CS0414
     private global::Kerf.Geometry.JoinKind _joinType;
-    private readonly NCollection_DataMap<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> _map =
+    private readonly Dictionary<Shape, Dictionary<Shape, NCollection_List<Shape>>> _map =
         new(ShapeHasher.Instance);
     private Shape _top = new();
     private Shape _bottom = new();
@@ -68,7 +69,7 @@ public sealed class Evolved
         return tol;
     }
 
-    private static NCollection_DataMap<Shape, NCollection_List<Shape>> NewProfMap() => new(ShapeHasher.Instance);
+    private static Dictionary<Shape, NCollection_List<Shape>> NewProfMap() => new(ShapeHasher.Instance);
 
     private static void EdgeVertices(in Edge e, out Vertex v1, out Vertex v2)
     {
@@ -209,7 +210,7 @@ public sealed class Evolved
         }
 
         List<Shape> others = [_top, _bottom];
-        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in _map)
+        foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> bySpine in _map)
         {
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> byProf in bySpine.Value)
             {
@@ -219,7 +220,7 @@ public sealed class Evolved
         _shape = overlay.Finish(_shape, others);
         _top = overlay.Final(_top);
         _bottom = overlay.Final(_bottom);
-        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> bySpine in _map)
+        foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> bySpine in _map)
         {
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> byProf in bySpine.Value)
             {
@@ -262,8 +263,8 @@ public sealed class Evolved
         //------------------------------------------------------------------
         // projection of the profile and cut of the spine.
         //------------------------------------------------------------------
-        NCollection_DataMap<Shape, Shape> mapProf = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> mapSpine = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapProf = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapSpine = new(ShapeHasher.Instance);
 
         PrepareProfile(workProf, mapProf);
         PrepareSpine(ref workSpine, mapSpine);
@@ -554,9 +555,9 @@ public sealed class Evolved
         //---------------------------------------------------------------------
 
         // keyed by the medial axis's nodes (OCCT: by handle; only looked up, never iterated)
-        NCollection_DataMap<MedialNode, NCollection_DataMap<Shape, Shape>> mapNodeVertex = new(ReferenceEqualityComparer.Instance);
-        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> mapBis = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_Sequence<double>> mapVerPar = new(ShapeHasher.Instance);
+        Dictionary<MedialNode, Dictionary<Shape, Shape>> mapNodeVertex = new(ReferenceEqualityComparer.Instance);
+        Dictionary<Shape, NCollection_Sequence<Shape>> mapBis = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_Sequence<double>> mapVerPar = new(ShapeHasher.Instance);
 
         // mark of the profile.
         CoordinateSystem axeRef = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
@@ -623,26 +624,26 @@ public sealed class Evolved
             NCollection_Sequence<Shape> vOnF = new(), vOnL = new();
             NCollection_Sequence<Point3D> parOnF = new(), parOnL = new();
 
-            NCollection_DataMap<Shape, NCollection_Sequence<Shape>> mapSeqVer = new(ShapeHasher.Instance);
-            NCollection_DataMap<Shape, NCollection_Sequence<Point3D>> mapSeqPar = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_Sequence<Shape>> mapSeqVer = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_Sequence<Point3D>> mapSeqPar = new(ShapeHasher.Instance);
 
             for (profExp.Init(_profile); profExp.More(); profExp.Next())
             {
                 //-----------------------------------------------
                 // Return two faces separated by the bissectrice.
                 //-----------------------------------------------
-                f[0] = ShapeCasts.Face(_map[S[0]][profExp.Current()].First());
-                f[1] = ShapeCasts.Face(_map[S[1]][profExp.Current()].First());
+                f[0] = ShapeCasts.Face(_map.GetValue(S[0]).GetValue(profExp.Current()).First());
+                f[1] = ShapeCasts.Face(_map.GetValue(S[1]).GetValue(profExp.Current()).First());
 
                 //------------------------------------
                 // Return parallel edges on each face.
                 //------------------------------------
                 EdgeVertices(profExp.Current(), out Vertex vf, out Vertex vl);
 
-                e[0] = ShapeCasts.Edge(_map[S[0]][vf].First());
-                e[1] = ShapeCasts.Edge(_map[S[0]][vl].First());
-                e[2] = ShapeCasts.Edge(_map[S[1]][vf].First());
-                e[3] = ShapeCasts.Edge(_map[S[1]][vl].First());
+                e[0] = ShapeCasts.Edge(_map.GetValue(S[0]).GetValue(vf).First());
+                e[1] = ShapeCasts.Edge(_map.GetValue(S[0]).GetValue(vl).First());
+                e[2] = ShapeCasts.Edge(_map.GetValue(S[1]).GetValue(vf).First());
+                e[3] = ShapeCasts.Edge(_map.GetValue(S[1]).GetValue(vl).First());
 
                 bool[] inv0 = new bool[2];
                 bool[] inv1 = new bool[2];
@@ -700,7 +701,7 @@ public sealed class Evolved
                 //-----------------------------------------------------------
                 // Construction of vertices on edges parallel to the spine.
                 //-----------------------------------------------------------
-                if (!mapSeqVer.IsBound(vf))
+                if (!mapSeqVer.ContainsKey(vf))
                 {
                     if (inv0[0] || inv1[0])
                     {
@@ -730,11 +731,11 @@ public sealed class Evolved
                 else
                 {
                     // OCCT assigns copies
-                    parOnF = new NCollection_Sequence<Point3D>(mapSeqPar[vf]);
-                    vOnF = new NCollection_Sequence<Shape>(mapSeqVer[vf]);
+                    parOnF = new NCollection_Sequence<Point3D>(mapSeqPar.GetValue(vf));
+                    vOnF = new NCollection_Sequence<Shape>(mapSeqVer.GetValue(vf));
                 }
 
-                if (!mapSeqVer.IsBound(vl))
+                if (!mapSeqVer.ContainsKey(vl))
                 {
                     if (inv0[1] || inv1[1])
                     {
@@ -763,8 +764,8 @@ public sealed class Evolved
                 }
                 else
                 {
-                    parOnL = new NCollection_Sequence<Point3D>(mapSeqPar[vl]);
-                    vOnL = new NCollection_Sequence<Shape>(mapSeqVer[vl]);
+                    parOnL = new NCollection_Sequence<Point3D>(mapSeqPar.GetValue(vl));
+                    vOnL = new NCollection_Sequence<Shape>(mapSeqVer.GetValue(vl));
                 }
 
                 //------------------------------------------------------
@@ -821,9 +822,9 @@ public sealed class Evolved
                     //-------------------------------------------
                     for (k = 0; k <= 1; k++)
                     {
-                        if (!mapBis.IsBound(f[k]))
+                        if (!mapBis.ContainsKey(f[k]))
                         {
-                            mapBis.Bind(f[k], new NCollection_Sequence<Shape>());
+                            mapBis[f[k]] = new NCollection_Sequence<Shape>();
                         }
                     }
                     //---------------------------------------------------------------
@@ -837,16 +838,16 @@ public sealed class Evolved
                     if (DistanceToOZ(vf) < DistanceToOZ(vl))
                     {
                         // Skin
-                        mapBis[f[0]].Append(currentEdge.Oriented(e[0].Orientation()));
+                        mapBis.GetValue(f[0]).Append(currentEdge.Oriented(e[0].Orientation()));
                         currentEdge.Orientation(global::Kerf.Engine.Topology.TopAbs.Complement(e[2].Orientation()));
-                        mapBis[f[1]].Append(currentEdge);
+                        mapBis.GetValue(f[1]).Append(currentEdge);
                     }
                     else
                     {
                         // Contreskin
-                        mapBis[f[1]].Append(currentEdge.Oriented(e[2].Orientation()));
+                        mapBis.GetValue(f[1]).Append(currentEdge.Oriented(e[2].Orientation()));
                         currentEdge.Orientation(global::Kerf.Engine.Topology.TopAbs.Complement(e[0].Orientation()));
-                        mapBis[f[0]].Append(currentEdge);
+                        mapBis.GetValue(f[0]).Append(currentEdge);
                     }
                 }
 
@@ -858,25 +859,25 @@ public sealed class Evolved
                 //----------------------------------------------
                 for (k = 0; k <= 2; k = k + 2)
                 {
-                    if (!mapSeqVer.IsBound(vf))
+                    if (!mapSeqVer.ContainsKey(vf))
                     {
                         if (!vOnF.IsEmpty())
                         {
-                            if (!mapBis.IsBound(e[k]))
+                            if (!mapBis.ContainsKey(e[k]))
                             {
-                                mapBis.Bind(e[k], new NCollection_Sequence<Shape>());
-                                mapVerPar.Bind(e[k], new NCollection_Sequence<double>());
+                                mapBis[e[k]] = new NCollection_Sequence<Shape>();
+                                mapVerPar[e[k]] = new NCollection_Sequence<double>();
                             }
                             for (int ii = 1; ii <= vOnF.Length(); ii++)
                             {
-                                mapBis[e[k]].Append(vOnF.Value(ii));
+                                mapBis.GetValue(e[k]).Append(vOnF.Value(ii));
                                 if (k == 0)
                                 {
-                                    mapVerPar[e[k]].Append(parOnF.Value(ii).Y());
+                                    mapVerPar.GetValue(e[k]).Append(parOnF.Value(ii).Y());
                                 }
                                 else
                                 {
-                                    mapVerPar[e[k]].Append(parOnF.Value(ii).Z());
+                                    mapVerPar.GetValue(e[k]).Append(parOnF.Value(ii).Z());
                                 }
                             }
                         }
@@ -885,25 +886,25 @@ public sealed class Evolved
 
                 for (k = 1; k <= 3; k = k + 2)
                 {
-                    if (!mapSeqVer.IsBound(vl))
+                    if (!mapSeqVer.ContainsKey(vl))
                     {
                         if (!vOnL.IsEmpty())
                         {
-                            if (!mapBis.IsBound(e[k]))
+                            if (!mapBis.ContainsKey(e[k]))
                             {
-                                mapBis.Bind(e[k], new NCollection_Sequence<Shape>());
-                                mapVerPar.Bind(e[k], new NCollection_Sequence<double>());
+                                mapBis[e[k]] = new NCollection_Sequence<Shape>();
+                                mapVerPar[e[k]] = new NCollection_Sequence<double>();
                             }
                             for (int ii = 1; ii <= vOnL.Length(); ii++)
                             {
-                                mapBis[e[k]].Append(vOnL.Value(ii));
+                                mapBis.GetValue(e[k]).Append(vOnL.Value(ii));
                                 if (k == 1)
                                 {
-                                    mapVerPar[e[k]].Append(parOnL.Value(ii).Y());
+                                    mapVerPar.GetValue(e[k]).Append(parOnL.Value(ii).Y());
                                 }
                                 else
                                 {
-                                    mapVerPar[e[k]].Append(parOnL.Value(ii).Z());
+                                    mapVerPar.GetValue(e[k]).Append(parOnL.Value(ii).Z());
                                 }
                             }
                         }
@@ -916,10 +917,10 @@ public sealed class Evolved
                 //-----------------------------------------------------------------
 
                 // OCCT binds copies
-                mapSeqPar.Bind(vf, new NCollection_Sequence<Point3D>(parOnF));
-                mapSeqVer.Bind(vf, new NCollection_Sequence<Shape>(vOnF));
-                mapSeqPar.Bind(vl, new NCollection_Sequence<Point3D>(parOnL));
-                mapSeqVer.Bind(vl, new NCollection_Sequence<Shape>(vOnL));
+                mapSeqPar[vf] = new NCollection_Sequence<Point3D>(parOnF);
+                mapSeqVer[vf] = new NCollection_Sequence<Shape>(vOnF);
+                mapSeqPar[vl] = new NCollection_Sequence<Point3D>(parOnL);
+                mapSeqVer[vl] = new NCollection_Sequence<Shape>(vOnL);
             }
         }
 
@@ -940,13 +941,13 @@ public sealed class Evolved
             {
                 currentProf = profExp.Current();
                 EdgeVertices(ShapeCasts.Edge(currentProf), out vcf, out vcl);
-                currentEdge = ShapeCasts.Edge(_map[currentSpine][vcf].First());
+                currentEdge = ShapeCasts.Edge(_map.GetValue(currentSpine).GetValue(vcf).First());
 
                 //-------------------------------------------------------------
                 // RQ : Current Edge is oriented relatively to the face (oriented forward)
                 //     generated by edge CurrentProf .
                 //-------------------------------------------------------------
-                if (mapBis.IsBound(currentEdge))
+                if (mapBis.ContainsKey(currentEdge))
                 {
                     //--------------------------------------------------------
                     // Find if one of two faces connected to the edge
@@ -958,14 +959,14 @@ public sealed class Evolved
                     Shape faceControle;
                     bool yaFace = true;
 
-                    faceControle = _map[currentSpine][currentProf].First();
-                    if (!mapBis.IsBound(faceControle))
+                    faceControle = _map.GetValue(currentSpine).GetValue(currentProf).First();
+                    if (!mapBis.ContainsKey(faceControle))
                     {
                         yaFace = false;
                         if (!precProf.IsNull)
                         {
-                            faceControle = _map[currentSpine][precProf].First();
-                            if (mapBis.IsBound(faceControle))
+                            faceControle = _map.GetValue(currentSpine).GetValue(precProf).First();
+                            if (mapBis.ContainsKey(faceControle))
                             {
                                 yaFace = true;
                             }
@@ -978,11 +979,11 @@ public sealed class Evolved
                         // No connected face in the volevo => no parallel edge.
                         //------------------------------------------------------------
                         NCollection_Sequence<Shape> seqOfShape = new();
-                        TrimEdge(currentEdge, mapBis[faceControle], mapBis[currentEdge], mapVerPar[currentEdge], seqOfShape);
+                        TrimEdge(currentEdge, mapBis.GetValue(faceControle), mapBis.GetValue(currentEdge), mapVerPar.GetValue(currentEdge), seqOfShape);
 
                         for (k = 1; k <= seqOfShape.Length(); k++)
                         {
-                            _map[currentSpine][vcf].Append(seqOfShape.Value(k));
+                            _map.GetValue(currentSpine).GetValue(vcf).Append(seqOfShape.Value(k));
                         }
                     }
                 }
@@ -992,28 +993,28 @@ public sealed class Evolved
             //------------------------------------------------------------
             // Construction of the parallel edge from the last vertex of myProfile.
             //------------------------------------------------------------
-            currentEdge = ShapeCasts.Edge(_map[currentSpine][vcl].First());
+            currentEdge = ShapeCasts.Edge(_map.GetValue(currentSpine).GetValue(vcl).First());
 
-            if (mapBis.IsBound(currentEdge))
+            if (mapBis.ContainsKey(currentEdge))
             {
                 bool yaFace = true;
                 Shape faceControle;
 
-                faceControle = _map[currentSpine][currentProf].First();
-                if (!mapBis.IsBound(faceControle))
+                faceControle = _map.GetValue(currentSpine).GetValue(currentProf).First();
+                if (!mapBis.ContainsKey(faceControle))
                 {
                     yaFace = false;
                 }
                 // the number of element of the list allows to know
                 // if the edges have already been done (closed profile) .
-                if (yaFace && _map[currentSpine][vcl].Extent() <= 1)
+                if (yaFace && _map.GetValue(currentSpine).GetValue(vcl).Extent() <= 1)
                 {
                     NCollection_Sequence<Shape> seqOfShape = new();
-                    TrimEdge(currentEdge, mapBis[faceControle], mapBis[currentEdge], mapVerPar[currentEdge], seqOfShape);
+                    TrimEdge(currentEdge, mapBis.GetValue(faceControle), mapBis.GetValue(currentEdge), mapVerPar.GetValue(currentEdge), seqOfShape);
 
                     for (k = 1; k <= seqOfShape.Length(); k++)
                     {
-                        _map[currentSpine][vcl].Append(seqOfShape.Value(k));
+                        _map.GetValue(currentSpine).GetValue(vcl).Append(seqOfShape.Value(k));
                     }
                 }
             }
@@ -1029,10 +1030,10 @@ public sealed class Evolved
             for (profExp.Init(_profile); profExp.More(); profExp.Next())
             {
                 currentProf = profExp.Current();
-                currentFace = ShapeCasts.Face(_map[currentSpine][currentProf].First());
-                _map[currentSpine][currentProf].Clear();
+                currentFace = ShapeCasts.Face(_map.GetValue(currentSpine).GetValue(currentProf).First());
+                _map.GetValue(currentSpine).GetValue(currentProf).Clear();
 
-                if (mapBis.IsBound(currentFace))
+                if (mapBis.ContainsKey(currentFace))
                 {
                     //----------------------------------------------------------
                     // If the face does not contain edges that can limit it
@@ -1046,31 +1047,31 @@ public sealed class Evolved
                     EdgeVertices(ShapeCasts.Edge(currentProf), out vcf, out vcl);
 
                     NCollection_List<Shape>.Iterator itl = new();
-                    NCollection_List<Shape> lf = _map[currentSpine][vcf];
+                    NCollection_List<Shape> lf = _map.GetValue(currentSpine).GetValue(vcf);
 
                     Orientation ori = BrepTools.OriEdgeInFace(ShapeCasts.Edge(lf.First()), currentFace);
                     for (itl.Initialize(lf), itl.Next(); itl.More(); itl.Next())
                     {
                         Edge re = ShapeCasts.Edge(itl.Value());
-                        mapBis[currentFace].Append(re.Oriented(ori));
+                        mapBis.GetValue(currentFace).Append(re.Oriented(ori));
                     }
-                    NCollection_List<Shape> ll = _map[currentSpine][vcl];
+                    NCollection_List<Shape> ll = _map.GetValue(currentSpine).GetValue(vcl);
                     ori = BrepTools.OriEdgeInFace(ShapeCasts.Edge(ll.First()), currentFace);
                     for (itl.Initialize(ll), itl.Next(); itl.More(); itl.Next())
                     {
                         Edge re = ShapeCasts.Edge(itl.Value());
-                        mapBis[currentFace].Append(re.Oriented(ori));
+                        mapBis.GetValue(currentFace).Append(re.Oriented(ori));
                     }
 
                     // Cut of the face.
                     NCollection_Sequence<Shape> seqOfShape = new();
 
-                    TrimFace(currentFace, mapBis[currentFace], seqOfShape);
+                    TrimFace(currentFace, mapBis.GetValue(currentFace), seqOfShape);
 
                     for (int ii = 1; ii <= seqOfShape.Length(); ii++)
                     {
                         myBuilder.Add(_shape, seqOfShape.Value(ii));
-                        _map[currentSpine][currentProf].Append(seqOfShape.Value(ii));
+                        _map.GetValue(currentSpine).GetValue(currentProf).Append(seqOfShape.Value(ii));
                     }
                 }
             }
@@ -1085,7 +1086,7 @@ public sealed class Evolved
             {
                 if (vmap.Add(explo.Current()))
                 {
-                    _map[currentSpine][explo.Current()].RemoveFirst();
+                    _map.GetValue(currentSpine).GetValue(explo.Current()).RemoveFirst();
                 }
             }
         }
@@ -1107,7 +1108,7 @@ public sealed class Evolved
 
         WireExplorer profExp = new();
         Explorer exp = new();
-        NCollection_DataMap<Shape, Shape> mapVP = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapVP = new(ShapeHasher.Instance);
         OffsetWire paral = new();
 
         for (profExp.Init(_profile); profExp.More(); profExp.Next())
@@ -1126,14 +1127,14 @@ public sealed class Evolved
 
             for (int i = 0; i <= 1; i++)
             {
-                if (!mapVP.IsBound(v[i]))
+                if (!mapVP.ContainsKey(v[i]))
                 {
                     //------------------------------------------------
                     // Calculate parallel lines corresponding to vertices.
                     //------------------------------------------------
                     paral.PerformWithBiLo(_spine, offset[i], locus, link, Join, alt);
                     offAnc.Perform(paral);
-                    mapVP.Bind(v[i], paral.InternalShape());
+                    mapVP[v[i]] = paral.InternalShape();
 
                     //-----------------------------
                     // Update myMap (.)(V[i])
@@ -1142,17 +1143,17 @@ public sealed class Evolved
                     {
                         Edge wc = ShapeCasts.Edge(exp.Current());
                         Shape gs = offAnc.Ancestor(wc);
-                        if (!_map.IsBound(gs))
+                        if (!_map.ContainsKey(gs))
                         {
-                            _map.Bind(gs, NewProfMap());
+                            _map[gs] = NewProfMap();
                         }
-                        if (!_map[gs].IsBound(v[i]))
+                        if (!_map.GetValue(gs).ContainsKey(v[i]))
                         {
-                            _map[gs].Bind(v[i], new NCollection_List<Shape>(paral.InternalGeneratedShapes(gs)));
+                            _map.GetValue(gs)[v[i]] = new NCollection_List<Shape>(paral.InternalGeneratedShapes(gs));
                         }
                     }
                 }
-                Shape rest = mapVP[v[i]];
+                Shape rest = mapVP.GetValue(v[i]);
 
                 bool toReverse = false;
                 if ((isMinV1 && (i == 1)) || (!isMinV1 && (i == 0)))
@@ -1219,15 +1220,15 @@ public sealed class Evolved
                     if (offAnc.HasAncestor(ce))
                     {
                         Shape initE = offAnc.Ancestor(ce);
-                        if (!_map.IsBound(initE))
+                        if (!_map.ContainsKey(initE))
                         {
-                            _map.Bind(initE, NewProfMap());
+                            _map[initE] = NewProfMap();
                         }
-                        if (!_map[initE].IsBound(e))
+                        if (!_map.GetValue(initE).ContainsKey(e))
                         {
-                            _map[initE].Bind(e, new NCollection_List<Shape>());
+                            _map.GetValue(initE)[e] = new NCollection_List<Shape>();
                         }
-                        _map[initE][e].Append(fc);
+                        _map.GetValue(initE).GetValue(e).Append(fc);
                     }
                 }
             }
@@ -1278,15 +1279,15 @@ public sealed class Evolved
                 {
                     Edge edge = ShapeCasts.Edge(exp.Current());
                     Shape ae = offAnc.Ancestor(edge);
-                    if (!_map.IsBound(ae))
+                    if (!_map.ContainsKey(ae))
                     {
-                        _map.Bind(ae, NewProfMap());
+                        _map[ae] = NewProfMap();
                     }
-                    if (!_map[ae].IsBound(v1))
+                    if (!_map.GetValue(ae).ContainsKey(v1))
                     {
-                        _map[ae].Bind(v1, new NCollection_List<Shape>());
+                        _map.GetValue(ae)[v1] = new NCollection_List<Shape>();
                     }
-                    _map[ae][v1].Append(edge);
+                    _map.GetValue(ae).GetValue(v1).Append(edge);
                 }
                 first = false;
             }
@@ -1303,23 +1304,23 @@ public sealed class Evolved
             // MAJ myMap
             foreach (Shape key in new List<Shape>(_map.Keys))
             {
-                NCollection_List<Shape> lof = _map[key][v1];
+                NCollection_List<Shape> lof = _map.GetValue(key).GetValue(v1);
                 NCollection_List<Shape>.Iterator itLOF = new(lof);
-                if (!_map[key].IsBound(v2))
+                if (!_map.GetValue(key).ContainsKey(v2))
                 {
-                    _map[key].Bind(v2, new NCollection_List<Shape>());
+                    _map.GetValue(key)[v2] = new NCollection_List<Shape>();
                 }
 
-                if (!_map[key].IsBound(e))
+                if (!_map.GetValue(key).ContainsKey(e))
                 {
-                    _map[key].Bind(e, new NCollection_List<Shape>());
+                    _map.GetValue(key)[e] = new NCollection_List<Shape>();
                 }
 
                 for (; itLOF.More(); itLOF.Next())
                 {
                     Shape os = itLOF.Value();
-                    _map[key][v2].Append(ps.LastShape(os));
-                    _map[key][e].Append(ps.Shape(os));
+                    _map.GetValue(key).GetValue(v2).Append(ps.LastShape(os));
+                    _map.GetValue(key).GetValue(e).Append(ps.Shape(os));
                 }
             }
         }
@@ -1350,7 +1351,7 @@ public sealed class Evolved
     // - Isolate vertical and horizontal parts.
     // - Reconstruction of wires starting from cut edges.
     // New wires stored in <WorkProf> are always at the same side of axis OZ or mixed with it.
-    private void PrepareProfile(NCollection_List<Shape> workProf, NCollection_DataMap<Shape, Shape> mapProf)
+    private void PrepareProfile(NCollection_List<Shape> workProf, Dictionary<Shape, Shape> mapProf)
     {
         // Supposedly the profile is located so that the only transformation
         // to be carried out is a projection on plane yOz.
@@ -1360,7 +1361,7 @@ public sealed class Evolved
         LineCurve2D line = new(Constants.OY2d());
 
         // Map initial vertex -> projected vertex.
-        NCollection_DataMap<Shape, Shape> mapVerRefMoved = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapVerRefMoved = new(ShapeHasher.Instance);
 
         Wire w = new();
         BrepBuilder b = new();
@@ -1385,22 +1386,22 @@ public sealed class Evolved
             {
                 // Neither extrema nor intersections nor vertices on the axis.
                 b.Add(w, e);
-                mapProf.Bind(e, e);
+                mapProf[e] = e;
             }
             else
             {
                 while (!cuts.IsEmpty())
                 {
                     Edge ne = ShapeCasts.Edge(cuts.First());
-                    mapProf.Bind(ne, e);
+                    mapProf[ne] = e;
                     EdgeVertices(ne, out Vertex v1, out Vertex v2);
-                    if (!mapProf.IsBound(v1))
+                    if (!mapProf.ContainsKey(v1))
                     {
-                        mapProf.Bind(v1, e);
+                        mapProf[v1] = e;
                     }
-                    if (!mapProf.IsBound(v2))
+                    if (!mapProf.ContainsKey(v2))
                     {
-                        mapProf.Bind(v2, e);
+                        mapProf[v2] = e;
                     }
 
                     b.Add(w, ne);
@@ -1505,12 +1506,12 @@ public sealed class Evolved
         // OCCT iterates in hash order; binding each pair does not depend on the order
         foreach (KeyValuePair<Shape, Shape> gilbert in mapVerRefMoved)
         {
-            mapProf.Bind(gilbert.Value, gilbert.Key);
+            mapProf[gilbert.Value] = gilbert.Key;
         }
     }
 
     // Cut the spine's edges at the extrema of curvature and at the inflexion points.
-    private void PrepareSpine(ref Face workSpine, NCollection_DataMap<Shape, Shape> mapSpine)
+    private void PrepareSpine(ref Face workSpine, Dictionary<Shape, Shape> mapSpine)
     {
         BrepBuilder b = new();
         NCollection_List<Shape> cuts = new();
@@ -1530,8 +1531,8 @@ public sealed class Evolved
             {
                 Edge e = ShapeCasts.Edge(iteW.Value());
                 EdgeVertices(e, out Vertex v1, out Vertex v2);
-                mapSpine.Bind(v1, v1);
-                mapSpine.Bind(v2, v2);
+                mapSpine[v1] = v1;
+                mapSpine[v2] = v2;
                 cuts.Clear();
 
                 // Cut
@@ -1540,7 +1541,7 @@ public sealed class Evolved
                 if (cuts.IsEmpty())
                 {
                     b.Add(nw, e);
-                    mapSpine.Bind(e, e);
+                    mapSpine[e] = e;
                 }
                 else
                 {
@@ -1548,15 +1549,15 @@ public sealed class Evolved
                     {
                         Edge ne = ShapeCasts.Edge(iteCuts.Value());
                         b.Add(nw, ne);
-                        mapSpine.Bind(ne, e);
+                        mapSpine[ne] = e;
                         EdgeVertices(ne, out v1, out v2);
-                        if (!mapSpine.IsBound(v1))
+                        if (!mapSpine.ContainsKey(v1))
                         {
-                            mapSpine.Bind(v1, e);
+                            mapSpine[v1] = e;
                         }
-                        if (!mapSpine.IsBound(v2))
+                        if (!mapSpine.ContainsKey(v2))
                         {
-                            mapSpine.Bind(v2, e);
+                            mapSpine[v2] = e;
                         }
                     }
                 }
@@ -1609,9 +1610,9 @@ public sealed class Evolved
     /// <summary>OCCT's <c>GeneratedShapes</c>: the algorithm's own list (shared: don't modify), not frozen.</summary>
     internal NCollection_List<Shape> InternalGeneratedShapes(in Shape spineShape, in Shape profShape)
     {
-        if (_map.IsBound(spineShape) && _map[spineShape].IsBound(profShape))
+        if (_map.ContainsKey(spineShape) && _map.GetValue(spineShape).ContainsKey(profShape))
         {
-            return _map[spineShape][profShape];
+            return _map.GetValue(spineShape).GetValue(profShape);
         }
         else
         {
@@ -1619,7 +1620,7 @@ public sealed class Evolved
         }
     }
 
-    private NCollection_DataMap<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> Generated() => _map;
+    private Dictionary<Shape, Dictionary<Shape, NCollection_List<Shape>>> Generated() => _map;
 
     private static Orientation Compare(in Edge e1, in Edge e2)
     {
@@ -1639,7 +1640,7 @@ public sealed class Evolved
 
     private void Add(Evolved vevo, in Wire prof, Quilt glue)
     {
-        NCollection_DataMap<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> mapVevo = vevo.Generated();
+        Dictionary<Shape, Dictionary<Shape, NCollection_List<Shape>>> mapVevo = vevo.Generated();
         Shape currentSpine, currentProf;
 
         if (vevo.InternalShape().IsNull)
@@ -1670,12 +1671,12 @@ public sealed class Evolved
             if (commun)
             {
                 // OCCT iterates myMap in hash order; the bindings made do not depend on it
-                foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> iteS in _map)
+                foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> iteS in _map)
                 {
                     Shape sp = iteS.Key;
-                    if (iteS.Value.IsBound(vv) && mapVevo.IsBound(sp) && mapVevo[sp].IsBound(vv))
+                    if (iteS.Value.ContainsKey(vv) && mapVevo.ContainsKey(sp) && mapVevo.GetValue(sp).ContainsKey(vv))
                     {
-                        NCollection_List<Shape> myList = _map[sp][vv];
+                        NCollection_List<Shape> myList = _map.GetValue(sp).GetValue(vv);
                         NCollection_List<Shape> vevoList = vevo.InternalGeneratedShapes(sp, vv);
                         NCollection_List<Shape>.Iterator myIte = new(myList);
                         NCollection_List<Shape>.Iterator vevoIte = new(vevoList);
@@ -1697,23 +1698,23 @@ public sealed class Evolved
         //----------------------------------------------------------
         // Add map of elements generate in Vevo in myMap.
         //----------------------------------------------------------
-        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> iteS in mapVevo)
+        foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> iteS in mapVevo)
         {
             currentSpine = iteS.Key;
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> iteP in iteS.Value)
             {
                 currentProf = iteP.Key;
-                if (!_map.IsBound(currentSpine))
+                if (!_map.ContainsKey(currentSpine))
                 {
                     //------------------------------------------------
                     // The element of spine is not yet present .
                     // => previous profile not on the border.
                     //-------------------------------------------------
-                    _map.Bind(currentSpine, NewProfMap());
+                    _map[currentSpine] = NewProfMap();
                 }
-                if (!_map[currentSpine].IsBound(currentProf))
+                if (!_map.GetValue(currentSpine).ContainsKey(currentProf))
                 {
-                    _map[currentSpine].Bind(currentProf, new NCollection_List<Shape>());
+                    _map.GetValue(currentSpine)[currentProf] = new NCollection_List<Shape>();
                     NCollection_List<Shape> genShapes = iteP.Value;
                     NCollection_List<Shape>.Iterator itl = new(genShapes);
                     for (; itl.More(); itl.Next())
@@ -1721,11 +1722,11 @@ public sealed class Evolved
                         // during Glue.Add the shared shapes are recreated.
                         if (glue.IsCopied(itl.Value()))
                         {
-                            _map[currentSpine][currentProf].Append(glue.InternalCopy(itl.Value()));
+                            _map.GetValue(currentSpine).GetValue(currentProf).Append(glue.InternalCopy(itl.Value()));
                         }
                         else
                         {
-                            _map[currentSpine][currentProf].Append(itl.Value());
+                            _map.GetValue(currentSpine).GetValue(currentProf).Append(itl.Value());
                         }
                     }
                 }
@@ -1736,8 +1737,8 @@ public sealed class Evolved
     private ref Shape ChangeShape() => ref _shape;
 
     private void Transfert(Evolved vevo,
-                           NCollection_DataMap<Shape, Shape> mapProf,
-                           NCollection_DataMap<Shape, Shape> mapSpine,
+                           Dictionary<Shape, Shape> mapProf,
+                           Dictionary<Shape, Shape> mapSpine,
                            in Placement ls,
                            in Placement initLS,
                            in Placement initLP)
@@ -1769,18 +1770,18 @@ public sealed class Evolved
         //--------------------------------------------------------------
         Shape initialSpine, initialProf;
 
-        NCollection_DataMap<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> mapVevo = vevo.Generated();
+        Dictionary<Shape, Dictionary<Shape, NCollection_List<Shape>>> mapVevo = vevo.Generated();
 
         // OCCT iterates MapVevo in hash order: the keys of myMap are bound in another order, which only changes
         // the order of later iterations over myMap (none in a published result)
-        foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> iteS in mapVevo)
+        foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> iteS in mapVevo)
         {
-            initialSpine = mapSpine[iteS.Key];
+            initialSpine = mapSpine.GetValue(iteS.Key);
             initialSpine.Move(ls);
 
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> iteP in iteS.Value)
             {
-                initialProf = mapProf[iteP.Key];
+                initialProf = mapProf.GetValue(iteP.Key);
                 initialProf.Location(initLP);
 
                 NCollection_List<Shape> genShapes = iteP.Value;
@@ -1791,16 +1792,16 @@ public sealed class Evolved
                     itl.ChangeValue().Move(ls);
                 }
 
-                if (!_map.IsBound(initialSpine))
+                if (!_map.ContainsKey(initialSpine))
                 {
-                    _map.Bind(initialSpine, NewProfMap());
+                    _map[initialSpine] = NewProfMap();
                 }
 
-                if (!_map[initialSpine].IsBound(initialProf))
+                if (!_map.GetValue(initialSpine).ContainsKey(initialProf))
                 {
-                    _map[initialSpine].Bind(initialProf, new NCollection_List<Shape>());
+                    _map.GetValue(initialSpine)[initialProf] = new NCollection_List<Shape>();
                 }
-                _map[initialSpine][initialProf].Append(genShapes);
+                _map.GetValue(initialSpine).GetValue(initialProf).Append(genShapes);
             }
         }
         //--------------------------------------------------------------
@@ -2038,7 +2039,7 @@ public sealed class Evolved
         WireExplorer genProfExp = new();
         bool firstVertex = true;
 
-        _map.Bind(se, NewProfMap());
+        _map[se] = NewProfMap();
 
         for (profExp.Init(_profile), genProfExp.Init(genProf); profExp.More(); profExp.Next(), genProfExp.Next())
         {
@@ -2047,14 +2048,14 @@ public sealed class Evolved
 
             if (firstVertex)
             {
-                _map[se].Bind(vf, new NCollection_List<Shape>());
-                _map[se][vf].Append(pipe.InternalEdge(se, vfg));
+                _map.GetValue(se)[vf] = new NCollection_List<Shape>();
+                _map.GetValue(se).GetValue(vf).Append(pipe.InternalEdge(se, vfg));
                 firstVertex = false;
             }
-            _map[se].Bind(vl, new NCollection_List<Shape>());
-            _map[se][vl].Append(pipe.InternalEdge(se, vlg));
-            _map[se].Bind(profExp.Current(), new NCollection_List<Shape>());
-            _map[se][profExp.Current()].Append(pipe.InternalFace(se, genProfExp.Current()));
+            _map.GetValue(se)[vl] = new NCollection_List<Shape>();
+            _map.GetValue(se).GetValue(vl).Append(pipe.InternalEdge(se, vlg));
+            _map.GetValue(se)[profExp.Current()] = new NCollection_List<Shape>();
+            _map.GetValue(se).GetValue(profExp.Current()).Append(pipe.InternalFace(se, genProfExp.Current()));
         }
     }
 
@@ -2087,7 +2088,7 @@ public sealed class Evolved
         WireExplorer genProfExp = new();
         bool firstVertex = true;
 
-        _map.Bind(vLast, NewProfMap());
+        _map[vLast] = NewProfMap();
 
         for (profExp.Init(_profile), genProfExp.Init(genProf); profExp.More(); profExp.Next(), genProfExp.Next())
         {
@@ -2098,21 +2099,21 @@ public sealed class Evolved
 
             if (firstVertex)
             {
-                _map[vLast].Bind(vf, new NCollection_List<Shape>());
+                _map.GetValue(vLast)[vf] = new NCollection_List<Shape>();
                 Shape rv0 = rev.Shape(vfg);
                 Orientation oo0 = rv0.Orientation();
-                _map[vLast][vf].Append(rv0.Oriented(oo0));
+                _map.GetValue(vLast).GetValue(vf).Append(rv0.Oriented(oo0));
                 firstVertex = false;
             }
-            _map[vLast].Bind(profExp.Current(), new NCollection_List<Shape>());
+            _map.GetValue(vLast)[profExp.Current()] = new NCollection_List<Shape>();
             Shape rf = rev.Shape(genProfExp.Current());
             Orientation oo = global::Kerf.Engine.Topology.TopAbs.Compose(rf.Orientation(), or);
 
-            _map[vLast][profExp.Current()].Append(rf.Oriented(oo));
-            _map[vLast].Bind(vl, new NCollection_List<Shape>());
+            _map.GetValue(vLast).GetValue(profExp.Current()).Append(rf.Oriented(oo));
+            _map.GetValue(vLast)[vl] = new NCollection_List<Shape>();
             Shape rv = rev.Shape(vlg);
             oo = rv.Orientation();
-            _map[vLast][vl].Append(rv.Oriented(oo));
+            _map.GetValue(vLast).GetValue(vl).Append(rv.Oriented(oo));
         }
     }
 
@@ -2192,16 +2193,16 @@ public sealed class Evolved
                     //-----------------------------------------------------
                     // Code continuity for all edges generated by V.
                     //-----------------------------------------------------
-                    foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> iteS in _map)
+                    foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> iteS in _map)
                     {
                         Shape sp = iteS.Key;
-                        if (_map[sp].IsBound(v) && _map[sp].IsBound(curE) && _map[sp].IsBound(precE))
+                        if (_map.GetValue(sp).ContainsKey(v) && _map.GetValue(sp).ContainsKey(curE) && _map.GetValue(sp).ContainsKey(precE))
                         {
-                            if (!_map[sp][v].IsEmpty() && !_map[sp][curE].IsEmpty() && !_map[sp][precE].IsEmpty())
+                            if (!_map.GetValue(sp).GetValue(v).IsEmpty() && !_map.GetValue(sp).GetValue(curE).IsEmpty() && !_map.GetValue(sp).GetValue(precE).IsEmpty())
                             {
-                                b.Continuity(ShapeCasts.Edge(_map[sp][v].First()),
-                                             ShapeCasts.Face(_map[sp][curE].First()),
-                                             ShapeCasts.Face(_map[sp][precE].First()),
+                                b.Continuity(ShapeCasts.Edge(_map.GetValue(sp).GetValue(v).First()),
+                                             ShapeCasts.Face(_map.GetValue(sp).GetValue(curE).First()),
+                                             ShapeCasts.Face(_map.GetValue(sp).GetValue(precE).First()),
                                              continuity);
                             }
                         }
@@ -2227,16 +2228,16 @@ public sealed class Evolved
                 //---------------------------------------------
                 // Code continuity for all edges generated by V.
                 //---------------------------------------------
-                foreach (KeyValuePair<Shape, NCollection_DataMap<Shape, NCollection_List<Shape>>> iteS in _map)
+                foreach (KeyValuePair<Shape, Dictionary<Shape, NCollection_List<Shape>>> iteS in _map)
                 {
                     Shape sp = iteS.Key;
-                    if (_map[sp].IsBound(vf) && _map[sp].IsBound(curE) && _map[sp].IsBound(firstE))
+                    if (_map.GetValue(sp).ContainsKey(vf) && _map.GetValue(sp).ContainsKey(curE) && _map.GetValue(sp).ContainsKey(firstE))
                     {
-                        if (!_map[sp][vf].IsEmpty() && !_map[sp][curE].IsEmpty() && !_map[sp][firstE].IsEmpty())
+                        if (!_map.GetValue(sp).GetValue(vf).IsEmpty() && !_map.GetValue(sp).GetValue(curE).IsEmpty() && !_map.GetValue(sp).GetValue(firstE).IsEmpty())
                         {
-                            b.Continuity(ShapeCasts.Edge(_map[sp][vf].First()),
-                                         ShapeCasts.Face(_map[sp][curE].First()),
-                                         ShapeCasts.Face(_map[sp][firstE].First()),
+                            b.Continuity(ShapeCasts.Edge(_map.GetValue(sp).GetValue(vf).First()),
+                                         ShapeCasts.Face(_map.GetValue(sp).GetValue(curE).First()),
+                                         ShapeCasts.Face(_map.GetValue(sp).GetValue(firstE).First()),
                                          continuity);
                         }
                     }
@@ -2760,7 +2761,7 @@ public sealed class Evolved
                                     PlaneSurface plane,
                                     LineCurve2D line,
                                     NCollection_List<Shape> cuts,
-                                    NCollection_DataMap<Shape, Shape> mapVerRefMoved)
+                                    Dictionary<Shape, Shape> mapVerRefMoved)
     {
         cuts.Clear();
 
@@ -2824,24 +2825,24 @@ public sealed class Evolved
         Vertex vv, vf = new(), vl = new();
         Exploration.Vertices(e, out Vertex vRf, out Vertex vRl);
 
-        if (!mapVerRefMoved.IsBound(vRf))
+        if (!mapVerRefMoved.ContainsKey(vRf))
         {
             builder.MakeVertex(ref vf, c.Value(f), Tool.Tolerance(vRf));
-            mapVerRefMoved.Bind(vRf, vf);
+            mapVerRefMoved[vRf] = vf;
         }
         else
         {
-            vf = ShapeCasts.Vertex(mapVerRefMoved[vRf]);
+            vf = ShapeCasts.Vertex(mapVerRefMoved.GetValue(vRf));
         }
 
-        if (!mapVerRefMoved.IsBound(vRl))
+        if (!mapVerRefMoved.ContainsKey(vRl))
         {
             builder.MakeVertex(ref vl, c.Value(l), Tool.Tolerance(vRl));
-            mapVerRefMoved.Bind(vRl, vl);
+            mapVerRefMoved[vRl] = vl;
         }
         else
         {
-            vl = ShapeCasts.Vertex(mapVerRefMoved[vRl]);
+            vl = ShapeCasts.Vertex(mapVerRefMoved.GetValue(vRl));
         }
 
         if (!seq.IsEmpty())
@@ -3001,7 +3002,7 @@ public sealed class Evolved
                                       in Edge e,
                                       in Vertex vf,
                                       in Vertex vl,
-                                      NCollection_DataMap<MedialNode, NCollection_DataMap<Shape, Shape>> mapNodeVertex,
+                                      Dictionary<MedialNode, Dictionary<Shape, Shape>> mapNodeVertex,
                                       ref Vertex vn)
     {
         Shape shapeOnNode = new();
@@ -3030,19 +3031,19 @@ public sealed class Evolved
             //-------------------------------------------------
             // the vertex will correspond to a node of the map
             //-------------------------------------------------
-            if (mapNodeVertex.IsBound(aNode) && mapNodeVertex[aNode].IsBound(shapeOnNode))
+            if (mapNodeVertex.ContainsKey(aNode) && mapNodeVertex.GetValue(aNode).ContainsKey(shapeOnNode))
             {
-                vn = ShapeCasts.Vertex(mapNodeVertex[aNode][shapeOnNode]);
+                vn = ShapeCasts.Vertex(mapNodeVertex.GetValue(aNode).GetValue(shapeOnNode));
             }
             else
             {
                 vn = new Vertex();
                 b.MakeVertex(ref vn);
-                if (!mapNodeVertex.IsBound(aNode))
+                if (!mapNodeVertex.ContainsKey(aNode))
                 {
-                    mapNodeVertex.Bind(aNode, new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance));
+                    mapNodeVertex[aNode] = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
                 }
-                mapNodeVertex[aNode].Bind(shapeOnNode, vn);
+                mapNodeVertex.GetValue(aNode)[shapeOnNode] = vn;
             }
         }
         return status;

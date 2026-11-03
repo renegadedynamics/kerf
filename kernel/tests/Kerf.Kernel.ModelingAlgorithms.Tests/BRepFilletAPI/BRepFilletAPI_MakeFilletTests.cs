@@ -2,6 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeFillet_Test.cxx (OCCT V8_0_1)
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Fillets;
@@ -423,13 +424,13 @@ public class BRepFilletAPI_MakeFilletTests
         Shape aFuseUnif = anUnify.Shape();
 
         // --- Collect all unique edges and apply fillet of radius 1 ---
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEdgeMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> anEdgeMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aFuseUnif, ShapeType.Edge, ShapeType.Solid, anEdgeMap);
 
         MakeFillet aBlend = new(aFuseUnif, FilletShape.Rational);
-        for (int i = 1; i <= anEdgeMap.Extent(); i++)
+        for (int i = 0; i < anEdgeMap.Count; i++)
         {
-            Edge anEdge = ShapeCasts.Edge(anEdgeMap.FindKey(i));
+            Edge anEdge = ShapeCasts.Edge(anEdgeMap.KeyAt(i));
             if (!anEdge.IsNull)
             {
                 aBlend.Add(1.0, anEdge);

@@ -18,16 +18,16 @@ public class MapContainer : Transient
     }
 
     /// <summary>Set map already translated geometry objects (a copy of it, as C++'s assignment).</summary>
-    public void SetMapObjects(NCollection_DataMap<Transient, Transient?> mapObjects)
+    public void SetMapObjects(Dictionary<Transient, Transient?> mapObjects)
     {
-        _mapObj = new NCollection_DataMap<Transient, Transient?>(mapObjects);
+        _mapObj = new Dictionary<Transient, Transient?>(mapObjects,mapObjects.Comparer);
     }
 
     /// <summary>Get map already translated geometry objects (the container's own map, which callers may edit).</summary>
-    public NCollection_DataMap<Transient, Transient?> GetMapObjects()
+    public Dictionary<Transient, Transient?> GetMapObjects()
     {
         return _mapObj;
     }
 
-    private NCollection_DataMap<Transient, Transient?> _mapObj = new(ReferenceEqualityComparer.Instance);
+    private Dictionary<Transient, Transient?> _mapObj = new(ReferenceEqualityComparer.Instance);
 }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -25,7 +26,7 @@ public class BRepTools_ModifierTests
 {
     private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         return [.. aMap];
     }
@@ -33,7 +34,7 @@ public class BRepTools_ModifierTests
     private static void AssertAllNew(in Shape theInput, in Shape theResult)
     {
         var anInput = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theInput, aMap);
         foreach (Shape aS in aMap)
         {
@@ -497,7 +498,7 @@ public class BRepTools_ModifierTests
         aSnapshot.AssertUnchanged(aPlaced);
 
         // no location that isn't a rigid motion is left, and the vertices are where the placed box had them
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, aMap, false, false);
         foreach (Shape aS in aMap)
         {

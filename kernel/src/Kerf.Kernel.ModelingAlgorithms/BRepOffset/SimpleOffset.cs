@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry.Adaptors;
@@ -60,15 +61,15 @@ public sealed class SimpleOffset : Modification
     }
 
     // Map of faces to new faces information.
-    private readonly NCollection_DataMap<Face, NewFaceData> _faceInfo =
+    private readonly Dictionary<Face, NewFaceData> _faceInfo =
         new(EqualityComparer<Face>.Default); // the default hasher of OCCT (IsEqual)
 
     // Map of edges to new edges information.
-    private readonly NCollection_DataMap<Edge, NewEdgeData> _edgeInfo =
+    private readonly Dictionary<Edge, NewEdgeData> _edgeInfo =
         new(EqualityComparer<Edge>.Default); // the default hasher of OCCT (IsEqual)
 
     // Map of vertices to new vertices information.
-    private readonly NCollection_DataMap<Vertex, NewVertexData> _vertexInfo =
+    private readonly Dictionary<Vertex, NewVertexData> _vertexInfo =
         new(EqualityComparer<Vertex>.Default); // the default hasher of OCCT (IsEqual)
 
     // Offset value.
@@ -103,7 +104,7 @@ public sealed class SimpleOffset : Modification
                                     out bool revWires,
                                     out bool revFace)
     {
-        if (!_faceInfo.IsBound(f))
+        if (!_faceInfo.ContainsKey(f))
         {
             // OCCT.NET: OCCT leaves the outputs unset
             s = null;
@@ -113,7 +114,7 @@ public sealed class SimpleOffset : Modification
             return false;
         }
 
-        NewFaceData nfd = _faceInfo.Find(f);
+        NewFaceData nfd = _faceInfo.GetValue(f);
 
         s = nfd.OffsetS;
         l = nfd.L;
@@ -129,7 +130,7 @@ public sealed class SimpleOffset : Modification
     /// <summary>True if the edge has been modified: <paramref name="c"/> is its new 3D curve.</summary>
     public override bool NewCurve(in Edge e, out Curve3D? c, out Placement l, out double tol)
     {
-        if (!_edgeInfo.IsBound(e))
+        if (!_edgeInfo.ContainsKey(e))
         {
             // OCCT.NET: OCCT leaves the outputs unset
             c = null;
@@ -138,7 +139,7 @@ public sealed class SimpleOffset : Modification
             return false;
         }
 
-        NewEdgeData ned = _edgeInfo.Find(e);
+        NewEdgeData ned = _edgeInfo.GetValue(e);
 
         c = ned.OffsetC;
         l = ned.L;
@@ -152,7 +153,7 @@ public sealed class SimpleOffset : Modification
     /// <summary>True if the vertex has been modified: <paramref name="p"/> is its new point.</summary>
     public override bool NewPoint(in Vertex v, out Point3D p, out double tol)
     {
-        if (!_vertexInfo.IsBound(v))
+        if (!_vertexInfo.ContainsKey(v))
         {
             // OCCT.NET: OCCT leaves the outputs unset
             p = new Point3D();
@@ -160,7 +161,7 @@ public sealed class SimpleOffset : Modification
             return false;
         }
 
-        NewVertexData nvd = _vertexInfo.Find(v);
+        NewVertexData nvd = _vertexInfo.GetValue(v);
 
         p = nvd.myP;
         tol = nvd.myTol;
@@ -182,9 +183,9 @@ public sealed class SimpleOffset : Modification
         c = Tool.CurveOnSurface(e, f, out double aF, out double l);
         tol = Tool.Tolerance(e);
 
-        if (_edgeInfo.IsBound(e))
+        if (_edgeInfo.ContainsKey(e))
         {
-            tol = _edgeInfo.Find(e).myTol;
+            tol = _edgeInfo.GetValue(e).myTol;
         }
 
         return true;
@@ -199,9 +200,9 @@ public sealed class SimpleOffset : Modification
         p = Tool.Parameter(v, e);
         tol = Tool.Tolerance(v);
 
-        if (_vertexInfo.IsBound(v))
+        if (_vertexInfo.ContainsKey(v))
         {
-            tol = _vertexInfo.Find(v).myTol;
+            tol = _vertexInfo.GetValue(v).myTol;
         }
 
         return true;
@@ -241,21 +242,21 @@ public sealed class SimpleOffset : Modification
 
         // Iterate over edges to compute 3d curve.
         var edgeFaceMap =
-            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Edge, ShapeType.Face, edgeFaceMap);
-        for (int idx = 1; idx <= edgeFaceMap.Extent(); ++idx)
+        for (int idx = 1; idx <= edgeFaceMap.Count; ++idx)
         {
-            Edge currEdge = ShapeCasts.Edge(edgeFaceMap.FindKey(idx));
+            Edge currEdge = ShapeCasts.Edge(edgeFaceMap.KeyAt(idx - 1));
             FillEdgeData(currEdge, edgeFaceMap, idx);
         }
 
         // Iterate over vertices to compute new vertex.
         var vertexEdgeMap =
-            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Vertex, ShapeType.Edge, vertexEdgeMap);
-        for (int idx = 1; idx <= vertexEdgeMap.Extent(); ++idx)
+        for (int idx = 1; idx <= vertexEdgeMap.Count; ++idx)
         {
-            Vertex currVertex = ShapeCasts.Vertex(vertexEdgeMap.FindKey(idx));
+            Vertex currVertex = ShapeCasts.Vertex(vertexEdgeMap.KeyAt(idx - 1));
             FillVertexData(currVertex, vertexEdgeMap, idx);
         }
     }
@@ -289,17 +290,17 @@ public sealed class SimpleOffset : Modification
         nfd.L = new Placement(); // Null transformation.
 
         // Save offset surface in map.
-        _faceInfo.Bind(face, nfd);
+        _faceInfo[face] = nfd;
     }
 
     //=================================================================================================
 
     // Method to fill new edge data for single edge.
     private void FillEdgeData(in Edge edge,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgeFaceMap,
+                              IndexedMap<Shape, NCollection_List<Shape>> edgeFaceMap,
                               int idx)
     {
-        NCollection_List<Shape> facesList = edgeFaceMap[idx];
+        NCollection_List<Shape> facesList = edgeFaceMap.ValueAt(idx - 1);
 
         if (facesList.Size() == 0)
         {
@@ -309,13 +310,13 @@ public sealed class SimpleOffset : Modification
         // Get offset surface.
         Face currFace = ShapeCasts.Face(facesList.First());
 
-        if (!_faceInfo.IsBound(currFace))
+        if (!_faceInfo.ContainsKey(currFace))
         {
             return;
         }
 
         // No need to deal with transformation - it is applied in fill faces data method.
-        NewFaceData nfd = _faceInfo.Find(currFace);
+        NewFaceData nfd = _faceInfo.GetValue(currFace);
         Surface offsetSurf = nfd.OffsetS!;
 
         // Compute offset 3d curve.
@@ -339,7 +340,7 @@ public sealed class SimpleOffset : Modification
         {
             Face curFace = ShapeCasts.Face(iter.Value());
 
-            if (!_faceInfo.IsBound(curFace))
+            if (!_faceInfo.ContainsKey(curFace))
             {
                 continue;
             }
@@ -347,7 +348,7 @@ public sealed class SimpleOffset : Modification
             // Create offset curve on surface.
             Curve2D c2dNew = Tool.CurveOnSurface(edge, curFace, out f, out l)!;
             Curve2DAdaptorBase hCurve2d = new CurveAdaptor2D(c2dNew, f, l);
-            SurfaceAdaptorBase hSurface = new SurfaceAdaptor(_faceInfo.Find(curFace).OffsetS!);
+            SurfaceAdaptorBase hSurface = new SurfaceAdaptor(_faceInfo.GetValue(curFace).OffsetS!);
             var curveOnSurf = new CurveOnSurface(hCurve2d, hSurface);
 
             // Extract 3d-curve (it is not null).
@@ -365,14 +366,14 @@ public sealed class SimpleOffset : Modification
         ned.myTol = Max(Tool.Tolerance(newEdge), edgeTol);
 
         // Save computed 3d curve in map.
-        _edgeInfo.Bind(edge, ned);
+        _edgeInfo[edge] = ned;
     }
 
     //=================================================================================================
 
     // Method to fill new vertex data for single vertex.
     private void FillVertexData(in Vertex vertex,
-                                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexEdgeMap,
+                                IndexedMap<Shape, NCollection_List<Shape>> vertexEdgeMap,
                                 int idx)
     {
         // Algorithm:
@@ -383,7 +384,7 @@ public sealed class SimpleOffset : Modification
 
         Point3D currPnt = Tool.Pnt(vertex);
 
-        NCollection_List<Shape> edgesList = vertexEdgeMap[idx];
+        NCollection_List<Shape> edgesList = vertexEdgeMap.ValueAt(idx - 1);
 
         if (edgesList.Size() == 0)
         {
@@ -391,7 +392,7 @@ public sealed class SimpleOffset : Modification
         }
 
         // Array to store offset points.
-        var offsetPointVec = new NCollection_DynamicArray<Point3D>();
+        var offsetPointVec = new List<Point3D>();
 
         double maxEdgeTol = 0.0;
 
@@ -401,7 +402,7 @@ public sealed class SimpleOffset : Modification
         {
             Edge currEdge = ShapeCasts.Edge(iterEdges.Value());
 
-            if (!_edgeInfo.IsBound(currEdge))
+            if (!_edgeInfo.ContainsKey(currEdge))
             {
                 continue; // Skip shared edges with wrong orientation.
             }
@@ -430,17 +431,17 @@ public sealed class SimpleOffset : Modification
             }
 
             // Compute point on offset edge.
-            NewEdgeData ned = _edgeInfo.Find(currEdge);
+            NewEdgeData ned = _edgeInfo.GetValue(currEdge);
             Curve3D offsetCurve = ned.OffsetC!;
             Point3D offsetPoint = offsetCurve.Value(minParam);
-            offsetPointVec.Append(offsetPoint);
+            offsetPointVec.Add(offsetPoint);
 
             // Handle situation when edge is closed.
             Exploration.Vertices(currEdge, out Vertex v1, out Vertex v2);
             if (v1.IsSame(v2))
             {
                 Point3D offsetPointLast = offsetCurve.Value(maxParam);
-                offsetPointVec.Append(offsetPointLast);
+                offsetPointVec.Add(offsetPointLast);
             }
 
             maxEdgeTol = Max(maxEdgeTol, ned.myTol);
@@ -449,19 +450,19 @@ public sealed class SimpleOffset : Modification
         // NCollection_DynamicArray starts from 0 by default.
         // It's better to use lower() and upper() in this case instead of direct indexes range.
         Point3D center = new(0.0, 0.0, 0.0);
-        for (int i = offsetPointVec.Lower(); i <= offsetPointVec.Upper(); ++i)
+        for (int i = 0; i <= (offsetPointVec.Count - 1); ++i)
         {
-            center = center.WithXYZ(center.XYZ() + offsetPointVec.Value(i).XYZ());
+            center = center.WithXYZ(center.XYZ() + offsetPointVec[i].XYZ());
         }
         // OCCT: a vertex none of whose edges has an offset curve (only free or degenerated edges, or shared edges met
         // in the other orientation) divides by zero: its new point is NaN.
-        center = center.WithXYZ(center.XYZ() / offsetPointVec.Length());
+        center = center.WithXYZ(center.XYZ() / offsetPointVec.Count);
 
         // Compute max distance.
         double sqMaxDist = 0.0;
-        for (int i = offsetPointVec.Lower(); i <= offsetPointVec.Upper(); ++i)
+        for (int i = 0; i <= (offsetPointVec.Count - 1); ++i)
         {
-            double sqDist = center.SquareDistance(offsetPointVec.Value(i));
+            double sqDist = center.SquareDistance(offsetPointVec[i]);
             if (sqDist > sqMaxDist)
             {
                 sqMaxDist = sqDist;
@@ -476,6 +477,6 @@ public sealed class SimpleOffset : Modification
         nvd.myTol = resTol * multCoeff;
 
         // Save computed vertex info.
-        _vertexInfo.Bind(vertex, nvd);
+        _vertexInfo[vertex] = nvd;
     }
 }

@@ -204,19 +204,19 @@ public abstract class QueueBuilder<T, TVec> : Builder<T, TVec>
             // Reserve the maximum possible number of nodes in the BVH
             bvh.Reserve(2 * setSize - 1);
 
-            NCollection_DynamicArray<BuildThread> threads = new();
+            List<BuildThread> threads = new();
 
             // Run BVH build threads
             for (int threadIndex = 0; threadIndex < _numOfThreads; ++threadIndex)
             {
-                threads.Append(new BuildThread(buildTool, buildQueue));
-                threads.Last().Run();
+                threads.Add(new BuildThread(buildTool, buildQueue));
+                threads[^1].Run();
             }
 
             // Wait until all threads finish their work
             for (int threadIndex = 0; threadIndex < _numOfThreads; ++threadIndex)
             {
-                threads.ChangeValue(threadIndex).Wait();
+                threads[threadIndex].Wait();
             }
 
             // Free unused memory (Reserve never shrinks, so this does nothing, in OCCT too)

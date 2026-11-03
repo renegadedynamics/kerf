@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
@@ -144,14 +145,14 @@ public class BRepFill_CompatibleWiresNativeTests(ITestOutputHelper output)
                 B.Add(anOut, aW);
             }
             aOut.Append(Block("OUT", Text(anOut)));
-            NCollection_IndexedMap<Shape> anInEdges = new(ShapeHasher.Instance), anOutEdges = new(ShapeHasher.Instance);
+            IndexedSet<Shape> anInEdges = new(ShapeHasher.Instance), anOutEdges = new(ShapeHasher.Instance);
             Exploration.MapShapes(anIn, ShapeType.Edge, anInEdges);
             Exploration.MapShapes(anOut, ShapeType.Edge, anOutEdges);
             aOut.Append("GEN ");
-            for (int i = 1; i <= anInEdges.Extent(); i++)
+            for (int i = 0; i < anInEdges.Count; i++)
             {
-                aOut.Append(string.Join(",", aCW.GeneratedShapes(ShapeCasts.Edge(anInEdges.FindKey(i)))
-                                              .Select(s => anOutEdges.FindIndex(s) + Orient(s.Orientation()))));
+                aOut.Append(string.Join(",", aCW.GeneratedShapes(ShapeCasts.Edge(anInEdges[i]))
+                                              .Select(s => anOutEdges.IndexOf(s) + 1 + Orient(s.Orientation()))));
                 aOut.Append(';');
             }
             aOut.Append('\n');

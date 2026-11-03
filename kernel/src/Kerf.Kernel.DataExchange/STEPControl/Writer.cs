@@ -227,7 +227,7 @@ public class Writer
     // CleanDuplicateEntities (StepTidy_DuplicateCleaner, write.step.cleanduplicates) is not ported (decision 1271)
 
     /// <summary>Sets parameters for shape processing.</summary>
-    public void SetShapeFixParameters(NCollection_DataMap<string, string> parameters)
+    public void SetShapeFixParameters(Dictionary<string, string> parameters)
     {
         ActorOfFinderProcess actor = GetActor();
         if (actor is not null)
@@ -239,7 +239,7 @@ public class Writer
     /// <summary>Sets parameters for shape processing.</summary>
     public void SetShapeFixParameters(in ShapeFixParameters parameters)
     {
-        NCollection_DataMap<string, string> additionalParameters = new NCollection_DataMap<string, string>();
+        Dictionary<string, string> additionalParameters = new Dictionary<string, string>();
         ActorOfFinderProcess actor = GetActor();
         if (actor is not null)
         {
@@ -251,7 +251,7 @@ public class Writer
     /// Sets parameters for shape processing. Parameters from theParameters are copied to the internal map. Parameters
     /// from theAdditionalParameters are copied to the internal map if they are not present in theParameters.
     /// </summary>
-    public void SetShapeFixParameters(in ShapeFixParameters parameters, NCollection_DataMap<string, string> additionalParameters)
+    public void SetShapeFixParameters(in ShapeFixParameters parameters, Dictionary<string, string> additionalParameters)
     {
         ActorOfFinderProcess actor = GetActor();
         if (actor is not null)
@@ -261,10 +261,10 @@ public class Writer
     }
 
     /// <summary>Returns parameters for shape processing that was set by SetParameters() method.</summary>
-    public NCollection_DataMap<string, string> GetShapeFixParameters()
+    public Dictionary<string, string> GetShapeFixParameters()
     {
         ActorOfFinderProcess actor = GetActor();
-        return actor is null ? new NCollection_DataMap<string, string>() : actor.GetShapeFixParameters();
+        return actor is null ? new Dictionary<string, string>() : actor.GetShapeFixParameters();
     }
 
     /// <summary>Sets flags defining operations to be performed on shapes.</summary>
@@ -308,7 +308,7 @@ public class Writer
     /// </summary>
     private void InitializeMissingParameters()
     {
-        if (GetShapeFixParameters().IsEmpty())
+        if (GetShapeFixParameters().Count == 0)
         {
             SetShapeFixParameters(Parameters.GetDefaultShapeFixParameters());
         }

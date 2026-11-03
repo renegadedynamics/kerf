@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
@@ -66,19 +67,19 @@ internal static partial class Builder_0
         Vertex v1, v2;
         bool trouve = false;
         Edge ecur;
-        NCollection_IndexedMap<Shape> mapE = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE = new(ShapeHasher.Instance);
         Exploration.MapShapes(f1, ShapeType.Edge, mapE);
-        for (ie = 1; ie <= mapE.Extent() && !trouve; ie++)
+        for (ie = 1; ie <= mapE.Count && !trouve; ie++)
         {
-            ecur = ShapeCasts.Edge(mapE.FindKey(ie));
+            ecur = ShapeCasts.Edge(mapE[ie - 1]);
             if (!ecur.IsSame(e1))
             {
-                NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mapV = new(ShapeHasher.Instance);
                 Exploration.MapShapes(ecur, ShapeType.Vertex, mapV);
-                if (mapV.Extent() == 2)
+                if (mapV.Count == 2)
                 {
-                    v1 = ShapeCasts.Vertex(mapV.FindKey(1));
-                    v2 = ShapeCasts.Vertex(mapV.FindKey(2));
+                    v1 = ShapeCasts.Vertex(mapV[0]);
+                    v2 = ShapeCasts.Vertex(mapV[1]);
                     if (v1.IsSame(v))
                     {
                         vtx = v2;
@@ -117,11 +118,11 @@ internal static partial class Builder_0
         bool trouve = false;
         Edge ecur;
         bool same;
-        NCollection_IndexedMap<Shape> mapE = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE = new(ShapeHasher.Instance);
         Exploration.MapShapes(f1, ShapeType.Edge, mapE);
-        for (ie = 1; ie <= mapE.Extent() && !trouve; ie++)
+        for (ie = 1; ie <= mapE.Count && !trouve; ie++)
         {
-            ecur = ShapeCasts.Edge(mapE.FindKey(ie));
+            ecur = ShapeCasts.Edge(mapE[ie - 1]);
             same = false;
             for (i = e1.Lower(); i <= e1.Upper(); i++)
             {
@@ -132,12 +133,12 @@ internal static partial class Builder_0
             }
             if (!same)
             {
-                NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mapV = new(ShapeHasher.Instance);
                 Exploration.MapShapes(ecur, ShapeType.Vertex, mapV);
-                if (mapV.Extent() == 2)
+                if (mapV.Count == 2)
                 {
-                    v1 = ShapeCasts.Vertex(mapV.FindKey(1));
-                    v2 = ShapeCasts.Vertex(mapV.FindKey(2));
+                    v1 = ShapeCasts.Vertex(mapV[0]);
+                    v2 = ShapeCasts.Vertex(mapV[1]);
                     if (v1.IsSame(v))
                     {
                         vtx = v2;
@@ -438,18 +439,18 @@ internal static partial class Builder_0
         int i, j;
         Vertex vcur1, vcur2;
         trouve = false;
-        NCollection_IndexedMap<Shape> mapV1 = new(ShapeHasher.Instance),
+        IndexedSet<Shape> mapV1 = new(ShapeHasher.Instance),
                                              mapV2 = new(ShapeHasher.Instance);
         Exploration.MapShapes(e1, ShapeType.Vertex, mapV1);
         Exploration.MapShapes(e2, ShapeType.Vertex, mapV2);
-        for (i = 1; i <= mapV1.Extent() && !trouve; i++)
+        for (i = 1; i <= mapV1.Count && !trouve; i++)
         {
-            Shape alocalshape = mapV1.FindKey(i);
+            Shape alocalshape = mapV1[i - 1];
             vcur1 = ShapeCasts.Vertex(alocalshape);
             //    Vcur1=TopoDS::Vertex(TopoDS_Shape (MapV1(i)));
-            for (j = 1; j <= mapV2.Extent() && !trouve; j++)
+            for (j = 1; j <= mapV2.Count && !trouve; j++)
             {
-                Shape localShape = mapV2.FindKey(j);
+                Shape localShape = mapV2[j - 1];
                 vcur2 = ShapeCasts.Vertex(localShape);
                 //      Vcur2=TopoDS::Vertex(TopoDS_Shape (MapV2(j)));
                 if (vcur2.IsSame(vcur1))
@@ -471,12 +472,12 @@ internal static partial class Builder_0
     {
         Edge ecur;
         couture = false;
-        NCollection_IndexedMap<Shape> mapE1 = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE1 = new(ShapeHasher.Instance);
         Exploration.MapShapes(f, ShapeType.Edge, mapE1);
         Surface? surf = Tool.Surface(f, out Placement loc);
-        for (int i = 1; i <= mapE1.Extent() && !couture; i++)
+        for (int i = 1; i <= mapE1.Count && !couture; i++)
         {
-            Shape localShape = mapE1.FindKey(i);
+            Shape localShape = mapE1[i - 1];
             ecur = ShapeCasts.Edge(localShape);
             //      Ecur=TopoDS::Edge(TopoDS_Shape (MapE1(i)));
             if (Tool.IsClosed(ecur, surf, loc))
@@ -495,12 +496,12 @@ internal static partial class Builder_0
     {
         Edge ecur;
         couture = false;
-        NCollection_IndexedMap<Shape> mapE1 = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE1 = new(ShapeHasher.Instance);
         Exploration.MapShapes(f, ShapeType.Edge, mapE1);
         Surface? surf = Tool.Surface(f, out Placement loc);
-        for (int i = 1; i <= mapE1.Extent(); i++)
+        for (int i = 0; i < mapE1.Count; i++)
         {
-            Shape localShape = mapE1.FindKey(i);
+            Shape localShape = mapE1[i];
             ecur = ShapeCasts.Edge(localShape);
             //      Ecur=TopoDS::Edge(TopoDS_Shape (MapE1(i)));
             if (Tool.IsClosed(ecur, surf, loc))

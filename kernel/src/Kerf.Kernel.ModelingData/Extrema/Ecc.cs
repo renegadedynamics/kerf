@@ -11,6 +11,7 @@ using Kerf.Engine.Measurement;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Extrema.GGenExtCC;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -286,7 +287,7 @@ public class Ecc
                                global::Kerf.Engine.Foundation.Precision.PConfusion());
         Extrema_GGenExtCC_PointsInspector inspector = new(cellSize);
         CellFilter<Extrema_GGenExtCC_PointsInspector, Xy, Xy> filter = new(cellSize);
-        NCollection_DynamicArray<Xy> pnts = new();
+        List<Xy> pnts = new();
 
         int i, j, k;
         math_Vector firstBorderInterval = new(1, 2);
@@ -340,13 +341,13 @@ public class Ecc
                     if (!inspector.IsFind())
                     {
                         filter.Add(pnt2d, pnt2d);
-                        pnts.Append(new Xy(sol[1], sol[2]));
+                        pnts.Add(new Xy(sol[1], sol[2]));
                     }
                 }
             }
         }
 
-        int nbSol = pnts.Length();
+        int nbSol = pnts.Count;
         if (nbSol == 0)
         {
             _done = false;
@@ -357,13 +358,13 @@ public class Ecc
 
         if (nbSol == 1)
         {
-            Xy aSol = pnts.First();
+            Xy aSol = pnts[0];
             _points1.Append(aSol.X());
             _points2.Append(aSol.Y());
             return;
         }
 
-        pnts.AsSpan().Sort(Extrema_GGenExtCC_Compare);
+        CollectionsMarshal.AsSpan(pnts).Sort(Extrema_GGenExtCC_Compare);
 
         NCollection_List<int> solutions = new();
 
@@ -443,7 +444,7 @@ public class Ecc
 
         if (isParallel)
         {
-            Xy aSol = pnts.First();
+            Xy aSol = pnts[0];
             _points1.Append(aSol.X());
             _points2.Append(aSol.Y());
             _parallel = true;

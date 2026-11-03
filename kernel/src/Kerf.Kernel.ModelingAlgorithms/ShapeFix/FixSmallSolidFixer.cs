@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Measurement;
@@ -134,15 +135,15 @@ public class FixSmallSolidFixer : RootFixer
     }
 
     // Append an item to a list of shapes mapped to a shape
-    private static void AddToMap(NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+    private static void AddToMap(Dictionary<Shape, NCollection_List<Shape>> map,
                                  in Shape key,
                                  in Shape item)
     {
-        if (!map.Find(key, out NCollection_List<Shape> list))
+        if (!map.TryGetValue(key, out NCollection_List<Shape>? list))
         {
             var newList = new NCollection_List<Shape>();
             newList.Append(item);
-            map.Bind(key, newList);
+            map[key] = newList;
         }
         else
         {
@@ -151,7 +152,7 @@ public class FixSmallSolidFixer : RootFixer
     }
 
     // Append items to a list of shapes mapped to a shape
-    private static void AddToMap(NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+    private static void AddToMap(Dictionary<Shape, NCollection_List<Shape>> map,
                                  in Shape key,
                                  NCollection_List<Shape> items)
     {
@@ -160,12 +161,12 @@ public class FixSmallSolidFixer : RootFixer
             return;
         }
 
-        if (!map.Find(key, out NCollection_List<Shape> list))
+        if (!map.TryGetValue(key, out NCollection_List<Shape>? list))
         {
             // OCCT binds a copy of the list
             var copy = new NCollection_List<Shape>();
             copy.Append(items);
-            map.Bind(key, copy);
+            map[key] = copy;
         }
         else
         {
@@ -175,7 +176,7 @@ public class FixSmallSolidFixer : RootFixer
 
     // Map faces from a solid with their shells;
     // unmap faces shared between two shells
-    private static void MapFacesToShells(in Shape solid, NCollection_DataMap<Shape, Shape> map)
+    private static void MapFacesToShells(in Shape solid, Dictionary<Shape, Shape> map)
     {
         var shellIter = new Iterator(solid);
         for (; shellIter.More(); shellIter.Next())
@@ -195,9 +196,9 @@ public class FixSmallSolidFixer : RootFixer
                     continue;
                 }
 
-                if (!map.Bind(face, shell))
+                if (!map.TryAdd(face, shell))
                 {
-                    map.UnBind(face);
+                    map.Remove(face);
                 }
             }
         }
@@ -206,12 +207,12 @@ public class FixSmallSolidFixer : RootFixer
     // Find an outer shell having greatest sum area of
     // all faces shared with the solid
     private static bool FindMostSharedShell(in Shape solid,
-                                            NCollection_DataMap<Shape, Shape> mapFacesToOuterShells,
+                                            Dictionary<Shape, Shape> mapFacesToOuterShells,
                                             ref Shape mostSharedOuterShell,
                                             ref Shape mostSharedSolidShell,
                                             NCollection_List<Shape> otherSolidShells)
     {
-        var sharedAreas = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
+        var sharedAreas = new Dictionary<Shape, double>(ShapeHasher.Instance);
         double maxSharedArea = 0.0;
         Shape? mostSharedOuterShellPtr = null;
         Shape? mostSharedSolidShellPtr = null;
@@ -238,20 +239,20 @@ public class FixSmallSolidFixer : RootFixer
                 }
 
                 // find an outer shell that shares the current face
-                if (!mapFacesToOuterShells.Find(face, out Shape outerShell))
+                if (!mapFacesToOuterShells.TryGetValue(face, out Shape outerShell))
                 {
                     continue;
                 }
 
                 // add the face area to the sum shared area for the outer shell
                 double area = ShapeArea(face);
-                if (!sharedAreas.IsBound(outerShell))
+                if (!sharedAreas.ContainsKey(outerShell))
                 {
-                    sharedAreas.Bind(outerShell, area);
+                    sharedAreas[outerShell] = area;
                 }
                 else
                 {
-                    area = sharedAreas.ChangeFind(outerShell) += area;
+                    area = sharedAreas.GetValueRef(outerShell) += area;
                 }
 
                 // if this outer shell currently has maximum shared area,
@@ -289,8 +290,8 @@ public class FixSmallSolidFixer : RootFixer
     // Merge some shells to a base shell
     private static Shape MergeShells(in Shape baseShell,
                                             NCollection_List<Shape> shellsToMerge,
-                                            NCollection_DataMap<Shape, Shape> mapFacesToOuterShells,
-                                            NCollection_DataMap<Shape, Shape> mapNewFreeFacesToShells)
+                                            Dictionary<Shape, Shape> mapFacesToOuterShells,
+                                            Dictionary<Shape, Shape> mapNewFreeFacesToShells)
     {
         // Create a new shell
         var builder = new BrepBuilder();
@@ -323,7 +324,7 @@ public class FixSmallSolidFixer : RootFixer
                 }
 
                 // classify the face
-                if (mapFacesToOuterShells.Find(face, out Shape outerShell))
+                if (mapFacesToOuterShells.TryGetValue(face, out Shape outerShell))
                 {
                     if (outerShell.IsSame(baseShell))
                     {
@@ -353,7 +354,7 @@ public class FixSmallSolidFixer : RootFixer
         foreach (Shape face in newFreeFaces)
         {
             builder.Add(newShell, face);
-            mapNewFreeFacesToShells.Bind(face, newShell);
+            mapNewFreeFacesToShells[face] = newShell;
         }
         newFreeFaces.Clear();
 
@@ -423,7 +424,7 @@ public class FixSmallSolidFixer : RootFixer
         // Build a map of faces belonging to non-small solids
         // but not shared between two non-small solids
         var smallSolids = new NCollection_List<Shape>();
-        var mapFacesToShells = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var mapFacesToShells = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         var solidIter = new Explorer(shape, ShapeType.Solid);
         for (; solidIter.More(); solidIter.Next())
         {
@@ -440,16 +441,16 @@ public class FixSmallSolidFixer : RootFixer
 
         // Merge all small solids adjacent to at least one non-small one;
         // repeat this until no small solids remain or no new solids can be merged
-        var newMapFacesToShells = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, Shape> mapFacesToShellsPtr = mapFacesToShells;
-        NCollection_DataMap<Shape, Shape> newMapFacesToShellsPtr = newMapFacesToShells;
+        var newMapFacesToShells = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapFacesToShellsPtr = mapFacesToShells;
+        Dictionary<Shape, Shape> newMapFacesToShellsPtr = newMapFacesToShells;
         while (!smallSolids.IsEmpty())
         {
             // find small solids that may be merged on the current iteration;
             // compose their shells in lists associated with non-small solids' shells
             // which they should be merged to
-            var shellsToMerge = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-            var shellsToAdd = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var shellsToMerge = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var shellsToAdd = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             var smallIter = new NCollection_List<Shape>.Iterator(smallSolids);
             while (smallIter.More())
             {
@@ -484,7 +485,7 @@ public class FixSmallSolidFixer : RootFixer
             }
 
             // stop if no solids can be merged
-            if (shellsToMerge.IsEmpty())
+            if (shellsToMerge.Count == 0)
             {
                 break;
             }
@@ -497,7 +498,7 @@ public class FixSmallSolidFixer : RootFixer
                 // and corresponding small solids' shells
                 Shape baseShell = shellIter.Key;
                 NCollection_List<Shape> shellsToBeMerged = shellIter.Value;
-                shellsToAdd.Find(baseShell, out NCollection_List<Shape>? shellsToBeAddedPtr);
+                shellsToAdd.TryGetValue(baseShell, out NCollection_List<Shape>? shellsToBeAddedPtr);
 
                 // merge needed shells
                 Shape newShell =

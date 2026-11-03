@@ -158,7 +158,7 @@ internal static class XSDRAWSTEPDocCommands
             aDocument = DDocStdCommands.NewDocument(theDI, aDocumentName!);
         }
 
-        (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+        (Dictionary<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aSession.Statics());
         aReader.SetShapeFixParameters(aParameters);
         aReader.SetShapeProcessFlags(aFlags);
@@ -337,7 +337,7 @@ internal static class XSDRAWSTEPDocCommands
 
         bool isFileMode = XSDRAWCommands.FileAndVar(aSession, aFilePath, aDocumentName, "STEP", out _, out _);
 
-        (NCollection_DataMap<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+        (Dictionary<string, string> aParameters, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             ShapeProcessor.ReadProcessingData("write.step.resource.name", "write.step.sequence", aSession.Statics());
         aWriter.SetShapeFixParameters(aParameters);
         aWriter.SetShapeProcessFlags(aFlags);

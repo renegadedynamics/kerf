@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Topology.Orientation;
@@ -19,7 +20,7 @@ namespace Kerf.Engine.Topology;
 public static class Exploration
 {
     /// <summary>Adds the sub-shapes of <paramref name="s"/> of type <paramref name="t"/> to <paramref name="m"/>.</summary>
-    public static void MapShapes(in Shape s, ShapeType t, NCollection_IndexedMap<Shape> m)
+    public static void MapShapes(in Shape s, ShapeType t, IndexedSet<Shape> m)
     {
         var ex = new Explorer(s, t);
         while (ex.More())
@@ -35,7 +36,7 @@ public static class Exploration
     /// <param name="cumOri">Compose the sub-shapes' orientations with their parents'.</param>
     /// <param name="cumLoc">Multiply the sub-shapes' locations by their parents'.</param>
     public static void MapShapes(in Shape s,
-                                 NCollection_IndexedMap<Shape> m,
+                                 IndexedSet<Shape> m,
                                  bool cumOri = true,
                                  bool cumLoc = true)
     {
@@ -71,7 +72,7 @@ public static class Exploration
     public static void MapShapesAndAncestors(in Shape s,
                                              ShapeType ts,
                                              ShapeType ta,
-                                             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> m)
+                                             IndexedMap<Shape, NCollection_List<Shape>> m)
     {
         // visit ancestors
         var exa = new Explorer(s, ta);
@@ -82,14 +83,14 @@ public static class Exploration
             var exs = new Explorer(anc, ts);
             while (exs.More())
             {
-                int index = m.FindIndex(exs.Current());
+                int index = m.IndexOf(exs.Current()) + 1;
                 if (index == 0)
                 {
                     // OCCT copies an empty list; the port's lists are classes, so each key gets its own
-                    index = m.Add(exs.Current(), new NCollection_List<Shape>());
+                    index = m.Add(exs.Current(), new NCollection_List<Shape>()) + 1;
                 }
 
-                m[index].Append(anc);
+                m.ValueAt(index - 1).Append(anc);
                 exs.Next();
             }
 
@@ -100,7 +101,7 @@ public static class Exploration
         var ex = new Explorer(s, ts, ta);
         while (ex.More())
         {
-            int index = m.FindIndex(ex.Current());
+            int index = m.IndexOf(ex.Current()) + 1;
             if (index == 0)
             {
                 m.Add(ex.Current(), new NCollection_List<Shape>());
@@ -117,7 +118,7 @@ public static class Exploration
     public static void MapShapesAndUniqueAncestors(in Shape s,
                                                    ShapeType ts,
                                                    ShapeType ta,
-                                                   NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> m,
+                                                   IndexedMap<Shape, NCollection_List<Shape>> m,
                                                    bool useOrientation = false)
     {
         // visit ancestors
@@ -129,13 +130,13 @@ public static class Exploration
             var exs = new Explorer(anc, ts);
             while (exs.More())
             {
-                int index = m.FindIndex(exs.Current());
+                int index = m.IndexOf(exs.Current()) + 1;
                 if (index == 0)
                 {
-                    index = m.Add(exs.Current(), new NCollection_List<Shape>());
+                    index = m.Add(exs.Current(), new NCollection_List<Shape>()) + 1;
                 }
 
-                NCollection_List<Shape> list = m[index];
+                NCollection_List<Shape> list = m.ValueAt(index - 1);
                 // check if anc already exists in a list
                 var it = new NCollection_List<Shape>.Iterator(list);
                 for (; it.More(); it.Next())
@@ -161,7 +162,7 @@ public static class Exploration
         var ex = new Explorer(s, ts, ta);
         while (ex.More())
         {
-            int index = m.FindIndex(ex.Current());
+            int index = m.IndexOf(ex.Current()) + 1;
             if (index == 0)
             {
                 m.Add(ex.Current(), new NCollection_List<Shape>());

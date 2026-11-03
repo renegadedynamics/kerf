@@ -23,19 +23,19 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
     where TheObjType : notnull
     where TheBndType : struct, ISpatialTreeBox<TheBndType>
 {
-    private readonly NCollection_DataMap<TheObjType, TreeNode> _objNodeMap; // map of object to node
+    private readonly Dictionary<TheObjType, TreeNode> _objNodeMap; // map of object to node
 
     /// <summary>An empty tree.</summary>
     public IndexedSpatialTree(IEqualityComparer<TheObjType>? comparer = null)
     {
-        _objNodeMap = new NCollection_DataMap<TheObjType, TreeNode>(comparer);
+        _objNodeMap = new Dictionary<TheObjType, TreeNode>(comparer);
     }
 
     /// <summary>Takes the nodes and map of <paramref name="other"/>, which is left empty (C++'s move constructor).</summary>
     public IndexedSpatialTree(IndexedSpatialTree<TheObjType, TheBndType> other)
         : base(other)
     {
-        _objNodeMap = new NCollection_DataMap<TheObjType, TreeNode>(other._objNodeMap);
+        _objNodeMap = new Dictionary<TheObjType, TreeNode>(other._objNodeMap,other._objNodeMap.Comparer);
         other._objNodeMap.Clear();
     }
 
@@ -51,7 +51,7 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
             _objNodeMap.Clear();
             foreach (KeyValuePair<TheObjType, TreeNode> item in other._objNodeMap)
             {
-                _objNodeMap.Bind(item.Key, item.Value);
+                _objNodeMap[item.Key] = item.Value;
             }
             other._objNodeMap.Clear();
         }
@@ -71,7 +71,7 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
 
             // Update the map
             TreeNode newNode = ChangeLastNode();
-            _objNodeMap.Bind(obj, newNode);
+            _objNodeMap[obj] = newNode;
             // If the new node is not the root (has a parent) check the neighbour node.
             // Gemmate moved old content to child(0), so the map entry points to a stale node.
             if (!newNode.IsRoot)
@@ -79,9 +79,9 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
                 TreeNode neiNode = newNode.ChangeParent().ChangeChild(0);
                 if (neiNode.IsLeaf)
                 {
-                    if (_objNodeMap.IsBound(neiNode.Object()))
+                    if (_objNodeMap.ContainsKey(neiNode.Object()))
                     {
-                        _objNodeMap.Bind(neiNode.Object(), neiNode);
+                        _objNodeMap[neiNode.Object()] = neiNode;
                     }
                 }
             }
@@ -93,7 +93,7 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
     /// <summary>Removes the object and updates the tree. False if the tree doesn't contain it.</summary>
     public bool Remove(in TheObjType obj)
     {
-        if (!_objNodeMap.Find(obj, out TreeNode pNode))
+        if (!_objNodeMap.TryGetValue(obj, out TreeNode? pNode))
         {
             return false;
         }
@@ -108,16 +108,16 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
             // it is a child of some parent,
             // so kill the child that contains theObj
             // and update bounding boxes of all ancestors
-            _objNodeMap.UnBind(obj);
+            _objNodeMap.Remove(obj);
             TreeNode pParent = pNode.ChangeParent();
             pParent.Kill(ReferenceEquals(pNode, pParent.Child(0)) ? 0 : 1);
             if (pParent.IsLeaf)
             {
                 // The parent node became a leaf (absorbed surviving child),
                 // so update the map entry to point to the new node.
-                if (_objNodeMap.IsBound(pParent.Object()))
+                if (_objNodeMap.ContainsKey(pParent.Object()))
                 {
-                    _objNodeMap.Bind(pParent.Object(), pParent);
+                    _objNodeMap[pParent.Object()] = pParent;
                 }
             }
             while (!pParent.IsRoot)
@@ -132,10 +132,10 @@ public class IndexedSpatialTree<TheObjType, TheBndType> : SpatialTree<TheObjType
     }
 
     /// <summary>True if the tree contains the object.</summary>
-    public bool Contains(in TheObjType obj) => _objNodeMap.IsBound(obj);
+    public bool Contains(in TheObjType obj) => _objNodeMap.ContainsKey(obj);
 
     /// <summary>The leaf holding the object; throws <see cref="NoSuchObjectException"/> if there is none.</summary>
-    public TreeNode FindNode(in TheObjType obj) => _objNodeMap.Find(obj);
+    public TreeNode FindNode(in TheObjType obj) => _objNodeMap.GetValue(obj);
 
     /// <summary>Clears the tree.</summary>
     public override void Clear()

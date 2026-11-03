@@ -104,7 +104,7 @@ public partial class PaveFiller : BooleanAlgorithm
     //! Vertices located close to E/E or E/F intersection points
     protected NCollection_IntMap _vertsToAvoidExtension = new();
     //! Map to store minimal distances between shapes
-    protected NCollection_DataMap<Pair, NCollection_List<EdgeRangeDistance>> _distances = new();
+    protected Dictionary<Pair, NCollection_List<EdgeRangeDistance>> _distances = new();
 
     public PaveFiller()
     {

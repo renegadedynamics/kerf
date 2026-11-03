@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
@@ -41,9 +42,9 @@ namespace Kerf.Engine.Offsets;
 public sealed class Inter3d
 {
     private readonly AsDes _asDes;
-    private readonly NCollection_IndexedMap<Shape> _touched = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _done = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _newEdges = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _touched = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _done = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _newEdges = new(ShapeHasher.Instance);
     private readonly Containment _side;
     private readonly double _tol;
 
@@ -100,7 +101,7 @@ public sealed class Inter3d
         BoxTree bbTree = new();
         bbTree.SetSize(setOfFaces.Extent());
         //
-        NCollection_IndexedDataMap<Shape, Box> mFaces = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Box> mFaces = new(ShapeHasher.Instance);
         // Construct bounding boxes for faces and add them to the tree
         NCollection_List<Shape>.Iterator itL = new(setOfFaces);
         for (; itL.More(); itL.Next())
@@ -111,7 +112,7 @@ public sealed class Inter3d
             Box boxF = new();
             Bounds.Add(f, ref boxF);
             //
-            int i = mFaces.Add(f, boxF);
+            int i = mFaces.Add(f, boxF) + 1;
             //
             bbTree.Add(i, global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(boxF));
         }
@@ -138,8 +139,8 @@ public sealed class Inter3d
             }
             PairSelector<NCollection_Vec3<double>>.PairIDs pair = pairs.Value(iPair);
 
-            Face f1 = ShapeCasts.Face(mFaces.FindKey(Min(pair.ID1, pair.ID2)));
-            Face f2 = ShapeCasts.Face(mFaces.FindKey(Max(pair.ID1, pair.ID2)));
+            Face f1 = ShapeCasts.Face(mFaces.KeyAt(Min(pair.ID1, pair.ID2) - 1));
+            Face f2 = ShapeCasts.Face(mFaces.KeyAt(Max(pair.ID1, pair.ID2) - 1));
 
             // intersect faces
             FaceInter(f1, f2, initOffsetFace);
@@ -444,13 +445,13 @@ public sealed class Inter3d
     /// Computes the intersections of the offset faces that have to be connected by sharp edges, i.e. the
     /// intersections between the extended offset faces.
     /// </summary>
-    public void ConnexIntByInt(in Shape si, NCollection_DataMap<Shape, Offset> mapSF,
-                               Analyse analyse, NCollection_DataMap<Shape, Shape> mes,
-                               NCollection_DataMap<Shape, Shape> build,
+    public void ConnexIntByInt(in Shape si, Dictionary<Shape, Offset> mapSF,
+                               Analyse analyse, Dictionary<Shape, Shape> mes,
+                               Dictionary<Shape, Shape> build,
                                NCollection_List<Shape> failed, ProgressRange range,
                                bool bIsPlanar = false)
     {
-        NCollection_IndexedMap<Shape> vEmap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> vEmap = new(ShapeHasher.Instance);
         Face F1 = new(), F2 = new(), of1 = new(), of2 = new(), NF1 = new(), NF2 = new();
         Containment curSide = _side;
         BrepBuilder b = new();
@@ -463,10 +464,10 @@ public sealed class Inter3d
         using ProgressScope psOuter = new(range, null, 10);
         if (bIsPlanar)
         {
-            nb = vEmap.Extent();
+            nb = vEmap.Count;
             for (i = 1; i <= nb; ++i)
             {
-                Edge aE = ShapeCasts.Edge(vEmap[i]);
+                Edge aE = ShapeCasts.Edge(vEmap[i - 1]);
                 Shape fGen = analyse.Generated(aE);
                 if (!fGen.IsNull)
                 {
@@ -483,16 +484,16 @@ public sealed class Inter3d
             }
         }
         //
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmvlf1 = new(ShapeHasher.Instance),
+        Dictionary<Shape, NCollection_List<Shape>> dmvlf1 = new(ShapeHasher.Instance),
                                                                          dmvlf2 = new(ShapeHasher.Instance),
                                                                          dmIntFF = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmIntE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmIntE = new(ShapeHasher.Instance);
         //
         if (bIsPlanar)
         {
             // Find internal edges in the faces to skip them while preparing faces
             // for intersection through vertices
-            NCollection_DataMap<Shape, HashSet<Shape>> dmfei = new(ShapeHasher.Instance);
+            Dictionary<Shape, HashSet<Shape>> dmfei = new(ShapeHasher.Instance);
             {
                 for (Explorer expF = new(si, ShapeType.Face); expF.More(); expF.Next())
                 {
@@ -509,19 +510,19 @@ public sealed class Inter3d
                     }
                     if (mei.Count != 0)
                     {
-                        dmfei.Bind(fx, mei);
+                        dmfei[fx] = mei;
                     }
                 }
             }
 
             // Analyze faces connected through vertices
-            for (i = nb + 1, nb = vEmap.Extent(); i <= nb; ++i)
+            for (i = nb + 1, nb = vEmap.Count; i <= nb; ++i)
             {
                 if (!psOuter.More())
                 {
                     return;
                 }
-                Shape s = vEmap[i];
+                Shape s = vEmap[i - 1];
                 if (s.ShapeType() != ShapeType.Vertex)
                 {
                     continue;
@@ -561,7 +562,7 @@ public sealed class Inter3d
                     // get edges of first face connected to current vertex
                     HashSet<Shape> me = new(ShapeHasher.Instance);
                     HashSet<Shape>? pF1Internal =
-                      dmfei.Find(fv1, out HashSet<Shape> f1Internal) ? f1Internal : null;
+                      dmfei.TryGetValue(fv1, out HashSet<Shape>? f1Internal) ? f1Internal : null;
                     NCollection_List<Shape>? pLE1 = analyse.Descendants(fv1);
                     if (pLE1 is null)
                     {
@@ -597,7 +598,7 @@ public sealed class Inter3d
                         Face fv2 = ShapeCasts.Face(it1.Value());
 
                         HashSet<Shape>? pF2Internal =
-                          dmfei.Find(fv2, out HashSet<Shape> f2Internal) ? f2Internal : null;
+                          dmfei.TryGetValue(fv2, out HashSet<Shape>? f2Internal) ? f2Internal : null;
 
                         NCollection_List<Shape>? pLE2 = analyse.Descendants(fv2);
                         if (pLE2 is null)
@@ -636,13 +637,13 @@ public sealed class Inter3d
                 //
                 if (lf1.Extent() != 0)
                 {
-                    dmvlf1.Bind(s, lf1);
-                    dmvlf2.Bind(s, lf2);
+                    dmvlf1[s] = lf1;
+                    dmvlf2[s] = lf2;
                 }
             }
         }
         //
-        nb = vEmap.Extent();
+        nb = vEmap.Count;
         using ProgressScope psInter = new(psOuter.Next(8), "Intersecting offset faces", nb);
         for (i = 1; i <= nb; ++i, psInter.Next())
         {
@@ -650,7 +651,7 @@ public sealed class Inter3d
             {
                 return;
             }
-            Shape s = vEmap[i];
+            Shape s = vEmap[i - 1];
             //
             Edge E = new();
             NCollection_List<Shape> lf1 = new(), lf2 = new();
@@ -698,13 +699,13 @@ public sealed class Inter3d
             }
             else
             {
-                if (!dmvlf1.IsBound(s))
+                if (!dmvlf1.ContainsKey(s))
                 {
                     continue;
                 }
                 //
-                lf1.Assign(dmvlf1.Find(s));
-                lf2.Assign(dmvlf2.Find(s));
+                lf1.Assign(dmvlf1.GetValue(s));
+                lf2.Assign(dmvlf2.GetValue(s));
                 //
                 curSide = _side;
             }
@@ -716,32 +717,32 @@ public sealed class Inter3d
                 F1 = ShapeCasts.Face(itF1.Value());
                 F2 = ShapeCasts.Face(itF2.Value());
                 //
-                of1 = ShapeCasts.Face(mapSF[F1].InternalFace());
-                of2 = ShapeCasts.Face(mapSF[F2].InternalFace());
-                if (!mes.IsBound(of1))
+                of1 = ShapeCasts.Face(mapSF.GetValue(F1).InternalFace());
+                of2 = ShapeCasts.Face(mapSF.GetValue(F2).InternalFace());
+                if (!mes.ContainsKey(of1))
                 {
                     bool enlargeU = true;
                     bool enlargeVfirst = true, enlargeVlast = true;
                     OffsetTool.CheckBounds(F1, analyse, out enlargeU, out enlargeVfirst, out enlargeVlast);
                     OffsetTool.EnLargeFace(of1, ref NF1, true, true, enlargeU, enlargeVfirst, enlargeVlast);
-                    mes.Bind(of1, NF1);
+                    mes[of1] = NF1;
                 }
                 else
                 {
-                    NF1 = ShapeCasts.Face(mes[of1]);
+                    NF1 = ShapeCasts.Face(mes.GetValue(of1));
                 }
                 //
-                if (!mes.IsBound(of2))
+                if (!mes.ContainsKey(of2))
                 {
                     bool enlargeU = true;
                     bool enlargeVfirst = true, enlargeVlast = true;
                     OffsetTool.CheckBounds(F2, analyse, out enlargeU, out enlargeVfirst, out enlargeVlast);
                     OffsetTool.EnLargeFace(of2, ref NF2, true, true, enlargeU, enlargeVfirst, enlargeVlast);
-                    mes.Bind(of2, NF2);
+                    mes[of2] = NF2;
                 }
                 else
                 {
-                    NF2 = ShapeCasts.Face(mes[of2]);
+                    NF2 = ShapeCasts.Face(mes.GetValue(of2));
                 }
                 //
                 if (!IsDone(NF1, NF2))
@@ -756,9 +757,9 @@ public sealed class Inter3d
                         Compound c = new();
                         b.MakeCompound(ref c);
                         //
-                        if (build.IsBound(s))
+                        if (build.ContainsKey(s))
                         {
-                            Shape se = build[s];
+                            Shape se = build.GetValue(s);
                             Explorer exp = new(se, ShapeType.Edge);
                             for (; exp.More(); exp.Next())
                             {
@@ -774,15 +775,15 @@ public sealed class Inter3d
                             b.Add(c, ne);
                             //
                             // keep connection from new edge to shape from which it was created
-                            NCollection_List<Shape> pLS = dmIntE[dmIntE.Add(ne, new NCollection_List<Shape>())];
+                            NCollection_List<Shape> pLS = dmIntE.ValueAt(dmIntE.Add(ne, new NCollection_List<Shape>()));
                             pLS.Append(s);
                             // keep connection to faces created the edge as well
-                            NCollection_List<Shape> pLFF = dmIntFF.Bound(ne, new NCollection_List<Shape>());
+                            NCollection_List<Shape> pLFF = dmIntFF.SetValueRef(ne, new NCollection_List<Shape>());
                             pLFF.Append(F1);
                             pLFF.Append(F2);
                         }
                         //
-                        build.Bind(s, c);
+                        build[s] = c;
                     }
                     else
                     {
@@ -800,9 +801,9 @@ public sealed class Inter3d
                         Compound c = new();
                         b.MakeCompound(ref c);
                         //
-                        if (build.IsBound(s))
+                        if (build.ContainsKey(s))
                         {
-                            Shape se = build[s];
+                            Shape se = build.GetValue(s);
                             Explorer exp = new(se, ShapeType.Edge);
                             for (; exp.More(); exp.Next())
                             {
@@ -822,14 +823,14 @@ public sealed class Inter3d
                                 {
                                     b.Add(c, e1);
                                     //
-                                    if (dmIntE.FindFromKey(e1, out NCollection_List<Shape> pLS))
+                                    if (dmIntE.TryGetValue(e1, out NCollection_List<Shape> pLS))
                                     {
                                         pLS.Append(s);
                                     }
                                 }
                             }
                         }
-                        build.Bind(s, c);
+                        build[s] = c;
                     }
                     else
                     {
@@ -841,7 +842,7 @@ public sealed class Inter3d
         }
         //
         // create unique intersection for each localized shared part
-        nb = dmIntE.Extent();
+        nb = dmIntE.Count;
         using ProgressScope psPostTreat = new(psOuter.Next(2), "Creating unique intersection", nb);
         for (i = 1; i <= nb; ++i, psPostTreat.Next())
         {
@@ -849,16 +850,16 @@ public sealed class Inter3d
             {
                 return;
             }
-            NCollection_List<Shape> ls = dmIntE[i];
+            NCollection_List<Shape> ls = dmIntE.ValueAt(i - 1);
             if (ls.Extent() < 2)
             {
                 continue;
             }
             //
             // intersection edge
-            Edge e = ShapeCasts.Edge(dmIntE.FindKey(i));
+            Edge e = ShapeCasts.Edge(dmIntE.KeyAt(i - 1));
             // faces created the edge
-            NCollection_List<Shape> lff = dmIntFF.Find(e);
+            NCollection_List<Shape> lff = dmIntFF.GetValue(e);
             Shape f1 = lff.First();
             Shape f2 = lff.Last();
 
@@ -981,8 +982,8 @@ public sealed class Inter3d
                 continue;
             }
             //
-            Shape nf1 = mes[mapSF[f1].InternalFace()];
-            Shape nf2 = mes[mapSF[f2].InternalFace()];
+            Shape nf1 = mes.GetValue(mapSF.GetValue(f1).InternalFace());
+            Shape nf2 = mes.GetValue(mapSF.GetValue(f2).InternalFace());
             //
             NCollection_List<Shape>.Iterator itLCB = new(lcbe);
             for (itLCB.Next(); itLCB.More(); itLCB.Next())
@@ -1009,7 +1010,7 @@ public sealed class Inter3d
                     {
                         continue;
                     }
-                    ref Shape ci = ref build.ChangeFind(s);
+                    ref Shape ci = ref build.GetValueRef(s);
                     //
                     Compound newCI = new();
                     b.MakeCompound(ref newCI);
@@ -1032,10 +1033,10 @@ public sealed class Inter3d
     //=================================================================================================
 
     /// <summary>Computes the intersections with the not offset (context) faces.</summary>
-    public void ContextIntByInt(NCollection_IndexedMap<Shape> contextFaces, bool extentContext,
-                                NCollection_DataMap<Shape, Offset> mapSF,
-                                Analyse analyse, NCollection_DataMap<Shape, Shape> mes,
-                                NCollection_DataMap<Shape, Shape> build,
+    public void ContextIntByInt(IndexedSet<Shape> contextFaces, bool extentContext,
+                                Dictionary<Shape, Offset> mapSF,
+                                Analyse analyse, Dictionary<Shape, Shape> mes,
+                                Dictionary<Shape, Shape> build,
                                 NCollection_List<Shape> failed, ProgressRange range,
                                 bool bIsPlanar = false)
     {
@@ -1049,15 +1050,15 @@ public sealed class Inter3d
         int i, j, nb, nbVE;
         bool bEdge;
 
-        nb = contextFaces.Extent();
+        nb = contextFaces.Count;
         for (i = 1; i <= nb; i++)
         {
-            Face cf = ShapeCasts.Face(contextFaces[i]);
+            Face cf = ShapeCasts.Face(contextFaces[i - 1]);
             _touched.Add(cf);
             if (extentContext)
             {
                 OffsetTool.EnLargeFace(cf, ref nf, false, false);
-                mes.Bind(cf, nf);
+                mes[cf] = nf;
             }
         }
         Containment side = Out;
@@ -1069,17 +1070,17 @@ public sealed class Inter3d
             {
                 return;
             }
-            Face cf = ShapeCasts.Face(contextFaces[i]);
+            Face cf = ShapeCasts.Face(contextFaces[i - 1]);
             if (extentContext)
             {
-                wcf = ShapeCasts.Face(mes[cf]);
+                wcf = ShapeCasts.Face(mes.GetValue(cf));
             }
             else
             {
                 wcf = cf;
             }
 
-            NCollection_IndexedMap<Shape> vEmap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> vEmap = new(ShapeHasher.Instance);
             Exploration.MapShapes(cf.Oriented(Forward), ShapeType.Edge, vEmap);
             //
             if (bIsPlanar)
@@ -1087,10 +1088,10 @@ public sealed class Inter3d
                 Exploration.MapShapes(cf.Oriented(Forward), ShapeType.Vertex, vEmap);
             }
             //
-            nbVE = vEmap.Extent();
+            nbVE = vEmap.Count;
             for (j = 1; j <= nbVE; ++j)
             {
-                Shape s = vEmap[j];
+                Shape s = vEmap[j - 1];
                 //
                 bEdge = (s.ShapeType() == ShapeType.Edge);
                 //
@@ -1115,7 +1116,7 @@ public sealed class Inter3d
                         }
                         else
                         {
-                            if (!mes.IsBound(E))
+                            if (!mes.ContainsKey(E))
                             {
                                 double f, l, tol;
                                 Tool.Range(E, out f, out l);
@@ -1134,11 +1135,11 @@ public sealed class Inter3d
                                 NE.Orientation(E.Orientation());
                                 _asDes.Add(cf, NE);
                                 _newEdges.Add(NE);
-                                mes.Bind(E, NE);
+                                mes[E] = NE;
                             }
                             else
                             {
-                                Shape NE = mes[E];
+                                Shape NE = mes.GetValue(E);
                                 Shape localShape = NE.Oriented(E.Orientation());
                                 _asDes.Add(cf, localShape);
                                 //            myAsDes->Add(CF,NE.Oriented(E.Orientation()));
@@ -1197,18 +1198,18 @@ public sealed class Inter3d
                 for (; itF.More(); itF.Next())
                 {
                     Face F = ShapeCasts.Face(itF.Value());
-                    of = ShapeCasts.Face(mapSF[F].InternalFace());
-                    Shape localShape = mapSF[F].InternalGenerated(E);
+                    of = ShapeCasts.Face(mapSF.GetValue(F).InternalFace());
+                    Shape localShape = mapSF.GetValue(F).InternalGenerated(E);
                     oe = ShapeCasts.Edge(localShape);
                     //      OE = TopoDS::Edge(MapSF(F).Generated(E));
-                    if (!mes.IsBound(of))
+                    if (!mes.ContainsKey(of))
                     {
                         OffsetTool.EnLargeFace(of, ref nf, true, true);
-                        mes.Bind(of, nf);
+                        mes[of] = nf;
                     }
                     else
                     {
-                        nf = ShapeCasts.Face(mes[of]);
+                        nf = ShapeCasts.Face(mes.GetValue(of));
                     }
                     if (!IsDone(nf, cf))
                     {
@@ -1220,16 +1221,16 @@ public sealed class Inter3d
                         if (!lInt1.IsEmpty())
                         {
                             Store(cf, nf, lInt1, lInt2);
-                            if ((lInt1.Extent() == 1) && !build.IsBound(s))
+                            if ((lInt1.Extent() == 1) && !build.ContainsKey(s))
                             {
-                                build.Bind(s, lInt1.First());
+                                build[s] = lInt1.First();
                             }
                             else
                             {
                                 b.MakeCompound(ref c);
-                                if (build.IsBound(s))
+                                if (build.ContainsKey(s))
                                 {
-                                    Shape se = build[s];
+                                    Shape se = build.GetValue(s);
                                     exp.Init(se, ShapeType.Edge);
                                     for (; exp.More(); exp.Next())
                                     {
@@ -1242,7 +1243,7 @@ public sealed class Inter3d
                                 {
                                     b.Add(c, it.Value());
                                 }
-                                build.Bind(s, c);
+                                build[s] = c;
                             }
                         }
                         else
@@ -1258,7 +1259,7 @@ public sealed class Inter3d
     //=================================================================================================
 
     /// <summary>Computes the connections of the not offset (context) faces that have to be connected by arcs.</summary>
-    public void ContextIntByArc(NCollection_IndexedMap<Shape> contextFaces, bool inSide,
+    public void ContextIntByArc(IndexedSet<Shape> contextFaces, bool inSide,
                                 Analyse analyse, ShapeImage initOffsetFace,
                                 ShapeImage initOffsetEdge, ProgressRange range)
     {
@@ -1272,20 +1273,20 @@ public sealed class Inter3d
         Face nullFace = new();
         int j;
 
-        for (j = 1; j <= contextFaces.Extent(); j++)
+        for (j = 1; j <= contextFaces.Count; j++)
         {
-            Face cf = ShapeCasts.Face(contextFaces[j]);
+            Face cf = ShapeCasts.Face(contextFaces[j - 1]);
             _touched.Add(cf);
         }
 
-        using ProgressScope ps = new(range, "Intersecting with deepening faces", contextFaces.Extent());
-        for (j = 1; j <= contextFaces.Extent(); j++, ps.Next())
+        using ProgressScope ps = new(range, "Intersecting with deepening faces", contextFaces.Count);
+        for (j = 1; j <= contextFaces.Count; j++, ps.Next())
         {
             if (!ps.More())
             {
                 return;
             }
-            Face cf = ShapeCasts.Face(contextFaces[j]);
+            Face cf = ShapeCasts.Face(contextFaces[j - 1]);
             for (exp.Init(cf.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
@@ -1480,18 +1481,18 @@ public sealed class Inter3d
     /// <summary>Marks the pair of faces as already intersected.</summary>
     public void SetDone(in Face f1, in Face f2)
     {
-        if (!_done.IsBound(f1))
+        if (!_done.ContainsKey(f1))
         {
             NCollection_List<Shape> empty = new();
-            _done.Bind(f1, empty);
+            _done[f1] = empty;
         }
-        _done[f1].Append(f2);
-        if (!_done.IsBound(f2))
+        _done.GetValue(f1).Append(f2);
+        if (!_done.ContainsKey(f2))
         {
             NCollection_List<Shape> empty = new();
-            _done.Bind(f2, empty);
+            _done[f2] = empty;
         }
-        _done[f2].Append(f1);
+        _done.GetValue(f2).Append(f1);
     }
 
     //=================================================================================================
@@ -1499,9 +1500,9 @@ public sealed class Inter3d
     /// <summary>Whether the pair of faces has already been treated.</summary>
     public bool IsDone(in Face f1, in Face f2)
     {
-        if (_done.IsBound(f1))
+        if (_done.ContainsKey(f1))
         {
-            NCollection_List<Shape>.Iterator it = new(_done[f1]);
+            NCollection_List<Shape>.Iterator it = new(_done.GetValue(f1));
             for (; it.More(); it.Next())
             {
                 if (it.Value().IsSame(f2))
@@ -1514,13 +1515,13 @@ public sealed class Inter3d
     }
 
     /// <summary>The touched faces (the tool's own map).</summary>
-    public NCollection_IndexedMap<Shape> TouchedFaces() => _touched;
+    public IndexedSet<Shape> TouchedFaces() => _touched;
 
     /// <summary>The AsDes tool.</summary>
     public AsDes AsDes() => _asDes;
 
     /// <summary>The new edges (the tool's own map).</summary>
-    public NCollection_IndexedMap<Shape> NewEdges() => _newEdges;
+    public IndexedSet<Shape> NewEdges() => _newEdges;
 
     //=================================================================================================
 

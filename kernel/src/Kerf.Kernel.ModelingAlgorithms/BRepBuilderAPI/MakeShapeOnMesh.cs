@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2018-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -78,7 +79,7 @@ public class MakeShapeOnMesh : MakeShape
         using var ps = new ProgressScope(range, "Per-facet shape construction", (double)nbNodes + 2.0 * nbTriangles);
 
         // Build shared vertices.
-        var pnt2VertexMap = new NCollection_IndexedDataMap<int, Vertex>();
+        var pnt2VertexMap = new IndexedMap<int, Vertex>();
 
         for (int i = 1; i <= nbNodes; ++i)
         {
@@ -94,7 +95,7 @@ public class MakeShapeOnMesh : MakeShape
         }
 
         // Build shared edges.
-        var edgeToTEgeMap = new NCollection_IndexedDataMap<Edge, global::Kerf.Topology.Edge>();
+        var edgeToTEgeMap = new IndexedMap<Edge, global::Kerf.Topology.Edge>();
         for (int i = 1; i <= nbTriangles; ++i)
         {
             ps.Next();
@@ -126,9 +127,9 @@ public class MakeShapeOnMesh : MakeShape
             // Edges are constructed in forward order for the existing normals orientation.
             // In Poly_Triangulation, positive direction is defined as cross product:
             // (aV1, aV2) x (aV1, aV3).
-            Vertex v1 = pnt2VertexMap.FindFromKey(idx0);
-            Vertex v2 = pnt2VertexMap.FindFromKey(idx1);
-            Vertex v3 = pnt2VertexMap.FindFromKey(idx2);
+            Vertex v1 = pnt2VertexMap.GetValue(idx0);
+            Vertex v2 = pnt2VertexMap.GetValue(idx1);
+            Vertex v3 = pnt2VertexMap.GetValue(idx2);
 
             var meshEdge1 = new Edge(idx0, idx1);
             var meshEdge2 = new Edge(idx1, idx2);
@@ -185,25 +186,25 @@ public class MakeShapeOnMesh : MakeShape
 
             // Edges can be skipped in case of mesh defects - topologically or geometrically
             // degenerated triangles.
-            bool hasAllEdges = edgeToTEgeMap.Contains(meshEdge1)
-                                && edgeToTEgeMap.Contains(meshEdge2)
-                                && edgeToTEgeMap.Contains(meshEdge3);
+            bool hasAllEdges = edgeToTEgeMap.ContainsKey(meshEdge1)
+                                && edgeToTEgeMap.ContainsKey(meshEdge2)
+                                && edgeToTEgeMap.ContainsKey(meshEdge3);
             if (!hasAllEdges)
             {
                 continue;
             }
 
-            global::Kerf.Topology.Edge tEdge1 = edgeToTEgeMap.FindFromKey(meshEdge1);
+            global::Kerf.Topology.Edge tEdge1 = edgeToTEgeMap.GetValue(meshEdge1);
             if (isReversed1)
             {
                 tEdge1.Reverse();
             }
-            global::Kerf.Topology.Edge tEdge2 = edgeToTEgeMap.FindFromKey(meshEdge2);
+            global::Kerf.Topology.Edge tEdge2 = edgeToTEgeMap.GetValue(meshEdge2);
             if (isReversed2)
             {
                 tEdge2.Reverse();
             }
-            global::Kerf.Topology.Edge tEdge3 = edgeToTEgeMap.FindFromKey(meshEdge3);
+            global::Kerf.Topology.Edge tEdge3 = edgeToTEgeMap.GetValue(meshEdge3);
             if (isReversed3)
             {
                 tEdge3.Reverse();

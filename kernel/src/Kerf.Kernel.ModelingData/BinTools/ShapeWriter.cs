@@ -23,14 +23,14 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 public class ShapeWriter : ShapeSetBase
 {
     // positions of the objects already stored
-    private readonly NCollection_DataMap<Shape, ulong> _shapePos = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Placement, ulong> _locationPos = new();
-    private readonly NCollection_DataMap<Curve3D, ulong> _curvePos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Curve2D, ulong> _curve2dPos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Surface, ulong> _surfacePos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Polygon3D, ulong> _polygon3dPos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<PolygonOnTriangulation, ulong> _polygonPos = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Triangulation, ulong> _triangulationPos = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Shape, ulong> _shapePos = new(ShapeHasher.Instance);
+    private readonly Dictionary<Placement, ulong> _locationPos = new();
+    private readonly Dictionary<Curve3D, ulong> _curvePos = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Curve2D, ulong> _curve2dPos = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Surface, ulong> _surfacePos = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Polygon3D, ulong> _polygon3dPos = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<PolygonOnTriangulation, ulong> _polygonPos = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Triangulation, ulong> _triangulationPos = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>A writer that has written nothing yet.</summary>
     public ShapeWriter()
@@ -67,7 +67,7 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_locationPos.Find(location, out ulong loc))
+        if (_locationPos.TryGetValue(location, out ulong loc))
         {
             stream.WriteReference(loc);
             return;
@@ -102,7 +102,7 @@ public class ShapeWriter : ShapeSetBase
                 stream = stream << ObjectType.ObjectType_LocationEnd;
             }
 
-            _locationPos.Bind(location, newLoc);
+            _locationPos[location] = newLoc;
         }
         catch (Exception exception) when (global::Kerf.Engine.Exchange.Brep.Binary.BinTools.IsCaught(exception))
         {
@@ -123,7 +123,7 @@ public class ShapeWriter : ShapeSetBase
         }
 
         Shape aShape = shape.Located(new Placement());
-        if (_shapePos.Find(aShape, out ulong existing))
+        if (_shapePos.TryGetValue(aShape, out ulong existing))
         {
             // shape is already there, so, write reference to it
             stream.WriteReference(existing);
@@ -133,7 +133,7 @@ public class ShapeWriter : ShapeSetBase
         }
 
         ulong newPos = stream.Position();
-        _shapePos.Bind(aShape, newPos);
+        _shapePos[aShape] = newPos;
         stream.WriteShape(aShape.ShapeType(), aShape.Orientation());
         WriteLocation(stream, shape.Location());
 
@@ -348,13 +348,13 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_curvePos.Find(curve, out ulong aCurve))
+        if (_curvePos.TryGetValue(curve, out ulong aCurve))
         {
             stream.WriteReference(aCurve);
             return;
         }
 
-        _curvePos.Bind(curve, stream.Position());
+        _curvePos[curve] = stream.Position();
         stream = stream << ObjectType.ObjectType_Curve;
         BinaryCurveSet.WriteCurve(curve, stream);
     }
@@ -367,13 +367,13 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_curve2dPos.Find(curve, out ulong aCurve))
+        if (_curve2dPos.TryGetValue(curve, out ulong aCurve))
         {
             stream.WriteReference(aCurve);
             return;
         }
 
-        _curve2dPos.Bind(curve, stream.Position());
+        _curve2dPos[curve] = stream.Position();
         stream = stream << ObjectType.ObjectType_Curve2d;
         BinaryCurve2dSet.WriteCurve2d(curve, stream);
     }
@@ -386,13 +386,13 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_surfacePos.Find(surface, out ulong aSurface))
+        if (_surfacePos.TryGetValue(surface, out ulong aSurface))
         {
             stream.WriteReference(aSurface);
             return;
         }
 
-        _surfacePos.Bind(surface, stream.Position());
+        _surfacePos[surface] = stream.Position();
         stream = stream << ObjectType.ObjectType_Surface;
         BinarySurfaceSet.WriteSurface(surface, stream);
     }
@@ -405,13 +405,13 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_polygon3dPos.Find(polygon, out ulong aPolygon))
+        if (_polygon3dPos.TryGetValue(polygon, out ulong aPolygon))
         {
             stream.WriteReference(aPolygon);
             return;
         }
 
-        _polygon3dPos.Bind(polygon, stream.Position());
+        _polygon3dPos[polygon] = stream.Position();
         stream = stream << ObjectType.ObjectType_Polygon3d;
 
         int nbNodes = polygon.NodeCount;
@@ -440,13 +440,13 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_polygonPos.Find(polygon, out ulong aPolygon))
+        if (_polygonPos.TryGetValue(polygon, out ulong aPolygon))
         {
             stream.WriteReference(aPolygon);
             return;
         }
 
-        _polygonPos.Bind(polygon, stream.Position());
+        _polygonPos[polygon] = stream.Position();
         stream = stream << ObjectType.ObjectType_PolygonOnTriangulation;
 
         NCollection_Array1<int> nodes = polygon.Nodes();
@@ -479,13 +479,13 @@ public class ShapeWriter : ShapeSetBase
             return;
         }
 
-        if (_triangulationPos.Find(triangulation, out ulong aTriangulation))
+        if (_triangulationPos.TryGetValue(triangulation, out ulong aTriangulation))
         {
             stream.WriteReference(aTriangulation);
             return;
         }
 
-        _triangulationPos.Bind(triangulation, stream.Position());
+        _triangulationPos[triangulation] = stream.Position();
         stream = stream << ObjectType.ObjectType_Triangulation;
 
         int nbNodes = triangulation.NodeCount;

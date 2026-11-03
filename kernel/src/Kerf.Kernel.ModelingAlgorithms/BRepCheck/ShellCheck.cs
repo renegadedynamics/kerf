@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -26,7 +27,7 @@ public class ShellCheck : ResultCheck
     private bool _odone;
     private StatusCheck _ostat;
 
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapEF =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapEF =
         new(ShapeHasher.Instance);
 
     /// <summary>Checks the shell on its own (<see cref="Minimum"/>).</summary>
@@ -40,22 +41,22 @@ public class ShellCheck : ResultCheck
         Init(s);
     }
 
-    private static void Propagate(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF,
+    private static void Propagate(IndexedMap<Shape, NCollection_List<Shape>> mapEF,
                                   in Shape face,
-                                  NCollection_IndexedMap<Shape> mapF)
+                                  IndexedSet<Shape> mapF)
     {
         // Base for the traverse procedure.
         mapF.Add(face);
 
         // Perform well-known width-first traverse.
-        for (int idx = 1; idx <= mapF.Extent(); ++idx)
+        for (int idx = 0; idx < mapF.Count; ++idx)
         {
             Shape aFace = mapF[idx];
             for (var ex = new Explorer(aFace, ShapeType.Edge); ex.More(); ex.Next())
             {
                 Edge edg = ShapeCasts.Edge(ex.Current());
                 // Test if the edge is in the map (only oriented edges are present).
-                if (!mapEF.FindFromKey(edg, out NCollection_List<Shape>? list))
+                if (!mapEF.TryGetValue(edg, out NCollection_List<Shape>? list))
                 {
                     continue;
                 }
@@ -85,7 +86,7 @@ public class ShellCheck : ResultCheck
 
         try
         {
-            return _map.Find(_shape);
+            return _map.GetValue(_shape);
         }
         finally
         {
@@ -105,7 +106,7 @@ public class ShellCheck : ResultCheck
         if (!_min)
         {
             var newList = new NCollection_List<StatusCheck>();
-            NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+            NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
 
             // it is checked if the shell is "connected"
             var exp = new Explorer(_shape, ShapeType.Face);
@@ -118,14 +119,14 @@ public class ShellCheck : ResultCheck
                 for (expe.Init(exp.Current(), ShapeType.Edge); expe.More(); expe.Next())
                 {
                     Shape edg = expe.Current();
-                    int index = _mapEF.FindIndex(edg);
+                    int index = _mapEF.IndexOf(edg) + 1;
                     if (index == 0)
                     {
                         var thelist1 = new NCollection_List<Shape>();
-                        index = _mapEF.Add(edg, thelist1);
+                        index = _mapEF.Add(edg, thelist1) + 1;
                     }
 
-                    _mapEF[index].Append(exp.Current());
+                    _mapEF.ValueAt(index - 1).Append(exp.Current());
                 }
             } // for (; exp.More(); exp.Next())
 
@@ -135,10 +136,10 @@ public class ShellCheck : ResultCheck
             }
             else if (nbface >= 2)
             {
-                var mapF = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                var mapF = new IndexedSet<Shape>(ShapeHasher.Instance);
                 exp.ReInit();
                 Propagate(_mapEF, exp.Current(), mapF);
-                if (mapF.Extent() != nbface)
+                if (mapF.Count != nbface)
                 {
                     BRepCheckCheck.Add(lst, StatusCheck.NotConnected);
                 }
@@ -170,13 +171,13 @@ public class ShellCheck : ResultCheck
 
             try
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 {
                     return;
                 }
 
                 var newList = new NCollection_List<StatusCheck>();
-                hList = _map.Bound(s, newList);
+                hList = _map.SetValueRef(s, newList);
             }
             finally
             {
@@ -273,7 +274,7 @@ public class ShellCheck : ResultCheck
         //
         int index, nbF;
         Explorer exp = new(), ede = new();
-        var mapS = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
         var meToAvoid = new HashSet<Shape>(ShapeHasher.Instance);
         _mapEF.Clear();
 
@@ -307,7 +308,7 @@ public class ShellCheck : ResultCheck
             {
                 // OCCT: NCollection_IndexedMap::Add returns the index (never 0), so !mapS.Add(aF) is always false
                 // and a face present twice is never reported here (Orientation reports it)
-                if (mapS.Add(f) == 0)
+                if (mapS.Add(f) + 1 == 0)
                 {
                     _cstat = StatusCheck.RedundantFace;
                     if (update)
@@ -324,21 +325,21 @@ public class ShellCheck : ResultCheck
                     Shape e = ede.Current();
                     if (!meToAvoid.Contains(e))
                     {
-                        index = _mapEF.FindIndex(e);
+                        index = _mapEF.IndexOf(e) + 1;
                         if (index == 0)
                         {
                             var thelist = new NCollection_List<Shape>();
-                            index = _mapEF.Add(e, thelist);
+                            index = _mapEF.Add(e, thelist) + 1;
                         }
 
-                        _mapEF[index].Append(f);
+                        _mapEF.ValueAt(index - 1).Append(f);
                     }
                 }
             }
         }
 
         //
-        _nbori = mapS.Extent();
+        _nbori = mapS.Count;
         if (_nbori >= 2)
         {
             mapS.Clear();
@@ -359,7 +360,7 @@ public class ShellCheck : ResultCheck
 
         //
         //
-        nbF = mapS.Extent();
+        nbF = mapS.Count;
         if (_nbori != nbF)
         {
             _cstat = StatusCheck.NotConnected;
@@ -375,10 +376,10 @@ public class ShellCheck : ResultCheck
         //
         int i, nbedges, nboc, nbSet;
         //
-        nbedges = _mapEF.Extent();
+        nbedges = _mapEF.Count;
         for (i = 1; i <= nbedges; ++i)
         {
-            nboc = _mapEF[i].Extent();
+            nboc = _mapEF.ValueAt(i - 1).Extent();
             if (nboc == 0 || nboc >= 3)
             {
                 var theSet = new NCollection_List<Shape>();
@@ -398,7 +399,7 @@ public class ShellCheck : ResultCheck
             }
             else if (nboc == 1)
             {
-                if (!Tool.Degenerated(ShapeCasts.Edge(_mapEF.FindKey(i))))
+                if (!Tool.Degenerated(ShapeCasts.Edge(_mapEF.KeyAt(i - 1))))
                 {
                     _cstat = StatusCheck.NotClosed;
                     if (update)
@@ -455,13 +456,15 @@ public class ShellCheck : ResultCheck
 
         // First the orientation of each face in relation to the shell is found.
         // It is used to check BRepCheck_RedundantFace
-        var mapOfShapeOrientation = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+        var mapOfShapeOrientation = new Dictionary<Shape, int>(ShapeHasher.Instance);
         Explorer exp = new(), ede = new();
 
         for (exp.Init(_shape, ShapeType.Face); exp.More(); exp.Next())
         {
-            if (!mapOfShapeOrientation.Bind(exp.Current(), (int)exp.Current().Orientation()))
+            if (!mapOfShapeOrientation.TryAdd(exp.Current(), (int)exp.Current().Orientation()))
             {
+                // OCCT's Bind replaces the value of a bound key
+                mapOfShapeOrientation[exp.Current()] = (int)exp.Current().Orientation();
                 _ostat = StatusCheck.RedundantFace;
                 if (update)
                 {
@@ -477,19 +480,19 @@ public class ShellCheck : ResultCheck
         // Then the orientation of faces by their connectivity is checked
         // BRepCheck_BadOrientationOfSubshape and
         //         BRepCheck_SubshapeNotInShape are checked;
-        int nbedges = _mapEF.Extent();
+        int nbedges = _mapEF.Count;
         Face fref = new();
         Orientation orf;
 
-        for (int i = 1; i <= nbedges; i++)
+        for (int i = 0; i < nbedges; i++)
         {
-            Edge edg = ShapeCasts.Edge(_mapEF.FindKey(i));
+            Edge edg = ShapeCasts.Edge(_mapEF.KeyAt(i));
             if (Tool.Degenerated(edg))
             {
                 continue;
             }
 
-            NCollection_List<Shape> lface = _mapEF[i];
+            NCollection_List<Shape> lface = _mapEF.ValueAt(i);
             var lite = new NCollection_List<Shape>.Iterator(lface);
 
             if (lface.Extent() <= 2)
@@ -497,7 +500,7 @@ public class ShellCheck : ResultCheck
                 lite.Initialize(lface);
                 fref = ShapeCasts.Face(lite.Value());
 
-                if (!mapOfShapeOrientation.IsBound(fref))
+                if (!mapOfShapeOrientation.ContainsKey(fref))
                 {
                     _ostat = StatusCheck.SubshapeNotInShape;
                     if (update)
@@ -513,7 +516,7 @@ public class ShellCheck : ResultCheck
 
                 if (lite.More()) // Edge of connectivity
                 {
-                    int iorf = mapOfShapeOrientation.Find(fref);
+                    int iorf = mapOfShapeOrientation.GetValue(fref);
                     orf = (Orientation)iorf;
                     fref.Orientation(orf);
 
@@ -531,7 +534,7 @@ public class ShellCheck : ResultCheck
                         Orientation orient = ede.Current().Orientation();
                         Face fcur = ShapeCasts.Face(lite.Value());
 
-                        if (!mapOfShapeOrientation.IsBound(fcur))
+                        if (!mapOfShapeOrientation.ContainsKey(fcur))
                         {
                             _ostat = StatusCheck.SubshapeNotInShape;
                             if (update)
@@ -543,7 +546,7 @@ public class ShellCheck : ResultCheck
                             return _ostat;
                         }
 
-                        int oriFCur = mapOfShapeOrientation.Find(fcur);
+                        int oriFCur = mapOfShapeOrientation.GetValue(fcur);
                         orf = (Orientation)oriFCur;
                         fcur.Orientation(orf);
 
@@ -593,7 +596,7 @@ public class ShellCheck : ResultCheck
                 for (lite.Initialize(lface); lite.More(); lite.Next())
                 {
                     Face fcur = ShapeCasts.Face(lite.Value());
-                    if (!mapOfShapeOrientation.IsBound(fcur))
+                    if (!mapOfShapeOrientation.ContainsKey(fcur))
                     {
                         _ostat = StatusCheck.SubshapeNotInShape;
                         if (update)
@@ -605,7 +608,7 @@ public class ShellCheck : ResultCheck
                         return _ostat;
                     }
 
-                    int iorf = mapOfShapeOrientation.Find(fcur);
+                    int iorf = mapOfShapeOrientation.GetValue(fcur);
                     orf = (Orientation)iorf;
                     fcur.Orientation(orf);
 
@@ -674,7 +677,7 @@ public class ShellCheck : ResultCheck
                     {
                         fref = ShapeCasts.Face(voisin.First());
                         voisin.RemoveFirst();
-                        if (!mapOfShapeOrientation.IsBound(fref))
+                        if (!mapOfShapeOrientation.ContainsKey(fref))
                         {
                             _ostat = StatusCheck.SubshapeNotInShape;
                             if (update)
@@ -686,7 +689,7 @@ public class ShellCheck : ResultCheck
                             return _ostat;
                         }
 
-                        int iorf = mapOfShapeOrientation.Find(fref);
+                        int iorf = mapOfShapeOrientation.GetValue(fref);
                         orf = (Orientation)iorf;
                         fref.Orientation(orf);
 
@@ -697,7 +700,7 @@ public class ShellCheck : ResultCheck
                         {
                             Edge edg = ShapeCasts.Edge(ede.Current());
                             Orientation orient = edg.Orientation();
-                            NCollection_List<Shape> lface = _mapEF.ChangeFromKey(edg);
+                            NCollection_List<Shape> lface = _mapEF.GetValue(edg);
                             var lite = new NCollection_List<Shape>.Iterator(lface);
 
                             Face fcur = ShapeCasts.Face(lite.Value());
@@ -715,7 +718,7 @@ public class ShellCheck : ResultCheck
                                 }
                             }
 
-                            if (!mapOfShapeOrientation.IsBound(fcur))
+                            if (!mapOfShapeOrientation.ContainsKey(fcur))
                             {
                                 _ostat = StatusCheck.SubshapeNotInShape;
                                 if (update)
@@ -727,7 +730,7 @@ public class ShellCheck : ResultCheck
                                 return _ostat;
                             }
 
-                            int oriFCur = mapOfShapeOrientation.Find(fcur);
+                            int oriFCur = mapOfShapeOrientation.GetValue(fcur);
                             orf = (Orientation)oriFCur;
                             fcur.Orientation(orf);
 
@@ -756,7 +759,7 @@ public class ShellCheck : ResultCheck
                                 }
 
                                 orf = global::Kerf.Engine.Topology.TopAbs.Reverse(orf);
-                                mapOfShapeOrientation[fcur] = (int)orf;
+                                mapOfShapeOrientation.GetValueRef(fcur) = (int)orf;
                             }
 
                             if (alre.Add(fcur))
@@ -788,7 +791,7 @@ public class ShellCheck : ResultCheck
 
         try
         {
-            BRepCheckCheck.Add(_map.Find(_shape), StatusCheck.UnorientableShape);
+            BRepCheckCheck.Add(_map.GetValue(_shape), StatusCheck.UnorientableShape);
         }
         finally
         {
@@ -834,7 +837,7 @@ public class ShellCheck : ResultCheck
     private int NbConnectedSetCore(NCollection_List<Shape> sets, bool toFreeze)
     {
         // The connections are found
-        var parents = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(
+        var parents = new IndexedMap<Shape, NCollection_List<Shape>>(
             ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, parents);
         // All faces are taken
@@ -849,10 +852,10 @@ public class ShellCheck : ResultCheck
         int iCur;
         var theMultiEd = new HashSet<Shape>(ShapeHasher.Instance);
         var theUnOriEd = new HashSet<Shape>(ShapeHasher.Instance);
-        for (iCur = 1; iCur <= parents.Extent(); iCur++)
+        for (iCur = 1; iCur <= parents.Count; iCur++)
         {
-            Edge ed = ShapeCasts.Edge(parents.FindKey(iCur));
-            if (parents[iCur].Extent() > 2)
+            Edge ed = ShapeCasts.Edge(parents.KeyAt(iCur - 1));
+            if (parents.ValueAt(iCur - 1).Extent() > 2)
             {
                 theMultiEd.Add(ed);
             }
@@ -876,7 +879,7 @@ public class ShellCheck : ResultCheck
         {
             if (!theUnOriEd.Contains(ed))
             {
-                for (lconx1.Initialize(parents.FindFromKey(ed)); lconx1.More(); lconx1.Next())
+                for (lconx1.Initialize(parents.GetValue(ed)); lconx1.More(); lconx1.Next())
                 {
                     if (theFaces.Contains(lconx1.Value()))
                     {
@@ -900,7 +903,7 @@ public class ShellCheck : ResultCheck
                                 Shape ced = exsh.Current();
                                 if (!theMultiEd.Contains(ced))
                                 {
-                                    for (lconx2.Initialize(parents.FindFromKey(ced)); lconx2.More(); lconx2.Next())
+                                    for (lconx2.Initialize(parents.GetValue(ced)); lconx2.More(); lconx2.Next())
                                     {
                                         if (theFaces.Contains(lconx2.Value()))
                                         {

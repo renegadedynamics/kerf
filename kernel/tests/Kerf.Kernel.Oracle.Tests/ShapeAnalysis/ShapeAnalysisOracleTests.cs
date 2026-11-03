@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
@@ -770,12 +771,12 @@ public class ShapeAnalysisOracleTests(ITestOutputHelper output) : IDisposable
             (N.TopoDS_Shape aN, Shape aP) = RoundTrip(aShape);
             using var aNMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aN, N.TopAbs_ShapeEnum.TopAbs_FACE, aNMap);
-            var aPMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aPMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aP, ShapeType.Face, aPMap);
-            Assert.Equal(aNMap.Extent(), aPMap.Extent());
-            for (int f = 1; f <= aPMap.Extent(); f++)
+            Assert.Equal(aNMap.Extent(), aPMap.Count);
+            for (int f = 1; f <= aPMap.Count; f++)
             {
-                Face aPF = ShapeCasts.Face(aPMap[f]);
+                Face aPF = ShapeCasts.Face(aPMap[f - 1]);
                 BrepTools.UVBounds(aPF, out double u1, out double u2, out double v1, out double v2);
                 using N.Geom_Surface aNS = N.BRep_Tool.Surface(N.TopoDS.Face(aNMap.FindKey(f)))!;
                 Surface aPS = Tool.Surface(aPF)!;

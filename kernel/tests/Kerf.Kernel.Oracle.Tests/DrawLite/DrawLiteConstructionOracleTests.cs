@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -91,15 +92,15 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
     // a vertex TShape reached at two locations or more
     private static bool HasVertexAtSeveralLocations(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Vertex, aMap);
         var aTShapes = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aTShapes.Add(aMap[i].TShape()!);
         }
 
-        return aTShapes.Count < aMap.Extent();
+        return aTShapes.Count < aMap.Count;
     }
 
     // The Free flag is the first of the seven flag digits on their own line.

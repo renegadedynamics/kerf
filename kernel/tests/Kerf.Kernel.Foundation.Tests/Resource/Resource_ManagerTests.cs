@@ -146,8 +146,8 @@ public sealed class Resource_ManagerTests : IDisposable
         aManager.SetResource("m", " spaced");
         Assert.Equal("3", aManager.Value("z"));
         Assert.Equal("0.5", aManager.Value("a"));
-        Assert.Equal(3, aManager.GetMap(false).Extent());
-        Assert.Equal(0, aManager.GetMap().Extent());
+        Assert.Equal(3, aManager.GetMap(false).Count);
+        Assert.Empty(aManager.GetMap());
 
         // the copy is independent
         var aCopy = new Manager(aManager);

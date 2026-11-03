@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2021-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Topology;
 
@@ -25,9 +26,9 @@ public sealed class PurgeLocations
 {
     private bool _done;
     private Shape _shape = new();
-    private readonly NCollection_IndexedMap<Shape> _mapShapes = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapShapes = new(ShapeHasher.Instance);
     private readonly LocationSet _locations = new();
-    private readonly NCollection_DataMap<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
     private ReShape? _reShape;
 
     /// <summary>A purge, not yet performed.</summary>
@@ -47,7 +48,7 @@ public sealed class PurgeLocations
 
         // Check locations;
         int ind;
-        var badTrsfInds = new NCollection_DynamicArray<int>();
+        var badTrsfInds = new List<int>();
         for (ind = 1; ; ++ind)
         {
             Placement loc = _locations.Location(ind);
@@ -63,34 +64,34 @@ public sealed class PurgeLocations
                 || (Math.Abs(Math.Abs(trsf.ScaleFactor()) - 1.0) > Placement.ScalePrec());
             if (isBadTrsf)
             {
-                badTrsfInds.Append(ind);
+                badTrsfInds.Add(ind);
             }
         }
 
-        if (badTrsfInds.IsEmpty())
+        if (badTrsfInds.Count == 0)
         {
             return _done;
         }
 
-        int nbShapes = _mapShapes.Extent();
+        int nbShapes = _mapShapes.Count;
         _mapNewShapes.Clear();
         int inds;
         for (inds = 1; inds <= nbShapes; ++inds)
         {
-            Shape s = _mapShapes[inds];
+            Shape s = _mapShapes[inds - 1];
             int locInd = _locations.Index(s.Location());
             if (locInd == 0)
             {
                 continue;
             }
             int il;
-            for (il = 0; il < badTrsfInds.Length(); ++il)
+            for (il = 0; il < badTrsfInds.Count; ++il)
             {
                 if (badTrsfInds[il] == locInd)
                 {
                     bool isDone = PurgeLocation(s, out Shape trS);
                     _done = _done && isDone;
-                    _mapNewShapes.Bind(s, trS);
+                    _mapNewShapes[s] = trS;
                     break;
                 }
             }
@@ -195,9 +196,9 @@ public sealed class PurgeLocations
     public Shape ModifiedShape(in Shape initShape)
     {
         Shape shape = initShape;
-        if (_mapNewShapes.IsBound(initShape))
+        if (_mapNewShapes.ContainsKey(initShape))
         {
-            shape = _mapNewShapes.Find(initShape);
+            shape = _mapNewShapes.GetValue(initShape);
         }
         shape.TShape()?.FreezeGraph();
         return shape;

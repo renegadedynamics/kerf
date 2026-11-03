@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Meshing;
@@ -248,7 +249,7 @@ public class BRepMeshShellTests
         }
 
         // The vertices are the input's own; each face is mapped to its meshed image.
-        var aInVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aInVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Vertex, aInVertices);
         for (var anExp = new Explorer(aResult, ShapeType.Vertex); anExp.More(); anExp.Next())
         {

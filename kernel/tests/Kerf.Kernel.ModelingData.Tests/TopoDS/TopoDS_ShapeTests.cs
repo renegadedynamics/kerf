@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
@@ -115,16 +116,16 @@ public class TopoDS_ShapeTests
     public void Map_hashers_choose_IsSame_or_IsEqual()
     {
         Edge anEdge = TestShapes.Edge(new Point3D(), new Point3D(1, 0, 0));
-        var aSame = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        Assert.Equal(1, aSame.Add(anEdge));
-        Assert.Equal(1, aSame.Add(anEdge.Reversed()));
-        Assert.Equal(2, aSame.Add(anEdge.Moved(theLoc)));
+        var aSame = new IndexedSet<Shape>(ShapeHasher.Instance);
+        Assert.Equal(1, aSame.Add(anEdge) + 1);
+        Assert.Equal(1, aSame.Add(anEdge.Reversed()) + 1);
+        Assert.Equal(2, aSame.Add(anEdge.Moved(theLoc)) + 1);
         Assert.True(ShapeHasher.Instance.Equals(anEdge, anEdge.Reversed()));
         Assert.Equal(anEdge.GetHashCode(), ShapeHasher.Instance.GetHashCode(anEdge.Reversed()));
 
-        var anEqual = new NCollection_IndexedMap<Shape>(EqualityComparer<Shape>.Default);
-        Assert.Equal(1, anEqual.Add(anEdge));
-        Assert.Equal(2, anEqual.Add(anEdge.Reversed()));
+        var anEqual = new IndexedSet<Shape>(EqualityComparer<Shape>.Default);
+        Assert.Equal(1, anEqual.Add(anEdge) + 1);
+        Assert.Equal(2, anEqual.Add(anEdge.Reversed()) + 1);
     }
 
     [Fact]

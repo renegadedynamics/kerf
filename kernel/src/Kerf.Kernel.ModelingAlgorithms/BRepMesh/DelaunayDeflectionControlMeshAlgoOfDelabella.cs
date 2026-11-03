@@ -155,7 +155,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
         {
             MeshVertex vertex = GetStructure().GetNode(nodesIndices[i]);
             info[i].Point2d = GetRangeSplitter().Scale(new Point2D(vertex.Coord()), false).XY();
-            info[i].Point = GetNodesMap().Value(vertex.Location3d()).XYZ();
+            info[i].Point = GetNodesMap()[vertex.Location3d()].XYZ();
             info[i].isFrontierLink =
                 (GetStructure().GetLink(e[i]).Movability() == DegreeOfFreedom.Frontier);
         }
@@ -384,7 +384,7 @@ public class DelaunayDeflectionControlMeshAlgoOfDelabella<RangeSplitter> : Delau
                 {
                     usedNodes.Add(nodes[i]);
                     MeshVertex vertex = GetStructure().GetNode(nodes[i]);
-                    Point3D point = GetNodesMap().Value(vertex.Location3d());
+                    Point3D point = GetNodesMap()[vertex.Location3d()];
 
                     if (pnt3d.SquareDistance(point) < _sqMinSize)
                     {

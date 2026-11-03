@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -33,7 +34,7 @@ public class BinarySurfaceSet
     private const byte Offset = 11;
 
     // OCCT's NCollection_IndexedMap of handles, which hashes by address and can hold one null handle
-    private readonly NCollection_IndexedMap<object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _map = new(ReferenceEqualityComparer.Instance);
 
     // the null handle as a key
     private static readonly object NullKey = new();
@@ -52,24 +53,24 @@ public class BinarySurfaceSet
     /// <summary>Adds a surface to the set (once; null too) and returns its index.</summary>
     public int Add(Surface? s)
     {
-        return _map.Add((object?)s ?? NullKey);
+        return _map.Add((object?)s ?? NullKey) + 1;
     }
 
     /// <summary>The surface of index I (null for the null entry).</summary>
     /// <exception cref="OutOfRangeException">There is no surface of index I.</exception>
     public Surface? Surface(int i)
     {
-        return _map[i] as Surface;
+        return _map[i - 1] as Surface;
     }
 
     /// <summary>The index of the surface, 0 if it isn't in the set.</summary>
     public int Index(Surface? s)
     {
-        return _map.FindIndex((object?)s ?? NullKey);
+        return _map.IndexOf((object?)s ?? NullKey) + 1;
     }
 
     // the number of surfaces, for the readers' checks
-    internal int SurfaceCount => _map.Extent();
+    internal int SurfaceCount => _map.Count;
 
     private static void Write(OStream os, PlaneSurface s)
     {
@@ -300,7 +301,7 @@ public class BinarySurfaceSet
     /// <summary>Writes the set ("Surfaces", the count, then each surface).</summary>
     public void Write(Stream os, ProgressRange range = default)
     {
-        int i, nbsurf = _map.Extent();
+        int i, nbsurf = _map.Count;
         using var ps = new ProgressScope(range, "Writing surfaces", nbsurf);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "Surfaces ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbsurf);
@@ -309,7 +310,7 @@ public class BinarySurfaceSet
         for (i = 1; i <= nbsurf && ps.More(); i++, ps.Next())
         {
             // OCCT dereferences the null entry outside its try block, and crashes; the port throws
-            Surface surface = _map[i] as Surface
+            Surface surface = _map[i - 1] as Surface
                                     ?? throw new FailureException("BinTools_SurfaceSet::Write: a null surface");
             WriteSurface(surface, stream);
         }

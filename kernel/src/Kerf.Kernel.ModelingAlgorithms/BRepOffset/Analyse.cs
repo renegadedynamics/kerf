@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
@@ -52,24 +53,24 @@ public sealed class Analyse
 
     private double _offset; // Offset value
     // Map to store offset values for the faces. Should be set by the calling algorithm.
-    private NCollection_DataMap<Shape, double> _faceOffsetMap = new(ShapeHasher.Instance);
+    private Dictionary<Shape, double> _faceOffsetMap = new(ShapeHasher.Instance);
 
     // Results
     private bool _done; // Status of the algorithm
 
     // Map containing the list of intervals on the edge
-    private readonly NCollection_DataMap<Shape, NCollection_List<Interval>> _mapEdgeType = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Interval>> _mapEdgeType = new(ShapeHasher.Instance);
     // Ancestors map
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _ancestors = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _ancestors = new(ShapeHasher.Instance);
     // Replacement of an edge in the face
-    private readonly NCollection_DataMap<Shape, NCollection_DataMap<Shape, Shape>> _replacement = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Dictionary<Shape, Shape>> _replacement = new(ShapeHasher.Instance);
     // Map of shapes descendants built on the base of Ancestors map. Filled on the first query.
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _descendants = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _descendants = new(ShapeHasher.Instance);
 
     // New faces generated to close the gaps between adjacent tangential faces having different offset values
     private readonly NCollection_List<Shape> _newFaces = new();
     // Binding between edge and face generated from the edge
-    private readonly NCollection_DataMap<Shape, Shape> _generated = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _generated = new(ShapeHasher.Instance);
 
     private static void CorrectOrientationOfTangent(ref Vector3D tangVec, in Vertex aVertex, in Edge anEdge)
     {
@@ -281,7 +282,7 @@ public sealed class Analyse
 
     //=================================================================================================
 
-    private static void BuildAncestors(in Shape s, NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> ma)
+    private static void BuildAncestors(in Shape s, IndexedMap<Shape, NCollection_List<Shape>> ma)
     {
         ma.Clear();
         Exploration.MapShapesAndUniqueAncestors(s, ShapeType.Vertex, ShapeType.Edge, ma);
@@ -318,10 +319,10 @@ public sealed class Analyse
                 return;
             }
             Edge e = ShapeCasts.Edge(exp.Current());
-            if (!_mapEdgeType.IsBound(e))
+            if (!_mapEdgeType.ContainsKey(e))
             {
                 NCollection_List<Interval> li = new();
-                _mapEdgeType.Bind(e, li);
+                _mapEdgeType[e] = li;
 
                 NCollection_List<Shape> l = Ancestors(e);
                 if (l.IsEmpty())
@@ -333,11 +334,11 @@ public sealed class Analyse
                 {
                     Face f1 = ShapeCasts.Face(l.First());
                     Face f2 = ShapeCasts.Face(l.Last());
-                    EdgeAnalyse(e, f1, f2, sinTol, _mapEdgeType[e]);
+                    EdgeAnalyse(e, f1, f2, sinTol, _mapEdgeType.GetValue(e));
 
                     // For tangent faces add artificial perpendicular face
                     // to close the gap between them (if they have different offset values)
-                    if (_mapEdgeType[e].Last().Type() == TypeOfConcavity.Tangential)
+                    if (_mapEdgeType.GetValue(e).Last().Type() == TypeOfConcavity.Tangential)
                     {
                         leTang.Append(e);
                     }
@@ -352,7 +353,7 @@ public sealed class Analyse
                     {
                         inter.Type(TypeOfConcavity.FreeBound);
                     }
-                    _mapEdgeType[e].Append(inter);
+                    _mapEdgeType.GetValue(e).Append(inter);
                 }
                 else
                 {
@@ -374,7 +375,7 @@ public sealed class Analyse
     // Treatment of the tangential cases: theLE are the edges connecting tangent faces
     private void TreatTangentFaces(NCollection_List<Shape> le, ProgressRange range)
     {
-        if (le.IsEmpty() || _faceOffsetMap.IsEmpty())
+        if (le.IsEmpty() || _faceOffsetMap.Count == 0)
         {
             // Noting to do: either there are no tangent faces in the shape or
             //               the face offset map has not been provided
@@ -385,10 +386,10 @@ public sealed class Analyse
         Compound ceTangent = new();
         new BrepBuilder().MakeCompound(ref ceTangent);
         // Bind to each tangent edge a max offset value of its faces
-        NCollection_DataMap<Shape, double> edgeOffsetMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, double> edgeOffsetMap = new(ShapeHasher.Instance);
         // Bind vertices of the tangent edges with connected edges
         // of the face with smaller offset value
-        NCollection_DataMap<Shape, Shape> dmveMin = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> dmveMin = new(ShapeHasher.Instance);
         using ProgressScope psOuter = new(range, null, 3);
         using ProgressScope ps1 = new(psOuter.Next(), "Binding vertices with connected edges", le.Extent());
         for (NCollection_List<Shape>.Iterator it = new(le); it.More(); it.Next(), ps1.Next())
@@ -402,14 +403,14 @@ public sealed class Analyse
 
             Shape f1 = la.First(), f2 = la.Last();
 
-            bool pOffsetVal1 = _faceOffsetMap.Find(f1, out double offsetFound1);
-            bool pOffsetVal2 = _faceOffsetMap.Find(f2, out double offsetFound2);
+            bool pOffsetVal1 = _faceOffsetMap.TryGetValue(f1, out double offsetFound1);
+            bool pOffsetVal2 = _faceOffsetMap.TryGetValue(f2, out double offsetFound2);
             double offsetVal1 = pOffsetVal1 ? Math.Abs(offsetFound1) : _offset;
             double offsetVal2 = pOffsetVal2 ? Math.Abs(offsetFound2) : _offset;
             if (offsetVal1 != offsetVal2)
             {
                 new BrepBuilder().Add(ceTangent, e);
-                edgeOffsetMap.Bind(e, Max(offsetVal1, offsetVal2));
+                edgeOffsetMap[e] = Max(offsetVal1, offsetVal2);
 
                 Shape fMin = offsetVal1 < offsetVal2 ? f1 : f2;
                 for (Iterator itV = new(e); itV.More(); itV.Next())
@@ -429,7 +430,7 @@ public sealed class Analyse
                                 Shape vx = itV1.Value();
                                 if (v.IsSame(vx))
                                 {
-                                    dmveMin.Bind(v, eMin);
+                                    dmveMin[v] = eMin;
                                 }
                             }
                         }
@@ -438,13 +439,13 @@ public sealed class Analyse
             }
         }
 
-        if (edgeOffsetMap.IsEmpty())
+        if (edgeOffsetMap.Count == 0)
         {
             return;
         }
 
         // Create map of Face ancestors for the vertices on tangent edges
-        NCollection_DataMap<Shape, NCollection_List<Shape>> dmvfAnc = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> dmvfAnc = new(ShapeHasher.Instance);
 
         using ProgressScope ps2 = new(psOuter.Next(), "Creating map of Face ancestors", le.Extent());
         for (NCollection_List<Shape>.Iterator itE = new(le); itE.More(); itE.Next(), ps2.Next())
@@ -454,7 +455,7 @@ public sealed class Analyse
                 return;
             }
             Shape e = itE.Value();
-            if (!edgeOffsetMap.IsBound(e))
+            if (!edgeOffsetMap.ContainsKey(e))
             {
                 continue;
             }
@@ -471,12 +472,12 @@ public sealed class Analyse
             for (Iterator itV = new(e); itV.More(); itV.Next())
             {
                 Shape v = itV.Value();
-                NCollection_List<Shape> pLFA = dmvfAnc.Bound(v, new NCollection_List<Shape>());
+                NCollection_List<Shape> pLFA = dmvfAnc.SetValueRef(v, new NCollection_List<Shape>());
                 NCollection_List<Shape> lva = Ancestors(v);
                 for (NCollection_List<Shape>.Iterator itLVA = new(lva); itLVA.More(); itLVA.Next())
                 {
                     Edge ea = ShapeCasts.Edge(itLVA.Value());
-                    if (!_mapEdgeType.Find(ea, out NCollection_List<Interval> pIntervals)
+                    if (!_mapEdgeType.TryGetValue(ea, out NCollection_List<Interval>? pIntervals)
                         || pIntervals.IsEmpty())
                     {
                         continue;
@@ -505,7 +506,7 @@ public sealed class Analyse
 
         // Make blocks of connected edges
         NCollection_List<NCollection_List<Shape>> lcb = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mveMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mveMap = new(ShapeHasher.Instance);
 
         AlgoTools.MakeConnexityBlocks(ceTangent, ShapeType.Vertex, ShapeType.Edge, lcb, mveMap);
 
@@ -533,7 +534,7 @@ public sealed class Analyse
                 new BrepBuilder().MakeCompound(ref block);
                 new BrepBuilder().Add(block, e1.Oriented(Forward));
 
-                double offset = edgeOffsetMap.Find(e1);
+                double offset = edgeOffsetMap.GetValue(e1);
                 NCollection_List<Shape> lf1 = Ancestors(e1);
 
                 AlgoTools3D.GetNormalToFaceOnEdge(e1, ShapeCasts.Face(lf1.First()), out Direction3D dn1);
@@ -556,7 +557,7 @@ public sealed class Analyse
                     {
                         new BrepBuilder().Add(block, e2.Oriented(Forward));
                         mFence.Add(e2);
-                        offset = Max(offset, edgeOffsetMap.Find(e2));
+                        offset = Max(offset, edgeOffsetMap.GetValue(e2));
                     }
                 }
 
@@ -568,7 +569,7 @@ public sealed class Analyse
                 }
 
                 Shape prism = mp.InternalShape();
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> prismAncestors = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> prismAncestors = new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(prism, ShapeType.Edge, ShapeType.Face, prismAncestors);
                 Exploration.MapShapesAndAncestors(prism, ShapeType.Vertex, ShapeType.Edge, prismAncestors);
 
@@ -578,13 +579,13 @@ public sealed class Analyse
                     NCollection_List<Shape> lg = mp.InternalGenerated(e);
                     Face fNew = ShapeCasts.Face(lg.First());
 
-                    NCollection_List<Shape> la = _ancestors.ChangeFromKey(e);
+                    NCollection_List<Shape> la = _ancestors.GetValue(e);
 
                     Shape f1 = la.First();
                     Shape f2 = la.Last();
 
-                    bool pOffsetVal1 = _faceOffsetMap.Find(f1, out double offsetFound1);
-                    bool pOffsetVal2 = _faceOffsetMap.Find(f2, out double offsetFound2);
+                    bool pOffsetVal1 = _faceOffsetMap.TryGetValue(f1, out double offsetFound1);
+                    bool pOffsetVal2 = _faceOffsetMap.TryGetValue(f2, out double offsetFound2);
                     double offsetVal1 = pOffsetVal1 ? Math.Abs(offsetFound1) : _offset;
                     double offsetVal2 = pOffsetVal2 ? Math.Abs(offsetFound2) : _offset;
 
@@ -633,9 +634,9 @@ public sealed class Analyse
                     }
                     la.Append(fNew);
 
-                    _mapEdgeType[e].Clear();
+                    _mapEdgeType.GetValue(e).Clear();
                     // Analyze edge again
-                    EdgeAnalyse(e, ShapeCasts.Face(fOpposite), fNew, sinTol, _mapEdgeType[e]);
+                    EdgeAnalyse(e, ShapeCasts.Face(fOpposite), fNew, sinTol, _mapEdgeType.GetValue(e));
 
                     // Analyze vertices
                     HashSet<Shape> fNewEdgeMap = new(ShapeHasher.Instance);
@@ -645,7 +646,7 @@ public sealed class Analyse
                         Shape v = itV.Value();
                         // Add Side edge to map of Ancestors with the correct orientation
                         Edge eg = ShapeCasts.Edge(mp.InternalGenerated(v).First());
-                        _generated.Bind(v, eg);
+                        _generated[v] = eg;
                         {
                             for (Explorer expEg = new(fNew, ShapeType.Edge); expEg.More(); expEg.Next())
                             {
@@ -657,12 +658,12 @@ public sealed class Analyse
                             }
                         }
 
-                        if (dmveMin.IsBound(v))
+                        if (dmveMin.ContainsKey(v))
                         {
-                            if (dmvfAnc.Find(v, out NCollection_List<Shape> pSA) && pSA.Extent() == 1)
+                            if (dmvfAnc.TryGetValue(v, out NCollection_List<Shape>? pSA) && pSA.Extent() == 1)
                             {
                                 // Adjust orientation of generated edge to its new ancestor
-                                Edge eMin = ShapeCasts.Edge(dmveMin.Find(v));
+                                Edge eMin = ShapeCasts.Edge(dmveMin.GetValue(v));
                                 for (Explorer expEx = new(pSA.First(), ShapeType.Edge); expEx.More(); expEx.Next())
                                 {
                                     if (expEx.Current().IsSame(eMin))
@@ -699,7 +700,7 @@ public sealed class Analyse
                             }
                         }
 
-                        NCollection_List<Shape> lva = _ancestors.ChangeFromKey(v);
+                        NCollection_List<Shape> lva = _ancestors.GetValue(v);
                         if (!lva.Contains(eg))
                         {
                             lva.Append(eg);
@@ -707,21 +708,21 @@ public sealed class Analyse
                         fNewEdgeMap.Add(eg);
 
                         NCollection_List<Shape> lega =
-                            _ancestors[_ancestors.Add(eg, new NCollection_List<Shape>(prismAncestors.FindFromKey(eg)))];
+                            _ancestors.ValueAt(_ancestors.Add(eg, new NCollection_List<Shape>(prismAncestors.GetValue(eg))));
                         {
                             // Add ancestors from the shape
-                            if (dmvfAnc.Find(v, out NCollection_List<Shape> pSA) && !pSA.IsEmpty())
+                            if (dmvfAnc.TryGetValue(v, out NCollection_List<Shape>? pSA) && !pSA.IsEmpty())
                             {
                                 NCollection_List<Shape> lsa = new(pSA);
                                 lega.Append(lsa);
                             }
                         }
 
-                        _mapEdgeType.Bind(eg, new NCollection_List<Interval>());
+                        _mapEdgeType[eg] = new NCollection_List<Interval>();
                         if (lega.Extent() == 2)
                         {
                             EdgeAnalyse(eg, ShapeCasts.Face(lega.First()), ShapeCasts.Face(lega.Last()), sinTol,
-                                        _mapEdgeType[eg]);
+                                        _mapEdgeType.GetValue(eg));
                         }
                     }
 
@@ -756,26 +757,26 @@ public sealed class Analyse
                     lfOpposite.Append(fNew);
                     lfOpposite.Append(fToRemove);
                     _ancestors.Add(eOpposite, lfOpposite);
-                    _mapEdgeType.Bind(eOpposite, new NCollection_List<Interval>());
-                    EdgeAnalyse(eOpposite, fNew, ShapeCasts.Face(fToRemove), sinTol, _mapEdgeType[eOpposite]);
+                    _mapEdgeType[eOpposite] = new NCollection_List<Interval>();
+                    EdgeAnalyse(eOpposite, fNew, ShapeCasts.Face(fToRemove), sinTol, _mapEdgeType.GetValue(eOpposite));
 
-                    if (!_replacement.Find(fToRemove, out NCollection_DataMap<Shape, Shape> pEEMap))
+                    if (!_replacement.TryGetValue(fToRemove, out Dictionary<Shape, Shape>? pEEMap))
                     {
-                        pEEMap = _replacement.Bound(fToRemove,
-                                                     new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance));
+                        pEEMap = _replacement.SetValueRef(fToRemove,
+                                                     new Dictionary<Shape, Shape>(ShapeHasher.Instance));
                     }
-                    pEEMap.Bind(e, eOpposite);
+                    pEEMap[e] = eOpposite;
 
                     // Add ancestors for the vertices
                     for (Iterator itV = new(eOpposite); itV.More(); itV.Next())
                     {
                         Shape v = itV.Value();
-                        NCollection_List<Shape> lva = prismAncestors.FindFromKey(v);
+                        NCollection_List<Shape> lva = prismAncestors.GetValue(v);
                         _ancestors.Add(v, new NCollection_List<Shape>(lva));
                     }
 
                     _newFaces.Append(fNew);
-                    _generated.Bind(e, fNew);
+                    _generated[e] = fNew;
                 }
             }
         }
@@ -792,12 +793,12 @@ public sealed class Analyse
     /// </summary>
     public Edge EdgeReplacement(in Face face, in Edge edge)
     {
-        if (!_replacement.Find(face, out NCollection_DataMap<Shape, Shape> pEE))
+        if (!_replacement.TryGetValue(face, out Dictionary<Shape, Shape>? pEE))
         {
             return edge;
         }
 
-        if (!pEE.Find(edge, out Shape pE))
+        if (!pEE.TryGetValue(edge, out Shape pE))
         {
             return edge;
         }
@@ -813,11 +814,11 @@ public sealed class Analyse
     /// </summary>
     public Shape Generated(in Shape s)
     {
-        return _generated.Find(s, out Shape pGenS) ? pGenS : new Shape();
+        return _generated.TryGetValue(s, out Shape pGenS) ? pGenS : new Shape();
     }
 
     /// <summary>True if the shape has generated a new face (or edge).</summary>
-    public bool HasGenerated(in Shape s) => _generated.IsBound(s);
+    public bool HasGenerated(in Shape s) => _generated.ContainsKey(s);
 
     /// <summary>
     /// The new faces built between tangent faces with different offset values (the 3D offset's per-face values).
@@ -832,22 +833,22 @@ public sealed class Analyse
     /// </summary>
     public NCollection_List<Shape>? Descendants(in Shape s, bool update = false)
     {
-        if (_descendants.IsEmpty() || update)
+        if (_descendants.Count == 0 || update)
         {
             _descendants.Clear();
-            int nbA = _ancestors.Extent();
-            for (int i = 1; i <= nbA; ++i)
+            int nbA = _ancestors.Count;
+            for (int i = 0; i < nbA; ++i)
             {
-                Shape ss = _ancestors.FindKey(i);
-                NCollection_List<Shape> la = _ancestors[i];
+                Shape ss = _ancestors.KeyAt(i);
+                NCollection_List<Shape> la = _ancestors.ValueAt(i);
 
                 for (NCollection_List<Shape>.Iterator it = new(la); it.More(); it.Next())
                 {
                     Shape sa = it.Value();
 
-                    if (!_descendants.Find(sa, out NCollection_List<Shape> pLD))
+                    if (!_descendants.TryGetValue(sa, out NCollection_List<Shape>? pLD))
                     {
-                        pLD = _descendants.Bound(sa, new NCollection_List<Shape>());
+                        pLD = _descendants.SetValueRef(sa, new NCollection_List<Shape>());
                     }
                     if (!pLD.Contains(ss))
                     {
@@ -857,7 +858,7 @@ public sealed class Analyse
             }
         }
 
-        return _descendants.Find(s, out NCollection_List<Shape> ld) ? ld : null;
+        return _descendants.TryGetValue(s, out NCollection_List<Shape>? ld) ? ld : null;
     }
 
     //=================================================================================================
@@ -884,7 +885,7 @@ public sealed class Analyse
     /// <summary>The connectivity type of the edge: its intervals (throws if the edge wasn't analysed).</summary>
     public NCollection_List<Interval> Type(in Edge e)
     {
-        return _mapEdgeType.Find(e);
+        return _mapEdgeType.GetValue(e);
     }
 
     //=================================================================================================
@@ -899,7 +900,7 @@ public sealed class Analyse
         for (; it.More(); it.Next())
         {
             Edge e = ShapeCasts.Edge(it.Value());
-            if (_mapEdgeType.Find(e, out NCollection_List<Interval> pIntervals) && pIntervals.Extent() > 0)
+            if (_mapEdgeType.TryGetValue(e, out NCollection_List<Interval>? pIntervals) && pIntervals.Extent() > 0)
             {
                 OffsetTool.EdgeVertices(e, out Vertex v1, out Vertex v2);
                 if (v1.IsSame(v))
@@ -993,10 +994,10 @@ public sealed class Analyse
     }
 
     /// <summary>True if the shape has ancestors.</summary>
-    public bool HasAncestor(in Shape s) => _ancestors.Contains(s);
+    public bool HasAncestor(in Shape s) => _ancestors.ContainsKey(s);
 
     /// <summary>The ancestors of the shape (throws if it has none).</summary>
-    public NCollection_List<Shape> Ancestors(in Shape s) => _ancestors.FindFromKey(s);
+    public NCollection_List<Shape> Ancestors(in Shape s) => _ancestors.GetValue(s);
 
     //=================================================================================================
 
@@ -1142,12 +1143,12 @@ public sealed class Analyse
     /// Sets the faces' offset values, to treat tangent faces with different values (the 3D offset only). The map is
     /// copied, as OCCT assigns it.
     /// </summary>
-    internal void SetFaceOffsetMap(NCollection_DataMap<Shape, double> map)
+    internal void SetFaceOffsetMap(Dictionary<Shape, double> map)
     {
-        _faceOffsetMap = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
+        _faceOffsetMap = new Dictionary<Shape, double>(ShapeHasher.Instance);
         foreach (KeyValuePair<Shape, double> pair in map)
         {
-            _faceOffsetMap.Bind(pair.Key, pair.Value);
+            _faceOffsetMap[pair.Key] = pair.Value;
         }
     }
 }

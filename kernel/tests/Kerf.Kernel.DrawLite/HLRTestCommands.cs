@@ -176,7 +176,7 @@ internal static class HLRTestCommands
             di.Append(name2).Append(" is not a projector.\n");
             return 1;
         }
-        NCollection_DataMap<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
+        Dictionary<Shape, AdaptorTool> MST = new(ShapeHasher.Instance);
         HS.Fill(P, MST, nbIso);
         return 0;
     }

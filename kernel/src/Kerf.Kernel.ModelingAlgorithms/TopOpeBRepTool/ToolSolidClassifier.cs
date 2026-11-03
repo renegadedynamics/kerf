@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -23,7 +24,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 public sealed class ToolSolidClassifier
 {
     private SolidClassifier? _pClassifier;
-    private readonly NCollection_IndexedDataMap<Shape, SolidClassifier> _shapeClassifierMap =
+    private readonly IndexedMap<Shape, SolidClassifier> _shapeClassifierMap =
         new(ShapeHasher.Instance);
     private Containment _state;
     private Shell _shell = new();
@@ -51,7 +52,7 @@ public sealed class ToolSolidClassifier
     /// <summary>Makes <paramref name="sol"/>'s classifier current, creating it on first use.</summary>
     public void LoadSolid(in Solid sol)
     {
-        bool found = _shapeClassifierMap.Contains(sol);
+        bool found = _shapeClassifierMap.ContainsKey(sol);
         if (!found)
         {
             _pClassifier = new SolidClassifier(sol);
@@ -59,7 +60,7 @@ public sealed class ToolSolidClassifier
         }
         else
         {
-            _pClassifier = _shapeClassifierMap.ChangeFromKey(sol);
+            _pClassifier = _shapeClassifierMap.GetValue(sol);
         }
     }
 
@@ -133,7 +134,7 @@ public sealed class ToolSolidClassifier
     /// </summary>
     public void LoadShell(in Shell she)
     {
-        bool found = _shapeClassifierMap.Contains(she);
+        bool found = _shapeClassifierMap.ContainsKey(she);
         if (!found)
         {
             _builder.MakeSolid(ref _solid);
@@ -143,7 +144,7 @@ public sealed class ToolSolidClassifier
         }
         else
         {
-            _pClassifier = _shapeClassifierMap.ChangeFromKey(she);
+            _pClassifier = _shapeClassifierMap.GetValue(she);
         }
     }
 

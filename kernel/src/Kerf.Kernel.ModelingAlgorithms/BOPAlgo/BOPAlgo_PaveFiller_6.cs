@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -20,6 +21,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Booleans.GlueMode;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
@@ -262,7 +264,7 @@ public partial class PaveFiller
 
         using var psOuter = new ProgressScope(range, null, 1);
 
-        NCollection_DynamicArray<InterfFF> fFs = _ds.InterfFF();
+        List<InterfFF> fFs = _ds.InterfFF();
         //
         // Options for the intersection algorithm
         bool bApprox = _sectionAttribute.Approximation(), bCompC2D1 = _sectionAttribute.PCurveOnS1(),
@@ -273,9 +275,9 @@ public partial class PaveFiller
         //
         // Collect all pairs of Edge/Edge interferences to check if
         // some faces have to be moved to obtain more precise intersection
-        NCollection_DataMap<Pair, NCollection_List<int>> eeMap = new();
-        NCollection_DynamicArray<InterfEE> veEs = _ds.InterfEE();
-        for (int iEE = 0; iEE < veEs.Length(); ++iEE)
+        Dictionary<Pair, NCollection_List<int>> eeMap = new();
+        List<InterfEE> veEs = _ds.InterfEE();
+        for (int iEE = 0; iEE < veEs.Count; ++iEE)
         {
             Interf ee = veEs[iEE];
             if (!ee.HasIndexNew())
@@ -287,19 +289,19 @@ public partial class PaveFiller
             int nVN = ee.IndexNew();
 
             Pair pair = new(nE1, nE2);
-            if (eeMap.Find(pair, out NCollection_List<int> pPoints))
+            if (eeMap.TryGetValue(pair, out NCollection_List<int>? pPoints))
             {
                 pPoints.Append(nVN);
             }
             else
             {
-                pPoints = eeMap.Bound(new Pair(nE1, nE2), new NCollection_List<int>());
+                pPoints = eeMap.SetValueRef(new Pair(nE1, nE2), new NCollection_List<int>());
                 pPoints.Append(nVN);
             }
         }
 
         // Prepare the pairs of faces for intersection
-        NCollection_DynamicArray<FaceFaceJob> vFaceFace = new();
+        List<FaceFaceJob> vFaceFace = new();
         _iterator.Initialize(ShapeType.Face, ShapeType.Face);
         for (; _iterator.More(); _iterator.Next())
         {
@@ -322,7 +324,8 @@ public partial class PaveFiller
                     bool bToIntersect = CheckPlanes(nF1, nF2);
                     if (!bToIntersect)
                     {
-                        InterfFF ff0 = fFs.Append(new InterfFF());
+                        InterfFF ff0 =  new InterfFF();
+                        fFs.Add(ff0);
                         ff0.SetIndices(nF1, nF2);
                         ff0.Init(0, 0);
                         continue;
@@ -374,7 +377,7 @@ public partial class PaveFiller
                                         continue;
                                     }
 
-                                    if (!eeMap.Find(new Pair(edgeIndex1, edgeIndex2), out NCollection_List<int> vertexIndices))
+                                    if (!eeMap.TryGetValue(new Pair(edgeIndex1, edgeIndex2), out NCollection_List<int>? vertexIndices))
                                     {
                                         continue;
                                     }
@@ -424,7 +427,8 @@ public partial class PaveFiller
                     }
                 }
                 //
-                FaceFaceJob faceFace = vFaceFace.Append(new FaceFaceJob());
+                FaceFaceJob faceFace =  new FaceFaceJob();
+                vFaceFace.Add(faceFace);
                 //
                 faceFace.SetRunParallel(_runParallel);
                 faceFace.SetIndices(nF1, nF2);
@@ -448,14 +452,15 @@ public partial class PaveFiller
             else
             {
                 // for the Glue mode just add all interferences of that type
-                InterfFF ff0 = fFs.Append(new InterfFF());
+                InterfFF ff0 =  new InterfFF();
+                fFs.Add(ff0);
                 ff0.SetIndices(nF1, nF2);
                 ff0.SetTangentFaces(false);
                 ff0.Init(0, 0);
             }
         } // for (; myIterator->More(); myIterator->Next()) {
         //
-        int k, nbFaceFace = vFaceFace.Length();
+        int k, nbFaceFace = vFaceFace.Count;
         using var ps = new ProgressScope(psOuter.Next(), "Performing Face-Face intersection", nbFaceFace);
         for (k = 0; k < nbFaceFace; k++)
         {
@@ -482,7 +487,8 @@ public partial class PaveFiller
             faceFace.Indices(out nF1, out nF2);
             if (!faceFace.IsDone || faceFace.HasErrors)
             {
-                InterfFF ff0 = fFs.Append(new InterfFF());
+                InterfFF ff0 =  new InterfFF();
+                fFs.Add(ff0);
                 ff0.SetIndices(nF1, nF2);
                 ff0.Init(0, 0);
                 // Warn about failed intersection of faces
@@ -509,7 +515,8 @@ public partial class PaveFiller
                 _ds.AddInterf(nF1, nF2);
             }
             //
-            InterfFF ff = fFs.Append(new InterfFF());
+            InterfFF ff =  new InterfFF();
+            fFs.Add(ff);
             ff.SetIndices(nF1, nF2);
             ff.SetTangentFaces(bTangentFaces);
             ff.Init(nbCurves, nbPoints);
@@ -526,7 +533,7 @@ public partial class PaveFiller
                 boxExpandValue += maxVertexTol;
             }
             //
-            NCollection_DynamicArray<SectionCurve> vnc = ff.ChangeCurves();
+            List<SectionCurve> vnc = ff.ChangeCurves();
             for (int i = 1; i <= nbCurves; ++i)
             {
                 if (UserBreak(psOuter))
@@ -538,7 +545,8 @@ public partial class PaveFiller
                 bool bIsValid = IntersectionTools.CheckCurve(ic, ref box);
                 if (bIsValid)
                 {
-                    SectionCurve nc = vnc.Append(new SectionCurve());
+                    SectionCurve nc =  new SectionCurve();
+                    vnc.Add(nc);
                     nc.SetCurve(ic);
                     // make sure that the bounding box has the maximal gap
                     box.Enlarge(boxExpandValue);
@@ -548,13 +556,14 @@ public partial class PaveFiller
             }
             //
             // Points
-            NCollection_DynamicArray<DataPoint> vnp = ff.ChangePoints();
+            List<DataPoint> vnp = ff.ChangePoints();
             for (int i = 1; i <= nbPoints; ++i)
             {
                 PntOn2Faces pi = pntsX[i];
                 Point3D p = pi.P1().Pnt();
                 //
-                ref DataPoint np = ref vnp.Append(new DataPoint());
+                vnp.Add(new DataPoint());
+                ref DataPoint np = ref CollectionsMarshal.AsSpan(vnp)[^1];
                 np.SetPnt(p);
             }
         }
@@ -597,8 +606,8 @@ public partial class PaveFiller
             return;
         }
         //
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        int nbFF = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        int nbFF = fFs.Count;
         using var ps = new ProgressScope(psOuter.Next(), "Building section edges", nbFF);
         if (nbFF == 0)
         {
@@ -624,7 +633,7 @@ public partial class PaveFiller
         NCollection_IntMap mvef = new(100);
         NCollection_IntMap mvBounds = new(100);
         NCollection_IntMap mi = new(100);
-        NCollection_IndexedMap<PaveBlock> mpbOnIn = new();
+        IndexedSet<PaveBlock> mpbOnIn = new();
         HashSet<PaveBlock> mpbCommon = new();
         NCollection_IntDataMap<NCollection_List<int>> dmbv = new(100);
         NCollection_IntDataMap<double> mvTol = new(100);
@@ -632,18 +641,18 @@ public partial class PaveFiller
         // Cross-iteration collections (persist through entire loop)
         HashSet<PaveBlock> mpbAdd = new();
         NCollection_List<PaveBlock> lpb = new();
-        NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mscpb = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, int> mvi = new(ShapeHasher.Instance);
-        NCollection_DataMap<PaveBlock, NCollection_List<PaveBlock>> dmExEdges = new();
+        IndexedMap<Shape, CoupleOfPaveBlocks> mscpb = new(ShapeHasher.Instance);
+        Dictionary<Shape, int> mvi = new(ShapeHasher.Instance);
+        Dictionary<PaveBlock, NCollection_List<PaveBlock>> dmExEdges = new();
         NCollection_IntDataMap<int> dmNewSD = new(100);
         NCollection_IntDataMap<NCollection_List<int>> dmvlv = new(100);
-        NCollection_IndexedMap<PaveBlock> microPB = new();
-        NCollection_IndexedMap<Shape> vertsOnRejectedPB = new(ShapeHasher.Instance);
+        IndexedSet<PaveBlock> microPB = new();
+        IndexedSet<Shape> vertsOnRejectedPB = new(ShapeHasher.Instance);
         // Map of PaveBlocks with the faces to which it has to be added
-        NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap = new();
+        Dictionary<PaveBlock, NCollection_List<int>> pbFacesMap = new();
         //
         // The vector aFFToRecheck contains indices of potentially problematic Face-Face intersections
-        NCollection_DynamicArray<int> ffToRecheck = new();
+        List<int> ffToRecheck = new();
         // aNbFF may be increased while processing this loop, because it is necessary to recheck
         // some of Face-Face intersections to avoid missing section edges
         // aNbFF will be increased to the number of potentially problematic Face-Face intersections
@@ -661,10 +670,10 @@ public partial class PaveFiller
             InterfFF ff = fFs[curInd];
             ff.Indices(out nF1, out nF2);
             //
-            NCollection_DynamicArray<DataPoint> vp = ff.ChangePoints();
-            nbP = vp.Length();
-            NCollection_DynamicArray<SectionCurve> vc = ff.ChangeCurves();
-            nbC = vc.Length();
+            List<DataPoint> vp = ff.ChangePoints();
+            nbP = vp.Count;
+            List<SectionCurve> vc = ff.ChangeCurves();
+            nbC = vc.Count;
             if (nbP == 0 && nbC == 0)
             {
                 continue;
@@ -701,7 +710,7 @@ public partial class PaveFiller
                 Vertex v;
                 CoupleOfPaveBlocks cpb = new();
                 //
-                ref DataPoint np = ref vp.ChangeValue(j);
+                ref DataPoint np = ref CollectionsMarshal.AsSpan(vp)[j];
                 Point3D p = np.Pnt();
                 //
                 bExist = IsExistingVertex(p, tolFF, mvOnIn);
@@ -781,11 +790,11 @@ public partial class PaveFiller
             {
                 // Fill the tree with boxes of pave blocks ON/IN
                 // Tree will be build on first selection from the tree.
-                int nbPB = mpbOnIn.Extent();
+                int nbPB = mpbOnIn.Count;
                 pbTree.SetSize(nbPB);
                 for (int iPB = 1; iPB <= nbPB; ++iPB)
                 {
-                    PaveBlock pb = mpbOnIn[iPB];
+                    PaveBlock pb = mpbOnIn[iPB - 1];
                     if (!pb.HasEdge())
                     {
                         continue;
@@ -879,8 +888,8 @@ public partial class PaveFiller
                         {
                             microPB.Add(pb);
                             // keep vertices for post treatment
-                            mvi.Bind(v1, nV1);
-                            mvi.Bind(v2, nV2);
+                            mvi[v1] = nV1;
+                            mvi[v2] = nV2;
                         }
                         continue;
                     }
@@ -912,9 +921,9 @@ public partial class PaveFiller
 
                             // Face without pave block
                             int nF = bInF1 ? nF2 : nF1;
-                            if (!pbFacesMap.Find(pbOut, out NCollection_List<int> pFaces))
+                            if (!pbFacesMap.TryGetValue(pbOut, out NCollection_List<int>? pFaces))
                             {
-                                pFaces = pbFacesMap.Bound(pbOut, new NCollection_List<int>());
+                                pFaces = pbFacesMap.SetValueRef(pbOut, new NCollection_List<int>());
                             }
                             // List is expected to be short, so we allow the check here
                             if (pFaces.IsEmpty() || !pFaces.Contains(nF))
@@ -965,8 +974,8 @@ public partial class PaveFiller
                     cpb.SetPaveBlock1(pb);
                     //
                     mscpb.Add(es, cpb);
-                    mvi.Bind(v1, nV1);
-                    mvi.Bind(v2, nV2);
+                    mvi[v1] = nV1;
+                    mvi[v2] = nV2;
                     //
                     mvTol.UnBind(nV1);
                     mvTol.UnBind(nV2);
@@ -990,7 +999,7 @@ public partial class PaveFiller
             } // for (j=0; j<aNbC; ++j) {
             if (isToRecheck)
             {
-                ffToRecheck.Append(curInd);
+                ffToRecheck.Add(curInd);
                 ++nbFF;
             }
             //
@@ -1094,14 +1103,14 @@ public partial class PaveFiller
     /// The post-treatment of the section edges and vertices: they are intersected among themselves (and with the
     /// existing edges and vertices involved) by a nested pave filler, and the results are put into the data structure.
     /// </summary>
-    protected void PostTreatFF(NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mscpb,
-                               NCollection_DataMap<PaveBlock, NCollection_List<PaveBlock>> aDMExEdges,
+    protected void PostTreatFF(IndexedMap<Shape, CoupleOfPaveBlocks> mscpb,
+                               Dictionary<PaveBlock, NCollection_List<PaveBlock>> aDMExEdges,
                                NCollection_IntDataMap<int> aDMNewSD,
-                               NCollection_IndexedMap<PaveBlock> microPB,
-                               NCollection_IndexedMap<Shape> vertsOnRejectedPB,
+                               IndexedSet<PaveBlock> microPB,
+                               IndexedSet<Shape> vertsOnRejectedPB,
                                ProgressRange range)
     {
-        int nbS = mscpb.Extent();
+        int nbS = mscpb.Count;
         if (nbS == 0)
         {
             return;
@@ -1124,12 +1133,12 @@ public partial class PaveFiller
         pf.SetIsPrimary(false);
         pf.SetNonDestructive(_nonDestructive);
         //
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        int nbFF = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        int nbFF = fFs.Count;
         //
 
         // Find unused vertices
-        NCollection_IndexedMap<Shape> vertsUnused = new(ShapeHasher.Instance);
+        IndexedSet<Shape> vertsUnused = new(ShapeHasher.Instance);
         NCollection_IntMap indMap = new();
         for (int i = 0; i < nbFF; i++)
         {
@@ -1138,7 +1147,7 @@ public partial class PaveFiller
 
             NCollection_IntMap mv = new(), mvef = new(), mi = new();
             GetStickVertices(nF1, nF2, mv, mvef, mi);
-            NCollection_DynamicArray<SectionCurve> vc = ff.ChangeCurves();
+            List<SectionCurve> vc = ff.ChangeCurves();
             RemoveUsedVertices(vc, mv);
 
             // The vertices are visited in the map's order, which orders VertsUnused and so the nested filler's
@@ -1152,19 +1161,19 @@ public partial class PaveFiller
                 }
                 else
                 {
-                    vertsUnused.RemoveKey(vertex);
+                    vertsUnused.Remove(vertex);
                 }
             }
         }
         /////////////////////
 
-        int nbME = microPB.Extent();
-        int nbVOnRPB = vertsOnRejectedPB.Extent();
+        int nbME = microPB.Count;
+        int nbVOnRPB = vertsOnRejectedPB.Count;
         // 0
-        if (nbS == 1 && (nbME == 0) && (nbVOnRPB == 0) && vertsUnused.IsEmpty())
+        if (nbS == 1 && (nbME == 0) && (nbVOnRPB == 0) && vertsUnused.Count == 0)
         {
-            Shape s = mscpb.FindKey(1);
-            CoupleOfPaveBlocks cpb = mscpb.FindFromIndex(1);
+            Shape s = mscpb.KeyAt(0);
+            CoupleOfPaveBlocks cpb = mscpb.ValueAt(0);
             //
             type = s.ShapeType();
             if (type == ShapeType.Vertex)
@@ -1176,8 +1185,8 @@ public partial class PaveFiller
                 iX = cpb.IndexInterf();
                 iP = cpb.Index();
                 InterfFF ff = fFs[iX];
-                NCollection_DynamicArray<DataPoint> vnp = ff.ChangePoints();
-                ref DataPoint np = ref vnp[iP];
+                List<DataPoint> vnp = ff.ChangePoints();
+                ref DataPoint np = ref CollectionsMarshal.AsSpan(vnp)[iP];
                 np.SetIndex(iV);
             }
             else if (type == ShapeType.Edge)
@@ -1188,7 +1197,7 @@ public partial class PaveFiller
                 {
                     NCollection_List<PaveBlock> lpBx = new();
                     lpBx.Append(pb1);
-                    aDMExEdges.Bind(pb1, lpBx);
+                    aDMExEdges[pb1] = lpBx;
                 }
                 else
                 {
@@ -1209,8 +1218,8 @@ public partial class PaveFiller
         HashSet<Shape> addedSD = new(ShapeHasher.Instance);
         for (k = nbS; k > 0; --k)
         {
-            Shape s = mscpb.FindKey(k);
-            PaveBlock? pb = mscpb[k].PaveBlock1();
+            Shape s = mscpb.KeyAt(k - 1);
+            PaveBlock? pb = mscpb.ValueAt(k - 1).PaveBlock1();
             if (pb is not null && pb.HasEdge())
             {
                 new BrepBuilder().Add(existingEdges, s);
@@ -1251,7 +1260,7 @@ public partial class PaveFiller
         Vertex[] verts = new Vertex[2];
         for (k = 1; k <= nbME; ++k)
         {
-            microPB[k].Indices(out nVerts[0], out nVerts[1]);
+            microPB[k - 1].Indices(out nVerts[0], out nVerts[1]);
             for (int i = 0; i < 2; ++i)
             {
                 bool isSD = aDMNewSD.Find(nVerts[i], out int pSD);
@@ -1287,13 +1296,13 @@ public partial class PaveFiller
         // Add vertices put on the real section curves to unify them with the
         // vertices of the edges, by which these sections curves have been rejected
         // and with unused vertices
-        NCollection_IndexedMap<Shape>[] verMap = [vertsOnRejectedPB, vertsUnused];
+        IndexedSet<Shape>[] verMap = [vertsOnRejectedPB, vertsUnused];
         for (int imap = 0; imap < 2; imap++)
         {
-            int nbVer = verMap[imap].Extent();
+            int nbVer = verMap[imap].Count;
             for (int i = 1; i <= nbVer; ++i)
             {
-                Shape ver = verMap[imap].FindKey(i);
+                Shape ver = verMap[imap][i - 1];
                 int iVer = _ds.Index(ver);
                 if (aDMNewSD.Find(iVer, out int pSD))
                 {
@@ -1322,7 +1331,7 @@ public partial class PaveFiller
         //
         // Map to store the real tolerance of the common block
         // and avoid repeated computation of it
-        NCollection_DataMap<CommonBlock, double> mcbTol = new();
+        Dictionary<CommonBlock, double> mcbTol = new();
         // Map to avoid creation of different pave blocks for
         // the same intersection edge
         NCollection_IntDataMap<PaveBlock> mepb = new();
@@ -1346,7 +1355,7 @@ public partial class PaveFiller
             //
             if (type == ShapeType.Vertex)
             {
-                bool bIntersectionPoint = mscpb.Contains(sx);
+                bool bIntersectionPoint = mscpb.ContainsKey(sx);
                 //
                 if (pds.HasShapeSD(nSx, ref nVSD))
                 {
@@ -1378,12 +1387,12 @@ public partial class PaveFiller
                 else
                 {
                     // update FF interference
-                    CoupleOfPaveBlocks cpb = mscpb.FindFromKey(sx);
+                    CoupleOfPaveBlocks cpb = mscpb.GetValue(sx);
                     iX = cpb.IndexInterf();
                     iP = cpb.Index();
                     InterfFF ff = fFs[iX];
-                    NCollection_DynamicArray<DataPoint> vnp = ff.ChangePoints();
-                    ref DataPoint np = ref vnp[iP];
+                    List<DataPoint> vnp = ff.ChangePoints();
+                    ref DataPoint np = ref CollectionsMarshal.AsSpan(vnp)[iP];
                     np.SetIndex(iV);
                 }
             } // if (aType==TopAbs_VERTEX) {
@@ -1391,7 +1400,7 @@ public partial class PaveFiller
             else if (type == ShapeType.Edge)
             {
                 bHasPaveBlocks = pds.HasPaveBlocks(nSx);
-                CoupleOfPaveBlocks cpb = mscpb.FindFromKey(sx);
+                CoupleOfPaveBlocks cpb = mscpb.GetValue(sx);
                 iX = cpb.IndexInterf();
                 iC = cpb.Index();
                 pb1 = cpb.PaveBlock1()!;
@@ -1400,14 +1409,14 @@ public partial class PaveFiller
                 if (bOld)
                 {
                     NCollection_List<PaveBlock> lpBx = new();
-                    aDMExEdges.Bind(pb1, lpBx);
+                    aDMExEdges[pb1] = lpBx;
                 }
                 //
                 if (!bHasPaveBlocks)
                 {
                     if (bOld)
                     {
-                        aDMExEdges.ChangeFind(pb1).Append(pb1);
+                        aDMExEdges.GetValue(pb1).Append(pb1);
                     }
                     else
                     {
@@ -1421,7 +1430,7 @@ public partial class PaveFiller
                 else
                 {
                     InterfFF ff = fFs[iX];
-                    NCollection_DynamicArray<SectionCurve> vnc = ff.ChangeCurves();
+                    List<SectionCurve> vnc = ff.ChangeCurves();
                     SectionCurve nc = vnc[iC];
                     NCollection_List<PaveBlock> lpbc = nc.ChangePaveBlocks();
                     //
@@ -1453,7 +1462,7 @@ public partial class PaveFiller
                     //
                     if (bOld && nbLPBx == 0)
                     {
-                        aDMExEdges.ChangeFind(pb1).Append(pb1);
+                        aDMExEdges.GetValue(pb1).Append(pb1);
                         continue;
                     }
                     //
@@ -1535,10 +1544,10 @@ public partial class PaveFiller
                             if (pds.IsCommonBlock(pbRx))
                             {
                                 CommonBlock cb = pds.CommonBlock(pbRx)!;
-                                if (!mcbTol.Find(cb, out double pTol))
+                                if (!mcbTol.TryGetValue(cb, out double pTol))
                                 {
                                     double tol = BuilderTools.ComputeToleranceOfCB(cb, pds, pf.Context());
-                                    pTol = mcbTol.Bound(cb, tol);
+                                    pTol = mcbTol.SetValueRef(cb, tol);
                                 }
                                 //
                                 if (nc.Tolerance() < pTol)
@@ -1564,7 +1573,7 @@ public partial class PaveFiller
                             if (bOld)
                             {
                                 pPBC.SetOriginalEdge(pb1.OriginalEdge());
-                                aDMExEdges.ChangeFind(pb1).Append(pPBC);
+                                aDMExEdges.GetValue(pb1).Append(pPBC);
                             }
                             else
                             {
@@ -1601,9 +1610,9 @@ public partial class PaveFiller
     /// Updates the face information with the section edges and vertices, and with the pave blocks and vertices
     /// that the post-treatment replaced.
     /// </summary>
-    protected void UpdateFaceInfo(NCollection_DataMap<PaveBlock, NCollection_List<PaveBlock>> dme,
+    protected void UpdateFaceInfo(Dictionary<PaveBlock, NCollection_List<PaveBlock>> dme,
                                   NCollection_IntDataMap<int> dmv,
-                                  NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap)
+                                  Dictionary<PaveBlock, NCollection_List<int>> pbFacesMap)
     {
         int i, j, nV1, nF1, nF2, nbFF, nbC, nbP;
         NCollection_List<PaveBlock>.Iterator aItLPB = new();
@@ -1612,8 +1621,8 @@ public partial class PaveFiller
         // Unify pave blocks of the existing edges united on the post-treat stage
         NCollection_IntDataMap<NCollection_List<PaveBlock>> edgeLPB = new();
 
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        nbFF = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        nbFF = fFs.Count;
         // 1. Sections (curves, points);
         for (i = 0; i < nbFF; ++i)
         {
@@ -1624,8 +1633,8 @@ public partial class PaveFiller
             FaceInfo fi2 = _ds.ChangeFaceInfo(nF2);
             //
             // 1.1. Section edges
-            NCollection_DynamicArray<SectionCurve> vnc = ff.ChangeCurves();
-            nbC = vnc.Length();
+            List<SectionCurve> vnc = ff.ChangeCurves();
+            nbC = vnc.Count;
             for (j = 0; j < nbC; ++j)
             {
                 SectionCurve nc = vnc[j];
@@ -1638,9 +1647,9 @@ public partial class PaveFiller
                     PaveBlock pb = aItLPB.Value();
                     //
                     // Treat existing pave blocks
-                    if (dme.IsBound(pb))
+                    if (dme.ContainsKey(pb))
                     {
-                        NCollection_List<PaveBlock> lpb = dme.ChangeFind(pb);
+                        NCollection_List<PaveBlock> lpb = dme.GetValue(pb);
                         UpdateExistingPaveBlocks(pb, lpb, pbFacesMap);
 
                         NCollection_List<PaveBlock>.Iterator itLPB = new(lpb);
@@ -1673,8 +1682,8 @@ public partial class PaveFiller
             }
             //
             // 1.2. Section vertices
-            NCollection_DynamicArray<DataPoint> vnp = ff.Points();
-            nbP = vnp.Length();
+            List<DataPoint> vnp = ff.Points();
+            nbP = vnp.Count;
             for (j = 0; j < nbP; ++j)
             {
                 DataPoint np = vnp[j];
@@ -1711,7 +1720,7 @@ public partial class PaveFiller
                 // Collect all faces attached to common blocks
                 NCollection_IntMap mFaces = new();
                 // Collect all pave blocks attached to common blocks
-                NCollection_IndexedMap<PaveBlock> mPaveBlocks = new();
+                IndexedSet<PaveBlock> mPaveBlocks = new();
 
                 NCollection_List<PaveBlock>.Iterator itLPB = new(lpb);
                 for (; itLPB.More(); itLPB.Next())
@@ -1759,8 +1768,8 @@ public partial class PaveFiller
                     // Update common block with new pave blocks
                     NCollection_List<PaveBlock> lpbNew = new();
                     {
-                        int nbPB = mPaveBlocks.Extent();
-                        for (int iPB = 1; iPB <= nbPB; ++iPB)
+                        int nbPB = mPaveBlocks.Count;
+                        for (int iPB = 0; iPB < nbPB; ++iPB)
                         {
                             PaveBlock pb = mPaveBlocks[iPB];
                             _ds.SetCommonBlock(pb, cb);
@@ -1782,7 +1791,7 @@ public partial class PaveFiller
         }
 
         bool bVerts = dmv.Extent() > 0;
-        bool bEdges = dme.Extent() > 0 || bNewCB;
+        bool bEdges = dme.Count > 0 || bNewCB;
         //
         if (!bVerts && !bEdges)
         {
@@ -1826,18 +1835,18 @@ public partial class PaveFiller
             if (bEdges)
             {
                 HashSet<PaveBlock> mpbFence = new();
-                NCollection_IndexedMap<PaveBlock>[] pMPB = [fi.ChangePaveBlocksOn(),
+                IndexedSet<PaveBlock>[] pMPB = [fi.ChangePaveBlocksOn(),
                                                                   fi.ChangePaveBlocksIn(),
                                                                   fi.ChangePaveBlocksSc()];
                 for (i = 0; i < 3; ++i)
                 {
-                    NCollection_IndexedMap<PaveBlock> mpbCopy = new(pMPB[i]);
+                    IndexedSet<PaveBlock> mpbCopy = new(pMPB[i]);
                     pMPB[i].Clear();
-                    int nbPB = mpbCopy.Extent();
+                    int nbPB = mpbCopy.Count;
                     for (j = 1; j <= nbPB; ++j)
                     {
-                        PaveBlock pb = mpbCopy[j];
-                        if (dme.Find(pb, out NCollection_List<PaveBlock> pLPB) && !pLPB.IsEmpty())
+                        PaveBlock pb = mpbCopy[j - 1];
+                        if (dme.TryGetValue(pb, out NCollection_List<PaveBlock>? pLPB) && !pLPB.IsEmpty())
                         {
                             aItLPB.Initialize(pLPB);
                             for (; aItLPB.More(); aItLPB.Next())
@@ -1968,7 +1977,7 @@ public partial class PaveFiller
     protected bool IsExistingPaveBlock(PaveBlock pb,
                                        SectionCurve nc,
                                        double tolR3D,
-                                       NCollection_IndexedMap<PaveBlock> mpbOnIn,
+                                       IndexedSet<PaveBlock> mpbOnIn,
                                        BoxTree pbTree,
                                        HashSet<PaveBlock> mpbCommon,
                                        ref PaveBlock? aPBOut,
@@ -2033,7 +2042,7 @@ public partial class PaveFiller
 
         for (NCollection_List<int>.Iterator it = new(selector.Indices()); it.More(); it.Next())
         {
-            PaveBlock aPB = mpbOnIn[it.Value()];
+            PaveBlock aPB = mpbOnIn[it.Value() - 1];
 
             aPB.Indices(out int nV21, out int nV22);
 
@@ -2335,14 +2344,14 @@ public partial class PaveFiller
         public double Tolerance; // tolerance of the section curve
     }
 
-    protected void FilterPavesOnCurves(NCollection_DynamicArray<SectionCurve> vnc, NCollection_IntDataMap<double> mvTol)
+    protected void FilterPavesOnCurves(List<SectionCurve> vnc, NCollection_IntDataMap<double> mvTol)
     {
         // For each vertex found in ExtPaves of pave blocks of section curves
         // collect list of pave blocks with distance to the curve
-        NCollection_IndexedDataMap<int, NCollection_List<PaveBlockDist>> idmVertPBs = new();
+        IndexedMap<int, NCollection_List<PaveBlockDist>> idmVertPBs = new();
         int i;
         double eps = Constants.Resolution();
-        for (i = 0; i < vnc.Length(); ++i)
+        for (i = 0; i < vnc.Count; ++i)
         {
             SectionCurve nc = vnc[i];
             IntersectionCurve ic = nc.Curve();
@@ -2368,10 +2377,10 @@ public partial class PaveFiller
                 {
                     sin = Math.Sqrt(sin / sqDist / sqD1Mod);
                 }
-                int index = idmVertPBs.FindIndex(nV);
+                int index = idmVertPBs.IndexOf(nV) + 1;
                 NCollection_List<PaveBlockDist> pList = index > 0
-                    ? idmVertPBs.ChangeFromIndex(index)
-                    : idmVertPBs.ChangeFromIndex(idmVertPBs.Add(nV, new NCollection_List<PaveBlockDist>()));
+                    ? idmVertPBs.ValueAt(index - 1)
+                    : idmVertPBs.ValueAt(idmVertPBs.Add(nV, new NCollection_List<PaveBlockDist>()));
                 PaveBlockDist pbd = new() { PB = pb, SquareDist = sqDist, SinAngle = sin, Tolerance = tolR3D };
                 pList.Append(pbd);
             }
@@ -2379,10 +2388,10 @@ public partial class PaveFiller
 
         // Process each vertex
         const double sinAngleMin = 0.5; // angle below which projection is suspicious
-        for (i = 1; i <= idmVertPBs.Extent(); i++)
+        for (i = 1; i <= idmVertPBs.Count; i++)
         {
-            int nV = idmVertPBs.FindKey(i);
-            NCollection_List<PaveBlockDist> list = idmVertPBs[i];
+            int nV = idmVertPBs.KeyAt(i - 1);
+            NCollection_List<PaveBlockDist> list = idmVertPBs.ValueAt(i - 1);
             // Find a pave with minimal distance
             double minDist = RealLast();
             PaveBlock? pbMinDist = null;
@@ -2467,12 +2476,12 @@ public partial class PaveFiller
         v = ShapeCasts.Vertex(_ds.Shape(nV));
         pv = Tool.Pnt(v);
         //
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
-        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
+        List<InterfEE> eEs = _ds.InterfEE();
+        List<InterfEF> eFs = _ds.InterfEF();
         //
         for (; k < nbInt; ++k)
         {
-            nbLines = k == 0 ? eEs.Length() : eFs.Length();
+            nbLines = k == 0 ? eEs.Count : eFs.Count;
             for (i = 0; i < nbLines; ++i)
             {
                 Interf aInt = k == 0 ? eEs[i] : eFs[i];
@@ -2513,8 +2522,8 @@ public partial class PaveFiller
         GetFullShapeMap(nF1, mi);
         GetFullShapeMap(nF2, mi);
         //
-        NCollection_DynamicArray<InterfEF> eFs = _ds!.InterfEF();
-        nbEFs = eFs.Length();
+        List<InterfEF> eFs = _ds!.InterfEF();
+        nbEFs = eFs.Count;
         //
         for (i = 0; i < nbEFs; ++i)
         {
@@ -2584,7 +2593,7 @@ public partial class PaveFiller
 
     //=================================================================================================
 
-    protected void PutEFPavesOnCurve(NCollection_DynamicArray<SectionCurve> vc,
+    protected void PutEFPavesOnCurve(List<SectionCurve> vc,
                                      int index,
                                      NCollection_IntMap aMI,
                                      NCollection_IntMap aMVEF,
@@ -2596,7 +2605,7 @@ public partial class PaveFiller
             return;
         }
         //
-        SectionCurve nc = vc.Value(index);
+        SectionCurve nc = vc[index];
         IntersectionCurve ic = nc.Curve();
         CurveKind typeC;
         typeC = ic.Type();
@@ -2638,13 +2647,13 @@ public partial class PaveFiller
     protected void PutStickPavesOnCurve(in Face aF1,
                                         in Face aF2,
                                         NCollection_IntMap aMI,
-                                        NCollection_DynamicArray<SectionCurve> vc,
+                                        List<SectionCurve> vc,
                                         int index,
                                         NCollection_IntMap aMVStick,
                                         NCollection_IntDataMap<double> aMVTol,
                                         NCollection_IntDataMap<NCollection_List<int>> aDMVLV)
     {
-        SectionCurve nc = vc.Value(index);
+        SectionCurve nc = vc[index];
         // Get numbers of vertices assigned to the ends of the curve
         Span<int> bndNV = stackalloc int[2];
         GetBoundPaves(_ds!, nc, bndNV);
@@ -2736,13 +2745,13 @@ public partial class PaveFiller
     {
         int nS1, nS2, nVNew, typeInt, i;
         //
-        NCollection_DynamicArray<InterfVV> vVs = _ds!.InterfVV();
-        NCollection_DynamicArray<InterfVE> vEs = _ds.InterfVE();
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
-        NCollection_DynamicArray<InterfVF> vFs = _ds.InterfVF();
-        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
+        List<InterfVV> vVs = _ds!.InterfVV();
+        List<InterfVE> vEs = _ds.InterfVE();
+        List<InterfEE> eEs = _ds.InterfEE();
+        List<InterfVF> vFs = _ds.InterfVF();
+        List<InterfEF> eFs = _ds.InterfEF();
         //
-        Span<int> nbLines = [vVs.Length(), vEs.Length(), eEs.Length(), vFs.Length(), eFs.Length()];
+        Span<int> nbLines = [vVs.Count, vEs.Count, eEs.Count, vFs.Count, eFs.Count];
         // collect indices of all shapes from nF1 and nF2.
         aMI.Clear();
         GetFullShapeMap(nF1, aMI);
@@ -2809,16 +2818,16 @@ public partial class PaveFiller
 
     //=================================================================================================
 
-    protected void RemoveUsedVertices(NCollection_DynamicArray<SectionCurve> aVC, NCollection_IntMap aMV)
+    protected void RemoveUsedVertices(List<SectionCurve> aVC, NCollection_IntMap aMV)
     {
         if (aMV.IsEmpty())
         {
             return;
         }
 
-        for (int i = 0; i < aVC.Length(); ++i)
+        for (int i = 0; i < aVC.Count; ++i)
         {
-            SectionCurve nc = aVC.Value(i);
+            SectionCurve nc = aVC[i];
             NCollection_List<PaveBlock> lpbc = nc.PaveBlocks();
             NCollection_List<PaveBlock>.Iterator itPB = new(lpbc);
             for (; itPB.More(); itPB.Next())
@@ -2958,12 +2967,12 @@ public partial class PaveFiller
                                              int nF1,
                                              int nF2,
                                              in Edge es,
-                                             NCollection_IndexedMap<PaveBlock> mpbOnIn,
+                                             IndexedSet<PaveBlock> mpbOnIn,
                                              BoxTree pbTree,
-                                             NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mscpb,
-                                             NCollection_DataMap<Shape, int> mvi,
+                                             IndexedMap<Shape, CoupleOfPaveBlocks> mscpb,
+                                             Dictionary<Shape, int> mvi,
                                              NCollection_List<PaveBlock> lpbc,
-                                             NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap,
+                                             Dictionary<PaveBlock, NCollection_List<int>> pbFacesMap,
                                              HashSet<PaveBlock> mpb)
     {
         Box boxES = new();
@@ -2984,7 +2993,7 @@ public partial class PaveFiller
 
         for (NCollection_List<int>.Iterator itPB = new(selector.Indices()); itPB.More(); itPB.Next())
         {
-            PaveBlock pbf = mpbOnIn[itPB.Value()];
+            PaveBlock pbf = mpbOnIn[itPB.Value() - 1];
             if (mpb.Contains(pbf))
             {
                 continue;
@@ -3001,7 +3010,7 @@ public partial class PaveFiller
             }
 
             int nF = bInF1 ? nF2 : nF1;
-            if (!_distances.Find(new Pair(pbf.OriginalEdge(), nF), out NCollection_List<EdgeRangeDistance> pList))
+            if (!_distances.TryGetValue(new Pair(pbf.OriginalEdge(), nF), out NCollection_List<EdgeRangeDistance>? pList))
             {
                 continue;
             }
@@ -3031,9 +3040,9 @@ public partial class PaveFiller
                     mpb.Add(pbf);
                     PreparePostTreatFF(theInt, cur, pbf, mscpb, mvi, lpbc);
 
-                    if (!pbFacesMap.Find(pbf, out NCollection_List<int> pFaces))
+                    if (!pbFacesMap.TryGetValue(pbf, out NCollection_List<int>? pFaces))
                     {
-                        pFaces = pbFacesMap.Bound(pbf, new NCollection_List<int>());
+                        pFaces = pbFacesMap.SetValueRef(pbf, new NCollection_List<int>());
                     }
                     if (pFaces.IsEmpty() || !pFaces.Contains(nF))
                     {
@@ -3049,12 +3058,12 @@ public partial class PaveFiller
     protected void ProcessExistingPaveBlocks(int theInt,
                                              int nF1,
                                              int nF2,
-                                             NCollection_IndexedMap<PaveBlock> aMPBOnIn,
+                                             IndexedSet<PaveBlock> aMPBOnIn,
                                              BoxTree pbTree,
                                              NCollection_IntDataMap<NCollection_List<int>> aDMBV,
-                                             NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> aMSCPB,
-                                             NCollection_DataMap<Shape, int> aMVI,
-                                             NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap,
+                                             IndexedMap<Shape, CoupleOfPaveBlocks> aMSCPB,
+                                             Dictionary<Shape, int> aMVI,
+                                             Dictionary<PaveBlock, NCollection_List<int>> pbFacesMap,
                                              HashSet<PaveBlock> aMPB)
     {
         if (aDMBV.IsEmpty())
@@ -3066,9 +3075,9 @@ public partial class PaveFiller
         int nV, nE, iC, iFlag;
         NCollection_List<int>.Iterator itLI = new();
         //
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
+        List<InterfFF> fFs = _ds!.InterfFF();
         InterfFF ff = fFs[theInt];
-        NCollection_DynamicArray<SectionCurve> vc = ff.ChangeCurves();
+        List<SectionCurve> vc = ff.ChangeCurves();
         //
         FaceInfo fi1 = _ds.FaceInfo(nF1);
         FaceInfo fi2 = _ds.FaceInfo(nF2);
@@ -3090,7 +3099,7 @@ public partial class PaveFiller
                 ShapeInfo siv = _ds.ShapeInfo(nV);
                 Box boxV = siv.Box();
                 Vertex v = ShapeCasts.Vertex(siv.Shape());
-                if (!aMVI.IsBound(v))
+                if (!aMVI.ContainsKey(v))
                 {
                     continue;
                 }
@@ -3105,7 +3114,7 @@ public partial class PaveFiller
 
                 for (NCollection_List<int>.Iterator it = new(selector.Indices()); it.More(); it.Next())
                 {
-                    PaveBlock pb = aMPBOnIn[it.Value()];
+                    PaveBlock pb = aMPBOnIn[it.Value() - 1];
                     if (pb.Pave1().Index() == nV || pb.Pave2().Index() == nV)
                     {
                         continue;
@@ -3132,9 +3141,9 @@ public partial class PaveFiller
                         {
                             // Face without pave block
                             int nF = bInF1 ? nF2 : nF1;
-                            if (!pbFacesMap.Find(pb, out NCollection_List<int> pFaces))
+                            if (!pbFacesMap.TryGetValue(pb, out NCollection_List<int>? pFaces))
                             {
-                                pFaces = pbFacesMap.Bound(pb, new NCollection_List<int>());
+                                pFaces = pbFacesMap.SetValueRef(pb, new NCollection_List<int>());
                             }
                             // List is expected to be short, so we allow the check here
                             if (pFaces.IsEmpty() || !pFaces.Contains(nF))
@@ -3152,7 +3161,7 @@ public partial class PaveFiller
 
     protected void UpdateExistingPaveBlocks(PaveBlock aPBf,
                                             NCollection_List<PaveBlock> aLPB,
-                                            NCollection_DataMap<PaveBlock, NCollection_List<int>> pbFacesMap)
+                                            Dictionary<PaveBlock, NCollection_List<int>> pbFacesMap)
     {
         if (aLPB.Extent() == 0)
         {
@@ -3320,7 +3329,7 @@ public partial class PaveFiller
         }
 
         // Try to project the edge on the faces
-        if (!pbFacesMap.Find(aPBf, out NCollection_List<int> pLFaces))
+        if (!pbFacesMap.TryGetValue(aPBf, out NCollection_List<int>? pLFaces))
         {
             return;
         }
@@ -3482,8 +3491,8 @@ public partial class PaveFiller
     protected void PreparePostTreatFF(int aInt,
                                       int aCur,
                                       PaveBlock aPB,
-                                      NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> aMSCPB,
-                                      NCollection_DataMap<Shape, int> aMVI,
+                                      IndexedMap<Shape, CoupleOfPaveBlocks> aMSCPB,
+                                      Dictionary<Shape, int> aMVI,
                                       NCollection_List<PaveBlock> aLPBC)
     {
         int nV1, nV2;
@@ -3501,8 +3510,8 @@ public partial class PaveFiller
         cpb.SetPaveBlock1(aPB);
         //
         aMSCPB.Add(e, cpb);
-        aMVI.Bind(v1, nV1);
-        aMVI.Bind(v2, nV2);
+        aMVI[v1] = nV1;
+        aMVI[v2] = nV2;
     }
 
     //=================================================================================================
@@ -3562,13 +3571,13 @@ public partial class PaveFiller
         NCollection_List<PaveBlock> allPBs = new();
 
         // Get pave blocks of section edges
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        int nbFF = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        int nbFF = fFs.Count;
         for (i = 0; i < nbFF; ++i)
         {
             InterfFF ff = fFs[i];
-            NCollection_DynamicArray<SectionCurve> vnc = ff.Curves();
-            int nbC = vnc.Length();
+            List<SectionCurve> vnc = ff.Curves();
+            int nbC = vnc.Count;
             for (j = 0; j < nbC; ++j)
             {
                 SectionCurve nc = vnc[j];
@@ -3582,8 +3591,8 @@ public partial class PaveFiller
         }
 
         // Get pave blocks from the pool
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds.ChangePaveBlocksPool();
-        nbPBP = pbp.Length();
+        List<NCollection_List<PaveBlock>> pbp = _ds.ChangePaveBlocksPool();
+        nbPBP = pbp.Count;
         for (i = 0; i < nbPBP; ++i)
         {
             NCollection_List<PaveBlock> lpb = pbp[i];
@@ -3685,8 +3694,8 @@ public partial class PaveFiller
         // Remove all pave blocks referring to input edges:
         //
         // 1. from the Pave Blocks Pool
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
-        int nbPBP = pbp.Length(), i;
+        List<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        int nbPBP = pbp.Count, i;
         for (i = 0; i < nbPBP; ++i)
         {
             NCollection_List<PaveBlock> lpb = pbp[i];
@@ -3707,14 +3716,14 @@ public partial class PaveFiller
         }
 
         // 2. from section curves
-        NCollection_DynamicArray<InterfFF> fFs = _ds.InterfFF();
-        int nbFF = fFs.Length(), j;
+        List<InterfFF> fFs = _ds.InterfFF();
+        int nbFF = fFs.Count, j;
         for (i = 0; i < nbFF; ++i)
         {
             InterfFF ff = fFs[i];
             // remove from Section pave blocks
-            NCollection_DynamicArray<SectionCurve> vnc = ff.ChangeCurves();
-            int nbC = vnc.Length();
+            List<SectionCurve> vnc = ff.ChangeCurves();
+            int nbC = vnc.Count;
             for (j = 0; j < nbC; ++j)
             {
                 SectionCurve nc = vnc[j];
@@ -3749,15 +3758,15 @@ public partial class PaveFiller
             }
 
             FaceInfo fi = _ds.ChangeFaceInfo(i);
-            NCollection_IndexedMap<PaveBlock>[] impb = [fi.ChangePaveBlocksIn(),
+            IndexedSet<PaveBlock>[] impb = [fi.ChangePaveBlocksIn(),
                                                                fi.ChangePaveBlocksOn(),
                                                                fi.ChangePaveBlocksSc()];
             for (int k = 0; k < 3; k++)
             {
-                int nbPB = impb[k].Extent(), m;
+                int nbPB = impb[k].Count, m;
                 for (m = 1; m <= nbPB; ++m)
                 {
-                    PaveBlock pb = impb[k].FindKey(m);
+                    PaveBlock pb = impb[k][m - 1];
                     if (edges.Contains(pb.Edge()))
                     {
                         break;
@@ -3765,11 +3774,11 @@ public partial class PaveFiller
                 }
                 if (m <= nbPB)
                 {
-                    NCollection_IndexedMap<PaveBlock> mpbCopy = new(impb[k]);
+                    IndexedSet<PaveBlock> mpbCopy = new(impb[k]);
                     impb[k].Clear();
                     for (m = 1; m <= nbPB; ++m)
                     {
-                        PaveBlock pb = mpbCopy[m];
+                        PaveBlock pb = mpbCopy[m - 1];
                         if (!edges.Contains(pb.Edge()))
                         {
                             impb[k].Add(pb);
@@ -3818,8 +3827,8 @@ public partial class PaveFiller
         //
         int nbFF;
         //
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        nbFF = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        nbFF = fFs.Count;
         if (nbFF == 0)
         {
             return;
@@ -3834,8 +3843,8 @@ public partial class PaveFiller
         {
             InterfFF ff = fFs[i];
             //
-            NCollection_DynamicArray<SectionCurve> vc = ff.ChangeCurves();
-            nbC = vc.Length();
+            List<SectionCurve> vc = ff.ChangeCurves();
+            nbC = vc.Count;
             if (nbC == 0)
             {
                 continue;
@@ -3931,20 +3940,20 @@ public partial class PaveFiller
 
     protected void CorrectToleranceOfSE()
     {
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        NCollection_IndexedDataMap<int, NCollection_List<PaveBlock>> mvipBs = new();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        IndexedMap<int, NCollection_List<PaveBlock>> mvipBs = new();
         NCollection_IntMap mviToReduce = new();
         // Fence map to avoid repeated checking of the same edge
         HashSet<PaveBlock> mpb = new();
         //
         // 1. iterate on all sections F-F
-        int nb = fFs.Length(), i;
+        int nb = fFs.Count, i;
         for (i = 0; i < nb; ++i)
         {
             InterfFF ff = fFs[i];
             //
-            NCollection_DynamicArray<SectionCurve> vnc = ff.ChangeCurves();
-            int nbC = vnc.Length(), k;
+            List<SectionCurve> vnc = ff.ChangeCurves();
+            int nbC = vnc.Count, k;
             for (k = 0; k < nbC; ++k)
             {
                 SectionCurve nc = vnc[k];
@@ -3996,10 +4005,10 @@ public partial class PaveFiller
                     {
                         int nV = (j == 0 ? pb.Pave1().Index() : pb.Pave2().Index());
                         _ds.HasShapeSD(nV, ref nV);
-                        int index = mvipBs.FindIndex(nV);
+                        int index = mvipBs.IndexOf(nV) + 1;
                         NCollection_List<PaveBlock> pPBList = index > 0
-                            ? mvipBs.ChangeFromIndex(index)
-                            : mvipBs.ChangeFromIndex(mvipBs.Add(nV, new NCollection_List<PaveBlock>()));
+                            ? mvipBs.ValueAt(index - 1)
+                            : mvipBs.ValueAt(mvipBs.Add(nV, new NCollection_List<PaveBlock>()));
                         pPBList.Append(pb);
                         if (bIsReduced)
                         {
@@ -4022,8 +4031,8 @@ public partial class PaveFiller
         //     i.e. minimal tolerance for the vertex is the max tolerance of the
         //     edges containing this vertex
         NCollection_IntDataMap<double> mviTol = new();
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds.ChangePaveBlocksPool();
-        nb = pbp.Length();
+        List<NCollection_List<PaveBlock>> pbp = _ds.ChangePaveBlocksPool();
+        nb = pbp.Count;
         Span<int> nVs = stackalloc int[2];
         for (i = 0; i < nb; ++i)
         {
@@ -4053,7 +4062,7 @@ public partial class PaveFiller
                         {
                             mviTol.ChangeFind(nVs[j]) = tolE;
                         }
-                        NCollection_List<PaveBlock> pbList = mvipBs.ChangeFromKey(nVs[j]);
+                        NCollection_List<PaveBlock> pbList = mvipBs.GetValue(nVs[j]);
                         pbList.Append(pb);
                     }
                 }
@@ -4061,10 +4070,10 @@ public partial class PaveFiller
         }
         //
         // 2.2 reduce tolerances if possible
-        nb = mvipBs.Extent();
+        nb = mvipBs.Count;
         for (i = 1; i <= nb; ++i)
         {
-            int nV = mvipBs.FindKey(i);
+            int nV = mvipBs.KeyAt(i - 1);
             if (!mviToReduce.Contains(nV))
             {
                 continue;
@@ -4086,7 +4095,7 @@ public partial class PaveFiller
             // Avoid repeated checks
             HashSet<PaveBlock> mpbFence = new();
             //
-            NCollection_List<PaveBlock> lpb = mvipBs.FindFromIndex(i);
+            NCollection_List<PaveBlock> lpb = mvipBs.ValueAt(i - 1);
             NCollection_List<PaveBlock>.Iterator itLPB = new(lpb);
             for (; itLPB.More(); itLPB.Next())
             {
@@ -4135,15 +4144,15 @@ public partial class PaveFiller
         // not participated in its creation
 
         // Get all section edges
-        NCollection_IndexedMap<PaveBlock> mpbScAll = new();
+        IndexedSet<PaveBlock> mpbScAll = new();
 
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        int nbFF = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        int nbFF = fFs.Count;
         using var ps = new ProgressScope(range, null, 1);
         for (int i = 0; i < nbFF; ++i)
         {
-            NCollection_DynamicArray<SectionCurve> vnc = fFs[i].Curves();
-            int nbC = vnc.Length();
+            List<SectionCurve> vnc = fFs[i].Curves();
+            int nbC = vnc.Count;
             for (int j = 0; j < nbC; ++j)
             {
                 NCollection_List<PaveBlock> lpbc = vnc[j].PaveBlocks();
@@ -4160,26 +4169,26 @@ public partial class PaveFiller
 
     //=================================================================================================
 
-    protected void RemoveMicroSectionEdges(NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mscpb,
-                                           NCollection_IndexedMap<PaveBlock> microPB)
+    protected void RemoveMicroSectionEdges(IndexedMap<Shape, CoupleOfPaveBlocks> mscpb,
+                                           IndexedSet<PaveBlock> microPB)
     {
-        if (mscpb.IsEmpty())
+        if (mscpb.Count == 0)
         {
             // no section edges
             return;
         }
 
         // Get all F/F interferences
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
+        List<InterfFF> fFs = _ds!.InterfFF();
 
         // Build the new map of section edges avoiding the micro edges
-        NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> sepbMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, CoupleOfPaveBlocks> sepbMap = new(ShapeHasher.Instance);
         // Analyze all section edges
-        int nbCPB = mscpb.Extent();
-        for (int i = 1; i <= nbCPB; ++i)
+        int nbCPB = mscpb.Count;
+        for (int i = 0; i < nbCPB; ++i)
         {
-            Shape si = mscpb.FindKey(i);
-            CoupleOfPaveBlocks cpb = mscpb[i];
+            Shape si = mscpb.KeyAt(i);
+            CoupleOfPaveBlocks cpb = mscpb.ValueAt(i);
 
             if (si.ShapeType() != ShapeType.Edge)
             {
@@ -4229,12 +4238,12 @@ public partial class PaveFiller
         }
 
         // Overwrite the old map if necessary (OCCT's assignment: the caller's map takes the new contents)
-        if (sepbMap.Extent() != mscpb.Extent())
+        if (sepbMap.Count != mscpb.Count)
         {
             mscpb.Clear();
-            for (int i = 1; i <= sepbMap.Extent(); ++i)
+            for (int i = 0; i < sepbMap.Count; ++i)
             {
-                mscpb.Add(sepbMap.FindKey(i), sepbMap.FindFromIndex(i));
+                mscpb.Add(sepbMap.KeyAt(i), sepbMap.ValueAt(i));
             }
         }
     }
@@ -4248,8 +4257,8 @@ public partial class PaveFiller
         // Resulting map of micro edges
         NCollection_IntMap microEdges = new();
         // Check all pave blocks from the pool to find the micro edges
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
-        int nbPBP = pbp.Length();
+        List<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        int nbPBP = pbp.Count;
         for (int i = 0; i < nbPBP; ++i)
         {
             NCollection_List<PaveBlock> lpb = pbp[i];

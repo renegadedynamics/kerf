@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Filling;
@@ -840,7 +841,7 @@ internal static class BRepFillRecordingCases
             RemoveLocations aRL = new();
             aRL.SetRemoveLevel(aL);
             Line("REMOVE " + Int(aRL.Remove(aShape)) + " " + Int((int)aRL.RemoveLevel()) + " "
-                 + Int(aRL.GetModifiedShapesMap().Extent()));
+                 + Int(aRL.GetModifiedShapesMap().Count));
             Text("RESULT", aRL.GetResult());
         });
     }
@@ -865,17 +866,17 @@ internal static class BRepFillRecordingCases
             FillingSection aSec = new(aProfile, aV, aContact, aCorrection);
             Line("SECT " + Int(aSec.IsPunctual) + " " + Int(aSec.WithContact()) + " " + Int(aSec.WithCorrection()));
             Text("WIRE", aSec.Wire());
-            NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aSec.Wire(), aMap);
             for (Explorer anExp = new(aProfile, ShapeType.Edge); anExp.More(); anExp.Next())
             {
-                Line("MOD " + Int(aMap.FindIndex(aSec.ModifiedShape(anExp.Current()))));
+                Line("MOD " + Int(aMap.IndexOf(aSec.ModifiedShape(anExp.Current())) + 1));
             }
             for (Explorer anExp = new(aProfile, global::Kerf.Topology.ShapeType.Vertex); anExp.More(); anExp.Next())
             {
-                Line("MOD " + Int(aMap.FindIndex(aSec.ModifiedShape(anExp.Current()))));
+                Line("MOD " + Int(aMap.IndexOf(aSec.ModifiedShape(anExp.Current())) + 1));
             }
-            Line("MOD " + Int(aMap.FindIndex(aSec.ModifiedShape(aProfile))));
+            Line("MOD " + Int(aMap.IndexOf(aSec.ModifiedShape(aProfile)) + 1));
         });
     }
 

@@ -239,7 +239,7 @@ public class IntPatch_PolyhedronBVHTest
 
         // The sphere and cylinder should have some overlapping triangles
         Assert.True(aNbPairs > 0, "Expected some overlapping triangle pairs");
-        Assert.Equal(aNbPairs, aTraversal.Pairs().Size());
+        Assert.Equal(aNbPairs, aTraversal.Pairs().Count);
 
         // Verify all pairs have valid indices
         foreach (BvhTraversal.TrianglePair aPair in aTraversal.Pairs())

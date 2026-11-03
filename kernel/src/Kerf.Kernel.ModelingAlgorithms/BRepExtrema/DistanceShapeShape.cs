@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
@@ -48,12 +49,12 @@ public sealed class DistanceShapeShape
     private double _eps;
     private Shape _shape1;
     private Shape _shape2;
-    private readonly NCollection_IndexedMap<Shape> _mapV1 = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapV2 = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapE1 = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapE2 = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapF1 = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapF2 = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapV1 = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapV2 = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapE1 = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapE2 = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapF1 = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapF2 = new(ShapeHasher.Instance);
     private bool _isInitS1;
     private bool _isInitS2;
 #pragma warning disable CS0414 // OCCT keeps the obsolete flag and algorithm without reading them
@@ -74,9 +75,9 @@ public sealed class DistanceShapeShape
     //=================================================================================================
 
     private static void Decomposition(in Shape s,
-                                      NCollection_IndexedMap<Shape> mapV,
-                                      NCollection_IndexedMap<Shape> mapE,
-                                      NCollection_IndexedMap<Shape> mapF)
+                                      IndexedSet<Shape> mapV,
+                                      IndexedSet<Shape> mapE,
+                                      IndexedSet<Shape> mapF)
     {
         mapV.Clear();
         mapE.Clear();
@@ -86,12 +87,12 @@ public sealed class DistanceShapeShape
         Exploration.MapShapes(s, ShapeType.Face, mapF);
     }
 
-    private static void BoxCalculation(NCollection_IndexedMap<Shape> map, NCollection_Array1<Box> sBox)
+    private static void BoxCalculation(IndexedSet<Shape> map, NCollection_Array1<Box> sBox)
     {
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 1; i <= map.Count; i++)
         {
             var box = new Box();
-            Bounds.Add(map[i], ref box);
+            Bounds.Add(map[i - 1], ref box);
             sBox[i] = box;
         }
     }
@@ -128,8 +129,8 @@ public sealed class DistanceShapeShape
     {
         public readonly NCollection_Array1<IndexBand> BandArray;
         public readonly ThreadSolution Solution;
-        public NCollection_IndexedMap<Shape>? Map1;
-        public NCollection_IndexedMap<Shape>? Map2;
+        public IndexedSet<Shape>? Map1;
+        public IndexedSet<Shape>? Map2;
         public readonly ProgressScope Scope;
         public readonly NCollection_Array1<ProgressRange> Ranges;
         public double Eps;
@@ -151,7 +152,7 @@ public sealed class DistanceShapeShape
 
         public void Invoke(int index)
         {
-            int count2 = Map2!.Extent();
+            int count2 = Map2!.Count;
             int first = BandArray.Value(index).First;
             int last = BandArray.Value(index).Last;
             Solution.Dist[index] = StartDist;
@@ -166,11 +167,11 @@ public sealed class DistanceShapeShape
                 }
                 scope.Next();
 
-                Vertex vertex1 = ShapeCasts.Vertex(Map1!.FindKey(idx1));
+                Vertex vertex1 = ShapeCasts.Vertex(Map1![idx1 - 1]);
                 Point3D point1 = Tool.Pnt(vertex1);
                 for (int idx2 = 1; idx2 <= count2; ++idx2)
                 {
-                    Vertex vertex2 = ShapeCasts.Vertex(Map2.FindKey(idx2));
+                    Vertex vertex2 = ShapeCasts.Vertex(Map2[idx2 - 1]);
                     Point3D point2 = Tool.Pnt(vertex2);
                     double dist = point1.Distance(point2);
                     {
@@ -206,11 +207,11 @@ public sealed class DistanceShapeShape
 
     //=================================================================================================
 
-    private bool DistanceVertVert(NCollection_IndexedMap<Shape> map1,
-                                  NCollection_IndexedMap<Shape> map2,
+    private bool DistanceVertVert(IndexedSet<Shape> map1,
+                                  IndexedSet<Shape> map2,
                                   ProgressRange range)
     {
-        int count1 = map1.Extent();
+        int count1 = map1.Count;
         int minTaskSize = count1 < 10 ? count1 : 10;
         int nbThreads = ThreadCount;
         int nbTasks = nbThreads;
@@ -274,8 +275,8 @@ public sealed class DistanceShapeShape
     {
         public readonly NCollection_Array1<NCollection_Array1<BRepExtrema_CheckPair>> ArrayOfArrays;
         public readonly ThreadSolution Solution;
-        public NCollection_IndexedMap<Shape>? Map1;
-        public NCollection_IndexedMap<Shape>? Map2;
+        public IndexedSet<Shape>? Map1;
+        public IndexedSet<Shape>? Map2;
         public NCollection_Array1<Box>? LBox1;
         public NCollection_Array1<Box>? LBox2;
         public readonly ProgressScope Scope;
@@ -316,8 +317,8 @@ public sealed class DistanceShapeShape
                 }
                 Box box1 = LBox1!.Value(pair.Index1);
                 Box box2 = LBox2!.Value(pair.Index2);
-                Shape shape1 = Map1!.FindKey(pair.Index1);
-                Shape shape2 = Map2!.FindKey(pair.Index2);
+                Shape shape1 = Map1![pair.Index1 - 1];
+                Shape shape2 = Map2![pair.Index2 - 1];
                 var distTool = new DistanceSS(shape1, shape2, box1, box2, Solution.Dist[index], Eps);
                 double dist = distTool.DistValue();
                 if (distTool.IsDone)
@@ -357,7 +358,7 @@ public sealed class DistanceShapeShape
     private sealed class DistancePairFunctor
     {
         public readonly NCollection_Array1<IndexBand> BandArray;
-        public readonly NCollection_Array1<NCollection_DynamicArray<BRepExtrema_CheckPair>> PairList;
+        public readonly NCollection_Array1<List<BRepExtrema_CheckPair>> PairList;
         public NCollection_Array1<Box>? LBox1;
         public NCollection_Array1<Box>? LBox2;
         public readonly ProgressScope Scope;
@@ -368,10 +369,10 @@ public sealed class DistanceShapeShape
         public DistancePairFunctor(NCollection_Array1<IndexBand> bandArray, ProgressRange range)
         {
             BandArray = bandArray;
-            PairList = new NCollection_Array1<NCollection_DynamicArray<BRepExtrema_CheckPair>>(0, bandArray.Length() - 1);
+            PairList = new NCollection_Array1<List<BRepExtrema_CheckPair>>(0, bandArray.Length() - 1);
             for (int i = 0; i < bandArray.Length(); ++i)
             {
-                PairList[i] = new NCollection_DynamicArray<BRepExtrema_CheckPair>();
+                PairList[i] = new List<BRepExtrema_CheckPair>();
             }
             Scope = new ProgressScope(range, "Boxes distances calculating", bandArray.Length());
             Ranges = new NCollection_Array1<ProgressRange>(0, bandArray.Length() - 1);
@@ -410,7 +411,7 @@ public sealed class DistanceShapeShape
                     double dist = box1.Distance(box2);
                     if (dist - DistRef < Eps)
                     {
-                        PairList[index].Append(new BRepExtrema_CheckPair(idx1, idx2, dist));
+                        PairList[index].Add(new BRepExtrema_CheckPair(idx1, idx2, dist));
                     }
                 }
             }
@@ -421,7 +422,7 @@ public sealed class DistanceShapeShape
             int size = 0;
             for (int i = PairList.Lower(); i <= PairList.Upper(); ++i)
             {
-                size += PairList[i].Length();
+                size += PairList[i].Count;
             }
             return size;
         }
@@ -429,14 +430,14 @@ public sealed class DistanceShapeShape
 
     //=================================================================================================
 
-    private bool DistanceMapMap(NCollection_IndexedMap<Shape> map1,
-                                NCollection_IndexedMap<Shape> map2,
+    private bool DistanceMapMap(IndexedSet<Shape> map1,
+                                IndexedSet<Shape> map2,
                                 NCollection_Array1<Box> lBox1,
                                 NCollection_Array1<Box> lBox2,
                                 ProgressRange range)
     {
-        int count1 = map1.Extent();
-        int count2 = map2.Extent();
+        int count1 = map1.Count;
+        int count2 = map2.Count;
 
         if (count1 == 0 || count2 == 0)
         {
@@ -490,7 +491,7 @@ public sealed class DistanceShapeShape
         int listIndex = 0;
         for (int i = 0; i < pairFunctor.PairList.Length(); ++i)
         {
-            for (int j = 0; j < pairFunctor.PairList[i].Length(); ++j)
+            for (int j = 0; j < pairFunctor.PairList[i].Count; ++j)
             {
                 pairList[listIndex] = pairFunctor.PairList[i][j];
                 ++listIndex;
@@ -745,10 +746,10 @@ public sealed class DistanceShapeShape
     //=================================================================================================
 
     private bool SolidTreatment(in Shape shape,
-                                NCollection_IndexedMap<Shape> vertexMap,
+                                IndexedSet<Shape> vertexMap,
                                 ProgressRange range)
     {
-        int mapSize = vertexMap.Extent();
+        int mapSize = vertexMap.Count;
         const int minTaskSize = 3;
         int nbThreads = ThreadCount;
         int nbTasks = nbThreads * 10;
@@ -778,7 +779,7 @@ public sealed class DistanceShapeShape
                 }
                 arrayOfArray[vectIndex].Resize(0, vectorSize - 1, false);
             }
-            arrayOfArray[vectIndex][shapeIndex] = vertexMap[i];
+            arrayOfArray[vectIndex][shapeIndex] = vertexMap[i - 1];
         }
 
         // Local variables for thread-safe communication during the parallel section (OCCT's atomics)
@@ -852,17 +853,17 @@ public sealed class DistanceShapeShape
         {
             if (!_isInitS1) // rebuild cached data for 1st shape
             {
-                if (!_mapV1.IsEmpty())
+                if (_mapV1.Count != 0)
                 {
-                    _bv1.Resize(1, _mapV1.Extent(), false);
+                    _bv1.Resize(1, _mapV1.Count, false);
                 }
-                if (!_mapE1.IsEmpty())
+                if (_mapE1.Count != 0)
                 {
-                    _be1.Resize(1, _mapE1.Extent(), false);
+                    _be1.Resize(1, _mapE1.Count, false);
                 }
-                if (!_mapF1.IsEmpty())
+                if (_mapF1.Count != 0)
                 {
-                    _bf1.Resize(1, _mapF1.Extent(), false);
+                    _bf1.Resize(1, _mapF1.Count, false);
                 }
 
                 BoxCalculation(_mapV1, _bv1);
@@ -874,17 +875,17 @@ public sealed class DistanceShapeShape
 
             if (!_isInitS2) // rebuild cached data for 2nd shape
             {
-                if (!_mapV2.IsEmpty())
+                if (_mapV2.Count != 0)
                 {
-                    _bv2.Resize(1, _mapV2.Extent(), false);
+                    _bv2.Resize(1, _mapV2.Count, false);
                 }
-                if (!_mapE2.IsEmpty())
+                if (_mapE2.Count != 0)
                 {
-                    _be2.Resize(1, _mapE2.Extent(), false);
+                    _be2.Resize(1, _mapE2.Count, false);
                 }
-                if (!_mapF2.IsEmpty())
+                if (_mapF2.Count != 0)
                 {
-                    _bf2.Resize(1, _mapF2.Extent(), false);
+                    _bf2.Resize(1, _mapF2.Count, false);
                 }
 
                 BoxCalculation(_mapV2, _bv2);
@@ -894,10 +895,10 @@ public sealed class DistanceShapeShape
                 _isInitS2 = true;
             }
 
-            if (_mapV1.Extent() != 0 && _mapV2.Extent() != 0)
+            if (_mapV1.Count != 0 && _mapV2.Count != 0)
             {
-                Vertex v1 = ShapeCasts.Vertex(_mapV1[1]);
-                Vertex v2 = ShapeCasts.Vertex(_mapV2[1]);
+                Vertex v1 = ShapeCasts.Vertex(_mapV1[0]);
+                Vertex v2 = ShapeCasts.Vertex(_mapV2[0]);
                 _distRef = DistanceInitiale(v1, v2);
             }
             else

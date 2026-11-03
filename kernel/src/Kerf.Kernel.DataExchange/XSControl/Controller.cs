@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
@@ -368,7 +369,7 @@ public abstract class Controller : Transient
         {
             return;
         }
-        _adaptorSession.Bind(name, item);
+        _adaptorSession[name] = item;
         if (toApply && item.IsKind(typeof(GeneralModifier)))
         {
             _adaptorApplied.Append(item);
@@ -381,9 +382,9 @@ public abstract class Controller : Transient
     public Transient? SessionItem(string name)
     {
         Transient item = null;
-        if (!_adaptorSession.IsEmpty())
+        if (_adaptorSession.Count != 0)
         {
-            item = _adaptorSession.Find(name);
+            item = _adaptorSession.GetValue(name);
         }
         return item;
     }
@@ -401,23 +402,23 @@ public abstract class Controller : Transient
     public virtual void Customise(ExchangeWorkSession ws)
     {
         StaticSet statics = ws.Statics();
-        NCollection_DynamicArray<Transient> aParams = new NCollection_DynamicArray<Transient>();
-        NCollection_DynamicArray<int> paramUses = new NCollection_DynamicArray<int>();
-        for (int ip = 0; ip < _paramNames.Length(); ip++)
+        List<Transient> aParams = new List<Transient>();
+        List<int> paramUses = new List<int>();
+        for (int ip = 0; ip < _paramNames.Count; ip++)
         {
             // OCCT's TraceStatic keeps the statics that exist when the controller is built
-            Static val = statics.Static(_paramNames.Value(ip));
+            Static val = statics.Static(_paramNames[ip]);
             if (val is null)
             {
                 continue;
             }
-            aParams.Append(val);
-            paramUses.Append(_paramUses.Value(ip));
+            aParams.Add(val);
+            paramUses.Add(_paramUses[ip]);
         }
         ws.SetParams(aParams, paramUses);
 
         // General
-        if (!_adaptorSession.IsEmpty())
+        if (_adaptorSession.Count != 0)
         {
             foreach (KeyValuePair<string, Transient> iter in _adaptorSession)
             {
@@ -519,7 +520,7 @@ public abstract class Controller : Transient
         ws.AddNamedItem("xst-static-params", paramform);
     }
 
-    public NCollection_DataMap<string, Transient> AdaptorSession()
+    public Dictionary<string, Transient> AdaptorSession()
     {
         return _adaptorSession;
     }
@@ -549,8 +550,8 @@ public abstract class Controller : Transient
     /// </remarks>
     protected void TraceStatic(string name, int use)
     {
-        _paramNames.Append(name);
-        _paramUses.Append(use);
+        _paramNames.Add(name);
+        _paramUses.Add(use);
     }
 
     /// <summary>
@@ -571,9 +572,9 @@ public abstract class Controller : Transient
     protected Protocol? _adaptorProtocol;
     protected ActorOfTransientProcess? _adaptorRead;
     protected ActorOfFinderProcess? _adaptorWrite;
-    protected NCollection_DataMap<string, Transient> _adaptorSession = new NCollection_DataMap<string, Transient>();
+    protected Dictionary<string, Transient> _adaptorSession = new Dictionary<string, Transient>();
     private NCollection_Sequence<Transient> _adaptorApplied = new NCollection_Sequence<Transient>();
-    private NCollection_DynamicArray<string> _paramNames = new NCollection_DynamicArray<string>(); // OCCT: myParams, the statics
-    private NCollection_DynamicArray<int> _paramUses = new NCollection_DynamicArray<int>();
+    private List<string> _paramNames = new List<string>(); // OCCT: myParams, the statics
+    private List<int> _paramUses = new List<int>();
     private NCollection_HArray1<TCollection_HAsciiString>? _modeWriteShapeN;
 }

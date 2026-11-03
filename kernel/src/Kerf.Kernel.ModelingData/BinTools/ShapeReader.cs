@@ -29,14 +29,14 @@ public class ShapeReader : ShapeSetBase
     private static readonly BrepBuilder ABuilder = new();
 
     // positions of the objects already read
-    private readonly NCollection_DataMap<ulong, Shape> _shapePos = new();
-    private readonly NCollection_DataMap<ulong, Placement> _locationPos = new();
-    private readonly NCollection_DataMap<ulong, Curve3D?> _curvePos = new();
-    private readonly NCollection_DataMap<ulong, Curve2D?> _curve2dPos = new();
-    private readonly NCollection_DataMap<ulong, Surface?> _surfacePos = new();
-    private readonly NCollection_DataMap<ulong, Polygon3D> _polygon3dPos = new();
-    private readonly NCollection_DataMap<ulong, PolygonOnTriangulation> _polygonPos = new();
-    private readonly NCollection_DataMap<ulong, Triangulation> _triangulationPos = new();
+    private readonly Dictionary<ulong, Shape> _shapePos = new();
+    private readonly Dictionary<ulong, Placement> _locationPos = new();
+    private readonly Dictionary<ulong, Curve3D?> _curvePos = new();
+    private readonly Dictionary<ulong, Curve2D?> _curve2dPos = new();
+    private readonly Dictionary<ulong, Surface?> _surfacePos = new();
+    private readonly Dictionary<ulong, Polygon3D> _polygon3dPos = new();
+    private readonly Dictionary<ulong, PolygonOnTriangulation> _polygonPos = new();
+    private readonly Dictionary<ulong, Triangulation> _triangulationPos = new();
 
     // OCCT.NET: untrusted input: the positions of the shapes and locations being read, and the depth of the recursion
     private readonly HashSet<ulong> _shapesInProgress = [];
@@ -135,7 +135,7 @@ public class ShapeReader : ShapeSetBase
         if (stream.IsReference)
         {
             ulong aRef = stream.ReadReference();
-            if (_shapePos.Find(aRef, out Shape found))
+            if (_shapePos.TryGetValue(aRef, out Shape found))
             {
                 // the shape is already retrieved, just add location
                 result = found;
@@ -190,7 +190,7 @@ public class ShapeReader : ShapeSetBase
         result.Closed(closedFlag);
         result.Infinite(inf);
         result.Convex(conv);
-        _shapePos.Bind(position, result);
+        _shapePos[position] = result;
         _shapesInProgress.Remove(position);
         result.Orientation(shapeOrientation);
         result.Location(shapeLocation, false);
@@ -510,7 +510,7 @@ public class ShapeReader : ShapeSetBase
         if (stream.IsReference)
         {
             ulong aRef = stream.ReadReference();
-            if (_locationPos.Find(aRef, out Placement found))
+            if (_locationPos.TryGetValue(aRef, out Placement found))
             {
                 // the location is already retrieved
                 return found;
@@ -549,7 +549,7 @@ public class ShapeReader : ShapeSetBase
             _locationsInProgress.Remove(position);
         }
 
-        _locationPos.Bind(position, loc);
+        _locationPos[position] = loc;
         return loc;
     }
 
@@ -565,7 +565,7 @@ public class ShapeReader : ShapeSetBase
             {
                 // get by reference
                 ulong aRef = stream.ReadReference();
-                if (_curvePos.Find(aRef, out Curve3D? found))
+                if (_curvePos.TryGetValue(aRef, out Curve3D? found))
                 {
                     // the curve is already retrieved
                     return found;
@@ -581,7 +581,7 @@ public class ShapeReader : ShapeSetBase
                 // read from the stream
                 BinaryCurveSet.ReadCurve(stream.Stream(), out result);
                 stream.UpdatePosition();
-                _curvePos.Bind(position, result);
+                _curvePos[position] = result;
             }
 
             return result;
@@ -604,7 +604,7 @@ public class ShapeReader : ShapeSetBase
             {
                 // get by reference
                 ulong aRef = stream.ReadReference();
-                if (_curve2dPos.Find(aRef, out Curve2D? found))
+                if (_curve2dPos.TryGetValue(aRef, out Curve2D? found))
                 {
                     // the curve is already retrieved
                     return found;
@@ -620,7 +620,7 @@ public class ShapeReader : ShapeSetBase
                 // read from the stream
                 BinaryCurve2dSet.ReadCurve2d(stream.Stream(), out result);
                 stream.UpdatePosition();
-                _curve2dPos.Bind(position, result);
+                _curve2dPos[position] = result;
             }
 
             return result;
@@ -643,7 +643,7 @@ public class ShapeReader : ShapeSetBase
             {
                 // get by reference
                 ulong aRef = stream.ReadReference();
-                if (_surfacePos.Find(aRef, out Surface? found))
+                if (_surfacePos.TryGetValue(aRef, out Surface? found))
                 {
                     // the surface is already retrieved
                     return found;
@@ -659,7 +659,7 @@ public class ShapeReader : ShapeSetBase
                 // read from the stream
                 BinarySurfaceSet.ReadSurface(stream.Stream(), out result);
                 stream.UpdatePosition();
-                _surfacePos.Bind(position, result);
+                _surfacePos[position] = result;
             }
 
             return result;
@@ -682,7 +682,7 @@ public class ShapeReader : ShapeSetBase
             {
                 // get by reference
                 ulong aRef = stream.ReadReference();
-                if (_polygon3dPos.Find(aRef, out Polygon3D found))
+                if (_polygon3dPos.TryGetValue(aRef, out Polygon3D? found))
                 {
                     // the polygon is already retrieved
                     return found;
@@ -717,7 +717,7 @@ public class ShapeReader : ShapeSetBase
                     }
                 }
 
-                _polygon3dPos.Bind(position, result);
+                _polygon3dPos[position] = result;
             }
 
             return result;
@@ -740,7 +740,7 @@ public class ShapeReader : ShapeSetBase
             {
                 // get by reference
                 ulong aRef = stream.ReadReference();
-                if (_polygonPos.Find(aRef, out PolygonOnTriangulation found))
+                if (_polygonPos.TryGetValue(aRef, out PolygonOnTriangulation? found))
                 {
                     // the polygon is already retrieved
                     return found;
@@ -777,7 +777,7 @@ public class ShapeReader : ShapeSetBase
                     result.SetParameters(aParams);
                 }
 
-                _polygonPos.Bind(position, result);
+                _polygonPos[position] = result;
             }
 
             return result;
@@ -800,7 +800,7 @@ public class ShapeReader : ShapeSetBase
             {
                 // get by reference
                 ulong aRef = stream.ReadReference();
-                if (_triangulationPos.Find(aRef, out Triangulation found))
+                if (_triangulationPos.TryGetValue(aRef, out Triangulation? found))
                 {
                     // the triangulation is already retrieved
                     return found;
@@ -863,7 +863,7 @@ public class ShapeReader : ShapeSetBase
                     }
                 }
 
-                _triangulationPos.Bind(position, result);
+                _triangulationPos[position] = result;
             }
 
             return result;

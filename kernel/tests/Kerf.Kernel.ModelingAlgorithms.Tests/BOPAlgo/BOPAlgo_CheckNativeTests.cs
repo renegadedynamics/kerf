@@ -3,6 +3,7 @@
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
@@ -99,7 +100,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
 
     private sealed class ShapeIndex
     {
-        private readonly NCollection_IndexedMap<Shape> myMap = new(ShapeHasher.Instance);
+        private readonly IndexedSet<Shape> myMap = new(ShapeHasher.Instance);
 
         public ShapeIndex(in Shape theS1, in Shape theS2)
         {
@@ -114,7 +115,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
         }
 
         public string Of(in Shape theS) =>
-            theS.IsNull ? "-" : $"{myMap.FindIndex(theS)}o{(int)theS.Orientation()}";
+            theS.IsNull ? "-" : $"{(myMap.IndexOf(theS) + 1)}o{(int)theS.Orientation()}";
     }
 
     private static string Results(IEnumerable<CheckResult> theResults, ShapeIndex theIndex)
@@ -169,7 +170,7 @@ public class BOPAlgo_CheckNativeTests(ITestOutputHelper output)
                     p.Indices(out int n1, out int n2);
                     return $" {n1},{n2}";
                 }));
-                aB += $"\nz {aDS.InterfVZ().Length()} {aDS.InterfEZ().Length()} {aDS.InterfFZ().Length()} {aDS.InterfZZ().Length()}\n";
+                aB += $"\nz {aDS.InterfVZ().Count} {aDS.InterfEZ().Count} {aDS.InterfFZ().Count} {aDS.InterfZZ().Count}\n";
                 return aB + PaveFillerDump.Write(aDS);
             }
             case "aa":

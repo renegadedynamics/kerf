@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
@@ -9,6 +10,7 @@ using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
+using System.Runtime.InteropServices;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests.BOPDS;
@@ -180,7 +182,7 @@ public class BOPDS_DSTests
         Assert.True(aDS.HasPaveBlocks(nE));
         Assert.Same(aLPB, aDS.PaveBlocks(nE));
         Assert.Equal(1, aLPB.Extent());
-        Assert.Equal(1, aDS.PaveBlocksPool().Length());
+        Assert.Single(aDS.PaveBlocksPool());
 
         PaveBlock aPB = aLPB.First();
         Assert.Equal(nE, aPB.OriginalEdge());
@@ -206,7 +208,7 @@ public class BOPDS_DSTests
         aDS.InitPaveBlocksForVertex(nV1);
         int aNbEdgesOfV1 = IndicesOfType(aDS, ShapeType.Edge).Count(e => aDS.ShapeInfo(e).HasSubShape(nV1));
         Assert.Equal(3, aNbEdgesOfV1);
-        Assert.Equal(3, aDS.PaveBlocksPool().Length());
+        Assert.Equal(3, aDS.PaveBlocksPool().Count);
     }
 
     [Fact]
@@ -314,7 +316,7 @@ public class BOPDS_DSTests
         aDS.ReleasePaveBlocks();
         Assert.False(aDS.HasPaveBlocks(anEdges[0]));
         Assert.False(aDS.HasPaveBlocks(anEdges[1]));
-        Assert.True(aDS.PaveBlocksPool().Value(0).IsEmpty());
+        Assert.True(aDS.PaveBlocksPool()[0].IsEmpty());
     }
 
     [Fact]
@@ -471,10 +473,11 @@ public class BOPDS_DSTests
         Assert.False(aDS.HasInterf(3, 41));
         Assert.Equal(1, aDS.Interferences().Extent());
 
-        InterfVV aVV = aDS.InterfVV().Append(new InterfVV());
+        InterfVV aVV = new InterfVV();
+        aDS.InterfVV().Add(aVV);
         aVV.SetIndices(3, 40);
         aVV.SetIndexNew(70);
-        InterfVV aRead = aDS.InterfVV().Value(0);
+        InterfVV aRead = aDS.InterfVV()[0];
         Assert.Same(aVV, aRead);
         Assert.Equal(40, aRead.OppositeIndex(3));
         Assert.Equal(3, aRead.OppositeIndex(40));
@@ -485,21 +488,25 @@ public class BOPDS_DSTests
         Assert.Equal(70, nNew);
         Assert.Equal(70, aRead.GetIndexNew());
 
-        InterfVE aVE = aDS.InterfVE().Append(new InterfVE());
+        InterfVE aVE = new InterfVE();
+        aDS.InterfVE().Add(aVE);
         aVE.SetParameter(2.5);
-        Assert.Equal(2.5, aDS.InterfVE().Value(0).Parameter());
+        Assert.Equal(2.5, aDS.InterfVE()[0].Parameter());
         Assert.Null(aVE.GetIndexNew());
         Assert.False(aVE.HasIndexNew());
 
-        InterfVF aVF = aDS.InterfVF().Append(new InterfVF());
+        InterfVF aVF = new InterfVF();
+        aDS.InterfVF().Add(aVF);
         aVF.SetUV(0.25, 0.75);
         aVF.UV(out double aU, out double aV);
         Assert.Equal((0.25, 0.75), (aU, aV));
 
-        InterfFF aFF = aDS.InterfFF().Append(new InterfFF());
+        InterfFF aFF = new InterfFF();
+        aDS.InterfFF().Add(aFF);
         aFF.Init(2, 1);
         aFF.SetTangentFaces(true);
-        SectionCurve aCurve = aFF.ChangeCurves().Append(new SectionCurve());
+        SectionCurve aCurve = new SectionCurve();
+        aFF.ChangeCurves().Add(aCurve);
         aCurve.SetTolerance(1e-5);
         aCurve.InitPaveBlock1();
         aCurve.InitPaveBlock1(); // only once
@@ -510,18 +517,20 @@ public class BOPDS_DSTests
         aPB1Ref = aReplacement;
         Assert.Same(aReplacement, aCurve.PaveBlocks().First());
         Assert.True(aCurve.HasEdge());
-        aFF.ChangePoints().Appended().SetIndex(9);
-        Assert.True(aDS.InterfFF().Value(0).TangentFaces());
-        Assert.Equal(1e-5, aDS.InterfFF().Value(0).Curves().Value(0).Tolerance());
-        Assert.Equal(9, aDS.InterfFF().Value(0).Points().Value(0).Index());
+        aFF.ChangePoints().Add(new DataPoint());
+        ref DataPoint aPoint = ref CollectionsMarshal.AsSpan(aFF.ChangePoints())[^1];
+        aPoint.SetIndex(9);
+        Assert.True(aDS.InterfFF()[0].TangentFaces());
+        Assert.Equal(1e-5, aDS.InterfFF()[0].Curves()[0].Tolerance());
+        Assert.Equal(9, aDS.InterfFF()[0].Points()[0].Index());
 
-        aDS.InterfEE().Append(new InterfEE());
-        aDS.InterfEF().Append(new InterfEF());
-        aDS.InterfVZ().Append(new InterfVZ());
-        aDS.InterfEZ().Append(new InterfEZ());
-        aDS.InterfFZ().Append(new InterfFZ());
-        aDS.InterfZZ().Append(new InterfZZ());
-        Assert.Equal(1, aDS.InterfZZ().Length());
+        aDS.InterfEE().Add(new InterfEE());
+        aDS.InterfEF().Add(new InterfEF());
+        aDS.InterfVZ().Add(new InterfVZ());
+        aDS.InterfEZ().Add(new InterfEZ());
+        aDS.InterfFZ().Add(new InterfFZ());
+        aDS.InterfZZ().Add(new InterfZZ());
+        Assert.Single(aDS.InterfZZ());
 
         // HasInterfShapeSubShapes / HasInterfSubShapes on a face of the first box
         int nF = IndicesOfType(aDS, ShapeType.Face, 0)[0];
@@ -537,7 +546,7 @@ public class BOPDS_DSTests
         Assert.True(aDS.HasInterfShapeSubShapes(50, nF, false));
 
         aDS.Clear();
-        Assert.Equal(0, aDS.InterfVV().Length());
+        Assert.Empty(aDS.InterfVV());
         Assert.Equal(0, aDS.Interferences().Extent());
         Assert.False(aDS.HasInterf(3));
     }
@@ -574,14 +583,15 @@ public class BOPDS_DSTests
         Assert.True(aDS.HasFaceInfo(nF));
         Assert.Same(aFI, aDS.FaceInfo(nF));
         Assert.Equal(nF, aFI.Index());
-        Assert.Equal(4, aFI.PaveBlocksOn().Extent());
+        Assert.Equal(4, aFI.PaveBlocksOn().Count);
         Assert.Equal(4, aFI.VerticesOn().Extent());
-        Assert.True(aFI.PaveBlocksIn().IsEmpty());
+        Assert.True(aFI.PaveBlocksIn().Count == 0);
         Assert.True(aFI.VerticesIn().IsEmpty());
 
         // A vertex/face interference puts the vertex In the face
         int nV = IndicesOfType(aDS, ShapeType.Vertex, 1)[0];
-        InterfVF aVF = aDS.InterfVF().Append(new InterfVF());
+        InterfVF aVF = new InterfVF();
+        aDS.InterfVF().Add(aVF);
         aVF.SetIndices(nV, nF);
         aDS.UpdateFaceInfoIn(nF);
         Assert.True(aFI.VerticesIn().Contains(nV));
@@ -590,7 +600,7 @@ public class BOPDS_DSTests
         aDS.UpdateFaceInfoIn(aFaces);
         Assert.True(aFI.VerticesIn().Contains(nV));
         aDS.UpdateFaceInfoOn(aFaces);
-        Assert.Equal(4, aFI.PaveBlocksOn().Extent());
+        Assert.Equal(4, aFI.PaveBlocksOn().Count);
 
         // the vertex In the face is alone: no In or Sc pave block ends there
         NCollection_List<int> anAlone = new();
@@ -599,24 +609,24 @@ public class BOPDS_DSTests
 
         // RefineFaceInfoOn keeps only pave blocks with edges
         aDS.RefineFaceInfoOn();
-        Assert.True(aFI.PaveBlocksOn().IsEmpty());
+        Assert.True(aFI.PaveBlocksOn().Count == 0);
 
         // RefineFaceInfoIn removes from In what is On
         aDS.UpdateFaceInfoOn(nF);
-        PaveBlock anOn = aFI.PaveBlocksOn().FindKey(1);
+        PaveBlock anOn = aFI.PaveBlocksOn()[0];
         aFI.ChangePaveBlocksIn().Add(anOn);
         aFI.ChangePaveBlocksIn().Add(new PaveBlock());
         aDS.RefineFaceInfoIn();
-        Assert.Equal(1, aFI.PaveBlocksIn().Extent());
+        Assert.Single(aFI.PaveBlocksIn());
         Assert.False(aFI.PaveBlocksIn().Contains(anOn));
 
         aFI.ChangePaveBlocksSc().Add(new PaveBlock());
         aFI.ChangeVerticesSc().Add(3);
         aFI.Clear(); // OCCT leaves the Sc maps
-        Assert.True(aFI.PaveBlocksOn().IsEmpty());
-        Assert.Equal(1, aFI.PaveBlocksSc().Extent());
+        Assert.True(aFI.PaveBlocksOn().Count == 0);
+        Assert.Single(aFI.PaveBlocksSc());
         Assert.Equal(1, aFI.VerticesSc().Extent());
-        Assert.Equal(1, aDS.FaceInfoPool().Length());
+        Assert.Single(aDS.FaceInfoPool());
     }
 
     [Fact]
@@ -643,10 +653,10 @@ public class BOPDS_DSTests
         Assert.True(aDS.ShapeInfo(nF2).HasSubShape(aShared.First()));
 
         NCollection_IntMap aMVOnIn = new(), aMVCommon = new();
-        NCollection_IndexedMap<PaveBlock> aPBOnIn = new();
+        IndexedSet<PaveBlock> aPBOnIn = new();
         HashSet<PaveBlock> aCommonPB = new();
         aDS.SubShapesOnIn(nF1, nF2, aMVOnIn, aMVCommon, aPBOnIn, aCommonPB);
-        Assert.Equal(7, aPBOnIn.Extent());
+        Assert.Equal(7, aPBOnIn.Count);
         Assert.Single(aCommonPB);
         Assert.Equal(6, aMVOnIn.Extent());
         Assert.Equal(2, aMVCommon.Extent());

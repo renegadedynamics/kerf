@@ -82,7 +82,7 @@ public sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve
             global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.AddEndpointExtrema(result, p, _domain, this, tol, mode);
 
             // Update status if we found any extrema (including endpoints)
-            if (!result._extrema.IsEmpty())
+            if (result._extrema.Count != 0)
             {
                 result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;
             }
@@ -114,8 +114,8 @@ public sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve
         int samplesPerSpan = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.THE_BSPLINE_SPAN_MULTIPLIER * (degree + 1);
 
         // Single-pass algorithm using dynamic vector
-        NCollection_DynamicArray<double> aParams = new();
-        aParams.Append(theUMin);
+        List<double> aParams = new();
+        aParams.Add(theUMin);
 
         for (int i = knots.Lower(); i < knots.Upper(); ++i)
         {
@@ -134,21 +134,21 @@ public sealed class BSplineCurveExtrema : global::Kerf.Engine.Extrema.PointCurve
                 double u = spanLo + j * step;
                 if (u > theUMin && u < theUMax)
                 {
-                    aParams.Append(u);
+                    aParams.Add(u);
                 }
             }
             if (knotHi > theUMin && knotHi < theUMax)
             {
-                aParams.Append(knotHi);
+                aParams.Add(knotHi);
             }
         }
-        aParams.Append(theUMax);
+        aParams.Add(theUMax);
 
         // Convert to math_Vector (required by BuildGrid interface)
-        math_Vector result = new(1, aParams.Length());
-        for (int i = 0; i < aParams.Length(); ++i)
+        math_Vector result = new(1, aParams.Count);
+        for (int i = 0; i < aParams.Count; ++i)
         {
-            result[i + 1] = aParams.Value(i);
+            result[i + 1] = aParams[i];
         }
 
         return result;

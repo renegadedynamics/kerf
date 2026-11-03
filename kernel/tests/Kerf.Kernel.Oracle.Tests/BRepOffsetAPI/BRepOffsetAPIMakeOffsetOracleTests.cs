@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
@@ -252,7 +253,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             // Generated, as indices of the result's edges and vertices
             var aNResMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aNRes, aNResMap);
-            NCollection_IndexedMap<Shape> aPResMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aPResMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aPRes, aPResMap);
             if (aNResMap.Extent() <= 1)
             {
@@ -260,7 +261,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
             }
             var aNInMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aNIn, aNInMap);
-            NCollection_IndexedMap<Shape> aPInMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aPInMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aPIn, aPInMap);
             var aNH = new List<string>();
             var aPH = new List<string>();
@@ -272,7 +273,7 @@ public sealed class BRepOffsetAPIMakeOffsetOracleTests(ITestOutputHelper output)
                     continue;
                 }
                 aNH.Add($"{i}:" + string.Join(",", aN.Generated(aNS).Select(s => aNResMap.FindIndex(s))));
-                aPH.Add($"{i}:" + string.Join(",", aP.Generated(aPInMap.FindKey(i)).Select(s => aPResMap.FindIndex(s))));
+                aPH.Add($"{i}:" + string.Join(",", aP.Generated(aPInMap[i - 1]).Select(s => (aPResMap.IndexOf(s) + 1))));
             }
             static string Sorted(string theEntry)
             {

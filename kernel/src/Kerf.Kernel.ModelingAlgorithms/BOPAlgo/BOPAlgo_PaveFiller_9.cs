@@ -40,7 +40,7 @@ public partial class PaveFiller
         Span<int> nS = stackalloc int[2];
         NCollection_List<PaveBlock>.Iterator itLPB = new();
         NCollection_IntMap mi = new();
-        NCollection_DynamicArray<ShrunkRange> vsd = new();
+        List<ShrunkRange> vsd = new();
         Span<ShapeType> type = [aType1, aType2];
         //
         for (; _iterator.More(); _iterator.Next())
@@ -81,7 +81,8 @@ public partial class PaveFiller
                     //
                     Vertex v2 = ShapeCasts.Vertex(_ds.Shape(nV2));
                     //
-                    ShrunkRange sd = vsd.Append(new ShrunkRange());
+                    ShrunkRange sd =  new ShrunkRange();
+                    vsd.Add(sd);
                     //
                     sd.SetPaveBlock(pb);
                     sd.SetData(e, t1, t2, v1, v2);
@@ -89,7 +90,7 @@ public partial class PaveFiller
             }
         }
         //
-        nbVSD = vsd.Length();
+        nbVSD = vsd.Count;
         //=============================================================
         BooleanParallel.Perform(_runParallel, vsd, _context!);
         //=============================================================

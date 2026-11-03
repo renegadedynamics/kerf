@@ -690,8 +690,8 @@ public class FixSmallFaceFixer : RootFixer
     /// </summary>
     internal bool SplitOneFace(ref Face F, in Compound splittedFaces)
     {
-        var mapEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var mapParam = new NCollection_DataMap<Shape, NCollection_List<double>>(ShapeHasher.Instance);
+        var mapEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapParam = new Dictionary<Shape, NCollection_List<double>>(ShapeHasher.Instance);
         var theAllVert = new Compound();
         var theBuilder = new BrepBuilder();
         theBuilder.MakeCompound(ref theAllVert);

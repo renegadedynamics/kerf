@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
@@ -38,29 +39,29 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 public sealed class DsDataStructure
 {
     private int _nbSurfaces;
-    internal readonly NCollection_DataMap<int, DsSurfaceData> _surfaces = new();
+    internal readonly Dictionary<int, DsSurfaceData> _surfaces = new();
     private int _nbCurves;
-    internal readonly NCollection_DataMap<int, DsCurveData> _curves = new();
+    internal readonly Dictionary<int, DsCurveData> _curves = new();
     private int _nbPoints;
-    internal readonly NCollection_DataMap<int, DsPointData> _points = new();
-    private readonly NCollection_IndexedDataMap<Shape, DsShapeData> _shapes = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _sectionEdges = new(ShapeHasher.Instance);
+    internal readonly Dictionary<int, DsPointData> _points = new();
+    private readonly IndexedMap<Shape, DsShapeData> _shapes = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _sectionEdges = new(ShapeHasher.Instance);
     private readonly NCollection_List<DsInterference> _emptyListOfInterference = new();
     private readonly NCollection_List<Shape> _emptyListOfShape = new();
     private Shape _emptyShape = new();
     private DsPoint _emptyPoint = new();
     private DsSurface _emptySurface = new();
     private DsCurve _emptyCurve = new();
-    private readonly NCollection_DataMap<Shape, Surface> _newSurface = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Surface> _newSurface = new(ShapeHasher.Instance);
     private bool _isfafa;
     private int _i;
-    private readonly NCollection_IndexedDataMap<Shape, DsShapeWithState> _mapOfShapeWithStateObj = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedDataMap<Shape, DsShapeWithState> _mapOfShapeWithStateTool = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapOfRejectedShapesObj = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mapOfRejectedShapesTool = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, DsShapeWithState> _mapOfShapeWithStateObj = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, DsShapeWithState> _mapOfShapeWithStateTool = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapOfRejectedShapesObj = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapOfRejectedShapesTool = new(ShapeHasher.Instance);
 
     // OCCT.NET: OCCT's function-scope statics of ChangeMapOfShapeWithState and GetShapeWithState (decision 1063)
-    private readonly NCollection_IndexedDataMap<Shape, DsShapeWithState> _dummyMapOfShapeWithState = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, DsShapeWithState> _dummyMapOfShapeWithState = new(ShapeHasher.Instance);
     private readonly DsShapeWithState _dummyShapeWithState = new();
 
     /// <summary>An empty data structure.</summary>
@@ -99,7 +100,7 @@ public sealed class DsDataStructure
         _nbSurfaces++;
         // modified by NIZNHY-PKV Tue Oct 30 09:22:04 2001 f
         DsSurfaceData sd = new(s);
-        _surfaces.Bind(_nbSurfaces, sd);
+        _surfaces[_nbSurfaces] = sd;
         // mySurfaces.Bind(myNbSurfaces,S);
         // modified by NIZNHY-PKV Tue Oct 30 09:22:20 2001 t
         return _nbSurfaces;
@@ -108,7 +109,7 @@ public sealed class DsDataStructure
     /// <summary>Removes the surface <paramref name="i"/> (its index is not reused).</summary>
     internal void RemoveSurface(int i)
     {
-        _surfaces.UnBind(i);
+        _surfaces.Remove(i);
     }
 
     /// <summary>Whether the surface <paramref name="i"/> is kept.</summary>
@@ -149,7 +150,7 @@ public sealed class DsDataStructure
         c.ChangeDSIndex(_nbCurves);
 
         DsCurveData cd = new(c);
-        _curves.Bind(_nbCurves, cd);
+        _curves[_nbCurves] = cd;
         return _nbCurves;
     }
 
@@ -209,7 +210,7 @@ public sealed class DsDataStructure
     internal int AddPoint(in DsPoint pds)
     {
         _nbPoints++;
-        _points.Bind(_nbPoints, new DsPointData(pds));
+        _points[_nbPoints] = new DsPointData(pds);
         return _nbPoints;
     }
 
@@ -258,11 +259,11 @@ public sealed class DsDataStructure
     /// <summary>Adds the shape <paramref name="s"/> if it is new (its own same-domain reference); returns its index.</summary>
     internal int AddShape(in Shape s)
     {
-        int iS = _shapes.FindIndex(s);
+        int iS = _shapes.IndexOf(s) + 1;
         if (iS == 0)
         {
             DsShapeData sd = new();
-            iS = _shapes.Add(s, sd);
+            iS = _shapes.Add(s, sd) + 1;
             // a shape is its own reference, oriented as itself
             SameDomainRef(iS, iS);
             SameDomainOri(iS, DsConfig.Sameoriented);
@@ -276,11 +277,11 @@ public sealed class DsDataStructure
     /// </summary>
     internal int AddShape(in Shape s, int ianc)
     {
-        int iS = _shapes.FindIndex(s);
+        int iS = _shapes.IndexOf(s) + 1;
         if (iS == 0)
         {
             DsShapeData sd = new();
-            iS = _shapes.Add(s, sd);
+            iS = _shapes.Add(s, sd) + 1;
             // a shape is its own reference, oriented as itself
             SameDomainRef(iS, iS);
             SameDomainOri(iS, DsConfig.Sameoriented);
@@ -293,9 +294,9 @@ public sealed class DsDataStructure
     public bool KeepShape(int i, bool findKeep = true)
     {
         bool b = false;
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            Shape s = _shapes.FindKey(i);
+            Shape s = _shapes.KeyAt(i - 1);
             if (findKeep)
             {
                 b = KeepShape(s);
@@ -312,9 +313,9 @@ public sealed class DsDataStructure
     public bool KeepShape(in Shape s, bool findKeep = true)
     {
         bool b = false;
-        if ((!_shapes.IsEmpty()) && (!s.IsNull) && _shapes.Contains(s))
+        if ((_shapes.Count != 0) && (!s.IsNull) && _shapes.ContainsKey(s))
         {
-            DsShapeData sd = _shapes.FindFromKey(s);
+            DsShapeData sd = _shapes.GetValue(s);
             if (findKeep)
             {
                 b = sd.Keep();
@@ -329,18 +330,18 @@ public sealed class DsDataStructure
 
     internal void ChangeKeepShape(int i, bool findKeep)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            Shape s = _shapes.FindKey(i);
+            Shape s = _shapes.KeyAt(i - 1);
             ChangeKeepShape(s, findKeep);
         }
     }
 
     internal void ChangeKeepShape(in Shape s, bool findKeep)
     {
-        if (!s.IsNull && _shapes.Contains(s))
+        if (!s.IsNull && _shapes.ContainsKey(s))
         {
-            DsShapeData sd = _shapes.ChangeFromKey(s);
+            DsShapeData sd = _shapes.GetValue(s);
             sd.ChangeKeep(findKeep);
         }
     }
@@ -353,36 +354,36 @@ public sealed class DsDataStructure
     /// <summary>Adds the section edge <paramref name="e"/> if it is new; returns its index among the section edges.</summary>
     internal int AddSectionEdge(in Edge e)
     {
-        int iE = _sectionEdges.FindIndex(e);
+        int iE = _sectionEdges.IndexOf(e) + 1;
         if (iE == 0)
         {
-            iE = _sectionEdges.Add(e);
+            iE = _sectionEdges.Add(e) + 1;
         }
         return iE;
     }
 
     /// <summary>The map of the shapes and their data.</summary>
-    internal NCollection_IndexedDataMap<Shape, DsShapeData> ChangeShapes() => _shapes;
+    internal IndexedMap<Shape, DsShapeData> ChangeShapes() => _shapes;
 
     /// <summary>The interferences of the surface <paramref name="i"/> (the shared empty list if there is none).</summary>
     public NCollection_List<DsInterference> SurfaceInterferences(int i)
     {
-        if (!_surfaces.IsBound(i))
+        if (!_surfaces.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsSurfaceData sd = _surfaces.Find(i);
+        DsSurfaceData sd = _surfaces.GetValue(i);
         NCollection_List<DsInterference> li = sd.Interferences();
         return li;
     }
 
     internal NCollection_List<DsInterference> ChangeSurfaceInterferences(int i)
     {
-        if (!_surfaces.IsBound(i))
+        if (!_surfaces.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsSurfaceData sd = _surfaces.ChangeFind(i);
+        DsSurfaceData sd = _surfaces.GetValue(i);
         NCollection_List<DsInterference> li = sd.ChangeInterferences();
         return li;
     }
@@ -390,22 +391,22 @@ public sealed class DsDataStructure
     /// <summary>The interferences of the curve <paramref name="i"/> (the shared empty list if there is none).</summary>
     public NCollection_List<DsInterference> CurveInterferences(int i)
     {
-        if (!_curves.IsBound(i))
+        if (!_curves.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsCurveData cd = _curves.Find(i);
+        DsCurveData cd = _curves.GetValue(i);
         NCollection_List<DsInterference> li = cd.Interferences();
         return li;
     }
 
     internal NCollection_List<DsInterference> ChangeCurveInterferences(int i)
     {
-        if (!_curves.IsBound(i))
+        if (!_curves.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsCurveData cd = _curves.ChangeFind(i);
+        DsCurveData cd = _curves.GetValue(i);
         NCollection_List<DsInterference> li = cd.ChangeInterferences();
         return li;
     }
@@ -413,22 +414,22 @@ public sealed class DsDataStructure
     /// <summary>The interferences of the point <paramref name="i"/> (the shared empty list if there is none).</summary>
     public NCollection_List<DsInterference> PointInterferences(int i)
     {
-        if (!_points.IsBound(i))
+        if (!_points.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsPointData pd = _points.Find(i);
+        DsPointData pd = _points.GetValue(i);
         NCollection_List<DsInterference> li = pd.Interferences();
         return li;
     }
 
     internal NCollection_List<DsInterference> ChangePointInterferences(int i)
     {
-        if (!_points.IsBound(i))
+        if (!_points.ContainsKey(i))
         {
             return _emptyListOfInterference;
         }
-        DsPointData pd = _points.ChangeFind(i);
+        DsPointData pd = _points.GetValue(i);
         NCollection_List<DsInterference> li = pd.ChangeInterferences();
         return li;
     }
@@ -438,7 +439,7 @@ public sealed class DsDataStructure
     {
         if (HasShape(s, findKeep))
         {
-            return _shapes.FindFromKey(s)._interferences;
+            return _shapes.GetValue(s)._interferences;
         }
         return _emptyListOfInterference;
     }
@@ -450,7 +451,7 @@ public sealed class DsDataStructure
             // OCCT: the shared empty list, for writing (decision 1066)
             return _emptyListOfInterference;
         }
-        DsShapeData sd = _shapes.ChangeFromKey(s);
+        DsShapeData sd = _shapes.GetValue(s);
         return sd._interferences;
     }
 
@@ -461,12 +462,12 @@ public sealed class DsDataStructure
         {
             return _emptyListOfInterference;
         }
-        return _shapes.FindFromIndex(i)._interferences;
+        return _shapes.ValueAt(i - 1)._interferences;
     }
 
     internal NCollection_List<DsInterference> ChangeShapeInterferences(int i)
     {
-        DsShapeData sd = _shapes.ChangeFromIndex(i);
+        DsShapeData sd = _shapes.ValueAt(i - 1);
         return sd._interferences;
     }
 
@@ -475,9 +476,9 @@ public sealed class DsDataStructure
     {
         if (!s.IsNull)
         {
-            if (_shapes.Contains(s))
+            if (_shapes.ContainsKey(s))
             {
-                DsShapeData sd = _shapes.FindFromKey(s);
+                DsShapeData sd = _shapes.GetValue(s);
                 NCollection_List<Shape> l = sd._sameDomain;
                 return l;
             }
@@ -487,16 +488,16 @@ public sealed class DsDataStructure
 
     internal NCollection_List<Shape> ChangeShapeSameDomain(in Shape s)
     {
-        DsShapeData sd = _shapes.ChangeFromKey(s);
+        DsShapeData sd = _shapes.GetValue(s);
         return sd._sameDomain;
     }
 
     /// <summary>The shapes sharing the geometrical domain of the shape <paramref name="i"/>.</summary>
     public NCollection_List<Shape> ShapeSameDomain(int i)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            DsShapeData sd = _shapes.FindFromIndex(i);
+            DsShapeData sd = _shapes.ValueAt(i - 1);
             NCollection_List<Shape> l = sd._sameDomain;
             return l;
         }
@@ -508,7 +509,7 @@ public sealed class DsDataStructure
 
     internal NCollection_List<Shape> ChangeShapeSameDomain(int i)
     {
-        DsShapeData sd = _shapes.ChangeFromIndex(i);
+        DsShapeData sd = _shapes.ValueAt(i - 1);
         return sd._sameDomain;
     }
 
@@ -555,9 +556,9 @@ public sealed class DsDataStructure
     /// <summary>The index of the same-domain reference of the shape <paramref name="i"/>, or 0.</summary>
     public int SameDomainRef(int i)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            return _shapes.FindFromIndex(i)._sameDomainRef;
+            return _shapes.ValueAt(i - 1)._sameDomainRef;
         }
         return 0;
     }
@@ -569,18 +570,18 @@ public sealed class DsDataStructure
         {
             return 0;
         }
-        if (_shapes.Contains(s))
+        if (_shapes.ContainsKey(s))
         {
-            return _shapes.FindFromKey(s)._sameDomainRef;
+            return _shapes.GetValue(s)._sameDomainRef;
         }
         return 0;
     }
 
     internal void SameDomainRef(int i, int Ref)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            DsShapeData sd = _shapes.ChangeFromIndex(i);
+            DsShapeData sd = _shapes.ValueAt(i - 1);
             sd._sameDomainRef = Ref;
         }
     }
@@ -591,9 +592,9 @@ public sealed class DsDataStructure
         {
             return;
         }
-        if (_shapes.Contains(s))
+        if (_shapes.ContainsKey(s))
         {
-            DsShapeData sd = _shapes.ChangeFromKey(s);
+            DsShapeData sd = _shapes.GetValue(s);
             sd._sameDomainRef = Ref;
         }
     }
@@ -601,9 +602,9 @@ public sealed class DsDataStructure
     /// <summary>How the shape <paramref name="i"/> lies with respect to its same-domain reference.</summary>
     public DsConfig SameDomainOri(int i)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            return _shapes.FindFromIndex(i)._sameDomainOri;
+            return _shapes.ValueAt(i - 1)._sameDomainOri;
         }
         return DsConfig.Unshgeometry;
     }
@@ -613,9 +614,9 @@ public sealed class DsDataStructure
     {
         if (!s.IsNull)
         {
-            if (_shapes.Contains(s))
+            if (_shapes.ContainsKey(s))
             {
-                return _shapes.FindFromKey(s)._sameDomainOri;
+                return _shapes.GetValue(s)._sameDomainOri;
             }
         }
         return DsConfig.Unshgeometry;
@@ -623,9 +624,9 @@ public sealed class DsDataStructure
 
     internal void SameDomainOri(int i, DsConfig ori)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            DsShapeData sd = _shapes.ChangeFromIndex(i);
+            DsShapeData sd = _shapes.ValueAt(i - 1);
             sd._sameDomainOri = ori;
         }
     }
@@ -634,9 +635,9 @@ public sealed class DsDataStructure
     {
         if (!s.IsNull)
         {
-            if (_shapes.Contains(s))
+            if (_shapes.ContainsKey(s))
             {
-                DsShapeData sd = _shapes.ChangeFromKey(s);
+                DsShapeData sd = _shapes.GetValue(s);
                 sd._sameDomainOri = ori;
             }
         }
@@ -645,9 +646,9 @@ public sealed class DsDataStructure
     /// <summary>The same-domain index (1 or 2: which argument) of the shape <paramref name="i"/>, or 0.</summary>
     public int SameDomainInd(int i)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            return _shapes.FindFromIndex(i)._sameDomainInd;
+            return _shapes.ValueAt(i - 1)._sameDomainInd;
         }
         return 0;
     }
@@ -657,9 +658,9 @@ public sealed class DsDataStructure
     {
         if (!s.IsNull)
         {
-            if (_shapes.Contains(s))
+            if (_shapes.ContainsKey(s))
             {
-                return _shapes.FindFromKey(s)._sameDomainInd;
+                return _shapes.GetValue(s)._sameDomainInd;
             }
         }
         return 0;
@@ -667,9 +668,9 @@ public sealed class DsDataStructure
 
     internal void SameDomainInd(int i, int ind)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            DsShapeData sd = _shapes.ChangeFromIndex(i);
+            DsShapeData sd = _shapes.ValueAt(i - 1);
             sd._sameDomainInd = ind;
         }
     }
@@ -680,9 +681,9 @@ public sealed class DsDataStructure
         {
             return;
         }
-        if (_shapes.Contains(s))
+        if (_shapes.ContainsKey(s))
         {
-            DsShapeData sd = _shapes.ChangeFromKey(s);
+            DsShapeData sd = _shapes.GetValue(s);
             sd._sameDomainInd = ind;
         }
     }
@@ -690,9 +691,9 @@ public sealed class DsDataStructure
     /// <summary>The ancestor rank (the argument it comes from) of the shape <paramref name="i"/>, or 0.</summary>
     public int AncestorRank(int i)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            return _shapes.FindFromIndex(i)._ancestorRank;
+            return _shapes.ValueAt(i - 1)._ancestorRank;
         }
         return 0;
     }
@@ -704,18 +705,18 @@ public sealed class DsDataStructure
         {
             return 0;
         }
-        if (_shapes.Contains(s))
+        if (_shapes.ContainsKey(s))
         {
-            return _shapes.FindFromKey(s)._ancestorRank;
+            return _shapes.GetValue(s)._ancestorRank;
         }
         return 0;
     }
 
     internal void AncestorRank(int i, int ianc)
     {
-        if (i >= 1 && i <= _shapes.Extent())
+        if (i >= 1 && i <= _shapes.Count)
         {
-            DsShapeData sd = _shapes.ChangeFromIndex(i);
+            DsShapeData sd = _shapes.ValueAt(i - 1);
             sd._ancestorRank = ianc;
         }
     }
@@ -726,9 +727,9 @@ public sealed class DsDataStructure
         {
             return;
         }
-        if (_shapes.Contains(s))
+        if (_shapes.ContainsKey(s))
         {
-            DsShapeData sd = _shapes.ChangeFromKey(s);
+            DsShapeData sd = _shapes.GetValue(s);
             sd._ancestorRank = ianc;
         }
     }
@@ -760,7 +761,7 @@ public sealed class DsDataStructure
         Orientation o2 = s2.Orientation();
 
         int iS1 = AddShape(s1, 1);
-        DsShapeData sd1 = _shapes.ChangeFromIndex(iS1);
+        DsShapeData sd1 = _shapes.ValueAt(iS1 - 1);
         bool isdef1 = sd1._orientationDef;
         bool todef1 = (!isdef1);
         if (isdef1 && sd1._sameDomainOri == DsConfig.Unshgeometry)
@@ -774,7 +775,7 @@ public sealed class DsDataStructure
         }
 
         int iS2 = AddShape(s2, 2);
-        DsShapeData sd2 = _shapes.ChangeFromIndex(iS2);
+        DsShapeData sd2 = _shapes.ValueAt(iS2 - 1);
         bool isdef2 = sd2._orientationDef;
         bool todef2 = (!isdef2);
         if (isdef2 && sd2._sameDomainOri == DsConfig.Unshgeometry)
@@ -838,7 +839,7 @@ public sealed class DsDataStructure
         }
 
         Shape sr = Shape(r);
-        DsShapeData sd = _shapes.FindFromKey(sr);
+        DsShapeData sd = _shapes.GetValue(sr);
         Orientation oSr = sd._orientation;
         sr.Orientation(oSr);
 
@@ -885,7 +886,7 @@ public sealed class DsDataStructure
                                        bool refFirst = true)
     {
         int iS1 = AddShape(s1, 1);
-        DsShapeData sd1 = _shapes.ChangeFromIndex(iS1);
+        DsShapeData sd1 = _shapes.ValueAt(iS1 - 1);
         bool isdef1 = sd1._orientationDef;
         bool todef1 = true;
         if (c1 == DsConfig.Unshgeometry && isdef1)
@@ -894,7 +895,7 @@ public sealed class DsDataStructure
         }
 
         int iS2 = AddShape(s2, 2);
-        DsShapeData sd2 = _shapes.ChangeFromIndex(iS2);
+        DsShapeData sd2 = _shapes.ValueAt(iS2 - 1);
         bool isdef2 = sd2._orientationDef;
         bool todef2 = true;
         if (c2 == DsConfig.Unshgeometry && isdef2)
@@ -953,23 +954,23 @@ public sealed class DsDataStructure
     /// <summary>The number of shapes.</summary>
     public int NbShapes()
     {
-        int n = _shapes.Extent();
+        int n = _shapes.Count;
         return n;
     }
 
     /// <summary>The number of section edges.</summary>
     public int NbSectionEdges()
     {
-        int n = _sectionEdges.Extent();
+        int n = _sectionEdges.Count;
         return n;
     }
 
     /// <summary>The surface <paramref name="i"/> (the data structure's empty surface if there is none).</summary>
     public DsSurface Surface(int i)
     {
-        if (_surfaces.IsBound(i))
+        if (_surfaces.ContainsKey(i))
         {
-            return _surfaces[i]._surface;
+            return _surfaces.GetValue(i)._surface;
         }
         else
         {
@@ -980,9 +981,9 @@ public sealed class DsDataStructure
     /// <summary>The surface <paramref name="i"/> for writing (the data structure's empty surface if there is none).</summary>
     internal ref DsSurface ChangeSurface(int i)
     {
-        if (_surfaces.IsBound(i))
+        if (_surfaces.ContainsKey(i))
         {
-            return ref _surfaces[i]._surface;
+            return ref _surfaces.GetValue(i)._surface;
         }
         else
         {
@@ -993,9 +994,9 @@ public sealed class DsDataStructure
     /// <summary>The curve <paramref name="i"/> (the data structure's empty curve if there is none).</summary>
     public DsCurve Curve(int i)
     {
-        if (_curves.IsBound(i))
+        if (_curves.ContainsKey(i))
         {
-            DsCurveData cd = _curves[i];
+            DsCurveData cd = _curves.GetValue(i);
             DsCurve c = cd._curve;
             return c;
         }
@@ -1008,9 +1009,9 @@ public sealed class DsDataStructure
     /// <summary>The curve <paramref name="i"/> for writing (the data structure's empty curve if there is none).</summary>
     internal ref DsCurve ChangeCurve(int i)
     {
-        if (_curves.IsBound(i))
+        if (_curves.ContainsKey(i))
         {
-            DsCurveData cd = _curves.ChangeFind(i);
+            DsCurveData cd = _curves.GetValue(i);
             return ref cd._curve;
         }
         return ref _emptyCurve;
@@ -1025,9 +1026,9 @@ public sealed class DsDataStructure
             throw new ProgramErrorException("TopOpeBRepDS_DataStructure::Point");
         }
 
-        if (_points.IsBound(i))
+        if (_points.ContainsKey(i))
         {
-            return _points[i]._point;
+            return _points.GetValue(i)._point;
         }
         else
         {
@@ -1044,9 +1045,9 @@ public sealed class DsDataStructure
             throw new ProgramErrorException("TopOpeBRepDS_DataStructure::Point");
         }
 
-        if (_points.IsBound(i))
+        if (_points.ContainsKey(i))
         {
-            return ref _points[i]._point;
+            return ref _points.GetValue(i)._point;
         }
         else
         {
@@ -1059,7 +1060,7 @@ public sealed class DsDataStructure
     {
         if (KeepShape(i, findKeep))
         {
-            Shape s = _shapes.FindKey(i);
+            Shape s = _shapes.KeyAt(i - 1);
             return s;
         }
         return _emptyShape;
@@ -1072,7 +1073,7 @@ public sealed class DsDataStructure
         bool hs = HasShape(s, findKeep);
         if (hs)
         {
-            i = _shapes.FindIndex(s);
+            i = _shapes.IndexOf(s) + 1;
         }
         return i;
     }
@@ -1080,7 +1081,7 @@ public sealed class DsDataStructure
     /// <summary>The section edge <paramref name="i"/>, or a null edge if it isn't a kept shape of the data structure.</summary>
     public Edge SectionEdge(int i, bool findKeep = true)
     {
-        Shape s = _sectionEdges.FindKey(i);
+        Shape s = _sectionEdges[i - 1];
         if (HasShape(s, findKeep))
         {
             return ShapeCasts.Edge(s);
@@ -1094,7 +1095,7 @@ public sealed class DsDataStructure
         int i = 0;
         if (KeepShape(s, findKeep))
         {
-            i = _sectionEdges.FindIndex(s);
+            i = _sectionEdges.IndexOf(s) + 1;
         }
         return i;
     }
@@ -1131,13 +1132,13 @@ public sealed class DsDataStructure
     /// <summary>Sets the new surface of the face <paramref name="f"/>.</summary>
     internal void SetNewSurface(in Shape f, Surface s)
     {
-        _newSurface.Bind(f, s);
+        _newSurface[f] = s;
     }
 
     /// <summary>Whether the face <paramref name="f"/> has a new surface.</summary>
     public bool HasNewSurface(in Shape f)
     {
-        bool b = _newSurface.IsBound(f);
+        bool b = _newSurface.ContainsKey(f);
         return b;
     }
 
@@ -1146,7 +1147,7 @@ public sealed class DsDataStructure
     {
         if (HasNewSurface(f))
         {
-            return _newSurface.Find(f);
+            return _newSurface.GetValue(f);
         }
         return null;
     }
@@ -1172,10 +1173,10 @@ public sealed class DsDataStructure
     /// <summary>Whether the data structure comes from a face/face operation.</summary>
     public bool Isfafa() => _isfafa;
 
-    internal NCollection_IndexedDataMap<Shape, DsShapeWithState> ChangeMapOfShapeWithStateObj()
+    internal IndexedMap<Shape, DsShapeWithState> ChangeMapOfShapeWithStateObj()
         => _mapOfShapeWithStateObj;
 
-    internal NCollection_IndexedDataMap<Shape, DsShapeWithState> ChangeMapOfShapeWithStateTool()
+    internal IndexedMap<Shape, DsShapeWithState> ChangeMapOfShapeWithStateTool()
         => _mapOfShapeWithStateTool;
 
     /// <summary>
@@ -1183,17 +1184,17 @@ public sealed class DsDataStructure
     /// <paramref name="aFlag"/> is false and the result is an empty map.
     /// </summary>
     /// <remarks>OCCT returns a function-scope static map, shared by every data structure; the port's is this one's (decision 1063).</remarks>
-    internal NCollection_IndexedDataMap<Shape, DsShapeWithState> ChangeMapOfShapeWithState(in Shape aShape,
+    internal IndexedMap<Shape, DsShapeWithState> ChangeMapOfShapeWithState(in Shape aShape,
                                                                                                              out bool aFlag)
     {
         aFlag = true;
 
-        if (_mapOfShapeWithStateObj.Contains(aShape))
+        if (_mapOfShapeWithStateObj.ContainsKey(aShape))
         {
             return _mapOfShapeWithStateObj;
         }
 
-        if (_mapOfShapeWithStateTool.Contains(aShape))
+        if (_mapOfShapeWithStateTool.ContainsKey(aShape))
         {
             return _mapOfShapeWithStateTool;
         }
@@ -1205,18 +1206,18 @@ public sealed class DsDataStructure
     /// <summary>The shape with state of <paramref name="aShape"/>, or an empty one.</summary>
     public DsShapeWithState GetShapeWithState(in Shape aShape)
     {
-        if (_mapOfShapeWithStateObj.Contains(aShape))
+        if (_mapOfShapeWithStateObj.ContainsKey(aShape))
         {
-            return _mapOfShapeWithStateObj.FindFromKey(aShape);
+            return _mapOfShapeWithStateObj.GetValue(aShape);
         }
-        else if (_mapOfShapeWithStateTool.Contains(aShape))
+        else if (_mapOfShapeWithStateTool.ContainsKey(aShape))
         {
-            return _mapOfShapeWithStateTool.FindFromKey(aShape);
+            return _mapOfShapeWithStateTool.GetValue(aShape);
         }
         return _dummyShapeWithState;
     }
 
-    internal NCollection_IndexedMap<Shape> ChangeMapOfRejectedShapesObj() => _mapOfRejectedShapesObj;
+    internal IndexedSet<Shape> ChangeMapOfRejectedShapesObj() => _mapOfRejectedShapesObj;
 
-    internal NCollection_IndexedMap<Shape> ChangeMapOfRejectedShapesTool() => _mapOfRejectedShapesTool;
+    internal IndexedSet<Shape> ChangeMapOfRejectedShapesTool() => _mapOfRejectedShapesTool;
 }

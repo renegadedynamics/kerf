@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -258,9 +259,9 @@ internal static class BinTestShapes
 
     public static Edge NthEdge(in Shape theShape, int theN)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Edge, aMap);
-        return ShapeCasts.Edge(aMap[theN]);
+        return ShapeCasts.Edge(aMap[theN - 1]);
     }
 
     public static List<Face> FacesOf(in Shape theShape, Edge theEdge)

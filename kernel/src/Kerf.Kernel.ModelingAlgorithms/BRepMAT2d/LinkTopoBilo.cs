@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Objects;
 using Kerf.Engine.Topology;
@@ -24,9 +25,9 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// </remarks>
 public sealed class LinkTopoBilo
 {
-    private readonly NCollection_DataMap<Shape, NCollection_Sequence<MedialBasicElt>> _map =
+    private readonly Dictionary<Shape, NCollection_Sequence<MedialBasicElt>> _map =
         new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<MedialBasicElt, Shape> _beShape = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<MedialBasicElt, Shape> _beShape = new(ReferenceEqualityComparer.Instance);
     private Shape _key;
     private int _current;
     private bool _isEmpty;
@@ -77,7 +78,7 @@ public sealed class LinkTopoBilo
     {
         _isEmpty = false;
         _current = 1;
-        if (_map.IsBound(s))
+        if (_map.ContainsKey(s))
         {
             _key = s;
         }
@@ -94,17 +95,17 @@ public sealed class LinkTopoBilo
         {
             return false;
         }
-        return _current <= _map.Find(_key).Length();
+        return _current <= _map.GetValue(_key).Length();
     }
 
     /// <summary>Moves to the next basic element.</summary>
     public void Next() => _current++;
 
     /// <summary>The current basic element.</summary>
-    public MedialBasicElt Value() => _map.Find(_key).Value(_current);
+    public MedialBasicElt Value() => _map.GetValue(_key).Value(_current);
 
     /// <summary>The shape linked to BE.</summary>
-    public Shape GeneratingShape(MedialBasicElt be) => _beShape.Find(be);
+    public Shape GeneratingShape(MedialBasicElt be) => _beShape.GetValue(be);
 
     private void LinkToWire(in Wire w, MedialAxisExplorer explo, int indC, BisectingLocus biLo)
     {
@@ -153,19 +154,19 @@ public sealed class LinkTopoBilo
                     s = vf;
                 }
             }
-            if (!_map.IsBound(s))
+            if (!_map.ContainsKey(s))
             {
-                _map.Bind(s, new NCollection_Sequence<MedialBasicElt>());
+                _map[s] = new NCollection_Sequence<MedialBasicElt>();
             }
-            _map[s].Append(be);
+            _map.GetValue(s).Append(be);
 
             if (kc < 0)
             {
-                _beShape.Bind(be, s.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(s.Orientation())));
+                _beShape[be] = s.Oriented(global::Kerf.Engine.Topology.TopAbs.Reverse(s.Orientation()));
             }
             else
             {
-                _beShape.Bind(be, s);
+                _beShape[be] = s;
             }
         }
     }

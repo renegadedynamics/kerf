@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
@@ -89,7 +90,7 @@ public class SplitCommonVertexFixer : RootFixer
             {
                 continue;
             }
-            var mapVV = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            var mapVV = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
             mapVV.Clear();
             for (int nw1 = 1; nw1 < wires.Length(); nw1++)
             {
@@ -109,9 +110,9 @@ public class SplitCommonVertexFixer : RootFixer
                             {
                                 // common vertex exists
                                 Vertex vnew = new();
-                                if (mapVV.IsBound(v2))
+                                if (mapVV.ContainsKey(v2))
                                 {
-                                    vnew = ShapeCasts.Vertex(mapVV.Find(v2));
+                                    vnew = ShapeCasts.Vertex(mapVV.GetValue(v2));
                                 }
                                 else
                                 {
@@ -119,7 +120,7 @@ public class SplitCommonVertexFixer : RootFixer
                                     double tol = Tool.Tolerance(v2);
                                     var    b   = new BrepBuilder();
                                     b.MakeVertex(ref vnew, p, tol);
-                                    mapVV.Bind(v2, vnew);
+                                    mapVV[v2] = vnew;
                                 }
                                 var sbe = new BuildEdgeBuilder();
                                 var sae = new EdgeAnalysis();
@@ -150,7 +151,7 @@ public class SplitCommonVertexFixer : RootFixer
                     }
                 }
             }
-            if (!mapVV.IsEmpty())
+            if (mapVV.Count != 0)
             {
                 SendWarning(new Msg("Fix.SplitCommonVertex.MSG0"));
             }

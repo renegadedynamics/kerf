@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
@@ -201,8 +202,8 @@ internal static class MatRecordings
     //=============================================================================================
     // The results, as matrec's RunCase
 
-    private static string ShapeName(in Shape theS, NCollection_IndexedMap<Shape> theEdges,
-                                    NCollection_IndexedMap<Shape> theVerts)
+    private static string ShapeName(in Shape theS, IndexedSet<Shape> theEdges,
+                                    IndexedSet<Shape> theVerts)
     {
         const string anOri = "FRIE";
         if (theS.IsNull)
@@ -212,11 +213,11 @@ internal static class MatRecordings
         string aName;
         if (theS.ShapeType() == ShapeType.Edge)
         {
-            aName = "E" + theEdges.FindIndex(theS).ToString(CultureInfo.InvariantCulture);
+            aName = "E" + (theEdges.IndexOf(theS) + 1).ToString(CultureInfo.InvariantCulture);
         }
         else if (theS.ShapeType() == ShapeType.Vertex)
         {
-            aName = "V" + theVerts.FindIndex(theS).ToString(CultureInfo.InvariantCulture);
+            aName = "V" + (theVerts.IndexOf(theS) + 1).ToString(CultureInfo.InvariantCulture);
         }
         else
         {
@@ -296,11 +297,11 @@ internal static class MatRecordings
             anOut.Add("face:" + aFail);
             return anOut;
         }
-        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> aVerts = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aVerts = new(ShapeHasher.Instance);
         Exploration.MapShapes(aFace, ShapeType.Edge, anEdges);
         Exploration.MapShapes(aFace, ShapeType.Vertex, aVerts);
-        anOut.Add("nE:" + I(anEdges.Extent()));
+        anOut.Add("nE:" + I(anEdges.Count));
 
         MedialAxisExplorer anExplo = new();
         aFail = Fail(() => anExplo.Perform(aFace));
@@ -412,10 +413,10 @@ internal static class MatRecordings
             anOut.Add("link:" + aFail);
             return anOut;
         }
-        for (int k = 1; k <= anEdges.Extent() + aVerts.Extent(); k++)
+        for (int k = 1; k <= anEdges.Count + aVerts.Count; k++)
         {
-            Shape aS = k <= anEdges.Extent() ? anEdges.FindKey(k) : aVerts.FindKey(k - anEdges.Extent());
-            string aNm = k <= anEdges.Extent() ? "lE" + I(k) : "lV" + I(k - anEdges.Extent());
+            Shape aS = k <= anEdges.Count ? anEdges[k - 1] : aVerts[k - anEdges.Count - 1];
+            string aNm = k <= anEdges.Count ? "lE" + I(k) : "lV" + I(k - anEdges.Count);
             Tok(anOut, aNm, () =>
             {
                 StringBuilder aRes = new();

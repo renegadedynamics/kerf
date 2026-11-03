@@ -1,5 +1,6 @@
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Healing.Checks;
@@ -343,16 +344,16 @@ public static partial class TopologyUtils
 
         var neighbours = peerList.Distinct().ToDictionary(p => p, _ => new HashSet<Shape>());
         {
-            var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+            var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
             if (connector is null)
             {
                 // Vertices are neighbours across an edge
                 Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
-                for (int i = 1; i <= map.Extent(); i++)
+                for (int i = 0; i < map.Count; i++)
                 {
-                    if (!lookup.TryGetValue(Shape.Cast(map.FindKey(i)), out var vertexPeer))
+                    if (!lookup.TryGetValue(Shape.Cast(map.KeyAt(i)), out var vertexPeer))
                         continue;
-                    var edges = map.FindFromIndex(i);
+                    var edges = map.ValueAt(i);
                     foreach (var e in edges)
                     {
                         var edge = ShapeCasts.Edge(e);
@@ -366,9 +367,9 @@ public static partial class TopologyUtils
             {
                 // Peers are neighbours across a shared connector
                 Exploration.MapShapesAndAncestors(parent.TopoShape, connector.Value, TopoUtil.ToTopAbs(peerType), map);
-                for (int i = 1; i <= map.Extent(); i++)
+                for (int i = 0; i < map.Count; i++)
                 {
-                    var list = map.FindFromIndex(i);
+                    var list = map.ValueAt(i);
                     var connected = list.Select(s => lookup.GetValueOrDefault(Shape.Cast(s))).OfType<Shape>().ToList();
                     foreach (var a in connected)
                         foreach (var b in connected)

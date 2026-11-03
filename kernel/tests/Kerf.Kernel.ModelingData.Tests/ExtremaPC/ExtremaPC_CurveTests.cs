@@ -440,15 +440,15 @@ public class ExtremaPC_CurveTest
         // Add some extrema
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt1 = new();
         anExt1.SquareDistance = 100.0;
-        aResult._extrema.Append(anExt1);
+        aResult._extrema.Add(anExt1);
 
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt2 = new();
         anExt2.SquareDistance = 50.0;
-        aResult._extrema.Append(anExt2);
+        aResult._extrema.Add(anExt2);
 
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt3 = new();
         anExt3.SquareDistance = 75.0;
-        aResult._extrema.Append(anExt3);
+        aResult._extrema.Add(anExt3);
 
         Assert.Equal(50.0, aResult.MinSquareDistance(), THE_TOL);
         Assert.Equal(1, aResult.MinIndex());
@@ -604,17 +604,17 @@ public class ExtremaPC_CurveTest
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt1 = new();
         anExt1.SquareDistance = 100.0;
         anExt1.IsMinimum = false;
-        aResult._extrema.Append(anExt1);
+        aResult._extrema.Add(anExt1);
 
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt2 = new();
         anExt2.SquareDistance = 50.0;
         anExt2.IsMinimum = true;
-        aResult._extrema.Append(anExt2);
+        aResult._extrema.Add(anExt2);
 
         global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.ExtremumResult anExt3 = new();
         anExt3.SquareDistance = 75.0;
         anExt3.IsMinimum = false;
-        aResult._extrema.Append(anExt3);
+        aResult._extrema.Add(anExt3);
 
         Assert.Equal(50.0, aResult.MinSquareDistance(), THE_TOL);
         Assert.Equal(1, aResult.MinIndex());

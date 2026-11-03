@@ -19,8 +19,8 @@ namespace Kerf.Engine.Meshing;
 /// <remarks>A working object, as OCCT's: <see cref="RegisterWire"/> adds a wire.</remarks>
 public sealed class Classifier : Transient
 {
-    private readonly NCollection_DynamicArray<Class2d> _tabClass = new();
-    private readonly NCollection_DynamicArray<bool> _tabOrient = new();
+    private readonly List<Class2d> _tabClass = new();
+    private readonly List<bool> _tabOrient = new();
 
     /// <summary>A classifier without wires.</summary>
     public Classifier() { }
@@ -29,7 +29,7 @@ public sealed class Classifier : Transient
     public Containment Perform(in Point2D point)
     {
         bool isOut = false;
-        int nb = _tabClass.Length();
+        int nb = _tabClass.Count;
 
         for (int i = 0; i < nb; i++)
         {
@@ -114,7 +114,7 @@ public sealed class Classifier : Transient
             angle = 0.0;
         }
 
-        _tabClass.Append(new Class2d(pClass,
+        _tabClass.Add(new Class2d(pClass,
                                             tolUV.first,
                                             tolUV.second,
                                             rangeU.first,
@@ -122,6 +122,6 @@ public sealed class Classifier : Transient
                                             rangeU.second,
                                             rangeV.second));
 
-        _tabOrient.Append(!(angle < 0.0));
+        _tabOrient.Add(!(angle < 0.0));
     }
 }

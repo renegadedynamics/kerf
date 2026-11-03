@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -681,25 +682,25 @@ public class BooleanOracleTests(ITestOutputHelper output)
         theKeptByNative = [];
         using var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theNRes, aNResMap);
-        var aPResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aPResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(thePRes, aPResMap);
-        Assert.Equal(aNResMap.Extent(), aPResMap.Extent());
+        Assert.Equal(aNResMap.Extent(), aPResMap.Count);
         var aHistory = new History();
         for (int a = 0; a < theNArgs.Count; a++)
         {
             using var aNInMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(theNArgs[a], aNInMap);
-            var aPInMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aPInMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(thePArgs[a], aPInMap);
-            Assert.Equal(aNInMap.Extent(), aPInMap.Extent());
+            Assert.Equal(aNInMap.Extent(), aPInMap.Count);
             for (int i = 1; i <= aNInMap.Extent(); i++)
             {
                 using N.TopoDS_Shape aNS = aNInMap.FindKey(i);
-                Shape aPS = aPInMap[i];
+                Shape aPS = aPInMap[i - 1];
                 int aKeptIndex = aNResMap.FindIndex(aNS);
                 if (aKeptIndex > 0)
                 {
-                    theKeptByNative[(a, i)] = aPResMap[aKeptIndex];
+                    theKeptByNative[(a, i)] = aPResMap[aKeptIndex - 1];
                 }
                 if (!History.IsSupportedType(aPS))
                 {
@@ -715,7 +716,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     {
                         int anIndex = aNResMap.FindIndex(aNM);
                         Assert.True(anIndex > 0, "a modified shape outside native's result");
-                        aHistory.AddModified(aPS, aPResMap[anIndex]);
+                        aHistory.AddModified(aPS, aPResMap[anIndex - 1]);
                     }
                 }
                 using (N.TopTools_ListOfShape aGenerated = theHistory.Generated(aNS))
@@ -724,7 +725,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     {
                         int anIndex = aNResMap.FindIndex(aNG);
                         Assert.True(anIndex > 0, "a generated shape outside native's result");
-                        aHistory.AddGenerated(aPS, aPResMap[anIndex]);
+                        aHistory.AddGenerated(aPS, aPResMap[anIndex - 1]);
                     }
                 }
             }
@@ -736,17 +737,17 @@ public class BooleanOracleTests(ITestOutputHelper output)
     private static History PortHistory(History theHistory, List<Shape> theArgs, in Shape theRes,
                                                  in Shape theResRead)
     {
-        var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aReadMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var aReadMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theRes, aResMap);
         Exploration.MapShapes(theResRead, aReadMap);
-        Assert.Equal(aResMap.Extent(), aReadMap.Extent());
+        Assert.Equal(aResMap.Count, aReadMap.Count);
         var aHistory = new History();
         foreach (Shape anArg in theArgs)
         {
-            var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(anArg, aMap);
-            for (int i = 1; i <= aMap.Extent(); i++)
+            for (int i = 0; i < aMap.Count; i++)
             {
                 Shape aS = aMap[i];
                 if (!History.IsSupportedType(aS))
@@ -759,15 +760,15 @@ public class BooleanOracleTests(ITestOutputHelper output)
                 }
                 foreach (Shape aM in theHistory.Modified(aS))
                 {
-                    int anIndex = aResMap.FindIndex(aM);
+                    int anIndex = aResMap.IndexOf(aM) + 1;
                     Assert.True(anIndex > 0, "a modified shape outside the port's result");
-                    aHistory.AddModified(aS, aReadMap[anIndex]);
+                    aHistory.AddModified(aS, aReadMap[anIndex - 1]);
                 }
                 foreach (Shape aG in theHistory.Generated(aS))
                 {
-                    int anIndex = aResMap.FindIndex(aG);
+                    int anIndex = aResMap.IndexOf(aG) + 1;
                     Assert.True(anIndex > 0, "a generated shape outside the port's result");
-                    aHistory.AddGenerated(aS, aReadMap[anIndex]);
+                    aHistory.AddGenerated(aS, aReadMap[anIndex - 1]);
                 }
             }
         }
@@ -784,11 +785,11 @@ public class BooleanOracleTests(ITestOutputHelper output)
         var aHistory = new History();
         for (int a = 0; a < theArgs.Count; a++)
         {
-            var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(theArgs[a], aMap);
-            for (int i = 1; i <= aMap.Extent(); i++)
+            for (int i = 1; i <= aMap.Count; i++)
             {
-                Shape aS = aMap[i];
+                Shape aS = aMap[i - 1];
                 if (!History.IsSupportedType(aS))
                 {
                     continue;

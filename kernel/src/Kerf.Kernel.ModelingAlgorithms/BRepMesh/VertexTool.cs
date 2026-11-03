@@ -104,10 +104,10 @@ public sealed class VertexTool : Transient
     }
 
     /// <summary>The vertices.</summary>
-    public NCollection_DynamicArray<MeshVertex> Vertices() => _selector.Vertices();
+    public List<MeshVertex> Vertices() => _selector.Vertices();
 
     /// <summary>The vertices' array, for replacing.</summary>
-    public ref NCollection_DynamicArray<MeshVertex> ChangeVertices() => ref _selector.ChangeVertices();
+    public ref List<MeshVertex> ChangeVertices() => ref _selector.ChangeVertices();
 
     /// <summary>The vertex of the given index.</summary>
     public MeshVertex FindKey(int index) => _selector.Vertex(index);

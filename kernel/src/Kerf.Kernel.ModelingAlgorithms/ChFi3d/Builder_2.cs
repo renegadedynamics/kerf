@@ -5,6 +5,7 @@
 #nullable disable warnings
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Extrema;
@@ -180,7 +181,7 @@ public partial class FilletBuilderBase
         Orientation of1 = default, of2 = default;
         Face ff1 = new(), ff2 = new();
         Edge edge = spine.Edges(1);
-        Face firstFace = ShapeCasts.Face(_edgeFirstFace[edge]);
+        Face firstFace = ShapeCasts.Face(_edgeFirstFace.GetValue(edge));
         ChFi3d_conexfaces(edge, out ff1, out ff2, _efMap);
         if (ff2.IsSame(firstFace))
         {
@@ -220,7 +221,7 @@ public partial class FilletBuilderBase
         Edge edge = spine.Edges(iEdge);
         ChFi3d_conexfaces(spine.Edges(iEdge), out ff1, out ff2, _efMap);
 
-        Face firstFace = ShapeCasts.Face(_edgeFirstFace[edge]);
+        Face firstFace = ShapeCasts.Face(_edgeFirstFace.GetValue(edge));
         if (ff2.IsSame(firstFace))
         {
             Face tmpFace = ff1;
@@ -1777,7 +1778,7 @@ public partial class FilletBuilderBase
                 }
                 if (!li.IsEmpty())
                 {
-                    _eviMap.Bind(spine.Edges(iedge), li);
+                    _eviMap[spine.Edges(iedge)] = li;
                 }
             }
         }
@@ -2302,12 +2303,12 @@ public partial class FilletBuilderBase
                         {
                             continue;
                         }
-                        if (!_eviMap.IsBound(ej))
+                        if (!_eviMap.ContainsKey(ej))
                         {
                             NCollection_List<int> li = new();
-                            _eviMap.Bind(ej, li);
+                            _eviMap[ej] = li;
                         }
-                        _eviMap.ChangeFind(ej).Append(cursd.Surf());
+                        _eviMap.GetValue(ej).Append(cursd.Surf());
                     }
                 }
                 else if (IF < il)
@@ -2368,12 +2369,12 @@ public partial class FilletBuilderBase
                                 jloc = (j - 1) % nbed + 1;
                             }
                             Edge ej = spine.Edges(jloc);
-                            if (!_eviMap.IsBound(ej))
+                            if (!_eviMap.ContainsKey(ej))
                             {
                                 NCollection_List<int> li = new();
-                                _eviMap.Bind(ej, li);
+                                _eviMap[ej] = li;
                             }
-                            _eviMap.ChangeFind(ej).Append(cursd.Surf());
+                            _eviMap.GetValue(ej).Append(cursd.Surf());
                         }
                     }
                 }

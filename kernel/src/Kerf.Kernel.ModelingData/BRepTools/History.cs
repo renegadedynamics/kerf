@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using Occt;
@@ -58,14 +59,14 @@ public class History : Transient
     // If an input shape is not bound to the map then
     // there is no shapes modified from the shape.
     // No any shape should be mapped to an empty list.
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _shapeToModified =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _shapeToModified =
         new(ShapeHasher.Instance);
 
     // Maps each input shape to all shapes generated from it.
     // If an input shape is not bound to the map then
     // there is no shapes generated from the shape.
     // No any shape should be mapped to an empty list.
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _shapeToGenerated =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _shapeToGenerated =
         new(ShapeHasher.Instance);
 
     // The removed shapes.
@@ -86,11 +87,11 @@ public class History : Transient
         ArgumentNullException.ThrowIfNull(other);
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in other._shapeToModified)
         {
-            _shapeToModified.Bind(pair.Key, new NCollection_List<Shape>(pair.Value));
+            _shapeToModified[pair.Key] = new NCollection_List<Shape>(pair.Value);
         }
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in other._shapeToGenerated)
         {
-            _shapeToGenerated.Bind(pair.Key, new NCollection_List<Shape>(pair.Value));
+            _shapeToGenerated[pair.Key] = new NCollection_List<Shape>(pair.Value);
         }
         foreach (Shape shape in other._removed)
         {
@@ -105,7 +106,7 @@ public class History : Transient
     public History(NCollection_List<Shape> arguments, IAlgorithm algo)
     {
         // Map all argument shapes to save them in history
-        var argsMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var argsMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         var it = new NCollection_List<Shape>.Iterator(arguments);
         for (; it.More(); it.Next())
         {
@@ -115,10 +116,10 @@ public class History : Transient
             }
         }
         // Copy the history for all supported shapes from the algorithm
-        int i, nb = argsMap.Extent();
+        int i, nb = argsMap.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape s = argsMap[i];
+            Shape s = argsMap[i - 1];
             if (!IsSupportedType(s))
             {
                 continue;
@@ -156,10 +157,10 @@ public class History : Transient
             return;
         }
 
-        if (!_shapeToGenerated.Find(initial, out NCollection_List<Shape>? generations))
+        if (!_shapeToGenerated.TryGetValue(initial, out NCollection_List<Shape>? generations))
         {
             generations = new NCollection_List<Shape>();
-            _shapeToGenerated.Bind(initial, generations);
+            _shapeToGenerated[initial] = generations;
         }
 
         // Standard_ASSERT_VOID: "Error: a duplicated generation of a shape." (debug-only in OCCT)
@@ -175,10 +176,10 @@ public class History : Transient
             return;
         }
 
-        if (!_shapeToModified.Find(initial, out NCollection_List<Shape>? modifications))
+        if (!_shapeToModified.TryGetValue(initial, out NCollection_List<Shape>? modifications))
         {
             modifications = new NCollection_List<Shape>();
-            _shapeToModified.Bind(initial, modifications);
+            _shapeToModified[initial] = modifications;
         }
 
         // Standard_ASSERT_VOID: "Error: a duplicated modification of a shape." (debug-only in OCCT)
@@ -196,7 +197,7 @@ public class History : Transient
         }
 
         // Standard_ASSERT_INVOKE_ myMsgModifiedAndRemoved when it was modified: a debug-only report
-        _shapeToModified.UnBind(removed);
+        _shapeToModified.Remove(removed);
 
         _removed.Add(removed);
     }
@@ -210,7 +211,7 @@ public class History : Transient
         }
 
         var generations = new NCollection_List<Shape>();
-        _shapeToGenerated.Bind(initial, generations);
+        _shapeToGenerated[initial] = generations;
         generations.Append(generated);
     }
 
@@ -223,7 +224,7 @@ public class History : Transient
         }
 
         var modifications = new NCollection_List<Shape>();
-        _shapeToModified.Bind(initial, modifications);
+        _shapeToModified[initial] = modifications;
         modifications.Append(modified);
     }
 
@@ -245,7 +246,7 @@ public class History : Transient
         }
 
         //
-        return _shapeToGenerated.Find(initial, out NCollection_List<Shape>? generations)
+        return _shapeToGenerated.TryGetValue(initial, out NCollection_List<Shape>? generations)
                  ? PackedList.Own([.. generations])
                  : PackedList<Shape>.Empty;
     }
@@ -260,7 +261,7 @@ public class History : Transient
         }
 
         //
-        return _shapeToModified.Find(initial, out NCollection_List<Shape>? modifications)
+        return _shapeToModified.TryGetValue(initial, out NCollection_List<Shape>? modifications)
                  ? PackedList.Own([.. modifications])
                  : PackedList<Shape>.Empty;
     }
@@ -279,10 +280,10 @@ public class History : Transient
     }
 
     /// <summary>True if some shape has generated shapes.</summary>
-    public bool HasGenerated => !_shapeToGenerated.IsEmpty();
+    public bool HasGenerated => _shapeToGenerated.Count != 0;
 
     /// <summary>True if some shape has modified shapes.</summary>
-    public bool HasModified => !_shapeToModified.IsEmpty();
+    public bool HasModified => _shapeToModified.Count != 0;
 
     /// <summary>True if some shape is removed.</summary>
     public bool HasRemoved => _removed.Count != 0;
@@ -306,7 +307,7 @@ public class History : Transient
 
         // Propagate R23 directly and M23 and G23 fully to M12 and G12.
         // Remember the propagated shapes.
-        NCollection_DataMap<Shape, NCollection_List<Shape>>[] s1ToGAndM =
+        Dictionary<Shape, NCollection_List<Shape>>[] s1ToGAndM =
             [_shapeToGenerated, _shapeToModified];
         var rPropagated = new HashSet<Shape>(ShapeHasher.Instance);
         {
@@ -335,15 +336,15 @@ public class History : Transient
                         }
                         else
                         {
-                            if (history23._shapeToGenerated.IsBound(s2))
+                            if (history23._shapeToGenerated.ContainsKey(s2))
                             {
-                                Add(additions[0], history23._shapeToGenerated[s2]);
+                                Add(additions[0], history23._shapeToGenerated.GetValue(s2));
                                 mAndGPropagated.Add(s2);
                             }
 
-                            if (history23._shapeToModified.IsBound(s2))
+                            if (history23._shapeToModified.ContainsKey(s2))
                             {
-                                Add(additions[i], history23._shapeToModified[s2]);
+                                Add(additions[i], history23._shapeToModified.GetValue(s2));
                                 mAndGPropagated.Add(s2);
 
                                 l12.Remove(sIt2);
@@ -359,10 +360,10 @@ public class History : Transient
                     if (i != 0 && additions[0].Count != 0)
                     {
                         Shape s1 = mIt1.Key;
-                        if (!s1ToGAndM[0].Find(s1, out NCollection_List<Shape>? gAndM))
+                        if (!s1ToGAndM[0].TryGetValue(s1, out NCollection_List<Shape>? gAndM))
                         {
                             gAndM = new NCollection_List<Shape>();
-                            s1ToGAndM[0].Bind(s1, gAndM);
+                            s1ToGAndM[0][s1] = gAndM;
                         }
 
                         Add(gAndM, additions[0]);
@@ -371,7 +372,7 @@ public class History : Transient
             }
 
             // Propagate M23 and G23 to M12 and G12 sequentially.
-            NCollection_DataMap<Shape, NCollection_List<Shape>>[] s2ToGAndM =
+            Dictionary<Shape, NCollection_List<Shape>>[] s2ToGAndM =
                 [history23._shapeToGenerated, history23._shapeToModified];
             for (int i = 0; i < 2; ++i)
             {
@@ -380,13 +381,13 @@ public class History : Transient
                     Shape s2 = mIt2.Key;
                     if (!mAndGPropagated.Contains(s2))
                     {
-                        if (!s1ToGAndM[i].IsBound(s2))
+                        if (!s1ToGAndM[i].ContainsKey(s2))
                         {
-                            s1ToGAndM[i].Bind(s2, new NCollection_List<Shape>());
+                            s1ToGAndM[i][s2] = new NCollection_List<Shape>();
                         }
 
                         var m2 = new NCollection_List<Shape>(mIt2.Value);
-                        s1ToGAndM[i][s2].Append(m2);
+                        s1ToGAndM[i].GetValue(s2).Append(m2);
                         _removed.Remove(s2);
                     }
                 }
@@ -407,15 +408,15 @@ public class History : Transient
             foreach (Shape s1 in empty)
             {
                 _removed.Add(s1);
-                s1ToGAndM[i].UnBind(s1);
+                s1ToGAndM[i].Remove(s1);
             }
         }
 
         // Propagate R23 to R12 sequentially.
         foreach (Shape s2 in history23._removed)
         {
-            if (!rPropagated.Contains(s2) && !_shapeToModified.IsBound(s2)
-                && !_shapeToGenerated.IsBound(s2))
+            if (!rPropagated.Contains(s2) && !_shapeToModified.ContainsKey(s2)
+                && !_shapeToGenerated.ContainsKey(s2))
             {
                 _removed.Add(s2);
             }
@@ -436,8 +437,8 @@ public class History : Transient
     {
         s.Write("History contains:\n");
         s.Write(" - " + _removed.Count + " Deleted shapes;\n");
-        s.Write(" - " + _shapeToModified.Extent() + " Modified shapes;\n");
-        s.Write(" - " + _shapeToGenerated.Extent() + " Generated shapes.\n");
+        s.Write(" - " + _shapeToModified.Count + " Modified shapes;\n");
+        s.Write(" - " + _shapeToGenerated.Count + " Generated shapes.\n");
     }
 
     // Prepares the shapes generated from the first shape to set the second one
@@ -451,7 +452,7 @@ public class History : Transient
         }
 
         // Standard_ASSERT_INVOKE_ myMsgGeneratedAndModified when removed: a debug-only report
-        if (_shapeToModified.Find(initial, out NCollection_List<Shape>? modified))
+        if (_shapeToModified.TryGetValue(initial, out NCollection_List<Shape>? modified))
         {
             modified.Remove(generated);
         }
@@ -473,7 +474,7 @@ public class History : Transient
         _removed.Remove(initial);
 
         // Standard_ASSERT_INVOKE_ myMsgGeneratedAndModified when removed: a debug-only report
-        if (_shapeToGenerated.Find(initial, out NCollection_List<Shape>? generated))
+        if (_shapeToGenerated.TryGetValue(initial, out NCollection_List<Shape>? generated))
         {
             generated.Remove(modified);
         }

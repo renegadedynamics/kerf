@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
@@ -136,19 +137,19 @@ public partial class UnifySameDomain
         var faceSeq = new NCollection_Sequence<Shape>();
 
         Edge                    firstEdge = ShapeCasts.Edge(chain.Value(1));
-        NCollection_List<Shape> faceList  = _eFmap.FindFromKey(firstEdge);
+        NCollection_List<Shape> faceList  = _eFmap.GetValue(firstEdge);
         var                            itl      = new NCollection_List<Shape>.Iterator(faceList);
         for (; itl.More(); itl.Next())
         {
             Face face = ShapeCasts.Face(itl.Value());
-            if (_facePlaneMap.IsBound(face))
+            if (_facePlaneMap.ContainsKey(face))
             {
                 continue;
             }
 
-            if (_faceNewFace.IsBound(face))
+            if (_faceNewFace.ContainsKey(face))
             {
-                face = ShapeCasts.Face(_faceNewFace[face]);
+                face = ShapeCasts.Face(_faceNewFace.GetValue(face));
             }
 
             face.Orientation(Forward); // to get proper pcurves of seam edges
@@ -522,7 +523,7 @@ public partial class UnifySameDomain
 
     /// <summary>Merges a sequence of edges into one edge if possible.</summary>
     protected bool MergeSubSeq(NCollection_Sequence<Shape>                                       chain,
-                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                               IndexedMap<Shape, NCollection_List<Shape>> vFmap,
                                ref Edge                                                          outEdge)
     {
         var sae = new EdgeAnalysis();
@@ -856,7 +857,7 @@ public partial class UnifySameDomain
                                           bool                                                                   lineDirectionOk,
                                           in Point3D                                                              firstPoint,
                                           in Vector3D                                                              directionVec,
-                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap)
+                                          IndexedMap<Shape, NCollection_List<Shape>> vFmap)
     {
         bool isDegE1 = Tool.Degenerated(edge1);
         bool isDegE2 = Tool.Degenerated(edge2);
@@ -1016,7 +1017,7 @@ public partial class UnifySameDomain
                                        double                                                                   angTol,
                                        double                                                                   linTol,
                                        HashSet<Shape>                                            avoidEdgeVrt,
-                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap)
+                                       IndexedMap<Shape, NCollection_List<Shape>> vFmap)
     {
         bool        isOk;
         Edge edge1, edge2;
@@ -1078,11 +1079,11 @@ public partial class UnifySameDomain
 
     /// <summary>Splits the sequence of edges into the sequence of chains.</summary>
     protected bool MergeEdges(NCollection_Sequence<Shape>                                       seqEdges,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                              IndexedMap<Shape, NCollection_List<Shape>> vFmap,
                               NCollection_Sequence<SubSequenceOfEdges>                                 seqOfSubSeqOfEdges,
                               HashSet<Shape>                                            nonMergVrt)
     {
-        var mapVE          = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapVE          = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int j;
         var verticesToAvoid = new HashSet<Shape>(ShapeHasher.Instance);
         int nbE            = seqEdges.Length();
@@ -1095,11 +1096,11 @@ public partial class UnifySameDomain
                 Shape aV = it.Value();
                 if (aV.Orientation() == Forward || aV.Orientation() == Reversed)
                 {
-                    if (!mapVE.Contains(aV))
+                    if (!mapVE.ContainsKey(aV))
                     {
                         mapVE.Add(aV, new NCollection_List<Shape>());
                     }
-                    mapVE.ChangeFromKey(aV).Append(anEdge);
+                    mapVE.GetValue(aV).Append(anEdge);
                 }
             }
         }
@@ -1133,7 +1134,7 @@ public partial class UnifySameDomain
                     {
                         break;
                     }
-                    NCollection_List<Shape> le = mapVE.FindFromKey(v[j]);
+                    NCollection_List<Shape> le = mapVE.GetValue(v[j]);
                     for (var itL = new NCollection_List<Shape>.Iterator(le); itL.More(); itL.Next())
                     {
                         edge = ShapeCasts.Edge(itL.Value());
@@ -1198,7 +1199,7 @@ public partial class UnifySameDomain
 
     /// <summary>Tries to unify the sequence of edges with the set of another edges which lies on the same geometry.</summary>
     protected bool MergeSeq(NCollection_Sequence<Shape>                                       seqEdges,
-                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                            IndexedMap<Shape, NCollection_List<Shape>> vFmap,
                             HashSet<Shape>                                            nonMergVert)
     {
         var seqOfSubsSeqOfEdges = new NCollection_Sequence<SubSequenceOfEdges>();

@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Features.Local;
@@ -52,8 +53,8 @@ public abstract class RibSlot : MakeShape
     protected Point3D _lastPnt = new();
     protected bool _fuse;
     protected bool _sliding;
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _lfMap = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, NCollection_List<Shape>> _lfMap = new(ShapeHasher.Instance);
     protected Shape _fShape = new();
     protected Shape _lShape = new();
     protected PerfSelection _perfSelection;
@@ -63,7 +64,7 @@ public abstract class RibSlot : MakeShape
     protected Face _pbase = new();
     protected Shape _gShape = new();
     protected Shape _sUntil = new();
-    protected NCollection_DataMap<Shape, Shape> _gluedF = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, Shape> _gluedF = new(ShapeHasher.Instance);
     protected NCollection_List<Shape> _newEdges = new();
     protected NCollection_List<Shape> _tgtEdges = new();
     protected NCollection_List<Shape> _facesForDraft = new();
@@ -82,7 +83,7 @@ public abstract class RibSlot : MakeShape
     /// <summary>General perform method: the topological reconstruction of the result.</summary>
     protected void LFPerform()
     {
-        if (_sbase.IsNull || _pbase.IsNull || _skface.IsNull || _gShape.IsNull || _lfMap.IsEmpty())
+        if (_sbase.IsNull || _pbase.IsNull || _skface.IsNull || _gShape.IsNull || _lfMap.Count == 0)
         {
             _statusError = StatusError.NotInitialized;
             NotDone();
@@ -92,7 +93,7 @@ public abstract class RibSlot : MakeShape
         Explorer exp = new(), exp2 = new();
         int theOpe = 2;
 
-        if (!_gluedF.IsEmpty())
+        if (_gluedF.Count != 0)
         {
             theOpe = 1;
         }
@@ -128,7 +129,7 @@ public abstract class RibSlot : MakeShape
             foreach (KeyValuePair<Shape, Shape> itm in _gluedF)
             {
                 Face glface = ShapeCasts.Face(itm.Key);
-                Face fac = ShapeCasts.Face(_gluedF[glface]);
+                Face fac = ShapeCasts.Face(_gluedF.GetValue(glface));
                 for (exp.Init(_gShape, ShapeType.Face); exp.More(); exp.Next())
                 {
                     if (exp.Current().IsSame(glface))
@@ -248,7 +249,7 @@ public abstract class RibSlot : MakeShape
         _shape = overlay.Finish(_shape);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = Final(overlay, _map[key]);
+            _map.GetValueRef(key) = Final(overlay, _map.GetValue(key));
         }
         _newEdges = Final(overlay, _newEdges);
         _tgtEdges = Final(overlay, _tgtEdges);
@@ -269,16 +270,16 @@ public abstract class RibSlot : MakeShape
     /// <exception cref="NoSuchObjectException"><paramref name="f"/> isn't a shape of the history.</exception>
     public override bool IsDeleted(in Shape f)
     {
-        return _map.Find(f).IsEmpty();
+        return _map.GetValue(f).IsEmpty();
     }
 
     /// <summary>The faces generated from the face <paramref name="f"/> (OCCT's virtual; unfrozen).</summary>
     internal override NCollection_List<Shape> InternalModified(in Shape f)
     {
-        if (_map.IsBound(f))
+        if (_map.ContainsKey(f))
         {
             _list.Clear();
-            NCollection_List<Shape>.Iterator ite = new(_map.Find(f));
+            NCollection_List<Shape>.Iterator ite = new(_map.GetValue(f));
             for (; ite.More(); ite.Next())
             {
                 Shape sh = ite.Value();
@@ -298,12 +299,12 @@ public abstract class RibSlot : MakeShape
         if (s.ShapeType() != ShapeType.Face)
         {
             _generated.Clear();
-            if (_lfMap.IsEmpty() || !_lfMap.IsBound(s))
+            if (_lfMap.Count == 0 || !_lfMap.ContainsKey(s))
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 { // check if filter on face or not
                     _list.Clear();
-                    NCollection_List<Shape>.Iterator ite = new(_map.Find(s));
+                    NCollection_List<Shape>.Iterator ite = new(_map.GetValue(s));
                     for (; ite.More(); ite.Next())
                     {
                         Shape sh = ite.Value();
@@ -322,13 +323,13 @@ public abstract class RibSlot : MakeShape
             else
             {
                 _generated.Clear();
-                NCollection_List<Shape>.Iterator it = new(_lfMap.Find(s));
+                NCollection_List<Shape>.Iterator it = new(_lfMap.GetValue(s));
                 _list.Clear();
                 for (; it.More(); it.Next())
                 {
-                    if (_map.IsBound(it.Value()))
+                    if (_map.ContainsKey(it.Value()))
                     {
-                        NCollection_List<Shape>.Iterator it1 = new(_map.Find(it.Value()));
+                        NCollection_List<Shape>.Iterator it1 = new(_map.GetValue(it.Value()));
                         for (; it1.More(); it1.Next())
                         {
                             Shape sh = it1.Value();
@@ -362,7 +363,7 @@ public abstract class RibSlot : MakeShape
         {
             Shape orig = itdm.Key;
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newdsc = new(ShapeHasher.Instance);
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
                 Face fdsc = ShapeCasts.Face(it.Value());
@@ -371,10 +372,10 @@ public abstract class RibSlot : MakeShape
                     newdsc.Add(it2.Value());
                 }
             }
-            _map.ChangeFind(orig).Clear();
+            _map.GetValue(orig).Clear();
             foreach (Shape itm in newdsc)
             {
-                _map.ChangeFind(orig).Append(itm);
+                _map.GetValue(orig).Append(itm);
             }
         }
     }
@@ -391,7 +392,7 @@ public abstract class RibSlot : MakeShape
     {
         if (!_fShape.IsNull)
         {
-            return _map.Find(_fShape);
+            return _map.GetValue(_fShape);
         }
         return _generated; // empty list
     }
@@ -408,7 +409,7 @@ public abstract class RibSlot : MakeShape
     {
         if (!_lShape.IsNull)
         {
-            return _map.Find(_lShape);
+            return _map.GetValue(_lShape);
         }
         return _generated; // empty list
     }
@@ -1994,10 +1995,10 @@ public abstract class RibSlot : MakeShape
 
         if (firstEdge.IsSame(lastEdge))
         {
-            if (!_lfMap.IsBound(firstEdge))
+            if (!_lfMap.ContainsKey(firstEdge))
             {
                 NCollection_List<Shape> thelist = new();
-                _lfMap.Bind(firstEdge, thelist);
+                _lfMap[firstEdge] = thelist;
             }
             if (onFirstFace || onLastFace)
             {
@@ -2035,7 +2036,7 @@ public abstract class RibSlot : MakeShape
                     LibraryMakeEdge e = new(cc, v1, v2);
                     theEdge = ShapeCasts.Edge(e.InternalShape());
                 }
-                _lfMap[firstEdge].Append(theEdge);
+                _lfMap.GetValue(firstEdge).Append(theEdge);
                 bb.Add(w, theEdge);
                 if (theFV.IsNull)
                 {
@@ -2080,7 +2081,7 @@ public abstract class RibSlot : MakeShape
                     LibraryMakeEdge e = new(cc, v1, v2);
                     theEdge = ShapeCasts.Edge(e.InternalShape());
                 }
-                _lfMap[firstEdge].Append(theEdge);
+                _lfMap.GetValue(firstEdge).Append(theEdge);
                 bb.Add(w, theEdge);
                 if (theFV.IsNull)
                 {
@@ -2091,10 +2092,10 @@ public abstract class RibSlot : MakeShape
         }
         else
         {
-            if (!_lfMap.IsBound(firstEdge))
+            if (!_lfMap.ContainsKey(firstEdge))
             {
                 NCollection_List<Shape> thelist1 = new();
-                _lfMap.Bind(firstEdge, thelist1);
+                _lfMap[firstEdge] = thelist1;
             }
             if (!onFirstFace)
             {
@@ -2111,7 +2112,7 @@ public abstract class RibSlot : MakeShape
                 {
                     theEdge = firstEdge;
                 }
-                _lfMap[firstEdge].Append(theEdge);
+                _lfMap.GetValue(firstEdge).Append(theEdge);
                 bb.Add(w, theEdge);
                 if (theFV.IsNull)
                 {
@@ -2134,7 +2135,7 @@ public abstract class RibSlot : MakeShape
                 {
                     theEdge = falseFirstEdge;
                 }
-                _lfMap[firstEdge].Append(theEdge);
+                _lfMap.GetValue(firstEdge).Append(theEdge);
                 bb.Add(w, theEdge);
                 if (theFV.IsNull)
                 {
@@ -2160,10 +2161,10 @@ public abstract class RibSlot : MakeShape
                 Edge E = ex.Current();
                 if (!E.IsSame(lastEdge))
                 {
-                    if (!_lfMap.IsBound(E))
+                    if (!_lfMap.ContainsKey(E))
                     {
                         NCollection_List<Shape> thelist2 = new();
-                        _lfMap.Bind(E, thelist2);
+                        _lfMap[E] = thelist2;
                     }
                     Edge eee;
                     Curve3D cc = Tool.Curve(E, out double f, out double l)!;
@@ -2178,7 +2179,7 @@ public abstract class RibSlot : MakeShape
                     {
                         eee = E;
                     }
-                    _lfMap[E].Append(eee);
+                    _lfMap.GetValue(E).Append(eee);
                     bb.Add(w, eee);
                     if (theFV.IsNull)
                     {
@@ -2197,10 +2198,10 @@ public abstract class RibSlot : MakeShape
                 if (!firstEdge.IsSame(lastEdge))
                 {
                     Edge edg = ShapeCasts.Edge(ex.Current());
-                    if (!_lfMap.IsBound(edg))
+                    if (!_lfMap.ContainsKey(edg))
                     {
                         NCollection_List<Shape> thelist3 = new();
-                        _lfMap.Bind(edg, thelist3);
+                        _lfMap[edg] = thelist3;
                     }
                     Edge eee;
                     Curve3D cc = Tool.Curve(edg, out double f, out double l)!;
@@ -2236,7 +2237,7 @@ public abstract class RibSlot : MakeShape
                         LibraryMakeEdge e = new(cc, v1, v2);
                         eee = ShapeCasts.Edge(e.InternalShape());
                     }
-                    _lfMap[edg].Append(eee);
+                    _lfMap.GetValue(edg).Append(eee);
                     bb.Add(w, eee);
                     if (theFV.IsNull)
                     {
@@ -2247,10 +2248,10 @@ public abstract class RibSlot : MakeShape
                 else
                 {
                     Edge eee;
-                    if (!_lfMap.IsBound(lastEdge))
+                    if (!_lfMap.ContainsKey(lastEdge))
                     {
                         NCollection_List<Shape> thelist4 = new();
-                        _lfMap.Bind(lastEdge, thelist4);
+                        _lfMap[lastEdge] = thelist4;
                     }
                     Curve3D cc = Tool.Curve(falseOnlyOne, out double f, out double l)!;
                     if (!theLastEdge.IsNull)
@@ -2285,7 +2286,7 @@ public abstract class RibSlot : MakeShape
                         LibraryMakeEdge e = new(cc, v1, v2);
                         eee = ShapeCasts.Edge(e.InternalShape());
                     }
-                    _lfMap[lastEdge].Append(eee);
+                    _lfMap.GetValue(lastEdge).Append(eee);
                     bb.Add(w, eee);
                     if (theFV.IsNull)
                     {
@@ -2297,10 +2298,10 @@ public abstract class RibSlot : MakeShape
             else
             {
                 Edge eee;
-                if (!_lfMap.IsBound(lastEdge))
+                if (!_lfMap.ContainsKey(lastEdge))
                 {
                     NCollection_List<Shape> thelist5 = new();
-                    _lfMap.Bind(lastEdge, thelist5);
+                    _lfMap[lastEdge] = thelist5;
                 }
                 Curve3D cc = Tool.Curve(falseLastEdge, out double f, out double l)!;
                 if (!theLastEdge.IsNull)
@@ -2335,7 +2336,7 @@ public abstract class RibSlot : MakeShape
                     LibraryMakeEdge e = new(cc, v1, v2);
                     eee = ShapeCasts.Edge(e.InternalShape());
                 }
-                _lfMap[lastEdge].Append(eee);
+                _lfMap.GetValue(lastEdge).Append(eee);
                 bb.Add(w, eee);
                 if (theFV.IsNull)
                 {
@@ -2435,7 +2436,7 @@ public abstract class RibSlot : MakeShape
                 continue;
             }
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newdsc = new(ShapeHasher.Instance);
 
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
@@ -2464,7 +2465,7 @@ public abstract class RibSlot : MakeShape
                     }
                 }
             }
-            _map.ChangeFind(orig).Clear();
+            _map.GetValue(orig).Clear();
             foreach (Shape itm in newdsc)
             {
                 // check the belonging to the shape...
@@ -2472,7 +2473,7 @@ public abstract class RibSlot : MakeShape
                 {
                     if (exp.Current().IsSame(itm))
                     {
-                        _map.ChangeFind(orig).Append(itm);
+                        _map.GetValue(orig).Append(itm);
                         break;
                     }
                 }

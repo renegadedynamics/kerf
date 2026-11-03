@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -141,17 +142,17 @@ internal abstract class Trsf : NumLinearRegularSweep
             var e1 = new EdgeCurveAdaptor();
             var e2 = new EdgeCurveAdaptor();
             double u1, u2;
-            var m = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var m = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(aGenS, ShapeType.Vertex, ShapeType.Edge, m);
             var it = new NCollection_List<Shape>.Iterator();
             var jt = new NCollection_List<Shape>.Iterator();
-            for (int i = 1; i <= m.Extent(); i++)
+            for (int i = 0; i < m.Count; i++)
             {
-                Vertex v = ShapeCasts.Vertex(m.FindKey(i));
+                Vertex v = ShapeCasts.Vertex(m.KeyAt(i));
                 int j = 1;
-                for (it.Initialize(m.FindFromIndex(i)); it.More(); it.Next(), j++)
+                for (it.Initialize(m.ValueAt(i)); it.More(); it.Next(), j++)
                 {
-                    jt.Initialize(m.FindFromIndex(i));
+                    jt.Initialize(m.ValueAt(i));
                     for (int k = 1; k <= j; k++)
                     {
                         jt.Next();

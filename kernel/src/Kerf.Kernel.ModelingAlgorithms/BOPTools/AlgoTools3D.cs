@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification.Hatching;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
@@ -673,14 +674,14 @@ public static class AlgoTools3D
     {
         bool bHasGeometry = false;
         //
-        NCollection_IndexedMap<Shape> myShapes = new(ShapeHasher.Instance);
+        IndexedSet<Shape> myShapes = new(ShapeHasher.Instance);
         //
         Add(aS, myShapes, ref bHasGeometry);
 
         return !bHasGeometry;
     }
 
-    private static void Add(in Shape aS, NCollection_IndexedMap<Shape> myShapes, ref bool bHasGeometry)
+    private static void Add(in Shape aS, IndexedSet<Shape> myShapes, ref bool bHasGeometry)
     {
         int index;
         //
@@ -696,7 +697,7 @@ public static class AlgoTools3D
         //
         Shape sx = aS;
         //
-        index = myShapes.FindIndex(sx);
+        index = myShapes.IndexOf(sx) + 1;
         if (index == 0)
         {
             bHasGeometry = HasGeometry(sx);

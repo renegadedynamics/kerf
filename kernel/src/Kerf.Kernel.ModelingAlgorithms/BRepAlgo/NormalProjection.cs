@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -48,9 +49,9 @@ public sealed class NormalProjection
     private int _maxSeg;
     private bool _faceBounds;
     private readonly Shape _toProj;
-    private readonly NCollection_DataMap<Shape, Shape> _ancestorMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, Shape> _corresp = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _descendants =
+    private readonly Dictionary<Shape, Shape> _ancestorMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _corresp = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _descendants =
         new(ShapeHasher.Instance);
     private Shape _res = new();
 
@@ -225,7 +226,7 @@ public sealed class NormalProjection
                         bb.Add(VertexRes, prj);
                         yaVertexRes = true;
 
-                        _ancestorMap.Bind(prj, edges.Value(i));
+                        _ancestorMap[prj] = edges.Value(i);
                     }
                     else
                     {
@@ -397,8 +398,8 @@ public sealed class NormalProjection
                                     {
                                         Shape e = expE.Current();
                                         bb.Add(_res, e);
-                                        _ancestorMap.Bind(e, edges.Value(i));
-                                        _corresp.Bind(e, faces.Value(j));
+                                        _ancestorMap[e] = edges.Value(i);
+                                        _corresp[e] = faces.Value(j);
                                     }
                                 }
                                 else
@@ -415,8 +416,8 @@ public sealed class NormalProjection
                                     {
                                         bb.Add(_res, prj);
                                         descenList.Append(prj);
-                                        _ancestorMap.Bind(prj, edges.Value(i));
-                                        _corresp.Bind(prj, faces.Value(j));
+                                        _ancestorMap[prj] = edges.Value(i);
+                                        _corresp[prj] = faces.Value(j);
                                     }
                                 }
                             }
@@ -433,8 +434,8 @@ public sealed class NormalProjection
                                 {
                                     bb.Add(_res, prj);
                                     descenList.Append(prj);
-                                    _ancestorMap.Bind(prj, edges.Value(i));
-                                    _corresp.Bind(prj, faces.Value(j));
+                                    _ancestorMap[prj] = edges.Value(i);
+                                    _corresp[prj] = faces.Value(j);
                                 }
                             }
                         }
@@ -442,14 +443,14 @@ public sealed class NormalProjection
                         {
                             bb.Add(_res, prj);
                             descenList.Append(prj);
-                            _ancestorMap.Bind(prj, edges.Value(i));
-                            _corresp.Bind(prj, faces.Value(j));
+                            _ancestorMap[prj] = edges.Value(i);
+                            _corresp[prj] = faces.Value(j);
                         }
                     }
                 }
             }
             // OCCT binds the list by value (a copy), then clears it for the next edge.
-            _descendants.Bind(edges.Value(i), new NCollection_List<Shape>(descenList));
+            _descendants[edges.Value(i)] = new NCollection_List<Shape>(descenList);
         }
         // JPI : eventual wire creation is reported in a specific method
         //       BuilWire that can be called by the user. Otherwise, the
@@ -484,13 +485,13 @@ public sealed class NormalProjection
 
     /// <summary>The edge or wire's edge projected into the edge (or vertex) <paramref name="e"/> of the result.</summary>
     /// <exception cref="NoSuchObjectException">E isn't in the result.</exception>
-    public Shape Ancestor(in Edge e) => _ancestorMap.Find(e);
+    public Shape Ancestor(in Edge e) => _ancestorMap.GetValue(e);
 
     //=================================================================================================
 
     /// <summary>The face on which the edge <paramref name="e"/> of the result lies.</summary>
     /// <exception cref="NoSuchObjectException">E isn't in the result.</exception>
-    public Shape Couple(in Edge e) => _corresp.Find(e);
+    public Shape Couple(in Edge e) => _corresp.GetValue(e);
 
     //=================================================================================================
 
@@ -511,7 +512,7 @@ public sealed class NormalProjection
     }
 
     /// <summary><see cref="Generated"/> without freezing, for ported code.</summary>
-    internal NCollection_List<Shape> InternalGenerated(in Shape s) => _descendants.Find(s);
+    internal NCollection_List<Shape> InternalGenerated(in Shape s) => _descendants.GetValue(s);
 
     //=================================================================================================
 

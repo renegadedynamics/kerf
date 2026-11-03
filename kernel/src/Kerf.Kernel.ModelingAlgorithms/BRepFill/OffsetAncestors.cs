@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -16,7 +17,7 @@ namespace Kerf.Engine.Construction.Filling;
 public sealed class OffsetAncestors
 {
     private bool _isPerform;
-    private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
 
     /// <summary>An empty tool.</summary>
     public OffsetAncestors()
@@ -43,7 +44,7 @@ public sealed class OffsetAncestors
         {
             for (it.Initialize(paral.InternalGeneratedShapes(exp.Current())); it.More(); it.Next())
             {
-                _map.Bind(it.Value(), exp.Current());
+                _map[it.Value()] = exp.Current();
             }
         }
 
@@ -52,7 +53,7 @@ public sealed class OffsetAncestors
         {
             for (it.Initialize(paral.InternalGeneratedShapes(exp.Current())); it.More(); it.Next())
             {
-                _map.Bind(it.Value(), exp.Current());
+                _map[it.Value()] = exp.Current();
             }
         }
 
@@ -63,7 +64,7 @@ public sealed class OffsetAncestors
     public bool IsDone => _isPerform;
 
     /// <summary>True if the edge <paramref name="s1"/> of the parallel has an ancestor.</summary>
-    public bool HasAncestor(in Edge s1) => _map.IsBound(s1);
+    public bool HasAncestor(in Edge s1) => _map.ContainsKey(s1);
 
     /// <summary>The ancestor of the edge <paramref name="s1"/> of the parallel.</summary>
     /// <exception cref="NotDoneException"><see cref="Perform"/> hasn't run.</exception>
@@ -71,6 +72,6 @@ public sealed class OffsetAncestors
     {
         StdFail_NotDone_Raise_if(!_isPerform,
             "BRepFill_OffsetAncestors::Ancestor() - Perform() should be called before accessing results");
-        return _map[s1];
+        return _map.GetValue(s1);
     }
 }

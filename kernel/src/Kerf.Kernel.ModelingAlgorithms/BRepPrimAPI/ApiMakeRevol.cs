@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Sweeping;
 using Kerf.Engine.Extrema;
@@ -103,7 +104,7 @@ public class ApiMakeRevol : MakeSweep
 
         _hist = null;
         _degenerated.Clear();
-        var degE = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var degE = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var bb = new BrepBuilder();
 
         var exp = new Explorer(_shape, ShapeType.Edge);
@@ -117,7 +118,7 @@ public class ApiMakeRevol : MakeSweep
             var tEdge = (BrepTEdge)edge.TShape()!;
             if (tEdge.Degenerated())
             {
-                if (degE.Find(edge, out NCollection_List<Shape> l))
+                if (degE.TryGetValue(edge, out NCollection_List<Shape>? l))
                 {
                     // Make the copy if degenerated edge occurs more then once
                     Shape copyE = edge.EmptyCopied();
@@ -133,7 +134,7 @@ public class ApiMakeRevol : MakeSweep
                 }
                 else
                 {
-                    l = degE.Bound(edge, new NCollection_List<Shape>());
+                    l = degE.SetValueRef(edge, new NCollection_List<Shape>());
                     l.Append(edge);
                     _degenerated.Append(edge);
                 }
@@ -142,7 +143,7 @@ public class ApiMakeRevol : MakeSweep
         if (!_degenerated.IsEmpty())
         {
             var subs = new ReShape();
-            var degF = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var degF = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             bool isReplaced = false;
             exp.Init(_shape, ShapeType.Face);
             // Replace degenerated edge by its copies for different faces
@@ -156,9 +157,9 @@ public class ApiMakeRevol : MakeSweep
                     Shape e = expE.Current();
                     if (Tool.Degenerated(ShapeCasts.Edge(e)))
                     {
-                        if (!degF.Find(f, out NCollection_List<Shape> l))
+                        if (!degF.TryGetValue(f, out NCollection_List<Shape>? l))
                         {
-                            l = degF.Bound(f, new NCollection_List<Shape>());
+                            l = degF.SetValueRef(f, new NCollection_List<Shape>());
                         }
                         l.Append(e);
                     }
@@ -179,9 +180,9 @@ public class ApiMakeRevol : MakeSweep
                 for (; eIter.More(); eIter.Next())
                 {
                     Shape e = eIter.Value();
-                    if (degE.IsBound(e))
+                    if (degE.ContainsKey(e))
                     {
-                        NCollection_List<Shape> cel = degE.ChangeFind(e);
+                        NCollection_List<Shape> cel = degE.GetValue(e);
                         var it = new NCollection_List<Shape>.Iterator(cel);
                         for (; it.More(); it.Next())
                         {

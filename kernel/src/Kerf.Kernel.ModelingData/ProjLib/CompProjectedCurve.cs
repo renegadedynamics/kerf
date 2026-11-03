@@ -14,6 +14,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Geometry;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Extrema.ExtFlag;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.Continuity;
@@ -72,7 +73,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     // critical section. PeriodicDir - 0 for U periodicity and 1 for V periodicity.
     private sealed class SplitDS
     {
-        public SplitDS(CurveAdaptorBase curve, SurfaceAdaptorBase surface, NCollection_DynamicArray<double> splits)
+        public SplitDS(CurveAdaptorBase curve, SurfaceAdaptorBase surface, List<double> splits)
         {
             myCurve = curve;
             mySurface = surface;
@@ -87,7 +88,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
 
         public readonly CurveAdaptorBase myCurve;
         public readonly SurfaceAdaptorBase mySurface;
-        public readonly NCollection_DynamicArray<double> Splits;
+        public readonly List<double> Splits;
 
         public double PerMinParam;
         public double PerMaxParam;
@@ -620,7 +621,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
     public void Init()
     {
         _tabInt = null;
-        NCollection_DynamicArray<double> splits = new();
+        List<double> splits = new();
         splits.Clear();
 
         double Tol; // Tolerance for ExactBound
@@ -1005,10 +1006,10 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                     }
 
                     // We assume at least one point of cache inside of a split.
-                    int size = splits.Length();
+                    int size = splits.Count;
                     for (int idx = splitIdx; idx < size; ++idx)
                     {
-                        double param = splits.Value(idx);
+                        double param = splits[idx];
                         if (Math.Abs(param - Triple.X()) < global::Kerf.Engine.Foundation.Precision.PConfusion())
                         {
                             // The current point is equal to a split point.
@@ -2147,7 +2148,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                                          SurfaceAdaptorBase surface,
                                          double tolU,
                                          double tolV,
-                                         NCollection_DynamicArray<double> splits)
+                                         List<double> splits)
     {
         SplitDS ds = new(curve, surface, splits);
 
@@ -2173,7 +2174,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             SplitOnDirection(ds);
         }
 
-        ds.Splits.AsSpan().Sort(Comparator);
+        CollectionsMarshal.AsSpan(ds.Splits).Sort(Comparator);
     }
 
     /// <summary>Perform splitting on a specified direction. Sub-method in BuildCurveSplits.</summary>
@@ -2272,7 +2273,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
                         && param < clParam - global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {
                         // Add only inner points.
-                        splitDS.Splits.Append(param);
+                        splitDS.Splits.Add(param);
                     }
 
                     const double deltaCoeff = 0.01;

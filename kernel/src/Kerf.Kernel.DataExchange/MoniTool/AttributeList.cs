@@ -31,7 +31,7 @@ public class AttributeList
     /// </summary>
     public AttributeList(AttributeList other)
     {
-        _theattrib = new NCollection_DataMap<string, Transient>(other.AttrList());
+        _theattrib = new Dictionary<string, Transient>(other.AttrList());
 
     }
 
@@ -40,7 +40,7 @@ public class AttributeList
     /// </summary>
     public void SetAttribute(string name, Transient? val)
     {
-        _theattrib.Bind(name, val);
+        _theattrib[name] = val;
     }
 
     /// <summary>
@@ -48,11 +48,11 @@ public class AttributeList
     /// </summary>
     public bool RemoveAttribute(string name)
     {
-        if (_theattrib.IsEmpty())
+        if (_theattrib.Count == 0)
         {
             return false;
         }
-        return _theattrib.UnBind(name);
+        return _theattrib.Remove(name);
     }
 
     /// <summary>
@@ -61,12 +61,12 @@ public class AttributeList
     /// </summary>
     public bool GetAttribute(string name, Type? type, out Transient? val)
     {
-        if (_theattrib.IsEmpty())
+        if (_theattrib.Count == 0)
         {
             val = null;
             return false;
         }
-        if (!_theattrib.Find(name, out val))
+        if (!_theattrib.TryGetValue(name, out val))
         {
             val = null;
             return false;
@@ -86,11 +86,11 @@ public class AttributeList
     public Transient? Attribute(string name)
     {
         Transient atr = null;
-        if (_theattrib.IsEmpty())
+        if (_theattrib.Count == 0)
         {
             return atr;
         }
-        if (!_theattrib.Find(name, out atr))
+        if (!_theattrib.TryGetValue(name, out atr))
         {
             atr = null;
         }
@@ -244,7 +244,7 @@ public class AttributeList
     /// <summary>
     /// Returns the exhaustive list of attributes
     /// </summary>
-    public NCollection_DataMap<string, Transient> AttrList()
+    public Dictionary<string, Transient> AttrList()
     {
         return _theattrib;
     }
@@ -256,7 +256,7 @@ public class AttributeList
     /// </summary>
     public void SameAttributes(AttributeList other)
     {
-        _theattrib = new NCollection_DataMap<string, Transient>(other.AttrList());
+        _theattrib = new Dictionary<string, Transient>(other.AttrList());
     }
 
     /// <summary>
@@ -269,9 +269,9 @@ public class AttributeList
     /// </summary>
     public void GetAttributes(AttributeList other, string fromname = "", bool copied = true)
     {
-        NCollection_DataMap<string, Transient> list =
+        Dictionary<string, Transient> list =
             other.AttrList();
-        if (list.IsEmpty())
+        if (list.Count == 0)
         {
             return;
         }
@@ -313,9 +313,9 @@ public class AttributeList
                     newatr = strval;
                 }
             }
-            _theattrib.Bind(name, newatr);
+            _theattrib[name] = newatr;
         }
     }
 
-    private NCollection_DataMap<string, Transient> _theattrib = new();
+    private Dictionary<string, Transient> _theattrib = new();
 }

@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -36,8 +37,8 @@ public sealed class ShapeClassifier
     private Shape _ref = new();
     private Shape _avS = new();
     private NCollection_List<Shape>? _pAvLS;
-    private readonly NCollection_IndexedMap<Shape> _mapAvS = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _mymre = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapAvS = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mymre = new(ShapeHasher.Instance);
     private int _mymren;
     private bool _mymredone;
     private Containment _state;
@@ -113,7 +114,7 @@ public sealed class ShapeClassifier
         if (_ref.ShapeType() == ShapeType.Face && _sameDomain == 1)
         {
             Exploration.MapShapes(_ref, ShapeType.Edge, _mymre);
-            _mymren = _mymre.Extent();
+            _mymren = _mymre.Count;
             if (_mymren == 1)
             {
                 Explorer x = new(_ref, ShapeType.Edge);

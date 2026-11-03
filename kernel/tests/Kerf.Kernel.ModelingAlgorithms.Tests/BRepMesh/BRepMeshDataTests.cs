@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
@@ -154,12 +155,12 @@ public class BRepMeshDataTests
         Assert.Equal(4.0, aModel.GetMaxSize());
 
         // Edges first, mapped by shape, then faces with their wires and pcurves (as BRepMesh_ShapeVisitor does).
-        var anEdgeMap = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+        var anEdgeMap = new Dictionary<Shape, int>(ShapeHasher.Instance);
         for (var anExp = new Explorer(aBox, ShapeType.Edge); anExp.More(); anExp.Next())
         {
-            if (!anEdgeMap.IsBound(anExp.Current()))
+            if (!anEdgeMap.ContainsKey(anExp.Current()))
             {
-                anEdgeMap.Bind(anExp.Current(), aModel.EdgesNb());
+                anEdgeMap[anExp.Current()] = aModel.EdgesNb();
                 EdgeModel aDEdge = aModel.AddEdge(ShapeCasts.Edge(anExp.Current()));
                 Assert.Same(aDEdge, aModel.GetEdge(aModel.EdgesNb() - 1));
                 Assert.True(aDEdge.IsFree);
@@ -185,7 +186,7 @@ public class BRepMeshDataTests
             Assert.True(aDWire.GetWire().IsSame(aWire));
             for (var anIt = new Iterator(aWire); anIt.More(); anIt.Next())
             {
-                EdgeModel aDEdge = aModel.GetEdge(anEdgeMap.Find(anIt.Value()));
+                EdgeModel aDEdge = aModel.GetEdge(anEdgeMap.GetValue(anIt.Value()));
                 int anIndex = aDWire.AddEdge(aDEdge, anIt.Value().Orientation());
                 Assert.Same(aDEdge, aDWire.GetEdge(anIndex));
                 Assert.Equal(anIt.Value().Orientation(), aDWire.GetEdgeOrientation(anIndex));

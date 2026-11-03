@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Construction.Values;
@@ -58,20 +59,20 @@ public sealed class Offset
     private Shape _shape = new();
     private OffsetStatus _status = OffsetStatus.Unknown;
     private Face _face = new();
-    private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
 
     // OCCT_DEBUG statics (Affich, NbOFFSET) and their blocks are left out.
 
     private static Point3D GetFarestCorner(in Wire aWire)
     {
-        var vertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var vertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aWire, ShapeType.Vertex, vertices);
 
         double maxDist = 0.0;
         Point3D thePoint = new();
-        for (int i = 1; i <= vertices.Extent(); i++)
+        for (int i = 0; i < vertices.Count; i++)
         {
-            for (int j = 1; j <= vertices.Extent(); j++)
+            for (int j = 0; j < vertices.Count; j++)
             {
                 Vertex v1 = ShapeCasts.Vertex(vertices[i]);
                 Vertex v2 = ShapeCasts.Vertex(vertices[j]);
@@ -368,7 +369,7 @@ public sealed class Offset
     /// sharing E with at least G1 continuity (so two tangent faces generate one edge, no pipe). The edges E' are written
     /// into and must be unfrozen.
     /// </summary>
-    public Offset(in Face face, double offset, NCollection_DataMap<Shape, Shape> created,
+    public Offset(in Face face, double offset, Dictionary<Shape, Shape> created,
                              bool offsetOutside = true, JoinKind joinType = Arc) =>
         Init(face, offset, created, offsetOutside, joinType);
 
@@ -404,7 +405,7 @@ public sealed class Offset
     public void Init(in Face face, double offset, bool offsetOutside = true,
                      JoinKind joinType = Arc)
     {
-        var empty = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var empty = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Init(face, offset, empty, offsetOutside, joinType);
     }
 
@@ -414,7 +415,7 @@ public sealed class Offset
     /// Builds the offset of <paramref name="face"/>, sharing the edges already generated from other faces (see the
     /// constructor). The edges of <paramref name="created"/> are written into and must be unfrozen.
     /// </summary>
-    public void Init(in Face face, double offset, NCollection_DataMap<Shape, Shape> created,
+    public void Init(in Face face, double offset, Dictionary<Shape, Shape> created,
                      bool offsetOutside = true, JoinKind joinType = Arc)
     {
         _shape = face;
@@ -739,7 +740,7 @@ public sealed class Offset
             myBuilder.UpdateFace(_face, theSurf, new Placement(), Tool.Tolerance(face));
         }
 
-        var mapSS = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var mapSS = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
 
         // mise a jour de la map sur les vertex deja crees
         Shape localShapeOriented = face.Oriented(Forward);
@@ -758,31 +759,31 @@ public sealed class Offset
             {
                 vonDegen.Add(V1);
             }
-            if (created.IsBound(e))
+            if (created.ContainsKey(e))
             {
-                Edge oe = ShapeCasts.Edge(created[e]);
+                Edge oe = ShapeCasts.Edge(created.GetValue(e));
                 Exploration.Vertices(oe, out Vertex ov1, out Vertex ov2);
-                if (!mapSS.IsBound(V1))
+                if (!mapSS.ContainsKey(V1))
                 {
-                    mapSS.Bind(V1, ov1);
+                    mapSS[V1] = ov1;
                 }
-                if (!mapSS.IsBound(V2))
+                if (!mapSS.ContainsKey(V2))
                 {
-                    mapSS.Bind(V2, ov2);
-                }
-            }
-            if (created.IsBound(V1))
-            {
-                if (!mapSS.IsBound(V1))
-                {
-                    mapSS.Bind(V1, created[V1]);
+                    mapSS[V2] = ov2;
                 }
             }
-            if (created.IsBound(V2))
+            if (created.ContainsKey(V1))
             {
-                if (!mapSS.IsBound(V2))
+                if (!mapSS.ContainsKey(V1))
                 {
-                    mapSS.Bind(V2, created[V2]);
+                    mapSS[V1] = created.GetValue(V1);
+                }
+            }
+            if (created.ContainsKey(V2))
+            {
+                if (!mapSS.ContainsKey(V2))
+                {
+                    mapSS[V2] = created.GetValue(V2);
                 }
             }
         }
@@ -804,9 +805,9 @@ public sealed class Offset
                 double f, l;
                 Curve2D C2d = Tool.CurveOnSurface(e, curFace, out f, out l)!;
                 Edge oe = new();
-                if (mapSS.IsBound(e) && !vonDegen.Contains(V1) && !vonDegen.Contains(V2))
+                if (mapSS.ContainsKey(e) && !vonDegen.Contains(V1) && !vonDegen.Contains(V2))
                 { // c`est un edge de couture
-                    oe = ShapeCasts.Edge(mapSS[e]);
+                    oe = ShapeCasts.Edge(mapSS.GetValue(e));
                     Shape localShape = e.Reversed();
                     Curve2D? C2d_1 = Tool.CurveOnSurface(ShapeCasts.Edge(localShape), curFace, out f, out l);
                     //	occ::handle<Geom2d_Curve> C2d_1 =
@@ -872,37 +873,37 @@ public sealed class Offset
                         vend = p2d2.Y();
                     }
                     // E a-t-il ume image dans la Map des Created ?
-                    if (created.IsBound(e))
+                    if (created.ContainsKey(e))
                     {
-                        oe = ShapeCasts.Edge(created[e]);
+                        oe = ShapeCasts.Edge(created.GetValue(e));
                     }
-                    else if (mapSS.IsBound(e))
+                    else if (mapSS.ContainsKey(e))
                     { // seam edge
-                        oe = ShapeCasts.Edge(mapSS[e]);
+                        oe = ShapeCasts.Edge(mapSS.GetValue(e));
                     }
                     else
                     {
                         myBuilder.MakeEdge(ref oe);
                         Vertex ov1 = new(), ov2 = new();
-                        if (mapSS.IsBound(V1))
+                        if (mapSS.ContainsKey(V1))
                         {
-                            ov1 = ShapeCasts.Vertex(mapSS[V1]);
+                            ov1 = ShapeCasts.Vertex(mapSS.GetValue(V1));
                         }
                         else
                         {
                             myBuilder.MakeVertex(ref ov1);
                             myBuilder.UpdateVertex(ov1, p1, Tool.Tolerance(V1));
-                            mapSS.Bind(V1, ov1);
+                            mapSS[V1] = ov1;
                         }
-                        if (mapSS.IsBound(V2))
+                        if (mapSS.ContainsKey(V2))
                         {
-                            ov2 = ShapeCasts.Vertex(mapSS[V2]);
+                            ov2 = ShapeCasts.Vertex(mapSS.GetValue(V2));
                         }
                         else
                         {
                             myBuilder.MakeVertex(ref ov2);
                             myBuilder.UpdateVertex(ov2, p2, Tool.Tolerance(V2));
-                            mapSS.Bind(V2, ov2);
+                            mapSS[V2] = ov2;
                         }
                         myBuilder.Add(oe, ov1.Oriented(V1.Orientation()));
                         myBuilder.Add(oe, ov2.Oriented(V2.Orientation()));
@@ -925,7 +926,7 @@ public sealed class Offset
                         C2d = new LineCurve2D(p2d1, new Direction2D(new Vector2D(p2d1, p2d2)));
                         f = 0.0;
                         l = p2d1.Distance(p2d2);
-                        if (mapSS.IsBound(e)) // seam edge
+                        if (mapSS.ContainsKey(e)) // seam edge
                         {
                             Curve2D? C2d_1 = Tool.CurveOnSurface(oe, _face, out f, out l);
                             if (e.Orientation() == Forward)
@@ -986,7 +987,7 @@ public sealed class Offset
                     {
                         ComputeCurve3d(oe, C2d, theSurf, L, Tool.Tolerance(e));
                     }
-                    mapSS.Bind(e, oe);
+                    mapSS[e] = oe;
                 }
                 myBuilder.Add(ow, oe.Oriented(e.Orientation()));
             }

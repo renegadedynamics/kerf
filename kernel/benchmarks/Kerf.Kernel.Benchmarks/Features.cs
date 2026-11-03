@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Features;
 using Kerf.Engine.Features.Api;
@@ -44,9 +45,9 @@ internal static class Features
 
     private static List<Shape> Sub(in Shape shape, ShapeType type)
     {
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, type, map);
-        return [.. Enumerable.Range(1, map.Extent()).Select(i => map[i])];
+        return [.. Enumerable.Range(1, map.Count).Select(i => map[i - 1])];
     }
 
     // The face with the highest centre

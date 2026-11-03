@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -26,19 +27,19 @@ public class BRepLibRegularityTests
 
     private static List<Edge> Edges(in Shape S)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, aMap);
         var aList = new List<Edge>();
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aList.Add(ShapeCasts.Edge(aMap[i]));
         }
         return aList;
     }
 
-    private static NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EdgeFaces(in Shape S)
+    private static IndexedMap<Shape, NCollection_List<Shape>> EdgeFaces(in Shape S)
     {
-        var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, aMap);
         return aMap;
     }
@@ -66,12 +67,12 @@ public class BRepLibRegularityTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aMap = EdgeFaces(aBox);
-        Assert.Equal(12, aMap.Extent());
-        for (int i = 1; i <= aMap.Extent(); i++)
+        Assert.Equal(12, aMap.Count);
+        for (int i = 0; i < aMap.Count; i++)
         {
-            NCollection_List<Shape> aFaces = aMap.FindFromIndex(i);
+            NCollection_List<Shape> aFaces = aMap.ValueAt(i);
             Assert.Equal(2, aFaces.Extent());
-            Assert.Equal(C0, BrepLibrary.ContinuityOfFaces(ShapeCasts.Edge(aMap.FindKey(i)), ShapeCasts.Face(aFaces.First()),
+            Assert.Equal(C0, BrepLibrary.ContinuityOfFaces(ShapeCasts.Edge(aMap.KeyAt(i)), ShapeCasts.Face(aFaces.First()),
                                                                ShapeCasts.Face(aFaces.Last()), 1e-10));
         }
     }

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -67,7 +68,7 @@ public class ShellSplitter : BooleanAlgorithm
         NCollection_List<Shape>.Iterator itF = new();
         CoupleOfShape csOff = new();
         HashSet<Shape> addedFacesMap = new(EqualityComparer<Shape>.Default);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance),
+        IndexedMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance),
                                                                                   mefp = new(ShapeHasher.Instance);
         IntersectionContext context;
         //
@@ -103,13 +104,13 @@ public class ShellSplitter : BooleanAlgorithm
             //
             int nbBegin = mFaces.Count;
             // check the free edges
-            int nbE = efMap.Extent();
+            int nbE = efMap.Count;
             for (i = 1; i <= nbE; ++i)
             {
-                Edge e = ShapeCasts.Edge(efMap.FindKey(i));
+                Edge e = ShapeCasts.Edge(efMap.KeyAt(i - 1));
                 if (!Tool.Degenerated(e) && e.Orientation() != Internal)
                 {
-                    NCollection_List<Shape> lf = efMap[i];
+                    NCollection_List<Shape> lf = efMap.ValueAt(i - 1);
                     if (lf.Extent() == 1)
                     {
                         // remove the face
@@ -185,9 +186,9 @@ public class ShellSplitter : BooleanAlgorithm
                     Edge e = ShapeCasts.Edge(exp.Current());
                     //
                     // proceed only free edges in this shell
-                    if (mefp.Contains(e))
+                    if (mefp.ContainsKey(e))
                     {
-                        NCollection_List<Shape> lfp = mefp.FindFromKey(e);
+                        NCollection_List<Shape> lfp = mefp.GetValue(e);
                         nbFP = lfp.Extent();
                         if (nbFP > 1)
                         {
@@ -207,7 +208,7 @@ public class ShellSplitter : BooleanAlgorithm
                     }
                     //
                     // candidate faces list
-                    NCollection_List<Shape> lf = efMap.FindFromKey(e);
+                    NCollection_List<Shape> lf = efMap.GetValue(e);
                     nbLF = lf.Extent();
                     if (nbLF == 0)
                     {
@@ -344,7 +345,7 @@ public class ShellSplitter : BooleanAlgorithm
 
     // Splits the shell on its branch edges (OCCT's file-static RefineShell).
     private static void RefineShell(in Shell shell,
-                                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef,
+                                    IndexedMap<Shape, NCollection_List<Shape>> mef,
                                     NCollection_List<Shape> lShSp)
     {
         Iterator it = new(shell);
@@ -357,11 +358,11 @@ public class ShellSplitter : BooleanAlgorithm
         // edges on which the input shell should be split
         HashSet<Shape> meStop = new(ShapeHasher.Instance);
         //
-        int i, nbMEF = mef.Extent();
+        int i, nbMEF = mef.Count;
         for (i = 1; i <= nbMEF; ++i)
         {
-            Edge e = ShapeCasts.Edge(mef.FindKey(i));
-            NCollection_List<Shape> lf = mef[i];
+            Edge e = ShapeCasts.Edge(mef.KeyAt(i - 1));
+            NCollection_List<Shape> lf = mef.ValueAt(i - 1);
             if (lf.Extent() > 2)
             {
                 meStop.Add(e);
@@ -420,7 +421,7 @@ public class ShellSplitter : BooleanAlgorithm
         //
         Builder bb = new();
         Explorer exp = new();
-        NCollection_IndexedMap<Shape> mfb = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mfb = new(ShapeHasher.Instance);
         HashSet<Shape> mfProcessed = new(EqualityComparer<Shape>.Default);
         NCollection_List<Shape> lfp = new(), lfp1 = new();
         NCollection_List<Shape>.Iterator itLF = new(), itLFP = new();
@@ -467,7 +468,7 @@ public class ShellSplitter : BooleanAlgorithm
                             continue;
                         }
                         //
-                        NCollection_List<Shape> lf = mef.FindFromKey(e);
+                        NCollection_List<Shape> lf = mef.GetValue(e);
                         //
                         itLF.Initialize(lf);
                         for (; itLF.More(); itLF.Next())
@@ -501,7 +502,7 @@ public class ShellSplitter : BooleanAlgorithm
                 lfp.Append(lfp1);
             } // for (;;) {
             //
-            int nbMFB = mfb.Extent();
+            int nbMFB = mfb.Count;
             if (nbMFB != 0)
             {
                 Shell shSp = new();
@@ -509,7 +510,7 @@ public class ShellSplitter : BooleanAlgorithm
                 //
                 for (i = 1; i <= nbMFB; ++i)
                 {
-                    Shape fb = mfb[i];
+                    Shape fb = mfb[i - 1];
                     bb.Add(shSp, fb);
                 }
                 lShSp.Append(shSp);
@@ -524,7 +525,7 @@ public class ShellSplitter : BooleanAlgorithm
         int nbVCBK, k;
         NCollection_List<ConnexityBlock>.Iterator itCB = new();
         NCollection_List<Shape>.Iterator it = new();
-        NCollection_DynamicArray<CBK> vcbk = new();
+        List<CBK> vcbk = new();
         //
         using var psOuter = new ProgressScope(range, null, 1);
         _shells.Clear();
@@ -549,16 +550,17 @@ public class ShellSplitter : BooleanAlgorithm
             }
             else
             {
-                CBK cbk = vcbk.Append(new CBK());
+                CBK cbk =  new CBK();
+                vcbk.Add(cbk);
                 cbk.SetConnexityBlock(cb);
             }
         }
         //
-        nbVCBK = vcbk.Length();
+        nbVCBK = vcbk.Count;
         using var psParallel = new ProgressScope(psOuter.Next(), null, nbVCBK);
         for (int iS = 0; iS < nbVCBK; ++iS)
         {
-            vcbk.ChangeValue(iS).SetProgressRange(psParallel.Next());
+            vcbk[iS].SetProgressRange(psParallel.Next());
         }
         //===================================================
         BooleanParallel.Perform(_runParallel, vcbk);

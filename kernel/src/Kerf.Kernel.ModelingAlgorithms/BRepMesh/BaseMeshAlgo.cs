@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Meshing.Model;
@@ -37,8 +38,8 @@ public abstract class BaseMeshAlgo : MeshAlgo
     private FaceModel? _dFace;
     private ToolParameters _parameters = new();
     private DataStructureOfDelaun? _structure;
-    private NCollection_DynamicArray<Point3D>? _nodesMap;
-    private NCollection_DataMap<int, int>? _usedNodes;
+    private List<Point3D>? _nodesMap;
+    private Dictionary<int, int>? _usedNodes;
 
     /// <summary>An algorithm.</summary>
     protected BaseMeshAlgo()
@@ -55,8 +56,8 @@ public abstract class BaseMeshAlgo : MeshAlgo
             _dFace = dFace;
             _parameters = parameters;
             _structure = new DataStructureOfDelaun();
-            _nodesMap = new NCollection_DynamicArray<Point3D>(256);
-            _usedNodes = new NCollection_DataMap<int, int>();
+            _nodesMap = new List<Point3D>();
+            _usedNodes = new Dictionary<int, int>();
 
             if (InitDataStructure())
             {
@@ -88,7 +89,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
     protected DataStructureOfDelaun GetStructure() => _structure!;
 
     /// <summary>The 3D nodes, indexed by the structure's nodes' <c>Location3d</c>.</summary>
-    protected NCollection_DynamicArray<Point3D> GetNodesMap() => _nodesMap!;
+    protected List<Point3D> GetNodesMap() => _nodesMap!;
 
     /// <summary>
     /// Registers the point in the 3D nodes and adds the 2D point to the mesh structure; returns the node's index in
@@ -100,11 +101,11 @@ public abstract class BaseMeshAlgo : MeshAlgo
                                        bool isForceAdd)
     {
         int nodeIndex =
-            AddNodeToStructure(point2d, _nodesMap!.Length(), movability, isForceAdd);
+            AddNodeToStructure(point2d, _nodesMap!.Count, movability, isForceAdd);
 
-        if (nodeIndex > _nodesMap.Length())
+        if (nodeIndex > _nodesMap.Count)
         {
-            _nodesMap.Append(point);
+            _nodesMap.Add(point);
             // Pre-bind frontier and fixed nodes with identity mapping so that
             // pcurve indices (set in initDataStructure as raw structure indices)
             // remain valid as compact Poly_Triangulation indices. Free (internal)
@@ -113,7 +114,7 @@ public abstract class BaseMeshAlgo : MeshAlgo
             // prevents unreferenced internal nodes from appearing as free nodes.
             if (movability != DegreeOfFreedom.Free)
             {
-                _usedNodes!.Bind(nodeIndex, nodeIndex);
+                _usedNodes![nodeIndex] = nodeIndex;
             }
         }
 
@@ -300,17 +301,17 @@ public abstract class BaseMeshAlgo : MeshAlgo
 
             for (int i = 0; i < 3; ++i)
             {
-                if (!_usedNodes!.IsBound(node[i]))
+                if (!_usedNodes!.ContainsKey(node[i]))
                 {
-                    _usedNodes.Bind(node[i], _usedNodes.Extent() + 1);
+                    _usedNodes[node[i]] = _usedNodes.Count + 1;
                 }
 
-                node[i] = _usedNodes.Find(node[i]);
+                node[i] = _usedNodes.GetValue(node[i]);
             }
 
             res.SetTriangle(triangeId, new Triangle1(node[0], node[1], node[2]));
         }
-        res.ResizeNodes(_usedNodes!.Extent(), false);
+        res.ResizeNodes(_usedNodes!.Count, false);
         res.AddUVNodes();
         return res;
     }
@@ -318,14 +319,14 @@ public abstract class BaseMeshAlgo : MeshAlgo
     // Collects nodes to output data.
     private void CollectNodes(Triangulation triangulation)
     {
-        for (int i = 1; i <= _nodesMap!.Length(); ++i)
+        for (int i = 1; i <= _nodesMap!.Count; ++i)
         {
-            if (_usedNodes!.IsBound(i))
+            if (_usedNodes!.ContainsKey(i))
             {
                 MeshVertex vertex = _structure!.GetNode(i);
 
-                int nodeIndex = _usedNodes.Find(i);
-                triangulation.SetNode(nodeIndex, _nodesMap.Value(vertex.Location3d()));
+                int nodeIndex = _usedNodes.GetValue(i);
+                triangulation.SetNode(nodeIndex, _nodesMap[vertex.Location3d()]);
                 triangulation.SetUVNode(nodeIndex, GetNodePoint2d(vertex));
             }
         }

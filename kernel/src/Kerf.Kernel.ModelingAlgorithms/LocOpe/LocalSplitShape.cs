@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
@@ -44,7 +45,7 @@ public sealed class LocalSplitShape
     private bool _done;
     private Shape _shape = new();
     // OCCT iterates this map keyed by the shapes' addresses (CanSplit, which only tests); the port in insertion order
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _dblE = new(ShapeHasher.Instance);
     private NCollection_List<Shape> _left = new();
     private WorkingShapes _work = new();
@@ -102,12 +103,12 @@ public sealed class LocalSplitShape
         {
             return false;
         }
-        if (_map.IsEmpty())
+        if (_map.Count == 0)
         {
             return false;
         }
 
-        if (!_map.IsBound(e))
+        if (!_map.ContainsKey(e))
         {
             return false;
         }
@@ -150,7 +151,7 @@ public sealed class LocalSplitShape
         }
 
         BrepBuilder b = new();
-        NCollection_List<Shape> le = _map[e];
+        NCollection_List<Shape> le = _map.GetValue(e);
         if (le.IsEmpty())
         {
             le.Append(e);
@@ -222,8 +223,8 @@ public sealed class LocalSplitShape
                 Edge edg1 = ShapeCasts.Edge(itl.Value());
                 newList.Append(edg1);
             }
-            _map.UnBind(e);
-            _map.Bind(e, newList);
+            _map.Remove(e);
+            _map[e] = newList;
         }
         else
         {
@@ -268,14 +269,14 @@ public sealed class LocalSplitShape
             return false;
         }
 
-        NCollection_List<Shape> lf = _map[f];
+        NCollection_List<Shape> lf = _map.GetValue(f);
         if (lf.IsEmpty())
         {
             Rebuild(f);
         }
 
         // On cherche la face descendante de F qui continent le wire
-        lf = _map[f];
+        lf = _map.GetValue(f);
         NCollection_List<Shape>.Iterator itl = new(lf);
 
         BrepTools.Update(f);
@@ -309,17 +310,17 @@ public sealed class LocalSplitShape
 
         NCollection_List<Shape> newWires = new();
 
-        NCollection_DataMap<Shape, int> sectionsTimes = new(ShapeHasher.Instance);
+        Dictionary<Shape, int> sectionsTimes = new(ShapeHasher.Instance);
         for (itl.Initialize(lInside); itl.More(); itl.Next())
         {
-            sectionsTimes.Bind(itl.Value(), 2);
+            sectionsTimes[itl.Value()] = 2;
         }
 
         NCollection_List<Shape> breakVertices = new();
         NCollection_List<Shape> breakOnWires = new();
 
         // OCCT iterates this map keyed by the vertices' addresses to count a wire's entries, which isn't order dependent
-        NCollection_DataMap<Shape, Shape> verWireMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> verWireMap = new(ShapeHasher.Instance);
         int i;
         Explorer exploF = new(), exploW = new();
         for (itl.Initialize(lInside); itl.More(); itl.Next())
@@ -329,7 +330,7 @@ public sealed class LocalSplitShape
             Exploration.Vertices(section, out Ver[0], out Ver[1]);
             for (i = 0; i < 2; i++)
             {
-                if (verWireMap.IsBound(Ver[i]))
+                if (verWireMap.ContainsKey(Ver[i]))
                 {
                     continue;
                 }
@@ -347,29 +348,29 @@ public sealed class LocalSplitShape
                     }
                     if (ver.IsSame(Ver[i]))
                     {
-                        verWireMap.Bind(ver, wire);
+                        verWireMap[ver] = wire;
                         break;
                     }
                 }
             }
         }
 
-        NCollection_DataMap<Shape, NCollection_List<Shape>> verSecMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> verSecMap = new(ShapeHasher.Instance);
         for (itl.Initialize(lInside); itl.More(); itl.Next())
         {
             Wire wire = ShapeCasts.Wire(itl.Value());
             Exploration.Vertices(wire, out Vertex v1, out Vertex v2);
             NCollection_List<Shape> lw1 = new(), lw2 = new();
-            if (!verSecMap.IsBound(v1))
+            if (!verSecMap.ContainsKey(v1))
             {
-                verSecMap.Bind(v1, lw1);
+                verSecMap[v1] = lw1;
             }
-            verSecMap[v1].Append(wire);
-            if (!verSecMap.IsBound(v2))
+            verSecMap.GetValue(v1).Append(wire);
+            if (!verSecMap.ContainsKey(v2))
             {
-                verSecMap.Bind(v2, lw2);
+                verSecMap[v2] = lw2;
             }
-            verSecMap[v2].Append(wire);
+            verSecMap.GetValue(v2).Append(wire);
         }
 
         Wire outerW = BrepTools.OuterWire(faceRef);
@@ -397,9 +398,9 @@ public sealed class LocalSplitShape
                     break;
                 }
                 curVertex = wexp.CurrentVertex();
-                if (verSecMap.IsBound(curVertex))
+                if (verSecMap.ContainsKey(curVertex))
                 {
-                    Shape localWire = ChooseDirection(lastEdge, curVertex, faceRef, verSecMap[curVertex]);
+                    Shape localWire = ChooseDirection(lastEdge, curVertex, faceRef, verSecMap.GetValue(curVertex));
                     sectionWire = ShapeCasts.Wire(localWire);
                     break;
                 }
@@ -433,15 +434,15 @@ public sealed class LocalSplitShape
             for (;;)
             {
                 mw.Add(sectionWire);
-                (sectionsTimes[sectionWire])--;
-                if (sectionsTimes[sectionWire] == 0)
+                (sectionsTimes.GetValueRef(sectionWire))--;
+                if (sectionsTimes.GetValue(sectionWire) == 0)
                 {
-                    sectionsTimes.UnBind(sectionWire);
+                    sectionsTimes.Remove(sectionWire);
                 }
                 if (mw.InternalWire().Closed())
                 {
                     newWires.Append(mw.InternalWire());
-                    if (sectionsTimes.IsEmpty())
+                    if (sectionsTimes.Count == 0)
                     {
                         break;
                     }
@@ -461,7 +462,7 @@ public sealed class LocalSplitShape
                 {
                     Exploration.Vertices(sectionWire, out Vertex v1, out Vertex v2);
                     Vertex startVertex = (v1.IsSame(breakVertex)) ? v2 : v1;
-                    curWire = ShapeCasts.Wire(verWireMap[startVertex]);
+                    curWire = ShapeCasts.Wire(verWireMap.GetValue(startVertex));
 
                     wexp.Init(curWire, faceRef);
                     while (!wexp.CurrentVertex().IsSame(startVertex))
@@ -469,7 +470,7 @@ public sealed class LocalSplitShape
                         wexp.Next();
                     }
 
-                    NCollection_List<Shape> lsections = verSecMap[startVertex];
+                    NCollection_List<Shape> lsections = verSecMap.GetValue(startVertex);
                     if (lsections.Extent() == 1)
                     {
                         break;
@@ -508,7 +509,7 @@ public sealed class LocalSplitShape
                     breakVertex = startVertex;
                 } // end of else (MW is not closed)
             } // end of for (;;) (loop on section wires)
-            if (sectionsTimes.IsEmpty())
+            if (sectionsTimes.Count == 0)
             {
                 break;
             }
@@ -575,7 +576,7 @@ public sealed class LocalSplitShape
         // Update of descendants of wires
         for (exploF.Init(f, ShapeType.Wire); exploF.More(); exploF.Next())
         {
-            NCollection_List<Shape> ls = _map[exploF.Current()];
+            NCollection_List<Shape> ls = _map.GetValue(exploF.Current());
             ls.Clear();
         }
         ///////////////////
@@ -615,7 +616,7 @@ public sealed class LocalSplitShape
         }
 
         Explorer exp = new();
-        NCollection_List<Shape> lf = _map[f];
+        NCollection_List<Shape> lf = _map.GetValue(f);
         if (lf.IsEmpty())
         {
             Rebuild(f);
@@ -660,7 +661,7 @@ public sealed class LocalSplitShape
         Explorer exp = new();
 
         // On cherche la face descendante de F qui continent le wire
-        NCollection_List<Shape> lf = _map[f];
+        NCollection_List<Shape> lf = _map.GetValue(f);
         NCollection_List<Shape>.Iterator itl = new(lf);
         for (; itl.More(); itl.Next())
         {
@@ -762,7 +763,7 @@ public sealed class LocalSplitShape
     private bool AddOpenWire(in Wire w, in Face F)
     {
         // On cherche la face descendante de F qui continent le wire
-        NCollection_List<Shape> lf = _map[F];
+        NCollection_List<Shape> lf = _map.GetValue(F);
         NCollection_List<Shape>.Iterator itl = new(lf);
         Vertex vfirst, vlast;
 
@@ -869,7 +870,7 @@ public sealed class LocalSplitShape
                 _dblE.Add(edg);
             }
 
-            NCollection_IndexedMap<Shape> possE = new(ShapeHasher.Instance);
+            IndexedSet<Shape> possE = new(ShapeHasher.Instance);
             // OCCT's default hasher: the shapes' TShapes, locations and orientations
             HashSet<Shape> mapE = new(EqualityComparer<Shape>.Default);
             Vertex vdeb, vfin;
@@ -966,7 +967,7 @@ public sealed class LocalSplitShape
                         possE.Add(edg);
                     }
                 }
-                nbPoss = possE.Extent();
+                nbPoss = possE.Count;
                 if (nbPoss == 0)
                 {
                     break;
@@ -975,7 +976,7 @@ public sealed class LocalSplitShape
                 Edge nextEdge = new();
                 if (nbPoss == 1)
                 {
-                    nextEdge = ShapeCasts.Edge(possE.FindKey(1));
+                    nextEdge = ShapeCasts.Edge(possE[0]);
                     Shape localFaceTemp = faceRef.Oriented(wfirst.Orientation());
                     GetDirection(nextEdge, ShapeCasts.Face(localFaceTemp), out plast, out dlast, false);
                 }
@@ -1136,7 +1137,7 @@ public sealed class LocalSplitShape
             // Mise a jour des descendants des wires
             for (exp.Init(F, ShapeType.Wire); exp.More(); exp.Next())
             {
-                NCollection_List<Shape> ls = _map[exp.Current()];
+                NCollection_List<Shape> ls = _map.GetValue(exp.Current());
                 itl.Initialize(ls);
                 for (; itl.More(); itl.Next())
                 {
@@ -1224,7 +1225,7 @@ public sealed class LocalSplitShape
             // Mise a jour des descendants des wires
             for (exp.Init(F, ShapeType.Wire); exp.More(); exp.Next())
             {
-                NCollection_List<Shape> ls = _map[exp.Current()];
+                NCollection_List<Shape> ls = _map.GetValue(exp.Current());
                 itl.Initialize(ls);
                 bool touch = false;
                 while (itl.More())
@@ -1292,7 +1293,7 @@ public sealed class LocalSplitShape
         {
             // Kerf: once the splitting has ended, the wire's edges as they stand in the faces (unit 10H5)
             Edge edg = ShapeCasts.Edge(_work.Final(expw.Current()));
-            for (itl.Initialize(_map[theFace]); itl.More(); itl.Next())
+            for (itl.Initialize(_map.GetValue(theFace)); itl.More(); itl.Next())
             {
                 Face fac = ShapeCasts.Face(itl.Value());
                 fac.Orientation(orFace);
@@ -1352,12 +1353,12 @@ public sealed class LocalSplitShape
                 _work.Finish(shapes);
                 foreach (Shape key in _map.Keys.ToList())
                 {
-                    _map[key] = _work.Final(_map[key]);
+                    _map.GetValueRef(key) = _work.Final(_map.GetValue(key));
                 }
             }
         }
         // OCCT_DEBUG trace left out ("Le shape comporte des faces invalides" when myDblE isn't empty)
-        return _map[s];
+        return _map.GetValue(s);
     }
 
     /// <summary>Returns the "original" shape (the caller's).</summary>
@@ -1365,10 +1366,10 @@ public sealed class LocalSplitShape
 
     private void Put(in Shape s)
     {
-        if (!_map.IsBound(s))
+        if (!_map.ContainsKey(s))
         {
             NCollection_List<Shape> thelist = new();
-            _map.Bind(s, thelist);
+            _map[s] = thelist;
             if (s.ShapeType() != ShapeType.Vertex)
             {
                 for (Iterator theIterator = new(s); theIterator.More(); theIterator.Next())
@@ -1378,22 +1379,22 @@ public sealed class LocalSplitShape
             }
             else
             {
-                _map[s].Append(s);
+                _map.GetValue(s).Append(s);
             }
         }
     }
 
     private static void UpdateToleraces(in Face face,
-                                        NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+                                        Dictionary<Shape, NCollection_List<Shape>> map)
     {
         Explorer expE = new(face, ShapeType.Edge);
         for (; expE.More(); expE.Next())
         {
-            if (!map.IsBound(expE.Current()))
+            if (!map.ContainsKey(expE.Current()))
             {
                 continue;
             }
-            NCollection_List<Shape> lEdges = map[expE.Current()];
+            NCollection_List<Shape> lEdges = map.GetValue(expE.Current());
             if (lEdges.Extent() <= 1)
             {
                 continue;
@@ -1421,7 +1422,7 @@ public sealed class LocalSplitShape
         {
             UpdateToleraces(ShapeCasts.Face(s), _map);
         }
-        NCollection_List<Shape>.Iterator itr = new(_map[s]);
+        NCollection_List<Shape>.Iterator itr = new(_map.GetValue(s));
         if (itr.More())
         {
             return !itr.Value().IsSame(s);
@@ -1441,7 +1442,7 @@ public sealed class LocalSplitShape
             for (it.Initialize(s); it.More(); it.Next())
             {
                 orient = it.Value().Orientation();
-                for (itr.Initialize(_map[it.Value()]); itr.More(); itr.Next())
+                for (itr.Initialize(_map.GetValue(it.Value())); itr.More(); itr.Next())
                 {
                     b.Add(result, itr.Value().Oriented(orient));
                 }
@@ -1451,11 +1452,11 @@ public sealed class LocalSplitShape
             {
                 result.Closed(Tool.IsClosed(result));
             }
-            _map[s].Append(result);
+            _map.GetValue(s).Append(result);
         }
         else
         {
-            _map[s].Append(s);
+            _map.GetValue(s).Append(s);
         }
         return rebuild;
     }
@@ -1613,7 +1614,7 @@ public sealed class LocalSplitShape
 
     private static bool ChoixUV(in Edge last,
                                 in Face f,
-                                NCollection_IndexedMap<Shape> poss,
+                                IndexedSet<Shape> poss,
                                 ref Edge resEdge,
                                 ref Point2D plst,
                                 ref Vector2D dlst)
@@ -1626,9 +1627,9 @@ public sealed class LocalSplitShape
         int index = 0, imin = 0;
         double angmax = -Math.PI, ang;
 
-        for (index = 1; index <= poss.Extent(); index++)
+        for (index = 1; index <= poss.Count; index++)
         {
-            Edge edge = ShapeCasts.Edge(poss.FindKey(index));
+            Edge edge = ShapeCasts.Edge(poss[index - 1]);
 
             GetDirection(edge, f, out Point2D p2d, out Vector2D v2d, true);
             if (!SameUV(plst, p2d, surf))
@@ -1656,7 +1657,7 @@ public sealed class LocalSplitShape
 
         if (imin != 0)
         {
-            resEdge = ShapeCasts.Edge(poss.FindKey(imin));
+            resEdge = ShapeCasts.Edge(poss[imin - 1]);
             GetDirection(resEdge, f, out plst, out dlst, false);
         }
 

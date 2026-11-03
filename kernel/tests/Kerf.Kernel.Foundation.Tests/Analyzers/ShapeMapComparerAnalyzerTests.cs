@@ -13,7 +13,7 @@ using Diagnostic = Microsoft.CodeAnalysis.Diagnostic;
 
 public class ShapeMapComparerAnalyzerTests
 {
-    // Stand-ins shaped like Kerf's: shape structs in Kerf.Topology, NCollection maps with an optional comparer
+    // Stand-ins shaped like Kerf's: shape structs in Kerf.Topology, indexed collections with an optional comparer
     private const string Prelude = """
         using System.Collections.Generic;
         namespace Kerf.Topology
@@ -25,7 +25,7 @@ public class ShapeMapComparerAnalyzerTests
         {
             public struct Point3D { }
         }
-        namespace Occt
+        namespace Kerf.Engine.Collections
         {
             using Kerf.Topology;
             public sealed class ShapeHasher : IEqualityComparer<Shape>
@@ -34,25 +34,17 @@ public class ShapeMapComparerAnalyzerTests
                 public bool Equals(Shape a, Shape b) => true;
                 public int GetHashCode(Shape s) => 0;
             }
-            public class NCollection_Map<TKey>
+            public class IndexedSet<TKey>
             {
-                public NCollection_Map(IEqualityComparer<TKey>? theHasher = null) { }
-                public NCollection_Map(NCollection_Map<TKey> theOther) { }
+                public IndexedSet(IEqualityComparer<TKey>? comparer = null) { }
+                public IndexedSet(IndexedSet<TKey> other) { }
             }
-            public class NCollection_IndexedMap<TKey>
+            public class IndexedMap<TKey, TValue>
             {
-                public NCollection_IndexedMap(IEqualityComparer<TKey>? theHasher = null) { }
+                public IndexedMap(IEqualityComparer<TKey>? comparer = null) { }
+                public IndexedMap(IndexedMap<TKey, TValue> other) { }
             }
-            public class NCollection_DataMap<TKey, TValue>
-            {
-                public NCollection_DataMap(IEqualityComparer<TKey>? theHasher = null) { }
-            }
-            public class NCollection_IndexedDataMap<TKey, TValue>
-            {
-                public NCollection_IndexedDataMap(IEqualityComparer<TKey>? theHasher = null) { }
-                public NCollection_IndexedDataMap(NCollection_IndexedDataMap<TKey, TValue> theOther) { }
-            }
-            public class ShapeSet : NCollection_IndexedMap<Shape>
+            public class ShapeSet : IndexedSet<Shape>
             {
                 public ShapeSet() { }
                 public ShapeSet(IEqualityComparer<Shape> h) : base(h) { }
@@ -62,12 +54,12 @@ public class ShapeMapComparerAnalyzerTests
         """;
 
     [Theory]
-    [InlineData("var m = new NCollection_Map<Shape>();")]
-    [InlineData("var m = new NCollection_IndexedMap<Edge>();")]
-    [InlineData("var m = new NCollection_DataMap<Shape, int>();")]
-    [InlineData("var m = new NCollection_IndexedDataMap<Shape, int>();")]
-    [InlineData("NCollection_Map<Shape> m = new();")]
-    [InlineData("var m = new NCollection_IndexedMap<Shape>(null);")]
+    [InlineData("var m = new HashSet<Shape>(16);")]
+    [InlineData("var m = new IndexedSet<Edge>();")]
+    [InlineData("Dictionary<Edge, int> m = new();")]
+    [InlineData("var m = new IndexedMap<Shape, int>();")]
+    [InlineData("IndexedSet<Shape> m = new();")]
+    [InlineData("var m = new IndexedSet<Shape>((IEqualityComparer<Shape>?)null);")]
     [InlineData("var m = new HashSet<Shape>();")]
     [InlineData("var m = new HashSet<Edge>(new List<Edge>());")]
     [InlineData("var m = new Dictionary<Shape, int>();")]
@@ -78,15 +70,15 @@ public class ShapeMapComparerAnalyzerTests
         => Assert.Single(Analyze(statement));
 
     [Theory]
-    [InlineData("var m = new NCollection_Map<Shape>(ShapeHasher.Instance);")]
-    [InlineData("var m = new NCollection_IndexedMap<Shape>(theHasher: ShapeHasher.Instance);")]
-    [InlineData("var m = new NCollection_DataMap<Shape, int>(EqualityComparer<Shape>.Default);")]
+    [InlineData("var m = new IndexedSet<Shape>(ShapeHasher.Instance);")]
+    [InlineData("var m = new IndexedSet<Shape>(comparer: ShapeHasher.Instance);")]
+    [InlineData("var m = new IndexedMap<Shape, int>(EqualityComparer<Shape>.Default);")]
     [InlineData("var m = new HashSet<Shape>(ShapeHasher.Instance);")]
     [InlineData("var m = new Dictionary<Shape, int>(4, ShapeHasher.Instance);")]
-    [InlineData("var a = new NCollection_Map<Shape>(ShapeHasher.Instance); var b = new NCollection_Map<Shape>(a);")]
-    [InlineData("var a = new NCollection_IndexedDataMap<Shape, int>(ShapeHasher.Instance); var b = new NCollection_IndexedDataMap<Shape, int>(a);")]
+    [InlineData("var a = new IndexedSet<Shape>(ShapeHasher.Instance); var b = new IndexedSet<Shape>(a);")]
+    [InlineData("var a = new IndexedMap<Shape, int>(ShapeHasher.Instance); var b = new IndexedMap<Shape, int>(a);")]
     [InlineData("var m = new ShapeSet(ShapeHasher.Instance);")]
-    [InlineData("var m = new NCollection_Map<Point3D>();")]
+    [InlineData("var m = new IndexedSet<Point3D>();")]
     [InlineData("var m = new HashSet<int>();")]
     [InlineData("var m = new Dictionary<int, Shape>();")]
     [InlineData("var m = new List<Shape>();")]
@@ -96,7 +88,7 @@ public class ShapeMapComparerAnalyzerTests
 
     private static ImmutableArray<Diagnostic> Analyze(string statement)
     {
-        string source = Prelude + "\nnamespace Occt { using Kerf.Topology; using Kerf.Geometry; public static class Test { static void M() { " + statement + " } } }";
+        string source = Prelude + "\nnamespace Kerf.Engine.Collections { using Kerf.Topology; using Kerf.Geometry; public static class Test { static void M() { " + statement + " } } }";
         var compilation = CSharpCompilation.Create(
             "Probe",
             [CSharpSyntaxTree.ParseText(source)],

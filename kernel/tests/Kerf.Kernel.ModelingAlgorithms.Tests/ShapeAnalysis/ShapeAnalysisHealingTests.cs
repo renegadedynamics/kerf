@@ -419,8 +419,8 @@ public class ShapeAnalysisHealingTests
                                         new Point3D(0, 1, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aFace);
         var aCSF = new CheckSmallFaceAnalysis();
-        var aMapEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var aMapParam = new NCollection_DataMap<Shape, NCollection_List<double>>(ShapeHasher.Instance);
+        var aMapEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMapParam = new Dictionary<Shape, NCollection_List<double>>(ShapeHasher.Instance);
 
         // the public form: a null compound gives a new frozen compound
         // (the vertices are explored with repetition: the splitting vertex is met, counted and added twice, as in OCCT)
@@ -429,8 +429,8 @@ public class ShapeAnalysisHealingTests
         Assert.True(aCSF.StatusSplitVert(ExtendStatus.Done));
         Assert.True(aComp.TShape()!.IsFrozen);
         Assert.Equal(2, aComp.ChildCount);
-        Assert.Equal(1, aMapEdges.Extent());
-        Assert.Equal(1, aMapParam.Extent());
+        Assert.Single(aMapEdges);
+        Assert.Single(aMapParam);
 
         // a frozen compound passed in is kept: the result holds its items and the new ones
         Compound aFirst = aComp;
@@ -490,11 +490,11 @@ public class ShapeAnalysisHealingTests
     public void CheckSmallFace_PinFace()
     {
         var aCSF = new CheckSmallFaceAnalysis();
-        var aMap = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aMap = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Face aSquare = PolygonFace(new Point3D(0, 0, 0), new Point3D(1, 0, 0), new Point3D(1, 1, 0), new Point3D(0, 1, 0));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aSquare);
         Assert.False(aCSF.CheckPinFace(aSquare, aMap));
-        Assert.Equal(0, aMap.Extent());
+        Assert.Empty(aMap);
         Assert.False(aCSF.StatusPinFace(ExtendStatus.Done));
         aSnap.AssertUnchanged(aSquare);
     }

@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
@@ -48,11 +49,11 @@ namespace Kerf.Engine.Features.Local;
 public sealed class WiresOnShape : Transient
 {
     private Shape _shape = new();
-    private readonly NCollection_IndexedDataMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _facesWithSection = new(ShapeHasher.Instance);
     private bool _checkInterior;
     // OCCT iterates this map keyed by the shapes' addresses (in BindAll); the port in insertion order
-    private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
     private bool _done;
     private int _index;
     private WorkingShapes _work;
@@ -243,7 +244,7 @@ public sealed class WiresOnShape : Transient
     // Bind(E, F) on working shapes
     private void BindCore(in Edge e, in Face f)
     {
-        if (!_mapEF.Contains(e))
+        if (!_mapEF.ContainsKey(e))
         {
             Explorer exp = new(f, global::Kerf.Topology.ShapeType.Edge);
             for (; exp.More(); exp.Next())
@@ -267,7 +268,7 @@ public sealed class WiresOnShape : Transient
     public void Bind(in Edge efromW, in Edge eonFace)
     {
         using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
-        _map.Bind(efromW, eonFace);
+        _map[efromW] = eonFace;
     }
 
     public void BindAll()
@@ -280,7 +281,7 @@ public sealed class WiresOnShape : Transient
         HashSet<Shape> theMap = new(ShapeHasher.Instance);
 
         // Detection des vertex a projeter ou a "binder" avec des vertex existants
-        NCollection_DataMap<Shape, Shape> mapV = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> mapV = new(ShapeHasher.Instance);
         Explorer exp = new(), exp2 = new();
         foreach (KeyValuePair<Shape, Shape> ite in _map)
         {
@@ -303,13 +304,13 @@ public sealed class WiresOnShape : Transient
                         }
                         else if (BrepTools.Compare(vtx, vtx2))
                         {
-                            mapV.Bind(vtx, vtx2);
+                            mapV[vtx] = vtx2;
                             break;
                         }
                     }
                     if (!exp2.More())
                     {
-                        mapV.Bind(vtx, eimg);
+                        mapV[vtx] = eimg;
                     }
                     theMap.Add(vtx);
                 }
@@ -318,16 +319,16 @@ public sealed class WiresOnShape : Transient
 
         foreach (KeyValuePair<Shape, Shape> ite in mapV)
         {
-            _map.Bind(ite.Key, ite.Value);
+            _map[ite.Key] = ite.Value;
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> splits = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> splits = new(ShapeHasher.Instance);
         int ind;
         HashSet<Shape> overlappedEdges = new(ShapeHasher.Instance);
-        for (ind = 1; ind <= _mapEF.Extent(); ind++)
+        for (ind = 1; ind <= _mapEF.Count; ind++)
         {
-            Edge edg = ShapeCasts.Edge(_mapEF.FindKey(ind));
-            Face fac = ShapeCasts.Face(_mapEF[ind]);
+            Edge edg = ShapeCasts.Edge(_mapEF.KeyAt(ind - 1));
+            Face fac = ShapeCasts.Face(_mapEF.ValueAt(ind - 1));
 
             PutPCurve(edg, fac);
             Curve2D? pCurve = Tool.CurveOnSurface(edg, fac, out _, out _);
@@ -347,29 +348,29 @@ public sealed class WiresOnShape : Transient
             }
         }
 
-        for (ind = 1; ind <= splits.Extent(); ind++)
+        for (ind = 1; ind <= splits.Count; ind++)
         {
-            Shape edge = splits.FindKey(ind);
+            Shape edge = splits.KeyAt(ind - 1);
             if (overlappedEdges.Contains(edge))
             {
                 continue;
             }
-            Shape face = _mapEF.FindFromKey(edge);
+            Shape face = _mapEF.GetValue(edge);
             // Remove "anEdge" from "myMapEF"
-            _mapEF.RemoveKey(edge);
-            NCollection_List<Shape>.Iterator itl = new(splits[ind]);
+            _mapEF.Remove(edge);
+            NCollection_List<Shape>.Iterator itl = new(splits.ValueAt(ind - 1));
             for (; itl.More(); itl.Next())
             {
                 _mapEF.Add(itl.Value(), face);
             }
         }
 
-        NCollection_DataMap<Shape, double> vertParam = new(ShapeHasher.Instance);
+        Dictionary<Shape, double> vertParam = new(ShapeHasher.Instance);
 
-        for (ind = 1; ind <= _mapEF.Extent(); ind++)
+        for (ind = 1; ind <= _mapEF.Count; ind++)
         {
-            Edge edg = ShapeCasts.Edge(_mapEF.FindKey(ind));
-            Face fac = ShapeCasts.Face(_mapEF[ind]);
+            Edge edg = ShapeCasts.Edge(_mapEF.KeyAt(ind - 1));
+            Face fac = ShapeCasts.Face(_mapEF.ValueAt(ind - 1));
             // JAG 02.02.96 : On verifie les pcurves...
 
             for (exp.Init(edg, ShapeType.Vertex); exp.More(); exp.Next())
@@ -389,22 +390,22 @@ public sealed class WiresOnShape : Transient
 
                 Edge epro = new();
                 double prm = global::Kerf.Engine.Foundation.Precision.Infinite();
-                bool isProjected = _map.IsBound(vtx);
+                bool isProjected = _map.ContainsKey(vtx);
 
                 // if vertex was already projected on the current edge on the previous face
                 // it is necessary to check tolerance of the vertex in the 2D space on the current
                 // face without projection and update tolerance of vertex if it is necessary
                 if (isProjected)
                 {
-                    Shape sh = _map.Find(vtx);
+                    Shape sh = _map.GetValue(vtx);
                     if (sh.ShapeType() != global::Kerf.Topology.ShapeType.Edge)
                     {
                         continue;
                     }
-                    epro = ShapeCasts.Edge(_map.Find(vtx));
-                    if (vertParam.IsBound(vtx))
+                    epro = ShapeCasts.Edge(_map.GetValue(vtx));
+                    if (vertParam.ContainsKey(vtx))
                     {
-                        prm = vertParam.Find(vtx);
+                        prm = vertParam.GetValue(vtx);
                     }
                 }
                 bool ok = Project(vtx, p2d, fac, ref epro, ref prm);
@@ -415,7 +416,7 @@ public sealed class WiresOnShape : Transient
                         Vertex vtx2 = ShapeCasts.Vertex(exp2.Current());
                         if (vtx2.IsSame(vtx))
                         {
-                            _map.Bind(vtx, vtx2);
+                            _map[vtx] = vtx2;
                             theMap.Add(vtx);
                             break;
                         }
@@ -426,7 +427,7 @@ public sealed class WiresOnShape : Transient
                                 && (Math.Abs(prm - f1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()
                                     || Math.Abs(prm - l1) <= global::Kerf.Engine.Foundation.Precision.PConfusion()))
                             {
-                                _map.Bind(vtx, vtx2);
+                                _map[vtx] = vtx2;
                                 theMap.Add(vtx);
                                 break;
                             }
@@ -434,8 +435,8 @@ public sealed class WiresOnShape : Transient
                     }
                     if (!exp2.More())
                     {
-                        _map.Bind(vtx, epro);
-                        vertParam.Bind(vtx, prm);
+                        _map[vtx] = epro;
+                        vertParam[vtx] = prm;
                     }
                 }
             }
@@ -462,19 +463,19 @@ public sealed class WiresOnShape : Transient
         _index = 1;
     }
 
-    public bool MoreEdge() => _index <= _mapEF.Extent();
+    public bool MoreEdge() => _index <= _mapEF.Count;
 
     /// <summary>The current edge (the caller's edge if it was copied).</summary>
     public Edge Edge() => ShapeCasts.Edge(InternalEdge());
 
     /// <summary><see cref="Edge"/> as worked on, for ported code.</summary>
-    internal Edge InternalEdge() => ShapeCasts.Edge(_mapEF.FindKey(_index));
+    internal Edge InternalEdge() => ShapeCasts.Edge(_mapEF.KeyAt(_index - 1));
 
     /// <summary>Returns the face of the shape on which the current edge is projected (the caller's face).</summary>
     public Face OnFace() => ShapeCasts.Face(InternalOnFace());
 
     /// <summary><see cref="OnFace"/> as worked on, for ported code.</summary>
-    internal Face InternalOnFace() => ShapeCasts.Face(_mapEF[_index]);
+    internal Face InternalOnFace() => ShapeCasts.Face(_mapEF.ValueAt(_index - 1));
 
     /// <summary>
     /// If the current edge is projected on an edge, returns true and sets the edge (the caller's edge) in
@@ -491,9 +492,9 @@ public sealed class WiresOnShape : Transient
     internal bool InternalOnEdge(out Edge e)
     {
         e = new Edge();
-        if (_map.IsBound(_mapEF.FindKey(_index)))
+        if (_map.ContainsKey(_mapEF.KeyAt(_index - 1)))
         {
-            e = ShapeCasts.Edge(_map[_mapEF.FindKey(_index)]);
+            e = ShapeCasts.Edge(_map.GetValue(_mapEF.KeyAt(_index - 1)));
             return true;
         }
         return false;
@@ -519,11 +520,11 @@ public sealed class WiresOnShape : Transient
     internal bool InternalOnVertex(in Vertex vw, out Vertex vs)
     {
         vs = new Vertex();
-        if (_map.IsBound(vw))
+        if (_map.ContainsKey(vw))
         {
-            if (_map[vw].ShapeType() == ShapeType.Vertex)
+            if (_map.GetValue(vw).ShapeType() == ShapeType.Vertex)
             {
-                vs = ShapeCasts.Vertex(_map[vw]);
+                vs = ShapeCasts.Vertex(_map.GetValue(vw));
                 return true;
             }
             return false;
@@ -548,12 +549,12 @@ public sealed class WiresOnShape : Transient
     {
         ed = new Edge();
         prm = 0.0; // OCCT: unchanged
-        if (!_map.IsBound(v) || _map[v].ShapeType() == ShapeType.Vertex)
+        if (!_map.ContainsKey(v) || _map.GetValue(v).ShapeType() == ShapeType.Vertex)
         {
             return false;
         }
 
-        ed = ShapeCasts.Edge(_map[v]);
+        ed = ShapeCasts.Edge(_map.GetValue(v));
         prm = Project(v, ed);
         return true;
     }
@@ -574,18 +575,18 @@ public sealed class WiresOnShape : Transient
     {
         ed = new Edge();
         prm = 0.0; // OCCT: unchanged
-        if (!_map.IsBound(v) || _map[v].ShapeType() == ShapeType.Vertex)
+        if (!_map.ContainsKey(v) || _map.GetValue(v).ShapeType() == ShapeType.Vertex)
         {
             return false;
         }
 
-        ed = ShapeCasts.Edge(_map[v]);
-        if (!_mapEF.Contains(edgeFrom))
+        ed = ShapeCasts.Edge(_map.GetValue(v));
+        if (!_mapEF.ContainsKey(edgeFrom))
         {
             return false;
         }
 
-        Shape shape = _mapEF.FindFromKey(edgeFrom);
+        Shape shape = _mapEF.GetValue(edgeFrom);
         Curve3D? c = Tool.Curve(ed, out _, out _);
         if (c is null && shape.ShapeType() == ShapeType.Face)
         {
@@ -1320,7 +1321,7 @@ public sealed class WiresOnShape : Transient
 
     private static void FindInternalIntersections(in Edge edge,
                                                   in Face face,
-                                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> splits,
+                                                  IndexedMap<Shape, NCollection_List<Shape>> splits,
                                                   ref bool isOverlapped)
     {
         double tolExt = global::Kerf.Engine.Foundation.Precision.PConfusion();

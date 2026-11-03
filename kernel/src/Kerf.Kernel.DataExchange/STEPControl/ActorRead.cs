@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Basic;
@@ -836,7 +837,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         Transform3D trsf = new Transform3D();
         using ProgressScope psRoot = new ProgressScope(progress, "Sub-assembly", isManifold ? 1 : 2);
         using ProgressScope ps = new ProgressScope(psRoot.Next(), "Transfer", nb);
-        NCollection_IndexedMap<Shape> compoundedShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        IndexedSet<Shape> compoundedShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (int i = 1; i <= nb && ps.More(); i++)
         {
             ProgressRange range = ps.Next();
@@ -918,7 +919,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             // Set tolerances for shape processing.
             // These parameters are calculated inside STEPControl_ActorRead::Transfer() and cannot be set
             // from outside.
-            NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+            Dictionary<string, string> parameters = GetShapeFixParameters();
             ShapeProcessor.SetParameter("FixShape.Tolerance3d", _precision, true, parameters);
             ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
             ShapeProcessor.SetParameter("FixShape.NonManifold", "1", true, parameters);
@@ -948,8 +949,8 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 //  Shells which are stored separately in I-DEAS-like STP
                 // ==========================================================
 
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> shellClosingsMap =
-                    new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> shellClosingsMap =
+                    new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 // Find possible closings for each shell
                 ComputeIDEASClosings(comp, shellClosingsMap);
 
@@ -958,10 +959,10 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 brepBuilder.MakeCompound(ref compWithClosings);
 
                 // Attempt to close Shells one-by-one
-                for (int i = 1; i <= shellClosingsMap.Extent(); i++)
+                for (int i = 0; i < shellClosingsMap.Count; i++)
                 {
-                    Shell adjustedShell = CloseIDEASShell(ShapeCasts.Shell(shellClosingsMap.FindKey(i)),
-                                                                 shellClosingsMap.FindFromIndex(i));
+                    Shell adjustedShell = CloseIDEASShell(ShapeCasts.Shell(shellClosingsMap.KeyAt(i)),
+                                                                 shellClosingsMap.ValueAt(i));
                     brepBuilder.Add(compWithClosings, adjustedShell);
                 }
                 // Put not suspected open Shells as they are (updated 23.11.2010)
@@ -969,7 +970,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 for (; allShellsExp.More(); allShellsExp.Next())
                 {
                     Shape currentShell = allShellsExp.Current();
-                    if (!_nmTool.IsPureNMShell(currentShell) && !shellClosingsMap.Contains(currentShell))
+                    if (!_nmTool.IsPureNMShell(currentShell) && !shellClosingsMap.ContainsKey(currentShell))
                     {
                         brepBuilder.Add(compWithClosings, currentShell);
                     }
@@ -1622,7 +1623,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                 // Set tolerances for shape processing.
                 // These parameters are calculated inside STEPControl_ActorRead::Transfer() and cannot be set
                 // from outside.
-                NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+                Dictionary<string, string> parameters = GetShapeFixParameters();
                 ShapeProcessor.SetParameter("FixShape.Tolerance3d", _precision, true, parameters);
                 ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
                 ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);
@@ -1771,8 +1772,8 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         try
         {
             ImportTool myTool = new ImportTool();
-            NCollection_DataMap<StepTopologicalRepresentationItem, Shape> map =
-                new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+            Dictionary<StepTopologicalRepresentationItem, Shape> map =
+                new Dictionary<StepTopologicalRepresentationItem, Shape>();
 
             myTool.Init(map, tp);
             TranslateFace myTF = new TranslateFace();
@@ -1806,7 +1807,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
             {
                 Shape s = sb.Result();
 
-                NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+                Dictionary<string, string> parameters = GetShapeFixParameters();
                 ShapeProcessor.SetParameter("FixShape.Tolerance3d", _precision, true, parameters);
                 ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", _maxTol, true, parameters);
                 ShapeProcessor shapeProcessor = new ShapeProcessor(parameters);
@@ -2264,7 +2265,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
     //           the passed map (shellClosingMap)
     //=======================================================================
     private void ComputeIDEASClosings(Compound comp,
-                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> shellClosingsMap)
+                                      IndexedMap<Shape, NCollection_List<Shape>> shellClosingsMap)
     {
         Explorer shellExpA = new Explorer(comp, ShapeType.Shell);
 

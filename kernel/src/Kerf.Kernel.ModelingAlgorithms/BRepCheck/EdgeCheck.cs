@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -52,7 +53,7 @@ public class EdgeCheck : ResultCheck
         if (!_min)
         {
             var newList = new NCollection_List<StatusCheck>();
-            NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+            NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
             _cref = null;
 
             // Existence et unicite d`une representation 3D
@@ -253,13 +254,13 @@ public class EdgeCheck : ResultCheck
 
             try
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 {
                     return;
                 }
 
                 var newList = new NCollection_List<StatusCheck>();
-                hList = _map.Bound(s, newList);
+                hList = _map.SetValueRef(s, newList);
             }
             finally
             {
@@ -587,7 +588,7 @@ public class EdgeCheck : ResultCheck
 
         try
         {
-            BRepCheckCheck.Add(_map.Find(_shape), status);
+            BRepCheckCheck.Add(_map.GetValue(_shape), status);
         }
         finally
         {

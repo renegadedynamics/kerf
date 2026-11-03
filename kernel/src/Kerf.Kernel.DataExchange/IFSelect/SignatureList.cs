@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 using static Kerf.Engine.Exchange.Framework.Selection.PrintCount;
@@ -78,9 +79,9 @@ public class SignatureList : Transient
             return;
         }
 
-        if (_thedicount.Contains(sign))
+        if (_thedicount.ContainsKey(sign))
         {
-            _thedicount.ChangeFromKey(sign)++;
+            _thedicount.GetValueRef(sign)++;
         }
         else
         {
@@ -90,9 +91,9 @@ public class SignatureList : Transient
         if (_thelistat)
         {
             NCollection_HSequence<Transient> alist = null;
-            if (_thediclist.Contains(sign))
+            if (_thediclist.ContainsKey(sign))
             {
-                alist = _thediclist.FindFromKey(sign);
+                alist = _thediclist.GetValue(sign);
             }
             else
             {
@@ -114,14 +115,14 @@ public class SignatureList : Transient
     /// <summary>
     /// Acknowledges the list in once. Name identifies the Signature
     /// </summary>
-    public void Init(string name, NCollection_IndexedDataMap<string, int> count, NCollection_IndexedDataMap<string, NCollection_HSequence<Transient>> list, int nbnuls)
+    public void Init(string name, IndexedMap<string, int> count, IndexedMap<string, NCollection_HSequence<Transient>> list, int nbnuls)
     {
         _thelastval = "";
         _thename = new TCollection_HAsciiString(name);
         _thedicount = count;
         _thediclist = list;
         _thenbnuls = nbnuls;
-        if (_thediclist.IsEmpty())
+        if (_thediclist.Count == 0)
         {
             _thelistat = false;
         }
@@ -136,14 +137,14 @@ public class SignatureList : Transient
     {
         NCollection_HSequence<TCollection_HAsciiString> list =
             new NCollection_HSequence<TCollection_HAsciiString>();
-        for (int iter = 1; iter <= _thedicount.Extent(); iter++)
+        for (int iter = 0; iter < _thedicount.Count; iter++)
         {
-            if (!_thedicount.FindKey(iter).StartsWith(root, StringComparison.Ordinal))
+            if (!_thedicount.KeyAt(iter).StartsWith(root, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            TCollection_HAsciiString sign = new TCollection_HAsciiString(_thedicount.FindKey(iter));
+            TCollection_HAsciiString sign = new TCollection_HAsciiString(_thedicount.KeyAt(iter));
             list.Append(sign);
         }
         return list;
@@ -177,7 +178,7 @@ public class SignatureList : Transient
     /// </summary>
     public int NbTimes(string sign)
     {
-        _thedicount.FindFromKey(sign, out int nb);
+        _thedicount.TryGetValue(sign, out int nb);
         return nb;
     }
 
@@ -192,7 +193,7 @@ public class SignatureList : Transient
         {
             return list;
         }
-        if (_thediclist.FindFromKey(sign, out NCollection_HSequence<Transient> tList))
+        if (_thediclist.TryGetValue(sign, out NCollection_HSequence<Transient> tList))
         {
             list = tList;
         }
@@ -229,13 +230,13 @@ public class SignatureList : Transient
         s.Write(_thename);
         s.Write("\n -----\t-----------");
         s.Write('\n');
-        for (int iter = 1; iter <= _thedicount.Extent(); iter++)
+        for (int iter = 0; iter < _thedicount.Count; iter++)
         {
-            int val = _thedicount.FindFromIndex(iter);
+            int val = _thedicount.ValueAt(iter);
             s.Write(FrameworkMsg.Blanks(val, 6));
             s.Write(val);
             s.Write("\t");
-            s.Write(_thedicount.FindKey(iter));
+            s.Write(_thedicount.KeyAt(iter));
             s.Write('\n');
             nbtot += val;
             nbsign++;
@@ -289,12 +290,12 @@ public class SignatureList : Transient
             return;
         }
         int nbtot = 0, nbsign = 0;
-        for (int iter = 1; iter <= _thediclist.Extent(); iter++)
+        for (int iter = 0; iter < _thediclist.Count; iter++)
         {
-            NCollection_HSequence<Transient> list = _thediclist.FindFromIndex(iter);
+            NCollection_HSequence<Transient> list = _thediclist.ValueAt(iter);
             s.Write(Name());
             s.Write(" : ");
-            s.Write(_thediclist.FindKey(iter));
+            s.Write(_thediclist.KeyAt(iter));
             s.Write('\n');
             if (list is null)
             {
@@ -363,16 +364,16 @@ public class SignatureList : Transient
         s.Write("\n -----\t-----------");
         s.Write('\n');
         int nbtot = 0, nbsign = 0, maxent = 0, nbval = 0, nbve = 0, minval = 0, maxval = 0, totval = 0;
-        for (int iter = 1; iter <= _thedicount.Extent(); iter++)
+        for (int iter = 0; iter < _thedicount.Count; iter++)
         {
-            int nbent = _thedicount.FindFromIndex(iter);
+            int nbent = _thedicount.ValueAt(iter);
             nbtot += nbent;
             nbsign++;
             if (nbent > maxent)
             {
                 maxent = nbent;
             }
-            string name = _thedicount.FindKey(iter);
+            string name = _thedicount.KeyAt(iter);
             //    if (!name.IsIntegerValue()) continue;  not very reliable
             int ic, nc = name.Length;
             bool iaint = true;
@@ -457,6 +458,6 @@ public class SignatureList : Transient
     private int _thenbnuls;
     private TCollection_HAsciiString? _thename;
     private string _thelastval = "";
-    private NCollection_IndexedDataMap<string, int> _thedicount = new NCollection_IndexedDataMap<string, int>();
-    private NCollection_IndexedDataMap<string, NCollection_HSequence<Transient>> _thediclist = new NCollection_IndexedDataMap<string, NCollection_HSequence<Transient>>();
+    private IndexedMap<string, int> _thedicount = new IndexedMap<string, int>();
+    private IndexedMap<string, NCollection_HSequence<Transient>> _thediclist = new IndexedMap<string, NCollection_HSequence<Transient>>();
 }

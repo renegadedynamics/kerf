@@ -39,7 +39,7 @@ internal class RWTessellatedCurveSet
         data.ReadEntity(num, 2, "coord_list", ach, typeof(CoordinatesList), ref coordList);
         //--- Initialisation of the read entity ---
         int nsub2 = 0;
-        NCollection_DynamicArray<NCollection_HSequence<int>> curves = new NCollection_DynamicArray<NCollection_HSequence<int>>();
+        List<NCollection_HSequence<int>> curves = new List<NCollection_HSequence<int>>();
         if (data.ReadSubList(num, 3, "curves", ach, ref nsub2))
         {
             int nb2 = data.NbParams(nsub2);
@@ -63,7 +63,7 @@ internal class RWTessellatedCurveSet
                             curve.Append(val);
                         }
                     }
-                    curves.Append(curve);
+                    curves.Add(curve);
                 }
             }
         }
@@ -80,9 +80,9 @@ internal class RWTessellatedCurveSet
 
         // Own field : line_strips
         sw.OpenSub();
-        for (int curveIt = 0; curveIt < ent.Curves().Length(); curveIt++)
+        for (int curveIt = 0; curveIt < ent.Curves().Count; curveIt++)
         {
-            NCollection_HSequence<int> curve = ent.Curves().Value(curveIt);
+            NCollection_HSequence<int> curve = ent.Curves()[curveIt];
             sw.OpenSub();
             for (int i = 1; i <= curve.Length(); i++)
             {

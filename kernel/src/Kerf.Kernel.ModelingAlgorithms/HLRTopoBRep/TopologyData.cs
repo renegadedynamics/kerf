@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 
 using Kerf.Topology;
@@ -23,14 +24,14 @@ namespace Kerf.Engine.HiddenLines.Topology;
 /// </remarks>
 public sealed class TopologyData
 {
-    private readonly NCollection_DataMap<Shape, Shape> _oldS = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _splE =
+    private readonly Dictionary<Shape, Shape> _oldS = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _splE =
         new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, TopologyFaceData> _data =
+    private readonly Dictionary<Shape, TopologyFaceData> _data =
         new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _outV = new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _intV = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<VData>> _edgesVertices =
+    private readonly Dictionary<Shape, NCollection_List<VData>> _edgesVertices =
         new(ShapeHasher.Instance);
 
     // OCCT's map iterator on myEdgesVertices: the keys, in the map's order, and the current position
@@ -63,41 +64,41 @@ public sealed class TopologyData
     /// <summary>True if the edge has splits.</summary>
     public bool EdgeHasSplE(in Edge e)
     {
-        if (!_splE.IsBound(e))
+        if (!_splE.ContainsKey(e))
         {
             return false;
         }
-        return !_splE[e].IsEmpty();
+        return !_splE.GetValue(e).IsEmpty();
     }
 
     /// <summary>True if the face has internal outlines.</summary>
     public bool FaceHasIntL(in Face f)
     {
-        if (!_data.IsBound(f))
+        if (!_data.ContainsKey(f))
         {
             return false;
         }
-        return !_data[f].FaceIntL().IsEmpty();
+        return !_data.GetValue(f).FaceIntL().IsEmpty();
     }
 
     /// <summary>True if the face has outlines on its boundary.</summary>
     public bool FaceHasOutL(in Face f)
     {
-        if (!_data.IsBound(f))
+        if (!_data.ContainsKey(f))
         {
             return false;
         }
-        return !_data[f].FaceOutL().IsEmpty();
+        return !_data.GetValue(f).FaceOutL().IsEmpty();
     }
 
     /// <summary>True if the face has isolines.</summary>
     public bool FaceHasIsoL(in Face f)
     {
-        if (!_data.IsBound(f))
+        if (!_data.ContainsKey(f))
         {
             return false;
         }
-        return !_data[f].FaceIsoL().IsEmpty();
+        return !_data.GetValue(f).FaceIsoL().IsEmpty();
     }
 
     /// <summary>True if E2 is E1 or one of its splits.</summary>
@@ -167,9 +168,9 @@ public sealed class TopologyData
     /// <summary>The shape a new shape comes from (itself if none).</summary>
     public Shape NewSOldS(in Shape newS)
     {
-        if (_oldS.IsBound(newS))
+        if (_oldS.ContainsKey(newS))
         {
-            return _oldS[newS];
+            return _oldS.GetValue(newS);
         }
         else
         {
@@ -177,13 +178,13 @@ public sealed class TopologyData
         }
     }
 
-    public NCollection_List<Shape> EdgeSplE(in Edge e) => _splE.Find(e);
+    public NCollection_List<Shape> EdgeSplE(in Edge e) => _splE.GetValue(e);
 
-    public NCollection_List<Shape> FaceIntL(in Face f) => _data.Find(f).FaceIntL();
+    public NCollection_List<Shape> FaceIntL(in Face f) => _data.GetValue(f).FaceIntL();
 
-    public NCollection_List<Shape> FaceOutL(in Face f) => _data.Find(f).FaceOutL();
+    public NCollection_List<Shape> FaceOutL(in Face f) => _data.GetValue(f).FaceOutL();
 
-    public NCollection_List<Shape> FaceIsoL(in Face f) => _data.Find(f).FaceIsoL();
+    public NCollection_List<Shape> FaceIsoL(in Face f) => _data.GetValue(f).FaceIsoL();
 
     public bool IsOutV(in Vertex v) => _outV.Contains(v);
 
@@ -192,54 +193,54 @@ public sealed class TopologyData
     /// <summary>Records that NewS comes from OldS (the first record is kept).</summary>
     public void AddOldS(in Shape newS, in Shape oldS)
     {
-        if (!_oldS.IsBound(newS))
+        if (!_oldS.ContainsKey(newS))
         {
-            _oldS.Bind(newS, oldS);
+            _oldS[newS] = oldS;
         }
     }
 
     /// <summary>The splits of E, created empty if needed.</summary>
     public NCollection_List<Shape> AddSplE(in Edge e)
     {
-        if (!_splE.IsBound(e))
+        if (!_splE.ContainsKey(e))
         {
             NCollection_List<Shape> empty = new();
-            _splE.Bind(e, empty);
+            _splE[e] = empty;
         }
-        return _splE[e];
+        return _splE.GetValue(e);
     }
 
     /// <summary>The internal outlines of F, created empty if needed.</summary>
     public NCollection_List<Shape> AddIntL(in Face f)
     {
-        if (!_data.IsBound(f))
+        if (!_data.ContainsKey(f))
         {
             TopologyFaceData theData = new();
-            _data.Bind(f, theData);
+            _data[f] = theData;
         }
-        return _data[f].AddIntL();
+        return _data.GetValue(f).AddIntL();
     }
 
     /// <summary>The outlines of F, created empty if needed.</summary>
     public NCollection_List<Shape> AddOutL(in Face f)
     {
-        if (!_data.IsBound(f))
+        if (!_data.ContainsKey(f))
         {
             TopologyFaceData theData = new();
-            _data.Bind(f, theData);
+            _data[f] = theData;
         }
-        return _data[f].AddOutL();
+        return _data.GetValue(f).AddOutL();
     }
 
     /// <summary>The isolines of F, created empty if needed.</summary>
     public NCollection_List<Shape> AddIsoL(in Face f)
     {
-        if (!_data.IsBound(f))
+        if (!_data.ContainsKey(f))
         {
             TopologyFaceData theData = new();
-            _data.Bind(f, theData);
+            _data[f] = theData;
         }
-        return _data[f].AddIsoL();
+        return _data.GetValue(f).AddIsoL();
     }
 
     public void AddOutV(in Vertex v) => _outV.Add(v);
@@ -256,7 +257,7 @@ public sealed class TopologyData
         }
         _eIndex = 0;
 
-        while (MoreEdge() && _edgesVertices[_eKeys[_eIndex]].IsEmpty())
+        while (MoreEdge() && _edgesVertices.GetValue(_eKeys[_eIndex]).IsEmpty())
         {
             _eIndex++;
         }
@@ -268,7 +269,7 @@ public sealed class TopologyData
     {
         _eIndex++;
 
-        while (MoreEdge() && _edgesVertices[_eKeys[_eIndex]].IsEmpty())
+        while (MoreEdge() && _edgesVertices.GetValue(_eKeys[_eIndex]).IsEmpty())
         {
             _eIndex++;
         }
@@ -279,12 +280,12 @@ public sealed class TopologyData
     /// <summary>Starts the iteration on the vertices inserted on E (creating the empty list if needed).</summary>
     public void InitVertex(in Edge e)
     {
-        if (!_edgesVertices.IsBound(e))
+        if (!_edgesVertices.ContainsKey(e))
         {
             NCollection_List<VData> empty = new();
-            _edgesVertices.Bind(e, empty);
+            _edgesVertices[e] = empty;
         }
-        NCollection_List<VData> l = _edgesVertices[e];
+        NCollection_List<VData> l = _edgesVertices.GetValue(e);
         _vList = l;
         _vIterator.Initialize(l);
     }

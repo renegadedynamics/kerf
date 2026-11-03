@@ -99,14 +99,14 @@ public sealed class DsCurveExplorer
     /// <summary>Whether the data structure has a curve <paramref name="i"/> (removed curves included).</summary>
     public bool IsCurve(int i)
     {
-        bool b = MYDS._curves.IsBound(i);
+        bool b = MYDS._curves.ContainsKey(i);
         return b;
     }
 
     /// <summary>Whether the data structure has a kept curve <paramref name="i"/>.</summary>
     public bool IsCurveKeep(int i)
     {
-        bool b = MYDS._curves.IsBound(i);
+        bool b = MYDS._curves.ContainsKey(i);
         if (b)
         {
             b = MYDS.Curve(i).Keep();

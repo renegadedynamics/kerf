@@ -378,8 +378,8 @@ public class MathOpt_PSOTest
         math_Vector aSeedPos = new(1, 2, 0.0);
         aSeedPos[1] = 0.1;
         aSeedPos[2] = -0.1;
-        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
-        aSeeds.Append(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos));
+        List<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        aSeeds.Add(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos));
 
         global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStatsSeeded = new();
         VectorResult aResultSeeded = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfigSeeded, aSeeds, aStatsSeeded);
@@ -404,8 +404,8 @@ public class MathOpt_PSOTest
 
         // Seed near global minimum
         math_Vector aSeedPos = new(1, 2, 0.0);
-        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
-        aSeeds.Append(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos, 0.0));
+        List<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        aSeeds.Add(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos, 0.0));
 
         VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, aSeeds);
 
@@ -600,9 +600,9 @@ public class MathOpt_PSOTest
         aSeedPos[2] = -10.0; // out of bounds (will be clamped to -5.0)
 
         // Provide a stale value of 0.0 which is wrong for (5, -5)
-        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        List<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
         global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle aSeed = new(aSeedPos, 0.0);
-        aSeeds.Append(aSeed);
+        aSeeds.Add(aSeed);
 
         VectorResult aResult = global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSO(aFunc, aLower, aUpper, aConfig, aSeeds);
 

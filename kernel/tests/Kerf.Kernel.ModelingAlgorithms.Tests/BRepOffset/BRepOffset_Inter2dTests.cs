@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Algo;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Offsets;
@@ -38,11 +39,11 @@ public class BRepOffset_Inter2dTests
         AsDes anAsDes = new();
         anAsDes.Add(aF, aE1);
         anAsDes.Add(aF, aE2);
-        NCollection_IndexedMap<Shape> aNewEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedSet<Shape> aNewEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         aNewEdges.Add(aE1);
         aNewEdges.Add(aE2);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> anEdgeIntEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVV = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> anEdgeIntEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aDMVV = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
 
         Inter2d.Compute(anAsDes, aF, aNewEdges, 1.0e-7, anEdgeIntEdges, aDMVV);
 
@@ -55,7 +56,7 @@ public class BRepOffset_Inter2dTests
         Assert.True(Tool.Pnt(aV).IsEqual(new Point3D(1, 0, 0), 1.0e-9));
         Assert.Equal(6.0, Tool.Parameter(global::Kerf.Engine.Topology.ShapeCasts.Vertex(aV.Oriented(Orientation.Internal)), aE1), 1.0e-9);
         Assert.Equal(5.0, Tool.Parameter(global::Kerf.Engine.Topology.ShapeCasts.Vertex(aV.Oriented(Orientation.Internal)), aE2), 1.0e-9);
-        Assert.Equal(0, aDMVV.Extent());
+        Assert.Equal(0, aDMVV.Count);
     }
 
     [Fact]
@@ -72,7 +73,7 @@ public class BRepOffset_Inter2dTests
         AsDes anAsDes = new();
         anAsDes.Add(aE, aV1);
         anAsDes.Add(aE, aV2);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVV = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aDMVV = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         aDMVV.Add(aV1, new NCollection_List<Shape>([aV2]));
         ShapeImage anImageVV = new();
 

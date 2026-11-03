@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -511,9 +512,9 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
 
         var aNMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theResult.N, aNMap, false, true);
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theResult.P, aMap, false, true);
-        theOracle.Same(aNMap.FindIndex(theN), aMap.FindIndex(theP), theWhat + " place in the result");
+        theOracle.Same(aNMap.FindIndex(theN), aMap.IndexOf(theP) + 1, theWhat + " place in the result");
     }
 
     internal static void CompareMeshes(Oracle theOracle, Twin<N.TopoDS_Shape, Shape> theShape)

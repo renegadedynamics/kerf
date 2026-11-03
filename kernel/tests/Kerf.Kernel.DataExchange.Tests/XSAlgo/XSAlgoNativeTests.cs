@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
@@ -86,9 +87,9 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static char TypeChar(in Shape theShape) => theShape.IsNull ? 'n' : theShape.ShapeType() switch
@@ -109,9 +110,9 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         var aKeys = new List<Shape> { theShape };
         foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge })
         {
-            var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            var aMap = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, aType, aMap);
-            for (int i = 1; i <= aMap.Extent(); i++)
+            for (int i = 0; i < aMap.Count; i++)
             {
                 aKeys.Add(aMap[i]);
             }
@@ -158,11 +159,11 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     private static ulong MergeFP(in Shape theInput, Action<global::Kerf.Engine.Exchange.Framework.Transfer.FinderProcess> theMerge)
     {
         var aFP = new global::Kerf.Engine.Exchange.Framework.Transfer.FinderProcess();
-        var aFaces = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theInput, ShapeType.Face, aFaces);
-        for (int i = 1; i <= aFaces.Extent(); i++)
+        for (int i = 1; i <= aFaces.Count; i++)
         {
-            Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.SetTransientFromShape(aFP, aFaces[i], new TCollection_HAsciiString(i));
+            Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.SetTransientFromShape(aFP, aFaces[i - 1], new TCollection_HAsciiString(i));
         }
         theMerge(aFP);
         var aLines = new List<string>();
@@ -193,7 +194,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         string aMsgs = theContext is null ? "" : Messages(theContext.Messages(), out aNbMsg);
         return string.Create(CultureInfo.InvariantCulture,
                              $"{theRun} {(theResult.IsSame(theInput) ? 1 : 0)} {BRepHash(theResult):x16} {Count(theResult, ShapeType.Face)} "
-                             + $"{Count(theResult, ShapeType.Edge)} {Count(theResult, ShapeType.Vertex)} {(theContext is null ? 0 : theContext.Map().Extent())} "
+                             + $"{Count(theResult, ShapeType.Edge)} {Count(theResult, ShapeType.Vertex)} {(theContext is null ? 0 : theContext.Map().Count)} "
                              + $"{aNbMsg} {Fnv(aMsgs):x16} {theMerge:x16}");
     }
 
@@ -219,7 +220,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         return aText.ToString();
     }
 
-    private static ulong ParamsHash(NCollection_DataMap<string, string> theParams)
+    private static ulong ParamsHash(Dictionary<string, string> theParams)
     {
         var aLines = theParams.Select(p => p.Key + "=" + p.Value).ToList();
         aLines.Sort(StringComparer.Ordinal);
@@ -241,8 +242,8 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
     private sealed class Setup
     {
         public readonly global::Kerf.Engine.Exchange.Framework.StaticSet Statics = StepStatics();
-        public readonly (NCollection_DataMap<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) Read, ToStep;
-        public readonly NCollection_DataMap<string, string> WriteParams = new();
+        public readonly (Dictionary<string, string>, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags) Read, ToStep;
+        public readonly Dictionary<string, string> WriteParams = new();
         public readonly global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags WriteFlags =
             new(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex, global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.DirectFaces);
 
@@ -263,7 +264,7 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         ];
     }
 
-    private static string Processor(in Shape theInput, string theRun, NCollection_DataMap<string, string> theParams,
+    private static string Processor(in Shape theInput, string theRun, Dictionary<string, string> theParams,
                                     global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags theFlags, bool theToFinder)
     {
         Shape anInput = theInput;
@@ -297,11 +298,11 @@ public class XSAlgoNativeTests(ITestOutputHelper output)
         {
             Assert.True(BrepTools.Read(out Shape aRead, thePath));
             Shape anInput = TestCopies.ExactCopyForWrite(aRead, out _); // a reader's shape, not frozen
-            var aFaces = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            var aFaces = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             global::Kerf.Engine.Topology.Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
             int aNb = 0, aNbTrue = 0;
             var aLines = new StringBuilder();
-            for (int i = 1; i <= aFaces.Extent(); i++)
+            for (int i = 0; i < aFaces.Count; i++)
             {
                 Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaces[i]);
                 for (var anExp = new global::Kerf.Engine.Topology.Explorer(aFace, ShapeType.Edge); anExp.More(); anExp.Next())

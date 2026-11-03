@@ -113,3 +113,5 @@ The first packages, for Bento's 3D-models extension.
   and copying it out allocates less than half what it did (the normals go straight into the buffer).
   `ShapeMeshTests.ABigMeshComesOutQuickly` checks the allocation and the best of five runs instead of one timing, which
   failed on loaded machines. Results are as before.
+- Kerf's unit 10J2: the kernel's `NCollection_DataMap`, `NCollection_DynamicArray` and indexed maps are `Dictionary`,
+  `List`, `IndexedSet` and `IndexedMap`; the layer's uses (`Vertex`, `OneD`, among others) follow. No behaviour changes.

@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/TopExp_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -22,27 +23,27 @@ public class TopExpTests
     public void MapShapes_Faces()
     {
         Shape aBox = MakeBox();
-        var aFaceMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaceMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Face, aFaceMap);
-        Assert.Equal(6, aFaceMap.Extent());
+        Assert.Equal(6, aFaceMap.Count);
     }
 
     [Fact]
     public void MapShapes_Edges()
     {
         Shape aBox = MakeBox();
-        var anEdgeMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdgeMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Edge, anEdgeMap);
-        Assert.Equal(12, anEdgeMap.Extent());
+        Assert.Equal(12, anEdgeMap.Count);
     }
 
     [Fact]
     public void MapShapes_Vertices()
     {
         Shape aBox = MakeBox();
-        var aVertexMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aVertexMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Vertex, aVertexMap);
-        Assert.Equal(8, aVertexMap.Extent());
+        Assert.Equal(8, aVertexMap.Count);
     }
 
     [Fact]
@@ -77,18 +78,18 @@ public class TopExpTests
     public void CommonVertex()
     {
         Shape aBox = MakeBox();
-        var anEdgeMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdgeMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Edge, anEdgeMap);
-        Assert.True(anEdgeMap.Extent() >= 2);
+        Assert.True(anEdgeMap.Count >= 2);
 
         // Find two adjacent edges (sharing a common vertex)
         bool isFound = false;
-        for (int i = 1; i <= anEdgeMap.Extent() && !isFound; ++i)
+        for (int i = 1; i <= anEdgeMap.Count && !isFound; ++i)
         {
-            Edge anEdge1 = ShapeCasts.Edge(anEdgeMap.FindKey(i));
-            for (int j = i + 1; j <= anEdgeMap.Extent() && !isFound; ++j)
+            Edge anEdge1 = ShapeCasts.Edge(anEdgeMap[i - 1]);
+            for (int j = i + 1; j <= anEdgeMap.Count && !isFound; ++j)
             {
-                Edge anEdge2 = ShapeCasts.Edge(anEdgeMap.FindKey(j));
+                Edge anEdge2 = ShapeCasts.Edge(anEdgeMap[j - 1]);
                 Vertex aCommonVertex = new();
                 if (Exploration.CommonVertex(anEdge1, anEdge2, ref aCommonVertex))
                 {
@@ -155,15 +156,15 @@ public class TopExpTests
     {
         Shape aBox = MakeBox();
 
-        var anEdgeFaceMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var anEdgeFaceMap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, anEdgeFaceMap);
 
-        Assert.Equal(12, anEdgeFaceMap.Extent());
+        Assert.Equal(12, anEdgeFaceMap.Count);
 
         // Each edge of a box is shared by exactly 2 faces
-        for (int i = 1; i <= anEdgeFaceMap.Extent(); ++i)
+        for (int i = 0; i < anEdgeFaceMap.Count; ++i)
         {
-            NCollection_List<Shape> aFaceList = anEdgeFaceMap.FindFromIndex(i);
+            NCollection_List<Shape> aFaceList = anEdgeFaceMap.ValueAt(i);
             Assert.Equal(2, aFaceList.Extent());
         }
     }

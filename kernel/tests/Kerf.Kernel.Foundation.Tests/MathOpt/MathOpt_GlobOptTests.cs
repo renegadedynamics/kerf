@@ -498,8 +498,8 @@ public class MathOpt_GlobOptTest
 
         // Seed near the minimum (1, 3)
         math_Vector aSeedPos = MathOpt_NDim_TestFunctions.Vec(1.5, 2.5);
-        NCollection_DynamicArray<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
-        aSeeds.Append(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos));
+        List<global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle> aSeeds = new();
+        aSeeds.Add(new global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOSeedParticle(aSeedPos));
 
         global::Kerf.Engine.Numerics.Optimisation.MathOpt.PSOStats aStats = new();
         VectorResult aResult =

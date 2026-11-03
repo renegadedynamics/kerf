@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
@@ -38,7 +39,7 @@ public class FaceCheck : ResultCheck
     private bool _oridone;
     private StatusCheck _orires;
 
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _mapImb =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _mapImb =
         new(ShapeHasher.Instance);
 
     private bool _gctrl;
@@ -58,7 +59,7 @@ public class FaceCheck : ResultCheck
 
     // OCCT's DataMapOfShapeBox2d: NCollection_DataMap<TopoDS_Shape, Bnd_Box2d> with the default hasher, which
     // compares shapes with operator== (IsEqual: the orientation counts)
-    private static NCollection_DataMap<Shape, Box2d> NewDataMapOfShapeBox2d()
+    private static Dictionary<Shape, Box2d> NewDataMapOfShapeBox2d()
         => new(EqualityComparer<Shape>.Default);
 
     /// <summary>The status list of the face itself, read under the lock in parallel mode.</summary>
@@ -72,7 +73,7 @@ public class FaceCheck : ResultCheck
 
         try
         {
-            return _map.Find(_shape);
+            return _map.GetValue(_shape);
         }
         finally
         {
@@ -89,7 +90,7 @@ public class FaceCheck : ResultCheck
         if (!_min)
         {
             var newList = new NCollection_List<StatusCheck>();
-            NCollection_List<StatusCheck> lst = _map.Bound(_shape, newList);
+            NCollection_List<StatusCheck> lst = _map.SetValueRef(_shape, newList);
 
             var tf = (BrepTFace)_shape.TShape()!;
             if (tf.Surface() is null)
@@ -123,13 +124,13 @@ public class FaceCheck : ResultCheck
 
             try
             {
-                if (_map.IsBound(s))
+                if (_map.ContainsKey(s))
                 {
                     return;
                 }
 
                 var newList = new NCollection_List<StatusCheck>();
-                hList = _map.Bound(s, newList);
+                hList = _map.SetValueRef(s, newList);
             }
             finally
             {
@@ -202,10 +203,10 @@ public class FaceCheck : ResultCheck
         exp1.Init(_shape.Oriented(Forward), ShapeType.Wire);
         while (exp1.More())
         {
-            if (!_mapImb.IsBound(exp1.Current()))
+            if (!_mapImb.ContainsKey(exp1.Current()))
             {
                 // OCCT.NET: OCCT binds a copy of one empty list; each wire gets its own
-                _mapImb.Bind(exp1.Current(), new NCollection_List<Shape>());
+                _mapImb[exp1.Current()] = new NCollection_List<Shape>();
             }
             else
             {
@@ -224,7 +225,7 @@ public class FaceCheck : ResultCheck
 
         var c = new CurveAdaptor2D();
         double first, last;
-        NCollection_DataMap<Shape, Box2d> mapShapeBox2d = NewDataMapOfShapeBox2d();
+        Dictionary<Shape, Box2d> mapShapeBox2d = NewDataMapOfShapeBox2d();
         for (exp1.Init(_shape, ShapeType.Wire); exp1.More(); exp1.Next())
         {
             Wire wire = ShapeCasts.Wire(exp1.Current());
@@ -247,15 +248,15 @@ public class FaceCheck : ResultCheck
 
                 var boxE = new Box2d();
                 Add2dCurve.Add(c, first, last, 0.0, ref boxE);
-                mapShapeBox2d.Bind(edge, boxE);
+                mapShapeBox2d[edge] = boxE;
                 boxW.Add(boxE);
             }
 
-            mapShapeBox2d.Bind(wire, boxW);
+            mapShapeBox2d[wire] = boxW;
         }
 
         int nbwire, index, indexbis;
-        nbwire = _mapImb.Extent();
+        nbwire = _mapImb.Count;
 
         index = 1;
         while (index < nbwire)
@@ -272,18 +273,18 @@ public class FaceCheck : ResultCheck
             Wire wir1 = ShapeCasts.Wire(exp1.Current());
             // to reduce the number of calls Intersect(wir1,wir2)
             Box2d box1 = new(), box2 = new();
-            if (mapShapeBox2d.IsBound(wir1))
+            if (mapShapeBox2d.ContainsKey(wir1))
             {
-                box1 = mapShapeBox2d.Find(wir1);
+                box1 = mapShapeBox2d.GetValue(wir1);
             }
 
             exp1.Next();
             for (; exp1.More(); exp1.Next())
             {
                 Wire wir2 = ShapeCasts.Wire(exp1.Current());
-                if (mapShapeBox2d.IsBound(wir2))
+                if (mapShapeBox2d.ContainsKey(wir2))
                 {
-                    box2 = mapShapeBox2d.Find(wir2);
+                    box2 = mapShapeBox2d.GetValue(wir2);
                 }
 
                 if (!box1.IsVoid && !box2.IsVoid && box1.IsOut(box2))
@@ -346,7 +347,7 @@ public class FaceCheck : ResultCheck
             return _imbres;
         }
 
-        int nbwire = _mapImb.Extent();
+        int nbwire = _mapImb.Count;
         if (nbwire < 1)
         {
             if (update)
@@ -362,7 +363,7 @@ public class FaceCheck : ResultCheck
         var exp2 = new Explorer();
 
         Face forwardFace = ShapeCasts.Face(_shape.Oriented(Forward));
-        NCollection_DataMap<Shape, Box2d> wireBoxMap = NewDataMapOfShapeBox2d();
+        Dictionary<Shape, Box2d> wireBoxMap = NewDataMapOfShapeBox2d();
         // Precompute reliable UV bounds for cheap rejection of disjoint wire pairs.
         for (exp1.Init(forwardFace, ShapeType.Wire); exp1.More(); exp1.Next())
         {
@@ -370,7 +371,7 @@ public class FaceCheck : ResultCheck
             var box = new Box2d();
             if (ComputeWireUVBounds(forwardFace, wire, ref box))
             {
-                wireBoxMap.Bind(wire, box);
+                wireBoxMap[wire] = box;
             }
         }
 
@@ -390,11 +391,11 @@ public class FaceCheck : ResultCheck
             {
                 wireBienOriente = true;
                 // the given wire defines a hole
-                _mapImb.UnBind(wir1);
-                _mapImb.Bind(wir1.Reversed(), new NCollection_List<Shape>());
+                _mapImb.Remove(wir1);
+                _mapImb[wir1.Reversed()] = new NCollection_List<Shape>();
             }
 
-            bool hasBox1 = wireBoxMap.Find(wir1, out Box2d box1);
+            bool hasBox1 = wireBoxMap.TryGetValue(wir1, out Box2d box1);
 
             for (exp2.Init(forwardFace, ShapeType.Wire); exp2.More(); exp2.Next())
             {
@@ -404,7 +405,7 @@ public class FaceCheck : ResultCheck
                     continue;
                 }
 
-                bool hasBox2 = wireBoxMap.Find(wir2, out Box2d box2);
+                bool hasBox2 = wireBoxMap.TryGetValue(wir2, out Box2d box2);
                 // Wires with disjoint UV bounds cannot contain one another.
                 if (hasBox1 && hasBox2 && box1.IsOut(box2))
                 {
@@ -413,7 +414,7 @@ public class FaceCheck : ResultCheck
 
                 if (IsInside(wir2, wireBienOriente, fClass2d, newFace))
                 {
-                    _mapImb[wir1].Append(wir2);
+                    _mapImb.GetValue(wir1).Append(wir2);
                 }
             }
         }
@@ -447,7 +448,7 @@ public class FaceCheck : ResultCheck
         if (!wext.IsNull)
         {
             // verifies that the list contains nbwire-1 elements
-            if (_mapImb.Find(wext).Extent() != nbwire - 1)
+            if (_mapImb.GetValue(wext).Extent() != nbwire - 1)
             {
                 _imbres = StatusCheck.InvalidImbricationOfWires;
                 if (update)
@@ -499,7 +500,7 @@ public class FaceCheck : ResultCheck
             return _orires;
         }
 
-        int nbwire = _mapImb.Extent();
+        int nbwire = _mapImb.Count;
         Wire wext = new();
         // OCCT's map iterator: the keys in the map's order (at most one wire contains others, ClassifyWires checked)
         Shape[] keys = [.. _mapImb.Select(p => p.Key)];
@@ -515,7 +516,7 @@ public class FaceCheck : ResultCheck
         {
             for (; itm < keys.Length; itm++)
             {
-                if (!_mapImb.Find(keys[itm]).IsEmpty())
+                if (!_mapImb.GetValue(keys[itm]).IsEmpty())
                 {
                     wext = ShapeCasts.Wire(keys[itm]);
                 }
@@ -617,7 +618,7 @@ public class FaceCheck : ResultCheck
 
         try
         {
-            BRepCheckCheck.Add(_map.Find(_shape), status);
+            BRepCheckCheck.Add(_map.GetValue(_shape), status);
         }
         finally
         {
@@ -639,7 +640,7 @@ public class FaceCheck : ResultCheck
             return _orires != StatusCheck.NoError;
         }
 
-        for (var itl = new NCollection_List<StatusCheck>.Iterator(_map.Find(_shape)); itl.More(); itl.Next())
+        for (var itl = new NCollection_List<StatusCheck>.Iterator(_map.GetValue(_shape)); itl.More(); itl.Next())
         {
             if (itl.Value() == StatusCheck.UnorientableShape)
             {
@@ -672,7 +673,7 @@ public class FaceCheck : ResultCheck
     private static bool Intersect(in Wire wir1,
                                   in Wire wir2,
                                   in Face f,
-                                  NCollection_DataMap<Shape, Box2d> mapEdgeBox)
+                                  Dictionary<Shape, Box2d> mapEdgeBox)
     {
         double inter2dTol = 1.0e-10;
         var exp1 = new Explorer();
@@ -734,9 +735,9 @@ public class FaceCheck : ResultCheck
             }
 
             box1.SetVoid();
-            if (mapEdgeBox.IsBound(edg1))
+            if (mapEdgeBox.ContainsKey(edg1))
             {
-                box1 = mapEdgeBox.Find(edg1);
+                box1 = mapEdgeBox.GetValue(edg1);
             }
 
             if (box1.IsVoid)
@@ -762,9 +763,9 @@ public class FaceCheck : ResultCheck
                     }
 
                     box2.SetVoid();
-                    if (mapEdgeBox.IsBound(edg2))
+                    if (mapEdgeBox.ContainsKey(edg2))
                     {
-                        box2 = mapEdgeBox.Find(edg2);
+                        box2 = mapEdgeBox.GetValue(edg2);
                     }
 
                     if (box2.IsVoid)

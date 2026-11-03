@@ -12,6 +12,7 @@ using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
 using static Kerf.Topology.Containment;
@@ -1031,11 +1032,11 @@ public partial class FaceFace
                 box2.Add(new Point2D(u2f, v2f));
                 box2.Add(new Point2D(u2l, v2l));
 
-                NCollection_DynamicArray<double> arrayOfParameters = new();
+                List<double> arrayOfParameters = new();
 
                 // We consider here that the intersection line is same-parameter-line
-                arrayOfParameters.Append(c3d.FirstParameter());
-                arrayOfParameters.Append(c3d.LastParameter());
+                arrayOfParameters.Add(c3d.FirstParameter());
+                arrayOfParameters.Add(c3d.LastParameter());
 
                 IntSS.TrimILineOnSurfBoundaries(c2d1, c2d2, box1, box2, arrayOfParameters);
 
@@ -1044,13 +1045,13 @@ public partial class FaceFace
                 box1.Enlarge(toler);
                 box2.Enlarge(toler);
 
-                int nbIntersSolutionsm1 = arrayOfParameters.Length() - 1;
+                int nbIntersSolutionsm1 = arrayOfParameters.Count - 1;
 
                 // Trim RLine found.
                 for (int ind = 0; ind < nbIntersSolutionsm1; ind++)
                 {
-                    ref double parF = ref arrayOfParameters[ind];
-                    ref double parL = ref arrayOfParameters[ind + 1];
+                    ref double parF = ref CollectionsMarshal.AsSpan(arrayOfParameters)[ind];
+                    ref double parL = ref CollectionsMarshal.AsSpan(arrayOfParameters)[ind + 1];
 
                     if ((parL - parF) <= global::Kerf.Engine.Foundation.Precision.PConfusion())
                     {

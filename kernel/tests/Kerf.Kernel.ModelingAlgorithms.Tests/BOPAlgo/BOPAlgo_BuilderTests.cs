@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
@@ -107,7 +108,7 @@ public class BOPAlgo_BuilderTests
 
         // every modified shape is in the result
         Shape aResult = aBuilder.Shape();
-        var aResultMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aResultMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, aResultMap);
         foreach (Shape aSp in aBuilder.Modified(aA))
         {

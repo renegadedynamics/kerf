@@ -522,7 +522,7 @@ public class FrameworkReader
     /// <summary>
     /// Sets parameters for shape processing.
     /// </summary>
-    public void SetShapeFixParameters(NCollection_DataMap<string, string> parameters)
+    public void SetShapeFixParameters(Dictionary<string, string> parameters)
     {
         ActorOfTransientProcess actor = GetActor();
         if (actor is not null)
@@ -537,12 +537,12 @@ public class FrameworkReader
     /// theParameters.
     /// </summary>
     public void SetShapeFixParameters(in ShapeFixParameters parameters,
-                                      NCollection_DataMap<string, string>? additionalParameters = null)
+                                      Dictionary<string, string>? additionalParameters = null)
     {
         ActorOfTransientProcess actor = GetActor();
         if (actor is not null)
         {
-            actor.SetShapeFixParameters(parameters, additionalParameters ?? new NCollection_DataMap<string, string>());
+            actor.SetShapeFixParameters(parameters, additionalParameters ?? new Dictionary<string, string>());
         }
     }
 
@@ -550,10 +550,10 @@ public class FrameworkReader
     /// Returns parameters for shape processing that was set by SetParameters() method. Returns the empty map if no
     /// parameters were set.
     /// </summary>
-    public NCollection_DataMap<string, string> GetShapeFixParameters()
+    public Dictionary<string, string> GetShapeFixParameters()
     {
         ActorOfTransientProcess actor = GetActor();
-        return actor is null ? new NCollection_DataMap<string, string>() : actor.GetShapeFixParameters();
+        return actor is null ? new Dictionary<string, string>() : actor.GetShapeFixParameters();
     }
 
     /// <summary>
@@ -627,7 +627,7 @@ public class FrameworkReader
     /// </summary>
     private void InitializeMissingParameters()
     {
-        if (GetShapeFixParameters().IsEmpty())
+        if (GetShapeFixParameters().Count == 0)
         {
             SetShapeFixParameters(GetDefaultShapeFixParameters());
         }

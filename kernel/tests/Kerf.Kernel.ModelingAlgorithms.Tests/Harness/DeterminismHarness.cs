@@ -10,6 +10,7 @@
 // (MaxDegreeOfParallelismScope), several times. Both scopes are AsyncLocal, so tests running in parallel don't
 // interfere.
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -97,28 +98,28 @@ internal static class DeterminismHarness
         {
             return "no history";
         }
-        var aResultMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aResultMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         if (!theResult.IsNull)
         {
             Exploration.MapShapes(theResult, aResultMap);
         }
-        var anArgumentMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anArgumentMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         foreach (Shape anArgument in theArguments)
         {
             Exploration.MapShapes(anArgument, anArgumentMap);
         }
         var aText = new StringBuilder();
-        for (int i = 1; i <= anArgumentMap.Extent(); ++i)
+        for (int i = 1; i <= anArgumentMap.Count; ++i)
         {
-            Shape aShape = anArgumentMap.FindKey(i);
+            Shape aShape = anArgumentMap[i - 1];
             if (!History.IsSupportedType(aShape))
             {
                 continue;
             }
             aText.Append(CultureInfo.InvariantCulture, $"{i} {Kerf.Engine.Foundation.OcctTypeNames.Of(aShape.ShapeType())} M[");
-            aText.AppendJoin(' ', theHistory.Modified(aShape).Select(s => aResultMap.FindIndex(s)));
+            aText.AppendJoin(' ', theHistory.Modified(aShape).Select(s => (aResultMap.IndexOf(s) + 1)));
             aText.Append("] G[");
-            aText.AppendJoin(' ', theHistory.Generated(aShape).Select(s => aResultMap.FindIndex(s)));
+            aText.AppendJoin(' ', theHistory.Generated(aShape).Select(s => (aResultMap.IndexOf(s) + 1)));
             aText.Append(theHistory.IsRemoved(aShape) ? "] removed\n" : "]\n");
         }
         return aText.ToString();

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -43,12 +44,12 @@ public class BRepLibTwinsTests
 
     private static int CountShared(in Shape theA, in Shape theB, ShapeType theType)
     {
-        var aMapA = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aMapB = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMapA = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var aMapB = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theA, theType, aMapA);
         Exploration.MapShapes(theB, theType, aMapB);
         int n = 0;
-        for (int i = 1; i <= aMapA.Extent(); i++)
+        for (int i = 0; i < aMapA.Count; i++)
         {
             if (aMapB.Contains(aMapA[i]))
             {
@@ -121,13 +122,13 @@ public class BRepLibTwinsTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         AssertTwin(aBox, s => BrepLibrary.RegularityEncoded(s), s => BrepLibrary.EncodeRegularity(s));
         Shape aResult = BrepLibrary.RegularityEncoded(aBox, out History aH);
-        var anEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var anEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aResult, ShapeType.Edge, ShapeType.Face, anEF);
-        for (int i = 1; i <= anEF.Extent(); i++)
+        for (int i = 0; i < anEF.Count; i++)
         {
-            Edge anE = ShapeCasts.Edge(anEF.FindKey(i));
+            Edge anE = ShapeCasts.Edge(anEF.KeyAt(i));
             Assert.Equal(Continuity.C0,
-                         Tool.Continuity(anE, ShapeCasts.Face(anEF[i].First()), ShapeCasts.Face(anEF[i].Last())));
+                         Tool.Continuity(anE, ShapeCasts.Face(anEF.ValueAt(i).First()), ShapeCasts.Face(anEF.ValueAt(i).Last())));
         }
         // every edge changed, the vertices didn't
         Assert.Equal(0, CountShared(aBox, aResult, ShapeType.Edge));

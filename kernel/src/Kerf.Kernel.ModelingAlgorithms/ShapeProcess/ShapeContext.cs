@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Extend;
@@ -43,7 +44,7 @@ public class ShapeContext : ProcessContext
 {
     private Shape _shape;
     private Shape _result;
-    private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);
     private MsgRegistrator? _msg;
     private ShapeType _until;
     private bool _nonManifold;
@@ -105,7 +106,7 @@ public class ShapeContext : ProcessContext
     /// The history: each sub-shape of <see cref="Shape"/> (down to the detalisation level) that was modified, with
     /// what it became (null if removed). Its values are frozen.
     /// </summary>
-    public NCollection_DataMap<Shape, Shape> Map()
+    public Dictionary<Shape, Shape> Map()
     {
         foreach (KeyValuePair<Shape, Shape> item in _map)
         {
@@ -115,7 +116,7 @@ public class ShapeContext : ProcessContext
     }
 
     /// <summary><see cref="Map"/> without freezing its values, for ported code.</summary>
-    internal NCollection_DataMap<Shape, Shape> InternalMap() => _map;
+    internal Dictionary<Shape, Shape> InternalMap() => _map;
 
     /// <summary>The messages attached to the shape's sub-shapes (null if messages are off).</summary>
     public MsgRegistrator? Messages() => _msg;
@@ -140,7 +141,7 @@ public class ShapeContext : ProcessContext
     public void SetResult(in Shape s)
     {
         _result = s;
-        _map.Bind(_shape, _result);
+        _map[_shape] = _result;
     }
 
     /// <summary>Sets the non-manifold flag, which FixShape passes to ShapeFix_Shell.</summary>
@@ -196,7 +197,7 @@ public class ShapeContext : ProcessContext
             var keys = new List<Shape>(_map.Keys);
             foreach (Shape key in keys)
             {
-                _map.Bind(key, overlay.Final(_map.Find(key)));
+                _map[key] = overlay.Final(_map.GetValue(key));
             }
         }
     }
@@ -204,9 +205,9 @@ public class ShapeContext : ProcessContext
     // ---------------------------------------------------------------------------------------------------------------
 
     private static void RecModif(in Shape s,
-                                 NCollection_DataMap<Shape, Shape> repl,
+                                 Dictionary<Shape, Shape> repl,
                                  MsgRegistrator? msg,
-                                 NCollection_DataMap<Shape, Shape> map,
+                                 Dictionary<Shape, Shape> map,
                                  MsgRegistrator? myMsg,
                                  ShapeType until)
     {
@@ -216,17 +217,17 @@ public class ShapeContext : ProcessContext
         var nullLoc = new Placement();
         r.Location(nullLoc);
 
-        if (map.IsBound(r))
+        if (map.ContainsKey(r))
         {
-            r = map.Find(r);
+            r = map.GetValue(r);
         }
         if (!r.IsNull)
         {
             Shape res = r;
 
-            if (repl.IsBound(r.Located(shLoc, false)))
+            if (repl.ContainsKey(r.Located(shLoc, false)))
             {
-                res = repl.Find(r.Located(shLoc, false));
+                res = repl.GetValue(r.Located(shLoc, false));
                 // it is supposed that map is created for r having FORWARD orientation
                 // hence, if it is reversed, result should be reversed too
                 // INTERNAL or EXTERNAL orientations are not allowed
@@ -247,9 +248,9 @@ public class ShapeContext : ProcessContext
                 for (var it = new Iterator(r, false); it.More(); it.Next())
                 {
                     Shape sh = it.Value();
-                    if (repl.IsBound(sh))
+                    if (repl.ContainsKey(sh))
                     {
-                        Shape newsh = repl.Find(sh);
+                        Shape newsh = repl.GetValue(sh);
                         if (!newsh.IsNull)
                         {
                             b.Add(result, newsh);
@@ -273,25 +274,25 @@ public class ShapeContext : ProcessContext
 
             if (res != r)
             {
-                map.Bind(s.Located(nullLoc), res);
+                map[s.Located(nullLoc)] = res;
             }
         }
 
         // update messages (messages must be taken from each level in the substitution map)
-        if (!r.IsNull && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
+        if (!r.IsNull && myMsg is not null && msg is not null && msg.MapShape().Count > 0)
         {
-            NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
-            if (msgmap.IsBound(r))
+            Dictionary<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+            if (msgmap.ContainsKey(r))
             {
-                NCollection_List<Msg> msglist = msgmap.Find(r);
+                NCollection_List<Msg> msglist = msgmap.GetValue(r);
                 for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                 {
                     myMsg.Send(s, iter.Value(), Warning);
                 }
             }
-            else if (msgmap.IsBound(s))
+            else if (msgmap.ContainsKey(s))
             {
-                NCollection_List<Msg> msglist = msgmap.Find(s);
+                NCollection_List<Msg> msglist = msgmap.GetValue(s);
                 for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                 {
                     myMsg.Send(s, iter.Value(), Warning);
@@ -314,16 +315,16 @@ public class ShapeContext : ProcessContext
     /// Records the modifications <paramref name="repl"/> (from the shapes the operator worked on to what they became)
     /// in the history, for every sub-shape of the shape down to the detalisation level, with their messages.
     /// </summary>
-    public void RecordModification(NCollection_DataMap<Shape, Shape> repl, MsgRegistrator? msg = null)
+    public void RecordModification(Dictionary<Shape, Shape> repl, MsgRegistrator? msg = null)
     {
-        if (repl.Extent() <= 0)
+        if (repl.Count <= 0)
         {
             return;
         }
         RecModif(_shape, repl, msg, _map, _msg, _until);
-        if (_map.IsBound(_shape))
+        if (_map.ContainsKey(_shape))
         {
-            _result = _map.Find(_shape);
+            _result = _map.GetValue(_shape);
         }
         // OCCT_DEBUG: the map dumped, left out
     }
@@ -331,7 +332,7 @@ public class ShapeContext : ProcessContext
     private static void RecModif(in Shape s,
                                  ReShapeBuilder repl,
                                  MsgRegistrator? msg,
-                                 NCollection_DataMap<Shape, Shape> map,
+                                 Dictionary<Shape, Shape> map,
                                  MsgRegistrator? myMsg,
                                  ShapeType until)
     {
@@ -344,15 +345,15 @@ public class ShapeContext : ProcessContext
         Shape aS = s.Located(nullLoc);
         Shape r = aS;
 
-        if (map.IsBound(r))
+        if (map.ContainsKey(r))
         {
-            r = map.Find(r);
+            r = map.GetValue(r);
         }
         if (!r.IsNull)
         {
             if (repl.InternalStatus(r, out Shape res, true) != 0 && res != r)
             {
-                map.Bind(aS, res);
+                map[aS] = res;
 
                 // Treat special case: if S was split, r will be a compound of
                 // resulting shapes, recursive procedure should be applied
@@ -362,26 +363,26 @@ public class ShapeContext : ProcessContext
                 res = repl.InternalApply(r, (ShapeType)((int)s.ShapeType() + 1));
                 if (res != r)
                 {
-                    map.Bind(aS, res);
+                    map[aS] = res;
                 }
             }
         }
 
         // update messages (messages must be taken from each level in the substitution map)
-        if (!r.IsNull && myMsg is not null && msg is not null && msg.MapShape().Extent() > 0)
+        if (!r.IsNull && myMsg is not null && msg is not null && msg.MapShape().Count > 0)
         {
             Shape cur, next = r;
-            NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
-            if (msgmap.IsBound(s))
+            Dictionary<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+            if (msgmap.ContainsKey(s))
             {
                 next = s;
             }
             do
             {
                 cur = next;
-                if (msgmap.IsBound(cur))
+                if (msgmap.ContainsKey(cur))
                 {
-                    NCollection_List<Msg> msglist = msgmap.Find(cur);
+                    NCollection_List<Msg> msglist = msgmap.GetValue(cur);
                     for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                     {
                         myMsg.Send(s, iter.Value(), Warning);
@@ -409,9 +410,9 @@ public class ShapeContext : ProcessContext
     public void RecordModification(ReShapeBuilder repl, MsgRegistrator? msg)
     {
         RecModif(_shape, repl, msg, _map, _msg, _until);
-        if (_map.IsBound(_shape))
+        if (_map.ContainsKey(_shape))
         {
-            _result = _map.Find(_shape);
+            _result = _map.GetValue(_shape);
             _result.Location(_shape.Location(), false);
         }
         // OCCT_DEBUG: the map dumped, left out
@@ -431,14 +432,14 @@ public class ShapeContext : ProcessContext
 
     private static void ExplodeModifier(in Shape s,
                                         Modifier repl,
-                                        NCollection_DataMap<Shape, Shape> map,
+                                        Dictionary<Shape, Shape> map,
                                         ShapeType until)
     {
         Shape res = repl.InternalModifiedShape(s);
 
         if (res != s)
         {
-            map.Bind(s, res);
+            map[s] = res;
         }
         if (until == global::Kerf.Topology.ShapeType.Shape || s.ShapeType() >= until)
         {
@@ -456,7 +457,7 @@ public class ShapeContext : ProcessContext
     /// </summary>
     public void RecordModification(in Shape s, Modifier repl, MsgRegistrator? msg)
     {
-        var map = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var map = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         ExplodeModifier(s, repl, map, _until);
         RecordModification(map, msg);
     }
@@ -516,7 +517,7 @@ public class ShapeContext : ProcessContext
 
     // The statistics ShapeProcess_ShapeContext::PrintStatistics and ShapeProcessAPI_ApplySequence::PrintPreparationResult
     // print (the same code twice in OCCT)
-    internal static void PrintPreparation(NCollection_DataMap<Shape, Shape> map, Messenger aMessenger)
+    internal static void PrintPreparation(Dictionary<Shape, Shape> map, Messenger aMessenger)
     {
         int ss = 0, sn = 0, ff = 0, fs = 0, fn = 0;
         foreach (KeyValuePair<Shape, Shape> it in map)

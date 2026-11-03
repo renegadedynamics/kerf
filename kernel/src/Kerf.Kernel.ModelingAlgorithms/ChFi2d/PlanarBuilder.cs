@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Constraints;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
@@ -38,7 +39,7 @@ public sealed partial class PlanarBuilder
     private Face _newFace = new();
     private readonly NCollection_Sequence<Shape> _fillets = new();
     private readonly NCollection_Sequence<Shape> _chamfers = new();
-    private readonly NCollection_DataMap<Shape, Shape> _history = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _history = new(ShapeHasher.Instance);
 
     //=================================================================================================
 
@@ -149,7 +150,7 @@ public sealed partial class PlanarBuilder
         // The sequence newEdges will contains this edges.
 
         NCollection_Sequence<Shape> newEdges = new();
-        NCollection_IndexedMap<Shape> refEdgesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> refEdgesMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(_refFace, ShapeType.Edge, refEdgesMap);
         var ex = new Explorer(_newFace, ShapeType.Edge);
         while (ex.More())
@@ -171,7 +172,7 @@ public sealed partial class PlanarBuilder
             Edge currentEdge = ShapeCasts.Edge(newEdges.Value(i));
             if (IsIssuedFrom(currentEdge, refEdgesMap, ref basisEdge))
             {
-                _history.Bind(basisEdge, currentEdge);
+                _history[basisEdge] = currentEdge;
             }
             else
             {
@@ -204,7 +205,7 @@ public sealed partial class PlanarBuilder
     //           been find, this edge is returned in <BasisEdge>, else <E> is
     //           returned in <BasisEdge>.
     //=======================================================================
-    private static bool IsIssuedFrom(in Edge e, NCollection_IndexedMap<Shape> map, ref Edge basisEdge)
+    private static bool IsIssuedFrom(in Edge e, IndexedSet<Shape> map, ref Edge basisEdge)
     {
         double f1, l1, f2, l2;
         //  syntaxe invalide sur NT
@@ -212,9 +213,9 @@ public sealed partial class PlanarBuilder
         //    BRep_Tool::Curve(E, loc1, f1, L1);
         Curve3D? c1 = Tool.Curve(e, out _, out f1, out l1);
 
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 0; i < map.Count; i++)
         {
-            Edge currentEdge = ShapeCasts.Edge(map.FindKey(i));
+            Edge currentEdge = ShapeCasts.Edge(map[i]);
             //  syntaxe invalide sur NT
             //    const occ::handle<Geom_Curve>& c2 =
             //      BRep_Tool::Curve(currentEdge, loc2, f2, L2);
@@ -713,20 +714,20 @@ public sealed partial class PlanarBuilder
             _chamfers.Append(newEdge);
         }
 
-        _history.UnBind(e1);
+        _history.Remove(e1);
         if (_status != ConstructionError.FirstEdgeDegenerated && _status != ConstructionError.BothEdgesDegenerated)
         {
             if (!e1.IsSame(trimE1))
             {
-                _history.Bind(e1, trimE1);
+                _history[e1] = trimE1;
             }
         }
-        _history.UnBind(e2);
+        _history.Remove(e2);
         if (_status != ConstructionError.LastEdgeDegenerated && _status != ConstructionError.BothEdgesDegenerated)
         {
             if (!e2.IsSame(trimE2))
             {
-                _history.Bind(e2, trimE2);
+                _history[e2] = trimE2;
             }
         }
     } // UpDateHistory
@@ -736,21 +737,21 @@ public sealed partial class PlanarBuilder
     // Writes the modifications in history: TrimE1 is given by E1, TrimE2 by E2.
     private void UpDateHistory(in Edge e1, in Edge e2, in Edge trimE1, in Edge trimE2)
     {
-        if (_history.IsBound(e1))
+        if (_history.ContainsKey(e1))
         {
-            _history.UnBind(e1);
+            _history.Remove(e1);
         }
         if (!e1.IsSame(trimE1))
         {
-            _history.Bind(e1, trimE1);
+            _history[e1] = trimE1;
         }
-        if (_history.IsBound(e2))
+        if (_history.ContainsKey(e2))
         {
-            _history.UnBind(e2);
+            _history.Remove(e2);
         }
         if (!e2.IsSame(trimE2))
         {
-            _history.Bind(e2, trimE2);
+            _history[e2] = trimE2;
         }
     } // UpDateHistory
 
@@ -1323,7 +1324,7 @@ public sealed partial class PlanarBuilder
     /// <summary>True if the edge <paramref name="e"/> of the initial face has been trimmed by a fillet or chamfer.</summary>
     public bool IsModified(in Edge e)
     {
-        return _history.IsBound(e);
+        return _history.ContainsKey(e);
     }
 
     /// <summary>The fillets built (frozen with the face that holds them).</summary>
@@ -1356,7 +1357,7 @@ public sealed partial class PlanarBuilder
 
     public bool HasDescendant(in Edge e)
     {
-        return _history.IsBound(e);
+        return _history.ContainsKey(e);
     }
 
     /// <summary>
@@ -1372,7 +1373,7 @@ public sealed partial class PlanarBuilder
     /// <summary><see cref="DescendantEdge"/> without freezing, for ported code.</summary>
     internal Edge InternalDescendantEdge(in Edge e)
     {
-        return ShapeCasts.Edge(_history.Find(e));
+        return ShapeCasts.Edge(_history.GetValue(e));
     } // DescendantEdge
 
     public ConstructionError Status()

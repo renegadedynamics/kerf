@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Features.Local;
@@ -45,7 +46,7 @@ public sealed class MakeLinearForm : RibSlot
     private Vector3D _dir1 = new();
     private PlaneSurface? _pln;
     private double _bnd;
-    private NCollection_DataMap<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
+    private Dictionary<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);
     private readonly NCollection_List<Shape> _listOfEdges = new();
     private double _tol;
     // Kerf: the working overlay the contour is written in (unit 10H5), detached, entered by Init and Perform and finished
@@ -340,10 +341,10 @@ public sealed class MakeLinearForm : RibSlot
             for (; ex1.More(); ex1.Next())
             {
                 Edge E = ex1.Current();
-                if (!_lfMap.IsBound(E))
+                if (!_lfMap.ContainsKey(E))
                 {
                     NCollection_List<Shape> theTmpList = new();
-                    _lfMap.Bind(E, theTmpList);
+                    _lfMap[E] = theTmpList;
                 }
                 if (E.IsSame(firstEdge))
                 {
@@ -385,7 +386,7 @@ public sealed class MakeLinearForm : RibSlot
                     {
                         theFV = Exploration.FirstVertex(ee1, true);
                     }
-                    _lfMap[E].Append(ee1);
+                    _lfMap.GetValue(E).Append(ee1);
                     bb.Add(w, ee1);
                     thePreviousEdge = ee1;
                     counter++;
@@ -400,10 +401,10 @@ public sealed class MakeLinearForm : RibSlot
                 for (; ex1.More(); ex1.Next())
                 {
                     Edge E = ex1.Current();
-                    if (!_lfMap.IsBound(E))
+                    if (!_lfMap.ContainsKey(E))
                     {
                         NCollection_List<Shape> thelist1 = new();
-                        _lfMap.Bind(E, thelist1);
+                        _lfMap[E] = thelist1;
                     }
                     theList.Append(E);
                     if (!E.IsSame(lastEdge))
@@ -425,7 +426,7 @@ public sealed class MakeLinearForm : RibSlot
                         Shape localShape = e11.Oriented(E.Orientation());
                         e11 = ShapeCasts.Edge(localShape);
                         thePreviousEdge = e11;
-                        _lfMap[E].Append(e11);
+                        _lfMap.GetValue(E).Append(e11);
                         bb.Add(w, e11);
                         if (counter == 1)
                         {
@@ -454,7 +455,7 @@ public sealed class MakeLinearForm : RibSlot
                         Shape localShape = ee.Oriented(E.Orientation());
                         ee = ShapeCasts.Edge(localShape);
                         bb.Add(w, ee);
-                        _lfMap[E].Append(ee);
+                        _lfMap.GetValue(E).Append(ee);
                         if (counter == 1)
                         {
                             theFV = Exploration.FirstVertex(ee, true);
@@ -597,7 +598,7 @@ public sealed class MakeLinearForm : RibSlot
                 sens = 0;
             }
 
-            NCollection_DataMap<Shape, NCollection_List<Shape>> slidMap = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_List<Shape>> slidMap = new(ShapeHasher.Instance);
             slidMap.Clear();
 
             if (sliding && counter1 > counter)
@@ -628,12 +629,12 @@ public sealed class MakeLinearForm : RibSlot
                                         Edge e1 = ShapeCasts.Edge(itedg.Value());
                                         if (e1.IsSame(e2))
                                         {
-                                            if (!slidMap.IsBound(fac))
+                                            if (!slidMap.ContainsKey(fac))
                                             {
                                                 NCollection_List<Shape> thelist2 = new();
-                                                slidMap.Bind(fac, thelist2);
+                                                slidMap[fac] = thelist2;
                                             }
-                                            slidMap[fac].Append(E);
+                                            slidMap.GetValue(fac).Append(E);
                                         }
                                     }
                                 }
@@ -713,8 +714,8 @@ public sealed class MakeLinearForm : RibSlot
         for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
         {
             NCollection_List<Shape> thelist3 = new();
-            _map.Bind(exp.Current(), thelist3);
-            _map[exp.Current()].Append(exp.Current());
+            _map[exp.Current()] = thelist3;
+            _map.GetValue(exp.Current()).Append(exp.Current());
         }
     }
 
@@ -722,7 +723,7 @@ public sealed class MakeLinearForm : RibSlot
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape.</exception>
     public void Add(in Edge e, in Face f)
     {
-        if (_slface.IsEmpty())
+        if (_slface.Count == 0)
         {
             Explorer exp = new();
             for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
@@ -737,12 +738,12 @@ public sealed class MakeLinearForm : RibSlot
                 throw new ConstructionErrorException();
             }
 
-            if (!_slface.IsBound(f))
+            if (!_slface.ContainsKey(f))
             {
                 NCollection_List<Shape> thelist = new();
-                _slface.Bind(f, thelist);
+                _slface[f] = thelist;
             }
-            NCollection_List<Shape>.Iterator itl = new(_slface[f]);
+            NCollection_List<Shape>.Iterator itl = new(_slface.GetValue(f));
             for (; itl.More(); itl.Next())
             {
                 if (itl.Value().IsSame(e))
@@ -752,7 +753,7 @@ public sealed class MakeLinearForm : RibSlot
             }
             if (!itl.More())
             {
-                _slface[f].Append(e);
+                _slface.GetValue(f).Append(e);
             }
         }
     }
@@ -807,7 +808,7 @@ public sealed class MakeLinearForm : RibSlot
         for (; exx.More(); exx.Next())
         {
             Edge e = ShapeCasts.Edge(exx.Current());
-            if (!_map.IsBound(e))
+            if (!_map.ContainsKey(e))
             {
                 _statusError = StatusError.IncSlidFace;
                 NotDone();
@@ -818,7 +819,7 @@ public sealed class MakeLinearForm : RibSlot
         _gShape = vraiForm;
         SetGluedFaces(_slface, theForm, _gluedF); // management of sliding faces
 
-        if (!_gluedF.IsEmpty() && !_sUntil.IsNull)
+        if (_gluedF.Count != 0 && !_sUntil.IsNull)
         {
             _statusError = StatusError.InvShape;
             NotDone();
@@ -853,11 +854,11 @@ public sealed class MakeLinearForm : RibSlot
         _shape = overlay.Finish(_shape, others);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = Final(overlay, _map[key]);
+            _map.GetValueRef(key) = Final(overlay, _map.GetValue(key));
         }
         foreach (Shape key in _lfMap.Keys.ToList())
         {
-            _lfMap[key] = Final(overlay, _lfMap[key]);
+            _lfMap.GetValueRef(key) = Final(overlay, _lfMap.GetValue(key));
         }
         _newEdges = Final(overlay, _newEdges);
         _tgtEdges = Final(overlay, _tgtEdges);
@@ -942,8 +943,8 @@ public sealed class MakeLinearForm : RibSlot
             return false;
         }
         NCollection_List<Shape> thelist = new();
-        _slface.Bind(currentFace, thelist);
-        _slface[currentFace].Append(eb);
+        _slface[currentFace] = thelist;
+        _slface.GetValue(currentFace).Append(eb);
 
         _listOfEdges.Clear();
         _listOfEdges.Append(eb);
@@ -954,7 +955,7 @@ public sealed class MakeLinearForm : RibSlot
             return result;
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapedges = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapedges = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_sbase, ShapeType.Edge, ShapeType.Face, mapedges);
         Explorer ex = new();
         Edge firstEdge = new();
@@ -1029,7 +1030,7 @@ public sealed class MakeLinearForm : RibSlot
                 }
             }
 
-            NCollection_List<Shape> l = mapedges.FindFromKey(firstEdge);
+            NCollection_List<Shape> l = mapedges.GetValue(firstEdge);
             NCollection_List<Shape>.Iterator it = new(l);
 
             for (; it.More(); it.Next())
@@ -1112,8 +1113,8 @@ public sealed class MakeLinearForm : RibSlot
                 return false;
             }
             NCollection_List<Shape> thelist1 = new();
-            _slface.Bind(currentFace, thelist1);
-            _slface[currentFace].Append(edg1);
+            _slface[currentFace] = thelist1;
+            _slface.GetValue(currentFace).Append(edg1);
             _listOfEdges.Append(edg1);
         }
 
@@ -1121,7 +1122,7 @@ public sealed class MakeLinearForm : RibSlot
     }
 
     private static void MajMap(in Shape b, LinearForm p,
-                               NCollection_DataMap<Shape, NCollection_List<Shape>> map,
+                               Dictionary<Shape, NCollection_List<Shape>> map,
                                ref Shape fShape, ref Shape lShape)
     {
         Explorer exp = new(p.InternalFirstShape(), ShapeType.Wire);
@@ -1129,10 +1130,10 @@ public sealed class MakeLinearForm : RibSlot
         {
             fShape = exp.Current();
             NCollection_List<Shape> thelist = new();
-            map.Bind(fShape, thelist);
+            map[fShape] = thelist;
             for (exp.Init(p.InternalFirstShape(), ShapeType.Face); exp.More(); exp.Next())
             {
-                map[fShape].Append(exp.Current());
+                map.GetValue(fShape).Append(exp.Current());
             }
         }
 
@@ -1141,28 +1142,28 @@ public sealed class MakeLinearForm : RibSlot
         {
             lShape = exp.Current();
             NCollection_List<Shape> thelist1 = new();
-            map.Bind(lShape, thelist1);
+            map[lShape] = thelist1;
             for (exp.Init(p.InternalLastShape(), ShapeType.Face); exp.More(); exp.Next())
             {
-                map[lShape].Append(exp.Current());
+                map.GetValue(lShape).Append(exp.Current());
             }
         }
 
         for (exp.Init(b, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (!map.IsBound(exp.Current()))
+            if (!map.ContainsKey(exp.Current()))
             {
-                map.Bind(exp.Current(), new NCollection_List<Shape>(p.InternalShapes(exp.Current())));
+                map[exp.Current()] = new NCollection_List<Shape>(p.InternalShapes(exp.Current()));
             }
         }
     }
 
-    private static void SetGluedFaces(NCollection_DataMap<Shape, NCollection_List<Shape>> slmap,
+    private static void SetGluedFaces(Dictionary<Shape, NCollection_List<Shape>> slmap,
                                       LinearForm prism,
-                                      NCollection_DataMap<Shape, Shape> map)
+                                      Dictionary<Shape, Shape> map)
     {
         // Slidings
-        if (!slmap.IsEmpty())
+        if (slmap.Count != 0)
         {
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> itm in slmap)
             {
@@ -1172,7 +1173,7 @@ public sealed class MakeLinearForm : RibSlot
                 for (it.Initialize(ledg); it.More(); it.Next())
                 {
                     NCollection_List<Shape> gfac = prism.InternalShapes(it.Value());
-                    map.Bind(gfac.First(), fac);
+                    map[gfac.First()] = fac;
                 }
             }
         }

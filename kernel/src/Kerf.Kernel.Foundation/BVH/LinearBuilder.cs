@@ -209,11 +209,11 @@ public static partial class BvhTools
                 int lftChild = data.myBVH.NodeInfoBuffer()[data.Node].Y();
                 int rghChild = data.myBVH.NodeInfoBuffer()[data.Node].Z();
 
-                NCollection_DynamicArray<BoundData<T, TVec>> list = new(2);
+                List<BoundData<T, TVec>> list = new(2);
 
                 if (!data.myBVH.IsOuter(lftChild))
                 {
-                    list.Append(new BoundData<T, TVec>(data.mySet, data.myBVH, lftChild, data.myLevel + 1, lftHeight));
+                    list.Add(new BoundData<T, TVec>(data.mySet, data.myBVH, lftChild, data.myLevel + 1, lftHeight));
                 }
                 else
                 {
@@ -222,14 +222,14 @@ public static partial class BvhTools
 
                 if (!data.myBVH.IsOuter(rghChild))
                 {
-                    list.Append(new BoundData<T, TVec>(data.mySet, data.myBVH, rghChild, data.myLevel + 1, rghHeight));
+                    list.Add(new BoundData<T, TVec>(data.mySet, data.myBVH, rghChild, data.myLevel + 1, rghHeight));
                 }
                 else
                 {
                     rghHeight.Value = UpdateBounds(data.mySet, data.myBVH, rghChild);
                 }
 
-                if (list.Size() > 0)
+                if (list.Count > 0)
                 {
                     // OSD_Parallel::ForEach(..., !myIsParallel)
                     UpdateBoundTask<T, TVec> task = new(_isParallel);

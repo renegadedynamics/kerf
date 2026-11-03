@@ -1097,7 +1097,7 @@ internal static class InterUtils
     /// </summary>
     public static bool ProcessIntAna<CurveType, CurveTool, SurfaceType, SurfaceTool>(
         in CurveType curve, in SurfaceType surface, IntConicQuad intAna, out bool isParallel,
-        NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points)
+        List<CurveSurfaceIntersectionPoint> points)
         where CurveTool : IIntersectionCurveTool<CurveType>
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
     {
@@ -1126,7 +1126,7 @@ internal static class InterUtils
             if (ComputeAppendPoint<CurveType, CurveTool, SurfaceType, SurfaceTool>(curve, w, surface, u, v,
                                                                                    out CurveSurfaceIntersectionPoint point))
             {
-                points.Append(point);
+                points.Add(point);
             }
         }
         return true;
@@ -1135,7 +1135,7 @@ internal static class InterUtils
     /// <summary>The intersection of the curve with a quadric surface by the exact quadric/curve algorithm.</summary>
     public static void PerformCurveQuadric<TQuadCurvExactType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
         in CurveType curve, in SurfaceType surface,
-        NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points)
+        List<CurveSurfaceIntersectionPoint> points)
         where TQuadCurvExactType : ITheQuadCurvExactInter<TQuadCurvExactType, SurfaceType, CurveType>
         where CurveTool : IIntersectionCurveTool<CurveType>
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
@@ -1156,7 +1156,7 @@ internal static class InterUtils
                 if (ComputeAppendPoint<CurveType, CurveTool, SurfaceType, SurfaceTool>(curve, w, surface, u, v,
                                                                                        out CurveSurfaceIntersectionPoint point))
                 {
-                    points.Append(point);
+                    points.Add(point);
                 }
             }
         }
@@ -1165,7 +1165,7 @@ internal static class InterUtils
     /// <summary>The intersection of a line and a torus (IntAna_IntLinTorus); false if it failed.</summary>
     public static bool ProcessLinTorus<CurveType, CurveTool, SurfaceType, SurfaceTool>(
         in Line3D line, in CurveType curve, in SurfaceType surface,
-        NCollection_DynamicArray<CurveSurfaceIntersectionPoint> points)
+        List<CurveSurfaceIntersectionPoint> points)
         where CurveTool : IIntersectionCurveTool<CurveType>
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
     {
@@ -1187,7 +1187,7 @@ internal static class InterUtils
             if (ComputeAppendPoint<CurveType, CurveTool, SurfaceType, SurfaceTool>(curve, w, surface, fi, theta,
                                                                                    out CurveSurfaceIntersectionPoint point))
             {
-                points.Append(point);
+                points.Add(point);
             }
         }
         return true;
@@ -1196,9 +1196,9 @@ internal static class InterUtils
     /// <summary>The start points of the exact intersection: their (U, V, W) parameters.</summary>
     public sealed class SortedStartPoints
     {
-        public readonly NCollection_DynamicArray<double> TabU = new();
-        public readonly NCollection_DynamicArray<double> TabV = new();
-        public readonly NCollection_DynamicArray<double> TabW = new();
+        public readonly List<double> TabU = new();
+        public readonly List<double> TabV = new();
+        public readonly List<double> TabW = new();
 
         public void Clear()
         {
@@ -1207,13 +1207,13 @@ internal static class InterUtils
             TabW.Clear();
         }
 
-        public int Size() => TabU.Length();
+        public int Size() => TabU.Count;
 
         public void Append(double u, double v, double w)
         {
-            TabU.Append(u);
-            TabV.Append(v);
-            TabW.Append(w);
+            TabU.Add(u);
+            TabV.Add(v);
+            TabW.Add(w);
         }
     }
 
@@ -1329,7 +1329,7 @@ internal static class InterUtils
     public static void ProcessSortedPoints<TExactInterType, TCSFunctionType, CurveType, CurveTool, SurfaceType, SurfaceTool>(
         TExactInterType exactInter, FunctionSetRoot rsnld, SortedStartPoints points, double u0,
         double u1, double v0, double v1, double winf, double wsup, in CurveType curve,
-        in SurfaceType surface, NCollection_DynamicArray<CurveSurfaceIntersectionPoint> result)
+        in SurfaceType surface, List<CurveSurfaceIntersectionPoint> result)
         where TExactInterType : IntCS<TCSFunctionType, SurfaceType, SurfaceTool, CurveType, CurveTool>
         where TCSFunctionType : FunctionSetWithDerivatives, ICSFunction<SurfaceType, CurveType>
         where CurveTool : IIntersectionCurveTool<CurveType>
@@ -1368,7 +1368,7 @@ internal static class InterUtils
                     if (ComputeAppendPoint<CurveType, CurveTool, SurfaceType, SurfaceTool>(curve, w, surface, u,
                                                                                            v, out CurveSurfaceIntersectionPoint point))
                     {
-                        result.Append(point);
+                        result.Add(point);
                     }
                 }
             }
@@ -1389,7 +1389,7 @@ internal static class InterUtils
 
     /// <summary>The rectangles of the C2 intervals of the surface in U and V.</summary>
     public static void DecomposeSurfaceIntervals<SurfaceType, SurfaceTool>(in SurfaceType surface,
-                                                                           NCollection_DynamicArray<UVBounds> intervals)
+                                                                           List<UVBounds> intervals)
         where SurfaceTool : IIntersectionSurfaceTool<SurfaceType>
     {
         intervals.Clear();
@@ -1415,14 +1415,14 @@ internal static class InterUtils
                     {
                         double v0 = tabV.Value(iv);
                         double v1 = tabV.Value(iv + 1);
-                        intervals.Append(new UVBounds(u0, u1, v0, v1));
+                        intervals.Add(new UVBounds(u0, u1, v0, v1));
                     }
                 }
                 else
                 {
                     double v0 = SurfaceTool.FirstVParameter(surface);
                     double v1 = SurfaceTool.LastVParameter(surface);
-                    intervals.Append(new UVBounds(u0, u1, v0, v1));
+                    intervals.Add(new UVBounds(u0, u1, v0, v1));
                 }
             }
         }
@@ -1438,7 +1438,7 @@ internal static class InterUtils
             {
                 double v0 = tabV.Value(iv);
                 double v1 = tabV.Value(iv + 1);
-                intervals.Append(new UVBounds(u0, u1, v0, v1));
+                intervals.Add(new UVBounds(u0, u1, v0, v1));
             }
         }
         else
@@ -1447,7 +1447,7 @@ internal static class InterUtils
             double u1 = SurfaceTool.LastUParameter(surface);
             double v0 = SurfaceTool.FirstVParameter(surface);
             double v1 = SurfaceTool.LastVParameter(surface);
-            intervals.Append(new UVBounds(u0, u1, v0, v1));
+            intervals.Add(new UVBounds(u0, u1, v0, v1));
         }
     }
 

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Healing.Extend;
@@ -98,7 +99,7 @@ internal static class SWDRAWShapeToolCommands
         }
 
         int i, num = 0, nbw, nbe = 0;
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (var ext = new Iterator(W); ext.More(); ext.Next())
         {
             if (ext.Value().ShapeType() != ShapeType.Edge)
@@ -107,7 +108,7 @@ internal static class SWDRAWShapeToolCommands
             }
             Edge E = ShapeCasts.Edge(ext.Value());
             nbe++;
-            num = map.Add(E);
+            num = map.Add(E) + 1;
         }
         int[] nbs = new int[nbe + 1];
 
@@ -133,7 +134,7 @@ internal static class SWDRAWShapeToolCommands
         {
             Edge E = ShapeCasts.Edge(bwe.Current());
             nbw++;
-            num = map.FindIndex(E);
+            num = map.IndexOf(E) + 1;
             nbs[num]++;
         }
         di.Append("BRepTools_WireExplorer donne ").Append(nbw).Append(" Edges\n");
@@ -147,12 +148,12 @@ internal static class SWDRAWShapeToolCommands
             if (nbs[i] < 1)
             {
                 di.Append("Edge n0 ").Append(i).Append(" pas vue par WE\n");
-                theDI.SetShape($"NOWE_{i}", map.FindKey(i));
+                theDI.SetShape($"NOWE_{i}", map[i - 1]);
             }
             else if (nbs[i] > 1)
             {
                 di.Append("Edge n0 ").Append(i).Append(" vue par WE : ").Append(nbs[i]).Append(" fois\n");
-                theDI.SetShape($"MULT_{i}", map.FindKey(i));
+                theDI.SetShape($"MULT_{i}", map[i - 1]);
             }
         }
         return 0;

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Healing.Checks;
@@ -71,8 +72,8 @@ public class BOPAlgo_BuilderSolidTests
         Assert.Equal(1, Count(aSolid, ShapeType.Shell));
         Assert.Equal(6.0, Volume(aSolid), 1e-9);
         Assert.True(new Analyzer(aSolid).IsValid());
-        Assert.Equal(1, aBS.GetBoxesMap().Extent());
-        Assert.True(aBS.GetBoxesMap().IsBound(aSolid));
+        Assert.Single(aBS.GetBoxesMap());
+        Assert.True(aBS.GetBoxesMap().ContainsKey(aSolid));
         Assert.False(aBS.HasWarnings);
     }
 
@@ -110,7 +111,7 @@ public class BOPAlgo_BuilderSolidTests
         BuilderSolid aBS = BuildSolids(Faces(Box(1, 1, 1, 2, 2, 2).Reversed()));
         Assert.Equal(1, aBS.Areas().Extent());
         Shape aSolid = aBS.Areas().First();
-        Assert.True(aBS.GetBoxesMap().Find(aSolid).IsWhole);
+        Assert.True(aBS.GetBoxesMap().GetValue(aSolid).IsWhole);
     }
 
     [Fact]
@@ -199,12 +200,12 @@ public class BOPAlgo_BuilderSolidTests
         NCollection_List<Shape> aLF = Faces(aSewn);
         Assert.Equal(12, aLF.Extent());
         // the common edge is shared by four faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSewn, ShapeType.Edge, ShapeType.Face, aMEF);
         bool isShared = false;
-        for (int i = 1; i <= aMEF.Extent(); i++)
+        for (int i = 0; i < aMEF.Count; i++)
         {
-            isShared |= aMEF[i].Extent() == 4;
+            isShared |= aMEF.ValueAt(i).Extent() == 4;
         }
         Assert.True(isShared);
         return aLF;
@@ -255,23 +256,23 @@ public class BOPAlgo_BuilderSolidTests
         aLS.Append(aSolid);
         foreach (bool aParallel in new[] { false, true })
         {
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
             BuilderTools.ClassifyFaces(aLF, aLS, aParallel, new IntersectionContext(), anInParts);
-            Assert.Equal(1, anInParts.Extent());
-            Assert.True(anInParts.FindKey(1).IsSame(aSolid));
-            NCollection_List<Shape> aLIn = anInParts[1];
+            Assert.Equal(1, anInParts.Count);
+            Assert.True(anInParts.KeyAt(0).IsSame(aSolid));
+            NCollection_List<Shape> aLIn = anInParts.ValueAt(0);
             Assert.Equal(1, aLIn.Extent());
             Assert.True(aLIn.First().IsSame(aFIn));
         }
 
         // a face given as the solid's own internal face isn't classified
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aSolidsIF = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> aSolidsIF = new(ShapeHasher.Instance);
         NCollection_List<Shape> anOwn = new();
         anOwn.Append(aFIn);
-        aSolidsIF.Bind(aSolid, anOwn);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts2 = new(ShapeHasher.Instance);
+        aSolidsIF[aSolid] = anOwn;
+        IndexedMap<Shape, NCollection_List<Shape>> anInParts2 = new(ShapeHasher.Instance);
         BuilderTools.ClassifyFaces(aLF, aLS, false, new IntersectionContext(), anInParts2, null, aSolidsIF);
-        Assert.True(anInParts2[1].IsEmpty());
+        Assert.True(anInParts2.ValueAt(0).IsEmpty());
     }
 
     [Fact]
@@ -294,7 +295,7 @@ public class BOPAlgo_BuilderSolidTests
         aLParts.Append(aFIn);
         NCollection_List<Shape> aLS = new();
         aLS.Append(aSolid);
-        BuilderTools.FillInternals(aLS, aLParts, new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
+        BuilderTools.FillInternals(aLS, aLParts, new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance),
                                     new IntersectionContext());
         // the solid holds its shell, the internal vertex, the internal edge and an internal shell of the face
         Assert.Equal(2, Count(aSolid, ShapeType.Shell));
@@ -331,13 +332,13 @@ public class BOPAlgo_BuilderSolidTests
 
         Shape aBox = Box(0, 0, 0, 1, 2, 3);
         Assert.Equal(0, BuilderTools.EdgesToWires(aBox, ref aWires, true));
-        NCollection_IndexedMap<Shape> aMEIn = new(ShapeHasher.Instance), aMEOut = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMEIn = new(ShapeHasher.Instance), aMEOut = new(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Edge, aMEIn);
         Exploration.MapShapes(aWires, ShapeType.Edge, aMEOut);
-        Assert.Equal(12, aMEIn.Extent());
+        Assert.Equal(12, aMEIn.Count);
         for (int i = 1; i <= 12; i++)
         {
-            Assert.True(aMEOut.Contains(aMEIn[i]));
+            Assert.True(aMEOut.Contains(aMEIn[i - 1]));
         }
         Assert.True(Count(aWires, ShapeType.Wire) >= 1);
     }

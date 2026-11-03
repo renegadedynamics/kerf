@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 
 using Kerf.Topology;
@@ -17,7 +18,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// </remarks>
 public sealed class Map
 {
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _map =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);
 
     /// <summary>An empty map.</summary>
@@ -34,12 +35,12 @@ public sealed class Map
 
     public bool Contains(in Shape s)
     {
-        return _map.Contains(s);
+        return _map.ContainsKey(s);
     }
 
     public NCollection_List<Shape> FindFromKey(in Shape s)
     {
-        return _map.FindFromKey(s);
+        return _map.GetValue(s);
     }
 
     /// <summary>OCCT's <c>operator()(S)</c>.</summary>
@@ -47,7 +48,7 @@ public sealed class Map
 
     public NCollection_List<Shape> FindFromIndex(int i)
     {
-        return _map.FindFromIndex(i);
+        return _map.ValueAt(i - 1);
     }
 
     /// <summary>OCCT's <c>operator()(I)</c>.</summary>

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
@@ -100,8 +101,8 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
     // The Free flag is the first of the seven flag digits on their own line.
     private static string MaskFree(string theText) => Regex.Replace(theText, "(?m)^[01]([01]{6})$", "x$1");
 
-    private static string Indices(IEnumerable<Shape> theList, NCollection_IndexedMap<Shape> theMap)
-        => string.Join(",", theList.Select(s => theMap.FindIndex(s)));
+    private static string Indices(IEnumerable<Shape> theList, IndexedSet<Shape> theMap)
+        => string.Join(",", theList.Select(s => (theMap.IndexOf(s) + 1)));
 
     /// <summary>Runs one recorded case on the port and writes what piperec writes after the input block.</summary>
     private static string Run(Case theCase, out string theInputBefore, out string theInputAfter)
@@ -147,32 +148,32 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
                     aOut.Append(Block("OUT", Text(aRes)));
                     aOut.Append(Block("FIRST", Text(aPipe.FirstShape())));
                     aOut.Append(Block("LAST", Text(aPipe.LastShape())));
-                    NCollection_IndexedMap<Shape> aResMap = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> aResMap = new(ShapeHasher.Instance);
                     Exploration.MapShapes(aRes, aResMap);
                     // (piperec builds each GEN line before writing it: an exception leaves no partial line)
                     var aGen = new StringBuilder("GEN ");
                     foreach (Shape anIn2 in new[] { aProfile, aSpine })
                     {
-                        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+                        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
                         Exploration.MapShapes(anIn2, aMap);
-                        for (int i = 1; i <= aMap.Extent(); i++)
+                        for (int i = 0; i < aMap.Count; i++)
                         {
-                            aGen.Append(Indices(aPipe.Generated(aMap.FindKey(i)), aResMap)).Append(';');
+                            aGen.Append(Indices(aPipe.Generated(aMap[i]), aResMap)).Append(';');
                         }
                     }
                     aOut.Append(aGen).Append('\n');
                     var aGen2 = new StringBuilder("GEN2 ");
-                    NCollection_IndexedMap<Shape> aSpineEdges = new(ShapeHasher.Instance);
-                    NCollection_IndexedMap<Shape> aProfShapes = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> aSpineEdges = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> aProfShapes = new(ShapeHasher.Instance);
                     Exploration.MapShapes(aSpine, ShapeType.Edge, aSpineEdges);
                     Exploration.MapShapes(aProfile, ShapeType.Edge, aProfShapes);
                     Exploration.MapShapes(aProfile, ShapeType.Vertex, aProfShapes);
-                    for (int i = 1; i <= aSpineEdges.Extent(); i++)
+                    for (int i = 0; i < aSpineEdges.Count; i++)
                     {
-                        for (int j = 1; j <= aProfShapes.Extent(); j++)
+                        for (int j = 0; j < aProfShapes.Count; j++)
                         {
-                            Shape aG = aPipe.Generated(aSpineEdges.FindKey(i), aProfShapes.FindKey(j));
-                            aGen2.Append(aG.IsNull ? -1 : aResMap.FindIndex(aG)).Append(';');
+                            Shape aG = aPipe.Generated(aSpineEdges[i], aProfShapes[j]);
+                            aGen2.Append(aG.IsNull ? -1 : (aResMap.IndexOf(aG) + 1)).Append(';');
                         }
                     }
                     aOut.Append(aGen2).Append('\n');

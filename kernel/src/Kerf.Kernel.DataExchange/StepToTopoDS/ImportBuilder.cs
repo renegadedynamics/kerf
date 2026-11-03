@@ -91,7 +91,7 @@ public sealed class ImportBuilder : ImportRoot
         // Initialisation of the Tool
 
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         // Start Mapping
@@ -140,7 +140,7 @@ public sealed class ImportBuilder : ImportRoot
         using Messenger.StreamBuffer sout = tp.Messenger().SendInfo();
         // Initialisation of the Tool
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         // Start Mapping
@@ -222,7 +222,7 @@ public sealed class ImportBuilder : ImportRoot
     {
         // Initialisation of the Tool
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         // Start Mapping
@@ -265,7 +265,7 @@ public sealed class ImportBuilder : ImportRoot
     {
         // Initialisation of the Tool
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         // Start Mapping
@@ -332,7 +332,7 @@ public sealed class ImportBuilder : ImportRoot
         // Initialisation of the Tool
 
         var myTool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         myTool.Init(map, tp);
 
         // Start Mapping
@@ -427,7 +427,7 @@ public sealed class ImportBuilder : ImportRoot
         }
 
         var myTool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         myTool.Init(map, tp);
 
         var myTranEdge = new TranslateEdge();
@@ -517,7 +517,7 @@ public sealed class ImportBuilder : ImportRoot
         }
 
         var myTool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         myTool.Init(map, tp);
 
         var myTranFace = new TranslateFace();
@@ -838,7 +838,7 @@ public sealed class ImportBuilder : ImportRoot
         tranSolid.SetMaxTol(MaxTol());
 
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         var dummyNMTool = new NMTool();
@@ -870,7 +870,7 @@ public sealed class ImportBuilder : ImportRoot
         tranShell.SetMaxTol(MaxTol());
 
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         var dummyNMTool = new NMTool();
@@ -902,7 +902,7 @@ public sealed class ImportBuilder : ImportRoot
         tranFace.SetMaxTol(MaxTol());
 
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         var dummyNMTool = new NMTool();
@@ -933,7 +933,7 @@ public sealed class ImportBuilder : ImportRoot
         tranFace.SetMaxTol(MaxTol());
 
         var tool = new ImportTool();
-        var map = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>();
+        var map = new Dictionary<StepTopologicalRepresentationItem, Shape>();
         tool.Init(map, tp);
 
         var dummyNMTool = new NMTool();

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
@@ -34,7 +35,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// </remarks>
 public sealed class WireExplorer
 {
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map =
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map =
         new(ShapeHasher.Instance);
 
     private Edge _edge = new();
@@ -205,7 +206,7 @@ public sealed class WireExplorer
         }
 
         // map of vertices to know if the wire is open
-        var vmap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var vmap = new IndexedSet<Shape>(ShapeHasher.Instance);
         //  map of infinite edges
         var infEmap = new HashSet<Shape>(ShapeHasher.Instance);
 
@@ -226,29 +227,29 @@ public sealed class WireExplorer
 
             if (!v1.IsNull)
             {
-                if (!_map.IsBound(v1))
+                if (!_map.ContainsKey(v1))
                 {
                     // OCCT binds a copy of one empty list; the port's lists are classes, so each vertex gets its own
-                    _map.Bind(v1, new NCollection_List<Shape>());
+                    _map[v1] = new NCollection_List<Shape>();
                 }
-                _map[v1].Append(e);
+                _map.GetValue(v1).Append(e);
 
                 // add or remove in the vertex map
                 v1.Orientation(Forward);
-                int currsize = vmap.Extent(), ind = vmap.Add(v1);
+                int currsize = vmap.Count, ind = vmap.Add(v1) + 1;
                 if (currsize >= ind)
                 {
-                    vmap.RemoveKey(v1);
+                    vmap.Remove(v1);
                 }
             }
 
             if (!v2.IsNull)
             {
                 v2.Orientation(Reversed);
-                int currsize = vmap.Extent(), ind = vmap.Add(v2);
+                int currsize = vmap.Count, ind = vmap.Add(v2) + 1;
                 if (currsize >= ind)
                 {
-                    vmap.RemoveKey(v2);
+                    vmap.Remove(v2);
                 }
             }
 
@@ -287,14 +288,14 @@ public sealed class WireExplorer
         }
 
         // if vmap is not empty the wire is open, let us find the first vertex
-        if (!vmap.IsEmpty())
+        if (vmap.Count != 0)
         {
             int ind = 0;
-            for (ind = 1; ind <= vmap.Extent(); ++ind)
+            for (ind = 1; ind <= vmap.Count; ++ind)
             {
-                if (vmap[ind].Orientation() == Forward)
+                if (vmap[ind - 1].Orientation() == Forward)
                 {
-                    v1 = ShapeCasts.Vertex(vmap[ind]);
+                    v1 = ShapeCasts.Vertex(vmap[ind - 1]);
                     break;
                 }
             }
@@ -343,12 +344,12 @@ public sealed class WireExplorer
         {
             return;
         }
-        if (!_map.IsBound(v1))
+        if (!_map.ContainsKey(v1))
         {
             return;
         }
 
-        NCollection_List<Shape> l = _map[v1];
+        NCollection_List<Shape> l = _map.GetValue(v1);
         _edge = ShapeCasts.Edge(l.First());
         l.RemoveFirst();
         _vertex = Exploration.FirstVertex(_edge, true);
@@ -367,13 +368,13 @@ public sealed class WireExplorer
             _edge = new Edge();
             return;
         }
-        if (!_map.IsBound(_vertex))
+        if (!_map.ContainsKey(_vertex))
         {
             _edge = new Edge();
             return;
         }
 
-        NCollection_List<Shape> l = _map[_vertex];
+        NCollection_List<Shape> l = _map.GetValue(_vertex);
 
         if (l.IsEmpty())
         {

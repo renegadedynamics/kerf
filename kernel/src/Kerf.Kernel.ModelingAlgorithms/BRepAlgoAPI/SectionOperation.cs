@@ -198,16 +198,16 @@ public class SectionOperation : BooleanOperation
         int nbFF, i, j, nE, nbVC;
         //
         DS pDS = pPF.PDS()!;
-        NCollection_DynamicArray<InterfFF> fFs = pDS.InterfFF();
+        List<InterfFF> fFs = pDS.InterfFF();
         //
-        nbFF = fFs.Length();
+        nbFF = fFs.Count;
         for (i = 0; i < nbFF; ++i)
         {
             InterfFF fFi = fFs[i];
             fFi.Indices(out int nF1, out int nF2);
             //
-            NCollection_DynamicArray<SectionCurve> vc = fFi.Curves();
-            nbVC = vc.Length();
+            List<SectionCurve> vc = fFi.Curves();
+            nbVC = vc.Count;
             for (j = 0; j < nbVC; j++)
             {
                 SectionCurve bc = vc[j];

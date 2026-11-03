@@ -127,7 +127,7 @@ internal static class BRepTestExtremaCommands
     }
 
     // OCCT's NCollection_DataMap iterates in bucket order; the port lists the keys in ascending order (decision 18)
-    private static List<int> Keys(NCollection_DataMap<int, NCollection_PackedMapOfInteger> theMap)
+    private static List<int> Keys(Dictionary<int, NCollection_PackedMapOfInteger> theMap)
         => theMap.Select(p => p.Key).Order().ToList();
 
     private static int ShapeProximity(DrawInterpreter theDI, DrawResult theResult, IReadOnlyList<string> theArgs)

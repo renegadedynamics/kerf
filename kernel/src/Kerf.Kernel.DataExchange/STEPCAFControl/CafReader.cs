@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Selection;
@@ -501,7 +502,7 @@ public class CafReader
     }
 
     /// <summary>Returns data on external files Returns Null handle if no external files are read</summary>
-    public NCollection_DataMap<string, ExternFile> ExternFiles()
+    public Dictionary<string, ExternFile> ExternFiles()
     {
         return _files;
     }
@@ -510,11 +511,11 @@ public class CafReader
     public bool ExternFile(string name, out ExternFile ef)
     {
         ef = null;
-        if (_files.IsEmpty() || !_files.IsBound(name))
+        if (_files.Count == 0 || !_files.ContainsKey(name))
         {
             return false;
         }
-        ef = _files.Find(name);
+        ef = _files.GetValue(name);
         return true;
     }
 
@@ -531,7 +532,7 @@ public class CafReader
     }
 
     /// <summary>The map of the shapes read to their labels</summary>
-    public NCollection_DataMap<Shape, Label> GetShapeLabelMap() => _map;
+    public Dictionary<Shape, Label> GetShapeLabelMap() => _map;
 
     //=======================================================================
     // function : FillShapesMap
@@ -637,10 +638,10 @@ public class CafReader
         // this will be used to distinguish compounds representing assemblies
         // from the ones representing hybrid models and shape sets
         // OCCT.NET: the map iterates in insertion order (ExpandSubShapes iterates it; decision 1280)
-        NCollection_DataMap<Shape, ProductDefinition> shapePDMap =
-            new NCollection_DataMap<Shape, ProductDefinition>(ShapeHasher.Instance);
-        NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap =
-            new NCollection_DataMap<ProductDefinition, ExternFile>(ReferenceEqualityComparer.Instance);
+        Dictionary<Shape, ProductDefinition> shapePDMap =
+            new Dictionary<Shape, ProductDefinition>(ShapeHasher.Instance);
+        Dictionary<ProductDefinition, ExternFile> pdFileMap =
+            new Dictionary<ProductDefinition, ExternFile>(ReferenceEqualityComparer.Instance);
         TransientProcess tp = reader.WS().TransferReader().TransientProcess();
         int nb = model.EntityCount;
 
@@ -665,8 +666,8 @@ public class CafReader
                     if (!s.IsNull && shapesMap.Contains(s))
                     {
                         newShapesMap.Add(s);
-                        shapePDMap.Bind(s, pd);
-                        pdFileMap.Bind(pd, null);
+                        shapePDMap[s] = pd;
+                        pdFileMap[pd] = null;
                     }
                 }
             }
@@ -761,13 +762,13 @@ public class CafReader
                 {
                     continue; // not a valid extern ref
                 }
-                if (!pdFileMap.IsBound(pd))
+                if (!pdFileMap.ContainsKey(pd))
                 {
                     continue; // this PD is not concerned by current transfer
                 }
 
                 // OCCT.NET (unit 8Z): a cycle or a reference past the budget stays unresolved, with a warning
-                if (resolver is not null && !_files.IsBound(filename))
+                if (resolver is not null && !_files.ContainsKey(filename))
                 {
                     string refusal = ExternRefusal(fullname);
                     if (refusal is not null)
@@ -776,7 +777,7 @@ public class CafReader
                         ExternFile unread = new ExternFile();
                         unread.SetName(new TCollection_HAsciiString(filename));
                         unread.SetLoadStatus(ReturnStatus.RetError);
-                        pdFileMap.Bind(pd, unread);
+                        pdFileMap[pd] = unread;
                         range.Close();
                         continue;
                     }
@@ -784,7 +785,7 @@ public class CafReader
 
                 // read extern file (or use existing data) and record its data
                 ExternFile ef = ReadExternFile(filename, fullname, loadedFile, doc, range);
-                pdFileMap.Bind(pd, ef);
+                pdFileMap[pd] = ef;
             }
         }
         finally
@@ -882,13 +883,13 @@ public class CafReader
     /// it is associated with external reference) taken as that referred shape
     /// </summary>
     protected Label AddShape(Shape s, ExchangeDocument sTool, HashSet<Shape> newShapesMap,
-                                    NCollection_DataMap<Shape, ProductDefinition> shapePDMap,
-                                    NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap)
+                                    Dictionary<Shape, ProductDefinition> shapePDMap,
+                                    Dictionary<ProductDefinition, ExternFile> pdFileMap)
     {
         // if shape has already been mapped, just return corresponding label
-        if (_map.IsBound(s))
+        if (_map.ContainsKey(s))
         {
-            return _map.Find(s);
+            return _map.GetValue(s);
         }
 
         // if shape is located, create instance
@@ -897,7 +898,7 @@ public class CafReader
             Shape s0 = s.Located(new Placement());
             AddShape(s0, sTool, newShapesMap, shapePDMap, pdFileMap);
             Label l = sTool.AddShape(s, false); // should create reference
-            _map.Bind(s, l);
+            _map[s] = l;
             return l;
         }
 
@@ -905,7 +906,7 @@ public class CafReader
         if (s.ShapeType() != ShapeType.Compound)
         {
             Label l = sTool.AddShape(s, false);
-            _map.Bind(s, l);
+            _map[s] = l;
             return l;
         }
 
@@ -926,9 +927,9 @@ public class CafReader
 
         // check whether it has associated external ref
         NCollection_Sequence<string> shas = new NCollection_Sequence<string>();
-        if (shapePDMap.IsBound(s) && pdFileMap.IsBound(shapePDMap.Find(s)))
+        if (shapePDMap.ContainsKey(s) && pdFileMap.ContainsKey(shapePDMap.GetValue(s)))
         {
-            ExternFile ef = pdFileMap.Find(shapePDMap.Find(s));
+            ExternFile ef = pdFileMap.GetValue(shapePDMap.GetValue(s));
             if (ef is not null)
             {
                 // (store information on extern refs in the document)
@@ -939,7 +940,7 @@ public class CafReader
                     // but if components >0, ignore extern ref!
                     if (nbComponents <= 0)
                     {
-                        _map.Bind(s, ef.GetLabel());
+                        _map[s] = ef.GetLabel();
                         sTool.SetExternRefs(ef.GetLabel(), shas);
                         return ef.GetLabel();
                     }
@@ -956,7 +957,7 @@ public class CafReader
             {
                 sTool.SetExternRefs(l, shas);
             }
-            _map.Bind(s, l);
+            _map[s] = l;
             return l;
         }
 
@@ -970,9 +971,9 @@ public class CafReader
             if (!subL.IsNull)
             {
                 Label instL = sTool.AddComponent(la, subL, it.Value().Location());
-                if (!_map.IsBound(it.Value()))
+                if (!_map.ContainsKey(it.Value()))
                 {
-                    _map.Bind(it.Value(), instL);
+                    _map[it.Value()] = instL;
                 }
             }
         }
@@ -980,7 +981,7 @@ public class CafReader
         {
             sTool.SetExternRefs(la, shas);
         }
-        _map.Bind(s, la);
+        _map[s] = la;
         // STool->SetShape ( L, S ); // it is necessary for assemblies OCC1747 // commemted by skl for
         // OCC2941
 
@@ -1004,9 +1005,9 @@ public class CafReader
                                                      ExchangeDocument doc, ProgressRange progress)
     {
         // if the file is already read, associate it with SDR
-        if (_files.IsBound(file))
+        if (_files.ContainsKey(file))
         {
-            return _files.ChangeFind(file);
+            return _files.GetValue(file);
         }
 
         // create new WorkSession and Reader
@@ -1044,7 +1045,7 @@ public class CafReader
         }
 
         // add read file to dictionary
-        _files.Bind(file, ef);
+        _files[file] = ef;
 
         return ef;
     }
@@ -1294,7 +1295,7 @@ public class CafReader
     // function : SetStyle
     // purpose  : auxiliary: set style for parts and instances
     //=======================================================================
-    private static void SetStyle(ExchangeWorkSession ws, NCollection_DataMap<Shape, Label> map,
+    private static void SetStyle(ExchangeWorkSession ws, Dictionary<Shape, Label> map,
                                  ExchangeDocument sTool, Styles styles,
                                  NCollection_HSequence<Transient> hSeqOfInvisStyle,
                                  StyledItem style, in Factors localFactors)
@@ -1563,13 +1564,13 @@ public class CafReader
 
     private static Label GetLabelFromPD(ProductDefinition pd, ExchangeDocument sTool,
                                                TransientProcess tp,
-                                               NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap,
-                                               NCollection_DataMap<Shape, Label> shapeLabelMap)
+                                               Dictionary<ProductDefinition, ExternFile> pdFileMap,
+                                               Dictionary<Shape, Label> shapeLabelMap)
     {
         Label l = default;
-        if (pdFileMap.IsBound(pd))
+        if (pdFileMap.ContainsKey(pd))
         {
-            ExternFile ef = pdFileMap.Find(pd);
+            ExternFile ef = pdFileMap.GetValue(pd);
             if (ef is not null)
             {
                 l = ef.GetLabel();
@@ -1592,9 +1593,9 @@ public class CafReader
             return l;
         }
 
-        if (shapeLabelMap.IsBound(s))
+        if (shapeLabelMap.ContainsKey(s))
         {
-            l = shapeLabelMap.Find(s);
+            l = shapeLabelMap.GetValue(s);
         }
         if (l.IsNull)
         {
@@ -1607,7 +1608,7 @@ public class CafReader
     /// Find a label of the instance of a component (NAUO) in the document, through the shape it was read into.
     /// </summary>
     public static Label FindInstance(NextAssemblyUsageOccurrence nauo, ExchangeDocument sTool,
-                                            ConstructTool tool, NCollection_DataMap<Shape, Label> shapeLabelMap)
+                                            ConstructTool tool, Dictionary<Shape, Label> shapeLabelMap)
     {
         Label l = default;
 
@@ -1627,9 +1628,9 @@ public class CafReader
             return l;
         }
 
-        if (shapeLabelMap.IsBound(s))
+        if (shapeLabelMap.ContainsKey(s))
         {
-            l = shapeLabelMap.Find(s);
+            l = shapeLabelMap.GetValue(s);
         }
         else
         {
@@ -1643,7 +1644,7 @@ public class CafReader
     /// Reads names of parts defined in the STEP model and assigns them to corresponding labels in the DECAF document
     /// </summary>
     protected bool ReadNames(ExchangeWorkSession ws, ExchangeDocument doc,
-                             NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap)
+                             Dictionary<ProductDefinition, ExternFile> pdFileMap)
     {
         // get starting data
         InterfaceModel model = ws.Model();
@@ -1760,13 +1761,13 @@ public class CafReader
 
     private static Label GetLabelFromPD(ProductDefinition pd, ExchangeDocument sTool,
                                                ValidationProps props,
-                                               NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap,
-                                               NCollection_DataMap<Shape, Label> shapeLabelMap)
+                                               Dictionary<ProductDefinition, ExternFile> pdFileMap,
+                                               Dictionary<Shape, Label> shapeLabelMap)
     {
         Label l = default;
-        if (pdFileMap.IsBound(pd))
+        if (pdFileMap.ContainsKey(pd))
         {
-            ExternFile ef = pdFileMap.Find(pd);
+            ExternFile ef = pdFileMap.GetValue(pd);
             if (ef is not null)
             {
                 l = ef.GetLabel();
@@ -1781,9 +1782,9 @@ public class CafReader
         {
             return l;
         }
-        if (shapeLabelMap.IsBound(s))
+        if (shapeLabelMap.ContainsKey(s))
         {
-            l = shapeLabelMap.Find(s);
+            l = shapeLabelMap.GetValue(s);
         }
         if (l.IsNull)
         {
@@ -1797,7 +1798,7 @@ public class CafReader
     /// the DECAF document
     /// </summary>
     protected bool ReadValProps(ExchangeWorkSession ws, ExchangeDocument doc,
-                                NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap,
+                                Dictionary<ProductDefinition, ExternFile> pdFileMap,
                                 in Factors localFactors)
     {
         // get starting data
@@ -1930,9 +1931,9 @@ public class CafReader
                     {
                         continue;
                     }
-                    if (_map.IsBound(s))
+                    if (_map.ContainsKey(s))
                     {
-                        l = _map.Find(s);
+                        l = _map.GetValue(s);
                     }
                     if (l.IsNull)
                     {
@@ -2053,7 +2054,7 @@ public class CafReader
     /// <summary>Reads SHUO for instances defined in the STEP model</summary>
     /// <remarks>OCCT.NET: not read (the document has no SHUOs, decision 1279).</remarks>
     protected bool ReadSHUOs(ExchangeWorkSession ws, ExchangeDocument doc,
-                             NCollection_DataMap<ProductDefinition, ExternFile> pdFileMap)
+                             Dictionary<ProductDefinition, ExternFile> pdFileMap)
     {
         _ = ws;
         _ = doc;
@@ -2199,7 +2200,7 @@ public class CafReader
     /// Expands the topological structure of Manifold Solid BRep STEP entity to OCAF sub-tree. Entities having no
     /// names associated via their StepRepr_RepresentationItem base class are skipped.
     /// </summary>
-    protected void ExpandSubShapes(ExchangeDocument shapeTool, NCollection_DataMap<Shape, ProductDefinition> shapePDMap)
+    protected void ExpandSubShapes(ExchangeDocument shapeTool, Dictionary<Shape, ProductDefinition> shapePDMap)
     {
         TransientProcess tp = Reader().WS().TransferReader().TransientProcess();
         StepModel stepModel = tp.Model() as StepModel;
@@ -2254,12 +2255,12 @@ public class CafReader
                 continue;
             }
 
-            if (!_map.IsBound(rootShape))
+            if (!_map.ContainsKey(rootShape))
             {
                 continue;
             }
 
-            Label rootLab = _map.Find(rootShape);
+            Label rootLab = _map.GetValue(rootShape);
             // Do not add subshapes to assembly,
             // they will be processed with corresponding Shape_Product_Definition of necessary part.
             if (shapeTool.IsAssembly(rootLab))
@@ -2481,19 +2482,19 @@ public class CafReader
     public bool GetViewMode() => _viewMode;
 
     /// <summary>Sets parameters for shape processing.</summary>
-    public void SetShapeFixParameters(NCollection_DataMap<string, string> parameters)
+    public void SetShapeFixParameters(Dictionary<string, string> parameters)
     {
         _reader.SetShapeFixParameters(parameters);
     }
 
     /// <summary>Sets parameters for shape processing.</summary>
-    public void SetShapeFixParameters(in ShapeFixParameters parameters, NCollection_DataMap<string, string> additionalParameters)
+    public void SetShapeFixParameters(in ShapeFixParameters parameters, Dictionary<string, string> additionalParameters)
     {
         _reader.SetShapeFixParameters(parameters, additionalParameters);
     }
 
     /// <summary>Returns parameters for shape processing that was set by SetParameters() method.</summary>
-    public NCollection_DataMap<string, string> GetShapeFixParameters()
+    public Dictionary<string, string> GetShapeFixParameters()
     {
         return _reader.GetShapeFixParameters();
     }
@@ -2511,9 +2512,9 @@ public class CafReader
     }
 
     private readonly StepReader _reader;
-    private readonly NCollection_DataMap<string, ExternFile> _files = new NCollection_DataMap<string, ExternFile>();
-    private readonly NCollection_DataMap<Shape, Label> _map =
-        new NCollection_DataMap<Shape, Label>(ShapeHasher.Instance);
+    private readonly Dictionary<string, ExternFile> _files = new Dictionary<string, ExternFile>();
+    private readonly Dictionary<Shape, Label> _map =
+        new Dictionary<Shape, Label>(ShapeHasher.Instance);
     private bool _colorMode;
     private bool _nameMode;
     private bool _layerMode;

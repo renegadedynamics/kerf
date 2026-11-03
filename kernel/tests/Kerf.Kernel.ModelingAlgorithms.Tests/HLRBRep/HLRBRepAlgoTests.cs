@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
@@ -44,9 +45,9 @@ public class HLRBRepAlgoTests
         {
             return 0;
         }
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Edge, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static Shape Frozen(Shape theShape)
@@ -258,7 +259,7 @@ public class HLRBRepAlgoTests
         anAlgo.InitHide();
         Assert.True(anAlgo.MoreHide());
         anAlgo.Hide(aStatus, out Shape anEdge, out _, out _, out _, out _);
-        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Edge, anEdges);
         Assert.True(anEdges.Contains(anEdge));
 

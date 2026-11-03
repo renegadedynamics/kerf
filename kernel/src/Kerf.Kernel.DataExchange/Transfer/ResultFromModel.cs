@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
@@ -189,14 +190,14 @@ public class ResultFromModel : Transient
         var list = new NCollection_HSequence<Transient>();
         if (level > 1)
         {
-            var map = new NCollection_IndexedMap<Transient>(ReferenceEqualityComparer.Instance);
+            var map = new IndexedSet<Transient>(ReferenceEqualityComparer.Instance);
             map.Add(_themain);
             _themain.FillMap(map);
 
-            nb = map.Extent();
+            nb = map.Count;
             for (i = 1; i <= nb; i++)
             {
-                list.Append(map.FindKey(i));
+                list.Append(map[i - 1]);
             }
         }
         else

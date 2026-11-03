@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Features.Draft;
@@ -42,7 +43,7 @@ namespace Kerf.Engine.Features.Api;
 /// </remarks>
 public class DraftAngle : ModifyShape
 {
-    private readonly NCollection_DataMap<Shape, Shape> _vtxToReplace = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _vtxToReplace = new(ShapeHasher.Instance);
     private readonly ReShape _subs = new();
 
     // Kerf: the working overlay CorrectWires changed the modifier's result in (null when it had nothing to change, or
@@ -195,7 +196,7 @@ public class DraftAngle : ModifyShape
         {
             if (dMod.NewSurface(ShapeCasts.Face(s), out _, out _, out _, out _, out _))
             {
-                if (_vtxToReplace.IsEmpty())
+                if (_vtxToReplace.Count == 0)
                 {
                     _generated.Append(InternalModifiedShape(s));
                 }
@@ -221,7 +222,7 @@ public class DraftAngle : ModifyShape
             if (!dMod.NewSurface(ShapeCasts.Face(s), out _, out _, out _, out _, out _))
             {
                 // Ce n est pas une generation => peut etre une  modif
-                if (_vtxToReplace.IsEmpty())
+                if (_vtxToReplace.Count == 0)
                 {
                     _generated.Append(InternalModifiedShape(s));
                 }
@@ -244,9 +245,9 @@ public class DraftAngle : ModifyShape
     {
         if (s.ShapeType() == ShapeType.Vertex)
         {
-            if (_vtxToReplace.IsBound(s))
+            if (_vtxToReplace.ContainsKey(s))
             {
-                return _vtxToReplace.Find(s);
+                return _vtxToReplace.GetValue(s);
             }
         }
         // Kerf: what stands for it after CorrectWires' working overlay, if it opened one.
@@ -255,7 +256,7 @@ public class DraftAngle : ModifyShape
         {
             ns = _resultOverlay.Final(ns);
         }
-        if (_vtxToReplace.IsEmpty())
+        if (_vtxToReplace.Count == 0)
         {
             return ns;
         }
@@ -311,13 +312,13 @@ public class DraftAngle : ModifyShape
             {
                 curWire = wit.Value();
                 // OCCT iterates a map of the wire's edges (by address); the port in the wire's order.
-                NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+                IndexedSet<Shape> emap = new(ShapeHasher.Instance);
                 eit.Initialize(curWire);
                 for (; eit.More(); eit.Next())
                 {
                     emap.Add(eit.Value());
                 }
-                for (int m = 1; m <= emap.Extent(); m++)
+                for (int m = 0; m < emap.Count; m++)
                 {
                     curEdge = emap[m];
                     if (BrepTools.IsReallyClosed(ShapeCasts.Edge(curEdge), ShapeCasts.Face(curFace)))
@@ -330,7 +331,7 @@ public class DraftAngle : ModifyShape
             }
         }
 
-        NCollection_DataMap<Shape, NCollection_Sequence<double>> Emap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_Sequence<double>> Emap = new(ShapeHasher.Instance);
 
         NCollection_Sequence<Shape> nonSeam = new();
         NCollection_Sequence<Shape> nonSeamWires = new();
@@ -338,8 +339,8 @@ public class DraftAngle : ModifyShape
         NCollection_Sequence<NCollection_Sequence<Shape>> seam = new();
         NCollection_Sequence<NCollection_Sequence<double>> parsSeam = new();
 
-        NCollection_DataMap<Shape, Shape> wFmap = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_List<Shape>> wWmap = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> wFmap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> wWmap = new(ShapeHasher.Instance);
         for (i = 1; i <= eseq.Length(); i++)
         {
             curEdge = eseq[i];
@@ -386,9 +387,9 @@ public class DraftAngle : ModifyShape
                         }
                         //
                         wadd = true;
-                        if (!wFmap.IsBound(wire))
+                        if (!wFmap.ContainsKey(wire))
                         {
-                            wFmap.Bind(wire, curFace);
+                            wFmap[wire] = curFace;
                         }
                         int ind = 0;
                         for (j = 1; j <= nonSeam.Length(); j++)
@@ -408,9 +409,9 @@ public class DraftAngle : ModifyShape
                             seam.Append(new NCollection_Sequence<Shape>());
                             parsSeam.Append(new NCollection_Sequence<double>());
                         }
-                        if (!Emap.IsBound(curEdge))
+                        if (!Emap.ContainsKey(curEdge))
                         {
-                            Emap.Bind(curEdge, new NCollection_Sequence<double>());
+                            Emap[curEdge] = new NCollection_Sequence<double>();
                         }
                         //
                         // Get the tolerance of edge to compare intersection points
@@ -439,7 +440,7 @@ public class DraftAngle : ModifyShape
                             if (ied == 0)
                             {
                                 pts.Append(p3D);
-                                Emap.ChangeFind(curEdge).Append(p2DInt.ParamOnFirst());
+                                Emap.GetValue(curEdge).Append(p2DInt.ParamOnFirst());
                                 parsNonSeam[ind].Append(p2DInt.ParamOnSecond());
                                 seam[ind].Append(curEdge);
                                 parsSeam[ind].Append(p2DInt.ParamOnFirst());
@@ -448,11 +449,11 @@ public class DraftAngle : ModifyShape
                     } // for (; eit.More(); eit.Next())
                     if (wadd)
                     {
-                        if (!wWmap.IsBound(curWire))
+                        if (!wWmap.ContainsKey(curWire))
                         {
-                            wWmap.Bind(curWire, new NCollection_List<Shape>());
+                            wWmap[curWire] = new NCollection_List<Shape>();
                         }
-                        wWmap.ChangeFind(curWire).Append(wire);
+                        wWmap.GetValue(curWire).Append(wire);
                     }
                 } // if (! aWire.IsSame( CurWire ))
             } // for (; wit.More(); wit.Next())
@@ -461,7 +462,7 @@ public class DraftAngle : ModifyShape
         // Kerf: the rest writes into the result: vertices, wires and faces it frees and edits, pcurves it moves, which
         // may be the caller's sub-shapes (frozen). Unless an operation's overlay that takes writes is open here, the
         // analysis is made again in a working overlay, and the rest runs there (decision 1044, unit 10H5).
-        if (!Emap.IsEmpty() && _resultOverlay is null && WorkingOverlay.Writing is null)
+        if (Emap.Count != 0 && _resultOverlay is null && WorkingOverlay.Writing is null)
         {
             using (_resultOverlay = WorkingOverlay.Begin(_shape))
             {
@@ -496,7 +497,7 @@ public class DraftAngle : ModifyShape
         // OCCT iterates Emap (and EPmap below) by the edges' addresses; the port in insertion order.
         foreach (Shape key in Emap.Keys.ToList())
         {
-            NCollection_Sequence<double> seq = new(Emap.Find(key));
+            NCollection_Sequence<double> seq = new(Emap.GetValue(key));
             for (i = 1; i < seq.Length(); i++)
             {
                 for (j = i + 1; j <= seq.Length(); j++)
@@ -509,18 +510,18 @@ public class DraftAngle : ModifyShape
                     }
                 }
             }
-            Emap.ChangeFind(key) = seq;
+            Emap.GetValueRef(key) = seq;
         }
-        NCollection_DataMap<Shape, NCollection_Sequence<double>> ePmap = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> eVmap =
+        Dictionary<Shape, NCollection_Sequence<double>> ePmap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_Sequence<Shape>> eVmap =
             new(ShapeHasher.Instance); // Seam
-        NCollection_DataMap<Shape, NCollection_Sequence<Shape>> eWmap =
+        Dictionary<Shape, NCollection_Sequence<Shape>> eWmap =
             new(ShapeHasher.Instance); // Seam and wires intersecting it
         foreach (KeyValuePair<Shape, NCollection_Sequence<double>> entry in Emap)
         {
-            ePmap.Bind(entry.Key, new NCollection_Sequence<double>());
-            eVmap.Bind(entry.Key, new NCollection_Sequence<Shape>());
-            eWmap.Bind(entry.Key, new NCollection_Sequence<Shape>());
+            ePmap[entry.Key] = new NCollection_Sequence<double>();
+            eVmap[entry.Key] = new NCollection_Sequence<Shape>();
+            eWmap[entry.Key] = new NCollection_Sequence<Shape>();
         }
 
         // Reconstruction of non-seam edges
@@ -550,9 +551,9 @@ public class DraftAngle : ModifyShape
             if (Math.Abs(par - firstPar) <= global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 bb.UpdateVertex(vfirst, parsSeam[i][1], seamEdge, Tool.Tolerance(vfirst));
-                ePmap.ChangeFind(seamEdge).Append(parsSeam[i][1]);
-                eVmap.ChangeFind(seamEdge).Append(vfirst);
-                eWmap.ChangeFind(seamEdge).Append(nonSeamWires[i]);
+                ePmap.GetValue(seamEdge).Append(parsSeam[i][1]);
+                eVmap.GetValue(seamEdge).Append(vfirst);
+                eWmap.GetValue(seamEdge).Append(nonSeamWires[i]);
                 firstind = 2;
             }
             double prevpar = firstPar;
@@ -572,9 +573,9 @@ public class DraftAngle : ModifyShape
                     if (firstind == 2 && j == 2)
                     {
                         bb.UpdateVertex(vlast, parsSeam[i][j], seamEdge, Tool.Tolerance(vlast));
-                        ePmap.ChangeFind(seamEdge).Append(parsSeam[i][j]);
-                        eVmap.ChangeFind(seamEdge).Append(vlast);
-                        eWmap.ChangeFind(seamEdge).Append(nonSeamWires[i]);
+                        ePmap.GetValue(seamEdge).Append(parsSeam[i][j]);
+                        eVmap.GetValue(seamEdge).Append(vlast);
+                        eWmap.GetValue(seamEdge).Append(nonSeamWires[i]);
                         break;
                     }
                 }
@@ -591,9 +592,9 @@ public class DraftAngle : ModifyShape
                 bb.Add(newE, newV.Oriented(Reversed));
 
                 newEdges.Append(newE);
-                ePmap.ChangeFind(seamEdge).Append(parsSeam[i][j]);
-                eVmap.ChangeFind(seamEdge).Append(newV);
-                eWmap.ChangeFind(seamEdge).Append(nonSeamWires[i]);
+                ePmap.GetValue(seamEdge).Append(parsSeam[i][j]);
+                eVmap.GetValue(seamEdge).Append(newV);
+                eWmap.GetValue(seamEdge).Append(nonSeamWires[i]);
 
                 prevpar = par;
                 prevV = newV;
@@ -621,9 +622,9 @@ public class DraftAngle : ModifyShape
         // Sorting of EPmap and EVmap and removing repeating points from them
         foreach (Shape key in ePmap.Keys.ToList())
         {
-            NCollection_Sequence<double> seq = new(ePmap.Find(key));
-            NCollection_Sequence<Shape> seqShape = new(eVmap.Find(key));
-            NCollection_Sequence<Shape> seqShape2 = new(eWmap.Find(key));
+            NCollection_Sequence<double> seq = new(ePmap.GetValue(key));
+            NCollection_Sequence<Shape> seqShape = new(eVmap.GetValue(key));
+            NCollection_Sequence<Shape> seqShape2 = new(eWmap.GetValue(key));
             for (i = 1; i < seq.Length(); i++)
             {
                 for (j = i + 1; j <= seq.Length(); j++)
@@ -643,15 +644,15 @@ public class DraftAngle : ModifyShape
                 }
             }
 
-            ePmap.ChangeFind(key) = seq;
-            eVmap.ChangeFind(key) = seqShape;
-            eWmap.ChangeFind(key) = seqShape2;
+            ePmap.GetValueRef(key) = seq;
+            eVmap.GetValueRef(key) = seqShape;
+            eWmap.GetValueRef(key) = seqShape2;
         }
         foreach (Shape key in ePmap.Keys.ToList())
         {
-            NCollection_Sequence<double> seq = new(ePmap.Find(key));
-            NCollection_Sequence<Shape> seqShape = new(eVmap.Find(key));
-            NCollection_Sequence<Shape> seqShape2 = new(eWmap.Find(key));
+            NCollection_Sequence<double> seq = new(ePmap.GetValue(key));
+            NCollection_Sequence<Shape> seqShape = new(eVmap.GetValue(key));
+            NCollection_Sequence<Shape> seqShape2 = new(eWmap.GetValue(key));
             bool remove = true;
             while (remove)
             {
@@ -667,22 +668,22 @@ public class DraftAngle : ModifyShape
                     }
                 }
             }
-            ePmap.ChangeFind(key) = seq;
-            eVmap.ChangeFind(key) = seqShape;
-            eWmap.ChangeFind(key) = seqShape2;
+            ePmap.GetValueRef(key) = seq;
+            eVmap.GetValueRef(key) = seqShape;
+            eWmap.GetValueRef(key) = seqShape2;
         }
 
         // Reconstruction of seam edges
-        NCollection_DataMap<Shape, Shape> vEmap = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> vEmap = new(ShapeHasher.Instance);
         foreach (KeyValuePair<Shape, NCollection_Sequence<double>> entry in Emap)
         {
             Edge edge = ShapeCasts.Edge(entry.Key);
             bool onepoint = false;
             NCollection_List<Shape> newEdges = new();
             NCollection_Sequence<double> seq = new(entry.Value);
-            NCollection_Sequence<double> seq2 = new(ePmap.Find(edge));
-            NCollection_Sequence<Shape> seqVer = new(eVmap.Find(edge));
-            NCollection_Sequence<Shape> seqWire = new(eWmap.Find(edge));
+            NCollection_Sequence<double> seq2 = new(ePmap.GetValue(edge));
+            NCollection_Sequence<Shape> seqVer = new(eVmap.GetValue(edge));
+            NCollection_Sequence<Shape> seqWire = new(eWmap.GetValue(edge));
             Exploration.Vertices(edge, out Vertex vfirst, out Vertex vlast);
             double fpar, lpar;
             Tool.Range(edge, out double firstPar, out double lastPar);
@@ -700,7 +701,7 @@ public class DraftAngle : ModifyShape
             {
                 if (seq.Length() % 2 != 0)
                 {
-                    vEmap.Bind(vfirst, edge);
+                    vEmap[vfirst] = edge;
                     firstind = 2;
                     fpar = seq[1];
                     if (seq.Length() > 2)
@@ -849,7 +850,7 @@ public class DraftAngle : ModifyShape
             for (; itl.More(); itl.Next())
             {
                 Shape wire = itl.Value();
-                curFace = wFmap.Find(wire);
+                curFace = wFmap.GetValue(wire);
                 theCopy = sub.InternalCopy(wire);
                 wire = theCopy.First();
                 // Adjusting period
@@ -956,9 +957,9 @@ public class DraftAngle : ModifyShape
                 Vertex vtx = ShapeCasts.Vertex(iter.Value());
                 if (initVertices.Contains(vtx))
                 {
-                    if (_vtxToReplace.IsBound(vtx))
+                    if (_vtxToReplace.ContainsKey(vtx))
                     {
-                        bb.UpdateVertex(ShapeCasts.Vertex(_vtxToReplace.Find(vtx)), eTol + Epsilon(eTol));
+                        bb.UpdateVertex(ShapeCasts.Vertex(_vtxToReplace.GetValue(vtx)), eTol + Epsilon(eTol));
                     }
                     else
                     {
@@ -969,7 +970,7 @@ public class DraftAngle : ModifyShape
                             Point3D vPnt = Tool.Pnt(vtx);
                             bb.MakeVertex(ref newVtx, vPnt, eTol + Epsilon(eTol));
                             newVtx.Orientation(vtx.Orientation());
-                            _vtxToReplace.Bind(vtx, newVtx);
+                            _vtxToReplace[vtx] = newVtx;
                         }
                     }
                 }
@@ -980,7 +981,7 @@ public class DraftAngle : ModifyShape
             }
         }
         //
-        if (_vtxToReplace.IsEmpty())
+        if (_vtxToReplace.Count == 0)
         {
             return;
         }

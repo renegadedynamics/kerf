@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Meshing.Model;
 
 using Kerf.Engine.Meshing.Tools;
@@ -16,8 +17,8 @@ namespace Kerf.Engine.Meshing;
 /// </summary>
 public class UVParamRangeSplitter : DefaultRangeSplitter
 {
-    private readonly NCollection_IndexedMap<double> _uParams = new();
-    private readonly NCollection_IndexedMap<double> _vParams = new();
+    private readonly IndexedSet<double> _uParams = new();
+    private readonly IndexedSet<double> _vParams = new();
 
     /// <summary>A splitter.</summary>
     public UVParamRangeSplitter()
@@ -33,8 +34,8 @@ public class UVParamRangeSplitter : DefaultRangeSplitter
     }
 
     /// <summary>The U parameters (the splitter's own map: OCCT's const and non-const accessors are one).</summary>
-    public NCollection_IndexedMap<double> GetParametersU() => _uParams;
+    public IndexedSet<double> GetParametersU() => _uParams;
 
     /// <summary>The V parameters (the splitter's own map: OCCT's const and non-const accessors are one).</summary>
-    public NCollection_IndexedMap<double> GetParametersV() => _vParams;
+    public IndexedSet<double> GetParametersV() => _vParams;
 }

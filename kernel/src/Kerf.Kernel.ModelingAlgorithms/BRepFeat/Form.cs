@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Features.Local;
 using Kerf.Engine.Topology;
@@ -40,7 +41,7 @@ public abstract class Form : MakeShape
 {
     protected bool _fuse;
     protected bool _modify;
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     protected Shape _fShape = new();
     protected Shape _lShape = new();
     protected NCollection_List<Shape> _newEdges = new();
@@ -53,7 +54,7 @@ public abstract class Form : MakeShape
     protected Shape _gShape = new();
     protected Shape _sFrom = new();
     protected Shape _sUntil = new();
-    protected NCollection_DataMap<Shape, Shape> _gluedF = new(ShapeHasher.Instance);
+    protected Dictionary<Shape, Shape> _gluedF = new(ShapeHasher.Instance);
 
     private bool _sbOK;
     private bool _skOK;
@@ -173,7 +174,7 @@ public abstract class Form : MakeShape
         _shape = work.Final(_shape);
         foreach (Shape key in _map.Keys.ToList())
         {
-            _map[key] = work.Final(_map[key]);
+            _map.GetValueRef(key) = work.Final(_map.GetValue(key));
         }
         _newEdges = work.Final(_newEdges);
         _tgtEdges = work.Final(_tgtEdges);
@@ -211,7 +212,7 @@ public abstract class Form : MakeShape
         {
             theOpe = 2;
         }
-        else if (!_gluedF.IsEmpty())
+        else if (_gluedF.Count != 0)
         {
             theOpe = 1;
         }
@@ -457,7 +458,7 @@ public abstract class Form : MakeShape
             }
 
             FindEdges theFE = new();
-            NCollection_DataMap<Shape, NCollection_List<Shape>> locmap = new(ShapeHasher.Instance);
+            Dictionary<Shape, NCollection_List<Shape>> locmap = new(ShapeHasher.Instance);
             Explorer expp = new(comp, ShapeType.Solid);
             if (expp.More() && !comp.IsNull && !_gShape.IsNull)
             {
@@ -496,30 +497,30 @@ public abstract class Form : MakeShape
                                 if (!fromInShape)
                                 {
                                     NCollection_List<Shape> thelist = new();
-                                    _map.Bind(fac, thelist);
+                                    _map[fac] = thelist;
                                 }
                                 else
                                 {
                                     NCollection_List<Shape> thelist1 = new();
-                                    locmap.Bind(fac, thelist1);
+                                    locmap[fac] = thelist1;
                                 }
                                 if (trP.IsDeleted(fac))
                                 {
                                 }
                                 else if (!fromInShape)
                                 {
-                                    _map[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
-                                    if (_map[fac].IsEmpty())
+                                    _map.GetValueRef(fac) = new NCollection_List<Shape>(trP.InternalModified(fac));
+                                    if (_map.GetValue(fac).IsEmpty())
                                     {
-                                        _map[fac].Append(fac);
+                                        _map.GetValue(fac).Append(fac);
                                     }
                                 }
                                 else
                                 {
-                                    locmap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
-                                    if (locmap[fac].IsEmpty())
+                                    locmap.GetValueRef(fac) = new NCollection_List<Shape>(trP.InternalModified(fac));
+                                    if (locmap.GetValue(fac).IsEmpty())
                                     {
-                                        locmap[fac].Append(fac);
+                                        locmap.GetValue(fac).Append(fac);
                                     }
                                 }
                             }
@@ -535,30 +536,30 @@ public abstract class Form : MakeShape
                                 if (!untilInShape)
                                 {
                                     NCollection_List<Shape> thelist2 = new();
-                                    _map.Bind(fac, thelist2);
+                                    _map[fac] = thelist2;
                                 }
                                 else
                                 {
                                     NCollection_List<Shape> thelist3 = new();
-                                    locmap.Bind(fac, thelist3);
+                                    locmap[fac] = thelist3;
                                 }
                                 if (trP.IsDeleted(fac))
                                 {
                                 }
                                 else if (!untilInShape)
                                 {
-                                    _map[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
-                                    if (_map[fac].IsEmpty())
+                                    _map.GetValueRef(fac) = new NCollection_List<Shape>(trP.InternalModified(fac));
+                                    if (_map.GetValue(fac).IsEmpty())
                                     {
-                                        _map[fac].Append(fac);
+                                        _map.GetValue(fac).Append(fac);
                                     }
                                 }
                                 else
                                 {
-                                    locmap[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
-                                    if (locmap[fac].IsEmpty())
+                                    locmap.GetValueRef(fac) = new NCollection_List<Shape>(trP.InternalModified(fac));
+                                    if (locmap.GetValue(fac).IsEmpty())
                                     {
-                                        locmap[fac].Append(fac);
+                                        locmap.GetValue(fac).Append(fac);
                                     }
                                 }
                             }
@@ -613,7 +614,7 @@ public abstract class Form : MakeShape
                 foreach (KeyValuePair<Shape, Shape> itm in _gluedF)
                 {
                     Face glface = ShapeCasts.Face(itm.Key);
-                    Face fac = ShapeCasts.Face(_gluedF[glface]);
+                    Face fac = ShapeCasts.Face(_gluedF.GetValue(glface));
                     for (exp.Init(_gShape, ShapeType.Face); exp.More(); exp.Next())
                     {
                         if (exp.Current().IsSame(glface))
@@ -650,7 +651,7 @@ public abstract class Form : MakeShape
                 for (; ex.More(); ex.Next())
                 {
                     Face fac2 = ShapeCasts.Face(ex.Current());
-                    for (it.Initialize(locmap.Find(fac2)); it.More(); it.Next())
+                    for (it.Initialize(locmap.GetValue(fac2)); it.More(); it.Next())
                     {
                         Face fac1 = ShapeCasts.Face(it.Value());
                         theFE.Set(fac1, fac2);
@@ -669,7 +670,7 @@ public abstract class Form : MakeShape
                 for (; ex.More(); ex.Next())
                 {
                     Face fac2 = ShapeCasts.Face(ex.Current());
-                    for (it.Initialize(locmap.Find(fac2)); it.More(); it.Next())
+                    for (it.Initialize(locmap.GetValue(fac2)); it.More(); it.Next())
                     {
                         Face fac1 = ShapeCasts.Face(it.Value());
                         theGlue.Bind(fac1, fac2);
@@ -819,16 +820,16 @@ public abstract class Form : MakeShape
                         {
                             Face fac = ShapeCasts.Face(ex.Current());
                             NCollection_List<Shape> thelist4 = new();
-                            _map.Bind(fac, thelist4);
+                            _map[fac] = thelist4;
                             if (trP.IsDeleted(fac))
                             {
                             }
                             else
                             {
-                                _map[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
-                                if (_map[fac].IsEmpty())
+                                _map.GetValueRef(fac) = new NCollection_List<Shape>(trP.InternalModified(fac));
+                                if (_map.GetValue(fac).IsEmpty())
                                 {
-                                    _map[fac].Append(fac);
+                                    _map.GetValue(fac).Append(fac);
                                 }
                             }
                         }
@@ -843,16 +844,16 @@ public abstract class Form : MakeShape
                         {
                             Face fac = ShapeCasts.Face(ex.Current());
                             NCollection_List<Shape> thelist5 = new();
-                            _map.Bind(fac, thelist5);
+                            _map[fac] = thelist5;
                             if (trP.IsDeleted(fac))
                             {
                             }
                             else
                             {
-                                _map[fac] = new NCollection_List<Shape>(trP.InternalModified(fac));
-                                if (_map.IsEmpty()) // OCCT: tests the map, not the face's list
+                                _map.GetValueRef(fac) = new NCollection_List<Shape>(trP.InternalModified(fac));
+                                if (_map.Count == 0) // OCCT: tests the map, not the face's list
                                 {
-                                    _map[fac].Append(fac);
+                                    _map.GetValue(fac).Append(fac);
                                 }
                             }
                         }
@@ -1263,9 +1264,9 @@ public abstract class Form : MakeShape
     public override bool IsDeleted(in Shape f)
     {
         FinishWorkingShapes();
-        if (_map.IsBound(f))
+        if (_map.ContainsKey(f))
         {
-            return _map.Find(f).IsEmpty();
+            return _map.GetValue(f).IsEmpty();
         }
         return false;
     }
@@ -1286,9 +1287,9 @@ public abstract class Form : MakeShape
             return _generated;
         }
 
-        if (_map.IsBound(f))
+        if (_map.ContainsKey(f))
         {
-            NCollection_List<Shape>.Iterator ite = new(_map.Find(f));
+            NCollection_List<Shape>.Iterator ite = new(_map.GetValue(f));
             for (; ite.More(); ite.Next())
             {
                 Shape sh = ite.Value();
@@ -1310,9 +1311,9 @@ public abstract class Form : MakeShape
         {
             return _generated;
         }
-        if (_map.IsBound(s) && s.ShapeType() != ShapeType.Face)
+        if (_map.ContainsKey(s) && s.ShapeType() != ShapeType.Face)
         { // check if filter on face or not
-            NCollection_List<Shape>.Iterator ite = new(_map.Find(s));
+            NCollection_List<Shape>.Iterator ite = new(_map.GetValue(s));
             for (; ite.More(); ite.Next())
             {
                 Shape sh = ite.Value();
@@ -1341,7 +1342,7 @@ public abstract class Form : MakeShape
         {
             Shape orig = itdm.Key;
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newdsc = new(ShapeHasher.Instance);
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
                 Face fdsc = ShapeCasts.Face(it.Value());
@@ -1350,10 +1351,10 @@ public abstract class Form : MakeShape
                     newdsc.Add(it2.Value());
                 }
             }
-            _map.ChangeFind(orig).Clear();
+            _map.GetValue(orig).Clear();
             foreach (Shape itm in newdsc)
             {
-                _map.ChangeFind(orig).Append(itm);
+                _map.GetValue(orig).Append(itm);
             }
         }
     }
@@ -1371,7 +1372,7 @@ public abstract class Form : MakeShape
         FinishWorkingShapes();
         if (!_fShape.IsNull)
         {
-            return _map.Find(_fShape);
+            return _map.GetValue(_fShape);
         }
         return _generated; // empty list
     }
@@ -1389,7 +1390,7 @@ public abstract class Form : MakeShape
         FinishWorkingShapes();
         if (!_lShape.IsNull)
         {
-            return _map.Find(_lShape);
+            return _map.GetValue(_lShape);
         }
         return _generated; // empty list
     }
@@ -1485,15 +1486,15 @@ public abstract class Form : MakeShape
             if (flag == 0)
             {
                 NCollection_List<Shape> thelist6 = new();
-                _map.Bind(_sFrom, thelist6);
-                _map[_sFrom].Append(fac);
+                _map[_sFrom] = thelist6;
+                _map.GetValue(_sFrom).Append(fac);
                 _sFrom = fac;
             }
             else if (flag == 1)
             {
                 NCollection_List<Shape> thelist7 = new();
-                _map.Bind(_sUntil, thelist7);
-                _map[_sUntil].Append(fac);
+                _map[_sUntil] = thelist7;
+                _map.GetValue(_sUntil).Append(fac);
                 _sUntil = fac;
             }
         }
@@ -1503,8 +1504,8 @@ public abstract class Form : MakeShape
             {
                 Shape fac = exp.Current();
                 NCollection_List<Shape> thelist8 = new();
-                _map.Bind(fac, thelist8);
-                _map[fac].Append(fac);
+                _map[fac] = thelist8;
+                _map.GetValue(fac).Append(fac);
             }
         }
         return trf;
@@ -1537,11 +1538,11 @@ public abstract class Form : MakeShape
                 continue;
             }
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newdsc = new(ShapeHasher.Instance);
 
             if (itdm.Value.IsEmpty())
             {
-                _map.ChangeFind(orig).Append(orig);
+                _map.GetValue(orig).Append(orig);
             }
 
             for (it.Initialize(itdm.Value); it.More(); it.Next())
@@ -1571,7 +1572,7 @@ public abstract class Form : MakeShape
                     }
                 }
             }
-            _map.ChangeFind(orig).Clear();
+            _map.GetValue(orig).Clear();
             foreach (Shape itm in newdsc)
             {
                 // check the appartenance to the shape...
@@ -1579,7 +1580,7 @@ public abstract class Form : MakeShape
                 {
                     if (exp.Current().IsSame(itm))
                     {
-                        _map.ChangeFind(orig).Append(itm);
+                        _map.GetValue(orig).Append(itm);
                         break;
                     }
                 }

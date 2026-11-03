@@ -6,6 +6,7 @@
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Features.Api;
@@ -218,17 +219,17 @@ public sealed class Draft
             case global::Kerf.Topology.ShapeType.Shell:
             {
                 NCollection_List<Shape> list = new();
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgemap =
+                IndexedMap<Shape, NCollection_List<Shape>> edgemap =
                     new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(s, ShapeType.Edge, ShapeType.Face, edgemap);
                 int iedge, nbf;
-                for (iedge = 1; iedge <= edgemap.Extent(); iedge++)
+                for (iedge = 1; iedge <= edgemap.Count; iedge++)
                 {
-                    Edge theEdge = ShapeCasts.Edge(edgemap.FindKey(iedge));
+                    Edge theEdge = ShapeCasts.Edge(edgemap.KeyAt(iedge - 1));
                     // skip degenerated edges
                     if (!Tool.Degenerated(theEdge))
                     {
-                        nbf = edgemap[iedge].Extent();
+                        nbf = edgemap.ValueAt(iedge - 1).Extent();
                         if (nbf == 1)
                         {
                             list.Append(theEdge);
@@ -479,8 +480,8 @@ public sealed class Draft
         sweep.SetTolerance(_tol);
         sweep.SetAngularControl(_angmin, _angmax);
         HashSet<Shape> dummy = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
         sweep.Build(dummy, dummy2, dummy3, _style, _cont);
         if (sweep.IsDone)
         {

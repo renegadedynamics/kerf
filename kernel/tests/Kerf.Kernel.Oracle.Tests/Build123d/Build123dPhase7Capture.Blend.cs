@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
@@ -149,14 +150,14 @@ internal static partial class Build123dPhase7Capture
 
     private static string BlendHistory(in Shape theOp, in Shape theResult, MakeShape theMaker)
     {
-        var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anIn = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theOp, anIn);
-        var aRes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aRes = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theResult, aRes);
         var aSb = new StringBuilder();
-        for (int i = 1; i <= anIn.Extent(); i++)
+        for (int i = 1; i <= anIn.Count; i++)
         {
-            Shape aS = anIn[i];
+            Shape aS = anIn[i - 1];
             if (!IsTracked(aS.ShapeType()))
             {
                 continue;
@@ -171,8 +172,8 @@ internal static partial class Build123dPhase7Capture
     private static N.TopoDS_Edge NEdge(N.TopTools_IndexedMapOfShape theEdges, int theK) =>
         N.TopoDS.Edge(theEdges.FindKey(Math.Abs(theK)).Oriented(theK < 0 ? N.TopAbs_Orientation.TopAbs_REVERSED : N.TopAbs_Orientation.TopAbs_FORWARD));
 
-    private static Edge PEdge(NCollection_IndexedMap<Shape> theEdges, int theK) =>
-        ShapeCasts.Edge(theEdges[Math.Abs(theK)].Oriented(theK < 0 ? Orientation.Reversed : Orientation.Forward));
+    private static Edge PEdge(IndexedSet<Shape> theEdges, int theK) =>
+        ShapeCasts.Edge(theEdges[Math.Abs(theK) - 1].Oriented(theK < 0 ? Orientation.Reversed : Orientation.Forward));
 
     // One fillet natively: the result (or the exception), the status (done; the faulty contours' details by index)
     private static (string? Error, string Status, N.TopoDS_Shape? Result, string History, string? Details) NativeFillet(
@@ -230,7 +231,7 @@ internal static partial class Build123dPhase7Capture
     private static (string? Error, string Status, Shape? Result, string History) PortFillet(Shape theShape, int[] theEdges,
                                                                                                     double theRadius, bool theHistory)
     {
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
         var aB = new MakeFillet(theShape);
         foreach (int k in theEdges)
@@ -262,7 +263,7 @@ internal static partial class Build123dPhase7Capture
             var aSet = new HashSet<int>();
             for (int j = 1; j <= aB.NbEdges(aContour); j++)
             {
-                aSet.Add(anEdges.FindIndex(aB.Edge(aContour, j)));
+                aSet.Add(anEdges.IndexOf(aB.Edge(aContour, j)) + 1);
             }
             aFaulty.Add((Reason(aStripe), aSet));
         }
@@ -382,19 +383,19 @@ internal static partial class Build123dPhase7Capture
                 }
                 case P7Op.Chamfer:
                 {
-                    var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(aShape, ShapeType.Edge, anEdges);
-                    var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(aShape, ShapeType.Face, aFaces);
-                    var anEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                    var anEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                     Exploration.MapShapesAndAncestors(aShape, ShapeType.Edge, ShapeType.Face, anEF);
                     var aB = new MakeChamfer(aShape);
                     var aChosen = new List<int>();
                     for (int i = 0; i < a.Edges!.Length; i++)
                     {
                         Edge anE = PEdge(anEdges, a.Edges[i]);
-                        Face aF = a.Faces![i] > 0 ? ShapeCasts.Face(aFaces[a.Faces[i]]) : ShapeCasts.Face(anEF.FindFromKey(anE).First());
-                        aChosen.Add(aFaces.FindIndex(aF));
+                        Face aF = a.Faces![i] > 0 ? ShapeCasts.Face(aFaces[a.Faces[i] - 1]) : ShapeCasts.Face(anEF.GetValue(anE).First());
+                        aChosen.Add(aFaces.IndexOf(aF) + 1);
                         aB.Add(a.Value, a.Value2, anE, aF);
                     }
                     string? anError = null;

@@ -99,14 +99,14 @@ public sealed class DsSurfaceExplorer
     /// <summary>Whether the data structure has a surface <paramref name="i"/>.</summary>
     public bool IsSurface(int i)
     {
-        bool b = MYDS._surfaces.IsBound(i);
+        bool b = MYDS._surfaces.ContainsKey(i);
         return b;
     }
 
     /// <summary>Whether the data structure has a kept surface <paramref name="i"/>.</summary>
     public bool IsSurfaceKeep(int i)
     {
-        bool b = MYDS._surfaces.IsBound(i);
+        bool b = MYDS._surfaces.ContainsKey(i);
         if (b)
         {
             b = MYDS.Surface(i).Keep();

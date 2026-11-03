@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
@@ -569,7 +570,7 @@ public static partial class BrepTools
     }
 
     /// <summary>Adds the non-degenerated edges of the shape to <paramref name="m"/>.</summary>
-    public static void Map3DEdges(in Shape s, NCollection_IndexedMap<Shape> m)
+    public static void Map3DEdges(in Shape s, IndexedSet<Shape> m)
     {
         var ex = new Explorer();
         for (ex.Init(s, ShapeType.Edge); ex.More(); ex.Next())
@@ -746,13 +747,13 @@ public static partial class BrepTools
             }
         }
 
-        var emap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var emap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(s, ShapeType.Edge, emap);
 
         int i;
-        for (i = 1; i <= emap.Extent(); i++)
+        for (i = 1; i <= emap.Count; i++)
         {
-            BrepTEdge te = (BrepTEdge)emap.FindKey(i).TShape()!;
+            BrepTEdge te = (BrepTEdge)emap[i - 1].TShape()!;
             NCollection_List<CurveRepresentation> lcr = te.ChangeCurves();
             var itrep = new NCollection_List<CurveRepresentation>.Iterator(lcr);
             while (itrep.More())
@@ -1357,13 +1358,13 @@ public static partial class BrepTools
             return;
         }
 
-        var mapS = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(s, mapS, false, false);
 
         int i;
-        for (i = 1; i <= mapS.Extent(); ++i)
+        for (i = 1; i <= mapS.Count; ++i)
         {
-            Shape anS = mapS.FindKey(i);
+            Shape anS = mapS[i - 1];
             Placement loc = anS.Location();
             Transform3D trsf = loc.Transformation();
             bool isBadTrsf = trsf.IsNegative

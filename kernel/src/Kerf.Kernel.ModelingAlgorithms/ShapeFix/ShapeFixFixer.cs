@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2000-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -57,7 +58,7 @@ public static partial class ShapeFixFixer
             ++nbFaces;
         }
 
-        var mapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Edge, ShapeType.Face, mapEF);
 
         var    b       = new BrepBuilder();
@@ -94,7 +95,7 @@ public static partial class ShapeFixFixer
                         b.SameParameter(e, false);
                     }
 
-                    mapEF.FindFromKey(e, out NCollection_List<Shape> listOfFaces);
+                    mapEF.TryGetValue(e, out NCollection_List<Shape> listOfFaces);
                     if (listOfFaces.Extent() != 0)
                     {
                         var listOfFacesIt = new NCollection_List<Shape>.Iterator(listOfFaces);
@@ -525,7 +526,7 @@ public static partial class ShapeFixFixer
     /// </summary>
     internal static bool FixVertexPosition(ref Shape theshape, double tolerance, ReShapeBuilder thecontext)
     {
-        var mapVertEdges = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapVertEdges = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var exp1         = new Explorer(theshape, ShapeType.Edge);
         for (; exp1.More(); exp1.Next())
         {
@@ -543,9 +544,9 @@ public static partial class ShapeFixFixer
                 {
                     continue;
                 }
-                if (mapVertEdges.Contains(vert))
+                if (mapVertEdges.ContainsKey(vert))
                 {
-                    mapVertEdges.ChangeFromKey(vert).Append(exp1.Current());
+                    mapVertEdges.GetValue(vert).Append(exp1.Current());
                 }
                 else
                 {
@@ -557,9 +558,9 @@ public static partial class ShapeFixFixer
         }
         bool isDone = false;
         int  i      = 1;
-        for (; i <= mapVertEdges.Extent(); i++)
+        for (; i <= mapVertEdges.Count; i++)
         {
-            Vertex vert    = ShapeCasts.Vertex(mapVertEdges.FindKey(i));
+            Vertex vert    = ShapeCasts.Vertex(mapVertEdges.KeyAt(i - 1));
             double        tolVert = Tool.Tolerance(vert);
             if (tolVert <= tolerance)
             {
@@ -574,7 +575,7 @@ public static partial class ShapeFixFixer
 
             var suitEdges   = new NCollection_Sequence<Shape>();
             var rejectEdges = new NCollection_Sequence<Shape>();
-            var aledges      = new NCollection_List<Shape>(mapVertEdges.FindFromIndex(i));
+            var aledges      = new NCollection_List<Shape>(mapVertEdges.ValueAt(i - 1));
             if (aledges.Extent() == 1)
             {
                 continue;

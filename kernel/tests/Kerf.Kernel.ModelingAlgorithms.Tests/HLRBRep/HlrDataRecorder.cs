@@ -313,7 +313,7 @@ internal sealed class HlrDataRecorder
         End();
     }
 
-    private void RecHide(HiddenLineData DS, NCollection_DataMap<Shape, AdaptorTool> MST, int theMaxFaces)
+    private void RecHide(HiddenLineData DS, Dictionary<Shape, AdaptorTool> MST, int theMaxFaces)
     {
         EdgesBlock.MinMaxIndices aTot = new();
         for (int k = 0; k < 8; k++)
@@ -424,7 +424,7 @@ internal sealed class HlrDataRecorder
         try
         {
             OutLiner S = new(theShape);
-            NCollection_DataMap<Shape, AdaptorTool> MST = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            Dictionary<Shape, AdaptorTool> MST = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             HiddenLineData DS = ShapeToHlr.Load(S, P, MST, nbIso);
             Tag("sizes");
             Int(DS.VertexCount);

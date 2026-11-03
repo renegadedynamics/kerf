@@ -45,7 +45,7 @@ public class PrinterToReport : Printer
     public override void SendStringStream(StringBuilder stream, Gravity gravity)
     {
         Report report = Report();
-        if (!report.ActiveMetrics().IsEmpty())
+        if (report.ActiveMetrics().Count != 0)
         {
             SendMetricAlert(stream.ToString(), gravity);
             return;
@@ -71,7 +71,7 @@ public class PrinterToReport : Printer
     public override void SendObject(Transient? theObject, Gravity gravity)
     {
         Report report = Report();
-        if (!report.ActiveMetrics().IsEmpty())
+        if (report.ActiveMetrics().Count != 0)
         {
             SendMetricAlert(_name, gravity);
             return;
@@ -91,7 +91,7 @@ public class PrinterToReport : Printer
         }
 
         Report report = Report();
-        if (!report.ActiveMetrics().IsEmpty())
+        if (report.ActiveMetrics().Count != 0)
         {
             SendMetricAlert(theString, gravity);
             return;

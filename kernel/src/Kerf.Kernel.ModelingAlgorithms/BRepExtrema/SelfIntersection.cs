@@ -22,7 +22,7 @@ public class SelfIntersection : ElementFilter
 {
     private double _tolerance;
     private bool _isInit;
-    private readonly NCollection_DynamicArray<Shape> _faceList = new();
+    private readonly List<Shape> _faceList = new();
     private TriangleSet? _elementSet;
     private readonly OverlapTool _overlapTool = new();
 
@@ -50,10 +50,10 @@ public class SelfIntersection : ElementFilter
     public bool IsDone => _overlapTool.IsDone;
 
     /// <summary>The overlapped faces (indices from 0), each with the faces it overlaps.</summary>
-    public NCollection_DataMap<int, NCollection_PackedMapOfInteger> OverlapElements() => _overlapTool.OverlapSubShapes1();
+    public Dictionary<int, NCollection_PackedMapOfInteger> OverlapElements() => _overlapTool.OverlapSubShapes1();
 
     /// <summary>The face of the shape with the given index (from 0).</summary>
-    public Face GetSubShape(int id) => ShapeCasts.Face(_faceList.Value(id));
+    public Face GetSubShape(int id) => ShapeCasts.Face(_faceList[id]);
 
     /// <summary>The set of all the face triangles of the shape.</summary>
     public TriangleSet? ElementSet() => _elementSet;
@@ -65,7 +65,7 @@ public class SelfIntersection : ElementFilter
 
         for (var iter = new Explorer(shape, ShapeType.Face); iter.More(); iter.Next())
         {
-            _faceList.Append(ShapeCasts.Face(iter.Current()));
+            _faceList.Add(ShapeCasts.Face(iter.Current()));
         }
 
         _elementSet ??= new TriangleSet();

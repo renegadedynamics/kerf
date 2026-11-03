@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Measurement.Distance;
@@ -71,7 +72,7 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
     private sealed class Maps
     {
         public readonly N.TopTools_IndexedMapOfShape[] NM = new N.TopTools_IndexedMapOfShape[3];
-        public readonly NCollection_IndexedMap<Shape>[] PM = new NCollection_IndexedMap<Shape>[3];
+        public readonly IndexedSet<Shape>[] PM = new IndexedSet<Shape>[3];
 
         public Maps(N.TopoDS_Shape theN, in Shape theP)
         {
@@ -80,9 +81,9 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
             {
                 NM[i] = new N.TopTools_IndexedMapOfShape();
                 N.TopExp.MapShapes(theN, TwinShapes.ToNative(aTypes[i]), NM[i]);
-                PM[i] = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                PM[i] = new IndexedSet<Shape>(ShapeHasher.Instance);
                 Exploration.MapShapes(theP, aTypes[i], PM[i]);
-                Assert.Equal(NM[i].Extent(), PM[i].Extent());
+                Assert.Equal(NM[i].Extent(), PM[i].Count);
             }
         }
     }
@@ -99,9 +100,9 @@ public sealed class BRepExtremaOracleTests(ITestOutputHelper output) : IDisposab
 
         // the support may come from either input (an inner solution's vertex is the other shape's)
         int aNIndex = theMaps1.NM[aKind].FindIndex(theN);
-        int aPIndex = theMaps1.PM[aKind].FindIndex(theP);
+        int aPIndex = theMaps1.PM[aKind].IndexOf(theP) + 1;
         int aNIndex2 = theMaps2.NM[aKind].FindIndex(theN);
-        int aPIndex2 = theMaps2.PM[aKind].FindIndex(theP);
+        int aPIndex2 = theMaps2.PM[aKind].IndexOf(theP) + 1;
         theOracle.Same(aNIndex, aPIndex, theWhat + " index in shape 1");
         theOracle.Same(aNIndex2, aPIndex2, theWhat + " index in shape 2");
         theOracle.Same((int)theN.Orientation(), (int)theP.Orientation(), theWhat + " orientation");

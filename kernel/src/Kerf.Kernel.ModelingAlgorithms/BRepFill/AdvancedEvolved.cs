@@ -6,6 +6,7 @@
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
@@ -136,17 +137,17 @@ public sealed class AdvancedEvolved
         _spine = spine;
         _profile = profile;
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mvep = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mvep = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(profile, ShapeType.Vertex, ShapeType.Edge, mvep);
 
         Vector3D n2 = new();
         Point3D loc = new();
 
-        for (int i = 1; i <= mvep.Extent(); i++)
+        for (int i = 0; i < mvep.Count; i++)
         {
-            Vertex vc = ShapeCasts.Vertex(mvep.FindKey(i));
+            Vertex vc = ShapeCasts.Vertex(mvep.KeyAt(i));
 
-            NCollection_List<Shape> le = mvep.FindFromIndex(i);
+            NCollection_List<Shape> le = mvep.ValueAt(i);
 
             if (le.Extent() < 2)
             {
@@ -231,11 +232,11 @@ public sealed class AdvancedEvolved
                 if (extr.SupportTypeShape1(idxMin) == SupportType.IsVertex)
                 {
                     Vertex v = ShapeCasts.Vertex(extr.SupportOnShape1(idxMin));
-                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mves =
+                    IndexedMap<Shape, NCollection_List<Shape>> mves =
                         new(ShapeHasher.Instance);
                     Exploration.MapShapesAndAncestors(spine, ShapeType.Vertex, ShapeType.Edge, mves);
 
-                    NCollection_List<Shape> le = mves.FindFromKey(v);
+                    NCollection_List<Shape> le = mves.GetValue(v);
 
                     Edge e1 = ShapeCasts.Edge(le.First());
                     Edge e2 = ShapeCasts.Edge(le.Last());
@@ -303,11 +304,11 @@ public sealed class AdvancedEvolved
                 if (extr.SupportTypeShape2(idxMin) == SupportType.IsVertex)
                 {
                     Vertex v = ShapeCasts.Vertex(extr.SupportOnShape2(idxMin));
-                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mves =
+                    IndexedMap<Shape, NCollection_List<Shape>> mves =
                         new(ShapeHasher.Instance);
                     Exploration.MapShapesAndAncestors(profile, ShapeType.Vertex, ShapeType.Edge, mves);
 
-                    NCollection_List<Shape> le = mves.FindFromKey(v);
+                    NCollection_List<Shape> le = mves.GetValue(v);
 
                     Edge e1 = ShapeCasts.Edge(le.First());
                     Edge e2 = ShapeCasts.Edge(le.Last());
@@ -383,9 +384,9 @@ public sealed class AdvancedEvolved
 
     //=================================================================================================
 
-    private bool IsLid(in Face f, NCollection_IndexedMap<Shape> mapOfLids)
+    private bool IsLid(in Face f, IndexedSet<Shape> mapOfLids)
     {
-        if (mapOfLids.IsEmpty())
+        if (mapOfLids.Count == 0)
         {
             return false;
         }
@@ -395,7 +396,7 @@ public sealed class AdvancedEvolved
             return false;
         }
 
-        for (int i = 1; i <= mapOfLids.Extent(); i++)
+        for (int i = 0; i < mapOfLids.Count; i++)
         {
             Face aF = ShapeCasts.Face(mapOfLids[i]);
             PlaneSurface? plane = Tool.Surface(aF) as PlaneSurface;
@@ -455,7 +456,7 @@ public sealed class AdvancedEvolved
             }
 
             Shell shell = new();
-            NCollection_IndexedMap<Shape> mfLids = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mfLids = new(ShapeHasher.Instance);
             Exploration.MapShapes(_topBottom, ShapeType.Face, mfLids);
 
             for (Explorer exp = new(_result, ShapeType.Face); exp.More(); exp.Next())
@@ -551,23 +552,23 @@ public sealed class AdvancedEvolved
         // Obtain free-edges from myPipeShell. All edges must be planar
         // and parallel to the plane of mySpine
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapEF = new(ShapeHasher.Instance);
 
         Exploration.MapShapesAndAncestors(_pipeShell, ShapeType.Edge, ShapeType.Face, mapEF);
 
         NCollection_List<Shape> le = new();
 
         double dpMax = 0.0;
-        for (int i = 1; i <= mapEF.Extent(); i++)
+        for (int i = 0; i < mapEF.Count; i++)
         {
-            NCollection_List<Shape> listF = mapEF[i];
+            NCollection_List<Shape> listF = mapEF.ValueAt(i);
 
             if (listF.Extent() != 1)
             {
                 continue;
             }
 
-            Edge e = ShapeCasts.Edge(mapEF.FindKey(i));
+            Edge e = ShapeCasts.Edge(mapEF.KeyAt(i));
 
             EdgeCurveAdaptor ac = new(e);
             if (!ac.Is3DCurve())
@@ -627,7 +628,7 @@ public sealed class AdvancedEvolved
         {
             // Check orientation
 
-            NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mapV = new(ShapeHasher.Instance);
             Exploration.MapShapes(_pipeShell, ShapeType.Vertex, mapV);
             Explorer exp = new(compFS, ShapeType.Face);
             for (; exp.More(); exp.Next())
@@ -640,9 +641,9 @@ public sealed class AdvancedEvolved
 
                 bool isFound = false;
 
-                for (int i = 1; i <= mapV.Extent(); i++)
+                for (int i = 0; i < mapV.Count; i++)
                 {
-                    Vertex v = ShapeCasts.Vertex(mapV.FindKey(i));
+                    Vertex v = ShapeCasts.Vertex(mapV[i]);
                     Xyz p = Tool.Pnt(v).XYZ();
 
                     Xyz delta = p - locP;
@@ -789,17 +790,17 @@ public sealed class AdvancedEvolved
 
     private void ExtractOuterSolid(ref Shape shape, NCollection_List<Shape> argsList)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapS = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapS = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Face, ShapeType.Solid, mapS);
 
         // theArgsList.Clear();
         NCollection_List<Shape> newList = new();
-        int nbF = mapS.Extent();
-        for (int i = 1; i <= nbF; ++i)
+        int nbF = mapS.Count;
+        for (int i = 0; i < nbF; ++i)
         {
-            if (mapS[i].Extent() == 1)
+            if (mapS.ValueAt(i).Extent() == 1)
             {
-                newList.Append(mapS.FindKey(i));
+                newList.Append(mapS.KeyAt(i));
             }
         }
 
@@ -895,7 +896,7 @@ public sealed class AdvancedEvolved
             for (; expSo.More(); expSo.Next())
             {
                 Solid sol = ShapeCasts.Solid(expSo.Current());
-                NCollection_IndexedMap<Shape> mapF = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mapF = new(ShapeHasher.Instance);
                 Exploration.MapShapes(sol, mapF);
 
                 bool areThereLids = false;
@@ -904,13 +905,13 @@ public sealed class AdvancedEvolved
                 {
                     areThereLids = true;
                     Face fLid = ShapeCasts.Face(expLids.Current());
-                    int fIdx = mapF.FindIndex(fLid);
+                    int fIdx = mapF.IndexOf(fLid) + 1;
                     if (fIdx < 1)
                     {
                         continue;
                     }
 
-                    Face fSol = ShapeCasts.Face(mapF.FindKey(fIdx));
+                    Face fSol = ShapeCasts.Face(mapF[fIdx - 1]);
 
                     if (fSol.IsEqual(fLid))
                     {
@@ -985,7 +986,7 @@ public sealed class AdvancedEvolved
             for (expSo.Init(resShape, ShapeType.Solid); expSo.More(); expSo.Next())
             {
                 Solid so = ShapeCasts.Solid(expSo.Current());
-                NCollection_IndexedMap<Shape> mapF = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mapF = new(ShapeHasher.Instance);
                 Exploration.MapShapes(so, ShapeType.Face, mapF);
                 bool isToDelete = false;
 
@@ -1007,13 +1008,13 @@ public sealed class AdvancedEvolved
                 for (itl.Initialize(argsList); itl.More(); itl.Next())
                 {
                     Face f = ShapeCasts.Face(itl.Value());
-                    int idx = mapF.FindIndex(f);
+                    int idx = mapF.IndexOf(f) + 1;
                     if (idx == 0)
                     {
                         continue;
                     }
 
-                    Face f1 = ShapeCasts.Face(mapF.FindKey(idx));
+                    Face f1 = ShapeCasts.Face(mapF[idx - 1]);
 
                     // aF and aF1 are same shapes. Check if they are equal.
 
@@ -1169,7 +1170,7 @@ public sealed class AdvancedEvolved
             bb.Add(wir, e);
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapVE = new(ShapeHasher.Instance);
         Exploration.MapShapesAndUniqueAncestors(wir, ShapeType.Vertex, ShapeType.Edge, mapVE);
 
         WireExplorer exp = new(wir, face);
@@ -1235,7 +1236,7 @@ public sealed class AdvancedEvolved
                 continue;
             }
 
-            bool found = mapVE.FindFromKey(vertCurr, out NCollection_List<Shape> eList);
+            bool found = mapVE.TryGetValue(vertCurr, out NCollection_List<Shape> eList);
             if (found && (eList.Extent() <= 2))
             {
                 e1 = e2;
@@ -1330,7 +1331,7 @@ public sealed class AdvancedEvolved
                     continue;
                 }
 
-                if (mapVE.FindFromKey(v[idfe], out NCollection_List<Shape> eList) && (eList.Extent() > 2))
+                if (mapVE.TryGetValue(v[idfe], out NCollection_List<Shape> eList) && (eList.Extent() > 2))
                 {
                     // Causes:
                     //  1. Non-manifold topology.
@@ -1750,18 +1751,18 @@ public sealed class AdvancedEvolved
     private static void ReduceVertexTolerance(in Shape aS)
     {
         int i, nbV;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance),
+        IndexedMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance),
             vfMap = new(ShapeHasher.Instance);
 
         Exploration.MapShapesAndUniqueAncestors(aS, ShapeType.Vertex, ShapeType.Edge, veMap);
         Exploration.MapShapesAndUniqueAncestors(aS, ShapeType.Vertex, ShapeType.Face, vfMap);
 
-        nbV = veMap.Extent();
+        nbV = veMap.Count;
         for (i = 1; i <= nbV; i++)
         {
-            Vertex v = ShapeCasts.Vertex(veMap.FindKey(i));
-            NCollection_List<Shape> le = veMap[i];
-            NCollection_List<Shape> lf = vfMap.FindFromKey(v);
+            Vertex v = ShapeCasts.Vertex(veMap.KeyAt(i - 1));
+            NCollection_List<Shape> le = veMap.ValueAt(i - 1);
+            NCollection_List<Shape> lf = vfMap.GetValue(v);
 
             ProcessVertex(v, le, lf);
         }

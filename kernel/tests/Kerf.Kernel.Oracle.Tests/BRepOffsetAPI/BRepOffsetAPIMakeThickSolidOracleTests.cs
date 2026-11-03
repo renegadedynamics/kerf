@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
@@ -122,25 +123,25 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     internal static List<(string Name, Shape Shape)> Sheets()
     {
         Shape aBox = Box(10, 20, 30);
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Face, aFaces);
         Shape aCyl = new ApiMakeCylinder(5, 12).Shape();
-        var aCylFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aCylFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aCyl, ShapeType.Face, aCylFaces);
         Shape aSph = new MakeSphere(new Point3D(0, 0, 0), 6, 0.3, 1.2, 2.0).Shape();
-        var aSphFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aSphFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aSph, ShapeType.Face, aSphFaces);
         BrepBuilder aB = new();
         Shell aShell = new();
         aB.MakeShell(ref aShell);
-        aB.Add(aShell, aFaces[1]);
-        aB.Add(aShell, aFaces[3]);
-        aB.Add(aShell, aFaces[5]);
+        aB.Add(aShell, aFaces[0]);
+        aB.Add(aShell, aFaces[2]);
+        aB.Add(aShell, aFaces[4]);
         Shell aShell2 = new();
         aB.MakeShell(ref aShell2);
         for (int i = 1; i <= 5; i++)
         {
-            aB.Add(aShell2, aFaces[i]);
+            aB.Add(aShell2, aFaces[i - 1]);
         }
         // a B-spline face: a lofted patch
         var aPoles = new NCollection_Array2<Point3D>(1, 4, 1, 4);
@@ -155,10 +156,10 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         Face aBsp = new MakeFace(aSurf, 1.0e-7).Face();
         return
         [
-            ("planar face", aFaces[1]),
-            ("planar face reversed", aFaces[2]),
-            ("cylindrical face", aCylFaces[1]),
-            ("spherical patch", aSphFaces[1]),
+            ("planar face", aFaces[0]),
+            ("planar face reversed", aFaces[1]),
+            ("cylindrical face", aCylFaces[0]),
+            ("spherical patch", aSphFaces[0]),
             ("B-spline face", aBsp),
             ("open shell of 3", aShell),
             ("open shell of 5", aShell2),
@@ -466,13 +467,13 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
     // each list sorted.
     private static string Keyed(string theHistory, in Shape theResult)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theResult, aMap);
         CanonicalKeys aKeys = CanonicalKeys.Build(theResult);
         return System.Text.RegularExpressions.Regex.Replace(theHistory, @"([GM])\[([^\]]*)\]", m =>
             m.Groups[1].Value + "[" + string.Join(' ', m.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                                                          .Select(s => (I: int.Parse(s.TrimEnd('r'), CultureInfo.InvariantCulture), R: s.EndsWith('r')))
-                                                         .Select(t => (t.I > 0 ? aKeys.Key(aMap[t.I]) : "out") + (t.R ? "r" : ""))
+                                                         .Select(t => (t.I > 0 ? aKeys.Key(aMap[t.I - 1]) : "out") + (t.R ? "r" : ""))
                                                          .Order(StringComparer.Ordinal)) + "]");
     }
 
@@ -607,15 +608,15 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == N.TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
     }
 
-    private static string IndexOf(NCollection_IndexedMap<Shape> theMap, in Shape theS)
+    private static string IndexOf(IndexedSet<Shape> theMap, in Shape theS)
     {
-        int anI = theMap.FindIndex(theS);
+        int anI = theMap.IndexOf(theS) + 1;
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
     }
 
     internal static Outcome RunPort(ShapeFixOracleRun theRun, Run theCase, Shape theInput)
     {
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theInput, ShapeType.Face, aFaces);
         try
         {
@@ -663,9 +664,9 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                     var aClosing = new NCollection_List<Shape>();
                     foreach (int i in theCase.Closing ?? [])
                     {
-                        if (i <= aFaces.Extent())
+                        if (i <= aFaces.Count)
                         {
-                            aClosing.Append(aFaces[i]);
+                            aClosing.Append(aFaces[i - 1]);
                         }
                     }
                     aMT.MakeThickSolidByJoin(theInput, aClosing, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false,
@@ -684,14 +685,14 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 return new Outcome(null, aStatus, aStatus.StartsWith("done=True", StringComparison.Ordinal) ? "" : null, "", aRes);
             }
             string aText = theRun.PortText(aRes);
-            var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aRes, aResMap);
-            var anInMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var anInMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(theInput, anInMap);
             var aSb = new StringBuilder();
-            for (int i = 1; i <= anInMap.Extent(); i++)
+            for (int i = 1; i <= anInMap.Count; i++)
             {
-                Shape aS = anInMap[i];
+                Shape aS = anInMap[i - 1];
                 if (aS.ShapeType() is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
                 {
                     continue;

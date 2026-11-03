@@ -12,25 +12,25 @@ namespace Kerf.Engine.Meshing.Data;
 /// <summary>The default discrete face.</summary>
 public class FaceData : FaceModel
 {
-    private readonly NCollection_DynamicArray<WireModel> _dWires;
+    private readonly List<WireModel> _dWires;
 
     /// <summary>An empty discrete face of the face.</summary>
     public FaceData(in Face face) : base(face)
     {
-        _dWires = new NCollection_DynamicArray<WireModel>(256);
+        _dWires = new List<WireModel>();
     }
 
     /// <inheritdoc/>
-    public override int WiresNb() => _dWires.Length();
+    public override int WiresNb() => _dWires.Count;
 
     /// <inheritdoc/>
     public override WireModel AddWire(in Wire wire, int edgeNb = 0)
     {
         WireModel aWire = new WireData(wire, edgeNb);
-        _dWires.Append(aWire);
+        _dWires.Add(aWire);
         return GetWire(WiresNb() - 1);
     }
 
     /// <inheritdoc/>
-    public override WireModel GetWire(int index) => _dWires.Value(index);
+    public override WireModel GetWire(int index) => _dWires[index];
 }

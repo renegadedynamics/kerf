@@ -8,6 +8,7 @@
 // ShapeUpgrade_UnifySameDomain.Edges.cs MergeEdges, MergeSeq, MergeSubSeq, UnionPCurves and theirs.
 
 // OCCT's typedefs of the class
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Conversion;
@@ -20,8 +21,8 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using DataMapOfFacePlane = Occt.NCollection_DataMap<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
-using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Kerf.Topology.Shape, System.Collections.Generic.HashSet<Kerf.Topology.Shape>>;
+using DataMapOfFacePlane = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
+using DataMapOfShapeMapOfShape = System.Collections.Generic.Dictionary<Kerf.Topology.Shape, System.Collections.Generic.HashSet<Kerf.Topology.Shape>>;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -68,9 +69,9 @@ public partial class UnifySameDomain : Transient
     private readonly ReShapeBuilder   _context;
     private readonly HashSet<Shape> _keepShapes = new(ShapeHasher.Instance);
     private readonly DataMapOfFacePlane   _facePlaneMap = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _eFmap =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _eFmap =
       new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, Shape> _faceNewFace = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _faceNewFace = new(ShapeHasher.Instance);
 
     private History? _history; //!< The history.
 
@@ -282,11 +283,11 @@ public partial class UnifySameDomain : Transient
     {
         // creating map of edge faces for the whole shape
         var gMapEdgeFaces =
-          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+          new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
-        var faceMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var faceMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(_shape, ShapeType.Face, faceMap);
-        for (int i = 1; i <= faceMap.Extent(); i++)
+        for (int i = 0; i < faceMap.Count; i++)
         {
             Exploration.MapShapesAndAncestors(faceMap[i], ShapeType.Edge, ShapeType.Face, gMapEdgeFaces);
         }
@@ -300,13 +301,13 @@ public partial class UnifySameDomain : Transient
             for (var itF = new Iterator(shell); itF.More(); itF.Next())
             {
                 Shape f = itF.Value();
-                if (gMapFaceShells.Find(f, out HashSet<Shape> pShells))
+                if (gMapFaceShells.TryGetValue(f, out HashSet<Shape>? pShells))
                 {
                     pShells.Add(shell);
                 }
                 else
                 {
-                    gMapFaceShells.Bound(f, new HashSet<Shape>(ShapeHasher.Instance)).Add(shell);
+                    gMapFaceShells.SetValueRef(f, new HashSet<Shape>(ShapeHasher.Instance)).Add(shell);
                 }
             }
         }
@@ -318,12 +319,12 @@ public partial class UnifySameDomain : Transient
         for (; explo.More(); explo.Next())
         {
             Shape shell = explo.Current();
-            var eFmap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var eFmap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(shell, ShapeType.Edge, ShapeType.Face, eFmap);
-            for (int ii = 1; ii <= eFmap.Extent(); ii++)
+            for (int ii = 0; ii < eFmap.Count; ii++)
             {
-                Edge                    edge    = ShapeCasts.Edge(eFmap.FindKey(ii));
-                NCollection_List<Shape> faceList = eFmap[ii];
+                Edge                    edge    = ShapeCasts.Edge(eFmap.KeyAt(ii));
+                NCollection_List<Shape> faceList = eFmap.ValueAt(ii);
                 if (!Tool.Degenerated(edge) && faceList.Extent() == 1)
                 {
                     freeBoundMap.Add(edge);
@@ -358,13 +359,13 @@ public partial class UnifySameDomain : Transient
     }
 
     private void IntUnifyFaces(in Shape                                                          inpShape,
-                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> gMapEdgeFaces,
+                               IndexedMap<Shape, NCollection_List<Shape>> gMapEdgeFaces,
                                DataMapOfShapeMapOfShape                                                 gMapFaceShells,
                                HashSet<Shape>                                            freeBoundMap)
     {
         // creating map of edge faces for the shape
         var mapEdgeFaces =
-          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+          new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(inpShape, ShapeType.Edge, ShapeType.Face, mapEdgeFaces);
 
         // map of processed shapes
@@ -417,7 +418,7 @@ public partial class UnifySameDomain : Transient
 
             // Get shells connected to the face (in normal cases should not be more than 2)
             HashSet<Shape>? pFShells1 =
-              gMapFaceShells.Find(face, out HashSet<Shape> fShells1) ? fShells1 : null;
+              gMapFaceShells.TryGetValue(face, out HashSet<Shape>? fShells1) ? fShells1 : null;
 
             // find adjacent faces to union
             int i;
@@ -430,7 +431,7 @@ public partial class UnifySameDomain : Transient
                 }
 
                 // get connectivity of the edge in the global shape
-                NCollection_List<Shape> gList = gMapEdgeFaces.FindFromKey(edge);
+                NCollection_List<Shape> gList = gMapEdgeFaces.GetValue(edge);
                 if (!_allowInternal
                     && (gList.Extent() != 2 || _keepShapes.Contains(edge) || freeBoundMap.Contains(edge)))
                 {
@@ -439,7 +440,7 @@ public partial class UnifySameDomain : Transient
                 }
                 //
                 // Get the faces connected through the edge in the current shape
-                NCollection_List<Shape> list = mapEdgeFaces.FindFromKey(edge);
+                NCollection_List<Shape> list = mapEdgeFaces.GetValue(edge);
                 if (list.Extent() < 2)
                 {
                     continue;
@@ -478,7 +479,7 @@ public partial class UnifySameDomain : Transient
 
                     // Get shells connected to the checked face
                     HashSet<Shape>? pFShells2 =
-                      gMapFaceShells.Find(checkedFace, out HashSet<Shape> fShells2) ? fShells2 : null;
+                      gMapFaceShells.TryGetValue(checkedFace, out HashSet<Shape>? fShells2) ? fShells2 : null;
                     // Faces can be unified only if the shells of faces connected to
                     // these faces are the same. Otherwise, topology would be broken.
                     if (!IsSameSets(pFShells1, pFShells2))
@@ -518,9 +519,9 @@ public partial class UnifySameDomain : Transient
 
             if (faces.Length() > 1)
             {
-                if (_facePlaneMap.IsBound(faces[1]))
+                if (_facePlaneMap.ContainsKey(faces[1]))
                 {
-                    PlaneSurface plane = _facePlaneMap[faces[1]];
+                    PlaneSurface plane = _facePlaneMap.GetValue(faces[1]);
                     var        loc   = new Placement();
                     bb.UpdateFace(refFace, plane, loc, global::Kerf.Engine.Foundation.Precision.Confusion());
                 }
@@ -531,7 +532,7 @@ public partial class UnifySameDomain : Transient
 
                 // fill in the connectivity map for selected faces
                 var mapEF0 =
-                  new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                  new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 for (i = 1; i <= faces.Length(); i++)
                 {
                     Exploration.MapShapesAndAncestors(faces[i], ShapeType.Edge, ShapeType.Face, mapEF0);
@@ -539,13 +540,13 @@ public partial class UnifySameDomain : Transient
                 // Collect keep edges and multi-connected edges, i.e. edges that are internal to
                 // the set of selected faces and have connections to other faces.
                 var keepEdges = new NCollection_List<Shape>();
-                for (i = 1; i <= mapEF0.Extent(); i++)
+                for (i = 1; i <= mapEF0.Count; i++)
                 {
-                    NCollection_List<Shape> lf = mapEF0[i];
+                    NCollection_List<Shape> lf = mapEF0.ValueAt(i - 1);
                     if (lf.Extent() == 2)
                     {
-                        Shape                   e   = mapEF0.FindKey(i);
-                        NCollection_List<Shape> glf = gMapEdgeFaces.FindFromKey(e);
+                        Shape                   e   = mapEF0.KeyAt(i - 1);
+                        NCollection_List<Shape> glf = gMapEdgeFaces.GetValue(e);
                         if (glf.Extent() > 2 || _keepShapes.Contains(e) || freeBoundMap.Contains(e))
                         {
                             keepEdges.Append(e);
@@ -563,7 +564,7 @@ public partial class UnifySameDomain : Transient
                         for (; it.More(); it.Next())
                         {
                             Shape                   e  = it.Value();
-                            NCollection_List<Shape> lf = mapEF0.FindFromKey(e);
+                            NCollection_List<Shape> lf = mapEF0.GetValue(e);
                             avoidFaces.Add(lf.First());
                             avoidFaces.Add(lf.Last());
                         }
@@ -579,7 +580,7 @@ public partial class UnifySameDomain : Transient
                                 for (; ex.More() && !hasConnectAnotherFaces; ex.Next())
                                 {
                                     Shape                   e  = ex.Current();
-                                    NCollection_List<Shape> lf = mapEF0.FindFromKey(e);
+                                    NCollection_List<Shape> lf = mapEF0.GetValue(e);
                                     if (lf.Extent() > 1)
                                     {
                                         for (it.Initialize(lf); it.More() && !hasConnectAnotherFaces; it.Next())
@@ -611,7 +612,7 @@ public partial class UnifySameDomain : Transient
                             for (it.Initialize(keepEdges); it.More(); it.Next())
                             {
                                 Shape                   e  = it.Value();
-                                NCollection_List<Shape> lf = mapEF0.FindFromKey(e);
+                                NCollection_List<Shape> lf = mapEF0.GetValue(e);
                                 if (lf.Extent() < 2)
                                 {
                                     continue;
@@ -645,7 +646,7 @@ public partial class UnifySameDomain : Transient
             } // if (faces.Length() > 1)
 
             var mapEF =
-              new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+              new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             for (i = 1; i <= faces.Length(); i++)
             {
                 Exploration.MapShapesAndUniqueAncestors(faces[i], ShapeType.Edge, ShapeType.Face, mapEF);
@@ -655,8 +656,8 @@ public partial class UnifySameDomain : Transient
             for (int ii = 1; ii <= edges.Length(); ii++)
             {
                 ref Shape               anEdge = ref edges[ii];
-                int                            indE   = mapEF.FindIndex(anEdge);
-                NCollection_List<Shape> lf    = mapEF[indE];
+                int                            indE   = mapEF.IndexOf(anEdge) + 1;
+                NCollection_List<Shape> lf    = mapEF.ValueAt(indE - 1);
                 if (_allowInternal && _keepShapes.Contains(anEdge) && lf.Extent() == 2)
                 {
                     edges[ii].Orientation(Internal);
@@ -664,12 +665,12 @@ public partial class UnifySameDomain : Transient
 
                 if (anEdge.Orientation() != Internal)
                 {
-                    edges[ii] = mapEF.FindKey(indE);
+                    edges[ii] = mapEF.KeyAt(indE - 1);
                 }
             }
 
             // Exclude internal edges
-            var internalEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var internalEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
             int ind_e         = 1;
             while (ind_e <= edges.Length())
             {
@@ -705,7 +706,7 @@ public partial class UnifySameDomain : Transient
                 coordTol =  Max(coordTol, global::Kerf.Engine.Foundation.Precision.Confusion());
 
                 var vEmap =
-                  new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                  new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 for (int ind = 1; ind <= edges.Length(); ind++)
                 {
                     Exploration.MapShapesAndUniqueAncestors(edges[ind], ShapeType.Vertex, ShapeType.Edge, vEmap);
@@ -747,7 +748,7 @@ public partial class UnifySameDomain : Transient
                 bool isEdgeWith2pcurvesSmooth = false;
                 if (_concatBSplines && !edgeWith2pcurves.IsNull && !seamFound)
                 {
-                    NCollection_List<Shape> faceList = gMapEdgeFaces.FindFromKey(edgeWith2pcurves);
+                    NCollection_List<Shape> faceList = gMapEdgeFaces.GetValue(edgeWith2pcurves);
                     Face                    face1    = ShapeCasts.Face(faceList.First());
                     Face                    face2    = ShapeCasts.Face(faceList.Last());
                     Continuity orderOfCont = BrepLibrary.ContinuityOfFaces(edgeWith2pcurves, face1, face2, _angTol);
@@ -882,7 +883,7 @@ public partial class UnifySameDomain : Transient
                             else if (numberOfIntervals == 2)
                             {
                                 var usedEdges0    = new HashSet<Shape>(ShapeHasher.Instance);
-                                var edgeNewPCurve = new NCollection_DataMap<Shape, Curve2D>(EqualityComparer<Shape>.Default);
+                                var edgeNewPCurve = new Dictionary<Shape, Curve2D>(EqualityComparer<Shape>.Default);
 
                                 // Relocate pcurves to new U-origin
                                 if (!RelocatePCurvesToNewUorigin(edges,
@@ -917,10 +918,10 @@ public partial class UnifySameDomain : Transient
                                             break;
                                         }
                                         pCurve = new TrimmedCurve2D(pCurve, fpar, lpar);
-                                        edgeNewPCurve.Bind(anEdge, pCurve);
+                                        edgeNewPCurve[anEdge] = pCurve;
                                     }
                                 }
-                                if (edgeNewPCurve.Extent() != edges.Length())
+                                if (edgeNewPCurve.Count != edges.Length())
                                 {
                                     break;
                                 }
@@ -936,7 +937,7 @@ public partial class UnifySameDomain : Transient
                                 double newCoordMin = RealLast(), newCoordMax = RealFirst();
                                 for (int jj = 1; jj <= edges.Length(); jj++)
                                 {
-                                    Curve2D pCurve = edgeNewPCurve[edges[jj]];
+                                    Curve2D pCurve = edgeNewPCurve.GetValue(edges[jj]);
                                     UpdateBoundaries(pCurve,
                                                      pCurve.FirstParameter(),
                                                      pCurve.LastParameter(),
@@ -984,7 +985,7 @@ public partial class UnifySameDomain : Transient
                                         {
                                             bb.UpdateEdge(anEdge, nullPCurve, oldRefFace, 0.0);
                                         }
-                                        Curve2D pCurve = edgeNewPCurve[anEdge];
+                                        Curve2D pCurve = edgeNewPCurve.GetValue(anEdge);
                                         bb.UpdateEdge(anEdge, pCurve, refFace, 0.0);
                                     }
                                 }
@@ -1073,7 +1074,7 @@ public partial class UnifySameDomain : Transient
                     bb.MakeWire(ref newWire);
                     bb.Add(newWire, startEdge);
                     RemoveEdgeFromMap(startEdge, vEmap);
-                    var splittingVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    var splittingVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
 
                     double        fpar, lpar;
                     Curve2D? startPCurve = Tool.CurveOnSurface(startEdge, F_RefFace, out fpar, out lpar);
@@ -1105,9 +1106,9 @@ public partial class UnifySameDomain : Transient
 
                         var elist = new NCollection_List<Shape>();
                         // const NCollection_List<TopoDS_Shape>& Elist = VEmap.FindFromKey(CurVertex);
-                        if (vEmap.Contains(curVertex))
+                        if (vEmap.ContainsKey(curVertex))
                         {
-                            elist = new NCollection_List<Shape>(vEmap.FindFromKey(curVertex));
+                            elist = new NCollection_List<Shape>(vEmap.GetValue(curVertex));
                         }
                         var itl = new NCollection_List<Shape>.Iterator(elist);
                         if (elist.IsEmpty())
@@ -1364,7 +1365,7 @@ public partial class UnifySameDomain : Transient
                     else // may be this wire is a hole
                     {
                         // split this wire if needed
-                        if (!splittingVertices.IsEmpty())
+                        if (splittingVertices.Count != 0)
                         {
                             SplitWire(newWire, F_RefFace, splittingVertices, newWires);
                         }
@@ -1382,16 +1383,16 @@ public partial class UnifySameDomain : Transient
 
                 // Build wires from internal edges
                 var intVEmap =
-                  new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-                for (int ii = 1; ii <= internalEdges.Extent(); ii++)
+                  new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                for (int ii = 0; ii < internalEdges.Count; ii++)
                 {
                     Exploration.MapShapesAndAncestors(internalEdges[ii], ShapeType.Vertex, ShapeType.Edge, intVEmap);
                 }
                 var internalWires = new NCollection_Sequence<Shape>();
-                while (!internalEdges.IsEmpty())
+                while (internalEdges.Count != 0)
                 {
-                    Edge firstEdge = ShapeCasts.Edge(internalEdges[1]);
-                    internalEdges.RemoveFromIndex(1);
+                    Edge firstEdge = ShapeCasts.Edge(internalEdges[0]);
+                    internalEdges.RemoveAtSwap(0);
                     RemoveEdgeFromMap(firstEdge, intVEmap);
                     var internalWire = new Wire();
                     bb.MakeWire(ref internalWire);
@@ -1409,7 +1410,7 @@ public partial class UnifySameDomain : Transient
                         bool found = false;
                         for (int ii = 0; ii < 2; ii++)
                         {
-                            NCollection_List<Shape> elist = intVEmap.FindFromKey(vv[ii]);
+                            NCollection_List<Shape> elist = intVEmap.GetValue(vv[ii]);
                             var                            itl   = new NCollection_List<Shape>.Iterator(elist);
                             for (; itl.More(); itl.Next())
                             {
@@ -1419,7 +1420,7 @@ public partial class UnifySameDomain : Transient
                                     continue;
                                 }
                                 found = true;
-                                internalEdges.RemoveKey(anEdge);
+                                internalEdges.Remove(anEdge);
                                 RemoveEdgeFromMap(anEdge, intVEmap);
                                 bb.Add(internalWire, anEdge);
                                 Exploration.Vertices(anEdge, out Vertex v1, out Vertex v2);
@@ -1456,7 +1457,7 @@ public partial class UnifySameDomain : Transient
                     // Update the map Face-NewFace
                     for (int jj = 1; jj <= faces.Length(); jj++)
                     {
-                        _faceNewFace.Bind(faces[jj], result);
+                        _faceNewFace[faces[jj]] = result;
                     }
                 }
                 else if (newFaces.Length() == 1)
@@ -1474,7 +1475,7 @@ public partial class UnifySameDomain : Transient
                     // Update the map Face-NewFace
                     for (int jj = 1; jj <= faces.Length(); jj++)
                     {
-                        _faceNewFace.Bind(faces[jj], newFaces[1]);
+                        _faceNewFace[faces[jj]] = newFaces[1];
                     }
                 }
                 else
@@ -1519,7 +1520,7 @@ public partial class UnifySameDomain : Transient
                         // Update the map Face-NewFace
                         for (int jj = 1; jj <= facesForThisFace.Length(); jj++)
                         {
-                            _faceNewFace.Bind(facesForThisFace[jj], newFaces[ii]);
+                            _faceNewFace[facesForThisFace[jj]] = newFaces[ii];
                         }
                     }
                 }
@@ -1536,15 +1537,15 @@ public partial class UnifySameDomain : Transient
         Shape res = _context.InternalApply(_shape);
         // creating map of edge faces
         var mapEdgeFaces =
-          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+          new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(res, ShapeType.Edge, ShapeType.Face, mapEdgeFaces);
         // creating map of vertex edges
         var mapEdgesVertex =
-          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+          new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndUniqueAncestors(res, ShapeType.Vertex, ShapeType.Edge, mapEdgesVertex);
         // creating map of vertex faces
         var vFmap =
-          new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+          new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndUniqueAncestors(res, ShapeType.Vertex, ShapeType.Face, vFmap);
 
         if (_safeInputMode)
@@ -1554,10 +1555,10 @@ public partial class UnifySameDomain : Transient
 
         // Sequence of the edges of the shape
         var seqEdges = new NCollection_Sequence<Shape>();
-        int nbE      = mapEdgeFaces.Extent();
-        for (int i = 1; i <= nbE; ++i)
+        int nbE      = mapEdgeFaces.Count;
+        for (int i = 0; i < nbE; ++i)
         {
-            seqEdges.Append(mapEdgeFaces.FindKey(i));
+            seqEdges.Append(mapEdgeFaces.KeyAt(i));
         }
 
         // Prepare map of shared vertices (with the number of connected edges greater then 2)
@@ -1566,15 +1567,15 @@ public partial class UnifySameDomain : Transient
         // Merge the edges avoiding removal of the shared vertices
         bool isMerged = MergeSeq(seqEdges, vFmap, sharedVert);
         // Collect faces to rebuild
-        var changedFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var changedFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         if (isMerged)
         {
-            for (int i = 1; i <= nbE; ++i)
+            for (int i = 0; i < nbE; ++i)
             {
-                Shape e = mapEdgeFaces.FindKey(i);
+                Shape e = mapEdgeFaces.KeyAt(i);
                 if (_context.IsRecorded(e))
                 {
-                    var it = new NCollection_List<Shape>.Iterator(mapEdgeFaces[i]);
+                    var it = new NCollection_List<Shape>.Iterator(mapEdgeFaces.ValueAt(i));
                     for (; it.More(); it.Next())
                     {
                         changedFaces.Add(it.Value());
@@ -1585,9 +1586,9 @@ public partial class UnifySameDomain : Transient
 
         // fix changed faces and replace them in the local context
         double prec = global::Kerf.Engine.Foundation.Precision.Confusion();
-        for (int i = 1; i <= changedFaces.Extent(); i++)
+        for (int i = 0; i < changedFaces.Count; i++)
         {
-            Face face = ShapeCasts.Face(_context.InternalApply(changedFaces.FindKey(i)));
+            Face face = ShapeCasts.Face(_context.InternalApply(changedFaces[i]));
             if (face.IsNull)
             {
                 continue;
@@ -1630,7 +1631,7 @@ public partial class UnifySameDomain : Transient
             _context.Replace(face, newFace);
         }
 
-        if (changedFaces.Extent() > 0)
+        if (changedFaces.Count > 0)
         {
             // fix changed shell and replace it in the local context
             Shape res1     = _context.InternalApply(res);
@@ -1680,24 +1681,24 @@ public partial class UnifySameDomain : Transient
         var usdHistory = new History();
 
         // Map all Vertices, Edges, Faces and Solids in the input shape
-        var mapInputShape = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mapInputShape = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(_initShape, ShapeType.Vertex, mapInputShape);
         Exploration.MapShapes(_initShape, ShapeType.Edge, mapInputShape);
         Exploration.MapShapes(_initShape, ShapeType.Face, mapInputShape);
         Exploration.MapShapes(_initShape, ShapeType.Solid, mapInputShape);
 
         // Map all Vertices, Edges, Faces and Solids in the result shape
-        var mapResultShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mapResultShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(_shape, ShapeType.Vertex, mapResultShapes);
         Exploration.MapShapes(_shape, ShapeType.Edge, mapResultShapes);
         Exploration.MapShapes(_shape, ShapeType.Face, mapResultShapes);
         Exploration.MapShapes(_shape, ShapeType.Solid, mapResultShapes);
 
         // Iterate on all input shapes and get their modifications
-        int i, nb = mapInputShape.Extent();
+        int i, nb = mapInputShape.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape s = mapInputShape[i];
+            Shape s = mapInputShape[i - 1];
 
             // Check the shape itself to be present in the result
             if (mapResultShapes.Contains(s))

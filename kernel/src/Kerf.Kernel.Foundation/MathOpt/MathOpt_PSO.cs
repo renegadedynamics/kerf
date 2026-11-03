@@ -270,7 +270,7 @@ public static partial class MathOpt
                                              math_Vector lowerBounds,
                                              math_Vector upperBounds,
                                              PSOConfig config,
-                                             NCollection_DynamicArray<PSOSeedParticle>? seeds,
+                                             List<PSOSeedParticle>? seeds,
                                              PSOStats? stats = null)
         where Function : IVectorFunction
     {
@@ -308,10 +308,10 @@ public static partial class MathOpt
         // Initialize stats
         PSOStats localStats = new();
 
-        NCollection_DynamicArray<PSO_Particle> swarm = new();
+        List<PSO_Particle> swarm = new();
         for (int partIdx = 0; partIdx < nbParticles; ++partIdx)
         {
-            swarm.Append(new PSO_Particle(lower, upper));
+            swarm.Add(new PSO_Particle(lower, upper));
         }
 
         // Random number generator
@@ -331,7 +331,7 @@ public static partial class MathOpt
         double globalBestValue = double.MaxValue;
 
         // Determine how many particles are seeded
-        int nbSeeds = (seeds is not null) ? seeds.Length() : 0;
+        int nbSeeds = (seeds is not null) ? seeds.Count : 0;
         int seeded = 0;
 
         // Validate seed dimensions and index ranges
@@ -339,7 +339,7 @@ public static partial class MathOpt
         {
             for (int seedIdx = 0; seedIdx < nbSeeds; ++seedIdx)
             {
-                PSOSeedParticle seed = seeds!.Value(seedIdx);
+                PSOSeedParticle seed = seeds![seedIdx];
                 if (seed.Position.Lower() != lower || seed.Position.Upper() != upper)
                 {
                     result.Status = Status.InvalidInput;
@@ -369,8 +369,8 @@ public static partial class MathOpt
             int nbDirect = Min(nbSeeds, nbParticles);
             for (int seedIdx = 0; seedIdx < nbDirect; ++seedIdx)
             {
-                PSO_Particle particle = swarm.ChangeValue(seedIdx);
-                PSOSeedParticle seed = seeds!.Value(seedIdx);
+                PSO_Particle particle = swarm[seedIdx];
+                PSOSeedParticle seed = seeds![seedIdx];
 
                 // Clamp seed position to bounds, track if any coordinate was clamped
                 bool wasClamped = false;
@@ -434,10 +434,10 @@ public static partial class MathOpt
             {
                 for (int partIdx = seeded; partIdx < nbParticles; ++partIdx)
                 {
-                    PSO_Particle particle = swarm.ChangeValue(partIdx);
+                    PSO_Particle particle = swarm[partIdx];
                     // Pick a seed to jitter (round-robin)
                     int srcIdx = partIdx % seeded;
-                    PSOSeedParticle src = seeds!.Value(srcIdx);
+                    PSOSeedParticle src = seeds![srcIdx];
 
                     for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                     {
@@ -470,7 +470,7 @@ public static partial class MathOpt
         // Fill remaining particles randomly
         for (int partIdx = seeded; partIdx < nbParticles; ++partIdx)
         {
-            PSO_Particle particle = swarm.ChangeValue(partIdx);
+            PSO_Particle particle = swarm[partIdx];
             for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
             {
                 particle.Position[dimIdx] = lowerBounds[dimIdx] + rng.NextReal() * range[dimIdx];
@@ -517,7 +517,7 @@ public static partial class MathOpt
             // Update each particle
             for (int partIdx = 0; partIdx < nbParticles; ++partIdx)
             {
-                PSO_Particle particle = swarm.ChangeValue(partIdx);
+                PSO_Particle particle = swarm[partIdx];
 
                 // Update velocity
                 for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
@@ -639,7 +639,7 @@ public static partial class MathOpt
                             int bestIdx = 0;
                             for (int findIdx = 1; findIdx < nbParticles; ++findIdx)
                             {
-                                if (swarm.Value(findIdx).BestValue < swarm.Value(bestIdx).BestValue)
+                                if (swarm[findIdx].BestValue < swarm[bestIdx].BestValue)
                                 {
                                     bestIdx = findIdx;
                                 }
@@ -647,34 +647,34 @@ public static partial class MathOpt
 
                             // Sort by fitness descending (simple selection of worst)
                             // Reinitialize aNbRestart worst particles
-                            NCollection_DynamicArray<int> worstIndices = new();
+                            List<int> worstIndices = new();
                             for (int collIdx = 0; collIdx < nbParticles; ++collIdx)
                             {
                                 if (collIdx != bestIdx)
                                 {
-                                    worstIndices.Append(collIdx);
+                                    worstIndices.Add(collIdx);
                                 }
                             }
                             // Simple approach: sort by BestValue descending, take first aNbRestart
-                            for (int sortOuter = 0; sortOuter < worstIndices.Length() - 1; ++sortOuter)
+                            for (int sortOuter = 0; sortOuter < worstIndices.Count - 1; ++sortOuter)
                             {
-                                for (int sortInner = sortOuter + 1; sortInner < worstIndices.Length();
+                                for (int sortInner = sortOuter + 1; sortInner < worstIndices.Count;
                                      ++sortInner)
                                 {
-                                    if (swarm.Value(worstIndices.Value(sortOuter)).BestValue
-                                        < swarm.Value(worstIndices.Value(sortInner)).BestValue)
+                                    if (swarm[worstIndices[sortOuter]].BestValue
+                                        < swarm[worstIndices[sortInner]].BestValue)
                                     {
-                                        int tmp = worstIndices.Value(sortOuter);
-                                        worstIndices.ChangeValue(sortOuter) = worstIndices.Value(sortInner);
-                                        worstIndices.ChangeValue(sortInner) = tmp;
+                                        int tmp = worstIndices[sortOuter];
+                                        worstIndices[sortOuter] = worstIndices[sortInner];
+                                        worstIndices[sortInner] = tmp;
                                     }
                                 }
                             }
 
-                            int nbToRestart = Min(nbRestart, worstIndices.Length());
+                            int nbToRestart = Min(nbRestart, worstIndices.Count);
                             for (int restIdx = 0; restIdx < nbToRestart; ++restIdx)
                             {
-                                PSO_Particle restartPart = swarm.ChangeValue(worstIndices.Value(restIdx));
+                                PSO_Particle restartPart = swarm[worstIndices[restIdx]];
                                 for (int dimIdx = lower; dimIdx <= upper; ++dimIdx)
                                 {
                                     restartPart.Position[dimIdx] =

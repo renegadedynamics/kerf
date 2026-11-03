@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
@@ -139,7 +140,7 @@ public class BRepLibMeshTests
             Assert.Equal(0.0, Triangulation(aNewF).Deflection());
         }
         // the vertices are the box's own; every edge changed (its polygons refer to the copies)
-        var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Vertex, aVertices);
         for (var anExp = new Explorer(aBox, ShapeType.Vertex); anExp.More(); anExp.Next())
         {

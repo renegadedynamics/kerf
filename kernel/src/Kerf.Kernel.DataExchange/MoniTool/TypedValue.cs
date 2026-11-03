@@ -32,27 +32,27 @@ public class TypedValue : Transient
 
     private static (FrozenDictionary<string, TypedValue> Map, ImmutableArray<string> Names) MakeLib()
     {
-        var lib = new NCollection_DataMap<string, TypedValue>();
+        var lib = new Dictionary<string, TypedValue>();
         TypedValue tv;
         tv = new TypedValue("Integer", MonitorValueType.ValueInteger);
-        lib.Bind("Integer", tv);
+        lib["Integer"] = tv;
         tv = new TypedValue("Real", MonitorValueType.ValueReal);
-        lib.Bind("Real", tv);
+        lib["Real"] = tv;
         tv = new TypedValue("Text", MonitorValueType.ValueText);
-        lib.Bind("Text", tv);
+        lib["Text"] = tv;
         tv = new TypedValue("Transient", MonitorValueType.ValueIdent);
-        lib.Bind("Transient", tv);
+        lib["Transient"] = tv;
         tv = new TypedValue("Boolean", MonitorValueType.ValueEnum);
         tv.AddDef("enum 0"); //    = 0 False  ,  > 0 True
         tv.AddDef("eval False");
         tv.AddDef("eval True");
-        lib.Bind("Boolean", tv);
+        lib["Boolean"] = tv;
         tv = new TypedValue("Logical", MonitorValueType.ValueEnum);
         tv.AddDef("enum -1"); //    < 0 False  ,  = 0 Unk  ,  > 0 True
         tv.AddDef("eval False");
         tv.AddDef("eval Unknown");
         tv.AddDef("eval True");
-        lib.Bind("Logical", tv);
+        lib["Logical"] = tv;
         return (lib.ToFrozenDictionary(StringComparer.Ordinal), [.. lib.Keys]);
     }
 
@@ -110,7 +110,7 @@ public class TypedValue : Transient
         _theival = other.IntegerValue();
         _thehval = other.HStringValue();
         _theoval = other.ObjectValue();
-        other.Internals(out _theinterp, out _thesatisf, out string satisname, out NCollection_DataMap<string, int> eadds);
+        other.Internals(out _theinterp, out _thesatisf, out string satisname, out Dictionary<string, int> eadds);
         _thesatisn += satisname;
 
         if (other.IntegerLimit(false, out _theintlow))
@@ -151,11 +151,11 @@ public class TypedValue : Transient
             }
         }
         //  dupliquer theeadds
-        if (!eadds.IsEmpty())
+        if (eadds.Count != 0)
         {
             foreach (KeyValuePair<string, int> itad in eadds)
             {
-                _theeadds.Bind(itad.Key, itad.Value);
+                _theeadds[itad.Key] = itad.Value;
             }
         }
 
@@ -187,7 +187,7 @@ public class TypedValue : Transient
         _therealup = other._therealup;
         _theunidef = other._theunidef;
         _theenums = other._theenums is null ? null : new NCollection_HArray1<string>(other._theenums);
-        _theeadds = new NCollection_DataMap<string, int>(other._theeadds);
+        _theeadds = new Dictionary<string, int>(other._theeadds,other._theeadds.Comparer);
         _theinterp = other._theinterp;
         _thesatisf = other._thesatisf;
         _thesatisn = other._thesatisn;
@@ -199,12 +199,12 @@ public class TypedValue : Transient
     /// <summary>
     /// Access to internal data which have no other access
     /// </summary>
-    public void Internals(out MonitorValueInterpret interp, out MonitorValueSatisfies satisf, out string satisname, out NCollection_DataMap<string, int> enums)
+    public void Internals(out MonitorValueInterpret interp, out MonitorValueSatisfies satisf, out string satisname, out Dictionary<string, int> enums)
     {
         interp = _theinterp;
         satisf = _thesatisf;
         satisname = _thesatisn;
-        enums = new NCollection_DataMap<string, int>(_theeadds); // a copy, as C++'s assignment
+        enums = new Dictionary<string, int>(_theeadds,_theeadds.Comparer); // a copy, as C++'s assignment
     }
 
     /// <summary>
@@ -289,7 +289,7 @@ public class TypedValue : Transient
                     mess = Sprintf(" %d:%s", i, enva);
                     def += mess;
                 }
-                if (!_theeadds.IsEmpty())
+                if (_theeadds.Count != 0)
                 {
                     def += " , alpha: ";
                     // OCCT.NET: the map iterates in insertion order where OCCT's iterates in hash order (decision 1181)
@@ -673,61 +673,61 @@ public class TypedValue : Transient
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v1));
-            _theeadds.Bind(v1, _theintup);
+            _theeadds[v1] = _theintup;
         }
         if (v2.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v2));
-            _theeadds.Bind(v2, _theintup);
+            _theeadds[v2] = _theintup;
         }
         if (v3.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v3));
-            _theeadds.Bind(v3, _theintup);
+            _theeadds[v3] = _theintup;
         }
         if (v4.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v4));
-            _theeadds.Bind(v4, _theintup);
+            _theeadds[v4] = _theintup;
         }
         if (v5.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v5));
-            _theeadds.Bind(v5, _theintup);
+            _theeadds[v5] = _theintup;
         }
         if (v6.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v6));
-            _theeadds.Bind(v6, _theintup);
+            _theeadds[v6] = _theintup;
         }
         if (v7.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v7));
-            _theeadds.Bind(v7, _theintup);
+            _theeadds[v7] = _theintup;
         }
         if (v8.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v8));
-            _theeadds.Bind(v8, _theintup);
+            _theeadds[v8] = _theintup;
         }
         if (v9.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v9));
-            _theeadds.Bind(v9, _theintup);
+            _theeadds[v9] = _theintup;
         }
         if (v10.Length > 0)
         {
             _theintup++;
             _theenums.SetValue(_theintup, (v10));
-            _theeadds.Bind(v10, _theintup);
+            _theeadds[v10] = _theintup;
         }
     }
 
@@ -776,7 +776,7 @@ public class TypedValue : Transient
         }
         //    We ALSO put in the dictionary
         //  else {
-        _theeadds.Bind(val, num);
+        _theeadds[val] = num;
         //  }
     }
 
@@ -832,9 +832,9 @@ public class TypedValue : Transient
             }
         }
         //  cas additionnel ?
-        if (!_theeadds.IsEmpty())
+        if (_theeadds.Count != 0)
         {
-            if (_theeadds.Find(val, out i))
+            if (_theeadds.TryGetValue(val, out i))
             {
                 return i;
             }
@@ -1374,7 +1374,7 @@ public class TypedValue : Transient
     private double _therealup;
     private string _theunidef = "";
     private NCollection_HArray1<string>? _theenums;
-    private NCollection_DataMap<string, int> _theeadds = new();
+    private Dictionary<string, int> _theeadds = new();
     private MonitorValueInterpret? _theinterp;
     private MonitorValueSatisfies? _thesatisf;
     private string _thesatisn = "";

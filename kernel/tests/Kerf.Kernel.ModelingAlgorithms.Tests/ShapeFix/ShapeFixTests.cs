@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Checks;
@@ -142,8 +143,8 @@ public class ShapeFixTests
         Shape aC = TwoEdgesOnATolerantVertex();
         var aContext = new ReShapeBuilder();
         Assert.True(ShapeFixFixer.FixVertexPosition(ref aC, 0.1, aContext));
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aC, ShapeType.Vertex, aMap);
-        Assert.Equal(4, aMap.Extent());
+        Assert.Equal(4, aMap.Count);
     }
 }

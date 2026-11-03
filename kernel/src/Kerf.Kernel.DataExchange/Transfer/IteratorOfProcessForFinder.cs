@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 
@@ -67,10 +68,10 @@ public class IteratorOfProcessForFinder : TransferIterator
             return;
         }
         Binder? factice = null;
-        var amap = new NCollection_IndexedDataMap<Finder, Binder?>(FindHasher.Instance);
+        var amap = new IndexedMap<Finder, Binder?>(FindHasher.Instance);
         for (i = 1; i <= nb; i++)
         {
-            j = amap.Add(_thestarts.Value(i), factice);
+            j = amap.Add(_thestarts.Value(i), factice) + 1;
             SelectItem(j, !keep);
         }
 
@@ -78,7 +79,7 @@ public class IteratorOfProcessForFinder : TransferIterator
         nb = list.Length();
         for (i = 1; i <= nb; i++)
         {
-            j = amap.FindIndex(list.Value(i));
+            j = amap.IndexOf(list.Value(i)) + 1;
             if (j > 0)
             {
                 SelectItem(j, keep);

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Sweeping;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -37,7 +38,7 @@ public sealed class LocalRevol
     private Shape _res = new();
     private Shape _firstShape = new();
     private Shape _lastShape = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
     private WorkingShapes _work = new();
 
     public LocalRevol()
@@ -106,14 +107,14 @@ public sealed class LocalRevol
             for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge edg = ShapeCasts.Edge(exp.Current());
-                if (!_map.IsBound(edg))
+                if (!_map.ContainsKey(edg))
                 {
                     NCollection_List<Shape> thelist = new();
-                    _map.Bind(edg, thelist);
+                    _map[edg] = thelist;
                     Shape desc = theRevol.Shape(edg);
                     if (!desc.IsNull)
                     {
-                        _map[edg].Append(desc);
+                        _map.GetValue(edg).Append(desc);
                     }
                 }
             }
@@ -123,25 +124,25 @@ public sealed class LocalRevol
         else
         {
             // Cas base != FACE
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(theBase, ShapeType.Edge, ShapeType.Face, theEFMap);
             NCollection_List<Shape> lfaces = new();
             bool toremove = false;
-            for (int i = 1; i <= theEFMap.Extent(); i++)
+            for (int i = 0; i < theEFMap.Count; i++)
             {
-                Shape edg = theEFMap.FindKey(i);
+                Shape edg = theEFMap.KeyAt(i);
                 NCollection_List<Shape> thelist1 = new();
-                _map.Bind(edg, thelist1);
+                _map[edg] = thelist1;
                 Shape desc = theRevol.Shape(edg);
                 if (!desc.IsNull)
                 {
-                    if (theEFMap[i].Extent() >= 2)
+                    if (theEFMap.ValueAt(i).Extent() >= 2)
                     {
                         toremove = true;
                     }
                     else
                     {
-                        _map[edg].Append(desc);
+                        _map.GetValue(edg).Append(desc);
                         lfaces.Append(desc);
                     }
                 }
@@ -166,14 +167,14 @@ public sealed class LocalRevol
                 for (exp.Init(theBase, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     Edge edg = ShapeCasts.Edge(exp.Current());
-                    if (!_map.IsBound(edg))
+                    if (!_map.ContainsKey(edg))
                     {
                         NCollection_List<Shape> thelist2 = new();
-                        _map.Bind(edg, thelist2);
+                        _map[edg] = thelist2;
                         Shape desc = theRevol.Shape(edg);
                         if (!desc.IsNull)
                         {
-                            _map[edg].Append(desc);
+                            _map.GetValue(edg).Append(desc);
                         }
                     }
                 }
@@ -189,10 +190,10 @@ public sealed class LocalRevol
             {
                 Edge edg = ShapeCasts.Edge(anExp.Current());
                 Edge edgbis = ShapeCasts.Edge(modif.InternalModifiedShape(edg));
-                if (!edgbis.IsSame(edg) && _map.IsBound(edgbis))
+                if (!edgbis.IsSame(edg) && _map.ContainsKey(edgbis))
                 {
-                    _map.Bind(edg, _map[edgbis]);
-                    _map.UnBind(edgbis);
+                    _map[edg] = _map.GetValue(edgbis);
+                    _map.Remove(edgbis);
                 }
             }
         }
@@ -211,7 +212,7 @@ public sealed class LocalRevol
             _lastShape = _work.Final(_lastShape);
             foreach (Shape key in _map.Keys.ToList())
             {
-                _map[key] = _work.Final(_map[key]);
+                _map.GetValueRef(key) = _work.Final(_map.GetValue(key));
             }
         }
         _done = true;
@@ -246,7 +247,7 @@ public sealed class LocalRevol
     public NCollection_List<Shape> Shapes(in Shape s) => WorkingShapes.Published(InternalShapes(s));
 
     /// <summary><see cref="Shapes"/> without freezing, for ported code.</summary>
-    internal NCollection_List<Shape> InternalShapes(in Shape s) => _map[s];
+    internal NCollection_List<Shape> InternalShapes(in Shape s) => _map.GetValue(s);
 
     /// <summary>The circles around the axis through sample points of the first shape's edges.</summary>
     public void Curves(NCollection_Sequence<Curve3D> scurves)

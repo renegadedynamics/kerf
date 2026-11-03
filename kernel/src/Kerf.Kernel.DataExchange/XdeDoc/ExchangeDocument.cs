@@ -3,6 +3,7 @@
 // so that code ported from STEPCAFControl and the XDE Draw commands can call them in place of the tools'.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -68,7 +69,7 @@ public sealed class ExchangeDocument
         public List<int>? Layers;            // layer labels (a shape's), in order
         public List<int>? LayerShapes;       // shape labels (a layer's), in order
 
-        public NCollection_IndexedMap<Shape>? SubShapeMap; // XCAFDoc_ShapeMapTool's map
+        public IndexedSet<Shape>? SubShapeMap; // XCAFDoc_ShapeMapTool's map
         public Dictionary<Shape, int>? SubShapeLabels;      // sub-shape children by shape
 
         public ColorWithAlpha? Color;    // a colour label's colour (XCAFDoc_Color)
@@ -253,14 +254,14 @@ public sealed class ExchangeDocument
     /// </summary>
     public bool IsSubShape(in Label shapeLabel, in Shape sub)
     {
-        NCollection_IndexedMap<Shape>? map = SubShapeMap(this.Index(shapeLabel));
+        IndexedSet<Shape>? map = SubShapeMap(this.Index(shapeLabel));
         return map is not null && map.Contains(sub);
     }
 
     /// <summary>True if the label refers to external files (<c>XCAFDoc_ShapeTool::IsExternRef</c>).</summary>
     public bool IsExternRef(in Label label) => IsMine(label) && NodeOf(label).Attributes.ExternRefs.Length > 0;
 
-    private NCollection_IndexedMap<Shape>? SubShapeMap(int index)
+    private IndexedSet<Shape>? SubShapeMap(int index)
     {
         Node node = _nodes[index];
         if (node.SubShapeMap is null)
@@ -270,7 +271,7 @@ public sealed class ExchangeDocument
             {
                 return null;
             }
-            node.SubShapeMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            node.SubShapeMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             // XCAFDoc_ShapeMapTool::SetShape: the shape's sub-shapes, not the shape (unit 8G2's fix)
             for (var it = new Iterator(shape); it.More(); it.Next())
             {
@@ -281,7 +282,7 @@ public sealed class ExchangeDocument
     }
 
     // XCAFDoc_ShapeMapTool's AddSubShape: the shape and its sub-shapes, with their locations in it
-    private static void AddSubShapes(in Shape shape, NCollection_IndexedMap<Shape> map)
+    private static void AddSubShapes(in Shape shape, IndexedSet<Shape> map)
     {
         var stack = new Stack<Shape>();
         stack.Push(shape);
@@ -643,10 +644,10 @@ public sealed class ExchangeDocument
         }
         if (!_nodes[shapeIndex].IsAssembly)
         {
-            NCollection_IndexedMap<Shape> map = SubShapeMap(shapeIndex)!;
-            for (int i = 1; i <= map.Extent(); i++)
+            IndexedSet<Shape> map = SubShapeMap(shapeIndex)!;
+            for (int i = 0; i < map.Count; i++)
             {
-                Shape sub = map.FindKey(i);
+                Shape sub = map[i];
                 _subShapes[sub] = shapeIndex;
                 if (!sub.Location().IsIdentity)
                 {
@@ -1922,10 +1923,10 @@ public sealed class ExchangeDocument
                     (node.SubShapeLabels ??= new(ShapeHasher.Instance)).TryAdd(sub.Shape, subIndex);
                     doc.SetAttributes(doc.Label(subIndex), sub.Attributes);
                 }
-                NCollection_IndexedMap<Shape> map = doc.SubShapeMap(index)!;
-                for (int i = 1; i <= map.Extent(); i++)
+                IndexedSet<Shape> map = doc.SubShapeMap(index)!;
+                for (int i = 0; i < map.Count; i++)
                 {
-                    doc._subShapes.TryAdd(map.FindKey(i), index);
+                    doc._subShapes.TryAdd(map[i], index);
                 }
             }
             doc._shapeLabels.TryAdd(product.Shape, index);

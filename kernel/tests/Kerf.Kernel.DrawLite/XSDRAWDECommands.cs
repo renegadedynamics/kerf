@@ -566,7 +566,7 @@ internal static class XSDRAWDECommands
             aReader.SetPropsMode(myStep.ReadProps);
             aReader.SetMetaMode(myStep.ReadMetadata);
             aReader.SetProductMetaMode(myStep.ReadProductMetadata);
-            aReader.SetShapeFixParameters(myStepShapeFix, new NCollection_DataMap<string, string>());
+            aReader.SetShapeFixParameters(myStepShapeFix, new Dictionary<string, string>());
             theDocument.SetLengthUnit(myLengthUnit / 1000.0, global::Kerf.Engine.Exchange.Framework.UnitsMethods.DumpLengthUnit(myLengthUnit, global::Kerf.Engine.Exchange.Framework.FrameworkLengthUnit.LengthUnit_Millimeter));
 
             ReturnStatus aReadStat = theDI.Files.TryReadBytes(thePath, out byte[] aBytes)
@@ -619,7 +619,7 @@ internal static class XSDRAWDECommands
             aWriter.SetMaterialMode(myStep.WriteMaterial);
             aWriter.SetVisualMaterialMode(myStep.WriteVisMaterial);
             aWriter.SetCleanDuplicates(myStep.CleanDuplicates);
-            aWriter.SetShapeFixParameters(myStepShapeFix, new NCollection_DataMap<string, string>());
+            aWriter.SetShapeFixParameters(myStepShapeFix, new Dictionary<string, string>());
             var aModel = (StepModel)aWriter.Writer().WS()!.Model()!;
             if (theDocument.GetLengthUnit(out double aUnitM))
             {

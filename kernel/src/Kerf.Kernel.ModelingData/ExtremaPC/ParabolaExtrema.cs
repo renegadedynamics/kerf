@@ -181,9 +181,9 @@ public sealed class ParabolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ext
 
             // Check for duplicates
             bool duplicate = false;
-            for (int j = 0; j < _result._extrema.Length(); ++j)
+            for (int j = 0; j < _result._extrema.Count; ++j)
             {
-                if (curvePt.SquareDistance(_result._extrema.Value(j).Point) < tol2)
+                if (curvePt.SquareDistance(_result._extrema[j].Point) < tol2)
                 {
                     duplicate = true;
                     break;
@@ -222,7 +222,7 @@ public sealed class ParabolaExtrema : global::Kerf.Engine.Extrema.PointCurve.Ext
             ext.SquareDistance = sqDist;
             ext.IsMinimum = isMin;
 
-            _result._extrema.Append(ext);
+            _result._extrema.Add(ext);
         }
 
         _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;

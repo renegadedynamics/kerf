@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
@@ -20,7 +21,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// </summary>
 public class BinaryLocationSet
 {
-    private readonly NCollection_IndexedMap<Placement> _map = new();
+    private readonly IndexedSet<Placement> _map = new();
 
     /// <summary>An empty set of locations.</summary>
     public BinaryLocationSet()
@@ -41,7 +42,7 @@ public class BinaryLocationSet
             return 0;
         }
 
-        int n = _map.FindIndex(l);
+        int n = _map.IndexOf(l) + 1;
         if (n > 0)
         {
             return n;
@@ -54,7 +55,7 @@ public class BinaryLocationSet
             N = N.NextLocation();
         } while (!N.IsIdentity);
 
-        return _map.Add(l);
+        return _map.Add(l) + 1;
     }
 
     /// <summary>The location of index I; the identity for 0.</summary>
@@ -66,7 +67,7 @@ public class BinaryLocationSet
         }
         else
         {
-            return _map[i];
+            return _map[i - 1];
         }
     }
 
@@ -78,11 +79,11 @@ public class BinaryLocationSet
             return 0;
         }
 
-        return _map.FindIndex(l);
+        return _map.IndexOf(l) + 1;
     }
 
     /// <summary>The number of locations.</summary>
-    public int LocationCount => _map.Extent();
+    public int LocationCount => _map.Count;
 
     // operator<<(Standard_OStream&, const gp_Trsf&)
     internal static void Write(Stream os, in Transform3D t)
@@ -128,7 +129,7 @@ public class BinaryLocationSet
     /// <summary>Writes the set in the binary format that <see cref="Read(Stream)"/> reads.</summary>
     public void Write(Stream os)
     {
-        int i, nbLoc = _map.Extent();
+        int i, nbLoc = _map.Count;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "Locations ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbLoc);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "\n");
@@ -136,7 +137,7 @@ public class BinaryLocationSet
         {
             for (i = 1; i <= nbLoc; i++)
             {
-                Placement l = _map[i];
+                Placement l = _map[i - 1];
 
                 Placement l2 = l.NextLocation();
                 bool simple = l2.IsIdentity;
@@ -151,14 +152,14 @@ public class BinaryLocationSet
                 else
                 {
                     os.WriteByte(2); // 2
-                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _map.FindIndex(l1));
+                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _map.IndexOf(l1) + 1);
                     global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, p);
                     while (!l2.IsIdentity)
                     {
                         l1 = new Placement(l2.FirstDatum());
                         p = l2.FirstPower();
                         l2 = l2.NextLocation();
-                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _map.FindIndex(l1));
+                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _map.IndexOf(l1) + 1);
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, p);
                     }
 
@@ -213,8 +214,8 @@ public class BinaryLocationSet
                     {
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out p);
                         // OCCT.NET: untrusted input: OCCT reads outside its map
-                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l1, 1, _map.Extent(), "location");
-                        Placement L1 = _map[l1];
+                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l1, 1, _map.Count, "location");
+                        Placement L1 = _map[l1 - 1];
                         l = global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PoweredTimes(L1, p, l);
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l1);
                     }

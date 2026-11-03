@@ -92,7 +92,7 @@ public class ApplySequence
     }
 
     /// <summary>The history: each sub-shape modified, with what it became. Its values are frozen.</summary>
-    public NCollection_DataMap<Shape, Shape> Map() => _context.Map();
+    public Dictionary<Shape, Shape> Map() => _context.Map();
 
     /// <summary>Prints statistics on the history (shells and faces mapped, the preparation ratio) to the messenger.</summary>
     public void PrintPreparationResult()

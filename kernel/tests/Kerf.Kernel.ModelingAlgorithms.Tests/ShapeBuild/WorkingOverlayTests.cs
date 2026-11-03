@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
@@ -24,10 +25,10 @@ public class WorkingOverlayTests
 
     private static List<Shape> SubShapes(in Shape shape, ShapeType type)
     {
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, type, map);
         var list = new List<Shape>();
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 0; i < map.Count; i++)
         {
             list.Add(map[i]);
         }

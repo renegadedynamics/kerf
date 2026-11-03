@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -34,16 +35,16 @@ namespace Kerf.Engine.Healing.Fixes;
 /// </remarks>
 public sealed class EdgeConnectFixer
 {
-    private NCollection_DataMap<Shape, Shape>                   _vertices;
-    private NCollection_DataMap<Shape, NCollection_List<Shape>> _lists;
+    private Dictionary<Shape, Shape>                   _vertices;
+    private Dictionary<Shape, NCollection_List<Shape>> _lists;
 
     // #define POSITION_USES_MEAN_POINT
 
     /// <summary>Empty constructor.</summary>
     public EdgeConnectFixer()
     {
-        _vertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        _lists    = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        _vertices = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
+        _lists    = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
     }
 
     /// <summary>
@@ -57,68 +58,68 @@ public sealed class EdgeConnectFixer
         Vertex theSecondVertex = Exploration.FirstVertex(aSecond, true);
 
         // Make necessary bindings
-        if (_vertices.IsBound(theFirstVertex))
+        if (_vertices.ContainsKey(theFirstVertex))
         {
             // First vertex is bound - find shared vertex
-            Vertex theFirstShared = ShapeCasts.Vertex(_vertices[theFirstVertex]);
-            if (_vertices.IsBound(theSecondVertex))
+            Vertex theFirstShared = ShapeCasts.Vertex(_vertices.GetValue(theFirstVertex));
+            if (_vertices.ContainsKey(theSecondVertex))
             {
                 // Second vertex is bound - find shared vertex
-                Vertex theSecondShared = ShapeCasts.Vertex(_vertices[theSecondVertex]);
+                Vertex theSecondShared = ShapeCasts.Vertex(_vertices.GetValue(theSecondVertex));
                 if (!theFirstShared.IsSame(theSecondShared))
                 {
                     // Concatenate lists
-                    NCollection_List<Shape> theFirstList  = _lists[theFirstShared];
-                    NCollection_List<Shape> theSecondList = _lists[theSecondShared];
+                    NCollection_List<Shape> theFirstList  = _lists.GetValue(theFirstShared);
+                    NCollection_List<Shape> theSecondList = _lists.GetValue(theSecondShared);
                     for (var theIterator = new NCollection_List<Shape>.Iterator(theSecondList);
                          theIterator.More();
                          theIterator.Next())
                     {
                         // Rebind shared vertex for current one
-                        _vertices[theIterator.Value()] = theFirstShared;
+                        _vertices.GetValueRef(theIterator.Value()) = theFirstShared;
                         // Skip the following edge
                         theIterator.Next();
                     }
                     // Append second list to the first one
                     theFirstList.Append(theSecondList);
                     // Unbind the second shared vertex
-                    _lists.UnBind(theSecondShared);
+                    _lists.Remove(theSecondShared);
                 }
             }
             else
             {
                 // Bind second vertex with shared vertex of the first one
-                _vertices.Bind(theSecondVertex, theFirstShared);
+                _vertices[theSecondVertex] = theFirstShared;
                 // Add second vertex and second edge to the list
-                NCollection_List<Shape> theFirstList = _lists[theFirstShared];
+                NCollection_List<Shape> theFirstList = _lists.GetValue(theFirstShared);
                 theFirstList.Append(theSecondVertex);
                 theFirstList.Append(aSecond);
             }
         }
         else
         {
-            if (_vertices.IsBound(theSecondVertex))
+            if (_vertices.ContainsKey(theSecondVertex))
             {
                 // Second vertex is bound - find shared vertex
-                Vertex theSecondShared = ShapeCasts.Vertex(_vertices[theSecondVertex]);
+                Vertex theSecondShared = ShapeCasts.Vertex(_vertices.GetValue(theSecondVertex));
                 // Bind first vertex with shared vertex of the second one
-                _vertices.Bind(theFirstVertex, theSecondShared);
+                _vertices[theFirstVertex] = theSecondShared;
                 // Add first vertex and first edge to the list
-                NCollection_List<Shape> theSecondList = _lists[theSecondShared];
+                NCollection_List<Shape> theSecondList = _lists.GetValue(theSecondShared);
                 theSecondList.Append(theFirstVertex);
                 theSecondList.Append(aFirst);
             }
             else
             {
                 // None is bound - create new bindings
-                _vertices.Bind(theFirstVertex, theFirstVertex);
-                _vertices.Bind(theSecondVertex, theFirstVertex);
+                _vertices[theFirstVertex] = theFirstVertex;
+                _vertices[theSecondVertex] = theFirstVertex;
                 var theNewList = new NCollection_List<Shape>();
                 theNewList.Append(theFirstVertex);
                 theNewList.Append(aFirst);
                 theNewList.Append(theSecondVertex);
                 theNewList.Append(aSecond);
-                _lists.Bind(theFirstVertex, theNewList);
+                _lists[theFirstVertex] = theNewList;
             }
         }
     }
@@ -356,12 +357,12 @@ public sealed class EdgeConnectFixer
         Shape work = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
         if (copies is not null)
         {
-            var vertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+            var vertices = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
             foreach (KeyValuePair<Shape, Shape> pair in _vertices)
             {
-                vertices.Bind(WorkingOverlay.CopiedIn(pair.Key, copies), WorkingOverlay.CopiedIn(pair.Value, copies));
+                vertices[WorkingOverlay.CopiedIn(pair.Key, copies)] = WorkingOverlay.CopiedIn(pair.Value, copies);
             }
-            var lists = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var lists = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> pair in _lists)
             {
                 var list = new NCollection_List<Shape>();
@@ -369,7 +370,7 @@ public sealed class EdgeConnectFixer
                 {
                     list.Append(WorkingOverlay.CopiedIn(it.Value(), copies));
                 }
-                lists.Bind(WorkingOverlay.CopiedIn(pair.Key, copies), list);
+                lists[WorkingOverlay.CopiedIn(pair.Key, copies)] = list;
             }
             _vertices = vertices;
             _lists    = lists;

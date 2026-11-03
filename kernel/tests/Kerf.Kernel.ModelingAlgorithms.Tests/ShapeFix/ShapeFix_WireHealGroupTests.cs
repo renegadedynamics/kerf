@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Extend;
@@ -86,12 +87,12 @@ public class ShapeFix_WireHealGroupTests(ITestOutputHelper output)
             var aSnap = ShapeSnapshot.Of(aShape);
             aShapes++;
 
-            var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aShape, ShapeType.Face, aFaces);
-            int aStep = Math.Max(1, aFaces.Extent() / 40);
-            for (int f = 1; f <= aFaces.Extent(); f += aStep)
+            int aStep = Math.Max(1, aFaces.Count / 40);
+            for (int f = 1; f <= aFaces.Count; f += aStep)
             {
-                Face aFace = ShapeCasts.Face(aFaces[f]);
+                Face aFace = ShapeCasts.Face(aFaces[f - 1]);
                 for (var anIt = new Iterator(aFace); anIt.More(); anIt.Next())
                 {
                     if (anIt.Value().ShapeType() != ShapeType.Wire)

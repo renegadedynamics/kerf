@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
@@ -43,16 +44,16 @@ internal sealed class MeshTestCheckTopology(Shape theShape)
     /// <summary>Performs the checks; "face N has no triangulation" lines go to <paramref name="di"/>.</summary>
     public void Perform(DrawResult di)
     {
-        var aMapF = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
-        var aMapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMapF = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMapEF = new IndexedMap<Shape, NCollection_List<Shape>>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(myShape, ShapeType.Face, aMapF);
         global::Kerf.Engine.Topology.Exploration.MapShapesAndAncestors(myShape, ShapeType.Edge, ShapeType.Face, aMapEF);
 
         // check polygons
-        for (int ie = 1; ie <= aMapEF.Extent(); ie++)
+        for (int ie = 1; ie <= aMapEF.Count; ie++)
         {
-            Edge aEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(aMapEF.FindKey(ie));
-            NCollection_List<Shape> aFaces = aMapEF.FindFromIndex(ie);
+            Edge aEdge = global::Kerf.Engine.Topology.ShapeCasts.Edge(aMapEF.KeyAt(ie - 1));
+            NCollection_List<Shape> aFaces = aMapEF.ValueAt(ie - 1);
             if (aFaces.Extent() < 2)
             {
                 continue;
@@ -94,8 +95,8 @@ internal sealed class MeshTestCheckTopology(Shape theShape)
                 // check distances between corresponding points
                 double aSqDefle = Tool.Tolerance(aEdge);
                 aSqDefle *= aSqDefle;
-                int iF1 = aMapF.FindIndex(aFace1);
-                int iF2 = aMapF.FindIndex(aFace2);
+                int iF1 = aMapF.IndexOf(aFace1) + 1;
+                int iF2 = aMapF.IndexOf(aFace2) + 1;
                 int i1 = aNodes1.Lower();
                 int i2 = aNodes2.Lower();
                 Transform3D aTrsf1 = aFace1.Location().Transformation();
@@ -119,9 +120,9 @@ internal sealed class MeshTestCheckTopology(Shape theShape)
         }
 
         // check triangulations
-        for (int iF = 1; iF <= aMapF.Extent(); iF++)
+        for (int iF = 1; iF <= aMapF.Count; iF++)
         {
-            Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF.FindKey(iF));
+            Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF[iF - 1]);
             Triangulation? aT = Tool.Triangulation(aFace, out Placement aLoc);
             if (aT is null)
             {

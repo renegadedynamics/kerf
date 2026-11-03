@@ -16,6 +16,7 @@ using Kerf.Engine.Intersection.TwoD;
 using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Engine.Intersection.Patches.PatchLineType;
@@ -140,7 +141,7 @@ public partial class IntSS
     }
 
     private static void GetSegmentBoundary(in IntersectionSegment2D segm, Curve2D curve,
-                                           NCollection_DynamicArray<double> arrayOfParameters)
+                                           List<double> arrayOfParameters)
     {
         double u1 = curve.FirstParameter(), u2 = curve.LastParameter();
 
@@ -156,13 +157,13 @@ public partial class IntSS
             u2 = ipl.ParamOnFirst();
         }
 
-        arrayOfParameters.Append(u1);
-        arrayOfParameters.Append(u2);
+        arrayOfParameters.Add(u1);
+        arrayOfParameters.Add(u2);
     }
 
     private static void IntersectCurveAndBoundary(Curve2D? c2d, Curve2D?[] arrBounds,
                                                   int numberOfCurves, double tol,
-                                                  NCollection_DynamicArray<double> arrayOfParameters)
+                                                  List<double> arrayOfParameters)
     {
         if (c2d is null)
         {
@@ -188,7 +189,7 @@ public partial class IntSS
             for (int pntID = 1; pntID <= intCC2d.PointCount; pntID++)
             {
                 double param = intCC2d.Point(pntID).ParamOnFirst();
-                arrayOfParameters.Append(param);
+                arrayOfParameters.Add(param);
             }
 
             for (int segmID = 1; segmID <= intCC2d.SegmentCount; segmID++)
@@ -953,15 +954,15 @@ public partial class IntSS
                 box2.Add(new Point2D(u2f, v2f));
                 box2.Add(new Point2D(u2l, v2l));
 
-                NCollection_DynamicArray<double> arrayOfParameters = new();
+                List<double> arrayOfParameters = new();
 
                 // We consider here that the intersection line is same-parameter-line
-                arrayOfParameters.Append(c3d.FirstParameter());
-                arrayOfParameters.Append(c3d.LastParameter());
+                arrayOfParameters.Add(c3d.FirstParameter());
+                arrayOfParameters.Add(c3d.LastParameter());
 
                 TrimILineOnSurfBoundaries(c2d1, c2d2, box1, box2, arrayOfParameters);
 
-                int nbIntersSolutionsm1 = arrayOfParameters.Length() - 1;
+                int nbIntersSolutionsm1 = arrayOfParameters.Count - 1;
 
                 // Trim RLine found.
                 for (int ind = 0; ind < nbIntersSolutionsm1; ind++)
@@ -1239,7 +1240,7 @@ public partial class IntSS
     /// </summary>
     public static void TrimILineOnSurfBoundaries(Curve2D? c2d1, Curve2D? c2d2, in Box2d bound1,
                                                  in Box2d bound2,
-                                                 NCollection_DynamicArray<double> arrayOfParameters)
+                                                 List<double> arrayOfParameters)
     {
         // Rectangular boundaries of two surfaces: [0]:U=Ufirst, [1]:U=Ulast,
         //                                         [2]:V=Vfirst, [3]:V=Vlast
@@ -1346,7 +1347,7 @@ public partial class IntSS
         IntersectCurveAndBoundary(c2d2, curS2Bounds, numberOfCurves, intTol, arrayOfParameters);
 
         // MSVC's order (decision 621): only 0.0 and -0.0 tie.
-        Sorting.Sort(arrayOfParameters.AsSpan(), new DoubleLess());
+        Sorting.Sort(CollectionsMarshal.AsSpan(arrayOfParameters), new DoubleLess());
     }
 
     /// <summary>The degree-1 B-spline through the points ideb to ifin of the walking line (knots 0, 1, 2, ...).</summary>

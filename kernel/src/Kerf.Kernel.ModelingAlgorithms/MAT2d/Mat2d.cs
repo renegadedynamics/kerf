@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Occt;
 
 namespace Kerf.Engine.Offsets.MedialAxis;
@@ -28,10 +29,10 @@ public sealed class Mat2d
     private bool _semiInfinite;
     private MedialListOfEdge? _theedgelist;
     private MedialListOfEdge? _removedEdgesList;
-    private readonly NCollection_DataMap<int, int> _typeofbisectortoremove = new();
-    private readonly NCollection_DataMap<int, MedialBisector> _bisectoronetoremove = new();
-    private readonly NCollection_DataMap<int, MedialBisector> _bisectortwotoremove = new();
-    private readonly NCollection_DataMap<int, MedialBisector> _bisectormap = new();
+    private readonly Dictionary<int, int> _typeofbisectortoremove = new();
+    private readonly Dictionary<int, MedialBisector> _bisectoronetoremove = new();
+    private readonly Dictionary<int, MedialBisector> _bisectortwotoremove = new();
+    private readonly Dictionary<int, MedialBisector> _bisectormap = new();
     private MedialListOfBisector? _roots;
     private bool _isDone;
 
@@ -111,32 +112,32 @@ public sealed class Mat2d
 
         for (i = 0; i < _theedgelist.Number() - 1; i++)
         {
-            _bisectormap.Bind(i, new MedialBisector());
-            _bisectormap[i].IndexNumber(i);
-            _bisectormap[i].FirstEdge(_theedgelist.Current());
-            _bisectormap[i].FirstVector(atool.TangentBefore(_theedgelist.Current().EdgeNumber(), _isOpenResult));
+            _bisectormap[i] = new MedialBisector();
+            _bisectormap.GetValue(i).IndexNumber(i);
+            _bisectormap.GetValue(i).FirstEdge(_theedgelist.Current());
+            _bisectormap.GetValue(i).FirstVector(atool.TangentBefore(_theedgelist.Current().EdgeNumber(), _isOpenResult));
             _theedgelist.Next();
-            _bisectormap[i].SecondEdge(_theedgelist.Current());
-            _bisectormap[i].IssuePoint(atool.FirstPoint(_theedgelist.Current().EdgeNumber(), out dist));
-            _bisectormap[i].DistIssuePoint(dist);
-            _bisectormap[i].SecondVector(atool.TangentAfter(_theedgelist.Current().EdgeNumber(), _isOpenResult));
+            _bisectormap.GetValue(i).SecondEdge(_theedgelist.Current());
+            _bisectormap.GetValue(i).IssuePoint(atool.FirstPoint(_theedgelist.Current().EdgeNumber(), out dist));
+            _bisectormap.GetValue(i).DistIssuePoint(dist);
+            _bisectormap.GetValue(i).SecondVector(atool.TangentAfter(_theedgelist.Current().EdgeNumber(), _isOpenResult));
         }
 
         // The two bisectors of each edge.
         _theedgelist.First();
-        _theedgelist.Current().FirstBisector(_bisectormap[0]);
-        _theedgelist.Current().SecondBisector(_bisectormap[0]);
+        _theedgelist.Current().FirstBisector(_bisectormap.GetValue(0));
+        _theedgelist.Current().SecondBisector(_bisectormap.GetValue(0));
         _theedgelist.Next();
 
         for (i = 1; i < _theedgelist.Number() - 1; i++)
         {
-            _theedgelist.Current().FirstBisector(_bisectormap[i - 1]);
-            _theedgelist.Current().SecondBisector(_bisectormap[i]);
+            _theedgelist.Current().FirstBisector(_bisectormap.GetValue(i - 1));
+            _theedgelist.Current().SecondBisector(_bisectormap.GetValue(i));
             _theedgelist.Next();
         }
 
-        _theedgelist.Current().FirstBisector(_bisectormap[_theedgelist.Number() - 2]);
-        _theedgelist.Current().SecondBisector(_bisectormap[_theedgelist.Number() - 2]);
+        _theedgelist.Current().FirstBisector(_bisectormap.GetValue(_theedgelist.Number() - 2));
+        _theedgelist.Current().SecondBisector(_bisectormap.GetValue(_theedgelist.Number() - 2));
 
         //===========================================================================
         //                         Main loop   (step 2)
@@ -148,7 +149,7 @@ public sealed class Mat2d
             // The geometries of the bisectors, through the tool. (step 2.1)
             for (i = beginbisector; i < noofbisectors; i++)
             {
-                atool.CreateBisector(_bisectormap[i]);
+                atool.CreateBisector(_bisectormap.GetValue(i));
                 _thenumberofbisectors++;
             }
 
@@ -331,7 +332,7 @@ public sealed class Mat2d
             for (i = 1; i < _theedgelist.Number(); i++)
             {
                 edge = _theedgelist.Current();
-                _bisectormap.Bind(noofbisectors, edge.SecondBisector());
+                _bisectormap[noofbisectors] = edge.SecondBisector();
                 noofbisectors++;
                 _theedgelist.Next();
             }
@@ -413,15 +414,15 @@ public sealed class Mat2d
 
         for (i = 0; i < _theedgelist.Number(); i++)
         {
-            _bisectormap.Bind(i, new MedialBisector());
-            _bisectormap[i].IndexNumber(i);
-            _bisectormap[i].FirstEdge(_theedgelist.Current());
-            _bisectormap[i].FirstVector(atool.TangentBefore(_theedgelist.Current().EdgeNumber(), _isOpenResult));
+            _bisectormap[i] = new MedialBisector();
+            _bisectormap.GetValue(i).IndexNumber(i);
+            _bisectormap.GetValue(i).FirstEdge(_theedgelist.Current());
+            _bisectormap.GetValue(i).FirstVector(atool.TangentBefore(_theedgelist.Current().EdgeNumber(), _isOpenResult));
             _theedgelist.Next();
-            _bisectormap[i].SecondEdge(_theedgelist.Current());
-            _bisectormap[i].IssuePoint(atool.FirstPoint(_theedgelist.Current().EdgeNumber(), out dist));
-            _bisectormap[i].DistIssuePoint(dist);
-            _bisectormap[i].SecondVector(atool.TangentAfter(_theedgelist.Current().EdgeNumber(), _isOpenResult));
+            _bisectormap.GetValue(i).SecondEdge(_theedgelist.Current());
+            _bisectormap.GetValue(i).IssuePoint(atool.FirstPoint(_theedgelist.Current().EdgeNumber(), out dist));
+            _bisectormap.GetValue(i).DistIssuePoint(dist);
+            _bisectormap.GetValue(i).SecondVector(atool.TangentAfter(_theedgelist.Current().EdgeNumber(), _isOpenResult));
         }
 
         // The two bisectors of each edge.
@@ -429,8 +430,8 @@ public sealed class Mat2d
 
         for (i = 0; i < _theedgelist.Number(); i++)
         {
-            _theedgelist.Current().FirstBisector(_bisectormap[(i - 1 + noofbisectors) % noofbisectors]);
-            _theedgelist.Current().SecondBisector(_bisectormap[i]);
+            _theedgelist.Current().FirstBisector(_bisectormap.GetValue((i - 1 + noofbisectors) % noofbisectors));
+            _theedgelist.Current().SecondBisector(_bisectormap.GetValue(i));
             _theedgelist.Next();
         }
 
@@ -445,7 +446,7 @@ public sealed class Mat2d
             int nbBis = noofbisectors - beginbisector;
             for (i = beginbisector; i < noofbisectors; i++)
             {
-                atool.CreateBisector(_bisectormap[i]);
+                atool.CreateBisector(_bisectormap.GetValue(i));
                 _thenumberofbisectors++;
             }
 
@@ -455,8 +456,8 @@ public sealed class Mat2d
                 if (prefNarea == 1)
                 {
                     nbOfNarea1++;
-                    int edge1number = _bisectormap[beginbisector].FirstEdge().EdgeNumber();
-                    int edge2number = _bisectormap[beginbisector].SecondEdge().EdgeNumber();
+                    int edge1number = _bisectormap.GetValue(beginbisector).FirstEdge().EdgeNumber();
+                    int edge2number = _bisectormap.GetValue(beginbisector).SecondEdge().EdgeNumber();
                     if (nbElts[0] == edge1number)
                     {
                         countElts[0]++;
@@ -672,7 +673,7 @@ public sealed class Mat2d
             for (i = 0; i < _theedgelist.Number(); i++)
             {
                 edge = _theedgelist.Current();
-                _bisectormap.Bind(noofbisectors, edge.SecondBisector());
+                _bisectormap[noofbisectors] = edge.SecondBisector();
                 noofbisectors++;
                 _theedgelist.Next();
             }
@@ -692,7 +693,7 @@ public sealed class Mat2d
 
         for (int i = 0; i < noofbisectorstoremove; i++)
         {
-            bisectortoremove = _bisectoronetoremove[i];
+            bisectortoremove = _bisectoronetoremove.GetValue(i);
 
             // Destruction of the bisectors descending from <bisectortoremove>, down the tree to
             // <bisectortwotoremove(i)>.
@@ -740,13 +741,13 @@ public sealed class Mat2d
                 _theedgelist.Unlink();
 
                 // Exit test of the cancelling loop.
-                if (bisectortoremove.BisectorNumber() == _bisectortwotoremove[i].BisectorNumber())
+                if (bisectortoremove.BisectorNumber() == _bisectortwotoremove.GetValue(i).BisectorNumber())
                 {
                     break;
                 }
 
                 // Down the tree.
-                if (_typeofbisectortoremove[i] == 1)
+                if (_typeofbisectortoremove.GetValue(i) == 1)
                 {
                     bisectortoremove = bisectortoremove.FirstBisector();
                 }
@@ -839,12 +840,12 @@ public sealed class Mat2d
 
         atool.TrimBisector(edgetoremove.FirstBisector());
 
-        _bisectormap.Bind(noofbisectors, new MedialBisector());
-        _bisectormap[noofbisectors].IndexNumber(noofbisectors);
-        _bisectormap[noofbisectors].DistIssuePoint(edgetoremove.Distance());
-        _bisectormap[noofbisectors].IssuePoint(edgetoremove.IntersectionPoint());
-        _bisectormap[noofbisectors].FirstEdge(theedges.PreviousItem());
-        _bisectormap[noofbisectors].AddBisector(edgetoremove.FirstBisector());
+        _bisectormap[noofbisectors] = new MedialBisector();
+        _bisectormap.GetValue(noofbisectors).IndexNumber(noofbisectors);
+        _bisectormap.GetValue(noofbisectors).DistIssuePoint(edgetoremove.Distance());
+        _bisectormap.GetValue(noofbisectors).IssuePoint(edgetoremove.IntersectionPoint());
+        _bisectormap.GetValue(noofbisectors).FirstEdge(theedges.PreviousItem());
+        _bisectormap.GetValue(noofbisectors).AddBisector(edgetoremove.FirstBisector());
 
         for (int j = 0; j < noofarea; j++)
         {
@@ -855,7 +856,7 @@ public sealed class Mat2d
 
             if (all == 0 || j + 1 != noofarea)
             {
-                _bisectormap[noofbisectors].AddBisector(edgetoremove.SecondBisector());
+                _bisectormap.GetValue(noofbisectors).AddBisector(edgetoremove.SecondBisector());
             }
             edgetoremove.SecondBisector().EndPoint(edgetoremove.IntersectionPoint());
 
@@ -866,14 +867,14 @@ public sealed class Mat2d
             edgetoremove = theedges.Current();
         }
 
-        _bisectormap[noofbisectors].SecondEdge(theedges.Current());
+        _bisectormap.GetValue(noofbisectors).SecondEdge(theedges.Current());
 
-        theedges.PreviousItem().SecondBisector(_bisectormap[noofbisectors]);
-        theedges.Current().FirstBisector(_bisectormap[noofbisectors]);
+        theedges.PreviousItem().SecondBisector(_bisectormap.GetValue(noofbisectors));
+        theedges.Current().FirstBisector(_bisectormap.GetValue(noofbisectors));
 
-        _bisectormap[noofbisectors].FirstVector(atool.Tangent(_bisectormap[noofbisectors].FirstBisector().BisectorNumber()));
+        _bisectormap.GetValue(noofbisectors).FirstVector(atool.Tangent(_bisectormap.GetValue(noofbisectors).FirstBisector().BisectorNumber()));
 
-        _bisectormap[noofbisectors].SecondVector(atool.Tangent(_bisectormap[noofbisectors].LastBisector().BisectorNumber()));
+        _bisectormap.GetValue(noofbisectors).SecondVector(atool.Tangent(_bisectormap.GetValue(noofbisectors).LastBisector().BisectorNumber()));
 
         noofbisectors++;
 
@@ -903,7 +904,7 @@ public sealed class Mat2d
                     {
                         edge.SecondBisector().EndPoint(edge.FirstBisector().IssuePoint());
                     }
-                    _bisectormap[noofbisectors - 1].AddBisector(edge.SecondBisector());
+                    _bisectormap.GetValue(noofbisectors - 1).AddBisector(edge.SecondBisector());
                 }
                 else
                 {
@@ -918,7 +919,7 @@ public sealed class Mat2d
                     {
                         edge.FirstBisector().EndPoint(edge.SecondBisector().IssuePoint());
                     }
-                    _bisectormap[noofbisectors - 1].AddBisector(edge.FirstBisector());
+                    _bisectormap.GetValue(noofbisectors - 1).AddBisector(edge.FirstBisector());
                 }
                 else
                 {
@@ -928,8 +929,8 @@ public sealed class Mat2d
             if (!_semiInfinite)
             {
                 _thenumberofbisectors--;
-                _bisectormap[noofbisectors - 1].SecondEdge(edge);
-                _bisectormap[noofbisectors - 1].BisectorNumber(-1);
+                _bisectormap.GetValue(noofbisectors - 1).SecondEdge(edge);
+                _bisectormap.GetValue(noofbisectors - 1).BisectorNumber(-1);
             }
         }
     }
@@ -939,9 +940,9 @@ public sealed class Mat2d
     {
         _roots = new MedialListOfBisector();
 
-        if (_bisectormap[noofbisectors - 1].BisectorNumber() == -1)
+        if (_bisectormap.GetValue(noofbisectors - 1).BisectorNumber() == -1)
         {
-            _roots = _bisectormap[noofbisectors - 1].List();
+            _roots = _bisectormap.GetValue(noofbisectors - 1).List();
             if (_roots.IsEmpty)
             {
                 // A single element (a contour of one closed edge): the main loop never runs and the only bisector
@@ -950,13 +951,13 @@ public sealed class Mat2d
                 return;
             }
             _roots.First();
-            _roots.Current().FirstEdge().Distance(_bisectormap[noofbisectors - 1].DistIssuePoint());
+            _roots.Current().FirstEdge().Distance(_bisectormap.GetValue(noofbisectors - 1).DistIssuePoint());
         }
         else
         {
             for (int i = beginbisector; i < noofbisectors; i++)
             {
-                _roots.BackAdd(_bisectormap[i]);
+                _roots.BackAdd(_bisectormap.GetValue(i));
             }
         }
     }
@@ -988,10 +989,10 @@ public sealed class Mat2d
             found = noofbisectorstoremove;
             for (int j = 0; j < noofbisectorstoremove; j++)
             {
-                if (_bisectoronetoremove[j].BisectorNumber() == firstbisectortoremove[index].BisectorNumber())
+                if (_bisectoronetoremove.GetValue(j).BisectorNumber() == firstbisectortoremove[index].BisectorNumber())
                 {
                     found = j;
-                    if (_bisectortwotoremove[j].BisectorNumber() < lastbisectortoremove[index]!.BisectorNumber())
+                    if (_bisectortwotoremove.GetValue(j).BisectorNumber() < lastbisectortoremove[index]!.BisectorNumber())
                     {
                         found = -1;
                     }
@@ -1001,9 +1002,9 @@ public sealed class Mat2d
 
             if (found != -1)
             {
-                _bisectoronetoremove.Bind(found, firstbisectortoremove[index]);
-                _bisectortwotoremove.Bind(found, lastbisectortoremove[index]!);
-                _typeofbisectortoremove.Bind(found, index + 1);
+                _bisectoronetoremove[found] = firstbisectortoremove[index];
+                _bisectortwotoremove[found] = lastbisectortoremove[index]!;
+                _typeofbisectortoremove[found] = index + 1;
 
                 if (found == noofbisectorstoremove)
                 {

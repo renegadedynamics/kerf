@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
@@ -192,7 +193,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         {
             return aComposed;
         }
-        var aSubShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aSubShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theInput, aSubShapes);
         foreach (Shape aSub in aSubShapes)
         {

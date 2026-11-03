@@ -29,12 +29,12 @@ public class Vars : Transient
 
     public virtual void Set(string name, Transient? val)
     {
-        _thevars.Bind(name, val);
+        _thevars[name] = val;
     }
 
     public virtual Transient? Get(string name)
     {
-        if (!_thevars.Find(name, out Transient val))
+        if (!_thevars.TryGetValue(name, out Transient val))
         {
             val = null;
         }
@@ -109,5 +109,5 @@ public class Vars : Transient
         return sh;
     }
 
-    private NCollection_DataMap<string, Transient> _thevars = new NCollection_DataMap<string, Transient>();
+    private Dictionary<string, Transient> _thevars = new Dictionary<string, Transient>();
 }

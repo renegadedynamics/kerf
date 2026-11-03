@@ -54,17 +54,17 @@ public abstract class Finder : Transient
     /// <summary>Adds an attribute with a given name (replaces the former one with the same name if already exists).</summary>
     public void SetAttribute(string name, Transient? val)
     {
-        _theattrib.Bind(name, val);
+        _theattrib[name] = val;
     }
 
     /// <summary>Removes an attribute. Returns True when done, False if this attribute did not exist.</summary>
     public bool RemoveAttribute(string name)
     {
-        if (_theattrib.IsEmpty())
+        if (_theattrib.Count == 0)
         {
             return false;
         }
-        return _theattrib.UnBind(name);
+        return _theattrib.Remove(name);
     }
 
     /// <summary>
@@ -73,12 +73,12 @@ public abstract class Finder : Transient
     /// </summary>
     public bool GetAttribute(string name, Type? type, out Transient? val)
     {
-        if (_theattrib.IsEmpty())
+        if (_theattrib.Count == 0)
         {
             val = null;
             return false;
         }
-        if (!_theattrib.Find(name, out val))
+        if (!_theattrib.TryGetValue(name, out val))
         {
             val = null;
             return false;
@@ -95,11 +95,11 @@ public abstract class Finder : Transient
     public Transient? Attribute(string name)
     {
         Transient? atr = null;
-        if (_theattrib.IsEmpty())
+        if (_theattrib.Count == 0)
         {
             return atr;
         }
-        if (!_theattrib.Find(name, out atr))
+        if (!_theattrib.TryGetValue(name, out atr))
         {
             atr = null;
         }
@@ -236,7 +236,7 @@ public abstract class Finder : Transient
     }
 
     /// <summary>Returns the exhaustive list of attributes (the finder's own map, which callers may edit).</summary>
-    public NCollection_DataMap<string, Transient?> AttrList()
+    public Dictionary<string, Transient?> AttrList()
     {
         return _theattrib;
     }
@@ -254,7 +254,7 @@ public abstract class Finder : Transient
     {
         if (other is not null)
         {
-            _theattrib = new NCollection_DataMap<string, Transient?>(other.AttrList()); // OCCT: a copy, despite the documentation
+            _theattrib = new Dictionary<string, Transient?>(other.AttrList()); // OCCT: a copy, despite the documentation
         }
     }
 
@@ -271,8 +271,8 @@ public abstract class Finder : Transient
         {
             return;
         }
-        NCollection_DataMap<string, Transient?> list = other.AttrList();
-        if (list.IsEmpty())
+        Dictionary<string, Transient?> list = other.AttrList();
+        if (list.Count == 0)
         {
             return;
         }
@@ -310,7 +310,7 @@ public abstract class Finder : Transient
                     newatr = strval;
                 }
             }
-            _theattrib.Bind(name, newatr);
+            _theattrib[name] = newatr;
         }
     }
 
@@ -321,5 +321,5 @@ public abstract class Finder : Transient
     }
 
     private int _thecode;
-    private NCollection_DataMap<string, Transient?> _theattrib = new(StringComparer.Ordinal);
+    private Dictionary<string, Transient?> _theattrib = new(StringComparer.Ordinal);
 }

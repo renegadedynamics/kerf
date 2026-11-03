@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -43,10 +44,10 @@ public sealed class LocalGluer
     private Shape _res = new();
     private Orientation _ori;
     private FeatureOperation _ope;
-    private readonly NCollection_IndexedDataMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
     // OCCT iterates this map keyed by the edges' addresses; the port in insertion order
-    private readonly NCollection_DataMap<Shape, Shape> _mapEE = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _descF = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _mapEE = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _descF = new(ShapeHasher.Instance);
     private NCollection_List<Shape> _edges = new();
     private NCollection_List<Shape> _tgtEdges = new();
     private WorkingShapes _work = new();
@@ -136,13 +137,13 @@ public sealed class LocalGluer
         for (exp.Init(fnor, ShapeType.Edge); exp.More(); exp.Next())
         {
             Edge edg = ShapeCasts.Edge(exp.Current());
-            if (!_mapEF.Contains(edg))
+            if (!_mapEF.ContainsKey(edg))
             {
                 _mapEF.Add(edg, fbor);
             }
-            else if (!_mapEF.FindFromKey(edg).IsSame(fbor))
+            else if (!_mapEF.GetValue(edg).IsSame(fbor))
             {
-                _mapEF.ChangeFromKey(edg).Nullify();
+                _mapEF.GetValueRef(edg).Nullify();
                 // edg sur 2 face. a binder avec l`edge commun
             }
         }
@@ -152,11 +153,11 @@ public sealed class LocalGluer
     /// <summary>Binds the edge <paramref name="enew"/> of the new shape to the edge <paramref name="ebase"/> of the basis shape.</summary>
     public void Bind(in Edge enew, in Edge ebase)
     {
-        if (_mapEE.IsBound(enew) && !_mapEE[enew].IsSame(ebase))
+        if (_mapEE.ContainsKey(enew) && !_mapEE.GetValue(enew).IsSame(ebase))
         {
             throw new ConstructionErrorException();
         }
-        _mapEE.Bind(enew, ebase);
+        _mapEE[enew] = ebase;
     }
 
     public FeatureOperation OpeType() => _ope;
@@ -168,7 +169,7 @@ public sealed class LocalGluer
         {
             return;
         }
-        if (_sb.IsNull || _sn.IsNull || _mapEF.IsEmpty() || _ope == FeatureOperation.Invalid)
+        if (_sb.IsNull || _sn.IsNull || _mapEF.Count == 0 || _ope == FeatureOperation.Invalid)
         {
             throw new ConstructionErrorException();
         }
@@ -183,14 +184,14 @@ public sealed class LocalGluer
         WiresOnShape theWOnS = new(sb, _work);
         GluedShape theGS = new(sn);
 
-        int lmap = _mapEF.Extent();
+        int lmap = _mapEF.Count;
 
         for (ind = 1; ind <= lmap; ind++)
         {
-            Shape s = _mapEF.FindKey(ind);
+            Shape s = _mapEF.KeyAt(ind - 1);
             if (s.ShapeType() == ShapeType.Edge)
             {
-                Shape s2 = _mapEF[ind];
+                Shape s2 = _mapEF.ValueAt(ind - 1);
                 if (!s2.IsNull)
                 {
                     theWOnS.Bind(ShapeCasts.Edge(s), ShapeCasts.Face(s2));
@@ -224,16 +225,16 @@ public sealed class LocalGluer
         Explorer exp = new(sb, ShapeType.Face);
         for (; exp.More(); exp.Next())
         {
-            _descF.Bind(exp.Current(), new NCollection_List<Shape>(theSplit.InternalDescendantShapes(exp.Current())));
+            _descF[exp.Current()] = new NCollection_List<Shape>(theSplit.InternalDescendantShapes(exp.Current()));
         }
 
         for (exp.Init(sn, ShapeType.Face); exp.More(); exp.Next())
         {
             NCollection_List<Shape> thelist = new();
-            _descF.Bind(exp.Current(), thelist);
+            _descF[exp.Current()] = thelist;
             if (Contains(theGS.OrientedFaces(), exp.Current()))
             {
-                _descF[exp.Current()].Append(exp.Current());
+                _descF.GetValue(exp.Current()).Append(exp.Current());
             }
         }
 
@@ -252,7 +253,7 @@ public sealed class LocalGluer
             {
                 NCollection_List<Shape> newDesc = new();
                 NCollection_List<Shape>.Iterator itl = new();
-                for (itl.Initialize(_descF[key]); itl.More(); itl.Next())
+                for (itl.Initialize(_descF.GetValue(key)); itl.More(); itl.Next())
                 {
                     NCollection_List<Shape>.Iterator itl2 = new(theGen.InternalDescendantFace(ShapeCasts.Face(itl.Value())));
                     for (; itl2.More(); itl2.Next())
@@ -264,20 +265,20 @@ public sealed class LocalGluer
                         }
                     }
                 }
-                _descF[key] = newDesc;
+                _descF.GetValueRef(key) = newDesc;
             }
         }
 
         // recodage des regularites
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF1 = new(ShapeHasher.Instance),
+        IndexedMap<Shape, NCollection_List<Shape>> theMapEF1 = new(ShapeHasher.Instance),
                                                                                    theMapEF2 = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(sn, ShapeType.Edge, ShapeType.Face, theMapEF1);
         Exploration.MapShapesAndAncestors(_res, ShapeType.Edge, ShapeType.Face, theMapEF2);
 
-        for (ind = 1; ind <= theMapEF1.Extent(); ind++)
+        for (ind = 1; ind <= theMapEF1.Count; ind++)
         {
-            Edge edg = ShapeCasts.Edge(theMapEF1.FindKey(ind));
-            NCollection_List<Shape> ll = theMapEF1[ind];
+            Edge edg = ShapeCasts.Edge(theMapEF1.KeyAt(ind - 1));
+            NCollection_List<Shape> ll = theMapEF1.ValueAt(ind - 1);
             if (ll.Extent() == 2)
             {
                 Face fac1 = ShapeCasts.Face(ll.First());
@@ -286,10 +287,10 @@ public sealed class LocalGluer
                 if (thecont >= G1)
                 {
                     // on essaie de recoder
-                    int ind2 = theMapEF2.FindIndex(edg);
+                    int ind2 = theMapEF2.IndexOf(edg) + 1;
                     if (ind2 != 0)
                     {
-                        NCollection_List<Shape> ll2 = theMapEF2[ind2];
+                        NCollection_List<Shape> ll2 = theMapEF2.ValueAt(ind2 - 1);
                         if (ll2.Extent() == 2)
                         {
                             Face ff1 = ShapeCasts.Face(ll2.First());
@@ -312,14 +313,14 @@ public sealed class LocalGluer
         while (theWOnS.MoreEdge())
         {
             Edge edg = theWOnS.InternalEdge();
-            for (ind = 1; ind <= theMapEF2.Extent(); ind++)
+            for (ind = 1; ind <= theMapEF2.Count; ind++)
             {
-                Edge edg1 = ShapeCasts.Edge(theMapEF2.FindKey(ind));
+                Edge edg1 = ShapeCasts.Edge(theMapEF2.KeyAt(ind - 1));
                 if (edg1.IsSame(edg))
                 {
                     _edges.Append(edg);
                     // recodage eventuel des regularites sur cet edge
-                    NCollection_List<Shape> l = theMapEF2[ind];
+                    NCollection_List<Shape> l = theMapEF2.ValueAt(ind - 1);
                     if (l.Extent() == 2)
                     {
                         Face fac1 = ShapeCasts.Face(l.First());
@@ -356,7 +357,7 @@ public sealed class LocalGluer
             _res = _work.Final(_res);
             foreach (Shape key in _descF.Keys.ToList())
             {
-                _descF[key] = _work.Final(_descF[key]);
+                _descF.GetValueRef(key) = _work.Final(_descF.GetValue(key));
             }
             _edges = _work.Final(_edges);
             _tgtEdges = _work.Final(_tgtEdges);
@@ -395,9 +396,9 @@ public sealed class LocalGluer
             throw new NotDoneException();
         }
         Shape aF = f;
-        if (_descF.IsBound(aF))
+        if (_descF.ContainsKey(aF))
         {
-            return _descF[aF];
+            return _descF.GetValue(aF);
         }
         return new NCollection_List<Shape>();
     }
@@ -537,7 +538,7 @@ public sealed class LocalGluer
         Explorer exp = new(), expsb = new();
         exp.Init(sn, ShapeType.Edge);
 
-        NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance),
+        IndexedSet<Shape> mapV = new(ShapeHasher.Instance),
                                              mapFPrism = new(ShapeHasher.Instance),
                                              mapE = new(ShapeHasher.Instance);
         Explorer vexp = new();

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
@@ -47,7 +48,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
     // Intermediate
     protected NCollection_List<Shape> _features = new(); //!< List of not connected features to remove (each feature is a compound of faces)
-    protected NCollection_IndexedMap<Shape> _inputsMap = new(ShapeHasher.Instance); //!< Map of all sub-shapes of the input shape
+    protected IndexedSet<Shape> _inputsMap = new(ShapeHasher.Instance); //!< Map of all sub-shapes of the input shape
 
     /// <summary>Empty constructor.</summary>
     public RemoveFeaturesAlgorithm()
@@ -306,15 +307,15 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     {
         private bool _runParallel;                                                   //!< Defines the mode of processing of the single feature
         private Shape _feature = new();                                       //!< Feature to remove
-        private NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>? _efMap; //!< EF Connection map to find adjacent faces
-        private NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>? _fsMap; //!< FS Connection map to find solids participating in the feature removal
+        private IndexedMap<Shape, NCollection_List<Shape>>? _efMap; //!< EF Connection map to find adjacent faces
+        private IndexedMap<Shape, NCollection_List<Shape>>? _fsMap; //!< FS Connection map to find solids participating in the feature removal
         private ProgressRange _range;                                        //!< Indication of progress
 
         // Results
         private readonly HashSet<Shape> _featureFacesMap = new(ShapeHasher.Instance); //!< Faces of the feature
         private bool _hasAdjacentFaces;                                                                         //!< Flag to show whether the adjacent faces have been found or not
-        private readonly NCollection_IndexedMap<Shape> _solids = new(ShapeHasher.Instance);  //!< Solids participating in the feature removal
-        private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _faces = new(ShapeHasher.Instance); //!< Reconstructed adjacent faces
+        private readonly IndexedSet<Shape> _solids = new(ShapeHasher.Instance);  //!< Solids participating in the feature removal
+        private readonly IndexedMap<Shape, NCollection_List<Shape>> _faces = new(ShapeHasher.Instance); //!< Reconstructed adjacent faces
         private History? _history;                                                                    //!< History of the adjacent faces reconstruction
 
         public FillGap()
@@ -327,9 +328,9 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         public Shape Feature() => _feature;
 
-        public void SetEFConnectionMap(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap) => _efMap = efMap;
+        public void SetEFConnectionMap(IndexedMap<Shape, NCollection_List<Shape>> efMap) => _efMap = efMap;
 
-        public void SetFSConnectionMap(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> fsMap) => _fsMap = fsMap;
+        public void SetFSConnectionMap(IndexedMap<Shape, NCollection_List<Shape>> fsMap) => _fsMap = fsMap;
 
         public void SetRunParallel(bool bRunParallel) => _runParallel = bRunParallel;
 
@@ -347,21 +348,21 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 _history = new History();
 
                 // Find the faces adjacent to the faces of the feature
-                NCollection_IndexedMap<Shape> mfAdjacent = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mfAdjacent = new(ShapeHasher.Instance);
                 FindAdjacentFaces(mfAdjacent, ps.Next());
                 if (!ps.More())
                 {
                     return;
                 }
 
-                _hasAdjacentFaces = mfAdjacent.Extent() > 0;
+                _hasAdjacentFaces = mfAdjacent.Count > 0;
                 if (!_hasAdjacentFaces)
                 {
                     return;
                 }
 
                 // Extend the adjacent faces keeping the connection to the original faces
-                NCollection_IndexedDataMap<Shape, Shape> faceExtFaceMap = new(ShapeHasher.Instance);
+                IndexedMap<Shape, Shape> faceExtFaceMap = new(ShapeHasher.Instance);
                 ExtendAdjacentFaces(mfAdjacent, faceExtFaceMap, ps.Next());
                 if (!ps.More())
                 {
@@ -383,12 +384,12 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         public bool HasAdjacentFaces => _hasAdjacentFaces;
 
-        public NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> Faces() => _faces;
+        public IndexedMap<Shape, NCollection_List<Shape>> Faces() => _faces;
 
-        public NCollection_IndexedMap<Shape> Solids() => _solids;
+        public IndexedSet<Shape> Solids() => _solids;
 
         // Finds the faces adjacent to the feature and stores them into outgoing map.
-        private void FindAdjacentFaces(NCollection_IndexedMap<Shape> mfAdjacent, ProgressRange range)
+        private void FindAdjacentFaces(IndexedSet<Shape> mfAdjacent, ProgressRange range)
         {
             // Map the faces of the feature to avoid them in the map of adjacent faces
             Iterator it = new(_feature);
@@ -411,7 +412,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 for (; expE.More(); expE.Next())
                 {
                     Shape e = expE.Current();
-                    if (_efMap!.FindFromKey(e, out NCollection_List<Shape> pAdjacentFaces))
+                    if (_efMap!.TryGetValue(e, out NCollection_List<Shape> pAdjacentFaces))
                     {
                         NCollection_List<Shape>.Iterator itLFA = new(pAdjacentFaces);
                         for (; itLFA.More(); itLFA.Next())
@@ -425,7 +426,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                     }
                 }
                 // Find solids containing the feature face
-                if (_fsMap!.FindFromKey(f, out NCollection_List<Shape> pLS))
+                if (_fsMap!.TryGetValue(f, out NCollection_List<Shape> pLS))
                 {
                     NCollection_List<Shape>.Iterator itLS = new(pLS);
                     for (; itLS.More(); itLS.Next())
@@ -436,7 +437,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             }
 
             // Find solids containing the edges of adjacent faces
-            int nbFA = mfAdjacent.Extent();
+            int nbFA = mfAdjacent.Count;
             using var pss = new ProgressScope(psOuter.Next(), "Looking for adjacent solids", nbFA);
             for (int i = 1; i <= nbFA; ++i, pss.Next())
             {
@@ -444,17 +445,17 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 {
                     return;
                 }
-                Explorer expEA = new(mfAdjacent.FindKey(i), ShapeType.Edge);
+                Explorer expEA = new(mfAdjacent[i - 1], ShapeType.Edge);
                 for (; expEA.More(); expEA.Next())
                 {
                     // Faces adjacent to the face adjacent to the feature
-                    if (_efMap!.FindFromKey(expEA.Current(), out NCollection_List<Shape> pLFAA))
+                    if (_efMap!.TryGetValue(expEA.Current(), out NCollection_List<Shape> pLFAA))
                     {
                         NCollection_List<Shape>.Iterator itLFAA = new(pLFAA);
                         for (; itLFAA.More(); itLFAA.Next())
                         {
                             // Solids containing the faces
-                            if (_fsMap!.FindFromKey(itLFAA.Value(), out NCollection_List<Shape> pLS))
+                            if (_fsMap!.TryGetValue(itLFAA.Value(), out NCollection_List<Shape> pLS))
                             {
                                 NCollection_List<Shape>.Iterator itLS = new(pLS);
                                 for (; itLS.More(); itLS.Next())
@@ -469,8 +470,8 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         }
 
         // Extends the found adjacent faces and binds them to the original faces.
-        private void ExtendAdjacentFaces(NCollection_IndexedMap<Shape> mfAdjacent,
-                                         NCollection_IndexedDataMap<Shape, Shape> faceExtFaceMap,
+        private void ExtendAdjacentFaces(IndexedSet<Shape> mfAdjacent,
+                                         IndexedMap<Shape, Shape> faceExtFaceMap,
                                          ProgressRange range)
         {
             // Get the extension value for the faces - half of the diagonal of bounding box of the feature
@@ -479,11 +480,11 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
             double extLength = Math.Sqrt(featureBox.SquareExtent());
 
-            int nbFA = mfAdjacent.Extent();
+            int nbFA = mfAdjacent.Count;
             using var ps = new ProgressScope(range, "Extending adjacent faces", nbFA);
             for (int i = 1; i <= nbFA && ps.More(); ++i, ps.Next())
             {
-                Face f = ShapeCasts.Face(mfAdjacent.FindKey(i));
+                Face f = ShapeCasts.Face(mfAdjacent[i - 1]);
                 // Extend the face (the port's unfrozen form: the trimming builds on it)
                 BrepLibrary.InternalExtendFace(f, extLength, true, true, true, true, out Face fExt);
                 faceExtFaceMap.Add(f, fExt);
@@ -493,16 +494,16 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         // Trims the extended adjacent faces by intersection with each other
         // and following intersection with the bounds of original faces.
-        private void TrimExtendedFaces(NCollection_IndexedDataMap<Shape, Shape> faceExtFaceMap,
+        private void TrimExtendedFaces(IndexedMap<Shape, Shape> faceExtFaceMap,
                                        ProgressRange range)
         {
             // Intersect the extended faces first
             BooleanBuilder gfInter = new();
             // Add faces for intersection
-            int nbF = faceExtFaceMap.Extent();
-            for (int i = 1; i <= nbF; ++i)
+            int nbF = faceExtFaceMap.Count;
+            for (int i = 0; i < nbF; ++i)
             {
-                gfInter.AddArgument(faceExtFaceMap.FindFromIndex(i));
+                gfInter.AddArgument(faceExtFaceMap.ValueAt(i));
             }
 
             gfInter.SetRunParallel(_runParallel);
@@ -529,21 +530,21 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
             // Prepare the EF map of the extended faces after intersection
             // to select from them only boundary edges
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efExtMap = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> efExtMap = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(intResult, ShapeType.Edge, ShapeType.Face, efExtMap);
 
             // Get the splits of the extended faces after intersection
             // and trim them by the edges of the original faces
 
             // Map the edges of the Feature to avoid them during the trim
-            NCollection_IndexedMap<Shape> featureEdgesMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> featureEdgesMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(_feature, ShapeType.Edge, featureEdgesMap);
 
             using var ps = new ProgressScope(psOuter.Next(), "Trimming faces", nbF);
             for (int i = 1; i <= nbF && ps.More(); ++i, ps.Next())
             {
-                Face fOriginal = ShapeCasts.Face(faceExtFaceMap.FindKey(i));
-                Face fExt = ShapeCasts.Face(faceExtFaceMap.FindFromIndex(i));
+                Face fOriginal = ShapeCasts.Face(faceExtFaceMap.KeyAt(i - 1));
+                Face fExt = ShapeCasts.Face(faceExtFaceMap.ValueAt(i - 1));
                 TrimFace(fExt, fOriginal, featureEdgesMap, efExtMap, gfInter);
             }
         }
@@ -552,8 +553,8 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // except those contained in the feature to remove.
         private void TrimFace(in Face fExt,
                               in Face fOriginal,
-                              NCollection_IndexedMap<Shape> featureEdgesMap,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efExtMap,
+                              IndexedSet<Shape> featureEdgesMap,
+                              IndexedMap<Shape, NCollection_List<Shape>> efExtMap,
                               BooleanBuilder gfInter)
         {
             // Map all edges of the extended face, to filter the result of trim
@@ -574,7 +575,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                 for (; itLEIm.More(); itLEIm.Next())
                 {
                     Shape eIm = itLEIm.Value();
-                    if (efExtMap.FindFromKey(eIm).Extent() == 1)
+                    if (efExtMap.GetValue(eIm).Extent() == 1)
                     {
                         mExtEdges.Add(eIm);
                     }
@@ -646,7 +647,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             {
                 // Chose the correct faces - the ones that contains edges with proper
                 // bi-normal direction
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
                 NCollection_List<Shape>.Iterator itLF0 = new(lfTrimmed);
                 for (; itLF0.More(); itLF0.Next())
                 {
@@ -741,7 +742,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             History histRem = new();
 
             // Map of the result splits
-            NCollection_IndexedMap<Shape> resMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> resMap = new(ShapeHasher.Instance);
             NCollection_List<Shape>.Iterator itLF = new(lfTrimmed);
             for (; itLF.More(); itLF.Next())
             {
@@ -773,34 +774,35 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         // Make Edge-Face connection map of the input
         // shape to find faces adjacent to the feature
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_inputShape, ShapeType.Edge, ShapeType.Face, efMap);
 
         // Make Face-Solid connection map to find the solids
         // participating in the removal of each feature
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_inputShape, ShapeType.Face, ShapeType.Solid, fsMap);
 
         // Tool for reconstruction of the faces adjacent to the feature
         // in parallel threads if necessary.
-        NCollection_DynamicArray<FillGap> vfg = new();
+        List<FillGap> vfg = new();
         // Fill the vector
         NCollection_List<Shape>.Iterator itF = new(_features);
         for (; itF.More(); itF.Next())
         {
             Shape feature = itF.Value();
-            FillGap fg = vfg.Append(new FillGap());
+            FillGap fg =  new FillGap();
+            vfg.Add(fg);
             fg.SetFeature(feature);
             fg.SetEFConnectionMap(efMap);
             fg.SetFSConnectionMap(fsMap);
             fg.SetRunParallel(_runParallel);
         }
 
-        int nbF = vfg.Length();
+        int nbF = vfg.Count;
         using var ps = new ProgressScope(psOuter.Next(), "Filling gaps", nbF);
         for (int i = 0; i < nbF; ++i)
         {
-            FillGap fg = vfg.Value(i);
+            FillGap fg = vfg[i];
             fg.SetRange(ps.Next());
         }
         // Perform the reconstruction of the adjacent faces
@@ -826,7 +828,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             {
                 return;
             }
-            FillGap fg = vfg.Value(i);
+            FillGap fg = vfg[i];
 
             // No need to fill the history for solids if the history is not
             // requested and the current feature is the last one.
@@ -854,16 +856,16 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     /// <param name="solidsHistoryNeeded">Whether the history of the solids' modifications is tracked.</param>
     /// <param name="range">The progress range.</param>
     protected void RemoveFeature(in Shape feature,
-                                 NCollection_IndexedMap<Shape> solids,
+                                 IndexedSet<Shape> solids,
                                  HashSet<Shape> featureFacesMap,
                                  bool hasAdjacentFaces,
-                                 NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> adjFaces,
+                                 IndexedMap<Shape, NCollection_List<Shape>> adjFaces,
                                  History? adjFacesHistory,
                                  bool solidsHistoryNeeded,
                                  ProgressRange range)
     {
         bool bFuseShapes = true;
-        int nbAF = adjFaces.Extent();
+        int nbAF = adjFaces.Count;
         if (nbAF == 0)
         {
             if (hasAdjacentFaces)
@@ -891,7 +893,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // - all non-internal faces of the input shape (except for adjacent and feature faces)
         //   must have some trace in the result solids;
         // - all adjacent faces (if any) must have some trace in the result solids.
-        NCollection_IndexedMap<Shape> facesToBeKept = new(ShapeHasher.Instance);
+        IndexedSet<Shape> facesToBeKept = new(ShapeHasher.Instance);
         // Build also the map of faces to compare orientation of the original and result faces
         HashSet<Shape> facesToCheckOri = new(ShapeHasher.Instance);
 
@@ -903,7 +905,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // or the faces adjacent to the feature.
 
         // Solids to be rebuilt  after the feature removal
-        NCollection_IndexedMap<Shape> solidsToRebuild = new(ShapeHasher.Instance);
+        IndexedSet<Shape> solidsToRebuild = new(ShapeHasher.Instance);
         // Find faces shared between solids
         NCollection_List<Shape> sharedFaces = new();
         // Solids to be avoided in the feature removal and added into result directly
@@ -927,10 +929,10 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // of the input shape into a compound
         Compound origF = new();
         bb.MakeCompound(ref origF);
-        int nbFK = facesToBeKept.Extent();
+        int nbFK = facesToBeKept.Count;
         for (int i = 1; i <= nbFK; ++i)
         {
-            bb.Add(origF, facesToBeKept.FindKey(i));
+            bb.Add(origF, facesToBeKept[i - 1]);
         }
 
         // Tool for solids reconstruction
@@ -943,9 +945,9 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         mv.AddArgument(origF);
 
         // Add reconstructed adjacent faces
-        for (int i = 1; i <= nbAF; ++i)
+        for (int i = 0; i < nbAF; ++i)
         {
-            NCollection_List<Shape> lfa = adjFaces.FindFromIndex(i);
+            NCollection_List<Shape> lfa = adjFaces.ValueAt(i);
             if (lfa.Extent() == 1)
             {
                 Shape fa = lfa.First();
@@ -970,7 +972,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             if (HasHistory)
             {
                 // Look for internal edges in the original adjacent faces
-                Shape fOr = adjFaces.FindKey(i);
+                Shape fOr = adjFaces.KeyAt(i);
                 FindInternals(fOr, internalShapes);
             }
         }
@@ -1002,13 +1004,13 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         // Splits of adjacent faces from previous runs
         HashSet<Shape> adjFacesSplits = new(ShapeHasher.Instance);
-        for (int i = 1; i <= nbAF; ++i)
+        for (int i = 0; i < nbAF; ++i)
         {
             if (!ps.More())
             {
                 return;
             }
-            Shape f = adjFaces.FindKey(i);
+            Shape f = adjFaces.KeyAt(i);
             IReadOnlyList<Shape> lfIm = _history!.Modified(f);
             if (lfIm.Count == 0)
             {
@@ -1025,10 +1027,10 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
         // Validate the result
         bool bValid = true;
-        nbFK = facesToBeKept.Extent();
+        nbFK = facesToBeKept.Count;
         for (int i = 1; i <= nbFK && bValid; ++i)
         {
-            Shape s = facesToBeKept.FindKey(i);
+            Shape s = facesToBeKept[i - 1];
             if (adjFacesSplits.Contains(s))
             {
                 continue;
@@ -1065,11 +1067,11 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                        facesToCheckOri,
                        sharedFaces,
                        origF,
-                       solids.Extent(),
+                       solids.Count,
                        lsRes,
                        removedShapes);
 
-        if (lsRes.Extent() != solids.Extent())
+        if (lsRes.Extent() != solids.Count)
         {
             // Add warning for the feature
             AddWarning(new AlertUnableToRemoveTheFeature(feature));
@@ -1091,7 +1093,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         if (HasHistory)
         {
             // Map the result to check if the shape is removed
-            NCollection_IndexedMap<Shape> msRes = new(ShapeHasher.Instance);
+            IndexedSet<Shape> msRes = new(ShapeHasher.Instance);
             NCollection_List<Shape>.Iterator itLS0 = new(lsRes);
             for (; itLS0.More(); itLS0.Next())
             {
@@ -1148,11 +1150,11 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // Update the history
         History history = new();
 
-        int nbS = _inputsMap.Extent();
+        int nbS = _inputsMap.Count;
         using var ps = new ProgressScope(range, "Updating history", nbS);
         for (int i = 1; i <= nbS; ++i, ps.Next())
         {
-            Shape s = _inputsMap.FindKey(i);
+            Shape s = _inputsMap[i - 1];
             if (!global::Kerf.Engine.Topology.History.IsSupportedType(s))
             {
                 continue;
@@ -1207,7 +1209,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             Exploration.MapShapes(_shape, _mapShape);
         }
 
-        int nbS = _inputsMap.Extent();
+        int nbS = _inputsMap.Count;
         using var ps = new ProgressScope(psOuter.Next(), null, nbS);
         for (int i = 1; i <= nbS; ++i, ps.Next())
         {
@@ -1215,9 +1217,9 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             {
                 return;
             }
-            if (_mapShape.Contains(_inputsMap.FindKey(i)))
+            if (_mapShape.Contains(_inputsMap[i - 1]))
             {
-                sdTool.KeepShape(_inputsMap.FindKey(i));
+                sdTool.KeepShape(_inputsMap[i - 1]);
             }
         }
 
@@ -1279,19 +1281,19 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     // Makes the shapes in the list removed in the history. Keeps the shapes contained in the map.
     private static void MakeRemoved(NCollection_List<Shape> shapes,
                                     History history,
-                                    NCollection_IndexedMap<Shape>? keepShapes = null)
+                                    IndexedSet<Shape>? keepShapes = null)
     {
-        NCollection_IndexedMap<Shape> shapesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> shapesMap = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new(shapes);
         for (; it.More(); it.Next())
         {
             Exploration.MapShapes(it.Value(), shapesMap);
         }
 
-        int nbS = shapesMap.Extent();
-        for (int i = 1; i <= nbS; ++i)
+        int nbS = shapesMap.Count;
+        for (int i = 0; i < nbS; ++i)
         {
-            Shape s = shapesMap.FindKey(i);
+            Shape s = shapesMap[i];
             if ((keepShapes is null || !keepShapes.Contains(s)) && global::Kerf.Engine.Topology.History.IsSupportedType(s))
             {
                 history.Remove(s);
@@ -1380,14 +1382,14 @@ public class RemoveFeaturesAlgorithm : BuilderShape
 
     // Get original faces from my face
     private static void GetOriginalFaces(in Shape shape,
-                                         NCollection_IndexedMap<Shape> solids,
+                                         IndexedSet<Shape> solids,
                                          HashSet<Shape> featureFacesMap,
-                                         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> adjFaces,
+                                         IndexedMap<Shape, NCollection_List<Shape>> adjFaces,
                                          History history,
-                                         NCollection_IndexedMap<Shape> facesToBeKept,
+                                         IndexedSet<Shape> facesToBeKept,
                                          NCollection_List<Shape> internalShapes,
                                          HashSet<Shape> facesToCheckOri,
-                                         NCollection_IndexedMap<Shape> solidsToRebuild,
+                                         IndexedSet<Shape> solidsToRebuild,
                                          NCollection_List<Shape> sharedFaces,
                                          NCollection_List<Shape> unTouchedSolids)
     {
@@ -1396,10 +1398,10 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         // into result directly.
 
         // Update solids after removal of previous features
-        int nbSols = solids.Extent();
-        for (int i = 1; i <= nbSols; ++i)
+        int nbSols = solids.Count;
+        for (int i = 0; i < nbSols; ++i)
         {
-            Shape sol = solids.FindKey(i);
+            Shape sol = solids[i];
             IReadOnlyList<Shape> lfIm = history.Modified(sol);
             if (lfIm.Count == 0)
             {
@@ -1463,7 +1465,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
                     }
 
                     // Avoid the adjacent faces
-                    if (adjFaces.Contains(f))
+                    if (adjFaces.ContainsKey(f))
                     {
                         continue;
                     }
@@ -1521,7 +1523,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
         {
             // Find Solids filling the holes in the initial shape
             HashSet<Shape> solidsToAvoid = new(ShapeHasher.Instance);
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(mv.InternalShape(), ShapeType.Face, ShapeType.Solid, fsMap);
             FindExtraShapes(fsMap, facesToCheckOri, mv, solidsToAvoid);
 
@@ -1583,7 +1585,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     // The checks are made in the iteration order of theShapesToCheckOri (native: address order; the port: insertion
     // order), but the outcome doesn't depend on it: a shape is avoided only if no check found it of the same
     // orientation.
-    private static void FindExtraShapes(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> connectionMap,
+    private static void FindExtraShapes(IndexedMap<Shape, NCollection_List<Shape>> connectionMap,
                                         HashSet<Shape> shapesToCheckOri,
                                         BooleanBuilder builder,
                                         HashSet<Shape> shapesToAvoid,
@@ -1602,7 +1604,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             {
                 Shape sIm = itLSIm.Value();
 
-                if (!connectionMap.FindFromKey(sIm, out NCollection_List<Shape> pShapesToValidate))
+                if (!connectionMap.TryGetValue(sIm, out NCollection_List<Shape> pShapesToValidate))
                 {
                     continue;
                 }
@@ -1657,7 +1659,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> fsMap = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itLS = new(lSolids);
         for (; itLS.More(); itLS.Next())
         {
@@ -1674,7 +1676,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             for (; expF.More(); expF.Next())
             {
                 Shape f = expF.Current();
-                NCollection_List<Shape> lSol = fsMap.FindFromKey(f);
+                NCollection_List<Shape> lSol = fsMap.GetValue(f);
                 if (lSol.Extent() != 2 || mfSharedSp.Contains(f))
                 {
                     lfArguments.Append(f);
@@ -1706,16 +1708,16 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     }
 
     // Fills the history of solids modifications
-    private static void FillSolidsHistory(NCollection_IndexedMap<Shape> solIn,
+    private static void FillSolidsHistory(IndexedSet<Shape> solIn,
                                           NCollection_List<Shape> solidsOut,
-                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> adjFaces,
+                                          IndexedMap<Shape, NCollection_List<Shape>> adjFaces,
                                           BooleanBuilder builder,
                                           History solidsHistory)
     {
-        int nbS = solIn.Extent();
-        for (int i = 1; i <= nbS; ++i)
+        int nbS = solIn.Count;
+        for (int i = 0; i < nbS; ++i)
         {
-            Shape aSolIn = solIn.FindKey(i);
+            Shape aSolIn = solIn[i];
 
             Shape solOut = new();
             FindSolid(aSolIn, solidsOut, adjFaces, builder, ref solOut);
@@ -1789,7 +1791,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
     // Looks for the image of the solid in the list of resulting solids
     private static void FindSolid(in Shape solIn,
                                   NCollection_List<Shape> solidsRes,
-                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> adjFaces,
+                                  IndexedMap<Shape, NCollection_List<Shape>> adjFaces,
                                   BooleanBuilder builder,
                                   ref Shape solOut)
     {
@@ -1802,7 +1804,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             Shape fs = expF.Current();
             // Images of the face
             HashSet<Shape> mfsIm = new(ShapeHasher.Instance);
-            if (adjFaces.FindFromKey(fs, out NCollection_List<Shape> pLFA))
+            if (adjFaces.TryGetValue(fs, out NCollection_List<Shape> pLFA))
             {
                 NCollection_List<Shape>.Iterator itLFA = new(pLFA);
                 for (; itLFA.More(); itLFA.Next())

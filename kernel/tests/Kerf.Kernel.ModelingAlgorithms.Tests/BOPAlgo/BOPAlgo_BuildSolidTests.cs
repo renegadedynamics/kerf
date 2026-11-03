@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
@@ -18,9 +19,9 @@ public class BOPAlgo_BuildSolidTests
 {
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static double Volume(in Shape theShape)

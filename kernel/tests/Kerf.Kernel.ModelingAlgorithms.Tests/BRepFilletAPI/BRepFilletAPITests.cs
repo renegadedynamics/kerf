@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Extrema;
@@ -32,9 +33,9 @@ public class BRepFilletAPITests
 
     private static Edge EdgeOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, M);
-        return ShapeCasts.Edge(M[k]);
+        return ShapeCasts.Edge(M[k - 1]);
     }
 
     private static List<Shape> Faces(in Shape S)
@@ -206,9 +207,9 @@ public class BRepFilletAPITests
         Shape aBox = Box();
         string aText = Text(aBox);
         Edge E = EdgeOf(aBox, 1);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, M);
-        Face F = ShapeCasts.Face(M.FindFromKey(E).First());
+        Face F = ShapeCasts.Face(M.GetValue(E).First());
 
         MakeChamfer aChamfer = new(aBox);
         aChamfer.Add(1.0, 2.0, E, F);
@@ -242,9 +243,9 @@ public class BRepFilletAPITests
         Assert.Equal(SurfaceStatusType.TwoExtremityOnEdge, aB.EndSectionStatus());
 
         // the support faces are the caller's, those of the edge
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, M);
-        NCollection_List<Shape> aFaces = M.FindFromKey(E);
+        NCollection_List<Shape> aFaces = M.GetValue(E);
         Assert.Contains(aFaces, f => f.IsSame(aB.SupportFace1(1)));
         Assert.Contains(aFaces, f => f.IsSame(aB.SupportFace2(1)));
 

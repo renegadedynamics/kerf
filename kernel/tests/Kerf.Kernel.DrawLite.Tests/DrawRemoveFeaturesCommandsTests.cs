@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -34,9 +35,9 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
         Shape aTool = new ApiMakeCylinder(new Frame3D(new Point3D(5, 5, -1), new Direction3D(0, 0, 1)), 2.0, 12.0).Shape();
         Shape aShape = new Cut(new MakeBox(10.0, 10.0, 10.0).Shape(), aTool).Shape();
         i.SetShape("s", aShape);
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShape, ShapeType.Face, aMap);
-        Shape aHole = Enumerable.Range(1, aMap.Extent()).Select(aMap.FindKey)
+        Shape aHole = aMap
                                        .First(f => Tool.Surface(ShapeCasts.Face(f)) is CylindricalSurface);
         i.SetShape("f", aHole);
         i.Eval("removefeatures r s f nothere -parallel");
@@ -138,7 +139,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
             {
                 if (a.Count >= 4 && theDI.GetShape(a[2]) is { } anInput && !anInput.IsNull)
                 {
-                    var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
                     List<int> anIndices = [];
                     for (int k = 3; k < a.Count; ++k)
@@ -150,7 +151,7 @@ public class DrawRemoveFeaturesCommandsTests(ITestOutputHelper output)
                         }
                         for (Explorer anExp = new(aFeature, ShapeType.Face); anExp.More(); anExp.Next())
                         {
-                            anIndices.Add(aFaces.FindIndex(anExp.Current()));
+                            anIndices.Add(aFaces.IndexOf(anExp.Current()) + 1);
                         }
                     }
                     using var aText = new StringWriter(System.Globalization.CultureInfo.InvariantCulture) { NewLine = "\n" };

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Fillets.Data;
@@ -63,7 +64,7 @@ public class ChFi3dBuilderTests
         Assert.Equal(aBefore, VertexTolerances(aBox));
         // every shape of the data structure is the caller's own
         DsDataStructure DS = aRec.HDS!.DS();
-        NCollection_IndexedMap<Shape> anInput = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anInput = new(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, anInput);
         for (int i = 1; i <= DS.NbShapes(); i++)
         {

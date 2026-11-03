@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
@@ -120,7 +121,7 @@ public class ModelPostProcessor : ModelAlgo
         private static void CommitPolygons(EdgeModel dEdge)
         {
             // Collect pcurves associated with the given edge on the specific surface.
-            NCollection_IndexedDataMap<FaceModel, NCollection_List<PCurveModel>> mapOfPCurves =
+            IndexedMap<FaceModel, NCollection_List<PCurveModel>> mapOfPCurves =
                 new(ReferenceEqualityComparer.Instance);
             for (int pCurveIt = 0; pCurveIt < dEdge.PCurvesNb(); ++pCurveIt)
             {
@@ -132,26 +133,26 @@ public class ModelPostProcessor : ModelAlgo
                     continue;
                 }
 
-                if (!mapOfPCurves.Contains(dFacePtr))
+                if (!mapOfPCurves.ContainsKey(dFacePtr))
                 {
                     mapOfPCurves.Add(dFacePtr, new NCollection_List<PCurveModel>());
                 }
 
-                NCollection_List<PCurveModel> pCurves = mapOfPCurves.ChangeFromKey(dFacePtr);
+                NCollection_List<PCurveModel> pCurves = mapOfPCurves.GetValue(dFacePtr);
                 pCurves.Append(pCurve);
             }
 
             // Commit polygons related to separate face.
             Edge edge = dEdge.GetEdge();
-            for (int polygonIt = 1; polygonIt <= mapOfPCurves.Extent(); ++polygonIt)
+            for (int polygonIt = 0; polygonIt < mapOfPCurves.Count; ++polygonIt)
             {
-                Face face = mapOfPCurves.FindKey(polygonIt).GetFace();
+                Face face = mapOfPCurves.KeyAt(polygonIt).GetFace();
 
                 Triangulation? triangulation = Tool.Triangulation(face, out Placement loc);
 
                 if (triangulation is not null)
                 {
-                    NCollection_List<PCurveModel> pCurves = mapOfPCurves.FindFromIndex(polygonIt);
+                    NCollection_List<PCurveModel> pCurves = mapOfPCurves.ValueAt(polygonIt);
                     // OCCT: the first pcurve becomes the forward edge's polygon, the last the reversed edge's, whatever
                     // their orientations (occt-issues.md).
                     if (pCurves.Size() == 2)

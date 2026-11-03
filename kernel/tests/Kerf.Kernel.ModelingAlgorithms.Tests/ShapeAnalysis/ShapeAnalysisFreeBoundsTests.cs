@@ -185,11 +185,11 @@ public class ShapeAnalysisFreeBoundsTests
         var aSeq = new NCollection_HSequence<Shape>();
         aSeq.Append(new MakeWire(e1).Wire());
         aSeq.Append(new MakeWire(e2).Wire());
-        var aVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aVertices = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         NCollection_HSequence<Shape> aWires = FreeBounds.ConnectWiresToWires(aSeq, 1e-3, false, aVertices);
         Assert.Equal(1, aWires.Length());
         Assert.Equal(2, Count(aWires.Value(1), ShapeType.Edge));
-        Assert.Equal(2, aVertices.Extent());
+        Assert.Equal(2, aVertices.Count);
         foreach (KeyValuePair<Shape, Shape> aPair in aVertices)
         {
             Assert.True(aPair.Value.TShape()!.IsFrozen);

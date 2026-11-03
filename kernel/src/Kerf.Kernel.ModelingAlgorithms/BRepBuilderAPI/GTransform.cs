@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -56,13 +57,13 @@ public class GTransform : ModifyShape
     internal override NCollection_List<Shape> InternalModified(in Shape f)
     {
         _generated.Clear();
-        NCollection_DataMap<Shape, NCollection_List<Shape>> m = _hist.Modification();
-        if (m.IsBound(f))
+        Dictionary<Shape, NCollection_List<Shape>> m = _hist.Modification();
+        if (m.ContainsKey(f))
         {
             // OCCT copies each image's list into a local that it never reads; the list returned is the one the last
             // base Modified call filled (the image of the last converted shape).
             var li = new NCollection_List<Shape>();
-            var itL = new NCollection_List<Shape>.Iterator(m[f]);
+            var itL = new NCollection_List<Shape>.Iterator(m.GetValue(f));
             for (; itL.More(); itL.Next())
             {
                 li.Assign(base.InternalModified(itL.Value()));
@@ -73,12 +74,12 @@ public class GTransform : ModifyShape
 
     internal override Shape InternalModifiedShape(in Shape s)
     {
-        NCollection_DataMap<Shape, NCollection_List<Shape>> mapModif = _hist.Modification();
+        Dictionary<Shape, NCollection_List<Shape>> mapModif = _hist.Modification();
         Shape shape = s;
 
-        if (mapModif.IsBound(s))
+        if (mapModif.ContainsKey(s))
         {
-            NCollection_List<Shape> listModShape = mapModif[s];
+            NCollection_List<Shape> listModShape = mapModif.GetValue(s);
             int nbShapes = listModShape.Extent();
 
             if (nbShapes > 0)

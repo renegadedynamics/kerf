@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -116,9 +117,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return aB.ToString();
     }
 
-    private static string Indices(IEnumerable<Shape> theList, NCollection_IndexedMap<Shape> theMap, bool theSort)
+    private static string Indices(IEnumerable<Shape> theList, IndexedSet<Shape> theMap, bool theSort)
     {
-        IEnumerable<int> aV = theList.Select(theMap.FindIndex);
+        IEnumerable<int> aV = theList.Select(s => theMap.IndexOf(s) + 1);
         if (theSort)
         {
             aV = aV.Order();
@@ -126,9 +127,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         return string.Concat(aV.Select(i => " " + i.ToString(CultureInfo.InvariantCulture)));
     }
 
-    private static NCollection_IndexedMap<Shape> Map(IEnumerable<Shape> theShapes)
+    private static IndexedSet<Shape> Map(IEnumerable<Shape> theShapes)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         foreach (Shape aS in theShapes)
         {
             Exploration.MapShapes(aS, aMap);
@@ -144,9 +145,9 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         }
         StringBuilder aB = new();
         var aMap = Map([theResult]);
-        for (int i = 1; i <= aMap.Extent(); ++i)
+        for (int i = 1; i <= aMap.Count; ++i)
         {
-            NCollection_List<Shape> aT = theMaker.InternalGetTwins(aMap[i]);
+            NCollection_List<Shape> aT = theMaker.InternalGetTwins(aMap[i - 1]);
             if (!aT.IsEmpty())
             {
                 aB.Append(CultureInfo.InvariantCulture, $"t {i}:{Indices(aT, aMap, true)}\n");
@@ -164,11 +165,11 @@ public class BOPAlgo_ConnectedNativeTests(ITestOutputHelper output)
         StringBuilder aB = new();
         var aMap = Map([theResult]);
         var anArgMap = Map(theArgs);
-        for (int i = 1; i <= aMap.Extent(); ++i)
+        for (int i = 1; i <= aMap.Count; ++i)
         {
-            NCollection_List<Shape> aP = theTool.InternalMaterialsOnPositiveSide(aMap[i]);
-            NCollection_List<Shape> aN = theTool.InternalMaterialsOnNegativeSide(aMap[i]);
-            NCollection_List<Shape> aO = theTool.InternalGetOrigins(aMap[i]);
+            NCollection_List<Shape> aP = theTool.InternalMaterialsOnPositiveSide(aMap[i - 1]);
+            NCollection_List<Shape> aN = theTool.InternalMaterialsOnNegativeSide(aMap[i - 1]);
+            NCollection_List<Shape> aO = theTool.InternalGetOrigins(aMap[i - 1]);
             if (aP.IsEmpty() && aN.IsEmpty() && aO.IsEmpty())
             {
                 continue;

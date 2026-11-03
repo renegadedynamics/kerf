@@ -12,33 +12,33 @@ namespace Kerf.Engine.Meshing.Data;
 /// <summary>The default discrete wire.</summary>
 public class WireData : WireModel
 {
-    private readonly NCollection_DynamicArray<EdgeModel> _dEdges;
-    private readonly NCollection_DynamicArray<Orientation> _dEdgesOri;
+    private readonly List<EdgeModel> _dEdges;
+    private readonly List<Orientation> _dEdgesOri;
 
     /// <summary>An empty discrete wire of the wire, expecting <paramref name="edgeNb"/> edges (256 if not positive).</summary>
     public WireData(in Wire wire, int edgeNb) : base(wire)
     {
-        _dEdges = new NCollection_DynamicArray<EdgeModel>(edgeNb > 0 ? edgeNb : 256);
-        _dEdgesOri = new NCollection_DynamicArray<Orientation>(edgeNb > 0 ? edgeNb : 256);
+        _dEdges = new List<EdgeModel>(edgeNb > 0 ? edgeNb : 256);
+        _dEdgesOri = new List<Orientation>(edgeNb > 0 ? edgeNb : 256);
     }
 
     /// <inheritdoc/>
-    public override int EdgesNb() => _dEdges.Length();
+    public override int EdgesNb() => _dEdges.Count;
 
     /// <inheritdoc/>
     public override int AddEdge(EdgeModel dEdge, Orientation orientation)
     {
         int index = EdgesNb();
 
-        _dEdges.Append(dEdge);
-        _dEdgesOri.Append(orientation);
+        _dEdges.Add(dEdge);
+        _dEdgesOri.Add(orientation);
 
         return index;
     }
 
     /// <inheritdoc/>
-    public override EdgeModel GetEdge(int index) => _dEdges.Value(index);
+    public override EdgeModel GetEdge(int index) => _dEdges[index];
 
     /// <inheritdoc/>
-    public override Orientation GetEdgeOrientation(int index) => _dEdgesOri.Value(index);
+    public override Orientation GetEdgeOrientation(int index) => _dEdgesOri[index];
 }

@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Topology;
@@ -112,7 +113,7 @@ public class BRepFill_CompatibleWiresTests
         for (int s = 0; s < 3; s++)
         {
             Shape anIn = new[] { aSquare, aTriangle, aHexagon }[s];
-            NCollection_IndexedMap<Shape> aResEdges = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aResEdges = new(ShapeHasher.Instance);
             Exploration.MapShapes(aRes[s], ShapeType.Edge, aResEdges);
             int aTotal = 0;
             for (Explorer anExp = new(anIn, ShapeType.Edge); anExp.More(); anExp.Next())
@@ -140,7 +141,7 @@ public class BRepFill_CompatibleWiresTests
         ISchematiqList<Shape> aRes = aCW.Shape();
         Assert.Equal(5, NbEdges(aRes[1]));
         // the result's edges are the caller's edges
-        NCollection_IndexedMap<Shape> anIn = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anIn = new(ShapeHasher.Instance);
         Exploration.MapShapes(aW2, ShapeType.Edge, anIn);
         for (Explorer anExp = new(aRes[1], ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -242,7 +243,7 @@ public class BRepFill_CompatibleWiresTests
         Assert.Equal(t1, Text(aW1));
         Assert.Equal(t2, Text(aW2));
         // the 4-edge wire's edges were not cut (the triangle gets cut): the result holds the caller's edges
-        NCollection_IndexedMap<Shape> anIn = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anIn = new(ShapeHasher.Instance);
         Exploration.MapShapes(aW1, ShapeType.Edge, anIn);
         int aShared = 0;
         for (Explorer anExp = new(aCW.Shape()[0], ShapeType.Edge); anExp.More(); anExp.Next())

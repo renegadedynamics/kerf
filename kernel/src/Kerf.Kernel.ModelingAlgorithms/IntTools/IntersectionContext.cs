@@ -51,18 +51,18 @@ namespace Kerf.Engine.Intersection.Tools;
 /// </remarks>
 public class IntersectionContext : Transient
 {
-    private readonly NCollection_DataMap<Shape, FaceClassifier2D> _fClass2dMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, ProjectPointOnSurface> _projPSMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, ProjectPointOnCurve> _projPCMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, SolidClassifier> _sClassMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Curve3D, ProjectPointOnCurve> _projPTMap = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_DataMap<Shape, Hatcher2D> _hatcherMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, SurfaceRangeLocalizeData> _projSDataMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, FaceClassifier2D> _fClass2dMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, ProjectPointOnSurface> _projPSMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, ProjectPointOnCurve> _projPCMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, SolidClassifier> _sClassMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Curve3D, ProjectPointOnCurve> _projPTMap = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<Shape, Hatcher2D> _hatcherMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, SurfaceRangeLocalizeData> _projSDataMap = new(ShapeHasher.Instance);
     // OCCT.NET (decision 753): the localisation data keyed by face and by what the intersector's boxes depend on
-    private readonly NCollection_DataMap<Shape, Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>> _sDataKeyedMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, Box> _bndBoxDataMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, FaceSurfaceAdaptor> _surfAdaptorMap = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, OrientedBox> _obbMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>> _sDataKeyedMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Box> _bndBoxDataMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, FaceSurfaceAdaptor> _surfAdaptorMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, OrientedBox> _obbMap = new(ShapeHasher.Instance);
     private int _createFlag;
     private double _pOnSTolerance;
 
@@ -79,11 +79,11 @@ public class IntersectionContext : Transient
     /// </summary>
     public Box BndBox(in Shape aS)
     {
-        if (!_bndBoxDataMap.Find(aS, out Box box))
+        if (!_bndBoxDataMap.TryGetValue(aS, out Box box))
         {
             box = new Box();
             Bounds.Add(aS, ref box);
-            _bndBoxDataMap.Bind(aS, box);
+            _bndBoxDataMap[aS] = box;
         }
         return box;
     }
@@ -99,7 +99,7 @@ public class IntersectionContext : Transient
     /// <summary>The 2D point classifier of the face (taken FORWARD, with the face's tolerance), built on the first call.</summary>
     public FaceClassifier2D FClass2d(in Face aF)
     {
-        if (!_fClass2dMap.Find(aF, out FaceClassifier2D? pFClass2d))
+        if (!_fClass2dMap.TryGetValue(aF, out FaceClassifier2D? pFClass2d))
         {
             double tolF;
             Face ff;
@@ -110,7 +110,7 @@ public class IntersectionContext : Transient
             //
             pFClass2d = new FaceClassifier2D(ff, tolF);
             //
-            _fClass2dMap.Bind(ff, pFClass2d);
+            _fClass2dMap[ff] = pFClass2d;
         }
         return pFClass2d!;
     }
@@ -121,7 +121,7 @@ public class IntersectionContext : Transient
     /// </summary>
     public ProjectPointOnSurface ProjPS(in Face aF)
     {
-        if (!_projPSMap.Find(aF, out ProjectPointOnSurface? pProjPS))
+        if (!_projPSMap.TryGetValue(aF, out ProjectPointOnSurface? pProjPS))
         {
             UVBounds(aF, out double umin, out double usup, out double vmin, out double vsup);
             Surface s = Tool.Surface(aF)!;
@@ -130,7 +130,7 @@ public class IntersectionContext : Transient
             pProjPS.Init(s, umin, usup, vmin, vsup, _pOnSTolerance);
             pProjPS.SetExtremaFlag(ExtFlag_MIN);
             //
-            _projPSMap.Bind(aF, pProjPS);
+            _projPSMap[aF] = pProjPS;
         }
         return pProjPS!;
     }
@@ -138,14 +138,14 @@ public class IntersectionContext : Transient
     /// <summary>The point projector of the edge's 3D curve over the edge's range, built on the first call.</summary>
     public ProjectPointOnCurve ProjPC(in Edge aE)
     {
-        if (!_projPCMap.Find(aE, out ProjectPointOnCurve? pProjPC))
+        if (!_projPCMap.TryGetValue(aE, out ProjectPointOnCurve? pProjPC))
         {
             Curve3D? c3D = Tool.Curve(aE, out double f, out double l);
             //
             pProjPC = new ProjectPointOnCurve();
             pProjPC.Init(c3D!, f, l);
             //
-            _projPCMap.Bind(aE, pProjPC);
+            _projPCMap[aE] = pProjPC;
         }
         return pProjPC!;
     }
@@ -153,7 +153,7 @@ public class IntersectionContext : Transient
     /// <summary>The point projector of the curve over its own range, built on the first call (keyed by the curve object).</summary>
     public ProjectPointOnCurve ProjPT(Curve3D aC3D)
     {
-        if (!_projPTMap.Find(aC3D, out ProjectPointOnCurve? pProjPT))
+        if (!_projPTMap.TryGetValue(aC3D, out ProjectPointOnCurve? pProjPT))
         {
             double f, l;
             f = aC3D.FirstParameter();
@@ -162,7 +162,7 @@ public class IntersectionContext : Transient
             pProjPT = new ProjectPointOnCurve();
             pProjPT.Init(aC3D, f, l);
             //
-            _projPTMap.Bind(aC3D, pProjPT);
+            _projPTMap[aC3D] = pProjPT;
         }
         return pProjPT!;
     }
@@ -170,11 +170,11 @@ public class IntersectionContext : Transient
     /// <summary>The 3D point classifier of the solid, built on the first call.</summary>
     public SolidClassifier SolidClassifier(in Solid aSolid)
     {
-        if (!_sClassMap.Find(aSolid, out SolidClassifier? pSC))
+        if (!_sClassMap.TryGetValue(aSolid, out SolidClassifier? pSC))
         {
             pSC = new SolidClassifier(aSolid);
             //
-            _sClassMap.Bind(aSolid, pSC);
+            _sClassMap[aSolid] = pSC;
         }
         return pSC!;
     }
@@ -182,12 +182,12 @@ public class IntersectionContext : Transient
     /// <summary>The surface adaptor of the face (restricted to the face's UV bounds), built on the first call.</summary>
     public FaceSurfaceAdaptor SurfaceAdaptor(in Face face)
     {
-        if (!_surfAdaptorMap.Find(face, out FaceSurfaceAdaptor? pBAS))
+        if (!_surfAdaptorMap.TryGetValue(face, out FaceSurfaceAdaptor? pBAS))
         {
             //
             pBAS = new FaceSurfaceAdaptor(face, true);
             //
-            _surfAdaptorMap.Bind(face, pBAS);
+            _surfAdaptorMap[face] = pBAS;
         }
         return pBAS!;
     }
@@ -198,7 +198,7 @@ public class IntersectionContext : Transient
     /// </summary>
     public Hatcher2D Hatcher(in Face aF)
     {
-        if (!_hatcherMap.Find(aF, out Hatcher2D? pHatcher))
+        if (!_hatcherMap.TryGetValue(aF, out Hatcher2D? pHatcher))
         {
             double tolArcIntr, tolTangfIntr, tolHatch2D, tolHatch3D;
             double epsT;
@@ -242,7 +242,7 @@ public class IntersectionContext : Transient
                 pHatcher.AddElement(gac, orE);
             } // for (; aExp.More() ; aExp.Next()) {
             //
-            _hatcherMap.Bind(ff, pHatcher);
+            _hatcherMap[ff] = pHatcher;
         }
         return pHatcher!;
     }
@@ -257,12 +257,12 @@ public class IntersectionContext : Transient
     /// <inheritdoc cref="OBB(in Shape)"/>
     public OrientedBox OBB(in Shape aS, double gap)
     {
-        if (!_obbMap.Find(aS, out OrientedBox box))
+        if (!_obbMap.TryGetValue(aS, out OrientedBox box))
         {
             box = new OrientedBox();
             Bounds.AddOBB(aS, ref box);
             box.Enlarge(gap);
-            _obbMap.Bind(aS, box);
+            _obbMap[aS] = box;
         }
         return box;
     }
@@ -273,14 +273,14 @@ public class IntersectionContext : Transient
     /// </summary>
     public SurfaceRangeLocalizeData SurfaceData(in Face aF)
     {
-        if (!_projSDataMap.Find(aF, out SurfaceRangeLocalizeData? pSData))
+        if (!_projSDataMap.TryGetValue(aF, out SurfaceRangeLocalizeData? pSData))
         {
             pSData = new SurfaceRangeLocalizeData(3,
                                                            3,
                                                            10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion(),
                                                            10.0 * global::Kerf.Engine.Foundation.Precision.PConfusion());
             //
-            _projSDataMap.Bind(aF, pSData);
+            _projSDataMap[aF] = pSData;
         }
         return pSData!;
     }
@@ -299,10 +299,10 @@ public class IntersectionContext : Transient
                                                            double vMin,
                                                            double vMax)
     {
-        if (!_sDataKeyedMap.Find(aF, out Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>? map))
+        if (!_sDataKeyedMap.TryGetValue(aF, out Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>? map))
         {
             map = [];
-            _sDataKeyedMap.Bind(aF, map);
+            _sDataKeyedMap[aF] = map;
         }
         SurfaceDataKey key = new(criteria, faceTolerance, uMin, uMax, vMin, vMax);
         if (!map!.TryGetValue(key, out SurfaceRangeLocalizeData? pSData))

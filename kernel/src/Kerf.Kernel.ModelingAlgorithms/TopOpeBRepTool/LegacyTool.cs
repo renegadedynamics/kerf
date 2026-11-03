@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -28,11 +29,11 @@ public static class LegacyTool
     {
         EdgeCurveAdaptor bc = new(e);
 
-        NCollection_IndexedMap<Shape> m = new(ShapeHasher.Instance);
+        IndexedSet<Shape> m = new(ShapeHasher.Instance);
         Exploration.MapShapes(e, ShapeType.Vertex, m);
         int i, extent, n = 10;
         double ln = 0.0, d, t, f, l, dt;
-        extent = m.Extent();
+        extent = m.Count;
 
         if (extent != 1)
         {

@@ -199,8 +199,8 @@ public partial class PaveFiller
         }
         int nbPBP;
         //
-        NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
-        nbPBP = pbp.Length();
+        List<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
+        nbPBP = pbp.Count;
         if (nbPBP == 0)
         {
             return;
@@ -239,10 +239,10 @@ public partial class PaveFiller
         UpdatePaveBlocksWithSDVertices();
     }
 
-    private static void UpdateIntfsWithSDVertices<TInterfType>(DS ds, NCollection_DynamicArray<TInterfType> interfs)
+    private static void UpdateIntfsWithSDVertices<TInterfType>(DS ds, List<TInterfType> interfs)
         where TInterfType : Interf
     {
-        for (int i = 0; i < interfs.Length(); i++)
+        for (int i = 0; i < interfs.Count; i++)
         {
             TInterfType intf = interfs[i];
             if (intf.HasIndexNew(out int ind))

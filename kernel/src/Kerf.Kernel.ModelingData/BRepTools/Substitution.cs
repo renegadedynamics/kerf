@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -22,7 +23,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// </remarks>
 public sealed class Substitution
 {
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
 
     /// <summary>An empty substitution.</summary>
     public Substitution()
@@ -45,7 +46,7 @@ public sealed class Substitution
     {
         Standard_ConstructionError_Raise_if(IsCopied(os), "BRepTools_CutClue::Substitute");
         // OCCT.NET: OCCT's map stores a copy of the list
-        _map.Bind(os, new NCollection_List<Shape>(ns));
+        _map[os] = new NCollection_List<Shape>(ns);
     }
 
     /// <summary>Builds the new shape of <paramref name="s"/> if its sub-shapes have been replaced.</summary>
@@ -95,7 +96,7 @@ public sealed class Substitution
             for (; iteS.More(); iteS.Next())
             {
                 Orientation os = iteS.Value().Orientation();
-                var L = new NCollection_List<Shape>(_map[iteS.Value()]);
+                var L = new NCollection_List<Shape>(_map.GetValue(iteS.Value()));
                 var iteL = new NCollection_List<Shape>.Iterator(L);
 
                 for (; iteL.More(); iteL.Next())
@@ -106,7 +107,7 @@ public sealed class Substitution
                     //------------------------------------------
                     Build(nss);
 
-                    NCollection_List<Shape> nl = _map[nss];
+                    NCollection_List<Shape> nl = _map.GetValue(nss);
                     Orientation newOr = global::Kerf.Engine.Topology.TopAbs.Compose(os, nss.Orientation());
                     var iteNL = new NCollection_List<Shape>.Iterator(nl);
 
@@ -144,15 +145,15 @@ public sealed class Substitution
     /// <summary>True if <paramref name="s"/> has been replaced.</summary>
     public bool IsCopied(in Shape s)
     {
-        if (_map.IsBound(s))
+        if (_map.ContainsKey(s))
         {
-            if (_map[s].IsEmpty())
+            if (_map.GetValue(s).IsEmpty())
             {
                 return true;
             }
             else
             {
-                return !s.IsSame(_map[s].First());
+                return !s.IsSame(_map.GetValue(s).First());
             }
         }
         else
@@ -177,6 +178,6 @@ public sealed class Substitution
     internal NCollection_List<Shape> InternalCopy(in Shape s)
     {
         Standard_NoSuchObject_Raise_if(!IsCopied(s), "BRepTools_Substitution::Copy");
-        return _map[s];
+        return _map.GetValue(s);
     }
 }

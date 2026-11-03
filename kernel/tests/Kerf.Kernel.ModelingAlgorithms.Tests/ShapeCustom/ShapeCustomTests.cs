@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Checks;
@@ -28,10 +29,10 @@ public class ShapeCustomTests
 {
     private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         var aList = new List<Shape>();
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aList.Add(aMap[i]);
         }
@@ -40,7 +41,7 @@ public class ShapeCustomTests
 
     private static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
     }
@@ -137,7 +138,7 @@ public class ShapeCustomTests
         Shape aBox = Mirrored(Box());
         List<Shape> aFaces = SubShapes(aBox, ShapeType.Face);
         var aDM = new DirectModification();
-        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aContext = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         var aMD = new Modifier();
 
         Shape aFirst = Customize.ApplyModifier(aFaces[0], aDM, aContext, aMD);
@@ -153,7 +154,7 @@ public class ShapeCustomTests
     {
         Shape aBox = Mirrored(Box());
         var aReShape = new ReShapeBuilder();
-        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aContext = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Shape aResult = Customize.ApplyModifier(aBox, new DirectModification(), aContext, new Modifier(),
                                                          default, aReShape);
         Assert.True(AllFrozen(aResult));
@@ -171,7 +172,7 @@ public class ShapeCustomTests
     {
         Shape aBox = Mirrored(Box());
         Shape aCompound = Compound(aBox, aBox.Located(new Placement(new Transform3D())), aBox);
-        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aContext = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Shape aResult = Customize.ApplyModifier(aCompound, new DirectModification(), aContext, new Modifier());
         var aChildren = new List<Shape>();
         for (var it = new Iterator(aResult); it.More(); it.Next())
@@ -393,7 +394,7 @@ public class ShapeCustomTests
         var aParameters = new RestrictionParameters();
         aParameters.ConvertCylindricalSurf() = true;
         var aBSR = new BSplineRestriction(true, true, true, 1e-3, 1e-5, C1, C2, 6, 10, true, false, aParameters);
-        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aContext = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Customize.ApplyModifier(aCylinder, aBSR, aContext, new Modifier());
         Assert.True(aBSR.OfSpanCount > 0);
         double aSurfaceError = aBSR.MaxErrors(out double a3d, out double a2d);
@@ -414,12 +415,12 @@ public class ShapeCustomTests
         var aMsg = new MsgRegistrator();
         aDM.SetMsgRegistrator(aMsg);
         Assert.Same(aMsg, aDM.MsgRegistrator());
-        var aContext = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var aContext = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         Customize.ApplyModifier(aBox, aDM, aContext, new Modifier());
-        Assert.Equal(6, aMsg.MapShape().Extent());
+        Assert.Equal(6, aMsg.MapShape().Count);
         foreach (Shape aF in SubShapes(aBox, ShapeType.Face))
         {
-            Assert.Equal("Direction of Face of revolution corrected", aMsg.MapShape()[aF].First().Value());
+            Assert.Equal("Direction of Face of revolution corrected", aMsg.MapShape().GetValue(aF).First().Value());
         }
     }
 

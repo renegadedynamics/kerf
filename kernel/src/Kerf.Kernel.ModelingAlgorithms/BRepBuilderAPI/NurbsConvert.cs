@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -24,7 +25,7 @@ namespace Kerf.Engine.Construction.Api;
 /// </remarks>
 public class NurbsConvert : ModifyShape
 {
-    private readonly NCollection_DataMap<Shape, Shape> _vtxToReplace =
+    private readonly Dictionary<Shape, Shape> _vtxToReplace =
         new(ShapeHasher.Instance);
     private readonly ReShape _subs = new();
 
@@ -76,9 +77,9 @@ public class NurbsConvert : ModifyShape
                 Vertex vtx = ShapeCasts.Vertex(iter.Value());
                 if (initVertices.Contains(vtx))
                 {
-                    if (_vtxToReplace.IsBound(vtx))
+                    if (_vtxToReplace.ContainsKey(vtx))
                     {
-                        bb.UpdateVertex(ShapeCasts.Vertex(_vtxToReplace[vtx]), eTol + Epsilon(eTol));
+                        bb.UpdateVertex(ShapeCasts.Vertex(_vtxToReplace.GetValue(vtx)), eTol + Epsilon(eTol));
                     }
                     else
                     {
@@ -89,7 +90,7 @@ public class NurbsConvert : ModifyShape
                             Point3D vPnt = Tool.Pnt(vtx);
                             bb.MakeVertex(ref newVtx, vPnt, eTol + Epsilon(eTol));
                             newVtx.Orientation(vtx.Orientation());
-                            _vtxToReplace.Bind(vtx, newVtx);
+                            _vtxToReplace[vtx] = newVtx;
                         }
                     }
                 }
@@ -101,7 +102,7 @@ public class NurbsConvert : ModifyShape
             }
         }
 
-        if (_vtxToReplace.IsEmpty())
+        if (_vtxToReplace.Count == 0)
         {
             return;
         }
@@ -119,12 +120,12 @@ public class NurbsConvert : ModifyShape
     {
         if (s.ShapeType() == ShapeType.Vertex)
         {
-            if (_vtxToReplace.IsBound(s))
+            if (_vtxToReplace.ContainsKey(s))
             {
-                return _vtxToReplace[s];
+                return _vtxToReplace.GetValue(s);
             }
         }
-        if (_vtxToReplace.IsEmpty())
+        if (_vtxToReplace.Count == 0)
         {
             return _modifier.InternalModifiedShape(s);
         }
@@ -140,9 +141,9 @@ public class NurbsConvert : ModifyShape
         _generated.Clear();
         if (f.ShapeType() == ShapeType.Vertex)
         {
-            if (_vtxToReplace.IsBound(f))
+            if (_vtxToReplace.ContainsKey(f))
             {
-                _generated.Append(_vtxToReplace[f]);
+                _generated.Append(_vtxToReplace.GetValue(f));
             }
             else
             {
@@ -151,7 +152,7 @@ public class NurbsConvert : ModifyShape
         }
         else
         {
-            if (_vtxToReplace.IsEmpty())
+            if (_vtxToReplace.Count == 0)
             {
                 _generated.Append(_modifier.InternalModifiedShape(f));
             }

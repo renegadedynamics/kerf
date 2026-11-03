@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -61,8 +62,8 @@ public partial class BooleanBuilder
 
         // Analyze all types of Interferences which can produce
         // new vertices - Edge/Edge and Edge/Face
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
-        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
+        List<InterfEE> eEs = _ds.InterfEE();
+        List<InterfEF> eFs = _ds.InterfEF();
 
         // Fence map to avoid duplicates in the list of Generated;
         NCollection_IntMap mFence = new();
@@ -74,7 +75,7 @@ public partial class BooleanBuilder
 
         for (int k = isFace ? 1 : 0; k < 2; ++k)
         {
-            int nbLines = k == 0 ? eEs.Length() : eFs.Length();
+            int nbLines = k == 0 ? eEs.Count : eFs.Count;
             for (int i = 0; i < nbLines; ++i)
             {
                 Interf aInt = k == 0 ? eEs[i] : eFs[i];
@@ -119,10 +120,10 @@ public partial class BooleanBuilder
         FaceInfo fi = _ds.FaceInfo(nS);
 
         // Section edges of the face
-        NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+        IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
         // Save section edges contained in the result shape
-        int nb = mpbSc.Extent();
-        for (int i = 1; i <= nb; ++i)
+        int nb = mpbSc.Count;
+        for (int i = 0; i < nb; ++i)
         {
             Shape eNew = _ds.Shape(mpbSc[i].Edge());
             if (_mapShape.Contains(eNew))
@@ -148,7 +149,7 @@ public partial class BooleanBuilder
 
     /// <summary>The splits of <paramref name="s"/> (null if it has no images).</summary>
     protected virtual NCollection_List<Shape>? LocModified(in Shape s)
-        => _images.Find(s, out NCollection_List<Shape> list) ? list : null;
+        => _images.TryGetValue(s, out NCollection_List<Shape>? list) ? list : null;
 
     /// <summary>OCCT's history of the result: modified, generated and deleted argument sub-shapes.</summary>
     protected void PrepareHistory(ProgressRange range)

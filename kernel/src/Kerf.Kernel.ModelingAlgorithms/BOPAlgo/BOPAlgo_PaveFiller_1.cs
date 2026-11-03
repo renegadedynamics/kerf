@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
@@ -29,10 +30,10 @@ public partial class PaveFiller
             return;
         }
         //
-        NCollection_DynamicArray<InterfVV> vVs = _ds!.InterfVV();
+        List<InterfVV> vVs = _ds!.InterfVV();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<int, NCollection_List<int>> mili = new();
+        IndexedMap<int, NCollection_List<int>> mili = new();
         NCollection_List<NCollection_List<int>> mBlocks = new();
         //
         // 1. Map V/LV
@@ -158,7 +159,7 @@ public partial class PaveFiller
         box.SetGap(Tool.Tolerance(vn) + global::Kerf.Engine.Foundation.Precision.Confusion());
         //
         // Fill ShapesSD
-        NCollection_DynamicArray<InterfVV> vVs = _ds.InterfVV();
+        List<InterfVV> vVs = _ds.InterfVV();
         //
         itLI.Initialize(vertIndices);
         for (; itLI.More(); itLI.Next())
@@ -193,7 +194,8 @@ public partial class PaveFiller
                 {
                     if (_ds.AddInterf(n1, n2))
                     {
-                        InterfVV vv = vVs.Append(new InterfVV());
+                        InterfVV vv =  new InterfVV();
+                        vVs.Add(vv);
                         vv.SetIndices(n1, n2);
                         vv.SetIndexNew(nV);
                     }

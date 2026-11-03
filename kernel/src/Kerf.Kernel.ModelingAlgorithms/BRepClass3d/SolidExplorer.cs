@@ -41,10 +41,10 @@ public class SolidExplorer
     private double _paramOnEdge;
     private readonly Explorer _shellExplorer = new();
     private readonly Explorer _faceExplorer = new();
-    private readonly NCollection_DataMap<Shape, CurveSurfaceIntersector?> _mapOfInter =
+    private readonly Dictionary<Shape, CurveSurfaceIntersector?> _mapOfInter =
         new(ShapeHasher.Instance);
     private readonly SpatialTree<int, Box> _tree = new();
-    private readonly NCollection_IndexedMap<Shape> _mapEV = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapEV = new(ShapeHasher.Instance);
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
@@ -269,9 +269,9 @@ public class SolidExplorer
 
         bool isNotUper = !surf.IsUPeriodic, isNotVper = !surf.IsVPeriodic;
         int nbPntCalc = 0;
-        if (_mapOfInter.IsBound(face))
+        if (_mapOfInter.ContainsKey(face))
         {
-            CurveSurfaceIntersector? ptr = _mapOfInter.Find(face);
+            CurveSurfaceIntersector? ptr = _mapOfInter.GetValue(face);
             bool isInside = true;
             if (isNotUper)
             {
@@ -548,11 +548,11 @@ public class SolidExplorer
                     if (aClass.PerformInfinitePoint() == In)
                     {
                         restr = false;
-                        if (_mapOfInter.IsBound(face))
+                        if (_mapOfInter.ContainsKey(face))
                         {
-                            _mapOfInter.UnBind(face);
+                            _mapOfInter.Remove(face);
                             var ptr = new CurveSurfaceIntersector(face, global::Kerf.Engine.Foundation.Precision.Confusion(), restr, false);
-                            _mapOfInter.Bind(face, ptr);
+                            _mapOfInter[face] = ptr;
                         }
                     }
                     else
@@ -896,7 +896,7 @@ public class SolidExplorer
         {
             Face face = ShapeCasts.Face(expl.Current());
             var ptr = new CurveSurfaceIntersector(face, global::Kerf.Engine.Foundation.Precision.Confusion(), true, false);
-            _mapOfInter.Bind(face, ptr);
+            _mapOfInter[face] = ptr;
             _reject = false; //-- at least one face in the solid
         }
 
@@ -940,10 +940,10 @@ public class SolidExplorer
         // Fill mapEV with vertices and edges from shape
         var treeFiller = new SpatialTreeFiller<int, Box>(_tree);
         //
-        int i, nbEV = _mapEV.Extent();
+        int i, nbEV = _mapEV.Count;
         for (i = 1; i <= nbEV; ++i)
         {
-            Shape aS = _mapEV[i];
+            Shape aS = _mapEV[i - 1];
             //
             Box box = new();
             Bounds.Add(aS, ref box);
@@ -999,7 +999,7 @@ public class SolidExplorer
     /// <exception cref="NoSuchObjectException">The face is not in the shape.</exception>
     public CurveSurfaceIntersector Intersector(in Face f)
     {
-        CurveSurfaceIntersector? ptr = _mapOfInter.Find(f);
+        CurveSurfaceIntersector? ptr = _mapOfInter.GetValue(f);
         CurveSurfaceIntersector curr = ptr!;
         return curr;
     }
@@ -1016,5 +1016,5 @@ public class SolidExplorer
     public SpatialTree<int, Box> GetTree() => _tree;
 
     /// <summary>The edges and vertices of the shape.</summary>
-    public NCollection_IndexedMap<Shape> GetMapEV() => _mapEV;
+    public IndexedSet<Shape> GetMapEV() => _mapEV;
 }

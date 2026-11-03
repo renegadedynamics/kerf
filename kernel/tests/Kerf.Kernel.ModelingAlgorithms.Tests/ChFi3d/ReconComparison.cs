@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Geometry.Bounds;
@@ -146,9 +147,9 @@ internal static class ReconComparison
 
     internal static int Count(in Shape S, ShapeType T)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, T, M);
-        return M.Extent();
+        return M.Count;
     }
 
     private static string FaceKey(in Shape F) =>
@@ -247,11 +248,11 @@ internal static class ReconComparison
         }
 
         // the history, as sets of (surface type, area): the faces of each surface and the images of each input face
-        NCollection_IndexedMap<Shape> aNF = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aNF = new(ShapeHasher.Instance);
         Exploration.MapShapes(aNative, ShapeType.Face, aNF);
-        NCollection_IndexedMap<Shape> aMF = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMF = new(ShapeHasher.Instance);
         Exploration.MapShapes(aMine, ShapeType.Face, aMF);
-        IEnumerable<Shape> NativeFaces(int[] theIdx) => theIdx.Where(i => i > 0).Select(i => aNF[i]);
+        IEnumerable<Shape> NativeFaces(int[] theIdx) => theIdx.Where(i => i > 0).Select(i => aNF[i - 1]);
         for (int i = 1; i <= theCase.NewFaces.Count; i++)
         {
             string s1 = FaceSet(NativeFaces(theCase.NewFaces[i - 1]));
@@ -270,11 +271,11 @@ internal static class ReconComparison
                 d.Add($"NewEdges({i}) {Lengths(l1)} | {Lengths(l2)}");
             }
         }
-        NCollection_IndexedMap<Shape> aIF = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aIF = new(ShapeHasher.Instance);
         Exploration.MapShapes(theRun.Input, ShapeType.Face, aIF);
         for (int i = 1; i <= theCase.Modified.Count; i++)
         {
-            Shape F = aIF[i];
+            Shape F = aIF[i - 1];
             List<Shape> aMod = [];
             foreach (Containment st in new[] { Out, In, On })
             {
@@ -292,15 +293,15 @@ internal static class ReconComparison
             }
         }
         // the input's solids: BRepFilletAPI's IsDeleted and Modified read the reconstruction's splits (unit 7R3)
-        NCollection_IndexedMap<Shape> aIS = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aIS = new(ShapeHasher.Instance);
         Exploration.MapShapes(theRun.Input, ShapeType.Solid, aIS);
-        NCollection_IndexedMap<Shape> aNS = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aNS = new(ShapeHasher.Instance);
         Exploration.MapShapes(aNative, ShapeType.Solid, aNS);
-        NCollection_IndexedMap<Shape> aMS = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMS = new(ShapeHasher.Instance);
         Exploration.MapShapes(aMine, ShapeType.Solid, aMS);
-        for (int i = 1; i <= Math.Min(theCase.Solids.Count, aIS.Extent()); i++)
+        for (int i = 1; i <= Math.Min(theCase.Solids.Count, aIS.Count); i++)
         {
-            Shape S = aIS[i];
+            Shape S = aIS[i - 1];
             List<Shape> aMod = [];
             foreach (Containment st in new[] { Out, In, On })
             {
@@ -313,7 +314,7 @@ internal static class ReconComparison
             static string Volumes(IEnumerable<Shape> L) =>
                 "[" + string.Join(", ", L.Select(x => Volume(x).ToString("G6", CultureInfo.InvariantCulture))) + "]";
             (bool nDel, int[] nMod) = theCase.Solids[i - 1];
-            string s1 = (nDel ? "deleted " : "") + Volumes(nMod.Where(j => j > 0).Select(j => aNS[j]));
+            string s1 = (nDel ? "deleted " : "") + Volumes(nMod.Where(j => j > 0).Select(j => aNS[j - 1]));
             string s2 = (aDeleted ? "deleted " : "") + Volumes(aMod);
             if (s1 != s2)
             {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
@@ -385,9 +386,9 @@ public sealed class Build123dDifferentialTests(ITestOutputHelper output)
             foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face,
                                                        ShapeType.Wire, ShapeType.Edge, ShapeType.Vertex })
             {
-                var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
                 Exploration.MapShapes(aShape, aType, aMap);
-                aCounts.Add(aMap.Extent());
+                aCounts.Add(aMap.Count);
             }
             var aVolume = new Properties();
             MassPropertiesBuilder.VolumeProperties(aShape, aVolume);

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
@@ -143,8 +144,8 @@ public class MakePeriodicAlgorithm : Options
     protected Shape _shape = new();                         //!< Resulting periodic shape (base for repetitions)
     protected Shape _repeatedShape = new();                 //!< Resulting shape after making repetitions of the base
     protected double[] _repeatPeriod = new double[3];              //!< XYZ repeat period
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _repeatedTwins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
-    protected NCollection_DataMap<Shape, NCollection_List<Shape>> _twins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
+    protected Dictionary<Shape, NCollection_List<Shape>> _repeatedTwins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
+    protected Dictionary<Shape, NCollection_List<Shape>> _twins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
     protected History? _splitHistory;                    //!< Split history - history of shapes modification
     protected History? _history;                         //!< Final history of shapes modifications
     private History _inPlace = new();                    //!< Kerf: the shapes changed in place, modified into what stands for them
@@ -304,9 +305,9 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>OCCT's GetTwins, the algorithm's own list (empty if none), without freezing.</summary>
     internal NCollection_List<Shape> InternalGetTwins(in Shape s)
     {
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map =
-            _repeatedTwins.IsEmpty() ? _twins : _repeatedTwins;
-        if (map.Find(s, out NCollection_List<Shape> twins))
+        Dictionary<Shape, NCollection_List<Shape>> map =
+            _repeatedTwins.Count == 0 ? _twins : _repeatedTwins;
+        if (map.TryGetValue(s, out NCollection_List<Shape>? twins))
         {
             return twins;
         }
@@ -314,7 +315,7 @@ public class MakePeriodicAlgorithm : Options
         // is the shape itself
         foreach (Shape copy in _inPlace.Modified(s))
         {
-            if (map.Find(copy, out twins))
+            if (map.TryGetValue(copy, out twins))
             {
                 return twins;
             }
@@ -502,9 +503,9 @@ public class MakePeriodicAlgorithm : Options
         // Get the trimmed shape
         // Kerf: the end of the overlay: the shapes and the history get what stands for each changed shape
         Shape trimmed = common.InternalShape();
-        NCollection_IndexedMap<Shape> trimmedShapes = new(ShapeHasher.Instance);
+        IndexedSet<Shape> trimmedShapes = new(ShapeHasher.Instance);
         Exploration.MapShapes(trimmed, trimmedShapes);
-        NCollection_IndexedMap<Shape> inputShapes = new(ShapeHasher.Instance);
+        IndexedSet<Shape> inputShapes = new(ShapeHasher.Instance);
         Exploration.MapShapes(_inputShape, inputShapes);
         _shape = overlay.Finish(trimmed, [_inputShape]);
         _inputShape = overlay.Final(_inputShape);
@@ -573,11 +574,11 @@ public class MakePeriodicAlgorithm : Options
 
     // Associates the shape <theS> with the shape <theTwin> in the map.
     private static void AddTwin(in Shape s, in Shape twin,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+                                Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        if (!map.Find(s, out NCollection_List<Shape> twins))
+        if (!map.TryGetValue(s, out NCollection_List<Shape>? twins))
         {
-            map.Bound(s, new NCollection_List<Shape>()).Append(twin);
+            map.SetValueRef(s, new NCollection_List<Shape>()).Append(twin);
             return;
         }
 
@@ -605,16 +606,16 @@ public class MakePeriodicAlgorithm : Options
     {
         // Prepare map of the sub-shapes of the input shape to make
         // associations of the opposite shapes
-        NCollection_IndexedMap<Shape> subShapesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> subShapesMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(_shape, subShapesMap);
-        int nbS = subShapesMap.Extent();
+        int nbS = subShapesMap.Count;
 
         // Translate the shape to the positive periodic directions to make the
         // shapes look identical on the opposite sides.
         NCollection_List<Shape> tools = new();
 
         // Remember the history of shapes translation
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> translationHistMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> translationHistMap = new(ShapeHasher.Instance);
 
         // Make translations for all periodic directions
         for (int i = 0; i < 3; ++i)
@@ -630,18 +631,18 @@ public class MakePeriodicAlgorithm : Options
             tools.Append(translator.InternalShape());
 
             // Fill the translation history map
-            for (int j = 1; j <= nbS; ++j)
+            for (int j = 0; j < nbS; ++j)
             {
                 Shape s = subShapesMap[j];
                 if (global::Kerf.Engine.Topology.History.IsSupportedType(s))
                 {
                     NCollection_List<Shape> sm = translator.InternalModified(s);
-                    int index = translationHistMap.FindIndex(s);
+                    int index = translationHistMap.IndexOf(s) + 1;
                     if (index == 0)
                     {
-                        index = translationHistMap.Add(s, new NCollection_List<Shape>());
+                        index = translationHistMap.Add(s, new NCollection_List<Shape>()) + 1;
                     }
-                    translationHistMap[index].Append(sm.First());
+                    translationHistMap.ValueAt(index - 1).Append(sm.First());
                 }
             }
         }
@@ -659,10 +660,10 @@ public class MakePeriodicAlgorithm : Options
         _splitHistory!.Merge(splitShapeHist);
 
         // Make associations between identical opposite sub-shapes
-        int nbSH = translationHistMap.Extent();
-        for (int i = 1; i <= nbSH; ++i)
+        int nbSH = translationHistMap.Count;
+        for (int i = 0; i < nbSH; ++i)
         {
-            Shape pS = translationHistMap.FindKey(i);
+            Shape pS = translationHistMap.KeyAt(i);
             ISchematiqList<Shape> sIm = splitShapeHist.Modified(pS);
             if (sIm.Count == 1)
             {
@@ -673,7 +674,7 @@ public class MakePeriodicAlgorithm : Options
                 continue;
             }
 
-            NCollection_List<Shape> lTranslated = translationHistMap[i];
+            NCollection_List<Shape> lTranslated = translationHistMap.ValueAt(i);
 
             NCollection_List<Shape>.Iterator itLT = new(lTranslated);
             for (; itLT.More(); itLT.Next())
@@ -802,15 +803,15 @@ public class MakePeriodicAlgorithm : Options
         // Create the translation history - all translated shapes will be
         // created as Generated from the shape.
         History translationHistory = new();
-        NCollection_IndexedMap<Shape> subShapesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> subShapesMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(_repeatedShape, subShapesMap);
-        int nbS = subShapesMap.Extent();
+        int nbS = subShapesMap.Count;
 
         // Add shapes for gluing
         NCollection_List<Shape> shapes = new();
         // Add the shape itself
         shapes.Append(_repeatedShape);
-        for (int i = 1; i <= nbS; ++i)
+        for (int i = 0; i < nbS; ++i)
         {
             Shape s = subShapesMap[i];
             if (global::Kerf.Engine.Topology.History.IsSupportedType(s))
@@ -827,7 +828,7 @@ public class MakePeriodicAlgorithm : Options
             shapes.Append(translator.InternalShape());
 
             // Fill the translation history
-            for (int j = 1; j <= nbS; ++j)
+            for (int j = 0; j < nbS; ++j)
             {
                 Shape s = subShapesMap[j];
                 if (global::Kerf.Engine.Topology.History.IsSupportedType(s))
@@ -873,10 +874,10 @@ public class MakePeriodicAlgorithm : Options
         UpdateTwins(translationHistory, gluingHistory);
 
         // Kerf: the end of the overlay: the shapes, histories and twins get what stands for each changed shape
-        NCollection_IndexedMap<Shape> gluedShapes = new(ShapeHasher.Instance), periodicShapes = new(ShapeHasher.Instance);
+        IndexedSet<Shape> gluedShapes = new(ShapeHasher.Instance), periodicShapes = new(ShapeHasher.Instance);
         Exploration.MapShapes(glued, gluedShapes);
         Exploration.MapShapes(_shape, periodicShapes);
-        NCollection_IndexedMap<Shape> inputShapes = new(ShapeHasher.Instance);
+        IndexedSet<Shape> inputShapes = new(ShapeHasher.Instance);
         Exploration.MapShapes(_inputShape, inputShapes);
         _repeatedShape = overlay.Finish(glued, [_shape, _inputShape]);
         _shape = overlay.Final(_shape);
@@ -898,7 +899,7 @@ public class MakePeriodicAlgorithm : Options
     // Kerf: merges the in-place images of the shapes (a working overlay's Images) into the history, so its results are
     // what stands for them now; a shape that is also an initial shape of the history with only generated shapes (the
     // translations' AddGenerated(s, s)) is modified into what stands for it, as the shape itself is natively
-    private static void MergeInPlace(History history, History images, NCollection_IndexedMap<Shape> shapes)
+    private static void MergeInPlace(History history, History images, IndexedSet<Shape> shapes)
     {
         history.Merge(images);
         foreach (Shape s in shapes)
@@ -913,14 +914,14 @@ public class MakePeriodicAlgorithm : Options
     }
 
     // Kerf: the twins with what stands for each shape after the overlay's end
-    private static NCollection_DataMap<Shape, NCollection_List<Shape>> FinalTwins(
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map, WorkingOverlay overlay)
+    private static Dictionary<Shape, NCollection_List<Shape>> FinalTwins(
+        Dictionary<Shape, NCollection_List<Shape>> map, WorkingOverlay overlay)
     {
         if (overlay.WorkingCount == 0)
         {
             return map;
         }
-        NCollection_DataMap<Shape, NCollection_List<Shape>> aFinal = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> aFinal = new(ShapeHasher.Instance);
         foreach ((Shape key, NCollection_List<Shape> list) in map)
         {
             NCollection_List<Shape> aNew = new();
@@ -928,7 +929,7 @@ public class MakePeriodicAlgorithm : Options
             {
                 aNew.Append(overlay.Final(aS));
             }
-            aFinal.Bind(overlay.Final(key), aNew);
+            aFinal[overlay.Final(key)] = aNew;
         }
         return aFinal;
     }
@@ -936,18 +937,18 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>Updates the map of twins after repetition.</summary>
     protected void UpdateTwins(History translationHistory, History gluingHistory)
     {
-        if (_twins.IsEmpty())
+        if (_twins.Count == 0)
         {
             return;
         }
 
-        if (_repeatedTwins.IsEmpty())
+        if (_repeatedTwins.Count == 0)
         {
             _repeatedTwins = CopyTwins(_twins);
         }
 
         // New twins
-        NCollection_DataMap<Shape, NCollection_List<Shape>> newTwinsMap = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> newTwinsMap = new(ShapeHasher.Instance);
 
         // Fence map to avoid repeated fill for the twins
         HashSet<Shape> mTwinsDone = new(ShapeHasher.Instance);
@@ -975,7 +976,7 @@ public class MakePeriodicAlgorithm : Options
 
             // All shapes generated from the shape itself and generated
             // from its twins will be the new twins for the shape
-            NCollection_IndexedMap<Shape> newGroup = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newGroup = new(ShapeHasher.Instance);
             itLT.Initialize(lTwins);
 
             for (bool bShape = true; itLT.More();)
@@ -1008,15 +1009,15 @@ public class MakePeriodicAlgorithm : Options
             }
 
             // Associate the twins to each other
-            int nbTwins = newGroup.Extent();
+            int nbTwins = newGroup.Count;
             for (int i = 1; i <= nbTwins; ++i)
             {
-                ref NCollection_List<Shape> pTwins = ref newTwinsMap.Bound(newGroup[i], new NCollection_List<Shape>());
+                ref NCollection_List<Shape> pTwins = ref newTwinsMap.SetValueRef(newGroup[i - 1], new NCollection_List<Shape>());
                 for (int j = 1; j <= nbTwins; ++j)
                 {
                     if (i != j)
                     {
-                        pTwins.Append(newGroup[j]);
+                        pTwins.Append(newGroup[j - 1]);
                     }
                 }
             }
@@ -1026,13 +1027,13 @@ public class MakePeriodicAlgorithm : Options
     }
 
     // OCCT's map assignment copies the lists
-    private static NCollection_DataMap<Shape, NCollection_List<Shape>> CopyTwins(
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+    private static Dictionary<Shape, NCollection_List<Shape>> CopyTwins(
+        Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        NCollection_DataMap<Shape, NCollection_List<Shape>> copy = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> copy = new(ShapeHasher.Instance);
         foreach ((Shape key, NCollection_List<Shape> list) in map)
         {
-            copy.Bind(key, new NCollection_List<Shape>(list));
+            copy[key] = new NCollection_List<Shape>(list);
         }
         return copy;
     }

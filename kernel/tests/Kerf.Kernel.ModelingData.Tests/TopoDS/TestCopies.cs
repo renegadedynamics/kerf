@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 
@@ -34,9 +35,9 @@ internal static class TestCopies
         Shape copy = shape;
         copy.TShape(ExactCopy(shape.TShape()!, copies));
 
-        var map = new Occt.NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new Kerf.Engine.Collections.IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, map);
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 0; i < map.Count; i++)
         {
             Shape s = map[i];
             if (History.IsSupportedType(s) && copies.TryGetValue(s.TShape()!, out TShape? image))

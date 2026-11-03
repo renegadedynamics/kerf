@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Tools;
 using Occt;
@@ -65,9 +66,9 @@ public class ProcessForFinder : Transient
     }
 
     // The initial size is indicative only: the port's map grows as needed
-    private static NCollection_IndexedDataMap<Finder, Binder?> NewMap(int nb)
+    private static IndexedMap<Finder, Binder?> NewMap(int nb)
     {
-        return new NCollection_IndexedDataMap<Finder, Binder?>(FindHasher.Instance);
+        return new IndexedMap<Finder, Binder?>(FindHasher.Instance);
     }
 
     /// <summary>Resets a TransferProcess as ready for a completely new work. Clears general data (roots) and the Map.</summary>
@@ -92,7 +93,7 @@ public class ProcessForFinder : Transient
         int j, unb = 0;
         for (i = 1; i <= nb; i++)
         {
-            if (_themap[i] is null)
+            if (_themap.ValueAt(i - 1) is null)
             {
                 unb++;
             }
@@ -105,7 +106,7 @@ public class ProcessForFinder : Transient
         // Redo the map -> offsets
         var unbs = new NCollection_Array1<int>(1, nb);
         unbs.Init(0);
-        NCollection_IndexedDataMap<Finder, Binder?> newmap = NewMap(nb * 2);
+        IndexedMap<Finder, Binder?> newmap = NewMap(nb * 2);
         for (i = 1; i <= nb; i++)
         {
             Finder? ent = Mapped(i);
@@ -114,16 +115,16 @@ public class ProcessForFinder : Transient
             {
                 continue;
             }
-            j = newmap.Add(ent, bnd);
+            j = newmap.Add(ent, bnd) + 1;
             unbs.SetValue(i, j);
         }
         _themap = newmap;
 
         // Update Root List
-        var newRoots = new NCollection_IndexedMap<int>();
-        for (i = 1; i <= _theroots.Extent(); i++)
+        var newRoots = new IndexedSet<int>();
+        for (i = 1; i <= _theroots.Count; i++)
         {
-            j = _theroots.FindKey(i);
+            j = _theroots[i - 1];
             int k = unbs.Value(j);
             if (k != 0)
             {
@@ -199,7 +200,7 @@ public class ProcessForFinder : Transient
         int index = FindIndex(start);
         if (index > 0)
         {
-            Binder? binder = _themap.FindFromIndex(index);
+            Binder? binder = _themap.ValueAt(index - 1);
             return binder;
         }
         return null;
@@ -249,7 +250,7 @@ public class ProcessForFinder : Transient
         _theindex = FindIndex(start);
         if (_theindex > 0)
         {
-            _thelastbnd = _themap.FindFromIndex(_theindex);
+            _thelastbnd = _themap.ValueAt(_theindex - 1);
         }
         else
         {
@@ -276,7 +277,7 @@ public class ProcessForFinder : Transient
             if (former.DynamicType() == typeof(VoidBinder))
             {
                 binder.Merge(former);
-                _themap[_theindex] = binder;
+                _themap.ValueAt(_theindex - 1) = binder;
             }
             else if (former.Status() == StatusResult.StatusUsed)
             {
@@ -296,18 +297,18 @@ public class ProcessForFinder : Transient
         {
             if (_theindex == 0)
             {
-                _theindex = _themap.Add(start, binder);
+                _theindex = _themap.Add(start, binder) + 1;
             }
             else
             {
-                _themap[_theindex] = binder;
+                _themap.ValueAt(_theindex - 1) = binder;
             }
             _thelastbnd = binder;
         }
         else
         {
             _thelastbnd = binder;
-            _themap[_theindex] = binder;
+            _themap.ValueAt(_theindex - 1) = binder;
         }
     }
 
@@ -340,15 +341,15 @@ public class ProcessForFinder : Transient
         {
             return true;
         }
-        _themap[_theindex] = _thelastbnd; // OCCT: thelastbnd is the former binder here, so nothing is unbound
+        _themap.ValueAt(_theindex - 1) = _thelastbnd; // OCCT: thelastbnd is the former binder here, so nothing is unbound
         if (_theroots.Contains(_theindex))
         {
-            var newRoots = new NCollection_IndexedMap<int>();
-            for (int i = 1; i <= _theroots.Extent(); i++)
+            var newRoots = new IndexedSet<int>();
+            for (int i = 0; i < _theroots.Count; i++)
             {
-                if (_theindex != _theroots.FindKey(i))
+                if (_theindex != _theroots[i])
                 {
-                    newRoots.Add(_theroots.FindKey(i));
+                    newRoots.Add(_theroots[i]);
                 }
             }
             _theroots.Clear();
@@ -678,14 +679,14 @@ public class ProcessForFinder : Transient
     {
         get
         {
-            return _themap.Extent();
+            return _themap.Count;
         }
     }
 
     /// <summary>Returns the Starting Object bound to an Index.</summary>
     public Finder? Mapped(int num)
     {
-        return _themap.FindKey(num);
+        return _themap.KeyAt(num - 1);
     }
 
     /// <summary>Returns the Index value bound to a Starting Object, 0 if none.</summary>
@@ -697,7 +698,7 @@ public class ProcessForFinder : Transient
     /// <summary>Returns the Binder bound to an Index.</summary>
     public Binder? MapItem(int num)
     {
-        Binder? binder = _themap.FindFromIndex(num);
+        Binder? binder = _themap.ValueAt(num - 1);
         return binder;
     }
 
@@ -735,7 +736,7 @@ public class ProcessForFinder : Transient
     {
         get
         {
-            return _theroots.Extent();
+            return _theroots.Count;
         }
     }
 
@@ -744,11 +745,11 @@ public class ProcessForFinder : Transient
     public Finder? Root(int num)
     {
         int ind = 0;
-        if (num > 0 && num <= _theroots.Extent())
+        if (num > 0 && num <= _theroots.Count)
         {
-            ind = _theroots.FindKey(num);
+            ind = _theroots[num - 1];
         }
-        return _themap.FindKey(ind);
+        return _themap.KeyAt(ind - 1);
     }
 
     /// <summary>Returns the Binder bound with a Root Entity given its number.</summary>
@@ -756,11 +757,11 @@ public class ProcessForFinder : Transient
     public Binder? RootItem(int num)
     {
         int ind = 0;
-        if (num > 0 && num <= _theroots.Extent())
+        if (num > 0 && num <= _theroots.Count)
         {
-            ind = _theroots.FindKey(num);
+            ind = _theroots[num - 1];
         }
-        return _themap.FindFromIndex(ind);
+        return _themap.ValueAt(ind - 1);
     }
 
     /// <summary>Returns the index in the list of roots for a starting item, or 0 if it is not recorded as a root.</summary>
@@ -771,7 +772,7 @@ public class ProcessForFinder : Transient
         {
             return 0;
         }
-        return _theroots.FindIndex(index);
+        return _theroots.IndexOf(index) + 1;
     }
 
     /// <summary>
@@ -1079,7 +1080,7 @@ public class ProcessForFinder : Transient
             }
             if (mode == 3)
             {
-                sender.Append("  ###  New Root n0 ").Append(_theroots.Extent());
+                sender.Append("  ###  New Root n0 ").Append(_theroots.Count);
             }
             if (mode == 4)
             {
@@ -1099,7 +1100,7 @@ public class ProcessForFinder : Transient
             }
             if (mode >= 0 && mode != 3)
             {
-                sender.Append(" at ").Append(_theroots.Extent()).Append(" Roots");
+                sender.Append(" at ").Append(_theroots.Count).Append(" Roots");
             }
         }
         if (start is not null)
@@ -1170,10 +1171,10 @@ public class ProcessForFinder : Transient
     public IteratorOfProcessForFinder RootResult(bool withstart = false)
     {
         var iter = new IteratorOfProcessForFinder(withstart);
-        int max = _theroots.Extent();
-        for (int j = 1; j <= max; j++)
+        int max = _theroots.Count;
+        for (int j = 0; j < max; j++)
         {
-            int i = _theroots.FindKey(j);
+            int i = _theroots[j];
             Binder? binder = MapItem(i);
             if (binder is null)
             {
@@ -1471,7 +1472,7 @@ public class ProcessForFinder : Transient
     // The index of a starting object, 0 if none (a null object is never mapped)
     private int FindIndex(Finder? start)
     {
-        return start is null ? 0 : _themap.FindIndex(start);
+        return start is null ? 0 : (_themap.IndexOf(start) + 1);
     }
 
     private bool _theerrh;
@@ -1480,10 +1481,10 @@ public class ProcessForFinder : Transient
     private int _thelevel;
     private int _therootl;
     private bool _therootm;
-    private NCollection_IndexedMap<int> _theroots = new();
+    private IndexedSet<int> _theroots = new();
     private Finder? _thelastobj;
     private Binder? _thelastbnd;
     private int _theindex;
     private ActorOfProcessForFinder? _theactor;
-    private NCollection_IndexedDataMap<Finder, Binder?> _themap;
+    private IndexedMap<Finder, Binder?> _themap;
 }

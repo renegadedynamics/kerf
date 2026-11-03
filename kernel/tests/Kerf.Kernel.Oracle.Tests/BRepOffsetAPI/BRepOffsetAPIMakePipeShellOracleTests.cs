@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Filling;
@@ -490,7 +491,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         // Generated, as indices in the result
         var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNRes, aNResMap);
-        NCollection_IndexedMap<Shape> aPResMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedSet<Shape> aPResMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(aPRes, aPResMap);
         var aNH = new List<string>();
         var aPH = new List<string>();
@@ -502,12 +503,12 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             }
             var aNInMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(aNIn[k], aNInMap);
-            NCollection_IndexedMap<Shape> aPInMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            IndexedSet<Shape> aPInMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             global::Kerf.Engine.Topology.Exploration.MapShapes(aPIn[k], aPInMap);
             for (int i = 1; i <= aNInMap.Extent(); i++)
             {
                 aNH.Add($"{k}.{i}:" + string.Join(",", aN.Generated(aNInMap.FindKey(i)).Select(s => aNResMap.FindIndex(s))));
-                aPH.Add($"{k}.{i}:" + string.Join(",", aP.Generated(aPInMap.FindKey(i)).Select(s => aPResMap.FindIndex(s))));
+                aPH.Add($"{k}.{i}:" + string.Join(",", aP.Generated(aPInMap[i - 1]).Select(s => (aPResMap.IndexOf(s) + 1))));
             }
         }
         static string Sorted(string theEntry)
@@ -574,9 +575,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
 
     private static Vertex PortVertex(in Wire theSpine, int theIndex)
     {
-        NCollection_IndexedMap<Shape> aMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theSpine, ShapeType.Vertex, aMap);
-        return global::Kerf.Engine.Topology.ShapeCasts.Vertex(aMap.FindKey(Math.Min(theIndex + 1, aMap.Extent())));
+        return global::Kerf.Engine.Topology.ShapeCasts.Vertex(aMap[Math.Min(theIndex + 1, aMap.Count) - 1]);
     }
 
     // Compares the shapes: BRep text, then with the Free column masked, then canonically. Counts the results' outcomes.
@@ -767,9 +768,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 // a box's face, the spine its outer wire or a part of it
                 Shape aBox = new MakeBox(anOracle.Real(5, 15), anOracle.Real(5, 15), anOracle.Real(5, 15)).Shape();
-                NCollection_IndexedMap<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+                IndexedSet<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
                 global::Kerf.Engine.Topology.Exploration.MapShapes(aBox, ShapeType.Face, aFaces);
-                Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaces.FindKey(anOracle.Int(1, 6)));
+                Face aFace = global::Kerf.Engine.Topology.ShapeCasts.Face(aFaces[anOracle.Int(1, 6) - 1]);
                 aSupport = anOracle.Bool() ? aFace : aBox;
                 aSpine = BrepTools.OuterWire(aFace);
             }
@@ -777,17 +778,17 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             {
                 // a cylinder's lateral face, the spine its top circle
                 Shape aCyl = new ApiMakeCylinder(anOracle.Real(3, 8), anOracle.Real(4, 10)).Shape();
-                NCollection_IndexedMap<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+                IndexedSet<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
                 global::Kerf.Engine.Topology.Exploration.MapShapes(aCyl, ShapeType.Face, aFaces);
-                aSupport = aFaces.FindKey(1);
-                NCollection_IndexedMap<Shape> anEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+                aSupport = aFaces[0];
+                IndexedSet<Shape> anEdges = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
                 global::Kerf.Engine.Topology.Exploration.MapShapes(aSupport, ShapeType.Edge, anEdges);
                 Edge aCircle = new();
-                for (int k = 1; k <= anEdges.Extent(); k++)
+                for (int k = 0; k < anEdges.Count; k++)
                 {
-                    if (!Tool.IsClosed(global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdges.FindKey(k)), global::Kerf.Engine.Topology.ShapeCasts.Face(aSupport)))
+                    if (!Tool.IsClosed(global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdges[k]), global::Kerf.Engine.Topology.ShapeCasts.Face(aSupport)))
                     {
-                        aCircle = global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdges.FindKey(k));
+                        aCircle = global::Kerf.Engine.Topology.ShapeCasts.Edge(anEdges[k]);
                         break;
                     }
                 }
@@ -818,7 +819,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         foreach (int i in Tape.Budget(40))
         {
             (Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2));
-            NCollection_IndexedMap<Shape> aVertices = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            IndexedSet<Shape> aVertices = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             global::Kerf.Engine.Topology.Exploration.MapShapes(aSpine, ShapeType.Vertex, aVertices);
             WireCurveAdaptor aC = new(aSpine);
             List<Section> aSections = [];
@@ -842,7 +843,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                     bool isOff = aShape == 3;
                     Frame3D aFrame = new(isOff ? aP.Translated(new Vector3D(anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5), anOracle.Real(-0.5, 0.5))) : aP,
                                         new Direction3D(isOff ? aV + new Vector3D(anOracle.Real(-0.2, 0.2), anOracle.Real(-0.2, 0.2), 0) * aV.Magnitude() : aV));
-                    int aVertex = aShape == 2 && k > 0 ? (k == aNb - 1 ? aVertices.Extent() - 1 : anOracle.Int(0, aVertices.Extent() - 1)) : -1;
+                    int aVertex = aShape == 2 && k > 0 ? (k == aNb - 1 ? aVertices.Count - 1 : anOracle.Int(0, aVertices.Count - 1)) : -1;
                     aSections.Add(new Section(RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 1.5), true).Shape, aVertex,
                                               isOff && anOracle.Bool(), isOff && anOracle.Bool()));
                 }

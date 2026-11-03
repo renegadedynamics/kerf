@@ -6,6 +6,7 @@
 using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Occt;
+using System.Runtime.InteropServices;
 using static Kerf.Engine.Meshing.DegreeOfFreedom;
 using static Kerf.Engine.Collections.CellFilterAction;
 
@@ -22,7 +23,7 @@ public sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
     private double _minSqDist;
     private double _tolerance0;
     private double _tolerance1;
-    private NCollection_DynamicArray<MeshVertex> _vertices;
+    private List<MeshVertex> _vertices;
     private readonly NCollection_List<int> _delNodes;
     private Xy _point;
 
@@ -39,7 +40,7 @@ public sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
     {
         _index = 0;
         _minSqDist = RealLast();
-        _vertices = new NCollection_DynamicArray<MeshVertex>();
+        _vertices = new List<MeshVertex>();
         _delNodes = new NCollection_List<int>();
         SetTolerance(global::Kerf.Engine.Foundation.Precision.Confusion());
     }
@@ -49,12 +50,12 @@ public sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
     {
         if (_delNodes.IsEmpty())
         {
-            _vertices.Append(vertex);
-            return _vertices.Length();
+            _vertices.Add(vertex);
+            return _vertices.Count;
         }
 
         int nodeIndex = _delNodes.First();
-        _vertices.ChangeValue(nodeIndex - 1) = vertex;
+        _vertices[nodeIndex - 1] = vertex;
         _delNodes.RemoveFirst();
         return nodeIndex;
     }
@@ -83,18 +84,18 @@ public sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
     /// <summary>Marks the vertex of the given index deleted; its index is reused by the next <see cref="Add"/>.</summary>
     public void Delete(int index)
     {
-        _vertices.ChangeValue(index - 1).SetMovability(DegreeOfFreedom.Deleted);
+        CollectionsMarshal.AsSpan(_vertices)[index - 1].SetMovability(DegreeOfFreedom.Deleted);
         _delNodes.Append(index);
     }
 
     /// <summary>The number of vertices stored (deleted ones included).</summary>
-    public int VertexCount => _vertices.Length();
+    public int VertexCount => _vertices.Count;
 
     /// <summary>The vertex of the given index (from 1).</summary>
-    public MeshVertex Vertex(int index) => _vertices.Value(index - 1);
+    public MeshVertex Vertex(int index) => _vertices[index - 1];
 
     /// <summary>The vertex of the given index (from 1), for writing.</summary>
-    public ref MeshVertex GetVertex(int index) => ref _vertices.ChangeValue(index - 1);
+    public ref MeshVertex GetVertex(int index) => ref CollectionsMarshal.AsSpan(_vertices)[index - 1];
 
     /// <summary>Sets the point to search for, and clears the result.</summary>
     public void SetPoint(in Xy point)
@@ -111,15 +112,15 @@ public sealed class MeshingVertexInspector : ICellFilterInspector<int, Xy>
     public NCollection_List<int> GetListOfDelPoints() => _delNodes;
 
     /// <summary>The vertices.</summary>
-    public NCollection_DynamicArray<MeshVertex> Vertices() => _vertices;
+    public List<MeshVertex> Vertices() => _vertices;
 
     /// <summary>The vertices' array, for replacing.</summary>
-    public ref NCollection_DynamicArray<MeshVertex> ChangeVertices() => ref _vertices;
+    public ref List<MeshVertex> ChangeVertices() => ref _vertices;
 
     /// <summary>Keeps the vertex if it is the nearest so far within the tolerance; purges deleted vertices.</summary>
     public CellFilterAction Inspect(int target)
     {
-        MeshVertex vertex = _vertices.Value(target - 1);
+        MeshVertex vertex = _vertices[target - 1];
         if (vertex.Movability() == DegreeOfFreedom.Deleted)
         {
             _delNodes.Append(target);

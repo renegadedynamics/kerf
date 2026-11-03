@@ -1,6 +1,7 @@
 // Port of: src/ModelingData/TKBRep/GTests/BRep_Tool_Test.cxx
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -344,9 +345,9 @@ public class BRep_ToolTests
         Assert.Equal(0.0, Tool.MaxTolerance(aBox, ShapeType.Wire));
 
         // the continuity between the two faces of the edge
-        var aFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aFaces = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aFaces);
-        NCollection_List<Shape> aList = aFaces.FindFromKey(anEdge);
+        NCollection_List<Shape> aList = aFaces.GetValue(anEdge);
         Face aF1 = ShapeCasts.Face(aList.First()), aF2 = ShapeCasts.Face(aList.Last());
         Assert.False(Tool.HasContinuity(anEdge));
         Assert.Equal(C0, Tool.Continuity(anEdge, aF1, aF2));

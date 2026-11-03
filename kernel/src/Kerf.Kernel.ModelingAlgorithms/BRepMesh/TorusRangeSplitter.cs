@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 
 using Kerf.Engine.Measurement;
@@ -126,19 +127,19 @@ public class TorusRangeSplitter : UVParamRangeSplitter
     }
 
     // The parameters, sorted, without those closer than the scaled average step to one already taken.
-    private NCollection_Sequence<double> FillParams(NCollection_IndexedMap<double> theParams,
+    private NCollection_Sequence<double> FillParams(IndexedSet<double> theParams,
                                                     (double first, double second) range,
                                                     int stepsNb,
                                                     double scale)
     {
         NCollection_Sequence<double> aParams = new();
 
-        int length = theParams.Extent();
+        int length = theParams.Count;
         NCollection_Array1<double> paramArray = new(1, length);
 
         for (int j = 1; j <= length; ++j)
         {
-            paramArray[j] = theParams[j];
+            paramArray[j] = theParams[j - 1];
         }
 
         // Calculate DU, leave array of parameters

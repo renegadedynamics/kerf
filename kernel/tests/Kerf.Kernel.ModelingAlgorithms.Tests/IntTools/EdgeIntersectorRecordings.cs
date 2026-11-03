@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -34,9 +35,9 @@ internal static class EdgeIntersectorRecordings
         public required string Name { get; init; }
         public required Shape A { get; init; }
         public required Shape B { get; init; }
-        public NCollection_IndexedMap<Shape> EA { get; } = new(ShapeHasher.Instance);
-        public NCollection_IndexedMap<Shape> EB { get; } = new(ShapeHasher.Instance);
-        public NCollection_IndexedMap<Shape> FB { get; } = new(ShapeHasher.Instance);
+        public IndexedSet<Shape> EA { get; } = new(ShapeHasher.Instance);
+        public IndexedSet<Shape> EB { get; } = new(ShapeHasher.Instance);
+        public IndexedSet<Shape> FB { get; } = new(ShapeHasher.Instance);
         public List<EERun> EE { get; } = [];
         public List<EFRun> EF { get; } = [];
     }
@@ -210,8 +211,8 @@ internal static class EdgeIntersectorRecordings
         }
     }
 
-    public static Edge Edge(Case theCase, NCollection_IndexedMap<Shape> theMap, int theIndex) =>
-        ShapeCasts.Edge(theMap.FindKey(theIndex));
+    public static Edge Edge(Case theCase, IndexedSet<Shape> theMap, int theIndex) =>
+        ShapeCasts.Edge(theMap[theIndex - 1]);
 
-    public static Face Face(Case theCase, int theIndex) => ShapeCasts.Face(theCase.FB.FindKey(theIndex));
+    public static Face Face(Case theCase, int theIndex) => ShapeCasts.Face(theCase.FB[theIndex - 1]);
 }

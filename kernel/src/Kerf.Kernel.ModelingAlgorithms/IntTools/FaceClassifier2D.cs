@@ -97,7 +97,7 @@ public sealed class FaceClassifier2D
         Curve2D? c2D;
         Point3D ancienpnt3d = new();
         NCollection_Sequence<Point2D> seqPnt2d = new();
-        NCollection_DataMap<int, int> indexMap = new();
+        Dictionary<int, int> indexMap = new();
         NCollection_Sequence<Vector2D> d1Prev = new();
         NCollection_Sequence<Vector2D> d1Next = new();
         //
@@ -415,11 +415,11 @@ public sealed class FaceClassifier2D
                 // Fill the map anIndexMap.
                 if (avant > 0)
                 {
-                    indexMap.Bind(avant, d1Next.Length());
+                    indexMap[avant] = d1Next.Length();
                 }
                 else
                 {
-                    indexMap.Bind(1, d1Next.Length());
+                    indexMap[1] = d1Next.Length();
                 }
             } // for(;aWExp.More(); aWExp.Next()) {
             // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

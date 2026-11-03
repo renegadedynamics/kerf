@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2025-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Healing.Checks;
@@ -126,16 +127,16 @@ public class BRepBuilderAPI_SewingTests
 {
     private static int Count(in Shape theS, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theS, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static bool AllFrozen(in Shape theS)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theS, aMap);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             if (!aMap[i].TShape()!.IsFrozen)
             {
@@ -432,7 +433,7 @@ public class BRepBuilderAPI_SewingTests
         Shape aResult = anAgain.SewedShape();
         Assert.Equal(ShapeType.Shell, aResult.ShapeType());
         Assert.False(anAgain.IsModified(aShell));
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShell, ShapeType.Face, aFaces);
         for (var anExp = new Explorer(aResult, ShapeType.Face); anExp.More(); anExp.Next())
         {

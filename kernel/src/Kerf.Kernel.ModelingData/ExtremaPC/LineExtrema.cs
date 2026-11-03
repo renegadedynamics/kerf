@@ -82,7 +82,7 @@ public sealed class LineExtrema : global::Kerf.Engine.Extrema.PointCurve.Extrema
         ext.SquareDistance = p.SquareDistance(ptOnLine);
         ext.IsMinimum = true;
 
-        _result._extrema.Append(ext);
+        _result._extrema.Add(ext);
         _result.Status = global::Kerf.Engine.Extrema.PointCurve.ExtremaPC.Status.OK;
         return _result;
     }

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Construct;
@@ -119,19 +120,19 @@ public class ActorWrite : ActorOfFinderProcess
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEdgeFaces =
-            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapEdgeFaces =
+            new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(directShapes, ShapeType.Edge, ShapeType.Face, mapEdgeFaces);
 
-        int nbEdges = mapEdgeFaces.Extent();
+        int nbEdges = mapEdgeFaces.Count;
 
         // Check topology
-        for (int i = 1; i <= nbEdges; i++)
+        for (int i = 0; i < nbEdges; i++)
         {
-            Edge currentEdge = ShapeCasts.Edge(mapEdgeFaces.FindKey(i));
+            Edge currentEdge = ShapeCasts.Edge(mapEdgeFaces.KeyAt(i));
             if (!Tool.Degenerated(currentEdge))
             {
-                int nbAncestors = mapEdgeFaces.FindFromIndex(i).Extent();
+                int nbAncestors = mapEdgeFaces.ValueAt(i).Extent();
                 if (nbAncestors > 2)
                 {
                     result = false;
@@ -601,8 +602,8 @@ public class ActorWrite : ActorOfFinderProcess
                                        in Shape aShVrtx, int num, in Factors localFactors)
     {
         bool isDone = false;
-        NCollection_DataMap<Shape, Transient> map =
-            new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        Dictionary<Shape, Transient> map =
+            new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         StepModel stepModel = fp.Model() as StepModel;
         ExportTool tool = new ExportTool(map, true, stepModel.InternalParameters.WriteSurfaceCurMode ? 1 : 0);
         MakeStepVertex mkVrtx = new MakeStepVertex(ShapeCasts.Vertex(aShVrtx), tool, fp, localFactors);
@@ -977,7 +978,7 @@ public class ActorWrite : ActorOfFinderProcess
 
             Shape shape = xShape;
 
-            NCollection_DataMap<string, string> parameters = GetShapeFixParameters();
+            Dictionary<string, string> parameters = GetShapeFixParameters();
             ShapeProcessor.SetParameter("FixShape.Tolerance3d", tol, true, parameters);
             ShapeProcessor.SetParameter("FixShape.MaxTolerance3d", stepModel.InternalParameters.ReadMaxPrecisionVal, true,
                                                parameters);

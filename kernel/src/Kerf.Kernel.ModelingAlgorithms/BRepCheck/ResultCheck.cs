@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -28,7 +29,7 @@ public abstract class ResultCheck : Transient
     protected bool _isParallel;
 
     /// <summary>The status lists of the shape (keyed by itself) and of its contexts.</summary>
-    protected readonly NCollection_DataMap<Shape, NCollection_List<StatusCheck>> _map =
+    protected readonly Dictionary<Shape, NCollection_List<StatusCheck>> _map =
         new(ShapeHasher.Instance);
 
     /// <summary>OCCT's <c>std::mutex myMutex</c>, taken when <see cref="IsParallel"/>.</summary>
@@ -76,10 +77,10 @@ public abstract class ResultCheck : Transient
 
         try
         {
-            if (!_map.Find(s, out NCollection_List<StatusCheck>? list))
+            if (!_map.TryGetValue(s, out NCollection_List<StatusCheck>? list))
             {
                 list = new NCollection_List<StatusCheck>();
-                _map.Bind(s, list);
+                _map[s] = list;
             }
 
             BRepCheckCheck.Add(list, StatusCheck.CheckFail);
@@ -94,7 +95,7 @@ public abstract class ResultCheck : Transient
     }
 
     /// <summary>The statuses of the shape itself.</summary>
-    public NCollection_List<StatusCheck> Status() => _map.Find(_shape);
+    public NCollection_List<StatusCheck> Status() => _map.GetValue(_shape);
 
     public bool IsMinimum => _min;
 
@@ -134,7 +135,7 @@ public abstract class ResultCheck : Transient
     /// <summary>True if sub-algorithms should use parallel execution.</summary>
     public bool IsParallel => _isParallel;
 
-    public bool IsStatusOnShape(in Shape shape) => _map.IsBound(shape);
+    public bool IsStatusOnShape(in Shape shape) => _map.ContainsKey(shape);
 
-    public NCollection_List<StatusCheck> StatusOnShape(in Shape shape) => _map.Find(shape);
+    public NCollection_List<StatusCheck> StatusOnShape(in Shape shape) => _map.GetValue(shape);
 }

@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
@@ -168,7 +169,7 @@ public partial class BooleanBuilder
         NCollection_List<Shape>.Iterator it = new();
         NCollection_List<int> liav = new();
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
-        NCollection_DynamicArray<SplitFace> vbf = new();
+        List<SplitFace> vbf = new();
         //
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~scope f
         NCollection_List<Shape> le = new();
@@ -177,7 +178,7 @@ public partial class BooleanBuilder
         using var psOuter = new ProgressScope(range, null, 10);
         // Build temporary map of faces images to avoid rebuilding
         // of the faces without any IN or section edges
-        NCollection_IndexedDataMap<int, NCollection_List<Shape>> facesIm = new();
+        IndexedMap<int, NCollection_List<Shape>> facesIm = new();
         //
         nbS = _ds!.SourceShapeCount;
         //
@@ -204,15 +205,15 @@ public partial class BooleanBuilder
             //
             FaceInfo fi = _ds.FaceInfo(i);
             //
-            NCollection_IndexedMap<PaveBlock> mpbIn = fi.PaveBlocksIn();
-            NCollection_IndexedMap<PaveBlock> mpbOn = fi.PaveBlocksOn();
-            NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+            IndexedSet<PaveBlock> mpbIn = fi.PaveBlocksIn();
+            IndexedSet<PaveBlock> mpbOn = fi.PaveBlocksOn();
+            IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
             liav.Clear();
             _ds.AloneVertices(i, liav);
 
-            nbPBIn = mpbIn.Extent();
-            nbPBOn = mpbOn.Extent();
-            nbPBSc = mpbSc.Extent();
+            nbPBIn = mpbIn.Count;
+            nbPBOn = mpbOn.Count;
+            nbPBSc = mpbSc.Count;
             nbAV = liav.Extent();
             if (nbPBIn == 0 && nbPBOn == 0 && nbPBSc == 0 && nbAV == 0)
             { // not compete
@@ -248,7 +249,7 @@ public partial class BooleanBuilder
                             break;
                         }
 
-                        hasModified |= _images.IsBound(itW.Value());
+                        hasModified |= _images.ContainsKey(itW.Value());
                     }
 
                     if (!hasInternals && !hasModified)
@@ -268,7 +269,7 @@ public partial class BooleanBuilder
                     Face fd = BuildDraftFace(f, _images, _context!, _report);
                     if (!fd.IsNull)
                     {
-                        facesIm[facesIm.Add(i, new NCollection_List<Shape>())].Append(fd);
+                        facesIm.ValueAt(facesIm.Add(i, new NCollection_List<Shape>())).Append(fd);
                         continue;
                     }
                 }
@@ -290,7 +291,7 @@ public partial class BooleanBuilder
                 Edge e = ShapeCasts.Edge(exp.Current());
                 oriE = e.Orientation();
                 //
-                if (!_images.IsBound(e))
+                if (!_images.ContainsKey(e))
                 {
                     if (oriE == Internal)
                     {
@@ -327,7 +328,7 @@ public partial class BooleanBuilder
 
                 bIsDegenerated = Tool.Degenerated(e);
 
-                NCollection_List<Shape> lie = _images.Find(e);
+                NCollection_List<Shape> lie = _images.GetValue(e);
                 it.Initialize(lie);
                 for (; it.More(); it.Next())
                 {
@@ -390,7 +391,7 @@ public partial class BooleanBuilder
             // 1.2 In edges
             for (j = 1; j <= nbPBIn; ++j)
             {
-                PaveBlock pb = mpbIn[j];
+                PaveBlock pb = mpbIn[j - 1];
                 nSp = pb.Edge();
                 if (nSp < 0)
                 {
@@ -409,7 +410,7 @@ public partial class BooleanBuilder
             // 1.3 Section edges
             for (j = 1; j <= nbPBSc; ++j)
             {
-                PaveBlock pb = mpbSc[j];
+                PaveBlock pb = mpbSc[j - 1];
                 nSp = pb.Edge();
                 sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 //
@@ -425,7 +426,8 @@ public partial class BooleanBuilder
                 BrepLibrary.BuildPCurveForEdgesOnPlane(le, ff);
             }
             // 3 Build split faces
-            SplitFace bf = vbf.Append(new SplitFace());
+            SplitFace bf =  new SplitFace();
+            vbf.Add(bf);
             bf.SetFace(f);
             bf.SetShapes(le);
             bf.SetRunParallel(_runParallel);
@@ -435,12 +437,12 @@ public partial class BooleanBuilder
         // close preparation task
         psOuter.Next();
         //
-        int nbBF = vbf.Length();
+        int nbBF = vbf.Count;
         // Set progress range for each task to be run in parallel
         using var psParallel = new ProgressScope(psOuter.Next(9), "Splitting faces", nbBF);
         for (int iF = 0; iF < nbBF; iF++)
         {
-            SplitFace bf = vbf.ChangeValue(iF);
+            SplitFace bf = vbf[iF];
             bf.SetProgressRange(psParallel.Next());
         }
         //===================================================
@@ -457,14 +459,14 @@ public partial class BooleanBuilder
             _report.Merge(bf.GetReport());
         }
 
-        nbBF = facesIm.Extent();
+        nbBF = facesIm.Count;
         for (k = 1; k <= nbBF; ++k)
         {
-            Face f = ShapeCasts.Face(_ds.Shape(facesIm.FindKey(k)));
+            Face f = ShapeCasts.Face(_ds.Shape(facesIm.KeyAt(k - 1)));
             oriF = f.Orientation();
-            NCollection_List<Shape> lfr = facesIm[k];
+            NCollection_List<Shape> lfr = facesIm.ValueAt(k - 1);
             //
-            NCollection_List<Shape> pLFIm = _images.Bound(f, new NCollection_List<Shape>());
+            NCollection_List<Shape> pLFIm = _images.SetValueRef(f, new NCollection_List<Shape>());
             it.Initialize(lfr);
             for (; it.More(); it.Next())
             {
@@ -481,16 +483,16 @@ public partial class BooleanBuilder
     }
 
     // Adds the set of the edges of the shape to the map, keeping the connection to the shape.
-    private static void AddEdgeSet(in Shape s, NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> map)
+    private static void AddEdgeSet(in Shape s, IndexedMap<ToolSet, NCollection_List<Shape>> map)
     {
         // Make set
         ToolSet se = new();
         se.Add(s, ShapeType.Edge);
         // Add set to the map, keeping connection to the shape
-        int index = map.FindIndex(se);
+        int index = map.IndexOf(se) + 1;
         NCollection_List<Shape> pLF = index > 0
-                                                 ? map[index]
-                                                 : map[map.Add(se, new NCollection_List<Shape>())];
+                                                 ? map.ValueAt(index - 1)
+                                                 : map.ValueAt(map.Add(se, new NCollection_List<Shape>()));
         pLF.Append(s);
     }
 
@@ -499,8 +501,8 @@ public partial class BooleanBuilder
     {
         // It is necessary to analyze all Face/Face intersections
         // and find all faces with equal sets of edges
-        NCollection_DynamicArray<InterfFF> fFs = _ds!.InterfFF();
-        int nbFFs = fFs.Length();
+        List<InterfFF> fFs = _ds!.InterfFF();
+        int nbFFs = fFs.Count;
         if (nbFFs == 0)
         {
             return;
@@ -510,7 +512,7 @@ public partial class BooleanBuilder
 
         // Two distinct faces of one solid cannot be Same-Domain: that would
         // imply a zero-thickness interior in a single operand.
-        NCollection_DataMap<Shape, Shape> faceToParent = new(ShapeHasher.Instance);
+        Dictionary<Shape, Shape> faceToParent = new(ShapeHasher.Instance);
         {
             int nbSrc = _ds.SourceShapeCount;
             for (int iSrc = 0; iSrc < nbSrc; ++iSrc)
@@ -524,39 +526,39 @@ public partial class BooleanBuilder
                 for (Explorer expF = new(solid, ShapeType.Face); expF.More(); expF.Next())
                 {
                     Shape f = expF.Current();
-                    if (!faceToParent.IsBound(f))
+                    if (!faceToParent.ContainsKey(f))
                     {
-                        faceToParent.Bind(f, solid);
+                        faceToParent[f] = solid;
                     }
                 }
             }
-            NCollection_DataMap<Shape, Shape> propagation = new(ShapeHasher.Instance);
+            Dictionary<Shape, Shape> propagation = new(ShapeHasher.Instance);
             // OCCT iterates the images map, a shape-keyed map, in address order (the port: insertion order); a split
             // face belongs to one face's images, so the order isn't observable here
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> itIm in _images)
             {
-                if (!faceToParent.Find(itIm.Key, out Shape pParent))
+                if (!faceToParent.TryGetValue(itIm.Key, out Shape pParent))
                 {
                     continue;
                 }
                 for (NCollection_List<Shape>.Iterator itPiece = new(itIm.Value); itPiece.More(); itPiece.Next())
                 {
-                    if (!faceToParent.IsBound(itPiece.Value()))
+                    if (!faceToParent.ContainsKey(itPiece.Value()))
                     {
-                        propagation.Bind(itPiece.Value(), pParent);
+                        propagation[itPiece.Value()] = pParent;
                     }
                 }
             }
             foreach (KeyValuePair<Shape, Shape> itProp in propagation)
             {
-                faceToParent.Bind(itProp.Key, itProp.Value);
+                faceToParent[itProp.Key] = itProp.Value;
             }
         }
 
         // Vector to store the indices of faces for future sorting
         // for making the SD face for the group from the face with
         // smallest index in Data structure
-        NCollection_DynamicArray<int> fiVec = new(256);
+        List<int> fiVec = new();
         // Fence map to avoid repeated checks of the same face.
         NCollection_IntMap mFence = new(1);
 
@@ -584,7 +586,7 @@ public partial class BooleanBuilder
                     continue;
                 }
 
-                fiVec.Append(nF2[j]);
+                fiVec.Add(nF2[j]);
             }
         }
 
@@ -597,12 +599,12 @@ public partial class BooleanBuilder
         }
 
         // Data map of set of edges with all faces having this set
-        NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> eSetFaces = new();
+        IndexedMap<ToolSet, NCollection_List<Shape>> eSetFaces = new();
         // Map of planar bounded faces. If such faces have the same Edge set
         // they are considered Same domain, without additional check.
         HashSet<Shape> mfPlanar = new(ShapeHasher.Instance);
 
-        int nbF = fiVec.Length();
+        int nbF = fiVec.Count;
         for (int i = 0; i < nbF; ++i)
         {
             if (UserBreak(psOuter))
@@ -626,7 +628,7 @@ public partial class BooleanBuilder
                 }
             }
 
-            if (_images.Find(f, out NCollection_List<Shape> pLFSp))
+            if (_images.TryGetValue(f, out NCollection_List<Shape>? pLFSp))
             {
                 NCollection_List<Shape>.Iterator itLF = new(pLFSp);
                 for (; itLF.More(); itLF.Next())
@@ -649,19 +651,19 @@ public partial class BooleanBuilder
         }
 
         // Store pairs of faces with equal set of edges to check if they are really Same Domain
-        NCollection_DynamicArray<PairOfShapeBoolean> vpsb = new();
+        List<PairOfShapeBoolean> vpsb = new();
 
         // Back and forth map of SD faces to make the blocks
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmsls = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmsls = new(ShapeHasher.Instance);
 
-        int nbSets = eSetFaces.Extent();
-        for (int i = 1; i <= nbSets; ++i)
+        int nbSets = eSetFaces.Count;
+        for (int i = 0; i < nbSets; ++i)
         {
             if (UserBreak(psOuter))
             {
                 return;
             }
-            NCollection_List<Shape> lf = eSetFaces[i];
+            NCollection_List<Shape> lf = eSetFaces.ValueAt(i);
             if (lf.Extent() < 2)
             {
                 continue;
@@ -673,14 +675,14 @@ public partial class BooleanBuilder
             {
                 Shape f1 = it1.Value();
                 bool bCheckPlanar = mfPlanar.Contains(f1);
-                bool hasParent1 = faceToParent.Find(f1, out Shape pParent1);
+                bool hasParent1 = faceToParent.TryGetValue(f1, out Shape pParent1);
 
                 NCollection_List<Shape>.Iterator it2 = new();
                 it2.Reset(lf, it1.Index); // aIt2 = aIt1
                 for (it2.Next(); it2.More(); it2.Next())
                 {
                     Shape f2 = it2.Value();
-                    bool hasParent2 = faceToParent.Find(f2, out Shape pParent2);
+                    bool hasParent2 = faceToParent.TryGetValue(f2, out Shape pParent2);
                     if (hasParent1 && hasParent2 && pParent1.IsSame(pParent2))
                     {
                         continue;
@@ -692,7 +694,8 @@ public partial class BooleanBuilder
                         continue;
                     }
                     // Add pair for analysis
-                    PairOfShapeBoolean psb = vpsb.Append(new PairOfShapeBoolean());
+                    PairOfShapeBoolean psb =  new PairOfShapeBoolean();
+                    vpsb.Add(psb);
                     psb.Shape1() = f1;
                     psb.Shape2() = f2;
                     psb.SetFuzzyValue(_fuzzyValue);
@@ -703,11 +706,11 @@ public partial class BooleanBuilder
         psOuter.Next();
 
         // Set progress range for each task to be run in parallel
-        using (var psParallel = new ProgressScope(psOuter.Next(6), "Checking SD faces", vpsb.Length()))
+        using (var psParallel = new ProgressScope(psOuter.Next(6), "Checking SD faces", vpsb.Count))
         {
-            for (int iPSB = 0; iPSB < vpsb.Length(); ++iPSB)
+            for (int iPSB = 0; iPSB < vpsb.Count; ++iPSB)
             {
-                vpsb.ChangeValue(iPSB).SetProgressRange(psParallel.Next());
+                vpsb[iPSB].SetProgressRange(psParallel.Next());
             }
             //================================================================
             // Perform analysis
@@ -721,7 +724,7 @@ public partial class BooleanBuilder
 
         NCollection_List<NCollection_List<Shape>> mBlocks = new();
         // Fill map with SD faces to make the blocks
-        int nbPairs = vpsb.Length();
+        int nbPairs = vpsb.Count;
         for (int i = 0; i < nbPairs; ++i)
         {
             PairOfShapeBoolean psb = vpsb[i];
@@ -765,7 +768,7 @@ public partial class BooleanBuilder
                     //
                     // Such face does not have any splits, but have an SD face.
                     // Consider it being split.
-                    _images.Bound(f, new NCollection_List<Shape>()).Append(f);
+                    _images.SetValueRef(f, new NCollection_List<Shape>()).Append(f);
 
                     // For the SD face chose the one with minimal index
                     if (nF < nFMin)
@@ -787,7 +790,7 @@ public partial class BooleanBuilder
             for (; itLF.More(); itLF.Next())
             {
                 Shape f = itLF.Value();
-                _shapesSD.Bind(f, pFSD.Value);
+                _shapesSD[f] = pFSD.Value;
             }
         }
 
@@ -803,7 +806,7 @@ public partial class BooleanBuilder
             }
 
             Shape f = si.Shape();
-            if (!_images.Find(f, out NCollection_List<Shape> pLFIm))
+            if (!_images.TryGetValue(f, out NCollection_List<Shape>? pLFIm))
             {
                 continue;
             }
@@ -812,16 +815,16 @@ public partial class BooleanBuilder
             for (; itLFIm.More(); itLFIm.Next())
             {
                 ref Shape fIm = ref itLFIm.ChangeValue();
-                if (_shapesSD.Find(fIm, out Shape pFSD))
+                if (_shapesSD.TryGetValue(fIm, out Shape pFSD))
                 {
                     // Update image with SD face
                     fIm = pFSD;
                 }
 
                 // Fill the map of origins
-                if (!_origins.Find(fIm, out NCollection_List<Shape> pLFOr))
+                if (!_origins.TryGetValue(fIm, out NCollection_List<Shape>? pLFOr))
                 {
-                    pLFOr = _origins.Bound(fIm, new NCollection_List<Shape>());
+                    pLFOr = _origins.SetValueRef(fIm, new NCollection_List<Shape>());
                 }
                 pLFOr.Append(f);
             }
@@ -838,7 +841,7 @@ public partial class BooleanBuilder
 
         // Vector of pairs of Vertex/Face for classification of the vertices
         // relatively faces, and adding them as internal into the faces
-        NCollection_DynamicArray<VFI> vvfi = new();
+        List<VFI> vvfi = new();
 
         int nbS = _ds!.SourceShapeCount;
         for (int i = 0; i < nbS; ++i)
@@ -855,7 +858,7 @@ public partial class BooleanBuilder
             }
 
             Shape f = si.Shape();
-            if (!_images.Find(f, out NCollection_List<Shape> pLFIm))
+            if (!_images.TryGetValue(f, out NCollection_List<Shape>? pLFIm))
             {
                 continue;
             }
@@ -876,7 +879,8 @@ public partial class BooleanBuilder
                 {
                     Face fIm = ShapeCasts.Face(itLFIm.Value());
                     // Make the pair
-                    VFI vfi = vvfi.Append(new VFI());
+                    VFI vfi =  new VFI();
+                    vvfi.Add(vfi);
                     vfi.SetVertex(v);
                     vfi.SetFace(fIm);
                     vfi.SetFuzzyValue(_fuzzyValue);
@@ -885,11 +889,11 @@ public partial class BooleanBuilder
         }
 
         // Set progress range for each task to be run in parallel
-        using (var psParallel = new ProgressScope(psOuter.Next(), "Looking for internal shapes", vvfi.Length()))
+        using (var psParallel = new ProgressScope(psOuter.Next(), "Looking for internal shapes", vvfi.Count))
         {
-            for (int iVFI = 0; iVFI < vvfi.Length(); ++iVFI)
+            for (int iVFI = 0; iVFI < vvfi.Count; ++iVFI)
             {
-                vvfi.ChangeValue(iVFI).SetProgressRange(psParallel.Next());
+                vvfi[iVFI].SetProgressRange(psParallel.Next());
             }
             // Perform classification
             //================================================================
@@ -901,7 +905,7 @@ public partial class BooleanBuilder
             return;
         }
 
-        int nbVFI = vvfi.Length();
+        int nbVFI = vvfi.Count;
         for (int i = 0; i < nbVFI; ++i)
         {
             VFI vfi = vvfi[i];
@@ -917,15 +921,15 @@ public partial class BooleanBuilder
     }
 
     // Checks if the edge has multi-connected vertices.
-    private static bool HasMultiConnected(in Edge edge, NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+    private static bool HasMultiConnected(in Edge edge, Dictionary<Shape, NCollection_List<Shape>> map)
     {
         Iterator itV = new(edge);
         for (; itV.More(); itV.Next())
         {
             Shape v = itV.Value();
-            if (!map.Find(v, out NCollection_List<Shape> pList))
+            if (!map.TryGetValue(v, out NCollection_List<Shape>? pList))
             {
-                pList = map.Bound(v, new NCollection_List<Shape>());
+                pList = map.SetValueRef(v, new NCollection_List<Shape>());
                 pList.Append(edge);
             }
             else
@@ -948,7 +952,7 @@ public partial class BooleanBuilder
 
     // Builds the draft face, updating the bounding edges according to the information stored into the images map.
     private static Face BuildDraftFace(in Face face,
-                                             NCollection_DataMap<Shape, NCollection_List<Shape>> images,
+                                             Dictionary<Shape, NCollection_List<Shape>> images,
                                              IntersectionContext ctx,
                                              Report report)
     {
@@ -965,7 +969,7 @@ public partial class BooleanBuilder
         // the vertices appearance, and if the multi-connexity is met return
         // the null face to use the BuilderFace algorithm for checking the
         // possibility of split.
-        NCollection_DataMap<Shape, NCollection_List<Shape>> verticesCounter = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> verticesCounter = new(ShapeHasher.Instance);
 
         // Check that the edges of the initial face have not been unified during intersection.
         // Otherwise, it will be necessary to check validity of the new wires.
@@ -1009,7 +1013,7 @@ public partial class BooleanBuilder
                 bool bIsClosed = Tool.IsClosed(e, face);
 
                 // Check for the splits of the edge
-                if (!images.Find(e, out NCollection_List<Shape> pLEIm))
+                if (!images.TryGetValue(e, out NCollection_List<Shape>? pLEIm))
                 {
                     // Check if the edge has multi-connected vertices
                     if (!bIsDegenerated && HasMultiConnected(e, verticesCounter))

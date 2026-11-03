@@ -1847,3 +1847,15 @@ Phase 10 (part): the end of copy at entry (unit 10H6).
 - Copying a mesh out (`MeshExtraction`) writes the normals straight into its buffer instead of computing them on a copy
   of each triangulation: 2.7 MB allocated for a 100,000-triangle sphere instead of 6.5 MB. Its timing test, which failed
   on loaded machines, measures allocation and the best of five runs.
+
+Phase 10 (part): heap and collections, the rest (unit 10J2).
+- `NCollection_DataMap` is gone: the engine uses `Dictionary<TKey, TValue>`, with `DictionaryExtensions` (in
+  `Kerf.Engine.Collections`) for what the wrapper added: `GetValue` and `GetValueRef` fail with OCCT's
+  `NoSuchObjectException` for a missing key, and `SetValueRef`/`GetOrAddValueRef` return the stored value by reference.
+- `NCollection_DynamicArray` and `NCollection_Vector` are gone: `List<T>`, with `ListExtensions.SetAt` for OCCT's
+  growing `SetValue`.
+- `NCollection_IndexedMap` and `NCollection_IndexedDataMap` are gone: `IndexedSet<T>` and `IndexedMap<TKey, TValue>`
+  (in `Kerf.Engine.Collections`), numbered from 0; removing an item moves the last one into its place, as in OCCT.
+- KERF0002 checks the two indexed collections.
+- `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
+  (docs/collections-plan.md). Results are unchanged.

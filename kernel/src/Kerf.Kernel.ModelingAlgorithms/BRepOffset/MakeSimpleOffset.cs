@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
@@ -88,7 +89,7 @@ public sealed class MakeSimpleOffset
     private bool _isDone;
     // Map of vertex - wall edge.
     // Used to build shared edge between adjacent wall faces.
-    private readonly NCollection_DataMap<Vertex, Edge> _mapVE =
+    private readonly Dictionary<Vertex, Edge> _mapVE =
         new(EqualityComparer<Vertex>.Default); // the default hasher of OCCT (IsEqual)
     // Used for histrory support.
     private readonly Modifier _builder = new();
@@ -463,19 +464,19 @@ public sealed class MakeSimpleOffset
     //=============================================================================
     private static void ComputeMaxAngleOnShape(in Shape s, ref double resAngle)
     {
-        var m = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var m = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(s, ShapeType.Edge, ShapeType.Face, m);
         var it = new NCollection_List<Shape>.Iterator();
         var ex = new Explorer();
         Face f1 = new(), f2 = new();
         bool found, couture;
-        for (int i = 1; i <= m.Extent(); i++)
+        for (int i = 0; i < m.Count; i++)
         {
-            Edge e = ShapeCasts.Edge(m.FindKey(i));
+            Edge e = ShapeCasts.Edge(m.KeyAt(i));
             found = false;
             couture = false;
             f1.Nullify();
-            for (it.Initialize(m.FindFromIndex(i)); it.More() && !found; it.Next())
+            for (it.Initialize(m.ValueAt(i)); it.More() && !found; it.Next())
             {
                 if (f1.IsNull)
                 {
@@ -670,10 +671,10 @@ public sealed class MakeSimpleOffset
 
         // Check existence of edges in stored map: Edge1
         Edge wall1;
-        if (_mapVE.IsBound(forwardV2))
+        if (_mapVE.ContainsKey(forwardV2))
         {
             // Edge exists - get it from map.
-            wall1 = _mapVE[forwardV2];
+            wall1 = _mapVE.GetValue(forwardV2);
         }
         else
         {
@@ -686,15 +687,15 @@ public sealed class MakeSimpleOffset
             }
             wall1 = me1.InternalEdge();
 
-            _mapVE.Bind(forwardV2, wall1);
+            _mapVE[forwardV2] = wall1;
         }
 
         // Check existence of edges in stored map: Edge2
         Edge wall2;
-        if (_mapVE.IsBound(forwardV1))
+        if (_mapVE.ContainsKey(forwardV1))
         {
             // Edge exists - get it from map.
-            wall2 = ShapeCasts.Edge(_mapVE[forwardV1].Oriented(Reversed));
+            wall2 = ShapeCasts.Edge(_mapVE.GetValue(forwardV1).Oriented(Reversed));
         }
         else
         {
@@ -707,7 +708,7 @@ public sealed class MakeSimpleOffset
             }
             wall2 = me2.InternalEdge();
 
-            _mapVE.Bind(forwardV1, wall2);
+            _mapVE[forwardV1] = wall2;
 
             // Orient it in reversed direction.
             wall2.Orientation(Reversed);

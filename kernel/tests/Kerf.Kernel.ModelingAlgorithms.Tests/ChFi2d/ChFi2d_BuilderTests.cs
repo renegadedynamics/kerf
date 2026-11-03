@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Fillets.Planar;
@@ -40,9 +41,9 @@ public class ChFi2d_BuilderTests
 
     private static List<Shape> Sub(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return Enumerable.Range(1, aMap.Extent()).Select(i => aMap.FindKey(i)).ToList();
+        return Enumerable.Range(1, aMap.Count).Select(i => aMap[i - 1]).ToList();
     }
 
     private static double Area(in Shape theShape)
@@ -95,9 +96,9 @@ public class ChFi2d_BuilderTests
     {
         Face aSquare = Square();
         var aMaker = new MakeFillet2D(aSquare);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
-        NCollection_List<Shape> anEdges = aMap.FindFromIndex(1);
+        NCollection_List<Shape> anEdges = aMap.ValueAt(0);
         Edge E1 = ShapeCasts.Edge(anEdges.First()), E2 = ShapeCasts.Edge(anEdges.Last());
         Edge aChamfer = aMaker.AddChamfer(E1, E2, 1.0, 2.0);
         Assert.Equal(ConstructionError.IsDone, aMaker.Status());
@@ -129,9 +130,9 @@ public class ChFi2d_BuilderTests
         Face aSquare = Square();
         var aMaker = new MakeFillet2D(aSquare);
         Vertex aV = ShapeCasts.Vertex(Sub(aSquare, ShapeType.Vertex)[0]);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
-        Edge E = ShapeCasts.Edge(aMap.FindFromKey(aV).First());
+        Edge E = ShapeCasts.Edge(aMap.GetValue(aV).First());
         aMaker.AddChamfer(E, aV, 2.0, Math.PI / 4.0);
         Assert.Equal(ConstructionError.IsDone, aMaker.Status());
         aMaker.Build();
@@ -162,9 +163,9 @@ public class ChFi2d_BuilderTests
         Assert.False(aMaker.IsDone);
         Assert.ThrowsAny<NotDoneException>(() => aMaker.Shape());
         // a chamfer distance not positive
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
-        aMaker.AddChamfer(ShapeCasts.Edge(aMap.FindFromIndex(2).First()), ShapeCasts.Edge(aMap.FindFromIndex(2).Last()), -1.0, 1.0);
+        aMaker.AddChamfer(ShapeCasts.Edge(aMap.ValueAt(1).First()), ShapeCasts.Edge(aMap.ValueAt(1).Last()), -1.0, 1.0);
         Assert.Equal(ConstructionError.ParametersError, aMaker.Status());
         // a fillet next to a fillet: the second vertex's edges include the first fillet
         Edge aFillet = aMaker.AddFillet(aV, 1.0);
@@ -219,9 +220,9 @@ public class ChFi2d_BuilderTests
         {
             aMaker.AddFillet(ShapeCasts.Vertex(aV), 1.5);
         }
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSquare, ShapeType.Vertex, ShapeType.Edge, aMap);
-        aMaker.AddChamfer(ShapeCasts.Edge(aMap.FindFromIndex(3).First()), ShapeCasts.Edge(aMap.FindFromIndex(3).Last()), 1.0, 1.0);
+        aMaker.AddChamfer(ShapeCasts.Edge(aMap.ValueAt(2).First()), ShapeCasts.Edge(aMap.ValueAt(2).Last()), 1.0, 1.0);
         aMaker.Build();
         Face aModified = ShapeCasts.Face(aMaker.Shape());
 

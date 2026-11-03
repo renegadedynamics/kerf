@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 
@@ -51,22 +52,22 @@ public abstract class SelectExplore : SelectDeduct
         //      If last level, we take it entirely. Otherwise, it feeds the input
 
         int nb = g.Size();
-        NCollection_IndexedMap<Transient> entrees = new NCollection_IndexedMap<Transient>();
-        NCollection_IndexedMap<Transient> result = new NCollection_IndexedMap<Transient>();
+        IndexedSet<Transient> entrees = new IndexedSet<Transient>();
+        IndexedSet<Transient> result = new IndexedSet<Transient>();
         //  Initialisation
         int i, j, level = 1, ilev = 0;
         EntityIterator input = new EntityIterator();
         input = InputResult(g);
         for (input.Start(); input.More(); input.Next())
         {
-            i = entrees.Add(input.Value());
+            i = entrees.Add(input.Value()) + 1;
         }
-        ilev = entrees.Extent();
+        ilev = entrees.Count;
 
         // Exploration
         for (i = 1; i <= nb; i++)
         {
-            if (i > entrees.Extent())
+            if (i > entrees.Count)
             {
                 break;
             }
@@ -77,9 +78,9 @@ public abstract class SelectExplore : SelectDeduct
                 {
                     break;
                 }
-                ilev = entrees.Extent();
+                ilev = entrees.Count;
             }
-            Transient ent = entrees.FindKey(i);
+            Transient ent = entrees[i - 1];
             if (ent is null)
             {
                 continue;
@@ -94,31 +95,31 @@ public abstract class SelectExplore : SelectDeduct
             //  take back input list (level not reached) or result (level reached)
             if (exp.NbEntities() == 0)
             {
-                j = result.Add(ent);
+                j = result.Add(ent) + 1;
                 continue;
             }
             else if (level == _thelevel)
             {
                 for (exp.Start(); exp.More(); exp.Next())
                 {
-                    j = result.Add(exp.Value());
+                    j = result.Add(exp.Value()) + 1;
                 }
             }
             else
             {
                 for (exp.Start(); exp.More(); exp.Next())
                 {
-                    j = entrees.Add(exp.Value());
+                    j = entrees.Add(exp.Value()) + 1;
                 }
             }
         }
 
         //  We collect the result
         EntityIterator res = new EntityIterator();
-        nb = result.Extent();
+        nb = result.Count;
         for (j = 1; j <= nb; j++)
         {
-            res.AddItem(result.FindKey(j));
+            res.AddItem(result[j - 1]);
         }
         return res;
     }

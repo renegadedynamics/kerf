@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Basic;
@@ -200,14 +201,14 @@ public class Styles : ConstructTool
     {
         get
         {
-            return _styles.Extent();
+            return _styles.Count;
         }
     }
 
     /// <summary>Returns style with given index</summary>
     public StyledItem Style(int i)
     {
-        return _styles.FindKey(i) as StyledItem;
+        return _styles[i - 1] as StyledItem;
     }
 
     /// <summary>Returns number of override styles</summary>
@@ -215,14 +216,14 @@ public class Styles : ConstructTool
     {
         get
         {
-            return _rootStyles.Extent();
+            return _rootStyles.Count;
         }
     }
 
     /// <summary>Returns override style with given index</summary>
     public StyledItem RootStyle(int i)
     {
-        return _rootStyles.FindKey(i) as StyledItem;
+        return _rootStyles[i - 1] as StyledItem;
     }
 
     /// <summary>Clears all defined styles and PSA sequence</summary>
@@ -296,17 +297,17 @@ public class Styles : ConstructTool
                             StepModel stepModel)
     {
         repr = null;
-        if (_styles.Extent() < 1)
+        if (_styles.Count < 1)
         {
             return false;
         }
 
         // create MECHANICAL_DESIGN_GEOMETRIC_PRESENTATION_REPRESENTATION
         NCollection_HArray1<RepresentationItem> elems =
-            new NCollection_HArray1<RepresentationItem>(1, _styles.Extent());
-        for (int i = 1; i <= _styles.Extent(); i++)
+            new NCollection_HArray1<RepresentationItem>(1, _styles.Count);
+        for (int i = 1; i <= _styles.Count; i++)
         {
-            elems.SetValue(i, _styles.FindKey(i) as RepresentationItem);
+            elems.SetValue(i, _styles[i - 1] as RepresentationItem);
         }
         // create new MDGPR
         repr = new MechanicalDesignGeometricPresentationRepresentation();
@@ -477,7 +478,7 @@ public class Styles : ConstructTool
                 }
             }
         }
-        return _styles.Extent() > 0;
+        return _styles.Count > 0;
     }
 
     /// <summary>Searches the STEP model for the INISIBILITY entities (which bring styles) and fills out sequence of styles</summary>
@@ -635,9 +636,9 @@ public class Styles : ConstructTool
     {
         // if this color already was processed, just use the same PSA, else create new and add it to map
         PresentationStyleAssignment psa;
-        if (_mapOfStyles.Contains(col))
+        if (_mapOfStyles.ContainsKey(col))
         {
-            psa = _mapOfStyles.FindFromKey(col) as PresentationStyleAssignment;
+            psa = _mapOfStyles.GetValue(col) as PresentationStyleAssignment;
         }
         else
         {
@@ -758,8 +759,8 @@ public class Styles : ConstructTool
     /// one of standard colors predefined in STEP. In that case, PredefinedColour entity is created instead of RGBColour
     /// </summary>
     /// <remarks>OCCT.NET: the RGB colours are keyed by their sRGB values (OCCT: a gp_Pnt of them).</remarks>
-    public static Colour EncodeColor(in Color c, NCollection_DataMap<string, Transient> dpdCs,
-                                                NCollection_DataMap<Point3D, Transient> colRGBs)
+    public static Colour EncodeColor(in Color c, Dictionary<string, Transient> dpdCs,
+                                                Dictionary<Point3D, Transient> colRGBs)
     {
         // detect if color corresponds to one of pre-defined colors
         string cName = PredefinedName(c);
@@ -768,9 +769,9 @@ public class Styles : ConstructTool
         {
             DraughtingPreDefinedColour colPr;
             string name = cName;
-            if (dpdCs.IsBound(name))
+            if (dpdCs.ContainsKey(name))
             {
-                colPr = dpdCs.Find(name) as DraughtingPreDefinedColour;
+                colPr = dpdCs.GetValue(name) as DraughtingPreDefinedColour;
                 if (colPr is not null)
                 {
                     return colPr;
@@ -780,7 +781,7 @@ public class Styles : ConstructTool
             PreDefinedItem preDef = new PreDefinedItem();
             preDef.Init(new TCollection_HAsciiString(cName));
             colPr.SetPreDefinedItem(preDef);
-            dpdCs.Bind(name, colPr);
+            dpdCs[name] = colPr;
             return colPr;
         }
         else
@@ -788,9 +789,9 @@ public class Styles : ConstructTool
             ColourRgb colRGB;
             c.Values(out double r, out double g, out double b, TOC_sRGB);
             Point3D p = new Point3D(r, g, b);
-            if (colRGBs.IsBound(p))
+            if (colRGBs.ContainsKey(p))
             {
-                colRGB = colRGBs.Find(p) as ColourRgb;
+                colRGB = colRGBs.GetValue(p) as ColourRgb;
                 if (colRGB is not null)
                 {
                     return colRGB;
@@ -799,7 +800,7 @@ public class Styles : ConstructTool
             TCollection_HAsciiString colName = new TCollection_HAsciiString("");
             colRGB = new ColourRgb();
             colRGB.Init(colName, p.Coord(1), p.Coord(2), p.Coord(3));
-            colRGBs.Bind(p, colRGB);
+            colRGBs[p] = colRGB;
             return colRGB;
         }
     }
@@ -872,11 +873,11 @@ public class Styles : ConstructTool
         return false;
     }
 
-    private readonly NCollection_IndexedDataMap<Transient, Transient> _mapOfStyles =
-        new NCollection_IndexedDataMap<Transient, Transient>(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Transient> _styles =
-        new NCollection_IndexedMap<Transient>(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Transient> _rootStyles =
-        new NCollection_IndexedMap<Transient>(ReferenceEqualityComparer.Instance);
+    private readonly IndexedMap<Transient, Transient> _mapOfStyles =
+        new IndexedMap<Transient, Transient>(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<Transient> _styles =
+        new IndexedSet<Transient>(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<Transient> _rootStyles =
+        new IndexedSet<Transient>(ReferenceEqualityComparer.Instance);
     private readonly NCollection_Sequence<Transient> _psa = new NCollection_Sequence<Transient>();
 }

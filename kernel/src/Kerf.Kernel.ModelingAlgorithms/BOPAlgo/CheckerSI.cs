@@ -218,11 +218,11 @@ public partial class CheckerSI : PaveFiller
         MapOfPair mpk = _ds!.Interferences();
 
         // 0
-        NCollection_DynamicArray<InterfVV> vVs = _ds.InterfVV();
-        nb = vVs.Length();
+        List<InterfVV> vVs = _ds.InterfVV();
+        nb = vVs.Count;
         for (i = 0; i != nb; ++i)
         {
-            InterfVV vv = vVs.Value(i);
+            InterfVV vv = vVs[i];
             vv.Indices(out n1, out n2);
             if (_ds.IsNewShape(n1) || _ds.IsNewShape(n2))
             {
@@ -233,11 +233,11 @@ public partial class CheckerSI : PaveFiller
         }
         //
         // 1
-        NCollection_DynamicArray<InterfVE> vEs = _ds.InterfVE();
-        nb = vEs.Length();
+        List<InterfVE> vEs = _ds.InterfVE();
+        nb = vEs.Count;
         for (i = 0; i != nb; ++i)
         {
-            InterfVE ve = vEs.Value(i);
+            InterfVE ve = vEs[i];
             ve.Indices(out n1, out n2);
             if (_ds.IsNewShape(n1) || _ds.IsNewShape(n2))
             {
@@ -248,11 +248,11 @@ public partial class CheckerSI : PaveFiller
         }
         //
         // 2
-        NCollection_DynamicArray<InterfEE> eEs = _ds.InterfEE();
-        nb = eEs.Length();
+        List<InterfEE> eEs = _ds.InterfEE();
+        nb = eEs.Count;
         for (i = 0; i != nb; ++i)
         {
-            InterfEE ee = eEs.Value(i);
+            InterfEE ee = eEs[i];
             ee.Indices(out n1, out n2);
             if (_ds.IsNewShape(n1) || _ds.IsNewShape(n2))
             {
@@ -263,11 +263,11 @@ public partial class CheckerSI : PaveFiller
         }
         //
         // 3
-        NCollection_DynamicArray<InterfVF> vFs = _ds.InterfVF();
-        nb = vFs.Length();
+        List<InterfVF> vFs = _ds.InterfVF();
+        nb = vFs.Count;
         for (i = 0; i != nb; ++i)
         {
-            InterfVF vf = vFs.Value(i);
+            InterfVF vf = vFs[i];
             vf.Indices(out n1, out n2);
             if (_ds.IsNewShape(n1) || _ds.IsNewShape(n2))
             {
@@ -278,11 +278,11 @@ public partial class CheckerSI : PaveFiller
         }
         //
         // 4
-        NCollection_DynamicArray<InterfEF> eFs = _ds.InterfEF();
-        nb = eFs.Length();
+        List<InterfEF> eFs = _ds.InterfEF();
+        nb = eFs.Count;
         for (i = 0; i != nb; ++i)
         {
-            InterfEF ef = eFs.Value(i);
+            InterfEF ef = eFs[i];
             if (ef.CommonPart().Type() == ShapeType.Shape)
             {
                 continue;
@@ -297,20 +297,20 @@ public partial class CheckerSI : PaveFiller
         }
         //
         // 5
-        NCollection_DynamicArray<InterfFF> fFs = _ds.InterfFF();
-        nb = fFs.Length();
+        List<InterfFF> fFs = _ds.InterfFF();
+        nb = fFs.Count;
         for (i = 0; i != nb; ++i)
         {
             bool bTangentFaces, bFlag;
             int nbC, nbP, j, iFound;
             //
-            InterfFF ff = fFs.Value(i);
+            InterfFF ff = fFs[i];
             ff.Indices(out n1, out n2);
             //
             bTangentFaces = ff.TangentFaces();
-            nbP = ff.Points().Length();
-            NCollection_DynamicArray<SectionCurve> vc = ff.Curves();
-            nbC = vc.Length();
+            nbP = ff.Points().Count;
+            List<SectionCurve> vc = ff.Curves();
+            nbC = vc.Count;
             if (nbP == 0 && nbC == 0 && !bTangentFaces)
             {
                 continue;
@@ -334,7 +334,7 @@ public partial class CheckerSI : PaveFiller
                 {
                     for (j = 0; j != nbC; ++j)
                     {
-                        SectionCurve nc = vc.Value(j);
+                        SectionCurve nc = vc[j];
                         NCollection_List<PaveBlock> lpbc = nc.PaveBlocks();
                         if (lpbc.Extent() != 0)
                         {
@@ -356,12 +356,12 @@ public partial class CheckerSI : PaveFiller
         //
         //
         // 6
-        NCollection_DynamicArray<InterfVZ> vZs = _ds.InterfVZ();
-        nb = vZs.Length();
+        List<InterfVZ> vZs = _ds.InterfVZ();
+        nb = vZs.Count;
         for (i = 0; i != nb; ++i)
         {
             //
-            InterfVZ vz = vZs.Value(i);
+            InterfVZ vz = vZs[i];
             vz.Indices(out n1, out n2);
             if (_ds.IsNewShape(n1) || _ds.IsNewShape(n2))
             {
@@ -372,36 +372,36 @@ public partial class CheckerSI : PaveFiller
         }
         //
         // 7
-        NCollection_DynamicArray<InterfEZ> eZs = _ds.InterfEZ();
-        nb = eZs.Length();
+        List<InterfEZ> eZs = _ds.InterfEZ();
+        nb = eZs.Count;
         for (i = 0; i != nb; ++i)
         {
             //
-            InterfEZ ez = eZs.Value(i);
+            InterfEZ ez = eZs[i];
             ez.Indices(out n1, out n2);
             pk.SetIndices(n1, n2);
             mpk.Add(pk);
         }
         //
         // 8
-        NCollection_DynamicArray<InterfFZ> fZs = _ds.InterfFZ();
-        nb = fZs.Length();
+        List<InterfFZ> fZs = _ds.InterfFZ();
+        nb = fZs.Count;
         for (i = 0; i != nb; ++i)
         {
             //
-            InterfFZ fz = fZs.Value(i);
+            InterfFZ fz = fZs[i];
             fz.Indices(out n1, out n2);
             pk.SetIndices(n1, n2);
             mpk.Add(pk);
         }
         //
         // 9
-        NCollection_DynamicArray<InterfZZ> zZs = _ds.InterfZZ();
-        nb = zZs.Length();
+        List<InterfZZ> zZs = _ds.InterfZZ();
+        nb = zZs.Count;
         for (i = 0; i != nb; ++i)
         {
             //
-            InterfZZ zz = zZs.Value(i);
+            InterfZZ zz = zZs[i];
             zz.Indices(out n1, out n2);
             pk.SetIndices(n1, n2);
             mpk.Add(pk);

@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
@@ -123,7 +124,7 @@ public class WireframeFixer : RootFixer
         ReShapeBuilder context = Context()!;
 
         double prec = (Precision() > 0.0) ? Precision() : Kerf.Engine.Foundation.Precision.Confusion();
-        var    cont = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var    cont = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         if (_shape.ShapeType() == ShapeType.Compound)
         {
             bool locModified = false;
@@ -137,16 +138,16 @@ public class WireframeFixer : RootFixer
                 Placement l = shape1.Location(), nullLoc = new();
                 shape1.Location(nullLoc);
                 Shape res;
-                if (cont.IsBound(shape1))
+                if (cont.ContainsKey(shape1))
                 {
-                    res = cont.Find(shape1).Oriented(shape1.Orientation());
+                    res = cont.GetValue(shape1).Oriented(shape1.Orientation());
                 }
                 else
                 {
                     _shape = shape1;
                     FixWireGapsCore();
                     res = _shape;
-                    cont.Bind(_shape, res);
+                    cont[_shape] = res;
                 }
                 if (!res.IsSame(shape1))
                 {
@@ -498,7 +499,7 @@ public class WireframeFixer : RootFixer
             _shape = Context()!.InternalApply(shape);
         }
         ReShapeBuilder context = Context()!;
-        var                cont     = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var                cont     = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         if (_shape.ShapeType() == ShapeType.Compound)
         {
             bool locModified = false;
@@ -512,16 +513,16 @@ public class WireframeFixer : RootFixer
                 Placement l = shape1.Location(), nullLoc = new();
                 shape1.Location(nullLoc);
                 Shape res;
-                if (cont.IsBound(shape1))
+                if (cont.ContainsKey(shape1))
                 {
-                    res = cont.Find(shape1).Oriented(shape1.Orientation());
+                    res = cont.GetValue(shape1).Oriented(shape1.Orientation());
                 }
                 else
                 {
                     _shape = shape1;
                     FixSmallEdgesCore();
                     res = _shape;
-                    cont.Bind(_shape, res);
+                    cont[_shape] = res;
                 }
                 if (!res.IsSame(shape1))
                 {
@@ -547,8 +548,8 @@ public class WireframeFixer : RootFixer
         }
         var theSmallEdges    = new HashSet<Shape>(ShapeHasher.Instance);
         var theMultyEdges    = new HashSet<Shape>(ShapeHasher.Instance);
-        var theEdgeToFaces   = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var theFaceWithSmall = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var theEdgeToFaces   = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var theFaceWithSmall = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         CheckSmallEdgesCore(theSmallEdges, theEdgeToFaces, theFaceWithSmall, theMultyEdges);
         MergeSmallEdgesCore(theSmallEdges, theEdgeToFaces, theFaceWithSmall, theMultyEdges);
         return StatusSmallEdges(ExtendStatus.Done);
@@ -561,8 +562,8 @@ public class WireframeFixer : RootFixer
     /// more than once in a wire (not seams). Returns true if a small edge was found.
     /// </summary>
     public bool CheckSmallEdges(HashSet<Shape> smallEdges,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
+                                Dictionary<Shape, NCollection_List<Shape>> edgeToFaces,
+                                Dictionary<Shape, NCollection_List<Shape>> faceWithSmall,
                                 HashSet<Shape> multyEdges)
     {
         using WorkingOverlay.Scope work = EnterWork();
@@ -570,8 +571,8 @@ public class WireframeFixer : RootFixer
     }
 
     private bool CheckSmallEdgesCore(HashSet<Shape> smallEdges,
-                                 NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
-                                 NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
+                                 Dictionary<Shape, NCollection_List<Shape>> edgeToFaces,
+                                 Dictionary<Shape, NCollection_List<Shape>> faceWithSmall,
                                  HashSet<Shape> multyEdges)
     {
         Face face;
@@ -597,25 +598,25 @@ public class WireframeFixer : RootFixer
                 var         aswd = new ExtendWireData(w, true, false);
                 saw.Init(aswd, face, Precision());
                 // pnd protection on seam edges
-                var edgeMap = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+                var edgeMap = new Dictionary<Shape, int>(ShapeHasher.Instance);
                 int i;
                 for (i = 1; i <= saw.EdgeCount; i++)
                 {
                     edge = saw.WireData()!.Edge(i);
-                    if (edgeMap.IsBound(edge))
+                    if (edgeMap.ContainsKey(edge))
                     {
-                        edgeMap.ChangeFind(edge)++;
+                        edgeMap.GetValueRef(edge)++;
                     }
                     else
                     {
-                        edgeMap.Bind(edge, 1);
+                        edgeMap[edge] = 1;
                     }
                 }
 
                 for (i = 1; i <= saw.EdgeCount; i++)
                 {
                     edge = saw.WireData()!.Edge(i);
-                    if (edgeMap.Find(edge) != 1)
+                    if (edgeMap.GetValue(edge) != 1)
                     {
                         if (!saw.WireData()!.IsSeam(i))
                         {
@@ -624,15 +625,15 @@ public class WireframeFixer : RootFixer
                         continue;
                     }
                     // Append current face to the list
-                    if (edgeToFaces.IsBound(edge))
+                    if (edgeToFaces.ContainsKey(edge))
                     {
-                        edgeToFaces[edge].Append(facet);
+                        edgeToFaces.GetValue(edge).Append(facet);
                     }
                     else
                     {
                         var theFaceList = new NCollection_List<Shape>();
                         theFaceList.Append(facet);
-                        edgeToFaces.Bind(edge, theFaceList);
+                        edgeToFaces[edge] = theFaceList;
                     }
                     // Check if current edge is small
                     if (smallEdges.Contains(edge))
@@ -649,7 +650,7 @@ public class WireframeFixer : RootFixer
             // Add current face to the map if has small edges
             if (theEdgeList.Extent() != 0)
             {
-                faceWithSmall.Bind(facet, theEdgeList);
+                faceWithSmall[facet] = theEdgeList;
             }
         }
 
@@ -660,7 +661,7 @@ public class WireframeFixer : RootFixer
         for (var expw1 = new Explorer(_shape, ShapeType.Wire, ShapeType.Face); expw1.More(); expw1.Next())
         {
             saw.SetPrecision(Precision());
-            var         edgeMap = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+            var         edgeMap = new Dictionary<Shape, int>(ShapeHasher.Instance);
             int         i;
             Wire theWire     = ShapeCasts.Wire(expw1.Current());
             var         theEdgeList = new NCollection_List<Shape>();
@@ -672,20 +673,20 @@ public class WireframeFixer : RootFixer
             for (i = 1; i <= saw.EdgeCount; i++)
             {
                 edge = saw.WireData()!.Edge(i);
-                if (edgeMap.IsBound(edge))
+                if (edgeMap.ContainsKey(edge))
                 {
-                    edgeMap.ChangeFind(edge)++;
+                    edgeMap.GetValueRef(edge)++;
                 }
                 else
                 {
-                    edgeMap.Bind(edge, 1);
+                    edgeMap[edge] = 1;
                 }
             }
 
             for (i = 1; i <= saw.EdgeCount; i++)
             {
                 edge = saw.WireData()!.Edge(i);
-                if (edgeMap.Find(edge) != 1)
+                if (edgeMap.GetValue(edge) != 1)
                 {
                     if (!saw.WireData()!.IsSeam(i))
                     {
@@ -717,8 +718,8 @@ public class WireframeFixer : RootFixer
     /// Returns true if something was done.
     /// </summary>
     public bool MergeSmallEdges(HashSet<Shape> smallEdges,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
-                                NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
+                                Dictionary<Shape, NCollection_List<Shape>> edgeToFaces,
+                                Dictionary<Shape, NCollection_List<Shape>> faceWithSmall,
                                 HashSet<Shape> multyEdges,
                                 bool modeDrop = false,
                                 double limitAngle = -1)
@@ -728,8 +729,8 @@ public class WireframeFixer : RootFixer
     }
 
     private bool MergeSmallEdgesCore(HashSet<Shape> smallEdges,
-                                 NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
-                                 NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
+                                 Dictionary<Shape, NCollection_List<Shape>> edgeToFaces,
+                                 Dictionary<Shape, NCollection_List<Shape>> faceWithSmall,
                                  HashSet<Shape> multyEdges,
                                  bool modeDrop = false,
                                  double limitAngle = -1)
@@ -738,7 +739,7 @@ public class WireframeFixer : RootFixer
         double aLimitAngle    = Math.Max(limitAngle, _limitAngle);
 
         bool aModeDrop      = modeDrop || _modeDrop;
-        var  theNewVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
+        var  theNewVertices = new Dictionary<Shape, Shape>(ShapeHasher.Instance);
         if (smallEdges.Count != 0)
         {
             ReShapeBuilder context = Context()!;
@@ -750,9 +751,9 @@ public class WireframeFixer : RootFixer
             var expf2 = new Explorer(_shape, ShapeType.Face);
             for (; expf2.More(); expf2.Next())
             {
-                if (faceWithSmall.IsBound(expf2.Current()))
+                if (faceWithSmall.ContainsKey(expf2.Current()))
                 {
-                    if (faceWithSmall[expf2.Current()].Extent() != 0)
+                    if (faceWithSmall.GetValue(expf2.Current()).Extent() != 0)
                     {
                         // smh#8
                         Shape tmpShape = context.InternalApply(expf2.Current());
@@ -770,11 +771,11 @@ public class WireframeFixer : RootFixer
                                         smallEdges.Remove(expEdge.Current());
                                         smallEdges.Add(newEdge);
                                     }
-                                    if (edgeToFaces.IsBound(expEdge.Current()))
+                                    if (edgeToFaces.ContainsKey(expEdge.Current()))
                                     {
-                                        NCollection_List<Shape> listFaces = edgeToFaces.Find(expEdge.Current());
-                                        edgeToFaces.UnBind(expEdge.Current());
-                                        edgeToFaces.Bind(newEdge, listFaces);
+                                        NCollection_List<Shape> listFaces = edgeToFaces.GetValue(expEdge.Current());
+                                        edgeToFaces.Remove(expEdge.Current());
+                                        edgeToFaces[newEdge] = listFaces;
                                     }
                                 }
                             }
@@ -885,17 +886,17 @@ public class WireframeFixer : RootFixer
                                     var theList1 = new NCollection_List<Shape>();
                                     var theList2 = new NCollection_List<Shape>();
                                     var theList3 = new NCollection_List<Shape>();
-                                    if (edgeToFaces.IsBound(edge1))
+                                    if (edgeToFaces.ContainsKey(edge1))
                                     {
-                                        theList1 = new NCollection_List<Shape>(edgeToFaces[edge1]);
+                                        theList1 = new NCollection_List<Shape>(edgeToFaces.GetValue(edge1));
                                     }
-                                    if (edgeToFaces.IsBound(edge2))
+                                    if (edgeToFaces.ContainsKey(edge2))
                                     {
-                                        theList2 = new NCollection_List<Shape>(edgeToFaces[edge2]);
+                                        theList2 = new NCollection_List<Shape>(edgeToFaces.GetValue(edge2));
                                     }
-                                    if (edgeToFaces.IsBound(edge3))
+                                    if (edgeToFaces.ContainsKey(edge3))
                                     {
-                                        theList3 = new NCollection_List<Shape>(edgeToFaces[edge3]);
+                                        theList3 = new NCollection_List<Shape>(edgeToFaces.GetValue(edge3));
                                     }
                                     bool same_set = false;
 
@@ -1012,19 +1013,19 @@ public class WireframeFixer : RootFixer
                                         {
                                             // Record vertex replacements in the map
                                             Vertex oldV1 = SAE.FirstVertex(edge3), oldV2 = SAE.LastVertex(edge3);
-                                            if (!theNewVertices.IsBound(oldV1))
+                                            if (!theNewVertices.ContainsKey(oldV1))
                                             // smh#8
                                             {
                                                 Shape emptyCopiedV1 = oldV1.EmptyCopied();
-                                                theNewVertices.Bind(oldV1, ShapeCasts.Vertex(emptyCopiedV1));
+                                                theNewVertices[oldV1] = ShapeCasts.Vertex(emptyCopiedV1);
                                             }
                                             if (!oldV1.IsSame(oldV2))
                                             {
-                                                if (!theNewVertices.IsBound(oldV2))
+                                                if (!theNewVertices.ContainsKey(oldV2))
                                                 // smh#8
                                                 {
                                                     Shape emptyCopiedV2 = oldV2.EmptyCopied();
-                                                    theNewVertices.Bind(oldV2, ShapeCasts.Vertex(emptyCopiedV2));
+                                                    theNewVertices[oldV2] = ShapeCasts.Vertex(emptyCopiedV2);
                                                 }
                                             }
 
@@ -1089,9 +1090,9 @@ public class WireframeFixer : RootFixer
                                             // Process changes in maps
                                             var theList = new NCollection_List<Shape>();
                                             theList.Append(theList2);
-                                            edgeToFaces.UnBind(edge1);
-                                            edgeToFaces.UnBind(edge2);
-                                            edgeToFaces.Bind(edge3, theList);
+                                            edgeToFaces.Remove(edge1);
+                                            edgeToFaces.Remove(edge2);
+                                            edgeToFaces[edge3] = theList;
                                             if (smallEdges.Contains(edge1))
                                             {
                                                 smallEdges.Remove(edge1);
@@ -1107,9 +1108,9 @@ public class WireframeFixer : RootFixer
                                             for (var itlf = new NCollection_List<Shape>.Iterator(theList); itlf.More(); itlf.Next())
                                             {
                                                 Shape curface = itlf.Value();
-                                                if (faceWithSmall.IsBound(curface))
+                                                if (faceWithSmall.ContainsKey(curface))
                                                 {
-                                                    NCollection_List<Shape> theEdges = faceWithSmall[curface];
+                                                    NCollection_List<Shape> theEdges = faceWithSmall.GetValue(curface);
                                                     if (newsmall)
                                                     {
                                                         theEdges.Append(edge3);
@@ -1130,7 +1131,7 @@ public class WireframeFixer : RootFixer
                                                     // Remove face without small edges from the map
                                                     if (theEdges.Extent() == 0)
                                                     {
-                                                        faceWithSmall.UnBind(curface);
+                                                        faceWithSmall.Remove(curface);
                                                     }
                                                 }
                                             }
@@ -1161,14 +1162,14 @@ public class WireframeFixer : RootFixer
                                             Edge tmpedge1 = tempWire.Edge(newindex);
                                             Edge tmpedge2 = tempWire.Edge(newindex == 1 ? tempSaw.EdgeCount : (newindex - 1));
                                             var         aL1      = new NCollection_List<Shape>();
-                                            if (edgeToFaces.IsBound(tmpedge1))
+                                            if (edgeToFaces.ContainsKey(tmpedge1))
                                             {
-                                                aL1 = new NCollection_List<Shape>(edgeToFaces.Find(tmpedge1));
+                                                aL1 = new NCollection_List<Shape>(edgeToFaces.GetValue(tmpedge1));
                                             }
                                             var l2 = new NCollection_List<Shape>();
-                                            if (edgeToFaces.IsBound(tmpedge2))
+                                            if (edgeToFaces.ContainsKey(tmpedge2))
                                             {
-                                                l2 = new NCollection_List<Shape>(edgeToFaces.Find(tmpedge2));
+                                                l2 = new NCollection_List<Shape>(edgeToFaces.GetValue(tmpedge2));
                                             }
                                             sfw.FixConnected(newindex <= sfw.NbEdges() ? newindex : 1, Precision());
                                             sfw.FixDegenerated(newindex <= sfw.NbEdges() ? newindex : 1);
@@ -1182,11 +1183,11 @@ public class WireframeFixer : RootFixer
                                             {
                                                 smallEdges.Remove(remedge);
                                             }
-                                            edgeToFaces.UnBind(remedge);
-                                            edgeToFaces.UnBind(tmpedge1);
-                                            edgeToFaces.UnBind(tmpedge2);
-                                            edgeToFaces.Bind(anewedge1, aL1);
-                                            edgeToFaces.Bind(anewedge2, l2);
+                                            edgeToFaces.Remove(remedge);
+                                            edgeToFaces.Remove(tmpedge1);
+                                            edgeToFaces.Remove(tmpedge2);
+                                            edgeToFaces[anewedge1] = aL1;
+                                            edgeToFaces[anewedge2] = l2;
                                             if (smallEdges.Contains(tmpedge1))
                                             {
                                                 smallEdges.Remove(tmpedge1);
@@ -1194,7 +1195,7 @@ public class WireframeFixer : RootFixer
                                                 for (var itlf = new NCollection_List<Shape>.Iterator(aL1); itlf.More(); itlf.Next())
                                                 {
                                                     Shape                   curface  = itlf.Value();
-                                                    NCollection_List<Shape> theEdges = faceWithSmall[curface];
+                                                    NCollection_List<Shape> theEdges = faceWithSmall.GetValue(curface);
                                                     var                            ite      = new NCollection_List<Shape>.Iterator(theEdges);
                                                     while (ite.More())
                                                     {
@@ -1218,7 +1219,7 @@ public class WireframeFixer : RootFixer
                                                 for (var itlf = new NCollection_List<Shape>.Iterator(l2); itlf.More(); itlf.Next())
                                                 {
                                                     Shape                   curface  = itlf.Value();
-                                                    NCollection_List<Shape> theEdges = faceWithSmall[curface];
+                                                    NCollection_List<Shape> theEdges = faceWithSmall.GetValue(curface);
                                                     var                            ite      = new NCollection_List<Shape>.Iterator(theEdges);
                                                     while (ite.More())
                                                     {
@@ -1271,7 +1272,7 @@ public class WireframeFixer : RootFixer
                                                 {
                                                     smallEdges.Remove(edge1);
                                                 }
-                                                edgeToFaces.UnBind(edge1);
+                                                edgeToFaces.Remove(edge1);
                                                 _statusSmallEdges |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
                                             }
                                             else
@@ -1291,7 +1292,7 @@ public class WireframeFixer : RootFixer
                                                 {
                                                     smallEdges.Remove(edge2);
                                                 }
-                                                edgeToFaces.UnBind(edge2);
+                                                edgeToFaces.Remove(edge2);
                                                 _statusSmallEdges |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
                                             }
                                             else
@@ -1319,7 +1320,7 @@ public class WireframeFixer : RootFixer
                                     context.Remove(edge1);
                                     SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                                     smallEdges.Remove(edge1);
-                                    edgeToFaces.UnBind(edge1);
+                                    edgeToFaces.Remove(edge1);
                                     context.Remove(wire);
                                     SendWarning(wire, new Msg("FixWireframe.FixSmallEdges.MSG1"));
                                     _statusSmallEdges |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
@@ -1437,17 +1438,17 @@ public class WireframeFixer : RootFixer
                         var theList1 = new NCollection_List<Shape>();
                         var theList2 = new NCollection_List<Shape>();
                         var theList3 = new NCollection_List<Shape>();
-                        if (edgeToFaces.IsBound(edge1))
+                        if (edgeToFaces.ContainsKey(edge1))
                         {
-                            theList1 = new NCollection_List<Shape>(edgeToFaces[edge1]);
+                            theList1 = new NCollection_List<Shape>(edgeToFaces.GetValue(edge1));
                         }
-                        if (edgeToFaces.IsBound(edge2))
+                        if (edgeToFaces.ContainsKey(edge2))
                         {
-                            theList2 = new NCollection_List<Shape>(edgeToFaces[edge2]);
+                            theList2 = new NCollection_List<Shape>(edgeToFaces.GetValue(edge2));
                         }
-                        if (edgeToFaces.IsBound(edge3))
+                        if (edgeToFaces.ContainsKey(edge3))
                         {
-                            theList3 = new NCollection_List<Shape>(edgeToFaces[edge3]);
+                            theList3 = new NCollection_List<Shape>(edgeToFaces.GetValue(edge3));
                         }
                         bool same_set = false;
 
@@ -1562,19 +1563,19 @@ public class WireframeFixer : RootFixer
                             {
                                 // Record vertex replacements in the map
                                 Vertex oldV1 = SAE.FirstVertex(edge3), oldV2 = SAE.LastVertex(edge3);
-                                if (!theNewVertices.IsBound(oldV1))
+                                if (!theNewVertices.ContainsKey(oldV1))
                                 // smh#8
                                 {
                                     Shape emptyCopiedV1 = oldV1.EmptyCopied();
-                                    theNewVertices.Bind(oldV1, ShapeCasts.Vertex(emptyCopiedV1));
+                                    theNewVertices[oldV1] = ShapeCasts.Vertex(emptyCopiedV1);
                                 }
                                 if (!oldV1.IsSame(oldV2))
                                 {
-                                    if (!theNewVertices.IsBound(oldV2))
+                                    if (!theNewVertices.ContainsKey(oldV2))
                                     // smh#8
                                     {
                                         Shape emptyCopiedV2 = oldV2.EmptyCopied();
-                                        theNewVertices.Bind(oldV2, ShapeCasts.Vertex(emptyCopiedV2));
+                                        theNewVertices[oldV2] = ShapeCasts.Vertex(emptyCopiedV2);
                                     }
                                 }
                                 // To keep NM vertices belonging initial edges
@@ -1638,9 +1639,9 @@ public class WireframeFixer : RootFixer
                                 // Process changes in maps
                                 var theList = new NCollection_List<Shape>();
                                 theList.Append(theList2);
-                                edgeToFaces.UnBind(edge1);
-                                edgeToFaces.UnBind(edge2);
-                                edgeToFaces.Bind(edge3, theList);
+                                edgeToFaces.Remove(edge1);
+                                edgeToFaces.Remove(edge2);
+                                edgeToFaces[edge3] = theList;
                                 if (smallEdges.Contains(edge1))
                                 {
                                     smallEdges.Remove(edge1);
@@ -1656,9 +1657,9 @@ public class WireframeFixer : RootFixer
                                 for (var itlf = new NCollection_List<Shape>.Iterator(theList); itlf.More(); itlf.Next())
                                 {
                                     Shape curface = itlf.Value();
-                                    if (faceWithSmall.IsBound(curface))
+                                    if (faceWithSmall.ContainsKey(curface))
                                     {
-                                        NCollection_List<Shape> theEdges = faceWithSmall[curface];
+                                        NCollection_List<Shape> theEdges = faceWithSmall.GetValue(curface);
                                         if (newsmall)
                                         {
                                             theEdges.Append(edge3);
@@ -1679,7 +1680,7 @@ public class WireframeFixer : RootFixer
                                         // Remove face without small edges from the map
                                         if (theEdges.Extent() == 0)
                                         {
-                                            faceWithSmall.UnBind(curface);
+                                            faceWithSmall.Remove(curface);
                                         }
                                     }
                                 }
@@ -1710,14 +1711,14 @@ public class WireframeFixer : RootFixer
                                 Edge tmpedge1 = tempWire.Edge(newindex);
                                 Edge tmpedge2 = tempWire.Edge(newindex == 1 ? tempSaw.EdgeCount : (newindex - 1));
                                 var         aL1      = new NCollection_List<Shape>();
-                                if (edgeToFaces.IsBound(tmpedge1))
+                                if (edgeToFaces.ContainsKey(tmpedge1))
                                 {
-                                    aL1 = new NCollection_List<Shape>(edgeToFaces.Find(tmpedge1));
+                                    aL1 = new NCollection_List<Shape>(edgeToFaces.GetValue(tmpedge1));
                                 }
                                 var l2 = new NCollection_List<Shape>();
-                                if (edgeToFaces.IsBound(tmpedge2))
+                                if (edgeToFaces.ContainsKey(tmpedge2))
                                 {
-                                    l2 = new NCollection_List<Shape>(edgeToFaces.Find(tmpedge2));
+                                    l2 = new NCollection_List<Shape>(edgeToFaces.GetValue(tmpedge2));
                                 }
                                 sfw.FixConnected(newindex <= sfw.NbEdges() ? newindex : 1, Precision());
                                 sfw.FixDegenerated(newindex <= sfw.NbEdges() ? newindex : 1);
@@ -1731,11 +1732,11 @@ public class WireframeFixer : RootFixer
                                 {
                                     smallEdges.Remove(remedge);
                                 }
-                                edgeToFaces.UnBind(remedge);
-                                edgeToFaces.UnBind(tmpedge1);
-                                edgeToFaces.UnBind(tmpedge2);
-                                edgeToFaces.Bind(anewedge1, aL1);
-                                edgeToFaces.Bind(anewedge2, l2);
+                                edgeToFaces.Remove(remedge);
+                                edgeToFaces.Remove(tmpedge1);
+                                edgeToFaces.Remove(tmpedge2);
+                                edgeToFaces[anewedge1] = aL1;
+                                edgeToFaces[anewedge2] = l2;
                                 if (smallEdges.Contains(tmpedge1))
                                 {
                                     smallEdges.Remove(tmpedge1);
@@ -1743,7 +1744,7 @@ public class WireframeFixer : RootFixer
                                     for (var itlf = new NCollection_List<Shape>.Iterator(aL1); itlf.More(); itlf.Next())
                                     {
                                         Shape                   curface  = itlf.Value();
-                                        NCollection_List<Shape> theEdges = faceWithSmall[curface];
+                                        NCollection_List<Shape> theEdges = faceWithSmall.GetValue(curface);
                                         var                            ite      = new NCollection_List<Shape>.Iterator(theEdges);
                                         while (ite.More())
                                         {
@@ -1767,7 +1768,7 @@ public class WireframeFixer : RootFixer
                                     for (var itlf = new NCollection_List<Shape>.Iterator(l2); itlf.More(); itlf.Next())
                                     {
                                         Shape                   curface  = itlf.Value();
-                                        NCollection_List<Shape> theEdges = faceWithSmall[curface];
+                                        NCollection_List<Shape> theEdges = faceWithSmall.GetValue(curface);
                                         var                            ite      = new NCollection_List<Shape>.Iterator(theEdges);
                                         while (ite.More())
                                         {
@@ -1820,7 +1821,7 @@ public class WireframeFixer : RootFixer
                                     {
                                         smallEdges.Remove(edge1);
                                     }
-                                    edgeToFaces.UnBind(edge1);
+                                    edgeToFaces.Remove(edge1);
                                     _statusSmallEdges |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
                                 }
                                 else
@@ -1840,7 +1841,7 @@ public class WireframeFixer : RootFixer
                                     {
                                         smallEdges.Remove(edge2);
                                     }
-                                    edgeToFaces.UnBind(edge2);
+                                    edgeToFaces.Remove(edge2);
                                     _statusSmallEdges |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
                                 }
                                 else
@@ -1868,7 +1869,7 @@ public class WireframeFixer : RootFixer
                         context.Remove(edge1);
                         SendWarning(edge1, new Msg("FixWireframe.FixSmallEdges.MSG0"));
                         smallEdges.Remove(edge1);
-                        edgeToFaces.UnBind(edge1);
+                        edgeToFaces.Remove(edge1);
                         context.Remove(wire);
                         SendWarning(wire, new Msg("FixWireframe.FixSmallEdges.MSG1"));
                         _statusSmallEdges |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);

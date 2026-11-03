@@ -50,10 +50,10 @@ public class BRepMeshDelaunTests
             aStructure.AddNode(new MeshVertex(thePoints[i], i + 1, DegreeOfFreedom.Free));
         }
 
-        NCollection_DynamicArray<int> anOrder = new(aStructure.NodeCount);
+        List<int> anOrder = new(aStructure.NodeCount);
         for (int i = 1; i <= aStructure.NodeCount; ++i)
         {
-            anOrder.Append(i);
+            anOrder.Add(i);
         }
 
         _ = new Delaun(aStructure, anOrder, -1, -1);
@@ -371,10 +371,10 @@ public class BRepMeshDelaunTests
             aStructure.AddNode(new MeshVertex(aPoint, ++aLocation, DegreeOfFreedom.Free));
         }
 
-        NCollection_DynamicArray<int> anOrder = new(aStructure.NodeCount);
+        List<int> anOrder = new(aStructure.NodeCount);
         for (int i = 1; i <= aStructure.NodeCount; ++i)
         {
-            anOrder.Append(i);
+            anOrder.Add(i);
         }
 
         _ = new Delaun(aStructure, anOrder, -1, -1);
@@ -537,12 +537,12 @@ public class BRepMeshDelaunTests
         Delaun aMesher = new(aStructure, -1, -1, true);
 
         Random aRandom = new(9);
-        NCollection_DynamicArray<int> aNew = new();
+        List<int> aNew = new();
         for (int i = 0; i < 60; ++i)
         {
             // Away from the frontier: a free node within 1/5 of a frontier link's length of it is skipped (below).
             Xy aPoint = new(0.25 + 3.5 * aRandom.NextDouble(), 0.25 + 3.5 * aRandom.NextDouble());
-            aNew.Append(aStructure.AddNode(new MeshVertex(aPoint, 1000 + i, DegreeOfFreedom.Free)));
+            aNew.Add(aStructure.AddNode(new MeshVertex(aPoint, 1000 + i, DegreeOfFreedom.Free)));
         }
 
         aMesher.AddVertices(aNew);
@@ -551,7 +551,7 @@ public class BRepMeshDelaunTests
         List<(int, int, int)> aTriangles = CheckTriangulation(aStructure, theCheckEmptyCircles: false);
         CheckFrontier(aStructure, aFrontier);
         HashSet<int> aUsed = [.. aTriangles.SelectMany(t => new[] { t.Item1, t.Item2, t.Item3 })];
-        for (int i = 0; i < aNew.Length(); ++i)
+        for (int i = 0; i < aNew.Count; ++i)
         {
             Assert.Contains(aNew[i], aUsed);
         }
@@ -566,11 +566,11 @@ public class BRepMeshDelaunTests
             TriangulateConstrained([Square(0.0, 4.0, 4, true)], [], null, out _, out _);
         Delaun aMesher = new(aStructure, -1, -1, true);
 
-        NCollection_DynamicArray<int> aNew = new();
+        List<int> aNew = new();
         int aNear = aStructure.AddNode(new MeshVertex(new Xy(0.15, 1.5), 100, DegreeOfFreedom.Free));
         int aFar = aStructure.AddNode(new MeshVertex(new Xy(0.25, 2.5), 101, DegreeOfFreedom.Free));
-        aNew.Append(aNear);
-        aNew.Append(aFar);
+        aNew.Add(aNear);
+        aNew.Add(aFar);
         aMesher.AddVertices(aNew);
 
         HashSet<int> aUsed = [.. Triangles(aStructure).SelectMany(t => new[] { t.Item1, t.Item2, t.Item3 })];

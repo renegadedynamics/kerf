@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1994-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -26,16 +27,16 @@ namespace Kerf.Engine.Features.Draft;
 /// </remarks>
 public sealed partial class DraftModification : Modification
 {
-    private readonly NCollection_IndexedDataMap<Shape, DraftFaceInfo> _fMap = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedDataMap<Shape, DraftEdgeInfo> _eMap = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedDataMap<Shape, VertexInfo> _vMap = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, DraftFaceInfo> _fMap = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, DraftEdgeInfo> _eMap = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, VertexInfo> _vMap = new(ShapeHasher.Instance);
     private bool _comp;
     private Shape _shape = new();
     private Shape _badShape = new();
     private DraftErrorStatus _errStat;
     private Face _curFace = new();
     private readonly NCollection_List<Shape> _conneF = new();
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _efMap =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _efMap =
         new(ShapeHasher.Instance);
 
     //=================================================================================================
@@ -100,18 +101,18 @@ public sealed partial class DraftModification : Modification
     /// <exception cref="NoSuchObjectException">The face wasn't added, or the modification was performed.</exception>
     public void Remove(in Face f)
     {
-        if (!_fMap.Contains(f) || _comp)
+        if (!_fMap.ContainsKey(f) || _comp)
         {
             throw new NoSuchObjectException();
         }
 
         _conneF.Clear();
 
-        _curFace = _fMap.FindFromKey(f).RootFace();
-        for (int i = 1; i <= _fMap.Extent(); i++)
+        _curFace = _fMap.GetValue(f).RootFace();
+        for (int i = 0; i < _fMap.Count; i++)
         {
-            Face theF = ShapeCasts.Face(_fMap.FindKey(i));
-            if (_fMap.FindFromKey(theF).RootFace().IsSame(_curFace))
+            Face theF = ShapeCasts.Face(_fMap.KeyAt(i));
+            if (_fMap.GetValue(theF).RootFace().IsSame(_curFace))
             {
                 _conneF.Append(theF);
                 if (theF.IsSame(_badShape))
@@ -123,21 +124,21 @@ public sealed partial class DraftModification : Modification
 
         for (NCollection_List<Shape>.Iterator ltod = new(_conneF); ltod.More(); ltod.Next())
         {
-            _fMap.RemoveKey(ShapeCasts.Face(ltod.Value()));
+            _fMap.Remove(ShapeCasts.Face(ltod.Value()));
         }
 
         _conneF.Clear();
-        for (int i = 1; i <= _eMap.Extent(); i++)
+        for (int i = 0; i < _eMap.Count; i++)
         {
-            Edge theE = ShapeCasts.Edge(_eMap.FindKey(i));
-            if (_eMap.FindFromKey(theE).RootFace().IsSame(_curFace))
+            Edge theE = ShapeCasts.Edge(_eMap.KeyAt(i));
+            if (_eMap.GetValue(theE).RootFace().IsSame(_curFace))
             {
                 _conneF.Append(theE);
             }
         }
         for (NCollection_List<Shape>.Iterator ltod = new(_conneF); ltod.More(); ltod.Next())
         {
-            _eMap.RemoveKey(ShapeCasts.Edge(ltod.Value()));
+            _eMap.Remove(ShapeCasts.Edge(ltod.Value()));
         }
     }
 
@@ -163,7 +164,7 @@ public sealed partial class DraftModification : Modification
     /// <exception cref="NotDoneException">The modification isn't done.</exception>
     public NCollection_List<Shape> ConnectedFaces(in Face f)
     {
-        if (!_fMap.Contains(f))
+        if (!_fMap.ContainsKey(f))
         {
             throw new NoSuchObjectException();
         }
@@ -172,12 +173,12 @@ public sealed partial class DraftModification : Modification
             throw new NotDoneException();
         }
         _conneF.Clear();
-        _curFace = _fMap.FindFromKey(f).RootFace();
+        _curFace = _fMap.GetValue(f).RootFace();
 
-        for (int i = 1; i <= _fMap.Extent(); i++)
+        for (int i = 0; i < _fMap.Count; i++)
         {
-            Face theF = ShapeCasts.Face(_fMap.FindKey(i));
-            if (_fMap.FindFromKey(theF).RootFace().IsSame(_curFace))
+            Face theF = ShapeCasts.Face(_fMap.KeyAt(i));
+            if (_fMap.GetValue(theF).RootFace().IsSame(_curFace))
             {
                 _conneF.Append(theF);
             }
@@ -198,10 +199,10 @@ public sealed partial class DraftModification : Modification
         }
         _conneF.Clear();
 
-        for (int i = 1; i <= _fMap.Extent(); i++)
+        for (int i = 0; i < _fMap.Count; i++)
         {
-            Face theF = ShapeCasts.Face(_fMap.FindKey(i));
-            if (!_fMap.FindFromKey(theF).RootFace().IsNull)
+            Face theF = ShapeCasts.Face(_fMap.KeyAt(i));
+            if (!_fMap.GetValue(theF).RootFace().IsNull)
             {
                 _conneF.Append(theF);
             }
@@ -230,7 +231,7 @@ public sealed partial class DraftModification : Modification
             throw new DomainErrorException();
         }
 
-        if (!_fMap.Contains(f) || !_fMap.FindFromKey(f).NewGeometry())
+        if (!_fMap.ContainsKey(f) || !_fMap.GetValue(f).NewGeometry())
         {
             return false;
         }
@@ -243,7 +244,7 @@ public sealed partial class DraftModification : Modification
 
         l = new Placement(); // L.Identity()
 
-        s = _fMap.FindFromKey(f).Geometry();
+        s = _fMap.GetValue(f).Geometry();
 
         return true;
     }
@@ -261,13 +262,13 @@ public sealed partial class DraftModification : Modification
             throw new DomainErrorException();
         }
 
-        if (!_eMap.Contains(e))
+        if (!_eMap.ContainsKey(e))
         {
             return false;
         }
 
-        DraftEdgeInfo einf = _eMap.FindFromKey(e);
-        if (!_eMap.FindFromKey(e).NewGeometry())
+        DraftEdgeInfo einf = _eMap.GetValue(e);
+        if (!_eMap.GetValue(e).NewGeometry())
         {
             return false;
         }
@@ -275,7 +276,7 @@ public sealed partial class DraftModification : Modification
         tol = einf.Tolerance();
         tol = Max(tol, Tool.Tolerance(e));
         l = new Placement(); // L.Identity()
-        c = _eMap.FindFromKey(e).Geometry();
+        c = _eMap.GetValue(e).Geometry();
 
         return true;
     }
@@ -292,13 +293,13 @@ public sealed partial class DraftModification : Modification
             throw new DomainErrorException();
         }
 
-        if (!_vMap.Contains(v))
+        if (!_vMap.ContainsKey(v))
         {
             return false;
         }
 
         tol = Tool.Tolerance(v);
-        p = _vMap.FindFromKey(v).Geometry();
+        p = _vMap.GetValue(v).Geometry();
         return true;
     }
 
@@ -320,18 +321,18 @@ public sealed partial class DraftModification : Modification
             throw new DomainErrorException();
         }
 
-        if (!_eMap.Contains(e))
+        if (!_eMap.ContainsKey(e))
         {
             return false;
         }
 
         Tool.Range(newE, out double fp, out double lp);
 
-        Surface sb = _fMap.FindFromKey(f).Geometry()!;
+        Surface sb = _fMap.GetValue(f).Geometry()!;
 
         tol = Tool.Tolerance(e);
 
-        DraftEdgeInfo einf = _eMap.FindFromKey(e);
+        DraftEdgeInfo einf = _eMap.GetValue(e);
         if (einf.FirstFace().IsSame(f) && einf.FirstPC() is not null)
         {
             c = einf.FirstPC();
@@ -342,7 +343,7 @@ public sealed partial class DraftModification : Modification
         }
         else
         {
-            if (!_eMap.FindFromKey(e).NewGeometry())
+            if (!_eMap.GetValue(e).NewGeometry())
             {
                 Tool.Range(e, out double fpi, out double lpi);
                 if (fpi <= fp && fp <= lpi && fpi <= lp && lp <= lpi)
@@ -353,7 +354,7 @@ public sealed partial class DraftModification : Modification
 
             //  if (!BRep_Tool::IsClosed(E,F)) {
             Tool.Range(newE, out fp, out lp);
-            TrimmedCurve3D tc = new(_eMap.FindFromKey(e).Geometry()!, fp, lp);
+            TrimmedCurve3D tc = new(_eMap.GetValue(e).Geometry()!, fp, lp);
             fp = tc.FirstParameter();
             lp = tc.LastParameter();
             BrepBuilder b = new();
@@ -438,13 +439,13 @@ public sealed partial class DraftModification : Modification
             throw new DomainErrorException();
         }
 
-        if (!_vMap.Contains(v))
+        if (!_vMap.ContainsKey(v))
         {
             return false;
         }
 
-        p = _vMap.ChangeFromKey(v).Parameter(e);
-        Curve3D gc = _eMap.FindFromKey(e).Geometry()!;
+        p = _vMap.GetValue(v).Parameter(e);
+        Curve3D gc = _eMap.GetValue(e).Geometry()!;
         Type typc = gc.GetType();
         if (typc == typeof(TrimmedCurve3D))
         {
@@ -456,9 +457,9 @@ public sealed partial class DraftModification : Modification
         {
             Vertex fv = Exploration.FirstVertex(e);
             double paramf;
-            if (_vMap.Contains(fv))
+            if (_vMap.ContainsKey(fv))
             {
-                paramf = _vMap.ChangeFromKey(fv).Parameter(e);
+                paramf = _vMap.GetValue(fv).Parameter(e);
             }
             else
             {

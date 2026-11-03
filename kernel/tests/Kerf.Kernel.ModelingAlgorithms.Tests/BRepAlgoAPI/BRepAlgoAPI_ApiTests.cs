@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Checks;
@@ -28,9 +29,9 @@ public class BRepAlgoAPI_ApiTests
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static string Text(in Shape theShape)
@@ -95,7 +96,7 @@ public class BRepAlgoAPI_ApiTests
 
         // the history answers for the arguments' faces through the simplification: each face of a is in the result,
         // as a merged face, or as itself (its left and right end faces)
-        NCollection_IndexedMap<Shape> aResultFaces = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aResultFaces = new(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Face, aResultFaces);
         int aModified = 0;
         for (Explorer anExp = new(a, ShapeType.Face); anExp.More(); anExp.Next())
@@ -130,7 +131,7 @@ public class BRepAlgoAPI_ApiTests
         aCut.SimplifyResult();
         ISchematiqList<Shape> aSE = aCut.SectionEdges();
         Assert.Equal(aBefore, aSE.Count);
-        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aCut.Shape(), ShapeType.Edge, anEdges);
         Assert.All(aSE, e => Assert.True(anEdges.Contains(e)));
     }

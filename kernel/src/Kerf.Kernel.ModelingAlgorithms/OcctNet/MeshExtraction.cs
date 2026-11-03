@@ -2,6 +2,7 @@
 // An OCCT.NET addition, not a port: the managed equivalent of build123d.NET's native mesh extraction
 // (native/shim/src/b3d_mesh.cpp, b3d_mesh_extract), which fills Bento's viewer's buffers. Open question 12.
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
@@ -52,7 +53,7 @@ public static class MeshExtraction
         ArgumentNullException.ThrowIfNull(faces);
         ArgumentNullException.ThrowIfNull(edges);
 
-        var edgeFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var edgeFaces = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(root, ShapeType.Edge, ShapeType.Face, edgeFaces);
 
         // Sizes first, so each buffer is allocated once at its final length
@@ -200,7 +201,7 @@ public static class MeshExtraction
             _points.Add((float)p.Z());
         }
 
-        public void AddEdge(in Edge edge, NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgeFaces,
+        public void AddEdge(in Edge edge, IndexedMap<Shape, NCollection_List<Shape>> edgeFaces,
                             double deflection, double angle)
         {
             EdgePoints[_edge] = _points.Count / 3;
@@ -210,7 +211,7 @@ public static class MeshExtraction
 
             // On a face's triangulation, so the edge sits exactly on the shaded surface
             bool isDone = false;
-            if (edgeFaces.FindFromKey(edge, out NCollection_List<Shape> faces))
+            if (edgeFaces.TryGetValue(edge, out NCollection_List<Shape> faces))
             {
                 foreach (Shape shape in faces)
                 {

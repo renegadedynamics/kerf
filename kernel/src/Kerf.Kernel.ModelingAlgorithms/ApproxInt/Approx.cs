@@ -118,7 +118,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     private double _tolReached3d;
     private double _tolReached2d;
     private Approx_Data _data;
-    private readonly NCollection_DynamicArray<int> _knots;
+    private readonly List<int> _knots;
 
     //=================================================================================================
 
@@ -308,11 +308,11 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
 
         // Build knots.
         BuildKnots(theline, null);
-        if (_knots.Length() == 2 && indicemax - indicemin > 2 * _data.NbPntMax)
+        if (_knots.Count == 2 && indicemax - indicemin > 2 * _data.NbPntMax)
         {
             // At least 3 knots for BrepApprox.
-            _knots.ChangeLast() = (indicemax - indicemin) / 2; // OCCT: an index count, not indicemin + half of it
-            _knots.Append(indicemax);
+            _knots[^1] = (indicemax - indicemin) / 2; // OCCT: an index count, not indicemin + half of it
+            _knots.Add(indicemax);
         }
 
         _computeLine.Init(_degMin, _degMax, _tol3d, _tol2d, _nbIterMax, true, _data.parametrization);
@@ -613,8 +613,8 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         _knots.Clear();
         if (!_data.BezierApprox)
         {
-            _knots.Append(_data.indicemin);
-            _knots.Append(_data.indicemax);
+            _knots.Add(_data.indicemin);
+            _knots.Add(_data.indicemax);
             return;
         }
 
@@ -687,7 +687,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
             _bezToBSpl.Reset();
         }
 
-        int kind = _knots.Lower();
+        int kind = 0;
         int imin = 0, imax = 0;
         bool otherInter = false;
         do
@@ -781,7 +781,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
                     _bezToBSpl.Append(_computeLineBezier.Value(nbmc));
                 }
                 kind++;
-                if (kind < _knots.Upper())
+                if (kind < (_knots.Count - 1))
                 {
                     otherInter = true;
                 }

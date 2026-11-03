@@ -2835,7 +2835,7 @@ public class ComposeShellFixer : RootFixer
             {
                 var sff = new FaceFixer(newFace);
                 sff.FixAddNaturalBoundMode() = 0;
-                var mapWires = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+                var mapWires = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
                 mapWires.Clear();
                 sff.FixOrientation(mapWires);
                 newFace = sff.InternalFace();

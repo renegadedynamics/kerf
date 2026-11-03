@@ -155,13 +155,13 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
         Point3D curvePt = global::Kerf.Engine.Geometry.ElCLib.Value(aU, _ellipse);
 
         // Check for duplicates using parameter proximity (more robust)
-        for (int j = 0; j < _result._extrema.Length(); ++j)
+        for (int j = 0; j < _result._extrema.Count; ++j)
         {
-            if (Math.Abs(_result._extrema.Value(j).Parameter - aU) < tol)
+            if (Math.Abs(_result._extrema[j].Parameter - aU) < tol)
             {
                 return;
             }
-            if (curvePt.SquareDistance(_result._extrema.Value(j).Point) < aTol2)
+            if (curvePt.SquareDistance(_result._extrema[j].Point) < aTol2)
             {
                 return;
             }
@@ -195,6 +195,6 @@ public sealed class EllipseExtrema : global::Kerf.Engine.Extrema.PointCurve.Extr
         ext.SquareDistance = sqDist;
         ext.IsMinimum = isMin;
 
-        _result._extrema.Append(ext);
+        _result._extrema.Add(ext);
     }
 }

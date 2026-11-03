@@ -252,25 +252,25 @@ public partial class IntSS
         TopolTool dom1 = new(_hs1);
         TopolTool dom2 = new(_hs2!);
 
-        NCollection_DynamicArray<SurfaceAdaptorBase> vecHS1 = new();
-        NCollection_DynamicArray<SurfaceAdaptorBase> vecHS2 = new();
+        List<SurfaceAdaptorBase> vecHS1 = new();
+        List<SurfaceAdaptorBase> vecHS2 = new();
 
         if (_hs1 == _hs2)
         {
-            vecHS1.Append(_hs1);
-            vecHS2.Append(_hs2);
+            vecHS1.Add(_hs1);
+            vecHS2.Add(_hs2);
         }
         else
         {
             PatchIntersection.PrepareSurfaces(_hs1, dom1, _hs2!, dom2, tol, vecHS1, vecHS2);
         }
 
-        for (int numOfHS1 = 0; numOfHS1 < vecHS1.Length(); numOfHS1++)
+        for (int numOfHS1 = 0; numOfHS1 < vecHS1.Count; numOfHS1++)
         {
-            SurfaceAdaptorBase hs1 = vecHS1.Value(numOfHS1);
-            for (int numOfHS2 = 0; numOfHS2 < vecHS2.Length(); numOfHS2++)
+            SurfaceAdaptorBase hs1 = vecHS1[numOfHS1];
+            for (int numOfHS2 = 0; numOfHS2 < vecHS2.Count; numOfHS2++)
             {
-                SurfaceAdaptorBase hs2 = vecHS2.Value(numOfHS2);
+                SurfaceAdaptorBase hs2 = vecHS2[numOfHS2];
 
                 TopolTool aDom1 = new(hs1);
                 TopolTool aDom2 = new(hs2);

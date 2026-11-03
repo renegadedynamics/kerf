@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -48,7 +49,7 @@ public sealed class BuildShape
         BrepBuilder b = new();
         b.MakeCompound(ref c);
 
-        NCollection_IndexedMap<Shape> mapF = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapF = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itl = new();
 
         for (itl.Initialize(l); itl.More(); itl.Next())
@@ -60,16 +61,16 @@ public sealed class BuildShape
             }
         }
 
-        if (mapF.Extent() == 0)
+        if (mapF.Count == 0)
         {
             return; // no face
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(c, ShapeType.Edge, ShapeType.Face, theMapEF);
 
         NCollection_IntMap mapI = new(), mapIf = new();
-        int nbedges = theMapEF.Extent();
+        int nbedges = theMapEF.Count;
 
         NCollection_List<Shape> lshell = new();
         NCollection_List<Shape> lresult = new();
@@ -93,16 +94,16 @@ public sealed class BuildShape
                 Shape faceRef = new();
                 Orientation orient;
 
-                for (j = 1; j <= mapF.Extent(); j++)
+                for (j = 1; j <= mapF.Count; j++)
                 {
-                    orient = mapF[j].Orientation();
+                    orient = mapF[j - 1].Orientation();
                     if (orient == Internal || orient == External)
                     {
                         manifold = false;
                     }
                     else if (faceRef.IsNull)
                     {
-                        faceRef = mapF[j];
+                        faceRef = mapF[j - 1];
                     }
                     mapIf.Add(j);
                 }
@@ -112,9 +113,9 @@ public sealed class BuildShape
                 if (!manifold && faceRef.IsNull)
                 {
                     // on a un paquet de faces. pas d'orientation possible ?
-                    for (j = 1; j <= mapF.Extent(); j++)
+                    for (j = 1; j <= mapF.Count; j++)
                     {
-                        b.Add(newSh, mapF[j]);
+                        b.Add(newSh, mapF[j - 1]);
                     }
                 }
                 else
@@ -122,11 +123,11 @@ public sealed class BuildShape
                     // orienter ce qu`on peut
                     if (!manifold)
                     {
-                        for (j = 1; j <= mapF.Extent(); j++)
+                        for (j = 1; j <= mapF.Count; j++)
                         {
-                            if (mapF[j].Orientation() == Internal || mapF[j].Orientation() == External)
+                            if (mapF[j - 1].Orientation() == Internal || mapF[j - 1].Orientation() == External)
                             {
-                                b.Add(newSh, mapF[j]);
+                                b.Add(newSh, mapF[j - 1]);
                                 mapIf.Remove(j);
                             }
                         }
@@ -142,15 +143,15 @@ public sealed class BuildShape
                 }
                 else
                 {
-                    NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEFbis = new(ShapeHasher.Instance);
+                    IndexedMap<Shape, NCollection_List<Shape>> theMapEFbis = new(ShapeHasher.Instance);
                     Exploration.MapShapesAndAncestors(newSh, ShapeType.Edge, ShapeType.Face, theMapEFbis);
-                    for (k = 1; k <= theMapEFbis.Extent(); k++)
+                    for (k = 1; k <= theMapEFbis.Count; k++)
                     {
-                        Edge ed = ShapeCasts.Edge(theMapEFbis.FindKey(k));
+                        Edge ed = ShapeCasts.Edge(theMapEFbis.KeyAt(k - 1));
                         Orientation oriEd = ed.Orientation();
                         if (oriEd != Internal && oriEd != External)
                         {
-                            int nbfac = theMapEFbis[k].Extent();
+                            int nbfac = theMapEFbis.ValueAt(k - 1).Extent();
                             if (nbfac > 2)
                             { // peu probable
                                 break;
@@ -164,7 +165,7 @@ public sealed class BuildShape
                             }
                         }
                     }
-                    if (k > theMapEFbis.Extent())
+                    if (k > theMapEFbis.Count)
                     {
                         Solid newSo = new();
                         b.MakeSolid(ref newSo);
@@ -193,7 +194,7 @@ public sealed class BuildShape
         // on n`accepte qu`1 niveau d'imbrication
 
         // OCCT iterates this map keyed by the shells' addresses; the port in insertion order (lresult's)
-        NCollection_DataMap<Shape, NCollection_List<Shape>> imbSh = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_List<Shape>> imbSh = new(ShapeHasher.Instance);
         NCollection_List<Shape> lIntern = new();
 
         for (itl.Initialize(lresult); itl.More(); itl.Next())
@@ -204,7 +205,7 @@ public sealed class BuildShape
             b.Add(tempo, sh);
 
             NCollection_List<Shape> thelist = new();
-            imbSh.Bind(sh, thelist);
+            imbSh[sh] = thelist;
             NCollection_List<Shape>.Iterator itl2 = new();
             for (itl2.Initialize(lresult); itl2.More(); itl2.Next())
             {
@@ -214,7 +215,7 @@ public sealed class BuildShape
                     if (IsInside(sh2, tempo))
                     {
                         lIntern.Append(sh2);
-                        imbSh[sh].Append(sh2);
+                        imbSh.GetValue(sh).Append(sh2);
                     }
                 }
             }
@@ -225,9 +226,9 @@ public sealed class BuildShape
         for (itl.Initialize(lIntern); itl.More(); itl.Next())
         {
             Shape sh = itl.Value();
-            if (imbSh.IsBound(sh))
+            if (imbSh.ContainsKey(sh))
             {
-                imbSh.UnBind(sh);
+                imbSh.Remove(sh);
             }
         }
 
@@ -255,7 +256,7 @@ public sealed class BuildShape
                     b.Add(newSo, itl.Value().Reversed());
                 }
                 lsolid.Append(newSo);
-                imbSh.UnBind(key);
+                imbSh.Remove(key);
             }
             else
             {
@@ -268,7 +269,7 @@ public sealed class BuildShape
                 }
                 imbSh.Clear();
             }
-        } while (imbSh.Extent() != 0);
+        } while (imbSh.Count != 0);
 
         int nbsol = lsolid.Extent();
         int nbshl = lshell.Extent();
@@ -309,15 +310,15 @@ public sealed class BuildShape
 
     private static void Add(int ind,
                             NCollection_IntMap mapI,
-                            NCollection_IndexedMap<Shape> mapF,
-                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF)
+                            IndexedSet<Shape> mapF,
+                            IndexedMap<Shape, NCollection_List<Shape>> mapEF)
     {
         if (!mapI.Add(ind))
         {
             throw new ConstructionErrorException();
         }
 
-        NCollection_List<Shape>.Iterator itl = new(mapEF[ind]);
+        NCollection_List<Shape>.Iterator itl = new(mapEF.ValueAt(ind - 1));
         for (; itl.More(); itl.Next())
         {
             if (!mapF.Contains(itl.Value()))
@@ -327,7 +328,7 @@ public sealed class BuildShape
                 for (exp.Init(itl.Value(), ShapeType.Edge); exp.More(); exp.Next())
                 {
                     Shape edg = exp.Current();
-                    int indedg = mapEF.FindIndex(edg);
+                    int indedg = mapEF.IndexOf(edg) + 1;
                     if (indedg == 0)
                     {
                         throw new ConstructionErrorException();
@@ -343,11 +344,11 @@ public sealed class BuildShape
 
     private static void Propagate(in Shape f,
                                   in Shape sh,
-                                  NCollection_IndexedMap<Shape> mapF,
+                                  IndexedSet<Shape> mapF,
                                   NCollection_IntMap mapIf)
     {
         BrepBuilder b = new();
-        int indf = mapF.FindIndex(f);
+        int indf = mapF.IndexOf(f) + 1;
         if (!mapIf.Contains(indf))
         {
             return;
@@ -372,7 +373,7 @@ public sealed class BuildShape
             NCollection_IntMap.Iterator itm = new(mapIf);
             for (; itm.More(); itm.Next())
             {
-                Shape newF = mapF[itm.Key()];
+                Shape newF = mapF[itm.Key() - 1];
                 Explorer exp2 = new(newF, ShapeType.Edge);
                 for (; exp2.More(); exp2.Next())
                 {
@@ -389,7 +390,7 @@ public sealed class BuildShape
             }
             if (itm.More())
             {
-                Shape ftoAdd = mapF[itm.Key()];
+                Shape ftoAdd = mapF[itm.Key() - 1];
                 bool added = false;
                 if (ored2 == ored1)
                 {

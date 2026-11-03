@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Healing.Checks;
@@ -39,7 +40,7 @@ public class BOPTools_AlgoTools_1Tests
         return aShape;
     }
 
-    private static NCollection_IndexedMap<Shape> EmptyMap() => new(ShapeHasher.Instance);
+    private static IndexedSet<Shape> EmptyMap() => new(ShapeHasher.Instance);
 
     [Theory]
     [MemberData(nameof(Files))]
@@ -123,7 +124,7 @@ public class BOPTools_AlgoTools_1Tests
     public void The_map_to_avoid_and_the_maximal_tolerance_are_respected()
     {
         Shape aShape = ShrunkCopy("bottle.brep");
-        NCollection_IndexedMap<Shape> aMap = EmptyMap();
+        IndexedSet<Shape> aMap = EmptyMap();
         Exploration.MapShapes(aShape, ShapeType.Edge, aMap);
         Exploration.MapShapes(aShape, ShapeType.Vertex, aMap);
         AlgoTools.CorrectTolerances(aShape, aMap, 1.0);
@@ -223,10 +224,10 @@ public class BOPTools_SetTests
         anAssigned.Assign(aS3);
         Assert.Equal(aS3, anAssigned);
 
-        NCollection_IndexedDataMap<ToolSet, Shape> aMap = new(EqualityComparer<ToolSet>.Default);
+        IndexedMap<ToolSet, Shape> aMap = new(EqualityComparer<ToolSet>.Default);
         aMap.Add(aS1, aBox);
-        Assert.True(aMap.Contains(aS2));
-        Assert.False(aMap.Contains(aS4));
+        Assert.True(aMap.ContainsKey(aS2));
+        Assert.False(aMap.ContainsKey(aS4));
     }
 
     [Fact]

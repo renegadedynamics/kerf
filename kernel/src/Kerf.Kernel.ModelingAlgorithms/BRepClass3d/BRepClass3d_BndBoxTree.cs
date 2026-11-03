@@ -24,11 +24,11 @@ namespace Kerf.Engine.Classification;
 /// <remarks>A working object (decision 21) over the explorer's map of edges and vertices.</remarks>
 public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
 {
-    private readonly NCollection_IndexedMap<Shape> _mapOfShape; // shapes (vertices + edges)
+    private readonly IndexedSet<Shape> _mapOfShape; // shapes (vertices + edges)
     private Point3D _p = new();
 
     /// <summary>A selector over the shapes of <paramref name="mapOfShape"/> (the tree's objects are their indices).</summary>
-    public BndBoxTreeSelectorPoint(NCollection_IndexedMap<Shape> mapOfShape)
+    public BndBoxTreeSelectorPoint(IndexedSet<Shape> mapOfShape)
     {
         _mapOfShape = mapOfShape;
     }
@@ -40,12 +40,12 @@ public sealed class BndBoxTreeSelectorPoint : SpatialTree<int, Box>.Selector
     public override bool Accept(in int obj)
     {
         // Box-point collision.
-        if (obj > _mapOfShape.Extent())
+        if (obj > _mapOfShape.Count)
         {
             return false;
         }
 
-        Shape shp = _mapOfShape[obj];
+        Shape shp = _mapOfShape[obj - 1];
         ShapeType sht = shp.ShapeType();
         if (sht == ShapeType.Edge)
         {
@@ -103,7 +103,7 @@ public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
     /// <summary>A vertex met by the line: the parameter on the line.</summary>
     public readonly record struct VertParam(Vertex myV, double LParam);
 
-    private readonly NCollection_IndexedMap<Shape> _mapOfShape; // shapes (vertices + edges)
+    private readonly IndexedSet<Shape> _mapOfShape; // shapes (vertices + edges)
     private Line3D _l = new();
     private readonly NCollection_Sequence<EdgeParam> _ep = new(); // output result (edge vs line)
     private readonly NCollection_Sequence<VertParam> _vp = new(); // output result (vertex vs line)
@@ -111,7 +111,7 @@ public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
     private bool _isValid;
 
     /// <summary>A selector over the shapes of <paramref name="mapOfShape"/> (the tree's objects are their indices).</summary>
-    public BndBoxTreeSelectorLine(NCollection_IndexedMap<Shape> mapOfShape)
+    public BndBoxTreeSelectorLine(IndexedSet<Shape> mapOfShape)
     {
         _mapOfShape = mapOfShape;
         _isValid = true;
@@ -124,12 +124,12 @@ public sealed class BndBoxTreeSelectorLine : SpatialTree<int, Box>.Selector
     public override bool Accept(in int obj)
     {
         // box-line collision
-        if (obj > _mapOfShape.Extent())
+        if (obj > _mapOfShape.Count)
         {
             return false;
         }
 
-        Shape shp = _mapOfShape[obj];
+        Shape shp = _mapOfShape[obj - 1];
         ShapeType sht = shp.ShapeType();
         if (sht == ShapeType.Edge)
         {

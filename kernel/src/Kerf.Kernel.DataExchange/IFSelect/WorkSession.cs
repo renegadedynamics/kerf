@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Tools;
@@ -223,11 +224,11 @@ public class WorkSession : Transient
         _thegtool.SetSignType(signtype);
         if (signtype is null)
         {
-            _thenames.UnBind("xst-sign-type");
+            _thenames.Remove("xst-sign-type");
         }
         else
         {
-            _thenames.Bind("xst-sign-type", signtype);
+            _thenames["xst-sign-type"] = signtype;
         }
     }
 
@@ -909,7 +910,7 @@ public class WorkSession : Transient
     /// </summary>
     public int MaxIdent()
     {
-        return _theitems.Extent();
+        return _theitems.Count;
     }
 
     /// <summary>
@@ -922,11 +923,11 @@ public class WorkSession : Transient
         {
             return res;
         }
-        if (_theitems.FindFromIndex(id) is null)
+        if (_theitems.ValueAt(id - 1) is null)
         {
             return res;
         }
-        return _theitems.FindKey(id);
+        return _theitems.KeyAt(id - 1);
     }
 
     /// <summary>
@@ -938,12 +939,12 @@ public class WorkSession : Transient
         {
             return 0;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return 0;
         }
-        if (_theitems.FindFromIndex(id) is null)
+        if (_theitems.ValueAt(id - 1) is null)
         {
             return 0;
         }
@@ -966,7 +967,7 @@ public class WorkSession : Transient
             int id = Atoi(name.Substring(1));
             return Item(id);
         }
-        if (!_thenames.Find(name, out res))
+        if (!_thenames.TryGetValue(name, out res))
         {
             res = null;
         }
@@ -1001,7 +1002,7 @@ public class WorkSession : Transient
             int id = Atoi(name.Substring(1));
             return id;
         }
-        if (!_thenames.Find(name, out Transient res))
+        if (!_thenames.TryGetValue(name, out Transient res))
         {
             return 0;
         }
@@ -1017,12 +1018,12 @@ public class WorkSession : Transient
         {
             return false;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return false;
         }
-        Transient att = _theitems.FindFromIndex(id);
+        Transient att = _theitems.ValueAt(id - 1);
         if (att is null)
         {
             return false;
@@ -1041,12 +1042,12 @@ public class WorkSession : Transient
         {
             return res;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return res; // Null
         }
-        Transient att = _theitems.FindFromIndex(id);
+        Transient att = _theitems.ValueAt(id - 1);
         return (att as TCollection_HAsciiString);
     }
 
@@ -1061,10 +1062,10 @@ public class WorkSession : Transient
         {
             return 0;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id > 0)
         {
-            ref Transient att = ref _theitems.ChangeFromIndex(id);
+            ref Transient att = ref _theitems.ValueAt(id - 1);
             if (att is null)
             {
                 att = item;
@@ -1072,7 +1073,7 @@ public class WorkSession : Transient
         }
         else
         {
-            id = _theitems.Add(item, item);
+            id = _theitems.Add(item, item) + 1;
         }
 
         //  Special cases : Dispatch,Modifier
@@ -1103,13 +1104,13 @@ public class WorkSession : Transient
         //   name already taken : we overwrite the old value
         if (CStringChar(name, 0) != '\0')
         {
-            _thenames.Bind(name, item);
+            _thenames[name] = item;
         }
 
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id > 0)
         {
-            ref Transient att = ref _theitems.ChangeFromIndex(id);
+            ref Transient att = ref _theitems.ValueAt(id - 1);
             if (att is null)
             {
                 att = item;
@@ -1122,11 +1123,11 @@ public class WorkSession : Transient
         }
         else if (CStringChar(name, 0) != '\0')
         {
-            id = _theitems.Add(item, new TCollection_HAsciiString(name));
+            id = _theitems.Add(item, new TCollection_HAsciiString(name)) + 1;
         }
         else
         {
-            id = _theitems.Add(item, item);
+            id = _theitems.Add(item, item) + 1;
         }
 
         //  Special cases : Dispatch,Modifier
@@ -1205,7 +1206,7 @@ public class WorkSession : Transient
             return false;
         }
         _theitems.Add(item, item); // remains but without name
-        return _thenames.UnBind(name);
+        return _thenames.Remove(name);
     }
 
     /// <summary>
@@ -1218,12 +1219,12 @@ public class WorkSession : Transient
         {
             return false;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return false;
         }
-        ref Transient att = ref _theitems.ChangeFromIndex(id);
+        ref Transient att = ref _theitems.ValueAt(id - 1);
         if (att is null)
         {
             return false; // already canceled
@@ -1235,7 +1236,7 @@ public class WorkSession : Transient
         //  Mark "Removed" in the Map (we cannot empty it)
         if (att.IsKind(typeof(TCollection_HAsciiString)))
         {
-            if (!_thenames.UnBind((att as TCollection_HAsciiString).ToCString()))
+            if (!_thenames.Remove((att as TCollection_HAsciiString).ToCString()))
             {
                 return false;
             }
@@ -1354,10 +1355,10 @@ public class WorkSession : Transient
     public NCollection_HSequence<int>? ItemIdents(Type? type)
     {
         NCollection_HSequence<int> list = new NCollection_HSequence<int>();
-        int nb = _theitems.Extent();
+        int nb = _theitems.Count;
         for (int i = 1; i <= nb; i++)
         {
-            if (type is not null && _theitems.FindKey(i).IsKind(type))
+            if (type is not null && _theitems.KeyAt(i - 1).IsKind(type))
             {
                 list.Append(i);
             }
@@ -3213,14 +3214,14 @@ public class WorkSession : Transient
     /// (no Transfer) xst-params-send 3 SendFile (Write, no Transfer) xst-params-split 4 Split xst-param-read 5
     /// Transfer on Reading xst-param-write 6 Transfer on Writing
     /// </summary>
-    public void SetParams(NCollection_DynamicArray<Transient> @params, NCollection_DynamicArray<int> uselist)
+    public void SetParams(List<Transient> @params, List<int> uselist)
     {
-        int i, nbp = @params.Length(), nbu = uselist.Length();
+        int i, nbp = @params.Count, nbu = uselist.Count;
         ParamEditor editor =
             new ParamEditor(nbp + nbu + 50, "Parameter Editor");
-        for (i = @params.Lower(); i <= @params.Upper(); i++)
+        for (i = 0; i <= (@params.Count - 1); i++)
         {
-            InterfaceTypedValue val = @params.Value(i) as InterfaceTypedValue;
+            InterfaceTypedValue val = @params[i] as InterfaceTypedValue;
             if (val is null)
             {
                 continue;
@@ -3236,9 +3237,9 @@ public class WorkSession : Transient
         NCollection_Sequence<int> listgen = new NCollection_Sequence<int>(), listload = new NCollection_Sequence<int>(),
             listsend = new NCollection_Sequence<int>(), listsplit = new NCollection_Sequence<int>(),
             listread = new NCollection_Sequence<int>(), listwrite = new NCollection_Sequence<int>();
-        for (i = uselist.Lower(); i <= uselist.Upper(); i++)
+        for (i = 0; i <= (uselist.Count - 1); i++)
         {
-            int use = uselist.Value(i);
+            int use = uselist[i];
             switch (use)
             {
                 case 1:
@@ -3963,8 +3964,8 @@ public class WorkSession : Transient
 
     protected HGraph? _thegraph;
     protected CheckIterator _thecheckrun = new CheckIterator();
-    protected NCollection_IndexedDataMap<Transient, Transient> _theitems = new NCollection_IndexedDataMap<Transient, Transient>();
-    protected NCollection_DataMap<string, Transient> _thenames = new NCollection_DataMap<string, Transient>();
+    protected IndexedMap<Transient, Transient> _theitems = new IndexedMap<Transient, Transient>();
+    protected Dictionary<string, Transient> _thenames = new Dictionary<string, Transient>();
     private bool _theerrhand;
     private bool _errHand; // OCCT's file static "errhand", the session's own here
     private StaticSet _thestatics;

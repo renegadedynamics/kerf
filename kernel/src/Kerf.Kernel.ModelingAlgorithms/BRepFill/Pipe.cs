@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Surfaces;
@@ -54,12 +55,12 @@ public sealed class Pipe
     private NCollection_HArray2<Shape>? _faces;
     private NCollection_HArray2<Shape>? _edges;
     private readonly HashSet<Shape> _reversedEdges = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_HArray2<Shape>> _tapes = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_HArray2<Shape>> _rails = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_HArray2<Shape>> _tapes = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_HArray2<Shape>> _rails = new(ShapeHasher.Instance);
     private int _curIndexOfSectionEdge;
     private Shape _first = new();
     private Shape _last = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _genMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _genMap = new(ShapeHasher.Instance);
     private int _degmax;
     private int _segmax;
     private Continuity _continuity;
@@ -71,14 +72,14 @@ public sealed class Pipe
 
     private static bool UpdateMap(in Shape key,
                                   in Shape value,
-                                  NCollection_DataMap<Shape, NCollection_List<Shape>> map)
+                                  Dictionary<Shape, NCollection_List<Shape>> map)
     {
-        if (!map.IsBound(key))
+        if (!map.ContainsKey(key))
         {
             NCollection_List<Shape> thelist = new();
-            map.Bind(key, thelist);
+            map[key] = thelist;
         }
-        NCollection_List<Shape> list = map.ChangeFind(key);
+        NCollection_List<Shape> list = map.GetValue(key);
         NCollection_List<Shape>.Iterator it = new(list);
         bool found = false;
 
@@ -376,9 +377,9 @@ public sealed class Pipe
     {
         list.Clear();
 
-        if (_genMap.IsBound(shape))
+        if (_genMap.ContainsKey(shape))
         {
-            list.Assign(_genMap.Find(shape));
+            list.Assign(_genMap.GetValue(shape));
         }
     }
 
@@ -1189,7 +1190,7 @@ public sealed class Pipe
                 {
                     continue;
                 }
-                if (_genMap.IsBound(edge))
+                if (_genMap.ContainsKey(edge))
                 {
                     continue;
                 }
@@ -1218,13 +1219,13 @@ public sealed class Pipe
 
                 for (int kk = 0; kk < 2; kk++)
                 {
-                    if (_genMap.IsBound(vertex[kk]))
+                    if (_genMap.ContainsKey(vertex[kk]))
                     {
                         continue;
                     }
 
                     // Assemble the list of edges ("rail" along the path)
-                    NCollection_List<Shape> elist = _genMap.Bound(vertex[kk], new NCollection_List<Shape>());
+                    NCollection_List<Shape> elist = _genMap.SetValueRef(vertex[kk], new NCollection_List<Shape>());
                     int jj;
                     for (jj = 1; jj <= uEdges.UpperCol(); jj++)
                     {
@@ -1236,7 +1237,7 @@ public sealed class Pipe
                     }
                 } // for (int kk = 0; kk < 2; kk++)
 
-                NCollection_List<Shape> flist = _genMap.Bound(edge, new NCollection_List<Shape>());
+                NCollection_List<Shape> flist = _genMap.SetValueRef(edge, new NCollection_List<Shape>());
                 Iterator itsh = new(tape);
                 for (; itsh.More(); itsh.Next())
                 {

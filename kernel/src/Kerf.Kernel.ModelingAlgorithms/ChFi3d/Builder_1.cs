@@ -6,6 +6,7 @@
 
 using Kerf.Engine.Booleans.Legacy.Data;
 using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Fillets.Data;
@@ -398,7 +399,7 @@ public partial class FilletBuilderBase
                 NCollection_List<Shape>.Iterator it = new(); //,Jt;
                 bool sommetpourri = false;
                 // OCCT's default hasher compares with IsEqual (orientation counts): a closed edge enters twice
-                NCollection_IndexedMap<Shape> edgesOfV = new(EqualityComparer<Shape>.Default);
+                IndexedSet<Shape> edgesOfV = new(EqualityComparer<Shape>.Default);
                 HashSet<Shape> edges = new(ShapeHasher.Instance);
                 edges.Add(e[0]);
                 edgesOfV.Add(e[0]);
@@ -437,14 +438,14 @@ public partial class FilletBuilderBase
                         Exploration.Vertices(edge, out v1, out v2);
                         if (v1.IsSame(v2)) // edge is closed - two ends of the edge in the vertex
                         {
-                            int ind = edgesOfV.FindIndex(edge);
+                            int ind = edgesOfV.IndexOf(edge) + 1;
                             if (ind == 0)
                             {
-                                ind = edgesOfV.FindIndex(edge.Reversed());
+                                ind = edgesOfV.IndexOf(edge.Reversed()) + 1;
                             }
-                            edge = ShapeCasts.Edge(edgesOfV[ind]);
+                            edge = ShapeCasts.Edge(edgesOfV[ind - 1]);
                             edge.Reverse();
-                            if (edgesOfV.Add(edge) != 0) // OCCT: an index, always true
+                            if (edgesOfV.Add(edge) + 1 != 0) // OCCT: an index, always true
                             {
                                 if (indOfE < 2)
                                 {
@@ -456,7 +457,7 @@ public partial class FilletBuilderBase
                     }
                 }
 
-                if (edgesOfV.Extent() != 3)
+                if (edgesOfV.Count != 3)
                 {
                     sommetpourri = true;
                 }
@@ -574,7 +575,7 @@ public partial class FilletBuilderBase
             ff2 = ff1;
             ff1 = FirstFace;
         }
-        _edgeFirstFace.Bind(ec, FirstFace);
+        _edgeFirstFace[ec] = FirstFace;
 
         // Define concavity
         TypeOfConcavity typeOfConcavity = global::Kerf.Engine.Fillets.ChFi3d.DefineConnectType(ec, ff1, ff2, 1.0e-5, true);
@@ -687,7 +688,7 @@ public partial class FilletBuilderBase
                             Face curF1 = new(), curF2 = new();
                             ChFi3d_conexfaces(ec, out curF1, out curF2, _efMap);
                             ReorderFaces(ref curF1, ref curF2, FirstFace, prevEdge, commonVertex, _efMap);
-                            _edgeFirstFace.Bind(ec, curF1);
+                            _edgeFirstFace[ec] = curF1;
                             if (offset > 0)
                             {
                                 FaceSurfaceAdaptor curSb1 = new(curF1), curSb2 = new(curF2);
@@ -736,7 +737,7 @@ public partial class FilletBuilderBase
             { // Upstream progression
                 fini = false;
                 ec = spine.Edges(1);
-                FirstFace = ShapeCasts.Face(_edgeFirstFace[ec]);
+                FirstFace = ShapeCasts.Face(_edgeFirstFace.GetValue(ec));
                 curor = ec.Orientation();
                 fvEc = vStart;
                 while (!fini)
@@ -793,7 +794,7 @@ public partial class FilletBuilderBase
                                 Face curF1 = new(), curF2 = new();
                                 ChFi3d_conexfaces(ec, out curF1, out curF2, _efMap);
                                 ReorderFaces(ref curF1, ref curF2, FirstFace, prevEdge, commonVertex, _efMap);
-                                _edgeFirstFace.Bind(ec, curF1);
+                                _edgeFirstFace[ec] = curF1;
                                 if (offset > 0)
                                 {
                                     FaceSurfaceAdaptor curSb1 = new(curF1), curSb2 = new(curF2);
@@ -1030,10 +1031,10 @@ internal static class Builder_1
         Face curFace = new();
         for (;;)
         {
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexEdgeMap =
+            IndexedMap<Shape, NCollection_List<Shape>> vertexEdgeMap =
                 new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(prevFace, ShapeType.Vertex, ShapeType.Edge, vertexEdgeMap);
-            foreach (Shape edge in vertexEdgeMap.FindFromKey(commonVertex))
+            foreach (Shape edge in vertexEdgeMap.GetValue(commonVertex))
             {
                 if (edge.IsSame(PrevEdge))
                 {

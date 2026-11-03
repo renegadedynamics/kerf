@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Healing.Analysis;
@@ -243,7 +244,7 @@ public sealed class IntersectionToolFixer
     //           and e2[param,b] using vertex vert
     //=======================================================================
     private bool SplitEdge1(ExtendWireData sewd, in Face face, int num, double param,
-                            in Vertex vert, double preci, NCollection_DataMap<Shape, Box2d> boxes)
+                            in Vertex vert, double preci, Dictionary<Shape, Box2d> boxes)
     {
         // Standard_ASSERT_RETURN: "Edge index out of range"
         if (!(num > 0 && num <= sewd.EdgeCount))
@@ -281,7 +282,7 @@ public sealed class IntersectionToolFixer
         }
 
         // change boxes
-        boxes.UnBind(edge);
+        boxes.Remove(edge);
         Surface? s = Tool.Surface(face, out Placement l);
         var           sae = new EdgeAnalysis();
         if (sae.PCurve(newE1, s, l, out Curve2D? c2d, out double cf, out double cl, false))
@@ -300,7 +301,7 @@ public sealed class IntersectionToolFixer
                 gac.Load(c2d, cf, cl);
             }
             Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
-            boxes.Bind(newE1, box);
+            boxes[newE1] = box;
         }
         if (sae.PCurve(newE2, s, l, out c2d, out cf, out cl, false))
         {
@@ -318,7 +319,7 @@ public sealed class IntersectionToolFixer
                 gac.Load(c2d, cf, cl);
             }
             Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
-            boxes.Bind(newE2, box);
+            boxes[newE2] = box;
         }
 
         return true;
@@ -331,7 +332,7 @@ public sealed class IntersectionToolFixer
     //                     (remove segment (param1,param2) from edge)
     //=======================================================================
     private bool SplitEdge2(ExtendWireData sewd, in Face face, int num, double param1, double param2,
-                            in Vertex vert, double preci, NCollection_DataMap<Shape, Box2d> boxes)
+                            in Vertex vert, double preci, Dictionary<Shape, Box2d> boxes)
     {
         Edge edge  = sewd.Edge(num);
         Edge newE1 = new(), newE2 = new();
@@ -399,7 +400,7 @@ public sealed class IntersectionToolFixer
         }
 
         // change boxes
-        boxes.UnBind(edge);
+        boxes.Remove(edge);
         Surface? s = Tool.Surface(face, out Placement l);
         if (sae.PCurve(newE1, s, l, out Curve2D? c2d, out double cf, out double cl, false))
         {
@@ -417,7 +418,7 @@ public sealed class IntersectionToolFixer
                 gac.Load(c2d, cf, cl);
             }
             Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
-            boxes.Bind(newE1, box);
+            boxes[newE1] = box;
         }
         if (sae.PCurve(newE2, s, l, out c2d, out cf, out cl, false))
         {
@@ -435,14 +436,14 @@ public sealed class IntersectionToolFixer
                 gac.Load(c2d, cf, cl);
             }
             Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
-            boxes.Bind(newE2, box);
+            boxes[newE2] = box;
         }
 
         return true;
     }
 
     private bool UnionVertexes(ExtendWireData sewd, ref Edge edge1, ref Edge edge2, int num2,
-                               NCollection_DataMap<Shape, Box2d> boxes, in Box2d b2)
+                               Dictionary<Shape, Box2d> boxes, in Box2d b2)
     {
         // union vertexes
         bool          res  = false;
@@ -472,7 +473,7 @@ public sealed class IntersectionToolFixer
                 _context!.Replace(edge2, newE);
                 sewd.Set(newE, num2);
                 edge2 = newE;
-                boxes.Bind(newE, b2); // update boxes
+                boxes[newE] = b2; // update boxes
                 // replace vertex in other edge
                 int num21, num22;
                 if (num2 > 1)
@@ -500,9 +501,9 @@ public sealed class IntersectionToolFixer
                 if (v21F.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v1F, v21L);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -510,9 +511,9 @@ public sealed class IntersectionToolFixer
                 if (v21L.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v21F, v1F);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -520,9 +521,9 @@ public sealed class IntersectionToolFixer
                 if (v22F.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v1F, v22L);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -530,9 +531,9 @@ public sealed class IntersectionToolFixer
                 if (v22L.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v22F, v1F);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -551,7 +552,7 @@ public sealed class IntersectionToolFixer
                 _context!.Replace(edge2, newE);
                 sewd.Set(newE, num2);
                 edge2 = newE;
-                boxes.Bind(newE, b2); // update boxes
+                boxes[newE] = b2; // update boxes
                 // replace vertex in other edge
                 int num21, num22;
                 if (num2 > 1)
@@ -579,9 +580,9 @@ public sealed class IntersectionToolFixer
                 if (v21F.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v1F, v21L);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -589,9 +590,9 @@ public sealed class IntersectionToolFixer
                 if (v21L.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v21F, v1F);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -599,9 +600,9 @@ public sealed class IntersectionToolFixer
                 if (v22F.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v1F, v22L);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -609,9 +610,9 @@ public sealed class IntersectionToolFixer
                 if (v22L.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v22F, v1F);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -630,7 +631,7 @@ public sealed class IntersectionToolFixer
                 _context!.Replace(edge2, newE);
                 sewd.Set(newE, num2);
                 edge2 = newE;
-                boxes.Bind(newE, b2); // update boxes
+                boxes[newE] = b2; // update boxes
                 // replace vertex in other edge
                 int num21, num22;
                 if (num2 > 1)
@@ -658,9 +659,9 @@ public sealed class IntersectionToolFixer
                 if (v21F.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v1L, v21L);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -668,9 +669,9 @@ public sealed class IntersectionToolFixer
                 if (v21L.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v21F, v1L);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -678,9 +679,9 @@ public sealed class IntersectionToolFixer
                 if (v22F.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v1L, v22L);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -688,9 +689,9 @@ public sealed class IntersectionToolFixer
                 if (v22L.IsSame(v2F))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v22F, v1L);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -709,7 +710,7 @@ public sealed class IntersectionToolFixer
                 _context!.Replace(edge2, newE);
                 sewd.Set(newE, num2);
                 edge2 = newE;
-                boxes.Bind(newE, b2); // update boxes
+                boxes[newE] = b2; // update boxes
                 // replace vertex in other edge
                 int num21, num22;
                 if (num2 > 1)
@@ -737,9 +738,9 @@ public sealed class IntersectionToolFixer
                 if (v21F.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v1L, v21L);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -747,9 +748,9 @@ public sealed class IntersectionToolFixer
                 if (v21L.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge21, v21F, v1L);
-                    if (boxes.IsBound(edge21))
+                    if (boxes.ContainsKey(edge21))
                     {
-                        boxes.Bind(newE, boxes.Find(edge21)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge21); // update boxes
                     }
                     _context!.Replace(edge21, newE);
                     sewd.Set(newE, num21);
@@ -757,9 +758,9 @@ public sealed class IntersectionToolFixer
                 if (v22F.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v1L, v22L);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -767,9 +768,9 @@ public sealed class IntersectionToolFixer
                 if (v22L.IsSame(v2L))
                 {
                     newE = sbe.InternalCopyReplaceVertices(edge22, v22F, v1L);
-                    if (boxes.IsBound(edge22))
+                    if (boxes.ContainsKey(edge22))
                     {
-                        boxes.Bind(newE, boxes.Find(edge22)); // update boxes
+                        boxes[newE] = boxes.GetValue(edge22); // update boxes
                     }
                     _context!.Replace(edge22, newE);
                     sewd.Set(newE, num22);
@@ -782,7 +783,7 @@ public sealed class IntersectionToolFixer
     }
 
     private static Box2d CreateBoxes2d(ExtendWireData sewd, in Face face,
-                                           NCollection_DataMap<Shape, Box2d> boxes)
+                                           Dictionary<Shape, Box2d> boxes)
     {
         // create box2d for edges from wire
         var           totalBox = new Box2d();
@@ -807,7 +808,7 @@ public sealed class IntersectionToolFixer
                     gac.Load(c2d, cf, cl);
                 }
                 Add2dCurve.Add(gac, global::Kerf.Engine.Foundation.Precision.Confusion(), ref box);
-                boxes.Bind(e, box);
+                boxes[e] = box;
                 totalBox.Add(box);
             }
         }
@@ -854,7 +855,7 @@ public sealed class IntersectionToolFixer
 
     private bool FindVertAndSplitEdge(double param1, in Edge edge1, in Edge edge2, Curve2D crv1,
                                       ref double maxTolVert, ref int num1, ExtendWireData sewd,
-                                      in Face face, NCollection_DataMap<Shape, Box2d> boxes,
+                                      in Face face, Dictionary<Shape, Box2d> boxes,
                                       bool aTmpKey)
     {
         // find needed vertex from edge2 and split edge1 using it
@@ -933,7 +934,7 @@ public sealed class IntersectionToolFixer
         // step 1 : intersection of adjacent edges
 
         // step 2 : intersection of non-adjacent edges
-        var boxes = new NCollection_DataMap<Shape, Box2d>(ShapeHasher.Instance);
+        var boxes = new Dictionary<Shape, Box2d>(ShapeHasher.Instance);
         _       = CreateBoxes2d(sewd, face, boxes);
         var sas = new SurfaceAnalysis(Tool.Surface(face));
 
@@ -961,12 +962,12 @@ public sealed class IntersectionToolFixer
                 {
                     continue;
                 }
-                if (!boxes.IsBound(edge1) || !boxes.IsBound(edge2))
+                if (!boxes.ContainsKey(edge1) || !boxes.ContainsKey(edge2))
                 {
                     continue;
                 }
-                Box2d B1 = boxes.Find(edge1);
-                Box2d B2 = boxes.Find(edge2);
+                Box2d B1 = boxes.GetValue(edge1);
+                Box2d B2 = boxes.GetValue(edge2);
                 if (!B1.IsOut(B2))
                 {
                     // intersection is possible...
@@ -1519,7 +1520,7 @@ public sealed class IntersectionToolFixer
                                         Edge newE = sbe.InternalCopyReplaceVertices(edge2, newV1, v22);
                                         _context.Replace(edge2, newE);
                                         sewd.Set(newE, num2 + dnum1);
-                                        boxes.Bind(newE, B2); // update boxes
+                                        boxes[newE] = B2; // update boxes
                                         edge2 = newE;
                                         akey1 = 1;
                                     }
@@ -1541,7 +1542,7 @@ public sealed class IntersectionToolFixer
                                         Edge newE = sbe.InternalCopyReplaceVertices(edge2, v12, newV1);
                                         _context.Replace(edge2, newE);
                                         sewd.Set(newE, num2 + dnum1);
-                                        boxes.Bind(newE, B2); // update boxes
+                                        boxes[newE] = B2; // update boxes
                                         edge2 = newE;
                                         akey1 = 2;
                                     }
@@ -1563,7 +1564,7 @@ public sealed class IntersectionToolFixer
                                         Edge newE = sbe.InternalCopyReplaceVertices(edge2, newV2, v22);
                                         _context.Replace(edge2, newE);
                                         sewd.Set(newE, num2 + dnum1);
-                                        boxes.Bind(newE, B2); // update boxes
+                                        boxes[newE] = B2; // update boxes
                                         edge2 = newE;
                                         akey2 = 1;
                                     }
@@ -1585,7 +1586,7 @@ public sealed class IntersectionToolFixer
                                         Edge newE = sbe.InternalCopyReplaceVertices(edge2, v12, newV2);
                                         _context.Replace(edge2, newE);
                                         sewd.Set(newE, num2 + dnum1);
-                                        boxes.Bind(newE, B2); // update boxes
+                                        boxes[newE] = B2; // update boxes
                                         edge2 = newE;
                                         akey2 = 2;
                                     }
@@ -1700,13 +1701,13 @@ public sealed class IntersectionToolFixer
         var  sas    = new SurfaceAnalysis(Tool.Surface(face));
 
         // precompute edge boxes for all wires
-        var seqWirEdgeBoxes = new NCollection_Sequence<NCollection_DataMap<Shape, Box2d>>();
+        var seqWirEdgeBoxes = new NCollection_Sequence<Dictionary<Shape, Box2d>>();
         var seqWirBoxes     = new NCollection_Sequence<Box2d>();
         for (int n = 1; n <= seqWir.Length(); n++)
         {
             Wire aWire  = ShapeCasts.Wire(seqWir.Value(n));
             var         sewd  = new ExtendWireData(aWire);
-            var         boxes = new NCollection_DataMap<Shape, Box2d>(ShapeHasher.Instance);
+            var         boxes = new Dictionary<Shape, Box2d>(ShapeHasher.Instance);
             Box2d   totalBox = CreateBoxes2d(sewd, face, boxes);
             seqWirEdgeBoxes.Append(boxes);
             seqWirBoxes.Append(totalBox);
@@ -1716,13 +1717,13 @@ public sealed class IntersectionToolFixer
         {
             Wire wire1 = ShapeCasts.Wire(seqWir.Value(n1));
             var         sewd1 = new ExtendWireData(wire1);
-            NCollection_DataMap<Shape, Box2d> boxes1 = seqWirEdgeBoxes.ChangeValue(n1);
+            Dictionary<Shape, Box2d> boxes1 = seqWirEdgeBoxes.ChangeValue(n1);
             Box2d box1 = seqWirBoxes[n1];
             for (int n2 = n1 + 1; n2 <= seqWir.Length(); n2++)
             {
                 Wire wire2 = ShapeCasts.Wire(seqWir.Value(n2));
                 var         sewd2 = new ExtendWireData(wire2);
-                NCollection_DataMap<Shape, Box2d> boxes2 = seqWirEdgeBoxes.ChangeValue(n2);
+                Dictionary<Shape, Box2d> boxes2 = seqWirEdgeBoxes.ChangeValue(n2);
                 Box2d box2 = seqWirBoxes[n2];
                 if (!box1.IsVoid && !box2.IsVoid && box1.IsOut(box2))
                 {
@@ -1749,12 +1750,12 @@ public sealed class IntersectionToolFixer
                         {
                             continue;
                         }
-                        if (!boxes1.IsBound(edge1) || !boxes2.IsBound(edge2))
+                        if (!boxes1.ContainsKey(edge1) || !boxes2.ContainsKey(edge2))
                         {
                             continue;
                         }
-                        Box2d B1 = boxes1.Find(edge1);
-                        Box2d B2 = boxes2.Find(edge2);
+                        Box2d B1 = boxes1.GetValue(edge1);
+                        Box2d B2 = boxes2.GetValue(edge2);
                         if (!B1.IsOut(B2))
                         {
                             // intersection is possible...
@@ -2159,7 +2160,7 @@ public sealed class IntersectionToolFixer
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, newV1, v22);
                                                 _context.Replace(edge2, newE);
                                                 sewd2.Set(newE, num2);
-                                                boxes2.Bind(newE, B2); // update boxes2
+                                                boxes2[newE] = B2; // update boxes2
                                                 edge2 = newE;
                                                 akey1 = 1;
                                             }
@@ -2171,7 +2172,7 @@ public sealed class IntersectionToolFixer
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, v12, newV1);
                                                 _context.Replace(edge2, newE);
                                                 sewd2.Set(newE, num2);
-                                                boxes2.Bind(newE, B2); // update boxes2
+                                                boxes2[newE] = B2; // update boxes2
                                                 edge2 = newE;
                                                 akey1 = 2;
                                             }
@@ -2183,7 +2184,7 @@ public sealed class IntersectionToolFixer
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, newV2, v22);
                                                 _context.Replace(edge2, newE);
                                                 sewd2.Set(newE, num2);
-                                                boxes2.Bind(newE, B2); // update boxes2
+                                                boxes2[newE] = B2; // update boxes2
                                                 edge2 = newE;
                                                 akey2 = 1;
                                             }
@@ -2195,7 +2196,7 @@ public sealed class IntersectionToolFixer
                                                 Edge newE = sbe.InternalCopyReplaceVertices(edge2, v12, newV2);
                                                 _context.Replace(edge2, newE);
                                                 sewd2.Set(newE, num2);
-                                                boxes2.Bind(newE, B2); // update boxes2
+                                                boxes2[newE] = B2; // update boxes2
                                                 edge2 = newE;
                                                 akey2 = 2;
                                             }
@@ -2238,7 +2239,7 @@ public sealed class IntersectionToolFixer
                                                 }
                                             }
                                             tmpE = sewd2.Edge(numseg2);
-                                            boxes2.Bind(tmpE, boxes1.Find(segE)); // update boxes2
+                                            boxes2[tmpE] = boxes1.GetValue(segE); // update boxes2
                                             if (!sae.FirstVertex(segE).IsSame(sae.FirstVertex(tmpE)))
                                             {
                                                 segE.Reverse();

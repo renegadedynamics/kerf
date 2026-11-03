@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Monitoring;
 using Kerf.Engine.Exchange.Tools;
@@ -42,10 +43,10 @@ public class StaticAndReaderTests
         Assert.True(aCopy.StartInit("STEPControl_Controller"));
         Assert.True(aSet.StartInit("STEPControl_Controller"));
 
-        var aMap = new NCollection_DataMap<string, string>();
+        var aMap = new Dictionary<string, string>();
         aCopy.FillMap(aMap);
-        Assert.Equal("User", aMap.Find("read.precision.mode"));
-        Assert.Equal("0.01", aMap.Find("read.precision.val"));
+        Assert.Equal("User", aMap.GetValue("read.precision.mode"));
+        Assert.Equal("0.01", aMap.GetValue("read.precision.val"));
 
         // families: those beginning with '$' are listed only by "$"
         aSet.Init("$local", "my.local", 't', "x");
@@ -143,7 +144,7 @@ public class StaticAndReaderTests
         aStat.Close(anId);
         Assert.Equal(0, aStat.Level());
 
-        var anElem = new TransientElem(aCopy.AttrList().Find("e"));
+        var anElem = new TransientElem(aCopy.AttrList().GetValue("e"));
         Assert.True(anElem.Equates(new TransientElem(anElem.Value())));
         Assert.False(anElem.Equates(new TransientElem(new ToyEntity("x"))));
         Assert.Equal("ToyEntity", anElem.ValueTypeName());

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Foundation;
@@ -95,12 +96,12 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
                 try
                 {
                     var anA = new Analyse(theShape, anAngle);
-                    var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
                     var aS = new StringBuilder();
-                    for (int i = 1; i <= anEdges.Extent(); i++)
+                    for (int i = 1; i <= anEdges.Count; i++)
                     {
-                        NCollection_List<Interval> aL = anA.Type(ShapeCasts.Edge(anEdges[i]));
+                        NCollection_List<Interval> aL = anA.Type(ShapeCasts.Edge(anEdges[i - 1]));
                         aS.Append(i.ToString(CultureInfo.InvariantCulture)).Append(' ').Append(aL.Extent().ToString(CultureInfo.InvariantCulture));
                         foreach (Interval anI in aL)
                         {
@@ -132,12 +133,12 @@ public class BRepOffsetNativeTests(ITestOutputHelper output)
             }
             case "OFF":
             {
-                var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
                 Exploration.MapShapes(theShape, ShapeType.Face, aFaces);
                 aRes.Add((theHead, ""));
                 try
                 {
-                    var anOff = new Offset(ShapeCasts.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture)]), FromHex(aWords[2]));
+                    var anOff = new Offset(ShapeCasts.Face(aFaces[int.Parse(aWords[1], CultureInfo.InvariantCulture) - 1]), FromHex(aWords[2]));
                     Face aF = anOff.Face();
                     Assert.True(aF.TShape()!.IsFrozen);
                     aRes.Add(Block("STATUS " + ((int)anOff.Status()).ToString(CultureInfo.InvariantCulture), Text(aF)));

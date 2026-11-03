@@ -240,14 +240,14 @@ public class BuilderAlgo : Algo
         // Intersection results
         DS pDS = _dsFiller!.PDS()!;
         // Iterate on all Face/Face interferences and take section edges
-        NCollection_DynamicArray<InterfFF> fFs = pDS.InterfFF();
-        int nbFF = fFs.Length();
+        List<InterfFF> fFs = pDS.InterfFF();
+        int nbFF = fFs.Count;
         for (int i = 0; i < nbFF; ++i)
         {
             InterfFF fFi = fFs[i];
             // Section curves between pair of faces
-            NCollection_DynamicArray<SectionCurve> sectionCurves = fFi.Curves();
-            int nbC = sectionCurves.Length();
+            List<SectionCurve> sectionCurves = fFi.Curves();
+            int nbC = sectionCurves.Count;
             for (int j = 0; j < nbC; ++j)
             {
                 SectionCurve curve = sectionCurves[j];

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -97,14 +98,14 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
     }
 
     // The data/occ shapes, read once.
-    private static readonly ConcurrentDictionary<string, NCollection_IndexedMap<Shape>> OccFaces = new();
+    private static readonly ConcurrentDictionary<string, IndexedSet<Shape>> OccFaces = new();
 
-    private static NCollection_IndexedMap<Shape> Faces(string theFile)
+    private static IndexedSet<Shape> Faces(string theFile)
         => OccFaces.GetOrAdd(theFile, f =>
         {
             Assert.True(BrepTools.Read(out Shape aShape,
                                        Path.Combine(Metadata("OcctSourceDir"), "data", "occ", f)));
-            NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aShape, ShapeType.Face, aMap);
             return aMap;
         });
@@ -114,12 +115,12 @@ public class IntTools_FaceFaceNativeTests(ITestOutputHelper output)
         if (theCase.FacesText is not null)
         {
             BrepTools.Read(out Shape aShape, new StringReader(theCase.FacesText));
-            NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aShape, ShapeType.Face, aMap);
-            return (ShapeCasts.Face(aMap.FindKey(1)), ShapeCasts.Face(aMap.FindKey(aMap.Extent()))); // the same face twice: held once
+            return (ShapeCasts.Face(aMap[0]), ShapeCasts.Face(aMap[aMap.Count - 1])); // the same face twice: held once
         }
-        return (ShapeCasts.Face(Faces(theCase.File1!).FindKey(theCase.Index1)),
-                ShapeCasts.Face(Faces(theCase.File2!).FindKey(theCase.Index2)));
+        return (ShapeCasts.Face(Faces(theCase.File1!)[theCase.Index1 - 1]),
+                ShapeCasts.Face(Faces(theCase.File2!)[theCase.Index2 - 1]));
     }
 
     // ---------------------------------------------------------------------------------------------------------

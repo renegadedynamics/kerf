@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Occt;
 
 namespace Kerf.Engine.Booleans.Data;
@@ -20,11 +21,11 @@ namespace Kerf.Engine.Booleans.Data;
 public class FaceInfo
 {
     protected int _index;
-    protected NCollection_IndexedMap<PaveBlock> _paveBlocksIn = new();
+    protected IndexedSet<PaveBlock> _paveBlocksIn = new();
     protected NCollection_IntMap _verticesIn = new();
-    protected NCollection_IndexedMap<PaveBlock> _paveBlocksOn = new();
+    protected IndexedSet<PaveBlock> _paveBlocksOn = new();
     protected NCollection_IntMap _verticesOn = new();
-    protected NCollection_IndexedMap<PaveBlock> _paveBlocksSc = new();
+    protected IndexedSet<PaveBlock> _paveBlocksSc = new();
     protected NCollection_IntMap _verticesSc = new();
 
     public FaceInfo()
@@ -47,27 +48,27 @@ public class FaceInfo
     public int Index() => _index;
 
     /// <summary>The pave blocks In the face (the face information's own map; read only for callers).</summary>
-    public NCollection_IndexedMap<PaveBlock> PaveBlocksIn() => _paveBlocksIn;
+    public IndexedSet<PaveBlock> PaveBlocksIn() => _paveBlocksIn;
 
-    internal NCollection_IndexedMap<PaveBlock> ChangePaveBlocksIn() => _paveBlocksIn;
+    internal IndexedSet<PaveBlock> ChangePaveBlocksIn() => _paveBlocksIn;
 
     public NCollection_IntMap VerticesIn() => _verticesIn;
 
     internal NCollection_IntMap ChangeVerticesIn() => _verticesIn;
 
     /// <summary>The pave blocks On the face (read only for callers).</summary>
-    public NCollection_IndexedMap<PaveBlock> PaveBlocksOn() => _paveBlocksOn;
+    public IndexedSet<PaveBlock> PaveBlocksOn() => _paveBlocksOn;
 
-    internal NCollection_IndexedMap<PaveBlock> ChangePaveBlocksOn() => _paveBlocksOn;
+    internal IndexedSet<PaveBlock> ChangePaveBlocksOn() => _paveBlocksOn;
 
     public NCollection_IntMap VerticesOn() => _verticesOn;
 
     internal NCollection_IntMap ChangeVerticesOn() => _verticesOn;
 
     /// <summary>The pave blocks of the section curves on the face (read only for callers).</summary>
-    public NCollection_IndexedMap<PaveBlock> PaveBlocksSc() => _paveBlocksSc;
+    public IndexedSet<PaveBlock> PaveBlocksSc() => _paveBlocksSc;
 
-    internal NCollection_IndexedMap<PaveBlock> ChangePaveBlocksSc() => _paveBlocksSc;
+    internal IndexedSet<PaveBlock> ChangePaveBlocksSc() => _paveBlocksSc;
 
     public NCollection_IntMap VerticesSc() => _verticesSc;
 

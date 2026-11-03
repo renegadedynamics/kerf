@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Algo;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
@@ -32,10 +33,10 @@ public class BRepOffset_MakeLoopsInter3dTests
 
     private static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         List<Shape> aList = [];
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aList.Add(aMap[i]);
         }
@@ -97,7 +98,7 @@ public class BRepOffset_MakeLoopsInter3dTests
         // The analysed shape doesn't hold the context face: none of its edges has ancestors.
         Analyse anAnalyse = new(new MakeBox(1, 1, 1).Shape(), 0.01);
         Face aCF = Square(5);
-        NCollection_IndexedMap<Shape> aContext = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aContext = new(ShapeHasher.Instance);
         aContext.Add(aCF);
 
         AsDes anAsDes = new();

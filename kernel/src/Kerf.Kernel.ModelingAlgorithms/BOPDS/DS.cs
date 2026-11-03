@@ -6,6 +6,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
@@ -51,25 +52,25 @@ public class DS
 
     private readonly NCollection_List<Shape> _arguments = new();
     private int _nbSourceShapes; // OCCT also keeps myNbShapes, set to 0 and never read: left out
-    private readonly NCollection_DynamicArray<IndexRange> _ranges = new(0);
-    private readonly NCollection_DynamicArray<ShapeInfo> _lines = new(0);
-    private readonly NCollection_DataMap<Shape, int> _mapShapeIndex = new(ShapeHasher.Instance);
-    private readonly NCollection_DynamicArray<NCollection_List<PaveBlock>> _paveBlocksPool = new(0);
-    private readonly NCollection_DataMap<PaveBlock, CommonBlock> _mapPBCB = new();
-    private readonly NCollection_DynamicArray<FaceInfo> _faceInfoPool = new(0);
+    private readonly List<IndexRange> _ranges = new();
+    private readonly List<ShapeInfo> _lines = new();
+    private readonly Dictionary<Shape, int> _mapShapeIndex = new(ShapeHasher.Instance);
+    private readonly List<NCollection_List<PaveBlock>> _paveBlocksPool = new();
+    private readonly Dictionary<PaveBlock, CommonBlock> _mapPBCB = new();
+    private readonly List<FaceInfo> _faceInfoPool = new();
     private readonly NCollection_IntDataMap<int> _shapesSD = new();
     private readonly NCollection_IntDataMap<NCollection_List<int>> _mapVE = new();
     private readonly MapOfPair _interfTB = new(100); // OCCT's buckets and hash, so that it iterates as OCCT's (BOPDS_MapOfPair)
-    private readonly NCollection_DynamicArray<InterfVV> _interfVV = new(0);
-    private readonly NCollection_DynamicArray<InterfVE> _interfVE = new(0);
-    private readonly NCollection_DynamicArray<InterfVF> _interfVF = new(0);
-    private readonly NCollection_DynamicArray<InterfEE> _interfEE = new(0);
-    private readonly NCollection_DynamicArray<InterfEF> _interfEF = new(0);
-    private readonly NCollection_DynamicArray<InterfFF> _interfFF = new(0);
-    private readonly NCollection_DynamicArray<InterfVZ> _interfVZ = new(0);
-    private readonly NCollection_DynamicArray<InterfEZ> _interfEZ = new(0);
-    private readonly NCollection_DynamicArray<InterfFZ> _interfFZ = new(0);
-    private readonly NCollection_DynamicArray<InterfZZ> _interfZZ = new(0);
+    private readonly List<InterfVV> _interfVV = new();
+    private readonly List<InterfVE> _interfVE = new();
+    private readonly List<InterfVF> _interfVF = new();
+    private readonly List<InterfEE> _interfEE = new();
+    private readonly List<InterfEF> _interfEF = new();
+    private readonly List<InterfFF> _interfFF = new();
+    private readonly List<InterfVZ> _interfVZ = new();
+    private readonly List<InterfEZ> _interfEZ = new();
+    private readonly List<InterfFZ> _interfFZ = new();
+    private readonly List<InterfZZ> _interfZZ = new();
     private readonly NCollection_IntMap _interfered = new();
 
     /// <summary>An empty data structure.</summary>
@@ -128,14 +129,14 @@ public class DS
         for (NCollection_List<Shape>.Iterator it = new(_arguments); it.More(); it.Next())
         {
             Shape shape = it.Value();
-            if (_mapShapeIndex.IsBound(shape))
+            if (_mapShapeIndex.ContainsKey(shape))
             {
                 continue;
             }
 
             InitShape(Append(shape), shape);
             int i2 = ShapeCount - 1;
-            _ranges.Append(new IndexRange(i1, i2));
+            _ranges.Add(new IndexRange(i1, i2));
             i1 = i2 + 1;
         }
 
@@ -157,16 +158,16 @@ public class DS
     }
 
     /// <summary>The total number of shapes stored.</summary>
-    public int ShapeCount => _lines.Length();
+    public int ShapeCount => _lines.Count;
 
     /// <summary>The number of source shapes (the arguments and their sub-shapes).</summary>
     public int SourceShapeCount => _nbSourceShapes;
 
     /// <summary>The number of index ranges (one per argument).</summary>
-    public int RangeCount => _ranges.Length();
+    public int RangeCount => _ranges.Count;
 
     /// <summary>The index range <paramref name="index"/>.</summary>
-    public IndexRange Range(int index) => _ranges.Value(index);
+    public IndexRange Range(int index) => _ranges[index];
 
     /// <summary>The rank (the argument's range) of the shape with the index, or -1.</summary>
     public int Rank(int index)
@@ -187,25 +188,26 @@ public class DS
     /// <summary>Appends a copy of the shape information; returns its index.</summary>
     internal int Append(ShapeInfo shapeInfo)
     {
-        _lines.Append(new ShapeInfo(shapeInfo));
-        int shapeIndex = _lines.Length() - 1;
-        _mapShapeIndex.Bind(shapeInfo.Shape(), shapeIndex);
+        _lines.Add(new ShapeInfo(shapeInfo));
+        int shapeIndex = _lines.Count - 1;
+        _mapShapeIndex[shapeInfo.Shape()] = shapeIndex;
         return shapeIndex;
     }
 
     /// <summary>Appends the default information of the shape; returns its index.</summary>
     internal int Append(in Shape shape)
     {
-        _lines.Append(new ShapeInfo()).SetShape(shape);
-        int shapeIndex = _lines.Length() - 1;
-        _mapShapeIndex.Bind(shape, shapeIndex);
+        _lines.Add(new ShapeInfo());
+        _lines[^1].SetShape(shape);
+        int shapeIndex = _lines.Count - 1;
+        _mapShapeIndex[shape] = shapeIndex;
         return shapeIndex;
     }
 
     /// <summary>The information on the shape with the index (the data structure's own object; read only for callers).</summary>
-    public ShapeInfo ShapeInfo(int index) => _lines.Value(index);
+    public ShapeInfo ShapeInfo(int index) => _lines[index];
 
-    internal ShapeInfo ChangeShapeInfo(int index) => _lines.Value(index);
+    internal ShapeInfo ChangeShapeInfo(int index) => _lines[index];
 
     /// <summary>The shape with the index.</summary>
     public Shape Shape(int index) => ShapeInfo(index).Shape();
@@ -214,7 +216,7 @@ public class DS
     public int Index(in Shape shape)
     {
         int index = -1;
-        if (_mapShapeIndex.Find(shape, out int found))
+        if (_mapShapeIndex.TryGetValue(shape, out int found))
         {
             index = found;
         }
@@ -236,7 +238,7 @@ public class DS
         for (Iterator shapeIter = new(shape); shapeIter.More(); shapeIter.Next())
         {
             Shape subShape = shapeIter.Value();
-            int subShapeIndex = _mapShapeIndex.Find(subShape, out int existingIndex) ? existingIndex : Append(subShape);
+            int subShapeIndex = _mapShapeIndex.TryGetValue(subShape, out int existingIndex) ? existingIndex : Append(subShape);
 
             InitShape(subShapeIndex, subShape);
             if (existingSubShapeIndices.Add(subShapeIndex))
@@ -291,9 +293,9 @@ public class DS
     }
 
     /// <summary>The pave blocks of the source edges (the data structure's own pool; read only for callers).</summary>
-    public NCollection_DynamicArray<NCollection_List<PaveBlock>> PaveBlocksPool() => _paveBlocksPool;
+    public List<NCollection_List<PaveBlock>> PaveBlocksPool() => _paveBlocksPool;
 
-    internal NCollection_DynamicArray<NCollection_List<PaveBlock>> ChangePaveBlocksPool() => _paveBlocksPool;
+    internal List<NCollection_List<PaveBlock>> ChangePaveBlocksPool() => _paveBlocksPool;
 
     /// <summary>True if the shape with the index has pave blocks.</summary>
     public bool HasPaveBlocks(int index) => ShapeInfo(index).HasReference;
@@ -303,7 +305,7 @@ public class DS
     {
         if (HasPaveBlocks(index))
         {
-            return _paveBlocksPool.Value(ShapeInfo(index).Reference());
+            return _paveBlocksPool[ShapeInfo(index).Reference()];
         }
 
         return StaticEmptyList;
@@ -317,7 +319,7 @@ public class DS
         {
             InitPaveBlocks(index);
         }
-        return _paveBlocksPool.Value(shapeInfo.Reference());
+        return _paveBlocksPool[shapeInfo.Reference()];
     }
 
     private void InitPaveBlocks(int edgeIndex)
@@ -383,9 +385,10 @@ public class DS
             }
         }
 
-        NCollection_List<PaveBlock> newList = _paveBlocksPool.Append(new NCollection_List<PaveBlock>());
+        NCollection_List<PaveBlock> newList =  new NCollection_List<PaveBlock>();
+        _paveBlocksPool.Add(newList);
         paveBlock.Update(newList, false);
-        edgeInfo.SetReference(_paveBlocksPool.Length() - 1);
+        edgeInfo.SetReference(_paveBlocksPool.Count - 1);
     }
 
     /// <summary>Splits every pave block with extra paves (see <see cref="PaveBlock.Update"/>).</summary>
@@ -420,7 +423,7 @@ public class DS
         }
 
         ShapeInfo shapeInfo = ChangeShapeInfo(paveBlock.OriginalEdge());
-        NCollection_List<PaveBlock> lpb = _paveBlocksPool.Value(shapeInfo.Reference());
+        NCollection_List<PaveBlock> lpb = _paveBlocksPool[shapeInfo.Reference()];
 
         for (NCollection_List<PaveBlock>.Iterator itPB = new(lpb); itPB.More(); itPB.Next())
         {
@@ -452,12 +455,12 @@ public class DS
         // OCCT iterates this map in the order of its hash buckets (keyed by pairs of vertex indices); the port in
         // insertion order. The order decides only the order in which the new common blocks are made, which nothing
         // indexes, so it isn't observable (decision 784).
-        NCollection_DataMap<Pair, NCollection_List<PaveBlock>> mpklpb = new();
+        Dictionary<Pair, NCollection_List<PaveBlock>> mpklpb = new();
 
         foreach (PaveBlock paveBlockOfCommonBlock in paveBlocksOfCommonBlock)
         {
             int edgeIndex = paveBlockOfCommonBlock.OriginalEdge();
-            NCollection_List<PaveBlock> lpb = _paveBlocksPool.Value(ChangeShapeInfo(edgeIndex).Reference());
+            NCollection_List<PaveBlock> lpb = _paveBlocksPool[ChangeShapeInfo(edgeIndex).Reference()];
 
             itPB.Initialize(lpb);
             for (; itPB.More(); itPB.Next())
@@ -473,7 +476,7 @@ public class DS
 
                         pbn.Indices(out int n1, out int n2);
                         Pair pk = new(n1, n2);
-                        if (mpklpb.Find(pk, out NCollection_List<PaveBlock> paveBlocks))
+                        if (mpklpb.TryGetValue(pk, out NCollection_List<PaveBlock>? paveBlocks))
                         {
                             paveBlocks.Append(pbn);
                         }
@@ -481,7 +484,7 @@ public class DS
                         {
                             NCollection_List<PaveBlock> newLPBx = new();
                             newLPBx.Append(pbn);
-                            mpklpb.Bind(pk, newLPBx);
+                            mpklpb[pk] = newLPBx;
                         }
                     }
                     lpb.Remove(itPB);
@@ -549,18 +552,18 @@ public class DS
     }
 
     /// <summary>True if the pave block is in a common block.</summary>
-    public bool IsCommonBlock(PaveBlock paveBlock) => _mapPBCB.IsBound(paveBlock);
+    public bool IsCommonBlock(PaveBlock paveBlock) => _mapPBCB.ContainsKey(paveBlock);
 
     /// <summary>The pave block's common block, or null.</summary>
     public CommonBlock? CommonBlock(PaveBlock paveBlock) =>
-        _mapPBCB.Find(paveBlock, out CommonBlock commonBlock) ? commonBlock : null;
+        _mapPBCB.TryGetValue(paveBlock, out CommonBlock? commonBlock) ? commonBlock : null;
 
     /// <summary>Sets the pave block's common block.</summary>
     internal void SetCommonBlock(PaveBlock paveBlock, CommonBlock commonBlock) =>
-        _mapPBCB.Bind(paveBlock, commonBlock);
+        _mapPBCB[paveBlock] = commonBlock;
 
     /// <summary>The states of the faces (the data structure's own pool; read only for callers).</summary>
-    public NCollection_DynamicArray<FaceInfo> FaceInfoPool() => _faceInfoPool;
+    public List<FaceInfo> FaceInfoPool() => _faceInfoPool;
 
     /// <summary>True if the shape with the index has face information.</summary>
     public bool HasFaceInfo(int index) => ShapeInfo(index).HasReference;
@@ -573,7 +576,7 @@ public class DS
             return EmptyFaceInfo;
         }
 
-        return _faceInfoPool.Value(ShapeInfo(index).Reference());
+        return _faceInfoPool[ShapeInfo(index).Reference()];
     }
 
     /// <summary>The state of the face with the index, made first if the face has none.</summary>
@@ -584,14 +587,15 @@ public class DS
         {
             InitFaceInfo(index);
         }
-        return _faceInfoPool.Value(shapeInfo.Reference());
+        return _faceInfoPool[shapeInfo.Reference()];
     }
 
     private void InitFaceInfo(int index)
     {
         ShapeInfo shapeInfo = ChangeShapeInfo(index);
-        FaceInfo faceInfo = _faceInfoPool.Append(new FaceInfo());
-        shapeInfo.SetReference(_faceInfoPool.Length() - 1);
+        FaceInfo faceInfo =  new FaceInfo();
+        _faceInfoPool.Add(faceInfo);
+        shapeInfo.SetReference(_faceInfoPool.Count - 1);
         faceInfo.SetIndex(index);
 
         InitFaceInfoIn(index);
@@ -606,7 +610,7 @@ public class DS
             return;
         }
 
-        FaceInfo faceInfo = _faceInfoPool.Value(shapeInfo.Reference());
+        FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
         for (Iterator shapeIter = new(Shape(index)); shapeIter.More(); shapeIter.Next())
         {
             Shape vertex = shapeIter.Value();
@@ -627,8 +631,8 @@ public class DS
             return;
         }
 
-        FaceInfo faceInfo = _faceInfoPool.Value(shapeInfo.Reference());
-        NCollection_IndexedMap<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
+        FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
+        IndexedSet<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
         NCollection_IntMap verticesIn = faceInfo.ChangeVerticesIn();
         paveBlocksIn.Clear();
         verticesIn.Clear();
@@ -644,8 +648,8 @@ public class DS
             return;
         }
 
-        FaceInfo faceInfo = _faceInfoPool.Value(shapeInfo.Reference());
-        NCollection_IndexedMap<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
+        FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
+        IndexedSet<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
         NCollection_IntMap verticesOn = faceInfo.ChangeVerticesOn();
         paveBlocksOn.Clear();
         verticesOn.Clear();
@@ -653,7 +657,7 @@ public class DS
     }
 
     /// <summary>The state On of the face: the (real) pave blocks of its edges and the vertices.</summary>
-    public void FaceInfoOn(int index, NCollection_IndexedMap<PaveBlock> mpb, NCollection_IntMap mvp)
+    public void FaceInfoOn(int index, IndexedSet<PaveBlock> mpb, NCollection_IntMap mvp)
     {
         foreach (int subShapeIndex in ShapeInfo(index).SubShapes())
         {
@@ -678,7 +682,7 @@ public class DS
     /// The state In of the face: its internal vertices, the vertices of vertex/face interferences, the new vertices
     /// of edge/face interferences and the common blocks lying on the face.
     /// </summary>
-    public void FaceInfoIn(int faceIndex, NCollection_IndexedMap<PaveBlock> paveBlocks, NCollection_IntMap indexMap)
+    public void FaceInfoIn(int faceIndex, IndexedSet<PaveBlock> paveBlocks, NCollection_IntMap indexMap)
     {
         // 1. Pure internal vertices on the face
         // Adding to theIndexMap all the indicies of vertices belonging to the face.
@@ -738,10 +742,11 @@ public class DS
             ShapeInfo shapeInfo = ChangeShapeInfo(faceIndex);
             if (!shapeInfo.HasReference)
             {
-                _faceInfoPool.Append(new FaceInfo()).SetIndex(faceIndex);
-                shapeInfo.SetReference(_faceInfoPool.Length() - 1);
+                _faceInfoPool.Add(new FaceInfo());
+                _faceInfoPool[^1].SetIndex(faceIndex);
+                shapeInfo.SetReference(_faceInfoPool.Count - 1);
             }
-            FaceInfo faceInfo = _faceInfoPool.Value(shapeInfo.Reference());
+            FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
             faceInfo.ChangePaveBlocksIn().Clear();
             faceInfo.ChangeVerticesIn().Clear();
 
@@ -756,7 +761,7 @@ public class DS
             if (faces.Contains(faceIndex))
             {
                 int sameDomainIndex = GetSameDomainIndex(vertexFaceInterference.Index1());
-                _faceInfoPool.Value(ShapeInfo(faceIndex).Reference()).ChangeVerticesIn().Add(sameDomainIndex);
+                _faceInfoPool[ShapeInfo(faceIndex).Reference()].ChangeVerticesIn().Add(sameDomainIndex);
             }
         }
 
@@ -769,7 +774,7 @@ public class DS
                 continue;
             }
 
-            FaceInfo faceInfo = _faceInfoPool.Value(ShapeInfo(faceIndex).Reference());
+            FaceInfo faceInfo = _faceInfoPool[ShapeInfo(faceIndex).Reference()];
             if (edgeFaceInterference.GetIndexNew() is int indexNew)
             {
                 faceInfo.ChangeVerticesIn().Add(GetSameDomainIndex(indexNew));
@@ -796,10 +801,11 @@ public class DS
             ShapeInfo shapeInfo = ChangeShapeInfo(shapeIndex);
             if (!shapeInfo.HasReference)
             {
-                _faceInfoPool.Append(new FaceInfo()).SetIndex(shapeIndex);
-                shapeInfo.SetReference(_faceInfoPool.Length() - 1);
+                _faceInfoPool.Add(new FaceInfo());
+                _faceInfoPool[^1].SetIndex(shapeIndex);
+                shapeInfo.SetReference(_faceInfoPool.Count - 1);
             }
-            FaceInfo faceInfo = _faceInfoPool.Value(shapeInfo.Reference());
+            FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
             faceInfo.ChangePaveBlocksOn().Clear();
             faceInfo.ChangeVerticesOn().Clear();
 
@@ -813,13 +819,13 @@ public class DS
         foreach (FaceInfo faceInfo in _faceInfoPool)
         {
             UpdateFaceInfoOn(faceInfo.Index());
-            NCollection_IndexedMap<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
-            for (int paveBlockIndex = paveBlocksOn.Extent(); paveBlockIndex >= 1; --paveBlockIndex)
+            IndexedSet<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
+            for (int paveBlockIndex = paveBlocksOn.Count; paveBlockIndex >= 1; --paveBlockIndex)
             {
-                PaveBlock paveBlock = paveBlocksOn.FindKey(paveBlockIndex);
+                PaveBlock paveBlock = paveBlocksOn[paveBlockIndex - 1];
                 if (!paveBlock.HasEdge())
                 {
-                    paveBlocksOn.RemoveFromIndex(paveBlockIndex);
+                    paveBlocksOn.RemoveAtSwap(paveBlockIndex - 1);
                 }
             }
         }
@@ -837,19 +843,19 @@ public class DS
             }
 
             FaceInfo faceInfo = ChangeFaceInfo(i);
-            NCollection_IndexedMap<PaveBlock> paveBlocksOn = faceInfo.PaveBlocksOn();
-            NCollection_IndexedMap<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
-            if (paveBlocksIn.IsEmpty() || paveBlocksOn.IsEmpty())
+            IndexedSet<PaveBlock> paveBlocksOn = faceInfo.PaveBlocksOn();
+            IndexedSet<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
+            if (paveBlocksIn.Count == 0 || paveBlocksOn.Count == 0)
             {
                 continue;
             }
 
-            for (int paveBlockIndex = paveBlocksIn.Extent(); paveBlockIndex >= 1; --paveBlockIndex)
+            for (int paveBlockIndex = paveBlocksIn.Count; paveBlockIndex >= 1; --paveBlockIndex)
             {
-                PaveBlock paveBlock = paveBlocksIn.FindKey(paveBlockIndex);
+                PaveBlock paveBlock = paveBlocksIn[paveBlockIndex - 1];
                 if (paveBlocksOn.Contains(paveBlock))
                 {
-                    paveBlocksIn.RemoveFromIndex(paveBlockIndex);
+                    paveBlocksIn.RemoveAtSwap(paveBlockIndex - 1);
                 }
             }
         }
@@ -869,11 +875,11 @@ public class DS
         NCollection_IntMap mi = new(100);
         FaceInfo faceInfo = FaceInfo(faceIndex);
 
-        foreach (NCollection_IndexedMap<PaveBlock> paveBlocks in new[] { faceInfo.PaveBlocksIn(), faceInfo.PaveBlocksSc() })
+        foreach (IndexedSet<PaveBlock> paveBlocks in new[] { faceInfo.PaveBlocksIn(), faceInfo.PaveBlocksSc() })
         {
-            for (int paveBlockIndex = 1; paveBlockIndex <= paveBlocks.Extent(); ++paveBlockIndex)
+            for (int paveBlockIndex = 0; paveBlockIndex < paveBlocks.Count; ++paveBlockIndex)
             {
-                PaveBlock paveBlock = paveBlocks.FindKey(paveBlockIndex);
+                PaveBlock paveBlock = paveBlocks[paveBlockIndex];
                 paveBlock.Indices(out int nV1, out int nV2);
                 mi.Add(nV1);
                 mi.Add(nV2);
@@ -901,23 +907,23 @@ public class DS
                               int faceIndex2,
                               NCollection_IntMap mvOnIn,
                               NCollection_IntMap mvCommon,
-                              NCollection_IndexedMap<PaveBlock> pbOnIn,
+                              IndexedSet<PaveBlock> pbOnIn,
                               HashSet<PaveBlock> commonPaveBlocks)
     {
         FaceInfo faceInfo1 = FaceInfo(faceIndex1);
         FaceInfo faceInfo2 = FaceInfo(faceIndex2);
 
-        NCollection_IndexedMap<PaveBlock> pbOn1 = faceInfo1.PaveBlocksOn();
-        NCollection_IndexedMap<PaveBlock> pbIn1 = faceInfo1.PaveBlocksIn();
-        NCollection_IndexedMap<PaveBlock> pbOn2 = faceInfo2.PaveBlocksOn();
-        NCollection_IndexedMap<PaveBlock> pbIn2 = faceInfo2.PaveBlocksIn();
+        IndexedSet<PaveBlock> pbOn1 = faceInfo1.PaveBlocksOn();
+        IndexedSet<PaveBlock> pbIn1 = faceInfo1.PaveBlocksIn();
+        IndexedSet<PaveBlock> pbOn2 = faceInfo2.PaveBlocksOn();
+        IndexedSet<PaveBlock> pbIn2 = faceInfo2.PaveBlocksIn();
 
         // Helper to process pave blocks from a map
-        void ProcessMap(NCollection_IndexedMap<PaveBlock> map)
+        void ProcessMap(IndexedSet<PaveBlock> map)
         {
-            for (int idx = 1; idx <= map.Extent(); ++idx)
+            for (int idx = 0; idx < map.Count; ++idx)
             {
-                PaveBlock paveBlock = map.FindKey(idx);
+                PaveBlock paveBlock = map[idx];
                 pbOnIn.Add(paveBlock);
                 paveBlock.Indices(out int v1, out int v2);
                 mvOnIn.Add(v1);
@@ -932,11 +938,11 @@ public class DS
         ProcessMap(pbIn2);
 
         // Find common pave blocks (those in Face1 that are also in Face2)
-        void FindCommon(NCollection_IndexedMap<PaveBlock> map)
+        void FindCommon(IndexedSet<PaveBlock> map)
         {
-            for (int idx = 1; idx <= map.Extent(); ++idx)
+            for (int idx = 0; idx < map.Count; ++idx)
             {
-                PaveBlock paveBlock = map.FindKey(idx);
+                PaveBlock paveBlock = map[idx];
                 if (pbOn2.Contains(paveBlock) || pbIn2.Contains(paveBlock))
                 {
                     commonPaveBlocks.Add(paveBlock);
@@ -1069,25 +1075,25 @@ public class DS
         return result;
     }
 
-    internal NCollection_DynamicArray<InterfVV> InterfVV() => _interfVV;
+    internal List<InterfVV> InterfVV() => _interfVV;
 
-    internal NCollection_DynamicArray<InterfVE> InterfVE() => _interfVE;
+    internal List<InterfVE> InterfVE() => _interfVE;
 
-    internal NCollection_DynamicArray<InterfVF> InterfVF() => _interfVF;
+    internal List<InterfVF> InterfVF() => _interfVF;
 
-    internal NCollection_DynamicArray<InterfEE> InterfEE() => _interfEE;
+    internal List<InterfEE> InterfEE() => _interfEE;
 
-    internal NCollection_DynamicArray<InterfEF> InterfEF() => _interfEF;
+    internal List<InterfEF> InterfEF() => _interfEF;
 
-    internal NCollection_DynamicArray<InterfFF> InterfFF() => _interfFF;
+    internal List<InterfFF> InterfFF() => _interfFF;
 
-    internal NCollection_DynamicArray<InterfVZ> InterfVZ() => _interfVZ;
+    internal List<InterfVZ> InterfVZ() => _interfVZ;
 
-    internal NCollection_DynamicArray<InterfEZ> InterfEZ() => _interfEZ;
+    internal List<InterfEZ> InterfEZ() => _interfEZ;
 
-    internal NCollection_DynamicArray<InterfFZ> InterfFZ() => _interfFZ;
+    internal List<InterfFZ> InterfFZ() => _interfFZ;
 
-    internal NCollection_DynamicArray<InterfZZ> InterfZZ() => _interfZZ;
+    internal List<InterfZZ> InterfZZ() => _interfZZ;
 
     /// <summary>The number of interference types (10).</summary>
     public static int InterfTypeCount => 10;

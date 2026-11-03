@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Foundation.Resources;
@@ -144,9 +145,9 @@ public class FrameworkAlgoContainer : Transient
             return;
         }
 
-        NCollection_DataMap<Shape, Shape> map = context.Map();
+        Dictionary<Shape, Shape> map = context.Map();
         MsgRegistrator? msg = context.Messages();
-        if (map.Extent() <= 0 && (msg is null || msg.MapShape().Extent() <= 0))
+        if (map.Count <= 0 && (msg is null || msg.MapShape().Count <= 0))
         {
             return;
         }
@@ -162,17 +163,17 @@ public class FrameworkAlgoContainer : Transient
             }
 
             Shape orig = sb.Result();
-            if (map.IsBound(orig))
+            if (map.ContainsKey(orig))
             {
-                sb.SetResult(map.Find(orig));
+                sb.SetResult(map.GetValue(orig));
             }
             else if (!orig.Location().IsIdentity)
             {
                 var nullLoc = new Placement();
                 Shape atmpSh = orig.Located(nullLoc);
-                if (map.IsBound(atmpSh))
+                if (map.ContainsKey(atmpSh))
                 {
-                    sb.SetResult(map.Find(atmpSh));
+                    sb.SetResult(map.GetValue(atmpSh));
                 }
             }
             else
@@ -185,10 +186,10 @@ public class FrameworkAlgoContainer : Transient
                 // Remember modifications.
                 for (; expSE.More(); expSE.Next())
                 {
-                    if (map.IsBound(expSE.Current()))
+                    if (map.ContainsKey(expSE.Current()))
                     {
                         hasModifiedEdges = true;
-                        Shape modifiedShape = map.Find(expSE.Current());
+                        Shape modifiedShape = map.GetValue(expSE.Current());
                         reShape.Replace(expSE.Current(), modifiedShape);
                     }
                 }
@@ -204,10 +205,10 @@ public class FrameworkAlgoContainer : Transient
             // update messages
             if (msg is not null)
             {
-                NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
-                if (msgmap.IsBound(orig))
+                Dictionary<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+                if (msgmap.ContainsKey(orig))
                 {
-                    NCollection_List<Msg> msglist = msgmap.Find(orig);
+                    NCollection_List<Msg> msglist = msgmap.GetValue(orig);
                     for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                     {
                         Msg mess = iter.Value();
@@ -230,7 +231,7 @@ public class FrameworkAlgoContainer : Transient
             return;
         }
 
-        NCollection_DataMap<Shape, Shape> map = context.Map();
+        Dictionary<Shape, Shape> map = context.Map();
         MsgRegistrator? msg = context.Messages();
         foreach (KeyValuePair<Shape, Shape> shapeShapeIterator in map)
         {
@@ -288,10 +289,10 @@ public class FrameworkAlgoContainer : Transient
             // update messages
             if (msg is not null)
             {
-                NCollection_DataMap<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
-                if (msgmap.IsBound(orig))
+                Dictionary<Shape, NCollection_List<Msg>> msgmap = msg.MapShape();
+                if (msgmap.ContainsKey(orig))
                 {
-                    NCollection_List<Msg> msglist = msgmap.Find(orig);
+                    NCollection_List<Msg> msglist = msgmap.GetValue(orig);
                     for (var iter = new NCollection_List<Msg>.Iterator(msglist); iter.More(); iter.Next())
                     {
                         Msg mess = iter.Value();

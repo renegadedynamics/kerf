@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
@@ -26,14 +27,14 @@ namespace Kerf.Engine.Meshing;
 /// </remarks>
 public sealed class Triangulator
 {
-    private readonly NCollection_DynamicArray<Xyz> _xyZs;
+    private readonly List<Xyz> _xyZs;
     private readonly NCollection_List<NCollection_Sequence<int>> _wires;
     private readonly Plane3D _plane;
     private Messenger? _mess;
 
     private DataStructureOfDelaun? _meshStructure;
-    private readonly NCollection_DataMap<int, int> _tmpMap = new();
-    private NCollection_DynamicArray<int>? _indices;
+    private readonly Dictionary<int, int> _tmpMap = new();
+    private List<int>? _indices;
 
     /// <summary>A triangulation of the given triangles over the given nodes.</summary>
     public static Triangulation ToPolyTriangulation(NCollection_Array1<Point3D> nodes,
@@ -53,7 +54,7 @@ public sealed class Triangulator
     /// A triangulator of the wires (sequences of indices, from 0, into <paramref name="xyZs"/>) in the plane of the
     /// given normal. The point list and the wires are kept by reference, as OCCT keeps references.
     /// </summary>
-    public Triangulator(NCollection_DynamicArray<Xyz> xyZs,
+    public Triangulator(List<Xyz> xyZs,
                                  NCollection_List<NCollection_Sequence<int>> wires,
                                  in Direction3D norm)
     {
@@ -127,8 +128,8 @@ public sealed class Triangulator
         }
         else if (w.Length() == 4)
         {
-            double d13 = (_xyZs.Value(w[1]) - _xyZs.Value(w[3])).SquareModulus();
-            double d24 = (_xyZs.Value(w[2]) - _xyZs.Value(w[4])).SquareModulus();
+            double d13 = (_xyZs[w[1]] - _xyZs[w[3]]).SquareModulus();
+            double d24 = (_xyZs[w[2]] - _xyZs[w[4]]).SquareModulus();
             bool use13 = true;
             if (d24 < d13)
             {
@@ -158,9 +159,9 @@ public sealed class Triangulator
     // auxiliary for addTriange34
     private bool CheckCondition(ReadOnlySpan<int> nodes, NCollection_Sequence<int> w)
     {
-        Xyz v0 = _xyZs.Value(w[nodes[1]]) - _xyZs.Value(w[nodes[0]]);
-        Xyz v1 = _xyZs.Value(w[nodes[2]]) - _xyZs.Value(w[nodes[0]]);
-        Xyz v2 = _xyZs.Value(w[nodes[3]]) - _xyZs.Value(w[nodes[0]]);
+        Xyz v0 = _xyZs[w[nodes[1]]] - _xyZs[w[nodes[0]]];
+        Xyz v1 = _xyZs[w[nodes[2]]] - _xyZs[w[nodes[0]]];
+        Xyz v2 = _xyZs[w[nodes[3]]] - _xyZs[w[nodes[0]]];
 
         Xyz cross1 = v0.Crossed(v1);
         Xyz cross2 = v0.Crossed(v2);
@@ -172,7 +173,7 @@ public sealed class Triangulator
     // performs initialization of mesh data structure.
     private bool PrepareMeshStructure()
     {
-        _indices = new NCollection_DynamicArray<int>(WireNodesNb(_wires));
+        _indices = new List<int>(WireNodesNb(_wires));
         _meshStructure = new DataStructureOfDelaun();
 
         // fill this structure created BRepMesh_Vertexes using 2d points received
@@ -189,15 +190,15 @@ public sealed class Triangulator
                     Point2D p2d = global::Kerf.Engine.Geometry.Projection.ProjLib.Project(_plane, new Point3D(_xyZs[w[nn]]));
                     MeshVertex vertex = new(p2d.XY(), numNode, DegreeOfFreedom.Frontier);
                     int nnn = _meshStructure.AddNode(vertex);
-                    _indices.SetValue(numNode, nnn);
-                    _tmpMap.Bind(numNode + 1, w[nn] + 1);
+                    _indices.SetAt(numNode, nnn);
+                    _tmpMap[numNode + 1] = w[nn] + 1;
                 }
 
                 int offset = numNode - w.Length();
                 for (int nn = 1; nn <= w.Length(); ++nn)
                 {
-                    MeshEdge edge = new(_indices.Value(offset + (nn - 1)),
-                                               _indices.Value(offset + (nn % w.Length())),
+                    MeshEdge edge = new(_indices[offset + (nn - 1)],
+                                               _indices[offset + (nn % w.Length())],
                                                DegreeOfFreedom.Frontier);
                     _meshStructure.AddLink(edge);
                 }
@@ -241,9 +242,9 @@ public sealed class Triangulator
 
                 _meshStructure.ElementNodes(triangle, tri2d);
 
-                Triangle1 t = new(_tmpMap.Find(tri2d[0]),
-                                       _tmpMap.Find(tri2d[1]),
-                                       _tmpMap.Find(tri2d[2]));
+                Triangle1 t = new(_tmpMap.GetValue(tri2d[0]),
+                                       _tmpMap.GetValue(tri2d[1]),
+                                       _tmpMap.GetValue(tri2d[2]));
                 polyTriangles.Append(t);
             }
         }

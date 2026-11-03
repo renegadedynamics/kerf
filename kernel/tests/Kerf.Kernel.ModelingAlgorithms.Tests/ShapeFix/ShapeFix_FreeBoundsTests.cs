@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
@@ -24,9 +25,9 @@ public class ShapeFix_FreeBoundsTests
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static int NbChildren(in Shape theShape) => theShape.IsNull ? 0 : theShape.ChildCount;
@@ -102,7 +103,7 @@ public class ShapeFix_FreeBoundsTests
         Assert.True(aFB.GetClosedWires().TShape()!.IsFrozen);
         Assert.True(aFB.GetShape().IsSame(aShape)); // nothing to connect: the input itself
         // the free edges are the caller's own
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShape, global::Kerf.Topology.ShapeType.Edge, anEdges);
         for (var anExp = new Explorer(aFB.GetClosedWires(), global::Kerf.Topology.ShapeType.Edge); anExp.More(); anExp.Next())
         {
@@ -133,7 +134,7 @@ public class ShapeFix_FreeBoundsTests
         Assert.False(aResult.IsSame(aShape));
         Assert.Equal(4, Count(aResult, global::Kerf.Topology.ShapeType.Vertex)); // the two corner vertices merged
         // the two edges not touching the corner are the caller's own
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShape, global::Kerf.Topology.ShapeType.Edge, anEdges);
         int aKept = 0;
         for (var anExp = new Explorer(aResult, global::Kerf.Topology.ShapeType.Edge); anExp.More(); anExp.Next())

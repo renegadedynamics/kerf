@@ -3,6 +3,7 @@
 // result that shares everything unchanged. Not a port of an OCCT file.
 // Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Topology;
 using Occt;
@@ -102,7 +103,7 @@ internal sealed partial class WorkingOverlay : IDisposable
     private long[]? _filter;
     private volatile bool _isAssembling; // Finish reads the state before this overlay's writes
     private Dictionary<TShape, TShape>? _final;
-    private NCollection_IndexedMap<Shape>? _inputSubShapes; // the input's sub-shapes as Finish found them
+    private IndexedSet<Shape>? _inputSubShapes; // the input's sub-shapes as Finish found them
     private History? _history;
     private bool _isFinished;
     private bool _isDisposed;
@@ -322,7 +323,7 @@ internal sealed partial class WorkingOverlay : IDisposable
         {
             // the input's sub-shapes as the operation found them, mapped before the assembly replaces the children of
             // its unfrozen TShapes (an input the operation's caller built, holding frozen sub-shapes it changed)
-            var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var subShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
             MapInput(subShapes);
             _inputSubShapes = subShapes;
 
@@ -337,7 +338,7 @@ internal sealed partial class WorkingOverlay : IDisposable
             }
 
             // what stands for each of the input's sub-shapes now
-            for (int i = 1; i <= subShapes.Extent(); i++)
+            for (int i = 0; i < subShapes.Count; i++)
             {
                 Shape sub = subShapes[i];
                 Shape now = Assembled(sub);
@@ -354,7 +355,7 @@ internal sealed partial class WorkingOverlay : IDisposable
                     Assembled(replacement);
                 }
                 _context.ReplaceResults(_final);
-                for (int i = 1; i <= subShapes.Extent(); i++)
+                for (int i = 0; i < subShapes.Count; i++)
                 {
                     Shape sub = subShapes[i];
                     Shape now = Final(sub);
@@ -412,8 +413,8 @@ internal sealed partial class WorkingOverlay : IDisposable
         }
 
         var composed = new History();
-        NCollection_IndexedMap<Shape> subShapes = _inputSubShapes!;
-        for (int i = 1; i <= subShapes.Extent(); i++)
+        IndexedSet<Shape> subShapes = _inputSubShapes!;
+        for (int i = 0; i < subShapes.Count; i++)
         {
             Shape sub = subShapes[i];
             if (!global::Kerf.Engine.Topology.History.IsSupportedType(sub))
@@ -499,7 +500,7 @@ internal sealed partial class WorkingOverlay : IDisposable
     }
 
     // The input's sub-shapes (none when the operation was opened without one).
-    private void MapInput(NCollection_IndexedMap<Shape> subShapes)
+    private void MapInput(IndexedSet<Shape> subShapes)
     {
         if (!_input.IsNull)
         {

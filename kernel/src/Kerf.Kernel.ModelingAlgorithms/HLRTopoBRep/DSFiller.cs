@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.HiddenLines.Contours;
@@ -34,7 +35,7 @@ public static class DSFiller
 {
     /// <summary>Outlines each face of S with FO into DS (nbIso isolines per direction), then splits the edges.</summary>
     public static void Insert(in Shape s, Contour fo, TopologyData ds,
-                              NCollection_DataMap<Shape, AdaptorTool> mst, int nbIso)
+                              Dictionary<Shape, AdaptorTool> mst, int nbIso)
     {
         HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
         Explorer ex = new(s, ShapeType.Face);
@@ -51,16 +52,16 @@ public static class DSFiller
                 s1.Orientation(Forward);
                 BrepTopolTool domain;
                 SurfaceAdaptorBase? surface;
-                if (mst.IsBound(s1))
+                if (mst.ContainsKey(s1))
                 {
-                    AdaptorTool brt = mst.ChangeFind(s1);
+                    AdaptorTool brt = mst.GetValue(s1);
                     domain = brt.GetTopolTool();
                     surface = brt.GetSurface();
                 }
                 else
                 {
                     AdaptorTool brt = new(s1, global::Kerf.Engine.Foundation.Precision.PConfusion());
-                    mst.Bind(s1, brt);
+                    mst[s1] = brt;
                     domain = brt.GetTopolTool();
                     surface = brt.GetSurface();
                 }

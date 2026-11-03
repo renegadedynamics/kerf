@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -25,9 +26,9 @@ namespace Kerf.Engine.Healing.Analysis;
 /// </remarks>
 public sealed class ShellAnalysis
 {
-    private readonly NCollection_IndexedMap<Shape> _shells = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _bad = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _free = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _shells = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _bad = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _free = new(ShapeHasher.Instance);
     private bool _conex;
 
     /// <summary>An empty analyser.</summary>
@@ -73,9 +74,9 @@ public sealed class ShellAnalysis
     //  On utilise pour cela une fonction auxiliaire : CheckEdges
     //    Qui alimente 2 maps auxiliaires : les edges directes et les inverses
 
-    private static bool CheckEdges(in Shape shape, NCollection_IndexedMap<Shape> bads,
-                                   NCollection_IndexedMap<Shape> dirs, NCollection_IndexedMap<Shape> revs,
-                                   NCollection_IndexedMap<Shape> ints)
+    private static bool CheckEdges(in Shape shape, IndexedSet<Shape> bads,
+                                   IndexedSet<Shape> dirs, IndexedSet<Shape> revs,
+                                   IndexedSet<Shape> ints)
     {
         bool res = false;
 
@@ -100,7 +101,7 @@ public sealed class ShellAnalysis
             if (shape.Orientation() == Forward)
             {
                 // szv#4:S4163:12Mar99 optimized
-                if (dirs.FindIndex(shape) == 0)
+                if (!dirs.Contains(shape))
                 {
                     dirs.Add(shape);
                 }
@@ -113,7 +114,7 @@ public sealed class ShellAnalysis
             if (shape.Orientation() == Reversed)
             {
                 // szv#4:S4163:12Mar99 optimized
-                if (revs.FindIndex(shape) == 0)
+                if (!revs.Contains(shape))
                 {
                     revs.Add(shape);
                 }
@@ -125,7 +126,7 @@ public sealed class ShellAnalysis
             }
             if (shape.Orientation() == Internal)
             {
-                if (ints.FindIndex(shape) == 0)
+                if (!ints.Contains(shape))
                 {
                     ints.Add(shape);
                 }
@@ -151,16 +152,16 @@ public sealed class ShellAnalysis
         }
         bool res = false;
 
-        var dirs = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var revs = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var ints = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var dirs = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var revs = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var ints = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (var exs = new Explorer(shape, ShapeType.Shell); exs.More(); exs.Next())
         {
             Shape sh = exs.Current();
             // szv#4:S4163:12Mar99 optimized
             if (CheckEdges(sh, _bad, dirs, revs, ints))
             {
-                if (_shells.Add(sh) != 0) // an indexed map's Add returns the index (never 0)
+                if (_shells.Add(sh) + 1 != 0) // an indexed map's Add returns the index (never 0)
                 {
                     res = true;
                 }
@@ -175,11 +176,11 @@ public sealed class ShellAnalysis
 
         //  Free Edges. Ce sont les edges d une map pas dans l autre
         //  et lycee de Versailles  (les maps dirs et revs)
-        int nb = dirs.Extent();
+        int nb = dirs.Count;
         int i; // svv Jan11 2000 : porting on DEC
         for (i = 1; i <= nb; i++)
         {
-            Shape sh = dirs.FindKey(i);
+            Shape sh = dirs[i - 1];
             if (!_bad.Contains(sh))
             {
                 if (!revs.Contains(sh))
@@ -211,10 +212,10 @@ public sealed class ShellAnalysis
             }
         }
 
-        nb = revs.Extent();
+        nb = revs.Count;
         for (i = 1; i <= nb; i++)
         {
-            Shape sh = revs.FindKey(i);
+            Shape sh = revs[i - 1];
             if (!_bad.Contains(sh))
             {
                 if (!dirs.Contains(sh))
@@ -260,13 +261,13 @@ public sealed class ShellAnalysis
     }
 
     /// <summary>The number of loaded shells.</summary>
-    public int LoadedCount => _shells.Extent();
+    public int LoadedCount => _shells.Count;
 
     /// <summary>The loaded shell of the given rank (from 1), as given.</summary>
-    public Shape Loaded(int num) => _shells.FindKey(num);
+    public Shape Loaded(int num) => _shells[num - 1];
 
     /// <summary>True if bad edges were found by <see cref="CheckOrientedShells"/>.</summary>
-    public bool HasBadEdges => (_bad.Extent() > 0);
+    public bool HasBadEdges => (_bad.Count > 0);
 
     /// <summary>A compound of the bad edges. Frozen.</summary>
     public Compound BadEdges() => Published(InternalBadEdges());
@@ -277,16 +278,16 @@ public sealed class ShellAnalysis
         Compound c = new();
         BrepBuilder b = new();
         b.MakeCompound(ref c);
-        int n = _bad.Extent();
-        for (int i = 1; i <= n; i++)
+        int n = _bad.Count;
+        for (int i = 0; i < n; i++)
         {
-            b.Add(c, _bad.FindKey(i));
+            b.Add(c, _bad[i]);
         }
         return c;
     }
 
     /// <summary>True if free edges were found by <see cref="CheckOrientedShells"/>.</summary>
-    public bool HasFreeEdges => (_free.Extent() > 0);
+    public bool HasFreeEdges => (_free.Count > 0);
 
     /// <summary>A compound of the free edges. Frozen.</summary>
     public Compound FreeEdges() => Published(InternalFreeEdges());
@@ -297,10 +298,10 @@ public sealed class ShellAnalysis
         Compound c = new();
         BrepBuilder b = new();
         b.MakeCompound(ref c);
-        int n = _free.Extent();
-        for (int i = 1; i <= n; i++)
+        int n = _free.Count;
+        for (int i = 0; i < n; i++)
         {
-            b.Add(c, _free.FindKey(i));
+            b.Add(c, _free[i]);
         }
         return c;
     }

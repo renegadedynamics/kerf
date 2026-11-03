@@ -62,13 +62,13 @@ public abstract class Reader : Transient
     private sealed class MergeNodeTool : MergeNodesTool
     {
         private readonly Reader _reader;
-        private readonly NCollection_DataMap<int, int> _nodeIndexMap;
+        private readonly Dictionary<int, int> _nodeIndexMap;
 
         public MergeNodeTool(Reader reader, int nbFacets = -1)
             : base(reader.MergeAngle(), 0.0, nbFacets)
         {
             _reader = reader;
-            _nodeIndexMap = new NCollection_DataMap<int, int>();
+            _nodeIndexMap = new Dictionary<int, int>();
             // avoid redundant allocations as final triangulation is managed by RWStl_Reader subclass
             ChangeOutput() = null;
         }
@@ -86,10 +86,10 @@ public abstract class Reader : Transient
             for (int nodeIter = 0; nodeIter < 3; ++nodeIter)
             {
                 // use existing node if found at the same point
-                if (!_nodeIndexMap.Find(nodesSrc[nodeIter], out nodesRes[nodeIter]))
+                if (!_nodeIndexMap.TryGetValue(nodesSrc[nodeIter], out nodesRes[nodeIter]))
                 {
                     nodesRes[nodeIter] = _reader.AddNode(elemNodes[nodeIter]);
-                    _nodeIndexMap.Bind(nodesSrc[nodeIter], nodesRes[nodeIter]);
+                    _nodeIndexMap[nodesSrc[nodeIter]] = nodesRes[nodeIter];
                 }
             }
             if (nodesRes[0] != nodesRes[1] && nodesRes[1] != nodesRes[2] && nodesRes[2] != nodesRes[0])

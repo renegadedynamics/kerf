@@ -3,6 +3,7 @@
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
@@ -175,7 +176,7 @@ public class BOPTools_AlgoToolsTests
         Solid anInner = BoxSolid(2, 2, 2, 3, 3, 3);
         Solid aFar = BoxSolid(20, 0, 0, 3, 3, 3);
         IntersectionContext aCtx = new();
-        NCollection_IndexedMap<Shape> aBounds = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aBounds = new(ShapeHasher.Instance);
         Exploration.MapShapes(anOuter, ShapeType.Edge, aBounds);
         foreach (Face aF in BOPToolsTestShapes.Faces(anInner))
         {
@@ -187,7 +188,7 @@ public class BOPTools_AlgoToolsTests
             Assert.Equal(Out, AlgoTools.ComputeStateByOnePoint(aF, anOuter, 1.0e-7, aCtx));
         }
         // the solid's own faces: all edges are bounds, so a point inside the face is classified
-        NCollection_IndexedMap<Shape> aOwn = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aOwn = new(ShapeHasher.Instance);
         Exploration.MapShapes(anOuter, ShapeType.Edge, aOwn);
         foreach (Face aF in BOPToolsTestShapes.Faces(anOuter))
         {
@@ -214,9 +215,9 @@ public class BOPTools_AlgoToolsTests
             }
         }
         Assert.False(aZ.IsNull);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
-        NCollection_List<Shape> aLF = aMEF.FindFromKey(aZ);
+        NCollection_List<Shape> aLF = aMEF.GetValue(aZ);
         Assert.Equal(2, aLF.Extent());
         Exploration.Vertices(aZ, out Vertex aV0, out Vertex aV1);
         Point3D p0 = Tool.Pnt(aV0), p1 = Tool.Pnt(aV1);
@@ -241,7 +242,7 @@ public class BOPTools_AlgoToolsTests
         aLF.Append(aF1);
         aLF.Append(aF2);
         Assert.Equal(1, AlgoTools.IsInternalFace(aIn, aE, aLF, aCtx));
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
         Assert.True(AlgoTools.IsInternalFace(aIn, aBox, aMEF, 1.0e-7, aCtx));
 
@@ -435,7 +436,7 @@ public class BOPTools_AlgoToolsTests
 
         // MakeConnexityBlock: avoiding the four vertical edges of the box splits off nothing (top and bottom still
         // connect through the side faces), avoiding every edge leaves the first face alone
-        NCollection_IndexedMap<Shape> aAvoid = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aAvoid = new(ShapeHasher.Instance);
         NCollection_List<Shape> aOne = new();
         AlgoTools.MakeConnexityBlock(new NCollection_List<Shape>(BOPToolsTestShapes.Faces(aB1).Select(f => (Shape)f)), aAvoid, aOne);
         Assert.Equal(6, aOne.Extent());
@@ -467,11 +468,11 @@ public class BOPTools_AlgoToolsTests
         Assert.Equal(aEdges.Count, aOut.Count);
         // every vertex ends one edge and starts the other (the edges are oriented head to tail; OCCT adds them in
         // traversal order, not in chain order)
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aVE = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aWS, ShapeType.Vertex, ShapeType.Edge, aVE);
-        for (int i = 1; i <= aVE.Extent(); ++i)
+        for (int i = 0; i < aVE.Count; ++i)
         {
-            Shape aV = aVE.FindKey(i);
+            Shape aV = aVE.KeyAt(i);
             int aNbFirst = 0, aNbLast = 0;
             foreach (Edge e in aOut)
             {
@@ -498,12 +499,12 @@ public class BOPTools_AlgoToolsTests
         Shape aS = aMixed;
         AlgoTools.OrientFacesOnShell(ref aS);
         Assert.Equal(6, BOPToolsTestShapes.Faces(aS).Count);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aS, ShapeType.Edge, ShapeType.Face, aMEF);
-        for (int i = 1; i <= aMEF.Extent(); ++i)
+        for (int i = 0; i < aMEF.Count; ++i)
         {
-            Edge aE = ShapeCasts.Edge(aMEF.FindKey(i));
-            NCollection_List<Shape> aLF = aMEF.FindFromIndex(i);
+            Edge aE = ShapeCasts.Edge(aMEF.KeyAt(i));
+            NCollection_List<Shape> aLF = aMEF.ValueAt(i);
             Assert.Equal(2, aLF.Extent());
             Orientation o1 = Internal, o2 = Internal;
             for (Explorer x = new(aLF.First(), ShapeType.Edge); x.More(); x.Next())
@@ -534,18 +535,18 @@ public class BOPTools_AlgoToolsTests
         }
         Assert.True(AlgoTools.IsMicroEdge(aDegen, aCtx));
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
         Tool.Range(aE, out double f, out double l);
         ParameterRange aR = new(f, l);
-        foreach (Shape aF in aMEF.FindFromKey(aE))
+        foreach (Shape aF in aMEF.GetValue(aE))
         {
             Assert.True(AlgoTools.IsBlockInOnFace(aR, ShapeCasts.Face(aF), aE, aCtx));
         }
         int aNbOff = 0;
         foreach (Face aF in BOPToolsTestShapes.Faces(aBox))
         {
-            if (!aMEF.FindFromKey(aE).Any(x => x.IsSame(aF)))
+            if (!aMEF.GetValue(aE).Any(x => x.IsSame(aF)))
             {
                 aNbOff += AlgoTools.IsBlockInOnFace(aR, aF, aE, aCtx) ? 0 : 1;
             }
@@ -669,7 +670,7 @@ public class BOPTools_AlgoToolsTests
             List<Edge> aEdges = BOPToolsTestShapes.Edges(aShape).Where(e => !Tool.Degenerated(e) && Tool.Curve(e, out _, out _) is not null).ToList();
             Explorer aSolids = new(aShape, ShapeType.Solid);
             Solid? aSolid = aSolids.More() ? ShapeCasts.Solid(aSolids.Current()) : null;
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
             if (aSolid is not null)
             {
                 Exploration.MapShapesAndAncestors(aSolid.Value, ShapeType.Edge, ShapeType.Face, aMEF);

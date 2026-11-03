@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Meshing.Model;
@@ -219,7 +220,7 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
     }
 
     // Computes the parameters of the filter and applies it to the source parameters.
-    private NCollection_Sequence<double> ComputeGrainAndFilterParameters(NCollection_IndexedMap<double> sourceParams,
+    private NCollection_Sequence<double> ComputeGrainAndFilterParameters(IndexedSet<double> sourceParams,
                                                                         double tol2d,
                                                                         double rangeDiff,
                                                                         double delta,
@@ -245,14 +246,14 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
     }
 
     // Filters the parameters to avoid a too dense distribution.
-    private static NCollection_Sequence<double> FilterParameters(NCollection_IndexedMap<double> theParams,
+    private static NCollection_Sequence<double> FilterParameters(IndexedSet<double> theParams,
                                                                  double minDist,
                                                                  double filterDist)
     {
         NCollection_Sequence<double> result = new();
 
         // Sort sequence of parameters
-        int initLen = theParams.Extent();
+        int initLen = theParams.Count;
 
         if (initLen < 1)
         {
@@ -263,7 +264,7 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
         int j;
         for (j = 1; j <= initLen; j++)
         {
-            paramArray[j] = theParams[j];
+            paramArray[j] = theParams[j - 1];
         }
 
         paramArray.AsSpan().Sort();
@@ -377,7 +378,7 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
 
     private static bool AddParam(double param,
                                  (double first, double second) range,
-                                 NCollection_IndexedMap<double> theParams)
+                                 IndexedSet<double> theParams)
     {
         if (param < range.first || param > range.second)
         {
@@ -391,7 +392,7 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
     private static bool InitParamsFromIntervals(NCollection_Array1<double> intervals,
                                                 (double first, double second) range,
                                                 bool isSplitIntervals,
-                                                NCollection_IndexedMap<double> theParams)
+                                                IndexedSet<double> theParams)
     {
         bool isAdded = false;
 

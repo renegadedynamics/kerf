@@ -1,3 +1,4 @@
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Values;
 using Kerf.Engine.Geometry.Bounds;
@@ -274,15 +275,15 @@ public abstract partial class Shape
                 return false;
             foreach (var shape in TopoUtil.TopLevelShapes(_wrapped))
             {
-                var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+                var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(shape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
-                for (int i = 1; i <= map.Extent(); i++)
+                for (int i = 0; i < map.Count; i++)
                 {
-                    var edge = ShapeCasts.Edge(map.FindKey(i));
+                    var edge = ShapeCasts.Edge(map.KeyAt(i));
                     // A degenerate edge (a sphere's pole, a cone's apex) belongs to one face only
                     if (Tool.Degenerated(edge))
                         continue;
-                    var faces = map.FindFromIndex(i);
+                    var faces = map.ValueAt(i);
                     if (faces.Extent() != 2)
                         return false;
                 }

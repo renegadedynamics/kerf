@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -66,23 +67,23 @@ public sealed class BuildFaceBuilder
 
     // The vertices of W (not INTERNAL) on one edge only (not INTERNAL or EXTERNAL), with that edge
     private static void FUN_DetectVerticesOn1Edge(in Shape w,
-                                                  NCollection_IndexedDataMap<Shape, Shape> mapVon1E)
+                                                  IndexedMap<Shape, Shape> mapVon1E)
     {
         // Fills up map <mapVon1E>, with vertices of W, connected to only one edge
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVedges =
+        IndexedMap<Shape, NCollection_List<Shape>> mapVedges =
             new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(w, ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, mapVedges);
-        int nV = mapVedges.Extent();
+        int nV = mapVedges.Count;
 
-        for (int i = 1; i <= nV; i++)
+        for (int i = 0; i < nV; i++)
         {
-            Shape v = mapVedges.FindKey(i);
+            Shape v = mapVedges.KeyAt(i);
             if (v.Orientation() == Internal)
             {
                 continue;
             }
 
-            NCollection_List<Shape> loE = mapVedges.FindFromIndex(i);
+            NCollection_List<Shape> loE = mapVedges.ValueAt(i);
             if (loE.Extent() < 2)
             {
                 // Keep INTERNAL edges
@@ -100,19 +101,19 @@ public sealed class BuildFaceBuilder
 
     // What the vertices on one edge make of the wire: ISVERTEX, CLOSEDW, GCLOSEDW (closed geometrically: the vertices
     // pair up by position, in mapVV) or UNCLOSEDW
-    private static int FUN_AnalyzemapVon1E(NCollection_IndexedDataMap<Shape, Shape> mapVon1E,
-                                           NCollection_IndexedDataMap<Shape, Shape> mapVV)
+    private static int FUN_AnalyzemapVon1E(IndexedMap<Shape, Shape> mapVon1E,
+                                           IndexedMap<Shape, Shape> mapVV)
     {
         int res = Isunknown;
 
-        int nV = mapVon1E.Extent();
+        int nV = mapVon1E.Count;
         if (nV == 0)
         {
             res = Closedw;
         }
         else if (nV == 1)
         {
-            Shape e = mapVon1E.FindFromIndex(1);
+            Shape e = mapVon1E.ValueAt(0);
             bool eclosed = Tool.IsClosed(e);
             bool dgE = Tool.Degenerated(ShapeCasts.Edge(e));
             if (dgE)
@@ -136,11 +137,11 @@ public sealed class BuildFaceBuilder
             double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
             for (int i = 1; i <= nV; i++)
             {
-                Vertex vi = ShapeCasts.Vertex(mapVon1E.FindKey(i));
+                Vertex vi = ShapeCasts.Vertex(mapVon1E.KeyAt(i - 1));
                 Point3D pi = Tool.Pnt(vi);
                 for (int j = i + 1; j <= nV; j++)
                 {
-                    Vertex vj = ShapeCasts.Vertex(mapVon1E.FindKey(j));
+                    Vertex vj = ShapeCasts.Vertex(mapVon1E.KeyAt(j - 1));
                     Point3D pj = Tool.Pnt(vj);
                     bool same = pi.IsEqual(pj, tol);
                     if (same)
@@ -151,7 +152,7 @@ public sealed class BuildFaceBuilder
                     }
                 } // j
             } // i
-            int nVV = mapVV.Extent();
+            int nVV = mapVV.Count;
             if (nVV == nV)
             {
                 res = Gclosedw;
@@ -169,8 +170,8 @@ public sealed class BuildFaceBuilder
     /// <paramref name="mapVVsameG"/> and <paramref name="mapVon1Edge"/> with the vertices of the wires closed only
     /// geometrically (see <see cref="CorrectGclosedWire"/>).
     /// </summary>
-    public void DetectUnclosedWire(NCollection_IndexedDataMap<Shape, Shape> mapVVsameG,
-                                   NCollection_IndexedDataMap<Shape, Shape> mapVon1Edge)
+    public void DetectUnclosedWire(IndexedMap<Shape, Shape> mapVVsameG,
+                                   IndexedMap<Shape, Shape> mapVon1Edge)
     {
         // wire unclosed : has vertices connected to only one edge.
         // edges of wire unclosed : (only one ancestor edge per vertex)
@@ -205,10 +206,10 @@ public sealed class BuildFaceBuilder
                     AddEdgeWire(Edge(), cmp);
                 }
                 Shape w = cmp;
-                NCollection_IndexedDataMap<Shape, Shape> mapVon1E = new(ShapeHasher.Instance);
+                IndexedMap<Shape, Shape> mapVon1E = new(ShapeHasher.Instance);
                 FUN_DetectVerticesOn1Edge(w, mapVon1E);
 
-                NCollection_IndexedDataMap<Shape, Shape> mapVV = new(ShapeHasher.Instance);
+                IndexedMap<Shape, Shape> mapVV = new(ShapeHasher.Instance);
                 int res = FUN_AnalyzemapVon1E(mapVon1E, mapVV);
                 if (res == Isvertex)
                 {
@@ -221,13 +222,13 @@ public sealed class BuildFaceBuilder
                 else if (res == Gclosedw)
                 {
                     int i;
-                    for (i = 1; i <= mapVV.Extent(); i++)
+                    for (i = 1; i <= mapVV.Count; i++)
                     {
-                        mapVVsameG.Add(mapVV.FindKey(i), mapVV.FindFromIndex(i));
+                        mapVVsameG.Add(mapVV.KeyAt(i - 1), mapVV.ValueAt(i - 1));
                     }
-                    for (i = 1; i <= mapVon1E.Extent(); i++)
+                    for (i = 1; i <= mapVon1E.Count; i++)
                     {
-                        mapVon1Edge.Add(mapVon1E.FindKey(i), mapVon1E.FindFromIndex(i));
+                        mapVon1Edge.Add(mapVon1E.KeyAt(i - 1), mapVon1E.ValueAt(i - 1));
                     }
                 }
                 else if (res == Unclosedw)
@@ -247,22 +248,22 @@ public sealed class BuildFaceBuilder
     /// Makes the wires closed only geometrically closed topologically: on the edge of each vertex of
     /// <paramref name="mapVVref"/>, replaces it by its reference vertex. Writes into the edges.
     /// </summary>
-    public void CorrectGclosedWire(NCollection_IndexedDataMap<Shape, Shape> mapVVref,
-                                   NCollection_IndexedDataMap<Shape, Shape> mapVon1Edge)
+    public void CorrectGclosedWire(IndexedMap<Shape, Shape> mapVVref,
+                                   IndexedMap<Shape, Shape> mapVon1Edge)
     {
         // prequesitory : edges described by <mapVon1Edge> are not shared
-        int nVV = mapVVref.Extent();
-        for (int i = 1; i <= nVV; i++)
+        int nVV = mapVVref.Count;
+        for (int i = 0; i < nVV; i++)
         {
-            Vertex v = ShapeCasts.Vertex(mapVVref.FindKey(i));
-            Vertex vref = ShapeCasts.Vertex(mapVVref.FindFromIndex(i));
+            Vertex v = ShapeCasts.Vertex(mapVVref.KeyAt(i));
+            Vertex vref = ShapeCasts.Vertex(mapVVref.ValueAt(i));
 
             if (v.IsSame(vref))
             {
                 continue;
             }
 
-            Edge e = ShapeCasts.Edge(mapVon1Edge.FindFromKey(v));
+            Edge e = ShapeCasts.Edge(mapVon1Edge.GetValue(v));
             double paronE = Tool.Parameter(v, e);
 
             BrepBuilder bb = new();
@@ -280,7 +281,7 @@ public sealed class BuildFaceBuilder
     /// Invalidates the edges that appear twice (FORWARD and REVERSED) at a vertex of the new wires shared by no other
     /// edge; <paramref name="mapE"/> receives them.
     /// </summary>
-    public void DetectPseudoInternalEdge(NCollection_IndexedMap<Shape> mapE)
+    public void DetectPseudoInternalEdge(IndexedSet<Shape> mapE)
     {
         Compound cmp = new();
         BrepBuilder bb = new();
@@ -306,14 +307,14 @@ public sealed class BuildFaceBuilder
             } // MoreWire
         } // MoreFace
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVOE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapVOE = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(cmp, ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, mapVOE);
-        int nv = mapVOE.Extent();
+        int nv = mapVOE.Count;
 
         mapE.Clear();
-        for (int i = 1; i <= nv; i++)
+        for (int i = 0; i < nv; i++)
         {
-            NCollection_List<Shape> le = mapVOE.FindFromIndex(i);
+            NCollection_List<Shape> le = mapVOE.ValueAt(i);
             int ne = le.Extent();
             if (ne == 2)
             {

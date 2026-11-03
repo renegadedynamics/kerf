@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange;
 using Kerf.Engine.Foundation;
@@ -45,58 +46,58 @@ public class XSAlgoTests
         Assert.Equal(aDefaults, new ShapeFixParameters());
         Assert.NotEqual(aDefaults, aDefaults with { FixWireMode = ShapeFixParameters.FixMode.Fix });
 
-        var aMap = new NCollection_DataMap<string, string>();
+        var aMap = new Dictionary<string, string>();
         global::Kerf.Engine.Exchange.Framework.ShapeProcessor.FillParameterMap(aDefaults, false, aMap);
-        Assert.Equal(54, aMap.Extent()); // the native map's hash is checked by XSAlgoNativeTests
-        Assert.Equal("1e-06", aMap.Find("FixShape.Tolerance3d"));
-        Assert.Equal("1", aMap.Find("FixShape.MaxTolerance3d"));
-        Assert.Equal("7", aMap.Find("DetalizationLevel"));
-        Assert.Equal("0", aMap.Find("NonManifold"));
-        Assert.Equal("-1", aMap.Find("FixShape.FixFreeShellMode"));
-        Assert.Equal("1", aMap.Find("FixShape.AutoCorrectPrecisionMode"));
+        Assert.Equal(54, aMap.Count); // the native map's hash is checked by XSAlgoNativeTests
+        Assert.Equal("1e-06", aMap.GetValue("FixShape.Tolerance3d"));
+        Assert.Equal("1", aMap.GetValue("FixShape.MaxTolerance3d"));
+        Assert.Equal("7", aMap.GetValue("DetalizationLevel"));
+        Assert.Equal("0", aMap.GetValue("NonManifold"));
+        Assert.Equal("-1", aMap.GetValue("FixShape.FixFreeShellMode"));
+        Assert.Equal("1", aMap.GetValue("FixShape.AutoCorrectPrecisionMode"));
 
         // SetParameter replaces only when asked
         global::Kerf.Engine.Exchange.Framework.ShapeProcessor.SetParameter("FixShape.Tolerance3d", 0.01, false, aMap);
-        Assert.Equal("1e-06", aMap.Find("FixShape.Tolerance3d"));
+        Assert.Equal("1e-06", aMap.GetValue("FixShape.Tolerance3d"));
         global::Kerf.Engine.Exchange.Framework.ShapeProcessor.SetParameter("FixShape.Tolerance3d", 0.01, true, aMap);
-        Assert.Equal("0.01", aMap.Find("FixShape.Tolerance3d"));
+        Assert.Equal("0.01", aMap.GetValue("FixShape.Tolerance3d"));
         global::Kerf.Engine.Exchange.Framework.ShapeProcessor.SetParameter("New", "x", false, aMap);
-        Assert.Equal("x", aMap.Find("New"));
+        Assert.Equal("x", aMap.GetValue("New"));
 
         // SetShapeFixParameters: the parameters replace, the additional ones are only added
-        var anAdditional = new NCollection_DataMap<string, string>();
-        anAdditional.Bind("FixShape.FixWireMode", "0");
-        anAdditional.Bind("Extra", "1");
-        var aTarget = new NCollection_DataMap<string, string>();
-        aTarget.Bind("FixShape.FixWireMode", "5");
+        var anAdditional = new Dictionary<string, string>();
+        anAdditional["FixShape.FixWireMode"] = "0";
+        anAdditional["Extra"] = "1";
+        var aTarget = new Dictionary<string, string>();
+        aTarget["FixShape.FixWireMode"] = "5";
         global::Kerf.Engine.Exchange.Framework.ShapeProcessor.SetShapeFixParameters(aDefaults with { FixWireMode = ShapeFixParameters.FixMode.Fix },
                                                     anAdditional, aTarget);
-        Assert.Equal("1", aTarget.Find("FixShape.FixWireMode"));
-        Assert.Equal("1", aTarget.Find("Extra"));
+        Assert.Equal("1", aTarget.GetValue("FixShape.FixWireMode"));
+        Assert.Equal("1", aTarget.GetValue("Extra"));
     }
 
     [Fact]
     public void The_actors_keep_copies_of_their_parameters()
     {
         var anActor = new global::Kerf.Engine.Exchange.Framework.Transfer.ActorOfTransientProcess();
-        Assert.Equal(0, anActor.GetShapeFixParameters().Extent());
+        Assert.Empty(anActor.GetShapeFixParameters());
         Assert.False(anActor.GetProcessingFlags().Item2);
-        var aMap = new NCollection_DataMap<string, string>();
-        aMap.Bind("a", "1");
+        var aMap = new Dictionary<string, string>();
+        aMap["a"] = "1";
         anActor.SetShapeFixParameters(aMap);
-        aMap.Bind("b", "2");
-        Assert.Equal(1, anActor.GetShapeFixParameters().Extent()); // a copy at the entry
-        anActor.GetShapeFixParameters().Bind("c", "3");
-        Assert.Equal(1, anActor.GetShapeFixParameters().Extent()); // a copy at the exit
+        aMap["b"] = "2";
+        Assert.Single(anActor.GetShapeFixParameters()); // a copy at the entry
+        anActor.GetShapeFixParameters()["c"] = "3";
+        Assert.Single(anActor.GetShapeFixParameters()); // a copy at the exit
         anActor.SetShapeFixParameters(new ShapeFixParameters());
-        Assert.Equal(55, anActor.GetShapeFixParameters().Extent());
+        Assert.Equal(55, anActor.GetShapeFixParameters().Count);
         var aFlags = new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.FixShape);
         anActor.SetProcessingFlags(aFlags);
         Assert.Equal((aFlags, true), anActor.GetProcessingFlags());
 
         var aWriter = new global::Kerf.Engine.Exchange.Framework.Transfer.ActorOfFinderProcess();
         aWriter.SetShapeFixParameters(new ShapeFixParameters(), aMap);
-        Assert.Equal(56, aWriter.GetShapeFixParameters().Extent());
+        Assert.Equal(56, aWriter.GetShapeFixParameters().Count);
         aWriter.SetShapeProcessFlags(aFlags);
         Assert.True(aWriter.GetShapeProcessFlags().Item2);
     }
@@ -105,19 +106,19 @@ public class XSAlgoTests
     public void ReadProcessingData_reads_a_resource_file_or_the_statics()
     {
         global::Kerf.Engine.Exchange.Framework.StaticSet aStatics = XSAlgoNativeTests.StepStatics();
-        (NCollection_DataMap<string, string> aParams, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
+        (Dictionary<string, string> aParams, global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags aFlags) =
             global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("read.step.resource.name", "read.step.sequence", aStatics);
         Assert.True(aFlags.Test(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.FixShape));
         Assert.Equal(1, aFlags.Count());
-        Assert.Equal("&Runtime.Tolerance", aParams.Find("FixShape.Tolerance3d"));
-        Assert.False(aParams.IsBound("exec.op"));
+        Assert.Equal("&Runtime.Tolerance", aParams.GetValue("FixShape.Tolerance3d"));
+        Assert.False(aParams.ContainsKey("exec.op"));
 
         // no such resource file: the statics' values, in the scope named by a static
         aStatics.Init("test", "test.resource", 't', "NoSuchResource");
         aStatics.Init("test", "test.scope", 't', "xstep");
         (aParams, aFlags) = global::Kerf.Engine.Exchange.Framework.ShapeProcessor.ReadProcessingData("test.resource", "test.scope", aStatics);
         Assert.Equal(0, aFlags.Count());
-        Assert.Equal("MM", aParams.Find("cascade.unit"));
+        Assert.Equal("MM", aParams.GetValue("cascade.unit"));
     }
 
     [Fact]
@@ -125,9 +126,9 @@ public class XSAlgoTests
     {
         Shape aBox = new MakeBox(1.0, 2.0, 3.0).Shape();
         ulong aBefore = XSAlgoNativeTests.BRepHash(aBox);
-        var aParams = new NCollection_DataMap<string, string>();
-        aParams.Bind("DetalizationLevel", ((int)ShapeType.Face).ToString(System.Globalization.CultureInfo.InvariantCulture));
-        aParams.Bind("NonManifold", "1");
+        var aParams = new Dictionary<string, string>();
+        aParams["DetalizationLevel"] = ((int)ShapeType.Face).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        aParams["NonManifold"] = "1";
         var aProcessor = new global::Kerf.Engine.Exchange.Framework.ShapeProcessor(aParams);
         Assert.Null(aProcessor.GetContext());
         Shape aResult = aProcessor.ProcessShape(aBox, new global::Kerf.Engine.Healing.Process.ShapeProcess.OperationsFlags(global::Kerf.Engine.Healing.Process.ShapeProcess.Operation.SplitCommonVertex,

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Topology;
@@ -24,7 +25,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// </remarks>
 public class ShellSewing
 {
-    private readonly NCollection_IndexedMap<Shape> _shells = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _shells = new(ShapeHasher.Instance);
     private readonly ReShapeBuilder _reShape;
 
     /// <summary>Creates an empty ShellSewing.</summary>
@@ -90,10 +91,10 @@ public class ShellSewing
 
     private int Prepare(double tol)
     {
-        int nb = _shells.Extent(), ns = 0;
-        for (int i = 1; i <= nb; i++)
+        int nb = _shells.Count, ns = 0;
+        for (int i = 0; i < nb; i++)
         {
-            Shell sl = ShapeCasts.Shell(_shells.FindKey(i));
+            Shell sl = ShapeCasts.Shell(_shells[i]);
             var ss = new Sewing(tol);
             var exp = new Explorer(sl, ShapeType.Face);
             for (; exp.More(); exp.Next())
@@ -113,7 +114,7 @@ public class ShellSewing
 
     private Shape Apply(in Shape shape, double tol)
     {
-        if (shape.IsNull || _shells.Extent() == 0)
+        if (shape.IsNull || _shells.Count == 0)
         {
             return shape;
         }

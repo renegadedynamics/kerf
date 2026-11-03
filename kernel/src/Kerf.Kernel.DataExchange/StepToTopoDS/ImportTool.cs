@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Geometry;
 using Kerf.Engine.Exchange.Step.Shapes;
@@ -25,9 +26,9 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// </remarks>
 public sealed class ImportTool
 {
-    private NCollection_DataMap<StepTopologicalRepresentationItem, Shape> _dataMap = new();
-    private NCollection_DataMap<StepCartesianPoint, Vertex> _vertexMap = new();
-    private NCollection_DataMap<PointPair, Edge> _edgeMap = new();
+    private Dictionary<StepTopologicalRepresentationItem, Shape> _dataMap = new();
+    private Dictionary<StepCartesianPoint, Vertex> _vertexMap = new();
+    private Dictionary<PointPair, Edge> _edgeMap = new();
     private bool _computePC;
     private TransientProcess? _transProc;
     private int _nbC0Surf;
@@ -49,19 +50,19 @@ public sealed class ImportTool
     }
 
     /// <summary>A tool with a copy of the map and the transient process.</summary>
-    public ImportTool(NCollection_DataMap<StepTopologicalRepresentationItem, Shape> map,
+    public ImportTool(Dictionary<StepTopologicalRepresentationItem, Shape> map,
                              TransientProcess? tp)
     {
         Init(map, tp);
     }
 
-    public void Init(NCollection_DataMap<StepTopologicalRepresentationItem, Shape> map, TransientProcess? tp)
+    public void Init(Dictionary<StepTopologicalRepresentationItem, Shape> map, TransientProcess? tp)
     {
         _computePC = false;
 
-        _dataMap = new NCollection_DataMap<StepTopologicalRepresentationItem, Shape>(map);
-        _vertexMap = new NCollection_DataMap<StepCartesianPoint, Vertex>();
-        _edgeMap = new NCollection_DataMap<PointPair, Edge>();
+        _dataMap = new Dictionary<StepTopologicalRepresentationItem, Shape>(map,map.Comparer);
+        _vertexMap = new Dictionary<StepCartesianPoint, Vertex>();
+        _edgeMap = new Dictionary<PointPair, Edge>();
         _transProc = tp;
         _hasNullItem = false;
         _nullItemShape = new Shape();
@@ -72,7 +73,7 @@ public sealed class ImportTool
     }
 
     /// <summary>True if the item is bound in the map.</summary>
-    public bool IsBound(StepTopologicalRepresentationItem? tri) => tri is null ? _hasNullItem : _dataMap.IsBound(tri);
+    public bool IsBound(StepTopologicalRepresentationItem? tri) => tri is null ? _hasNullItem : _dataMap.ContainsKey(tri);
 
     /// <summary>Binds the item with a shape in the map and, as its shape result, in the transient process.</summary>
     public void Bind(StepTopologicalRepresentationItem? tri, in Shape s)
@@ -84,7 +85,7 @@ public sealed class ImportTool
         }
         else
         {
-            _dataMap.Bind(tri, s);
+            _dataMap[tri] = s;
         }
 
         global::Kerf.Engine.Exchange.Framework.Transfer.TransferBRep.SetShapeResult(_transProc, tri, s);
@@ -99,28 +100,28 @@ public sealed class ImportTool
             return _hasNullItem ? _nullItemShape : throw new NoSuchObjectException("NCollection_DataMap::Find");
         }
 
-        return _dataMap.Find(tri);
+        return _dataMap.GetValue(tri);
     }
 
     public void ClearEdgeMap() => _edgeMap.Clear();
 
-    public bool IsEdgeBound(in PointPair pp) => _edgeMap.IsBound(pp);
+    public bool IsEdgeBound(in PointPair pp) => _edgeMap.ContainsKey(pp);
 
-    public void BindEdge(in PointPair pp, in Edge e) => _edgeMap.Bind(pp, e);
+    public void BindEdge(in PointPair pp, in Edge e) => _edgeMap[pp] = e;
 
-    public Edge FindEdge(in PointPair pp) => _edgeMap.Find(pp);
+    public Edge FindEdge(in PointPair pp) => _edgeMap.GetValue(pp);
 
     public void ClearVertexMap() => _vertexMap.Clear();
 
-    public bool IsVertexBound(StepCartesianPoint? pg) => pg is not null && _vertexMap.IsBound(pg);
+    public bool IsVertexBound(StepCartesianPoint? pg) => pg is not null && _vertexMap.ContainsKey(pg);
 
     public void BindVertex(StepCartesianPoint? p, in Vertex v)
     {
-        _vertexMap.Bind(p!, v);
+        _vertexMap[p!] = v;
         // OCCT_DEBUG: TransferBRep::SetShapeResult(myTransProc, P, V) left out
     }
 
-    public Vertex FindVertex(StepCartesianPoint? p) => _vertexMap.Find(p!);
+    public Vertex FindVertex(StepCartesianPoint? p) => _vertexMap.GetValue(p!);
 
     public void ComputePCurve(bool b) => _computePC = b;
 

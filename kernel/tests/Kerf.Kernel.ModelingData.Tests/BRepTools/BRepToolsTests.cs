@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -149,9 +150,9 @@ public class BRepToolsTests
         Assert.True(BrepTools.Compare(aV1, aV2));
         Assert.False(BrepTools.Compare(aV1, aV3));
 
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         BrepTools.Map3DEdges(aBox, aMap);
-        Assert.Equal(12, aMap.Extent());
+        Assert.Equal(12, aMap.Count);
     }
 
     [Fact]

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Extend;
 using Kerf.Engine.Meshing.Model;
@@ -30,22 +31,22 @@ namespace Kerf.Engine.Meshing;
 public class MeshShapeVisitor : ShapeVisitor
 {
     private readonly ModelModel _model;
-    private readonly NCollection_DataMap<Shape, int> _dEdgeMap;
+    private readonly Dictionary<Shape, int> _dEdgeMap;
 
     /// <summary>A visitor filling the model.</summary>
     public MeshShapeVisitor(ModelModel model)
     {
         _model = model;
-        _dEdgeMap = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
+        _dEdgeMap = new Dictionary<Shape, int>(ShapeHasher.Instance);
     }
 
     /// <summary>Adds the edge to the model, once.</summary>
     public override void Visit(in Edge edge)
     {
-        if (!_dEdgeMap.IsBound(edge))
+        if (!_dEdgeMap.ContainsKey(edge))
         {
             _model.AddEdge(edge);
-            _dEdgeMap.Bind(edge, _model.EdgesNb() - 1);
+            _dEdgeMap[edge] = _model.EdgesNb() - 1;
         }
     }
 
@@ -121,7 +122,7 @@ public class MeshShapeVisitor : ShapeVisitor
             Edge edge = wireData.Edge(edgeIndex);
             if (edge.Orientation() != External)
             {
-                EdgeModel dEdge = _model.GetEdge(_dEdgeMap.Find(edge));
+                EdgeModel dEdge = _model.GetEdge(_dEdgeMap.GetValue(edge));
 
                 dEdge.AddPCurve(dFace, edge.Orientation());
                 dWire.AddEdge(dEdge, edge.Orientation());

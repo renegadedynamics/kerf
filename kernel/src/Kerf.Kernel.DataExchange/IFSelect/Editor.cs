@@ -32,7 +32,7 @@ public abstract class Editor : Transient
         int lng = shn.Length;
         if (lng > 0)
         {
-            _thenames.Bind(shortname, num);
+            _thenames[shortname] = num;
         }
         if (lng > _themaxsh)
         {
@@ -49,7 +49,7 @@ public abstract class Editor : Transient
             _themaxla = lng;
         }
 
-        _thenames.Bind(typval.Name(), num);
+        _thenames[typval.Name()] = num;
         int edm = (int)editmode;
         _thevalues.SetValue(num, typval);
         _theshorts.SetValue(num, shn);
@@ -149,7 +149,7 @@ public abstract class Editor : Transient
     /// </summary>
     public int NameNumber(string name)
     {
-        if (_thenames.Find(name, out int res))
+        if (_thenames.TryGetValue(name, out int res))
         {
             return res;
         }
@@ -441,7 +441,7 @@ public abstract class Editor : Transient
     private int _themaxsh;
     private int _themaxco;
     private int _themaxla;
-    private NCollection_DataMap<string, int> _thenames = new NCollection_DataMap<string, int>();
+    private Dictionary<string, int> _thenames = new Dictionary<string, int>();
     private NCollection_Array1<InterfaceTypedValue> _thevalues;
     private NCollection_Array1<string> _theshorts;
     private NCollection_Array1<int> _themodes;

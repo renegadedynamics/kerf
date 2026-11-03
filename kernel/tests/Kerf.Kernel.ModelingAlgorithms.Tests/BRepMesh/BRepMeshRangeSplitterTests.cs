@@ -142,10 +142,10 @@ public class BRepMeshRangeSplitterTests
         aSplitter.Reset(aDFace, aParams);
         aSplitter.GetParametersU().Add(0.5);
         aSplitter.GetParametersV().Add(0.25);
-        Assert.Equal(1, aSplitter.GetParametersU().Extent());
+        Assert.Single(aSplitter.GetParametersU());
         aSplitter.Reset(aDFace, aParams);
-        Assert.Equal(0, aSplitter.GetParametersU().Extent());
-        Assert.Equal(0, aSplitter.GetParametersV().Extent());
+        Assert.Empty(aSplitter.GetParametersU());
+        Assert.Empty(aSplitter.GetParametersV());
         Assert.Null(aSplitter.GenerateSurfaceNodes(aParams));
     }
 
@@ -201,8 +201,8 @@ public class BRepMeshRangeSplitterTests
         FaceModel aDFace = FaceOfType(Model(new MakeTorus(5, 1).Solid(), aParams), SurfaceKind.Torus);
         var aSplitter = new TorusRangeSplitter();
         Split(aSplitter, aDFace, aParams);
-        Assert.True(aSplitter.GetParametersU().Extent() > 2);
-        Assert.True(aSplitter.GetParametersV().Extent() > 2);
+        Assert.True(aSplitter.GetParametersU().Count > 2);
+        Assert.True(aSplitter.GetParametersV().Count > 2);
     }
 
     [Fact]

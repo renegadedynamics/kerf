@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Occt;
 using System.Text;
 
@@ -44,8 +45,8 @@ public class NoSuchResourceException : NoSuchObjectException
 public class Manager : Transient
 {
     private readonly string _name;
-    private readonly NCollection_DataMap<string, string> _refMap;
-    private readonly NCollection_DataMap<string, string> _userMap;
+    private readonly Dictionary<string, string> _refMap;
+    private readonly Dictionary<string, string> _userMap;
     private readonly bool _verbose;
     private bool _initialized;
 
@@ -60,8 +61,8 @@ public class Manager : Transient
         _name = name;
         _verbose = isVerbose;
         _initialized = false;
-        _refMap = new NCollection_DataMap<string, string>(StringComparer.Ordinal);
-        _userMap = new NCollection_DataMap<string, string>(StringComparer.Ordinal);
+        _refMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        _userMap = new Dictionary<string, string>(StringComparer.Ordinal);
         if (!string.IsNullOrEmpty(defaultsDirectory))
         {
             Load(ResourcePath(defaultsDirectory, name), _refMap);
@@ -92,8 +93,8 @@ public class Manager : Transient
         _name = aName;
         _verbose = verbose;
         _initialized = false;
-        _refMap = new NCollection_DataMap<string, string>(StringComparer.Ordinal);
-        _userMap = new NCollection_DataMap<string, string>(StringComparer.Ordinal);
+        _refMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        _userMap = new Dictionary<string, string>(StringComparer.Ordinal);
 
         string? text = EmbeddedDefaults(aName);
         if (text is not null)
@@ -112,8 +113,8 @@ public class Manager : Transient
         _name = "";
         _verbose = false;
         _initialized = false;
-        _refMap = new NCollection_DataMap<string, string>(StringComparer.Ordinal);
-        _userMap = new NCollection_DataMap<string, string>(StringComparer.Ordinal);
+        _refMap = new Dictionary<string, string>(StringComparer.Ordinal);
+        _userMap = new Dictionary<string, string>(StringComparer.Ordinal);
     }
 
     /// <summary>A copy of <paramref name="other"/>, with copies of its resources (OCCT's implicit copy constructor).</summary>
@@ -122,8 +123,8 @@ public class Manager : Transient
         _name = other._name;
         _verbose = other._verbose;
         _initialized = other._initialized;
-        _refMap = new NCollection_DataMap<string, string>(other._refMap);
-        _userMap = new NCollection_DataMap<string, string>(other._userMap);
+        _refMap = new Dictionary<string, string>(other._refMap,other._refMap.Comparer);
+        _userMap = new Dictionary<string, string>(other._userMap,other._userMap.Comparer);
     }
 
     /// <summary>
@@ -143,7 +144,7 @@ public class Manager : Transient
     /// </summary>
     public static string ResourcePath(string directory, string name) => Path.Combine(directory, name);
 
-    private void Load(string path, NCollection_DataMap<string, string> aMap)
+    private void Load(string path, Dictionary<string, string> aMap)
     {
         string fileName = Path.GetFileName(path);
         byte[] bytes;
@@ -166,7 +167,7 @@ public class Manager : Transient
         LoadText(Encoding.Latin1.GetString(bytes), fileName, aMap);
     }
 
-    private void LoadText(string text, string fileName, NCollection_DataMap<string, string> aMap)
+    private void LoadText(string text, string fileName, Dictionary<string, string> aMap)
     {
         _initialized = true;
         int lineNumber = 1;
@@ -181,7 +182,7 @@ public class Manager : Transient
                 case Resource_KindOfLine.KOL_Empty:
                     break;
                 case Resource_KindOfLine.KOL_Resource:
-                    aMap.Bind(token1, token2);
+                    aMap[token1] = token2;
                     break;
                 case Resource_KindOfLine.KOL_Error:
                     if (_verbose)
@@ -349,7 +350,7 @@ public class Manager : Transient
         }
 
         var text = new StringBuilder();
-        int nbKey = _userMap.Extent();
+        int nbKey = _userMap.Count;
         if (nbKey != 0)
         {
             var keyArray = new string[nbKey];
@@ -364,7 +365,7 @@ public class Manager : Transient
 
             for (index = 0; index < nbKey; index++)
             {
-                string value = _userMap.Find(keyArray[index]);
+                string value = _userMap.GetValue(keyArray[index]);
                 if (value.Length != 0)
                 {
                     switch (value[0])
@@ -402,16 +403,16 @@ public class Manager : Transient
     }
 
     /// <summary>True if the resource is defined.</summary>
-    public bool Find(string aResource) => _userMap.IsBound(aResource) || _refMap.IsBound(aResource);
+    public bool Find(string aResource) => _userMap.ContainsKey(aResource) || _refMap.ContainsKey(aResource);
 
     /// <summary>True if the resource is defined, and its value.</summary>
     public bool Find(string resource, out string value)
     {
-        if (_userMap.Find(resource, out value!))
+        if (_userMap.TryGetValue(resource, out value!))
         {
             return true;
         }
-        return _refMap.Find(resource, out value!);
+        return _refMap.TryGetValue(resource, out value!);
     }
 
     /// <summary>
@@ -454,13 +455,13 @@ public class Manager : Transient
     /// <summary>The value of a resource (the user's value first); Resource_NoSuchResource if it isn't defined.</summary>
     public virtual string Value(string aResource)
     {
-        if (_userMap.IsBound(aResource))
+        if (_userMap.ContainsKey(aResource))
         {
-            return _userMap.Find(aResource);
+            return _userMap.GetValue(aResource);
         }
-        if (_refMap.IsBound(aResource))
+        if (_refMap.ContainsKey(aResource))
         {
-            return _refMap.Find(aResource);
+            return _refMap.GetValue(aResource);
         }
         throw new NoSuchResourceException(aResource);
     }
@@ -480,14 +481,14 @@ public class Manager : Transient
     /// <summary>Sets the value of a resource, creating it if needed.</summary>
     public virtual void SetResource(string aResource, string aValue)
     {
-        _userMap.Bind(aResource, aValue);
+        _userMap[aResource] = aValue;
     }
 
     /// <summary>
     /// The reference resources (read from the files), or with <paramref name="refMap"/> false the user's (set with
     /// SetResource); the map itself, which the caller may change.
     /// </summary>
-    public NCollection_DataMap<string, string> GetMap(bool refMap = true) => refMap ? _refMap : _userMap;
+    public Dictionary<string, string> GetMap(bool refMap = true) => refMap ? _refMap : _userMap;
 
     /// <summary>True if a resource file was read.</summary>
     public bool IsInitialized => _initialized;

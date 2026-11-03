@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Legacy.Tools;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -225,7 +226,7 @@ public class WireEdgeClassifier : CompositeClassifier
             Edge e1 = ShapeCasts.Edge(ex1.Current());
             Exploration.Vertices(e1, out Vertex vf1, out Vertex vl1); // xpu101198
             bool e1clo = vf1.IsSame(vl1);
-            NCollection_IndexedMap<Shape> mapv1 = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mapv1 = new(ShapeHasher.Instance);
             mapv1.Add(vf1);
             mapv1.Add(vl1);
 
@@ -285,7 +286,7 @@ public class WireEdgeClassifier : CompositeClassifier
         if (resta)
         {
             // classifying first point of B2's first edge not in B1's edges, in face bounded by B1
-            NCollection_IndexedMap<Shape> mape1 = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mape1 = new(ShapeHasher.Instance);
             Exploration.MapShapes(b1, ShapeType.Edge, mape1);
             Explorer ex2 = new(b2, ShapeType.Edge);
             for (; ex2.More(); ex2.Next())

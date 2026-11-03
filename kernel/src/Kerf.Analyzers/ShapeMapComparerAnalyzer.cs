@@ -9,8 +9,9 @@ namespace Kerf.Analyzers;
 
 /// <summary>
 /// Reports a map or set keyed by a shape (<c>Kerf.Topology.Shape</c> or one of its eight subtypes) created without an
-/// explicit comparer: <c>NCollection_Map</c>, <c>NCollection_IndexedMap</c>, <c>NCollection_DataMap</c>,
-/// <c>NCollection_IndexedDataMap</c>, <c>HashSet</c> and <c>Dictionary</c>, and classes derived from them.
+/// explicit comparer: <c>HashSet</c>, <c>Dictionary</c>, <c>IndexedSet</c> and <c>IndexedMap</c> (which replaced
+/// OCCT's <c>NCollection_Map</c>, <c>NCollection_DataMap</c>, <c>NCollection_IndexedMap</c> and
+/// <c>NCollection_IndexedDataMap</c> in units 10J and 10J2), and classes derived from them.
 /// </summary>
 /// <remarks>
 /// OCCT names its hasher in every map of shapes, usually <c>TopTools_ShapeMapHasher</c>, which compares shapes with
@@ -18,7 +19,7 @@ namespace Kerf.Analyzers;
 /// is the shapes' own equality, IsEqual: a forgotten comparer silently changes which shapes are the same key
 /// (docs/phase3-design.md, section 3). So the comparer must be written out: <c>ShapeHasher.Instance</c> (OCCT's
 /// <c>TopTools_ShapeMapHasher</c>), or <c>EqualityComparer&lt;Shape&gt;.Default</c> where OCCT uses <c>std::hash</c>.
-/// The NCollection maps' copy constructors take the comparer of the map they copy, so they are allowed. A collection
+/// The indexed collections' copy constructors take the comparer of the collection they copy, so they are allowed. A collection
 /// expression can't take a comparer, so it is reported too. Unit 10J: since the rename (unit 10E) the shapes are
 /// Kerf's types in <c>Kerf.Topology</c>; the rule looked for OCCT's names in <c>Occt</c> and so matched nothing.
 /// </remarks>
@@ -38,10 +39,8 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
 
     // The generic collections whose first type argument is the key, by their metadata names
     private static readonly ImmutableHashSet<string> MapTypes = ImmutableHashSet.Create(
-        "Occt.NCollection_Map`1",
-        "Occt.NCollection_IndexedMap`1",
-        "Occt.NCollection_DataMap`2",
-        "Occt.NCollection_IndexedDataMap`2",
+        "Kerf.Engine.Collections.IndexedSet`1",
+        "Kerf.Engine.Collections.IndexedMap`2",
         "System.Collections.Generic.HashSet`1",
         "System.Collections.Generic.Dictionary`2");
 
@@ -96,8 +95,8 @@ public sealed class ShapeMapComparerAnalyzer : DiagnosticAnalyzer
                 return;
             }
 
-            // The NCollection maps' copy constructors keep the comparer of the map they copy
-            if (map!.ContainingNamespace?.ToDisplayString() == "Occt" && creation.Arguments.Length == 1
+            // The indexed collections' copy constructors keep the comparer of the collection they copy
+            if (map!.ContainingNamespace?.ToDisplayString() == "Kerf.Engine.Collections" && creation.Arguments.Length == 1
                 && parameterType is INamedTypeSymbol named
                 && SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, map.OriginalDefinition))
             {

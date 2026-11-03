@@ -50,7 +50,7 @@ public sealed class WireframeBuilder : ExportRoot
     {
         _ = t;
         var itemList = new NCollection_HSequence<Transient>();
-        var pmsMap = new NCollection_DataMap<Shape, Transient>(ShapeHasher.Instance);
+        var pmsMap = new Dictionary<Shape, Transient>(ShapeHasher.Instance);
         _done = GetTrimmedCurveFromShape(aShape, pmsMap, ref itemList, localFactors);
         _result = itemList;
     }
@@ -92,7 +92,7 @@ public sealed class WireframeBuilder : ExportRoot
     }
 
     /// <summary>Extracts the trimmed curve of an edge (on a face, which may be null), into the list.</summary>
-    public bool GetTrimmedCurveFromEdge(in Edge edge, in Face face, NCollection_DataMap<Shape, Transient> map,
+    public bool GetTrimmedCurveFromEdge(in Edge edge, in Face face, Dictionary<Shape, Transient> map,
                                         ref NCollection_HSequence<Transient> curveList, in Factors localFactors)
     {
         if (edge.Orientation() == Internal || edge.Orientation() == External)
@@ -107,7 +107,7 @@ public sealed class WireframeBuilder : ExportRoot
 
         // resulting curve
         StepCurve sgc = null;
-        if (map.Find(anEdge, out Transient transient))
+        if (map.TryGetValue(anEdge, out Transient transient))
         {
             sgc = transient as StepCurve; // OCCT: found, then made again
         }
@@ -256,13 +256,13 @@ public sealed class WireframeBuilder : ExportRoot
             return false;
         }
 
-        map.Bind(anEdge, sgc);
+        map[anEdge] = sgc;
         curveList.Append(sgc);
         return true;
     }
 
     /// <summary>Extracts the trimmed curves of a face's edges, into the list.</summary>
-    public bool GetTrimmedCurveFromFace(in Face aFace, NCollection_DataMap<Shape, Transient> aMap,
+    public bool GetTrimmedCurveFromFace(in Face aFace, Dictionary<Shape, Transient> aMap,
                                         ref NCollection_HSequence<Transient> aCurveList, in Factors localFactors)
     {
         Shape curShape;
@@ -284,7 +284,7 @@ public sealed class WireframeBuilder : ExportRoot
     }
 
     /// <summary>Extracts the trimmed curves of a shape's edges, into the list.</summary>
-    public bool GetTrimmedCurveFromShape(in Shape aShape, NCollection_DataMap<Shape, Transient> aMap,
+    public bool GetTrimmedCurveFromShape(in Shape aShape, Dictionary<Shape, Transient> aMap,
                                          ref NCollection_HSequence<Transient> aCurveList, in Factors localFactors)
     {
         var it = new Iterator();

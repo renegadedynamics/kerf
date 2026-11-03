@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 
 using Kerf.Topology;
@@ -15,7 +16,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// <remarks>A working object (decision 21) of the fillet builders, keyed with OCCT's shape hasher (IsSame).</remarks>
 public sealed class StripeMap
 {
-    private readonly NCollection_IndexedDataMap<Vertex, NCollection_List<Stripe>> _mymap =
+    private readonly IndexedMap<Vertex, NCollection_List<Stripe>> _mymap =
         new(VertexHasher.Instance);
 
     public StripeMap()
@@ -25,24 +26,24 @@ public sealed class StripeMap
     /// <summary>Appends the stripe <paramref name="f"/> to the list of the vertex <paramref name="v"/>.</summary>
     internal void Add(in Vertex v, Stripe f)
     {
-        int index = _mymap.FindIndex(v);
+        int index = _mymap.IndexOf(v) + 1;
         if (index == 0)
         {
             NCollection_List<Stripe> empty = new();
-            index = _mymap.Add(v, empty);
+            index = _mymap.Add(v, empty) + 1;
         }
 
-        _mymap[index].Append(f);
+        _mymap.ValueAt(index - 1).Append(f);
     }
 
     public int Extent()
     {
-        return _mymap.Extent();
+        return _mymap.Count;
     }
 
     public NCollection_List<Stripe> FindFromKey(in Vertex v)
     {
-        return _mymap.FindFromKey(v);
+        return _mymap.GetValue(v);
     }
 
     /// <summary>OCCT's <c>operator()(V)</c>.</summary>
@@ -50,7 +51,7 @@ public sealed class StripeMap
 
     public NCollection_List<Stripe> FindFromIndex(int i)
     {
-        return _mymap.FindFromIndex(i);
+        return _mymap.ValueAt(i - 1);
     }
 
     /// <summary>OCCT's <c>operator()(I)</c>.</summary>
@@ -58,7 +59,7 @@ public sealed class StripeMap
 
     public Vertex FindKey(int i)
     {
-        return _mymap.FindKey(i);
+        return _mymap.KeyAt(i - 1);
     }
 
     internal void Clear()

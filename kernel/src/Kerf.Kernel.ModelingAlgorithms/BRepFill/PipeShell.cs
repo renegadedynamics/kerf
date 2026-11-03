@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Laws;
 using Kerf.Engine.Construction.Library;
@@ -57,8 +58,8 @@ public sealed class PipeShell : Transient
     private readonly NCollection_Sequence<FillingSection> _seq = new();
     private readonly NCollection_Sequence<Shape> _wSeq = new();
     private readonly NCollection_Sequence<int> _indOfSec = new();
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _edgeNewEdges = new(ShapeHasher.Instance);
-    private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _genMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _edgeNewEdges = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, NCollection_List<Shape>> _genMap = new(ShapeHasher.Instance);
     private double _tol3d;
     private double _boundTol;
     private double _tolAngular;
@@ -170,19 +171,19 @@ public sealed class PipeShell : Transient
 
     private static bool IsSameOriented(in Shape face, in Shape shell)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgeFaceMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> edgeFaceMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shell, ShapeType.Edge, ShapeType.Face, edgeFaceMap);
 
         for (Explorer faceExplorer = new(face, ShapeType.Edge); faceExplorer.More(); faceExplorer.Next())
         {
             Shape currentEdge = faceExplorer.Current();
-            if (!edgeFaceMap.Contains(currentEdge))
+            if (!edgeFaceMap.ContainsKey(currentEdge))
             {
                 continue;
             }
 
             Orientation currentEdgeOrientation = currentEdge.Orientation();
-            Shape adjFace = edgeFaceMap.FindFromKey(currentEdge).First();
+            Shape adjFace = edgeFaceMap.GetValue(currentEdge).First();
             for (Explorer adjFaceExplorer = new(adjFace, ShapeType.Edge); adjFaceExplorer.More(); adjFaceExplorer.Next())
             {
                 // IsSame compares TShape and Location only; orientation may differ.
@@ -785,8 +786,8 @@ public sealed class PipeShell : Transient
             theContinuity = C0;
         }
         HashSet<Shape> dummy = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
-        NCollection_DataMap<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_HArray2<Shape>> dummy2 = new(ShapeHasher.Instance);
+        Dictionary<Shape, NCollection_HArray2<Shape>> dummy3 = new(ShapeHasher.Instance);
         mkSw.Build(dummy, dummy2, dummy3, _transition, theContinuity, ApproxStyle.Location, _maxDegree, _maxSegments);
 
         _status = _location.GetStatus();
@@ -1000,9 +1001,9 @@ public sealed class PipeShell : Transient
     {
         list.Clear();
 
-        if (_genMap.IsBound(shape))
+        if (_genMap.ContainsKey(shape))
         {
-            list.Assign(_genMap.Find(shape));
+            list.Assign(_genMap.GetValue(shape));
         }
     }
 
@@ -1106,7 +1107,7 @@ public sealed class PipeShell : Transient
                 Shape edge = itw.Value();
                 NCollection_List<Shape> elist = new();
                 elist.Append(edge);
-                _edgeNewEdges.Bind(edge, elist);
+                _edgeNewEdges[edge] = elist;
             }
             ///////////////////////////////
         }
@@ -1238,7 +1239,7 @@ public sealed class PipeShell : Transient
                     {
                         Edge edge = ShapeCasts.Edge(explo.Current());
                         NCollection_List<Shape> newEdges = georges.InternalGeneratedShapes(edge);
-                        _edgeNewEdges.Bind(edge, new NCollection_List<Shape>(newEdges));
+                        _edgeNewEdges[edge] = new NCollection_List<Shape>(newEdges);
                     }
                 }
             }
@@ -1320,7 +1321,7 @@ public sealed class PipeShell : Transient
         NCollection_HArray2<Shape> uEdges = sweep.InterFaces()!;
         BrepBuilder bb = new();
 
-        NCollection_DataMap<int, Shape> indWireMap = new();
+        Dictionary<int, Shape> indWireMap = new();
 
         int indw, inde;
         Iterator itw = new();
@@ -1334,7 +1335,7 @@ public sealed class PipeShell : Transient
                 // for punctual sections (first or last)
                 // we take all the wires generated along the path
 
-                NCollection_List<Shape> elist = _genMap.Bound(Section, new NCollection_List<Shape>());
+                NCollection_List<Shape> elist = _genMap.SetValueRef(Section, new NCollection_List<Shape>());
                 for (int i = 1; i <= uEdges.UpperRow(); i++)
                 {
                     for (int j = 1; j <= uEdges.UpperCol(); j++)
@@ -1387,7 +1388,7 @@ public sealed class PipeShell : Transient
                 }
 
                 // Take the list of splits for <theEdge>
-                NCollection_List<Shape> newEdges = _edgeNewEdges.Find(theEdge);
+                NCollection_List<Shape> newEdges = _edgeNewEdges.GetValue(theEdge);
                 int signOfANewEdge = 0, signOfIndex = 0;
                 NCollection_List<Shape>.Iterator iter = new(newEdges);
                 for (; iter.More(); iter.Next())
@@ -1439,19 +1440,19 @@ public sealed class PipeShell : Transient
                     uIndex[1] = tmp;
                 }
 
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(shell, ShapeType.Vertex, ShapeType.Edge, vEmap);
                 for (int kk = 0; kk < 2; kk++)
                 {
-                    if (_genMap.IsBound(vertex[kk]))
+                    if (_genMap.ContainsKey(vertex[kk]))
                     {
                         continue;
                     }
-                    if (indWireMap.IsBound(uIndex[kk]))
+                    if (indWireMap.ContainsKey(uIndex[kk]))
                     {
-                        NCollection_List<Shape> elist = _genMap.Bound(vertex[kk], new NCollection_List<Shape>());
+                        NCollection_List<Shape> elist = _genMap.SetValueRef(vertex[kk], new NCollection_List<Shape>());
 
-                        for (itw.Initialize(indWireMap.Find(uIndex[kk])); itw.More(); itw.Next())
+                        for (itw.Initialize(indWireMap.GetValue(uIndex[kk])); itw.More(); itw.Next())
                         {
                             elist.Append(itw.Value());
                         }
@@ -1492,7 +1493,7 @@ public sealed class PipeShell : Transient
                         }
                         else // a hole
                         {
-                            NCollection_List<Shape> elist = vEmap.FindFromKey(vfirst);
+                            NCollection_List<Shape> elist = vEmap.GetValue(vfirst);
                             NCollection_List<Shape>.Iterator itl = new(elist);
                             for (; itl.More(); itl.Next())
                             {
@@ -1515,7 +1516,7 @@ public sealed class PipeShell : Transient
                     // case of closed wire
                     if (_location!.IsClosed() && !curVertex.IsSame(firstVertex))
                     {
-                        NCollection_List<Shape> elist = vEmap.FindFromKey(curVertex);
+                        NCollection_List<Shape> elist = vEmap.GetValue(curVertex);
                         NCollection_List<Shape>.Iterator itl = new(elist);
                         for (; itl.More(); itl.Next())
                         {
@@ -1533,7 +1534,7 @@ public sealed class PipeShell : Transient
                         }
                     }
 
-                    NCollection_List<Shape> elist2 = _genMap.Bound(vertex[kk], new NCollection_List<Shape>());
+                    NCollection_List<Shape> elist2 = _genMap.SetValueRef(vertex[kk], new NCollection_List<Shape>());
 
                     for (itw.Initialize(wire); itw.More(); itw.Next())
                     {
@@ -1541,11 +1542,11 @@ public sealed class PipeShell : Transient
                     }
 
                     // Save already built wire with its index
-                    indWireMap.Bind(uIndex[kk], wire);
+                    indWireMap[uIndex[kk]] = wire;
                 } // for (int kk = 0; kk < 2; kk++)
                 ////////////////////////////////////
 
-                NCollection_List<Shape> flist = _genMap.Bound(originalEdge, new NCollection_List<Shape>());
+                NCollection_List<Shape> flist = _genMap.SetValueRef(originalEdge, new NCollection_List<Shape>());
                 Iterator itsh2 = new(shell);
                 for (; itsh2.More(); itsh2.Next())
                 {
@@ -1577,7 +1578,7 @@ public sealed class PipeShell : Transient
             {
                 Edge edgeOfSpine = wexp2.Current();
 
-                NCollection_List<Shape> flist = _genMap.Bound(edgeOfSpine, new NCollection_List<Shape>());
+                NCollection_List<Shape> flist = _genMap.SetValueRef(edgeOfSpine, new NCollection_List<Shape>());
 
                 for (int i = 1; i <= faces.UpperRow(); i++)
                 {
@@ -1590,7 +1591,7 @@ public sealed class PipeShell : Transient
             }
 
             Vertex vertexOfSpine = wexp2.CurrentVertex();
-            NCollection_List<Shape> listVshapes = _genMap.Bound(vertexOfSpine, new NCollection_List<Shape>());
+            NCollection_List<Shape> listVshapes = _genMap.SetValueRef(vertexOfSpine, new NCollection_List<Shape>());
             for (int i = 1; i <= vEdges.UpperRow(); i++)
             {
                 Shape vshape = vEdges.Value(i, inde);

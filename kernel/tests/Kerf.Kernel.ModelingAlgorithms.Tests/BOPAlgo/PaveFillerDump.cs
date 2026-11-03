@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -181,11 +182,11 @@ internal static class PaveFillerDump
             }
             FaceInfo aFI = theDS.FaceInfo(nF);
             aB.Append("fi ").Append(nF);
-            foreach ((string aTag, NCollection_IndexedMap<PaveBlock> aMPB) in
+            foreach ((string aTag, IndexedSet<PaveBlock> aMPB) in
                      new[] { ("on", aFI.PaveBlocksOn()), ("in", aFI.PaveBlocksIn()), ("sc", aFI.PaveBlocksSc()) })
             {
                 aB.Append(' ').Append(aTag);
-                for (int j = 1; j <= aMPB.Extent(); ++j)
+                for (int j = 0; j < aMPB.Count; ++j)
                 {
                     aB.Append(' ').Append(PB(aMPB[j]));
                 }
@@ -221,10 +222,10 @@ internal static class PaveFillerDump
         }
         foreach (InterfFF aI in theDS.InterfFF())
         {
-            NCollection_DynamicArray<SectionCurve> aVC = aI.Curves();
-            NCollection_DynamicArray<DataPoint> aVP = aI.Points();
+            List<SectionCurve> aVC = aI.Curves();
+            List<DataPoint> aVP = aI.Points();
             aB.Append("ff ").Append(aI.Index1()).Append(' ').Append(aI.Index2()).Append(' ').Append(aI.TangentFaces() ? 1 : 0)
-              .Append(' ').Append(aVC.Length()).Append(' ').Append(aVP.Length()).Append('\n');
+              .Append(' ').Append(aVC.Count).Append(' ').Append(aVP.Count).Append('\n');
             foreach (SectionCurve aNC in aVC)
             {
                 aB.Append(" c ").Append(H(aNC.Tolerance())).Append(' ').Append(H(aNC.TangentialTolerance()))

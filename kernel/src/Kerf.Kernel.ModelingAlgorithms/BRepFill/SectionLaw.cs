@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1998-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Foundation;
 
@@ -26,7 +27,7 @@ public abstract class SectionLaw : Transient
     protected bool _uclosed;
     protected bool _vclosed;
     protected bool _done;
-    protected readonly NCollection_DataMap<Shape, int> _indices = new(ShapeHasher.Instance);
+    protected readonly Dictionary<Shape, int> _indices = new(ShapeHasher.Instance);
     private readonly WireExplorer _iterator = new();
 
     //=======================================================================
@@ -46,7 +47,7 @@ public abstract class SectionLaw : Transient
 
     /// <summary>The index of <paramref name="anEdge"/> in the section (negative for a reversed edge of NSections).</summary>
     /// <exception cref="NoSuchObjectException">The edge isn't in the section.</exception>
-    public int IndexOfEdge(in Shape anEdge) => _indices.Find(anEdge);
+    public int IndexOfEdge(in Shape anEdge) => _indices.GetValue(anEdge);
 
     /// <summary>True if the law is constant.</summary>
     public abstract bool IsConstant { get; }

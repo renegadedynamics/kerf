@@ -2,6 +2,7 @@
 // (docs/phase3-design.md, section 4.6). Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
@@ -36,9 +37,9 @@ public static partial class BrepTools
         var modifier = new Modifier(shape, new CopyModification(false, copyMesh));
         Shape copy = modifier.InternalModifiedShape(shape);
 
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, map);
-        for (int i = 1; i <= map.Extent(); ++i)
+        for (int i = 0; i < map.Count; ++i)
         {
             Shape s = map[i];
             Shape newS = modifier.InternalModifiedShape(s);

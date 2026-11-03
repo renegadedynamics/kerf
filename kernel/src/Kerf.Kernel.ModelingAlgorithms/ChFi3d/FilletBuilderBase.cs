@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using static Kerf.Engine.Fillets.Builder_0;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;
 using static Kerf.Engine.Fillets.Data.State;
@@ -82,8 +83,8 @@ public abstract partial class FilletBuilderBase
     internal NCollection_List<Regul> _regul = new();
     internal NCollection_List<Stripe> _badstripes = new();
     internal NCollection_List<Shape> _badvertices = new();
-    internal NCollection_DataMap<Shape, NCollection_List<int>> _eviMap = new(ShapeHasher.Instance);
-    internal NCollection_DataMap<Shape, Shape> _edgeFirstFace = new(ShapeHasher.Instance);
+    internal Dictionary<Shape, NCollection_List<int>> _eviMap = new(ShapeHasher.Instance);
+    internal Dictionary<Shape, Shape> _edgeFirstFace = new(ShapeHasher.Instance);
     internal bool _done;
     internal bool _hasresult;
 
@@ -909,9 +910,9 @@ public abstract partial class FilletBuilderBase
             return _generated;
         }
         Shape work = eouV;
-        if (_eviMap.IsBound(work))
+        if (_eviMap.ContainsKey(work))
         {
-            NCollection_List<int> l = _eviMap.Find(work);
+            NCollection_List<int> l = _eviMap.GetValue(work);
             NCollection_List<int>.Iterator il = new();
             for (il.Initialize(l); il.More(); il.Next())
             {

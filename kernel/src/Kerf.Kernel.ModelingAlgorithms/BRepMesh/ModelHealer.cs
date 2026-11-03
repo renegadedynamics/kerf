@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2016-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Meshing.Model;
@@ -43,7 +44,7 @@ public class ModelHealer : ModelAlgo
 {
     private ModelModel? _model;
     private ToolParameters _parameters = new();
-    private NCollection_DataMap<FaceModel, HashSet<EdgeModel>?>? _faceIntersectingEdges;
+    private Dictionary<FaceModel, HashSet<EdgeModel>?>? _faceIntersectingEdges;
 
     /// <summary>A healer.</summary>
     public ModelHealer()
@@ -71,10 +72,10 @@ public class ModelHealer : ModelAlgo
         _parameters.MinSize = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         _faceIntersectingEdges =
-            new NCollection_DataMap<FaceModel, HashSet<EdgeModel>?>(ReferenceEqualityComparer.Instance);
+            new Dictionary<FaceModel, HashSet<EdgeModel>?>(ReferenceEqualityComparer.Instance);
         for (int faceIt = 0; faceIt < _model.FacesNb(); ++faceIt)
         {
-            _faceIntersectingEdges.Bind(_model.GetFace(faceIt), null);
+            _faceIntersectingEdges[_model.GetFace(faceIt)] = null;
         }
 
         // TODO: Here we can process edges in order to remove close discrete points.
@@ -135,7 +136,7 @@ public class ModelHealer : ModelAlgo
     {
         foreach (FaceModel dFace in _faceIntersectingEdges!.Keys)
         {
-            ref HashSet<EdgeModel>? intersections = ref _faceIntersectingEdges.ChangeFind(dFace);
+            ref HashSet<EdgeModel>? intersections = ref _faceIntersectingEdges.GetValueRef(dFace);
             if (intersections is not null)
             {
                 NCollection_MapAlgo.Unite(edgesToUpdate, intersections);
@@ -161,7 +162,7 @@ public class ModelHealer : ModelAlgo
     {
         try
         {
-            ref HashSet<EdgeModel>? intersections = ref _faceIntersectingEdges!.ChangeFind(dFace);
+            ref HashSet<EdgeModel>? intersections = ref _faceIntersectingEdges!.GetValueRef(dFace);
             intersections = null;
 
             FixFaceBoundaries(dFace);

@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Algo;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -29,7 +30,7 @@ namespace Kerf.Engine.Offsets;
 /// </remarks>
 public sealed class OffsetMakeLoops
 {
-    private readonly NCollection_DataMap<Shape, Shape> _verVerMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Shape> _verVerMap = new(ShapeHasher.Instance);
 
     /// <summary>An empty builder.</summary>
     public OffsetMakeLoops()
@@ -125,7 +126,7 @@ public sealed class OffsetMakeLoops
             }
         }
         loops.GetVerticesForSubstitute(_verVerMap);
-        if (_verVerMap.IsEmpty())
+        if (_verVerMap.Count == 0)
         {
             return;
         }
@@ -157,9 +158,9 @@ public sealed class OffsetMakeLoops
                     for (; itlv.More(); itlv.Next())
                     {
                         Shape v = itlv.Value();
-                        if (_verVerMap.IsBound(v))
+                        if (_verVerMap.ContainsKey(v))
                         {
-                            Shape newV = _verVerMap[v];
+                            Shape newV = _verVerMap.GetValue(v);
                             e.Free(true);
                             newV.Orientation(v.Orientation());
                             BrepTVertex tv = (BrepTVertex)v.TShape()!;
@@ -400,7 +401,7 @@ public sealed class OffsetMakeLoops
             }
         }
         loops.GetVerticesForSubstitute(_verVerMap);
-        if (_verVerMap.IsEmpty())
+        if (_verVerMap.Count == 0)
         {
             return;
         }
@@ -427,9 +428,9 @@ public sealed class OffsetMakeLoops
                     for (; itlv.More(); itlv.Next())
                     {
                         Shape v = itlv.Value();
-                        if (_verVerMap.IsBound(v))
+                        if (_verVerMap.ContainsKey(v))
                         {
-                            Shape newV = _verVerMap[v];
+                            Shape newV = _verVerMap.GetValue(v);
                             e.Free(true);
                             newV.Orientation(v.Orientation());
                             BrepTVertex tv = (BrepTVertex)v.TShape()!;
@@ -490,7 +491,7 @@ public sealed class OffsetMakeLoops
                 // - maj on map MONV. Some vertices on reconstructed edges
                 // coincide geometrically with old but are not IsSame.
                 //----------------------------------------------------------------
-                NCollection_DataMap<Shape, Shape> monv = new(ShapeHasher.Instance);
+                Dictionary<Shape, Shape> monv = new(ShapeHasher.Instance);
                 Vertex ov1, ov2, nv1, nv2;
 
                 for (itl.Initialize(le); itl.More(); itl.Next())
@@ -520,11 +521,11 @@ public sealed class OffsetMakeLoops
                             Exploration.Vertices(ce, out nv1, out nv2);
                             if (!ov1.IsSame(nv1))
                             {
-                                monv.Bind(ov1, nv1);
+                                monv[ov1] = nv1;
                             }
                             if (!ov2.IsSame(nv2))
                             {
-                                monv.Bind(ov2, nv2);
+                                monv[ov2] = nv2;
                             }
                             loops.AddConstEdge(ce);
                         }
@@ -546,17 +547,17 @@ public sealed class OffsetMakeLoops
                         {
                             Exploration.Vertices(e, out ov1, out ov2);
                             NCollection_List<Shape> lv = new();
-                            if (monv.IsBound(ov1))
+                            if (monv.ContainsKey(ov1))
                             {
-                                Vertex vv = ShapeCasts.Vertex(monv[ov1]);
+                                Vertex vv = ShapeCasts.Vertex(monv.GetValue(ov1));
                                 vv.Orientation(Forward);
                                 lv.Append(vv);
                                 Shape localShape = vv.Oriented(Internal);
                                 b.UpdateVertex(ShapeCasts.Vertex(localShape), f, e, Tool.Tolerance(vv));
                             }
-                            if (monv.IsBound(ov2))
+                            if (monv.ContainsKey(ov2))
                             {
-                                Vertex vv = ShapeCasts.Vertex(monv[ov2]);
+                                Vertex vv = ShapeCasts.Vertex(monv.GetValue(ov2));
                                 vv.Orientation(Reversed);
                                 lv.Append(vv);
                                 Shape localShape = vv.Oriented(Internal);
@@ -612,7 +613,7 @@ public sealed class OffsetMakeLoops
             }
         }
         loops.GetVerticesForSubstitute(_verVerMap);
-        if (_verVerMap.IsEmpty())
+        if (_verVerMap.Count == 0)
         {
             return;
         }
@@ -639,9 +640,9 @@ public sealed class OffsetMakeLoops
                     for (; itlv.More(); itlv.Next())
                     {
                         Shape v = itlv.Value();
-                        if (_verVerMap.IsBound(v))
+                        if (_verVerMap.ContainsKey(v))
                         {
-                            Shape newV = _verVerMap[v];
+                            Shape newV = _verVerMap.GetValue(v);
                             e.Free(true);
                             newV.Orientation(v.Orientation());
                             BrepTVertex tv = (BrepTVertex)v.TShape()!;

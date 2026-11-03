@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -33,7 +34,7 @@ public class CurveSet
     private const int Offset = 9;
 
     // OCCT's NCollection_IndexedMap of handles, which hashes by address and can hold one null handle
-    private readonly NCollection_IndexedMap<object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _map = new(ReferenceEqualityComparer.Instance);
 
     // the null handle as a key
     internal static readonly object NullKey = new();
@@ -52,24 +53,24 @@ public class CurveSet
     /// <summary>Adds a curve to the set (once) and returns its index; 0 for null.</summary>
     public int Add(Curve3D? c)
     {
-        return (c is null) ? 0 : _map.Add(c);
+        return (c is null) ? 0 : (_map.Add(c) + 1);
     }
 
     /// <summary>The curve of index I, or null if there is none.</summary>
     public Curve3D? Curve(int i)
     {
-        if (i <= 0 || i > _map.Extent())
+        if (i <= 0 || i > _map.Count)
         {
             return null;
         }
 
-        return _map[i] as Curve3D;
+        return _map[i - 1] as Curve3D;
     }
 
     /// <summary>The index of the curve, 0 if it isn't in the set.</summary>
     public int Index(Curve3D? s)
     {
-        return s is null ? 0 : _map.FindIndex(s);
+        return s is null ? 0 : (_map.IndexOf(s) + 1);
     }
 
     private static void Out(TextWriter os, double value) => StreamUtilities.Write(os, value);
@@ -679,7 +680,7 @@ public class CurveSet
     /// <summary>Writes a readable dump of the set.</summary>
     public void Dump(TextWriter os)
     {
-        int i, nbsurf = _map.Extent();
+        int i, nbsurf = _map.Count;
         os.Write("\n -------\n");
         os.Write("Dump of ");
         Out(os, nbsurf);
@@ -703,7 +704,7 @@ public class CurveSet
     {
         int prec = StreamUtilities.Precision(os, 17);
 
-        int i, nbcurve = _map.Extent();
+        int i, nbcurve = _map.Count;
         os.Write("Curves ");
         Out(os, nbcurve);
         os.Write("\n");

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
@@ -104,9 +105,9 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
         return aF1;
     }
 
-    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
+    private static IndexedSet<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
@@ -380,11 +381,11 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
             theTally.TextDifferences.Add($"{aWhat}: BRep text differs ({aF2}, {aP})");
         }
 
-        NCollection_IndexedMap<Shape> aFaces = Map(aResult, ShapeType.Face);
-        Assert.Equal(aNativeTris.Length, aFaces.Extent());
-        for (int i = 1; i <= aFaces.Extent(); i++)
+        IndexedSet<Shape> aFaces = Map(aResult, ShapeType.Face);
+        Assert.Equal(aNativeTris.Length, aFaces.Count);
+        for (int i = 1; i <= aFaces.Count; i++)
         {
-            Triangulation? aT = Tool.Triangulation(ShapeCasts.Face(aFaces.FindKey(i)), out _);
+            Triangulation? aT = Tool.Triangulation(ShapeCasts.Face(aFaces[i - 1]), out _);
             CompareFace(theTally, $"{aWhat} face {i}", aT, aNativeTris[i - 1]);
         }
     }
@@ -795,10 +796,10 @@ public sealed class BRepMeshIncrementalMeshOracleTests(ITestOutputHelper output)
     private string PortDump(in Shape theShape)
     {
         var aBuilder = new StringBuilder(Text(PortWrite(theShape)));
-        NCollection_IndexedMap<Shape> aFaces = Map(theShape, ShapeType.Face);
-        for (int i = 1; i <= aFaces.Extent(); i++)
+        IndexedSet<Shape> aFaces = Map(theShape, ShapeType.Face);
+        for (int i = 0; i < aFaces.Count; i++)
         {
-            Triangulation? aT = Tool.Triangulation(ShapeCasts.Face(aFaces.FindKey(i)), out _);
+            Triangulation? aT = Tool.Triangulation(ShapeCasts.Face(aFaces[i]), out _);
             if (aT is null)
             {
                 aBuilder.Append("null\n");

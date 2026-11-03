@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Engine.Geometry;
@@ -32,7 +33,7 @@ public class LocationSet
     /// </summary>
     public const int MaxLocationItems = 1000;
 
-    private readonly NCollection_IndexedMap<Placement> _map = new();
+    private readonly IndexedSet<Placement> _map = new();
 
     /// <summary>Returns an empty set of locations.</summary>
     public LocationSet()
@@ -56,7 +57,7 @@ public class LocationSet
             return 0;
         }
 
-        int n = _map.FindIndex(l);
+        int n = _map.IndexOf(l) + 1;
         if (n > 0)
         {
             return n;
@@ -69,18 +70,18 @@ public class LocationSet
             N = N.NextLocation();
         } while (!N.IsIdentity);
 
-        return _map.Add(l);
+        return _map.Add(l) + 1;
     }
 
     /// <summary>The location of index I; the identity if I is out of range.</summary>
     public Placement Location(int i)
     {
-        if (i <= 0 || i > _map.Extent())
+        if (i <= 0 || i > _map.Count)
         {
             return new Placement();
         }
 
-        return _map[i];
+        return _map[i - 1];
     }
 
     /// <summary>The index of the location, 0 for the identity or a location that isn't in the set.</summary>
@@ -91,11 +92,11 @@ public class LocationSet
             return 0;
         }
 
-        return _map.FindIndex(l);
+        return _map.IndexOf(l) + 1;
     }
 
     /// <summary>The number of locations in the set.</summary>
-    public int LocationCount => _map.Extent();
+    public int LocationCount => _map.Count;
 
     private static void WriteTrsf(in Transform3D t, TextWriter os, bool compact)
     {
@@ -158,7 +159,7 @@ public class LocationSet
     /// <summary>Dumps the locations in a readable form.</summary>
     public void Dump(TextWriter os)
     {
-        int i, nbLoc = _map.Extent();
+        int i, nbLoc = _map.Count;
 
         os.Write("\n\n");
         os.Write("\n -------");
@@ -167,7 +168,7 @@ public class LocationSet
 
         for (i = 1; i <= nbLoc; i++)
         {
-            Placement l = _map[i];
+            Placement l = _map[i - 1];
             os.Write(StreamUtilities.Setw(5, Str(i)) + " : \n");
 
             Placement l2 = l.NextLocation();
@@ -181,7 +182,7 @@ public class LocationSet
             }
             else
             {
-                os.Write("Complex : L" + Str(_map.FindIndex(l1)));
+                os.Write("Complex : L" + Str(_map.IndexOf(l1) + 1));
                 if (p != 1)
                 {
                     os.Write("^" + Str(p));
@@ -192,7 +193,7 @@ public class LocationSet
                     l1 = new Placement(l2.FirstDatum());
                     p = l2.FirstPower();
                     l2 = l2.NextLocation();
-                    os.Write(" * L" + Str(_map.FindIndex(l1)));
+                    os.Write(" * L" + Str(_map.IndexOf(l1) + 1));
                     if (p != 1)
                     {
                         os.Write("^" + Str(p));
@@ -214,14 +215,14 @@ public class LocationSet
     {
         int prec = StreamUtilities.Precision(os, 15);
 
-        int i, nbLoc = _map.Extent();
+        int i, nbLoc = _map.Count;
         os.Write("Locations " + Str(nbLoc) + "\n");
 
         // OCC19559
         using var ps = new ProgressScope(progress, "Locations", nbLoc);
         for (i = 1; i <= nbLoc && ps.More(); i++, ps.Next())
         {
-            Placement l = _map[i];
+            Placement l = _map[i - 1];
 
             Placement l2 = l.NextLocation();
             bool simple = l2.IsIdentity;
@@ -236,13 +237,13 @@ public class LocationSet
             else
             {
                 os.Write("2 ");
-                os.Write(" " + Str(_map.FindIndex(l1)) + " " + Str(p));
+                os.Write(" " + Str(_map.IndexOf(l1) + 1) + " " + Str(p));
                 while (!l2.IsIdentity)
                 {
                     l1 = new Placement(l2.FirstDatum());
                     p = l2.FirstPower();
                     l2 = l2.NextLocation();
-                    os.Write(" " + Str(_map.FindIndex(l1)) + " " + Str(p));
+                    os.Write(" " + Str(_map.IndexOf(l1) + 1) + " " + Str(p));
                 }
 
                 os.Write(" 0\n");
@@ -330,12 +331,12 @@ public class LocationSet
                     StreamUtilities.CheckNotFailed(IS, "TopTools_LocationSet::Read");
                     StreamUtilities.Read(IS, ref p);
                     // OCCT.NET: untrusted input: OCCT reads outside its map
-                    if (l1 < 1 || l1 > _map.Extent())
+                    if (l1 < 1 || l1 > _map.Count)
                     {
                         throw new StreamFormatErrorException("TopTools_LocationSet::Read: no location " + Str(l1));
                     }
 
-                    Placement L1 = _map[l1];
+                    Placement L1 = _map[l1 - 1];
                     l = PoweredTimes(L1, p, l);
                     StreamUtilities.Read(IS, ref l1);
                 }

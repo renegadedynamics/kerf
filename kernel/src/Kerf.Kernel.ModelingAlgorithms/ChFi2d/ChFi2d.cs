@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
@@ -47,12 +48,12 @@ public static class ChFi2d
                                                               ref Edge e1,
                                                               ref Edge e2)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> vertexMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(f, ShapeType.Vertex, ShapeType.Edge, vertexMap);
 
-        if (vertexMap.Contains(v))
+        if (vertexMap.ContainsKey(v))
         {
-            NCollection_List<Shape>.Iterator iterator = new(vertexMap.FindFromKey(v));
+            NCollection_List<Shape>.Iterator iterator = new(vertexMap.GetValue(v));
             if (iterator.More())
             {
                 e1 = ShapeCasts.Edge(iterator.Value());

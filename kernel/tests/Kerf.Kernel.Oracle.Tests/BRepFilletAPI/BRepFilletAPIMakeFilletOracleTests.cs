@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
@@ -67,9 +68,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         return Math.Sqrt(aBox.SquareExtent());
     }
 
-    private static NCollection_IndexedMap<Shape> Map(in Shape S, ShapeType T)
+    private static IndexedSet<Shape> Map(in Shape S, ShapeType T)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, T, M);
         return M;
     }
@@ -77,18 +78,18 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     /// <summary>The edges that are not degenerated and lie between two different faces (filletable).</summary>
     private static List<int> SharpEdges(in Shape S)
     {
-        NCollection_IndexedMap<Shape> anEdges = Map(S, ShapeType.Edge);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anEdges = Map(S, ShapeType.Edge);
+        IndexedMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, EF);
         List<int> r = [];
-        for (int k = 1; k <= anEdges.Extent(); k++)
+        for (int k = 1; k <= anEdges.Count; k++)
         {
-            Edge E = ShapeCasts.Edge(anEdges[k]);
-            if (Tool.Degenerated(E) || !EF.Contains(E))
+            Edge E = ShapeCasts.Edge(anEdges[k - 1]);
+            if (Tool.Degenerated(E) || !EF.ContainsKey(E))
             {
                 continue;
             }
-            NCollection_List<Shape> L = EF.FindFromKey(E);
+            NCollection_List<Shape> L = EF.GetValue(E);
             if (L.Extent() == 2 && !L.First().IsSame(L.Last()))
             {
                 r.Add(k);
@@ -128,14 +129,14 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         if (theFull)
         {
             // the edges of each of the first faces (a chain round the face)
-            NCollection_IndexedMap<Shape> aFaces = Map(theShape, ShapeType.Face);
-            NCollection_IndexedMap<Shape> anEdges = Map(theShape, ShapeType.Edge);
-            for (int f = 1; f <= Math.Min(3, aFaces.Extent()); f++)
+            IndexedSet<Shape> aFaces = Map(theShape, ShapeType.Face);
+            IndexedSet<Shape> anEdges = Map(theShape, ShapeType.Edge);
+            for (int f = 1; f <= Math.Min(3, aFaces.Count); f++)
             {
                 List<int> aChain = [];
-                for (Explorer ex = new(aFaces[f], ShapeType.Edge); ex.More(); ex.Next())
+                for (Explorer ex = new(aFaces[f - 1], ShapeType.Edge); ex.More(); ex.Next())
                 {
-                    int k = anEdges.FindIndex(ex.Current());
+                    int k = anEdges.IndexOf(ex.Current()) + 1;
                     if (aSharp.Contains(k) && !aChain.Contains(k))
                     {
                         aChain.Add(k);
@@ -212,8 +213,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         Shape aCyl1 = new ApiMakeCylinder(new Frame3D(new Point3D(0, 0, -10), new Direction3D(0, 0, 1)), 3, 20).Shape();
         Cut aCut = new(aCommon, aCyl1);
         Shape aCutShape = aCut.Shape();
-        NCollection_IndexedMap<Shape> anEdges = Map(aCutShape, ShapeType.Edge);
-        CaseEdge[] aSection = [.. aCut.SectionEdges().Select(e => new CaseEdge(anEdges.FindIndex(e), 0.7))];
+        IndexedSet<Shape> anEdges = Map(aCutShape, ShapeType.Edge);
+        CaseEdge[] aSection = [.. aCut.SectionEdges().Select(e => new CaseEdge(anEdges.IndexOf(e) + 1, 0.7))];
         Compare(aRun, aTally, new Case("OCC1077 first cut, section edges r0.7", false, aSection), aCutShape);
         foreach (CaseEdge e in aSection)
         {
@@ -225,7 +226,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
             MakeFillet aF = new(aCutShape);
             foreach (CaseEdge e in aSection)
             {
-                aF.Add(0.7, ShapeCasts.Edge(anEdges[e.K]));
+                aF.Add(0.7, ShapeCasts.Edge(anEdges[e.K - 1]));
             }
             ShapeFixer aFix = new(aF.Shape());
             aFix.Perform();
@@ -240,13 +241,13 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         {
             Cut aCutC = new(aStage, aCyls[c]);
             Shape aCutCShape = aCutC.Shape();
-            NCollection_IndexedMap<Shape> anEdgesC = Map(aCutCShape, ShapeType.Edge);
-            CaseEdge[] aSectionC = [.. aCutC.SectionEdges().Select(e => new CaseEdge(anEdgesC.FindIndex(e), 0.7))];
+            IndexedSet<Shape> anEdgesC = Map(aCutCShape, ShapeType.Edge);
+            CaseEdge[] aSectionC = [.. aCutC.SectionEdges().Select(e => new CaseEdge(anEdgesC.IndexOf(e) + 1, 0.7))];
             Compare(aRun, aTally, new Case($"OCC1077 cut {c + 2}, section edges r0.7", false, aSectionC), aCutCShape);
             MakeFillet aF = new(aCutCShape);
             foreach (CaseEdge e in aSectionC)
             {
-                aF.Add(0.7, ShapeCasts.Edge(anEdgesC[e.K]));
+                aF.Add(0.7, ShapeCasts.Edge(anEdgesC[e.K - 1]));
             }
             aF.Build();
             if (!aF.IsDone)
@@ -262,11 +263,11 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 OCC426Input());
         // OCC570: a box's first wire, variable and constant radii
         Shape aBox = new MakeBox(100, 100, 100).Shape();
-        NCollection_IndexedMap<Shape> aBoxEdges = Map(aBox, ShapeType.Edge);
+        IndexedSet<Shape> aBoxEdges = Map(aBox, ShapeType.Edge);
         List<int> aWire = [];
         for (Explorer ex = new(new Explorer(aBox, ShapeType.Wire).Current(), ShapeType.Edge); ex.More(); ex.Next())
         {
-            aWire.Add(aBoxEdges.FindIndex(ex.Current()));
+            aWire.Add(aBoxEdges.IndexOf(ex.Current()) + 1);
         }
         double[] aVar = [0.0, 5.0, 0.3, 15.0, 0.7, 15.0, 1.0, 5.0];
         Compare(aRun, aTally, new Case("OCC570", false, [new CaseEdge(aWire[0], 0, Mode: 1, Pairs: aVar), new CaseEdge(aWire[1], 5.0),
@@ -391,11 +392,11 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     {
         try
         {
-            NCollection_IndexedMap<Shape> anEdges = Map(theInput, ShapeType.Edge);
+            IndexedSet<Shape> anEdges = Map(theInput, ShapeType.Edge);
             MakeFillet aB = new(theInput);
             foreach (int k in theEdges)
             {
-                aB.Add(theR, ShapeCasts.Edge(anEdges[k]));
+                aB.Add(theR, ShapeCasts.Edge(anEdges[k - 1]));
             }
             return new Analyzer(aB.Shape()).IsValid();
         }
@@ -551,9 +552,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
 
     internal static Outcome RunPort(Case theCase, Shape theInput)
     {
-        NCollection_IndexedMap<Shape> anEdges = Map(theInput, ShapeType.Edge);
-        NCollection_IndexedMap<Shape> aFaces = Map(theInput, ShapeType.Face);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anEdges = Map(theInput, ShapeType.Edge);
+        IndexedSet<Shape> aFaces = Map(theInput, ShapeType.Face);
+        IndexedMap<Shape, NCollection_List<Shape>> EF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(theInput, ShapeType.Edge, ShapeType.Face, EF);
         try
         {
@@ -565,8 +566,8 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 aMaker = aC;
                 foreach (CaseEdge e in theCase.Edges)
                 {
-                    Edge E = ShapeCasts.Edge(anEdges[e.K]);
-                    Face F = ShapeCasts.Face(EF.FindFromKey(E).First());
+                    Edge E = ShapeCasts.Edge(anEdges[e.K - 1]);
+                    Face F = ShapeCasts.Face(EF.GetValue(E).First());
                     if (e.Mode == 1)
                     {
                         aC.AddDA(e.R1, e.R2 * Math.PI / 180.0, E, F);
@@ -589,7 +590,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 aMaker = aF;
                 foreach (CaseEdge e in theCase.Edges)
                 {
-                    Edge E = ShapeCasts.Edge(anEdges[e.K]);
+                    Edge E = ShapeCasts.Edge(anEdges[e.K - 1]);
                     if (e.Pairs is double[] p)
                     {
                         NCollection_Array1<Point2D> anArray = new(1, p.Length / 2);
@@ -620,25 +621,25 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
                 return new Outcome(null, aStatus, null, []);
             }
             Shape aRes = aMaker.Shape();
-            NCollection_IndexedMap<Shape> aResFaces = Map(aRes, ShapeType.Face);
+            IndexedSet<Shape> aResFaces = Map(aRes, ShapeType.Face);
             Dictionary<string, (bool, int[])> aHistory = [];
-            for (int i = 1; i <= aFaces.Extent(); i++)
+            for (int i = 1; i <= aFaces.Count; i++)
             {
-                aHistory["F" + i] = (aMaker.IsDeleted(aFaces[i]), [.. aMaker.Modified(aFaces[i]).Select(x => aResFaces.FindIndex(x))]);
+                aHistory["F" + i] = (aMaker.IsDeleted(aFaces[i - 1]), [.. aMaker.Modified(aFaces[i - 1]).Select(x => (aResFaces.IndexOf(x) + 1))]);
             }
-            for (int k = 1; k <= anEdges.Extent(); k++)
+            for (int k = 1; k <= anEdges.Count; k++)
             {
-                IReadOnlyList<Shape> aL = aMaker.Generated(anEdges[k]);
+                IReadOnlyList<Shape> aL = aMaker.Generated(anEdges[k - 1]);
                 if (aL.Count > 0)
                 {
-                    aHistory["E" + k] = (false, [.. aL.Select(x => aResFaces.FindIndex(x))]);
+                    aHistory["E" + k] = (false, [.. aL.Select(x => (aResFaces.IndexOf(x) + 1))]);
                 }
             }
-            NCollection_IndexedMap<Shape> aSolids = Map(theInput, ShapeType.Solid);
-            for (int i = 1; i <= aSolids.Extent(); i++)
+            IndexedSet<Shape> aSolids = Map(theInput, ShapeType.Solid);
+            for (int i = 1; i <= aSolids.Count; i++)
             {
-                aHistory["So" + i] = (aMaker.IsDeleted(aSolids[i]),
-                                      [.. aMaker.Modified(aSolids[i]).SelectMany(x => Map(x, ShapeType.Face)).Select(x => aResFaces.FindIndex(x))]);
+                aHistory["So" + i] = (aMaker.IsDeleted(aSolids[i - 1]),
+                                      [.. aMaker.Modified(aSolids[i - 1]).SelectMany(x => Map(x, ShapeType.Face)).Select(x => (aResFaces.IndexOf(x) + 1))]);
             }
             return new Outcome(null, aStatus, aRes, aHistory);
         }
@@ -757,9 +758,9 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
     // (surface type, area) of each face of a list, sorted
     private static List<(string Type, double Area)> Keys(in Shape theResult, int[] theFaces)
     {
-        NCollection_IndexedMap<Shape> M = Map(theResult, ShapeType.Face);
+        IndexedSet<Shape> M = Map(theResult, ShapeType.Face);
         return [.. theFaces.Select(i => i > 0
-                                       ? (Kerf.Engine.Foundation.OcctTypeNames.Of(new FaceSurfaceAdaptor(ShapeCasts.Face(M[i])).GetType()).Replace("GeomAbs_", ""), Area(M[i]))
+                                       ? (Kerf.Engine.Foundation.OcctTypeNames.Of(new FaceSurfaceAdaptor(ShapeCasts.Face(M[i - 1])).GetType()).Replace("GeomAbs_", ""), Area(M[i - 1]))
                                        : ("out", 0.0))
                            .OrderBy(k => k.Item1, StringComparer.Ordinal).ThenBy(k => k.Item2)];
     }
@@ -786,7 +787,7 @@ public sealed class BRepFilletAPIMakeFilletOracleTests(ITestOutputHelper output)
         }
         foreach (ShapeType T in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face, ShapeType.Edge, ShapeType.Vertex })
         {
-            int n1 = Map(aN, T).Extent(), n2 = Map(aP, T).Extent();
+            int n1 = Map(aN, T).Count, n2 = Map(aP, T).Count;
             if (n1 != n2)
             {
                 d.Add($"{Kerf.Engine.Foundation.OcctTypeNames.Of(T).Replace("TopAbs_", "")} {n1} | {n2}");

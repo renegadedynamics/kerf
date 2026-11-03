@@ -71,7 +71,7 @@ public sealed class CircleTool
     }
 
     /// <summary>Whether no circle is bound.</summary>
-    public bool IsEmpty => _selector.Circles().IsEmpty();
+    public bool IsEmpty => _selector.Circles().Count == 0;
 
     /// <summary>Binds the circle to the index.</summary>
     public void Bind(int index, Circle2D circle)

@@ -217,7 +217,7 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
         Assert.Equal(4, aRec.KnotTools.Count);
         foreach (ApproxIntRecordings.KnotToolsRun aRun in aRec.KnotTools)
         {
-            NCollection_DynamicArray<int> aKnots = new();
+            List<int> aKnots = new();
             KnotTools.BuildKnots(p3, pa, pb, pars, true, true, true, aRun.MinNbPnts, aKnots);
             Assert.Equal(aRun.Knots, aKnots.ToArray());
         }
