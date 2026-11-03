@@ -14173,3 +14173,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          (9 skipped), DataExchange 274 (271 and ConcurrencyTests' 3; 1 skipped), Oracle 383, Draw-lite 687, the
          modelling layer 1,876 (1,875 and ConcurrentPartsTests). Changed: `MsgFile_UnknownKeyword` (decision 15804) and
          the Draw-lite meshing test, which reads `mpparallel`'s setting from the interpreter's context.
+         Draw-lite's cheap-gaps class failed in two later runs on `bug24157_5`/`_8`'s check that `bbuild -t` takes at
+         most 15 s of wall time: alone they take 1 to 3 s; twelve at once take 10 to 12 s, on `main` as on this branch
+         (measured both ways); with the class's other cases and other units' suites beside, 18 to 21 s. A timing check
+         under load, not a regression; it passed in the first full run.
