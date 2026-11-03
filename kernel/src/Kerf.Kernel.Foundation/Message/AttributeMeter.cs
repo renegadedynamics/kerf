@@ -22,7 +22,7 @@ namespace Kerf.Engine.Foundation;
 /// WebAssembly, WASI).
 /// </para>
 /// <para>
-/// The metrics are those of the process-wide default report (<see cref="Message.DefaultReport"/>), which only
+/// The metrics are those of the flow's default report (<see cref="Message.DefaultReport"/>), which only
 /// Draw-lite and tests set up; an algorithm's own report never computes them.
 /// </para>
 /// </remarks>

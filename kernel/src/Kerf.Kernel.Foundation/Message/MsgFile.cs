@@ -4,34 +4,79 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Occt;
+using System.Collections.Immutable;
 
 namespace Kerf.Engine.Foundation;
 
 /// <summary>
-/// The process-wide table of message texts by keyword, which <see cref="Msg"/> reads.
+/// The table of message texts by keyword, which <see cref="Msg"/> reads.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Only the in-memory table is ported: <c>Load</c>, <c>LoadFile</c> and <c>LoadFromEnv</c> (OCCT's resource files,
-/// read from the directories that environment variables name) are left out, so the table holds only what
-/// <see cref="AddMsg"/> and <see cref="LoadFromString"/> put there, from the texts compiled into the port (decision
-/// 8103), and a library result never depends on files or the environment. <see cref="AddMsg"/> and
-/// <see cref="LoadFromString"/> are internal (process-wide state, decision 415's rule). As in OCCT, <see cref="Msg(string)"/> of
-/// an unknown keyword stores the "Unknown message invoked with the keyword ..." text under that keyword, so that
-/// <see cref="HasMsg"/> is true for it afterwards.
+/// read from the directories that environment variables name) are left out, so a library result never depends on files
+/// or the environment (decision 8103).
+/// </para>
+/// <para>
+/// The table has two layers (unit 10I; OCCT's is one process-wide map behind a mutex):
+/// </para>
+/// <list type="bullet">
+/// <item><description><b>The defaults:</b> the texts compiled into the kernel (the Booleans', Shape Healing's, data
+/// exchange's), each set added once by its owner's one-time initialisation (<see cref="AddDefaults(string)"/>). An immutable
+/// table, replaced whole when a set is added, so readers take no lock.</description></item>
+/// <item><description><b>The flow's additions:</b> <see cref="AddMsg"/> and <see cref="LoadFromString"/> (internal:
+/// Draw-lite and tests) add to the current <see cref="OperationContext"/> (<see cref="AdditionsSetting"/>), over the
+/// defaults, for the rest of the flow of execution.</description></item>
+/// </list>
+/// <para>
+/// <see cref="Msg(string)"/> of an unknown keyword gives OCCT's "Unknown message invoked with the keyword ..." text.
+/// OCCT also stores it under the keyword, so that <see cref="HasMsg"/> is true for it afterwards in the whole process;
+/// the port doesn't: a read never writes the table.
+/// </para>
 /// </remarks>
 public static class MsgFile
 {
-    private static readonly Dictionary<string, string> MsgsDataMap = new(StringComparer.Ordinal);
-    private static readonly Lock Message_MsgFile_Mutex = new();
+    // The defaults: the compiled-in texts, added once per set by AddDefaults
+    private static ImmutableDictionary<string, string> s_defaults = ImmutableDictionary.Create<string, string>(StringComparer.Ordinal);
 
-    /// <summary>Adds a message to the table, replacing any message with the same keyword. Always true.</summary>
+    /// <summary>The texts the current flow of execution added over the defaults.</summary>
+    internal static readonly ContextKey<ImmutableDictionary<string, string>> AdditionsSetting =
+        new("MsgFile.Additions", ImmutableDictionary.Create<string, string>(StringComparer.Ordinal));
+
+    /// <summary>
+    /// Adds a message to the current flow's table, replacing any message with the same keyword (Draw-lite and tests).
+    /// Always true.
+    /// </summary>
     internal static bool AddMsg(string keyword, string message)
     {
-        lock (Message_MsgFile_Mutex)
-        {
-            MsgsDataMap[keyword] = message;
-        }
+        OperationContext.Set(AdditionsSetting, AdditionsSetting.Value.SetItem(keyword, message));
         return true;
+    }
+
+    /// <summary>
+    /// Adds a set of compiled-in texts (a message file's text, as <see cref="LoadFromString"/> reads it) to the
+    /// defaults: for the kernel's one-time initialisations, each with its own keywords. False if the text is empty.
+    /// </summary>
+    internal static bool AddDefaults(string content)
+    {
+        if (content.Length == 0)
+        {
+            return false;
+        }
+        AddDefaults(Parse(content));
+        return true;
+    }
+
+    /// <summary>Adds a set of compiled-in texts, keyword and text, to the defaults (see <see cref="AddDefaults(string)"/>).</summary>
+    internal static void AddDefaults(IEnumerable<KeyValuePair<string, string>> messages)
+    {
+        ImmutableDictionary<string, string> current, updated;
+        do
+        {
+            current = Volatile.Read(ref s_defaults);
+            updated = current.SetItems(messages);
+        }
+        while (!ReferenceEquals(Interlocked.CompareExchange(ref s_defaults, updated, current), current));
     }
 
     private enum LoadingState
@@ -110,8 +155,8 @@ public static class MsgFile
         return true;
     }
 
-    // Fills the table of messages from the buffer (ending with two NULs).
-    private static bool LoadFile(char[] buffer)
+    // Reads the messages from the buffer (ending with two NULs) into the list, in order.
+    private static bool LoadFile(char[] buffer, List<KeyValuePair<string, string>> messages)
     {
         string keyword = "";
         string message = "";
@@ -128,7 +173,7 @@ public static class MsgFile
                 case LoadingState.MsgFile_WaitingMoreMessage:
                     if (isKeyword)
                     {
-                        AddMsg(keyword, message); // terminate the previous one
+                        messages.Add(new(keyword, message)); // terminate the previous one
                         //      Pass from here to 'case MsgFile_WaitingKeyword'
                     }
                     else
@@ -169,18 +214,19 @@ public static class MsgFile
         //    Process the last string still remaining in the buffer
         if (state == LoadingState.MsgFile_WaitingMoreMessage)
         {
-            AddMsg(keyword, message);
+            messages.Add(new(keyword, message));
         }
         return true;
     }
 
     /// <summary>
     /// Loads the messages from the text of a message file (keywords starting with a dot, each followed by its message
-    /// on one or more lines; lines starting with '!' are comments). False if the text is empty.
+    /// on one or more lines; lines starting with '!' are comments) into the current flow's table. False if the text is
+    /// empty.
     /// </summary>
     /// <remarks>
-    /// Internal (process-wide state, decision 415's rule): OCCT.NET loads only the message texts compiled into the port
-    /// (decision 975), never files or the environment.
+    /// Internal (Draw-lite and tests): the kernel loads only the message texts compiled into it (decision 975), into
+    /// the defaults (<see cref="AddDefaults(string)"/>), never files or the environment.
     /// </remarks>
     internal static bool LoadFromString(string content, int length = -1)
     {
@@ -189,45 +235,58 @@ public static class MsgFile
         {
             return false;
         }
+        List<KeyValuePair<string, string>> messages = Parse(content, stringSize);
+        if (messages.Count > 0)
+        {
+            OperationContext.Set(AdditionsSetting, AdditionsSetting.Value.SetItems(messages));
+        }
+        return true;
+    }
 
+    // The messages of a message file's text, in order
+    private static List<KeyValuePair<string, string>> Parse(string content, int length = -1)
+    {
+        int stringSize = length >= 0 ? length : content.Length;
+        var messages = new List<KeyValuePair<string, string>>();
+        if (stringSize <= 0)
+        {
+            return messages;
+        }
         char[] buffer = new char[stringSize + 2];
         content.CopyTo(0, buffer, 0, stringSize);
         buffer[stringSize + 0] = '\0';
         buffer[stringSize + 1] = '\0';
-        return LoadFile(buffer);
+        LoadFile(buffer, messages);
+        return messages;
+    }
+
+    // The message for the keyword: the flow's, else the default; null if neither has it
+    private static string? Find(string keyword)
+    {
+        if (OperationContext.Current.TryGet(AdditionsSetting, out ImmutableDictionary<string, string> additions)
+            && additions.TryGetValue(keyword, out string? added))
+        {
+            return added;
+        }
+        return Volatile.Read(ref s_defaults).TryGetValue(keyword, out string? value) ? value : null;
     }
 
     /// <summary>True if the table has a message for the keyword.</summary>
-    public static bool HasMsg(string keyword)
-    {
-        lock (Message_MsgFile_Mutex)
-        {
-            return MsgsDataMap.ContainsKey(keyword);
-        }
-    }
+    public static bool HasMsg(string keyword) => Find(keyword) is not null;
 
     /// <summary>
     /// The message for the keyword. For an unknown keyword, the text of keyword <c>Message_Msg_BadKeyword</c> (by default
-    /// "Unknown message invoked with the keyword ") followed by the keyword, which is then stored under the keyword.
+    /// "Unknown message invoked with the keyword ") followed by the keyword (not stored: see the remarks).
     /// </summary>
     public static string Msg(string keyword)
     {
-        lock (Message_MsgFile_Mutex)
+        if (Find(keyword) is { } message)
         {
-            // if message is not found, generate error message and add it to the map to minimize overhead
-            // on consequent calls with the same key
-            if (!MsgsDataMap.TryGetValue(keyword, out string? valPtr))
-            {
-                // text of the error message can be itself defined in the map
-                const string prefixCode = "Message_Msg_BadKeyword";
-                const string defPrefix = "Unknown message invoked with the keyword ";
-                string errorMessage = MsgsDataMap.TryGetValue(prefixCode, out string? prefValPtr) ? prefValPtr : defPrefix;
-                errorMessage += keyword;
-                MsgsDataMap[keyword] = errorMessage;
-                valPtr = errorMessage;
-            }
-
-            return valPtr;
+            return message;
         }
+        // text of the error message can be itself defined in the map
+        const string prefixCode = "Message_Msg_BadKeyword";
+        const string defPrefix = "Unknown message invoked with the keyword ";
+        return (Find(prefixCode) ?? defPrefix) + keyword;
     }
 }

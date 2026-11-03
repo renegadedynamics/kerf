@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Foundation;
 
 /// <summary>
-/// A level of alerts in the process-wide default report (<see cref="Message.DefaultReport"/>): while it is open, the
+/// A level of alerts in the flow's default report (<see cref="Message.DefaultReport"/>): while it is open, the
 /// alerts added to that report go below the level's root alert. Opening it adds the level to the report if the report
 /// is active in the default messenger; disposing it removes it (OCCT's destructor):
 /// <c>using var aLevel = new Message_Level("name");</c> is OCCT's <c>OCCT_ADD_MESSAGE_LEVEL_SENTRY</c>.

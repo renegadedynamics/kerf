@@ -322,8 +322,8 @@ public class Message_MsgTest
         Assert.False(global::Kerf.Engine.Foundation.MsgFile.HasMsg(aKey));
         global::Kerf.Engine.Foundation.Msg aMsg = new(aKey);
         Assert.Equal("Unknown message invoked with the keyword " + aKey, aMsg.Get());
-        // OCCT stores the surrogate under the keyword
-        Assert.True(global::Kerf.Engine.Foundation.MsgFile.HasMsg(aKey));
+        // OCCT stores the surrogate under the keyword, for the whole process; the port's reads never write (unit 10I)
+        Assert.False(global::Kerf.Engine.Foundation.MsgFile.HasMsg(aKey));
         Assert.True(global::Kerf.Engine.Foundation.MsgFile.AddMsg(aKey, "known %d"));
         Assert.Equal("known 3", new global::Kerf.Engine.Foundation.Msg(aKey).Arg(3).Get());
     }

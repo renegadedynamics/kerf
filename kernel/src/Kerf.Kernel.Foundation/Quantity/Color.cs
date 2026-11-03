@@ -57,8 +57,8 @@ public partial struct Color : IEquatable<Color>
     private const double XYZ_TO_RGB_Z_G = 0.0415560;
     private const double XYZ_TO_RGB_Z_B = 1.0572252;
 
-    // getEpsilonRef()'s function-scope static: process-wide, as OCCT's (SetEpsilon changes it for every thread)
-    private static double s_epsilon = 0.0001;
+    // getEpsilonRef()'s function-scope static, process-wide in OCCT: a setting of the operation context (unit 10I)
+    internal static readonly ContextKey<double> EpsilonSetting = new("Quantity_Color.Epsilon", 0.0001);
 
     private NCollection_Vec3<float> _rgb;
 
@@ -821,11 +821,14 @@ public partial struct Color : IEquatable<Color>
         s = hls[2];
     }
 
-    /// <summary>The tolerance of <see cref="IsEqual"/> and <see cref="IsDifferent"/> (0.0001 by default; process-wide).</summary>
-    public static double Epsilon() => s_epsilon;
+    /// <summary>
+    /// The tolerance of <see cref="IsEqual"/> and <see cref="IsDifferent"/> (0.0001 by default) in the current flow of
+    /// execution (<see cref="OperationContext"/>).
+    /// </summary>
+    public static double Epsilon() => EpsilonSetting.Value;
 
-    /// <summary>Sets <see cref="Epsilon"/> for the whole process, as OCCT's.</summary>
-    public static void SetEpsilon(double epsilon) => Color.s_epsilon = epsilon;
+    /// <summary>Sets <see cref="Epsilon"/> for the rest of the current flow of execution (OCCT: for the whole process).</summary>
+    public static void SetEpsilon(double epsilon) => OperationContext.Set(EpsilonSetting, epsilon);
 
     // DumpJson and InitFromJson are left out: ToString replaces them.
 
