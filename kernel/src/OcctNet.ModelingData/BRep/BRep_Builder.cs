@@ -15,7 +15,8 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// Internal to OCCT.NET, as TopoDS_Builder (docs/phase3-design.md, section 4.5). Every update throws
+/// Internal to OCCT.NET but for the face of a triangulation, which the modelling layer makes when it reads a mesh (Kerf
+/// unit 10B; engine, internal, in unit 10L). Every update throws
 /// <see cref="TopoDS_LockedShape"/> on a locked shape, and in the port every frozen shape is locked. A frozen child can
 /// be added to an unfrozen parent. Every curve, surface, triangulation or polygon the builder stores is frozen.
 /// </para>
@@ -24,7 +25,7 @@ namespace Occt;
 /// Update methods change only the TShape and take it by <c>in</c>.
 /// </para>
 /// </remarks>
-internal sealed class BRep_Builder : TopoDS_Builder
+public sealed class BRep_Builder : TopoDS_Builder
 {
     public BRep_Builder()
     {
@@ -453,7 +454,7 @@ internal sealed class BRep_Builder : TopoDS_Builder
     }
 
     /// <summary>Makes a face with a triangulation (frozen here) and no surface.</summary>
-    internal void MakeFace(ref TopoDS_Face theFace, Poly_Triangulation? theTriangulation)
+    public void MakeFace(ref TopoDS_Face theFace, Poly_Triangulation? theTriangulation)
     {
         BRep_TFace aTFace = new BRep_TFace();
         if (!theFace.IsNull() && theFace.Locked())

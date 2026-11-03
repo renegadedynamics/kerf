@@ -15,9 +15,10 @@ namespace Occt;
 /// </summary>
 /// <remarks>
 /// <para>
-/// A builder changes shapes in place, so its methods are internal to OCCT.NET (docs/phase3-design.md, section 4.5).
-/// Callers build compounds with <see cref="MakeCompound(TopoDS_Shape[])"/>, which returns a frozen compound, and other
-/// shapes through the public algorithms.
+/// A builder changes shapes in place. Callers build compounds with <see cref="MakeCompound(TopoDS_Shape[])"/>, which
+/// returns a frozen compound, and other shapes through the public algorithms. The Make methods, Add and Remove are public
+/// for the modelling layer (Kerf unit 10B; they become engine, internal, in unit 10L): a shape they build stays open until
+/// the caller freezes it with <see cref="TopoDS_TShape.FreezeGraph"/>, before anything else reads it.
 /// </para>
 /// <para>
 /// Add checks OCCT's rules: any shape goes into a COMPOUND; only a SOLID into a COMPSOLID; only a SHELL, an EDGE or a
@@ -31,7 +32,7 @@ namespace Occt;
 /// </remarks>
 public class TopoDS_Builder
 {
-    internal TopoDS_Builder()
+    public TopoDS_Builder()
     {
     }
 
@@ -133,35 +134,35 @@ public class TopoDS_Builder
     }
 
     /// <summary>Makes an empty wire.</summary>
-    internal void MakeWire(ref TopoDS_Wire W)
+    public void MakeWire(ref TopoDS_Wire W)
     {
         TopoDS_TWire TW = new TopoDS_TWire();
         MakeShape(ref TopoDS.AsShapeRef(ref W), TW);
     }
 
     /// <summary>Makes an empty shell.</summary>
-    internal void MakeShell(ref TopoDS_Shell S)
+    public void MakeShell(ref TopoDS_Shell S)
     {
         TopoDS_TShell TS = new TopoDS_TShell();
         MakeShape(ref TopoDS.AsShapeRef(ref S), TS);
     }
 
     /// <summary>Makes a solid covering the whole 3D space.</summary>
-    internal void MakeSolid(ref TopoDS_Solid S)
+    public void MakeSolid(ref TopoDS_Solid S)
     {
         TopoDS_TSolid TS = new TopoDS_TSolid();
         MakeShape(ref TopoDS.AsShapeRef(ref S), TS);
     }
 
     /// <summary>Makes an empty composite solid.</summary>
-    internal void MakeCompSolid(ref TopoDS_CompSolid C)
+    public void MakeCompSolid(ref TopoDS_CompSolid C)
     {
         TopoDS_TCompSolid TC = new TopoDS_TCompSolid();
         MakeShape(ref TopoDS.AsShapeRef(ref C), TC);
     }
 
     /// <summary>Makes an empty compound.</summary>
-    internal void MakeCompound(ref TopoDS_Compound C)
+    public void MakeCompound(ref TopoDS_Compound C)
     {
         TopoDS_TCompound TC = new TopoDS_TCompound();
         MakeShape(ref TopoDS.AsShapeRef(ref C), TC);
@@ -174,7 +175,7 @@ public class TopoDS_Builder
     /// <exception cref="TopoDS_FrozenShape">aShape isn't free.</exception>
     /// <exception cref="TopoDS_UnCompatibleShapes">aShape can't contain aComponent.</exception>
     /// <exception cref="Standard_ImmutableObject">aShape is frozen.</exception>
-    internal void Add(in TopoDS_Shape aShape, in TopoDS_Shape aComponent)
+    public void Add(in TopoDS_Shape aShape, in TopoDS_Shape aComponent)
     {
         // From now the Component cannot be edited
         // OCCT.NET: frozen: a frozen component keeps the Free flag it was frozen with, so its BRep text never
@@ -255,7 +256,7 @@ public class TopoDS_Builder
     /// </summary>
     /// <exception cref="TopoDS_FrozenShape">aShape isn't free.</exception>
     /// <exception cref="Standard_ImmutableObject">aShape is frozen.</exception>
-    internal void Remove(in TopoDS_Shape aShape, in TopoDS_Shape aComponent)
+    public void Remove(in TopoDS_Shape aShape, in TopoDS_Shape aComponent)
     {
         // check if aShape  is not Frozen
         TopoDS_Raise.TopoDS_FrozenShape_Raise_if(!aShape.Free(), "TopoDS_Builder::Remove");

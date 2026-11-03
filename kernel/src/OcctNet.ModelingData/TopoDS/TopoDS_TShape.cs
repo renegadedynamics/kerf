@@ -164,9 +164,11 @@ public abstract class TopoDS_TShape : Standard_Transient
     /// <summary>
     /// Freezes this TShape and every TShape reachable from it, with their representations, in post-order: the
     /// children first, then the representations, then the TShape itself. Stops at frozen TShapes, so a frozen
-    /// TShape's whole sub-graph is always frozen, and the cost is proportional to the TShapes not yet frozen.
+    /// TShape's whole sub-graph is always frozen, and the cost is proportional to the TShapes not yet frozen. Public for
+    /// the modelling layer, which freezes what it builds with <see cref="TopoDS_Builder"/> (Kerf unit 10B; engine,
+    /// internal, in unit 10L).
     /// </summary>
-    internal void FreezeGraph()
+    public void FreezeGraph()
     {
         if (IsFrozen())
         {
