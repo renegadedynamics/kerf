@@ -1801,3 +1801,15 @@ Phase 10 (part): no copy at entry in construction (unit 10H3).
   was copied whole; Bento's benchmark is unchanged.
 - Seven oracle replays whose wires MakeWire builds compare at plan 3.2's second level (`Tape.AcceptOtherArguments`): the
   wires differ from the recordings' only in the Free flag of the caller's edges they now keep.
+
+Phase 10 (part): heap and collections, the rest (unit 10J2).
+- `NCollection_DataMap` is gone: the engine uses `Dictionary<TKey, TValue>`, with `DictionaryExtensions` (in
+  `Kerf.Engine.Collections`) for what the wrapper added: `GetValue` and `GetValueRef` fail with OCCT's
+  `NoSuchObjectException` for a missing key, and `SetValueRef`/`GetOrAddValueRef` return the stored value by reference.
+- `NCollection_DynamicArray` and `NCollection_Vector` are gone: `List<T>`, with `ListExtensions.SetAt` for OCCT's
+  growing `SetValue`.
+- `NCollection_IndexedMap` and `NCollection_IndexedDataMap` are gone: `IndexedSet<T>` and `IndexedMap<TKey, TValue>`
+  (in `Kerf.Engine.Collections`), numbered from 0; removing an item moves the last one into its place, as in OCCT.
+- KERF0002 checks the two indexed collections.
+- `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
+  (docs/collections-plan.md). Results are unchanged.

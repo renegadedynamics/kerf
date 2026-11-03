@@ -1,6 +1,6 @@
-# Collections plan: what 10J did and what is left
+# Collections plan: what 10J and 10J2 did and what is left
 
-*Unit 10J, 3 November 2026. Phase10-plan.md 2.6 replaces OCCT's NCollection classes with .NET's collections. The whole of
+*Unit 10J, 3 November 2026; updated by unit 10J2 the same day (its section below). Phase10-plan.md 2.6 replaces OCCT's NCollection classes with .NET's collections. The whole of
 it is far more than one unit (about 25,000 references, counted below), so 10J did the measured hot spots, the returned
 collections, the constant tables and the analyser, and this file is the plan for the rest.*
 
@@ -44,17 +44,41 @@ tests and benchmarks, and the modelling layer:
 - **`NCollection_Map` is gone:** every use is a `HashSet<T>` (decision 1406), by a Roslyn rewrite from the compiler's
   symbols (`Extent()`/`Size()` to `Count`, `IsEmpty()` to `Count == 0`, copies keeping the comparer).
 
+## What 10J2 did
+
+Three more types are gone, each in a commit of its own, by the same Roslyn rewrite extended (its source is in the unit's
+scratch, as 10J's was; decision 16301). Every suite keeps its counts and results: nothing moved off plan 3.2's first
+level.
+
+- **`NCollection_DataMap` → `Dictionary<TKey, TValue>`** (decision 16302). A lookup of a missing key must still fail
+  with OCCT's `NoSuchObjectException`, not .NET's `KeyNotFoundException`: algorithms catch OCCT's failures, and the
+  native recordings name the exception (BRepMAT2d's, two unit tests). So reads go through
+  `DictionaryExtensions.GetValue` and writes by reference through `GetValueRef`, `SetValueRef` (OCCT's `Bound`) and
+  `GetOrAddValueRef` (`TryBound`); `Bind` is the indexer's set, `TryBind` is `TryAdd`, `IsBound` is `ContainsKey`.
+- **`NCollection_DynamicArray`/`Vector` → `List<T>`** (decision 16303). `Append` is `Add` (a used result becomes the
+  value and then `Add`, or `CollectionsMarshal.AsSpan(list)[^1]` by reference); writes into struct elements go
+  through `CollectionsMarshal.AsSpan`; OCCT's growing `SetValue` is `ListExtensions.SetAt`. 9E's lazy first
+  capacity can't be had from `List<T>`: the default 256 (and 0) are dropped, so a list grows from 4; the explicit
+  small block sizes and the meshers' reservations become eager capacities.
+- **The indexed maps → `IndexedSet<T>` and `IndexedMap<TKey, TValue>`** (in `Kerf.Engine.Collections`, 0-based;
+  decision 16304), as designed below, with OCCT's removal checked: `RemoveFromIndex` swaps the last key in and
+  removes the last (`NCollection_IndexedMap.hxx`), which is `RemoveAtSwap`. The rewrite keeps the code's own
+  numbering: an index going in drops by one at the call (`m[i - 1]`, `KeyAt`, `ValueAt`), one coming out gains one
+  (`IndexOf(k) + 1`, `Add(k) + 1`), and `FindIndex(k)` compared with 0 is `Contains`. The 267 loops from 1 to
+  `Extent()` whose variable only indexes the map now run from 0. The Booleans' data structure, which numbers shapes
+  from 1, is unchanged.
+
 ## What is left, in order
 
 Each step is one type, one commit, measured with 9E's benchmarks, every suite keeping its counts. The rewrite tool of
 10J (a Roslyn pass like kerf-rename, keyed by the wrapper's members) does the mechanical part; what it reports by hand.
 
-1. **`NCollection_DataMap` → `Dictionary<,>`.** Its members map one to one except the `ref` returns (`ChangeFind`,
+1. *Done by 10J2.* **`NCollection_DataMap` → `Dictionary<,>`.** Its members map one to one except the `ref` returns (`ChangeFind`,
    `Bound`, `TryBound`, the indexer), which become `CollectionsMarshal.GetValueRefOrNullRef`/`GetValueRefOrAddDefault`
    helpers, and `Bind`'s returned bool. Iteration order is the same (both are a `Dictionary`).
-2. **`NCollection_DynamicArray`/`Vector` → `List<T>`**, keeping the first capacity (9E's fix); the `ref` returns
+2. *Done by 10J2.* **`NCollection_DynamicArray`/`Vector` → `List<T>`**, keeping the first capacity (9E's fix); the `ref` returns
    become `CollectionsMarshal.AsSpan`. Order unchanged.
-3. **Indexed maps.** Algorithms depend on their order and on 1-based indices (the Booleans' data structure numbers
+3. *Done by 10J2 (the ±1 at the calls; the remaining `i - 1` and `+ 1` go as each package is reworked).* **Indexed maps.** Algorithms depend on their order and on 1-based indices (the Booleans' data structure numbers
    every shape by its index). They need one small ordered type, not `Dictionary`:
    - `IndexedSet<T>`: a `List<T>` of keys and a `Dictionary<T, int>` of positions, 0-based; `Add` returns the
      position, `IndexOf` returns −1 when absent, `this[int]`, `Count`, `RemoveAtSwap` (OCCT's `RemoveFromIndex`: the
@@ -86,6 +110,13 @@ Also left: the static empty lists handed out by `BOPDS_DS`, `BRepFill`, `ChFi3d`
 `TopoDS_Iterator` (shared mutable instances: they become `[]` returned as read-only, with their callers); the Bézier
 classes' shared knot and multiplicity arrays (become `ReadOnlySpan<T>` with the BSplCLib signatures, step 6); and the
 surfaces' public constructors, which still take `NCollection_Array2` (10L's builders take `Grid<T>`).
+
+**Left after 10J2**, in this order (counts at 10J2's end: sources, files, tests, modelling layer):
+`NCollection_List` (5,558, 356, 420, 12), `NCollection_Sequence`/`HSequence` (1,814 and 725), the arrays
+(`Array1` 7,473, `HArray1` 3,434, `Array2` 960, `HArray2` 418), `math_Vector` (2,512) and its scratch, the shared
+empty lists, the Bézier classes' shared knot arrays and the surfaces' `NCollection_Array2` constructors. Each is
+a unit's worth: the list's `Iterator` (More/Next/Value) and the sequences' 1-based indices need the same care as the
+indexed maps had, and the arrays' bounds are part of the algorithms. The rewrite tool (decision 16301) is the start.
 
 Question 55, the transient base: `NCollection_Array1`, `Array2` and `Sequence` derive from `Transient` only for OCCT's
 handles; it goes with steps 5 and 6.

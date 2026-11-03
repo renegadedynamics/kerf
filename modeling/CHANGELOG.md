@@ -104,3 +104,5 @@ The first packages, for Bento's 3D-models extension.
 - Kerf's unit 10H3: the kernel's extrusions, revolutions, sweeps and lofts no longer copy their inputs. Results are
   as before: extruding a face taken from another part gives a solid that shares the face, its edges and vertices with
   the part, which stays unchanged (new tests: `ConstructionInputsUnchangedTests`).
+- Kerf's unit 10J2: the kernel's `NCollection_DataMap`, `NCollection_DynamicArray` and indexed maps are `Dictionary`,
+  `List`, `IndexedSet` and `IndexedMap`; the layer's uses (`Vertex`, `OneD`, among others) follow. No behaviour changes.

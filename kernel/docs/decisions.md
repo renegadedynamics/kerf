@@ -14570,3 +14570,66 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        geometry's (10G), BRepLib's writes skipped when they change nothing (needed outside an overlay), the sweep's
        `Closed` flag, BRepFill_Filling's bindings of MakeWire's history, the pipe shell's, and 1410's point section
        and `SameParameter`.
+
+## Phase 10: unit 10J2, heap and collections, the rest
+
+16301. **The rewrite tool is kept** (`tools/collections-rewrite`, not in the solution): a Roslyn pass over the solution and
+       the two benchmark projects, from the compiler's symbols, one mode per NCollection class (`datamap`, `dynarray`,
+       `indexed`). It rewrites the types (qualified names in using aliases too), the members, the copies, and the
+       contexts where a value is written through a reference (a `ref` local or argument, an assignment, a mutating call
+       on a struct value), adds the usings it needs, and lists what it leaves by hand. 10J's pass (scratch) was its
+       start. Each mode was one commit; the hand work was under 30 sites a type.
+16302. **`NCollection_DataMap` is `Dictionary<TKey, TValue>`**, iteration order unchanged (both are .NET's hash table).
+       A missing key must still fail with OCCT's `NoSuchObjectException`: the algorithms catch OCCT's failures
+       (`FailureException`), and BRepMAT2d's native recordings and two unit tests name the exception; a first attempt
+       with the indexer's `KeyNotFoundException` failed them. So reads are `DictionaryExtensions.GetValue` (OCCT's
+       `Find`, `ChangeFind` and indexer read), and writes by reference `GetValueRef` (`ChangeFind` written through, the
+       indexer assigned), `SetValueRef` (`Bound`) and `GetOrAddValueRef` (`TryBound`). `Bind` is the indexer's set (its
+       returned bool, used at two places, became `TryAdd` with the replacement OCCT does), `TryBind` is `TryAdd`,
+       `IsBound` is `ContainsKey`, `UnBind` is `Remove`, `Find(k, out v)` is `TryGetValue` (its out variables
+       nullable, 132 places). 258 files.
+16303. **`NCollection_DynamicArray` and `NCollection_Vector` are `List<T>`.** Reads index the list; writes into struct
+       elements and `ref` results go through `CollectionsMarshal.AsSpan` (the wrapper's own mechanism); a used
+       `Append` result becomes the value, then `Add`; OCCT's `SetValue`, which grows the array with default-constructed
+       elements, is `ListExtensions.SetAt`. 9E's fix took the block size as the first capacity lazily, at the first
+       element; `List<T>` can't defer it, so the default 256 and 0 are dropped (a list grows from 4) and the 27
+       explicit sizes (BOPDS's 3s, the meshers' reservations, the voxel grid's estimate) became eager capacities. An
+       index out of range throws `ArgumentOutOfRangeException` where the wrapper's span threw
+       `IndexOutOfRangeException`; neither is OCCT's, and nothing catches either. 133 files.
+16304. **The indexed maps are `IndexedSet<T>` and `IndexedMap<TKey, TValue>`** (`Kerf.Engine.Collections`, 0-based),
+       10J's design: a list of keys and a dictionary of positions; `Add` returns the index, `IndexOf` −1 when absent,
+       `RemoveAtSwap`, `Substitute`, `Swap`; the map adds `KeyAt`, `ValueAt` (by reference), `GetValue`/`GetValueRef`
+       (failing with `NoSuchObjectException`), `TryGetValue`, `Keys` and enumeration in index order. OCCT's removal was
+       checked against `NCollection_IndexedMap.hxx`: `RemoveFromIndex` swaps the last key into the place and removes
+       the last, so `RemoveAtSwap` keeps OCCT's order after a removal (.NET's `OrderedDictionary` shifts). KERF0002
+       knows the two types (and no longer OCCT's four maps, all gone).
+16305. **The code keeps its own numbering.** Indices the algorithms store (the Booleans' data structure numbers its
+       shapes from 1, and so do the STEP and IGES models, BRepTools' shape sets and the healing tools) move by one
+       at the call: an index going in is `i - 1` (simplified for literals and `x + 1`), one coming out is
+       `IndexOf(k) + 1` or `Add(k) + 1`; `FindIndex(k)` compared with 0 is `Contains`. The 267 loops from 1 to
+       `Extent()` whose variable only indexes the map now run from 0. Results are identical by construction, and the
+       suites say so; the remaining `- 1`s go as each package is reworked. 346 files, about 5,000 edits.
+16306. **What is left** (collections-plan.md): `NCollection_List`, `Sequence`/`HSequence`, the four arrays,
+       `math_Vector`'s scratch, the shared empty lists, the Bézier classes' knot arrays, the surfaces' `NCollection_Array2`
+       constructors, and question 55's transient base, which the arrays and sequences still use. Each is a unit's worth
+       (about 21,000 references in all); the brief's fallback applies, as in 10J: whole types, none half-converted.
+16307. **Measured** (Release builds of each commit, two rounds alternating base, DataMap, DynamicArray and indexed maps,
+       on a machine shared with other units' suites, so timings carry 30% noise and more):
+       - **Allocation falls, results don't move.** The Booleans (`-- booleans simple`, 407 cases) allocate **6.91 MB a
+         Boolean against 8.25** (−16%), all of it from the dynamic arrays: the lazily taken 256-element first block was
+         larger than most of BOPDS's and the mesher's arrays ever get; the DataMap step gives 8.24, the indexed maps
+         nothing measurable. Bento's parallel round allocates **11.08 GB against 11.57** (−4%), gen-0 collections
+         2,420–2,447 against 2,556–2,560; per example, from 0.3 to 4.5 MB less (nesting locations 30.6 against 35.1,
+         the bottle 95 against 98, extrude until 139.5 against 143). Every example gives the same volume, faces and
+         triangles in all eight runs, and the parallel runs match the serial ones.
+       - **Time, inside the noise:** the Booleans serial 3,037 and 4,655 ms (base, the second under load), 2,929 and
+         2,612 (DataMap), 3,105 and 2,426 (DynamicArray), 2,578 and 2,544 (indexed maps); parallel 2,304 and 8,154,
+         2,357 and 2,932, 2,994 and 1,824, 1,891 and 1,873. Bento's median recalculation 1,570 and 1,204 ms (base),
+         1,376 and 1,848, 1,326 and 1,317, 1,343 and 1,198; parallel rounds 9.1 and 7.4 s (base), 6.8 and 7.8 s
+         (indexed maps). The modelling layer's suite: 22 s before, 19 to 32 s after.
+       - **Tests**, the same counts as `main` at f3cefbf3 before each commit and after the last: Foundation 2,297,
+         ModelingData 3,145, ModelingAlgorithms 4,780 (9 skipped), DataExchange 276 (1 skipped), Oracle 383, Draw-lite
+         687 (the base run had one time-out under load, bug24157_5; after the last commit all pass), the modelling
+         layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (16302),
+         and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
+         printer; the tool now parenthesises in a string).
