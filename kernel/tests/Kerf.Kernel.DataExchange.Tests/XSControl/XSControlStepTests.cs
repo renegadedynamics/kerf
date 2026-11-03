@@ -90,20 +90,28 @@ public class XSControlStepTests
     }
 
     [Fact]
-    public void ReadingThroughTheSessionNeedsAModel()
+    public void ReadingThroughTheSessionMakesAModel()
     {
-        // OCCT's StepSelect_WorkLibrary reads into the model it is given: XSControl_Reader::ReadFile (through
-        // IFSelect_WorkSession::ReadFile) gives none, and the read fails on a null model, caught as a signal (RetFail).
-        // STEPControl_Reader makes the model itself (unit 8F, as TestStepController.ReadFile here).
+        // The session gives the library no model (IFSelect_WorkSession::ReadFile): OCCT 8's StepSelect_WorkLibrary
+        // read into it and failed (RetFail), so XSControl_Reader::ReadFile failed on STEP where STEPControl_Reader,
+        // which makes the model itself, read. The library makes one for its protocol (occt-issues.md,
+        // IFSelect_WorkSession::ReadFile with StepSelect_WorkLibrary; Kerf decision 16822): the generic reader reads
+        // the file, with as many entities as STEPControl_Reader.
         string? aPath = DataStep("screw.step");
         if (aPath is null)
         {
             return;
         }
-        _ = TestStepController.Instance;
-        var aReader = new FrameworkReader("TestSTEP");
-        Assert.Equal(ReturnStatus.RetFail, aReader.ReadFile(aPath));
-        Assert.Equal(0, aReader.WS()!.StartingEntityCount);
+        var aWS = new ExchangeWorkSession();
+        Assert.True(global::Kerf.Engine.Exchange.Step.StepController.SelectFor(aWS));
+        var aReader = new FrameworkReader(aWS, false);
+        Assert.IsType<global::Kerf.Engine.Exchange.Step.Selections.StepWorkLibrary>(aWS.WorkLibrary());
+        Assert.NotNull(aWS.Protocol());
+        Assert.Equal(RetDone, aReader.ReadFile(aPath));
+        var aStepReader = new global::Kerf.Engine.Exchange.Step.StepReader();
+        Assert.Equal(RetDone, aStepReader.ReadFile(aPath));
+        Assert.Equal(aStepReader.WS()!.StartingEntityCount, aReader.WS()!.StartingEntityCount);
+        Assert.True(aReader.WS()!.StartingEntityCount > 0);
     }
 
     [Fact]
