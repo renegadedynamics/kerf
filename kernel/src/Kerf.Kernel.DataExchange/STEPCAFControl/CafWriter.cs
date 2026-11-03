@@ -55,7 +55,7 @@ public class CafWriter
     private sealed class Style
     {
         public ColorWithAlpha? ColorSurf;
-        public Color? ColorCurv;
+        public LinearColor? ColorCurv;
         public bool IsVisible = true;
 
         public Style Copy() => (Style)MemberwiseClone();
@@ -1105,7 +1105,7 @@ public class CafWriter
             renderTransp = 1.0 - surfCol.Alpha();
             surfColor = Styles.EncodeColor(surfCol.GetRGB(), dpdCs, colRGBs);
         }
-        if (style.ColorCurv is Color curvCol)
+        if (style.ColorCurv is LinearColor curvCol)
         {
             curvColor = Styles.EncodeColor(curvCol, dpdCs, colRGBs);
         }
@@ -1149,7 +1149,7 @@ public class CafWriter
                     else
                     {
                         // default white color
-                        surfColor = Styles.EncodeColor(new Color(NocWhite), dpdCs, colRGBs);
+                        surfColor = Styles.EncodeColor(new LinearColor(NocWhite), dpdCs, colRGBs);
                         psa = styles.MakeColorPSA(item, surfColor, curvColor, new RenderingProperties(),
                                                       isComponent);
                         if (isComponent)

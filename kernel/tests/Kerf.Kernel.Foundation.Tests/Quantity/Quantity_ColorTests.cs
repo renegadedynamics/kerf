@@ -26,19 +26,19 @@ public class Quantity_ColorTest
     public void BasicConstruction()
     {
         // Default constructor
-        Color aColor1 = new();
+        LinearColor aColor1 = new();
         Assert.True(IsNear(1.0, aColor1.Red()));   // YELLOW = RGB(1,1,0)
         Assert.True(IsNear(1.0, aColor1.Green())); // YELLOW = RGB(1,1,0)
         Assert.True(IsNear(0.0, aColor1.Blue()));  // YELLOW = RGB(1,1,0)
 
         // RGB constructor
-        Color aColor2 = new(0.5, 0.6, 0.7, TocRgb);
+        LinearColor aColor2 = new(0.5, 0.6, 0.7, TocRgb);
         Assert.True(IsNear(0.5, aColor2.Red()));
         Assert.True(IsNear(0.6, aColor2.Green()));
         Assert.True(IsNear(0.7, aColor2.Blue()));
 
         // Named color constructor
-        Color aColor3 = new(NocRed);
+        LinearColor aColor3 = new(NocRed);
         Assert.True(IsNear(1.0, aColor3.Red()));
         Assert.True(IsNear(0.0, aColor3.Green()));
         Assert.True(IsNear(0.0, aColor3.Blue()));
@@ -47,7 +47,7 @@ public class Quantity_ColorTest
     [Fact]
     public void ConstexprGetters()
     {
-        Color aColor = new(0.3, 0.5, 0.7, TocRgb);
+        LinearColor aColor = new(0.3, 0.5, 0.7, TocRgb);
         Assert.True(IsNear(0.3, aColor.Red()));
         Assert.True(IsNear(0.5, aColor.Green()));
         Assert.True(IsNear(0.7, aColor.Blue()));
@@ -56,9 +56,9 @@ public class Quantity_ColorTest
     [Fact]
     public void EqualityComparison()
     {
-        Color aColor1 = new(0.5, 0.6, 0.7, TocRgb);
-        Color aColor2 = new(0.5, 0.6, 0.7, TocRgb);
-        Color aColor3 = new(0.5, 0.6, 0.8, TocRgb);
+        LinearColor aColor1 = new(0.5, 0.6, 0.7, TocRgb);
+        LinearColor aColor2 = new(0.5, 0.6, 0.7, TocRgb);
+        LinearColor aColor3 = new(0.5, 0.6, 0.8, TocRgb);
 
         // OCCT's operator== and != are IsEqual and IsDifferent; the port's == is exact (and agrees here)
         Assert.True(aColor1.IsEqual(aColor2));
@@ -75,8 +75,8 @@ public class Quantity_ColorTest
     [Fact]
     public void DistanceCalculation()
     {
-        Color aColor1 = new(0.0, 0.0, 0.0, TocRgb);
-        Color aColor2 = new(0.3, 0.4, 0.0, TocRgb);
+        LinearColor aColor1 = new(0.0, 0.0, 0.0, TocRgb);
+        LinearColor aColor2 = new(0.3, 0.4, 0.0, TocRgb);
 
         // Distance should be sqrt(0.3^2 + 0.4^2) = 0.5
         Assert.True(IsNear(0.5, aColor1.Distance(aColor2)));
@@ -87,16 +87,16 @@ public class Quantity_ColorTest
     public void RGB_to_HLS_Conversion()
     {
         // Pure red in sRGB
-        Color aRed = new(NocRed);
-        NCollection_Vec3<float> aHLS = Color.Convert_sRGB_To_HLS(aRed.Rgb());
+        LinearColor aRed = new(NocRed);
+        NCollection_Vec3<float> aHLS = LinearColor.Convert_sRGB_To_HLS(aRed.Rgb());
 
         Assert.True(IsNear(0.0, aHLS[0], 1.0)); // Hue for red should be ~0
         Assert.True(IsNear(1.0, aHLS[1]));      // Lightness should be 1 (max value)
         Assert.True(IsNear(1.0, aHLS[2]));      // Saturation should be 1 (fully saturated)
 
         // Gray (no saturation)
-        Color aGray = new(0.5, 0.5, 0.5, TocRgb);
-        NCollection_Vec3<float> aHLS_Gray = Color.Convert_sRGB_To_HLS(aGray.Rgb());
+        LinearColor aGray = new(0.5, 0.5, 0.5, TocRgb);
+        NCollection_Vec3<float> aHLS_Gray = LinearColor.Convert_sRGB_To_HLS(aGray.Rgb());
 
         Assert.True(IsNear(0.5, aHLS_Gray[1])); // Lightness
         Assert.True(IsNear(0.0, aHLS_Gray[2])); // Saturation should be 0 for gray
@@ -106,16 +106,16 @@ public class Quantity_ColorTest
     public void LinearRGB_to_Lab_Conversion()
     {
         // White should convert to L=100, a=0, b=0 in Lab
-        Color aWhite = new(1.0, 1.0, 1.0, TocRgb);
-        NCollection_Vec3<float> aLab = Color.Convert_LinearRGB_To_Lab(aWhite.Rgb());
+        LinearColor aWhite = new(1.0, 1.0, 1.0, TocRgb);
+        NCollection_Vec3<float> aLab = LinearColor.Convert_LinearRGB_To_Lab(aWhite.Rgb());
 
         Assert.True(IsNear(100.0, aLab[0], 1.0));
         Assert.True(IsNear(0.0, aLab[1], 5.0));
         Assert.True(IsNear(0.0, aLab[2], 5.0));
 
         // Black should convert to L=0
-        Color aBlack = new(0.0, 0.0, 0.0, TocRgb);
-        NCollection_Vec3<float> aLabBlack = Color.Convert_LinearRGB_To_Lab(aBlack.Rgb());
+        LinearColor aBlack = new(0.0, 0.0, 0.0, TocRgb);
+        NCollection_Vec3<float> aLabBlack = LinearColor.Convert_LinearRGB_To_Lab(aBlack.Rgb());
 
         Assert.True(IsNear(0.0, aLabBlack[0], 1.0));
     }
@@ -124,7 +124,7 @@ public class Quantity_ColorTest
     public void Lab_to_Lch_Conversion()
     {
         NCollection_Vec3<float> aLab = new(50.0f, 25.0f, 25.0f);
-        NCollection_Vec3<float> aLch = Color.Convert_Lab_To_Lch(aLab);
+        NCollection_Vec3<float> aLch = LinearColor.Convert_Lab_To_Lch(aLab);
 
         Assert.True(IsNear(50.0, aLch[0]));       // L should be preserved
         Assert.True(IsNear(35.36, aLch[1], 0.1)); // C = sqrt(25^2 + 25^2)
@@ -135,8 +135,8 @@ public class Quantity_ColorTest
     public void Lch_to_Lab_RoundTrip()
     {
         NCollection_Vec3<float> aLab1 = new(50.0f, 25.0f, 25.0f);
-        NCollection_Vec3<float> aLch = Color.Convert_Lab_To_Lch(aLab1);
-        NCollection_Vec3<float> aLab2 = Color.Convert_Lch_To_Lab(aLch);
+        NCollection_Vec3<float> aLch = LinearColor.Convert_Lab_To_Lch(aLab1);
+        NCollection_Vec3<float> aLab2 = LinearColor.Convert_Lch_To_Lab(aLch);
 
         Assert.True(IsNear(aLab1[0], aLab2[0], 0.01));
         Assert.True(IsNear(aLab1[1], aLab2[1], 0.01));
@@ -146,9 +146,9 @@ public class Quantity_ColorTest
     [Fact]
     public void Lab_to_RGB_RoundTrip()
     {
-        Color aOriginal = new(0.5, 0.6, 0.7, TocRgb);
-        NCollection_Vec3<float> aLab = Color.Convert_LinearRGB_To_Lab(aOriginal.Rgb());
-        NCollection_Vec3<float> aRGB = Color.Convert_Lab_To_LinearRGB(aLab);
+        LinearColor aOriginal = new(0.5, 0.6, 0.7, TocRgb);
+        NCollection_Vec3<float> aLab = LinearColor.Convert_LinearRGB_To_Lab(aOriginal.Rgb());
+        NCollection_Vec3<float> aRGB = LinearColor.Convert_Lab_To_LinearRGB(aLab);
 
         Assert.True(IsNear(aOriginal.Red(), aRGB[0], 0.01));
         Assert.True(IsNear(aOriginal.Green(), aRGB[1], 0.01));
@@ -159,29 +159,29 @@ public class Quantity_ColorTest
     public void DeltaE2000_Calculation()
     {
         // Same color should have DeltaE = 0
-        Color aColor1 = new(0.5, 0.6, 0.7, TocRgb);
-        Color aColor2 = new(0.5, 0.6, 0.7, TocRgb);
+        LinearColor aColor1 = new(0.5, 0.6, 0.7, TocRgb);
+        LinearColor aColor2 = new(0.5, 0.6, 0.7, TocRgb);
         Assert.True(IsNear(0.0, aColor1.DeltaE2000(aColor2), 0.01));
 
         // Different colors should have non-zero DeltaE
-        Color aColor3 = new(0.3, 0.4, 0.5, TocRgb);
+        LinearColor aColor3 = new(0.3, 0.4, 0.5, TocRgb);
         Assert.True(aColor1.DeltaE2000(aColor3) > 0.0);
     }
 
     [Fact]
     public void NamedColors()
     {
-        Color aRed = new(NocRed);
+        LinearColor aRed = new(NocRed);
         Assert.True(IsNear(1.0, aRed.Red()));
         Assert.True(IsNear(0.0, aRed.Green()));
         Assert.True(IsNear(0.0, aRed.Blue()));
 
-        Color aGreen = new(NocGreen);
+        LinearColor aGreen = new(NocGreen);
         Assert.True(IsNear(0.0, aGreen.Red()));
         Assert.True(aGreen.Green() > 0.5); // Green should be significant
         Assert.True(IsNear(0.0, aGreen.Blue()));
 
-        Color aBlue = new(NocBlue);
+        LinearColor aBlue = new(NocBlue);
         Assert.True(IsNear(0.0, aBlue.Red()));
         Assert.True(IsNear(0.0, aBlue.Green()));
         Assert.True(IsNear(1.0, aBlue.Blue()));
@@ -190,7 +190,7 @@ public class Quantity_ColorTest
     [Fact]
     public void SetValues()
     {
-        Color aColor = new();
+        LinearColor aColor = new();
 
         aColor.SetValues(0.2, 0.4, 0.6, TocRgb);
         Assert.True(IsNear(0.2, aColor.Red()));
@@ -203,14 +203,14 @@ public class Quantity_ColorTest
         Assert.True(IsNear(0.0, aColor.Blue()));
 
         // the public twins
-        Assert.Equal(aColor, new Color(NocRed).WithValues(NocYellow));
-        Assert.Equal(new Color(0.2, 0.4, 0.6, TocRgb), aColor.WithValues(0.2, 0.4, 0.6, TocRgb));
+        Assert.Equal(aColor, new LinearColor(NocRed).WithValues(NocYellow));
+        Assert.Equal(new LinearColor(0.2, 0.4, 0.6, TocRgb), aColor.WithValues(0.2, 0.4, 0.6, TocRgb));
     }
 
     [Fact]
     public void HLS_Extraction()
     {
-        Color aRed = new(NocRed);
+        LinearColor aRed = new(NocRed);
 
         double aHue = aRed.Hue();
         double aLight = aRed.Light();
@@ -224,38 +224,38 @@ public class Quantity_ColorTest
     [Fact]
     public void EpsilonThreadSafety()
     {
-        double aOriginalEpsilon = Color.Epsilon();
+        double aOriginalEpsilon = LinearColor.Epsilon();
 
-        Color.SetEpsilon(0.0002);
-        Assert.True(IsNear(0.0002, Color.Epsilon()));
+        LinearColor.SetEpsilon(0.0002);
+        Assert.True(IsNear(0.0002, LinearColor.Epsilon()));
 
-        Color.SetEpsilon(aOriginalEpsilon);
-        Assert.True(IsNear(aOriginalEpsilon, Color.Epsilon()));
+        LinearColor.SetEpsilon(aOriginalEpsilon);
+        Assert.True(IsNear(aOriginalEpsilon, LinearColor.Epsilon()));
     }
 
     [Fact]
     public void ColorNameString()
     {
-        Assert.Equal("RED", Color.StringName(NocRed));
-        Assert.Equal("BLUE", Color.StringName(NocBlue));
+        Assert.Equal("RED", LinearColor.StringName(NocRed));
+        Assert.Equal("BLUE", LinearColor.StringName(NocBlue));
     }
 
     [Fact]
     public void EdgeCases()
     {
-        Color aBlack = new(0.0, 0.0, 0.0, TocRgb);
+        LinearColor aBlack = new(0.0, 0.0, 0.0, TocRgb);
         Assert.True(IsNear(0.0, aBlack.Red()));
         Assert.True(IsNear(0.0, aBlack.Green()));
         Assert.True(IsNear(0.0, aBlack.Blue()));
 
-        Color aWhite = new(1.0, 1.0, 1.0, TocRgb);
+        LinearColor aWhite = new(1.0, 1.0, 1.0, TocRgb);
         Assert.True(IsNear(1.0, aWhite.Red()));
         Assert.True(IsNear(1.0, aWhite.Green()));
         Assert.True(IsNear(1.0, aWhite.Blue()));
 
         // Test equality with epsilon tolerance
-        Color aColor1 = new(0.5, 0.5, 0.5, TocRgb);
-        Color aColor2 = new(0.50001, 0.50001, 0.50001, TocRgb);
+        LinearColor aColor1 = new(0.5, 0.5, 0.5, TocRgb);
+        LinearColor aColor2 = new(0.50001, 0.50001, 0.50001, TocRgb);
         Assert.True(aColor1.IsEqual(aColor2)); // Should be equal within epsilon
         Assert.False(aColor1 == aColor2);      // the port's == is exact
     }
@@ -265,50 +265,50 @@ public class Quantity_ColorTest
     [Fact]
     public void Out_of_range_values_throw()
     {
-        Assert.Throws<OutOfRangeException>(() => new Color(1.1, 0, 0, TocRgb));
-        Assert.Throws<OutOfRangeException>(() => new Color(-0.1, 0, 0, TOC_sRGB));
-        Assert.Throws<OutOfRangeException>(() => new Color(361, 0.5, 0.5, TocHls));
-        Assert.Throws<OutOfRangeException>(() => new Color(50, 101, 0, TOC_CIELab));
-        Assert.Throws<OutOfRangeException>(() => new Color(50, 136, 0, TOC_CIELch));
-        Assert.Throws<OutOfRangeException>(() => new Color((NameOfColor)600));
-        Assert.Equal("UNDEFINED", Color.StringName((NameOfColor)(-1)));
+        Assert.Throws<OutOfRangeException>(() => new LinearColor(1.1, 0, 0, TocRgb));
+        Assert.Throws<OutOfRangeException>(() => new LinearColor(-0.1, 0, 0, TOC_sRGB));
+        Assert.Throws<OutOfRangeException>(() => new LinearColor(361, 0.5, 0.5, TocHls));
+        Assert.Throws<OutOfRangeException>(() => new LinearColor(50, 101, 0, TOC_CIELab));
+        Assert.Throws<OutOfRangeException>(() => new LinearColor(50, 136, 0, TOC_CIELch));
+        Assert.Throws<OutOfRangeException>(() => new LinearColor((NameOfColor)600));
+        Assert.Equal("UNDEFINED", LinearColor.StringName((NameOfColor)(-1)));
     }
 
     [Fact]
     public void Names_and_aliases()
     {
         NameOfColor aName = NocWhite;
-        Assert.True(Color.ColorFromName("quantity_noc_Red", ref aName));
+        Assert.True(LinearColor.ColorFromName("quantity_noc_Red", ref aName));
         Assert.Equal(NocRed, aName);
-        Assert.True(Color.ColorFromName("blue1", ref aName));
+        Assert.True(LinearColor.ColorFromName("blue1", ref aName));
         Assert.Equal(NocBlue, aName);
-        Assert.False(Color.ColorFromName("NOT A COLOUR", ref aName));
+        Assert.False(LinearColor.ColorFromName("NOT A COLOUR", ref aName));
         Assert.Equal(NocBlue, aName); // unchanged
         // OCCT's SubString raises on the bare prefix (natively inside noexcept: the process terminates)
-        Assert.Throws<OutOfRangeException>(() => Color.ColorFromName("Quantity_NOC_", ref aName));
+        Assert.Throws<OutOfRangeException>(() => LinearColor.ColorFromName("Quantity_NOC_", ref aName));
         for (int i = 0; i <= (int)NocWhite; i++)
         {
-            Color aColor = new((NameOfColor)i);
-            Assert.True(Color.ColorFromName(Color.StringName((NameOfColor)i), ref aName));
+            LinearColor aColor = new((NameOfColor)i);
+            Assert.True(LinearColor.ColorFromName(LinearColor.StringName((NameOfColor)i), ref aName));
             Assert.Equal(i, (int)aName);
             // a colour's own name is its nearest (its first entry where the table repeats a colour)
-            Assert.Equal(aColor.Rgb(), new Color(aColor.Name()).Rgb());
+            Assert.Equal(aColor.Rgb(), new LinearColor(aColor.Name()).Rgb());
         }
     }
 
     [Fact]
     public void Hex_round_trip()
     {
-        Color aColor = new();
-        Assert.True(Color.ColorFromHex("#123456", ref aColor));
-        Assert.Equal("#123456", Color.ColorToHex(aColor));
-        Assert.Equal("123456", Color.ColorToHex(aColor, false));
-        Assert.False(Color.ColorFromHex("#12345678", ref aColor));
-        Assert.Equal("#123456", Color.ColorToHex(aColor)); // unchanged
-        Color.Color2argb(new Color(NocRed), out int anArgb);
+        LinearColor aColor = new();
+        Assert.True(LinearColor.ColorFromHex("#123456", ref aColor));
+        Assert.Equal("#123456", LinearColor.ColorToHex(aColor));
+        Assert.Equal("123456", LinearColor.ColorToHex(aColor, false));
+        Assert.False(LinearColor.ColorFromHex("#12345678", ref aColor));
+        Assert.Equal("#123456", LinearColor.ColorToHex(aColor)); // unchanged
+        LinearColor.Color2argb(new LinearColor(NocRed), out int anArgb);
         Assert.Equal(0xFF0000, anArgb);
-        Color.Argb2color(0x00FF00, ref aColor);
-        Assert.Equal(new Color(NocGreen1), aColor);
+        LinearColor.Argb2color(0x00FF00, ref aColor);
+        Assert.Equal(new LinearColor(NocGreen1), aColor);
     }
 }
 
@@ -327,7 +327,7 @@ public class Quantity_ColorRGBATest
         Assert.True(IsNear(0.0f, aColor1.GetRGB().Blue()));  // YELLOW = RGB(1,1,0)
         Assert.True(IsNear(1.0f, aColor1.Alpha()));
 
-        ColorWithAlpha aColor2 = new(new Color(0.5, 0.6, 0.7, TocRgb), 0.8f);
+        ColorWithAlpha aColor2 = new(new LinearColor(0.5, 0.6, 0.7, TocRgb), 0.8f);
         Assert.True(IsNear(0.5f, aColor2.GetRGB().Red()));
         Assert.True(IsNear(0.6f, aColor2.GetRGB().Green()));
         Assert.True(IsNear(0.7f, aColor2.GetRGB().Blue()));
@@ -480,7 +480,7 @@ public class Quantity_ColorRGBATest
     {
         ColorWithAlpha aColor = new(0.2f, 0.4f, 0.6f, 0.8f);
 
-        Color aRGB = aColor.GetRGB();
+        LinearColor aRGB = aColor.GetRGB();
         Assert.True(IsNear(0.2f, aRGB.Red()));
         Assert.True(IsNear(0.4f, aRGB.Green()));
         Assert.True(IsNear(0.6f, aRGB.Blue()));

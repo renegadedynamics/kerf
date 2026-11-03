@@ -95,7 +95,7 @@ internal static class XDEDRAWColorsLayersCommands
     // the colour's name, with its alpha when not opaque
     private static void appendColor(DrawResult di, in global::Kerf.Engine.Foundation.ColorWithAlpha theColor)
     {
-        di.Append(global::Kerf.Engine.Foundation.Color.StringName(theColor.GetRGB().Name()));
+        di.Append(global::Kerf.Engine.Foundation.LinearColor.StringName(theColor.GetRGB().Name()));
         if ((1.0 - theColor.Alpha()) >= global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             di.Append(" (").Append((double)theColor.Alpha()).Append(")");

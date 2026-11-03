@@ -10,10 +10,10 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// limit the reading stops with an error and gives no tree. <see cref="None"/> accepts anything;
 /// <see cref="Default"/> is generous for real models.
 /// </summary>
-public sealed record ReadLimits
+public sealed record GltfReadLimits
 {
     /// <summary>No limits (but the JSON nesting, which System.Text.Json always bounds).</summary>
-    public static ReadLimits None { get; } = new()
+    public static GltfReadLimits None { get; } = new()
     {
         MaxBytes = long.MaxValue,
         MaxBufferBytes = long.MaxValue,
@@ -23,7 +23,7 @@ public sealed record ReadLimits
     };
 
     /// <summary>The defaults.</summary>
-    public static ReadLimits Default { get; } = new();
+    public static GltfReadLimits Default { get; } = new();
 
     /// <summary>The largest file (the JSON or the .glb), in bytes. 1 GiB by default.</summary>
     public long MaxBytes { get; init; } = 1L << 30;
@@ -57,5 +57,5 @@ public sealed record ReadOptions
     public bool YUpToZUp { get; init; } = true;
 
     /// <summary>The limits for hostile input.</summary>
-    public ReadLimits Limits { get; init; } = ReadLimits.Default;
+    public GltfReadLimits Limits { get; init; } = GltfReadLimits.Default;
 }

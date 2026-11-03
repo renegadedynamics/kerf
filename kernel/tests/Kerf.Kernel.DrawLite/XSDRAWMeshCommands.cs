@@ -81,7 +81,7 @@ internal static class XSDRAWMeshCommands
     /// <summary>A tree written by unit 8T's glTF writer to Draw-lite's files (a .glb, or a .gltf with its .bin beside it).</summary>
     internal static void WriteGltfTree(DrawInterpreter theDI, string theFilePath, Tree theTree, double theScaleFactorM, bool theIsZUp, bool theToMergeFaces)
     {
-        var aWriter = new GltfTreeWriter(new GltfWriteOptions { InputLengthUnit = theScaleFactorM, ZUpToYUp = theIsZUp, MergeFaces = theToMergeFaces });
+        var aWriter = new GltfTreeWriter(new GltfWriterOptions { InputLengthUnit = theScaleFactorM, ZUpToYUp = theIsZUp, MergeFaces = theToMergeFaces });
         if (theFilePath.EndsWith(".glb", StringComparison.OrdinalIgnoreCase))
         {
             var aGlb = new MemoryStream();

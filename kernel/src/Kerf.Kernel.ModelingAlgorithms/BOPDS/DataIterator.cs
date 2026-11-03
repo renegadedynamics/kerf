@@ -354,8 +354,8 @@ public class DataIterator
                 if (checkOBB)
                 {
                     // Check intersection of Oriented bounding boxes of the shapes
-                    OrientedBox obb1 = ctx!.OBB(si1.Shape(), fuzzyValue);
-                    OrientedBox obb2 = ctx.OBB(si2.Shape(), fuzzyValue);
+                    Obb obb1 = ctx!.OBB(si1.Shape(), fuzzyValue);
+                    Obb obb2 = ctx.OBB(si2.Shape(), fuzzyValue);
 
                     if (obb1.IsOut(obb2))
                     {

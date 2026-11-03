@@ -24,7 +24,7 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// <para>
 /// The scene has a node per root; a node per instance (its name the instance's or else its product's, its matrix the
 /// instance's location); an assembly's node has its components' nodes as children, a part's node a mesh. Each part
-/// is meshed once: its faces' triangulations (<see cref="GltfWriteOptions.MeshParameters"/> to mesh first) in a
+/// is meshed once: its faces' triangulations (<see cref="GltfWriterOptions.MeshParameters"/> to mesh first) in a
 /// primitive per sub-shape colour, the accessors shared by every instance, a mesh per part and instance colour.
 /// Materials are PBR, base colour the style's surface colour (linear RGB with alpha, as glTF wants), else its curve
 /// colour; parts without colour have no material (glTF's default).
@@ -40,10 +40,10 @@ public sealed class GltfTreeWriter
     private const int UNSIGNED_INT = 5125;
 
     /// <summary>A writer with the options (the defaults if null).</summary>
-    public GltfTreeWriter(GltfWriteOptions? options = null) => Options = options ?? GltfWriteOptions.Default;
+    public GltfTreeWriter(GltfWriterOptions? options = null) => Options = options ?? GltfWriterOptions.Default;
 
     /// <summary>The options.</summary>
-    public GltfWriteOptions Options { get; }
+    public GltfWriterOptions Options { get; }
 
     /// <summary>Writes the tree as binary glTF (<c>.glb</c>). False if cancelled or the stream fails.</summary>
     public bool WriteGlb(Tree tree, Stream stream, ProgressRange progress = default)
@@ -290,7 +290,7 @@ public sealed class GltfTreeWriter
                     for (int i = 0; i < Materials.Count; i++)
                     {
                         ColorWithAlpha color = Materials[i];
-                        Color rgb = color.GetRGB();
+                        LinearColor rgb = color.GetRGB();
                         w.WriteStartObject();
                         w.WriteString("name", "mat_" + i.ToString(System.Globalization.CultureInfo.InvariantCulture));
                         w.WriteStartObject("pbrMetallicRoughness");

@@ -196,7 +196,7 @@ public sealed class ObjTreeWriter
                 var aMtl = new StringBuilder("# OCCT.NET\n");
                 for (int i = 0; i < materials.Count; i++)
                 {
-                    Color rgb = materials[i].GetRGB();
+                    LinearColor rgb = materials[i].GetRGB();
                     rgb.Values(out double r, out double g, out double aB, ColorSpace.TOC_sRGB);
                     float alpha = materials[i].Alpha();
                     aMtl.Append("newmtl mat_").Append(i.ToString(CultureInfo.InvariantCulture)).Append('\n');

@@ -17,7 +17,7 @@ public class Bnd_OBB_Test
     [Fact]
     public void OCC33009_ReBuildWithPoints()
     {
-        OrientedBox aBndBox = new();
+        Obb aBndBox = new();
 
         NCollection_Array1<Point3D> aPoints = new(1, 5);
         aPoints[1] = new Point3D(1, 2, 3);
@@ -44,7 +44,7 @@ public class Bnd_OBB_Test
             aVertices[i + 1] = new Point3D((i & 1) != 0 ? 200 : 100, (i & 2) != 0 ? 200 : 100, (i & 4) != 0 ? 200 : 100);
         }
 
-        OrientedBox aVoidBox = new(), aOBB = new();
+        Obb aVoidBox = new(), aOBB = new();
         aOBB.ReBuild(aVertices);
         aVoidBox.Add(aOBB);
 
@@ -59,7 +59,7 @@ public class Bnd_OBB_Test
     {
         Point3D aP = new(100, 200, 300);
 
-        OrientedBox aVoidBox = new();
+        Obb aVoidBox = new();
         aVoidBox.Add(aP);
 
         Xyz aCenter = aVoidBox.Center();
@@ -71,7 +71,7 @@ public class Bnd_OBB_Test
     [Fact]
     public void Contains_Point()
     {
-        OrientedBox anOBB = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        Obb anOBB = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
         Assert.True(anOBB.Contains(new Point3D(0, 0, 0)));
         Assert.True(anOBB.Contains(new Point3D(4, 4, 4)));
         Assert.False(anOBB.Contains(new Point3D(10, 0, 0)));
@@ -80,9 +80,9 @@ public class Bnd_OBB_Test
     [Fact]
     public void Intersects_OBB()
     {
-        OrientedBox anOBB1 = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
-        OrientedBox anOBB2 = new(new Point3D(8, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
-        OrientedBox anOBB3 = new(new Point3D(20, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        Obb anOBB1 = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        Obb anOBB2 = new(new Point3D(8, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
+        Obb anOBB3 = new(new Point3D(20, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 5.0, 5.0, 5.0);
         Assert.True(anOBB1.Intersects(anOBB2));
         Assert.False(anOBB1.Intersects(anOBB3));
     }
@@ -90,7 +90,7 @@ public class Bnd_OBB_Test
     [Fact]
     public void GetHalfSizes_StructuredBindings()
     {
-        OrientedBox anOBB = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 3.0, 5.0, 7.0);
+        Obb anOBB = new(new Point3D(0, 0, 0), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 3.0, 5.0, 7.0);
         var (aHX, aHY, aHZ) = anOBB.GetHalfSizes();
         GTest.ExpectDoubleEq(3.0, aHX);
         GTest.ExpectDoubleEq(5.0, aHY);
@@ -104,10 +104,10 @@ public class Bnd_OBB_PortTest
     [Fact]
     public void DefaultIsVoid_AndValueSemantics()
     {
-        OrientedBox aBox = new();
+        Obb aBox = new();
         Assert.True(aBox.IsVoid);
-        Assert.True(OrientedBox.Void().IsVoid);
-        OrientedBox anEnlarged = new OrientedBox(new Point3D(1, 2, 3), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 1.0, 2.0, 3.0).Enlarged(-0.5);
+        Assert.True(Obb.Void().IsVoid);
+        Obb anEnlarged = new Obb(new Point3D(1, 2, 3), new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 1.0, 2.0, 3.0).Enlarged(-0.5);
         Assert.Equal(1.5, anEnlarged.XHSize());
         Assert.Equal(4.0 * (1.5 * 1.5 + 2.5 * 2.5 + 3.5 * 3.5), anEnlarged.SquareExtent());
         Assert.Equal(anEnlarged, anEnlarged.WithAABox(false));
@@ -118,13 +118,13 @@ public class Bnd_OBB_PortTest
     public void FromBndBox_AndCompletelyInside()
     {
         Box aBox = new(new Point3D(-1, -2, -3), new Point3D(1, 2, 3));
-        OrientedBox anOBB = new(aBox);
+        Obb anOBB = new(aBox);
         Assert.True(anOBB.IsAABox);
         Assert.Equal(new Xyz(0, 0, 0), anOBB.Center());
         Assert.Equal(3.0, anOBB.ZHSize());
         Assert.True(anOBB.Enlarged(1.0).IsCompletelyInside(anOBB));
         Assert.False(anOBB.IsCompletelyInside(anOBB.Enlarged(1.0)));
-        Assert.True(new OrientedBox(new Box()).IsVoid);
+        Assert.True(new Obb(new Box()).IsVoid);
     }
 
     [Fact]
@@ -144,7 +144,7 @@ public class Bnd_OBB_PortTest
                     aTols[i] = aRandom.NextDouble() * 0.01;
                 }
 
-                OrientedBox anOBB = OrientedBox.FromPoints(aPoints, aTols, isOptimal);
+                Obb anOBB = Obb.FromPoints(aPoints, aTols, isOptimal);
                 Assert.False(anOBB.IsVoid);
                 for (int i = 1; i <= aNb; ++i)
                 {
@@ -164,7 +164,7 @@ public class Bnd_OBB_PortTest
         NCollection_Array1<double> aTols = new(1, 2);
         aTols[1] = 0.5;
         aTols[2] = 0.5;
-        OrientedBox anOBB = OrientedBox.FromPoints(aPoints, aTols);
+        Obb anOBB = Obb.FromPoints(aPoints, aTols);
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), anOBB.XHSize());
     }
 

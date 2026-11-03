@@ -62,7 +62,7 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
 
     private static string NRgb(N.Quantity_Color theC) => Rec(theC.Red(), theC.Green(), theC.Blue());
 
-    private static string PRgb(in Color theC) => Rec(theC.Red(), theC.Green(), theC.Blue());
+    private static string PRgb(in LinearColor theC) => Rec(theC.Red(), theC.Green(), theC.Blue());
 
     private static readonly ColorSpace[] s_types = Enum.GetValues<ColorSpace>();
 
@@ -78,7 +78,7 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
         return string.Join(" | ", aParts) + " | " + Rec(theC.Hue(), theC.Light(), theC.Saturation()) + " " + (int)theC.Name();
     }
 
-    private static string PValues(in Color theC)
+    private static string PValues(in LinearColor theC)
     {
         var aParts = new List<string>();
         foreach (ColorSpace aType in s_types)
@@ -111,17 +111,17 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
                 return NRgb(aN) + " " + NValues(aN);
             }, () =>
             {
-                Color aP = new((NameOfColor)k);
+                LinearColor aP = new((NameOfColor)k);
                 return PRgb(aP) + " " + PValues(aP);
             });
-            Same($"string name {k}", N.Quantity_Color.StringName((N.Quantity_NameOfColor)k) ?? "", Color.StringName((NameOfColor)k));
+            Same($"string name {k}", N.Quantity_Color.StringName((N.Quantity_NameOfColor)k) ?? "", LinearColor.StringName((NameOfColor)k));
         }
         // names read back: every string name, lower case, prefixed, the aliases, and other strings (not the bare prefix
         // "Quantity_NOC_", which terminates native OCCT: occt-issues.md, unit 7X)
         var aNames = new List<string>();
         for (int i = 0; i <= (int)NameOfColor.NocWhite; i++)
         {
-            string aName = Color.StringName((NameOfColor)i);
+            string aName = LinearColor.StringName((NameOfColor)i);
             aNames.Add(aName);
             aNames.Add(aName.ToLowerInvariant());
             aNames.Add("Quantity_NOC_" + aName);
@@ -132,8 +132,8 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
         {
             using var aNC = new N.Quantity_Color(N.Quantity_NameOfColor.Quantity_NOC_WHITE);
             bool isN = N.Quantity_Color.ColorFromName(aName, aNC);
-            Color aPC = new(NameOfColor.NocWhite);
-            bool isP = Color.ColorFromName(aName, ref aPC);
+            LinearColor aPC = new(NameOfColor.NocWhite);
+            bool isP = LinearColor.ColorFromName(aName, ref aPC);
             Same($"ColorFromName '{aName}'", $"{isN} {NRgb(aNC)}", $"{isP} {PRgb(aPC)}");
             using var aNA = new N.Quantity_ColorRGBA(aNC, 0.25f);
             bool isNA = N.Quantity_ColorRGBA.ColorFromName(aName, aNA);
@@ -178,7 +178,7 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
             (TOC_CIELch, Grid(0, 100, 0, 135, 0, 360, 6)),
         };
         using var aNRef = new N.Quantity_Color(0.3, 0.55, 0.8, N.Quantity_TypeOfColor.Quantity_TOC_RGB);
-        Color aPRef = new(0.3, 0.55, 0.8, TocRgb);
+        LinearColor aPRef = new(0.3, 0.55, 0.8, TocRgb);
         foreach ((ColorSpace aType, IEnumerable<(double, double, double)> aValues) in aSpaces)
         {
             foreach ((double a, double b, double c) in aValues)
@@ -199,9 +199,9 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
                            + $"{aN.IsEqual(aNRef)} {aN.IsDifferent(aNRef)} {anArgb} {NRgb(anI)} {NRgb(aCo)}";
                 }, () =>
                 {
-                    Color aP = new(a, b, c, aType);
+                    LinearColor aP = new(a, b, c, aType);
                     aP.Delta(aPRef, out double aDC, out double aDI);
-                    Color.Color2argb(aP, out int anArgb);
+                    LinearColor.Color2argb(aP, out int anArgb);
                     return $"{PRgb(aP)} {PValues(aP)} {Rec(aP.DeltaE2000(aPRef), aP.Distance(aPRef), aP.SquareDistance(aPRef), aDC, aDI)} "
                            + $"{aP.IsEqual(aPRef)} {aP.IsDifferent(aPRef)} {anArgb} {PRgb(aP.ChangedIntensity(15))} {PRgb(aP.ChangedContrast(-20))}";
                 });
@@ -212,7 +212,7 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
         {
             double x = aRandom.NextDouble(), y = aRandom.NextDouble(), z = aRandom.NextDouble();
             Same($"Name({x:R}, {y:R}, {z:R})", ((int)N.Quantity_Color.Name(x, y, z)).ToString(CultureInfo.InvariantCulture),
-                 ((int)Color.Name(x, y, z)).ToString(CultureInfo.InvariantCulture));
+                 ((int)LinearColor.Name(x, y, z)).ToString(CultureInfo.InvariantCulture));
         }
         Report("colour spaces");
     }
@@ -233,9 +233,9 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
                  Rec(N.Quantity_Color.Convert_LinearRGB_To_sRGB(v), N.Quantity_Color.Convert_sRGB_To_LinearRGB(v),
                      N.Quantity_Color.Convert_LinearRGB_To_sRGB(f), N.Quantity_Color.Convert_sRGB_To_LinearRGB(f),
                      N.Quantity_Color.Convert_LinearRGB_To_sRGB_approx22(f), N.Quantity_Color.Convert_sRGB_To_LinearRGB_approx22(f)),
-                 Rec(Color.Convert_LinearRGB_To_sRGB(v), Color.Convert_sRGB_To_LinearRGB(v),
-                     Color.Convert_LinearRGB_To_sRGB(f), Color.Convert_sRGB_To_LinearRGB(f),
-                     Color.Convert_LinearRGB_To_sRGB_approx22(f), Color.Convert_sRGB_To_LinearRGB_approx22(f)));
+                 Rec(LinearColor.Convert_LinearRGB_To_sRGB(v), LinearColor.Convert_sRGB_To_LinearRGB(v),
+                     LinearColor.Convert_LinearRGB_To_sRGB(f), LinearColor.Convert_sRGB_To_LinearRGB(f),
+                     LinearColor.Convert_LinearRGB_To_sRGB_approx22(f), LinearColor.Convert_sRGB_To_LinearRGB_approx22(f)));
         }
         // HLS <-> sRGB (the static double forms, in single precision inside)
         for (int i = 0; i < 2000; i++)
@@ -250,8 +250,8 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
                 return Rec(r1, g1, b1, h1, l1, s1);
             }, () =>
             {
-                Color.HlsRgb(h, l, s, out double r1, out double g1, out double b1);
-                Color.RgbHls(r, g, b, out double h1, out double l1, out double s1);
+                LinearColor.HlsRgb(h, l, s, out double r1, out double g1, out double b1);
+                LinearColor.RgbHls(r, g, b, out double h1, out double l1, out double s1);
                 return Rec(r1, g1, b1, h1, l1, s1);
             });
         }
@@ -269,8 +269,8 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
         {
             using var aNC = new N.Quantity_Color(N.Quantity_NameOfColor.Quantity_NOC_WHITE);
             bool isN = N.Quantity_Color.ColorFromHex(aHex, aNC);
-            Color aPC = new(NameOfColor.NocWhite);
-            bool isP = Color.ColorFromHex(aHex, ref aPC);
+            LinearColor aPC = new(NameOfColor.NocWhite);
+            bool isP = LinearColor.ColorFromHex(aHex, ref aPC);
             Same($"ColorFromHex '{aHex}'", $"{isN} {NRgb(aNC)}", $"{isP} {PRgb(aPC)}");
             foreach (bool isAlphaOff in new[] { false, true })
             {
@@ -291,9 +291,9 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
             N.Quantity_Color.Argb2color(anArgb, aNC);
             int aNBack = 0;
             N.Quantity_Color.Color2argb(aNC, ref aNBack);
-            Color aPC = new();
-            Color.Argb2color(anArgb, ref aPC);
-            Color.Color2argb(aPC, out int aPBack);
+            LinearColor aPC = new();
+            LinearColor.Argb2color(anArgb, ref aPC);
+            LinearColor.Color2argb(aPC, out int aPBack);
             Same($"Argb2color {anArgb:X8}", $"{NRgb(aNC)} {aNBack}", $"{PRgb(aPC)} {aPBack}");
         }
         // RGBA constructors and comparisons
@@ -319,21 +319,21 @@ public class QuantityColorOracleTests(ITestOutputHelper output)
     [Fact]
     public void Epsilon_as_native()
     {
-        double aN0 = N.Quantity_Color.Epsilon(), aP0 = Color.Epsilon();
+        double aN0 = N.Quantity_Color.Epsilon(), aP0 = LinearColor.Epsilon();
         Same("Epsilon", Rec(aN0), Rec(aP0));
         try
         {
             N.Quantity_Color.SetEpsilon(0.01);
-            Color.SetEpsilon(0.01);
+            LinearColor.SetEpsilon(0.01);
             using var aN1 = new N.Quantity_Color(0.5, 0.5, 0.5, N.Quantity_TypeOfColor.Quantity_TOC_RGB);
             using var aN2 = new N.Quantity_Color(0.505, 0.5, 0.5, N.Quantity_TypeOfColor.Quantity_TOC_RGB);
-            Color aP1 = new(0.5, 0.5, 0.5, TocRgb), aP2 = new(0.505, 0.5, 0.5, TocRgb);
+            LinearColor aP1 = new(0.5, 0.5, 0.5, TocRgb), aP2 = new(0.505, 0.5, 0.5, TocRgb);
             Same("IsEqual with Epsilon 0.01", $"{aN1.IsEqual(aN2)} {aN1.IsDifferent(aN2)}", $"{aP1.IsEqual(aP2)} {aP1.IsDifferent(aP2)}");
         }
         finally
         {
             N.Quantity_Color.SetEpsilon(aN0);
-            Color.SetEpsilon(aP0);
+            LinearColor.SetEpsilon(aP0);
         }
         Report("Epsilon");
     }

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 
 public class ConversionBasedUnitAndLengthUnit : ConversionBasedUnit
 {
-    private LengthUnit _lengthUnit;
+    private StepLengthUnit _lengthUnit;
 
     /// <summary>
     /// Returns a ConversionBasedUnitAndLengthUnit
@@ -28,16 +28,16 @@ public class ConversionBasedUnitAndLengthUnit : ConversionBasedUnit
         base.Init(aDimensions, aName, aConversionFactor);
 
         // --- ANDOR component fields ---
-        _lengthUnit = new LengthUnit();
+        _lengthUnit = new StepLengthUnit();
         _lengthUnit.Init(aDimensions);
     }
 
-    public void SetLengthUnit(LengthUnit aLengthUnit)
+    public void SetLengthUnit(StepLengthUnit aLengthUnit)
     {
         _lengthUnit = aLengthUnit;
     }
 
-    public LengthUnit LengthUnit()
+    public StepLengthUnit LengthUnit()
     {
         return _lengthUnit;
     }

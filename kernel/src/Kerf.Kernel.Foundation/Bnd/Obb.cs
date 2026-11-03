@@ -18,7 +18,7 @@ namespace Kerf.Engine.Geometry.Bounds;
 /// OCCT's default constructor makes a void box (half-sizes -1, axes zero), and so does <c>new Bnd_OBB()</c>;
 /// <c>default(Bnd_OBB)</c> has zero half-sizes and is not void. DumpJson is not ported (ToString replaces it).
 /// </remarks>
-public partial struct OrientedBox : IEquatable<OrientedBox>
+public partial struct Obb : IEquatable<Obb>
 {
     /// <summary>The half-size dimensions, for deconstruction: <c>var (aHX, aHY, aHZ) = anOBB.GetHalfSizes();</c></summary>
     public readonly record struct HalfSizes(double X, double Y, double Z);
@@ -44,14 +44,14 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
     private bool _isAABox;    //!< To be set if the OBB is axis aligned box
 
     /// <summary>A void box.</summary>
-    public OrientedBox()
+    public Obb()
     {
         _isAABox = false;
         _hDims[0] = _hDims[1] = _hDims[2] = -1.0;
     }
 
     /// <summary>A box from all its defining parameters.</summary>
-    public OrientedBox(in Point3D center,
+    public Obb(in Point3D center,
                    in Direction3D xDirection,
                    in Direction3D yDirection,
                    in Direction3D zDirection,
@@ -72,7 +72,7 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
     }
 
     /// <summary>A box from an axis-aligned box (void if that is void).</summary>
-    public OrientedBox(in Box box)
+    public Obb(in Box box)
     {
         _isAABox = true;
         if (box.IsVoid)
@@ -203,7 +203,7 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
     }
 
     /// <summary>Rebuilds this box to include all the objects it was made from and the other box.</summary>
-    internal void Add(in OrientedBox other)
+    internal void Add(in Obb other)
     {
         if (!other.IsVoid)
         {
@@ -264,82 +264,82 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
     // Copies with a mutator applied, and factories
 
     /// <summary>The box covering the points (see <c>ReBuild</c>).</summary>
-    public static OrientedBox FromPoints(NCollection_Array1<Point3D> listOfPoints,
+    public static Obb FromPoints(NCollection_Array1<Point3D> listOfPoints,
                                      NCollection_Array1<double>? listOfTolerances = null,
                                      bool isOptimal = false)
     {
-        OrientedBox box = new();
+        Obb box = new();
         box.ReBuild(listOfPoints, listOfTolerances, isOptimal);
         return box;
     }
 
     /// <summary>A void box.</summary>
-    public static OrientedBox Void() => new();
+    public static Obb Void() => new();
 
     /// <summary>This box rebuilt over the points (as <c>ReBuild</c>; the flags of this box can survive in the two-point case).</summary>
-    public readonly OrientedBox ReBuilt(NCollection_Array1<Point3D> listOfPoints,
+    public readonly Obb ReBuilt(NCollection_Array1<Point3D> listOfPoints,
                                     NCollection_Array1<double>? listOfTolerances = null,
                                     bool isOptimal = false)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.ReBuild(listOfPoints, listOfTolerances, isOptimal);
         return copy;
     }
 
-    public readonly OrientedBox WithCenter(in Point3D center)
+    public readonly Obb WithCenter(in Point3D center)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.SetCenter(center);
         return copy;
     }
 
-    public readonly OrientedBox WithXComponent(in Direction3D xDirection, double hxSize)
+    public readonly Obb WithXComponent(in Direction3D xDirection, double hxSize)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.SetXComponent(xDirection, hxSize);
         return copy;
     }
 
-    public readonly OrientedBox WithYComponent(in Direction3D yDirection, double hySize)
+    public readonly Obb WithYComponent(in Direction3D yDirection, double hySize)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.SetYComponent(yDirection, hySize);
         return copy;
     }
 
-    public readonly OrientedBox WithZComponent(in Direction3D zDirection, double hzSize)
+    public readonly Obb WithZComponent(in Direction3D zDirection, double hzSize)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.SetZComponent(zDirection, hzSize);
         return copy;
     }
 
-    public readonly OrientedBox WithVoid() => new();
+    public readonly Obb WithVoid() => new();
 
-    public readonly OrientedBox WithAABox(bool flag)
+    public readonly Obb WithAABox(bool flag)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.SetAABox(flag);
         return copy;
     }
 
-    public readonly OrientedBox Enlarged(double gapAdd)
+    public readonly Obb Enlarged(double gapAdd)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.Enlarge(gapAdd);
         return copy;
     }
 
-    public readonly OrientedBox Added(in OrientedBox other)
+    public readonly Obb Added(in Obb other)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.Add(other);
         return copy;
     }
 
-    public readonly OrientedBox Added(in Point3D p)
+    public readonly Obb Added(in Point3D p)
     {
-        OrientedBox copy = this;
+        Obb copy = this;
         copy.Add(p);
         return copy;
     }
@@ -402,7 +402,7 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
         => 4.0 * (_hDims[0] * _hDims[0] + _hDims[1] * _hDims[1] + _hDims[2] * _hDims[2]);
 
     /// <summary>True if the boxes do not interfere (separating axis theorem on the 15 axes).</summary>
-    public readonly bool IsOut(in OrientedBox other)
+    public readonly bool IsOut(in Obb other)
     {
         if (IsVoid || other.IsVoid)
         {
@@ -521,10 +521,10 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
     public readonly bool Contains(in Point3D p) => !IsOut(p);
 
     /// <summary>True if the other box intersects or is inside this one.</summary>
-    public readonly bool Intersects(in OrientedBox other) => !IsOut(other);
+    public readonly bool Intersects(in Obb other) => !IsOut(other);
 
     /// <summary>True if every vertex of the other box is inside this one.</summary>
-    public readonly bool IsCompletelyInside(in OrientedBox other)
+    public readonly bool IsCompletelyInside(in Obb other)
     {
         if (IsVoid || other.IsVoid)
         {
@@ -546,20 +546,20 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
 
     // Exact equality, for use as a value
 
-    public readonly bool Equals(OrientedBox other)
+    public readonly bool Equals(Obb other)
         => _center.Equals(other._center)
            && _axes[0].Equals(other._axes[0]) && _axes[1].Equals(other._axes[1]) && _axes[2].Equals(other._axes[2])
            && _hDims[0].Equals(other._hDims[0]) && _hDims[1].Equals(other._hDims[1]) && _hDims[2].Equals(other._hDims[2])
            && _isAABox == other._isAABox;
 
-    public override readonly bool Equals(object? obj) => obj is OrientedBox other && Equals(other);
+    public override readonly bool Equals(object? obj) => obj is Obb other && Equals(other);
 
     public override readonly int GetHashCode()
         => HashCode.Combine(_center, _axes[0], _axes[1], _axes[2], _hDims[0], _hDims[1], _hDims[2], _isAABox);
 
-    public static bool operator ==(in OrientedBox left, in OrientedBox right) => left.Equals(right);
+    public static bool operator ==(in Obb left, in Obb right) => left.Equals(right);
 
-    public static bool operator !=(in OrientedBox left, in OrientedBox right) => !left.Equals(right);
+    public static bool operator !=(in Obb left, in Obb right) => !left.Equals(right);
 
     /// <summary>Centre, X, Y and Z directions, the three half-sizes, then 1 for an axis-aligned box (0 otherwise).</summary>
     public override readonly string ToString()
@@ -1028,7 +1028,7 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
         }
 
         /// <summary>Makes the box from the computed parameters.</summary>
-        public void BuildBox(ref OrientedBox box)
+        public void BuildBox(ref Obb box)
         {
             box.SetVoid();
 

@@ -32,7 +32,7 @@ public class MeshFormatsTests
 {
     // ---------------------------------------------------------------------------------------------- glTF
 
-    private static byte[] WriteGlb(Tree theTree, GltfWriteOptions? theOptions = null)
+    private static byte[] WriteGlb(Tree theTree, GltfWriterOptions? theOptions = null)
     {
         var aStream = new MemoryStream();
         Assert.True(new GltfTreeWriter(theOptions).WriteGlb(theTree, aStream));
@@ -271,7 +271,7 @@ public class MeshFormatsTests
         Assert.Equal(1.0, aMatrix[0], 12);
 
         // without the conversions
-        (aJson, _) = SplitGlb(WriteGlb(aTree, new GltfWriteOptions { ZUpToYUp = false, InputLengthUnit = 1.0 }));
+        (aJson, _) = SplitGlb(WriteGlb(aTree, new GltfWriterOptions { ZUpToYUp = false, InputLengthUnit = 1.0 }));
         aRoot = aJson.RootElement;
         aPos = aRoot.GetProperty("accessors")[0];
         Assert.Equal(new[] { 1000.0f, 2000.0f, 3000.0f }, aPos.GetProperty("max").EnumerateArray().Select(e => e.GetSingle()));
@@ -285,13 +285,13 @@ public class MeshFormatsTests
         Assert.False(aJson.RootElement.TryGetProperty("meshes", out _));
         Assert.False(aJson.RootElement.TryGetProperty("buffers", out _));
 
-        byte[] aGlb = WriteGlb(aTree, new GltfWriteOptions { MeshParameters = MeshParameters });
+        byte[] aGlb = WriteGlb(aTree, new GltfWriterOptions { MeshParameters = MeshParameters });
         Assert.Equal(WorldTriangles(aTree.Meshed(MeshParameters)!), WorldTriangles(ReadGltf(aGlb)));
         Assert.Null(Tool.Triangulation(ShapeCasts.Face(new Explorer(aTree.Roots[0].Product.Components[0].Product.Shape, ShapeType.Face).Current()), out _));
 
         Tree aHidden = SampleTree().WithLayers([new Layer("L1", false)]);
         Assert.Equal(2, ReadGltf(WriteGlb(aHidden)).Flatten().Count);
-        Assert.Equal(3, ReadGltf(WriteGlb(aHidden, new GltfWriteOptions { IncludeHidden = true })).Flatten().Count);
+        Assert.Equal(3, ReadGltf(WriteGlb(aHidden, new GltfWriterOptions { IncludeHidden = true })).Flatten().Count);
     }
 
     [Fact]

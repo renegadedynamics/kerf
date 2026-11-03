@@ -53,7 +53,7 @@ public class RenderingProperties
     }
 
     /// <summary>Constructor from surface color, transparency, and rendering method.</summary>
-    public RenderingProperties(in Color surfaceColor, double transparency = 0.0)
+    public RenderingProperties(in LinearColor surfaceColor, double transparency = 0.0)
     {
         Reset();
         Init(surfaceColor, transparency);
@@ -64,7 +64,7 @@ public class RenderingProperties
 
     private void Reset()
     {
-        _surfaceColor = new Color(NocWhite);
+        _surfaceColor = new LinearColor(NocWhite);
         _transparency = 0.0;
         _renderingMethod = ShadingSurfaceMethod.SsmNormalShading;
         _isDefined = false;
@@ -72,7 +72,7 @@ public class RenderingProperties
         _diffuseReflectance = (0.0, false);
         _specularReflectance = (0.0, false);
         _specularExponent = (0.0, false);
-        _specularColour = (new Color(NocWhite), false);
+        _specularColour = (new LinearColor(NocWhite), false);
     }
 
     /// <summary>Sets ambient reflectance value</summary>
@@ -91,7 +91,7 @@ public class RenderingProperties
     /// <summary>Sets ambient, diffuse and specular reflectance values</summary>
     public void SetAmbientDiffuseAndSpecularReflectance(double ambientReflectance, double diffuseReflectance,
                                                         double specularReflectance, double specularExponent,
-                                                        in Color specularColour)
+                                                        in LinearColor specularColour)
     {
         _ambientReflectance = (ambientReflectance, true);
         _diffuseReflectance = (diffuseReflectance, true);
@@ -194,7 +194,7 @@ public class RenderingProperties
         // Decode surface color using STEPConstruct_Styles utility
         if (color is not null)
         {
-            Color decodedColor = new Color();
+            LinearColor decodedColor = new LinearColor();
             if (Styles.DecodeColor(color, ref decodedColor))
             {
                 _surfaceColor = decodedColor;
@@ -235,7 +235,7 @@ public class RenderingProperties
                     _diffuseReflectance = (fullRefl.DiffuseReflectance(), true);
                     _specularReflectance = (fullRefl.SpecularReflectance(), true);
                     _specularExponent = (fullRefl.SpecularExponent(), true);
-                    Color specular = _specularColour.Item1;
+                    LinearColor specular = _specularColour.Item1;
                     bool isDecoded = Styles.DecodeColor(fullRefl.SpecularColour(), ref specular);
                     _specularColour = (specular, isDecoded);
                 }
@@ -275,7 +275,7 @@ public class RenderingProperties
         }
 
         // Decode color using STEPConstruct_Styles utility
-        Color decodedColor = new Color();
+        LinearColor decodedColor = new LinearColor();
         if (Styles.DecodeColor(color, ref decodedColor))
         {
             _surfaceColor = decodedColor;
@@ -284,7 +284,7 @@ public class RenderingProperties
     }
 
     /// <summary>Initializes from surface color, transparency and rendering method.</summary>
-    public void Init(in Color surfaceColor, double transparency = 0.0)
+    public void Init(in LinearColor surfaceColor, double transparency = 0.0)
     {
         Reset();
         _surfaceColor = surfaceColor;
@@ -299,7 +299,7 @@ public class RenderingProperties
     }
 
     /// <summary>Returns surface color</summary>
-    public Color SurfaceColor() => _surfaceColor;
+    public LinearColor SurfaceColor() => _surfaceColor;
 
     /// <summary>Returns transparency value</summary>
     public double Transparency() => _transparency;
@@ -348,12 +348,12 @@ public class RenderingProperties
     public bool IsSpecularExponentDefined => _specularExponent.Item2;
 
     /// <summary>Returns specular color</summary>
-    public Color SpecularColour() => _specularColour.Item1;
+    public LinearColor SpecularColour() => _specularColour.Item1;
 
     /// <summary>Returns whether specular color is defined</summary>
     public bool IsSpecularColourDefined => _specularColour.Item2;
 
-    private Color _surfaceColor;
+    private LinearColor _surfaceColor;
     private double _transparency;
     private ShadingSurfaceMethod _renderingMethod;
     private bool _isDefined;
@@ -361,5 +361,5 @@ public class RenderingProperties
     private (double, bool) _diffuseReflectance;
     private (double, bool) _specularReflectance;
     private (double, bool) _specularExponent;
-    private (Color, bool) _specularColour;
+    private (LinearColor, bool) _specularColour;
 }

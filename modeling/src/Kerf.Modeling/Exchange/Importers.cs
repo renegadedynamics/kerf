@@ -110,7 +110,7 @@ public static class Importers
         Color? color = null;
         if (node.Color is { } c)
         {
-            var rgb = new global::Kerf.Engine.Foundation.Color(c.R, c.G, c.B, ColorSpace.TocRgb);
+            var rgb = new global::Kerf.Engine.Foundation.LinearColor(c.R, c.G, c.B, ColorSpace.TocRgb);
             var rgba = new ColorWithAlpha(rgb, (float)c.A);
             color = new Color(rgba);
         }

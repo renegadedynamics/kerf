@@ -85,7 +85,7 @@ internal static partial class Extras
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(stream);
         var progress = new ProgressIndicator(cancellationToken);
-        var writer = new GltfTreeWriter(new GltfWriteOptions { InputLengthUnit = unitInMetres, Generator = "build123d.NET" });
+        var writer = new GltfTreeWriter(new GltfWriterOptions { InputLengthUnit = unitInMetres, Generator = "build123d.NET" });
         var tree = ToTree(root);
         bool done;
         if (binary)
@@ -135,7 +135,7 @@ internal static partial class Extras
         var options = new ReadOptions
         {
             OutputLengthUnit = unitInMetres,
-            Limits = ReadLimits.Default with
+            Limits = GltfReadLimits.Default with
             {
                 MaxBytes = limits.MaxBytes,
                 MaxNodes = limits.MaxNodes,

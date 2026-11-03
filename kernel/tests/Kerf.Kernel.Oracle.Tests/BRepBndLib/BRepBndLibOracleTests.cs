@@ -90,7 +90,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                     foreach (bool aUseTol in new[] { true, false })
                     {
                         N.Bnd_OBB aNO;
-                        OrientedBox aPO;
+                        Obb aPO;
                         if (aStartFull)
                         {
                             using var aNC = Oracle.ToNative(aMin);
@@ -98,12 +98,12 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
                             using var aNY = new N.gp_Dir(0, 1, 0);
                             using var aNZ = new N.gp_Dir(0, 0, 1);
                             aNO = new N.Bnd_OBB(aNC, aNX, aNY, aNZ, 1.0, 2.0, 0.5);
-                            aPO = new OrientedBox(aMin, new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 1.0, 2.0, 0.5);
+                            aPO = new Obb(aMin, new Direction3D(1, 0, 0), new Direction3D(0, 1, 0), new Direction3D(0, 0, 1), 1.0, 2.0, 0.5);
                         }
                         else
                         {
                             aNO = new N.Bnd_OBB();
-                            aPO = new OrientedBox();
+                            aPO = new Obb();
                         }
 
                         using (aNO)
@@ -155,7 +155,7 @@ public class BRepBndLibOracleTests(ITestOutputHelper output)
         theO.Same(theN.GetGap(), theP.GetGap(), theWhat + " Gap");
     }
 
-    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in OrientedBox theP, string theWhat)
+    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in Obb theP, string theWhat)
     {
         theO.Same(theN.IsVoid(), theP.IsVoid, theWhat + " IsVoid");
         if (theN.IsVoid())

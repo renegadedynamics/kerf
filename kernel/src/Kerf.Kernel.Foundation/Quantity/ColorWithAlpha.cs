@@ -10,7 +10,7 @@ using static Kerf.Engine.Foundation.ColorSpace;
 
 namespace Kerf.Engine.Foundation;
 
-/// <summary>A <see cref="Color"/> (linear RGB) with an alpha component (1 opaque, 0 fully transparent).</summary>
+/// <summary>A <see cref="LinearColor"/> (linear RGB) with an alpha component (1 opaque, 0 fully transparent).</summary>
 /// <remarks>
 /// OCCT's default is opaque <see cref="NameOfColor.NocYellow"/>: write <c>new Quantity_ColorRGBA()</c>,
 /// never <c>default</c>. <c>==</c> compares the components exactly; OCCT's tolerant <c>operator==</c> is
@@ -18,25 +18,25 @@ namespace Kerf.Engine.Foundation;
 /// </remarks>
 public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
 {
-    private Color _rgb;
+    private LinearColor _rgb;
     private float _alpha;
 
     /// <summary>Opaque <see cref="NameOfColor.NocYellow"/>.</summary>
     public ColorWithAlpha()
     {
-        _rgb = new Color();
+        _rgb = new LinearColor();
         _alpha = 1.0f;
     }
 
     /// <summary>The colour, opaque.</summary>
-    public ColorWithAlpha(in Color rgb)
+    public ColorWithAlpha(in LinearColor rgb)
     {
         _rgb = rgb;
         _alpha = 1.0f;
     }
 
     /// <summary>The colour with an alpha.</summary>
-    public ColorWithAlpha(in Color rgb, float alpha)
+    public ColorWithAlpha(in LinearColor rgb, float alpha)
     {
         _rgb = rgb;
         _alpha = alpha;
@@ -46,7 +46,7 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
     /// <exception cref="OutOfRangeException">An RGB value is outside [0, 1].</exception>
     public ColorWithAlpha(in NCollection_Vec4<float> rgba)
     {
-        _rgb = new Color(rgba.Rgb());
+        _rgb = new LinearColor(rgba.Rgb());
         _alpha = rgba.A();
     }
 
@@ -54,7 +54,7 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
     /// <exception cref="OutOfRangeException">An RGB value is outside [0, 1].</exception>
     public ColorWithAlpha(float red, float green, float blue, float alpha)
     {
-        _rgb = new Color(red, green, blue, TocRgb);
+        _rgb = new LinearColor(red, green, blue, TocRgb);
         _alpha = alpha;
     }
 
@@ -66,14 +66,14 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
     }
 
     /// <summary>The RGB part.</summary>
-    public readonly Color GetRGB() => _rgb;
+    public readonly LinearColor GetRGB() => _rgb;
 
     /// <summary>The RGB part, for writing.</summary>
     [UnscopedRef]
-    internal ref Color ChangeRGB() => ref _rgb;
+    internal ref LinearColor ChangeRGB() => ref _rgb;
 
     /// <summary>Assigns the RGB part.</summary>
-    internal void SetRGB(in Color rgb) => _rgb = rgb;
+    internal void SetRGB(in LinearColor rgb) => _rgb = rgb;
 
     /// <summary>The alpha (1 opaque, 0 fully transparent).</summary>
     public readonly float Alpha() => _alpha;
@@ -85,19 +85,19 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
     public static explicit operator NCollection_Vec4<float>(in ColorWithAlpha color)
         => new(color._rgb.Rgb(), color._alpha);
 
-    /// <summary>True if the colours or the alphas differ by more than <see cref="Color.Epsilon"/>.</summary>
+    /// <summary>True if the colours or the alphas differ by more than <see cref="LinearColor.Epsilon"/>.</summary>
     public readonly bool IsDifferent(in ColorWithAlpha other)
-        => _rgb.IsDifferent(other.GetRGB()) || Math.Abs(_alpha - other._alpha) > (float)Color.Epsilon();
+        => _rgb.IsDifferent(other.GetRGB()) || Math.Abs(_alpha - other._alpha) > (float)LinearColor.Epsilon();
 
-    /// <summary>True if neither the colours nor the alphas differ by more than <see cref="Color.Epsilon"/> (OCCT's <c>operator==</c>).</summary>
+    /// <summary>True if neither the colours nor the alphas differ by more than <see cref="LinearColor.Epsilon"/> (OCCT's <c>operator==</c>).</summary>
     public readonly bool IsEqual(in ColorWithAlpha other)
-        => _rgb.IsEqual(other.GetRGB()) && Math.Abs(_alpha - other._alpha) <= (float)Color.Epsilon();
+        => _rgb.IsEqual(other.GetRGB()) && Math.Abs(_alpha - other._alpha) <= (float)LinearColor.Epsilon();
 
     /// <summary>The colour of a name, opaque; false, <paramref name="color"/> unchanged, if the name is unknown.</summary>
     public static bool ColorFromName(string colorNameString, ref ColorWithAlpha color)
     {
         ColorWithAlpha aColor = new();
-        if (!Color.ColorFromName(colorNameString, ref aColor.ChangeRGB()))
+        if (!LinearColor.ColorFromName(colorNameString, ref aColor.ChangeRGB()))
         {
             return false;
         }
@@ -143,7 +143,7 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
         for (int colorComponentIndex = RGB_COMPONENT_LAST_INDEX; colorComponentIndex >= 0; --colorComponentIndex)
         {
             float colorComponent = TakeColorComponentFromInteger(ref colorInteger, colorComponentBase);
-            aColor[colorComponentIndex] = Color.Convert_sRGB_To_LinearRGB(colorComponent);
+            aColor[colorComponentIndex] = LinearColor.Convert_sRGB_To_LinearRGB(colorComponent);
         }
         if (colorInteger != 0)
         {
@@ -247,13 +247,13 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
 
     /// <summary>Linear RGB components to sRGB, the alpha unchanged.</summary>
     public static NCollection_Vec4<float> Convert_LinearRGB_To_sRGB(in NCollection_Vec4<float> rgb)
-        => new(Color.Convert_LinearRGB_To_sRGB(rgb.R()), Color.Convert_LinearRGB_To_sRGB(rgb.G()),
-               Color.Convert_LinearRGB_To_sRGB(rgb.B()), rgb.A());
+        => new(LinearColor.Convert_LinearRGB_To_sRGB(rgb.R()), LinearColor.Convert_LinearRGB_To_sRGB(rgb.G()),
+               LinearColor.Convert_LinearRGB_To_sRGB(rgb.B()), rgb.A());
 
     /// <summary>sRGB components to linear RGB, the alpha unchanged.</summary>
     public static NCollection_Vec4<float> Convert_sRGB_To_LinearRGB(in NCollection_Vec4<float> rgb)
-        => new(Color.Convert_sRGB_To_LinearRGB(rgb.R()), Color.Convert_sRGB_To_LinearRGB(rgb.G()),
-               Color.Convert_sRGB_To_LinearRGB(rgb.B()), rgb.A());
+        => new(LinearColor.Convert_sRGB_To_LinearRGB(rgb.R()), LinearColor.Convert_sRGB_To_LinearRGB(rgb.G()),
+               LinearColor.Convert_sRGB_To_LinearRGB(rgb.B()), rgb.A());
 
     // DumpJson and InitFromJson are left out: ToString replaces them.
 
@@ -269,7 +269,7 @@ public partial struct ColorWithAlpha : IEquatable<ColorWithAlpha>
     }
 
     /// <summary>A copy with another RGB part.</summary>
-    public readonly ColorWithAlpha WithRGB(in Color rgb)
+    public readonly ColorWithAlpha WithRGB(in LinearColor rgb)
     {
         ColorWithAlpha copy = this;
         copy.SetRGB(rgb);

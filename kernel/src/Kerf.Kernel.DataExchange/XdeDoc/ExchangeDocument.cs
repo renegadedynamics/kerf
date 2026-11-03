@@ -1003,7 +1003,7 @@ public sealed class ExchangeDocument
     }
 
     /// <summary>As <see cref="SetInstanceColor(in Shape, ColorType, in ColorWithAlpha)"/>, opaque.</summary>
-    public bool SetInstanceColor(in Shape shape, ColorType type, in Color color)
+    public bool SetInstanceColor(in Shape shape, ColorType type, in LinearColor color)
         => SetInstanceColor(shape, type, new ColorWithAlpha(color));
 
     // ---------------------------------------------------------------------------------------------- labels: OCAF's tree
@@ -1388,7 +1388,7 @@ public sealed class ExchangeDocument
         }
         int index = NewChild(ColorsIndex);
         _nodes[index].Color = color;
-        SetNameCore(index, Color.StringName(color.GetRGB().Name()) + " (" + ColorWithAlpha.ColorToHex(color) + ")");
+        SetNameCore(index, LinearColor.StringName(color.GetRGB().Name()) + " (" + ColorWithAlpha.ColorToHex(color) + ")");
         return Label(index);
     }
 
@@ -1449,7 +1449,7 @@ public sealed class ExchangeDocument
     }
 
     /// <summary>Sets the label's colour of the type, opaque.</summary>
-    public void SetColor(in Label label, in Color color, ColorType type)
+    public void SetColor(in Label label, in LinearColor color, ColorType type)
         => SetColor(label, new ColorWithAlpha(color), type);
 
     /// <summary>Sets the colour of the shape's label, found by <see cref="Search"/>; false if not found.</summary>
@@ -1476,7 +1476,7 @@ public sealed class ExchangeDocument
     }
 
     /// <summary>The label's colour of the type, without its alpha; false if not set.</summary>
-    public bool GetColor(in Label label, ColorType type, out Color color)
+    public bool GetColor(in Label label, ColorType type, out LinearColor color)
     {
         bool isSet = GetColor(label, type, out ColorWithAlpha aColor);
         color = aColor.GetRGB();
