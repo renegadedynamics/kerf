@@ -15052,3 +15052,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        gp_XYZ::Multiplied(gp_XYZ), a product coordinate by coordinate, where the dot product is meant; right only for an
        axis along X, Y or Z. Test: half a cylinder chamfered by 1 at 30° on a generatrix edge, about Z and about a tilted
        axis: the same volume.
+16719. **NurbsConvert and GTransform of a meshed face keep its surface** (unit 3K's BRepTools_Modifier::Rebuild row).
+       When a modification kept a face's surface (NurbsConvert on a B-spline or Bezier face) but gave it a new
+       triangulation, the modifier made the face a bare triangulation, so a meshed shape (as Bento's are, for display)
+       lost its B-spline and Bezier faces' surfaces. The face is made on its own surface with the new triangulation; a
+       face that had no surface stays bare. The pinned test asserts the converted face's surface, mesh, area and
+       validity. The GTransform oracle on native shapes moves to plan 3.2's third level for those faces: native's have
+       no surface, the port's do; their geometry wasn't compared before either.

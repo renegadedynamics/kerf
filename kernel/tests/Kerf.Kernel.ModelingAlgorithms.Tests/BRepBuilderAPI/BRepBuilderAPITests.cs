@@ -2,6 +2,8 @@
 
 using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Geometry.Api;
+using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -432,7 +434,7 @@ public class BRepBuilderAPITests
     // OCCT: NurbsConvertModification keeps a B-spline face's surface (NewSurface is false) but copies its
     // triangulation, and BRepTools_Modifier then makes the face from the triangulation alone (occt-issues.md)
     [Fact]
-    public void OcctIssue_NurbsConvert_of_a_meshed_BSpline_face_drops_its_surface()
+    public void NurbsConvert_of_a_meshed_Bezier_face_keeps_its_surface_and_mesh()
     {
         var aPoles = new NCollection_Array2<Point3D>(1, 2, 1, 2);
         aPoles[1, 1] = new Point3D(0, 0, 0);
@@ -453,10 +455,24 @@ public class BRepBuilderAPITests
         new BrepBuilder().UpdateFace(aF, aTri);
         TestShapes.Frozen(aF);
 
+        // the face keeps its surface (OCCT's modifier made it a bare triangulation: occt-issues.md, unit 4H's
+        // BRepTools_Modifier::Rebuild row; decision 16719), and the mesh; its area is the surface's
         Face aConverted = ShapeCasts.Face(new NurbsConvert(aF).Shape());
-        Assert.Null(Tool.Surface(aConverted));
+        Surface? aConvertedSurface = Tool.Surface(aConverted);
+        Assert.NotNull(aConvertedSurface);
         Assert.NotNull(Tool.Triangulation(aConverted, out _));
         Assert.NotNull(Tool.Surface(aF));
+        for (int i = 0; i <= 4; i++)
+        {
+            Point3D aP = aSurf.Value(0.25 * i, 0.5);
+            Assert.True(new ProjectPointOnSurface(aP, aConvertedSurface).LowerDistance() < 1e-9);
+        }
+        var aBefore = new Properties();
+        MassPropertiesBuilder.SurfaceProperties(aF, aBefore);
+        var anAfter = new Properties();
+        MassPropertiesBuilder.SurfaceProperties(aConverted, anAfter);
+        Assert.Equal(aBefore.Mass(), anAfter.Mass(), 1e-9);
+        Assert.True(new Analyzer(aConverted).IsValid());
 
         // without the mesh the face keeps its surface
         Face aBare = new MakeFace(aSurf, 0, 1, 0, 1, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
