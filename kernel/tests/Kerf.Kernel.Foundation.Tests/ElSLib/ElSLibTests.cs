@@ -262,14 +262,6 @@ public class ElSLibTests
         _ => global::Kerf.Engine.Geometry.ElSLib.TorusDN(U, V, Pos, MajorRadius, MinorRadius, Nu, Nv),
     };
 
-    /// <summary>
-    /// TorusDN's odd/odd and even/even mixed branches never change sign (an OCCT bug, see ElSLib.cs), so those
-    /// derivatives come out reversed when (Nu + Nv) % 4 is 0 (odd/odd) or 2 (even/even).
-    /// </summary>
-    private static bool TorusDNReversed(int Nu, int Nv)
-        => Nu > 0 && Nv > 0
-           && ((IsOdd(Nu) && IsOdd(Nv) && (Nu + Nv) % 4 == 0) || (IsEven(Nu) && IsEven(Nv) && (Nu + Nv) % 4 == 2));
-
     [Theory]
     [MemberData(nameof(Systems))]
     public void DN_matches_closed_form(int theSystem)
@@ -288,11 +280,6 @@ public class ElSLibTests
                     }
 
                     global::Kerf.Engine.Geometry.Xyz anExpected = ReferenceDN(aSurface, aU, aV, aPos, aNu, aNv);
-                    if (aSurface == "torus" && TorusDNReversed(aNu, aNv))
-                    {
-                        anExpected = anExpected.Reversed(); // OCCT behaviour, reproduced
-                    }
-
                     AssertNear(anExpected, PortDN(aSurface, aU, aV, aPos, aNu, aNv).XYZ());
                 }
             }
@@ -300,13 +287,17 @@ public class ElSLibTests
     }
 
     [Fact]
-    public void TorusDN_reproduces_OCCT_sign_error()
+    public void TorusDN_mixed_orders_change_sign_with_the_order()
     {
-        // d4P/du dv3 = -d2P/du dv for a torus, but OCCT returns +d2P/du dv
+        // d4P/du dv3 = -d2P/du dv and d6P/du2 dv4 = -d4P/du2 dv2 for a torus (OCCT returned them unreversed;
+        // occt-issues.md, ElSLib::TorusDN; Kerf decision 16803)
         CoordinateSystem aPos = new();
         Vector3D aDuv = global::Kerf.Engine.Geometry.ElSLib.TorusDN(0.5, 0.4, aPos, MajorRadius, MinorRadius, 1, 1);
         Vector3D aDuvvv = global::Kerf.Engine.Geometry.ElSLib.TorusDN(0.5, 0.4, aPos, MajorRadius, MinorRadius, 1, 3);
-        Assert.Equal(aDuv, aDuvvv);
+        Assert.Equal(aDuv.Reversed(), aDuvvv);
+        Vector3D aDuuvv = global::Kerf.Engine.Geometry.ElSLib.TorusDN(0.5, 0.4, aPos, MajorRadius, MinorRadius, 2, 2);
+        Vector3D aDuuvvvv = global::Kerf.Engine.Geometry.ElSLib.TorusDN(0.5, 0.4, aPos, MajorRadius, MinorRadius, 2, 4);
+        Assert.Equal(aDuuvv.Reversed(), aDuuvvvv);
     }
 
     [Theory]

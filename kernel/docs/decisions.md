@@ -14967,3 +14967,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        One oracle replay moves to plan 3.2's third level: `GpOracleTests.Trsf_composition`'s powers of scaled compound
        transformations from the cube on (`SamePowerOfScaled`: form and matrix against native's, the translation
        against the transformation applied |N| times). The 2D rows reach no recording.
+16803. **A torus's mixed derivatives change sign with their order** (occt-issues.md, ElSLib::TorusDN). The odd/odd and
+       even/even branches of `ElSLib.TorusDN` now reverse when (Nu + Nv) mod 4 is 0 and 2 respectively, as the closed
+       form's do; OCCT reversed neither, so (1, 3), (3, 1) and (2, 4) had the wrong sign. `DN_matches_closed_form`
+       loses its exception for those orders; the test that pinned OCCT's sign checks d⁴P/du dv³ = −d²P/du dv and
+       d⁶P/du² dv⁴ = −d⁴P/du² dv².
