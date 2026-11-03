@@ -15027,6 +15027,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `TopoDS_ShapeTests.Generated_subtypes_are_up_to_date`, as the typed shapes now have members of their own beside
        Shape's and Shape the casts; and `PublicBuilderTests`' theory `TheModellingLayersMembersArePublic`, now
        `…AreReachable` (public, or internal with `InternalsVisibleTo` to the modelling layer: `BrepBuilder` is internal). New:
-       `Kerf.Kernel.PublicApi.Tests` (39 tests; it has no `InternalsVisibleTo`, so a test that reaches for the engine
-       doesn't compile) and ModelingAlgorithms.Tests' `PublicApi` folder (19: topology, whose fixtures need the engine's
+       `Kerf.Kernel.PublicApi.Tests` (41 tests; it has no `InternalsVisibleTo`, so a test that reaches for the engine
+       doesn't compile; two of them keep this decision's rules: no engine type in a public signature, the geometry
+       hierarchy closed) and ModelingAlgorithms.Tests' `PublicApi` folder (19: topology, whose fixtures need the engine's
        primitives until 10L2's, and `EngineOperation`).
