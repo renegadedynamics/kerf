@@ -635,15 +635,14 @@ public static partial class BuilderTools
     /// true if any face was built.
     /// </summary>
     /// <remarks>
-    /// OCCT adds p-curves on the planes to the input's edges and corrects their tolerances in place. A frozen input
-    /// is copied at the entry (<see cref="CopyAtEntry"/>): the faces are built from the copy, whose sub-shapes
-    /// left unchanged are the caller's own again in the result.
+    /// OCCT adds p-curves on the planes to the input's edges and corrects their tolerances in place. It runs on the
+    /// input in a working overlay: the edges it writes into are new in the result, everything else is the caller's.
     /// </remarks>
     public static bool WiresToFaces(in Shape wires, ref Shape faces, double angTol = 1.0e-8)
     {
-        // OCCT.NET: OCCT writes into the input's edges (p-curves, tolerances): a frozen input is copied first
-        CopyAtEntry copyAtEntry = new(wires);
-        Shape aWires = copyAtEntry.Shape();
+        // Kerf: OCCT writes into the input's edges (p-curves, tolerances): the overlay takes the writes
+        using var overlay = WorkingOverlay.Begin(wires);
+        Shape aWires = wires;
         //
         BrepBuilder bb = new();
         NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
@@ -772,7 +771,7 @@ public static partial class BuilderTools
         AlgoTools.CorrectTolerances(rFaces, mEmpty, 0.05, false);
         AlgoTools.CorrectShapeTolerances(rFaces, mEmpty, false);
         //
-        faces = copyAtEntry.Finish(rFaces);
+        faces = overlay.Finish(rFaces);
         return faces.ChildCount > 0;
     }
 

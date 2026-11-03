@@ -86,8 +86,11 @@ internal sealed class FaceSelfIntersect : FaceFace, BooleanParallel.ISolver
 /// (the default, all).
 /// </para>
 /// <para>
-/// The checker is non-destructive (OCCT sets the mode in its constructor and its <c>Init</c> doesn't reset it), so the
-/// argument is never written; a frozen argument is the usual case. The class is partial over OCCT's two files.
+/// The checker is non-destructive (OCCT sets the mode in its constructor and its <c>Init</c> doesn't reset it), yet
+/// OCCT's filler still raises the tolerances of argument vertices that a section curve passes through
+/// (<c>PutPaveOnCurve</c>, occt-issues.md). The check runs in a working overlay: those writes go to working copies,
+/// which the check reads and then drops, so the argument (frozen, the usual case) is never written and the data
+/// structure holds its own sub-shapes. The class is partial over OCCT's two files.
 /// </para>
 /// </remarks>
 public partial class CheckerSI : PaveFiller
@@ -146,28 +149,11 @@ public partial class CheckerSI : PaveFiller
                 return;
             }
             //
-            // OCCT.NET: OCCT's non-destructive filler still raises the tolerances of argument vertices that a section
-            // curve passes through (PutPaveOnCurve, occt-issues.md), so the check of a shape holding frozen TShapes
-            // runs on an exact copy of it (decision 882); the data structure then holds the copy's sub-shapes, and
-            // Original maps them back to the argument's.
-            Shape input = _arguments.First();
-            _copyAtEntry = new CopyAtEntry(input);
-            if (_copyAtEntry.IsCopied)
-            {
-                _arguments = new NCollection_List<Shape>();
-                _arguments.Append(_copyAtEntry.Shape());
-            }
-            try
+            // Kerf: the filler's writes into the argument go to the overlay's working copies, dropped at the end
+            // (the checker hands out no shape built from them)
+            using (WorkingOverlay.Begin(_arguments.First()))
             {
                 PerformChecks(range);
-            }
-            finally
-            {
-                if (_copyAtEntry.IsCopied)
-                {
-                    _arguments = new NCollection_List<Shape>();
-                    _arguments.Append(input);
-                }
             }
         }
         //
@@ -176,15 +162,6 @@ public partial class CheckerSI : PaveFiller
             AddError(new AlertIntersectionFailed());
         }
     }
-
-    private CopyAtEntry? _copyAtEntry;
-
-    /// <summary>
-    /// The argument's own sub-shape for a shape of the data structure: the shape itself, unless the argument was
-    /// checked on a copy (it held frozen TShapes), when it is the original of the copy's sub-shape.
-    /// </summary>
-    internal Shape Original(in Shape shape) =>
-        _copyAtEntry is not null && _copyAtEntry.IsCopied ? _copyAtEntry.Original(shape) : shape;
 
     // OCCT's Perform from its progress scope on (the body of its try block).
     private void PerformChecks(ProgressRange range)

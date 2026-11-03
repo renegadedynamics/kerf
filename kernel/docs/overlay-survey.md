@@ -2,7 +2,8 @@
 
 *Unit 10H1, 3 November 2026. The work list for units 10H2 to 10H6 (phase10-plan.md, section 2.4). Counted at Kerf
 `main` db338009 plus 10H1, with `tools/overlay-survey.py` (run `python -I tools/overlay-survey.py src --files` from
-`kernel/` to recount). Decisions 1359 to 1364.*
+`kernel/` to recount). Decisions 1359 to 1364. Recounted by unit 10H2 after the Booleans (decisions 1378 to
+1384): the counts below are after 10H2.*
 
 ## What this is
 
@@ -25,30 +26,34 @@ BRepOffsetAPI's pipes, lofts, evolved and filling), healing (Shape\*, sewing), o
 BRepOffsetAPI's offsets), fillets (ChFi\*, FilletSurf, BRepFilletAPI, BRepBlend, Blend\*), features (BRepFeat, LocOpe,
 Draft, BRepOffsetAPI's drafts), other (meshing, hidden lines, data exchange, ModelingData itself).
 
-## 1. Copy at entry: 110 sites
+## 1. Copy at entry: 105 sites
 
-Before 10H1 there were 113. The pilot (section 5) removed 3: ShapeFix_Edge's twins (1) and ShapeFix_ShapeTolerance's
-(2).
+Before 10H1 there were 113 by 10H1's count. The pilot (section 5) removed 3: ShapeFix_Edge's twins (1) and
+ShapeFix_ShapeTolerance's (2). 10H2 found that the count missed the target-typed constructor (`CopyAtEntry entry =
+new(input)`): with it, 119 were left after 10H1 (Booleans 14, construction 38, features 7). 10H2 removed the Booleans'
+14.
 
 | Kind | Booleans | Construction | Healing | Offsets | Fillets | Features | Other | Total |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `new CopyAtEntry(…)` | 1 | 2 | 19 | 4 | 1 | 2 | 0 | 29 |
+| `new CopyAtEntry(…)`, `CopyAtEntry x = new(…)` | 0 | 6 | 19 | 4 | 1 | 3 | 0 | 33 |
 | `ExactCopyForWrite` | 0 | 6 | 3 | 0 | 0 | 1 | 2 | 12 |
 | `KeepUnchanged`, `KeepUnchangedIn` | 0 | 8 | 3 | 0 | 0 | 1 | 1 | 13 |
 | `KeepUnchangedGenerating` | 0 | 4 | 0 | 0 | 0 | 0 | 0 | 4 |
-| `CopyFrozenForWrite` | 5 | 0 | 0 | 0 | 0 | 0 | 0 | 5 |
-| `HoldsFrozen` | 2 | 5 | 10 | 1 | 1 | 2 | 4 | 25 |
-| Frozen workarounds (`…OfFrozen`, `…Unfrozen`, `UnfreezeResult`) | 2 | 9 | 0 | 0 | 0 | 0 | 11 | 22 |
-| **Total** | **10** | **34** | **35** | **5** | **2** | **6** | **18** | **110** |
+| `CopyFrozenForWrite` | 0 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| `HoldsFrozen` | 0 | 5 | 10 | 1 | 1 | 2 | 4 | 23 |
+| Frozen workarounds (`…OfFrozen`, `…Unfrozen`, `UnfreezeResult`) | 0 | 9 | 0 | 0 | 0 | 0 | 11 | 20 |
+| **Total** | **0** | **38** | **35** | **5** | **2** | **7** | **18** | **105** |
 
 A site is a call; an algorithm's copy at entry is usually two or three of them (`HoldsFrozen`, the copy, the give-back).
 By algorithm, the plan's "about 45" holds.
 
 ### The work list, by file
 
-- **Booleans** (10 sites, 5 files): `BOPAlgo_PaveFiller_10.cs` 1, `CellsBuilder.cs` 2, `CheckerSI.cs` 1,
-  `MakeConnectedAlgorithm.cs` 1, `MakePeriodicAlgorithm.cs` 5.
-- **Construction** (34 sites, 16 files): BRepFill `Fill.cs` 7, `Generator.cs` 2; BRepLib `BRepLib.Twins.cs` 4,
+- **Booleans**: none left (10H2). They were 14 sites in 9 files: `BOPAlgo_PaveFiller_10.cs` 1, `BuilderTools.cs` 1,
+  `CellsBuilder.cs` 2, `CheckerSI.cs` 1, `MakeConnectedAlgorithm.cs` 1, `MakePeriodicAlgorithm.cs` 5, `BRepAlgo.cs` 1,
+  `FaceRestrictor.cs` 1, `WireToFace.cs` 1.
+- **Construction** (38 sites, 18 files): BRepFill `AdvancedEvolved.cs` 2, `Evolved.cs` 2, `Fill.cs` 7, `Generator.cs` 2;
+  BRepLib `BRepLib.Twins.cs` 4,
   `LibraryMakeFace.cs` 3, `LibraryMakePolygon.cs` 2, `LibraryMakeShape.cs` 1, `LibraryMakeSolid.cs` 1,
   `LibraryMakeWire.cs` 3; BRepOffsetAPI `ApiMakePipe.cs` 1, `ThruSections.cs` 2; BRepPrimAPI `ApiMakePrism.cs` 1,
   `ApiMakeRevol.cs` 1, `MakeSweep.cs` 3; `Projection.cs` 1; BRepSweep `Rotation.cs` 1, `Translation.cs` 1. The prisms and
@@ -60,7 +65,8 @@ By algorithm, the plan's "about 45" holds.
   ShapeProcess `OperLibrary.cs` 2, `ShapeContext.cs` 3, ShapeUpgrade `ShapeDivide.cs` 1, `UnifySameDomain.cs` 1.
 - **Offsets** (5 sites, 4 files): `MakeOffset.cs` 1, `MakeSimpleOffset.cs` 1, `Offset.cs` 2, BiTgte `OffsetBlend.cs` 1.
 - **Fillets** (2 sites, 2 files): ChFi2d `PlanarBuilder.cs` 1, ChFi3d `Builder_1.cs` 1.
-- **Features** (6 sites, 3 files): `MakeLinearForm.cs` 1, `DraftAngle.cs` 2, LocOpe `WorkingShapes.cs` 3.
+- **Features** (7 sites, 4 files): `MakeLinearForm.cs` 1, `RibSlot.cs` 1, `DraftAngle.cs` 2, LocOpe `WorkingShapes.cs`
+  3.
 - **Other** (18 sites, 5 files): XSControl `TransferReader.cs` 2, BRepMesh `IncrementalMesh.cs` 3 and `ShapeTool.cs` 6,
   HLRTopoBRep `OutLiner.cs` 2, `BrepBuilder.cs` 5 (`UpdateVertexOfFrozen`, `UpdateEdgeUnfrozen`,
   `UpdateFaceUnfrozen`: the mesher's and sweeps' workarounds). These belong to no 10H unit: 10H6 takes them with the
@@ -71,14 +77,18 @@ The helpers themselves go last (10H6): `CopyAtEntry` (301 lines), `BrepTools.Exa
 lines), and `LockedShapeException`/`FrozenShapeException` where nothing throws them any more. `BrepTools.CopyData`,
 `CopyFlags` and `IsSameData` stay: the overlay uses them (decision 1361).
 
-## 2. Frozen-shape checks: 227 sites
+## 2. Frozen-shape checks: 221 sites
 
 | Kind | Booleans | Construction | Healing | Offsets | Fillets | Features | Other | Total |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|
-| `.IsFrozen` tests (topology and geometry) | 3 | 21 | 23 | 1 | 4 | 9 | 38 | 99 |
-| `.Locked()` tests | 1 | 0 | 0 | 2 | 0 | 0 | 15 | 18 |
-| `// OCCT.NET: frozen` markers | 4 | 33 | 60 | 0 | 3 | 0 | 10 | 110 |
-| **Total** | **8** | **54** | **83** | **3** | **7** | **9** | **63** | **227** |
+| `.IsFrozen` tests (topology and geometry) | 1 | 21 | 23 | 1 | 4 | 9 | 38 | 97 |
+| `.Locked()` tests | 0 | 0 | 0 | 2 | 0 | 0 | 15 | 17 |
+| `// OCCT.NET: frozen` markers | 1 | 33 | 60 | 0 | 3 | 0 | 10 | 107 |
+| **Total** | **2** | **54** | **83** | **3** | **7** | **9** | **63** | **221** |
+
+The Booleans' two left are the pave filler's: the walk deciding the non-destructive mode outside an overlay
+(`PaveFiller_10`, decision 1378) and the skipped no-op tolerance write of `PaveFiller_6` (decision 875), which the
+general fuse needs because it runs outside any overlay.
 
 The markers are the places where the port departs from OCCT because an input is frozen: a write skipped when it would
 change nothing, a new TShape made instead of an edit, a copy of geometry before an edit. Inside an overlay most are no
@@ -104,13 +114,13 @@ the overlay takes.
 | Face surface, tolerance or mesh (`UpdateFace`) | 0 | 3 | 1 | 7 | 0 | 0 | 14 | 25 |
 | Face natural restriction | 1 | 1 | 2 | 0 | 0 | 0 | 3 | 7 |
 | BRepLib's in-place statics (`SameParameter`, `UpdateTolerances`, `BuildCurves3d`, `EncodeRegularity`, …) | 8 | 29 | 11 | 42 | 5 | 5 | 3 | 103 |
-| Sub-shapes added (`Builder.Add`) | 199 | 363 | 289 | 206 | 34 | 163 | 223 | 1,477 |
-| Sub-shapes removed (`Builder.Remove`) | 6 | 14 | 10 | 11 | 2 | 2 | 4 | 49 |
-| Shape flags set (`Free`, `Closed`, `Orientable`, `Modified`, `Checked`, `Convex`, `Infinite`) | 14 | 67 | 18 | 21 | 0 | 5 | 147 | 272 |
+| Sub-shapes added (`Builder.Add`) | 196 | 363 | 289 | 206 | 34 | 163 | 223 | 1,474 |
+| Sub-shapes removed (`Builder.Remove`) | 5 | 14 | 10 | 11 | 2 | 2 | 4 | 48 |
+| Shape flags set (`Free`, `Closed`, `Orientable`, `Modified`, `Checked`, `Convex`, `Infinite`) | 13 | 67 | 18 | 21 | 0 | 5 | 147 | 271 |
 | TShape data written directly (`ChangeCurves`, `ChangePoints`, the BRep TShapes' setters) | 15 | 17 | 22 | 13 | 0 | 1 | 59 | 127 |
-| Child lists edited directly (`TShape._shapes`) | 6 | 2 | 8 | 0 | 0 | 1 | 29 | 46 |
+| Child lists edited directly (`TShape._shapes`) | 5 | 2 | 8 | 0 | 0 | 1 | 29 | 45 |
 | Representations edited (`Range`, `PCurve`, `SetUVPoints`, `Parameter` on a curve or point representation) | 1 | 0 | 12 | 0 | 1 | 1 | 38 | 53 |
-| Orientation and location (on the shape value) | 150 | 296 | 228 | 134 | 366 | 103 | 483 | 1,760 |
+| Orientation and location (on the shape value) | 149 | 296 | 228 | 134 | 366 | 103 | 483 | 1,759 |
 
 ### The member each kind reaches, and how the overlay takes it
 
@@ -129,7 +139,7 @@ the overlay takes.
 | Face surface, location, tolerance, restriction | `UpdateFace(f, s, l, tol)`, `UpdateFace(f, tol)`, `NaturalRestriction` | `BrepTFace`'s setters | Taken |
 | Sub-shapes added or removed | `Builder.Add`, `Builder.Remove` | `TShape._shapes`, `Modified` | Taken: the working copy's child list |
 | Shape flags | `Shape.Free(bool)`, `Closed(bool)`, … | `TShape`'s flag setters | Taken |
-| Child lists edited directly | none: `tShape._shapes.Append/Clear` | `TShape._shapes` | **Not taken**: 46 sites, 17 of them in algorithms (BOPTools `ConnexityBlock`, `ToolSet`; `Sewing`; `LibraryMakeFace`; LocOpe `WorkingShapes`; ShapeFix `FaceFixer`, `WireVertexFixer`, `ShapeFix_Wire.CopyAtEntry`; TopOpeBRepBuild `WireToFace`; the rest are the copy helpers and the hooks themselves). Each unit reroutes its module's through `Builder` or `WorkingOverlay.ForWrite`, or shows they act on unfrozen TShapes only |
+| Child lists edited directly | none: `tShape._shapes.Append/Clear` | `TShape._shapes` | **Not taken**: 45 sites, 16 of them in algorithms (`Sewing`; `LibraryMakeFace`; LocOpe `WorkingShapes`; ShapeFix `FaceFixer`, `WireVertexFixer`, `ShapeFix_Wire.CopyAtEntry`; the rest are the copy helpers and the hooks themselves; BOPTools' 5, in `ConnexityBlock` and `ToolSet`, are those classes' own fields named `_shapes`, not a TShape's). 10H2 removed TopOpeBRepBuild `WireToFace`'s, the only one in the Booleans. Each unit reroutes its module's through `Builder` or `WorkingOverlay.ForWrite`, or shows they act on unfrozen TShapes only |
 | Representations edited directly | none: `gc.SetRange(…)`, `pr.Parameter(…)` on a representation | the representation | Taken when the representation came from `ChangeCurves()`/`ChangePoints()`. One read through `Curves()`/`Points()` of a frozen TShape without a working copy is the frozen one: editing it throws, as today (fail fast). 53 sites, mostly ModelingData's own |
 | Orientation and location | `Shape.Orientation(o)`, `Location(l)`, `Reverse()`, `Move(l)` | none: they change the shape value, never a TShape | Nothing to take. OCCT reorients a sub-shape in place only by `Remove` and `Add`, counted above |
 

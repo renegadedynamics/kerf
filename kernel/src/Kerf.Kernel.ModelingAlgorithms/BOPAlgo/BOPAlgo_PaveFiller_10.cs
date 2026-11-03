@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
@@ -18,9 +19,11 @@ namespace Kerf.Engine.Booleans;
 public partial class PaveFiller
 {
     /// <summary>
-    /// Turns the non-destructive mode on if an argument is locked. Frozen shapes are locked, so every operation on
-    /// a published shape is non-destructive (decision 577); so is one on an argument holding frozen sub-shapes
-    /// (decision 1056).
+    /// Turns the non-destructive mode on if an argument is locked: if a write into it would be refused. Outside a
+    /// working overlay frozen shapes are locked, so every operation on a published shape is non-destructive
+    /// (decision 577), and so is one on an argument holding frozen sub-shapes (decision 1056). Inside an operation's
+    /// overlay a frozen shape takes writes (its working copy does), so a Boolean that the operation runs on it is
+    /// destructive, as OCCT's on an unlocked shape.
     /// </summary>
     protected void SetNonDestructive()
     {
@@ -37,12 +40,46 @@ public partial class PaveFiller
         for (; itLS.More() && (!bFlag); itLS.Next())
         {
             Shape s = itLS.Value();
-            // OCCT.NET: an unfrozen argument may hold frozen sub-shapes (ported code's intermediate shapes sharing a
-            // caller's unchanged ones, decision 1013); a destructive operation would throw writing into them, so they
-            // count as locked too (decision 1056)
-            bFlag = s.Locked() || BrepTools.HoldsFrozen(s);
+            // Kerf: OCCT's s.Locked(), asked of the overlay, and of the argument's sub-shapes too: an unfrozen argument
+            // may hold frozen sub-shapes (ported code's intermediate shapes sharing a caller's unchanged ones, decision
+            // 1013), which a destructive operation could write only in an overlay (decision 1056)
+            TShape tShape = s.TShape() ?? throw new NullObjectException("TopoDS_Shape: the shape is null");
+            bFlag = WorkingOverlay.IsLocked(tShape) || HoldsLocked(tShape);
         }
         _nonDestructive = bFlag;
+    }
+
+    // True if a frozen TShape below tShape would refuse a write: none does in an overlay, any does outside one. A
+    // frozen TShape's sub-graph is frozen, so the walk stops at the first.
+    private static bool HoldsLocked(TShape tShape)
+    {
+        if (WorkingOverlay.Current is not null)
+        {
+            return false;
+        }
+        var visited = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
+        var stack = new Stack<TShape>();
+        stack.Push(tShape);
+        while (stack.Count > 0)
+        {
+            TShape t = stack.Pop();
+            if (t.IsFrozen)
+            {
+                return true;
+            }
+            if (!visited.Add(t))
+            {
+                continue;
+            }
+            for (var it = new Iterator(new Shape(t, new Placement(), Orientation.Forward)); it.More(); it.Next())
+            {
+                if (it.Value().TShape() is { } child)
+                {
+                    stack.Push(child);
+                }
+            }
+        }
+        return false;
     }
 
     /// <summary>Increases the tolerance of the edge and of its vertices (not of an argument edge when non-destructive).</summary>

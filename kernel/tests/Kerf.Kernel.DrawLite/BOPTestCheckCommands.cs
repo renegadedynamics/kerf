@@ -175,9 +175,8 @@ internal static class BOPTestCheckCommands
                 continue;
             }
             //
-            // the shape's own sub-shapes (the checker works on a copy of a frozen shape)
-            Shape aS1 = aChecker.Original(aDS.Shape(n1));
-            Shape aS2 = aChecker.Original(aDS.Shape(n2));
+            Shape aS1 = aDS.Shape(n1);
+            Shape aS2 = aDS.Shape(n2);
             //
             di.Append(aInterfTypes[aBI.Type]).Append(": ");
             //

@@ -25,8 +25,9 @@ namespace Kerf.Engine.Booleans;
 /// A working object (decision 414's pattern). <see cref="Shape"/>, <see cref="PeriodicShape"/>, the materials, the
 /// origins, <see cref="GetModified"/> and <see cref="History"/> publish: they freeze the result graphs first. Ported
 /// code reads the <c>Internal*</c> forms. The gluing runs non-destructively, as in OCCT, so the arguments are never
-/// written. The periodicity natively writes into the connected shape in place, so its frozen parts (the arguments'
-/// untouched sub-shapes) are replaced by copies first, and the materials of a replaced shape are its copy's. The
+/// written. The periodicity natively writes into the connected shape in place: the periodicity tool does it in working
+/// overlays, so the connected shape then holds what stands for each sub-shape it changed (the arguments' frozen
+/// sub-shapes are never written), and the materials of a changed shape are those of what stands for it. The
 /// materials map keys elements with their orientation (OCCT's default hasher).
 /// </remarks>
 public class MakeConnectedAlgorithm : Options
@@ -40,7 +41,7 @@ public class MakeConnectedAlgorithm : Options
     protected History? _history;                                                //!< Final History of shapes modifications
     protected Shape _glued = new();                                                //!< The resulting connected (glued) shape
     protected Shape _shape = new();                                                //!< The resulting shape
-    private History _copies = new();                                            //!< OCCT.NET: the frozen shapes replaced by copies
+    private History _gluedImages = new();                                       //!< Kerf: the connected shape's sub-shapes changed in place
 
     public MakeConnectedAlgorithm()
     {
@@ -90,15 +91,14 @@ public class MakeConnectedAlgorithm : Options
             return;
         }
 
-        // OCCT.NET: making the shape periodic and repeating it writes into the connected shape in place natively
-        // (the trim and the gluing of the repetitions are destructive), and the connected shape shares the
-        // arguments' untouched sub-shapes. Its frozen parts are replaced by copies here, in place in its unfrozen
-        // parents, so that those writes reach the connected shape as in OCCT while the arguments are never written.
-        History copyHistory = new();
-        _glued = BrepTools.CopyFrozenForWrite(_glued, copyHistory);
-        _glueHistory ??= new History();
-        _glueHistory.Merge(copyHistory);
-        _copies.Merge(copyHistory);
+        // Kerf: the periodicity tool's history starts again from the connected shape as it stands now: the gluing
+        // history is brought up to date with the sub-shapes the earlier runs changed in place
+        if (_gluedImages.HasModified)
+        {
+            _glueHistory ??= new History();
+            _glueHistory.Merge(_gluedImages);
+            _gluedImages = new History();
+        }
 
         // Make the shape periodic
         _periodicityMaker.Clear();
@@ -106,6 +106,9 @@ public class MakeConnectedAlgorithm : Options
         _periodicityMaker.SetPeriodicityParameters(theParams);
         _periodicityMaker.SetRunParallel(_runParallel);
         _periodicityMaker.Perform();
+        // Kerf: the trim writes into the connected shape in place natively; the periodicity tool does it in a working
+        // overlay, and the connected shape is what stands for it now
+        UpdateGlued();
         if (_periodicityMaker.HasErrors)
         {
             // Add warning informing the user that periodicity with
@@ -118,6 +121,14 @@ public class MakeConnectedAlgorithm : Options
 
         // Update history, materials, origins
         Update();
+    }
+
+    // Kerf: the connected shape as the periodicity tool left it, and its sub-shapes the tool changed in place
+    // (natively the same shapes, changed), for the gluing history when the shape is made periodic again
+    private void UpdateGlued()
+    {
+        _glued = _periodicityMaker.InternalInputShape();
+        _gluedImages.Merge(_periodicityMaker.InternalInputImages());
     }
 
     /// <summary>Repeats the periodic shape in the direction the number of times.</summary>
@@ -137,6 +148,8 @@ public class MakeConnectedAlgorithm : Options
 
         // Repeat the shape
         _shape = _periodicityMaker.InternalRepeatShape(directionID, times);
+        // Kerf: the gluing writes into the connected shape in place natively (as the trim, above)
+        UpdateGlued();
 
         // Update history, materials, origins
         Update();
@@ -198,22 +211,14 @@ public class MakeConnectedAlgorithm : Options
         return EmptyList();
     }
 
-    // OCCT.NET: the shape, then the copies that replaced it if it was frozen (CopyFrozenForWrite), which natively are
-    // the shape itself: the connected shape's copies, and the periodicity tool's
+    // Kerf: the shape, then what stands for it if the periodicity tool changed it in place (in a working overlay),
+    // which natively is the shape itself
     private IEnumerable<Shape> Candidates(Shape s)
     {
         yield return s;
-        List<Shape> first = [s, .. _copies.Modified(s)];
-        foreach (Shape aS in first.Skip(1))
+        foreach (Shape now in _periodicityMaker.InternalInPlace().Modified(s))
         {
-            yield return aS;
-        }
-        foreach (Shape aS in first)
-        {
-            foreach (Shape copy in _periodicityMaker.InternalCopies().Modified(aS))
-            {
-                yield return copy;
-            }
+            yield return now;
         }
     }
 
@@ -284,8 +289,8 @@ public class MakeConnectedAlgorithm : Options
         _periodicityMaker.Clear();
         _origins.Clear();
         _materials.Clear();
-        _copies = new History();
         _glueHistory?.Clear();
+        _gluedImages = new History();
         _history?.Clear();
         _glued.Nullify();
         _shape.Nullify();

@@ -398,9 +398,8 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                     continue;
                 }
                 //
-                // OCCT.NET: the argument's own sub-shapes (the checker may have worked on a copy, decision 882)
-                Shape s1 = checker.Original(ds.Shape(n1));
-                Shape s2 = checker.Original(ds.Shape(n2));
+                Shape s1 = ds.Shape(n1);
+                Shape s2 = ds.Shape(n2);
                 //
                 CheckResult result = new();
                 if (ii == 0)

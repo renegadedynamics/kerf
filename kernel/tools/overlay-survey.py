@@ -54,7 +54,8 @@ MODULES = ["booleans", "construction", "healing", "offsets", "fillets", "feature
 
 # --- copy at entry and the frozen-shape checks ---
 COPY = [
-    ("CopyAtEntry", r"\bnew\s+CopyAtEntry\s*\("),
+    # the constructor, also target-typed (`CopyAtEntry entry = new(input)`, which 10H1's count missed)
+    ("CopyAtEntry", r"\bnew\s+CopyAtEntry\s*\(|\bCopyAtEntry\??\s+\w+\s*=\s*new\s*\("),
     ("ExactCopyForWrite", r"\bExactCopyForWrite\s*\("),
     ("KeepUnchanged/KeepUnchangedIn", r"\bKeepUnchanged(?:In)?\s*\("),
     ("KeepUnchangedGenerating", r"\bKeepUnchangedGenerating\s*\("),

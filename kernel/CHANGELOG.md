@@ -1729,3 +1729,12 @@ Phase 10 (part): immutability (unit 10G). **Breaking for code that changed value
 - KERF0003, a build error: a public type of Kerf's public namespaces can't gain a setter, a mutable field or an in-place
   method.
 - No behaviour changes: every result is the same to the bit, and every test passes as before.
+Phase 10 (part): no copy at entry in the Booleans (unit 10H2).
+- The Booleans no longer copy their inputs anywhere: the self-check (`BOPAlgo_CheckerSI`, `BRepAlgoAPI_Check`,
+  `bopargcheck`), the wire tools (`BOPAlgo_Tools::WiresToFaces`, `BRepAlgo::ConcatenateWireC0`,
+  `BRepAlgo_FaceRestrictor`, `TopOpeBRepBuild_WireToFace`), the cells builder, defeaturing's removal of internal wires,
+  and the periodicity's trim and repetitions (`BOPAlgo_MakePeriodic`, `BOPAlgo_MakeConnected`) run OCCT's in-place code
+  in a working overlay. Results are as before; the periodic and connected shapes' histories now record a sub-shape as
+  modified only when it changed.
+- The general fuse and `BRepAlgoAPI_*` keep OCCT's non-destructive mode on frozen arguments; a Boolean run inside
+  another operation's overlay is destructive, as OCCT's on an unlocked shape.
