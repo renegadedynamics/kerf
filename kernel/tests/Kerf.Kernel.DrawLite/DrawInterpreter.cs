@@ -133,6 +133,14 @@ public sealed partial class DrawInterpreter
     /// <summary>True once the script called <c>exit</c>.</summary>
     public bool HasExited { get; private set; }
 
+    /// <summary>
+    /// The interpreter's operation context: the settings its commands made (<c>mpparallel</c>, <c>brunparallel</c>,
+    /// <c>mpsetdefaultname</c>…, OCCT's process-wide statics), carried from one <see cref="Eval"/> to the next as a
+    /// DRAWEXE session keeps them, and seen by no other interpreter (unit 10I). It starts as the context of the flow
+    /// that made the interpreter.
+    /// </summary>
+    public Kerf.Engine.Foundation.OperationContext Context { get; private set; } = Kerf.Engine.Foundation.OperationContext.Current;
+
     public int ExitCode { get; private set; }
 
     /// <summary>
@@ -255,6 +263,7 @@ public sealed partial class DrawInterpreter
         var aThread = new Thread(() =>
         {
             t_hasLargeStack = true;
+            using Kerf.Engine.Foundation.OperationContext.Scope aScope = Kerf.Engine.Foundation.OperationContext.Begin(Context);
             try
             {
                 aResult = EvalTopLevel(theScript);
@@ -262,6 +271,10 @@ public sealed partial class DrawInterpreter
             catch (Exception anException)
             {
                 anError = ExceptionDispatchInfo.Capture(anException);
+            }
+            finally
+            {
+                Context = Kerf.Engine.Foundation.OperationContext.Current;
             }
         }, StackSize);
         aThread.Start();

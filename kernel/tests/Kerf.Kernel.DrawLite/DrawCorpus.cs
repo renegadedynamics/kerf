@@ -277,14 +277,8 @@ public sealed class DrawCorpus(string theTestsDirectory)
             // an exception from the port that a command didn't turn into a Tcl error
             aLog.WriteLine("Tcl Exception: " + global::Kerf.Engine.Foundation.OcctTypeNames.Of(anError.GetType()) + ": " + anError.Message);
         }
-        finally
-        {
-            // OCCT's harness runs each case in a fresh DRAWEXE process; the mesher's defaults (mpparallel,
-            // mpsetdefaultname) don't carry over to the next case (settings of the flow since unit 10I, reset in case
-            // the cases share one)
-            Kerf.Engine.Meshing.IncrementalMesh.SetParallelDefault(false);
-            Kerf.Engine.Meshing.DiscretFactory.Get().SetDefaultName("FastDiscret");
-        }
+        // OCCT's harness runs each case in a fresh DRAWEXE process: the settings a case's commands make (mpparallel,
+        // mpsetdefaultname…) stay in its interpreter's context (unit 10I), so none carries over to the next case
 
         string aText = aLog.ToString();
         var aChecker = new DrawInterpreter();
