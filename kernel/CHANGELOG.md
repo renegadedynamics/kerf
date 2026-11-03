@@ -1899,5 +1899,5 @@ and K8).
   curves and rational 2D Bezier curves written; angles written in the file's unit; strings of any length read, and a
   tab ends a string as a space does.
 - Binary BRep: a point on a surface keeps its parameters; the files are unchanged, and old ones read right.
-- Two rows reclassified to leave (decisions 16810, 16825). The oracle and native comparisons these fixes move compare
+- Two rows reclassified to leave (decisions 1493, 1509). The oracle and native comparisons these fixes move compare
   at plan 3.2's third level, each with its reason; occt-issues.md marks the rows fixed.
