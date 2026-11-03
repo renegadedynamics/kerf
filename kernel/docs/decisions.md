@@ -13918,3 +13918,60 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 1358. **The native recorders go** (`tools/*rec`, 41 folders): they built against the old build123d.net checkout's
        native OCCT, gone since 10B, and decision 1343 froze what they recorded. Two inputs that tests embed moved beside
        those tests.
+
+## Phase 10: unit 10G, immutability
+
+15501. **gp's public values are `readonly struct`s** (phase10-plan.md 2.2; design-rules.md 3): `Point3D`, `Vector3D`,
+       `Direction3D`, `Axis3D`, `Frame3D`, `CoordinateSystem`, `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, the
+       conics and quadrics, and their 2D twins (31 types), and `Placement`. Their 438 in-place mutators (`Transform`,
+       `SetX`, `Normalize`…) and the three `ref` accessors (`ChangeCoord`, `Matrix3x3.ChangeValue`) are gone; the
+       returning forms that already existed (`Transformed`, `WithX`, `Normalized`) are the only way to a changed value.
+       - **Callers:** every call outside the type's own declaration, 5,257 in 707 files of the kernel, Draw-lite and the
+         tests (none in the modelling layer, which used the returning forms already), became `x = x.Transformed(t);`,
+         rewritten by a Roslyn tool from the compiler's symbols (scratch, not committed); `SetLinearForm` became the
+         new static `Vector3D.LinearForm`/`Vector2D.LinearForm`. The 93 uses of `ChangeCoord` became a new value of
+         the coordinates (`p = new Point3D(p.XYZ() + v)`), the compound expressions kept in brackets.
+         Where OCCT built a transformation in two steps (`gp_Trsf T; T.SetRotation(…)`), the 278 pairs
+         `T t = new(); t = t.WithRotation(…);` are folded into `T t = new T().WithRotation(…);`.
+       - **Inside the types:** each returning form runs its mutator's body on locals copied from the fields it
+         changes, and builds the result through a private constructor of all the fields; where a mutator called
+         another of its type's own (`Power` calling `Invert`), the locals take the whole value back by deconstruction.
+         `Orthogonalize` is a static function of the matrix. Where a public constructor has the private one's
+         parameter types and only assigns (`Point3D(Xyz)`), it serves; where it checks (`Circle3D(Frame3D, double)`)
+         the check is kept, as the values it sees are valid; `Cone`'s takes its arguments in another order and
+         `Frame2D`'s orthogonalizes, so their calls were ordered to match and `Frame2D` keeps a private one;
+         `Direction3D`'s private constructor takes a unit vector as it is (`isUnit`), the public one normalizes.
+       - **Results are the same to the bit:** a copy runs the same arithmetic as the in-place call. Calls whose argument
+         was the receiver itself (`v.SetLinearForm(a, v, b, w)`, `m.Multiply(m)`, 121 of them) were checked: each is
+         component-wise or computes into temporaries first, so aliasing never changed a result.
+15502. **The engine's scratch structs stay mutable:** `Xyz`, `Xy`, `Matrix2x2`, `Quaternion3` and the interpolators are
+       engine types the maths writes in place; KERF0001 still reports a mutation of a read-only copy of them. It now
+       allows a readonly struct's constructor to change its own fields (the compiler does), and has a test for it.
+15503. **The shapes' value mutators stay internal for 10H:** `Shape`, `Edge`… keep their internal in-place
+       `Orientation(o)`, `Location(l)`, `Reverse()`, `Nullify()` (about 1,400 calls). They are topology's, which 10H
+       reworks with the overlay, and 10H1 runs beside this unit: rewriting them here would collide with it. They have no
+       public mutator, so KERF0003 passes.
+15504. **Geometry has no public mutator; its internal ones build fresh objects** (phase10-plan.md 2.4). Geom's and
+       Geom2d's classes already had none public (their 482 `With…` copies date from phase 5); 384 internal mutators
+       remain, each starting with `CheckMutable()`, which throws on a published (frozen) object. Audited with a Roslyn
+       pass over their 1,116 calls in the kernel: 188 are a class's own (a mutator through another), 397 on an object
+       created by `new` or `Copy()` in the same method, 344 on a local from a converter, builder or copy
+       (`CopyBSpline`, `GeomConvert.CurveToBSplineCurve`, `Writable`), 91 on a parameter, 57 on an algorithm's own field,
+       39 other. The parameters, fields and others sampled are helpers handed a copy their caller made in the same
+       operation (`PutInBounds`, `SegmentCurve`, Gordon's working curves) or guarded by `IsFrozen ? Copy()`; none writes
+       into geometry an operation was given. The internal mutators stay as the construction-time half of 2.4's rule ("a
+       B-spline is built, then published"); 10L's builders replace them at the public boundary.
+15505. **The public geometry's collections are standard read-only lists** (question 50): the 36 `Poles()`, `Knots()`,
+       `Weights()`… of `BSplineCurve3D`, `BezierCurve3D`, `BSplineSurface`, `BezierSurface` and the 2D curves return
+       `IReadOnlyList<T>` (still a `PackedList`, without copying) in place of Schematiq's `PackedList<T>`. The surfaces'
+       `Poles()`/`Weights()` return fresh `NCollection_Array2` copies until 10J's `Grid<T>`.
+15506. **KERF0003 fails the build when a public type of a public namespace can be changed** (design-rules.md's
+       KERF0101 to KERF0103, as one rule): a public or protected `set` (`init` allowed), a public field not `readonly`, a
+       public member of a struct not `readonly`, or a public `void` method named `Set…` or after an in-place operation
+       (`Transform`, `Reverse`, `Segment`…), on a public class or struct in `Kerf` or `Kerf.<Area>` (not
+       `Kerf.Engine.*`). It runs on the kernel's four assemblies, with tests in Foundation.Tests. Geom's `ResD1` to
+       `ResD3`, written through `out` parameters at 630 places, are exempt by `#pragma` until 10L replaces them with
+       `CurveDerivatives`.
+15507. **Out of 10G's scope, by decision 1349:** STEP's 1,556 entity setters (63: the entities become internal) and
+       `InternalsVisibleTo`, which stays between the four kernel assemblies (54); `Placement`'s value equality is 10L's
+       (62).
