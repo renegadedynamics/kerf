@@ -609,8 +609,9 @@ public sealed class MakeRevol : Form
 
         MajMap(_pbase, theRevol, _map, ref _fShape, ref _lShape);
 
-        // OCCT: the branches are the other way round from Perform(Until): a face until is cut, a support glued
-        if (trf)
+        // as Perform(Until): a face of the support is glued, an infinite one cuts (OCCT had the branches the other way
+        // round: decision 16721)
+        if (!trf)
         {
             _gShape = vraiRevol;
             GeneratedShapeValid();

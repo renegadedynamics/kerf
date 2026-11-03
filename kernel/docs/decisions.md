@@ -15075,3 +15075,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        the Coons style lie on the surface. The filling recordings (COONS and the BSC and BZC Coons cases, 109 of 400)
        move to plan 3.2's third level: only the weights and the derivatives evaluated with them differ, the poles are
        native's.
+16721. **A revolved feature up to a face at an angle chooses as Perform(Until) does** (unit 7I's BRepFeat_MakeRevol
+       PerformUntilAngle row). Its branches were the other way round from Perform(Until): a bounded face went to the
+       cut, an infinite face (a plane, cylinder or cone without wires) to the gluing, which left the support as it was.
+       Test: a groove turned about the box's top back edge, a quarter annulus, the same with Perform(Until) on the back
+       face, and with PerformUntilAngle at 135° up to the back face and up to the infinite plane through it (OCCT: no
+       groove for the plane).

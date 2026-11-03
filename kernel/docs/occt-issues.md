@@ -1583,7 +1583,7 @@ the line), unless the last column says otherwise.
 | BRepFeat_MakePipe | Declares its own `mySkface`, hiding the form's, which stays null | Reproduced | touch |
 | BRepFeat_MakeRevolutionForm | Declares its own `mySliding`, hiding BRepFeat_RibSlot's, which stays false | Reproduced | touch |
 | BRepFeat_MakePrism, MakeDPrism `PerformUntilHeight`, BRepFeat_MakeRevol `PerformUntilAngle` | `if (Until.IsNull()) Perform(Length);` and `if (Length == 0) Perform(Until);` don't return | A null Until throws Standard_ConstructionError after the prism of the length; a zero length builds the prism twice. Reproduced | touch |
-| BRepFeat_MakeRevol `PerformUntilAngle` | The branches are the other way round from `Perform(Until)`: a finite until face is cut, a support glued | Reproduced | fix K3 |
+| BRepFeat_MakeRevol `PerformUntilAngle` | The branches are the other way round from `Perform(Until)`: a finite until face is cut, a support glued | Reproduced | fixed (decision 16721) |
 | BRepFeat_MakePipe `Perform(Until)`, `Perform(From, Until)` | `myFShape` becomes the pipe's first shape, which the map doesn't hold | `FirstShape()` then throws Standard_NoSuchObject. Reproduced | touch |
 | BRepFeat_Form `GlobalPerform` | `if (myMap.IsEmpty())` where `myMap(fac).IsEmpty()` is meant (the until faces outside the shape) | An until face cut away entirely keeps an empty list. Reproduced | touch |
 | BRepFeat_MakeRevolutionForm `Init` | Tests `proj.NbPoints()` again where `proj1` is meant | Reproduced | touch |
