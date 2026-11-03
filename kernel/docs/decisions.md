@@ -14723,3 +14723,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        do. Test: on a 3D B-spline path the surface's iso at the end is the iso at the start scaled by 2 about the path's
        end (the sections' radii are 1 and 2). The sweep recordings' pipe-2sect (27 of 30; native ImpossibleContact)
        move to the third level.
+16510. **ShapeCustom_SweptToElementary handles the modifier's null face and faces not swept** (rows 1389, 1390).
+       `NewCurve2d` read the surface of the null face BRepTools_Modifier passes when it asks whether to copy an edge's
+       vertices, and the swept surface of a face that has none; both now skip the pcurve's shift, which applies only to
+       a swept face becoming a torus or a sphere. It failed on most shapes with a degenerated edge (29 of the dataset's
+       small brep files). Test: OCCT's bug26359_parabola.brep, a revolved parabola, converts to a valid face of the same
+       area. ShapeProcess's recordings on DSE3.rle, DSEwithTol1.rle and cts20960b.rle (the operator failed natively)
+       move to the third level.
