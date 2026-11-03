@@ -13,9 +13,9 @@ namespace Kerf.Geometry;
 
 /// <summary>An infinite line in 2D space, positioned by an axis (a location and a direction).</summary>
 /// <remarks><c>new gp_Lin2d()</c> is the X axis, as in OCCT; <c>default(gp_Lin2d)</c> is not valid.</remarks>
-public partial struct Line2D : IEquatable<Line2D>
+public readonly partial struct Line2D : IEquatable<Line2D>
 {
-    private Axis2D _pos;
+    private readonly Axis2D _pos;
 
     public Line2D() => _pos = new Axis2D();
 
@@ -34,44 +34,20 @@ public partial struct Line2D : IEquatable<Line2D>
         _pos = new Axis2D(p, v);
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void Reverse() => _pos.Reverse();
-
-    internal void SetDirection(in Direction2D v) => _pos.SetDirection(v);
-
-    internal void SetLocation(in Point2D p) => _pos.SetLocation(p);
-
-    internal void SetPosition(in Axis2D a) => _pos = a;
-
-    internal void Mirror(in Point2D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis2D a) => _pos.Mirror(a);
-
-    internal void Rotate(in Point2D p, double ang) => _pos.Rotate(p, ang);
-
-    internal void Scale(in Point2D p, double s) => _pos.Scale(p, s);
-
-    internal void Transform(in Transform2D t) => _pos.Transform(t);
-
-    internal void Translate(in Vector2D v) => _pos.Translate(v);
-
-    internal void Translate(in Point2D p1, in Point2D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Line2D WithDirection(in Direction2D v)
     {
-        Line2D copy = this;
-        copy.SetDirection(v);
-        return copy;
+        Axis2D pos = _pos;
+        pos = pos.WithDirection(v);
+        return new Line2D(pos);
     }
 
     public readonly Line2D WithLocation(in Point2D p)
     {
-        Line2D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Axis2D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Line2D(pos);
     }
 
     public readonly Line2D WithPosition(in Axis2D a) => new(a);
@@ -141,58 +117,58 @@ public partial struct Line2D : IEquatable<Line2D>
 
     public readonly Line2D Reversed()
     {
-        Line2D l = this;
-        l._pos.Reverse();
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Reversed();
+        return new Line2D(pos);
     }
 
     public readonly Line2D Mirrored(in Point2D p)
     {
-        Line2D l = this;
-        l._pos.Mirror(p);
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Line2D(pos);
     }
 
     public readonly Line2D Mirrored(in Axis2D a)
     {
-        Line2D l = this;
-        l._pos.Mirror(a);
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Mirrored(a);
+        return new Line2D(pos);
     }
 
     public readonly Line2D Rotated(in Point2D p, double ang)
     {
-        Line2D l = this;
-        l._pos.Rotate(p, ang);
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Rotated(p, ang);
+        return new Line2D(pos);
     }
 
     public readonly Line2D Scaled(in Point2D p, double s)
     {
-        Line2D l = this;
-        l._pos.Scale(p, s);
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Scaled(p, s);
+        return new Line2D(pos);
     }
 
     public readonly Line2D Transformed(in Transform2D t)
     {
-        Line2D l = this;
-        l._pos.Transform(t);
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Transformed(t);
+        return new Line2D(pos);
     }
 
     public readonly Line2D Translated(in Vector2D v)
     {
-        Line2D l = this;
-        l._pos.Translate(v);
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Translated(v);
+        return new Line2D(pos);
     }
 
     public readonly Line2D Translated(in Point2D p1, in Point2D p2)
     {
-        Line2D l = this;
-        l._pos.Translate(new Vector2D(p1, p2));
-        return l;
+        Axis2D pos = _pos;
+        pos = pos.Translated(new Vector2D(p1, p2));
+        return new Line2D(pos);
     }
 
     public readonly bool Equals(Line2D other) => _pos.Equals(other._pos);

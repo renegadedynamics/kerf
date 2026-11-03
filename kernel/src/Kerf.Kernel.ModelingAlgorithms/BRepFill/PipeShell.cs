@@ -291,8 +291,8 @@ public sealed class PipeShell : Transient
     {
         _trihedron = Trihedron.IsFixed;
         Vector3D v1 = new(), v2 = new();
-        v1.SetXYZ(axe.Direction().XYZ());
-        v2.SetXYZ(axe.XDirection().XYZ());
+        v1 = v1.WithXYZ(axe.Direction().XYZ());
+        v2 = v2.WithXYZ(axe.XDirection().XYZ());
         Fixed tLaw = new(v1, v2);
         CurveAndTrihedron loc = new(tLaw);
         _location = new Edge3DLaw(_spine, loc);
@@ -389,7 +389,7 @@ public sealed class PipeShell : Transient
                 spOr = Tool.Pnt(vf);
                 Point3D p = Tool.Pnt(vl);
                 Vector3D v = new(p, spOr);
-                spOr.BaryCenter(0.5, p, 0.5);
+                spOr = spOr.BaryCentered(0.5, p, 0.5);
                 dir = v;
             }
             else
@@ -545,7 +545,7 @@ public sealed class PipeShell : Transient
             for (i = 1; i <= nbParRad; i++)
             {
                 Point2D parRad = parAndRad.Value(i);
-                parRad.SetY(parRad.Y() / initialWidth);
+                parRad = parRad.WithY(parRad.Y() / initialWidth);
                 parAndRad.SetValue(i, parRad);
             }
 

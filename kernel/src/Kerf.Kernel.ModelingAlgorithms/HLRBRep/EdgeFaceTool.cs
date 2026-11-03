@@ -36,7 +36,7 @@ public static class EdgeFaceTool
             double beta2 = beta * beta;
             double alfabeta = alfa * beta;
             Vector3D nm = d1U ^ d1V;
-            nm.Normalize();
+            nm = nm.Normalized();
             double n = (nm * d2U) * alfa2 + 2 * (nm * d2UV) * alfabeta + (nm * d2V) * beta2;
             double d = nmu2 * alfa2 + 2 * d1ud1v * alfabeta + nmv2 * beta2;
             return n / d;

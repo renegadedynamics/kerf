@@ -90,7 +90,7 @@ public static class LegacyTool
         double thepar = par;
 
         bc.D1(thepar, out Point3D _, out tg);
-        tg.Normalize();
+        tg = tg.Normalized();
         return true;
     }
 
@@ -134,7 +134,7 @@ public static class LegacyTool
         normt = new Direction3D(nggeom);
         if (f.Orientation() == Orientation.Reversed)
         {
-            normt.Reverse();
+            normt = normt.Reversed();
         }
         return true;
     }
@@ -172,7 +172,7 @@ public static class LegacyTool
                 {
                     Direction3D axis = bs.Cone().Axis().Direction();
                     Vector3D ng = new(axis);
-                    ng.Reverse();
+                    ng = ng.Reversed();
                     ngF = ng;
                     return true;
                 }

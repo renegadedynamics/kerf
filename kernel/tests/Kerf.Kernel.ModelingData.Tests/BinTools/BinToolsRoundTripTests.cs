@@ -198,7 +198,7 @@ public class BinToolsRoundTripTests
         Shape aBox = BinTestShapes.MeshedBox(true, true);
         Shape aFace = new Explorer(aBox, ShapeType.Face).Current();
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 7));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 7));
         Shape aMoved = aFace.Moved(new Placement(aT));
         byte[] aBytes = WriteShapes(true, true, aBox, aMoved, aBox);
         byte[] aBoxOnly = WriteShapes(true, true, aBox);
@@ -417,9 +417,9 @@ public class BinToolsRoundTripTests
         // the location set alone, with its complex entries
         var aSet = new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet();
         var aT1 = new Transform3D();
-        aT1.SetTranslation(new Vector3D(1, 2, 3));
+        aT1 = aT1.WithTranslation(new Vector3D(1, 2, 3));
         var aT2 = new Transform3D();
-        aT2.SetRotation(new Axis3D(new Point3D(), new Direction3D(1, 0, 0)), 1.0);
+        aT2 = aT2.WithRotation(new Axis3D(new Point3D(), new Direction3D(1, 0, 0)), 1.0);
         var aL1 = new Placement(aT1);
         var aL2 = new Placement(aT2);
         Placement aComplex = aL2.Powered(3) * aL1.Powered(-2);

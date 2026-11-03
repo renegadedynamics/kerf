@@ -263,8 +263,7 @@ public class Geom2d_BSplineCurve_Test
     [Fact]
     public void Transform()
     {
-        Transform2D aTrsf = new Transform2D();
-        aTrsf.SetTranslation(new Vector2D(10, 20));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(10, 20));
         Point2D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point2D aPtAfter = myOriginalCurve.Value(0.5);
@@ -301,7 +300,7 @@ public class Geom2d_BSplineCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        PackedList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
         Assert.Null(aWeights);
     }
 
@@ -311,9 +310,9 @@ public class Geom2d_BSplineCurve_Test
         Assert.Equal(0.0, myOriginalCurve.Knot(1));
         Assert.Equal(1.0, myOriginalCurve.Knot(2));
         // OCCT returns references to its arrays; the port returns PackedLists (indexed from 0)
-        PackedList<double> aKnots = myOriginalCurve.Knots();
+        IReadOnlyList<double> aKnots = myOriginalCurve.Knots();
         Assert.Equal(2, aKnots.Count);
-        PackedList<int> aMults = myOriginalCurve.Multiplicities();
+        IReadOnlyList<int> aMults = myOriginalCurve.Multiplicities();
         Assert.Equal(2, aMults.Count);
         Assert.Equal(4, aMults[0]);
     }

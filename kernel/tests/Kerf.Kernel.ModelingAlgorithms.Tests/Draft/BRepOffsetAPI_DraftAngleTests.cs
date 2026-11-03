@@ -35,7 +35,7 @@ public class BRepOffsetAPI_DraftAngleTests
                 Direction3D aN = aPlane.Pln().Axis().Direction();
                 if (aF.Orientation() == Orientation.Reversed)
                 {
-                    aN.Reverse();
+                    aN = aN.Reversed();
                 }
                 if (aN.IsEqual(theNormal, 1.0e-9))
                 {

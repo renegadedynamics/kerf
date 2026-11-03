@@ -700,7 +700,7 @@ public sealed class WiresOnShape : Transient
                     double x1 = pBound2d.X();
                     double shift = ShapeAnalysisAnalysis.AdjustToPeriod(x1, adSurf.FirstUParameter(), adSurf.LastUParameter());
                     x1 += shift;
-                    pBound2d.SetX(x1);
+                    pBound2d = pBound2d.WithX(x1);
                     double x2 = p2d.X();
                     shift = ShapeAnalysisAnalysis.AdjustToPeriod(x2, adSurf.FirstUParameter(), adSurf.LastUParameter());
                     x2 += shift;
@@ -710,7 +710,7 @@ public sealed class WiresOnShape : Transient
                         x2 = x1;
                         dumin = 0.0;
                     }
-                    pcur.SetX(x2);
+                    pcur = pcur.WithX(x2);
                 }
 
                 if (dvmin > dvmax && adSurf.IsVPeriodic)
@@ -718,7 +718,7 @@ public sealed class WiresOnShape : Transient
                     double y1 = pBound2d.Y();
                     double shift = ShapeAnalysisAnalysis.AdjustToPeriod(y1, adSurf.FirstVParameter(), adSurf.LastVParameter());
                     y1 += shift;
-                    pBound2d.SetY(y1);
+                    pBound2d = pBound2d.WithY(y1);
                     double y2 = p2d.Y();
                     shift = ShapeAnalysisAnalysis.AdjustToPeriod(y2, adSurf.FirstVParameter(), adSurf.LastVParameter());
                     y2 += shift;
@@ -728,7 +728,7 @@ public sealed class WiresOnShape : Transient
                         y2 = y1;
                         dvmin = 0.0;
                     }
-                    pcur.SetY(y2);
+                    pcur = pcur.WithY(y2);
                 }
                 double dist3d = tolV;
                 if ((dumin > dumax) || (dvmin > dvmax))

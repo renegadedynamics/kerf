@@ -135,38 +135,38 @@ public static class LineTool
 
             if ((i % 2) == 0)
             {
-                otherVec.SetX(0.0);
-                otherVec.SetY(1.0);
-                otherVecNormal.SetX(1.0);
-                otherVecNormal.SetY(0.0);
+                otherVec = otherVec.WithX(0.0);
+                otherVec = otherVec.WithY(1.0);
+                otherVecNormal = otherVecNormal.WithX(1.0);
+                otherVecNormal = otherVecNormal.WithY(0.0);
 
                 if (i < 2)
                 {
-                    aprojpoint.SetX(umin);
+                    aprojpoint = aprojpoint.WithX(umin);
                 }
                 else
                 {
-                    aprojpoint.SetX(umax);
+                    aprojpoint = aprojpoint.WithX(umax);
                 }
             }
             else
             {
-                otherVec.SetX(1.0);
-                otherVec.SetY(0.0);
-                otherVecNormal.SetX(0.0);
-                otherVecNormal.SetY(1.0);
+                otherVec = otherVec.WithX(1.0);
+                otherVec = otherVec.WithY(0.0);
+                otherVecNormal = otherVecNormal.WithX(0.0);
+                otherVecNormal = otherVecNormal.WithY(1.0);
 
                 if (i < 2)
                 {
-                    aprojpoint.SetY(vmin);
+                    aprojpoint = aprojpoint.WithY(vmin);
                 }
                 else
                 {
-                    aprojpoint.SetY(vmax);
+                    aprojpoint = aprojpoint.WithY(vmax);
                 }
             }
             Vector2D anormvec = vec;
-            anormvec.Normalize();
+            anormvec = anormvec.Normalized();
             double adot1 = anormvec.Dot(otherVecNormal);
 
             if (Math.Abs(adot1) < global::Kerf.Engine.Foundation.Precision.Angular())
@@ -779,8 +779,8 @@ public static class LineTool
                             {
                                 prevNeighbourPoint.ParametersOnS2(out nU2, out nV2);
                             }
-                            ap2.SetX(nU2);
-                            ap2.SetY(nV2);
+                            ap2 = ap2.WithX(nU2);
+                            ap2 = ap2.WithY(nV2);
 
                             if (ap1.SquareDistance(ap2) > (Constants.Resolution() * Constants.Resolution()))
                             {

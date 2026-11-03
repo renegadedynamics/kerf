@@ -389,7 +389,7 @@ public sealed class TrimEdgeTool
             double dmin1 = pc.SquareDistance(pBis);
             if (dmin > dmin1 && dmin1 < dmax)
             {
-                p.SetY(t);
+                p = p.WithY(t);
                 if (Params.IsEmpty())
                 {
                     Params.Append(p);
@@ -420,7 +420,7 @@ public sealed class TrimEdgeTool
             double dmin1 = pc.SquareDistance(pBis);
             if (dmin > dmin1 && dmin1 < dmax)
             {
-                p.SetY(t);
+                p = p.WithY(t);
                 if (points2.IsEmpty())
                 {
                     points2.Append(p);
@@ -447,7 +447,7 @@ public sealed class TrimEdgeTool
             for (i = 1; i <= nbPoints; i++)
             {
                 pSeq = Params[i];
-                pSeq.SetZ(points2.Value(i).Y());
+                pSeq = pSeq.WithZ(points2.Value(i).Y());
                 Params.SetValue(i, pSeq);
             }
             return;
@@ -570,7 +570,7 @@ public sealed class TrimEdgeTool
         for (i = 1; i <= nbPoints; i++)
         {
             pSeq = Params[i];
-            pSeq.SetZ(points2.Value(i).Y());
+            pSeq = pSeq.WithZ(points2.Value(i).Y());
             Params.SetValue(i, pSeq);
         }
     }
@@ -640,12 +640,12 @@ public sealed class TrimEdgeTool
             Point3D pInt = new(0, projector1.LowerDistanceParameter(), projector2.LowerDistanceParameter());
             if (start)
             {
-                pInt.SetX(_bis.FirstParameter());
+                pInt = pInt.WithX(_bis.FirstParameter());
                 Params.Prepend(pInt);
             }
             else
             {
-                pInt.SetX(_bis.LastParameter());
+                pInt = pInt.WithX(_bis.LastParameter());
                 Params.Append(pInt);
             }
         }

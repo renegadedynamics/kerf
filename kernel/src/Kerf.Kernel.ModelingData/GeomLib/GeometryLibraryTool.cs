@@ -254,8 +254,8 @@ public static class GeometryLibraryTool
         //! Returns the given line
         public void GetLine(ref Line2D line)
         {
-            line.SetDirection(new Direction2D(_dirRef));
-            line.SetLocation(new Point2D(_pRef));
+            line = line.WithDirection(new Direction2D(_dirRef));
+            line = line.WithLocation(new Point2D(_pRef));
         }
 
         //! Returns value of *this (square deviation)
@@ -379,8 +379,8 @@ public static class GeometryLibraryTool
         {
             prmOnCurve = umax;
             func.UpdateFields(umax);
-            ptOnCurve.SetXY(func.PointOnCurve().XY());
-            vecCurvLine.SetXY(func.VecCurveLine().XY());
+            ptOnCurve = ptOnCurve.WithXY(func.PointOnCurve().XY());
+            vecCurvLine = vecCurvLine.WithXY(func.VecCurveLine().XY());
         }
         return Math.Sqrt(sqDefl);
     }

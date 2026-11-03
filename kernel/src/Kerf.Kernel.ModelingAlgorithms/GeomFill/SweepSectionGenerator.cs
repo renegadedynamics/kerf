@@ -283,13 +283,13 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
                 _path.D1(u, out p, out d1);
 
                 // Eval the translation between the (i-1) section and the i-th.
-                trans.SetTranslation(pRef, p);
+                trans = trans.WithTranslation(pRef, p);
 
                 Transform3D rot = new Transform3D();
                 if (!d1Ref.IsParallel(d1, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
                     // Eval the Rotation between (i-1) section and the i-th.
-                    rot.SetRotation(new Axis3D(p, new Direction3D(d1Ref ^ d1)), d1Ref.AngleWithRef(d1, d1Ref ^ d1));
+                    rot = rot.WithRotation(new Axis3D(p, new Direction3D(d1Ref ^ d1)), d1Ref.AngleWithRef(d1, d1Ref ^ d1));
                 }
                 else if (d1Ref.IsOpposite(d1, global::Kerf.Engine.Foundation.Precision.Angular()))
                 {
@@ -312,7 +312,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
         {
             for (int i = 2; i <= _nbSections; i++)
             {
-                cumulTR.SetRotation(_circPathAxis, parameters[i]);
+                cumulTR = cumulTR.WithRotation(_circPathAxis, parameters[i]);
                 _trsfs.Append(cumulTR);
             }
         }
@@ -447,7 +447,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
                 dPoles[i] = x * new Vector3D(n) - y * new Vector3D(t);
                 if (dPoles[i].Magnitude() > Epsilon(1.0))
                 {
-                    dPoles[i].Normalize();
+                    dPoles[i] = dPoles[i].Normalized();
                     dPoles[i] *= Math.Sqrt(x * x + y * y);
                 }
             }
@@ -482,9 +482,9 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
                 {
                     for (int i = 1; i <= _firstSect.PoleCount; i++)
                     {
-                        poles[i].SetXYZ((_nbSections - p) * _firstSect.Pole(i).XYZ()
+                        poles[i] = poles[i].WithXYZ((_nbSections - p) * _firstSect.Pole(i).XYZ()
                                         + (p - 1) * _lastSect!.Pole(i).XYZ());
-                        poles[i].SetXYZ(poles[i].XYZ() / (_nbSections - 1));
+                        poles[i] = poles[i].WithXYZ(poles[i].XYZ() / (_nbSections - 1));
 
                         weigths[i] = (_nbSections - p) * _firstSect.Weight(i) + (p - 1) * _lastSect.Weight(i);
                         weigths[i] /= _nbSections - 1;
@@ -493,7 +493,7 @@ public sealed class SweepSectionGenerator : ISectionGenerator<int>
 
                 for (int i = 1; i <= poles.Length(); i++)
                 {
-                    poles[i].Transform(cumulTR);
+                    poles[i] = poles[i].Transformed(cumulTR);
                 }
             }
         }

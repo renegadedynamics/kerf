@@ -90,7 +90,7 @@ public class Direction2 : GeometryVector2D
     {
         CheckMutable();
         Direction2D dir = new Direction2D(_gpVec2d);
-        dir.Transform(t);
+        dir = dir.Transformed(t);
         _gpVec2d = new Vector2D(dir);
     }
 

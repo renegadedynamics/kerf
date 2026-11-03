@@ -98,7 +98,7 @@ public sealed class Lin2dBisec
                                                       new Direction2D(lin1.Direction().XY() - lin2.Direction().XY()));
                         if (lin1.Angle(lin2) >= 0.0)
                         {
-                            _linsol[_nbrSol].Reverse();
+                            _linsol[_nbrSol] = _linsol[_nbrSol].Reversed();
                         }
                         _wellDone = true;
                     }

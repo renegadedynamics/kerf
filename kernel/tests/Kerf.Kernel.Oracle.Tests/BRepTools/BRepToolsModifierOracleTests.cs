@@ -396,12 +396,12 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
             {
                 double aScale = theOracle.Bool() ? theOracle.Real(0.2, 0.9) : theOracle.Real(1.1, 5.0);
                 aNT.SetScale(aNP, aScale);
-                aT.SetScale(aP, aScale);
+                aT = aT.WithScale(aP, aScale);
                 break;
             }
             case 1:
                 aNT.SetMirror(aNP);
-                aT.SetMirror(aP);
+                aT = aT.WithMirror(aP);
                 break;
             case 2:
             {
@@ -409,7 +409,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
                 using var aND = new N.gp_Dir(aV.X(), aV.Y(), aV.Z());
                 using var aNAx = new N.gp_Ax2(aNP, aND);
                 aNT.SetMirror(aNAx);
-                aT.SetMirror(new Frame3D(aP, new Direction3D(aV.X(), aV.Y(), aV.Z())));
+                aT = aT.WithMirror(new Frame3D(aP, new Direction3D(aV.X(), aV.Y(), aV.Z())));
                 break;
             }
             default:

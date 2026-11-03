@@ -94,7 +94,7 @@ public sealed partial class ImpImpIntersection
                 besttheta = theta;
             }
 
-            d1a.SetCoord(-d1a.X(), -d1a.Y());
+            d1a = d1a.WithCoord(-d1a.X(), -d1a.Y());
 
             double d = d1a.X() * d2d.Y() - d1a.Y() * d2d.X();
 
@@ -421,7 +421,7 @@ public sealed partial class ImpImpIntersection
                     currentparameter = currentpointonrst.Parameter();
                     currentarc.D1(currentparameter, out p2d, out d2d);
                     quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                    vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                    vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                     goon = MultiplePoint(listpnt,
                                          domain,
                                          quadSurf,
@@ -476,7 +476,7 @@ public sealed partial class ImpImpIntersection
                         }
                         //  Modified by skv - Thu Jan 15 15:57:15 2004 OCC4455 End
                         Point3D pointonarc = new();
-                        vtgint.SetCoord(0, 0, 0);
+                        vtgint = vtgint.WithCoord(0, 0, 0);
                         double vertTol = tolarc;
                         NCollection_List<double> lParams = new();
                         linefound = FindLine(ref psurf,
@@ -499,7 +499,7 @@ public sealed partial class ImpImpIntersection
                             //-- currentparameter = currentpointonrst.Parameter();
                             currentarc.D1(currentparameter, out p2d, out d2d);
                             quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                            vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                            vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                             PatchLine lin = slin.Value(linenumber);
                             theType = lin.ArcType();
@@ -592,7 +592,7 @@ public sealed partial class ImpImpIntersection
                                                     currentparameter = currentpointonrst.Parameter();
 
                                                     currentarc.D1(currentparameter, out p2d, out d2d);
-                                                    vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                                    vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                                     if (normale.SquareMagnitude() < 1e-16)
                                                     {
                                                         transline.SetValue(true, WalkingTypeTrans.Undecided);
@@ -705,7 +705,7 @@ public sealed partial class ImpImpIntersection
                         currentparameter = currentpointonrst.Parameter();
                         currentarc.D1(currentparameter, out Point2D p2d, out Vector2D d2d);
                         quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                        vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                        vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                         //-- Si la normale est nulle (apex d un cone) On simule une transition UNKNOWN
                         if (normale.SquareMagnitude() < 1e-16)
@@ -743,7 +743,7 @@ public sealed partial class ImpImpIntersection
                                             currentparameter = otherpt.Parameter();
 
                                             currentarc.D1(currentparameter, out p2d, out d2d);
-                                            vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                             if (normale.SquareMagnitude() < 1e-16)
                                             {
                                                 transline.SetValue(true, WalkingTypeTrans.Undecided);
@@ -842,7 +842,7 @@ public sealed partial class ImpImpIntersection
                     currentparameter = currentpointonrst.Parameter();
                     currentarc.D1(currentparameter, out Point2D p2d, out Vector2D d2d);
                     quadSurf.D1(p2d.X(), p2d.Y(), ref ptbid, ref d1u, ref d1v);
-                    vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                    vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                     if (normale.SquareMagnitude() < 1e-16)
                     {
                         transline.SetValue(true, WalkingTypeTrans.Undecided);
@@ -874,7 +874,7 @@ public sealed partial class ImpImpIntersection
                                         currentarc = currentpointonrst.Arc();
                                         currentparameter = currentpointonrst.Parameter();
                                         currentarc.D1(currentparameter, out p2d, out d2d);
-                                        vtgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                        vtgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                         if (normale.SquareMagnitude() < 1e-16)
                                         {
                                             transline.SetValue(true, WalkingTypeTrans.Undecided);
@@ -1203,7 +1203,7 @@ public sealed partial class ImpImpIntersection
                         // must be processed by high-level algorithms (IntPatch_SpecialPoints class).
                         // Therefore this code has been deleted as deprecated.
 
-                        vtgtint.SetCoord(0.0, 0.0, 0.0);
+                        vtgtint = vtgtint.WithCoord(0.0, 0.0, 0.0);
                     }
                 }
                 break;
@@ -1274,7 +1274,7 @@ public sealed partial class ImpImpIntersection
                             // must be processed by high-level algorithms (IntPatch_SpecialPoints class).
                             // Therefore this code has been deleted as deprecated.
 
-                            tgint.SetCoord(0.0, 0.0, 0.0);
+                            tgint = tgint.WithCoord(0.0, 0.0, 0.0);
                         }
                     }
                     else

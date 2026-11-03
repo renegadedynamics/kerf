@@ -699,10 +699,10 @@ internal static partial class Builder_0
             }
                 break;
         }
-        v.Normalize();
+        v = v.Normalized();
         if (sens == 1)
         {
-            v.Reverse();
+            v = v.Reversed();
         }
     }
 
@@ -736,8 +736,8 @@ internal static partial class Builder_0
                 return null;
             }
             Frame3D circax2 = new(cendeb, dddeb ^ ddfin, dddeb);
-            ccc.SetPosition(circax2);
-            ccc.SetRadius(rad);
+            ccc = ccc.WithPosition(circax2);
+            ccc = ccc.WithRadius(rad);
             wFirst = 0.0;
             wLast = dddeb.Angle(ddfin);
             return new CircleCurve3D(ccc);
@@ -760,11 +760,11 @@ internal static partial class Builder_0
         NCollection_Array1<Point3D> pol = new(1, 4);
         double fac = 0.5 * Math.Tan((Math.PI - vd.Angle(vf)) * 0.5);
         pol[1] = pd;
-        vd.Multiply(fac * r);
-        pol[2].SetCoord(pd.X() + vd.X(), pd.Y() + vd.Y(), pd.Z() + vd.Z());
+        vd = vd.Multiplied(fac * r);
+        pol[2] = pol[2].WithCoord(pd.X() + vd.X(), pd.Y() + vd.Y(), pd.Z() + vd.Z());
         pol[4] = pf;
-        vf.Multiply(fac * r);
-        pol[3].SetCoord(pf.X() + vf.X(), pf.Y() + vf.Y(), pf.Z() + vf.Z());
+        vf = vf.Multiplied(fac * r);
+        pol[3] = pol[3].WithCoord(pf.X() + vf.X(), pf.Y() + vf.Y(), pf.Z() + vf.Z());
         return new BezierCurve3D(pol);
     }
 

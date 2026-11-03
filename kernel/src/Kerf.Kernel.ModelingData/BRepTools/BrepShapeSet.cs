@@ -1787,7 +1787,7 @@ public class BrepShapeSet : ShapeSet
                 global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out x);
                 global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out y);
                 global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out z);
-                nodes[j].SetCoord(x, y, z);
+                nodes[j] = nodes[j].WithCoord(x, y, z);
             }
 
             if (hasparameters != 0)

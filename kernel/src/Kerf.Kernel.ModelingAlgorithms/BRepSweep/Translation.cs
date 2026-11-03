@@ -71,7 +71,7 @@ internal sealed class Translation : Trsf
         Point3D p = Tool.Pnt(ShapeCasts.Vertex(aGenV));
         if (aDirV.Index() == 2)
         {
-            p.Transform(_location.Transformation());
+            p = p.Transformed(_location.Transformation());
         }
         Vertex v = new();
         ////// modified by jgv, 5.10.01, for buc61008 //////
@@ -163,7 +163,7 @@ internal sealed class Translation : Trsf
             // extruded surfaces are inverted correspondingly to the topology, so reverse.
             c.Transform(tr);
             var d = new Direction3D(_vec);
-            d.Reverse();
+            d = d.Reversed();
             if (_canonize)
             {
                 var hc = new CurveAdaptor(c, first, last);
@@ -242,8 +242,8 @@ internal sealed class Translation : Trsf
             {
                 v = -_vec.Magnitude();
             }
-            l.SetLocation(new Point2D(0, v));
-            l.SetDirection(new Direction2D(Direction2D.D.X));
+            l = l.WithLocation(new Point2D(0, v));
+            l = l.WithDirection(new Direction2D(Direction2D.D.X));
             //  }
             var gl = new LineCurve2D(l);
             SetThePCurve(_builder.Builder(), ShapeCasts.Edge(aNewEdge), ShapeCasts.Face(aNewFace), orien, gl);
@@ -257,8 +257,8 @@ internal sealed class Translation : Trsf
         var l = new Line2D();
         if (AS.GetType() != Plane)
         {
-            l.SetLocation(new Point2D(Tool.Parameter(ShapeCasts.Vertex(aGenV), ShapeCasts.Edge(aGenE)), 0));
-            l.SetDirection(new Direction2D(Direction2D.D.NY));
+            l = l.WithLocation(new Point2D(Tool.Parameter(ShapeCasts.Vertex(aGenV), ShapeCasts.Edge(aGenE)), 0));
+            l = l.WithDirection(new Direction2D(Direction2D.D.NY));
             // JAG: OCCT's commented-out computation on planes
             var gl = new LineCurve2D(l);
             SetThePCurve(_builder.Builder(), ShapeCasts.Edge(aNewEdge), ShapeCasts.Face(aNewFace), orien, gl);

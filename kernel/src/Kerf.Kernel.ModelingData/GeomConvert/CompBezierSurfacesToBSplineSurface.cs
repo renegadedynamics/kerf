@@ -465,7 +465,7 @@ public sealed class CompBezierSurfacesToBSplineSurface
                     vindex = vIndex + vdeb - 1;
                     for (vpol = vdeb; vpol <= _vDegree + 1; vpol++, vindex++)
                     {
-                        _poles[uIndex, vindex].ChangeCoord() += patch.Pole(1, vpol).Coord();
+                        _poles[uIndex, vindex] = new Point3D(_poles[uIndex, vindex].XYZ() + patch.Pole(1, vpol).Coord());
                     }
                 }
 
@@ -474,13 +474,13 @@ public sealed class CompBezierSurfacesToBSplineSurface
                     uindex = uIndex + udeb - 1;
                     for (upol = udeb; upol <= _uDegree + 1; upol++, uindex++)
                     {
-                        _poles[uindex, vIndex].ChangeCoord() += patch.Pole(upol, 1).Coord();
+                        _poles[uindex, vIndex] = new Point3D(_poles[uindex, vIndex].XYZ() + patch.Pole(upol, 1).Coord());
                     }
                 }
 
                 if (udeb == 2 && vdeb == 2)
                 {
-                    _poles[uIndex, vIndex].ChangeCoord() += patch.Pole(1, 1).Coord();
+                    _poles[uIndex, vIndex] = new Point3D(_poles[uIndex, vIndex].XYZ() + patch.Pole(1, 1).Coord());
                 }
             }
         }
@@ -495,7 +495,7 @@ public sealed class CompBezierSurfacesToBSplineSurface
         {
             for (vpol = 1; vpol <= _poles.UpperCol(); vpol++)
             {
-                _poles[uIndex, vpol].ChangeCoord() *= 0.5;
+                _poles[uIndex, vpol] = new Point3D(_poles[uIndex, vpol].XYZ() * 0.5);
             }
         }
 
@@ -504,7 +504,7 @@ public sealed class CompBezierSurfacesToBSplineSurface
         {
             for (upol = 1; upol <= _poles.UpperRow(); upol++)
             {
-                _poles[upol, vIndex].ChangeCoord() *= 0.5;
+                _poles[upol, vIndex] = new Point3D(_poles[upol, vIndex].XYZ() * 0.5);
             }
         }
 

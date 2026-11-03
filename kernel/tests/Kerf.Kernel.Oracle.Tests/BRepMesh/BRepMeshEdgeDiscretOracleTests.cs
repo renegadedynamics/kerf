@@ -310,8 +310,8 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                             if (!aLoc.IsIdentity)
                             {
                                 Transform3D aTrsf = aLoc.Transformation();
-                                aTrsf.Invert();
-                                aPoint.Transform(aTrsf);
+                                aTrsf = aTrsf.Inverted();
+                                aPoint = aPoint.Transformed(aTrsf);
                             }
                             using N.gp_Pnt aNative = theNativeTriangulations[aFaceIndex - 1]!.Node(aPoly.Node(k));
                             theO.Same(aNative, aPoint, $"{aWhat} face {aFaceIndex} node {k}", 0.0);

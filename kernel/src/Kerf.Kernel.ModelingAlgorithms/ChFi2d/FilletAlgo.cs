@@ -296,8 +296,8 @@ public sealed class FilletAlgo
             }
 
             var perp = new Vector2D(((_startSide) ? -1 : 1) * vec.Y(), ((_startSide) ? 1 : -1) * vec.X());
-            perp.Normalize();
-            perp.Multiply(_radius);
+            perp = perp.Normalized();
+            perp = perp.Multiplied(_radius);
             center = aPoint.Translated(perp);
 
             var projInt = new ProjectPointOnCurve2D(aPoint, _curve2!, _start2, _end2);
@@ -590,7 +590,7 @@ public sealed class FilletAlgo
         double x, y;
         Point2D targetPoint2d = new();
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(_plane!.Pln().Position(), point, out x, out y);
-        targetPoint2d.SetCoord(x, y);
+        targetPoint2d = targetPoint2d.WithCoord(x, y);
 
         // iterate through all possible solutions.
         int i = 1, nb = 0;
@@ -619,7 +619,7 @@ public sealed class FilletAlgo
         Point2D targetPoint2d = new();
         double x, y;
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(_plane!.Pln().Position(), point, out x, out y);
-        targetPoint2d.SetCoord(x, y);
+        targetPoint2d = targetPoint2d.WithCoord(x, y);
 
         // choose the nearest circle
         double distance = 0.0, p;

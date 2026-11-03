@@ -100,7 +100,7 @@ internal static partial class Builder_0
             {
                 vp2 = ChFi3d_InPeriod(vp2, v1, v1 + s.VPeriod(), 1.0e-8);
             }
-            p2dS.SetCoord(up2, vp2);
+            p2dS = p2dS.WithCoord(up2, vp2);
             wc = pint.W();
             return true;
         }
@@ -142,7 +142,7 @@ internal static partial class Builder_0
         fi2.PCurveOnSurf()!.Value(uInt2).Coord(out x, out y);
         Point3D p3d2 = hs2.Value(x, y);
         distref2 = p3d1.SquareDistance(p3d2);
-        p.SetXYZ(p3d1.XYZ().Added(p3d2.XYZ()).Multiplied(0.5));
+        p = p.WithXYZ(p3d1.XYZ().Added(p3d2.XYZ()).Multiplied(0.5));
         // recalculation of the extremums
         double delt1 = Math.Min(0.1, 0.05 * (fi1.LastParameter() - fi1.FirstParameter()));
         CurveAdaptor2D hc2d1 = new(fi1.PCurveOnSurf()!, uInt1 - delt1, uInt1 + delt1);
@@ -161,7 +161,7 @@ internal static partial class Builder_0
                 uInt2 = ponc2.Parameter();
                 Point3D pnt1 = ponc1.Value();
                 Point3D pnt2 = ponc2.Value();
-                p.SetXYZ(pnt1.XYZ().Added(pnt2.XYZ()).Multiplied(0.5));
+                p = p.WithXYZ(pnt1.XYZ().Added(pnt2.XYZ()).Multiplied(0.5));
             }
         }
     }

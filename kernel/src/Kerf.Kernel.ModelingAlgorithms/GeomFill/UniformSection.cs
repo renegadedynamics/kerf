@@ -169,14 +169,14 @@ public class UniformSection : SurfaceSectionLaw
         Point3D bary = new Point3D();
 
         delta = (_curve.LastParameter() - u) / 20;
-        bary.SetCoord(0.0, 0.0, 0.0);
+        bary = bary.WithCoord(0.0, 0.0, 0.0);
         for (int ii = 0; ii <= 20; ii++, u += delta)
         {
             p = _curve.Value(u);
-            bary.ChangeCoord() += p.XYZ();
+            bary = new Point3D(bary.XYZ() + p.XYZ());
         }
 
-        bary.ChangeCoord() /= 21.0;
+        bary = new Point3D(bary.XYZ() / 21.0);
         return bary;
     }
 

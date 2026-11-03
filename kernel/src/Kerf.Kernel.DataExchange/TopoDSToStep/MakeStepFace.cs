@@ -196,7 +196,7 @@ public sealed class MakeStepFace : ExportRoot
                         Axis3D axis = ax3.Axis();
                         if (!ax3.Direct())
                         {
-                            axis.Reverse();
+                            axis = axis.Reversed();
                         }
 
                         var rev = new RevolutionSurface(basisCurve, axis);

@@ -45,9 +45,9 @@ public class CurveOnSurface : CurveAdaptorBase
     {
         Vector3D vx = new Vector3D(pl.XAxis().Direction());
         Vector3D vy = new Vector3D(pl.YAxis().Direction());
-        vx.Multiply(v.X());
-        vy.Multiply(v.Y());
-        vx.Add(vy);
+        vx = vx.Multiplied(v.X());
+        vy = vy.Multiplied(v.Y());
+        vx = vx.Added(vy);
         return vx;
     }
 
@@ -97,15 +97,15 @@ public class CurveOnSurface : CurveAdaptorBase
         // repeats it). Ported as is; Adaptor3d_CurveOnSurfaceTests.EvalD3_OcctFormula_DiffersFromDerivative.
         Vector3D v31 = new Vector3D(), v32 = new Vector3D(), v33 = new Vector3D(), v34 = new Vector3D(), v3 = new Vector3D();
 
-        v31.SetLinearForm(dw.X(), d1U, d2W.X() * dw.X(), d2U, d2W.X() * dw.Y(), d2UV);
-        v31.SetLinearForm(d3W.Y(), d1V, d2W.Y() * dw.X(), d2UV, d2W.Y() * dw.Y(), d2V, v31);
+        v31 = Vector3D.LinearForm(dw.X(), d1U, d2W.X() * dw.X(), d2U, d2W.X() * dw.Y(), d2UV);
+        v31 = Vector3D.LinearForm(d3W.Y(), d1V, d2W.Y() * dw.X(), d2UV, d2W.Y() * dw.Y(), d2V, v31);
 
-        v32.SetLinearForm(dw.X() * dw.X() * dw.Y(), d3UUV, dw.X() * dw.Y() * dw.Y(), d3UVV);
-        v32.SetLinearForm(d2W.X() * dw.Y() + dw.X() * d2W.Y(), d2UV, dw.X() * dw.Y() * dw.Y(), d3UVV, v32);
-        v33.SetLinearForm(2 * d2W.X() * dw.X(), d2U, dw.X() * dw.X() * dw.X(), d3U, dw.X() * dw.X() * dw.Y(), d3UUV);
+        v32 = Vector3D.LinearForm(dw.X() * dw.X() * dw.Y(), d3UUV, dw.X() * dw.Y() * dw.Y(), d3UVV);
+        v32 = Vector3D.LinearForm(d2W.X() * dw.Y() + dw.X() * d2W.Y(), d2UV, dw.X() * dw.Y() * dw.Y(), d3UVV, v32);
+        v33 = Vector3D.LinearForm(2 * d2W.X() * dw.X(), d2U, dw.X() * dw.X() * dw.X(), d3U, dw.X() * dw.X() * dw.Y(), d3UUV);
 
-        v34.SetLinearForm(2 * d2W.Y() * dw.Y(), d2V, dw.Y() * dw.Y() * dw.X(), d3UVV, dw.Y() * dw.Y() * dw.Y(), d3V);
-        v3.SetLinearForm(1, v31, 2, v32, 1, v33, v34);
+        v34 = Vector3D.LinearForm(2 * d2W.Y() * dw.Y(), d2V, dw.Y() * dw.Y() * dw.X(), d3UVV, dw.Y() * dw.Y() * dw.Y(), d3V);
+        v3 = Vector3D.LinearForm(1, v31, 2, v32, 1, v33, v34);
         return v3;
     }
 
@@ -116,13 +116,13 @@ public class CurveOnSurface : CurveAdaptorBase
 
         if (lx > rx)
         {
-            p1.SetX(rx);
-            p2.SetX(lx);
+            p1 = p1.WithX(rx);
+            p2 = p2.WithX(lx);
         }
         if (ly > ry)
         {
-            p1.SetY(ry);
-            p2.SetY(ly);
+            p1 = p1.WithY(ry);
+            p2 = p2.WithY(ly);
         }
     }
 
@@ -286,13 +286,13 @@ public class CurveOnSurface : CurveAdaptorBase
             {
                 if (index == 1)
                 {
-                    leftBot.SetX(bSplC.Knot(bnd1));
-                    rightTop.SetX(bSplC.Knot(bnd2));
+                    leftBot = leftBot.WithX(bSplC.Knot(bnd1));
+                    rightTop = rightTop.WithX(bSplC.Knot(bnd2));
                 }
                 else if (index == 2)
                 {
-                    leftBot.SetY(bSplC.Knot(bnd1));
-                    rightTop.SetY(bSplC.Knot(bnd2));
+                    leftBot = leftBot.WithY(bSplC.Knot(bnd1));
+                    rightTop = rightTop.WithY(bSplC.Knot(bnd2));
                 }
             }
             else if (dIsNull)
@@ -301,37 +301,37 @@ public class CurveOnSurface : CurveAdaptorBase
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(bSplC.Knot(lo));
-                        rightTop.SetX(bSplC.Knot(lo + 1));
+                        leftBot = leftBot.WithX(bSplC.Knot(lo));
+                        rightTop = rightTop.WithX(bSplC.Knot(lo + 1));
                     }
                     else if (index == 2)
                     {
-                        leftBot.SetY(bSplC.Knot(lo));
-                        rightTop.SetY(bSplC.Knot(lo + 1));
+                        leftBot = leftBot.WithY(bSplC.Knot(lo));
+                        rightTop = rightTop.WithY(bSplC.Knot(lo + 1));
                     }
                 }
                 else if (Math.Abs(comp1 - (l = bSplC.Knot(up))) <= tol)
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(bSplC.Knot(up - 1));
-                        rightTop.SetX(bSplC.Knot(up));
+                        leftBot = leftBot.WithX(bSplC.Knot(up - 1));
+                        rightTop = rightTop.WithX(bSplC.Knot(up));
                     }
                     else if (index == 2)
                     {
-                        leftBot.SetY(bSplC.Knot(up - 1));
-                        rightTop.SetY(bSplC.Knot(up));
+                        leftBot = leftBot.WithY(bSplC.Knot(up - 1));
+                        rightTop = rightTop.WithY(bSplC.Knot(up));
                     }
                 }
                 else if (index == 1)
                 {
-                    leftBot.SetX(bSplC.Knot(bnd1));
-                    rightTop.SetX(bSplC.Knot(bnd2));
+                    leftBot = leftBot.WithX(bSplC.Knot(bnd1));
+                    rightTop = rightTop.WithX(bSplC.Knot(bnd2));
                 }
                 else if (index == 2)
                 {
-                    leftBot.SetY(bSplC.Knot(bnd1));
-                    rightTop.SetY(bSplC.Knot(bnd2));
+                    leftBot = leftBot.WithY(bSplC.Knot(bnd1));
+                    rightTop = rightTop.WithY(bSplC.Knot(bnd2));
                 }
             }
         }
@@ -357,13 +357,13 @@ public class CurveOnSurface : CurveAdaptorBase
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(f);
-                        rightTop.SetX(l);
+                        leftBot = leftBot.WithX(f);
+                        rightTop = rightTop.WithX(l);
                     }
                     else if (index == 2)
                     {
-                        leftBot.SetY(f);
-                        rightTop.SetY(l);
+                        leftBot = leftBot.WithY(f);
+                        rightTop = rightTop.WithY(l);
                     }
                 }
                 else if (Math.Abs(dComp1) > tol)
@@ -372,26 +372,26 @@ public class CurveOnSurface : CurveAdaptorBase
                     {
                         if (dComp1 > 0)
                         {
-                            leftBot.SetX(comp1);
-                            rightTop.SetX(l);
+                            leftBot = leftBot.WithX(comp1);
+                            rightTop = rightTop.WithX(l);
                         }
                         else if (dComp1 < 0)
                         {
-                            leftBot.SetX(f);
-                            rightTop.SetX(comp1);
+                            leftBot = leftBot.WithX(f);
+                            rightTop = rightTop.WithX(comp1);
                         }
                     }
                     else if (index == 2)
                     {
                         if (dComp1 > 0)
                         {
-                            leftBot.SetY(comp1);
-                            rightTop.SetY(l);
+                            leftBot = leftBot.WithY(comp1);
+                            rightTop = rightTop.WithY(l);
                         }
                         else if (dComp1 < 0)
                         {
-                            leftBot.SetY(f);
-                            rightTop.SetY(comp1);
+                            leftBot = leftBot.WithY(f);
+                            rightTop = rightTop.WithY(comp1);
                         }
                     }
                 }
@@ -400,13 +400,13 @@ public class CurveOnSurface : CurveAdaptorBase
             {
                 if (index == 1)
                 {
-                    leftBot.SetX(comp1);
-                    rightTop.SetX(bSplC.Knot(i));
+                    leftBot = leftBot.WithX(comp1);
+                    rightTop = rightTop.WithX(bSplC.Knot(i));
                 }
                 else if (index == 2)
                 {
-                    leftBot.SetY(comp1);
-                    rightTop.SetY(bSplC.Knot(i));
+                    leftBot = leftBot.WithY(comp1);
+                    rightTop = rightTop.WithY(bSplC.Knot(i));
                 }
             }
         }
@@ -479,13 +479,13 @@ public class CurveOnSurface : CurveAdaptorBase
             {
                 if (index == 1)
                 {
-                    leftBot.SetX(bSplS.UKnot(bnd1));
-                    rightTop.SetX(bSplS.UKnot(bnd2));
+                    leftBot = leftBot.WithX(bSplS.UKnot(bnd1));
+                    rightTop = rightTop.WithX(bSplS.UKnot(bnd2));
                 }
                 else if (index == 2)
                 {
-                    leftBot.SetY(bSplS.VKnot(bnd1));
-                    rightTop.SetY(bSplS.VKnot(bnd2));
+                    leftBot = leftBot.WithY(bSplS.VKnot(bnd1));
+                    rightTop = rightTop.WithY(bSplS.VKnot(bnd2));
                 }
             }
         }
@@ -493,26 +493,26 @@ public class CurveOnSurface : CurveAdaptorBase
         {
             if ((index == 1) && (comp1 < bSplS.UKnot(down)))
             {
-                leftBot.SetX(bSplS.UKnot(down));
-                rightTop.SetX(bSplS.UKnot(down + 1));
+                leftBot = leftBot.WithX(bSplS.UKnot(down));
+                rightTop = rightTop.WithX(bSplS.UKnot(down + 1));
                 return;
             }
             else if ((index == 2) && (comp1 < bSplS.VKnot(down)))
             {
-                leftBot.SetY(bSplS.VKnot(down));
-                rightTop.SetY(bSplS.VKnot(down + 1));
+                leftBot = leftBot.WithY(bSplS.VKnot(down));
+                rightTop = rightTop.WithY(bSplS.VKnot(down + 1));
                 return;
             }
             else if ((index == 1) && (comp1 > bSplS.UKnot(up)))
             {
-                rightTop.SetX(bSplS.UKnot(up - 1));
-                leftBot.SetX(bSplS.UKnot(up));
+                rightTop = rightTop.WithX(bSplS.UKnot(up - 1));
+                leftBot = leftBot.WithX(bSplS.UKnot(up));
                 return;
             }
             else if ((index == 2) && (comp1 > bSplS.VKnot(up)))
             {
-                rightTop.SetY(bSplS.VKnot(up - 1));
-                leftBot.SetY(bSplS.VKnot(up));
+                rightTop = rightTop.WithY(bSplS.VKnot(up - 1));
+                leftBot = leftBot.WithY(bSplS.VKnot(up));
                 return;
             }
             else
@@ -559,26 +559,26 @@ public class CurveOnSurface : CurveAdaptorBase
                         {
                             if (dComp1 > 0)
                             {
-                                leftBot.SetX(comp1);
-                                rightTop.SetX(l);
+                                leftBot = leftBot.WithX(comp1);
+                                rightTop = rightTop.WithX(l);
                             }
                             else if (dComp1 < 0)
                             {
-                                leftBot.SetX(f);
-                                rightTop.SetX(comp1);
+                                leftBot = leftBot.WithX(f);
+                                rightTop = rightTop.WithX(comp1);
                             }
                         }
                         else if (index == 2)
                         {
                             if (dComp1 > 0)
                             {
-                                leftBot.SetY(comp1);
-                                rightTop.SetY(l);
+                                leftBot = leftBot.WithY(comp1);
+                                rightTop = rightTop.WithY(l);
                             }
                             else if (dComp1 < 0)
                             {
-                                leftBot.SetY(f);
-                                rightTop.SetY(comp1);
+                                leftBot = leftBot.WithY(f);
+                                rightTop = rightTop.WithY(comp1);
                             }
                         }
                     }
@@ -588,13 +588,13 @@ public class CurveOnSurface : CurveAdaptorBase
                         {
                             if (index == 1)
                             {
-                                leftBot.SetX(f);
-                                rightTop.SetX(l);
+                                leftBot = leftBot.WithX(f);
+                                rightTop = rightTop.WithX(l);
                             }
                             else if (index == 2)
                             {
-                                leftBot.SetY(f);
-                                rightTop.SetY(l);
+                                leftBot = leftBot.WithY(f);
+                                rightTop = rightTop.WithY(l);
                             }
                         }
                     }
@@ -603,13 +603,13 @@ public class CurveOnSurface : CurveAdaptorBase
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(comp1);
-                        rightTop.SetX(bSplS.UKnot(i));
+                        leftBot = leftBot.WithX(comp1);
+                        rightTop = rightTop.WithX(bSplS.UKnot(i));
                     }
                     else if (index == 2)
                     {
-                        leftBot.SetY(comp1);
-                        rightTop.SetY(bSplS.VKnot(i));
+                        leftBot = leftBot.WithY(comp1);
+                        rightTop = rightTop.WithY(bSplS.VKnot(i));
                     }
                 }
             }
@@ -645,39 +645,39 @@ public class CurveOnSurface : CurveAdaptorBase
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(i1);
-                        rightTop.SetX(comp1);
+                        leftBot = leftBot.WithX(i1);
+                        rightTop = rightTop.WithX(comp1);
                     }
                     if (index == 2)
                     {
-                        leftBot.SetY(i1);
-                        rightTop.SetY(comp1);
+                        leftBot = leftBot.WithY(i1);
+                        rightTop = rightTop.WithY(comp1);
                     }
                 }
                 else if (dComp1 > 0)
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(comp1);
-                        rightTop.SetX(i2);
+                        leftBot = leftBot.WithX(comp1);
+                        rightTop = rightTop.WithX(i2);
                     }
                     if (index == 2)
                     {
-                        leftBot.SetY(comp1);
-                        rightTop.SetY(i2);
+                        leftBot = leftBot.WithY(comp1);
+                        rightTop = rightTop.WithY(i2);
                     }
                 }
                 else
                 {
                     if (index == 1)
                     {
-                        leftBot.SetX(i1);
-                        rightTop.SetX(i2);
+                        leftBot = leftBot.WithX(i1);
+                        rightTop = rightTop.WithX(i2);
                     }
                     if (index == 2)
                     {
-                        leftBot.SetY(i1);
-                        rightTop.SetY(i2);
+                        leftBot = leftBot.WithY(i1);
+                        rightTop = rightTop.WithY(i2);
                     }
                 }
             }
@@ -685,13 +685,13 @@ public class CurveOnSurface : CurveAdaptorBase
             {
                 if (index == 1)
                 {
-                    leftBot.SetX(i1);
-                    rightTop.SetX(i2);
+                    leftBot = leftBot.WithX(i1);
+                    rightTop = rightTop.WithX(i2);
                 }
                 if (index == 2)
                 {
-                    leftBot.SetY(i1);
-                    rightTop.SetY(i2);
+                    leftBot = leftBot.WithY(i1);
+                    rightTop = rightTop.WithY(i2);
                 }
             }
         }
@@ -699,26 +699,26 @@ public class CurveOnSurface : CurveAdaptorBase
         {
             if (index == 1)
             {
-                leftBot.SetX(i1);
-                rightTop.SetX(i2);
+                leftBot = leftBot.WithX(i1);
+                rightTop = rightTop.WithX(i2);
             }
             if (index == 2)
             {
-                leftBot.SetY(i1);
-                rightTop.SetY(i2);
+                leftBot = leftBot.WithY(i1);
+                rightTop = rightTop.WithY(i2);
             }
         }
         else if (Math.Abs(comp1 - i2) < tol)
         {
             if (index == 1)
             {
-                leftBot.SetX(i1);
-                rightTop.SetX(i2);
+                leftBot = leftBot.WithX(i1);
+                rightTop = rightTop.WithX(i2);
             }
             if (index == 2)
             {
-                leftBot.SetY(i1);
-                rightTop.SetY(i2);
+                leftBot = leftBot.WithY(i1);
+                rightTop = rightTop.WithY(i2);
             }
         }
     }
@@ -772,13 +772,13 @@ public class CurveOnSurface : CurveAdaptorBase
 
             if (index == 1)
             {
-                leftBot.SetX(tmp1);
-                rightTop.SetX(tmp2);
+                leftBot = leftBot.WithX(tmp1);
+                rightTop = rightTop.WithX(tmp2);
             }
             else if (index == 2)
             {
-                leftBot.SetY(tmp1);
-                rightTop.SetY(tmp2);
+                leftBot = leftBot.WithY(tmp1);
+                rightTop = rightTop.WithY(tmp2);
             }
         }
         else if ((dComp < 0) && (Math.Abs(dComp) > tol))
@@ -804,13 +804,13 @@ public class CurveOnSurface : CurveAdaptorBase
 
             if (index == 1)
             {
-                leftBot.SetX(tmp1);
-                rightTop.SetX(tmp2);
+                leftBot = leftBot.WithX(tmp1);
+                rightTop = rightTop.WithX(tmp2);
             }
             else if (index == 2)
             {
-                leftBot.SetY(tmp1);
-                rightTop.SetY(tmp2);
+                leftBot = leftBot.WithY(tmp1);
+                rightTop = rightTop.WithY(tmp2);
             }
         }
     }
@@ -1144,13 +1144,13 @@ public class CurveOnSurface : CurveAdaptorBase
         {
             _curve.D1(u, out puv, out duv);
             _firstSurf.D1(puv.X(), puv.Y(), out res.Point, out d1U, out d1V);
-            res.D1.SetLinearForm(duv.X(), d1U, duv.Y(), d1V);
+            res.D1 = Vector3D.LinearForm(duv.X(), d1U, duv.Y(), d1V);
         }
         else if ((Math.Abs(u - lp) < tol) && (_lastSurf is not null))
         {
             _curve.D1(u, out puv, out duv);
             _lastSurf.D1(puv.X(), puv.Y(), out res.Point, out d1U, out d1V);
-            res.D1.SetLinearForm(duv.X(), d1U, duv.Y(), d1V);
+            res.D1 = Vector3D.LinearForm(duv.X(), d1U, duv.Y(), d1V);
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Line)
         {
@@ -1164,7 +1164,7 @@ public class CurveOnSurface : CurveAdaptorBase
         {
             _curve.D1(u, out puv, out duv);
             _surface!.D1(puv.X(), puv.Y(), out res.Point, out d1U, out d1V);
-            res.D1.SetLinearForm(duv.X(), d1U, duv.Y(), d1V);
+            res.D1 = Vector3D.LinearForm(duv.X(), d1U, duv.Y(), d1V);
         }
 
         return res;
@@ -1188,23 +1188,23 @@ public class CurveOnSurface : CurveAdaptorBase
             _curve.D2(u, out uv, out dw, out d2W);
             _firstSurf.D2(uv.X(), uv.Y(), out res.Point, out d1U, out d1V, out d2U, out d2V, out d2UV);
 
-            res.D1.SetLinearForm(dw.X(), d1U, dw.Y(), d1V);
-            res.D2.SetLinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
-            res.D2.SetLinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
+            res.D1 = Vector3D.LinearForm(dw.X(), d1U, dw.Y(), d1V);
+            res.D2 = Vector3D.LinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
+            res.D2 = Vector3D.LinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
         }
         else if ((Math.Abs(u - lp) < tol) && (_lastSurf is not null))
         {
             _curve.D2(u, out uv, out dw, out d2W);
             _lastSurf.D2(uv.X(), uv.Y(), out res.Point, out d1U, out d1V, out d2U, out d2V, out d2UV);
 
-            res.D1.SetLinearForm(dw.X(), d1U, dw.Y(), d1V);
-            res.D2.SetLinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
-            res.D2.SetLinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
+            res.D1 = Vector3D.LinearForm(dw.X(), d1U, dw.Y(), d1V);
+            res.D2 = Vector3D.LinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
+            res.D2 = Vector3D.LinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Line)
         {
             global::Kerf.Engine.Geometry.ElCLib.D1(u, _lin, out res.Point, out res.D1);
-            res.D2.SetCoord(0.0, 0.0, 0.0);
+            res.D2 = res.D2.WithCoord(0.0, 0.0, 0.0);
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Circle)
         {
@@ -1215,9 +1215,9 @@ public class CurveOnSurface : CurveAdaptorBase
             _curve.D2(u, out uv, out dw, out d2W);
             _surface!.D2(uv.X(), uv.Y(), out res.Point, out d1U, out d1V, out d2U, out d2V, out d2UV);
 
-            res.D1.SetLinearForm(dw.X(), d1U, dw.Y(), d1V);
-            res.D2.SetLinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
-            res.D2.SetLinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
+            res.D1 = Vector3D.LinearForm(dw.X(), d1U, dw.Y(), d1V);
+            res.D2 = Vector3D.LinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
+            res.D2 = Vector3D.LinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
         }
 
         return res;
@@ -1241,9 +1241,9 @@ public class CurveOnSurface : CurveAdaptorBase
             _curve.D3(u, out uv, out dw, out d2W, out d3W);
             _firstSurf.D3(uv.X(), uv.Y(), out res.Point, out d1U, out d1V, out d2U, out d2V, out d2UV, out d3U, out d3V,
                            out d3UUV, out d3UVV);
-            res.D1.SetLinearForm(dw.X(), d1U, dw.Y(), d1V);
-            res.D2.SetLinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
-            res.D2.SetLinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
+            res.D1 = Vector3D.LinearForm(dw.X(), d1U, dw.Y(), d1V);
+            res.D2 = Vector3D.LinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
+            res.D2 = Vector3D.LinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
             res.D3 = SetLinearForm(dw, d2W, d3W, d1U, d1V, d2U, d2V, d2UV, d3U, d3V, d3UUV, d3UVV);
         }
         else if ((Math.Abs(u - lp) < tol) && (_lastSurf is not null))
@@ -1251,16 +1251,16 @@ public class CurveOnSurface : CurveAdaptorBase
             _curve.D3(u, out uv, out dw, out d2W, out d3W);
             _lastSurf.D3(uv.X(), uv.Y(), out res.Point, out d1U, out d1V, out d2U, out d2V, out d2UV, out d3U, out d3V,
                           out d3UUV, out d3UVV);
-            res.D1.SetLinearForm(dw.X(), d1U, dw.Y(), d1V);
-            res.D2.SetLinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
-            res.D2.SetLinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
+            res.D1 = Vector3D.LinearForm(dw.X(), d1U, dw.Y(), d1V);
+            res.D2 = Vector3D.LinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
+            res.D2 = Vector3D.LinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
             res.D3 = SetLinearForm(dw, d2W, d3W, d1U, d1V, d2U, d2V, d2UV, d3U, d3V, d3UUV, d3UVV);
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Line)
         {
             global::Kerf.Engine.Geometry.ElCLib.D1(u, _lin, out res.Point, out res.D1);
-            res.D2.SetCoord(0.0, 0.0, 0.0);
-            res.D3.SetCoord(0.0, 0.0, 0.0);
+            res.D2 = res.D2.WithCoord(0.0, 0.0, 0.0);
+            res.D3 = res.D3.WithCoord(0.0, 0.0, 0.0);
         }
         else if (_type == global::Kerf.Geometry.CurveKind.Circle)
         {
@@ -1271,9 +1271,9 @@ public class CurveOnSurface : CurveAdaptorBase
             _curve.D3(u, out uv, out dw, out d2W, out d3W);
             _surface!.D3(uv.X(), uv.Y(), out res.Point, out d1U, out d1V, out d2U, out d2V, out d2UV, out d3U, out d3V,
                           out d3UUV, out d3UVV);
-            res.D1.SetLinearForm(dw.X(), d1U, dw.Y(), d1V);
-            res.D2.SetLinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
-            res.D2.SetLinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
+            res.D1 = Vector3D.LinearForm(dw.X(), d1U, dw.Y(), d1V);
+            res.D2 = Vector3D.LinearForm(d2W.X(), d1U, d2W.Y(), d1V, 2.0 * dw.X() * dw.Y(), d2UV);
+            res.D2 = Vector3D.LinearForm(dw.X() * dw.X(), d2U, dw.Y() * dw.Y(), d2V, res.D2);
             res.D3 = SetLinearForm(dw, d2W, d3W, d1U, d1V, d2U, d2V, d2UV, d3U, d3V, d3UUV, d3UVV);
         }
 
@@ -1454,7 +1454,7 @@ public class CurveOnSurface : CurveAdaptorBase
                 _curve.D1(0.0, out puv, out duv);
                 Vector3D d1U, d1V;
                 _surface.D1(puv.X(), puv.Y(), out p, out d1U, out d1V);
-                v.SetLinearForm(duv.X(), d1U, duv.Y(), d1V);
+                v = Vector3D.LinearForm(duv.X(), d1U, duv.Y(), d1V);
                 _lin = new Line3D(p, new Direction3D(v));
             }
         }
@@ -1476,12 +1476,12 @@ public class CurveOnSurface : CurveAdaptorBase
                             _circ = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius(), p.Y());
                             Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                             Axis3D axeRev = new Axis3D(axis.Location(), dRev);
-                            _circ.Rotate(axeRev, p.X());
+                            _circ = _circ.Rotated(axeRev, p.X());
                             if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
                                 Frame3D ax = _circ.Position();
-                                ax.SetDirection(ax.Direction().Reversed());
-                                _circ.SetPosition(ax);
+                                ax = ax.WithDirection(ax.Direction().Reversed());
+                                _circ = _circ.WithPosition(ax);
                             }
                         }
                     }
@@ -1494,12 +1494,12 @@ public class CurveOnSurface : CurveAdaptorBase
                         _circ = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         Axis3D axeRev = new Axis3D(axis.Location(), dRev);
-                        _circ.Rotate(axeRev, p.X());
+                        _circ = _circ.Rotated(axeRev, p.X());
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Frame3D ax = _circ.Position();
-                            ax.SetDirection(ax.Direction().Reversed());
-                            _circ.SetPosition(ax);
+                            ax = ax.WithDirection(ax.Direction().Reversed());
+                            _circ = _circ.WithPosition(ax);
                         }
                     }
                     else if (sTy == SurfaceKind.Cone)
@@ -1511,12 +1511,12 @@ public class CurveOnSurface : CurveAdaptorBase
                         _circ = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius(), cone.SemiAngle(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         Axis3D axeRev = new Axis3D(axis.Location(), dRev);
-                        _circ.Rotate(axeRev, p.X());
+                        _circ = _circ.Rotated(axeRev, p.X());
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Frame3D ax = _circ.Position();
-                            ax.SetDirection(ax.Direction().Reversed());
-                            _circ.SetPosition(ax);
+                            ax = ax.WithDirection(ax.Direction().Reversed());
+                            _circ = _circ.WithPosition(ax);
                         }
                     }
                     else if (sTy == SurfaceKind.Torus)
@@ -1528,12 +1528,12 @@ public class CurveOnSurface : CurveAdaptorBase
                         _circ = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         Axis3D axeRev = new Axis3D(axis.Location(), dRev);
-                        _circ.Rotate(axeRev, p.X());
+                        _circ = _circ.Rotated(axeRev, p.X());
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Frame3D ax = _circ.Position();
-                            ax.SetDirection(ax.Direction().Reversed());
-                            _circ.SetPosition(ax);
+                            ax = ax.WithDirection(ax.Direction().Reversed());
+                            _circ = _circ.WithPosition(ax);
                         }
                     }
                 }
@@ -1551,18 +1551,18 @@ public class CurveOnSurface : CurveAdaptorBase
                         // Same-parametrization (circle rotation - Y offset)
                         Direction3D dRev = axis.XDirection().Crossed(axis.Direction());
                         Axis3D axeRev = new Axis3D(axis.Location(), dRev);
-                        _circ.Rotate(axeRev, p.Y());
+                        _circ = _circ.Rotated(axeRev, p.Y());
 
                         // Transform to iso U ( = P.X())
                         dRev = axis.XDirection().Crossed(axis.YDirection());
                         axeRev = new Axis3D(axis.Location(), dRev);
-                        _circ.Rotate(axeRev, p.X());
+                        _circ = _circ.Rotated(axeRev, p.X());
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Frame3D ax = _circ.Position();
-                            ax.SetDirection(ax.Direction().Reversed());
-                            _circ.SetPosition(ax);
+                            ax = ax.WithDirection(ax.Direction().Reversed());
+                            _circ = _circ.WithPosition(ax);
                         }
                     }
                     else if (sTy == SurfaceKind.Cylinder)
@@ -1572,11 +1572,11 @@ public class CurveOnSurface : CurveAdaptorBase
                         Point2D p = _curve.Line().Location();
                         _lin = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position(), cyl.Radius(), p.X());
                         Vector3D tr = new Vector3D(_lin.Direction());
-                        tr.Multiply(p.Y());
-                        _lin.Translate(tr);
+                        tr = tr.Multiplied(p.Y());
+                        _lin = _lin.Translated(tr);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            _lin.Reverse();
+                            _lin = _lin.Reversed();
                         }
                     }
                     else if (sTy == SurfaceKind.Cone)
@@ -1586,11 +1586,11 @@ public class CurveOnSurface : CurveAdaptorBase
                         Point2D p = _curve.Line().Location();
                         _lin = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p.X());
                         Vector3D tr = new Vector3D(_lin.Direction());
-                        tr.Multiply(p.Y());
-                        _lin.Translate(tr);
+                        tr = tr.Multiplied(p.Y());
+                        _lin = _lin.Translated(tr);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
-                            _lin.Reverse();
+                            _lin = _lin.Reversed();
                         }
                     }
                     else if (sTy == SurfaceKind.Torus)
@@ -1600,13 +1600,13 @@ public class CurveOnSurface : CurveAdaptorBase
                         Point2D p = _curve.Line().Location();
                         CoordinateSystem axis = tore.Position();
                         _circ = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.X());
-                        _circ.Rotate(_circ.Axis(), p.Y());
+                        _circ = _circ.Rotated(_circ.Axis(), p.Y());
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
                             Frame3D ax = _circ.Position();
-                            ax.SetDirection(ax.Direction().Reversed());
-                            _circ.SetPosition(ax);
+                            ax = ax.WithDirection(ax.Direction().Reversed());
+                            _circ = _circ.WithPosition(ax);
                         }
                     }
                 }
@@ -1665,7 +1665,7 @@ public class CurveOnSurface : CurveAdaptorBase
         lastPar = _curve.LastParameter();
         ok = true;
         _curve.D1(lastPar, out uv, out duv);
-        duv.Reverse(); // We want the other part
+        duv = duv.Reversed(); // We want the other part
 
         if (duv.Magnitude() <= tol)
         {
@@ -1727,11 +1727,11 @@ public class CurveOnSurface : CurveAdaptorBase
 
             double u1, u2, v1, v2;
             ReverseParam(leftBot.X(), rightTop.X(), out u1, out u2);
-            leftBot.SetX(u1);
-            rightTop.SetX(u2);
+            leftBot = leftBot.WithX(u1);
+            rightTop = rightTop.WithX(u2);
             ReverseParam(leftBot.Y(), rightTop.Y(), out v1, out v2);
-            leftBot.SetY(v1);
-            rightTop.SetY(v2);
+            leftBot = leftBot.WithY(v1);
+            rightTop = rightTop.WithY(v2);
             return true;
         }
         return false;

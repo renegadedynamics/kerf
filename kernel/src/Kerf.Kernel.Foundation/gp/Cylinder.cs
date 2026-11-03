@@ -17,10 +17,10 @@ namespace Kerf.Geometry;
 /// <c>new gp_Cylinder()</c> is OCCT's indefinite cylinder (radius <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Cylinder)</c> is not valid.
 /// </remarks>
-public partial struct Cylinder : IEquatable<Cylinder>
+public readonly partial struct Cylinder : IEquatable<Cylinder>
 {
-    private CoordinateSystem _pos;
-    private double _radius;
+    private readonly CoordinateSystem _pos;
+    private readonly double _radius;
 
     public Cylinder()
     {
@@ -36,100 +36,49 @@ public partial struct Cylinder : IEquatable<Cylinder>
         Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Cylinder() - radius should be positive number");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetAxis(in Axis3D a1) => _pos.SetAxis(a1);
-
-    internal void SetLocation(in Point3D loc) => _pos.SetLocation(loc);
-
-    internal void SetPosition(in CoordinateSystem a3) => _pos = a3;
-
-    internal void SetRadius(double r)
-    {
-        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Cylinder::SetRadius() - radius should be positive number");
-        _radius = r;
-    }
-
-    /// <summary>Reverses the U parametrisation (the Y direction).</summary>
-    internal void UReverse() => _pos.YReverse();
-
-    /// <summary>Reverses the V parametrisation (the main direction).</summary>
-    internal void VReverse() => _pos.ZReverse();
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _pos.Scale(p, s);
-        _radius *= s;
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _pos.Transform(t);
-        _radius *= t.ScaleFactor();
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-    }
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Cylinder WithAxis(in Axis3D a1)
     {
-        Cylinder copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.WithAxis(a1);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder WithLocation(in Point3D loc)
     {
-        Cylinder copy = this;
-        copy.SetLocation(loc);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.WithLocation(loc);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder WithPosition(in CoordinateSystem a3)
     {
-        Cylinder copy = this;
-        copy.SetPosition(a3);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = a3;
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder WithRadius(double r)
     {
-        Cylinder copy = this;
-        copy.SetRadius(r);
-        return copy;
+        double newRadius = _radius;
+        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Cylinder::SetRadius() - radius should be positive number");
+        newRadius = r;
+        return new Cylinder(_pos, newRadius);
     }
 
     public readonly Cylinder UReversed()
     {
-        Cylinder copy = this;
-        copy.UReverse();
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.YReversed();
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder VReversed()
     {
-        Cylinder copy = this;
-        copy.VReverse();
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.ZReversed();
+        return new Cylinder(pos, _radius);
     }
 
     // Queries
@@ -151,8 +100,7 @@ public partial struct Cylinder : IEquatable<Cylinder>
     {
         // Dans le repere local du cylindre :
         // X**2 + Y**2 - radius = 0.0
-        Transform3D t = new();
-        t.SetTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -185,70 +133,72 @@ public partial struct Cylinder : IEquatable<Cylinder>
 
     public readonly Cylinder Mirrored(in Point3D p)
     {
-        Cylinder c = this;
-        c._pos.Mirror(p);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder Mirrored(in Axis3D a1)
     {
-        Cylinder c = this;
-        c._pos.Mirror(a1);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder Mirrored(in Frame3D a2)
     {
-        Cylinder c = this;
-        c._pos.Mirror(a2);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder Rotated(in Axis3D a1, double ang)
     {
-        Cylinder cyl = this;
-        cyl._pos.Rotate(a1, ang);
-        return cyl;
+        CoordinateSystem pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder Scaled(in Point3D p, double s)
     {
-        Cylinder cyl = this;
-        cyl._pos.Scale(p, s);
-        cyl._radius *= s;
-        if (cyl._radius < 0)
+        CoordinateSystem pos = _pos;
+        double radius = _radius;
+        pos = pos.Scaled(p, s);
+        radius *= s;
+        if (radius < 0)
         {
-            cyl._radius = -cyl._radius;
+            radius = -radius;
         }
 
-        return cyl;
+        return new Cylinder(pos, radius);
     }
 
     public readonly Cylinder Transformed(in Transform3D t)
     {
-        Cylinder cyl = this;
-        cyl._pos.Transform(t);
-        cyl._radius *= t.ScaleFactor();
-        if (cyl._radius < 0)
+        CoordinateSystem pos = _pos;
+        double radius = _radius;
+        pos = pos.Transformed(t);
+        radius *= t.ScaleFactor();
+        if (radius < 0)
         {
-            cyl._radius = -cyl._radius;
+            radius = -radius;
         }
 
-        return cyl;
+        return new Cylinder(pos, radius);
     }
 
     public readonly Cylinder Translated(in Vector3D v)
     {
-        Cylinder cyl = this;
-        cyl._pos.Translate(v);
-        return cyl;
+        CoordinateSystem pos = _pos;
+        pos = pos.Translated(v);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly Cylinder Translated(in Point3D p1, in Point3D p2)
     {
-        Cylinder cyl = this;
-        cyl._pos.Translate(p1, p2);
-        return cyl;
+        CoordinateSystem pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Cylinder(pos, _radius);
     }
 
     public readonly bool Equals(Cylinder other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);

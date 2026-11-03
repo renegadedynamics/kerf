@@ -196,7 +196,7 @@ public sealed class PEquation
             case 3:
                 {
                     _type = Type.Space;
-                    _g.SetXYZ(_g.XYZ() + min1 * _axes[0].XYZ() + min2 * _axes[1].XYZ()
+                    _g = _g.WithXYZ(_g.XYZ() + min1 * _axes[0].XYZ() + min2 * _axes[1].XYZ()
                                + min3 * _axes[2].XYZ());
                     _v1 = _extents[0] * _axes[0];
                     _v2 = _extents[1] * _axes[1];

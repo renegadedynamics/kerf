@@ -476,7 +476,7 @@ public class BRepMeshShellTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 1, 1));
         Edge aFree = TestShapes.Frozen(TestShapes.Edge(new Point3D(5, 0, 0), new Point3D(6, 0, 0)));
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 10));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0, 0, 10));
         Edge aMovedFree = ShapeCasts.Edge(aFree.Moved(new Placement(aTrsf)));
         Face aFace = Faces(aBox)[0];
 
@@ -525,7 +525,7 @@ public class BRepMeshShellTests
 
         // A located edge: the 3D range is the located curve's, reversed with the orientation if asked.
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 7));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0, 0, 7));
         Edge anEdge = TestShapes.Frozen(TestShapes.Edge(new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 1, 3));
         Edge aMoved = ShapeCasts.Edge(anEdge.Moved(new Placement(aTrsf)).Reversed());
         Assert.True(ShapeTool.Range(aMoved, out Curve3D? aCurve, out double aF, out double aL));
@@ -588,7 +588,7 @@ public class BRepMeshShellTests
     {
         Solid aBox = TestShapes.Box(1, 1, 1); // unfrozen: ported code meshing in place
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(10, 0, 0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(10, 0, 0));
         Face aFace = Faces(aBox)[0];
         Face aMoved = ShapeCasts.Face(aFace.Moved(new Placement(aTrsf)));
 

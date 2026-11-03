@@ -425,8 +425,8 @@ public sealed class BisecCC : BisectorCurve
         _curve1.Transform(t);
         _curve2.Transform(t);
         _polygon.Transform(t);
-        _pointStart.Transform(t);
-        _pointEnd.Transform(t);
+        _pointStart = _pointStart.Transformed(t);
+        _pointEnd = _pointEnd.Transformed(t);
     }
 
     /// <summary>True if both curves are C(N+1).</summary>
@@ -1101,7 +1101,7 @@ public sealed class BisecCC : BisectorCurve
             {
                 u2 = _curve2.LastParameter();
             }
-            tang.SetCoord(p1.X() - p.X(), p1.Y() - p.Y());
+            tang = tang.WithCoord(p1.X() - p.X(), p1.Y() - p.Y());
         }
         else if (u < _polygon.First().ParamOnBis())
         {
@@ -1123,7 +1123,7 @@ public sealed class BisecCC : BisectorCurve
                 {
                     u2 = _curve2.FirstParameter();
                 }
-                tang.SetCoord(p.X() - p1.X(), p.Y() - p1.Y());
+                tang = tang.WithCoord(p.X() - p1.X(), p.Y() - p1.Y());
             }
             else
             {
@@ -1150,7 +1150,7 @@ public sealed class BisecCC : BisectorCurve
                 {
                     u2 = _curve2.FirstParameter();
                 }
-                tang.SetCoord(p1.X() - p.X(), p1.Y() - p.Y());
+                tang = tang.WithCoord(p1.X() - p.X(), p1.Y() - p.Y());
             }
             else
             {
@@ -1167,7 +1167,7 @@ public sealed class BisecCC : BisectorCurve
             u2 = pRef.ParamOnC2();
             p2 = _curve2.Value(u2);
             _curve1.D1(u1, out p1, out Vector2D t1);
-            tang.SetCoord(2 * p.X() - p1.X() - p2.X(), 2 * p.Y() - p1.Y() - p2.Y());
+            tang = tang.WithCoord(2 * p.X() - p1.X() - p2.X(), 2 * p.Y() - p1.Y() - p2.Y());
             if (tang.Magnitude() < global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 tang = t1;
@@ -1179,7 +1179,7 @@ public sealed class BisecCC : BisectorCurve
         }
 
         t = tang.Normalized();
-        pBis.SetCoord(p.X() + dU * t.X(), p.Y() + dU * t.Y());
+        pBis = pBis.WithCoord(p.X() + dU * t.X(), p.Y() + dU * t.Y());
         dist = p1.Distance(pBis);
         return pBis;
     }
@@ -1545,7 +1545,7 @@ public sealed class BisecCC : BisectorCurve
         }
 
         Vector2D ppf = new(pf.X() - p.X(), pf.Y() - p.Y());
-        tf.Normalize();
+        tf = tf.Normalized();
 
         if (Math.Abs(ppf.Dot(tf)) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
@@ -1553,7 +1553,7 @@ public sealed class BisecCC : BisectorCurve
             return true;
         }
         Vector2D ppl = new(pl.X() - p.X(), pl.Y() - p.Y());
-        tl.Normalize();
+        tl = tl.Normalized();
         if (Math.Abs(ppl.Dot(tl)) < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             param = c.LastParameter();
@@ -1587,8 +1587,8 @@ public sealed class BisecCC : BisectorCurve
         c2.D1(c2.FirstParameter(), out p2, out t2);
         if (p1.IsEqual(p2, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
-            t1.Normalize();
-            t2.Normalize();
+            t1 = t1.Normalized();
+            t2 = t2.Normalized();
             if (t1.Dot(t2) > 1.0 - global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 test = true;
@@ -1599,7 +1599,7 @@ public sealed class BisecCC : BisectorCurve
             c2.D1(c2.LastParameter(), out p2, out t2);
             if (p1.IsEqual(p2, global::Kerf.Engine.Foundation.Precision.Confusion()))
             {
-                t2.Normalize(); // OCCT: T1 is not normalised on this path (occt-issues.md).
+                t2 = t2.Normalized(); // OCCT: T1 is not normalised on this path (occt-issues.md).
                 if (t1.Dot(t2) > 1.0 - global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
                     test = true;
@@ -1645,7 +1645,7 @@ public sealed class BisecCC : BisectorCurve
         }
 
         _curve1.D1(u1, out Point2D pf, out Vector2D tf);
-        tf.Normalize();
+        tf = tf.Normalized();
         if (kc != 0.0)
         {
             rc = Math.Abs(1 / kc);
@@ -1654,7 +1654,7 @@ public sealed class BisecCC : BisectorCurve
         {
             rc = global::Kerf.Engine.Foundation.Precision.Infinite();
         }
-        _pointEnd.SetCoord(pf.X() - _sign1 * rc * tf.Y(), pf.Y() + _sign1 * rc * tf.X());
+        _pointEnd = _pointEnd.WithCoord(pf.X() - _sign1 * rc * tf.Y(), pf.Y() + _sign1 * rc * tf.X());
     }
 
     private static bool DiscretPar(double du, double epsMin, double epsMax, int nbMin, int nbMax, out double eps,

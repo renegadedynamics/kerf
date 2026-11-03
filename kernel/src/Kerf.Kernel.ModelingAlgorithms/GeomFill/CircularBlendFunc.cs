@@ -195,7 +195,7 @@ public class CircularBlendFunc : SweepFunction
         double angle, cosa, percent;
         QuasiUniformDeflection samp = new QuasiUniformDeflection();
         samp.Initialize(c, fleche);
-        _bary.SetCoord(0.0, 0.0, 0.0);
+        _bary = _bary.WithCoord(0.0, 0.0, 0.0);
         Vector3D ns1 = new Vector3D(), ns2 = new Vector3D();
 
         if (samp.IsDone)
@@ -207,10 +207,10 @@ public class CircularBlendFunc : SweepFunction
                 _curve1.D0(t, out p1);
                 _curve2.D0(t, out p2);
                 _path.D0(t, out center);
-                ns1.SetXYZ(center.XYZ() - p1.XYZ());
-                ns2.SetXYZ(center.XYZ() - p2.XYZ());
-                ns1.Normalize();
-                ns2.Normalize();
+                ns1 = ns1.WithXYZ(center.XYZ() - p1.XYZ());
+                ns2 = ns2.WithXYZ(center.XYZ() - p2.XYZ());
+                ns1 = ns1.Normalized();
+                ns2 = ns2.Normalized();
                 cosa = ns1.Dot(ns2);
                 if (cosa > 1.0)
                 {
@@ -226,7 +226,7 @@ public class CircularBlendFunc : SweepFunction
                     _minang = angle;
                 }
                 _distmin = Min(_distmin, p1.Distance(p2));
-                _bary.ChangeCoord() += (p1.XYZ() + p2.XYZ());
+                _bary = new Point3D(_bary.XYZ() + ((p1.XYZ() + p2.XYZ())));
             }
         }
         else
@@ -239,10 +239,10 @@ public class CircularBlendFunc : SweepFunction
                 _curve2.D0(t, out p2);
                 _path.D0(t, out center);
 
-                ns1.SetXYZ(center.XYZ() - p1.XYZ());
-                ns2.SetXYZ(center.XYZ() - p2.XYZ());
-                ns1.Normalize();
-                ns2.Normalize();
+                ns1 = ns1.WithXYZ(center.XYZ() - p1.XYZ());
+                ns2 = ns2.WithXYZ(center.XYZ() - p2.XYZ());
+                ns1 = ns1.Normalized();
+                ns2 = ns2.Normalized();
                 cosa = ns1.Dot(ns2);
                 if (cosa > 1.0)
                 {
@@ -259,10 +259,10 @@ public class CircularBlendFunc : SweepFunction
                     _minang = angle;
                 }
                 _distmin = Min(_distmin, p1.Distance(p2));
-                _bary.ChangeCoord() += (p1.XYZ() + p2.XYZ());
+                _bary = new Point3D(_bary.XYZ() + ((p1.XYZ() + p2.XYZ())));
             }
         }
-        _bary.ChangeCoord() *= percent;
+        _bary = new Point3D(_bary.XYZ() * percent);
 
         // Faut il inverser la trajectoire ?
         t = (tFirst + tLast) / 2;
@@ -270,8 +270,8 @@ public class CircularBlendFunc : SweepFunction
         _curve2.D0(t, out p2);
         _path.D1(t, out center, out dCenter);
 
-        ns1.SetXYZ(center.XYZ() - p1.XYZ());
-        ns2.SetXYZ(center.XYZ() - p2.XYZ());
+        ns1 = ns1.WithXYZ(center.XYZ() - p1.XYZ());
+        ns2 = ns2.WithXYZ(center.XYZ() - p2.XYZ());
 
         // myreverse = (DCenter.Dot(ns1.Crossed(ns2)) < 0);
         _myreverse = false;
@@ -292,8 +292,8 @@ public class CircularBlendFunc : SweepFunction
         _tPath.D0(param, out center);
         _tCurve1.D0(param, out p1);
         _tCurve2.D0(param, out p2);
-        ns1.SetXYZ(center.XYZ() - p1.XYZ());
-        ns2.SetXYZ(center.XYZ() - p2.XYZ());
+        ns1 = ns1.WithXYZ(center.XYZ() - p1.XYZ());
+        ns2 = ns2.WithXYZ(center.XYZ() - p2.XYZ());
         if (!ns1.IsParallel(ns2, TolAng))
         {
             nplan = ns1.Crossed(ns2);
@@ -303,17 +303,17 @@ public class CircularBlendFunc : SweepFunction
             _tPath.D1(param, out center, out nplan);
             if (_myreverse)
             {
-                nplan.Reverse();
+                nplan = nplan.Reversed();
             }
         }
 
         // Normalisation
-        ns1.Normalize();
-        ns2.Normalize();
-        nplan.Normalize();
+        ns1 = ns1.Normalized();
+        ns2 = ns2.Normalized();
+        nplan = nplan.Normalized();
 
         temp.SetLinearForm(_radius, ns1.XYZ(), _radius, ns2.XYZ(), 1, p1.XYZ(), p2.XYZ());
-        center.ChangeCoord() = 0.5 * temp;
+        center = new Point3D(0.5 * temp);
 
         // Section
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns1, ns2, nplan, p1, p2, _radius, center, poles, weigths);
@@ -342,8 +342,8 @@ public class CircularBlendFunc : SweepFunction
         _tCurve1.D1(param, out p1, out dp1);
         _tCurve2.D1(param, out p2, out dp2);
 
-        ns1.SetXYZ(center.XYZ() - p1.XYZ());
-        ns2.SetXYZ(center.XYZ() - p2.XYZ());
+        ns1 = ns1.WithXYZ(center.XYZ() - p1.XYZ());
+        ns2 = ns2.WithXYZ(center.XYZ() - p2.XYZ());
         dns1 = dCenter - dp1;
         dns2 = dCenter - dp2;
 
@@ -357,8 +357,8 @@ public class CircularBlendFunc : SweepFunction
             _tPath.D2(param, out center, out nplan, out dnplan);
             if (_myreverse)
             {
-                nplan.Reverse();
-                dnplan.Reverse();
+                nplan = nplan.Reversed();
+                dnplan = dnplan.Reversed();
             }
         }
 
@@ -367,21 +367,21 @@ public class CircularBlendFunc : SweepFunction
         invnorm2 = ((double)1) / ns2.Magnitude();
 
         ns1 *= invnorm1;
-        dns1.SetLinearForm(-dns1.Dot(ns1), ns1, dns1);
+        dns1 = Vector3D.LinearForm(-dns1.Dot(ns1), ns1, dns1);
         dns1 *= invnorm1;
 
         ns2 *= invnorm2;
-        dns2.SetLinearForm(-dns2.Dot(ns2), ns2, dns2);
+        dns2 = Vector3D.LinearForm(-dns2.Dot(ns2), ns2, dns2);
         dns2 *= invnorm2;
 
         temp.SetLinearForm(_radius, ns1.XYZ(), _radius, ns2.XYZ(), 1, p1.XYZ(), p2.XYZ());
-        center.ChangeCoord() = 0.5 * temp;
-        dCenter.SetLinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
+        center = new Point3D(0.5 * temp);
+        dCenter = Vector3D.LinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
         dCenter *= 0.5;
 
         invnormp = ((double)1) / nplan.Magnitude();
         nplan *= invnormp;
-        dnplan.SetLinearForm(-dnplan.Dot(nplan), nplan, dnplan);
+        dnplan = Vector3D.LinearForm(-dnplan.Dot(nplan), nplan, dnplan);
         dnplan *= invnormp;
 
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv,
@@ -431,10 +431,10 @@ public class CircularBlendFunc : SweepFunction
         _tCurve1.D2(param, out p1, out dp1, out d2P1);
         _tCurve2.D2(param, out p2, out dp2, out d2P2);
 
-        ns1.SetXYZ(center.XYZ() - p1.XYZ());
+        ns1 = ns1.WithXYZ(center.XYZ() - p1.XYZ());
         dns1 = dCenter - dp1;
         d2ns1 = d2Center - d2P1;
-        ns2.SetXYZ(center.XYZ() - p2.XYZ());
+        ns2 = ns2.WithXYZ(center.XYZ() - p2.XYZ());
         dns2 = dCenter - dp2;
         d2ns2 = d2Center - d2P2;
 
@@ -443,16 +443,16 @@ public class CircularBlendFunc : SweepFunction
             nplan = ns1.Crossed(ns2);
             dnplan = dns1.Crossed(ns2).Added(ns1.Crossed(dns2));
             d2nplan = new Vector3D();
-            d2nplan.SetLinearForm(1, d2ns1.Crossed(ns2), 2, dns1.Crossed(dns2), ns1.Crossed(d2ns2));
+            d2nplan = Vector3D.LinearForm(1, d2ns1.Crossed(ns2), 2, dns1.Crossed(dns2), ns1.Crossed(d2ns2));
         }
         else
         {
             _tPath.D3(param, out center, out nplan, out dnplan, out d2nplan);
             if (_myreverse)
             {
-                nplan.Reverse();
-                dnplan.Reverse();
-                d2nplan.Reverse();
+                nplan = nplan.Reversed();
+                dnplan = dnplan.Reversed();
+                d2nplan = d2nplan.Reversed();
             }
         }
 
@@ -462,42 +462,42 @@ public class CircularBlendFunc : SweepFunction
 
         ns1 *= invnorm1;
         sc = dns1.Dot(ns1);
-        d2ns1.SetLinearForm(3 * sc * sc * invnorm1 - d2ns1.Dot(ns1) - invnorm1 * dns1.SquareMagnitude(),
+        d2ns1 = Vector3D.LinearForm(3 * sc * sc * invnorm1 - d2ns1.Dot(ns1) - invnorm1 * dns1.SquareMagnitude(),
                             ns1,
                             -2 * sc * invnorm1,
                             dns1,
                             d2ns1);
-        dns1.SetLinearForm(-dns1.Dot(ns1), ns1, dns1);
+        dns1 = Vector3D.LinearForm(-dns1.Dot(ns1), ns1, dns1);
         d2ns1 *= invnorm1;
         dns1 *= invnorm1;
 
         ns2 *= invnorm2;
         sc = dns2.Dot(ns2);
-        d2ns2.SetLinearForm(3 * sc * sc * invnorm2 - d2ns2.Dot(ns2) - invnorm2 * dns2.SquareMagnitude(),
+        d2ns2 = Vector3D.LinearForm(3 * sc * sc * invnorm2 - d2ns2.Dot(ns2) - invnorm2 * dns2.SquareMagnitude(),
                             ns2,
                             -2 * sc * invnorm2,
                             dns2,
                             d2ns2);
-        dns2.SetLinearForm(-sc, ns2, dns2);
+        dns2 = Vector3D.LinearForm(-sc, ns2, dns2);
         d2ns2 *= invnorm2;
         dns2 *= invnorm2;
 
         temp.SetLinearForm(_radius, ns1.XYZ(), _radius, ns2.XYZ(), 1, p1.XYZ(), p2.XYZ());
-        center.ChangeCoord() = 0.5 * temp;
-        dCenter.SetLinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
+        center = new Point3D(0.5 * temp);
+        dCenter = Vector3D.LinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
         dCenter *= 0.5;
-        d2Center.SetLinearForm(_radius, d2ns1, _radius, d2ns2, 1, d2P1, d2P2);
+        d2Center = Vector3D.LinearForm(_radius, d2ns1, _radius, d2ns2, 1, d2P1, d2P2);
         d2Center *= 0.5;
 
         invnormp = ((double)1) / nplan.Magnitude();
         nplan *= invnormp;
         sc = dnplan.Dot(nplan);
-        d2nplan.SetLinearForm(3 * sc * sc * invnormp - d2nplan.Dot(nplan) - invnormp * dnplan.SquareMagnitude(),
+        d2nplan = Vector3D.LinearForm(3 * sc * sc * invnormp - d2nplan.Dot(nplan) - invnormp * dnplan.SquareMagnitude(),
                               nplan,
                               -2 * sc * invnormp,
                               dnplan,
                               d2nplan);
-        dnplan.SetLinearForm(-sc, nplan, dnplan);
+        dnplan = Vector3D.LinearForm(-sc, nplan, dnplan);
         dnplan *= invnormp;
         d2nplan *= invnormp;
 

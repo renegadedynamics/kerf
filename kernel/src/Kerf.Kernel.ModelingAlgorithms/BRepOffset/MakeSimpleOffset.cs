@@ -411,7 +411,7 @@ public sealed class MakeSimpleOffset
             }
             if (rev1)
             {
-                d1.Reverse();
+                d1 = d1.Reversed();
             }
 
             c2d2.D0(u, out p);
@@ -428,7 +428,7 @@ public sealed class MakeSimpleOffset
             }
             if (rev2)
             {
-                d2.Reverse();
+                d2 = d2.Reversed();
             }
 
             // Compute angle.

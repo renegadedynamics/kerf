@@ -182,7 +182,7 @@ public class NurbsConvertModification : CopyModification
             if (dist2Min < tol * tol)
             {
                 proj.Point().Parameter(out double u, out double v);
-                uv.SetCoord(u, v);
+                uv = uv.WithCoord(u, v);
                 return true;
             }
         }
@@ -381,7 +381,7 @@ public class NurbsConvertModification : CopyModification
 
         if (caux is null)
         {
-            L.Identity();
+            L = new Placement();
             return false;
         }
         Type theType = caux.GetType();

@@ -273,8 +273,7 @@ public sealed class Evolved
         // Positioning of mySpine and myProfil in the workspace.
         //-------------------------------------------------------------------
         Placement lSpine = FindLocation(_spine);
-        Transform3D t = new();
-        t.SetTransformation(axeProf);
+        Transform3D t = new Transform3D().WithTransformation(axeProf);
         Placement lProfile = new(t);
         Placement initLS = _spine.Location();
         Placement initLP = _profile.Location();
@@ -474,7 +473,7 @@ public sealed class Evolved
         else
         {
             cs.D1(cs.LastParameter(), out p, out ds);
-            ds.Reverse();
+            ds = ds.Reversed();
         }
 
         if (!Tool.Degenerated(e1))
@@ -487,7 +486,7 @@ public sealed class Evolved
             else
             {
                 c1.D1(c1.LastParameter(), out p, out dc1);
-                dc1.Reverse();
+                dc1 = dc1.Reversed();
             }
             inverse[0] = (ds.Dot(dc1) < 0.0);
         }
@@ -506,7 +505,7 @@ public sealed class Evolved
             else
             {
                 c2.D1(c2.LastParameter(), out p, out dc2);
-                dc2.Reverse();
+                dc2 = dc2.Reversed();
             }
             inverse[1] = (ds.Dot(dc2) < 0.0);
         }
@@ -1220,8 +1219,7 @@ public sealed class Evolved
             // Construction of faces limited by parallels.
             // - set to the height of the support face.
             //----------------------------------------------------
-            Transform3D t = new();
-            t.SetTranslation(new Vector3D(0, 0, alt));
+            Transform3D t = new Transform3D().WithTranslation(new Vector3D(0, 0, alt));
             Placement lt = new(t);
             Shape localShape2 = _spine.Moved(lt);
             fr.Init(ShapeCasts.Face(localShape2));
@@ -2037,7 +2035,7 @@ public sealed class Evolved
         Transform3D trsf = new();
         if (Side(_profile, BRepFill_Confusion()) > 3)
         { // side right
-            trsf.SetRotation(Constants.OZ(), Math.PI);
+            trsf = trsf.WithRotation(Constants.OZ(), Math.PI);
         }
         Placement dumLoc = new(trsf);
         Shape localShape = _profile.Moved(dumLoc);
@@ -2087,7 +2085,7 @@ public sealed class Evolved
         Transform3D trsf = new();
         if (Side(_profile, BRepFill_Confusion()) > 3)
         { // side right
-            trsf.SetRotation(Constants.OZ(), Math.PI);
+            trsf = trsf.WithRotation(Constants.OZ(), Math.PI);
         }
         Placement dumLoc = new(trsf);
         Shape localShape = _profile.Moved(dumLoc);
@@ -2097,8 +2095,7 @@ public sealed class Evolved
 
         // Position of the sewing on the edge of the spine
         // so that the bissectrices didn't cross the sewings.
-        Transform3D dummy = new();
-        dummy.SetRotation(axeRev, 1.5 * Math.PI);
+        Transform3D dummy = new Transform3D().WithRotation(axeRev, 1.5 * Math.PI);
         Placement dummyLoc = new(dummy);
         genProf.Move(dummyLoc);
 
@@ -2167,7 +2164,7 @@ public sealed class Evolved
 
         Transform3D t = new();
         CoordinateSystem axeRef = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
-        t.SetTransformation(axeRef, axis);
+        t = t.WithTransformation(axeRef, axis);
 
         return new Placement(t);
     }
@@ -2439,7 +2436,7 @@ public sealed class Evolved
             {
                 c2d.D1(last, out p, out d1);
             }
-            d1.Reverse();
+            d1 = d1.Reversed();
         }
         else
         {
@@ -2456,8 +2453,7 @@ public sealed class Evolved
         Vector3D v3d = new(d1.X(), d1.Y(), 0.0);
 
         CoordinateSystem ax = new(p3d, Constants.DZ(), new Direction3D(v3d));
-        Transform3D trans = new();
-        trans.SetTransformation(ax, axeRef);
+        Transform3D trans = new Transform3D().WithTransformation(ax, axeRef);
         Shape localShape = profRef.Moved(new Placement(trans));
         prof = ShapeCasts.Wire(localShape);
         return prof;

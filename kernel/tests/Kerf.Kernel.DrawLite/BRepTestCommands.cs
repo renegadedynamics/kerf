@@ -113,7 +113,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetTranslation(new Vector3D(F(n - 3), F(n - 2), F(n - 1)));
+                    T = T.WithTranslation(new Vector3D(F(n - 3), F(n - 2), F(n - 1)));
                     last = n - 3;
                     break;
                 case "rotate":
@@ -122,7 +122,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetRotation(new Axis3D(new Point3D(F(n - 7), F(n - 6), F(n - 5)), new Direction3D(new Vector3D(F(n - 4), F(n - 3), F(n - 2)))),
+                    T = T.WithRotation(new Axis3D(new Point3D(F(n - 7), F(n - 6), F(n - 5)), new Direction3D(new Vector3D(F(n - 4), F(n - 3), F(n - 2)))),
                                   F(n - 1) * (Math.PI / 180.0));
                     last = n - 7;
                     break;
@@ -132,7 +132,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetMirror(new Frame3D(new Point3D(F(n - 6), F(n - 5), F(n - 4)), new Direction3D(new Vector3D(F(n - 3), F(n - 2), F(n - 1)))));
+                    T = T.WithMirror(new Frame3D(new Point3D(F(n - 6), F(n - 5), F(n - 4)), new Direction3D(new Vector3D(F(n - 3), F(n - 2), F(n - 1)))));
                     last = n - 6;
                     break;
                 case "scale":
@@ -141,7 +141,7 @@ internal static class BRepTestCommands
                         return 1;
                     }
 
-                    T.SetScale(new Point3D(F(n - 4), F(n - 3), F(n - 2)), F(n - 1));
+                    T = T.WithScale(new Point3D(F(n - 4), F(n - 3), F(n - 2)), F(n - 1));
                     last = n - 4;
                     break;
             }

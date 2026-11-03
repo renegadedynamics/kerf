@@ -26,13 +26,13 @@ namespace Kerf.Topology;
 /// </para>
 /// <para>
 /// A struct holding one reference to a shared, immutable list, as OCCT's class is. <c>default(TopLoc_Location)</c>
-/// and <c>new TopLoc_Location()</c> are both the identity. The internal mutators <c>Identity</c> and <c>Clear</c>
-/// only drop the list; their twin is <c>new TopLoc_Location()</c>.
+/// and <c>new TopLoc_Location()</c> are both the identity. It is a readonly struct (unit 10G): OCCT's
+/// <c>Identity</c> and <c>Clear</c>, which dropped the list, are <c>new TopLoc_Location()</c>.
 /// </para>
 /// </remarks>
-public partial struct Placement : IEquatable<Placement>
+public readonly partial struct Placement : IEquatable<Placement>
 {
-    private SListOfItemLocation _items;
+    private readonly SListOfItemLocation _items;
 
     private static readonly Transform3D THE_IDENTITY_TRSF = new Transform3D();
 
@@ -59,9 +59,6 @@ public partial struct Placement : IEquatable<Placement>
 
     /// <summary>True if this location is the identity.</summary>
     public readonly bool IsIdentity => _items.IsEmpty;
-
-    /// <summary>Resets this location to the identity.</summary>
-    internal void Identity() => _items.Clear();
 
     /// <summary>The first elementary datum. Use <see cref="NextLocation"/> to reach the others.</summary>
     /// <exception cref="NoSuchObjectException">This location is the identity.</exception>
@@ -104,15 +101,15 @@ public partial struct Placement : IEquatable<Placement>
         // the inverse of a Location is a chain in revert order
         // with opposite powers and same Local
         //
-        Placement result = new Placement();
+        SListOfItemLocation result = new SListOfItemLocation();
         SListOfItemLocation items = _items;
         while (items.More())
         {
-            result._items.Construct(new ItemLocation(items.Value()._datum, -items.Value()._power));
+            result.Construct(new ItemLocation(items.Value()._datum, -items.Value()._power));
             items.Next();
         }
 
-        return result;
+        return new Placement(result);
     }
 
     /// <summary><c>this * Other</c>: the datums are concatenated, and powers of the same datum meeting at the join are added (dropped if they cancel).</summary>
@@ -132,25 +129,26 @@ public partial struct Placement : IEquatable<Placement>
         }
 
         // prepend the queue of Other
-        Placement result = Multiplied(other.NextLocation());
+        Placement head = Multiplied(other.NextLocation());
+        SListOfItemLocation result = head._items;
         // does the head of Other cancel the head of result
 
         int p = other.FirstPower();
-        if (!result.IsIdentity)
+        if (!head.IsIdentity)
         {
-            if (other.FirstDatum() == result.FirstDatum())
+            if (other.FirstDatum() == head.FirstDatum())
             {
-                p += result.FirstPower();
-                result._items.ToTail();
+                p += head.FirstPower();
+                result.ToTail();
             }
         }
 
         if (p != 0)
         {
-            result._items.Construct(new ItemLocation(other.FirstDatum(), p));
+            result.Construct(new ItemLocation(other.FirstDatum(), p));
         }
 
-        return result;
+        return new Placement(result);
     }
 
     public static Placement operator *(in Placement left, in Placement right)
@@ -204,9 +202,9 @@ public partial struct Placement : IEquatable<Placement>
         // optimisation when just one element
         if (_items.Tail().IsEmpty)
         {
-            Placement result = new Placement();
-            result._items.Construct(new ItemLocation(FirstDatum(), FirstPower() * pwr));
-            return result;
+            SListOfItemLocation result = new SListOfItemLocation();
+            result.Construct(new ItemLocation(FirstDatum(), FirstPower() * pwr));
+            return new Placement(result);
         }
 
         if (pwr > 0)
@@ -304,9 +302,6 @@ public partial struct Placement : IEquatable<Placement>
 
         s.Write("\n");
     }
-
-    /// <summary>Makes this location the identity.</summary>
-    internal void Clear() => _items.Clear();
 
     /// <summary>The precision of scale factors, 1e-14.</summary>
     public static double ScalePrec() => 1.0e-14;

@@ -313,11 +313,11 @@ public sealed class FreeBoundsPropertiesAnalysis
         c3d2!.D1(first2, out _, out Vector3D vec2);
         if (e1.Orientation() == Reversed)
         {
-            vec1.Reverse();
+            vec1 = vec1.Reversed();
         }
         if (e2.Orientation() == Reversed)
         {
-            vec2.Reverse();
+            vec2 = vec2.Reversed();
         }
 
         double angl = Math.Abs(vec1.Angle(vec2));

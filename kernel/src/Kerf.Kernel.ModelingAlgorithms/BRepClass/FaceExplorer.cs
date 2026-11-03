@@ -91,7 +91,7 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
         double distance = centerPnt.Distance(point);
         if (global::Kerf.Engine.Foundation.Precision.IsInfinite(distance))
         {
-            point.SetCoord(_uMin - (_uMax - _uMin), _vMin - (_vMax - _vMin));
+            point = point.WithCoord(_uMin - (_uMax - _uMin), _vMin - (_vMax - _vMin));
             return false;
         }
         else
@@ -255,8 +255,8 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
                                                     continue;
                                                 }
 
-                                                linVec.SetXY((pOnC.XY() - p.XY()));
-                                                linDir.SetXY(linVec.XY());
+                                                linVec = linVec.WithXY((pOnC.XY() - p.XY()));
+                                                linDir = linDir.WithXY(linVec.XY());
                                                 l = new Line2D(p, linDir);
                                             }
                                         }

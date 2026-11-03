@@ -96,7 +96,7 @@ public class PolyArc : Polygo
             line.D0(pdeb, out p2d);
             xs = p2d.X();
             ys = p2d.Y();
-            _brise[1].SetCoord(xs, ys);
+            _brise[1] = _brise[1].WithCoord(xs, ys);
 
             _box.SetVoid();
 
@@ -109,7 +109,7 @@ public class PolyArc : Polygo
                 line.D0(_param[i], out p2d);
                 x = p2d.X();
                 y = p2d.Y();
-                _brise[i].SetCoord(x, y);
+                _brise[i] = _brise[i].WithCoord(x, y);
                 xXs = 0.5 * (xs + x);
                 yYs = 0.5 * (ys + y);
                 //------------------------------------------------------------

@@ -1931,12 +1931,12 @@ public partial class WireFixer : RootFixer
                         double   period;
                         if (uclosed)
                         {
-                            x.SetX(1.0);
+                            x = x.WithX(1.0);
                             period = uRange;
                         }
                         else
                         {
-                            x.SetY(1.0);
+                            x = x.WithY(1.0);
                             period = vRange;
                         }
                         double rot1 = (pn1.XY() - pd2.XY()) ^ x.XY();
@@ -1971,7 +1971,7 @@ public partial class WireFixer : RootFixer
                             // x *= ( std::abs(scld-scln) > 1.5 * period ? 2. : 1. ) *
                             //      ( scld >0 ? -period : period );
                             var shift = new Transform2D();
-                            shift.SetTranslation(x);
+                            shift = shift.WithTranslation(x);
                             for (int k = degn2;; k++)
                             {
                                 if (k > nb)
@@ -2045,7 +2045,7 @@ public partial class WireFixer : RootFixer
 
             _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
             var shift2 = new Transform2D();
-            shift2.SetTranslation(new Vector2D(du, dv));
+            shift2 = shift2.WithTranslation(new Vector2D(du, dv));
             // c2d2->Transform ( Shift );
             //  skl 15.05.2002 for OCC208 (if few edges have reference to one pcurve)
             var c2d2new = c2d2.Transformed(shift2) as Curve2D;
@@ -2102,7 +2102,7 @@ public partial class WireFixer : RootFixer
         _lastFixStatus |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE2);
 
         var shift3 = new Transform2D();
-        shift3.SetTranslation(new Vector2D(du2, dv2));
+        shift3 = shift3.WithTranslation(new Vector2D(du2, dv2));
 
         for (n = 1; n <= sbwdOring.EdgeCount; n++)
         {
@@ -3308,7 +3308,7 @@ public partial class WireFixer : RootFixer
                 {
                     double u  = vtx1Param + pointsC * du1;
                     Point3D p1 = curve1.Value(u);
-                    p1.Transform(l1.Transformation());
+                    p1 = p1.Transformed(l1.Transformation());
                     double d1 = lig.Distance(p1) * 2.0000001;
                     if (d1 > tole1 && d1 > maxEdgeTol1)
                     {
@@ -3317,7 +3317,7 @@ public partial class WireFixer : RootFixer
 
                     u         = vtx2Param + pointsC * du2;
                     Point3D p2 = curve2.Value(u);
-                    p2.Transform(l2.Transformation());
+                    p2 = p2.Transformed(l2.Transformation());
                     double d2 = lig.Distance(p2) * 2.0000001;
                     if (d2 > tole2 && d2 > maxEdgeTol2)
                     {

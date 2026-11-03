@@ -317,8 +317,7 @@ public class Geom_BSplineSurfaceTests
     [Fact]
     public void Transform()
     {
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(10, 20, 30));
         Point3D aPtBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Transform(aTrsf);
         Point3D aPtAfter = myOriginalSurface.Value(0.5, 0.5);
@@ -330,12 +329,12 @@ public class Geom_BSplineSurfaceTests
     [Fact]
     public void KnotsAccess()
     {
-        PackedList<double> aUKnots = myOriginalSurface.UKnots();
+        IReadOnlyList<double> aUKnots = myOriginalSurface.UKnots();
         Assert.Equal(2, aUKnots.Count);
         Assert.Equal(0.0, aUKnots[0]);
         Assert.Equal(1.0, aUKnots[1]);
         Assert.Equal(2, myOriginalSurface.VKnots().Count);
-        PackedList<int> aUMults = myOriginalSurface.UMultiplicities();
+        IReadOnlyList<int> aUMults = myOriginalSurface.UMultiplicities();
         Assert.Equal(2, aUMults.Count);
         Assert.Equal(3, aUMults[0]);
         Assert.Equal(2, myOriginalSurface.VMultiplicities().Count);

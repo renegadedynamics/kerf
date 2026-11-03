@@ -503,7 +503,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         {
             case global::Kerf.Geometry.CurveKind.Line:
                 global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
-                aResult.D2.SetCoord(0.0, 0.0, 0.0);
+                aResult.D2 = aResult.D2.WithCoord(0.0, 0.0, 0.0);
                 return aResult;
             case global::Kerf.Geometry.CurveKind.Circle:
                 global::Kerf.Engine.Geometry.ElCLib.D2(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2);
@@ -563,8 +563,8 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
         {
             case global::Kerf.Geometry.CurveKind.Line:
                 global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
-                aResult.D2.SetCoord(0.0, 0.0, 0.0);
-                aResult.D3.SetCoord(0.0, 0.0, 0.0);
+                aResult.D2 = aResult.D2.WithCoord(0.0, 0.0, 0.0);
+                aResult.D3 = aResult.D3.WithCoord(0.0, 0.0, 0.0);
                 return aResult;
             case global::Kerf.Geometry.CurveKind.Circle:
                 global::Kerf.Engine.Geometry.ElCLib.D3(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
@@ -577,7 +577,7 @@ internal sealed class TestGeomAdaptor_Curve : CurveAdaptorBase
                 return aResult;
             case global::Kerf.Geometry.CurveKind.Parabola:
                 global::Kerf.Engine.Geometry.ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
-                aResult.D3.SetCoord(0.0, 0.0, 0.0);
+                aResult.D3 = aResult.D3.WithCoord(0.0, 0.0, 0.0);
                 return aResult;
             case BezierCurve:
             {
@@ -1328,7 +1328,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         {
             case global::Kerf.Geometry.CurveKind.Line:
                 global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
-                aResult.D2.SetCoord(0.0, 0.0);
+                aResult.D2 = aResult.D2.WithCoord(0.0, 0.0);
                 return aResult;
             case global::Kerf.Geometry.CurveKind.Circle:
                 global::Kerf.Engine.Geometry.ElCLib.D2(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2);
@@ -1388,8 +1388,8 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
         {
             case global::Kerf.Geometry.CurveKind.Line:
                 global::Kerf.Engine.Geometry.ElCLib.D1(U, myLin, out aResult.Point, out aResult.D1);
-                aResult.D2.SetCoord(0.0, 0.0);
-                aResult.D3.SetCoord(0.0, 0.0);
+                aResult.D2 = aResult.D2.WithCoord(0.0, 0.0);
+                aResult.D3 = aResult.D3.WithCoord(0.0, 0.0);
                 return aResult;
             case global::Kerf.Geometry.CurveKind.Circle:
                 global::Kerf.Engine.Geometry.ElCLib.D3(U, myCirc, out aResult.Point, out aResult.D1, out aResult.D2, out aResult.D3);
@@ -1402,7 +1402,7 @@ internal sealed class TestGeom2dAdaptor_Curve : Curve2DAdaptorBase
                 return aResult;
             case global::Kerf.Geometry.CurveKind.Parabola:
                 global::Kerf.Engine.Geometry.ElCLib.D2(U, myParab, out aResult.Point, out aResult.D1, out aResult.D2);
-                aResult.D3.SetCoord(0.0, 0.0);
+                aResult.D3 = aResult.D3.WithCoord(0.0, 0.0);
                 return aResult;
             case BezierCurve:
             {

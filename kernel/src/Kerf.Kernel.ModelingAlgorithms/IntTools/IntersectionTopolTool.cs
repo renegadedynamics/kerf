@@ -452,7 +452,7 @@ public class IntersectionTopolTool : TopolTool
                 Point3D a = array2.Value(i, 1);
                 Point3D b = array2.Value(i, 2);
                 Point3D c = array2.Value(i, 3);
-                vi.SetCoord(c.X() - b.X() - b.X() + a.X(),
+                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
                             c.Y() - b.Y() - b.Y() + a.Y(),
                             c.Z() - b.Z() - b.Z() + a.Z());
                 int locnbch = 0;
@@ -462,7 +462,7 @@ public class IntersectionTopolTool : TopolTool
                     Point3D ax = array2.Value(i, j - 1);
                     Point3D bx = array2.Value(i, j);
                     Point3D cx = array2.Value(i, j + 1);
-                    vip1.SetCoord(cx.X() - bx.X() - bx.X() + ax.X(),
+                    vip1 = vip1.WithCoord(cx.X() - bx.X() - bx.X() + ax.X(),
                                   cx.Y() - bx.Y() - bx.Y() + ax.Y(),
                                   cx.Z() - bx.Z() - bx.Z() + ax.Z());
                     double pd = vi.Dot(vip1);
@@ -503,7 +503,7 @@ public class IntersectionTopolTool : TopolTool
                 Point3D a = array2.Value(array2.LowerRow(), j);
                 Point3D b = array2.Value(array2.LowerRow() + 1, j);
                 Point3D c = array2.Value(array2.LowerRow() + 2, j);
-                vi.SetCoord(c.X() - b.X() - b.X() + a.X(),
+                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
                             c.Y() - b.Y() - b.Y() + a.Y(),
                             c.Z() - b.Z() - b.Z() + a.Z());
                 int locnbch = 0;
@@ -513,7 +513,7 @@ public class IntersectionTopolTool : TopolTool
                     Point3D ax = array2.Value(i - 1, j);
                     Point3D bx = array2.Value(i, j);
                     Point3D cx = array2.Value(i + 1, j);
-                    vip1.SetCoord(cx.X() - bx.X() - bx.X() + ax.X(),
+                    vip1 = vip1.WithCoord(cx.X() - bx.X() - bx.X() + ax.X(),
                                   cx.Y() - bx.Y() - bx.Y() + ax.Y(),
                                   cx.Z() - bx.Z() - bx.Z() + ax.Z());
                     double pd = vi.Dot(vip1);

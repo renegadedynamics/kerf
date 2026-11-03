@@ -71,8 +71,7 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         Direction2D ox = e.XAxis().Direction();
         Direction2D oy = e.YAxis().Direction();
-        Transform2D trsf = new();
-        trsf.SetTransformation(e.XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis(), Constants.OX2d());
         if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
         {
             value = r;
@@ -87,9 +86,9 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         for (ii = 1; ii <= _poles.Length(); ii++)
         {
-            _poles[ii].SetCoord(1, R * cosNumerator[ii]);
-            _poles[ii].SetCoord(2, value * sinNumerator[ii]);
-            _poles[ii].Transform(trsf);
+            _poles[ii] = _poles[ii].WithCoord(1, R * cosNumerator[ii]);
+            _poles[ii] = _poles[ii].WithCoord(2, value * sinNumerator[ii]);
+            _poles[ii] = _poles[ii].Transformed(trsf);
         }
     }
 
@@ -130,8 +129,7 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         Direction2D ox = e.XAxis().Direction();
         Direction2D oy = e.YAxis().Direction();
-        Transform2D trsf = new();
-        trsf.SetTransformation(e.XAxis(), Constants.OX2d());
+        Transform2D trsf = new Transform2D().WithTransformation(e.XAxis(), Constants.OX2d());
         if (ox.X() * oy.Y() - ox.Y() * oy.X() > 0.0e0)
         {
             value = r;
@@ -146,9 +144,9 @@ public class EllipseToBSplineCurve : ConicToBSplineCurve
 
         for (ii = 1; ii <= _poles.Length(); ii++)
         {
-            _poles[ii].SetCoord(1, R * cosNumerator[ii]);
-            _poles[ii].SetCoord(2, value * sinNumerator[ii]);
-            _poles[ii].Transform(trsf);
+            _poles[ii] = _poles[ii].WithCoord(1, R * cosNumerator[ii]);
+            _poles[ii] = _poles[ii].WithCoord(2, value * sinNumerator[ii]);
+            _poles[ii] = _poles[ii].Transformed(trsf);
         }
     }
 }

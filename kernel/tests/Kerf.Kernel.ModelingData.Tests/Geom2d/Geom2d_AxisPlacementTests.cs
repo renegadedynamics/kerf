@@ -141,8 +141,7 @@ public class Geom2d_AxisPlacementTest
         AxisPlacement2 anAP =
             new AxisPlacement2(new Point2D(1.0, 2.0), new Direction2D(1.0, 0.0));
 
-        Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(10.0, 20.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(10.0, 20.0));
         anAP.Transform(aTrsf);
 
         Assert.Equal(11.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -157,8 +156,7 @@ public class Geom2d_AxisPlacementTest
         AxisPlacement2 anAP =
             new AxisPlacement2(new Point2D(1.0, 0.0), new Direction2D(1.0, 0.0));
 
-        Transform2D aTrsf = new();
-        aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
+        Transform2D aTrsf = new Transform2D().WithRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
         anAP.Transform(aTrsf);
 
         Assert.Equal(0.0, anAP.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());

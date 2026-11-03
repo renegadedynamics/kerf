@@ -419,7 +419,7 @@ public class Poly_TriangulationTest
 
         // translated
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(10, 0, 0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(10, 0, 0));
         var aMoved = new Box();
         Assert.True(aTri.MinMax(ref aMoved, aTrsf, true));
         Assert.Equal(10.0, aMoved.Get().Xmin);
@@ -434,7 +434,7 @@ public class Poly_TriangulationTest
 
         // an accurate box with a rotation ignores the cache
         var aRot = new Transform3D();
-        aRot.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 2);
+        aRot = aRot.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), Math.PI / 2);
         var anAccurate = new Box();
         aTri.MinMax(ref anAccurate, aRot, true);
         Assert.Equal(-1.0, anAccurate.Get().Xmin, 1e-12);

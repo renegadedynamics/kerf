@@ -560,7 +560,7 @@ public sealed class SplitDrafts
                     case 2:
                     {
                         Line3D theLine = new(normalFg);
-                        theLine.Translate(normalFg.Location(), Tool.Pnt(vtx));
+                        theLine = theLine.Translated(normalFg.Location(), Tool.Pnt(vtx));
                         newc = new LineCurve3D(theLine);
                         knownp = 0.0;
                     }
@@ -1332,7 +1332,7 @@ public sealed class SplitDrafts
             normalF = newpl.Axis();
             if ((newpl.Direct() && f.Orientation() == Reversed) || (!newpl.Direct() && f.Orientation() == Forward))
             {
-                normalF.Reverse();
+                normalF = normalF.Reversed();
             }
             return true;
         }
@@ -1359,7 +1359,7 @@ public sealed class SplitDrafts
                 {
                     b = -b;
                     c = -c;
-                    normalF.Reverse();
+                    normalF = normalF.Reversed();
                 }
                 double denom = Math.Sqrt(1 - a * a);
                 double sina = Math.Sin(ang);
@@ -1419,22 +1419,22 @@ public sealed class SplitDrafts
                             if (vp1.IsSame(v1))
                             {
                                 pt2d = c22d.Value(f2);
-                                pt2d.SetY(pt2d.Y() - f);
+                                pt2d = pt2d.WithY(pt2d.Y() - f);
                             }
                             else if (vp2.IsSame(v1))
                             {
                                 pt2d = c22d.Value(l2);
-                                pt2d.SetY(pt2d.Y() - f);
+                                pt2d = pt2d.WithY(pt2d.Y() - f);
                             }
                             else if (vp1.IsSame(v2))
                             {
                                 pt2d = c22d.Value(f2);
-                                pt2d.SetY(pt2d.Y() - l);
+                                pt2d = pt2d.WithY(pt2d.Y() - l);
                             }
                             else if (vp2.IsSame(v2))
                             {
                                 pt2d = c22d.Value(l2);
-                                pt2d.SetY(pt2d.Y() - l);
+                                pt2d = pt2d.WithY(pt2d.Y() - l);
                             }
                             c2d = new LineCurve2D(pt2d, Constants.DY2d());
                             b.UpdateEdge(edg, c2d, F, Tool.Tolerance(edg));

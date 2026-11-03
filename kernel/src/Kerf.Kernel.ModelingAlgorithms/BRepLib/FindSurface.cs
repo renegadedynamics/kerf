@@ -229,7 +229,7 @@ public class FindSurface
         _tolerance = tol;
         _tolReached = 0.0;
         _isExisted = false;
-        _location.Identity();
+        _location = new Placement();
         _surface = null;
 
         // compute the tolerance
@@ -411,7 +411,7 @@ public class FindSurface
         }
 
         // ======================= Step #2
-        _location.Identity();
+        _location = new Placement();
         int iPoint;
         var mat = new Matrix(1, 3, 1, 3, 0.0);
         var vec = new math_Vector(1, 3, 0.0);
@@ -555,7 +555,7 @@ public class FindSurface
                 if (fClass.PerformInfinitePoint() == In)
                 {
                     Direction3D norm = plane.Position().Direction();
-                    norm.Reverse();
+                    norm = norm.Reversed();
                     _surface = new PlaneSurface(plane.Position().Location(), norm);
                 }
             }

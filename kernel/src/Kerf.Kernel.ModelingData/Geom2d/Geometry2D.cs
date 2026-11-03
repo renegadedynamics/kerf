@@ -26,8 +26,7 @@ public abstract class Geometry2D : Transient
     internal void Mirror(in Point2D p)
     {
         CheckMutable();
-        Transform2D t = new Transform2D();
-        t.SetMirror(p);
+        Transform2D t = new Transform2D().WithMirror(p);
         Transform(t);
     }
 
@@ -35,8 +34,7 @@ public abstract class Geometry2D : Transient
     internal void Mirror(in Axis2D a)
     {
         CheckMutable();
-        Transform2D t = new Transform2D();
-        t.SetMirror(a);
+        Transform2D t = new Transform2D().WithMirror(a);
         Transform(t);
     }
 
@@ -44,8 +42,7 @@ public abstract class Geometry2D : Transient
     internal void Rotate(in Point2D p, double ang)
     {
         CheckMutable();
-        Transform2D t = new Transform2D();
-        t.SetRotation(p, ang);
+        Transform2D t = new Transform2D().WithRotation(p, ang);
         Transform(t);
     }
 
@@ -53,8 +50,7 @@ public abstract class Geometry2D : Transient
     internal void Scale(in Point2D p, double s)
     {
         CheckMutable();
-        Transform2D t = new Transform2D();
-        t.SetScale(p, s);
+        Transform2D t = new Transform2D().WithScale(p, s);
         Transform(t);
     }
 
@@ -62,8 +58,7 @@ public abstract class Geometry2D : Transient
     internal void Translate(in Vector2D v)
     {
         CheckMutable();
-        Transform2D t = new Transform2D();
-        t.SetTranslation(v);
+        Transform2D t = new Transform2D().WithTranslation(v);
         Transform(t);
     }
 

@@ -502,11 +502,11 @@ public class IWalking<TheIWFunction, TheIWLine>
     {
         if (Math.Abs(vector.X()) < tolerance[1])
         {
-            vector.SetX(0.0);
+            vector = vector.WithX(0.0);
         }
         if (Math.Abs(vector.Y()) < tolerance[2])
         {
-            vector.SetY(0.0);
+            vector = vector.WithY(0.0);
         }
     }
 
@@ -1351,8 +1351,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                     {
                         for (int k = n + 1; k <= n + _nbMultiplicities[i]; k++)
                         {
-                            vec1.SetCoord(up - umult.Value(k), vp - vmult.Value(k));
-                            vec2.SetCoord(uc - umult.Value(k), vc - vmult.Value(k));
+                            vec1 = vec1.WithCoord(up - umult.Value(k), vp - vmult.Value(k));
+                            vec2 = vec2.WithCoord(uc - umult.Value(k), vc - vmult.Value(k));
                             CutVectorByTolerances(ref vec1, _tolerance);
                             CutVectorByTolerances(ref vec2, _tolerance);
 
@@ -1396,7 +1396,7 @@ public class IWalking<TheIWFunction, TheIWLine>
                                 double dot = dir3d.Dot(dir3d1);
                                 if (dot < 0.0)
                                 { // Normally this Function should not be used often !!!
-                                    dir3d.Reverse();
+                                    dir3d = dir3d.Reversed();
                                 }
                                 line.SetTangentVector(_previousd3d, j - 1);
                             }
@@ -1436,8 +1436,8 @@ public class IWalking<TheIWFunction, TheIWLine>
                 {
                     for (int j = n + 1; j <= n + _nbMultiplicities[i]; j++)
                     {
-                        vec1.SetCoord(up - umult.Value(j), vp - vmult.Value(j));
-                        vec2.SetCoord(uv[1] - umult.Value(j), uv[2] - vmult.Value(j));
+                        vec1 = vec1.WithCoord(up - umult.Value(j), vp - vmult.Value(j));
+                        vec2 = vec2.WithCoord(uv[1] - umult.Value(j), uv[2] - vmult.Value(j));
                         CutVectorByTolerances(ref vec1, _tolerance);
                         CutVectorByTolerances(ref vec2, _tolerance);
 

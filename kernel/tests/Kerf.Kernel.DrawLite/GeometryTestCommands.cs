@@ -152,7 +152,7 @@ internal static class GeometryTestCommands
         {
             for (jj = 1; jj <= 3; jj++)
             {
-                a_point.SetCoord(jj, theDI.Atof(a[num_read]));
+                a_point = a_point.WithCoord(jj, theDI.Atof(a[num_read]));
                 num_read += 1;
             }
             PointsArrayPtr.SetValue(ii, a_point);
@@ -178,7 +178,7 @@ internal static class GeometryTestCommands
             {
                 for (jj = 1; jj <= 3; jj++)
                 {
-                    a_vector.SetCoord(jj, theDI.Atof(a[num_read]));
+                    a_vector = a_vector.WithCoord(jj, theDI.Atof(a[num_read]));
                     num_read += 1;
                 }
                 TangentsArray.SetValue(ii, a_vector);

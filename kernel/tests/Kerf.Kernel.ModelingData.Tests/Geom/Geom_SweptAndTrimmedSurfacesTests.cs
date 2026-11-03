@@ -101,8 +101,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
     public void Revolution_Transform_With_Mirror_Reverses_U()
     {
         RevolutionSurface S = Torus();
-        Transform3D T = new();
-        T.SetMirror(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        Transform3D T = new Transform3D().WithMirror(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)));
         RevolutionSurface M = (RevolutionSurface)S.Transformed(T);
         // A mirror turns the rotation the other way; UReverse (the axis reversed) restores the parametrization
         double U = 0.8, V = 1.1;
@@ -332,8 +331,7 @@ public class Geom_SweptAndTrimmedSurfacesTests
         Assert.NotSame(aRBasis, R.BasisCurve());
         Assert.True(R.Value(0.7, R.VReversedParameter(1.0)).IsEqual(aRExpected, 1e-12));
         Curve3D aRBasis2 = R.BasisCurve();
-        Transform3D aMirror = new();
-        aMirror.SetMirror(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)));
+        Transform3D aMirror = new Transform3D().WithMirror(new Frame3D(new Point3D(0, 0, 1), new Direction3D(1, 0, 0)));
         R.Transform(aMirror);
         Assert.NotSame(aRBasis2, R.BasisCurve());
         Assert.Equal(aRBefore, aRBasis.Value(1.0));

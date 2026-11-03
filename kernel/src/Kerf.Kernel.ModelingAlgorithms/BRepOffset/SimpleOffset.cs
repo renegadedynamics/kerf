@@ -451,11 +451,11 @@ public sealed class SimpleOffset : Modification
         Point3D center = new(0.0, 0.0, 0.0);
         for (int i = offsetPointVec.Lower(); i <= offsetPointVec.Upper(); ++i)
         {
-            center.SetXYZ(center.XYZ() + offsetPointVec.Value(i).XYZ());
+            center = center.WithXYZ(center.XYZ() + offsetPointVec.Value(i).XYZ());
         }
         // OCCT: a vertex none of whose edges has an offset curve (only free or degenerated edges, or shared edges met
         // in the other orientation) divides by zero: its new point is NaN.
-        center.SetXYZ(center.XYZ() / offsetPointVec.Length());
+        center = center.WithXYZ(center.XYZ() / offsetPointVec.Length());
 
         // Compute max distance.
         double sqMaxDist = 0.0;

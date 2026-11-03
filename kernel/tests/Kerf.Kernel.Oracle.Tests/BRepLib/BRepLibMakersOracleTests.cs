@@ -159,7 +159,7 @@ public sealed class BRepLibMakersOracleTests(ITestOutputHelper output) : IDispos
             var anAx = new CoordinateSystem(anAx2);
             if (!theDirect)
             {
-                anAx.YReverse();
+                anAx = anAx.YReversed();
             }
             using var aNAx = Oracle.ToNative(anAx);
             using var aND = aNAx.Direction();

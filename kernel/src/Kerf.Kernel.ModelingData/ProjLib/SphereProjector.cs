@@ -114,26 +114,26 @@ public class SphereProjector : Projector
             {
                 // then P1 is on the apex of the sphere and U is undefined
                 // The value of U is given by P2d2.Y() .
-                p2d1.SetX(p2d2.X());
+                p2d1 = p2d1.WithX(p2d2.X());
             }
             else if (Math.Abs(Math.Abs(p2d1.X() - p2d2.X()) - M_PI) < global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
                 // then we have U2 = U1 + PI; V2;
                 // we have to assume that U1 = U2
                 //   so V2 = PI - V2;
-                p2d2.SetX(p2d1.X());
+                p2d2 = p2d2.WithX(p2d1.X());
                 if (p2d2.Y() < 0.0)
                 {
-                    p2d2.SetY(-M_PI - p2d2.Y());
+                    p2d2 = p2d2.WithY(-M_PI - p2d2.Y());
                 }
                 else
                 {
-                    p2d2.SetY(M_PI - p2d2.Y());
+                    p2d2 = p2d2.WithY(M_PI - p2d2.Y());
                 }
             }
             else
             {
-                p2d2.SetX(p2d1.X());
+                p2d2 = p2d2.WithX(p2d1.X());
             }
 
             d2d = new Direction2D(new Vector2D(p2d1, p2d2));
@@ -188,7 +188,7 @@ public class SphereProjector : Projector
         double newY, y = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin).Y();
         newY = global::Kerf.Engine.Geometry.ElCLib.InPeriod(y, -M_PI, M_PI);
 
-        _lin.Translate(new Vector2D(0.0, newY - y));
+        _lin = _lin.Translated(new Vector2D(0.0, newY - y));
 
         Point2D p = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin);
         Transform2D trsf = new();
@@ -215,14 +215,14 @@ public class SphereProjector : Projector
         {
             return;
         }
-        trsf.SetMirror(axis);
-        _lin.Transform(trsf);
+        trsf = trsf.WithMirror(axis);
+        _lin = _lin.Transformed(trsf);
 
-        _lin.Translate(new Vector2D(M_PI, 0.0));
+        _lin = _lin.Translated(new Vector2D(M_PI, 0.0));
 
         // Now we need to adjust the U parameter
         double newX, x = global::Kerf.Engine.Geometry.ElCLib.Value(u, _lin).X();
         newX = global::Kerf.Engine.Geometry.ElCLib.InPeriod(x, 0.0, 2.0 * M_PI);
-        _lin.Translate(new Vector2D(newX - x, 0.0));
+        _lin = _lin.Translated(new Vector2D(newX - x, 0.0));
     }
 }

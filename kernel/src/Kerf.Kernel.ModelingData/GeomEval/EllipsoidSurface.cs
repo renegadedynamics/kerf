@@ -354,8 +354,7 @@ public sealed class EllipsoidSurface : ElementarySurface
         double invB2 = 1.0 / (_b * _b);
         double invC2 = 1.0 / (_c * _c);
 
-        Transform3D t = new Transform3D();
-        t.SetTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);

@@ -59,7 +59,7 @@ public static class BRepOffset
             }
             else if (radius <= -tol)
             {
-                axis.Rotate(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis = axis.Rotated(new Axis3D(axis.Location(), axis.Direction()), M_PI);
                 result = new CylindricalSurface(axis, Math.Abs(radius));
                 status = OffsetStatus.Reversed;
             }
@@ -78,15 +78,15 @@ public static class BRepOffset
             {
                 Vector3D z = new(axis.Direction());
                 z *= -offset * Math.Sin(alpha);
-                axis.Translate(z);
+                axis = axis.Translated(z);
             }
             else
             {
                 radius = -radius;
                 Vector3D z = new(axis.Direction());
                 z *= -offset * Math.Sin(alpha);
-                axis.Translate(z);
-                axis.Rotate(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis = axis.Translated(z);
+                axis = axis.Rotated(new Axis3D(axis.Location(), axis.Direction()), M_PI);
                 alpha = -alpha;
             }
             result = new ConicalSurface(axis, alpha, radius);
@@ -110,8 +110,8 @@ public static class BRepOffset
             }
             else if (radius <= -tol)
             {
-                axis.Rotate(new Axis3D(axis.Location(), axis.Direction()), M_PI);
-                axis.ZReverse();
+                axis = axis.Rotated(new Axis3D(axis.Location(), axis.Direction()), M_PI);
+                axis = axis.ZReversed();
                 result = new SphericalSurface(axis, -radius);
                 status = OffsetStatus.Reversed;
             }

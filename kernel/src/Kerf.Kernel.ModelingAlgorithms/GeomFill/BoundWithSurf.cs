@@ -50,7 +50,7 @@ public class BoundWithSurf : Boundary
             _par.D1(u, out x, out dx);
         }
         _conS.D1(x, out p, out v);
-        v.Multiply(dx);
+        v = v.Multiplied(dx);
     }
 
     public override bool HasNormals => true;
@@ -73,8 +73,8 @@ public class BoundWithSurf : Boundary
         Point3D p;
         Vector3D su, sv;
         _conS.GetSurface()!.D1(x, y, out p, out su, out sv);
-        su.Cross(sv);
-        su.Normalize();
+        su = su.Crossed(sv);
+        su = su.Normalized();
         return su;
     }
 
@@ -95,13 +95,13 @@ public class BoundWithSurf : Boundary
         }
         _conS.GetCurve()!.D1(w, out p2d, out v2d);
         p2d.Coord(out x, out y);
-        v2d.Multiply(dw);
+        v2d = v2d.Multiplied(dw);
         v2d.Coord(out dx, out dy);
         Point3D p;
         Vector3D su, sv, suu, suv, svv;
         _conS.GetSurface()!.D2(x, y, out p, out su, out sv, out suu, out svv, out suv);
         n = su.Crossed(sv);
-        n.Normalize();
+        n = n.Normalized();
         double nsuu = n.Dot(suu), nsuv = n.Dot(suv), nsvv = n.Dot(svv);
         double susu = su.Dot(su), susv = su.Dot(sv), svsv = sv.Dot(sv);
         double deno = (susu * svsv) - (susv * susv);
@@ -110,8 +110,8 @@ public class BoundWithSurf : Boundary
             // on embraye sur un calcul approche, c est mieux que rien!?!
             Vector3D temp = Norm(u + 1.0e-12);
             dn = n.Multiplied(-1.0);
-            dn.Add(temp);
-            dn.Multiply(1.0e-12);
+            dn = dn.Added(temp);
+            dn = dn.Multiplied(1.0e-12);
         }
         else
         {
@@ -122,12 +122,12 @@ public class BoundWithSurf : Boundary
 
             Vector3D temp1 = su.Multiplied(a);
             Vector3D temp2 = sv.Multiplied(b);
-            temp1.Add(temp2);
+            temp1 = temp1.Added(temp2);
             temp2 = su.Multiplied(c);
             Vector3D temp3 = sv.Multiplied(d);
-            temp2.Add(temp3);
-            temp1.Multiply(dx);
-            temp2.Multiply(dy);
+            temp2 = temp2.Added(temp3);
+            temp1 = temp1.Multiplied(dx);
+            temp2 = temp2.Multiplied(dy);
             dn = temp1.Added(temp2);
         }
     }

@@ -30,7 +30,7 @@ public class CartesianPoint2 : Point2
     internal void SetCoord(double x, double y)
     {
         CheckMutable();
-        _gpPnt2d.SetCoord(x, y);
+        _gpPnt2d = _gpPnt2d.WithCoord(x, y);
     }
 
     public override void Coord(out double x, out double y) => _gpPnt2d.Coord(out x, out y);
@@ -44,13 +44,13 @@ public class CartesianPoint2 : Point2
     internal void SetX(double x)
     {
         CheckMutable();
-        _gpPnt2d.SetX(x);
+        _gpPnt2d = _gpPnt2d.WithX(x);
     }
 
     internal void SetY(double y)
     {
         CheckMutable();
-        _gpPnt2d.SetY(y);
+        _gpPnt2d = _gpPnt2d.WithY(y);
     }
 
     public override Point2D Pnt2d() => _gpPnt2d;
@@ -63,7 +63,7 @@ public class CartesianPoint2 : Point2
     protected internal override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _gpPnt2d.Transform(t);
+        _gpPnt2d = _gpPnt2d.Transformed(t);
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

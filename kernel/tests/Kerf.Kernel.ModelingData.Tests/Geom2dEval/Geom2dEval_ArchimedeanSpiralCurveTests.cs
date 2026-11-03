@@ -165,8 +165,7 @@ public class Geom2dEval_ArchimedeanSpiralCurveTest
     {
         Axis2D anAx2d = new();
         ArchimedeanSpiralCurve2D aCurve = new(anAx2d, 0.0, 1.0);
-        Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(1.0, 2.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(1.0, 2.0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }

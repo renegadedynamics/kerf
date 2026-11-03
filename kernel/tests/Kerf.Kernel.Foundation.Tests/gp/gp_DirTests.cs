@@ -165,8 +165,7 @@ public class gp_DirTest
     public void Transform()
     {
         Direction3D aDir = new(1.0, 0.0, 0.0);
-        Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0)), M_PI);
         Direction3D aTransformed = aDir.Transformed(aTrsf);
         Assert.Equal(-1.0, aTransformed.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aTransformed.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -186,7 +185,7 @@ public class gp_DirTest
     {
         Direction3D aToSym = new(1.0, 1.0, 1.0);
         Frame3D anAx2 = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        aToSym.Mirror(anAx2);
+        aToSym = aToSym.Mirrored(anAx2);
 
         // Expected: (-1/sqrt(3), 1/sqrt(3), 1/sqrt(3))
         double aExpected = 1.0 / Math.Sqrt(3.0);

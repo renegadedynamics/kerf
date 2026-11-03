@@ -34,15 +34,15 @@ public class MakeBox : MakeShape
         Point3D P = p;
         if (dx < 0)
         {
-            P.SetX(P.X() + dx);
+            P = P.WithX(P.X() + dx);
         }
         if (dy < 0)
         {
-            P.SetY(P.Y() + dy);
+            P = P.WithY(P.Y() + dy);
         }
         if (dz < 0)
         {
-            P.SetZ(P.Z() + dz);
+            P = P.WithZ(P.Z() + dz);
         }
         return P;
     }

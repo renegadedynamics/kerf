@@ -1252,8 +1252,8 @@ public sealed class LocalGenerator
             Plane3D pl1 = ((PlaneSurface)s1).Pln();
             Plane3D pl2 = ((PlaneSurface)s2).Pln();
 
-            pl1.Transform(loc1.Transformation());
-            pl2.Transform(loc2.Transformation());
+            pl1 = pl1.Transformed(loc1.Transformation());
+            pl2 = pl2.Transformed(loc2.Transformation());
 
             if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))
             {

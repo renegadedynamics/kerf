@@ -74,8 +74,7 @@ public sealed class FunctionGuide : FunctionSetWithDerivatives
         // calculer transfo entre triedre et Oxyz
         Direction3D b2 = new Direction3D(dx);
         CoordinateSystem repTriedre = new CoordinateSystem(c, new Direction3D(d), b2);
-        Transform3D transfo = new Transform3D();
-        transfo.SetTransformation(repTriedre, rep);
+        Transform3D transfo = new Transform3D().WithTransformation(repTriedre, rep);
 
         if (_isconst)
         {
@@ -201,6 +200,6 @@ public sealed class FunctionGuide : FunctionSetWithDerivatives
         dq.Multiply(cosU);
         dq.Add(dVdotCQ);
         dq.Add(dc);
-        ds.SetXYZ(dq);
+        ds = ds.WithXYZ(dq);
     }
 }

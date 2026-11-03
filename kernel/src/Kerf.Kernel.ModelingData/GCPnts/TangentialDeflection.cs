@@ -219,7 +219,7 @@ public sealed class TangentialDeflection
         c.D0(u, out Point2D p);
         p.Coord(out x, out y);
         pp = new Point3D();
-        pp.SetCoord(x, y, 0.0);
+        pp = pp.WithCoord(x, y, 0.0);
     }
 
     private static void D2(Curve2DAdaptorBase c, double u, out Point3D pp, out Vector3D vv1, out Vector3D vv2)
@@ -230,11 +230,11 @@ public sealed class TangentialDeflection
         vv1 = new Vector3D();
         vv2 = new Vector3D();
         p.Coord(out x, out y);
-        pp.SetCoord(x, y, 0.0);
+        pp = pp.WithCoord(x, y, 0.0);
         v1.Coord(out x, out y);
-        vv1.SetCoord(x, y, 0.0);
+        vv1 = vv1.WithCoord(x, y, 0.0);
         v2.Coord(out x, out y);
-        vv2.SetCoord(x, y, 0.0);
+        vv2 = vv2.WithCoord(x, y, 0.0);
     }
 
     private static double EstimAngl(in Point3D p1, in Point3D pm, in Point3D p2)

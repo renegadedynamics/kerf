@@ -986,11 +986,11 @@ public sealed partial class AnalyticCirc2d3Tan
                     Direction2D dc = new();
                     if ((i == 2 || i == 5 || i == 6 || i == 8) || rSol[j] > r1)
                     {
-                        dc.SetXY(cir1.Location().XY() - center.XY());
+                        dc = dc.WithXY(cir1.Location().XY() - center.XY());
                     }
                     else
                     {
-                        dc.SetXY(center.XY() - cir1.Location().XY());
+                        dc = dc.WithXY(center.XY() - cir1.Location().XY());
                     }
                     _pnttg1sol[_nbrSol] = new Point2D(center.XY() + rSol[j] * dc.XY());
                     _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
@@ -1007,11 +1007,11 @@ public sealed partial class AnalyticCirc2d3Tan
                     Direction2D dc = new();
                     if ((i == 3 || i == 5 || i == 7 || i == 8) || rSol[j] > r2)
                     {
-                        dc.SetXY(cir2.Location().XY() - center.XY());
+                        dc = dc.WithXY(cir2.Location().XY() - center.XY());
                     }
                     else
                     {
-                        dc.SetXY(center.XY() - cir2.Location().XY());
+                        dc = dc.WithXY(center.XY() - cir2.Location().XY());
                     }
                     _pnttg2sol[_nbrSol] = new Point2D(center.XY() + rSol[j] * dc.XY());
                     _par2sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg2sol[_nbrSol]);
@@ -1028,11 +1028,11 @@ public sealed partial class AnalyticCirc2d3Tan
                     Direction2D dc = new();
                     if ((i == 4 || i == 6 || i == 7 || i == 8) || rSol[j] > r3)
                     {
-                        dc.SetXY(cir3.Location().XY() - center.XY());
+                        dc = dc.WithXY(cir3.Location().XY() - center.XY());
                     }
                     else
                     {
-                        dc.SetXY(center.XY() - cir3.Location().XY());
+                        dc = dc.WithXY(center.XY() - cir3.Location().XY());
                     }
                     _pnttg3sol[_nbrSol] = new Point2D(center.XY() + rSol[j] * dc.XY());
                     _par3sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg3sol[_nbrSol]);

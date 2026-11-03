@@ -1299,10 +1299,10 @@ internal static class Builder_1
         SLProps theProp1 = new(hs1, u, v, 1, eps);
         if (theProp1.IsNormalDefined)
         {
-            n1.SetXYZ(theProp1.Normal().XYZ());
+            n1 = n1.WithXYZ(theProp1.Normal().XYZ());
             if (o1 == Reversed)
             {
-                n1.Reverse();
+                n1 = n1.Reversed();
             }
         }
         else
@@ -1315,10 +1315,10 @@ internal static class Builder_1
         SLProps theProp2 = new(hs2, u, v, 1, eps);
         if (theProp2.IsNormalDefined)
         {
-            n2.SetXYZ(theProp2.Normal().XYZ());
+            n2 = n2.WithXYZ(theProp2.Normal().XYZ());
             if (o2 == Reversed)
             {
-                n2.Reverse();
+                n2 = n2.Reversed();
             }
         }
         else

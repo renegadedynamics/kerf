@@ -189,7 +189,7 @@ public class GuideTrihedronPlan : TrihedronWithGuide
 
             normal = n.Normalized();
             biNormal = tangent.Crossed(normal);
-            biNormal.Normalize();
+            biNormal = biNormal.Normalized();
         }
         else
         { // Erreur...
@@ -238,10 +238,10 @@ public class GuideTrihedronPlan : TrihedronWithGuide
             e.DEDT(res, to, dTangent, out double dedt);
             dtg_dt = -dedt / dedx;
 
-            dn.SetLinearForm(dtg_dt, tg, -1, to);
-            dNormal.SetLinearForm(-(n * dn), n, dn);
+            dn = Vector3D.LinearForm(dtg_dt, tg, -1, to);
+            dNormal = Vector3D.LinearForm(-(n * dn), n, dn);
             dNormal /= norm;
-            dBiNormal.SetLinearForm(tangent.Crossed(dNormal), dTangent.Crossed(normal));
+            dBiNormal = Vector3D.LinearForm(tangent.Crossed(dNormal), dTangent.Crossed(normal));
         }
         else
         { // Erreur...
@@ -307,9 +307,9 @@ public class GuideTrihedronPlan : TrihedronWithGuide
         int ii;
         double t, delta = (_curve!.LastParameter() - _curve.FirstParameter()) / 20.001;
 
-        aTangent.SetCoord(0.0, 0.0, 0.0);
-        aNormal.SetCoord(0.0, 0.0, 0.0);
-        aBiNormal.SetCoord(0.0, 0.0, 0.0);
+        aTangent = aTangent.WithCoord(0.0, 0.0, 0.0);
+        aNormal = aNormal.WithCoord(0.0, 0.0, 0.0);
+        aBiNormal = aBiNormal.WithCoord(0.0, 0.0, 0.0);
         Vector3D T = new Vector3D(), n = new Vector3D(), b = new Vector3D();
 
         for (ii = 1; ii <= 20; ii++)

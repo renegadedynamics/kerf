@@ -129,8 +129,7 @@ public class SphericalSurface : ElementarySurface
                              out double c3,
                              out double d)
     {
-        Transform3D t = new Transform3D();
-        t.SetTransformation(_pos);
+        Transform3D t = new Transform3D().WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -240,6 +239,6 @@ public class SphericalSurface : ElementarySurface
     {
         CheckMutable();
         _radius = _radius * Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 }

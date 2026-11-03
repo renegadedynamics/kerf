@@ -345,7 +345,7 @@ public sealed class TrimSurfaceTool
         for (int i = 1; i <= nbPoints; i++)
         {
             pSeq = points[i];
-            pSeq.SetZ((points2.Value(i)).Y());
+            pSeq = pSeq.WithZ((points2.Value(i)).Y());
             points.SetValue(i, pSeq);
         }
     }

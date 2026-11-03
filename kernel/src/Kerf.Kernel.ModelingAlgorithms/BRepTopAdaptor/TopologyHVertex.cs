@@ -62,7 +62,7 @@ public class TopologyHVertex : HVertex
         c.D1(p, out Point2D p2d, out Vector2D v2d);
         Vector3D dc = new();
         s.D1(p2d.X(), p2d.Y(), out Point3D P, out Vector3D du, out Vector3D dv);
-        dc.SetLinearForm(v2d.X(), du, v2d.Y(), dv);
+        dc = Vector3D.LinearForm(v2d.X(), du, v2d.Y(), dv);
         double resUV, mag = dc.Magnitude();
 
         double uRes = s.UResolution(tv);
@@ -138,7 +138,7 @@ public class TopologyHVertex : HVertex
 
             c.D1(pp, out p2d, out v2d);
             s.D1(p2d.X(), p2d.Y(), out p1, out du, out dv);
-            dc.SetLinearForm(v2d.X(), du, v2d.Y(), dv);
+            dc = Vector3D.LinearForm(v2d.X(), du, v2d.Y(), dv);
             dist1 = P.Distance(p1);
             if (Math.Abs(dist1 - tv) < Math.Abs(dist - tv))
             {

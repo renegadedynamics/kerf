@@ -147,7 +147,7 @@ public class Interpolate2D
             global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(parametersArray.Value(1), 1, degree, 2, point_array, parameter_array, eval_result);
             for (ii = 1; ii <= 2; ii++)
             {
-                a_vector.SetCoord(ii, eval_result[2 + ii - 1]);
+                a_vector = a_vector.WithCoord(ii, eval_result[2 + ii - 1]);
             }
             tangentsArray.SetValue(1, a_vector);
         }
@@ -182,7 +182,7 @@ public class Interpolate2D
             global::Kerf.Engine.Numerics.Polynomials.PLib.EvalLagrange(parametersArray.Value(1), 1, degree, 2, point_array, parameter_array, eval_result);
             for (ii = 1; ii <= 2; ii++)
             {
-                a_vector.SetCoord(ii, eval_result[2 + ii - 1]);
+                a_vector = a_vector.WithCoord(ii, eval_result[2 + ii - 1]);
             }
             tangentsArray.SetValue(1, a_vector);
         }
@@ -195,7 +195,7 @@ public class Interpolate2D
                               eval_result);
             for (ii = 1; ii <= 2; ii++)
             {
-                a_vector.SetCoord(ii, eval_result[2 + ii - 1]);
+                a_vector = a_vector.WithCoord(ii, eval_result[2 + ii - 1]);
             }
             tangentsArray.SetValue(tangentsArray.Upper(), a_vector);
         }
@@ -240,7 +240,7 @@ public class Interpolate2D
                 ratio = value[1] / value[0];
                 for (jj = 1; jj <= 2; jj++)
                 {
-                    a_vector.SetCoord(jj, ratio * tangentsArray.Value(ii).Coord(jj));
+                    a_vector = a_vector.WithCoord(jj, ratio * tangentsArray.Value(ii).Coord(jj));
                 }
                 tangentsArray.SetValue(ii, a_vector);
                 if (ii != tangentFlags.Lower())
@@ -484,7 +484,7 @@ public class Interpolate2D
             poles.SetValue(1, _points.Value(1));
             for (jj = 1; jj <= 2; jj++)
             {
-                a_point.SetCoord(jj, _tangents.Value(1).Coord(jj));
+                a_point = a_point.WithCoord(jj, _tangents.Value(1).Coord(jj));
             }
             poles.SetValue(2, a_point);
 
@@ -509,7 +509,7 @@ public class Interpolate2D
                         flatknots.SetValue(index1, _parameters.Value(ii));
                         for (jj = 1; jj <= 2; jj++)
                         {
-                            a_point.SetCoord(jj, _tangents.Value(ii).Coord(jj));
+                            a_point = a_point.WithCoord(jj, _tangents.Value(ii).Coord(jj));
                         }
                         poles.SetValue(index, a_point);
                         index += 1;
@@ -549,7 +549,7 @@ public class Interpolate2D
             //
             for (jj = 1; jj <= 2; jj++)
             {
-                a_point.SetCoord(jj, _tangents.Value(1).Coord(jj));
+                a_point = a_point.WithCoord(jj, _tangents.Value(1).Coord(jj));
             }
             poles.SetValue(num_poles - 1, a_point);
 
@@ -667,7 +667,7 @@ public class Interpolate2D
                 poles.SetValue(1, _points.Value(1));
                 for (jj = 1; jj <= 2; jj++)
                 {
-                    a_point.SetCoord(jj, _tangents.Value(1).Coord(jj));
+                    a_point = a_point.WithCoord(jj, _tangents.Value(1).Coord(jj));
                 }
                 poles.SetValue(2, a_point);
                 mult_index = 2;
@@ -696,7 +696,7 @@ public class Interpolate2D
                             parameters.SetValue(index, _parameters.Value(ii));
                             for (jj = 1; jj <= 2; jj++)
                             {
-                                a_point.SetCoord(jj, _tangents.Value(ii).Coord(jj));
+                                a_point = a_point.WithCoord(jj, _tangents.Value(ii).Coord(jj));
                             }
                             poles.SetValue(index, a_point);
                             index += 1;
@@ -731,7 +731,7 @@ public class Interpolate2D
                 }
                 for (jj = 1; jj <= 2; jj++)
                 {
-                    a_point.SetCoord(jj, _tangents.Value(num_points).Coord(jj));
+                    a_point = a_point.WithCoord(jj, _tangents.Value(num_points).Coord(jj));
                 }
                 poles.SetValue(num_poles - 1, a_point);
 

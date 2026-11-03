@@ -70,7 +70,7 @@ public sealed class CurveUniformDeflection
     {
         ((Curve2DAdaptorBase)c).D0(u, out Point2D p);
         pp = new Point3D();
-        pp.SetCoord(p.X(), p.Y(), 0.0);
+        pp = pp.WithCoord(p.X(), p.Y(), 0.0);
     }
 
     private static void D23d(object c, double u, out Point3D p, out Vector3D v1, out Vector3D v2)
@@ -84,9 +84,9 @@ public sealed class CurveUniformDeflection
         pp = new Point3D();
         vv1 = new Vector3D();
         vv2 = new Vector3D();
-        pp.SetCoord(p.X(), p.Y(), 0.0);
-        vv1.SetCoord(v1.X(), v1.Y(), 0.0);
-        vv2.SetCoord(v2.X(), v2.Y(), 0.0);
+        pp = pp.WithCoord(p.X(), p.Y(), 0.0);
+        vv1 = vv1.WithCoord(v1.X(), v1.Y(), 0.0);
+        vv2 = vv2.WithCoord(v2.X(), v2.Y(), 0.0);
     }
 
     private void Perform()

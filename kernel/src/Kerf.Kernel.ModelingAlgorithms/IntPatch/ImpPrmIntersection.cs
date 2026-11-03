@@ -624,7 +624,7 @@ public partial class ImpPrmIntersection
                                 currentarc = _solrst.Point(i).Arc();
                                 currentparam = _solrst.Point(i).Parameter();
                                 currentarc.D1(currentparam, out p2d, out d2d);
-                                tgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                 double squaremagnitudeVecNormale = vecNormale.SquareMagnitude();
                                 if (squaremagnitudeVecNormale > 1e-13)
@@ -730,7 +730,7 @@ public partial class ImpPrmIntersection
                                 currentarc = _solrst.Point(i).Arc();
                                 currentparam = _solrst.Point(i).Parameter();
                                 currentarc.D1(currentparam, out p2d, out d2d);
-                                tgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                 double squaremagnitudeVecNormale = vecNormale.SquareMagnitude();
                                 if (squaremagnitudeVecNormale > 1e-13)
@@ -993,11 +993,11 @@ public partial class ImpPrmIntersection
                     tgline = new Vector3D();
                     if (reversed)
                     {
-                        tgline.SetLinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
+                        tgline = Vector3D.LinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
                     }
                     else
                     {
-                        tgline.SetLinearForm(_d2d.X(), d1u2, _d2d.Y(), d1v2);
+                        tgline = Vector3D.LinearForm(_d2d.X(), d1u2, _d2d.Y(), d1v2);
                     }
                     _u1 = tgline.DotCross(norm2, norm1);
                     transitionOK = true;
@@ -1061,11 +1061,11 @@ public partial class ImpPrmIntersection
                     tgline = new Vector3D();
                     if (reversed)
                     {
-                        tgline.SetLinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
+                        tgline = Vector3D.LinearForm(_d2d.X(), d1u1, _d2d.Y(), d1v1);
                     }
                     else
                     {
-                        tgline.SetLinearForm(_d2d.X(), d1u2, _d2d.Y(), d1v2);
+                        tgline = Vector3D.LinearForm(_d2d.X(), d1u2, _d2d.Y(), d1v2);
                     }
                     _u1 = tgline.DotCross(norm2, norm1);
                     transitionOK = true;

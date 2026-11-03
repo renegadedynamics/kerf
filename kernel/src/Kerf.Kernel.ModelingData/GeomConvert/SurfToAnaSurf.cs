@@ -248,7 +248,7 @@ public sealed class SurfToAnaSurf
         for (i = points.Lower(); i <= points.Upper(); ++i)
         {
             Vector3D d = new(points.Value(i) - loc);
-            d.Cross(new Vector3D(dir));
+            d = d.Crossed(new Vector3D(dir));
             gap = Max(gap, Math.Abs((d.Magnitude() - r)));
         }
     }
@@ -309,7 +309,7 @@ public sealed class SurfToAnaSurf
         globSolver.Perform(steps, out lsDist, startPoint);
         //
         Point3D loc = new(startPoint[1], startPoint[2], startPoint[3]);
-        pos.SetLocation(loc);
+        pos = pos.WithLocation(loc);
         r = startPoint[4];
 
         GetLSGap(points, pos, r, out gap);
@@ -345,8 +345,8 @@ public sealed class SurfToAnaSurf
         {
             CoordinateSystem pos2 = pos;
             solver.Location(startPoint);
-            loc.SetCoord(startPoint[1], startPoint[2], startPoint[3]);
-            pos2.SetLocation(loc);
+            loc = loc.WithCoord(startPoint[1], startPoint[2], startPoint[3]);
+            pos2 = pos2.WithLocation(loc);
             double r2 = startPoint[4], gap2;
             //
             GetLSGap(points, pos2, r2, out gap2);
@@ -486,11 +486,10 @@ public sealed class SurfToAnaSurf
         Point3D loc = props.Value();
         Direction3D axD = new(avDir);
         Vector3D t = new(sign * avR * norm.XYZ());
-        loc.Translate(t);
+        loc = loc.Translated(t);
         Axis3D ax1 = new(loc, axD);
-        Cylinder cyl = new();
-        cyl.SetAxis(ax1);
-        cyl.SetRadius(avR);
+        Cylinder cyl = new Cylinder().WithAxis(ax1);
+        cyl = cyl.WithRadius(avR);
 
         if (leastSquare)
         {
@@ -499,8 +498,8 @@ public sealed class SurfToAnaSurf
             bool isDone = GetCylByLS(points!, toler, ref pos, ref r, out double _);
             if (isDone)
             {
-                cyl.SetPosition(pos);
-                cyl.SetRadius(r);
+                cyl = cyl.WithPosition(pos);
+                cyl = cyl.WithRadius(r);
             }
         }
 

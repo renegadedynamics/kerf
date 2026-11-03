@@ -193,12 +193,12 @@ public class Chamfer : GenChamfer
 
         if (revF)
         {
-            tgF.Reverse();
+            tgF = tgF.Reversed();
         }
 
         if (revL)
         {
-            tgL.Reverse();
+            tgL = tgL.Reversed();
         }
     }
 

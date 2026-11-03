@@ -1177,7 +1177,7 @@ public static class BndLib
         Add(c, uMin, uMax, 0.0, ref b);
         //
         Vector3D t = (vMax - vMin) * new Vector3D(cyl.Axis().Direction());
-        c.Translate(t);
+        c = c.Translated(t);
         Add(c, uMin, uMax, 0.0, ref b);
     }
 
@@ -1370,7 +1370,7 @@ public static class BndLib
             double umax = uMin + 2.0 * M_PI;
             CoordinateSystem pos = sphere.Position();
             Point3D pExt = p;
-            pExt.SetX(xmin);
+            pExt = pExt.WithX(xmin);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
             u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
             if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -1378,33 +1378,16 @@ public static class BndLib
                 b.Add(pExt);
             }
             //
-            pExt.SetX(xmax);
+            pExt = pExt.WithX(xmax);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
             u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
             if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
             {
                 b.Add(pExt);
             }
-            pExt.SetX(p.X());
+            pExt = pExt.WithX(p.X());
             //
-            pExt.SetY(ymin);
-            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
-            u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
-            if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
-            {
-                b.Add(pExt);
-            }
-            //
-            pExt.SetY(ymax);
-            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
-            u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
-            if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
-            {
-                b.Add(pExt);
-            }
-            pExt.SetY(p.Y());
-            //
-            pExt.SetZ(zmin);
+            pExt = pExt.WithY(ymin);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
             u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
             if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -1412,7 +1395,24 @@ public static class BndLib
                 b.Add(pExt);
             }
             //
-            pExt.SetZ(zmax);
+            pExt = pExt.WithY(ymax);
+            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
+            u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
+            if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
+            {
+                b.Add(pExt);
+            }
+            pExt = pExt.WithY(p.Y());
+            //
+            pExt = pExt.WithZ(zmin);
+            global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
+            u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
+            if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
+            {
+                b.Add(pExt);
+            }
+            //
+            pExt = pExt.WithZ(zmax);
             global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
             u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
             if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -1464,7 +1464,7 @@ public static class BndLib
         double umax = uMin + 2.0 * M_PI;
         CoordinateSystem pos = torus.Position();
         Point3D pExt = p;
-        pExt.SetX(xmin);
+        pExt = pExt.WithX(xmin);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -1472,33 +1472,16 @@ public static class BndLib
             b.Add(pExt);
         }
         //
-        pExt.SetX(xmax);
+        pExt = pExt.WithX(xmax);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
         {
             b.Add(pExt);
         }
-        pExt.SetX(p.X());
+        pExt = pExt.WithX(p.X());
         //
-        pExt.SetY(ymin);
-        global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
-        u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
-        if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
-        {
-            b.Add(pExt);
-        }
-        //
-        pExt.SetY(ymax);
-        global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
-        u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
-        if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
-        {
-            b.Add(pExt);
-        }
-        pExt.SetY(p.Y());
-        //
-        pExt.SetZ(zmin);
+        pExt = pExt.WithY(ymin);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -1506,7 +1489,24 @@ public static class BndLib
             b.Add(pExt);
         }
         //
-        pExt.SetZ(zmax);
+        pExt = pExt.WithY(ymax);
+        global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
+        u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
+        if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
+        {
+            b.Add(pExt);
+        }
+        pExt = pExt.WithY(p.Y());
+        //
+        pExt = pExt.WithZ(zmin);
+        global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
+        u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
+        if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
+        {
+            b.Add(pExt);
+        }
+        //
+        pExt = pExt.WithZ(zmax);
         global::Kerf.Engine.Geometry.ElSLib.TorusParameters(pos, ra, ri, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)

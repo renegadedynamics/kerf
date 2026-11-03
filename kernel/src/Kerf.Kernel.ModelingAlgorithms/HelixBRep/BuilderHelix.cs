@@ -51,8 +51,8 @@ public class BuilderHelix
     {
         Point3D p0 = new(0.0, 0.0, 0);
         // Initialize coordinate system and data arrays
-        _axis3.SetDirection(Constants.DZ());
-        _axis3.SetLocation(p0);
+        _axis3 = _axis3.WithDirection(Constants.DZ());
+        _axis3 = _axis3.WithLocation(p0);
         _diams = null;
         _heights = null;
         _pitches = null;
@@ -284,7 +284,7 @@ public class BuilderHelix
 
         Axis3D axis = _axis3.Axis();
         Point3D pStart = _axis3.Location();
-        pStart.Translate(.5 * _diams!.Value(1) * new Vector3D(_axis3.XDirection()));
+        pStart = pStart.Translated(.5 * _diams!.Value(1) * new Vector3D(_axis3.XDirection()));
         bool bIsClockwise = _axis3.Direct();
 
         double height;
@@ -319,7 +319,7 @@ public class BuilderHelix
 
             pStart = Tool.Pnt(v2);
 
-            axis.SetLocation(axis.Location().Translated(height * new Vector3D(axis.Direction())));
+            axis = axis.WithLocation(axis.Location().Translated(height * new Vector3D(axis.Direction())));
 
             lst.Append(part);
             // aBB.Add(myShape, aPart);

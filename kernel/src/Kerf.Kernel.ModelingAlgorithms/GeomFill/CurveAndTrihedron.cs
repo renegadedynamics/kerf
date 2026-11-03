@@ -36,7 +36,7 @@ public class CurveAndTrihedron : SurfaceLocationLaw
         _law = trihedron;
         _curve = null;
         _trans = new Matrix3x3();
-        _trans.SetIdentity();
+        _trans = _trans.WithIdentity();
         _withTrans = false;
     }
 
@@ -62,8 +62,7 @@ public class CurveAndTrihedron : SurfaceLocationLaw
     public override void SetTrsf(in Matrix3x3 transfo)
     {
         _trans = transfo;
-        Matrix3x3 aux = new Matrix3x3();
-        aux.SetIdentity();
+        Matrix3x3 aux = new Matrix3x3().WithIdentity();
         aux -= _trans;
 
         _withTrans = false; // Au cas ou Trans = I
@@ -83,10 +82,10 @@ public class CurveAndTrihedron : SurfaceLocationLaw
     {
         bool ok;
         _trimmed!.D0(param, out _point);
-        v.SetXYZ(_point.XYZ());
+        v = v.WithXYZ(_point.XYZ());
 
         ok = _law.D0(param, ref _v1, ref _v2, ref _v3);
-        m.SetCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
+        m = m.WithCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
 
         if (_withTrans)
         {
@@ -100,10 +99,10 @@ public class CurveAndTrihedron : SurfaceLocationLaw
     {
         bool ok;
         _trimmed!.D0(param, out _point);
-        v.SetXYZ(_point.XYZ());
+        v = v.WithXYZ(_point.XYZ());
 
         ok = _law.D0(param, ref _v1, ref _v2, ref _v3);
-        m.SetCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
+        m = m.WithCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
 
         if (_withTrans)
         {
@@ -118,12 +117,12 @@ public class CurveAndTrihedron : SurfaceLocationLaw
     {
         bool ok;
         _trimmed!.D1(param, out _point, out dv);
-        v.SetXYZ(_point.XYZ());
+        v = v.WithXYZ(_point.XYZ());
 
         Vector3D dv1 = new Vector3D(), dv2 = new Vector3D(), dv3 = new Vector3D();
         ok = _law.D1(param, ref _v1, ref dv1, ref _v2, ref dv2, ref _v3, ref dv3);
-        m.SetCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
-        dm.SetCols(dv2.XYZ(), dv3.XYZ(), dv1.XYZ());
+        m = m.WithCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
+        dm = dm.WithCols(dv2.XYZ(), dv3.XYZ(), dv1.XYZ());
 
         if (_withTrans)
         {
@@ -140,15 +139,15 @@ public class CurveAndTrihedron : SurfaceLocationLaw
     {
         bool ok;
         _trimmed!.D2(param, out _point, out dv, out d2V);
-        v.SetXYZ(_point.XYZ());
+        v = v.WithXYZ(_point.XYZ());
 
         Vector3D dv1 = new Vector3D(), dv2 = new Vector3D(), dv3 = new Vector3D();
         Vector3D d2V1 = new Vector3D(), d2V2 = new Vector3D(), d2V3 = new Vector3D();
         ok = _law.D2(param, ref _v1, ref dv1, ref d2V1, ref _v2, ref dv2, ref d2V2, ref _v3, ref dv3, ref d2V3);
 
-        m.SetCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
-        dm.SetCols(dv2.XYZ(), dv3.XYZ(), dv1.XYZ());
-        d2M.SetCols(d2V2.XYZ(), d2V3.XYZ(), d2V1.XYZ());
+        m = m.WithCols(_v2.XYZ(), _v3.XYZ(), _v1.XYZ());
+        dm = dm.WithCols(dv2.XYZ(), dv3.XYZ(), dv1.XYZ());
+        d2M = d2M.WithCols(d2V2.XYZ(), d2V3.XYZ(), d2V1.XYZ());
 
         if (_withTrans)
         {
@@ -243,14 +242,14 @@ public class CurveAndTrihedron : SurfaceLocationLaw
 
         _law.GetAverageLaw(ref _v1, ref _v2, ref _v3);
         // OCCT: the columns are (tangent, normal, binormal) here, but (normal, binormal, tangent) in D0, D1 and D2.
-        am.SetCols(_v1.XYZ(), _v2.XYZ(), _v3.XYZ());
+        am = am.WithCols(_v1.XYZ(), _v2.XYZ(), _v3.XYZ());
 
-        av.SetCoord(0.0, 0.0, 0.0);
+        av = av.WithCoord(0.0, 0.0, 0.0);
         delta = (_trimmed!.LastParameter() - _trimmed.FirstParameter()) / 10;
         u = _trimmed.FirstParameter();
         for (ii = 0; ii <= 10; ii++, u += delta)
         {
-            v.SetXYZ(_trimmed.Value(u).XYZ());
+            v = v.WithXYZ(_trimmed.Value(u).XYZ());
             av += v;
         }
         av /= 11;

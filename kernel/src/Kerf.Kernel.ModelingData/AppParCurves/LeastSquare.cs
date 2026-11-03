@@ -141,12 +141,12 @@ public class LeastSquare<MultiLine, ToolLine>
 
         for (int i = arrTg3d.Lower(); i <= arrTg3d.Upper(); i++)
         {
-            arrTg3d[i].Reverse();
+            arrTg3d[i] = arrTg3d[i].Reversed();
         }
 
         for (int i = arrTg2d.Lower(); i <= arrTg2d.Upper(); i++)
         {
-            arrTg2d[i].Reverse();
+            arrTg2d[i] = arrTg2d[i].Reversed();
         }
     }
 
@@ -178,7 +178,7 @@ public class LeastSquare<MultiLine, ToolLine>
 
             if (v1.Dot(v2) < 0.0)
             {
-                arrTg2d[i].Reverse();
+                arrTg2d[i] = arrTg2d[i].Reversed();
             }
         }
     }
@@ -360,13 +360,13 @@ public class LeastSquare<MultiLine, ToolLine>
             i2 = 1;
             for (i = 1; i <= _nbP; i++)
             {
-                poi.SetCoord(_mypoints[_myfirstp, i2], _mypoints[_myfirstp, i2 + 1], _mypoints[_myfirstp, i2 + 2]);
+                poi = poi.WithCoord(_mypoints[_myfirstp, i2], _mypoints[_myfirstp, i2 + 1], _mypoints[_myfirstp, i2 + 2]);
                 pole1.SetPoint(i, poi);
                 i2 += 3;
             }
             for (i = 1; i <= _nbP2d; i++)
             {
-                poi2d.SetCoord(_mypoints[_myfirstp, i2], _mypoints[_myfirstp, i2 + 1]);
+                poi2d = poi2d.WithCoord(_mypoints[_myfirstp, i2], _mypoints[_myfirstp, i2 + 1]);
                 pole1.SetPoint2d(i + _nbP, poi2d);
                 i2 += 2;
             }
@@ -384,13 +384,13 @@ public class LeastSquare<MultiLine, ToolLine>
             i2 = 1;
             for (i = 1; i <= _nbP; i++)
             {
-                poi.SetCoord(_mypoints[_mylastp, i2], _mypoints[_mylastp, i2 + 1], _mypoints[_mylastp, i2 + 2]);
+                poi = poi.WithCoord(_mypoints[_mylastp, i2], _mypoints[_mylastp, i2 + 1], _mypoints[_mylastp, i2 + 2]);
                 poleN.SetPoint(i, poi);
                 i2 += 3;
             }
             for (i = 1; i <= _nbP2d; i++)
             {
-                poi2d.SetCoord(_mypoints[_mylastp, i2], _mypoints[_mylastp, i2 + 1]);
+                poi2d = poi2d.WithCoord(_mypoints[_mylastp, i2], _mypoints[_mylastp, i2 + 1]);
                 poleN.SetPoint2d(i + _nbP, poi2d);
                 i2 += 2;
             }
@@ -1496,13 +1496,13 @@ public class LeastSquare<MultiLine, ToolLine>
             MultiPoint mPole = new(_nbP, _nbP2d);
             for (j = 1; j <= _nbP; j++)
             {
-                pt.SetCoord(_mypoles[i, j2], _mypoles[i, j2 + 1], _mypoles[i, j2 + 2]);
+                pt = pt.WithCoord(_mypoles[i, j2], _mypoles[i, j2 + 1], _mypoles[i, j2 + 2]);
                 mPole.SetPoint(j, pt);
                 j2 += 3;
             }
             for (j = _nbP + 1; j <= npoints; j++)
             {
-                pt2d.SetCoord(_mypoles[i, j2], _mypoles[i, j2 + 1]);
+                pt2d = pt2d.WithCoord(_mypoles[i, j2], _mypoles[i, j2 + 1]);
                 mPole.SetPoint2d(j, pt2d);
                 j2 += 2;
             }

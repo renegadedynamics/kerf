@@ -728,7 +728,7 @@ public sealed partial class PlanarBuilder
             p1 = Tool.Pnt(v1);
             p2 = Tool.Pnt(v2);
             var myVec = new Vector3D(p1, p2);
-            myVec.Normalize();
+            myVec = myVec.Normalized();
             myVec *= d;
             if (v2.IsSame(v))
             {

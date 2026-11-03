@@ -643,8 +643,8 @@ public class HiddenLineData : Transient
             {
                 ec.D1(ec.Parameter3d(ec.FirstParameter()), out Point3D pt, out Vector3D tg1);
                 ec.D1(ec.Parameter3d(ec.LastParameter()), out pt, out Vector3D tg2);
-                tg1.Transform(t);
-                tg2.Transform(t);
+                tg1 = tg1.Transformed(t);
+                tg2 = tg2.Transformed(t);
                 if (Abs(tg1.X()) + Abs(tg1.Y()) < _toler * 10)
                 {
                     ver1 = true;
@@ -766,8 +766,8 @@ public class HiddenLineData : Transient
                             if (_slProps.IsNormalDefined)
                             {
                                 Vector3D nm = new(_slProps.Normal());
-                                pt.Transform(t);
-                                nm.Transform(t);
+                                pt = pt.Transformed(t);
+                                nm = nm.Transformed(t);
                                 if (_proj.Value.Perspective())
                                 {
                                     r = nm.Z() * _proj.Value.Focus() - (nm.X() * pt.X() + nm.Y() * pt.Y() + nm.Z() * pt.Z());
@@ -1424,10 +1424,10 @@ public class HiddenLineData : Transient
                 {
                     v = new Direction3D(Direction3D.D.NZ);
                 }
-                v.Transform(ti);
+                v = v.Transformed(ti);
                 if (nrmFace.Dot(v) > 0.0)
                 {
-                    nrmFace.Reverse();
+                    nrmFace = nrmFace.Reversed();
                 }
 
                 double scal = (tngEdge.SquareMagnitude() > 1.0e-10) ? nrmFace.Dot(new Direction3D(tngEdge)) : 0.0;
@@ -1616,7 +1616,7 @@ public class HiddenLineData : Transient
                         {
                             v = new Direction3D(Direction3D.D.NZ);
                         }
-                        v.Transform(ti);
+                        v = v.Transformed(ti);
                         if (_slProps.IsNormalDefined)
                         {
                             double curv = EdgeFaceTool.CurvatureValue(_iFaceGeom!, pu, pv, v);
@@ -1627,12 +1627,12 @@ public class HiddenLineData : Transient
                             }
                             if (curv > 0)
                             {
-                                nm.Reverse();
+                                nm = nm.Reversed();
                             }
-                            tg.Transform(t);
-                            pt.Transform(t);
-                            nm.Transform(t);
-                            nm.Cross(tg);
+                            tg = tg.Transformed(t);
+                            pt = pt.Transformed(t);
+                            nm = nm.Transformed(t);
+                            nm = nm.Crossed(tg);
                             if (tg.Magnitude() < Constants.Resolution())
                             {
                                 // OCCT_DEBUG trace left out
@@ -1701,8 +1701,8 @@ public class HiddenLineData : Transient
                         if (_slProps.IsNormalDefined)
                         {
                             Vector3D nm = new(_slProps.Normal());
-                            pt.Transform(t);
-                            nm.Transform(t);
+                            pt = pt.Transformed(t);
+                            nm = nm.Transformed(t);
                             if (_proj.Value.Perspective())
                             {
                                 r = nm.Z() * _proj.Value.Focus() - (nm.X() * pt.X() + nm.Y() * pt.Y() + nm.Z() * pt.Z());

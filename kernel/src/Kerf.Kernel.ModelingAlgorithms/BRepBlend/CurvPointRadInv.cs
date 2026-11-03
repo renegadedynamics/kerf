@@ -70,8 +70,8 @@ public class CurvPointRadInv : CurvPointFuncInv
         normd1cur1 = d1cur1.Magnitude();
         unsurnormd1cur1 = 1.0 / normd1cur1;
         nplan = unsurnormd1cur1 * d1cur1;
-        dnplan.SetLinearForm(-nplan.Dot(d2cur1), nplan, d2cur1);
-        dnplan.Multiply(unsurnormd1cur1);
+        dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur1), nplan, d2cur1);
+        dnplan = dnplan.Multiplied(unsurnormd1cur1);
         dtheD = -nplan.XYZ().Dot(d1cur1.XYZ()) - dnplan.XYZ().Dot(ptcur1.XYZ());
         d[1, 1] = dnplan.XYZ().Dot(_point.XYZ()) + dtheD;
         d[1, 2] = 0.0;

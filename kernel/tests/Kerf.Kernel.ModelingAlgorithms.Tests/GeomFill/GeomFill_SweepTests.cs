@@ -551,8 +551,7 @@ public class GeomFill_SweepTests
         NCollection_Array1<Point2D> aP2 = new(1, 1);
         aGen.Section(aNbS, aP, aP2, aW);
         // the last section is the first one rotated by 2 radians about the circle's axis
-        Transform3D aRot = new();
-        aRot.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
+        Transform3D aRot = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2);
         BSplineCurve3D aFirst = OpenSection(new Point3D(8, 0, 0));
         Assert.True(aP[1].Distance(aFirst.Pole(1).Transformed(aRot)) < 1e-9);
         Assert.Throws<RangeErrorException>(() => aGen.Transformation(aNbS));

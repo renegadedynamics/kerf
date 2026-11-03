@@ -468,10 +468,10 @@ public sealed class LocalGluer
                 n1 = d1u.Crossed(d1v);
                 if (n1.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
-                    n1.Normalize();
+                    n1 = n1.Normalized();
                     if (fn.Orientation() == Reversed)
                     {
-                        n1.Reverse();
+                        n1 = n1.Reversed();
                     }
 
                     // Projection sur Sb
@@ -495,10 +495,10 @@ public sealed class LocalGluer
                             n2 = d1u.Crossed(d1v);
                             if (n2.Magnitude() > global::Kerf.Engine.Foundation.Precision.Confusion())
                             {
-                                n2.Normalize();
+                                n2 = n2.Normalized();
                                 if (fb.Orientation() == Reversed)
                                 {
-                                    n2.Reverse();
+                                    n2 = n2.Reversed();
                                 }
                                 if (n1.Dot(n2) > 0.0)
                                 {

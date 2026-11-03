@@ -105,7 +105,7 @@ internal static class DrawTrSurfCommands
             }
 
             var P = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
-            T.SetScale(P, s);
+            T = T.WithScale(P, s);
         }
         else if (a[0][1..] == "mirror")
         {
@@ -117,7 +117,7 @@ internal static class DrawTrSurfCommands
             var P = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             if (a[0][0] == 'p')
             {
-                T.SetMirror(P);
+                T = T.WithMirror(P);
             }
             else
             {
@@ -132,12 +132,12 @@ internal static class DrawTrSurfCommands
                 var D = new Direction3D(P.X(), P.Y(), P.Z());
                 if (a[0][0] == 'l')
                 {
-                    T.SetMirror(new Axis3D(O, D));
+                    T = T.WithMirror(new Axis3D(O, D));
                 }
                 else if (a[0][0] == 's')
                 {
                     var Pl = new Plane3D(O, D);
-                    T.SetMirror(Pl.Position().Ax2());
+                    T = T.WithMirror(Pl.Position().Ax2());
                 }
             }
         }
@@ -150,7 +150,7 @@ internal static class DrawTrSurfCommands
 
             var V = new Vector3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 3;
-            T.SetTranslation(V);
+            T = T.WithTranslation(V);
         }
         else if (a[0] == "rotate")
         {
@@ -165,7 +165,7 @@ internal static class DrawTrSurfCommands
             last -= 3;
             var P = new Point3D(theDI.Atof(a[last - 2]), theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 3;
-            T.SetRotation(new Axis3D(P, D), ang);
+            T = T.WithRotation(new Axis3D(P, D), ang);
         }
 
         for (int i = 1; i <= last; i++)
@@ -210,7 +210,7 @@ internal static class DrawTrSurfCommands
             }
 
             var P = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
-            T.SetScale(P, s);
+            T = T.WithScale(P, s);
         }
         else if (a[0] is "2dpmirror" or "2dlmirror")
         {
@@ -222,7 +222,7 @@ internal static class DrawTrSurfCommands
             var P = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             if (a[0] == "2dpmirror")
             {
-                T.SetMirror(P);
+                T = T.WithMirror(P);
             }
             else
             {
@@ -235,7 +235,7 @@ internal static class DrawTrSurfCommands
                 var O = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
                 last -= 2;
                 var D = new Direction2D(P.X(), P.Y());
-                T.SetMirror(new Axis2D(O, D));
+                T = T.WithMirror(new Axis2D(O, D));
             }
         }
         else if (a[0] == "2dtranslate")
@@ -247,7 +247,7 @@ internal static class DrawTrSurfCommands
 
             var V = new Vector2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 2;
-            T.SetTranslation(V);
+            T = T.WithTranslation(V);
         }
         else if (a[0] == "2drotate")
         {
@@ -260,7 +260,7 @@ internal static class DrawTrSurfCommands
             last--;
             var P = new Point2D(theDI.Atof(a[last - 1]), theDI.Atof(a[last]));
             last -= 2;
-            T.SetRotation(P, ang);
+            T = T.WithRotation(P, ang);
         }
 
         for (int i = 1; i <= last; i++)

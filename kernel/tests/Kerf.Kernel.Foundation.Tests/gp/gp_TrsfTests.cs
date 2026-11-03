@@ -14,15 +14,15 @@ public class gp_TrsfTest
         Point3D aP = new(0, 0, 2);
 
         Transform3D aT1 = new(), aT2 = new();
-        aT1.SetRotation(new Axis3D(aP, new Direction3D(Direction3D.D.Y)), -0.49328285294022267);
-        aT2.SetRotation(new Axis3D(aP, new Direction3D(Direction3D.D.Z)), 0.87538474718473880);
+        aT1 = aT1.WithRotation(new Axis3D(aP, new Direction3D(Direction3D.D.Y)), -0.49328285294022267);
+        aT2 = aT2.WithRotation(new Axis3D(aP, new Direction3D(Direction3D.D.Z)), 0.87538474718473880);
 
         Transform3D aTComp = aT2 * aT1;
 
         Point3D aP1 = new(10, 3, 4);
         Point3D aP2 = aP1.Transformed(aTComp);
         Point3D aP3 = aP1.Transformed(aT1);
-        aP3.Transform(aT2);
+        aP3 = aP3.Transformed(aT2);
 
         // Points must be equal: equivalent transformations should produce equal points
         Assert.True(aP2.IsEqual(aP3, global::Kerf.Engine.Foundation.Precision.Confusion()));

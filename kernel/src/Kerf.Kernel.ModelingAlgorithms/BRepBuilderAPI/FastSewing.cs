@@ -691,8 +691,8 @@ public class FastSewing : Transient
                     Point3D p3df = surf.Value(p2df.X(), p2df.Y());
                     Point3D p3dl = surf.Value(p2dl.X(), p2dl.Y());
 
-                    p3df.Transform(location.Transformation());
-                    p3dl.Transform(location.Transformation());
+                    p3df = p3df.Transformed(location.Transformation());
+                    p3dl = p3dl.Transformed(location.Transformation());
 
                     double sqD1 = p3df.SquareDistance(pref);
                     double sqD2 = p3dl.SquareDistance(pref);

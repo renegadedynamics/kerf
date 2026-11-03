@@ -570,11 +570,11 @@ public partial class UnifySameDomain
                         var vec = new Vector2D();
                         if (indCoord == 1)
                         {
-                            vec.SetCoord(offset, 0.0);
+                            vec = vec.WithCoord(offset, 0.0);
                         }
                         else
                         {
-                            vec.SetCoord(0.0, offset);
+                            vec = vec.WithCoord(0.0, offset);
                         }
                         var newPCurve = (Curve2D)pCurve.Copy();
                         newPCurve.Translate(vec);
@@ -995,7 +995,7 @@ public partial class UnifySameDomain
                 Direction3D dirRef = vdirRefSurf;
                 if (!axisOfRefSurf.Direct())
                 {
-                    dirRef.Reverse();
+                    dirRef = dirRef.Reversed();
                 }
                 angle = xdirRefSurf.AngleWithRef(xdirSurfFace, dirRef);
             }
@@ -1354,10 +1354,10 @@ public partial class UnifySameDomain
         //
         if (face.Orientation() == Reversed)
         {
-            vNormal.Reverse();
+            vNormal = vNormal.Reversed();
         }
         //
-        vNormal.Transform(loc.Transformation());
+        vNormal = vNormal.Transformed(loc.Transformation());
         normal = new Direction3D(vNormal);
         return true;
     }
@@ -1646,10 +1646,10 @@ public partial class UnifySameDomain
                     {
                         double   param = (curEdge.Orientation() == Forward) ? lpar : fpar;
                         Vector2D curDir = pCurve.EvalD1(param).D1;
-                        curDir.Normalize();
+                        curDir = curDir.Normalized();
                         if (curEdge.Orientation() == Reversed)
                         {
-                            curDir.Reverse();
+                            curDir = curDir.Reversed();
                         }
                         // choose the rightest direction - the smallest angle
                         double minAngle   = RealLast();
@@ -1666,10 +1666,10 @@ public partial class UnifySameDomain
                             }
                             param = (edge.Orientation() == Forward) ? fpar : lpar;
                             Vector2D dir = pCurve.EvalD1(param).D1;
-                            dir.Normalize();
+                            dir = dir.Normalized();
                             if (edge.Orientation() == Reversed)
                             {
-                                dir.Reverse();
+                                dir = dir.Reversed();
                             }
                             double angle = curDir.Angle(dir);
                             if (angle < minAngle)

@@ -207,7 +207,7 @@ public class ChFi2d_NativeTests(ITestOutputHelper theOutput)
         var anAx3 = new CoordinateSystem(aLoc, aN, aX);
         if (!isDirect)
         {
-            anAx3.YReverse();
+            anAx3 = anAx3.YReversed();
         }
         var aPln = new Plane3D(anAx3);
         bool isShared = r.B(), isRev1 = r.B(), isRev2 = r.B();

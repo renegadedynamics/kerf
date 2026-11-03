@@ -40,7 +40,7 @@ public class SelGProps : Properties
         double ix  = r * (sa2 - sa1) / (alpha2 - alpha1);
         double iy  = r * (ca1 - ca2) / (alpha2 - alpha1);
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + ix * xa1 + iy * xa2 + xa3 * (z2 + z1) / 2.0,
+        _g = _g.WithCoord(x0 + ix * xa1 + iy * xa2 + xa3 * (z2 + z1) / 2.0,
                               y0 + ix * ya1 + iy * ya2 + ya3 * (z2 + z1) / 2.0,
                               z0 + ix * za1 + iy * za2 + za3 * (z2 + z1) / 2.0);
         double iCn2  = r * r * (alpha2 - alpha1 + sa2 * ca2 - sa1 * ca1) / 2.0;
@@ -120,7 +120,7 @@ public class SelGProps : Properties
         double iz = cnt * (r * (z2 + z1) / 2.0 + snt * auxi2) / auxi1;
 
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + xa1 * ix + xa2 * iy + xa3 * iz,
+        _g = _g.WithCoord(x0 + xa1 * ix + xa2 * iy + xa3 * iz,
                               y0 + ya1 * ix + ya2 * iy + ya3 * iz,
                               z0 + za1 * ix + za2 * iy + za3 * iz);
 
@@ -201,7 +201,7 @@ public class SelGProps : Properties
                                 / (snf2 - snf1) / 2.0;
         double iz = r * (snf2 + snf1) / 2.0;
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
+        _g = _g.WithCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
                               y0 + ix * ya1 + iy * ya2 + iz * ya3,
                               z0 + ix * za1 + iy * za2 + iz * za3);
 
@@ -278,7 +278,7 @@ public class SelGProps : Properties
         double iz = rmin * (cnf1 - cnf2) / (alpha2 - alpha1);
 
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
+        _g = _g.WithCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
                               y0 + ix * ya1 + iy * ya2 + iz * ya3,
                               z0 + ix * za1 + iy * za2 + iz * za3);
 

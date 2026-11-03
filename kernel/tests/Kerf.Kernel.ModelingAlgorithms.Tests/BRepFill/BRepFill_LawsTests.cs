@@ -223,8 +223,7 @@ public class BRepFill_LawsTests
     public void ACRLaw_sets_each_edge_origin_to_its_reduced_abscissae()
     {
         Wire aSpine = Polyline(new Point3D(0, 0, 0), new Point3D(4, 0, 0), new Point3D(4, 0, 6));
-        Transform3D aT = new();
-        aT.SetTranslation(new Vector3D(0, 3, 0));
+        Transform3D aT = new Transform3D().WithTranslation(new Vector3D(0, 3, 0));
         Wire aGuide = ShapeCasts.Wire(new Transform(aSpine, aT, true).Shape());
         LocationGuide aLoc = new(new GuideTrihedronAC(new WireCurveAdaptor(aGuide)));
         AcrLaw aLaw = new(aSpine, aLoc);
@@ -365,8 +364,7 @@ public class BRepFill_LawsTests
     [Fact]
     public void Section_of_a_located_wire_removes_its_locations()
     {
-        Transform3D aT = new();
-        aT.SetTranslation(new Vector3D(1, 2, 3));
+        Transform3D aT = new Transform3D().WithTranslation(new Vector3D(1, 2, 3));
         Wire aProfile = ShapeCasts.Wire(ClosedSquare(1).Moved(new Placement(aT)));
         Vertex aV = new MakeVertex(new Point3D()).Vertex();
         FillingSection aSec = new(aProfile, aV, true, false);
@@ -426,8 +424,7 @@ public class BRepFill_LawsTests
     [Fact]
     public void RemoveLocations_rebuilds_a_located_box_without_locations()
     {
-        Transform3D aT = new();
-        aT.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), 0.3);
+        Transform3D aT = new Transform3D().WithRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), 0.3);
         Shape aBox = new MakeBox(1, 2, 3).Shape().Moved(new Placement(aT));
         string aBefore = Text(aBox);
         RemoveLocations aRL = new();

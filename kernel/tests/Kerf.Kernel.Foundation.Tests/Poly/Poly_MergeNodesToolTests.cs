@@ -97,7 +97,7 @@ public class Poly_MergeNodesToolTest
     public void MergeNodes_TransformReverseAndUnits()
     {
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 10));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0, 0, 10));
         Triangulation aResult = MergeNodesTool.MergeNodes(Soup(0), aTrsf, true, 0.5)!;
         Assert.Equal(new Triangle1(1, 2, 3), aResult.Triangle(1));
         Assert.Equal(new Point3D(0, 0, 10), aResult.Node(1));

@@ -28,7 +28,7 @@ public sealed class MakeCartesianTransformationOperator : GeometryRoot
     public MakeCartesianTransformationOperator(in Transform3D trsf, in Factors localFactors)
     {
         Transform3D invTrsf = trsf;
-        invTrsf.Invert();
+        invTrsf = invTrsf.Inverted();
         double scale = invTrsf.ScaleFactor();
 
         Matrix3x3 invMat = invTrsf.HVectorialPart();

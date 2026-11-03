@@ -380,21 +380,21 @@ public sealed class SurfacePipe
                     if (cp.IsTangentDefined())
                     {
                         cp.Tangent(out d);
-                        v1.SetXYZ(d.XYZ());
-                        v1.Normalize();
+                        v1 = v1.WithXYZ(d.XYZ());
+                        v1 = v1.Normalized();
                         if (cp.Curvature() > eps)
                         {
                             cp.Normal(out d);
-                            v2.SetXYZ(d.XYZ());
-                            v2.Normalize();
+                            v2 = v2.WithXYZ(d.XYZ());
+                            v2 = v2.Normalized();
                         }
                         else
                         {
                             Point3D p0 = new Point3D(0.0, 0.0, 0.0);
                             Frame3D axe = new Frame3D(p0, d);
                             d = axe.XDirection();
-                            v2.SetXYZ(d.XYZ());
-                            v2.Normalize();
+                            v2 = v2.WithXYZ(d.XYZ());
+                            v2 = v2.Normalized();
                         }
                     }
                     tLaw = new Fixed(v1, v2);
@@ -420,16 +420,16 @@ public sealed class SurfacePipe
                         if (cp.Curvature() > eps)
                         {
                             cp.Normal(out d);
-                            v.SetXYZ(d.XYZ());
-                            v.Normalize();
+                            v = v.WithXYZ(d.XYZ());
+                            v = v.Normalized();
                         }
                         else
                         {
                             Point3D p0 = new Point3D(0.0, 0.0, 0.0);
                             Frame3D axe = new Frame3D(p0, d);
                             d = axe.XDirection();
-                            v.SetXYZ(d.XYZ());
-                            v.Normalize();
+                            v = v.WithXYZ(d.XYZ());
+                            v = v.Normalized();
                         }
                     }
                     tLaw = new ConstantBiNormal(new Direction3D(v));
@@ -481,8 +481,7 @@ public sealed class SurfacePipe
 
         Curve3D sect;
         _adpPath = new CurveAdaptor((Curve3D)path.Copy());
-        Vector3D v = new Vector3D();
-        v.SetXYZ(direction.XYZ());
+        Vector3D v = new Vector3D().WithXYZ(direction.XYZ());
         ConstantBiNormal tLaw = new ConstantBiNormal(new Direction3D(v));
 
         _loc = new CurveAndTrihedron(tLaw);
@@ -794,11 +793,11 @@ public sealed class SurfacePipe
             CoordinateSystem axis = new CoordinateSystem(a0.Location(), d0, x);
             if (zRef.Dot(d0) < 0.0)
             {
-                axis.YReverse();
+                axis = axis.YReversed();
             }
 
             // rotate the surface to set the iso U = 0 not in the result.
-            axis.Rotate(new Axis3D(p0, zRef), -M_PI / 2.0);
+            axis = axis.Rotated(new Axis3D(p0, zRef), -M_PI / 2.0);
 
             _surface = new CylindricalSurface(axis, _radius);
             double alpha = v1.AngleWithRef(v2, zRef);
@@ -868,7 +867,7 @@ public sealed class SurfacePipe
             double deltaV = v2.AngleWithRef(v1, new Direction3D(yRef));
             if (deltaV < 0.0)
             {
-                t.VReverse();
+                t = t.VReversed();
                 vv1 = -vv1;
                 vv2 = 2 * M_PI + vv1 - deltaV;
             }

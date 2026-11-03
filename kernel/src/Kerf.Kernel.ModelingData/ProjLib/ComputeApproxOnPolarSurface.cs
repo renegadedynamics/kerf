@@ -126,12 +126,12 @@ public class ComputeApproxOnPolarSurface
 
         if (su.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            su.Normalize();
+            su = su.Normalized();
         }
 
         if (sv.SquareMagnitude() > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            sv.Normalize();
+            sv = sv.Normalized();
         }
 
         double firstPart = su.Dot(baseVec);
@@ -161,7 +161,7 @@ public class ComputeApproxOnPolarSurface
             data.mySurf.D0(p2d.X(), theU, out aPnt);
             if (aPnt.SquareDistance(p) < surfPntDist)
             {
-                p2d.SetY(theU);
+                p2d = p2d.WithY(theU);
             }
         }
 
@@ -173,7 +173,7 @@ public class ComputeApproxOnPolarSurface
             data.mySurf.D0(theU, p2d.Y(), out aPnt);
             if (aPnt.SquareDistance(p) < surfPntDist)
             {
-                p2d.SetX(theU);
+                p2d = p2d.WithX(theU);
             }
         }
 
@@ -632,8 +632,8 @@ public class ComputeApproxOnPolarSurface
         for (i = 2; i <= np2; i++)
         {
             count++;
-            p[count].SetX(p2[i].X() + uJump);
-            p[count].SetY(p2[i].Y() + vJump);
+            p[count] = p[count].WithX(p2[i].X() + uJump);
+            p[count] = p[count].WithY(p2[i].Y() + vJump);
         }
 
         BSplineCurve2D bs = new(p, k, m, deg);
@@ -966,7 +966,7 @@ public class ComputeApproxOnPolarSurface
                     int usens = 0;
                     Cylinder cylinder = surf.Cylinder();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cylinder, pts[1], out s, out t);
-                    pts2d[1].SetCoord(s, t);
+                    pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
                     {
                         sloc = s;
@@ -982,7 +982,7 @@ public class ComputeApproxOnPolarSurface
                                 usens--;
                             }
                         }
-                        pts2d[i].SetCoord(s + usens * 2 * M_PI, t);
+                        pts2d[i] = pts2d[i].WithCoord(s + usens * 2 * M_PI, t);
                     }
                     _projIsDone = true;
                     break;
@@ -993,7 +993,7 @@ public class ComputeApproxOnPolarSurface
                     int usens = 0;
                     Cone cone = surf.Cone();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(cone, pts[1], out s, out t);
-                    pts2d[1].SetCoord(s, t);
+                    pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
                     {
                         sloc = s;
@@ -1009,7 +1009,7 @@ public class ComputeApproxOnPolarSurface
                                 usens--;
                             }
                         }
-                        pts2d[i].SetCoord(s + usens * 2 * M_PI, t);
+                        pts2d[i] = pts2d[i].WithCoord(s + usens * 2 * M_PI, t);
                     }
                     _projIsDone = true;
                     break;
@@ -1021,7 +1021,7 @@ public class ComputeApproxOnPolarSurface
                     bool vparit = false;
                     Sphere sphere = surf.Sphere();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(sphere, pts[1], out s, out t);
-                    pts2d[1].SetCoord(s, t);
+                    pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
                     {
                         sloc = s;
@@ -1060,11 +1060,11 @@ public class ComputeApproxOnPolarSurface
                         }
                         if (vparit)
                         {
-                            pts2d[i].SetCoord(s + usens * M_PI, (M_PI - t) * (vsens - 1));
+                            pts2d[i] = pts2d[i].WithCoord(s + usens * M_PI, (M_PI - t) * (vsens - 1));
                         }
                         else
                         {
-                            pts2d[i].SetCoord(s + usens * M_PI, t + vsens * M_PI);
+                            pts2d[i] = pts2d[i].WithCoord(s + usens * M_PI, t + vsens * M_PI);
                         }
                     }
                     _projIsDone = true;
@@ -1076,7 +1076,7 @@ public class ComputeApproxOnPolarSurface
                     int usens = 0, vsens = 0;
                     Torus torus = surf.Torus();
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(torus, pts[1], out s, out t);
-                    pts2d[1].SetCoord(s, t);
+                    pts2d[1] = pts2d[1].WithCoord(s, t);
                     for (i = 2; i <= nbOfPnts; i++)
                     {
                         sloc = s;
@@ -1104,7 +1104,7 @@ public class ComputeApproxOnPolarSurface
                                 vsens--;
                             }
                         }
-                        pts2d[i].SetCoord(s + usens * 2 * M_PI, t + vsens * 2 * M_PI);
+                        pts2d[i] = pts2d[i].WithCoord(s + usens * 2 * M_PI, t + vsens * 2 * M_PI);
                     }
                     _projIsDone = true;
                     break;
@@ -1195,7 +1195,7 @@ public class ComputeApproxOnPolarSurface
                     if (!areManyZeros)
                     {
                         extPS.Point(GoodValue).Parameter(out u, out v);
-                        pts2d[1].SetCoord(u, v);
+                        pts2d[1] = pts2d[1].WithCoord(u, v);
                         _projIsDone = true;
                     }
                     else
@@ -1295,7 +1295,7 @@ public class ComputeApproxOnPolarSurface
                                             isChosen = true;
                                             u = p1.X();
                                             v = p1.Y();
-                                            pts2d[1].SetCoord(u, v);
+                                            pts2d[1] = pts2d[1].WithCoord(u, v);
                                             _projIsDone = true;
                                             break;
                                         }
@@ -1303,28 +1303,28 @@ public class ComputeApproxOnPolarSurface
                                     if (!isChosen)
                                     {
                                         extPS.Point(GoodValue).Parameter(out u, out v);
-                                        pts2d[1].SetCoord(u, v);
+                                        pts2d[1] = pts2d[1].WithCoord(u, v);
                                         _projIsDone = true;
                                     }
                                 }
                                 else
                                 {
                                     extPS.Point(GoodValue).Parameter(out u, out v);
-                                    pts2d[1].SetCoord(u, v);
+                                    pts2d[1] = pts2d[1].WithCoord(u, v);
                                     _projIsDone = true;
                                 }
                             }
                             else
                             {
                                 extPS.Point(GoodValue).Parameter(out u, out v);
-                                pts2d[1].SetCoord(u, v);
+                                pts2d[1] = pts2d[1].WithCoord(u, v);
                                 _projIsDone = true;
                             }
                         }
                         else
                         {
                             extPS.Point(GoodValue).Parameter(out u, out v);
-                            pts2d[1].SetCoord(u, v);
+                            pts2d[1] = pts2d[1].WithCoord(u, v);
                             _projIsDone = true;
                         }
                     }
@@ -1363,7 +1363,7 @@ public class ComputeApproxOnPolarSurface
                                 (locateExtPS.Point()).Parameter(out u0, out v0);
                                 u1 = u0 + usens * uperiod;
                                 v1 = v0 + vsens * vperiod;
-                                pts2d[i].SetCoord(u1, v1);
+                                pts2d[i] = pts2d[i].WithCoord(u1, v1);
                                 _projIsDone = true;
                             }
                             else
@@ -1416,7 +1416,7 @@ public class ComputeApproxOnPolarSurface
                                         v0 = localV;
                                         u1 = u0 + usens * uperiod;
                                         v1 = v0 + vsens * vperiod;
-                                        pts2d[i].SetCoord(u1, v1);
+                                        pts2d[i] = pts2d[i].WithCoord(u1, v1);
                                         _projIsDone = true;
 
                                         if ((i == 2) && (!IsEqual(uperiod, 0.0) || !IsEqual(vperiod, 0.0)))
@@ -1447,7 +1447,7 @@ public class ComputeApproxOnPolarSurface
                                                 }
                                             }
 
-                                            pts2d[1].SetCoord(upar[bestUInd], vpar[bestVInd]);
+                                            pts2d[1] = pts2d[1].WithCoord(upar[bestUInd], vpar[bestVInd]);
                                         } // if(i == 2) condition
                                     }
                                 }
@@ -1491,7 +1491,7 @@ public class ComputeApproxOnPolarSurface
                                     v0 = v;
                                     u1 = u0 + usens * uperiod;
                                     v1 = v0 + vsens * vperiod;
-                                    pts2d[i].SetCoord(u1, v1);
+                                    pts2d[i] = pts2d[i].WithCoord(u1, v1);
                                     _projIsDone = true;
                                 }
                             }
@@ -1534,7 +1534,7 @@ public class ComputeApproxOnPolarSurface
                                     v0 = v;
                                     u1 = u0 + usens * uperiod;
                                     v1 = v0 + vsens * vperiod;
-                                    pts2d[i].SetCoord(u1, v1);
+                                    pts2d[i] = pts2d[i].WithCoord(u1, v1);
                                     _projIsDone = true;
                                 }
                             }
@@ -1591,7 +1591,7 @@ public class ComputeApproxOnPolarSurface
                                     v0 = v;
                                     u1 = u0 + usens * uperiod;
                                     v1 = v0 + vsens * vperiod;
-                                    pts2d[i].SetCoord(u1, v1);
+                                    pts2d[i] = pts2d[i].WithCoord(u1, v1);
                                     _projIsDone = true;
                                 }
                             }
@@ -1646,7 +1646,7 @@ public class ComputeApproxOnPolarSurface
                                     v0 = v;
                                     u1 = u0 + usens * uperiod;
                                     v1 = v0 + vsens * vperiod;
-                                    pts2d[i].SetCoord(u1, v1);
+                                    pts2d[i] = pts2d[i].WithCoord(u1, v1);
                                     _projIsDone = true;
                                 }
                             }
@@ -1749,7 +1749,7 @@ public class ComputeApproxOnPolarSurface
                 for (i = 1; i <= curve.PoleCount; i++)
                 {
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(plane, bsc.Pole(i), out s, out t);
-                    poles2d[i].SetCoord(s, t);
+                    poles2d[i] = poles2d[i].WithCoord(s, t);
                 }
                 NCollection_Array1<double> knots = bsc.InternalKnots();
                 NCollection_Array1<int> mults = bsc.InternalMultiplicities();
@@ -1776,7 +1776,7 @@ public class ComputeApproxOnPolarSurface
                 for (i = 1; i <= curve.PoleCount; i++)
                 {
                     global::Kerf.Engine.Geometry.ElSLib.Parameters(plane, bc.Pole(i), out s, out t);
-                    poles2d[i].SetCoord(s, t);
+                    poles2d[i] = poles2d[i].WithCoord(s, t);
                 }
                 NCollection_Array1<double> knots = new(1, 2);
                 knots.SetValue(1, 0.0);
@@ -1837,7 +1837,7 @@ public class ComputeApproxOnPolarSurface
                                 if (dist2Min < distTol3d2)
                                 {
                                     (extrloc.Point()).Parameter(out u, out v);
-                                    poles2d[i].SetCoord(u, v);
+                                    poles2d[i] = poles2d[i].WithCoord(u, v);
                                     _projIsDone = true;
                                 }
                                 else
@@ -1888,7 +1888,7 @@ public class ComputeApproxOnPolarSurface
                                 if (dist2Min < distTol3d2)
                                 {
                                     (extrloc.Point()).Parameter(out u, out v);
-                                    poles2d[i].SetCoord(u, v);
+                                    poles2d[i] = poles2d[i].WithCoord(u, v);
                                     _projIsDone = true;
                                 }
                                 else
@@ -1970,7 +1970,7 @@ public class ComputeApproxOnPolarSurface
                                 if (dist2Min < distTol3d2)
                                 {
                                     (extrloc.Point()).Parameter(out u, out v);
-                                    poles2d[i].SetCoord(u, v);
+                                    poles2d[i] = poles2d[i].WithCoord(u, v);
                                     _projIsDone = true;
                                 }
                                 else
@@ -2021,7 +2021,7 @@ public class ComputeApproxOnPolarSurface
                                 if (dist2Min < distTol3d2)
                                 {
                                     (extrloc.Point()).Parameter(out u, out v);
-                                    poles2d[i].SetCoord(u, v);
+                                    poles2d[i] = poles2d[i].WithCoord(u, v);
                                     _projIsDone = true;
                                 }
                                 else

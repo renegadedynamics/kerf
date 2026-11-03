@@ -1284,7 +1284,7 @@ public class RstRstLineBuilder
             }
         }
 
-        tgrst.SetLinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
         normale = d1u.Crossed(d1v);
 
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(tgline, tgrst, new Direction3D(normale), ref tLine, ref tArc);

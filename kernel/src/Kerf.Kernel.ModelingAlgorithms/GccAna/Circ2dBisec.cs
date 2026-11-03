@@ -160,8 +160,8 @@ public sealed class Circ2dBisec
             Direction2D dircen = new(), medcen = new();
             if (dist > tol)
             {
-                dircen.SetCoord(xcencir2 - xcencir1, ycencir2 - ycencir1);
-                medcen.SetCoord(ycencir2 - ycencir1, xcencir1 - xcencir2);
+                dircen = dircen.WithCoord(xcencir2 - xcencir1, ycencir2 - ycencir1);
+                medcen = medcen.WithCoord(ycencir2 - ycencir1, xcencir1 - xcencir2);
             }
             Direction2D dirx = new(Direction2D.D.X);
             Axis2D acenx = new(pcen, dirx);

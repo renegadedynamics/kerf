@@ -19,11 +19,11 @@ namespace Kerf.Geometry;
 /// <c>new gp_Elips2d()</c> is OCCT's indefinite ellipse (major radius <see cref="Standard.RealLast"/>, minor
 /// radius <see cref="Standard.RealSmall"/>); <c>default(gp_Elips2d)</c> is not valid.
 /// </remarks>
-public partial struct Ellipse2D : IEquatable<Ellipse2D>
+public readonly partial struct Ellipse2D : IEquatable<Ellipse2D>
 {
-    private Frame2D _pos;
-    private double _majorRadius;
-    private double _minorRadius;
+    private readonly Frame2D _pos;
+    private readonly double _majorRadius;
+    private readonly double _minorRadius;
 
     public Ellipse2D()
     {
@@ -51,120 +51,53 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
         Standard_ConstructionError_Raise_if(minorRadius < 0.0 || majorRadius < minorRadius, "gp_Elips2d() - invalid construction parameters");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetLocation(in Point2D p) => _pos.SetLocation(p);
-
-    internal void SetMajorRadius(double majorRadius)
-    {
-        Standard_ConstructionError_Raise_if(majorRadius < _minorRadius,
-                                            "gp_Elips2d::SetMajorRadius() - major radius should be greater or equal to minor radius");
-        _majorRadius = majorRadius;
-    }
-
-    internal void SetMinorRadius(double minorRadius)
-    {
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || _majorRadius < minorRadius,
-                                            "gp_Elips2d::SetMinorRadius() - minor radius should be a "
-                                            + "positive number lesser or equal to major radius");
-        _minorRadius = minorRadius;
-    }
-
-    internal void SetAxis(in Frame2D a) => _pos.SetAxis(a);
-
-    internal void SetXAxis(in Axis2D a) => _pos.SetXAxis(a);
-
-    internal void SetYAxis(in Axis2D a) => _pos.SetYAxis(a);
-
-    internal void Reverse()
-    {
-        Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        _pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
-    }
-
-    internal void Mirror(in Point2D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis2D a) => _pos.Mirror(a);
-
-    internal void Rotate(in Point2D p, double ang) => _pos.Rotate(p, ang);
-
-    internal void Scale(in Point2D p, double s)
-    {
-        _majorRadius *= s;
-        if (_majorRadius < 0)
-        {
-            _majorRadius = -_majorRadius;
-        }
-
-        _minorRadius *= s;
-        if (_minorRadius < 0)
-        {
-            _minorRadius = -_minorRadius;
-        }
-
-        _pos.Scale(p, s);
-    }
-
-    internal void Transform(in Transform2D t)
-    {
-        double tSca = t.ScaleFactor();
-        if (tSca < 0.0)
-        {
-            tSca = -tSca;
-        }
-
-        _majorRadius *= tSca;
-        _minorRadius *= tSca;
-        _pos.Transform(t);
-    }
-
-    internal void Translate(in Vector2D v) => _pos.Translate(v);
-
-    internal void Translate(in Point2D p1, in Point2D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Ellipse2D WithLocation(in Point2D p)
     {
-        Ellipse2D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D WithMajorRadius(double majorRadius)
     {
-        Ellipse2D copy = this;
-        copy.SetMajorRadius(majorRadius);
-        return copy;
+        double newMajorRadius = _majorRadius;
+        Standard_ConstructionError_Raise_if(majorRadius < _minorRadius,
+                                            "gp_Elips2d::SetMajorRadius() - major radius should be greater or equal to minor radius");
+        newMajorRadius = majorRadius;
+        return new Ellipse2D(_pos, newMajorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D WithMinorRadius(double minorRadius)
     {
-        Ellipse2D copy = this;
-        copy.SetMinorRadius(minorRadius);
-        return copy;
+        double newMinorRadius = _minorRadius;
+        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || _majorRadius < minorRadius,
+                                            "gp_Elips2d::SetMinorRadius() - minor radius should be a "
+                                            + "positive number lesser or equal to major radius");
+        newMinorRadius = minorRadius;
+        return new Ellipse2D(_pos, _majorRadius, newMinorRadius);
     }
 
     public readonly Ellipse2D WithAxis(in Frame2D a)
     {
-        Ellipse2D copy = this;
-        copy.SetAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithAxis(a);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D WithXAxis(in Axis2D a)
     {
-        Ellipse2D copy = this;
-        copy.SetXAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithXAxis(a);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D WithYAxis(in Axis2D a)
     {
-        Ellipse2D copy = this;
-        copy.SetYAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithYAxis(a);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     // Queries
@@ -185,8 +118,7 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
         }
         else
         {
-            Transform2D t = new();
-            t.SetTransformation(_pos.XAxis());
+            Transform2D t = new Transform2D().WithTransformation(_pos.XAxis());
             double t11 = t.Value(1, 1);
             double t12 = t.Value(1, 2);
             double t13 = t.Value(1, 3);
@@ -299,84 +231,88 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
 
     public readonly Ellipse2D Reversed()
     {
-        Ellipse2D e = this;
+        Frame2D pos = _pos;
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        e._pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
-        return e;
+        temp = temp.Reversed();
+        pos = pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D Mirrored(in Point2D p)
     {
-        Ellipse2D e = this;
-        e._pos.Mirror(p);
-        return e;
+        Frame2D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D Mirrored(in Axis2D a)
     {
-        Ellipse2D e = this;
-        e._pos.Mirror(a);
-        return e;
+        Frame2D pos = _pos;
+        pos = pos.Mirrored(a);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D Rotated(in Point2D p, double ang)
     {
-        Ellipse2D e = this;
-        e._pos.Rotate(p, ang);
-        return e;
+        Frame2D pos = _pos;
+        pos = pos.Rotated(p, ang);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D Scaled(in Point2D p, double s)
     {
-        Ellipse2D e = this;
-        e._majorRadius *= s;
-        if (e._majorRadius < 0)
+        Frame2D pos = _pos;
+        double majorRadius = _majorRadius;
+        double minorRadius = _minorRadius;
+        majorRadius *= s;
+        if (majorRadius < 0)
         {
-            e._majorRadius = -e._majorRadius;
+            majorRadius = -majorRadius;
         }
 
-        e._minorRadius *= s;
-        if (e._minorRadius < 0)
+        minorRadius *= s;
+        if (minorRadius < 0)
         {
-            e._minorRadius = -e._minorRadius;
+            minorRadius = -minorRadius;
         }
 
-        e._pos.Scale(p, s);
-        return e;
+        pos = pos.Scaled(p, s);
+        return new Ellipse2D(pos, majorRadius, minorRadius);
     }
 
     public readonly Ellipse2D Transformed(in Transform2D t)
     {
-        Ellipse2D e = this;
-        e._majorRadius *= t.ScaleFactor();
-        if (e._majorRadius < 0)
+        Frame2D pos = _pos;
+        double majorRadius = _majorRadius;
+        double minorRadius = _minorRadius;
+        majorRadius *= t.ScaleFactor();
+        if (majorRadius < 0)
         {
-            e._majorRadius = -e._majorRadius;
+            majorRadius = -majorRadius;
         }
 
-        e._minorRadius *= t.ScaleFactor();
-        if (e._minorRadius < 0)
+        minorRadius *= t.ScaleFactor();
+        if (minorRadius < 0)
         {
-            e._minorRadius = -e._minorRadius;
+            minorRadius = -minorRadius;
         }
 
-        e._pos.Transform(t);
-        return e;
+        pos = pos.Transformed(t);
+        return new Ellipse2D(pos, majorRadius, minorRadius);
     }
 
     public readonly Ellipse2D Translated(in Vector2D v)
     {
-        Ellipse2D e = this;
-        e._pos.Translate(v);
-        return e;
+        Frame2D pos = _pos;
+        pos = pos.Translated(v);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse2D Translated(in Point2D p1, in Point2D p2)
     {
-        Ellipse2D e = this;
-        e._pos.Translate(p1, p2);
-        return e;
+        Frame2D pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Ellipse2D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly bool Equals(Ellipse2D other)

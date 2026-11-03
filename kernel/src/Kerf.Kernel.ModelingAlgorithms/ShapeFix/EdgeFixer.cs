@@ -161,11 +161,11 @@ public partial class EdgeFixer : Transient
             {
                 if (Math.Abs(theLoc.X() - uf) < Math.Abs(theLoc.X() - ul))
                 {
-                    newLoc.SetCoord(theLoc.X() + (ul - uf), theLoc.Y());
+                    newLoc = newLoc.WithCoord(theLoc.X() + (ul - uf), theLoc.Y());
                 }
                 else
                 {
-                    newLoc.SetCoord(theLoc.X() - (ul - uf), theLoc.Y());
+                    newLoc = newLoc.WithCoord(theLoc.X() - (ul - uf), theLoc.Y());
                 }
                 theNewL2d = new LineCurve2D(newLoc, theDir);
             }
@@ -174,11 +174,11 @@ public partial class EdgeFixer : Transient
             {
                 if (Math.Abs(theLoc.Y() - vf) < Math.Abs(theLoc.Y() - vl))
                 {
-                    newLoc.SetCoord(theLoc.X(), theLoc.Y() + (vl - vf));
+                    newLoc = newLoc.WithCoord(theLoc.X(), theLoc.Y() + (vl - vf));
                 }
                 else
                 {
-                    newLoc.SetCoord(theLoc.X(), theLoc.Y() - (vl - vf));
+                    newLoc = newLoc.WithCoord(theLoc.X(), theLoc.Y() - (vl - vf));
                 }
                 theNewL2d = new LineCurve2D(newLoc, theDir);
             }
@@ -205,11 +205,11 @@ public partial class EdgeFixer : Transient
             {
                 if (Math.Abs(firstPoint.X() - uf) < Math.Abs(firstPoint.X() - ul))
                 {
-                    t.SetTranslation(p00, p10);
+                    t = t.WithTranslation(p00, p10);
                 }
                 else
                 {
-                    t.SetTranslation(p10, p00);
+                    t = t.WithTranslation(p10, p00);
                 }
                 newC.Transform(t);
                 return newC;
@@ -218,11 +218,11 @@ public partial class EdgeFixer : Transient
             {
                 if (Math.Abs(firstPoint.Y() - vf) < Math.Abs(firstPoint.Y() - vl))
                 {
-                    t.SetTranslation(p00, p01);
+                    t = t.WithTranslation(p00, p01);
                 }
                 else
                 {
-                    t.SetTranslation(p01, p00);
+                    t = t.WithTranslation(p01, p00);
                 }
                 newC.Transform(t);
                 return newC;

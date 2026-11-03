@@ -140,7 +140,7 @@ public static class LocOpe
             d1 = (du.Crossed(dv)).Normalized();
             if (rev1)
             {
-                d1.Reverse();
+                d1 = d1.Reversed();
             }
             hc2d2.D0(u, out p);
             p.Coord(out uu, out vv);
@@ -148,7 +148,7 @@ public static class LocOpe
             d2 = (du.Crossed(dv)).Normalized();
             if (rev2)
             {
-                d2.Reverse();
+                d2 = d2.Reversed();
             }
             ang = d1.Angle(d2);
             if (ang <= angmin)

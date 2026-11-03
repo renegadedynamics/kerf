@@ -76,9 +76,9 @@ internal static class BRepTestHelixCommands
         }
 
         StrongBox<CoordinateSystem> theHelixAxis = HelixAxis(theDI);
-        theHelixAxis.Value.SetLocation(new Point3D(xx[0], xx[1], xx[2]));
-        theHelixAxis.Value.SetDirection(new Direction3D(xx[3], xx[4], xx[5]));
-        theHelixAxis.Value.SetXDirection(new Direction3D(xx[6], xx[7], xx[8]));
+        theHelixAxis.Value = theHelixAxis.Value.WithLocation(new Point3D(xx[0], xx[1], xx[2]));
+        theHelixAxis.Value = theHelixAxis.Value.WithDirection(new Direction3D(xx[3], xx[4], xx[5]));
+        theHelixAxis.Value = theHelixAxis.Value.WithXDirection(new Direction3D(xx[6], xx[7], xx[8]));
 
         return 0;
     }

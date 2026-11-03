@@ -279,8 +279,7 @@ public class Bnd_BoxTest
         Box aBox = new();
         aBox.Update(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
-        Transform3D aTranslation = new();
-        aTranslation.SetTranslation(new Vector3D(2.0, 3.0, 4.0));
+        Transform3D aTranslation = new Transform3D().WithTranslation(new Vector3D(2.0, 3.0, 4.0));
 
         Box aTransformed = aBox.Transformed(aTranslation);
 
@@ -299,8 +298,7 @@ public class Bnd_BoxTest
     public void TransformationVoidBox()
     {
         Box aVoidBox = new();
-        Transform3D aRotation = new();
-        aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 4);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 4);
 
         Box aTransformed = aVoidBox.Transformed(aRotation);
 
@@ -612,8 +610,7 @@ public class Bnd_BoxTest
         aBox.Update(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
         aBox.OpenXmax();
 
-        Transform3D aRotation = new();
-        aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 2);
+        Transform3D aRotation = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), M_PI / 2);
 
         Box aTransformed = aBox.Transformed(aRotation);
 
@@ -688,7 +685,7 @@ public class Bnd_BoxTest
         Assert.True(aBox1.IsOut(aBox2, aTransf), "Separate boxes should be out");
 
         // Transform to overlap
-        aTransf.SetTranslation(new Vector3D(-1.5, 0.0, 0.0));
+        aTransf = aTransf.WithTranslation(new Vector3D(-1.5, 0.0, 0.0));
         Assert.False(aBox1.IsOut(aBox2, aTransf), "Overlapping transformed boxes should not be out");
     }
 
@@ -702,8 +699,8 @@ public class Bnd_BoxTest
         aBox2.Update(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 
         Transform3D aT1 = new(), aT2 = new();
-        aT1.SetTranslation(new Vector3D(0.0, 0.0, 0.0));
-        aT2.SetTranslation(new Vector3D(2.0, 0.0, 0.0));
+        aT1 = aT1.WithTranslation(new Vector3D(0.0, 0.0, 0.0));
+        aT2 = aT2.WithTranslation(new Vector3D(2.0, 0.0, 0.0));
 
         Assert.True(aBox1.IsOut(aT1, aBox2, aT2), "Separated transformed boxes should be out");
     }

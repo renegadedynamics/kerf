@@ -112,7 +112,7 @@ public static class GeomAnalysis
         {
             for (int j = 1; j <= 4; j++)
             {
-                gtrsf.SetValue(i, j, coefs.Value(i, j));
+                gtrsf = gtrsf.WithValue(i, j, coefs.Value(i, j));
             }
         }
 
@@ -148,26 +148,26 @@ public static class GeomAnalysis
             Direction3D d2 = new(v2);
             Direction3D d3 = new(v3);
             CoordinateSystem axes = new(new Point3D(0, 0, 0), d3, d1);
-            d3.Cross(d1);
+            d3 = d3.Crossed(d1);
             if (d3.Dot(d2) < 0)
             {
-                axes.YReverse();
+                axes = axes.YReversed();
             }
-            trsf.SetTransformation(axes);
+            trsf = trsf.WithTransformation(axes);
         }
 
         if (Math.Abs(mm - 1.0) > prec)
         {
-            trsf.SetScale(new Point3D(0, 0, 0), mm); // OCCT: SetScale resets the transformation, dropping the rotation set above (occt-issues.md)
+            trsf = trsf.WithScale(new Point3D(0, 0, 0), mm); // OCCT: SetScale resets the transformation, dropping the rotation set above (occt-issues.md)
         }
         Vector3D tp = new(gtrsf.TranslationPart());
         if (unit != 1.0)
         {
-            tp.Multiply(unit);
+            tp = tp.Multiplied(unit);
         }
         if (tp.X() != 0 || tp.Y() != 0 || tp.Z() != 0)
         {
-            trsf.SetTranslationPart(tp);
+            trsf = trsf.WithTranslationPart(tp);
         }
 
         return result;

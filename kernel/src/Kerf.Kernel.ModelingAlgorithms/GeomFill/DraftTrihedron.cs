@@ -34,7 +34,7 @@ public class DraftTrihedron : TrihedronLaw
     public DraftTrihedron(in Vector3D biNormal, double angle)
     {
         _b = biNormal;
-        _b.Normalize();
+        _b = _b.Normalized();
         SetAngle(angle);
     }
 
@@ -47,7 +47,7 @@ public class DraftTrihedron : TrihedronLaw
     public override bool D0(double param, ref Vector3D tangent, ref Vector3D normal, ref Vector3D biNormal)
     {
         _trimmed!.D1(param, out _, out Vector3D t);
-        t.Normalize();
+        t = t.Normalized();
         Vector3D b = t.Crossed(_b);
         double normb = b.Magnitude();
         b /= normb;
@@ -62,15 +62,15 @@ public class DraftTrihedron : TrihedronLaw
         mu = _cos;
 
         // La Normal est portee par la regle
-        normal.SetLinearForm(Math.Sqrt(1 - mu * mu), b, mu, v);
+        normal = Vector3D.LinearForm(Math.Sqrt(1 - mu * mu), b, mu, v);
 
         // Le reste suit....
         // La tangente est perpendiculaire a la normale et a la direction de depouille
         tangent = normal.Crossed(_b);
-        tangent.Normalize();
+        tangent = tangent.Normalized();
 
         biNormal = tangent;
-        biNormal.Cross(normal);
+        biNormal = biNormal.Crossed(normal);
 
         return true;
     }
@@ -84,7 +84,7 @@ public class DraftTrihedron : TrihedronLaw
         double normT, normb;
         normT = t.Magnitude();
         t /= normT;
-        dt.SetLinearForm(-(t.Dot(aux)), t, aux);
+        dt = Vector3D.LinearForm(-(t.Dot(aux)), t, aux);
         dt /= normT;
 
         Vector3D db = new Vector3D(), b = t.Crossed(_b);
@@ -95,7 +95,7 @@ public class DraftTrihedron : TrihedronLaw
         }
         b /= normb;
         aux = dt.Crossed(_b);
-        db.SetLinearForm(-(b.Dot(aux)), b, aux);
+        db = Vector3D.LinearForm(-(b.Dot(aux)), b, aux);
         db /= normb;
 
         Vector3D v = b.Crossed(t);
@@ -103,19 +103,19 @@ public class DraftTrihedron : TrihedronLaw
 
         double mu = _cos;
 
-        normal.SetLinearForm(Math.Sqrt(1 - mu * mu), b, mu, v);
-        dNormal.SetLinearForm(Math.Sqrt(1 - mu * mu), db, mu, dv);
+        normal = Vector3D.LinearForm(Math.Sqrt(1 - mu * mu), b, mu, v);
+        dNormal = Vector3D.LinearForm(Math.Sqrt(1 - mu * mu), db, mu, dv);
 
         tangent = normal.Crossed(_b);
         normT = tangent.Magnitude();
         tangent /= normT;
         aux = dNormal.Crossed(_b);
-        dTangent.SetLinearForm(-(tangent.Dot(aux)), tangent, aux);
+        dTangent = Vector3D.LinearForm(-(tangent.Dot(aux)), tangent, aux);
         dTangent /= normT;
 
         biNormal = tangent;
-        biNormal.Cross(normal);
-        dBiNormal.SetLinearForm(dTangent.Crossed(normal), tangent.Crossed(dNormal));
+        biNormal = biNormal.Crossed(normal);
+        dBiNormal = Vector3D.LinearForm(dTangent.Crossed(normal), tangent.Crossed(dNormal));
 
         return true;
     }
@@ -135,7 +135,7 @@ public class DraftTrihedron : TrihedronLaw
         normT = t.Magnitude();
         t /= normT;
         dot = t.Dot(aux);
-        dt.SetLinearForm(-dot, t, aux);
+        dt = Vector3D.LinearForm(-dot, t, aux);
         dt /= normT;
 
         Vector3D db = new Vector3D(), d2b, b = t.Crossed(_b);
@@ -150,7 +150,7 @@ public class DraftTrihedron : TrihedronLaw
         d2b = DDeriv(b, aux, aux2);
         b /= normb;
         dot = b.Dot(aux);
-        db.SetLinearForm(-dot, b, aux);
+        db = Vector3D.LinearForm(-dot, b, aux);
         db /= normb;
 
         Vector3D v = b.Crossed(t);
@@ -160,9 +160,9 @@ public class DraftTrihedron : TrihedronLaw
         double mu = _cos, rac;
         rac = Math.Sqrt(1 - mu * mu);
 
-        normal.SetLinearForm(rac, b, mu, v);
-        dNormal.SetLinearForm(rac, db, mu, dv);
-        d2Normal.SetLinearForm(rac, d2b, mu, d2v);
+        normal = Vector3D.LinearForm(rac, b, mu, v);
+        dNormal = Vector3D.LinearForm(rac, db, mu, dv);
+        d2Normal = Vector3D.LinearForm(rac, d2b, mu, d2v);
 
         tangent = normal.Crossed(_b);
         normT = tangent.Magnitude();
@@ -172,13 +172,13 @@ public class DraftTrihedron : TrihedronLaw
         d2Tangent = DDeriv(tangent, aux, aux2);
         tangent /= normT;
         dot = tangent.Dot(aux);
-        dTangent.SetLinearForm(-dot, tangent, aux);
+        dTangent = Vector3D.LinearForm(-dot, tangent, aux);
         dTangent /= normT;
 
         biNormal = tangent;
-        biNormal.Cross(normal);
-        dBiNormal.SetLinearForm(dTangent.Crossed(normal), tangent.Crossed(dNormal));
-        d2BiNormal.SetLinearForm(1, d2Tangent.Crossed(normal), 2, dTangent.Crossed(dNormal), tangent.Crossed(d2Normal));
+        biNormal = biNormal.Crossed(normal);
+        dBiNormal = Vector3D.LinearForm(dTangent.Crossed(normal), tangent.Crossed(dNormal));
+        d2BiNormal = Vector3D.LinearForm(1, d2Tangent.Crossed(normal), 2, dTangent.Crossed(dNormal), tangent.Crossed(d2Normal));
 
         return true;
     }
@@ -271,8 +271,7 @@ public class DraftTrihedron : TrihedronLaw
                     break;
                 case Line:
                 { // La normale du plan de la courbe est il perpendiculaire a la BiNormale ?
-                    Vector3D v = new Vector3D();
-                    v.SetXYZ(_curve.Line().Direction().XYZ());
+                    Vector3D v = new Vector3D().WithXYZ(_curve.Line().Direction().XYZ());
                     return v.IsParallel(_b, global::Kerf.Engine.Foundation.Precision.Angular());
                 }
                 default:
@@ -280,8 +279,7 @@ public class DraftTrihedron : TrihedronLaw
             }
 
             // La normale du plan de la courbe est il // a la BiNormale ?
-            Vector3D v2 = new Vector3D();
-            v2.SetXYZ(theAxe.Direction().XYZ());
+            Vector3D v2 = new Vector3D().WithXYZ(theAxe.Direction().XYZ());
             return v2.IsParallel(_b, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }

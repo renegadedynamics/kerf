@@ -236,7 +236,7 @@ public sealed class OffsetBlend
                             Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius(), p.Y());
                             Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                             Axis3D axeRev = new(axis.Location(), dRev);
-                            ci.Rotate(axeRev, p.X());
+                            ci = ci.Rotated(axeRev, p.X());
                             CircleCurve3D circle = new(ci);
                             if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
@@ -253,7 +253,7 @@ public sealed class OffsetBlend
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         Axis3D axeRev = new(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -269,7 +269,7 @@ public sealed class OffsetBlend
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius(), cone.SemiAngle(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         Axis3D axeRev = new(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -285,7 +285,7 @@ public sealed class OffsetBlend
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         Axis3D axeRev = new(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -307,12 +307,12 @@ public sealed class OffsetBlend
                         // set to sameparameter (rotation of the circle - offset from Y)
                         Direction3D dRev = axis.XDirection().Crossed(axis.Direction());
                         Axis3D axeRev = new(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.Y());
+                        ci = ci.Rotated(axeRev, p.Y());
 
                         // transformation by iso U ( = P.X())
                         dRev = axis.XDirection().Crossed(axis.YDirection());
                         axeRev = new Axis3D(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new(ci);
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -327,8 +327,8 @@ public sealed class OffsetBlend
                         Point2D p = c.Line().Location();
                         Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position(), cyl.Radius(), p.X());
                         Vector3D tr = new(l.Direction());
-                        tr.Multiply(p.Y());
-                        l.Translate(tr);
+                        tr = tr.Multiplied(p.Y());
+                        l = l.Translated(tr);
                         LineCurve3D line = new(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -342,8 +342,8 @@ public sealed class OffsetBlend
                         Point2D p = c.Line().Location();
                         Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p.X());
                         Vector3D tr = new(l.Direction());
-                        tr.Multiply(p.Y());
-                        l.Translate(tr);
+                        tr = tr.Multiplied(p.Y());
+                        l = l.Translated(tr);
                         LineCurve3D line = new(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -2343,7 +2343,7 @@ public sealed class OffsetBlend
                                         b.MakeVertex(ref ov1);
                                         Point2D p2d = c2d!.Value(Tool.Parameter(v1, e, face));
                                         s.D0(p2d.X(), p2d.Y(), out Point3D p);
-                                        p.Transform(L.Transformation());
+                                        p = p.Transformed(L.Transformation());
                                         b.UpdateVertex(ov1, p, Tool.Tolerance(v1));
                                         BindCreated(v1);
                                         BindCreated(v1, curF);
@@ -2358,7 +2358,7 @@ public sealed class OffsetBlend
                                         b.MakeVertex(ref ov2);
                                         Point2D p2d = c2d!.Value(Tool.Parameter(v2, e, face));
                                         s.D0(p2d.X(), p2d.Y(), out Point3D p);
-                                        p.Transform(L.Transformation());
+                                        p = p.Transformed(L.Transformation());
                                         b.UpdateVertex(ov2, p, Tool.Tolerance(v2));
                                         BindCreated(v2);
                                         BindCreated(v2, curF);

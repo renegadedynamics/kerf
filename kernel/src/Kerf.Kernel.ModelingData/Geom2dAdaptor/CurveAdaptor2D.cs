@@ -906,7 +906,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             case global::Kerf.Geometry.CurveKind.Line:
                 global::Kerf.Engine.Geometry.ElCLib.D1(U, (Line2D)_curveData!, out result.Point, out result.D1);
                 result.D2 = new Vector2D();
-                result.D2.SetCoord(0.0, 0.0);
+                result.D2 = result.D2.WithCoord(0.0, 0.0);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Circle:
@@ -1006,9 +1006,9 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             case global::Kerf.Geometry.CurveKind.Line:
                 global::Kerf.Engine.Geometry.ElCLib.D1(U, (Line2D)_curveData!, out result.Point, out result.D1);
                 result.D2 = new Vector2D();
-                result.D2.SetCoord(0.0, 0.0);
+                result.D2 = result.D2.WithCoord(0.0, 0.0);
                 result.D3 = new Vector2D();
-                result.D3.SetCoord(0.0, 0.0);
+                result.D3 = result.D3.WithCoord(0.0, 0.0);
                 return result;
 
             case global::Kerf.Geometry.CurveKind.Circle:
@@ -1026,7 +1026,7 @@ public class CurveAdaptor2D : Curve2DAdaptorBase
             case global::Kerf.Geometry.CurveKind.Parabola:
                 global::Kerf.Engine.Geometry.ElCLib.D2(U, (Parabola2D)_curveData!, out result.Point, out result.D1, out result.D2);
                 result.D3 = new Vector2D();
-                result.D3.SetCoord(0.0, 0.0);
+                result.D3 = result.D3.WithCoord(0.0, 0.0);
                 return result;
 
             case BezierCurve:

@@ -121,7 +121,7 @@ public sealed class MakeCylinder : Root
         else
         {
             _theCylinder = cyl;
-            _theCylinder.SetRadius(rad);
+            _theCylinder = _theCylinder.WithRadius(rad);
             _theError = Done;
         }
     }
@@ -132,7 +132,7 @@ public sealed class MakeCylinder : Root
         Line3D l = new(cyl.Axis());
         double rad = l.Distance(p);
         _theCylinder = cyl;
-        _theCylinder.SetRadius(rad);
+        _theCylinder = _theCylinder.WithRadius(rad);
         _theError = Done;
     }
 

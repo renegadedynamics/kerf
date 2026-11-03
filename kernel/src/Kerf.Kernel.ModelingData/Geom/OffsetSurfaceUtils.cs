@@ -164,7 +164,7 @@ internal static class OffsetSurfaceUtils
         {
             return false;
         }
-        normal.Normalize();
+        normal = normal.Normalized();
         return true;
     }
 
@@ -175,14 +175,14 @@ internal static class OffsetSurfaceUtils
         double scale = (d1U ^ d1V).Dot(normal);
 
         Vector3D n1U = new Vector3D();
-        n1U.SetX(d2U.Y() * d1V.Z() + d1U.Y() * d2UV.Z() - d2U.Z() * d1V.Y()
+        n1U = n1U.WithX(d2U.Y() * d1V.Z() + d1U.Y() * d2UV.Z() - d2U.Z() * d1V.Y()
                   - d1U.Z() * d2UV.Y());
-        n1U.SetY(-(d2U.X() * d1V.Z() + d1U.X() * d2UV.Z() - d2U.Z() * d1V.X()
+        n1U = n1U.WithY(-(d2U.X() * d1V.Z() + d1U.X() * d2UV.Z() - d2U.Z() * d1V.X()
                     - d1U.Z() * d2UV.X()));
-        n1U.SetZ(d2U.X() * d1V.Y() + d1U.X() * d2UV.Y() - d2U.Y() * d1V.X()
+        n1U = n1U.WithZ(d2U.X() * d1V.Y() + d1U.X() * d2UV.Y() - d2U.Y() * d1V.X()
                   - d1U.Y() * d2UV.X());
         double scaleU = n1U.Dot(normal);
-        n1U.Subtract(scaleU * normal);
+        n1U = n1U.Subtracted(scaleU * normal);
         n1U /= scale;
 
         return n1U;
@@ -195,14 +195,14 @@ internal static class OffsetSurfaceUtils
         double scale = (d1U ^ d1V).Dot(normal);
 
         Vector3D n1V = new Vector3D();
-        n1V.SetX(d2UV.Y() * d1V.Z() + d2V.Z() * d1U.Y() - d2UV.Z() * d1V.Y()
+        n1V = n1V.WithX(d2UV.Y() * d1V.Z() + d2V.Z() * d1U.Y() - d2UV.Z() * d1V.Y()
                   - d2V.Y() * d1U.Z());
-        n1V.SetY(-(d2UV.X() * d1V.Z() + d2V.Z() * d1U.X() - d2UV.Z() * d1V.X()
+        n1V = n1V.WithY(-(d2UV.X() * d1V.Z() + d2V.Z() * d1U.X() - d2UV.Z() * d1V.X()
                     - d2V.X() * d1U.Z()));
-        n1V.SetZ(d2UV.X() * d1V.Y() + d2V.Y() * d1U.X() - d2UV.Y() * d1V.X()
+        n1V = n1V.WithZ(d2UV.X() * d1V.Y() + d2V.Y() * d1U.X() - d2UV.Y() * d1V.X()
                   - d2V.X() * d1U.Y());
         double scaleV = n1V.Dot(normal);
-        n1V.Subtract(scaleV * normal);
+        n1V = n1V.Subtracted(scaleV * normal);
         n1V /= scale;
 
         return n1V;
@@ -218,7 +218,7 @@ internal static class OffsetSurfaceUtils
         {
             return false;
         }
-        value.SetXYZ(value.XYZ() + offset * sign * norm.XYZ());
+        value = value.WithXYZ(value.XYZ() + offset * sign * norm.XYZ());
         return true;
     }
 
@@ -235,7 +235,7 @@ internal static class OffsetSurfaceUtils
         }
 
         // Compute offset point
-        value.SetXYZ(value.XYZ() + offset * sign * norm.XYZ());
+        value = value.WithXYZ(value.XYZ() + offset * sign * norm.XYZ());
 
         // Compute normal derivatives
         Vector3D n1U = ComputeDNormalU(d1U, d1V, d2U, d2UV, norm);
@@ -653,7 +653,7 @@ internal static class OffsetSurfaceUtils
 
             if (nStatus == Defined)
             {
-                value.SetXYZ(value.XYZ() + offset * oscInfo.Sign() * normal.XYZ());
+                value = value.WithXYZ(value.XYZ() + offset * oscInfo.Sign() * normal.XYZ());
                 return true;
             }
 
@@ -762,32 +762,32 @@ internal static class OffsetSurfaceUtils
             // Non-singular case: use direct formulas
             if (!isSingular)
             {
-                norm.Normalize();
-                value.SetXYZ(value.XYZ() + offset * sign * norm.XYZ());
+                norm = norm.Normalized();
+                value = value.WithXYZ(value.XYZ() + offset * sign * norm.XYZ());
 
                 // Compute normal derivatives using inline formulas
                 Vector3D n0 = new Vector3D(norm.XYZ()), n1U = new Vector3D(), n1V = new Vector3D();
                 double scale = (d1U ^ d1V).Dot(n0);
-                n1U.SetX(aD2U.Y() * d1V.Z() + d1U.Y() * aD2UV.Z() - aD2U.Z() * d1V.Y()
+                n1U = n1U.WithX(aD2U.Y() * d1V.Z() + d1U.Y() * aD2UV.Z() - aD2U.Z() * d1V.Y()
                           - d1U.Z() * aD2UV.Y());
-                n1U.SetY((aD2U.X() * d1V.Z() + d1U.X() * aD2UV.Z() - aD2U.Z() * d1V.X()
+                n1U = n1U.WithY((aD2U.X() * d1V.Z() + d1U.X() * aD2UV.Z() - aD2U.Z() * d1V.X()
                            - d1U.Z() * aD2UV.X())
                           * -1.0);
-                n1U.SetZ(aD2U.X() * d1V.Y() + d1U.X() * aD2UV.Y() - aD2U.Y() * d1V.X()
+                n1U = n1U.WithZ(aD2U.X() * d1V.Y() + d1U.X() * aD2UV.Y() - aD2U.Y() * d1V.X()
                           - d1U.Y() * aD2UV.X());
                 double scaleU = n1U.Dot(n0);
-                n1U.Subtract(scaleU * n0);
+                n1U = n1U.Subtracted(scaleU * n0);
                 n1U /= scale;
 
-                n1V.SetX(aD2UV.Y() * d1V.Z() + aD2V.Z() * d1U.Y() - aD2UV.Z() * d1V.Y()
+                n1V = n1V.WithX(aD2UV.Y() * d1V.Z() + aD2V.Z() * d1U.Y() - aD2UV.Z() * d1V.Y()
                           - aD2V.Y() * d1U.Z());
-                n1V.SetY((aD2UV.X() * d1V.Z() + aD2V.Z() * d1U.X() - aD2UV.Z() * d1V.X()
+                n1V = n1V.WithY((aD2UV.X() * d1V.Z() + aD2V.Z() * d1U.X() - aD2UV.Z() * d1V.X()
                            - aD2V.X() * d1U.Z())
                           * -1.0);
-                n1V.SetZ(aD2UV.X() * d1V.Y() + aD2V.Y() * d1U.X() - aD2UV.Y() * d1V.X()
+                n1V = n1V.WithZ(aD2UV.X() * d1V.Y() + aD2V.Y() * d1U.X() - aD2UV.Y() * d1V.X()
                           - aD2V.X() * d1U.Y());
                 double scaleV = n1V.Dot(n0);
-                n1V.Subtract(scaleV * n0);
+                n1V = n1V.Subtracted(scaleV * n0);
                 n1V /= scale;
 
                 d1U += offset * sign * n1U;
@@ -892,15 +892,15 @@ internal static class OffsetSurfaceUtils
             if (nStatus == Defined)
             {
                 // Compute offset point
-                value.SetXYZ(value.XYZ() + offset * sign * normal.XYZ());
+                value = value.WithXYZ(value.XYZ() + offset * sign * normal.XYZ());
                 // Compute D1 using CSLib
                 d1U = global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, derNUV, orderU, orderV);
                 d1V = global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 1, derNUV, orderU, orderV);
 
-                d1U.Multiply(offset * sign);
-                d1U.Add(derSurf[1, 0]);
-                d1V.Multiply(offset * sign);
-                d1V.Add(derSurf[0, 1]);
+                d1U = d1U.Multiplied(offset * sign);
+                d1U = d1U.Added(derSurf[1, 0]);
+                d1V = d1V.Multiplied(offset * sign);
+                d1V = d1V.Added(derSurf[0, 1]);
                 return true;
             }
 
@@ -1066,7 +1066,7 @@ internal static class OffsetSurfaceUtils
                 double sign = offset * oscInfo.Sign();
 
                 // Compute offset point
-                value.SetXYZ(value.XYZ() + sign * normal.XYZ());
+                value = value.WithXYZ(value.XYZ() + sign * normal.XYZ());
 
                 // Compute D1 using CSLib::DNNormal
                 d1U = derSurf[1, 0].Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, derNUV, orderU, orderV).Multiplied(sign));
@@ -1081,9 +1081,9 @@ internal static class OffsetSurfaceUtils
                 d2UV = dn11;
 
                 // Add offset corrections using CSLib::DNNormal
-                d2U.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 0, derNUV, orderU, orderV).Multiplied(sign));
-                d2V.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 2, derNUV, orderU, orderV).Multiplied(sign));
-                d2UV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 1, derNUV, orderU, orderV).Multiplied(sign));
+                d2U = d2U.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 0, derNUV, orderU, orderV).Multiplied(sign));
+                d2V = d2V.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 2, derNUV, orderU, orderV).Multiplied(sign));
+                d2UV = d2UV.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 1, derNUV, orderU, orderV).Multiplied(sign));
                 return true;
             }
 
@@ -1251,7 +1251,7 @@ internal static class OffsetSurfaceUtils
                 double sign = offset * oscInfo.Sign();
 
                 // Compute offset point
-                value.SetXYZ(value.XYZ() + sign * normal.XYZ());
+                value = value.WithXYZ(value.XYZ() + sign * normal.XYZ());
 
                 // Compute D1 using CSLib::DNNormal
                 d1U = derSurf[1, 0].Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, derNUV, orderU, orderV).Multiplied(sign));
@@ -1274,13 +1274,13 @@ internal static class OffsetSurfaceUtils
                 d3UVV = dn12;
 
                 // Add offset corrections using CSLib::DNNormal
-                d2U.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 0, derNUV, orderU, orderV).Multiplied(sign));
-                d2V.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 2, derNUV, orderU, orderV).Multiplied(sign));
-                d2UV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 1, derNUV, orderU, orderV).Multiplied(sign));
-                d3U.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(3, 0, derNUV, orderU, orderV).Multiplied(sign));
-                d3V.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 3, derNUV, orderU, orderV).Multiplied(sign));
-                d3UUV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 1, derNUV, orderU, orderV).Multiplied(sign));
-                d3UVV.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 2, derNUV, orderU, orderV).Multiplied(sign));
+                d2U = d2U.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 0, derNUV, orderU, orderV).Multiplied(sign));
+                d2V = d2V.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 2, derNUV, orderU, orderV).Multiplied(sign));
+                d2UV = d2UV.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 1, derNUV, orderU, orderV).Multiplied(sign));
+                d3U = d3U.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(3, 0, derNUV, orderU, orderV).Multiplied(sign));
+                d3V = d3V.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 3, derNUV, orderU, orderV).Multiplied(sign));
+                d3UUV = d3UUV.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(2, 1, derNUV, orderU, orderV).Multiplied(sign));
+                d3UVV = d3UVV.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 2, derNUV, orderU, orderV).Multiplied(sign));
                 return true;
             }
 
@@ -1397,7 +1397,7 @@ internal static class OffsetSurfaceUtils
                 // Compute DN result: basis DN + offset * DNNormal
                 Vector3D basisDN = basisSurf.EvalDN(u, v, nu, nv);
                 result = basisDN;
-                result.Add(global::Kerf.Engine.Geometry.CSLib.DNNormal(nu, nv, derNUV, orderU, orderV).Multiplied(sign));
+                result = result.Added(global::Kerf.Engine.Geometry.CSLib.DNNormal(nu, nv, derNUV, orderU, orderV).Multiplied(sign));
                 return true;
             }
 

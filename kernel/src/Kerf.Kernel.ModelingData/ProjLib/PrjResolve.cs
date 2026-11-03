@@ -71,8 +71,8 @@ public class PrjResolve
         double extU = 10 * tol2d.X(), extV = 10 * tol2d.Y();
         math_Vector tol = new(1, 2), start = new(1, 2), bInf = new(1, 2), bSup = new(1, 2);
 
-        extInf.SetCoord(inf.X() - extU, inf.Y() - extV);
-        extSup.SetCoord(sup.X() + extU, sup.Y() + extV);
+        extInf = extInf.WithCoord(inf.X() - extU, inf.Y() - extV);
+        extSup = extSup.WithCoord(sup.X() + extU, sup.Y() + extV);
         bInf[1] = extInf.X();
         bInf[2] = extInf.Y();
         bSup[1] = extSup.X();
@@ -121,7 +121,7 @@ public class PrjResolve
             }
         }
 
-        _solution.SetXY(f.Solution().XY());
+        _solution = _solution.WithXY(f.Solution().XY());
 
         // computation of myDone
         _done = true;
@@ -133,19 +133,19 @@ public class PrjResolve
         //  }
         if (_solution.X() > inf.X() - tol2d.X() && _solution.X() < inf.X())
         {
-            _solution.SetX(inf.X());
+            _solution = _solution.WithX(inf.X());
         }
         if (_solution.X() > sup.X() && _solution.X() < sup.X() + tol2d.X())
         {
-            _solution.SetX(sup.X());
+            _solution = _solution.WithX(sup.X());
         }
         if (_solution.Y() > inf.Y() - tol2d.Y() && _solution.Y() < inf.Y())
         {
-            _solution.SetY(inf.Y());
+            _solution = _solution.WithY(inf.Y());
         }
         if (_solution.Y() > sup.Y() && _solution.Y() < sup.Y() + tol2d.Y())
         {
-            _solution.SetY(sup.Y());
+            _solution = _solution.WithY(sup.Y());
         }
         if (_solution.X() < inf.X() - extraU || _solution.X() > sup.X() + extraU
             || _solution.Y() < inf.Y() - extraV || _solution.Y() > sup.Y() + extraV)

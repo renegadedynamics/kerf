@@ -708,7 +708,7 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
             ];
             for (int cornerIter = 0; cornerIter < 8; ++cornerIter)
             {
-                corners[cornerIter].Transform(t);
+                corners[cornerIter] = corners[cornerIter].Transformed(t);
                 newBox2.Add(corners[cornerIter]);
             }
         }
@@ -753,7 +753,7 @@ public partial struct Box : IEquatable<Box>, ISpatialTreeBox<Box>
 
         for (int dirIter = 0; dirIter < nbDirs; ++dirIter)
         {
-            dirs[dirIter].Transform(t);
+            dirs[dirIter] = dirs[dirIter].Transformed(t);
             newBox2.Add(dirs[dirIter]);
         }
 

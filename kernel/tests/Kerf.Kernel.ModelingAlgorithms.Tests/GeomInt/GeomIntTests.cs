@@ -76,8 +76,8 @@ public class GeomIntTests
         Assert.Equal(3, aC.PoleCount);
         Assert.Equal(new Point3D(1, 0, 0), aC.Pole(1));
         Assert.Equal(new Point3D(3, 0, 0), aC.Pole(3));
-        Assert.Equal([0.0, 1.0, 2.0], aC.Knots().AsSpan().ToArray());
-        Assert.Equal([2, 1, 2], aC.Multiplicities().AsSpan().ToArray());
+        Assert.Equal([0.0, 1.0, 2.0], aC.Knots().ToArray());
+        Assert.Equal([2, 1, 2], aC.Multiplicities().ToArray());
         Assert.False(aC.IsFrozen);
 
         BSplineCurve2D aC1 = global::Kerf.Engine.Intersection.Surfaces.IntSS.MakeBSpline2d(aW, 2, 4, true);
@@ -86,7 +86,7 @@ public class GeomIntTests
         Assert.Equal(new Point2D(3, 0), aC1.Pole(3));
         Assert.Equal(new Point2D(1, 1), aC2.Pole(1));
         Assert.Equal(new Point2D(3, 1), aC2.Pole(3));
-        Assert.Equal([0.0, 1.0, 2.0], aC2.Knots().AsSpan().ToArray());
+        Assert.Equal([0.0, 1.0, 2.0], aC2.Knots().ToArray());
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class GeomIntTests
         global::Kerf.Engine.Intersection.Surfaces.IntSS.BuildPCurves(0.0, 1.0e-9, -10, 10, -10, 10, ref aTol, aPlane, aLine, ref aC2d);
         BSplineCurve2D aBS = Assert.IsType<BSplineCurve2D>(aC2d);
         Assert.Equal(2, aBS.PoleCount);
-        Assert.Equal([0.0, 1.0e-9], aBS.Knots().AsSpan().ToArray());
+        Assert.Equal([0.0, 1.0e-9], aBS.Knots().ToArray());
         Assert.True(aBS.Pole(1).IsEqual(new Point2D(1, 2), 1.0e-9));
         Assert.Equal(1.0e-7, aTol, 1.0e-12);
     }

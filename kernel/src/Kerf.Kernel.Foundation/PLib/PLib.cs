@@ -80,9 +80,9 @@ public static class PLib
         for (int i = pLower; i <= pUpper; i++)
         {
             ref Point2D p = ref poles[i];
-            p.SetCoord(1, fp[j]);
+            p = p.WithCoord(1, fp[j]);
             j++;
-            p.SetCoord(2, fp[j]);
+            p = p.WithCoord(2, fp[j]);
             j++;
         }
     }
@@ -99,9 +99,9 @@ public static class PLib
             double w = fp[j + 2];
             weights[i] = w;
             ref Point2D p = ref poles[i];
-            p.SetCoord(1, fp[j] / w);
+            p = p.WithCoord(1, fp[j] / w);
             j++;
-            p.SetCoord(2, fp[j] / w);
+            p = p.WithCoord(2, fp[j] / w);
             j++;
             j++;
         }
@@ -158,11 +158,11 @@ public static class PLib
         for (int i = pLower; i <= pUpper; i++)
         {
             ref Point3D p = ref poles[i];
-            p.SetCoord(1, fp[j]);
+            p = p.WithCoord(1, fp[j]);
             j++;
-            p.SetCoord(2, fp[j]);
+            p = p.WithCoord(2, fp[j]);
             j++;
-            p.SetCoord(3, fp[j]);
+            p = p.WithCoord(3, fp[j]);
             j++;
         }
     }
@@ -179,11 +179,11 @@ public static class PLib
             double w = fp[j + 3];
             weights[i] = w;
             ref Point3D p = ref poles[i];
-            p.SetCoord(1, fp[j] / w);
+            p = p.WithCoord(1, fp[j] / w);
             j++;
-            p.SetCoord(2, fp[j] / w);
+            p = p.WithCoord(2, fp[j] / w);
             j++;
-            p.SetCoord(3, fp[j] / w);
+            p = p.WithCoord(3, fp[j] / w);
             j++;
             j++;
         }
@@ -1670,7 +1670,7 @@ public static class PLib
                 cnp = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(rowLength - 1, col - lowerCol);
                 temp = coefs[nPoleu, col].XYZ();
                 temp.Divide(cnp);
-                poles[nPoleu, col].SetXYZ(temp);
+                poles[nPoleu, col] = poles[nPoleu, col].WithXYZ(temp);
                 if (rat)
                 {
                     weights![nPoleu, col] = wCoefs![nPoleu, col] / cnp;
@@ -1688,7 +1688,7 @@ public static class PLib
                 for (i2 = upperCol; i2 >= lowerCol + i1; i2--)
                 {
                     temp.SetLinearForm(poles[nPoleu, i2].XYZ(), poles[nPoleu, i2 - 1].XYZ());
-                    poles[nPoleu, i2].SetXYZ(temp);
+                    poles[nPoleu, i2] = poles[nPoleu, i2].WithXYZ(temp);
                     if (rat)
                     {
                         weights![nPoleu, i2] += weights[nPoleu, i2 - 1];
@@ -1705,7 +1705,7 @@ public static class PLib
                 cnp = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(colLength - 1, row - lowerRow);
                 temp = poles[row, nPolev].XYZ();
                 temp.Divide(cnp);
-                poles[row, nPolev].SetXYZ(temp);
+                poles[row, nPolev] = poles[row, nPolev].WithXYZ(temp);
                 if (rat)
                 {
                     weights![row, nPolev] /= cnp;
@@ -1718,7 +1718,7 @@ public static class PLib
                 for (i2 = upperRow; i2 >= lowerRow + i1; i2--)
                 {
                     temp.SetLinearForm(poles[i2, nPolev].XYZ(), poles[i2 - 1, nPolev].XYZ());
-                    poles[i2, nPolev].SetXYZ(temp);
+                    poles[i2, nPolev] = poles[i2, nPolev].WithXYZ(temp);
                     if (rat)
                     {
                         weights![i2, nPolev] += weights[i2 - 1, nPolev];
@@ -1737,7 +1737,7 @@ public static class PLib
                     w = weights![row, col];
                     temp = poles[row, col].XYZ();
                     temp.Divide(w);
-                    poles[row, col].SetXYZ(temp);
+                    poles[row, col] = poles[row, col].WithXYZ(temp);
                 }
             }
         }

@@ -700,29 +700,29 @@ public sealed class FaceConnectFixer
                                 double val = thePosition.X();
                                 if (val < theLBound.X())
                                 {
-                                    theLBound.SetX(val);
+                                    theLBound = theLBound.WithX(val);
                                 }
                                 else if (val > theRBound.X())
                                 {
-                                    theRBound.SetX(val);
+                                    theRBound = theRBound.WithX(val);
                                 }
                                 val = thePosition.Y();
                                 if (val < theLBound.Y())
                                 {
-                                    theLBound.SetY(val);
+                                    theLBound = theLBound.WithY(val);
                                 }
                                 else if (val > theRBound.Y())
                                 {
-                                    theRBound.SetY(val);
+                                    theRBound = theRBound.WithY(val);
                                 }
                                 val = thePosition.Z();
                                 if (val < theLBound.Z())
                                 {
-                                    theLBound.SetZ(val);
+                                    theLBound = theLBound.WithZ(val);
                                 }
                                 else if (val > theRBound.Z())
                                 {
-                                    theRBound.SetZ(val);
+                                    theRBound = theRBound.WithZ(val);
                                 }
                             }
                             thePosition = new Point3D((theLBound.XYZ() + theRBound.XYZ()) / 2.0);

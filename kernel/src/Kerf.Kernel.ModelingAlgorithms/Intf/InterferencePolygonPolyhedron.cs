@@ -348,7 +348,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
                 {
                     continue;
                 }
-                normale.Multiply(defPh / Norm_Normale);
+                normale = normale.Multiplied(defPh / Norm_Normale);
                 Point3D p1m = p1.Translated(-normale);
                 Point3D p1p = p1.Translated(normale);
                 Point3D p2m = p2.Translated(-normale);
@@ -565,7 +565,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
                         if (cos > Constants.Resolution())
                         {
                             double shift = defPh / cos;
-                            beg0.SetXYZ(p1.XYZ() + dif * shift);
+                            beg0 = beg0.WithXYZ(p1.XYZ() + dif * shift);
                         }
                     }
                 }
@@ -581,7 +581,7 @@ public class InterferencePolygonPolyhedron<Polygon3d, ToolPolygon3d, Polyhedron,
                         if (cos > Constants.Resolution())
                         {
                             double shift = defPh / cos;
-                            end0.SetXYZ(p2.XYZ() + dif * shift);
+                            end0 = end0.WithXYZ(p2.XYZ() + dif * shift);
                         }
                     }
                 }

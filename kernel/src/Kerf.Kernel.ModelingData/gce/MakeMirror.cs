@@ -14,22 +14,22 @@ public sealed class MakeMirror
     private Transform3D _theMirror = new();
 
     /// <summary>A central symmetry about a point.</summary>
-    public MakeMirror(in Point3D point) => _theMirror.SetMirror(point);
+    public MakeMirror(in Point3D point) => _theMirror = _theMirror.WithMirror(point);
 
     /// <summary>An axial symmetry about an axis.</summary>
-    public MakeMirror(in Axis3D axis) => _theMirror.SetMirror(axis);
+    public MakeMirror(in Axis3D axis) => _theMirror = _theMirror.WithMirror(axis);
 
     /// <summary>An axial symmetry about a line.</summary>
-    public MakeMirror(in Line3D line) => _theMirror.SetMirror(new Axis3D(line.Location(), line.Direction()));
+    public MakeMirror(in Line3D line) => _theMirror = _theMirror.WithMirror(new Axis3D(line.Location(), line.Direction()));
 
     /// <summary>An axial symmetry about the axis through a point with a direction.</summary>
-    public MakeMirror(in Point3D point, in Direction3D direc) => _theMirror.SetMirror(new Axis3D(point, direc));
+    public MakeMirror(in Point3D point, in Direction3D direc) => _theMirror = _theMirror.WithMirror(new Axis3D(point, direc));
 
     /// <summary>A planar symmetry about a plane.</summary>
-    public MakeMirror(in Frame3D plane) => _theMirror.SetMirror(plane);
+    public MakeMirror(in Frame3D plane) => _theMirror = _theMirror.WithMirror(plane);
 
     /// <summary>A planar symmetry about a plane.</summary>
-    public MakeMirror(in Plane3D plane) => _theMirror.SetMirror(plane.Position().Ax2());
+    public MakeMirror(in Plane3D plane) => _theMirror = _theMirror.WithMirror(plane.Position().Ax2());
 
     /// <summary>The constructed transformation.</summary>
     public Transform3D Value() => _theMirror;

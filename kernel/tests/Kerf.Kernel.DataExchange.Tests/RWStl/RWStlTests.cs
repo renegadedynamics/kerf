@@ -361,7 +361,7 @@ public class RWStlTests
     {
         Shape aFace = CreateTriangulatedFace();
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 5));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0, 0, 5));
         Shape aMoved = aFace.Moved(new Placement(aTrsf)).Reversed();
         Triangulation? aRead = global::Kerf.Engine.Exchange.Stl.RWStl.ReadFile(new MemoryStream(Write(aMoved, false)));
         Assert.NotNull(aRead);

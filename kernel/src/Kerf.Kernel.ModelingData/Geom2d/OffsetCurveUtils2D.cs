@@ -33,7 +33,7 @@ internal static class OffsetCurveUtils2D
         }
 
         Direction2D normal = new Direction2D(d1.Y(), -d1.X());
-        value.ChangeCoord().Add(normal.XY() * offset);
+        value = new Point2D(value.XY().Added(normal.XY() * offset));
         return true;
     }
 
@@ -74,9 +74,9 @@ internal static class OffsetCurveUtils2D
 
         ndir.Multiply(offset / r);
         // P(u)
-        value.ChangeCoord().Add(ndir);
+        value = new Point2D(value.XY().Added(ndir));
         // P'(u)
-        d1.Add(new Vector2D(dNdir));
+        d1 = d1.Added(new Vector2D(dNdir));
         return true;
     }
 
@@ -141,15 +141,15 @@ internal static class OffsetCurveUtils2D
 
         ndir.Multiply(offset / r);
         // P(u)
-        value.ChangeCoord().Add(ndir);
+        value = new Point2D(value.XY().Added(ndir));
         // P'(u) :
-        d1.Add(new Vector2D(dNdir));
+        d1 = d1.Added(new Vector2D(dNdir));
         // P"(u) :
         if (isDirChange)
         {
-            d2.Reverse();
+            d2 = d2.Reversed();
         }
-        d2.Add(new Vector2D(d2Ndir));
+        d2 = d2.Added(new Vector2D(d2Ndir));
         return true;
     }
 
@@ -242,17 +242,17 @@ internal static class OffsetCurveUtils2D
 
         ndir.Multiply(offset / r);
         // P(u)
-        value.ChangeCoord().Add(ndir);
+        value = new Point2D(value.XY().Added(ndir));
         // P'(u) :
-        d1.Add(new Vector2D(dNdir));
+        d1 = d1.Added(new Vector2D(dNdir));
         // P"(u)
-        d2.Add(new Vector2D(d2Ndir));
+        d2 = d2.Added(new Vector2D(d2Ndir));
         // P"'(u)
         if (isDirChange)
         {
-            d3.Reverse();
+            d3 = d3.Reversed();
         }
-        d3.Add(new Vector2D(d3Ndir));
+        d3 = d3.Added(new Vector2D(d3Ndir));
         return true;
     }
 

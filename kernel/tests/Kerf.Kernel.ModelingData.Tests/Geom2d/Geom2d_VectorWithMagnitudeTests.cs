@@ -217,8 +217,7 @@ public class Geom2d_VectorWithMagnitudeTest
     [Fact]
     public void Transform_Rotation()
     {
-        Transform2D aTrsf = new();
-        aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
+        Transform2D aTrsf = new Transform2D().WithRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
 
         VectorWithMagnitude2 aVec = new VectorWithMagnitude2(1.0, 0.0);
         aVec.Transform(aTrsf);

@@ -325,11 +325,11 @@ public sealed class Spliter
                     { // tout au meme point
                         Curve3D c = Tool.Curve(e1, out Placement loc, out double f, out _)!;
                         c.D1(f, out Point3D pbid, out Vector3D v1);
-                        v1.Transform(loc.Transformation());
+                        v1 = v1.Transformed(loc.Transformation());
 
                         c = Tool.Curve(e2, out loc, out f, out _)!;
                         c.D1(f, out pbid, out Vector3D v2);
-                        v2.Transform(loc.Transformation());
+                        v2 = v2.Transformed(loc.Transformation());
                         if (v1.Dot(v2) > 0.0)
                         {
                             lsubs.Append(e2.Oriented(Forward));

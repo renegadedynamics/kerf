@@ -296,9 +296,9 @@ public class HelixNativeTests(ITestOutputHelper theOutput)
         double[] aSet = theCase.Axis.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1).Select(FromHex).ToArray();
         if (aSet.Length == 9)
         {
-            anAxis.SetLocation(new Point3D(aSet[0], aSet[1], aSet[2]));
-            anAxis.SetDirection(new Direction3D(aSet[3], aSet[4], aSet[5]));
-            anAxis.SetXDirection(new Direction3D(aSet[6], aSet[7], aSet[8]));
+            anAxis = anAxis.WithLocation(new Point3D(aSet[0], aSet[1], aSet[2]));
+            anAxis = anAxis.WithDirection(new Direction3D(aSet[3], aSet[4], aSet[5]));
+            anAxis = anAxis.WithXDirection(new Direction3D(aSet[6], aSet[7], aSet[8]));
         }
         string[] anIn = theCase.In.Split(' ');
         int aNb = int.Parse(anIn[1], CultureInfo.InvariantCulture);

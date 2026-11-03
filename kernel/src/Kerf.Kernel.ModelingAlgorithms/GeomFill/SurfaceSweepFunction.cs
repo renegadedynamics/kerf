@@ -75,9 +75,10 @@ public class SurfaceSweepFunction : SweepFunction
 
         for (ii = 1; ii <= l; ii++)
         {
-            ref Xyz aux = ref poles[ii].ChangeCoord();
+            Xyz aux = poles[ii].XYZ();
             aux *= _m;
             aux += _v.XYZ();
+            poles[ii] = new Point3D(aux);
         }
         return true;
     }
@@ -112,16 +113,17 @@ public class SurfaceSweepFunction : SweepFunction
         for (ii = 1; ii <= l; ii++)
         {
             pPrim = dPoles[ii].XYZ();
-            ref Xyz p = ref poles[ii].ChangeCoord();
+            Xyz p = poles[ii].XYZ();
             pPrim *= _ratio;
             dWeigths[ii] *= _ratio;
             pPrim *= _m;
             pPrim += _dm * p;
             pPrim += _dv.XYZ();
-            dPoles[ii].SetXYZ(pPrim);
+            dPoles[ii] = dPoles[ii].WithXYZ(pPrim);
 
             p *= _m;
             p += _v.XYZ();
+            poles[ii] = new Point3D(p);
         }
         return true;
     }
@@ -164,21 +166,22 @@ public class SurfaceSweepFunction : SweepFunction
             dWeigths[ii] *= _ratio;
             pSecn *= squareratio;
             d2Weigths[ii] *= squareratio;
-            ref Xyz p = ref poles[ii].ChangeCoord();
+            Xyz p = poles[ii].XYZ();
 
             pSecn *= _m;
             pSecn += 2 * (_dm * pPrim);
             pSecn += _d2M * p;
             pSecn += _d2V.XYZ();
-            d2Poles[ii].SetXYZ(pSecn);
+            d2Poles[ii] = d2Poles[ii].WithXYZ(pSecn);
 
             pPrim *= _m;
             pPrim += _dm * p;
             pPrim += _dv.XYZ();
-            dPoles[ii].SetXYZ(pPrim);
+            dPoles[ii] = dPoles[ii].WithXYZ(pPrim);
 
             p *= _m;
             p += _v.XYZ();
+            poles[ii] = new Point3D(p);
         }
         return true;
     }
@@ -310,8 +313,8 @@ public class SurfaceSweepFunction : SweepFunction
 
         bary = _sec.BarycentreOfSurf();
         _loc.GetAverageLaw(ref m, ref translate);
-        bary.ChangeCoord() *= m;
-        bary.ChangeCoord() += translate.XYZ();
+        bary = new Point3D(bary.XYZ() * m);
+        bary = new Point3D(bary.XYZ() + translate.XYZ());
 
         return bary;
     }

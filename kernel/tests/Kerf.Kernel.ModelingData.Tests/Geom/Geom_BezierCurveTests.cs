@@ -287,8 +287,7 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void Transform()
     {
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(10, 20, 30));
         Point3D aPtBefore = myOriginalCurve.Value(0.5);
         myOriginalCurve.Transform(aTrsf);
         Point3D aPtAfter = myOriginalCurve.Value(0.5);
@@ -301,7 +300,7 @@ public class Geom_BezierCurve_Test
     public void PolesAccess()
     {
         // Poles() returns an immutable copy indexed from 0 (OCCT: a reference indexed from 1)
-        PackedList<Point3D> aPoles = myOriginalCurve.Poles();
+        IReadOnlyList<Point3D> aPoles = myOriginalCurve.Poles();
         Assert.Equal(4, aPoles.Count);
         Assert.True(aPoles[0].IsEqual(new Point3D(0, 0, 0), 1e-10));
     }
@@ -309,7 +308,7 @@ public class Geom_BezierCurve_Test
     [Fact]
     public void WeightsAccess_NonRational()
     {
-        PackedList<double>? aWeights = myOriginalCurve.Weights();
+        IReadOnlyList<double>? aWeights = myOriginalCurve.Weights();
         Assert.Null(aWeights);
         Assert.Null(myOriginalCurve.InternalWeights());
     }
@@ -449,7 +448,7 @@ public class Geom_BezierCurve_Test
             Assert.Equal(1.0, aWeights[i]);
         }
         Assert.Same(aWeights, myOriginalCurve.InternalWeightsArray());
-        Assert.Equal(aWeights.AsSpan().ToArray(), myOriginalCurve.WeightsArray().AsSpan().ToArray());
+        Assert.Equal(aWeights.AsSpan().ToArray(), myOriginalCurve.WeightsArray().ToArray());
     }
 
     [Fact]
@@ -466,7 +465,7 @@ public class Geom_BezierCurve_Test
         Assert.Equal(2.0, aWeights[2]);
         Assert.Equal(1.0, aWeights[3]);
         Assert.Same(aWeights, aRational.InternalWeightsArray());
-        Assert.Equal([1.0, 2.0, 1.0], aRational.WeightsArray().AsSpan().ToArray());
+        Assert.Equal([1.0, 2.0, 1.0], aRational.WeightsArray().ToArray());
     }
 }
 

@@ -433,7 +433,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         }
         else
         {
-            norm.SetCoord(tang.Y(), -tang.X());
+            norm = norm.WithCoord(tang.Y(), -tang.X());
         }
     }
 
@@ -502,7 +502,7 @@ public class Intersector : IntConicCurveOfGInter, IIntersector<ClassifierEdge>
         Vector2D chord = new(pnt2d, offsetPnt2d);
         if (offset < 0.0)
         {
-            chord.Reverse();
+            chord = chord.Reversed();
         }
 
         double sqLength = chord.SquareMagnitude();

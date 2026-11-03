@@ -880,7 +880,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
                             {
                                 continue;
                             }
-                            trsf.SetTransformation(ax3Targ, ax3Orig);
+                            trsf = trsf.WithTransformation(ax3Targ, ax3Orig);
                         }
                         continue;
                     }
@@ -2132,7 +2132,7 @@ public class ActorRead : ActorOfTransientProcess, IActorRead
         CoordinateSystem ax3Targ = new CoordinateSystem(theTarg.Ax2());
 
         //  ne pas se tromper de sens !
-        trsf.SetTransformation(ax3Targ, ax3Orig);
+        trsf = trsf.WithTransformation(ax3Targ, ax3Orig);
         return trsf.Form() != Identity;
     }
 

@@ -103,7 +103,7 @@ public class LocationGuide : SurfaceLocationLaw
         _origParam1 = 0;    // param pour ACR quand trajectoire
         _origParam2 = 1;    // et guide pas meme sens de parcourt
         _trans = new Matrix3x3();
-        _trans.SetIdentity();
+        _trans = _trans.WithIdentity();
         _withTrans = false;
     }
 
@@ -204,8 +204,7 @@ public class LocationGuide : SurfaceLocationLaw
             // calculer transfo entre triedre et Oxyz
             Direction3D n2 = new Direction3D(n);
             CoordinateSystem n3 = new CoordinateSystem(p, d, n2);
-            Transform3D transfo = new Transform3D();
-            transfo.SetTransformation(n3, rep);
+            Transform3D transfo = new Transform3D().WithTransformation(n3, rep);
 
             // transformer la section
             if (!isconst)
@@ -335,8 +334,8 @@ public class LocationGuide : SurfaceLocationLaw
                 diff = v - _poles2d.Value(2, ii - 1).Y();
             }
 
-            p1.SetCoord(t, w); // on stocke les parametres
-            p2.SetCoord(angle, v);
+            p1 = p1.WithCoord(t, w); // on stocke les parametres
+            p2 = p2.WithCoord(angle, v);
             curAngle = angle;
             _poles2d.SetValue(1, ii, p1);
             _poles2d.SetValue(2, ii, p2);
@@ -435,8 +434,7 @@ public class LocationGuide : SurfaceLocationLaw
     public override void SetTrsf(in Matrix3x3 transfo)
     {
         _trans = transfo;
-        Matrix3x3 aux = new Matrix3x3();
-        aux.SetIdentity();
+        Matrix3x3 aux = new Matrix3x3().WithIdentity();
         aux -= _trans;
         _withTrans = false; // Au cas ou Trans = I
         for (int ii = 1; ii <= 3 && !_withTrans; ii++)
@@ -457,14 +455,14 @@ public class LocationGuide : SurfaceLocationLaw
         Vector3D t = new Vector3D(), n = new Vector3D(), b = new Vector3D();
 
         _curve!.D0(param, out Point3D p);
-        v.SetXYZ(p.XYZ());
+        v = v.WithXYZ(p.XYZ());
         ok = _law.D0(param, ref t, ref n, ref b);
         if (!ok)
         {
             _status = _law.ErrorStatus();
             return ok;
         }
-        m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
 
         if (_withTrans)
         {
@@ -508,12 +506,11 @@ public class LocationGuide : SurfaceLocationLaw
             result.Root(_r);
 
             // rotation
-            Matrix3x3 rot = new Matrix3x3();
-            rot.SetRotation(t, _r[2]);
+            Matrix3x3 rot = new Matrix3x3().WithRotation(t, _r[2]);
             b *= rot;
             n *= rot;
 
-            m.SetCols(n, b, t);
+            m = m.WithCols(n, b, t);
         }
         else
         {
@@ -530,14 +527,14 @@ public class LocationGuide : SurfaceLocationLaw
         bool ok;
 
         _curve!.D0(param, out Point3D p);
-        v.SetXYZ(p.XYZ());
+        v = v.WithXYZ(p.XYZ());
         ok = _law.D0(param, ref t, ref n, ref b);
         if (!ok)
         {
             _status = _law.ErrorStatus();
             return ok;
         }
-        m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
 
         if (_withTrans)
         {
@@ -561,7 +558,7 @@ public class LocationGuide : SurfaceLocationLaw
         bool ok;
 
         _curve!.D1(param, out Point3D p, out dv);
-        v.SetXYZ(p.XYZ());
+        v = v.WithXYZ(p.XYZ());
         ok = _law.D1(param, ref t, ref dt, ref n, ref dn, ref b, ref db);
         if (!ok)
         {
@@ -569,8 +566,8 @@ public class LocationGuide : SurfaceLocationLaw
             return ok;
         }
 
-        m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
-        dm.SetCols(dn.XYZ(), db.XYZ(), dt.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
+        dm = dm.WithCols(dn.XYZ(), db.XYZ(), dt.XYZ());
 
         if (_withTrans)
         {
@@ -596,7 +593,7 @@ public class LocationGuide : SurfaceLocationLaw
         bool ok;
 
         _curve!.D2(param, out Point3D p, out dv, out d2V);
-        v.SetXYZ(p.XYZ());
+        v = v.WithXYZ(p.XYZ());
         ok = _law.D2(param, ref t, ref dt, ref d2T, ref n, ref dn, ref d2N, ref b, ref db, ref d2B);
         if (!ok)
         {
@@ -619,9 +616,9 @@ public class LocationGuide : SurfaceLocationLaw
         } // if_rotation
         else
         {
-            m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
-            dm.SetCols(dn.XYZ(), db.XYZ(), dt.XYZ());
-            d2M.SetCols(d2N.XYZ(), d2B.XYZ(), d2T.XYZ());
+            m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
+            dm = dm.WithCols(dn.XYZ(), db.XYZ(), dt.XYZ());
+            d2M = d2M.WithCols(d2N.XYZ(), d2B.XYZ(), d2T.XYZ());
         }
 
         return true;
@@ -731,15 +728,15 @@ public class LocationGuide : SurfaceLocationLaw
 
         _law.GetAverageLaw(ref v1, ref v2, ref v3);
         // OCCT: the columns are (tangent, normal, binormal) here, but (normal, binormal, tangent) in D0, D1 and D2.
-        am.SetCols(v1.XYZ(), v2.XYZ(), v3.XYZ());
+        am = am.WithCols(v1.XYZ(), v2.XYZ(), v3.XYZ());
 
-        av.SetCoord(0.0, 0.0, 0.0);
+        av = av.WithCoord(0.0, 0.0, 0.0);
         delta = (_trimmed!.LastParameter() - _trimmed.FirstParameter()) / 10;
         u = _trimmed.FirstParameter();
         // OCCT: myNbPts + 1 (22) points with a tenth of the interval as step, so most lie past its end.
         for (ii = 0; ii <= _nbPts; ii++, u += delta)
         {
-            v.SetXYZ(_trimmed.Value(u).XYZ());
+            v = v.WithXYZ(_trimmed.Value(u).XYZ());
             av += v;
         }
         av = av / (_nbPts + 1);

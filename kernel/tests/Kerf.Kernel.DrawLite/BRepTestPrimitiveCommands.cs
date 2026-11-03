@@ -60,9 +60,9 @@ internal static class BRepTestPrimitiveCommands
             string anArgCase = a[anArgIter].ToLowerInvariant();
             if (anArgCase == "-min" && anArgIter + 3 <= n)
             {
-                anOrigin.SetX(theDI.Atof(a[anArgIter + 1]));
-                anOrigin.SetY(theDI.Atof(a[anArgIter + 2]));
-                anOrigin.SetZ(theDI.Atof(a[anArgIter + 3]));
+                anOrigin = anOrigin.WithX(theDI.Atof(a[anArgIter + 1]));
+                anOrigin = anOrigin.WithY(theDI.Atof(a[anArgIter + 2]));
+                anOrigin = anOrigin.WithZ(theDI.Atof(a[anArgIter + 3]));
                 anArgIter += 3;
             }
             else if (anArgCase == "-max" && anArgIter + 3 <= n)
@@ -86,7 +86,7 @@ internal static class BRepTestPrimitiveCommands
                 double aX = theDI.Atof(a[anArgIter + 1]);
                 double anY = theDI.Atof(a[anArgIter + 2]);
                 double aZ = theDI.Atof(a[anArgIter + 3]);
-                aDir.SetCoord(aX, anY, aZ);
+                aDir = aDir.WithCoord(aX, anY, aZ);
                 isAxis = true;
                 anArgIter += 3;
             }
@@ -95,7 +95,7 @@ internal static class BRepTestPrimitiveCommands
                 double aX = theDI.Atof(a[anArgIter + 1]);
                 double anY = theDI.Atof(a[anArgIter + 2]);
                 double aZ = theDI.Atof(a[anArgIter + 3]);
-                aXDir.SetCoord(aX, anY, aZ);
+                aXDir = aXDir.WithCoord(aX, anY, aZ);
                 isAxis = true;
                 anArgIter += 3;
             }
@@ -115,9 +115,9 @@ internal static class BRepTestPrimitiveCommands
 
                 if (aCountReal == 6)
                 {
-                    anOrigin.SetX(theDI.Atof(a[anArgIter]));
-                    anOrigin.SetY(theDI.Atof(a[anArgIter + 1]));
-                    anOrigin.SetZ(theDI.Atof(a[anArgIter + 2]));
+                    anOrigin = anOrigin.WithX(theDI.Atof(a[anArgIter]));
+                    anOrigin = anOrigin.WithY(theDI.Atof(a[anArgIter + 1]));
+                    anOrigin = anOrigin.WithZ(theDI.Atof(a[anArgIter + 2]));
                     aParams.SetX(theDI.Atof(a[anArgIter + 3]));
                     aParams.SetY(theDI.Atof(a[anArgIter + 4]));
                     aParams.SetZ(theDI.Atof(a[anArgIter + 5]));

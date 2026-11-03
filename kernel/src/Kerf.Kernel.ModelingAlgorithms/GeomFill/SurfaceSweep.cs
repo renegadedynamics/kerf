@@ -261,7 +261,7 @@ public sealed class SurfaceSweep
                     _cError.SetValue(1, 1, 0.0);
                     _cError.SetValue(2, 1, 0.0);
 
-                    p.SetCoord(bSplSurf.UKnot(bSplSurf.UKnotCount), 0);
+                    p = p.WithCoord(bSplSurf.UKnot(bSplSurf.UKnotCount), 0);
                     LineCurve2D lc2 = new LineCurve2D(p, d);
                     TrimmedCurve2D tc2 = new TrimmedCurve2D(lc2, 0, bSplSurf.VKnot(bSplSurf.VKnotCount));
 
@@ -407,10 +407,10 @@ public sealed class SurfaceSweep
         // Get the first transformation
         loc.D0(first, ref m, ref vBegin);
 
-        gTfBegin.SetVectorialPart(m);
-        gTfBegin.SetTranslationPart(vBegin.XYZ());
+        gTfBegin = gTfBegin.WithVectorialPart(m);
+        gTfBegin = gTfBegin.WithTranslationPart(vBegin.XYZ());
 
-        tfBegin.SetValues(gTfBegin[1, 1],
+        tfBegin = tfBegin.WithValues(gTfBegin[1, 1],
                           gTfBegin[1, 2],
                           gTfBegin[1, 3],
                           gTfBegin[1, 4],
@@ -426,10 +426,10 @@ public sealed class SurfaceSweep
         // Get the last transformation
         loc.D0(last, ref m, ref vEnd);
 
-        gTfEnd.SetVectorialPart(m);
-        gTfEnd.SetTranslationPart(vEnd.XYZ());
+        gTfEnd = gTfEnd.WithVectorialPart(m);
+        gTfEnd = gTfEnd.WithTranslationPart(vEnd.XYZ());
 
-        tfEnd.SetValues(gTfEnd[1, 1],
+        tfEnd = tfEnd.WithValues(gTfEnd[1, 1],
                         gTfEnd[1, 2],
                         gTfEnd[1, 3],
                         gTfEnd[1, 4],
@@ -457,14 +457,14 @@ public sealed class SurfaceSweep
         double uFirst = acFirst.FirstParameter();
         Line3D l = acFirst.Line();
 
-        l.Transform(tfBegin);
+        l = l.Transformed(tfBegin);
 
         // Get and transform the last section
         Curve3D lastSection = surf.VIso(vmax);
         double firstParameter = lastSection.FirstParameter();
         Point3D pntLastSec = lastSection.Value(firstParameter);
 
-        pntLastSec.Transform(tfEnd);
+        pntLastSec = pntLastSec.Transformed(tfEnd);
 
         Point3D pntFirstSec = global::Kerf.Engine.Geometry.ElCLib.Value(uFirst, l);
         Vector3D vecSec = new Vector3D(pntFirstSec, pntLastSec);
@@ -501,14 +501,14 @@ public sealed class SurfaceSweep
             _loc.D0(1, ref m, ref ds);
             _loc.D0(0, ref m, ref v);
             dp = ds - v;
-            dp.Normalize();
+            dp = dp.Normalized();
             GeneralTransform3D tf = new GeneralTransform3D();
             Transform3D tf2 = new Transform3D();
-            tf.SetVectorialPart(m);
-            tf.SetTranslationPart(v.XYZ());
+            tf = tf.WithVectorialPart(m);
+            tf = tf.WithTranslationPart(v.XYZ());
             try
             { // Pas joli mais il n'y as pas d'autre moyens de tester SetValues
-                tf2.SetValues(tf[1, 1],
+                tf2 = tf2.WithValues(tf[1, 1],
                               tf[1, 2],
                               tf[1, 3],
                               tf[1, 4],
@@ -549,9 +549,9 @@ public sealed class SurfaceSweep
                     }
                     //  Modified by skv - Thu Feb  5 11:39:08 2004 OCC5073 End
                     Line3D L = ac.Line();
-                    L.Transform(tf2);
-                    ds.SetXYZ(L.Position().Direction().XYZ());
-                    ds.Normalize();
+                    L = L.Transformed(tf2);
+                    ds = ds.WithXYZ(L.Position().Direction().XYZ());
+                    ds = ds.Normalized();
                     levier = Math.Abs(ds.Dot(dp));
                     _sError = error + levier * Math.Abs(_last - _first);
                     if (_sError <= tol)
@@ -572,10 +572,10 @@ public sealed class SurfaceSweep
                     const double tolProd = 1.0e-6;
 
                     Circle3D c = ac.Circle();
-                    c.Transform(tf2);
+                    c = c.Transformed(tf2);
 
-                    ds.SetXYZ(c.Position().Direction().XYZ());
-                    ds.Normalize();
+                    ds = ds.WithXYZ(c.Position().Direction().XYZ());
+                    ds = ds.Normalized();
                     levier = Math.Abs(ds.CrossMagnitude(dp)) * c.Radius();
                     _sError = levier * Math.Abs(_last - _first);
                     if (_sError <= tolProd)
@@ -712,29 +712,29 @@ public sealed class SurfaceSweep
                 _loc.Rotation(ref centre);
 
                 dp = ds - v;
-                ds.SetXYZ(v.XYZ() - centre.XYZ());
+                ds = ds.WithXYZ(v.XYZ() - centre.XYZ());
                 rotRadius = ds.Magnitude();
                 if (rotRadius > 1.0e-15)
                 {
-                    ds.Normalize();
+                    ds = ds.Normalized();
                 }
                 else
                 {
                     return false; // Pas de KPart, rotation degeneree
                 }
                 dn = ds ^ dp;
-                dn.Normalize();
+                dn = dn.Normalized();
                 dp = dn ^ ds;
-                dp.Normalize();
+                dp = dp.Normalized();
 
                 GeneralTransform3D tf = new GeneralTransform3D();
                 Transform3D tf2 = new Transform3D();
-                tf.SetVectorialPart(m);
-                tf.SetTranslationPart(v.XYZ());
+                tf = tf.WithVectorialPart(m);
+                tf = tf.WithTranslationPart(v.XYZ());
                 // TODO: finding #9 - exception handling is commented out unlike the translation
                 // branch (~600-619). Restoring try/catch caused blend regressions. Needs
                 // investigation to understand why the catch was intentionally disabled.
-                tf2.SetValues(tf[1, 1],
+                tf2 = tf2.WithValues(tf[1, 1],
                               tf[1, 2],
                               tf[1, 3],
                               tf[1, 4],
@@ -760,12 +760,12 @@ public sealed class SurfaceSweep
                     Circle3D c = ac.Circle();
                     double Radius;
                     bool isGoodSide = true;
-                    c.Transform(tf2);
+                    c = c.Transformed(tf2);
                     Vector3D dc = new Vector3D();
                     // On calcul le centre eventuel
-                    dc.SetXYZ(c.Location().XYZ() - centre.XYZ());
-                    centre.ChangeCoord() += (dc.Dot(dn)) * dn.XYZ();
-                    dc.SetXYZ(c.Location().XYZ() - centre.XYZ());
+                    dc = dc.WithXYZ(c.Location().XYZ() - centre.XYZ());
+                    centre = new Point3D(centre.XYZ() + ((dc.Dot(dn)) * dn.XYZ()));
+                    dc = dc.WithXYZ(c.Location().XYZ() - centre.XYZ());
                     Radius = dc.Magnitude(); // grand Rayon du tore
                     if ((Radius > tol) && (dc.Dot(ds) < 0))
                     {
@@ -778,9 +778,8 @@ public sealed class SurfaceSweep
 
                     // On verifie d'abord que le plan de la section est // a
                     // l'axe de rotation
-                    Vector3D nc = new Vector3D();
-                    nc.SetXYZ(c.Position().Direction().XYZ());
-                    nc.Normalize();
+                    Vector3D nc = new Vector3D().WithXYZ(c.Position().Direction().XYZ());
+                    nc = nc.Normalized();
                     error = Math.Abs(nc.Dot(dn));
                     // Puis on evalue l'erreur commise sur la section,
                     // en pivotant son plan ( pour contenir l'axe de rotation)
@@ -795,7 +794,7 @@ public sealed class SurfaceSweep
                             // (2.1.a) Sphere
                             double f = uFirst, l = uLast, aRadius = 0.0;
                             _sError = error;
-                            centre.BaryCenter(1.0, c.Location(), 1.0);
+                            centre = centre.BaryCentered(1.0, c.Location(), 1.0);
                             CoordinateSystem axisOfSphere = new CoordinateSystem(centre, new Direction3D(dn), new Direction3D(ds));
                             aRadius = c.Radius();
                             Sphere theSphere = new Sphere(axisOfSphere, aRadius);
@@ -896,9 +895,8 @@ public sealed class SurfaceSweep
                 if ((sectionType == Line) && isTrsf)
                 {
                     Line3D L = ac.Line();
-                    L.Transform(tf2);
-                    Vector3D dl = new Vector3D();
-                    dl.SetXYZ(L.Direction().XYZ());
+                    L = L.Transformed(tf2);
+                    Vector3D dl = new Vector3D().WithXYZ(L.Direction().XYZ());
                     levier = Max(Math.Abs(ac.FirstParameter()), ac.LastParameter());
                     // si la line est ortogonale au cercle de rotation
                     _sError = error + levier * Math.Abs(dl.Dot(dp));
@@ -916,7 +914,7 @@ public sealed class SurfaceSweep
                         trans = dn;
                         trans *= dn.Dot(o1O2);
                         centreOfSurf = centre.Translated(trans);
-                        ds.SetXYZ(L.Location().XYZ() - centreOfSurf.XYZ());
+                        ds = ds.WithXYZ(L.Location().XYZ() - centreOfSurf.XYZ());
 
                         error = _sError;
                         error += (dl.XYZ()).CrossMagnitude(dn.XYZ()) * levier;
@@ -929,7 +927,7 @@ public sealed class SurfaceSweep
                             CoordinateSystem axis = new CoordinateSystem(centreOfSurf, dir.Direction());
                             if (ds.SquareMagnitude() > Constants.Resolution())
                             {
-                                axis.SetXDirection(new Direction3D(ds));
+                                axis = axis.WithXDirection(new Direction3D(ds));
                             }
                             s = new CylindricalSurface(axis, L.Distance(centreOfSurf));
                             ok = true;

@@ -232,12 +232,12 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
             // leurs poids respectifs
             if (withderiv)
             {
-                tabAppV2d[nbPoles2d + j].SetCoord(tabDW[j], 0.0);
+                tabAppV2d[nbPoles2d + j] = tabAppV2d[nbPoles2d + j].WithCoord(tabDW[j], 0.0);
                 newDv.SetLinearForm(tabDW[j], tabAppP[j].XYZ(), tabW[j], tabAppV[j].XYZ());
-                tabAppV[j].SetXYZ(newDv);
+                tabAppV[j] = tabAppV[j].WithXYZ(newDv);
             }
-            tabAppP[j].SetXYZ(tabAppP[j].XYZ() * tabW[j]);
-            tabAppP2d[nbPoles2d + j].SetCoord(tabW[j], 0.0);
+            tabAppP[j] = tabAppP[j].WithXYZ(tabAppP[j].XYZ() * tabW[j]);
+            tabAppP2d[nbPoles2d + j] = tabAppP2d[nbPoles2d + j].WithCoord(tabW[j], 0.0);
         }
 
         if (withderiv)
@@ -265,8 +265,8 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
                 {
                     // pour les courbes rationnelles il faut multiplier les poles par
                     // leurs poids respectifs
-                    tabAppP[j].SetXYZ(tabAppP[j].XYZ() * tabW[j]);
-                    tabAppP2d[nbPoles2d + j].SetCoord(tabW[j], 0.0);
+                    tabAppP[j] = tabAppP[j].WithXYZ(tabAppP[j].XYZ() * tabW[j]);
+                    tabAppP2d[nbPoles2d + j] = tabAppP2d[nbPoles2d + j].WithCoord(tabW[j], 0.0);
                 }
                 multP = new MultiPointConstraint(tabAppP, tabAppP2d);
                 multL.SetValue(i, multP);
@@ -294,12 +294,12 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
                     // leurs poids respectifs
                     if (withderiv)
                     {
-                        tabAppV2d[nbPoles2d + j].SetCoord(tabDW[j], 0.0);
+                        tabAppV2d[nbPoles2d + j] = tabAppV2d[nbPoles2d + j].WithCoord(tabDW[j], 0.0);
                         newDv.SetLinearForm(tabDW[j], tabAppP[j].XYZ(), tabW[j], tabAppV[j].XYZ());
-                        tabAppV[j].SetXYZ(newDv);
+                        tabAppV[j] = tabAppV[j].WithXYZ(newDv);
                     }
-                    tabAppP[j].SetXYZ(tabAppP[j].XYZ() * tabW[j]);
-                    tabAppP2d[nbPoles2d + j].SetCoord(tabW[j], 0.0);
+                    tabAppP[j] = tabAppP[j].WithXYZ(tabAppP[j].XYZ() * tabW[j]);
+                    tabAppP2d[nbPoles2d + j] = tabAppP2d[nbPoles2d + j].WithCoord(tabW[j], 0.0);
                 }
                 if (withderiv)
                 {
@@ -334,12 +334,12 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
             // leurs poids respectifs
             if (withderiv)
             {
-                tabAppV2d[nbPoles2d + j].SetCoord(tabDW[j], 0.0);
+                tabAppV2d[nbPoles2d + j] = tabAppV2d[nbPoles2d + j].WithCoord(tabDW[j], 0.0);
                 newDv.SetLinearForm(tabDW[j], tabAppP[j].XYZ(), tabW[j], tabAppV[j].XYZ());
-                tabAppV[j].SetXYZ(newDv);
+                tabAppV[j] = tabAppV[j].WithXYZ(newDv);
             }
-            tabAppP[j].SetXYZ(tabAppP[j].XYZ() * tabW[j]);
-            tabAppP2d[nbPoles2d + j].SetCoord(tabW[j], 0.0);
+            tabAppP[j] = tabAppP[j].WithXYZ(tabAppP[j].XYZ() * tabW[j]);
+            tabAppP2d[nbPoles2d + j] = tabAppP2d[nbPoles2d + j].WithCoord(tabW[j], 0.0);
         }
 
         if (withderiv)
@@ -543,7 +543,7 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
             {
                 // pour les courbes rationnelles il faut maintenant diviser
                 // les poles par leurs poids respectifs
-                _tabPoles[j, k].SetXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
+                _tabPoles[j, k] = _tabPoles[j, k].WithXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
                 double weight = newtabP2d.Value(k).X();
                 if (weight < Constants.Resolution())
                 {
@@ -822,11 +822,11 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
                 for (j = 1; j <= nbPoles2d; j++)
                 {
                     tabP2d[j].Coord(out x, out y);
-                    tabAppP2d[j].SetCoord(dx2d[j] * x + x2d[j], dy2d[j] * y + y2d[j]);
+                    tabAppP2d[j] = tabAppP2d[j].WithCoord(dx2d[j] * x + x2d[j], dy2d[j] * y + y2d[j]);
                     if (withderiv)
                     {
                         tabV2d[j].Coord(out x, out y);
-                        tabAppV2d[j].SetCoord(dx2d[j] * x, dy2d[j] * y);
+                        tabAppV2d[j] = tabAppV2d[j].WithCoord(dx2d[j] * x, dy2d[j] * y);
                     }
                 }
                 for (j = 1; j <= nbUPoles; j++)
@@ -835,14 +835,14 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
                     // leurs poids respectifs
                     if (withderiv)
                     {
-                        tabAppV2d[nbPoles2d + j].SetCoord(tabDW[j], 0.0);
+                        tabAppV2d[nbPoles2d + j] = tabAppV2d[nbPoles2d + j].WithCoord(tabDW[j], 0.0);
                         newDv.SetLinearForm(tabDW[j], tabAppP[j].XYZ(), tabW[j], tabAppV[j].XYZ());
-                        tabAppV[j].SetCoord(dx * newDv.X(), dy * newDv.Y(), dz * newDv.Z());
+                        tabAppV[j] = tabAppV[j].WithCoord(dx * newDv.X(), dy * newDv.Y(), dz * newDv.Z());
                     }
-                    tabAppP[j].SetXYZ(tabAppP[j].XYZ() * tabW[j]);
-                    tabAppP2d[nbPoles2d + j].SetCoord(tabW[j], 0.0);
+                    tabAppP[j] = tabAppP[j].WithXYZ(tabAppP[j].XYZ() * tabW[j]);
+                    tabAppP2d[nbPoles2d + j] = tabAppP2d[nbPoles2d + j].WithCoord(tabW[j], 0.0);
                     tabAppP[j].Coord(out x, out y, out z);
-                    tabAppP[j].SetCoord(dx * x + X, dy * y + Y, dz * z + Z);
+                    tabAppP[j] = tabAppP[j].WithCoord(dx * x + X, dy * y + Y, dz * z + Z);
                 }
                 if (withderiv)
                 {
@@ -996,7 +996,7 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
             {
                 // pour les courbes rationnelles il faut maintenant diviser
                 // les poles par leurs poids respectifs
-                _tabPoles[j, k].SetXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
+                _tabPoles[j, k] = _tabPoles[j, k].WithXYZ(newtabP[k].XYZ() / newtabP2d.Value(k).X());
                 double weight = newtabP2d.Value(k).X();
                 if (weight < Constants.Resolution())
                 {

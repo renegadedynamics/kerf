@@ -161,12 +161,12 @@ public static class GeomLProp
             d2 = clp2.D1();
             if (r1)
             {
-                d1.Reverse();
+                d1 = d1.Reversed();
             }
 
             if (r2)
             {
-                d2.Reverse();
+                d2 = d2.Reversed();
             }
 
             if (d1.IsEqual(d2, tl, ta))
@@ -179,12 +179,12 @@ public static class GeomLProp
                 clp2.Tangent(out dir2);
                 if (r1)
                 {
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                 }
 
                 if (r2)
                 {
-                    dir2.Reverse();
+                    dir2 = dir2.Reversed();
                 }
 
                 if (dir1.IsEqual(dir2, ta))

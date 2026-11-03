@@ -163,7 +163,7 @@ public sealed class OffsetWire
                 Transform3D t = new();
                 Vector3D trans = new(nor.Direction());
                 trans = alt * trans;
-                t.SetTranslation(trans);
+                t = t.WithTranslation(trans);
                 myShape.Move(new Placement(t));
             }
 
@@ -532,8 +532,7 @@ public sealed class OffsetWire
         {
             ALT = -alt;
         }
-        Transform3D t = new();
-        t.SetTranslation(new Vector3D(0.0, 0.0, ALT));
+        Transform3D t = new Transform3D().WithTranslation(new Vector3D(0.0, 0.0, ALT));
         Placement l = new(t);
 
         for (Explorer exp = new(spine, ShapeType.Wire); exp.More(); exp.Next())
@@ -1880,7 +1879,7 @@ public sealed class OffsetWire
         if (e.Orientation() == Forward)
         {
             gc.D1(l, out p, out dx);
-            dx.Reverse();
+            dx = dx.Reversed();
         }
         else
         {
@@ -2323,7 +2322,7 @@ public sealed class OffsetWire
     {
         Point3D pv = Tool.Pnt(aVertex);
         Point2D pv2d = new(), pfirst, plast, pmid;
-        pv2d.SetCoord(pv.X(), pv.Y());
+        pv2d = pv2d.WithCoord(pv.X(), pv.Y());
 
         Curve2D pCurve;
         CurveRepresentation curveRep = ((BrepTEdge)anEdge.TShape()!).Curves().First();
@@ -2405,10 +2404,10 @@ public sealed class OffsetWire
                         {
                             clProps.Tangent(out n);
                             double x = n.Y(), y = -n.X();
-                            n.SetCoord(x, y);
+                            n = n.WithCoord(x, y);
                             if (reverse)
                             {
-                                n.Reverse();
+                                n = n.Reversed();
                             }
                             clProps.CentreOfCurvature(out pc);
                             Vector2D dir = new(p, pc);
@@ -2438,10 +2437,10 @@ public sealed class OffsetWire
                         {
                             clProps.Tangent(out n);
                             double x = n.Y(), y = -n.X();
-                            n.SetCoord(x, y);
+                            n = n.WithCoord(x, y);
                             if (reverse)
                             {
-                                n.Reverse();
+                                n = n.Reversed();
                             }
                             clProps.CentreOfCurvature(out pc);
                             Vector2D dir = new(p, pc);

@@ -84,8 +84,7 @@ public sealed class LocalRevol
         Modifier modif = new();
         if (_isTrans)
         {
-            Transform3D t = new();
-            t.SetRotation(_axis, _angTra);
+            Transform3D t = new Transform3D().WithRotation(_axis, _angTra);
             TrsfModification modbase = new(t);
             modif.Init(theBase);
             modif.Perform(modbase);
@@ -308,8 +307,8 @@ public sealed class LocalRevol
         {
             return false;
         }
-        ci.SetRadius(radius);
-        ci.SetPosition(new Frame3D(prj, dax, new Direction3D(axx)));
+        ci = ci.WithRadius(radius);
+        ci = ci.WithPosition(new Frame3D(prj, dax, new Direction3D(axx)));
         return true;
     }
 }

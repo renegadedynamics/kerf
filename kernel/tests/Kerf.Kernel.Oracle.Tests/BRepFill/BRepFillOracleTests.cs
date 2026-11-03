@@ -196,7 +196,7 @@ public sealed class BRepFillOracleTests(ITestOutputHelper output) : IDisposable
     private static Placement Location(Oracle theO)
     {
         Transform3D aT = Transform3D.Rotation(theO.Ax1(), theO.Angle());
-        aT.SetTranslationPart(theO.Vec());
+        aT = aT.WithTranslationPart(theO.Vec());
         return new Placement(aT);
     }
 

@@ -94,7 +94,7 @@ public static class AlgoTools2D
         // aTau.Normalize();
         if (anEdge.Orientation() == Reversed)
         {
-            aTau.Reverse();
+            aTau = aTau.Reversed();
         }
         return true;
     }
@@ -864,14 +864,14 @@ public static class AlgoTools2D
         { // V Closed
             if (Math.Abs(v - vs2) < tol)
             {
-                v2DT.Reverse();
+                v2DT = v2DT.Reversed();
             }
         }
         else
         { // U Closed
             if (Math.Abs(u - us2) < tol)
             {
-                v2DT.Reverse();
+                v2DT = v2DT.Reversed();
             }
         }
         //

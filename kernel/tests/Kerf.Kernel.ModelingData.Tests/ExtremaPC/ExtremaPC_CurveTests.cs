@@ -717,8 +717,7 @@ public class ExtremaPC_CurveTest
     {
         LineCurve3D aGeomLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0, 10, 0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0, 10, 0));
         TransformedCurve aTransformed = new(aGeomLine, -100.0, 100.0, aTrsf);
 
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
@@ -743,8 +742,7 @@ public class ExtremaPC_CurveTest
         CircleCurve3D aGeomCircle =
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(100, 0, 0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(100, 0, 0));
         TransformedCurve aTransformed = new(aGeomCircle, aTrsf);
 
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
@@ -766,8 +764,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBSpline);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(10, 20, 30));
         TransformedCurve aTransformed = new(aBSpline, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -800,8 +797,7 @@ public class ExtremaPC_CurveTest
         LineCurve3D aGeomLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         // Rotate 90 degrees around Z . line becomes along Y
-        Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 2.0);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 2.0);
         TransformedCurve aTransformed = new(aGeomLine, 0.0, 100.0, aTrsf);
 
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
@@ -827,8 +823,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBSpline);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 2.0);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 2.0);
         TransformedCurve aTransformed = new(aBSpline, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -859,11 +854,9 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBSpline);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 4.0);
-        Transform3D aTransl = new();
-        aTransl.SetTranslation(new Vector3D(5, 5, 0));
-        aTrsf.Multiply(aTransl);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 4.0);
+        Transform3D aTransl = new Transform3D().WithTranslation(new Vector3D(5, 5, 0));
+        aTrsf = aTrsf.Multiplied(aTransl);
 
         TransformedCurve aTransformed = new(aBSpline, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
@@ -900,8 +893,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBSpline);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetScale(new Point3D(0, 0, 0), 2.0);
+        Transform3D aTrsf = new Transform3D().WithScale(new Point3D(0, 0, 0), 2.0);
         TransformedCurve aTransformed = new(aBSpline, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -930,8 +922,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBezier);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetScale(new Point3D(0, 0, 0), 3.0);
+        Transform3D aTrsf = new Transform3D().WithScale(new Point3D(0, 0, 0), 3.0);
         TransformedCurve aTransformed = new(aBezier, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -959,8 +950,7 @@ public class ExtremaPC_CurveTest
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
         OffsetCurve3D anOffsetCurve = new OffsetCurve3D(aCircle, 5.0, new Direction3D(0, 0, 1));
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(50, 0, 0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(50, 0, 0));
         TransformedCurve aTransformed = new(anOffsetCurve, aTrsf);
 
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
@@ -985,8 +975,7 @@ public class ExtremaPC_CurveTest
         CircleCurve3D aGeomCircle =
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 50));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0, 0, 50));
         TransformedCurve aTransformed = new(aGeomCircle, 0.0, M_PI / 2.0, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
 
@@ -1007,8 +996,7 @@ public class ExtremaPC_CurveTest
     {
         LineCurve3D aGeomLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0, 5, 0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0, 5, 0));
         TransformedCurve aTransformed = new(aGeomLine, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed, 0.0, 10.0);
 
@@ -1036,8 +1024,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBSpline);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 10));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0, 0, 10));
         TransformedCurve aTransformed = new(aBSpline, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -1061,8 +1048,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBSpline);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetScale(new Point3D(0, 0, 0), 2.0);
+        Transform3D aTrsf = new Transform3D().WithScale(new Point3D(0, 0, 0), 2.0);
         TransformedCurve aTransformed = new(aBSpline, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -1089,8 +1075,7 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBezier);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(10, 20, 30));
         TransformedCurve aTransformed = new(aBezier, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
 
@@ -1120,11 +1105,9 @@ public class ExtremaPC_CurveTest
         CurveAdaptor anAdaptor = new(aBezier);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(anAdaptor);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 3.0);
-        Transform3D aTransl = new();
-        aTransl.SetTranslation(new Vector3D(10, 0, 0));
-        aTrsf.Multiply(aTransl);
+        Transform3D aTrsf = new Transform3D().WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), M_PI / 3.0);
+        Transform3D aTransl = new Transform3D().WithTranslation(new Vector3D(10, 0, 0));
+        aTrsf = aTrsf.Multiplied(aTransl);
 
         TransformedCurve aTransformed = new(aBezier, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPCTr = new(aTransformed);
@@ -1150,8 +1133,7 @@ public class ExtremaPC_CurveTest
         CircleCurve3D aGeomCircle =
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 5));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0, 0, 5));
         TransformedCurve aTransformed = new(aGeomCircle, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
 
@@ -1170,8 +1152,7 @@ public class ExtremaPC_CurveTest
         CircleCurve3D aGeomCircle =
             new CircleCurve3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 10.0);
 
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0, 0, 5));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0, 0, 5));
         TransformedCurve aTransformed = new(aGeomCircle, aTrsf);
         global::Kerf.Engine.Extrema.PointCurve.Curve anExtPC = new(aTransformed);
 

@@ -78,7 +78,7 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
         Point3D pExt = p;
 
         // -X extremum
-        pExt.SetX(xmin);
+        pExt = pExt.WithX(xmin);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -86,16 +86,16 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
             box.Add(pExt);
         }
         // +X extremum
-        pExt.SetX(xmax);
+        pExt = pExt.WithX(xmax);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
         {
             box.Add(pExt);
         }
-        pExt.SetX(p.X());
+        pExt = pExt.WithX(p.X());
         // -Y extremum
-        pExt.SetY(ymin);
+        pExt = pExt.WithY(ymin);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -103,16 +103,16 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
             box.Add(pExt);
         }
         // +Y extremum
-        pExt.SetY(ymax);
+        pExt = pExt.WithY(ymax);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
         {
             box.Add(pExt);
         }
-        pExt.SetY(p.Y());
+        pExt = pExt.WithY(p.Y());
         // -Z extremum
-        pExt.SetZ(zmin);
+        pExt = pExt.WithZ(zmin);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)
@@ -120,7 +120,7 @@ public sealed class SphereBounds : SurfaceBounds.ISurfaceEvaluator
             box.Add(pExt);
         }
         // +Z extremum
-        pExt.SetZ(zmax);
+        pExt = pExt.WithZ(zmax);
         global::Kerf.Engine.Geometry.ElSLib.SphereParameters(pos, r, pExt, out u, out v);
         u = global::Kerf.Engine.Geometry.ElCLib.InPeriod(u, uMin, umax);
         if (u >= uMin && u <= uMax && v >= vMin && v <= vMax)

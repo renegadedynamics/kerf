@@ -38,7 +38,7 @@ internal static class ComputeDataFilPlnCyl
         CoordinateSystem axCyl = cyl.Position();
         if (or1 == Reversed)
         {
-            norF.Reverse();
+            norF = norF.Reversed();
         }
         Plane3D planOffset = pln.Translated(radius * new Vector3D(norF));
         // Parallel cylinder
@@ -90,7 +90,7 @@ internal static class ComputeDataFilPlnCyl
         // Construction fillet
         if (dirFillet.Dot(spine.Direction()) < 0.0)
         {
-            dirFillet.Reverse();
+            dirFillet = dirFillet.Reversed();
         }
         double uOnCyl, vOnCyl, uOnPln, vOnPln;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(cyl, orFillet, out uOnCyl, out vOnCyl);
@@ -105,19 +105,19 @@ internal static class ComputeDataFilPlnCyl
         {
             xDir = new Vector3D(norF.Reversed());
             otherDir = new Vector3D(orFillet, global::Kerf.Engine.Geometry.ElSLib.Value(uOnCyl, vOnCyl, cyl));
-            otherDir.Normalize();
+            otherDir = otherDir.Normalized();
         }
         else
         {
             otherDir = new Vector3D(norF.Reversed());
             xDir = new Vector3D(orFillet, global::Kerf.Engine.Geometry.ElSLib.Value(uOnCyl, vOnCyl, cyl));
-            xDir.Normalize();
+            xDir = xDir.Normalized();
         }
         CoordinateSystem axFil = new(orFillet, dirFillet, new Direction3D(xDir));
         Vector3D prod = xDir.Crossed(otherDir);
         if (prod.Dot(new Vector3D(dirFillet)) < 0.0)
         {
-            axFil.YReverse();
+            axFil = axFil.YReversed();
         }
         CylindricalSurface fillet = new(axFil, radius);
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(fillet, dStr));
@@ -172,7 +172,7 @@ internal static class ComputeDataFilPlnCyl
         Direction2D dpc = Constants.DY2d();
         if (dirFillet.Dot(axCyl.Direction()) < 0.0)
         {
-            dpc.Reverse();
+            dpc = dpc.Reversed();
         }
         Line2D lin2dCyl = new(pCyl2d, dpc);
         Point3D pOnCyl = global::Kerf.Engine.Geometry.ElSLib.Value(uOnCyl, vOnCyl, cyl);
@@ -229,11 +229,11 @@ internal static class ComputeDataFilPlnCyl
         Direction3D df = dp;
         if (or1 == Reversed)
         {
-            dp.Reverse();
+            dp = dp.Reversed();
         }
         if (ofpl == Reversed)
         {
-            df.Reverse();
+            df = df.Reversed();
         }
         Point3D or = cyl.Location();
         double u, v;
@@ -241,7 +241,7 @@ internal static class ComputeDataFilPlnCyl
         Point2D c2dPln = new(u, v);
         global::Kerf.Engine.Geometry.ElSLib.PlaneD0(u, v, posPl, out or);
         Point3D cPln = or;
-        or.SetCoord(or.X() + radius * dp.X(), or.Y() + radius * dp.Y(), or.Z() + radius * dp.Z());
+        or = or.WithCoord(or.X() + radius * dp.X(), or.Y() + radius * dp.Y(), or.Z() + radius * dp.Z());
         Point3D ptSp;
         Vector3D dSp;
         // Modification for the PtSp found at the wrong side of the sewing edge.
@@ -272,7 +272,7 @@ internal static class ComputeDataFilPlnCyl
         Direction3D dc = new(vu.Crossed(vv));
         if (or2 == Reversed)
         {
-            dc.Reverse();
+            dc = dc.Reversed();
         }
         Direction3D dz = dp;
         double rad, cylrad = cyl.Radius();
@@ -281,7 +281,7 @@ internal static class ComputeDataFilPlnCyl
         {
             if (!plandab)
             {
-                dz.Reverse();
+                dz = dz.Reversed();
             }
             rad = cylrad - radius;
             if (Math.Abs(rad) <= global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -298,14 +298,14 @@ internal static class ComputeDataFilPlnCyl
         {
             if (plandab)
             {
-                dz.Reverse();
+                dz = dz.Reversed();
             }
             rad = cylrad + radius;
         }
         CoordinateSystem filAx3 = new(or, dz, dx);
         if (filAx3.YDirection().Dot(dy) <= 0.0)
         {
-            filAx3.YReverse();
+            filAx3 = filAx3.YReversed();
         }
         if (c1sphere)
         {
@@ -320,7 +320,7 @@ internal static class ComputeDataFilPlnCyl
         // It is checked if the orientation of the fillet is the same as of faces.
         Point3D p = new(), pp;
         Vector3D deru, derv;
-        p.SetCoord(cPln.X() + rad * dx.X(), cPln.Y() + rad * dx.Y(), cPln.Z() + rad * dx.Z());
+        p = p.WithCoord(cPln.X() + rad * dx.X(), cPln.Y() + rad * dx.Y(), cPln.Z() + rad * dx.Z());
         u = 0.0;
         if ((dedans && plandab) || (!dedans && !plandab))
         {
@@ -344,7 +344,7 @@ internal static class ComputeDataFilPlnCyl
             norFil = filAx3.XDirection().Crossed(filAx3.YDirection());
             if (v < 0.0)
             {
-                norFil.Reverse();
+                norFil = norFil.Reversed();
             }
         }
         else
@@ -375,7 +375,7 @@ internal static class ComputeDataFilPlnCyl
             Frame2D ax2dPln = new(c2dPln, new Direction2D(new Vector2D(c2dPln, p2dPln)), d2d);
             Circle2D circ2dPln = new(ax2dPln, rad);
             gCirc2dPln = new CircleCurve2D(circ2dPln);
-            circAx2.SetLocation(cPln);
+            circAx2 = circAx2.WithLocation(cPln);
             Circle3D circPln = new(circAx2, rad);
             gCircPln = new CircleCurve3D(circPln);
         }
@@ -415,7 +415,7 @@ internal static class ComputeDataFilPlnCyl
                                                           gCirc2dPln, gLin2dFil1);
         }
         // The cylindrical face.
-        p.SetCoord(or.X() + cylrad * dx.X(), or.Y() + cylrad * dx.Y(), or.Z() + cylrad * dx.Z());
+        p = p.WithCoord(or.X() + cylrad * dx.X(), or.Y() + cylrad * dx.Y(), or.Z() + cylrad * dx.Z());
         u = 0.0;
         if (dedans)
         {
@@ -432,7 +432,7 @@ internal static class ComputeDataFilPlnCyl
         {
             v = Math.PI;
         }
-        p2dFil.SetCoord(u, v);
+        p2dFil = p2dFil.WithCoord(u, v);
         if (c1sphere)
         {
             global::Kerf.Engine.Geometry.ElSLib.SphereD1(u, v, filAx3, cylrad, out pp, out deru, out derv);
@@ -442,7 +442,7 @@ internal static class ComputeDataFilPlnCyl
             global::Kerf.Engine.Geometry.ElSLib.TorusD1(u, v, filAx3, rad, radius, out pp, out deru, out derv);
         }
         norFil = new Direction3D(deru.Crossed(derv));
-        lin2dFil.SetLocation(p2dFil);
+        lin2dFil = lin2dFil.WithLocation(p2dFil);
         LineCurve2D gLin2dFil2 = new(lin2dFil);
         global::Kerf.Engine.Geometry.ElSLib.Parameters(cyl, p, out u, out v);
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
@@ -468,7 +468,7 @@ internal static class ComputeDataFilPlnCyl
         Direction2D d2dCyl = Constants.DX2d();
         if (deru.Dot(new Vector3D(dy)) < 0.0)
         {
-            d2dCyl.Reverse();
+            d2dCyl = d2dCyl.Reversed();
             if (careaboutsens && Math.Abs(fu - u) < tol)
             {
                 u = lu;
@@ -481,7 +481,7 @@ internal static class ComputeDataFilPlnCyl
         Point2D p2dCyl = new(u, v);
         Line2D lin2dCyl = new(p2dCyl, d2dCyl);
         LineCurve2D gLin2dCyl = new(lin2dCyl);
-        circAx2.SetLocation(or);
+        circAx2 = circAx2.WithLocation(or);
         Circle3D circCyl = new(circAx2, cylrad);
         CircleCurve3D gCircCyl = new(circCyl);
         toreverse = (norFil.Dot(norcyl) <= 0.0);

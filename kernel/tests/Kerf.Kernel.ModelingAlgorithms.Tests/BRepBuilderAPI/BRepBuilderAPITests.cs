@@ -281,7 +281,7 @@ public class BRepBuilderAPITests
         Shape aBox = Box10();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aTrsf = new Transform3D();
-        aTrsf.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 0)), 0.3);
+        aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(0, 1, 0)), 0.3);
         var aT = new Transform(aBox, aTrsf);
         Assert.True(aT.IsDone);
         Shape aR = aT.Shape();
@@ -309,7 +309,7 @@ public class BRepBuilderAPITests
         Shape aBox = Box10();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
         var aTrsf = new Transform3D();
-        aTrsf.SetScale(new Point3D(0, 0, 0), 0.5);
+        aTrsf = aTrsf.WithScale(new Point3D(0, 0, 0), 0.5);
         var aT = new Transform(aTrsf);
         Assert.False(aT.IsDone);
         aT.Perform(aBox);
@@ -468,7 +468,7 @@ public class BRepBuilderAPITests
         Edge aCircle = new MakeEdge(new Circle3D(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 1)).Edge();
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aCircle);
         var aG = new GeneralTransform3D();
-        aG.SetValue(1, 1, 3.0);
+        aG = aG.WithValue(1, 1, 3.0);
         var aGT = new GTransform(aCircle, aG);
         Assert.True(aGT.IsDone);
         Edge anE = ShapeCasts.Edge(aGT.Shape());

@@ -17,6 +17,9 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class Surface : Geometry3D
 {
+    // Results with public fields, written through out parameters across the engine: 10L replaces them (geometry.md,
+    // CurveDerivatives), so KERF0003 is off for them until then.
+#pragma warning disable KERF0003
     /// <summary>Result of D1 evaluation: point and first partial derivatives.</summary>
     public struct ResD1
     {
@@ -50,6 +53,7 @@ public abstract class Surface : Geometry3D
         public Vector3D D3UUV;
         public Vector3D D3UVV;
     }
+#pragma warning restore KERF0003
 
     /// <summary>Reverses the U direction of parametrization in place; the bounds don't change.</summary>
     protected internal abstract void UReverse();

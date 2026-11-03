@@ -14,10 +14,10 @@ public sealed class MakeTranslation2d
     private Transform2D _theTranslation2d = new();
 
     /// <summary>A translation by a vector.</summary>
-    public MakeTranslation2d(in Vector2D vec) => _theTranslation2d.SetTranslation(vec);
+    public MakeTranslation2d(in Vector2D vec) => _theTranslation2d = _theTranslation2d.WithTranslation(vec);
 
     /// <summary>A translation from Point1 to Point2.</summary>
-    public MakeTranslation2d(in Point2D point1, in Point2D point2) => _theTranslation2d.SetTranslation(new Vector2D(point1, point2));
+    public MakeTranslation2d(in Point2D point1, in Point2D point2) => _theTranslation2d = _theTranslation2d.WithTranslation(new Vector2D(point1, point2));
 
     /// <summary>The constructed transformation.</summary>
     public Transform2D Value() => _theTranslation2d;

@@ -272,7 +272,7 @@ public class LocationSet
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out v32);
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out v2);
 
-        t.SetValues(v10, v11, v12, v0, v20, v21, v22, v1, v30, v31, v32, v2);
+        t = t.WithValues(v10, v11, v12, v0, v20, v21, v22, v1, v30, v31, v32, v2);
     }
 
     /// <summary>

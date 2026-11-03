@@ -714,11 +714,11 @@ public class LineConstructor
             Parameters(_hs1!, _hs2!, pmid, out u1, out v1, out u2, out v2);
             AdjustPeriodic(_hs1!, _hs2!, ref u1, ref v1, ref u2, ref v2);
             //
-            p2D.SetCoord(u1, v1);
+            p2D = p2D.WithCoord(u1, v1);
             Containment state = _dom1!.Classify(p2D, tol);
             if (state != global::Kerf.Topology.Containment.Out)
             {
-                p2D.SetCoord(u2, v2);
+                p2D = p2D.WithCoord(u2, v2);
                 state = _dom2!.Classify(p2D, tol);
                 if (state != global::Kerf.Topology.Containment.Out)
                 {

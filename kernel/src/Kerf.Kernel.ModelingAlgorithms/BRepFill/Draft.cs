@@ -90,7 +90,7 @@ public sealed class Draft
 
         // Calculate the Transformation
         CoordinateSystem n = new(new Point3D(bary), d);
-        tf.SetTransformation(n);
+        tf = tf.WithTransformation(n);
         EdgeCurveAdaptor ac = new();
         //  BndLib_Add3dCurve BC;
 
@@ -123,14 +123,14 @@ public sealed class Draft
         wZmax = zmax;
 
         sBox.Get(out xmin, out ymin, out zmin, out xmax, out ymax, out zmax);
-        p.SetCoord((xmin + xmax) / 2, (ymin + ymax) / 2, zmax);
+        p = p.WithCoord((xmin + xmax) / 2, (ymin + ymax) / 2, zmax);
 
         if (zmax < wZmin)
         {
             // Skin in the wrong direction. Invert...
-            d.Reverse();
+            d = d.Reversed();
             l = wZmax - zmin;
-            p.SetZ(zmin);
+            p = p.WithZ(zmin);
         }
         else
         {
@@ -405,7 +405,7 @@ public sealed class Draft
         // surface of stop
         Transform3D inv;
         inv = trsf.Inverted(); // inverted transformation
-        pt.Transform(inv); // coordinate in the absolute reference
+        pt = pt.Transformed(inv); // coordinate in the absolute reference
         PlaneSurface plan = new(pt, _dir);
         surf = new TrimmedSurface(plan, -l, l, -l, l);
 
@@ -453,7 +453,7 @@ public sealed class Draft
         double ang = _dir.Angle(bn);
         if (ang > M_PI / 2)
         {
-            d.Reverse();
+            d = d.Reversed();
         }
         LineCurve3D L = new(p, new Direction3D(d));
 
@@ -503,7 +503,7 @@ public sealed class Draft
             V = v1.Crossed(v2);
             if (f.Orientation() == Reversed)
             {
-                V.Reverse();
+                V = V.Reversed();
             }
             if (V.Magnitude() > 1.0e-10)
             {

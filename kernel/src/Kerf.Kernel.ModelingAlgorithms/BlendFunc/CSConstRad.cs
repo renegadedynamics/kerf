@@ -147,12 +147,12 @@ public class CSConstRad : CSFunction
             _prmc = sol[3];
             _surf.D1(sol[1], sol[2], out _pts, out Vector3D d1u1, out Vector3D d1v1);
             _curv.D1(sol[3], out _ptc, out Vector3D d1);
-            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
-            temp.SetXYZ(_pts.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
             secmember[1] = _normtg - dnplan.Dot(temp);
 
-            temp.SetXYZ(_ptc.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_ptc.XYZ() - _ptgui.XYZ());
             secmember[2] = _normtg - dnplan.Dot(temp);
 
             ns = d1u1.Crossed(d1v1);
@@ -161,11 +161,11 @@ public class CSConstRad : CSFunction
             norm = ncrossns.Magnitude();
 
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-            temp.SetLinearForm(_ray / norm * (dnplan.Dot(ns) - grosterme * ndotns), _nplan, _ray * ndotns / norm, dnplan,
+            temp = Vector3D.LinearForm(_ray / norm * (dnplan.Dot(ns) - grosterme * ndotns), _nplan, _ray * ndotns / norm, dnplan,
                                _ray * grosterme / norm, ns);
 
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-            resul.SetLinearForm(_ray, ns, new Vector3D(_ptc, _pts));
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            resul = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptc, _pts));
 
             secmember[3] = -2.0 * (temp.Dot(resul));
 
@@ -174,9 +174,9 @@ public class CSConstRad : CSFunction
             {
                 resol.Solve(secmember);
 
-                _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+                _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
                 _tgc = secmember[3] * d1;
-                _tg2d.SetCoord(secmember[1], secmember[2]);
+                _tg2d = _tg2d.WithCoord(secmember[1], secmember[2]);
                 _istangent = false;
             }
             else
@@ -228,8 +228,8 @@ public class CSConstRad : CSFunction
 
         Vector3D vref = new Vector3D(), ns = d1u1.Crossed(d1v1);
         double norm = _nplan.Crossed(ns).Magnitude();
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
-        vref.SetLinearForm(_ray, ns, new Vector3D(_ptc, _pts));
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        vref = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptc, _pts));
 
         f[3] = vref.SquareMagnitude() - _ray * _ray;
 
@@ -260,14 +260,14 @@ public class CSConstRad : CSFunction
         norm = ncrossns.Magnitude();
         ndotns = _nplan.Dot(ns);
 
-        vref.SetLinearForm(ndotns, _nplan, -1.0, ns);
-        vref.Divide(norm);
-        vref.SetLinearForm(_ray, vref, new Vector3D(_ptc, _pts));
+        vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
+        vref = vref.Divided(norm);
+        vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptc, _pts));
 
         // Derivee par rapport a u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1u1);
 
         d[3, 1] = 2.0 * (resul.Dot(vref));
@@ -275,7 +275,7 @@ public class CSConstRad : CSFunction
         // Derivee par rapport a v1
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1v1);
 
         d[3, 2] = 2.0 * (resul.Dot(vref));
@@ -312,16 +312,16 @@ public class CSConstRad : CSFunction
         norm = ncrossns.Magnitude();
         ndotns = _nplan.Dot(ns);
 
-        vref.SetLinearForm(ndotns, _nplan, -1.0, ns);
-        vref.Divide(norm);
-        vref.SetLinearForm(_ray, vref, new Vector3D(_ptc, _pts));
+        vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
+        vref = vref.Divided(norm);
+        vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptc, _pts));
 
         f[3] = vref.SquareMagnitude() - _ray * _ray;
 
         // Derivee par rapport a u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1u1);
 
         d[3, 1] = 2.0 * (resul.Dot(vref));
@@ -329,7 +329,7 @@ public class CSConstRad : CSFunction
         // Derivee par rapport a v1
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1v1);
 
         d[3, 2] = 2.0 * (resul.Dot(vref));
@@ -405,12 +405,12 @@ public class CSConstRad : CSFunction
         nmS = ns = d1u.Crossed(d1v);
 
         double norm = _nplan.Crossed(ns).Magnitude();
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
         Point3D center = new Point3D(bid.XYZ() + _ray * ns.XYZ());
         tgS = _nplan.Crossed(new Vector3D(center, bid));
         if (_choix % 2 == 1)
         {
-            tgS.Reverse();
+            tgS = tgS.Reversed();
         }
     }
 
@@ -429,16 +429,16 @@ public class CSConstRad : CSFunction
 
         ns = d1u1.Crossed(d1v1);
         norm = _nplan.Crossed(ns).Magnitude();
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
-        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
-        c.SetRadius(Math.Abs(_ray));
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        c = c.WithRadius(Math.Abs(_ray));
         if (_choix % 2 == 0)
         {
-            c.SetPosition(new Frame3D(center, new Direction3D(_nplan), new Direction3D(ns)));
+            c = c.WithPosition(new Frame3D(center, new Direction3D(_nplan), new Direction3D(ns)));
         }
         else
         {
-            c.SetPosition(new Frame3D(center, new Direction3D(_nplan.Reversed()), new Direction3D(ns)));
+            c = c.WithPosition(new Frame3D(center, new Direction3D(_nplan.Reversed()), new Direction3D(ns)));
         }
 
         pdeb = 0.0;
@@ -484,7 +484,7 @@ public class CSConstRad : CSFunction
         _guide.D2(param, out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude();
         _nplan = _d1gui.Normalized();
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         sol[1] = u;
         sol[2] = v;
@@ -495,10 +495,10 @@ public class CSConstRad : CSFunction
         _surf.D2(u, v, out _pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1, out Vector3D d2uv1);
         _curv.D1(w, out _ptc, out Vector3D d1);
 
-        temp.SetXYZ(_pts.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
         secmember[1] = _normtg - dnplan.Dot(temp);
 
-        temp.SetXYZ(_ptc.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_ptc.XYZ() - _ptgui.XYZ());
         secmember[2] = _normtg - dnplan.Dot(temp);
 
         ns = d1u1.Crossed(d1v1);
@@ -509,11 +509,11 @@ public class CSConstRad : CSFunction
         // Derivee de n1 par rapport a w
 
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-        dnw.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+        dnw = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                           grosterme / norm, ns);
 
-        temp.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-        resul.SetLinearForm(_ray, temp, new Vector3D(_ptc, _pts));
+        temp = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+        resul = Vector3D.LinearForm(_ray, temp, new Vector3D(_ptc, _pts));
         secmember[3] = -2.0 * _ray * (dnw.Dot(resul)); // jag 950105 il manquait ray
 
         Gauss resol = new(gradsol);
@@ -521,34 +521,34 @@ public class CSConstRad : CSFunction
         {
             resol.Solve(secmember);
 
-            _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
             _tgc = secmember[3] * d1;
 
             // Derivee de n1 par rapport a u1
             temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
             grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulu.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+            resulu = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
                                  -1.0 / norm, temp);
 
             // Derivee de n1 par rapport a v1
             temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
             grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulv.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+            resulv = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
                                  -1.0 / norm, temp);
 
-            dnw.SetLinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            dnw = Vector3D.LinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
 
-            dn2w.SetLinearForm(_ray, dnw, -1.0, _tgc, _tgs);
+            dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgc, _tgs);
             norm = resul.Magnitude();
-            dn2w.Divide(norm);
+            dn2w = dn2w.Divided(norm);
             ns2 = -resul.Normalized();
-            dn2w.SetLinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
+            dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
 
             if (_choix % 2 != 0)
             {
-                _nplan.Reverse();
-                dnplan.Reverse();
+                _nplan = _nplan.Reversed();
+                dnplan = dnplan.Reversed();
             }
 
             tabP[lowp] = _pts;
@@ -577,14 +577,13 @@ public class CSConstRad : CSFunction
                 lambda = (double)(i - 1) / (double)(nbPoint - 1);
                 cosa = Math.Cos(lambda * angle);
                 sina = Math.Sin(lambda * angle);
-                tabP[lowp + i - 1]
-                    .SetXYZ(_pts.XYZ() + Math.Abs(_ray) * ((cosa - 1) * ns.XYZ() + sina * ncrn.XYZ()));
+                tabP[lowp + i - 1] = tabP[lowp + i - 1].WithXYZ(_pts.XYZ() + Math.Abs(_ray) * ((cosa - 1) * ns.XYZ() + sina * ncrn.XYZ()));
 
-                temp.SetLinearForm(-sina, ns, cosa, ncrn);
-                temp.Multiply(lambda * dangle);
-                temp.Add(((cosa - 1) * dnw).Added(sina * dncrn));
-                temp.Multiply(Math.Abs(_ray));
-                temp.Add(_tgs);
+                temp = Vector3D.LinearForm(-sina, ns, cosa, ncrn);
+                temp = temp.Multiplied(lambda * dangle);
+                temp = temp.Added(((cosa - 1) * dnw).Added(sina * dncrn));
+                temp = temp.Multiplied(Math.Abs(_ray));
+                temp = temp.Added(_tgs);
                 tabV[lowv + i - 1] = temp;
             }
 
@@ -675,7 +674,7 @@ public class CSConstRad : CSFunction
         _surf.D1(u1, v1, out _pts, out Vector3D d1u1, out Vector3D d1v1);
         _ptc = _curv.Value(w);
 
-        poles2d[poles2d.Lower()].SetCoord(u1, v1);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(u1, v1);
 
         // Cas Linear
         if (_sShape == SectionShape.Linear)
@@ -690,14 +689,14 @@ public class CSConstRad : CSFunction
         ns = d1u1.Crossed(d1v1);
         norm = _nplan.Crossed(ns).Magnitude();
 
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
 
-        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
 
         ns2 = new Vector3D(center, _ptc).Normalized();
         if (_choix % 2 != 0)
         {
-            _nplan.Reverse();
+            _nplan = _nplan.Reversed();
         }
 
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _pts, _ptc, Math.Abs(_ray), center, poles, weights);
@@ -726,7 +725,7 @@ public class CSConstRad : CSFunction
         _guide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude();
         _nplan = _d1gui.Normalized();
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         p.ParametersOnS(out sol[1], out sol[2]);
         sol[3] = p.ParameterOnC();
@@ -737,10 +736,10 @@ public class CSConstRad : CSFunction
                 out Vector3D d2uv1);
         _curv.D1(sol[3], out _ptc, out Vector3D d1);
 
-        temp.SetXYZ(_pts.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
         secmember[1] = _normtg - dnplan.Dot(temp);
 
-        temp.SetXYZ(_ptc.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_ptc.XYZ() - _ptgui.XYZ());
         secmember[2] = _normtg - dnplan.Dot(temp);
 
         ns = d1u1.Crossed(d1v1);
@@ -751,11 +750,11 @@ public class CSConstRad : CSFunction
         // Derivee de n1 par rapport a w
 
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-        dnw.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+        dnw = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                           grosterme / norm, ns);
 
-        temp.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-        resul.SetLinearForm(_ray, temp, new Vector3D(_ptc, _pts));
+        temp = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+        resul = Vector3D.LinearForm(_ray, temp, new Vector3D(_ptc, _pts));
         secmember[3] = -2.0 * _ray * (dnw.Dot(resul)); // jag 950105 il manquait ray
 
         Gauss resol = new(gradsol);
@@ -764,45 +763,45 @@ public class CSConstRad : CSFunction
         {
             resol.Solve(secmember);
 
-            _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
             _tgc = secmember[3] * d1;
 
             // Derivee de n1 par rapport a u1
             temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
             grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulu.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+            resulu = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
                                  -1.0 / norm, temp);
 
             // Derivee de n1 par rapport a v1
             temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
             grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulv.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+            resulv = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
                                  -1.0 / norm, temp);
 
-            dnw.SetLinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            dnw = Vector3D.LinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
 
-            dn2w.SetLinearForm(_ray, dnw, -1.0, _tgc, _tgs);
+            dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgc, _tgs);
             norm = resul.Magnitude();
-            dn2w.Divide(norm);
+            dn2w = dn2w.Divided(norm);
             ns2 = -resul.Normalized();
-            dn2w.SetLinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
+            dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
 
             istgt = false;
         }
         else
         {
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
             ns2 = -resul.Normalized();
             istgt = true;
         }
 
         // Les poles 2d
 
-        poles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
         if (!istgt)
         {
-            dPoles2d[poles2d.Lower()].SetCoord(secmember[1], secmember[2]);
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(secmember[1], secmember[2]);
         }
 
         // Cas Linear
@@ -824,7 +823,7 @@ public class CSConstRad : CSFunction
         }
 
         // Cas du cercle
-        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
         if (!istgt)
         {
             tgct = _tgs.Added(_ray * dnw);
@@ -832,8 +831,8 @@ public class CSConstRad : CSFunction
 
         if (_choix % 2 != 0)
         {
-            _nplan.Reverse();
-            dnplan.Reverse();
+            _nplan = _nplan.Reversed();
+            dnplan = dnplan.Reversed();
         }
 
         if (!istgt)

@@ -455,7 +455,7 @@ internal static class GeomliteTestCommands
                 index2 = G2.PoleCount - 1;
             }
             G2.D0(u, out Point3D p);
-            p.SetCoord(p.X() + dx, p.Y() + dy, p.Z() + dz);
+            p = p.WithCoord(p.X() + dx, p.Y() + dy, p.Z() + dz);
             DrawTrSurf.Set(theDI, a[1], G2.PointMoved(u, p, index1, index2, out _, out _));
             return 0;
         }
@@ -469,7 +469,7 @@ internal static class GeomliteTestCommands
                 index2 = G4.PoleCount - 1;
             }
             G4.D0(u, out Point2D p);
-            p.SetCoord(p.X() + dx, p.Y() + dy);
+            p = p.WithCoord(p.X() + dx, p.Y() + dy);
             DrawTrSurf.Set(theDI, a[1], G4.PointMoved(u, p, index1, index2, out _, out _));
             return 0;
         }

@@ -38,13 +38,12 @@ public class gp_Pnt2dTests
     [Fact]
     public void SetCoord()
     {
-        Point2D aPnt = new();
-        aPnt.SetX(10.0);
-        aPnt.SetY(20.0);
+        Point2D aPnt = new Point2D().WithX(10.0);
+        aPnt = aPnt.WithY(20.0);
         Assert.Equal(10.0, aPnt.X());
         Assert.Equal(20.0, aPnt.Y());
 
-        aPnt.SetCoord(7.0, 8.0);
+        aPnt = aPnt.WithCoord(7.0, 8.0);
         Assert.Equal(7.0, aPnt.X());
         Assert.Equal(8.0, aPnt.Y());
     }
@@ -131,8 +130,7 @@ public class gp_Pnt2dTests
     public void Transformed()
     {
         Point2D aPnt = new(1.0, 0.0);
-        Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(0.0, 5.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(0.0, 5.0));
         Point2D aResult = aPnt.Transformed(aTrsf);
         Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(5.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -151,10 +149,8 @@ public class gp_Pnt2dTests
         Point2D aP1 = new(1.0, 0.0);
         Point2D aP2 = new(1.0, 2.0);
 
-        Transform2D aM1 = new();
-        aM1.SetMirror(aMirrorAxis);
-        Transform2D aM2 = new();
-        aM2.SetMirror(aMirrorAxis);
+        Transform2D aM1 = new Transform2D().WithMirror(aMirrorAxis);
+        Transform2D aM2 = new Transform2D().WithMirror(aMirrorAxis);
 
         // Applying M1 to p1 should give p2
         Point2D aP1MirrorM1 = aP1.Transformed(aM1);

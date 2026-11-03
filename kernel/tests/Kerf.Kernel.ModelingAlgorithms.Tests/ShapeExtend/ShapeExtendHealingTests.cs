@@ -165,7 +165,7 @@ public class ShapeExtendHealingTests
         Assert.Same(aPatch, aSurf.Patch(1, 1));
 
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 1));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 1));
         var aMoved = (CompositeSurface)aSurf.Transformed(aT);
         Assert.Equal(1.0, aMoved.Value(new Point2D(5, 1)).Z());
         Assert.Equal(0.0, aSurf.Value(new Point2D(5, 1)).Z());

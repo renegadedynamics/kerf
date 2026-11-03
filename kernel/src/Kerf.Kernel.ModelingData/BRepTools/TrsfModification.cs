@@ -65,9 +65,9 @@ public class TrsfModification : Modification
         revFace = _trsf.IsNegative;
 
         Transform3D lt = l.Transformation();
-        lt.Invert();
-        lt.Multiply(_trsf);
-        lt.Multiply(l.Transformation());
+        lt = lt.Inverted();
+        lt = lt.Multiplied(_trsf);
+        lt = lt.Multiplied(l.Transformation());
 
         s = (Surface)s.Transformed(lt);
 
@@ -103,7 +103,7 @@ public class TrsfModification : Modification
         for (int ind = 1; ind <= triangulation.NodeCount; ++ind)
         {
             Point3D p = triangulation.Node(ind);
-            p.Transform(trsf);
+            p = p.Transformed(trsf);
             triangulation.SetNode(ind, p);
         }
         // modify 2D nodes
@@ -115,7 +115,7 @@ public class TrsfModification : Modification
                 Point2D p2d = triangulation.UVNode(ind);
                 double u = p2d.X(), v = p2d.Y();
                 surf.TransformParameters(ref u, ref v, _trsf);
-                p2d.SetCoord(u, v);
+                p2d = p2d.WithCoord(u, v);
                 triangulation.SetUVNode(ind, p2d);
             }
         }
@@ -136,7 +136,7 @@ public class TrsfModification : Modification
             for (int ind = 1; ind <= triangulation.NodeCount; ++ind)
             {
                 Direction3D normal = triangulation.Normal(ind);
-                normal.Transform(trsf);
+                normal = normal.Transformed(trsf);
                 triangulation.SetNormal(ind, normal);
             }
         }
@@ -171,7 +171,7 @@ public class TrsfModification : Modification
         for (int id = nodesArray.Lower(); id <= nodesArray.Upper(); ++id)
         {
             // Applying the transformation to each node of polygon
-            nodesArray[id].Transform(trsf);
+            nodesArray[id] = nodesArray[id].Transformed(trsf);
         }
         // transform the parametrization
         if (p.HasParameters)
@@ -233,7 +233,7 @@ public class TrsfModification : Modification
                     Point2D p2d = c2d.Value(param);
                     Xy xy = p2d.XY();
                     gTrsf.Transforms(ref xy);
-                    p2d.SetXY(xy);
+                    p2d = p2d.WithXY(xy);
                     GeometryLibraryTool.Parameter(newC2d, p2d, p.Deflection(), out param);
                     p.SetParameter(ind, param);
                 }
@@ -252,9 +252,9 @@ public class TrsfModification : Modification
         tol *= Math.Abs(_trsf.ScaleFactor());
 
         Transform3D lt = l.Transformation();
-        lt.Invert();
-        lt.Multiply(_trsf);
-        lt.Multiply(l.Transformation());
+        lt = lt.Inverted();
+        lt = lt.Multiplied(_trsf);
+        lt = lt.Multiplied(l.Transformation());
 
         if (c is not null)
         {
@@ -270,7 +270,7 @@ public class TrsfModification : Modification
         p = Tool.Pnt(v);
         tol = Tool.Tolerance(v);
         tol *= Math.Abs(_trsf.ScaleFactor());
-        p.Transform(_trsf);
+        p = p.Transformed(_trsf);
 
         return true;
     }

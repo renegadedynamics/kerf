@@ -40,14 +40,14 @@ public class AxisPlacement2 : Geometry2D
     internal void Reverse()
     {
         CheckMutable();
-        _axis.Reverse();
+        _axis = _axis.Reversed();
     }
 
     /// <summary>A copy with the direction reversed.</summary>
     public AxisPlacement2 Reversed()
     {
         Axis2D a = _axis;
-        a.Reverse();
+        a = a.Reversed();
         AxisPlacement2 temp = new AxisPlacement2(a);
         return temp;
     }
@@ -56,7 +56,7 @@ public class AxisPlacement2 : Geometry2D
     protected internal override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _axis.Transform(t);
+        _axis = _axis.Transformed(t);
     }
 
     internal void SetAxis(in Axis2D a)
@@ -68,13 +68,13 @@ public class AxisPlacement2 : Geometry2D
     internal void SetLocation(in Point2D p)
     {
         CheckMutable();
-        _axis.SetLocation(p);
+        _axis = _axis.WithLocation(p);
     }
 
     internal void SetDirection(in Direction2D v)
     {
         CheckMutable();
-        _axis.SetDirection(v);
+        _axis = _axis.WithDirection(v);
     }
 
     /// <summary>The angle, in [-PI, PI], between the directions of this axis and Other.</summary>

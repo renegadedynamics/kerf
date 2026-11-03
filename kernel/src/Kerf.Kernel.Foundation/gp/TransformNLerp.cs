@@ -85,9 +85,9 @@ public partial struct TransformNLerp : IEquatable<TransformNLerp>
         _rotLerp.Interpolate(t, out Quaternion3 rot);
         double scale = (1.0 - t) * _scaleLerpStart + t * _scaleLerpEnd; // myScaleLerp.Interpolate(theT, aScale)
         result = new Transform3D();
-        result.SetRotation(rot);
-        result.SetTranslationPart(new Vector3D(loc));
-        result.SetScaleFactor(scale);
+        result = result.WithRotation(rot);
+        result = result.WithTranslationPart(new Vector3D(loc));
+        result = result.WithScaleFactor(scale);
     }
 
     public readonly bool Equals(TransformNLerp other)

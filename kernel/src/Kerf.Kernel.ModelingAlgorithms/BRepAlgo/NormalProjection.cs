@@ -315,7 +315,7 @@ public sealed class NormalProjection
                                 {
                                     par = bs3d.FirstParameter() + ii * dPar;
                                     pp = bs3d.Value(par);
-                                    p1.SetXYZ(p1.XYZ() + pp.XYZ() / nbPoint);
+                                    p1 = p1.WithXYZ(p1.XYZ() + pp.XYZ() / nbPoint);
                                 }
                                 for (ii = 0; ii < nbPoint && degenerated; ii++)
                                 {
@@ -331,14 +331,14 @@ public sealed class NormalProjection
                                 // if the test passes a more exact test with 10 points
                                 if (degenerated)
                                 {
-                                    p1.SetCoord(0.0, 0.0, 0.0);
+                                    p1 = p1.WithCoord(0.0, 0.0, 0.0);
                                     nbPoint = 10;
                                     dPar = (bs3d.LastParameter() - bs3d.FirstParameter()) / (nbPoint - 1);
                                     for (ii = 0; ii < nbPoint; ii++)
                                     {
                                         par = bs3d.FirstParameter() + ii * dPar;
                                         pp = bs3d.Value(par);
-                                        p1.SetXYZ(p1.XYZ() + pp.XYZ() / nbPoint);
+                                        p1 = p1.WithXYZ(p1.XYZ() + pp.XYZ() / nbPoint);
                                     }
                                     for (ii = 0; ii < nbPoint && degenerated; ii++)
                                     {

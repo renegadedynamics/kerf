@@ -318,9 +318,9 @@ public class ConicToBSplineCurve
             evaluator(parameters[ii], evalDegree, evalPoles, evalKnots, evalMults, result);
             contact_order_array[ii] = 0;
 
-            poles_array[ii].SetCoord(1, (result[1] * result[1] - result[0] * result[0]));
-            poles_array[ii].SetCoord(2, 2.0e0 * result[1] * result[0]);
-            poles_array[ii].SetCoord(3, result[1] * result[1] + result[0] * result[0]);
+            poles_array[ii] = poles_array[ii].WithCoord(1, (result[1] * result[1] - result[0] * result[0]));
+            poles_array[ii] = poles_array[ii].WithCoord(2, 2.0e0 * result[1] * result[0]);
+            poles_array[ii] = poles_array[ii].WithCoord(3, result[1] * result[1] + result[0] * result[0]);
         }
         global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree,
                              flatKnots,
@@ -532,15 +532,15 @@ public class ConicToBSplineCurve
                     q_param = (1.0e0 / 3.0e0) + p_param;
 
                     temp_degree = 3;
-                    temp_poles[1].SetCoord(1, 0.0e0);
-                    temp_poles[2].SetCoord(1, 1.0e0);
-                    temp_poles[3].SetCoord(1, 0.0e0);
-                    temp_poles[4].SetCoord(1, q_param);
+                    temp_poles[1] = temp_poles[1].WithCoord(1, 0.0e0);
+                    temp_poles[2] = temp_poles[2].WithCoord(1, 1.0e0);
+                    temp_poles[3] = temp_poles[3].WithCoord(1, 0.0e0);
+                    temp_poles[4] = temp_poles[4].WithCoord(1, q_param);
 
-                    temp_poles[1].SetCoord(2, 1.0e0);
-                    temp_poles[2].SetCoord(2, 0.0e0);
-                    temp_poles[3].SetCoord(2, p_param);
-                    temp_poles[4].SetCoord(2, 0.0e0);
+                    temp_poles[1] = temp_poles[1].WithCoord(2, 1.0e0);
+                    temp_poles[2] = temp_poles[2].WithCoord(2, 0.0e0);
+                    temp_poles[3] = temp_poles[3].WithCoord(2, p_param);
+                    temp_poles[4] = temp_poles[4].WithCoord(2, 0.0e0);
                     evaluatorPtr = CosAndSinQuasiAngular;
                     break;
                 case RationalC1:
@@ -557,14 +557,14 @@ public class ConicToBSplineCurve
                     jj = 1;
                     for (ii = 1; ii <= 2; ii++)
                     {
-                        temp_poles[1 + ii].SetCoord(2, 1.0e0 + alpha_4 * tan_alpha_2);
-                        temp_poles[jj].SetCoord(2, 1.0e0);
+                        temp_poles[1 + ii] = temp_poles[1 + ii].WithCoord(2, 1.0e0 + alpha_4 * tan_alpha_2);
+                        temp_poles[jj] = temp_poles[jj].WithCoord(2, 1.0e0);
                         jj += 3;
                     }
-                    temp_poles[1].SetCoord(1, -tan_alpha_2);
-                    temp_poles[2].SetCoord(1, alpha_4 - tan_alpha_2);
-                    temp_poles[3].SetCoord(1, -alpha_4 + tan_alpha_2);
-                    temp_poles[4].SetCoord(1, tan_alpha_2);
+                    temp_poles[1] = temp_poles[1].WithCoord(1, -tan_alpha_2);
+                    temp_poles[2] = temp_poles[2].WithCoord(1, alpha_4 - tan_alpha_2);
+                    temp_poles[3] = temp_poles[3].WithCoord(1, -alpha_4 + tan_alpha_2);
+                    temp_poles[4] = temp_poles[4].WithCoord(1, tan_alpha_2);
                     temp_knots[1] = -alpha;
                     temp_knots[2] = 0.0e0;
                     temp_knots[3] = alpha;
@@ -755,9 +755,9 @@ public class ConicToBSplineCurve
                             out value3);
                 contact_order_array[ii] = 0;
 
-                poles_array[ii].SetCoord(1, value1 * value3 * inverse);
-                poles_array[ii].SetCoord(2, value2 * value3 * inverse);
-                poles_array[ii].SetCoord(3, value3);
+                poles_array[ii] = poles_array[ii].WithCoord(1, value1 * value3 * inverse);
+                poles_array[ii] = poles_array[ii].WithCoord(2, value2 * value3 * inverse);
+                poles_array[ii] = poles_array[ii].WithCoord(3, value3);
             }
             global::Kerf.Engine.Geometry.Splines.BSplCLib.Interpolate(degree,
                                  flat_knots,

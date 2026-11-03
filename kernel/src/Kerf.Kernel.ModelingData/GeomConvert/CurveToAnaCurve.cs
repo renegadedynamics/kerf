@@ -284,8 +284,8 @@ public sealed class CurveToAnaCurve
         Point3D pc = crc.Location();
         Frame3D axe = crc.Position();
         var vx = new Vector3D(pc, p0);
-        axe.SetXDirection(new Direction3D(vx));
-        crc.SetPosition(axe);
+        axe = axe.WithXDirection(new Direction3D(vx));
+        crc = crc.WithPosition(axe);
         return true;
     }
 
@@ -555,8 +555,8 @@ public sealed class CurveToAnaCurve
             }
         }
 
-        center.SetCoord(xcen, ycen, 0.0);
-        mainAxis.SetCoord(xax, yax, 0.0);
+        center = center.WithCoord(xcen, ycen, 0.0);
+        mainAxis = mainAxis.WithCoord(xax, yax, 0.0);
         return true;
     }
 
@@ -619,7 +619,7 @@ public sealed class CurveToAnaCurve
         var trans = new Vector3D(bc);
         for (i = 1; i <= 5; ++i)
         {
-            ap[i].Translate(trans);
+            ap[i] = ap[i].Translated(trans);
         }
 
         var ndir = new Direction3D();
@@ -636,7 +636,7 @@ public sealed class CurveToAnaCurve
 
         var ax = new CoordinateSystem(new Point3D(0, 0, 0), ndir);
         var tr = new Transform3D();
-        tr.SetTransformation(ax);
+        tr = tr.WithTransformation(ax);
         Transform3D tr2 = tr.Inverted();
 
         var dt = new Matrix(1, 5, 1, 5);
@@ -692,7 +692,7 @@ public sealed class CurveToAnaCurve
                 }
 
                 trans *= -1;
-                center.SetZ(zn);
+                center = center.WithZ(zn);
                 Point3D newCenter = center.Transformed(tr2);
                 var ptmp = new Point3D(center.X() + mainAxis.X() * 10,
                                       center.Y() + mainAxis.Y() * 10,
@@ -704,7 +704,7 @@ public sealed class CurveToAnaCurve
                 var ax2 = new Frame3D(newCenter, ndir, newMainAxis);
 
                 var ellipse = new Ellipse3D(ax2, rmax, rmin);
-                ellipse.Translate(trans);
+                ellipse = ellipse.Translated(trans);
                 var gell = new EllipseCurve3D(ellipse);
 
                 // test for 20 points

@@ -651,8 +651,8 @@ public sealed class Contour
                                     if ((test < 0.0 && arcorien == Forward)
                                         || (test > 0.0 && arcorien == Reversed))
                                     {
-                                        vectg.Reverse();
-                                        dirtg.Reverse();
+                                        vectg = vectg.Reversed();
+                                        dirtg = dirtg.Reversed();
                                     }
                                     pPoint.SetDirections(vectg, dirtg);
                                 }
@@ -699,7 +699,7 @@ public sealed class Contour
                                         }
                                         if (arcorien == Reversed)
                                         {
-                                            tg3drst.Reverse();
+                                            tg3drst = tg3drst.Reversed();
                                         } // pas deja fait ???
                                     }
 
@@ -752,7 +752,7 @@ public sealed class Contour
                                                         }
                                                         if (arcorien == Reversed)
                                                         {
-                                                            tg3drst.Reverse();
+                                                            tg3drst = tg3drst.Reversed();
                                                         } // deja fait????
                                                     }
 
@@ -781,8 +781,8 @@ public sealed class Contour
                                         }
                                         else
                                         {
-                                            vectg.Reverse();
-                                            dirtg.Reverse();
+                                            vectg = vectg.Reversed();
+                                            dirtg = dirtg.Reversed();
                                         }
                                     }
                                     else
@@ -814,7 +814,7 @@ public sealed class Contour
                                                 if ((arcorien == Forward && vtxorien == Reversed)
                                                     || (arcorien == Reversed && vtxorien == Forward))
                                                 {
-                                                    tg3drst.Reverse();
+                                                    tg3drst = tg3drst.Reversed();
                                                 }
                                                 test = vectg.Normalized().Dot(tg3drst.Normalized());
                                                 if (test >= 1.0 - Tole)
@@ -974,7 +974,7 @@ public sealed class Contour
 
             ContourHCurve2dTool.D1(thesegsol.Curve(), u, out p2d, out Vector2D d2d);
             HSurfaceTool.D1(sFunc.Surface(), p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
-            tgline.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+            tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
             WalkingTypeTrans tral = ComputeTransitionOnLine(sFunc, p2d.X(), p2d.Y(), tgline);
 
             theline.SetTransitionOnS(tral);
@@ -1099,13 +1099,13 @@ public sealed class Contour
             paraminf = ((nbpnts - indexinf) * paramf + (indexinf - 1) * paraml) / (nbpnts - 1);
             ContourHCurve2dTool.D1(thearc, paraminf, out p2d, out d2d);
             HSurfaceTool.D1(surf, p2d.X(), p2d.Y(), out pcour, out Vector3D d1u, out Vector3D d1v);
-            tgt.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+            tgt = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
             if (tgt.Magnitude() > Constants.Resolution())
             {
                 if (typeFunc == ContourTFunction.ContourPrs || typeFunc == ContourTFunction.DraftPrs)
                 {
-                    vecregard.SetXYZ(pcour.XYZ() - sFunc.Eye().XYZ());
+                    vecregard = vecregard.WithXYZ(pcour.XYZ() - sFunc.Eye().XYZ());
                 }
                 vecref = vecregard.Crossed(tgt);
 
@@ -1131,13 +1131,13 @@ public sealed class Contour
             paramsup = ((nbpnts - indexsup) * paramf + (indexsup - 1) * paraml) / (nbpnts - 1);
             ContourHCurve2dTool.D1(thearc, paramsup, out p2d, out d2d);
             HSurfaceTool.D1(surf, p2d.X(), p2d.Y(), out pcour, out Vector3D d1u, out Vector3D d1v);
-            tgt.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+            tgt = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
             if (tgt.Magnitude() > Constants.Resolution())
             {
                 if (typeFunc == ContourTFunction.ContourPrs || typeFunc == ContourTFunction.DraftPrs)
                 {
-                    vecregard.SetXYZ(pcour.XYZ() - sFunc.Eye().XYZ());
+                    vecregard = vecregard.WithXYZ(pcour.XYZ() - sFunc.Eye().XYZ());
                 }
                 vectest = vecregard.Crossed(tgt);
             }
@@ -1161,13 +1161,13 @@ public sealed class Contour
                         paramp = (paraminf + paramsup) / 2.0;
                         ContourHCurve2dTool.D1(thearc, paramp, out p2d, out d2d);
                         HSurfaceTool.D1(surf, p2d.X(), p2d.Y(), out pcour, out d1u, out d1v);
-                        tgt.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                        tgt = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                         if (tgt.Magnitude() > Constants.Resolution())
                         {
                             if (typeFunc == ContourTFunction.ContourPrs || typeFunc == ContourTFunction.DraftPrs)
                             {
-                                vecregard.SetXYZ(pcour.XYZ() - sFunc.Eye().XYZ());
+                                vecregard = vecregard.WithXYZ(pcour.XYZ() - sFunc.Eye().XYZ());
                             }
                             vtestb = vecregard.Crossed(tgt);
                         }
@@ -1272,7 +1272,7 @@ public sealed class Contour
                 tgt = sFunc.Direction3d();
                 if (typeFunc == ContourTFunction.ContourPrs || typeFunc == ContourTFunction.DraftPrs)
                 {
-                    vecregard.SetXYZ(line.Point(indexinf).Value().XYZ() - sFunc.Eye().XYZ());
+                    vecregard = vecregard.WithXYZ(line.Point(indexinf).Value().XYZ() - sFunc.Eye().XYZ());
                 }
                 vecref = vecregard.Crossed(tgt);
 
@@ -1303,7 +1303,7 @@ public sealed class Contour
 
                 if (typeFunc == ContourTFunction.ContourPrs || typeFunc == ContourTFunction.DraftPrs)
                 {
-                    vecregard.SetXYZ(line.Point(indexsup).Value().XYZ() - sFunc.Eye().XYZ());
+                    vecregard = vecregard.WithXYZ(line.Point(indexsup).Value().XYZ() - sFunc.Eye().XYZ());
                 }
                 vectest = vecregard.Crossed(tgt);
             }
@@ -1348,7 +1348,7 @@ public sealed class Contour
                                     tgt = sFunc.Direction3d();
                                     if (typeFunc == ContourTFunction.ContourPrs || typeFunc == ContourTFunction.DraftPrs)
                                     {
-                                        vecregard.SetXYZ(sFunc.Point().XYZ() - sFunc.Eye().XYZ());
+                                        vecregard = vecregard.WithXYZ(sFunc.Point().XYZ() - sFunc.Eye().XYZ());
                                     }
                                     vtestb = vecregard.Crossed(tgt);
                                 }
@@ -1672,7 +1672,7 @@ public sealed class Contour
                                 SurfProps.DerivAndNorm(surf, pt2d.X(), pt2d.Y(), out ptonsurf, out d1u, out d1v,
                                                               out normale);
                                 tgtrst = d2d.X() * d1u;
-                                tgtrst.Add(d2d.Y() * d1v);
+                                tgtrst = tgtrst.Added(d2d.Y() * d1v);
 
                                 global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(pPoint.Direction3d(), tgtrst, new Direction3D(normale), ref tLine,
                                                        ref tArc);
@@ -1726,7 +1726,7 @@ public sealed class Contour
                                 SurfProps.DerivAndNorm(surf, pt2d.X(), pt2d.Y(), out ptonsurf, out d1u, out d1v,
                                                               out normale);
                                 tgtrst = d2d.X() * d1u;
-                                tgtrst.Add(d2d.Y() * d1v);
+                                tgtrst = tgtrst.Added(d2d.Y() * d1v);
                                 global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(pPoint.Direction3d().Reversed(), tgtrst, new Direction3D(normale),
                                                        ref tLine, ref tArc);
                             }
@@ -1844,7 +1844,7 @@ public sealed class Contour
                                                                           out d1u, out d1v, out normale);
 
                                             tgtrst = d2d.X() * d1u;
-                                            tgtrst.Add(d2d.Y() * d1v);
+                                            tgtrst = tgtrst.Added(d2d.Y() * d1v);
                                             int paraml = (int)ptvt.ParameterOnLine();
 
                                             if (paraml == theli.PntCount)
@@ -1974,12 +1974,12 @@ public sealed class Contour
                             tgtrst = d1v.Crossed(normale);
                             if (d2d.X() < 0.0)
                             {
-                                tgtrst.Reverse();
+                                tgtrst = tgtrst.Reversed();
                             }
                         }
                         else
                         {
-                            tgtrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                            tgtrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                         }
                         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(vectg, tgtrst, new Direction3D(normale), ref tLine, ref tArc);
                     }

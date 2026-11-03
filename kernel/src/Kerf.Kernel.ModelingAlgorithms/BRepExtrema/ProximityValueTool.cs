@@ -395,7 +395,7 @@ public sealed class ProximityValueTool
 
         int bisectedEdgeIdx = d[0] > d[1] ? (d[0] > d[2] ? 0 : 2) : (d[1] > d[2] ? 1 : 2);
         var centerOfMaxSide = new Point3D(trg[bisectedEdgeIdx].Coord());
-        centerOfMaxSide.BaryCenter(0.5, trg[(bisectedEdgeIdx + 1) % 3], 0.5);
+        centerOfMaxSide = centerOfMaxSide.BaryCentered(0.5, trg[(bisectedEdgeIdx + 1) % 3], 0.5);
 
         var box = new Box();
         box.Add(centerOfMaxSide);
@@ -454,15 +454,15 @@ public sealed class ProximityValueTool
         tr.Triangle(triIdx).Get(out int vtxIdx1, out int vtxIdx2, out int vtxIdx3);
 
         Point3D vtx1 = tr.Node(vtxIdx1);
-        vtx1.Transform(location.Transformation());
+        vtx1 = vtx1.Transformed(location.Transformation());
         trg[0] = vtx1;
 
         Point3D vtx2 = tr.Node(vtxIdx2);
-        vtx2.Transform(location.Transformation());
+        vtx2 = vtx2.Transformed(location.Transformation());
         trg[1] = vtx2;
 
         Point3D vtx3 = tr.Node(vtxIdx3);
-        vtx3.Transform(location.Transformation());
+        vtx3 = vtx3.Transformed(location.Transformation());
         trg[2] = vtx3;
     }
 

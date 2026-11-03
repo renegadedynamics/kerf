@@ -16,8 +16,7 @@ public class gp_GTrsfTest
     public void OCC13963_SetAffinity_Ratio1_IsIdentity()
     {
         Frame3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, -1.0, 0.0));
-        GeneralTransform3D aTrf = new();
-        aTrf.SetAffinity(aPln, 1.0);
+        GeneralTransform3D aTrf = new GeneralTransform3D().WithAffinity(aPln, 1.0);
 
         Xyz aOrigin = new(1.0, 0.0, 0.0);
         Xyz aResult = aOrigin;
@@ -34,8 +33,7 @@ public class gp_GTrsfTest
     public void OCC13963_SetAffinity_Ratio2_ScalesAlongNormal()
     {
         Frame3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, -1.0, 0.0));
-        GeneralTransform3D aTrf = new();
-        aTrf.SetAffinity(aPln, 2.0);
+        GeneralTransform3D aTrf = new GeneralTransform3D().WithAffinity(aPln, 2.0);
 
         Xyz aOrigin = new(1.0, 0.0, 0.0);
         Xyz aResult = aOrigin;

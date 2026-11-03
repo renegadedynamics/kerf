@@ -259,7 +259,7 @@ public class HyperbolaCurve2D : ConicCurve2D
         CheckMutable();
         _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor());
         _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

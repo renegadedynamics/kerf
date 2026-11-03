@@ -204,8 +204,8 @@ internal static class XdeDocDump
         Label aSub = aDoc.NewShape();
         aDoc.SetName(aSub, "sub");
         var aTrsf = new Transform3D();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
-        aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
+        aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
+        aTrsf = aTrsf.WithTranslationPart(new Vector3D(100.0, 50.0, 0.0));
         aDoc.AddComponent(aSub, aPart, new Placement());
         Label aSecond = aDoc.AddComponent(aSub, aPart, new Placement(aTrsf));
         aDoc.SetName(aSecond, "second");
@@ -213,7 +213,7 @@ internal static class XdeDocDump
         Label aTop = aDoc.NewShape();
         aDoc.SetName(aTop, "top");
         var aTrsf2 = new Transform3D();
-        aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
+        aTrsf2 = aTrsf2.WithTranslation(new Vector3D(0.0, 0.0, 300.0));
         aDoc.AddComponent(aTop, aSub, new Placement());
         Label anUpper = aDoc.AddComponent(aTop, aSub, new Placement(aTrsf2));
         aDoc.SetName(anUpper, "upper");

@@ -706,14 +706,14 @@ public class Hatcher2D
         // adaptor's Curve(), which is the same
         _intersector.LocalGeometry(curveH, point.Parameter(), out tangente2d, out normale2d, out courbure);
 
-        tangente.SetCoord(tangente2d.X(), tangente2d.Y(), 0.0);
+        tangente = tangente.WithCoord(tangente2d.X(), tangente2d.Y(), 0.0);
         if (courbure < global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            normale.SetCoord(-tangente2d.Y(), tangente2d.X(), 0.0);
+            normale = normale.WithCoord(-tangente2d.Y(), tangente2d.X(), 0.0);
         }
         else
         {
-            normale.SetCoord(normale2d.X(), normale2d.Y(), 0.0);
+            normale = normale.WithCoord(normale2d.X(), normale2d.Y(), 0.0);
         }
 
         CurveTransition complexTransition = new();
@@ -850,13 +850,13 @@ public class Hatcher2D
 
             if (toReverse)
             {
-                tangente.SetCoord(-tangente2d.X(), -tangente2d.Y(), 0.0);
+                tangente = tangente.WithCoord(-tangente2d.X(), -tangente2d.Y(), 0.0);
             }
             else
             {
-                tangente.SetCoord(tangente2d.X(), tangente2d.Y(), 0.0);
+                tangente = tangente.WithCoord(tangente2d.X(), tangente2d.Y(), 0.0);
             }
-            normale.SetCoord(normale2d.X(), normale2d.Y(), 0.0);
+            normale = normale.WithCoord(normale2d.X(), normale2d.Y(), 0.0);
 
             complexTransition.Compare(global::Kerf.Engine.Foundation.Precision.Angular(),
                                       tangente,

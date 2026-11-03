@@ -333,7 +333,7 @@ public sealed partial class AnalyticCirc2d3Tan
                                             if (_qualifier1[_nbrSol] == Qualifier.Enclosed)
                                             {
                                                 // if tangent circle is inside the source circle, moving to edge of source circle
-                                                dc.Reverse();
+                                                dc = dc.Reversed();
                                             }
                                             _pnttg1sol[_nbrSol] = new Point2D(center.XY() + radius[k1] * dc.XY());
                                             _par1sol[_nbrSol] = global::Kerf.Engine.Geometry.ElCLib.Parameter(_cirsol[_nbrSol], _pnttg1sol[_nbrSol]);
@@ -399,7 +399,7 @@ public sealed partial class AnalyticCirc2d3Tan
             double nr = cc.Location().Distance(point3);
             if (Math.Abs(nr - cc.Radius()) > tol)
             {
-                _cirsol[kk].SetRadius(nr);
+                _cirsol[kk] = _cirsol[kk].WithRadius(nr);
             }
         }
 

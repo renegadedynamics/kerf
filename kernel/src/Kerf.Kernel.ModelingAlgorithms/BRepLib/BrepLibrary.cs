@@ -1383,7 +1383,7 @@ public static partial class BrepLibrary
                                 || Math.Abs(originPoint.Y() - newOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                             {
 
-                                PackedList<double> knotbs2d = bs2d.Knots();
+                                IReadOnlyList<double> knotbs2d = bs2d.Knots();
 
                                 for (int index = 1; index <= bs2d.KnotCount; index++)
                                 {
@@ -1432,7 +1432,7 @@ public static partial class BrepLibrary
                                         || Math.Abs(originPoint.Y() - newOriginPoint.Y()) > Kerf.Engine.Foundation.Precision.PConfusion())
                                     {
 
-                                        PackedList<double> knotbs2d = bs2d.Knots();
+                                        IReadOnlyList<double> knotbs2d = bs2d.Knots();
 
                                         for (int index = 1; index <= bs2d.KnotCount; index++)
                                         {
@@ -1855,7 +1855,7 @@ public static partial class BrepLibrary
                         if (c is not null)
                         { // edge non degenerated
                             p3d = c.Value(par);
-                            p3d.Transform(l.Transformation());
+                            p3d = p3d.Transformed(l.Transformation());
                             double dist = p3d.SquareDistance(pv);
                             if (dist > maxDist)
                             {
@@ -1874,7 +1874,7 @@ public static partial class BrepLibrary
                         }
                         Point2D p2d = pc.Value(par);
                         p3d = su.Value(p2d.X(), p2d.Y());
-                        p3d.Transform(l.Transformation());
+                        p3d = p3d.Transformed(l.Transformation());
                         double dist = p3d.SquareDistance(pv);
                         if (dist > maxDist)
                         {
@@ -1884,7 +1884,7 @@ public static partial class BrepLibrary
                         {
                             p2d = pc2.Value(par);
                             p3d = su.Value(p2d.X(), p2d.Y());
-                            p3d.Transform(l.Transformation());
+                            p3d = p3d.Transformed(l.Transformation());
                             dist = p3d.SquareDistance(pv);
                             if (dist > maxDist)
                             {
@@ -2118,10 +2118,10 @@ public static partial class BrepLibrary
             ortho /= len;
             if (_isReversed)
             {
-                ortho.Reverse();
+                ortho = ortho.Reversed();
             }
 
-            deriv.SetLinearForm(ortho.X(), _surfaceProps.D1U(), ortho.Y(), _surfaceProps.D1V());
+            deriv = Vector3D.LinearForm(ortho.X(), _surfaceProps.D1U(), ortho.Y(), _surfaceProps.D1V());
             return deriv.Transformed(_surfaceTrsf);
         }
 
@@ -2149,8 +2149,8 @@ public static partial class BrepLibrary
                 curvature2 = -curvature2;
             }
 
-            principalDir1.Transform(_surfaceTrsf);
-            principalDir2.Transform(_surfaceTrsf);
+            principalDir1 = principalDir1.Transformed(_surfaceTrsf);
+            principalDir2 = principalDir2.Transformed(_surfaceTrsf);
         }
     }
 
@@ -2286,12 +2286,12 @@ public static partial class BrepLibrary
                 Direction3D normal1 = sp1.Normal();
                 if (face1.Orientation() == Reversed)
                 {
-                    normal1.Reverse();
+                    normal1 = normal1.Reversed();
                 }
                 Direction3D normal2 = sp2.Normal();
                 if (face2.Orientation() == Reversed)
                 {
-                    normal2.Reverse();
+                    normal2 = normal2.Reversed();
                 }
 
                 if (normal1 * normal2 < 0.0)
@@ -2658,7 +2658,7 @@ public static partial class BrepLibrary
                     Direction3D norm = slp.Normal();
                     if (face.Orientation() == Reversed)
                     {
-                        norm.Reverse();
+                        norm = norm.Reversed();
                     }
                     pt.SetNormal(i, norm);
                 }
@@ -3084,7 +3084,7 @@ public static partial class BrepLibrary
                 //
                 rr = 0.5 * (r[m] + r[n] + d);
                 xyZr = 0.5 * (p[m].XYZ() + p[n].XYZ() - vd.XYZ() * (dR / d));
-                pr.SetXYZ(xyZr);
+                pr = pr.WithXYZ(xyZr);
                 //
                 newCenter = pr;
                 newTol = rr;

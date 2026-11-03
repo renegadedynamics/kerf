@@ -17,6 +17,9 @@ namespace Kerf.Geometry;
 /// </summary>
 public abstract class Curve3D : Geometry3D
 {
+    // Results with public fields, written through out parameters across the engine: 10L replaces them (geometry.md,
+    // CurveDerivatives), so KERF0003 is off for them until then.
+#pragma warning disable KERF0003
     /// <summary>Result of D1 evaluation: point and first derivative.</summary>
     public struct ResD1
     {
@@ -40,6 +43,7 @@ public abstract class Curve3D : Geometry3D
         public Vector3D D2;
         public Vector3D D3;
     }
+#pragma warning restore KERF0003
 
     /// <summary>
     /// Reverses the direction of parametrization in place. The first and last parameters don't change; the start

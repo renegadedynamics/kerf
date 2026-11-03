@@ -88,7 +88,7 @@ internal static class GeomOracleInputs
             if (theOracle.Int(0, 1) == 1)
             {
                 aNative.YReverse();
-                aPort.YReverse();
+                aPort = aPort.YReversed();
             }
             return (aNative, aPort);
         }

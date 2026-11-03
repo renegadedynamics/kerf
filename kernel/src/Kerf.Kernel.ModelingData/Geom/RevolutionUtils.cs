@@ -28,9 +28,8 @@ internal static class RevolutionUtils
                                      out Point3D p)
     {
         p = curvePt;
-        Transform3D rotation = new Transform3D();
-        rotation.SetRotation(axis, u);
-        p.Transform(rotation);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
+        p = p.Transformed(rotation);
     }
 
     /// <summary>The point and first derivatives from C(V) and C'(V).</summary>
@@ -52,15 +51,14 @@ internal static class RevolutionUtils
         // Manually set them to zero.
         if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            d1U.SetCoord(0.0, 0.0, 0.0);
+            d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
 
-        Transform3D rotation = new Transform3D();
-        rotation.SetRotation(axis, u);
-        p.Transform(rotation);
-        d1U.Transform(rotation);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
+        p = p.Transformed(rotation);
+        d1U = d1U.Transformed(rotation);
         d1V = curveD1;
-        d1V.Transform(rotation);
+        d1V = d1V.Transformed(rotation);
     }
 
     /// <summary>The point, first and second derivatives from C(V), C'(V) and C''(V).</summary>
@@ -87,22 +85,21 @@ internal static class RevolutionUtils
         // Manually set them to zero.
         if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            d1U.SetCoord(0.0, 0.0, 0.0);
+            d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
 
         d2U = new Vector3D(dir.Dot(cq) * dir - cq);
         d2UV = new Vector3D(dir.Crossed(curveD1.XYZ()));
 
-        Transform3D rotation = new Transform3D();
-        rotation.SetRotation(axis, u);
-        p.Transform(rotation);
-        d1U.Transform(rotation);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
+        p = p.Transformed(rotation);
+        d1U = d1U.Transformed(rotation);
         d1V = curveD1;
-        d1V.Transform(rotation);
-        d2U.Transform(rotation);
+        d1V = d1V.Transformed(rotation);
+        d2U = d2U.Transformed(rotation);
         d2V = curveD2;
-        d2V.Transform(rotation);
-        d2UV.Transform(rotation);
+        d2V = d2V.Transformed(rotation);
+        d2UV = d2UV.Transformed(rotation);
     }
 
     /// <summary>The point and the derivatives up to the third order from C(V) to C'''(V).</summary>
@@ -134,7 +131,7 @@ internal static class RevolutionUtils
         // Manually set them to zero.
         if (d1U.SquareMagnitude() < global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
-            d1U.SetCoord(0.0, 0.0, 0.0);
+            d1U = d1U.WithCoord(0.0, 0.0, 0.0);
         }
 
         d2U = new Vector3D(dir.Dot(cq) * dir - cq);
@@ -143,21 +140,20 @@ internal static class RevolutionUtils
         d3UUV = new Vector3D(dir.Dot(curveD1.XYZ()) * dir - curveD1.XYZ());
         d3UVV = new Vector3D(dir.Crossed(curveD2.XYZ()));
 
-        Transform3D rotation = new Transform3D();
-        rotation.SetRotation(axis, u);
-        p.Transform(rotation);
-        d1U.Transform(rotation);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
+        p = p.Transformed(rotation);
+        d1U = d1U.Transformed(rotation);
         d1V = curveD1;
-        d1V.Transform(rotation);
-        d2U.Transform(rotation);
+        d1V = d1V.Transformed(rotation);
+        d2U = d2U.Transformed(rotation);
         d2V = curveD2;
-        d2V.Transform(rotation);
-        d2UV.Transform(rotation);
-        d3U.Transform(rotation);
+        d2V = d2V.Transformed(rotation);
+        d2UV = d2UV.Transformed(rotation);
+        d3U = d3U.Transformed(rotation);
         d3V = curveD3;
-        d3V.Transform(rotation);
-        d3UUV.Transform(rotation);
-        d3UVV.Transform(rotation);
+        d3V = d3V.Transformed(rotation);
+        d3UUV = d3UUV.Transformed(rotation);
+        d3UVV = d3UVV.Transformed(rotation);
     }
 
     /// <summary>
@@ -173,8 +169,7 @@ internal static class RevolutionUtils
         // theDerV is part of the interface contract - caller provides different data based on its value
         _ = derV;
 
-        Transform3D rotation = new Transform3D();
-        rotation.SetRotation(axis, u);
+        Transform3D rotation = new Transform3D().WithRotation(axis, u);
 
         Vector3D result;
         if (derU == 0)
@@ -205,7 +200,7 @@ internal static class RevolutionUtils
             }
         }
 
-        result.Transform(rotation);
+        result = result.Transformed(rotation);
         return result;
     }
 

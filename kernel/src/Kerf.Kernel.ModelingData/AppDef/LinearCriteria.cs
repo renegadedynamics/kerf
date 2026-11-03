@@ -440,7 +440,7 @@ public class LinearCriteria : SmoothCriterion
             MyLineTool.Value(_ssp, i, tabP3d);
             for (ipnt = 1; ipnt <= myNbP3d; ipnt++)
             {
-                p3d.SetCoord(basePoint[c0 + 1], basePoint[c0 + 2], basePoint[c0 + 3]);
+                p3d = p3d.WithCoord(basePoint[c0 + 1], basePoint[c0 + 2], basePoint[c0 + 3]);
                 sqrDist = p3d.SquareDistance(tabP3d[ipnt]);
                 dist = Math.Sqrt(sqrDist);
                 maxError = Max(maxError, dist);
@@ -459,7 +459,7 @@ public class LinearCriteria : SmoothCriterion
             }
             for (ipnt = 1; ipnt <= myNbP2d; ipnt++)
             {
-                p2d.SetCoord(basePoint[c0 + 1], basePoint[c0 + 2]);
+                p2d = p2d.WithCoord(basePoint[c0 + 1], basePoint[c0 + 2]);
                 sqrDist = p2d.SquareDistance(tabP2d[ipnt]);
                 dist = Math.Sqrt(sqrDist);
                 maxError = Max(maxError, dist);

@@ -715,7 +715,7 @@ public partial class FilletBuilderBase
                     else
                     {
                         pc.D1(ufin, out pcL, out derPc);
-                        derPc.Reverse();
+                        derPc = derPc.Reversed();
                     }
                     hc.D1(cv[i].ParameterOnArc(), out pfac1, out derHc);
 
@@ -2037,8 +2037,8 @@ public partial class FilletBuilderBase
                                 if (ext.IsDone)
                                 {
                                     ext.Point(1).Parameter(out uc1, out vc1);
-                                    pfac1.SetX(uc1);
-                                    pfac1.SetY(vc1);
+                                    pfac1 = pfac1.WithX(uc1);
+                                    pfac1 = pfac1.WithY(vc1);
                                 }
                             }
                         }
@@ -2273,8 +2273,8 @@ public partial class FilletBuilderBase
                         if (ext.IsDone)
                         {
                             ext.Point(1).Parameter(out uc2, out vc2);
-                            pfac2.SetX(uc2);
-                            pfac2.SetY(vc2);
+                            pfac2 = pfac2.WithX(uc2);
+                            pfac2 = pfac2.WithY(vc2);
                         }
                     }
                 }
@@ -2819,8 +2819,8 @@ public partial class FilletBuilderBase
                     prevSDParam = isUShrink ? uv.X() : uv.Y();
                 }
                 Point2D uv1 = p2d1, uv2 = p2d2;
-                uv1.SetCoord(isUShrink ? 1 : 2, prevSDParam);
-                uv2.SetCoord(isUShrink ? 1 : 2, prevSDParam);
+                uv1 = uv1.WithCoord(isUShrink ? 1 : 2, prevSDParam);
+                uv2 = uv2.WithCoord(isUShrink ? 1 : 2, prevSDParam);
                 double aTolreached = 0.0;
                 ChFi3d_ComputePCurv(cc, uv1, uv2, out ps, dStr.Surface(sDprev.Surf()).Surface(), p1, p2, _tolapp3d,
                                                         out aTolreached);
@@ -2936,8 +2936,8 @@ public partial class FilletBuilderBase
 
             // for SDprev
             surf = dStr.Surface(sDprev.Surf()).Surface();
-            uv1.SetCoord(isUShrink ? 1 : 2, prevSDParam);
-            uv2.SetCoord(isUShrink ? 1 : 2, prevSDParam);
+            uv1 = uv1.WithCoord(isUShrink ? 1 : 2, prevSDParam);
+            uv2 = uv2.WithCoord(isUShrink ? 1 : 2, prevSDParam);
 
             ChFi3d_ComputePCurv(c3d, uv1, uv2, out pc, surf, p1, p2, _tolapp3d, out aTolreached);
 
@@ -4724,7 +4724,7 @@ internal static class Builder_C1
             if (!recadrebis)
             {
                 CurveSurfaceIntersectionPoint pint = intersection.Point(isol);
-                p2dbout.SetCoord(pint.U(), pint.V());
+                p2dbout = p2dbout.WithCoord(pint.U(), pint.V());
                 w = pint.W();
                 if (isperiodic)
                 {
@@ -4736,13 +4736,13 @@ internal static class Builder_C1
                 if (dist > distbis)
                 {
                     CurveSurfaceIntersectionPoint pint = intersection.Point(isolbis);
-                    p2dbout.SetCoord(pint.U(), pint.V());
+                    p2dbout = p2dbout.WithCoord(pint.U(), pint.V());
                     w = wbis;
                 }
                 else
                 {
                     CurveSurfaceIntersectionPoint pint = intersection.Point(isol);
-                    p2dbout.SetCoord(pint.U(), pint.V());
+                    p2dbout = p2dbout.WithCoord(pint.U(), pint.V());
                     w = pint.W();
                     w = global::Kerf.Engine.Geometry.ElCLib.InPeriod(w, uf, ul);
                 }
@@ -4946,8 +4946,8 @@ internal static class Builder_C1
                     u1 += uper;
                 }
             }
-            p1.SetX(u1);
-            p2.SetX(u2);
+            p1 = p1.WithX(u1);
+            p2 = p2.WithX(u2);
         }
         if (surf.IsVPeriodic)
         {
@@ -4972,8 +4972,8 @@ internal static class Builder_C1
                     v1 += vper;
                 }
             }
-            p1.SetY(v1);
-            p2.SetY(v2);
+            p1 = p1.WithY(v1);
+            p2 = p2.WithY(v2);
         }
     }
 

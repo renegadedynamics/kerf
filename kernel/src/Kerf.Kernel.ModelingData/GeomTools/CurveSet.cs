@@ -734,7 +734,7 @@ public class CurveSet
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out x);
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out y);
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out z);
-        d.SetCoord(x, y, z);
+        d = d.WithCoord(x, y, z);
     }
 
     private static LineCurve3D ReadLine(TextReader IS)

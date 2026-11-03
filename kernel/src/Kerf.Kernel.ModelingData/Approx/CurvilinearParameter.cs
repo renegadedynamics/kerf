@@ -300,12 +300,12 @@ public sealed class CurvilinearParameter
             approx.Poles1d(1, poles1d);
             for (i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetX(poles1d[i]);
+                poles2d[i] = poles2d[i].WithX(poles1d[i]);
             }
             approx.Poles1d(2, poles1d);
             for (i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetY(poles1d[i]);
+                poles2d[i] = poles2d[i].WithY(poles1d[i]);
             }
             NCollection_HArray1<double> knots = approx.Knots()!;
             NCollection_HArray1<int> mults = approx.Multiplicities()!;
@@ -386,12 +386,12 @@ public sealed class CurvilinearParameter
             approx.Poles1d(1, poles1d);
             for (i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetX(poles1d[i]);
+                poles2d[i] = poles2d[i].WithX(poles1d[i]);
             }
             approx.Poles1d(2, poles1d);
             for (i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetY(poles1d[i]);
+                poles2d[i] = poles2d[i].WithY(poles1d[i]);
             }
             NCollection_HArray1<double> knots = approx.Knots()!;
             NCollection_HArray1<int> mults = approx.Multiplicities()!;
@@ -401,12 +401,12 @@ public sealed class CurvilinearParameter
             approx.Poles1d(3, poles1d);
             for (i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetX(poles1d[i]);
+                poles2d[i] = poles2d[i].WithX(poles1d[i]);
             }
             approx.Poles1d(4, poles1d);
             for (i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetY(poles1d[i]);
+                poles2d[i] = poles2d[i].WithY(poles1d[i]);
             }
             _curve2d2 = new BSplineCurve2D(poles2d, knots.Array1(), mults.Array1(), degree);
         }

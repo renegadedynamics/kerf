@@ -199,7 +199,7 @@ public class BRepLibMeshTests
             Direction3D aN = ((PlaneSurface)Tool.Surface(aNewF)!).Pln().Axis().Direction();
             if (aNewF.Orientation() == Reversed)
             {
-                aN.Reverse();
+                aN = aN.Reversed();
             }
             for (int i = 1; i <= aNew.NodeCount; i++)
             {

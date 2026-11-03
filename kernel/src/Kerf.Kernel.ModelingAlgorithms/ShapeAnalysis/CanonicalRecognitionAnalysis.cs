@@ -180,7 +180,7 @@ public sealed class CanonicalRecognitionAnalysis
         SurfaceKind target = Plane;
         if (IsElementarySurf(target, tol, ref pos, aParams))
         {
-            pln.SetPosition(pos);
+            pln = pln.WithPosition(pos);
             return true;
         }
         // Try to build plane for wire or edge
@@ -217,8 +217,8 @@ public sealed class CanonicalRecognitionAnalysis
         SurfaceKind target = SurfaceKind.Cylinder;
         if (IsElementarySurf(target, tol, ref pos, aParams))
         {
-            cyl.SetPosition(pos);
-            cyl.SetRadius(aParams[1]);
+            cyl = cyl.WithPosition(pos);
+            cyl = cyl.WithRadius(aParams[1]);
             return true;
         }
 
@@ -234,8 +234,8 @@ public sealed class CanonicalRecognitionAnalysis
             bool isDone = GetSurfaceByLS(wire, tol, target, ref pos, aParams, ref _gap, ref _status);
             if (isDone)
             {
-                cyl.SetPosition(pos);
-                cyl.SetRadius(aParams[1]);
+                cyl = cyl.WithPosition(pos);
+                cyl = cyl.WithRadius(aParams[1]);
                 return true;
             }
         }
@@ -257,9 +257,9 @@ public sealed class CanonicalRecognitionAnalysis
         SurfaceKind target = SurfaceKind.Cone;
         if (IsElementarySurf(target, tol, ref pos, aParams))
         {
-            cone.SetPosition(pos);
-            cone.SetSemiAngle(aParams[1]);
-            cone.SetRadius(aParams[2]);
+            cone = cone.WithPosition(pos);
+            cone = cone.WithSemiAngle(aParams[1]);
+            cone = cone.WithRadius(aParams[2]);
             return true;
         }
 
@@ -275,9 +275,9 @@ public sealed class CanonicalRecognitionAnalysis
             bool isDone = GetSurfaceByLS(wire, tol, target, ref pos, aParams, ref _gap, ref _status);
             if (isDone)
             {
-                cone.SetPosition(pos);
-                cone.SetSemiAngle(aParams[1]);
-                cone.SetRadius(aParams[2]);
+                cone = cone.WithPosition(pos);
+                cone = cone.WithSemiAngle(aParams[1]);
+                cone = cone.WithRadius(aParams[2]);
                 return true;
             }
         }
@@ -298,8 +298,8 @@ public sealed class CanonicalRecognitionAnalysis
         SurfaceKind target = SurfaceKind.Sphere;
         if (IsElementarySurf(target, tol, ref pos, aParams))
         {
-            sphere.SetPosition(pos);
-            sphere.SetRadius(aParams[1]);
+            sphere = sphere.WithPosition(pos);
+            sphere = sphere.WithRadius(aParams[1]);
             return true;
         }
         //
@@ -315,8 +315,8 @@ public sealed class CanonicalRecognitionAnalysis
             bool isDone = GetSurfaceByLS(wire, tol, target, ref pos, aParams, ref _gap, ref _status);
             if (isDone)
             {
-                sphere.SetPosition(pos);
-                sphere.SetRadius(aParams[1]);
+                sphere = sphere.WithPosition(pos);
+                sphere = sphere.WithRadius(aParams[1]);
                 return true;
             }
         }
@@ -431,7 +431,7 @@ public sealed class CanonicalRecognitionAnalysis
         bool isOK = IsConic(target, tol, ref pos, aParams);
         if (isOK)
         {
-            lin.SetPosition(pos.Axis());
+            lin = lin.WithPosition(pos.Axis());
         }
         return isOK;
     }
@@ -449,8 +449,8 @@ public sealed class CanonicalRecognitionAnalysis
         bool isOK = IsConic(target, tol, ref pos, aParams);
         if (isOK)
         {
-            circ.SetPosition(pos);
-            circ.SetRadius(aParams[1]);
+            circ = circ.WithPosition(pos);
+            circ = circ.WithRadius(aParams[1]);
         }
         return isOK;
     }
@@ -468,9 +468,9 @@ public sealed class CanonicalRecognitionAnalysis
         bool isOK = IsConic(target, tol, ref pos, aParams);
         if (isOK)
         {
-            elips.SetPosition(pos);
-            elips.SetMajorRadius(aParams[1]);
-            elips.SetMinorRadius(aParams[2]);
+            elips = elips.WithPosition(pos);
+            elips = elips.WithMajorRadius(aParams[1]);
+            elips = elips.WithMinorRadius(aParams[2]);
         }
         return isOK;
     }
@@ -917,7 +917,7 @@ public sealed class CanonicalRecognitionAnalysis
         if (target == Line)
         {
             Line3D lin = gac.Line();
-            pos.SetAxis(lin.Position());
+            pos = pos.WithAxis(lin.Position());
         }
         else if (target == Circle)
         {
@@ -1177,7 +1177,7 @@ public sealed class CanonicalRecognitionAnalysis
             for (i = points.Lower(); i <= points.Upper(); ++i)
             {
                 Vector3D d = new(points.Value(i) - loc);
-                d.Cross(dir);
+                d = d.Crossed(dir);
                 gap = Max(gap, Math.Abs((d.Magnitude() - r)));
             }
         }
@@ -1258,7 +1258,7 @@ public sealed class CanonicalRecognitionAnalysis
                                              NCollection_Array1<double> theParams)
     {
         Point3D loc = new(sol[1], sol[2], sol[3]);
-        pos.SetLocation(loc);
+        pos = pos.WithLocation(loc);
         if (target == SurfaceKind.Sphere || target == SurfaceKind.Cylinder)
         {
             theParams[1] = sol[4]; // radius

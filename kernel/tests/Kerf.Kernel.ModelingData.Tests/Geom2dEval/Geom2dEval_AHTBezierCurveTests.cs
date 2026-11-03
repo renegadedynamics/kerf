@@ -219,8 +219,7 @@ public class Geom2dEval_AHTBezierCurveTest
     public void Transform_NotImplemented()
     {
         AhtBezierCurve2D aCurve = createFullBasisCurve();
-        Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(1.0, 2.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(1.0, 2.0));
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
@@ -246,8 +245,7 @@ public class Geom2dEval_AHTBezierCurveTest
         }
 
         // Verify behavior: transformation is not supported on the copy either.
-        Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(10.0, 10.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(10.0, 10.0));
         AhtBezierCurve2D aCopyHandle = (AhtBezierCurve2D)aCopy;
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCopyHandle.Transform(aTrsf));
 

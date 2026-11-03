@@ -88,7 +88,7 @@ public class CylinderProjector : Projector
         Point2D p2d = EvalPnt2d(l.Location(), _cylinder);
         if (p2d.X() < 0.0)
         {
-            p2d.SetX(p2d.X() + 2 * M_PI);
+            p2d = p2d.WithX(p2d.X() + 2 * M_PI);
         }
         double signe = l.Direction().Dot(_cylinder.Position().Direction());
         signe = (signe > 0.0) ? 1.0 : -1.0;
@@ -123,11 +123,11 @@ public class CylinderProjector : Projector
         Direction2D d2d = new();
         if (zCyl.Dot(circPos.Direction()) > 0.0)
         {
-            d2d.SetCoord(1.0, 0.0);
+            d2d = d2d.WithCoord(1.0, 0.0);
         }
         else
         {
-            d2d.SetCoord(-1.0, 0.0);
+            d2d = d2d.WithCoord(-1.0, 0.0);
         }
 
         _lin = new Line2D(p2d1, d2d);

@@ -404,8 +404,7 @@ public partial class PaveFiller
                                         if (shiftDist > Tool.Tolerance(vertex))
                                         {
                                             // Move one of the faces to the point of exact intersection of edges
-                                            Transform3D trsf = new();
-                                            trsf.SetTranslation(isClosed1 ? new Vector3D(p1, p2) : new Vector3D(p2, p1));
+                                            Transform3D trsf = new Transform3D().WithTranslation(isClosed1 ? new Vector3D(p1, p2) : new Vector3D(p2, p1));
                                             Placement loc = new(trsf);
                                             if (isClosed1)
                                             {
@@ -2007,7 +2006,7 @@ public partial class PaveFiller
         bool isVtgt1Valid = vTgt1.SquareMagnitude() > Constants.Resolution();
         if (isVtgt1Valid)
         {
-            vTgt1.Normalize();
+            vTgt1 = vTgt1.Normalized();
         }
 
         // last point

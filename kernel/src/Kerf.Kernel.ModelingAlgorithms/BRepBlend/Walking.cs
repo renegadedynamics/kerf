@@ -818,8 +818,8 @@ public class Walking
             if (!_comptra && !curpointistangent)
             {
                 function.Tangent(_sol[1], _sol[2], _sol[3], _sol[4], out tgp1, out tgp2, out nor1, out nor2);
-                nor1.Normalize();
-                nor2.Normalize();
+                nor1 = nor1.Normalized();
+                nor2 = nor2.Normalized();
                 double testra = tgp1.Dot(nor1.Crossed(v1));
                 if (Math.Abs(testra) > global::Kerf.Engine.Foundation.Precision.Confusion())
                 {
@@ -1546,12 +1546,12 @@ public class Walking
             }
         }
 
-        tgrst.SetLinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
 
         global::Kerf.Engine.Geometry.CSLib.Normal(d1u, d1v, 1.0e-9, out stat, ref thenormal);
         if (stat == Defined)
         {
-            normale.SetXYZ(thenormal.XYZ());
+            normale = normale.WithXYZ(thenormal.XYZ());
         }
         else
         {
@@ -1574,7 +1574,7 @@ public class Walking
             global::Kerf.Engine.Geometry.CSLib.Normal(2, der, 1.0e-9, p2d.X(), p2d.Y(), HSurfaceTool.FirstUParameter(surf),
                          HSurfaceTool.LastUParameter(surf), HSurfaceTool.FirstVParameter(surf),
                          HSurfaceTool.LastVParameter(surf), out stat, ref thenormal, out iu, out iv);
-            normale.SetXYZ(thenormal.XYZ());
+            normale = normale.WithXYZ(thenormal.XYZ());
             // OCCT_DEBUG trace left out.
         }
 

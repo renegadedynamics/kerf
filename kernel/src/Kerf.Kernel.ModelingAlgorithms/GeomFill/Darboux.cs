@@ -256,12 +256,12 @@ public class Darboux : TrihedronLaw
 
         Direction3D normalDir = new Direction3D();
         NormalD0(c2d.X(), c2d.Y(), mySupport, ref normalDir, out _, out _);
-        biNormal.SetXYZ(normalDir.XYZ());
+        biNormal = biNormal.WithXYZ(normalDir.XYZ());
 
         mySupport.D1(c2d.X(), c2d.Y(), out _, out Vector3D dS_du, out Vector3D dS_dv);
 
         tangent = d2d.X() * dS_du + d2d.Y() * dS_dv;
-        tangent.Normalize();
+        tangent = tangent.Normalized();
 
         normal = biNormal;
         normal ^= tangent;
@@ -288,7 +288,7 @@ public class Darboux : TrihedronLaw
 
         Direction3D normalDir = new Direction3D();
         NormalD1(c2d.X(), c2d.Y(), mySupport, ref normalDir, out Vector3D d1UNormal, out Vector3D d1VNormal);
-        biNormal.SetXYZ(normalDir.XYZ());
+        biNormal = biNormal.WithXYZ(normalDir.XYZ());
         dBiNormal = d1UNormal * d2d.X() + d1VNormal * d2d.Y();
 
         normal = biNormal;
@@ -327,7 +327,7 @@ public class Darboux : TrihedronLaw
         Direction3D normalDir = new Direction3D();
         NormalD2(c2d.X(), c2d.Y(), mySupport, ref normalDir, out Vector3D d1UNormal, out Vector3D d1VNormal,
                  out Vector3D d2UNormal, out Vector3D d2VNormal, out Vector3D d2UVNormal);
-        biNormal.SetXYZ(normalDir.XYZ());
+        biNormal = biNormal.WithXYZ(normalDir.XYZ());
         dBiNormal = d1UNormal * d2d.X() + d1VNormal * d2d.Y();
         d2BiNormal = d1UNormal * D2_2d.X() + d1VNormal * D2_2d.Y() + d2UNormal * d2d.X() * d2d.X()
                      + 2 * d2UVNormal * d2d.X() * d2d.Y() + d2VNormal * d2d.Y() * d2d.Y();
@@ -371,7 +371,7 @@ public class Darboux : TrihedronLaw
         aTangent /= num + 1;
         aNormal /= num + 1;
 
-        aTangent.Normalize();
+        aTangent = aTangent.Normalized();
         aBiNormal = aTangent.Crossed(aNormal).Normalized();
         aNormal = aBiNormal.Crossed(aTangent);
     }

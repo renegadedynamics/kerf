@@ -154,7 +154,7 @@ public class RevolutionSurface : SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _direction.Reverse();
+        _direction = _direction.Reversed();
     }
 
     /// <summary>2*PI - U.</summary>
@@ -183,7 +183,7 @@ public class RevolutionSurface : SweptSurface
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2.SetAffinity(axis, _basisCurve!.ParametricTransformation(t));
+        t2 = t2.WithAffinity(axis, _basisCurve!.ParametricTransformation(t));
         return t2;
     }
 
@@ -383,8 +383,8 @@ public class RevolutionSurface : SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _loc.Transform(t);
-        _direction.Transform(t);
+        _loc = _loc.Transformed(t);
+        _direction = _direction.Transformed(t);
         OwnBasisCurve();
         _basisCurve!.Transform(t);
         if (t.ScaleFactor() * t.HVectorialPart().Determinant() < 0.0)

@@ -197,7 +197,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
                 Orientation eori = e.Orientation();
                 if (eori == Reversed)
                 {
-                    d1E.Reverse();
+                    d1E = d1E.Reversed();
                 }
 
                 NCollection_List<Shape>.Iterator lclo = new(_currentShapeNeighbours);
@@ -226,7 +226,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
                     Orientation eEori = ee.Orientation();
                     if (eEori == Reversed)
                     {
-                        d1EE.Reverse();
+                        d1EE = d1EE.Reversed();
                     }
 
                     double cross = d1E.Crossed(d1EE);

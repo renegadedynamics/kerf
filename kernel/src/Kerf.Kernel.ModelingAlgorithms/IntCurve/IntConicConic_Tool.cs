@@ -53,9 +53,9 @@ internal static class IntConicConic_Tool
 
             Vector2D Norm = new();
             //  Modified by Sergey KHROMOV - Thu Nov  2 17:57:15 2000 Begin
-            tan1.Normalize();
+            tan1 = tan1.Normalized();
             //  Modified by Sergey KHROMOV - Thu Nov  2 17:57:16 2000 End
-            Norm.SetCoord(-tan1.Y(), tan1.X());
+            Norm = Norm.WithCoord(-tan1.Y(), tan1.X());
 
             double val1 = Norm.Dot(norm1);
             double val2 = Norm.Dot(norm2);

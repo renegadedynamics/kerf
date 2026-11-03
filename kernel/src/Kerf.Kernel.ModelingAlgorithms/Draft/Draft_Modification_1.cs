@@ -68,7 +68,7 @@ public sealed partial class DraftModification
                     Axis3D axcyl = cyl.Axis();
                     cir = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(cyl.Position(), cyl.Radius(), 0.0);
                     Vector3D vv = new(cyl.Location(), neutralPlane.Location());
-                    cir.Translate(vv.Dot(new Vector3D(axcyl.Direction())) * new Vector3D(axcyl.Direction()));
+                    cir = cir.Translated(vv.Dot(new Vector3D(axcyl.Direction())) * new Vector3D(axcyl.Direction()));
                 }
                 else
                 {
@@ -101,7 +101,7 @@ public sealed partial class DraftModification
                     double L = new Vector3D(cir.Location(), axis.Location()).Dot(new Vector3D(axis.Direction()));
                     double cos = theDirextr.Dot(axis.Direction());
                     Vector3D vv = (L / cos) * new Vector3D(theDirextr);
-                    cir.Translate(vv);
+                    cir = cir.Translated(vv);
                 }
 
                 theCircle = new CircleCurve3D(cir);
@@ -688,7 +688,7 @@ public sealed partial class DraftModification
 
                     if (extrdir.Dot(dirRef) < 0.0)
                     {
-                        extrdir.Reverse();
+                        extrdir = extrdir.Reversed();
                     }
 
                     // it is possible to accelerate speed by storing the info during
@@ -1525,25 +1525,25 @@ public sealed partial class DraftModification
 
                     if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        dirNF.Divide(Math.Sqrt(sqMagn));
+                        dirNF = dirNF.Divided(Math.Sqrt(sqMagn));
                     }
 
                     sqMagn = dirNL.SquareMagnitude();
                     if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        dirNL.Divide(Math.Sqrt(sqMagn));
+                        dirNL = dirNL.Divided(Math.Sqrt(sqMagn));
                     }
 
                     sqMagn = dirOF.SquareMagnitude();
                     if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        dirOF.Divide(Math.Sqrt(sqMagn));
+                        dirOF = dirOF.Divided(Math.Sqrt(sqMagn));
                     }
 
                     sqMagn = dirOL.SquareMagnitude();
                     if (sqMagn > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
-                        dirOL.Divide(Math.Sqrt(sqMagn));
+                        dirOL = dirOL.Divided(Math.Sqrt(sqMagn));
                     }
 
                     double cosF = dirNF.Dot(dirOF), cosL = dirNL.Dot(dirOL);
@@ -1839,13 +1839,13 @@ public sealed partial class DraftModification
         {
             if (oris == Reversed)
             {
-                norm.Reverse();
+                norm = norm.Reversed();
             }
             Axis3D axrot = new(ilipl.Point(1), norm.Crossed(direction));
             Line3D lires = new Line3D(new Axis3D(ilipl.Point(1), direction)).Rotated(axrot, angle);
             if (lires.Direction().Dot(lin.Direction()) < 0.0)
             {
-                lires.Reverse();
+                lires = lires.Reversed();
             }
             newC = new LineCurve3D(lires);
         }

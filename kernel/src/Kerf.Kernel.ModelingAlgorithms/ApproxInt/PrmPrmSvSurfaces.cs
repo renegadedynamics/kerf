@@ -157,8 +157,8 @@ public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         _myPnt = p = _myIntersectionOn2S.Point().Value();
 
         _myIntersectionOn2S.Point().Parameters(out u1, out v1, out u2, out v2);
-        _myParOnS1.SetCoord(tu1, tv1);
-        _myParOnS2.SetCoord(tu2, tv2);
+        _myParOnS1 = _myParOnS1.WithCoord(tu1, tv1);
+        _myParOnS2 = _myParOnS2.WithCoord(tu2, tv2);
 
         if (_myIntersectionOn2S.IsTangent)
         {
@@ -188,7 +188,7 @@ public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         //--   DeltaV = -------------------------------
         //--               TU.TU TV.TV  - (TU.TV)**2
 
-        tg.Normalize();
+        tg = tg.Normalized();
         _myTg = tg;
 
         double deltaU, deltaV;
@@ -215,7 +215,7 @@ public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         deltaU = (tgTU * tvtv - tgTV * tutv) / dis;
         deltaV = (tgTV * tutu - tgTU * tutv) / dis;
 
-        tguv1.SetCoord(deltaU, deltaV);
+        tguv1 = tguv1.WithCoord(deltaU, deltaV);
         _myTguv1 = tguv1;
 
         //------------------------------------------------------------
@@ -239,7 +239,7 @@ public class PrmPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         deltaU = (tgTU * tvtv - tgTV * tutv) / dis;
         deltaV = (tgTV * tutu - tgTU * tutv) / dis;
 
-        tguv2.SetCoord(deltaU, deltaV);
+        tguv2 = tguv2.WithCoord(deltaU, deltaV);
         _myTguv2 = tguv2;
 
         return (true);

@@ -1719,3 +1719,13 @@ Phase 10 (part): errors (unit 10F).
   (`IFSelect_ReturnStatus`). docs/api/diagnostics.md lists the codes.
 - `Resource_Manager.TryGetInteger`; ShapeProcess reads its parameters without catching an exception for each one that
   isn't set (results unchanged).
+Phase 10 (part): immutability (unit 10G). **Breaking for code that changed values in place.**
+- gp's values are `readonly struct`s: `Point3D`, `Vector3D`, `Direction3D`, `Axis3D`, `Frame3D`, `CoordinateSystem`,
+  `Transform3D`, `GeneralTransform3D`, `Matrix3x3`, the conics and quadrics and their 2D twins, and `Placement`. Their
+  in-place mutators (internal since phase 5) are gone; `Transformed`, `WithX`, `Normalized` and the other returning forms
+  give changed values. New: `Vector3D.LinearForm`, `Vector2D.LinearForm`, `Matrix3x3.PreMultiplied`.
+- The B-spline and Bézier curves' and surfaces' `Poles()`, `Knots()`, `Weights()` and the like return
+  `IReadOnlyList<T>` in place of `PackedList<T>`.
+- KERF0003, a build error: a public type of Kerf's public namespaces can't gain a setter, a mutable field or an in-place
+  method.
+- No behaviour changes: every result is the same to the bit, and every test passes as before.

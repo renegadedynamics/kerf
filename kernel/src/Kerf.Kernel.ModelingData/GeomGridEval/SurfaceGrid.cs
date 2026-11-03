@@ -414,7 +414,7 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         {
             for (int vIdx = grid.LowerCol(); vIdx <= grid.UpperCol(); ++vIdx)
             {
-                grid.ChangeValue(uIdx, vIdx).Transform(trsf);
+                grid.ChangeValue(uIdx, vIdx) = grid.ChangeValue(uIdx, vIdx).Transformed(trsf);
             }
         }
     }
@@ -432,9 +432,9 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
             for (int vIdx = grid.LowerCol(); vIdx <= grid.UpperCol(); ++vIdx)
             {
                 ref Surface.ResD1 val = ref grid.ChangeValue(uIdx, vIdx);
-                val.Point.Transform(trsf);
-                val.D1U.Transform(trsf);
-                val.D1V.Transform(trsf);
+                val.Point = val.Point.Transformed(trsf);
+                val.D1U = val.D1U.Transformed(trsf);
+                val.D1V = val.D1V.Transformed(trsf);
             }
         }
     }
@@ -452,12 +452,12 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
             for (int vIdx = grid.LowerCol(); vIdx <= grid.UpperCol(); ++vIdx)
             {
                 ref Surface.ResD2 val = ref grid.ChangeValue(uIdx, vIdx);
-                val.Point.Transform(trsf);
-                val.D1U.Transform(trsf);
-                val.D1V.Transform(trsf);
-                val.D2U.Transform(trsf);
-                val.D2V.Transform(trsf);
-                val.D2UV.Transform(trsf);
+                val.Point = val.Point.Transformed(trsf);
+                val.D1U = val.D1U.Transformed(trsf);
+                val.D1V = val.D1V.Transformed(trsf);
+                val.D2U = val.D2U.Transformed(trsf);
+                val.D2V = val.D2V.Transformed(trsf);
+                val.D2UV = val.D2UV.Transformed(trsf);
             }
         }
     }
@@ -475,16 +475,16 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
             for (int vIdx = grid.LowerCol(); vIdx <= grid.UpperCol(); ++vIdx)
             {
                 ref Surface.ResD3 val = ref grid.ChangeValue(uIdx, vIdx);
-                val.Point.Transform(trsf);
-                val.D1U.Transform(trsf);
-                val.D1V.Transform(trsf);
-                val.D2U.Transform(trsf);
-                val.D2V.Transform(trsf);
-                val.D2UV.Transform(trsf);
-                val.D3U.Transform(trsf);
-                val.D3V.Transform(trsf);
-                val.D3UUV.Transform(trsf);
-                val.D3UVV.Transform(trsf);
+                val.Point = val.Point.Transformed(trsf);
+                val.D1U = val.D1U.Transformed(trsf);
+                val.D1V = val.D1V.Transformed(trsf);
+                val.D2U = val.D2U.Transformed(trsf);
+                val.D2V = val.D2V.Transformed(trsf);
+                val.D2UV = val.D2UV.Transformed(trsf);
+                val.D3U = val.D3U.Transformed(trsf);
+                val.D3V = val.D3V.Transformed(trsf);
+                val.D3UUV = val.D3UUV.Transformed(trsf);
+                val.D3UVV = val.D3UVV.Transformed(trsf);
             }
         }
     }
@@ -501,7 +501,7 @@ public sealed class SurfaceGrid : GeomGridEvalGrid.ISurfaceEvaluator
         {
             for (int vIdx = grid.LowerCol(); vIdx <= grid.UpperCol(); ++vIdx)
             {
-                grid.ChangeValue(uIdx, vIdx).Transform(trsf);
+                grid.ChangeValue(uIdx, vIdx) = grid.ChangeValue(uIdx, vIdx).Transformed(trsf);
             }
         }
     }

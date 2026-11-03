@@ -68,7 +68,7 @@ public class Stretch : Filling
                 Point3D p = new();
                 for (k = 1; k <= 3; k++)
                 {
-                    p.SetCoord(k, pv1 * p1[i].Coord(k) + pv * p3[i].Coord(k) + pu * p2[j].Coord(k) + pu1 * p4[j].Coord(k)
+                    p = p.WithCoord(k, pv1 * p1[i].Coord(k) + pv * p3[i].Coord(k) + pu * p2[j].Coord(k) + pu1 * p4[j].Coord(k)
                                   - (pu1 * pv1 * p1[1].Coord(k) + pu * pv1 * p2[1].Coord(k)
                                      + pu * pv * p3[nPolU].Coord(k) + pu1 * pv * p4[nPolV].Coord(k)));
                 }

@@ -226,8 +226,8 @@ public class SurfaceAnalysis : Transient
             double vApex = -conicS.RefRadius() / Math.Sin(conicS.SemiAngle());
             _preci[0] = 0;
             _p3d[0]   = conicS.Apex();
-            _firstP2d[0].SetCoord(su1, vApex);
-            _lastP2d[0].SetCoord(su2, vApex);
+            _firstP2d[0] = _firstP2d[0].WithCoord(su1, vApex);
+            _lastP2d[0] = _lastP2d[0].WithCoord(su2, vApex);
             _firstPar[0] = su1;
             _lastPar[0]  = su2;
             _uIsoDeg[0]  = false;
@@ -241,11 +241,11 @@ public class SurfaceAnalysis : Transient
             double ang = Math.Acos(Min(1.0, majorR / minorR));
             _preci[0] = _preci[1] = Max(0.0, majorR - minorR);
             _p3d[0]   = _surf.Value(0.0, M_PI - ang);
-            _firstP2d[0].SetCoord(su1, M_PI - ang);
-            _lastP2d[0].SetCoord(su2, M_PI - ang);
+            _firstP2d[0] = _firstP2d[0].WithCoord(su1, M_PI - ang);
+            _lastP2d[0] = _lastP2d[0].WithCoord(su2, M_PI - ang);
             _p3d[1] = _surf.Value(0.0, M_PI + ang);
-            _firstP2d[1].SetCoord(su2, M_PI + ang);
-            _lastP2d[1].SetCoord(su1, M_PI + ang);
+            _firstP2d[1] = _firstP2d[1].WithCoord(su2, M_PI + ang);
+            _lastP2d[1] = _lastP2d[1].WithCoord(su1, M_PI + ang);
             _firstPar[0] = _firstPar[1] = su1;
             _lastPar[0]  = _lastPar[1]  = su2;
             _uIsoDeg[0]  = _uIsoDeg[1]  = false;
@@ -256,10 +256,10 @@ public class SurfaceAnalysis : Transient
             _preci[0] = _preci[1] = 0;
             _p3d[0]   = _surf.Value(su1, sv2); // Northern pole is first
             _p3d[1]   = _surf.Value(su1, sv1);
-            _firstP2d[0].SetCoord(su2, sv2);
-            _lastP2d[0].SetCoord(su1, sv2);
-            _firstP2d[1].SetCoord(su1, sv1);
-            _lastP2d[1].SetCoord(su2, sv1);
+            _firstP2d[0] = _firstP2d[0].WithCoord(su2, sv2);
+            _lastP2d[0] = _lastP2d[0].WithCoord(su1, sv2);
+            _firstP2d[1] = _firstP2d[1].WithCoord(su1, sv1);
+            _lastP2d[1] = _lastP2d[1].WithCoord(su2, sv1);
             _firstPar[0] = _firstPar[1] = su1;
             _lastPar[0]  = _lastPar[1]  = su2;
             _uIsoDeg[0]  = _uIsoDeg[1]  = false;
@@ -271,20 +271,20 @@ public class SurfaceAnalysis : Transient
 
             // rln S4135 //:r3
             _p3d[0] = _adSur!.Value(su1, 0.5 * (sv1 + sv2));
-            _firstP2d[0].SetCoord(su1, sv2);
-            _lastP2d[0].SetCoord(su1, sv1);
+            _firstP2d[0] = _firstP2d[0].WithCoord(su1, sv2);
+            _lastP2d[0] = _lastP2d[0].WithCoord(su1, sv1);
 
             _p3d[1] = _adSur.Value(su2, 0.5 * (sv1 + sv2));
-            _firstP2d[1].SetCoord(su2, sv1);
-            _lastP2d[1].SetCoord(su2, sv2);
+            _firstP2d[1] = _firstP2d[1].WithCoord(su2, sv1);
+            _lastP2d[1] = _lastP2d[1].WithCoord(su2, sv2);
 
             _p3d[2] = _adSur.Value(0.5 * (su1 + su2), sv1);
-            _firstP2d[2].SetCoord(su1, sv1);
-            _lastP2d[2].SetCoord(su2, sv1);
+            _firstP2d[2] = _firstP2d[2].WithCoord(su1, sv1);
+            _lastP2d[2] = _lastP2d[2].WithCoord(su2, sv1);
 
             _p3d[3] = _adSur.Value(0.5 * (su1 + su2), sv2);
-            _firstP2d[3].SetCoord(su2, sv2);
-            _lastP2d[3].SetCoord(su1, sv2);
+            _firstP2d[3] = _firstP2d[3].WithCoord(su2, sv2);
+            _lastP2d[3] = _lastP2d[3].WithCoord(su1, sv2);
 
             _firstPar[0] = _firstPar[1] = sv1;
             _lastPar[0]  = _lastPar[1]  = sv2;
@@ -481,11 +481,11 @@ public class SurfaceAnalysis : Transient
         _gap = Math.Sqrt(gapMin);
         if (!_uIsoDeg[indMin])
         {
-            result.SetX(neighbour.X());
+            result = result.WithX(neighbour.X());
         }
         else
         {
-            result.SetY(neighbour.Y());
+            result = result.WithY(neighbour.Y());
         }
 
         return true;
@@ -555,11 +555,11 @@ public class SurfaceAnalysis : Transient
                 double x = (x1 * (nbrPnt - j) + x2 * (j - 1)) / (nbrPnt - 1);
                 if (!_uIsoDeg[indMin])
                 {
-                    pnt2d[j].SetX(x);
+                    pnt2d[j] = pnt2d[j].WithX(x);
                 }
                 else
                 {
-                    pnt2d[j].SetY(x);
+                    pnt2d[j] = pnt2d[j].WithY(x);
                 }
             }
 
@@ -570,11 +570,11 @@ public class SurfaceAnalysis : Transient
         {
             if (!_uIsoDeg[indMin])
             {
-                pnt2d[j].SetX(pk.X());
+                pnt2d[j] = pnt2d[j].WithX(pk.X());
             }
             else
             {
-                pnt2d[j].SetY(pk.Y());
+                pnt2d[j] = pnt2d[j].WithY(pk.Y());
             }
         }
 
@@ -1183,7 +1183,7 @@ public class SurfaceAnalysis : Transient
             }
 
             // OK, return the result
-            sol.SetCoord(u, v);
+            sol = sol.WithCoord(u, v);
 
             return (nrm2 < 0.01 * ru2 * rv2 ? 2 : 1); //: q6
         }

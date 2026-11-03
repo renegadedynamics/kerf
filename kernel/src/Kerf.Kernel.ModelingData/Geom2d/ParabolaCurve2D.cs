@@ -149,7 +149,7 @@ public class ParabolaCurve2D : ConicCurve2D
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.ParabolaD2(u, _pos, _focalLength, out result.Point, out result.D1, out result.D2);
-        result.D3.SetCoord(0.0, 0.0);
+        result.D3 = result.D3.WithCoord(0.0, 0.0);
         return result;
     }
 
@@ -168,7 +168,7 @@ public class ParabolaCurve2D : ConicCurve2D
     {
         CheckMutable();
         _focalLength *= Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>

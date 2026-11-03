@@ -86,8 +86,7 @@ public class Geom_CircleTest
     public void Transform()
     {
         CircleCurve3D aCircle = new(XY(), 5.0);
-        Transform3D aTrsf = new();
-        aTrsf.SetScale(new Point3D(0.0, 0.0, 0.0), 2.0);
+        Transform3D aTrsf = new Transform3D().WithScale(new Point3D(0.0, 0.0, 0.0), 2.0);
         aCircle.Transform(aTrsf);
         Assert.Equal(10.0, aCircle.Radius(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }

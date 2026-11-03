@@ -427,8 +427,8 @@ public sealed class AnaFilletAlgo
 
                     // Make the circle again.
                     center = global::Kerf.Engine.Geometry.ElSLib.Value(xc, yc, _plane);
-                    circ.SetLocation(center);
-                    circ.SetRadius(radius - little);
+                    circ = circ.WithLocation(center);
+                    circ = circ.WithRadius(radius - little);
                 }
                 else
                 {
@@ -585,8 +585,8 @@ public sealed class AnaFilletAlgo
         // Make vectors.
         var v1 = new Vector2D(p12, p11);
         var v2 = new Vector2D(p12, p22);
-        v1.Normalize();
-        v2.Normalize();
+        v1 = v1.Normalized();
+        v2 = v2.Normalized();
 
         // Make bisectrissa.
         Vector2D bisec = 0.5 * (v1 + v2);
@@ -598,7 +598,7 @@ public sealed class AnaFilletAlgo
         }
 
         // Normalize the bisectrissa.
-        bisec.Normalize();
+        bisec = bisec.Normalized();
 
         // Angle at bisectrissa.
         double beta = v1.Angle(bisec);
@@ -650,11 +650,11 @@ public sealed class AnaFilletAlgo
         // Rotate the arc vector to become tangential at p21.
         if (_cw2)
         {
-            v2.Rotate(+M_PI_2);
+            v2 = v2.Rotated(+M_PI_2);
         }
         else
         {
-            v2.Rotate(-M_PI_2);
+            v2 = v2.Rotated(-M_PI_2);
         }
 
         // If vectors coincide (segment and arc are tangent),
@@ -666,8 +666,8 @@ public sealed class AnaFilletAlgo
         }
 
         // Make a bissectrisa of vectors at p12.
-        v2.Normalize();
-        v1.Normalize();
+        v2 = v2.Normalized();
+        v1 = v1.Normalized();
         Vector2D bisec = 0.5 * (v1 + v2);
 
         // If segment and arc look in opposite direction,
@@ -678,7 +678,7 @@ public sealed class AnaFilletAlgo
         }
 
         // Define an appropriate point to choose center of fillet.
-        bisec.Normalize();
+        bisec = bisec.Normalized();
         Point2D nearp = p12.Translated(radius * bisec);
         var nearl = new Line2D(p12, new Direction2D(bisec));
 
@@ -686,11 +686,11 @@ public sealed class AnaFilletAlgo
         // passing near the "near" point.
         Vector2D d1 = v1;
         var line = new Line2D(p11, new Direction2D(-d1));
-        d1.Rotate(M_PI_2);
-        line.Translate(radius * d1);
+        d1 = d1.Rotated(M_PI_2);
+        line = line.Translated(radius * d1);
         if (line.Distance(nearp) > radius)
         {
-            line.Translate(-2.0 * radius * d1);
+            line = line.Translated(-2.0 * radius * d1);
         }
 
         // Make a circle of radius of the arc +/- fillet radius.
@@ -698,7 +698,7 @@ public sealed class AnaFilletAlgo
         var circ = new Circle2D(axes, _radius2 + radius);
         if (_radius2 > radius && circ.Distance(nearp) > radius)
         {
-            circ.SetRadius(_radius2 - radius);
+            circ = circ.WithRadius(_radius2 - radius);
         }
 
         // Calculate intersection of the line and the circle.
@@ -736,10 +736,10 @@ public sealed class AnaFilletAlgo
 
         // Duplicate the information on shrink the arc:
         // calculate a point on the arc coinciding with the end of fillet.
-        line.SetLocation(pc2);
-        line.SetDirection(new Direction2D(pcc));
-        circ.SetLocation(pc2);
-        circ.SetRadius(_radius2);
+        line = line.WithLocation(pc2);
+        line = line.WithDirection(new Direction2D(pcc));
+        circ = circ.WithLocation(pc2);
+        circ = circ.WithRadius(_radius2);
         intersector.Perform(line, circ);
         if (!intersector.IsDone || intersector.PointCount == 0)
         {
@@ -798,11 +798,11 @@ public sealed class AnaFilletAlgo
         // Rotate the arc vector to become tangential at p21.
         if (_cw1)
         {
-            v1.Rotate(-M_PI_2);
+            v1 = v1.Rotated(-M_PI_2);
         }
         else
         {
-            v1.Rotate(+M_PI_2);
+            v1 = v1.Rotated(+M_PI_2);
         }
 
         // If vectors coincide (segment and arc are tangent),
@@ -814,8 +814,8 @@ public sealed class AnaFilletAlgo
         }
 
         // Make a bisectrissa of vectors at p12.
-        v1.Normalize();
-        v2.Normalize();
+        v1 = v1.Normalized();
+        v2 = v2.Normalized();
         Vector2D bisec = 0.5 * (v1 + v2);
 
         // If segment and arc look in opposite direction,
@@ -826,7 +826,7 @@ public sealed class AnaFilletAlgo
         }
 
         // Define an appropriate point to choose center of fillet.
-        bisec.Normalize();
+        bisec = bisec.Normalized();
         Point2D nearPoint = p12.Translated(radius * bisec);
         var nearLine = new Line2D(p12, new Direction2D(bisec));
 
@@ -834,11 +834,11 @@ public sealed class AnaFilletAlgo
         // passing near the "near" point.
         Vector2D d2Vec = v2;
         var line = new Line2D(p22, new Direction2D(-d2Vec));
-        d2Vec.Rotate(M_PI_2);
-        line.Translate(radius * d2Vec);
+        d2Vec = d2Vec.Rotated(M_PI_2);
+        line = line.Translated(radius * d2Vec);
         if (line.Distance(nearPoint) > radius)
         {
-            line.Translate(-2.0 * radius * d2Vec);
+            line = line.Translated(-2.0 * radius * d2Vec);
         }
 
         // Make a circle of radius of the arc +/- fillet radius.
@@ -846,7 +846,7 @@ public sealed class AnaFilletAlgo
         var circ = new Circle2D(axes, _radius1 + radius);
         if (_radius1 > radius && circ.Distance(nearPoint) > radius)
         {
-            circ.SetRadius(_radius1 - radius);
+            circ = circ.WithRadius(_radius1 - radius);
         }
 
         // Calculate intersection of the line and the big circle.
@@ -884,10 +884,10 @@ public sealed class AnaFilletAlgo
 
         // Duplicate the information on shrink the arc:
         // calculate a point on the arc coinciding with the start of fillet.
-        line.SetLocation(pc1);
-        line.SetDirection(new Direction2D(pcc));
-        circ.SetLocation(pc1);
-        circ.SetRadius(_radius1);
+        line = line.WithLocation(pc1);
+        line = line.WithDirection(new Direction2D(pcc));
+        circ = circ.WithLocation(pc1);
+        circ = circ.WithRadius(_radius1);
         intersector.Perform(line, circ);
         if (!intersector.IsDone || intersector.PointCount == 0)
         {
@@ -935,24 +935,24 @@ public sealed class AnaFilletAlgo
         // Rotate the vectors so that they are tangent to circles at p12.
         if (_cw1)
         {
-            v1.Rotate(+M_PI_2);
+            v1 = v1.Rotated(+M_PI_2);
         }
         else
         {
-            v1.Rotate(-M_PI_2);
+            v1 = v1.Rotated(-M_PI_2);
         }
         if (_cw2)
         {
-            v2.Rotate(-M_PI_2);
+            v2 = v2.Rotated(-M_PI_2);
         }
         else
         {
-            v2.Rotate(+M_PI_2);
+            v2 = v2.Rotated(+M_PI_2);
         }
 
         // Make a "check" point for choosing an offset circle.
-        v1.Normalize();
-        v2.Normalize();
+        v1 = v1.Normalized();
+        v2 = v2.Normalized();
         Vector2D bisec = 0.5 * (v1 + v2);
         if (bisec.SquareMagnitude() < Constants.Resolution())
         {
@@ -970,14 +970,14 @@ public sealed class AnaFilletAlgo
         var c1 = new Circle2D(axes, _radius1 + radius);
         if (_radius1 > radius && c1.Distance(checkp) > radius)
         {
-            c1.SetRadius(_radius1 - radius);
+            c1 = c1.WithRadius(_radius1 - radius);
         }
         // Arc 2.
-        axes.SetLocation(pc2);
+        axes = axes.WithLocation(pc2);
         var c2 = new Circle2D(axes, _radius2 + radius);
         if (_radius2 > radius && c2.Distance(checkp) > radius)
         {
-            c2.SetRadius(_radius2 - radius);
+            c2 = c2.WithRadius(_radius2 - radius);
         }
 
         // Calculate an intersection point of these two circles

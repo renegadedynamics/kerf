@@ -107,20 +107,20 @@ public class TorusProjector : Projector
             {
                 v += 2 * M_PI;
             }
-            p1.SetY(v);
-            p2.SetY(v);
+            p1 = p1.WithY(v);
+            p2 = p2.WithY(v);
             Vector2D v2d = new(p1, p2);
             // Normally std::abs( P1.X() - P2.X()) = PI/2
             // If != PI/2, we crossed the period => Reverse the Direction
             if (Math.Abs(p1.X() - p2.X()) > M_PI)
             {
-                v2d.Reverse();
+                v2d = v2d.Reversed();
             }
 
             Direction2D d2 = new(v2d);
             if (p1.X() < 0)
             {
-                p1.SetX(2 * M_PI + p1.X());
+                p1 = p1.WithX(2 * M_PI + p1.X());
             }
             _lin = new Line2D(p1, d2);
         }
@@ -146,7 +146,7 @@ public class TorusProjector : Projector
             Direction2D d2 = Constants.DY2d();
             if (((oc ^ zt) * (xc ^ yc)) < 0.0)
             {
-                d2.Reverse();
+                d2 = d2.Reversed();
             }
 
             _lin = new Line2D(p1, d2);

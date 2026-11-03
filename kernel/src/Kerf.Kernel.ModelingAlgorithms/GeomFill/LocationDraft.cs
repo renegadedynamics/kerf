@@ -69,8 +69,7 @@ public class LocationDraft : SurfaceLocationLaw
     public override void SetTrsf(in Matrix3x3 transfo)
     {
         _trans = transfo;
-        Matrix3x3 aux = new Matrix3x3();
-        aux.SetIdentity();
+        Matrix3x3 aux = new Matrix3x3().WithIdentity();
         aux -= _trans;
         _withTrans = false; // Au cas ou Trans = I
         for (int ii = 1; ii <= 3 && !_withTrans; ii++)
@@ -181,14 +180,14 @@ public class LocationDraft : SurfaceLocationLaw
         Vector3D t = new Vector3D(), n = new Vector3D(), b = new Vector3D();
 
         _trimmed!.D0(param, out Point3D p);
-        v.SetXYZ(p.XYZ());
+        v = v.WithXYZ(p.XYZ());
 
         ok = _law.D0(param, ref t, ref n, ref b);
         if (!ok)
         {
             return ok;
         }
-        m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
 
         if (_withTrans)
         {
@@ -246,14 +245,14 @@ public class LocationDraft : SurfaceLocationLaw
         Vector3D d, t = new Vector3D(), n = new Vector3D(), b = new Vector3D();
 
         _curve!.D0(param, out Point3D P);
-        v.SetXYZ(P.XYZ());
+        v = v.WithXYZ(P.XYZ());
 
         ok = _law.D0(param, ref t, ref n, ref b);
         if (!ok)
         {
             return ok;
         }
-        m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
 
         if (_withTrans)
         {
@@ -322,7 +321,7 @@ public class LocationDraft : SurfaceLocationLaw
                db = new Vector3D();
 
         _curve!.D1(param, out Point3D P, out dv);
-        v.SetXYZ(P.XYZ());
+        v = v.WithXYZ(P.XYZ());
 
         ok = _law.D1(param, ref t, ref dt, ref n, ref dn, ref b, ref db);
         if (!ok)
@@ -330,8 +329,8 @@ public class LocationDraft : SurfaceLocationLaw
             return false;
         }
 
-        m.SetCols(n.XYZ(), b.XYZ(), t.XYZ());
-        dm.SetCols(dn.XYZ(), db.XYZ(), dt.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), t.XYZ());
+        dm = dm.WithCols(dn.XYZ(), db.XYZ(), dt.XYZ());
 
         if (_withTrans)
         {
@@ -419,7 +418,7 @@ public class LocationDraft : SurfaceLocationLaw
                db = new Vector3D(), d2T = new Vector3D(), d2N = new Vector3D(), d2B = new Vector3D();
 
         _curve!.D2(param, out Point3D P, out dv, out d2V);
-        v.SetXYZ(P.XYZ());
+        v = v.WithXYZ(P.XYZ());
 
         ok = _law.D2(param, ref T, ref dt, ref d2T, ref n, ref dn, ref d2N, ref b, ref db, ref d2B);
         if (!ok)
@@ -427,9 +426,9 @@ public class LocationDraft : SurfaceLocationLaw
             return ok;
         }
 
-        m.SetCols(n.XYZ(), b.XYZ(), T.XYZ());
-        dm.SetCols(dn.XYZ(), db.XYZ(), dt.XYZ());
-        d2M.SetCols(d2N.XYZ(), d2B.XYZ(), d2T.XYZ());
+        m = m.WithCols(n.XYZ(), b.XYZ(), T.XYZ());
+        dm = dm.WithCols(dn.XYZ(), db.XYZ(), dt.XYZ());
+        d2M = d2M.WithCols(d2N.XYZ(), d2B.XYZ(), d2T.XYZ());
 
         if (_withTrans)
         {
@@ -600,14 +599,14 @@ public class LocationDraft : SurfaceLocationLaw
 
         _law.GetAverageLaw(ref v1, ref v2, ref v3);
         // OCCT: the columns are (tangent, normal, binormal) here, but (normal, binormal, tangent) in D0, D1 and D2.
-        am.SetCols(v1.XYZ(), v2.XYZ(), v3.XYZ());
+        am = am.WithCols(v1.XYZ(), v2.XYZ(), v3.XYZ());
 
-        av.SetCoord(0.0, 0.0, 0.0);
+        av = av.WithCoord(0.0, 0.0, 0.0);
         delta = (_trimmed!.LastParameter() - _trimmed.FirstParameter()) / 10;
         u = _trimmed.FirstParameter();
         for (ii = 0; ii <= 10; ii++, u += delta)
         {
-            v.SetXYZ(_trimmed.Value(u).XYZ());
+            v = v.WithXYZ(_trimmed.Value(u).XYZ());
             av += v;
         }
         av /= 11;

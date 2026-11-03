@@ -113,11 +113,11 @@ public partial struct PntOn2S : IEquatable<PntOn2S>
         Point2D pointOnSurf = new();
         if (onFirst)
         {
-            pointOnSurf.SetCoord(_u1, _v1);
+            pointOnSurf = pointOnSurf.WithCoord(_u1, _v1);
         }
         else
         {
-            pointOnSurf.SetCoord(_u2, _v2);
+            pointOnSurf = pointOnSurf.WithCoord(_u2, _v2);
         }
         return pointOnSurf;
     }
@@ -185,8 +185,8 @@ public partial struct PntOn2S : IEquatable<PntOn2S>
             return false;
         }
 
-        p1.SetCoord(_u2, _v2);
-        p2.SetCoord(u2, v2);
+        p1 = p1.WithCoord(_u2, _v2);
+        p2 = p2.WithCoord(u2, v2);
 
         return p1.IsEqual(p2, tol2D);
     }

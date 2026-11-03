@@ -422,7 +422,7 @@ public class ShapeAnalysis_CurveTests
 
         // Transform applies to each segment
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 5));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 5));
         var aMoved = (ComplexCurve)aCurve.Transformed(aT);
         Assert.Equal(5.0, aMoved.Value(0.75).Z(), 1e-15);
         Assert.Equal(0.0, aCurve.Value(0.75).Z());

@@ -170,7 +170,7 @@ public class GeomTools_PortTests
     public void Left_handed_axes_are_read_back_left_handed()
     {
         var anAx3 = new CoordinateSystem(new Point3D(1, 2, 3), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
-        anAx3.YReverse();
+        anAx3 = anAx3.YReversed();
         var aCylinder = new CylindricalSurface(anAx3, 2.0);
         var aWriter = new StringWriter();
         global::Kerf.Engine.Exchange.Brep.GeomTools.Write(aCylinder, aWriter);

@@ -721,7 +721,7 @@ public class ComposeShellFixer : RootFixer
                         {
                             shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.X() - p2d0.X(), 0.0, _uPeriod);
                         }
-                        p2d.SetX(p2d.X() + shift);
+                        p2d = p2d.WithX(p2d.X() + shift);
                     }
                     if (_vClosed && Math.Abs(line.Direction().Y()) < Kerf.Engine.Foundation.Precision.PConfusion())
                     {
@@ -733,7 +733,7 @@ public class ComposeShellFixer : RootFixer
                         {
                             shift = ShapeAnalysisAnalysis.AdjustByPeriod(p2d.Y() - p2d0.Y(), 0.0, _vPeriod);
                         }
-                        p2d.SetY(p2d.Y() + shift);
+                        p2d = p2d.WithY(p2d.Y() + shift);
                     }
                     begin = false;
                 }
@@ -870,7 +870,7 @@ public class ComposeShellFixer : RootFixer
         Point3D p = c3d.Value(param);
         if (t.Form() != Identity)
         {
-            p.Transform(t);
+            p = p.Transformed(t);
         }
         return pos.SquareDistance(p) <= tol * tol ? 1 : 0;
     }
@@ -991,8 +991,8 @@ public class ComposeShellFixer : RootFixer
             Point3D lastVPnt = Tool.Pnt(lastV);
             if (t.Form() != Identity)
             {
-                prevVPnt.Transform(t);
-                lastVPnt.Transform(t);
+                prevVPnt = prevVPnt.Transformed(t);
+                lastVPnt = lastVPnt.Transformed(t);
             }
 
             if (!sae.Curve3d(edge, out Curve3D? c3d, out double f3d, out double l3d))
@@ -1482,12 +1482,12 @@ public class ComposeShellFixer : RootFixer
                         pppl.SetX(pppl.X() + shift);
                     }
                     double dUmax = umax + shift - x;
-                    shiftNext.SetX(dUmax > 0 ? -_uPeriod : _uPeriod);
+                    shiftNext = shiftNext.WithX(dUmax > 0 ? -_uPeriod : _uPeriod);
                     nbIter = (int)(1 + Math.Abs(dUmax) / _uPeriod);
                     shift = ShapeAnalysisAnalysis.AdjustByPeriod(posf.X(), x, _uPeriod);
-                    posf.SetX(posf.X() + shift);
+                    posf = posf.WithX(posf.X() + shift);
                     shift = ShapeAnalysisAnalysis.AdjustByPeriod(posl.X(), x, _uPeriod);
-                    posl.SetX(posl.X() + shift);
+                    posl = posl.WithX(posl.X() + shift);
                 }
                 else if (closedDir > 0)
                 {
@@ -1502,12 +1502,12 @@ public class ComposeShellFixer : RootFixer
                         pppl.SetY(pppl.Y() + shift);
                     }
                     double dVmax = vmax + shift - y;
-                    shiftNext.SetY(dVmax > 0 ? -_vPeriod : _vPeriod);
+                    shiftNext = shiftNext.WithY(dVmax > 0 ? -_vPeriod : _vPeriod);
                     nbIter = (int)(1 + Math.Abs(dVmax) / _vPeriod);
                     shift = ShapeAnalysisAnalysis.AdjustByPeriod(posf.Y(), y, _vPeriod);
-                    posf.SetY(posf.Y() + shift);
+                    posf = posf.WithY(posf.Y() + shift);
                     shift = ShapeAnalysisAnalysis.AdjustByPeriod(posl.Y(), y, _vPeriod);
-                    posl.SetY(posl.Y() + shift);
+                    posl = posl.WithY(posl.Y() + shift);
                 }
             }
 
@@ -2317,7 +2317,7 @@ public class ComposeShellFixer : RootFixer
             Point3D midPnt3d = myGrid.Value(midPnt.X(), midPnt.Y());
             if (!myLoc.IsIdentity)
             {
-                midPnt3d.Transform(myLoc.Transformation());
+                midPnt3d = midPnt3d.Transformed(myLoc.Transformation());
             }
             if (midPnt3d.SquareDistance(pnt) > tol2)
             {
@@ -2537,12 +2537,12 @@ public class ComposeShellFixer : RootFixer
                         if (_uClosed)
                         {
                             shiftu = ShapeAnalysisAnalysis.AdjustByPeriod(lPnt.X(), endPnt.X(), _uPeriod);
-                            lPnt.SetX(lPnt.X() + shiftu);
+                            lPnt = lPnt.WithX(lPnt.X() + shiftu);
                         }
                         if (_vClosed)
                         {
                             shiftv = ShapeAnalysisAnalysis.AdjustByPeriod(lPnt.Y(), endPnt.Y(), _vPeriod);
-                            lPnt.SetY(lPnt.Y() + shiftv);
+                            lPnt = lPnt.WithY(lPnt.Y() + shiftv);
                         }
                     }
 
@@ -2666,11 +2666,11 @@ public class ComposeShellFixer : RootFixer
                 }
                 if (_uClosed)
                 {
-                    endPnt.SetX(endPnt.X() + dsu);
+                    endPnt = endPnt.WithX(endPnt.X() + dsu);
                 }
                 if (_vClosed)
                 {
-                    endPnt.SetY(endPnt.Y() + dsv);
+                    endPnt = endPnt.WithY(endPnt.Y() + dsv);
                 }
             }
 
@@ -3128,11 +3128,11 @@ public class ComposeShellFixer : RootFixer
                             var shift = new Vector2D(0.0, 0.0);
                             if (_uClosed && Math.Abs(pf2.X() - pl2.X()) < Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                shift.SetX(_uPeriod);
+                                shift = shift.WithX(_uPeriod);
                             }
                             if (_vClosed && Math.Abs(pf2.Y() - pl2.Y()) < Kerf.Engine.Foundation.Precision.PConfusion())
                             {
-                                shift.SetY(_vPeriod);
+                                shift = shift.WithY(_vPeriod);
                             }
                             // OCCT.NET: frozen. OCCT translates the stored pcurve in place.
                             FaceFixer.EditPCurve(e, c22, c => c.Translate(shift));
@@ -3205,12 +3205,12 @@ public class ComposeShellFixer : RootFixer
             if (_uClosed)
             {
                 ush = ShapeAnalysisAnalysis.AdjustToPeriod(pnt.X(), u1, u2);
-                pnt.SetX(pnt.X() + ush);
+                pnt = pnt.WithX(pnt.X() + ush);
             }
             if (_vClosed)
             {
                 vsh = ShapeAnalysisAnalysis.AdjustToPeriod(pnt.Y(), v1, v2);
-                pnt.SetY(pnt.Y() + vsh);
+                pnt = pnt.WithY(pnt.Y() + vsh);
             }
             mPnts[i] = pnt;
             int indU = _grid.LocateUParameter(pnt.X());
@@ -3221,8 +3221,8 @@ public class ComposeShellFixer : RootFixer
             if (ush != 0.0 || vsh != 0.0)
             {
                 var sh = new Transform2D();
-                sh.SetTranslation(new Vector2D(ush, vsh));
-                t.Multiply(sh);
+                sh = sh.WithTranslation(new Vector2D(ush, vsh));
+                t = t.Multiplied(sh);
                 needT = true;
             }
             if (wires[i].IsVertex)

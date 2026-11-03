@@ -24,13 +24,13 @@ public abstract class ConicCurve3D : Curve3D
     internal void SetAxis(in Axis3D a1)
     {
         CheckMutable();
-        _pos.SetAxis(a1);
+        _pos = _pos.WithAxis(a1);
     }
 
     internal void SetLocation(in Point3D p)
     {
         CheckMutable();
-        _pos.SetLocation(p);
+        _pos = _pos.WithLocation(p);
     }
 
     internal void SetPosition(in Frame3D a2)
@@ -87,8 +87,8 @@ public abstract class ConicCurve3D : Curve3D
     {
         CheckMutable();
         Direction3D vz = _pos.Direction();
-        vz.Reverse();
-        _pos.SetDirection(vz);
+        vz = vz.Reversed();
+        _pos = _pos.WithDirection(vz);
     }
 
     /// <summary>CN: conics are infinitely smooth.</summary>

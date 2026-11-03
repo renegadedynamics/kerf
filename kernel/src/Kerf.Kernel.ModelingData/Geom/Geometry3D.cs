@@ -27,8 +27,7 @@ public abstract class Geometry3D : Transient
     internal void Mirror(in Point3D p)
     {
         CheckMutable();
-        Transform3D t = new Transform3D();
-        t.SetMirror(p);
+        Transform3D t = new Transform3D().WithMirror(p);
         Transform(t);
     }
 
@@ -36,8 +35,7 @@ public abstract class Geometry3D : Transient
     internal void Mirror(in Axis3D a1)
     {
         CheckMutable();
-        Transform3D t = new Transform3D();
-        t.SetMirror(a1);
+        Transform3D t = new Transform3D().WithMirror(a1);
         Transform(t);
     }
 
@@ -45,8 +43,7 @@ public abstract class Geometry3D : Transient
     internal void Mirror(in Frame3D a2)
     {
         CheckMutable();
-        Transform3D t = new Transform3D();
-        t.SetMirror(a2);
+        Transform3D t = new Transform3D().WithMirror(a2);
         Transform(t);
     }
 
@@ -54,8 +51,7 @@ public abstract class Geometry3D : Transient
     internal void Rotate(in Axis3D a1, double ang)
     {
         CheckMutable();
-        Transform3D t = new Transform3D();
-        t.SetRotation(a1, ang);
+        Transform3D t = new Transform3D().WithRotation(a1, ang);
         Transform(t);
     }
 
@@ -63,8 +59,7 @@ public abstract class Geometry3D : Transient
     internal void Scale(in Point3D p, double s)
     {
         CheckMutable();
-        Transform3D t = new Transform3D();
-        t.SetScale(p, s);
+        Transform3D t = new Transform3D().WithScale(p, s);
         Transform(t);
     }
 
@@ -72,8 +67,7 @@ public abstract class Geometry3D : Transient
     internal void Translate(in Vector3D v)
     {
         CheckMutable();
-        Transform3D t = new Transform3D();
-        t.SetTranslation(v);
+        Transform3D t = new Transform3D().WithTranslation(v);
         Transform(t);
     }
 

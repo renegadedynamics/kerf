@@ -124,11 +124,11 @@ public partial class FilBuilder
         cl2.Tangent(out dir2);
         if (sens1 == -1)
         {
-            dir1.Reverse();
+            dir1 = dir1.Reversed();
         }
         if (sens2 == -1)
         {
-            dir2.Reverse();
+            dir2 = dir2.Reversed();
         }
         double ang1 = 0.0;
         ang1 = Math.Abs(dir1.Angle(dir2));
@@ -735,11 +735,11 @@ public partial class FilBuilder
                     {
                         if (ppfacdif.X() < ppfacsam.X())
                         {
-                            ppfacdif.SetX(ppfacdif.X() + uperiod);
+                            ppfacdif = ppfacdif.WithX(ppfacdif.X() + uperiod);
                         }
                         else
                         {
-                            ppfacdif.SetX(ppfacdif.X() - uperiod);
+                            ppfacdif = ppfacdif.WithX(ppfacdif.X() - uperiod);
                         }
                     }
                 }

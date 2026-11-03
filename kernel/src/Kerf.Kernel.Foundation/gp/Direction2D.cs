@@ -11,7 +11,7 @@ namespace Kerf.Geometry;
 
 /// <summary>A unit vector in 2D space.</summary>
 /// <remarks><c>new gp_Dir2d()</c> is (1, 0), as in OCCT; <c>default(gp_Dir2d)</c> is all zeros and not a valid direction.</remarks>
-public partial struct Direction2D : IEquatable<Direction2D>
+public readonly partial struct Direction2D : IEquatable<Direction2D>
 {
     /// <summary>The four directions along the axes of the global system.</summary>
     public enum D
@@ -26,7 +26,14 @@ public partial struct Direction2D : IEquatable<Direction2D>
         NY,
     }
 
-    private Xy _coord;
+    private readonly Xy _coord;
+
+    /// <summary>A value of the fields as they are (unit 10G: the returning forms build their results with it).</summary>
+    /// <remarks><paramref name="isUnit"/> tells it from the public constructor, which normalizes.</remarks>
+    private Direction2D(in Xy coord, bool isUnit)
+    {
+        _coord = coord;
+    }
 
     public Direction2D() => _coord = new Xy(1.0, 0.0);
 
@@ -53,140 +60,35 @@ public partial struct Direction2D : IEquatable<Direction2D>
         _coord.SetCoord(xv / d, yv / d);
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetCoord(int index, double xi)
-    {
-        Standard_OutOfRange_Raise_if(index < 1 || index > 2, "gp_Dir2d::SetCoord() - index is out of range [1, 2]");
-        if (index == 1)
-        {
-            SetX(xi);
-        }
-        else
-        {
-            SetY(xi);
-        }
-    }
-
-    internal void SetCoord(double xv, double yv)
-    {
-        double sqMod = xv * xv + yv * yv;
-        if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
-        {
-            _coord.SetCoord(xv, yv);
-            return;
-        }
-
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir2d::SetCoord() - result vector has zero norm");
-        double d = Math.Sqrt(sqMod);
-        _coord.SetCoord(xv / d, yv / d);
-    }
-
-    internal void SetX(double x) => SetCoord(x, _coord.Y());
-
-    internal void SetY(double y) => SetCoord(_coord.X(), y);
-
-    internal void SetXY(in Xy xy) => SetCoord(xy.X(), xy.Y());
-
-    internal void Reverse() => _coord.Reverse();
-
-    internal void Mirror(in Direction2D v)
-    {
-        Xy xy = v._coord;
-        double a = xy.X();
-        double b = xy.Y();
-        double x = _coord.X();
-        double y = _coord.Y();
-        double m1 = 2.0 * a * b;
-        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y;
-        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y;
-        _coord.SetCoord(xx, yy);
-    }
-
-    internal void Mirror(in Axis2D a2)
-    {
-        Xy xy = a2.Direction().XY();
-        double a = xy.X();
-        double b = xy.Y();
-        double x = _coord.X();
-        double y = _coord.Y();
-        double m1 = 2.0 * a * b;
-        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y;
-        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y;
-        _coord.SetCoord(xx, yy);
-    }
-
-    internal void Rotate(double ang)
-    {
-        Transform2D t = new();
-        t.SetRotation(new Point2D(0.0, 0.0), ang);
-        _coord.Multiply(t.HVectorialPart());
-    }
-
-    internal void Transform(in Transform2D t)
-    {
-        if (t.Form() == Identity || t.Form() == Translation)
-        {
-        }
-        else if (t.Form() == PntMirror)
-        {
-            _coord.Reverse();
-        }
-        else if (t.Form() == Scale)
-        {
-            if (t.ScaleFactor() < 0.0)
-            {
-                _coord.Reverse();
-            }
-        }
-        else
-        {
-            _coord.Multiply(t.HVectorialPart());
-            double d = _coord.Modulus();
-            _coord.Divide(d);
-            if (t.ScaleFactor() < 0.0)
-            {
-                _coord.Reverse();
-            }
-        }
-    }
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Direction2D WithCoord(int index, double xi)
     {
-        Direction2D copy = this;
-        copy.SetCoord(index, xi);
-        return copy;
+        Standard_OutOfRange_Raise_if(index < 1 || index > 2, "gp_Dir2d::SetCoord() - index is out of range [1, 2]");
+        return index == 1 ? WithX(xi) : WithY(xi);
     }
 
     public readonly Direction2D WithCoord(double xv, double yv)
     {
-        Direction2D copy = this;
-        copy.SetCoord(xv, yv);
-        return copy;
+        Xy coord = _coord;
+        double sqMod = xv * xv + yv * yv;
+        if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
+        {
+            coord.SetCoord(xv, yv);
+            return new Direction2D(coord, isUnit: true);
+        }
+
+        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir2d::SetCoord() - result vector has zero norm");
+        double d = Math.Sqrt(sqMod);
+        coord.SetCoord(xv / d, yv / d);
+        return new Direction2D(coord, isUnit: true);
     }
 
-    public readonly Direction2D WithX(double x)
-    {
-        Direction2D copy = this;
-        copy.SetX(x);
-        return copy;
-    }
+    public readonly Direction2D WithX(double x) => WithCoord(x, _coord.Y());
 
-    public readonly Direction2D WithY(double y)
-    {
-        Direction2D copy = this;
-        copy.SetY(y);
-        return copy;
-    }
+    public readonly Direction2D WithY(double y) => WithCoord(_coord.X(), y);
 
-    public readonly Direction2D WithXY(in Xy xy)
-    {
-        Direction2D copy = this;
-        copy.SetXY(xy);
-        return copy;
-    }
+    public readonly Direction2D WithXY(in Xy xy) => WithCoord(xy.X(), xy.Y());
 
     // Queries
 
@@ -293,37 +195,77 @@ public partial struct Direction2D : IEquatable<Direction2D>
 
     public readonly Direction2D Reversed()
     {
-        Direction2D v = this;
-        v._coord.Reverse();
-        return v;
+        Xy coord = _coord;
+        coord.Reverse();
+        return new Direction2D(coord, isUnit: true);
     }
 
     public readonly Direction2D Mirrored(in Direction2D v)
     {
-        Direction2D vres = this;
-        vres.Mirror(v);
-        return vres;
+        Xy coord = _coord;
+        Xy xy = v._coord;
+        double a = xy.X();
+        double b = xy.Y();
+        double x = coord.X();
+        double y = coord.Y();
+        double m1 = 2.0 * a * b;
+        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y;
+        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y;
+        coord.SetCoord(xx, yy);
+        return new Direction2D(coord, isUnit: true);
     }
 
-    public readonly Direction2D Mirrored(in Axis2D a)
+    public readonly Direction2D Mirrored(in Axis2D a2)
     {
-        Direction2D v = this;
-        v.Mirror(a);
-        return v;
+        Xy coord = _coord;
+        Xy xy = a2.Direction().XY();
+        double a = xy.X();
+        double b = xy.Y();
+        double x = coord.X();
+        double y = coord.Y();
+        double m1 = 2.0 * a * b;
+        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y;
+        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y;
+        coord.SetCoord(xx, yy);
+        return new Direction2D(coord, isUnit: true);
     }
 
     public readonly Direction2D Rotated(double ang)
     {
-        Direction2D v = this;
-        v.Rotate(ang);
-        return v;
+        Xy coord = _coord;
+        Transform2D t = new Transform2D().WithRotation(new Point2D(0.0, 0.0), ang);
+        coord.Multiply(t.HVectorialPart());
+        return new Direction2D(coord, isUnit: true);
     }
 
     public readonly Direction2D Transformed(in Transform2D t)
     {
-        Direction2D v = this;
-        v.Transform(t);
-        return v;
+        Xy coord = _coord;
+        if (t.Form() == Identity || t.Form() == Translation)
+        {
+        }
+        else if (t.Form() == PntMirror)
+        {
+            coord.Reverse();
+        }
+        else if (t.Form() == Scale)
+        {
+            if (t.ScaleFactor() < 0.0)
+            {
+                coord.Reverse();
+            }
+        }
+        else
+        {
+            coord.Multiply(t.HVectorialPart());
+            double d = coord.Modulus();
+            coord.Divide(d);
+            if (t.ScaleFactor() < 0.0)
+            {
+                coord.Reverse();
+            }
+        }
+        return new Direction2D(coord, isUnit: true);
     }
 
     public static Direction2D operator -(in Direction2D v) => v.Reversed();

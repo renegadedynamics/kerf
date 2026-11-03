@@ -168,10 +168,10 @@ public abstract class LocationLaw : Transient
             _laws.Value(ipath - 1).D0(last, ref m1, ref v);
             _laws.Value(ipath).GetDomain(out first, out last);
             _laws.Value(ipath).D0(first, ref m2, ref v);
-            t1.SetXYZ(m1.Column(3));
-            t2.SetXYZ(m2.Column(3));
-            n1.SetXYZ(m1.Column(1));
-            n2.SetXYZ(m2.Column(1));
+            t1 = t1.WithXYZ(m1.Column(3));
+            t2 = t2.WithXYZ(m2.Column(3));
+            n1 = n1.WithXYZ(m1.Column(1));
+            n2 = n2.WithXYZ(m2.Column(1));
             if (t1.IsParallel(t2, tolAngular) && !t1.IsOpposite(t2, tolAngular))
             { // Correction G0
                 ToG0(m1, m2, out trsf);
@@ -180,13 +180,13 @@ public abstract class LocationLaw : Transient
             {
                 double alpha;
                 Vector3D cross = t1;
-                cross.Cross(t2);
+                cross = cross.Crossed(t2);
                 alpha = t2.AngleWithRef(t1, cross);
                 Axis3D axe = new(Constants.Origin(), new Direction3D(cross.XYZ()));
-                n2.Rotate(axe, alpha);
+                n2 = n2.Rotated(axe, alpha);
 
                 angle = n2.AngleWithRef(n1, t1);
-                trsf.SetRotation(oz, angle);
+                trsf = trsf.WithRotation(oz, angle);
             }
             _laws.Value(ipath).SetTrsf(trsf);
         }
@@ -228,8 +228,7 @@ public abstract class LocationLaw : Transient
     /// <summary>Removes the transformations set by <see cref="TransformInG0Law"/> or TransformInCompatibleLaw.</summary>
     public void DeleteTransform()
     {
-        Matrix3x3 id = new();
-        id.SetIdentity();
+        Matrix3x3 id = new Matrix3x3().WithIdentity();
         for (int ii = 1; ii <= _edges!.Length(); ii++)
         {
             _laws!.ChangeValue(ii).SetTrsf(id);
@@ -441,7 +440,9 @@ public abstract class LocationLaw : Transient
             p2 *= m2;
             p2 += v2.XYZ();
 
-            p.ChangeCoord().SetLinearForm(0.5, p1, 0.5, p2);
+            Xyz coord = default;
+            coord.SetLinearForm(0.5, p1, 0.5, p2);
+            p = new Point3D(coord);
             p1 -= p2;
             double tol = p1.Modulus() / 2;
             tol += tolMin;
@@ -449,8 +450,8 @@ public abstract class LocationLaw : Transient
         }
         else
         {
-            p.ChangeCoord() *= m1;
-            p.ChangeCoord() += v1.XYZ();
+            p = new Point3D(p.XYZ() * m1);
+            p = new Point3D(p.XYZ() + v1.XYZ());
             b.MakeVertex(ref output, p, tolMin);
         }
     }
@@ -717,7 +718,7 @@ public abstract class LocationLaw : Transient
             // Positionement
             _laws!.Value(ind).D0(u, ref m, ref v);
             Transform3D fila = new();
-            fila.SetValues(m[1, 1],
+            fila = fila.WithValues(m[1, 1],
                            m[1, 2],
                            m[1, 3],
                            v.X(),

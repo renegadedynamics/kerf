@@ -477,7 +477,7 @@ public partial class UnifySameDomain
                         Point2D pnt2d   = gAcurve.Value(resFirsts[ii]);
                         Vector2D offset = -new Vector2D(dir2d);
                         offset *= first3d;
-                        pnt2d.Translate(offset);
+                        pnt2d = pnt2d.Translated(offset);
                         var newLine2d = new LineCurve2D(pnt2d, dir2d);
                         resPCurves[ii] = newLine2d;
                     }
@@ -488,7 +488,7 @@ public partial class UnifySameDomain
                         Frame2D  position = circ2d.Position();
                         Point2D  location = circ2d.Location();
                         double    offset  = resFirsts[ii] - first3d;
-                        position.Rotate(location, offset);
+                        position = position.Rotated(location, offset);
                         var newCircle2d = new CircleCurve2D(position, radius);
                         resPCurves[ii] = newCircle2d;
                     }
@@ -1004,7 +1004,7 @@ public partial class UnifySameDomain
         firstPoint = cur.Value(f);
         Point3D lp = cur.Value(l);
         directionVec = new Vector3D(lp.XYZ().Subtracted(firstPoint.XYZ()));
-        directionVec.Normalize();
+        directionVec = directionVec.Normalized();
         return true;
     }
 

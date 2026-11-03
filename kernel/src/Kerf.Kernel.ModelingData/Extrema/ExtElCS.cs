@@ -473,7 +473,7 @@ public class ExtElCS
                         Vector3D vec = new(dir);
                         Point3D pntOnCyl;
 
-                        vec.Multiply(shift[j]);
+                        vec = vec.Multiplied(shift[j]);
                         pntOnCyl = pOnCirc.Value().Translated(vec);
 
                         double u;

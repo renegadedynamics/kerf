@@ -63,55 +63,55 @@ public class GeometryTransformation : Transient
     internal void SetMirror(in Point3D pnt)
     {
         CheckMutable();
-        _gpTrsf.SetMirror(pnt);
+        _gpTrsf = _gpTrsf.WithMirror(pnt);
     }
 
     internal void SetMirror(in Axis3D a1)
     {
         CheckMutable();
-        _gpTrsf.SetMirror(a1);
+        _gpTrsf = _gpTrsf.WithMirror(a1);
     }
 
     internal void SetMirror(in Frame3D a2)
     {
         CheckMutable();
-        _gpTrsf.SetMirror(a2);
+        _gpTrsf = _gpTrsf.WithMirror(a2);
     }
 
     internal void SetRotation(in Axis3D a1, double ang)
     {
         CheckMutable();
-        _gpTrsf.SetRotation(a1, ang);
+        _gpTrsf = _gpTrsf.WithRotation(a1, ang);
     }
 
     internal void SetScale(in Point3D pnt, double scale)
     {
         CheckMutable();
-        _gpTrsf.SetScale(pnt, scale);
+        _gpTrsf = _gpTrsf.WithScale(pnt, scale);
     }
 
     internal void SetTransformation(in CoordinateSystem fromSystem1, in CoordinateSystem toSystem2)
     {
         CheckMutable();
-        _gpTrsf.SetTransformation(fromSystem1, toSystem2);
+        _gpTrsf = _gpTrsf.WithTransformation(fromSystem1, toSystem2);
     }
 
     internal void SetTransformation(in CoordinateSystem toSystem)
     {
         CheckMutable();
-        _gpTrsf.SetTransformation(toSystem);
+        _gpTrsf = _gpTrsf.WithTransformation(toSystem);
     }
 
     internal void SetTranslation(in Vector3D vec)
     {
         CheckMutable();
-        _gpTrsf.SetTranslation(vec);
+        _gpTrsf = _gpTrsf.WithTranslation(vec);
     }
 
     internal void SetTranslation(in Point3D p1, in Point3D p2)
     {
         CheckMutable();
-        _gpTrsf.SetTranslation(p1, p2);
+        _gpTrsf = _gpTrsf.WithTranslation(p1, p2);
     }
 
     internal void SetTrsf(in Transform3D trsf)
@@ -123,25 +123,25 @@ public class GeometryTransformation : Transient
     internal void Invert()
     {
         CheckMutable();
-        _gpTrsf.Invert();
+        _gpTrsf = _gpTrsf.Inverted();
     }
 
     internal void Multiply(GeometryTransformation other)
     {
         CheckMutable();
-        _gpTrsf.Multiply(other.Trsf());
+        _gpTrsf = _gpTrsf.Multiplied(other.Trsf());
     }
 
     internal void Power(int n)
     {
         CheckMutable();
-        _gpTrsf.Power(n);
+        _gpTrsf = _gpTrsf.Powered(n);
     }
 
     internal void PreMultiply(GeometryTransformation other)
     {
         CheckMutable();
-        _gpTrsf.PreMultiply(other.Trsf());
+        _gpTrsf = _gpTrsf.PreMultiplied(other.Trsf());
     }
 
     // Queries
@@ -174,7 +174,7 @@ public class GeometryTransformation : Transient
     public GeometryTransformation Powered(int n)
     {
         Transform3D t = _gpTrsf;
-        t.Power(n);
+        t = t.Powered(n);
         return new GeometryTransformation(t);
     }
 

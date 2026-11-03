@@ -125,8 +125,8 @@ public abstract class PointLine : PatchLine
             dvS1 = -Math.CopySign(Math.Sqrt(deltaV), tgU.Dot(n1));
 
             sqNMagn = n2.SquareMagnitude();
-            tgU.SetXYZ(cTan.Crossed(du2).XYZ());
-            tgV.SetXYZ(cTan.Crossed(dv2).XYZ());
+            tgU = tgU.WithXYZ(cTan.Crossed(du2).XYZ());
+            tgV = tgV.WithXYZ(cTan.Crossed(dv2).XYZ());
             deltaU = tgV.SquareMagnitude() / sqNMagn;
             deltaV = tgU.SquareMagnitude() / sqNMagn;
 

@@ -1659,7 +1659,7 @@ public sealed class AdvancedEvolved
                         // 3D-point treatment
                         param = Tool.Parameter(vx, e);
                         pc3D = c3D.Value(param);
-                        pc3D.Transform(l.Transformation());
+                        pc3D = pc3D.Transformed(l.Transformation());
                         d2 = pv3D.SquareDistance(pc3D);
                         if (d2 > tolMax2)
                         {
@@ -1683,7 +1683,7 @@ public sealed class AdvancedEvolved
                         param = Tool.Parameter(vx, e, s, l);
                         pc2D = c2D.Value(param);
                         s.D0(pc2D.X(), pc2D.Y(), out pc3D);
-                        pc3D.Transform(l.Transformation());
+                        pc3D = pc3D.Transformed(l.Transformation());
                         d2 = pv3D.SquareDistance(pc3D);
                         if (d2 > tolMax2)
                         {

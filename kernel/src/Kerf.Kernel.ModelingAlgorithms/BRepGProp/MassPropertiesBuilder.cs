@@ -57,7 +57,7 @@ public static class MassPropertiesBuilder
         //! as relative vector (rotation only, no translation), and rotates inertia tensor.
         public void ApplyTransform(in Transform3D trsf)
         {
-            _loc.Transform(trsf);
+            _loc = _loc.Transformed(trsf);
             TransformForm form = trsf.Form();
             if (form != Identity && form != Translation)
             {
@@ -65,7 +65,7 @@ public static class MassPropertiesBuilder
                 Matrix3x3 r = trsf.VectorialPart();
                 Xyz gxyz = _g.XYZ();
                 gxyz.Multiply(r);
-                _g.SetXYZ(gxyz);
+                _g = _g.WithXYZ(gxyz);
                 Matrix3x3 rt = r.Transposed();
                 _inertia = r.Multiplied(_inertia).Multiplied(rt);
             }
@@ -75,7 +75,7 @@ public static class MassPropertiesBuilder
         public void Negate()
         {
             _dim = -_dim;
-            _inertia.Multiply(-1.0);
+            _inertia = _inertia.Multiplied(-1.0);
         }
     }
 
@@ -132,7 +132,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         lProps.Assign(new Properties(p));
 
         var bac = new EdgeCurveAdaptor();
@@ -287,7 +287,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         sProps.Assign(new Properties(p));
         SurfacePropertiesCore(s, sProps, 1.0, skipShared, useTriangulation);
     }
@@ -309,7 +309,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         sProps.Assign(new Properties(p));
         double errorMax = SurfacePropertiesCore(s, sProps, eps, skipShared, false);
         return errorMax;
@@ -589,7 +589,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         vProps.Assign(new Properties(p));
         if (onlyClosed)
         {
@@ -639,7 +639,7 @@ public static class MassPropertiesBuilder
     {
         // find the origin
         Point3D p = new(0, 0, 0);
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         vProps.Assign(new Properties(p));
         int i;
         double errorMax = 0.0, error = 0.0;
@@ -783,7 +783,7 @@ public static class MassPropertiesBuilder
         Point3D p = new(0, 0, 0);
         double error = 0.0;
 
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         vProps.Assign(new Properties(p));
 
         if (onlyClosed)
@@ -950,7 +950,7 @@ public static class MassPropertiesBuilder
         Point3D p = new(0, 0, 0);
         double error = 0.0;
 
-        p.Transform(s.Location().Transformation());
+        p = p.Transformed(s.Location().Transformation());
         vProps.Assign(new Properties(p));
 
         if (onlyClosed)

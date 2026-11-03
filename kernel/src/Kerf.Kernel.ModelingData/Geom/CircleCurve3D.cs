@@ -121,7 +121,7 @@ public class CircleCurve3D : ConicCurve3D
     {
         CheckMutable();
         _radius = _radius * Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

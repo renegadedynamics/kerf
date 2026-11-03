@@ -126,8 +126,8 @@ public class ChAsym : BlendFunction
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
-            dnp.Reverse();
+            np = np.Reversed();
+            dnp = dnp.Reversed();
             normg = -normg;
         }
 
@@ -188,10 +188,10 @@ public class ChAsym : BlendFunction
 
             if (!_istangent)
             {
-                _tg1.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
-                _tg2.SetLinearForm(secmember[3], d1u2, secmember[4], d1v2);
-                _tg12d.SetCoord(secmember[1], secmember[2]);
-                _tg22d.SetCoord(secmember[3], secmember[4]);
+                _tg1 = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
+                _tg2 = Vector3D.LinearForm(secmember[3], d1u2, secmember[4], d1v2);
+                _tg12d = _tg12d.WithCoord(secmember[1], secmember[2]);
+                _tg22d = _tg22d.WithCoord(secmember[3], secmember[4]);
             }
 
             _distmin = Min(_distmin, _pt1.Distance(_pt2));
@@ -226,7 +226,7 @@ public class ChAsym : BlendFunction
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
+            np = np.Reversed();
         }
 
         if ((degF == 0) && (degL == 0))
@@ -442,12 +442,12 @@ public class ChAsym : BlendFunction
 
         if (revF)
         {
-            tgF.Reverse();
+            tgF = tgF.Reversed();
         }
 
         if (revL)
         {
-            tgL.Reverse();
+            tgL = tgL.Reversed();
         }
     }
 
@@ -459,8 +459,8 @@ public class ChAsym : BlendFunction
         Point3D pt2 = _surf2.Value(u2, v2);
         Direction3D dir = new Direction3D(new Vector3D(pt1, pt2));
 
-        c.SetLocation(pt1);
-        c.SetDirection(dir);
+        c = c.WithLocation(pt1);
+        c = c.WithDirection(dir);
 
         pdeb = 0.0;
         pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, pt2);
@@ -540,8 +540,8 @@ public class ChAsym : BlendFunction
         x[2] = v1;
         x[3] = u2;
         x[4] = v2;
-        poles2d[poles2d.Lower()].SetCoord(u1, v1);
-        poles2d[poles2d.Upper()].SetCoord(u2, v2);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(u1, v1);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(u2, v2);
 
         Set(prm);
         Value(x, f);
@@ -565,8 +565,8 @@ public class ChAsym : BlendFunction
         p.ParametersOnS2(out sol[3], out sol[4]);
         Set(prm);
 
-        poles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
-        poles2d[poles2d.Upper()].SetCoord(sol[3], sol[4]);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(sol[3], sol[4]);
 
         // OCCT: the poles are the points of the previous computation, set before the D1s below (decision 1040).
         poles[low] = PointOnS1();
@@ -584,8 +584,8 @@ public class ChAsym : BlendFunction
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
-            dnp.Reverse();
+            np = np.Reversed();
+            dnp = dnp.Reversed();
             normg = -normg;
         }
 
@@ -642,18 +642,18 @@ public class ChAsym : BlendFunction
 
         if (!_istangent)
         {
-            _tg1.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
-            _tg2.SetLinearForm(secmember[3], d1u2, secmember[4], d1v2);
-            _tg12d.SetCoord(secmember[1], secmember[2]);
-            _tg22d.SetCoord(secmember[3], secmember[4]);
+            _tg1 = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tg2 = Vector3D.LinearForm(secmember[3], d1u2, secmember[4], d1v2);
+            _tg12d = _tg12d.WithCoord(secmember[1], secmember[2]);
+            _tg22d = _tg22d.WithCoord(secmember[3], secmember[4]);
         }
 
         _distmin = Min(_distmin, _pt1.Distance(_pt2));
 
         if (!_istangent)
         {
-            dPoles2d[poles2d.Lower()].SetCoord(Tangent2dOnS1().X(), Tangent2dOnS1().Y());
-            dPoles2d[poles2d.Upper()].SetCoord(Tangent2dOnS2().X(), Tangent2dOnS2().Y());
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(Tangent2dOnS1().X(), Tangent2dOnS1().Y());
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(Tangent2dOnS2().X(), Tangent2dOnS2().Y());
             dPoles[low] = TangentOnS1();
             dPoles[upp] = TangentOnS2();
             dWeights[low] = 0.0;

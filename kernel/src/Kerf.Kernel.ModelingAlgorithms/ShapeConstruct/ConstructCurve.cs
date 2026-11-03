@@ -64,7 +64,7 @@ public sealed class ConstructCurve
             Direction3D adir = new(avec);
             Line3D alin = new(p1, adir);
             double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l3D.Lin().Location());
-            alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
+            alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             l3D.SetLin(alin);
             return true;
         }
@@ -102,7 +102,7 @@ public sealed class ConstructCurve
             Direction3D adir = new(avec);
             Line3D alin = new(p1, adir);
             double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l3D.Lin().Location());
-            alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
+            alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             l3D.SetLin(alin);
             return true;
         }
@@ -138,7 +138,7 @@ public sealed class ConstructCurve
             Direction2D adir = new(avec);
             Line2D alin = new(p1, adir);
             double theParam = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, l2D.Lin2d().Location());
-            alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
+            alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(theParam, alin));
             l2D.SetLin2d(alin);
             return true;
         }

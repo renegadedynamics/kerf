@@ -842,8 +842,7 @@ internal sealed class Sweep
         Point3D P1, P2, p;
 
         // Choose the angle of opening
-        Transform3D tf = new();
-        tf.SetTransformation(new CoordinateSystem(Axe));
+        Transform3D tf = new Transform3D().WithTransformation(new CoordinateSystem(Axe));
 
         // Choose the furthest point from the "center of revolution"
         // to provide correct angle measurement.
@@ -880,7 +879,7 @@ internal sealed class Sweep
         if (angle < 0)
         {
             angle = -angle;
-            axe.Reverse();
+            axe = axe.Reversed();
         }
 
         RevolutionSurface rev = new(prof1, axe);
@@ -904,7 +903,7 @@ internal sealed class Sweep
         l = new LineCurve2D(p2d, Constants.DY2d());
         c1 = new TrimmedCurve2D(l, f1, l1);
 
-        p2d.SetCoord(angle, 0.0);
+        p2d = p2d.WithCoord(angle, 0.0);
         l = new LineCurve2D(p2d, Constants.DY2d());
         c2 = new TrimmedCurve2D(l, f1, l1);
 
@@ -932,11 +931,11 @@ internal sealed class Sweep
                           ref c3);
         c2 = c3!;
 
-        p2d.SetCoord(0.0, f1);
+        p2d = p2d.WithCoord(0.0, f1);
         l = new LineCurve2D(p2d, Constants.DX2d());
         c3 = new TrimmedCurve2D(l, 0, angle);
 
-        p2d.SetCoord(0.0, l1);
+        p2d = p2d.WithCoord(0.0, l1);
         l = new LineCurve2D(p2d, Constants.DX2d());
         c4 = new TrimmedCurve2D(l, 0, angle);
         // (OCCT's commented-out deformation by GeomPlate and its unused points are left out.)
@@ -1412,7 +1411,7 @@ internal sealed class Sweep
             c3d.D1(first, out pOnS, out Vector3D dC3d);
             cl.D1(f2d, out p2d, out Vector2D v2d);
             s.D1(p2d.X(), p2d.Y(), out pOnS, out Vector3D du, out Vector3D dv);
-            v3d.SetLinearForm(v2d.X(), du, v2d.Y(), dv);
+            v3d = Vector3D.LinearForm(v2d.X(), du, v2d.Y(), dv);
             reverse = (dC3d.Angle(v3d) > Tol);
         }
         if (reverse)
@@ -3214,11 +3213,11 @@ internal sealed class Sweep
         // Construct an axis supported by the bissectrice
         _loc.Law(i1).GetDomain(out f, out l);
         _loc.Law(i1).GetCurve()!.D1(l, out p1, out T1);
-        T1.Normalize();
+        T1 = T1.Normalized();
 
         _loc.Law(i2).GetDomain(out f, out l);
         _loc.Law(i2).GetCurve()!.D1(f, out p2, out T2);
-        T2.Normalize();
+        T2 = T2.Normalized();
 
         if (T1.Angle(T2) < _angMin)
         {
@@ -3262,7 +3261,7 @@ internal sealed class Sweep
             tang -= (tang.Dot(T2)) * T2;
         }
 
-        p1.BaryCenter(0.5, p2, 0.5);
+        p1 = p1.BaryCentered(0.5, p2, 0.5);
         Direction3D n = new(sortant);
         Direction3D dx = new(tang);
 
@@ -3498,10 +3497,10 @@ internal sealed class Sweep
 
             _loc.Law(i1).GetDomain(out f, out l);
             _loc.Law(i1).D0(l, ref m1, ref v1);
-            t1.SetXYZ(m1.Column(3));
+            t1 = t1.WithXYZ(m1.Column(3));
             _loc.Law(i2).GetDomain(out f, out l);
             _loc.Law(i2).D0(f, ref m2, ref v2);
-            t2.SetXYZ(m2.Column(3));
+            t2 = t2.WithXYZ(m2.Column(3));
 
             double alpha = t1.Angle(t2);
             if ((alpha > _angMax) || (alpha < _angMin))

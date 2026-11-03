@@ -163,7 +163,7 @@ public class BRepLibRegularityTests
     {
         Solid aBox = TestShapes.Box(1, 1, 1);
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(5, 0, 0));
+        aT = aT.WithTranslation(new Vector3D(5, 0, 0));
         Compound aC = TestShapes.Frozen(BRepGPropTestShapes.CompoundOf(aBox, aBox.Moved(new Placement(aT))));
         Shape aCopy = BrepTools.CopyForWrite(aC, out _);
         BrepLibrary.EncodeRegularity(aCopy);

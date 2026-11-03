@@ -1002,8 +1002,7 @@ public sealed class MakeRevolutionForm : RibSlot
 
         if (_angle2 != 0)
         {
-            Transform3D t = new();
-            t.SetRotation(_axe, -_angle2);
+            Transform3D t = new Transform3D().WithRotation(_axe, -_angle2);
             Transform trsf = new(t);
             trsf.Perform(_pbase, false);
             Face pbase = ShapeCasts.Face(trsf.InternalShape());

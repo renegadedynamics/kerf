@@ -45,11 +45,11 @@ internal static class ComputeDataSphere
         Direction3D dnat1 = ds1;
         if (or1 == Reversed)
         {
-            ds1.Reverse();
+            ds1 = ds1.Reversed();
         }
         if (orFace1 == Reversed)
         {
-            df1.Reverse();
+            df1 = df1.Reversed();
         }
         s2.D0(p1S2.X(), p1S2.Y(), out Point3D p2);
         s2.D0(p2S2.X(), p2S2.Y(), out Point3D p3);
@@ -62,7 +62,7 @@ internal static class ComputeDataSphere
         Direction3D dz = new(new Vector3D(p1, cen));
         if (Math.Abs(ds1.Dot(dz) - 1.0) > ptol)
         {
-            cen.SetCoord(pp.X() - delta * di.X(), pp.Y() - delta * di.Y(), pp.Z() - delta * di.Z());
+            cen = cen.WithCoord(pp.X() - delta * di.X(), pp.Y() - delta * di.Y(), pp.Z() - delta * di.Z());
             dz = new Direction3D(new Vector3D(p1, cen));
             if (Math.Abs(ds1.Dot(dz) - 1.0) > ptol)
             {
@@ -78,9 +78,9 @@ internal static class ComputeDataSphere
         CoordinateSystem filAx3 = new(cen, dz, dx);
         if (filAx3.YDirection().Dot(ddy) <= 0.0)
         {
-            filAx3.YReverse();
-            ddz.Reverse();
-            dddx.Reverse();
+            filAx3 = filAx3.YReversed();
+            ddz = ddz.Reversed();
+            dddx = dddx.Reversed();
         }
         SphericalSurface gsph = new(filAx3, rad);
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gsph, dStr));

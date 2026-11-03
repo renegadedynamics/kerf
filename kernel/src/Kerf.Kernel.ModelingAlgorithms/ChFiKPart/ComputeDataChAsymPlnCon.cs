@@ -47,11 +47,11 @@ internal static class ComputeDataChAsymPlnCon
         Direction3D norf = dpl;
         if (ofpl == Reversed)
         {
-            norf.Reverse();
+            norf = norf.Reversed();
         }
         if (or1 == Reversed)
         {
-            dpl.Reverse();
+            dpl = dpl.Reversed();
         }
         // compute the origin of the conical chamfer PtPl
         Point3D or = con.Location();
@@ -69,7 +69,7 @@ internal static class ComputeDataChAsymPlnCon
         Direction3D dcon = new(deru.Crossed(derv));
         if (or2 == Reversed)
         {
-            dcon.Reverse();
+            dcon = dcon.Reversed();
         }
         bool dedans = (dx.Dot(dcon) <= 0.0);
         bool ouvert = (dpl.Dot(dcon) >= 0.0);
@@ -193,7 +193,7 @@ internal static class ComputeDataChAsymPlnCon
                 dis = dis1 - Dis * Math.Abs(Math.Sin(angCon));
             }
         }
-        or.SetCoord(or.X() + move * dpl.X(), or.Y() + move * dpl.Y(), or.Z() + move * dpl.Z());
+        or = or.WithCoord(or.X() + move * dpl.X(), or.Y() + move * dpl.Y(), or.Z() + move * dpl.Z());
         Point3D pt = new(or.X() + dis * posPl.XDirection().X(), or.Y() + dis * posPl.XDirection().Y(),
                         or.Z() + dis * posPl.XDirection().Z());
         CoordinateSystem chamfAx3 = new(ptPl, dpl, dx);
@@ -211,7 +211,7 @@ internal static class ComputeDataChAsymPlnCon
             // parametrization
             if (chamfAx3.YDirection().Dot(new Direction3D(dSp)) <= 0.0)
             {
-                chamfAx3.YReverse();
+                chamfAx3 = chamfAx3.YReversed();
                 gcyl.SetPosition(chamfAx3);
             }
             data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gcyl, dStr));
@@ -220,7 +220,7 @@ internal static class ComputeDataChAsymPlnCon
             torevcha = ((torevcha && !plandab) || (!torevcha && plandab));
             if (torevcha)
             {
-                cylaxe.Reverse();
+                cylaxe = cylaxe.Reversed();
             }
             bool toreverse = (norf.Dot(cylaxe) < 0.0);
             if ((toreverse && dedans) || (!toreverse && !dedans))
@@ -240,8 +240,8 @@ internal static class ComputeDataChAsymPlnCon
             CircleCurve3D gCirPln;
             CircleCurve2D gCir2dPln;
             Frame3D cirAx2 = chamfAx3.Ax2();
-            cirAx2.SetLocation(ptPl);
-            pt.SetCoord(ptPl.X() + chamfRad * dx.X(), ptPl.Y() + chamfRad * dx.Y(), ptPl.Z() + chamfRad * dx.Z());
+            cirAx2 = cirAx2.WithLocation(ptPl);
+            pt = pt.WithCoord(ptPl.X() + chamfRad * dx.X(), ptPl.Y() + chamfRad * dx.Y(), ptPl.Z() + chamfRad * dx.Z());
             Circle3D cirPln = new(cirAx2, chamfRad);
             gCirPln = new CircleCurve3D(cirPln);
             // pcurve on the plane
@@ -252,8 +252,7 @@ internal static class ComputeDataChAsymPlnCon
             Circle2D cir2dPln = new(ax2dPln, chamfRad);
             gCir2dPln = new CircleCurve2D(cir2dPln);
             // pcurve on chamfer
-            Point2D p2dch = new();
-            p2dch.SetCoord(0.0, 0.0);
+            Point2D p2dch = new Point2D().WithCoord(0.0, 0.0);
             // ElSLib::CylinderD1(0.,0.,ChamfAx3,ChamfRad,Pt,deru,derv);
             Line2D lin2dch = new(p2dch, Constants.DX2d());
             LineCurve2D gLin2dCh1 = new(lin2dch);
@@ -291,7 +290,7 @@ internal static class ComputeDataChAsymPlnCon
             {
                 rad = chamfRad - dis;
             }
-            cirAx2.SetLocation(or);
+            cirAx2 = cirAx2.WithLocation(or);
             Circle3D cirCon = new(cirAx2, rad);
             CircleCurve3D gCirCon = new(cirCon);
             // pcurve on chamfer
@@ -303,12 +302,12 @@ internal static class ComputeDataChAsymPlnCon
             {
                 v = -Math.Sqrt(dis * dis + move * move);
             }
-            p2dch.SetCoord(0.0, v);
+            p2dch = p2dch.WithCoord(0.0, v);
             global::Kerf.Engine.Geometry.ElSLib.CylinderD1(0.0, v, chamfAx3, chamfRad, out pt, out deru, out derv);
-            lin2dch.SetLocation(p2dch);
+            lin2dch = lin2dch.WithLocation(p2dch);
             LineCurve2D gLin2dCh2 = new(lin2dch);
             // pcurve on cone
-            pt.SetCoord(or.X() + rad * dx.X(), or.Y() + rad * dx.Y(), or.Z() + rad * dx.Z());
+            pt = pt.WithCoord(or.X() + rad * dx.X(), or.Y() + rad * dx.Y(), or.Z() + rad * dx.Z());
             global::Kerf.Engine.Geometry.ElSLib.Parameters(con, pt, out u, out v);
             double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (u >= 2 * Math.PI - tol && u <= 2 * Math.PI)
@@ -345,7 +344,7 @@ internal static class ComputeDataChAsymPlnCon
             Direction3D dirCon = (con.Axis()).Direction();
             if (angCon > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                dirCon.Reverse();
+                dirCon = dirCon.Reversed();
             }
             bool torevcon = (norcon.Dot(dirCon) < 0.0);
             if ((torevcon && dedans) || (!torevcon && !dedans))
@@ -382,7 +381,7 @@ internal static class ComputeDataChAsymPlnCon
             // parametrization
             if (chamfAx3.YDirection().Dot(new Direction3D(dSp)) <= 0.0)
             {
-                chamfAx3.YReverse();
+                chamfAx3 = chamfAx3.YReversed();
                 gcon.SetPosition(chamfAx3);
             }
             data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gcon, dStr));
@@ -422,10 +421,10 @@ internal static class ComputeDataChAsymPlnCon
             CircleCurve3D? gCirPln = null;
             CircleCurve2D? gCir2dPln = null;
             Frame3D cirAx2 = chamfAx3.Ax2();
-            cirAx2.SetLocation(ptPl);
+            cirAx2 = cirAx2.WithLocation(ptPl);
             if (!pointu)
             {
-                pt.SetCoord(ptPl.X() + chamfRad * dx.X(), ptPl.Y() + chamfRad * dx.Y(),
+                pt = pt.WithCoord(ptPl.X() + chamfRad * dx.X(), ptPl.Y() + chamfRad * dx.Y(),
                             ptPl.Z() + chamfRad * dx.Z());
                 Circle3D cirPln = new(cirAx2, chamfRad);
                 gCirPln = new CircleCurve3D(cirPln);
@@ -439,8 +438,7 @@ internal static class ComputeDataChAsymPlnCon
                 gCir2dPln = new CircleCurve2D(cir2dPln);
             }
             // pcurve on chamfer
-            Point2D p2dch = new();
-            p2dch.SetCoord(0.0, 0.0);
+            Point2D p2dch = new Point2D().WithCoord(0.0, 0.0);
             global::Kerf.Engine.Geometry.ElSLib.ConeD1(0.0, 0.0, chamfAx3, chamfRad, semiAngl, out pt, out deru, out derv);
             Line2D lin2dch = new(p2dch, Constants.DX2d());
             LineCurve2D gLin2dCh1 = new(lin2dch);
@@ -449,7 +447,7 @@ internal static class ComputeDataChAsymPlnCon
             Direction3D norpl = posPl.XDirection().Crossed(posPl.YDirection());
             if (!pointu)
             {
-                norchamf.SetXYZ(deru.Crossed(derv).XYZ());
+                norchamf = norchamf.WithXYZ(deru.Crossed(derv).XYZ());
             }
             toreverse = (norchamf.Dot(norpl) <= 0.0);
             if (isConPar)
@@ -485,7 +483,7 @@ internal static class ComputeDataChAsymPlnCon
             {
                 rad = chamfRad - dis;
             }
-            cirAx2.SetLocation(or);
+            cirAx2 = cirAx2.WithLocation(or);
             Circle3D cirCon = new(cirAx2, rad);
             CircleCurve3D gCirCon = new(cirCon);
             // pcurve on chamfer
@@ -497,13 +495,13 @@ internal static class ComputeDataChAsymPlnCon
             {
                 v = -Math.Sqrt(dis * dis + move * move);
             }
-            p2dch.SetCoord(0.0, v);
+            p2dch = p2dch.WithCoord(0.0, v);
             global::Kerf.Engine.Geometry.ElSLib.ConeD1(0.0, v, chamfAx3, chamfRad, semiAngl, out pt, out deru, out derv);
-            lin2dch.SetLocation(p2dch);
+            lin2dch = lin2dch.WithLocation(p2dch);
             LineCurve2D gLin2dCh2 = new(lin2dch);
             // pcurve on cone
-            norchamf.SetXYZ(deru.Crossed(derv).XYZ());
-            pt.SetCoord(or.X() + rad * dx.X(), or.Y() + rad * dx.Y(), or.Z() + rad * dx.Z());
+            norchamf = norchamf.WithXYZ(deru.Crossed(derv).XYZ());
+            pt = pt.WithCoord(or.X() + rad * dx.X(), or.Y() + rad * dx.Y(), or.Z() + rad * dx.Z());
             global::Kerf.Engine.Geometry.ElSLib.Parameters(con, pt, out u, out v);
             double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
             if (u >= 2 * Math.PI - tol && u <= 2 * Math.PI)
@@ -541,11 +539,11 @@ internal static class ComputeDataChAsymPlnCon
             Direction3D dirChamf = (gcon.Axis()).Direction();
             if (angCon > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                dirCon.Reverse();
+                dirCon = dirCon.Reversed();
             }
             if (semiAngl > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
-                dirChamf.Reverse();
+                dirChamf = dirChamf.Reversed();
             }
             bool torevcon = (norcon.Dot(dirCon) > 0.0);
             bool torevcha = (norchamf.Dot(dirChamf) > 0.0);

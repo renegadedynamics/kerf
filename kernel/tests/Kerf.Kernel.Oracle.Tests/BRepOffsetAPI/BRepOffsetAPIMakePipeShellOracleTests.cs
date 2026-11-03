@@ -188,7 +188,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
                     TrimmedCurve3D anArc = new MakeArcOfCircle(aP1, aTangent, aNext).Value();
                     anEdges.Add(new MakeEdge(anArc).Edge());
                     anArc.D1(anArc.LastParameter(), out _, out aTangent);
-                    aTangent.Normalize();
+                    aTangent = aTangent.Normalized();
                     aP1 = aNext;
                 }
                 return (Wire([.. anEdges]), "g1chain");
@@ -724,8 +724,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             (Wire aSpine, string aKind) = RandomSpine(anOracle, anOracle.Int(0, 2) switch { 0 => 0, 1 => 2, _ => 3 });
             Frame3D aFrame = StartFrame(aSpine);
             // the guide: the spine moved sideways (build123d.NET's twisted extrusion uses a twisted copy)
-            Transform3D aT = new();
-            aT.SetTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
+            Transform3D aT = new Transform3D().WithTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
             Wire aGuide = global::Kerf.Engine.Topology.ShapeCasts.Wire(new Transform(aSpine, aT, true).Shape());
             foreach (bool aCurvilinear in new[] { true, false })
             {
@@ -888,8 +887,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             };
             if (c.Mode == Mode.Auxiliary)
             {
-                Transform3D aT = new();
-                aT.SetTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
+                Transform3D aT = new Transform3D().WithTranslation(new Vector3D(aFrame.XDirection()) * anOracle.Real(2, 5));
                 c.Aux = global::Kerf.Engine.Topology.ShapeCasts.Wire(new Transform(aSpine, aT, true).Shape());
                 c.Curvilinear = aStyle == 2;
             }

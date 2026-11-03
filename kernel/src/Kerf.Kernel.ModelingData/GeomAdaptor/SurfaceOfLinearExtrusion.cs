@@ -270,7 +270,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
         CoordinateSystem ax3 = new CoordinateSystem(p, new Direction3D(newZ), new Direction3D(d1u));
         if (_direction.Dot(ax3.YDirection()) < 0.0)
         {
-            ax3.YReverse();
+            ax3 = ax3.YReversed();
         }
         return new Plane3D(ax3);
     }
@@ -284,7 +284,7 @@ public class SurfaceOfLinearExtrusion : SurfaceAdaptor
         CoordinateSystem ax3 = new CoordinateSystem(c.Position());
         if (_direction.Dot((c.Axis()).Direction()) < 0.0)
         {
-            ax3.ZReverse();
+            ax3 = ax3.ZReversed();
         }
         return new Cylinder(ax3, c.Radius());
     }

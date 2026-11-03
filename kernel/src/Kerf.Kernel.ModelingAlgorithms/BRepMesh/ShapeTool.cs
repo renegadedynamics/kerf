@@ -154,11 +154,11 @@ public static class ShapeTool
         if (!loc.IsIdentity)
         {
             Transform3D trsf = loc.Transformation();
-            trsf.Invert();
+            trsf = trsf.Inverted();
             for (int nodeIter = 1; nodeIter <= triangulation.NodeCount; ++nodeIter)
             {
                 Point3D node = triangulation.Node(nodeIter);
-                node.Transform(trsf);
+                node = node.Transformed(trsf);
                 triangulation.SetNode(nodeIter, node);
             }
         }

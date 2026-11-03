@@ -159,7 +159,7 @@ public class Cinert : Properties
         }
         else
         {
-            _g.SetCoord(ix / _dim, iy / _dim, iz / _dim);
+            _g = _g.WithCoord(ix / _dim, iy / _dim, iz / _dim);
         }
     }
 }

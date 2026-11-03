@@ -49,7 +49,7 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
             return new Box2d();
         }
 
-        normal.Normalize();
+        normal = normal.Normalized();
         normal *= off.Offset();
         Point2D loc = basisLin.Location().Translated(normal);
         Box2d localBox = Line2dBounds.Box(new Line2D(loc, basisLin.Direction()), u1, u2, 0.0);
@@ -78,14 +78,14 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
         {
             return new Box2d();
         }
-        normal.Normalize();
+        normal = normal.Normalized();
 
         Vector2D radial = new(basisCirc.Location(), p);
         if (radial.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box2d();
         }
-        radial.Normalize();
+        radial = radial.Normalized();
 
         double sign = normal.Dot(radial);
         if (Math.Abs(Math.Abs(sign) - 1.0) > 1e-9)
@@ -98,7 +98,7 @@ public sealed class OffsetCurve2dBounds : Curve2dBounds.ICurve2dEvaluator
         if (newRadius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Circle2D offsetCirc = basisCirc;
-            offsetCirc.SetRadius(newRadius);
+            offsetCirc = offsetCirc.WithRadius(newRadius);
             localBox = Circle2dBounds.Box(offsetCirc, u1, u2, 0.0);
         }
         else if (Math.Abs(newRadius) <= global::Kerf.Engine.Foundation.Precision.Confusion())

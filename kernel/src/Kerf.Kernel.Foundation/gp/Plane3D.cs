@@ -17,9 +17,9 @@ namespace Kerf.Geometry;
 /// <c>P(U, V) = O + U * XDir + V * YDir</c>.
 /// </summary>
 /// <remarks><c>new gp_Pln()</c> is the XOY plane, as in OCCT; <c>default(gp_Pln)</c> is not valid.</remarks>
-public partial struct Plane3D : IEquatable<Plane3D>
+public readonly partial struct Plane3D : IEquatable<Plane3D>
 {
-    private CoordinateSystem _position;
+    private readonly CoordinateSystem _position;
 
     public Plane3D() => _position = new CoordinateSystem();
 
@@ -115,66 +115,36 @@ public partial struct Plane3D : IEquatable<Plane3D>
         }
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetAxis(in Axis3D a1) => _position.SetAxis(a1);
-
-    internal void SetLocation(in Point3D loc) => _position.SetLocation(loc);
-
-    internal void SetPosition(in CoordinateSystem a3) => _position = a3;
-
-    /// <summary>Reverses the U parametrisation (the X direction), which reverses the normal of an indirect system.</summary>
-    internal void UReverse() => _position.XReverse();
-
-    /// <summary>Reverses the V parametrisation (the Y direction).</summary>
-    internal void VReverse() => _position.YReverse();
-
-    internal void Mirror(in Point3D p) => _position.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _position.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _position.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _position.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s) => _position.Scale(p, s);
-
-    internal void Transform(in Transform3D t) => _position.Transform(t);
-
-    internal void Translate(in Vector3D v) => _position.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _position.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Plane3D WithAxis(in Axis3D a1)
     {
-        Plane3D copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        CoordinateSystem position = _position;
+        position = position.WithAxis(a1);
+        return new Plane3D(position);
     }
 
     public readonly Plane3D WithLocation(in Point3D loc)
     {
-        Plane3D copy = this;
-        copy.SetLocation(loc);
-        return copy;
+        CoordinateSystem position = _position;
+        position = position.WithLocation(loc);
+        return new Plane3D(position);
     }
 
     public readonly Plane3D WithPosition(in CoordinateSystem a3) => new(a3);
 
     public readonly Plane3D UReversed()
     {
-        Plane3D copy = this;
-        copy.UReverse();
-        return copy;
+        CoordinateSystem position = _position;
+        position = position.XReversed();
+        return new Plane3D(position);
     }
 
     public readonly Plane3D VReversed()
     {
-        Plane3D copy = this;
-        copy.VReverse();
-        return copy;
+        CoordinateSystem position = _position;
+        position = position.YReversed();
+        return new Plane3D(position);
     }
 
     // Queries
@@ -288,37 +258,37 @@ public partial struct Plane3D : IEquatable<Plane3D>
 
     public readonly Plane3D Rotated(in Axis3D a1, double ang)
     {
-        Plane3D pl = this;
-        pl._position.Rotate(a1, ang);
-        return pl;
+        CoordinateSystem position = _position;
+        position = position.Rotated(a1, ang);
+        return new Plane3D(position);
     }
 
     public readonly Plane3D Scaled(in Point3D p, double s)
     {
-        Plane3D pl = this;
-        pl._position.Scale(p, s);
-        return pl;
+        CoordinateSystem position = _position;
+        position = position.Scaled(p, s);
+        return new Plane3D(position);
     }
 
     public readonly Plane3D Transformed(in Transform3D t)
     {
-        Plane3D pl = this;
-        pl._position.Transform(t);
-        return pl;
+        CoordinateSystem position = _position;
+        position = position.Transformed(t);
+        return new Plane3D(position);
     }
 
     public readonly Plane3D Translated(in Vector3D v)
     {
-        Plane3D pl = this;
-        pl._position.Translate(v);
-        return pl;
+        CoordinateSystem position = _position;
+        position = position.Translated(v);
+        return new Plane3D(position);
     }
 
     public readonly Plane3D Translated(in Point3D p1, in Point3D p2)
     {
-        Plane3D pl = this;
-        pl._position.Translate(p1, p2);
-        return pl;
+        CoordinateSystem position = _position;
+        position = position.Translated(p1, p2);
+        return new Plane3D(position);
     }
 
     public readonly bool Equals(Plane3D other) => _position.Equals(other._position);

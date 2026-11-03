@@ -207,12 +207,12 @@ public class RstRstConstRad : RstRstFunction
             _cons1.D1(sol[1], out _ptrst1, out d11);
             _cons2.D1(sol[2], out _ptrst2, out d21);
 
-            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
-            temp.SetXYZ(_ptrst1.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_ptrst1.XYZ() - _ptgui.XYZ());
             secmember[1] = _normtg - dnplan.Dot(temp);
 
-            temp.SetXYZ(_ptrst2.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_ptrst2.XYZ() - _ptgui.XYZ());
             secmember[2] = _normtg - dnplan.Dot(temp);
 
             Gauss resol = new(gradsol);
@@ -248,10 +248,10 @@ public class RstRstConstRad : RstRstFunction
                 double a, b;
                 _surf1.D1(_pt2drst1.X(), _pt2drst1.Y(), out bid, out d1urst1, out d1vrst1);
                 T3dto2d(out a, out b, _tgrst1, d1urst1, d1vrst1);
-                _tg2drst1.SetCoord(a, b);
+                _tg2drst1 = _tg2drst1.WithCoord(a, b);
                 _surf2.D1(_pt2drst2.X(), _pt2drst2.Y(), out bid, out d1urst2, out d1vrst2);
                 T3dto2d(out a, out b, _tgrst1, d1urst2, d1vrst2); // OCCT: tgrst1 where tgrst2 is meant
-                _tg2drst2.SetCoord(a, b);
+                _tg2drst2 = _tg2drst2.WithCoord(a, b);
             }
 
             Point3D center = new();
@@ -267,8 +267,8 @@ public class RstRstConstRad : RstRstFunction
 
             Vector3D n1 = new(center, _ptrst1), n2 = new(center, _ptrst2);
 
-            n1.Normalize();
-            n2.Normalize();
+            n1 = n1.Normalized();
+            n2 = n2.Normalized();
 
             cosa = n1.Dot(n2);
             sina = _nplan.Dot(n1.Crossed(n2));
@@ -379,33 +379,33 @@ public class RstRstConstRad : RstRstFunction
         norm = _nplan.Crossed(nRst1).Magnitude();
         unsurnorm = 1.0 / norm;
 
-        nRst1InPlane.SetLinearForm(_nplan.Dot(nRst1) * unsurnorm, _nplan, -unsurnorm, nRst1);
+        nRst1InPlane = Vector3D.LinearForm(_nplan.Dot(nRst1) * unsurnorm, _nplan, -unsurnorm, nRst1);
 
-        centptrst.SetXYZ(ptTmp1.XYZ() - center.XYZ());
+        centptrst = centptrst.WithXYZ(ptTmp1.XYZ() - center.XYZ());
 
         if (centptrst.Dot(nRst1InPlane) < 0.0)
         {
-            nRst1InPlane.Reverse();
+            nRst1InPlane = nRst1InPlane.Reversed();
         }
 
         tgRst1 = _nplan.Crossed(centptrst);
 
         norm = _nplan.Crossed(nRst2).Magnitude();
         unsurnorm = 1.0 / norm;
-        nRst2InPlane.SetLinearForm(_nplan.Dot(nRst2) * unsurnorm, _nplan, -unsurnorm, nRst2);
-        centptrst.SetXYZ(ptTmp2.XYZ() - center.XYZ());
+        nRst2InPlane = Vector3D.LinearForm(_nplan.Dot(nRst2) * unsurnorm, _nplan, -unsurnorm, nRst2);
+        centptrst = centptrst.WithXYZ(ptTmp2.XYZ() - center.XYZ());
 
         if (centptrst.Dot(nRst2InPlane) < 0.0)
         {
-            nRst2InPlane.Reverse();
+            nRst2InPlane = nRst2InPlane.Reversed();
         }
 
         tgRst2 = _nplan.Crossed(centptrst);
 
         if (_choix % 2 != 0)
         {
-            tgRst1.Reverse();
-            tgRst2.Reverse();
+            tgRst1 = tgRst1.Reversed();
+            tgRst2 = tgRst2.Reversed();
         }
 
         // The vectors are returned
@@ -466,7 +466,7 @@ public class RstRstConstRad : RstRstFunction
 
         if (_choix > 2)
         {
-            vdMed.Reverse();
+            vdMed = vdMed.Reversed();
         }
 
         if (dist < -1.0E-07)
@@ -478,11 +478,11 @@ public class RstRstConstRad : RstRstFunction
         {
             dist = Math.Sqrt(dist);
             vdmedNor = vdMed.Normalized();
-            center.SetXYZ(0.5 * rst1rst2.XYZ() + ptRst1.XYZ() + dist * vdmedNor.XYZ());
+            center = center.WithXYZ(0.5 * rst1rst2.XYZ() + ptRst1.XYZ() + dist * vdmedNor.XYZ());
         }
         else
         {
-            center.SetXYZ(0.5 * rst1rst2.XYZ() + ptRst1.XYZ());
+            center = center.WithXYZ(0.5 * rst1rst2.XYZ() + ptRst1.XYZ());
         }
 
         return true;
@@ -501,23 +501,23 @@ public class RstRstConstRad : RstRstFunction
 
         CenterCircleRst1Rst2(_ptrst1, _ptrst2, np, ref center, out notUsed);
 
-        c.SetRadius(Math.Abs(_ray));
+        c = c.WithRadius(Math.Abs(_ray));
         ns = new Vector3D(center, _ptrst1).Normalized();
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
+            np = np.Reversed();
         }
 
-        c.SetPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
+        c = c.WithPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
         pdeb = 0; // ElCLib::Parameter(C, pts);
         pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptrst2);
 
         // Test of angles negative and almost null : Special Case
         if (pfin > 1.5 * M_PI)
         {
-            np.Reverse();
-            c.SetPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
+            np = np.Reversed();
+            c = c.WithPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
             pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptrst2);
         }
         if (pfin < global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -608,8 +608,8 @@ public class RstRstConstRad : RstRstFunction
         _ptrst2 = _cons2.Value(v);
         _distmin = Min(_distmin, _ptrst1.Distance(_ptrst2));
 
-        poles2d[poles2d.Lower()].SetCoord(pt2d1.X(), pt2d1.Y());
-        poles2d[poles2d.Upper()].SetCoord(pt2d2.X(), pt2d2.Y());
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(pt2d1.X(), pt2d1.Y());
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(pt2d2.X(), pt2d2.Y());
 
         // Linear case
         if (_sShape == SectionShape.Linear)
@@ -630,7 +630,7 @@ public class RstRstConstRad : RstRstFunction
 
         if (_choix % 2 != 0)
         {
-            _nplan.Reverse();
+            _nplan = _nplan.Reversed();
         }
 
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _ptrst1, _ptrst2, Math.Abs(_ray), center, poles, weights);
@@ -659,7 +659,7 @@ public class RstRstConstRad : RstRstFunction
         _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude();
         _nplan = _d1gui.Normalized();
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         sol[1] = _prmrst1 = p.ParameterOnC1();
         sol[2] = _prmrst2 = p.ParameterOnC2();
@@ -671,10 +671,10 @@ public class RstRstConstRad : RstRstFunction
         _cons1.D1(sol[1], out _ptrst1, out d11);
         _cons2.D1(sol[2], out _ptrst2, out d21);
 
-        temp.SetXYZ(_ptrst1.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_ptrst1.XYZ() - _ptgui.XYZ());
         secmember[1] = _normtg - dnplan.Dot(temp);
 
-        temp.SetXYZ(_ptrst2.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_ptrst2.XYZ() - _ptgui.XYZ());
         secmember[2] = _normtg - dnplan.Dot(temp);
 
         Gauss resol = new(gradsol, 1.0e-9);
@@ -711,10 +711,10 @@ public class RstRstConstRad : RstRstFunction
         }
 
         normmed = med.Magnitude();
-        med.Normalize();
+        med = med.Normalized();
         Vector3D n1 = new(center, _ptrst1), n2 = new(center, _ptrst2);
-        n1.Normalize();
-        n2.Normalize();
+        n1 = n1.Normalized();
+        n2 = n2.Normalized();
 
         if (!istgt)
         {
@@ -740,11 +740,11 @@ public class RstRstConstRad : RstRstFunction
 
                 if (_choix > 2)
                 {
-                    dmed.Reverse();
+                    dmed = dmed.Reversed();
                 }
 
                 // the derivative of coefficient Dist is located in dmed
-                dmed.SetLinearForm(dist, dmed, d1Dist, med);
+                dmed = Vector3D.LinearForm(dist, dmed, d1Dist, med);
                 d1rst1rst2 *= 0.5;
                 // derivative of the Normal to the curve in P1
                 d1n1 = -(dmed + d1rst1rst2) / _ray;
@@ -765,18 +765,18 @@ public class RstRstConstRad : RstRstFunction
 
         // Tops 2d
 
-        poles2d[poles2d.Lower()].SetCoord(_pt2drst1.X(), _pt2drst1.Y());
-        poles2d[poles2d.Upper()].SetCoord(_pt2drst2.X(), _pt2drst2.Y());
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(_pt2drst1.X(), _pt2drst1.Y());
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(_pt2drst2.X(), _pt2drst2.Y());
         if (!istgt)
         {
             double a, b;
             _surf1.D1(_pt2drst1.X(), _pt2drst1.Y(), out notUsed, out d1urst, out d1vrst);
             T3dto2d(out a, out b, _tgrst1, d1urst, d1vrst);
-            dPoles2d[poles2d.Lower()].SetCoord(a, b);
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(a, b);
 
             _surf2.D1(_pt2drst2.X(), _pt2drst2.Y(), out notUsed, out d1urst, out d1vrst);
             T3dto2d(out a, out b, _tgrst2, d1urst, d1vrst);
-            dPoles2d[poles2d.Upper()].SetCoord(a, b);
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(a, b);
         }
 
         // Linear case
@@ -800,13 +800,13 @@ public class RstRstConstRad : RstRstFunction
         // tangent to the center of the circle
         if (!istgt)
         {
-            tgct.SetLinearForm(-_ray, d1n1, _tgrst1);
+            tgct = Vector3D.LinearForm(-_ray, d1n1, _tgrst1);
         }
 
         if (_choix % 2 != 0)
         {
-            _nplan.Reverse();
-            dnplan.Reverse();
+            _nplan = _nplan.Reversed();
+            dnplan = dnplan.Reversed();
         }
 
         if (!istgt)

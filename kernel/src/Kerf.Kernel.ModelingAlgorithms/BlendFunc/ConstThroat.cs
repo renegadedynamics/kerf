@@ -80,11 +80,11 @@ public class ConstThroat : GenChamfer
         if (Math.Abs(valsol[1]) <= tol && Math.Abs(valsol[2]) <= tol && Math.Abs(valsol[3]) <= tol * tol
             && Math.Abs(valsol[4]) <= tol * tol)
         {
-            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
-            temp1.SetXYZ(_pts1.XYZ() - _ptgui.XYZ());
-            temp2.SetXYZ(_pts2.XYZ() - _ptgui.XYZ());
-            tempmid.SetXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
+            temp1 = temp1.WithXYZ(_pts1.XYZ() - _ptgui.XYZ());
+            temp2 = temp2.WithXYZ(_pts2.XYZ() - _ptgui.XYZ());
+            tempmid = tempmid.WithXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
 
             _surf1.D1(sol[1], sol[2], out _pts1, out _d1u1, out _d1v1);
             _surf2.D1(sol[3], sol[4], out _pts2, out _d1u2, out _d1v2);
@@ -98,10 +98,10 @@ public class ConstThroat : GenChamfer
             if (resol.IsDone)
             {
                 resol.Solve(secmember);
-                _tg1.SetLinearForm(secmember[1], _d1u1, secmember[2], _d1v1);
-                _tg2.SetLinearForm(secmember[3], _d1u2, secmember[4], _d1v2);
-                _tg12d.SetCoord(secmember[1], secmember[2]);
-                _tg22d.SetCoord(secmember[3], secmember[4]);
+                _tg1 = Vector3D.LinearForm(secmember[1], _d1u1, secmember[2], _d1v1);
+                _tg2 = Vector3D.LinearForm(secmember[3], _d1u2, secmember[4], _d1v2);
+                _tg12d = _tg12d.WithCoord(secmember[1], secmember[2]);
+                _tg22d = _tg22d.WithCoord(secmember[3], secmember[4]);
                 _istangent = false;
             }
             else
@@ -254,12 +254,12 @@ public class ConstThroat : GenChamfer
 
         if (revF)
         {
-            tgF.Reverse();
+            tgF = tgF.Reversed();
         }
 
         if (revL)
         {
-            tgL.Reverse();
+            tgL = tgL.Reversed();
         }
     }
 

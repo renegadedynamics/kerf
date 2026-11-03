@@ -797,8 +797,8 @@ internal static class GordonUtilities
         Vector3D lastTangent = lastD1.D1;
         if (!isForward)
         {
-            firstTangent.Reverse();
-            lastTangent.Reverse();
+            firstTangent = firstTangent.Reversed();
+            lastTangent = lastTangent.Reversed();
         }
         double firstMagnitude = firstTangent.Magnitude();
         double lastMagnitude = lastTangent.Magnitude();
@@ -1176,7 +1176,7 @@ internal static class GordonUtilities
             {
                 return false;
             }
-            newPoles2.ChangeAt(poleIdx).SetCoord(newHomogeneousPoles.At(homogeneousIdx) / weight,
+            newPoles2.ChangeAt(poleIdx) = newPoles2.ChangeAt(poleIdx).WithCoord(newHomogeneousPoles.At(homogeneousIdx) / weight,
                                                    newHomogeneousPoles.At(homogeneousIdx + 1) / weight,
                                                    newHomogeneousPoles.At(homogeneousIdx + 2) / weight);
             newWeights.ChangeAt(poleIdx) = weight;

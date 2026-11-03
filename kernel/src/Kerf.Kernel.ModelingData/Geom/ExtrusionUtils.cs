@@ -28,7 +28,7 @@ internal static class ExtrusionUtils
                                      out Point3D p)
     {
         p = new Point3D();
-        p.SetXYZ(curvePt.XYZ() + v * dir);
+        p = p.WithXYZ(curvePt.XYZ() + v * dir);
     }
 
     /// <summary>The point and first derivatives from C(U) and C'(U).</summary>
@@ -41,10 +41,10 @@ internal static class ExtrusionUtils
                                      out Vector3D d1V)
     {
         p = new Point3D();
-        p.SetXYZ(curvePt.XYZ() + v * dir);
+        p = p.WithXYZ(curvePt.XYZ() + v * dir);
         d1U = curveD1;
         d1V = new Vector3D();
-        d1V.SetXYZ(dir);
+        d1V = d1V.WithXYZ(dir);
     }
 
     /// <summary>The point, first and second derivatives from C(U), C'(U) and C''(U).</summary>
@@ -61,10 +61,10 @@ internal static class ExtrusionUtils
                                      out Vector3D d2UV)
     {
         p = new Point3D();
-        p.SetXYZ(curvePt.XYZ() + v * dir);
+        p = p.WithXYZ(curvePt.XYZ() + v * dir);
         d1U = curveD1;
         d1V = new Vector3D();
-        d1V.SetXYZ(dir);
+        d1V = d1V.WithXYZ(dir);
         d2U = curveD2;
         d2V = new Vector3D(0.0, 0.0, 0.0);
         d2UV = new Vector3D(0.0, 0.0, 0.0);
@@ -89,10 +89,10 @@ internal static class ExtrusionUtils
                                      out Vector3D d3UVV)
     {
         p = new Point3D();
-        p.SetXYZ(curvePt.XYZ() + v * dir);
+        p = p.WithXYZ(curvePt.XYZ() + v * dir);
         d1U = curveD1;
         d1V = new Vector3D();
-        d1V.SetXYZ(dir);
+        d1V = d1V.WithXYZ(dir);
         d2U = curveD2;
         d2V = new Vector3D(0.0, 0.0, 0.0);
         d2UV = new Vector3D(0.0, 0.0, 0.0);

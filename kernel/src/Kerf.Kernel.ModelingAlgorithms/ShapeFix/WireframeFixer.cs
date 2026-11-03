@@ -832,11 +832,11 @@ public class WireframeFixer : RootFixer
                                         c2!.D1(first2, out _, out Vector3D vec2);
                                         if (edge1.Orientation() == Reversed)
                                         {
-                                            vec1.Reverse();
+                                            vec1 = vec1.Reversed();
                                         }
                                         if (edge2.Orientation() == Reversed)
                                         {
-                                            vec2.Reverse();
+                                            vec2 = vec2.Reversed();
                                         }
                                         double tol2 = Kerf.Engine.Foundation.Precision.SquareConfusion();
                                         if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
@@ -851,11 +851,11 @@ public class WireframeFixer : RootFixer
                                         c3!.D1(first3, out _, out vec2);
                                         if (edge2.Orientation() == Reversed)
                                         {
-                                            vec1.Reverse();
+                                            vec1 = vec1.Reversed();
                                         }
                                         if (edge3.Orientation() == Reversed)
                                         {
-                                            vec2.Reverse();
+                                            vec2 = vec2.Reversed();
                                         }
                                         if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
                                         {
@@ -1384,11 +1384,11 @@ public class WireframeFixer : RootFixer
                             c2!.D1(first2, out _, out Vector3D vec2);
                             if (edge1.Orientation() == Reversed)
                             {
-                                vec1.Reverse();
+                                vec1 = vec1.Reversed();
                             }
                             if (edge2.Orientation() == Reversed)
                             {
-                                vec2.Reverse();
+                                vec2 = vec2.Reversed();
                             }
                             double tol2 = Kerf.Engine.Foundation.Precision.SquareConfusion();
                             if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
@@ -1403,11 +1403,11 @@ public class WireframeFixer : RootFixer
                             c3!.D1(first3, out _, out vec2);
                             if (edge2.Orientation() == Reversed)
                             {
-                                vec1.Reverse();
+                                vec1 = vec1.Reversed();
                             }
                             if (edge3.Orientation() == Reversed)
                             {
-                                vec2.Reverse();
+                                vec2 = vec2.Reversed();
                             }
                             if (vec1.SquareMagnitude() < tol2 || vec2.SquareMagnitude() < tol2)
                             {

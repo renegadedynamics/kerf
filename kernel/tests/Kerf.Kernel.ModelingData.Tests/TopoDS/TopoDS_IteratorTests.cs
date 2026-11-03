@@ -288,8 +288,7 @@ public class TopoDS_IteratorTests
         aBuilder.Add(aCompound, aV);
 
         // Apply a translation to the compound
-        Transform3D aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(10, 20, 30));
         var aLoc = new Placement(aTrsf);
         aCompound.Location(aLoc);
 

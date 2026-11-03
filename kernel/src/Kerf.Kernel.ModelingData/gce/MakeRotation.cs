@@ -14,13 +14,13 @@ public sealed class MakeRotation
     private Transform3D _theRotation = new();
 
     /// <summary>A rotation by Angle (radians) around the axis of a line.</summary>
-    public MakeRotation(in Line3D line, double angle) => _theRotation.SetRotation(line.Position(), angle);
+    public MakeRotation(in Line3D line, double angle) => _theRotation = _theRotation.WithRotation(line.Position(), angle);
 
     /// <summary>A rotation by Angle (radians) around an axis.</summary>
-    public MakeRotation(in Axis3D axis, double angle) => _theRotation.SetRotation(axis, angle);
+    public MakeRotation(in Axis3D axis, double angle) => _theRotation = _theRotation.WithRotation(axis, angle);
 
     /// <summary>A rotation by Angle (radians) around the axis through a point with a direction.</summary>
-    public MakeRotation(in Point3D point, in Direction3D direc, double angle) => _theRotation.SetRotation(new Axis3D(point, direc), angle);
+    public MakeRotation(in Point3D point, in Direction3D direc, double angle) => _theRotation = _theRotation.WithRotation(new Axis3D(point, direc), angle);
 
     /// <summary>The constructed transformation.</summary>
     public Transform3D Value() => _theRotation;

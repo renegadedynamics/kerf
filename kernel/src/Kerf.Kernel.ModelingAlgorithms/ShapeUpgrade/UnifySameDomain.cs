@@ -1196,10 +1196,10 @@ public partial class UnifySameDomain : Transient
                                 Curve2D.ResD1 curD1 = curPCurve.EvalD1(curParam);
                                 curPoint = curD1.Point;
                                 Vector2D curDir = curD1.D1;
-                                curDir.Normalize();
+                                curDir = curDir.Normalized();
                                 if (curEdge.Orientation() == Reversed)
                                 {
-                                    curDir.Reverse();
+                                    curDir = curDir.Reversed();
                                 }
                                 for (itl.Initialize(tmpElist); itl.More(); itl.Next())
                                 {
@@ -1212,10 +1212,10 @@ public partial class UnifySameDomain : Transient
                                     }
                                     double   param = (anEdge.Orientation() == Forward) ? fpar : lpar;
                                     Vector2D dir   = pCurve.EvalD1(param).D1;
-                                    dir.Normalize();
+                                    dir = dir.Normalized();
                                     if (anEdge.Orientation() == Reversed)
                                     {
-                                        dir.Reverse();
+                                        dir = dir.Reversed();
                                     }
                                     double angle = curDir.Angle(dir);
                                     if (angle > maxAngle)

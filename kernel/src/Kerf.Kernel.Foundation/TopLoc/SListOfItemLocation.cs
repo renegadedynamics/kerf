@@ -41,7 +41,8 @@ public partial struct SListOfItemLocation : IEquatable<SListOfItemLocation>
         if (!_node.Tail().IsEmpty)
         {
             Transform3D t = _node.Tail().Value()._trsf;
-            _node.Value()._trsf.PreMultiply(t);
+            ref ItemLocation value = ref _node.Value();
+            value._trsf = value._trsf.PreMultiplied(t);
         }
     }
 

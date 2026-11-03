@@ -349,7 +349,7 @@ public partial class ChBuilder
             CoordinateSystem planAx3 = new(p3d[pivot], ndir, xdir);
             if (planAx3.YDirection().Dot(new Direction3D(v1)) <= 0.0)
             {
-                planAx3.YReverse();
+                planAx3 = planAx3.YReversed();
             }
             PlaneSurface? gpl = new PlaneSurface(planAx3);
             coin.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gpl, dStr));
@@ -358,7 +358,7 @@ public partial class ChBuilder
             Vector3D norface = norpl;
             if (face[pivot].Orientation() == Reversed)
             {
-                norface.Reverse();
+                norface = norface.Reversed();
             }
             Vector3D norcoin = new(gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection()));
             if (norcoin.Dot(norface) <= 0.0)
@@ -896,7 +896,7 @@ internal static class ChBuilder_C3
         ChFi3d_Parameters(gpl, pdeb, out u, out v);
         pardeb[3] = u;
         pardeb[4] = v;
-        ptcoindeb.SetCoord(u, v);
+        ptcoindeb = ptcoindeb.WithCoord(u, v);
 
         // compute parfin
         u = p2dfin.X();

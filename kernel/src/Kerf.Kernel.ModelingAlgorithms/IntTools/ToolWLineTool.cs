@@ -127,7 +127,7 @@ public static class ToolWLineTool
         delta = 1.0e-7;
         // Check on Surf 1
         d = gas1.UResolution(delta);
-        p2d.SetCoord(u1, v1);
+        p2d = p2d.WithCoord(u1, v1);
         if (Math.Abs(u1 - us11) < d)
         {
             bFlag = IsDegeneratedZone(p2d, s1, 1);
@@ -164,7 +164,7 @@ public static class ToolWLineTool
         }
         // Check on Surf 2
         d = gas2.UResolution(delta);
-        p2d.SetCoord(u2, v2);
+        p2d = p2d.WithCoord(u2, v2);
         if (Math.Abs(u2 - us21) < delta)
         {
             bFlag = IsDegeneratedZone(p2d, s2, 1);
@@ -273,7 +273,7 @@ public static class ToolWLineTool
 
             for (int pIt = -1; pIt <= 1; pIt++)
             {
-                pTest.SetX(originalPoint.X() + period * pIt);
+                pTest = pTest.WithX(originalPoint.X() + period * pIt);
                 double dd = ap1.SquareDistance(pTest);
 
                 if (dd < sqDistMin)
@@ -291,7 +291,7 @@ public static class ToolWLineTool
 
             for (int pIt = -1; pIt <= 1; pIt++)
             {
-                pTest.SetY(originalPoint.Y() + period * pIt);
+                pTest = pTest.WithY(originalPoint.Y() + period * pIt);
                 double dd = ap1.SquareDistance(pTest);
 
                 if (dd < sqDistMin)
@@ -335,7 +335,7 @@ public static class ToolWLineTool
                 break;
             }
         }
-        aV2D.SetCoord(c[0], c[1]);
+        aV2D = aV2D.WithCoord(c[0], c[1]);
     }
 
     // static subfunction in DecompositionOfWLine
@@ -353,38 +353,38 @@ public static class ToolWLineTool
 
             if ((i % 2) == 0)
             {
-                otherVec.SetX(0.0);
-                otherVec.SetY(1.0);
-                otherVecNormal.SetX(1.0);
-                otherVecNormal.SetY(0.0);
+                otherVec = otherVec.WithX(0.0);
+                otherVec = otherVec.WithY(1.0);
+                otherVecNormal = otherVecNormal.WithX(1.0);
+                otherVecNormal = otherVecNormal.WithY(0.0);
 
                 if (i < 2)
                 {
-                    aprojpoint.SetX(umin);
+                    aprojpoint = aprojpoint.WithX(umin);
                 }
                 else
                 {
-                    aprojpoint.SetX(umax);
+                    aprojpoint = aprojpoint.WithX(umax);
                 }
             }
             else
             {
-                otherVec.SetX(1.0);
-                otherVec.SetY(0.0);
-                otherVecNormal.SetX(0.0);
-                otherVecNormal.SetY(1.0);
+                otherVec = otherVec.WithX(1.0);
+                otherVec = otherVec.WithY(0.0);
+                otherVecNormal = otherVecNormal.WithX(0.0);
+                otherVecNormal = otherVecNormal.WithY(1.0);
 
                 if (i < 2)
                 {
-                    aprojpoint.SetY(vmin);
+                    aprojpoint = aprojpoint.WithY(vmin);
                 }
                 else
                 {
-                    aprojpoint.SetY(vmax);
+                    aprojpoint = aprojpoint.WithY(vmax);
                 }
             }
             Vector2D anormvec = vec;
-            anormvec.Normalize();
+            anormvec = anormvec.Normalized();
             RefineVector(ref anormvec);
             double adot1 = anormvec.Dot(otherVecNormal);
 
@@ -414,7 +414,7 @@ public static class ToolWLineTool
                 Vector2D acurvec = new(lastPoint, acurpoint);
                 if (bIsOut)
                 {
-                    acurvec.Reverse();
+                    acurvec = acurvec.Reversed();
                 }
 
                 double dotX, angleX;
@@ -921,8 +921,8 @@ public static class ToolWLineTool
                                 {
                                     prevNeighbourPoint.ParametersOnS2(out nU2, out nV2);
                                 }
-                                ap2.SetX(nU2);
-                                ap2.SetY(nV2);
+                                ap2 = ap2.WithX(nU2);
+                                ap2 = ap2.WithY(nV2);
 
                                 if (ap1.SquareDistance(ap2) > Constants.Resolution())
                                 {
@@ -994,8 +994,8 @@ public static class ToolWLineTool
                                             {
                                                 projector2.LowerDistanceParameters(out double foundU2,
                                                                                     out double foundV2);
-                                                anewpoint.SetX(foundU2);
-                                                anewpoint.SetY(foundV2);
+                                                anewpoint = anewpoint.WithX(foundU2);
+                                                anewpoint = anewpoint.WithY(foundV2);
                                             }
                                         }
                                     }

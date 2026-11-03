@@ -1060,7 +1060,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             if (_sequence.Value(i).Value(_sequence.Value(i).Length()).X()
                 >= _sequence.Value(i + 1).Value(1).X())
             {
-                _sequence.ChangeValue(i + 1).ChangeValue(1).SetX(
+                _sequence.ChangeValue(i + 1).ChangeValue(1) = _sequence.ChangeValue(i + 1).ChangeValue(1).WithX(
                     _sequence.Value(i).Value(_sequence.Value(i).Length()).X() + 1.0e-12);
             }
         }
@@ -1105,7 +1105,7 @@ public class CompProjectedCurve : Curve2DAdaptorBase
             aveU /= _sequence.Value(i).Length();
             aveV /= _sequence.Value(i).Length();
 
-            pmoy.SetCoord(aveU, aveV);
+            pmoy = pmoy.WithCoord(aveU, aveV);
             for (j = 1; j <= _sequence.Value(i).Length(); j++)
             {
                 pcurr = new Point2D(_sequence.Value(i).Value(j).Y(), _sequence.Value(i).Value(j).Z());
@@ -2138,8 +2138,8 @@ public class CompProjectedCurve : Curve2DAdaptorBase
         {
             v = point.Z();
         }
-        point.SetY(u);
-        point.SetZ(v);
+        point = point.WithY(u);
+        point = point.WithZ(v);
     }
 
     /// <summary>Compute split points in the parameter space of the curve.</summary>

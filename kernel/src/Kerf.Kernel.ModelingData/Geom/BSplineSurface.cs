@@ -1938,7 +1938,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The U knots (without repetition).</summary>
-    public PackedList<double> UKnots() => _uKnots.ToPackedList();
+    public IReadOnlyList<double> UKnots() => _uKnots.ToPackedList();
 
     /// <summary>Copies the V knots into Kv (deprecated in OCCT: use <see cref="VKnots()"/>).</summary>
     public void VKnots(NCollection_Array1<double> kv)
@@ -1948,7 +1948,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The V knots (without repetition).</summary>
-    public PackedList<double> VKnots() => _vKnots.ToPackedList();
+    public IReadOnlyList<double> VKnots() => _vKnots.ToPackedList();
 
     /// <summary>Copies the U flat knots into Ku (deprecated in OCCT: use <see cref="UKnotSequence()"/>).</summary>
     public void UKnotSequence(NCollection_Array1<double> ku)
@@ -1958,7 +1958,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The U knots repeated by their multiplicities (the flat knots).</summary>
-    public PackedList<double> UKnotSequence() => _uFlatKnots.ToPackedList();
+    public IReadOnlyList<double> UKnotSequence() => _uFlatKnots.ToPackedList();
 
     /// <summary>Copies the V flat knots into Kv (deprecated in OCCT: use <see cref="VKnotSequence()"/>).</summary>
     public void VKnotSequence(NCollection_Array1<double> kv)
@@ -1968,7 +1968,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The V knots repeated by their multiplicities (the flat knots).</summary>
-    public PackedList<double> VKnotSequence() => _vFlatKnots.ToPackedList();
+    public IReadOnlyList<double> VKnotSequence() => _vFlatKnots.ToPackedList();
 
     /// <summary>The multiplicity of the U knot UIndex.</summary>
     public int UMultiplicity(int uIndex)
@@ -1985,7 +1985,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The multiplicities of the U knots.</summary>
-    public PackedList<int> UMultiplicities() => _uMults.ToPackedList();
+    public IReadOnlyList<int> UMultiplicities() => _uMults.ToPackedList();
 
     /// <summary>The V iso-curve (a B-spline curve in U) at V.</summary>
     public sealed override Curve3D VIso(double v)
@@ -2051,7 +2051,7 @@ public class BSplineSurface : BoundedSurface
     }
 
     /// <summary>The multiplicities of the V knots.</summary>
-    public PackedList<int> VMultiplicities() => _vMults.ToPackedList();
+    public IReadOnlyList<int> VMultiplicities() => _vMults.ToPackedList();
 
     /// <summary>The weight of the pole (UIndex, VIndex): 1 for a non-rational surface.</summary>
     public double Weight(int uIndex, int vIndex)
@@ -2105,7 +2105,7 @@ public class BSplineSurface : BoundedSurface
         {
             for (int i = _poles.LowerRow(); i <= _poles.UpperRow(); i++)
             {
-                _poles[i, j].Transform(t);
+                _poles[i, j] = _poles[i, j].Transformed(t);
             }
         }
         _maxDerivInvOk = false;

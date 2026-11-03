@@ -68,7 +68,7 @@ public class PlaneSurface : ElementarySurface
     protected internal sealed override void UReverse()
     {
         CheckMutable();
-        _pos.XReverse();
+        _pos = _pos.XReversed();
     }
 
     /// <summary>-U.</summary>
@@ -78,7 +78,7 @@ public class PlaneSurface : ElementarySurface
     protected internal sealed override void VReverse()
     {
         CheckMutable();
-        _pos.YReverse();
+        _pos = _pos.YReversed();
     }
 
     /// <summary>-V.</summary>
@@ -87,7 +87,7 @@ public class PlaneSurface : ElementarySurface
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     /// <summary>False.</summary>
@@ -199,8 +199,7 @@ public class PlaneSurface : ElementarySurface
     /// <summary>A scale of |T.ScaleFactor()| about the parametric origin.</summary>
     public sealed override GeneralTransform2D ParametricTransformation(in Transform3D t)
     {
-        Transform2D t2 = new Transform2D();
-        t2.SetScale(Constants.Origin2d(), Math.Abs(t.ScaleFactor()));
+        Transform2D t2 = new Transform2D().WithScale(Constants.Origin2d(), Math.Abs(t.ScaleFactor()));
         return new GeneralTransform2D(t2);
     }
 

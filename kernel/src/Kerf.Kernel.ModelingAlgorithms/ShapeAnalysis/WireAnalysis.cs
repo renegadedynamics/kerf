@@ -1848,7 +1848,7 @@ public class WireAnalysis : Transient
         adapt.D1(b, out p2d1, out v1);
         if (e1.Orientation() == Reversed)
         {
-            v1.Reverse();
+            v1 = v1.Reversed();
         }
 
         if (!sae.PCurve(e2, _face, out c2d, out a, out b, true))
@@ -1861,7 +1861,7 @@ public class WireAnalysis : Transient
         adapt.D1(a, out p2d2, out v2);
         if (e2.Orientation() == Reversed)
         {
-            v2.Reverse();
+            v2 = v2.Reversed();
         }
 
         v12     = new Vector2D(p2d2.XY() - p2d1.XY());
@@ -2017,7 +2017,7 @@ public class WireAnalysis : Transient
         else
         {
             c2d1!.D1(b1, out p2d1, out v1);
-            v1.Reverse();
+            v1 = v1.Reversed();
         }
 
         if (!sae.PCurve(e2, _face, out Curve2D? c2d2, out double a2, out double b2, false))
@@ -2029,7 +2029,7 @@ public class WireAnalysis : Transient
         if (e2.Orientation() == Reversed)
         {
             c2d2!.D1(b2, out p2d2, out v2);
-            v2.Reverse();
+            v2 = v2.Reversed();
         }
         else
         {

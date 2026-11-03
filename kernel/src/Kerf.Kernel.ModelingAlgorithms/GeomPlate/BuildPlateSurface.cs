@@ -308,8 +308,7 @@ public class BuildPlateSurface
         p = _proj.Point(nearest);
         double u, v;
         p.Parameter(out u, out v);
-        Point2D p2d = new Point2D();
-        p2d.SetCoord(u, v);
+        Point2D p2d = new Point2D().WithCoord(u, v);
 
         return p2d;
     }
@@ -1328,10 +1327,10 @@ public class BuildPlateSurface
                     {
                         _linCont.Value(i).D1(uinit + inter, out pts.ChangeValue(++pnum), out vec1, out vec2);
                         normal = vec1 ^ vec2;
-                        normal.Normalize();
+                        normal = normal.Normalized();
                         if (toReverse)
                         {
-                            normal.Reverse();
+                            normal = normal.Reversed();
                         }
                         bool isNew = true;
                         int k;
@@ -1387,7 +1386,7 @@ public class BuildPlateSurface
                     {
                         _pntCont.Value(i).D1(out pts.ChangeValue(++pnum), out vec1, out vec2);
                         normal = vec1 ^ vec2;
-                        normal.Normalize();
+                        normal = normal.Normalized();
                         bool isNew = true;
                         for (int k = 1; k <= vecs.Length(); k++)
                         {
@@ -1403,7 +1402,7 @@ public class BuildPlateSurface
                             isHalfSpace = BuildAveragePlane.HalfSpace(newVecs, vecs, aset, linTol, angTol);
                             if (!isHalfSpace)
                             {
-                                newVecs.ChangeValue(1).Reverse();
+                                newVecs.ChangeValue(1) = newVecs.ChangeValue(1).Reversed();
                                 isHalfSpace = BuildAveragePlane.HalfSpace(newVecs, vecs, aset, linTol, angTol);
                             }
                             if (!isHalfSpace)
@@ -1928,17 +1927,17 @@ public class BuildPlateSurface
                 int ii, nbint = 20;
                 double u;
                 NCollection_Array1<Point2D> tabP2d = new NCollection_Array1<Point2D>(1, nbint + 1);
-                tabP2d[1].SetY(uinit);
-                tabP2d[1].SetX(0.0);
-                tabP2d[nbint + 1].SetY(ufinal);
+                tabP2d[1] = tabP2d[1].WithY(uinit);
+                tabP2d[1] = tabP2d[1].WithX(0.0);
+                tabP2d[nbint + 1] = tabP2d[nbint + 1].WithY(ufinal);
                 length2d = AbscissaPoint.Length(ac2d, uinit, ufinal);
 
-                tabP2d[nbint + 1].SetX(length2d);
+                tabP2d[nbint + 1] = tabP2d[nbint + 1].WithX(length2d);
                 for (ii = 2; ii <= nbint; ii++)
                 {
                     u = uinit + (ufinal - uinit) * ((1 - Math.Cos((ii - 1) * M_PI / (nbint))) / 2);
-                    tabP2d[ii].SetY(u);
-                    tabP2d[ii].SetX(AbscissaPoint.Length(ac2d, uinit, u));
+                    tabP2d[ii] = tabP2d[ii].WithY(u);
+                    tabP2d[ii] = tabP2d[ii].WithX(AbscissaPoint.Length(ac2d, uinit, u));
                 }
                 acrlaw.Set(tabP2d);
             }
@@ -1998,7 +1997,7 @@ public class BuildPlateSurface
                                             ac2d.D0(inter, out p2d);
                                             linCont.D0(inter, out p3d);
                                             _surfInit!.D0(p2d.Coord(1), p2d.Coord(2), out pp);
-                                            pdif.SetCoord(-pp.Coord(1) + p3d.Coord(1),
+                                            pdif = pdif.WithCoord(-pp.Coord(1) + p3d.Coord(1),
                                                           -pp.Coord(2) + p3d.Coord(2),
                                                           -pp.Coord(3) + p3d.Coord(3));
                                             PinpointConstraint pc = new PinpointConstraint(p2d.XY(), pdif.XYZ(), 0, 0);
@@ -2039,7 +2038,7 @@ public class BuildPlateSurface
                                 ac2d.D0(inter, out p2d);
                                 linCont.D0(inter, out p3d);
                                 _surfInit!.D0(p2d.Coord(1), p2d.Coord(2), out pp);
-                                pdif.SetCoord(-pp.Coord(1) + p3d.Coord(1),
+                                pdif = pdif.WithCoord(-pp.Coord(1) + p3d.Coord(1),
                                               -pp.Coord(2) + p3d.Coord(2),
                                               -pp.Coord(3) + p3d.Coord(3));
                                 PinpointConstraint pc = new PinpointConstraint(p2d.XY(), pdif.XYZ(), 0, 0);
@@ -2140,7 +2139,7 @@ public class BuildPlateSurface
                             }
                         }
                         _surfInit!.D0(p2d.Coord(1), p2d.Coord(2), out pp);
-                        pdif.SetCoord(-pp.Coord(1) + p3d.Coord(1),
+                        pdif = pdif.WithCoord(-pp.Coord(1) + p3d.Coord(1),
                                       -pp.Coord(2) + p3d.Coord(2),
                                       -pp.Coord(3) + p3d.Coord(3));
                         PinpointConstraint pc = new PinpointConstraint(p2d.XY(), pdif.XYZ(), 0, 0);
@@ -2179,8 +2178,8 @@ public class BuildPlateSurface
                                 derPlateU = new Vector3D(_prevPlate.EvaluateDerivative(p2d.XY(), 1, 0));
                                 derPlateV = new Vector3D(_prevPlate.EvaluateDerivative(p2d.XY(), 0, 1));
 
-                                du.SetLinearForm(-(v3 + derPlateU).Dot(normal), normal, derPlateU);
-                                dv.SetLinearForm(-(v4 + derPlateV).Dot(normal), normal, derPlateV);
+                                du = Vector3D.LinearForm(-(v3 + derPlateU).Dot(normal), normal, derPlateU);
+                                dv = Vector3D.LinearForm(-(v4 + derPlateV).Dot(normal), normal, derPlateV);
                                 PinpointConstraint pinU = new PinpointConstraint(p2d.XY(), du.XYZ(), 1, 0);
                                 PinpointConstraint pinV = new PinpointConstraint(p2d.XY(), dv.XYZ(), 0, 1);
                                 _plate.Load(pinU);
@@ -2221,7 +2220,7 @@ public class BuildPlateSurface
             _pntCont.Value(i).D0(out p3d);
             p2d = _pntCont.Value(i).Pnt2dOnSurf();
             _surfInit!.D0(p2d.Coord(1), p2d.Coord(2), out pp);
-            pdif.SetCoord(-pp.Coord(1) + p3d.Coord(1),
+            pdif = pdif.WithCoord(-pp.Coord(1) + p3d.Coord(1),
                           -pp.Coord(2) + p3d.Coord(2),
                           -pp.Coord(3) + p3d.Coord(3));
             PinpointConstraint pc = new PinpointConstraint(p2d.XY(), pdif.XYZ(), 0, 0);

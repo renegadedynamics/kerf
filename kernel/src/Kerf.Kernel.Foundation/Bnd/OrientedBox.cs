@@ -385,14 +385,14 @@ public partial struct OrientedBox : IEquatable<OrientedBox>
             return false;
         }
 
-        p[0].SetXYZ(_center - _hDims[0] * _axes[0] - _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
-        p[1].SetXYZ(_center + _hDims[0] * _axes[0] - _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
-        p[2].SetXYZ(_center - _hDims[0] * _axes[0] + _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
-        p[3].SetXYZ(_center + _hDims[0] * _axes[0] + _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
-        p[4].SetXYZ(_center - _hDims[0] * _axes[0] - _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
-        p[5].SetXYZ(_center + _hDims[0] * _axes[0] - _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
-        p[6].SetXYZ(_center - _hDims[0] * _axes[0] + _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
-        p[7].SetXYZ(_center + _hDims[0] * _axes[0] + _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
+        p[0] = p[0].WithXYZ(_center - _hDims[0] * _axes[0] - _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
+        p[1] = p[1].WithXYZ(_center + _hDims[0] * _axes[0] - _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
+        p[2] = p[2].WithXYZ(_center - _hDims[0] * _axes[0] + _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
+        p[3] = p[3].WithXYZ(_center + _hDims[0] * _axes[0] + _hDims[1] * _axes[1] - _hDims[2] * _axes[2]);
+        p[4] = p[4].WithXYZ(_center - _hDims[0] * _axes[0] - _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
+        p[5] = p[5].WithXYZ(_center + _hDims[0] * _axes[0] - _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
+        p[6] = p[6].WithXYZ(_center - _hDims[0] * _axes[0] + _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
+        p[7] = p[7].WithXYZ(_center + _hDims[0] * _axes[0] + _hDims[1] * _axes[1] + _hDims[2] * _axes[2]);
 
         return true;
     }

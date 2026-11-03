@@ -1517,7 +1517,7 @@ public static class StepToGeom
                 //: o9 abv 19 Feb 99
                 else
                 {
-                    a.SetXDirection(a.XDirection() ^ a.Direction());
+                    a = a.WithXDirection(a.XDirection() ^ a.Direction());
                     return new EllipseCurve3D(a, minorR, majorR);
                 }
             }
@@ -1551,7 +1551,7 @@ public static class StepToGeom
                 else
                 {
                     Direction2D x = a.XDirection();
-                    a.SetXDirection(new Direction2D(x.X(), -x.Y()));
+                    a = a.WithXDirection(new Direction2D(x.X(), -x.Y()));
                     return new EllipseCurve2D(a, minorR, majorR);
                 }
             }
@@ -2131,7 +2131,7 @@ public static class StepToGeom
                 }
             }
             Axis2D result = new Axis2D(cp.Pnt2d(), d1);
-            ct.SetTransformation(result);
+            ct = ct.WithTransformation(result);
             ct = ct.Inverted();
             return true;
         }
@@ -2197,10 +2197,10 @@ public static class StepToGeom
             }
 
             CoordinateSystem result = new CoordinateSystem(pgp, d3, d1);
-            ct.SetTransformation(result);
+            ct = ct.WithTransformation(result);
             if (scto.HasScale)
             {
-                ct.SetScaleFactor(scto.Scale());
+                ct = ct.WithScaleFactor(scto.Scale());
             }
             ct = ct.Inverted(); //: n8 abv 16 Feb 99: tr8_as2_db.stp: reverse for accordance with LV tool
             return true;

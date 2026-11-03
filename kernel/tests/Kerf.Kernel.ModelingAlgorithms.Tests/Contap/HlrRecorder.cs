@@ -167,10 +167,8 @@ internal sealed class HlrRecorder
         RecProjector("persp top", new AlgorithmProjector(new Frame3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0)),
                                                         20.0));
 
-        Transform3D aT = new();
-        aT.SetTransformation(new CoordinateSystem(new Point3D(1, -2, 0.5), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0)));
-        Transform3D aS = new();
-        aS.SetScale(new Point3D(0.5, 0.5, 0.5), 2.5);
+        Transform3D aT = new Transform3D().WithTransformation(new CoordinateSystem(new Point3D(1, -2, 0.5), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0)));
+        Transform3D aS = new Transform3D().WithScale(new Point3D(0.5, 0.5, 0.5), 2.5);
         Transform3D aTS = aS * aT;
         RecProjector("trsf", new AlgorithmProjector(aTS, false, 0.0));
         RecProjector("trsf persp", new AlgorithmProjector(aTS, true, 30.0));

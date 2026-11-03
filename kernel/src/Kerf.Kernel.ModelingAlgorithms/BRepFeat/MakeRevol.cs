@@ -404,7 +404,7 @@ public sealed class MakeRevol : Form
             else if (Working(until).IsSame(_skface))
             {
                 _justGluer = true;
-                _axis.Reverse();
+                _axis = _axis.Reversed();
                 Perform(From);
                 if (_justGluer)
                 {

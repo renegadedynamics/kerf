@@ -315,7 +315,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         if (vl > Constants.Resolution())
         {
             double ivl = 1.0 / vl;
-            axis.SetCoord(_x * ivl, _y * ivl, _z * ivl);
+            axis = axis.WithCoord(_x * ivl, _y * ivl, _z * ivl);
             if (_w < 0.0)
             {
                 angle = 2.0 * Math.Atan2(-vl, -_w); // [-PI, 0]
@@ -327,7 +327,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         }
         else
         {
-            axis.SetCoord(0.0, 0.0, 1.0);
+            axis = axis.WithCoord(0.0, 0.0, 1.0);
             angle = 0.0;
         }
     }
@@ -349,17 +349,9 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         wy = _w * y2;
         wz = _w * z2;
 
-        Matrix3x3 mat = new();
-        mat.ChangeValue(1, 1) = 1.0 - (yy + zz);
-        mat.ChangeValue(1, 2) = xy - wz;
-        mat.ChangeValue(1, 3) = xz + wy;
-        mat.ChangeValue(2, 1) = xy + wz;
-        mat.ChangeValue(2, 2) = 1.0 - (xx + zz);
-        mat.ChangeValue(2, 3) = yz - wx;
-        mat.ChangeValue(3, 1) = xz - wy;
-        mat.ChangeValue(3, 2) = yz + wx;
-        mat.ChangeValue(3, 3) = 1.0 - (xx + yy);
-        return mat;
+        return new Matrix3x3(1.0 - (yy + zz), xy - wz, xz + wy,
+                             xy + wz, 1.0 - (xx + zz), yz - wx,
+                             xz - wy, yz + wx, 1.0 - (xx + yy));
     }
 
     public readonly void GetEulerAngles(EulerSequence order, out double alpha, out double beta, out double gamma)

@@ -116,7 +116,7 @@ public class ShapeAnalysisEdgeTests
     public void Curve3d_applies_the_location()
     {
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 5));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 5));
         Edge anE = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
         Edge aMoved = ShapeCasts.Edge(anE.Moved(new Placement(aT)));
         var sae = new EdgeAnalysis();

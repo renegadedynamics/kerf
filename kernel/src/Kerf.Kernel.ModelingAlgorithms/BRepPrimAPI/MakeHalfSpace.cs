@@ -38,7 +38,7 @@ public class MakeHalfSpace : MakeShape
         Direction3D normal = props.Normal();
         if (face.Orientation() == Reversed)
         {
-            normal.Reverse();
+            normal = normal.Reversed();
         }
         return normal;
     }

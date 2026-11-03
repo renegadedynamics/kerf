@@ -57,7 +57,7 @@ public struct IConicTool : IImpTool
         _prm2 = elips.MinorRadius();
         _prm3 = Math.Sqrt(_prm1 * _prm1 - _prm2 * _prm2);
         _axis = elips.Axis();
-        _absToObject.SetTransformation(Constants.OX2d(), _axis.XAxis());
+        _absToObject = _absToObject.WithTransformation(Constants.OX2d(), _axis.XAxis());
         _type = Ellipse;
     }
 
@@ -68,7 +68,7 @@ public struct IConicTool : IImpTool
         _axis = c.Axis();
         _prm2 = _axis.Location().X();
         _prm3 = _axis.Location().Y();
-        _absToObject.SetTransformation(Constants.OX2d(), _axis.XAxis());
+        _absToObject = _absToObject.WithTransformation(Constants.OX2d(), _axis.XAxis());
         _type = Circle;
     }
 
@@ -78,7 +78,7 @@ public struct IConicTool : IImpTool
         _prm1 = p.Focal();
         _prm2 = 4.0 * _prm1;
         _axis = p.Axis();
-        _absToObject.SetTransformation(Constants.OX2d(), _axis.XAxis());
+        _absToObject = _absToObject.WithTransformation(Constants.OX2d(), _axis.XAxis());
         _type = Parabola;
     }
 
@@ -88,7 +88,7 @@ public struct IConicTool : IImpTool
         _prm1 = h.MajorRadius();
         _prm2 = h.MinorRadius();
         _axis = h.Axis();
-        _absToObject.SetTransformation(Constants.OX2d(), _axis.XAxis());
+        _absToObject = _absToObject.WithTransformation(Constants.OX2d(), _axis.XAxis());
         _type = Hyperbola;
     }
 
@@ -188,7 +188,7 @@ public struct IConicTool : IImpTool
             {
                 // OCCT's AN_ELIPS is 0: the distance through the affinity on the minor axis.
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 double x = p.X();
                 double y = p.Y() * (_prm1 / _prm2);
                 double d = Math.Sqrt(x * x + y * y) - _prm1;
@@ -205,7 +205,7 @@ public struct IConicTool : IImpTool
             case Parabola:
             { //-- Distance(X,Y) = Y**2 - 2 P X
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 return (p.Y() * p.Y() - _prm2 * p.X());
             }
 
@@ -215,7 +215,7 @@ public struct IConicTool : IImpTool
                 //--     -(Y/b)**2 - 1  sinon ??
                 //--     avec un gradient avec x -> std::abs(x)
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 if (p.X() > 0.0)
                 {
                     return ((p.X() * p.X()) / (_prm1 * _prm1) - (p.Y() * p.Y()) / (_prm2 * _prm2) - 1.0);
@@ -244,7 +244,7 @@ public struct IConicTool : IImpTool
             case Circle:
             {
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 double gradx = 0.0;
                 double grady = 0.0;
                 double x = p.X();
@@ -256,13 +256,13 @@ public struct IConicTool : IImpTool
                     grady = y / temp1;
                 }
                 Vector2D gradient = new(gradx, grady);
-                gradient.Transform(Object_To_Abs);
+                gradient = gradient.Transformed(Object_To_Abs);
                 return (gradient);
             }
             case Ellipse:
             {
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 double gradx = 0.0;
                 double grady = 0.0;
                 double x = p.X();
@@ -274,25 +274,25 @@ public struct IConicTool : IImpTool
                     grady = (y * (_prm1 / _prm2)) / temp1;
                 }
                 Vector2D gradient = new(gradx, grady);
-                gradient.Transform(Object_To_Abs);
+                gradient = gradient.Transformed(Object_To_Abs);
                 return (gradient);
             }
 
             case Parabola:
             { //-- Distance(X,Y) = Y**2 - 2 P X
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 Vector2D gradient = new(-_prm2, p.Y() + p.Y());
-                gradient.Transform(Object_To_Abs);
+                gradient = gradient.Transformed(Object_To_Abs);
                 return (gradient);
             }
             case Hyperbola:
             { //-- Distance(X,Y) = (X/a)**2 - (Y/b)**2 -1
                 Point2D p = thePoint;
-                p.Transform(_absToObject);
+                p = p.Transformed(_absToObject);
                 //--### la Branche a X negatif doit ramener vers les X positifs
                 Vector2D gradient = new(2.0 * Math.Abs(p.X()) / (_prm1 * _prm1), -2.0 * p.Y() / (_prm2 * _prm2));
-                gradient.Transform(Object_To_Abs);
+                gradient = gradient.Transformed(Object_To_Abs);
                 return (gradient);
             }
             default:

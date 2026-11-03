@@ -1387,7 +1387,7 @@ public partial class IntSS
             {
                 wLine.Point(ipidebm1).ParametersOnS2(out u, out v);
             }
-            poles[i].SetCoord(u, v);
+            poles[i] = poles[i].WithCoord(u, v);
             mults[i] = 1;
             knots[i] = i - 1;
         }

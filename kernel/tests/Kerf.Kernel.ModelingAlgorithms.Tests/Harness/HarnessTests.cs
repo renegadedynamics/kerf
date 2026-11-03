@@ -33,7 +33,7 @@ public class HarnessTests
     {
         Shape aBox = Box();
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(100.0, 0.0, 0.0));
         var aBuilder = new BrepBuilder();
         var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
@@ -270,7 +270,7 @@ public class HarnessTests
     {
         Shape aBox = Box();
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 1.0e-6));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0.0, 0.0, 1.0e-6));
         CanonicalComparison aComparison = CanonicalShapeComparer.Compare(aBox, aBox.Located(new Placement(aTrsf)));
         Assert.False(aComparison.IsIdentical);
         Assert.True(aComparison.CountsEqual);

@@ -106,8 +106,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace bspline in the mark of the sphere.
         // and calculate the weight of the bspline.
         double w1;
-        Transform3D trsf = new();
-        trsf.SetTransformation(cyl.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(cyl.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -123,7 +122,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
             for (j = 1; j <= _nbVPoles; j++)
             {
                 _weights[i, j] = w1;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();
@@ -168,8 +167,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline inn the mark of the cone.
         // and calculate the weight of the bspline.
         double w;
-        Transform3D trsf = new();
-        trsf.SetTransformation(cyl.Position(), new CoordinateSystem(Constants.XOY()));
+        Transform3D trsf = new Transform3D().WithTransformation(cyl.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -185,7 +183,7 @@ public class CylinderToBSplineSurface : ElementarySurfaceToBSplineSurface
             for (j = 1; j <= _nbVPoles; j++)
             {
                 _weights[i, j] = w;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();

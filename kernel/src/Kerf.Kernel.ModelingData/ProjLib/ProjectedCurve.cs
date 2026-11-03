@@ -183,7 +183,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
         double tol = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         aRes.D1(theParam, out pBnd, out vBnd);
-        dBnd.SetXY(vBnd.XY());
+        dBnd = dBnd.WithXY(vBnd.XY());
         Line2D lin = new(pBnd, dBnd); // line in direction of derivative
 
         Point2D thePole = new();
@@ -192,26 +192,26 @@ public class ProjectedCurve : Curve2DAdaptorBase
         {
             case 1:
             {
-                thePole.SetCoord(u1, v1);
-                theBoundDir.SetCoord(0.0, 1.0);
+                thePole = thePole.WithCoord(u1, v1);
+                theBoundDir = theBoundDir.WithCoord(0.0, 1.0);
                 break;
             }
             case 2:
             {
-                thePole.SetCoord(u2, v1);
-                theBoundDir.SetCoord(0.0, 1.0);
+                thePole = thePole.WithCoord(u2, v1);
+                theBoundDir = theBoundDir.WithCoord(0.0, 1.0);
                 break;
             }
             case 3:
             {
-                thePole.SetCoord(u1, v1);
-                theBoundDir.SetCoord(1.0, 0.0);
+                thePole = thePole.WithCoord(u1, v1);
+                theBoundDir = theBoundDir.WithCoord(1.0, 0.0);
                 break;
             }
             case 4:
             {
-                thePole.SetCoord(u1, v2);
-                theBoundDir.SetCoord(1.0, 0.0);
+                thePole = thePole.WithCoord(u1, v2);
+                theBoundDir = theBoundDir.WithCoord(1.0, 0.0);
                 break;
             }
         }
@@ -990,7 +990,7 @@ public class ProjectedCurve : Curve2DAdaptorBase
                     {
                         Point2D firstPnt = res.Value(res.FirstParameter());
                         Point2D secondPnt = firstPnt;
-                        secondPnt.SetCoord(idx, firstPnt.Coord(idx) - surfPeriod[idx - 1] * maxIdx);
+                        secondPnt = secondPnt.WithCoord(idx, firstPnt.Coord(idx) - surfPeriod[idx - 1] * maxIdx);
                         res.Translate(new Vector2D(firstPnt, secondPnt));
                     }
                 }

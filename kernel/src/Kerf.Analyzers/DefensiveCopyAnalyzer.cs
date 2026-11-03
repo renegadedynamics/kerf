@@ -73,8 +73,10 @@ public sealed class DefensiveCopyAnalyzer : DiagnosticAnalyzer
                 return parameter.Parameter.RefKind is RefKind.None or RefKind.Ref or RefKind.Out;
 
             case IInstanceReferenceOperation:
-                // `this` of a struct is writable unless the member (or the whole struct) is readonly
-                return containingSymbol is not IMethodSymbol { IsReadOnly: true }
+                // `this` of a struct is writable unless the member (or the whole struct) is readonly; a constructor's
+                // `this` is writable even in a readonly struct
+                return containingSymbol is IMethodSymbol { MethodKind: MethodKind.Constructor }
+                       || containingSymbol is not IMethodSymbol { IsReadOnly: true }
                        && containingSymbol.ContainingType is not { IsValueType: true, IsReadOnly: true };
 
             case IFieldReferenceOperation field:

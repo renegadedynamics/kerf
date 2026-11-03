@@ -1320,8 +1320,7 @@ public static class ElSLib
     /// <summary>The parameters (U, V) of a point on the plane: its coordinates in the plane's system.</summary>
     public static void PlaneParameters(in CoordinateSystem pos, in Point3D p, out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t.SetTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
         u = ploc.X();
         v = ploc.Y();
@@ -1330,8 +1329,7 @@ public static class ElSLib
     /// <summary>The parameters (U, V) of a point on the cylinder, U in [0, 2*PI].</summary>
     public static void CylinderParameters(in CoordinateSystem pos, double radius, in Point3D p, out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t.SetTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
         u = Math.Atan2(ploc.Y(), ploc.X());
         NormalizeAngle(ref u);
@@ -1345,8 +1343,7 @@ public static class ElSLib
     public static void ConeParameters(in CoordinateSystem pos, double radius, double sAngle, in Point3D p,
                                       out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t.SetTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
 
         // Check if point is at the apex
@@ -1380,8 +1377,7 @@ public static class ElSLib
     /// <summary>The parameters (U, V) of a point on the sphere, U in [0, 2*PI] and V in [-PI/2, PI/2].</summary>
     public static void SphereParameters(in CoordinateSystem pos, double radius, in Point3D p, out double u, out double v)
     {
-        Transform3D t = new Transform3D();
-        t.SetTransformation(pos);
+        Transform3D t = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
         ploc.Coord(out double x, out double y, out double z);
         double l = Math.Sqrt(x * x + y * y);
@@ -1411,8 +1407,7 @@ public static class ElSLib
     public static void TorusParameters(in CoordinateSystem pos, double majorRadius, double minorRadius, in Point3D p,
                                        out double u, out double v)
     {
-        Transform3D tref = new Transform3D();
-        tref.SetTransformation(pos);
+        Transform3D tref = new Transform3D().WithTransformation(pos);
         Point3D ploc = p.Transformed(tref);
         ploc.Coord(out double x, out double y, out double z);
 
@@ -1465,7 +1460,7 @@ public static class ElSLib
         Line3D l = new Line3D(pos.Location(), pos.YDirection());
         Vector3D ve = new Vector3D(pos.XDirection());
         ve *= u;
-        l.Translate(ve);
+        l = l.Translated(ve);
         return l;
     }
 
@@ -1507,7 +1502,7 @@ public static class ElSLib
         Frame3D axes = new Frame3D(pos.Location(), cx.Crossed(dz), cx);
         Vector3D ve = new Vector3D(cx);
         ve *= majorRadius;
-        axes.Translate(ve);
+        axes = axes.Translated(ve);
         Circle3D circ = new Circle3D(axes, minorRadius);
         return circ;
     }
@@ -1518,7 +1513,7 @@ public static class ElSLib
         Line3D l = new Line3D(pos.Location(), pos.XDirection());
         Vector3D ve = new Vector3D(pos.YDirection());
         ve *= v;
-        l.Translate(ve);
+        l = l.Translated(ve);
         return l;
     }
 
@@ -1527,8 +1522,8 @@ public static class ElSLib
     {
         Frame3D axes = pos.Ax2();
         Vector3D ve = new Vector3D(pos.Direction());
-        ve.Multiply(v);
-        axes.Translate(ve);
+        ve = ve.Multiplied(v);
+        axes = axes.Translated(ve);
         Circle3D c = new Circle3D(axes, radius);
         return c;
     }
@@ -1538,13 +1533,13 @@ public static class ElSLib
     {
         CoordinateSystem axes = pos;
         Vector3D ve = new Vector3D(pos.Direction());
-        ve.Multiply(v * Math.Cos(sAngle));
-        axes.Translate(ve);
+        ve = ve.Multiplied(v * Math.Cos(sAngle));
+        axes = axes.Translated(ve);
         double r = radius + v * Math.Sin(sAngle);
         if (r < 0)
         {
-            axes.XReverse();
-            axes.YReverse();
+            axes = axes.XReversed();
+            axes = axes.YReversed();
             r = -r;
         }
 
@@ -1557,15 +1552,15 @@ public static class ElSLib
     {
         Frame3D axes = pos.Ax2();
         Vector3D ve = new Vector3D(pos.Direction());
-        ve.Multiply(Radius * Math.Sin(v));
-        axes.Translate(ve);
+        ve = ve.Multiplied(Radius * Math.Sin(v));
+        axes = axes.Translated(ve);
         double radius = Radius * Math.Cos(v);
         // #23170: if V is even slightly (e.g. by double epsilon) greater than PI/2,
         // radius will become negative and constructor of gp_Circ will raise exception.
         // Lets try to create correct isoline even on analytical continuation for |V| > PI/2...
         if (radius < 0.0)
         {
-            axes.SetDirection(-axes.Direction());
+            axes = axes.WithDirection(-axes.Direction());
             radius = -radius;
         }
 
@@ -1578,13 +1573,13 @@ public static class ElSLib
     {
         CoordinateSystem axes = new CoordinateSystem(pos.Ax2());
         Vector3D ve = new Vector3D(pos.Direction());
-        ve.Multiply(minorRadius * Math.Sin(v));
-        axes.Translate(ve);
+        ve = ve.Multiplied(minorRadius * Math.Sin(v));
+        axes = axes.Translated(ve);
         double r = majorRadius + minorRadius * Math.Cos(v);
         if (r < 0)
         {
-            axes.XReverse();
-            axes.YReverse();
+            axes = axes.XReversed();
+            axes = axes.YReversed();
             r = -r;
         }
 

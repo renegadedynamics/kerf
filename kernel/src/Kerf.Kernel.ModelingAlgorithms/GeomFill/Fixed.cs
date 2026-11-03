@@ -26,11 +26,11 @@ public class Fixed : TrihedronLaw
             throw new ConstructionErrorException("GeomFill_Fixed : Two parallel vectors !");
         }
         _t = tangent;
-        _t.Normalize();
+        _t = _t.Normalized();
         _n = normal;
-        _n.Normalize();
+        _n = _n.Normalized();
         _b = _t ^ _n;
-        _b.Normalize();
+        _b = _b.Normalized();
     }
 
     public override TrihedronLaw Copy()

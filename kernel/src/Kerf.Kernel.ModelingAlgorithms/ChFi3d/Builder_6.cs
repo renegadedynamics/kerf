@@ -509,15 +509,15 @@ public partial class FilletBuilderBase
             Vector3D du1 = new(), du2 = new(), dv1 = new(), dv2 = new();
 
             sref.D1(puv.X(), puv.Y(), out p, out du1, out dv1);
-            du1.Cross(dv1);
+            du1 = du1.Crossed(dv1);
 
             if (or1 == global::Kerf.Topology.Orientation.Reversed)
             {
-                du1.Reverse();
+                du1 = du1.Reversed();
             }
 
             surf.D1(uFirst, param, out p, out du2, out dv2);
-            du2.Cross(dv2);
+            du2 = du2.Crossed(dv2);
 
             if (du1.Magnitude() <= tolget3d || du2.Magnitude() <= tolget3d)
             {

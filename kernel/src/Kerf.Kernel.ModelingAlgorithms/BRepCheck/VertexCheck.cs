@@ -165,7 +165,7 @@ public class VertexCheck : ResultCheck
                                 if (pr.IsPointOnCurve(c, l))
                                 {
                                     controlp = c.Value(pr.Parameter());
-                                    controlp.Transform(l.Transformation());
+                                    controlp = controlp.Transformed(l.Transformation());
                                     if (prep.SquareDistance(controlp) > tol)
                                     {
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
@@ -181,7 +181,7 @@ public class VertexCheck : ResultCheck
                                 if (orv == Forward || multiple)
                                 {
                                     controlp = c.Value(gc.First());
-                                    controlp.Transform(l.Transformation());
+                                    controlp = controlp.Transformed(l.Transformation());
                                     if (prep.SquareDistance(controlp) > tol)
                                     {
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
@@ -191,7 +191,7 @@ public class VertexCheck : ResultCheck
                                 if (orv == Reversed || multiple)
                                 {
                                     controlp = c.Value(gc.Last());
-                                    controlp.Transform(l.Transformation());
+                                    controlp = controlp.Transformed(l.Transformation());
                                     if (prep.SquareDistance(controlp) > tol)
                                     {
                                         BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurve);
@@ -218,7 +218,7 @@ public class VertexCheck : ResultCheck
                             {
                                 Point2D p2d = pc.Value(pr.Parameter());
                                 controlp = su.Value(p2d.X(), p2d.Y());
-                                controlp.Transform(l.Transformation());
+                                controlp = controlp.Transformed(l.Transformation());
                                 if (prep.SquareDistance(controlp) > tol)
                                 {
                                     BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurveOnSurface);
@@ -229,7 +229,7 @@ public class VertexCheck : ResultCheck
                             {
                                 Point2D p2d = pc2.Value(pr.Parameter());
                                 controlp = su.Value(p2d.X(), p2d.Y());
-                                controlp.Transform(l.Transformation());
+                                controlp = controlp.Transformed(l.Transformation());
                                 if (prep.SquareDistance(controlp) > tol)
                                 {
                                     BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnCurveOnSurface);
@@ -269,7 +269,7 @@ public class VertexCheck : ResultCheck
                     if (pr.IsPointOnSurface(su, l))
                     {
                         controlp = su!.Value(pr.Parameter(), pr.Parameter2());
-                        controlp.Transform(l.Transformation());
+                        controlp = controlp.Transformed(l.Transformation());
                         if (prep.SquareDistance(controlp) > tol)
                         {
                             BRepCheckCheck.Add(lst, StatusCheck.InvalidPointOnSurface);
@@ -341,7 +341,7 @@ public class VertexCheck : ResultCheck
                 controlp = pr.Surface()!.Value(pr.Parameter(), pr.Parameter2());
             }
 
-            controlp.Transform(loc.Transformation());
+            controlp = controlp.Transformed(loc.Transformation());
             if (prep.SquareDistance(controlp) > tol)
             {
                 tol = prep.SquareDistance(controlp);

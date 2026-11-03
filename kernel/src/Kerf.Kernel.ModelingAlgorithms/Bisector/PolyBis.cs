@@ -110,7 +110,7 @@ public sealed class PolyBis
         for (int i = 1; i <= _nbPoints; i++)
         {
             Point2D p = _points[i].Point();
-            p.Transform(t);
+            p = p.Transformed(t);
             _points[i].Point(p);
         }
     }

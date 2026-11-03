@@ -1316,7 +1316,7 @@ public static partial class AlgoTools
         //
         if (fSp.Orientation() == Reversed)
         {
-            dnfSp.Reverse();
+            dnfSp = dnfSp.Reversed();
         }
         //
         // Project the point from the split face on the original face
@@ -1343,7 +1343,7 @@ public static partial class AlgoTools
         //
         if (fSr.Orientation() == Reversed)
         {
-            dnfOr.Reverse();
+            dnfOr = dnfOr.Reversed();
         }
         //
         // compare the normals
@@ -1905,7 +1905,7 @@ public static partial class AlgoTools
         }
 
         projector.LowerDistanceParameters(out uld, out vld);
-        p2D.SetCoord(uld, vld);
+        p2D = p2D.WithCoord(uld, vld);
         //
         bFlag = aContext.IsPointInOnFace(aF, p2D);
         //
@@ -1926,7 +1926,7 @@ public static partial class AlgoTools
         }
 
         projector.LowerDistanceParameters(out uld, out vld);
-        p2D.SetCoord(uld, vld);
+        p2D = p2D.WithCoord(uld, vld);
         //
         bFlag = aContext.IsPointInOnFace(aF, p2D);
         //
@@ -1959,7 +1959,7 @@ public static partial class AlgoTools
         }
 
         projector.LowerDistanceParameters(out uld, out vld);
-        p2D.SetCoord(uld, vld);
+        p2D = p2D.WithCoord(uld, vld);
         //
         bFlag = aContext.IsPointInOnFace(aF, p2D);
         //
@@ -2028,7 +2028,7 @@ public static partial class AlgoTools
         AlgoTools3D.GetNormalToFaceOnEdge(aE, aF, aT, out aDN, context);
         if (aF.Orientation() == Reversed)
         {
-            aDN.Reverse();
+            aDN = aDN.Reversed();
         }
         //
         tolE = Tool.Tolerance(aE);
@@ -2050,7 +2050,7 @@ public static partial class AlgoTools
             }
             px = aProjPL.NearestPoint();
             Vector3D vec = new(aP, px);
-            aDB.SetXYZ(vec.XYZ());
+            aDB = aDB.WithXYZ(vec.XYZ());
         }
         //
         return bFound;
@@ -2094,7 +2094,7 @@ public static partial class AlgoTools
         aProjPL.Perform(ps);
         ps = aProjPL.NearestPoint();
         //
-        ps.SetXYZ(ps.XYZ() + 2.0 * aTolE * aDB.XYZ());
+        ps = ps.WithXYZ(ps.XYZ() + 2.0 * aTolE * aDB.XYZ());
         proj.Perform(ps);
         if (!proj.IsDone)
         {
@@ -2106,7 +2106,7 @@ public static partial class AlgoTools
         //
         do
         {
-            p1.SetXYZ(ps.XYZ() + aDt * aDB.XYZ());
+            p1 = p1.WithXYZ(ps.XYZ() + aDt * aDB.XYZ());
             //
             proj.Perform(p1);
             if (!proj.IsDone)
@@ -2124,7 +2124,7 @@ public static partial class AlgoTools
             {
                 return bRet;
             }
-            aDB.SetXYZ(v.XYZ());
+            aDB = aDB.WithXYZ(v.XYZ());
         } while (dist > dTol && --nbItMax != 0);
         //
         bRet = dist < dTol;

@@ -14,7 +14,7 @@ public sealed class MakeScale
     private Transform3D _theScale = new();
 
     /// <summary>A scaling by Scale about a point.</summary>
-    public MakeScale(in Point3D point, double scale) => _theScale.SetScale(point, scale);
+    public MakeScale(in Point3D point, double scale) => _theScale = _theScale.WithScale(point, scale);
 
     /// <summary>The constructed transformation.</summary>
     public Transform3D Value() => _theScale;

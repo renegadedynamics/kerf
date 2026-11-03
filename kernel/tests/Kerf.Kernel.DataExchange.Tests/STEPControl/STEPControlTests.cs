@@ -132,7 +132,7 @@ public class STEPControlTests(ITestOutputHelper theOutput)
         var aCompound = new Compound();
         aBuilder.MakeCompound(ref aCompound);
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(100.0, 0.0, 0.0));
         aBuilder.Add(aCompound, aBox);
         aBuilder.Add(aCompound, aBox.Moved(new Placement(aTrsf)));
 

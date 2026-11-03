@@ -250,6 +250,6 @@ public class ToroidalSurface : ElementarySurface
         CheckMutable();
         _majorRadius = _majorRadius * Math.Abs(t.ScaleFactor());
         _minorRadius = _minorRadius * Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 }

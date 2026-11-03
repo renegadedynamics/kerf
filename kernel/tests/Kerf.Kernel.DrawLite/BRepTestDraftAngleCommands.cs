@@ -71,8 +71,8 @@ internal static class BRepTestDraftAngleCommands
             F = ShapeCasts.Face(aLocalShape);
             //    F = TopoDS::Face(DBRep::Get(a[8*ii+6],TopAbs_FACE));
             Angle = theDI.Atof(a[8 * ii + 7]) * Math.PI / 180.0;
-            Pax.SetCoord(theDI.Atof(a[8 * ii + 8]), theDI.Atof(a[8 * ii + 9]), theDI.Atof(a[8 * ii + 10]));
-            Dax.SetCoord(theDI.Atof(a[8 * ii + 11]), theDI.Atof(a[8 * ii + 12]), theDI.Atof(a[8 * ii + 13]));
+            Pax = Pax.WithCoord(theDI.Atof(a[8 * ii + 8]), theDI.Atof(a[8 * ii + 9]), theDI.Atof(a[8 * ii + 10]));
+            Dax = Dax.WithCoord(theDI.Atof(a[8 * ii + 11]), theDI.Atof(a[8 * ii + 12]), theDI.Atof(a[8 * ii + 13]));
             drft.Add(F, Dirextract, Angle, new Plane3D(Pax, Dax));
             if (!drft.AddDone())
             {
@@ -137,8 +137,8 @@ internal static class BRepTestDraftAngleCommands
 
             Flag = theDI.Atoi(a[9 * ii + 7]) != 0;
             Angle = theDI.Atof(a[9 * ii + 8]) * Math.PI / 180.0;
-            Pax.SetCoord(theDI.Atof(a[9 * ii + 9]), theDI.Atof(a[9 * ii + 10]), theDI.Atof(a[9 * ii + 11]));
-            Dax.SetCoord(theDI.Atof(a[9 * ii + 12]), theDI.Atof(a[9 * ii + 13]), theDI.Atof(a[9 * ii + 14]));
+            Pax = Pax.WithCoord(theDI.Atof(a[9 * ii + 9]), theDI.Atof(a[9 * ii + 10]), theDI.Atof(a[9 * ii + 11]));
+            Dax = Dax.WithCoord(theDI.Atof(a[9 * ii + 12]), theDI.Atof(a[9 * ii + 13]), theDI.Atof(a[9 * ii + 14]));
             drft.Add(F, Dirextract, Angle, new Plane3D(Pax, Dax), Flag);
             if (!drft.AddDone())
             {

@@ -61,7 +61,7 @@ internal sealed class Prism
     private static Placement Location(in Vector3D v)
     {
         var gpt = new Transform3D();
-        gpt.SetTranslation(v);
+        gpt = gpt.WithTranslation(v);
         var l = new Placement(gpt);
         return l;
     }

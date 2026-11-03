@@ -71,16 +71,16 @@ public static class ChFi3d
         }
         if (t1.SquareMagnitude() > Constants.Resolution())
         {
-            t1.Normalize();
+            t1 = t1.Normalized();
         }
 
         if (BrepTools.OriEdgeInFace(e, f1) == Reversed)
         {
-            t1.Reverse();
+            t1 = t1.Reversed();
         }
         if (f1.Orientation() == Reversed)
         {
-            t1.Reverse();
+            t1 = t1.Reversed();
         }
 
         Point2D p = c1.Value(parOnC);
@@ -96,7 +96,7 @@ public static class ChFi3d
         Vector3D dn1 = d1U ^ d1V;
         if (f1.Orientation() == Reversed)
         {
-            dn1.Reverse();
+            dn1 = dn1.Reversed();
         }
 
         p = c2.Value(parOnC);
@@ -108,11 +108,11 @@ public static class ChFi3d
         Vector3D dn2 = d1U ^ d1V;
         if (f2.Orientation() == Reversed)
         {
-            dn2.Reverse();
+            dn2 = dn2.Reversed();
         }
 
-        dn1.Normalize();
-        dn2.Normalize();
+        dn1 = dn1.Normalized();
+        dn2 = dn2.Normalized();
 
         Vector3D proVec = dn1 ^ dn2;
         double normProVec = proVec.Magnitude();
@@ -318,11 +318,11 @@ public static class ChFi3d
         // F2.Orientation(TopAbs_FORWARD);
 
         ce.D1(par, out pt, out tgE);
-        tgE.Normalize();
+        tgE = tgE.Normalized();
         tgE2 = tgE1 = tgE;
         if (e.Orientation() == Reversed)
         {
-            tgE.Reverse();
+            tgE = tgE.Reversed();
         }
 
         Edge e1 = e, e2 = e;
@@ -332,7 +332,7 @@ public static class ChFi3d
         if (f1.IsSame(f2) && Tool.IsClosed(e, f1))
         {
             e2.Orientation(Reversed);
-            tgE2.Reverse();
+            tgE2 = tgE2.Reversed();
         }
         else
         {
@@ -344,7 +344,7 @@ public static class ChFi3d
                 {
                     if (exp.Current().Orientation() == Reversed)
                     {
-                        tgE1.Reverse();
+                        tgE1 = tgE1.Reversed();
                     }
                     found = true;
                 }
@@ -360,7 +360,7 @@ public static class ChFi3d
                 {
                     if (exp.Current().Orientation() == Reversed)
                     {
-                        tgE2.Reverse();
+                        tgE2 = tgE2.Reversed();
                     }
                     found = true;
                 }
@@ -378,17 +378,17 @@ public static class ChFi3d
         p2d2 = pc2.Value(par);
         s1.D1(p2d1.X(), p2d1.Y(), out pt1, out du1, out dv1);
         ns1 = du1.Crossed(dv1);
-        ns1.Normalize();
+        ns1 = ns1.Normalized();
         if (f1.Orientation() == Reversed)
         {
-            ns1.Reverse();
+            ns1 = ns1.Reversed();
         }
         s2.D1(p2d2.X(), p2d2.Y(), out pt2, out du2, out dv2);
         ns2 = du2.Crossed(dv2);
-        ns2.Normalize();
+        ns2 = ns2.Normalized();
         if (f2.Orientation() == Reversed)
         {
-            ns2.Reverse();
+            ns2 = ns2.Reversed();
         }
 
         dint1 = ns1.Crossed(tgE1);
@@ -399,13 +399,13 @@ public static class ChFi3d
             double scal = ns2.Dot(dint1);
             if (scal <= 0.0)
             {
-                ns2.Reverse();
+                ns2 = ns2.Reversed();
                 or2 = Reversed;
             }
             scal = ns1.Dot(dint2);
             if (scal <= 0.0)
             {
-                ns1.Reverse();
+                ns1 = ns1.Reversed();
                 or1 = Reversed;
             }
         }
@@ -420,19 +420,19 @@ public static class ChFi3d
                 du1 += (du1 * dint1 < 0) ? -ddu : ddu;
                 dv1 += (dv1 * dint1 < 0) ? -ddv : ddv;
                 ns1 = du1.Crossed(dv1);
-                ns1.Normalize();
+                ns1 = ns1.Normalized();
                 if (f1.Orientation() == Reversed)
                 {
-                    ns1.Reverse();
+                    ns1 = ns1.Reversed();
                 }
                 s2.D2(p2d2.X(), p2d2.Y(), out pt2, out du2, out dv2, out ddu, out ddv, out dduv);
                 du2 += (du2 * dint2 < 0) ? -ddu : ddu;
                 dv2 += (dv2 * dint2 < 0) ? -ddv : ddv;
                 ns2 = du2.Crossed(dv2);
-                ns2.Normalize();
+                ns2 = ns2.Normalized();
                 if (f2.Orientation() == Reversed)
                 {
-                    ns2.Reverse();
+                    ns2 = ns2.Reversed();
                 }
 
                 dint1 = ns1.Crossed(tgE1);
@@ -443,13 +443,13 @@ public static class ChFi3d
                     double scal = ns2.Dot(dint1);
                     if (scal <= 0.0)
                     {
-                        ns2.Reverse();
+                        ns2 = ns2.Reversed();
                         or2 = Reversed;
                     }
                     scal = ns1.Dot(dint2);
                     if (scal <= 0.0)
                     {
-                        ns1.Reverse();
+                        ns1 = ns1.Reversed();
                         or1 = Reversed;
                     }
                 }
@@ -466,22 +466,22 @@ public static class ChFi3d
                 // neither too close nor too far as much as possible.
                 double u, v;
                 ChFi3d_Coefficient(dint1, du1, dv1, out u, out v);
-                p2d1.SetX(p2d1.X() + u);
-                p2d1.SetY(p2d1.Y() + v);
+                p2d1 = p2d1.WithX(p2d1.X() + u);
+                p2d1 = p2d1.WithY(p2d1.Y() + v);
                 ChFi3d_Coefficient(dint1, du2, dv2, out u, out v);
-                p2d2.SetX(p2d2.X() + u);
-                p2d2.SetY(p2d2.Y() + v);
+                p2d2 = p2d2.WithX(p2d2.X() + u);
+                p2d2 = p2d2.WithY(p2d2.Y() + v);
                 s1.D1(p2d1.X(), p2d1.Y(), out pt1, out du1, out dv1);
                 ns1 = du1.Crossed(dv1);
                 if (f1.Orientation() == Reversed)
                 {
-                    ns1.Reverse();
+                    ns1 = ns1.Reversed();
                 }
                 s2.D1(p2d2.X(), p2d2.Y(), out pt2, out du2, out dv2);
                 ns2 = du2.Crossed(dv2);
                 if (f2.Orientation() == Reversed)
                 {
-                    ns2.Reverse();
+                    ns2 = ns2.Reversed();
                 }
                 Vector3D vref = new(pt1, pt2);
                 if (ns1.Dot(vref) < 0.0)
@@ -662,11 +662,11 @@ public static class ChFi3d
             eps = Max(coeff * (u2 - u1), global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (Math.Abs(p2d.X() - u1) < eps)
             {
-                p2d.SetX(u1 + eps);
+                p2d = p2d.WithX(u1 + eps);
             }
             if (Math.Abs(p2d.X() - u2) < eps)
             {
-                p2d.SetX(u2 - eps);
+                p2d = p2d.WithX(u2 - eps);
             }
         }
         if (!(global::Kerf.Engine.Foundation.Precision.IsInfinite(v1) || global::Kerf.Engine.Foundation.Precision.IsInfinite(v2)))
@@ -674,11 +674,11 @@ public static class ChFi3d
             eps = Max(coeff * (v2 - v1), global::Kerf.Engine.Foundation.Precision.PConfusion());
             if (Math.Abs(p2d.Y() - v1) < eps)
             {
-                p2d.SetY(v1 + eps);
+                p2d = p2d.WithY(v1 + eps);
             }
             if (Math.Abs(p2d.Y() - v2) < eps)
             {
-                p2d.SetY(v2 - eps);
+                p2d = p2d.WithY(v2 - eps);
             }
         }
     }

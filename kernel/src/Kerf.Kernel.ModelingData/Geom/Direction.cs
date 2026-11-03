@@ -126,7 +126,7 @@ public class Direction : GeometryVector3D
     {
         CheckMutable();
         Direction3D v = new Direction3D(_gpVec);
-        v.Transform(t);
+        v = v.Transformed(t);
         _gpVec = new Vector3D(v);
     }
 

@@ -78,7 +78,7 @@ public sealed class ContAna
             _dir2 = d.Crossed(s.YAxis().Direction());
         }
         double alpha = (s.Direct() ? angle : -angle);
-        _pt1.SetXYZ(s.Location().XYZ() - s.Radius() * Math.Sin(alpha) * d.XYZ());
+        _pt1 = _pt1.WithXYZ(s.Location().XYZ() - s.Radius() * Math.Sin(alpha) * d.XYZ());
         _prm = s.Radius() * Math.Cos(alpha);
         _nbSol = 1;
         _done = true;
@@ -105,8 +105,8 @@ public sealed class ContAna
             else
             {
                 Xyz locxyz = s.Location().XYZ();
-                _dir1.SetXYZ(eye.XYZ() - locxyz);
-                _pt1.SetXYZ(locxyz + (radius * radius / dist) * _dir1.XYZ());
+                _dir1 = _dir1.WithXYZ(eye.XYZ() - locxyz);
+                _pt1 = _pt1.WithXYZ(locxyz + (radius * radius / dist) * _dir1.XYZ());
                 if (Math.Abs(_dir1.Dot(s.XAxis().Direction())) < 0.9999999999999)
                 {
                     _dir2 = _dir1.Crossed(s.XAxis().Direction());
@@ -139,8 +139,8 @@ public sealed class ContAna
             _typL = global::Kerf.Geometry.CurveKind.Line;
             _dir1 = c.Position().Direction();
             _dir2 = _dir1;
-            _pt1.SetXYZ(c.Location().XYZ() + c.Radius() * normale);
-            _pt2.SetXYZ(c.Location().XYZ() - c.Radius() * normale);
+            _pt1 = _pt1.WithXYZ(c.Location().XYZ() + c.Radius() * normale);
+            _pt2 = _pt2.WithXYZ(c.Location().XYZ() - c.Radius() * normale);
             _nbSol = 2;
         }
 
@@ -194,11 +194,11 @@ public sealed class ContAna
 
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir);
             dirxyz.Multiply(c.Radius());
-            _pt1.SetXYZ(c.Location().XYZ().Added(dirxyz));
+            _pt1 = _pt1.WithXYZ(c.Location().XYZ().Added(dirxyz));
 
             dirxyz.SetLinearForm(cost1, xdir, sint1, ydir);
             dirxyz.Multiply(c.Radius());
-            _pt2.SetXYZ(c.Location().XYZ().Added(dirxyz));
+            _pt2 = _pt2.WithXYZ(c.Location().XYZ().Added(dirxyz));
         }
         else
         {
@@ -229,9 +229,9 @@ public sealed class ContAna
             Xyz axeye = theaxis.Normal(eye).Direction().XYZ(); // orientate the axis to the outside
             Xyz normale = (theaxis.Direction().Crossed(new Direction3D(axeye))).XYZ();
             //      normale.Normalize();
-            _pt1.SetXYZ(c.Location().XYZ() + (radius * radius / dist) * axeye);
-            _pt2.SetXYZ(_pt1.XYZ() - _prm * normale);
-            _pt1.SetXYZ(_pt1.XYZ() + _prm * normale);
+            _pt1 = _pt1.WithXYZ(c.Location().XYZ() + (radius * radius / dist) * axeye);
+            _pt2 = _pt2.WithXYZ(_pt1.XYZ() - _prm * normale);
+            _pt1 = _pt1.WithXYZ(_pt1.XYZ() + _prm * normale);
             _nbSol = 2;
         }
         _done = true;
@@ -275,11 +275,11 @@ public sealed class ContAna
             Xyz zdir = c.Axis().Direction().XYZ();
             Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir, 1.0 / tgtalpha, zdir);
-            _dir1.SetXYZ(dirxyz);
-            _pt1.SetXYZ(_pt1.XYZ() + dirxyz);
+            _dir1 = _dir1.WithXYZ(dirxyz);
+            _pt1 = _pt1.WithXYZ(_pt1.XYZ() + dirxyz);
             dirxyz.SetLinearForm(cost1, xdir, sint1, ydir, 1.0 / tgtalpha, zdir);
-            _dir2.SetXYZ(dirxyz);
-            _pt2.SetXYZ(_pt2.XYZ() + dirxyz);
+            _dir2 = _dir2.WithXYZ(dirxyz);
+            _pt2 = _pt2.WithXYZ(_pt2.XYZ() + dirxyz);
         }
         else
         {
@@ -334,11 +334,11 @@ public sealed class ContAna
             }
             Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir, cosa / sina, zdir);
-            _dir1.SetXYZ(dirxyz);
-            _pt1.SetXYZ(_pt1.XYZ() + dirxyz);
+            _dir1 = _dir1.WithXYZ(dirxyz);
+            _pt1 = _pt1.WithXYZ(_pt1.XYZ() + dirxyz);
             dirxyz.SetLinearForm(cost1, xdir, sint1, ydir, cosa / sina, zdir);
-            _dir2.SetXYZ(dirxyz);
-            _pt2.SetXYZ(_pt2.XYZ() + dirxyz);
+            _dir2 = _dir2.WithXYZ(dirxyz);
+            _pt2 = _pt2.WithXYZ(_pt2.XYZ() + dirxyz);
         }
 
         coefcst = (coefcst1 - coefnz) / cosa;
@@ -368,11 +368,11 @@ public sealed class ContAna
             }
             Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir, -cosa / sina, zdir);
-            _dir3.SetXYZ(dirxyz);
-            _pt3.SetXYZ(_pt3.XYZ() + dirxyz);
+            _dir3 = _dir3.WithXYZ(dirxyz);
+            _pt3 = _pt3.WithXYZ(_pt3.XYZ() + dirxyz);
             dirxyz.SetLinearForm(cost1, xdir, sint1, ydir, -cosa / sina, zdir);
-            _dir4.SetXYZ(dirxyz);
-            _pt4.SetXYZ(_pt4.XYZ() + dirxyz);
+            _dir4 = _dir4.WithXYZ(dirxyz);
+            _pt4 = _pt4.WithXYZ(_pt4.XYZ() + dirxyz);
             if (_nbSol == 2)
             {
                 _pt1 = _pt3;
@@ -423,11 +423,11 @@ public sealed class ContAna
             Xyz zdir = c.Axis().Direction().XYZ();
             Xyz dirxyz = new();
             dirxyz.SetLinearForm(cost0, xdir, sint0, ydir, 1.0 / tgtalpha, zdir);
-            _dir1.SetXYZ(dirxyz);
-            _pt1.SetXYZ(_pt1.XYZ() + dirxyz);
+            _dir1 = _dir1.WithXYZ(dirxyz);
+            _pt1 = _pt1.WithXYZ(_pt1.XYZ() + dirxyz);
             dirxyz.SetLinearForm(cost1, xdir, sint1, ydir, 1.0 / tgtalpha, zdir);
-            _dir2.SetXYZ(dirxyz);
-            _pt2.SetXYZ(_pt2.XYZ() + dirxyz);
+            _dir2 = _dir2.WithXYZ(dirxyz);
+            _pt2 = _pt2.WithXYZ(_pt2.XYZ() + dirxyz);
         }
         else
         {

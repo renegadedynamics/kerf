@@ -103,8 +103,11 @@ mechanically to ported code (`theX` → `x`, `myX` → `_x`, `aX` → `x`): tool
 - **Algorithms never write into their inputs** (phase10-plan.md 2.4). Where OCCT changes an input in place, the
   operation records a replacement in its working overlay; the result shares every sub-shape it didn't change.
 - **Collections handed out are read-only** (section 6), and never a view of something that will change.
-- `InternalsVisibleTo` between Kerf's assemblies goes (10G): an assembly reaches another through its public API or a
-  small `Engine` surface marked as such.
+- `InternalsVisibleTo` stays between the four kernel assemblies, one product released together (decision 1349, 54):
+  the engine types they share stay internal to the kernel.
+- **Values are `readonly struct`s** (10G): the gp values have no mutating member; `Transformed`, `WithX` and the other
+  returning forms are the only way to a changed value. Engine structs that are scratch storage (`Xyz`, `Xy`, `Matrix2x2`,
+  `Quaternion3`, inline buffers) stay mutable, and KERF0001 guards them.
 
 ## 4. Operations
 
@@ -245,8 +248,9 @@ The kernel's analyzers (src/Kerf.Analyzers; 10E renamed their ids from `OCCTNET�
 |---|---|---|
 | KERF0001 | A mutating call on a read-only struct value, which would change a hidden copy | **Kept.** The gp types become `readonly struct`s, so it stops firing for them, but `[InlineArray]` buffers and `ref struct` views (section 7) are mutable structs. Retire it only if no mutable struct is left. |
 | KERF0002 | A map or set of shapes created without an explicit comparer | **Kept.** 10E pointed it at the shapes' new names (`Kerf.Topology.Shape` and its eight subtypes; NCollection's maps keep theirs). It still finds them by name, so a later rename must update it; a marker attribute on the shape types would end that. Its map list shrinks to .NET's collections when NCollection goes (10J). |
+| KERF0003 | A way to change a public type of a public namespace (`Kerf`, `Kerf.<Area>`; not `Kerf.Engine.*`): a public or protected `set` accessor, a public field that isn't `readonly`, a public member of a struct that isn't `readonly`, a public `void` method named `Set…` or after one of OCCT's in-place operations (`Transform`, `Reverse`…) | **Written in 10G**, an error: KERF0101 to KERF0103 below, as one rule. Geom's `ResD1`…`ResD3` are exempt (a `#pragma`) until 10L replaces them. |
 
-Proposed, for 10G and 10L (not written yet):
+Proposed, for 10L (not written yet; KERF0101 to KERF0103 are KERF0003 since 10G):
 
 | Rule | Reports |
 |---|---|

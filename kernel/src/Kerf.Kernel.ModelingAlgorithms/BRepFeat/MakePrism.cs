@@ -627,7 +627,7 @@ public sealed class MakePrism : Form
         }
         if (!_skface.IsNull && Working(until).IsSame(_skface))
         {
-            _dir.Reverse();
+            _dir = _dir.Reversed();
             PerformUntilEnd();
             return;
         }
@@ -1051,9 +1051,9 @@ public sealed class MakePrism : Form
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
             Point3D pvt = spt[jj];
-            bar.ChangeCoord() += pvt.XYZ();
+            bar = new Point3D(bar.XYZ() + pvt.XYZ());
         }
-        bar.ChangeCoord().Divide(spt.Length());
+        bar = new Point3D(bar.XYZ().Divided(spt.Length()));
         Axis3D newAx = new(bar, new Direction3D(v));
         LineCurve3D theLin = new(newAx);
         return theLin;
@@ -1097,11 +1097,11 @@ public sealed class MakePrism : Form
             // apply locations
             if (!loc1.IsIdentity)
             {
-                pl1.Transform(loc1.Transformation());
+                pl1 = pl1.Transformed(loc1.Transformation());
             }
             if (!loc2.IsIdentity)
             {
-                pl2.Transform(loc2.Transformation());
+                pl2 = pl2.Transformed(loc2.Transformation());
             }
 
             if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))

@@ -504,7 +504,7 @@ public sealed class FilSpine : Spine
                 NCollection_Array1<Point2D> tpr = new(1, nbp);
                 for (int l = 1; l <= nbp; l++)
                 {
-                    tpr[l].SetXY(npr.Value(l));
+                    tpr[l] = tpr[l].WithXY(npr.Value(l));
                 }
 
                 Interpol curloi = new();
@@ -628,10 +628,10 @@ public sealed class FilSpine : Spine
                 NCollection_Array1<Point2D> pr = new(1, nbp);
                 for (int l = 1; l < nbp; l++)
                 {
-                    pr[l].SetXY(_parandrad[l]);
+                    pr[l] = pr[l].WithXY(_parandrad[l]);
                 }
 
-                pr[nbp].SetCoord(fin, pr[1].Y());
+                pr[nbp] = pr[nbp].WithCoord(fin, pr[1].Y());
                 Interpol curloi = new();
                 curloi.Set(pr, true);
                 list.Append(curloi);

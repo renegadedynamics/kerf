@@ -175,7 +175,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     center3 = center1;
                     center1 = center2;
                     center2 = center3;
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                     // it is necessary to swap the resulting tangency points
                     invers = true;
                 }
@@ -257,7 +257,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     center3 = center1;
                     center1 = center2;
                     center2 = center3;
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                     // it is necessary to swap the resulting tangency points
                     invers = true;
                 }
@@ -328,7 +328,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     center3 = center1;
                     center1 = center2;
                     center2 = center3;
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                     // it is necessary to swap the resulting tangency points
                     invers = true;
                 }
@@ -451,7 +451,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     center3 = center1;
                     center1 = center2;
                     center2 = center3;
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                     // it is necessary to swap the resulting tangency points
                     invers = true;
                 }
@@ -504,7 +504,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     center1 = center2;
                     center2 = center3;
                     invers  = true;
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                 }
                 if ((tol < r1 - dist - r2) || (r1 - radius > tol))
                 {
@@ -618,7 +618,7 @@ public sealed partial class AnalyticCirc2d2TanRad
                     center3 = center1;
                     center1 = center2;
                     center2 = center3;
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                     // it is necessary to swap the resulting tangency points
                     invers = true;
                 }

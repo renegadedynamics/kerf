@@ -76,9 +76,9 @@ internal sealed class PrimitiveCylinder : Revolution
     private void SetMeridian()
     {
         Vector3D v = new(Axes().XDirection());
-        v.Multiply(_radius);
+        v = v.Multiplied(_radius);
         Axis3D a = Axes().Axis();
-        a.Translate(v);
+        a = a.Translated(v);
         LineCurve3D l = new(a);
         LineCurve2D l2d = new(new Point2D(_radius, 0), new Direction2D(Direction2D.D.Y));
         Meridian(l, l2d);

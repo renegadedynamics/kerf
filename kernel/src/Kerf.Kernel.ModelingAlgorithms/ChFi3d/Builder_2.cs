@@ -303,8 +303,8 @@ public partial class FilletBuilderBase
             // There are points on the border, and internal points are found
             if (derive.Magnitude() > global::Kerf.Engine.Foundation.Precision.PConfusion())
             {
-                derive.Normalize();
-                derive.Rotate(M_PI / 2);
+                derive = derive.Normalized();
+                derive = derive.Rotated(M_PI / 2);
                 AS.Initialize(f1);
                 resU = AS.UResolution(tolE);
                 resV = AS.VResolution(tolE);
@@ -342,8 +342,8 @@ public partial class FilletBuilderBase
             if (Projection(pExt, pnt, els, ref w, _tolapp3d)
                     && PerformFirstSection(spine, hGuide, choix, hs1, hs2, i1, i2, w, solDep, ref pos1, ref pos2))
             {
-                p1.SetCoord(solDep[1], solDep[2]);
-                p2.SetCoord(solDep[3], solDep[4]);
+                p1 = p1.WithCoord(solDep[1], solDep[2]);
+                p2 = p2.WithCoord(solDep[3], solDep[4]);
                 first = w;
                 return;
             }
@@ -421,8 +421,8 @@ public partial class FilletBuilderBase
                         i2.Initialize(hSon2new);
                         if (PerformFirstSection(spine, hGuide, choix, hs1, hs2, i1, i2, w, solDep, ref pos1, ref pos2))
                         {
-                            p1.SetCoord(solDep[1], solDep[2]);
-                            p2.SetCoord(solDep[3], solDep[4]);
+                            p1 = p1.WithCoord(solDep[1], solDep[2]);
+                            p2 = p2.WithCoord(solDep[3], solDep[4]);
                             first = w;
                             found = true;
                         }
@@ -910,7 +910,7 @@ public partial class FilletBuilderBase
                 findFace = IsInput(vecSpine, pc.Vertex(), fRef);
                 if (findFace)
                 {
-                    vecSpine.Reverse();
+                    vecSpine = vecSpine.Reversed();
                     findFace = IsInput(vecSpine, pc.Vertex(), fRef);
                 }
                 // If one does not leave, it is ended
@@ -2657,9 +2657,9 @@ internal static class Builder_2
         else
         {
             bc.D1(-wtg + bc.LastParameter(), out ped, out ded);
-            ded.Reverse();
+            ded = ded.Reversed();
         }
-        ded.Normalize();
+        ded = ded.Normalized();
     }
 
     internal static bool IsInput(in Vector3D vec, in Vertex ve, in Face fa)
@@ -2691,7 +2691,7 @@ internal static class Builder_2
                 {
                     EdgeCurveAdaptor cb = new(e);
                     cb.D1(Tool.Parameter(ve, e), out point, out vec3d[trouve]);
-                    vec3d[trouve].Reverse();
+                    vec3d[trouve] = vec3d[trouve].Reversed();
                     trouve++;
                 }
             }
@@ -2722,12 +2722,11 @@ internal static class Builder_2
 
         // Projection of the vector
         CoordinateSystem axe = new(point, new Direction3D(normal), new Direction3D(vec3d[0]));
-        Transform3D transf = new();
-        transf.SetTransformation(axe);
+        Transform3D transf = new Transform3D().WithTransformation(axe);
         Xyz coord = vec.XYZ();
         transf.Transforms(ref coord);
         coord.SetZ(0);
-        transf.Invert();
+        transf = transf.Inverted();
         transf.Transforms(ref coord);
         Vector3D theProj = new(coord);
 
@@ -2882,7 +2881,7 @@ internal static class Builder_2
                 PlaneSurface? pln = new PlaneSurface(theProp.Value(), theProp.Normal());
                 Face newF = new LibraryMakeFace(pln, global::Kerf.Engine.Foundation.Precision.Confusion()).Face();
                 newF.Orientation(f.Orientation());
-                pons.SetCoord(0.0, 0.0);
+                pons = pons.WithCoord(0.0, 0.0);
                 hs.Initialize(newF);
                 return; // everything is good !
             }

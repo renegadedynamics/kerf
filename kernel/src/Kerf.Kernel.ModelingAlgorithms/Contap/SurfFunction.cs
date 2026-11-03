@@ -214,7 +214,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
             }
             break;
             case ContourTFunction.DraftStd:
-                norm.Normalize();
+                norm = norm.Normalized();
                 grad[1, 1] = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                 grad[1, 2] = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
                 break;
@@ -256,7 +256,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
             break;
             case ContourTFunction.DraftStd:
                 f[1] = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude()) / _mean;
-                norm.Normalize();
+                norm = norm.Normalized();
                 grad[1, 1] = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                 grad[1, 2] = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
                 break;
@@ -311,7 +311,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
                     }
                     break;
                     case ContourTFunction.DraftStd:
-                        norm.Normalize();
+                        norm = norm.Normalized();
                         _fpu = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                         _fpv = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
                         break;
@@ -335,7 +335,7 @@ public sealed class SurfFunction : FunctionSetWithDerivatives, IWFunction<SurfFu
 
                 Xyz d3dxyz = -_fpv * d1u.XYZ();
                 d3dxyz.Add(_fpu * d1v.XYZ());
-                _d3d.SetXYZ(d3dxyz);
+                _d3d = _d3d.WithXYZ(d3dxyz);
 
                 // jag 940616    if (d3d.Magnitude() <= Tolpetit) {
                 if (_d3d.Magnitude() <= _tol)

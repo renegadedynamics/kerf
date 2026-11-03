@@ -148,11 +148,11 @@ public sealed class Hatcher
         Vector2D v = new(p1, p2);
         if (Math.Abs(v.X()) > .9 * RealLast())
         {
-            v.Multiply(1 / v.X());
+            v = v.Multiplied(1 / v.X());
         }
         else if (Math.Abs(v.Y()) > .9 * RealLast())
         {
-            v.Multiply(1 / v.Y());
+            v = v.Multiplied(1 / v.Y());
         }
         if (v.Magnitude() > _toler)
         {

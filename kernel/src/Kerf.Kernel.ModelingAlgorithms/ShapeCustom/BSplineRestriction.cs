@@ -613,8 +613,8 @@ public class BSplineRestriction : CustomModification
                              ref tolS,
                              isOf);
                 Transform3D shiftF = new Transform3D(), shiftL = new Transform3D();
-                shiftF.SetTranslation(surfaceE.Value(uf, 0), surfaceE.Value(uf, vf));
-                shiftL.SetTranslation(surfaceE.Value(uf, 0), surfaceE.Value(uf, vl));
+                shiftF = shiftF.WithTranslation(surfaceE.Value(uf, 0), surfaceE.Value(uf, vf));
+                shiftL = shiftL.WithTranslation(surfaceE.Value(uf, 0), surfaceE.Value(uf, vl));
                 ConvertExtrusion(resCurve, /*Surface->Direction(),*/ shiftF, shiftL, vf, vl, out Surface bSpline);
                 s = bSpline;
                 return true;

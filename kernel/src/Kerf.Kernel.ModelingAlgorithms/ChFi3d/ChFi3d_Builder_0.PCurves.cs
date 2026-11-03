@@ -522,12 +522,12 @@ internal static partial class Builder_0
         Direction2D v1 = new(vfac1);
         if (sens1 == 1)
         {
-            v1.Reverse();
+            v1 = v1.Reversed();
         }
         Direction2D v2 = new(vfac2);
         if (sens2 == 1)
         {
-            v2.Reverse();
+            v2 = v2.Reversed();
         }
         curv = ChFi3d_BuildPCurve(fac, pfac1, new Vector2D(v1), pfac2, new Vector2D(v2), false);
         return ChFi3d_mkbound(fac, curv, t3d, ta);
@@ -543,11 +543,11 @@ internal static partial class Builder_0
     {
         if (sens1 == 1)
         {
-            v1.Reverse();
+            v1 = v1.Reversed();
         }
         if (sens2 == 1)
         {
-            v2.Reverse();
+            v2 = v2.Reversed();
         }
         curv = ChFi3d_BuildPCurve(surf, p1, v1, p2, v2);
         return ChFi3d_mkbound(surf, curv, t3d, ta);
@@ -625,11 +625,11 @@ internal static partial class Builder_0
         {
             if (d1.Dot(dref) < 0.0)
             {
-                d1.Reverse();
+                d1 = d1.Reversed();
             }
             if (d2.Dot(dref) > 0.0)
             {
-                d2.Reverse();
+                d2 = d2.Reversed();
             }
         }
         // On fait une cubique a la mords moi le noeud
@@ -658,14 +658,14 @@ internal static partial class Builder_0
         double vres = surf.VResolution(1.0);
         double invures = 1.0 / ures;
         double invvres = 1.0 / vres;
-        pp1.SetX(invures * pp1.X());
-        pp1.SetY(invvres * pp1.Y());
-        pp2.SetX(invures * pp2.X());
-        pp2.SetY(invvres * pp2.Y());
-        vv1.SetX(invures * vv1.X());
-        vv1.SetY(invvres * vv1.Y());
-        vv2.SetX(invures * vv2.X());
-        vv2.SetY(invvres * vv2.Y());
+        pp1 = pp1.WithX(invures * pp1.X());
+        pp1 = pp1.WithY(invvres * pp1.Y());
+        pp2 = pp2.WithX(invures * pp2.X());
+        pp2 = pp2.WithY(invvres * pp2.Y());
+        vv1 = vv1.WithX(invures * vv1.X());
+        vv1 = vv1.WithY(invvres * vv1.Y());
+        vv2 = vv2.WithX(invures * vv2.X());
+        vv2 = vv2.WithY(invvres * vv2.Y());
         Direction2D d1 = new(vv1), d2 = new(vv2);
         Curve2D g2dc = ChFi3d_BuildPCurve(pp1, ref d1, pp2, ref d2, redresse);
         BezierCurve2D pc = (BezierCurve2D)g2dc;
@@ -673,8 +673,8 @@ internal static partial class Builder_0
         for (int ip = 1; ip <= nbp; ip++)
         {
             Point2D pol = pc.Pole(ip);
-            pol.SetX(ures * pol.X());
-            pol.SetY(vres * pol.Y());
+            pol = pol.WithX(ures * pol.X());
+            pol = pol.WithY(vres * pol.Y());
             pc.SetPole(ip, pol);
         }
         return pc;
@@ -701,11 +701,11 @@ internal static partial class Builder_0
         {
             if (vref.Dot(v1) < 0.0)
             {
-                vv1.Reverse();
+                vv1 = vv1.Reversed();
             }
             if (vref.Dot(v2) > 0.0)
             {
-                vv2.Reverse();
+                vv2 = vv2.Reversed();
             }
         }
         return ChFi3d_BuildPCurve(surf, p1, vv1, p2, vv2, false);

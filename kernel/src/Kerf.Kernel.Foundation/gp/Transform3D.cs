@@ -18,12 +18,30 @@ namespace Kerf.Geometry;
 /// static factories (<see cref="Rotation(in Axis3D, double)"/>, <see cref="Translation(in Vector3D)"/>, ...) or the
 /// <c>With</c> methods, which mirror OCCT's <c>Set</c> methods.
 /// </remarks>
-public partial struct Transform3D : IEquatable<Transform3D>
+public readonly partial struct Transform3D : IEquatable<Transform3D>
 {
-    internal double _scale;
-    internal TransformForm _shape;
-    internal Matrix3x3 _matrix;
-    internal Xyz _loc;
+    internal readonly double _scale;
+    internal readonly TransformForm _shape;
+    internal readonly Matrix3x3 _matrix;
+    internal readonly Xyz _loc;
+
+    /// <summary>A value of the fields as they are (unit 10G: the returning forms build their results with it).</summary>
+    internal Transform3D(double scale, TransformForm shape, in Matrix3x3 matrix, in Xyz loc)
+    {
+        _scale = scale;
+        _shape = shape;
+        _matrix = matrix;
+        _loc = loc;
+    }
+
+    /// <summary>The fields, for the returning forms that take a whole value back (unit 10G).</summary>
+    private void Deconstruct(out double scale, out TransformForm shape, out Matrix3x3 matrix, out Xyz loc)
+    {
+        scale = _scale;
+        shape = _shape;
+        matrix = _matrix;
+        loc = _loc;
+    }
 
     public Transform3D()
     {
@@ -69,86 +87,113 @@ public partial struct Transform3D : IEquatable<Transform3D>
                                  double a31, double a32, double a33, double a34)
         => new Transform3D().WithValues(a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34);
 
-    // Mutators (internal: see docs/translation-rules.md)
+    // Copies
 
-    internal void SetMirror(in Point3D p)
+    public readonly Transform3D WithMirror(in Point3D p)
     {
-        _shape = PntMirror;
-        _scale = -1.0;
-        _loc = p.XYZ();
-        _matrix.SetIdentity();
-        _loc.Multiply(2.0);
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = PntMirror;
+        scale = -1.0;
+        loc = p.XYZ();
+        matrix = matrix.WithIdentity();
+        loc.Multiply(2.0);
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetMirror(in Axis3D a1)
+    public readonly Transform3D WithMirror(in Axis3D a1)
     {
-        _shape = Ax1Mirror;
-        _scale = 1;
-        _loc = a1.Location().XYZ();
-        _matrix.SetDot(a1.Direction().XYZ());
-        _matrix.Multiply(-2);
-        _matrix.SetDiagonal(_matrix.Value(1, 1) + 1, _matrix.Value(2, 2) + 1, _matrix.Value(3, 3) + 1);
-        _loc.Multiply(_matrix);
-        _loc.Add(a1.Location().XYZ());
-        _matrix.Multiply(-1);
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = Ax1Mirror;
+        scale = 1;
+        loc = a1.Location().XYZ();
+        matrix = matrix.WithDot(a1.Direction().XYZ());
+        matrix = matrix.Multiplied(-2);
+        matrix = matrix.WithDiagonal(matrix.Value(1, 1) + 1, matrix.Value(2, 2) + 1, matrix.Value(3, 3) + 1);
+        loc.Multiply(matrix);
+        loc.Add(a1.Location().XYZ());
+        matrix = matrix.Multiplied(-1);
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetMirror(in Frame3D a2)
+    public readonly Transform3D WithMirror(in Frame3D a2)
     {
-        _shape = Ax2Mirror;
-        _scale = -1;
-        _loc = a2.Location().XYZ();
-        _matrix.SetDot(a2.Direction().XYZ());
-        _matrix.Multiply(2);
-        _matrix.SetDiagonal(_matrix.Value(1, 1) - 1, _matrix.Value(2, 2) - 1, _matrix.Value(3, 3) - 1);
-        _loc.Multiply(_matrix);
-        _loc.Add(a2.Location().XYZ());
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = Ax2Mirror;
+        scale = -1;
+        loc = a2.Location().XYZ();
+        matrix = matrix.WithDot(a2.Direction().XYZ());
+        matrix = matrix.Multiplied(2);
+        matrix = matrix.WithDiagonal(matrix.Value(1, 1) - 1, matrix.Value(2, 2) - 1, matrix.Value(3, 3) - 1);
+        loc.Multiply(matrix);
+        loc.Add(a2.Location().XYZ());
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetRotation(in Axis3D a1, double ang)
+    public readonly Transform3D WithRotation(in Axis3D a1, double ang)
     {
-        _shape = global::Kerf.Geometry.TransformForm.Rotation;
-        _scale = 1.0;
-        _loc = a1.Location().XYZ();
-        _matrix.SetRotation(a1.Direction().XYZ(), ang);
-        _loc.Reverse();
-        _loc.Multiply(_matrix);
-        _loc.Add(a1.Location().XYZ());
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = global::Kerf.Geometry.TransformForm.Rotation;
+        scale = 1.0;
+        loc = a1.Location().XYZ();
+        matrix = matrix.WithRotation(a1.Direction().XYZ(), ang);
+        loc.Reverse();
+        loc.Multiply(matrix);
+        loc.Add(a1.Location().XYZ());
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetRotation(in Quaternion3 r)
+    public readonly Transform3D WithRotation(in Quaternion3 r)
     {
-        _shape = global::Kerf.Geometry.TransformForm.Rotation;
-        _scale = 1.0;
-        _loc.SetCoord(0.0, 0.0, 0.0);
-        _matrix = r.GetMatrix();
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = global::Kerf.Geometry.TransformForm.Rotation;
+        scale = 1.0;
+        loc.SetCoord(0.0, 0.0, 0.0);
+        matrix = r.GetMatrix();
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetRotationPart(in Quaternion3 r)
+    public readonly Transform3D WithRotationPart(in Quaternion3 r)
     {
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
         bool hasRotation = !r.IsEqual(new Quaternion3());
         if (hasRotation)
         {
-            _matrix = r.GetMatrix();
+            matrix = r.GetMatrix();
         }
         else
         {
-            _matrix.SetIdentity();
+            matrix = matrix.WithIdentity();
         }
 
-        switch (_shape)
+        switch (shape)
         {
             case Identity:
                 if (hasRotation)
                 {
-                    _shape = global::Kerf.Geometry.TransformForm.Rotation;
+                    shape = global::Kerf.Geometry.TransformForm.Rotation;
                 }
 
                 break;
             case global::Kerf.Geometry.TransformForm.Rotation:
                 if (!hasRotation)
                 {
-                    _shape = Identity;
+                    shape = Identity;
                 }
 
                 break;
@@ -161,32 +206,74 @@ public partial struct Transform3D : IEquatable<Transform3D>
             case Other:
                 if (hasRotation)
                 {
-                    _shape = CompoundTrsf;
+                    shape = CompoundTrsf;
                 }
 
                 break;
         }
+        return new Transform3D(_scale, shape, matrix, _loc);
     }
 
-    internal void SetScale(in Point3D p, double s)
+    public readonly Transform3D WithScale(in Point3D p, double s)
     {
-        _shape = global::Kerf.Geometry.TransformForm.Scale;
-        _scale = s;
-        _loc = p.XYZ();
-        Standard_ConstructionError_Raise_if(Math.Abs(_scale) <= Constants.Resolution(), "gp_Trsf::SetScaleFactor");
-        _matrix.SetIdentity();
-        _loc.Multiply(1 - s);
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = global::Kerf.Geometry.TransformForm.Scale;
+        scale = s;
+        loc = p.XYZ();
+        Standard_ConstructionError_Raise_if(Math.Abs(scale) <= Constants.Resolution(), "gp_Trsf::SetScaleFactor");
+        matrix = matrix.WithIdentity();
+        loc.Multiply(1 - s);
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetTransformation(in CoordinateSystem fromA1, in CoordinateSystem toA2)
+    public readonly Transform3D WithDisplacement(in CoordinateSystem fromA1, in CoordinateSystem toA2)
     {
-        _shape = CompoundTrsf;
-        _scale = 1.0;
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 newMatrix = _matrix;
+        Xyz loc = _loc;
+        shape = CompoundTrsf;
+        scale = 1.0;
+        // matrix from ToA2 to XOY
+        newMatrix = newMatrix.WithCol(1, toA2.XDirection().XYZ());
+        newMatrix = newMatrix.WithCol(2, toA2.YDirection().XYZ());
+        newMatrix = newMatrix.WithCol(3, toA2.Direction().XYZ());
+        loc = toA2.Location().XYZ();
+
+        // matrix XOY to FromA1
+        Xyz xDir = fromA1.XDirection().XYZ();
+        Xyz yDir = fromA1.YDirection().XYZ();
+        Xyz zDir = fromA1.Direction().XYZ();
+
+        Matrix3x3 ma1 = new(xDir, yDir, zDir);
+        ma1 = ma1.Transposed();
+        Xyz ma1loc = fromA1.Location().XYZ();
+        ma1loc.Multiply(ma1);
+        ma1loc.Reverse();
+
+        // matrix * MA1
+        ma1loc.Multiply(newMatrix);
+        loc.Add(ma1loc);
+        newMatrix = newMatrix.Multiplied(ma1);
+        return new Transform3D(scale, shape, newMatrix, loc);
+    }
+
+    public readonly Transform3D WithTransformation(in CoordinateSystem fromA1, in CoordinateSystem toA2)
+    {
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 newMatrix = _matrix;
+        Xyz loc = _loc;
+        shape = CompoundTrsf;
+        scale = 1.0;
         // matrix from XOY to ToA2
-        _matrix.SetRows(toA2.XDirection().XYZ(), toA2.YDirection().XYZ(), toA2.Direction().XYZ());
-        _loc = toA2.Location().XYZ();
-        _loc.Multiply(_matrix);
-        _loc.Reverse();
+        newMatrix = newMatrix.WithRows(toA2.XDirection().XYZ(), toA2.YDirection().XYZ(), toA2.Direction().XYZ());
+        loc = toA2.Location().XYZ();
+        loc.Multiply(newMatrix);
+        loc.Reverse();
 
         // matrix FromA1 to XOY
         Xyz xDir = fromA1.XDirection().XYZ();
@@ -197,90 +284,86 @@ public partial struct Transform3D : IEquatable<Transform3D>
         Xyz ma1loc = fromA1.Location().XYZ();
 
         // matrix * MA1 => FromA1 ToA2
-        ma1loc.Multiply(_matrix);
-        _loc.Add(ma1loc);
-        _matrix.Multiply(ma1);
+        ma1loc.Multiply(newMatrix);
+        loc.Add(ma1loc);
+        newMatrix = newMatrix.Multiplied(ma1);
+        return new Transform3D(scale, shape, newMatrix, loc);
     }
 
-    internal void SetTransformation(in CoordinateSystem a3)
+    public readonly Transform3D WithTransformation(in CoordinateSystem a3)
     {
-        _shape = CompoundTrsf;
-        _scale = 1.0;
-        _matrix.SetRows(a3.XDirection().XYZ(), a3.YDirection().XYZ(), a3.Direction().XYZ());
-        _loc = a3.Location().XYZ();
-        _loc.Multiply(_matrix);
-        _loc.Reverse();
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = CompoundTrsf;
+        scale = 1.0;
+        matrix = matrix.WithRows(a3.XDirection().XYZ(), a3.YDirection().XYZ(), a3.Direction().XYZ());
+        loc = a3.Location().XYZ();
+        loc.Multiply(matrix);
+        loc.Reverse();
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetTransformation(in Quaternion3 r, in Vector3D t)
+    public readonly Transform3D WithTransformation(in Quaternion3 r, in Vector3D t)
     {
-        _shape = CompoundTrsf;
-        _scale = 1.0;
-        _loc = t.XYZ();
-        _matrix = r.GetMatrix();
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = CompoundTrsf;
+        scale = 1.0;
+        loc = t.XYZ();
+        matrix = r.GetMatrix();
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetDisplacement(in CoordinateSystem fromA1, in CoordinateSystem toA2)
+    public readonly Transform3D WithTranslation(in Vector3D v)
     {
-        _shape = CompoundTrsf;
-        _scale = 1.0;
-        // matrix from ToA2 to XOY
-        _matrix.SetCol(1, toA2.XDirection().XYZ());
-        _matrix.SetCol(2, toA2.YDirection().XYZ());
-        _matrix.SetCol(3, toA2.Direction().XYZ());
-        _loc = toA2.Location().XYZ();
-
-        // matrix XOY to FromA1
-        Xyz xDir = fromA1.XDirection().XYZ();
-        Xyz yDir = fromA1.YDirection().XYZ();
-        Xyz zDir = fromA1.Direction().XYZ();
-
-        Matrix3x3 ma1 = new(xDir, yDir, zDir);
-        ma1.Transpose();
-        Xyz ma1loc = fromA1.Location().XYZ();
-        ma1loc.Multiply(ma1);
-        ma1loc.Reverse();
-
-        // matrix * MA1
-        ma1loc.Multiply(_matrix);
-        _loc.Add(ma1loc);
-        _matrix.Multiply(ma1);
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = global::Kerf.Geometry.TransformForm.Translation;
+        scale = 1.0;
+        matrix = matrix.WithIdentity();
+        loc = v.XYZ();
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetTranslation(in Vector3D v)
+    public readonly Transform3D WithTranslation(in Point3D p1, in Point3D p2)
     {
-        _shape = global::Kerf.Geometry.TransformForm.Translation;
-        _scale = 1.0;
-        _matrix.SetIdentity();
-        _loc = v.XYZ();
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        shape = global::Kerf.Geometry.TransformForm.Translation;
+        scale = 1.0;
+        matrix = matrix.WithIdentity();
+        loc = p2.XYZ().Subtracted(p1.XYZ());
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
-    internal void SetTranslation(in Point3D p1, in Point3D p2)
+    public readonly Transform3D WithTranslationPart(in Vector3D v)
     {
-        _shape = global::Kerf.Geometry.TransformForm.Translation;
-        _scale = 1.0;
-        _matrix.SetIdentity();
-        _loc = p2.XYZ().Subtracted(p1.XYZ());
-    }
+        TransformForm shape = _shape;
+        Xyz loc = _loc;
+        loc = v.XYZ();
+        bool locnull = loc.SquareModulus() < Constants.Resolution();
 
-    internal void SetTranslationPart(in Vector3D v)
-    {
-        _loc = v.XYZ();
-        bool locnull = _loc.SquareModulus() < Constants.Resolution();
-
-        switch (_shape)
+        switch (shape)
         {
             case Identity:
                 if (!locnull)
                 {
-                    _shape = global::Kerf.Geometry.TransformForm.Translation;
+                    shape = global::Kerf.Geometry.TransformForm.Translation;
                 }
 
                 break;
             case global::Kerf.Geometry.TransformForm.Translation:
                 if (locnull)
                 {
-                    _shape = Identity;
+                    shape = Identity;
                 }
 
                 break;
@@ -293,40 +376,43 @@ public partial struct Transform3D : IEquatable<Transform3D>
             case Other:
                 if (!locnull)
                 {
-                    _shape = CompoundTrsf;
+                    shape = CompoundTrsf;
                 }
 
                 break;
         }
+        return new Transform3D(_scale, shape, _matrix, loc);
     }
 
-    internal void SetScaleFactor(double s)
+    public readonly Transform3D WithScaleFactor(double s)
     {
+        double scale = _scale;
+        TransformForm shape = _shape;
         Standard_ConstructionError_Raise_if(Math.Abs(s) <= Constants.Resolution(), "gp_Trsf::SetScaleFactor");
-        _scale = s;
+        scale = s;
 
-        bool unit = Math.Abs(_scale - 1.0) <= Constants.Resolution();
-        bool munit = Math.Abs(_scale + 1.0) <= Constants.Resolution();
+        bool unit = Math.Abs(scale - 1.0) <= Constants.Resolution();
+        bool munit = Math.Abs(scale + 1.0) <= Constants.Resolution();
 
-        switch (_shape)
+        switch (shape)
         {
             case Identity:
             case global::Kerf.Geometry.TransformForm.Translation:
                 if (!unit)
                 {
-                    _shape = global::Kerf.Geometry.TransformForm.Scale;
+                    shape = global::Kerf.Geometry.TransformForm.Scale;
                 }
 
                 if (munit)
                 {
-                    _shape = PntMirror;
+                    shape = PntMirror;
                 }
 
                 break;
             case global::Kerf.Geometry.TransformForm.Rotation:
                 if (!unit)
                 {
-                    _shape = CompoundTrsf;
+                    shape = CompoundTrsf;
                 }
 
                 break;
@@ -335,24 +421,24 @@ public partial struct Transform3D : IEquatable<Transform3D>
             case Ax2Mirror:
                 if (!munit)
                 {
-                    _shape = global::Kerf.Geometry.TransformForm.Scale;
+                    shape = global::Kerf.Geometry.TransformForm.Scale;
                 }
 
                 if (unit)
                 {
-                    _shape = Identity;
+                    shape = Identity;
                 }
 
                 break;
             case global::Kerf.Geometry.TransformForm.Scale:
                 if (unit)
                 {
-                    _shape = Identity;
+                    shape = Identity;
                 }
 
                 if (munit)
                 {
-                    _shape = PntMirror;
+                    shape = PntMirror;
                 }
 
                 break;
@@ -361,14 +447,24 @@ public partial struct Transform3D : IEquatable<Transform3D>
             case Other:
                 break;
         }
+        return new Transform3D(scale, shape, _matrix, _loc);
     }
 
-    internal void SetForm(TransformForm p) => _shape = p;
-
-    internal void SetValues(double a11, double a12, double a13, double a14,
-                            double a21, double a22, double a23, double a24,
-                            double a31, double a32, double a33, double a34)
+    public readonly Transform3D WithForm(TransformForm p)
     {
+        TransformForm shape = _shape;
+        shape = p;
+        return new Transform3D(_scale, shape, _matrix, _loc);
+    }
+
+    public readonly Transform3D WithValues(double a11, double a12, double a13, double a14,
+                                       double a21, double a22, double a23, double a24,
+                                       double a31, double a32, double a33, double a34)
+    {
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
         Xyz col1 = new(a11, a21, a31);
         Xyz col2 = new(a12, a22, a32);
         Xyz col3 = new(a13, a23, a33);
@@ -386,462 +482,14 @@ public partial struct Transform3D : IEquatable<Transform3D>
             s = -Math.Pow(-s, 1.0 / 3.0);
         }
 
-        m.Divide(s);
+        m = m.Divided(s);
 
-        _scale = s;
-        _shape = CompoundTrsf;
-
-        _matrix = m;
-        Orthogonalize();
-
-        _loc = col4;
+        return new Transform3D(s, CompoundTrsf, Orthogonalized(m), col4);
     }
 
-    internal void Invert()
+    /// <summary>The matrix made orthogonal again (OCCT's <c>Orthogonalize</c>, which changed the transformation in place).</summary>
+    private static Matrix3x3 Orthogonalized(Matrix3x3 tm)
     {
-        // -1
-        // X' = scale * R * X + T  =>  X = (R / scale) * (X' - T)
-        if (_shape == Identity)
-        {
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation || _shape == PntMirror)
-        {
-            _loc.Reverse();
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Scale)
-        {
-            Standard_ConstructionError_Raise_if(Math.Abs(_scale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
-            _scale = 1.0 / _scale;
-            _loc.Multiply(-_scale);
-        }
-        else
-        {
-            Standard_ConstructionError_Raise_if(Math.Abs(_scale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
-            _scale = 1.0 / _scale;
-            _matrix.Transpose();
-            _loc.Multiply(_matrix);
-            _loc.Multiply(-_scale);
-        }
-    }
-
-    internal void Multiply(in Transform3D t)
-    {
-        if (t._shape == Identity)
-        {
-        }
-        else if (_shape == Identity)
-        {
-            _shape = t._shape;
-            _scale = t._scale;
-            _loc = t._loc;
-            _matrix = t._matrix;
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Rotation && t._shape == global::Kerf.Geometry.TransformForm.Rotation)
-        {
-            if (t._loc.X() != 0.0 || t._loc.Y() != 0.0 || t._loc.Z() != 0.0)
-            {
-                _loc.Add(t._loc.Multiplied(_matrix));
-            }
-
-            _matrix.Multiply(t._matrix);
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation && t._shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            _loc.Add(t._loc);
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Scale && t._shape == global::Kerf.Geometry.TransformForm.Scale)
-        {
-            _loc.Add(t._loc.Multiplied(_scale));
-            _scale = _scale * t._scale;
-        }
-        else if (_shape == PntMirror && t._shape == PntMirror)
-        {
-            _scale = 1.0;
-            _shape = global::Kerf.Geometry.TransformForm.Translation;
-            _loc.Add(t._loc.Reversed());
-        }
-        else if (_shape == Ax1Mirror && t._shape == Ax1Mirror)
-        {
-            _shape = global::Kerf.Geometry.TransformForm.Rotation;
-            _loc.Add(t._loc.Multiplied(_matrix));
-            _matrix.Multiply(t._matrix);
-        }
-        else if ((_shape == CompoundTrsf || _shape == global::Kerf.Geometry.TransformForm.Rotation || _shape == Ax1Mirror || _shape == Ax2Mirror)
-                 && t._shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            Xyz tloc = t._loc;
-            tloc.Multiply(_matrix);
-            if (_scale != 1.0)
-            {
-                tloc.Multiply(_scale);
-            }
-
-            _loc.Add(tloc);
-        }
-        else if ((_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror) && t._shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            Xyz tloc = t._loc;
-            tloc.Multiply(_scale);
-            _loc.Add(tloc);
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation
-                 && (t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror))
-        {
-            _shape = CompoundTrsf;
-            _scale = t._scale;
-            _loc.Add(t._loc);
-            _matrix = t._matrix;
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation && (t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror))
-        {
-            _shape = t._shape;
-            _loc.Add(t._loc);
-            _scale = t._scale;
-        }
-        else if ((_shape == PntMirror || _shape == global::Kerf.Geometry.TransformForm.Scale) && (t._shape == PntMirror || t._shape == global::Kerf.Geometry.TransformForm.Scale))
-        {
-            _shape = CompoundTrsf;
-            Xyz tloc = t._loc;
-            tloc.Multiply(_scale);
-            _loc.Add(tloc);
-            _scale = _scale * t._scale;
-        }
-        else if ((_shape == CompoundTrsf || _shape == global::Kerf.Geometry.TransformForm.Rotation || _shape == Ax1Mirror || _shape == Ax2Mirror)
-                 && (t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror))
-        {
-            _shape = CompoundTrsf;
-            Xyz tloc = t._loc;
-            if (_scale == 1.0)
-            {
-                _scale = t._scale;
-                tloc.Multiply(_matrix);
-            }
-            else
-            {
-                tloc.Multiply(_matrix);
-                tloc.Multiply(_scale);
-                _scale = _scale * t._scale;
-            }
-
-            _loc.Add(tloc);
-        }
-        else if ((t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror)
-                 && (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror))
-        {
-            _shape = CompoundTrsf;
-            Xyz tloc = t._loc;
-            tloc.Multiply(_scale);
-            _loc.Add(tloc);
-            _scale = _scale * t._scale;
-            _matrix = t._matrix;
-        }
-        else
-        {
-            _shape = CompoundTrsf;
-            Xyz tloc = t._loc;
-            tloc.Multiply(_matrix);
-            if (_scale != 1.0)
-            {
-                tloc.Multiply(_scale);
-                _scale = _scale * t._scale;
-            }
-            else
-            {
-                _scale = t._scale;
-            }
-
-            _loc.Add(tloc);
-            _matrix.Multiply(t._matrix);
-        }
-    }
-
-    internal void PreMultiply(in Transform3D t)
-    {
-        if (t._shape == Identity)
-        {
-        }
-        else if (_shape == Identity)
-        {
-            _shape = t._shape;
-            _scale = t._scale;
-            _loc = t._loc;
-            _matrix = t._matrix;
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Rotation && t._shape == global::Kerf.Geometry.TransformForm.Rotation)
-        {
-            _loc.Multiply(t._matrix);
-            _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation && t._shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            _loc.Add(t._loc);
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Scale && t._shape == global::Kerf.Geometry.TransformForm.Scale)
-        {
-            _loc.Multiply(t._scale);
-            _loc.Add(t._loc);
-            _scale = _scale * t._scale;
-        }
-        else if (_shape == PntMirror && t._shape == PntMirror)
-        {
-            _scale = 1.0;
-            _shape = global::Kerf.Geometry.TransformForm.Translation;
-            _loc.Reverse();
-            _loc.Add(t._loc);
-        }
-        else if (_shape == Ax1Mirror && t._shape == Ax1Mirror)
-        {
-            _shape = global::Kerf.Geometry.TransformForm.Rotation;
-            _loc.Multiply(t._matrix);
-            _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
-        }
-        else if ((_shape == CompoundTrsf || _shape == global::Kerf.Geometry.TransformForm.Rotation || _shape == Ax1Mirror || _shape == Ax2Mirror)
-                 && t._shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            _loc.Add(t._loc);
-        }
-        else if ((_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror) && t._shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            _loc.Add(t._loc);
-        }
-        else if (_shape == global::Kerf.Geometry.TransformForm.Translation
-                 && (t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror))
-        {
-            _shape = CompoundTrsf;
-            _matrix = t._matrix;
-            if (t._scale == 1.0)
-            {
-                _loc.Multiply(t._matrix);
-            }
-            else
-            {
-                _scale = t._scale;
-                _loc.Multiply(_matrix);
-                _loc.Multiply(_scale);
-            }
-
-            _loc.Add(t._loc);
-        }
-        else if ((t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror) && _shape == global::Kerf.Geometry.TransformForm.Translation)
-        {
-            _loc.Multiply(t._scale);
-            _loc.Add(t._loc);
-            _scale = t._scale;
-            _shape = t._shape;
-        }
-        else if ((_shape == PntMirror || _shape == global::Kerf.Geometry.TransformForm.Scale) && (t._shape == PntMirror || t._shape == global::Kerf.Geometry.TransformForm.Scale))
-        {
-            _shape = CompoundTrsf;
-            _loc.Multiply(t._scale);
-            _loc.Add(t._loc);
-            _scale = _scale * t._scale;
-        }
-        else if ((_shape == CompoundTrsf || _shape == global::Kerf.Geometry.TransformForm.Rotation || _shape == Ax1Mirror || _shape == Ax2Mirror)
-                 && (t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror))
-        {
-            _shape = CompoundTrsf;
-            _loc.Multiply(t._scale);
-            _loc.Add(t._loc);
-            _scale = _scale * t._scale;
-        }
-        else if ((t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror)
-                 && (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror))
-        {
-            _shape = CompoundTrsf;
-            _matrix = t._matrix;
-            if (t._scale == 1.0)
-            {
-                _loc.Multiply(t._matrix);
-            }
-            else
-            {
-                _loc.Multiply(_matrix);
-                _loc.Multiply(t._scale);
-                _scale = t._scale * _scale;
-            }
-
-            _loc.Add(t._loc);
-        }
-        else
-        {
-            _shape = CompoundTrsf;
-            _loc.Multiply(t._matrix);
-            if (t._scale != 1.0)
-            {
-                _loc.Multiply(t._scale);
-                _scale = _scale * t._scale;
-            }
-
-            _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
-        }
-    }
-
-    internal void Power(int n)
-    {
-        if (_shape == Identity)
-        {
-        }
-        else
-        {
-            if (n == 0)
-            {
-                _scale = 1.0;
-                _shape = Identity;
-                _matrix.SetIdentity();
-                _loc = new Xyz(0.0, 0.0, 0.0);
-            }
-            else if (n == 1)
-            {
-            }
-            else if (n == -1)
-            {
-                Invert();
-            }
-            else
-            {
-                if (n < 0)
-                {
-                    Invert();
-                }
-
-                if (_shape == global::Kerf.Geometry.TransformForm.Translation)
-                {
-                    int npower = Math.Abs(n) - 1;
-                    Xyz temploc = _loc;
-                    for (;;)
-                    {
-                        if (IsOdd(npower))
-                        {
-                            _loc.Add(temploc);
-                        }
-
-                        if (npower == 1)
-                        {
-                            break;
-                        }
-
-                        temploc.Add(temploc);
-                        npower = npower / 2;
-                    }
-                }
-                else if (_shape == global::Kerf.Geometry.TransformForm.Scale)
-                {
-                    int npower = Math.Abs(n) - 1;
-                    Xyz temploc = _loc;
-                    double tempscale = _scale;
-                    for (;;)
-                    {
-                        if (IsOdd(npower))
-                        {
-                            _loc.Add(temploc.Multiplied(_scale));
-                            _scale = _scale * tempscale;
-                        }
-
-                        if (npower == 1)
-                        {
-                            break;
-                        }
-
-                        temploc.Add(temploc.Multiplied(tempscale));
-                        tempscale = tempscale * tempscale;
-                        npower = npower / 2;
-                    }
-                }
-                else if (_shape == global::Kerf.Geometry.TransformForm.Rotation)
-                {
-                    int npower = Math.Abs(n) - 1;
-                    Matrix3x3 tempmatrix = _matrix;
-                    if (_loc.X() == 0.0 && _loc.Y() == 0.0 && _loc.Z() == 0.0)
-                    {
-                        for (;;)
-                        {
-                            if (IsOdd(npower))
-                            {
-                                _matrix.Multiply(tempmatrix);
-                            }
-
-                            if (npower == 1)
-                            {
-                                break;
-                            }
-
-                            tempmatrix.Multiply(tempmatrix);
-                            npower = npower / 2;
-                        }
-                    }
-                    else
-                    {
-                        Xyz temploc = _loc;
-                        for (;;)
-                        {
-                            if (IsOdd(npower))
-                            {
-                                _loc.Add(temploc.Multiplied(_matrix));
-                                _matrix.Multiply(tempmatrix);
-                            }
-
-                            if (npower == 1)
-                            {
-                                break;
-                            }
-
-                            temploc.Add(temploc.Multiplied(tempmatrix));
-                            tempmatrix.Multiply(tempmatrix);
-                            npower = npower / 2;
-                        }
-                    }
-                }
-                else if (_shape == PntMirror || _shape == Ax1Mirror || _shape == Ax2Mirror)
-                {
-                    if (IsEven(n))
-                    {
-                        _shape = Identity;
-                        _scale = 1.0;
-                        _matrix.SetIdentity();
-                        _loc.SetX(0);
-                        _loc.SetY(0);
-                        _loc.SetZ(0);
-                    }
-                }
-                else
-                {
-                    _shape = CompoundTrsf;
-                    int npower = Math.Abs(n) - 1;
-                    Xyz temploc = _loc;
-                    double tempscale = _scale;
-                    Matrix3x3 tempmatrix = _matrix;
-                    for (;;)
-                    {
-                        if (IsOdd(npower))
-                        {
-                            _loc.Add(temploc.Multiplied(_matrix).Multiplied(_scale));
-                            _scale = _scale * tempscale;
-                            _matrix.Multiply(tempmatrix);
-                        }
-
-                        if (npower == 1)
-                        {
-                            break;
-                        }
-
-                        tempscale = tempscale * tempscale;
-                        temploc.Add(temploc.Multiplied(tempmatrix).Multiplied(tempscale));
-                        tempmatrix.Multiply(tempmatrix);
-                        npower = npower / 2;
-                    }
-                }
-            }
-        }
-    }
-
-    /// <summary>Makes the matrix orthogonal (Gram-Schmidt on columns, then rows).</summary>
-    internal void Orthogonalize()
-    {
-        Matrix3x3 tm = _matrix;
-
         Xyz v1 = tm.Column(1);
         Xyz v2 = tm.Column(2);
         Xyz v3 = tm.Column(3);
@@ -854,7 +502,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         v3 -= v1 * v3.Dot(v1) + v2 * v3.Dot(v2);
         v3.Normalize();
 
-        tm.SetCols(v1, v2, v3);
+        tm = tm.WithCols(v1, v2, v3);
 
         v1 = tm.Row(1);
         v2 = tm.Row(2);
@@ -868,132 +516,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         v3 -= v1 * v3.Dot(v1) + v2 * v3.Dot(v2);
         v3.Normalize();
 
-        tm.SetRows(v1, v2, v3);
-
-        _matrix = tm;
-    }
-
-    // Copies with a mutator applied
-
-    public readonly Transform3D WithMirror(in Point3D p)
-    {
-        Transform3D copy = this;
-        copy.SetMirror(p);
-        return copy;
-    }
-
-    public readonly Transform3D WithMirror(in Axis3D a1)
-    {
-        Transform3D copy = this;
-        copy.SetMirror(a1);
-        return copy;
-    }
-
-    public readonly Transform3D WithMirror(in Frame3D a2)
-    {
-        Transform3D copy = this;
-        copy.SetMirror(a2);
-        return copy;
-    }
-
-    public readonly Transform3D WithRotation(in Axis3D a1, double ang)
-    {
-        Transform3D copy = this;
-        copy.SetRotation(a1, ang);
-        return copy;
-    }
-
-    public readonly Transform3D WithRotation(in Quaternion3 r)
-    {
-        Transform3D copy = this;
-        copy.SetRotation(r);
-        return copy;
-    }
-
-    public readonly Transform3D WithRotationPart(in Quaternion3 r)
-    {
-        Transform3D copy = this;
-        copy.SetRotationPart(r);
-        return copy;
-    }
-
-    public readonly Transform3D WithScale(in Point3D p, double s)
-    {
-        Transform3D copy = this;
-        copy.SetScale(p, s);
-        return copy;
-    }
-
-    public readonly Transform3D WithDisplacement(in CoordinateSystem fromSystem1, in CoordinateSystem toSystem2)
-    {
-        Transform3D copy = this;
-        copy.SetDisplacement(fromSystem1, toSystem2);
-        return copy;
-    }
-
-    public readonly Transform3D WithTransformation(in CoordinateSystem fromSystem1, in CoordinateSystem toSystem2)
-    {
-        Transform3D copy = this;
-        copy.SetTransformation(fromSystem1, toSystem2);
-        return copy;
-    }
-
-    public readonly Transform3D WithTransformation(in CoordinateSystem toSystem)
-    {
-        Transform3D copy = this;
-        copy.SetTransformation(toSystem);
-        return copy;
-    }
-
-    public readonly Transform3D WithTransformation(in Quaternion3 r, in Vector3D t)
-    {
-        Transform3D copy = this;
-        copy.SetTransformation(r, t);
-        return copy;
-    }
-
-    public readonly Transform3D WithTranslation(in Vector3D v)
-    {
-        Transform3D copy = this;
-        copy.SetTranslation(v);
-        return copy;
-    }
-
-    public readonly Transform3D WithTranslation(in Point3D p1, in Point3D p2)
-    {
-        Transform3D copy = this;
-        copy.SetTranslation(p1, p2);
-        return copy;
-    }
-
-    public readonly Transform3D WithTranslationPart(in Vector3D v)
-    {
-        Transform3D copy = this;
-        copy.SetTranslationPart(v);
-        return copy;
-    }
-
-    public readonly Transform3D WithScaleFactor(double s)
-    {
-        Transform3D copy = this;
-        copy.SetScaleFactor(s);
-        return copy;
-    }
-
-    public readonly Transform3D WithForm(TransformForm p)
-    {
-        Transform3D copy = this;
-        copy.SetForm(p);
-        return copy;
-    }
-
-    public readonly Transform3D WithValues(double a11, double a12, double a13, double a14,
-                                       double a21, double a22, double a23, double a24,
-                                       double a31, double a32, double a33, double a34)
-    {
-        Transform3D copy = this;
-        copy.SetValues(a11, a12, a13, a14, a21, a22, a23, a24, a31, a32, a33, a34);
-        return copy;
+        return tm.WithRows(v1, v2, v3);
     }
 
     // Queries
@@ -1029,11 +552,11 @@ public partial struct Transform3D : IEquatable<Transform3D>
         Matrix3x3 m = _matrix;
         if (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror)
         {
-            m.SetDiagonal(_scale * m._m00, _scale * m._m11, _scale * m._m22);
+            m = m.WithDiagonal(_scale * m._m00, _scale * m._m11, _scale * m._m22);
         }
         else
         {
-            m.Multiply(_scale);
+            m = m.Multiplied(_scale);
         }
 
         return m;
@@ -1058,32 +581,463 @@ public partial struct Transform3D : IEquatable<Transform3D>
 
     public readonly Transform3D Inverted()
     {
-        Transform3D t = this;
-        t.Invert();
-        return t;
+        double newScale = _scale;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        // -1
+        // X' = scale * R * X + T  =>  X = (R / scale) * (X' - T)
+        if (_shape == Identity)
+        {
+        }
+        else if (_shape == global::Kerf.Geometry.TransformForm.Translation || _shape == PntMirror)
+        {
+            loc.Reverse();
+        }
+        else if (_shape == global::Kerf.Geometry.TransformForm.Scale)
+        {
+            Standard_ConstructionError_Raise_if(Math.Abs(newScale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
+            newScale = 1.0 / newScale;
+            loc.Multiply(-newScale);
+        }
+        else
+        {
+            Standard_ConstructionError_Raise_if(Math.Abs(newScale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
+            newScale = 1.0 / newScale;
+            matrix = matrix.Transposed();
+            loc.Multiply(matrix);
+            loc.Multiply(-newScale);
+        }
+        return new Transform3D(newScale, _shape, matrix, loc);
     }
 
     /// <summary><c>this * theT</c>, which applies <paramref name="t"/> first.</summary>
     public readonly Transform3D Multiplied(in Transform3D t)
     {
-        Transform3D tresult = this;
-        tresult.Multiply(t);
-        return tresult;
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        if (t._shape == Identity)
+        {
+        }
+        else if (shape == Identity)
+        {
+            shape = t._shape;
+            scale = t._scale;
+            loc = t._loc;
+            matrix = t._matrix;
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Rotation && t._shape == global::Kerf.Geometry.TransformForm.Rotation)
+        {
+            if (t._loc.X() != 0.0 || t._loc.Y() != 0.0 || t._loc.Z() != 0.0)
+            {
+                loc.Add(t._loc.Multiplied(matrix));
+            }
+
+            matrix = matrix.Multiplied(t._matrix);
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Translation && t._shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            loc.Add(t._loc);
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Scale && t._shape == global::Kerf.Geometry.TransformForm.Scale)
+        {
+            loc.Add(t._loc.Multiplied(scale));
+            scale = scale * t._scale;
+        }
+        else if (shape == PntMirror && t._shape == PntMirror)
+        {
+            scale = 1.0;
+            shape = global::Kerf.Geometry.TransformForm.Translation;
+            loc.Add(t._loc.Reversed());
+        }
+        else if (shape == Ax1Mirror && t._shape == Ax1Mirror)
+        {
+            shape = global::Kerf.Geometry.TransformForm.Rotation;
+            loc.Add(t._loc.Multiplied(matrix));
+            matrix = matrix.Multiplied(t._matrix);
+        }
+        else if ((shape == CompoundTrsf || shape == global::Kerf.Geometry.TransformForm.Rotation || shape == Ax1Mirror || shape == Ax2Mirror)
+                 && t._shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            Xyz tloc = t._loc;
+            tloc.Multiply(matrix);
+            if (scale != 1.0)
+            {
+                tloc.Multiply(scale);
+            }
+
+            loc.Add(tloc);
+        }
+        else if ((shape == global::Kerf.Geometry.TransformForm.Scale || shape == PntMirror) && t._shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            Xyz tloc = t._loc;
+            tloc.Multiply(scale);
+            loc.Add(tloc);
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Translation
+                 && (t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror))
+        {
+            shape = CompoundTrsf;
+            scale = t._scale;
+            loc.Add(t._loc);
+            matrix = t._matrix;
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Translation && (t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror))
+        {
+            shape = t._shape;
+            loc.Add(t._loc);
+            scale = t._scale;
+        }
+        else if ((shape == PntMirror || shape == global::Kerf.Geometry.TransformForm.Scale) && (t._shape == PntMirror || t._shape == global::Kerf.Geometry.TransformForm.Scale))
+        {
+            shape = CompoundTrsf;
+            Xyz tloc = t._loc;
+            tloc.Multiply(scale);
+            loc.Add(tloc);
+            scale = scale * t._scale;
+        }
+        else if ((shape == CompoundTrsf || shape == global::Kerf.Geometry.TransformForm.Rotation || shape == Ax1Mirror || shape == Ax2Mirror)
+                 && (t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror))
+        {
+            shape = CompoundTrsf;
+            Xyz tloc = t._loc;
+            if (scale == 1.0)
+            {
+                scale = t._scale;
+                tloc.Multiply(matrix);
+            }
+            else
+            {
+                tloc.Multiply(matrix);
+                tloc.Multiply(scale);
+                scale = scale * t._scale;
+            }
+
+            loc.Add(tloc);
+        }
+        else if ((t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror)
+                 && (shape == global::Kerf.Geometry.TransformForm.Scale || shape == PntMirror))
+        {
+            shape = CompoundTrsf;
+            Xyz tloc = t._loc;
+            tloc.Multiply(scale);
+            loc.Add(tloc);
+            scale = scale * t._scale;
+            matrix = t._matrix;
+        }
+        else
+        {
+            shape = CompoundTrsf;
+            Xyz tloc = t._loc;
+            tloc.Multiply(matrix);
+            if (scale != 1.0)
+            {
+                tloc.Multiply(scale);
+                scale = scale * t._scale;
+            }
+            else
+            {
+                scale = t._scale;
+            }
+
+            loc.Add(tloc);
+            matrix = matrix.Multiplied(t._matrix);
+        }
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
     /// <summary><c>theT * this</c>, which applies this transformation first.</summary>
     public readonly Transform3D PreMultiplied(in Transform3D t)
     {
-        Transform3D tresult = this;
-        tresult.PreMultiply(t);
-        return tresult;
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        if (t._shape == Identity)
+        {
+        }
+        else if (shape == Identity)
+        {
+            shape = t._shape;
+            scale = t._scale;
+            loc = t._loc;
+            matrix = t._matrix;
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Rotation && t._shape == global::Kerf.Geometry.TransformForm.Rotation)
+        {
+            loc.Multiply(t._matrix);
+            loc.Add(t._loc);
+            matrix = matrix.PreMultiplied(t._matrix);
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Translation && t._shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            loc.Add(t._loc);
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Scale && t._shape == global::Kerf.Geometry.TransformForm.Scale)
+        {
+            loc.Multiply(t._scale);
+            loc.Add(t._loc);
+            scale = scale * t._scale;
+        }
+        else if (shape == PntMirror && t._shape == PntMirror)
+        {
+            scale = 1.0;
+            shape = global::Kerf.Geometry.TransformForm.Translation;
+            loc.Reverse();
+            loc.Add(t._loc);
+        }
+        else if (shape == Ax1Mirror && t._shape == Ax1Mirror)
+        {
+            shape = global::Kerf.Geometry.TransformForm.Rotation;
+            loc.Multiply(t._matrix);
+            loc.Add(t._loc);
+            matrix = matrix.PreMultiplied(t._matrix);
+        }
+        else if ((shape == CompoundTrsf || shape == global::Kerf.Geometry.TransformForm.Rotation || shape == Ax1Mirror || shape == Ax2Mirror)
+                 && t._shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            loc.Add(t._loc);
+        }
+        else if ((shape == global::Kerf.Geometry.TransformForm.Scale || shape == PntMirror) && t._shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            loc.Add(t._loc);
+        }
+        else if (shape == global::Kerf.Geometry.TransformForm.Translation
+                 && (t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror))
+        {
+            shape = CompoundTrsf;
+            matrix = t._matrix;
+            if (t._scale == 1.0)
+            {
+                loc.Multiply(t._matrix);
+            }
+            else
+            {
+                scale = t._scale;
+                loc.Multiply(matrix);
+                loc.Multiply(scale);
+            }
+
+            loc.Add(t._loc);
+        }
+        else if ((t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror) && shape == global::Kerf.Geometry.TransformForm.Translation)
+        {
+            loc.Multiply(t._scale);
+            loc.Add(t._loc);
+            scale = t._scale;
+            shape = t._shape;
+        }
+        else if ((shape == PntMirror || shape == global::Kerf.Geometry.TransformForm.Scale) && (t._shape == PntMirror || t._shape == global::Kerf.Geometry.TransformForm.Scale))
+        {
+            shape = CompoundTrsf;
+            loc.Multiply(t._scale);
+            loc.Add(t._loc);
+            scale = scale * t._scale;
+        }
+        else if ((shape == CompoundTrsf || shape == global::Kerf.Geometry.TransformForm.Rotation || shape == Ax1Mirror || shape == Ax2Mirror)
+                 && (t._shape == global::Kerf.Geometry.TransformForm.Scale || t._shape == PntMirror))
+        {
+            shape = CompoundTrsf;
+            loc.Multiply(t._scale);
+            loc.Add(t._loc);
+            scale = scale * t._scale;
+        }
+        else if ((t._shape == CompoundTrsf || t._shape == global::Kerf.Geometry.TransformForm.Rotation || t._shape == Ax1Mirror || t._shape == Ax2Mirror)
+                 && (shape == global::Kerf.Geometry.TransformForm.Scale || shape == PntMirror))
+        {
+            shape = CompoundTrsf;
+            matrix = t._matrix;
+            if (t._scale == 1.0)
+            {
+                loc.Multiply(t._matrix);
+            }
+            else
+            {
+                loc.Multiply(matrix);
+                loc.Multiply(t._scale);
+                scale = t._scale * scale;
+            }
+
+            loc.Add(t._loc);
+        }
+        else
+        {
+            shape = CompoundTrsf;
+            loc.Multiply(t._matrix);
+            if (t._scale != 1.0)
+            {
+                loc.Multiply(t._scale);
+                scale = scale * t._scale;
+            }
+
+            loc.Add(t._loc);
+            matrix = matrix.PreMultiplied(t._matrix);
+        }
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
     public readonly Transform3D Powered(int n)
     {
-        Transform3D t = this;
-        t.Power(n);
-        return t;
+        double scale = _scale;
+        TransformForm shape = _shape;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        if (shape == Identity)
+        {
+        }
+        else
+        {
+            if (n == 0)
+            {
+                scale = 1.0;
+                shape = Identity;
+                matrix = matrix.WithIdentity();
+                loc = new Xyz(0.0, 0.0, 0.0);
+            }
+            else if (n == 1)
+            {
+            }
+            else if (n == -1)
+            {
+                (scale, shape, matrix, loc) = new Transform3D(scale, shape, matrix, loc).Inverted();
+            }
+            else
+            {
+                if (n < 0)
+                {
+                    (scale, shape, matrix, loc) = new Transform3D(scale, shape, matrix, loc).Inverted();
+                }
+
+                if (shape == global::Kerf.Geometry.TransformForm.Translation)
+                {
+                    int npower = Math.Abs(n) - 1;
+                    Xyz temploc = loc;
+                    for (;;)
+                    {
+                        if (IsOdd(npower))
+                        {
+                            loc.Add(temploc);
+                        }
+
+                        if (npower == 1)
+                        {
+                            break;
+                        }
+
+                        temploc.Add(temploc);
+                        npower = npower / 2;
+                    }
+                }
+                else if (shape == global::Kerf.Geometry.TransformForm.Scale)
+                {
+                    int npower = Math.Abs(n) - 1;
+                    Xyz temploc = loc;
+                    double tempscale = scale;
+                    for (;;)
+                    {
+                        if (IsOdd(npower))
+                        {
+                            loc.Add(temploc.Multiplied(scale));
+                            scale = scale * tempscale;
+                        }
+
+                        if (npower == 1)
+                        {
+                            break;
+                        }
+
+                        temploc.Add(temploc.Multiplied(tempscale));
+                        tempscale = tempscale * tempscale;
+                        npower = npower / 2;
+                    }
+                }
+                else if (shape == global::Kerf.Geometry.TransformForm.Rotation)
+                {
+                    int npower = Math.Abs(n) - 1;
+                    Matrix3x3 tempmatrix = matrix;
+                    if (loc.X() == 0.0 && loc.Y() == 0.0 && loc.Z() == 0.0)
+                    {
+                        for (;;)
+                        {
+                            if (IsOdd(npower))
+                            {
+                                matrix = matrix.Multiplied(tempmatrix);
+                            }
+
+                            if (npower == 1)
+                            {
+                                break;
+                            }
+
+                            tempmatrix = tempmatrix.Multiplied(tempmatrix);
+                            npower = npower / 2;
+                        }
+                    }
+                    else
+                    {
+                        Xyz temploc = loc;
+                        for (;;)
+                        {
+                            if (IsOdd(npower))
+                            {
+                                loc.Add(temploc.Multiplied(matrix));
+                                matrix = matrix.Multiplied(tempmatrix);
+                            }
+
+                            if (npower == 1)
+                            {
+                                break;
+                            }
+
+                            temploc.Add(temploc.Multiplied(tempmatrix));
+                            tempmatrix = tempmatrix.Multiplied(tempmatrix);
+                            npower = npower / 2;
+                        }
+                    }
+                }
+                else if (shape == PntMirror || shape == Ax1Mirror || shape == Ax2Mirror)
+                {
+                    if (IsEven(n))
+                    {
+                        shape = Identity;
+                        scale = 1.0;
+                        matrix = matrix.WithIdentity();
+                        loc.SetX(0);
+                        loc.SetY(0);
+                        loc.SetZ(0);
+                    }
+                }
+                else
+                {
+                    shape = CompoundTrsf;
+                    int npower = Math.Abs(n) - 1;
+                    Xyz temploc = loc;
+                    double tempscale = scale;
+                    Matrix3x3 tempmatrix = matrix;
+                    for (;;)
+                    {
+                        if (IsOdd(npower))
+                        {
+                            loc.Add(temploc.Multiplied(matrix).Multiplied(scale));
+                            scale = scale * tempscale;
+                            matrix = matrix.Multiplied(tempmatrix);
+                        }
+
+                        if (npower == 1)
+                        {
+                            break;
+                        }
+
+                        tempscale = tempscale * tempscale;
+                        temploc.Add(temploc.Multiplied(tempmatrix).Multiplied(tempscale));
+                        tempmatrix = tempmatrix.Multiplied(tempmatrix);
+                        npower = npower / 2;
+                    }
+                }
+            }
+        }
+        return new Transform3D(scale, shape, matrix, loc);
     }
 
     public readonly void Transforms(ref double x, ref double y, ref double z)

@@ -86,8 +86,7 @@ public class GeomFill_CurveAndTrihedronTests
         AssertEqual(M0 * aTrsf, M1, "M Trsf");
         Assert.Equal(V0, V1);
 
-        Matrix3x3 anId = new();
-        anId.SetIdentity();
+        Matrix3x3 anId = new Matrix3x3().WithIdentity();
         aLaw.SetTrsf(anId);
         (Matrix3x3 M2, _) = D0(aLaw, 0.4);
         AssertEqual(M0, M2, "identity");

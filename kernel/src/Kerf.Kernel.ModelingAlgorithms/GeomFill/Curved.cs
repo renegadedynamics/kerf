@@ -83,7 +83,7 @@ public class Curved : Filling
                 Point3D p = new();
                 for (k = 1; k <= 3; k++)
                 {
-                    p.SetCoord(k, pv1 * p1[i].Coord(k) + pv * p3[i].Coord(k) + pu * p2[j].Coord(k) + pu1 * p4[j].Coord(k));
+                    p = p.WithCoord(k, pv1 * p1[i].Coord(k) + pv * p3[i].Coord(k) + pu * p2[j].Coord(k) + pu1 * p4[j].Coord(k));
                 }
                 _poles[i, j] = p;
             }

@@ -105,7 +105,7 @@ public class Intersector3d
                         n1 = RealToInt((x - u2) / uperiod);
                     }
 
-                    puv.SetX(x - uperiod * n1);
+                    puv = puv.WithX(x - uperiod * n1);
                 }
 
                 if (isVPer)
@@ -120,7 +120,7 @@ public class Intersector3d
                         n2 = RealToInt((y - v2) / vperiod);
                     }
 
-                    puv.SetY(y - vperiod * n2);
+                    puv = puv.WithY(y - vperiod * n2);
                 }
 
                 classifier2d.Perform(face, puv, tol);

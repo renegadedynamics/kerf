@@ -281,7 +281,7 @@ public class ExtElC
         dy = d.Dot(y2);
         dz = d.Dot(z2);
         //
-        d.SetCoord(dx, dy, dz);
+        d = d.WithCoord(dx, dy, dz);
         RefineDir(ref d);
         d.Coord(out dx, out dy, out dz);
         //
@@ -296,14 +296,14 @@ public class ExtElC
         {
             Direction3D do2O1 = new();
             //
-            o2O1.Multiply(1.0 / ro2O1);
-            do2O1.SetCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
+            o2O1 = o2O1.Multiplied(1.0 / ro2O1);
+            do2O1 = do2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
             RefineDir(ref do2O1);
-            o2O1.SetXYZ(ro2O1 * do2O1.XYZ());
+            o2O1 = o2O1.WithXYZ(ro2O1 * do2O1.XYZ());
         }
         else
         {
-            o2O1.SetCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
+            o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         }
         //
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
@@ -424,13 +424,13 @@ public class ExtElC
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double dz = d.Dot(z2);
-        d.SetCoord(dx, dy, dz);
+        d = d.WithCoord(dx, dy, dz);
 
         // Calculate V ...
         Point3D o1 = c1.Location();
         Point3D o2 = c2.Location();
         Vector3D o2O1 = new(o2, o1);
-        o2O1.SetCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
+        o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
 
         // Calculate the coefficients of the equation by Cos and Sin ...
@@ -556,13 +556,13 @@ public class ExtElC
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double dz = d.Dot(z2);
-        d.SetCoord(dx, dy, dz);
+        d = d.WithCoord(dx, dy, dz);
 
         // Calculate V ...
         Point3D o1 = c1.Location();
         Point3D o2 = c2.Location();
         Vector3D o2O1 = new(o2, o1);
-        o2O1.SetCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
+        o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
         double vx = vxyz.X();
         double vy = vxyz.Y();
@@ -657,13 +657,13 @@ public class ExtElC
         double dx = d.Dot(x2);
         double dy = d.Dot(y2);
         double dz = d.Dot(z2);
-        d.SetCoord(dx, dy, dz);
+        d = d.WithCoord(dx, dy, dz);
 
         // Calculate V ...
         Point3D o1 = c1.Location();
         Point3D o2 = c2.Location();
         Vector3D o2O1 = new(o2, o1);
-        o2O1.SetCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
+        o2O1 = o2O1.WithCoord(o2O1.Dot(new Vector3D(x2)), o2O1.Dot(new Vector3D(y2)), o2O1.Dot(new Vector3D(z2)));
         Xyz vxyz = (d.XYZ() * (o2O1.Dot(new Vector3D(d)))) - o2O1.XYZ();
 
         // Calculate coefficients of the equation by y
@@ -937,7 +937,7 @@ public class ExtElC
                 cx[i] = one;
                 cx[j] = 0.0;
                 cx[k] = 0.0;
-                aDir.SetCoord(cx[0], cx[1], cx[2]);
+                aDir = aDir.WithCoord(cx[0], cx[1], cx[2]);
                 return;
             }
         }

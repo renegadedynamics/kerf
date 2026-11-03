@@ -69,7 +69,7 @@ public sealed class IsPlanarSurface
                     if (angle > M_PI / 2)
                     {
                         angle = M_PI - angle;
-                        dir.Reverse();
+                        dir = dir.Reversed();
                     }
                     essai = (angle < 0.1);
                 }
@@ -77,9 +77,9 @@ public sealed class IsPlanarSurface
                 if (essai)
                 {
                     CoordinateSystem axe = new(p, dir);
-                    axe.SetXDirection(new Direction3D(DU));
-                    _plan.SetPosition(axe);
-                    _plan.SetLocation(p);
+                    axe = axe.WithXDirection(new Direction3D(DU));
+                    _plan = _plan.WithPosition(axe);
+                    _plan = _plan.WithLocation(p);
                     Curve3D c;
                     c = s.UIso(umin);
                     _isPlan = Controle(c, _plan, tol);
@@ -119,8 +119,8 @@ public sealed class IsPlanarSurface
                 if (essai)
                 {
                     CoordinateSystem axe = new(p, new Direction3D(dn), new Direction3D(Du));
-                    _plan.SetPosition(axe);
-                    _plan.SetLocation(p);
+                    _plan = _plan.WithPosition(axe);
+                    _plan = _plan.WithLocation(p);
                     Curve3D c;
                     c = s.VIso((vmin + vmax) / 2);
                     _isPlan = Controle(c, _plan, tol);
@@ -210,16 +210,16 @@ public sealed class IsPlanarSurface
                 }
                 if (dx.Angle(new Direction3D(DU)) > M_PI / 2)
                 {
-                    dx.Reverse();
+                    dx = dx.Reversed();
                 }
                 if (dy.Angle(new Direction3D(dv)) > M_PI / 2)
                 {
-                    dy.Reverse();
+                    dy = dy.Reversed();
                 }
 
                 CoordinateSystem axe = new(bary, dx ^ dy, dx);
-                plan.SetPosition(axe);
-                plan.SetLocation(bary);
+                plan = plan.WithPosition(axe);
+                plan = plan.WithLocation(bary);
                 isPlan = true;
             }
         }

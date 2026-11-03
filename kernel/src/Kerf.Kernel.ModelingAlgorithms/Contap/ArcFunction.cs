@@ -161,7 +161,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
             }
             break;
             case ContourTFunction.DraftStd:
-                norm.Normalize();
+                norm = norm.Normalized();
                 dfu = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                 dfv = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
                 break;
@@ -201,7 +201,7 @@ public class ArcFunction : FunctionWithDerivative, IArcFunction
             break;
             case ContourTFunction.DraftStd:
                 f = (norm.Dot(new Vector3D(_dir)) - _cosAng * norm.Magnitude()) / _mean;
-                norm.Normalize();
+                norm = norm.Normalized();
                 dfu = (dnu.Dot(new Vector3D(_dir)) - _cosAng * dnu.Dot(norm)) / _mean;
                 dfv = (dnv.Dot(new Vector3D(_dir)) - _cosAng * dnv.Dot(norm)) / _mean;
                 break;

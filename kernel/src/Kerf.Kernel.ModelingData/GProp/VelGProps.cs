@@ -66,7 +66,7 @@ public class VelGProps : Properties
         double coef = rayon / (alpha2 - alpha1);
 
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + (coef * (xa1 * dsin + xa2 * dcos)) + (xa3 * (z2 + z1) / 2.0),
+        _g = _g.WithCoord(x0 + (coef * (xa1 * dsin + xa2 * dcos)) + (xa3 * (z2 + z1) / 2.0),
                               y0 + (coef * (ya1 * dsin + ya2 * dcos)) + (ya3 * (z2 + z1) / 2.0),
                               z0 + (coef * (za1 * dsin + za2 * dcos)) + (za3 * (z2 + z1) / 2.0));
 
@@ -149,7 +149,7 @@ public class VelGProps : Properties
         double iy    = coef0 * (cn1 - cn2) / (alpha2 - alpha1) / auxi1;
 
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + xa1 * ix + xa2 * iy + xa3 * iz,
+        _g = _g.WithCoord(x0 + xa1 * ix + xa2 * iy + xa3 * iz,
                               y0 + ya1 * ix + ya2 * iy + ya3 * iz,
                               z0 + za1 * ix + za2 * iy + za3 * iz);
 
@@ -229,7 +229,7 @@ public class VelGProps : Properties
                                 / (snf2 - snf1) / 2.0;
         double iz = r * (snf2 + snf1) / 2.0;
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
+        _g = _g.WithCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
                               y0 + ix * ya1 + iy * ya2 + iz * ya3,
                               z0 + ix * za1 + iy * za2 + iz * za3);
 
@@ -307,7 +307,7 @@ public class VelGProps : Properties
         double iz = rmin * (cnf1 - cnf2) / (alpha2 - alpha1);
 
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
+        _g = _g.WithCoord(x0 + ix * xa1 + iy * xa2 + iz * xa3,
                               y0 + ix * ya1 + iy * ya2 + iz * ya3,
                               z0 + ix * za1 + iy * za2 + iz * za3);
 

@@ -128,7 +128,7 @@ public class MeshCinert : Properties
         }
         else
         {
-            _g.SetCoord(ix / _dim, iy / _dim, iz / _dim);
+            _g = _g.WithCoord(ix / _dim, iy / _dim, iz / _dim);
         }
     }
 
@@ -215,7 +215,7 @@ public class MeshCinert : Properties
                 {
                     Point2D p2d = nodes2D[i];
                     Point3D p = s!.Value(p2d.X(), p2d.Y());
-                    p.Transform(tr);
+                    p = p.Transformed(tr);
                     thePolyg.SetValue(i, p);
                 }
             }

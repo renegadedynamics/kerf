@@ -27,13 +27,13 @@ public abstract class ElementarySurface : Surface
     internal void SetAxis(in Axis3D a1)
     {
         CheckMutable();
-        _pos.SetAxis(a1);
+        _pos = _pos.WithAxis(a1);
     }
 
     internal void SetLocation(in Point3D loc)
     {
         CheckMutable();
-        _pos.SetLocation(loc);
+        _pos = _pos.WithLocation(loc);
     }
 
     internal void SetPosition(in CoordinateSystem ax3)
@@ -79,14 +79,14 @@ public abstract class ElementarySurface : Surface
     protected internal override void UReverse()
     {
         CheckMutable();
-        _pos.YReverse();
+        _pos = _pos.YReversed();
     }
 
     /// <summary>Reverses the V direction (reverses the main direction of the local coordinate system).</summary>
     protected internal override void VReverse()
     {
         CheckMutable();
-        _pos.ZReverse();
+        _pos = _pos.ZReversed();
     }
 
     /// <summary>CN, the continuity of every elementary surface.</summary>

@@ -174,7 +174,7 @@ internal static class BOPTestTolerCommands
                     Point3D aPC3D = aC3D.Value(aT);
                     Point2D aPC2D = aC2D.Value(aT);
                     Point3D aP3D = aS.Value(aPC2D.X(), aPC2D.Y());
-                    aP3D.Transform(L.Transformation());
+                    aP3D = aP3D.Transformed(L.Transformation());
                     double aD2 = aPC3D.SquareDistance(aP3D);
                     if (aD2 > aTolMax2)
                     {
@@ -234,7 +234,7 @@ internal static class BOPTestTolerCommands
                         // 3D-point treatment
                         double aParam = Tool.Parameter(aVx, aE);
                         Point3D aPC3D = aC3D.Value(aParam);
-                        aPC3D.Transform(L.Transformation());
+                        aPC3D = aPC3D.Transformed(L.Transformation());
                         double aD2 = aPV3D.SquareDistance(aPC3D);
                         if (aD2 > aTolMax2)
                         {
@@ -255,7 +255,7 @@ internal static class BOPTestTolerCommands
                         double aParam = Tool.Parameter(aVx, aE, aS, L);
                         Point2D aPC2D = aC2D.Value(aParam);
                         Point3D aPC3D = aS.Value(aPC2D.X(), aPC2D.Y());
-                        aPC3D.Transform(L.Transformation());
+                        aPC3D = aPC3D.Transformed(L.Transformation());
                         double aD2 = aPV3D.SquareDistance(aPC3D);
                         if (aD2 > aTolMax2)
                         {

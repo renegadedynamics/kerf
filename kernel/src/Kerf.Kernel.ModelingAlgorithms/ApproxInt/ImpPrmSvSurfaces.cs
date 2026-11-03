@@ -64,14 +64,14 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
             return true;
         }
 
-        aDU.Divide(Math.Sqrt(sqMagnDU));
+        aDU = aDU.Divided(Math.Sqrt(sqMagnDU));
 
         if (sqMagnDV < sqLinTol)
         {
             return true;
         }
 
-        aDV.Divide(Math.Sqrt(sqMagnDV));
+        aDV = aDV.Divided(Math.Sqrt(sqMagnDV));
 
         // Here aDU and aDV vectors have magnitude 1.0.
 
@@ -141,7 +141,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
                 double norm = Math.Sqrt(sqMagnDV);
                 tg3D = dv.Divided(norm);
-                tg2D.SetCoord(0.0, tgMagn / norm);
+                tg2D = tg2D.WithCoord(0.0, tgMagn / norm);
             }
             else
             {
@@ -155,7 +155,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     // Use sign "+" if theTg3D and theDV are codirectional
                     // and sign "-" if opposite
                     double dp = tg3D.Dot(dv);
-                    tg2D.SetCoord(0.0, Math.CopySign(Math.Sqrt(sqTan / sqMagnDV), dp));
+                    tg2D = tg2D.WithCoord(0.0, Math.CopySign(Math.Sqrt(sqTan / sqMagnDV), dp));
                 }
                 else
                 {
@@ -183,7 +183,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
                 double norm = Math.Sqrt(sqMagnDU);
                 tg3D = du.Divided(norm);
-                tg2D.SetCoord(tgMagn / norm, 0.0);
+                tg2D = tg2D.WithCoord(tgMagn / norm, 0.0);
             }
             else
             {
@@ -197,7 +197,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     // Use sign "+" if theTg3D and theDU are codirectional
                     // and sign "-" if opposite
                     double dp = tg3D.Dot(du);
-                    tg2D.SetCoord(Math.CopySign(Math.Sqrt(sqTan / sqMagnDU), dp), 0.0);
+                    tg2D = tg2D.WithCoord(Math.CopySign(Math.Sqrt(sqTan / sqMagnDU), dp), 0.0);
                 }
                 else
                 {
@@ -224,7 +224,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
             if (isTo3DTgCompute)
             {
-                tg2D.SetCoord(1.0 / lenSum, 1.0 / lenSum);
+                tg2D = tg2D.WithCoord(1.0 / lenSum, 1.0 / lenSum);
                 tg3D = du * tg2D.X() + dv * tg2D.Y();
             }
             else
@@ -239,7 +239,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
                     double dp = tg3D.Dot(du);
                     double lenTg = Math.CopySign(Math.Sqrt(sqTan), dp);
-                    tg2D.SetCoord(lenTg / lenSum, lenTg / lenSum);
+                    tg2D = tg2D.WithCoord(lenTg / lenSum, lenTg / lenSum);
                 }
                 else
                 {
@@ -260,7 +260,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 // True direction shall be precised later (the algorithm is
                 // based on array of Walking-points).
 
-                tg2D.SetCoord(1.0 / lenSum, -1.0 / lenSum);
+                tg2D = tg2D.WithCoord(1.0 / lenSum, -1.0 / lenSum);
                 tg3D = du * tg2D.X() + dv * tg2D.Y();
             }
             else
@@ -275,7 +275,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
 
                     double dp = tg3D.Dot(du);
                     double lenTg = Math.CopySign(Math.Sqrt(sqTan), dp);
-                    tg2D.SetCoord(lenTg / lenSum, -lenTg / lenSum);
+                    tg2D = tg2D.WithCoord(lenTg / lenSum, -lenTg / lenSum);
                 }
                 else
                 {
@@ -334,7 +334,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
         double deltaU = tgV.SquareMagnitude() / sqMagn;
         double deltaV = tgU.SquareMagnitude() / sqMagn;
 
-        tg2D.SetCoord(Math.CopySign(Math.Sqrt(deltaU), tgV.Dot(normal)),
+        tg2D = tg2D.WithCoord(Math.CopySign(Math.Sqrt(deltaU), tgV.Dot(normal)),
                          -Math.CopySign(Math.Sqrt(deltaV), tgU.Dot(normal)));
 
         return true;
@@ -574,8 +574,8 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                         }
                     }
 
-                    _myParOnS1.SetCoord(tu1, tv1);
-                    _myParOnS2.SetCoord(tu2, tv2);
+                    _myParOnS1 = _myParOnS1.WithCoord(tu1, tv1);
+                    _myParOnS2 = _myParOnS2.WithCoord(tu2, tv2);
 
                     Point3D p2 = new();
 
@@ -583,7 +583,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     qSurf.D1(u1, v1, ref p2, ref d1uQuad, ref d1vQuad);
 
                     // Middle-point of P-P2 segment
-                    p.BaryCenter(1.0, p2, 1.0);
+                    p = p.BaryCentered(1.0, p2, 1.0);
                 }
                 else
                 {
@@ -602,8 +602,8 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                         }
                     }
 
-                    _myParOnS1.SetCoord(tu1, tv1);
-                    _myParOnS2.SetCoord(tu2, tu2); // OCCT: tu2 for tv2, so the cache never matches this point
+                    _myParOnS1 = _myParOnS1.WithCoord(tu1, tv1);
+                    _myParOnS2 = _myParOnS2.WithCoord(tu2, tu2); // OCCT: tu2 for tv2, so the cache never matches this point
 
                     Point3D p2 = new();
                     ThePSurfaceTool.D1(pSurf, x[1], x[2], out p, out d1uPrm, out d1vPrm);
@@ -611,7 +611,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                     qSurf.D1(u2, v2, ref p2, ref d1uQuad, ref d1vQuad);
 
                     // Middle-point of P-P2 segment
-                    p.BaryCenter(1.0, p2, 1.0);
+                    p = p.BaryCentered(1.0, p2, 1.0);
                 }
 
                 _myPnt = p;
@@ -638,7 +638,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 }
                 else
                 {
-                    normalPrm.Divide(Math.Sqrt(sqMagnPrm));
+                    normalPrm = normalPrm.Divided(Math.Sqrt(sqMagnPrm));
                 }
 
                 // Analogically for implicit surface
@@ -658,7 +658,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 }
                 else
                 {
-                    normalImp.Divide(Math.Sqrt(sqMagnImp));
+                    normalImp = normalImp.Divided(Math.Sqrt(sqMagnImp));
                 }
 
                 if (isImpSingular && isPrmSingular)
@@ -693,7 +693,7 @@ public class ImpPrmSvSurfaces<ThePSurface, ThePSurfaceTool> : SvSurfaces
                 }
 
                 // Normalize Tg vector
-                tg.Divide(Math.Sqrt(sqMagnTg));
+                tg = tg.Divided(Math.Sqrt(sqMagnTg));
                 _myTg = tg;
 
                 if (!isPrmSingular)

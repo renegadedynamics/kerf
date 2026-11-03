@@ -78,7 +78,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _lin = new Line3D();
         _typ = global::Kerf.Geometry.SurfaceKind.Cone;
         _ax3direc = _ax3.Direct();
-        _lin.SetPosition(_ax3.Axis());
+        _lin = _lin.WithPosition(_ax3.Axis());
         _prm1 = c.RefRadius();
         _prm2 = c.SemiAngle();
         _prm3 = Math.Cos(_prm2);
@@ -91,7 +91,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _lin = new Line3D();
         _typ = global::Kerf.Geometry.SurfaceKind.Torus;
         _ax3direc = _ax3.Direct();
-        _lin.SetPosition(_ax3.Axis());
+        _lin = _lin.WithPosition(_ax3.Axis());
         _prm1 = t.MajorRadius();
         _prm2 = t.MinorRadius();
         _prm3 = 0.0;
@@ -113,7 +113,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _typ = global::Kerf.Geometry.SurfaceKind.Cylinder;
         _ax3 = c.Position();
         _ax3direc = _ax3.Direct();
-        _lin.SetPosition(_ax3.Axis());
+        _lin = _lin.WithPosition(_ax3.Axis());
         _prm1 = c.Radius();
         _prm2 = _prm3 = _prm4 = 0.0;
     }
@@ -123,7 +123,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _typ = global::Kerf.Geometry.SurfaceKind.Sphere;
         _ax3 = s.Position();
         _ax3direc = _ax3.Direct();
-        _lin.SetPosition(_ax3.Axis());
+        _lin = _lin.WithPosition(_ax3.Axis());
         _prm1 = s.Radius();
         _prm2 = _prm3 = _prm4 = 0.0;
     }
@@ -133,7 +133,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _typ = global::Kerf.Geometry.SurfaceKind.Cone;
         _ax3 = c.Position();
         _ax3direc = _ax3.Direct();
-        _lin.SetPosition(_ax3.Axis());
+        _lin = _lin.WithPosition(_ax3.Axis());
         _prm1 = c.RefRadius();
         _prm2 = c.SemiAngle();
         _prm3 = Math.Cos(_prm2);
@@ -145,7 +145,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         _typ = global::Kerf.Geometry.SurfaceKind.Torus;
         _ax3 = t.Position();
         _ax3direc = _ax3.Direct();
-        _lin.SetPosition(_ax3.Axis());
+        _lin = _lin.WithPosition(_ax3.Axis());
         _prm1 = t.MajorRadius();
         _prm2 = t.MinorRadius();
         _prm3 = 0.0;
@@ -198,36 +198,36 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         switch (_typ)
         {
             case global::Kerf.Geometry.SurfaceKind.Plane: // plan
-                grad.SetCoord(_prm1, _prm2, _prm3);
+                grad = grad.WithCoord(_prm1, _prm2, _prm3);
                 break;
             case global::Kerf.Geometry.SurfaceKind.Cylinder: // cylindre
             {
                 Xyz PP = _lin.Location().XYZ();
                 PP.Add(global::Kerf.Engine.Geometry.ElCLib.Parameter(_lin, p) * _lin.Direction().XYZ());
-                grad.SetXYZ(p.XYZ() - PP);
+                grad = grad.WithXYZ(p.XYZ() - PP);
                 double n = grad.Magnitude();
                 if (n > 1e-14)
                 {
-                    grad.Divide(n);
+                    grad = grad.Divided(n);
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
             case global::Kerf.Geometry.SurfaceKind.Sphere: // sphere
             {
                 Xyz PP = p.XYZ();
-                grad.SetXYZ((PP - _lin.Location().XYZ()));
+                grad = grad.WithXYZ((PP - _lin.Location().XYZ()));
                 double n = grad.Magnitude();
                 if (n > 1e-14)
                 {
-                    grad.Divide(n);
+                    grad = grad.Divided(n);
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
@@ -239,30 +239,30 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
                 grad = d1u.Crossed(d1v);
                 if (!_ax3direc)
                 {
-                    grad.Reverse();
+                    grad = grad.Reversed();
                 }
                 if (HasMagnitudeForNormalization(grad))
                 {
-                    grad.Normalize();
+                    grad = grad.Normalized();
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
             case global::Kerf.Geometry.SurfaceKind.Torus: // torus
             {
                 TorusPoint(p, out Point3D pt, out _);
-                grad.SetXYZ(p.XYZ() - pt.XYZ());
+                grad = grad.WithXYZ(p.XYZ() - pt.XYZ());
                 double n = grad.Magnitude();
                 if (n > 1e-14)
                 {
-                    grad.Divide(n);
+                    grad = grad.Divided(n);
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
@@ -285,7 +285,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
             case global::Kerf.Geometry.SurfaceKind.Plane:
             {
                 Dist = _prm1 * p.X() + _prm2 * p.Y() + _prm3 * p.Z() + _prm4;
-                grad.SetCoord(_prm1, _prm2, _prm3);
+                grad = grad.WithCoord(_prm1, _prm2, _prm3);
             }
             break;
             case global::Kerf.Geometry.SurfaceKind.Cylinder:
@@ -293,15 +293,15 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
                 Dist = _lin.Distance(p) - _prm1;
                 Xyz PP = _lin.Location().XYZ();
                 PP.Add(global::Kerf.Engine.Geometry.ElCLib.Parameter(_lin, p) * _lin.Direction().XYZ());
-                grad.SetXYZ((p.XYZ() - PP));
+                grad = grad.WithXYZ((p.XYZ() - PP));
                 double n = grad.Magnitude();
                 if (n > 1e-14)
                 {
-                    grad.Divide(n);
+                    grad = grad.Divided(n);
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
@@ -309,15 +309,15 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
             {
                 Dist = _lin.Location().Distance(p) - _prm1;
                 Xyz PP = p.XYZ();
-                grad.SetXYZ((PP - _lin.Location().XYZ()));
+                grad = grad.WithXYZ((PP - _lin.Location().XYZ()));
                 double n = grad.Magnitude();
                 if (n > 1e-14)
                 {
-                    grad.Divide(n);
+                    grad = grad.Divided(n);
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
@@ -332,7 +332,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
                 grad = d1u.Crossed(d1v);
                 if (!_ax3direc)
                 {
-                    grad.Reverse();
+                    grad = grad.Reversed();
                 }
                 //-- lbr le 7 mars 96
                 //-- If the gradient is null, we are on the axis
@@ -340,11 +340,11 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
                 //-- so any value can be returned.
                 if (HasMagnitudeForNormalization(grad))
                 {
-                    grad.Normalize();
+                    grad = grad.Normalized();
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
@@ -352,15 +352,15 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
             {
                 TorusPoint(p, out Point3D pt, out _);
                 Dist = p.Distance(pt) - _prm2;
-                grad.SetXYZ(p.XYZ() - pt.XYZ());
+                grad = grad.WithXYZ(p.XYZ() - pt.XYZ());
                 double n = grad.Magnitude();
                 if (n > 1e-14)
                 {
-                    grad.Divide(n);
+                    grad = grad.Divided(n);
                 }
                 else
                 {
-                    grad.SetCoord(0.0, 0.0, 0.0);
+                    grad = grad.WithCoord(0.0, 0.0, 0.0);
                 }
             }
             break;
@@ -541,7 +541,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
                 else
                 {
                     Direction3D D = _lin.Normal(p).Direction();
-                    D.Reverse();
+                    D = D.Reversed();
                     return new Vector3D(D);
                 }
             }
@@ -595,7 +595,7 @@ public partial struct SurfaceQuadric : IEquatable<SurfaceQuadric>
         pp = p.Translated(oz.Multiplied(-(new Vector3D(o, p).Dot(new Vector3D(_ax3.Direction())))));
         //
         Direction3D doPp = (o.SquareDistance(pp) < 1e-14) ? _ax3.XDirection() : new Direction3D(new Vector3D(o, pp));
-        pt.SetXYZ(o.XYZ() + doPp.XYZ() * _prm1);
+        pt = pt.WithXYZ(o.XYZ() + doPp.XYZ() * _prm1);
     }
 
     private static bool HasMagnitudeForNormalization(in Vector3D vector)

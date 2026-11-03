@@ -712,7 +712,7 @@ public sealed class MakeCylindricalHole : FeatureBuilder
         }
         bar.Divide((double)nbp);
         b = new Point3D();
-        b.SetXYZ(bar);
+        b = b.WithXYZ(bar);
     }
 
     private static void BoxParameters(in Shape s, in Axis3D axis, out double parmin, out double parmax)
@@ -729,13 +729,13 @@ public sealed class MakeCylindricalHole : FeatureBuilder
         double param;
         for (i = 0; i <= 1; i++)
         {
-            p.SetX(c[i]);
+            p = p.WithX(c[i]);
             for (j = 2; j <= 3; j++)
             {
-                p.SetY(c[j]);
+                p = p.WithY(c[j]);
                 for (k = 4; k <= 5; k++)
                 {
-                    p.SetZ(c[k]);
+                    p = p.WithZ(c[k]);
                     param = global::Kerf.Engine.Geometry.ElCLib.LineParameter(axis, p);
                     parmin = Min(param, parmin);
                     parmax = Max(param, parmax);

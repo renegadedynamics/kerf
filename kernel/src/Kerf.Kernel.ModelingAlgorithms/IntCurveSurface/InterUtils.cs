@@ -169,8 +169,8 @@ internal static class InterUtils
             for (i = 0; i <= nbsu; i++)
             {
                 SurfaceTool.D0(surface, u, 0.0, out p);
-                l.SetLocation(p);
-                l.SetDirection(dirOfExt);
+                l = l.WithLocation(p);
+                l = l.WithDirection(dirOfExt);
 
                 ExtElC extr = new(l, line, tolang);
 
@@ -464,7 +464,7 @@ internal static class InterUtils
             // gp_Dir ^ gp_Dir is a gp_Dir (normalized), converted to gp_Vec
             Vector3D t = new(pln.Position().XDirection() ^ pln.Position().YDirection());
             t *= offVal;
-            pln.Translate(t);
+            pln = pln.Translated(t);
             IntConicQuad linPlane = new(line, pln, THE_TOLERANCE_ANGULAIRE);
 
             if (!linPlane.IsDone)
@@ -502,13 +502,13 @@ internal static class InterUtils
 
             if (r >= THE_TOLTANGENCY)
             {
-                cyl.SetRadius(r);
+                cyl = cyl.WithRadius(r);
             }
             else if (r <= -THE_TOLTANGENCY)
             {
-                a.Rotate(new Axis3D(a.Location(), a.Direction()), M_PI);
-                cyl.SetPosition(a);
-                cyl.SetRadius(-r);
+                a = a.Rotated(new Axis3D(a.Location(), a.Direction()), M_PI);
+                cyl = cyl.WithPosition(a);
+                cyl = cyl.WithRadius(-r);
             }
             else
             {
@@ -552,10 +552,10 @@ internal static class InterUtils
             {
                 Vector3D z = new(a.Direction());
                 z *= -offVal * Math.Sin(ang);
-                a.Translate(z);
-                con.SetPosition(a);
-                con.SetRadius(r);
-                con.SetSemiAngle(ang);
+                a = a.Translated(z);
+                con = con.WithPosition(a);
+                con = con.WithRadius(r);
+                con = con.WithSemiAngle(ang);
             }
             else
             {
@@ -795,7 +795,7 @@ internal static class InterUtils
         double norm = nSurf.Magnitude();
         if (norm > THE_TOLERANCE_ANGULAIRE && d1U.SquareMagnitude() > THE_TOLERANCE_ANGULAIRE)
         {
-            d1U.Normalize();
+            d1U = d1U.Normalized();
             cosDir = nSurf.Dot(d1U);
             cosDir /= norm;
             if (-cosDir > THE_TOLERANCE_ANGULAIRE)

@@ -41,12 +41,11 @@ public static class GeomConvert
         for (int i = poles2d.Lower(); i <= poles2d.Upper(); i++)
         {
             Point2D p2d = poles2d[i];
-            poles[i].SetCoord(p2d.X(), p2d.Y(), 0.0);
+            poles[i] = poles[i].WithCoord(p2d.X(), p2d.Y(), 0.0);
         }
 
         theCurve = new BSplineCurve3D(poles, weights, knots, mults, convert.Degree(), convert.IsPeriodic);
-        Transform3D t = new();
-        t.SetTransformation(new CoordinateSystem(theConic.Position()), new CoordinateSystem(Constants.XOY()));
+        Transform3D t = new Transform3D().WithTransformation(new CoordinateSystem(theConic.Position()), new CoordinateSystem(Constants.XOY()));
         BSplineCurve3D cres;
         cres = (BSplineCurve3D)theCurve.Transformed(t);
         return cres;
@@ -470,7 +469,7 @@ public static class GeomConvert
         {
             for (jj = 1; jj <= 3; jj++)
             {
-                bsPoles[ii].SetCoord(jj, bsPoles[ii].Coord(jj) * bsWeights[ii]);
+                bsPoles[ii] = bsPoles[ii].WithCoord(jj, bsPoles[ii].Coord(jj) * bsWeights[ii]);
             }
         }
 
@@ -484,7 +483,7 @@ public static class GeomConvert
         {
             for (jj = 1; jj <= 3; jj++)
             {
-                resPoles[ii].SetCoord(jj, resNumPoles[ii].Coord(jj) / resDenPoles[ii]);
+                resPoles[ii] = resPoles[ii].WithCoord(jj, resNumPoles[ii].Coord(jj) / resDenPoles[ii]);
             }
         }
 
@@ -800,7 +799,7 @@ public static class GeomConvert
                     {
                         for (jj = 1; jj <= 3; jj++)
                         {
-                            curve1Poles[ii].SetCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
+                            curve1Poles[ii] = curve1Poles[ii].WithCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
                         }
                     }
 
@@ -815,7 +814,7 @@ public static class GeomConvert
                     {
                         for (jj = 1; jj <= 3; jj++)
                         {
-                            newPoles[ii].SetCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
+                            newPoles[ii] = newPoles[ii].WithCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
                         }
                     }
 
@@ -1068,7 +1067,7 @@ public static class GeomConvert
                         {
                             for (jj = 1; jj <= 3; jj++)
                             {
-                                curve1Poles[ii].SetCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
+                                curve1Poles[ii] = curve1Poles[ii].WithCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
                             }
                         }
 
@@ -1083,7 +1082,7 @@ public static class GeomConvert
                         {
                             for (jj = 1; jj <= 3; jj++)
                             {
-                                newPoles[ii].SetCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
+                                newPoles[ii] = newPoles[ii].WithCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
                             }
                         }
 
@@ -1845,7 +1844,7 @@ public static class GeomConvert
 
                 for (i = 1; i <= nbUPoles; i += 2)
                 {
-                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    trsf = trsf.WithRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
                     for (j = 1; j <= nbVPoles; j++)
                     {
                         newPoles[i, j] = Poles[j].Transformed(trsf);
@@ -1853,19 +1852,18 @@ public static class GeomConvert
                     }
                 }
 
-                GeneralTransform3D aff = new();
-                aff.SetAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
+                GeneralTransform3D aff = new GeneralTransform3D().WithAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
                 Xyz coord;
                 for (j = 1; j <= nbVPoles; j++)
                 {
                     coord = Poles[j].XYZ();
                     aff.Transforms(ref coord);
-                    Poles[j].SetXYZ(coord);
+                    Poles[j] = Poles[j].WithXYZ(coord);
                 }
 
                 for (i = 2; i <= nbUPoles; i += 2)
                 {
-                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    trsf = trsf.WithRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
                     for (j = 1; j <= nbVPoles; j++)
                     {
                         newPoles[i, j] = Poles[j].Transformed(trsf);
@@ -2087,7 +2085,7 @@ public static class GeomConvert
 
                 for (i = 1; i <= nbUPoles; i += 2)
                 {
-                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    trsf = trsf.WithRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
                     for (j = 1; j <= nbVPoles; j++)
                     {
                         newPoles[i, j] = Poles[j].Transformed(trsf);
@@ -2095,19 +2093,18 @@ public static class GeomConvert
                     }
                 }
 
-                GeneralTransform3D aff = new();
-                aff.SetAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
+                GeneralTransform3D aff = new GeneralTransform3D().WithAffinity(revol.Axis(), 1 / Math.Cos(alfaU));
                 Xyz coord;
                 for (j = 1; j <= nbVPoles; j++)
                 {
                     coord = Poles[j].XYZ();
                     aff.Transforms(ref coord);
-                    Poles[j].SetXYZ(coord);
+                    Poles[j] = Poles[j].WithXYZ(coord);
                 }
 
                 for (i = 2; i <= nbUPoles; i += 2)
                 {
-                    trsf.SetRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
+                    trsf = trsf.WithRotation(revol.Axis(), uFirst + (i - 1) * alfaU);
                     for (j = 1; j <= nbVPoles; j++)
                     {
                         newPoles[i, j] = Poles[j].Transformed(trsf);

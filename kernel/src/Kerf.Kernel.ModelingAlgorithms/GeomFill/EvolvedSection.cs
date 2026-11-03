@@ -56,7 +56,7 @@ public class EvolvedSection : SurfaceSectionLaw
         poles.Assign(_curve.InternalPoles());
         for (ii = 1; ii <= l; ii++)
         {
-            poles[ii].ChangeCoord() *= val;
+            poles[ii] = new Point3D(poles[ii].XYZ() * val);
         }
         weights.Assign(_curve.InternalWeightsArray());
 
@@ -74,9 +74,9 @@ public class EvolvedSection : SurfaceSectionLaw
         weights.Assign(_curve.InternalWeightsArray());
         for (ii = 1; ii <= l; ii++)
         {
-            dPoles[ii].SetXYZ(poles[ii].XYZ());
+            dPoles[ii] = dPoles[ii].WithXYZ(poles[ii].XYZ());
             dPoles[ii] *= dval;
-            poles[ii].ChangeCoord() *= val;
+            poles[ii] = new Point3D(poles[ii].XYZ() * val);
         }
         dWeights.Init(0);
 
@@ -95,11 +95,11 @@ public class EvolvedSection : SurfaceSectionLaw
 
         for (ii = 1; ii <= l; ii++)
         {
-            dPoles[ii].SetXYZ(poles[ii].XYZ());
+            dPoles[ii] = dPoles[ii].WithXYZ(poles[ii].XYZ());
             d2Poles[ii] = dPoles[ii];
             d2Poles[ii] *= d2val;
             dPoles[ii] *= dval;
-            poles[ii].ChangeCoord() *= val;
+            poles[ii] = new Point3D(poles[ii].XYZ() * val);
         }
 
         dWeights.Init(0);
@@ -176,11 +176,11 @@ public class EvolvedSection : SurfaceSectionLaw
         Point3D bary = new Point3D();
 
         delta = (_curve.LastParameter() - u) / 20;
-        bary.SetCoord(0.0, 0.0, 0.0);
+        bary = bary.WithCoord(0.0, 0.0, 0.0);
         for (ii = 0; ii <= 20; ii++, u += delta)
         {
             p = _curve.Value(u);
-            bary.ChangeCoord() += p.XYZ();
+            bary = new Point3D(bary.XYZ() + p.XYZ());
         }
 
         u = _first;
@@ -189,7 +189,7 @@ public class EvolvedSection : SurfaceSectionLaw
         {
             b += _law.Value(u);
         }
-        bary.ChangeCoord() *= b / (21 * 21);
+        bary = new Point3D(bary.XYZ() * (b / (21 * 21)));
         return bary;
     }
 
@@ -236,7 +236,7 @@ public class EvolvedSection : SurfaceSectionLaw
         Transform3D t = new Transform3D();
         Point3D p = new Point3D(0, 0, 0);
         scale = _law.Value(_first) + _law.Value((_first + _last) / 2) + _law.Value(_last);
-        t.SetScale(p, scale / 3);
+        t = t.WithScale(p, scale / 3);
 
         Curve3D c;
         c = (Curve3D)_section.Copy();

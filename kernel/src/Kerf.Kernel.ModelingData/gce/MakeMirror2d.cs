@@ -14,16 +14,16 @@ public sealed class MakeMirror2d
     private Transform2D _theMirror2d = new();
 
     /// <summary>A central symmetry about a point.</summary>
-    public MakeMirror2d(in Point2D point) => _theMirror2d.SetMirror(point);
+    public MakeMirror2d(in Point2D point) => _theMirror2d = _theMirror2d.WithMirror(point);
 
     /// <summary>An axial symmetry about an axis.</summary>
-    public MakeMirror2d(in Axis2D axis) => _theMirror2d.SetMirror(axis);
+    public MakeMirror2d(in Axis2D axis) => _theMirror2d = _theMirror2d.WithMirror(axis);
 
     /// <summary>An axial symmetry about a line.</summary>
-    public MakeMirror2d(in Line2D line) => _theMirror2d.SetMirror(new Axis2D(line.Location(), line.Direction()));
+    public MakeMirror2d(in Line2D line) => _theMirror2d = _theMirror2d.WithMirror(new Axis2D(line.Location(), line.Direction()));
 
     /// <summary>An axial symmetry about the axis through a point with a direction.</summary>
-    public MakeMirror2d(in Point2D point, in Direction2D direc) => _theMirror2d.SetMirror(new Axis2D(point, direc));
+    public MakeMirror2d(in Point2D point, in Direction2D direc) => _theMirror2d = _theMirror2d.WithMirror(new Axis2D(point, direc));
 
     /// <summary>The constructed transformation.</summary>
     public Transform2D Value() => _theMirror2d;

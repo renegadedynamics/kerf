@@ -744,7 +744,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
         using (var aNSeq = theN.KnotSequence())
         {
             double[] aNS = aNSeq.ToArray();
-            ReadOnlySpan<double> aPS = theP.KnotSequence().AsSpan();
+            ReadOnlySpan<double> aPS = theP.KnotSequence().ToArray();
             Assert.Equal(aNS.Length, aPS.Length);
             for (int i = 0; i < aNS.Length; i++)
             {

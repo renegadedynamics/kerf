@@ -69,7 +69,7 @@ public sealed class SameParameter
             else if (derivativeRequest == 1)
             {
                 _hCurve2d.D1(eval_result[0], out point, out vector);
-                vector.Multiply(eval_result[1]);
+                vector = vector.Multiplied(eval_result[1]);
                 vector.Coord(out result[0], out result[1]);
             }
 

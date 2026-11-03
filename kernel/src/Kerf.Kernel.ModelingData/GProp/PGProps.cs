@@ -115,7 +115,7 @@ public class PGProps : Properties
             double newX = (_g.X() * _dim + x) / newMass;
             double newY = (_g.Y() * _dim + y) / newMass;
             double newZ = (_g.Z() * _dim + z) / newMass;
-            _g.SetCoord(newX, newY, newZ);
+            _g = _g.WithCoord(newX, newY, newZ);
             _dim = newMass;
             _inertia = _inertia + mp;
         }
@@ -150,7 +150,7 @@ public class PGProps : Properties
             double newX = (_g.X() * _dim + x * density) / newMass;
             double newY = (_g.Y() * _dim + y * density) / newMass;
             double newZ = (_g.Z() * _dim + z * density) / newMass;
-            _g.SetCoord(newX, newY, newZ);
+            _g = _g.WithCoord(newX, newY, newZ);
             _dim = newMass;
             _inertia = _inertia + mp * density;
         }

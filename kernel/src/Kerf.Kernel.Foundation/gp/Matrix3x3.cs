@@ -14,11 +14,25 @@ namespace Kerf.Geometry;
 /// <summary>A 3x3 matrix. Rows and columns are numbered from 1, as in OCCT.</summary>
 /// <remarks>OCCT's <c>double myMat[3][3]</c> is nine fields here; <c>myMat[i][j]</c> is <c>m{i}{j}</c>.</remarks>
 [StructLayout(LayoutKind.Sequential)]
-public struct Matrix3x3 : IEquatable<Matrix3x3>
+public readonly struct Matrix3x3 : IEquatable<Matrix3x3>
 {
-    internal double _m00, _m01, _m02;
-    internal double _m10, _m11, _m12;
-    internal double _m20, _m21, _m22;
+    internal readonly double _m00, _m01, _m02;
+    internal readonly double _m10, _m11, _m12;
+    internal readonly double _m20, _m21, _m22;
+
+    /// <summary>The fields, for the returning forms that take a whole value back (unit 10G).</summary>
+    private void Deconstruct(out double m00, out double m01, out double m02, out double m10, out double m11, out double m12, out double m20, out double m21, out double m22)
+    {
+        m00 = _m00;
+        m01 = _m01;
+        m02 = _m02;
+        m10 = _m10;
+        m11 = _m11;
+        m12 = _m12;
+        m20 = _m20;
+        m21 = _m21;
+        m22 = _m22;
+    }
 
     public Matrix3x3(double a11, double a12, double a13,
                   double a21, double a22, double a23,
@@ -52,78 +66,118 @@ public struct Matrix3x3 : IEquatable<Matrix3x3>
     /// <summary>The identity matrix.</summary>
     public static Matrix3x3 Identity() => new(1, 0, 0, 0, 1, 0, 0, 0, 1);
 
-    // Mutators (internal: see docs/translation-rules.md)
+    // Copies
 
-    internal void SetCol(int col, in Xyz value)
+    public readonly Matrix3x3 WithCol(int col, in Xyz value)
     {
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+
+        double m22 = _m22;
         Standard_OutOfRange_Raise_if(col < 1 || col > 3, " ");
         if (col == 1)
         {
-            _m00 = value.X();
-            _m10 = value.Y();
-            _m20 = value.Z();
+            m00 = value.X();
+            m10 = value.Y();
+            m20 = value.Z();
         }
         else if (col == 2)
         {
-            _m01 = value.X();
-            _m11 = value.Y();
-            _m21 = value.Z();
+            m01 = value.X();
+            m11 = value.Y();
+            m21 = value.Z();
         }
         else
         {
-            _m02 = value.X();
-            _m12 = value.Y();
-            _m22 = value.Z();
+            m02 = value.X();
+            m12 = value.Y();
+            m22 = value.Z();
         }
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    internal void SetCols(in Xyz col1, in Xyz col2, in Xyz col3) => this = new Matrix3x3(col1, col2, col3);
+    public readonly Matrix3x3 WithCols(in Xyz col1, in Xyz col2, in Xyz col3) => new(col1, col2, col3);
 
-    internal void SetCross(in Xyz theRef)
+    public readonly Matrix3x3 WithCross(in Xyz theRef)
     {
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
         double x = theRef.X();
         double y = theRef.Y();
         double z = theRef.Z();
-        _m00 = _m11 = _m22 = 0.0;
-        _m01 = -z;
-        _m02 = y;
-        _m12 = -x;
-        _m10 = z;
-        _m20 = -y;
-        _m21 = x;
+        m00 = m11 = m22 = 0.0;
+        m01 = -z;
+        m02 = y;
+        m12 = -x;
+        m10 = z;
+        m20 = -y;
+        m21 = x;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    internal void SetDiagonal(double x1, double x2, double x3)
+    public readonly Matrix3x3 WithDiagonal(double x1, double x2, double x3)
     {
-        _m00 = x1;
-        _m11 = x2;
-        _m22 = x3;
+        double m00 = _m00;
+        double m11 = _m11;
+        double m22 = _m22;
+        m00 = x1;
+        m11 = x2;
+        m22 = x3;
+        return new Matrix3x3(m00, _m01, _m02, _m10, m11, _m12, _m20, _m21, m22);
     }
 
-    internal void SetDot(in Xyz theRef)
+    public readonly Matrix3x3 WithDot(in Xyz theRef)
     {
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
         double x = theRef.X();
         double y = theRef.Y();
         double z = theRef.Z();
-        _m00 = x * x;
-        _m11 = y * y;
-        _m22 = z * z;
-        _m01 = x * y;
-        _m02 = x * z;
-        _m12 = y * z;
-        _m10 = _m01;
-        _m20 = _m02;
-        _m21 = _m12;
+        m00 = x * x;
+        m11 = y * y;
+        m22 = z * z;
+        m01 = x * y;
+        m02 = x * z;
+        m12 = y * z;
+        m10 = m01;
+        m20 = m02;
+        m21 = m12;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
-    internal void SetIdentity()
-    {
-        _m00 = _m11 = _m22 = 1.0;
-        _m01 = _m02 = _m10 = _m12 = _m20 = _m21 = 0.0;
-    }
+    public readonly Matrix3x3 WithIdentity() => Identity();
 
-    internal void SetRotation(in Xyz axis, double ang)
+    public readonly Matrix3x3 WithRotation(in Xyz axis, double ang)
     {
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
         Xyz v = axis.Normalized();
         double a = v.X();
         double b = v.Y();
@@ -137,303 +191,96 @@ public struct Matrix3x3 : IEquatable<Matrix3x3>
         double ab = a * b;
         double ac = a * c;
         double bc = b * c;
-        _m00 = 1.0 + omCos * (-(b2 + c2));
-        _m01 = omCos * ab - sin * c;
-        _m02 = omCos * ac + sin * b;
-        _m10 = omCos * ab + sin * c;
-        _m11 = 1.0 + omCos * (-(a2 + c2));
-        _m12 = omCos * bc - sin * a;
-        _m20 = omCos * ac - sin * b;
-        _m21 = omCos * bc + sin * a;
-        _m22 = 1.0 + omCos * (-(a2 + b2));
-    }
-
-    internal void SetRow(int row, in Xyz value)
-    {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3, " ");
-        if (row == 1)
-        {
-            _m00 = value.X();
-            _m01 = value.Y();
-            _m02 = value.Z();
-        }
-        else if (row == 2)
-        {
-            _m10 = value.X();
-            _m11 = value.Y();
-            _m12 = value.Z();
-        }
-        else
-        {
-            _m20 = value.X();
-            _m21 = value.Y();
-            _m22 = value.Z();
-        }
-    }
-
-    internal void SetRows(in Xyz row1, in Xyz row2, in Xyz row3)
-    {
-        _m00 = row1.X();
-        _m01 = row1.Y();
-        _m02 = row1.Z();
-        _m10 = row2.X();
-        _m11 = row2.Y();
-        _m12 = row2.Z();
-        _m20 = row3.X();
-        _m21 = row3.Y();
-        _m22 = row3.Z();
-    }
-
-    internal void SetScale(double s)
-    {
-        _m00 = _m11 = _m22 = s;
-        _m01 = _m02 = _m10 = _m12 = _m20 = _m21 = 0.0;
-    }
-
-    internal void SetValue(int row, int col, double value) => ChangeValue(row, col) = value;
-
-    [UnscopedRef]
-    internal ref double ChangeValue(int row, int col)
-    {
-        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 3, " ");
-        return ref Unsafe.Add(ref _m00, (row - 1) * 3 + (col - 1));
-    }
-
-    internal void Add(in Matrix3x3 other)
-    {
-        _m00 += other._m00;
-        _m01 += other._m01;
-        _m02 += other._m02;
-        _m10 += other._m10;
-        _m11 += other._m11;
-        _m12 += other._m12;
-        _m20 += other._m20;
-        _m21 += other._m21;
-        _m22 += other._m22;
-    }
-
-    internal void Divide(double scalar)
-    {
-        Standard_ConstructionError_Raise_if((scalar < 0.0 ? -scalar : scalar) <= Constants.Resolution(), "gp_Mat : Divide by 0");
-        double unSurScalar = 1.0 / scalar;
-        Multiply(unSurScalar);
-    }
-
-    internal void Invert()
-    {
-        double a00 = _m00, a01 = _m01, a02 = _m02;
-        double a10 = _m10, a11 = _m11, a12 = _m12;
-        double a20 = _m20, a21 = _m21, a22 = _m22;
-
-        double adj00 = a11 * a22 - a12 * a21;
-        double adj10 = a12 * a20 - a10 * a22;
-        double adj20 = a10 * a21 - a11 * a20;
-        double adj01 = a02 * a21 - a01 * a22;
-        double adj11 = a00 * a22 - a02 * a20;
-        double adj21 = a01 * a20 - a00 * a21;
-        double adj02 = a01 * a12 - a02 * a11;
-        double adj12 = a02 * a10 - a00 * a12;
-        double adj22 = a00 * a11 - a01 * a10;
-
-        double det = a00 * adj00 + a01 * adj10 + a02 * adj20;
-        Standard_ConstructionError_Raise_if(Math.Abs(det) <= Constants.Resolution(), "gp_Mat::Invert() - matrix has zero determinant");
-
-        double invDet = 1.0 / det;
-        _m00 = adj00 * invDet;
-        _m10 = adj10 * invDet;
-        _m20 = adj20 * invDet;
-        _m01 = adj01 * invDet;
-        _m11 = adj11 * invDet;
-        _m21 = adj21 * invDet;
-        _m02 = adj02 * invDet;
-        _m12 = adj12 * invDet;
-        _m22 = adj22 * invDet;
-    }
-
-    internal void Multiply(in Matrix3x3 other)
-    {
-        double t00 = _m00 * other._m00 + _m01 * other._m10 + _m02 * other._m20;
-        double t01 = _m00 * other._m01 + _m01 * other._m11 + _m02 * other._m21;
-        double t02 = _m00 * other._m02 + _m01 * other._m12 + _m02 * other._m22;
-        double t10 = _m10 * other._m00 + _m11 * other._m10 + _m12 * other._m20;
-        double t11 = _m10 * other._m01 + _m11 * other._m11 + _m12 * other._m21;
-        double t12 = _m10 * other._m02 + _m11 * other._m12 + _m12 * other._m22;
-        double t20 = _m20 * other._m00 + _m21 * other._m10 + _m22 * other._m20;
-        double t21 = _m20 * other._m01 + _m21 * other._m11 + _m22 * other._m21;
-        double t22 = _m20 * other._m02 + _m21 * other._m12 + _m22 * other._m22;
-        _m00 = t00;
-        _m01 = t01;
-        _m02 = t02;
-        _m10 = t10;
-        _m11 = t11;
-        _m12 = t12;
-        _m20 = t20;
-        _m21 = t21;
-        _m22 = t22;
-    }
-
-    internal void PreMultiply(in Matrix3x3 other)
-    {
-        double t00 = other._m00 * _m00 + other._m01 * _m10 + other._m02 * _m20;
-        double t01 = other._m00 * _m01 + other._m01 * _m11 + other._m02 * _m21;
-        double t02 = other._m00 * _m02 + other._m01 * _m12 + other._m02 * _m22;
-        double t10 = other._m10 * _m00 + other._m11 * _m10 + other._m12 * _m20;
-        double t11 = other._m10 * _m01 + other._m11 * _m11 + other._m12 * _m21;
-        double t12 = other._m10 * _m02 + other._m11 * _m12 + other._m12 * _m22;
-        double t20 = other._m20 * _m00 + other._m21 * _m10 + other._m22 * _m20;
-        double t21 = other._m20 * _m01 + other._m21 * _m11 + other._m22 * _m21;
-        double t22 = other._m20 * _m02 + other._m21 * _m12 + other._m22 * _m22;
-        _m00 = t00;
-        _m01 = t01;
-        _m02 = t02;
-        _m10 = t10;
-        _m11 = t11;
-        _m12 = t12;
-        _m20 = t20;
-        _m21 = t21;
-        _m22 = t22;
-    }
-
-    internal void Multiply(double scalar)
-    {
-        _m00 *= scalar;
-        _m01 *= scalar;
-        _m02 *= scalar;
-        _m10 *= scalar;
-        _m11 *= scalar;
-        _m12 *= scalar;
-        _m20 *= scalar;
-        _m21 *= scalar;
-        _m22 *= scalar;
-    }
-
-    internal void Power(int n)
-    {
-        if (n == 0)
-        {
-            SetIdentity();
-            return;
-        }
-
-        if (n == 1)
-        {
-            return;
-        }
-
-        if (n == -1)
-        {
-            Invert();
-            return;
-        }
-
-        bool isNegative = n < 0;
-        if (isNegative)
-        {
-            Invert();
-        }
-
-        int power = isNegative ? -n : n;
-        Matrix3x3 aBase = this;
-        SetIdentity();
-        while (power > 0)
-        {
-            if ((power & 1) != 0)
-            {
-                Multiply(aBase);
-            }
-
-            aBase.Multiply(aBase);
-            power >>= 1;
-        }
-    }
-
-    internal void Subtract(in Matrix3x3 other)
-    {
-        _m00 -= other._m00;
-        _m01 -= other._m01;
-        _m02 -= other._m02;
-        _m10 -= other._m10;
-        _m11 -= other._m11;
-        _m12 -= other._m12;
-        _m20 -= other._m20;
-        _m21 -= other._m21;
-        _m22 -= other._m22;
-    }
-
-    internal void Transpose()
-    {
-        (_m01, _m10) = (_m10, _m01);
-        (_m02, _m20) = (_m20, _m02);
-        (_m12, _m21) = (_m21, _m12);
-    }
-
-    // Copies with a mutator applied
-
-    public readonly Matrix3x3 WithCol(int col, in Xyz value)
-    {
-        Matrix3x3 copy = this;
-        copy.SetCol(col, value);
-        return copy;
-    }
-
-    public readonly Matrix3x3 WithCols(in Xyz col1, in Xyz col2, in Xyz col3) => new(col1, col2, col3);
-
-    public readonly Matrix3x3 WithCross(in Xyz theRef)
-    {
-        Matrix3x3 copy = this;
-        copy.SetCross(theRef);
-        return copy;
-    }
-
-    public readonly Matrix3x3 WithDiagonal(double x1, double x2, double x3)
-    {
-        Matrix3x3 copy = this;
-        copy.SetDiagonal(x1, x2, x3);
-        return copy;
-    }
-
-    public readonly Matrix3x3 WithDot(in Xyz theRef)
-    {
-        Matrix3x3 copy = this;
-        copy.SetDot(theRef);
-        return copy;
-    }
-
-    public readonly Matrix3x3 WithIdentity() => Identity();
-
-    public readonly Matrix3x3 WithRotation(in Xyz axis, double ang)
-    {
-        Matrix3x3 copy = this;
-        copy.SetRotation(axis, ang);
-        return copy;
+        m00 = 1.0 + omCos * (-(b2 + c2));
+        m01 = omCos * ab - sin * c;
+        m02 = omCos * ac + sin * b;
+        m10 = omCos * ab + sin * c;
+        m11 = 1.0 + omCos * (-(a2 + c2));
+        m12 = omCos * bc - sin * a;
+        m20 = omCos * ac - sin * b;
+        m21 = omCos * bc + sin * a;
+        m22 = 1.0 + omCos * (-(a2 + b2));
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 WithRow(int row, in Xyz value)
     {
-        Matrix3x3 copy = this;
-        copy.SetRow(row, value);
-        return copy;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        Standard_OutOfRange_Raise_if(row < 1 || row > 3, " ");
+        if (row == 1)
+        {
+            m00 = value.X();
+            m01 = value.Y();
+            m02 = value.Z();
+        }
+        else if (row == 2)
+        {
+            m10 = value.X();
+            m11 = value.Y();
+            m12 = value.Z();
+        }
+        else
+        {
+            m20 = value.X();
+            m21 = value.Y();
+            m22 = value.Z();
+        }
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 WithRows(in Xyz row1, in Xyz row2, in Xyz row3)
     {
-        Matrix3x3 copy = this;
-        copy.SetRows(row1, row2, row3);
-        return copy;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        m00 = row1.X();
+        m01 = row1.Y();
+        m02 = row1.Z();
+        m10 = row2.X();
+        m11 = row2.Y();
+        m12 = row2.Z();
+        m20 = row3.X();
+        m21 = row3.Y();
+        m22 = row3.Z();
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 WithScale(double s)
     {
-        Matrix3x3 copy = this;
-        copy.SetScale(s);
-        return copy;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        m00 = m11 = m22 = s;
+        m01 = m02 = m10 = m12 = m20 = m21 = 0.0;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 WithValue(int row, int col, double value)
     {
-        Matrix3x3 copy = this;
-        copy.SetValue(row, col, value);
-        return copy;
+        Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 3, " ");
+        Span<double> m = [_m00, _m01, _m02, _m10, _m11, _m12, _m20, _m21, _m22];
+        m[(row - 1) * 3 + (col - 1)] = value;
+        return new Matrix3x3(m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8]);
     }
 
     // Queries
@@ -497,58 +344,233 @@ public struct Matrix3x3 : IEquatable<Matrix3x3>
 
     public readonly Matrix3x3 Added(in Matrix3x3 other)
     {
-        Matrix3x3 newMat = this;
-        newMat.Add(other);
-        return newMat;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        m00 += other._m00;
+        m01 += other._m01;
+        m02 += other._m02;
+        m10 += other._m10;
+        m11 += other._m11;
+        m12 += other._m12;
+        m20 += other._m20;
+        m21 += other._m21;
+        m22 += other._m22;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 Divided(double scalar)
     {
-        Matrix3x3 newMat = this;
-        newMat.Divide(scalar);
-        return newMat;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        Standard_ConstructionError_Raise_if((scalar < 0.0 ? -scalar : scalar) <= Constants.Resolution(), "gp_Mat : Divide by 0");
+        double unSurScalar = 1.0 / scalar;
+        (m00, m01, m02, m10, m11, m12, m20, m21, m22) = new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22).Multiplied(unSurScalar);
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 Inverted()
     {
-        Matrix3x3 newMat = this;
-        newMat.Invert();
-        return newMat;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        double a00 = m00, a01 = m01, a02 = m02;
+        double a10 = m10, a11 = m11, a12 = m12;
+        double a20 = m20, a21 = m21, a22 = m22;
+
+        double adj00 = a11 * a22 - a12 * a21;
+        double adj10 = a12 * a20 - a10 * a22;
+        double adj20 = a10 * a21 - a11 * a20;
+        double adj01 = a02 * a21 - a01 * a22;
+        double adj11 = a00 * a22 - a02 * a20;
+        double adj21 = a01 * a20 - a00 * a21;
+        double adj02 = a01 * a12 - a02 * a11;
+        double adj12 = a02 * a10 - a00 * a12;
+        double adj22 = a00 * a11 - a01 * a10;
+
+        double det = a00 * adj00 + a01 * adj10 + a02 * adj20;
+        Standard_ConstructionError_Raise_if(Math.Abs(det) <= Constants.Resolution(), "gp_Mat::Invert() - matrix has zero determinant");
+
+        double invDet = 1.0 / det;
+        m00 = adj00 * invDet;
+        m10 = adj10 * invDet;
+        m20 = adj20 * invDet;
+        m01 = adj01 * invDet;
+        m11 = adj11 * invDet;
+        m21 = adj21 * invDet;
+        m02 = adj02 * invDet;
+        m12 = adj12 * invDet;
+        m22 = adj22 * invDet;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 Multiplied(in Matrix3x3 other)
     {
-        Matrix3x3 newMat = this;
-        newMat.Multiply(other);
-        return newMat;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        double t00 = m00 * other._m00 + m01 * other._m10 + m02 * other._m20;
+        double t01 = m00 * other._m01 + m01 * other._m11 + m02 * other._m21;
+        double t02 = m00 * other._m02 + m01 * other._m12 + m02 * other._m22;
+        double t10 = m10 * other._m00 + m11 * other._m10 + m12 * other._m20;
+        double t11 = m10 * other._m01 + m11 * other._m11 + m12 * other._m21;
+        double t12 = m10 * other._m02 + m11 * other._m12 + m12 * other._m22;
+        double t20 = m20 * other._m00 + m21 * other._m10 + m22 * other._m20;
+        double t21 = m20 * other._m01 + m21 * other._m11 + m22 * other._m21;
+        double t22 = m20 * other._m02 + m21 * other._m12 + m22 * other._m22;
+        m00 = t00;
+        m01 = t01;
+        m02 = t02;
+        m10 = t10;
+        m11 = t11;
+        m12 = t12;
+        m20 = t20;
+        m21 = t21;
+        m22 = t22;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+    }
+
+    public readonly Matrix3x3 PreMultiplied(in Matrix3x3 other)
+    {
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        double t00 = other._m00 * m00 + other._m01 * m10 + other._m02 * m20;
+        double t01 = other._m00 * m01 + other._m01 * m11 + other._m02 * m21;
+        double t02 = other._m00 * m02 + other._m01 * m12 + other._m02 * m22;
+        double t10 = other._m10 * m00 + other._m11 * m10 + other._m12 * m20;
+        double t11 = other._m10 * m01 + other._m11 * m11 + other._m12 * m21;
+        double t12 = other._m10 * m02 + other._m11 * m12 + other._m12 * m22;
+        double t20 = other._m20 * m00 + other._m21 * m10 + other._m22 * m20;
+        double t21 = other._m20 * m01 + other._m21 * m11 + other._m22 * m21;
+        double t22 = other._m20 * m02 + other._m21 * m12 + other._m22 * m22;
+        m00 = t00;
+        m01 = t01;
+        m02 = t02;
+        m10 = t10;
+        m11 = t11;
+        m12 = t12;
+        m20 = t20;
+        m21 = t21;
+        m22 = t22;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 Multiplied(double scalar)
     {
-        Matrix3x3 newMat = this;
-        newMat.Multiply(scalar);
-        return newMat;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        m00 *= scalar;
+        m01 *= scalar;
+        m02 *= scalar;
+        m10 *= scalar;
+        m11 *= scalar;
+        m12 *= scalar;
+        m20 *= scalar;
+        m21 *= scalar;
+        m22 *= scalar;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 Powered(int n)
     {
-        Matrix3x3 matN = this;
-        matN.Power(n);
-        return matN;
+        if (n == 0)
+        {
+            return Identity();
+        }
+
+        if (n == 1)
+        {
+            return this;
+        }
+
+        if (n == -1)
+        {
+            return Inverted();
+        }
+
+        bool isNegative = n < 0;
+        Matrix3x3 aBase = isNegative ? Inverted() : this;
+        int power = isNegative ? -n : n;
+        Matrix3x3 result = Identity();
+        while (power > 0)
+        {
+            if ((power & 1) != 0)
+            {
+                result = result.Multiplied(aBase);
+            }
+
+            aBase = aBase.Multiplied(aBase);
+            power >>= 1;
+        }
+
+        return result;
     }
 
     public readonly Matrix3x3 Subtracted(in Matrix3x3 other)
     {
-        Matrix3x3 newMat = this;
-        newMat.Subtract(other);
-        return newMat;
+        double m00 = _m00;
+        double m01 = _m01;
+        double m02 = _m02;
+        double m10 = _m10;
+        double m11 = _m11;
+        double m12 = _m12;
+        double m20 = _m20;
+        double m21 = _m21;
+        double m22 = _m22;
+        m00 -= other._m00;
+        m01 -= other._m01;
+        m02 -= other._m02;
+        m10 -= other._m10;
+        m11 -= other._m11;
+        m12 -= other._m12;
+        m20 -= other._m20;
+        m21 -= other._m21;
+        m22 -= other._m22;
+        return new Matrix3x3(m00, m01, m02, m10, m11, m12, m20, m21, m22);
     }
 
     public readonly Matrix3x3 Transposed()
     {
-        Matrix3x3 newMat = this;
-        newMat.Transpose();
-        return newMat;
+        return new Matrix3x3(_m00, _m10, _m20, _m01, _m11, _m21, _m02, _m12, _m22);
     }
 
     /// <summary>The nine elements, row by row.</summary>

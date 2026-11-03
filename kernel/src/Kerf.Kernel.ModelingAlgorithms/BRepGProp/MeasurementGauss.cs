@@ -454,16 +454,16 @@ public sealed class MeasurementGauss
         if (Math.Abs(inertia.Mass) >= EPS_DIM)
         {
             double invMass = 1.0 / inertia.Mass;
-            outGravityCenter.SetX(inertia.Ix * invMass);
-            outGravityCenter.SetY(inertia.Iy * invMass);
-            outGravityCenter.SetZ(inertia.Iz * invMass);
+            outGravityCenter = outGravityCenter.WithX(inertia.Ix * invMass);
+            outGravityCenter = outGravityCenter.WithY(inertia.Iy * invMass);
+            outGravityCenter = outGravityCenter.WithZ(inertia.Iz * invMass);
 
             outMass = inertia.Mass;
         }
         else
         {
             outMass = 0.0;
-            outGravityCenter.SetCoord(0.0, 0.0, 0.0);
+            outGravityCenter = outGravityCenter.WithCoord(0.0, 0.0, 0.0);
         }
 
         outMatrixOfInertia = new Matrix3x3(new Xyz(inertia.Ixx, -inertia.Ixy, -inertia.Ixz),
@@ -484,15 +484,15 @@ public sealed class MeasurementGauss
             double invMass = 1.0 / inertia.Mass;
             if (isByPoint)
             {
-                outGravityCenter.SetX(coeff[0] + inertia.Ix * invMass);
-                outGravityCenter.SetY(coeff[1] + inertia.Iy * invMass);
-                outGravityCenter.SetZ(coeff[2] + inertia.Iz * invMass);
+                outGravityCenter = outGravityCenter.WithX(coeff[0] + inertia.Ix * invMass);
+                outGravityCenter = outGravityCenter.WithY(coeff[1] + inertia.Iy * invMass);
+                outGravityCenter = outGravityCenter.WithZ(coeff[2] + inertia.Iz * invMass);
             }
             else
             {
-                outGravityCenter.SetX(inertia.Ix * invMass);
-                outGravityCenter.SetY(inertia.Iy * invMass);
-                outGravityCenter.SetZ(inertia.Iz * invMass);
+                outGravityCenter = outGravityCenter.WithX(inertia.Ix * invMass);
+                outGravityCenter = outGravityCenter.WithY(inertia.Iy * invMass);
+                outGravityCenter = outGravityCenter.WithZ(inertia.Iz * invMass);
             }
 
             outMass = inertia.Mass;
@@ -501,7 +501,7 @@ public sealed class MeasurementGauss
         {
             // OCCT: a region bounded by a plane always gets a null mass and centre here (occt-issues.md)
             outMass = 0.0;
-            outGravityCenter.SetCoord(0.0, 0.0, 0.0);
+            outGravityCenter = outGravityCenter.WithCoord(0.0, 0.0, 0.0);
         }
 
         outMatrixOfInertia = new Matrix3x3(new Xyz(inertia.Ixx, inertia.Ixy, inertia.Ixz),

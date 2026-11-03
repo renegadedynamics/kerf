@@ -168,7 +168,7 @@ public class ChamfInv : GenChamfInv
         }
 
         // derivees par rapport a T
-        temp.SetLinearForm(v2d.X(), d1u, v2d.Y(), d1v);
+        temp = Vector3D.LinearForm(v2d.X(), d1u, v2d.Y(), d1v);
         if (_first)
         {
             d[1, 1] = nplan.Dot(temp);

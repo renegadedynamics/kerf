@@ -608,8 +608,8 @@ public class ComputeApprox
                     Transform3D trsf = new();
                     //
                     Circle3D circle = myCurve.Circle();
-                    trsf.SetTransformation(sp.Position());
-                    circle.Transform(trsf);
+                    trsf = trsf.WithTransformation(sp.Position());
+                    circle = circle.Transformed(trsf);
                     //
                     r = sp.Radius();
                     Plane3D plane = new(new CoordinateSystem(circle.Position()));

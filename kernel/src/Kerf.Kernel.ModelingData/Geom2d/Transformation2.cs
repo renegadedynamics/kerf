@@ -80,7 +80,7 @@ public class Transformation2 : Transient
     public Transformation2 Powered(int n)
     {
         Transform2D temp = _gpTrsf2d;
-        temp.Power(n);
+        temp = temp.Powered(n);
         return new Transformation2(temp);
     }
 
@@ -97,49 +97,49 @@ public class Transformation2 : Transient
     internal void SetMirror(in Point2D p)
     {
         CheckMutable();
-        _gpTrsf2d.SetMirror(p);
+        _gpTrsf2d = _gpTrsf2d.WithMirror(p);
     }
 
     internal void SetMirror(in Axis2D a)
     {
         CheckMutable();
-        _gpTrsf2d.SetMirror(a);
+        _gpTrsf2d = _gpTrsf2d.WithMirror(a);
     }
 
     internal void SetRotation(in Point2D p, double ang)
     {
         CheckMutable();
-        _gpTrsf2d.SetRotation(p, ang);
+        _gpTrsf2d = _gpTrsf2d.WithRotation(p, ang);
     }
 
     internal void SetScale(in Point2D p, double s)
     {
         CheckMutable();
-        _gpTrsf2d.SetScale(p, s);
+        _gpTrsf2d = _gpTrsf2d.WithScale(p, s);
     }
 
     internal void SetTransformation(in Axis2D toAxis)
     {
         CheckMutable();
-        _gpTrsf2d.SetTransformation(toAxis);
+        _gpTrsf2d = _gpTrsf2d.WithTransformation(toAxis);
     }
 
     internal void SetTransformation(in Axis2D fromAxis1, in Axis2D toAxis2)
     {
         CheckMutable();
-        _gpTrsf2d.SetTransformation(fromAxis1, toAxis2);
+        _gpTrsf2d = _gpTrsf2d.WithTransformation(fromAxis1, toAxis2);
     }
 
     internal void SetTranslation(in Vector2D v)
     {
         CheckMutable();
-        _gpTrsf2d.SetTranslation(v);
+        _gpTrsf2d = _gpTrsf2d.WithTranslation(v);
     }
 
     internal void SetTranslation(in Point2D p1, in Point2D p2)
     {
         CheckMutable();
-        _gpTrsf2d.SetTranslation(p1, p2);
+        _gpTrsf2d = _gpTrsf2d.WithTranslation(p1, p2);
     }
 
     internal void SetTrsf2d(in Transform2D t)
@@ -151,25 +151,25 @@ public class Transformation2 : Transient
     internal void Invert()
     {
         CheckMutable();
-        _gpTrsf2d.Invert();
+        _gpTrsf2d = _gpTrsf2d.Inverted();
     }
 
     internal void Multiply(Transformation2 other)
     {
         CheckMutable();
-        _gpTrsf2d.Multiply(other.Trsf2d());
+        _gpTrsf2d = _gpTrsf2d.Multiplied(other.Trsf2d());
     }
 
     internal void Power(int n)
     {
         CheckMutable();
-        _gpTrsf2d.Power(n);
+        _gpTrsf2d = _gpTrsf2d.Powered(n);
     }
 
     internal void PreMultiply(Transformation2 other)
     {
         CheckMutable();
-        _gpTrsf2d.PreMultiply(other.Trsf2d());
+        _gpTrsf2d = _gpTrsf2d.PreMultiplied(other.Trsf2d());
     }
 
     // Queries

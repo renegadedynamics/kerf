@@ -469,7 +469,7 @@ public static class OffsetTool
         Vector3D t1 = c.DN(parOnC, 1).Transformed(L.Transformation());
         if (t1.SquareMagnitude() > Constants.Resolution())
         {
-            t1.Normalize();
+            t1 = t1.Normalized();
         }
 
         Point2D p = c1.Value(parOnC);
@@ -478,7 +478,7 @@ public static class OffsetTool
         Vector3D dn1 = d1U ^ d1V;
         if (f1.Orientation() == Reversed)
         {
-            dn1.Reverse();
+            dn1 = dn1.Reversed();
         }
 
         p = c2.Value(parOnC);
@@ -486,7 +486,7 @@ public static class OffsetTool
         Vector3D dn2 = d1U ^ d1V;
         if (f2.Orientation() == Reversed)
         {
-            dn2.Reverse();
+            dn2 = dn2.Reversed();
         }
 
         Vector3D proVec = dn2 ^ t1;
@@ -2330,8 +2330,8 @@ public static class OffsetTool
                             u2 = (u2on1 + u2on2) / 2.0;
                             Point2D p2d1 = c1!.Value(u1);
                             Point2D p2d2 = c2!.Value(u2);
-                            p2d.SetX((p2d1.X() + p2d2.X()) / 2.0);
-                            p2d.SetY((p2d1.Y() + p2d2.Y()) / 2.0);
+                            p2d = p2d.WithX((p2d1.X() + p2d2.X()) / 2.0);
+                            p2d = p2d.WithY((p2d1.Y() + p2d2.Y()) / 2.0);
                         }
                     }
                     if (currentFind)
@@ -4378,13 +4378,13 @@ public static class OffsetTool
         Direction3D dn1 = bas1.Plane().Position().Direction();
         if (face1.Orientation() == Reversed)
         {
-            dn1.Reverse();
+            dn1 = dn1.Reversed();
         }
         //
         Direction3D dn2 = bas2.Plane().Position().Direction();
         if (face2.Orientation() == Reversed)
         {
-            dn2.Reverse();
+            dn2 = dn2.Reversed();
         }
         //
         double angle = dn1.Angle(dn2);

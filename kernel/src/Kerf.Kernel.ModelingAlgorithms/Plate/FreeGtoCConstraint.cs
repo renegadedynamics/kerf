@@ -87,7 +87,7 @@ public class FreeGtoCConstraint
             Direction3D dir = new Direction3D(d1);
             Transform3D rota = new();
             Axis3D  axe = new(new Point3D(0, 0, 0), dir);
-            rota.SetRotation(axe, angle * (incrementalLoad - 1.0));
+            rota = rota.WithRotation(axe, angle * (incrementalLoad - 1.0));
             //      gp_Trsf rota = gce_MakeRotation(new gp_Pnt(0,0,0), dir, angle*(IncrementalLoad-1.0));
             rota.Transforms(ref normale);
         }
@@ -163,7 +163,7 @@ public class FreeGtoCConstraint
             Direction3D dir = new Direction3D(d1);
             Transform3D rota = new();
             Axis3D  axe = new(new Point3D(0, 0, 0), dir);
-            rota.SetRotation(axe, angle * (incrementalLoad - 1.0));
+            rota = rota.WithRotation(axe, angle * (incrementalLoad - 1.0));
             //      gp_Trsf rota = gce_MakeRotation(new gp_Pnt(0,0,0), dir, angle*(IncrementalLoad-1.0));
             rota.Transforms(ref normale);
             rota.Transforms(ref d1T._du);
@@ -305,7 +305,7 @@ public class FreeGtoCConstraint
             Direction3D dir = new Direction3D(d1);
             Transform3D rota = new();
             Axis3D  axe = new(new Point3D(0, 0, 0), dir);
-            rota.SetRotation(axe, angle * (incrementalLoad - 1.0));
+            rota = rota.WithRotation(axe, angle * (incrementalLoad - 1.0));
             //      gp_Trsf rota = gce_MakeRotation(new gp_Pnt(0,0,0), dir, angle*(IncrementalLoad-1.0));
             rota.Transforms(ref normale);
             rota.Transforms(ref d1T._du);

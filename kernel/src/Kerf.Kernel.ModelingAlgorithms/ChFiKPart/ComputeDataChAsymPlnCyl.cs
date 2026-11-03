@@ -49,11 +49,11 @@ internal static class ComputeDataChAsymPlnCyl
         Direction3D norf = dpl;
         if (ofpl == Reversed)
         {
-            norf.Reverse();
+            norf = norf.Reversed();
         }
         if (or1 == Reversed)
         {
-            dpl.Reverse();
+            dpl = dpl.Reversed();
         }
         // compute the origin Or of the cone
         Point3D or = cyl.Location();
@@ -73,7 +73,7 @@ internal static class ComputeDataChAsymPlnCyl
         Direction3D dcyl = new(vu.Crossed(vv)); // normal to the cylinder in PtSp
         if (or2 == Reversed)
         {
-            dcyl.Reverse();
+            dcyl = dcyl.Reversed();
         }
         bool dedans = (dcyl.Dot(dx) <= 0.0);
         bool pointu = false;
@@ -94,7 +94,7 @@ internal static class ComputeDataChAsymPlnCyl
             sinNPCyl = Math.Sqrt(1.0 - cosNPCyl * cosNPCyl);
             dis1 = dis / (sinNPCyl / Math.Tan(angle) - cosNPCyl);
         }
-        or.SetCoord(or.X() + dis2 * dpl.X(), or.Y() + dis2 * dpl.Y(), or.Z() + dis2 * dpl.Z());
+        or = or.WithCoord(or.X() + dis2 * dpl.X(), or.Y() + dis2 * dpl.Y(), or.Z() + dis2 * dpl.Z());
         // variables used to compute the semiangle of the cone
         Direction3D vec1 = new(or.X() - ptPl.X(), or.Y() - ptPl.Y(), or.Z() - ptPl.Z());
         Point3D pt = new(or.X() + dis1 * posPl.XDirection().X(), or.Y() + dis1 * posPl.XDirection().Y(),
@@ -136,7 +136,7 @@ internal static class ComputeDataChAsymPlnCyl
         // parametrization
         if (conAx3.YDirection().Dot(new Direction3D(dSp)) <= 0.0)
         {
-            conAx3.YReverse();
+            conAx3 = conAx3.YReversed();
             gcon.SetPosition(conAx3);
         }
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gcon, dStr));
@@ -162,7 +162,7 @@ internal static class ComputeDataChAsymPlnCyl
         CircleCurve2D? gCir2dPln = null;
         CircleCurve3D? gCirPln = null;
         Frame3D cirAx2 = conAx3.Ax2();
-        cirAx2.SetLocation(ptPl);
+        cirAx2 = cirAx2.WithLocation(ptPl);
         if (!pointu)
         {
             // intersection plane-chamfer
@@ -186,7 +186,7 @@ internal static class ComputeDataChAsymPlnCyl
         {
             v = Math.Sqrt(dis1 * dis1 + dis2 * dis2);
         }
-        p2dch.SetCoord(0.0, v);
+        p2dch = p2dch.WithCoord(0.0, v);
         global::Kerf.Engine.Geometry.ElSLib.ConeD1(0.0, v, conAx3, conRad, semiAngl, out pt, out deru, out derv);
         Line2D lin2dch = new(p2dch, Constants.DX2d());
         LineCurve2D gLin2dCh1 = new(lin2dch);
@@ -214,17 +214,17 @@ internal static class ComputeDataChAsymPlnCyl
         }
         // Case of the cylindrical face
         // intersection cylinder-chamfer
-        cirAx2.SetLocation(or);
+        cirAx2 = cirAx2.WithLocation(or);
         Circle3D cirCyl = new(cirAx2, conRad);
         CircleCurve3D gCirCyl = new(cirCyl);
         // pcurve on the chamfer
-        p2dch.SetCoord(0.0, 0.0);
+        p2dch = p2dch.WithCoord(0.0, 0.0);
         global::Kerf.Engine.Geometry.ElSLib.ConeD1(0.0, 0.0, conAx3, conRad, semiAngl, out pt, out deru, out derv);
-        lin2dch.SetLocation(p2dch);
+        lin2dch = lin2dch.WithLocation(p2dch);
         LineCurve2D gLin2dCh2 = new(lin2dch);
         // pcurve on the cylinder
-        norCon.SetXYZ(deru.Crossed(derv).XYZ());
-        pt.SetCoord(or.X() + conRad * dx.X(), or.Y() + conRad * dx.Y(), or.Z() + conRad * dx.Z());
+        norCon = norCon.WithXYZ(deru.Crossed(derv).XYZ());
+        pt = pt.WithCoord(or.X() + conRad * dx.X(), or.Y() + conRad * dx.Y(), or.Z() + conRad * dx.Z());
         global::Kerf.Engine.Geometry.ElSLib.Parameters(cyl, pt, out u, out v);
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
         bool careaboutsens = false;
@@ -249,7 +249,7 @@ internal static class ComputeDataChAsymPlnCyl
         Direction2D d2dCyl = Constants.DX2d();
         if (deru.Dot(new Vector3D(dy)) < 0.0)
         {
-            d2dCyl.Reverse();
+            d2dCyl = d2dCyl.Reversed();
             if (careaboutsens && Math.Abs(fu - u) < tol)
             {
                 u = lu;
@@ -309,7 +309,7 @@ internal static class ComputeDataChAsymPlnCyl
         Direction3D norF = norPln;
         if (or1 == Reversed)
         {
-            norF.Reverse();
+            norF = norF.Reversed();
         }
         CoordinateSystem axCyl = cyl.Position();
         // OrCyl is the point on axis of cylinder in the plane normal to the
@@ -320,18 +320,18 @@ internal static class ComputeDataChAsymPlnCyl
         // OCCT: gp_XYZ::Multiplied(gp_XYZ) multiplies coordinate by coordinate (it is not the dot product), so OrCyl
         // is the projection on the axis only when the axis is parallel to a coordinate axis (occt-issues 7N1).
         temp = temp.Multiplied(locSp.XYZ().Multiplied(temp));
-        orCyl.SetXYZ((loc.XYZ()).Added(temp));
+        orCyl = orCyl.WithXYZ((loc.XYZ()).Added(temp));
         // construction of POnPln
         Vector3D vecTranslPln, tmp;
         tmp = new Vector3D(orSpine, orCyl);
         if ((or2 == Forward && cyl.Direct()) || (or2 == Reversed && !cyl.Direct()))
         {
-            tmp.Reverse();
+            tmp = tmp.Reversed();
         }
         vecTranslPln = new Vector3D(xDir.Crossed(norPln));
         if (vecTranslPln.Dot(tmp) <= 0.0)
         {
-            vecTranslPln.Reverse();
+            vecTranslPln = vecTranslPln.Reversed();
         }
         Vector3D vecTranslCyl;
         vecTranslCyl = new Vector3D(orSpine, orCyl);
@@ -378,13 +378,13 @@ internal static class ComputeDataChAsymPlnCyl
         Vector3D vecTemp = vecTranslCyl.Reversed();
         if ((xDir.Crossed(new Direction3D(vecTranslCyl))).Dot(norF) < 0.0)
         {
-            vecTemp.Rotate(new Axis3D(orCyl, xDir), alpha);
+            vecTemp = vecTemp.Rotated(new Axis3D(orCyl, xDir), alpha);
         }
         else
         {
-            vecTemp.Rotate(new Axis3D(orCyl, xDir.Reversed()), alpha);
+            vecTemp = vecTemp.Rotated(new Axis3D(orCyl, xDir.Reversed()), alpha);
         }
-        pOnCyl.SetXYZ(orCyl.XYZ().Added(vecTemp.XYZ()));
+        pOnCyl = pOnCyl.WithXYZ(orCyl.XYZ().Added(vecTemp.XYZ()));
         double uOnCyl, vOnCyl, uOnPln, vOnPln;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(cyl, pOnCyl, out uOnCyl, out vOnCyl);
         global::Kerf.Engine.Geometry.ElSLib.CylinderD1(uOnCyl, vOnCyl, axCyl, cyl.Radius(), out pOnCyl, out Vector3D duOnCyl, out Vector3D dvOnCyl);
@@ -394,8 +394,8 @@ internal static class ComputeDataChAsymPlnCyl
             Vector3D corde = new(pOnCyl, orSpine);
             Vector3D tCyl = duOnCyl.Crossed(dvOnCyl);
             tCyl = new Vector3D(xDir.Crossed(new Direction3D(tCyl)));
-            tCyl.Normalize();
-            corde.Normalize();
+            tCyl = tCyl.Normalized();
+            corde = corde.Normalized();
             double cosCorTan = tCyl.Dot(corde);
             double tgCorTan = 1.0 / (cosCorTan * cosCorTan);
             tgCorTan = Math.Sqrt(tgCorTan - 1.0);
@@ -411,8 +411,8 @@ internal static class ComputeDataChAsymPlnCyl
             dis1 -= (cosA1 - sinA1 * tgAng) * sinA11;
             dis1 = (dis2 * tgAng) / dis1;
         }
-        vecTranslPln.Multiply(dis1);
-        pOnPln.SetXYZ((orSpine.XYZ()).Added(vecTranslPln.XYZ()));
+        vecTranslPln = vecTranslPln.Multiplied(dis1);
+        pOnPln = pOnPln.WithXYZ((orSpine.XYZ()).Added(vecTranslPln.XYZ()));
         // construction of the chamfer
         global::Kerf.Engine.Geometry.ElSLib.Parameters(pln, pOnPln, out uOnPln, out vOnPln);
         pOnPln = global::Kerf.Engine.Geometry.ElSLib.PlaneValue(uOnPln, vOnPln, axPln);
@@ -420,7 +420,7 @@ internal static class ComputeDataChAsymPlnCyl
         Vector3D yDir = new(pOnPln, pOnCyl);
         if (!plandab)
         {
-            yDir.Reverse();
+            yDir = yDir.Reversed();
         }
         CoordinateSystem axCh = new(pOnPln, xDir.Crossed(new Direction3D(yDir)), xDir);
         PlaneSurface chamfer = new(axCh);
@@ -475,7 +475,7 @@ internal static class ComputeDataChAsymPlnCyl
         Direction2D vCyl2d = Constants.DY2d();
         if (xDir.Dot(axCyl.Direction()) < 0)
         {
-            vCyl2d.Reverse();
+            vCyl2d = vCyl2d.Reversed();
         }
         Line2D lin2dCyl = new(pCyl2d, vCyl2d);
         pOnCyl = global::Kerf.Engine.Geometry.ElSLib.Value(uOnCyl, vOnCyl, cyl);

@@ -151,7 +151,7 @@ public class ParabolaCurve3D : ConicCurve3D
     {
         CheckMutable();
         _focalLength *= Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     /// <summary>U * |T.ScaleFactor()| (U itself when infinite).</summary>

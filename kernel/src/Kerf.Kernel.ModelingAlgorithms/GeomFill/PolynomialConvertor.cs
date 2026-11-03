@@ -143,7 +143,7 @@ public sealed class PolynomialConvertor
             pnt.SetCoord(px[ii], py[ii], 0);
             pnt *= m;
             pnt += center.XYZ();
-            poles[ii].ChangeCoord() = pnt;
+            poles[ii] = new Point3D(pnt);
         }
     }
 
@@ -216,12 +216,12 @@ public sealed class PolynomialConvertor
         for (ii = 1; ii <= _ordre; ii++)
         {
             p.SetCoord(px[ii], py[ii], 0);
-            poles[ii].ChangeCoord() = m * p + center.XYZ();
+            poles[ii] = new Point3D(m * p + center.XYZ());
             p *= mPrim;
             dp.SetCoord(dPx[ii], dPy[ii], 0);
             dp *= m;
             aux.SetLinearForm(1, p, 1, dp, dCenter.XYZ());
-            dPoles[ii].SetXYZ(aux);
+            dPoles[ii] = dPoles[ii].WithXYZ(aux);
         }
     }
 
@@ -336,14 +336,14 @@ public sealed class PolynomialConvertor
             dp.SetCoord(dPx[ii], dPy[ii], 0);
             d2P.SetCoord(d2Px[ii], d2Py[ii], 0);
 
-            poles[ii].ChangeCoord() = m * p + center.XYZ();
+            poles[ii] = new Point3D(m * p + center.XYZ());
             auxyz.SetLinearForm(1, mPrim * p, 1, m * dp, dCenter.XYZ());
-            dPoles[ii].SetXYZ(auxyz);
+            dPoles[ii] = dPoles[ii].WithXYZ(auxyz);
             p *= mSecn;
             dp *= mPrim;
             d2P *= m;
             auxyz.SetLinearForm(1, p, 2, dp, 1, d2P, d2Center.XYZ());
-            d2Poles[ii].SetXYZ(auxyz);
+            d2Poles[ii] = d2Poles[ii].WithXYZ(auxyz);
         }
     }
 }

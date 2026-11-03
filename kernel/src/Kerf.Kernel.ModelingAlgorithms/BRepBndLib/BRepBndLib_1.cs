@@ -365,7 +365,7 @@ public static partial class Bounds
             var locCoordSys = new CoordinateSystem(gCommon.CentreOfMass(),
                                           new Direction3D(gCommon.PrincipalProperties().ThirdAxisOfInertia()),
                                           new Direction3D(gCommon.PrincipalProperties().FirstAxisOfInertia()));
-            trsf.SetTransformation(locCoordSys);
+            trsf = trsf.WithTransformation(locCoordSys);
         }
 
         Shape st = (trsf.Form() == Identity) ? s : s.Moved(new Placement(trsf));
@@ -403,7 +403,7 @@ public static partial class Bounds
         // Apply transformation if necessary
         if (trsf.Form() != Identity)
         {
-            trsf.Invert();
+            trsf = trsf.Inverted();
             trsf.Transforms(ref center);
 
             // Make transformation

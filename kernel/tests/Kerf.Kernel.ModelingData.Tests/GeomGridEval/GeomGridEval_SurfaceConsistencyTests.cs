@@ -228,12 +228,9 @@ public class GeomGridEval_SurfaceConsistencyTest
 
     private static Transform3D RandomTrsf(Random theRnd)
     {
-        Transform3D aRot = new();
-        aRot.SetRotation(new Axis3D(RandomPnt(theRnd, 3.0), RandomDir(theRnd)), Uniform(theRnd, -3.0, 3.0));
-        Transform3D aTr = new();
-        aTr.SetTranslation(new Vector3D(Uniform(theRnd, -5, 5), Uniform(theRnd, -5, 5), Uniform(theRnd, -5, 5)));
-        Transform3D aScale = new();
-        aScale.SetScale(RandomPnt(theRnd, 2.0), Uniform(theRnd, 0.5, 2.0));
+        Transform3D aRot = new Transform3D().WithRotation(new Axis3D(RandomPnt(theRnd, 3.0), RandomDir(theRnd)), Uniform(theRnd, -3.0, 3.0));
+        Transform3D aTr = new Transform3D().WithTranslation(new Vector3D(Uniform(theRnd, -5, 5), Uniform(theRnd, -5, 5), Uniform(theRnd, -5, 5)));
+        Transform3D aScale = new Transform3D().WithScale(RandomPnt(theRnd, 2.0), Uniform(theRnd, 0.5, 2.0));
         return aTr.Multiplied(aRot).Multiplied(aScale);
     }
 

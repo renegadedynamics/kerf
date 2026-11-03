@@ -58,8 +58,8 @@ internal static partial class Builder_0
         }
 
         Point3D pdeb = new(), pfin = new();
-        pdeb.SetXYZ(pdeb1.XYZ().Added(pdeb2.XYZ()).Multiplied(0.5));
-        pfin.SetXYZ(pfin1.XYZ().Added(pfin2.XYZ()).Multiplied(0.5));
+        pdeb = pdeb.WithXYZ(pdeb1.XYZ().Added(pdeb2.XYZ()).Multiplied(0.5));
+        pfin = pfin.WithXYZ(pfin1.XYZ().Added(pfin2.XYZ()).Multiplied(0.5));
 
         double distref = 0.005 * pdeb.Distance(pfin);
         if (distref < distrefdeb)
@@ -590,16 +590,16 @@ internal static partial class Builder_0
                 if (ddeb >= tol1)
                 {
                     pol3d[1] = pntd;
-                    pol2d1[1].SetCoord(pardeb[1], pardeb[2]);
-                    pol2d2[1].SetCoord(pardeb[3], pardeb[4]);
+                    pol2d1[1] = pol2d1[1].WithCoord(pardeb[1], pardeb[2]);
+                    pol2d2[1] = pol2d2[1].WithCoord(pardeb[3], pardeb[4]);
                     //	tolreached = std::max(tolreached,ddeb);
                 }
 
                 if (dfin >= tol2)
                 {
                     pol3d[nbpol] = pntf;
-                    pol2d1[nbpol].SetCoord(parfin[1], parfin[2]);
-                    pol2d2[nbpol].SetCoord(parfin[3], parfin[4]);
+                    pol2d1[nbpol] = pol2d1[nbpol].WithCoord(parfin[1], parfin[2]);
+                    pol2d2[nbpol] = pol2d2[nbpol].WithCoord(parfin[3], parfin[4]);
                     //	tolreached = std::max(tolreached,dfin);
                 }
                 NCollection_Array1<double> knots = mbs.Knots();

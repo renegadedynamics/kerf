@@ -89,7 +89,7 @@ public sealed class MakeCirc2d : Root
                     double alpha3 = global::Kerf.Engine.Geometry.ElCLib.Parameter(_theCirc2d, p3);
                     if ((alpha1 > alpha2) || (alpha2 > alpha3))
                     {
-                        _theCirc2d.Reverse();
+                        _theCirc2d = _theCirc2d.Reversed();
                     }
                     _theError = Done;
                 }

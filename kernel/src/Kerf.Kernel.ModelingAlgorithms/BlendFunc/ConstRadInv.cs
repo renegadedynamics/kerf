@@ -231,9 +231,9 @@ public class ConstRadInv : FuncInv
         }
 
         Vector3D resul = new Vector3D();
-        ns1.SetLinearForm(nplan.Dot(ns1) / norm1, nplan, -1.0 / norm1, ns1);
-        ns2.SetLinearForm(nplan.Dot(ns2) / norm2, nplan, -1.0 / norm2, ns2);
-        resul.SetLinearForm(_ray1, ns1, -1.0, new Vector3D(pts2.XYZ()), -_ray2, ns2, new Vector3D(pts1.XYZ()));
+        ns1 = Vector3D.LinearForm(nplan.Dot(ns1) / norm1, nplan, -1.0 / norm1, ns1);
+        ns2 = Vector3D.LinearForm(nplan.Dot(ns2) / norm2, nplan, -1.0 / norm2, ns2);
+        resul = Vector3D.LinearForm(_ray1, ns1, -1.0, new Vector3D(pts2.XYZ()), -_ray2, ns2, new Vector3D(pts1.XYZ()));
         f[2] = resul.X();
         f[3] = resul.Y();
         f[4] = resul.Z();
@@ -255,7 +255,7 @@ public class ConstRadInv : FuncInv
         theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
         // OCCT: the plane's offset theD stands where Values has -nplan.Dot(d2cur) (decision 1038).
-        dnplan.SetLinearForm(theD, nplan, d2cur);
+        dnplan = Vector3D.LinearForm(theD, nplan, d2cur);
         dnplan /= normtgcur;
 
         _csurf!.D1(x[1], out Point2D p2d, out Vector2D v2d);
@@ -264,9 +264,9 @@ public class ConstRadInv : FuncInv
         {
             _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp.SetLinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            temp = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
             d[1, 1] = nplan.Dot(temp) / 2.0;
-            temp.SetXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
+            temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
             d[1, 3] = nplan.Dot(d1u2) / 2.0;
             d[1, 4] = nplan.Dot(d1v2) / 2.0;
@@ -275,9 +275,9 @@ public class ConstRadInv : FuncInv
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp.SetLinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            temp = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
             d[1, 1] = nplan.Dot(temp) / 2.0;
-            temp.SetXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
+            temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
             d[1, 3] = nplan.Dot(d1u1) / 2.0;
             d[1, 4] = nplan.Dot(d1v1) / 2.0;
@@ -346,13 +346,13 @@ public class ConstRadInv : FuncInv
         // Derived compared to u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul1.SetLinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
+        resul1 = Vector3D.LinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
                              _ray1 * grosterme / norm1, ns1, -_ray1 / norm1, temp, d1u1);
 
         // Derived compared to v1
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul2.SetLinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
+        resul2 = Vector3D.LinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - nplan.Dot(temp)), nplan,
                              _ray1 * grosterme / norm1, ns1, -_ray1 / norm1, temp, d1v1);
 
         if (_first)
@@ -374,11 +374,11 @@ public class ConstRadInv : FuncInv
         // derived compared to w (parameter on guideline)
         // It is assumed that the radius is constant
         grosterme = ncrossns1.Dot(dnplan.Crossed(ns1)) / norm1 / norm1;
-        resul1.SetLinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - dnplan.Dot(ns1)), nplan, _ray1 * ndotns1 / norm1,
+        resul1 = Vector3D.LinearForm(-_ray1 / norm1 * (grosterme * ndotns1 - dnplan.Dot(ns1)), nplan, _ray1 * ndotns1 / norm1,
                              dnplan, _ray1 * grosterme / norm1, ns1);
 
         grosterme = ncrossns2.Dot(dnplan.Crossed(ns2)) / norm2 / norm2;
-        resul2.SetLinearForm(_ray2 / norm2 * (grosterme * ndotns2 - dnplan.Dot(ns2)), nplan, -_ray2 * ndotns2 / norm2,
+        resul2 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - dnplan.Dot(ns2)), nplan, -_ray2 * ndotns2 / norm2,
                              dnplan, -_ray2 * grosterme / norm2, ns2);
 
         d[2, 2] = resul1.X() + resul2.X();
@@ -388,16 +388,16 @@ public class ConstRadInv : FuncInv
         // Derived compared to u2
         temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
         grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul1.SetLinearForm(_ray2 / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
+        resul1 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
                              -_ray2 * grosterme / norm2, ns2, _ray2 / norm2, temp);
-        resul1.Subtract(d1u2);
+        resul1 = resul1.Subtracted(d1u2);
 
         // Derived compared to v2
         temp = d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2));
         grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul2.SetLinearForm(_ray2 / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
+        resul2 = Vector3D.LinearForm(_ray2 / norm2 * (grosterme * ndotns2 - nplan.Dot(temp)), nplan,
                              -_ray2 * grosterme / norm2, ns2, _ray2 / norm2, temp);
-        resul2.Subtract(d1v2);
+        resul2 = resul2.Subtracted(d1v2);
 
         if (!_first)
         {
@@ -430,7 +430,7 @@ public class ConstRadInv : FuncInv
         normtgcur = d1cur.Magnitude();
         nplan = d1cur.Normalized();
         theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
-        dnplan.SetLinearForm(-nplan.Dot(d2cur), nplan, d2cur);
+        dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
         dnplan /= normtgcur;
 
         _csurf!.D1(x[1], out Point2D p2d, out Vector2D v2d);
@@ -439,9 +439,9 @@ public class ConstRadInv : FuncInv
         {
             _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp.SetLinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            temp = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
             d[1, 1] = nplan.Dot(temp) / 2.0;
-            temp.SetXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
+            temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
             d[1, 3] = nplan.Dot(d1u2) / 2.0;
             d[1, 4] = nplan.Dot(d1v2) / 2.0;
@@ -450,9 +450,9 @@ public class ConstRadInv : FuncInv
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            temp.SetLinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            temp = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
             d[1, 1] = nplan.Dot(temp) / 2.0;
-            temp.SetXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
+            temp = temp.WithXYZ(0.5 * (pts1.XYZ() + pts2.XYZ()) - ptcur.XYZ());
             d[1, 2] = dnplan.Dot(temp) - normtgcur;
             d[1, 3] = nplan.Dot(d1u1) / 2.0;
             d[1, 4] = nplan.Dot(d1v1) / 2.0;
@@ -508,10 +508,10 @@ public class ConstRadInv : FuncInv
         ndotns1 = nplan.Dot(ns1);
         ndotns2 = nplan.Dot(ns2);
 
-        temp.SetLinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
-        resul1.SetLinearForm(_ray1, temp, new Vector3D(pts2, pts1));
-        temp.SetLinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
-        resul1.Subtract(_ray2 * temp);
+        temp = Vector3D.LinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
+        resul1 = Vector3D.LinearForm(_ray1, temp, new Vector3D(pts2, pts1));
+        temp = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
+        resul1 = resul1.Subtracted(_ray2 * temp);
 
         f[2] = resul1.X();
         f[3] = resul1.Y();

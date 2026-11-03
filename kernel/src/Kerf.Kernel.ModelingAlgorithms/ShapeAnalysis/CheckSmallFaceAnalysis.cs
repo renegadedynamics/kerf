@@ -196,7 +196,7 @@ public sealed class CheckSmallFaceAnalysis
             }
         }
 
-        spot.SetCoord((minx + maxx) / 2.0, (miny + maxy) / 2.0, (minz + maxz) / 2.0);
+        spot = spot.WithCoord((minx + maxx) / 2.0, (miny + maxy) / 2.0, (minz + maxz) / 2.0);
         spotol = maxx - minx;
         spotol = Max(spotol, maxy - miny);
         spotol = Max(spotol, maxz - minz);

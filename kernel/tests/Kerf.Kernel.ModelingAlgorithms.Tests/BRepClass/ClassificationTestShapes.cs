@@ -82,7 +82,7 @@ internal static class ClassificationTestShapes
         Solid anInnerBox = TestShapes.Box(2, 2, 2);
         theOuter = FirstShell(anOuterBox);
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(3, 3, 3));
+        aT = aT.WithTranslation(new Vector3D(3, 3, 3));
         theInner = ShapeCasts.Shell(FirstShell(anInnerBox).Moved(new Placement(aT)).Reversed());
         Solid aSolid = new();
         aB.MakeSolid(ref aSolid);
@@ -101,7 +101,7 @@ internal static class ClassificationTestShapes
     public static Shape Translated(in Shape theShape, in Vector3D theV)
     {
         var aT = new Transform3D();
-        aT.SetTranslation(theV);
+        aT = aT.WithTranslation(theV);
         return theShape.Moved(new Placement(aT));
     }
 
@@ -109,7 +109,7 @@ internal static class ClassificationTestShapes
     public static Shape RotatedZ(in Shape theShape, double theAngle)
     {
         var aT = new Transform3D();
-        aT.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), theAngle);
+        aT = aT.WithRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), theAngle);
         return theShape.Moved(new Placement(aT));
     }
 }

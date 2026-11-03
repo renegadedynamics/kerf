@@ -56,7 +56,7 @@ public sealed class MakeTransformed : ImportRoot
         CoordinateSystem ax3Targ = new CoordinateSystem(theTarg.Ax2());
 
         //  ne pas se tromper de sens !
-        _trsf.SetTransformation(ax3Targ, ax3Orig);
+        _trsf = _trsf.WithTransformation(ax3Targ, ax3Orig);
         return true;
     }
 

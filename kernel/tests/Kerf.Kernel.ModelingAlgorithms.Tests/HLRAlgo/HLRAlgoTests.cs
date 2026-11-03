@@ -126,10 +126,8 @@ public class HLRAlgoTests
     [Fact]
     public void Projector_Scaled_KeepsTheScaleAndTranslation()
     {
-        Transform3D aT = new();
-        aT.SetTransformation(new CoordinateSystem(View()));
-        Transform3D aS = new();
-        aS.SetScale(new Point3D(0, 0, 0), 2.0);
+        Transform3D aT = new Transform3D().WithTransformation(new CoordinateSystem(View()));
+        Transform3D aS = new Transform3D().WithScale(new Point3D(0, 0, 0), 2.0);
         Transform3D aTS = aS * aT;
         AlgorithmProjector P = new(aTS, false, 0.0);
         AlgorithmProjector PS = P.WithScaled(true);

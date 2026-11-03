@@ -145,8 +145,7 @@ public class Geom2d_EllipseTest
     [Fact]
     public void Transform_Translation()
     {
-        Transform2D aTrsf = new Transform2D();
-        aTrsf.SetTranslation(new Vector2D(5.0, 10.0));
+        Transform2D aTrsf = new Transform2D().WithTranslation(new Vector2D(5.0, 10.0));
         myEllipse.Transform(aTrsf);
         Assert.Equal(5.0, myEllipse.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(10.0, myEllipse.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());

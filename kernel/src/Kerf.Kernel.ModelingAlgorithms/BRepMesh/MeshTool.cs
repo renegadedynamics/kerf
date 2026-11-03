@@ -37,8 +37,8 @@ public sealed class MeshTool : Transient
             MeshVertex vertex1 = _structure.GetNode(constraint.FirstNode());
             MeshVertex vertex2 = _structure.GetNode(constraint.LastNode());
 
-            _constraint.SetLocation(new Point2D(vertex1.Coord()));
-            _constraint.SetDirection(new Direction2D(new Vector2D(new Point2D(vertex1.Coord()), new Point2D(vertex2.Coord()))));
+            _constraint = _constraint.WithLocation(new Point2D(vertex1.Coord()));
+            _constraint = _constraint.WithDirection(new Direction2D(new Vector2D(new Point2D(vertex1.Coord()), new Point2D(vertex2.Coord()))));
             _sign = _constraint.Direction().X() > 0;
         }
 

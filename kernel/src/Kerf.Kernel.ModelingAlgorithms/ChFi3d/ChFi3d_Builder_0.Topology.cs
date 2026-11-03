@@ -247,11 +247,11 @@ internal static partial class Builder_0
         bCurv2.D1(parE2, out Point3D p2, out Vector3D dir2);
         if (!vtx.IsSame(Exploration.FirstVertex(e1)))
         {
-            dir1.Reverse();
+            dir1 = dir1.Reversed();
         }
         if (!vtx.IsSame(Exploration.FirstVertex(e2)))
         {
-            dir2.Reverse();
+            dir2 = dir2.Reversed();
         }
         angle = Math.Abs(dir1.Angle(dir2));
         return angle;

@@ -139,7 +139,7 @@ internal readonly struct CurveTraits3d : ICurveTraits<Point3D, Vector3D>
         carr[2] = vec.Z();
     }
 
-    public static void SetCoord(ref Point3D pnt, int index, double xi) => pnt.SetCoord(index, xi);
+    public static void SetCoord(ref Point3D pnt, int index, double xi) => pnt = pnt.WithCoord(index, xi);
 
     public static Point3D Translated(in Point3D pnt, double scale, in Vector3D vec) => pnt.Translated(scale * vec);
 
@@ -216,7 +216,7 @@ internal readonly struct CurveTraits2d : ICurveTraits<Point2D, Vector2D>
         carr[1] = vec.Y();
     }
 
-    public static void SetCoord(ref Point2D pnt, int index, double xi) => pnt.SetCoord(index, xi);
+    public static void SetCoord(ref Point2D pnt, int index, double xi) => pnt = pnt.WithCoord(index, xi);
 
     public static Point2D Translated(in Point2D pnt, double scale, in Vector2D vec) => pnt.Translated(scale * vec);
 

@@ -41,13 +41,11 @@ public static class Geom2dConvert2D
         if ((axis.XDirection() ^ axis.YDirection()) < 0.0)
         {
             // Then the axis is left-handed, apply a symmetry to the curve.
-            Transform2D sym = new();
-            sym.SetMirror(Constants.OX2d());
+            Transform2D sym = new Transform2D().WithMirror(Constants.OX2d());
             theCurve.Transform(sym);
         }
 
-        Transform2D t = new();
-        t.SetTransformation(theConic.XAxis(), Constants.OX2d());
+        Transform2D t = new Transform2D().WithTransformation(theConic.XAxis(), Constants.OX2d());
         BSplineCurve2D cres = (BSplineCurve2D)theCurve.Transformed(t);
         return cres;
     }
@@ -454,7 +452,7 @@ public static class Geom2dConvert2D
         {
             for (jj = 1; jj <= 2; jj++)
             {
-                bsPoles[ii].SetCoord(jj, bsPoles[ii].Coord(jj) * bsWeights[ii]);
+                bsPoles[ii] = bsPoles[ii].WithCoord(jj, bsPoles[ii].Coord(jj) * bsWeights[ii]);
             }
         }
 
@@ -466,7 +464,7 @@ public static class Geom2dConvert2D
         {
             for (jj = 1; jj <= 2; jj++)
             {
-                resPoles[ii].SetCoord(jj, resNumPoles[ii].Coord(jj) / resDenPoles[ii]);
+                resPoles[ii] = resPoles[ii].WithCoord(jj, resNumPoles[ii].Coord(jj) / resDenPoles[ii]);
             }
         }
 
@@ -709,12 +707,12 @@ public static class Geom2dConvert2D
                 {
                     if (r1)
                     {
-                        d1.SetCoord(-d1.X(), -d1.Y());
+                        d1 = d1.WithCoord(-d1.X(), -d1.Y());
                     }
 
                     if (r2)
                     {
-                        d2.SetCoord(-d2.X(), -d2.Y());
+                        d2 = d2.WithCoord(-d2.X(), -d2.Y());
                     }
 
                     value = d1.Dot(d2);
@@ -725,8 +723,8 @@ public static class Geom2dConvert2D
                     }
                     else
                     {
-                        d1.Normalize();
-                        d2.Normalize();
+                        d1 = d1.Normalized();
+                        d2 = d2.Normalized();
                         value = Math.Abs(d1.Dot(d2));
                         if (value >= 1.0e0 - ta * ta)
                         {
@@ -922,7 +920,7 @@ public static class Geom2dConvert2D
                     {
                         for (jj = 1; jj <= 2; jj++)
                         {
-                            curve1Poles[ii].SetCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
+                            curve1Poles[ii] = curve1Poles[ii].WithCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
                         }
                     }
 
@@ -937,7 +935,7 @@ public static class Geom2dConvert2D
                     {
                         for (jj = 1; jj <= 2; jj++)
                         {
-                            newPoles[ii].SetCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
+                            newPoles[ii] = newPoles[ii].WithCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
                         }
                     }
 
@@ -1192,7 +1190,7 @@ public static class Geom2dConvert2D
                         {
                             for (jj = 1; jj <= 2; jj++)
                             {
-                                curve1Poles[ii].SetCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
+                                curve1Poles[ii] = curve1Poles[ii].WithCoord(jj, curve1Poles[ii].Coord(jj) * curve1Weights[ii]);
                             }
                         }
 
@@ -1207,7 +1205,7 @@ public static class Geom2dConvert2D
                         {
                             for (jj = 1; jj <= 2; jj++)
                             {
-                                newPoles[ii].SetCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
+                                newPoles[ii] = newPoles[ii].WithCoord(jj, newPoles[ii].Coord(jj) / newWeights[ii]);
                             }
                         }
 

@@ -116,7 +116,7 @@ public class ExtrusionSurface : SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _direction.Reverse();
+        _direction = _direction.Reversed();
     }
 
     /// <summary>-V.</summary>
@@ -256,7 +256,7 @@ public class ExtrusionSurface : SweptSurface
     public sealed override Curve3D VIso(double v)
     {
         Vector3D vdir = new Vector3D(_direction);
-        vdir.Multiply(v);
+        vdir = vdir.Multiplied(v);
         Curve3D c;
         c = (Curve3D)_basisCurve!.Translated(vdir);
         return c;
@@ -278,7 +278,7 @@ public class ExtrusionSurface : SweptSurface
     {
         CheckMutable();
         ClearEvalRepresentation();
-        _direction.Transform(t);
+        _direction = _direction.Transformed(t);
         OwnBasisCurve();
         _basisCurve!.Transform(t);
     }
@@ -311,11 +311,11 @@ public class ExtrusionSurface : SweptSurface
         // transformation in the V Direction
         GeneralTransform2D tv = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        tv.SetAffinity(axis, Math.Abs(t.ScaleFactor()));
+        tv = tv.WithAffinity(axis, Math.Abs(t.ScaleFactor()));
         // transformation in the U Direction
         GeneralTransform2D tu = new GeneralTransform2D();
         axis = new Axis2D(Constants.Origin2d(), Constants.DY2d());
-        tu.SetAffinity(axis, _basisCurve!.ParametricTransformation(t));
+        tu = tu.WithAffinity(axis, _basisCurve!.ParametricTransformation(t));
         return tu * tv;
     }
 

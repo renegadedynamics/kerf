@@ -188,8 +188,7 @@ public class Geom_OffsetSurfacePortTests
         // surface (after a reversal drops it), by 2.
         PlaneSurface aPlane = new(new CoordinateSystem(new Point3D(), new Direction3D(0, 0, 1)));
         OffsetSurface anOff = new(aPlane, 1.0);
-        Transform3D aScale = new();
-        aScale.SetScale(new Point3D(), 2.0);
+        Transform3D aScale = new Transform3D().WithScale(new Point3D(), 2.0);
         double U = 1.5, V = -0.5;
         anOff.TransformParameters(ref U, ref V, aScale);
         Assert.Equal((6.0, -2.0), (U, V));

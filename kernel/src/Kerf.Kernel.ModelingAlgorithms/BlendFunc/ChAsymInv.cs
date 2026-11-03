@@ -190,7 +190,7 @@ public class ChAsymInv : FuncInv
             nplan = d1gui.Normalized();
             if (_choix % 2 != 0)
             {
-                nplan.Reverse();
+                nplan = nplan.Reversed();
             }
 
             pt2d = _csurf!.Value(x[1]);
@@ -215,8 +215,8 @@ public class ChAsymInv : FuncInv
 
             if (_choix % 2 != 0)
             {
-                nplan.Reverse();
-                dnplan.Reverse();
+                nplan = nplan.Reversed();
+                dnplan = dnplan.Reversed();
                 normg = -normg;
             }
 
@@ -318,7 +318,7 @@ public class ChAsymInv : FuncInv
                 tempVec = 2.0 * nps1;
                 _dx[3, 1] = 0.0;
                 _dx[3, 2] = d1gui.Dot(tempVec);
-                tempVec.Reverse();
+                tempVec = tempVec.Reversed();
                 _dx[3, 3] = d1u1.Dot(tempVec);
                 _dx[3, 4] = d1v1.Dot(tempVec);
 

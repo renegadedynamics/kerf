@@ -607,8 +607,8 @@ public class ExtremaSurfaceOracleTests(ITestOutputHelper output)
                     {
                         // Turn surface 2 so that its normal at aOn2 is opposite to surface 1's at aOn1, and put aOn2 on
                         // that normal: the two points are then a local extremum of the distance, often inside both faces
-                        aN1.Normalize();
-                        aN2.Normalize();
+                        aN1 = aN1.Normalized();
+                        aN2 = aN2.Normalized();
                         Vector3D anAxis = aN2 ^ aN1.Reversed();
                         if (anAxis.Magnitude() > 1e-6)
                         {

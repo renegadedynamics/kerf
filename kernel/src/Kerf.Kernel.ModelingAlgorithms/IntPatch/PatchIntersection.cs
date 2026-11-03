@@ -1217,7 +1217,7 @@ public partial class PatchIntersection
             {
                 // Singular point aPP1;
                 pmid /= nb;
-                pp1.SetXYZ(pmid);
+                pp1 = pp1.WithXYZ(pmid);
                 double tolU = global::Kerf.Engine.Foundation.Precision.PConfusion(), tolV = global::Kerf.Engine.Foundation.Precision.PConfusion();
                 ExtPS proj = new(pp1, s2, tolU, tolV, ExtFlag.ExtFlag_MIN);
 

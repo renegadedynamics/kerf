@@ -29,8 +29,8 @@ internal sealed class TestLine : Curve3D
     protected internal override void Transform(in Transform3D T)
     {
         CheckMutable();
-        myOrigin.Transform(T);
-        myDir.Transform(T);
+        myOrigin = myOrigin.Transformed(T);
+        myDir = myDir.Transformed(T);
     }
 
     public override Geometry3D Copy() => new TestLine(myOrigin, myDir);
@@ -38,7 +38,7 @@ internal sealed class TestLine : Curve3D
     protected internal override void Reverse()
     {
         CheckMutable();
-        myDir.Reverse();
+        myDir = myDir.Reversed();
     }
 
     public override double ReversedParameter(double U) => -U;

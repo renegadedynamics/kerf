@@ -75,8 +75,8 @@ public class BRepLibCheckTests
     public void CheckCurveOnSurface_LocatedEdgeAndFace()
     {
         var aT = new Transform3D();
-        aT.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.7);
-        aT.SetTranslationPart(new Vector3D(5, -3, 2));
+        aT = aT.WithRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0)), 0.7);
+        aT = aT.WithTranslationPart(new Vector3D(5, -3, 2));
         (Edge anE, Face aF) = EdgeOnPlane(0.02, new Placement(aT));
         var aCheck = new LibraryCheckCurveOnSurface(anE, aF);
         aCheck.Perform();

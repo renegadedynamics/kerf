@@ -298,7 +298,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p1 = tabP1[1];
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
-            myV.SetCoord(v[low], v[low + 1], v[low + 2]);
+            myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -307,7 +307,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p12d = tabP12d[1];
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
-            myV.SetCoord(v[low], v[low + 1]);
+            myV = myV.WithCoord(v[low], v[low + 1]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -371,7 +371,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p1 = tabP[1];
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
-            myV.SetCoord(v[low], v[low + 1], v[low + 2]);
+            myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -380,7 +380,7 @@ public class BSplComputeLine<MultiLine, LineTool>
             p12d = tabP2d[1];
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
-            myV.SetCoord(v[low], v[low + 1]);
+            myV = myV.WithCoord(v[low], v[low + 1]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }

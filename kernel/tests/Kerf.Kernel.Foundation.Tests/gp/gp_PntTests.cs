@@ -41,15 +41,14 @@ public class gp_PntTest
     [Fact]
     public void SetCoord()
     {
-        Point3D aPnt = new();
-        aPnt.SetX(10.0);
-        aPnt.SetY(20.0);
-        aPnt.SetZ(30.0);
+        Point3D aPnt = new Point3D().WithX(10.0);
+        aPnt = aPnt.WithY(20.0);
+        aPnt = aPnt.WithZ(30.0);
         Assert.Equal(10.0, aPnt.X());
         Assert.Equal(20.0, aPnt.Y());
         Assert.Equal(30.0, aPnt.Z());
 
-        aPnt.SetCoord(7.0, 8.0, 9.0);
+        aPnt = aPnt.WithCoord(7.0, 8.0, 9.0);
         Assert.Equal(7.0, aPnt.X());
         Assert.Equal(8.0, aPnt.Y());
         Assert.Equal(9.0, aPnt.Z());
@@ -88,7 +87,7 @@ public class gp_PntTest
         Point3D aP1 = new(0.0, 0.0, 0.0);
         Point3D aP2 = new(10.0, 0.0, 0.0);
         // BaryCenter with equal weights: midpoint
-        aP1.BaryCenter(1.0, aP2, 1.0);
+        aP1 = aP1.BaryCentered(1.0, aP2, 1.0);
         Assert.Equal(5.0, aP1.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP1.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aP1.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -177,8 +176,7 @@ public class gp_PntTest
     public void Transformed()
     {
         Point3D aPnt = new(1.0, 0.0, 0.0);
-        Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 5.0));
+        Transform3D aTrsf = new Transform3D().WithTranslation(new Vector3D(0.0, 0.0, 5.0));
         Point3D aResult = aPnt.Transformed(aTrsf);
         Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());

@@ -173,7 +173,7 @@ public class RuledInv : FuncInv
         double theD = -(nplan.XYZ().Dot(ptcur.XYZ()));
 
         Vector3D dnplan = new Vector3D();
-        dnplan.SetLinearForm(-nplan.Dot(d2cur), nplan, d2cur);
+        dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
         dnplan /= normtgcur;
 
         _csurf!.D1(x[1], out Point2D p2d, out Vector2D v2d);
@@ -187,7 +187,7 @@ public class RuledInv : FuncInv
         {
             _surf1.D2(p2d.X(), p2d.Y(), out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(x[3], x[4], out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            dpdt.SetLinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
+            dpdt = Vector3D.LinearForm(v2d.X(), d1u1, v2d.Y(), d1v1);
             p1p2 = new Vector3D(pts1, pts2);
             d[1, 1] = dpdt.Dot(nplan);
             d[1, 2] = dnplan.XYZ().Dot(pts1.XYZ() - ptcur.XYZ()) - normtgcur;
@@ -202,7 +202,7 @@ public class RuledInv : FuncInv
         {
             _surf1.D2(x[3], x[4], out pts1, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
             _surf2.D2(p2d.X(), p2d.Y(), out pts2, out d1u2, out d1v2, out d2u2, out d2v2, out d2uv2);
-            dpdt.SetLinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
+            dpdt = Vector3D.LinearForm(v2d.X(), d1u2, v2d.Y(), d1v2);
             p1p2 = new Vector3D(pts1, pts2);
             d[1, 1] = 0.0;
             d[1, 2] = dnplan.XYZ().Dot(pts1.XYZ() - ptcur.XYZ()) - normtgcur;
@@ -225,8 +225,8 @@ public class RuledInv : FuncInv
         double ndotns2 = nplan.Dot(ns2);
 
         Vector3D nor1 = new Vector3D(), nor2 = new Vector3D();
-        nor1.SetLinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
-        nor2.SetLinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
+        nor1 = Vector3D.LinearForm(ndotns1 / norm1, nplan, -1.0 / norm1, ns1);
+        nor2 = Vector3D.LinearForm(ndotns2 / norm2, nplan, -1.0 / norm2, ns2);
 
         if (f is not null)
         {
@@ -257,18 +257,18 @@ public class RuledInv : FuncInv
         // Derivee de nor1 par rapport a u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul1.SetLinearForm(-(grosterme * ndotns1 - nplan.Dot(temp)) / norm1, nplan, grosterme / norm1, ns1,
+        resul1 = Vector3D.LinearForm(-(grosterme * ndotns1 - nplan.Dot(temp)) / norm1, nplan, grosterme / norm1, ns1,
                              -1.0 / norm1, temp);
 
         // Derivee par rapport a v1
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns1.Dot(nplan.Crossed(temp)) / norm1 / norm1;
-        resul2.SetLinearForm(-(grosterme * ndotns1 - nplan.Dot(temp)) / norm1, nplan, grosterme / norm1, ns1,
+        resul2 = Vector3D.LinearForm(-(grosterme * ndotns1 - nplan.Dot(temp)) / norm1, nplan, grosterme / norm1, ns1,
                              -1.0 / norm1, temp);
 
         if (_first)
         {
-            resul1.SetLinearForm(v2d.X(), resul1, v2d.Y(), resul2);
+            resul1 = Vector3D.LinearForm(v2d.X(), resul1, v2d.Y(), resul2);
             d[3, 1] = p1p2.Dot(resul1) - (dpdt.Dot(nor1));
         }
         else
@@ -280,13 +280,13 @@ public class RuledInv : FuncInv
         // Derivee de nor2 par rapport a u2
         temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
         grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul1.SetLinearForm(-(grosterme * ndotns2 - nplan.Dot(temp)) / norm2, nplan, grosterme / norm2, ns2,
+        resul1 = Vector3D.LinearForm(-(grosterme * ndotns2 - nplan.Dot(temp)) / norm2, nplan, grosterme / norm2, ns2,
                              -1.0 / norm2, temp);
 
         // Derivee par rapport a v2
         temp = d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2));
         grosterme = ncrossns2.Dot(nplan.Crossed(temp)) / norm2 / norm2;
-        resul2.SetLinearForm(-(grosterme * ndotns2 - nplan.Dot(temp)) / norm2, nplan, grosterme / norm2, ns2,
+        resul2 = Vector3D.LinearForm(-(grosterme * ndotns2 - nplan.Dot(temp)) / norm2, nplan, grosterme / norm2, ns2,
                              -1.0 / norm2, temp);
 
         if (_first)
@@ -296,17 +296,17 @@ public class RuledInv : FuncInv
         }
         else
         {
-            resul1.SetLinearForm(v2d.X(), resul1, v2d.Y(), resul2);
+            resul1 = Vector3D.LinearForm(v2d.X(), resul1, v2d.Y(), resul2);
             d[4, 1] = p1p2.Dot(resul1) + dpdt.Dot(nor2);
         }
 
         // derivee par rapport a w (parametre sur ligne guide)
         grosterme = ncrossns1.Dot(dnplan.Crossed(ns1)) / norm1 / norm1;
-        resul1.SetLinearForm(-(grosterme * ndotns1 - dnplan.Dot(ns1)) / norm1, nplan, ndotns1 / norm1, dnplan,
+        resul1 = Vector3D.LinearForm(-(grosterme * ndotns1 - dnplan.Dot(ns1)) / norm1, nplan, ndotns1 / norm1, dnplan,
                              grosterme / norm1, ns1);
 
         grosterme = ncrossns2.Dot(dnplan.Crossed(ns2)) / norm2 / norm2;
-        resul2.SetLinearForm(-(grosterme * ndotns2 - dnplan.Dot(ns2)) / norm2, nplan, ndotns2 / norm2, dnplan,
+        resul2 = Vector3D.LinearForm(-(grosterme * ndotns2 - dnplan.Dot(ns2)) / norm2, nplan, ndotns2 / norm2, dnplan,
                              grosterme / norm2, ns2);
 
         d[3, 2] = p1p2.Dot(resul1);

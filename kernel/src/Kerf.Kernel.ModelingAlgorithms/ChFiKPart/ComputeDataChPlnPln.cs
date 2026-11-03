@@ -48,13 +48,13 @@ internal static class ComputeDataChPlnPln
         Direction3D d1 = pos1.XDirection().Crossed(pos1.YDirection());
         if (or1 == Reversed)
         {
-            d1.Reverse();
+            d1 = d1.Reversed();
         }
         CoordinateSystem pos2 = pl2.Position();
         Direction3D d2 = pos2.XDirection().Crossed(pos2.YDirection());
         if (or2 == Reversed)
         {
-            d2.Reverse();
+            d2 = d2.Reversed();
         }
         // compute the intersection line of Pl1 and Pl2
         QuadQuadGeo lInt = new(pl1, pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -73,12 +73,12 @@ internal static class ComputeDataChPlnPln
         Direction3D vecTransl1 = linAx1.Crossed(d1);
         if (vecTransl1.Dot(d2) <= 0.0)
         {
-            vecTransl1.Reverse();
+            vecTransl1 = vecTransl1.Reversed();
         }
         Direction3D vecTransl2 = linAx1.Crossed(d2);
         if (vecTransl2.Dot(d1) <= 0.0)
         {
-            vecTransl2.Reverse();
+            vecTransl2 = vecTransl2.Reversed();
         }
         double Dis1 = dis1, Dis2 = dis2;
         double alpha = vecTransl1.Angle(vecTransl2);
@@ -118,7 +118,7 @@ internal static class ComputeDataChPlnPln
         CoordinateSystem planAx3 = new(po, axisPlan, xdir);
         if (planAx3.YDirection().Dot(d2) >= 0.0)
         {
-            planAx3.YReverse();
+            planAx3 = planAx3.YReversed();
         }
         PlaneSurface gpl = new(planAx3);
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gpl, dStr));
@@ -128,7 +128,7 @@ internal static class ComputeDataChPlnPln
         Direction3D norface1 = norpl;
         if (of1 == Reversed)
         {
-            norface1.Reverse();
+            norface1 = norface1.Reversed();
         }
         // Compute the orientation of the chamfer plane
         Direction3D norplch = gpl.Pln().Position().XDirection().Crossed(gpl.Pln().Position().YDirection());
@@ -157,9 +157,9 @@ internal static class ComputeDataChPlnPln
         Line2D lin2dPln = new(p2dPln, dir2dPln);
         LineCurve2D gLin2dPln1 = new(lin2dPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(planAx3, p1, out u, out v);
-        p2dPln.SetCoord(u, v);
-        lin2dPln.SetLocation(p2dPln);
-        lin2dPln.SetDirection(Constants.DX2d());
+        p2dPln = p2dPln.WithCoord(u, v);
+        lin2dPln = lin2dPln.WithLocation(p2dPln);
+        lin2dPln = lin2dPln.WithDirection(Constants.DX2d());
         LineCurve2D gLin2dPlnCh1 = new(lin2dPln);
         Orientation trans;
         toreverse = (norplch.Dot(norpl) <= 0.0);
@@ -178,18 +178,18 @@ internal static class ComputeDataChPlnPln
         data.ChangeInterferenceOnS1().SetInterference(ChFiKPart_IndexCurveInDS(gLinPln1, dStr), trans, gLin2dPln1,
                                                       gLin2dPlnCh1);
         // case face 2
-        linPln.SetLocation(p2);
+        linPln = linPln.WithLocation(p2);
         LineCurve3D gLinPln2 = new(linPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(pos2, p2, out u, out v);
-        p2dPln.SetCoord(u, v);
-        dir2dPln.SetCoord(xdir.Dot(pos2.XDirection()), xdir.Dot(pos2.YDirection()));
-        lin2dPln.SetLocation(p2dPln);
-        lin2dPln.SetDirection(dir2dPln);
+        p2dPln = p2dPln.WithCoord(u, v);
+        dir2dPln = dir2dPln.WithCoord(xdir.Dot(pos2.XDirection()), xdir.Dot(pos2.YDirection()));
+        lin2dPln = lin2dPln.WithLocation(p2dPln);
+        lin2dPln = lin2dPln.WithDirection(dir2dPln);
         LineCurve2D gLin2dPln2 = new(lin2dPln);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(planAx3, p2, out u, out v);
-        p2dPln.SetCoord(u, v);
-        lin2dPln.SetLocation(p2dPln);
-        lin2dPln.SetDirection(Constants.DX2d());
+        p2dPln = p2dPln.WithCoord(u, v);
+        lin2dPln = lin2dPln.WithLocation(p2dPln);
+        lin2dPln = lin2dPln.WithDirection(Constants.DX2d());
         LineCurve2D gLin2dPlnCh2 = new(lin2dPln);
         norpl = pos2.XDirection().Crossed(pos2.YDirection());
         toreverse = (norplch.Dot(norpl) <= 0.0);
