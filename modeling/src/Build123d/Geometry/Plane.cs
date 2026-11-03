@@ -1,5 +1,5 @@
 using System.Diagnostics;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -61,25 +61,25 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     Plane(gp_Pln pln, bool owned)
     {
         Pln = EnsureRightHanded(pln);
-        using var loc = Pln.Location();
-        using var axis = Pln.Axis();
-        using var z = axis.Direction();
-        using var xAxis = Pln.XAxis();
-        using var x = xAxis.Direction();
-        using var yAxis = Pln.YAxis();
-        using var y = yAxis.Direction();
+        var loc = Pln.Location();
+        var axis = Pln.Axis();
+        var z = axis.Direction();
+        var xAxis = Pln.XAxis();
+        var x = xAxis.Direction();
+        var yAxis = Pln.YAxis();
+        var y = yAxis.Direction();
         (Origin, XDir, YDir, ZDir) = (new Vector(loc), new Vector(x), new Vector(y), new Vector(z));
     }
 
-    /// <summary>A plane from an OCCT gp_Pln (copied).</summary>
-    public Plane(gp_Pln pln) : this(new gp_Pln(pln), owned: true) { }
+    /// <summary>A plane from an OCCT gp_Pln.</summary>
+    public Plane(gp_Pln pln) : this(pln, owned: true) { }
 
     /// <summary>
     /// A plane at <paramref name="origin"/> with normal <paramref name="zDir"/> (default +Z) and X direction
     /// <paramref name="xDir"/>. Without an X direction, OCCT chooses one perpendicular to the normal.
     /// </summary>
     /// <exception cref="ArgumentException">A direction has zero length.</exception>
-    /// <exception cref="OcctException">The X direction is parallel to the normal.</exception>
+    /// <exception cref="Standard_Failure">The X direction is parallel to the normal.</exception>
     public Plane(Vector origin, Vector? xDir = null, Vector? zDir = null)
         : this(Build(origin, xDir is { } x ? NormalizedArg(x) : null, zDir is { } z ? NormalizedArg(z) : new Vector(0, 0, 1)), owned: true)
     {
@@ -100,31 +100,25 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         if (face.IsPlanar is null)
             throw new ArgumentException("Planes can only be created from planar faces");
         var topoFace = face.TopoFace;
-        using var surface = BRep_Tool.Surface(topoFace)!;
+        var surface = BRep_Tool.Surface(topoFace)!;
         Vector origin;
-        using (var props = new GProp_GProps())
         {
+            var props = new GProp_GProps();
             BRepGProp.SurfaceProperties(topoFace, props);
-            using var c = props.CentreOfMass();
+            var c = props.CentreOfMass();
             origin = new Vector(c);
         }
         Vector faceXDir;
-        if (Geom_BoundedSurface.DownCast(surface) is { } bounded)
+        if (surface is Geom_BoundedSurface bounded)
         {
-            using (bounded)
-            using (var point = new gp_Pnt())
-            using (var du = new gp_Vec())
-            using (var dv = new gp_Vec())
-            {
-                bounded.D1(0.5, 0.5, point, du, dv);
-                faceXDir = new Vector(du);
-            }
+            bounded.D1(0.5, 0.5, out _, out var du, out _);
+            faceXDir = new Vector(du);
         }
         else
         {
-            using var elementary = Geom_ElementarySurface.DownCast(surface)!;
-            using var position = elementary.Position();
-            using var x = position.XDirection();
+            var elementary = (surface as Geom_ElementarySurface)!;
+            var position = elementary.Position();
+            var x = position.XDirection();
             faceXDir = new Vector(x);
         }
         var x14 = (xDir ?? faceXDir).Round(14);
@@ -135,13 +129,13 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>The normal of a face where it is nearest the global origin (build123d's <c>get_topods_face_normal</c>).</summary>
     static Vector FaceNormal(TopoDS_Face face, Geom_Surface surface)
     {
-        using var pnt = new gp_Pnt();
-        using var normal = new gp_Vec();
-        using var projector = new GeomAPI_ProjectPointOnSurf(pnt, surface);
+        var pnt = new gp_Pnt();
+        var normal = new gp_Vec();
+        var projector = new GeomAPI_ProjectPointOnSurf(pnt, surface);
         double u = 0, v = 0;
-        projector.LowerDistanceParameters(ref u, ref v);
-        using var props = new BRepGProp_Face(face);
-        props.Normal(u, v, pnt, normal);
+        projector.LowerDistanceParameters(out u, out v);
+        var props = new BRepGProp_Face(face);
+        props.Normal(u, v, out pnt, out normal);
         return new Vector(normal);
     }
 
@@ -189,7 +183,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         {
             return v.Normalized();
         }
-        catch (OcctException ex)
+        catch (Standard_Failure ex)
         {
             throw new ArgumentException("Expected gp_Pln, Face, Location, Axis, VectorLike, or three points", ex);
         }
@@ -204,10 +198,10 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         if (xDir is null)
         {
             // OCCT picks an X direction perpendicular to the normal
-            using var p = origin.ToGpPnt();
-            using var n = z.ToGpDir();
-            using var ax3 = new gp_Ax3(p, n);
-            using var xd = ax3.XDirection();
+            var p = origin.ToGpPnt();
+            var n = z.ToGpDir();
+            var ax3 = new gp_Ax3(p, n);
+            var xd = ax3.XDirection();
             x = new Vector(xd).Normalized();
         }
         else
@@ -221,10 +215,10 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     static gp_Pln Ax3Plane(Vector origin, Vector z, Vector x)
     {
-        using var p = origin.ToGpPnt();
-        using var n = z.ToGpDir();
-        using var vx = x.ToGpDir();
-        using var ax3 = new gp_Ax3(p, n, vx);
+        var p = origin.ToGpPnt();
+        var n = z.ToGpDir();
+        var vx = x.ToGpDir();
+        var ax3 = new gp_Ax3(p, n, vx);
         return new gp_Pln(ax3);
     }
 
@@ -233,11 +227,11 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         // build123d moves a planar XY face to the location and reads back its surface's X direction and
         // its normal. Both follow from transforming the XY frame's directions as gp_Ax3::Transform does:
         // X and Y each transformed as a gp_Dir, and the normal their cross product.
-        using var trsf = location.Wrapped.Transformation();
-        using var dx = new gp_Dir(1, 0, 0);
-        using var dy = new gp_Dir(0, 1, 0);
-        using var tx = dx.Transformed(trsf);
-        using var ty = dy.Transformed(trsf);
+        var trsf = location.Wrapped.Transformation();
+        var dx = new gp_Dir(1, 0, 0);
+        var dy = new gp_Dir(0, 1, 0);
+        var tx = dx.Transformed(trsf);
+        var ty = dy.Transformed(trsf);
         var x = new Vector(tx);
         var normal = x.Cross(new Vector(ty));
         return Build(location.Position, x.Round(14), normal.Round(14));
@@ -245,24 +239,23 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
 
     static gp_Pln EnsureRightHanded(gp_Pln pln)
     {
-        using var position = pln.Position();
+        var position = pln.Position();
         if (position.Direct())
             return pln;
 
         Trace.TraceWarning("Trying to set a left-handed plane");
-        using var loc = pln.Location();
-        using var axis = pln.Axis();
-        using var n = axis.Direction();
-        using var xAxis = pln.XAxis();
-        using var vx = xAxis.Direction();
-        using var ax2 = new gp_Ax2(loc, n, vx);
-        using var ax3 = new gp_Ax3(ax2);
-        pln.Dispose();
+        var loc = pln.Location();
+        var axis = pln.Axis();
+        var n = axis.Direction();
+        var xAxis = pln.XAxis();
+        var vx = xAxis.Direction();
+        var ax2 = new gp_Ax2(loc, n, vx);
+        var ax3 = new gp_Ax3(ax2);
         return new gp_Pln(ax3);
     }
 
-    /// <summary>A new OCCT gp_Pln for this plane.</summary>
-    public gp_Pln ToGpPln() => new(Pln);
+    /// <summary>The OCCT gp_Pln of this plane.</summary>
+    public gp_Pln ToGpPln() => Pln;
 
     /// <summary>A new OCCT gp_Ax3 for this plane's coordinate system.</summary>
     public gp_Ax3 ToGpAx3() => Pln.Position();
@@ -270,7 +263,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>A new OCCT gp_Ax2 for this plane's coordinate system.</summary>
     public gp_Ax2 ToGpAx2()
     {
-        using var ax3 = Pln.Position();
+        var ax3 = Pln.Position();
         return ax3.Ax2();
     }
 
@@ -286,20 +279,20 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     /// <summary>This plane with a new X direction, projected to be perpendicular to the normal.</summary>
     public Plane WithXDir(Vector xDir)
     {
-        using var ax2 = ToGpAx2();
-        using var d = xDir.ToGpDir();
-        ax2.SetXDirection(d);
-        using var ax3 = new gp_Ax3(ax2);
+        var ax2 = ToGpAx2();
+        var d = xDir.ToGpDir();
+        ax2 = ax2.WithXDirection(d);
+        var ax3 = new gp_Ax3(ax2);
         return new Plane(new gp_Pln(ax3), owned: true);
     }
 
     /// <summary>This plane with a new Y direction, projected to be perpendicular to the normal.</summary>
     public Plane WithYDir(Vector yDir)
     {
-        using var ax2 = ToGpAx2();
-        using var d = yDir.ToGpDir();
-        ax2.SetYDirection(d);
-        using var ax3 = new gp_Ax3(ax2);
+        var ax2 = ToGpAx2();
+        var d = yDir.ToGpDir();
+        ax2 = ax2.WithYDirection(d);
+        var ax3 = new gp_Ax3(ax2);
         return new Plane(new gp_Pln(ax3), owned: true);
     }
 
@@ -357,10 +350,10 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         get
         {
-            using var global = new gp_Ax3();
-            using var local = Pln.Position();
-            using var t = new gp_Trsf();
-            t.SetTransformation(global, local);
+            var global = new gp_Ax3();
+            var local = Pln.Position();
+            var t = new gp_Trsf();
+            t = t.WithTransformation(global, local);
             return new Matrix(t);
         }
     }
@@ -370,10 +363,10 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         get
         {
-            using var global = new gp_Ax3();
-            using var local = Pln.Position();
-            using var t = new gp_Trsf();
-            t.SetTransformation(local, global);
+            var global = new gp_Ax3();
+            var local = Pln.Position();
+            var t = new gp_Trsf();
+            t = t.WithTransformation(local, global);
             return new Matrix(t);
         }
     }
@@ -399,34 +392,34 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     static BoundBox TransformBox(BoundBox box, Matrix transform)
     {
         // The two corners are transformed as they are; the box isn't re-fitted around the result
-        using var min = box.Min.Transform(transform).ToGpPnt();
-        using var max = box.Max.Transform(transform).ToGpPnt();
+        var min = box.Min.Transform(transform).ToGpPnt();
+        var max = box.Max.Transform(transform).ToGpPnt();
         return BoundBox.Own(new Bnd_Box(min, max));
     }
 
     /// <summary>The location taking this plane to another.</summary>
     public Location LocationBetween(Plane other)
     {
-        using var t = new gp_Trsf();
-        using var from = Pln.Position();
-        using var to = other.Pln.Position();
-        t.SetTransformation(from, to);
+        var t = new gp_Trsf();
+        var from = Pln.Position();
+        var to = other.Pln.Position();
+        t = t.WithTransformation(from, to);
         return new Location(t);
     }
 
     /// <summary>True if the point lies in the plane, within the tolerance.</summary>
     public bool Contains(Vector point, double tolerance = Constants.Tolerance)
     {
-        using var p = point.ToGpPnt();
+        var p = point.ToGpPnt();
         return Pln.Contains(p, tolerance);
     }
 
     /// <summary>True if the whole axis lies in the plane, within the tolerance (linear and angular).</summary>
     public bool Contains(Axis axis, double tolerance = Constants.Tolerance)
     {
-        using var p = axis.Position.ToGpPnt();
-        using var d = axis.Direction.ToGpDir();
-        using var line = new gp_Lin(p, d);
+        var p = axis.Position.ToGpPnt();
+        var d = axis.Direction.ToGpDir();
+        var line = new gp_Lin(p, d);
         return Pln.Contains(line, tolerance, tolerance);
     }
 
@@ -478,14 +471,14 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         if (Contains(axis))
             return axis;
-        using var ax1 = axis.ToGpAx1();
-        using var line = new Geom_Line(ax1);
-        using var ax3 = Pln.Position();
-        using var plane = new Geom_Plane(ax3);
-        using var intersection = new GeomAPI_IntCS(line, plane);
+        var ax1 = axis.ToGpAx1();
+        var line = new Geom_Line(ax1);
+        var ax3 = Pln.Position();
+        var plane = new Geom_Plane(ax3);
+        var intersection = new GeomAPI_IntCS(line, plane);
         if (intersection.IsDone() && intersection.NbPoints() == 1)
         {
-            using var p = intersection.Point(1);
+            var p = intersection.Point(1);
             return new Vector(p);
         }
         return null;
@@ -496,14 +489,14 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     {
         if (Contains(plane.Origin) && ZDir == plane.ZDir)
             return this;
-        using var s1 = new Geom_Plane(Pln);
-        using var s2 = new Geom_Plane(plane.Pln);
-        using var intersector = new GeomAPI_IntSS(s1, s2, Constants.Tolerance);
+        var s1 = new Geom_Plane(Pln);
+        var s2 = new Geom_Plane(plane.Pln);
+        var intersector = new GeomAPI_IntSS(s1, s2, Constants.Tolerance);
         if (intersector.IsDone() && intersector.NbLines() > 0)
         {
-            using var curve = intersector.Line(1);
-            using var line = Geom_Line.DownCast(curve) ?? throw new InvalidOperationException("plane intersection isn't a line");
-            using var position = line.Position();
+            var curve = intersector.Line(1);
+            var line = (curve as Geom_Line) ?? throw new InvalidOperationException("plane intersection isn't a line");
+            var position = line.Position();
             return new Axis(position);
         }
         return null;

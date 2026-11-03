@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -18,11 +18,11 @@ public partial class Solid : Shape3D
 
     private static TopoDS_Solid MakeSolid(Shell shell)
     {
-        using var fix = new ShapeFix_Solid();
+        var fix = new ShapeFix_Solid();
         return fix.SolidFromShell(shell.TopoShell);
     }
 
-    internal TopoDS_Solid TopoSolid => (TopoDS_Solid)TopoShape;
+    internal TopoDS_Solid TopoSolid => TopoDS.Solid(TopoShape);
 
     internal override double Order => 3.0;
 
@@ -36,36 +36,32 @@ public partial class Solid : Shape3D
     /// <summary>A box from the plane's origin (default XY), extending along each of its positive axes.</summary>
     public static Solid MakeBox(double length, double width, double height, Plane? plane = null)
     {
-        using var doing = OcctContext.Doing($"box {PyFormat.Repr(length)} × {PyFormat.Repr(width)} × {PyFormat.Repr(height)}");
-        using var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        using var maker = new BRepPrimAPI_MakeBox(ax2, length, width, height);
+        var ax2 = (plane ?? Plane.XY).ToGpAx2();
+        var maker = new BRepPrimAPI_MakeBox(ax2, length, width, height);
         return new Solid(TopoDS.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial cone from the plane's origin (default XY).</summary>
     public static Solid MakeCone(double baseRadius, double topRadius, double height, Plane? plane = null, double angle = 360)
     {
-        using var doing = OcctContext.Doing($"cone of radii {PyFormat.Repr(baseRadius)} and {PyFormat.Repr(topRadius)}, height {PyFormat.Repr(height)}");
-        using var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        using var maker = new BRepPrimAPI_MakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
+        var ax2 = (plane ?? Plane.XY).ToGpAx2();
+        var maker = new BRepPrimAPI_MakeCone(ax2, baseRadius, topRadius, height, angle * Constants.DegToRad);
         return new Solid(TopoDS.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial cylinder with its base centred on the plane's origin (default XY).</summary>
     public static Solid MakeCylinder(double radius, double height, Plane? plane = null, double angle = 360)
     {
-        using var doing = OcctContext.Doing($"cylinder of radius {PyFormat.Repr(radius)}, height {PyFormat.Repr(height)}");
-        using var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        using var maker = new BRepPrimAPI_MakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
+        var ax2 = (plane ?? Plane.XY).ToGpAx2();
+        var maker = new BRepPrimAPI_MakeCylinder(ax2, radius, height, angle * Constants.DegToRad);
         return new Solid(TopoDS.Solid(maker.Shape()));
     }
 
     /// <summary>A full or partial sphere centred on the plane's origin (default XY).</summary>
     public static Solid MakeSphere(double radius, Plane? plane = null, double angle1 = -90, double angle2 = 90, double angle3 = 360)
     {
-        using var doing = OcctContext.Doing($"sphere of radius {PyFormat.Repr(radius)}");
-        using var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        using var maker = new BRepPrimAPI_MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
+        var ax2 = (plane ?? Plane.XY).ToGpAx2();
+        var maker = new BRepPrimAPI_MakeSphere(ax2, radius, angle1 * Constants.DegToRad, angle2 * Constants.DegToRad,
                                                      angle3 * Constants.DegToRad);
         return new Solid(TopoDS.Solid(maker.Shape()));
     }
@@ -74,9 +70,8 @@ public partial class Solid : Shape3D
     public static Solid MakeTorus(double majorRadius, double minorRadius, Plane? plane = null, double startAngle = 0,
                                   double endAngle = 360, double majorAngle = 360)
     {
-        using var doing = OcctContext.Doing($"torus of radii {PyFormat.Repr(majorRadius)} and {PyFormat.Repr(minorRadius)}");
-        using var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        using var maker = new BRepPrimAPI_MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
+        var ax2 = (plane ?? Plane.XY).ToGpAx2();
+        var maker = new BRepPrimAPI_MakeTorus(ax2, majorRadius, minorRadius, startAngle * Constants.DegToRad,
                                                     endAngle * Constants.DegToRad, majorAngle * Constants.DegToRad);
         return new Solid(TopoDS.Solid(maker.Shape()));
     }
@@ -85,16 +80,14 @@ public partial class Solid : Shape3D
     public static Solid MakeWedge(double deltaX, double deltaY, double deltaZ, double minX, double minZ, double maxX, double maxZ,
                                   Plane? plane = null)
     {
-        using var doing = OcctContext.Doing("wedge");
-        using var ax2 = (plane ?? Plane.XY).ToGpAx2();
-        using var maker = new BRepPrimAPI_MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
+        var ax2 = (plane ?? Plane.XY).ToGpAx2();
+        var maker = new BRepPrimAPI_MakeWedge(ax2, deltaX, deltaY, deltaZ, minX, minZ, maxX, maxZ);
         return new Solid(maker.Solid());
     }
 
     /// <summary>A loft through wires, optionally starting or ending with a vertex; ruled (stepped) or smooth.</summary>
     public static Solid MakeLoft(IEnumerable<Shape> objs, bool ruled = false)
     {
-        using var doing = OcctContext.Doing("loft");
         return Result(new Solid(TopoDS.Solid(TopoUtil.MakeLoft(objs, true, ruled))));
     }
 
@@ -113,7 +106,6 @@ public partial class Solid : Shape3D
     /// <summary>A face extruded into a solid.</summary>
     public static Solid Extrude(Face obj, Vector direction)
     {
-        using var doing = OcctContext.Doing("extrude");
         return Result(new Solid(TopoDS.Solid(TopoUtil.Extrude(obj.TopoShape, direction))));
     }
 
@@ -129,10 +121,9 @@ public partial class Solid : Shape3D
     /// <inheritdoc cref="ExtrudeLinearWithRotation(Shape2D, Vector, Vector, double)"/>
     public static Solid ExtrudeLinearWithRotation(Wire section, Vector center, Vector normal, double angle, IEnumerable<Wire>? innerWires = null)
     {
-        using var doing = OcctContext.Doing("extrude with rotation");
         static TopoDS_Shape ExtrudeAuxSpine(TopoDS_Wire wire, TopoDS_Wire spine, TopoDS_Wire auxSpine)
         {
-            using var builder = new BRepOffsetAPI_MakePipeShell(spine);
+            var builder = new BRepOffsetAPI_MakePipeShell(spine);
             builder.SetMode(auxSpine, false);   // an auxiliary spine
             builder.Add(wire);
             builder.Build();
@@ -145,15 +136,15 @@ public partial class Solid : Shape3D
         var auxSpine = new Wire([Edge.MakeHelix(pitch, normal.Length, 1, center, normal)]).TopoWire;
         var outer = ExtrudeAuxSpine(section.TopoWire, straightSpine, auxSpine);
         var inner = (innerWires ?? []).Select(w => ExtrudeAuxSpine(w.TopoWire, straightSpine, auxSpine)).ToList();
-        using var innerComp = TopoUtil.MakeCompound(inner);
-        using var cut = new BRepAlgoAPI_Cut(outer, innerComp);
+        var innerComp = TopoUtil.MakeCompound(inner);
+        var cut = new BRepAlgoAPI_Cut(outer, innerComp);
         var difference = cut.Shape();
         // The result may be wrapped in a compound
         try
         {
             return Result(new Solid(TopoDS.Solid(difference)));
         }
-        catch (OcctException e) when (e.OcctType == "Standard_TypeMismatch")
+        catch (Standard_Failure e) when (e.OcctType == "Standard_TypeMismatch")
         {
             return Result(new Solid(TopoDS.Solid(TopoUtil.UnwrapCompound(TopoDS.Compound(difference)))));
         }
@@ -167,21 +158,20 @@ public partial class Solid : Shape3D
     /// <exception cref="InvalidOperationException">The taper can't be built, as when it collapses the profile.</exception>
     public static Solid ExtrudeTaper(Face profile, Vector direction, double taper, bool flipInner = true)
     {
-        using var doing = OcctContext.Doing("tapered extrude");
         var pull = direction.Normalized();
         var profileWires = new List<Wire> { profile.OuterWire() };
         profileWires.AddRange(profile.InnerWires());
 
         // The prism shares the profile's face, which the draft would edit: the profile is a copy
         var original = profile;
-        using var copier = new BRepBuilderAPI_Copy(original.TopoShape, false, false);
+        var copier = new BRepBuilderAPI_Copy(original.TopoShape, false, false);
         profile = new Face(TopoDS.Face(copier.Shape()));
         var copyHistory = ShapeHistory.FromAlgorithm(copier, [original.TopoShape], profile.TopoShape);
         profileWires = [profile.OuterWire(), .. profile.InnerWires()];
 
         // Extrude the profile; its sides are the faces generated from its edges
-        using var directionVec = direction.ToGpVec();
-        using var prismBuilder = new BRepPrimAPI_MakePrism(profile.TopoShape, directionVec);
+        var directionVec = direction.ToGpVec();
+        var prismBuilder = new BRepPrimAPI_MakePrism(profile.TopoShape, directionVec);
         var prism = prismBuilder.Shape();
         var sideFaces = new List<(TopoDS_Face Face, double Angle)>();
         for (int i = 0; i < profileWires.Count; i++)
@@ -189,7 +179,7 @@ public partial class Solid : Shape3D
             var angle = i > 0 && !flipInner ? -taper : taper;
             foreach (var edge in profileWires[i].Edges())
             {
-                using var generated = prismBuilder.Generated(edge.TopoShape);
+                var generated = prismBuilder.Generated(edge.TopoShape);
                 foreach (var side in generated)
                     sideFaces.Add((TopoDS.Face(side), angle));
             }
@@ -199,10 +189,10 @@ public partial class Solid : Shape3D
         if (alongNormal && sideFaces.All(s => new Face(s.Face).GeomType is GeomType.Plane or GeomType.Cylinder or GeomType.Cone))
         {
             // Draft the sides about the plane of the profile, which keeps its size
-            using var center = profile.Center().ToGpPnt();
-            using var pullDir = pull.ToGpDir();
-            using var neutral = new gp_Pln(center, pullDir);
-            using var draft = new BRepOffsetAPI_DraftAngle(prism);
+            var center = profile.Center().ToGpPnt();
+            var pullDir = pull.ToGpDir();
+            var neutral = new gp_Pln(center, pullDir);
+            var draft = new BRepOffsetAPI_DraftAngle(prism);
             try
             {
                 bool ok = true;
@@ -222,7 +212,7 @@ public partial class Solid : Shape3D
                         result = new Solid(TopoDS.Solid(draft.Shape()));
                 }
             }
-            catch (OcctException)
+            catch (Standard_Failure)
             {
                 // The draft can't build every taper a loft can
             }
@@ -251,7 +241,7 @@ public partial class Solid : Shape3D
                 }
                 solids = [.. profileWires.Zip(taperWires).Select(p => MakeLoft([p.First, p.Second]))];
             }
-            catch (Exception e) when (e is InvalidOperationException or OcctException)
+            catch (Exception e) when (e is InvalidOperationException or Standard_Failure)
             {
                 throw new InvalidOperationException(
                     $"Tapered extrusion of {PyFormat.Repr(taper)} degrees over {PyFormat.Repr(direction.Length)} could not be built. "
@@ -270,7 +260,6 @@ public partial class Solid : Shape3D
     /// <exception cref="ArgumentException">The extrusion doesn't reach the target, or the surface reached doesn't cut it.</exception>
     public static Solid ExtrudeUntil(Face profile, Shape target, Vector direction, Until until = Until.Next)
     {
-        using var doing = OcctContext.Doing("extrude until");
         if (until is Until.Previous or Until.First)
         {
             direction = -direction;
@@ -281,37 +270,35 @@ public partial class Solid : Shape3D
         var extrusion = Extrude(profile, direction * maxDimension);
 
         // 2: the target's faces the extrusion modified
-        using var intersectOp = new BRepAlgoAPI_Common();
-        using (var arguments = TopoUtil.ListOf([target.TopoShape]))
-        using (var tools = TopoUtil.ListOf([extrusion.TopoShape]))
+        var intersectOp = new BRepAlgoAPI_Common();
         {
+            var arguments = TopoUtil.ListOf([target.TopoShape]);
+            var tools = TopoUtil.ListOf([extrusion.TopoShape]);
             intersectOp.SetArguments(arguments);
             intersectOp.SetTools(tools);
         }
         intersectOp.SetNonDestructive(true);   // leave the target's tolerances alone
         intersectOp.Build();
-        using var intersection = intersectOp.Shape();
-        using (var faceExp = new TopExp_Explorer(intersection, TopAbs_ShapeEnum.TopAbs_FACE))
-            if (!faceExp.More())
-                throw new ArgumentException("No intersection: extrusion does not contact target");
-        using var history = intersectOp.History()!;
+        var intersection = intersectOp.Shape();
+        var faceExp = new TopExp_Explorer(intersection, TopAbs_ShapeEnum.TopAbs_FACE);
+        if (!faceExp.More())
+            throw new ArgumentException("No intersection: extrusion does not contact target");
+        var history = intersectOp.History()!;
         var modifiedTargetFaces = new List<TopoDS_Shape>();
-        using (var faceExplorer = new TopExp_Explorer(target.TopoShape, TopAbs_ShapeEnum.TopAbs_FACE))
-            for (; faceExplorer.More(); faceExplorer.Next())
-            {
-                using var targetFace = TopoDS.Face(faceExplorer.Current());
-                using var modified = history.Modified(targetFace);
-                modifiedTargetFaces.AddRange(modified.Select(m => (TopoDS_Shape)TopoDS.Face(m)));
-            }
+        var faceExplorer = new TopExp_Explorer(target.TopoShape, TopAbs_ShapeEnum.TopAbs_FACE);
+        for (; faceExplorer.More(); faceExplorer.Next())
+        {
+            var targetFace = TopoDS.Face(faceExplorer.Current());
+            var modified = history.Modified(targetFace);
+            modifiedTargetFaces.AddRange(modified.Select(m => (TopoDS_Shape)TopoDS.Face(m)));
+        }
 
         // 3: sewn into one shell per surface passed through, sorted by distance from the profile
         var sewn = TopoUtil.SewFaces(modifiedTargetFaces);
-        var surfaces = new ShapeList<Shape2D>(TopoUtil.TopLevelShapes(sewn).Select(s => s switch
-        {
-            TopoDS_Face f => (Shape2D)new Face(f),
-            TopoDS_Shell sh => new Shell(sh),
-            _ => throw new InvalidOperationException($"Invalid sewn shape {s.GetType().Name}"),
-        })).SortBy(s => s.DistanceTo(profile));
+        var surfaces = new ShapeList<Shape2D>(TopoUtil.TopLevelShapes(sewn).Select(s =>
+            s.IsFace() ? (Shape2D)new Face(TopoDS.Face(s))
+            : s.IsShell() ? new Shell(TopoDS.Shell(s))
+            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).SortBy(s => s.DistanceTo(profile));
         var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
 
         // 4: split the extrusion by that surface
@@ -336,9 +323,8 @@ public partial class Solid : Shape3D
     /// <summary>A cross section (a face, or a wire with optional holes) revolved through <paramref name="angle"/> degrees about an axis.</summary>
     public static Solid Revolve(Face section, double angle, Axis axis)
     {
-        using var doing = OcctContext.Doing("revolve");
-        using var ax1 = axis.ToGpAx1();
-        using var builder = new BRepPrimAPI_MakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
+        var ax1 = axis.ToGpAx1();
+        var builder = new BRepPrimAPI_MakeRevol(section.TopoShape, ax1, angle * Constants.DegToRad, true);
         return Result(new Solid(TopoDS.Solid(builder.Shape())));
     }
 
@@ -368,12 +354,11 @@ public partial class Solid : Shape3D
     private static Shape SweepCore(Wire outerWire, IReadOnlyList<Wire> innerWires, Shape1D path, bool makeSolid, bool isFrenet,
                                    object? mode, Transition transition)
     {
-        using var doing = OcctContext.Doing("sweep");
         var shapes = new List<Shape>();
         var pathWire = path as Wire ?? new Wire((Edge)path);
         foreach (var wire in innerWires.Prepend(outerWire))
         {
-            using var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+            var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
             bool rotate = false;
             if (mode is not null)
                 rotate = SetSweepMode(builder, path, mode);
@@ -402,11 +387,11 @@ public partial class Solid : Shape3D
         {
             case Vector v:
             {
-                using var system = new gp_Ax2();
-                using var start = path.StartPoint().ToGpPnt();
-                using var dir = v.ToGpDir();
-                system.SetLocation(start);
-                system.SetDirection(dir);
+                var system = new gp_Ax2();
+                var start = path.StartPoint().ToGpPnt();
+                var dir = v.ToGpDir();
+                system = system.WithLocation(start);
+                system = system.WithDirection(dir);
                 builder.SetMode(system);
                 return true;
             }
@@ -428,9 +413,8 @@ public partial class Solid : Shape3D
     /// <inheritdoc cref="SweepMulti(IEnumerable{Shape2D}, Shape1D, bool, bool, object?)"/>
     public static Solid SweepMulti(IEnumerable<Wire> profiles, Shape1D path, bool makeSolid = true, bool isFrenet = false, object? binormal = null)
     {
-        using var doing = OcctContext.Doing("multi-section sweep");
         var pathWire = path as Wire ?? new Wire((Edge)path);
-        using var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
+        var builder = new BRepOffsetAPI_MakePipeShell(pathWire.TopoWire);
         bool rotate = false;
         if (binormal is not null)
             rotate = SetSweepMode(builder, path, binormal);
@@ -455,7 +439,6 @@ public partial class Solid : Shape3D
     /// <exception cref="InvalidOperationException">OCCT can't thicken the surface.</exception>
     public static Solid Thicken(Shape2D surface, double depth, Vector? normalOverride = null)
     {
-        using var doing = OcctContext.Doing("thicken");
         var adjusted = depth;
         if (surface is Face face && normalOverride is { } up)
         {
@@ -463,7 +446,7 @@ public partial class Solid : Shape3D
             if (normal.Dot(up.Normalized()) < 0)
                 adjusted = -depth;
         }
-        using var builder = new BRepOffset_MakeOffset();
+        var builder = new BRepOffset_MakeOffset();
         builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, BRepOffset_Mode.BRepOffset_Skin, true, false,
                            GeomAbs_JoinType.GeomAbs_Intersection, true, true);
         builder.MakeOffsetShape();
@@ -472,7 +455,7 @@ public partial class Solid : Shape3D
         {
             thickened = builder.Shape();
         }
-        catch (OcctException e) when (e.OcctType == "StdFail_NotDone")
+        catch (Standard_Failure e) when (e.OcctType == "StdFail_NotDone")
         {
             throw new InvalidOperationException("Error applying thicken to given surface", e);
         }
@@ -491,9 +474,9 @@ public partial class Solid : Shape3D
                 throw new ArgumentException(
                     $"Face {face} has unsupported geometry type {face.GeomType.ToString().ToUpperInvariant()}. "
                     + "Only PLANAR, CYLINDRICAL, and CONICAL faces are supported.");
-        using var builder = new BRepOffsetAPI_DraftAngle(TopoShape);
-        using var dir = neutralPlane.ZDir.ToGpDir();
-        using var pln = neutralPlane.ToGpPln();
+        var builder = new BRepOffsetAPI_DraftAngle(TopoShape);
+        var dir = neutralPlane.ZDir.ToGpDir();
+        var pln = neutralPlane.ToGpPln();
         foreach (var face in faceList)
         {
             builder.Add(face.TopoFace, dir, angle * Constants.DegToRad, pln, true);
@@ -506,7 +489,7 @@ public partial class Solid : Shape3D
             builder.Build();
             result = new Solid(TopoDS.Solid(builder.Shape()));
         }
-        catch (OcctException e) when (e.OcctType == "StdFail_NotDone")
+        catch (Standard_Failure e) when (e.OcctType == "StdFail_NotDone")
         {
             throw new DraftAngleError("Draft build failed on the given solid.", null, builder.ProblematicShape(), e);
         }
@@ -529,17 +512,17 @@ public partial class Solid : Shape3D
         // Distance can't tell an edge on a face from one crossing it, so ask for the common part
         bool OnFaces(Shape s, IEnumerable<Face> faces) => faces.Any(f =>
         {
-            using var common = new BRepAlgoAPI_Common();
+            var common = new BRepAlgoAPI_Common();
             return BoolOpList([s], [f], common).Count > 0;
         });
         bool EdgeOnFaces(Edge e, IEnumerable<Face> faces) => OnFaces(e, faces);
         (Vector, Vector) PointNormal(Face face, double u, double v)
         {
             var (u0, u1, v0, v1) = face.UVBounds();
-            using var pnt = new gp_Pnt();
-            using var norm = new gp_Vec();
-            using var props = new BRepGProp_Face(face.TopoFace);
-            props.Normal(u0 + u * (u1 - u0), v0 + v * (v1 - v0), pnt, norm);
+            var pnt = new gp_Pnt();
+            var norm = new gp_Vec();
+            var props = new BRepGProp_Face(face.TopoFace);
+            props.Normal(u0 + u * (u1 - u0), v0 + v * (v1 - v0), out pnt, out norm);
             return (new Vector(pnt), new Vector(norm));
         }
         // Faces are equal geometrically, not as the same OCCT object: compare a grid of positions and normals
@@ -620,13 +603,13 @@ public partial class Solid : Shape3D
                 {
                     if (!sfBox.Intersects(otherBox, tolerance))
                         continue;
-                    using var extrema = new BRepExtrema_DistShapeShape(sf.TopoShape, other.TopoShape);
+                    var extrema = new BRepExtrema_DistShapeShape(sf.TopoShape, other.TopoShape);
                     if (!extrema.IsDone() || extrema.Value() > tolerance)
                         continue;
                     for (int i = 1; i <= extrema.NbSolution(); i++)
                     {
-                        using var p1 = extrema.PointOnShape1(i);
-                        using var p2 = extrema.PointOnShape2(i);
+                        var p1 = extrema.PointOnShape1(i);
+                        var p2 = extrema.PointOnShape2(i);
                         if (p1.Distance(p2) > tolerance)
                             continue;
                         var vertex = new Vertex(p1.X(), p1.Y(), p1.Z());

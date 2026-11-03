@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -13,9 +13,9 @@ public abstract partial class Shape3D : Shape
     internal static Shape Make3DResult(TopoDS_Shape shape)
     {
         var result = TopoUtil.Downcast(shape);
-        if (result is TopoDS_Compound c)
-            result = TopoUtil.Downcast(TopoUtil.UnwrapCompound(c));
-        if (result is TopoDS_Compound)
+        if (result.IsCompound())
+            result = TopoUtil.Downcast(TopoUtil.UnwrapCompound(TopoDS.Compound(result)));
+        if (result.IsCompound())
             return MakeComposite(TopoUtil.TopLevelShapes(result).Select(s => new Solid(TopoDS.Solid(s))), 3);
         return new Solid(TopoDS.Solid(result));
     }
@@ -33,9 +33,9 @@ public abstract partial class Shape3D : Shape
                 throw new ArgumentException("Center of GEOMETRY is not supported for this object");
             case CenterOf.Mass:
             {
-                using var props = new GProp_GProps();
+                var props = new GProp_GProps();
                 MassProperties(TopoShape, props);
-                using var c = props.CentreOfMass();
+                var c = props.CentreOfMass();
                 return new Vector(c);
             }
             default:
@@ -57,9 +57,9 @@ public abstract partial class Shape3D : Shape
             if (edges.Any(e => !faceEdges.Contains(e)))
                 throw new ArgumentException("Some edges are not part of the face");
         }
-        using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, map);
-        using var builder = new BRepFilletAPI_MakeChamfer(TopoShape);
+        var builder = new BRepFilletAPI_MakeChamfer(TopoShape);
         var distance2 = length2 is { } l2 && l2 != 0 ? l2 : length;
         foreach (var edge in edges)
         {
@@ -68,7 +68,7 @@ public abstract partial class Shape3D : Shape
                 topoFace = face.TopoFace;
             else
             {
-                using var ancestors = map.FindFromKey(edge.TopoShape);
+                var ancestors = map.FindFromKey(edge.TopoShape);
                 topoFace = TopoDS.Face(ancestors.First());
             }
             builder.Add(length, distance2, edge.TopoEdge, topoFace);
@@ -80,7 +80,7 @@ public abstract partial class Shape3D : Shape
             if (!result.IsValid)
                 throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)");
         }
-        catch (OcctException e)
+        catch (Standard_Failure e)
         {
             throw new ArgumentException("Failed creating a chamfer, try a smaller length value(s)", e);
         }
@@ -103,10 +103,10 @@ public abstract partial class Shape3D : Shape
     private Shape DPrismCore(Face? basis, IEnumerable<Face> faces, double? depth, double taper, Face? upToFace, bool thruAll, bool additive)
     {
         var shape = TopoShape;
-        using var noBasis = new TopoDS_Face();
+        var noBasis = new TopoDS_Face();
         foreach (var face in faces)
         {
-            using var feature = new BRepFeat_MakeDPrism(shape, face.TopoFace, basis?.TopoFace ?? noBasis,
+            var feature = new BRepFeat_MakeDPrism(shape, face.TopoFace, basis?.TopoFace ?? noBasis,
                                                         taper * Constants.DegToRad, additive ? 1 : 0, false);
             if (upToFace is not null)
                 feature.Perform(upToFace.TopoShape);
@@ -124,7 +124,7 @@ public abstract partial class Shape3D : Shape
     public Shape Fillet(double radius, IEnumerable<Edge> edgeList)
     {
         var edges = edgeList.Select(e => e.TopoEdge).ToList();
-        using var builder = new BRepFilletAPI_MakeFillet(TopoShape);
+        var builder = new BRepFilletAPI_MakeFillet(TopoShape);
         foreach (var edge in edges)
             builder.Add(radius, edge);
         Shape result;
@@ -134,7 +134,7 @@ public abstract partial class Shape3D : Shape
             if (!result.IsValid)
                 throw new InvalidOperationException();
         }
-        catch (Exception e) when (e is OcctException or InvalidOperationException)
+        catch (Exception e) when (e is Standard_Failure or InvalidOperationException)
         {
             string details = "";
             try
@@ -216,7 +216,7 @@ public abstract partial class Shape3D : Shape
             var windowMid = (windowMin + windowMax) / 2;
             if (iteration == maxIterations)
                 throw new InvalidOperationException($"Failed to find the max value within {PyFormat.Repr(tolerance)} in {maxIterations}");
-            using var builder = new BRepFilletAPI_MakeFillet(TopoShape);
+            var builder = new BRepFilletAPI_MakeFillet(TopoShape);
             foreach (var edge in edges)
                 builder.Add(windowMid, edge);
             // Do these numbers work? If not, try the smaller window
@@ -225,7 +225,7 @@ public abstract partial class Shape3D : Shape
                 if (!Make3DResult(builder.Shape()).IsValid)
                     return Search(windowMin, windowMid, iteration + 1);
             }
-            catch (OcctException)
+            catch (Standard_Failure)
             {
                 return Search(windowMin, windowMid, iteration + 1);
             }
@@ -247,8 +247,8 @@ public abstract partial class Shape3D : Shape
         if (kind == Kind.Tangent)
             throw new ArgumentException("Kind.TANGENT not supported");
         var join = kind == Kind.Arc ? GeomAbs_JoinType.GeomAbs_Arc : GeomAbs_JoinType.GeomAbs_Intersection;
-        using var openings = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
-        using var builder = new BRepOffsetAPI_MakeThickSolid();
+        var openings = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
+        var builder = new BRepOffsetAPI_MakeThickSolid();
         builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join);
         builder.Build();
         var shellShape = builder.Shape();
@@ -261,15 +261,15 @@ public abstract partial class Shape3D : Shape
         var shell1 = CastLike(shellShape).Shells()[0].TopoShell;
         var shell2 = Shells()[0].TopoShell;
         // The first can be the outer or inner shell depending on the thickness's sign
-        using var solid = thickness > 0 ? new BRepBuilderAPI_MakeSolid(shell1, shell2) : new BRepBuilderAPI_MakeSolid(shell2, shell1);
+        var solid = thickness > 0 ? new BRepBuilderAPI_MakeSolid(shell1, shell2) : new BRepBuilderAPI_MakeSolid(shell2, shell1);
         return CastLike(solid.Shape()).Fix();
     }
 
     /// <summary>Whether a point is inside the solid (or on its surface) within a tolerance.</summary>
     public bool IsInside(Vector point, double tolerance = 1.0e-6)
     {
-        using var classifier = new BRepClass3d_SolidClassifier(TopoShape);
-        using var p = point.ToGpPnt();
+        var classifier = new BRepClass3d_SolidClassifier(TopoShape);
+        var p = point.ToGpPnt();
         classifier.Perform(p, tolerance);
         return classifier.State() == TopAbs_State.TopAbs_IN || classifier.IsOnAFace();
     }
@@ -285,8 +285,8 @@ public abstract partial class Shape3D : Shape
         if (kind == Kind.Tangent)
             throw new ArgumentException("Kind.TANGENT not supported");
         var join = kind == Kind.Arc ? GeomAbs_JoinType.GeomAbs_Arc : GeomAbs_JoinType.GeomAbs_Intersection;
-        using var faces = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
-        using var builder = new BRepOffsetAPI_MakeThickSolid();
+        var faces = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
+        var builder = new BRepOffsetAPI_MakeThickSolid();
         builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false, join, true);
         builder.Build();
         TopoDS_Shape solid;
@@ -294,7 +294,7 @@ public abstract partial class Shape3D : Shape
         {
             solid = builder.Shape();
         }
-        catch (OcctException e)
+        catch (Standard_Failure e)
         {
             throw new InvalidOperationException("offset Error, an alternative kind may resolve this error", e);
         }
@@ -321,7 +321,7 @@ public abstract partial class Shape3D : Shape
         {
             case Solid or Face or Shell or Edge or Wire:
             {
-                using var common = new BRepAlgoAPI_Common();
+                var common = new BRepAlgoAPI_Common();
                 results.AddRange(BoolOpList([this], [shape], common).Expand());
                 break;
             }
@@ -367,24 +367,19 @@ internal static class ThreeD
     internal static TopoDS_Shape ForwardSolid(TopoDS_Solid solid)
     {
         var flags = new List<TopAbs_Orientation> { solid.Orientation() };
-        using (var shells = new TopoDS_Iterator(solid, true, true))
-            for (; shells.More(); shells.Next())
-                flags.Add(shells.Value().Orientation());
+        var shells = new TopoDS_Iterator(solid, true, true);
+        for (; shells.More(); shells.Next())
+            flags.Add(shells.Value().Orientation());
         if (flags.All(f => f == TopAbs_Orientation.TopAbs_FORWARD))
             return solid;
-        using var builder = new BRep_Builder();
-        var forward = new TopoDS_Solid();
-        builder.MakeSolid(forward);
-        using (var shells = new TopoDS_Iterator(solid, true, true))   // orientations composed
-            for (; shells.More(); shells.Next())
-            {
-                var shell = new TopoDS_Shell();
-                builder.MakeShell(shell);
-                using var faces = new TopoDS_Iterator(shells.Value(), true, true);
-                for (; faces.More(); faces.Next())
-                    builder.Add(shell, faces.Value());
-                builder.Add(forward, shell);
-            }
-        return forward;
+        var forwardShells = new List<TopoDS_Shape>();
+        for (shells = new TopoDS_Iterator(solid, true, true); shells.More(); shells.Next())   // orientations composed
+        {
+            var faces = new List<TopoDS_Shape>();
+            for (var it = new TopoDS_Iterator(shells.Value(), true, true); it.More(); it.Next())
+                faces.Add(it.Value());
+            forwardShells.Add(TopoDS_Builder.MakeShell(faces));
+        }
+        return TopoDS_Builder.MakeSolid(forwardShells);
     }
 }

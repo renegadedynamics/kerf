@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -21,12 +21,12 @@ public sealed class Vertex : Shape
 
     private static TopoDS_Vertex Make(Vector point)
     {
-        using var pnt = point.ToGpPnt();
-        using var maker = new BRepBuilderAPI_MakeVertex(pnt);
+        var pnt = point.ToGpPnt();
+        var maker = new BRepBuilderAPI_MakeVertex(pnt);
         return maker.Vertex();
     }
 
-    internal TopoDS_Vertex TopoVertex => (TopoDS_Vertex)TopoShape;
+    internal TopoDS_Vertex TopoVertex => TopoDS.Vertex(TopoShape);
 
     internal override int? Dim => 0;
 
@@ -47,25 +47,25 @@ public sealed class Vertex : Shape
     }
 
     /// <summary>The X coordinate, including the vertex's Location.</summary>
-    public double X { get { using var p = Point; return p.X(); } }
+    public double X { get { var p = Point; return p.X(); } }
 
     /// <summary>The Y coordinate, including the vertex's Location.</summary>
-    public double Y { get { using var p = Point; return p.Y(); } }
+    public double Y { get { var p = Point; return p.Y(); } }
 
     /// <summary>The Z coordinate, including the vertex's Location.</summary>
-    public double Z { get { using var p = Point; return p.Z(); } }
+    public double Z { get { var p = Point; return p.Z(); } }
 
     /// <summary>The coordinates of the vertex.</summary>
     public void Deconstruct(out double x, out double y, out double z)
     {
-        using var p = Point;
+        var p = Point;
         (x, y, z) = (p.X(), p.Y(), p.Z());
     }
 
     /// <summary>The point the vertex is at.</summary>
     public Vector ToVector()
     {
-        using var p = Point;
+        var p = Point;
         return new Vector(p);
     }
 
@@ -149,7 +149,7 @@ public sealed class Vertex : Shape
         get
         {
             var face = OwningFace() ?? OnlyFace();
-            return face is not null ? CornerConvexity(face) : CreaseConvexity();
+            return face is { } f ? CornerConvexity(f) : CreaseConvexity();
         }
     }
 
@@ -169,11 +169,11 @@ public sealed class Vertex : Shape
         if (parent is null || parent.IsEmpty || parent.Solids().Count > 0 || parent.Shells().Count > 0)
             return null;
         var holding = new List<TopoDS_Face>();
-        using var faces = new TopExp_Explorer(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_FACE);
+        var faces = new TopExp_Explorer(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_FACE);
         for (; faces.More(); faces.Next())
         {
             var face = TopoDS.Face(faces.Current());
-            using var vertices = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_VERTEX);
+            var vertices = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_VERTEX);
             for (; vertices.More(); vertices.Next())
                 if (vertices.Current().IsSame(TopoShape))
                 {
@@ -191,25 +191,25 @@ public sealed class Vertex : Shape
     /// <summary>Unit directions leading away from this vertex in the face's (u, v) parameters.</summary>
     private List<(double U, double V)> FaceTangents(TopoDS_Face face)
     {
-        using var here = BRep_Tool.Parameters(TopoVertex, face);
+        var here = BRep_Tool.Parameters(TopoVertex, face);
         var seen = new List<TopoDS_Edge>();
         var directions = new List<(double, double)>();
-        using var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
         for (; explorer.More(); explorer.Next())
         {
             var edge = TopoDS.Edge(explorer.Current());
-            if (seen.Any(edge.IsSame))
+            if (seen.Any(e => edge.IsSame(e)))
                 continue;   // a seam edge is met once per side
             seen.Add(edge);
-            using var curve = new BRepAdaptor_Curve2d(edge, face);
+            var curve = new BRepAdaptor_Curve2d(edge, face);
             foreach (var (param, sign) in new[] { (curve.FirstParameter(), 1.0), (curve.LastParameter(), -1.0) })
             {
-                using var end = curve.Value(param);
+                var end = curve.Value(param);
                 if (Math.Pow(end.X() - here.X(), 2) + Math.Pow(end.Y() - here.Y(), 2) > Constants.Tolerance)
                     continue;
-                using var point = new gp_Pnt2d();
-                using var tangent = new gp_Vec2d();
-                curve.D1(param, point, tangent);
+                var point = new gp_Pnt2d();
+                var tangent = new gp_Vec2d();
+                curve.D1(param, out point, out tangent);
                 var length = Math.Sqrt(tangent.X() * tangent.X() + tangent.Y() * tangent.Y());
                 if (length > 0)
                     directions.Add((sign * tangent.X() / length, sign * tangent.Y() / length));
@@ -234,11 +234,11 @@ public sealed class Vertex : Shape
         if (span < Constants.Tolerance)
             return Convexity.Smooth;   // the boundary runs straight through
         double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BRepTools.UVBounds(face, ref uMin, ref uMax, ref vMin, ref vMax);
+        BRepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
         var step = 1e-4 * Math.Sqrt(Math.Pow(uMax - uMin, 2) + Math.Pow(vMax - vMin, 2)) / span;
-        using var here = BRep_Tool.Parameters(TopoVertex, face);
-        using var probe = new gp_Pnt2d(here.X() + bisector.U * step, here.Y() + bisector.V * step);
-        using var classifier = new IntTools_FClass2d(face, Constants.Tolerance);
+        var here = BRep_Tool.Parameters(TopoVertex, face);
+        var probe = new gp_Pnt2d(here.X() + bisector.U * step, here.Y() + bisector.V * step);
+        var classifier = new IntTools_FClass2d(face, Constants.Tolerance);
         return classifier.Perform(probe) == TopAbs_State.TopAbs_IN ? Convexity.Convex : Convexity.Concave;
     }
 
@@ -249,12 +249,12 @@ public sealed class Vertex : Shape
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException(
                 "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
-        using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_VERTEX, TopAbs_ShapeEnum.TopAbs_EDGE, map);
         var own = TopoUtil.FindSame(TopoShape, Enumerable.Range(1, map.Extent()).Select(map.FindKey))
                   ?? throw new InvalidOperationException("this vertex is not part of its topo_parent");
         var kinds = new HashSet<Convexity>();
-        using var edges = map.FindFromKey(own);
+        var edges = map.FindFromKey(own);
         foreach (var topoEdge in edges)
             kinds.Add(((Edge)Cast(topoEdge).WithTopoPath(TopoPath)).Convexity);
         kinds.Remove(Convexity.Smooth);
@@ -271,11 +271,11 @@ public sealed class Vertex : Shape
 
     internal static Vertex CommonVertex(TopoDS_Edge edge1, TopoDS_Edge edge2)
     {
-        using var first = new TopExp_Explorer(edge1, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        var first = new TopExp_Explorer(edge1, TopAbs_ShapeEnum.TopAbs_VERTEX);
         for (; first.More(); first.Next())
         {
             var vertex1 = first.Current();
-            using var second = new TopExp_Explorer(edge2, TopAbs_ShapeEnum.TopAbs_VERTEX);
+            var second = new TopExp_Explorer(edge2, TopAbs_ShapeEnum.TopAbs_VERTEX);
             for (; second.More(); second.Next())
                 if (vertex1.IsSame(second.Current()))
                     return new Vertex(TopoDS.Vertex(vertex1));

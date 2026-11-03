@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Reflection;
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Immutability;
@@ -169,7 +169,7 @@ public class InputsUnchangedTests
         {
             c.Run();
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
         {
             // Failing is allowed; changing the inputs isn't
         }
@@ -246,7 +246,7 @@ public class InputsUnchangedTests
                 var value => value?.ToString() ?? "null",
             };
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
         {
             return e.GetType().Name + ": " + e.Message;
         }

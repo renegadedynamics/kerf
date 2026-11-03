@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -8,11 +8,11 @@ public static class OneD
     /// <summary>The wires made by connecting edges end to end within <paramref name="tolerance"/>.</summary>
     public static ShapeList<Wire> EdgesToWires(IEnumerable<Edge> edges, double tolerance = 1e-6)
     {
-        using var edgesIn = new TopTools_HSequenceOfShape();
+        var edgesIn = new NCollection_HSequence<TopoDS_Shape>();
         foreach (var edge in edges)
             if (!edge.IsEmpty)
                 edgesIn.Append(edge.TopoShape);
-        using var wiresOut = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(edgesIn, tolerance, false);
+        var wiresOut = ShapeAnalysis_FreeBounds.ConnectEdgesToWires(edgesIn, tolerance, false);
         if (wiresOut is null)
             return [];
         return new ShapeList<Wire>(wiresOut.Select(w => new Wire(TopoDS.Wire(w))));
@@ -41,7 +41,7 @@ public static class OneD
                 {
                     sum = JoinedWire(summandEdges, [], brought);
                 }
-                catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+                catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
                 {
                     sum = summands[0].Fuse(summands.Skip(1));
                     if (sum.History is not null)
@@ -55,7 +55,7 @@ public static class OneD
             {
                 sum = JoinedWire([.. self.Edges(), .. summandEdges], [self.TopoShape], brought);
             }
-            catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+            catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
             {
                 sum = self.Fuse(summands);
             }
@@ -69,7 +69,7 @@ public static class OneD
     /// <summary>A face offset by <paramref name="amount"/> (<c>BRepOffset_MakeOffset</c>).</summary>
     public static TopoDS_Shape OffsetTopodsFace(TopoDS_Face face, double amount)
     {
-        using var offsetter = new BRepOffset_MakeOffset();
+        var offsetter = new BRepOffset_MakeOffset();
         offsetter.Initialize(face, amount, Constants.Tolerance);
         offsetter.MakeOffsetShape();
         return offsetter.Shape();
@@ -90,21 +90,21 @@ public static class OneD
         var parentEdge = TopoUtil.FindSame(edge.TopoShape, topoEdges);
         if (parentEdge is null)
             return [];
-        var given = TopoDS.Edge(parentEdge);
-        using var relocation = TopoUtil.RelocationBetween(given, edge.TopoShape);
+        var given = TopoDS.Edge(parentEdge.Value);
+        var relocation = TopoUtil.RelocationBetween(given, edge.TopoShape);
         var connected = new List<TopoDS_Shape>();
         foreach (var other in topoEdges)
         {
             if (given.IsSame(other))
                 continue;
-            using var otherEdge = TopoDS.Edge(other);
+            var otherEdge = TopoDS.Edge(other);
             var common = Vertex.CommonVertex(given, otherEdge);
             if (common.IsEmpty)
                 continue;
             var u1 = BRep_Tool.Parameter(common.TopoVertex, given);
             var u2 = BRep_Tool.Parameter(common.TopoVertex, otherEdge);
-            using var curve1 = new BRepAdaptor_Curve(given);
-            using var curve2 = new BRepAdaptor_Curve(otherEdge);
+            var curve1 = new BRepAdaptor_Curve(given);
+            var curve2 = new BRepAdaptor_Curve(otherEdge);
             var actual = BRepLProp.Continuity(curve1, curve2, u1, u2, Constants.Tolerance, Constants.Tolerance);
             var level = actual switch
             {
@@ -133,17 +133,17 @@ public static class OneD
         parent ??= edge.TopoParent;
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException("edge has no valid parent");
-        using var map = new TopTools_IndexedDataMapOfShapeListOfShape();
+        var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
         TopExp.MapShapesAndAncestors(parent.TopoShape, TopAbs_ShapeEnum.TopAbs_EDGE, TopAbs_ShapeEnum.TopAbs_FACE, map);
         // The map keys on TShape and Location, so a moved edge isn't found by Contains
         var parentEdge = TopoUtil.FindSame(edge.TopoShape, Enumerable.Range(1, map.Extent()).Select(map.FindKey));
         if (parentEdge is null)
             return [];
-        using var relocation = TopoUtil.RelocationBetween(parentEdge, edge.TopoShape);
-        using var unique = new TopTools_IndexedMapOfShape();
-        using (var faces = map.FindFromKey(parentEdge))
-            foreach (var face in faces)
-                unique.Add(face);
+        var relocation = TopoUtil.RelocationBetween(parentEdge.Value, edge.TopoShape);
+        var unique = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
+        var faces = map.FindFromKey(parentEdge.Value);
+        foreach (var face in faces)
+            unique.Add(face);
         return [.. unique.Select(f => TopoDS.Face(f.Moved(relocation)))];
     }
 
@@ -151,7 +151,7 @@ public static class OneD
     internal static bool IsSeamOf(TopoDS_Edge edge, TopoDS_Face face)
     {
         int count = 0;
-        using var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
         for (; explorer.More(); explorer.Next())
             if (explorer.Current().IsSame(edge))
                 count++;
@@ -161,7 +161,7 @@ public static class OneD
     /// <summary>The edge with the orientation it has in the face's boundary.</summary>
     private static TopoDS_Edge AsBoundedBy(TopoDS_Face face, TopoDS_Edge edge)
     {
-        using var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
         for (; explorer.More(); explorer.Next())
             if (explorer.Current().IsSame(edge))
                 return TopoDS.Edge(explorer.Current());
@@ -177,41 +177,41 @@ public static class OneD
     internal static Convexity DihedralConvexity(TopoDS_Edge edge, TopoDS_Face face1, TopoDS_Face face2,
                                                 int samples = 7, double sinTolerance = 1e-4)
     {
-        using var curve = new BRepAdaptor_Curve(edge);
+        var curve = new BRepAdaptor_Curve(edge);
         double first = curve.FirstParameter(), last = curve.LastParameter();
         double f1 = first, l1 = last, f2 = first, l2 = last;
-        using var pcurve1 = BRep_Tool.CurveOnSurface(edge, face1, ref f1, ref l1)!;
-        using var pcurve2 = BRep_Tool.CurveOnSurface(edge, face2, ref f2, ref l2)!;
+        var pcurve1 = BRep_Tool.CurveOnSurface(edge, face1, out f1, out l1)!;
+        var pcurve2 = BRep_Tool.CurveOnSurface(edge, face2, out f2, out l2)!;
         bool reversedInFace2 = AsBoundedBy(face2, edge).Orientation() == TopAbs_Orientation.TopAbs_REVERSED;
-        using var props1 = new BRepGProp_Face(face1);
-        using var props2 = new BRepGProp_Face(face2);
+        var props1 = new BRepGProp_Face(face1);
+        var props2 = new BRepGProp_Face(face2);
         var kinds = new HashSet<Convexity>();
         for (int i = 0; i < samples; i++)
         {
             var param = first + (last - first) * (i + 0.5) / samples;
-            using var point = new gp_Pnt();
-            using var tangent = new gp_Vec();
-            curve.D1(param, point, tangent);
-            using var uv1 = pcurve1.Value(param);
-            using var uv2 = pcurve2.Value(param);
-            using var normal1 = new gp_Vec();
-            using var normal2 = new gp_Vec();
-            props1.Normal(uv1.X(), uv1.Y(), point, normal1);
-            props2.Normal(uv2.X(), uv2.Y(), point, normal2);
+            var point = new gp_Pnt();
+            var tangent = new gp_Vec();
+            curve.D1(param, out point, out tangent);
+            var uv1 = pcurve1.Value(param);
+            var uv2 = pcurve2.Value(param);
+            var normal1 = new gp_Vec();
+            var normal2 = new gp_Vec();
+            props1.Normal(uv1.X(), uv1.Y(), out point, out normal1);
+            props2.Normal(uv2.X(), uv2.Y(), out point, out normal2);
             if (Math.Min(tangent.Magnitude(), Math.Min(normal1.Magnitude(), normal2.Magnitude())) < 1e-12)
                 continue;
-            tangent.Normalize();
-            normal1.Normalize();
-            normal2.Normalize();
-            using (var cross = normal1.Crossed(normal2))
-                if (cross.Magnitude() < sinTolerance)
-                {
-                    kinds.Add(Convexity.Smooth);
-                    continue;
-                }
+            tangent = tangent.Normalized();
+            normal1 = normal1.Normalized();
+            normal2 = normal2.Normalized();
+            var cross = normal1.Crossed(normal2);
+            if (cross.Magnitude() < sinTolerance)
+            {
+                kinds.Add(Convexity.Smooth);
+                continue;
+            }
             if (reversedInFace2)
-                tangent.Reverse();
-            using var intoFace2 = normal2.Crossed(tangent);
+                tangent = tangent.Reversed();
+            var intoFace2 = normal2.Crossed(tangent);
             kinds.Add(intoFace2.Dot(normal1) < 0 ? Convexity.Convex : Convexity.Concave);
         }
         if (kinds.Count == 0)
@@ -233,7 +233,7 @@ public static class OneD
     internal static Wire JoinedWire(IReadOnlyList<Edge> edges, IEnumerable<TopoDS_Shape> before, IEnumerable<TopoDS_Shape> brought)
     {
         var wire = new Wire(edges);
-        using var history = new BRepTools_History();
+        var history = new BRepTools_History();
         var placed = wire.Edges();
         var midpoints = placed.Select(e => e.PositionAt(0.5)).ToList();
         foreach (var source in edges)
@@ -259,14 +259,14 @@ public static class OneD
         {
             if (old.ShapeType() != TopAbs_ShapeEnum.TopAbs_VERTEX)
                 continue;
-            using var oldVertex = TopoDS.Vertex(old);
-            using var oldPoint = BRep_Tool.Pnt(oldVertex);
+            var oldVertex = TopoDS.Vertex(old);
+            var oldPoint = BRep_Tool.Pnt(oldVertex);
             foreach (var @new in placedVertices)
             {
                 if (@new.IsSame(old))
                     break;
-                using var newVertex = TopoDS.Vertex(@new);
-                using var newPoint = BRep_Tool.Pnt(newVertex);
+                var newVertex = TopoDS.Vertex(@new);
+                var newPoint = BRep_Tool.Pnt(newVertex);
                 if (newPoint.Distance(oldPoint) < Constants.Tolerance)
                 {
                     history.AddModified(old, @new);
@@ -293,19 +293,19 @@ public static class OneD
                 fitted.Add(edge);
                 continue;
             }
-            using var adaptor = edge.GeomAdaptor();
+            var adaptor = edge.GeomAdaptor();
             // Fit only the part of the offset curve the edge uses, as it lies before the edge's location
-            using var curveLocation = new TopLoc_Location();
+            var curveLocation = new TopLoc_Location();
             double f = 0, l = 0;
-            using var curve = BRep_Tool.Curve(edge.TopoEdge, curveLocation, ref f, ref l);
-            using var trimmed = new Geom_TrimmedCurve(curve, adaptor.FirstParameter(), adaptor.LastParameter());
-            using var approximation = new GeomConvert_ApproxCurve(trimmed, Constants.Tolerance / 10, GeomAbs_Shape.GeomAbs_C2, 100, 9);
+            var curve = BRep_Tool.Curve(edge.TopoEdge, out curveLocation, out f, out l);
+            var trimmed = new Geom_TrimmedCurve(curve!, adaptor.FirstParameter(), adaptor.LastParameter());
+            var approximation = new GeomConvert_ApproxCurve(trimmed, Constants.Tolerance / 10, GeomAbs_Shape.GeomAbs_C2, 100, 9);
             if (!approximation.HasResult())
                 throw new InvalidOperationException("2D offset curve could not be converted to a spline");
-            using var spline = approximation.Curve();
-            using var maker = new BRepBuilderAPI_MakeEdge(spline);
+            var spline = approximation.Curve();
+            var maker = new BRepBuilderAPI_MakeEdge(spline!);
             // The curve is stored without the placement or direction of its edge
-            using var placed = maker.Edge().Located(edge.TopoShape.Location());
+            var placed = maker.Edge().Located(edge.TopoShape.Location());
             fitted.Add(new Edge(TopoDS.Edge(placed.Oriented(edge.TopoShape.Orientation()))));
         }
         // The edges came from the wire with its direction applied, so the new wire winds the same way
@@ -393,11 +393,11 @@ public abstract partial class Shape1D
         TopoDS_Wire topoWire = lineEdges.Count == 1
             ? new Wire([lineEdges[0].Trim(0.0, 0.5), lineEdges[0].Trim(0.5, 1.0)]).TopoWire
             : line.TopoWire;
-        using var builder = new BRepOffsetAPI_MakeOffset();
+        var builder = new BRepOffsetAPI_MakeOffset();
         if (isStraight && normal is { } sn)
         {
             // A straight line has no plane of its own to offset within
-            using var spine = MakePlaneFace(new Plane(start, zDir: sn));
+            var spine = MakePlaneFace(new Plane(start, zDir: sn));
             builder.Init(spine, join);
         }
         else
@@ -407,11 +407,11 @@ public abstract partial class Shape1D
         if (!builder.IsDone())
             throw new InvalidOperationException($"2D offset failed with distance {distance}");
         var obj = TopoUtil.Downcast(builder.Shape());
-        if (obj is TopoDS_Compound c)
-            obj = TopoUtil.UnwrapCompound(c);
-        if (obj is not TopoDS_Wire offsetTopo)
+        if (obj.IsCompound())
+            obj = TopoUtil.UnwrapCompound(TopoDS.Compound(obj));
+        if (!obj.IsWire())
             throw new InvalidOperationException("Unexpected result type");   // likely several wires
-        var offsetWire = new Wire(offsetTopo);
+        var offsetWire = new Wire(TopoDS.Wire(obj));
         if (asBSpline)
             offsetWire = OneD.OffsetCurvesToBSplines(offsetWire);
 

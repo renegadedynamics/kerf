@@ -13,8 +13,17 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Build123d.OcctNet\Build123d.OcctNet.csproj" />
     <PackageReference Include="Schematiq.Collections" Version="1.0.0-beta.1" />
   </ItemGroup>
+
+  <!-- OCCT.NET, called directly (unit 10B): the kernel's projects (OcctNetRoot), which pack as the package dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj" />
+  </ItemGroup>
+
+  <Target Name="RequireOcctNet" BeforeTargets="ResolveProjectReferences"
+          Condition="!Exists('$(OcctNetRoot)src/OcctNet.DataExchange/OcctNet.DataExchange.csproj')">
+    <Error Text="OCCT.NET not found at OcctNetRoot '$(OcctNetRoot)': pass a Kerf checkout's kernel folder" />
+  </Target>
 
 </Project>

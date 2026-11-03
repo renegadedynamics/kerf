@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -9,9 +9,9 @@ internal static partial class TopoUtil
     internal static Vector FacePosition(TopoDS_Face face, double u, double v)
     {
         double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BRepTools.UVBounds(face, ref uMin, ref uMax, ref vMin, ref vMax);
-        using var surface = BRep_Tool.Surface(face)!;
-        using var p = surface.Value(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin));
+        BRepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
+        var surface = BRep_Tool.Surface(face)!;
+        var p = surface.Value(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin));
         return new Vector(p);
     }
 
@@ -22,28 +22,28 @@ internal static partial class TopoUtil
     internal static Vector FaceNormal(TopoDS_Face face, double u = 0.5, double v = 0.5)
     {
         double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-        BRepTools.UVBounds(face, ref uMin, ref uMax, ref vMin, ref vMax);
-        using var point = new gp_Pnt();
-        using var normal = new gp_Vec();
-        using var props = new BRepGProp_Face(face);
-        props.Normal(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin), point, normal);
+        BRepTools.UVBounds(face, out uMin, out uMax, out vMin, out vMax);
+        var point = new gp_Pnt();
+        var normal = new gp_Vec();
+        var props = new BRepGProp_Face(face);
+        props.Normal(uMin + u * (uMax - uMin), vMin + v * (vMax - vMin), out point, out normal);
         return new Vector(normal).Normalized();
     }
 
     /// <summary>The centre of mass of a face's area.</summary>
     internal static Vector FaceCenter(TopoDS_Face face)
     {
-        using var props = new GProp_GProps();
+        var props = new GProp_GProps();
         BRepGProp.SurfaceProperties(face, props);
-        using var c = props.CentreOfMass();
+        var c = props.CentreOfMass();
         return new Vector(c);
     }
 
     /// <summary>Whether a point lies on a face, its boundary included, within a tolerance.</summary>
     internal static bool PointOnFace(TopoDS_Face face, Vector point, double tolerance = Constants.Tolerance)
     {
-        using var classifier = new BRepClass3d_SolidClassifier(face);
-        using var p = point.ToGpPnt();
+        var classifier = new BRepClass3d_SolidClassifier(face);
+        var p = point.ToGpPnt();
         classifier.Perform(p, tolerance);
         return classifier.IsOnAFace();
     }
@@ -56,15 +56,9 @@ internal static partial class TopoUtil
         if (list.Count == 0)
             throw new ArgumentException("a shell needs at least one face");
         if (list.Count == 1)
-        {
-            var shell = new TopoDS_Shell();
-            using var builder = new BRep_Builder();
-            builder.MakeShell(shell);
-            builder.Add(shell, list[0]);
-            return shell;
-        }
-        return SewFaces(list, tolerance) as TopoDS_Shell
-               ?? throw new ArgumentException("the faces do not sew into one connected shell");
+            return TopoDS_Builder.MakeShell([list[0]]);
+        var sewn = SewFaces(list.Select(f => (TopoDS_Shape)f), tolerance);
+        return sewn.IsShell() ? TopoDS.Shell(sewn) : throw new ArgumentException("the faces do not sew into one connected shell");
     }
 
     /// <summary>
@@ -75,26 +69,24 @@ internal static partial class TopoUtil
     internal static Vector MaterialSide(TopoDS_Face face, TopoDS_Edge edge)
     {
         TopoDS_Edge? occurrence = null;
-        using (var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE))
-            for (; explorer.More(); explorer.Next())
+        var explorer = new TopExp_Explorer(face, TopAbs_ShapeEnum.TopAbs_EDGE);
+        for (; explorer.More(); explorer.Next())
+        {
+            var current = explorer.Current();
+            if (current.IsSame(edge))
             {
-                var current = explorer.Current();
-                if (current.IsSame(edge))
-                {
-                    occurrence = TopoDS.Edge(current);
-                    break;
-                }
-                if (occurrence is null && current.IsPartner(edge))
-                    occurrence = TopoDS.Edge(current);
+                occurrence = TopoDS.Edge(current);
+                break;
             }
-        if (occurrence is null)
+            if (occurrence is null && current.IsPartner(edge))
+                occurrence = TopoDS.Edge(current);
+        }
+        if (occurrence is not { } found)
             throw new ArgumentException("the edge is not an edge of the face");
-        using var curve = new BRepAdaptor_Curve(occurrence);
-        using var point = new gp_Pnt();
-        using var tangent = new gp_Vec();
-        curve.D1((curve.FirstParameter() + curve.LastParameter()) / 2, point, tangent);
-        if (occurrence.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
-            tangent.Reverse();
+        var curve = new BRepAdaptor_Curve(found);
+        curve.D1((curve.FirstParameter() + curve.LastParameter()) / 2, out var point, out var tangent);
+        if (found.Orientation() == TopAbs_Orientation.TopAbs_REVERSED)
+            tangent = tangent.Reversed();
         return FaceNormalAt(face, point).Cross(new Vector(tangent).Normalized());
     }
 
@@ -104,15 +96,15 @@ internal static partial class TopoUtil
     /// </summary>
     internal static TopoDS_Shape Extrude(TopoDS_Shape obj, Vector direction)
     {
-        if (obj is not (TopoDS_Vertex or TopoDS_Edge or TopoDS_Wire or TopoDS_Face or TopoDS_Shell))
-            throw new ArgumentException($"extrude not supported for {obj.GetType().Name}");
-        using var vec = direction.ToGpVec();
-        using var prism = new BRepPrimAPI_MakePrism(obj, vec);
+        if (!(obj.IsVertex() || obj.IsEdge() || obj.IsWire() || obj.IsFace() || obj.IsShell()))
+            throw new ArgumentException($"extrude not supported for {TypeName(obj)}");
+        var vec = direction.ToGpVec();
+        var prism = new BRepPrimAPI_MakePrism(obj, vec);
         var extrusion = Downcast(prism.Shape());
         if (extrusion.ShapeType() == TopAbs_ShapeEnum.TopAbs_COMPSOLID)
         {
             var solids = new List<TopoDS_Shape>();
-            using var explorer = new TopExp_Explorer(extrusion, TopAbs_ShapeEnum.TopAbs_SOLID);
+            var explorer = new TopExp_Explorer(extrusion, TopAbs_ShapeEnum.TopAbs_SOLID);
             for (; explorer.More(); explorer.Next())
                 solids.Add(Downcast(explorer.Current()));
             extrusion = MakeCompound(solids);
@@ -128,25 +120,25 @@ internal static partial class TopoUtil
         var list = objs.ToList();
         if (list.Count < 2)
             throw new ArgumentException("More than one wire is required");
-        int vertexCount = list.Count(o => o.TopoShape is TopoDS_Vertex);
+        int vertexCount = list.Count(o => o.TopoShape.IsVertex());
         if (vertexCount > 2)
             throw new ArgumentException("Only two vertices are allowed");
-        if (vertexCount == 1 && !(list[0].TopoShape is TopoDS_Vertex || list[^1].TopoShape is TopoDS_Vertex))
+        if (vertexCount == 1 && !(list[0].TopoShape.IsVertex() || list[^1].TopoShape.IsVertex()))
             throw new ArgumentException("The vertex must be either at the beginning or end of the list");
         if (vertexCount == 2)
         {
             if (list.Count == 2)
                 throw new ArgumentException("You can't have only 2 vertices to loft; try adding some wires");
-            if (!(list[0].TopoShape is TopoDS_Vertex && list[^1].TopoShape is TopoDS_Vertex))
+            if (!(list[0].TopoShape.IsVertex() && list[^1].TopoShape.IsVertex()))
                 throw new ArgumentException("The vertices must be at the beginning and end of the list");
         }
-        using var loft = new BRepOffsetAPI_ThruSections(filled, ruled);
+        var loft = new BRepOffsetAPI_ThruSections(filled, ruled);
         foreach (var obj in list)
         {
-            if (obj.TopoShape is TopoDS_Vertex v)
-                loft.AddVertex(v);
-            else if (obj.TopoShape is TopoDS_Wire w)
-                loft.AddWire(TopoDS.Wire(PrivateCopy(w)));   // the loft writes pcurves into the sections' edges
+            if (obj.TopoShape.IsVertex())
+                loft.AddVertex(TopoDS.Vertex(obj.TopoShape));
+            else if (obj.TopoShape.IsWire())
+                loft.AddWire(TopoDS.Wire(PrivateCopy(obj.TopoShape)));   // the loft writes pcurves into the sections' edges
         }
         loft.Build();
         return loft.Shape();
@@ -159,29 +151,29 @@ internal static partial class TopoUtil
         var inner = innerWires?.ToList() ?? [];
         if (inner.Count > 0 && !BRep_Tool.IsClosed(outerWire))
             throw new ArgumentException("Cannot build face(s): outer wire is not closed");
-        using (var verification = MakeCompound([outerWire, .. inner]))
-        using (var finder = new BRepLib_FindSurface(verification, -1, true))
-            if (!finder.Found())
-                throw new ArgumentException("Cannot build face(s): wires not planar");
+        var verification = MakeCompound([outerWire, .. inner]);
+        var finder = new BRepLib_FindSurface(verification, -1, true);
+        if (!finder.Found())
+            throw new ArgumentException("Cannot build face(s): wires not planar");
 
-        using var fixOuter = new ShapeFix_Shape(outerWire);
+        var fixOuter = new ShapeFix_Shape(outerWire);
         fixOuter.Perform();
-        using var topoWire = TopoDS.Wire(fixOuter.Shape());
-        using var builder = new BRepBuilderAPI_MakeFace(topoWire, true);
+        var topoWire = TopoDS.Wire(fixOuter.Shape());
+        var builder = new BRepBuilderAPI_MakeFace(topoWire, true);
         foreach (var innerWire in inner)
         {
             if (!BRep_Tool.IsClosed(innerWire))
                 throw new ArgumentException("Cannot build face(s): inner wire is not closed");
-            using var fixInner = new ShapeFix_Shape(innerWire);
+            var fixInner = new ShapeFix_Shape(innerWire);
             fixInner.Perform();
-            using var fixedInner = TopoDS.Wire(fixInner.Shape());
+            var fixedInner = TopoDS.Wire(fixInner.Shape());
             builder.Add(fixedInner);
         }
         builder.Build();
         if (!builder.IsDone())
             throw new ArgumentException($"Cannot build face(s): {builder.Error()}");
-        using var face = builder.Face();
-        using var fixFace = new ShapeFix_Face(face);
+        var face = builder.Face();
+        var fixFace = new ShapeFix_Face(face);
         fixFace.FixOrientation();
         fixFace.Perform();
         return TopoDS.Face(fixFace.Result());
@@ -193,20 +185,20 @@ internal static partial class TopoUtil
     /// </summary>
     internal static TopoDS_Face MakeFaceOnSurface(TopoDS_Face surfaceFace, TopoDS_Wire outerWire, IEnumerable<TopoDS_Wire>? innerWires = null)
     {
-        using var surface = BRep_Tool.Surface(surfaceFace);
-        using var builder = new BRepBuilderAPI_MakeFace(surface, outerWire, true);
+        var surface = BRep_Tool.Surface(surfaceFace);
+        var builder = new BRepBuilderAPI_MakeFace(surface!, outerWire, true);
         foreach (var innerWire in innerWires ?? [])
             builder.Add(innerWire);
         if (!builder.IsDone())
             throw new ArgumentException($"Cannot build face(s): {builder.Error()}");
-        using var built = builder.Face();
-        using var fix = new ShapeFix_Shape(built);
+        var built = builder.Face();
+        var fix = new ShapeFix_Shape(built);
         fix.Perform();
         var fixedShape = fix.Shape();
         if (fixedShape.ShapeType() != TopAbs_ShapeEnum.TopAbs_FACE)
             throw new InvalidOperationException("Cannot build face(s): the wires do not bound one face");
         var result = TopoDS.Face(fixedShape);
-        using var check = new BRepCheck_Analyzer(result);
+        var check = new BRepCheck_Analyzer(result);
         if (!check.IsValid())
             throw new InvalidOperationException("Cannot build face(s): the wires do not lie on the surface");
         return result;
@@ -215,7 +207,7 @@ internal static partial class TopoUtil
     /// <summary>The kernel type of a shape, looking into a compound whose children are all of one type.</summary>
     internal static TopAbs_ShapeEnum UnwrappedShapeType(Shape obj)
     {
-        if (obj.TopoShape is TopoDS_Compound && obj is Compound compound)
+        if (obj.TopoShape.IsCompound() && obj is Compound compound)
         {
             var types = compound.Children().Select(c => ShapeTypeOf(c.TopoShape)).Distinct().ToList();
             if (types.Count == 1)
@@ -249,24 +241,24 @@ public static partial class TopologyUtils
     /// <summary>The diagonal of the bounding box of one or more shapes.</summary>
     public static double FindMaxDimension(IEnumerable<Shape> shapes)
     {
-        using var composite = TopoUtil.MakeCompound(shapes.Select(s => s.TopoShape));
+        var composite = TopoUtil.MakeCompound(shapes.Select(s => s.TopoShape));
         return BoundBox.FromTopoDS(composite, Constants.Tolerance, optimal: true).Diagonal;
     }
 
     /// <summary>The edges of <paramref name="combined"/> that none of <paramref name="objects"/> had.</summary>
     public static ShapeList<Edge> NewEdges(IEnumerable<Shape> objects, Shape combined)
     {
-        using var combinedEdges = TopoUtil.ListOf(combined.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape));
-        using var originalEdges = TopoUtil.ListOf(objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e.TopoShape));
-        using var operation = new BRepAlgoAPI_Cut();
+        var combinedEdges = TopoUtil.ListOf(combined.Edges().Where(e => !e.IsEmpty).Select(e => e.TopoShape));
+        var originalEdges = TopoUtil.ListOf(objects.SelectMany(o => o.Edges()).Where(e => !e.IsEmpty).Select(e => e.TopoShape));
+        var operation = new BRepAlgoAPI_Cut();
         operation.SetNonDestructive(true);   // leave the inputs' tolerances alone
         operation.SetArguments(combinedEdges);
         operation.SetTools(originalEdges);
         operation.SetRunParallel(true);
         operation.Build();
         var edges = new List<Edge>();
-        using var result = operation.Shape();
-        using var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
+        var result = operation.Shape();
+        var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
         for (; explorer.More(); explorer.Next())
             edges.Add((Edge)combined.CastLike(TopoUtil.Downcast(explorer.Current())).WithTopoPath([combined]));
         return new ShapeList<Edge>(edges);
@@ -337,8 +329,8 @@ public static partial class TopologyUtils
         }
 
         var neighbours = peerList.Distinct().ToDictionary(p => p, _ => new HashSet<Shape>());
-        using (var map = new TopTools_IndexedDataMapOfShapeListOfShape())
         {
+            var map = new NCollection_IndexedDataMap<TopoDS_Shape, NCollection_List<TopoDS_Shape>>(TopTools_ShapeMapHasher.Instance);
             if (connector is null)
             {
                 // Vertices are neighbours across an edge
@@ -347,10 +339,10 @@ public static partial class TopologyUtils
                 {
                     if (!lookup.TryGetValue(Shape.Cast(map.FindKey(i)), out var vertexPeer))
                         continue;
-                    using var edges = map.FindFromIndex(i);
+                    var edges = map.FindFromIndex(i);
                     foreach (var e in edges)
                     {
-                        using var edge = TopoDS.Edge(e);
+                        var edge = TopoDS.Edge(e);
                         foreach (var end in new[] { TopExp.FirstVertex(edge), TopExp.LastVertex(edge) })
                             if (lookup.TryGetValue(Shape.Cast(end), out var n) && n != vertexPeer)
                                 neighbours[vertexPeer].Add(n);
@@ -363,7 +355,7 @@ public static partial class TopologyUtils
                 TopExp.MapShapesAndAncestors(parent.TopoShape, connector.Value, TopoUtil.ToTopAbs(peerType), map);
                 for (int i = 1; i <= map.Extent(); i++)
                 {
-                    using var list = map.FindFromIndex(i);
+                    var list = map.FindFromIndex(i);
                     var connected = list.Select(s => lookup.GetValueOrDefault(Shape.Cast(s))).OfType<Shape>().ToList();
                     foreach (var a in connected)
                         foreach (var b in connected)

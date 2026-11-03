@@ -12,15 +12,10 @@
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <ServerGarbageCollector>false</ServerGarbageCollector>
-    <DisableTransitiveProjectReferences>true</DisableTransitiveProjectReferences>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The backend's assembly is referenced directly too, with the same properties: restore doesn't see them -->
-    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj"
-                      AdditionalProperties="Build123dBackend=OcctNet;OcctNetRoot=$(RepoRoot)" />
-    <ProjectReference Include="$(Build123dNetRoot)src/Build123d.OcctNet/Build123d.OcctNet.csproj"
-                      AdditionalProperties="Build123dBackend=OcctNet;OcctNetRoot=$(RepoRoot)" />
+    <ProjectReference Include="$(Build123dNetRoot)src/Build123d/Build123d.csproj" />
   </ItemGroup>
 
 </Project>

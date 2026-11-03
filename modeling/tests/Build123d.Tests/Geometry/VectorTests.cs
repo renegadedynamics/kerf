@@ -1,6 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_vector.py. Cases that need topology (Vertex, Solid)
 // follow with the topology port.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -9,8 +9,8 @@ public class VectorTests
     [Fact]
     public void Constructors()
     {
-        using var gpVec = new gp_Vec(1, 2, 3);
-        using var gpXyz = new gp_XYZ(1, 2, 3);
+        var gpVec = new gp_Vec(1, 2, 3);
+        var gpXyz = new gp_XYZ(1, 2, 3);
         Vector[] full = [new(1, 2, 3), (1, 2, 3), new(gpVec), new([1, 2, 3]), new(gpXyz)];
         foreach (var v in full)
             Check.AlmostEqual((1, 2, 3), v, 4);
@@ -201,5 +201,5 @@ public class VectorTests
 
     [Fact]
     public void NormalizingZeroThrows() =>
-        Assert.Equal("Standard_ConstructionError", Assert.Throws<OcctException>(() => new Vector().Normalized()).OcctType);
+        Assert.Equal("Standard_ConstructionError", Assert.ThrowsAny<Standard_Failure>(() => new Vector().Normalized()).OcctType);
 }

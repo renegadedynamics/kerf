@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -40,6 +40,22 @@ internal static partial class TopoUtil
         return obj.ShapeType();
     }
 
+    /// <summary>
+    /// The name of the native binding's wrapper class for a shape (<c>TopoDS_Edge</c> for an edge), as messages name it.
+    /// </summary>
+    internal static string TypeName(TopoDS_Shape obj) => obj.IsNull() ? "TopoDS_Shape" : obj.ShapeType() switch
+    {
+        TopAbs_ShapeEnum.TopAbs_VERTEX => "TopoDS_Vertex",
+        TopAbs_ShapeEnum.TopAbs_EDGE => "TopoDS_Edge",
+        TopAbs_ShapeEnum.TopAbs_WIRE => "TopoDS_Wire",
+        TopAbs_ShapeEnum.TopAbs_FACE => "TopoDS_Face",
+        TopAbs_ShapeEnum.TopAbs_SHELL => "TopoDS_Shell",
+        TopAbs_ShapeEnum.TopAbs_SOLID => "TopoDS_Solid",
+        TopAbs_ShapeEnum.TopAbs_COMPSOLID => "TopoDS_CompSolid",
+        TopAbs_ShapeEnum.TopAbs_COMPOUND => "TopoDS_Compound",
+        _ => "TopoDS_Shape",
+    };
+
     /// <summary>The shape as the wrapper of its own type (TopoDS_Edge for an edge). Always a new wrapper.</summary>
     internal static TopoDS_Shape Downcast(TopoDS_Shape obj) => ShapeTypeOf(obj) switch
     {
@@ -61,7 +77,7 @@ internal static partial class TopoUtil
     /// </summary>
     internal static TopoDS_Shape PrivateCopy(TopoDS_Shape shape, bool copyGeometry = false)
     {
-        using var copier = new BRepBuilderAPI_Copy(shape, copyGeometry, false);
+        var copier = new BRepBuilderAPI_Copy(shape, copyGeometry, false);
         return copier.Shape();
     }
 
@@ -69,31 +85,22 @@ internal static partial class TopoUtil
     internal static TopoDS_Shape Fix(TopoDS_Shape obj)
     {
         // ShapeFix edits the shape it's given, pcurves and parameters included, so it gets its own geometry too
-        using var shapeFix = new ShapeFix_Shape(PrivateCopy(obj, copyGeometry: true));
+        var shapeFix = new ShapeFix_Shape(PrivateCopy(obj, copyGeometry: true));
         shapeFix.Perform();
         return Downcast(shapeFix.Shape());
     }
 
-    /// <summary>A compound of the given shapes (the kernel's empty compound for none).</summary>
-    internal static TopoDS_Compound MakeCompound(IEnumerable<TopoDS_Shape?> shapes)
-    {
-        var comp = new TopoDS_Compound();
-        using var builder = new TopoDS_Builder();
-        builder.MakeCompound(comp);
-        foreach (var shape in shapes)
-            if (shape is not null)
-                builder.Add(comp, shape);
-        return comp;
-    }
+    /// <summary>A compound of the given shapes (the kernel's empty compound for none), frozen.</summary>
+    internal static TopoDS_Compound MakeCompound(IEnumerable<TopoDS_Shape> shapes) => TopoDS_Builder.MakeCompound(shapes);
 
     internal static TopoDS_Compound EmptyCompound() => MakeCompound([]);
 
     /// <summary>True for a compound with nothing in it: the zero of every shape class.</summary>
     internal static bool IsEmptyCompound(TopoDS_Shape shape)
     {
-        if (shape is not TopoDS_Compound)
+        if (!shape.IsCompound())
             return false;
-        using var it = new TopoDS_Iterator(shape);
+        var it = new TopoDS_Iterator(shape);
         return !it.More();
     }
 
@@ -108,14 +115,14 @@ internal static partial class TopoUtil
         while (stack.Count > 0)
         {
             var current = stack.Pop();
-            if (current is TopoDS_Compound)
+            if (current.IsCompound())
             {
-                using var it = new TopoDS_Iterator();
+                var it = new TopoDS_Iterator();
                 it.Initialize(current);
                 for (; it.More(); it.Next())
                 {
                     var child = Downcast(it.Value());
-                    if (child is TopoDS_Compound)
+                    if (child.IsCompound())
                         stack.Push(child);
                     else
                         firstLevel.Add(child);
@@ -128,13 +135,13 @@ internal static partial class TopoUtil
     }
 
     /// <summary>The dimension of a shape: 0 to 3, or null for a compound of mixed dimension.</summary>
-    internal static int? Dim(TopoDS_Shape shape) => shape switch
+    internal static int? Dim(TopoDS_Shape shape) => shape.IsNull() ? null : shape.ShapeType() switch
     {
-        TopoDS_Vertex => 0,
-        TopoDS_Edge or TopoDS_Wire => 1,
-        TopoDS_Face or TopoDS_Shell => 2,
-        TopoDS_Solid => 3,
-        TopoDS_Compound => TopLevelShapes(shape).Select(Dim).Distinct().ToList() is [var d] ? d : null,
+        TopAbs_ShapeEnum.TopAbs_VERTEX => 0,
+        TopAbs_ShapeEnum.TopAbs_EDGE or TopAbs_ShapeEnum.TopAbs_WIRE => 1,
+        TopAbs_ShapeEnum.TopAbs_FACE or TopAbs_ShapeEnum.TopAbs_SHELL => 2,
+        TopAbs_ShapeEnum.TopAbs_SOLID => 3,
+        TopAbs_ShapeEnum.TopAbs_COMPOUND => TopLevelShapes(shape).Select(Dim).Distinct().ToList() is [var d] ? d : null,
         _ => null,
     };
 
@@ -143,10 +150,10 @@ internal static partial class TopoUtil
     {
         if (compound.NbChildren() == 1)
         {
-            using var it = new TopoDS_Iterator(compound);
+            var it = new TopoDS_Iterator(compound);
             var single = Downcast(it.Value());
-            if (single is TopoDS_Compound inner)
-                return UnwrapCompound(inner, fully);
+            if (single.IsCompound())
+                return UnwrapCompound(TopoDS.Compound(single), fully);
             return fully ? single : compound;
         }
         return compound;
@@ -158,7 +165,7 @@ internal static partial class TopoUtil
         // Keyed by hash, as build123d is, so orientations of one sub-shape count once; the last one found is kept
         var index = new Dictionary<ulong, int>();
         var found = new List<TopoDS_Shape>();
-        using var explorer = new TopExp_Explorer(shape, type);
+        var explorer = new TopExp_Explorer(shape, type);
         for (; explorer.More(); explorer.Next())
         {
             var item = explorer.Current();
@@ -177,7 +184,7 @@ internal static partial class TopoUtil
     /// <summary>The surface area of a shape's faces.</summary>
     internal static double Area(TopoDS_Shape shape)
     {
-        using var props = new GProp_GProps();
+        var props = new GProp_GProps();
         BRepGProp.SurfaceProperties(shape, props);
         return props.Mass();
     }
@@ -185,16 +192,16 @@ internal static partial class TopoUtil
     /// <summary>The faces sewn into a shell where they meet within <paramref name="tolerance"/>.</summary>
     internal static TopoDS_Shape SewFaces(IEnumerable<TopoDS_Shape> faces, double tolerance = Constants.Tolerance)
     {
-        using var builder = new BRepBuilderAPI_Sewing(tolerance);
+        var builder = new BRepBuilderAPI_Sewing(tolerance);
         foreach (var face in faces)
             builder.Add(face);
         builder.Perform();
         return Downcast(builder.SewedShape());
     }
 
-    internal static TopTools_ListOfShape ListOf(IEnumerable<TopoDS_Shape> shapes)
+    internal static NCollection_List<TopoDS_Shape> ListOf(IEnumerable<TopoDS_Shape> shapes)
     {
-        var list = new TopTools_ListOfShape();
+        var list = new NCollection_List<TopoDS_Shape>();
         foreach (var s in shapes)
             list.Append(s);
         return list;
@@ -203,20 +210,17 @@ internal static partial class TopoUtil
     /// <summary>A boolean (or split) of raw shapes, with any compound around a single result removed.</summary>
     internal static TopoDS_Shape BoolOp(IEnumerable<TopoDS_Shape> args, IEnumerable<TopoDS_Shape> tools, BRepAlgoAPI_BuilderAlgo operation)
     {
-        using var arg = ListOf(args);
-        using var tool = ListOf(tools);
+        var arg = ListOf(args);
+        var tool = ListOf(tools);
         operation.SetArguments(arg);
         SetTools(operation, tool);
         operation.SetRunParallel(true);
         // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
         operation.SetNonDestructive(true);
-        using (OcctContext.Doing(BooleanName(operation)))
-        {
-            operation.Build();
-            ThrowIfFailed(operation);
-        }
+        operation.Build();
+        ThrowIfFailed(operation);
         var result = Downcast(operation.Shape());
-        return result is TopoDS_Compound c ? UnwrapCompound(c) : result;
+        return result.IsCompound() ? UnwrapCompound(TopoDS.Compound(result)) : result;
     }
 
     /// <summary>What a boolean is called in an error message.</summary>
@@ -237,10 +241,10 @@ internal static partial class TopoUtil
     internal static void ThrowIfFailed(BRepAlgoAPI_Algo operation)
     {
         if (operation.HasErrors())
-            throw new OcctException("StdFail_NotDone", Extras.AlgoErrors(operation) ?? "");
+            throw new StdFail_NotDone(Extras.AlgoErrors(operation) ?? "");
     }
 
-    internal static void SetTools(BRepAlgoAPI_BuilderAlgo operation, TopTools_ListOfShape tools)
+    internal static void SetTools(BRepAlgoAPI_BuilderAlgo operation, NCollection_List<TopoDS_Shape> tools)
     {
         switch (operation)
         {
@@ -253,19 +257,19 @@ internal static partial class TopoUtil
     /// <summary>The unit normal of a face at the point of it nearest <paramref name="surfacePoint"/>.</summary>
     internal static Vector FaceNormalAt(TopoDS_Face face, gp_Pnt surfacePoint)
     {
-        using var surface = BRep_Tool.Surface(face);
-        using var projector = new GeomAPI_ProjectPointOnSurf(surfacePoint, surface);
+        var surface = BRep_Tool.Surface(face);
+        var projector = new GeomAPI_ProjectPointOnSurf(surfacePoint, surface!);
         double u = 0, v = 0;
-        projector.LowerDistanceParameters(ref u, ref v);
-        using var pnt = new gp_Pnt();
-        using var normal = new gp_Vec();
-        using var props = new BRepGProp_Face(face);
-        props.Normal(u, v, pnt, normal);
+        projector.LowerDistanceParameters(out u, out v);
+        var pnt = new gp_Pnt();
+        var normal = new gp_Vec();
+        var props = new BRepGProp_Face(face);
+        props.Normal(u, v, out pnt, out normal);
         return new Vector(normal).Normalized();
     }
 
     /// <summary>The shapes in a list, in order.</summary>
-    internal static TopoDS_Shape[] Items(TopTools_ListOfShape list) => list.ToArray();
+    internal static TopoDS_Shape[] Items(NCollection_List<TopoDS_Shape> list) => list.ToArray();
 }
 
 internal static partial class TopoUtil
@@ -277,15 +281,18 @@ internal static partial class TopoUtil
     internal static TopoDS_Shape? FindSame(TopoDS_Shape query, IEnumerable<TopoDS_Shape> candidates)
     {
         var list = candidates.ToList();
-        return list.FirstOrDefault(c => c.IsSame(query)) ?? list.FirstOrDefault(c => c.IsPartner(query));
+        int i = list.FindIndex(c => c.IsSame(query));
+        if (i < 0)
+            i = list.FindIndex(c => c.IsPartner(query));
+        return i < 0 ? null : list[i];
     }
 
     /// <summary>The Location that carries <paramref name="source"/>'s frame onto <paramref name="target"/>'s.</summary>
     internal static TopLoc_Location RelocationBetween(TopoDS_Shape source, TopoDS_Shape target)
     {
-        using var s = source.Location();
-        using var t = target.Location();
-        using var inverse = s.Inverted();
+        var s = source.Location();
+        var t = target.Location();
+        var inverse = s.Inverted();
         return t.Multiplied(inverse);
     }
 }

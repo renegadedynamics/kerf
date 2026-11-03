@@ -1,5 +1,5 @@
 using System.Text;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -10,15 +10,12 @@ namespace Build123d;
 /// </summary>
 /// <remarks>
 /// <para>
-/// STEP is written as build123d writes it, on the OCCT.NET backend: through an assembly document (OCCT.NET's
-/// STEPCAFControl over its XdeDoc tree), a product per part and assembly, named by its label and coloured by its
-/// colour. Natively, OCCT's XCAF isn't bound, so STEP is written with <c>STEPControl_Writer</c>, without names, colours
-/// or assembly structure (an assembly is written as its compound). The FILE_NAME header carries the shape's label, the
-/// time stamp given and "build123d" as the originating system, as build123d's.
+/// STEP is written as build123d writes it: through an assembly document (OCCT.NET's STEPCAFControl over its XdeDoc
+/// tree), a product per part and assembly, named by its label and coloured by its colour. The FILE_NAME header carries
+/// the shape's label, the time stamp given and "build123d" as the originating system, as build123d's.
 /// </para>
 /// <para>
-/// STL, glTF and 3MF need the OCCT.NET backend, whose writers are OCCT.NET's: native OCCT's mesh formats aren't
-/// bound. glTF and 3MF keep the assembly tree, its labels and colours.
+/// STL, glTF and 3MF are written by OCCT.NET's writers. glTF and 3MF keep the assembly tree, its labels and colours.
 /// </para>
 /// </remarks>
 public static class Exporters3D
@@ -39,11 +36,9 @@ public static class Exporters3D
     /// <summary>
     /// Writes a shape or assembly as STEP (AP214, as OCCT writes by default), in <paramref name="unit"/>, with or
     /// without pcurves, at a precision mode; <paramref name="timestamp"/> (ISO 8601) replaces the time of writing in the
-    /// header, for repeatable output. On the OCCT.NET backend, as build123d's <c>export_step</c>: an assembly (a
-    /// compound with <see cref="Compound.AssemblyChildren"/>) is written as one, each child a component at its
-    /// location, children of one shape, label and colour written once; labels name the products and colours colour
-    /// them. Natively, the shape alone; units other than millimetres, no pcurves and other precision modes need the
-    /// OCCT.NET backend.
+    /// header, for repeatable output. As build123d's <c>export_step</c>: an assembly (a compound with
+    /// <see cref="Compound.AssemblyChildren"/>) is written as one, each child a component at its location, children of
+    /// one shape, label and colour written once; labels name the products and colours colour them.
     /// </summary>
     /// <exception cref="InvalidOperationException">The shape is empty, or OCCT couldn't translate it.</exception>
     public static bool ExportStep(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, bool writePcurves = true,
@@ -55,25 +50,10 @@ public static class Exporters3D
         NothingToExport(toExport);
         var settings = new StepWriteSettings(ExchangeUnits.Millimetres(unit, "unit"), writePcurves, (int)precisionMode);
         using var text = new MemoryStream();
-        if (Extras.StepKeepsAssemblies)
-        {
-            if (!Extras.WriteStep(StepTree(toExport), text, settings, cancellationToken))
-                throw new InvalidOperationException("Failed to write STEP file");
-        }
-        else
-            WriteStepShape(toExport, text, settings, cancellationToken);
+        if (!Extras.WriteStep(StepTree(toExport), text, settings, cancellationToken))
+            throw new InvalidOperationException("Failed to write STEP file");
         stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, timestamp, "build123d"));
         return true;
-    }
-
-    private static void WriteStepShape(Shape toExport, Stream text, StepWriteSettings settings, CancellationToken cancellationToken)
-    {
-        using var writer = new STEPControl_Writer();
-        if (writer.Transfer(toExport.TopoShape, STEPControl_StepModelType.STEPControl_AsIs, settings, cancellationToken)
-            != IFSelect_ReturnStatus.IFSelect_RetDone)
-            throw new InvalidOperationException("Failed to write STEP file");
-        if (writer.WriteStream(text) != IFSelect_ReturnStatus.IFSelect_RetDone)
-            throw new InvalidOperationException("Failed to write STEP file");
     }
 
     /// <summary>Writes a shape to a STEP file.</summary>
@@ -85,7 +65,7 @@ public static class Exporters3D
     /// <summary>
     /// Writes a shape's mesh as STL, binary or ASCII. <paramref name="tolerance"/> and
     /// <paramref name="angularTolerance"/> are the mesh's deflections (relative to each edge's size, as build123d
-    /// meshes). Needs the OCCT.NET backend.
+    /// meshes).
     /// </summary>
     public static bool ExportStl(Shape toExport, Stream stream, double tolerance = 1e-3, double angularTolerance = 0.1,
                                  bool asciiFormat = false, CancellationToken cancellationToken = default)
@@ -96,7 +76,7 @@ public static class Exporters3D
         return Extras.WriteStl(toExport.MeshedCopy(tolerance, angularTolerance), stream, asciiFormat, cancellationToken);
     }
 
-    /// <summary>Writes a shape's mesh to an STL file, whose folder must exist. Needs the OCCT.NET backend.</summary>
+    /// <summary>Writes a shape's mesh to an STL file, whose folder must exist.</summary>
     public static bool ExportStl(Shape toExport, string filePath, double tolerance = 1e-3, double angularTolerance = 0.1,
                                  bool asciiFormat = false, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => ExportStl(toExport, s, tolerance, angularTolerance, asciiFormat, cancellationToken));
@@ -105,7 +85,7 @@ public static class Exporters3D
     /// Writes a shape or assembly as glTF 2.0: binary (<c>.glb</c>), or JSON (<c>.gltf</c>) with its buffer embedded
     /// as a <c>data:</c> URI, since one stream can't carry the <c>.bin</c> file beside it. Z-up turned Y-up, and
     /// <paramref name="unit"/> into metres, as glTF wants; a material per colour; a node per assembly child, named by
-    /// its label. Needs the OCCT.NET backend.
+    /// its label.
     /// </summary>
     public static bool ExportGltf(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, bool binary = false,
                                   double linearDeflection = 0.001, double angularDeflection = 0.1,
@@ -120,7 +100,7 @@ public static class Exporters3D
 
     /// <summary>
     /// Writes a shape or assembly to a glTF 2.0 file: binary, or JSON with its buffer in a <c>.bin</c> file of the
-    /// same name beside it, as build123d's. Needs the OCCT.NET backend.
+    /// same name beside it, as build123d's.
     /// </summary>
     public static bool ExportGltf(Shape toExport, string filePath, Unit unit = Unit.Millimeter, bool binary = false,
                                   double linearDeflection = 0.001, double angularDeflection = 0.1,
@@ -144,8 +124,7 @@ public static class Exporters3D
     /// <summary>
     /// Writes a shape or assembly as 3MF (3MF Core: a mesh object per part, a components object per assembly, a base
     /// material per colour), in <paramref name="unit"/>. build123d writes 3MF through its <c>Mesher</c> (lib3mf);
-    /// this is its <c>add_shape</c> and <c>write</c> in one, with <c>add_shape</c>'s deflections. Needs the OCCT.NET
-    /// backend.
+    /// this is its <c>add_shape</c> and <c>write</c> in one, with <c>add_shape</c>'s deflections.
     /// </summary>
     public static bool Export3mf(Shape toExport, Stream stream, Unit unit = Unit.Millimeter, double linearDeflection = 0.001,
                                  double angularDeflection = 0.1, CancellationToken cancellationToken = default)
@@ -157,7 +136,7 @@ public static class Exporters3D
         return Extras.Write3mf(MeshTree(toExport, linearDeflection, angularDeflection), stream, metres, cancellationToken);
     }
 
-    /// <summary>Writes a shape or assembly to a 3MF file. Needs the OCCT.NET backend.</summary>
+    /// <summary>Writes a shape or assembly to a 3MF file.</summary>
     public static bool Export3mf(Shape toExport, string filePath, Unit unit = Unit.Millimeter, double linearDeflection = 0.001,
                                  double angularDeflection = 0.1, CancellationToken cancellationToken = default)
         => ToFile(filePath, s => Export3mf(toExport, s, unit, linearDeflection, angularDeflection, cancellationToken));
@@ -218,16 +197,16 @@ public static class Exporters3D
     {
         if (color is not { } c)
             return null;
-        using var rgba = c.ToQuantityColorRgba();
-        using var rgb = rgba.GetRGB();
+        var rgba = c.ToQuantityColorRgba();
+        var rgb = rgba.GetRGB();
         return (rgb.Red(), rgb.Green(), rgb.Blue(), rgba.Alpha());
     }
 }
 
 /// <summary>
 /// The header of a STEP file: OCCT writes FILE_NAME from the time of writing and its own names; build123d sets the
-/// model's name, the time stamp and the originating system. Native OCCT's header maker isn't bound, so the record is
-/// rewritten in the text, the same way on both backends.
+/// model's name, the time stamp and the originating system. The record is rewritten in the text, as it was when the
+/// native backend's header maker wasn't bound.
 /// </summary>
 internal static class StepHeader
 {

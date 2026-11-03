@@ -6,7 +6,7 @@ public class WarningsTests
     public void AScopeCollectsTheWarningsRaisedInIt()
     {
         Warnings.Warn("before");
-        using var outer = Warnings.Capture();
+        var outer = Warnings.Capture();
         Warnings.Warn("one");
         using (var inner = Warnings.Capture())
         {
@@ -20,7 +20,7 @@ public class WarningsTests
     [Fact]
     public async Task AScopeFollowsItsAsyncFlow()
     {
-        using var scope = Warnings.Capture();
+        var scope = Warnings.Capture();
         await Task.Run(() => Warnings.Warn("from a task"));
         Assert.Equal(["from a task"], scope.Messages);
     }
@@ -29,10 +29,10 @@ public class WarningsTests
     public void ConcurrentScopesDontSeeEachOthersWarnings()
     {
         var results = new IReadOnlyList<string>[8];
-        using var barrier = new Barrier(results.Length);
+        var barrier = new Barrier(results.Length);
         Parallel.For(0, results.Length, new ParallelOptions { MaxDegreeOfParallelism = results.Length }, i =>
         {
-            using var scope = Warnings.Capture();
+            var scope = Warnings.Capture();
             barrier.SignalAndWait();   // every scope is open at once
             Warnings.Warn($"cell {i}");
             barrier.SignalAndWait();

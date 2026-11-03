@@ -1,6 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Build123d.OcctNet/Build123d.OcctNet.csproj" />
     <Project Path="src/Build123d/Build123d.csproj" />
   </Folder>
   <Folder Name="/tests/">

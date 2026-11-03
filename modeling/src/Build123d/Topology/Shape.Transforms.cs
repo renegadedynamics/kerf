@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -27,7 +27,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        using var builder = new BRepBuilderAPI_Transform(_wrapped, transformation, true);
+        var builder = new BRepBuilderAPI_Transform(_wrapped, transformation, true);
         var transformed = builder.Shape();
         var copy = Rewrapped(transformed);
         if (History is not null)
@@ -45,8 +45,8 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        using var trsf = matrix.GTrsf.Trsf();
-        using var builder = new BRepBuilderAPI_Transform(_wrapped, trsf);
+        var trsf = matrix.GTrsf.Trsf();
+        var builder = new BRepBuilderAPI_Transform(_wrapped, trsf);
         return Rewrapped(builder.Shape());
     }
 
@@ -54,7 +54,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        using var upgrader = new ShapeUpgrade_UnifySameDomain(_wrapped, true, true, true);
+        var upgrader = new ShapeUpgrade_UnifySameDomain(_wrapped, true, true, true);
         upgrader.AllowInternalEdges(false);
         // Cleaning is best effort: on failure the uncleaned shape is still usable
         try
@@ -64,7 +64,7 @@ public abstract partial class Shape
             var unified = ShapeHistory.FromUnify(upgrader);
             return Placed(TopoUtil.Downcast(upgrader.Shape())).MadeBy(record is null ? unified : record.Merge(unified));
         }
-        catch (OcctException)
+        catch (Standard_Failure)
         {
             Warnings.Warn($"Unable to clean {this}");
             return this;
@@ -83,11 +83,11 @@ public abstract partial class Shape
         mirrorPlane ??= Plane.XY;
         if (IsEmpty)
             return this;
-        using var trsf = new gp_Trsf();
-        using var origin = mirrorPlane.Origin.ToGpPnt();
-        using var normal = mirrorPlane.ZDir.ToGpDir();
-        using var ax2 = new gp_Ax2(origin, normal);
-        trsf.SetMirror(ax2);
+        var trsf = new gp_Trsf();
+        var origin = mirrorPlane.Origin.ToGpPnt();
+        var normal = mirrorPlane.ZDir.ToGpDir();
+        var ax2 = new gp_Ax2(origin, normal);
+        trsf = trsf.WithMirror(ax2);
         return ApplyTransform(trsf);
     }
 
@@ -95,9 +95,9 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        using var trsf = new gp_Trsf();
-        using var ax1 = axis.ToGpAx1();
-        trsf.SetRotation(ax1, angle * Constants.DegToRad);
+        var trsf = new gp_Trsf();
+        var ax1 = axis.ToGpAx1();
+        trsf = trsf.WithRotation(ax1, angle * Constants.DegToRad);
         return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
     }
 
@@ -105,9 +105,9 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        using var trsf = new gp_Trsf();
-        using var vec = vector.ToGpVec();
-        trsf.SetTranslation(vec);
+        var trsf = new gp_Trsf();
+        var vec = vector.ToGpVec();
+        trsf = trsf.WithTranslation(vec);
         return transform ? ApplyTransform(trsf) : MovedCore(new Location(trsf));
     }
 
@@ -116,9 +116,9 @@ public abstract partial class Shape
         if (IsEmpty)
             return this;
         var point = about ?? Location.Position;
-        using var trsf = new gp_Trsf();
-        using var pnt = point.ToGpPnt();
-        trsf.SetScale(pnt, factor);
+        var trsf = new gp_Trsf();
+        var pnt = point.ToGpPnt();
+        trsf = trsf.WithScale(pnt, factor);
         return ApplyTransform(trsf);
     }
 
@@ -145,15 +145,15 @@ public abstract partial class Shape
         if (matrix.GTrsf.Form() == gp_TrsfForm.gp_Other)
         {
             // A general affine transform (stretch, shear): only GTransform can apply it, converting geometry to splines
-            using var builder = new BRepBuilderAPI_GTransform(_wrapped, matrix.GTrsf, true);
+            var builder = new BRepBuilderAPI_GTransform(_wrapped, matrix.GTrsf, true);
             result = builder.Shape();
         }
         else
         {
             // A similarity: Transform applies it exactly and keeps the geometry types; GTransform would drop its
             // scale factor, which a gp_GTrsf of any recognised form keeps apart from its matrix
-            using var trsf = matrix.GTrsf.Trsf();
-            using var builder = new BRepBuilderAPI_Transform(_wrapped, trsf, true);
+            var trsf = matrix.GTrsf.Trsf();
+            var builder = new BRepBuilderAPI_Transform(_wrapped, trsf, true);
             result = builder.Shape();
         }
         return Rewrapped(result);
@@ -163,32 +163,32 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             return this;
-        using var trsf = matrix.GTrsf.Trsf();
-        using var builder = new BRepBuilderAPI_Transform(_wrapped, trsf);
+        var trsf = matrix.GTrsf.Trsf();
+        var builder = new BRepBuilderAPI_Transform(_wrapped, trsf);
         return Rewrapped(builder.Shape());
     }
 
     internal Shape TransformedCore(Vector rotate, Vector offset)
     {
         var radians = rotate * Constants.DegToRad;
-        using var origin = new gp_Pnt(0, 0, 0);
+        var origin = new gp_Pnt(0, 0, 0);
         gp_Trsf About(double x, double y, double z, double angle)
         {
             var t = new gp_Trsf();
-            using var dir = new gp_Dir(x, y, z);
-            using var ax1 = new gp_Ax1(origin, dir);
-            t.SetRotation(ax1, angle);
+            var dir = new gp_Dir(x, y, z);
+            var ax1 = new gp_Ax1(origin, dir);
+            t = t.WithRotation(ax1, angle);
             return t;
         }
-        using var rx = About(1, 0, 0, radians.X);
-        using var ry = About(0, 1, 0, radians.Y);
-        using var rz = About(0, 0, 1, radians.Z);
-        using var to = new gp_Trsf();
-        using var vec = offset.ToGpVec();
-        to.SetTranslation(vec);
-        using var a = to.Multiplied(rx);
-        using var b = a.Multiplied(ry);
-        using var c = b.Multiplied(rz);
+        var rx = About(1, 0, 0, radians.X);
+        var ry = About(0, 1, 0, radians.Y);
+        var rz = About(0, 0, 1, radians.Z);
+        var to = new gp_Trsf();
+        var vec = offset.ToGpVec();
+        to = to.WithTranslation(vec);
+        var a = to.Multiplied(rx);
+        var b = a.Multiplied(ry);
+        var c = b.Multiplied(rz);
         return ApplyTransform(c);
     }
 
@@ -196,7 +196,7 @@ public abstract partial class Shape
     {
         if (IsEmpty)
             throw new InvalidOperationException("Cannot approximate an empty shape");
-        using var parameters = new ShapeCustom_RestrictionParameters();
+        var parameters = new ShapeCustom_RestrictionParameters();
         var result = ShapeCustom.BSplineRestriction(_wrapped, tolerance, tolerance, degree, 1,
                                                     GeomAbs_Shape.GeomAbs_C0, GeomAbs_Shape.GeomAbs_C0,
                                                     true, !nurbs, parameters);

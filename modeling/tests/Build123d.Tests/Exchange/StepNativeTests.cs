@@ -1,6 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Exchange;

@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -16,8 +16,8 @@ public sealed class OrientedBoundBox
     /// <summary>Wraps a Bnd_OBB this box takes ownership of.</summary>
     internal static OrientedBoundBox Own(Bnd_OBB obb) => new(obb);
 
-    /// <summary>An oriented bounding box from an OCCT Bnd_OBB (copied).</summary>
-    public static OrientedBoundBox FromBndObb(Bnd_OBB obb) => new(new Bnd_OBB(obb));
+    /// <summary>An oriented bounding box from an OCCT Bnd_OBB.</summary>
+    public static OrientedBoundBox FromBndObb(Bnd_OBB obb) => new(obb);
 
     /// <summary>True for the box of nothing, which has no size or axes.</summary>
     public bool IsEmpty => Wrapped.IsVoid();
@@ -69,16 +69,16 @@ public sealed class OrientedBoundBox
         : new Vector(Wrapped.XHSize(), Wrapped.YHSize(), Wrapped.ZHSize()) * 2.0;
 
     /// <summary>The primary (X) direction, a unit vector.</summary>
-    public Vector XDirection { get { using var d = Wrapped.XDirection(); return new Vector(d); } }
+    public Vector XDirection { get { var d = Wrapped.XDirection(); return new Vector(d); } }
 
     /// <summary>The secondary (Y) direction, a unit vector.</summary>
-    public Vector YDirection { get { using var d = Wrapped.YDirection(); return new Vector(d); } }
+    public Vector YDirection { get { var d = Wrapped.YDirection(); return new Vector(d); } }
 
     /// <summary>The tertiary (Z) direction, a unit vector.</summary>
-    public Vector ZDirection { get { using var d = Wrapped.ZDirection(); return new Vector(d); } }
+    public Vector ZDirection { get { var d = Wrapped.ZDirection(); return new Vector(d); } }
 
     /// <summary>The centre point.</summary>
-    public Vector Center() { using var c = Wrapped.Center(); return new Vector(c); }
+    public Vector Center() { var c = Wrapped.Center(); return new Vector(c); }
 
     /// <summary>True if <paramref name="other"/> lies entirely within this box, by OCCT's criteria.</summary>
     public bool IsCompletelyInside(OrientedBoundBox other) => Wrapped.IsCompletelyInside(other.Wrapped);
@@ -86,7 +86,7 @@ public sealed class OrientedBoundBox
     /// <summary>True if the point is neither inside the box nor on its surface.</summary>
     public bool IsOutside(Vector point)
     {
-        using var p = point.ToGpPnt();
+        var p = point.ToGpPnt();
         return Wrapped.IsOut(p);
     }
 

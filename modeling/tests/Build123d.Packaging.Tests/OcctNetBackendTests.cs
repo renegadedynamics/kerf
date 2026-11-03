@@ -6,22 +6,22 @@ using System.Runtime.Loader;
 namespace Build123d.Packaging.Tests;
 
 /// <summary>
-/// A test that needs the OCCT.NET backend's build output: the folder of a project built with
-/// <c>-p:Build123dBackend=OcctNet</c>, given as B3D_OCCTNET_LIB. Skipped without it.
+/// A test that needs build123d.NET's build output: the folder of a project built against OCCT.NET (Build123d's own, or
+/// its tests'), given as B3D_OCCTNET_LIB. Skipped without it.
 /// </summary>
 public sealed class OcctNetFactAttribute : FactAttribute
 {
     public OcctNetFactAttribute()
     {
         if (Environment.GetEnvironmentVariable("B3D_OCCTNET_LIB") is not { Length: > 0 })
-            Skip = "set B3D_OCCTNET_LIB to a build output of Build123dBackend=OcctNet";
+            Skip = "set B3D_OCCTNET_LIB to a build output of Build123d";
     }
 }
 
 /// <summary>
-/// The OCCT.NET backend as Bento's 3D-models extension would load it: Build123d, Build123d.OcctNet and OCCT.NET's
-/// assemblies alone in a folder, loaded through a collectible <see cref="AssemblyLoadContext"/> with Schematiq.Collections
-/// shared from the host. No native library may load.
+/// build123d.NET as Bento's 3D-models extension would load it: Build123d and OCCT.NET's assemblies alone in a folder,
+/// loaded through a collectible <see cref="AssemblyLoadContext"/> with Schematiq.Collections shared from the host. No
+/// native library may load.
 /// </summary>
 public class OcctNetBackendTests
 {
@@ -40,7 +40,7 @@ public class OcctNetBackendTests
         protected override IntPtr LoadUnmanagedDll(string name)
         {
             NativeLoads.Add(name);
-            throw new DllNotFoundException($"{name}: the OCCT.NET backend loads no native library");
+            throw new DllNotFoundException($"{name}: build123d.NET loads no native library");
         }
     }
 
@@ -50,7 +50,7 @@ public class OcctNetBackendTests
         var lib = Path.Combine(Path.GetTempPath(), "b3d-occtnet-extension-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(lib);
         var source = Environment.GetEnvironmentVariable("B3D_OCCTNET_LIB")!;
-        foreach (var name in new[] { "Build123d", "Build123d.OcctNet", "OcctNet.Foundation", "OcctNet.ModelingData", "OcctNet.ModelingAlgorithms",
+        foreach (var name in new[] { "Build123d", "OcctNet.Foundation", "OcctNet.ModelingData", "OcctNet.ModelingAlgorithms",
                                   "OcctNet.DataExchange" })
             File.Copy(Path.Combine(source, name + ".dll"), Path.Combine(lib, name + ".dll"));
         Assert.DoesNotContain(Directory.GetFiles(lib, "*.dll"), f => Path.GetFileName(f) is "b3docct.dll" or "TKernel.dll");

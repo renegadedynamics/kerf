@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -29,10 +29,10 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
         try
         {
             // As gp_Dir(*direction.normalized()): normalised, then normalised again by gp_Dir
-            using var dir = direction.Normalized().ToGpDir();
+            var dir = direction.Normalized().ToGpDir();
             unit = new Vector(dir);
         }
-        catch (OcctException ex)
+        catch (Standard_Failure ex)
         {
             throw new ArgumentException("Invalid Axis parameters", nameof(direction), ex);
         }
@@ -43,8 +43,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>An axis from an OCCT gp_Ax1.</summary>
     public Axis(gp_Ax1 ax1)
     {
-        using var loc = ax1.Location();
-        using var dir = ax1.Direction();
+        var loc = ax1.Location();
+        var dir = ax1.Direction();
         Position = new Vector(loc);
         Direction = new Vector(dir);
     }
@@ -53,13 +53,13 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Axis(Edge edge)
     {
         double first = 0, last = 0;
-        using var curve = BRep_Tool.Curve(edge.TopoEdge, ref first, ref last)
+        var curve = BRep_Tool.Curve(edge.TopoEdge, out first, out last)
                           ?? throw new ArgumentException($"Invalid edge argument: {edge}");
         double min = 0, max = 0;
-        BRep_Tool.Range(edge.TopoEdge, ref min, ref max);
-        using var origin = new gp_Pnt();
-        using var tangent = new gp_Vec();
-        curve.D1(min, origin, tangent);
+        BRep_Tool.Range(edge.TopoEdge, out min, out max);
+        var origin = new gp_Pnt();
+        var tangent = new gp_Vec();
+        curve.D1(min, out origin, out tangent);
         this = new Axis(new Vector(origin), new Vector(tangent));
     }
 
@@ -76,10 +76,10 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     public Axis WithPosition(Vector position) => new(position, Direction, true);
 
     /// <summary>This axis with a new direction (normalised), at the same position.</summary>
-    /// <exception cref="OcctException">The direction has zero length.</exception>
+    /// <exception cref="Standard_Failure">The direction has zero length.</exception>
     public Axis WithDirection(Vector direction)
     {
-        using var d = direction.ToGpDir();
+        var d = direction.ToGpDir();
         return new Axis(Position, new Vector(d), true);
     }
 
@@ -89,17 +89,17 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>A new OCCT gp_Ax1 for this axis.</summary>
     public gp_Ax1 ToGpAx1()
     {
-        using var p = Position.ToGpPnt();
-        using var d = Direction.ToGpDir();
+        var p = Position.ToGpPnt();
+        var d = Direction.ToGpDir();
         return new gp_Ax1(p, d);
     }
 
     /// <summary>This axis moved to a new location, which can change both position and direction.</summary>
     public Axis Located(Location location)
     {
-        using var ax1 = ToGpAx1();
-        using var trsf = location.Wrapped.Transformation();
-        using var moved = ax1.Transformed(trsf);
+        var ax1 = ToGpAx1();
+        var trsf = location.Wrapped.Transformation();
+        var moved = ax1.Transformed(trsf);
         return new Axis(moved);
     }
 
@@ -111,32 +111,32 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// </summary>
     public bool IsCoaxial(Axis other, double angularTolerance = 1e-5, double linearTolerance = 1e-5)
     {
-        using var a = ToGpAx1();
-        using var b = other.ToGpAx1();
+        var a = ToGpAx1();
+        var b = other.ToGpAx1();
         return a.IsCoaxial(b, Rad(angularTolerance), linearTolerance);
     }
 
     /// <summary>True if the axes are at 90° to each other, within the tolerance in degrees.</summary>
     public bool IsNormal(Axis other, double angularTolerance = 1e-5)
     {
-        using var a = ToGpAx1();
-        using var b = other.ToGpAx1();
+        var a = ToGpAx1();
+        var b = other.ToGpAx1();
         return a.IsNormal(b, Rad(angularTolerance));
     }
 
     /// <summary>True if the axes are parallel and point opposite ways, within the tolerance in degrees.</summary>
     public bool IsOpposite(Axis other, double angularTolerance = 1e-5)
     {
-        using var a = ToGpAx1();
-        using var b = other.ToGpAx1();
+        var a = ToGpAx1();
+        var b = other.ToGpAx1();
         return a.IsOpposite(b, Rad(angularTolerance));
     }
 
     /// <summary>True if the axes are parallel, pointing the same or opposite ways, within the tolerance in degrees.</summary>
     public bool IsParallel(Axis other, double angularTolerance = 1e-5)
     {
-        using var a = ToGpAx1();
-        using var b = other.ToGpAx1();
+        var a = ToGpAx1();
+        var b = other.ToGpAx1();
         return a.IsParallel(b, Rad(angularTolerance));
     }
 
@@ -158,8 +158,8 @@ public readonly struct Axis : IEquatable<Axis>, IFormattable, IGeometry
     /// <summary>The angle between the directions, in degrees (0 to 180).</summary>
     public double AngleBetween(Axis other)
     {
-        using var a = ToGpAx1();
-        using var b = other.ToGpAx1();
+        var a = ToGpAx1();
+        var b = other.ToGpAx1();
         return a.Angle(b) * Constants.RadToDeg;
     }
 

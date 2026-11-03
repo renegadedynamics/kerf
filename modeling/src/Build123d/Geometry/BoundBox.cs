@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -42,7 +42,6 @@ public sealed class BoundBox
     {
         if (box.IsVoid())
         {
-            box.Dispose();
             return;   // all corners at the origin
         }
         Wrapped = box;
@@ -51,11 +50,11 @@ public sealed class BoundBox
         Size = Max - Min;
     }
 
-    /// <summary>Wraps a Bnd_Box this bounding box takes ownership of.</summary>
+    /// <summary>Wraps a Bnd_Box.</summary>
     internal static BoundBox Own(Bnd_Box box) => new(box);
 
-    /// <summary>A bounding box from an OCCT Bnd_Box (copied).</summary>
-    public static BoundBox FromBndBox(Bnd_Box box) => new(new Bnd_Box(box));
+    /// <summary>A bounding box from an OCCT Bnd_Box.</summary>
+    public static BoundBox FromBndBox(Bnd_Box box) => new(box);
 
     /// <summary>
     /// The bounding box of a shape: tight when <paramref name="optimal"/>, else OCCT's quicker, looser one. Any mesh on the
@@ -72,12 +71,12 @@ public sealed class BoundBox
         var box = new Bnd_Box();
         // Ignoring a mesh gives the box build123d gets by removing it first, without changing the shape
         if (optimal)
-            BRepBndLib.AddOptimal(shape, box, false);
+            BRepBndLib.AddOptimal(shape, ref box, false);
         else
-            BRepBndLib.Add(shape, box, false);
+            BRepBndLib.Add(shape, ref box, false);
         // A shape with faces holding only triangles (STL, glTF) has no geometry to bound but its mesh: use it then
         if (box.IsVoid())
-            BRepBndLib.Add(shape, box, true);
+            BRepBndLib.Add(shape, ref box, true);
         return new BoundBox(box);
     }
 
@@ -101,7 +100,7 @@ public sealed class BoundBox
     }
 
     /// <summary>The length of the body diagonal: the object's maximum size.</summary>
-    public double Diagonal => Wrapped is null ? 0.0 : Math.Sqrt(Wrapped.SquareExtent());
+    public double Diagonal => Wrapped is { } box ? Math.Sqrt(box.SquareExtent()) : 0.0;
 
     /// <summary>The centre.</summary>
     public Vector Center() => (Min + Max) / 2;
@@ -110,7 +109,7 @@ public sealed class BoundBox
     public BoundBox Add(Vector point, double? tolerance = null)
     {
         var box = Start(tolerance);
-        box.Update(point.X, point.Y, point.Z);
+        box = box.Updated(point.X, point.Y, point.Z);
         return new BoundBox(box);
     }
 
@@ -118,17 +117,17 @@ public sealed class BoundBox
     public BoundBox Add(BoundBox other, double? tolerance = null)
     {
         var box = Start(tolerance);
-        if (other.Wrapped is not null)
-            box.Add(other.Wrapped);
+        if (other.Wrapped is { } otherBox)
+            box = box.Added(otherBox);
         return new BoundBox(box);
     }
 
     Bnd_Box Start(double? tolerance)
     {
         var box = new Bnd_Box();
-        box.SetGap(tolerance ?? Constants.LooseTolerance);
-        if (Wrapped is not null)
-            box.Add(Wrapped);
+        box = box.WithGap(tolerance ?? Constants.LooseTolerance);
+        if (Wrapped is { } own)
+            box = box.Added(own);
         return box;
     }
 
@@ -202,7 +201,7 @@ public sealed class BoundBox
 
     /// <summary>True if the distance between the boxes is within the tolerance.</summary>
     public bool Intersects(BoundBox other, double tolerance = Constants.Tolerance) =>
-        Wrapped is not null && other.Wrapped is not null && Wrapped.Distance(other.Wrapped) <= tolerance;
+        Wrapped is { } box && other.Wrapped is { } otherBox && box.Distance(otherBox) <= tolerance;
 
     /// <summary>True if the boxes don't intersect.</summary>
     public bool Disjoint(BoundBox other, double tolerance = Constants.Tolerance) => !Intersects(other, tolerance);

@@ -1,11 +1,11 @@
 // Ported from build123d tests/test_direct_api/test_mixin3_d.py (Mixin3D is Shape3D here).
 // Box and Cylinder (centred Parts in build123d) are Parts of solids made with the direct API. The radii in the fillet
 // messages read 3.0 and 6.0 where build123d's tests pass the ints 3 and 6; the kernel failure is the inner exception
-// (an OcctException) where Python chains it as __cause__. Omitted:
+// (an Standard_Failure) where Python chains it as __cause__. Omitted:
 // - TestFilletFailures.test_operation's builder half: BuildPart (phase 5).
 // - TestFilletFailures.test_diagnostic_readback_failure, test_group_failure_reasons,
 //   TestMixin3D.test_chamfer_invalid_shape_raises_error: mock the OCP builder or Shape.is_valid.
-using Build123d.Occt;
+using Occt;
 
 using Ops = Build123d.Operations;
 
@@ -32,7 +32,7 @@ public class FilletFailuresTests
         {
             var e = Assert.Throws<ArgumentException>(() => shape.Fillet(3, shape.Edges()));
             Assert.Equal(PlateMessage, e.Message);
-            Assert.IsAssignableFrom<OcctException>(e.InnerException);
+            Assert.IsAssignableFrom<Standard_Failure>(e.InnerException);
         }
     }
 

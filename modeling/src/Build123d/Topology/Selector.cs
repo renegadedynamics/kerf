@@ -1,3 +1,5 @@
+using Occt;
+
 namespace Build123d;
 
 /// <summary>
@@ -310,7 +312,7 @@ public sealed class Selector : IEquatable<Selector>
             {
                 return get();
             }
-            catch (Exception e) when (e is InvalidOperationException or ArgumentException or Occt.OcctException or NotSupportedException
+            catch (Exception e) when (e is InvalidOperationException or ArgumentException or Standard_Failure or NotSupportedException
                                        or NotImplementedException)
             {
                 return null;

@@ -7,7 +7,7 @@
 // - test_compound_intersection_keeps_joints_connected_to_the_assembly, _leaves_shared_joints_alone,
 //   test_compound_elements_reach_only_consistent_trees: joints are not yet ported.
 // - TestShapeListExpand.test_expand_with_vector, and the Vector in test_expand_mixed: a ShapeList holds only shapes.
-using Build123d.Occt;
+using Occt;
 using Xunit.Sdk;
 
 namespace Build123d.Tests.Topology;
@@ -914,10 +914,7 @@ public class EmptyCompoundIntersectTests
 {
     static Compound EmptyCompound()
     {
-        using var builder = new BRep_Builder();
-        var emptyOcct = new TopoDS_Compound();
-        builder.MakeCompound(emptyOcct);
-        return new Compound(emptyOcct);
+        return new Compound(TopoDS_Builder.MakeCompound());
     }
 
     [Fact]

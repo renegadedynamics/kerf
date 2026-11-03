@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -72,7 +72,7 @@ public sealed class ShapeHistory
     public static ShapeHistory FromHistory(BRepTools_History? history, IEnumerable<TopoDS_Shape>? before = null,
                                            IEnumerable<TopoDS_Shape>? brought = null)
     {
-        var own = history is null ? new BRepTools_History() : Extras.CopyHistory(history);
+        var own = history is null ? new BRepTools_History() : new BRepTools_History(history);
         return new ShapeHistory(own, before ?? [], brought ?? []);
     }
 
@@ -82,14 +82,14 @@ public sealed class ShapeHistory
     public static ShapeHistory FromBoolean(BRepAlgoAPI_BuilderAlgo operation, IEnumerable<TopoDS_Shape>? before = null,
                                            IEnumerable<TopoDS_Shape>? brought = null)
     {
-        using var history = operation.History();
+        var history = operation.History();
         return FromHistory(history, before, brought);
     }
 
     /// <summary>The record of a <c>Clean</c>.</summary>
     public static ShapeHistory FromUnify(ShapeUpgrade_UnifySameDomain upgrader)
     {
-        using var history = upgrader.History();
+        var history = upgrader.History();
         return FromHistory(history);
     }
 
@@ -103,15 +103,15 @@ public sealed class ShapeHistory
     /// (<c>BRepFilletAPI_MakeFillet2d</c> only answers for edges) is taken to have no answer for it.
     /// </remarks>
     public static ShapeHistory FromAlgorithm(BRepBuilderAPI_MakeShape algorithm, IEnumerable<TopoDS_Shape> inputs, TopoDS_Shape result) =>
-        FromAlgorithm(algorithm.Modified, algorithm.Generated, inputs, result);
+        FromAlgorithm(s => algorithm.Modified(s), s => algorithm.Generated(s), inputs, result);
 
-    internal static ShapeHistory FromAlgorithm(Func<TopoDS_Shape, TopTools_ListOfShape> modified,
-                                               Func<TopoDS_Shape, TopTools_ListOfShape> generated,
+    internal static ShapeHistory FromAlgorithm(Func<TopoDS_Shape, IEnumerable<TopoDS_Shape>> modified,
+                                               Func<TopoDS_Shape, IEnumerable<TopoDS_Shape>> generated,
                                                IEnumerable<TopoDS_Shape> inputs, TopoDS_Shape result)
     {
         var inputList = inputs.ToList();
         var history = new BRepTools_History();
-        using var present = new TopTools_MapOfShape();
+        var present = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         foreach (var sub in TrackedSubshapes([result]))
             present.Add(sub);
         foreach (var sub in TrackedSubshapes(inputList))
@@ -137,7 +137,7 @@ public sealed class ShapeHistory
     {
         var inputList = inputs.ToList();
         var history = new BRepTools_History();
-        using var present = new TopTools_MapOfShape();
+        var present = new NCollection_Map<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         foreach (var sub in TrackedSubshapes([sewing.SewedShape()]))
             present.Add(sub);
         foreach (var sub in TrackedSubshapes(inputList))
@@ -165,14 +165,14 @@ public sealed class ShapeHistory
     public static ShapeHistory FromRelocation(TopoDS_Shape before, TopoDS_Shape after)
     {
         var history = new BRepTools_History();
-        using var beforeToLocal = before.Location().Inverted();
-        using var afterToLocal = after.Location().Inverted();
-        using var placed = new TopTools_DataMapOfShapeShape();
+        var beforeToLocal = before.Location().Inverted();
+        var afterToLocal = after.Location().Inverted();
+        var placed = new NCollection_DataMap<TopoDS_Shape, TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         foreach (var sub in TrackedSubshapes([after]))
             placed.Bind(sub.Moved(afterToLocal), sub);
         foreach (var sub in TrackedSubshapes([before]))
         {
-            using var key = sub.Moved(beforeToLocal);
+            var key = sub.Moved(beforeToLocal);
             if (placed.IsBound(key))
             {
                 var moved = placed.Find(key);
@@ -232,7 +232,7 @@ public sealed class ShapeHistory
     private BRepTools_History Copy()
     {
         // As build123d merges in place: Merge into an empty history isn't a copy
-        return Extras.CopyHistory(_wrapped);
+        return new BRepTools_History(_wrapped);
     }
 
     private (ShapeTrace Before, ShapeTrace Brought) Traces => _traces ??= (new ShapeTrace(this, Before), new ShapeTrace(this, Brought));
@@ -266,7 +266,7 @@ public sealed class ShapeHistory
     {
         if (!BRepTools_History.IsSupportedType(shape))
             return [];
-        using var list = _wrapped.Modified(shape);
+        var list = _wrapped.Modified(shape);
         return list.ToArray();
     }
 
@@ -275,7 +275,7 @@ public sealed class ShapeHistory
     {
         if (!BRepTools_History.IsSupportedType(shape))
             return [];
-        using var list = _wrapped.Generated(shape);
+        var list = _wrapped.Generated(shape);
         return list.ToArray();
     }
 
@@ -286,12 +286,12 @@ public sealed class ShapeHistory
     public ShapeTrace TraceOf(IEnumerable<TopoDS_Shape> inputs) => new(this, inputs);
 
     /// <summary>Every distinct vertex, edge, face and solid of the given shapes.</summary>
-    internal static TopoDS_Shape[] TrackedSubshapes(IEnumerable<TopoDS_Shape?> shapes)
+    internal static TopoDS_Shape[] TrackedSubshapes(IEnumerable<TopoDS_Shape> shapes)
     {
-        using var found = new TopTools_IndexedMapOfShape();
+        var found = new NCollection_IndexedMap<TopoDS_Shape>(TopTools_ShapeMapHasher.Instance);
         foreach (var shape in shapes)
         {
-            if (shape is null || shape.IsNull())
+            if (shape.IsNull())
                 continue;
             foreach (var type in TrackedTypes)
                 TopExp.MapShapes(shape, type, found);
@@ -300,14 +300,13 @@ public sealed class ShapeHistory
     }
 
     /// <summary>What an algorithm says about one sub-shape, or nothing if it won't say.</summary>
-    private static TopoDS_Shape[] Answers(Func<TopoDS_Shape, TopTools_ListOfShape> query, TopoDS_Shape shape)
+    private static TopoDS_Shape[] Answers(Func<TopoDS_Shape, IEnumerable<TopoDS_Shape>> query, TopoDS_Shape shape)
     {
         try
         {
-            using var list = query(shape);
-            return list.ToArray();
+            return [.. query(shape)];
         }
-        catch (OcctException)
+        catch (Standard_Failure)
         {
             return [];
         }
@@ -321,9 +320,9 @@ public sealed class ShapeHistory
 /// </summary>
 public sealed class ShapeTrace
 {
-    private readonly TopTools_MapOfShape _untouched = new();
-    private readonly TopTools_DataMapOfShapeShape _modifiedFrom = new();
-    private readonly TopTools_DataMapOfShapeShape _generatedFrom = new();
+    private readonly NCollection_Map<TopoDS_Shape> _untouched = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> _modifiedFrom = new(TopTools_ShapeMapHasher.Instance);
+    private readonly NCollection_DataMap<TopoDS_Shape, TopoDS_Shape> _generatedFrom = new(TopTools_ShapeMapHasher.Instance);
 
     internal ShapeTrace(ShapeHistory history, IEnumerable<TopoDS_Shape> inputs)
     {

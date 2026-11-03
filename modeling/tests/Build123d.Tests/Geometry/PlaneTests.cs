@@ -1,7 +1,7 @@
 // Ported from build123d tests/test_direct_api/test_plane.py. Cases that need topology (Face, Solid,
 // Vertex) or builders follow with those ports. Python's origin/x_dir/y_dir setters and move() change the
 // plane; the port's WithOrigin/WithXDir/WithYDir and Moved return new planes.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -114,15 +114,15 @@ public class PlaneTests
     [Fact]
     public void LeftHandedPlanesAreMadeRightHanded()
     {
-        using var mirrorAxes = new gp_Ax2();
-        using var xy = Plane.XY.ToGpPln();
-        using var mirrored = xy.Mirrored(mirrorAxes);
-        using (var position = mirrored.Position())
-            Assert.False(position.Direct());
+        var mirrorAxes = new gp_Ax2();
+        var xy = Plane.XY.ToGpPln();
+        var mirrored = xy.Mirrored(mirrorAxes);
+        var position = mirrored.Position();
+        Assert.False(position.Direct());
 
         var p = new Plane(mirrored);
-        using var pln = p.ToGpPln();
-        using var fixedPosition = pln.Position();
+        var pln = p.ToGpPln();
+        var fixedPosition = pln.Position();
         Assert.True(fixedPosition.Direct());
     }
 

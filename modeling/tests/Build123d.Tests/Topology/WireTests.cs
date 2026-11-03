@@ -11,7 +11,7 @@
 // - TestWireValidation.test_fillet_2d_vertex_not_on_wire: ported in Objects/Fillet2DTests.cs.
 // test_param_at_point_reversed_edges's BuildLine on Plane.YZ is the filleted line placed on Plane.YZ.
 // Python's random u values in test_param_at_point are fixed values here.
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 using Rot = Build123d.Rotation;
 
@@ -192,8 +192,8 @@ public class WireTests
                 var @default = candidate.ParamAtPoint(point);
                 var normalized = candidate.ParamAtPoint(point, normalize: true);
                 var native = candidate.ParamAtPoint(point, normalize: false);
-                using var adaptor = candidate.GeomAdaptor();
-                using var value = adaptor.Value(native);
+                var adaptor = candidate.GeomAdaptor();
+                var value = adaptor.Value(native);
                 var evaluated = new Vector(value);
 
                 Assert.Equal(@default, normalized);
@@ -436,7 +436,7 @@ public class WireTests
     public void GeomAdaptor()
     {
         var w = Polyline((0, 0), (1, 0), (1, 1));
-        using var adaptor = w.GeomAdaptor();
+        var adaptor = w.GeomAdaptor();
         Assert.IsType<BRepAdaptor_CompCurve>(adaptor);
         Assert.Throws<InvalidOperationException>(() => new Wire().GeomAdaptor());
     }

@@ -1,7 +1,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Text.RegularExpressions;
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Exchange;
@@ -166,7 +166,7 @@ public partial class ExchangeTests
     [Fact]
     public void CancelledImportsAndExportsStop()
     {
-        using var cancelled = new CancellationTokenSource();
+        var cancelled = new CancellationTokenSource();
         cancelled.Cancel();
         var stream = new MemoryStream();
         Exporters3D.ExportStep(Block(), stream);
@@ -187,7 +187,6 @@ public partial class ExchangeTests
         stream.Position = 0;
         var read = Importers.ImportStep(stream);
         Check.AlmostEqual(pair.Volume, read.Volume, 6);
-        Assert.True(Extras.StepKeepsAssemblies);
         Assert.Equal("pair", read.Label);
         Assert.Equal(["a", "b"], ((Compound)read).AssemblyChildren.Select(c => c.Label));
         Assert.Equal(new Color("red"), ((Compound)read).AssemblyChildren[0].Color);
@@ -303,7 +302,7 @@ public partial class ExchangeTests
         var stream = new MemoryStream();
         Assert.True(Exporters3D.Export3mf(Compound.Assembly([Block(), new Sphere(3).WithColor(new Color("blue"))]), stream));
         stream.Position = 0;
-        using var zip = new ZipArchive(stream, ZipArchiveMode.Read);
+        var zip = new ZipArchive(stream, ZipArchiveMode.Read);
         using var model = new StreamReader(zip.GetEntry("3D/3dmodel.model")!.Open());
         var xml = model.ReadToEnd();
         Assert.Contains("unit=\"millimeter\"", xml);

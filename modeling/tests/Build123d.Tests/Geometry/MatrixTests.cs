@@ -1,6 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_matrix.py. Element-type validation is the compiler's
 // job in C#. Python's Matrix.rotate changes the matrix; the port's Rotated returns a new one.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -24,7 +24,7 @@ public class MatrixTests
 
     static gp_TrsfForm Form(Matrix m)
     {
-        using var g = m.ToGpGTrsf();
+        var g = m.ToGpGTrsf();
         return g.Form();
     }
 
@@ -93,19 +93,19 @@ public class MatrixTests
         }, inverse);
 
         // From a gp_Trsf
-        using var rotX = new gp_Trsf();
-        using var origin = new gp_Pnt(0, 0, 0);
-        using var dx = new gp_Dir(1, 0, 0);
-        using var ax = new gp_Ax1(origin, dx);
+        var rotX = new gp_Trsf();
+        var origin = new gp_Pnt(0, 0, 0);
+        var dx = new gp_Dir(1, 0, 0);
+        var ax = new gp_Ax1(origin, dx);
         double t = Math.PI;
-        rotX.SetRotation(ax, t);
+        rotX = rotX.WithRotation(ax, t);
         var rotXMatrix = new double[,]
         {
             { 1, 0, 0, 0 }, { 0, Math.Cos(t), -Math.Sin(t), 0 }, { 0, Math.Sin(t), Math.Cos(t), 0 }, { 0, 0, 0, 1 },
         };
         var fromTrsf = new Matrix(rotX);
         AlmostEqual(rotXMatrix, fromTrsf);
-        using var g = fromTrsf.ToGpGTrsf();
+        var g = fromTrsf.ToGpGTrsf();
         AlmostEqual(rotXMatrix, new Matrix(g));
     }
 
@@ -128,8 +128,8 @@ public class MatrixTests
         Check.AlmostEqual((5 - 2 * c, 2 * s, 0), rotationScaleMirror.Multiply(new Vector(1, 0, 0)), 7);
 
         // A similarity converts to a gp_Trsf, so it can place a shape
-        using var g = rotationScaleMirror.ToGpGTrsf();
-        using var trsf = g.Trsf();
+        var g = rotationScaleMirror.ToGpGTrsf();
+        var trsf = g.Trsf();
     }
 
     static Vector Reconstruct(Matrix matrix)
@@ -185,7 +185,7 @@ public class MatrixTests
             _ => new double[,] { { 2, 0, 0, 1 }, { 0, 1, 0, 0 }, { 0, 0, 1, 0 } },
         };
         var original = new Matrix(rows);
-        using var g = original.ToGpGTrsf();
+        var g = original.ToGpGTrsf();
         var copied = new Matrix(g);
         for (int r = 0; r < 3; r++)
             for (int col = 0; col < 4; col++)

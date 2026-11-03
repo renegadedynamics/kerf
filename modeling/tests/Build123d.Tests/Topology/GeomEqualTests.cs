@@ -2,7 +2,7 @@
 // Omitted:
 // - TestGeomEqualTypeMismatch.test_edge_vs_non_edge, test_wire_vs_non_wire: GeomEqual is typed (Edge with Edge, Wire
 //   with Wire), so comparing an edge with a wire doesn't compile.
-using Build123d.Occt;
+using Occt;
 using Ops = Build123d.Operations;
 
 namespace Build123d.Tests.Topology;
@@ -23,16 +23,16 @@ internal static class GeomEqualObjects
     /// <summary>An edge on an OCCT B-spline built from its poles, knots and multiplicities (and weights).</summary>
     public static Edge BSpline(Vector[] poles, double[] knots, int[] mults, int degree, double[]? weights = null)
     {
-        using var poleArray = new TColgp_Array1OfPnt(1, poles.Length);
+        var poleArray = new NCollection_Array1<gp_Pnt>(1, poles.Length);
         for (int i = 0; i < poles.Length; i++)
         {
-            using var p = poles[i].ToGpPnt();
+            var p = poles[i].ToGpPnt();
             poleArray.SetValue(i + 1, p);
         }
-        using var knotArray = new TColStd_Array1OfReal(1, knots.Length);
+        var knotArray = new NCollection_Array1<double>(1, knots.Length);
         for (int i = 0; i < knots.Length; i++)
             knotArray.SetValue(i + 1, knots[i]);
-        using var multArray = new TColStd_Array1OfInteger(1, mults.Length);
+        var multArray = new NCollection_Array1<int>(1, mults.Length);
         for (int i = 0; i < mults.Length; i++)
             multArray.SetValue(i + 1, mults[i]);
         Geom_BSplineCurve curve;
@@ -40,14 +40,13 @@ internal static class GeomEqualObjects
             curve = new Geom_BSplineCurve(poleArray, knotArray, multArray, degree, false);
         else
         {
-            using var weightArray = new TColStd_Array1OfReal(1, weights.Length);
+            var weightArray = new NCollection_Array1<double>(1, weights.Length);
             for (int i = 0; i < weights.Length; i++)
                 weightArray.SetValue(i + 1, weights[i]);
             curve = new Geom_BSplineCurve(poleArray, weightArray, knotArray, multArray, degree, false);
         }
-        using (curve)
-        using (var maker = new BRepBuilderAPI_MakeEdge(curve))
-            return new Edge(maker.Edge());
+        var maker = new BRepBuilderAPI_MakeEdge(curve);
+        return new Edge(maker.Edge());
     }
 }
 
@@ -413,14 +412,14 @@ public class EdgeGeomEqualOffsetTests
     {
         var spline = GeomEqualObjects.Spline((0, 0), (1, 1), (2, 0), (3, 1));
         double first, last;
-        using (var adaptor = spline.GeomAdaptor())
-            (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
-        using var topoEdge = TopoDS.Edge(spline.Wrapped);
+        var adaptor = spline.GeomAdaptor();
+        (first, last) = (adaptor.FirstParameter(), adaptor.LastParameter());
+        var topoEdge = TopoDS.Edge(spline.Wrapped);
         double f = 0, l = 0;
-        using var basis = BRep_Tool.Curve(topoEdge, ref f, ref l);
-        using var dir = (direction ?? new Vector(0, 0, 1)).ToGpDir();
-        using var curve = new Geom_OffsetCurve(basis, distance, dir);
-        using var maker = new BRepBuilderAPI_MakeEdge(curve, first, last);
+        var basis = BRep_Tool.Curve(topoEdge, out f, out l);
+        var dir = (direction ?? new Vector(0, 0, 1)).ToGpDir();
+        var curve = new Geom_OffsetCurve(basis!, distance, dir);
+        var maker = new BRepBuilderAPI_MakeEdge(curve, first, last);
         var edge = new Edge(maker.Edge());
         Assert.Equal(GeomType.Offset, edge.GeomType);
         return edge;

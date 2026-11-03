@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -31,7 +31,7 @@ public abstract partial class Shape2D : Shape
         {
             sum = new Shell(faces);
         }
-        catch (Exception e) when (e is ArgumentException or InvalidOperationException or OcctException)
+        catch (Exception e) when (e is ArgumentException or InvalidOperationException or Standard_Failure)
         {
             throw new ArgumentException(
                 "Unable to sew faces into a single connected Shell - faces must meet along shared edges, "
@@ -88,11 +88,11 @@ public abstract partial class Shape2D : Shape
                 return sides[0];
             // Try to make a shell
             var shell = TopoUtil.SewFaces(sides.Select(s => s.TopoShape));
-            return shell is TopoDS_Shell ? CastLike(shell) : new Compound(sides);
+            return shell.IsShell() ? CastLike(shell) : new Compound(sides);
         }
 
         // Split each perimeter edge where it crosses a seam, so the pieces lie in one patch of the surface
-        using var perimeterEdges = new TopTools_SequenceOfShape();
+        var perimeterEdges = new NCollection_Sequence<TopoDS_Shape>();
         var seams = Faces().SelectMany(f => f.Seams).ToList();
         foreach (var edge in perimeter.Edges())
         {
@@ -113,15 +113,15 @@ public abstract partial class Shape2D : Shape
                 perimeterEdges.Append(piece.TopoShape);
         }
 
-        using var constructor = new BRepFeat_SplitShape(TopoShape);
+        var constructor = new BRepFeat_SplitShape(TopoShape);
         constructor.Add(perimeterEdges);
         constructor.Build();
-        List<Shape> Sides(TopTools_ListOfShape list) => [.. list.Where(s => !s.IsNull()).Select(CastLike)];
+        List<Shape> Sides(IEnumerable<TopoDS_Shape> list) => [.. list.Where(s => !s.IsNull()).Select(CastLike)];
         Shape left, right;
-        using (var lefts = constructor.Left())
-            left = ProcessSides(Sides(lefts));
-        using (var rights = constructor.Right())
-            right = ProcessSides(Sides(rights));
+        var lefts = constructor.Left();
+        left = ProcessSides(Sides(lefts));
+        var rights = constructor.Right();
+        right = ProcessSides(Sides(rights));
 
         // Is the left or the right the inside?
         var perimeterLength = perimeter.Length;
@@ -173,13 +173,13 @@ public abstract partial class Shape2D : Shape
             {
                 // The common part (coplanar overlap) and the section (crossing curves)
                 ShapeList<Shape> commonFaces;
-                using (var common = new BRepAlgoAPI_Common())
-                    commonFaces = BoolOpList([this], [surface], common).Expand();
+                var common = new BRepAlgoAPI_Common();
+                commonFaces = BoolOpList([this], [surface], common).Expand();
                 results.AddRange(commonFaces);
                 ShapeList<Shape> sectionEdges;
-                using (var section = new BRepAlgoAPI_Section())
-                    // The section's vertices are boundary contacts (touches), not intersections
-                    sectionEdges = new ShapeList<Shape>(BoolOpList([this], [surface], section).OfType<Edge>()).Expand();
+                var section = new BRepAlgoAPI_Section();
+                // The section's vertices are boundary contacts (touches), not intersections
+                sectionEdges = new ShapeList<Shape>(BoolOpList([this], [surface], section).OfType<Edge>()).Expand();
                 if (commonFaces.Count == 0)
                     results.AddRange(sectionEdges);
                 else
@@ -197,7 +197,7 @@ public abstract partial class Shape2D : Shape
             }
             case Shape1D line:
             {
-                using var section = new BRepAlgoAPI_Section();
+                var section = new BRepAlgoAPI_Section();
                 results.AddRange(BoolOpList([this], [line], section));
                 break;
             }
@@ -251,7 +251,7 @@ public abstract partial class Shape2D : Shape
         var results = new List<Shape>();
         var foundVertices = new List<Vertex>();
         // All contact points (vertex-vertex, vertex-edge, vertex-face), with high precision to avoid duplicates
-        using var extrema = new BRepExtrema_DistShapeShape();
+        var extrema = new BRepExtrema_DistShapeShape();
         extrema.SetDeflection(tolerance * 1e-3);
         extrema.LoadS1(TopoShape);
         extrema.LoadS2(other.TopoShape);
@@ -264,8 +264,8 @@ public abstract partial class Shape2D : Shape
             var otherVertices = other.Vertices();
             for (int i = 1; i <= extrema.NbSolution(); i++)
             {
-                using var p1 = extrema.PointOnShape1(i);
-                using var p2 = extrema.PointOnShape2(i);
+                var p1 = extrema.PointOnShape1(i);
+                var p2 = extrema.PointOnShape2(i);
                 if (p1.Distance(p2) > tolerance)
                     continue;
                 var vertex = new Vertex(p1.X(), p1.Y(), p1.Z());
@@ -299,7 +299,7 @@ public abstract partial class Shape2D : Shape
     {
         if (amount == 0)
             return this;
-        using var builder = new BRepOffset_MakeOffset();
+        var builder = new BRepOffset_MakeOffset();
         builder.Initialize(TopoShape, amount, Constants.Tolerance, BRepOffset_Mode.BRepOffset_Skin, true, false,
                            GeomAbs_JoinType.GeomAbs_Intersection, false, true);
         builder.MakeOffsetShape();

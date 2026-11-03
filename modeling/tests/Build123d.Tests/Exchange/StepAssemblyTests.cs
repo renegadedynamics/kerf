@@ -38,7 +38,7 @@ public class StepAssemblyTests
     // The shape as OCCT.NET holds it, from the same BRep text (shared sub-shapes stay shared)
     private static O.TopoDS_Shape Occt(Shape shape)
     {
-        var text = Encoding.ASCII.GetString(Build123d.Occt.Extras.WriteBRep(shape.Wrapped));
+        var text = Encoding.ASCII.GetString(Extras.WriteBRep(shape.Wrapped));
         var reader = new StringReader(text);
         O.Standard_Stream.SetInputLength(reader, text.Length);
         O.BRepTools.Read(out var read, reader);
@@ -47,8 +47,8 @@ public class StepAssemblyTests
 
     private static O.Quantity_ColorRGBA Linear(Color color)
     {
-        using var rgba = color.ToQuantityColorRgba();
-        using var rgb = rgba.GetRGB();
+        var rgba = color.ToQuantityColorRgba();
+        var rgb = rgba.GetRGB();
         return new O.Quantity_ColorRGBA((float)rgb.Red(), (float)rgb.Green(), (float)rgb.Blue(), (float)rgba.Alpha());
     }
 

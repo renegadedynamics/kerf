@@ -1,6 +1,6 @@
 // Ported from build123d tests/test_direct_api/test_axis.py. Cases that need topology (Edge, Vertex)
 // follow with the topology port.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Geometry;
 
@@ -27,9 +27,9 @@ public class AxisTests
     [Fact]
     public void FromOcct()
     {
-        using var p = new gp_Pnt(1, 1, 1);
-        using var d = new gp_Dir(0, 1, 0);
-        using var occt = new gp_Ax1(p, d);
+        var p = new gp_Pnt(1, 1, 1);
+        var d = new gp_Dir(0, 1, 0);
+        var occt = new gp_Ax1(p, d);
         var axis = new Axis(occt);
         Check.AlmostEqual((1, 1, 1), axis.Position, 5);
         Check.AlmostEqual((0, 1, 0), axis.Direction, 5);
@@ -182,7 +182,7 @@ public class AxisTests
         Check.AlmostEqual((1, 2, 3), axis.Position);
         axis = axis.WithPosition(axis.Position + (1, 2, 3));
         Check.AlmostEqual((2, 4, 6), axis.Position);
-        using var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToGpAx1();
         Check.AlmostEqual((2, 4, 6), new Axis(ax1).Position);
         Check.AlmostEqual((0, 0, 0), Axis.X.Position);   // the original is unchanged
     }
@@ -195,7 +195,7 @@ public class AxisTests
         axis = axis.WithDirection(axis.Direction + (5, 3, 1));
         var expected = (new Vector(1, 2, 3).Normalized() + new Vector(5, 3, 1)).Normalized();
         Check.AlmostEqual(expected, axis.Direction);
-        using var ax1 = axis.ToGpAx1();
+        var ax1 = axis.ToGpAx1();
         Check.AlmostEqual(expected, new Axis(ax1).Direction);
     }
 }

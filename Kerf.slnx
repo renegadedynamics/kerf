@@ -22,7 +22,6 @@
   </Folder>
   <Folder Name="/modeling/" />
   <Folder Name="/modeling/src/">
-    <Project Path="modeling/src/Build123d.OcctNet/Build123d.OcctNet.csproj" />
     <Project Path="modeling/src/Build123d/Build123d.csproj" />
   </Folder>
   <Folder Name="/modeling/tests/">

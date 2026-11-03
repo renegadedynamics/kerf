@@ -1,4 +1,4 @@
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -116,7 +116,7 @@ public abstract partial class Shape
     /// <summary>This shape with <paramref name="toCut"/> removed. The result may be of another class.</summary>
     public Shape Cut(params IEnumerable<Shape> toCut)
     {
-        using var op = new BRepAlgoAPI_Cut();
+        var op = new BRepAlgoAPI_Cut();
         return BoolOp([this], toCut, op);
     }
 
@@ -126,7 +126,7 @@ public abstract partial class Shape
     /// </summary>
     public Shape Fuse(IEnumerable<Shape> toFuse, bool glue = false, double? tolerance = null)
     {
-        using var op = new BRepAlgoAPI_Fuse();
+        var op = new BRepAlgoAPI_Fuse();
         if (glue)
             op.SetGlue(BOPAlgo_GlueEnum.BOPAlgo_GlueShift);
         if (tolerance is { } tol && tol != 0)
@@ -136,18 +136,6 @@ public abstract partial class Shape
 
     /// <inheritdoc cref="Fuse(IEnumerable{Shape}, bool, double?)"/>
     public Shape Fuse(params Shape[] toFuse) => Fuse((IEnumerable<Shape>)toFuse);
-
-    /// <summary>Shapes as an error message names them: "a Box", "2 Cylinders", "a Box and 2 Cylinders".</summary>
-    private static string Names(IEnumerable<Shape> shapes)
-    {
-        var groups = shapes.GroupBy(s => s.GetType().Name).Select(g => g.Count() == 1 ? $"a {g.Key}" : $"{g.Count()} {g.Key}s").ToList();
-        return groups.Count switch
-        {
-            0 => "nothing",
-            1 => groups[0],
-            _ => string.Join(", ", groups[..^1]) + " and " + groups[^1],
-        };
-    }
 
     /// <summary>A boolean operation, its result cast to the highest-ranked class among the inputs.</summary>
     private protected Shape BoolOp(IEnumerable<Shape> args, IEnumerable<Shape> tools, BRepAlgoAPI_BuilderAlgo operation)
@@ -190,52 +178,49 @@ public abstract partial class Shape
         // The arguments were there before and the tools are brought in. An empty record means every input
         // sub-shape came through untouched, which is what the shortcuts above produce
         var history = new ShapeHistory(arg, tool);
-        if (topoResult is null)
+        if (topoResult is not { } result)
         {
-            using var argShapes = TopoUtil.ListOf(arg);
-            using var toolShapes = TopoUtil.ListOf(tool);
+            var argShapes = TopoUtil.ListOf(arg);
+            var toolShapes = TopoUtil.ListOf(tool);
             operation.SetArguments(argShapes);
             TopoUtil.SetTools(operation, toolShapes);
             operation.SetRunParallel(true);
             // Non-destructive: where an input needs a larger tolerance, OCCT copies it rather than changing it
             operation.SetNonDestructive(true);
-            using (OcctContext.Doing($"{TopoUtil.BooleanName(operation)} of {Names(argList)} with {Names(toolList)}"))
-            {
-                operation.Build();
-                TopoUtil.ThrowIfFailed(operation);
-            }
-            topoResult = TopoUtil.Downcast(operation.Shape());
+            operation.Build();
+            TopoUtil.ThrowIfFailed(operation);
+            result = TopoUtil.Downcast(operation.Shape());
             history = ShapeHistory.FromBoolean(operation, arg, tool);
         }
 
         if (SkipClean.Clean)
         {
-            using var upgrader = new ShapeUpgrade_UnifySameDomain(topoResult, true, true, true);
+            var upgrader = new ShapeUpgrade_UnifySameDomain(result, true, true, true);
             upgrader.AllowInternalEdges(false);
             try
             {
                 upgrader.Build();
-                topoResult = TopoUtil.Downcast(upgrader.Shape());
+                result = TopoUtil.Downcast(upgrader.Shape());
                 history = history.Merge(ShapeHistory.FromUnify(upgrader));
             }
-            catch (OcctException)
+            catch (Standard_Failure)
             {
                 Warnings.Warn("Boolean operation unable to clean");
             }
         }
 
         // Remove an unnecessary compound around a single shape
-        if (topoResult is TopoDS_Compound compound)
-            topoResult = TopoUtil.UnwrapCompound(compound);
+        if (result.IsCompound())
+            result = TopoUtil.UnwrapCompound(TopoDS.Compound(result));
 
-        if (topoResult is TopoDS_Compound && highest.Order != 4)
+        if (result.IsCompound() && highest.Order != 4)
         {
-            var results = TopoUtil.TopLevelShapes(topoResult)
+            var results = TopoUtil.TopLevelShapes(result)
                 .Select(s => baseShape.CopyAttributesTo(highest.CastLike(s)).MadeBy(history)).ToList();
             var composite = baseShape.CopyAttributesTo(MakeComposite(results, highest.Order));
             return composite.MadeBy(history);
         }
-        return baseShape.CopyAttributesTo(highest.CastLike(topoResult)).MadeBy(history);
+        return baseShape.CopyAttributesTo(highest.CastLike(result)).MadeBy(history);
     }
 
     /// <summary>A boolean operation whose pieces are returned as a list, empty for nothing.</summary>
@@ -244,7 +229,7 @@ public abstract partial class Shape
         var result = BoolOp(args, tools, operation);
         if (result.IsEmpty)
             return [];
-        if (result._wrapped is TopoDS_Compound)
+        if (result._wrapped.IsCompound())
             // The same operation made them all
             return new ShapeList<Shape>(result.GetTopLevelShapes().Select(p => p.MadeBy(result.History)));
         return [result];
@@ -303,23 +288,23 @@ public abstract partial class Shape
     {
         if (IsEmpty || other.IsEmpty)
             return ([], []);
-        using var section = new BRepAlgoAPI_Section(_wrapped, other._wrapped, false);
+        var section = new BRepAlgoAPI_Section(_wrapped, other._wrapped, false);
         section.SetNonDestructive(true);   // leave the inputs' tolerances alone
         section.SetRunParallel(true);
         section.Approximation(true);
         section.ComputePCurveOn1(true);
         section.ComputePCurveOn2(true);
         section.Build();
-        using var result = section.Shape();
+        var result = section.Shape();
 
         var vertices = new List<Vertex>();
-        using (var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_VERTEX))
-            for (; explorer.More(); explorer.Next())
-                vertices.Add((Vertex)CastLike(TopoUtil.Downcast(explorer.Current())));
+        var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_VERTEX);
+        for (; explorer.More(); explorer.Next())
+            vertices.Add((Vertex)CastLike(TopoUtil.Downcast(explorer.Current())));
         var edges = new List<Edge>();
-        using (var explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE))
-            for (; explorer.More(); explorer.Next())
-                edges.Add((Edge)CastLike(TopoUtil.Downcast(explorer.Current())));
+        explorer = new TopExp_Explorer(result, TopAbs_ShapeEnum.TopAbs_EDGE);
+        for (; explorer.More(); explorer.Next())
+            edges.Add((Edge)CastLike(TopoUtil.Downcast(explorer.Current())));
         return (new ShapeList<Vertex>(vertices.Distinct()), new ShapeList<Edge>(edges));
     }
 
@@ -356,13 +341,13 @@ public abstract partial class Shape
         if (IsEmpty)   // nothing to split; nothing on either side
             return ([], [], []);
 
-        using var trimTool = tool switch
+        var trimTool = tool switch
         {
             Plane p => MakePlaneFace(p),
             Shape s => s.Wrapped,
             _ => throw new ArgumentException($"Can't split with a {tool.GetType().Name}"),
         };
-        using var splitter = new BRepAlgoAPI_Splitter();
+        var splitter = new BRepAlgoAPI_Splitter();
         var splitResult = TopoUtil.BoolOp([_wrapped], [trimTool], splitter);
         var pieces = TopoUtil.TopLevelShapes(splitResult);
 
@@ -374,24 +359,24 @@ public abstract partial class Shape
         {
             // A reference point off the +ve side of the tool decides which side is up
             TopoDS_Face toolFace;
-            if (trimTool is TopoDS_Shell)
+            if (trimTool.IsShell())
             {
-                using var faces = new TopExp_Explorer(trimTool, TopAbs_ShapeEnum.TopAbs_FACE);
+                var faces = new TopExp_Explorer(trimTool, TopAbs_ShapeEnum.TopAbs_FACE);
                 toolFace = TopoDS.Face(faces.Current());
             }
             else
-                toolFace = (TopoDS_Face)trimTool;
+                toolFace = TopoDS.Face(trimTool);
             double uMin = 0, uMax = 0, vMin = 0, vMax = 0;
-            BRepTools.UVBounds(toolFace, ref uMin, ref uMax, ref vMin, ref vMax);
-            using var surfacePnt = new gp_Pnt();
-            using var surfaceNormal = new gp_Vec();
-            using (var props = new BRepGProp_Face(toolFace))
-                props.Normal((uMin + uMax) / 2, (vMin + vMax) / 2, surfacePnt, surfaceNormal);
+            BRepTools.UVBounds(toolFace, out uMin, out uMax, out vMin, out vMax);
+            var surfacePnt = new gp_Pnt();
+            var surfaceNormal = new gp_Vec();
+            var props = new BRepGProp_Face(toolFace);
+            props.Normal((uMin + uMax) / 2, (vMin + vMax) / 2, out surfacePnt, out surfaceNormal);
             var refPoint = new Vector(surfacePnt) + new Vector(surfaceNormal).Normalized();
-            using var refPnt = refPoint.ToGpPnt();
-            using var halfSpace = trimTool is TopoDS_Shell shell
-                ? new BRepPrimAPI_MakeHalfSpace(shell, refPnt)
-                : new BRepPrimAPI_MakeHalfSpace((TopoDS_Face)trimTool, refPnt);
+            var refPnt = refPoint.ToGpPnt();
+            var halfSpace = trimTool.IsShell()
+                ? new BRepPrimAPI_MakeHalfSpace(TopoDS.Shell(trimTool), refPnt)
+                : new BRepPrimAPI_MakeHalfSpace(TopoDS.Face(trimTool), refPnt);
             toolSolid = halfSpace.Solid();
         }
 
@@ -405,16 +390,16 @@ public abstract partial class Shape
             {
                 // A piece lies wholly on one side of the plane and so does its centre of mass. Its geometric centre
                 // need not: that of a curved face is the middle of its surface, trimmed away or not.
-                using var props = new GProp_GProps();
+                var props = new GProp_GProps();
                 MassProperties(part, props);
                 isUp = plane.ToLocalCoords(new Vector(props.CentreOfMass())).Z >= 0;
             }
             else
             {
                 // Intersect the piece and the thickened tool
-                using var common = new BRepAlgoAPI_Common();
-                using var isUpObj = TopoUtil.BoolOp([part], [toolSolid!], common);
-                using var props = new GProp_GProps();
+                var common = new BRepAlgoAPI_Common();
+                var isUpObj = TopoUtil.BoolOp([part], [toolSolid!.Value], common);
+                var props = new GProp_GProps();
                 BRepGProp.LinearProperties(isUpObj, props);
                 // Mass is the total length for linear properties
                 isUp = props.Mass() >= Constants.Tolerance;
@@ -434,8 +419,8 @@ public abstract partial class Shape
     /// <summary>A face on the plane, unbounded as far as OCCT's defaults go.</summary>
     internal static TopoDS_Face MakePlaneFace(Plane plane)
     {
-        using var pln = plane.ToGpPln();
-        using var maker = new BRepBuilderAPI_MakeFace(pln);
+        var pln = plane.ToGpPln();
+        var maker = new BRepBuilderAPI_MakeFace(pln);
         return maker.Face();
     }
 }

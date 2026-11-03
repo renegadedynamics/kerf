@@ -4,7 +4,7 @@
 //   rules out.
 // - TestSolidThicken (both cases), TestSolidDraft.test_adddone_failure_raises_draftangleerror and
 //   test_build_failure_raises_draftangleerror: mock the OCP builders.
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d.Tests.Topology;
 
@@ -300,7 +300,7 @@ public class SolidTests
     [Fact]
     public void SweepWarnsWhenInvalid()
     {
-        using var warnings = Warnings.Capture();
+        var warnings = Warnings.Capture();
         // The kernel reports success for a sweep that folds over itself
         var path = Wire.MakePolygon([(0, 20), (20, 20), (20, 0)], close: false);
         var section = new Plane((0, 20, 0), zDir: (1, 0, 0)) * Face.MakeRect(10, 10);
@@ -425,6 +425,6 @@ public class SolidDraftTests
         var err = new DraftAngleError("msg", face: face, problematicShape: shape);
         Assert.Equal("msg", err.Message);
         Assert.Same(face, err.Face);
-        Assert.Same(shape, err.ProblematicShape);
+        Assert.True(err.ProblematicShape is { } problematic && problematic.IsEqual(shape));
     }
 }

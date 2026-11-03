@@ -1,5 +1,5 @@
 using System.Text;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -36,11 +36,11 @@ public sealed class Matrix
         // general affine transform, which Trsf() refuses, from its matrix and translation
         if (source.Form() != gp_TrsfForm.gp_Other)
         {
-            using var trsf = source.Trsf();
+            var trsf = source.Trsf();
             return new gp_GTrsf(trsf);
         }
-        using var linear = source.VectorialPart();
-        using var translation = source.TranslationPart();
+        var linear = source.VectorialPart();
+        var translation = source.TranslationPart();
         return new gp_GTrsf(linear, translation);
     }
 
@@ -59,10 +59,9 @@ public sealed class Matrix
             // A rotation, translation, uniform scale or mirror, or a product of them: build it as a
             // gp_Trsf so OCCT records its form and scale factor and it converts back to a gp_Trsf where
             // one is needed. Filling a gp_GTrsf value by value marks it gp_Other whatever it holds.
-            using var similarity = new gp_Trsf();
-            similarity.SetValues(values[0, 0], values[0, 1], values[0, 2], values[0, 3],
-                                 values[1, 0], values[1, 1], values[1, 2], values[1, 3],
-                                 values[2, 0], values[2, 1], values[2, 2], values[2, 3]);
+            var similarity = new gp_Trsf().WithValues(values[0, 0], values[0, 1], values[0, 2], values[0, 3],
+                                                      values[1, 0], values[1, 1], values[1, 2], values[1, 3],
+                                                      values[2, 0], values[2, 1], values[2, 2], values[2, 3]);
             return new gp_GTrsf(similarity);
         }
 
@@ -70,7 +69,7 @@ public sealed class Matrix
         var gtrsf = new gp_GTrsf();
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 4; j++)
-                gtrsf.SetValue(i + 1, j + 1, values[i, j]);
+                gtrsf = gtrsf.WithValue(i + 1, j + 1, values[i, j]);
         return gtrsf;
     }
 
@@ -118,15 +117,15 @@ public sealed class Matrix
     /// <summary>This matrix followed by a rotation about an axis by an angle in degrees.</summary>
     public Matrix Rotated(Axis axis, double angle)
     {
-        using var rotation = new gp_Trsf();
-        using var ax1 = axis.ToGpAx1();
-        rotation.SetRotation(ax1, angle * Constants.DegToRad);
-        using var g = new gp_GTrsf(rotation);
+        var rotation = new gp_Trsf();
+        var ax1 = axis.ToGpAx1();
+        rotation = rotation.WithRotation(ax1, angle * Constants.DegToRad);
+        var g = new gp_GTrsf(rotation);
         return new Matrix(GTrsf.Multiplied(g), owned: true);
     }
 
     /// <summary>The inverse matrix.</summary>
-    /// <exception cref="OcctException">The matrix is singular.</exception>
+    /// <exception cref="Standard_Failure">The matrix is singular.</exception>
     public Matrix Inverse() => new(GTrsf.Inverted(), owned: true);
 
     /// <summary>A vector transformed by this matrix.</summary>

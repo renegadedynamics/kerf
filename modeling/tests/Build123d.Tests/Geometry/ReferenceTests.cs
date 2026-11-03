@@ -94,11 +94,11 @@ public class ReferenceTests
     {
         foreach (var c in Cases("plane_from_mirror"))
         {
-            using var p = V(c.GetProperty("point")).ToGpPnt();
-            using var d = V(c.GetProperty("dir")).ToGpDir();
-            using var ax2 = new Occt.gp_Ax2(p, d);
-            using var trsf = new Occt.gp_Trsf();
-            trsf.SetMirror(ax2);
+            var p = V(c.GetProperty("point")).ToGpPnt();
+            var d = V(c.GetProperty("dir")).ToGpDir();
+            var ax2 = new Occt.gp_Ax2(p, d);
+            var trsf = new Occt.gp_Trsf();
+            trsf = trsf.WithMirror(ax2);
             SamePlane(c.GetProperty("plane"), new Plane(new Location(trsf)), 1e-12, "mirror plane");
         }
     }

@@ -1,7 +1,7 @@
 namespace Build123d.Tests;
 
-/// <summary>The OCCT.NET backend's own behaviour.</summary>
-public class OcctNetBackendTests
+/// <summary>The kernel under build123d.NET: OCCT.NET, the managed port, with no native code.</summary>
+public class KernelTests
 {
     [Fact]
     public void FilletsAndChamfersRun()
@@ -18,17 +18,6 @@ public class OcctNetBackendTests
     }
 
     [Fact]
-    public void WhatIsntPortedSaysSo()
-    {
-        // Members OCCT.NET doesn't make public throw, with no native fallback, such as the phase 7 algorithms' copy
-        // constructors (OCCT.NET's phase 8 ported STEP, the last class missing)
-        using var fillet = new Build123d.Occt.BRepFilletAPI_MakeFillet(new Box(10, 10, 10).TopoShape);
-        var e = Assert.Throws<NotSupportedException>(() => new Build123d.Occt.BRepFilletAPI_MakeFillet(fillet));
-        Assert.Equal("not available through OCCT.NET's public API: BRepFilletAPI_MakeFillet::.ctor(BRepFilletAPI_MakeFillet)",
-                     e.Message);
-    }
-
-    [Fact]
     public void NoNativeLibraryLoads()
     {
         _ = new Box(1, 1, 1).Triangulate(0.1);
@@ -37,10 +26,9 @@ public class OcctNetBackendTests
     }
 
     [Fact]
-    public void OcctFailuresComeBackAsOcctExceptions()
+    public void OcctFailuresAreOcctNetsExceptions()
     {
-        var e = Assert.Throws<Build123d.Occt.OcctException>(() => new Build123d.Occt.gp_Dir(0, 0, 0));
+        var e = Assert.ThrowsAny<Occt.Standard_Failure>(() => new Occt.gp_Dir(0, 0, 0));
         Assert.Equal("Standard_ConstructionError", e.OcctType);
-        Assert.IsAssignableFrom<global::Occt.Standard_Failure>(e.InnerException);
     }
 }

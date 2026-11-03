@@ -1,5 +1,5 @@
 using System.Globalization;
-using Build123d.Occt;
+using Occt;
 
 namespace Build123d;
 
@@ -30,7 +30,7 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>A colour from sRGB components and alpha, each from 0 to 1. Missing components are 1.</summary>
     public Color(double red, double green = 1.0, double blue = 1.0, double alpha = 1.0)
     {
-        using var rgb = new Quantity_Color(red, green, blue, Quantity_TypeOfColor.Quantity_TOC_sRGB);
+        var rgb = new Quantity_Color(red, green, blue, Quantity_TypeOfColor.Quantity_TOC_sRGB);
         this = FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), (float)alpha);
     }
 
@@ -71,7 +71,7 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>A colour from an OCCT Quantity_ColorRGBA.</summary>
     public Color(Quantity_ColorRGBA rgba)
     {
-        using var rgb = rgba.GetRGB();
+        var rgb = rgba.GetRGB();
         this = FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), rgba.Alpha());
     }
 
@@ -83,9 +83,9 @@ public readonly struct Color : IEquatable<Color>
 
     static Color FromLinear(double r, double g, double b, float alpha)
     {
-        using var rgb = new Quantity_Color(r, g, b, Quantity_TypeOfColor.Quantity_TOC_RGB);
+        var rgb = new Quantity_Color(r, g, b, Quantity_TypeOfColor.Quantity_TOC_RGB);
         double sr = 0, sg = 0, sb = 0;
-        rgb.Values(ref sr, ref sg, ref sb, Quantity_TypeOfColor.Quantity_TOC_sRGB);
+        rgb.Values(out sr, out sg, out sb, Quantity_TypeOfColor.Quantity_TOC_sRGB);
         return new Color((float)r, (float)g, (float)b, alpha, sr, sg, sb);
     }
 
@@ -97,8 +97,8 @@ public readonly struct Color : IEquatable<Color>
             return (css.R / 255.0, css.G / 255.0, css.B / 255.0);
 
         // Fall back to OCCT's X11 names. build123d passes OCCT's linear components on as sRGB, so do the same.
-        using var color = new Quantity_Color();
-        if (!Quantity_Color.ColorFromName(name, color))
+        var color = new Quantity_Color();
+        if (!Quantity_Color.ColorFromName(name, ref color))
             throw new ArgumentException($"'{name}' is not defined as a named color in CSS3 or OCCT/X11", nameof(name));
         return (color.Red(), color.Green(), color.Blue());
     }
@@ -120,7 +120,7 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>A new OCCT Quantity_ColorRGBA for this colour.</summary>
     public Quantity_ColorRGBA ToQuantityColorRgba()
     {
-        using var rgb = new Quantity_Color(_r, _g, _b, Quantity_TypeOfColor.Quantity_TOC_RGB);
+        var rgb = new Quantity_Color(_r, _g, _b, Quantity_TypeOfColor.Quantity_TOC_RGB);
         return new Quantity_ColorRGBA(rgb, _a);
     }
 
@@ -221,9 +221,9 @@ public readonly struct Color : IEquatable<Color>
     /// </summary>
     public override string ToString()
     {
-        using var rgb = new Quantity_Color(_r, _g, _b, Quantity_TypeOfColor.Quantity_TOC_RGB);
+        var rgb = new Quantity_Color(_r, _g, _b, Quantity_TypeOfColor.Quantity_TOC_RGB);
         double sr = 0, sg = 0, sb = 0;
-        rgb.Values(ref sr, ref sg, ref sb, Quantity_TypeOfColor.Quantity_TOC_sRGB);
+        rgb.Values(out sr, out sg, out sb, Quantity_TypeOfColor.Quantity_TOC_sRGB);
         var key = ((int)Math.Round(sr * 255), (int)Math.Round(sg * 255), (int)Math.Round(sb * 255));
         string tuple = $"({PyFormat.Repr(R)}, {PyFormat.Repr(G)}, {PyFormat.Repr(B)}, {PyFormat.Repr(A)})";
         if (CssColors.ByRgb.TryGetValue(key, out var css))
