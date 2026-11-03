@@ -414,6 +414,21 @@ public class Manager : Transient
         return _refMap.Find(resource, out value!);
     }
 
+    /// <summary>
+    /// The value of an integer resource, if it is defined and an integer: <see cref="Integer"/> without its exceptions
+    /// (Standard_NoSuchObject, Standard_TypeMismatch), for callers that only want to know (unit 10F).
+    /// </summary>
+    public bool TryGetInteger(string resourceName, out int value)
+    {
+        if (Find(resourceName, out string text) && TCollection_AsciiString.IsIntegerValue(text))
+        {
+            value = TCollection_AsciiString.IntegerValue(text);
+            return true;
+        }
+        value = 0;
+        return false;
+    }
+
     /// <summary>The value of an integer resource; Standard_TypeMismatch if it isn't an integer.</summary>
     public virtual int Integer(string aResourceName)
     {

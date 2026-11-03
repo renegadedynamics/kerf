@@ -360,16 +360,15 @@ public class ProcessContext : Transient
         {
             return false;
         }
-        try
+        // OCCT reads Integer() and catches its Standard_Failure when the parameter is missing or not an integer, which
+        // is usual: the operators ask for every option they have. The status form says the same without the exception
+        // (unit 10F)
+        if (!_rc.TryGetInteger(MakeName(_scope, param), out int value))
         {
-            val = _rc.Integer(MakeName(_scope, param)) != 0;
-            return true;
+            return false;
         }
-        catch (FailureException)
-        {
-            // OCCT_DEBUG: the exception printed, left out
-        }
-        return false;
+        val = value != 0;
+        return true;
     }
 
     /// <summary>The value of a real parameter, or <paramref name="def"/>.</summary>
@@ -400,15 +399,8 @@ public class ProcessContext : Transient
         {
             return def;
         }
-        try
-        {
-            return _rc.Value(MakeName(_scope, param));
-        }
-        catch (FailureException)
-        {
-            // OCCT_DEBUG: the exception printed, left out
-        }
-        return def;
+        // OCCT catches Value()'s Standard_NoSuchObject for a missing parameter; Find says the same (unit 10F)
+        return _rc.Find(MakeName(_scope, param), out string value) ? value : def;
     }
 
     /// <summary>Sets the messenger for the messages (null: the default messenger).</summary>
