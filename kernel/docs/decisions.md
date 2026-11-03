@@ -15035,3 +15035,15 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 16716. **The right neighbour of a 2D fillet is trimmed by its own orientation** (unit 5R's ChFi2d_AnaFilletAlgo::Perform
        row). The second edge's kept end was chosen by the first edge's orientation, so a reversed second edge kept the
        corner's part. Test: a forward segment and a reversed one: the second is shrunk to (10, 2)–(10, 10).
+16717. **A 2D fillet or chamfer of a face with holes keeps its wires** (unit 5R's ChFi2d_Builder BuildNewWire row).
+       BuildNewWire, and the removal of a fillet or chamfer, put every edge of the face into one wire, closed as the
+       face's first wire, so a face with holes came back with one wire of outer and inner edges. The face is rebuilt wire
+       by wire, the outer wire first (`RebuildFace`), each keeping its closed flag. Test: a square with a square hole, a
+       fillet on an outer corner, its removal, and a chamfer on a hole's corner: two closed wires, a valid face, the
+       areas of the cut corners. build123d.NET chamfered each wire of a face alone to avoid it (`Face.Chamfer2D` over
+       `EditWires`); it now chamfers the face with MakeFillet2d, as build123d did before its own workaround.
+       `Face.Fillet2D` keeps its wire-by-wire construction, which is build123d's own wire fillet, not a workaround.
+       Each wire's closed flag is set as OCCT set its one wire's (the reference face's first wire's after a fillet or
+       chamfer, unset after a removal), so faces without holes come out as before. The MakeFillet2d oracle's
+       rectangles with a hole (30 of 120) move to plan 3.2's third level: two wires where native has one, with as many
+       edges and the same area.

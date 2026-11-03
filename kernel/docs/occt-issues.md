@@ -1195,7 +1195,7 @@ the port differ from native in the oracle or the recordings (decision 856).
 
 | Where | What | Effect | Triage |
 |---|---|---|---|
-| `ChFi2d_Builder.cxx`, `BuildNewWire` | Every edge of the face being built goes into one new wire, closed as the face's first wire | A face with holes comes back with one wire holding the outer and inner edges (build123d.NET chamfers each wire on its own for this reason) | fix K3 |
+| `ChFi2d_Builder.cxx`, `BuildNewWire` | Every edge of the face being built goes into one new wire, closed as the face's first wire | A face with holes comes back with one wire holding the outer and inner edges (build123d.NET chamfers each wire on its own for this reason) | fixed (decision 16717) |
 | `BRepFilletAPI_MakeFillet2d.cxx`, `Modified` | `DescendantEdge` reads the history with `Find` | Standard_NoSuchObject for any edge MakeFillet2d didn't trim, where BRepBuilderAPI_MakeShape's contract is an empty list | touch |
 | `ChFi2d_Builder.cxx`, `BuildFilletEdge` | `vec1` built from the vertices and overwritten at once; `Ebid1`/`Ebid2` built and unused; the basis curves down-cast to Geom2d_Line unchecked | Dead code; a curve neither line nor circle would be a null dereference (IsLineOrCircle rejects it first) | leave |
 | `ChFi2d_Builder_0.cxx`, `ComputePoint(F, L, E, Param)` | `Param` unset and the point at the plane's origin when the chamfer's line meets nothing | An angle chamfer that misses its second edge ends at the origin of the plane with an uninitialised parameter (0 in the port) | touch |

@@ -369,6 +369,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         N.TopoDS_Shape aNRes = aN.Maker.Shape();
         Shape aPRes = aP.Maker.Shape();
         string aNT = NativeText(aNRes), aPT = PortText(aPRes);
+        bool isHoleKept = false;
         BRepTextDiff aDiff = BRepTextComparison.Compare(aNT, aPT);
         if (aDiff.IsIdentical)
         {
@@ -389,6 +390,16 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             if (aCanon.IsIdentical)
             {
                 myCanonical++;
+            }
+            else if (Count(aNP, ShapeType.Wire) == 1 && Count(aPRes, ShapeType.Wire) == 2
+                     && Count(aNP, ShapeType.Edge) == Count(aPRes, ShapeType.Edge) && Math.Abs(Area(aNP) - Area(aPRes)) <= 1e-9 * Area(aNP))
+            {
+                // Plan 3.2's third level (occt-issues.md, unit 5R's ChFi2d_Builder BuildNewWire row; Kerf decision
+                // 16717): native put the outer and inner edges of a face with a hole into one wire, the port keeps its
+                // two wires, with as many edges and the same area; the edges' order, so the history's indices, follow
+                // the wires
+                isHoleKept = true;
+                myHoleKept++;
             }
             else
             {
@@ -444,7 +455,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         {
             myHistory++;
         }
-        else
+        else if (!isHoleKept)
         {
             myDifferences.Add($"{theWhat}: history native [{string.Join(" ", aNH)}], port [{string.Join(" ", aPH)}]");
         }
@@ -453,6 +464,22 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         {
             myDifferences.Add($"{theWhat}: the input changed");
         }
+    }
+
+    private int myHoleKept;
+
+    private static double Area(in Shape theShape)
+    {
+        var aProps = new global::Kerf.Engine.Measurement.Properties();
+        global::Kerf.Engine.Measurement.MassPropertiesBuilder.SurfaceProperties(theShape, aProps);
+        return Math.Abs(aProps.Mass());
+    }
+
+    private static int Count(in Shape theShape, ShapeType theType)
+    {
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapes(theShape, theType, aMap);
+        return aMap.Count;
     }
 
     private static int NbVertices(in Shape theShape)
@@ -466,7 +493,8 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
     {
         output.WriteLine($"{myCases} cases, {myOps} operations ({myOpsDone} done natively); {myNotDone} not done on both sides; "
                          + $"results: {myIdentical} identical BRep text ({myFreeMasked} with the Free column masked), "
-                         + $"{myCanonical} canonically identical; histories identical: {myHistory}; differences: {myDifferences.Count}");
+                         + $"{myCanonical} canonically identical, {myHoleKept} with a hole kept as its own wire (intended differences); "
+                         + $"histories identical: {myHistory}; differences: {myDifferences.Count}");
         foreach (string aDiff in myDifferences.Take(30))
         {
             output.WriteLine("  " + aDiff);

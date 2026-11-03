@@ -479,37 +479,12 @@ public sealed partial class PlanarBuilder
             } // else if (lastVertex ...
         } // else ...
 
-        // rebuild the newFace
-        var ex = new Explorer(_newFace, ShapeType.Edge);
-        Wire newWire = new();
-
-        var b = new BrepBuilder();
-        b.MakeWire(ref newWire);
-
-        while (ex.More())
-        {
-            Edge theEdge = ShapeCasts.Edge(ex.Current());
-            if (!theEdge.IsSame(e1) && !theEdge.IsSame(e2) && !theEdge.IsSame(fillet))
-            {
-                b.Add(newWire, theEdge);
-            }
-            else
-            {
-                if (theEdge.IsEqual(e1))
-                {
-                    b.Add(newWire, newEdge1);
-                }
-                else if (theEdge.IsEqual(e2))
-                {
-                    b.Add(newWire, newEdge2);
-                }
-            } // else
-            ex.Next();
-        } // while ...
-        var adaptor3dSurface = new FaceSurfaceAdaptor(_refFace);
-        var mFace = new LibraryMakeFace(adaptor3dSurface.Plane(), newWire);
-        _newFace.Nullify();
-        _newFace = mFace.InternalFace();
+        // rebuild the newFace, wire by wire (decision 16717)
+        Edge e1Copy = e1, e2Copy = e2, filletCopy = fillet, newEdge1Copy = newEdge1, newEdge2Copy = newEdge2;
+        RebuildFace(null, theEdge => !theEdge.IsSame(e1Copy) && !theEdge.IsSame(e2Copy) && !theEdge.IsSame(filletCopy) ? null
+                               : theEdge.IsEqual(e1Copy) ? [newEdge1Copy]
+                               : theEdge.IsEqual(e2Copy) ? [newEdge2Copy]
+                               : []);
 
         UpDateHistory(basisEdge1, basisEdge2, newEdge1, newEdge2);
 
@@ -559,67 +534,102 @@ public sealed partial class PlanarBuilder
                               in Edge fillet,
                               in Edge e2)
     {
+        // the closed flag is the reference face's first wire's, as OCCT set it
         bool closedStatus = true;
-
-        // OCCT: every edge of the face goes into one wire, so a face with holes loses them as separate wires; the
-        // closed flag is the first wire's
-        var ex = new Explorer(_refFace, ShapeType.Wire);
-        while (ex.More())
+        var exW = new Explorer(_refFace, ShapeType.Wire);
+        if (exW.More())
         {
-            Wire wire = ShapeCasts.Wire(ex.Current());
-            closedStatus = wire.Closed();
-            break;
+            closedStatus = ShapeCasts.Wire(exW.Current()).Closed();
         }
 
         bool filletIsAdded = false;
-
-        ex.Init(_newFace, ShapeType.Edge);
-        Wire newWire = new();
-        var b = new BrepBuilder();
-        b.MakeWire(ref newWire);
-
-        while (ex.More())
+        Edge e1Copy = e1, e2Copy = e2, filletCopy = fillet, oldE1Copy = oldE1, oldE2Copy = oldE2;
+        RebuildFace(closedStatus, theEdge =>
         {
-            Edge theEdge = ShapeCasts.Edge(ex.Current());
-            if (!theEdge.IsSame(oldE1) && !theEdge.IsSame(oldE2))
+            if (!theEdge.IsSame(oldE1Copy) && !theEdge.IsSame(oldE2Copy))
             {
-                b.Add(newWire, theEdge);
+                return null;
+            }
+            var anEdges = new List<Edge>();
+            if (theEdge.IsEqual(oldE1Copy))
+            {
+                if (_status != ConstructionError.FirstEdgeDegenerated && _status != ConstructionError.BothEdgesDegenerated)
+                {
+                    anEdges.Add(e1Copy);
+                }
+            }
+            else if (_status != ConstructionError.LastEdgeDegenerated && _status != ConstructionError.BothEdgesDegenerated)
+            {
+                anEdges.Add(e2Copy);
+            }
+            if (!filletIsAdded)
+            {
+                anEdges.Add(filletCopy);
+                filletIsAdded = true;
+            }
+            return anEdges;
+        });
+    } // BuildNewWire
+
+    // Rebuilds _newFace on the reference face's plane, wire by wire, the outer wire first: each edge for which
+    // theReplace gives edges is replaced by them (null keeps it); each wire's closed flag is theClosed, or left unset
+    // if it is null, as the removals left it (decision 16717; OCCT put every edge of the face into one wire, so a face
+    // with holes came back with one wire holding the outer and inner edges).
+    private void RebuildFace(bool? theClosed, Func<Edge, List<Edge>?> theReplace)
+    {
+        var b = new BrepBuilder();
+        Wire anOuter = BrepTools.OuterWire(_newFace);
+        var aWires = new List<Wire>();
+        for (var exW = new Explorer(_newFace, ShapeType.Wire); exW.More(); exW.Next())
+        {
+            Wire aWire = ShapeCasts.Wire(exW.Current());
+            if (aWire.IsSame(anOuter))
+            {
+                aWires.Insert(0, aWire);
             }
             else
             {
-                if (theEdge.IsEqual(oldE1))
+                aWires.Add(aWire);
+            }
+        }
+
+        var adaptor3dSurface = new FaceSurfaceAdaptor(_refFace);
+        LibraryMakeFace? mFace = null;
+        foreach (Wire aWire in aWires)
+        {
+            Wire newWire = new();
+            b.MakeWire(ref newWire);
+            for (var ex = new Explorer(aWire, ShapeType.Edge); ex.More(); ex.Next())
+            {
+                Edge theEdge = ShapeCasts.Edge(ex.Current());
+                List<Edge>? aNew = theReplace(theEdge);
+                if (aNew is null)
                 {
-                    if (_status != ConstructionError.FirstEdgeDegenerated && _status != ConstructionError.BothEdgesDegenerated)
-                    {
-                        b.Add(newWire, e1);
-                    }
-                    if (!filletIsAdded)
-                    {
-                        b.Add(newWire, fillet);
-                        filletIsAdded = true;
-                    } // if ( !filletIsAdded ...
-                } // if (theEdge == ...
+                    b.Add(newWire, theEdge);
+                }
                 else
                 {
-                    if (_status != ConstructionError.LastEdgeDegenerated && _status != ConstructionError.BothEdgesDegenerated)
+                    foreach (Edge anEdge in aNew)
                     {
-                        b.Add(newWire, e2);
+                        b.Add(newWire, anEdge);
                     }
-                    if (!filletIsAdded)
-                    {
-                        b.Add(newWire, fillet);
-                        filletIsAdded = true;
-                    } // if ( !filletIsAdded ...
-                } // else ...
-            } // else ...
-            ex.Next();
-        } // while ...
-
-        newWire.Closed(closedStatus);
-        var adaptor3dSurface = new FaceSurfaceAdaptor(_refFace);
-        var mFace = new LibraryMakeFace(adaptor3dSurface.Plane(), newWire);
-        _newFace = mFace.InternalFace();
-    } // BuildNewWire
+                }
+            }
+            if (theClosed is bool aClosed)
+            {
+                newWire.Closed(aClosed);
+            }
+            if (mFace is null)
+            {
+                mFace = new LibraryMakeFace(adaptor3dSurface.Plane(), newWire);
+            }
+            else
+            {
+                mFace.Add(newWire);
+            }
+        }
+        _newFace = mFace!.InternalFace();
+    }
 
     //=================================================================================================
 

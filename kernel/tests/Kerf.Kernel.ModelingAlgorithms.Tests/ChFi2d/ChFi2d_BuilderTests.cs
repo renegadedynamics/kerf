@@ -315,6 +315,60 @@ public class ChFi2d_BuilderTests
     }
 
     [Fact]
+    public void A_face_with_a_hole_keeps_its_hole()
+    {
+        // a square of 10 with a square hole of 4: a fillet of radius 2 on an outer corner, a chamfer of 1 by 1 on an
+        // inner one, then the fillet removed. Each result has its two wires, closed, and the area of the cut corners
+        // (OCCT put every edge into one wire: occt-issues.md, unit 5R's ChFi2d_Builder::BuildNewWire row; decision
+        // 16717)
+        var aPoly = new MakePolygon();
+        foreach (Point3D aP in new[] { new Point3D(3, 3, 0), new Point3D(3, 7, 0), new Point3D(7, 7, 0), new Point3D(7, 3, 0) })
+        {
+            aPoly.Add(aP);
+        }
+        aPoly.Close();
+        var aMaker = new MakeFace(Square());
+        aMaker.Add(aPoly.Wire());
+        Face aHoled = aMaker.Face();
+        Assert.Equal(84.0, Area(aHoled), 1.0e-9);
+
+        // (a removal leaves the closed flags unset, as OCCT's did)
+        void CheckWires(in Shape theFace, double theArea, bool theFlagged = true)
+        {
+            List<Shape> aWires = Sub(theFace, ShapeType.Wire);
+            Assert.Equal(2, aWires.Count);
+            Assert.All(aWires, w => Assert.True(!theFlagged || ShapeCasts.Wire(w).Closed()));
+            Assert.Equal(theArea, Area(theFace), 1.0e-9);
+            Assert.True(new Analyzer(theFace).IsValid());
+        }
+
+        Vertex Corner(in Shape theFace, Point3D theP)
+            => Sub(theFace, ShapeType.Vertex).Select(s => ShapeCasts.Vertex(s)).Single(v => Tool.Pnt(v).IsEqual(theP, 1.0e-9));
+
+        var aFillet = new MakeFillet2D(aHoled);
+        Edge aFilletEdge = aFillet.AddFillet(Corner(aHoled, new Point3D(10, 10, 0)), 2.0);
+        aFillet.Build();
+        Assert.True(aFillet.IsDone);
+        CheckWires(aFillet.Shape(), 84.0 - 4.0 * (1.0 - Math.PI / 4.0));
+
+        // removed again
+        aFillet.RemoveFillet(aFilletEdge);
+        aFillet.Build();
+        CheckWires(aFillet.Shape(), 84.0, false);
+
+        // a chamfer on the hole's corner (3, 3): the face gains the corner's triangle
+        Vertex anInner = Corner(aHoled, new Point3D(3, 3, 0));
+        IndexedMap<Shape, NCollection_List<Shape>> aMap = new(ShapeHasher.Instance);
+        Exploration.MapShapesAndAncestors(aHoled, ShapeType.Vertex, ShapeType.Edge, aMap);
+        NCollection_List<Shape> anEdges = aMap.GetValue(anInner);
+        var aChamfer = new MakeFillet2D(aHoled);
+        aChamfer.AddChamfer(ShapeCasts.Edge(anEdges.First()), ShapeCasts.Edge(anEdges.Last()), 1.0, 1.0);
+        aChamfer.Build();
+        Assert.True(aChamfer.IsDone);
+        CheckWires(aChamfer.Shape(), 84.0 + 0.5);
+    }
+
+    [Fact]
     public void FilletAPI_and_ChamferAPI_on_two_segments()
     {
         Edge E1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();

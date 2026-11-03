@@ -474,38 +474,12 @@ public sealed partial class PlanarBuilder
             } // else if (lastVertex ...
         } // else ...
 
-        // rebuild the newFace
-        var ex = new Explorer(_newFace, ShapeType.Edge);
-        Wire newWire = new();
-
-        var b = new BrepBuilder();
-        b.MakeWire(ref newWire);
-
-        while (ex.More())
-        {
-            Edge theEdge = ShapeCasts.Edge(ex.Current());
-            if (!theEdge.IsSame(e1) && !theEdge.IsSame(e2) && !theEdge.IsSame(chamfer))
-            {
-                b.Add(newWire, theEdge);
-            }
-            else
-            {
-                if (theEdge.IsEqual(e1))
-                {
-                    b.Add(newWire, newEdge1);
-                }
-                else if (theEdge.IsEqual(e2))
-                {
-                    b.Add(newWire, newEdge2);
-                }
-            } // else
-            ex.Next();
-        } // while ...
-
-        var adaptor3dSurface = new FaceSurfaceAdaptor(_refFace);
-        var mFace = new LibraryMakeFace(adaptor3dSurface.Plane(), newWire);
-        _newFace.Nullify();
-        _newFace = mFace.InternalFace();
+        // rebuild the newFace, wire by wire (decision 16717)
+        Edge e1Copy = e1, e2Copy = e2, chamferCopy = chamfer, newEdge1Copy = newEdge1, newEdge2Copy = newEdge2;
+        RebuildFace(null, theEdge => !theEdge.IsSame(e1Copy) && !theEdge.IsSame(e2Copy) && !theEdge.IsSame(chamferCopy) ? null
+                               : theEdge.IsEqual(e1Copy) ? [newEdge1Copy]
+                               : theEdge.IsEqual(e2Copy) ? [newEdge2Copy]
+                               : []);
 
         UpDateHistory(basisEdge1, basisEdge2, newEdge1, newEdge2);
 
