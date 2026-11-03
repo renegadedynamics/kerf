@@ -2204,14 +2204,14 @@ public sealed partial class BezierSurface : BoundedSurface
         return copy;
     }
 
-    internal BezierSurface WithPole(int uIndex, int vIndex, in Point3D p)
+    internal BezierSurface WithPoleOneBased(int uIndex, int vIndex, in Point3D p)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPole(uIndex, vIndex, p);
         return copy;
     }
 
-    internal BezierSurface WithPole(int uIndex, int vIndex, in Point3D p, double weight)
+    internal BezierSurface WithPoleOneBased(int uIndex, int vIndex, in Point3D p, double weight)
     {
         BezierSurface copy = CopyBezier();
         copy.SetPole(uIndex, vIndex, p, weight);
@@ -2246,7 +2246,7 @@ public sealed partial class BezierSurface : BoundedSurface
         return copy;
     }
 
-    internal BezierSurface WithWeight(int uIndex, int vIndex, double weight)
+    internal BezierSurface WithWeightOneBased(int uIndex, int vIndex, double weight)
     {
         BezierSurface copy = CopyBezier();
         copy.SetWeight(uIndex, vIndex, weight);

@@ -674,25 +674,25 @@ internal static class GeomliteTestCommands
 
         if (DrawTrSurf.GetBSplineCurve(theDI, a[1]) is { } aBSplCurve)
         {
-            DrawTrSurf.Set(theDI, a[1], aBSplCurve.WithWeight(anIndex1, aWeight));
+            DrawTrSurf.Set(theDI, a[1], aBSplCurve.WithWeightOneBased(anIndex1, aWeight));
             return 0;
         }
 
         if (DrawTrSurf.GetBezierCurve(theDI, a[1]) is { } aBezCurve)
         {
-            DrawTrSurf.Set(theDI, a[1], aBezCurve.WithWeight(anIndex1, aWeight));
+            DrawTrSurf.Set(theDI, a[1], aBezCurve.WithWeightOneBased(anIndex1, aWeight));
             return 0;
         }
 
         if (DrawTrSurf.GetBSplineCurve2d(theDI, a[1]) is { } aBSplCurve2d)
         {
-            DrawTrSurf.Set(theDI, a[1], aBSplCurve2d.WithWeight(anIndex1, aWeight));
+            DrawTrSurf.Set(theDI, a[1], aBSplCurve2d.WithWeightOneBased(anIndex1, aWeight));
             return 0;
         }
 
         if (DrawTrSurf.GetBezierCurve2d(theDI, a[1]) is { } aBezCurve2d)
         {
-            DrawTrSurf.Set(theDI, a[1], aBezCurve2d.WithWeight(anIndex1, aWeight));
+            DrawTrSurf.Set(theDI, a[1], aBezCurve2d.WithWeightOneBased(anIndex1, aWeight));
             return 0;
         }
 
@@ -706,13 +706,13 @@ internal static class GeomliteTestCommands
 
         if (aBSplSurf is not null)
         {
-            DrawTrSurf.Set(theDI, a[1], aBSplSurf.WithWeight(anIndex1, anIndex2, aWeight));
+            DrawTrSurf.Set(theDI, a[1], aBSplSurf.WithWeightOneBased(anIndex1, anIndex2, aWeight));
             return 0;
         }
 
         if (aBezSurf is not null)
         {
-            DrawTrSurf.Set(theDI, a[1], aBezSurf.WithWeight(anIndex1, anIndex2, aWeight));
+            DrawTrSurf.Set(theDI, a[1], aBezSurf.WithWeightOneBased(anIndex1, anIndex2, aWeight));
             return 0;
         }
 

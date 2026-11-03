@@ -723,7 +723,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                             using var aNPnt = Oracle.ToNative(aPnt);
                             aWhat = $"SetPole({anIndex})";
                             aNE = Catch(() => aN.SetPole(anIndex, aNPnt));
-                            aPE = Catch(() => aNext = aP.WithPole(anIndex, aPnt));
+                            aPE = Catch(() => aNext = aP.WithPoleOneBased(anIndex, aPnt));
                             break;
                         }
                         case 6:
@@ -732,7 +732,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                             double aW = anOracle.Int(0, 2) == 0 ? 1.0 : anOracle.Real(0.5, 2);
                             aWhat = $"SetWeight({anIndex}, {aW})";
                             aNE = Catch(() => aN.SetWeight(anIndex, aW));
-                            aPE = Catch(() => aNext = aP.WithWeight(anIndex, aW));
+                            aPE = Catch(() => aNext = aP.WithWeightOneBased(anIndex, aW));
                             break;
                         }
                         default:
@@ -969,14 +969,14 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         {
                             aWhat = $"SetPole({anIndex})";
                             aNE = Catch(() => aN.SetPole(anIndex, aNPnt));
-                            aPE = Catch(() => aNext = aP.WithPole(anIndex, aPnt));
+                            aPE = Catch(() => aNext = aP.WithPoleOneBased(anIndex, aPnt));
                         }
                         else
                         {
                             double aW = anOracle.Real(0.5, 2);
                             aWhat = $"SetPole({anIndex}, {aW})";
                             aNE = Catch(() => aN.SetPole(anIndex, aNPnt, aW));
-                            aPE = Catch(() => aNext = aP.WithPole(anIndex, aPnt, aW));
+                            aPE = Catch(() => aNext = aP.WithPoleOneBased(anIndex, aPnt, aW));
                         }
                         break;
                     }
@@ -986,7 +986,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         double aW = anOracle.Int(0, 2) == 0 ? 1.0 : anOracle.Real(0.5, 2);
                         aWhat = $"SetWeight({anIndex}, {aW})";
                         aNE = Catch(() => aN.SetWeight(anIndex, aW));
-                        aPE = Catch(() => aNext = aP.WithWeight(anIndex, aW));
+                        aPE = Catch(() => aNext = aP.WithWeightOneBased(anIndex, aW));
                         break;
                     }
                     case 7:
@@ -1095,7 +1095,7 @@ public class GeomCurveOracleTests(ITestOutputHelper output)
                         double aK = anOracle.Real(aLo, aHi);
                         aWhat = $"SetKnot({anIndex}, {aK})";
                         aNE = Catch(() => aN.SetKnot(anIndex, aK));
-                        aPE = Catch(() => aNext = aP.WithKnot(anIndex, aK));
+                        aPE = Catch(() => aNext = aP.WithKnotOneBased(anIndex, aK));
                         break;
                     }
                     default:

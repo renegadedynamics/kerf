@@ -15,3 +15,27 @@ type T:Kerf.Engine.Fillets.Api.ChamferOptions Kerf.Engine.Fillets.Api.MakeChamfe
 
 # --- 2. Kerf.Kernel.ModelingData (16901)
 type T:Kerf.Engine.Approximation.ParametrizationType Kerf.Geometry.ParametrizationType
+
+# --- 3. Kerf.Kernel.ModelingData: the splines' 1-based copies renamed, so the 0-based ones can take the names (16902)
+member M:Kerf.Geometry.BezierCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BezierCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BezierCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve3D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BezierCurve3D WithWeightOneBased
+member M:Kerf.Geometry.BezierSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BezierSurface WithPoleOneBased
+member M:Kerf.Geometry.BezierSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BezierSurface WithPoleOneBased
+member M:Kerf.Geometry.BezierSurface.WithWeight(System.Int32,System.Int32,System.Double)~Kerf.Geometry.BezierSurface WithWeightOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithKnot(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve3D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithKnot(System.Int32,System.Double,System.Int32)~Kerf.Geometry.BSplineCurve3D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BSplineCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BSplineCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve3D WithWeightOneBased
+member M:Kerf.Geometry.BSplineSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BSplineSurface WithPoleOneBased
+member M:Kerf.Geometry.BSplineSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BSplineSurface WithPoleOneBased
+member M:Kerf.Geometry.BSplineSurface.WithWeight(System.Int32,System.Int32,System.Double)~Kerf.Geometry.BSplineSurface WithWeightOneBased
+member M:Kerf.Geometry.BezierCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@)~Kerf.Geometry.BezierCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@,System.Double)~Kerf.Geometry.BezierCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve2D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BezierCurve2D WithWeightOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithKnot(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve2D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithKnot(System.Int32,System.Double,System.Int32)~Kerf.Geometry.BSplineCurve2D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@)~Kerf.Geometry.BSplineCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@,System.Double)~Kerf.Geometry.BSplineCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve2D WithWeightOneBased
