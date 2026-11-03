@@ -15073,3 +15073,12 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        with CR LF; OMF6391_box.stl with blanks) move to plan 3.2's third level: native's domains are the port's first,
        the whole-file reads hold all the domains' triangles, the stream readers are native's. The reader's return
        value is OCCT's: false after an ASCII file's last short block, whether its domains were all read or not.
+16829. **A point on a surface keeps its parameters through binary BRep** (occt-issues.md, BinTools_ShapeSet's point on
+       a surface). OCCT's writers put the second parameter first and its readers took the first for the first, so the
+       two were swapped on every round trip. The readers (`BinaryShapeSet`, the table format, and `ShapeReader`, the
+       position format) now take the first value written for the second parameter; the writers are unchanged. So
+       binary BRep files don't change, byte for byte (the BinTools write tests against native's bytes pass as they
+       were), and every file written before, by OCCT or by the port, reads right: its first value is the second
+       parameter, as OCCT has always written it. OCCT itself still reads the port's files swapped, as it reads its own.
+       The test that pinned the swap (`Point_representations_round_trip`) checks both parameters in place for the
+       table format's versions 2 to 4 and the position format.
