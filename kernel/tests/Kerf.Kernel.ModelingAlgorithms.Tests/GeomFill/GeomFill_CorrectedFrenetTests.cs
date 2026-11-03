@@ -209,4 +209,34 @@ public class GeomFill_CorrectedFrenetTests
         Assert.Equal(1.0, Math.Abs(M.Column(1).Y()), 1.0e-9);
         Assert.Equal(SurfacePipeError.PipeOk, aLaw.ErrorStatus());
     }
+
+    /// <summary>
+    /// Offsets of B-splines: the step of InitInterval's sampling, |S(t)|/2 / |S'(t)| with S = C' ^ C'', fell very low
+    /// on them and OCCT had no lower bound, so one SetCurve took hundreds of thousands of Frenet evaluations, seconds
+    /// to minutes (occt-issues.md, unit 5L1's GeomFill_CorrectedFrenet row; Kerf unit 10K1, decision 16513). On these
+    /// twelve offsets the port kept 16,709 to 32,205 samples of the six turned ones and took up to 4.7 s each before the
+    /// bound (Release, alone), 6,910 to 9,782 samples and at most 0.4 s after. The law still gives orthonormal frames.
+    /// </summary>
+    [Fact]
+    public void Offsets_of_BSplines_set_quickly()
+    {
+        var aRnd = new Random(7);
+        for (int k = 0; k < 12; k++)
+        {
+            int n = 5 + aRnd.Next(4);
+            Point3D[] aP = new Point3D[n];
+            for (int i = 0; i < n; i++)
+            {
+                aP[i] = new Point3D(i * 10 + aRnd.NextDouble() * 5, aRnd.NextDouble() * 10, aRnd.NextDouble() * (k % 2 == 0 ? 0 : 10));
+            }
+            var anOffset = new OffsetCurve3D(BSpline(aP), 1 + aRnd.NextDouble() * 3, new Direction3D(0, 0, 1), true);
+            CorrectedFrenet aLaw = HangGuard.Within(TimeSpan.FromSeconds(60), () => Law(anOffset));
+            Assert.True(aLaw.SampleCount < 12_000, $"offset {k}: {aLaw.SampleCount} samples");
+            foreach (double t in new[] { 0.13, 0.5, 0.77 })
+            {
+                double u = anOffset.FirstParameter() + t * (anOffset.LastParameter() - anOffset.FirstParameter());
+                AssertOrthonormal(D0(aLaw, u), 1.0e-9);
+            }
+        }
+    }
 }

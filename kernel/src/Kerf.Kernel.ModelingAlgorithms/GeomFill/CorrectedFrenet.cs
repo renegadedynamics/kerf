@@ -380,6 +380,15 @@ public class CorrectedFrenet : TrihedronLaw
     }
 
     // Computes the angle law on a span.
+    /// <summary>The number of points at which SetCurve sampled the curve (for tests; decision 16513).</summary>
+    internal int SampleCount => _hArrPoles?.Length() ?? 0;
+
+    /// <summary>
+    /// The samples InitInterval takes on an interval at OCCT's steps; beyond them its step is at least the interval's
+    /// length divided by this (decision 16513).
+    /// </summary>
+    internal const int SampleBudget = 2000;
+
     private bool InitInterval(double first, double last, double step, ref double startAng, ref Vector3D prevTangent,
                               ref Vector3D prevNormal, ref Vector3D aT, ref Vector3D aN, ref LawsFunction? funcInt,
                               NCollection_Sequence<double> seqPoles, NCollection_Sequence<double> seqAngle,
@@ -482,6 +491,13 @@ public class CorrectedFrenet : TrihedronLaw
                 if (currStep > step)
                 {
                     currStep = step; // default value
+                }
+                if (i > SampleBudget && currStep < (last - first) / SampleBudget)
+                {
+                    // past the budget of samples, the step is bounded below, where OCCT's could fall near 1e-6 on
+                    // offset curves: hundreds of thousands of Frenet evaluations, seconds to minutes (decision 16513).
+                    // A turn too sharp still halves it.
+                    currStep = (last - first) / SampleBudget;
                 }
             }
             else

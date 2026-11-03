@@ -14742,3 +14742,11 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        sections' non-periodic forms (closed, not periodic), which unify. The test that pinned the exception checks the
        common degree, knots and poles and each curve against its section. Two AppSurf recordings (APPSM 12, APPSP 67:
        native stopped at its unequal profile) move to the third level.
+16513. **CorrectedFrenet's sampling is bounded** (row 1087). InitInterval's next step, max(|S|/2, LengthMin)/|S'|
+       with S = C' ^ C'', fell very low on offset curves, so a sweep's trihedron took seconds to minutes. After 2,000
+       samples on an interval (`SampleBudget`) the step is at least the interval's length over 2,000; a turn of more
+       than 60° still halves it. A bound on the step alone (1e-3 of the default step) moved regular B-spline spines'
+       frames by up to 1.5% against native; 1e-4 left the offsets as slow. With the budget, the CorrectedFrenet oracle
+       and the sweep recordings stay bit-identical. On twelve random offsets of B-splines
+       (`Offsets_of_BSplines_set_quickly`) the six turned ones took 1.3 to 4.7 s and kept 16,709 to 32,205 samples; now
+       0.1 to 0.4 s and 6,910 to 9,782 (the test asserts fewer than 12,000, and orthonormal frames).
