@@ -224,6 +224,12 @@ The numbers in brackets are the plan's (section 7).
 **Owner (2 November):** "Let's go with `Kerf`", the recommendations for 46, 49, 51 and 52, and the answers above for
 47, 48 and 50 (decision 1317). The merged repository (unit 10R) was the owner's decision before the questions.
 
+53 to 65. **The public API's design** (unit 10D, [api/README.md](api/README.md) section 9). *Agreed* (3 November): the
+    recommendations for 53 to 59, 61, 63 and 65; 56 as 10D proposed (the modelling layer uses the kernel's shapes);
+    60 a root-level `Kerf.Color` in sRGB; 62 `Placement` compares by value, the engine by identity; 64 reversed: SVG
+    line drawings (hidden-line removal) and PNG shaded pictures (a managed renderer), in Kerf and in Bento (decision
+    1327).
+
 ## Earlier judgement calls worth a look
 
 6. **Decision 94: abstract geometry mutators are `protected internal`**, so callers can derive their own curves and

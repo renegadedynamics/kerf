@@ -13822,3 +13822,37 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        the forwarding layer. build123d.NET's suite: 1,872 tests (1,881, less the five `NativeFact`s, the forwarding
        layer's `WhatIsntPortedSaysSo`, three `OcctContext` scope tests and a memory-pressure test, plus decision
        1345's), all passing. The tests keep their names where native's differential log is recorded under them.
+
+## Phase 10: the owner's answers to questions 53 to 65 (10D's API design)
+
+### 15201. The owner's answers to questions 53 to 65
+
+Agreed on 3 November 2026. They settle 10D's draft (kernel/docs/api) for 10E and 10L:
+
+- **53, operations:** each area's operations are static methods on an `<Area>Operations` class and also C# 14 extension
+  members, so `BooleanOperations.Fuse(a, b)` and `a.Fuse(b)` both work. design-rules.md's `Booleans.Fuse` example
+  follows.
+- **54, assemblies:** the four kernel assemblies stay, with `InternalsVisibleTo` between them, and to Kerf.Modeling until
+  10M moves it onto the public API.
+- **55, the transient base:** `Standard_Transient` stays public (as `Kerf.Engine.Foundation.Transient` in 10D's map), with
+  no public members; 10J revisits it.
+- **56, shape names:** the modelling layer uses the kernel's shapes directly (`Shape`, `Edge`, `Face` and so on), and keeps
+  its own names only for modelling ideas (`Part`, `Sketch`, `Curve`). One set of shapes, not two.
+- **57, dimension suffixes:** `2D`/`3D` where both versions exist (`Point3D`, `Vector2D`, `Plane3D`), none where only one
+  does (`Surface`).
+- **58:** types 10J will replace keep their OCCT names until then.
+- **59, meshing:** returns a separate mesh value (`ShapeMesh`); faces don't hold triangles.
+- **60, colour:** a root-level `Kerf.Color`, its public values in sRGB, as people write colours; it converts to linear
+  where a format needs it (glTF). This replaces 10D's `Kerf.Exchange.ColorRgba` stored as linear.
+- **61, diagnostics:** codes are strings, like analyzer IDs.
+- **62, placement:** the public `Placement` compares by value, as .NET users expect. The engine keeps comparing locations
+  by identity internally, where deciding whether two shapes are the same depends on it.
+- **63:** STEP's entity classes become internal, and their 1,556 setters leave 10G's scope.
+- **64, images:** the owner wants Kerf and Bento to generate both **SVG line drawings** and **PNG shaded pictures**.
+  - **SVG:** a public hidden-line API (projection, visible and hidden edges, from HLRBRep) and an SVG writer, in 10L.
+  - **PNG:** a managed software renderer drawing `ShapeMesh` values (a z-buffered rasteriser with simple shading and
+    optional edges), with a PNG encoder, in 10L.
+  - **Bento:** spreadsheet functions to make both, in 10N.
+  - Hidden-line removal isn't needed for shaded pictures: Bento's model view draws meshes. 10D's "no public HLR API" is
+    reversed.
+- **65, namespaces:** `Kerf.Fillets`, `Kerf.Offsets`, `Kerf.Features`, `Kerf.Healing` and `Kerf.Measurement` are added.

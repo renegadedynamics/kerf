@@ -1,6 +1,6 @@
 # Kerf.Kernel's public API: the design
 
-*Unit 10D, 3 November 2026. A draft for the owner's review: the open questions are numbered 53 onwards, in section 9.*
+*Unit 10D, 3 November 2026. The open questions in section 9 (53 to 65) are answered: decision 1327 settles them, and where it differs from this draft (60, colour; 62, placement; 64, images) the decision wins.*
 
 This is the design that units 10E (the rename), 10F (errors), 10G (immutability) and 10L (the public API's
 implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [design-rules.md](../design-rules.md).
