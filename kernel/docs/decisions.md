@@ -14932,3 +14932,18 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
          layer 1,880. No comparison moved off level 1. Two catches on the way: the missing key's exception (decision 1453),
          and a string concatenation that took the `+ 1` as a digit (`"basis" + IndexOf(e) + 1`, an oracle test's
          printer; the tool now parenthesises in a string).
+
+## Phase 10: unit 10K2, OCCT's bugs: construction, properties, extrema and projection
+
+16701. **The pcurve of a curve winding more than a turn follows it** (occt-issues.md, unit 6A's ProjLib_ComputeApprox
+       row). Function_SetUVBounds unwraps the curve's angular parameter along samples; when the range came out wider than
+       a period OCCT still kept a window of 2π about its middle, so the image wrapped inside the curve and the
+       approximation bridged the jump: a helix of more than a turn on a cylinder (threads) got a pcurve off by up to the
+       diameter, with a tiny reported tolerance. The sampled, unwrapped parameters are now kept (`Winding`) when they span
+       more than a turn (by more than half a sampling step, so a closed curve, whose samples span one turn, keeps its
+       window), for the cylinder, the cone, the sphere and both directions of the torus, and a point's parameter,
+       known modulo 2π, is taken at the turn the samples predict. Curves within a turn are as before. The
+       cone's sampling also added the old turn to the new one at a second crossing of the seam; it now replaces it, as
+       the cylinder's does. Tests: helices of 1.3 to 3.5 turns on cylinders either way round, a conical spiral and two
+       toroidal coils, each pcurve on the curve within the reached tolerance and its parametric span the analytic one
+       (the pinned `Cylinder_HelixOfMoreThanATurn_WrongResult_OcctBug` rewritten). No recording moved.
