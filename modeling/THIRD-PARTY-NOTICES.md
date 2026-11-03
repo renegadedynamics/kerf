@@ -1,7 +1,8 @@
 # Third-party notices
 
-build123d.NET is a port of build123d, and its packages ship native libraries built from the projects
-below. The full licence texts are in [licenses/](licenses), which the packages carry too.
+build123d.NET is a port of build123d. Its package ships no native libraries: it runs on OCCT.NET, the managed port of
+OCCT, a package dependency under its own licence. The full licence texts are in [licenses/](licenses), which the
+package carries too.
 
 ## build123d
 
@@ -11,26 +12,17 @@ below. The full licence texts are in [licenses/](licenses), which the packages c
 - **Licence:** Apache License 2.0, copyright the build123d contributors (its NOTICE is in [NOTICE](NOTICE)).
   See [licenses/build123d-Apache-2.0.txt](licenses/build123d-Apache-2.0.txt).
 
-## Open CASCADE Technology (OCCT) 8.0.1
+## OCCT.NET (Open CASCADE Technology 8.0.1, ported)
 
-- **What:** the geometry kernel, shipped as the `TK*.dll` libraries in `Build123d.Occt`.
-- **Source:** https://github.com/Open-Cascade-SAS/OCCT, tag `V8_0_1`, built unmodified by
-  `native/occt`.
-- **Licence:** GNU Lesser General Public License 2.1 with the Open CASCADE exception, copyright Open
-  CASCADE SAS. See [licenses/OCCT-LGPL-2.1.txt](licenses/OCCT-LGPL-2.1.txt) and
+- **What:** the geometry kernel, the `OcctNet.*` packages this package depends on (the repository's `kernel` folder).
+  It isn't shipped in this package.
+- **Licence:** GNU Lesser General Public License 2.1 with the Open CASCADE exception, as OCCT's, copyright Open CASCADE
+  SAS and the OCCT.NET contributors. See [licenses/OCCT-LGPL-2.1.txt](licenses/OCCT-LGPL-2.1.txt) and
   [licenses/OCCT-LGPL-exception.txt](licenses/OCCT-LGPL-exception.txt).
 
-This software makes use of, and is based on, facilities provided by the Open CASCADE Technology
-software. OCCT is linked dynamically: the libraries can be replaced by other builds of the same
-version, and its source is available from the link above.
-
-## FreeType 2.14.3
-
-- **What:** font rendering, used by OCCT's TKService. It is shipped as `freetype.dll`.
-- **Source:** https://github.com/freetype/freetype, tag `VER-2-14-3`.
-- **Licence:** the FreeType Project License (FTL). Portions of this software are copyright © The
-  FreeType Project (https://freetype.org). All rights reserved. See
-  [licenses/FreeType-FTL.txt](licenses/FreeType-FTL.txt).
+Until unit 10B the package could also be built on native OCCT and FreeType, whose libraries it then shipped; that
+backend is gone, and with it [licenses/FreeType-FTL.txt](licenses/FreeType-FTL.txt)'s reason to be here. It is kept
+for the earlier packages that shipped FreeType.
 
 ## Schematiq.Collections
 

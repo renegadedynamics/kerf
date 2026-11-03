@@ -1679,3 +1679,12 @@ Phase 10 (part): test independence (unit 10A).
 - The differential run compares build123d.NET's suite on OCCT.NET with native's log as recorded (digests, properties,
   and the texts that differed).
 - `tools/coverage.ps1` measures line coverage per OCCT package (`docs/coverage.md`).
+Phase 10 (part): build123d.NET on OCCT.NET alone (unit 10B).
+- Native OCCT is gone from the repository: build123d.NET's native backend (its bindings, shim, generator and native
+  build), and with it the oracle tests' recording and live modes. The oracle replays native's results as recorded in
+  unit 10A, frozen; `tools/oracle-facade.cs` and `b3d-differential.ps1 -Record` went. The benchmarks time the port
+  alone, and build without native OCCT again.
+- Public for the modelling layer, which reached them with `UnsafeAccessor`: `TopoDS_Builder`'s constructor, `Make*`,
+  `Add` and `Remove`; `BRep_Builder` and its `MakeFace` of a triangulation; `TopoDS_TShape.FreezeGraph`. Engine API,
+  internal again once 10L's public API replaces them.
+- `tools/pack-nuget.ps1` packs `Build123d` from the repository, without `Build123d.OcctNet`, which is gone.
