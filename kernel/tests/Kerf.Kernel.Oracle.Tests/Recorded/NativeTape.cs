@@ -55,8 +55,26 @@ public static partial class Tape
     {
         Session aSession = Current;
         aSession.Finish();
-        s_session.Value = new Session(aSession.File, $"{aSession.BaseKey}[{RowName(aSession, theRow)}]", aSession.BaseKey);
+        s_session.Value = new Session(aSession.File, $"{aSession.BaseKey}[{RowName(aSession, theRow)}]", aSession.BaseKey)
+        {
+            OtherArgumentsReason = aSession.OtherArgumentsReason,
+        };
     }
+
+    /// <summary>
+    /// Plan 3.2's second level for the running test (Kerf unit 10H3): the port's inputs to native differ from the
+    /// recording's only as <paramref name="theReason"/> says (bookkeeping, not geometry), so native's recorded results
+    /// still answer them, and the calls are checked to be the ones recorded without their arguments. The test's own
+    /// comparisons (geometry, with the Free flags masked) stay as they were.
+    /// </summary>
+    public static void AcceptOtherArguments(string theReason) => Current.OtherArgumentsReason = theReason;
+
+    /// <summary>
+    /// Decision 15907's reason: since unit 10H3, BRepLib_MakeWire merges a vertex in a working overlay and the wire keeps
+    /// the caller's edges it didn't change, which, being frozen, keep their Free flag; the copies it made before had it
+    /// cleared. The wires the test builds and gives native differ only in that flag.
+    /// </summary>
+    public const string WireKeepsCallersEdges = "MakeWire keeps the caller's unchanged edges (their Free flag differs from the copies')";
 
     /// <summary>
     /// A row's name as recorded: an enum value of the kernel's was recorded under its OCCT name (Approx_Centripetal),
@@ -235,6 +253,12 @@ public static partial class Tape
         private int myIds;
         private uint myRunning = 2166136261;
 
+        /// <summary>
+        /// Plan 3.2's second level (Kerf unit 10H3): the calls are checked to be the ones recorded, not that their
+        /// arguments are the same; the reason is written in the test and in a decision.
+        /// </summary>
+        public string? OtherArgumentsReason { get; set; }
+
         /// <summary>A budgeted loop's decision for an item, read back.</summary>
         public bool Take()
         {
@@ -303,7 +327,7 @@ public static partial class Tape
             string aRecorded = aReader.String()!;
             byte aHeader = aReader.Byte();
             byte aCheck = aReader.Byte();
-            if (aRecorded != theSignature || aCheck != theCheck)
+            if (aRecorded != theSignature || (aCheck != theCheck && OtherArgumentsReason is null))
             {
                 throw new InvalidOperationException(
                     $"{File}.{Key}: native call {myCalls} is {theSignature}{(aRecorded == theSignature ? " with other arguments (here or a few calls before)" : "")}; "
