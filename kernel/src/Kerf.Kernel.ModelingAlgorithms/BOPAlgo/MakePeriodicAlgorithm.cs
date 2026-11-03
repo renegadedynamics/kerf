@@ -31,10 +31,10 @@ namespace Kerf.Engine.Booleans;
 /// <see cref="RepeatedShape"/>, <see cref="GetTwins"/> and <see cref="History"/> publish: they freeze the result
 /// graphs first. Ported code reads the <c>Internal*</c> forms. The input is never written. OCCT's splits run
 /// non-destructively, but its trim (a Common) and the gluing of the repetitions are destructive and natively write into
-/// the input and the periodic shape in place (tolerances, p-curves). The port replaces their frozen parts (the caller's
-/// input, results already handed out) by exact copies first (<c>BRepTools.CopyFrozenForWrite</c>), which the
-/// operations then write into, so results are native's; the history records each frozen shape as modified into its
-/// copy, and the twins of a replaced shape are its copy's.
+/// the input and the periodic shape in place (tolerances, p-curves). The port runs them in a working overlay, which
+/// takes the writes into their frozen parts (the caller's input, results already handed out), so results are native's;
+/// the shapes, histories and twins then hold what stands for each changed shape, and the history records each shape
+/// changed in place as modified into it.
 /// </para>
 /// <para>
 /// The twins of a repeated shape are grouped by iterating a shape-keyed map, which natively runs in address order: the
@@ -147,7 +147,8 @@ public class MakePeriodicAlgorithm : Options
     protected NCollection_DataMap<Shape, NCollection_List<Shape>> _twins = new(ShapeHasher.Instance); //!< Map of associations of the identical sub-shapes
     protected History? _splitHistory;                    //!< Split history - history of shapes modification
     protected History? _history;                         //!< Final history of shapes modifications
-    private History _copies = new();                     //!< OCCT.NET: the frozen shapes replaced by copies
+    private History _inPlace = new();                    //!< Kerf: the shapes changed in place, modified into what stands for them
+    private History _inputImages = new();                //!< Kerf: the input's sub-shapes the last operation changed in place
 
     public MakePeriodicAlgorithm()
     {
@@ -309,9 +310,9 @@ public class MakePeriodicAlgorithm : Options
         {
             return twins;
         }
-        // OCCT.NET: a frozen shape the algorithm replaced by a copy (decision on CopyFrozenForWrite) has the twins of
-        // its copy, which natively is the shape itself
-        foreach (Shape copy in _copies.Modified(s))
+        // Kerf: a shape changed in place (in a working overlay) has the twins of what stands for it now, which natively
+        // is the shape itself
+        foreach (Shape copy in _inPlace.Modified(s))
         {
             if (map.Find(copy, out twins))
             {
@@ -331,8 +332,17 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>The history, without freezing.</summary>
     internal History? InternalHistory() => _history;
 
-    /// <summary>OCCT.NET: the frozen shapes the algorithm replaced by copies to write into, modified into the copies.</summary>
-    internal History InternalCopies() => _copies;
+    /// <summary>Kerf: the shapes the algorithm changed in place, modified into what stands for them now.</summary>
+    internal History InternalInPlace() => _inPlace;
+
+    /// <summary>The input shape, as it stands after the in-place writes of the trim and the repetitions.</summary>
+    internal Shape InternalInputShape() => _inputShape;
+
+    /// <summary>
+    /// Kerf: the input's sub-shapes that the last trim or repetition changed in place, modified into what stands for
+    /// them now (natively the same shapes, changed).
+    /// </summary>
+    internal History InternalInputImages() => _inputImages;
 
     private void FreezeResults()
     {
@@ -344,7 +354,8 @@ public class MakePeriodicAlgorithm : Options
     public override void Clear()
     {
         base.Clear();
-        _copies = new History();
+        _inPlace = new History();
+        _inputImages = new History();
         _periodicityParams.Clear();
         _shape.Nullify();
         _splitHistory?.Clear();
@@ -358,6 +369,7 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>Performs the operation.</summary>
     public void Perform()
     {
+        _inputImages = new History();
         // Check the validity of input data
         CheckData();
         if (HasErrors)
@@ -456,12 +468,10 @@ public class MakePeriodicAlgorithm : Options
         MakeBox mBox = new(pMin, pMax);
         Shape trimBox = mBox.InternalSolid();
 
-        // OCCT.NET: the Common below is destructive and natively writes into the input (tolerances, p-curves): the
-        // frozen parts of the input (the caller's shape, or the arguments' sub-shapes a connected shape shares) are
-        // replaced by copies first, which it then writes into
-        History copyHistory = new();
-        _inputShape = BrepTools.CopyFrozenForWrite(_inputShape, copyHistory);
-        _copies.Merge(copyHistory);
+        // Kerf: the Common below is destructive and natively writes into the input (tolerances, p-curves): it runs in
+        // a working overlay, which takes the writes into the input's frozen parts (the caller's shape, or the
+        // arguments' sub-shapes a connected shape shares)
+        using var overlay = WorkingOverlay.Begin(_inputShape);
 
         // Perform trimming of the shape by solid
         Common common = new();
@@ -490,11 +500,21 @@ public class MakePeriodicAlgorithm : Options
             return;
         }
         // Get the trimmed shape
-        _shape = common.InternalShape();
+        // Kerf: the end of the overlay: the shapes and the history get what stands for each changed shape
+        Shape trimmed = common.InternalShape();
+        NCollection_IndexedMap<Shape> trimmedShapes = new(ShapeHasher.Instance);
+        Exploration.MapShapes(trimmed, trimmedShapes);
+        NCollection_IndexedMap<Shape> inputShapes = new(ShapeHasher.Instance);
+        Exploration.MapShapes(_inputShape, inputShapes);
+        _shape = overlay.Finish(trimmed, [_inputShape]);
+        _inputShape = overlay.Final(_inputShape);
+        _inputImages = overlay.Images(inputShapes);
+        History images = overlay.Images(trimmedShapes);
+        _inPlace.Merge(images);
         // Fill the History for the object only
         _splitHistory = new History();
-        _splitHistory.Merge(copyHistory);
         _splitHistory.Merge(obj, new MakeShapeHistory(common));
+        MergeInPlace(_splitHistory, images, trimmedShapes);
     }
 
     /// <summary>Makes the shape look the same on the opposite sides in the required periodic directions.</summary>
@@ -747,6 +767,7 @@ public class MakePeriodicAlgorithm : Options
     /// <summary>Repeats the shape in the required periodic direction; returns the repeated shape, unfrozen.</summary>
     internal Shape InternalRepeatShape(int dir, int times)
     {
+        _inputImages = new History();
         if (_repeatedShape.IsNull)
         {
             _repeatedShape = _shape;
@@ -775,10 +796,10 @@ public class MakePeriodicAlgorithm : Options
         // theTimes is negative - in negative direction.
         int iDir = times > 0 ? 1 : -1;
 
-        // OCCT.NET: the gluing below is destructive and writes into the shape to repeat (tolerances, p-curves), which
-        // natively changes the periodic shape and the input's sub-shapes it shares. Frozen sub-shapes (the input's,
-        // or the results already handed out) are replaced by copies first, which the gluing then writes into.
-        CopyFrozenForWrite();
+        // Kerf: the gluing below is destructive and writes into the shape to repeat (tolerances, p-curves), which
+        // natively changes the periodic shape and the input's sub-shapes it shares. It runs in a working overlay,
+        // which takes the writes into frozen sub-shapes (the input's, or the results already handed out).
+        using var overlay = WorkingOverlay.Begin(_repeatedShape);
 
         // Create the translation history - all translated shapes will be
         // created as Generated from the shape.
@@ -842,7 +863,7 @@ public class MakePeriodicAlgorithm : Options
             return _repeatedShape;
         }
         // Get glued shape
-        _repeatedShape = gluer.InternalShape();
+        Shape glued = gluer.InternalShape();
 
         // Update repetition period for the next repetitions
         _repeatPeriod[id] += Math.Abs(times) * _repeatPeriod[id];
@@ -854,53 +875,65 @@ public class MakePeriodicAlgorithm : Options
         // Update the map of twins after repetition
         UpdateTwins(translationHistory, gluingHistory);
 
+        // Kerf: the end of the overlay: the shapes, histories and twins get what stands for each changed shape
+        NCollection_IndexedMap<Shape> gluedShapes = new(ShapeHasher.Instance), periodicShapes = new(ShapeHasher.Instance);
+        Exploration.MapShapes(glued, gluedShapes);
+        Exploration.MapShapes(_shape, periodicShapes);
+        NCollection_IndexedMap<Shape> inputShapes = new(ShapeHasher.Instance);
+        Exploration.MapShapes(_inputShape, inputShapes);
+        _repeatedShape = overlay.Finish(glued, [_shape, _inputShape]);
+        _shape = overlay.Final(_shape);
+        _inputShape = overlay.Final(_inputShape);
+        _inputImages = overlay.Images(inputShapes);
+        History images = overlay.Images(gluedShapes);
+        MergeInPlace(_history, images, gluedShapes);
+        if (_splitHistory is not null)
+        {
+            MergeInPlace(_splitHistory, overlay.Images(periodicShapes), periodicShapes);
+        }
+        _inPlace.Merge(images);
+        _twins = FinalTwins(_twins, overlay);
+        _repeatedTwins = FinalTwins(_repeatedTwins, overlay);
+
         return _repeatedShape;
     }
 
-    /// <summary>
-    /// OCCT.NET: replaces the frozen sub-shapes of the shape to repeat by exact copies (in place in its unfrozen parents,
-    /// so the periodic shape sharing them sees the same shapes), recording the copies in the histories and the twins.
-    /// </summary>
-    private void CopyFrozenForWrite()
+    // Kerf: merges the in-place images of the shapes (a working overlay's Images) into the history, so its results are
+    // what stands for them now; a shape that is also an initial shape of the history with only generated shapes (the
+    // translations' AddGenerated(s, s)) is modified into what stands for it, as the shape itself is natively
+    private static void MergeInPlace(History history, History images, NCollection_IndexedMap<Shape> shapes)
     {
-        if (!BrepTools.HoldsFrozen(_repeatedShape))
+        history.Merge(images);
+        foreach (Shape s in shapes)
         {
-            return;
+            ISchematiqList<Shape> now = images.Modified(s);
+            if (now.Count != 0 && history.Modified(s).Count == 0 && history.Generated(s).Count != 0
+                && !history.IsRemoved(s))
+            {
+                history.AddModified(s, now[0]);
+            }
         }
-        History copyHistory = new();
-        bool isShape = _repeatedShape.IsSame(_shape);
-        _repeatedShape = BrepTools.CopyFrozenForWrite(_repeatedShape, copyHistory);
-        if (isShape)
-        {
-            _shape = _repeatedShape.Oriented(_shape.Orientation());
-        }
-        _history!.Merge(copyHistory);
-        _splitHistory?.Merge(copyHistory);
-        _copies.Merge(copyHistory);
-        _twins = CopiedTwins(_twins, copyHistory);
-        _repeatedTwins = CopiedTwins(_repeatedTwins, copyHistory);
     }
 
-    // The twins with the copied shapes in place of the frozen ones
-    private static NCollection_DataMap<Shape, NCollection_List<Shape>> CopiedTwins(
-        NCollection_DataMap<Shape, NCollection_List<Shape>> map, History copyHistory)
+    // Kerf: the twins with what stands for each shape after the overlay's end
+    private static NCollection_DataMap<Shape, NCollection_List<Shape>> FinalTwins(
+        NCollection_DataMap<Shape, NCollection_List<Shape>> map, WorkingOverlay overlay)
     {
-        Shape Copied(in Shape s)
+        if (overlay.WorkingCount == 0)
         {
-            ISchematiqList<Shape> m = copyHistory.Modified(s);
-            return m.Count == 1 ? m[0].Oriented(s.Orientation()) : s;
+            return map;
         }
-        NCollection_DataMap<Shape, NCollection_List<Shape>> copy = new(ShapeHasher.Instance);
+        NCollection_DataMap<Shape, NCollection_List<Shape>> aFinal = new(ShapeHasher.Instance);
         foreach ((Shape key, NCollection_List<Shape> list) in map)
         {
             NCollection_List<Shape> aNew = new();
             foreach (Shape aS in list)
             {
-                aNew.Append(Copied(aS));
+                aNew.Append(overlay.Final(aS));
             }
-            copy.Bind(Copied(key), aNew);
+            aFinal.Bind(overlay.Final(key), aNew);
         }
-        return copy;
+        return aFinal;
     }
 
     /// <summary>Updates the map of twins after repetition.</summary>
