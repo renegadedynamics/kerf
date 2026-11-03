@@ -1664,3 +1664,10 @@ Phase 10 (part): OCCT's bugs triaged (unit 10K's first half).
   drafts and fillets, wrong 2D fillets and chamfers, the 2D tangent-circle solvers, wrong properties and continuity,
   and STEP and STL files read or written wrong. docs/occt-issues-triage.md lists them in eight batches by impact,
   with each bug's site and the tests that will change. No change to the libraries yet.
+Phase 10 (part): the public API design (unit 10D).
+- `docs/api`: the design of Kerf.Kernel's public API, for review: an overview of results and diagnostics, options,
+  cancellation, values, shapes and collections, and an API review for each area (geometry, topology, construction,
+  Booleans, fillets, offsets and features, healing, measurement, meshing, exchange), each mapped from today's types.
+- Every public type classified as public API, engine or removed (`docs/api/classification.tsv`, from rules by package
+  with `tools/api-classify.cs`), and the draft name map for the rename (`docs/api/kerf.map`).
+- No change to the libraries.

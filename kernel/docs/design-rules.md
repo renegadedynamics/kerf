@@ -23,7 +23,9 @@ file is corrected.
 | `Kerf.Engine.<Area>` | Everything else, internal: the algorithms (`Kerf.Engine.Booleans.PaveFiller`) |
 | `Kerf.Modeling` | The modelling layer |
 
-More public areas (fillets, offsets, healing, properties) are added by unit 10D's reviews, one namespace per area.
+More public areas (fillets, offsets, healing, properties) are added by unit 10D's reviews, one namespace per area:
+[api/README.md](api/README.md) proposes `Kerf.Fillets`, `Kerf.Offsets`, `Kerf.Features`, `Kerf.Healing` and
+`Kerf.Measurement`, pending the owner's review (questions 53 to 65).
 
 - **No namespace segment that is also a common type name.** Inside `Kerf.Engine.*`, a namespace `Kerf.Engine.Math`
   would make every `Math.Sqrt` mean the namespace: OCCT's `math` package goes to `Kerf.Engine.Numerics`. Likewise no
