@@ -429,8 +429,9 @@ public partial class Wire : Shape1D
         }
         builder.Build();
         var chamfered = builder.Shape();
-        // The chamfered face shares the wire's other edges, which ShapeFix would edit: it fixes a copy
-        var fix = new ShapeFixer(TopoUtil.PrivateCopy(chamfered, copyGeometry: true));
+        // The chamfered face shares the wire's other edges, which ShapeFix leaves untouched (it edits in a working
+        // overlay)
+        var fix = new ShapeFixer(chamfered);
         fix.Perform();
         var fixedShape = TopoUtil.Downcast(fix.Shape());
         if (!fixedShape.IsFace())
@@ -448,7 +449,7 @@ public partial class Wire : Shape1D
     {
         if (IsEmpty)
             throw new InvalidOperationException("Can't fix an empty edge");
-        var fix = new WireframeFixer(TopoUtil.PrivateCopy(TopoShape, copyGeometry: true));   // it fixes in place
+        var fix = new WireframeFixer(TopoShape);   // it fixes in a working overlay, the wire untouched
         fix.SetPrecision(precision);
         fix.SetMaxTolerance(1e-6);
         fix.FixSmallEdges();

@@ -92,11 +92,11 @@ internal static partial class TopoUtil
         return copier.Shape();
     }
 
-    /// <summary>The shape fixed by ShapeFix_Shape, which works on a private copy.</summary>
+    /// <summary>The shape fixed by ShapeFix_Shape, which leaves the shape it's given untouched.</summary>
     internal static global::Kerf.Topology.Shape Fix(global::Kerf.Topology.Shape obj)
     {
-        // ShapeFix edits the shape it's given, pcurves and parameters included, so it gets its own geometry too
-        var shapeFix = new ShapeFixer(PrivateCopy(obj, copyGeometry: true));
+        // ShapeFix edits in a working overlay (the kernel's unit 10H4): the result shares what it didn't change
+        var shapeFix = new ShapeFixer(obj);
         shapeFix.Perform();
         return Downcast(shapeFix.Shape());
     }
