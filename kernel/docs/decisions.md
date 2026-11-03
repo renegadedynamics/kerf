@@ -14972,3 +14972,13 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        form's do; OCCT reversed neither, so (1, 3), (3, 1) and (2, 4) had the wrong sign. `DN_matches_closed_form`
        loses its exception for those orders; the test that pinned OCCT's sign checks d⁴P/du dv³ = −d²P/du dv and
        d⁶P/du² dv⁴ = −d⁴P/du² dv².
+16804. **An offset curve's third derivative is the derivative of its second** (occt-issues.md, the offset curves'
+       CalculateD3 and EvaluateDN; one commit, the rows sharing their site). With N = p′ × V (or p′ turned in 2D),
+       R = |N|, D = N·N′, E = N·N″ + N′·N′ and F = N·N‴ + 3N′·N″, the offset's D3 adds
+       offset·(N‴/R − 3D/R³ N″ − 3(E/R³ − 3D²/R⁵) N′ + (9DE/R⁵ − 15D³/R⁷ − F/R³) N), the derivative of D2's
+       term, and CalculateD3's D2 now adds D2's N term (3D²/R⁵ − E/R³) as CalculateD2 does, in both branches (R⁷ above
+       or below the resolution). `EvaluateDN(3)`, through GeomAdaptor_Curve's and Geom2dAdaptor_Curve's offsets,
+       passes D1 and D2 in separate variables, so the basis's D2 no longer overwrites its D1. Offset curves' `D3` and
+       `DN(u, 3)`, Adaptor2d_OffsetCurve's D3 and the adaptors' DN(3) agree with each other and with a finite
+       difference of D2. The two port tests that pinned OCCT's values check exactly that (offset 0.5 of the ellipse
+       (3, 1) at 0.7); the grid consistency tests no longer allow the adaptor's DN(3) to throw.

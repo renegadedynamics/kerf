@@ -333,15 +333,7 @@ public class Geom2dGridEval_ConsistencyTest(ITestOutputHelper theOutput)
                 }
                 else
                 {
-                    try
-                    {
-                        anAdaptorDN = theAdaptor.EvalDN(aU, aN).XY();
-                    }
-                    catch (global::Kerf.Engine.Foundation.FailureException)
-                    {
-                        // Geom2dAdaptor_Curve's offset DN3 can throw (Geom2d_OffsetCurveUtils::EvaluateDN)
-                        anAdaptorDN = aCurveDN!.Value;
-                    }
+                    anAdaptorDN = theAdaptor.EvalDN(aU, aN).XY();
                 }
                 Compare(theKind + " DN" + aN, aDN.Value(i).XY(), aCurveDN, anAdaptorDN);
             }

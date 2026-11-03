@@ -243,12 +243,13 @@ public class Geom_CurvePortTests
     // Reproductions of OCCT issues (occt-issues.md)
 
     /// <summary>
-    /// occt-issues.md, Geom_OffsetCurveUtils::CalculateD3 (the same code as Geom2d's): the D2 it returns subtracts
-    /// the Ndir term that CalculateD2 adds, and its D3 has wrong DNdir and Ndir coefficients, so EvalD3 disagrees
-    /// with EvalD2 (and with the derivative of EvalD2) wherever the basis curve's speed varies. On a circle they agree.
+    /// occt-issues.md, Geom_OffsetCurveUtils::CalculateD3 and EvaluateDN (Kerf decision 16804): OCCT's EvalD3
+    /// disagreed with EvalD2 (and with the derivative of EvalD2) wherever the basis curve's speed varies, and the
+    /// adaptor's DN(3) with both. Now EvalD3's D2 is EvalD2's, its D3 the derivative of D2, and the adaptor's DN(3)
+    /// the curve's.
     /// </summary>
     [Fact]
-    public void OcctIssue_OffsetCurveEvalD3_wrong_where_basis_speed_varies()
+    public void OffsetCurveEvalD3_is_the_derivative_of_EvalD2()
     {
         var anEllipse = new EllipseCurve3D(new Frame3D(), 3.0, 1.0);
         var anOffset = new OffsetCurve3D(anEllipse, 0.5, new Direction3D(0, 0, 1));
@@ -263,13 +264,16 @@ public class Geom_CurvePortTests
         Assert.True((aFdD2 - aD2.D2).Magnitude() <= 1e-6);
         Assert.True(aD2.Point.IsEqual(aD3.Point, 1e-15));
         Assert.True((aD2.D1 - aD3.D1).Magnitude() <= 1e-15);
-        // OCCT: EvalD3's D2 and D3 are wrong (the values of occt-issues.md: offset 0.5 of the ellipse (3, 1) at 0.7)
-        Assert.True((aD3.D2 - aD2.D2).Magnitude() > 1e-3);
-        Assert.True((aD3.D3 - aFdD3).Magnitude() > 1e-3);
-        Assert.True((aD3.D2 - new Vector3D(-2.597, -3.131, 0)).Magnitude() < 1e-3);
+        // EvalD3's D2 is EvalD2's, and its D3 the finite difference of D2 (offset 0.5 of the ellipse (3, 1) at 0.7,
+        // where OCCT gave D2 (-2.597, -3.131) and D3 (8.29, 11.12))
+        Assert.True((aD3.D2 - aD2.D2).Magnitude() <= 1e-12);
+        Assert.True((aD3.D3 - aFdD3).Magnitude() <= 1e-6);
         Assert.True((aD2.D2 - new Vector3D(-1.794, -1.102, 0)).Magnitude() < 1e-3);
+        // and the adaptor's DN(3), the third derivative of the curve's
+        Assert.True((new global::Kerf.Engine.Geometry.Adaptors.CurveAdaptor(anOffset).EvalDN(aU, 3) - aD3.D3).Magnitude() <= 1e-12);
+        Assert.True((anOffset.DN(aU, 3) - aD3.D3).Magnitude() <= 1e-12);
 
-        // The same wrong values as Geom2d_OffsetCurve (Ndir = D1 ^ Z is Geom2d's normal)
+        // The same values as Geom2d_OffsetCurve (Ndir = D1 ^ Z is Geom2d's normal)
         var anOffset2d = new OffsetCurve2D(new EllipseCurve2D(new Axis2D(), 3.0, 1.0), 0.5);
         Curve2D.ResD3 aD3_2d = anOffset2d.EvalD3(aU);
         Assert.True(Math.Abs(aD3.D2.X() - aD3_2d.D2.X()) < 1e-12 && Math.Abs(aD3.D2.Y() - aD3_2d.D2.Y()) < 1e-12);

@@ -321,7 +321,7 @@ public class OffsetCurveAdaptor2D : Curve2DAdaptorBase
         }
     }
 
-    /// <remarks>OCCT's D2 and D3 here are wrong where the basis curve's speed varies (occt-issues.md).</remarks>
+    /// <remarks>D3 is the derivative of D2 (OCCT's D2 and D3 here were wrong where the basis curve's speed varies; Kerf decision 16804).</remarks>
     public override void D3(double u, out Point2D p, out Vector2D v1, out Vector2D v2, out Vector2D v3)
     {
         if (_offset != 0.0)
