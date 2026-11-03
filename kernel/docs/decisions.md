@@ -15049,3 +15049,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        them; OCCT had none); `VTrim` sets them and `UTrim` trims the curve, each keeping the other's. The test that
        pinned the swap checks the bounds of each trim and of both, and their evaluation against the extrusion surface.
        No recording moved: OCCT's algorithms reach extrusions through GeomAdaptor_Surface, not these trims.
+16814. **A rational bilinear patch's cached second derivatives are right** (occt-issues.md, BSplSLib::CacheD2). The
+       rows above MinIndMax of the work array are zeroed again for the weights' smaller dimension, so a max degree
+       below 2 no longer leaves pole values where the weights' second derivative is read. (The triage found no marker:
+       it was a comment in CacheD2's weights branch.) `CacheD0ToD2_MatchD0ToD2` drops its exception for rational
+       surfaces of degrees (1, 1): their cached second derivatives match BSplSLib::D2's. No recording moved:
+       BSplSLib_Cache, which the evaluators use, never had the bug.
