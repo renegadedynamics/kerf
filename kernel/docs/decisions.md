@@ -15031,3 +15031,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        doesn't compile; two of them keep this decision's rules: no engine type in a public signature, the geometry
        hierarchy closed) and ModelingAlgorithms.Tests' `PublicApi` folder (19: topology, whose fixtures need the engine's
        primitives until 10L2's, and `EngineOperation`).
+16609. **Measured** (Release, serial, back to back with the base, 2ffdae36, exported beside; a machine shared with other
+       units, so the times carry its noise). Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`): the same volumes, faces
+       and triangles in every run, allocation per example the same to 0.1 MB but for loaded runs; median recalculation
+       1,201, 1,233 and 1,257 ms on the base, 1,371, 1,249 and 1,341 ms after (and one run under load, 2,382). The
+       Booleans' simple grid (407 cases): 6.91 MB a Boolean either way; serial 2,996 and 4,159 ms on the base, 2,375 and
+       3,277 after; parallel 2,648 and 7,486 before, 1,762 and 3,014 after: noise. The public wrappers sit outside the
+       engine's loops; the property conversions compile to the same calls.
