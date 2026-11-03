@@ -742,8 +742,9 @@ public sealed class EdgeAnalysis
         var adCurve1 = new EdgeCurveAdaptor(firstEdge);
         var minDist = new DistanceShapeShape();
         minDist.LoadS1(secEdge);
-        // OCCT: theStep is half the shorter edge's length, 0 for a degenerated edge, and the loop never ends
-        for (double s = startLength; s <= endLength; s += step / 2)
+        // The step is half the shorter edge's length: 0 for a zero-length edge, whose one point is checked once, where
+        // OCCT looped without end (decision 1431).
+        for (double s = startLength; s <= endLength; s = NextSample(s, step))
         {
             Point3D point;
             if (s <= global::Kerf.Engine.Foundation.Precision.Confusion())
@@ -776,6 +777,13 @@ public sealed class EdgeAnalysis
         }
 
         return true;
+    }
+
+    // The next sampled length, beyond the end when the step no longer advances.
+    private static double NextSample(double s, double step)
+    {
+        double next = s + step / 2;
+        return next > s ? next : double.PositiveInfinity;
     }
 
     /// <summary>

@@ -360,6 +360,41 @@ public class ShapeAnalysisEdgeTests
         Assert.True(aTol < 1e-9); // the distance found
     }
 
+    /// <summary>
+    /// A zero-length edge whose vertex lies on the other edge: OCCT sampled the shorter edge with a step of half its
+    /// length, 0 here, and never left the loop (occt-issues.md, unit 4S's ShapeAnalysis_Edge row; Kerf unit 10K1, decision
+    /// 16504). The edge's one point is checked: it overlaps.
+    /// </summary>
+    [Fact]
+    public void CheckOverlapping_with_a_zero_length_edge_returns()
+    {
+        Edge aLong = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        var b = new BrepBuilder();
+        Vertex aV = new();
+        b.MakeVertex(ref aV, new Point3D(5, 0, 0), Conf);
+        Edge aZero = new();
+        b.MakeEdge(ref aZero, new LineCurve3D(new Point3D(5, 0, 0), new Direction3D(1, 0, 0)), Conf);
+        b.Add(aZero, aV.Oriented(Forward));
+        b.Add(aZero, aV.Oriented(Reversed));
+        b.Range(aZero, 0.0, 0.0);
+
+        var sae = new EdgeAnalysis();
+        double aTol = 1e-3;
+        Assert.True(HangGuard.Within(TimeSpan.FromSeconds(20), () => sae.CheckOverlapping(aLong, aZero, ref aTol)));
+        Assert.True(sae.Status(ExtendStatus.DONE3));
+
+        // and away from the other edge, it doesn't
+        Vertex aFar = new();
+        b.MakeVertex(ref aFar, new Point3D(5, 1, 0), Conf);
+        Edge aZeroFar = new();
+        b.MakeEdge(ref aZeroFar, new LineCurve3D(new Point3D(5, 1, 0), new Direction3D(1, 0, 0)), Conf);
+        b.Add(aZeroFar, aFar.Oriented(Forward));
+        b.Add(aZeroFar, aFar.Oriented(Reversed));
+        b.Range(aZeroFar, 0.0, 0.0);
+        aTol = 1e-3;
+        Assert.False(HangGuard.Within(TimeSpan.FromSeconds(20), () => new EdgeAnalysis().CheckOverlapping(aLong, aZeroFar, ref aTol)));
+    }
+
     [Fact]
     public void PCurve_and_HasPCurve_with_surface_and_location()
     {

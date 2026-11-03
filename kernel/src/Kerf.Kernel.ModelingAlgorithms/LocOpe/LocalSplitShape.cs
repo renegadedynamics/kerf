@@ -30,9 +30,9 @@ namespace Kerf.Engine.Features.Local;
 /// <remarks>
 /// <para>
 /// As in OCCT, it writes into what it is given: the point representations of the split edges' vertices and of the
-/// added vertices, the continuities of the added wires' edges. So the shape, and each vertex, edge and wire given, is
-/// worked on as a copy when frozen, all sharing their copies; the first <see cref="DescendantShapes"/> ends the
-/// splitting and gives back the caller's sub-shapes it left unchanged (decision 1013). The shapes it hands out are
+/// added vertices, the continuities of the added wires' edges. So each public call writes in the process's working
+/// overlay (decision 1013, unit 10H5: <see cref="WorkingShapes"/>); the first <see cref="DescendantShapes"/> ends the
+/// splitting, with new TShapes only for the caller's sub-shapes that changed. The shapes it hands out are
 /// frozen; ported callers (LocOpe_Spliter) read the <c>Internal</c> forms, which share the spliter's working shapes.
 /// </para>
 /// <para>
@@ -68,7 +68,7 @@ public sealed class LocalSplitShape
     {
         _work = work;
         _ownsWork = false;
-        InitWorking(work.Working(s));
+        InitWorking(s);
     }
 
     /// <summary>Initializes the process on the shape <paramref name="s"/>.</summary>
@@ -78,7 +78,7 @@ public sealed class LocalSplitShape
         {
             _work = new WorkingShapes();
         }
-        InitWorking(_work.Working(s));
+        InitWorking(s);
     }
 
     private void InitWorking(in Shape s)
@@ -91,7 +91,11 @@ public sealed class LocalSplitShape
     }
 
     /// <summary>Tests if it is possible to split the edge <paramref name="e"/>.</summary>
-    public bool CanSplit(in Edge e) => InternalCanSplit(ShapeCasts.Edge(_work.Copied(e)));
+    public bool CanSplit(in Edge e)
+    {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        return InternalCanSplit(e);
+    }
 
     private bool InternalCanSplit(in Edge e)
     {
@@ -130,11 +134,12 @@ public sealed class LocalSplitShape
     /// <summary>Adds the vertex <paramref name="v"/> on the edge <paramref name="e"/>, at parameter <paramref name="p"/>.</summary>
     public void Add(in Vertex v, double p, in Edge e)
     {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
         if (_done)
         {
             return;
         }
-        InternalAdd(ShapeCasts.Vertex(_work.Working(v)), p, ShapeCasts.Edge(_work.Working(e)));
+        InternalAdd(ShapeCasts.Vertex(v), p, ShapeCasts.Edge(e));
     }
 
     // Add(V, P, E) on working shapes
@@ -243,6 +248,7 @@ public sealed class LocalSplitShape
     /// <summary>Adds the list of wires <paramref name="lwires"/> on the face <paramref name="f"/>.</summary>
     public bool Add(NCollection_List<Shape> lwires, in Face f)
     {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
         if (_done)
         {
             return false;
@@ -250,9 +256,9 @@ public sealed class LocalSplitShape
         NCollection_List<Shape> wires = new();
         for (NCollection_List<Shape>.Iterator it = new(lwires); it.More(); it.Next())
         {
-            wires.Append(_work.Working(it.Value()));
+            wires.Append(it.Value());
         }
-        return InternalAdd(wires, ShapeCasts.Face(_work.Working(f)));
+        return InternalAdd(wires, ShapeCasts.Face(f));
     }
 
     // Add(Lwires, F) on working shapes
@@ -593,11 +599,12 @@ public sealed class LocalSplitShape
     /// <summary>Adds the wire <paramref name="w"/> on the face <paramref name="f"/>.</summary>
     public bool Add(in Wire w, in Face f)
     {
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
         if (_done)
         {
             return false;
         }
-        return InternalAdd(ShapeCasts.Wire(_work.Working(w)), ShapeCasts.Face(_work.Working(f)));
+        return InternalAdd(ShapeCasts.Wire(w), ShapeCasts.Face(f));
     }
 
     // Add(W, F) on working shapes
@@ -1250,7 +1257,8 @@ public sealed class LocalSplitShape
     /// </summary>
     public NCollection_List<Shape> LeftOf(in Wire w, in Face f)
     {
-        NCollection_List<Shape> left = InternalLeftOf(ShapeCasts.Wire(_work.Copied(w)), ShapeCasts.Face(_work.Copied(f)));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        NCollection_List<Shape> left = InternalLeftOf(ShapeCasts.Wire(w), ShapeCasts.Face(f));
         return _done && _ownsWork ? WorkingShapes.Published(left) : left;
     }
 
@@ -1283,7 +1291,8 @@ public sealed class LocalSplitShape
 
         for (expw.Init(w, ShapeType.Edge); expw.More(); expw.Next())
         {
-            Edge edg = ShapeCasts.Edge(expw.Current());
+            // Kerf: once the splitting has ended, the wire's edges as they stand in the faces (unit 10H5)
+            Edge edg = ShapeCasts.Edge(_work.Final(expw.Current()));
             for (itl.Initialize(_map.GetValue(theFace)); itl.More(); itl.Next())
             {
                 Face fac = ShapeCasts.Face(itl.Value());
@@ -1321,7 +1330,8 @@ public sealed class LocalSplitShape
     /// </summary>
     public NCollection_List<Shape> DescendantShapes(in Shape s)
     {
-        NCollection_List<Shape> list = InternalDescendantShapes(_work.Copied(s));
+        using WorkingOverlay.Scope scope = _work.Enter(); // Kerf: the working overlay (unit 10H5)
+        NCollection_List<Shape> list = InternalDescendantShapes(s);
         return _ownsWork ? WorkingShapes.Published(list) : list;
     }
 
@@ -1333,7 +1343,7 @@ public sealed class LocalSplitShape
         {
             Rebuild(_shape);
             _done = true;
-            if (_ownsWork && _work.IsCopied)
+            if (_ownsWork && _work.IsWritten)
             {
                 var shapes = new List<Shape>();
                 foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _map)
@@ -1352,7 +1362,7 @@ public sealed class LocalSplitShape
     }
 
     /// <summary>Returns the "original" shape (the caller's).</summary>
-    public Shape Shape() => _work.Original(_shape);
+    public Shape Shape() => _shape;
 
     private void Put(in Shape s)
     {

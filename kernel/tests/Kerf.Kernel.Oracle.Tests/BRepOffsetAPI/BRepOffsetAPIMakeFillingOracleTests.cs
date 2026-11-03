@@ -44,7 +44,23 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     private readonly List<string> myDifferences = [];
     private readonly SortedDictionary<string, int> myExceptionTypes = new(StringComparer.Ordinal);
     private int myBuilds, myIdentical, myFreeMasked, myCanonical, myExceptions, myNotDone, myValues, myValuesEqual,
-                myGenerated, myGeneratedEqual, myUnchanged, myCases, myNativeVaries, myNativeUninitialised;
+                myGenerated, myGeneratedEqual, myUnchanged, myCases, myNativeVaries, myNativeUninitialised, myIntended;
+
+    // Plan 3.2's third level (occt-issues.md, unit 5P's BRepFill_Filling::AddConstraints row; Kerf unit 10K1, decision
+    // 16507): with a C1, G2 or C2 constraint, native's plate had the wrong order (C1 gave G2) or threw ("The continuity
+    // is not G0 G1 or G2"). Such a case's differences are intended: they are counted, not failed, and its native calls
+    // are made as recorded.
+    private static bool HasCorrectedOrder(IEnumerable<Continuity> theOrders)
+        => theOrders.Any(o => o is Continuity.C1 or Continuity.G2 or Continuity.C2);
+
+    private void Intended(bool theIsIntended, int theDifferencesBefore)
+    {
+        if (theIsIntended && myDifferences.Count > theDifferencesBefore)
+        {
+            myIntended += myDifferences.Count - theDifferencesBefore;
+            myDifferences.RemoveRange(theDifferencesBefore, myDifferences.Count - theDifferencesBefore);
+        }
+    }
 
     public void Dispose()
     {
@@ -138,6 +154,14 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
     }
 
     private void Run(FillingCase theCase)
+    {
+        int aBefore = myDifferences.Count;
+        RunCase(theCase);
+        Intended(HasCorrectedOrder(theCase.Steps.Where(st => st.Kind is Op.Edge or Op.EdgeFace or Op.PointOnFace).Select(st => st.Order)),
+                 aBefore);
+    }
+
+    private void RunCase(FillingCase theCase)
     {
         myCases++;
         string aFile = NewFile();
@@ -450,7 +474,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         output.WriteLine($"{theWhat}: {myCases} cases, {myBuilds} builds: {myIdentical} identical as BRep text ({myFreeMasked} with the Free column masked, "
                          + $"{myExceptions} the same exception, {myNotDone} not done on both sides), {myCanonical} canonically identical; "
                          + $"values {myValuesEqual}/{myValues} bit-identical ({myNativeVaries} where native varies from call to call, {myNativeUninitialised} where native reads uninitialised memory); Generated {myGeneratedEqual}/{myGenerated}; inputs unchanged {myUnchanged}/{myCases}; "
-                         + $"{myDifferences.Count} differences; {theTime.TotalSeconds:F0} s");
+                         + $"{myIntended} intended differences, {myDifferences.Count} differences; {theTime.TotalSeconds:F0} s");
         if (myExceptionTypes.Count > 0)
         {
             output.WriteLine("  exceptions on both sides: " + string.Join(", ", myExceptionTypes.Select(p => $"{p.Key} {p.Value}")));
@@ -862,6 +886,8 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
         ];
         for (int c = 0; c < aCases.Length; c++)
         {
+            int aBefore = myDifferences.Count;
+            bool anIsIntended = HasCorrectedOrder(aCases[c].Select(x => x.Order));
             myCases++;
             var aNEdges = new List<N.TopoDS_Shape>();
             var aPEdges = new List<Shape>();
@@ -958,6 +984,7 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                     myDifferences.Add($"{w2}: {aNErr ?? (aNRes is null ? "not done" : "done")} natively, {aPErr ?? (aPRes.IsNull ? "not done" : "done")} in the port");
                 }
                 CheckInputs(w2);
+                Intended(anIsIntended, aBefore);
                 continue;
             }
             string aNRec = FaceRecord(NativeText(aNRes)), aPRec = FaceRecord(PortText(aPRes));
@@ -980,10 +1007,11 @@ public class BRepOffsetAPIMakeFillingOracleTests(ITestOutputHelper output) : IDi
                 SameIndexedValue(w2 + $": G1Error({i})", () => aN.G1Error(i), () => aP.G1Error(i), aReadsUninitialised);
             }
             CheckInputs(w2);
+            Intended(anIsIntended, aBefore);
         }
         Report("MakeFilling on faces extruded from the constraint edges", aWatch.Elapsed);
         Assert.Equal(4, myBuilds);
-        Assert.Equal(3, myCanonical); // the fourth: the same exception on both sides
+        Assert.Equal(2, myCanonical); // the C1 case's face differs (now G1), the G2 case's native threw (decision 1434)
         Assert.Equal(4, myUnchanged);
         Assert.Empty(myDifferences);
     }

@@ -17,6 +17,7 @@ using Kerf.Engine.Numerics;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -39,8 +40,7 @@ namespace Kerf.Engine.Fillets;
 /// <remarks>
 /// A working object of the fillet algorithms (decision 21), ported over OCCT's files: this file (the header and
 /// <c>ChFi3d_FilBuilder.cxx</c>), <c>_C2</c> (two-fillet corners) and <c>_C3</c> (three-fillet corners). Ported in
-/// unit 7N2 so that the builder can be compared with native OCCT end to end; the API wrappers are unit 7N3's. Edges and
-/// vertices given by the caller are mapped onto the builder's working copy (<see cref="FilletBuilderBase.ToWork"/>).
+/// unit 7N2 so that the builder can be compared with native OCCT end to end; the API wrappers are unit 7N3's.
 /// OCCT_DEBUG blocks (traces) are left out.
 /// </remarks>
 public partial class FilBuilder : FilletBuilderBase
@@ -169,7 +169,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void Add(in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         Face dummy = new();
 
         if (Contains(E) == 0 && _efMap.Contains(E))
@@ -253,7 +253,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void SetRadius(double radius, int ic, in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -265,7 +265,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void UnSet(int ic, in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -277,7 +277,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void SetRadius(double radius, int ic, in Vertex v)
     {
-        Vertex V = ShapeCasts.Vertex(ToWork(v)); // the working copy's (OCCT.NET)
+        Vertex V = ShapeCasts.Vertex(v);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -289,7 +289,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void UnSet(int ic, in Vertex v)
     {
-        Vertex V = ShapeCasts.Vertex(ToWork(v)); // the working copy's (OCCT.NET)
+        Vertex V = ShapeCasts.Vertex(v);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -312,7 +312,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public bool IsConstant(int ic, in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -325,7 +325,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public double Radius(int ic, in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -338,7 +338,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public bool GetBounds(int ic, in Edge e, ref double f, ref double l)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -356,7 +356,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public LawsFunction? GetLaw(int ic, in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         if (ic <= NbElements())
         {
             FilSpine? fsp = (Value(ic) as FilSpine);
@@ -369,7 +369,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void SetLaw(int ic, in Edge e, LawsFunction? l)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e)); // the working copy's (OCCT.NET)
+        Edge E = ShapeCasts.Edge(e);
         // Check if it is necessary to check borders!
         if (ic <= NbElements())
         {
@@ -382,6 +382,7 @@ public partial class FilBuilder : FilletBuilderBase
 
     public void Simulate(int ic)
     {
+        using WorkingOverlay.Scope scope = EnterOverlay(); // Kerf: the elementary spines' 3D curves (unit 10H5)
         NCollection_List<Stripe>.Iterator itel = new();
         int i = 1;
         for (itel.Initialize(_listStripe); itel.More(); itel.Next(), i++)

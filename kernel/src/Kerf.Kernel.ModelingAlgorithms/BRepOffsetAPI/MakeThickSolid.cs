@@ -24,8 +24,8 @@ namespace Kerf.Engine.Offsets.Api;
 /// must be at least C1, and the offset small enough to avoid self-intersections.
 /// </para>
 /// <para>
-/// A maker (decision 414), as <see cref="MakeOffsetShape"/>: the caller's shape is never written (decision
-/// 1005), and the result holds the caller's faces where the algorithm left them unchanged.
+/// A maker (decision 414), as <see cref="MakeOffsetShape"/>: the caller's shape is never written (decisions 1005
+/// and 1419), and the result holds the caller's faces where the algorithm left them unchanged.
 /// </para>
 /// </remarks>
 public class MakeThickSolid : MakeOffsetShape
@@ -102,7 +102,7 @@ public class MakeThickSolid : MakeOffsetShape
     {
         _generated.Clear();
 
-        // OCCT.NET: the caller's face F is looked up through its working copy (decision 1005).
+        // the face the run worked on: the caller's, or its copy in a caller's unfrozen shape (unit 10H5)
         Shape aF = _offsetShape.InternalCopied(f);
         if (_lastUsedAlgo == OffsetAlgo_Type.OffsetAlgo_JOIN && _offsetShape.InternalOffsetFacesFromShapes().HasImage(aF))
         {

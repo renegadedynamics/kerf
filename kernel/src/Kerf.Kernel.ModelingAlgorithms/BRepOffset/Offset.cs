@@ -43,10 +43,11 @@ namespace Kerf.Engine.Offsets;
 /// <para>
 /// The pipe along an edge and the sphere at a vertex write pcurves, ranges and flags into the edges they are given
 /// (<c>Edge1</c>, <c>Edge2</c>, <c>FirstEdge</c>, <c>LastEdge</c>, the edges of <c>LEdge</c>), so that the pipe or
-/// sphere shares them with the faces' offsets. When none of these holds a frozen shape (the 3D offset's working
-/// edges), they are written in place, as in OCCT. When one does (a caller's shapes), they are copied at the entry
-/// (<see cref="CopyAtEntry"/>): the face is built on the copies, and the caller's sub-shapes the
-/// construction left unchanged (vertices whose tolerance didn't grow) are given back in it.
+/// sphere shares them with the faces' offsets. Inside an operation's working overlay that takes writes (the 3D offset's
+/// run) they are written in place, as in OCCT. Outside one, the construction runs in a working overlay of its own
+/// (unit 10H5, <see cref="WorkingOverlay"/>): the writes into a caller's frozen edges go to working copies, and the
+/// face holds new TShapes only for the edges and vertices that changed (the caller's own where, say, a vertex's
+/// tolerance didn't grow).
 /// </para>
 /// <para>
 /// <see cref="Face"/> and <see cref="Generated"/> freeze what they return (a publication point); ported code reads
@@ -1016,23 +1017,19 @@ public sealed class Offset
     /// <summary>
     /// Builds the pipe of radius <paramref name="offset"/> along <paramref name="path"/> between
     /// <paramref name="edge1"/> and <paramref name="edge2"/>, closed at its ends by <paramref name="firstEdge"/> and
-    /// <paramref name="lastEdge"/> (or new edges when null). The given edges get pcurves on the pipe: in place when
-    /// they are unfrozen, else on copies (see the class remarks).
+    /// <paramref name="lastEdge"/> (or new edges when null). The given edges get pcurves on the pipe, in place (in a
+    /// working overlay when frozen: see the class remarks).
     /// </summary>
     public void Init(in Edge path, in Edge edge1, in Edge edge2, double offset,
                      in Edge firstEdge, in Edge lastEdge, bool polynomial = false, double tol = 1.0e-4,
                      Continuity conti = C1)
     {
-        // OCCT.NET: copy at entry (plan 2.2) of the edges written below, when one of them holds a frozen shape.
-        CopyAtEntry? entry = CopyAtEntry([edge1, edge2, firstEdge, lastEdge]);
-        Edge aEdge1 = Copied(entry, edge1);
-        Edge aEdge2 = Copied(entry, edge2);
-        Edge aFirstEdge = Copied(entry, firstEdge);
-        Edge aLastEdge = Copied(entry, lastEdge);
-        InitPipe(path, aEdge1, aEdge2, offset, aFirstEdge, aLastEdge, polynomial, tol, conti);
-        if (entry is not null)
+        // Kerf: the edges are written below: in a working overlay (unit 10H5)
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
+        InitPipe(path, edge1, edge2, offset, firstEdge, lastEdge, polynomial, tol, conti);
+        if (overlay is not null)
         {
-            _face = ShapeCasts.Face(entry.Finish(_face));
+            _face = ShapeCasts.Face(overlay.Finish(_face));
         }
     }
 
@@ -1463,33 +1460,19 @@ public sealed class Offset
 
     /// <summary>
     /// Builds the sphere of radius <paramref name="offset"/> centred on <paramref name="vertex"/>, bounded by the
-    /// edges <paramref name="lEdge"/>, which get pcurves on it: in place when they are unfrozen, else on copies (see the
+    /// edges <paramref name="lEdge"/>, which get pcurves on it, in place (in a working overlay when frozen: see the
     /// class remarks). <paramref name="tol"/> and <paramref name="conti"/> are used only if
     /// <paramref name="polynomial"/> (for the approximation).
     /// </summary>
     public void Init(in Vertex vertex, NCollection_List<Shape> lEdge, double offset,
                      bool polynomial = false, double tol = 1.0e-4, Continuity conti = C1)
     {
-        // OCCT.NET: copy at entry (plan 2.2) of the edges written below, when one of them holds a frozen shape.
-        var shapes = new List<Shape>();
-        for (var it = new NCollection_List<Shape>.Iterator(lEdge); it.More(); it.Next())
+        // Kerf: the edges are written below: in a working overlay (unit 10H5)
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
+        InitSphere(vertex, lEdge, offset, polynomial, tol, conti);
+        if (overlay is not null)
         {
-            shapes.Add(it.Value());
-        }
-        CopyAtEntry? entry = CopyAtEntry(shapes);
-        NCollection_List<Shape> aLEdge = lEdge;
-        if (entry is not null)
-        {
-            aLEdge = new NCollection_List<Shape>();
-            foreach (Shape edge in shapes)
-            {
-                aLEdge.Append(entry.Copied(edge));
-            }
-        }
-        InitSphere(vertex, aLEdge, offset, polynomial, tol, conti);
-        if (entry is not null)
-        {
-            _face = ShapeCasts.Face(entry.Finish(_face));
+            _face = ShapeCasts.Face(overlay.Finish(_face));
         }
     }
 
@@ -1751,47 +1734,4 @@ public sealed class Offset
 
     /// <summary>The status of the offset surface.</summary>
     public OffsetStatus Status() => _status;
-
-    //=================================================================================================
-
-    // OCCT.NET: the copy at entry of the edges a pipe or a sphere writes into: null (write in place, as OCCT) unless
-    // one of them holds a frozen shape; else one exact copy of them all, so that the vertices they share stay shared.
-    private static CopyAtEntry? CopyAtEntry(IReadOnlyList<Shape> shapes)
-    {
-        bool hasFrozen = false;
-        foreach (Shape shape in shapes)
-        {
-            if (!shape.IsNull && BrepTools.HoldsFrozen(shape))
-            {
-                hasFrozen = true;
-                break;
-            }
-        }
-        if (!hasFrozen)
-        {
-            return null;
-        }
-
-        var b = new BrepBuilder();
-        Compound compound = new();
-        b.MakeCompound(ref compound);
-        foreach (Shape shape in shapes)
-        {
-            if (!shape.IsNull)
-            {
-                b.Add(compound, shape);
-            }
-        }
-        return new CopyAtEntry(compound, null, true);
-    }
-
-    // The copy of an edge given to a pipe (the edge itself when nothing was copied, or when it is null).
-    private static Edge Copied(CopyAtEntry? entry, in Edge edge)
-    {
-        if (entry is null || edge.IsNull)
-        {
-            return edge;
-        }
-        return ShapeCasts.Edge(entry.Copied(edge));
-    }
 }

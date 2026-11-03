@@ -41,7 +41,7 @@ public sealed class Hyperbola2dBounds : Curve2dBounds.ICurve2dEvaluator
     public Box2d BoxOptimal(double u1, double u2, double tol) => Box(u1, u2, tol);
 
     /// <summary>Compute bounding box for finite 2D hyperbola arc, adding per-coordinate extrema.</summary>
-    private static void ComputeHyperbola2dBox(in Hyperbola2D hypr, double t1, double t2, ref Box2d box)
+    internal static void ComputeHyperbola2dBox(in Hyperbola2D hypr, double t1, double t2, ref Box2d box)
     {
         Point2D p1 = global::Kerf.Engine.Geometry.ElCLib.Value(t1, hypr);
         Point2D p2 = global::Kerf.Engine.Geometry.ElCLib.Value(t2, hypr);

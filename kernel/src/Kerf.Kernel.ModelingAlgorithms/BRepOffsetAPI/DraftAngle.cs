@@ -36,8 +36,9 @@ namespace Kerf.Engine.Features.Api;
 /// <para>
 /// A maker (decision 414). The caller's shape is never written: the modifier rebuilds what changes and shares the rest
 /// (decision 973); OCCT's <c>CorrectWires</c> then edits the modifier's result in place, freeing and changing wires,
-/// faces, vertices and pcurves that may be the caller's, so when it has something to change it works on a copy of the
-/// result (<see cref="CopyAtEntry"/>) and gives back the caller's sub-shapes it left alone (decision 1044).
+/// faces, vertices and pcurves that may be the caller's, so when it has something to change it works in a working
+/// overlay (unit 10H5, <see cref="WorkingOverlay"/>): the result holds new TShapes only for what it changed, the
+/// caller's own sub-shapes for the rest (decision 1044).
 /// </para>
 /// </remarks>
 public class DraftAngle : ModifyShape
@@ -45,8 +46,9 @@ public class DraftAngle : ModifyShape
     private readonly Dictionary<Shape, Shape> _vtxToReplace = new(ShapeHasher.Instance);
     private readonly ReShape _subs = new();
 
-    // OCCT.NET: the copy of the modifier's result that CorrectWires works on (null when it had nothing to change).
-    private CopyAtEntry? _resultCopy;
+    // Kerf: the working overlay CorrectWires changed the modifier's result in (null when it had nothing to change, or
+    // ran in place inside an operation's overlay).
+    private WorkingOverlay? _resultOverlay;
 
     //=================================================================================================
 
@@ -248,11 +250,11 @@ public class DraftAngle : ModifyShape
                 return _vtxToReplace.GetValue(s);
             }
         }
-        // OCCT.NET: through the copy CorrectWires worked on, if it made one.
+        // Kerf: what stands for it after CorrectWires' working overlay, if it opened one.
         Shape ns = _modifier.InternalModifiedShape(s);
-        if (_resultCopy is not null)
+        if (_resultOverlay is not null && _resultOverlay.IsFinished)
         {
-            ns = _resultCopy.Final(_resultCopy.Copied(ns));
+            ns = _resultOverlay.Final(ns);
         }
         if (_vtxToReplace.Count == 0)
         {
@@ -270,7 +272,7 @@ public class DraftAngle : ModifyShape
     /// <exception cref="ConstructionErrorException">An Add failed and its face wasn't removed.</exception>
     public override void Build(ProgressRange range = default)
     {
-        _resultCopy = null;
+        _resultOverlay = null;
         this.Draft().Perform();
         if (!this.Draft().IsDone)
         {
@@ -457,15 +459,16 @@ public class DraftAngle : ModifyShape
             } // for (; wit.More(); wit.Next())
         } // for (i = 1; i <= Eseq.Length(); i++)
 
-        // OCCT.NET: the rest writes into the result: vertices, wires and faces it frees and edits, pcurves it moves. Where
-        // the result holds the caller's sub-shapes (frozen), the result is copied first and the analysis made again on
-        // the copy (decision 1044).
-        if (Emap.Count != 0 && _resultCopy is null && BrepTools.HoldsFrozen(_shape))
+        // Kerf: the rest writes into the result: vertices, wires and faces it frees and edits, pcurves it moves, which
+        // may be the caller's sub-shapes (frozen). Unless an operation's overlay that takes writes is open here, the
+        // analysis is made again in a working overlay, and the rest runs there (decision 1044, unit 10H5).
+        if (Emap.Count != 0 && _resultOverlay is null && WorkingOverlay.Writing is null)
         {
-            _resultCopy = new CopyAtEntry(_shape);
-            _shape = _resultCopy.Shape();
-            CorrectWires();
-            _shape = _resultCopy.Finish(_shape);
+            using (_resultOverlay = WorkingOverlay.Begin(_shape))
+            {
+                CorrectWires();
+                _shape = _resultOverlay.Finish(_shape);
+            }
             return;
         }
 

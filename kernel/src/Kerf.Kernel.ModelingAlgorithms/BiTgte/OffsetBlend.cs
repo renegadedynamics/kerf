@@ -44,9 +44,9 @@ namespace Kerf.Engine.Offsets.Blend;
 /// <para>
 /// A working object (decision 21), Draw's <c>rollingball</c>. It works with the offset's tools (BRepOffset_Inter3d,
 /// Inter2d, MakeLoops, Offset) on its own working shapes, and OCCT writes into the shape it is given (3D curves,
-/// same-parameter, parameters of the tube's vertices on the edges). So <see cref="Perform"/> copies a frozen shape at
-/// the entry (<see cref="CopyAtEntry"/>, decision 1005's rule), maps the faces and edges given onto the copy,
-/// and gives back the caller's unchanged faces in the result (decision 1046).
+/// same-parameter, parameters of the tube's vertices on the edges). So <see cref="Perform"/> runs on the caller's
+/// shape in a working overlay (unit 10H5, <see cref="WorkingOverlay"/>; in place inside an operation's overlay that
+/// takes writes), and the result holds the caller's faces it left unchanged (decision 1046).
 /// </para>
 /// <para>
 /// <see cref="Shape"/>, <see cref="Face(int)"/> and <see cref="Face(in Shape)"/> freeze what they return;
@@ -81,8 +81,8 @@ public sealed class OffsetBlend
     private NCollection_HArray1<int>? _indices;
     private bool _done;
 
-    // OCCT.NET: the copy of the caller's shape the blend works on (decision 1046).
-    private CopyAtEntry? _entry;
+    // Kerf: the working overlay of the last Perform (unit 10H5); null for a run in place inside an operation's overlay.
+    private WorkingOverlay? _overlay;
 
     //======================== START STATIC FUNCTIONS ============
 
@@ -706,7 +706,7 @@ public sealed class OffsetBlend
         _asDes.Clear();
         _nbBranches = -1;
         _done = false;
-        _entry = null;
+        _overlay = null;
     }
 
     //=================================================================================================
@@ -750,31 +750,10 @@ public sealed class OffsetBlend
     {
         _buildShape = buildShape;
 
-        // OCCT.NET: the work is done on a copy of a frozen shape, the faces and edges given mapped onto it (decision
-        // 9403).
-        _entry = new CopyAtEntry(_shape);
-        if (_entry.IsCopied)
-        {
-            _shape = _entry.Shape();
-            IndexedSet<Shape> faces = new(ShapeHasher.Instance);
-            for (int k = 0; k < _faces.Count; k++)
-            {
-                faces.Add(_entry.Copied(_faces[k]));
-            }
-            _faces = faces;
-            IndexedSet<Shape> edges = new(ShapeHasher.Instance);
-            for (int k = 0; k < _edges.Count; k++)
-            {
-                edges.Add(_entry.Copied(_edges[k]));
-            }
-            _edges = edges;
-            HashSet<Shape> stops = new(ShapeHasher.Instance);
-            foreach (Shape stop in _stopFaces)
-            {
-                stops.Add(_entry.Copied(stop));
-            }
-            _stopFaces = stops;
-        }
+        // Kerf: OCCT writes into the shape it is given: the work is done on the caller's shape in a working overlay
+        // (unit 10H5).
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(_shape);
+        _overlay = overlay;
 
         // Try cutting to avoid tubes on free borders
         // that are not actually free.
@@ -878,8 +857,11 @@ public sealed class OffsetBlend
         // since the partition is provided ( A Priori);
         BrepLibrary.BuildCurves3d(_result, global::Kerf.Engine.Foundation.Precision.Confusion());
 
-        // OCCT.NET: the caller's faces the blend left alone stand in the result again.
-        _result = _entry.Finish(_result);
+        // Kerf: new TShapes for the caller's sub-shapes the blend changed; its own for the rest.
+        if (overlay is not null)
+        {
+            _result = overlay.Finish(_result);
+        }
 
         _done = true;
     }
@@ -1063,10 +1045,10 @@ public sealed class OffsetBlend
         return Published(or2);
     }
 
-    // OCCT.NET: a shape of the working copy as the caller sees it: its own where unchanged, frozen.
+    // Kerf: a shape of the run as it stands in the result (the caller's own where unchanged), frozen.
     private Shape Published(in Shape shape)
     {
-        Shape aShape = _entry is not null && _done ? _entry.Final(shape) : shape;
+        Shape aShape = _overlay is not null && _overlay.IsFinished ? _overlay.Final(shape) : shape;
         aShape.TShape()?.FreezeGraph();
         return aShape;
     }

@@ -450,7 +450,9 @@ public sealed class BrepBuilder : Builder
     internal void MakeFace(ref Face f, Surface? s, double tol)
     {
         BrepTFace tf = new BrepTFace();
-        if (!f.IsNull && f.Locked())
+        // Kerf: inside a working overlay a variable holding a frozen shape takes the new TShape, as one holding its
+        // copy did (unit 10H5)
+        if (!f.IsNull && WorkingOverlay.IsLocked(f.TShape()!))
         {
             throw new LockedShapeException("BRep_Builder::MakeFace");
         }
@@ -464,7 +466,9 @@ public sealed class BrepBuilder : Builder
     public void MakeFace(ref Face face, Triangulation? triangulation)
     {
         BrepTFace tFace = new BrepTFace();
-        if (!face.IsNull && face.Locked())
+        // Kerf: inside a working overlay a variable holding a frozen shape takes the new TShape, as one holding its
+        // copy did (unit 10H5)
+        if (!face.IsNull && WorkingOverlay.IsLocked(face.TShape()!))
         {
             throw new LockedShapeException("BRep_Builder::MakeFace");
         }
@@ -479,7 +483,9 @@ public sealed class BrepBuilder : Builder
                            Triangulation? activeTriangulation = null)
     {
         BrepTFace tFace = new BrepTFace();
-        if (!face.IsNull && face.Locked())
+        // Kerf: inside a working overlay a variable holding a frozen shape takes the new TShape, as one holding its
+        // copy did (unit 10H5)
+        if (!face.IsNull && WorkingOverlay.IsLocked(face.TShape()!))
         {
             throw new LockedShapeException("BRep_Builder::MakeFace");
         }
@@ -492,7 +498,9 @@ public sealed class BrepBuilder : Builder
     internal void MakeFace(ref Face f, Surface? s, in Placement l, double tol)
     {
         BrepTFace tf = new BrepTFace();
-        if (!f.IsNull && f.Locked())
+        // Kerf: inside a working overlay a variable holding a frozen shape takes the new TShape, as one holding its
+        // copy did (unit 10H5)
+        if (!f.IsNull && WorkingOverlay.IsLocked(f.TShape()!))
         {
             throw new LockedShapeException("BRep_Builder::MakeFace");
         }
@@ -576,7 +584,9 @@ public sealed class BrepBuilder : Builder
     internal void MakeEdge(ref Edge e)
     {
         BrepTEdge te = new BrepTEdge();
-        if (!e.IsNull && e.Locked())
+        // Kerf: inside a working overlay a variable holding a frozen shape takes the new TShape, as one holding its
+        // copy did (unit 10H5)
+        if (!e.IsNull && WorkingOverlay.IsLocked(e.TShape()!))
         {
             throw new LockedShapeException("BRep_Builder::MakeEdge");
         }

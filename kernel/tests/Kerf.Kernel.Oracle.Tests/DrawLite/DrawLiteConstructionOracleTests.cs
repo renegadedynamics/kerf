@@ -114,11 +114,13 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         public int BothFailed;
         public int OrderDependent;
         public int Values;
+        public int Intended;
         public readonly List<string> Differences = [];
 
         public string Report()
             => $"{theWhat}: {Shapes} shapes ({Identical} byte-identical, {MaskedEqual} equal with the Free column masked), "
-               + $"{Values} values bit-identical, {BothFailed} failed on both sides, {OrderDependent} equal but for the vertex tolerances OCCT sets in address order";
+               + $"{Values} values bit-identical, {BothFailed} failed on both sides, {OrderDependent} equal but for the vertex tolerances OCCT sets in address order, "
+               + $"{Intended} intended differences";
     }
 
     private void Compare(Tally theTally, string theWhat, N.TopoDS_Shape theNative, in Shape thePort)
@@ -242,6 +244,7 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
         {
             N.gp_Pnt aP1 = aDist.PointOnShape1(i), aP2 = aDist.PointOnShape2(i);
             Shape aPort = theDI.GetShape(aNames[i]);
+            int aBefore = theTally.Differences.Count;
             N.TopoDS_Shape aNative = aDist.Value() <= 1.0e-9
                                    ? new N.BRepBuilderAPI_MakeVertex(aP1).Vertex()
                                    : new N.BRepBuilderAPI_MakeEdge(aP1, aP2).Edge();
@@ -256,7 +259,27 @@ public sealed partial class DrawLiteConstructionOracleTests(ITestOutputHelper ou
                 Same(theTally, aP1, Tool.Pnt(aV1), $"{theWhat} {aNames[i]} P1");
                 Same(theTally, aP2, Tool.Pnt(aV2), $"{theWhat} {aNames[i]} P2");
             }
+            if (IsOriginForAShortEdge(theTally.Differences.Skip(aBefore).ToList(), $"{theWhat} {aNames[i]}", aPort))
+            {
+                theTally.Intended++;
+                theTally.Differences.RemoveRange(aBefore, theTally.Differences.Count - aBefore);
+            }
         }
+    }
+
+    // Plan 3.2's third level (occt-issues.md, unit 4A's Extrema_ExtCS row; Kerf unit 10K1, decision 1430): where an
+    // edge's range clipped to the face's box is shorter than Precision::Confusion, native reported the origin as the
+    // point on the edge; the port reports the range's middle. A contact (a vertex) whose only differences are native's
+    // coordinates at 0 (and the vertex's text). The native calls are made as recorded; only the verdict changes.
+    private static bool IsOriginForAShortEdge(List<string> theDifferences, string theCoordinates, in Shape thePort)
+    {
+        if (theDifferences.Count == 0 || thePort.ShapeType() != ShapeType.Vertex)
+        {
+            return false;
+        }
+        List<string> aCoordinates = theDifferences.Where(d => d.StartsWith(theCoordinates + ".", StringComparison.Ordinal)).ToList();
+        return aCoordinates.Count > 0 && aCoordinates.All(d => d.Contains(": native 0, ", StringComparison.Ordinal))
+               && theDifferences.Count - aCoordinates.Count <= 1;
     }
 
     [Fact]

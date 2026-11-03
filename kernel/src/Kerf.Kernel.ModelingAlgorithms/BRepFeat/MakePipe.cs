@@ -9,6 +9,7 @@ using Kerf.Engine.Collections;
 using Kerf.Engine.Features.Local;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -57,15 +58,16 @@ public sealed class MakePipe : Form
     public void Init(in Shape sbase, in Shape pbase, in Face skface, in Wire spine, int mode,
                      bool modify)
     {
-        // OCCT.NET: the working copies of frozen inputs (decision 1052)
+        // Kerf: the working overlay the feature writes into its inputs in (decision 1052, unit 10H5)
         StartWorkingShapes();
-        _sbase = Working(sbase);
+        using WorkingOverlay.Scope scope = EnterWork();
+        _sbase = sbase;
         BasisShapeValid();
-        _skface = Working(skface);
+        _skface = skface;
         SketchFaceValid();
-        _pbase = Working(pbase);
+        _pbase = pbase;
         _slface.Clear();
-        _spine = ShapeCasts.Wire(Working(spine));
+        _spine = ShapeCasts.Wire(spine);
         if (mode == 0)
         {
             _fuse = false;
@@ -102,10 +104,11 @@ public sealed class MakePipe : Form
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in Edge e, in Face f)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         Explorer exp = new();
         for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(Working(f)))
+            if (exp.Current().IsSame(f))
             {
                 break;
             }
@@ -117,7 +120,7 @@ public sealed class MakePipe : Form
 
         for (exp.Init(_pbase, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(Working(e)))
+            if (exp.Current().IsSame(e))
             {
                 break;
             }
@@ -149,6 +152,7 @@ public sealed class MakePipe : Form
     /// <summary>Builds the pipe along the whole spine.</summary>
     public void Perform()
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         _sFrom.Nullify();
         ShapeFromValid();
         _sUntil.Nullify();
@@ -197,6 +201,7 @@ public sealed class MakePipe : Form
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         if (until.IsNull)
         {
             throw new ConstructionErrorException();
@@ -211,7 +216,7 @@ public sealed class MakePipe : Form
         PerfSelectionValid();
         _sFrom.Nullify();
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         TransformShapeFU(1);
         ShapeUntilValid();
         LocalPipe thePipe = new(_spine, _pbase);
@@ -233,18 +238,19 @@ public sealed class MakePipe : Form
     /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in Shape From, in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         if (From.IsNull || until.IsNull)
         {
             throw new ConstructionErrorException();
         }
         if (!_skface.IsNull)
         {
-            if (Working(From).IsSame(_skface))
+            if (From.IsSame(_skface))
             {
                 Perform(until);
                 return;
             }
-            else if (Working(until).IsSame(_skface))
+            else if (until.IsSame(_skface))
             {
                 Perform(From);
                 return;
@@ -263,10 +269,10 @@ public sealed class MakePipe : Form
         {
             throw new ConstructionErrorException();
         }
-        _sFrom = Working(From);
+        _sFrom = From;
         TransformShapeFU(0);
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         TransformShapeFU(1);
         ShapeUntilValid();
         LocalPipe thePipe = new(_spine, _pbase);

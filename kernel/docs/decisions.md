@@ -14571,6 +14571,205 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `Closed` flag, BRepFill_Filling's bindings of MakeWire's history, the pipe shell's, and 1410's point section
        and `SameParameter`.
 
+## Phase 10: unit 10H5, no copy at entry in offsets, fillets and features
+
+1419. **The offsets run in working overlays** (overlay-survey.md section 6): BRepOffset_MakeOffset (`MakeOffsetShape`,
+       `MakeThickSolid`, but the thickening mode: 1421), the pipes and spheres of BRepOffset_Offset, and BiTgte_Blend.
+       Each runs OCCT's code on the caller's shape (in place inside an operation's overlay that takes writes,
+       `BeginUnlessWriting`), and the result holds new TShapes only for what changed. The copies' re-keying goes: the
+       closing faces, the faces with their own offsets, BiTgte's faces, edges and stopping faces are the caller's; the
+       history (`Generated`, `Modified`, `IsDeleted`, the images) is direct, through `Final`. A caller's *unfrozen* input
+       (a shell it built of frozen faces, as the offset oracle's) is worked on with its unfrozen TShapes copied
+       (`WithUnfrozenCopied`, `UncopiedWhereUnchanged`, 10H4's twins' step): in place, the overlay's assembly replaced
+       the caller's shell's children, and the oracle's next run on the same shell gave another result. The history maps
+       such sub-shapes onto their copies (`InternalCopied`).
+1420. **OC5805's offset surface is carried by the overlay.** OCCT enlarges the offset surface of the face it is given in
+       place (BRepOffset_Tool's EnLargeFace, `SetBasisSurface`), and the lateral edges are then extended to it (decision
+       1101). The port's `PutSurfaceInPlace` did it on the offset's working faces and skipped a locked (frozen) face; it
+       now asks `WorkingOverlay.IsLocked`, so in the run's overlay the caller's face's working copy takes the enlarged
+       surface and its pcurves move onto it (`ChangeCurves()` gives the working copy's representations), as on the copy
+       before; the caller's face keeps its surface. Tested on OCC5805.brep's thick solid (bugs/modalg_2/bug5805_3: one
+       shell of 7 faces, area 1,185.03, the input unchanged, surface for surface); the corpus cases keep their status.
+       Outside an overlay nothing changes.
+1421. **Left on their copies, with a reason: the simple offset's solid and MakeOffset's thickening mode.** Both build
+       wall faces on the caller's free edges with BRepLib_MakeFace, which copies frozen edges at its own entry until
+       construction runs in an overlay (unit 10H3). Inside an overlay the caller's edges are frozen, so a wall held copies
+       of them beside the caller's own: face1.brep's simple offset solid didn't close (`ErrorInvalidNbShells`, where
+       native gives a solid), and thickened open shells held their vertices twice (the offset oracle's replay diverged).
+       On the copies the walls share the edges, as before. 10H6 converts both once 10H3's MakeFace runs in place in an
+       overlay (`MakeSimpleOffset`'s copy and MakeOffset's `EnterCopy` are the two sites left).
+1422. **A second MakeOffset run after `Initialize` clears the analysis.** OCCT's `Initialize` and `Clear` leave
+       BRepOffset_Analyse's edge types and ancestors, which its next `Perform` appends to: on the same shapes a second run
+       on one object fails (`UnknownError`). With a copy at each run's entry the shapes were new; on the caller's shapes
+       the doubling showed (Draw-lite's `offsetload` and `offsetperform` twice). `Initialize` clears the analysis
+       (occt-issues.md).
+1423. **The fillets run in working overlays.**
+       - ChFi3d_Builder (fillets, chamfers, FilletSurf's builder) works on the caller's shape: its maps, spines, data
+         structure and common points hold the caller's sub-shapes (`ToWork` and `FromWork` go). A detached overlay
+         (`EnterOverlay`) is entered by `Compute` and `Simulate` (FilletSurf's `Perform` and `Simulate`), which write the
+         vertex tolerances and the spines' 3D curves; the first `Compute` with a result finishes it, and a later
+         computation starts a new one, on the caller's shape as given (on the copy, a second `Compute` ran on what the
+         first had changed, and kept the copy's TShapes). The reconstruction's Booleans are destructive in it, as on the
+         copy.
+       - ChFi2d_Builder builds the face's missing 3D curves in an overlay whose result stands for the face (decision
+         854, in place of `BRepLib.Curves3dBuilt`), and `UpdateNewVertex`'s check asks `IsReadOnly`.
+       - BRep_Builder's `MakeFace` and `MakeEdge` refusal (OCCT's: no new TShape into a variable holding a locked shape)
+         asks `WorkingOverlay.IsLocked`: inside an overlay a variable holding a frozen shape takes the new TShape, as one
+         holding its copy did. Found by the fillet corpus (blend/complex/A2, blend/tolblend_simple C5, C9 and D2,
+         bugs/modalg_2/bug487 threw `TopoDS_LockedShape`).
+1424. **The features run in working overlays.**
+       - LocOpe's working shapes (`WorkingShapes`) are a detached overlay, shared by an operation and those it runs (the
+         gluer's wires on the shape, splitter and generator; a BRepFeat feature's LocOpe sweeps and gluing), made at the
+         first `Enter` (borrowed with `ForTool` inside an operation's overlay that takes writes). Each public call that
+         writes, or reads what was written, enters it: LocOpe_SplitShape's `Add`, `CanSplit`, `LeftOf` and
+         `DescendantShapes`; LocOpe_WiresOnShape's `Add`, `Bind`, `BindAll` and its queries; the spliter's, gluer's,
+         generator's and draft splitter's `Perform`; the sweeps' construction; BRepFeat's makers' `Init`, `Add` and
+         `Perform…` (`Form.EnterWork`). `Working`, `Copied` and `Original` go (the shapes are the caller's), `IsCopied`
+         is `IsWritten`, and `Finish` takes the shapes as they are (the holder compound, the features' one direct
+         `_shapes` edit, goes). LocOpe_SplitShape's `LeftOf` after the splitting maps the wire's edges with `Final`.
+       - BRepFeat_MakeLinearForm writes the contour in a detached overlay from `Init` to the end of `Perform`;
+         BRepFeat_RibSlot's same-parameter pass on the glued result, and BRepOffsetAPI_DraftAngle's `CorrectWires`, run in
+         one each. The Booleans inside are destructive, as OCCT's on unlocked shapes (the features' were already, on the
+         copies; MakeLinearForm's basis, not copied, now is too).
+1425. **The tests stay at level 1.** Every suite keeps its counts; no test moved to level 2, and the Draw-lite groups
+       (offset and draft corpus and commands, fillets, 2D fillets, features) have the same statuses case by case. Two
+       tests changed because they tested the copy, not a result: `ChFi3dBuilderTests.TheFrozenInputIsCopiedAndLeftUnchanged`
+       is `…IsWrittenInAWorkingOverlayAndLeftUnchanged` (the data structure holds the caller's shapes), and LocOpe's
+       `WorkingShapes_CopySharedSubShapesOnce…` is `WorkingShapes_WriteInAWorkingOverlay_AndShareTheUnchangedSubShapes`.
+       New: `OffsetInputsUnchangedTests` (7: the offset shell, thick solids with both joins, OC5805's thick solid, a pipe
+       on frozen edges, the rolling ball, the simple offset), `FilletInputsUnchangedTests` (6: fillets on a box and a
+       fused part, a chamfer, two computations on one builder, the fillet surfaces, a 2D fillet) and
+       `FeatureInputsUnchangedTests` (9: four bosses, a rib, a split and a gluing, LocOpe's split over several calls with
+       no overlay left open, two drafts), each checking the inputs untouched (`ShapeSnapshot`), the result frozen and
+       valid, and the faces left alone shared; and the modelling layer's `FeatureInputsUnchangedTests` (4: fillet and
+       chamfer, offset and shell, thicken, draft on parts taken from elsewhere, BRep text for BRep text).
+1426. **Measured** (Release, serial, one machine shared with other units: the times carry its noise; before is `main` at
+       fc22dc9b, built beside, run back to back). The new `Kerf.Kernel.Benchmarks -- features` runs seven operations on
+       16 frozen parts (boxes, cylinders, a boss fused on a box and a hole cut in one, four sizes each), the fastest of
+       three runs each.
+       - Allocation: offset with the arc join 96.6 to 97.1 MB before, 94.1 to 94.3 after (−3%); with the intersection
+         join 104.9 to 106.1, 104.0 to 104.3; the thick solid 118.1 to 118.3, 116.6; filleting every edge 183.4 to 183.7,
+         181.7; chamfering every edge 173.4 to 173.6, 171.7; the BRepFeat boss 49.8, 48.1 to 48.2; the draft 12.0 either
+         way. Each now writes working copies of the TShapes it changes, where it copied the whole input; on parts this
+         small the copy was a few per cent of the work.
+       - Time: in two runs each, 312 and 231 ms before against 279 and 223 after for the arc offset, 67 and 102 against
+         171 and 91 for the intersection, 142 and 124 against 187 and 127 for the thick solid, 114 and 106 against 156
+         and 88 for the fillets, 125 and 83 against 104 and 87 for the chamfers: within the machine's noise.
+       - Bento's benchmark (11 examples, 7 passes, two runs each): the same results; allocation per example the same or
+         lower, most where fillets and shells run (the bottle 116.7 and 115.9 MB to 96.5 and 97.3, nesting locations 43.1
+         and 47.2 to 33.5 and 33.1, chamfer and fillet 18.1 and 15.7 to 14.7 and 14.5); median recalculation 1,885 and
+         2,428 ms before, 1,304 and 2,611 after (the machine was loaded).
+       - Tests: ModelingAlgorithms 4,785 (4,763 and the 22 new; 9 skipped), Oracle 383, the modelling layer 1,880 (4
+         new), Draw-lite's offset, draft, fillet, 2D fillet and feature classes 15 (every case's status as before).
+1427. **The survey recounted** (overlay-survey.md): copy at entry 71 → 59 sites (offsets 5 → 2, fillets 2 → 0,
+       features 7 → 0); frozen-shape checks 187 → 177 (offsets 3 → 1, fillets 7 → 4: the `Locked()` tests and the frozen
+       markers that now ask the overlay); the features' direct `_shapes` edit gone (50 → 49). Section 8 records 10H5's
+       patterns for 10H6.
+
+## Phase 10: unit 10K1, OCCT's bugs: Booleans, boxes, distances, hangs and spurious failures
+
+1428. **BOPAlgo_BOP's fuse of solids checks every shared face** (occt-issues.md, unit 6F's first row). `BuildSolid`
+       scanned the face-to-solids map with `i < aNb`, so a solid whose only face shared with another was the map's last
+       was taken as untouched and kept apart. The scan now includes the last face. The case needs a solid adding no
+       face of its own after the shared one: a ball in a hollow ball sharing its sphere, as a compound or a compsolid,
+       fused with a box (`BOPAlgo_BuildSolidTests`: OCCT kept the two apart; now one ball and the box, with the ball's
+       volume and seven faces). No recording or corpus case moved.
+1429. **Parabola and hyperbola arc boxes contain the arc** (rows 259, 263, 264). BndLib's 3D and 2D parabola,
+       BndLib's 2D hyperbola and GeomBndLib's parabolas added only the arc's ends and vertex. Each now adds the arc's
+       coordinate extrema: for a parabola x_k(U) = O_k + U²/(4F)·X_k + U·Y_k, extreme at U = −2F·Y_k/X_k (inside the
+       arc); the 2D hyperbola uses GeomBndLib's per-coordinate code, as the 3D one did. Tested against points sampled on
+       the arcs and the analytic extrema (`BndLibTurnedConicTests`; the two pinned GeomBndLib tests rewritten). The box
+       oracle's parabolic edges (`BndLibOracleTests`, three tests) move to plan 3.2's third level: the port's box, and
+       its oriented box, contain native's.
+1430. **Extrema_ExtCS reports the point on the line** (row 265). Where a line's range, clipped to the surface's box,
+       is shorter than Precision::Confusion, OCCT passed a default Extrema_POnCurv's point (the origin) as the point on
+       the curve; it is now the range's middle, the point projected. Test: a short line against a torus
+       (`Extrema_ExtCSTests`). Two oracle replays move to the third level, accepting native's origin: BRepExtrema's twin
+       scenes (a box edge at the origin, so native's origin was within 5e-8 of the right point) and Draw-lite's
+       `distmini` on MODERN_Refrigerator_1.brep, whose contact points native reported at the origin where they are at
+       (5e-8, 70, 150) and the like.
+1431. **ShapeAnalysis_Edge::CheckOverlapping returns on a zero-length edge** (row 512). The sampling step is half the
+       shorter edge's length; for a zero-length edge it was 0 and the loop never ended. A step that no longer advances
+       ends the sampling, so the edge's one point is checked once. Test with a time limit (`HangGuard`, new in the
+       ModelingAlgorithms tests): a zero-length edge on another overlaps it, one off it doesn't.
+1432. **ShapeConstruct::ConvertSurfaceToBSpline gives up after C0** (row 702). When GeomConvert_ApproxSurface threw at
+       C0, OCCT retried C0 without end; it now returns the last result (null if none). Test: a surface whose evaluation
+       always fails returns null within the time limit.
+1433. **A fillet's radius by a law follows the law** (rows 1552, 1763). ChFiDS_FilSpine's `SetRadius(Law, IinC)`
+       built a composite law, dropped it and cleared the radii, so `BRepFilletAPI_MakeFillet.Add(law, edge)` and
+       `SetRadius(law, IC, IinC)` threw at Build. The law's range is now mapped onto the spine's, first vertex to last,
+       and sampled at 33 evenly spaced points into the spine's (parameter, radius) pairs, which the fillet interpolates
+       as it does pairs given directly (`FilSpine.LawSamples`; IinC unused, as in OCCT). `TheEvolvingRadii` checks the
+       fillets against the volume they remove, (1 − π/4)·∫r² along the edge: a linear law within 0.01, a sine law within
+       0.5. OCCT's own linear `Add(R1, R2, E)` differs from that integral by 0.18, as before.
+1434. **MakeFilling's continuities map to the plate's orders** (row 1240). BRepFill_Filling passed the GeomAbs_Shape
+       value as the plate's order: C1 (2) gave a G2 constraint and G2 (3) threw "The continuity is not G0 G1 or G2".
+       Now C0 is order 0, G1 and C1 are 1, G2 and above are 2, for edge constraints and for point constraints on faces
+       (`Add(u, v, face, order)`, the same mistake). Test: a half cylinder's filling for G1, C1, G2 and C2, its G0 and
+       G1 errors small, C1 the same face as G1, C2 as G2, G2 a different face. The MakeFilling oracle's cases with a C1,
+       G2 or C2 constraint move to the third level (their differences counted as intended). build123d.NET's
+       `MakeSurfacePatch` already mapped its C2 level to G2, which now builds; nothing there to remove. Its test patch
+       at C2 is valid and bounded by the same edges, but bulges (area 282 against 153 at C1): an order-2 plate against
+       ruled supports, worth a look when the modelling layer's patch is reviewed (10M).
+1435. **A pipe of a vertex gives the edges it swept** (row 1307). BRepFill_Pipe kept no edge table for a vertex
+       profile, so `BRepOffsetAPI_MakePipe.Generated(spine edge, profile vertex)` dereferenced null (an access violation
+       natively). The sweep's own table of the vertex's edges is kept. Test: a vertex at a polyline spine's start sweeps
+       the spine, each generated edge joining its spine edge's ends. The pipe recordings' vertex-profile cases (native
+       threw at GEN2) move to the third level: everything before agrees and the port's GEN2 line names an edge of the
+       result for each pair.
+1436. **GeomFill_Pipe between two sections no longer fails on 3D paths** (row 1156). `Init(Path, FirstSect, LastSect)`
+       read CorrectedFrenet's `SetCurve` result as a failure, but it says whether the plain Frenet frame needs no
+       correction; the pipe gave up with ImpossibleContact on most 3D paths. The result is ignored, as the other `Init`s
+       do. Test: on a 3D B-spline path the surface's iso at the end is the iso at the start scaled by 2 about the path's
+       end (the sections' radii are 1 and 2). The sweep recordings' pipe-2sect (27 of 30; native ImpossibleContact)
+       move to the third level. The corpus case bugs/modalg_7/bug31361, whose script requires tuyau's "cannot make a
+       surface", gets Draw-lite's first override of an OCCT reference (plan 3.3; `DrawCorpus.IntendedDifferences`): the
+       pipe is built. Its sections lie in the path's plane, not across it, so the surface's approximation error is 301;
+       GeomFill_Pipe reports its error and leaves the judgement to the caller, as its other constructions do.
+1437. **ShapeCustom_SweptToElementary handles the modifier's null face and faces not swept** (rows 1389, 1390).
+       `NewCurve2d` read the surface of the null face BRepTools_Modifier passes when it asks whether to copy an edge's
+       vertices, and the swept surface of a face that has none; both now skip the pcurve's shift, which applies only to
+       a swept face becoming a torus or a sphere. It failed on most shapes with a degenerated edge (29 of the dataset's
+       small brep files). Test: OCCT's bug26359_parabola.brep, a revolved parabola, converts to a valid face of the same
+       area. ShapeProcess's recordings on DSE3.rle, DSEwithTol1.rle and cts20960b.rle (the operator failed natively)
+       move to the third level.
+1438. **The medial axis of one closed edge fails cleanly** (row 1121, guarded). MAT2d_Mat2d took the roots from the
+       empty list of the one bisector never built (a null dereference). The map now reports not done. A real medial axis
+       of a single closed curve is left (touch): the 2D offset never meets it, as it cuts a one-edge contour first, so
+       only BRepMAT2d_BisectingLocus's direct callers see it. The test that pinned the exception asserts IsDone false;
+       the four recorded full-circle cases (native crashed) move to the third level.
+1439. **A loft of periodic sections with different knots unifies them** (rows 1181, 1182). GeomFill_Profiler inserted
+       each curve's knots into the others; on periodic curves BSplCLib::PrepareInsertKnots mispredicts the pole count
+       (row 82, touch), so the port threw Standard_RangeError, or the curves kept different numbers of poles. When the
+       periodic unification throws, or leaves different numbers of knots or poles, the profile is now made of the
+       sections' non-periodic forms (closed, not periodic), which unify. The test that pinned the exception checks the
+       common degree, knots and poles and each curve against its section. Two AppSurf recordings (APPSM 12, APPSP 67:
+       native stopped at its unequal profile) move to the third level.
+1440. **CorrectedFrenet's sampling is bounded** (row 1087). InitInterval's next step, max(|S|/2, LengthMin)/|S'|
+       with S = C' ^ C'', fell very low on offset curves, so a sweep's trihedron took seconds to minutes. After 2,000
+       samples on an interval (`SampleBudget`) the step is at least the interval's length over 2,000; a turn of more
+       than 60° still halves it. A bound on the step alone (1e-3 of the default step) moved regular B-spline spines'
+       frames by up to 1.5% against native; 1e-4 left the offsets as slow. With the budget, the CorrectedFrenet oracle
+       and the sweep recordings stay bit-identical. On twelve random offsets of B-splines
+       (`Offsets_of_BSplines_set_quickly`) the six turned ones took 1.3 to 4.7 s and kept 16,709 to 32,205 samples; now
+       0.1 to 0.4 s and 6,910 to 9,782 (the test asserts fewer than 12,000, and orthonormal frames).
+1441. **Three rows reclassified to touch** (rows 1122, 1296, 1565). Each needs an algorithm's deeper rework, beyond
+       this batch, and none hangs, so no guard applies. MAT2d_Tool2d::BisecFusion would need a curve/point bisector
+       (Bisector_BisecPC) extended backwards, which trimming can't do; BRepOffsetAPI_MakeOffset's failure comes from
+       Bisector_BisecAna leaving its curve unset on some arc profiles (unit 5M's rows); Draft_Modification's 24 of 870
+       recorded failures are several null dereferences, each needing its case understood. The 2D offset reports "not
+       done" for the first two; the draft still throws a NullReferenceException. They stay listed, with this reason, for
+       the modules' rewrites.
+1442. **The tests.** ModelingData 3,145 → 3,149, ModelingAlgorithms 4,802 → 4,814 (9 skipped), the oracle 383,
+       DataExchange 276 (1 skipped), the modelling layer 1,884: all pass; the new tests are the fixes' (one or two per
+       row), and the tests rewritten to the corrected behaviour are the ones the decisions above name (the GeomBndLib
+       parabola pair, `TheEvolvingRadii`, the profiler's, GeomFill_Pipe's, the medial axis's full circle). The moved
+       recordings compare at plan 3.2's third level, each with its reason, but the CorrectedFrenet oracle and the sweep
+       recordings, which stay bit-identical. Draw-lite's groups for Booleans (every fourth case), healing, offsets and
+       drafts, fillets, filling, pipes and sweeps, construction and the medial axis were run before and after: one case
+       changed by a fix (bug31361, overridden: 1436) and one by the machine's load (bugs/modalg_7/bug83's "too slow"
+       check failed before, passed after); every other case's status is unchanged.
+
 ## Phase 10: unit 10J2, heap and collections, the rest
 
 16301. **The rewrite tool is kept** (`tools/collections-rewrite`, not in the solution): a Roslyn pass over the solution and

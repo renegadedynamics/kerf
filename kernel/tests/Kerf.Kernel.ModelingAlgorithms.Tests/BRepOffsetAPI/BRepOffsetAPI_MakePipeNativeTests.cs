@@ -196,11 +196,33 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
     public static IEnumerable<object[]> Kinds() =>
         theCases.Value.Select(c => c.Name.Split(' ')[0]).Distinct().Select(k => new object[] { k });
 
+    /// <summary>
+    /// Plan 3.2's third level, an intended difference (occt-issues.md, unit 5S1's BRepFill_Pipe::Edge row; Kerf unit
+    /// 10K1, decision 1435): native threw an access violation at Generated(spine edge, profile vertex) of a vertex
+    /// profile, where the port gives the edge the vertex swept. Everything before agrees; the port's GEN2 line holds an
+    /// edge of the result for each pair.
+    /// </summary>
+    private static bool IsVertexProfileEdge(string theExpected, string thePort)
+    {
+        const string aThrow = "THROW OSD_Exception_ACCESS_VIOLATION\n";
+        if (!theExpected.EndsWith(aThrow, StringComparison.Ordinal))
+        {
+            return false;
+        }
+        string aBefore = theExpected[..^aThrow.Length];
+        if (!thePort.StartsWith(aBefore, StringComparison.Ordinal))
+        {
+            return false;
+        }
+        string aRest = thePort[aBefore.Length..];
+        return Regex.IsMatch(aRest, "^GEN2 ([1-9][0-9]*;)+\n$");
+    }
+
     [Theory]
     [MemberData(nameof(Kinds))]
     public void Port_matches_native(string theKind)
     {
-        int aCount = 0, anIdentical = 0, aMasked = 0;
+        int aCount = 0, anIdentical = 0, aMasked = 0, anIntended = 0;
         List<string> aDiffs = [];
         foreach (Case aCase in theCases.Value.Where(c => c.Name.Split(' ')[0] == theKind))
         {
@@ -214,6 +236,10 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
             else if (MaskFree(aPort) == MaskFree(aCase.Expected))
             {
                 aMasked++;
+            }
+            else if (IsVertexProfileEdge(aCase.Expected, aPort))
+            {
+                anIntended++;
             }
             else
             {
@@ -231,7 +257,8 @@ public class BRepOffsetAPI_MakePipeNativeTests(ITestOutputHelper output)
                 aDiffs.Add(aD.ToString());
             }
         }
-        output.WriteLine($"{theKind}: {aCount} cases, {anIdentical} identical, {aMasked} equal with the Free column masked, {aDiffs.Count} different");
+        output.WriteLine($"{theKind}: {aCount} cases, {anIdentical} identical, {aMasked} equal with the Free column masked, "
+                         + $"{anIntended} with the vertex profile's edges, {aDiffs.Count} different");
         foreach (string aD in aDiffs.Take(10))
         {
             output.WriteLine(aD);

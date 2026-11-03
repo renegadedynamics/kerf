@@ -19,8 +19,8 @@ namespace Kerf.Engine.Features;
 /// shape bound to those of the basis shape are rebuilt into it.
 /// </summary>
 /// <remarks>
-/// LocOpe_Gluer copies the frozen shapes it is given and ends its working shapes in <c>Perform</c> (decision 1013):
-/// the result shares the caller's unchanged sub-shapes, and the history answers for the caller's faces.
+/// LocOpe_Gluer writes into the shapes it is given in its working overlay and ends it in <c>Perform</c> (decision 1013,
+/// unit 10H5): the result shares the caller's unchanged sub-shapes, and the history answers for the caller's faces.
 /// </remarks>
 public sealed class Gluer : MakeShape
 {

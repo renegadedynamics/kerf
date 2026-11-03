@@ -40,14 +40,13 @@ public partial class FilletBuilderBase
     //=================================================================================================
 
     /// <summary>
-    /// Initializes the builder on <paramref name="s"/> with the angular tolerance <paramref name="ta"/>; a shape
-    /// holding frozen TShapes is copied first and the maps are built on the copy (decision 1087).
+    /// Initializes the builder on <paramref name="s"/> with the angular tolerance <paramref name="ta"/>: the maps are
+    /// built on the caller's shape, which the computation writes into in a working overlay (decision 1087, unit 10H5).
     /// </summary>
     protected FilletBuilderBase(in Shape s, double ta)
     {
         _done = false;
-        _copyAtEntry = new CopyAtEntry(s);
-        _shape = _copyAtEntry.Shape();
+        _shape = s;
         _ds = new DsHDataStructure();
         _coup = Reconstruction.Create(Mkbuildtool());
         _efMap.Fill(_shape, ShapeType.Edge, ShapeType.Face);
@@ -228,7 +227,7 @@ public partial class FilletBuilderBase
                 break;
             }
         }
-        return ShapeCasts.Vertex(FromWork(v));
+        return ShapeCasts.Vertex(v);
     }
 
     //=================================================================================================
@@ -832,7 +831,7 @@ public partial class FilletBuilderBase
 
     public void Remove(in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e));
+        Edge E = ShapeCasts.Edge(e);
         NCollection_List<Stripe>.Iterator itel = new(_listStripe);
 
         for (; itel.More(); itel.Next())
@@ -883,7 +882,7 @@ public partial class FilletBuilderBase
 
     public int Contains(in Edge e)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e));
+        Edge E = ShapeCasts.Edge(e);
         int i = 1, j;
         NCollection_List<Stripe>.Iterator itel = new(_listStripe);
         for (; itel.More(); itel.Next(), i++)
@@ -908,7 +907,7 @@ public partial class FilletBuilderBase
 
     public int Contains(in Edge e, out int indexInSpine)
     {
-        Edge E = ShapeCasts.Edge(ToWork(e));
+        Edge E = ShapeCasts.Edge(e);
         int i = 1, j;
         indexInSpine = 0;
         NCollection_List<Stripe>.Iterator itel = new(_listStripe);
@@ -949,7 +948,7 @@ public partial class FilletBuilderBase
     {
         if (ic <= NbElements())
         {
-            return ShapeCasts.Vertex(FromWork(Value(ic).FirstVertex()));
+            return Value(ic).FirstVertex();
         }
         return new Vertex();
     }
@@ -960,7 +959,7 @@ public partial class FilletBuilderBase
     {
         if (ic <= NbElements())
         {
-            return ShapeCasts.Vertex(FromWork(Value(ic).LastVertex()));
+            return Value(ic).LastVertex();
         }
         return new Vertex();
     }
@@ -971,7 +970,7 @@ public partial class FilletBuilderBase
     {
         if (ic <= NbElements())
         {
-            return Value(ic).Absc(ShapeCasts.Vertex(ToWork(v)));
+            return Value(ic).Absc(ShapeCasts.Vertex(v));
         }
         return -1;
     }

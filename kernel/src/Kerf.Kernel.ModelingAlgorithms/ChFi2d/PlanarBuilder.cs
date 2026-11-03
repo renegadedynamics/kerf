@@ -53,8 +53,8 @@ public sealed partial class PlanarBuilder
     /// <summary>The face <paramref name="f"/> can be built on a closed or an open wire.</summary>
     /// <remarks>
     /// OCCT builds the 3D curves of the face's edges that have none, in place (BRepLib::BuildCurves3d). On a frozen face
-    /// with such an edge the port builds them on a copy (<see cref="BrepLibrary.Curves3dBuilt(in Shape, out bool)"/>),
-    /// which then stands for the face (decision 854).
+    /// the port builds them in a working overlay (unit 10H5), whose result then stands for the face (decision 854): the
+    /// face itself when every edge had its curve.
     /// </remarks>
     public PlanarBuilder(in Face f)
     {
@@ -70,15 +70,15 @@ public sealed partial class PlanarBuilder
         {
             _newFace = _refFace = f;
             _newFace.Orientation(Forward);
-            if (BrepTools.HoldsFrozen(_newFace) && HasEdgeWithout3dCurve(_newFace)) // OCCT.NET: frozen
-            {
-                _refFace = ShapeCasts.Face(BrepLibrary.Curves3dBuilt(f, out _));
-                _newFace = _refFace;
-                _newFace.Orientation(Forward);
-            }
-            else
+            using (WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(f))
             {
                 BrepLibrary.BuildCurves3d(_newFace);
+                if (overlay is not null)
+                {
+                    _refFace = ShapeCasts.Face(overlay.Finish(f));
+                    _newFace = _refFace;
+                    _newFace.Orientation(Forward);
+                }
             }
             _status = ConstructionError.Ready;
         }
@@ -87,19 +87,6 @@ public sealed partial class PlanarBuilder
             _status = ConstructionError.NotPlanar;
         }
     } // ChFi2d_Builder
-
-    // OCCT.NET: frozen. True if an edge of the face has no 3D curve (BuildCurves3d would write into it).
-    private static bool HasEdgeWithout3dCurve(in Face f)
-    {
-        for (var exp = new Explorer(f, ShapeType.Edge); exp.More(); exp.Next())
-        {
-            if (Tool.Curve(ShapeCasts.Edge(exp.Current()), out _, out _, out _) is null)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
 
     //=================================================================================================
 

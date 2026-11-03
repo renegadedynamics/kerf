@@ -1801,6 +1801,37 @@ Phase 10 (part): no copy at entry in construction (unit 10H3).
   was copied whole; Bento's benchmark is unchanged.
 - Seven oracle replays whose wires MakeWire builds compare at plan 3.2's second level (`Tape.AcceptOtherArguments`): the
   wires differ from the recordings' only in the Free flag of the caller's edges they now keep.
+Phase 10 (part): no copy at entry in offsets, fillets and features (unit 10H5).
+- The 3D offset and the thick solid, BRepOffset_Offset's pipes and spheres, BiTgte's rolling ball, the fillet and
+  chamfer builder (and FilletSurf's), the 2D fillet, the draft angle, BRepFeat's features and LocOpe's local operations
+  no longer copy a frozen input: they run OCCT's in-place code on the caller's shape in a working overlay, and the
+  result holds new TShapes only for what changed. Their histories answer for the caller's shapes directly.
+- Builders called over several calls (the fillet builder, LocOpe's split and wires on a shape, BRepFeat's makers) keep
+  a detached overlay, entered by each call that writes, so nothing stays open between the calls; a second computation
+  on one fillet builder starts again from the caller's shape.
+- OC5805's thick solid, whose offset surface OCCT enlarges in place, is built as before, the caller's face keeping its
+  surface. A second `BRepOffset_MakeOffset` run after `Initialize` no longer fails on the same shapes (OCCT's analysis
+  kept the last run's data).
+- The simple offset's solid and the offset's thickening mode stay on their copies until construction runs in an overlay:
+  their walls are made by BRepLib_MakeFace, which copies frozen edges itself.
+- `OffsetInputsUnchangedTests`, `FilletInputsUnchangedTests` and `FeatureInputsUnchangedTests` check the inputs
+  untouched; the benchmarks gain `features` (offsets, thick solids, fillets, chamfers, drafts and a boss on frozen
+  parts).
+Phase 10 (part): OCCT's bugs in Booleans, boxes and distances, and hangs and spurious failures (unit 10K1, batches K1
+and K2 of the triage).
+- Booleans, boxes, distances: a fuse merges solids whose only shared face OCCT never checked; the boxes of parabola
+  and hyperbola arcs contain the arc (they could miss its coordinate extrema, so Booleans and distances could skip a
+  touching pair); a distance between a short edge and a face reports the point on the edge, not the origin.
+- Hangs: healing's overlap check on a zero-length edge, the B-spline conversion of a surface whose approximation
+  always fails, and the corrected Frenet trihedron on offset curves (seconds to minutes; now well under a second) all
+  return.
+- Spurious failures: a fillet whose radius follows a law (`MakeFillet.Add(law, edge)`); MakeFilling with G2 or C2
+  constraints, and C1 now meaning G1 rather than G2; a pipe of a vertex's history; a pipe between two sections on a
+  3D path; SweptToElementary on shapes with degenerated edges (most revolved shapes); a loft through closed B-spline
+  sections with different knots. The medial axis of a single closed edge reports failure instead of crashing.
+- Left for later, with reasons (decision 1441): the 2D offset's two medial-axis failures and some multi-face drafts.
+- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows
+  fixed.
 
 Phase 10 (part): heap and collections, the rest (unit 10J2).
 - `NCollection_DataMap` is gone: the engine uses `Dictionary<TKey, TValue>`, with `DictionaryExtensions` (in

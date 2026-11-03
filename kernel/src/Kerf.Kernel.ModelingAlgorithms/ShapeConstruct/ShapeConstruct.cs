@@ -247,12 +247,13 @@ public static partial class ShapeConstruct
             }
             catch (FailureException)
             {
-                // OCCT: once the continuity is C0, a failure retries C0 without end
-                if (cnt > 0)
+                // a lower continuity is tried; a failure at C0 gives up, where OCCT retried C0 without end (decision
+                // 16505)
+                if (cnt == 0)
                 {
-                    cnt--;
+                    break;
                 }
-                continue;
+                cnt--;
             }
         }
 

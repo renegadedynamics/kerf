@@ -215,15 +215,13 @@ public class ExtCS
                         {
                             int nbExt = extPS.ExtCount;
                             double T = cPar;
-                            POnCurv pc = new();
                             POnSurf ps;
                             for (i = 1; i <= nbExt; i++)
                             {
                                 ps = extPS.Point(i);
                                 ps.Parameter(out double u, out double v);
-                                // OCCT passes the point of a default Extrema_POnCurv (the origin), not aPm, as the
-                                // point on the curve (occt-issues.md).
-                                AddSolution(c, T, u, v, pc.Value(), ps.Value(), extPS.SquareDistance(i));
+                                // the middle point, where OCCT passed the origin (decision 1430)
+                                AddSolution(c, T, u, v, pm, ps.Value(), extPS.SquareDistance(i));
                             }
                         }
                         return;

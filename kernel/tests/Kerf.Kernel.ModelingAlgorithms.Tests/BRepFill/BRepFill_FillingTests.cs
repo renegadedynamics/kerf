@@ -155,6 +155,60 @@ public class BRepFill_FillingTests
         _ = aSurf;
     }
 
+    /// <summary>
+    /// The continuity of an edge on a support face is the plate's order: G0 for C0, G1 for G1 and C1, G2 for G2 and C2.
+    /// OCCT passed the GeomAbs_Shape value as the order, so C1 gave a G2 constraint and G2 threw "The continuity is not
+    /// G0 G1 or G2" (occt-issues.md, unit 5P's BRepFill_Filling row; Kerf unit 10K1, decision 1434). Between the two
+    /// semicircles of a half cylinder, tangent to it, the filling is the cylinder: the errors are checked against it.
+    /// </summary>
+    [Theory]
+    [InlineData(Continuity.G1)]
+    [InlineData(Continuity.C1)]
+    [InlineData(Continuity.G2)]
+    [InlineData(Continuity.C2)]
+    public void Each_continuity_gives_its_order(Continuity theOrder)
+    {
+        Face aHalfCyl = new ApiMakeCylinder(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)), 5.0, 10.0, M_PI)
+            .Face();
+        var aCircles = new List<Edge>();
+        var aLines = new List<Edge>();
+        for (var anExp = new Explorer(aHalfCyl, ShapeType.Edge); anExp.More(); anExp.Next())
+        {
+            Edge anEdge = ShapeCasts.Edge(anExp.Current());
+            (new EdgeCurveAdaptor(anEdge).GetType() == CurveKind.Circle ? aCircles : aLines).Add(anEdge);
+        }
+
+        MakeFilling Fill(Continuity theContinuity)
+        {
+            var aFilling = new MakeFilling();
+            aFilling.Add(aCircles[0], aHalfCyl, theContinuity);
+            aFilling.Add(aLines[0], Continuity.C0);
+            aFilling.Add(aCircles[1], aHalfCyl, theContinuity);
+            aFilling.Add(aLines[1], Continuity.C0);
+            aFilling.Build();
+            return aFilling;
+        }
+
+        MakeFilling aFilling = Fill(theOrder);
+        Assert.True(aFilling.IsDone);
+        Assert.True(new Analyzer(aFilling.Shape()).IsValid());
+        Assert.True(aFilling.G0Error() < 1.0e-2, $"G0 {aFilling.G0Error()}");
+        Assert.True(aFilling.G1Error() < 0.05, $"G1 {aFilling.G1Error()}");
+        // C1 is G1's order and C2 is G2's: the same constraints give the same face
+        Continuity aTwin = theOrder switch
+        {
+            Continuity.C1 => Continuity.G1,
+            Continuity.C2 => Continuity.G2,
+            _ => theOrder,
+        };
+        Assert.Equal(Text(Fill(aTwin).Shape()), Text(aFilling.Shape()));
+        // and G2 is an order of its own
+        if (theOrder is Continuity.G2 or Continuity.C2)
+        {
+            Assert.NotEqual(Text(Fill(Continuity.G1).Shape()), Text(aFilling.Shape()));
+        }
+    }
+
     [Fact]
     public void An_empty_filling_is_not_done()
     {

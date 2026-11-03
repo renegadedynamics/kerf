@@ -253,7 +253,7 @@ public class SurfaceFilling
     {
         FaceSurfaceAdaptor hSurf = new FaceSurfaceAdaptor();
         hSurf.Initialize(support);
-        PointConstraint pc = new PointConstraint(u, v, Tool.Surface(hSurf.Face())!, (int)order,
+        PointConstraint pc = new PointConstraint(u, v, Tool.Surface(hSurf.Face())!, PlateOrder(order),
                                                                       _tol3d, _tolAng, _tolCurv);
         _points.Append(pc);
         return (_boundary.Length() + _freeConstraints.Length() + _constraints.Length() + _points.Length());
@@ -287,6 +287,15 @@ public class SurfaceFilling
         return edge;
     }
 
+    // The plate's order of a continuity: 0 for C0, 1 for G1 and C1, 2 for G2 and above. OCCT passed the enum's value,
+    // so C1 (2) gave a G2 constraint and G2 (3) threw (decision 1434).
+    private static int PlateOrder(Continuity order) => order switch
+    {
+        C0 => 0,
+        G1 or C1 => 1,
+        _ => 2,
+    };
+
     private void AddConstraints(NCollection_Sequence<EdgeFaceAndOrder> seqOfConstraints)
     {
         Edge curEdge;
@@ -308,7 +317,7 @@ public class SurfaceFilling
                     EdgeCurveAdaptor HCurve = new EdgeCurveAdaptor();
                     HCurve.Initialize(curEdge);
                     CurveAdaptorBase hCurve = HCurve; // to avoid ambiguity
-                    constr = new FillingCurveConstraint(hCurve, (int)curOrder, _nbPtsOnCur, _tol3d);
+                    constr = new FillingCurveConstraint(hCurve, PlateOrder(curOrder), _nbPtsOnCur, _tol3d);
                 }
                 else
                 { // Pas de representation Topologique
@@ -330,7 +339,7 @@ public class SurfaceFilling
                     CurveOnSurface curvOnSurf = new CurveOnSurface(curve2d, surf);
                     CurveOnSurface hCurvOnSurf = curvOnSurf;
 
-                    constr = new CurveConstraint(hCurvOnSurf, (int)curOrder, _nbPtsOnCur, _tol3d, _tolAng,
+                    constr = new CurveConstraint(hCurvOnSurf, PlateOrder(curOrder), _nbPtsOnCur, _tol3d, _tolAng,
                                                            _tolCurv);
                 }
             }
@@ -346,7 +355,7 @@ public class SurfaceFilling
                 CurveOnSurface curvOnSurf = new CurveOnSurface(curve2d, surf);
                 CurveOnSurface hCurvOnSurf = curvOnSurf;
 
-                constr = new FillingCurveConstraint(hCurvOnSurf, (int)curOrder, _nbPtsOnCur, _tol3d, _tolAng,
+                constr = new FillingCurveConstraint(hCurvOnSurf, PlateOrder(curOrder), _nbPtsOnCur, _tol3d, _tolAng,
                                                       _tolCurv);
             }
             if (_isInitFaceGiven)

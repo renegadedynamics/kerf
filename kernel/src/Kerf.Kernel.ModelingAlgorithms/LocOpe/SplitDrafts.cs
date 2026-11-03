@@ -31,9 +31,9 @@ namespace Kerf.Engine.Features.Local;
 /// <remarks>
 /// <para>
 /// As in OCCT, the splitting and the rebuilding write into the shape and the wire (vertex point representations,
-/// pcurves, continuities, wires added to the faces it reuses). So the shape, the face and the wire are worked on as
-/// copies when frozen, sharing their copies (decision 1013), and the caller's sub-shapes left unchanged come back in
-/// the result. <see cref="Shape"/> and <see cref="ShapesFromShape"/> freeze what they hand out.
+/// pcurves, continuities, wires added to the faces it reuses). So they are written in a working overlay (decision
+/// 1013, unit 10H5: <see cref="WorkingShapes"/>), and the result holds new TShapes only for the caller's sub-shapes
+/// that changed. <see cref="Shape"/> and <see cref="ShapesFromShape"/> freeze what they hand out.
 /// </para>
 /// <para>
 /// OCCT writes its failures to std::cout ("LocOpe_SplitDrafts:!Fins ...", "fin newplane return standard_false",
@@ -111,11 +111,12 @@ public sealed class SplitDrafts
             throw new ConstructionErrorException();
         }
 
-        // OCCT.NET: the shape, the face and the wire as worked on (their copies if frozen, decision 1013)
+        // Kerf: the shape, the face and the wire are written in the working overlay (decision 1013, unit 10H5)
         _work = new WorkingShapes();
-        Shape shape = _work.Working(_shape);
-        Face aF = ShapeCasts.Face(_work.Working(F));
-        Wire aW = ShapeCasts.Wire(_work.Working(w));
+        using WorkingOverlay.Scope scope = _work.Enter();
+        Shape shape = _shape;
+        Face aF = F;
+        Wire aW = w;
 
         Orientation oriF = Forward;
 
@@ -1260,8 +1261,8 @@ public sealed class SplitDrafts
         BuildShape bs = new(thefaces);
         _result = bs.InternalShape();
 
-        // OCCT.NET: the copies left unchanged come back as the caller's sub-shapes
-        if (_work.IsCopied)
+        // Kerf: the end of the working overlay: new TShapes for the caller's sub-shapes changed (unit 10H5)
+        if (_work.IsWritten)
         {
             var shapes = new List<Shape> { _result };
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _map)
@@ -1299,14 +1300,14 @@ public sealed class SplitDrafts
     /// <summary>The descendants of <paramref name="s"/>, a face of the shape or an edge of the wire (frozen).</summary>
     public NCollection_List<Shape> ShapesFromShape(in Shape s) => WorkingShapes.Published(InternalShapesFromShape(s));
 
-    /// <summary><see cref="ShapesFromShape"/> without freezing, for ported code (of the caller's shape or its working copy).</summary>
+    /// <summary><see cref="ShapesFromShape"/> without freezing, for ported code.</summary>
     internal NCollection_List<Shape> InternalShapesFromShape(in Shape s)
     {
         if (_result.IsNull)
         {
             throw new NotDoneException();
         }
-        return _map.GetValue(_work.Copied(s));
+        return _map.GetValue(s);
     }
 
     private static bool NewPlane(in Face f, in Direction3D extr, in Plane3D neutr, double ang, out Plane3D newpl, out Axis3D normalF,

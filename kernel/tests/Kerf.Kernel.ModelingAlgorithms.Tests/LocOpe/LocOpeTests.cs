@@ -169,23 +169,42 @@ public class LocOpeTests
     }
 
     [Fact]
-    public void WorkingShapes_CopySharedSubShapesOnce_AndGiveBackTheUnchangedOnes()
+    public void WorkingShapes_WriteInAWorkingOverlay_AndShareTheUnchangedSubShapes()
     {
         Shape aBox = Box();
         Face aTop = TopFace(aBox);
+        Vertex aV = Exploration.FirstVertex(ShapeCasts.Edge(new Explorer(aTop, ShapeType.Edge).Current()));
+        double aTol = Tool.Tolerance(aV);
         var aWork = new global::Kerf.Engine.Features.Local.WorkingShapes();
-        Shape aCopy = aWork.Working(aBox);
-        Assert.False(aCopy.IsSame(aBox));
-        Shape aTopCopy = aWork.Working(aTop); // a face of the box: its copy within the box's
-        Assert.True(aTopCopy.IsSame(aWork.Copied(aTop)));
-        Assert.True(Shares(aCopy, aTopCopy));
-        Assert.True(aWork.Original(aTopCopy).IsSame(aTop));
-        Shape anOther = aWork.Working(MidEdge()); // another frozen shape: copied too
-        Assert.True(aWork.IsCopied);
-        aWork.Finish([aCopy, anOther]);
-        // nothing was written: everything comes back
-        Assert.True(aWork.Final(aCopy).IsSame(aBox));
-        Assert.True(aWork.Final(aTopCopy).IsSame(aTop));
+        using (aWork.Enter())
+        {
+            new BrepBuilder().UpdateVertex(aV, 0.5); // the caller's frozen vertex, written in the overlay
+            Assert.Equal(0.5, Tool.Tolerance(aV));
+        }
+        Assert.Equal(aTol, Tool.Tolerance(aV)); // outside, the caller's vertex is unchanged
+        Assert.True(aWork.IsWritten);
+        aWork.Finish([aBox]);
+        Shape aResult = aWork.Final(aBox);
+        Assert.False(ReferenceEquals(aResult.TShape(), aBox.TShape()));
+        Assert.False(aWork.Final(aV).IsSame(aV));
+        Assert.Equal(0.5, Tool.Tolerance(ShapeCasts.Vertex(aWork.Final(aV))));
+        // a face away from the vertex is the caller's own in the result
+        int aShared = 0;
+        for (var anExp = new Explorer(aBox, ShapeType.Face); anExp.More(); anExp.Next())
+        {
+            aShared += Shares(aResult, anExp.Current()) ? 1 : 0;
+        }
+        Assert.Equal(3, aShared);
+
+        // nothing written: everything comes back as it was
+        var aNone = new global::Kerf.Engine.Features.Local.WorkingShapes();
+        using (aNone.Enter())
+        {
+            Assert.Equal(aTol, Tool.Tolerance(aV));
+        }
+        Assert.False(aNone.IsWritten);
+        aNone.Finish([aBox]);
+        Assert.True(ReferenceEquals(aNone.Final(aBox).TShape(), aBox.TShape()));
     }
 
     // Splits the top face of the box by a segment between the middles of two opposite edges

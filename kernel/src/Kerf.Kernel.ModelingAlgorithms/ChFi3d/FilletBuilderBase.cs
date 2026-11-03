@@ -45,17 +45,17 @@ namespace Kerf.Engine.Fillets;
 /// (<c>ChFi3d_Builder_2</c>, ...), as <see cref="Builder_0"/>'s.
 /// </para>
 /// <para>
-/// <b>The working copy</b> (decisions 1005, 1087): the constructor copies a shape holding frozen TShapes
-/// (<see cref="CopyAtEntry"/>) and builds its maps from the copy, so that the vertices whose tolerance OCCT
-/// raises (<c>ChFi3d_IndexPointInDS</c>, <c>Compute</c>'s <c>UpdateVertex</c>) and the edges the elementary spines
-/// give a 3D curve are the copy's. Edges and vertices given by the caller are mapped onto the copy at the entry of
-/// each public member, and those handed back are mapped to the caller's.
+/// <b>The working overlay</b> (decisions 1087, 1419): the builder works on the caller's shape, as OCCT's. The
+/// vertices whose tolerance OCCT raises (<c>ChFi3d_IndexPointInDS</c>, <c>Compute</c>'s <c>UpdateVertex</c>) and the
+/// edges the elementary spines give a 3D curve are written in a working overlay that <see cref="Compute"/> and
+/// <c>Simulate</c> enter (<see cref="EnterOverlay()"/>), so the caller's frozen TShapes are never written. Edges,
+/// vertices and faces given by the caller and handed back are the caller's own.
 /// </para>
 /// <para>
 /// <b>The seam</b> (decision 992): OCCT's <c>myCoup</c>, a <c>TopOpeBRepBuild_HBuilder</c>, is an
 /// <see cref="Reconstruction"/>, unit 7R's <see cref="BOPReconstruction"/> on the Boolean engine. At the
-/// end of <see cref="Compute"/> the working copy's sub-shapes left unchanged are replaced by the caller's in the result
-/// (decision 1136); <see cref="Shape"/>, <see cref="BadShape"/> and <see cref="Generated"/> freeze what they hand out.
+/// end of <see cref="Compute"/> the result holds new TShapes for the caller's sub-shapes the computation changed, the
+/// caller's own for the rest (decision 1136); <see cref="Shape"/>, <see cref="BadShape"/> and <see cref="Generated"/> freeze what they hand out.
 /// </para>
 /// </remarks>
 public abstract partial class FilletBuilderBase
@@ -94,17 +94,43 @@ public abstract partial class FilletBuilderBase
     private Shape _shapeResult = new();
     private Shape _badShape = new();
 
-    /// <summary>The copy at the entry (OCCT.NET): <c>myShape</c> is its <see cref="CopyAtEntry.Shape"/>.</summary>
-    private CopyAtEntry _copyAtEntry;
+    /// <summary>
+    /// The builder's working overlay (Kerf, unit 10H5): detached, entered by each call that may write into the shape
+    /// (<see cref="Compute"/>, <c>Simulate</c>), finished by the first <see cref="Compute"/> that gives a result. A
+    /// later call starts a new one, on the caller's shape as it was given.
+    /// </summary>
+    private WorkingOverlay? _overlay;
 
-    /// <summary>The working shape: the copy of the shape given (OCCT.NET, for tests and unit 7R).</summary>
+    /// <summary>The shape the builder works on: the caller's (OCCT.NET, for tests and unit 7R).</summary>
     internal Shape WorkingShape() => _shape;
 
-    /// <summary>The caller's sub-shape mapped onto the working copy (OCCT.NET).</summary>
-    internal Shape ToWork(in Shape s) => _copyAtEntry.Copied(s);
+    /// <summary>
+    /// Enters the builder's working overlay for a call that may write into the shape (Kerf, unit 10H5): OCCT writes
+    /// the vertex tolerances where the fillets end, and 3D curves into the spine's edges that have none. Returns the
+    /// overlay, or null when an operation's overlay that takes writes is open here: the builder then writes into that
+    /// one, as OCCT's into the shape of the operation that runs it.
+    /// </summary>
+    internal WorkingOverlay? EnterOverlay(out WorkingOverlay.Scope scope)
+    {
+        if (WorkingOverlay.Writing is not null)
+        {
+            scope = default;
+            return null;
+        }
+        if (_overlay is null || _overlay.IsFinished)
+        {
+            _overlay = WorkingOverlay.Detached(_shape);
+        }
+        scope = _overlay.Enter();
+        return _overlay;
+    }
 
-    /// <summary>A sub-shape of the working copy mapped back to the caller's (OCCT.NET).</summary>
-    internal Shape FromWork(in Shape s) => _copyAtEntry.Original(s);
+    /// <summary>Enters the builder's working overlay (see <see cref="EnterOverlay(out WorkingOverlay.Scope)"/>).</summary>
+    internal WorkingOverlay.Scope EnterOverlay()
+    {
+        EnterOverlay(out WorkingOverlay.Scope scope);
+        return scope;
+    }
 
     //=================================================================================================
     // The pure virtual members (ChFi3d_FilBuilder and ChFi3d_ChBuilder implement them)
@@ -246,6 +272,29 @@ public abstract partial class FilletBuilderBase
     //=================================================================================================
 
     public void Compute()
+    {
+        WorkingOverlay? overlay = EnterOverlay(out WorkingOverlay.Scope scope);
+        using (scope)
+        {
+            ComputeCore();
+
+            // Kerf (decisions 1119, 1136; unit 10H5): the result (or the partial result) holds new TShapes for the
+            // caller's sub-shapes the computation changed, the caller's own for the rest
+            if (overlay is not null)
+            {
+                if (_done && !_shapeResult.IsNull)
+                {
+                    _shapeResult = overlay.Finish(_shapeResult);
+                }
+                else if (_hasresult && !_badShape.IsNull)
+                {
+                    _badShape = overlay.Finish(_badShape);
+                }
+            }
+        }
+    }
+
+    private void ComputeCore()
     {
 
         UpdateTolesp();
@@ -601,20 +650,6 @@ public abstract partial class FilletBuilderBase
                 }
             }
         }
-
-        // OCCT.NET (decisions 1119, 1136): the working copy's sub-shapes the computation left unchanged become the
-        // caller's in the result (or the partial result); a second Compute after a Reset keeps the copy's.
-        if (!_copyAtEntry.IsFinished)
-        {
-            if (_done && !_shapeResult.IsNull)
-            {
-                _shapeResult = _copyAtEntry.Finish(_shapeResult);
-            }
-            else if (_hasresult && !_badShape.IsNull)
-            {
-                _badShape = _copyAtEntry.Finish(_badShape);
-            }
-        }
     }
 
     //=======================================================================
@@ -874,7 +909,7 @@ public abstract partial class FilletBuilderBase
         {
             return _generated;
         }
-        Shape work = ToWork(eouV); // the working copy's shape (OCCT.NET)
+        Shape work = eouV;
         if (_eviMap.ContainsKey(work))
         {
             NCollection_List<int> l = _eviMap.GetValue(work);

@@ -12,6 +12,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -67,13 +68,14 @@ public sealed class MakePrism : Form
     public void Init(in Shape sbase, in Shape pbase, in Face skface, in Direction3D direc, int mode,
                      bool modify)
     {
-        // OCCT.NET: the working copies of frozen inputs (decision 1052)
+        // Kerf: the working overlay the feature writes into its inputs in (decision 1052, unit 10H5)
         StartWorkingShapes();
-        _skface = Working(skface);
+        using WorkingOverlay.Scope scope = EnterWork();
+        _skface = skface;
         SketchFaceValid();
-        _sbase = Working(sbase);
+        _sbase = sbase;
         BasisShapeValid();
-        _pbase = Working(pbase);
+        _pbase = pbase;
         _slface.Clear();
         _dir = direc;
         if (mode == 0)
@@ -114,10 +116,11 @@ public sealed class MakePrism : Form
     /// <exception cref="ConstructionErrorException">F isn't a face of the basis shape, or E an edge of the profile.</exception>
     public void Add(in Edge e, in Face f)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         Explorer exp = new();
         for (exp.Init(_sbase, ShapeType.Face); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(Working(f)))
+            if (exp.Current().IsSame(f))
             {
                 break;
             }
@@ -129,7 +132,7 @@ public sealed class MakePrism : Form
 
         for (exp.Init(_pbase, ShapeType.Edge); exp.More(); exp.Next())
         {
-            if (exp.Current().IsSame(Working(e)))
+            if (exp.Current().IsSame(e))
             {
                 break;
             }
@@ -161,6 +164,7 @@ public sealed class MakePrism : Form
     /// <summary>Builds a prism of length <paramref name="length"/>, and the topological reconstruction.</summary>
     public void Perform(double length)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         _sFrom.Nullify();
         ShapeFromValid();
         _sUntil.Nullify();
@@ -267,6 +271,7 @@ public sealed class MakePrism : Form
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void Perform(in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         if (until.IsNull)
         {
             throw new ConstructionErrorException();
@@ -281,7 +286,7 @@ public sealed class MakePrism : Form
         PerfSelectionValid();
         _sFrom.Nullify();
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trf = TransformShapeFU(1);
         ShapeUntilValid();
         Curve3D C = TestCurve(_pbase, new Vector3D(_dir));
@@ -371,6 +376,7 @@ public sealed class MakePrism : Form
     /// <exception cref="ConstructionErrorException">From or Until is null or has no face.</exception>
     public void Perform(in Shape From, in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         if (From.IsNull || until.IsNull)
         {
             throw new ConstructionErrorException();
@@ -378,7 +384,7 @@ public sealed class MakePrism : Form
 
         if (!_skface.IsNull)
         {
-            if (Working(From).IsSame(_skface))
+            if (From.IsSame(_skface))
             {
                 _justGluer = true;
                 Perform(until);
@@ -387,7 +393,7 @@ public sealed class MakePrism : Form
                     return;
                 }
             }
-            else if (Working(until).IsSame(_skface))
+            else if (until.IsSame(_skface))
             {
                 _justGluer = true;
                 Perform(From);
@@ -412,10 +418,10 @@ public sealed class MakePrism : Form
         {
             throw new ConstructionErrorException();
         }
-        _sFrom = Working(From);
+        _sFrom = From;
         bool trff = TransformShapeFU(0);
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trfu = TransformShapeFU(1);
         ShapeUntilValid();
         if (trfu != trff)
@@ -581,6 +587,7 @@ public sealed class MakePrism : Form
     /// <summary>Builds a prism up to the end of the basis shape.</summary>
     public void PerformUntilEnd()
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         _perfSelection = PerfSelection.SelectionSh;
         PerfSelectionValid();
         _gluedF.Clear();
@@ -622,11 +629,12 @@ public sealed class MakePrism : Form
     /// <exception cref="ConstructionErrorException">Until is null or has no face.</exception>
     public void PerformFromEnd(in Shape until)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         if (until.IsNull)
         {
             throw new ConstructionErrorException();
         }
-        if (!_skface.IsNull && Working(until).IsSame(_skface))
+        if (!_skface.IsNull && until.IsSame(_skface))
         {
             _dir = _dir.Reversed();
             PerformUntilEnd();
@@ -642,7 +650,7 @@ public sealed class MakePrism : Form
         PerfSelectionValid();
         _sFrom.Nullify();
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trf = TransformShapeFU(1);
         ShapeUntilValid();
         Curve3D C = TestCurve(_pbase, new Vector3D(_dir));
@@ -759,6 +767,7 @@ public sealed class MakePrism : Form
     /// <summary>Builds a prism through all the basis shape.</summary>
     public void PerformThruAll()
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         _sUntil.Nullify();
         ShapeUntilValid();
         _sFrom.Nullify();
@@ -807,6 +816,7 @@ public sealed class MakePrism : Form
     /// <exception cref="ConstructionErrorException">Until has no face (a null Until included, see below).</exception>
     public void PerformUntilHeight(in Shape until, double length)
     {
+        using WorkingOverlay.Scope scope = EnterWork(); // Kerf: the working overlay (unit 10H5)
         // OCCT: neither of the two first calls returns: a null Until goes on and throws below, a zero length goes on
         // and builds the prism again with the length 0
         if (until.IsNull)
@@ -827,7 +837,7 @@ public sealed class MakePrism : Form
         PerfSelectionValid();
         _sFrom.Nullify();
         ShapeFromValid();
-        _sUntil = Working(until);
+        _sUntil = until;
         bool trf = TransformShapeFU(1);
         ShapeUntilValid();
         Curve3D C = TestCurve(_pbase, new Vector3D(_dir));

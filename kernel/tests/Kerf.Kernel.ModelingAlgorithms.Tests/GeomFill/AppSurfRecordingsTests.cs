@@ -19,7 +19,7 @@ public class AppSurfRecordingsTests(ITestOutputHelper output)
     {
         List<AppSurfRecordings.Case> aCases = AppSurfRecordings.Cases.Where(c => c.Kind == theKind).ToList();
         Assert.NotEmpty(aCases);
-        int aTokens = 0, aBad = 0, aDone = 0, anAttributed = 0;
+        int aTokens = 0, aBad = 0, aDone = 0, anAttributed = 0, anIntended = 0;
         foreach (AppSurfRecordings.Case aCase in aCases)
         {
             List<string> aPort = AppSurfRecordings.Run(aCase);
@@ -33,6 +33,11 @@ public class AppSurfRecordingsTests(ITestOutputHelper output)
             if (!aSame && IsTwoPointSmoothing(aCase, aPort))
             {
                 anAttributed++;
+                continue;
+            }
+            if (!aSame && IsPeriodicProfileUnified(aCase, aPort))
+            {
+                anIntended++;
                 continue;
             }
             if (!aSame)
@@ -52,8 +57,43 @@ public class AppSurfRecordingsTests(ITestOutputHelper output)
             }
         }
         output.WriteLine($"{theKind}: {aCases.Count} cases ({aDone} with a surface), {aTokens} tokens, {aBad} cases differ, "
-                         + $"{anAttributed} attributed");
+                         + $"{anAttributed} attributed, {anIntended} intended differences");
         Assert.Equal(0, aBad);
+    }
+
+    // Plan 3.2's third level (occt-issues.md, unit 5L2's GeomFill_Profiler rows; Kerf unit 10K1, decision 1439):
+    // periodic sections whose knots OCCT's profiler couldn't unify. Native kept a periodic profile whose curves have
+    // different numbers of poles, and appsurfrec stopped there; the port's profile is of the sections' non-periodic
+    // forms, every curve with the profile's numbers of poles and knots, and the case goes on.
+    private static bool IsPeriodicProfileUnified(AppSurfRecordings.Case theCase, List<string> thePort)
+    {
+        int n = theCase.Native.Length;
+        if (n < 3 || thePort.Count < 3 || !theCase.Native[n - 3].StartsWith("prof:", StringComparison.Ordinal)
+            || !theCase.Native[n - 3].EndsWith(",1", StringComparison.Ordinal) || !theCase.Native[n - 1].StartsWith("pn:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+        for (int i = 0; i < n - 3; i++)
+        {
+            if (thePort[i] != theCase.Native[i])
+            {
+                return false;
+            }
+        }
+        string[] aProf = thePort[n - 3]["prof:".Length..].Split(',');
+        if (aProf.Length != 4 || aProf[3] != "0" || !thePort[n - 1].StartsWith("pn:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+        string[] aCounts = thePort[n - 1]["pn:".Length..].Split(',');
+        for (int i = 0; i + 1 < aCounts.Length; i += 2)
+        {
+            if (aCounts[i] != aProf[1] || aCounts[i + 1] != aProf[2])
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     // The smoothing of two sections: AppDef_Variational::InitCriterionEstimations calls EstTangent(myFirstPoint + 2)

@@ -27,8 +27,8 @@ namespace Kerf.Engine.Offsets.Api;
 /// <para>
 /// A maker (decision 414): <see cref="MakeShape.Shape"/>, <see cref="MakeShape.Generated"/>
 /// and <see cref="MakeShape.Modified"/> hand out frozen shapes. The caller's shape is never written:
-/// both algorithms copy it at the entry where they would write into it (decision 1005), and the history answers for
-/// the caller's sub-shapes. As in OCCT, a run reported done may give a null shape.
+/// both algorithms run on it in a working overlay where they would write into it (unit 10H5), and the history answers
+/// for the caller's sub-shapes. As in OCCT, a run reported done may give a null shape.
 /// </para>
 /// </remarks>
 public class MakeOffsetShape : MakeShape

@@ -25,9 +25,8 @@ namespace Kerf.Engine.Features.Local;
 /// <remarks>
 /// <para>
 /// As in OCCT, the splitting writes into the shape and the splitting edges (vertex tolerances and point
-/// representations, continuities). It works on the wires-on-shape's working shapes, the copies of the frozen ones
-/// (decision 1013); at the end of <see cref="Perform"/> the copies left unchanged are replaced by the caller's own
-/// sub-shapes. The shapes it hands out are frozen; ported callers (LocOpe_Gluer) read the <c>Internal</c> forms, and
+/// representations, continuities). It works in the wires-on-shape's working overlay (decision 1013, unit 10H5); at the
+/// end of <see cref="Perform"/> the result holds new TShapes only for the caller's sub-shapes that changed. The shapes it hands out are frozen; ported callers (LocOpe_Gluer) read the <c>Internal</c> forms, and
 /// end the working shapes themselves.
 /// </para>
 /// </remarks>
@@ -71,8 +70,10 @@ public sealed class Spliter
     /// </summary>
     public void Perform(WiresOnShape pw)
     {
+        // Kerf: in the working overlay of the wires on the shape, which write into it (unit 10H5)
+        using WorkingOverlay.Scope scope = pw.WorkingShapes().Enter();
         InternalPerform(pw);
-        if (!_done || _work is null || !_work.IsCopied)
+        if (!_done || _work is null || !_work.IsWritten)
         {
             return;
         }
@@ -107,9 +108,9 @@ public sealed class Spliter
         _done = false;
         _map.Clear();
         _res.Nullify();
-        // OCCT.NET: the shape as the wires-on-shape works on it (its copy if it was frozen)
+        // Kerf: the wires on the shape's working overlay (unit 10H5)
         _work = pw.WorkingShapes();
-        _shape = _work.Working(_input);
+        _shape = _input;
 
         Put(_shape, _map);
 
@@ -609,7 +610,7 @@ public sealed class Spliter
         WorkingShapes.Published(InternalDescendantShapes(f));
 
     /// <summary>
-    /// <see cref="DescendantShapes"/> without freezing, for ported code (of the caller's shape or of its working copy).
+    /// <see cref="DescendantShapes"/> without freezing, for ported code.
     /// </summary>
     internal NCollection_List<Shape> InternalDescendantShapes(in Shape f)
     {
@@ -617,7 +618,7 @@ public sealed class Spliter
         {
             throw new NotDoneException();
         }
-        Shape aF = _work is null ? f : _work.Copied(f);
+        Shape aF = f;
         if (_map.ContainsKey(aF))
         {
             return _map.GetValue(aF);

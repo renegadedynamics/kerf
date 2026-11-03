@@ -20,9 +20,9 @@ namespace Kerf.Engine.Features;
 /// faces right of them.
 /// </summary>
 /// <remarks>
-/// The splitting (LocOpe_WiresOnShape with LocOpe_Spliter) copies the frozen shapes it is given and ends its working
-/// shapes at the end of <see cref="Build"/> (decision 1013): the result shares the caller's unchanged sub-shapes, and
-/// <see cref="MakeShape.Modified"/> answers for the caller's faces and edges. A wires-on-shape serves
+/// The splitting (LocOpe_WiresOnShape with LocOpe_Spliter) writes into the shapes it is given in its working overlay
+/// and ends it at the end of <see cref="Build"/> (decision 1013, unit 10H5): the result shares the caller's unchanged
+/// sub-shapes, and <see cref="MakeShape.Modified"/> answers for the caller's faces and edges. A wires-on-shape serves
 /// one splitting: <see cref="Init"/> resets it.
 /// </remarks>
 public sealed class SplitShape : MakeShape

@@ -31,10 +31,15 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
     [Fact]
     public void EveryCase_BitIdentical()
     {
-        int aNbDiff = 0;
+        int aNbDiff = 0, aNbIntended = 0;
         foreach (MatRecordings.Case aCase in MatRecordings.Cases)
         {
             List<string> aPort = MatRecordings.Run(aCase.Input);
+            if (IsOneClosedEdge(aCase, aPort))
+            {
+                aNbIntended++;
+                continue;
+            }
             if (!aPort.SequenceEqual(aCase.Native))
             {
                 aNbDiff++;
@@ -51,8 +56,17 @@ public class BRepMAT2d_NativeTests(ITestOutputHelper theOutput)
                 }
             }
         }
-        theOutput.WriteLine($"{MatRecordings.Cases.Count} cases, {aNbDiff} different");
+        theOutput.WriteLine($"{MatRecordings.Cases.Count} cases, {aNbIntended} intended differences, {aNbDiff} different");
         Assert.Equal(0, aNbDiff);
+    }
+
+    // Plan 3.2's third level (occt-issues.md, unit 5M's MAT2d_Mat2d::CreateMat row; Kerf unit 10K1, decision 1438): a
+    // contour of one closed edge, where native crashed in Compute, is a map that isn't done.
+    private static bool IsOneClosedEdge(MatRecordings.Case theCase, List<string> thePort)
+    {
+        int i = Array.IndexOf(theCase.Native, "compute:!SEH");
+        return i >= 0 && i < thePort.Count && thePort[i] == "done:0" && theCase.Input.Contains(" 1 O ", StringComparison.Ordinal)
+               && thePort.Take(i).SequenceEqual(theCase.Native.Take(i));
     }
 
     [Fact]

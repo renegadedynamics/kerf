@@ -10,6 +10,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
@@ -26,8 +27,8 @@ namespace Kerf.Engine.Features.Local;
 /// <remarks>
 /// <para>
 /// BRepFill_Pipe sweeps the profile in place, as OCCT does, and writes into the sub-shapes the pipe shares with it: a
-/// frozen profile (or spine) is swept as a working copy, and the caller's sub-shapes left unchanged come back in the
-/// result (decisions 910, 1014). <see cref="Shapes"/> answers for the caller's edges and vertices. The shapes it hands
+/// frozen profile (or spine) is swept in a working overlay (unit 10H5), and the result holds new TShapes only for the
+/// caller's sub-shapes that changed (decisions 910, 1014). <see cref="Shapes"/> answers for the caller's edges and vertices. The shapes it hands
 /// out are frozen; ported callers (BRepFeat_MakePipe) read the <c>Internal</c> forms.
 /// </para>
 /// <para>
@@ -50,10 +51,9 @@ public sealed class LocalPipe
     {
         _spine = spine;
         _profile = profile;
-        // OCCT.NET: the pipe writes into the profile it shares (decisions 910, 1014)
-        Wire aSpine = ShapeCasts.Wire(_work.Working(spine));
-        Shape aProfile = _work.Working(profile);
-        _pipe = new Pipe(aSpine, aProfile);
+        // OCCT.NET: the pipe writes into the profile it shares (decisions 910, 1014): in the working overlay (unit 10H5)
+        using WorkingOverlay.Scope scope = _work.Enter();
+        _pipe = new Pipe(spine, profile);
 
         Shape result = _pipe.InternalShape();
 
@@ -61,7 +61,7 @@ public sealed class LocalPipe
         // et on fusionne les plans si possible
 
         IndexedMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
-        Exploration.MapShapesAndAncestors(aProfile, ShapeType.Edge, ShapeType.Face, theEFMap);
+        Exploration.MapShapesAndAncestors(profile, ShapeType.Edge, ShapeType.Face, theEFMap);
         Explorer exp = new();
         NCollection_List<Shape>.Iterator it = new();
 
@@ -79,7 +79,7 @@ public sealed class LocalPipe
             {
                 // on mappe les plans generes par cet edge (in the order they are generated: see the remarks)
                 IndexedSet<Shape> mapFac = new(ShapeHasher.Instance);
-                for (exp.Init(aSpine, ShapeType.Edge); exp.More(); exp.Next())
+                for (exp.Init(spine, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     Edge edgsp = ShapeCasts.Edge(exp.Current());
                     Face resfac = _pipe.InternalFace(edgsp, edgpr);
@@ -274,8 +274,8 @@ public sealed class LocalPipe
         BuildShape bs = new(goodfaces);
         _res = bs.InternalShape();
 
-        // OCCT.NET: the copies left unchanged come back as the caller's sub-shapes
-        if (_work.IsCopied)
+        // Kerf: the end of the working overlay: new TShapes for the caller's sub-shapes changed (unit 10H5)
+        if (_work.IsWritten)
         {
             var shapes = new List<Shape> { _res, _pipe.InternalShape(), _pipe.InternalFirstShape(), _pipe.InternalLastShape() };
             foreach (KeyValuePair<Shape, NCollection_List<Shape>> item in _map)
@@ -321,16 +321,16 @@ public sealed class LocalPipe
     /// </summary>
     public NCollection_List<Shape> Shapes(in Shape s) => WorkingShapes.Published(InternalShapes(s));
 
-    /// <summary><see cref="Shapes"/> without freezing, for ported code (of the caller's shape or its working copy).</summary>
+    /// <summary><see cref="Shapes"/> without freezing, for ported code.</summary>
     internal NCollection_List<Shape> InternalShapes(in Shape s0)
     {
-        Shape s = _work.Copied(s0);
+        Shape s = s0;
         ShapeType typS = s.ShapeType();
         if (typS != ShapeType.Edge && typS != ShapeType.Vertex)
         {
             throw new DomainErrorException();
         }
-        Explorer exp = new(_work.Copied(_profile), typS);
+        Explorer exp = new(_profile, typS);
         for (; exp.More(); exp.Next())
         {
             if (exp.Current().IsSame(s))
@@ -347,7 +347,7 @@ public sealed class LocalPipe
         if (typS == ShapeType.Vertex)
         {
             Vertex vProfile = ShapeCasts.Vertex(s);
-            for (exp.Init(_work.Copied(_spine), ShapeType.Edge); exp.More(); exp.Next())
+            for (exp.Init(_spine, ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge edsp = ShapeCasts.Edge(exp.Current());
                 Edge resed = _pipe.InternalEdge(edsp, vProfile);

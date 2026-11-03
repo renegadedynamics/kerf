@@ -13,6 +13,8 @@
 //     -- booleans-profile [filter]: the port's pave filler and builder apart;
 //   ... -- healing [filter]: STEP import with its healing, ShapeFix_Shape and UnifySameDomain on the dataset's STEP
 //     files (unit 10H4, Healing.cs);
+//   ... -- features [filter]: offsets, thick solids, fillets, chamfers, drafts and a BRepFeat boss on frozen parts
+//     (unit 10H5, Features.cs);
 //   ... -- stepfile [steprec-bench.txt]: the STEP parser (unit 8P) on the dataset's STEP files, the port's fastest of 5
 //     parses from memory, against native's from tools/steprec/build.ps1 -Bench when its file is given (StepFileBench.cs);
 //   ... -- construction [filter]: prisms, revolutions, pipes, lofts and the makers on frozen inputs (unit 10H3,
@@ -71,6 +73,11 @@ if (args.Length > 0 && args[0] == "booleans-profile")
 if (args.Length > 0 && args[0] == "healing")
 {
     Healing.Run(aFilter);
+    return 0;
+}
+if (args.Length > 0 && args[0] == "features")
+{
+    Features.Run(aFilter);
     return 0;
 }
 if (args.Length > 0 && args[0] == "stepfile")
