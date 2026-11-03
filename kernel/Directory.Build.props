@@ -13,13 +13,13 @@
     <!-- OCCT's test data (tools/get-occt-testdata.ps1), which the Draw corpus restores: CSF_TestDataPath in OCCT -->
     <OcctTestDataDir>$(RepoRoot).deps/occt-testdata/opencascade-dataset-7.9.0/</OcctTestDataDir>
     <!-- build123d.NET, in the repository's modeling folder, which the Bento benchmark builds on this kernel -->
-    <Build123dNetRoot Condition="'$(Build123dNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../modeling/'))</Build123dNetRoot>
+    <KerfModelingRoot Condition="'$(KerfModelingRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../modeling/'))</KerfModelingRoot>
   </PropertyGroup>
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->
   <PropertyGroup>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <Authors>OCCT.NET contributors</Authors>
+    <VersionPrefix>0.2.0</VersionPrefix>
+    <Authors>Kerf contributors</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <!-- LGPL 2.1 with the Open CASCADE exception, as OCCT itself; the SPDX expression isn't known to NuGet -->
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

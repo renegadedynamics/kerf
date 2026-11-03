@@ -7,7 +7,9 @@ under the tests that don't need native OCCT, merged (a line is covered if any ru
 tests, the Draw-lite tests as they run by default (the corpus classes on their samples, `OCCTNET_CORPUS_FULL` unset)
 and the modeling layer's suite on OCCT.NET; the oracle tests only with `-WithOracle`. A package is the folder under
 the assembly (OCCT's package for the kernel). Lines are the coverable lines Microsoft's code coverage counts.
-`Build123d.OcctNet` is the forwarding layer unit 10B removes.
+Measured on 3 November, before units 10B and 10E: `Build123d.Occt` and `Build123d.OcctNet`, the native runtime and the
+forwarding layer, are gone (10B), and the assemblies have been renamed since (10E: `OcctNet.*` is `Kerf.Kernel.*`,
+`Build123d` is `Kerf.Modeling`). `tools/coverage.ps1` measures under the new names when run again.
 
 Test projects merged: `Build123d.Tests`, `OcctNet.DataExchange.Tests`, `OcctNet.DrawLite.Tests`, `OcctNet.Foundation.Tests`, `OcctNet.ModelingAlgorithms.Tests`, `OcctNet.ModelingData.Tests`.
 

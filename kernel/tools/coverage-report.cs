@@ -120,7 +120,7 @@ static (string Area, string Package)? Area(string theFile)
             continue;
         }
         string[] aParts = theFile[(i + aRoot.Length)..].Split('/');
-        if (aParts[0] is "OcctNet.Analyzers" || aParts.Length < 2 || aParts[1] is "obj" or "bin")
+        if (aParts[0] is "Kerf.Analyzers" || aParts.Length < 2 || aParts[1] is "obj" or "bin")
         {
             return null;
         }

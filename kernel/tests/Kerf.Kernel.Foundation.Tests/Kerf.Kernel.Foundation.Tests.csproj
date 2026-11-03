@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kerf.Kernel.Foundation\Kerf.Kernel.Foundation.csproj" />
+    <!-- Runs on this project as on the ported code, and the analyzer's own tests compile snippets against it -->
+    <ProjectReference Include="..\..\src\Kerf.Analyzers\Kerf.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="true" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Kerf.Engine.Foundation.Standard" Static="true" />
+  </ItemGroup>
+
+</Project>

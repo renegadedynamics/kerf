@@ -2,9 +2,9 @@
 //
 // kerf-rename: renames to .NET conventions from a reviewed name map. See README.md.
 //
-//   kerf-rename draft --solution Kerf.slnx --assembly OcctNet.Foundation [--package gp ...] --seed seed.map --out draft.map
+//   kerf-rename draft --solution Kerf.slnx --assembly Kerf.Kernel.Foundation [--package gp ...] --seed seed.map --out draft.map
 //                     [--engine-namespace Kerf.Engine]
-//   kerf-rename apply --solution Kerf.slnx --assembly OcctNet.Foundation [--package gp ...] --map reviewed.map
+//   kerf-rename apply --solution Kerf.slnx --assembly Kerf.Kernel.Foundation [--package gp ...] --map reviewed.map
 //                     [--report report.txt] [--applied applied.map] [--rename-files] [--dry-run] [-p:Name=Value ...]
 
 using System.Diagnostics;

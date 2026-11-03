@@ -12,11 +12,11 @@ TOOL=kernel/tools/kerf-rename/bin/Release/net10.0/kerf-rename.dll
 PROPS='-p:OcctSourceDir=…\occt-src\ -p:OcctTestDataDir=…\opencascade-dataset-7.9.0\'
 
 # Draft the systematic part of a map, for review
-dotnet $TOOL draft --solution Kerf.slnx --assembly OcctNet.Foundation --package gp --package math \
+dotnet $TOOL draft --solution Kerf.slnx --assembly Kerf.Kernel.Foundation --package gp --package math \
     --seed seed.map --out draft.map $PROPS
 
 # Apply a reviewed map (--dry-run to see the report only)
-dotnet $TOOL apply --solution Kerf.slnx --assembly OcctNet.Foundation [--package gp …] --map reviewed.map \
+dotnet $TOOL apply --solution Kerf.slnx --assembly Kerf.Kernel.Foundation [--package gp …] --map reviewed.map \
     --report report.txt --applied applied.map --rename-files $PROPS
 ```
 

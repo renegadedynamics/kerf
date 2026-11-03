@@ -1,0 +1,71 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Kerf.Kernel.DataExchange.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kerf.Kernel.DataExchange\Kerf.Kernel.DataExchange.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Analyzers\Kerf.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <!-- tools/stepgen, run in-process to check the generated STEP entity classes (unit 8C1) -->
+    <ProjectReference Include="..\..\tools\stepgen\stepgen.csproj" />
+    <!-- OCCT's source (tools/get-occt.ps1), for its resource files and the STEP and STL files of its test data -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctSourceDir</_Parameter1>
+      <_Parameter2>$(OcctSourceDir)</_Parameter2>
+    </AssemblyAttribute>
+    <!-- OCCT's test dataset (tools/get-occt-testdata.ps1), for the corpus's STEP and STL files -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctTestDataDir</_Parameter1>
+      <_Parameter2>$(OcctTestDataDir)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Native OCCT's STL reading and writing, recorded by tools/stlrec (unit 8H1) -->
+    <EmbeddedResource Include="RWStl\Recordings\stlrec.txt.gz" LogicalName="RWStl.stlrec.txt.gz" />
+    <!-- Hand-written STL inputs (read by the tests and by tools/stlrec) -->
+    <None Include="RWStl\Inputs\*.stl" CopyToOutputDirectory="PreserveNewest" />
+    <!-- Native OCCT's STEP parser on the corpus's STEP files and on the hostile and mutated inputs of
+         tools/steprec/gen-cases.py (cases.pack.gz), recorded by tools/steprec (unit 8P) -->
+    <EmbeddedResource Include="StepFile\Recordings\steprec-corpus.txt.gz" LogicalName="StepFile.steprec-corpus.txt.gz" />
+    <EmbeddedResource Include="StepFile\Recordings\steprec-cases.txt.gz" LogicalName="StepFile.steprec-cases.txt.gz" />
+    <EmbeddedResource Include="StepFile\Recordings\cases.pack.gz" LogicalName="StepFile.cases.pack.gz" />
+    <!-- Native OCCT's recording of TKXSBase's foundation (tools/xsbaserec, unit 8A1) -->
+    <EmbeddedResource Include="Interface\Recordings\xsbaserec.txt.gz" LogicalName="Interface.xsbaserec.txt.gz" />
+    <!-- Native OCCT's StepData (tools/stepdatarec, unit 8B): the corpus read and written back, the texts of
+         StepData/text-cases.txt decoded under every code page, Resource_Unicode's code tables -->
+    <EmbeddedResource Include="StepData\Recordings\stepdatarec-corpus.txt.gz" LogicalName="StepData.stepdatarec-corpus.txt.gz" />
+    <EmbeddedResource Include="StepData\Recordings\stepdatarec-text.txt.gz" LogicalName="StepData.stepdatarec-text.txt.gz" />
+    <EmbeddedResource Include="StepData\Recordings\stepdatarec-tables.gz" LogicalName="StepData.stepdatarec-tables.gz" />
+    <EmbeddedResource Include="StepData\text-cases.txt" LogicalName="StepData.text-cases.txt" />
+    <!-- Native OCCT's StepToGeom and GeomToStep (tools/geomsteprec, unit 8D): the corpus's geometric entities
+         converted, and the constructed cases (GeomToStep/geomstep-cases.txt) and data/occ's geometry converted, written
+         and converted back, with the default factors and with inches and degrees -->
+    <EmbeddedResource Include="GeomToStep\Recordings\geomsteprec-s2g.txt.gz" LogicalName="GeomToStep.geomsteprec-s2g.txt.gz" />
+    <EmbeddedResource Include="GeomToStep\Recordings\geomsteprec-g2s.txt.gz" LogicalName="GeomToStep.geomsteprec-g2s.txt.gz" />
+    <EmbeddedResource Include="GeomToStep\geomstep-cases.txt" LogicalName="GeomToStep.cases.txt" />
+    <!-- Native OCCT's XSAlgo on data/occ's shapes (tools/xsalgorec, unit 8A2) -->
+    <EmbeddedResource Include="XSAlgo\Recordings\xsalgorec.txt.gz" LogicalName="XSAlgo.xsalgorec.txt.gz" />
+    <!-- Native OCCT's StepToTopoDS and TopoDSToStep (tools/toporec, unit 8E): the corpus's shape representation items
+         translated into BReps, and data/occ's shapes converted into STEP entities -->
+    <EmbeddedResource Include="TopoStep\Recordings\toporec-s2t.txt.gz" LogicalName="TopoStep.toporec-s2t.txt.gz" />
+    <EmbeddedResource Include="TopoStep\Recordings\toporec-t2s.txt.gz" LogicalName="TopoStep.toporec-t2s.txt.gz" />
+    <!-- Native OCCT's STEPControl_Reader and STEPControl_Writer (tools/stepctlrec, unit 8F): the corpus read (counts,
+         checks, messages) and data/occ's shapes and assemblies written in each schema and model type -->
+    <EmbeddedResource Include="STEPControl\Recordings\stepctlrec-read.txt.gz" LogicalName="STEPControl.stepctlrec-read.txt.gz" />
+    <EmbeddedResource Include="STEPControl\Recordings\stepctlrec-write.txt.gz" LogicalName="STEPControl.stepctlrec-write.txt.gz" />
+    <!-- Native OCCT's STEPCAFControl_Reader and STEPCAFControl_Writer over XCAF documents (tools/stepcafrec, unit 8G2):
+         the corpus read into documents (dumped), documents built and read written -->
+    <EmbeddedResource Include="STEPCAFControl\Recordings\stepcafrec-read.txt.gz" LogicalName="STEPCAFControl.stepcafrec-read.txt.gz" />
+    <EmbeddedResource Include="STEPCAFControl\Recordings\stepcafrec-write.txt.gz" LogicalName="STEPCAFControl.stepcafrec-write.txt.gz" />
+    <!-- Native OCCT's work session on the corpus's STEP files (tools/xscontrolrec, unit 8A3) -->
+    <EmbeddedResource Include="XSControl\Recordings\xscontrolrec.txt.gz" LogicalName="XSControl.xscontrolrec.txt.gz" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Occt" />
+    <Using Include="Kerf.Engine.Foundation.Standard" Static="true" />
+  </ItemGroup>
+
+</Project>

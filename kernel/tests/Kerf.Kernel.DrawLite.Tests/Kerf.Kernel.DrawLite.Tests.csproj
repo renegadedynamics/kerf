@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kerf.Kernel.DrawLite\Kerf.Kernel.DrawLite.csproj" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctSourceDir</_Parameter1>
+      <_Parameter2>$(OcctSourceDir)</_Parameter2>
+    </AssemblyAttribute>
+    <!-- OCCT's test dataset (tools/get-occt-testdata.ps1): CSF_TestDataPath for the corpus run -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctTestDataDir</_Parameter1>
+      <_Parameter2>$(OcctTestDataDir)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+</Project>

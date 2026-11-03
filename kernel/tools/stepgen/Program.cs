@@ -58,7 +58,7 @@ public static class Generator
         }
 
         anOcct ??= aRoot != null ? Path.Combine(aRoot, ".deps", "occt-src") : null;
-        anOut ??= aRoot != null ? Path.Combine(aRoot, "src", "OcctNet.DataExchange") : null;
+        anOut ??= aRoot != null ? Path.Combine(aRoot, "src", "Kerf.Kernel.DataExchange") : null;
         if (anOcct == null || !Directory.Exists(anOcct) || anOut == null)
         {
             theErr.WriteLine("No OCCT source: run from inside the repository after tools/get-occt.ps1, or pass --occt and --out.");

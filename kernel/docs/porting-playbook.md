@@ -11,9 +11,9 @@ The steps for porting one OCCT package, for a person or an agent. Read
    Port bodies line for line. Don't fix OCCT; mark its bugs (`// OCCT ...`) and list them in
    [occt-issues.md](occt-issues.md).
 4. **Build.** Warnings are errors. When OCCTNET0001 fires, restructure as the rules say; never suppress it.
-5. **Port the GTests** for the package to `tests/OcctNet.Foundation.Tests/<package>/` (or the matching test
+5. **Port the GTests** for the package to `tests/Kerf.Kernel.Foundation.Tests/<package>/` (or the matching test
    project), keeping test names. Run them.
-6. **Add oracle tests** for the package's non-trivial computations (`tests/OcctNet.Oracle.Tests/<package>/`). Wrap
+6. **Add oracle tests** for the package's non-trivial computations (`tests/Kerf.Kernel.Oracle.Tests/<package>/`). Wrap
    new native types in conversions in `Oracle.cs`. If build123d.NET's whitelist (`bindings/occt.txt` there) lacks
    a class you need, note it; adding it is a change to that repository.
 7. **Add Draw-lite commands** that the package makes possible, if the corpus scan lists them.

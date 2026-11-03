@@ -1,13 +1,13 @@
 # Oracle testing
 
-`tests/OcctNet.Oracle.Tests` runs the port on the inputs native OCCT was given and compares the results with native's,
+`tests/Kerf.Kernel.Oracle.Tests` runs the port on the inputs native OCCT was given and compares the results with native's,
 as recorded. Native OCCT went in unit 10B, with build123d.NET's native backend that built it: the recordings are frozen.
 
 ## Native OCCT, recorded (units 10A and 10B)
 
 Since unit 10A the tests don't need native OCCT to run (decisions 1336 to 1338). They call it through `N.`, which
 names the facade `OcctNative` (`Recorded/Native.g.cs`): the members of build123d.NET's native wrappers
-(`Build123d.Occt`) that the tests used, each a step on the running test's **tape** (`Recorded/NativeTape.cs`).
+(`Kerf.Modeling.Occt`) that the tests used, each a step on the running test's **tape** (`Recorded/NativeTape.cs`).
 
 Each call reads its results from the test's recording, embedded in the assembly (`Recordings/<test class>.tape.gz`,
 one tape per test method or theory row), after checking that the test asks the same thing: the member, and a check
@@ -23,7 +23,7 @@ with native OCCT: `HAS_ORACLE`, `Recorded/Native.Record.g.cs`) and run live (`-p
 `tools/oracle-facade.cs` generated the facade from a live build. All went with native OCCT: the facade is committed
 code now, and a test can only use the members it has, replayed as recorded.
 
-build123d.NET's own scenarios (`Build123d/`) ran build123d.NET on native OCCT when recording: what they produced (the
+build123d.NET's own scenarios (`Kerf.Modeling/`) ran build123d.NET on native OCCT when recording: what they produced (the
 calls captured, their operands' native shapes, build123d.NET's message details) is recorded as values (`Tape.Value`),
 and `Build123dConstructionOracleTests` runs the cases recorded (kind, operands as native OCCT wrote them, data). The
 scenarios themselves went in unit 10B.
@@ -72,7 +72,7 @@ angles), and say why.
   calls with which arguments (flat knots or knots with multiplicities, located span, periodic normalisation, the
   rationality flags it derives), and call the port the same way. Done that way, the B-spline packages are
   bit-identical.
-- All oracle tests are in the namespace `OcctNet.Oracle.Tests`, whatever their folder: a namespace named after an OCCT
+- All oracle tests are in the namespace `Kerf.Kernel.Oracle.Tests`, whatever their folder: a namespace named after an OCCT
   package (`...Tests.BSplCLib`, `...Tests.gp`) hides the OCCT class of the same name from every other test file.
 - Build native axes and directions from the same raw components as the port's, rather than converting the port's
   normalised `gp_Dir` with `Oracle.ToNative`: native OCCT normalises the unit direction again, which can change its
@@ -80,7 +80,7 @@ angles), and say why.
 
 ## build123d.NET's own operations (unit 6M)
 
-`tests/OcctNet.Oracle.Tests/Build123d` replays the native calls build123d.NET's own tests made (plan section 5,
+`tests/Kerf.Kernel.Oracle.Tests/Build123d` replays the native calls build123d.NET's own tests made (plan section 5,
 milestones 4 and 6). They were captured by transcribing the tests' constructions as scenarios run with build123d.NET's
 public API on native OCCT (decision 947), when recording; the scenarios went with native OCCT in unit 10B, and their
 calls are recorded:

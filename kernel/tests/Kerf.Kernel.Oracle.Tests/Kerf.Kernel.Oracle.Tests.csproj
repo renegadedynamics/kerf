@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Compares the port with native OCCT as recorded (unit 10A, decision 1336; docs/oracle-testing.md). The tests call
+    native OCCT through N, the facade OcctNative (Recorded/), which replays native's results from the recordings embedded
+    here (Recordings/*.tape.gz): no native code runs. Native OCCT went in unit 10B, so the recordings are frozen.
+  -->
+  <ItemGroup>
+    <Using Include="OcctNative" Alias="N" />
+    <Using Include="OcctNative.Tape" Alias="Tape" />
+    <!-- Native OCCT's results, one file per test class; native's log of build123d.NET's suite (decision 1338) -->
+    <EmbeddedResource Include="Recordings\*.tape.gz;Recordings\*.native.gz" LogicalName="Recordings.%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kerf.Kernel.Foundation\Kerf.Kernel.Foundation.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingData\Kerf.Kernel.ModelingData.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.ModelingAlgorithms\Kerf.Kernel.ModelingAlgorithms.csproj" />
+    <ProjectReference Include="..\..\src\Kerf.Kernel.DataExchange\Kerf.Kernel.DataExchange.csproj" />
+    <!-- Draw-lite, for the Draw commands on the data/occ files against native OCCT -->
+    <ProjectReference Include="..\Kerf.Kernel.DrawLite\Kerf.Kernel.DrawLite.csproj" />
+    <!-- OCCT's source (tools/get-occt.ps1), for the .brep files of its test data -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctSourceDir</_Parameter1>
+      <_Parameter2>$(OcctSourceDir)</_Parameter2>
+    </AssemblyAttribute>
+    <!-- OCCT's test dataset (tools/get-occt-testdata.ps1), for the BRep round trips of its .brep and .rle files -->
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>OcctTestDataDir</_Parameter1>
+      <_Parameter2>$(OcctTestDataDir)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Test stand-ins for GeomAdaptor_Curve and Geom2dAdaptor_Curve, shared with the unit tests -->
+    <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TestGeomAdaptors.cs" Link="TestGeomAdaptors.cs" />
+    <!-- The comparison and determinism harnesses of decisions 580 and 581, shared with the unit tests -->
+    <Compile Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\Harness\BRepTextComparison.cs" Link="Harness\BRepTextComparison.cs" />
+    <Compile Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\Harness\CanonicalShapeComparer.cs" Link="Harness\CanonicalShapeComparer.cs" />
+    <Compile Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\Harness\DeterminismHarness.cs" Link="Harness\DeterminismHarness.cs" />
+    <Compile Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\Harness\HistoryComparison.cs" Link="Harness\HistoryComparison.cs" />
+    <!-- The arguments of tools/pfrec's recording (decision 785), which the Boolean oracle reuses -->
+    <EmbeddedResource Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\BOPAlgo\PaveFillerRecordings.txt.gz" LogicalName="BOPAlgo.PaveFillerRecordings.txt.gz" Link="BOPAlgo\PaveFillerRecordings.txt.gz" />
+  </ItemGroup>
+
+</Project>

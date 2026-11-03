@@ -1,6 +1,6 @@
 # Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 #
-# Writes src/OcctNet.Foundation/Standard/OcctTypeNames.g.cs from docs/api/kerf.map (unit 10E): for every type and enum
+# Writes src/Kerf.Kernel.Foundation/Standard/OcctTypeNames.g.cs from docs/api/kerf.map (unit 10E): for every type and enum
 # member the map renames, its new full name and its OCCT name, so the names OCCT prints and looks up
 # (DynamicType()->Name(): message keys, STEP's type signatures, exceptions' types) and the enum values the kernel's
 # tests compare with native OCCT's recordings stay OCCT's.
@@ -52,5 +52,5 @@ public static partial class OcctTypeNames
 """;
 }}
 '''
-open('src/OcctNet.Foundation/Standard/OcctTypeNames.g.cs', 'w', encoding='utf-8', newline='\n').write(out)
+open('src/Kerf.Kernel.Foundation/Standard/OcctTypeNames.g.cs', 'w', encoding='utf-8', newline='\n').write(out)
 print(len(types), 'types,', len(members), 'members')

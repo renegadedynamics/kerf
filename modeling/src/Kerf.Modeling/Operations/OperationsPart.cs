@@ -1,0 +1,432 @@
+namespace Kerf.Modeling;
+
+public static partial class Operations
+{
+    // ---- draft ----
+
+    /// <summary>
+    /// The solid the faces were taken from, with a draft of <paramref name="angle"/> degrees applied to the faces about
+    /// <paramref name="neutralPlane"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// A face isn't a plane, cylinder or cone, or the faces aren't all taken from the same single solid.
+    /// </exception>
+    /// <exception cref="DraftAngleError">The draft can't be made.</exception>
+    public static Part Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
+    {
+        var faceList = faces.ToList();
+
+        GeomType[] validGeomTypes = [GeomType.Plane, GeomType.Cylinder, GeomType.Cone];
+        var unsupported = faceList.Where(f => !validGeomTypes.Contains(f.GeomType)).ToList();
+        if (unsupported.Count > 0)
+            throw new ArgumentException("Draft not supported on face(s) with geometry: "
+                                        + string.Join(", ", unsupported.Select(f => f.GeomType.ToString().ToUpperInvariant()).Distinct()));
+
+        // Check that all the faces are associated with the same Solid
+        var topoParents = faceList.Select(f => f.TopoParent).OfType<Shape>().Distinct().ToList();
+        if (topoParents.Count != 1)
+            throw new ArgumentException("All faces must share the same topological parent (a Solid)");
+        var parentSolids = topoParents[0].Solids();
+        if (parentSolids.Count != 1)
+            throw new ArgumentException("Topological parent must be a single Solid");
+
+        // Create the drafted solid
+        Solid newSolid;
+        try
+        {
+            newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
+        }
+        catch (DraftAngleError err)
+        {
+            throw new DraftAngleError("Draft operation failed. Use `Face` and `ProblematicShape` for more information.",
+                                      err.Face, err.ProblematicShape, err);
+        }
+
+        // Phase 5: in builder mode the drafted solid replaces the builder's part
+        return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
+    }
+
+    /// <inheritdoc cref="Draft(IEnumerable{Face}, Plane, double)"/>
+    public static Part Draft(Face face, Plane neutralPlane, double angle) => Draft([face], neutralPlane, angle);
+
+    // ---- extrude ----
+
+    /// <summary>
+    /// The faces of a face or sketch extruded: by <paramref name="amount"/> (its sign giving the direction) or, with
+    /// <paramref name="until"/>, up to <paramref name="target"/>. Each face is extruded along its normal, or along
+    /// <paramref name="dir"/>, which non-planar faces need.
+    /// </summary>
+    /// <param name="toExtrude">The face or sketch to extrude.</param>
+    /// <param name="amount">The distance to extrude; its sign controls the direction.</param>
+    /// <param name="dir">The direction to extrude in, instead of each face's normal.</param>
+    /// <param name="until">Extrude up to a face of <paramref name="target"/>, instead of by an amount.</param>
+    /// <param name="target">The object to extrude up to.</param>
+    /// <param name="both">Extrude in both directions.</param>
+    /// <param name="taper">
+    /// A taper angle in degrees: positive narrows the extrusion away from the face, negative widens it. The sides are
+    /// drafted where they are planes, cylinders or cones, which keeps sharp corners sharp, and lofted otherwise. Only
+    /// applied when extruding by an amount.
+    /// </param>
+    /// <param name="clean">Remove extraneous internal structure.</param>
+    /// <exception cref="ArgumentException">
+    /// A face is non-planar and <paramref name="dir"/> isn't given, neither an amount nor <paramref name="until"/> is given,
+    /// there is no target, or the extrusion doesn't reach the target.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">The tapered solid can't be built, as when the taper collapses the face.</exception>
+    public static Part Extrude(Shape toExtrude, double? amount = null, Vector? dir = null, Until? until = null, Shape? target = null,
+                               bool both = false, double taper = 0, bool clean = true)
+    {
+        // Phase 5: in builder mode the faces default to the pending faces (on their pending planes), the target to the
+        // builder's part, and the result is combined with mode
+        if (toExtrude is null)
+            throw new ArgumentException("A face or sketch must be provided");
+        return ExtrudeCore(toExtrude.Faces(), amount, dir, until, target, both, taper, clean);
+    }
+
+    /// <inheritdoc cref="Extrude(Shape, double?, Vector?, Until?, Shape?, bool, double, bool)"/>
+    public static Part Extrude(IEnumerable<Face> toExtrude, double? amount = null, Vector? dir = null, Until? until = null,
+                               Shape? target = null, bool both = false, double taper = 0, bool clean = true)
+    {
+        if (toExtrude is null)
+            throw new ArgumentException("A face or sketch must be provided");
+        return ExtrudeCore([.. toExtrude], amount, dir, until, target, both, taper, clean);
+    }
+
+    private static Part ExtrudeCore(IReadOnlyList<Face> faces, double? amount, Vector? dir, Until? until, Shape? target, bool both,
+                                    double taper, bool clean)
+    {
+        var facePlanes = new List<Plane>();
+        foreach (var face in faces)
+        {
+            try
+            {
+                facePlanes.Add(new Plane(face));
+            }
+            catch (ArgumentException)
+            {
+                // A non-planar face
+            }
+        }
+
+        if (dir is { } direction)
+            // Override in the provided direction
+            facePlanes = [.. faces.Select(f => new Plane(f.Center(), f.CenterLocation.XAxis.Direction, direction))];
+        if (facePlanes.Count != faces.Count)
+            throw new ArgumentException("dir must be provided when extruding non-planar faces");
+
+        var newSolids = new List<Shape>();
+        for (int i = 0; i < faces.Count; i++)
+        {
+            var (face, plane) = (faces[i], facePlanes[i]);
+            foreach (var sign in both ? new[] { 1, -1 } : [1])
+            {
+                if (amount is { } a)
+                {
+                    newSolids.Add(taper == 0
+                        ? Solid.Extrude(face, plane.ZDir * a * sign)
+                        : Solid.ExtrudeTaper(face, plane.ZDir * a * sign, taper));
+                }
+                else
+                {
+                    if (until is null)
+                        throw new ArgumentException("Either amount or until must be provided");
+                    if (target is null)
+                        throw new ArgumentException("A target object must be provided");
+                    if (target.IsEmpty)
+                        throw new ArgumentException("No target object provided");
+                    newSolids.Add(Solid.ExtrudeUntil(face, target, plane.ZDir * sign, until.Value));
+                }
+            }
+        }
+
+        if (both && newSolids.Count > 1)
+        {
+            // build123d fuses the last solid with all the others
+            var last = newSolids[^1];
+            newSolids = [last.Fuse(newSolids.Take(newSolids.Count - 1))];
+        }
+        if (clean)
+            newSolids = [.. newSolids.Select(s => s.Clean())];
+
+        return new Part(new ShapeList<Shape>(newSolids).Solids());
+    }
+
+    // ---- loft ----
+
+    /// <summary>
+    /// A solid lofted through the sections: faces, sketches and vertices, a vertex being allowed only first or last.
+    /// </summary>
+    /// <remarks>
+    /// Faces may have holes, which are lofted and cut away from the outer loft. When the faces have more than one hole, the
+    /// holes of each section are matched to those of the one before by the assignment with the smallest total distance
+    /// between wire centres. That makes the result independent of the order of the inner wires, but it is only a
+    /// geometric heuristic: holes that are close together, cross paths or move a lot may be matched wrongly. Every section
+    /// must have the same number of holes.
+    /// </remarks>
+    /// <param name="sections">The slices to loft through.</param>
+    /// <param name="ruled">Join the sections with ruled surfaces.</param>
+    /// <param name="clean">Remove extraneous internal structure.</param>
+    /// <exception cref="ArgumentException">
+    /// There are no sections, a vertex isn't first or last, or the sections have different numbers of holes.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">The loft is invalid and can't be recovered.</exception>
+    public static Part Loft(IEnumerable<Shape> sections, bool ruled = false, bool clean = true)
+    {
+        // Phase 5: in builder mode the sections default to the pending faces, and the result is combined with mode
+        var sectionList = sections?.ToList() ?? [];
+        if (sectionList.All(s => s is null))
+            throw new ArgumentException("No sections provided");
+        // An empty section is no section; a loft through nothing is nothing
+        var inputSections = sectionList.Where(s => s is { IsEmpty: false }).ToList();
+        if (inputSections.Count == 0)
+            return new Part();
+
+        // Validate Vertex placement
+        if (inputSections.Any(s => s is Vertex))
+        {
+            if (inputSections[0] is not Vertex && inputSections[^1] is not Vertex)
+                throw new ArgumentException("Vertices must be the first, last, or first and last elements");
+            if (inputSections.Skip(1).SkipLast(1).Any(s => s is Vertex))
+                throw new ArgumentException("Vertices must be the first, last, or first and last elements");
+        }
+
+        // Normalize all input into outer wires and collect the corresponding holes
+        var loftSections = new List<Shape>();
+        var faces = new List<Face>();
+        foreach (var s in inputSections)
+        {
+            if (s is Vertex)
+                loftSections.Add(s);
+            else
+                foreach (var face in s.Faces())
+                {
+                    loftSections.Add(face.OuterWire());
+                    faces.Add(face);
+                }
+        }
+
+        var holeCounts = faces.Select(f => f.InnerWires().Count).ToList();
+        if (holeCounts.Any(c => c != 0) && holeCounts.Distinct().Count() != 1)
+            throw new ArgumentException("All sections must have the same number of inner wires");
+
+        // Match holes between sections by minimizing the distance between their centers. This is needed because the
+        // order of inner_wires is not guaranteed to be consistent between faces.
+        var holeSections = new List<List<Wire>>();
+        if (holeCounts.Count > 0 && holeCounts[0] != 0)
+        {
+            holeSections = [.. faces[0].InnerWires().Select(w => new List<Wire> { w })];
+            foreach (var face in faces.Skip(1))
+            {
+                var innerWires = face.InnerWires();
+                double Distance(int j, int k) => (holeSections[j][^1].Center() - innerWires[k].Center()).Length;
+                // The first assignment (in lexicographic order) of the least total distance, as build123d's sort finds
+                int[]? best = null;
+                double bestQuality = double.PositiveInfinity;
+                foreach (var permutation in Permutations(holeSections.Count))
+                {
+                    double quality = 0;
+                    for (int j = 0; j < permutation.Length; j++)
+                        quality += Distance(j, permutation[j]);
+                    if (quality < bestQuality)
+                        (bestQuality, best) = (quality, permutation);
+                }
+                for (int j = 0; j < best!.Length; j++)
+                    holeSections[j].Add(innerWires[best[j]]);
+            }
+        }
+
+        // Perform lofts
+        Shape newSolid = Solid.MakeLoft(loftSections, ruled);
+        if (holeSections.Count > 0)
+            newSolid = newSolid.Cut(holeSections.Select(holes => (Shape)Solid.MakeLoft(holes, ruled)));
+
+        // Try to recover an invalid loft
+        if (!newSolid.IsValid)
+        {
+            try
+            {
+                var recoveryFaces = newSolid.Faces().Concat(loftSections.OfType<Wire>().Select(w => new Face(w)));
+                newSolid = new Solid(new Shell(recoveryFaces));
+                if (clean)
+                    newSolid = newSolid.Clean();
+                if (!newSolid.IsValid)
+                    throw new ArgumentException("Recovery failed");
+            }
+            catch (Exception e)
+            {
+                throw new InvalidOperationException("Failed to create valid loft", e);
+            }
+        }
+
+        if (clean)
+            newSolid = newSolid.Clean();
+
+        return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
+    }
+
+    /// <summary>The permutations of 0 … n - 1 in lexicographic order, as Python's <c>itertools.permutations</c>.</summary>
+    private static IEnumerable<int[]> Permutations(int n)
+    {
+        var current = Enumerable.Range(0, n).ToArray();
+        while (true)
+        {
+            yield return (int[])current.Clone();
+            // The next permutation in lexicographic order
+            int i = n - 2;
+            while (i >= 0 && current[i] >= current[i + 1])
+                i--;
+            if (i < 0)
+                yield break;
+            int j = n - 1;
+            while (current[j] <= current[i])
+                j--;
+            (current[i], current[j]) = (current[j], current[i]);
+            Array.Reverse(current, i + 1, n - i - 1);
+        }
+    }
+
+    // ---- project_workplane ----
+
+    /// <summary>
+    /// A workplane, for a sketch or line, with a known origin and X direction: <paramref name="distance"/> from
+    /// <paramref name="origin"/> along <paramref name="projectionDir"/>, normal to it, its origin and X direction being the
+    /// projections of <paramref name="origin"/> and <paramref name="xDir"/> onto it.
+    /// </summary>
+    /// <exception cref="ArgumentException"><paramref name="xDir"/> is perpendicular to <paramref name="projectionDir"/>.</exception>
+    public static Plane ProjectWorkplane(Vector origin, Vector xDir, Vector projectionDir, double distance)
+    {
+        // Phase 5: in builder mode this is only valid in a BuildPart
+        var x = xDir.Normalized();
+        var projection = projectionDir.Normalized();
+
+        // Create a preliminary workplane without x direction set
+        var workplaneOrigin = origin + projection * distance;
+        var workplane = new Plane(workplaneOrigin, zDir: projection);
+
+        // Project a point off the origin to find the projected x direction
+        var screen = Face.MakeRect(1e9, 1e9, workplane);
+        var xDirPointAxis = new Axis(origin + x, projection);
+        var found = screen.FindIntersectionPoints(xDirPointAxis);
+        if (found.Count == 0)
+            throw new ArgumentException("x_dir perpendicular to projection_dir");
+
+        // Set the workplane's x direction
+        return workplane.WithXDir(found[0].Point - workplaneOrigin);
+    }
+
+    /// <inheritdoc cref="ProjectWorkplane(Vector, Vector, Vector, double)"/>
+    public static Plane ProjectWorkplane(Vertex origin, Vertex xDir, Vector projectionDir, double distance) =>
+        ProjectWorkplane(origin.ToVector(), xDir.ToVector(), projectionDir, distance);
+
+    // ---- revolve ----
+
+    /// <summary>
+    /// The faces of the profiles revolved through <paramref name="revolutionArc"/> degrees about an axis (by default
+    /// Axis.Z). The axis is usually in the plane of the profile, but needn't be.
+    /// </summary>
+    /// <exception cref="ArgumentException">No profiles are given.</exception>
+    public static Part Revolve(IEnumerable<Shape> profiles, Axis? axis = null, double revolutionArc = 360.0, bool clean = true)
+    {
+        // Phase 5: in builder mode the profiles default to the pending faces, and the result is combined with mode
+        var profileList = profiles?.ToList() ?? [];
+
+        // Make sure we account for users specifying angles larger than 360 degrees, and for OCCT not assuming that a
+        // 0 degree revolve means a 360 degree revolve
+        double sign = revolutionArc >= 0 ? 1 : -1;
+        var angle = PyMath.Mod(revolutionArc, sign * 360.0);
+        angle = angle == 0 ? sign * 360.0 : angle;
+
+        if (profileList.All(s => s is null))
+            throw new ArgumentException("No profiles provided");
+        var profileFaces = new ShapeList<Shape>(profileList.OfType<Shape>()).Faces();
+
+        var revolveAxis = axis ?? Axis.Z;
+        var newSolids = profileFaces.Select(p => (Shape)Solid.Revolve(p, angle, revolveAxis)).ToList();
+        if (clean)
+            newSolids = [.. newSolids.Select(s => s.Clean())];
+
+        return new Part(newSolids);
+    }
+
+    /// <inheritdoc cref="Revolve(IEnumerable{Shape}, Axis?, double, bool)"/>
+    public static Part Revolve(Shape profile, Axis? axis = null, double revolutionArc = 360.0, bool clean = true) =>
+        Revolve([profile], axis, revolutionArc, clean);
+
+    // ---- section ----
+
+    /// <summary>
+    /// The cross sections of an object by planes (by default Plane.XZ), each moved <paramref name="height"/> along its
+    /// normal.
+    /// </summary>
+    public static Sketch Section(Shape obj, IEnumerable<Plane> sectionBy, double height = 0.0, bool clean = true)
+    {
+        // Phase 5: in builder mode the object defaults to the builder's part and the planes to its workplanes
+        if (obj is null)
+            throw new ArgumentException("No object to section");
+
+        var bbox = obj.BoundingBox(optimal: false);
+        var maxSize = new[] { bbox.Min.X, bbox.Min.Y, bbox.Min.Z, bbox.Max.X, bbox.Max.Y, bbox.Max.Z }.Max(Math.Abs) + bbox.Diagonal;
+
+        var planes = sectionBy.Select(plane =>
+            Face.MakeRect(2 * maxSize, 2 * maxSize, new Plane(plane.Origin + plane.ZDir * height, zDir: plane.ZDir)));
+
+        var newObjects = new List<Shape>();
+        foreach (var plane in planes)
+            newObjects.AddRange(obj.Intersect(plane));
+        if (clean)
+            newObjects = [.. newObjects.Select(r => r.Clean())];
+
+        return new Sketch(newObjects);
+    }
+
+    /// <inheritdoc cref="Section(Shape, IEnumerable{Plane}, double, bool)"/>
+    public static Sketch Section(Shape obj, Plane? sectionBy = null, double height = 0.0, bool clean = true) =>
+        Section(obj, [sectionBy ?? Plane.XZ], height, clean);
+
+    // ---- thicken ----
+
+    /// <summary>
+    /// Solids made from the faces of a face, sketch or shell, which may be non-planar, by thickening them along their
+    /// normals by <paramref name="amount"/> (its sign giving the direction). <paramref name="normalOverride"/> says which
+    /// way is up, flipping the normals of faces that point the other way (within 90°), so that faces with different
+    /// normals all go the same way.
+    /// </summary>
+    /// <exception cref="ArgumentException">No amount or nothing to thicken is given.</exception>
+    public static Part Thicken(Shape toThicken, double? amount = null, Vector? normalOverride = null, bool both = false, bool clean = true)
+    {
+        // Phase 5: in builder mode the faces default to the pending faces, and the result is combined with mode.
+        // Phase 7: a sheet Shell with SheetMetalParameters (and BuildSheet's pending sheets) is thickened as sheet material
+        if (amount is null)
+            throw new ArgumentException("An amount must be provided");
+        if (toThicken is null)
+            throw new ArgumentException("A face or sketch must be provided");
+        return ThickenCore(toThicken.Faces(), amount.Value, normalOverride, both, clean);
+    }
+
+    /// <inheritdoc cref="Thicken(Shape, double?, Vector?, bool, bool)"/>
+    public static Part Thicken(IEnumerable<Face> toThicken, double? amount = null, Vector? normalOverride = null, bool both = false,
+                               bool clean = true)
+    {
+        if (amount is null)
+            throw new ArgumentException("An amount must be provided");
+        if (toThicken is null)
+            throw new ArgumentException("A face or sketch must be provided");
+        return ThickenCore([.. toThicken], amount.Value, normalOverride, both, clean);
+    }
+
+    private static Part ThickenCore(IReadOnlyList<Face> faces, double amount, Vector? normalOverride, bool both, bool clean)
+    {
+        var newSolids = new List<Shape>();
+        foreach (var face in faces)
+        {
+            var faceNormal = normalOverride ?? face.NormalAt();
+            foreach (var sign in both ? new[] { 1, -1 } : [1])
+                newSolids.Add(Solid.Thicken(face, amount, faceNormal * sign));
+        }
+        if (newSolids.Count > 1)
+            newSolids = [newSolids[0].Fuse(newSolids.Skip(1))];
+        if (clean)
+            newSolids = [.. newSolids.Select(s => s.Clean())];
+        return new Part(newSolids);
+    }
+}

@@ -5,9 +5,9 @@ the shape it builds.
 Run with the reference environment (see tests/reference/README.md):
 
     PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=../build123d/src .deps/py/Scripts/python -W ignore \
-        tests/reference/topology_reference.py tests/Build123d.Tests/Reference/topology.json
+        tests/reference/topology_reference.py tests/Kerf.Modeling.Tests/Reference/topology.json
 
-Each case is named; tests/Build123d.Tests/Topology/TopologyReferenceTests.cs builds the same shape
+Each case is named; tests/Kerf.Modeling.Tests/Topology/TopologyReferenceTests.cs builds the same shape
 with the port. Keep the two lists in step.
 """
 

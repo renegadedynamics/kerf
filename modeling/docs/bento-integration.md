@@ -54,7 +54,7 @@ geometry, mostly a good tessellation API (section 3).
 - **Windows x64 first.** Bento is Windows x64 only today, so the other platforms can follow.
 
 **Should**
-- **Ship as NuGet packages to a local folder feed.** For example `Build123d` and `Build123d.Occt`, with natives under
+- **Ship as NuGet packages to a local folder feed.** For example `Build123d` and `Kerf.Modeling.Occt`, with natives under
   `runtimes/win-x64/native`. Bento's extension will reference them like any package. Follow SemVer and keep a short
   changelog.
 - **Keep the native set small.** Bento will install the extension separately because of its size, but every MB still

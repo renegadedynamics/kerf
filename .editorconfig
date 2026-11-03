@@ -121,5 +121,5 @@ dotnet_naming_rule.variables.severity = warning
 # Not yet renamed (unit 10E): IDE1006 off, folder by folder. Empty until 10E lifts the suppression in
 # kernel/Directory.Build.props; then it starts with every folder below and shrinks to nothing. For example:
 #
-# [{kernel/src/OcctNet.Foundation/{BSplCLib,BSplSLib,BVH}/**.cs,kernel/src/OcctNet.ModelingData/**.cs}]
+# [{kernel/src/Kerf.Kernel.Foundation/{BSplCLib,BSplSLib,BVH}/**.cs,kernel/src/Kerf.Kernel.ModelingData/**.cs}]
 # dotnet_diagnostic.IDE1006.severity = none
