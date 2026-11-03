@@ -303,7 +303,7 @@ public class ProjLib_CompProjectedCurveTests
     }
 
     [Fact]
-    public void Perform_IsoThenFreePart_ReusesIsoLine_OcctBug()
+    public void Perform_IsoThenFreePart_ApproximatesTheFreePart()
     {
         // A polyline above the unit square: along V = 0.5 out of the square, then back in diagonally.
         NCollection_Array1<Point3D> aPoles = new(1, 3);
@@ -328,8 +328,22 @@ public class ProjLib_CompProjectedCurveTests
         Assert.False(aProj.IsUIso(2, out _));
 
         aProj.Perform();
-        // OCCT: the iso part clears approx2d for the following parts, which get the iso line again.
-        Assert.Same(aProj.GetResult2dC(1), aProj.GetResult2dC(2));
+        // Each part gets its own pcurve: the iso line, then the free part's approximation, which maps onto the
+        // projection of the polyline's second span (OCCT gave the second part the iso line again; decision 16702).
+        Curve2D? anIso = aProj.GetResult2dC(1), aFree = aProj.GetResult2dC(2);
+        Assert.NotNull(anIso);
+        Assert.NotNull(aFree);
+        Assert.NotSame(anIso, aFree);
+        aProj.Bounds(2, out double aF, out double aL);
+        for (int i = 0; i <= 10; i++)
+        {
+            double t = aF + (aL - aF) * i / 10;
+            Point3D aP = aC.Value(t);
+            Point2D aUV = aFree.Value(t);
+            // the unit square is the plane z = 0 with (u, v) = (x, y)
+            Assert.Equal(aP.X(), aUV.X(), 1.0e-6);
+            Assert.Equal(aP.Y(), aUV.Y(), 1.0e-6);
+        }
     }
 
     [Fact]

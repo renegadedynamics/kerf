@@ -14947,3 +14947,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        the cylinder's does. Tests: helices of 1.3 to 3.5 turns on cylinders either way round, a conical spiral and two
        toroidal coils, each pcurve on the curve within the reached tolerance and its parametric span the analytic one
        (the pinned `Cylinder_HelixOfMoreThanATurn_WrongResult_OcctBug` rewritten). No recording moved.
+16702. **A free part of a projection after an isoparametric one gets its own pcurve** (unit 6A's
+       ProjLib_CompProjectedCurve::Perform row). Perform cleared its 2D approximation flag for an isoparametric part and
+       never restored it, so every later free part got the iso line again. Each part now starts from the requested
+       flags. The pinned test asserts the free part's pcurve is the polyline's projection.
