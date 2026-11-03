@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Engine.Meshing;
 using Kerf.Geometry;
 using Kerf.Topology;
@@ -23,7 +24,8 @@ namespace Kerf.Engine.Topology.Brep;
 /// The location applies to the surface, not to the triangulations, which are in the face's own coordinate system.
 /// </para>
 /// <para>
-/// The setters are internal to OCCT.NET and throw <see cref="ImmutableObjectException"/> once the face is frozen. The
+/// The setters are internal to OCCT.NET and throw <see cref="ImmutableObjectException"/> once the face is frozen, unless
+/// a working overlay is open: then they write into its working copy of the face (<see cref="WorkingOverlay"/>). The
 /// surface and the triangulations are frozen as soon as the face takes them (docs/phase3-design.md, section 4.1).
 /// OCCT marks the active triangulation with the Poly_MeshPurpose_Active bit of its purpose; the port leaves the
 /// purpose of a frozen triangulation as it is (docs/decisions.md, 3106).
@@ -47,38 +49,62 @@ public class BrepTFace : TFace
     }
 
     /// <summary>The face's surface.</summary>
-    public Surface? Surface() => _surface;
+    public Surface? Surface() => View()._surface;
 
     internal void Surface(Surface? surface)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTFace)working).Surface(surface);
+            return;
+        }
+
         CheckMutable();
         surface?.Freeze(); // OCCT.NET: attached geometry is frozen
         _surface = surface;
     }
 
     /// <summary>The location of the surface.</summary>
-    public Placement Location() => _location;
+    public Placement Location() => View()._location;
 
     internal void Location(in Placement location)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTFace)working).Location(location);
+            return;
+        }
+
         CheckMutable();
         _location = location;
     }
 
     /// <summary>The face's tolerance.</summary>
-    public double Tolerance() => _tolerance;
+    public double Tolerance() => View()._tolerance;
 
     internal void Tolerance(double tolerance)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTFace)working).Tolerance(tolerance);
+            return;
+        }
+
         CheckMutable();
         _tolerance = tolerance;
     }
 
     /// <summary>True if the boundary of the face is known to be the parametric space (UMin, UMax, VMin, VMax).</summary>
-    public bool NaturalRestriction() => _naturalRestriction;
+    public bool NaturalRestriction() => View()._naturalRestriction;
 
     internal void NaturalRestriction(bool restriction)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTFace)working).NaturalRestriction(restriction);
+            return;
+        }
+
         CheckMutable();
         _naturalRestriction = restriction;
     }
@@ -89,6 +115,11 @@ public class BrepTFace : TFace
     /// </summary>
     public Triangulation? Triangulation(MeshPurpose purpose = MeshPurpose_NONE)
     {
+        if (WorkingOverlay.TryView(this, out TShape? view))
+        {
+            return ((BrepTFace)view).Triangulation(purpose);
+        }
+
         if (purpose == MeshPurpose_NONE)
         {
             return ActiveTriangulation();
@@ -124,6 +155,12 @@ public class BrepTFace : TFace
     /// </param>
     internal void Triangulation(Triangulation? triangulation, bool toReset = true, bool toFreeze = true)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTFace)working).Triangulation(triangulation, toReset, toFreeze);
+            return;
+        }
+
         CheckMutable();
         if (toReset || triangulation is null)
         {
@@ -192,18 +229,19 @@ public class BrepTFace : TFace
     /// <summary>A new face with the same surface, location and tolerance, without triangulations and sub-shapes.</summary>
     public override TShape EmptyCopy()
     {
+        BrepTFace view = View();
         BrepTFace tf = new BrepTFace();
-        tf.Surface(_surface);
-        tf.Location(_location);
-        tf.Tolerance(_tolerance);
+        tf.Surface(view._surface);
+        tf.Location(view._location);
+        tf.Tolerance(view._tolerance);
         return tf;
     }
 
     /// <summary>The face's triangulations (internal: ported code reads the list itself).</summary>
-    internal NCollection_List<Triangulation> Triangulations() => _triangulations;
+    internal NCollection_List<Triangulation> Triangulations() => View()._triangulations;
 
     /// <summary>The face's triangulations, as a new read-only list (OCCT.NET addition).</summary>
-    public ISchematiqList<Triangulation> TriangulationList() => PackedList.Own([.. _triangulations]);
+    public ISchematiqList<Triangulation> TriangulationList() => PackedList.Own([.. View()._triangulations]);
 
     /// <summary>
     /// Sets the list of triangulations and the active one (the first if null). An empty list clears them.
@@ -212,6 +250,12 @@ public class BrepTFace : TFace
     internal void Triangulations(NCollection_List<Triangulation> triangulations,
                                  Triangulation? activeTriangulation)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTFace)working).Triangulations(triangulations, activeTriangulation);
+            return;
+        }
+
         CheckMutable();
         if (triangulations.IsEmpty())
         {
@@ -255,10 +299,13 @@ public class BrepTFace : TFace
     }
 
     /// <summary>The number of triangulations.</summary>
-    public int TriangulationCount => _triangulations.Extent();
+    public int TriangulationCount => View()._triangulations.Extent();
 
     /// <summary>The active triangulation, or null.</summary>
-    public Triangulation? ActiveTriangulation() => _activeTriangulation;
+    public Triangulation? ActiveTriangulation() => View()._activeTriangulation;
+
+    // The face whose data the current working overlay reads (WorkingOverlay): its working copy, or itself.
+    private BrepTFace View() => WorkingOverlay.TryView(this, out TShape? view) ? (BrepTFace)view : this;
 
     internal override void FreezeRepresentations()
     {

@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Occt;
 using Schematiq.Collections;
 
@@ -16,8 +17,9 @@ namespace Kerf.Engine.Topology.Brep;
 /// </summary>
 /// <remarks>
 /// The setters and the list of representations are internal to OCCT.NET and throw
-/// <see cref="ImmutableObjectException"/> once the edge is frozen. <see cref="CurveRepresentations"/> is the public,
-/// read-only view of the list.
+/// <see cref="ImmutableObjectException"/> once the edge is frozen, unless a working overlay is open: then they write
+/// into its working copy of the edge, which the getters read while it is open (<see cref="WorkingOverlay"/>, Kerf unit
+/// 10H1). <see cref="CurveRepresentations"/> is the public, read-only view of the list.
 /// </remarks>
 public class BrepTEdge : TEdge
 {
@@ -39,10 +41,16 @@ public class BrepTEdge : TEdge
     }
 
     /// <summary>The tolerance.</summary>
-    public double Tolerance() => _tolerance;
+    public double Tolerance() => View()._tolerance;
 
     internal void Tolerance(double t)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTEdge)working).Tolerance(t);
+            return;
+        }
+
         CheckMutable();
         _tolerance = t;
     }
@@ -50,6 +58,12 @@ public class BrepTEdge : TEdge
     /// <summary>Sets the tolerance to the max of <paramref name="t"/> and the current tolerance.</summary>
     internal void UpdateTolerance(double t)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTEdge)working).UpdateTolerance(t);
+            return;
+        }
+
         CheckMutable();
         if (t > _tolerance)
         {
@@ -58,10 +72,16 @@ public class BrepTEdge : TEdge
     }
 
     /// <summary>The SameParameter flag.</summary>
-    public bool SameParameter() => (_flags & ParameterMask) != 0;
+    public bool SameParameter() => (View()._flags & ParameterMask) != 0;
 
     internal void SameParameter(bool s)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTEdge)working).SameParameter(s);
+            return;
+        }
+
         CheckMutable();
         if (s)
         {
@@ -74,10 +94,16 @@ public class BrepTEdge : TEdge
     }
 
     /// <summary>The SameRange flag.</summary>
-    public bool SameRange() => (_flags & RangeMask) != 0;
+    public bool SameRange() => (View()._flags & RangeMask) != 0;
 
     internal void SameRange(bool s)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTEdge)working).SameRange(s);
+            return;
+        }
+
         CheckMutable();
         if (s)
         {
@@ -90,10 +116,16 @@ public class BrepTEdge : TEdge
     }
 
     /// <summary>The Degenerated flag.</summary>
-    public bool Degenerated() => (_flags & DegeneratedMask) != 0;
+    public bool Degenerated() => (View()._flags & DegeneratedMask) != 0;
 
     internal void Degenerated(bool s)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTEdge)working).Degenerated(s);
+            return;
+        }
+
         CheckMutable();
         if (s)
         {
@@ -106,16 +138,21 @@ public class BrepTEdge : TEdge
     }
 
     /// <summary>The curve representations (internal: ported code reads the list itself).</summary>
-    internal NCollection_List<CurveRepresentation> Curves() => _curves;
+    internal NCollection_List<CurveRepresentation> Curves() => View()._curves;
 
     internal NCollection_List<CurveRepresentation> ChangeCurves()
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            return ((BrepTEdge)working).ChangeCurves();
+        }
+
         CheckMutable();
         return _curves;
     }
 
     /// <summary>The curve representations, as a new read-only list (OCCT.NET addition).</summary>
-    public ISchematiqList<CurveRepresentation> CurveRepresentations() => PackedList.Own([.. _curves]);
+    public ISchematiqList<CurveRepresentation> CurveRepresentations() => PackedList.Own([.. View()._curves]);
 
     /// <summary>
     /// A new edge with the same tolerance, flags and curve representations (copied, sharing the geometry), without
@@ -123,11 +160,12 @@ public class BrepTEdge : TEdge
     /// </summary>
     public override TShape EmptyCopy()
     {
+        BrepTEdge view = View();
         BrepTEdge te = new BrepTEdge();
-        te.Tolerance(_tolerance);
+        te.Tolerance(view._tolerance);
         // copy the curves representations
         NCollection_List<CurveRepresentation> l = te.ChangeCurves();
-        var itr = new NCollection_List<CurveRepresentation>.Iterator(_curves);
+        var itr = new NCollection_List<CurveRepresentation>.Iterator(view._curves);
 
         while (itr.More())
         {
@@ -140,12 +178,15 @@ public class BrepTEdge : TEdge
             itr.Next();
         }
 
-        te.Degenerated(Degenerated());
+        te.Degenerated(view.Degenerated());
         te.SameParameter(SameParameter());
         te.SameRange(SameRange());
 
         return te;
     }
+
+    // The edge whose data the current working overlay reads (WorkingOverlay): its working copy, or itself.
+    private BrepTEdge View() => WorkingOverlay.TryView(this, out TShape? view) ? (BrepTEdge)view : this;
 
     internal override void FreezeRepresentations()
     {

@@ -5,6 +5,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology.Tools;
 using Kerf.Geometry;
 using Occt;
 using Schematiq.Collections;
@@ -31,10 +32,16 @@ public class BrepTVertex : TVertex
     }
 
     /// <summary>The tolerance.</summary>
-    public double Tolerance() => _tolerance;
+    public double Tolerance() => View()._tolerance;
 
     internal void Tolerance(double t)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTVertex)working).Tolerance(t);
+            return;
+        }
+
         CheckMutable();
         _tolerance = t;
     }
@@ -42,6 +49,12 @@ public class BrepTVertex : TVertex
     /// <summary>Sets the tolerance to the max of <paramref name="t"/> and the current tolerance.</summary>
     internal void UpdateTolerance(double t)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTVertex)working).UpdateTolerance(t);
+            return;
+        }
+
         CheckMutable();
         if (t > _tolerance)
         {
@@ -50,34 +63,49 @@ public class BrepTVertex : TVertex
     }
 
     /// <summary>The point, in the vertex's own coordinate system.</summary>
-    public Point3D Pnt() => _pnt;
+    public Point3D Pnt() => View()._pnt;
 
     internal void Pnt(in Point3D p)
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            ((BrepTVertex)working).Pnt(p);
+            return;
+        }
+
         CheckMutable();
         _pnt = p;
     }
 
     /// <summary>The point representations (internal: ported code reads the list itself).</summary>
-    internal NCollection_List<PointRepresentation> Points() => _points;
+    internal NCollection_List<PointRepresentation> Points() => View()._points;
 
     internal NCollection_List<PointRepresentation> ChangePoints()
     {
+        if (WorkingOverlay.TryWritable(this, out TShape? working))
+        {
+            return ((BrepTVertex)working).ChangePoints();
+        }
+
         CheckMutable();
         return _points;
     }
 
     /// <summary>The point representations, as a new read-only list (OCCT.NET addition).</summary>
-    public ISchematiqList<PointRepresentation> PointRepresentations() => PackedList.Own([.. _points]);
+    public ISchematiqList<PointRepresentation> PointRepresentations() => PackedList.Own([.. View()._points]);
 
     /// <summary>A new vertex with the same point and tolerance, without representations.</summary>
     public override TShape EmptyCopy()
     {
+        BrepTVertex view = View();
         BrepTVertex tv = new BrepTVertex();
-        tv.Pnt(_pnt);
-        tv.Tolerance(_tolerance);
+        tv.Pnt(view._pnt);
+        tv.Tolerance(view._tolerance);
         return tv;
     }
+
+    // The vertex whose data the current working overlay reads (WorkingOverlay): its working copy, or itself.
+    private BrepTVertex View() => WorkingOverlay.TryView(this, out TShape? view) ? (BrepTVertex)view : this;
 
     internal override void FreezeRepresentations()
     {
