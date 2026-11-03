@@ -97,7 +97,9 @@ internal sealed class WorkingOverlay : IDisposable
     /// <summary>
     /// Opens an overlay for an operation on <paramref name="input"/>, current on this thread (and in the tasks it
     /// starts) until disposed. <paramref name="context"/> is the operation's <see cref="ReShape"/>, if it keeps one:
-    /// <see cref="Finish"/> brings its replacements up to date.
+    /// <see cref="Finish"/> brings its replacements up to date. <paramref name="input"/> may be null for an operation on
+    /// several shapes that keeps no history over them (<see cref="History"/> is then empty, and what it hands out goes
+    /// through <see cref="Finish"/>'s <c>others</c> and <see cref="Final"/>).
     /// </summary>
     public static WorkingOverlay Begin(in Shape input, ReShape? context = null)
     {
@@ -310,7 +312,7 @@ internal sealed class WorkingOverlay : IDisposable
 
             // the input's sub-shapes as the operation found them, and what stands for each now
             var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-            Exploration.MapShapes(_input, subShapes);
+            MapInput(subShapes);
             for (int i = 1; i <= subShapes.Extent(); i++)
             {
                 Shape sub = subShapes[i];
@@ -389,7 +391,7 @@ internal sealed class WorkingOverlay : IDisposable
 
         var composed = new History();
         var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        Exploration.MapShapes(_input, subShapes);
+        MapInput(subShapes);
         for (int i = 1; i <= subShapes.Extent(); i++)
         {
             Shape sub = subShapes[i];
@@ -427,6 +429,35 @@ internal sealed class WorkingOverlay : IDisposable
         return composed;
     }
 
+    /// <summary>
+    /// After <see cref="Finish"/>: each vertex, edge, face and solid of <paramref name="shapes"/> (shapes the operation
+    /// worked with, as placed: its result's sub-shapes mapped before <see cref="Finish"/>, translated or glued copies of
+    /// the input) whose TShape was replaced, modified into what stands for it now. Merged into a history kept over those
+    /// shapes, it brings the history up to date, as <see cref="Composed"/> does for one over the input's sub-shapes.
+    /// </summary>
+    public History Images(IEnumerable<Shape> shapes)
+    {
+        CheckFinished();
+        var images = new History();
+        if (_final is null)
+        {
+            return images;
+        }
+        foreach (Shape shape in shapes)
+        {
+            if (shape.IsNull || !global::Kerf.Engine.Topology.History.IsSupportedType(shape))
+            {
+                continue;
+            }
+            Shape now = Final(shape);
+            if (!ReferenceEquals(now.TShape(), shape.TShape()))
+            {
+                images.AddModified(shape, now);
+            }
+        }
+        return images;
+    }
+
     /// <summary>Closes the overlay: its working copies are dropped, and the frozen TShapes read their own data again.</summary>
     public void Dispose()
     {
@@ -440,6 +471,15 @@ internal sealed class WorkingOverlay : IDisposable
             s_current.Value = _parent;
         }
         Interlocked.Decrement(ref s_openCount);
+    }
+
+    // The input's sub-shapes (none when the operation was opened without one).
+    private void MapInput(NCollection_IndexedMap<Shape> subShapes)
+    {
+        if (!_input.IsNull)
+        {
+            Exploration.MapShapes(_input, subShapes);
+        }
     }
 
     private void CheckFinished()

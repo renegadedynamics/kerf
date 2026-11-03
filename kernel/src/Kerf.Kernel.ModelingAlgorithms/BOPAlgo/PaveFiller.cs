@@ -32,7 +32,10 @@ namespace Kerf.Engine.Booleans;
 /// <para>
 /// <b>Non-destructive mode.</b> The filler turns non-destructive by itself when an argument is
 /// <see cref="Shape.Locked()"/> (<c>BOPAlgo_PaveFiller_10</c>), and frozen shapes are locked, so a published
-/// shape is never written (decision 577): an argument sub-shape that must change is replaced by a new one.
+/// shape is never written (decision 577): an argument sub-shape that must change is replaced by a new one. Inside an
+/// operation's working overlay a frozen shape takes writes (into its working copy), so it isn't locked there: the
+/// filler is destructive on it, as OCCT's on an unlocked shape, and the operation's result holds what stands for each
+/// sub-shape it changed.
 /// </para>
 /// <para>
 /// The allocator constructor goes; the protected typedefs are written out (<c>BOPAlgo_DataMapOfPaveBlockBndBox</c>
