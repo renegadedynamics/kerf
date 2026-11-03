@@ -25,9 +25,9 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// <para>
 /// OCCT's scanner keeps a token (with what <c>yymore</c> collected: a quoted string's pieces) in a buffer of 16,384
 /// bytes that it can't enlarge (its variable trailing context makes flex's REJECT machinery hold one state per
-/// byte), so it throws (<c>YY_FATAL_ERROR</c>: "input buffer overflow, can't enlarge buffer because scanner uses
-/// REJECT") when it has to look at a token's 16,384th byte. This scanner throws the same
-/// <see cref="FailureException"/> at the same byte (<see cref="MaxToken"/>).
+/// byte), so it fails ("input buffer overflow, can't enlarge buffer because scanner uses REJECT") on a token of
+/// 16,384 bytes or more, such as a long string. This scanner's buffer grows as a token needs (Kerf decision 16827),
+/// within <see cref="ParserReadLimits.MaxFileSize"/>.
 /// </para>
 /// <para>
 /// Reentrant: each read has its own scanner, parser and data. It reads the stream in blocks.
@@ -41,13 +41,8 @@ public sealed class Scanner
     private const int End = 2;
     private const int Text = 3;
 
-    /// <summary>
-    /// The index, from a token's start, of the first byte OCCT's scanner can't look at (YY_BUF_SIZE - 1: flex
-    /// refills the buffer with at most yy_buf_size - number_to_move - 1 bytes and fails at 0).
-    /// </summary>
-    internal const int MaxToken = 16383;
-
-    private const string Overflow = "input buffer overflow, can't enlarge buffer because scanner uses REJECT";
+    /// <summary>The bytes the buffer holds ahead of a token's start when a token starts, if the input has them.</summary>
+    private const int Lookahead = 16383;
 
     internal readonly ReadData _dataModel;
     private readonly Stream _stream;
@@ -58,7 +53,6 @@ public sealed class Scanner
     private long _read; // bytes read from the stream
     private int _pos; // where the next token starts (yy_c_buf_p)
     private int _textStart; // in Text, where the quoted string started (yymore's text)
-    private int _cap; // the current token's start + MaxToken
     private int _start = Initial; // yy_start
     private int _yylineno = 1;
 
@@ -115,14 +109,13 @@ public sealed class Scanner
         {
             int p = _pos;
             int tokStart = _start == Text ? _textStart : p;
-            if (!_eof && _len - tokStart <= MaxToken)
+            if (!_eof && _len - tokStart <= Lookahead)
             {
                 Refill(tokStart);
                 p = _pos;
                 tokStart = _start == Text ? _textStart : p;
             }
 
-            _cap = tokStart + MaxToken;
             int c = Peek(p);
             switch (_start)
             {
@@ -184,7 +177,7 @@ public sealed class Scanner
                     {
                         // 43: <End>[^\n], one byte at a time in flex: the run at once here
                         int i = p + 1;
-                        while (i < _cap && i < _len && _buf[i] != '\n')
+                        while (i < _len && _buf[i] != '\n')
                         {
                             i++;
                         }
@@ -209,11 +202,13 @@ public sealed class Scanner
                     }
                     else if (c == '\'')
                     {
-                        // 9: <Text>[']/[" "\n\r]*[\)\,], the end of the string. OCCT: the class [" "\n\r] holds
-                        // the double quote with the blank, CR and LF, and not the tab, so 'a' \t, goes on
+                        // 9: <Text>[']/[" "\n\r]*[\)\,], the end of the string: a quote followed by blanks and ) or ,.
+                        // The tab is a blank here too (OCCT's class left it out, so 'a' followed by a tab and a comma
+                        // ran on to a later quote; Kerf decision 16828). The class's double quote stays: it only
+                        // decides malformed input ('a'"" ends there, as in OCCT).
                         int j = p + 1;
                         int d;
-                        for (d = Peek(j); d == ' ' || d == '"' || d == '\n' || d == '\r'; d = Peek(++j)) { }
+                        for (d = Peek(j); d is ' ' or '\t' or '"' or '\n' or '\r'; d = Peek(++j)) { }
                         _pos = p + 1;
                         if (d == ')' || d == ',')
                         {
@@ -616,19 +611,42 @@ public sealed class Scanner
         }
     }
 
-    /// <summary>
-    /// The byte at <paramref name="i"/>, -1 at the end of the input; looking at a token's 16,384th byte throws, as
-    /// OCCT's scanner does.
-    /// </summary>
+    /// <summary>The byte at <paramref name="i"/>, -1 at the end of the input; the buffer grows as a token needs.</summary>
     private int Peek(int i)
     {
-        if (i >= _cap)
+        while (i >= _len && !_eof)
         {
-            // OCCT: flex can't grow its buffer (see the class's remarks)
-            throw new FailureException(Overflow);
+            ReadMore();
         }
 
         return i < _len ? _buf[i] : -1;
+    }
+
+    /// <summary>Reads more of the stream after the buffer's bytes, the buffer doubled when it is full.</summary>
+    private void ReadMore()
+    {
+        if (_len == _buf.Length)
+        {
+            if (_buf.Length > Array.MaxLength / 2)
+            {
+                throw new FileTooLarge();
+            }
+            Array.Resize(ref _buf, _buf.Length * 2);
+        }
+
+        int read = _stream.Read(_buf, _len, _buf.Length - _len);
+        if (read <= 0)
+        {
+            _eof = true;
+            return;
+        }
+
+        _len += read;
+        _read += read;
+        if (_read > _limits.MaxFileSize)
+        {
+            throw new FileTooLarge();
+        }
     }
 
     /// <summary>Where the case-insensitive match of <paramref name="word"/> at <paramref name="p"/> stops.</summary>
@@ -656,8 +674,7 @@ public sealed class Scanner
     private static bool IsHex(int c) => IsDigit(c) || (uint)((c | 0x20) - 'a') <= 'f' - 'a';
 
     /// <summary>
-    /// Moves the current token to the buffer's start and reads, so that the buffer holds the token's
-    /// <see cref="MaxToken"/> + 1 bytes, or the input's end.
+    /// Moves the current token to the buffer's start and reads, so that the buffer is full, or holds the input's end.
     /// </summary>
     private void Refill(int tokStart)
     {

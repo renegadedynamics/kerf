@@ -12,8 +12,8 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// </summary>
 /// <remarks>
 /// The defaults are far above any real file's (unit 8P's decision). A token (a string with its quotes, a name, a
-/// number, a run of blanks inside a comment) is limited by the scanner itself, as OCCT's is: 16,383 bytes, beyond which
-/// flex's buffer can't grow, a <see cref="FailureException"/> (OCCT's "input buffer overflow").
+/// number, a run of blanks inside a comment) is limited only by <see cref="MaxFileSize"/> (OCCT's scanner failed on one
+/// of 16,384 bytes or more: Kerf decision 16827).
 /// </remarks>
 public sealed record ParserReadLimits
 {

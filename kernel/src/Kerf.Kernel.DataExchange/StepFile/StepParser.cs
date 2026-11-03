@@ -116,8 +116,7 @@ public sealed class StepParser
     /// <summary>
     /// Parses the input: 0 when it was accepted (possibly with errors recovered, in
     /// <see cref="ReadData.GetLastError"/>), 1 when the parser gave up (an error it couldn't recover, a limit
-    /// reached, or cancellation). The scanner's <see cref="FailureException"/> (a token beyond 16,383 bytes) goes
-    /// through, as OCCT's does.
+    /// reached, or cancellation).
     /// </summary>
     public int Parse()
     {
