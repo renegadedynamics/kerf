@@ -601,7 +601,7 @@ public sealed class Generator
         // Kerf: the sections a caller holds are written into: in a working overlay (unit 10H3), unless the generator
         // runs inside an operation's own (ThruSections'), whose writes these are and which reads them back
         _overlay = null;
-        WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
         try
         {
             PerformCore();

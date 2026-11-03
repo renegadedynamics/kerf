@@ -201,7 +201,7 @@ public sealed class Evolved
     // shapes are keyed by the caller's sub-shapes directly.
     private void PrivatePerform(in Face spine, in Wire profile, in CoordinateSystem axeProf, global::Kerf.Geometry.JoinKind Join, bool solid)
     {
-        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
         PrivatePerformInPlace(spine, profile, axeProf, Join, solid);
         if (overlay is null)
         {

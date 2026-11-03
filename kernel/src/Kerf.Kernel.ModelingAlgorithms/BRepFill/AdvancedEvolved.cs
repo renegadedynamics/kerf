@@ -426,7 +426,7 @@ public sealed class AdvancedEvolved
 
         // Kerf: the algorithm writes into the caller's spine and profile in a working overlay (unit 10H3, in place of
         // decision 1047's copies)
-        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessInside(new Shape());
+        using WorkingOverlay? overlay = WorkingOverlay.BeginUnlessWriting(new Shape());
 
         GetSpineAndProfile(spine, profile);
 
