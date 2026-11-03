@@ -5,7 +5,7 @@
 .DESCRIPTION
   Runs, each with Microsoft's code coverage (part of Microsoft.NET.Test.Sdk) writing Cobertura: the kernel's unit tests
   (Foundation, ModelingData, ModelingAlgorithms, DataExchange), the Draw-lite tests in their default form (the corpus
-  classes sample their cases; OCCTNET_CORPUS_FULL isn't set) and the modeling layer's suite (Build123d.Tests, on
+  classes sample their cases; OCCTNET_CORPUS_FULL isn't set) and the modeling layer's suite (Kerf.Modeling.Tests, on
   OCCT.NET); with -WithOracle, the oracle tests too (replayed from their recordings). Then tools/coverage-report.cs
   merges them and writes the report: coverage per OCCT package (the folder under each kernel assembly) and per folder
   of the modeling layer, the packages under the floor listed.
@@ -32,14 +32,14 @@ $ErrorActionPreference = 'Stop'
 $kernel = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $root = (Resolve-Path (Join-Path $kernel '..')).Path
 $projects = @(
-  'kernel/tests/OcctNet.Foundation.Tests',
-  'kernel/tests/OcctNet.ModelingData.Tests',
-  'kernel/tests/OcctNet.ModelingAlgorithms.Tests',
-  'kernel/tests/OcctNet.DataExchange.Tests',
-  'kernel/tests/OcctNet.DrawLite.Tests',
-  'modeling/tests/Build123d.Tests'
+  'kernel/tests/Kerf.Kernel.Foundation.Tests',
+  'kernel/tests/Kerf.Kernel.ModelingData.Tests',
+  'kernel/tests/Kerf.Kernel.ModelingAlgorithms.Tests',
+  'kernel/tests/Kerf.Kernel.DataExchange.Tests',
+  'kernel/tests/Kerf.Kernel.DrawLite.Tests',
+  'modeling/tests/Kerf.Modeling.Tests'
 )
-if ($WithOracle) { $projects += 'kernel/tests/OcctNet.Oracle.Tests' }
+if ($WithOracle) { $projects += 'kernel/tests/Kerf.Kernel.Oracle.Tests' }
 if ($Only.Count -gt 0) { $projects = $projects | Where-Object { $p = $_; $Only | Where-Object { $p -like "*$_*" } } }
 New-Item -ItemType Directory -Force $Results | Out-Null
 

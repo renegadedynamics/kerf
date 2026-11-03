@@ -1,0 +1,403 @@
+// Port of: src/FoundationClasses/TKMath/gp/gp_Vec.hxx
+// Port of: src/FoundationClasses/TKMath/gp/gp_Vec.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Kerf.Engine.Geometry;
+using Occt;
+using static Kerf.Geometry.TransformForm;
+
+namespace Kerf.Geometry;
+
+/// <summary>A vector in 3D space.</summary>
+public partial struct Vector3D : IEquatable<Vector3D>
+{
+    private Xyz _coord;
+
+    public Vector3D(in Direction3D v) => _coord = v.XYZ();
+
+    public Vector3D(in Xyz coord) => _coord = coord;
+
+    public Vector3D(double xv, double yv, double zv) => _coord = new Xyz(xv, yv, zv);
+
+    /// <summary>The vector from <paramref name="p1"/> to <paramref name="p2"/>.</summary>
+    public Vector3D(in Point3D p1, in Point3D p2) => _coord = p2.XYZ().Subtracted(p1.XYZ());
+
+    // Mutators (internal: see docs/translation-rules.md)
+
+    internal void SetCoord(int index, double xi) => _coord.SetCoord(index, xi);
+
+    internal void SetCoord(double xv, double yv, double zv)
+    {
+        _coord.SetX(xv);
+        _coord.SetY(yv);
+        _coord.SetZ(zv);
+    }
+
+    internal void SetX(double x) => _coord.SetX(x);
+
+    internal void SetY(double y) => _coord.SetY(y);
+
+    internal void SetZ(double z) => _coord.SetZ(z);
+
+    internal void SetXYZ(in Xyz coord) => _coord = coord;
+
+    internal void Add(in Vector3D other) => _coord.Add(other._coord);
+
+    internal void Subtract(in Vector3D right) => _coord.Subtract(right._coord);
+
+    internal void Multiply(double scalar) => _coord.Multiply(scalar);
+
+    internal void Divide(double scalar) => _coord.Divide(scalar);
+
+    internal void Cross(in Vector3D right) => _coord.Cross(right._coord);
+
+    internal void CrossCross(in Vector3D v1, in Vector3D v2) => _coord.CrossCross(v1._coord, v2._coord);
+
+    internal void Normalize()
+    {
+        double d = _coord.Modulus();
+        Standard_ConstructionError_Raise_if(d <= Constants.Resolution(), "gp_Vec::Normalize() - vector has zero norm");
+        _coord.Divide(d);
+    }
+
+    internal void Reverse() => _coord.Reverse();
+
+    internal void SetLinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, double a3, in Vector3D v3, in Vector3D v4)
+        => _coord.SetLinearForm(a1, v1._coord, a2, v2._coord, a3, v3._coord, v4._coord);
+
+    internal void SetLinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, double a3, in Vector3D v3)
+        => _coord.SetLinearForm(a1, v1._coord, a2, v2._coord, a3, v3._coord);
+
+    internal void SetLinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, in Vector3D v3)
+        => _coord.SetLinearForm(a1, v1._coord, a2, v2._coord, v3._coord);
+
+    internal void SetLinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2)
+        => _coord.SetLinearForm(a1, v1._coord, a2, v2._coord);
+
+    internal void SetLinearForm(double a1, in Vector3D v1, in Vector3D v2) => _coord.SetLinearForm(a1, v1._coord, v2._coord);
+
+    internal void SetLinearForm(in Vector3D v1, in Vector3D v2) => _coord.SetLinearForm(v1._coord, v2._coord);
+
+    internal void Mirror(in Vector3D vec)
+    {
+        double magnitude = vec._coord.Modulus();
+        if (magnitude > Constants.Resolution())
+        {
+            Xyz mirrorVecXYZ = vec._coord;
+            double origX = _coord.X();
+            double origY = _coord.Y();
+            double origZ = _coord.Z();
+
+            double normDirX = mirrorVecXYZ.X() / magnitude;
+            double normDirY = mirrorVecXYZ.Y() / magnitude;
+            double normDirZ = mirrorVecXYZ.Z() / magnitude;
+
+            double crossTermXY = 2.0 * normDirX * normDirY;
+            double crossTermXZ = 2.0 * normDirX * normDirZ;
+            double crossTermYZ = 2.0 * normDirY * normDirZ;
+            double xxTerm = 2.0 * normDirX * normDirX - 1.0;
+            double yyTerm = 2.0 * normDirY * normDirY - 1.0;
+            double zzTerm = 2.0 * normDirZ * normDirZ - 1.0;
+
+            _coord.SetX(xxTerm * origX + crossTermXY * origY + crossTermXZ * origZ);
+            _coord.SetY(crossTermXY * origX + yyTerm * origY + crossTermYZ * origZ);
+            _coord.SetZ(crossTermXZ * origX + crossTermYZ * origY + zzTerm * origZ);
+        }
+    }
+
+    internal void Mirror(in Axis3D axis)
+    {
+        Xyz directionXYZ = axis.Direction().XYZ();
+        double origX = _coord.X();
+        double origY = _coord.Y();
+        double origZ = _coord.Z();
+        double dirX = directionXYZ.X();
+        double dirY = directionXYZ.Y();
+        double dirZ = directionXYZ.Z();
+
+        double crossTermXY = 2.0 * dirX * dirY;
+        double crossTermXZ = 2.0 * dirX * dirZ;
+        double crossTermYZ = 2.0 * dirY * dirZ;
+        double xxTerm = 2.0 * dirX * dirX - 1.0;
+        double yyTerm = 2.0 * dirY * dirY - 1.0;
+        double zzTerm = 2.0 * dirZ * dirZ - 1.0;
+
+        _coord.SetX(xxTerm * origX + crossTermXY * origY + crossTermXZ * origZ);
+        _coord.SetY(crossTermXY * origX + yyTerm * origY + crossTermYZ * origZ);
+        _coord.SetZ(crossTermXZ * origX + crossTermYZ * origY + zzTerm * origZ);
+    }
+
+    internal void Mirror(in Frame3D axis)
+    {
+        Xyz zDir = axis.Direction().XYZ();
+        Xyz mirXYZ = zDir.Crossed(_coord);
+
+        if (mirXYZ.Modulus() <= Constants.Resolution())
+        {
+            _coord.Reverse();
+        }
+        else
+        {
+            Xyz newZ = zDir;
+            newZ.Cross(mirXYZ);
+            Mirror(new Vector3D(newZ));
+        }
+    }
+
+    internal void Rotate(in Axis3D a1, double ang)
+    {
+        Transform3D t = new();
+        t.SetRotation(a1, ang);
+        _coord.Multiply(t.VectorialPart());
+    }
+
+    internal void Scale(double s) => _coord.Multiply(s);
+
+    internal void Transform(in Transform3D transformation)
+    {
+        if (transformation.Form() == Identity || transformation.Form() == Translation)
+        {
+        }
+        else if (transformation.Form() == PntMirror)
+        {
+            _coord.Reverse();
+        }
+        else if (transformation.Form() == global::Kerf.Geometry.TransformForm.Scale)
+        {
+            _coord.Multiply(transformation.ScaleFactor());
+        }
+        else
+        {
+            _coord.Multiply(transformation.VectorialPart());
+        }
+    }
+
+    // Copies with a mutator applied
+
+    public readonly Vector3D WithCoord(int index, double xi)
+    {
+        Vector3D copy = this;
+        copy.SetCoord(index, xi);
+        return copy;
+    }
+
+    public readonly Vector3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
+
+    public readonly Vector3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
+
+    public readonly Vector3D WithY(double y) => new(_coord.X(), y, _coord.Z());
+
+    public readonly Vector3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
+
+    public readonly Vector3D WithXYZ(in Xyz coord) => new(coord);
+
+    // Queries
+
+    public readonly double Coord(int index) => _coord.Coord(index);
+
+    public readonly void Coord(out double xv, out double yv, out double zv)
+    {
+        xv = _coord.X();
+        yv = _coord.Y();
+        zv = _coord.Z();
+    }
+
+    public readonly double X() => _coord.X();
+
+    public readonly double Y() => _coord.Y();
+
+    public readonly double Z() => _coord.Z();
+
+    public readonly Xyz XYZ() => _coord;
+
+    public readonly bool IsEqual(in Vector3D other, double linearTolerance, double angularTolerance)
+    {
+        double magnitude = Magnitude();
+        double otherMagnitude = other.Magnitude();
+        if (magnitude <= linearTolerance || otherMagnitude <= linearTolerance)
+        {
+            double val = Math.Abs(magnitude - otherMagnitude);
+            return val <= linearTolerance;
+        }
+        else
+        {
+            double val = Math.Abs(magnitude - otherMagnitude);
+            return val <= linearTolerance && Angle(other) <= angularTolerance;
+        }
+    }
+
+    public readonly bool IsNormal(in Vector3D other, double angularTolerance)
+    {
+        double ang = Math.Abs(M_PI_2 - Angle(other));
+        return ang <= angularTolerance;
+    }
+
+    public readonly bool IsOpposite(in Vector3D other, double angularTolerance)
+    {
+        double ang = M_PI - Angle(other);
+        return ang <= angularTolerance;
+    }
+
+    public readonly bool IsParallel(in Vector3D other, double angularTolerance)
+    {
+        double ang = Angle(other);
+        return ang <= angularTolerance || M_PI - ang <= angularTolerance;
+    }
+
+    public readonly double Angle(in Vector3D other)
+    {
+        gp_VectorWithNullMagnitude_Raise_if(_coord.Modulus() <= Constants.Resolution() || other._coord.Modulus() <= Constants.Resolution(), " ");
+        return new Direction3D(_coord).Angle(new Direction3D(other._coord));
+    }
+
+    public readonly double AngleWithRef(in Vector3D other, in Vector3D vRef)
+    {
+        gp_VectorWithNullMagnitude_Raise_if(_coord.Modulus() <= Constants.Resolution()
+                                            || vRef._coord.Modulus() <= Constants.Resolution()
+                                            || other._coord.Modulus() <= Constants.Resolution(), " ");
+        return new Direction3D(_coord).AngleWithRef(new Direction3D(other._coord), new Direction3D(vRef._coord));
+    }
+
+    public readonly double Magnitude() => _coord.Modulus();
+
+    public readonly double SquareMagnitude() => _coord.SquareModulus();
+
+    public readonly Vector3D Added(in Vector3D other)
+    {
+        Vector3D v = this;
+        v._coord.Add(other._coord);
+        return v;
+    }
+
+    public readonly Vector3D Subtracted(in Vector3D right)
+    {
+        Vector3D v = this;
+        v._coord.Subtract(right._coord);
+        return v;
+    }
+
+    public readonly Vector3D Multiplied(double scalar)
+    {
+        Vector3D v = this;
+        v._coord.Multiply(scalar);
+        return v;
+    }
+
+    public readonly Vector3D Divided(double scalar)
+    {
+        Vector3D v = this;
+        v._coord.Divide(scalar);
+        return v;
+    }
+
+    public readonly Vector3D Crossed(in Vector3D right)
+    {
+        Vector3D v = this;
+        v._coord.Cross(right._coord);
+        return v;
+    }
+
+    public readonly double CrossMagnitude(in Vector3D right) => _coord.CrossMagnitude(right._coord);
+
+    public readonly double CrossSquareMagnitude(in Vector3D right) => _coord.CrossSquareMagnitude(right._coord);
+
+    public readonly Vector3D CrossCrossed(in Vector3D v1, in Vector3D v2)
+    {
+        Vector3D v = this;
+        v._coord.CrossCross(v1._coord, v2._coord);
+        return v;
+    }
+
+    public readonly double Dot(in Vector3D other) => _coord.Dot(other._coord);
+
+    public readonly double DotCross(in Vector3D v1, in Vector3D v2) => _coord.DotCross(v1._coord, v2._coord);
+
+    public readonly Vector3D Normalized()
+    {
+        double d = _coord.Modulus();
+        Standard_ConstructionError_Raise_if(d <= Constants.Resolution(), "gp_Vec::Normalized() - vector has zero norm");
+        Vector3D v = this;
+        v._coord.Divide(d);
+        return v;
+    }
+
+    public readonly Vector3D Reversed()
+    {
+        Vector3D v = this;
+        v._coord.Reverse();
+        return v;
+    }
+
+    public readonly Vector3D Mirrored(in Vector3D vec)
+    {
+        Vector3D result = this;
+        result.Mirror(vec);
+        return result;
+    }
+
+    public readonly Vector3D Mirrored(in Axis3D axis)
+    {
+        Vector3D result = this;
+        result.Mirror(axis);
+        return result;
+    }
+
+    public readonly Vector3D Mirrored(in Frame3D axis)
+    {
+        Vector3D result = this;
+        result.Mirror(axis);
+        return result;
+    }
+
+    public readonly Vector3D Rotated(in Axis3D a1, double ang)
+    {
+        Vector3D vres = this;
+        vres.Rotate(a1, ang);
+        return vres;
+    }
+
+    public readonly Vector3D Scaled(double s)
+    {
+        Vector3D v = this;
+        v._coord.Multiply(s);
+        return v;
+    }
+
+    public readonly Vector3D Transformed(in Transform3D t)
+    {
+        Vector3D v = this;
+        v.Transform(t);
+        return v;
+    }
+
+    public static Vector3D operator +(in Vector3D left, in Vector3D right) => left.Added(right);
+
+    public static Vector3D operator -(in Vector3D left, in Vector3D right) => left.Subtracted(right);
+
+    public static Vector3D operator -(in Vector3D v) => v.Reversed();
+
+    /// <summary>The dot product, as OCCT's <c>operator*</c>.</summary>
+    public static double operator *(in Vector3D left, in Vector3D right) => left.Dot(right);
+
+    /// <summary>The cross product, as OCCT's <c>operator^</c>.</summary>
+    public static Vector3D operator ^(in Vector3D left, in Vector3D right) => left.Crossed(right);
+
+    public static Vector3D operator *(in Vector3D v, double scalar) => v.Multiplied(scalar);
+
+    public static Vector3D operator *(double scalar, in Vector3D v) => v.Multiplied(scalar);
+
+    public static Vector3D operator /(in Vector3D v, double scalar) => v.Divided(scalar);
+
+    public readonly bool Equals(Vector3D other) => _coord.Equals(other._coord);
+
+    public override readonly bool Equals(object? obj) => obj is Vector3D other && Equals(other);
+
+    public override readonly int GetHashCode() => _coord.GetHashCode();
+
+    public static bool operator ==(in Vector3D left, in Vector3D right) => left.Equals(right);
+
+    public static bool operator !=(in Vector3D left, in Vector3D right) => !left.Equals(right);
+
+    public override readonly string ToString() => Constants.Format("gp_Vec", _coord.X(), _coord.Y(), _coord.Z());
+}

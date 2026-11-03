@@ -1,0 +1,889 @@
+// Port of: src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_CSCircular.hxx
+// Port of: src/ModelingAlgorithms/TKFillet/BlendFunc/BlendFunc_CSCircular.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+// Modified 10/09/1996 PMN Ajout de (Nb)Intervalles, IsRationnal
+//                        + Utilisation de GeomFill::GetCircle dans Section.
+// Modified 23/06/1997 PMN : Pb de division par 0.
+
+using Kerf.Engine.Construction.Laws;
+using Kerf.Engine.Fillets.Blend;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Geometry.Adaptors;
+using Kerf.Engine.Geometry.Conversion;
+using Kerf.Engine.Numerics;
+using Kerf.Geometry;
+using Occt;
+using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
+
+namespace Kerf.Engine.Fillets.BlendFunctions;
+
+/// <summary>
+/// The function of a circular blend between a curve C and a surface S. The planes' directions come from CGuide; their
+/// position is on C, at the parameter the law L gives: Pguide = C(L(t)), Nguide = CGuide'(t)/||CGuide'(t)||. Its
+/// variables are U, V on the surface.
+/// </summary>
+/// <remarks>OCCT leaves the radius, the "quadrant" and the conversion uninitialised; here they are zero.</remarks>
+public class CSCircular : CSFunction
+{
+    private const double Eps = 1.0e-15;
+
+    private readonly SurfaceAdaptorBase _surf;
+    private readonly CurveAdaptorBase _curv;
+    private readonly CurveAdaptorBase _guide;
+    private readonly LawsFunction _law;
+    private Point3D _pts;
+    private Point3D _ptc;
+    private Point2D _pt2d;
+    private double _prmc;
+    private double _dprmc;
+    private bool _istangent;
+    private Vector3D _tgs;
+    private Vector2D _tg2d;
+    private Vector3D _tgc;
+    private double _ray;
+    private int _choix;
+    private Vector3D _d1gui;
+    private Vector3D _d2gui;
+    private Vector3D _nplan;
+    private double _normtg;
+    private double _maxang;
+    private double _minang;
+    private SectionShape _sShape;
+    private ParameterisationType _tConv;
+
+    public CSCircular(SurfaceAdaptorBase s, CurveAdaptorBase c, CurveAdaptorBase cGuide, LawsFunction l)
+    {
+        _surf = s;
+        _curv = c;
+        _guide = cGuide;
+        _law = l;
+        _maxang = RealFirst();
+        _minang = RealLast();
+        _sShape = SectionShape.Rational;
+        // prmc, dprmc, istangent, ray, choix, normtg, myTConv
+        _law = l;
+    }
+
+    /// <summary>Returns 2.</summary>
+    public override int NbVariables()
+    {
+        return 2;
+    }
+
+    /// <summary>Returns 2.</summary>
+    public override int NbEquations()
+    {
+        return 2;
+    }
+
+    /// <summary>Sets the radius and the "quadrant".</summary>
+    public void Set(double radius, int choix)
+    {
+        _choix = choix;
+        switch (choix)
+        {
+            case 3:
+            case 4:
+                _ray = Math.Abs(radius);
+                break;
+            default:
+                _ray = -Math.Abs(radius);
+                break;
+        }
+    }
+
+    /// <summary>Sets the type of the sections the approximation makes.</summary>
+    public void Set(SectionShape typeSection)
+    {
+        _sShape = typeSection;
+    }
+
+    public override void Set(double param)
+    {
+        _guide.D2(param, out _, out _d1gui, out _d2gui);
+        _law.D1(param, out _prmc, out _dprmc);
+
+        _normtg = _d1gui.Magnitude();
+        _nplan = _d1gui.Normalized();
+    }
+
+    /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
+    public override void Set(double first, double last)
+    {
+        throw new MethodNotImplementedException("BlendFunc_CSCircular::Set");
+    }
+
+    public override void GetTolerance(math_Vector tolerance, double tol)
+    {
+        tolerance[1] = _surf.UResolution(tol);
+        tolerance[2] = _surf.VResolution(tol);
+    }
+
+    public override void GetBounds(math_Vector infBound, math_Vector supBound)
+    {
+        infBound[1] = _surf.FirstUParameter();
+        infBound[2] = _surf.FirstVParameter();
+        supBound[1] = _surf.LastUParameter();
+        supBound[2] = _surf.LastVParameter();
+
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(infBound[1]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(supBound[1]))
+        {
+            double range = (supBound[1] - infBound[1]);
+            infBound[1] -= range;
+            supBound[1] += range;
+        }
+
+        if (!global::Kerf.Engine.Foundation.Precision.IsInfinite(infBound[2]) && !global::Kerf.Engine.Foundation.Precision.IsInfinite(supBound[2]))
+        {
+            double range = (supBound[2] - infBound[2]);
+            infBound[2] -= range;
+            supBound[2] += range;
+        }
+    }
+
+    public override bool IsSolution(math_Vector sol, double tol)
+    {
+        math_Vector valsol = new(1, 2), secmember = new(1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
+
+        Vector3D dnplan = new Vector3D(), temp = new Vector3D(), ns, ncrossns, resul = new Vector3D(), nc;
+        double norm, ndotns, grosterme;
+        double cosa, sina, angle;
+
+        Values(sol, valsol, gradsol);
+
+        if (Math.Abs(valsol[1]) <= tol && Math.Abs(valsol[2]) <= tol * tol)
+        {
+            // Calcul des tangentes
+
+            _pt2d = new Point2D(sol[1], sol[2]);
+
+            _surf.D1(sol[1], sol[2], out _pts, out Vector3D d1u1, out Vector3D d1v1);
+            _curv.D2(_prmc, out _ptc, out Vector3D d1c, out _);
+
+            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+
+            ns = d1u1.Crossed(d1v1);
+            ncrossns = _nplan.Crossed(ns);
+            ndotns = _nplan.Dot(ns);
+            norm = ncrossns.Magnitude();
+            if (norm < Eps)
+            {
+                norm = 1.0;
+            }
+
+            temp.SetXYZ(_pts.XYZ() - _ptc.XYZ());
+            secmember[1] = _dprmc * (_nplan.Dot(d1c)) - dnplan.Dot(temp);
+
+            grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
+            temp.SetLinearForm(_ray / norm * (dnplan.Dot(ns) - grosterme * ndotns), _nplan, _ray * ndotns / norm, dnplan,
+                               _ray * grosterme / norm, ns);
+            temp -= _dprmc * d1c;
+
+            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            resul.SetLinearForm(_ray, ns, new Vector3D(_ptc, _pts));
+
+            secmember[2] = -2.0 * (resul.Dot(temp));
+
+            Gauss resol = new(gradsol);
+            if (resol.IsDone)
+            {
+                resol.Solve(secmember);
+
+                _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+                _tgc = _dprmc * d1c;
+                _tg2d.SetCoord(secmember[1], secmember[2]);
+                _istangent = false;
+            }
+            else
+            {
+                _istangent = true;
+            }
+
+            // mise a jour de maxang
+            if (_ray > 0.0)
+            {
+                ns.Reverse();
+            }
+
+            nc = -resul.Normalized();
+
+            cosa = ns.Dot(nc);
+            sina = _nplan.Dot(ns.Crossed(nc));
+            if (_choix % 2 != 0)
+            {
+                sina = -sina; // nplan est change en -nplan
+            }
+
+            angle = Math.Acos(cosa);
+            if (sina < 0.0)
+            {
+                angle = 2.0 * M_PI - angle;
+            }
+
+            if (angle > _maxang)
+            {
+                _maxang = angle;
+            }
+
+            if (angle < _minang)
+            {
+                _minang = angle;
+            }
+
+            return true;
+        }
+
+        _istangent = true;
+        return false;
+    }
+
+    public override bool Value(math_Vector x, math_Vector f)
+    {
+        _surf.D1(x[1], x[2], out _pts, out Vector3D d1u1, out Vector3D d1v1);
+        _curv.D1(_prmc, out _ptc, out _);
+
+        f[1] = _nplan.XYZ().Dot(_pts.XYZ() - _ptc.XYZ());
+
+        Vector3D ns = d1u1.Crossed(d1v1);
+        double norm = _nplan.Crossed(ns).Magnitude();
+        if (norm < Eps)
+        {
+            norm = 1.0;
+        }
+
+        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        Vector3D vref = new Vector3D();
+        vref.SetLinearForm(_ray, ns, new Vector3D(_ptc, _pts));
+
+        f[2] = vref.SquareMagnitude() - _ray * _ray;
+
+        _pt2d = new Point2D(x[1], x[2]);
+        return true;
+    }
+
+    public override bool Derivatives(math_Vector x, Matrix d)
+    {
+        Vector3D ns, ncrossns, resul = new Vector3D(), temp, nsov = new Vector3D(), vref = new Vector3D();
+
+        double norm, ndotns, grosterme;
+
+        _surf.D2(x[1], x[2], out _pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                out Vector3D d2uv1);
+        _curv.D1(_prmc, out _ptc, out _);
+
+        d[1, 1] = _nplan.Dot(d1u1);
+        d[1, 2] = _nplan.Dot(d1v1);
+
+        ns = d1u1.Crossed(d1v1);
+        ncrossns = _nplan.Crossed(ns);
+        norm = ncrossns.Magnitude();
+        if (norm < Eps)
+        {
+            norm = 1.0;
+        }
+
+        ndotns = _nplan.Dot(ns);
+
+        nsov.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        vref.SetLinearForm(_ray, nsov, new Vector3D(_ptc, _pts));
+
+        // Derivee par rapport a u de Ps + ray*ns
+        temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
+        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+                            -_ray / norm, temp, d1u1);
+
+        d[2, 1] = 2.0 * (resul.Dot(vref));
+
+        // Derivee par rapport a v
+        temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
+        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+                            -_ray / norm, temp, d1v1);
+
+        d[2, 2] = 2.0 * (resul.Dot(vref));
+
+        _pt2d = new Point2D(x[1], x[2]);
+        return true;
+    }
+
+    public override bool Values(math_Vector x, math_Vector f, Matrix d)
+    {
+        Vector3D ns, ncrossns, resul = new Vector3D(), temp, vref = new Vector3D(), nsov = new Vector3D();
+
+        double norm, ndotns, grosterme;
+
+        _surf.D2(x[1], x[2], out _pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                out Vector3D d2uv1);
+        _curv.D1(_prmc, out _ptc, out _);
+
+        ns = d1u1.Crossed(d1v1);
+        ncrossns = _nplan.Crossed(ns);
+        norm = ncrossns.Magnitude();
+        if (norm < Eps)
+        {
+            norm = 1.0;
+        }
+
+        ndotns = _nplan.Dot(ns);
+        nsov.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+        vref.SetLinearForm(_ray, nsov, new Vector3D(_ptc, _pts));
+
+        f[1] = _nplan.XYZ().Dot(_pts.XYZ() - _ptc.XYZ());
+        f[2] = vref.SquareMagnitude() - _ray * _ray;
+
+        d[1, 1] = _nplan.Dot(d1u1);
+        d[1, 2] = _nplan.Dot(d1v1);
+
+        // Derivee par rapport a u
+        temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
+        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+                            -_ray / norm, temp, d1u1);
+
+        d[2, 1] = 2.0 * (resul.Dot(vref));
+
+        // Derivee par rapport a v
+        temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
+        grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+                            -_ray / norm, temp, d1v1);
+
+        d[2, 2] = 2.0 * (resul.Dot(vref));
+
+        _pt2d = new Point2D(x[1], x[2]);
+        return true;
+    }
+
+    public override Point3D PointOnS()
+    {
+        return _pts;
+    }
+
+    public override Point3D PointOnC()
+    {
+        return _ptc;
+    }
+
+    public override Point2D Pnt2d()
+    {
+        return _pt2d;
+    }
+
+    public override double ParameterOnC()
+    {
+        return _prmc;
+    }
+
+    public override bool IsTangencyPoint
+    {
+        get
+        {
+            return _istangent;
+        }
+    }
+
+    public override Vector3D TangentOnS()
+    {
+        if (_istangent)
+        {
+            throw new DomainErrorException("BlendFunc_CSCircular::TangentOnS");
+        }
+
+        return _tgs;
+    }
+
+    public override Vector3D TangentOnC()
+    {
+        if (_istangent)
+        {
+            throw new DomainErrorException("BlendFunc_CSCircular::TangentOnC");
+        }
+
+        return _tgc;
+    }
+
+    public override Vector2D Tangent2d()
+    {
+        if (_istangent)
+        {
+            throw new DomainErrorException("BlendFunc_CSCircular::Tangent2d");
+        }
+
+        return _tg2d;
+    }
+
+    public override void Tangent(double u, double v, out Vector3D tgS, out Vector3D nmS)
+    {
+        Vector3D ns;
+        _surf.D1(u, v, out _, out Vector3D d1u, out Vector3D d1v);
+        nmS = ns = d1u.Crossed(d1v);
+
+        double norm = _nplan.Crossed(ns).Magnitude();
+        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        if (_ray > 0.0)
+        {
+            ns.Reverse();
+        }
+
+        tgS = _nplan.Crossed(ns);
+        if (_choix % 2 == 1)
+        {
+            tgS.Reverse();
+        }
+    }
+
+    /// <summary>The circular section at <paramref name="param"/> through (U, V) and W, with its parameter range.</summary>
+    public void Section(double param, double u, double v, double w, out double pdeb, out double pfin, ref Circle3D c)
+    {
+        Vector3D ns;
+        double norm;
+        Point3D center = new Point3D();
+
+        _guide.D1(param, out _, out _d1gui);
+        _nplan = _d1gui.Normalized();
+
+        _surf.D1(u, v, out _pts, out Vector3D d1u1, out Vector3D d1v1);
+        _ptc = _curv.Value(w);
+
+        ns = d1u1.Crossed(d1v1);
+        norm = _nplan.Crossed(ns).Magnitude();
+        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        c.SetRadius(Math.Abs(_ray));
+        if (_ray > 0.0)
+        {
+            ns.Reverse();
+        }
+
+        if (_choix % 2 == 0)
+        {
+            c.SetPosition(new Frame3D(center, new Direction3D(_nplan), new Direction3D(ns)));
+        }
+        else
+        {
+            c.SetPosition(new Frame3D(center, new Direction3D(_nplan.Reversed()), new Direction3D(ns)));
+        }
+
+        pdeb = 0.0;
+        pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptc);
+    }
+
+    /// <summary>Blend_CSFunction's: returns false.</summary>
+    public override bool Section(in BlendPoint p, NCollection_Array1<Point3D> poles, NCollection_Array1<Vector3D> dPoles,
+                                 NCollection_Array1<Vector3D> d2Poles, NCollection_Array1<Point2D> poles2d,
+                                 NCollection_Array1<Vector2D> dPoles2d, NCollection_Array1<Vector2D> d2Poles2d,
+                                 NCollection_Array1<double> weigths, NCollection_Array1<double> dWeigths,
+                                 NCollection_Array1<double> d2Weigths)
+    {
+        return base.Section(in p, poles, dPoles, d2Poles, poles2d, dPoles2d, d2Poles2d, weigths, dWeigths, d2Weigths);
+    }
+
+    /// <summary>
+    /// The points and tangents of the section at <paramref name="param"/> through (U, V), sampled at tabP.Length()
+    /// points; false when the tangents cannot be computed. W is not used.
+    /// </summary>
+    public bool GetSection(double param, double u, double v, double w, NCollection_Array1<Point3D> tabP,
+                           NCollection_Array1<Vector3D> tabV)
+    {
+        int nbPoint = tabP.Length();
+        if (nbPoint != tabV.Length() || nbPoint < 2)
+        {
+            throw new RangeErrorException();
+        }
+
+        int i, lowp = tabP.Lower(), lowv = tabV.Lower();
+
+        Vector3D ns, dnplan = new Vector3D(), dnw = new Vector3D(), dn2w = new Vector3D(), ncrn = new Vector3D(),
+               dncrn = new Vector3D(), ns2 = new Vector3D();
+        Vector3D ncrossns, resul = new Vector3D();
+        Vector3D resulu = new Vector3D(), resulv = new Vector3D(), temp = new Vector3D();
+
+        double norm, ndotns, grosterme;
+        double lambda, cosa, sina;
+        double angle = 0.0, dangle = 0.0;
+        math_Vector sol = new(1, 2), valsol = new(1, 2), secmember = new(1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
+
+        Set(param);
+        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+
+        _curv.D2(_prmc, out _ptc, out Vector3D d1c, out _);
+        _surf.D2(u, v, out _pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1, out Vector3D d2uv1);
+
+        ns = d1u1.Crossed(d1v1);
+        ncrossns = _nplan.Crossed(ns);
+        ndotns = _nplan.Dot(ns);
+        norm = ncrossns.Magnitude();
+
+        temp.SetXYZ(_pts.XYZ() - _ptc.XYZ());
+        secmember[1] = _dprmc * (_nplan.Dot(d1c)) - dnplan.Dot(temp);
+
+        ns2.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+
+        // Derivee de n1 par rapport a w (param sur ligne guide)
+
+        grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
+        dnw.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+                          grosterme / norm, ns);
+
+        temp.SetLinearForm(_ray, dnw, -_dprmc, d1c);
+        resul.SetLinearForm(_ray, ns2, new Vector3D(_ptc, _pts));
+
+        secmember[2] = -2.0 * (resul.Dot(temp));
+
+        sol[1] = u;
+        sol[2] = v;
+
+        Values(sol, valsol, gradsol);
+        Gauss resol = new(gradsol);
+
+        if (resol.IsDone)
+        {
+            resol.Solve(secmember);
+
+            _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tgc = _dprmc * d1c;
+
+            // Derivee de n1 par rapport a u1
+            temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
+            grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+            resulu.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+                                 -1.0 / norm, temp);
+
+            // Derivee de n1 par rapport a v1
+            temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
+            grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+            resulv.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+                                 -1.0 / norm, temp);
+
+            dnw.SetLinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
+            ns = ns2;
+            dn2w.SetLinearForm(_ray, dnw, -1.0, _tgc, _tgs);
+            norm = resul.Magnitude();
+            dn2w.Divide(norm);
+            ns2 = -resul.Normalized();
+            dn2w.SetLinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
+
+            if (_ray > 0.0)
+            {
+                ns.Reverse();
+                dnw.Reverse();
+            }
+
+            if (_choix % 2 != 0)
+            {
+                _nplan.Reverse();
+                dnplan.Reverse();
+            }
+
+            tabP[lowp] = _pts;
+            tabP[lowp + nbPoint - 1] = _ptc;
+
+            tabV[lowv] = _tgs;
+            tabV[lowv + nbPoint - 1] = _tgc;
+
+            if (nbPoint > 2)
+            {
+                cosa = ns.Dot(ns2);
+                sina = _nplan.Dot(ns.Crossed(ns2));
+                angle = Math.Acos(cosa);
+                if (sina < 0.0)
+                {
+                    angle = 2.0 * M_PI - angle;
+                }
+
+                dangle = -(dnw.Dot(ns2) + ns.Dot(dn2w)) / sina;
+                ncrn = _nplan.Crossed(ns);
+                dncrn = dnplan.Crossed(ns).Added(_nplan.Crossed(dnw));
+            }
+
+            for (i = 2; i <= nbPoint - 1; i++)
+            {
+                lambda = (double)(i - 1) / (double)(nbPoint - 1);
+                cosa = Math.Cos(lambda * angle);
+                sina = Math.Sin(lambda * angle);
+                tabP[lowp + i - 1]
+                    .SetXYZ(_pts.XYZ() + Math.Abs(_ray) * ((cosa - 1) * ns.XYZ() + sina * ncrn.XYZ()));
+
+                temp.SetLinearForm(-sina, ns, cosa, ncrn);
+                temp.Multiply(lambda * dangle);
+                temp.Add(((cosa - 1) * dnw).Added(sina * dncrn));
+                temp.Multiply(Math.Abs(_ray));
+                temp.Add(_tgs);
+                tabV[lowv + i - 1] = temp;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public override bool IsRational
+    {
+        get
+        {
+            return (_sShape == SectionShape.Rational || _sShape == SectionShape.QuasiAngular);
+        }
+    }
+
+    public override double GetSectionSize()
+    {
+        return _maxang * Math.Abs(_ray);
+    }
+
+    public override void GetMinimalWeight(NCollection_Array1<double> weigths)
+    {
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetMinimalWeights(_sShape, _tConv, _minang, _maxang, weigths);
+        // On suppose que cela ne depend pas du Rayon!
+    }
+
+    public override int NbIntervals(Continuity s)
+    {
+        return _curv.NbIntervals(global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
+    }
+
+    public override void Intervals(NCollection_Array1<double> t, Continuity s)
+    {
+        _curv.Intervals(t, global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.NextShape(s));
+    }
+
+    public override void GetShape(out int nbPoles, out int nbKnots, out int degree, out int nbPoles2d)
+    {
+        nbPoles2d = 1;
+        global::Kerf.Engine.Fillets.BlendFunctions.BlendFunc.GetShape(_sShape, _maxang, out nbPoles, out nbKnots, out degree, ref _tConv);
+    }
+
+    //=======================================================================
+    // function : GetTolerance
+    // purpose  : Determine les Tolerances a utiliser dans les approximations.
+    //=======================================================================
+    public override void GetTolerance(double boundTol, double surfTol, double angleTol, math_Vector tol3d,
+                                      math_Vector tol1d)
+    {
+        int low = tol3d.Lower();
+        int up = tol3d.Upper();
+        // OCCT passes the signed radius here, where BlendFunc_CSConstRad passes its absolute value.
+        double tol = global::Kerf.Engine.Construction.Surfaces.GeomFill.GetTolerance(_tConv, _minang, _ray, angleTol, surfTol);
+        tol1d.Init(surfTol);
+        tol3d.Init(surfTol);
+        tol3d[low + 1] = tol3d[up - 1] = Min(tol, surfTol);
+        tol3d[low] = tol3d[up] = Min(tol, boundTol);
+    }
+
+    public override void Knots(NCollection_Array1<double> tKnots)
+    {
+        global::Kerf.Engine.Construction.Surfaces.GeomFill.Knots(_tConv, tKnots);
+    }
+
+    public override void Mults(NCollection_Array1<int> tMults)
+    {
+        global::Kerf.Engine.Construction.Surfaces.GeomFill.Mults(_tConv, tMults);
+    }
+
+    public override void Section(in BlendPoint p, NCollection_Array1<Point3D> poles,
+                                 NCollection_Array1<Point2D> poles2d, NCollection_Array1<double> weights)
+    {
+        Vector3D ns, ns2;
+        Point3D center = new Point3D();
+        double norm, u1, v1;
+
+        double prm = p.Parameter();
+        int low = poles.Lower();
+        int upp = poles.Upper();
+
+        Set(prm);
+
+        p.ParametersOnS(out u1, out v1);
+        _surf.D1(u1, v1, out _pts, out Vector3D d1u1, out Vector3D d1v1);
+        _ptc = _curv.Value(_prmc);
+
+        poles2d[poles2d.Lower()].SetCoord(u1, v1);
+
+        // Cas Linear
+        if (_sShape == SectionShape.Linear)
+        {
+            poles[low] = _pts;
+            poles[upp] = _ptc;
+            weights[low] = 1.0;
+            weights[upp] = 1.0;
+            return;
+        }
+
+        ns = d1u1.Crossed(d1v1);
+        norm = _nplan.Crossed(ns).Magnitude();
+
+        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+
+        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+
+        ns2 = new Vector3D(center, _ptc).Normalized();
+        if (_ray > 0.0)
+        {
+            ns.Reverse();
+        }
+
+        if (_choix % 2 != 0)
+        {
+            _nplan.Reverse();
+        }
+
+        global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _pts, _ptc, Math.Abs(_ray), center, poles, weights);
+    }
+
+    public override bool Section(in BlendPoint p, NCollection_Array1<Point3D> poles, NCollection_Array1<Vector3D> dPoles,
+                                 NCollection_Array1<Point2D> poles2d, NCollection_Array1<Vector2D> dPoles2d,
+                                 NCollection_Array1<double> weights, NCollection_Array1<double> dWeights)
+    {
+        Vector3D ns, ns2 = new Vector3D(), dnplan = new Vector3D(), dnw = new Vector3D(), dn2w = new Vector3D();
+        Vector3D ncrossns;
+        Vector3D resulu = new Vector3D(), resulv = new Vector3D(), temp = new Vector3D(), tgct = new Vector3D(),
+               resul = new Vector3D();
+
+        Point3D center = new Point3D();
+        double norm, ndotns, grosterme;
+
+        math_Vector sol = new(1, 2), valsol = new(1, 2), secmember = new(1, 2);
+        Matrix gradsol = new(1, 2, 1, 2);
+
+        double prm = p.Parameter();
+        int low = poles.Lower();
+        int upp = poles.Upper();
+        bool istgt;
+
+        Set(prm);
+        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+
+        _curv.D2(_prmc, out _ptc, out Vector3D d1, out _);
+        p.ParametersOnS(out sol[1], out sol[2]);
+        _surf.D2(sol[1], sol[2], out _pts, out Vector3D d1u1, out Vector3D d1v1, out Vector3D d2u1, out Vector3D d2v1,
+                out Vector3D d2uv1);
+
+        ns = d1u1.Crossed(d1v1);
+        ncrossns = _nplan.Crossed(ns);
+        ndotns = _nplan.Dot(ns);
+        norm = ncrossns.Magnitude();
+        ns2.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+
+        temp.SetXYZ(_pts.XYZ() - _ptc.XYZ());
+        secmember[1] = _dprmc * (_nplan.Dot(d1)) - dnplan.Dot(temp);
+
+        // Derivee de n1 par rapport a w
+
+        grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
+        dnw.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+                          grosterme / norm, ns);
+
+        temp.SetLinearForm(_ray, dnw, -_dprmc, d1);
+        resul.SetLinearForm(_ray, ns2, new Vector3D(_ptc, _pts));
+
+        secmember[2] = -2.0 * (resul.Dot(temp));
+
+        Values(sol, valsol, gradsol);
+        Gauss resol = new(gradsol);
+
+        if (resol.IsDone)
+        {
+            resol.Solve(secmember);
+
+            _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tgc = _dprmc * d1;
+
+            // Derivee de n1 par rapport a u1
+            temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
+            grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+            resulu.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+                                 -1.0 / norm, temp);
+
+            // Derivee de n1 par rapport a v1
+            temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
+            grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
+            resulv.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+                                 -1.0 / norm, temp);
+
+            dnw.SetLinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
+            ns = ns2;
+            dn2w.SetLinearForm(_ray, dnw, -1.0, _tgc, _tgs);
+            norm = resul.Magnitude();
+            dn2w.Divide(norm);
+            ns2 = -resul.Normalized();
+            dn2w.SetLinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
+
+            istgt = false;
+        }
+        else
+        {
+            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            ns2 = -resul.Normalized();
+            istgt = true;
+        }
+
+        // Les poles 2d
+
+        poles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
+        if (!istgt)
+        {
+            dPoles2d[poles2d.Lower()].SetCoord(secmember[1], secmember[2]);
+        }
+
+        if (_sShape == SectionShape.Linear)
+        {
+            poles[low] = _pts;
+            poles[upp] = _ptc;
+            weights[low] = 1.0;
+            weights[upp] = 1.0;
+            if (!istgt)
+            {
+                dPoles[low] = _tgs;
+                dPoles[upp] = _tgc;
+                dWeights[low] = 0.0;
+                dWeights[upp] = 0.0;
+            }
+
+            return (!istgt);
+        }
+
+        // Cas du cercle
+        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        if (!istgt)
+        {
+            tgct = _tgs.Added(_ray * dnw);
+        }
+
+        if (_ray > 0.0)
+        {
+            ns.Reverse();
+            if (!istgt)
+            {
+                dnw.Reverse();
+            }
+        }
+
+        if (_choix % 2 != 0)
+        {
+            _nplan.Reverse();
+            dnplan.Reverse();
+        }
+
+        if (!istgt)
+        {
+            return global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, dnw, dn2w, _nplan, dnplan, _pts, _ptc, _tgs, _tgc, Math.Abs(_ray), 0,
+                                      center, tgct, poles, dPoles, weights, dWeights);
+        }
+        else
+        {
+            global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _pts, _ptc, Math.Abs(_ray), center, poles, weights);
+            return false;
+        }
+    }
+
+    public override void Resolution(int ic2d, double tol, out double tolU, out double tolV)
+    {
+        tolU = _surf.UResolution(tol);
+        tolV = _surf.VResolution(tol);
+    }
+}

@@ -1,0 +1,163 @@
+// Ported from build123d tests/test_direct_api/test_vertex.py. The convexity cases build boxes, sketches and
+// extrusions, and follow with the 3D topology and the objects.
+namespace Build123d.Tests.Topology;
+
+// The tests keep build123d.NET's namespaces (see the project file); the library is Kerf.Modeling
+using Kerf.Modeling;
+
+public class VertexTests
+{
+    [Fact]
+    public void BasicVertex()
+    {
+        var v = new Vertex(0, 0, 0);
+        Assert.Equal(0, v.X);
+        Assert.True(new Vertex().IsEmpty);
+
+        v = new Vertex(1, 1, 1);
+        Assert.Equal(1, v.X);
+        Assert.IsType<Vector>(v.Center());
+
+        Check.AlmostEqual((1, 2, 3), new Vector(new Vertex(new Vector(1, 2, 3))), 7);
+        Check.AlmostEqual((4, 5, 6), new Vector(new Vertex((4, 5, 6))), 7);
+        Check.AlmostEqual((8, 9, 0), new Vector(new Vertex(8, 9)), 7);
+    }
+
+    [Fact]
+    public void CoordinatesIncludeLocation()
+    {
+        var vertex = new Vertex(1, 0, 0).Moved(new Location((1, 2, 3)));
+        Assert.Equal((2.0, 2.0, 3.0), (vertex.X, vertex.Y, vertex.Z));
+    }
+
+    [Fact]
+    public void VertexVolume() => Check.AlmostEqual(0, new Vertex(1, 1, 1).Volume, 5);
+
+    [Fact]
+    public void VertexAdd()
+    {
+        var v = new Vertex(0, 0, 0);
+        Check.AlmostEqual((100, -40, 10), new Vector(v + new Vector(100, -40, 10)), 7);
+        Check.AlmostEqual((100, -40, 10), new Vector(v + new Vertex(100, -40, 10)), 7);
+    }
+
+    [Fact]
+    public void VertexSub()
+    {
+        var v = new Vertex(0, 0, 0);
+        Check.AlmostEqual((-100, 40, -10), new Vector(v - new Vector(100, -40, 10)), 7);
+        Check.AlmostEqual((-100, 40, -10), new Vector(v - new Vertex(100, -40, 10)), 7);
+    }
+
+    [Fact]
+    public void VertexStr() => Assert.Equal("Vertex(0.0, 0.0, 0.0)", new Vertex(0, 0, 0).ToString());
+
+    [Fact]
+    public void NoIntersect() =>
+        Assert.Throws<NotSupportedException>(() => new Vertex(1, 2, 3) & new Vertex(5, 6, 7));
+
+    [Fact]
+    public void ALoneVertexHasNothingToClassifyAgainst()
+    {
+        var e = Assert.Throws<InvalidOperationException>(() => new Vertex(1, 2, 3).Convexity);
+        Assert.Contains("not selected from a shape", e.Message);
+    }
+}
+
+/// <summary>Smoke tests of the topology core through edges and wires, ahead of the full test port.</summary>
+public class EdgeWireSmokeTests
+{
+    [Fact]
+    public void LineHasLengthEndsAndTangent()
+    {
+        var line = Edge.MakeLine((0, 0, 0), (3, 4, 0));
+        Check.AlmostEqual(5, line.Length);
+        Check.AlmostEqual((0, 0, 0), line.StartPoint());
+        Check.AlmostEqual((3, 4, 0), line.EndPoint());
+        Check.AlmostEqual((1.5, 2, 0), line.PositionAt(0.5));
+        Check.AlmostEqual(new Vector(3, 4, 0).Normalized(), line.TangentAt(0.2));
+        Assert.Equal(GeomType.Line, line.GeomType);
+        Assert.Equal(2, line.Vertices().Count);
+        Check.AlmostEqual(0.25, line.ParamAtPoint((0.75, 1, 0)));
+    }
+
+    [Fact]
+    public void CircleHasRadiusAndCenter()
+    {
+        var circle = Edge.MakeCircle(2);
+        Check.AlmostEqual(2, circle.Radius);
+        Check.AlmostEqual(4 * Math.PI, circle.Length);
+        Check.AlmostEqual((0, 0, 0), circle.ArcCenter);
+        Assert.True(circle.IsClosed);
+        var arc = Edge.MakeCircle(1, startAngle: 0, endAngle: 90);
+        Check.AlmostEqual((1, 0, 0), arc.StartPoint());
+        Check.AlmostEqual((0, 1, 0), arc.EndPoint());
+    }
+
+    [Fact]
+    public void RectangleWireHasFourEdgesInOrder()
+    {
+        var rect = Wire.MakeRect(4, 2);
+        var edges = rect.Edges();
+        Assert.Equal(4, edges.Count);
+        Assert.True(rect.IsClosed);
+        Check.AlmostEqual(12, rect.Length);
+        for (int i = 0; i < 4; i++)
+            Check.AlmostEqual(edges[i].EndPoint(), edges[(i + 1) % 4].StartPoint());
+        // Each edge knows the wire it was taken from
+        Assert.All(edges, e => Assert.Same(rect, e.TopoParent));
+        Assert.Equal(2, (edges | Axis.X).Count);
+        Check.AlmostEqual(-1, (edges > Axis.Y)[0].Center().Y);
+    }
+
+    [Fact]
+    public void EdgesJoinIntoAWire()
+    {
+        var a = Edge.MakeLine((0, 0, 0), (1, 0, 0));
+        var b = Edge.MakeLine((1, 0, 0), (1, 1, 0));
+        var joined = a + b;
+        var wire = Assert.IsType<Wire>(joined);
+        Assert.Equal(2, wire.Edges().Count);
+        Check.AlmostEqual(2, wire.Length);
+    }
+
+    [Fact]
+    public void MovedSharesGeometryAndKeepsClass()
+    {
+        var edge = Edge.MakeLine((0, 0, 0), (1, 0, 0)).WithLabel("e");
+        Edge moved = new Location((0, 0, 5)) * edge;
+        Assert.Equal("e", moved.Label);
+        Check.AlmostEqual(5, moved.Center().Z);
+        Check.AlmostEqual(0, edge.Center().Z);   // the original is unchanged
+        Assert.True(moved.TopoShape.IsPartner(edge.TopoShape));
+    }
+
+    [Fact]
+    public void SplineThroughPointsAndTrim()
+    {
+        var spline = Edge.MakeSpline([(0, 0, 0), (1, 1, 0), (2, 0, 0)]);
+        Assert.Equal(GeomType.BSpline, spline.GeomType);
+        Check.AlmostEqual((1, 1, 0), spline.PositionAt(spline.ParamAtPoint((1, 1, 0))), 6);
+        var half = spline.Trim(0, 0.5);
+        Check.AlmostEqual(spline.Length / 2, half.Length, 6);
+    }
+
+    [Fact]
+    public void CommonPlaneOfAnArc()
+    {
+        var arc = Edge.MakeThreePointArc((0, 0, 0), (1, 1, 0), (2, 0, 0));
+        var plane = arc.CommonPlane();
+        Assert.NotNull(plane);
+        Check.AlmostEqual(1, Math.Abs(plane!.ZDir.Z));
+    }
+
+    [Fact]
+    public void LinesCrossAtAVertex()
+    {
+        var a = Edge.MakeLine((-1, 0, 0), (1, 0, 0));
+        var b = Edge.MakeLine((0, -1, 0), (0, 1, 0));
+        var hit = a.Intersect(b);
+        var vertex = Assert.IsType<Vertex>(Assert.Single(hit));
+        Check.AlmostEqual((0, 0, 0), vertex.ToVector());
+    }
+}

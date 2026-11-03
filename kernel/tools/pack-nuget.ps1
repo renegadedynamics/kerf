@@ -1,23 +1,23 @@
 <#
 .SYNOPSIS
-  Packs OCCT.NET's four assemblies and build123d.NET on OCCT.NET as NuGet packages, ready for nuget.org.
+  Packs Kerf: the kernel's four assemblies and the modelling layer over them, as NuGet packages, ready for nuget.org.
 .DESCRIPTION
-  OcctNet.Foundation, OcctNet.ModelingData, OcctNet.ModelingAlgorithms and OcctNet.DataExchange, then build123d.NET's
-  Build123d, which calls OCCT.NET directly (unit 10B: no native code, no forwarding layer), in Release with symbol
+  Kerf.Kernel.Foundation, Kerf.Kernel.ModelingData, Kerf.Kernel.ModelingAlgorithms and Kerf.Kernel.DataExchange, then the modelling layer,
+  Kerf.Modeling, which calls the kernel directly (unit 10B: no native code, no forwarding layer), in Release with symbol
   packages, each depending on the one below at the same version. The repository's committed HEAD is copied (git
   archive) into a work folder and built there, so nothing is written into the checkout.
-  Schematiq.Collections, which OcctNet.Foundation and Build123d depend on, comes from nuget.org.
+  Schematiq.Collections, which Kerf.Kernel.Foundation and Kerf.Modeling depend on, comes from nuget.org.
 
   Each assembly is compiled ahead of time (ReadyToRun) for win-x64, as Bento runs, keeping its IL: elsewhere .NET ignores
   the precompiled code and compiles the IL as usual. It cut the opening of Bento's example workbook by about a third
   (unit 9E, docs/performance.md). Each project is built, published with PublishReadyToRun,
   and packed without building again from its build output with the ReadyToRun assembly in place of its own.
 
-  Then the packages are checked as a consumer gets them: a new console project restores Build123d from the output
+  Then the packages are checked as a consumer gets them: a new console project restores Kerf.Modeling from the output
   folder (and nuget.org), into a package folder of its own so no cached copy stands in, and runs a smoke test: a
   filleted, drilled box written to STEP and glTF and read back, with no native library in its output.
 .PARAMETER Suffix
-  The prerelease label after the projects' VersionPrefix (0.1.0): preview.1 gives 0.1.0-preview.1.
+  The prerelease label after the projects' VersionPrefix (0.2.0): preview.1 gives 0.2.0-preview.1.
 .PARAMETER Out
   The folder for the packages.
 .PARAMETER Work
@@ -29,7 +29,7 @@
 #>
 param(
   [Parameter(Mandatory)] [string] $Suffix,
-  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.1.0-$Suffix"),
+  [string] $Out = (Join-Path $PSScriptRoot "..\..\..\nuget-release\0.2.0-$Suffix"),
   [string] $Work = (Join-Path ([IO.Path]::GetTempPath()) ('occtnet-pack-' + [guid]::NewGuid().ToString('N'))),
   [switch] $SkipVerify,
   [switch] $NoReadyToRun
@@ -76,12 +76,12 @@ function Test-ReadyToRun([string] $assembly) {
 }
 
 $properties = @('-c', 'Release', '-nologo', "-p:VersionSuffix=$Suffix", '-p:ContinuousIntegrationBuild=true')
-$b3dProperties = @("-p:OcctNetRoot=$occt/")
+$b3dProperties = @("-p:KerfKernelRoot=$occt/")
 $projects = @(
-  foreach ($p in 'OcctNet.Foundation', 'OcctNet.ModelingData', 'OcctNet.ModelingAlgorithms', 'OcctNet.DataExchange') {
+  foreach ($p in 'Kerf.Kernel.Foundation', 'Kerf.Kernel.ModelingData', 'Kerf.Kernel.ModelingAlgorithms', 'Kerf.Kernel.DataExchange') {
     @{ Name = $p; Path = (Join-Path $occt "src/$p/$p.csproj"); Extra = @() }
   }
-  foreach ($p in 'Build123d') {
+  foreach ($p in 'Kerf.Modeling') {
     @{ Name = $p; Path = (Join-Path $b3d "src/$p/$p.csproj"); Extra = $b3dProperties }
   }
 )
@@ -131,12 +131,12 @@ if (-not $SkipVerify) {
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Build123d" Version="0.1.0-$Suffix" />
+    <PackageReference Include="Kerf.Modeling" Version="0.2.0-$Suffix" />
   </ItemGroup>
 </Project>
 "@ | Set-Content -Encoding utf8 (Join-Path $smoke 'smoke.csproj')
   @'
-using Build123d;
+using Kerf.Modeling;
 
 var part = Operations.Fillet(new Box(10, 10, 10).Edges(), 1) - new Cylinder(2, 20);
 var step = new MemoryStream();

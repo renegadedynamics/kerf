@@ -5,25 +5,27 @@
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- .NET naming (IDE1006, the root .editorconfig), enforced since unit 10E -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 
     <RepoRoot>$(MSBuildThisFileDirectory)</RepoRoot>
   </PropertyGroup>
 
   <!--
     build123d.NET calls OCCT.NET, the managed port of OCCT, directly (unit 10B), from the kernel's projects in the
-    repository's kernel folder (OcctNetRoot, ../kernel/ by default), which pack as the OcctNet.* package dependencies.
+    repository's kernel folder (KerfKernelRoot, ../kernel/ by default), which pack as the Kerf.Kernel.* package dependencies.
     It uses kernel members the published packages (0.1.0-preview.3) don't make public, so it no longer builds against
     them (UseOcctNetPackages is gone).
   -->
   <PropertyGroup>
-    <OcctNetRoot Condition="'$(OcctNetRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../kernel/'))</OcctNetRoot>
-    <OcctNetRoot>$([MSBuild]::EnsureTrailingSlash('$(OcctNetRoot)'))</OcctNetRoot>
+    <KerfKernelRoot Condition="'$(KerfKernelRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../kernel/'))</KerfKernelRoot>
+    <KerfKernelRoot>$([MSBuild]::EnsureTrailingSlash('$(KerfKernelRoot)'))</KerfKernelRoot>
   </PropertyGroup>
 
   <!-- Packages: SemVer, with the changes in CHANGELOG.md -->
   <PropertyGroup>
-    <VersionPrefix>0.1.0</VersionPrefix>
-    <Authors>build123d.NET contributors</Authors>
+    <VersionPrefix>0.2.0</VersionPrefix>
+    <Authors>Kerf contributors</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <Copyright>Copyright (c) 2026 The build123d.NET Contributors; based on build123d, copyright (c) 2022–2025 The build123d Contributors</Copyright>

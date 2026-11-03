@@ -1,0 +1,24 @@
+<Solution>
+  <Folder Name="/benchmarks/">
+    <Project Path="benchmarks/Kerf.Kernel.Benchmarks/Kerf.Kernel.Benchmarks.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Kerf.Kernel.WasmDemo/Kerf.Kernel.WasmDemo.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/Kerf.Analyzers/Kerf.Analyzers.csproj" />
+    <Project Path="src/Kerf.Kernel.DataExchange/Kerf.Kernel.DataExchange.csproj" />
+    <Project Path="src/Kerf.Kernel.Foundation/Kerf.Kernel.Foundation.csproj" />
+    <Project Path="src/Kerf.Kernel.ModelingAlgorithms/Kerf.Kernel.ModelingAlgorithms.csproj" />
+    <Project Path="src/Kerf.Kernel.ModelingData/Kerf.Kernel.ModelingData.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kerf.Kernel.DataExchange.Tests/Kerf.Kernel.DataExchange.Tests.csproj" />
+    <Project Path="tests/Kerf.Kernel.DrawLite.Tests/Kerf.Kernel.DrawLite.Tests.csproj" />
+    <Project Path="tests/Kerf.Kernel.DrawLite/Kerf.Kernel.DrawLite.csproj" />
+    <Project Path="tests/Kerf.Kernel.Foundation.Tests/Kerf.Kernel.Foundation.Tests.csproj" />
+    <Project Path="tests/Kerf.Kernel.ModelingAlgorithms.Tests/Kerf.Kernel.ModelingAlgorithms.Tests.csproj" />
+    <Project Path="tests/Kerf.Kernel.ModelingData.Tests/Kerf.Kernel.ModelingData.Tests.csproj" />
+    <Project Path="tests/Kerf.Kernel.Oracle.Tests/Kerf.Kernel.Oracle.Tests.csproj" />
+  </Folder>
+</Solution>

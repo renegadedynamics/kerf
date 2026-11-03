@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Kerf.Modeling/Kerf.Modeling.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kerf.Modeling.Tests/Kerf.Modeling.Tests.csproj" />
+  </Folder>
+</Solution>

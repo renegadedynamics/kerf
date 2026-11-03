@@ -1,0 +1,102 @@
+// Port of: src/ModelingData/TKGeomBase/GeomConvert/GeomConvert_BSplineCurveKnotSplitting.hxx
+// Port of: src/ModelingData/TKGeomBase/GeomConvert/GeomConvert_BSplineCurveKnotSplitting.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Kerf.Engine.Foundation;
+using Kerf.Geometry;
+using Occt;
+
+namespace Kerf.Engine.Geometry.Conversion;
+
+/// <summary>
+/// The knots at which a 3D B-spline curve must be split to obtain arcs of a given continuity. At a knot, the
+/// continuity of a B-spline is its degree minus the knot's multiplicity. The split points are knot indices, the
+/// first and last knots of the curve included; GeomConvert.SplitBSplineCurve splits the curve between two of them.
+/// </summary>
+public sealed class BSplineCurveKnotSplitting
+{
+    private readonly NCollection_HArray1<int> _splitIndexes;
+
+    /// <summary>The knots at which BasisCurve must be split to obtain arcs of continuity ContinuityRange.</summary>
+    /// <exception cref="RangeErrorException">ContinuityRange is negative.</exception>
+    public BSplineCurveKnotSplitting(BSplineCurve3D basisCurve, int continuityRange)
+    {
+        if (continuityRange < 0)
+        {
+            throw new RangeErrorException();
+        }
+
+        int firstIndex = basisCurve.FirstUKnotIndex();
+        int lastIndex = basisCurve.LastUKnotIndex();
+
+        int degree = basisCurve.Degree();
+
+        if (continuityRange == 0)
+        {
+            _splitIndexes = new NCollection_HArray1<int>(1, 2);
+            _splitIndexes.SetValue(1, firstIndex);
+            _splitIndexes.SetValue(2, lastIndex);
+        }
+        else
+        {
+            NCollection_Array1<int> mults = basisCurve.InternalMultiplicities();
+            int mmax = global::Kerf.Engine.Geometry.Splines.BSplCLib.MaxKnotMult(mults, firstIndex, lastIndex);
+            if (degree - mmax >= continuityRange)
+            {
+                _splitIndexes = new NCollection_HArray1<int>(1, 2);
+                _splitIndexes.SetValue(1, firstIndex);
+                _splitIndexes.SetValue(2, lastIndex);
+            }
+            else
+            {
+                NCollection_Array1<int> split = new(1, lastIndex - firstIndex + 1);
+                int nbSplit = 1;
+                int index = firstIndex;
+                split[nbSplit] = index;
+                index++;
+                nbSplit++;
+                while (index < lastIndex)
+                {
+                    if (degree - mults[index] < continuityRange)
+                    {
+                        split[nbSplit] = index;
+                        nbSplit++;
+                    }
+
+                    index++;
+                }
+
+                split[nbSplit] = index;
+                _splitIndexes = new NCollection_HArray1<int>(1, nbSplit);
+                for (int i = 1; i <= nbSplit; i++)
+                {
+                    _splitIndexes.SetValue(i, split[i]);
+                }
+            }
+        }
+    }
+
+    /// <summary>The number of split points, the first and last knots of the curve included.</summary>
+    public int SplitCount => _splitIndexes.Length();
+
+    /// <summary>
+    /// Copies the split knot indices, in ascending order, into SplitValues (indexed from 1 to NbSplits(); OCCT
+    /// documents a Standard_DimensionError for other bounds but doesn't check them).
+    /// </summary>
+    public void Splitting(NCollection_Array1<int> splitValues)
+    {
+        for (int i = 1; i <= _splitIndexes.Length(); i++)
+        {
+            splitValues[i] = _splitIndexes.Value(i);
+        }
+    }
+
+    /// <summary>The knot index of split point Index (1 to NbSplits()).</summary>
+    /// <exception cref="RangeErrorException">Index is out of range.</exception>
+    public int SplitValue(int index)
+    {
+        Standard_RangeError_Raise_if(index < 1 || index > _splitIndexes.Length(), " ");
+        return _splitIndexes.Value(index);
+    }
+}

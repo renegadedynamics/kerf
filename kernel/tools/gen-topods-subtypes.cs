@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
-// Generates src/OcctNet.ModelingData/TopoDS/TopoDS_{Vertex,Edge,Wire,Face,Shell,Solid,CompSolid,Compound}.cs from
+// Generates src/Kerf.Kernel.ModelingData/TopoDS/TopoDS_{Vertex,Edge,Wire,Face,Shell,Solid,CompSolid,Compound}.cs from
 // TopoDS_Shape.cs (docs/phase3-design.md, section 2). C# structs can't inherit, so each subtype is a struct with
 // TopoDS_Shape's three fields and a copy of its members: the text between the "<generated-members>" and
 // "</generated-members>" markers of TopoDS_Shape.cs, verbatim, plus the type's own constructors, equality and the
@@ -14,7 +14,7 @@ using System.Text;
 
 string aRoot = FindRoot(Directory.GetCurrentDirectory())
                ?? throw new InvalidOperationException("Run from inside the OCCT.NET repository.");
-string aDir = Path.Combine(aRoot, "src", "OcctNet.ModelingData", "TopoDS");
+string aDir = Path.Combine(aRoot, "src", "Kerf.Kernel.ModelingData", "TopoDS");
 bool isCheck = args.Contains("--check");
 
 string aShapeText = File.ReadAllText(Path.Combine(aDir, "TopoDS_Shape.cs")).Replace("\r\n", "\n");
@@ -137,7 +137,7 @@ static string? FindRoot(string theDir)
 {
     for (DirectoryInfo? aDir = new(theDir); aDir is not null; aDir = aDir.Parent)
     {
-        if (File.Exists(Path.Combine(aDir.FullName, "OcctNet.slnx")))
+        if (File.Exists(Path.Combine(aDir.FullName, "Kerf.Kernel.slnx")))
         {
             return aDir.FullName;
         }

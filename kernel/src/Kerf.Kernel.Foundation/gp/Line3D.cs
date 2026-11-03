@@ -1,0 +1,203 @@
+// Port of: src/FoundationClasses/TKMath/gp/gp_Lin.hxx
+// Port of: src/FoundationClasses/TKMath/gp/gp_Lin.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Kerf.Engine.Foundation;
+
+using Kerf.Engine.Geometry;
+
+using Occt;
+
+namespace Kerf.Geometry;
+
+/// <summary>An infinite line in 3D space, positioned by an axis (a location and a unit direction).</summary>
+/// <remarks><c>new gp_Lin()</c> is the Z axis, as in OCCT; <c>default(gp_Lin)</c> is not valid.</remarks>
+public partial struct Line3D : IEquatable<Line3D>
+{
+    private Axis3D _pos;
+
+    public Line3D() => _pos = new Axis3D();
+
+    public Line3D(in Axis3D a1) => _pos = a1;
+
+    public Line3D(in Point3D p, in Direction3D v) => _pos = new Axis3D(p, v);
+
+    // Mutators (internal: see docs/translation-rules.md)
+
+    internal void Reverse() => _pos.Reverse();
+
+    internal void SetDirection(in Direction3D v) => _pos.SetDirection(v);
+
+    internal void SetLocation(in Point3D p) => _pos.SetLocation(p);
+
+    internal void SetPosition(in Axis3D a1) => _pos = a1;
+
+    internal void Mirror(in Point3D p) => _pos.Mirror(p);
+
+    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
+
+    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
+
+    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
+
+    internal void Scale(in Point3D p, double s) => _pos.Scale(p, s);
+
+    internal void Transform(in Transform3D t) => _pos.Transform(t);
+
+    internal void Translate(in Vector3D v) => _pos.Translate(v);
+
+    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
+
+    // Copies with a mutator applied
+
+    public readonly Line3D WithDirection(in Direction3D v)
+    {
+        Line3D copy = this;
+        copy.SetDirection(v);
+        return copy;
+    }
+
+    public readonly Line3D WithLocation(in Point3D p)
+    {
+        Line3D copy = this;
+        copy.SetLocation(p);
+        return copy;
+    }
+
+    public readonly Line3D WithPosition(in Axis3D a1) => new(a1);
+
+    // Queries
+
+    public readonly Line3D Reversed()
+    {
+        Line3D l = this;
+        l._pos.Reverse();
+        return l;
+    }
+
+    public readonly Direction3D Direction() => _pos.Direction();
+
+    public readonly Point3D Location() => _pos.Location();
+
+    public readonly Axis3D Position() => _pos;
+
+    /// <summary>The angle between the directions of the two lines, in [0, PI].</summary>
+    public readonly double Angle(in Line3D other) => _pos.Direction().Angle(other._pos.Direction());
+
+    public readonly bool Contains(in Point3D p, double linearTolerance) => Distance(p) <= linearTolerance;
+
+    public readonly double Distance(in Point3D p)
+    {
+        Xyz coord = p.XYZ();
+        coord.Subtract((_pos.Location()).XYZ());
+        coord.Cross((_pos.Direction()).XYZ());
+        return coord.Modulus();
+    }
+
+    /// <summary>The minimum distance between the two lines.</summary>
+    public readonly double Distance(in Line3D other)
+    {
+        if (_pos.IsParallel(other._pos, Constants.Resolution()))
+        {
+            return other.Distance(_pos.Location());
+        }
+        else
+        {
+            Direction3D dir = _pos.Direction().Crossed(other._pos.Direction());
+            return Math.Abs(new Vector3D(_pos.Location(), other._pos.Location()).Dot(new Vector3D(dir)));
+        }
+    }
+
+    public readonly double SquareDistance(in Point3D p)
+    {
+        Point3D loc = _pos.Location();
+        Vector3D v = new(p.X() - loc.X(), p.Y() - loc.Y(), p.Z() - loc.Z());
+        v.Cross(new Vector3D(_pos.Direction()));
+        return v.SquareMagnitude();
+    }
+
+    public readonly double SquareDistance(in Line3D other)
+    {
+        double d = Distance(other);
+        return d * d;
+    }
+
+    /// <summary>The line through <paramref name="p"/> normal to this line and intersecting it.</summary>
+    /// <exception cref="ConstructionErrorException"><paramref name="p"/> is on this line.</exception>
+    public readonly Line3D Normal(in Point3D p)
+    {
+        Point3D loc = _pos.Location();
+        Direction3D v = new(p.X() - loc.X(), p.Y() - loc.Y(), p.Z() - loc.Z());
+        v = _pos.Direction().CrossCrossed(v, _pos.Direction());
+        return new Line3D(p, v);
+    }
+
+    public readonly Line3D Mirrored(in Point3D p)
+    {
+        Line3D l = this;
+        l._pos.Mirror(p);
+        return l;
+    }
+
+    public readonly Line3D Mirrored(in Axis3D a1)
+    {
+        Line3D l = this;
+        l._pos.Mirror(a1);
+        return l;
+    }
+
+    public readonly Line3D Mirrored(in Frame3D a2)
+    {
+        Line3D l = this;
+        l._pos.Mirror(a2);
+        return l;
+    }
+
+    public readonly Line3D Rotated(in Axis3D a1, double ang)
+    {
+        Line3D l = this;
+        l._pos.Rotate(a1, ang);
+        return l;
+    }
+
+    public readonly Line3D Scaled(in Point3D p, double s)
+    {
+        Line3D l = this;
+        l._pos.Scale(p, s);
+        return l;
+    }
+
+    public readonly Line3D Transformed(in Transform3D t)
+    {
+        Line3D l = this;
+        l._pos.Transform(t);
+        return l;
+    }
+
+    public readonly Line3D Translated(in Vector3D v)
+    {
+        Line3D l = this;
+        l._pos.Translate(v);
+        return l;
+    }
+
+    public readonly Line3D Translated(in Point3D p1, in Point3D p2)
+    {
+        Line3D l = this;
+        l._pos.Translate(new Vector3D(p1, p2));
+        return l;
+    }
+
+    public readonly bool Equals(Line3D other) => _pos.Equals(other._pos);
+
+    public override readonly bool Equals(object? obj) => obj is Line3D other && Equals(other);
+
+    public override readonly int GetHashCode() => _pos.GetHashCode();
+
+    public static bool operator ==(in Line3D left, in Line3D right) => left.Equals(right);
+
+    public static bool operator !=(in Line3D left, in Line3D right) => !left.Equals(right);
+
+    public override readonly string ToString() => $"gp_Lin({_pos.Location()}, {_pos.Direction()})";
+}

@@ -93,7 +93,7 @@ public sealed class FaceSurface
     public SurfaceCurvature Curvature(double u, double v);      // BRepLProp_SLProps: min, max, mean, Gaussian, directions
     public (double U, double V) Parameters(Point3D point, double tolerance);  // ShapeAnalysis_Surface.ValueOfUV
     public Containment Classify(double u, double v, double tolerance);        // IntTools_FClass2d
-    public bool TryGetPlane(out Plane3D plane);  public bool TryGetCylinder(out Cylinder3D cylinder);  // and Cone, Sphere, Torus
+    public bool TryGetPlane(out Plane3D plane);  public bool TryGetCylinder(out Cylinder cylinder);  // and Cone, Sphere, Torus
 }
 
 public sealed class WireCurve { /* BRepAdaptor_CompCurve: Evaluate, Derivatives, Range over the whole wire */ }

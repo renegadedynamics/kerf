@@ -26,7 +26,7 @@ string root = FindRoot(Directory.GetCurrentDirectory()) ?? throw new InvalidOper
 string kernel = Path.Combine(root, "kernel");
 string docs = Path.Combine(kernel, "docs", "api");
 bool checkOnly = args.Contains("--check");
-string[] assemblies = ["OcctNet.Foundation", "OcctNet.ModelingData", "OcctNet.ModelingAlgorithms", "OcctNet.DataExchange"];
+string[] assemblies = ["Kerf.Kernel.Foundation", "Kerf.Kernel.ModelingData", "Kerf.Kernel.ModelingAlgorithms", "Kerf.Kernel.DataExchange"];
 
 var rules = Rules.Load(Path.Combine(docs, "classification-rules.txt"));
 var modeling = File.Exists(Path.Combine(docs, "modeling-uses.txt"))
@@ -162,7 +162,7 @@ report.AppendLine("|---|---:|---:|---:|---:|---:|");
 foreach (string name in assemblies.Append("Total"))
 {
     var mine = rows.Where(r => r.Rule is not null && (name == "Total" || r.Assembly == name)).ToList();
-    report.AppendLine($"| {name.Replace("OcctNet.", "")} | " + string.Join(" | ", classes.Select(c => mine.Count(r => r.Rule!.Class == c).ToString("N0")))
+    report.AppendLine($"| {name.Replace("Kerf.Kernel.", "")} | " + string.Join(" | ", classes.Select(c => mine.Count(r => r.Rule!.Class == c).ToString("N0")))
         + $" | {mine.Count:N0} | {mine.Count(r => r.Chain.Count > 1):N0} |");
 }
 
@@ -180,7 +180,7 @@ var crossEngine = crossRefs.Where(c => engineByAssembly.Contains((c.To, c.Type))
 report.AppendLine();
 report.AppendLine($"Engine and removed types used from another kernel assembly: {crossEngine.Select(c => (c.To, c.Type)).Distinct().Count():N0} "
     + "(" + string.Join(", ", crossEngine.GroupBy(c => c.To).OrderBy(g => Array.IndexOf(assemblies, g.Key))
-        .Select(g => $"{g.Select(c => c.Type).Distinct().Count():N0} of {g.Key.Replace("OcctNet.", "")}'s")) + "), "
+        .Select(g => $"{g.Select(c => c.Type).Distinct().Count():N0} of {g.Key.Replace("Kerf.Kernel.", "")}'s")) + "), "
     + $"and {crossRefs.Select(c => (c.To, c.Type)).Distinct().Count(t => !rows.Any(r => r.Assembly == t.To && r.Chain.Count == 1 && r.Chain[0] == t.Type)):N0} "
     + "internal types reached through InternalsVisibleTo.");
 
@@ -239,7 +239,7 @@ foreach (Row row in rows.Where(r => r.Rule is not null).OrderBy(r => r.Assembly,
              .ThenBy(r => string.Join("+", r.Chain), StringComparer.Ordinal))
 {
     bool nested = row.Chain.Count > 1;
-    tsv.AppendLine(string.Join('\t', row.Assembly.Replace("OcctNet.", ""), string.Join("+", row.Chain), row.Kind, row.Package,
+    tsv.AppendLine(string.Join('\t', row.Assembly.Replace("Kerf.Kernel.", ""), string.Join("+", row.Chain), row.Kind, row.Package,
         row.Rule!.Class, row.Rule.Area, row.NewName, row.Modeling, nested ? "" : row.Rule.Replacement ?? "",
         nested ? "" : row.Rule.Note ?? ""));
 }

@@ -3,7 +3,7 @@
 Run with the reference environment (see tests/reference/README.md):
 
     PYTHONPATH=../build123d/src .deps/py/Scripts/python -I tests/reference/geometry_reference.py \
-        tests/Build123d.Tests/Reference/geometry.json
+        tests/Kerf.Modeling.Tests/Reference/geometry.json
 
 Inputs are generated from a fixed seed, so the file only changes when build123d's results do.
 """

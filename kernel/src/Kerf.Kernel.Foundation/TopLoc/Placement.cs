@@ -1,0 +1,328 @@
+// Port of: src/FoundationClasses/TKMath/TopLoc/TopLoc_Location.hxx
+// Port of: src/FoundationClasses/TKMath/TopLoc/TopLoc_Location.lxx
+// Port of: src/FoundationClasses/TKMath/TopLoc/TopLoc_Location.cxx
+// Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1990-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
+// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Topology;
+using Kerf.Geometry;
+using Occt;
+using System.Runtime.CompilerServices;
+
+namespace Kerf.Topology;
+
+/// <summary>
+/// A composite transition: a series of elementary coordinate systems (<see cref="Datum3D"/>s), each raised
+/// to a power. <c>this = NextLocation() * FirstDatum() ^ FirstPower()</c>.
+/// </summary>
+/// <remarks>
+/// <para>
+/// Locations are compared by the <b>identity</b> of their datums, not by their transformations: two locations
+/// built separately from the same <see cref="Transform3D"/> are different, while a location and a copy of it, or
+/// <c>L * L.Inverted()</c> and the identity, are equal. <see cref="Equals(Placement)"/>,
+/// <see cref="GetHashCode"/>, <c>==</c> and <c>!=</c> follow OCCT's <see cref="IsEqual"/> and <see cref="HashCode"/>,
+/// so locations work as keys of NCollection and .NET maps as they do in OCCT.
+/// </para>
+/// <para>
+/// A struct holding one reference to a shared, immutable list, as OCCT's class is. <c>default(TopLoc_Location)</c>
+/// and <c>new TopLoc_Location()</c> are both the identity. The internal mutators <c>Identity</c> and <c>Clear</c>
+/// only drop the list; their twin is <c>new TopLoc_Location()</c>.
+/// </para>
+/// </remarks>
+public partial struct Placement : IEquatable<Placement>
+{
+    private SListOfItemLocation _items;
+
+    private static readonly Transform3D THE_IDENTITY_TRSF = new Transform3D();
+
+    /// <summary>The identity ("empty" location).</summary>
+    public Placement() => _items = new SListOfItemLocation();
+
+    /// <summary>The location of a new datum built from T.</summary>
+    public Placement(in Transform3D t)
+    {
+        Datum3D d = new Datum3D(t);
+        _items = new SListOfItemLocation();
+        _items.Construct(new ItemLocation(d, 1));
+    }
+
+    /// <summary>The location of the datum D.</summary>
+    public Placement(Datum3D d)
+    {
+        _items = new SListOfItemLocation();
+        _items.Construct(new ItemLocation(d, 1));
+    }
+
+    // NextLocation: OCCT reinterprets the tail list as a location.
+    private Placement(in SListOfItemLocation items) => _items = items;
+
+    /// <summary>True if this location is the identity.</summary>
+    public readonly bool IsIdentity => _items.IsEmpty;
+
+    /// <summary>Resets this location to the identity.</summary>
+    internal void Identity() => _items.Clear();
+
+    /// <summary>The first elementary datum. Use <see cref="NextLocation"/> to reach the others.</summary>
+    /// <exception cref="NoSuchObjectException">This location is the identity.</exception>
+    public readonly Datum3D FirstDatum() => _items.Value()._datum;
+
+    /// <summary>The power of the first elementary datum.</summary>
+    /// <exception cref="NoSuchObjectException">This location is the identity.</exception>
+    public readonly int FirstPower() => _items.Value()._power;
+
+    /// <summary>This location without its first datum: <c>this = NextLocation() * FirstDatum() ^ FirstPower()</c>.</summary>
+    /// <remarks>OCCT documents a Standard_NoSuchObject for the identity, but returns the identity, as the port does.</remarks>
+    public readonly Placement NextLocation() => new Placement(_items.Tail());
+
+    /// <summary>The transformation of this location.</summary>
+    public readonly Transform3D Transformation()
+    {
+        if (IsIdentity)
+        {
+            return THE_IDENTITY_TRSF;
+        }
+        else
+        {
+            return _items.Value()._trsf;
+        }
+    }
+
+    /// <summary>The transformation of the location, as OCCT's conversion operator to gp_Trsf.</summary>
+    /// <remarks>Explicit: the port has no implicit conversions.</remarks>
+    public static explicit operator Transform3D(in Placement location) => location.Transformation();
+
+    /// <summary>The inverse of this location: the datums in reverse order with opposite powers.</summary>
+    public readonly Placement Inverted()
+    {
+        if (IsIdentity)
+        {
+            return this;
+        }
+
+        //
+        // the inverse of a Location is a chain in revert order
+        // with opposite powers and same Local
+        //
+        Placement result = new Placement();
+        SListOfItemLocation items = _items;
+        while (items.More())
+        {
+            result._items.Construct(new ItemLocation(items.Value()._datum, -items.Value()._power));
+            items.Next();
+        }
+
+        return result;
+    }
+
+    /// <summary><c>this * Other</c>: the datums are concatenated, and powers of the same datum meeting at the join are added (dropped if they cancel).</summary>
+    public readonly Placement Multiplied(in Placement other)
+    {
+        // prepend the chain Other in front of this
+        // cancelling null exponents
+
+        if (IsIdentity)
+        {
+            return other;
+        }
+
+        if (other.IsIdentity)
+        {
+            return this;
+        }
+
+        // prepend the queue of Other
+        Placement result = Multiplied(other.NextLocation());
+        // does the head of Other cancel the head of result
+
+        int p = other.FirstPower();
+        if (!result.IsIdentity)
+        {
+            if (other.FirstDatum() == result.FirstDatum())
+            {
+                p += result.FirstPower();
+                result._items.ToTail();
+            }
+        }
+
+        if (p != 0)
+        {
+            result._items.Construct(new ItemLocation(other.FirstDatum(), p));
+        }
+
+        return result;
+    }
+
+    public static Placement operator *(in Placement left, in Placement right)
+        => left.Multiplied(right);
+
+    /// <summary><c>this * Other.Inverted()</c>.</summary>
+    public readonly Placement Divided(in Placement other) => Multiplied(other.Inverted());
+
+    public static Placement operator /(in Placement left, in Placement right)
+        => left.Divided(right);
+
+    /// <summary><c>Other.Inverted() * this</c>.</summary>
+    public readonly Placement Predivided(in Placement other)
+    {
+        if (other.IsIdentity)
+        {
+            return this;
+        }
+
+        if (IsIdentity)
+        {
+            return other.Inverted();
+        }
+
+        if (this == other)
+        {
+            return new Placement();
+        }
+
+        return other.Inverted().Multiplied(this);
+    }
+
+    /// <summary>This location to the power pwr; the identity for 0, and negative powers invert.</summary>
+    public readonly Placement Powered(int pwr)
+    {
+        if (IsIdentity)
+        {
+            return this;
+        }
+
+        if (pwr == 1)
+        {
+            return this;
+        }
+
+        if (pwr == 0)
+        {
+            return new Placement();
+        }
+
+        // optimisation when just one element
+        if (_items.Tail().IsEmpty)
+        {
+            Placement result = new Placement();
+            result._items.Construct(new ItemLocation(FirstDatum(), FirstPower() * pwr));
+            return result;
+        }
+
+        if (pwr > 0)
+        {
+            return Multiplied(Powered(pwr - 1));
+        }
+        else
+        {
+            return Inverted().Powered(-pwr);
+        }
+    }
+
+    /// <summary>A hash of the datums (by identity) and powers, consistent with <see cref="IsEqual"/>; 0 for the identity.</summary>
+    /// <remarks>
+    /// OCCT combines the datums' addresses and the powers with MurmurHash into a <c>size_t</c>; the port combines the
+    /// datums' runtime hash codes and the powers in the same order with <see cref="System.HashCode"/>. Both values
+    /// depend on the process, so only the structure is kept.
+    /// </remarks>
+    public readonly int HashCode()
+    {
+        if (_items.IsEmpty)
+        {
+            return 0;
+        }
+
+        int hash = OptimalSeed;
+        for (SListOfItemLocation iter = _items; iter.More(); iter.Next())
+        {
+            ItemLocation item = iter.Value();
+            hash = System.HashCode.Combine(RuntimeHelpers.GetHashCode(item._datum), item._power, hash);
+        }
+
+        return hash;
+    }
+
+    // opencascade::MurmurHash::optimalSeed<size_t>() (0xA329F1D3A586), truncated to an int
+    private const int OptimalSeed = unchecked((int)0xF1D3A586);
+
+    /// <summary>
+    /// True if both locations have the same series of datums (by identity) and powers. Locations with equal
+    /// transformations built from different datums are not equal.
+    /// </summary>
+    public readonly bool IsEqual(in Placement other)
+    {
+        if (ReferenceEquals(_items._node, other._items._node))
+        {
+            return true;
+        }
+
+        // Iterate through both lists in parallel.
+        SListOfItemLocation iter1 = _items;
+        SListOfItemLocation iter2 = other._items;
+        while (iter1.More() && iter2.More())
+        {
+            ItemLocation item1 = iter1.Value();
+            ItemLocation item2 = iter2.Value();
+            if (item1._datum != item2._datum)
+            {
+                return false;
+            }
+
+            if (item1._power != item2._power)
+            {
+                return false;
+            }
+
+            iter1.Next();
+            iter2.Next();
+        }
+
+        // Both lists should be exhausted at the same time for equality.
+        return !iter1.More() && !iter2.More();
+    }
+
+    /// <summary>The negation of <see cref="IsEqual"/>.</summary>
+    public readonly bool IsDifferent(in Placement other) => !IsEqual(other);
+
+    /// <summary>Writes the powers and datums of this location to S.</summary>
+    public readonly void ShallowDump(TextWriter s)
+    {
+        s.Write("TopLoc_Location : ");
+        SListOfItemLocation items = _items;
+        if (items.IsEmpty)
+        {
+            s.Write("Identity" + '\n');
+        }
+
+        while (items.More())
+        {
+            s.Write("\n");
+            s.Write("       Exponent : " + items.Value()._power + '\n');
+            items.Value()._datum.ShallowDump(s);
+            items.Next();
+        }
+
+        s.Write("\n");
+    }
+
+    /// <summary>Makes this location the identity.</summary>
+    internal void Clear() => _items.Clear();
+
+    /// <summary>The precision of scale factors, 1e-14.</summary>
+    public static double ScalePrec() => 1.0e-14;
+
+    // Equality follows OCCT's IsEqual: datums by identity, then powers.
+
+    public readonly bool Equals(Placement other) => IsEqual(other);
+
+    public override readonly bool Equals(object? obj) => obj is Placement other && IsEqual(other);
+
+    public override readonly int GetHashCode() => HashCode();
+
+    public static bool operator ==(in Placement left, in Placement right) => left.IsEqual(right);
+
+    public static bool operator !=(in Placement left, in Placement right) => left.IsDifferent(right);
+
+    public override readonly string ToString()
+        => IsIdentity ? "TopLoc_Location(Identity)" : $"TopLoc_Location({Transformation()})";
+}

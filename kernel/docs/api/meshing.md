@@ -92,7 +92,7 @@ Face fromStl = Face.FromMesh(stlMesh);            // a mesh-only face, as Stl.Re
 | `new BRepMesh_IncrementalMesh(copy, deflection, relative, angle, parallel)` | `Mesher.Mesh(shape, MeshOptions)` |
 | `BRep_Tool.Triangulation(face, location)`, `Poly_Triangulation` (`NbNodes`, `Node(i)`, `Triangle(i)`, 1-based) | `FaceMesh` (`Nodes`, `Triangles`, 0-based) |
 | `Poly_Triangle` (1-based) | `Triangle` (0-based) |
-| `OcctNet.MeshExtraction.Extract`, `MeshBuffers` | `ShapeMesh` |
+| `MeshExtraction.Extract`, `MeshBuffers` (`Kerf.Engine.Meshing`) | `ShapeMesh` |
 | `BRep_Tool.Polygon3D`, `PolygonOnTriangulation` | `EdgePolyline` |
 | `BRep_Builder.MakeFace(face, triangulation)` (an `UnsafeAccessor`) | `Face.FromMesh` |
 | `IMeshTools_Parameters` | `MeshOptions` |

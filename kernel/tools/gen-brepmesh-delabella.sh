@@ -1,7 +1,7 @@
 #!/bin/sh
 # Writes the Delabella instantiations of BRepMesh's node-insertion algorithms (BRepMesh_*MeshAlgoOfDelabella.cs) from
 # the Watson generics, changing only the names (phase4-plan section 6, decision 548).
-# Usage: sh tools/gen-brepmesh-delabella.sh src/OcctNet.ModelingAlgorithms/BRepMesh
+# Usage: sh tools/gen-brepmesh-delabella.sh src/Kerf.Kernel.ModelingAlgorithms/BRepMesh
 set -e
 cd "$1"
 for n in NodeInsertionMeshAlgo DelaunayNodeInsertionMeshAlgo DelaunayDeflectionControlMeshAlgo; do

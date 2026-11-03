@@ -24,7 +24,7 @@ for f in $conflicts; do
       else
         echo "CODE CONFLICT: $f"
       fi ;;
-    kernel/tests/OcctNet.DrawLite/DrawBuiltins.cs|kernel/tests/OcctNet.DrawLite/DrawSourceFiles.cs)
+    kernel/tests/Kerf.Kernel.DrawLite/DrawBuiltins.cs|kernel/tests/Kerf.Kernel.DrawLite/DrawSourceFiles.cs)
       # Units each add a line registering their Draw-lite commands at the same place: keep both sides, but only when
       # every conflicting line is a registration call or a comment
       if awk '/^<<<<<<< /{c=1;next} /^=======$/{next} /^>>>>>>> /{c=0;next} c && !/^[ \t]*([A-Za-z0-9_]+\.Register\(theInterpreter\);|\/\/.*)?[ \t\r]*$/ {bad=1} END{exit bad}' "$f"; then

@@ -1688,3 +1688,17 @@ Phase 10 (part): build123d.NET on OCCT.NET alone (unit 10B).
   `Add` and `Remove`; `BRep_Builder` and its `MakeFace` of a triangulation; `TopoDS_TShape.FreezeGraph`. Engine API,
   internal again once 10L's public API replaces them.
 - `tools/pack-nuget.ps1` packs `Build123d` from the repository, without `Build123d.OcctNet`, which is gone.
+Phase 10 (part): the rename (unit 10E). **Breaking: every name changes.**
+- The packages are `Kerf.Kernel.Foundation`, `Kerf.Kernel.ModelingData`, `Kerf.Kernel.ModelingAlgorithms` and
+  `Kerf.Kernel.DataExchange`, at 0.2.0 (the `OcctNet.*` packages end at 0.1.0).
+- Types are in namespaces by area without OCCT's package prefixes: the public values and curves in `Kerf.Geometry`
+  (`gp_Pnt` is `Point3D`, `gp_Cylinder` is `Cylinder`, `Geom_BSplineCurve` is `BSplineCurve3D`), the shapes in
+  `Kerf.Topology` (`TopoDS_Edge` is `Edge`, `TopLoc_Location` is `Placement`), everything else in `Kerf.Engine.<Area>`
+  (`BOPAlgo_PaveFiller` is `Kerf.Engine.Booleans.PaveFiller`). Members, parameters and fields follow .NET's naming
+  (`theX` is `x`, `myX` is `_x`; `NbPoles()` is the property `PoleCount`). `docs/api/kerf.map` says what each OCCT name
+  became; the types 10J replaces (NCollection, TCollection) keep their names in `Occt`.
+- Exceptions end in `Exception` (`Standard_DomainError` is `DomainErrorException`); their `OcctType`, messages, STEP's
+  signatures and every other text OCCT prints keep OCCT's names (`OcctTypeNames`).
+- The analyzers are `Kerf.Analyzers`, with ids `KERF0001` and `KERF0002`; .NET naming (IDE1006) is an error in the
+  build where the code obeys it.
+- No behaviour changes: every test passes as before.

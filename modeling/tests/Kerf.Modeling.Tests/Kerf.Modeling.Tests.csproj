@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <!-- The assembly and its namespaces keep build123d.NET's test names: xUnit orders the tests by IDs made from them, and
+         the differential run's native log (b3d-differential.ps1) was recorded in that order, which decides which test
+         logs a shape the tests share (unit 10E) -->
+    <AssemblyName>Build123d.Tests</AssemblyName>
+    <RootNamespace>Build123d.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Reference\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Kerf.Modeling\Kerf.Modeling.csproj" />
+  </ItemGroup>
+
+</Project>

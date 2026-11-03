@@ -2,28 +2,28 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <IsOcctPort Condition="'$(MSBuildProjectName)' != 'OcctNet.Analyzers'">true</IsOcctPort>
+    <IsOcctPort Condition="'$(MSBuildProjectName)' != 'Kerf.Analyzers'">true</IsOcctPort>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(IsOcctPort)' == 'true'">
     <!-- OCCT's free functions (RealSmall(), Square(), IsOdd(), the Raise_if checks) are called unqualified, as in C++ -->
-    <Using Include="Occt.Standard" Static="true" />
+    <Using Include="Kerf.Engine.Foundation.Standard" Static="true" />
     <!-- OCCT's typedefs math_Vector and math_IntegerVector: using aliases of math_VectorBase<T> -->
-    <Using Include="Occt.math_VectorBase&lt;double&gt;" Alias="math_Vector" />
-    <Using Include="Occt.math_VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
+    <Using Include="Kerf.Engine.Numerics.VectorBase&lt;double&gt;" Alias="math_Vector" />
+    <Using Include="Kerf.Engine.Numerics.VectorBase&lt;int&gt;" Alias="math_IntegerVector" />
     <!-- Checks ported code for mutating calls that would land on a defensive copy (docs/translation-rules.md) -->
-    <ProjectReference Include="$(MSBuildThisFileDirectory)OcctNet.Analyzers/OcctNet.Analyzers.csproj"
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Kerf.Analyzers/Kerf.Analyzers.csproj"
                       OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     <!-- Every OCCT.NET assembly may use the internal mutators of the others -->
-    <InternalsVisibleTo Include="OcctNet.ModelingData" />
-    <InternalsVisibleTo Include="OcctNet.ModelingAlgorithms" />
-    <InternalsVisibleTo Include="OcctNet.DataExchange" />
+    <InternalsVisibleTo Include="Kerf.Kernel.ModelingData" />
+    <InternalsVisibleTo Include="Kerf.Kernel.ModelingAlgorithms" />
+    <InternalsVisibleTo Include="Kerf.Kernel.DataExchange" />
     <!-- and so may the tests (ported GTests call OCCT's mutators, as the C++ tests do) -->
-    <InternalsVisibleTo Include="OcctNet.Foundation.Tests" />
-    <InternalsVisibleTo Include="OcctNet.ModelingData.Tests" />
-    <InternalsVisibleTo Include="OcctNet.ModelingAlgorithms.Tests" />
-    <InternalsVisibleTo Include="OcctNet.DataExchange.Tests" />
-    <InternalsVisibleTo Include="OcctNet.Oracle.Tests" />
-    <InternalsVisibleTo Include="OcctNet.DrawLite" />
+    <InternalsVisibleTo Include="Kerf.Kernel.Foundation.Tests" />
+    <InternalsVisibleTo Include="Kerf.Kernel.ModelingData.Tests" />
+    <InternalsVisibleTo Include="Kerf.Kernel.ModelingAlgorithms.Tests" />
+    <InternalsVisibleTo Include="Kerf.Kernel.DataExchange.Tests" />
+    <InternalsVisibleTo Include="Kerf.Kernel.Oracle.Tests" />
+    <InternalsVisibleTo Include="Kerf.Kernel.DrawLite" />
   </ItemGroup>
 </Project>

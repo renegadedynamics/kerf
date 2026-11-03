@@ -1,6 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 //
-// Generates src/OcctNet.ModelingData/AppCont/AppCont_ContMatrices_{BB,InvM,IBP,IBT,VB}.cs from OCCT's
+// Generates src/Kerf.Kernel.ModelingData/AppCont/AppCont_ContMatrices_{BB,InvM,IBP,IBT,VB}.cs from OCCT's
 // AppCont_ContMatrices_*.pxx: the constant tables of AppCont's Bernstein least squares (decision 77). Every literal
 // is copied as written, except that C's "1." and "1.e5" become "1.0" and "1.0e5", which C# requires.
 //
@@ -14,7 +14,7 @@ string aRoot = FindRoot(Directory.GetCurrentDirectory())
                ?? throw new InvalidOperationException("Run from inside the OCCT.NET repository.");
 string anOcctSrc = args.Length > 0 ? args[0] : Path.Combine(aRoot, ".deps", "occt-src");
 string aSrcDir = Path.Combine(anOcctSrc, "src", "ModelingData", "TKGeomBase", "AppCont");
-string anOutDir = Path.Combine(aRoot, "src", "OcctNet.ModelingData", "AppCont");
+string anOutDir = Path.Combine(aRoot, "src", "Kerf.Kernel.ModelingData", "AppCont");
 if (!Directory.Exists(aSrcDir))
 {
     Console.Error.WriteLine($"No OCCT source at {aSrcDir}: run tools/get-occt.ps1");

@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Kerf.Modeling</RootNamespace>
+    <Description>Kerf.Modeling: a code-first CAD modelling library for .NET, derived from build123d (the build123d contributors), over Kerf.Kernel.</Description>
+    <!-- The public API is documented -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Build123d.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Schematiq.Collections" Version="1.0.0-beta.1" />
+  </ItemGroup>
+
+  <!-- The kernel, called directly (unit 10B): the kernel's projects (KerfKernelRoot), which pack as the package dependencies -->
+  <ItemGroup>
+    <ProjectReference Include="$(KerfKernelRoot)src/Kerf.Kernel.DataExchange/Kerf.Kernel.DataExchange.csproj" />
+  </ItemGroup>
+
+  <Target Name="RequireKerfKernel" BeforeTargets="ResolveProjectReferences"
+          Condition="!Exists('$(KerfKernelRoot)src/Kerf.Kernel.DataExchange/Kerf.Kernel.DataExchange.csproj')">
+    <Error Text="Kerf.Kernel not found at KerfKernelRoot '$(KerfKernelRoot)': pass a Kerf checkout's kernel folder" />
+  </Target>
+
+</Project>

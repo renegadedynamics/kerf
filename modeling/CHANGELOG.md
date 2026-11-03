@@ -82,3 +82,10 @@ The first packages, for Bento's 3D-models extension.
   `SortBy("Length")`, `GroupBy("Area")`), and `FilterByValue(SortBy, value)` takes a measure.
 - `Selector`: a selection as plain values that can be kept and applied again. `Selector.For` finds the
   simplest selectors for a picked face, edge or vertex.
+
+## 0.2.0 (unreleased)
+
+- Kerf's unit 10E: the package and assembly are `Kerf.Modeling`, the namespace `Kerf.Modeling` (was `Build123d`), over the
+  renamed kernel (`Kerf.Kernel.*`): the kernel types it shows are the kernel's new names (`Kerf.Geometry.Point3D`,
+  `Kerf.Topology.Shape`…). Its own classes keep their names (`Shape`, `Edge`, `Box`…) until unit 10M merges its shapes
+  onto the kernel's. No behaviour changes.

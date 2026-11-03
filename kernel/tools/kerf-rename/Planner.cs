@@ -337,9 +337,11 @@ internal static class Planner
                 foreach ((string name, Dictionary<string, ISymbol> group) in groups)
                 {
                     // Overloads, and names that already coexisted, stay legal unless a method becomes a property
+                    // Methods renamed into another method's name aren't safe overloads either: send and Send would share
+                    // a signature, and length(…, double?) beside Length(…, double) changes which one a call binds to
+                    // (unit 10E)
                     bool converting = group.Keys.Any(plan.Converts);
-                    if (group.Count < 2 || (!converting && (group.Values.All(m => m is IMethodSymbol)
-                                                            || group.Values.Select(m => m.Name).Distinct().Count() < 2)))
+                    if (group.Count < 2 || (!converting && group.Values.Select(m => m.Name).Distinct().Count() < 2))
                     {
                         continue;
                     }

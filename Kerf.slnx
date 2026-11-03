@@ -1,30 +1,30 @@
 <Solution>
-  <!-- Everything but the kernel's benchmarks (kernel/OcctNet.slnx) -->
+  <!-- Everything but the kernel's benchmarks (kernel/Kerf.Kernel.slnx) -->
   <Folder Name="/kernel/" />
   <Folder Name="/kernel/samples/">
-    <Project Path="kernel/samples/OcctNet.WasmDemo/OcctNet.WasmDemo.csproj" />
+    <Project Path="kernel/samples/Kerf.Kernel.WasmDemo/Kerf.Kernel.WasmDemo.csproj" />
   </Folder>
   <Folder Name="/kernel/src/">
-    <Project Path="kernel/src/OcctNet.Analyzers/OcctNet.Analyzers.csproj" />
-    <Project Path="kernel/src/OcctNet.DataExchange/OcctNet.DataExchange.csproj" />
-    <Project Path="kernel/src/OcctNet.Foundation/OcctNet.Foundation.csproj" />
-    <Project Path="kernel/src/OcctNet.ModelingAlgorithms/OcctNet.ModelingAlgorithms.csproj" />
-    <Project Path="kernel/src/OcctNet.ModelingData/OcctNet.ModelingData.csproj" />
+    <Project Path="kernel/src/Kerf.Analyzers/Kerf.Analyzers.csproj" />
+    <Project Path="kernel/src/Kerf.Kernel.DataExchange/Kerf.Kernel.DataExchange.csproj" />
+    <Project Path="kernel/src/Kerf.Kernel.Foundation/Kerf.Kernel.Foundation.csproj" />
+    <Project Path="kernel/src/Kerf.Kernel.ModelingAlgorithms/Kerf.Kernel.ModelingAlgorithms.csproj" />
+    <Project Path="kernel/src/Kerf.Kernel.ModelingData/Kerf.Kernel.ModelingData.csproj" />
   </Folder>
   <Folder Name="/kernel/tests/">
-    <Project Path="kernel/tests/OcctNet.DataExchange.Tests/OcctNet.DataExchange.Tests.csproj" />
-    <Project Path="kernel/tests/OcctNet.DrawLite.Tests/OcctNet.DrawLite.Tests.csproj" />
-    <Project Path="kernel/tests/OcctNet.DrawLite/OcctNet.DrawLite.csproj" />
-    <Project Path="kernel/tests/OcctNet.Foundation.Tests/OcctNet.Foundation.Tests.csproj" />
-    <Project Path="kernel/tests/OcctNet.ModelingAlgorithms.Tests/OcctNet.ModelingAlgorithms.Tests.csproj" />
-    <Project Path="kernel/tests/OcctNet.ModelingData.Tests/OcctNet.ModelingData.Tests.csproj" />
-    <Project Path="kernel/tests/OcctNet.Oracle.Tests/OcctNet.Oracle.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.DataExchange.Tests/Kerf.Kernel.DataExchange.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.DrawLite.Tests/Kerf.Kernel.DrawLite.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.DrawLite/Kerf.Kernel.DrawLite.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.Foundation.Tests/Kerf.Kernel.Foundation.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.ModelingAlgorithms.Tests/Kerf.Kernel.ModelingAlgorithms.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.ModelingData.Tests/Kerf.Kernel.ModelingData.Tests.csproj" />
+    <Project Path="kernel/tests/Kerf.Kernel.Oracle.Tests/Kerf.Kernel.Oracle.Tests.csproj" />
   </Folder>
   <Folder Name="/modeling/" />
   <Folder Name="/modeling/src/">
-    <Project Path="modeling/src/Build123d/Build123d.csproj" />
+    <Project Path="modeling/src/Kerf.Modeling/Kerf.Modeling.csproj" />
   </Folder>
   <Folder Name="/modeling/tests/">
-    <Project Path="modeling/tests/Build123d.Tests/Build123d.Tests.csproj" />
+    <Project Path="modeling/tests/Kerf.Modeling.Tests/Kerf.Modeling.Tests.csproj" />
   </Folder>
 </Solution>

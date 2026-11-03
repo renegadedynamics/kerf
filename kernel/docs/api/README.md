@@ -20,7 +20,7 @@ implementation) build. It follows phase10-plan.md 2.1, 2.2, 2.5 and 2.6 and [des
 | [exchange.md](exchange.md) | `Kerf.Exchange`: STEP, STL, glTF, 3MF, OBJ, BREP |
 | [classification.tsv](classification.tsv) | Every public type today: public API, engine or removed, with its new name |
 | [classification-rules.txt](classification-rules.txt) | The rules that table comes from: by package, with exceptions by type |
-| [kerf.map](kerf.map) | The draft name map, in kerf-rename's format |
+| [kerf.map](kerf.map) | The name map unit 10E applied, in kerf-rename's format (decision 1349 settled the draft) |
 | [modeling-uses.txt](modeling-uses.txt) | The kernel types the modelling layer uses today |
 
 ## 1. The split
@@ -214,8 +214,8 @@ uses them everywhere, so a second set of values would mean a conversion at every
 | `gp_Vec`, `gp_Vec2d` | `Vector3D`, `Vector2D` | | `gp_GTrsf`, `gp_GTrsf2d` | `GeneralTransform3D`, `…2D` |
 | `gp_Dir`, `gp_Dir2d` | `Direction3D`, `Direction2D` | | `gp_Mat` | `Matrix3x3` |
 | `gp_Ax1`, `gp_Ax2d` | `Axis3D`, `Axis2D` | | `gp_Lin`, `gp_Circ`, `gp_Elips`… | `Line3D`, `Circle3D`, `Ellipse3D`… (and 2D) |
-| `gp_Ax2`, `gp_Ax22d` | `Frame3D`, `Frame2D` | | `gp_Pln`, `gp_Cylinder`, `gp_Cone`… | `Plane3D`, `Cylinder3D`, `Cone3D`, `Sphere3D`, `Torus3D` |
-| `gp_Ax3` | `CoordinateSystem3D` | | `Bnd_Box`, `Bnd_OBB` (classes) | `BoundingBox`, `OrientedBox` (new structs) |
+| `gp_Ax2`, `gp_Ax22d` | `Frame3D`, `Frame2D` | | `gp_Pln`, `gp_Cylinder`, `gp_Cone`… | `Plane3D`, `Cylinder`, `Cone`, `Sphere`, `Torus` |
+| `gp_Ax3` | `CoordinateSystem` | | `Bnd_Box`, `Bnd_OBB` (classes) | `BoundingBox`, `OrientedBox` (new structs) |
 
 - **Engine, not public:** `gp_XYZ`/`gp_XY` (the coordinates inside points and vectors), `gp_Quaternion` (its name is
   System.Numerics's; rotations are `Transform3D.Rotation(…)` and `GetEulerAngles(…)`), the interpolators, `gp_Mat2d`.
@@ -225,9 +225,10 @@ uses them everywhere, so a second set of values would mean a conversion at every
 - **`default`:** a default `Direction3D` or `Axis3D` is invalid (zero), and every API rejects it with an
   `ArgumentException`; points, vectors, transforms (identity is not default: `Transform3D.Identity`) are valid.
 - **System.Numerics:** `ToVector3()`, `ToMatrix4x4()` conversions (single precision, for viewers), not inheritance.
-- **The 3D suffix** goes on every gp value that is a 3D shape of space (`Plane3D`, `Cylinder3D`), not only where a
-  2D twin exists as in the pilot, so none clashes with System.Numerics's `Plane` or Kerf.Modeling's `Plane`,
-  `Cylinder` and `Sphere` (question 57).
+- **`2D`/`3D` only where both versions exist** (decision 1349, 57, which replaced this draft's suffix on every value):
+  `Cylinder`, `Cone`, `Sphere`, `Torus` and `CoordinateSystem` have none; `Plane3D` keeps its suffix because `Plane`
+  is System.Numerics's. Kerf.Modeling's own `Plane`, `Cylinder` and `Sphere` are qualified where they meet (10M merges
+  them).
 
 ## 5. Shapes
 
