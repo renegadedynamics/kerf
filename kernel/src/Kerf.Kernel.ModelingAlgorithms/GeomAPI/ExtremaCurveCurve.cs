@@ -92,10 +92,9 @@ public class ExtremaCurveCurve
         _totalExt = false;
 
         double tol = global::Kerf.Engine.Foundation.Precision.PConfusion();
-        // OCCT loads the whole curves, not the ranges: the Total methods then report the curves' natural end
-        // parameters (u11, u12, ...) with the ranges' end points, and project onto the whole curves
-        _c1.Load(c1);
-        _c2.Load(c2);
+        // the ranges, for the Total methods' ends and projections (OCCT loaded the whole curves: decision 16705)
+        _c1.Load(c1, u1min, u1max);
+        _c2.Load(c2, u2min, u2max);
         _extCC.Initialize(_c1, _c2, u1min, u1max, u2min, u2max, tol, tol);
         _extCC.Perform();
 

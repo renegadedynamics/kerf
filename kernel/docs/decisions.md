@@ -14959,3 +14959,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        pair was compared with the first total distance, never updated, so a later, farther pair could replace a nearer
        one (√8 for √2 on two perpendicular segments). The comparison is with the best so far; the pinned test asserts √2
        between (1, 0, 0) and (0, 1, 0).
+16705. **GeomAPI_ExtremaCurveCurve on ranges keeps the ranges for the total distance** (unit 3F's Init row). Init with
+       ranges loaded the whole curves, so the total methods paired the ranges' end points with the curves' own end
+       parameters and projected onto the whole curves. The adaptors are loaded on the ranges; the pinned test asserts √2
+       at parameters (1, 1) on ranges [1, 2] of segments [0, 3].

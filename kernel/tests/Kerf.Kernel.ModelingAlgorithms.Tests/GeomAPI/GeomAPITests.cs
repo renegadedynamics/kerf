@@ -160,25 +160,25 @@ public class GeomAPITests
     }
 
     [Fact]
-    public void ExtremaCurveCurve_TotalOnRangesReportsTheCurveEnds()
+    public void ExtremaCurveCurve_TotalOnRangesReachesTheRangesEnds()
     {
-        // OCCT (occt-issues.md): Init with ranges loads the whole curves, so the Total methods pair the ranges' end
-        // points with the curves' own end parameters and project them onto the whole curves. The segments of the
-        // test above, as ranges [1, 2] of segments [0, 3]: the true minimum is sqrt(2), between (1, 0, 0) and
-        // (0, 1, 0); OCCT gives 1, between (1, 0, 0) and the origin (outside the second range), at parameters (0, 0).
+        // The segments of the test above, as ranges [1, 2] of segments [0, 3]: the minimum is sqrt(2), between
+        // (1, 0, 0) and (0, 1, 0), at parameters (1, 1). OCCT (occt-issues.md; decision 16705) loaded the whole
+        // curves, so it paired the ranges' end points with the curves' own end parameters and projected them onto
+        // the whole curves: 1, between (1, 0, 0) and the origin (outside the second range), at parameters (0, 0).
         TrimmedCurve3D aC1 = new(Line(0, 0, 0, 1, 0, 0), 0.0, 3.0);
         TrimmedCurve3D aC2 = new(Line(0, 0, 0, 0, 1, 0), 0.0, 3.0);
         ExtremaCurveCurve anExt = new(aC1, aC2, 1.0, 2.0, 1.0, 2.0);
         Assert.Equal(0, anExt.NbExtrema());
-        Assert.Equal(1.0, anExt.TotalLowerDistance(), Tol);
+        Assert.Equal(Math.Sqrt(2.0), anExt.TotalLowerDistance(), Tol);
         double aU1 = -1, aU2 = -1;
         Assert.True(anExt.TotalLowerDistanceParameters(ref aU1, ref aU2));
         Point3D aP1 = new(), aP2 = new();
         Assert.True(anExt.TotalNearestPoints(ref aP1, ref aP2));
         Assert.True(aP1.IsEqual(new Point3D(1, 0, 0), Tol));
-        Assert.True(aP2.IsEqual(new Point3D(0, 0, 0), Tol));
-        Assert.Equal(0.0, aU1, Tol); // the first curve's first parameter, not the range's
-        Assert.Equal(0.0, aU2, Tol);
+        Assert.True(aP2.IsEqual(new Point3D(0, 1, 0), Tol));
+        Assert.Equal(1.0, aU1, Tol);
+        Assert.Equal(1.0, aU2, Tol);
     }
 
     [Fact]
