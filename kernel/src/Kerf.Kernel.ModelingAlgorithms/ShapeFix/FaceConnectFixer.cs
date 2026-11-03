@@ -27,11 +27,10 @@ namespace Kerf.Engine.Healing.Fixes;
 /// <para>
 /// A working object (decision 21). <see cref="Add"/> records the connections; <see cref="Build"/> runs OCCT's
 /// algorithm, which writes into the shell's sub-shapes in place (sewing same-parameters the free edges, the merged
-/// vertices are moved and their tolerances raised). A shell holding frozen shapes (any shell a caller holds) is copied
-/// first (<see cref="CopyAtEntry"/>, decision 583), the recorded faces mapped onto their copies: the
-/// caller's shell never changes, the result holds the caller's own sub-shapes wherever they are unchanged (the shell
-/// itself when nothing changed), and it is frozen. <see cref="InternalBuild"/> doesn't copy or freeze, for ported code
-/// connecting a shell it owns.
+/// vertices are moved and their tolerances raised). It runs on the caller's shell in a working overlay (unit 10H4):
+/// the caller's shell never changes, the result holds the caller's own sub-shapes wherever they are unchanged (the
+/// shell itself when nothing changed), and it is frozen. <see cref="InternalBuild"/> doesn't open an overlay or
+/// freeze, for ported code connecting a shell it owns.
 /// </para>
 /// </remarks>
 public sealed class FaceConnectFixer

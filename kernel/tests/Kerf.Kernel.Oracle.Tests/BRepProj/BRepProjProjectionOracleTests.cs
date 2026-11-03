@@ -328,7 +328,7 @@ public sealed class BRepProjProjectionOracleTests(ITestOutputHelper output) : ID
     // then the same BRep text as native's
     private bool DestructiveMatches(List<N.TopoDS_Wire> theNW, Shape[] thePIn, Direction3D? theDir, Point3D? thePnt)
     {
-        var aIn = thePIn.Select(s => BrepTools.ExactCopyForWrite(s, out _)).ToArray();
+        var aIn = thePIn.Select(s => TestCopies.ExactCopyForWrite(s, out _)).ToArray();
         Projection aP = theDir is { } d ? new Projection(aIn[0], aIn[1], d)
                                                  : new Projection(aIn[0], aIn[1], thePnt!.Value);
         var aPW = new List<Wire>();

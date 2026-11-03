@@ -66,6 +66,7 @@
   <ItemGroup>
     <!-- A record of a shape graph, to check that STEP import's healing leaves its input unchanged (unit 10H4) -->
     <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TopoDS\ShapeSnapshot.cs" Link="ShapeSnapshot.cs" />
+    <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TopoDS\TestCopies.cs" Link="TestCopies.cs" />
   </ItemGroup>
 
   <ItemGroup>

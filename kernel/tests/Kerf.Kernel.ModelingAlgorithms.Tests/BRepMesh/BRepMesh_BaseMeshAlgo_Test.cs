@@ -33,7 +33,7 @@ public class BRepMesh_BaseMeshAlgoTest
         // OCCT.NET: the maker's face is frozen; the vertices are added to an exact copy for write
         if (theFace.TShape()!.IsFrozen)
         {
-            theFace = ShapeCasts.Face(BrepTools.ExactCopyForWrite(theFace, out _));
+            theFace = ShapeCasts.Face(TestCopies.ExactCopyForWrite(theFace, out _));
         }
 
         Surface aSurf = Tool.Surface(theFace)!;

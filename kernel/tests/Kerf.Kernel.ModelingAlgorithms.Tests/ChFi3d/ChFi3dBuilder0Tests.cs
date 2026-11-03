@@ -46,7 +46,7 @@ public class ChFi3dBuilder0Tests
         Assert.Throws<global::Kerf.Engine.Topology.LockedShapeException>(() => ChFi3d_IndexPointInDS(P, DS));
         Assert.Equal(aTol, Tool.Tolerance(aFrozen));
 
-        Shape aCopy = BrepTools.ExactCopyForWrite(aBox, out global::Kerf.Engine.Topology.History _);
+        Shape aCopy = TestCopies.ExactCopyForWrite(aBox, out global::Kerf.Engine.Topology.History _);
         Vertex aV = FirstVertex(aCopy);
         P.SetVertex(aV);
         int i = ChFi3d_IndexPointInDS(P, DS);

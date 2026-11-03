@@ -99,7 +99,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
         else
         {
             // a copy the algorithm may write into, as native's operands (the shapes read are frozen)
-            aC = BrepTools.ExactCopyForWrite(aC, out _);
+            aC = TestCopies.ExactCopyForWrite(aC, out _);
         }
         var aList = new List<Shape>();
         for (var anIt = new Iterator(aC); anIt.More(); anIt.Next())

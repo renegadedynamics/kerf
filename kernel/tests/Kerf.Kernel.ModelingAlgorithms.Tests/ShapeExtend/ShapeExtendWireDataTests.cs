@@ -288,7 +288,7 @@ public class ShapeExtendWireDataTests
     public void Reverse_on_a_face_swaps_the_seam_pcurves()
     {
         Face aFrozen = FirstFace(new ApiMakeCylinder(1, 2).Shape(), f => Tool.Surface(f) is CylindricalSurface);
-        Face aF = ShapeCasts.Face(BrepTools.ExactCopyForWrite(aFrozen, out _));
+        Face aF = ShapeCasts.Face(TestCopies.ExactCopyForWrite(aFrozen, out _));
         var aWD = new ExtendWireData(BrepTools.OuterWire(aF));
         int aSeam = Enumerable.Range(1, 4).First(i => aWD.IsSeam(i) && aWD.Edge(i).Orientation() == Forward);
         Edge aSeamE = aWD.Edge(aSeam);

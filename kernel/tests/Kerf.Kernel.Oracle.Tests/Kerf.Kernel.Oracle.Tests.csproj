@@ -34,6 +34,7 @@
   <ItemGroup>
     <!-- Test stand-ins for GeomAdaptor_Curve and Geom2dAdaptor_Curve, shared with the unit tests -->
     <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TestGeomAdaptors.cs" Link="TestGeomAdaptors.cs" />
+    <Compile Include="..\Kerf.Kernel.ModelingData.Tests\TopoDS\TestCopies.cs" Link="TestCopies.cs" />
     <!-- The comparison and determinism harnesses of decisions 580 and 581, shared with the unit tests -->
     <Compile Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\Harness\BRepTextComparison.cs" Link="Harness\BRepTextComparison.cs" />
     <Compile Include="..\Kerf.Kernel.ModelingAlgorithms.Tests\Harness\CanonicalShapeComparer.cs" Link="Harness\CanonicalShapeComparer.cs" />
