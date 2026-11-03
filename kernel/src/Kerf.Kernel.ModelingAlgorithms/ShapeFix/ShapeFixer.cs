@@ -43,7 +43,7 @@ public class ShapeFixer : RootFixer
     /// <summary>The solid fixing tool (holding the shell, face, wire and edge tools).</summary>
     protected SolidFixer                _fixSolid;
     /// <summary>The shapes (without location) already fixed by this tool.</summary>
-    protected NCollection_Map<Shape> _mapFixingShape;
+    protected HashSet<Shape> _mapFixingShape;
     /// <summary>The mode of the solid fixes.</summary>
     protected int                           _fixSolidMode;
     /// <summary>The mode of the fixes of free shells.</summary>
@@ -68,7 +68,7 @@ public class ShapeFixer : RootFixer
     public ShapeFixer()
     {
         _result                = new Shape();
-        _mapFixingShape        = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        _mapFixingShape        = new HashSet<Shape>(ShapeHasher.Instance);
         _status                = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         _fixSolidMode          = -1;
         _fixShellMode          = -1;
@@ -84,7 +84,7 @@ public class ShapeFixer : RootFixer
     public ShapeFixer(in Shape shape)
     {
         _result                = new Shape();
-        _mapFixingShape        = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        _mapFixingShape        = new HashSet<Shape>(ShapeHasher.Instance);
         _status                = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         _fixSolidMode          = -1;
         _fixShellMode          = -1;

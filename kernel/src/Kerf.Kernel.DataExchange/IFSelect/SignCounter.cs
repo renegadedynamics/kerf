@@ -136,7 +136,7 @@ public class SignCounter : SignatureList
         int nb = model.EntityCount;
         //  If we start from empty, we know that each entity is unique in the model
         bool mapstat = _themapstat;
-        if (_themap.Extent() == 0)
+        if (_themap.Count == 0)
         {
             _themapstat = false;
         }
@@ -268,7 +268,7 @@ public class SignCounter : SignatureList
     }
 
     private bool _themapstat;
-    private NCollection_Map<Transient> _themap = new NCollection_Map<Transient>();
+    private HashSet<Transient> _themap = new HashSet<Transient>();
     private Signature? _thematcher;
     private AbstractSelection? _theselect;
     private int _theselmode;

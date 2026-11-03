@@ -400,7 +400,7 @@ public sealed class FuseEdges
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, _mapEdgLstFac);
 
         int iEdg;
-        var mapUniqEdg = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapUniqEdg = new HashSet<Shape>(ShapeHasher.Instance);
 
         // for each edge of myMapEdgLstFac
         for (iEdg = 1; iEdg <= _mapEdgLstFac.Extent(); iEdg++)
@@ -640,7 +640,7 @@ public sealed class FuseEdges
     // edges that are added to the list must be added also to the mapUniq, in order for the caller to not treat again
     // these edges. This list is always oriented in the "Forward" direction.
     private void BuildListConnexEdge(in Shape edge,
-                                     NCollection_Map<Shape> mapUniq,
+                                     HashSet<Shape> mapUniq,
                                      NCollection_List<Shape> lstEdg)
     {
         Vertex vf, vl;

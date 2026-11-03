@@ -1,4 +1,3 @@
-// Port of: src/FoundationClasses/TKernel/NCollection/NCollection_Map.hxx
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_IndexedMap.hxx
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_DataMap.hxx
 // Port of: src/FoundationClasses/TKernel/NCollection/NCollection_IndexedDataMap.hxx
@@ -15,39 +14,7 @@ namespace Occt;
 // Bucket counts and allocators are dropped. Iteration order of the unordered maps is not OCCT's: ported code
 // whose results depend on it must use an indexed map, and the port notes it.
 
-/// <summary>OCCT's set (<c>NCollection_Map</c>).</summary>
-public class NCollection_Map<TKey> : IEnumerable<TKey> where TKey : notnull
-{
-    private HashSet<TKey> _items;
-
-    public NCollection_Map(IEqualityComparer<TKey>? hasher = null) => _items = new HashSet<TKey>(hasher);
-
-    public NCollection_Map(NCollection_Map<TKey> other) => _items = new HashSet<TKey>(other._items, other._items.Comparer);
-
-    public int Extent() => _items.Count;
-
-    public int Size() => _items.Count;
-
-    public bool IsEmpty() => _items.Count == 0;
-
-    public void Clear() => _items.Clear();
-
-    /// <summary>Adds the key; false if it was already there.</summary>
-    public bool Add(TKey key) => _items.Add(key);
-
-    public bool Contains(TKey key) => _items.Contains(key);
-
-    public bool Remove(TKey key) => _items.Remove(key);
-
-    /// <summary>Exchanges the contents (and hashers) of the two maps.</summary>
-    public void Exchange(NCollection_Map<TKey> other) => (_items, other._items) = (other._items, _items);
-
-    public HashSet<TKey>.Enumerator GetEnumerator() => _items.GetEnumerator();
-
-    IEnumerator<TKey> IEnumerable<TKey>.GetEnumerator() => _items.GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => _items.GetEnumerator();
-}
+// OCCT's set, NCollection_Map, is HashSet<T> (unit 10J): its wrapper added nothing but OCCT's names.
 
 /// <summary>OCCT's indexed set: each key gets an index from 1 in the order added.</summary>
 public class NCollection_IndexedMap<TKey> : IEnumerable<TKey> where TKey : notnull

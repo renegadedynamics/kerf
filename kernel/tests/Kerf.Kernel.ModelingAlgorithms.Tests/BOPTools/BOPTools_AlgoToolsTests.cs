@@ -641,7 +641,7 @@ public class BOPTools_AlgoToolsTests
         AlgoTools.TreatCompound(aC, aL);
         Assert.Equal(3, aL.Extent());
         aL.Clear();
-        AlgoTools.TreatCompound(aC, aL, new NCollection_Map<Shape>(ShapeHasher.Instance));
+        AlgoTools.TreatCompound(aC, aL, new HashSet<Shape>(ShapeHasher.Instance));
         Assert.Equal(2, aL.Extent());
     }
 

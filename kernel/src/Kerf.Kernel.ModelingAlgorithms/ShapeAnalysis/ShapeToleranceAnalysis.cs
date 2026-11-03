@@ -146,7 +146,7 @@ public sealed class ShapeToleranceAnalysis
         if (type == ShapeType.Shell)
         {
             //  Exploration des shells
-            var mapface = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var mapface = new HashSet<Shape>(ShapeHasher.Instance);
             myExp.Init(shape, ShapeType.Shell);
             while (myExp.More())
             {

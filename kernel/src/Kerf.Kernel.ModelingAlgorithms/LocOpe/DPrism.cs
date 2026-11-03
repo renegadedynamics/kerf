@@ -93,7 +93,7 @@ public sealed class DPrism
             b.MakeCompound(ref c);
             NCollection_List<Shape>.Iterator it = new();
             Explorer expS = new(aSpine, ShapeType.Edge);
-            NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+            HashSet<Shape> view = new(ShapeHasher.Instance);
             for (; expS.More(); expS.Next())
             {
                 Shape es = expS.Current();
@@ -294,7 +294,7 @@ public sealed class DPrism
             b.MakeCompound(ref c);
             NCollection_List<Shape>.Iterator it = new();
             Explorer expS = new(aSpine, ShapeType.Edge);
-            NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+            HashSet<Shape> view = new(ShapeHasher.Instance);
             for (; expS.More(); expS.Next())
             {
                 Shape es = expS.Current();
@@ -376,7 +376,7 @@ public sealed class DPrism
         BrepBuilder b = new();
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(c, ShapeType.Edge, ShapeType.Face, theMapEF);
-        NCollection_Map<Shape> view = new(ShapeHasher.Instance);
+        HashSet<Shape> view = new(ShapeHasher.Instance);
 
         for (int i = 1; i <= theMapEF.Extent(); i++)
         {
@@ -513,7 +513,7 @@ public sealed class DPrism
             normale = normale.Reversed();
         }
 
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
         Explorer exp = new(_spine.Oriented(Forward), ShapeType.Edge);
         double prm;
         int i;

@@ -2168,7 +2168,7 @@ public class ComposeShellFixer : RootFixer
     protected void BreakWires(NCollection_Sequence<WireSegmentFixer> seqw)
     {
         // split all the wires by vertices
-        var splitVertices = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var splitVertices = new HashSet<Shape>(ShapeHasher.Instance);
         var sae = new EdgeAnalysis();
 
         // first collect splitting vertices

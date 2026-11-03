@@ -68,7 +68,7 @@ public class MergeNodesTool : Transient
     {
         _polyData = new Triangulation();
         _nodeIndexMap = new MergedNodesMap((smoothAngle > 0.0 || mergeTolerance > 0.0) ? InitialNbBuckets(nbFacets) : 1);
-        _elemMap = new NCollection_Map<NCollection_Vec4<int>>();
+        _elemMap = new HashSet<NCollection_Vec4<int>>();
         _nodeInds = new NCollection_Vec4<int>(0, 0, 0, -1);
         _triNormal = new NCollection_Vec3<float>(0.0f, 0.0f, 1.0f);
         _unitFactor = 1.0;
@@ -617,7 +617,7 @@ public class MergeNodesTool : Transient
 
     private Triangulation? _polyData;                         // output triangulation
     private readonly MergedNodesMap _nodeIndexMap;                  // map of merged nodes
-    private readonly NCollection_Map<NCollection_Vec4<int>> _elemMap; // map of elements
+    private readonly HashSet<NCollection_Vec4<int>> _elemMap; // map of elements
     private NCollection_Vec4<int> _nodeInds;                        // current element indexes
     private NCollection_Vec3<float> _triNormal;                     // current triangle normal
     private readonly Xyz[] _places = new Xyz[4];              // current triangle/quad coordinates to push

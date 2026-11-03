@@ -14,7 +14,7 @@ namespace Kerf.Engine.Booleans;
 public class ToolsProvider : BooleanBuilder
 {
     protected NCollection_List<Shape> _tools = new();
-    protected NCollection_Map<Shape> _mapTools = new(ShapeHasher.Instance);
+    protected HashSet<Shape> _mapTools = new(ShapeHasher.Instance);
 
     public ToolsProvider()
     {

@@ -218,7 +218,7 @@ public class FastSewing : Transient
             return result;
         }
 
-        var ms = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var ms = new HashSet<Shape>(ShapeHasher.Instance);
         // aMS.Add(theShape);
         var fExp = new Explorer(shape, ShapeType.Face);
         for (; fExp.More(); fExp.Next())

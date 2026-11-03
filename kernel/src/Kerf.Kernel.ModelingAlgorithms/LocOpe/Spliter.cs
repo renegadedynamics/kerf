@@ -112,7 +112,7 @@ public sealed class Spliter
 
         Put(_shape, _map);
 
-        NCollection_Map<Shape> mapV = new(ShapeHasher.Instance), mapE = new(ShapeHasher.Instance);
+        HashSet<Shape> mapV = new(ShapeHasher.Instance), mapE = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, Shape> edgOnEdg = new(ShapeHasher.Instance);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapFE = new(ShapeHasher.Instance);
         Explorer exp = new(), exp2 = new();
@@ -176,7 +176,7 @@ public sealed class Spliter
         // work to rebuild wires on each face
         double prm;
 
-        NCollection_Map<Shape> theFacesWithSection = new(ShapeHasher.Instance);
+        HashSet<Shape> theFacesWithSection = new(ShapeHasher.Instance);
         for (pw.InitEdgeIterator(); pw.MoreEdge(); pw.NextEdge())
         {
             Edge edg = pw.InternalEdge();
@@ -494,7 +494,7 @@ public sealed class Spliter
         // Map des edges ou les connexions sont possibles
         // OCCT takes the first edge of this map and the first face of mapV that has it, in the order of their
         // addresses: so the order of Left() natively depends on the run (the port: the maps' order)
-        NCollection_Map<Shape> mapebord = new(ShapeHasher.Instance);
+        HashSet<Shape> mapebord = new(ShapeHasher.Instance);
         for (itl.Initialize(_left); itl.More(); itl.Next())
         {
             for (exp.Init(itl.Value(), ShapeType.Edge); exp.More(); exp.Next())
@@ -509,7 +509,7 @@ public sealed class Spliter
             }
         }
 
-        while (mapebord.Extent() != 0)
+        while (mapebord.Count != 0)
         {
             Shape edg = new();
             foreach (Shape first in mapebord)

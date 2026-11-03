@@ -21,7 +21,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using DataMapOfFacePlane = Occt.NCollection_DataMap<Kerf.Topology.Shape, Kerf.Geometry.PlaneSurface>;
-using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Kerf.Topology.Shape, Occt.NCollection_Map<Kerf.Topology.Shape>>;
+using DataMapOfShapeMapOfShape = Occt.NCollection_DataMap<Kerf.Topology.Shape, System.Collections.Generic.HashSet<Kerf.Topology.Shape>>;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -66,7 +66,7 @@ public partial class UnifySameDomain : Transient
     private bool                          _safeInputMode;
     private Shape                  _shape;
     private readonly ReShapeBuilder   _context;
-    private NCollection_Map<Shape> _keepShapes = new(ShapeHasher.Instance);
+    private HashSet<Shape> _keepShapes = new(ShapeHasher.Instance);
     private readonly DataMapOfFacePlane   _facePlaneMap = new(ShapeHasher.Instance);
     private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _eFmap =
       new(ShapeHasher.Instance);
@@ -163,7 +163,7 @@ public partial class UnifySameDomain : Transient
     /// Sets the map of shapes for avoid merging of the faces/edges. It allows passing a ready to use map instead of
     /// calling many times the method KeepShape.
     /// </summary>
-    public void KeepShapes(NCollection_Map<Shape> shapes)
+    public void KeepShapes(HashSet<Shape> shapes)
     {
         foreach (Shape shape in shapes)
         {
@@ -246,12 +246,12 @@ public partial class UnifySameDomain : Transient
         // to the edges of the faces it unifies, even in the safe input mode)
         var          entry    = new CopyAtEntry(_initShape, _context);
         Shape input    = _initShape;
-        NCollection_Map<Shape> keepShapes = _keepShapes;
+        HashSet<Shape> keepShapes = _keepShapes;
         if (entry.IsCopied)
         {
             _initShape  = entry.Shape();
             _shape      = entry.Shape();
-            _keepShapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            _keepShapes = new HashSet<Shape>(ShapeHasher.Instance);
             foreach (Shape keepShape in keepShapes)
             {
                 _keepShapes.Add(entry.Copied(keepShape));
@@ -318,19 +318,19 @@ public partial class UnifySameDomain : Transient
             for (var itF = new Iterator(shell); itF.More(); itF.Next())
             {
                 Shape f = itF.Value();
-                if (gMapFaceShells.Find(f, out NCollection_Map<Shape> pShells))
+                if (gMapFaceShells.Find(f, out HashSet<Shape> pShells))
                 {
                     pShells.Add(shell);
                 }
                 else
                 {
-                    gMapFaceShells.Bound(f, new NCollection_Map<Shape>(ShapeHasher.Instance)).Add(shell);
+                    gMapFaceShells.Bound(f, new HashSet<Shape>(ShapeHasher.Instance)).Add(shell);
                 }
             }
         }
 
         // creating map of free boundaries
-        var freeBoundMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var freeBoundMap = new HashSet<Shape>(ShapeHasher.Instance);
         // look at only shells not belonging to solids
         var explo = new Explorer(_shape, ShapeType.Shell, ShapeType.Solid);
         for (; explo.More(); explo.Next())
@@ -378,7 +378,7 @@ public partial class UnifySameDomain : Transient
     private void IntUnifyFaces(in Shape                                                          inpShape,
                                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> gMapEdgeFaces,
                                DataMapOfShapeMapOfShape                                                 gMapFaceShells,
-                               NCollection_Map<Shape>                                            freeBoundMap)
+                               HashSet<Shape>                                            freeBoundMap)
     {
         // creating map of edge faces for the shape
         var mapEdgeFaces =
@@ -386,7 +386,7 @@ public partial class UnifySameDomain : Transient
         Exploration.MapShapesAndAncestors(inpShape, ShapeType.Edge, ShapeType.Face, mapEdgeFaces);
 
         // map of processed shapes
-        var processed = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var processed = new HashSet<Shape>(ShapeHasher.Instance);
 
         // processing each face
         var exp = new Explorer();
@@ -428,14 +428,14 @@ public partial class UnifySameDomain : Transient
             bb.MakeFace(ref refFace, baseSurface, baseLocation, 0.0);
             refFace.Orientation(refFaceOrientation);
             // map of edges not lying on RefFace; these edges may be updated by temporary pcurves
-            var mapEdgesWithTemporaryPCurves = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var mapEdgesWithTemporaryPCurves = new HashSet<Shape>(ShapeHasher.Instance);
 
             double uperiod = (baseSurface.IsUPeriodic) ? baseSurface.UPeriod() : 0.0;
             double vperiod = (baseSurface.IsVPeriodic) ? baseSurface.VPeriod() : 0.0;
 
             // Get shells connected to the face (in normal cases should not be more than 2)
-            NCollection_Map<Shape>? pFShells1 =
-              gMapFaceShells.Find(face, out NCollection_Map<Shape> fShells1) ? fShells1 : null;
+            HashSet<Shape>? pFShells1 =
+              gMapFaceShells.Find(face, out HashSet<Shape> fShells1) ? fShells1 : null;
 
             // find adjacent faces to union
             int i;
@@ -495,8 +495,8 @@ public partial class UnifySameDomain : Transient
                     }
 
                     // Get shells connected to the checked face
-                    NCollection_Map<Shape>? pFShells2 =
-                      gMapFaceShells.Find(checkedFace, out NCollection_Map<Shape> fShells2) ? fShells2 : null;
+                    HashSet<Shape>? pFShells2 =
+                      gMapFaceShells.Find(checkedFace, out HashSet<Shape> fShells2) ? fShells2 : null;
                     // Faces can be unified only if the shells of faces connected to
                     // these faces are the same. Otherwise, topology would be broken.
                     if (!IsSameSets(pFShells1, pFShells2))
@@ -576,7 +576,7 @@ public partial class UnifySameDomain : Transient
                     {
                         // Remove from the selection the faces which have no other connect edges
                         // and contain multi-connected edges and/or keep edges.
-                        var avoidFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var avoidFaces = new HashSet<Shape>(ShapeHasher.Instance);
                         var it           = new NCollection_List<Shape>.Iterator(keepEdges);
                         for (; it.More(); it.Next())
                         {
@@ -621,7 +621,7 @@ public partial class UnifySameDomain : Transient
                         // already updated the boundaries of merged area
                         if (!faces.IsEmpty())
                         {
-                            var mapFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                            var mapFaces = new HashSet<Shape>(ShapeHasher.Instance);
                             for (i = 1; i <= faces.Length(); i++)
                             {
                                 mapFaces.Add(faces[i]);
@@ -717,7 +717,7 @@ public partial class UnifySameDomain : Transient
             if (faces.Length() > 1)
             {
                 double coordTol;
-                var    edgesMap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var    edgesMap = new HashSet<Shape>(ShapeHasher.Instance);
                 coordTol =  ComputeMinEdgeSize(edges, F_RefFace, edgesMap);
                 coordTol /= 10.0;
                 coordTol =  Max(coordTol, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -899,7 +899,7 @@ public partial class UnifySameDomain : Transient
                             }
                             else if (numberOfIntervals == 2)
                             {
-                                var usedEdges0    = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                                var usedEdges0    = new HashSet<Shape>(ShapeHasher.Instance);
                                 var edgeNewPCurve = new NCollection_DataMap<Shape, Curve2D>(EqualityComparer<Shape>.Default);
 
                                 // Relocate pcurves to new U-origin
@@ -1038,7 +1038,7 @@ public partial class UnifySameDomain : Transient
                     }
                 }
 
-                var  usedEdges            = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var  usedEdges            = new HashSet<Shape>(ShapeHasher.Instance);
                 bool isWireBuildingFailed = false;
 
                 double faceUmin = RealLast();
@@ -1501,17 +1501,17 @@ public partial class UnifySameDomain : Transient
                     InsertWiresIntoFaces(newWires, newFaces, refFace);
                     InsertWiresIntoFaces(internalWires, newFaces, refFace);
 
-                    var emaps = new NCollection_Sequence<NCollection_Map<Shape>>();
+                    var emaps = new NCollection_Sequence<HashSet<Shape>>();
                     for (int ii = 1; ii <= faces.Length(); ii++)
                     {
-                        var emap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var emap = new HashSet<Shape>(ShapeHasher.Instance);
                         Exploration.MapShapes(faces[ii], emap);
                         emaps.Append(emap);
                     }
                     for (int ii = 1; ii <= newFaces.Length(); ii++)
                     {
                         var facesForThisFace = new NCollection_Sequence<Shape>();
-                        var usedFaces        = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var usedFaces        = new HashSet<Shape>(ShapeHasher.Instance);
                         var explo            = new Explorer(newFaces[ii], ShapeType.Edge);
                         for (; explo.More(); explo.Next())
                         {
@@ -1579,7 +1579,7 @@ public partial class UnifySameDomain : Transient
         }
 
         // Prepare map of shared vertices (with the number of connected edges greater then 2)
-        var sharedVert = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var sharedVert = new HashSet<Shape>(ShapeHasher.Instance);
         CheckSharedVertices(seqEdges, mapEdgesVertex, _keepShapes, sharedVert);
         // Merge the edges avoiding removal of the shared vertices
         bool isMerged = MergeSeq(seqEdges, vFmap, sharedVert);

@@ -43,7 +43,7 @@ public class ModelHealer : ModelAlgo
 {
     private ModelModel? _model;
     private ToolParameters _parameters = new();
-    private NCollection_DataMap<FaceModel, NCollection_Map<EdgeModel>?>? _faceIntersectingEdges;
+    private NCollection_DataMap<FaceModel, HashSet<EdgeModel>?>? _faceIntersectingEdges;
 
     /// <summary>A healer.</summary>
     public ModelHealer()
@@ -71,7 +71,7 @@ public class ModelHealer : ModelAlgo
         _parameters.MinSize = global::Kerf.Engine.Foundation.Precision.Confusion();
 
         _faceIntersectingEdges =
-            new NCollection_DataMap<FaceModel, NCollection_Map<EdgeModel>?>(ReferenceEqualityComparer.Instance);
+            new NCollection_DataMap<FaceModel, HashSet<EdgeModel>?>(ReferenceEqualityComparer.Instance);
         for (int faceIt = 0; faceIt < _model.FacesNb(); ++faceIt)
         {
             _faceIntersectingEdges.Bind(_model.GetFace(faceIt), null);
@@ -81,7 +81,7 @@ public class ModelHealer : ModelAlgo
         OsdParallel.For(0, _model.FacesNb(), Process, !IsParallel());
         AmplifyEdges();
 
-        foreach (KeyValuePair<FaceModel, NCollection_Map<EdgeModel>?> faceIt in _faceIntersectingEdges)
+        foreach (KeyValuePair<FaceModel, HashSet<EdgeModel>?> faceIt in _faceIntersectingEdges)
         {
             if (faceIt.Value is not null)
             {
@@ -101,7 +101,7 @@ public class ModelHealer : ModelAlgo
     {
         int ampIt = 0;
         const double iterNb = 5;
-        NCollection_Map<EdgeModel> edgesToUpdate = new(ReferenceEqualityComparer.Instance);
+        HashSet<EdgeModel> edgesToUpdate = new(ReferenceEqualityComparer.Instance);
         EdgeAmplifier edgeAmplifier = new(_parameters);
 
         while (ampIt++ < iterNb && PopEdgesToUpdate(edgesToUpdate))
@@ -109,10 +109,10 @@ public class ModelHealer : ModelAlgo
             // Try to update discretization by decreasing deflection of problematic edges.
             OsdParallel.ForEach(edgesToUpdate,
                                  edgeAmplifier.Process,
-                                 !_parameters.InParallel || edgesToUpdate.Size() <= 1,
-                                 edgesToUpdate.Size());
+                                 !_parameters.InParallel || edgesToUpdate.Count <= 1,
+                                 edgesToUpdate.Count);
 
-            NCollection_Map<FaceModel> facesToCheck = new(ReferenceEqualityComparer.Instance);
+            HashSet<FaceModel> facesToCheck = new(ReferenceEqualityComparer.Instance);
             foreach (EdgeModel dEdge in edgesToUpdate)
             {
                 for (int pCurveIt = 0; pCurveIt < dEdge.PCurvesNb(); ++pCurveIt)
@@ -123,19 +123,19 @@ public class ModelHealer : ModelAlgo
 
             OsdParallel.ForEach(facesToCheck,
                                  Process,
-                                 !_parameters.InParallel || facesToCheck.Size() <= 1,
-                                 facesToCheck.Size());
+                                 !_parameters.InParallel || facesToCheck.Count <= 1,
+                                 facesToCheck.Count);
 
             edgesToUpdate.Clear();
         }
     }
 
     // Collects unique edges to be updated from face map. Clears data stored in face map.
-    private bool PopEdgesToUpdate(NCollection_Map<EdgeModel> edgesToUpdate)
+    private bool PopEdgesToUpdate(HashSet<EdgeModel> edgesToUpdate)
     {
         foreach (FaceModel dFace in _faceIntersectingEdges!.Keys)
         {
-            ref NCollection_Map<EdgeModel>? intersections = ref _faceIntersectingEdges.ChangeFind(dFace);
+            ref HashSet<EdgeModel>? intersections = ref _faceIntersectingEdges.ChangeFind(dFace);
             if (intersections is not null)
             {
                 NCollection_MapAlgo.Unite(edgesToUpdate, intersections);
@@ -143,7 +143,7 @@ public class ModelHealer : ModelAlgo
             }
         }
 
-        return !edgesToUpdate.IsEmpty();
+        return edgesToUpdate.Count != 0;
     }
 
     // Returns True if check can be done in parallel.
@@ -161,7 +161,7 @@ public class ModelHealer : ModelAlgo
     {
         try
         {
-            ref NCollection_Map<EdgeModel>? intersections = ref _faceIntersectingEdges!.ChangeFind(dFace);
+            ref HashSet<EdgeModel>? intersections = ref _faceIntersectingEdges!.ChangeFind(dFace);
             intersections = null;
 
             FixFaceBoundaries(dFace);
@@ -189,7 +189,7 @@ public class ModelHealer : ModelAlgo
 
                             if (pCurve0.ParametersNb() == 2 && pCurve1.ParametersNb() == 2)
                             {
-                                intersections = new NCollection_Map<EdgeModel>(ReferenceEqualityComparer.Instance);
+                                intersections = new HashSet<EdgeModel>(ReferenceEqualityComparer.Instance);
                                 // a kind of degenerated face - 1 wire, 2 edges and both edges are very small
                                 intersections.Add(dEdge0);
                                 intersections.Add(dEdge1);

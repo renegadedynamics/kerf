@@ -54,7 +54,7 @@ public class NurbsConvert : ModifyShape
 
     private void CorrectVertexTol()
     {
-        var initVertices = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var initVertices = new HashSet<Shape>(ShapeHasher.Instance);
         var exp = new Explorer(_initialShape, ShapeType.Vertex);
         for (; exp.More(); exp.Next())
         {

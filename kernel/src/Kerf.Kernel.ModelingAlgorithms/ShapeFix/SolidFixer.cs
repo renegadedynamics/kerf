@@ -86,7 +86,7 @@ public class SolidFixer : RootFixer
                                       NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anIndexedMapShellHoles,
                                       NCollection_DataMap<Shape, int> mapStatus)
     {
-        var mapHoles      = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapHoles      = new HashSet<Shape>(ShapeHasher.Instance);
         var mapShellHoles = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         for (int i1 = 1; i1 <= aSeqShells.Length(); i1++)
         {

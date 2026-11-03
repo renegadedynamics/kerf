@@ -109,7 +109,7 @@ public sealed class Collect
                                MakeShape mks,
                                ShapeType shapeType)
     {
-        var dejaVu = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var dejaVu = new HashSet<Shape>(ShapeHasher.Instance);
         var exp = new Explorer();
         for (exp.Init(si, shapeType); exp.More(); exp.Next())
         {
@@ -214,7 +214,7 @@ public sealed class Collect
     private static void FilterByShape(NCollection_DataMap<Shape, NCollection_List<Shape>> mg,
                                       in Shape sf)
     {
-        var msf = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var msf = new HashSet<Shape>(ShapeHasher.Instance);
         var exp = new Explorer();
         bool yaEdge = false;
         bool yaVertex = false;

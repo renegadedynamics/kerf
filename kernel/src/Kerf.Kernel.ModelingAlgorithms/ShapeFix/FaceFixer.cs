@@ -274,7 +274,7 @@ public partial class FaceFixer : RootFixer
     /// </summary>
     private static bool SplitWire(in Face face, in Wire wire, NCollection_Sequence<Shape> aResWires)
     {
-        var usedEdges = new NCollection_Map<int>();
+        var usedEdges = new HashSet<int>();
         var sewd = new ExtendWireData(wire);
         int i, j, k;
         var sae = new EdgeAnalysis();
@@ -358,7 +358,7 @@ public partial class FaceFixer : RootFixer
                 // create new notclosed wire
                 aResWires.Append(sewd1.InternalWire());
             }
-            if (usedEdges.Extent() == sewd.EdgeCount)
+            if (usedEdges.Count == sewd.EdgeCount)
             {
                 break;
             }
@@ -1329,7 +1329,7 @@ public partial class FaceFixer : RootFixer
 
             var mw = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             var si = new NCollection_DataMap<Shape, int>(ShapeHasher.Instance);
-            var mapIntWires = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var mapIntWires = new HashSet<Shape>(ShapeHasher.Instance);
             mw.Clear();
             si.Clear();
             mapIntWires.Clear();
@@ -2410,9 +2410,9 @@ public partial class FaceFixer : RootFixer
     private static void FindNext(in Shape aVert, in Shape ainitEdge,
                                  NCollection_IndexedMap<Shape> aMapVertices,
                                  NCollection_DataMap<Shape, NCollection_List<Shape>> aMapVertexEdges,
-                                 NCollection_Map<Shape> aMapSmallEdges,
-                                 NCollection_Map<Shape> aMapSeemEdges,
-                                 NCollection_Map<Shape> aMapEdges,
+                                 HashSet<Shape> aMapSmallEdges,
+                                 HashSet<Shape> aMapSeemEdges,
+                                 HashSet<Shape> aMapEdges,
                                  ExtendWireData aWireData)
     {
         var itV = new Iterator(ainitEdge);
@@ -2490,14 +2490,14 @@ public partial class FaceFixer : RootFixer
     {
         var mapVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         var mapVertexEdges = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var mapSmallEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var mapSeemEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapSmallEdges = new HashSet<Shape>(ShapeHasher.Instance);
+        var mapSeemEdges = new HashSet<Shape>(ShapeHasher.Instance);
         if (!FixWireTool().Analyzer().CheckLoop(mapVertices, mapVertexEdges, mapSmallEdges, mapSeemEdges))
         {
             return false;
         }
 
-        var mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapEdges = new HashSet<Shape>(ShapeHasher.Instance);
         var seqWires = new NCollection_Sequence<Shape>();
 
         // collecting wires from common vertex belonging more than 2 edges

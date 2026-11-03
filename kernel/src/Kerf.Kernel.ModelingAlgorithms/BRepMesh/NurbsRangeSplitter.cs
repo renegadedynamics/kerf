@@ -84,9 +84,9 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
         ];
 
         // check intermediate isolines
-        NCollection_Map<double>[] fixedParams = [new NCollection_Map<double>(), new NCollection_Map<double>()];
+        HashSet<double>[] fixedParams = [new HashSet<double>(), new HashSet<double>()];
 
-        NCollection_Map<double>[] paramsToRemove =
+        HashSet<double>[] paramsToRemove =
         [
             new AnalyticalFilter(GetDFace(),
                                  IsoV,
@@ -459,10 +459,10 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
         private readonly NCollection_Sequence<double> _params;
         private readonly NCollection_Sequence<double> _controlParams;
 
-        private readonly NCollection_Map<double> _paramsForbiddenToRemove;
-        private readonly NCollection_Map<double> _controlParamsForbiddenToRemove;
+        private readonly HashSet<double> _paramsForbiddenToRemove;
+        private readonly HashSet<double> _controlParamsForbiddenToRemove;
 
-        private readonly NCollection_Map<double> _controlParamsToRemove;
+        private readonly HashSet<double> _controlParamsToRemove;
 
         private ToolParameters _parameters = new();
         private CurveAdaptor? _iso;
@@ -481,8 +481,8 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
                                 IsoType isoType,
                                 NCollection_Sequence<double> theParams,
                                 NCollection_Sequence<double> controlParams,
-                                NCollection_Map<double> paramsForbiddenToRemove,
-                                NCollection_Map<double> controlParamsForbiddenToRemove)
+                                HashSet<double> paramsForbiddenToRemove,
+                                HashSet<double> controlParamsForbiddenToRemove)
         {
             _dFace = dFace;
             _surface = _dFace.GetSurface().GeomSurfaceOriginal()!;
@@ -491,14 +491,14 @@ public class NurbsRangeSplitter : UVParamRangeSplitter
             _controlParams = controlParams;
             _paramsForbiddenToRemove = paramsForbiddenToRemove;
             _controlParamsForbiddenToRemove = controlParamsForbiddenToRemove;
-            _controlParamsToRemove = new NCollection_Map<double>();
+            _controlParamsToRemove = new HashSet<double>();
             _currParam = 0.0;
             _currControlParam = 0.0;
             _prevControlParam = 0.0;
         }
 
         // Returns the map of the parameters to be removed.
-        public NCollection_Map<double> GetControlParametersToRemove(in ToolParameters parameters)
+        public HashSet<double> GetControlParametersToRemove(in ToolParameters parameters)
         {
             _parameters = parameters;
 

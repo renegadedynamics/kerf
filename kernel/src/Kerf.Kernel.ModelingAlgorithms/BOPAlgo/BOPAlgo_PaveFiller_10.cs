@@ -208,7 +208,7 @@ public partial class PaveFiller
         //
         int i, nV1, nV2;
         double tolV;
-        NCollection_Map<CommonBlock> mcb = new();
+        HashSet<CommonBlock> mcb = new();
         NCollection_List<PaveBlock>.Iterator itPB = new();
         PaveBlock pb;
         //

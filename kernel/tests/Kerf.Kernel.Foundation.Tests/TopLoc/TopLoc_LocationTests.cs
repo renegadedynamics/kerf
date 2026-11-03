@@ -168,13 +168,13 @@ public class TopLoc_LocationSemanticsTests
     {
         var aL1 = new Placement(Rotation(0.2));
         var aL2 = new Placement(Rotation(0.2));
-        var aMap = new NCollection_Map<Placement>();
+        var aMap = new HashSet<Placement>();
         Assert.True(aMap.Add(aL1));
         Assert.False(aMap.Add(aL1 * aL2 * aL2.Inverted()));
         Assert.True(aMap.Add(aL2));
         Assert.True(aMap.Add(new Placement()));
         Assert.False(aMap.Add(default));
-        Assert.Equal(3, aMap.Extent());
+        Assert.Equal(3, aMap.Count);
 
         var aSet = new HashSet<Placement> { aL1, aL1.Powered(1), aL2 };
         Assert.Equal(2, aSet.Count);

@@ -100,7 +100,7 @@ public class CellsBuilder : BooleanBuilder
         Compound allParts = new();
         bb.MakeCompound(ref allParts);
         //
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         NCollection_IntMap mDims = new();
         //
         NCollection_List<Shape>.Iterator it = new(_arguments);
@@ -238,7 +238,7 @@ public class CellsBuilder : BooleanBuilder
         }
         //
         // collect result parts to avoid multiple adding of the same parts
-        NCollection_Map<Shape> resParts = new(ShapeHasher.Instance);
+        HashSet<Shape> resParts = new(ShapeHasher.Instance);
         Iterator it = new(_shape);
         for (; it.More(); it.Next())
         {
@@ -353,7 +353,7 @@ public class CellsBuilder : BooleanBuilder
         }
         //
         // collect parts into the map and remove parts from materials
-        NCollection_Map<Shape> partsToRemove = new(ShapeHasher.Instance);
+        HashSet<Shape> partsToRemove = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itP = new(parts);
         for (; itP.More(); itP.Next())
         {
@@ -467,7 +467,7 @@ public class CellsBuilder : BooleanBuilder
         // shapes of the same material
         NCollection_IntDataMap<NCollection_List<Shape>>.Iterator itM = new(_materials);
         NCollection_List<Shape>[] lsUnify = [new(), new()];
-        NCollection_Map<Shape>[] keepMap = [new(ShapeHasher.Instance), new(ShapeHasher.Instance)];
+        HashSet<Shape>[] keepMap = [new(ShapeHasher.Instance), new(ShapeHasher.Instance)];
         for (; itM.More(); itM.Next())
         {
             int iMaterial = itM.Key();
@@ -641,7 +641,7 @@ public class CellsBuilder : BooleanBuilder
         }
         //
         // map shapes to avoid
-        NCollection_Map<Shape> msToAvoid = new(ShapeHasher.Instance);
+        HashSet<Shape> msToAvoid = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itArgs = new(lsToAvoid);
         for (; itArgs.More(); itArgs.Next())
         {
@@ -650,7 +650,7 @@ public class CellsBuilder : BooleanBuilder
         }
         //
         // map shapes to be taken
-        NCollection_Map<Shape> msToTake = new(ShapeHasher.Instance);
+        HashSet<Shape> msToTake = new(ShapeHasher.Instance);
         itArgs.Initialize(lsToTake);
         for (; itArgs.More(); itArgs.Next())
         {
@@ -658,7 +658,7 @@ public class CellsBuilder : BooleanBuilder
             msToTake.Add(s);
         }
         //
-        int nbS = msToTake.Extent();
+        int nbS = msToTake.Count;
         //
         // among the shapes to be taken into result, find any one
         // of minimal dimension
@@ -713,7 +713,7 @@ public class CellsBuilder : BooleanBuilder
                 }
                 //
                 // check that input shapes containing the part should not be avoided
-                NCollection_Map<Shape> ms = new(ShapeHasher.Instance);
+                HashSet<Shape> ms = new(ShapeHasher.Instance);
                 itArgs.Initialize(ls);
                 for (; itArgs.More(); itArgs.Next())
                 {
@@ -800,7 +800,7 @@ public class CellsBuilder : BooleanBuilder
     /// <summary>Removes the internal boundaries between the shapes of the list (unifies them).</summary>
     protected bool RemoveInternals(NCollection_List<Shape> ls,
                                    NCollection_List<Shape> lsNew,
-                                   NCollection_Map<Shape>? mapKeepBnd = null)
+                                   HashSet<Shape>? mapKeepBnd = null)
     {
         bool bRemoved = false;
         if (ls.Extent() < 2)
@@ -832,7 +832,7 @@ public class CellsBuilder : BooleanBuilder
             bFaces = (type == ShapeType.Face);
             bEdges = (type == ShapeType.Edge);
             UnifySameDomain unify = new(shape, bEdges, bFaces);
-            unify.KeepShapes(mapKeepBnd ?? new NCollection_Map<Shape>(ShapeHasher.Instance));
+            unify.KeepShapes(mapKeepBnd ?? new HashSet<Shape>(ShapeHasher.Instance));
             unify.Build();
             Shape sNew = unify.InternalShape();
             //
@@ -1047,7 +1047,7 @@ public class CellsBuilder : BooleanBuilder
         }
         else
         {
-            NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+            HashSet<Shape> mFence = new(ShapeHasher.Instance);
             // Process all GF splits and check them for local unification with other shapes
             NCollection_List<Shape>.Iterator it = new(pLSp);
             for (; it.More(); it.Next())
@@ -1132,7 +1132,7 @@ public class CellsBuilder : BooleanBuilder
     }
 
     // Adds to theMapKeepBnd the boundary shapes of the area defined by shapes from the list.
-    private static void CollectMaterialBoundaries(NCollection_List<Shape> ls, NCollection_Map<Shape> mapKeepBnd)
+    private static void CollectMaterialBoundaries(NCollection_List<Shape> ls, HashSet<Shape> mapKeepBnd)
     {
         ShapeType type = ls.First().ShapeType();
         ShapeType typeSubsh = (type == ShapeType.Face ? ShapeType.Edge : ShapeType.Vertex);

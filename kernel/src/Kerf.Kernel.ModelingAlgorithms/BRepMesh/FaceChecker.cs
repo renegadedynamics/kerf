@@ -57,8 +57,8 @@ public class FaceChecker : Transient
 
     private NCollection_Array1<NCollection_DynamicArray<Segment>?>? _wiresSegments;
     private NCollection_Array1<IndexedSpatialTree<int, Box2d>?>? _wiresBndBoxTree;
-    private NCollection_Array1<NCollection_Map<EdgeModel>?>? _wiresIntersectingEdges;
-    private NCollection_Map<EdgeModel>? _intersectingEdges;
+    private NCollection_Array1<HashSet<EdgeModel>?>? _wiresIntersectingEdges;
+    private HashSet<EdgeModel>? _intersectingEdges;
 
     /// <summary>A checker of the face.</summary>
     public FaceChecker(FaceModel face, in ToolParameters parameters)
@@ -70,7 +70,7 @@ public class FaceChecker : Transient
     /// <summary>Checks the face's wires for intersections; true if there is none.</summary>
     public bool Perform()
     {
-        _intersectingEdges = new NCollection_Map<EdgeModel>(ReferenceEqualityComparer.Instance);
+        _intersectingEdges = new HashSet<EdgeModel>(ReferenceEqualityComparer.Instance);
         CollectSegments();
 
         OsdParallel.For(0, _dFace.WiresNb(), PerformCore, !IsParallel());
@@ -79,11 +79,11 @@ public class FaceChecker : Transient
         _wiresBndBoxTree = null;
         _wiresSegments = null;
         _wiresIntersectingEdges = null;
-        return _intersectingEdges.IsEmpty();
+        return _intersectingEdges.Count == 0;
     }
 
     /// <summary>The intersecting edges found by <see cref="Perform"/>.</summary>
-    public NCollection_Map<EdgeModel>? GetIntersectingEdges() => _intersectingEdges;
+    public HashSet<EdgeModel>? GetIntersectingEdges() => _intersectingEdges;
 
     // Returns True in case if check can be performed in parallel mode.
     private bool IsParallel() => (_parameters.InParallel && _dFace.WiresNb() > 1);
@@ -94,14 +94,14 @@ public class FaceChecker : Transient
         SegmentsFiller segmentsFiller = new(_dFace, out _wiresSegments, out _wiresBndBoxTree);
         OsdParallel.For(0, _dFace.WiresNb(), segmentsFiller.Process, !IsParallel());
 
-        _wiresIntersectingEdges = new NCollection_Array1<NCollection_Map<EdgeModel>?>(0, _dFace.WiresNb() - 1);
+        _wiresIntersectingEdges = new NCollection_Array1<HashSet<EdgeModel>?>(0, _dFace.WiresNb() - 1);
     }
 
     // Checks wire with the given index for intersection with others.
     private void PerformCore(int wireIndex)
     {
         NCollection_DynamicArray<Segment> segments1 = _wiresSegments!.Value(wireIndex)!;
-        ref NCollection_Map<EdgeModel>? intersections = ref _wiresIntersectingEdges![wireIndex];
+        ref HashSet<EdgeModel>? intersections = ref _wiresIntersectingEdges![wireIndex];
 
         // TODO: Tolerance is set to twice value of face deflection in order to fit regressions.
         BndBox2dTreeSelector selector = new(2 * _dFace.GetDeflection());
@@ -117,7 +117,7 @@ public class FaceChecker : Transient
                 selector.Reset(segment1, (wireIt == wireIndex) ? segmentIt : -1);
                 if (bndBoxTree2.Select(selector) != 0)
                 {
-                    intersections ??= new NCollection_Map<EdgeModel>(ReferenceEqualityComparer.Instance);
+                    intersections ??= new HashSet<EdgeModel>(ReferenceEqualityComparer.Instance);
 
                     intersections.Add(segment1.EdgePtr!);
 
@@ -137,7 +137,7 @@ public class FaceChecker : Transient
     {
         for (int wireIt = 0; wireIt < _dFace.WiresNb(); ++wireIt)
         {
-            NCollection_Map<EdgeModel>? edges = _wiresIntersectingEdges!.Value(wireIt);
+            HashSet<EdgeModel>? edges = _wiresIntersectingEdges!.Value(wireIt);
             if (edges is not null)
             {
                 NCollection_MapAlgo.Unite(_intersectingEdges!, edges);

@@ -192,7 +192,7 @@ public class BuilderFace : BuilderArea
         NCollection_List<Shape>.Iterator it = new(_shapes);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<TopoDS_Shape> with the default hasher (orientation included, decision 721)
-        NCollection_Map<Shape> mAdded = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mAdded = new(EqualityComparer<Shape>.Default);
         Iterator itW = new();
         BrepBuilder bb = new();
         WireEdgeSet wes = new();
@@ -231,7 +231,7 @@ public class BuilderFace : BuilderArea
             _loops.Append(w);
         }
         // Post Treatment
-        NCollection_Map<Shape> mep = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mep = new(EqualityComparer<Shape>.Default);
         //
         // a. collect all edges that are in loops
         it.Initialize(_loops);
@@ -318,7 +318,7 @@ public class BuilderFace : BuilderArea
                         if (mAdded.Add(ex))
                         {
                             bb.Add(w, ex);
-                            if (mAdded.Extent() == nbEA)
+                            if (mAdded.Count == nbEA)
                             {
                                 bFlag = !bFlag;
                             }
@@ -729,7 +729,7 @@ public class BuilderFace : BuilderArea
     private static void MakeInternalWires(NCollection_IndexedMap<Shape> me, NCollection_List<Shape> wires)
     {
         int i, nbE;
-        NCollection_Map<Shape> addedMap = new(ShapeHasher.Instance);
+        HashSet<Shape> addedMap = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itE = new(wires);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
         BrepBuilder bb = new();

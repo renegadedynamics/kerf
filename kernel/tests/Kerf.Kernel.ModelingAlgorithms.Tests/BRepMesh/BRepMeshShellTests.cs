@@ -33,7 +33,7 @@ public class BRepMeshShellTests
     {
         private sealed class Visitor(ModelData theModel) : ShapeVisitor
         {
-            private readonly NCollection_Map<Shape> myEdges = new(ShapeHasher.Instance);
+            private readonly HashSet<Shape> myEdges = new(ShapeHasher.Instance);
 
             public override void Visit(in Face theFace) => theModel.AddFace(theFace);
 

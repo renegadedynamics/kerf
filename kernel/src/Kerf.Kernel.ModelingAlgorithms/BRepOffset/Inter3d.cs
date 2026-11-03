@@ -337,7 +337,7 @@ public sealed class Inter3d
                         NCollection_List<Shape> anc = analyse.Ancestors(v[i]);
                         NCollection_List<Shape> tangOnV = new();
                         analyse.TangentEdges(e1, v[i], tangOnV);
-                        NCollection_Map<Shape> mtev = new(ShapeHasher.Instance);
+                        HashSet<Shape> mtev = new(ShapeHasher.Instance);
                         for (it.Initialize(tangOnV); it.More(); it.Next())
                         {
                             mtev.Add(it.Value());
@@ -492,13 +492,13 @@ public sealed class Inter3d
         {
             // Find internal edges in the faces to skip them while preparing faces
             // for intersection through vertices
-            NCollection_DataMap<Shape, NCollection_Map<Shape>> dmfei = new(ShapeHasher.Instance);
+            NCollection_DataMap<Shape, HashSet<Shape>> dmfei = new(ShapeHasher.Instance);
             {
                 for (Explorer expF = new(si, ShapeType.Face); expF.More(); expF.Next())
                 {
                     Shape fx = expF.Current();
 
-                    NCollection_Map<Shape> mei = new(ShapeHasher.Instance);
+                    HashSet<Shape> mei = new(ShapeHasher.Instance);
                     for (Explorer expE = new(fx, ShapeType.Edge); expE.More(); expE.Next())
                     {
                         Shape ex = expE.Current();
@@ -507,7 +507,7 @@ public sealed class Inter3d
                             mei.Add(ex);
                         }
                     }
-                    if (!mei.IsEmpty())
+                    if (mei.Count != 0)
                     {
                         dmfei.Bind(fx, mei);
                     }
@@ -559,9 +559,9 @@ public sealed class Inter3d
                     Shape fv1 = it.Value();
 
                     // get edges of first face connected to current vertex
-                    NCollection_Map<Shape> me = new(ShapeHasher.Instance);
-                    NCollection_Map<Shape>? pF1Internal =
-                      dmfei.Find(fv1, out NCollection_Map<Shape> f1Internal) ? f1Internal : null;
+                    HashSet<Shape> me = new(ShapeHasher.Instance);
+                    HashSet<Shape>? pF1Internal =
+                      dmfei.Find(fv1, out HashSet<Shape> f1Internal) ? f1Internal : null;
                     NCollection_List<Shape>? pLE1 = analyse.Descendants(fv1);
                     if (pLE1 is null)
                     {
@@ -596,8 +596,8 @@ public sealed class Inter3d
                     {
                         Face fv2 = ShapeCasts.Face(it1.Value());
 
-                        NCollection_Map<Shape>? pF2Internal =
-                          dmfei.Find(fv2, out NCollection_Map<Shape> f2Internal) ? f2Internal : null;
+                        HashSet<Shape>? pF2Internal =
+                          dmfei.Find(fv2, out HashSet<Shape> f2Internal) ? f2Internal : null;
 
                         NCollection_List<Shape>? pLE2 = analyse.Descendants(fv2);
                         if (pLE2 is null)
@@ -876,7 +876,7 @@ public sealed class Inter3d
             // compound of edges to build connexity blocks
             Compound ce = new();
             b.MakeCompound(ref ce);
-            NCollection_Map<Shape> ms = new(ShapeHasher.Instance);
+            HashSet<Shape> ms = new(ShapeHasher.Instance);
             NCollection_List<Shape>.Iterator itLS = new(ls);
             for (; itLS.More(); itLS.Next())
             {
@@ -893,7 +893,7 @@ public sealed class Inter3d
             }
             //
             // look for additional edges to connect the shared parts
-            NCollection_Map<Shape> meConnection = new(ShapeHasher.Instance);
+            HashSet<Shape> meConnection = new(ShapeHasher.Instance);
             for (int j = 0; j < 2; ++j)
             {
                 Shape f = j == 0 ? f1 : f2;
@@ -1039,7 +1039,7 @@ public sealed class Inter3d
                                 NCollection_List<Shape> failed, ProgressRange range,
                                 bool bIsPlanar = false)
     {
-        NCollection_Map<Shape> mv = new(ShapeHasher.Instance);
+        HashSet<Shape> mv = new(ShapeHasher.Instance);
         Explorer exp = new();
         Face of = new(), nf = new(), wcf = new();
         Edge oe = new();
@@ -1263,7 +1263,7 @@ public sealed class Inter3d
                                 ShapeImage initOffsetEdge, ProgressRange range)
     {
         NCollection_List<Shape> lInt1 = new(), lInt2 = new();
-        NCollection_Map<Shape> mv = new(ShapeHasher.Instance);
+        HashSet<Shape> mv = new(ShapeHasher.Instance);
         Explorer exp = new();
         Face of1 = new(), of2 = new();
         Edge oe = new();

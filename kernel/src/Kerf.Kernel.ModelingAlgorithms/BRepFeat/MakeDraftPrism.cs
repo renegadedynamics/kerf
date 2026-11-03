@@ -908,7 +908,7 @@ public sealed class MakeDraftPrism : Form
             {
                 // OCCT iterates this address-keyed map into the lateral edges: the port in the order of its additions and
                 // removals (decision 1054)
-                NCollection_Map<Shape> mapE = new(ShapeHasher.Instance);
+                HashSet<Shape> mapE = new(ShapeHasher.Instance);
                 bool found;
 
                 Explorer expF = new();

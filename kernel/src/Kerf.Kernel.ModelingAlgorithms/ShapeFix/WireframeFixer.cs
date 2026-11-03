@@ -542,8 +542,8 @@ public class WireframeFixer : RootFixer
             _shape = context.InternalApply(savShape);
             return StatusSmallEdges(ExtendStatus.Done);
         }
-        var theSmallEdges    = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var theMultyEdges    = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var theSmallEdges    = new HashSet<Shape>(ShapeHasher.Instance);
+        var theMultyEdges    = new HashSet<Shape>(ShapeHasher.Instance);
         var theEdgeToFaces   = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var theFaceWithSmall = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         CheckSmallEdgesCore(theSmallEdges, theEdgeToFaces, theFaceWithSmall, theMultyEdges);
@@ -557,19 +557,19 @@ public class WireframeFixer : RootFixer
     /// Finds the small edges of the shape, the faces of each edge, the faces holding small edges and the edges met
     /// more than once in a wire (not seams). Returns true if a small edge was found.
     /// </summary>
-    public bool CheckSmallEdges(NCollection_Map<Shape> smallEdges,
+    public bool CheckSmallEdges(HashSet<Shape> smallEdges,
                                 NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
                                 NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
-                                NCollection_Map<Shape> multyEdges)
+                                HashSet<Shape> multyEdges)
     {
         EnterWork();
         return CheckSmallEdgesCore(smallEdges, edgeToFaces, faceWithSmall, multyEdges);
     }
 
-    private bool CheckSmallEdgesCore(NCollection_Map<Shape> smallEdges,
+    private bool CheckSmallEdgesCore(HashSet<Shape> smallEdges,
                                  NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
                                  NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
-                                 NCollection_Map<Shape> multyEdges)
+                                 HashSet<Shape> multyEdges)
     {
         Face face;
         Edge edge;
@@ -703,7 +703,7 @@ public class WireframeFixer : RootFixer
                 }
             }
         }
-        return (!smallEdges.IsEmpty());
+        return (smallEdges.Count != 0);
     }
 
     //=================================================================================================
@@ -713,10 +713,10 @@ public class WireframeFixer : RootFixer
     /// describes; <paramref name="modeDrop"/> and <paramref name="limitAngle"/> add to the tool's own settings.
     /// Returns true if something was done.
     /// </summary>
-    public bool MergeSmallEdges(NCollection_Map<Shape> smallEdges,
+    public bool MergeSmallEdges(HashSet<Shape> smallEdges,
                                 NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
                                 NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
-                                NCollection_Map<Shape> multyEdges,
+                                HashSet<Shape> multyEdges,
                                 bool modeDrop = false,
                                 double limitAngle = -1)
     {
@@ -724,10 +724,10 @@ public class WireframeFixer : RootFixer
         return MergeSmallEdgesCore(smallEdges, edgeToFaces, faceWithSmall, multyEdges, modeDrop, limitAngle);
     }
 
-    private bool MergeSmallEdgesCore(NCollection_Map<Shape> smallEdges,
+    private bool MergeSmallEdgesCore(HashSet<Shape> smallEdges,
                                  NCollection_DataMap<Shape, NCollection_List<Shape>> edgeToFaces,
                                  NCollection_DataMap<Shape, NCollection_List<Shape>> faceWithSmall,
-                                 NCollection_Map<Shape> multyEdges,
+                                 HashSet<Shape> multyEdges,
                                  bool modeDrop = false,
                                  double limitAngle = -1)
     {
@@ -736,7 +736,7 @@ public class WireframeFixer : RootFixer
 
         bool aModeDrop      = modeDrop || _modeDrop;
         var  theNewVertices = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
-        if (!smallEdges.IsEmpty())
+        if (smallEdges.Count != 0)
         {
             ReShapeBuilder context = Context()!;
             var                sfw      = new WireFixer();
@@ -901,7 +901,7 @@ public class WireframeFixer : RootFixer
                                                       && ((!isSeam && !isSeam1) || (isSeam && isSeam1))); // gka
                                     bool same_set2 = (theList3.Extent() == theList2.Extent()
                                                       && ((!isSeam && !isSeam2) || (isSeam && isSeam2)));
-                                    var theSetOfFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                                    var theSetOfFaces = new HashSet<Shape>(ShapeHasher.Instance);
                                     for (var itf1 = new NCollection_List<Shape>.Iterator(theList2); itf1.More(); itf1.Next())
                                     {
                                         theSetOfFaces.Add(itf1.Value());
@@ -1453,7 +1453,7 @@ public class WireframeFixer : RootFixer
                                           && ((!isSeam && !isSeam1) || (isSeam && isSeam1))); // gka
                         bool same_set2 = (theList3.Extent() == theList2.Extent()
                                           && ((!isSeam && !isSeam2) || (isSeam && isSeam2)));
-                        var theSetOfFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var theSetOfFaces = new HashSet<Shape>(ShapeHasher.Instance);
                         for (var itf1 = new NCollection_List<Shape>.Iterator(theList2); itf1.More(); itf1.Next())
                         {
                             theSetOfFaces.Add(itf1.Value());

@@ -36,7 +36,7 @@ public sealed class SurfaceRangeLocalizeData
     private int _nbSampleV;
     private double _minRangeU;
     private double _minRangeV;
-    private NCollection_Map<SurfaceRangeSample> _mapRangeOut = new();
+    private HashSet<SurfaceRangeSample> _mapRangeOut = new();
     private NCollection_DataMap<SurfaceRangeSample, Box> _mapBox = new();
     private NCollection_HArray1<double>? _uParams;
     private NCollection_HArray1<double>? _vParams;
@@ -87,7 +87,7 @@ public sealed class SurfaceRangeLocalizeData
         _minRangeU = other._minRangeU;
         _minRangeV = other._minRangeV;
         _mapRangeOut.Clear();
-        _mapRangeOut = new NCollection_Map<SurfaceRangeSample>(other._mapRangeOut);
+        _mapRangeOut = new HashSet<SurfaceRangeSample>(other._mapRangeOut,other._mapRangeOut.Comparer);
         _mapBox.Clear();
         _mapBox = new NCollection_DataMap<SurfaceRangeSample, Box>(other._mapBox);
         _deflection = other._deflection;

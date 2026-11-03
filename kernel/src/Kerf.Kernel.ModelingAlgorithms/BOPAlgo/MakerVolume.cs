@@ -203,7 +203,7 @@ public class MakerVolume : BooleanBuilder
             return;
         }
         //
-        NCollection_Map<Shape> boxFaces = new(ShapeHasher.Instance);
+        HashSet<Shape> boxFaces = new(ShapeHasher.Instance);
         NCollection_List<Shape> lsr = new();
         //
         // 5. Create bounding box
@@ -262,7 +262,7 @@ public class MakerVolume : BooleanBuilder
         //
         int i, nbShapes;
         NCollection_List<Shape>.Iterator it = new();
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         //
         nbShapes = _ds!.SourceShapeCount;
         for (i = 0; i < nbShapes; ++i)
@@ -298,7 +298,7 @@ public class MakerVolume : BooleanBuilder
     }
 
     /// <summary>Makes the solid box.</summary>
-    protected void MakeBox(NCollection_Map<Shape> boxFaces)
+    protected void MakeBox(HashSet<Shape> boxFaces)
     {
         //
         double xmin, ymin, zmin, xmax, ymax, zmax, ext;
@@ -341,7 +341,7 @@ public class MakerVolume : BooleanBuilder
     }
 
     /// <summary>Removes the covering box.</summary>
-    protected void RemoveBox(NCollection_List<Shape> lsr, NCollection_Map<Shape> boxFaces)
+    protected void RemoveBox(NCollection_List<Shape> lsr, HashSet<Shape> boxFaces)
     {
         //
         NCollection_List<Shape>.Iterator it = new();
@@ -404,7 +404,7 @@ public class MakerVolume : BooleanBuilder
         // Get all non-compound shapes
         NCollection_List<Shape> lsc = new();
         // Fence map
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
 
         NCollection_List<Shape>.Iterator itLA = new(_ds!.Arguments());
         for (; itLA.More(); itLA.Next())

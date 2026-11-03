@@ -118,7 +118,7 @@ public sealed class ShapeHistory
     {
         var inputList = inputs.ToList();
         var history = new History();
-        var present = new NCollection_Map<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var present = new HashSet<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
         foreach (var sub in TrackedSubshapes([result]))
             present.Add(sub);
         foreach (var sub in TrackedSubshapes(inputList))
@@ -144,7 +144,7 @@ public sealed class ShapeHistory
     {
         var inputList = inputs.ToList();
         var history = new History();
-        var present = new NCollection_Map<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var present = new HashSet<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
         foreach (var sub in TrackedSubshapes([sewing.SewedShape()]))
             present.Add(sub);
         foreach (var sub in TrackedSubshapes(inputList))
@@ -327,7 +327,7 @@ public sealed class ShapeHistory
 /// </summary>
 public sealed class ShapeTrace
 {
-    private readonly NCollection_Map<global::Kerf.Topology.Shape> _untouched = new(ShapeHasher.Instance);
+    private readonly HashSet<global::Kerf.Topology.Shape> _untouched = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _modifiedFrom = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<global::Kerf.Topology.Shape, global::Kerf.Topology.Shape> _generatedFrom = new(ShapeHasher.Instance);
 

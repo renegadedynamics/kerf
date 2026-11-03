@@ -40,7 +40,7 @@ public static partial class BuilderTools
                                         IEqualityComparer<TKey>? hasher = null)
         where TKey : notnull
     {
-        NCollection_Map<TKey> mFence = new(hasher);
+        HashSet<TKey> mFence = new(hasher);
         int i, nb = mili.Extent();
         for (i = 1; i <= nb; ++i)
         {
@@ -411,7 +411,7 @@ public static partial class BuilderTools
         NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt = new(ShapeHasher.Instance);
         //
         // edges for which the plane is not found
-        NCollection_Map<Shape> mEdgesNoUniquePlane = new(ShapeHasher.Instance);
+        HashSet<Shape> mEdgesNoUniquePlane = new(ShapeHasher.Instance);
         //
         // edges for which the plane cannot be found on a single edge
         Compound lEdges = new();
@@ -445,7 +445,7 @@ public static partial class BuilderTools
         NCollection_List<Direction3D> lpFence = new();
         //
         // used edges
-        NCollection_Map<Shape> meFence = new(ShapeHasher.Instance);
+        HashSet<Shape> meFence = new(ShapeHasher.Instance);
         //
         // look for a planes on the single edges
         int i, j, nbPlanes = dmEdgePln.Extent(), nbEdges = dmEdgeTgt.Extent();
@@ -645,7 +645,7 @@ public static partial class BuilderTools
         Shape aWires = wires;
         //
         BrepBuilder bb = new();
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         Compound rFaces = new();
         bb.MakeCompound(ref rFaces);
         //
@@ -658,7 +658,7 @@ public static partial class BuilderTools
         // map to store the tolerance for the wire
         NCollection_DataMap<Shape, double> dmWireTol = new(ShapeHasher.Instance);
         // edges for which the plane is not found
-        NCollection_Map<Shape> mEdgesNoUniquePlane = new(ShapeHasher.Instance);
+        HashSet<Shape> mEdgesNoUniquePlane = new(ShapeHasher.Instance);
         //
         // Find planes for the wires
         Explorer expW = new(aWires, ShapeType.Wire);
@@ -780,7 +780,7 @@ public static partial class BuilderTools
                                   Compound wires,
                                   bool checkUniquePlane,
                                   NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt,
-                                  NCollection_Map<Shape> mEdgesNoUniquePlane)
+                                  HashSet<Shape> mEdgesNoUniquePlane)
     {
         Compound ce = new();
         new BrepBuilder().MakeCompound(ref ce);
@@ -934,7 +934,7 @@ public static partial class BuilderTools
     private static bool FindPlane(in Shape wire,
                                   ref Plane3D plane,
                                   NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt,
-                                  NCollection_Map<Shape> mEdgesNoUniquePlane)
+                                  HashSet<Shape> mEdgesNoUniquePlane)
     {
         Explorer expE1 = new(wire, ShapeType.Edge);
         if (!expE1.More())
@@ -1326,7 +1326,7 @@ public static partial class BuilderTools
             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mefds = new(ShapeHasher.Instance);
 
             // Fence map to avoid processing of the same faces twice
-            NCollection_Map<Shape> mfDone = new(ShapeHasher.Instance);
+            HashSet<Shape> mfDone = new(ShapeHasher.Instance);
 
             // Per-iteration list for connexity block faces
             NCollection_List<Shape> lcbf = new();
@@ -1439,7 +1439,7 @@ public static partial class BuilderTools
         private void MakeConnexityBlock(in Face fStart,
                                         NCollection_IndexedMap<Shape> meAvoid,
                                         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap,
-                                        NCollection_Map<Shape> mfDone,
+                                        HashSet<Shape> mfDone,
                                         NCollection_List<Shape> lcb,
                                         ref Face faceToClassify)
         {

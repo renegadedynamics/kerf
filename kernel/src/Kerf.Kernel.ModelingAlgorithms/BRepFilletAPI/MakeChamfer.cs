@@ -27,7 +27,7 @@ namespace Kerf.Engine.Fillets.Api;
 public class MakeChamfer : LocalOperation
 {
     private readonly ChBuilder _builder;
-    private readonly NCollection_Map<Shape> _map = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _map = new(ShapeHasher.Instance);
 
     //=================================================================================================
 

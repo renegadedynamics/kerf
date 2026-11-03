@@ -40,7 +40,7 @@ public abstract class BooleanAlgorithm : Options
         FillPIConstants(whole, steps);
 
         NCollection_Array1<double> aSteps = steps.ChangeSteps();
-        NCollection_Map<int> miConst = new();
+        HashSet<int> miConst = new();
         for (int i = aSteps.Lower(); i <= aSteps.Upper(); ++i)
         {
             if (aSteps[i] > 0.0)

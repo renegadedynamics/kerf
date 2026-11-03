@@ -133,7 +133,7 @@ public class PolyHlrToShape
 
     private Shape InternalCompound(int typ, bool visible, in Shape s)
     {
-        NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+        HashSet<Shape> map = new(ShapeHasher.Instance);
         if (!s.IsNull)
         {
             Explorer ex = new();

@@ -49,7 +49,7 @@ public sealed class WiresOnShape : Transient
 {
     private Shape _shape = new();
     private readonly NCollection_IndexedDataMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _facesWithSection = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _facesWithSection = new(ShapeHasher.Instance);
     private bool _checkInterior;
     // OCCT iterates this map keyed by the shapes' addresses (in BindAll); the port in insertion order
     private readonly NCollection_DataMap<Shape, Shape> _map = new(ShapeHasher.Instance);
@@ -271,7 +271,7 @@ public sealed class WiresOnShape : Transient
         {
             return;
         }
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
 
         // Detection des vertex a projeter ou a "binder" avec des vertex existants
         NCollection_DataMap<Shape, Shape> mapV = new(ShapeHasher.Instance);
@@ -317,7 +317,7 @@ public sealed class WiresOnShape : Transient
 
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> splits = new(ShapeHasher.Instance);
         int ind;
-        NCollection_Map<Shape> overlappedEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> overlappedEdges = new(ShapeHasher.Instance);
         for (ind = 1; ind <= _mapEF.Extent(); ind++)
         {
             Edge edg = ShapeCasts.Edge(_mapEF.FindKey(ind));

@@ -218,7 +218,7 @@ public class DataIterator
         // Treat selections
 
         // Fence map to avoid duplicating pairs
-        NCollection_Map<Pair> mpFence = new();
+        HashSet<Pair> mpFence = new();
 
         int nbV = vtsr.Length();
         for (int k = 0; k < nbV; ++k)

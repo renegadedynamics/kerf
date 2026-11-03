@@ -150,7 +150,7 @@ public class Section : BooleanBuilder
         NCollection_List<Shape>.Iterator it = new(), itIm = new(), itLS = new();
         NCollection_IndexedDataMap<Shape, int> msi = new(ShapeHasher.Instance);
         NCollection_IndexedMap<Shape> ms = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mFence = new(ShapeHasher.Instance);
         NCollection_IntMap.Iterator itMI = new();
         NCollection_List<PaveBlock>.Iterator itPB = new();
         //

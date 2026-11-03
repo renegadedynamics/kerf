@@ -90,7 +90,7 @@ public class ConnectedShapes : SelectExplore
             new NCollection_HSequence<Transient>();
         int i, nb = tp.MappedCount;
         //  NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> adj (nb);
-        NCollection_Map<Shape> vtx = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        HashSet<Shape> vtx = new HashSet<Shape>(ShapeHasher.Instance);
 
         for (Explorer vert = new Explorer(ashape, ShapeType.Vertex); vert.More(); vert.Next())
         {

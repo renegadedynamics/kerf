@@ -1116,7 +1116,7 @@ public class IWalking<TheIWFunction, TheIWLine>
         bornSup[2] = _vMax;
         _pointLineLine.Clear();
         NCollection_Sequence<int> seqToRemove = new();
-        NCollection_Map<int> badSolutions = new();
+        HashSet<int> badSolutions = new();
 
         for (int i = 1; i < copySeqAlone.Length(); i++)
         {

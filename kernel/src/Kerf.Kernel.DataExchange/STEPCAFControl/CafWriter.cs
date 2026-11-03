@@ -1059,7 +1059,7 @@ public class CafWriter
 
     private static void MakeSTEPStyles(Styles styles, Shape shape,
                                        NCollection_IndexedDataMap<Shape, Style> settings,
-                                       ref StyledItem theOverride, NCollection_Map<Shape> map,
+                                       ref StyledItem theOverride, HashSet<Shape> map,
                                        NCollection_DataMap<Shape, Transient> mapCompMDGPR,
                                        NCollection_DataMap<string, Transient> dpdCs,
                                        NCollection_DataMap<Point3D, Transient> colRGBs, ExchangeDocument shTool,
@@ -1294,7 +1294,7 @@ public class CafWriter
 
             // iterate on subshapes and create STEP styles
             StyledItem anOverride = null;
-            NCollection_Map<Shape> map = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            HashSet<Shape> map = new HashSet<Shape>(ShapeHasher.Instance);
 
             MakeSTEPStyles(styles, shape, settings, ref anOverride, map, _mapCompMDGPR, dpdCs, colRGBs, sTool, null,
                            isComponent, GetVisualMaterialMode());

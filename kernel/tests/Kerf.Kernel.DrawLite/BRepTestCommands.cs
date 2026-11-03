@@ -266,7 +266,7 @@ internal static class BRepTestCommands
         double TMF, TME, TMV, TmF, TmE, TmV;
         TMF = TME = TMV = -double.MaxValue;
         TmF = TmE = TmV = double.MaxValue;
-        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
         for (var ex = new Explorer(TheShape, ShapeType.Face); ex.More(); ex.Next())
         {
             double T = Tool.Tolerance(ShapeCasts.Face(ex.Current()));
@@ -275,7 +275,7 @@ internal static class BRepTestCommands
             mapS.Add(ex.Current());
         }
 
-        int nbF = mapS.Extent();
+        int nbF = mapS.Count;
         mapS.Clear();
         for (var ex = new Explorer(TheShape, ShapeType.Edge); ex.More(); ex.Next())
         {
@@ -285,7 +285,7 @@ internal static class BRepTestCommands
             mapS.Add(ex.Current());
         }
 
-        int nbE = mapS.Extent();
+        int nbE = mapS.Count;
         mapS.Clear();
         for (var ex = new Explorer(TheShape, ShapeType.Vertex); ex.More(); ex.Next())
         {
@@ -295,7 +295,7 @@ internal static class BRepTestCommands
             mapS.Add(ex.Current());
         }
 
-        int nbV = mapS.Extent();
+        int nbV = mapS.Count;
         var sss = new StringBuilder();
         sss.Append(CultureInfo.InvariantCulture, $"\n## Tolerances on the shape {a[1]}  (nbFaces:{nbF}  nbEdges:{nbE} nbVtx:{nbV})\n");
         static string E(double theValue) => DrawFormat.Scientific(theValue, 5).PadLeft(8);

@@ -389,7 +389,7 @@ internal sealed class TrimShellCorner
         for (fit = 1; fit <= 2; fit++)
         {
             Compound comp = new();
-            NCollection_Map<Shape> mapV = new(ShapeHasher.Instance);
+            HashSet<Shape> mapV = new(ShapeHasher.Instance);
             bb.MakeCompound(ref comp);
 
             for (ueit = 1, eindex = index; ueit <= 2; ueit++, eindex++)
@@ -1220,7 +1220,7 @@ internal sealed class TrimShellCorner
     //=================================================================================================
 
     private static void FindFreeVertices(in Shape shape,
-                                         NCollection_Map<Shape> verticesToAvoid,
+                                         HashSet<Shape> verticesToAvoid,
                                          NCollection_List<Shape> listOfVertex)
     {
         listOfVertex.Clear();
@@ -1406,7 +1406,7 @@ internal sealed class TrimShellCorner
             return false;
         }
         NCollection_List<Shape> listOfEdge = new();
-        NCollection_Map<Shape> mapToAvoid = new(ShapeHasher.Instance);
+        HashSet<Shape> mapToAvoid = new(ShapeHasher.Instance);
 
         if (FindNextEdge(firstVertex, lastVertex, map, mapToAvoid, listOfEdge))
         {
@@ -1423,11 +1423,11 @@ internal sealed class TrimShellCorner
     private static bool FindNextEdge(in Vertex firstVertex,
                                      in Vertex lastVertex,
                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE,
-                                     NCollection_Map<Shape> mapToAvoid,
+                                     HashSet<Shape> mapToAvoid,
                                      NCollection_List<Shape> orderedList)
     {
         Vertex curVertex = firstVertex;
-        NCollection_Map<Shape> aMapToAvoid = new(mapToAvoid);
+        HashSet<Shape> aMapToAvoid = new(mapToAvoid,mapToAvoid.Comparer);
         NCollection_List<Shape> listOfEdge = new();
         int i = 0;
 

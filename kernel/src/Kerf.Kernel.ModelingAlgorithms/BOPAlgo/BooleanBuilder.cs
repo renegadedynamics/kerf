@@ -39,7 +39,7 @@ namespace Kerf.Engine.Booleans;
 public partial class BooleanBuilder : BuilderShape
 {
     protected NCollection_List<Shape> _arguments = new();                                                     //!< Arguments of the operation
-    protected NCollection_Map<Shape> _mapFence = new(ShapeHasher.Instance);                         //!< Fence map providing the uniqueness of the shapes in the list of arguments
+    protected HashSet<Shape> _mapFence = new(ShapeHasher.Instance);                         //!< Fence map providing the uniqueness of the shapes in the list of arguments
     protected PaveFiller? _paveFiller;                                                                         //!< Pave Filler - algorithm for sub-shapes intersection
     protected DS? _ds;                                                                                           //!< Data Structure - holder of intersection information
     protected IntersectionContext? _context;                                                                              //!< Context - tool for cashing heavy algorithms such as Projectors and Classifiers
@@ -240,7 +240,7 @@ public partial class BooleanBuilder : BuilderShape
                 if (s.ShapeType() != ShapeType.Solid)
                 {
                     NCollection_List<Shape> ls = new();
-                    NCollection_Map<Shape> mFence0 = new(ShapeHasher.Instance);
+                    HashSet<Shape> mFence0 = new(ShapeHasher.Instance);
                     AlgoTools.TreatCompound(s, ls, mFence0);
 
                     NCollection_List<Shape>.Iterator it = new(ls);
@@ -270,7 +270,7 @@ public partial class BooleanBuilder : BuilderShape
         NCollection_IndexedMap<Shape> mObjFaces = new(ShapeHasher.Instance),
                                              mToolFaces = new(ShapeHasher.Instance);
         // Copy the list of IN faces of the solids into map
-        NCollection_Map<Shape> inObjects = new(ShapeHasher.Instance),
+        HashSet<Shape> inObjects = new(ShapeHasher.Instance),
                                       inTools = new(ShapeHasher.Instance);
 
         for (int i = 0; i < 2; ++i)
@@ -324,7 +324,7 @@ public partial class BooleanBuilder : BuilderShape
                     // Copy the list of IN faces into a map
                     if (_inParts.Find(s, out NCollection_List<Shape> pLFIN))
                     {
-                        NCollection_Map<Shape> inMap = i == 0 ? inObjects : inTools;
+                        HashSet<Shape> inMap = i == 0 ? inObjects : inTools;
                         NCollection_List<Shape>.Iterator itLFIn = new(pLFIN);
                         for (; itLFIn.More(); itLFIn.Next())
                         {
@@ -348,19 +348,19 @@ public partial class BooleanBuilder : BuilderShape
         bool isSameOriNeeded = objState == toolsState;
         // Resulting faces
         NCollection_IndexedMap<Shape> mResFacesOri = new(EqualityComparer<Shape>.Default);
-        NCollection_Map<Shape> mResFacesFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mResFacesFence = new(ShapeHasher.Instance);
         // Fence map
-        NCollection_Map<Shape> mFence = new(ShapeHasher.Instance),
+        HashSet<Shape> mFence = new(ShapeHasher.Instance),
                                       mfToAvoid = new(ShapeHasher.Instance);
         // Oriented fence map
-        NCollection_Map<Shape> mFenceOri = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mFenceOri = new(EqualityComparer<Shape>.Default);
 
         for (int i = 0; i < 2; ++i)
         {
             NCollection_IndexedMap<Shape> map = i == 0 ? mObjFacesOri : mToolFacesOri;
             NCollection_IndexedMap<Shape> oppositeMap = i == 0 ? mToolFaces : mObjFaces;
-            NCollection_Map<Shape> inMap = i == 0 ? inObjects : inTools;
-            NCollection_Map<Shape> oppositeINMap = i == 0 ? inTools : inObjects;
+            HashSet<Shape> inMap = i == 0 ? inObjects : inTools;
+            HashSet<Shape> oppositeINMap = i == 0 ? inTools : inObjects;
             bool bTakeIN = i == 0 ? isObjectsIN : isToolsIN;
 
             int nbF = map.Extent();

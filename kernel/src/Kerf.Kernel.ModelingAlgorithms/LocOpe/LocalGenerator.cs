@@ -178,11 +178,11 @@ public sealed class LocalGenerator
         // a l`interieur
 
         Explorer exp = new(), exp2 = new(), exp3 = new();
-        NCollection_Map<Shape> theLeft = new(ShapeHasher.Instance); // Faces a gauche
+        HashSet<Shape> theLeft = new(ShapeHasher.Instance); // Faces a gauche
 
         // Edges et vertex generateurs; OCCT iterates GEdg keyed by the edges' addresses, the port in their order
         NCollection_IndexedMap<Shape> gEdg = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> gVtx = new(ShapeHasher.Instance);
+        HashSet<Shape> gVtx = new(ShapeHasher.Instance);
 
         NCollection_List<Shape>.Iterator itl = new(), itl2 = new();
 
@@ -228,7 +228,7 @@ public sealed class LocalGenerator
         // OCCT iterates these maps keyed by the shapes' addresses; the port in insertion order
         NCollection_DataMap<Shape, NCollection_List<Shape>> theEEMap = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, NCollection_List<Shape>> theFFMap = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> toRemove = new(ShapeHasher.Instance);
+        HashSet<Shape> toRemove = new(ShapeHasher.Instance);
 
         // search for face fusions
         for (int itm = 1; itm <= gEdg.Extent(); itm++)
@@ -345,7 +345,7 @@ public sealed class LocalGenerator
         }
 
         NCollection_List<Shape> rebuildFace = new();
-        NCollection_Map<Shape> mapTreated = new(ShapeHasher.Instance);
+        HashSet<Shape> mapTreated = new(ShapeHasher.Instance);
         NCollection_DataMap<Shape, Shape> dontFuse = new(ShapeHasher.Instance);
         Orientation orient, orface;
 
@@ -593,7 +593,7 @@ public sealed class LocalGenerator
             }
         }
 
-        NCollection_Map<Shape> edgAdded = new(ShapeHasher.Instance);
+        HashSet<Shape> edgAdded = new(ShapeHasher.Instance);
 
         // Fusion des faces, ou reconstruction
         foreach (KeyValuePair<Shape, NCollection_List<Shape>> itf in theFFMap)
@@ -1317,7 +1317,7 @@ public sealed class LocalGenerator
         return valRet;
     }
 
-    private static bool ToFuse(in Edge e, in Face f, in Vertex v, NCollection_Map<Shape> toRemove)
+    private static bool ToFuse(in Edge e, in Face f, in Vertex v, HashSet<Shape> toRemove)
     {
         Explorer exp = new();
         for (exp.Init(f, ShapeType.Edge); exp.More(); exp.Next())

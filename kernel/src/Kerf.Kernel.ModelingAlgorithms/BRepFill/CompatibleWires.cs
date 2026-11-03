@@ -1591,7 +1591,7 @@ public sealed class CompatibleWires
                 }
 
                 // Check of cuts: are all the new edges long enough or not
-                NCollection_Map<int> cutsToRemove = new();
+                HashSet<int> cutsToRemove = new();
                 for (k = 1; k <= nbdec; k++)
                 {
                     double knot1 = dec2[k];
@@ -1611,7 +1611,7 @@ public sealed class CompatibleWires
                         cutsToRemove.Add(k);
                     }
                 }
-                int newNbDec = nbdec - cutsToRemove.Extent();
+                int newNbDec = nbdec - cutsToRemove.Count;
                 NCollection_Array1<double> dec3 = new(1, newNbDec);
                 i = 1;
                 for (k = 1; k <= nbdec; k++)

@@ -291,7 +291,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
         if (theOracle.Bool())
         {
             var aTwins = new TwinShapes();
-            var aDone = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var aDone = new HashSet<Shape>(ShapeHasher.Instance);
             foreach (Twin<N.TopoDS_Shape, Shape> aF in TopologyOracleTests.Explore(aShape, ShapeType.Face))
             {
                 if (aDone.Add(aF.P) && theOracle.Bool())
@@ -440,7 +440,7 @@ public class BRepToolsModifierOracleTests(ITestOutputHelper output)
     internal static List<Twin<N.TopoDS_Shape, Shape>> AllSubShapes(Twin<N.TopoDS_Shape, Shape> theShape)
     {
         var aList = new List<Twin<N.TopoDS_Shape, Shape>> { theShape };
-        var aDone = new NCollection_Map<Shape>(ShapeHasher.Instance) { theShape.P };
+        var aDone = new HashSet<Shape>(ShapeHasher.Instance) { theShape.P };
         foreach (ShapeType aType in theAllTypes)
         {
             foreach (Twin<N.TopoDS_Shape, Shape> aS in TopologyOracleTests.Explore(theShape, aType))

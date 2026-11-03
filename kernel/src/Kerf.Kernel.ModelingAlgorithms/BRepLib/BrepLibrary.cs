@@ -403,7 +403,7 @@ public static partial class BrepLibrary
                                        int maxSegment = 0)
     {
         bool boolean_value, ok = true;
-        var a_counter = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var a_counter = new HashSet<Shape>(ShapeHasher.Instance);
         var ex = new Explorer(s, ShapeType.Edge);
 
         while (ex.More())
@@ -627,7 +627,7 @@ public static partial class BrepLibrary
                                              double maxToleranceToCheck)
     {
         var ex = new Explorer(s, ShapeType.Edge);
-        var a_counter = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var a_counter = new HashSet<Shape>(ShapeHasher.Instance);
 
         bool return_status = false, local_flag;
 
@@ -849,7 +849,7 @@ public static partial class BrepLibrary
                                               bool isMutableInput)
     {
         var ex = new Explorer(sh, ShapeType.Edge);
-        var done = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var done = new HashSet<Shape>(ShapeHasher.Instance);
         var b = new BrepBuilder();
         var shToTol = new NCollection_DataMap<Shape, double>(ShapeHasher.Instance);
 
@@ -2384,8 +2384,8 @@ public static partial class BrepLibrary
     //=======================================================================
     private static void EncodeRegularityCore(in Shape shape,
                                          double tolAng,
-                                         NCollection_Map<Shape> map,
-                                         NCollection_Map<Shape>? edgesToEncode = null)
+                                         HashSet<Shape> map,
+                                         HashSet<Shape>? edgesToEncode = null)
     {
         Shape aShape = shape;
         var nullLoc = new Placement();
@@ -2414,7 +2414,7 @@ public static partial class BrepLibrary
             for (int i = 1; i <= m.Extent(); i++)
             {
                 Edge e = ShapeCasts.Edge(m.FindKey(i));
-                if (edgesToEncode is not null && !edgesToEncode.IsEmpty())
+                if (edgesToEncode is not null && edgesToEncode.Count != 0)
                 {
                     // process only the edges from the list to update their regularity
                     Shape pureEdge = e.Located(nullLoc);
@@ -2474,7 +2474,7 @@ public static partial class BrepLibrary
     /// </summary>
     internal static void EncodeRegularity(in Shape s, double tolAng = 1.0e-10)
     {
-        var map = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var map = new HashSet<Shape>(ShapeHasher.Instance);
         EncodeRegularityCore(s, tolAng, map);
     }
 
@@ -2485,7 +2485,7 @@ public static partial class BrepLibrary
     internal static void EncodeRegularity(in Shape s, NCollection_List<Shape> le, double tolAng = 1.0e-10)
     {
         // Collect edges without location and orientation
-        var pureEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var pureEdges = new HashSet<Shape>(ShapeHasher.Instance);
         var nullLoc = new Placement();
         var edgeIt = new NCollection_List<Shape>.Iterator(le);
         for (; edgeIt.More(); edgeIt.Next())
@@ -2496,7 +2496,7 @@ public static partial class BrepLibrary
             pureEdges.Add(edge);
         }
 
-        var map = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var map = new HashSet<Shape>(ShapeHasher.Instance);
         EncodeRegularityCore(s, tolAng, map, pureEdges);
     }
 
@@ -2810,7 +2810,7 @@ public static partial class BrepLibrary
             // Collect all nodes of degenerative edges and skip elements
             // build upon them due to huge distortions introduced by passage
             // from UV space to 3D.
-            var degNodes = new NCollection_Map<int>();
+            var degNodes = new HashSet<int>();
             var expEdge = new Explorer(face, ShapeType.Edge);
             for (; expEdge.More(); expEdge.Next())
             {
@@ -2831,7 +2831,7 @@ public static partial class BrepLibrary
             }
 
             var tool = new EvalDeflection(face);
-            var links = new NCollection_Map<Link>();
+            var links = new HashSet<Link>();
             double sqDeflection = 0.0;
             Transform3D trsf = loc.Transformation();
             var p3d = new Point3D[3];

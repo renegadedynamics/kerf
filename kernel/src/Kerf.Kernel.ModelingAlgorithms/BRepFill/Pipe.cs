@@ -53,7 +53,7 @@ public sealed class Pipe
     private NCollection_HArray2<Shape>? _sections;
     private NCollection_HArray2<Shape>? _faces;
     private NCollection_HArray2<Shape>? _edges;
-    private readonly NCollection_Map<Shape> _reversedEdges = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _reversedEdges = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, NCollection_HArray2<Shape>> _tapes = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, NCollection_HArray2<Shape>> _rails = new(ShapeHasher.Instance);
     private int _curIndexOfSectionEdge;

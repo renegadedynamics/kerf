@@ -133,7 +133,7 @@ public class SubIterator
         int nbPairs = pairs.Size();
 
         // Fence map
-        NCollection_Map<Pair> mpkFence = new();
+        HashSet<Pair> mpkFence = new();
 
         for (int iPair = 0; iPair < nbPairs; ++iPair)
         {

@@ -731,7 +731,7 @@ public abstract class RibSlot : MakeShape
             PtOnEdgeVertex(revolRib, _sbase, p2, firstVertex, lastVertex, ref ptOnLastEdge, ref onLastEdge,
                            ref ptOnLastVertex, ref onLastVertex);
 
-            NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+            HashSet<Shape> map = new(ShapeHasher.Instance);
 
             if (ptOnFirstEdge)
             {
@@ -1193,7 +1193,7 @@ public abstract class RibSlot : MakeShape
 
         Explorer exp = new();
         exp.Init(shape, ShapeType.Edge);
-        NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+        HashSet<Shape> map = new(ShapeHasher.Instance);
         for (; exp.More(); exp.Next())
         {
             Edge e = ShapeCasts.Edge(exp.Current());

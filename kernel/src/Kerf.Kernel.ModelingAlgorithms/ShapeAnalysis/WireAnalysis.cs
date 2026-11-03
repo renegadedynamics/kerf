@@ -2321,8 +2321,8 @@ public class WireAnalysis : Transient
         return LastCheckStatus(ExtendStatus.Done);
     }
 
-    private static bool IsMultiVertex(NCollection_List<Shape> alshape, NCollection_Map<Shape> aMapSmallEdges,
-                                      NCollection_Map<Shape> aMapSeemEdges)
+    private static bool IsMultiVertex(NCollection_List<Shape> alshape, HashSet<Shape> aMapSmallEdges,
+                                      HashSet<Shape> aMapSeemEdges)
     {
         NCollection_List<Shape>.Iterator lIt1 = new NCollection_List<Shape>.Iterator(alshape);
         int                                     nbNotAccount = 0;
@@ -2349,7 +2349,7 @@ public class WireAnalysis : Transient
     /// </summary>
     public bool CheckLoop(NCollection_IndexedMap<Shape> aMapLoopVertices,
                           NCollection_DataMap<Shape, NCollection_List<Shape>> aMapVertexEdges,
-                          NCollection_Map<Shape> aMapSmallEdges, NCollection_Map<Shape> aMapSeemEdges)
+                          HashSet<Shape> aMapSmallEdges, HashSet<Shape> aMapSeemEdges)
     {
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (!IsLoaded || EdgeCount < 2)

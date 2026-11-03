@@ -56,7 +56,7 @@ public sealed class FindEdgesInFace
         _face = F;
         _list.Clear();
 
-        NCollection_Map<Shape> m = new(ShapeHasher.Instance);
+        HashSet<Shape> m = new(ShapeHasher.Instance);
         Explorer exp = new(), expf = new();
         Curve3D c;
         Surface s;

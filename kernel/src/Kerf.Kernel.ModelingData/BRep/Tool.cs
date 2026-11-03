@@ -1575,7 +1575,7 @@ public static class Tool
     {
         if (shape.ShapeType() == ShapeType.Shell)
         {
-            var map = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var map = new HashSet<Shape>(ShapeHasher.Instance);
             var exp = new Explorer(shape.Oriented(Forward), ShapeType.Edge);
             bool hasBound = false;
             for (; exp.More(); exp.Next())
@@ -1593,11 +1593,11 @@ public static class Tool
                 }
             }
 
-            return hasBound && map.IsEmpty();
+            return hasBound && map.Count == 0;
         }
         else if (shape.ShapeType() == ShapeType.Wire)
         {
-            var map = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var map = new HashSet<Shape>(ShapeHasher.Instance);
             var exp = new Explorer(shape.Oriented(Forward), ShapeType.Vertex);
             bool hasBound = false;
             for (; exp.More(); exp.Next())
@@ -1615,7 +1615,7 @@ public static class Tool
                 }
             }
 
-            return hasBound && map.IsEmpty();
+            return hasBound && map.Count == 0;
         }
         else if (shape.ShapeType() == ShapeType.Edge)
         {

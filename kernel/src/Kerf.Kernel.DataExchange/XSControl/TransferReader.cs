@@ -902,7 +902,7 @@ public class TransferReader : Transient
         {
             return lt;
         }
-        NCollection_Map<Shape> shapes = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        HashSet<Shape> shapes = new HashSet<Shape>(ShapeHasher.Instance);
 
         //  We convert res to a map, for rapid presence test
         int i, j, nb = res.Length();

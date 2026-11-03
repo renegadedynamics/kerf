@@ -247,9 +247,9 @@ public class BuilderSolid : BuilderArea
         //
         // 2. Post Treatment
         BrepBuilder bb = new();
-        NCollection_Map<Shape> addedFacesMap = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> addedFacesMap = new(EqualityComparer<Shape>.Default);
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> mp = new(EqualityComparer<Shape>.Default);
+        HashSet<Shape> mp = new(EqualityComparer<Shape>.Default);
         //
         // a. collect all edges that are in loops
         it.Initialize(_loops);
@@ -642,7 +642,7 @@ public class BuilderSolid : BuilderArea
 
         // Update Solids by internal Faces
 
-        NCollection_Map<Shape> mfDone = new(ShapeHasher.Instance);
+        HashSet<Shape> mfDone = new(ShapeHasher.Instance);
 
         int nbS = mslf.Extent();
         using (var psLoop = new ProgressScope(mainScope.Next(), null, nbS))
@@ -728,7 +728,7 @@ public class BuilderSolid : BuilderArea
         BrepBuilder bb = new();
         NCollection_List<Shape>.Iterator itF = new();
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> addedFacesMap = new(ShapeHasher.Instance);
+        HashSet<Shape> addedFacesMap = new(ShapeHasher.Instance);
         //
         nbF = mf.Extent();
         for (i = 1; i <= nbF; ++i)

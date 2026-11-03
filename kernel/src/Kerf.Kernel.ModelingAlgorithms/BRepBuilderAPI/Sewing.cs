@@ -84,7 +84,7 @@ public class Sewing : Transient
     private bool _localToleranceMode;
     private double _minTolerance;
     private double _maxTolerance;
-    private readonly NCollection_Map<Shape> _mergedEdges = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _mergedEdges = new(ShapeHasher.Instance);
 
     // OCCT.NET: copy at entry (decision 583). When an input holds a frozen shape, Perform works on an exact copy:
     // sewing (the original where sewing left the copy unchanged, the copy otherwise). Both null otherwise.
@@ -545,7 +545,7 @@ public class Sewing : Transient
     protected virtual Edge SameParameterEdge(in Shape edge,
                                                     NCollection_Sequence<Shape> seqEdges,
                                                     NCollection_Sequence<bool> seqForward,
-                                                    NCollection_Map<Shape> mapMerged,
+                                                    HashSet<Shape> mapMerged,
                                                     ReShape locReShape)
     {
         // Retrieve reference section
@@ -560,7 +560,7 @@ public class Sewing : Transient
 
         // Create data structures for temporary merged edges
         var listFaces1 = new NCollection_List<Shape>();
-        var mergedFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mergedFaces = new HashSet<Shape>(ShapeHasher.Instance);
 
         if (_sewing)
         {
@@ -1721,7 +1721,7 @@ public class Sewing : Transient
         {
             return;
         }
-        var mapFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapFaces = new HashSet<Shape>(ShapeHasher.Instance);
         var lIt = new NCollection_List<Shape>.Iterator();
         for (lIt.Initialize(workfaces); lIt.More(); lIt.Next())
         {
@@ -1794,7 +1794,7 @@ public class Sewing : Transient
             return;
         }
         var totTabDist = new NCollection_Array2<double>(1, seqNotCandidate.Length(), 1, seqIndCandidate.Length());
-        var mapIndex = new NCollection_Map<int>();
+        var mapIndex = new HashSet<int>();
         var seqForward = new NCollection_Sequence<int>();
 
         // Definition and removing edges which are not candidate for work edge
@@ -1880,7 +1880,7 @@ public class Sewing : Transient
         // Retrieve last reference index
         int indReference = mapReference[mapReference.Extent()];
         int nbCandidates = 0;
-        var faces1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var faces1 = new HashSet<Shape>(ShapeHasher.Instance);
         // if (nbSections > 1) {
 
         Edge edge1 = ShapeCasts.Edge(seqSections[indReference]);
@@ -2514,8 +2514,8 @@ public class Sewing : Transient
     public void Dump(TextWriter os)
     {
         int i, nbBounds = _boundFaces.Extent(), nbSections = 0;
-        var mapVertices = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapVertices = new HashSet<Shape>(ShapeHasher.Instance);
+        var mapEdges = new HashSet<Shape>(ShapeHasher.Instance);
         for (i = 1; i <= nbBounds; i++)
         {
             Shape bound = _boundFaces.FindKey(i);
@@ -2545,9 +2545,9 @@ public class Sewing : Transient
         os.Write(" Number of actual shapes     : " + _nbShapes + '\n');
         os.Write(" Number of Bounds            : " + nbBounds + '\n');
         os.Write(" Number of Sections          : " + nbSections + '\n');
-        os.Write(" Number of Edges             : " + mapEdges.Extent() + '\n');
+        os.Write(" Number of Edges             : " + mapEdges.Count + '\n');
         os.Write(" Number of Vertices          : " + _nbVertices + '\n');
-        os.Write(" Number of Nodes             : " + mapVertices.Extent() + '\n');
+        os.Write(" Number of Nodes             : " + mapVertices.Count + '\n');
         os.Write(" Number of Free Edges        : " + _freeEdges.Extent() + '\n');
         os.Write(" Number of Contiguous Edges  : " + _contigousEdges.Extent() + '\n');
         os.Write(" Number of Multiple Edges    : " + _multipleEdges.Extent() + '\n');
@@ -2577,7 +2577,7 @@ public class Sewing : Transient
         }
 
         var b = new BrepBuilder();
-        var smallEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var smallEdges = new HashSet<Shape>(ShapeHasher.Instance);
         var gluedVertices = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int i = 1;
         using var ps = new ProgressScope(progress, "Shape analysis", _oldShapes.Extent());
@@ -2862,7 +2862,7 @@ public class Sewing : Transient
         }
         // Fill map Edge -> Faces
         nbShapes = newShapes.Extent();
-        var mapFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapFaces = new HashSet<Shape>(ShapeHasher.Instance);
         for (i = 1; i <= nbShapes; i++)
         {
             // Explore shape to find all faces
@@ -3085,7 +3085,7 @@ public class Sewing : Transient
             // Calculate new node center point
             var theCoordinates = new Xyz(0.0, 0.0, 0.0);
             var lvert = new NCollection_List<Shape>(); // Accumulate node vertices
-            var medge = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var medge = new HashSet<Shape>(ShapeHasher.Instance);
             var ledge = new NCollection_List<Shape>(); // Accumulate node edges
             // Iterate on old nodes
             var itn = new NCollection_List<Shape>.Iterator(newNodeOldNodes[iter1]);
@@ -3294,7 +3294,7 @@ public class Sewing : Transient
                         }
                     }
                     // Create map of faces for e1
-                    var faces1 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                    var faces1 = new HashSet<Shape>(ShapeHasher.Instance);
                     NCollection_List<Shape> lfac1 = aBoundFaces.FindFromKey(e1);
                     if (lfac1.Extent() != 0)
                     {
@@ -3353,7 +3353,7 @@ public class Sewing : Transient
                                 }
                             }
                         }
-                        else if (faces1.IsEmpty() && e1 == e2)
+                        else if (faces1.Count == 0 && e1 == e2)
                         {
                             int stat = IsMergedVertices(new Face(), e1, e1, v1, v2);
                             if (stat == 1)
@@ -3791,7 +3791,7 @@ public class Sewing : Transient
                     if (nbMerged != 0)
                     {
                         // Create same parameter edge
-                        var actuallyMerged = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var actuallyMerged = new HashSet<Shape>(ShapeHasher.Instance);
                         Edge mergedEdge = SameParameterEdge(bound,
                                                                    seqMergedWithBound,
                                                                    seqMergedWithBoundOri,
@@ -3920,7 +3920,7 @@ public class Sewing : Transient
                         if (nbMerged != 0)
                         {
                             // Create same parameter edge
-                            var actuallyMerged = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                            var actuallyMerged = new HashSet<Shape>(ShapeHasher.Instance);
                             Edge mergedEdge = SameParameterEdge(section,
                                                                        seqMergedWithSection,
                                                                        seqMergedWithSectionOri,
@@ -4145,7 +4145,7 @@ public class Sewing : Transient
         }
 
         // Fill map of nodes connected to the node #2
-        var mapVert2 = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapVert2 = new HashSet<Shape>(ShapeHasher.Instance);
         mapVert2.Add(nno2);
         if (_cuttingNode.IsBound(nno2))
         {
@@ -4169,7 +4169,7 @@ public class Sewing : Transient
         // Find all possible contiguous edges
         var seqEdges = new NCollection_Sequence<Shape>();
         seqEdges.Append(edge);
-        var mapEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapEdges = new HashSet<Shape>(ShapeHasher.Instance);
         mapEdges.Add(edge);
         for (int i = 1; i <= mapVert1.Extent(); i++)
         {
@@ -4838,7 +4838,7 @@ public class Sewing : Transient
         var mapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_sewedShape, ShapeType.Edge, ShapeType.Face, mapEF);
 
-        using var ps = new ProgressScope(progress, "Encode edge regularity", _mergedEdges.Extent());
+        using var ps = new ProgressScope(progress, "Encode edge regularity", _mergedEdges.Count);
         // OCCT iterates its map in address order; the port in insertion order (decision 18). Each edge is encoded on
         // its own, so the order doesn't change the result.
         foreach (Shape mergedEdge in _mergedEdges)
@@ -4988,11 +4988,11 @@ public class Sewing : Transient
             else if (nbOldShells != 0)
             {
                 // Several shells should be merged
-                var indexMerged = new NCollection_Map<int>();
-                while (indexMerged.Extent() < nbOldShells)
+                var indexMerged = new HashSet<int>();
+                while (indexMerged.Count < nbOldShells)
                 {
                     var newShell = new Shell();
-                    var newEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                    var newEdges = new HashSet<Shape>(ShapeHasher.Instance);
                     for (int i = 1; i <= nbOldShells; i++)
                     {
                         if (indexMerged.Contains(i))

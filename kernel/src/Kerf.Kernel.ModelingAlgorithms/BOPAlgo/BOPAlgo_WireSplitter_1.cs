@@ -39,7 +39,7 @@ public partial class WireSplitter
         //
         NCollection_List<Shape> myEdges = aCB.Shapes();
 
-        NCollection_Map<Shape> ms = new(ShapeHasher.Instance);
+        HashSet<Shape> ms = new(ShapeHasher.Instance);
         //
         // 1.Filling mySmartMap
         aIt = new NCollection_List<Shape>.Iterator(myEdges);

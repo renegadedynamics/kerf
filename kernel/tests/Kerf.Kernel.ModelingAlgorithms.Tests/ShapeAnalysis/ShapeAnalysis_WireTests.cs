@@ -422,8 +422,8 @@ public class ShapeAnalysis_WireTests
                                           PlaneFace(), Prec);
         var aLoops = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         var aVE = new NCollection_DataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var aSmall = new NCollection_Map<Shape>(ShapeHasher.Instance);
-        var aSeams = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var aSmall = new HashSet<Shape>(ShapeHasher.Instance);
+        var aSeams = new HashSet<Shape>(ShapeHasher.Instance);
         Assert.True(aSAW.CheckLoop(aLoops, aVE, aSmall, aSeams));
         Assert.True(aSAW.StatusLoop(ExtendStatus.DONE1));
         Assert.Equal(1, aLoops.Extent());

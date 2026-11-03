@@ -40,7 +40,7 @@ public class LibraryMakeSolid : LibraryMakeShape
         MakeSolid(b);
 
         Explorer ex1 = new(), ex2 = new();
-        var mapOfFaces = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapOfFaces = new HashSet<Shape>(ShapeHasher.Instance);
         for (ex1.Init(s, ShapeType.Shell); ex1.More(); ex1.Next())
         {
             for (ex2.Init(ex1.Current(), ShapeType.Face); ex2.More(); ex2.Next())

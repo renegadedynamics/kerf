@@ -149,7 +149,7 @@ public class BRepOffset_ToolTests
     {
         Shape aBox = Box();
         Shell aShell = global::Kerf.Engine.Topology.ShapeCasts.Shell(new global::Kerf.Engine.Topology.Explorer(aBox, ShapeType.Shell).Current());
-        NCollection_Map<Shape> aBoundary = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        HashSet<Shape> aBoundary = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         Assert.True(OffsetTool.Deboucle3D(aShell, aBoundary).IsSame(aShell));
 
         // A shell of one face has free edges which aren't in the boundary.

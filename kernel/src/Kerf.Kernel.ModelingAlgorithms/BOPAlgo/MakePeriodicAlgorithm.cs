@@ -950,7 +950,7 @@ public class MakePeriodicAlgorithm : Options
         NCollection_DataMap<Shape, NCollection_List<Shape>> newTwinsMap = new(ShapeHasher.Instance);
 
         // Fence map to avoid repeated fill for the twins
-        NCollection_Map<Shape> mTwinsDone = new(ShapeHasher.Instance);
+        HashSet<Shape> mTwinsDone = new(ShapeHasher.Instance);
 
         // Update the map of twins with the new repeated shapes
         // (native: address order; the port: insertion order, occt-issues.md)

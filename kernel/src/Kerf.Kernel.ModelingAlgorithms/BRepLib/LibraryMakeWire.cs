@@ -643,7 +643,7 @@ public class LibraryMakeWire : LibraryMakeShape
 
             Exploration.MapShapesAndAncestors(_shape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, mapVE);
 
-            var processedEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var processedEdges = new HashSet<Shape>(ShapeHasher.Instance);
             var exp = new Explorer();
 
             var actEdges = new NCollection_List<Shape>();
@@ -751,7 +751,7 @@ public class LibraryMakeWire : LibraryMakeShape
         Shape old = _shape;
         CopyForWrite();
         History history = _history!;
-        var oldVertices = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var oldVertices = new HashSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(old, oldVertices);
         for (var itLLV = new NCollection_List<NCollection_List<Vertex>>.Iterator(grVL); itLLV.More(); itLLV.Next())
         {
@@ -844,10 +844,10 @@ public class LibraryMakeWire : LibraryMakeShape
         }
 
         // aV2CV : vertex <-> its coincident vertices. OCCT's maps here use std::hash and operator== (IsEqual).
-        var v2CV = new NCollection_DataMap<Vertex, NCollection_Map<Vertex>>(EqualityComparer<Vertex>.Default);
+        var v2CV = new NCollection_DataMap<Vertex, HashSet<Vertex>>(EqualityComparer<Vertex>.Default);
         var tree = new SpatialTree<int, Box>();
         var treeFiller = new SpatialTreeFiller<int, Box>(tree);
-        var nonGroupedV = new NCollection_Map<Vertex>(EqualityComparer<Vertex>.Default);
+        var nonGroupedV = new HashSet<Vertex>(EqualityComparer<Vertex>.Default);
 
         // add vertices from anAllV to treefiller
         for (int i = 1; i <= allV.Extent(); i++)
@@ -875,7 +875,7 @@ public class LibraryMakeWire : LibraryMakeShape
             if (nbColl > 0)
             {
                 NCollection_List<int> resInds = selector.GetResultInds();
-                NCollection_Map<Vertex> vm = v2CV.Bound(v, new NCollection_Map<Vertex>(EqualityComparer<Vertex>.Default));
+                HashSet<Vertex> vm = v2CV.Bound(v, new HashSet<Vertex>(EqualityComparer<Vertex>.Default));
                 for (itI.Initialize(resInds); itI.More(); itI.Next())
                 {
                     Vertex cv = ShapeCasts.Vertex(allV[itI.Value()]);
@@ -888,12 +888,12 @@ public class LibraryMakeWire : LibraryMakeShape
                         }
                         else
                         {
-                            v2CV.Bound(cv, new NCollection_Map<Vertex>(EqualityComparer<Vertex>.Default)).Add(v);
+                            v2CV.Bound(cv, new HashSet<Vertex>(EqualityComparer<Vertex>.Default)).Add(v);
                             nonGroupedV.Add(cv);
                         }
                     }
                 }
-                if (!vm.IsEmpty())
+                if (vm.Count != 0)
                 {
                     nonGroupedV.Add(v); // vertexes to be grouped; store only coincident vertices
                 }
@@ -907,7 +907,7 @@ public class LibraryMakeWire : LibraryMakeShape
         var oneGrV = new NCollection_List<Vertex>();
         var itLV = new NCollection_List<Vertex>.Iterator();
         bool isStartNewGroup = true;
-        while (!nonGroupedV.IsEmpty() || !isStartNewGroup)
+        while (nonGroupedV.Count != 0 || !isStartNewGroup)
         // exit only if there are no nongrouped vertices
         // and the last group are fully are constructed
         {

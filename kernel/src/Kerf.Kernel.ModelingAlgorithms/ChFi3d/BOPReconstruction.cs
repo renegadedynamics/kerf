@@ -815,7 +815,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
 
         // the face's new edges, oriented by their transitions (both ways on a seam of the face)
         NCollection_List<Shape> le = new();
-        NCollection_Map<Shape> keptVertices = new(ShapeHasher.Instance);
+        HashSet<Shape> keptVertices = new(ShapeHasher.Instance);
         HashSet<(TShape, Orientation)> added = [];
         if (ds.HasShape(f))
         {
@@ -881,7 +881,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         Wire outer = BrepTools.OuterWire(ff);
         List<NCollection_List<Shape>> isolated = [];
         NCollection_List<Shape>? outerIsolated = null;
-        NCollection_Map<Shape> isolatedEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> isolatedEdges = new(ShapeHasher.Instance);
         for (Iterator itw = new(ff); itw.More(); itw.Next())
         {
             Shape w = itw.Value();
@@ -1066,8 +1066,8 @@ internal sealed partial class BOPReconstruction : Reconstruction
     /// crosses a cylinder's seam) that it would build into a band.
     /// </summary>
     private static List<Shape> WholeEdgesKept(NCollection_List<Shape> whole,
-                                                     NCollection_Map<Shape> isolated,
-                                                     NCollection_Map<Shape> keptVertices)
+                                                     HashSet<Shape> isolated,
+                                                     HashSet<Shape> keptVertices)
     {
         List<Shape> edges = [.. whole.Where(e => !isolated.Contains(e))];
         int[] parent = Enumerable.Range(0, edges.Count).ToArray();
@@ -1105,7 +1105,7 @@ internal sealed partial class BOPReconstruction : Reconstruction
         return [.. edges.Where((e, i) => anchored.Contains(Root(i)))];
     }
 
-    private static void AddVertices(in Shape e, NCollection_Map<Shape> map)
+    private static void AddVertices(in Shape e, HashSet<Shape> map)
     {
         for (Explorer exv = new(e, ShapeType.Vertex); exv.More(); exv.Next())
         {

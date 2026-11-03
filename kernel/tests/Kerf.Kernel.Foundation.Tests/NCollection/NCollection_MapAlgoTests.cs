@@ -16,13 +16,13 @@ public class NCollection_MapTest
         const int aRightLower = 5;
         const int aRightUpper = 15;
 
-        NCollection_Map<int> aMapLeft = new();
+        HashSet<int> aMapLeft = new();
         for (int aKeyIter = aLeftLower; aKeyIter <= aLeftUpper; ++aKeyIter)
         {
             aMapLeft.Add(aKeyIter);
         }
 
-        NCollection_Map<int> aMapRight = new();
+        HashSet<int> aMapRight = new();
         for (int aKeyIter = aRightLower; aKeyIter <= aRightUpper; ++aKeyIter)
         {
             aMapRight.Add(aKeyIter);
@@ -31,68 +31,69 @@ public class NCollection_MapTest
         Assert.False(NCollection_MapAlgo.Contains(aMapLeft, aMapRight));
         Assert.False(NCollection_MapAlgo.Contains(aMapRight, aMapLeft));
 
-        NCollection_Map<int> aMapUnion = new();
+        HashSet<int> aMapUnion = new();
         NCollection_MapAlgo.Union(aMapUnion, aMapLeft, aMapRight);
-        Assert.Equal(aRightUpper - aLeftLower + 1, aMapUnion.Extent());
+        Assert.Equal(aRightUpper - aLeftLower + 1, aMapUnion.Count);
         for (int aKeyIter = aLeftLower; aKeyIter <= aRightUpper; ++aKeyIter)
         {
-            Assert.True(aMapUnion.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapUnion);
         }
 
-        NCollection_Map<int> aMapSect = new();
+        HashSet<int> aMapSect = new();
         NCollection_MapAlgo.Intersection(aMapSect, aMapLeft, aMapRight);
-        Assert.Equal(aLeftUpper - aRightLower + 1, aMapSect.Extent());
+        Assert.Equal(aLeftUpper - aRightLower + 1, aMapSect.Count);
         for (int aKeyIter = aRightLower; aKeyIter <= aLeftUpper; ++aKeyIter)
         {
-            Assert.True(aMapSect.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapSect);
         }
         Assert.True(NCollection_MapAlgo.Contains(aMapLeft, aMapSect));
         Assert.True(NCollection_MapAlgo.Contains(aMapRight, aMapSect));
 
-        NCollection_Map<int> aMapSubsLR = new();
+        HashSet<int> aMapSubsLR = new();
         NCollection_MapAlgo.Subtraction(aMapSubsLR, aMapLeft, aMapRight);
-        Assert.Equal(aRightLower - aLeftLower, aMapSubsLR.Extent());
+        Assert.Equal(aRightLower - aLeftLower, aMapSubsLR.Count);
         for (int aKeyIter = aLeftLower; aKeyIter < aRightLower; ++aKeyIter)
         {
-            Assert.True(aMapSubsLR.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapSubsLR);
         }
 
-        NCollection_Map<int> aMapSubsRL = new();
+        HashSet<int> aMapSubsRL = new();
         NCollection_MapAlgo.Subtraction(aMapSubsRL, aMapRight, aMapLeft);
-        Assert.Equal(aRightUpper - aLeftUpper, aMapSubsRL.Extent());
+        Assert.Equal(aRightUpper - aLeftUpper, aMapSubsRL.Count);
         for (int aKeyIter = aLeftUpper + 1; aKeyIter <= aRightUpper; ++aKeyIter)
         {
-            Assert.True(aMapSubsRL.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapSubsRL);
         }
 
-        NCollection_Map<int> aMapDiff = new();
+        HashSet<int> aMapDiff = new();
         NCollection_MapAlgo.Difference(aMapDiff, aMapLeft, aMapRight);
-        Assert.Equal(aRightLower - aLeftLower + aRightUpper - aLeftUpper, aMapDiff.Extent());
+        Assert.Equal(aRightLower - aLeftLower + aRightUpper - aLeftUpper, aMapDiff.Count);
         for (int aKeyIter = aLeftLower; aKeyIter < aRightLower; ++aKeyIter)
         {
-            Assert.True(aMapDiff.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapDiff);
         }
         for (int aKeyIter = aLeftUpper + 1; aKeyIter <= aRightUpper; ++aKeyIter)
         {
-            Assert.True(aMapDiff.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapDiff);
         }
 
-        NCollection_Map<int> aMapSwap = new();
-        aMapSwap.Exchange(aMapSect);
+        // OCCT's Exchange: the port's maps are HashSets now (unit 10J), exchanged by their references
+        HashSet<int> aMapSwap = new();
+        (aMapSwap, aMapSect) = (aMapSect, aMapSwap);
         for (int aKeyIter = aRightLower; aKeyIter <= aLeftUpper; ++aKeyIter)
         {
-            Assert.True(aMapSwap.Contains(aKeyIter));
+            Assert.Contains(aKeyIter, aMapSwap);
         }
-        Assert.True(aMapSect.IsEmpty());
+        Assert.True(aMapSect.Count == 0);
     }
 }
 
 /// <summary>Additions: every operation of NCollection_MapAlgo, with the result map as an operand, against LINQ.</summary>
 public class NCollection_MapAlgoTest
 {
-    private static NCollection_Map<int> Map(params int[] theKeys)
+    private static HashSet<int> Map(params int[] theKeys)
     {
-        NCollection_Map<int> aMap = new();
+        HashSet<int> aMap = new();
         foreach (int aKey in theKeys)
         {
             aMap.Add(aKey);
@@ -100,12 +101,12 @@ public class NCollection_MapAlgoTest
         return aMap;
     }
 
-    private static int[] Sorted(NCollection_Map<int> theMap) => [.. theMap.Order()];
+    private static int[] Sorted(HashSet<int> theMap) => [.. theMap.Order()];
 
     [Fact]
     public void Unite_ChangesAndReportsChange()
     {
-        NCollection_Map<int> aMap = Map(1, 2, 3);
+        HashSet<int> aMap = Map(1, 2, 3);
         Assert.True(NCollection_MapAlgo.Unite(aMap, Map(3, 4)));
         Assert.Equal([1, 2, 3, 4], Sorted(aMap));
         Assert.False(NCollection_MapAlgo.Unite(aMap, Map(1, 4)));
@@ -116,7 +117,7 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Unite_KeepsInsertionOrder()
     {
-        NCollection_Map<int> aMap = Map(7, 3);
+        HashSet<int> aMap = Map(7, 3);
         NCollection_MapAlgo.Unite(aMap, Map(9, 1, 3, 5));
         Assert.Equal([7, 3, 9, 1, 5], aMap.ToArray());
     }
@@ -124,17 +125,17 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Union_WithResultAsOperand()
     {
-        NCollection_Map<int> aLeft = Map(1, 2);
-        NCollection_Map<int> aRight = Map(2, 3);
+        HashSet<int> aLeft = Map(1, 2);
+        HashSet<int> aRight = Map(2, 3);
         NCollection_MapAlgo.Union(aLeft, aLeft, aRight);
         Assert.Equal([1, 2, 3], Sorted(aLeft));
 
-        NCollection_Map<int> aRight2 = Map(5);
+        HashSet<int> aRight2 = Map(5);
         NCollection_MapAlgo.Union(aRight2, Map(4), aRight2);
         Assert.Equal([4, 5], Sorted(aRight2));
 
-        NCollection_Map<int> aResult = Map(99);
-        NCollection_Map<int> aSame = Map(6, 7);
+        HashSet<int> aResult = Map(99);
+        HashSet<int> aSame = Map(6, 7);
         NCollection_MapAlgo.Union(aResult, aSame, aSame);
         Assert.Equal([6, 7], Sorted(aResult));
     }
@@ -150,15 +151,15 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Intersection_And_Intersect()
     {
-        NCollection_Map<int> aLeft = Map(1, 2, 3, 4);
+        HashSet<int> aLeft = Map(1, 2, 3, 4);
         NCollection_MapAlgo.Intersection(aLeft, aLeft, Map(2, 4, 6));
         Assert.Equal([2, 4], Sorted(aLeft));
 
-        NCollection_Map<int> aRight = Map(2, 4, 6);
+        HashSet<int> aRight = Map(2, 4, 6);
         NCollection_MapAlgo.Intersection(aRight, Map(4, 6, 8), aRight);
         Assert.Equal([4, 6], Sorted(aRight));
 
-        NCollection_Map<int> aMap = Map(1, 2, 3);
+        HashSet<int> aMap = Map(1, 2, 3);
         Assert.True(NCollection_MapAlgo.Intersect(aMap, Map(2, 3, 4)));
         Assert.Equal([2, 3], Sorted(aMap));
         Assert.False(NCollection_MapAlgo.Intersect(aMap, Map(2, 3)));
@@ -169,19 +170,19 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Subtract_And_Subtraction()
     {
-        NCollection_Map<int> aMap = Map(1, 2, 3);
+        HashSet<int> aMap = Map(1, 2, 3);
         Assert.True(NCollection_MapAlgo.Subtract(aMap, Map(2, 9)));
         Assert.Equal([1, 3], Sorted(aMap));
         Assert.False(NCollection_MapAlgo.Subtract(aMap, Map(9)));
         Assert.True(NCollection_MapAlgo.Subtract(aMap, aMap));
-        Assert.True(aMap.IsEmpty());
+        Assert.True(aMap.Count == 0);
         Assert.False(NCollection_MapAlgo.Subtract(aMap, aMap));
 
-        NCollection_Map<int> aRight = Map(2, 3);
+        HashSet<int> aRight = Map(2, 3);
         NCollection_MapAlgo.Subtraction(aRight, Map(1, 2, 3, 4), aRight);
         Assert.Equal([1, 4], Sorted(aRight));
 
-        NCollection_Map<int> aLeft = Map(1, 2, 3, 4);
+        HashSet<int> aLeft = Map(1, 2, 3, 4);
         NCollection_MapAlgo.Subtraction(aLeft, aLeft, Map(1, 4));
         Assert.Equal([2, 3], Sorted(aLeft));
     }
@@ -189,24 +190,24 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Difference_And_Differ()
     {
-        NCollection_Map<int> aLeft = Map(1, 2, 3);
+        HashSet<int> aLeft = Map(1, 2, 3);
         NCollection_MapAlgo.Difference(aLeft, aLeft, Map(3, 4));
         Assert.Equal([1, 2, 4], Sorted(aLeft));
 
-        NCollection_Map<int> aRight = Map(3, 4);
+        HashSet<int> aRight = Map(3, 4);
         NCollection_MapAlgo.Difference(aRight, Map(1, 3), aRight);
         Assert.Equal([1, 4], Sorted(aRight));
 
-        NCollection_Map<int> aSame = Map(1);
-        NCollection_Map<int> aResult = Map(5);
+        HashSet<int> aSame = Map(1);
+        HashSet<int> aResult = Map(5);
         NCollection_MapAlgo.Difference(aResult, aSame, aSame);
-        Assert.True(aResult.IsEmpty());
+        Assert.True(aResult.Count == 0);
 
-        NCollection_Map<int> aMap = Map(1, 2);
+        HashSet<int> aMap = Map(1, 2);
         Assert.True(NCollection_MapAlgo.Differ(aMap, Map(2, 3, 4)));
         Assert.Equal([1, 3, 4], Sorted(aMap));
         Assert.True(NCollection_MapAlgo.Differ(aMap, aMap));
-        Assert.True(aMap.IsEmpty());
+        Assert.True(aMap.Count == 0);
         Assert.False(NCollection_MapAlgo.Differ(aMap, aMap));
     }
 
@@ -214,7 +215,7 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Differ_ReportsByCount()
     {
-        NCollection_Map<int> aMap = Map(1, 2);
+        HashSet<int> aMap = Map(1, 2);
         Assert.False(NCollection_MapAlgo.Differ(aMap, Map(2, 3)));
         Assert.Equal([1, 3], Sorted(aMap));
     }
@@ -222,7 +223,7 @@ public class NCollection_MapAlgoTest
     [Fact]
     public void Contains_And_IsEqual()
     {
-        NCollection_Map<int> aMap = Map(1, 2, 3);
+        HashSet<int> aMap = Map(1, 2, 3);
         Assert.True(NCollection_MapAlgo.Contains(aMap, Map(1, 3)));
         Assert.True(NCollection_MapAlgo.Contains(aMap, Map()));
         Assert.True(NCollection_MapAlgo.Contains(aMap, aMap));
@@ -238,10 +239,10 @@ public class NCollection_MapAlgoTest
     public void ReferenceKeys_UseTheMapsComparer()
     {
         object a = new(), b = new(), c = new();
-        NCollection_Map<object> aMap = new(ReferenceEqualityComparer.Instance);
+        HashSet<object> aMap = new(ReferenceEqualityComparer.Instance);
         aMap.Add(a);
         aMap.Add(b);
-        NCollection_Map<object> anOther = new(ReferenceEqualityComparer.Instance);
+        HashSet<object> anOther = new(ReferenceEqualityComparer.Instance);
         anOther.Add(b);
         anOther.Add(c);
         NCollection_MapAlgo.Intersection(aMap, aMap, anOther);

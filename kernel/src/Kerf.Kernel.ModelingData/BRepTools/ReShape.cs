@@ -75,7 +75,7 @@ public class ReShape : Transient
     private readonly NCollection_DataMap<Shape, TReplacement> _shapeToReplacement = new(ShapeHasher.Instance);
 
     /// <summary>The shapes recorded as replacements.</summary>
-    protected readonly NCollection_Map<Shape> _newShapes = new(ShapeHasher.Instance);
+    protected readonly HashSet<Shape> _newShapes = new(ShapeHasher.Instance);
 
     /// <summary>The status of the last application (ShapeExtend's encoding).</summary>
     protected int _status;
@@ -227,7 +227,7 @@ public class ReShape : Transient
         // so keying the cycle guard on the TShape handle catches cycles that would otherwise
         // slip past orientation/location-sensitive comparisons.
         Shape current = shape;
-        var visited = new NCollection_Map<TShape>(ReferenceEqualityComparer.Instance);
+        var visited = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         visited.Add(current.TShape()!);
 
         for (;;)
@@ -385,7 +385,7 @@ public class ReShape : Transient
     /// <summary>Applies the substitution requests, as <see cref="Apply"/>, without freezing the result (ported code).</summary>
     internal virtual Shape InternalApply(in Shape shape, ShapeType until = ShapeType.Shape)
     {
-        var inFlight = new NCollection_Map<TShape>(ReferenceEqualityComparer.Instance);
+        var inFlight = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         return ApplyImpl(shape, until, inFlight);
     }
 
@@ -393,7 +393,7 @@ public class ReShape : Transient
     /// The recursive worker of Apply, with a set of the TShapes being processed further up (by identity), so that a
     /// replacement containing the original shape doesn't recurse without end.
     /// </summary>
-    protected Shape ApplyImpl(in Shape shape, ShapeType until, NCollection_Map<TShape> inFlight)
+    protected Shape ApplyImpl(in Shape shape, ShapeType until, HashSet<TShape> inFlight)
     {
         _status = EncodeStatus(0); // ShapeExtend::EncodeStatus ( ShapeExtend_OK );
         if (shape.IsNull)
@@ -604,7 +604,7 @@ public class ReShape : Transient
             // OCCT.NET: OCCT's NCollection_IndexedMap<TopoDS_Shape> and NCollection_Map<TopoDS_Shape> without a hasher
             // use std::hash and operator==, which are IsEqual.
             var intermediates = new NCollection_IndexedMap<Shape>(EqualityComparer<Shape>.Default);
-            var modified = new NCollection_Map<Shape>(EqualityComparer<Shape>.Default);
+            var modified = new HashSet<Shape>(EqualityComparer<Shape>.Default);
             intermediates.Add(shape);
             for (int i = 1; i <= intermediates.Extent(); ++i)
             {
@@ -623,7 +623,7 @@ public class ReShape : Transient
                 }
             }
 
-            if (modified.IsEmpty())
+            if (modified.Count == 0)
             {
                 history.Remove(shape);
             }
@@ -751,7 +751,7 @@ public class ReShape : Transient
     // Adds the shape to the map.
     // If the shape is a wire, shell or solid then
     // adds the sub-shapes of the shape instead.
-    private static void Add(NCollection_Map<Shape> map, in Shape shape)
+    private static void Add(HashSet<Shape> map, in Shape shape)
     {
         ShapeType type = shape.ShapeType();
         if (type != ShapeType.Wire && type != ShapeType.Shell && type != ShapeType.CompSolid)

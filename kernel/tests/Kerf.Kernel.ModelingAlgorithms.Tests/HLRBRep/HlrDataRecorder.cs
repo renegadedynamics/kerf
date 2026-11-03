@@ -128,7 +128,7 @@ internal sealed class HlrDataRecorder
     private void RecTopo(OutLiner S, Shape theWorking)
     {
         TopologyData DS = S.DataStructure();
-        NCollection_Map<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        HashSet<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         int i = 0;
         for (global::Kerf.Engine.Topology.Explorer ex = new(theWorking, ShapeType.Face); ex.More(); ex.Next())
         {

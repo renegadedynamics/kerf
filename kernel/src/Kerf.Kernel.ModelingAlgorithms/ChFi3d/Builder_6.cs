@@ -1873,7 +1873,7 @@ internal static class Builder_6
         return nb;
     }
 
-    internal static bool IsVois(in Edge e, in Vertex vref, Map veMap, NCollection_Map<Shape> done, int prof, int profmax)
+    internal static bool IsVois(in Edge e, in Vertex vref, Map veMap, HashSet<Shape> done, int prof, int profmax)
     {
         if (prof > profmax)
         {
@@ -1935,7 +1935,7 @@ internal static class Builder_6
             return false;
         }
         Edge e = cp.Arc();
-        NCollection_Map<Shape> done = new(ShapeHasher.Instance);
+        HashSet<Shape> done = new(ShapeHasher.Instance);
         int prof = 4;
         return !IsVois(e, vref, veMap, done, 0, prof);
     }

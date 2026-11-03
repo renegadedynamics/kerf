@@ -26,7 +26,7 @@ public class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeInse
     private double _maxSqDeflection;
     private double _sqMinSize;
     private bool _isAllDegenerated;
-    private NCollection_Map<OrientedEdge>? _couplesMap;
+    private HashSet<OrientedEdge>? _couplesMap;
     private NCollection_List<Point2D>? _controlNodes;
     private CircleTool? _circles;
 
@@ -65,7 +65,7 @@ public class DelaunayDeflectionControlMeshAlgo<RangeSplitter> : DelaunayNodeInse
     protected virtual void OptimizeMesh(Delaun mesher, ProgressRange range)
     {
         _sqMinSize = GetParameters().MinSize * GetParameters().MinSize;
-        _couplesMap = new NCollection_Map<OrientedEdge>(); // OCCT preallocates 3 * ElementsOfDomain().Extent() buckets
+        _couplesMap = new HashSet<OrientedEdge>(); // OCCT preallocates 3 * ElementsOfDomain().Extent() buckets
         _controlNodes = new NCollection_List<Point2D>();
         _circles = mesher.Circles();
 

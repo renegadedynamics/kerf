@@ -42,8 +42,8 @@ public class MiddlePath : MakeShape
     private readonly Wire _endWire;
     private readonly bool _closedSection;
     private readonly bool _closedRing;
-    private readonly NCollection_Map<Shape> _startWireEdges = new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _endWireEdges = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _startWireEdges = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _endWireEdges = new(ShapeHasher.Instance);
     private readonly NCollection_Sequence<NCollection_Sequence<Shape>> _paths = new();
 
     private static bool IsLinear(in Edge anEdge, out Line3D aLine)
@@ -163,7 +163,7 @@ public class MiddlePath : MakeShape
     {
         LibraryMakeWire wMaker = new();
         WireExplorer wexp = new(wire);
-        NCollection_Map<Shape> generatedEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> generatedEdges = new(ShapeHasher.Instance);
         for (; wexp.More(); wexp.Next())
         {
             Shape edge = wexp.Current();
@@ -237,8 +237,8 @@ public class MiddlePath : MakeShape
         NCollection_List<Shape>.Iterator itl = new();
 
         NCollection_Sequence<Shape> startVertices = new();
-        NCollection_Map<Shape> endVertices = new(ShapeHasher.Instance);
-        NCollection_Map<Shape> endEdges = new(ShapeHasher.Instance);
+        HashSet<Shape> endVertices = new(ShapeHasher.Instance);
+        HashSet<Shape> endEdges = new(ShapeHasher.Instance);
         NCollection_Sequence<NCollection_Sequence<Shape>> sectionsEdges = new();
 
         WireExplorer wexp = new(_startWire);
@@ -279,7 +279,7 @@ public class MiddlePath : MakeShape
         Exploration.MapShapesAndAncestors(_initialShape, ShapeType.Vertex, ShapeType.Edge, vEmap);
         Exploration.MapShapesAndAncestors(_initialShape, ShapeType.Edge, ShapeType.Face, eFmap);
 
-        NCollection_Map<Shape> curVertices = new(ShapeHasher.Instance);
+        HashSet<Shape> curVertices = new(ShapeHasher.Instance);
 
         int i, j, k;
         Edge edge = new();
@@ -343,7 +343,7 @@ public class MiddlePath : MakeShape
                     continue;
                 }
                 NCollection_List<Shape> le = vEmap.FindFromKey(theVertex);
-                NCollection_Map<Shape> nextEdgeCandidates = new(ShapeHasher.Instance);
+                HashSet<Shape> nextEdgeCandidates = new(ShapeHasher.Instance);
                 for (itl.Initialize(le); itl.More(); itl.Next())
                 {
                     edge = ShapeCasts.Edge(itl.Value());
@@ -366,9 +366,9 @@ public class MiddlePath : MakeShape
                         nextEdgeCandidates.Add(edge);
                     }
                 }
-                if (!nextEdgeCandidates.IsEmpty())
+                if (nextEdgeCandidates.Count != 0)
                 {
-                    if (nextEdgeCandidates.Extent() > 1)
+                    if (nextEdgeCandidates.Count > 1)
                     {
                         _paths[i].Append(theVertex); // punctual segment of path
                     }

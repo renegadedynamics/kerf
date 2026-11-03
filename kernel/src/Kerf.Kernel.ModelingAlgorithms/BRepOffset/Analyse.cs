@@ -459,7 +459,7 @@ public sealed class Analyse
                 continue;
             }
 
-            NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+            HashSet<Shape> mFence = new(ShapeHasher.Instance);
             {
                 NCollection_List<Shape> lea = Ancestors(e);
                 for (NCollection_List<Shape>.Iterator itLEA = new(lea); itLEA.More(); itLEA.Next())
@@ -520,7 +520,7 @@ public sealed class Analyse
             }
             NCollection_List<Shape> cb = itLCB.Value();
 
-            NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+            HashSet<Shape> mFence = new(ShapeHasher.Instance);
             for (NCollection_List<Shape>.Iterator itCB1 = new(cb); itCB1.More(); itCB1.Next())
             {
                 Edge e1 = ShapeCasts.Edge(itCB1.Value());
@@ -638,7 +638,7 @@ public sealed class Analyse
                     EdgeAnalyse(e, ShapeCasts.Face(fOpposite), fNew, sinTol, _mapEdgeType[e]);
 
                     // Analyze vertices
-                    NCollection_Map<Shape> fNewEdgeMap = new(ShapeHasher.Instance);
+                    HashSet<Shape> fNewEdgeMap = new(ShapeHasher.Instance);
                     fNewEdgeMap.Add(e);
                     for (Iterator itV = new(e); itV.More(); itV.Next())
                     {
@@ -1007,7 +1007,7 @@ public sealed class Analyse
     {
         list.Clear();
         BrepBuilder b = new();
-        NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+        HashSet<Shape> map = new(ShapeHasher.Instance);
 
         Explorer fexp = new();
         for (fexp.Init(_shape, ShapeType.Face); fexp.More(); fexp.Next())
@@ -1036,7 +1036,7 @@ public sealed class Analyse
     {
         list.Clear();
         BrepBuilder b = new();
-        NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+        HashSet<Shape> map = new(ShapeHasher.Instance);
 
         Explorer fexp = new();
         for (fexp.Init(_shape, ShapeType.Face); fexp.More(); fexp.Next())
@@ -1061,7 +1061,7 @@ public sealed class Analyse
     /// Adds to <paramref name="co"/> the faces of the shell holding <paramref name="face"/> connected to it through
     /// edges of type <paramref name="t"/>.
     /// </summary>
-    public void AddFaces(in Face face, in Compound co, NCollection_Map<Shape> map,
+    public void AddFaces(in Face face, in Compound co, HashSet<Shape> map,
                          TypeOfConcavity t)
     {
         BrepBuilder b = new();
@@ -1101,7 +1101,7 @@ public sealed class Analyse
     /// Adds to <paramref name="co"/> the faces of the shell holding <paramref name="face"/> connected to it through
     /// edges of type <paramref name="t1"/> or <paramref name="t2"/>.
     /// </summary>
-    public void AddFaces(in Face face, in Compound co, NCollection_Map<Shape> map,
+    public void AddFaces(in Face face, in Compound co, HashSet<Shape> map,
                          TypeOfConcavity t1, TypeOfConcavity t2)
     {
         BrepBuilder b = new();

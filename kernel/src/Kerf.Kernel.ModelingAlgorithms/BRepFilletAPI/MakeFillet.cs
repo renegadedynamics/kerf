@@ -39,7 +39,7 @@ namespace Kerf.Engine.Fillets.Api;
 public class MakeFillet : LocalOperation
 {
     private readonly FilBuilder _builder;
-    private readonly NCollection_Map<Shape> _map = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _map = new(ShapeHasher.Instance);
 
     //=================================================================================================
 

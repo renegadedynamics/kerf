@@ -286,7 +286,7 @@ public class SClassifier
             {
                 // Line and edges / vertices interference.
                 int vlInterNb = selectorLine.GetNbVertParam();
-                var lvInts = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                var lvInts = new HashSet<Shape>(ShapeHasher.Instance);
                 for (int i = 1; i <= vlInterNb; i++)
                 {
                     // Line and vertex.

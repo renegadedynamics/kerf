@@ -669,7 +669,7 @@ public class ThruSections : MakeShape
                 bool degen1 = Tool.Degenerated(exp1.Current());
                 bool degen2 = Tool.Degenerated(exp2.Current());
 
-                NCollection_Map<Shape> mapFaces = new(ShapeHasher.Instance);
+                HashSet<Shape> mapFaces = new(ShapeHasher.Instance);
                 if (degen2)
                 {
                     Vertex vdegen =

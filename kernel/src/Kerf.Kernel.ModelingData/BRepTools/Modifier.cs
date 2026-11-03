@@ -55,8 +55,8 @@ public sealed class Modifier
     private bool _done;
     private readonly NCollection_DataMap<Shape, NewCurveInfo> _ncInfo = new(ShapeHasher.Instance);
     private readonly NCollection_DataMap<Shape, NewSurfaceInfo> _nsInfo = new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _nonUpdFace = new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _hasNewGeom = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _nonUpdFace = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _hasNewGeom = new(ShapeHasher.Instance);
     private bool _mutableInput;
 
     /// <summary>An empty modifier.</summary>

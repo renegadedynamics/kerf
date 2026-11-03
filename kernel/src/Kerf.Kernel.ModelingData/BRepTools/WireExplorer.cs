@@ -40,7 +40,7 @@ public sealed class WireExplorer
     private Edge _edge = new();
     private Vertex _vertex = new();
     private Face _face = new();
-    private readonly NCollection_Map<Shape> _doubles = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _doubles = new(ShapeHasher.Instance);
     private bool _reverse;
     private double _tolU;
     private double _tolV;
@@ -207,7 +207,7 @@ public sealed class WireExplorer
         // map of vertices to know if the wire is open
         var vmap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
         //  map of infinite edges
-        var infEmap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var infEmap = new HashSet<Shape>(ShapeHasher.Instance);
 
         // list the vertices
         Vertex v1 = new Vertex(), v2 = new Vertex();
@@ -276,7 +276,7 @@ public sealed class WireExplorer
 
         // Construction of the set of double edges.
         var it2 = new Iterator(w);
-        var emap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var emap = new HashSet<Shape>(ShapeHasher.Instance);
         while (it2.More())
         {
             if (!emap.Add(it2.Value()))
@@ -302,7 +302,7 @@ public sealed class WireExplorer
         else
         {
             //   The wire is infinite Try to find the first vertex. It may be NULL.
-            if (!infEmap.IsEmpty())
+            if (infEmap.Count != 0)
             {
                 foreach (Shape key in infEmap)
                 {
@@ -700,7 +700,7 @@ public sealed class WireExplorer
         _vertex = new Vertex();
     }
 
-    private static bool SelectDouble(NCollection_Map<Shape> doubles, NCollection_List<Shape> l, ref Edge e)
+    private static bool SelectDouble(HashSet<Shape> doubles, NCollection_List<Shape> l, ref Edge e)
     {
         var it = new NCollection_List<Shape>.Iterator(l);
 

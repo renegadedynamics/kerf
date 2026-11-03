@@ -144,7 +144,7 @@ public sealed class ShapeContentsAnalysis
         Clear();
         //  On y va
         Explorer exp = new();
-        var mapsh = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mapsh = new HashSet<Shape>(ShapeHasher.Instance);
         //  On note pour les SOLIDES : ceux qui ont des trous (plus d un SHELL)
 
         for (exp.Init(shape, ShapeType.Solid); exp.More(); exp.Next())
@@ -163,7 +163,7 @@ public sealed class ShapeContentsAnalysis
             }
             _nbSolids++;
         }
-        _nbSharedSolids = mapsh.Extent();
+        _nbSharedSolids = mapsh.Count;
 
         //  Pour les SHELLS, on compte les faces dans les SHELLS
         //  Ensuite une soustraction, et on a les faces libres
@@ -180,7 +180,7 @@ public sealed class ShapeContentsAnalysis
                 nbfaceshell++;
             }
         }
-        _nbSharedShells = mapsh.Extent();
+        _nbSharedShells = mapsh.Count;
         //  On note pour les FACES pas mal de choses (surface, topologie)
         //  * Surface BSpline > 8192 poles
         //  * Surface BSpline "OnlyC0" (not yet impl)
@@ -311,7 +311,7 @@ public sealed class ShapeContentsAnalysis
                 _nbFaceWithSevWires++;
             }
         }
-        _nbSharedFaces = mapsh.Extent();
+        _nbSharedFaces = mapsh.Count;
 
         mapsh.Clear();
         for (exp.Init(shape, ShapeType.Wire); exp.More(); exp.Next())
@@ -321,7 +321,7 @@ public sealed class ShapeContentsAnalysis
             mapsh.Add(wire);
             _nbWires++;
         }
-        _nbSharedWires = mapsh.Extent();
+        _nbSharedWires = mapsh.Count;
 
         //  Ne pas oublier les FACES :
         _nbFreeFaces = _nbFaces - nbfaceshell;
@@ -347,7 +347,7 @@ public sealed class ShapeContentsAnalysis
                 _nbC0Curves++;
             }
         }
-        _nbSharedEdges = mapsh.Extent();
+        _nbSharedEdges = mapsh.Count;
 
         mapsh.Clear();
         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
@@ -357,7 +357,7 @@ public sealed class ShapeContentsAnalysis
             _nbVertices++;
             mapsh.Add(vert);
         }
-        _nbSharedVertices = mapsh.Extent();
+        _nbSharedVertices = mapsh.Count;
 
         mapsh.Clear();
         for (exp.Init(shape, ShapeType.Edge, ShapeType.Face); exp.More(); exp.Next())
@@ -367,7 +367,7 @@ public sealed class ShapeContentsAnalysis
             _nbFreeEdges++;
             mapsh.Add(edge);
         }
-        _nbSharedFreeEdges = mapsh.Extent();
+        _nbSharedFreeEdges = mapsh.Count;
 
         mapsh.Clear();
         for (exp.Init(shape, ShapeType.Wire, ShapeType.Face); exp.More(); exp.Next())
@@ -377,7 +377,7 @@ public sealed class ShapeContentsAnalysis
             _nbFreeWires++;
             mapsh.Add(wire);
         }
-        _nbSharedFreeWires = mapsh.Extent();
+        _nbSharedFreeWires = mapsh.Count;
     }
 
     /// <summary>The flag to store the faces with edges whose 3D curves have more than 8192 poles (modifiable).</summary>

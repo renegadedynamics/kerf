@@ -381,7 +381,7 @@ public class Analyzer
                             result?.SetFailStatus(shape);
                         }
 
-                        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
                         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
                             Shape vertex = exp.Current();
@@ -413,7 +413,7 @@ public class Analyzer
                     }
                     case ShapeType.Face:
                     {
-                        var mapS = new NCollection_Map<Shape>(ShapeHasher.Instance);
+                        var mapS = new HashSet<Shape>(ShapeHasher.Instance);
                         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
                             ResultCheck? faceVertexRes = _map.FindFromKey(exp.Current());

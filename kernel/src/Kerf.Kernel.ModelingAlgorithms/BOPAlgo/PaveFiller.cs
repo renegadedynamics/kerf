@@ -98,7 +98,7 @@ public partial class PaveFiller : BooleanAlgorithm
     protected GlueMode _glue;
 
     //! Fence map of intersected faces and pave blocks
-    protected NCollection_IntDataMap<NCollection_Map<PaveBlock>> _fpbDone = new();
+    protected NCollection_IntDataMap<HashSet<PaveBlock>> _fpbDone = new();
     //! Sub-shapes with increased tolerance during the operation
     protected NCollection_IntMap _increasedSS = new();
     //! Vertices located close to E/E or E/F intersection points

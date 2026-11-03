@@ -1007,9 +1007,9 @@ public abstract class Form : MakeShape
                     // correction take into account flag2 for pro15323 and flag3 for pro16060
                     if (!_sUntil.IsNull)
                     {
-                        NCollection_Map<Shape> mapFuntil = new(ShapeHasher.Instance);
+                        HashSet<Shape> mapFuntil = new(ShapeHasher.Instance);
                         Descendants(_sUntil, theBuilder, mapFuntil);
-                        if (!mapFuntil.IsEmpty())
+                        if (mapFuntil.Count != 0)
                         {
                             for (it.Initialize(lshape); it.More(); it.Next())
                             {
@@ -1079,9 +1079,9 @@ public abstract class Form : MakeShape
                     }
                     if (!_sFrom.IsNull)
                     {
-                        NCollection_Map<Shape> mapFfrom = new(ShapeHasher.Instance);
+                        HashSet<Shape> mapFfrom = new(ShapeHasher.Instance);
                         Descendants(_sFrom, theBuilder, mapFfrom);
-                        if (!mapFfrom.IsEmpty())
+                        if (mapFfrom.Count != 0)
                         {
                             for (it.Initialize(lshape); it.More(); it.Next())
                             {
@@ -1523,7 +1523,7 @@ public abstract class Form : MakeShape
         return trf;
     }
 
-    private static void Descendants(in Shape s, FeatureBuilder fb, NCollection_Map<Shape> mapF)
+    private static void Descendants(in Shape s, FeatureBuilder fb, HashSet<Shape> mapF)
     {
         mapF.Clear();
         Explorer exp = new();

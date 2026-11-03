@@ -956,7 +956,7 @@ internal static class BOPTestCheckCommands
             di.Append("\n\nSugestions to fix the shape:\n");
             di.Append("explode ").Append(a[1]).Append(" e;\n");
             //
-            NCollection_Map<Shape> M = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            HashSet<Shape> M = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             aExpE.Init(aS, ShapeType.Edge);
             for (anECounter = 0; aExpE.More(); aExpE.Next())
             {

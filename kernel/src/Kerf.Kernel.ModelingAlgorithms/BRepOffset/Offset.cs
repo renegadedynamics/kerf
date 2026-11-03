@@ -745,7 +745,7 @@ public sealed class Offset
         Face curFace = ShapeCasts.Face(localShapeOriented);
         //  TopoDS_Face CurFace = TopoDS::Face(Face.Oriented(TopAbs_FORWARD));
 
-        var vonDegen = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var vonDegen = new HashSet<Shape>(ShapeHasher.Instance);
         theSurf.Bounds(out double u1, out double u2, out double v1, out double v2);
 
         var exp = new Explorer(curFace, ShapeType.Edge);

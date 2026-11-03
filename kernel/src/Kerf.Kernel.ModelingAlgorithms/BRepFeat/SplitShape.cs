@@ -135,7 +135,7 @@ public sealed class SplitShape : MakeShape
     {
         if (_right.IsEmpty())
         {
-            NCollection_Map<Shape> mapOfLeft = new(ShapeHasher.Instance);
+            HashSet<Shape> mapOfLeft = new(ShapeHasher.Instance);
             NCollection_List<Shape>.Iterator iterator = new();
             for (iterator.Initialize(_sShape.InternalLeft()); iterator.More(); iterator.Next())
             {

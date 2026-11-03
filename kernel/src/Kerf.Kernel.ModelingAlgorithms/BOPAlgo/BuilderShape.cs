@@ -19,7 +19,7 @@ public abstract class BuilderShape : BooleanAlgorithm
 {
     protected Shape _shape = new();                                                //!< Result of the operation
     protected NCollection_List<Shape> _histShapes = new();                         //!< Storer for the history shapes
-    protected NCollection_Map<Shape> _mapShape = new(ShapeHasher.Instance); //!< cached map of all arguments shapes
+    protected HashSet<Shape> _mapShape = new(ShapeHasher.Instance); //!< cached map of all arguments shapes
     protected bool _fillHistory;                                                          //!< Controls the history filling
     protected History? _history;                                                //!< History tool
 

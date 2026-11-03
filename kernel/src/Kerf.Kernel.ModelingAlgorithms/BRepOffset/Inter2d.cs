@@ -274,7 +274,7 @@ public static class Inter2d
             tolE = Tool.Tolerance(edge);
         }
         //
-        NCollection_Map<Shape> mv = new(ShapeHasher.Instance);
+        HashSet<Shape> mv = new(ShapeHasher.Instance);
         for (it.Initialize(lv); it.More(); it.Next())
         {
             Vertex v = ShapeCasts.Vertex(it.Value());
@@ -1625,7 +1625,7 @@ public static class Inter2d
     {
 
         // Do not intersect the edges of face
-        NCollection_Map<Shape> edgesOfFace = new(ShapeHasher.Instance);
+        HashSet<Shape> edgesOfFace = new(ShapeHasher.Instance);
         Explorer explo = new(f, ShapeType.Edge);
         for (; explo.More(); explo.Next())
         {
@@ -2008,7 +2008,7 @@ public static class Inter2d
             fio = ShapeCasts.Face(mes[fio]);
         }
         //
-        NCollection_Map<Shape> me = new(ShapeHasher.Instance);
+        HashSet<Shape> me = new(ShapeHasher.Instance);
         NCollection_List<Shape> le = asDes.Descendant(fio);
         NCollection_List<Shape>.Iterator itLE = new(le);
         for (; itLE.More(); itLE.Next())
@@ -2202,7 +2202,7 @@ public static class Inter2d
 
     private static void MakeChain(in Shape v,
                                   NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv,
-                                  NCollection_Map<Shape> mDone,
+                                  HashSet<Shape> mDone,
                                   NCollection_List<Shape> chain)
     {
         if (mDone.Add(v))
@@ -2233,7 +2233,7 @@ public static class Inter2d
                                     ShapeImage imageVV)
     {
         BrepBuilder bb = new();
-        NCollection_Map<Shape> mvDone = new(ShapeHasher.Instance);
+        HashSet<Shape> mvDone = new(ShapeHasher.Instance);
         int i, nb = dmvv.Extent();
         for (i = 1; i <= nb; ++i)
         {

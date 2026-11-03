@@ -44,7 +44,7 @@ public sealed class BuildWires
         Compound c = new();
         b.MakeCompound(ref c);
 
-        NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
+        HashSet<Shape> theMap = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itl = new(l);
         for (; itl.More(); itl.Next())
         {
@@ -59,7 +59,7 @@ public sealed class BuildWires
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapVE = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(c, ShapeType.Vertex, ShapeType.Edge, theMapVE);
 
-        NCollection_Map<Shape> bords = new(ShapeHasher.Instance);
+        HashSet<Shape> bords = new(ShapeHasher.Instance);
         int i;
 
         for (i = 1; i <= theMapVE.Extent(); i++)
@@ -78,7 +78,7 @@ public sealed class BuildWires
         {
             NCollection_IndexedMap<Shape> mapE = new(ShapeHasher.Instance);
             // iterated below in another order than OCCT's (by address), which isn't observable: each vertex is handled alone
-            NCollection_Map<Shape> mapV = new(ShapeHasher.Instance);
+            HashSet<Shape> mapV = new(ShapeHasher.Instance);
             Edge edgf = ShapeCasts.Edge(theMapVE[i].First());
 
             Exploration.Vertices(edgf, out Vertex VF, out Vertex vl);
@@ -215,7 +215,7 @@ public sealed class BuildWires
     }
 
     private static int FindFirstEdge(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE,
-                                     NCollection_Map<Shape> bord)
+                                     HashSet<Shape> bord)
     {
         int i = 1;
 

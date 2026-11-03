@@ -185,7 +185,7 @@ public class PolyAlgo : Transient
         NCollection_Array1<int> es = new(0, nbEdge); // index of the Shell
         NCollection_Array1<PolyData?> pd = new(0, nbFace);
         NCollection_Array1<PolyInternalData?> pid = new(0, nbFace);
-        NCollection_Map<Shape> shapeMap1 = new(ShapeHasher.Instance),
+        HashSet<Shape> shapeMap1 = new(ShapeHasher.Instance),
                                       shapeMap2 = new(ShapeHasher.Instance);
         NCollection_Array1<PolyShellData?> shell = _algo.ChangePolyShell();
         int iShell = 0;
@@ -263,7 +263,7 @@ public class PolyAlgo : Transient
 
     private int InitShape(in Shape shape, ref bool isoledF, ref bool isoledE)
     {
-        NCollection_Map<Shape> shapeMap0 = new(ShapeHasher.Instance);
+        HashSet<Shape> shapeMap0 = new(ShapeHasher.Instance);
         int nbShell = 0;
         isoledF = false;
         isoledE = false;
@@ -326,8 +326,8 @@ public class PolyAlgo : Transient
     private void StoreShell(in Shape shape, ref int iShell,
         NCollection_Array1<PolyShellData?> shell, bool isoledF, bool isoledE,
         NCollection_Array1<int> es, NCollection_Array1<PolyData?> pd,
-        NCollection_Array1<PolyInternalData?> pid, NCollection_Map<Shape> shapeMap1,
-        NCollection_Map<Shape> shapeMap2)
+        NCollection_Array1<PolyInternalData?> pid, HashSet<Shape> shapeMap1,
+        HashSet<Shape> shapeMap2)
     {
         Placement loc;
         Explorer faceExp = new(), edgeExp = new();
@@ -2891,7 +2891,7 @@ public class PolyAlgo : Transient
             return result;
         }
 
-        NCollection_Map<Shape> map = new(ShapeHasher.Instance);
+        HashSet<Shape> map = new(ShapeHasher.Instance);
         {
             Explorer shapeExp = new();
             for (shapeExp.Init(shape, ShapeType.Edge); shapeExp.More(); shapeExp.Next())

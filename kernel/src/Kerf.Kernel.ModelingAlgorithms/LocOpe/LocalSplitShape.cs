@@ -45,7 +45,7 @@ public sealed class LocalSplitShape
     private Shape _shape = new();
     // OCCT iterates this map keyed by the shapes' addresses (CanSplit, which only tests); the port in insertion order
     private readonly NCollection_DataMap<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);
-    private readonly NCollection_Map<Shape> _dblE = new(ShapeHasher.Instance);
+    private readonly HashSet<Shape> _dblE = new(ShapeHasher.Instance);
     private NCollection_List<Shape> _left = new();
     private WorkingShapes _work = new();
     private bool _ownsWork = true;
@@ -864,7 +864,7 @@ public sealed class LocalSplitShape
 
             NCollection_IndexedMap<Shape> possE = new(ShapeHasher.Instance);
             // OCCT's default hasher: the shapes' TShapes, locations and orientations
-            NCollection_Map<Shape> mapE = new(EqualityComparer<Shape>.Default);
+            HashSet<Shape> mapE = new(EqualityComparer<Shape>.Default);
             Vertex vdeb, vfin;
             int nbPoss;
 

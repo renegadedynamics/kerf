@@ -196,7 +196,7 @@ internal static class BRepTestOtherCommands
             }
 
             int isub = theDI.Atoi(n > 3 ? a[3] : "");
-            var M = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var M = new HashSet<Shape>(ShapeHasher.Instance);
             M.Add(S);
             var ex = new Explorer(S, typ);
             while (ex.More())

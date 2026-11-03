@@ -673,7 +673,7 @@ internal static class BRepTestCheckCommands
         }
         else
         {
-            var theEdges = new NCollection_Map<Shape>(ShapeHasher.Instance);
+            var theEdges = new HashSet<Shape>(ShapeHasher.Instance);
             for (var exp = new Explorer(S, ShapeType.Edge); exp.More(); exp.Next())
             {
                 if (theEdges.Add(exp.Current()))

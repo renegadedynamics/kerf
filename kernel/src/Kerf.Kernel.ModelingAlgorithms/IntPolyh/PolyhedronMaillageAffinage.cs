@@ -972,7 +972,7 @@ public sealed partial class PolyhedronMaillageAffinage
         GetInterferingTriangles(triangles1, points1, triangles2, points2, dmili);
         //
         // Interfering triangles of second surface
-        NCollection_Map<int> mIntS2 = new();
+        HashSet<int> mIntS2 = new();
         // Since the number of the triangles may change during refinement,
         // save the number of triangles before refinement
         int finTT1 = triangles1.ItemCount;
@@ -1015,7 +1015,7 @@ public sealed partial class PolyhedronMaillageAffinage
         }
         //
         // Mark non-interfering triangles of S2 to avoid their repeated usage
-        if (mIntS2.Extent() < finTT2)
+        if (mIntS2.Count < finTT2)
         {
             for (int i_S2 = 0; i_S2 < finTT2; i_S2++)
             {

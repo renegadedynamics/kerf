@@ -901,7 +901,7 @@ public partial class PaveFiller
     protected void UpdateVerticesOfCB()
     {
         // Fence map to avoid checking same Common block twice
-        NCollection_Map<PaveBlock> mpbFence = new();
+        HashSet<PaveBlock> mpbFence = new();
 
         NCollection_DynamicArray<NCollection_List<PaveBlock>> pbp = _ds!.ChangePaveBlocksPool();
         int nbPBP = pbp.Length();
@@ -967,7 +967,7 @@ public partial class PaveFiller
         // having those bounding vertices
         NCollection_IndexedDataMap<Pair, NCollection_List<PaveBlock>> pbMap = new();
         // Fence map of pave blocks
-        NCollection_Map<PaveBlock> mpbFence = new();
+        HashSet<PaveBlock> mpbFence = new();
 
         for (int i = 0; i < nbS; ++i)
         {

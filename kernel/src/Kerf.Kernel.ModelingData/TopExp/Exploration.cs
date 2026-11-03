@@ -54,7 +54,7 @@ public static class Exploration
     /// <param name="m">The map to fill.</param>
     /// <param name="cumOri">Compose the sub-shapes' orientations with their parents'.</param>
     /// <param name="cumLoc">Multiply the sub-shapes' locations by their parents'.</param>
-    public static void MapShapes(in Shape s, NCollection_Map<Shape> m, bool cumOri = true, bool cumLoc = true)
+    public static void MapShapes(in Shape s, HashSet<Shape> m, bool cumOri = true, bool cumLoc = true)
     {
         m.Add(s);
         var it = new Iterator(s, cumOri, cumLoc);
@@ -259,7 +259,7 @@ public static class Exploration
     {
         vfirst = vlast = new Vertex(); // nullify
 
-        var vmap = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var vmap = new HashSet<Shape>(ShapeHasher.Instance);
         var it = new Iterator(w);
         Vertex v1 = new Vertex(), v2 = new Vertex();
 
@@ -291,14 +291,14 @@ public static class Exploration
             it.Next();
         }
 
-        if (vmap.IsEmpty())
+        if (vmap.Count == 0)
         { // closed
             Shape localShape = v2.Oriented(Forward);
             vfirst = ShapeCasts.Vertex(localShape);
             localShape = v2.Oriented(Reversed);
             vlast = ShapeCasts.Vertex(localShape);
         }
-        else if (vmap.Extent() == 2)
+        else if (vmap.Count == 2)
         { // open
             // OCCT walks the map for the FORWARD key, then for the REVERSED one; with two keys the order doesn't matter
             foreach (Shape key in vmap)

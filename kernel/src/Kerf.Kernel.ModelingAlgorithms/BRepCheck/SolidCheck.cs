@@ -146,7 +146,7 @@ public class SolidCheck : ResultCheck
         var itF = new Iterator();
         var bb = new Builder();
         var exp = new Explorer();
-        var mss = new NCollection_Map<Shape>(ShapeHasher.Instance);
+        var mss = new HashSet<Shape>(ShapeHasher.Instance);
         Orientation or;
         var vts = new List<BRepCheck_ToolSolid>();
 

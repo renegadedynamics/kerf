@@ -277,7 +277,7 @@ public class Bop : ToolsProvider
     {
         ShapeType aType;
         BrepBuilder bb = new();
-        NCollection_Map<Shape> m = new(ShapeHasher.Instance);
+        HashSet<Shape> m = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new(), itIm = new();
         //
         NCollection_List<Shape> la = _ds!.Arguments();
@@ -543,7 +543,7 @@ public class Bop : ToolsProvider
         // A. Fuse
         if (_operation == global::Kerf.Engine.Booleans.Operation.Fuse)
         {
-            NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+            HashSet<Shape> mFence = new(ShapeHasher.Instance);
             type = TypeToExplore(_dims[0]);
             Explorer exp = new(_shape, type);
             for (; exp.More(); exp.Next())
@@ -733,7 +733,7 @@ public class Bop : ToolsProvider
         // filter result for COMMON operation
         if (bCommon)
         {
-            NCollection_Map<Shape> mFence = new(ShapeHasher.Instance);
+            HashSet<Shape> mFence = new(ShapeHasher.Instance);
             Explorer exp = new();
             Compound cx = new();
             bb.MakeCompound(ref cx);
@@ -865,7 +865,7 @@ public class Bop : ToolsProvider
         BrepBuilder bb = new();
         Shape rc = new(), rcb = new();
         //
-        NCollection_Map<Shape> msrc = new(ShapeHasher.Instance);
+        HashSet<Shape> msrc = new(ShapeHasher.Instance);
         Exploration.MapShapes(_rc, msrc);
         //
         // collect images of containers
@@ -888,7 +888,7 @@ public class Bop : ToolsProvider
         }
         // make containers
         NCollection_List<Shape> lcRes = new();
-        NCollection_Map<Shape> mInpFence = new(ShapeHasher.Instance);
+        HashSet<Shape> mInpFence = new(ShapeHasher.Instance);
         itLS.Initialize(lsc);
         for (; itLS.More(); itLS.Next())
         {
@@ -999,7 +999,7 @@ public class Bop : ToolsProvider
         }
 
         // create map of containers
-        NCollection_Map<Shape> msResult = new(ShapeHasher.Instance);
+        HashSet<Shape> msResult = new(ShapeHasher.Instance);
         Exploration.MapShapes(result, msResult);
 
         // get input non-container shapes
@@ -1054,7 +1054,7 @@ public class Bop : ToolsProvider
         BrepBuilder bb = new();
         //
         // Get solids from input arguments
-        NCollection_Map<Shape> msa = new(ShapeHasher.Instance);
+        HashSet<Shape> msa = new(ShapeHasher.Instance);
         // Map the arguments to find shared faces
         NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mfs = new(ShapeHasher.Instance);
         for (int i0 = 0; i0 < 2; ++i0)
@@ -1083,7 +1083,7 @@ public class Bop : ToolsProvider
         }
         //
         // Find solids in input arguments sharing faces with other solids
-        NCollection_Map<Shape> mtSols = new(ShapeHasher.Instance);
+        HashSet<Shape> mtSols = new(ShapeHasher.Instance);
         int i, nb = mfs.Extent();
         for (i = 1; i < nb; ++i) // OCCT: the last face of the map is not checked
         {
@@ -1249,7 +1249,7 @@ public class Bop : ToolsProvider
         }
         //
         // get splits of faces of the Compsolid arguments
-        NCollection_Map<Shape> mfCs = new(ShapeHasher.Instance);
+        HashSet<Shape> mfCs = new(ShapeHasher.Instance);
         itLS.Initialize(lsc);
         for (; itLS.More(); itLS.Next())
         {
@@ -1331,7 +1331,7 @@ public class Bop : ToolsProvider
     {
         // Analyze the report to find if BuilderSolid has generated warnings
         // for any of the solids and collect these solids to check if they are open.
-        NCollection_Map<Shape> failedSolids = new(ShapeHasher.Instance);
+        HashSet<Shape> failedSolids = new(ShapeHasher.Instance);
         {
             NCollection_List<Alert> list = _report.GetAlerts(Warning);
             for (NCollection_List<Alert>.Iterator it = new(list); it.More(); it.Next())
@@ -1377,7 +1377,7 @@ public class Bop : ToolsProvider
             // Check that not INTERNAL faces create closed loops
             NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
             // Collect all splits of internal faces
-            NCollection_Map<Shape> mfInternal = new(ShapeHasher.Instance);
+            HashSet<Shape> mfInternal = new(ShapeHasher.Instance);
 
             for (Iterator itSh = new(solid); itSh.More(); itSh.Next())
             {
@@ -1571,14 +1571,14 @@ public class Bop : ToolsProvider
         }
         //
         // map containers to compare its contents (OCCT's default hasher: orientation included, decision 721)
-        NCollection_IndexedDataMap<Shape, NCollection_Map<Shape>> contents = new(EqualityComparer<Shape>.Default);
+        NCollection_IndexedDataMap<Shape, HashSet<Shape>> contents = new(EqualityComparer<Shape>.Default);
         //
         itLC.Initialize(lc);
         for (; itLC.More(); itLC.Next())
         {
             Shape c = itLC.Value();
             //
-            NCollection_Map<Shape> mc = contents[contents.Add(c, new NCollection_Map<Shape>(ShapeHasher.Instance))];
+            HashSet<Shape> mc = contents[contents.Add(c, new HashSet<Shape>(ShapeHasher.Instance))];
             //
             Iterator it = new(c);
             for (; it.More(); it.Next())
@@ -1588,7 +1588,7 @@ public class Bop : ToolsProvider
         }
         //
         // compare the contents of the containers and find duplicates
-        NCollection_Map<Shape> duplicates = new(ShapeHasher.Instance);
+        HashSet<Shape> duplicates = new(ShapeHasher.Instance);
         //
         int i, j, nb = contents.Extent();
         for (i = 1; i <= nb; ++i)
@@ -1598,8 +1598,8 @@ public class Bop : ToolsProvider
             {
                 continue;
             }
-            NCollection_Map<Shape> mi = contents[i];
-            int nbi = mi.Extent();
+            HashSet<Shape> mi = contents[i];
+            int nbi = mi.Count;
             //
             for (j = i + 1; j <= nb; ++j)
             {
@@ -1608,8 +1608,8 @@ public class Bop : ToolsProvider
                 {
                     continue;
                 }
-                NCollection_Map<Shape> mj = contents[j];
-                int nbj = mj.Extent();
+                HashSet<Shape> mj = contents[j];
+                int nbj = mj.Count;
                 //
                 int nbCommon = NbCommonItemsInMap(mi, mj);
                 //
@@ -1627,7 +1627,7 @@ public class Bop : ToolsProvider
             }
         }
         //
-        if (duplicates.IsEmpty())
+        if (duplicates.Count == 0)
         {
             return;
         }
@@ -1647,12 +1647,12 @@ public class Bop : ToolsProvider
     }
 
     // Counts the items contained in both maps
-    private static int NbCommonItemsInMap(NCollection_Map<Shape> m1, NCollection_Map<Shape> m2)
+    private static int NbCommonItemsInMap(HashSet<Shape> m1, HashSet<Shape> m2)
     {
-        NCollection_Map<Shape> map1 = m1;
-        NCollection_Map<Shape> map2 = m2;
+        HashSet<Shape> map1 = m1;
+        HashSet<Shape> map2 = m2;
         //
-        if (m2.Extent() < m1.Extent())
+        if (m2.Count < m1.Count)
         {
             map1 = m2;
             map2 = m1;

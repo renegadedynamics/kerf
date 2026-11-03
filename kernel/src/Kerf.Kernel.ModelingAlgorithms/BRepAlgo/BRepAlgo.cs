@@ -804,7 +804,7 @@ public static class BRepAlgo
         }
         bool validate = false;
 
-        NCollection_Map<Shape> allFaces = new(ShapeHasher.Instance);
+        HashSet<Shape> allFaces = new(ShapeHasher.Instance);
         Explorer tEx = new();
         NCollection_List<Shape>.Iterator itLOS = new();
         for (itLOS.Initialize(theArgs); itLOS.More(); itLOS.Next())
@@ -822,7 +822,7 @@ public static class BRepAlgo
 
         Compound toCheck = new();
 
-        if (allFaces.IsEmpty())
+        if (allFaces.Count == 0)
         {
             if (validate)
             {

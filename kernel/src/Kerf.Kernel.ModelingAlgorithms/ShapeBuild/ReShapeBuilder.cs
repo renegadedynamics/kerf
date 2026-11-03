@@ -208,14 +208,14 @@ public class ReShapeBuilder : ReShape
     /// </summary>
     internal override Shape InternalApply(in Shape shape, ShapeType until = ShapeType.Shape)
     {
-        var inFlight = new NCollection_Map<TShape>(ReferenceEqualityComparer.Instance);
+        var inFlight = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
         return ApplyImplCore(shape, until, inFlight);
     }
 
     // Recursive worker for Apply with a DFS in-flight set keyed by TShape (by reference). Prevents unbounded descent
     // when a replacement is a compound that transitively contains the original shape as a sub-shape (cyclic
     // containment, distinct from cycles in the replacement map itself).
-    private Shape ApplyImplCore(in Shape shape, ShapeType until, NCollection_Map<TShape> inFlight)
+    private Shape ApplyImplCore(in Shape shape, ShapeType until, HashSet<TShape> inFlight)
     {
         _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.OK);
         if (shape.IsNull)
