@@ -1859,3 +1859,24 @@ Phase 10 (part): heap and collections, the rest (unit 10J2).
 - KERF0002 checks the two indexed collections.
 - `tools/collections-rewrite`: the Roslyn rewrite that made these changes, for the types still to go
   (docs/collections-plan.md). Results are unchanged.
+
+Phase 10 (part): OCCT's bugs in construction, properties, extrema and projection (unit 10K2, batches K3, K5 and K6 of
+the triage).
+- Projection: the pcurve of a helix of more than a turn on a cylinder (a thread), a spiral on a cone or a coil on a
+  torus follows the curve (it was off by up to the diameter); a projection's free part after an isoparametric one gets
+  its own pcurve; a parabola projected on a plane gets the right focal.
+- Extrema: curve-curve extrema run twice report the second run's solutions only; GeomAPI's total curve-curve distance
+  keeps the nearest end pair and, on ranges, stays on the ranges; 2D circle intersections give an indirect circle's
+  own parameters.
+- Properties: BRepGProp's volume by a plane (Vinert) reports its volume and centre; natural faces' adaptive
+  integration splits V at the V bounds; curvatures asked before IsCurvatureDefined are the point's; GeomLProp's
+  continuity at a B-spline knot is the knot's; a continuous approximation with free ends is done; GProp's elementary
+  curves, surfaces and solids (lines, circles, cylinders, cones, spheres, tori) have right centres and inertia.
+- Construction: 2D fillets and chamfers keep a face's holes as their own wires, fillet a moved arc the right way and
+  trim a reversed neighbour correctly; a distance-angle chamfer between a plane and a cylinder no longer depends on the
+  axis direction; NurbsConvert and GTransform keep a meshed face's surface; rational Coons fillings keep their
+  boundaries; a revolved feature up to a face at an angle chooses as Perform(Until) does; the sweep section generator
+  moves its sections along the path; ExtendFace no longer extends an infinite side.
+- Left, with reasons: AdvApp2Var's error estimate (decision 16712), and the row about ExtendFace losing a location,
+  which wasn't a bug (16723).
+- Recordings these fixes move compare at plan 3.2's third level, each with its reason; occt-issues.md marks the rows.
