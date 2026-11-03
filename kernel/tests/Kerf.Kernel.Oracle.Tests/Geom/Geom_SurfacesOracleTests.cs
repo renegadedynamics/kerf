@@ -108,10 +108,22 @@ public class Geom_SurfacesOracleTests(ITestOutputHelper output)
             for (int aNu = 0; aNu <= aN; aNu++)
             {
                 using N.gp_Vec aNDN = theN.DN(U, V, aNu, aN - aNu);
-                theOracle.Same(aNDN, theP.DN(U, V, aNu, aN - aNu), $"{theWhat} DN({aNu}, {aN - aNu})", theTol);
+                Vector3D aPDN = theP.DN(U, V, aNu, aN - aNu);
+                if (theP is ToroidalSurface && TorusDNReversedByOcct(aNu, aN - aNu))
+                {
+                    aPDN = aPDN.Reversed();
+                }
+                theOracle.Same(aNDN, aPDN, $"{theWhat} DN({aNu}, {aN - aNu})", theTol);
             }
         }
     }
+
+    // Plan 3.2's third level (occt-issues.md, ElSLib::TorusDN; Kerf decision 16803): OCCT's mixed torus derivatives
+    // of orders (Nu + Nv) = 0 mod 4 (both odd) and 2 mod 4 (both even) have the wrong sign, which the port's don't:
+    // native's are compared with the port's reversed.
+    private static bool TorusDNReversedByOcct(int theNu, int theNv)
+        => theNu > 0 && theNv > 0
+           && ((theNu % 2 == 1 && theNv % 2 == 1 && (theNu + theNv) % 4 == 0) || (theNu % 2 == 0 && theNv % 2 == 0 && (theNu + theNv) % 4 == 2));
 
     /// <summary>Bounds, closure, periodicity (with periods), continuity and IsCN.</summary>
     private static void CompareProperties(Oracle theOracle, N.Geom_Surface theN, Surface theP, string theWhat,

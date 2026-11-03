@@ -14971,7 +14971,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        even/even branches of `ElSLib.TorusDN` now reverse when (Nu + Nv) mod 4 is 0 and 2 respectively, as the closed
        form's do; OCCT reversed neither, so (1, 3), (3, 1) and (2, 4) had the wrong sign. `DN_matches_closed_form`
        loses its exception for those orders; the test that pinned OCCT's sign checks d⁴P/du dv³ = −d²P/du dv and
-       d⁶P/du² dv⁴ = −d⁴P/du² dv².
+       d⁶P/du² dv⁴ = −d⁴P/du² dv². One oracle replay moves to plan 3.2's third level: `Geom_SurfacesOracleTests`'s
+       torus DN of those orders compares native's with the port's reversed.
 16804. **An offset curve's third derivative is the derivative of its second** (occt-issues.md, the offset curves'
        CalculateD3 and EvaluateDN; one commit, the rows sharing their site). With N = p′ × V (or p′ turned in 2D),
        R = |N|, D = N·N′, E = N·N″ + N′·N′ and F = N·N‴ + 3N′·N″, the offset's D3 adds
@@ -14981,7 +14982,23 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        passes D1 and D2 in separate variables, so the basis's D2 no longer overwrites its D1. Offset curves' `D3` and
        `DN(u, 3)`, Adaptor2d_OffsetCurve's D3 and the adaptors' DN(3) agree with each other and with a finite
        difference of D2. The two port tests that pinned OCCT's values check exactly that (offset 0.5 of the ellipse
-       (3, 1) at 0.7); the grid consistency tests no longer allow the adaptor's DN(3) to throw.
+       (3, 1) at 0.7); the grid consistency tests no longer allow the adaptor's DN(3) to throw. The trihedron laws use
+       the spine's D3, so on offset spines their frames' derivatives change too, and CorrectedFrenet's angle law, built
+       from them: `Laws_on_an_offset_spine_have_the_derivatives_of_their_frames` (Frenet and CorrectedFrenet on an
+       offset of a helix: D1's frame is D0's, its derivative a finite difference of D0's; it failed before). Eight oracle
+       replays move to plan 3.2's third level:
+       - the offset curves' evaluations (`GeomCurveOracleTests.Offset_curves`, `Offset_at_singular_points`;
+         `GeomAdaptor_CurveOracleTests.Curves` through `AdaptorOracleInputs.SameCurveEval`): D3's V2 against the port's
+         D2 (away from the basis's cusp), DN(3) against D3's V3, native's values read as recorded, and native's DN(3)
+         allowed to throw where the port's doesn't;
+       - the trihedron laws on offset spines (`TrihedronOracle`, for Frenet's and CorrectedFrenet's three random
+         runs and OffsetSpines_Short): D0 compared, D1's and D2's frames against D0's; for CorrectedFrenet only D0's
+         tangent, its frame checked orthonormal, its intervals increasing over the range (19 where OCCT's law, sampled
+         with the wrong derivatives, has 723, on one trimmed offset), its average law finite;
+       - MakePipeShell's corrected Frenet on an offset spine (`CorrectedFrenet_on_an_offset_free_form_spine_timing`):
+         that spine has cusps where the tube isn't defined, and the two sweeps differ by up to 0.09 (area 210.5
+         natively, 204.8 in the port, 2πrL 198.7): the same topology, both valid.
+       The modelling layer's lofts and sweeps and ModelingAlgorithms' sweep recordings don't move.
 16805. **A curve on a surface has the chain rule's third derivative** (occt-issues.md,
        Adaptor3d_CurveOnSurface::EvalD3). The general path's linear form weights D1U by u‴ (OCCT: u′) and gives
        D3UVV 3u′v′² (OCCT: 5u′v′², its second V32 line repeating the term). `Adaptor3d_CurveOnSurfaceTests` drops the
@@ -14996,7 +15013,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
 16807. **A B-spline surface split in V, from the larger parameter, is reversed in V** (occt-issues.md,
        GeomConvert::SplitBSplineSurface). The V branch tests V's periodicity and calls `VReverse`, where OCCT tested U's
        and reversed U. The test that pinned the U reversal checks the split's corners and an inner point against the
-       surface with V reversed.
+       surface with V reversed. One oracle replay moves to plan 3.2's third level: `GeomConvertOracleTests`'s splits by
+       parameters in V that either reverses (`SameBSplineSurface` reads native's poles and knots without comparing; the
+       port's U range is the surface's and its V ends are the isos at the two parameters).
 16808. **The knot splitting of a surface smooth enough in V keeps its U splits** (occt-issues.md,
        GeomConvert_BSplineSurfaceKnotSplitting). When V needs no inner split, its first and last knot indices go to the
        V split indices; OCCT wrote them over the U ones and left V's null, so `VSplitCount`, `VSplitValue` and
