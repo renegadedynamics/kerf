@@ -14315,7 +14315,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        published the result (`InternalEnsureWritable`) goes: the overlay takes writes into frozen shapes. ShapeFix_Face's
        `Add` adds the wire to the loaded face in the overlay, as OCCT adds it to the caller's, in place of a shallow copy
        (a direct `_shapes` edit). The one site left is `OperLibrary`'s `HoldsFrozen`, asked only outside an overlay
-       (16104). The modelling layer's three private copies before ShapeFix (`Fix`, the 2D chamfer, `FixDegenerateEdges`)
+       (decision 1396). The modelling layer's three private copies before ShapeFix (`Fix`, the 2D chamfer, `FixDegenerateEdges`)
        go too.
 1394. **Three ways in, by what the tool is.**
        - **One call, OCCT-shaped** (ShapeFix_Shape/Solid/Shell's `Perform`, `UnifySameDomain.Build`, the dividers'
