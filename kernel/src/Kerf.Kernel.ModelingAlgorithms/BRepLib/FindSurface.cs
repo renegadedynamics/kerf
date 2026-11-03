@@ -555,7 +555,7 @@ public class FindSurface
                 if (fClass.PerformInfinitePoint() == In)
                 {
                     Direction3D norm = plane.Position().Direction();
-                    norm.Reverse();
+                    norm = norm.Reversed();
                     _surface = new PlaneSurface(plane.Position().Location(), norm);
                 }
             }

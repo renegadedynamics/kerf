@@ -45,19 +45,19 @@ public class VectorWithMagnitude : GeometryVector3D
     internal void SetX(double x)
     {
         CheckMutable();
-        _gpVec.SetX(x);
+        _gpVec = _gpVec.WithX(x);
     }
 
     internal void SetY(double y)
     {
         CheckMutable();
-        _gpVec.SetY(y);
+        _gpVec = _gpVec.WithY(y);
     }
 
     internal void SetZ(double z)
     {
         CheckMutable();
-        _gpVec.SetZ(z);
+        _gpVec = _gpVec.WithZ(z);
     }
 
     public override double Magnitude() => _gpVec.Magnitude();
@@ -67,56 +67,56 @@ public class VectorWithMagnitude : GeometryVector3D
     internal void Add(GeometryVector3D other)
     {
         CheckMutable();
-        _gpVec.Add(other.Vec());
+        _gpVec = _gpVec.Added(other.Vec());
     }
 
     /// <summary>this + Other.</summary>
     public VectorWithMagnitude Added(GeometryVector3D other)
     {
         Vector3D v1 = _gpVec;
-        v1.Add(other.Vec());
+        v1 = v1.Added(other.Vec());
         return new VectorWithMagnitude(v1);
     }
 
     protected internal override void Cross(GeometryVector3D other)
     {
         CheckMutable();
-        _gpVec.Cross(other.Vec());
+        _gpVec = _gpVec.Crossed(other.Vec());
     }
 
     /// <summary>this ^ Other.</summary>
     public override GeometryVector3D Crossed(GeometryVector3D other)
     {
         Vector3D v = _gpVec;
-        v.Cross(other.Vec());
+        v = v.Crossed(other.Vec());
         return new VectorWithMagnitude(v);
     }
 
     protected internal override void CrossCross(GeometryVector3D v1, GeometryVector3D v2)
     {
         CheckMutable();
-        _gpVec.CrossCross(v1.Vec(), v2.Vec());
+        _gpVec = _gpVec.CrossCrossed(v1.Vec(), v2.Vec());
     }
 
     /// <summary>this ^ (V1 ^ V2).</summary>
     public override GeometryVector3D CrossCrossed(GeometryVector3D v1, GeometryVector3D v2)
     {
         Vector3D v = _gpVec;
-        v.CrossCross(v1.Vec(), v2.Vec());
+        v = v.CrossCrossed(v1.Vec(), v2.Vec());
         return new VectorWithMagnitude(v);
     }
 
     internal void Divide(double scalar)
     {
         CheckMutable();
-        _gpVec.Divide(scalar);
+        _gpVec = _gpVec.Divided(scalar);
     }
 
     /// <summary>this / Scalar.</summary>
     public VectorWithMagnitude Divided(double scalar)
     {
         Vector3D v = _gpVec;
-        v.Divide(scalar);
+        v = v.Divided(scalar);
         return new VectorWithMagnitude(v);
     }
 
@@ -124,21 +124,21 @@ public class VectorWithMagnitude : GeometryVector3D
     public VectorWithMagnitude Multiplied(double scalar)
     {
         Vector3D v = _gpVec;
-        v.Multiply(scalar);
+        v = v.Multiplied(scalar);
         return new VectorWithMagnitude(v);
     }
 
     internal void Multiply(double scalar)
     {
         CheckMutable();
-        _gpVec.Multiply(scalar);
+        _gpVec = _gpVec.Multiplied(scalar);
     }
 
     /// <exception cref="ConstructionErrorException">The magnitude is at most <c>gp::Resolution()</c>.</exception>
     internal void Normalize()
     {
         CheckMutable();
-        _gpVec.Normalize();
+        _gpVec = _gpVec.Normalized();
     }
 
     /// <summary>The unit vector of this one.</summary>
@@ -146,21 +146,21 @@ public class VectorWithMagnitude : GeometryVector3D
     public VectorWithMagnitude Normalized()
     {
         Vector3D v = _gpVec;
-        v.Normalize();
+        v = v.Normalized();
         return new VectorWithMagnitude(v);
     }
 
     internal void Subtract(GeometryVector3D other)
     {
         CheckMutable();
-        _gpVec.Subtract(other.Vec());
+        _gpVec = _gpVec.Subtracted(other.Vec());
     }
 
     /// <summary>this - Other.</summary>
     public VectorWithMagnitude Subtracted(GeometryVector3D other)
     {
         Vector3D v = _gpVec;
-        v.Subtract(other.Vec());
+        v = v.Subtracted(other.Vec());
         return new VectorWithMagnitude(v);
     }
 
@@ -168,7 +168,7 @@ public class VectorWithMagnitude : GeometryVector3D
     protected internal override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _gpVec.Transform(t);
+        _gpVec = _gpVec.Transformed(t);
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

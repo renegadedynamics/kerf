@@ -31,13 +31,13 @@ internal static class ComputeDataFilPlnPln
         Direction3D d1 = pos1.XDirection().Crossed(pos1.YDirection());
         if (or1 == Reversed)
         {
-            d1.Reverse();
+            d1 = d1.Reversed();
         }
         CoordinateSystem pos2 = pl2.Position();
         Direction3D d2 = pos2.XDirection().Crossed(pos2.YDirection());
         if (or2 == Reversed)
         {
-            d2.Reverse();
+            d2 = d2.Reversed();
         }
         QuadQuadGeo lInt = new(pl1, pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Point3D pv;
@@ -57,12 +57,12 @@ internal static class ComputeDataFilPlnPln
         Direction3D s = new(V);
         Point3D c = new();
         double fac = radius / Math.Cos(ang / 2.0);
-        c.SetCoord(pv.X() + fac * s.X(), pv.Y() + fac * s.Y(), pv.Z() + fac * s.Z());
+        c = c.WithCoord(pv.X() + fac * s.X(), pv.Y() + fac * s.Y(), pv.Z() + fac * s.Z());
         Direction3D xdir = d1.Reversed();
         CoordinateSystem cylAx3 = new(c, axisCylinder, xdir);
         if (cylAx3.YDirection().Dot(d2) >= 0.0)
         {
-            cylAx3.YReverse();
+            cylAx3 = cylAx3.YReversed();
         }
         CylindricalSurface gcyl = new(cylAx3, radius);
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gcyl, dStr));
@@ -75,7 +75,7 @@ internal static class ComputeDataFilPlnPln
         Direction3D norface = norpl;
         if (of1 == Reversed)
         {
-            norface.Reverse();
+            norface = norface.Reversed();
         }
         bool toreverse = (norcyl.Dot(norface) <= 0.0);
         if (toreverse)
@@ -119,15 +119,15 @@ internal static class ComputeDataFilPlnPln
         norpl = pos2.XDirection().Crossed(pos2.YDirection());
         toreverse = (norcyl.Dot(norpl) <= 0.0);
         global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(pos2, p, out u, out v);
-        p2dPln.SetCoord(u, v);
-        dir2dPln.SetCoord(axisCylinder.Dot(pos2.XDirection()), axisCylinder.Dot(pos2.YDirection()));
-        lin2dPln.SetLocation(p2dPln);
-        lin2dPln.SetDirection(dir2dPln);
+        p2dPln = p2dPln.WithCoord(u, v);
+        dir2dPln = dir2dPln.WithCoord(axisCylinder.Dot(pos2.XDirection()), axisCylinder.Dot(pos2.YDirection()));
+        lin2dPln = lin2dPln.WithLocation(p2dPln);
+        lin2dPln = lin2dPln.WithDirection(dir2dPln);
         LineCurve2D gLin2dPln2 = new(lin2dPln);
-        linPln.SetLocation(p);
-        linPln.SetDirection(axisCylinder);
+        linPln = linPln.WithLocation(p);
+        linPln = linPln.WithDirection(axisCylinder);
         LineCurve3D gLinPln2 = new(linPln);
-        lin2dCyl.SetLocation(new Point2D(ang, 0.0));
+        lin2dCyl = lin2dCyl.WithLocation(new Point2D(ang, 0.0));
         LineCurve2D gLin2dCyl2 = new(lin2dCyl);
         if (toreverse)
         {

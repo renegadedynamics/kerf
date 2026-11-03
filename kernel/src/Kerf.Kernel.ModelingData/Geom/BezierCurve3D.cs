@@ -674,7 +674,7 @@ public class BezierCurve3D : BoundedCurve3D
 
         for (int i = 1; i <= nbpoles; i++)
         {
-            _poles[i].Transform(t);
+            _poles[i] = _poles[i].Transformed(t);
         }
         ClearEvalRepresentation();
         _maxDerivInvOk = false;

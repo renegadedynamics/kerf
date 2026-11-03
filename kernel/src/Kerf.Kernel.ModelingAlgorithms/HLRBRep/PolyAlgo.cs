@@ -456,7 +456,7 @@ public class PolyAlgo : Transient
                         int faceIndex = _fMap.FindIndex(face);
                         bool isReversed = face.Orientation() == Reversed;
                         Transform3D tt = loc.Transformation();
-                        tt.PreMultiply(projTrsf);
+                        tt = tt.PreMultiplied(projTrsf);
                         {
                             Xyz tTrsfVec = tt.TranslationPart();
                             _ttLo[0] = tTrsfVec.X();
@@ -1143,7 +1143,7 @@ public class PolyAlgo : Transient
                 NCollection_Array1<Point3D> pol = polyg.Nodes();
                 Transform3D tt = loc.Transformation();
                 Transform3D projTrsf = _proj.Transformation();
-                tt.PreMultiply(projTrsf);
+                tt = tt.PreMultiplied(projTrsf);
                 {
                     Xyz tTrsfVec = tt.TranslationPart();
                     _ttLo[0] = tTrsfVec.X();
@@ -1816,7 +1816,7 @@ public class PolyAlgo : Transient
             _gSurf = Tool.Surface(face, out loc);
             {
                 Transform3D tt = loc.Transformation();
-                tt.PreMultiply(projTrsf);
+                tt = tt.PreMultiplied(projTrsf);
                 Xyz tTrsfVec = tt.TranslationPart();
                 _ttLo[0] = tTrsfVec.X();
                 _ttLo[1] = tTrsfVec.Y();

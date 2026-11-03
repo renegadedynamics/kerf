@@ -39,7 +39,7 @@ public class LineCurve3D : Curve3D
     protected internal sealed override void Reverse()
     {
         CheckMutable();
-        _pos.Reverse();
+        _pos = _pos.Reversed();
     }
 
     /// <summary>-U.</summary>
@@ -48,7 +48,7 @@ public class LineCurve3D : Curve3D
     internal void SetDirection(in Direction3D v)
     {
         CheckMutable();
-        _pos.SetDirection(v);
+        _pos = _pos.WithDirection(v);
     }
 
     internal void SetLin(in Line3D l)
@@ -60,7 +60,7 @@ public class LineCurve3D : Curve3D
     internal void SetLocation(in Point3D p)
     {
         CheckMutable();
-        _pos.SetLocation(p);
+        _pos = _pos.WithLocation(p);
     }
 
     internal void SetPosition(in Axis3D a1)
@@ -93,7 +93,7 @@ public class LineCurve3D : Curve3D
     protected internal sealed override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     public sealed override Point3D EvalD0(double u) => global::Kerf.Engine.Geometry.ElCLib.LineValue(u, _pos);

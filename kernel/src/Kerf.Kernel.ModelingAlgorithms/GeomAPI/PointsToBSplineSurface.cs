@@ -805,7 +805,7 @@ public class PointsToBSplineSurface
             theCurve2.Curve(j, poles2);
             for (i = 1; i <= poles2.Upper(); i++)
             {
-                thePoles[i, j].SetCoord(xPoles[i], yPoles[j], poles2[i].Y());
+                thePoles[i, j] = thePoles[i, j].WithCoord(xPoles[i], yPoles[j], poles2[i].Y());
             }
         }
 

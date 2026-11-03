@@ -50,7 +50,7 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
             return new Box();
         }
 
-        shift.Normalize();
+        shift = shift.Normalized();
         shift *= off.Offset();
         Point3D loc = basisLin.Location().Translated(shift);
         Box box = LineBounds.Box(new Line3D(loc, basisLin.Direction()), u1, u2, 0.0);
@@ -86,14 +86,14 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
         {
             return new Box();
         }
-        normal.Normalize();
+        normal = normal.Normalized();
 
         Vector3D radial = new(basisCirc.Location(), p);
         if (radial.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
         {
             return new Box();
         }
-        radial.Normalize();
+        radial = radial.Normalized();
 
         double sign = normal.Dot(radial);
         if (Math.Abs(Math.Abs(sign) - 1.0) > 1e-9)
@@ -106,7 +106,7 @@ public sealed class OffsetCurveBounds : CurveBounds.ICurveEvaluator
         if (newRadius > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             Circle3D offsetCirc = basisCirc;
-            offsetCirc.SetRadius(newRadius);
+            offsetCirc = offsetCirc.WithRadius(newRadius);
             box = CircleBounds.Box(offsetCirc, u1, u2, 0.0);
         }
         else if (Math.Abs(newRadius) <= global::Kerf.Engine.Foundation.Precision.Confusion())

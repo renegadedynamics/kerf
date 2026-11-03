@@ -34,8 +34,8 @@ public sealed class CommonPrt
         _type = ShapeType.Shape;
         _allNullFlag = false;
         //
-        _pnt1.SetCoord(0.0, 0.0, 0.0);
-        _pnt2.SetCoord(0.0, 0.0, 0.0);
+        _pnt1 = _pnt1.WithCoord(0.0, 0.0, 0.0);
+        _pnt2 = _pnt2.WithCoord(0.0, 0.0, 0.0);
         //
         _vertPar1 = 0.0;
         _vertPar2 = 0.0;

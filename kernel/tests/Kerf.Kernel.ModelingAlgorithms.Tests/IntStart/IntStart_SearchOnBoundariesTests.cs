@@ -99,7 +99,7 @@ public class IntStart_SearchOnBoundariesTests
         Vector3D aTgLine = aFunc.Direction3d();
 
         Vector3D aTgRst = new();
-        aTgRst.SetLinearForm(aD2d.X(), aD1u, aD2d.Y(), aD1v);
+        aTgRst = Vector3D.LinearForm(aD2d.X(), aD1u, aD2d.Y(), aD1v);
         Direction3D aNormal = new(aD1u.Crossed(aD1v));
         global::Kerf.Engine.Intersection.Walking.WalkingTransition aTLine = new(), aTArc = new();
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(aTgLine, aTgRst, aNormal, ref aTLine, ref aTArc);

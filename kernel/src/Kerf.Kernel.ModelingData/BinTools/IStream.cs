@@ -209,7 +209,7 @@ public sealed class IStream
         double v20 = ReadReal(), v21 = ReadReal(), v22 = ReadReal(), v1 = ReadReal();
         double v30 = ReadReal(), v31 = ReadReal(), v32 = ReadReal(), v2 = ReadReal();
         Transform3D theValue = new();
-        theValue.SetValues(v10, v11, v12, v0, v20, v21, v22, v1, v30, v31, v32, v2);
+        theValue = theValue.WithValues(v10, v11, v12, v0, v20, v21, v22, v1, v30, v31, v32, v2);
         return theValue;
     }
 

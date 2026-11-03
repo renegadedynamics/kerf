@@ -90,7 +90,7 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform3D t)
@@ -107,7 +107,7 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector3D v) => _pos.Translate(v);
@@ -159,9 +159,9 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     {
         Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
         Vector3D v1 = new(_pos.YDirection());
-        v1.Multiply(_minorRadius / _majorRadius);
+        v1 = v1.Multiplied(_minorRadius / _majorRadius);
         Vector3D v = new(_pos.XDirection());
-        v.Add(v1);
+        v = v.Added(v1);
         return new Axis3D(_pos.Location(), new Direction3D(v));
     }
 
@@ -172,9 +172,9 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
         // OCCT: the message names Asymptote1
         Standard_ConstructionError_Raise_if(_majorRadius <= Constants.Resolution(), "gp_Hypr::Asymptote1() - major radius is zero");
         Vector3D v1 = new(_pos.YDirection());
-        v1.Multiply(-_minorRadius / _majorRadius);
+        v1 = v1.Multiplied(-_minorRadius / _majorRadius);
         Vector3D v = new(_pos.XDirection());
-        v.Add(v1);
+        v = v.Added(v1);
         return new Axis3D(_pos.Location(), new Direction3D(v));
     }
 
@@ -189,7 +189,7 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     public readonly Hyperbola3D ConjugateBranch2()
     {
         Direction3D d = _pos.YDirection();
-        d.Reverse();
+        d = d.Reversed();
         return new Hyperbola3D(new Frame3D(_pos.Location(), _pos.Direction(), d), _minorRadius, _majorRadius);
     }
 
@@ -255,7 +255,7 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     public readonly Hyperbola3D OtherBranch()
     {
         Direction3D d = _pos.XDirection();
-        d.Reverse();
+        d = d.Reversed();
         return new Hyperbola3D(new Frame3D(_pos.Location(), _pos.Direction(), d), _majorRadius, _minorRadius);
     }
 
@@ -278,28 +278,28 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
     public readonly Hyperbola3D Mirrored(in Point3D p)
     {
         Hyperbola3D h = this;
-        h._pos.Mirror(p);
+        h._pos = h._pos.Mirrored(p);
         return h;
     }
 
     public readonly Hyperbola3D Mirrored(in Axis3D a1)
     {
         Hyperbola3D h = this;
-        h._pos.Mirror(a1);
+        h._pos = h._pos.Mirrored(a1);
         return h;
     }
 
     public readonly Hyperbola3D Mirrored(in Frame3D a2)
     {
         Hyperbola3D h = this;
-        h._pos.Mirror(a2);
+        h._pos = h._pos.Mirrored(a2);
         return h;
     }
 
     public readonly Hyperbola3D Rotated(in Axis3D a1, double ang)
     {
         Hyperbola3D h = this;
-        h._pos.Rotate(a1, ang);
+        h._pos = h._pos.Rotated(a1, ang);
         return h;
     }
 
@@ -318,7 +318,7 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
             h._minorRadius = -h._minorRadius;
         }
 
-        h._pos.Scale(p, s);
+        h._pos = h._pos.Scaled(p, s);
         return h;
     }
 
@@ -337,21 +337,21 @@ public partial struct Hyperbola3D : IEquatable<Hyperbola3D>
             h._minorRadius = -h._minorRadius;
         }
 
-        h._pos.Transform(t);
+        h._pos = h._pos.Transformed(t);
         return h;
     }
 
     public readonly Hyperbola3D Translated(in Vector3D v)
     {
         Hyperbola3D h = this;
-        h._pos.Translate(v);
+        h._pos = h._pos.Translated(v);
         return h;
     }
 
     public readonly Hyperbola3D Translated(in Point3D p1, in Point3D p2)
     {
         Hyperbola3D h = this;
-        h._pos.Translate(p1, p2);
+        h._pos = h._pos.Translated(p1, p2);
         return h;
     }
 

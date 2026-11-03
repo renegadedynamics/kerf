@@ -652,7 +652,7 @@ public class TopolTool : Transient
                 Point3D a = array2.Value(i, 1);
                 Point3D b = array2.Value(i, 2);
                 Point3D c = array2.Value(i, 3);
-                vi.SetCoord(c.X() - b.X() - b.X() + a.X(),
+                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
                             c.Y() - b.Y() - b.Y() + a.Y(),
                             c.Z() - b.Z() - b.Z() + a.Z());
                 int locnbch = 0;
@@ -661,7 +661,7 @@ public class TopolTool : Transient
                     Point3D a1 = array2.Value(i, j - 1);
                     Point3D b1 = array2.Value(i, j);
                     Point3D c1 = array2.Value(i, j + 1);
-                    vip1.SetCoord(c1.X() - b1.X() - b1.X() + a1.X(),
+                    vip1 = vip1.WithCoord(c1.X() - b1.X() - b1.X() + a1.X(),
                                   c1.Y() - b1.Y() - b1.Y() + a1.Y(),
                                   c1.Z() - b1.Z() - b1.Z() + a1.Z());
                     double pd = vi.Dot(vip1);
@@ -702,7 +702,7 @@ public class TopolTool : Transient
                 Point3D a = array2.Value(1, j);
                 Point3D b = array2.Value(2, j);
                 Point3D c = array2.Value(3, j);
-                vi.SetCoord(c.X() - b.X() - b.X() + a.X(),
+                vi = vi.WithCoord(c.X() - b.X() - b.X() + a.X(),
                             c.Y() - b.Y() - b.Y() + a.Y(),
                             c.Z() - b.Z() - b.Z() + a.Z());
                 int locnbch = 0;
@@ -711,7 +711,7 @@ public class TopolTool : Transient
                     Point3D a1 = array2.Value(i - 1, j);
                     Point3D b1 = array2.Value(i, j);
                     Point3D c1 = array2.Value(i + 1, j);
-                    vip1.SetCoord(c1.X() - b1.X() - b1.X() + a1.X(),
+                    vip1 = vip1.WithCoord(c1.X() - b1.X() - b1.X() + a1.X(),
                                   c1.Y() - b1.Y() - b1.Y() + a1.Y(),
                                   c1.Z() - b1.Z() - b1.Z() + a1.Z());
                     double pd = vi.Dot(vip1);
@@ -1573,7 +1573,7 @@ public class TopolTool : Transient
         Point3D p = c.Apex();
 
         Transform3D t = new();
-        t.SetTransformation(pos);
+        t = t.WithTransformation(pos);
         Point3D ploc = p.Transformed(t);
 
         if (ploc.X() == 0.0 && ploc.Y() == 0.0)

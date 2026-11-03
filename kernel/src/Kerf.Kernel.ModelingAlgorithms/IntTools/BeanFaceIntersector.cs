@@ -2293,7 +2293,7 @@ public class BeanFaceIntersector
                     {
                         dv = 0.5 * (surfaceData.GetVParam(j + 1) - parV);
                         Vector3D shift = du * aDU + dv * aDV;
-                        pnt.Translate(shift);
+                        pnt = pnt.Translated(shift);
                         extBox.Add(pnt);
                     }
                 }

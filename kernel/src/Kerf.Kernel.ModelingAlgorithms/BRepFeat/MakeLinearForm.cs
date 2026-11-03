@@ -147,7 +147,7 @@ public sealed class MakeLinearForm : RibSlot
             // Rib is centre in the middle of translation
             Vector3D dirTranslation = (direc + direc1) * 0.5;
             Transform3D t = new();
-            t.SetTranslation(dirTranslation);
+            t = t.WithTranslation(dirTranslation);
             Transform trf = new(t);
             trf.Perform(_wire);
             _wire = ShapeCasts.Wire(trf.InternalShape());

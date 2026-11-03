@@ -153,12 +153,12 @@ public class ConstThroatInv : GenChamfInv
         _nplan = _d1gui.Normalized();
         _d = -(_nplan.XYZ().Dot(_ptgui.XYZ()));
 
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         // OCCT: temp1, temp2 and tempmid use the points of the previous call, before the D1 below (decision 1040).
-        temp1.SetXYZ(_pts1.XYZ() - _ptgui.XYZ());
-        temp2.SetXYZ(_pts2.XYZ() - _ptgui.XYZ());
-        tempmid.SetXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
+        temp1 = temp1.WithXYZ(_pts1.XYZ() - _ptgui.XYZ());
+        temp2 = temp2.WithXYZ(_pts2.XYZ() - _ptgui.XYZ());
+        tempmid = tempmid.WithXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - _ptgui.XYZ());
 
         if (_first)
         {
@@ -181,7 +181,7 @@ public class ConstThroatInv : GenChamfInv
         if (_first)
         {
             // p2d = pts est sur surf1
-            temp.SetLinearForm(v2d.X(), _d1u1, v2d.Y(), _d1v1);
+            temp = Vector3D.LinearForm(v2d.X(), _d1u1, v2d.Y(), _d1v1);
             d[1, 1] = _nplan.Dot(temp);
             d[2, 1] = 0.0;
             d[3, 1] = new Vector3D(_ptgui, _pts1).Dot(temp);
@@ -199,7 +199,7 @@ public class ConstThroatInv : GenChamfInv
         else
         {
             //  p2d = pts est sur surf2
-            temp.SetLinearForm(v2d.X(), _d1u2, v2d.Y(), _d1v2);
+            temp = Vector3D.LinearForm(v2d.X(), _d1u2, v2d.Y(), _d1v2);
             d[1, 1] = 0.0;
             d[2, 1] = _nplan.Dot(temp);
             d[3, 1] = new Vector3D(_ptgui, _pts2).Dot(temp);

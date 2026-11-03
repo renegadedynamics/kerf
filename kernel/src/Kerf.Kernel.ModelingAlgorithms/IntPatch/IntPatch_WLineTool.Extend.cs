@@ -842,9 +842,9 @@ public static partial class WLineTool
 
                 if ((checkResult & IntPatchWT_DisFirstFirst) == 0)
                 { // First/First
-                    vec1.SetXYZ(pntFp1WL1.Value().Value().XYZ() - pntFWL1.Value().Value().XYZ());
-                    vec2.SetXYZ(pntFWL2.Value().Value().XYZ() - pntFp1WL2.Value().Value().XYZ());
-                    vec3.SetXYZ(pntFWL1.Value().Value().XYZ() - pntFWL2.Value().Value().XYZ());
+                    vec1 = vec1.WithXYZ(pntFp1WL1.Value().Value().XYZ() - pntFWL1.Value().Value().XYZ());
+                    vec2 = vec2.WithXYZ(pntFWL2.Value().Value().XYZ() - pntFp1WL2.Value().Value().XYZ());
+                    vec3 = vec3.WithXYZ(pntFWL1.Value().Value().XYZ() - pntFWL2.Value().Value().XYZ());
 
                     ExtendTwoWLFirstFirst(s1, s2, wLine1, wLine2, pntFWL1.Value(), pntFWL2.Value(), vec1,
                                           vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
@@ -853,9 +853,9 @@ public static partial class WLineTool
 
                 if ((checkResult & IntPatchWT_DisFirstLast) == 0)
                 { // First/Last
-                    vec1.SetXYZ(pntFp1WL1.Value().Value().XYZ() - pntFWL1.Value().Value().XYZ());
-                    vec2.SetXYZ(pntLWL2.Value().Value().XYZ() - pntLm1WL2.Value().Value().XYZ());
-                    vec3.SetXYZ(pntFWL1.Value().Value().XYZ() - pntLWL2.Value().Value().XYZ());
+                    vec1 = vec1.WithXYZ(pntFp1WL1.Value().Value().XYZ() - pntFWL1.Value().Value().XYZ());
+                    vec2 = vec2.WithXYZ(pntLWL2.Value().Value().XYZ() - pntLm1WL2.Value().Value().XYZ());
+                    vec3 = vec3.WithXYZ(pntFWL1.Value().Value().XYZ() - pntLWL2.Value().Value().XYZ());
 
                     ExtendTwoWLFirstLast(s1, s2, wLine1, wLine2, pntFWL1.Value(), pntLWL2.Value(), vec1,
                                          vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
@@ -864,9 +864,9 @@ public static partial class WLineTool
 
                 if ((checkResult & IntPatchWT_DisLastFirst) == 0)
                 { // Last/First
-                    vec1.SetXYZ(pntLWL1.Value().Value().XYZ() - pntLm1WL1.Value().Value().XYZ());
-                    vec2.SetXYZ(pntFp1WL2.Value().Value().XYZ() - pntFWL2.Value().Value().XYZ());
-                    vec3.SetXYZ(pntFWL2.Value().Value().XYZ() - pntLWL1.Value().Value().XYZ());
+                    vec1 = vec1.WithXYZ(pntLWL1.Value().Value().XYZ() - pntLm1WL1.Value().Value().XYZ());
+                    vec2 = vec2.WithXYZ(pntFp1WL2.Value().Value().XYZ() - pntFWL2.Value().Value().XYZ());
+                    vec3 = vec3.WithXYZ(pntFWL2.Value().Value().XYZ() - pntLWL1.Value().Value().XYZ());
 
                     ExtendTwoWLLastFirst(s1, s2, wLine1, wLine2, pntLWL1.Value(), pntFWL2.Value(), vec1,
                                          vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,
@@ -875,9 +875,9 @@ public static partial class WLineTool
 
                 if ((checkResult & IntPatchWT_DisLastLast) == 0)
                 { // Last/Last
-                    vec1.SetXYZ(pntLWL1.Value().Value().XYZ() - pntLm1WL1.Value().Value().XYZ());
-                    vec2.SetXYZ(pntLm1WL2.Value().Value().XYZ() - pntLWL2.Value().Value().XYZ());
-                    vec3.SetXYZ(pntLWL2.Value().Value().XYZ() - pntLWL1.Value().Value().XYZ());
+                    vec1 = vec1.WithXYZ(pntLWL1.Value().Value().XYZ() - pntLm1WL1.Value().Value().XYZ());
+                    vec2 = vec2.WithXYZ(pntLm1WL2.Value().Value().XYZ() - pntLWL2.Value().Value().XYZ());
+                    vec3 = vec3.WithXYZ(pntLWL2.Value().Value().XYZ() - pntLWL1.Value().Value().XYZ());
 
                     ExtendTwoWLLastLast(s1, s2, wLine1, wLine2, pntLWL1.Value(), pntLWL2.Value(), vec1,
                                         vec2, vec3, boxS1, boxS2, toler3D, arrPeriods,

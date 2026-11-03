@@ -458,7 +458,7 @@ public sealed class Generator
             v = new Vector3D(c1.Location(), c2.Location()).Dot(new Vector3D(ac1.Direction()));
             if (v < 0.0)
             {
-                ac1.ZReverse();
+                ac1 = ac1.ZReversed();
                 v = -v;
             }
             CylindricalSurface cyl = new(ac1, c1.Radius());
@@ -483,7 +483,7 @@ public sealed class Generator
 
             if (v < 0.0)
             {
-                ak1.ZReverse();
+                ak1 = ak1.ZReversed();
                 v = -v;
             }
             double ang = Math.Atan(rad / v);
@@ -496,12 +496,12 @@ public sealed class Generator
             // conical surface with the top at the beginning (degen1 is true)
             Circle3D k2 = c2Adaptor.Circle();
             CoordinateSystem ak2 = new(k2.Position());
-            ak2.SetLocation(Tool.Pnt(v1f));
+            ak2 = ak2.WithLocation(Tool.Pnt(v1f));
             v = new Vector3D(Tool.Pnt(v1f), k2.Location()).Dot(new Vector3D(ak2.Direction()));
             rad = k2.Radius(); // - k2.Radius();
             if (v < 0.0)
             {
-                ak2.ZReverse();
+                ak2 = ak2.ZReversed();
                 v = -v;
             }
             double ang = Math.Atan(rad / v);
@@ -1069,11 +1069,11 @@ public sealed class Generator
                     if (periodic)
                     {
                         NCollection_Array1<Point2D> extrem1 = new(1, 2);
-                        extrem1[1].SetCoord(l1, f2);
-                        extrem1[2].SetCoord(l1, l2);
+                        extrem1[1] = extrem1[1].WithCoord(l1, f2);
+                        extrem1[2] = extrem1[2].WithCoord(l1, l2);
                         NCollection_Array1<Point2D> extrem2 = new(1, 2);
-                        extrem2[1].SetCoord(f1, f2);
-                        extrem2[2].SetCoord(f1, l2);
+                        extrem2[1] = extrem2[1].WithCoord(f1, f2);
+                        extrem2[2] = extrem2[2].WithCoord(f1, l2);
                         b.UpdateEdge(edge3,
                                      new BezierCurve2D(extrem1),
                                      new BezierCurve2D(extrem2),
@@ -1083,12 +1083,12 @@ public sealed class Generator
                     else if (iType != 4)
                     { // not plane
                         NCollection_Array1<Point2D> extrem2 = new(1, 2);
-                        extrem2[1].SetCoord(f1, f2);
-                        extrem2[2].SetCoord(f1, l2);
+                        extrem2[1] = extrem2[1].WithCoord(f1, f2);
+                        extrem2[2] = extrem2[2].WithCoord(f1, l2);
                         b.UpdateEdge(edge3, new BezierCurve2D(extrem2), face, t);
                         NCollection_Array1<Point2D> extrem1 = new(1, 2);
-                        extrem1[1].SetCoord(l1, f2);
-                        extrem1[2].SetCoord(l1, l2);
+                        extrem1[1] = extrem1[1].WithCoord(l1, f2);
+                        extrem1[2] = extrem1[2].WithCoord(l1, l2);
                         b.UpdateEdge(edge4, new BezierCurve2D(extrem1), face, t);
                     }
                 }

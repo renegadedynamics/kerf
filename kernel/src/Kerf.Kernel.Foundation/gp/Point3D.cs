@@ -53,21 +53,21 @@ public partial struct Point3D : IEquatable<Point3D>
     internal void Mirror(in Axis3D a1)
     {
         Transform3D t = new();
-        t.SetMirror(a1);
+        t = t.WithMirror(a1);
         t.Transforms(ref _coord);
     }
 
     internal void Mirror(in Frame3D a2)
     {
         Transform3D t = new();
-        t.SetMirror(a2);
+        t = t.WithMirror(a2);
         t.Transforms(ref _coord);
     }
 
     internal void Rotate(in Axis3D a1, double ang)
     {
         Transform3D t = new();
-        t.SetRotation(a1, ang);
+        t = t.WithRotation(a1, ang);
         t.Transforms(ref _coord);
     }
 

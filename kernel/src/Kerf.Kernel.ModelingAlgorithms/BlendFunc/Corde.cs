@@ -140,12 +140,12 @@ public sealed class Corde
     {
         _surf.D1(sol[1], sol[2], out _pts, out _, out _);
         Vector3D dnplan = new Vector3D();
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         Vector3D temp = new Vector3D(_pts.XYZ() - _ptgui.XYZ());
 
-        derF.SetX(dnplan.Dot(temp) - _nplan.Dot(_d1gui));
-        derF.SetY(-2.0 * _d1gui.Dot(temp));
+        derF = derF.WithX(dnplan.Dot(temp) - _nplan.Dot(_d1gui));
+        derF = derF.WithY(-2.0 * _d1gui.Dot(temp));
     }
 
     public bool IsSolution(math_Vector sol, double tol)
@@ -159,9 +159,9 @@ public sealed class Corde
         if (Math.Abs(valsol[1]) <= tol && Math.Abs(valsol[2]) <= tol * tol)
         {
             _surf.D1(sol[1], sol[2], out _pts, out Vector3D d1u, out Vector3D d1v);
-            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
-            temp.SetXYZ(_pts.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
 
             secmember[1] = _nplan.Dot(_d1gui) - dnplan.Dot(temp);
             secmember[2] = 2.0 * _d1gui.Dot(temp);
@@ -173,8 +173,8 @@ public sealed class Corde
             if (resol.IsDone)
             {
                 resol.Solve(secmember);
-                _tgs.SetLinearForm(secmember[1], d1u, secmember[2], d1v);
-                _tg2d.SetCoord(secmember[1], secmember[2]);
+                _tgs = Vector3D.LinearForm(secmember[1], d1u, secmember[2], d1v);
+                _tg2d = _tg2d.WithCoord(secmember[1], secmember[2]);
                 _istangent = false;
             }
             else

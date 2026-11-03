@@ -39,7 +39,7 @@ public class LineCurve2D : Curve2D
     internal void SetDirection(in Direction2D v)
     {
         CheckMutable();
-        _pos.SetDirection(v);
+        _pos = _pos.WithDirection(v);
     }
 
     /// <summary>The unit direction of the line.</summary>
@@ -54,7 +54,7 @@ public class LineCurve2D : Curve2D
     internal void SetLocation(in Point2D p)
     {
         CheckMutable();
-        _pos.SetLocation(p);
+        _pos = _pos.WithLocation(p);
     }
 
     /// <summary>The origin of the line.</summary>
@@ -76,7 +76,7 @@ public class LineCurve2D : Curve2D
     protected internal sealed override void Reverse()
     {
         CheckMutable();
-        _pos.Reverse();
+        _pos = _pos.Reversed();
     }
 
     /// <summary>-U.</summary>
@@ -120,7 +120,7 @@ public class LineCurve2D : Curve2D
     {
         ResD2 result = new ResD2();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
-        result.D2.SetCoord(0.0, 0.0);
+        result.D2 = result.D2.WithCoord(0.0, 0.0);
         return result;
     }
 
@@ -128,8 +128,8 @@ public class LineCurve2D : Curve2D
     {
         ResD3 result = new ResD3();
         global::Kerf.Engine.Geometry.ElCLib.LineD1(u, _pos, out result.Point, out result.D1);
-        result.D2.SetCoord(0.0, 0.0);
-        result.D3.SetCoord(0.0, 0.0);
+        result.D2 = result.D2.WithCoord(0.0, 0.0);
+        result.D3 = result.D3.WithCoord(0.0, 0.0);
         return result;
     }
 
@@ -155,7 +155,7 @@ public class LineCurve2D : Curve2D
     protected internal sealed override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     /// <summary>U * |T.ScaleFactor()|; an infinite U is returned unchanged.</summary>

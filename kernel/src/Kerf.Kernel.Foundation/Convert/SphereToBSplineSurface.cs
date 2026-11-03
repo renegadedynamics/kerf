@@ -135,7 +135,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
         // and calculate the weight of the bspline.
         double w1, w2;
         Transform3D trsf = new();
-        trsf.SetTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
+        trsf = trsf.WithTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -160,7 +160,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
                 }
 
                 _weights[i, j] = w1 * w2;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();
@@ -252,7 +252,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline in the mark of the sphere.
         // and calculate the weight of bspline.
         Transform3D trsf = new();
-        trsf.SetTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
+        trsf = trsf.WithTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -277,7 +277,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
                 }
 
                 _weights[i, j] = w1 * w2;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();
@@ -321,7 +321,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
         // Replace the bspline in the mark of the sphere.
         // and calculate the weight of the bspline.
         Transform3D trsf = new();
-        trsf.SetTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
+        trsf = trsf.WithTransformation(sph.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -346,7 +346,7 @@ public class SphereToBSplineSurface : ElementarySurfaceToBSplineSurface
                 }
 
                 _weights[i, j] = w1 * w2;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();

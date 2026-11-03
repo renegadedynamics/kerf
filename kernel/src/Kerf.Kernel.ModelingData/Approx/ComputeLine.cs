@@ -151,9 +151,9 @@ public class ComputeLine<MultiLine, LineTool>
                             break;
                         }
                         Vector3D vec1 = new(firstPnt, pnt1);
-                        vec1.Normalize();
+                        vec1 = vec1.Normalized();
                         Vector3D vec2 = new(firstPnt, pnt2);
-                        vec2.Normalize();
+                        vec2 = vec2.Normalized();
                         double scalProd = vec1 * vec2;
                         if (scalProd < minScalProd)
                         {
@@ -233,7 +233,7 @@ public class ComputeLine<MultiLine, LineTool>
             Point2D midPnt = poles2d[2];
             for (int k = 3; k <= poles2d.Upper(); k++)
             {
-                secondVec.SetXY(poles2d[k].XY() - midPnt.XY());
+                secondVec = secondVec.WithXY(poles2d[k].XY() - midPnt.XY());
                 vecSqNorm = secondVec.SquareMagnitude();
                 if (vecSqNorm < sqNormToler)
                 {
@@ -270,9 +270,9 @@ public class ComputeLine<MultiLine, LineTool>
                             break;
                         }
                         Vector2D vec1 = new(firstPnt, pnt1);
-                        vec1.Normalize();
+                        vec1 = vec1.Normalized();
                         Vector2D vec2 = new(firstPnt, pnt2);
-                        vec2.Normalize();
+                        vec2 = vec2.Normalized();
                         double scalProd = vec1 * vec2;
                         if (scalProd < minScalProd)
                         {
@@ -573,7 +573,7 @@ public class ComputeLine<MultiLine, LineTool>
             p1 = tabP1[1];
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
-            myV.SetCoord(v[low], v[low + 1], v[low + 2]);
+            myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -582,7 +582,7 @@ public class ComputeLine<MultiLine, LineTool>
             p12d = tabP12d[1];
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
-            myV.SetCoord(v[low], v[low + 1]);
+            myV = myV.WithCoord(v[low], v[low + 1]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -645,7 +645,7 @@ public class ComputeLine<MultiLine, LineTool>
             p1 = tabP[1];
             p2 = tabP2[1];
             Vector3D p1P2 = new(p1, p2), myV = new();
-            myV.SetCoord(v[low], v[low + 1], v[low + 2]);
+            myV = myV.WithCoord(v[low], v[low + 1], v[low + 2]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -654,7 +654,7 @@ public class ComputeLine<MultiLine, LineTool>
             p12d = tabP2d[1];
             p22d = tabP22d[1];
             Vector2D p1P2 = new(p12d, p22d), myV = new();
-            myV.SetCoord(v[low], v[low + 1]);
+            myV = myV.WithCoord(v[low], v[low + 1]);
             lambda = (p1P2.Magnitude()) / (myV.Magnitude() * (u2 - u1));
             s = (p1P2.Dot(myV) > 0.0) ? 1.0 : -1.0;
         }
@@ -1495,13 +1495,13 @@ public class ComputeLine<MultiLine, LineTool>
                     {
                         p1 = tabP1[j];
                         p2 = tabP2[j];
-                        tabP[j].SetXYZ(p1.XYZ() + (i - 1) * (p2.XYZ() - p1.XYZ()) / _mydegremin);
+                        tabP[j] = tabP[j].WithXYZ(p1.XYZ() + (i - 1) * (p2.XYZ() - p1.XYZ()) / _mydegremin);
                     }
                     for (j = 1; j <= nbP2d; j++)
                     {
                         p12d = tabP12d[j];
                         p22d = tabP22d[j];
-                        tabP2d[j].SetXY(p12d.XY() + (i - 1) * (p22d.XY() - p12d.XY()) / _mydegremin);
+                        tabP2d[j] = tabP2d[j].WithXY(p12d.XY() + (i - 1) * (p22d.XY() - p12d.XY()) / _mydegremin);
                     }
                     MultiPoint mPole = new(tabP, tabP2d);
                     mySCU2.SetValue(i, mPole);
@@ -1519,7 +1519,7 @@ public class ComputeLine<MultiLine, LineTool>
                     {
                         p1 = tabP1[j];
                         p2 = tabP2[j];
-                        tabP[j].SetXYZ(p1.XYZ() + (i - 1) * (p2.XYZ() - p1.XYZ()) / _mydegremin);
+                        tabP[j] = tabP[j].WithXYZ(p1.XYZ() + (i - 1) * (p2.XYZ() - p1.XYZ()) / _mydegremin);
                     }
                     MultiPoint mPole = new(tabP);
                     mySCU2.SetValue(i, mPole);
@@ -1537,7 +1537,7 @@ public class ComputeLine<MultiLine, LineTool>
                     {
                         p12d = tabP12d[j];
                         p22d = tabP22d[j];
-                        tabP2d[j].SetXY(p12d.XY() + (i - 1) * (p22d.XY() - p12d.XY()) / _mydegremin);
+                        tabP2d[j] = tabP2d[j].WithXY(p12d.XY() + (i - 1) * (p22d.XY() - p12d.XY()) / _mydegremin);
                     }
                     MultiPoint mPole = new(tabP2d);
                     mySCU2.SetValue(i, mPole);

@@ -94,17 +94,17 @@ public class Properties
         if (_loc.Distance(item._loc) <= Constants.Resolution())
         {
             Xyz gxyz = (item._g.XYZ()).Multiplied(item._dim * density);
-            _g.SetXYZ(_g.XYZ().Multiplied(_dim));
+            _g = _g.WithXYZ(_g.XYZ().Multiplied(_dim));
             gxyz.Add(_g.XYZ());
             _dim = _dim + item._dim * density;
             if (Math.Abs(_dim) >= 1.0e-20)
             {
                 gxyz.Divide(_dim);
-                _g.SetXYZ(gxyz);
+                _g = _g.WithXYZ(gxyz);
             }
             else
             {
-                _g.SetCoord(0.0, 0.0, 0.0);
+                _g = _g.WithCoord(0.0, 0.0, 0.0);
             }
             _inertia = _inertia + item._inertia * density;
         }
@@ -114,17 +114,17 @@ public class Properties
             Xyz itemg = item._loc.XYZ() + item._g.XYZ();
             Xyz gxyz = item._g.XYZ() - itemloc;
             gxyz = gxyz.Multiplied(item._dim * density);
-            _g.SetXYZ(_g.XYZ().Multiplied(_dim));
+            _g = _g.WithXYZ(_g.XYZ().Multiplied(_dim));
             gxyz.Add(_g.XYZ());
             _dim = _dim + item._dim * density;
             if (Math.Abs(_dim) >= 1.0e-20)
             {
                 gxyz.Divide(_dim);
-                _g.SetXYZ(gxyz);
+                _g = _g.WithXYZ(gxyz);
             }
             else
             {
-                _g.SetCoord(0.0, 0.0, 0.0);
+                _g = _g.WithCoord(0.0, 0.0, 0.0);
             }
             // We have to compute the inertia of the Item at the location point
             // of the system using the Huyghens theorem

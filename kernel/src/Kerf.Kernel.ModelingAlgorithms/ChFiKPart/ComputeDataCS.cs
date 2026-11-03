@@ -26,19 +26,19 @@ internal static class ComputeDataCS
         s2.D1(p1S2.X(), p1S2.Y(), out Point3D p, out Vector3D du, out Vector3D dv);
         Vector3D v = new(p, s1.Value(p1S1.X(), p1S1.Y()));
         v = v.Dot(v1) * v1 + v.Dot(v2) * v2;
-        v.Normalize();
+        v = v.Normalized();
         Point3D p2 = s2.Value(p2S2.X(), p2S2.Y());
         Vector3D vorien = new(p, p2);
         Point3D cent = new();
         Direction3D dx = new(v);
         if (v.Dot(vorien) >= 0.0)
         {
-            cent.SetCoord(p.X() + r * v.X(), p.Y() + r * v.Y(), p.Z() + r * v.Z());
-            dx.Reverse();
+            cent = cent.WithCoord(p.X() + r * v.X(), p.Y() + r * v.Y(), p.Z() + r * v.Z());
+            dx = dx.Reversed();
         }
         else
         {
-            cent.SetCoord(p.X() - r * v.X(), p.Y() - r * v.Y(), p.Z() - r * v.Z());
+            cent = cent.WithCoord(p.X() - r * v.X(), p.Y() - r * v.Y(), p.Z() - r * v.Z());
         }
         Direction3D dy = new(new Vector3D(cent, p2));
         dy = (dx ^ dy) ^ dx;
@@ -46,13 +46,13 @@ internal static class ComputeDataCS
         CoordinateSystem cylax3 = new(circax2);
         if ((du ^ dv).Dot(new Vector3D(dx)) < 0.0)
         {
-            cylax3.ZReverse();
+            cylax3 = cylax3.ZReversed();
         }
         first = 0.0;
         last = global::Kerf.Engine.Geometry.ElCLib.CircleParameter(circax2, p2);
-        circ.SetPosition(circax2);
-        circ.SetRadius(r);
-        cyl.SetPosition(cylax3);
-        cyl.SetRadius(r);
+        circ = circ.WithPosition(circax2);
+        circ = circ.WithRadius(r);
+        cyl = cyl.WithPosition(cylax3);
+        cyl = cyl.WithRadius(r);
     }
 }

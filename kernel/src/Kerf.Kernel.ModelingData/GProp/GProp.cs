@@ -30,7 +30,7 @@ public static class GProp
         double iyz = -qg.Y() * qg.Z();
         double ixz = -qg.X() * qg.Z();
         Operator = new Matrix3x3();
-        Operator.SetCols(new Xyz(ixx, ixy, ixz), new Xyz(ixy, iyy, iyz), new Xyz(ixz, iyz, izz));
-        Operator.Multiply(mass);
+        Operator = Operator.WithCols(new Xyz(ixx, ixy, ixz), new Xyz(ixy, iyy, iyz), new Xyz(ixz, iyz, izz));
+        Operator = Operator.Multiplied(mass);
     }
 }

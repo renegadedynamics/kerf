@@ -30,7 +30,7 @@ public class CartesianPoint : Point
     internal void SetCoord(double x, double y, double z)
     {
         CheckMutable();
-        _gpPnt.SetCoord(x, y, z);
+        _gpPnt = _gpPnt.WithCoord(x, y, z);
     }
 
     internal void SetPnt(in Point3D p)
@@ -42,19 +42,19 @@ public class CartesianPoint : Point
     internal void SetX(double x)
     {
         CheckMutable();
-        _gpPnt.SetX(x);
+        _gpPnt = _gpPnt.WithX(x);
     }
 
     internal void SetY(double y)
     {
         CheckMutable();
-        _gpPnt.SetY(y);
+        _gpPnt = _gpPnt.WithY(y);
     }
 
     internal void SetZ(double z)
     {
         CheckMutable();
-        _gpPnt.SetZ(z);
+        _gpPnt = _gpPnt.WithZ(z);
     }
 
     public override void Coord(out double x, out double y, out double z) => _gpPnt.Coord(out x, out y, out z);
@@ -71,7 +71,7 @@ public class CartesianPoint : Point
     protected internal override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _gpPnt.Transform(t);
+        _gpPnt = _gpPnt.Transformed(t);
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

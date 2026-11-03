@@ -266,7 +266,7 @@ public class BinaryCurve2dSet
     {
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(IS, out double x);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetReal(IS, out double y);
-        d.SetCoord(x, y);
+        d = d.WithCoord(x, y);
     }
 
     private static LineCurve2D ReadLine(Stream IS)

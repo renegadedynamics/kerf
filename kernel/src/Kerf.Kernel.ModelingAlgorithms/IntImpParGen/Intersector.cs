@@ -466,9 +466,9 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
                 if (pos1 != Position2D.Middle && pos2 != Position2D.Middle)
                 {
                     double m = 0.5 * (Pt1_on1.X() + Pt1_on2.X());
-                    Pt1_on1.SetX(m);
+                    Pt1_on1 = Pt1_on1.WithX(m);
                     m = 0.5 * (Pt1_on1.Y() + Pt1_on2.Y());
-                    Pt1_on1.SetY(m);
+                    Pt1_on1 = Pt1_on1.WithY(m);
                 }
 
                 IntersectionPoint2D new_p1 = new(Pt1_on1,
@@ -525,9 +525,9 @@ public class Intersector<ImpTool, ParCurve, ParTool, ProjectOnPCurveTool, MyImpP
                     if (pos1 != Position2D.Middle && pos2 != Position2D.Middle)
                     {
                         double m = 0.5 * (Pt2_on1.X() + Pt2_on2.X());
-                        Pt2_on1.SetX(m);
+                        Pt2_on1 = Pt2_on1.WithX(m);
                         m = 0.5 * (Pt2_on1.Y() + Pt2_on2.Y());
-                        Pt2_on1.SetY(m);
+                        Pt2_on1 = Pt2_on1.WithY(m);
                     }
 
                     new_p2.SetValues(Pt2_on1, Param2_on1, Param2_on2, trans1, trans2, ReversedParameters());

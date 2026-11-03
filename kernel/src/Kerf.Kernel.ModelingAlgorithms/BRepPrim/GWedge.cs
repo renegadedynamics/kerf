@@ -476,9 +476,9 @@ internal class GWedge
         }
 
         Point3D p = _axes.Location();
-        p.Translate(x * new Vector3D(_axes.XDirection()));
-        p.Translate(y * new Vector3D(_axes.YDirection()));
-        p.Translate(z * new Vector3D(_axes.Direction()));
+        p = p.Translated(x * new Vector3D(_axes.XDirection()));
+        p = p.Translated(y * new Vector3D(_axes.YDirection()));
+        p = p.Translated(z * new Vector3D(_axes.Direction()));
         Plane3D plane = new(p, d);
         return plane;
     }
@@ -845,9 +845,9 @@ internal class GWedge
         }
 
         Point3D p = _axes.Location();
-        p.Translate(x * new Vector3D(_axes.XDirection()));
-        p.Translate(y * new Vector3D(_axes.YDirection()));
-        p.Translate(z * new Vector3D(_axes.Direction()));
+        p = p.Translated(x * new Vector3D(_axes.XDirection()));
+        p = p.Translated(y * new Vector3D(_axes.YDirection()));
+        p = p.Translated(z * new Vector3D(_axes.Direction()));
         return new Line3D(new Axis3D(p, d));
     }
 
@@ -1009,9 +1009,9 @@ internal class GWedge
         }
 
         Point3D p = _axes.Location();
-        p.Translate(x * new Vector3D(_axes.XDirection()));
-        p.Translate(y * new Vector3D(_axes.YDirection()));
-        p.Translate(z * new Vector3D(_axes.Direction()));
+        p = p.Translated(x * new Vector3D(_axes.XDirection()));
+        p = p.Translated(y * new Vector3D(_axes.YDirection()));
+        p = p.Translated(z * new Vector3D(_axes.Direction()));
         return p;
     }
 

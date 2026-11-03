@@ -318,7 +318,7 @@ public static class AlgoTools3D
 
         if (aF.Orientation() == Reversed)
         {
-            aDNF.Reverse();
+            aDNF = aDNF.Reversed();
         }
     }
 
@@ -427,7 +427,7 @@ public static class AlgoTools3D
 
             if (aF.Orientation() == Reversed)
             {
-                aDNF.Reverse();
+                aDNF = aDNF.Reversed();
             }
         }
         //
@@ -448,7 +448,7 @@ public static class AlgoTools3D
 
             if (aF.Orientation() == Reversed)
             {
-                aDNF.Reverse();
+                aDNF = aDNF.Reversed();
             }
         }
         //
@@ -469,7 +469,7 @@ public static class AlgoTools3D
 
             if (aF.Orientation() == Reversed)
             {
-                aDNF.Reverse();
+                aDNF = aDNF.Reversed();
             }
         }
         //
@@ -502,16 +502,16 @@ public static class AlgoTools3D
         Direction2D dx2D = new(vx2D);
 
         Direction2D dp = new();
-        dp.SetCoord(-dx2D.Y(), dx2D.X());
+        dp = dp.WithCoord(-dx2D.Y(), dx2D.X());
 
         if (aE.Orientation() == Reversed)
         {
-            dp.Reverse();
+            dp = dp.Reversed();
         }
 
         if (aF.Orientation() == Reversed)
         {
-            dp.Reverse();
+            dp = dp.Reversed();
         }
         //
         eTol = Tool.Tolerance(aE);
@@ -547,17 +547,17 @@ public static class AlgoTools3D
                     }
                 }
                 //
-                transVec.Multiply(transVal);
+                transVec = transVec.Multiplied(transVal);
                 aPx2DNear = px2D.Translated(transVec);
             }
             else
             {
-                aPx2DNear.SetCoord(px2D.X() + aDt2D * dp.X(), px2D.Y() + aDt2D * dp.Y());
+                aPx2DNear = aPx2DNear.WithCoord(px2D.X() + aDt2D * dp.X(), px2D.Y() + aDt2D * dp.Y());
             }
         }
         else
         {
-            aPx2DNear.SetCoord(px2D.X() + aDt2D * dp.X(), px2D.Y() + aDt2D * dp.Y());
+            aPx2DNear = aPx2DNear.WithCoord(px2D.X() + aDt2D * dp.X(), px2D.Y() + aDt2D * dp.Y());
         }
         //
         s.D0(aPx2DNear.X(), aPx2DNear.Y(), out aPxNear);
@@ -894,16 +894,16 @@ public static class AlgoTools3D
         Direction2D d2Dx = new(v2D);
         //
         Direction2D d2D = new();
-        d2D.SetCoord(-d2Dx.Y(), d2Dx.X());
+        d2D = d2D.WithCoord(-d2Dx.Y(), d2Dx.X());
         //
         if (e.Orientation() == Reversed)
         {
-            d2D.Reverse();
+            d2D = d2D.Reversed();
         }
         //
         if (f.Orientation() == Reversed)
         {
-            d2D.Reverse();
+            d2D = d2D.Reversed();
         }
         //
         LineCurve2D l2D = new(aP2D, d2D);

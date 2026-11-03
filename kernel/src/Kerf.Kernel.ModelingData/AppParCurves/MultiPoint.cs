@@ -157,7 +157,7 @@ public class MultiPoint
         }
         Point3D p, newP = new();
         p = Point(cuIndex);
-        newP.SetCoord(x + p.X() * dx, y + p.Y() * dy, z + p.Z() * dz);
+        newP = newP.WithCoord(x + p.X() * dx, y + p.Y() * dy, z + p.Z() * dz);
         TabPoint.SetValue(cuIndex, newP);
     }
 
@@ -172,7 +172,7 @@ public class MultiPoint
         }
         Point2D p, newP = new();
         p = Point2d(cuIndex);
-        newP.SetCoord(x + p.X() * dx, y + p.Y() * dy);
+        newP = newP.WithCoord(x + p.X() * dx, y + p.Y() * dy);
         SetPoint2d(cuIndex, newP);
     }
 

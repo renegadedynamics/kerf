@@ -236,7 +236,7 @@ public class Geom2dEval_TBezierCurveTest
     {
         TBezierCurve2D aCurve = createSimpleCurve();
         Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(1.0, 2.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(1.0, 2.0));
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
@@ -270,7 +270,7 @@ public class Geom2dEval_TBezierCurveTest
 
         // Transform is unsupported on the copy as well.
         Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(10.0, 10.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(10.0, 10.0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCopyCurve.Transform(aTrsf));
 
         // Copy and original remain identical.

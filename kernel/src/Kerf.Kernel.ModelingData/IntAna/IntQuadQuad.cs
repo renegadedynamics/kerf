@@ -702,7 +702,7 @@ public class IntQuadQuad
         quad.Coefficients(out qxx, out qyy, out qzz, out qxy, out qxz, out qyz, out qx, out qy, out qz, out q1);
         //
         CoordinateSystem tAx3 = cone.Position();
-        tAx3.SetLocation(cone.Apex());
+        tAx3 = tAx3.WithLocation(cone.Apex());
         quad.NewCoefficients(ref qxx, ref qyy, ref qzz, ref qxy, ref qxz, ref qyz, ref qx, ref qy, ref qz, ref q1, tAx3);
         //
         tgAngle = 1.0 / (Math.Tan(cone.SemiAngle()));

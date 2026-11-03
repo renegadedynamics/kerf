@@ -846,9 +846,9 @@ internal static class XDEDRAWColorsLayersCommands
         Label aLabel = labelOrShape(theDI, aDoc, argv[2]);
         if (!aLabel.IsNull)
         {
-            aPnt.SetX(theDI.Atof(argv[3]));
-            aPnt.SetY(theDI.Atof(argv[4]));
-            aPnt.SetZ(theDI.Atof(argv[5]));
+            aPnt = aPnt.WithX(theDI.Atof(argv[3]));
+            aPnt = aPnt.WithY(theDI.Atof(argv[4]));
+            aPnt = aPnt.WithZ(theDI.Atof(argv[5]));
             aDoc.SetCentroid(aLabel, aPnt);
         }
         di.Append(theDI.Atof(argv[3])).Append(" ").Append(theDI.Atof(argv[4])).Append(" ").Append(theDI.Atof(argv[5]));

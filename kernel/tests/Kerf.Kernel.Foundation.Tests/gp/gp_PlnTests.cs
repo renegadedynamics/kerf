@@ -112,7 +112,7 @@ public class gp_PlnTest
     {
         Plane3D aPln = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 10.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0.0, 0.0, 10.0));
         Plane3D aTransformed = aPln.Transformed(aTrsf);
         Assert.Equal(10.0, aTransformed.Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }

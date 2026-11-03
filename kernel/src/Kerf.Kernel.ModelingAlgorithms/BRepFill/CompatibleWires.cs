@@ -172,7 +172,7 @@ public sealed class CompatibleWires
                 s = (Surface)s!.Transformed(l.Transformation());
             }
             p = ((PlaneSurface)s!).Pln();
-            p.SetLocation(bary);
+            p = p.WithLocation(bary);
         }
         else
         {
@@ -621,7 +621,7 @@ public sealed class CompatibleWires
             alpha = vtrans.Dot(axe1);
             beta = vtrans.Dot(axe2);
             Vector3D norm2 = axe1 ^ axe2;
-            vsign.SetLinearForm(vtrans.Dot(axe1), axe2, -vtrans.Dot(axe2), axe1);
+            vsign = Vector3D.LinearForm(vtrans.Dot(axe1), axe2, -vtrans.Dot(axe2), axe1);
             alpha = vsign.Dot(axe1);
             beta = vsign.Dot(axe2);
             bool pasnul = (Math.Abs(alpha) > 1.0e-4 && Math.Abs(beta) > 1.0e-4);
@@ -1842,7 +1842,7 @@ public sealed class CompatibleWires
             Point3D curBary = curPlane.Location();
             Vector3D vec = new(prevBary, curBary);
             Vector3D offsetProj = (vec * normalOfFirstPlane) * normalOfFirstPlane;
-            curBary.Translate(-offsetProj); // projected current bary center
+            curBary = curBary.Translated(-offsetProj); // projected current bary center
             Vector3D offset = new(curBary, prevBary);
 
             Wire newwire = new();

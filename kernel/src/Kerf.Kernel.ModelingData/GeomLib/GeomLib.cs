@@ -670,8 +670,8 @@ public static partial class GeomLib
 
                     Point2D p1 = c.StartPoint();
                     Point2D p2 = c.EndPoint();
-                    p1.SetXY(gTrsf.Transformed(p1.XY()));
-                    p2.SetXY(gTrsf.Transformed(p2.XY()));
+                    p1 = p1.WithXY(gTrsf.Transformed(p1.XY()));
+                    p2 = p2.WithXY(gTrsf.Transformed(p2.XY()));
                     double u1 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, p1);
                     double u2 = global::Kerf.Engine.Geometry.ElCLib.Parameter(lin, p2);
 
@@ -705,8 +705,8 @@ public static partial class GeomLib
                 Line2D lin = l.Lin2d();
                 Point2D p = lin.Location();
                 Point2D pp = l.Value(10.0); // arbitrary point
-                p.SetXY(gTrsf.Transformed(p.XY()));
-                pp.SetXY(gTrsf.Transformed(pp.XY()));
+                p = p.WithXY(gTrsf.Transformed(p.XY()));
+                pp = pp.WithXY(gTrsf.Transformed(pp.XY()));
                 l.SetLocation(p);
                 Vector2D v = new(p, pp);
                 l.SetDirection(new Direction2D(v));
@@ -723,7 +723,7 @@ public static partial class GeomLib
                 NCollection_Array1<Point2D> poles = new(c.InternalPoles());
                 for (int i = 1; i <= nbPoles; i++)
                 {
-                    poles[i].SetXY(gTrsf.Transformed(poles[i].XY()));
+                    poles[i] = poles[i].WithXY(gTrsf.Transformed(poles[i].XY()));
                     c.SetPole(i, poles[i]);
                 }
                 return c;
@@ -738,7 +738,7 @@ public static partial class GeomLib
                 NCollection_Array1<Point2D> poles = new(c.InternalPoles());
                 for (int i = 1; i <= nbPoles; i++)
                 {
-                    poles[i].SetXY(gTrsf.Transformed(poles[i].XY()));
+                    poles[i] = poles[i].WithXY(gTrsf.Transformed(poles[i].XY()));
                     c.SetPole(i, poles[i]);
                 }
                 return c;
@@ -818,7 +818,7 @@ public static partial class GeomLib
                 {
                     dU = requestedFirst - firstOnCurve;
                 }
-                trsf.SetRotation(p, dU);
+                trsf = trsf.WithRotation(p, dU);
                 newCurvePtr.Transform(trsf);
             }
             else if (curvePtr is TrimmedCurve2D)
@@ -1131,14 +1131,14 @@ public static partial class GeomLib
         aIn.D1(ti[1], out p, out v);
         polesDef[1].ChangeCoord() = p1.XYZ() - p.XYZ();
         vtan = t1;
-        vtan.Normalize();
+        vtan = vtan.Normalized();
         dv = vtan * (vtan * v) - v;
         polesDef[2].ChangeCoord() = (ti[4] - ti[1]) * dv.XYZ();
 
         aIn.D1(ti[4], out p, out v);
         polesDef[3].ChangeCoord() = p2.XYZ() - p.XYZ();
         vtan = t2;
-        vtan.Normalize();
+        vtan = vtan.Normalized();
         dv = vtan * (vtan * v) - v;
         polesDef[4].ChangeCoord() = (ti[4] - ti[1]) * dv.XYZ();
 
@@ -1156,7 +1156,7 @@ public static partial class GeomLib
             {
                 aux.SetLinearForm(mat[ii, jj], polesDef[ii].XYZ(), aux);
             }
-            coeffs[jj].SetXYZ(aux);
+            coeffs[jj] = coeffs[jj].WithXYZ(aux);
         }
 
         global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(coeffs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), polesDef, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
@@ -1635,7 +1635,7 @@ public static partial class GeomLib
                 }
                 for (ii = gap; ii <= cdim; ii += gap)
                 {
-                    curT.SetCoord(tgte[ii - 3], tgte[ii - 2], tgte[ii - 1]);
+                    curT = curT.WithCoord(tgte[ii - 3], tgte[ii - 2], tgte[ii - 1]);
                     nTgte = curT.Magnitude();
                     if (nTgte > tgtol)
                     {
@@ -1665,7 +1665,7 @@ public static partial class GeomLib
             {
                 for (ii = gap; ii <= cdim; ii += gap)
                 {
-                    curT.SetCoord(tgte[ii - 2], tgte[ii - 1], tgte[ii]);
+                    curT = curT.WithCoord(tgte[ii - 2], tgte[ii - 1], tgte[ii]);
                     nTgte = curT.Magnitude();
                     if (nTgte > tgtol)
                     {
@@ -1795,9 +1795,9 @@ public static partial class GeomLib
                     for (jj = 1; jj <= nv && !nullWeight; jj++)
                     {
                         indice = 1 + (ii - 1) * cdim + (jj - 1) * gap;
-                        newP[ii, jj].SetCoord(1, pRes[indice]);
-                        newP[ii, jj].SetCoord(2, pRes[indice + 1]);
-                        newP[ii, jj].SetCoord(3, pRes[indice + 2]);
+                        newP[ii, jj] = newP[ii, jj].WithCoord(1, pRes[indice]);
+                        newP[ii, jj] = newP[ii, jj].WithCoord(2, pRes[indice + 1]);
+                        newP[ii, jj] = newP[ii, jj].WithCoord(3, pRes[indice + 2]);
                         if (rational)
                         {
                             ww = pRes[indice + 3];
@@ -1825,9 +1825,9 @@ public static partial class GeomLib
                     for (ii = 1; ii <= nu && !nullWeight; ii++)
                     {
                         indice = 1 + (ii - 1) * gap + (jj - 1) * cdim;
-                        newP[ii, jj].SetCoord(1, pRes[indice]);
-                        newP[ii, jj].SetCoord(2, pRes[indice + 1]);
-                        newP[ii, jj].SetCoord(3, pRes[indice + 2]);
+                        newP[ii, jj] = newP[ii, jj].WithCoord(1, pRes[indice]);
+                        newP[ii, jj] = newP[ii, jj].WithCoord(2, pRes[indice + 1]);
+                        newP[ii, jj] = newP[ii, jj].WithCoord(3, pRes[indice + 2]);
                         if (rational)
                         {
                             ww = pRes[indice + 3];
@@ -2025,11 +2025,11 @@ public static partial class GeomLib
         j.Vector(m3, v3);
 
         bary = new Point3D();
-        bary.SetXYZ(gb);
+        bary = bary.WithXYZ(gb);
         xDir = new Direction3D();
-        xDir.SetCoord(v3[1], v3[2], v3[3]);
+        xDir = xDir.WithCoord(v3[1], v3[2], v3[3]);
         yDir = new Direction3D();
-        yDir.SetCoord(v2[1], v2[2], v2[3]);
+        yDir = yDir.WithCoord(v2[1], v2[2], v2[3]);
 
         zgap = Math.Sqrt(Math.Abs(j.Value(m1)));
         ygap = Math.Sqrt(Math.Abs(j.Value(m2)));
@@ -2385,7 +2385,7 @@ public static partial class GeomLib
             {
                 for (k = 1; k <= 3; k++)
                 {
-                    newNumerator[i, j].SetCoord(k, newNumerator[i, j].Coord(k) / newDenominator[i, j]);
+                    newNumerator[i, j] = newNumerator[i, j].WithCoord(k, newNumerator[i, j].Coord(k) / newDenominator[i, j]);
                 }
             }
         }
@@ -2542,7 +2542,7 @@ public static partial class GeomLib
                 return 3;
             }
 
-            norm.SetXYZ(aNorm.XYZ());
+            norm = norm.WithXYZ(aNorm.XYZ());
             return 0;
         }
 
@@ -2608,7 +2608,7 @@ public static partial class GeomLib
             }
             if (Norm.SquareMagnitude() >= eps && Norm.Dot(new Vector3D(normal)) < 0.0)
             {
-                normal.Reverse();
+                normal = normal.Reversed();
             }
         }
 
@@ -2635,7 +2635,7 @@ public static partial class GeomLib
             }
             if (Norm.SquareMagnitude() >= eps && Norm.Dot(new Vector3D(normal)) < 0.0)
             {
-                normal.Reverse();
+                normal = normal.Reversed();
             }
         }
 
@@ -2643,7 +2643,7 @@ public static partial class GeomLib
         if (status == D1NuIsNull || status == D1NvIsNull
             || status == D1NuIsParallelD1Nv)
         {
-            norm.SetXYZ(normal.XYZ());
+            norm = norm.WithXYZ(normal.XYZ());
             return 1;
         }
 

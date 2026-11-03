@@ -916,7 +916,7 @@ public class SurfaceSet
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out x);
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out y);
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out z);
-        d.SetCoord(x, y, z);
+        d = d.WithCoord(x, y, z);
     }
 
     private static void ReadAx3(TextReader IS, out CoordinateSystem a3)
@@ -930,7 +930,7 @@ public class SurfaceSet
         CoordinateSystem ax3 = new(p, a, ax);
         if (ay.DotCross(a, ax) < 0)
         {
-            ax3.YReverse();
+            ax3 = ax3.YReversed();
         }
 
         a3 = ax3;

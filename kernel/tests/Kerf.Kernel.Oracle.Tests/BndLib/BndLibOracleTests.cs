@@ -578,7 +578,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             if (anIdx1 == 0 || anIdx2 == 0)
             {
                 CoordinateSystem aLocCoordSys = new(new Point3D(aCM.X(), aCM.Y(), aCM.Z()), ToDir(aV3), ToDir(aV1));
-                aTrsf.SetTransformation(aLocCoordSys);
+                aTrsf = aTrsf.WithTransformation(aLocCoordSys);
             }
         }
 
@@ -600,7 +600,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
         bool anIdentity = aTrsf.Form() == TransformForm.Identity;
         if (!anIdentity)
         {
-            aTrsf.Invert();
+            aTrsf = aTrsf.Inverted();
             aTrsf.Transforms(ref aCenter);
             Matrix3x3 aMat = aTrsf.HVectorialPart();
             aXDir = new global::Kerf.Engine.Geometry.Xyz(aMat.Value(1, 1), aMat.Value(2, 1), aMat.Value(3, 1));

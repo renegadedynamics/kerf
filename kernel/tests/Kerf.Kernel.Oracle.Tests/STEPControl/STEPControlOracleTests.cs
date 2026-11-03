@@ -268,8 +268,8 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
             }
             Assert.True(BrepTools.Read(out Shape aShape, aFile));
             var aTrsf = new Transform3D();
-            aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
-            aTrsf.SetTranslationPart(new Vector3D(100.0, 50.0, 0.0));
+            aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 0.5);
+            aTrsf = aTrsf.WithTranslationPart(new Vector3D(100.0, 50.0, 0.0));
             var anAssembly = new Compound();
             aBuilder.MakeCompound(ref anAssembly);
             aBuilder.Add(anAssembly, aShape);
@@ -277,7 +277,7 @@ public class STEPControlOracleTests(ITestOutputHelper theOutput) : IDisposable
             var aTop = new Compound();
             aBuilder.MakeCompound(ref aTop);
             var aTrsf2 = new Transform3D();
-            aTrsf2.SetTranslation(new Vector3D(0.0, 0.0, 300.0));
+            aTrsf2 = aTrsf2.WithTranslation(new Vector3D(0.0, 0.0, 300.0));
             aBuilder.Add(aTop, anAssembly);
             aBuilder.Add(aTop, anAssembly.Moved(new Placement(aTrsf2)));
             string anAssemblyFile = TempFile(".brep");

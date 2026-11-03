@@ -80,7 +80,7 @@ public sealed class MakeCurvefromApprox
         {
             w = weigths[i];
             poles[i].Coord(out x, out y);
-            poles[i].SetCoord(x / w, y / w);
+            poles[i] = poles[i].WithCoord(x / w, y / w);
         }
 
         BSplineCurve2D c = new(poles, knots, mults, _approx.Degree());
@@ -111,7 +111,7 @@ public sealed class MakeCurvefromApprox
 
         for (int i = 1; i <= _approx.NbPoles(); i++)
         {
-            poles[i].SetCoord(poles1d1.Value(i), poles1d2.Value(i));
+            poles[i] = poles[i].WithCoord(poles1d1.Value(i), poles1d2.Value(i));
         }
 
         BSplineCurve2D c = new(poles, knots, mults, _approx.Degree());
@@ -163,7 +163,7 @@ public sealed class MakeCurvefromApprox
         {
             w = weigths[i];
             poles[i].Coord(out x, out y, out z);
-            poles[i].SetCoord(x / w, y / w, z / w);
+            poles[i] = poles[i].WithCoord(x / w, y / w, z / w);
         }
 
         BSplineCurve3D c = new(poles, knots, mults, _approx.Degree());

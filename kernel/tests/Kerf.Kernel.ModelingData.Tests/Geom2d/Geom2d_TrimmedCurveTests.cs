@@ -150,7 +150,7 @@ public class Geom2d_TrimmedCurveTest
     {
         TrimmedCurve2D aTrim = new TrimmedCurve2D(myLine, 0.0, 10.0);
         Transform2D aTrsf = new Transform2D();
-        aTrsf.SetTranslation(new Vector2D(5.0, 5.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(5.0, 5.0));
         aTrim.Transform(aTrsf);
         Point2D aStart = aTrim.StartPoint();
         Assert.Equal(5.0, aStart.X(), global::Kerf.Engine.Foundation.Precision.Confusion());

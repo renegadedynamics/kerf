@@ -81,8 +81,8 @@ internal static class CurveUtils
                                                   out Point3D centre)
     {
         Vector3D norm = d2 * (d1 * d1) - d1 * (d1 * d2);
-        norm.Normalize();
-        norm.Divide(curvature);
+        norm = norm.Normalized();
+        norm = norm.Divided(curvature);
         centre = pnt.Translated(norm);
     }
 
@@ -91,8 +91,8 @@ internal static class CurveUtils
                                                   double curvature, out Point2D centre)
     {
         Vector2D norm = d2 * (d1 * d1) - d1 * (d1 * d2);
-        norm.Normalize();
-        norm.Divide(curvature);
+        norm = norm.Normalized();
+        norm = norm.Divided(curvature);
         centre = pnt.Translated(norm);
     }
 }

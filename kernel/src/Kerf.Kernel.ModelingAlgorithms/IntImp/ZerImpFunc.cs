@@ -196,7 +196,7 @@ public class ZerImpFunc<ThePSurface, ThePSurfaceTool> : FunctionSetWithDerivativ
             _tangent = (_tgdu * _tgdu <= N2grad_EpsAng2 * n2d1v) && (_tgdv * _tgdv <= N2grad_EpsAng2 * n2d1u);
             if (!_tangent)
             {
-                _d3d.SetLinearForm(_tgdu, _d1u, _tgdv, _d1v);
+                _d3d = Vector3D.LinearForm(_tgdu, _d1u, _tgdv, _d1v);
                 _d2d = new Direction2D(_tgdu, _tgdv);
                 if (_d3d.Magnitude() <= Tolpetit)
                 { // jag

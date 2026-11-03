@@ -106,7 +106,7 @@ public sealed class Axis2Placement3dMaker : GeometryRoot
     public Axis2Placement3dMaker(in Transform3D t, in Factors localFactors)
     {
         Frame3D a = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(Direction3D.D.Z), new Direction3D(Direction3D.D.X));
-        a.Transform(t);
+        a = a.Transformed(t);
         //   le reste inchange
 
         StepAxis2Placement3d axe = MakeAxis2Placement3d(a.Location(), a.Direction(), a.XDirection(), "", localFactors.LengthFactor());

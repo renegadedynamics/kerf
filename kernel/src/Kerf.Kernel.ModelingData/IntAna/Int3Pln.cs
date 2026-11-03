@@ -60,7 +60,7 @@ public class Int3Pln
             _empt = false;
             v.Initialized(-v);
             resol.Solve(v);
-            _pnt.SetCoord(v[1], v[2], v[3]);
+            _pnt = _pnt.WithCoord(v[1], v[2], v[3]);
         }
         _done = true;
     }

@@ -774,9 +774,9 @@ internal static class ViewerTestCommands
             Direction3D aCamDir = aBck.Reversed();
             Direction3D aSide = aCamDir.Crossed(aContext.ViewUp);
             aDir = aBck;
-            aProjAx.SetLocation(anEye);
-            aProjAx.SetDirection(aDir);
-            aProjAx.SetXDirection(aSide);
+            aProjAx = aProjAx.WithLocation(anEye);
+            aProjAx = aProjAx.WithDirection(aDir);
+            aProjAx = aProjAx.WithXDirection(aSide);
         }
         for (int anArgIter = 1; anArgIter < theArgNb; ++anArgIter)
         {
@@ -847,9 +847,9 @@ internal static class ViewerTestCommands
                                   theDI.Atof(theArgVec[anArgIter + 5]));
                 Direction3D anUp = new(theDI.Atof(theArgVec[anArgIter + 6]), theDI.Atof(theArgVec[anArgIter + 7]),
                                   theDI.Atof(theArgVec[anArgIter + 8]));
-                aProjAx.SetLocation(anEye);
-                aProjAx.SetDirection(aDir);
-                aProjAx.SetYDirection(anUp);
+                aProjAx = aProjAx.WithLocation(anEye);
+                aProjAx = aProjAx.WithDirection(aDir);
+                aProjAx = aProjAx.WithYDirection(anUp);
                 anArgIter += 8;
             }
             else

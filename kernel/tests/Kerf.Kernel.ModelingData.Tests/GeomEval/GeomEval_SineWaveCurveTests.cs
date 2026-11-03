@@ -126,7 +126,7 @@ public class GeomEval_SineWaveCurveTest
         Frame3D anAx2 = new();
         SineWaveCurve aCurve = new(anAx2, 2.0, 3.0, 0.5);
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));

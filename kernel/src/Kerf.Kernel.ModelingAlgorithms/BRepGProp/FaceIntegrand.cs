@@ -247,7 +247,7 @@ public sealed class FaceIntegrand
         vNor = d1U.Crossed(d1V);
         if (_sReverse)
         {
-            vNor.Reverse();
+            vNor = vNor.Reversed();
         }
     }
 
@@ -599,13 +599,13 @@ public sealed class FaceIntegrand
 
             if (isFirstParam)
             {
-                loc.SetCoord(u1, v2);
-                dir.SetCoord(0.0, -1.0);
+                loc = loc.WithCoord(u1, v2);
+                dir = dir.WithCoord(0.0, -1.0);
             }
             else
             {
-                loc.SetCoord(u2, v1);
-                dir.SetCoord(0.0, 1.0);
+                loc = loc.WithCoord(u2, v1);
+                dir = dir.WithCoord(0.0, 1.0);
             }
         }
         else if (isoType == IsoV)
@@ -614,13 +614,13 @@ public sealed class FaceIntegrand
 
             if (isFirstParam)
             {
-                loc.SetCoord(u1, v1);
-                dir.SetCoord(1.0, 0.0);
+                loc = loc.WithCoord(u1, v1);
+                dir = dir.WithCoord(1.0, 0.0);
             }
             else
             {
-                loc.SetCoord(u2, v2);
-                dir.SetCoord(-1.0, 0.0);
+                loc = loc.WithCoord(u2, v2);
+                dir = dir.WithCoord(-1.0, 0.0);
             }
         }
         else

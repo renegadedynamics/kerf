@@ -59,7 +59,7 @@ internal sealed class Revol
     private static Placement Location(in Axis3D ax, double d)
     {
         var gpt = new Transform3D();
-        gpt.SetRotation(Axe(ax, d), Angle(d));
+        gpt = gpt.WithRotation(Axe(ax, d), Angle(d));
         var l = new Placement(gpt);
         return l;
     }
@@ -69,7 +69,7 @@ internal sealed class Revol
         Axis3D a = ax;
         if (d < 0.0)
         {
-            a.Reverse();
+            a = a.Reversed();
         }
         return a;
     }

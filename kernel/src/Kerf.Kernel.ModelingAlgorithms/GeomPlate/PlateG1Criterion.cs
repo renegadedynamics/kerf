@@ -81,13 +81,13 @@ public class PlateG1Criterion : Criterion
                 up = (2 * p2d.X() - uInt[0] - uInt[1]) / (uInt[1] - uInt[0]);
                 vp = (2 * p2d.Y() - vInt[0] - vInt[1]) / (vInt[1] - vInt[0]);
                 global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPoly2Var(up, vp, 1, 0, nbCoeff[0] - 1, nbCoeff[1] - 1, 3, coeffs, digit);
-                v1s.SetCoord(1, digit[0]);
-                v1s.SetCoord(2, digit[1]);
-                v1s.SetCoord(3, digit[2]);
+                v1s = v1s.WithCoord(1, digit[0]);
+                v1s = v1s.WithCoord(2, digit[1]);
+                v1s = v1s.WithCoord(3, digit[2]);
                 global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPoly2Var(up, vp, 0, 1, nbCoeff[0] - 1, nbCoeff[1] - 1, 3, coeffs, digit);
-                v2s.SetCoord(1, digit[0]);
-                v2s.SetCoord(2, digit[1]);
-                v2s.SetCoord(3, digit[2]);
+                v2s = v2s.WithCoord(1, digit[0]);
+                v2s = v2s.WithCoord(2, digit[1]);
+                v2s = v2s.WithCoord(3, digit[2]);
                 v3s = v1s ^ v2s;
                 if (v3s.Angle(v3h) > (M_PI / 2))
                 {

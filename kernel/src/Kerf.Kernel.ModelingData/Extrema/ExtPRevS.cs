@@ -52,11 +52,11 @@ public class ExtPRevS : Transient
                                 return new Frame3D(); // Line and axe of revolution coincide
                             }
                         }
-                        n.Cross(new Direction3D(oo));
+                        n = n.Crossed(new Direction3D(oo));
                     }
                     else
                     {
-                        n.Cross(l.Direction());
+                        n = n.Crossed(l.Direction());
                     }
                     return new Frame3D(l.Location(), n, l.Direction());
                 }
@@ -300,7 +300,7 @@ public class ExtPRevS : Transient
         }
 
         Transform3D t = new();
-        t.SetRotation(ax, -u);
+        t = t.WithRotation(ax, -u);
         p1 = p.Transformed(t);
 
         Point3D e;
@@ -388,8 +388,8 @@ public class ExtPRevS : Transient
                 }
             }
         }
-        t.SetRotation(ax, M_PI);
-        p1.Transform(t);
+        t = t.WithRotation(ax, M_PI);
+        p1 = p1.Transformed(t);
 
         PerformExtPElC(ext, p1, aCurve, _mytolv);
         if (ext.IsDone)

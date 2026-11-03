@@ -173,7 +173,7 @@ public class Geom2dEval_LogarithmicSpiralCurveTest
         Axis2D anAx2d = new();
         LogarithmicSpiralCurve2D aCurve = new(anAx2d, 1.0, 0.2);
         Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(1.0, 2.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(1.0, 2.0));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aCurve.Transformed(aTrsf));
     }

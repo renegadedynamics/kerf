@@ -147,7 +147,7 @@ public class BRepGPropOracleTests(ITestOutputHelper output)
                 aNT.SetRotation(aNAx, anAngle);
             }
 
-            aT.SetRotation(anAx, anAngle);
+            aT = aT.WithRotation(anAx, anAngle);
         }
 
         if (theOracle.Bool())

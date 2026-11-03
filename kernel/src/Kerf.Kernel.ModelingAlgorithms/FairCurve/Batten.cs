@@ -391,7 +391,7 @@ public class Batten
             {
                 auxXY += hermiteCoef[kk, ii] * aDelta[kk];
             }
-            interpolation[ii].SetXY(auxXY);
+            interpolation[ii] = interpolation[ii].WithXY(auxXY);
         }
         // Conversion into BSpline of the same structure as the current batten.
         global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(interpolation, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), hermitePoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());

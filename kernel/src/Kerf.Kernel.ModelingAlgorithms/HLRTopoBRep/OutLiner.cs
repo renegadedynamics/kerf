@@ -121,13 +121,13 @@ public class OutLiner : Transient
 
                 Vector3D vecz = new(0.0, 0.0, 1.0);
                 Transform3D tr = p.Transformation();
-                tr.Invert();
-                vecz.Transform(tr);
+                tr = tr.Inverted();
+                vecz = vecz.Transformed(tr);
                 Contour fo = new();
                 if (p.Perspective())
                 {
                     Point3D eye = new();
-                    eye.SetXYZ(p.Focus() * vecz.XYZ());
+                    eye = eye.WithXYZ(p.Focus() * vecz.XYZ());
                     fo.Init(eye);
                 }
                 else

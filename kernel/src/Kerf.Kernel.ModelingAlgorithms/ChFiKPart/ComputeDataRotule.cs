@@ -35,23 +35,23 @@ internal static class ComputeDataRotule
         Direction3D dplnat = dpl;
         if (opl == Reversed)
         {
-            dpl.Reverse();
+            dpl = dpl.Reversed();
         }
         if (ofpl == Reversed)
         {
-            dfpl.Reverse();
+            dfpl = dfpl.Reversed();
         }
         pos = pl1.Position();
         Direction3D dpl1 = pos.XDirection().Crossed(pos.YDirection());
         if (opl1 == Reversed)
         {
-            dpl1.Reverse();
+            dpl1 = dpl1.Reversed();
         }
         pos = pl2.Position();
         Direction3D dpl2 = pos.XDirection().Crossed(pos.YDirection());
         if (opl2 == Reversed)
         {
-            dpl2.Reverse();
+            dpl2 = dpl2.Reversed();
         }
         double alpha = dpl1.Angle(dpl2);
         QuadQuadGeo lInt = new(pl1, pl2, global::Kerf.Engine.Foundation.Precision.Angular(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -59,7 +59,7 @@ internal static class ComputeDataRotule
         if (lInt.IsDone)
         {
             pcirc = global::Kerf.Engine.Geometry.ElCLib.Value(global::Kerf.Engine.Geometry.ElCLib.Parameter(lInt.Line(1), pl.Location()), lInt.Line(1));
-            ptor.SetCoord(pcirc.X() + r * dpl.X(), pcirc.Y() + r * dpl.Y(), pcirc.Z() + r * dpl.Z());
+            ptor = ptor.WithCoord(pcirc.X() + r * dpl.X(), pcirc.Y() + r * dpl.Y(), pcirc.Z() + r * dpl.Z());
         }
         else
         {
@@ -68,7 +68,7 @@ internal static class ComputeDataRotule
         CoordinateSystem ppos = new(ptor, dpl.Reversed(), dpl1);
         if (ppos.YDirection().Dot(dpl2) < 0.0)
         {
-            ppos.YReverse();
+            ppos = ppos.YReversed();
         }
         ToroidalSurface gtor = new(ppos, r, r);
         data.ChangeSurf(ChFiKPart_IndexSurfaceInDS(gtor, dStr));
@@ -91,7 +91,7 @@ internal static class ComputeDataRotule
         // du cote du plan
         //---------------
         Frame3D circAx2 = ppos.Ax2();
-        circAx2.SetLocation(pcirc);
+        circAx2 = circAx2.WithLocation(pcirc);
         CircleCurve3D gc = new(circAx2, r);
         double u, v;
         global::Kerf.Engine.Geometry.ElSLib.Parameters(pl, pcirc, out u, out v);
@@ -113,7 +113,7 @@ internal static class ComputeDataRotule
         //--------------
         Curve3D? bid = null;
         Curve2D? bid2d = null;
-        p2dlin.SetCoord(0.0, Math.PI);
+        p2dlin = p2dlin.WithCoord(0.0, Math.PI);
         LineCurve2D gl2dcoin = new(p2dlin, Constants.DX2d());
         data.ChangeInterferenceOnS2().SetInterference(ChFiKPart_IndexCurveInDS(bid, dStr), trans, bid2d, gl2dcoin);
         // et les points

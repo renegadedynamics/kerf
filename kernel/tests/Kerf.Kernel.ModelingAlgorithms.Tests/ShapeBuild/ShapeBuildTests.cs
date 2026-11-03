@@ -291,7 +291,7 @@ public class ShapeBuildTests
 
         // uFact 1: a copy, transformed
         var aT = new Transform2D();
-        aT.SetTranslation(new Vector2D(0, 3));
+        aT = aT.WithTranslation(new Vector2D(0, 3));
         f = 0;
         l = 1;
         aRes = sbe.TransformPCurve(aLine, aT, 1, ref f, ref l);
@@ -336,7 +336,7 @@ public class ShapeBuildTests
     {
         var sbe = new BuildEdgeBuilder();
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 5));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 5));
         var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
 
         Edge anE = new();

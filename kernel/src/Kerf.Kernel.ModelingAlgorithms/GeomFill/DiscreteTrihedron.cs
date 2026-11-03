@@ -120,7 +120,7 @@ public class DiscreteTrihedron : TrihedronLaw
                     subdelta = _knots.Value(i + 1) - _knots.Value(i);
                 }
                 subPnt = _trimmed.Value(param + subdelta);
-                tangent.SetXYZ(subPnt.XYZ() - pnt.XYZ());
+                tangent = tangent.WithXYZ(subPnt.XYZ() - pnt.XYZ());
             }
 
             tangDir = new Direction3D(tangent); // normalize;
@@ -159,7 +159,7 @@ public class DiscreteTrihedron : TrihedronLaw
                     double theAngle = lastTangent.AngleWithRef(tangent, axisOfRotation);
                     Axis3D theAxisOfRotation = new Axis3D(origin, new Direction3D(axisOfRotation));
                     Frame3D newAxis = lastAxis.Rotated(theAxisOfRotation, theAngle);
-                    newAxis.SetDirection(tangDir); // to prevent accumulation of floating computations error
+                    newAxis = newAxis.WithDirection(tangDir); // to prevent accumulation of floating computations error
                     _trihedrons.Append(newAxis);
                 }
             }
@@ -225,7 +225,7 @@ public class DiscreteTrihedron : TrihedronLaw
                         subdelta = _knots.Value(index + 1) - param;
                     }
                     Point3D subPnt = _trimmed.Value(param + subdelta);
-                    tangent.SetXYZ(subPnt.XYZ() - _point.XYZ());
+                    tangent = tangent.WithXYZ(subPnt.XYZ() - _point.XYZ());
                 }
 
                 Direction3D tangDir = new Direction3D(tangent); // normalize;
@@ -243,7 +243,7 @@ public class DiscreteTrihedron : TrihedronLaw
                     Axis3D theAxisOfRotation = new Axis3D(origin, new Direction3D(axisOfRotation));
                     theAxis = prevAxis.Rotated(theAxisOfRotation, theAngle);
                 }
-                theAxis.SetDirection(tangDir); // to prevent accumulation of floating computations error
+                theAxis = theAxis.WithDirection(tangDir); // to prevent accumulation of floating computations error
             } // end of else (Param is between knots)
 
             tangent = new Vector3D(theAxis.Direction());
@@ -264,9 +264,9 @@ public class DiscreteTrihedron : TrihedronLaw
         {
             D0(param, ref tangent, ref normal, ref biNormal);
 
-            dTangent.SetCoord(0.0, 0.0, 0.0);
-            dNormal.SetCoord(0.0, 0.0, 0.0);
-            dBiNormal.SetCoord(0.0, 0.0, 0.0);
+            dTangent = dTangent.WithCoord(0.0, 0.0, 0.0);
+            dNormal = dNormal.WithCoord(0.0, 0.0, 0.0);
+            dBiNormal = dBiNormal.WithCoord(0.0, 0.0, 0.0);
         }
         return true;
     }
@@ -284,12 +284,12 @@ public class DiscreteTrihedron : TrihedronLaw
         {
             D0(param, ref tangent, ref normal, ref biNormal);
 
-            dTangent.SetCoord(0.0, 0.0, 0.0);
-            dNormal.SetCoord(0.0, 0.0, 0.0);
-            dBiNormal.SetCoord(0.0, 0.0, 0.0);
-            d2Tangent.SetCoord(0.0, 0.0, 0.0);
-            d2Normal.SetCoord(0.0, 0.0, 0.0);
-            d2BiNormal.SetCoord(0.0, 0.0, 0.0);
+            dTangent = dTangent.WithCoord(0.0, 0.0, 0.0);
+            dNormal = dNormal.WithCoord(0.0, 0.0, 0.0);
+            dBiNormal = dBiNormal.WithCoord(0.0, 0.0, 0.0);
+            d2Tangent = d2Tangent.WithCoord(0.0, 0.0, 0.0);
+            d2Normal = d2Normal.WithCoord(0.0, 0.0, 0.0);
+            d2BiNormal = d2BiNormal.WithCoord(0.0, 0.0, 0.0);
         }
         return true;
     }
@@ -325,7 +325,7 @@ public class DiscreteTrihedron : TrihedronLaw
         aTangent /= num + 1;
         aNormal /= num + 1;
 
-        aTangent.Normalize();
+        aTangent = aTangent.Normalized();
         aBiNormal = aTangent.Crossed(aNormal).Normalized();
         aNormal = aBiNormal.Crossed(aTangent);
     }

@@ -436,8 +436,8 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
                 case 2:
                 {
                     var anAx = new Frame3D();
-                    anAx.SetLocation(new Point3D(theCall.Start!.Value.X, theCall.Start.Value.Y, theCall.Start.Value.Z));
-                    anAx.SetDirection(new Direction3D(theCall.Dir!.Value.X, theCall.Dir.Value.Y, theCall.Dir.Value.Z));
+                    anAx = anAx.WithLocation(new Point3D(theCall.Start!.Value.X, theCall.Start.Value.Y, theCall.Start.Value.Z));
+                    anAx = anAx.WithDirection(new Direction3D(theCall.Dir!.Value.X, theCall.Dir.Value.Y, theCall.Dir.Value.Z));
                     aB.SetMode(anAx);
                     break;
                 }

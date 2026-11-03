@@ -155,8 +155,8 @@ public sealed class SurfaceCustom
             if (nold.Dot(nnew) < 0.0)
             {
                 CoordinateSystem ax3 = pln.Position();
-                ax3.ZReverse();
-                ax3.XReverse();
+                ax3 = ax3.ZReversed();
+                ax3 = ax3.XReversed();
                 pln = new Plane3D(ax3);
                 newSurf = new PlaneSurface(pln);
             }
@@ -208,7 +208,7 @@ public sealed class SurfaceCustom
 
                 iso.D0(u1, out p1[i]);
                 iso.D0(0.5 * (u1 + u2), out p2[i]);
-                p3[i].SetCoord(0.5 * (p1[i].X() + p2[i].X()),
+                p3[i] = p3[i].WithCoord(0.5 * (p1[i].X() + p2[i].X()),
                                0.5 * (p1[i].Y() + p2[i].Y()),
                                0.5 * (p1[i].Z() + p2[i].Z()));
                 r[i] = p3[i].Distance(p1[i]);
@@ -225,7 +225,7 @@ public sealed class SurfaceCustom
             // C++ converts origD1U to a gp_Dir implicitly
             if (aAx3.YDirection().Dot(new Direction3D(origD1U)) < 0)
             {
-                aAx3.YReverse(); //  mais X reste !
+                aAx3 = aAx3.YReversed(); //  mais X reste !
             }
 
             if (nVP > 2)
@@ -264,7 +264,7 @@ public sealed class SurfaceCustom
                     }
                     else
                     {
-                        dir.Reverse();
+                        dir = dir.Reversed();
                         Vector3D anotherXVec = new Vector3D(p3[2], p1[2]);
                         Direction3D anotherXDir = new Direction3D(anotherXVec);
                         CoordinateSystem anotherAx3 = new CoordinateSystem(p3[2], dir, anotherXDir);
@@ -310,7 +310,7 @@ public sealed class SurfaceCustom
 
                     iso.D0(v1, out p1[i]);
                     iso.D0(0.5 * (v1 + v2), out p2[i]);
-                    p3[i].SetCoord(0.5 * (p1[i].X() + p2[i].X()),
+                    p3[i] = p3[i].WithCoord(0.5 * (p1[i].X() + p2[i].X()),
                                    0.5 * (p1[i].Y() + p2[i].Y()),
                                    0.5 * (p1[i].Z() + p2[i].Z()));
                     r[i] = p3[i].Distance(p1[i]);
@@ -323,11 +323,11 @@ public sealed class SurfaceCustom
                     Vector3D vec = new Vector3D(p10, p3[1]);
                     Vector3D vec2 = new Vector3D(p10, p3[3]);
                     double rr1 = r[1], rr2 = r[2], rr3;
-                    vec.Cross(vec2);
+                    vec = vec.Crossed(vec2);
 
                     if (vec.Magnitude() <= Constants.Resolution())
                     {
-                        vec.SetCoord(0.0, 0.0, 1.0);
+                        vec = vec.WithCoord(0.0, 0.0, 1.0);
                     }
 
                     Direction3D dir = new Direction3D(vec);

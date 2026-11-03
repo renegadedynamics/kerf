@@ -145,7 +145,7 @@ public class PointsToBSpline2D
             {
                 param[i] = (paramSpan > 0) ? (double)(i - yValues.Lower()) / (double)paramSpan : 0.0;
             }
-            points[i].SetCoord(0.0, yValues[i]);
+            points[i] = points[i].WithCoord(0.0, yValues[i]);
         }
 
         BSplineCompute theComputer = new(param, degMin, degMax, tol3D, tol2D, 0, true, true);
@@ -197,7 +197,7 @@ public class PointsToBSpline2D
         // set the Poles
         for (i = 1; i <= poles.Upper(); i++)
         {
-            poles[i].SetX(xPoles[i]);
+            poles[i] = poles[i].WithX(xPoles[i]);
         }
 
         _curve = new BSplineCurve2D(poles, knots, mults, degree);

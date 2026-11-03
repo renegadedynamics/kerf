@@ -99,7 +99,7 @@ public class BRepMeshDataTests
 
         // references for writing, as OCCT's
         aCurve.GetParameter(1) = 1.5;
-        aCurve.GetPoint(1).SetY(7);
+        aCurve.GetPoint(1) = aCurve.GetPoint(1).WithY(7);
         Assert.Equal(1.5, aCurve.GetParameter(1));
         Assert.Equal(7, aCurve.GetPoint(1).Y());
 

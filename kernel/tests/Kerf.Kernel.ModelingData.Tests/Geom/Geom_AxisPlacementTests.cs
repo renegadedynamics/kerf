@@ -80,15 +80,15 @@ public class Geom_AxisPlacementTests
 
         Direction3D aNewMain = new(1, 0, 0);
         Frame3D AD = A;
-        AD.SetDirection(aNewMain);
+        AD = AD.WithDirection(aNewMain);
         AssertAx2(AD, (Axis2Placement)G.WithDirection(aNewMain));
 
         Frame3D AX = A;
-        AX.SetXDirection(new Direction3D(1, 0, 0));
+        AX = AX.WithXDirection(new Direction3D(1, 0, 0));
         AssertAx2(AX, G.WithXDirection(new Direction3D(1, 0, 0)));
 
         Frame3D AY = A;
-        AY.SetYDirection(new Direction3D(1, 0, 0));
+        AY = AY.WithYDirection(new Direction3D(1, 0, 0));
         AssertAx2(AY, G.WithYDirection(new Direction3D(1, 0, 0)));
 
         Frame3D AOther = new(new Point3D(5, 5, 5), new Direction3D(0, 1, 0));

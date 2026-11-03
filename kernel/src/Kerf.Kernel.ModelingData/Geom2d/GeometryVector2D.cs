@@ -22,7 +22,7 @@ public abstract class GeometryVector2D : Geometry2D
     internal void Reverse()
     {
         CheckMutable();
-        _gpVec2d.Reverse();
+        _gpVec2d = _gpVec2d.Reversed();
     }
 
     /// <summary>A reversed copy.</summary>

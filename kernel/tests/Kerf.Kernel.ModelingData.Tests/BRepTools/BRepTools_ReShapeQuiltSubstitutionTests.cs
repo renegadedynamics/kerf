@@ -175,7 +175,7 @@ public class BRepTools_ReShapeQuiltSubstitutionTests
         Vertex aA = TestShapes.Frozen(TestShapes.Vertex(new Point3D(0, 0, 0)));
         Vertex aB = TestShapes.Frozen(TestShapes.Vertex(new Point3D(1, 0, 0)));
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 5));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 5));
         var aL = new Placement(aT);
 
         // Without the mode, a located copy of a recorded shape isn't recorded (IsSame compares locations).

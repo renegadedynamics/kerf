@@ -864,7 +864,7 @@ public sealed partial class ImpImpIntersection
                     glig.SetFirstPoint(1);
                     slin.Append(glig);
                     // 2
-                    linsol.SetDirection(linsol.Direction().Reversed());
+                    linsol = linsol.WithDirection(linsol.Direction().Reversed());
                     para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                     aPtsol.SetParameter(para);
 
@@ -906,7 +906,7 @@ public sealed partial class ImpImpIntersection
                         glig.SetFirstPoint(1);
                         slin.Append(glig);
                         // 2,4
-                        linsol.SetDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, pApex1);
                         aPtsol.SetParameter(para);
                         glig = new GLine(linsol, false, trans1, trans2);

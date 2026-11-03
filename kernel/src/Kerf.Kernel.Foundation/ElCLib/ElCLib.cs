@@ -689,7 +689,7 @@ public static class ElCLib
         // V2 :
         vxy.SetLinearForm(xc, xdir, yc, ydir);
         v2 = new Vector2D(vxy);
-        v2.Reverse();
+        v2 = v2.Reversed();
         vxy.Add(pos.Location().XY());
         p = new Point2D(vxy);
         // V1 :
@@ -708,7 +708,7 @@ public static class ElCLib
         // V2 :
         vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir);
         v2 = new Vector2D(vxy);
-        v2.Reverse();
+        v2 = v2.Reversed();
         // Point courant :
         vxy.Add(pos.Location().XY());
         p = new Point2D(vxy);
@@ -772,7 +772,7 @@ public static class ElCLib
         // V2 :
         vxy.SetLinearForm(xc, xdir, yc, ydir);
         v2 = new Vector2D(vxy);
-        v2.Reverse();
+        v2 = v2.Reversed();
         // Point courant :
         vxy.Add(pos.Location().XY());
         p = new Point2D(vxy);
@@ -781,7 +781,7 @@ public static class ElCLib
         v1 = new Vector2D(vxy);
         // V3 :
         v3 = new Vector2D(vxy);
-        v3.Reverse();
+        v3 = v3.Reversed();
     }
 
     public static void EllipseD3(double u, in Frame2D pos, double majorRadius, double minorRadius,
@@ -795,7 +795,7 @@ public static class ElCLib
         // V2 :
         vxy.SetLinearForm(xc * majorRadius, xdir, yc * minorRadius, ydir);
         v2 = new Vector2D(vxy);
-        v2.Reverse();
+        v2 = v2.Reversed();
         // Point courant :
         vxy.Add(pos.Location().XY());
         p = new Point2D(vxy);
@@ -804,7 +804,7 @@ public static class ElCLib
         v1 = new Vector2D(vxy);
         // V3 :
         v3 = new Vector2D(vxy);
-        v3.Reverse();
+        v3 = v3.Reversed();
     }
 
     public static void HyperbolaD3(double u, in Frame2D pos, double majorRadius, double minorRadius,
@@ -1198,9 +1198,9 @@ public static class ElCLib
     {
         Vector3D vx = new Vector3D(pos.XDirection());
         Vector3D vy = new Vector3D(pos.YDirection());
-        vx.Multiply(v.X());
-        vy.Multiply(v.Y());
-        vx.Add(vy);
+        vx = vx.Multiplied(v.X());
+        vy = vy.Multiplied(v.Y());
+        vx = vx.Added(vy);
         return new Direction3D(vx);
     }
 
@@ -1208,9 +1208,9 @@ public static class ElCLib
     {
         Vector3D vx = new Vector3D(pos.XDirection());
         Vector3D vy = new Vector3D(pos.YDirection());
-        vx.Multiply(v.X());
-        vy.Multiply(v.Y());
-        vx.Add(vy);
+        vx = vx.Multiplied(v.X());
+        vy = vy.Multiplied(v.Y());
+        vx = vx.Added(vy);
         return vx;
     }
 

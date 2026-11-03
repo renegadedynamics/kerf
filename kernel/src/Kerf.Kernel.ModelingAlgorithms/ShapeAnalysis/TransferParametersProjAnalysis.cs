@@ -696,7 +696,7 @@ public class TransferParametersProjAnalysis : TransferParametersAnalysis
             Curve2D ac2d1    = toGC.PCurve()!;
             Point2D     p2d     = ac2d1.Value(apar);
             Point3D       p3d     = surface1.Value(p2d.X(), p2d.Y());
-            p3d.Transform(l.Transformation());
+            p3d = p3d.Transformed(l.Transformation());
             double adist = pv.Distance(p3d);
             if (adist > tol)
             {

@@ -434,7 +434,7 @@ internal abstract class OneAxis
             // make the empty face by translating the axes
             double z = MeridianValue(_vMax).Y();
             Vector3D v = new(_axes.Direction());
-            v.Multiply(z);
+            v = v.Multiplied(z);
             _builder.MakeFace(ref _faces[Ftop], new Plane3D(new CoordinateSystem(_axes.Translated(v))));
 
             _builder.AddFaceWire(_faces[Ftop], TopWire());
@@ -470,7 +470,7 @@ internal abstract class OneAxis
             // make the empty face by translating the axes
             double z = MeridianValue(_vMin).Y();
             Vector3D v = new(_axes.Direction());
-            v.Multiply(z);
+            v = v.Multiplied(z);
             Frame3D axes = _axes.Translated(v);
             _builder.MakeFace(ref _faces[Fbottom], new Plane3D(new CoordinateSystem(axes)));
             _builder.ReverseFace(ref _faces[Fbottom]);
@@ -565,7 +565,7 @@ internal abstract class OneAxis
 
             // build the empty face, perpendicular to myTool.Axes()
             Frame3D axes = new(_axes.Location(), _axes.YDirection().Reversed(), _axes.XDirection());
-            axes.Rotate(_axes.Axis(), _angle);
+            axes = axes.Rotated(_axes.Axis(), _angle);
             _builder.MakeFace(ref _faces[Fend], new Plane3D(new CoordinateSystem(axes)));
 
             // When heights are inverted, the wire traversal direction changes due to the AxisEdge running in the
@@ -981,7 +981,7 @@ internal abstract class OneAxis
 
             // build the empty Edge
             Vector3D v = new(_axes.Direction());
-            v.Multiply(MeridianValue(_vMax).Y());
+            v = v.Multiplied(MeridianValue(_vMax).Y());
             Point3D p = _axes.Location().Translated(v);
             _builder.MakeEdge(ref _edges[Etopstart], new Line3D(p, _axes.XDirection()));
 
@@ -1004,7 +1004,7 @@ internal abstract class OneAxis
 
             // build the empty Edge
             Vector3D v = new(_axes.Direction());
-            v.Multiply(MeridianValue(_vMin).Y());
+            v = v.Multiplied(MeridianValue(_vMin).Y());
             Point3D p = _axes.Location().Translated(v);
             _builder.MakeEdge(ref _edges[Ebotstart], new Line3D(p, _axes.XDirection()));
 
@@ -1027,10 +1027,10 @@ internal abstract class OneAxis
 
             // build the empty Edge
             Vector3D v = new(_axes.Direction());
-            v.Multiply(MeridianValue(_vMax).Y());
+            v = v.Multiplied(MeridianValue(_vMax).Y());
             Point3D p = _axes.Location().Translated(v);
             Line3D l = new(p, _axes.XDirection());
-            l.Rotate(_axes.Axis(), _angle);
+            l = l.Rotated(_axes.Axis(), _angle);
             _builder.MakeEdge(ref _edges[Etopend], l);
 
             _builder.AddEdgeVertex(_edges[Etopend], AxisTopVertex(), 0.0, true);
@@ -1052,10 +1052,10 @@ internal abstract class OneAxis
 
             // build the empty Edge
             Vector3D v = new(_axes.Direction());
-            v.Multiply(MeridianValue(_vMin).Y());
+            v = v.Multiplied(MeridianValue(_vMin).Y());
             Point3D p = _axes.Location().Translated(v);
             Line3D l = new(p, _axes.XDirection());
-            l.Rotate(_axes.Axis(), _angle);
+            l = l.Rotated(_axes.Axis(), _angle);
             _builder.MakeEdge(ref _edges[Ebotend], l);
 
             _builder.AddEdgeVertex(_edges[Ebotend], AxisBottomVertex(), 0.0, true);
@@ -1085,7 +1085,7 @@ internal abstract class OneAxis
                 {
                     Point2D mp = MeridianValue(_vMax);
                     Vector3D v = new(_axes.Direction());
-                    v.Multiply(mp.Y());
+                    v = v.Multiplied(mp.Y());
                     Point3D p = _axes.Location().Translated(v);
                     Circle3D c = new(new Frame3D(p, _axes.Direction(), _axes.XDirection()), mp.X());
                     _builder.MakeEdge(ref _edges[Etop], c);
@@ -1131,7 +1131,7 @@ internal abstract class OneAxis
                 {
                     Point2D mp = MeridianValue(_vMin);
                     Vector3D v = new(_axes.Direction());
-                    v.Multiply(mp.Y());
+                    v = v.Multiplied(mp.Y());
                     Point3D p = _axes.Location().Translated(v);
                     Circle3D c = new(new Frame3D(p, _axes.Direction(), _axes.XDirection()), mp.X());
                     _builder.MakeEdge(ref _edges[Ebottom], c);
@@ -1185,7 +1185,7 @@ internal abstract class OneAxis
                 Standard_DomainError_Raise_if(VMaxInfinite(), "BRepPrim_OneAxis::AxisTopVertex");
 
                 Vector3D v = new(_axes.Direction());
-                v.Multiply(MeridianValue(_vMax).Y());
+                v = v.Multiplied(MeridianValue(_vMax).Y());
                 Point3D p = _axes.Location().Translated(v);
                 _builder.MakeVertex(ref _vertices[Vaxistop], p);
             }
@@ -1221,7 +1221,7 @@ internal abstract class OneAxis
                 Standard_DomainError_Raise_if(VMinInfinite(), "BRepPrim_OneAxis::AxisBottomVertex");
 
                 Vector3D v = new(_axes.Direction());
-                v.Multiply(MeridianValue(_vMin).Y());
+                v = v.Multiplied(MeridianValue(_vMin).Y());
                 Point3D p = _axes.Location().Translated(v);
                 _builder.MakeVertex(ref _vertices[Vaxisbot], p);
             }
@@ -1258,11 +1258,11 @@ internal abstract class OneAxis
             {
                 Point2D mp = MeridianValue(_vMax);
                 Vector3D v = new(_axes.Direction());
-                v.Multiply(mp.Y());
+                v = v.Multiplied(mp.Y());
                 Point3D p = _axes.Location().Translated(v);
                 v = new Vector3D(_axes.XDirection());
-                v.Multiply(mp.X());
-                p.Translate(v);
+                v = v.Multiplied(mp.X());
+                p = p.Translated(v);
                 _builder.MakeVertex(ref _vertices[Vtopstart], p);
             }
 
@@ -1298,12 +1298,12 @@ internal abstract class OneAxis
             {
                 Point2D mp = MeridianValue(_vMax);
                 Vector3D v = new(_axes.Direction());
-                v.Multiply(mp.Y());
+                v = v.Multiplied(mp.Y());
                 Point3D p = _axes.Location().Translated(v);
                 v = new Vector3D(_axes.XDirection());
-                v.Multiply(mp.X());
-                p.Translate(v);
-                p.Rotate(_axes.Axis(), _angle);
+                v = v.Multiplied(mp.X());
+                p = p.Translated(v);
+                p = p.Rotated(_axes.Axis(), _angle);
                 _builder.MakeVertex(ref _vertices[Vtopend], p);
             }
 
@@ -1339,11 +1339,11 @@ internal abstract class OneAxis
             {
                 Point2D mp = MeridianValue(_vMin);
                 Vector3D v = new(_axes.Direction());
-                v.Multiply(mp.Y());
+                v = v.Multiplied(mp.Y());
                 Point3D p = _axes.Location().Translated(v);
                 v = new Vector3D(_axes.XDirection());
-                v.Multiply(mp.X());
-                p.Translate(v);
+                v = v.Multiplied(mp.X());
+                p = p.Translated(v);
                 _builder.MakeVertex(ref _vertices[Vbotstart], p);
             }
 
@@ -1379,12 +1379,12 @@ internal abstract class OneAxis
             {
                 Point2D mp = MeridianValue(_vMin);
                 Vector3D v = new(_axes.Direction());
-                v.Multiply(mp.Y());
+                v = v.Multiplied(mp.Y());
                 Point3D p = _axes.Location().Translated(v);
                 v = new Vector3D(_axes.XDirection());
-                v.Multiply(mp.X());
-                p.Translate(v);
-                p.Rotate(_axes.Axis(), _angle);
+                v = v.Multiplied(mp.X());
+                p = p.Translated(v);
+                p = p.Rotated(_axes.Axis(), _angle);
                 _builder.MakeVertex(ref _vertices[Vbotend], p);
             }
 

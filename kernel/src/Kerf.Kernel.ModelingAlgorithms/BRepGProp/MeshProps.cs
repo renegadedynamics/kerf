@@ -78,12 +78,12 @@ public class MeshProps : Properties
             //
             Transform3D trInv = tr.Inverted();
             Point3D loc_save = _loc;
-            _loc.Transform(trInv);
+            _loc = _loc.Transformed(trInv);
             Perform(mesh, ori);
             // Computes the inertia tensor at mesh gravity center
             Matrix3x3 hMat, inertia0;
             Point3D g0 = _g;
-            _g.SetXYZ(_g.XYZ() + _loc.XYZ());
+            _g = _g.WithXYZ(_g.XYZ() + _loc.XYZ());
             if (g0.XYZ().Modulus() > Constants.Resolution())
             {
                 global::Kerf.Engine.Measurement.GProp.HOperator(_g, _loc, _dim, out hMat);
@@ -97,12 +97,12 @@ public class MeshProps : Properties
             // Transform inertia tensor for rotation
             Matrix3x3 hVec = trInv.HVectorialPart();
             Matrix3x3 hVecT = hVec.Transposed();
-            hVecT.Multiply(inertia0);
+            hVecT = hVecT.Multiplied(inertia0);
             inertia0 = hVecT.Multiplied(hVec);
             // Put gravity center in true position of mesh
-            _g.Transform(tr);
+            _g = _g.Transformed(tr);
             g0 = _g;
-            _g.SetXYZ(_g.XYZ() - loc_save.XYZ());
+            _g = _g.WithXYZ(_g.XYZ() - loc_save.XYZ());
             _loc = loc_save;
             //
             // Computes the inertia tensor for loc
@@ -163,26 +163,26 @@ public class MeshProps : Properties
         _dim = gProps[0];
         if (Math.Abs(_dim) >= 1.0e-20) // To be consistent with GProp_GProps
         {
-            _g.SetX(gProps[1] / _dim);
-            _g.SetY(gProps[2] / _dim);
-            _g.SetZ(gProps[3] / _dim);
+            _g = _g.WithX(gProps[1] / _dim);
+            _g = _g.WithY(gProps[2] / _dim);
+            _g = _g.WithZ(gProps[3] / _dim);
         }
         else
         {
-            _g.SetX(gProps[1]);
-            _g.SetY(gProps[2]);
-            _g.SetZ(gProps[3]);
+            _g = _g.WithX(gProps[1]);
+            _g = _g.WithY(gProps[2]);
+            _g = _g.WithZ(gProps[3]);
         }
 
-        _inertia.SetValue(1, 1, gProps[4]);
-        _inertia.SetValue(1, 2, -gProps[7]);
-        _inertia.SetValue(1, 3, -gProps[8]);
-        _inertia.SetValue(2, 1, -gProps[7]);
-        _inertia.SetValue(2, 2, gProps[5]);
-        _inertia.SetValue(2, 3, -gProps[9]);
-        _inertia.SetValue(3, 1, -gProps[8]);
-        _inertia.SetValue(3, 2, -gProps[9]);
-        _inertia.SetValue(3, 3, gProps[6]);
+        _inertia = _inertia.WithValue(1, 1, gProps[4]);
+        _inertia = _inertia.WithValue(1, 2, -gProps[7]);
+        _inertia = _inertia.WithValue(1, 3, -gProps[8]);
+        _inertia = _inertia.WithValue(2, 1, -gProps[7]);
+        _inertia = _inertia.WithValue(2, 2, gProps[5]);
+        _inertia = _inertia.WithValue(2, 3, -gProps[9]);
+        _inertia = _inertia.WithValue(3, 1, -gProps[8]);
+        _inertia = _inertia.WithValue(3, 2, -gProps[9]);
+        _inertia = _inertia.WithValue(3, 3, gProps[6]);
     }
 
     /// <summary>

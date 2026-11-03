@@ -342,7 +342,7 @@ public sealed partial class PolyhedronMaillageAffinage
                 Vector3D norm = pn.Normal.Multiplied(1.5 * deflTol);
                 if (!isShiftFwd)
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
 
                 Point3D p = pn.Point.Translated(norm);
@@ -1848,12 +1848,12 @@ public sealed partial class PolyhedronMaillageAffinage
         //
         if (de > SquareMyConfusionPrecision)
         {
-            ve.Divide(de);
+            ve = ve.Divided(de);
         }
         //
         if (dc > SquareMyConfusionPrecision)
         {
-            vc.Divide(dc);
+            vc = vc.Divided(dc);
         }
         //
         if (!ve.IsParallel(vc, MyConfusionPrecision))

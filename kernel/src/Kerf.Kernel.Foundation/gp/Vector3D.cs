@@ -148,7 +148,7 @@ public partial struct Vector3D : IEquatable<Vector3D>
     internal void Rotate(in Axis3D a1, double ang)
     {
         Transform3D t = new();
-        t.SetRotation(a1, ang);
+        t = t.WithRotation(a1, ang);
         _coord.Multiply(t.VectorialPart());
     }
 
@@ -174,6 +174,55 @@ public partial struct Vector3D : IEquatable<Vector3D>
     }
 
     // Copies with a mutator applied
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, double a3, in Vector3D v3, in Vector3D v4)
+    {
+        Xyz coord = default;
+        coord.SetLinearForm(a1, v1._coord, a2, v2._coord, a3, v3._coord, v4._coord);
+        return new Vector3D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, double a3, in Vector3D v3)
+    {
+        Xyz coord = default;
+        coord.SetLinearForm(a1, v1._coord, a2, v2._coord, a3, v3._coord);
+        return new Vector3D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2, in Vector3D v3)
+    {
+        Xyz coord = default;
+        coord.SetLinearForm(a1, v1._coord, a2, v2._coord, v3._coord);
+        return new Vector3D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector3D LinearForm(double a1, in Vector3D v1, double a2, in Vector3D v2)
+    {
+        Xyz coord = default;
+        coord.SetLinearForm(a1, v1._coord, a2, v2._coord);
+        return new Vector3D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector3D LinearForm(double a1, in Vector3D v1, in Vector3D v2)
+    {
+        Xyz coord = default;
+        coord.SetLinearForm(a1, v1._coord, v2._coord);
+        return new Vector3D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector3D LinearForm(in Vector3D v1, in Vector3D v2)
+    {
+        Xyz coord = default;
+        coord.SetLinearForm(v1._coord, v2._coord);
+        return new Vector3D(coord);
+    }
+
 
     public readonly Vector3D WithCoord(int index, double xi)
     {

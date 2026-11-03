@@ -118,7 +118,7 @@ public class SurfaceSweepFunction : SweepFunction
             pPrim *= _m;
             pPrim += _dm * p;
             pPrim += _dv.XYZ();
-            dPoles[ii].SetXYZ(pPrim);
+            dPoles[ii] = dPoles[ii].WithXYZ(pPrim);
 
             p *= _m;
             p += _v.XYZ();
@@ -170,12 +170,12 @@ public class SurfaceSweepFunction : SweepFunction
             pSecn += 2 * (_dm * pPrim);
             pSecn += _d2M * p;
             pSecn += _d2V.XYZ();
-            d2Poles[ii].SetXYZ(pSecn);
+            d2Poles[ii] = d2Poles[ii].WithXYZ(pSecn);
 
             pPrim *= _m;
             pPrim += _dm * p;
             pPrim += _dv.XYZ();
-            dPoles[ii].SetXYZ(pPrim);
+            dPoles[ii] = dPoles[ii].WithXYZ(pPrim);
 
             p *= _m;
             p += _v.XYZ();

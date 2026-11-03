@@ -112,7 +112,7 @@ internal sealed class Rotation : Trsf
         Vertex v = new();
         if (aDirV.Index() == 2)
         {
-            p.Transform(_location.Transformation());
+            p = p.Transformed(_location.Transformation());
         }
         ////// modified by jgv, 1.10.01, for buc61005 //////
         // myBuilder.Builder().MakeVertex(V,P,Precision::Confusion());
@@ -133,7 +133,7 @@ internal sealed class Rotation : Trsf
         Direction3D dirz = _axe.Direction();
         var v = new Vector3D(dirz);
         Point3D o = _axe.Location();
-        o.Translate(v.Dot(new Vector3D(o, p)) * v);
+        o = o.Translated(v.Dot(new Vector3D(o, p)) * v);
         if (o.IsEqual(p, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // make a degenerated edge
@@ -332,14 +332,14 @@ internal sealed class Rotation : Trsf
                 }
             }
             Line3D gl = GL!.Lin();
-            gl.Transform(loc.Transformation());
+            gl = gl.Transformed(loc.Transformation());
             point = gl.Location();
             Direction3D dir = gl.Direction();
             global::Kerf.Engine.Geometry.ElSLib.PlaneParameters(ax3, point, out u, out v);
-            pnt2d.SetCoord(u, v);
-            dir2d.SetCoord(dir.Dot(ax3.XDirection()), dir.Dot(ax3.YDirection()));
-            l.SetLocation(pnt2d);
-            l.SetDirection(dir2d);
+            pnt2d = pnt2d.WithCoord(u, v);
+            dir2d = dir2d.WithCoord(dir.Dot(ax3.XDirection()), dir.Dot(ax3.YDirection()));
+            l = l.WithLocation(pnt2d);
+            l = l.WithDirection(dir2d);
         }
         else if (AS.GetType() == SurfaceKind.Torus)
         {
@@ -374,9 +374,9 @@ internal sealed class Rotation : Trsf
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(-Math.PI, Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref u, ref uRight);
             }
             //  modified by NIZHNY-EAP Wed Mar  1 17:49:32 2000 ___END___
-            pnt2d.SetCoord(u, v - U);
-            l.SetLocation(pnt2d);
-            l.SetDirection(Constants.DY2d());
+            pnt2d = pnt2d.WithCoord(u, v - U);
+            l = l.WithLocation(pnt2d);
+            l = l.WithDirection(Constants.DY2d());
         }
         else if (AS.GetType() == SurfaceKind.Sphere)
         {
@@ -390,9 +390,9 @@ internal sealed class Rotation : Trsf
             {
                 u = _ang;
             }
-            pnt2d.SetCoord(u, v - U);
-            l.SetLocation(pnt2d);
-            l.SetDirection(Constants.DY2d());
+            pnt2d = pnt2d.WithCoord(u, v - U);
+            l = l.WithLocation(pnt2d);
+            l = l.WithDirection(Constants.DY2d());
         }
         else
         {
@@ -401,8 +401,8 @@ internal sealed class Rotation : Trsf
             {
                 angleTemp = _ang;
             }
-            l.SetLocation(new Point2D(angleTemp, 0));
-            l.SetDirection(Constants.DY2d());
+            l = l.WithLocation(new Point2D(angleTemp, 0));
+            l = l.WithDirection(Constants.DY2d());
         }
         var gl2 = new LineCurve2D(l);
         SetThePCurve(_builder.Builder(), ShapeCasts.Edge(aNewEdge), ShapeCasts.Face(aNewFace), orien, gl2);
@@ -438,7 +438,7 @@ internal sealed class Rotation : Trsf
             {
                 Cone cone = AS.Cone();
                 global::Kerf.Engine.Geometry.ElSLib.ConeParameters(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p2, out u, out v);
-                p22d.SetCoord(0.0, v);
+                p22d = p22d.WithCoord(0.0, v);
                 var l = new Line2D(p22d, Constants.DX2d());
                 var gl = new LineCurve2D(l);
                 thePCurve = gl;
@@ -448,7 +448,7 @@ internal sealed class Rotation : Trsf
             {
                 Sphere sph = AS.Sphere();
                 global::Kerf.Engine.Geometry.ElSLib.SphereParameters(sph.Position(), sph.Radius(), p2, out u, out v);
-                p22d.SetCoord(0.0, v);
+                p22d = p22d.WithCoord(0.0, v);
                 var l = new Line2D(p22d, Constants.DX2d());
                 var gl = new LineCurve2D(l);
                 thePCurve = gl;
@@ -487,11 +487,11 @@ internal sealed class Rotation : Trsf
                 global::Kerf.Engine.Geometry.ElCLib.AdjustPeriodic(-Math.PI, Math.PI, global::Kerf.Engine.Foundation.Precision.PConfusion(), ref u1, ref u2);
                 if (aGenV.Orientation() == Forward)
                 {
-                    p22d.SetCoord(u1, v1);
+                    p22d = p22d.WithCoord(u1, v1);
                 }
                 else
                 {
-                    p22d.SetCoord(u1, v2);
+                    p22d = p22d.WithCoord(u1, v2);
                     //  modified by NIZHNY-EAP Thu Mar  2 09:43:32 2000 ___END___
                 }
                 var l = new Line2D(p22d, Constants.DX2d());
@@ -501,7 +501,7 @@ internal sealed class Rotation : Trsf
             break;
             default:
             {
-                p22d.SetCoord(0.0, par);
+                p22d = p22d.WithCoord(0.0, par);
                 var l = new Line2D(p22d, Constants.DX2d());
                 var gl = new LineCurve2D(l);
                 thePCurve = gl;
@@ -535,7 +535,7 @@ internal sealed class Rotation : Trsf
         surf.D1(ux, vx, out Point3D p, out Vector3D du, out Vector3D dv);
         //
         var v = new Vector3D(pAxeLoc, p);
-        v.Cross(new Vector3D(pAxeDir));
+        v = v.Crossed(new Vector3D(pAxeDir));
         mv2 = v.SquareMagnitude();
         if (mv2 < tol2)
         {
@@ -543,8 +543,8 @@ internal sealed class Rotation : Trsf
             ux = u1 * (1.0 - tx) + u2 * tx;
             vx = v1 * (1.0 - tx) + v2 * tx;
             surf.D1(ux, vx, out p, out du, out dv);
-            v.SetXYZ(p.XYZ() - pAxeLoc.XYZ());
-            v.Cross(new Vector3D(pAxeDir));
+            v = v.WithXYZ(p.XYZ() - pAxeLoc.XYZ());
+            v = v.Crossed(new Vector3D(pAxeDir));
         }
         //
         x = v.DotCross(du, dv);

@@ -274,7 +274,7 @@ internal static partial class SWDrawShapeUpgradeCommands
         double aDy = theDI.Atof(argv[4]);
         double aDz = theDI.Atof(argv[5]);
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(aDx, aDy, aDz));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(aDx, aDy, aDz));
         var builderTransform = new Transform(aTrsf);
         builderTransform.Perform(aShape, true);
         Shape aNewShape = builderTransform.Shape();

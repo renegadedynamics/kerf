@@ -220,7 +220,7 @@ public static class Customize
     {
         // Create a modification description
         Transform3D t = new Transform3D();
-        t.SetScale(new Point3D(0, 0, 0), scale);
+        t = t.WithScale(new Point3D(0, 0, 0), scale);
         CustomTrsfModification tm = new CustomTrsfModification(t);
         var context = new NCollection_DataMap<Shape, Shape>(ShapeHasher.Instance);
         Modifier md = new Modifier();

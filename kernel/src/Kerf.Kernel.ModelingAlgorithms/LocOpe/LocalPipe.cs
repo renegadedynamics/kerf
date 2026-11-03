@@ -158,7 +158,7 @@ public sealed class LocalPipe
                         Direction3D dirref = plref.Axis().Direction();
                         if ((plref.Direct() && orref == Reversed) || (!plref.Direct() && orref == Forward))
                         {
-                            dirref.Reverse();
+                            dirref = dirref.Reversed();
                         }
 
                         // OCCT iterates this map (keyed by the edges' addresses) to build the fused face's wire: the
@@ -207,7 +207,7 @@ public sealed class LocalPipe
                                 // OCCT: the second test reads the reference plane's Direct (occt-issues.md)
                                 if ((pl.Direct() && orrelat == Reversed) || (!plref.Direct() && orrelat == Forward))
                                 {
-                                    dirpl.Reverse();
+                                    dirpl = dirpl.Reversed();
                                 }
                                 if (dirpl.Dot(dirref) > 0)
                                 {

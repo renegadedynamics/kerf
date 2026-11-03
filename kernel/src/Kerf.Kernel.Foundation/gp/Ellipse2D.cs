@@ -79,8 +79,8 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
     internal void Reverse()
     {
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        _pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
     }
 
     internal void Mirror(in Point2D p) => _pos.Mirror(p);
@@ -103,7 +103,7 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform2D t)
@@ -116,7 +116,7 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
 
         _majorRadius *= tSca;
         _minorRadius *= tSca;
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector2D v) => _pos.Translate(v);
@@ -186,7 +186,7 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
         else
         {
             Transform2D t = new();
-            t.SetTransformation(_pos.XAxis());
+            t = t.WithTransformation(_pos.XAxis());
             double t11 = t.Value(1, 1);
             double t12 = t.Value(1, 2);
             double t13 = t.Value(1, 3);
@@ -301,29 +301,29 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
     {
         Ellipse2D e = this;
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        e._pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        e._pos = e._pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
         return e;
     }
 
     public readonly Ellipse2D Mirrored(in Point2D p)
     {
         Ellipse2D e = this;
-        e._pos.Mirror(p);
+        e._pos = e._pos.Mirrored(p);
         return e;
     }
 
     public readonly Ellipse2D Mirrored(in Axis2D a)
     {
         Ellipse2D e = this;
-        e._pos.Mirror(a);
+        e._pos = e._pos.Mirrored(a);
         return e;
     }
 
     public readonly Ellipse2D Rotated(in Point2D p, double ang)
     {
         Ellipse2D e = this;
-        e._pos.Rotate(p, ang);
+        e._pos = e._pos.Rotated(p, ang);
         return e;
     }
 
@@ -342,7 +342,7 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
             e._minorRadius = -e._minorRadius;
         }
 
-        e._pos.Scale(p, s);
+        e._pos = e._pos.Scaled(p, s);
         return e;
     }
 
@@ -361,21 +361,21 @@ public partial struct Ellipse2D : IEquatable<Ellipse2D>
             e._minorRadius = -e._minorRadius;
         }
 
-        e._pos.Transform(t);
+        e._pos = e._pos.Transformed(t);
         return e;
     }
 
     public readonly Ellipse2D Translated(in Vector2D v)
     {
         Ellipse2D e = this;
-        e._pos.Translate(v);
+        e._pos = e._pos.Translated(v);
         return e;
     }
 
     public readonly Ellipse2D Translated(in Point2D p1, in Point2D p2)
     {
         Ellipse2D e = this;
-        e._pos.Translate(p1, p2);
+        e._pos = e._pos.Translated(p1, p2);
         return e;
     }
 

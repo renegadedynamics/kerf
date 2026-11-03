@@ -182,7 +182,7 @@ public class GeomEval_HypParaboloidSurfaceTest
         CoordinateSystem anAx3 = new();
         HypParaboloidSurface aSurf = new(anAx3, 2.0, 3.0);
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));

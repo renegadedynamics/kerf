@@ -85,8 +85,8 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
     internal void Reverse()
     {
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        _pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
     }
 
     internal void Mirror(in Point2D p) => _pos.Mirror(p);
@@ -103,7 +103,7 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
             _focalLength = -_focalLength;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform2D t)
@@ -114,7 +114,7 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
             _focalLength = -_focalLength;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector2D v) => _pos.Translate(v);
@@ -161,7 +161,7 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
     {
         double p = 2.0 * _focalLength;
         Transform2D t = new();
-        t.SetTransformation(_pos.XAxis());
+        t = t.WithTransformation(_pos.XAxis());
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -208,29 +208,29 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
     {
         Parabola2D p = this;
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        p._pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        p._pos = p._pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
         return p;
     }
 
     public readonly Parabola2D Mirrored(in Point2D p)
     {
         Parabola2D prb = this;
-        prb._pos.Mirror(p);
+        prb._pos = prb._pos.Mirrored(p);
         return prb;
     }
 
     public readonly Parabola2D Mirrored(in Axis2D a)
     {
         Parabola2D prb = this;
-        prb._pos.Mirror(a);
+        prb._pos = prb._pos.Mirrored(a);
         return prb;
     }
 
     public readonly Parabola2D Rotated(in Point2D p, double ang)
     {
         Parabola2D prb = this;
-        prb._pos.Rotate(p, ang);
+        prb._pos = prb._pos.Rotated(p, ang);
         return prb;
     }
 
@@ -243,7 +243,7 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
             prb._focalLength = -prb._focalLength;
         }
 
-        prb._pos.Scale(p, s);
+        prb._pos = prb._pos.Scaled(p, s);
         return prb;
     }
 
@@ -256,21 +256,21 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
             prb._focalLength = -prb._focalLength;
         }
 
-        prb._pos.Transform(t);
+        prb._pos = prb._pos.Transformed(t);
         return prb;
     }
 
     public readonly Parabola2D Translated(in Vector2D v)
     {
         Parabola2D prb = this;
-        prb._pos.Translate(v);
+        prb._pos = prb._pos.Translated(v);
         return prb;
     }
 
     public readonly Parabola2D Translated(in Point2D p1, in Point2D p2)
     {
         Parabola2D prb = this;
-        prb._pos.Translate(p1, p2);
+        prb._pos = prb._pos.Translated(p1, p2);
         return prb;
     }
 

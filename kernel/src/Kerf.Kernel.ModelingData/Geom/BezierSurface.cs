@@ -1865,7 +1865,7 @@ public class BezierSurface : BoundedSurface
         {
             for (int j = 1; j <= _poles.RowLength(); j++)
             {
-                _poles[i, j].Transform(t);
+                _poles[i, j] = _poles[i, j].Transformed(t);
             }
         }
         ClearEvalRepresentation();

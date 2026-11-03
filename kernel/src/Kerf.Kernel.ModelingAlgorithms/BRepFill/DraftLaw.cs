@@ -46,10 +46,10 @@ public sealed class DraftLaw : Edge3DLaw
             _laws.Value(ipath - 1).D0(last, ref m1, ref v);
             _laws.Value(ipath).GetDomain(out first, out last);
             _laws.Value(ipath).D0(first, ref m2, ref v);
-            t1.SetXYZ(m1.Column(3));
-            t2.SetXYZ(m2.Column(3));
-            n1.SetXYZ(m1.Column(1));
-            n2.SetXYZ(m2.Column(1));
+            t1 = t1.WithXYZ(m1.Column(3));
+            t2 = t2.WithXYZ(m2.Column(3));
+            n1 = n1.WithXYZ(m1.Column(1));
+            n2 = n2.WithXYZ(m2.Column(1));
             if (n1.IsParallel(n2, tolAngular))
             { // Correction G0 des normales...
                 ToG0(m1, m2, out trsf);

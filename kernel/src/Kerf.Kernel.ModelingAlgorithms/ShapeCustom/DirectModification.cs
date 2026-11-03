@@ -209,23 +209,23 @@ public class DirectModification : CustomModification
                 case 1:
                 { // Indirect surface
                     // mirror the PCurve about the V axis
-                    t.SetMirror(Constants.OY2d());
+                    t = t.WithMirror(Constants.OY2d());
                     c = (Curve2D)c!.Transformed(t);
                     break;
                 }
                 case 2:
                 { // Negative cone
                     // mirror the PCurve about the U and V axis
-                    t.SetMirror(Constants.OX2d());
+                    t = t.WithMirror(Constants.OX2d());
                     c = (Curve2D)c!.Transformed(t);
-                    t.SetMirror(Constants.OY2d());
+                    t = t.WithMirror(Constants.OY2d());
                     c.Transform(t);
                     break;
                 }
                 case 3:
                 { // Indirect negative cone
                     // mirror the PCurve about the U axis
-                    t.SetMirror(Constants.OX2d());
+                    t = t.WithMirror(Constants.OX2d());
                     c = (Curve2D)c!.Transformed(t);
                     break;
                 }

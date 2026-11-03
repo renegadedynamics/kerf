@@ -1205,7 +1205,7 @@ public class BSplineCurve3D : BoundedCurve3D
         Vector3D delta = new Vector3D(p0, p);
         for (ii = 1; ii <= 3; ii++)
         {
-            delta_derivative.SetCoord(ii, tangent.Coord(ii) - delta_derivative.Coord(ii));
+            delta_derivative = delta_derivative.WithCoord(ii, tangent.Coord(ii) - delta_derivative.Coord(ii));
         }
         global::Kerf.Engine.Geometry.Splines.BSplCLib.MovePointAndTangent(u,
                                      delta,
@@ -1893,7 +1893,7 @@ public class BSplineCurve3D : BoundedCurve3D
         ClearEvalRepresentation();
         for (int i = 1; i <= _poles.Length(); i++)
         {
-            _poles.ChangeValue(i).Transform(t);
+            _poles.ChangeValue(i) = _poles.ChangeValue(i).Transformed(t);
         }
         _maxDerivInvOk = false;
     }

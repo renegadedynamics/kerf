@@ -971,7 +971,7 @@ public partial class PWalking
                 int pInd = 1;
                 for (; pInd <= nbPnts; pInd++)
                 {
-                    p1.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    p1 = p1.WithXYZ(_line.Value(pInd).Value().XYZ());
                     if (p1.SquareDistance(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
@@ -980,7 +980,7 @@ public partial class PWalking
 
                 for (++pInd; pInd <= nbPnts; pInd++)
                 {
-                    p2.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    p2 = p2.WithXYZ(_line.Value(pInd).Value().XYZ());
                     if (p1.SquareDistance(p2) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
@@ -1003,7 +1003,7 @@ public partial class PWalking
                 RemoveAPoint(1);
             }
 
-            p1.SetXYZ(_line.Value(1).Value().XYZ());
+            p1 = p1.WithXYZ(_line.Value(1).Value().XYZ());
             if (p1.SquareDistance(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(1);
@@ -1022,7 +1022,7 @@ public partial class PWalking
                 int pInd = nbPnts;
                 for (; pInd > 0; pInd--)
                 {
-                    pCurr.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    pCurr = pCurr.WithXYZ(_line.Value(pInd).Value().XYZ());
                     if (pCurr.SquareDistance(pInt) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
@@ -1031,7 +1031,7 @@ public partial class PWalking
 
                 for (--pInd; pInd > 0; pInd--)
                 {
-                    pPrev.SetXYZ(_line.Value(pInd).Value().XYZ());
+                    pPrev = pPrev.WithXYZ(_line.Value(pInd).Value().XYZ());
                     if (pCurr.SquareDistance(pPrev) > global::Kerf.Engine.Foundation.Precision.SquareConfusion())
                     {
                         break;
@@ -1055,7 +1055,7 @@ public partial class PWalking
             }
 
             int nbPntsL = _line.PointCount;
-            p1.SetXYZ(_line.Value(nbPntsL).Value().XYZ());
+            p1 = p1.WithXYZ(_line.Value(nbPntsL).Value().XYZ());
             if (p1.SquareDistance(pInt) <= global::Kerf.Engine.Foundation.Precision.SquareConfusion())
             {
                 RemoveAPoint(nbPntsL);

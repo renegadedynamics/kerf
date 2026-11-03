@@ -47,7 +47,7 @@ public class SimpleBound : Boundary
             _par.D1(u, out x, out dx);
         }
         _c3d.D1(x, out p, out v);
-        v.Multiply(dx);
+        v = v.Multiplied(dx);
     }
 
     public override void Reparametrize(double first, double last, bool hasDF, bool hasDL, double df, double dl, bool rev)

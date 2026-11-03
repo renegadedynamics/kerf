@@ -476,13 +476,13 @@ public class VinertGK : Properties
                 _dim = 0.0;
             }
 
-            _g.SetCoord(value[2], value[3], value[4]);
+            _g = _g.WithCoord(value[2], value[3], value[4]);
         }
 
         if (iFlag)
         {
             // Fill the matrix of inertia.
-            _inertia.SetCols(new Xyz(value[5], value[8], value[9]),
+            _inertia = _inertia.WithCols(new Xyz(value[5], value[8], value[9]),
                             new Xyz(value[8], value[6], value[10]),
                             new Xyz(value[9], value[10], value[7]));
         }

@@ -864,13 +864,13 @@ public class DraftAngle : ModifyShape
                     if (pfirst.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion() || plast.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion()
                         || pmid.X() - 2.0 * M_PI > global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        offset.SetCoord(-2.0 * M_PI, 0);
+                        offset = offset.WithCoord(-2.0 * M_PI, 0);
                         translate = true;
                     }
                     if (pfirst.X() < -global::Kerf.Engine.Foundation.Precision.Confusion() || plast.X() < -global::Kerf.Engine.Foundation.Precision.Confusion()
                         || pmid.X() < -global::Kerf.Engine.Foundation.Precision.Confusion())
                     {
-                        offset.SetCoord(2.0 * M_PI, 0);
+                        offset = offset.WithCoord(2.0 * M_PI, 0);
                         translate = true;
                     }
                     if (translate)

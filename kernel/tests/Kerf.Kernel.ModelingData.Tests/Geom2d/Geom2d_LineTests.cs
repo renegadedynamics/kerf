@@ -143,7 +143,7 @@ public class Geom2d_LineTest
     public void Transform_Translation()
     {
         Transform2D aTrsf = new Transform2D();
-        aTrsf.SetTranslation(new Vector2D(5.0, 10.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(5.0, 10.0));
         myLine.Transform(aTrsf);
         Assert.Equal(5.0, myLine.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(10.0, myLine.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -153,7 +153,7 @@ public class Geom2d_LineTest
     public void Transform_Rotation()
     {
         Transform2D aTrsf = new Transform2D();
-        aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
+        aTrsf = aTrsf.WithRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
         myLine.Transform(aTrsf);
         // Horizontal line rotated 90 degrees becomes vertical
         Assert.Equal(0.0, myLine.Direction().X(), global::Kerf.Engine.Foundation.Precision.Confusion());

@@ -170,7 +170,7 @@ public class SurfaceNSections : SurfaceSectionLaw
             int ii, l = Poles.Length();
             for (ii = 1; ii <= l; ii++)
             {
-                Poles[ii].SetXYZ(poles[ii].XYZ());
+                Poles[ii] = Poles[ii].WithXYZ(poles[ii].XYZ());
                 Weights[ii] = weights[ii];
             }
         }
@@ -229,9 +229,9 @@ public class SurfaceNSections : SurfaceSectionLaw
         //  recopie des poles du resultat sous forme de points 3D et de poids
         for (ii = 1; ii <= l && (!nullWeight); ii++)
         {
-            dPoles[ii].SetX(result[indice]);
-            dPoles[ii].SetY(result[indice + 1]);
-            dPoles[ii].SetZ(result[indice + 2]);
+            dPoles[ii] = dPoles[ii].WithX(result[indice]);
+            dPoles[ii] = dPoles[ii].WithY(result[indice + 1]);
+            dPoles[ii] = dPoles[ii].WithZ(result[indice + 2]);
             if (rational)
             {
                 ww = weights[ii];
@@ -242,7 +242,7 @@ public class SurfaceNSections : SurfaceSectionLaw
                 else
                 {
                     dWeights[ii] = result[indice + 3];
-                    dPoles[ii].SetXYZ((dPoles[ii].XYZ() - dWeights[ii] * poles[ii].Coord()) / ww);
+                    dPoles[ii] = dPoles[ii].WithXYZ((dPoles[ii].XYZ() - dWeights[ii] * poles[ii].Coord()) / ww);
                 }
             }
             indice += gap;
@@ -310,9 +310,9 @@ public class SurfaceNSections : SurfaceSectionLaw
         //  recopie des poles du resultat sous forme de points 3D et de poids
         for (ii = 1; ii <= l && (!nullWeight); ii++)
         {
-            d2Poles[ii].SetX(result[indice]);
-            d2Poles[ii].SetY(result[indice + 1]);
-            d2Poles[ii].SetZ(result[indice + 2]);
+            d2Poles[ii] = d2Poles[ii].WithX(result[indice]);
+            d2Poles[ii] = d2Poles[ii].WithY(result[indice + 1]);
+            d2Poles[ii] = d2Poles[ii].WithZ(result[indice + 2]);
             if (rational)
             {
                 ww = weights[ii];
@@ -323,7 +323,7 @@ public class SurfaceNSections : SurfaceSectionLaw
                 else
                 {
                     d2Weights[ii] = result[indice + 3];
-                    d2Poles[ii].SetXYZ((d2Poles[ii].XYZ() - d2Weights[ii] * poles[ii].Coord()
+                    d2Poles[ii] = d2Poles[ii].WithXYZ((d2Poles[ii].XYZ() - d2Weights[ii] * poles[ii].Coord()
                                         - 2 * dWeights[ii] * dPoles[ii].XYZ())
                                        / ww);
                 }
@@ -584,7 +584,7 @@ public class SurfaceNSections : SurfaceSectionLaw
     {
         Point3D p;
         Point3D bary = new Point3D();
-        bary.SetCoord(0.0, 0.0, 0.0);
+        bary = bary.WithCoord(0.0, 0.0, 0.0);
 
         if (_surface is null)
         {
@@ -746,12 +746,12 @@ public class SurfaceNSections : SurfaceSectionLaw
                 Circle3D c1 = ac1.Circle();
                 if (!_trsfs.IsEmpty())
                 {
-                    c1.Transform(_trsfs[1].Inverted());
+                    c1 = c1.Transformed(_trsfs[1].Inverted());
                 }
                 Circle3D c2 = ac2.Circle();
                 if (!_trsfs.IsEmpty())
                 {
-                    c2.Transform(_trsfs[2].Inverted());
+                    c2 = c2.Transformed(_trsfs[2].Inverted());
                 }
                 double tol = 1.0e-7;
                 // bool samedir, linearrad, sameaxis;
@@ -795,7 +795,7 @@ public class SurfaceNSections : SurfaceSectionLaw
         double p1 = _params[1], p2 = _params[_params.Length()];
         double radius = (c2.Radius() - c1.Radius()) * (v - p1) / (p2 - p1) + c1.Radius();
 
-        c1.SetRadius(radius);
+        c1 = c1.WithRadius(radius);
         Curve3D c = new CircleCurve3D(c1);
 
         double parF = ac1.FirstParameter();

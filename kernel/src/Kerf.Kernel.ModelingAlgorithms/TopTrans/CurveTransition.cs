@@ -109,19 +109,19 @@ public class CurveTransition
             {
                 // Interference at the end of the edge: the tangent must be reversed
                 case Reversed:
-                    _tgtFirst.Reverse();
-                    _tgtLast.Reverse();
+                    _tgtFirst = _tgtFirst.Reversed();
+                    _tgtLast = _tgtLast.Reversed();
                     break;
                 case Internal:
                     // Interference in the middle of the edge: reverse depending on the position of the
                     // reference tangent
                     if (_tgt * t > 0)
                     {
-                        _tgtFirst.Reverse();
+                        _tgtFirst = _tgtFirst.Reversed();
                     }
                     else
                     {
-                        _tgtLast.Reverse();
+                        _tgtLast = _tgtLast.Reversed();
                     }
 
                     break;
@@ -163,12 +163,12 @@ public class CurveTransition
                     switch (o)
                     {
                         case Reversed:
-                            _tgtFirst.Reverse();
+                            _tgtFirst = _tgtFirst.Reversed();
                             break;
                         case Internal:
                             if (_tgt * t > 0)
                             {
-                                _tgtFirst.Reverse();
+                                _tgtFirst = _tgtFirst.Reversed();
                             }
 
                             break;
@@ -191,12 +191,12 @@ public class CurveTransition
                         switch (o)
                         {
                             case Reversed:
-                                _tgtFirst.Reverse();
+                                _tgtFirst = _tgtFirst.Reversed();
                                 break;
                             case Internal:
                                 if (_tgt * t > 0)
                                 {
-                                    _tgtFirst.Reverse();
+                                    _tgtFirst = _tgtFirst.Reversed();
                                 }
 
                                 break;
@@ -234,12 +234,12 @@ public class CurveTransition
                         switch (o)
                         {
                             case Reversed:
-                                _tgtLast.Reverse();
+                                _tgtLast = _tgtLast.Reversed();
                                 break;
                             case Internal:
                                 if (_tgt * t < 0)
                                 {
-                                    _tgtLast.Reverse();
+                                    _tgtLast = _tgtLast.Reversed();
                                 }
 
                                 break;
@@ -261,12 +261,12 @@ public class CurveTransition
                             switch (o)
                             {
                                 case Reversed:
-                                    _tgtLast.Reverse();
+                                    _tgtLast = _tgtLast.Reversed();
                                     break;
                                 case Internal:
                                     if (_tgt * t < 0)
                                     {
-                                        _tgtLast.Reverse();
+                                        _tgtLast = _tgtLast.Reversed();
                                     }
 
                                     break;

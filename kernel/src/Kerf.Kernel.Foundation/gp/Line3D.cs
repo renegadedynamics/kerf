@@ -72,7 +72,7 @@ public partial struct Line3D : IEquatable<Line3D>
     public readonly Line3D Reversed()
     {
         Line3D l = this;
-        l._pos.Reverse();
+        l._pos = l._pos.Reversed();
         return l;
     }
 
@@ -113,7 +113,7 @@ public partial struct Line3D : IEquatable<Line3D>
     {
         Point3D loc = _pos.Location();
         Vector3D v = new(p.X() - loc.X(), p.Y() - loc.Y(), p.Z() - loc.Z());
-        v.Cross(new Vector3D(_pos.Direction()));
+        v = v.Crossed(new Vector3D(_pos.Direction()));
         return v.SquareMagnitude();
     }
 
@@ -136,56 +136,56 @@ public partial struct Line3D : IEquatable<Line3D>
     public readonly Line3D Mirrored(in Point3D p)
     {
         Line3D l = this;
-        l._pos.Mirror(p);
+        l._pos = l._pos.Mirrored(p);
         return l;
     }
 
     public readonly Line3D Mirrored(in Axis3D a1)
     {
         Line3D l = this;
-        l._pos.Mirror(a1);
+        l._pos = l._pos.Mirrored(a1);
         return l;
     }
 
     public readonly Line3D Mirrored(in Frame3D a2)
     {
         Line3D l = this;
-        l._pos.Mirror(a2);
+        l._pos = l._pos.Mirrored(a2);
         return l;
     }
 
     public readonly Line3D Rotated(in Axis3D a1, double ang)
     {
         Line3D l = this;
-        l._pos.Rotate(a1, ang);
+        l._pos = l._pos.Rotated(a1, ang);
         return l;
     }
 
     public readonly Line3D Scaled(in Point3D p, double s)
     {
         Line3D l = this;
-        l._pos.Scale(p, s);
+        l._pos = l._pos.Scaled(p, s);
         return l;
     }
 
     public readonly Line3D Transformed(in Transform3D t)
     {
         Line3D l = this;
-        l._pos.Transform(t);
+        l._pos = l._pos.Transformed(t);
         return l;
     }
 
     public readonly Line3D Translated(in Vector3D v)
     {
         Line3D l = this;
-        l._pos.Translate(v);
+        l._pos = l._pos.Translated(v);
         return l;
     }
 
     public readonly Line3D Translated(in Point3D p1, in Point3D p2)
     {
         Line3D l = this;
-        l._pos.Translate(new Vector3D(p1, p2));
+        l._pos = l._pos.Translated(new Vector3D(p1, p2));
         return l;
     }
 

@@ -113,8 +113,8 @@ public class SurfRstConstRad : SurfRstFunction
 
         ns = d1u1.Crossed(d1v1);
         norm = _nplan.Crossed(ns).Magnitude();
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
-        vref.SetLinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        vref = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
         vref /= _ray;
         f[3] = (vref.SquareMagnitude() - 1) * _ray * _ray;
         return true;
@@ -143,14 +143,14 @@ public class SurfRstConstRad : SurfRstFunction
         norm = ncrossns.Magnitude();
         ndotns = _nplan.Dot(ns);
 
-        vref.SetLinearForm(ndotns, _nplan, -1.0, ns);
-        vref.Divide(norm);
-        vref.SetLinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
+        vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
+        vref = vref.Divided(norm);
+        vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
 
         // Derivative by u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1u1);
 
         d[3, 1] = resul.Dot(vref);
@@ -159,7 +159,7 @@ public class SurfRstConstRad : SurfRstFunction
         // Derivative by v1
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1v1);
 
         d[3, 2] = resul.Dot(vref);
@@ -198,9 +198,9 @@ public class SurfRstConstRad : SurfRstFunction
         norm = ncrossns.Magnitude();
         ndotns = _nplan.Dot(ns);
 
-        vref.SetLinearForm(ndotns, _nplan, -1.0, ns);
-        vref.Divide(norm);
-        vref.SetLinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
+        vref = Vector3D.LinearForm(ndotns, _nplan, -1.0, ns);
+        vref = vref.Divided(norm);
+        vref = Vector3D.LinearForm(_ray, vref, new Vector3D(_ptrst, _pts));
 
         temp = vref / _ray;
         f[3] = (temp.SquareMagnitude() - 1) * _ray * _ray; // more stable numerically
@@ -208,7 +208,7 @@ public class SurfRstConstRad : SurfRstFunction
         // Derivative by u1
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1u1);
 
         d[3, 1] = resul.Dot(vref);
@@ -217,7 +217,7 @@ public class SurfRstConstRad : SurfRstFunction
         // Derivative by v1
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-        resul.SetLinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
+        resul = Vector3D.LinearForm(-_ray / norm * (grosterme * ndotns - _nplan.Dot(temp)), _nplan, _ray * grosterme / norm, ns,
                             -_ray / norm, temp, d1v1);
 
         d[3, 2] = resul.Dot(vref);
@@ -242,7 +242,7 @@ public class SurfRstConstRad : SurfRstFunction
         _nplan = new Vector3D(0.0, 0.0, 0.0);
         _tguide.D2(param, out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude();
-        _nplan.SetXYZ(_d1gui.Normalized().XYZ());
+        _nplan = _nplan.WithXYZ(_d1gui.Normalized().XYZ());
         Xyz nplanXYZ = _nplan.XYZ();
         Xyz ptguiXYZ = _ptgui.XYZ();
         _d = nplanXYZ.Dot(ptguiXYZ);
@@ -308,12 +308,12 @@ public class SurfRstConstRad : SurfRstFunction
             _pt2drst = _rst.Value(_prmrst);
             _surf.D1(sol[1], sol[2], out _pts, out d1u1, out d1v1);
             _cons.D1(sol[3], out _ptrst, out d1);
-            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
-            temp.SetXYZ(_pts.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
             secmember[1] = _normtg - dnplan.Dot(temp);
 
-            temp.SetXYZ(_ptrst.XYZ() - _ptgui.XYZ());
+            temp = temp.WithXYZ(_ptrst.XYZ() - _ptgui.XYZ());
             secmember[2] = _normtg - dnplan.Dot(temp);
 
             ns = d1u1.Crossed(d1v1);
@@ -322,11 +322,11 @@ public class SurfRstConstRad : SurfRstFunction
             norm = ncrossns.Magnitude();
 
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-            temp.SetLinearForm(_ray / norm * (dnplan.Dot(ns) - grosterme * ndotns), _nplan, _ray * ndotns / norm, dnplan,
+            temp = Vector3D.LinearForm(_ray / norm * (dnplan.Dot(ns) - grosterme * ndotns), _nplan, _ray * ndotns / norm, dnplan,
                                _ray * grosterme / norm, ns);
 
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-            resul.SetLinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            resul = Vector3D.LinearForm(_ray, ns, new Vector3D(_ptrst, _pts));
             secmember[3] = -2.0 * (temp.Dot(resul));
 
             Gauss resol = new(gradsol);
@@ -353,19 +353,19 @@ public class SurfRstConstRad : SurfRstFunction
 
             if (!_istangent)
             {
-                _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+                _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
                 _tgrst = secmember[3] * d1;
-                _tg2ds.SetCoord(secmember[1], secmember[2]);
+                _tg2ds = _tg2ds.WithCoord(secmember[1], secmember[2]);
                 _surfrst.D1(_pt2drst.X(), _pt2drst.Y(), out bid, out d1urst, out d1vrst);
                 double a, b;
                 T3dto2d(out a, out b, _tgrst, d1urst, d1vrst);
-                _tg2drst.SetCoord(a, b);
+                _tg2drst = _tg2drst.WithCoord(a, b);
             }
 
             // update of maxang
             if (_ray > 0.0)
             {
-                ns.Reverse();
+                ns = ns.Reversed();
             }
             ns2 = -resul.Normalized();
 
@@ -464,17 +464,17 @@ public class SurfRstConstRad : SurfRstFunction
 
         norm = _nplan.Crossed(ns).Magnitude();
         unsurnorm = 1.0 / norm;
-        nsInPlane.SetLinearForm(_nplan.Dot(ns) * unsurnorm, _nplan, -unsurnorm, ns);
+        nsInPlane = Vector3D.LinearForm(_nplan.Dot(ns) * unsurnorm, _nplan, -unsurnorm, ns);
 
-        center.SetXYZ(bid.XYZ() + _ray * nsInPlane.XYZ());
+        center = center.WithXYZ(bid.XYZ() + _ray * nsInPlane.XYZ());
         if (_choix > 2)
         {
-            nsInPlane.Reverse();
+            nsInPlane = nsInPlane.Reversed();
         }
         tgS = _nplan.Crossed(new Vector3D(center, bid));
         if (_choix % 2 == 1)
         {
-            tgS.Reverse();
+            tgS = tgS.Reversed();
         }
         double u, v;
         _rstref!.Value(sol[3]).Coord(out u, out v);
@@ -483,16 +483,16 @@ public class SurfRstConstRad : SurfRstFunction
         norm = _nplan.Crossed(nRst).Magnitude();
         unsurnorm = 1.0 / norm;
         nRstInPlane = new Vector3D();
-        nRstInPlane.SetLinearForm(_nplan.Dot(nRst) * unsurnorm, _nplan, -unsurnorm, nRst);
+        nRstInPlane = Vector3D.LinearForm(_nplan.Dot(nRst) * unsurnorm, _nplan, -unsurnorm, nRst);
         Vector3D centptrst = new(center, bid);
         if (centptrst.Dot(nRstInPlane) < 0.0)
         {
-            nRstInPlane.Reverse();
+            nRstInPlane = nRstInPlane.Reversed();
         }
         tgRst = _nplan.Crossed(centptrst);
         if (_choix % 2 == 1)
         {
-            tgRst.Reverse();
+            tgRst = tgRst.Reversed();
         }
 
         double dot, nt = nRstInPlane.Magnitude();
@@ -550,29 +550,29 @@ public class SurfRstConstRad : SurfRstFunction
         ns = d1u1.Crossed(d1v1);
 
         norm = _nplan.Crossed(ns).Magnitude();
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
-        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
-        c.SetRadius(Math.Abs(_ray));
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        c = c.WithRadius(Math.Abs(_ray));
 
         if (_ray > 0)
         {
-            ns.Reverse();
+            ns = ns.Reversed();
         }
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
+            np = np.Reversed();
         }
 
-        c.SetPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
+        c = c.WithPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
         pdeb = 0; // ElCLib::Parameter(C,pts);
         pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptrst);
 
         // Test negative and almost null angles : Special case
         if (pfin > 1.5 * M_PI)
         {
-            np.Reverse();
-            c.SetPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
+            np = np.Reversed();
+            c = c.WithPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns)));
             pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _ptrst);
         }
         if (pfin < global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -663,8 +663,8 @@ public class SurfRstConstRad : SurfRstFunction
         _ptrst = _cons.Value(w);
         _distmin = Min(_distmin, _pts.Distance(_ptrst));
 
-        poles2d[poles2d.Lower()].SetCoord(u1, v1);
-        poles2d[poles2d.Upper()].SetCoord(pt2d.X(), pt2d.Y());
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(u1, v1);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(pt2d.X(), pt2d.Y());
 
         // Linear Case
         if (_sShape == SectionShape.Linear)
@@ -679,18 +679,18 @@ public class SurfRstConstRad : SurfRstFunction
         ns = d1u1.Crossed(d1v1);
         norm = _nplan.Crossed(ns).Magnitude();
 
-        ns.SetLinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
+        ns = Vector3D.LinearForm(_nplan.Dot(ns) / norm, _nplan, -1.0 / norm, ns);
 
-        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
 
         ns2 = new Vector3D(center, _ptrst).Normalized();
         if (_ray > 0)
         {
-            ns.Reverse();
+            ns = ns.Reversed();
         }
         if (_choix % 2 != 0)
         {
-            _nplan.Reverse();
+            _nplan = _nplan.Reversed();
         }
 
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns, ns2, _nplan, _pts, _ptrst, Math.Abs(_ray), center, poles, weights);
@@ -720,7 +720,7 @@ public class SurfRstConstRad : SurfRstFunction
         _tguide.D2(prm, out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude();
         _nplan = _d1gui.Normalized();
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         p.ParametersOnS(out sol[1], out sol[2]);
         sol[3] = _prmrst = p.ParameterOnC();
@@ -731,10 +731,10 @@ public class SurfRstConstRad : SurfRstFunction
         _surf.D2(sol[1], sol[2], out _pts, out d1u1, out d1v1, out d2u1, out d2v1, out d2uv1);
         _cons.D1(sol[3], out _ptrst, out d1);
 
-        temp.SetXYZ(_pts.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_pts.XYZ() - _ptgui.XYZ());
         secmember[1] = _normtg - dnplan.Dot(temp);
 
-        temp.SetXYZ(_ptrst.XYZ() - _ptgui.XYZ());
+        temp = temp.WithXYZ(_ptrst.XYZ() - _ptgui.XYZ());
         secmember[2] = _normtg - dnplan.Dot(temp);
 
         ns = d1u1.Crossed(d1v1);
@@ -750,11 +750,11 @@ public class SurfRstConstRad : SurfRstFunction
         // Derivative of n1 corresponding to w
 
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-        dnw.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+        dnw = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                           grosterme / norm, ns);
 
-        temp.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
-        resul.SetLinearForm(_ray, temp, new Vector3D(_ptrst, _pts));
+        temp = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+        resul = Vector3D.LinearForm(_ray, temp, new Vector3D(_ptrst, _pts));
         secmember[3] = dnw.Dot(resul);
         secmember[3] = -2.0 * _ray * secmember[3];
 
@@ -783,47 +783,47 @@ public class SurfRstConstRad : SurfRstFunction
 
         if (!istgt)
         {
-            _tgs.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tgs = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
             _tgrst = secmember[3] * d1;
 
             // Derivative of n1 corresponding to u1
             temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
             grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulu.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+            resulu = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
                                  -1.0 / norm, temp);
 
             // Derivative of n1 corresponding to v1
             temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
             grosterme = ncrossns.Dot(_nplan.Crossed(temp)) / norm / norm;
-            resulv.SetLinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
+            resulv = Vector3D.LinearForm(-(grosterme * ndotns - _nplan.Dot(temp)) / norm, _nplan, grosterme / norm, ns,
                                  -1.0 / norm, temp);
 
-            dnw.SetLinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            dnw = Vector3D.LinearForm(secmember[1], resulu, secmember[2], resulv, dnw);
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
 
-            dn2w.SetLinearForm(_ray, dnw, -1.0, _tgrst, _tgs);
+            dn2w = Vector3D.LinearForm(_ray, dnw, -1.0, _tgrst, _tgs);
             norm = resul.Magnitude();
-            dn2w.Divide(norm);
+            dn2w = dn2w.Divided(norm);
             ns2 = -resul.Normalized();
-            dn2w.SetLinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
+            dn2w = Vector3D.LinearForm(ns2.Dot(dn2w), ns2, -1.0, dn2w);
         }
         else
         {
-            ns.SetLinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
+            ns = Vector3D.LinearForm(ndotns / norm, _nplan, -1.0 / norm, ns);
             ns2 = -resul.Normalized();
         }
 
         // Tops 2D
 
-        poles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
-        poles2d[poles2d.Upper()].SetCoord(_pt2drst.X(), _pt2drst.Y());
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(_pt2drst.X(), _pt2drst.Y());
         if (!istgt)
         {
-            dPoles2d[poles2d.Lower()].SetCoord(secmember[1], secmember[2]);
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(secmember[1], secmember[2]);
             _surfrst.D1(_pt2drst.X(), _pt2drst.Y(), out bid, out d1urst, out d1vrst);
             double a, b;
             T3dto2d(out a, out b, _tgrst, d1urst, d1vrst);
-            dPoles2d[poles2d.Upper()].SetCoord(a, b);
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(a, b);
         }
 
         // Linear Case
@@ -844,7 +844,7 @@ public class SurfRstConstRad : SurfRstFunction
         }
 
         // Case of the circle
-        center.SetXYZ(_pts.XYZ() + _ray * ns.XYZ());
+        center = center.WithXYZ(_pts.XYZ() + _ray * ns.XYZ());
         if (!istgt)
         {
             tgct = _tgs.Added(_ray * dnw);
@@ -852,16 +852,16 @@ public class SurfRstConstRad : SurfRstFunction
 
         if (_ray > 0.0)
         {
-            ns.Reverse();
+            ns = ns.Reversed();
             if (!istgt)
             {
-                dnw.Reverse();
+                dnw = dnw.Reversed();
             }
         }
         if (_choix % 2 != 0)
         {
-            _nplan.Reverse();
-            dnplan.Reverse();
+            _nplan = _nplan.Reversed();
+            dnplan = dnplan.Reversed();
         }
         if (!istgt)
         {

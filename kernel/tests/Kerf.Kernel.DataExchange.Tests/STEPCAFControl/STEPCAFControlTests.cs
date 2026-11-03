@@ -122,7 +122,7 @@ public sealed class STEPCAFControlTests
         Label aPart = aDoc.AddShape(aBox, false);
         Label anAssembly = aDoc.NewShape();
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(5.0, 0.0, 0.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(5.0, 0.0, 0.0));
         var aLoc = new Placement(aTrsf);
         Label aComp = aDoc.AddComponent(anAssembly, aPart, aLoc);
         var aLabels = new NCollection_Sequence<Label>();

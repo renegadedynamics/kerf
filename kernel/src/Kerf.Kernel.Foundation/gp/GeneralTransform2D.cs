@@ -128,7 +128,7 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
         else
         {
             Transform2D t = Trsf2d();
-            t.Invert();
+            t = t.Inverted();
             SetTrsf2d(t);
         }
     }
@@ -145,7 +145,7 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
         {
             Transform2D t1 = Trsf2d();
             Transform2D t2 = t.Trsf2d();
-            t1.Multiply(t2);
+            t1 = t1.Multiplied(t2);
             _matrix = t1._matrix;
             _loc = t1._loc;
             _scale = t1._scale;
@@ -166,7 +166,7 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
         {
             Transform2D t1 = Trsf2d();
             Transform2D t2 = t.Trsf2d();
-            t1.PreMultiply(t2);
+            t1 = t1.PreMultiplied(t2);
             _matrix = t1._matrix;
             _loc = t1._loc;
             _scale = t1._scale;
@@ -224,7 +224,7 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
             else
             {
                 Transform2D t = Trsf2d();
-                t.Power(n);
+                t = t.Powered(n);
                 SetTrsf2d(t);
             }
         }

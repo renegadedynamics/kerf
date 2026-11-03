@@ -87,7 +87,7 @@ public class Geom_PlaneTests
     {
         PlaneSurface aPlane = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 10.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0.0, 0.0, 10.0));
         PlaneSurface aMoved = (PlaneSurface)aPlane.Transformed(aTrsf);
         Assert.Equal(10.0, aMoved.Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aPlane.Location().Z());

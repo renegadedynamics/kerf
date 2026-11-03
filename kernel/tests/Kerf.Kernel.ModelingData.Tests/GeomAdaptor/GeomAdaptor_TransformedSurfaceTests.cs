@@ -17,14 +17,14 @@ public class GeomAdaptor_TransformedSurfaceTest
     private static Transform3D createTranslation(double theDx, double theDy, double theDz)
     {
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(theDx, theDy, theDz));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(theDx, theDy, theDz));
         return aTrsf;
     }
 
     private static Transform3D createRotationY(double theAngle)
     {
         Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0)), theAngle);
+        aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 1.0, 0.0)), theAngle);
         return aTrsf;
     }
 

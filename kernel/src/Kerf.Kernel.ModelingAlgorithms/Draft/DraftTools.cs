@@ -47,11 +47,11 @@ public static class DraftTools
             Vector3D normale = new(ax3.Direction());
             if (!ax3.Direct())
             {
-                normale.Reverse();
+                normale = normale.Reversed();
             }
             if (f.Orientation() == Reversed)
             {
-                normale.Reverse();
+                normale = normale.Reversed();
             }
             angle = Math.Asin(normale.Dot(new Vector3D(d)));
         }
@@ -75,11 +75,11 @@ public static class DraftTools
             }
             BrepTools.UVBounds(f, out double umin, out double umax, out double vmin, out double vmax);
             global::Kerf.Engine.Geometry.ElSLib.D1(umin + umax / 2.0, vmin + vmax / 2.0, co, out Point3D _, out Vector3D d1u, out Vector3D d1v);
-            d1u.Cross(d1v);
-            d1u.Normalize();
+            d1u = d1u.Crossed(d1v);
+            d1u = d1u.Normalized();
             if (f.Orientation() == Reversed)
             {
-                d1u.Reverse();
+                d1u = d1u.Reversed();
             }
             angle = Math.Asin(d1u.Dot(new Vector3D(d)));
         }

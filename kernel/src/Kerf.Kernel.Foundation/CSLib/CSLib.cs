@@ -83,10 +83,10 @@ public static class CSLib
         // and dN/dv = D2UV ^ D1V + D1U ^ D2V
 
         Vector3D d1Nu = d2U.Crossed(d1V);
-        d1Nu.Add(d1U.Crossed(d2UV));
+        d1Nu = d1Nu.Added(d1U.Crossed(d2UV));
 
         Vector3D d1Nv = d2UV.Crossed(d1V);
-        d1Nv.Add(d1U.Crossed(d2V));
+        d1Nv = d1Nv.Added(d1U.Crossed(d2V));
 
         double ld1Nu = d1Nu.SquareMagnitude();
         double ld1Nv = d1Nv.SquareMagnitude();
@@ -386,7 +386,7 @@ public static class CSLib
                 Vector3D vd      = derSurf.Value(nu - i, nv + 1 - j);
                 Vector3D cross   = vg.Crossed(vd);
                 double binCoef = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(nu, i) * global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(nv, j);
-                result.Add(binCoef * cross);
+                result = result.Added(binCoef * cross);
             }
         }
 
@@ -410,7 +410,7 @@ public static class CSLib
                 Vector3D vd      = derSurf2.Value(nu - i, nv + 1 - j);
                 Vector3D cross   = vg.Crossed(vd);
                 double binCoef = global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(nu, i) * global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(nv, j);
-                result.Add(binCoef * cross);
+                result = result.Added(binCoef * cross);
             }
         }
 
@@ -528,7 +528,7 @@ public static class CSLib
 
                 for (int jderiv = 1; jderiv <= qderiv; ++jderiv)
                 {
-                    derNor.Subtract(global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(pderiv + iduref, iduref)
+                    derNor = derNor.Subtracted(global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(pderiv + iduref, iduref)
                                      * global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(qderiv + idvref, jderiv + idvref)
                                      * tabNorm.Value(0, jderiv)
                                      * derVecNor.Value(pderiv, qderiv - jderiv));
@@ -538,14 +538,14 @@ public static class CSLib
                 {
                     for (int jderiv = 0; jderiv <= qderiv; ++jderiv)
                     {
-                        derNor.Subtract(global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(pderiv + iduref, ideriv + iduref)
+                        derNor = derNor.Subtracted(global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(pderiv + iduref, ideriv + iduref)
                                          * global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(qderiv + idvref, jderiv + idvref)
                                          * tabNorm.Value(ideriv, jderiv)
                                          * derVecNor.Value(pderiv - ideriv, qderiv - jderiv));
                     }
                 }
 
-                derNor.Divide(global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(pderiv + iduref, iduref)
+                derNor = derNor.Divided(global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(pderiv + iduref, iduref)
                                * global::Kerf.Engine.Numerics.Polynomials.PLib.Bin(qderiv + idvref, idvref) * tabNorm.Value(0, 0));
                 derVecNor.SetValue(pderiv, qderiv, derNor);
             }

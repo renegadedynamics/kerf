@@ -130,10 +130,10 @@ public sealed class QuasiAngularConvertor
         Matrix3x3 rot = new Matrix3x3();
         // Calcul de la transformation
         Vector3D v1 = new Vector3D(center, firstPnt), v2;
-        rot.SetRotation(dir.XYZ(), angle / 2);
+        rot = rot.WithRotation(dir.XYZ(), angle / 2);
         aux = v1.XYZ();
         aux *= rot;
-        v1.SetXYZ(aux);
+        v1 = v1.WithXYZ(aux);
         v2 = dir ^ v1;
 
         Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
@@ -223,14 +223,14 @@ public sealed class QuasiAngularConvertor
         Matrix3x3 rot = new Matrix3x3(), rotPrim, d = new Matrix3x3(), dPrim = new Matrix3x3();
         // La rotation s'ecrit I +  sin(Ang) * D + (1. - cos(Ang)) * D*D
         // ou D est l'application x -> Dir ^ x
-        rot.SetRotation(dir.XYZ(), angle / 2);
+        rot = rot.WithRotation(dir.XYZ(), angle / 2);
         // La derive s'ecrit donc :
         // AngPrim * (sin(Ang)*D*D + cos(Ang)*D)
         // + sin(Ang)*DPrim  + (1. - cos(Ang)) *(DPrim*D + D*DPrim)
         sina = Math.Sin(angle / 2);
         cosa = Math.Cos(angle / 2);
-        d.SetCross(dir.XYZ());
-        dPrim.SetCross(dDir.XYZ());
+        d = d.WithCross(dir.XYZ());
+        dPrim = dPrim.WithCross(dDir.XYZ());
 
         rotPrim = (d.Powered(2)).Multiplied(sina);
         rotPrim += d.Multiplied(cosa);
@@ -240,10 +240,10 @@ public sealed class QuasiAngularConvertor
 
         aux = (dFirstPnt - dCenter).XYZ().Multiplied(rot);
         aux += v1.XYZ().Multiplied(rotPrim);
-        v1Prim.SetXYZ(aux);
+        v1Prim = v1Prim.WithXYZ(aux);
         aux = v1.XYZ();
         aux.Multiply(rot);
-        v1.SetXYZ(aux);
+        v1 = v1.WithXYZ(aux);
         v2 = dir ^ v1;
         Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
         v2 = (dDir.Crossed(v1)).Added(dir.Crossed(v1Prim));
@@ -338,7 +338,7 @@ public sealed class QuasiAngularConvertor
             p *= mPrim;
             dp *= m;
             aux.SetLinearForm(1, p, 1, dp, dCenter.XYZ());
-            dPoles[ii].SetXYZ(aux);
+            dPoles[ii] = dPoles[ii].WithXYZ(aux);
             weights[ii] = wi;
             dWeights[ii] = dw[ii];
         }
@@ -368,15 +368,15 @@ public sealed class QuasiAngularConvertor
                ddp, maux;
         // La rotation s'ecrit I +  sin(Ang) * D + (1. - cos(Ang)) * D*D
         // ou D est l'application x -> Dir ^ x
-        rot.SetRotation(dir.XYZ(), angle / 2);
+        rot = rot.WithRotation(dir.XYZ(), angle / 2);
         // La derive s'ecrit donc :
         // AngPrim * (sin(Ang)*D*D + cos(Ang)*D)
         // + sin(Ang)*DPrim  + (1. - cos(Ang)) *(DPrim*D + D*DPrim)
         sina = Math.Sin(angle / 2);
         cosa = Math.Cos(angle / 2);
-        d.SetCross(dir.XYZ());
-        dPrim.SetCross(dDir.XYZ());
-        dSecn.SetCross(d2Dir.XYZ());
+        d = d.WithCross(dir.XYZ());
+        dPrim = dPrim.WithCross(dDir.XYZ());
+        dSecn = dSecn.WithCross(d2Dir.XYZ());
 
         ddp = (dPrim.Multiplied(d)).Added(d.Multiplied(dPrim));
         rotPrim = (d.Powered(2)).Multiplied(sina);
@@ -405,13 +405,13 @@ public sealed class QuasiAngularConvertor
         auxyz = (d2FirstPnt - d2Center).XYZ().Multiplied(rot);
         auxyz += 2 * (v1Prim.XYZ().Multiplied(rotPrim));
         auxyz += v1.XYZ().Multiplied(rotSecn);
-        v1Secn.SetXYZ(auxyz);
+        v1Secn = v1Secn.WithXYZ(auxyz);
         auxyz = v1Prim.XYZ().Multiplied(rot);
         auxyz += v1.XYZ().Multiplied(rotPrim);
-        v1Prim.SetXYZ(auxyz);
+        v1Prim = v1Prim.WithXYZ(auxyz);
         auxyz = v1.XYZ();
         auxyz.Multiply(rot);
-        v1.SetXYZ(auxyz);
+        v1 = v1.WithXYZ(auxyz);
         v2 = dir ^ v1;
 
         Matrix3x3 m = new Matrix3x3(v1.X(), v2.X(), 0, v1.Y(), v2.Y(), 0, v1.Z(), v2.Z(), 0);
@@ -546,12 +546,12 @@ public sealed class QuasiAngularConvertor
 
             poles[ii].ChangeCoord() = m * p + center.XYZ();
             auxyz.SetLinearForm(1, mPrim * p, 1, m * dp, dCenter.XYZ());
-            dPoles[ii].SetXYZ(auxyz);
+            dPoles[ii] = dPoles[ii].WithXYZ(auxyz);
             p *= mSecn;
             dp *= mPrim;
             d2P *= m;
             auxyz.SetLinearForm(1, p, 2, dp, 1, d2P, d2Center.XYZ());
-            d2Poles[ii].SetXYZ(auxyz);
+            d2Poles[ii] = d2Poles[ii].WithXYZ(auxyz);
             weights[ii] = wi;
             dWeights[ii] = dwi;
             d2Weights[ii] = d2W[ii];

@@ -606,8 +606,8 @@ internal static class BRepTestPipeShellCommands
                     var ParAndRad = new NCollection_Array1<Point2D>(1, L);
                     for (ii = 1; ii <= L; ii++, cur += 2)
                     {
-                        ParAndRad[ii].SetX(theDI.Atof(a[cur]));
-                        ParAndRad[ii].SetY(theDI.Atof(a[cur + 1]));
+                        ParAndRad[ii] = ParAndRad[ii].WithX(theDI.Atof(a[cur]));
+                        ParAndRad[ii] = ParAndRad[ii].WithY(theDI.Atof(a[cur + 1]));
                     }
                     thelaw = new Interpol();
                     thelaw.Set(ParAndRad, Math.Abs(ParAndRad[1].Y() - ParAndRad[L].Y()) < global::Kerf.Engine.Foundation.Precision.Confusion());

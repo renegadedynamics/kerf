@@ -129,10 +129,10 @@ internal sealed class PrimitiveCone : Revolution
     private void SetMeridian()
     {
         Axis3D a = Axes().Axis();
-        a.Rotate(new Axis3D(Axes().Location(), Axes().YDirection()), _halfAngle);
+        a = a.Rotated(new Axis3D(Axes().Location(), Axes().YDirection()), _halfAngle);
         Vector3D v = new(Axes().XDirection());
         v *= _radius;
-        a.Translate(v);
+        a = a.Translated(v);
         LineCurve3D l = new(a);
         LineCurve2D l2d = new(new Point2D(_radius, 0), new Direction2D(Math.Sin(_halfAngle), Math.Cos(_halfAngle)));
         Meridian(l, l2d);

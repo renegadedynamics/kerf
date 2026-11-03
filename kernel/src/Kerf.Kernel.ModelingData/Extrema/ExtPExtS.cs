@@ -45,7 +45,7 @@ public class ExtPExtS : Transient
         double alpha = po * new Vector3D(thePlane.Direction());
         alpha /= theDir * thePlane.Direction();
         Point3D p = new();
-        p.SetXYZ(point.XYZ() + alpha * theDir.XYZ());
+        p = p.WithXYZ(point.XYZ() + alpha * theDir.XYZ());
         return p;
     }
 

@@ -241,7 +241,7 @@ public sealed class BRepLibStaticsOracleTests(ITestOutputHelper output) : IDispo
                         {
                             // the iso v: a circle on the cylinder's exact axes
                             Frame3D anAx2 = theS.Ax.Ax2();
-                            anAx2.SetLocation(new Point3D(theS.Ax.Location().XYZ() + theS.Ax.Direction().XYZ() * anE.A.Y()));
+                            anAx2 = anAx2.WithLocation(new Point3D(theS.Ax.Location().XYZ() + theS.Ax.Direction().XYZ() * anE.A.Y()));
                             aC = new CircleCurve3D(anAx2, theS.Radius);
                             using var aNAx2 = Oracle.ToNative(anAx2);
                             aNC = new N.Geom_Circle(aNAx2, theS.Radius);

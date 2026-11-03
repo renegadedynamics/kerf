@@ -39,12 +39,12 @@ public class gp_Pnt2dTests
     public void SetCoord()
     {
         Point2D aPnt = new();
-        aPnt.SetX(10.0);
-        aPnt.SetY(20.0);
+        aPnt = aPnt.WithX(10.0);
+        aPnt = aPnt.WithY(20.0);
         Assert.Equal(10.0, aPnt.X());
         Assert.Equal(20.0, aPnt.Y());
 
-        aPnt.SetCoord(7.0, 8.0);
+        aPnt = aPnt.WithCoord(7.0, 8.0);
         Assert.Equal(7.0, aPnt.X());
         Assert.Equal(8.0, aPnt.Y());
     }
@@ -132,7 +132,7 @@ public class gp_Pnt2dTests
     {
         Point2D aPnt = new(1.0, 0.0);
         Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(0.0, 5.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(0.0, 5.0));
         Point2D aResult = aPnt.Transformed(aTrsf);
         Assert.Equal(1.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(5.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -152,9 +152,9 @@ public class gp_Pnt2dTests
         Point2D aP2 = new(1.0, 2.0);
 
         Transform2D aM1 = new();
-        aM1.SetMirror(aMirrorAxis);
+        aM1 = aM1.WithMirror(aMirrorAxis);
         Transform2D aM2 = new();
-        aM2.SetMirror(aMirrorAxis);
+        aM2 = aM2.WithMirror(aMirrorAxis);
 
         // Applying M1 to p1 should give p2
         Point2D aP1MirrorM1 = aP1.Transformed(aM1);

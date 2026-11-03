@@ -119,7 +119,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
             if ((_basisCurve.Line().Direction()).Dot(oz) < 0.0)
             {
                 yrev = true;
-                oz.Reverse();
+                oz = oz.Reversed();
             }
         }
 
@@ -153,7 +153,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         }
 
         Direction3D dz = _axis.Direction();
-        o.SetXYZ(o.XYZ() + (new Vector3D(o, p) * new Vector3D(dz)) * dz.XYZ());
+        o = o.WithXYZ(o.XYZ() + (new Vector3D(o, p) * new Vector3D(dz)) * dz.XYZ());
         if (new Line3D(_axis).Distance(q) > global::Kerf.Engine.Foundation.Precision.Confusion())
         {
             ox = new Direction3D(q.XYZ() - o.XYZ());
@@ -185,14 +185,14 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
 
         if (yrev)
         {
-            _axeRev.YReverse();
+            _axeRev = _axeRev.YReversed();
         }
         else if (_basisCurve.GetType() == Circle)
         {
             Direction3D dc = (_basisCurve.Circle()).Axis().Direction();
             if ((ox.Crossed(oz)).Dot(dc) < 0.0)
             {
-                _axeRev.ZReverse();
+                _axeRev = _axeRev.ZReversed();
             }
         }
     }
@@ -375,10 +375,10 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
         double dot = (ponCurve.XYZ() - _axis.Location().XYZ()).Dot(_axis.Direction().XYZ());
 
         Point3D p = new Point3D(_axis.Location().XYZ() + dot * _axis.Direction().XYZ());
-        axe.SetLocation(p);
+        axe = axe.WithLocation(p);
         if (axe.XDirection().Dot(_basisCurve!.Line().Direction()) >= -global::Kerf.Engine.Foundation.Precision.Confusion())
         {
-            axe.XReverse();
+            axe = axe.XReversed();
         }
 
         return new Plane3D(axe);
@@ -410,7 +410,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
             Vector3D op0 = new Vector3D(o, p0);
             double t = op0.Dot(new Vector3D(axe.XDirection()));
             t /= ldir.Dot(axe.XDirection());
-            op0.Add(-t * new Vector3D(ldir));
+            op0 = op0.Added(-t * new Vector3D(ldir));
             if (op0.Dot(new Vector3D(axe.Direction())) > 0.0)
             {
                 angle = -angle;
@@ -426,7 +426,7 @@ public class RevolutionSurfaceAdaptor : SurfaceAdaptor
 
         Circle3D c = _basisCurve!.Circle();
         CoordinateSystem axe = _axeRev;
-        axe.SetLocation(c.Location());
+        axe = axe.WithLocation(c.Location());
         return new Sphere(axe, c.Radius());
     }
 

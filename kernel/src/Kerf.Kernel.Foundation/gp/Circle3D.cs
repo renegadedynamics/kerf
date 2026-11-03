@@ -67,7 +67,7 @@ public partial struct Circle3D : IEquatable<Circle3D>
             _radius = -_radius;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform3D t)
@@ -78,7 +78,7 @@ public partial struct Circle3D : IEquatable<Circle3D>
             _radius = -_radius;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector3D v) => _pos.Translate(v);
@@ -153,28 +153,28 @@ public partial struct Circle3D : IEquatable<Circle3D>
     public readonly Circle3D Mirrored(in Point3D p)
     {
         Circle3D c = this;
-        c._pos.Mirror(p);
+        c._pos = c._pos.Mirrored(p);
         return c;
     }
 
     public readonly Circle3D Mirrored(in Axis3D a1)
     {
         Circle3D c = this;
-        c._pos.Mirror(a1);
+        c._pos = c._pos.Mirrored(a1);
         return c;
     }
 
     public readonly Circle3D Mirrored(in Frame3D a2)
     {
         Circle3D c = this;
-        c._pos.Mirror(a2);
+        c._pos = c._pos.Mirrored(a2);
         return c;
     }
 
     public readonly Circle3D Rotated(in Axis3D a1, double ang)
     {
         Circle3D c = this;
-        c._pos.Rotate(a1, ang);
+        c._pos = c._pos.Rotated(a1, ang);
         return c;
     }
 
@@ -187,7 +187,7 @@ public partial struct Circle3D : IEquatable<Circle3D>
             c._radius = -c._radius;
         }
 
-        c._pos.Scale(p, s);
+        c._pos = c._pos.Scaled(p, s);
         return c;
     }
 
@@ -200,21 +200,21 @@ public partial struct Circle3D : IEquatable<Circle3D>
             c._radius = -c._radius;
         }
 
-        c._pos.Transform(t);
+        c._pos = c._pos.Transformed(t);
         return c;
     }
 
     public readonly Circle3D Translated(in Vector3D v)
     {
         Circle3D c = this;
-        c._pos.Translate(v);
+        c._pos = c._pos.Translated(v);
         return c;
     }
 
     public readonly Circle3D Translated(in Point3D p1, in Point3D p2)
     {
         Circle3D c = this;
-        c._pos.Translate(p1, p2);
+        c._pos = c._pos.Translated(p1, p2);
         return c;
     }
 

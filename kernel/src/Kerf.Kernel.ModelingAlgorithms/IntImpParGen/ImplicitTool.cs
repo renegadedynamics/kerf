@@ -152,7 +152,7 @@ internal static class ImplicitTool
                 else
                 {
                     Vector2D Norm = new();
-                    Norm.SetCoord(-tan1.Y(), tan1.X());
+                    Norm = Norm.WithCoord(-tan1.Y(), tan1.X());
 
                     double val1, val2;
                     if (!courbure1)

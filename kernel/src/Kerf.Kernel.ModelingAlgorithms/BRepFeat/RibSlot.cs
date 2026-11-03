@@ -458,11 +458,11 @@ public abstract class RibSlot : MakeShape
 
         if (e.Orientation() == Reversed)
         {
-            tgt.Reverse();
+            tgt = tgt.Reversed();
         }
 
         Vector3D d = -tgt.Crossed(new Vector3D(pln.Pln().Position().Direction())) / 10.0;
-        pp.Translate(d);
+        pp = pp.Translated(d);
 
         return pp;
     }
@@ -502,7 +502,7 @@ public abstract class RibSlot : MakeShape
         global::Kerf.Engine.Geometry.CSLib.Normal(d1U, d1V, global::Kerf.Engine.Foundation.Precision.Confusion(), out DerivativeStatus st, ref n);
         if (f.Orientation() == Forward)
         {
-            n.Reverse();
+            n = n.Reversed();
         }
         return n;
     }
@@ -670,8 +670,8 @@ public abstract class RibSlot : MakeShape
                 bnd = c[i];
             }
         }
-        p1.SetCoord(c[0] - 2.0 * bnd, c[1] - 2.0 * bnd, c[2] - 2.0 * bnd);
-        p2.SetCoord(c[3] + 2.0 * bnd, c[4] + 2.0 * bnd, c[5] + 2.0 * bnd);
+        p1 = p1.WithCoord(c[0] - 2.0 * bnd, c[1] - 2.0 * bnd, c[2] - 2.0 * bnd);
+        p2 = p2.WithCoord(c[3] + 2.0 * bnd, c[4] + 2.0 * bnd, c[5] + 2.0 * bnd);
         return bnd;
     }
 

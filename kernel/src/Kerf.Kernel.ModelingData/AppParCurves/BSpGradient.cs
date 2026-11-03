@@ -274,8 +274,8 @@ public class BSpGradient<MultiLine, ToolLine>
                         c += aa * pz;
                         f += da * pz;
                     }
-                    pt.SetCoord(a, b, c);
-                    v1.SetCoord(d, e, f);
+                    pt = pt.WithCoord(a, b, c);
+                    v1 = v1.WithCoord(d, e, f);
                     i2 += nbpoles;
 
                     myV = new Vector3D(pt, tabP[k]);
@@ -298,8 +298,8 @@ public class BSpGradient<MultiLine, ToolLine>
                         b += aa * py;
                         e += da * py;
                     }
-                    pt2d.SetCoord(a, b);
-                    v12d.SetCoord(d, e);
+                    pt2d = pt2d.WithCoord(a, b);
+                    v12d = v12d.WithCoord(d, e);
                     i2 += nbpoles;
 
                     myV2d = new Vector2D(pt2d, tabP2d[k]);

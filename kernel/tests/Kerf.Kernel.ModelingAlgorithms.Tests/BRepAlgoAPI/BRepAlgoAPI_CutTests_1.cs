@@ -1075,7 +1075,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create profile f2 with interior cylinder: "profile f2 o 0 0 20 f 10 -20 c 40 360"
             Transform3D aTrsf2 = new();
-            aTrsf2.SetTranslation(new Vector3D(0, 0, 20));
+            aTrsf2 = aTrsf2.WithTranslation(new Vector3D(0, 0, 20));
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
@@ -1086,7 +1086,7 @@ public static class BRepAlgoAPI_CutTests_1
             // Create profile f3: "profile f3 p 0 0 -1 1 0 0 o 0 0 14 f 50 -10 c -30 360"
             // This represents a cylinder at z=14 with radius 30 and height 9
             Transform3D aTrsf3 = new();
-            aTrsf3.SetTranslation(new Vector3D(0, 0, 14));
+            aTrsf3 = aTrsf3.WithTranslation(new Vector3D(0, 0, 14));
             Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new Placement(aTrsf3));
 
             // Final cut operation: "bcut result r1 p3"
@@ -1103,7 +1103,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create profile f2 with interior cylinder: "profile f2 o 0 0 20 f 10 -20 c 40 360"
             Transform3D aTrsf2 = new();
-            aTrsf2.SetTranslation(new Vector3D(0, 0, 20));
+            aTrsf2 = aTrsf2.WithTranslation(new Vector3D(0, 0, 20));
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
@@ -1114,7 +1114,7 @@ public static class BRepAlgoAPI_CutTests_1
             // Create profile f3: "profile f3 o 0 0 23 f 50 10 c 30 360"
             // This represents a cylinder at z=23 with radius 30 and height -9
             Transform3D aTrsf3 = new();
-            aTrsf3.SetTranslation(new Vector3D(0, 0, 23));
+            aTrsf3 = aTrsf3.WithTranslation(new Vector3D(0, 0, 23));
             Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new Placement(aTrsf3));
 
             // Final cut operation: "bcut result r1 p3"
@@ -1131,7 +1131,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create profile f2 with interior cylinder: "profile f2 o 0 0 20 f 10 -20 c 40 360"
             Transform3D aTrsf2 = new();
-            aTrsf2.SetTranslation(new Vector3D(0, 0, 20));
+            aTrsf2 = aTrsf2.WithTranslation(new Vector3D(0, 0, 20));
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(40.0, 6.0).Moved(new Placement(aTrsf2));
 
             // First cut operation: "bcut r1 p1 p2"
@@ -1142,7 +1142,7 @@ public static class BRepAlgoAPI_CutTests_1
             // Create profile f3: "profile f3 o 0 0 14 f 50 10 c 30 360"
             // This represents a cylinder at z=14 with radius 30 and height 9
             Transform3D aTrsf3 = new();
-            aTrsf3.SetTranslation(new Vector3D(0, 0, 14));
+            aTrsf3 = aTrsf3.WithTranslation(new Vector3D(0, 0, 14));
             Shape aCylinder3 = BOPTest_Utilities.CreateCylinder(30.0, 9.0).Moved(new Placement(aTrsf3));
 
             // Final cut operation: "bcut result r1 p3"
@@ -1159,7 +1159,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create cylinder c2: "pcylinder c2 20 100; ttranslate c2 0 0 50"
             Transform3D aTrsf = new();
-            aTrsf.SetTranslation(new Vector3D(0, 0, 50));
+            aTrsf = aTrsf.WithTranslation(new Vector3D(0, 0, 50));
             Shape aCylinder2 = BOPTest_Utilities.CreateCylinder(20.0, 100.0).Moved(new Placement(aTrsf));
 
             // Cut operation: "bcut result c1 c2"
@@ -1218,7 +1218,7 @@ public static class BRepAlgoAPI_CutTests_1
 
             // Create cylinder: "pcylinder s 2 4; ttranslate s 5 5 -2"
             Transform3D aTrsf = new();
-            aTrsf.SetTranslation(new Vector3D(5, 5, -2));
+            aTrsf = aTrsf.WithTranslation(new Vector3D(5, 5, -2));
             Shape aCylinder = BOPTest_Utilities.CreateCylinder(2.0, 4.0).Moved(new Placement(aTrsf));
 
             // First cut operation: "bcut rr c s"

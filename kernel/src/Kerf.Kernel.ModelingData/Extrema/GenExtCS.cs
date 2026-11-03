@@ -615,7 +615,7 @@ public class GenExtCS
                         isBadSol = false;
                         break;
                     }
-                    pcPs.SetXYZ(pOnS.XYZ() - pOnC.XYZ());
+                    pcPs = pcPs.WithXYZ(pOnS.XYZ() - pOnC.XYZ());
                     angN = pcPs.Angle(n);
                     if (angN < angMin || angN > angMax)
                     {

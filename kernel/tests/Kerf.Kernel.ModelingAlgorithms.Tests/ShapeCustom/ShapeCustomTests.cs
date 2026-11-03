@@ -51,7 +51,7 @@ public class ShapeCustomTests
     private static Shape Mirrored(in Shape theShape)
     {
         var aT = new Transform3D();
-        aT.SetMirror(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
+        aT = aT.WithMirror(new Frame3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0)));
         return new Transform(theShape, aT, true).Shape();
     }
 

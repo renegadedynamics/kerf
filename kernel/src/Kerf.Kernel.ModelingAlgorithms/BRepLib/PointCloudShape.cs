@@ -229,7 +229,7 @@ public abstract class PointCloudShape
             Vector3D norm = dU ^ dV;
             if (aFace.Orientation() == Reversed)
             {
-                norm.Reverse();
+                norm = norm.Reversed();
             }
             double normMod = norm.Magnitude();
             if (normMod > Constants.Resolution())
@@ -239,9 +239,9 @@ public abstract class PointCloudShape
             if (_dist > global::Kerf.Engine.Foundation.Precision.Confusion())
             {
                 Xyz deflPoint = p1.XYZ() + norm.XYZ() * UniformReal(randomGenerator, 0.0, _dist);
-                p1.SetXYZ(deflPoint);
+                p1 = p1.WithXYZ(deflPoint);
             }
-            p1.Transform(trsf);
+            p1 = p1.Transformed(trsf);
             if (normMod > Constants.Resolution())
             {
                 norm = new Vector3D(new Direction3D(norm).Transformed(trsf));
@@ -272,8 +272,8 @@ public abstract class PointCloudShape
             Direction3D normal = triangulation.Normal(nodeIter);
             if (!loc.IsIdentity)
             {
-                p1.Transform(trsf);
-                normal.Transform(trsf);
+                p1 = p1.Transformed(trsf);
+                normal = normal.Transformed(trsf);
             }
 
             Point2D uvNode = hasUVNode ? triangulation.UVNode(nodeIter) : new Point2D();

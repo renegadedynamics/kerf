@@ -28,8 +28,8 @@ public partial struct Frame3D : IEquatable<Frame3D>
         _axis = new Axis3D(p, n);
         _vydir = n;
         _vxdir = n;
-        _vxdir.CrossCross(vx, n);
-        _vydir.Cross(_vxdir);
+        _vxdir = _vxdir.CrossCrossed(vx, n);
+        _vydir = _vydir.Crossed(_vxdir);
     }
 
     public Frame3D(in Point3D p, Direction3D.D n, Direction3D.D vx)
@@ -58,33 +58,33 @@ public partial struct Frame3D : IEquatable<Frame3D>
         {
             if (aabs > cabs)
             {
-                d.SetCoord(-c, 0.0, a);
+                d = d.WithCoord(-c, 0.0, a);
             }
             else
             {
-                d.SetCoord(c, 0.0, -a);
+                d = d.WithCoord(c, 0.0, -a);
             }
         }
         else if (aabs <= babs && aabs <= cabs)
         {
             if (babs > cabs)
             {
-                d.SetCoord(0.0, -c, b);
+                d = d.WithCoord(0.0, -c, b);
             }
             else
             {
-                d.SetCoord(0.0, c, -b);
+                d = d.WithCoord(0.0, c, -b);
             }
         }
         else
         {
             if (aabs > babs)
             {
-                d.SetCoord(-b, a, 0.0);
+                d = d.WithCoord(-b, a, 0.0);
             }
             else
             {
-                d.SetCoord(b, -a, 0.0);
+                d = d.WithCoord(b, -a, 0.0);
             }
         }
 
@@ -136,17 +136,17 @@ public partial struct Frame3D : IEquatable<Frame3D>
             {
                 _vxdir = _vydir;
                 _vydir = _axis.Direction();
-                _axis.SetDirection(v);
+                _axis = _axis.WithDirection(v);
             }
             else
             {
                 _vxdir = _axis.Direction();
-                _axis.SetDirection(v);
+                _axis = _axis.WithDirection(v);
             }
         }
         else
         {
-            _axis.SetDirection(v);
+            _axis = _axis.WithDirection(v);
             _vxdir = v.CrossCrossed(_vxdir, v);
             _vydir = v.Crossed(_vxdir);
         }
@@ -169,62 +169,62 @@ public partial struct Frame3D : IEquatable<Frame3D>
     internal void Mirror(in Point3D p)
     {
         Point3D temp = _axis.Location();
-        temp.Mirror(p);
-        _axis.SetLocation(temp);
-        _vxdir.Reverse();
-        _vydir.Reverse();
+        temp = temp.Mirrored(p);
+        _axis = _axis.WithLocation(temp);
+        _vxdir = _vxdir.Reversed();
+        _vydir = _vydir.Reversed();
     }
 
     internal void Mirror(in Axis3D a1)
     {
-        _vydir.Mirror(a1);
-        _vxdir.Mirror(a1);
+        _vydir = _vydir.Mirrored(a1);
+        _vxdir = _vxdir.Mirrored(a1);
         Point3D temp = _axis.Location();
-        temp.Mirror(a1);
-        _axis.SetLocation(temp);
-        _axis.SetDirection(_vxdir.Crossed(_vydir));
+        temp = temp.Mirrored(a1);
+        _axis = _axis.WithLocation(temp);
+        _axis = _axis.WithDirection(_vxdir.Crossed(_vydir));
     }
 
     internal void Mirror(in Frame3D a2)
     {
-        _vydir.Mirror(a2);
-        _vxdir.Mirror(a2);
+        _vydir = _vydir.Mirrored(a2);
+        _vxdir = _vxdir.Mirrored(a2);
         Point3D temp = _axis.Location();
-        temp.Mirror(a2);
-        _axis.SetLocation(temp);
-        _axis.SetDirection(_vxdir.Crossed(_vydir));
+        temp = temp.Mirrored(a2);
+        _axis = _axis.WithLocation(temp);
+        _axis = _axis.WithDirection(_vxdir.Crossed(_vydir));
     }
 
     internal void Rotate(in Axis3D a1, double ang)
     {
         Point3D temp = _axis.Location();
-        temp.Rotate(a1, ang);
-        _axis.SetLocation(temp);
-        _vxdir.Rotate(a1, ang);
-        _vydir.Rotate(a1, ang);
-        _axis.SetDirection(_vxdir.Crossed(_vydir));
+        temp = temp.Rotated(a1, ang);
+        _axis = _axis.WithLocation(temp);
+        _vxdir = _vxdir.Rotated(a1, ang);
+        _vydir = _vydir.Rotated(a1, ang);
+        _axis = _axis.WithDirection(_vxdir.Crossed(_vydir));
     }
 
     internal void Scale(in Point3D p, double s)
     {
         Point3D temp = _axis.Location();
-        temp.Scale(p, s);
-        _axis.SetLocation(temp);
+        temp = temp.Scaled(p, s);
+        _axis = _axis.WithLocation(temp);
         if (s < 0.0)
         {
-            _vxdir.Reverse();
-            _vydir.Reverse();
+            _vxdir = _vxdir.Reversed();
+            _vydir = _vydir.Reversed();
         }
     }
 
     internal void Transform(in Transform3D t)
     {
         Point3D temp = _axis.Location();
-        temp.Transform(t);
-        _axis.SetLocation(temp);
-        _vxdir.Transform(t);
-        _vydir.Transform(t);
-        _axis.SetDirection(_vxdir.Crossed(_vydir));
+        temp = temp.Transformed(t);
+        _axis = _axis.WithLocation(temp);
+        _vxdir = _vxdir.Transformed(t);
+        _vydir = _vydir.Transformed(t);
+        _axis = _axis.WithDirection(_vxdir.Crossed(_vydir));
     }
 
     internal void Translate(in Vector3D v) => _axis.Translate(v);

@@ -550,15 +550,15 @@ public class Frenet : TrihedronLaw
             if (norm <= Constants.Resolution())
             {
                 Frame3D axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(tangent));
-                biNormal.SetXYZ(axe.YDirection().XYZ());
+                biNormal = biNormal.WithXYZ(axe.YDirection().XYZ());
             }
             else
             {
-                biNormal.Normalize();
+                biNormal = biNormal.Normalized();
             }
 
             normal = biNormal;
-            normal.Cross(tangent);
+            normal = normal.Crossed(tangent);
         }
 
         return true;
@@ -584,11 +584,11 @@ public class Frenet : TrihedronLaw
         if (tangent.Crossed(dc2).Magnitude() <= Constants.Resolution())
         {
             Frame3D axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(tangent));
-            normal.SetXYZ(axe.XDirection().XYZ());
-            biNormal.SetXYZ(axe.YDirection().XYZ());
-            dTangent.SetCoord(0, 0, 0);
-            dNormal.SetCoord(0, 0, 0);
-            dBiNormal.SetCoord(0, 0, 0);
+            normal = normal.WithXYZ(axe.XDirection().XYZ());
+            biNormal = biNormal.WithXYZ(axe.YDirection().XYZ());
+            dTangent = dTangent.WithCoord(0, 0, 0);
+            dNormal = dNormal.WithCoord(0, 0, 0);
+            dBiNormal = dBiNormal.WithCoord(0, 0, 0);
             return true;
         }
         else
@@ -633,14 +633,14 @@ public class Frenet : TrihedronLaw
         if (tangent.Crossed(dc2).Magnitude() <= Constants.Resolution())
         {
             Frame3D axe = new Frame3D(new Point3D(0, 0, 0), new Direction3D(tangent));
-            normal.SetXYZ(axe.XDirection().XYZ());
-            biNormal.SetXYZ(axe.YDirection().XYZ());
-            dTangent.SetCoord(0, 0, 0);
-            dNormal.SetCoord(0, 0, 0);
-            dBiNormal.SetCoord(0, 0, 0);
-            d2Tangent.SetCoord(0, 0, 0);
-            d2Normal.SetCoord(0, 0, 0);
-            d2BiNormal.SetCoord(0, 0, 0);
+            normal = normal.WithXYZ(axe.XDirection().XYZ());
+            biNormal = biNormal.WithXYZ(axe.YDirection().XYZ());
+            dTangent = dTangent.WithCoord(0, 0, 0);
+            dNormal = dNormal.WithCoord(0, 0, 0);
+            dBiNormal = dBiNormal.WithCoord(0, 0, 0);
+            d2Tangent = d2Tangent.WithCoord(0, 0, 0);
+            d2Normal = d2Normal.WithCoord(0, 0, 0);
+            d2BiNormal = d2BiNormal.WithCoord(0, 0, 0);
             return true;
         }
         else
@@ -754,7 +754,7 @@ public class Frenet : TrihedronLaw
         aTangent /= num + 1;
         aNormal /= num + 1;
 
-        aTangent.Normalize();
+        aTangent = aTangent.Normalized();
         aBiNormal = aTangent.Crossed(aNormal).Normalized();
         aNormal = aBiNormal.Crossed(aTangent);
     }
@@ -811,7 +811,7 @@ public class Frenet : TrihedronLaw
         {
             return false;
         }
-        tangent.Normalize();
+        tangent = tangent.Normalized();
         n = i;
 
         i++;
@@ -836,7 +836,7 @@ public class Frenet : TrihedronLaw
             delta = h;
             return false;
         }
-        biNormal.Normalize();
+        biNormal = biNormal.Normalized();
         k = i;
 
         D0(u + h, ref t, ref N, ref bn);
@@ -865,7 +865,7 @@ public class Frenet : TrihedronLaw
         tangent *= tFlag;
         biNormal *= bnFlag;
         normal = biNormal;
-        normal.Cross(tangent);
+        normal = normal.Crossed(tangent);
 
         return true;
     }

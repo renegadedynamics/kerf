@@ -83,7 +83,7 @@ public static class BRepFeat
 
         bar.Divide((double)nbp);
         b = new Point3D();
-        b.SetXYZ(bar);
+        b = b.WithXYZ(bar);
     }
 
     /// <summary>The "parametric" barycentre of a shape on a curve.</summary>

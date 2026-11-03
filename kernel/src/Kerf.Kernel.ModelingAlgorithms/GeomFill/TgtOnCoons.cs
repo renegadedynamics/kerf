@@ -62,8 +62,8 @@ public class TgtOnCoons : TgtField
 
         Vector3D n = _k.Bound(_ibound).Norm(w);
         double scal = tgk.Dot(n);
-        n.Multiply(-scal);
-        tgk.Add(n);
+        n = n.Multiplied(-scal);
+        tgk = tgk.Added(n);
         return tgk;
     }
 
@@ -108,14 +108,14 @@ public class TgtOnCoons : TgtField
 
         double scal = tgsc.Dot(n);
         Vector3D scaln = n.Multiplied(-scal);
-        tgsc.Add(scaln);
+        tgsc = tgsc.Added(scaln);
 
         Vector3D scaldn = dn.Multiplied(-scal);
 
         double scal2 = -dtgsc.Dot(n) - tgsc.Dot(dn);
         Vector3D temp = n.Multiplied(scal2);
 
-        temp.Add(scaldn);
+        temp = temp.Added(scaldn);
         Vector3D dtpur = dtgsc.Added(temp);
 
         return dtpur;
@@ -169,7 +169,7 @@ public class TgtOnCoons : TgtField
         double scal2 = -dtgsc.Dot(n) - tgsc.Dot(dn);
         Vector3D temp = n.Multiplied(scal2);
 
-        temp.Add(scaldn);
+        temp = temp.Added(scaldn);
         dt = dtgsc.Added(temp);
     }
 }

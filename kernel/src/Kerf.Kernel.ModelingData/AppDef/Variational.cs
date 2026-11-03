@@ -284,7 +284,7 @@ public class Variational
                         for (jp2d = 1; jp2d <= _nbP2d; jp2d++)
                         {
                             vt2d = tabV2d.Value(jp2d);
-                            vt2d.Normalize();
+                            vt2d = vt2d.Normalized();
                             _tabConstraints.SetValue(jndex++, vt2d.X());
                             _tabConstraints.SetValue(jndex++, vt2d.Y());
                             jndex = jndex + 2;
@@ -300,7 +300,7 @@ public class Variational
                         for (jp3d = 1; jp3d <= _nbP3d; jp3d++)
                         {
                             vt3d = tabV3d.Value(jp3d);
-                            vt3d.Normalize();
+                            vt3d = vt3d.Normalized();
                             _tabConstraints.SetValue(jndex++, vt3d.X());
 
                             _tabConstraints.SetValue(jndex++, vt3d.Y());
@@ -319,7 +319,7 @@ public class Variational
                         for (jp3d = 1; jp3d <= _nbP3d; jp3d++)
                         {
                             vt3d = tabV3d.Value(jp3d);
-                            vt3d.Normalize();
+                            vt3d = vt3d.Normalized();
                             _tabConstraints.SetValue(jndex++, vt3d.X());
                             _tabConstraints.SetValue(jndex++, vt3d.Y());
                             _tabConstraints.SetValue(jndex++, vt3d.Z());
@@ -330,7 +330,7 @@ public class Variational
                         for (jp2d = 1; jp2d <= _nbP2d; jp2d++)
                         {
                             vt2d = tabV2d.Value(jp2d);
-                            vt2d.Normalize();
+                            vt2d = vt2d.Normalized();
                             _tabConstraints.SetValue(jndex++, vt2d.X());
                             _tabConstraints.SetValue(jndex++, vt2d.Y());
                             jndex = jndex + 2;
@@ -357,7 +357,7 @@ public class Variational
                         for (jp2d = 1; jp2d <= _nbP2d; jp2d++)
                         {
                             vt2d = tabV2d.Value(jp2d);
-                            vt2d.Normalize();
+                            vt2d = vt2d.Normalized();
                             vc2d = tabV2dcurv.Value(jp2d);
                             if (Math.Abs(Math.Abs(vc2d.Angle(vt2d)) - M_PI / 2.0) > global::Kerf.Engine.Foundation.Precision.Angular())
                             {
@@ -384,7 +384,7 @@ public class Variational
                         for (jp3d = 1; jp3d <= _nbP3d; jp3d++)
                         {
                             vt3d = tabV3d.Value(jp3d);
-                            vt3d.Normalize();
+                            vt3d = vt3d.Normalized();
                             vc3d = tabV3dcurv.Value(jp3d);
                             if (!(vc3d.Normalized()).IsNormal(vt3d, global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
@@ -412,7 +412,7 @@ public class Variational
                         for (jp3d = 1; jp3d <= _nbP3d; jp3d++)
                         {
                             vt3d = tabV3d.Value(jp3d);
-                            vt3d.Normalize();
+                            vt3d = vt3d.Normalized();
                             vc3d = tabV3dcurv.Value(jp3d);
                             if (!(vc3d.Normalized()).IsNormal(vt3d, global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
@@ -429,7 +429,7 @@ public class Variational
                         for (jp2d = 1; jp2d <= _nbP2d; jp2d++)
                         {
                             vt2d = tabV2d.Value(jp2d);
-                            vt2d.Normalize();
+                            vt2d = vt2d.Normalized();
                             vc2d = tabV2dcurv.Value(jp2d);
                             if (Math.Abs(Math.Abs(vc2d.Angle(vt2d)) - M_PI / 2.0) > global::Kerf.Engine.Foundation.Precision.Angular())
                             {
@@ -559,9 +559,9 @@ public class Variational
                     {
                         for (jp3d = 1; jp3d <= _nbP3d; jp3d++)
                         {
-                            p3d.SetX(poles.Value(ipole, index++));
-                            p3d.SetY(poles.Value(ipole, index++));
-                            p3d.SetZ(poles.Value(ipole, index++));
+                            p3d = p3d.WithX(poles.Value(ipole, index++));
+                            p3d = p3d.WithY(poles.Value(ipole, index++));
+                            p3d = p3d.WithZ(poles.Value(ipole, index++));
                             tabP3d.SetValue(jp3d, p3d);
                         }
                     }
@@ -569,8 +569,8 @@ public class Variational
                     {
                         for (jp2d = 1; jp2d <= _nbP2d; jp2d++)
                         {
-                            p2d.SetX(poles.Value(ipole, index++));
-                            p2d.SetY(poles.Value(ipole, index++));
+                            p2d = p2d.WithX(poles.Value(ipole, index++));
+                            p2d = p2d.WithY(poles.Value(ipole, index++));
                             tabP2d.SetValue(jp2d, p2d);
                         }
                     }
@@ -2639,17 +2639,17 @@ public class Variational
     private static bool NotParallel(in Vector3D t, out Vector3D v)
     {
         v = t;
-        v.SetX(v.X() + 1.0);
+        v = v.WithX(v.X() + 1.0);
         if (v.CrossMagnitude(t) > 1.0e-12)
         {
             return true;
         }
-        v.SetY(v.Y() + 1.0);
+        v = v.WithY(v.Y() + 1.0);
         if (v.CrossMagnitude(t) > 1.0e-12)
         {
             return true;
         }
-        v.SetZ(v.Z() + 1.0);
+        v = v.WithZ(v.Z() + 1.0);
         return v.CrossMagnitude(t) > 1.0e-12;
     }
 
@@ -2936,21 +2936,21 @@ public class Variational
 
         if ((typcon == TangencyPoint) || (typcon == CurvaturePoint))
         {
-            t.SetX(_tabConstraints.Value(jndex));
-            t.SetY(_tabConstraints.Value(jndex + 1));
+            t = t.WithX(_tabConstraints.Value(jndex));
+            t = t.WithY(_tabConstraints.Value(jndex + 1));
             if (ndimen == 3)
             {
-                t.SetZ(_tabConstraints.Value(jndex + 2));
+                t = t.WithZ(_tabConstraints.Value(jndex + 2));
             }
             else
             {
-                t.SetZ(0.0);
+                t = t.WithZ(0.0);
             }
             if (ndimen == 2)
             {
-                v.SetX(0.0);
-                v.SetY(0.0);
-                v.SetZ(1.0);
+                v = v.WithX(0.0);
+                v = v.WithY(0.0);
+                v = v.WithZ(1.0);
             }
             if (ndimen == 3)
             {
@@ -2960,13 +2960,13 @@ public class Variational
                 }
             }
             theta1 = v ^ t;
-            theta1.Normalize();
+            theta1 = theta1.Normalized();
             _ttheta.SetValue(begin, theta1.X());
             _ttheta.SetValue(begin + 1, theta1.Y());
             if (ndimen == 3)
             {
                 theta2 = t ^ theta1;
-                theta2.Normalize();
+                theta2 = theta2.Normalized();
                 _ttheta.SetValue(begin + 2, theta1.Z());
                 _ttheta.SetValue(begin + 3, theta2.X());
                 _ttheta.SetValue(begin + 4, theta2.Y());
@@ -2981,8 +2981,8 @@ public class Variational
                 yy = Math.Pow(t.Y(), 2);
                 if (ndimen == 2)
                 {
-                    f.SetX(yy * theta1.X() - xy * theta1.Y());
-                    f.SetY(xx * theta1.Y() - xy * theta1.X());
+                    f = f.WithX(yy * theta1.X() - xy * theta1.Y());
+                    f = f.WithY(xx * theta1.Y() - xy * theta1.X());
                     _tfthet.SetValue(begin, f.X());
                     _tfthet.SetValue(begin + 1, f.Y());
                 }
@@ -2992,15 +2992,15 @@ public class Variational
                     yz = t.Y() * t.Z();
                     zz = Math.Pow(t.Z(), 2);
 
-                    f.SetX((zz + yy) * theta1.X() - xy * theta1.Y() - xz * theta1.Z());
-                    f.SetY((xx + zz) * theta1.Y() - xy * theta1.X() - yz * theta1.Z());
-                    f.SetZ((xx + yy) * theta1.Z() - xz * theta1.X() - yz * theta1.Y());
+                    f = f.WithX((zz + yy) * theta1.X() - xy * theta1.Y() - xz * theta1.Z());
+                    f = f.WithY((xx + zz) * theta1.Y() - xy * theta1.X() - yz * theta1.Z());
+                    f = f.WithZ((xx + yy) * theta1.Z() - xz * theta1.X() - yz * theta1.Y());
                     _tfthet.SetValue(begin, f.X());
                     _tfthet.SetValue(begin + 1, f.Y());
                     _tfthet.SetValue(begin + 2, f.Z());
-                    f.SetX((zz + yy) * theta2.X() - xy * theta2.Y() - xz * theta2.Z());
-                    f.SetY((xx + zz) * theta2.Y() - xy * theta2.X() - yz * theta2.Z());
-                    f.SetZ((xx + yy) * theta2.Z() - xz * theta2.X() - yz * theta2.Y());
+                    f = f.WithX((zz + yy) * theta2.X() - xy * theta2.Y() - xz * theta2.Z());
+                    f = f.WithY((xx + zz) * theta2.Y() - xy * theta2.X() - yz * theta2.Z());
+                    f = f.WithZ((xx + yy) * theta2.Z() - xz * theta2.X() - yz * theta2.Y());
                     _tfthet.SetValue(begin + 3, f.X());
                     _tfthet.SetValue(begin + 4, f.Y());
                     _tfthet.SetValue(begin + 5, f.Z());

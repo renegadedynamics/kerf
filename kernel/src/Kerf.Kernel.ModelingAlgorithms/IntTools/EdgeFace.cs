@@ -202,8 +202,8 @@ public class EdgeFace
             }
 
             projector.LowerDistanceParameters(out u, out v);
-            p2d.SetX(u);
-            p2d.SetY(v);
+            p2d = p2d.WithX(u);
+            p2d = p2d.WithY(v);
 
             FaceClassifier2D class2d = _context.FClass2d(_face);
             state = class2d.Perform(p2d);

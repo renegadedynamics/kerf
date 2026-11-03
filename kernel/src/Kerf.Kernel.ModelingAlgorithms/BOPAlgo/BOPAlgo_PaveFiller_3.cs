@@ -1069,7 +1069,7 @@ public partial class PaveFiller
                 {
                     continue;
                 }
-                vTgt1.Normalize();
+                vTgt1 = vTgt1.Normalized();
 
                 NCollection_List<PaveBlock>.Iterator itLPB2 = new();
                 itLPB2.Reset(lpb, itLPB1.Index);

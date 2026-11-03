@@ -116,7 +116,7 @@ public class ShapeAnalysisHealingTests
     {
         // a face on an indirect plane (left-handed axes), and one on a B-spline surface
         var anAx = new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1), new Direction3D(1, 0, 0));
-        anAx.YReverse();
+        anAx = anAx.YReversed();
         var aPlane = new PlaneSurface(anAx);
         Face anIndirect = new MakeFace(aPlane, 0, 1, 0, 1, 1e-7).Face();
         BSplineSurface aBs = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(new TrimmedSurface(new PlaneSurface(new Plane3D()), 0, 1, 0, 1));
@@ -510,7 +510,7 @@ public class ShapeAnalysisHealingTests
         var aLine = new LineCurve3D(new Point3D(0, 0, 0), new Direction3D(1, 0, 0));
         Edge anEdge = new MakeEdge(aLine, 0.0, 2.0).Edge();
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 5, 0));
+        aT = aT.WithTranslation(new Vector3D(0, 5, 0));
         Edge aMoved = ShapeCasts.Edge(anEdge.Moved(new Placement(aT)));
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aMoved);
 

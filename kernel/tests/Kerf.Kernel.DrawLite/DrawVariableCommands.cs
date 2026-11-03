@@ -337,8 +337,8 @@ internal static class DrawVariableCommands
             double z = 0.0;
             var P = new Point3D(p_X / z, p_Y / z, 0);
             var T = new Transform3D();
-            T.Invert();
-            P.Transform(T);
+            T = T.Inverted();
+            P = P.Transformed(T);
             theDI.SetNumber(a[2], P.X());
             theDI.SetNumber(a[3], P.Y());
             theDI.SetNumber(a[4], P.Z());

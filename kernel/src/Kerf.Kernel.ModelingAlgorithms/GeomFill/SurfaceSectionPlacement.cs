@@ -192,8 +192,8 @@ public sealed class SurfaceSectionPlacement
         {
             Tangente(_adpSection, (_adpSection.FirstParameter() + _adpSection.LastParameter()) / 2, out Point3D p,
                      out Vector3D v);
-            _theAxe.SetLocation(p);
-            _theAxe.SetDirection(new Direction3D(v));
+            _theAxe = _theAxe.WithLocation(p);
+            _theAxe = _theAxe.WithDirection(new Direction3D(v));
 
             // y a t'il un Plan moyen ?
             CurveKind theType = _adpSection.GetType();
@@ -342,8 +342,8 @@ public sealed class SurfaceSectionPlacement
                 if (!issing)
                 {
                     _isplan = true;
-                    _theAxe.SetLocation(axe.Location());
-                    _theAxe.SetDirection(axe.Direction());
+                    _theAxe = _theAxe.WithLocation(axe.Location());
+                    _theAxe = _theAxe.WithDirection(axe.Direction());
                 }
             }
 
@@ -386,7 +386,7 @@ public sealed class SurfaceSectionPlacement
             double distaux = 0.0, taux = 0.0, alpha;
             Point3D ponPath, ponSec, p;
             Vector3D vRef = new Vector3D(), dp1;
-            vRef.SetXYZ(_theAxe.Direction().XYZ());
+            vRef = vRef.WithXYZ(_theAxe.Direction().XYZ());
 
             Tangente(path, _pathParam, out ponPath, out dp1);
             ponSec = _adpSection.Value(_secParam);
@@ -421,7 +421,7 @@ public sealed class SurfaceSectionPlacement
                 }
 
                 Point3D plast = path.Value(path.LastParameter());
-                v1.SetXYZ(_theAxe.Location().XYZ() - plast.XYZ());
+                v1 = v1.WithXYZ(_theAxe.Location().XYZ() - plast.XYZ());
                 distPlan = Math.Abs(v1.Dot(vRef));
                 if (distPlan <= intTol)
                 {
@@ -609,7 +609,7 @@ public sealed class SurfaceSectionPlacement
 
             Point3D ponPath, ponSec;
             Vector3D vRef = new Vector3D(), dp1;
-            vRef.SetXYZ(_theAxe.Direction().XYZ());
+            vRef = vRef.WithXYZ(_theAxe.Direction().XYZ());
 
             Tangente(path, _pathParam, out ponPath, out dp1);
             ponSec = _adpSection.Value(_secParam);
@@ -659,9 +659,9 @@ public sealed class SurfaceSectionPlacement
         // Calcul des reperes
         _law.D0(_pathParam, ref m, ref v);
 
-        p.SetXYZ(v.XYZ());
-        d.SetXYZ(m.Column(3));
-        dn.SetXYZ(m.Column(1));
+        p = p.WithXYZ(v.XYZ());
+        d = d.WithXYZ(m.Column(3));
+        dn = dn.WithXYZ(m.Column(1));
         CoordinateSystem paxe = new CoordinateSystem(p, d, dn);
 
         if (withTranslation || withCorrection)
@@ -694,9 +694,9 @@ public sealed class SurfaceSectionPlacement
                 Direction3D dirAxeOfRotation = profileNormal ^ spineStartDir;
                 angle = profileNormal.AngleWithRef(spineStartDir, dirAxeOfRotation);
                 Axis3D axeOfRotation = new Axis3D(_theAxe.Location(), dirAxeOfRotation);
-                rot.SetRotation(axeOfRotation, angle);
+                rot = rot.WithRotation(axeOfRotation, angle);
             }
-            pSection.Transform(rot);
+            pSection = pSection.Transformed(rot);
         }
         // modified by NIZHNY-MKK  Wed Oct  8 15:03:21 2003.END
 
@@ -706,14 +706,14 @@ public sealed class SurfaceSectionPlacement
         }
         else
         {
-            p.SetCoord(0.0, 0.0, 0.0);
+            p = p.WithCoord(0.0, 0.0, 0.0);
         }
 
         CoordinateSystem saxe = new CoordinateSystem(p, Constants.DZ(), Constants.DX());
 
         // Transfo
         Transform3D tf = new Transform3D();
-        tf.SetTransformation(saxe, paxe);
+        tf = tf.WithTransformation(saxe, paxe);
 
         if (withCorrection)
         {
@@ -755,12 +755,12 @@ public sealed class SurfaceSectionPlacement
         if (cp.IsTangentDefined())
         {
             cp.Tangent(out d);
-            t.SetXYZ(d.XYZ());
-            t.Normalize();
+            t = t.WithXYZ(d.XYZ());
+            t = t.Normalized();
             if (cp.Curvature() > eps)
             {
                 cp.Normal(out d);
-                n.SetXYZ(d.XYZ());
+                n = n.WithXYZ(d.XYZ());
             }
             else
             {
@@ -768,12 +768,12 @@ public sealed class SurfaceSectionPlacement
                 // Reste le probleme des points d'inflexions, qui n'est pas
                 // bien traiter par LProp (pas de recuperation de la normal) :
                 // A voir...
-                pathNormal.SetXYZ(m.Column(1));
-                pathNormal.Normalize();
+                pathNormal = pathNormal.WithXYZ(m.Column(1));
+                pathNormal = pathNormal.Normalized();
                 bn = t ^ pathNormal;
                 if (bn.Magnitude() > eps)
                 {
-                    bn.Normalize();
+                    bn = bn.Normalized();
                 }
                 n = bn ^ t;
             }
@@ -781,8 +781,8 @@ public sealed class SurfaceSectionPlacement
         else
         { // Cas indefinie, on prend le triedre
             // complet sur la trajectoire
-            t.SetXYZ(m.Column(3));
-            n.SetXYZ(m.Column(2));
+            t = t.WithXYZ(m.Column(3));
+            n = n.WithXYZ(m.Column(2));
         }
         bn = t ^ n;
     }

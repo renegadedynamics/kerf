@@ -468,7 +468,7 @@ internal sealed class BuildOffsetFaces
             //
             if (e.Orientation() == Reversed)
             {
-                vSum.Reverse();
+                vSum = vSum.Reversed();
             }
             //
             va += vSum;
@@ -1720,8 +1720,8 @@ internal sealed class BuildOffsetFaces
                         Vector3D vSum1 = GetAverageTangent(eIm, nbP);
                         Vector3D vSum2 = GetAverageTangent(eOrF, nbP);
                         //
-                        vSum1.Normalize();
-                        vSum2.Normalize();
+                        vSum1 = vSum1.Normalized();
+                        vSum2 = vSum2.Normalized();
                         //
                         double cos = vSum1.Dot(vSum2);
                         if (Math.Abs(cos) < 0.9999)

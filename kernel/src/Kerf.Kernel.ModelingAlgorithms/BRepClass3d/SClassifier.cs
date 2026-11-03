@@ -572,11 +572,11 @@ public class SClassifier
             return false;
         }
 
-        n.Normalize();
-        aDN.SetXYZ(n.XYZ());
+        n = n.Normalized();
+        aDN = aDN.WithXYZ(n.XYZ());
         if (aF.Orientation() == Reversed)
         {
-            aDN.Reverse();
+            aDN = aDN.Reversed();
         }
 
         return true;

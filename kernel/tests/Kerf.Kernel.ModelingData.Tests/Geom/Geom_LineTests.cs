@@ -88,7 +88,7 @@ public class Geom_LineTest
     {
         LineCurve3D aLine = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(0.0, 0.0, 5.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(0.0, 0.0, 5.0));
         aLine.Transform(aTrsf);
         Assert.Equal(5.0, aLine.Lin().Location().Z(), global::Kerf.Engine.Foundation.Precision.Confusion());
     }

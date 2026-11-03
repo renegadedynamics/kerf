@@ -59,7 +59,7 @@ public static class Project
         }
         dist = ponS.LowerDistance();
         ponS.LowerDistanceParameters(out double u, out double v);
-        uv.SetCoord(u, v);
+        uv = uv.WithCoord(u, v);
         return true;
     }
 

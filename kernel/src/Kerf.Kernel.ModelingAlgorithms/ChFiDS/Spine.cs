@@ -467,16 +467,16 @@ public class Spine : Transient
         {
             Point3D pp = _firstori;
             Vector3D vp = _firsttgt;
-            vp.Multiply(l);
-            pp.Translate(vp);
+            vp = vp.Multiplied(l);
+            pp = pp.Translated(vp);
             return pp;
         }
         else if (index == (_abscissa!.Length() + 1))
         {
             Point3D pp = _lastori;
             Vector3D vp = _lasttgt;
-            vp.Multiply(l);
-            pp.Translate(vp);
+            vp = vp.Multiplied(l);
+            pp = pp.Translated(vp);
             return pp;
         }
 
@@ -510,16 +510,16 @@ public class Spine : Transient
             p = _firstori;
             v1 = _firsttgt;
             Vector3D vp = _firsttgt;
-            vp.Multiply(l);
-            p.Translate(vp);
+            vp = vp.Multiplied(l);
+            p = p.Translated(vp);
         }
         else if (index == (_abscissa!.Length() + 1))
         {
             p = _lastori;
             v1 = _lasttgt;
             Vector3D vp = _lasttgt;
-            vp.Multiply(l);
-            p.Translate(vp);
+            vp = vp.Multiplied(l);
+            p = p.Translated(vp);
         }
         else
         {
@@ -539,7 +539,7 @@ public class Spine : Transient
                 d1 = -d1;
             }
 
-            v1.Multiply(d1);
+            v1 = v1.Multiplied(d1);
         }
     }
 
@@ -555,20 +555,20 @@ public class Spine : Transient
             p = _firstori;
             v1 = _firsttgt;
             v2 = new Vector3D();
-            v2.SetCoord(0.0, 0.0, 0.0);
+            v2 = v2.WithCoord(0.0, 0.0, 0.0);
             Vector3D vp = _firsttgt;
-            vp.Multiply(l);
-            p.Translate(vp);
+            vp = vp.Multiplied(l);
+            p = p.Translated(vp);
         }
         else if (index == (_abscissa!.Length() + 1))
         {
             p = _lastori;
             v1 = _lasttgt;
             v2 = new Vector3D();
-            v2.SetCoord(0.0, 0.0, 0.0);
+            v2 = v2.WithCoord(0.0, 0.0, 0.0);
             Vector3D vp = _lasttgt;
-            vp.Multiply(l);
-            p.Translate(vp);
+            vp = vp.Multiplied(l);
+            p = p.Translated(vp);
         }
         else
         {
@@ -584,17 +584,17 @@ public class Spine : Transient
             _curve.D2(gcp.Parameter(), out p, out v1, out v2);
             double n1 = v1.SquareMagnitude();
             double d2 = -(v1.Dot(v2)) * (1.0 / n1) * (1.0 / n1);
-            v2.Multiply(1.0 / n1);
+            v2 = v2.Multiplied(1.0 / n1);
             n1 = Math.Sqrt(n1);
             Vector3D va = v1.Multiplied(d2);
-            v2.Add(va);
+            v2 = v2.Added(va);
             double d1 = 1.0 / n1;
             if (_spine.Value(index).Orientation() == Reversed)
             {
                 d1 = -d1;
             }
 
-            v1.Multiply(d1);
+            v1 = v1.Multiplied(d1);
         }
     }
 
@@ -636,12 +636,12 @@ public class Spine : Transient
         Line3D ll = _curve.Line();
         if (_spine.Value(_indexofcurve).Orientation() == Reversed)
         {
-            ll.Reverse();
-            ll.SetLocation(_curve.Value(_curve.LastParameter()));
+            ll = ll.Reversed();
+            ll = ll.WithLocation(_curve.Value(_curve.LastParameter()));
         }
         else
         {
-            ll.SetLocation(_curve.Value(_curve.FirstParameter()));
+            ll = ll.WithLocation(_curve.Value(_curve.FirstParameter()));
         }
 
         return ll;
@@ -657,7 +657,7 @@ public class Spine : Transient
         if (_spine.Value(_indexofcurve).Orientation() == Reversed)
         {
             dc = new Direction3D(new Vector3D(ac.Location(), _curve.Value(_curve.LastParameter())));
-            zz.Reverse();
+            zz = zz.Reversed();
         }
 
         Frame3D a = new Frame3D(ac.Location(), zz, dc);

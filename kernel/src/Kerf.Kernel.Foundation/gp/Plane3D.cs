@@ -289,35 +289,35 @@ public partial struct Plane3D : IEquatable<Plane3D>
     public readonly Plane3D Rotated(in Axis3D a1, double ang)
     {
         Plane3D pl = this;
-        pl._position.Rotate(a1, ang);
+        pl._position = pl._position.Rotated(a1, ang);
         return pl;
     }
 
     public readonly Plane3D Scaled(in Point3D p, double s)
     {
         Plane3D pl = this;
-        pl._position.Scale(p, s);
+        pl._position = pl._position.Scaled(p, s);
         return pl;
     }
 
     public readonly Plane3D Transformed(in Transform3D t)
     {
         Plane3D pl = this;
-        pl._position.Transform(t);
+        pl._position = pl._position.Transformed(t);
         return pl;
     }
 
     public readonly Plane3D Translated(in Vector3D v)
     {
         Plane3D pl = this;
-        pl._position.Translate(v);
+        pl._position = pl._position.Translated(v);
         return pl;
     }
 
     public readonly Plane3D Translated(in Point3D p1, in Point3D p2)
     {
         Plane3D pl = this;
-        pl._position.Translate(p1, p2);
+        pl._position = pl._position.Translated(p1, p2);
         return pl;
     }
 

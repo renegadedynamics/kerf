@@ -196,7 +196,7 @@ public partial class ImpPrmIntersection
 
                     pSurf.D1(x[1], x[2], out _, out d1u, out d1v);
                     thearc.D1(theparam, out p2d, out d2d);
-                    v2.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                    v2 = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                     v1 = d1u.Crossed(d1v);
 
                     test = vectg.Dot(v1.Crossed(v2));
@@ -204,8 +204,8 @@ public partial class ImpPrmIntersection
                     {
                         if ((test < 0.0 && arcorien == Forward) || (test > 0.0 && arcorien == Reversed))
                         {
-                            vectg.Reverse();
-                            dirtg.Reverse();
+                            vectg = vectg.Reversed();
+                            dirtg = dirtg.Reversed();
                         }
                         pPoint.SetDirections(vectg, dirtg);
                         pPoint.SetPassing(ispassing);
@@ -243,7 +243,7 @@ public partial class ImpPrmIntersection
                                 }
                                 if (arcorien == Reversed)
                                 {
-                                    v2.Reverse();
+                                    v2 = v2.Reversed();
                                 }
                             }
 
@@ -272,7 +272,7 @@ public partial class ImpPrmIntersection
                                         if (arcorien == Forward || arcorien == Reversed)
                                         {
                                             ispassing = false;
-                                            v2.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            v2 = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                             test = vectg.Dot(v1.Crossed(v2));
                                             vtxorien = domain.Orientation(pStart.Vertex());
@@ -293,7 +293,7 @@ public partial class ImpPrmIntersection
                                                 }
                                                 if (arcorien == Reversed)
                                                 {
-                                                    v2.Reverse();
+                                                    v2 = v2.Reversed();
                                                 }
                                             }
 
@@ -321,8 +321,8 @@ public partial class ImpPrmIntersection
                                 }
                                 else
                                 {
-                                    vectg.Reverse();
-                                    dirtg.Reverse();
+                                    vectg = vectg.Reversed();
+                                    dirtg = dirtg.Reversed();
                                 }
                             }
                             else

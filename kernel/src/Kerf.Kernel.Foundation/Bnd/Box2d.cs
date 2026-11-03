@@ -510,35 +510,35 @@ public partial struct Box2d : IEquatable<Box2d>, ISpatialTreeBox<Box2d>
 
             for (int i = 0; i < nbDirs; i++)
             {
-                d[i].Transform(t);
+                d[i] = d[i].Transformed(t);
                 newBox.Add(d[i]);
             }
 
-            p[0].SetCoord(_xmin, _ymin);
-            p[1].SetCoord(_xmax, _ymin);
-            p[2].SetCoord(_xmin, _ymax);
-            p[3].SetCoord(_xmax, _ymax);
+            p[0] = p[0].WithCoord(_xmin, _ymin);
+            p[1] = p[1].WithCoord(_xmax, _ymin);
+            p[2] = p[2].WithCoord(_xmin, _ymax);
+            p[3] = p[3].WithCoord(_xmax, _ymax);
             if (vertex[0])
             {
-                p[0].Transform(t);
+                p[0] = p[0].Transformed(t);
                 newBox.Add(p[0]);
             }
 
             if (vertex[1])
             {
-                p[1].Transform(t);
+                p[1] = p[1].Transformed(t);
                 newBox.Add(p[1]);
             }
 
             if (vertex[2])
             {
-                p[2].Transform(t);
+                p[2] = p[2].Transformed(t);
                 newBox.Add(p[2]);
             }
 
             if (vertex[3])
             {
-                p[3].Transform(t);
+                p[3] = p[3].Transformed(t);
                 newBox.Add(p[3]);
             }
 

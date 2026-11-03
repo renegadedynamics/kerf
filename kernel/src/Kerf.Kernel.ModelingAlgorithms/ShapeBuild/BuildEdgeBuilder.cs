@@ -591,7 +591,7 @@ public sealed partial class BuildEdgeBuilder
         }
 
         GeneralTransform2D tMatu = new GeneralTransform2D();
-        tMatu.SetAffinity(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), uFact); // gp::OY2d()
+        tMatu = tMatu.WithAffinity(new Axis2D(new Point2D(0, 0), new Direction2D(0, 1)), uFact); // gp::OY2d()
         Xy pXY;
 
         if (result is LineCurve2D aLine2d)
@@ -599,11 +599,11 @@ public sealed partial class BuildEdgeBuilder
             aLine2d.D0(aFirst, out Point2D pf);
             pXY = pf.XY();
             tMatu.Transforms(ref pXY);
-            pf.SetXY(pXY);
+            pf = pf.WithXY(pXY);
             aLine2d.D0(aLast, out Point2D pl);
             pXY = pl.XY();
             tMatu.Transforms(ref pXY);
-            pl.SetXY(pXY);
+            pl = pl.WithXY(pXY);
             Line2D line2d = new Line2D(pf, new Direction2D(new Vector2D(pf, pl)));
             aFirst = global::Kerf.Engine.Geometry.ElCLib.Parameter(line2d, pf);
             aLast = global::Kerf.Engine.Geometry.ElCLib.Parameter(line2d, pl);
@@ -619,7 +619,7 @@ public sealed partial class BuildEdgeBuilder
             {
                 pXY = bezier.Pole(i).XY();
                 tMatu.Transforms(ref pXY);
-                pt1.SetXY(pXY);
+                pt1 = pt1.WithXY(pXY);
                 bezier.SetPole(i, pt1);
             }
 
@@ -660,7 +660,7 @@ public sealed partial class BuildEdgeBuilder
             {
                 pXY = bSpline2d.Pole(i).XY();
                 tMatu.Transforms(ref pXY);
-                pt1.SetXY(pXY);
+                pt1 = pt1.WithXY(pXY);
                 bSpline2d.SetPole(i, pt1);
             }
 

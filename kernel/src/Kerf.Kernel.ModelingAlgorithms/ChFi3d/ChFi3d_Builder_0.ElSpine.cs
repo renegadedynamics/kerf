@@ -86,8 +86,8 @@ internal static partial class Builder_0
         //
         spine.D1(wf, out pDeb, out vrefDeb);
         spine.D1(wl, out pFin, out vrefFin);
-        vrefDeb.Normalize();
-        vrefFin.Normalize();
+        vrefDeb = vrefDeb.Normalized();
+        vrefFin = vrefFin.Normalized();
         //
         // (OCCT declares ExtrapPole, ExtraCoeffs and Cont here and never uses them.)
         // Attention on segmente eventuellement la premiere et la
@@ -527,7 +527,7 @@ internal static partial class Builder_0
             Point3D p1, p2;
             Vector3D v1, v2;
             bSpline.D1(wf, out p1, out v1);
-            v1.Normalize();
+            v1 = v1.Normalized();
             es.FirstPointAndTgt(out pDeb, out vrefDeb);
             double scaldeb = vrefDeb.Dot(v1);
             double disdeb = pDeb.Distance(p1);
@@ -537,7 +537,7 @@ internal static partial class Builder_0
                 adjust = true;
             }
             bSpline.D1(wl, out p2, out v2);
-            v2.Normalize();
+            v2 = v2.Normalized();
             es.LastPointAndTgt(out pFin, out vrefFin);
             double scalfin = vrefFin.Dot(v2);
             double disfin = pFin.Distance(p2);

@@ -111,7 +111,7 @@ public class Coons : Filling
             {
                 for (k = 1; k <= 3; k++)
                 {
-                    p.SetCoord(k,
+                    p = p.WithCoord(k,
                                fv[j] * (_poles.Value(i, 1)).Coord(k) + gv[j] * (_poles.Value(i, nPolV)).Coord(k)
                                + fu[i] * (_poles.Value(1, j)).Coord(k) + gu[i] * (_poles.Value(nPolU, j)).Coord(k)
                                - fu[i] * fv[j] * (_poles.Value(1, 1)).Coord(k)

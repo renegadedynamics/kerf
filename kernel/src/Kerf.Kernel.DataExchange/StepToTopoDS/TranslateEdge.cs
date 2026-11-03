@@ -400,7 +400,7 @@ public sealed class TranslateEdge : ImportRoot
                 LineCurve3D line = c1 as LineCurve3D;
                 Line3D lin = line.Lin();
                 Point3D origin = new Point3D(pnt1.XYZ() - lin.Position().Direction().XYZ() * u1);
-                lin.SetLocation(origin);
+                lin = lin.WithLocation(origin);
                 c1 = new LineCurve3D(lin);
                 tp.AddWarning(c3D, "Poor result from projection vertex / line 3d, line shifted");
             }

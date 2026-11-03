@@ -428,7 +428,7 @@ public sealed partial class ImpImpIntersection
                     Line3D linsol = inter.Line(1);
                     if (linsol.Direction().Dot(co.Axis().Direction()) < 0.0)
                     {
-                        linsol.SetDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
                     }
                     double para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                     Point3D ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
@@ -506,7 +506,7 @@ public sealed partial class ImpImpIntersection
                         //----------------------------------------------------------
                         //--   -Cone.Direction <------- Apex
                         //--
-                        linsol.SetDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
                         if (!reversed)
                         {
                             glig = new GLine(linsol, true, situp_otherside, situco_otherside);
@@ -554,7 +554,7 @@ public sealed partial class ImpImpIntersection
                         //-- Other Side : Les transitions restent les memes
                         //--    linsol -> -linsol   et Quad1(2).N -> -Quad1(2).N
                         //--
-                        linsol.SetDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
                         glig = new GLine(linsol, false, trans1, trans2);
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
@@ -566,7 +566,7 @@ public sealed partial class ImpImpIntersection
                         linsol = inter.Line(2);
                         if (linsol.Direction().Dot(co.Axis().Direction()) < 0.0)
                         {
-                            linsol.SetDirection(linsol.Direction().Reversed());
+                            linsol = linsol.WithDirection(linsol.Direction().Reversed());
                         }
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptbid = global::Kerf.Engine.Geometry.ElCLib.Value(para + 5.0, linsol);
@@ -592,7 +592,7 @@ public sealed partial class ImpImpIntersection
                         //-- Other Side : Les transitions restent les memes
                         //--    linsol -> -linsol   et Quad1(2).N -> -Quad1(2).N
                         //--
-                        linsol.SetDirection(linsol.Direction().Reversed());
+                        linsol = linsol.WithDirection(linsol.Direction().Reversed());
                         glig = new GLine(linsol, false, trans1, trans2);
                         para = global::Kerf.Engine.Geometry.ElCLib.Parameter(linsol, apex);
                         ptsol.SetParameter(para);
@@ -793,7 +793,7 @@ public sealed partial class ImpImpIntersection
         Point3D pLoc = aCirc.Location();
         CoordinateSystem ax3 = aQuad.Position();
         SeamPosition(pLoc, ax3, out ax2);
-        aCirc.SetPosition(ax2);
+        aCirc = aCirc.WithPosition(ax2);
     }
 
     //=================================================================================================
@@ -812,7 +812,7 @@ public sealed partial class ImpImpIntersection
         {
             Point3D pLoc = aCirc.Location();
             SeamPosition(pLoc, ax3, out ax2);
-            aCirc.SetPosition(ax2);
+            aCirc = aCirc.WithPosition(ax2);
         }
     }
 
@@ -825,7 +825,7 @@ public sealed partial class ImpImpIntersection
         Point3D pLoc = aCirc.Location();
         CoordinateSystem ax3 = aQuad.Position();
         SeamPosition(pLoc, ax3, out ax2);
-        aCirc.SetPosition(ax2);
+        aCirc = aCirc.WithPosition(ax2);
     }
 
     //=================================================================================================
@@ -837,7 +837,7 @@ public sealed partial class ImpImpIntersection
         Point3D pLoc = aCirc.Location();
         CoordinateSystem ax3 = aQuad.Position();
         SeamPosition(pLoc, ax3, out ax2);
-        aCirc.SetPosition(ax2);
+        aCirc = aCirc.WithPosition(ax2);
     }
 
     //=================================================================================================

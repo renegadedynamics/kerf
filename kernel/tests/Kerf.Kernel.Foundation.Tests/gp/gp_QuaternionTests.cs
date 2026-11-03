@@ -30,7 +30,7 @@ public class gp_QuaternionTest
 
         Matrix3x3 aRinv = aQuat.GetMatrix().Inverted();
         Matrix3x3 aI = new();
-        aI.SetIdentity();
+        aI = aI.WithIdentity();
 
         // Check round-trip consistency: GetEulerAngles then SetEulerAngles should reproduce the matrix
         for (int i = (int)Extrinsic_XYZ; i <= (int)Intrinsic_ZYZ; i++)
@@ -73,7 +73,7 @@ public class gp_QuaternionTest
                 v.SetCoord(anAxis + 1, 1.0);
 
                 Transform3D aT = new();
-                aT.SetRotation(q2);
+                aT = aT.WithRotation(q2);
                 Xyz v2 = v;
                 aT.Transforms(ref v2);
 
@@ -140,7 +140,7 @@ public class gp_QuaternionTest
         Frame3D aResult = new(new Point3D(0.0, 0.0, 0.0), new Direction3D(aRotZ3), new Direction3D(aRotX2));
 
         Transform3D aTransformation = new();
-        aTransformation.SetDisplacement(new CoordinateSystem(new Frame3D()), new CoordinateSystem(aResult));
+        aTransformation = aTransformation.WithDisplacement(new CoordinateSystem(new Frame3D()), new CoordinateSystem(aResult));
 
         aTransformation.GetRotation().GetEulerAngles(YawPitchRoll,
                                                      out double aComputedAlpha,

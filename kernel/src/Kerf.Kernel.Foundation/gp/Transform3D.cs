@@ -76,7 +76,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _shape = PntMirror;
         _scale = -1.0;
         _loc = p.XYZ();
-        _matrix.SetIdentity();
+        _matrix = _matrix.WithIdentity();
         _loc.Multiply(2.0);
     }
 
@@ -85,12 +85,12 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _shape = Ax1Mirror;
         _scale = 1;
         _loc = a1.Location().XYZ();
-        _matrix.SetDot(a1.Direction().XYZ());
-        _matrix.Multiply(-2);
-        _matrix.SetDiagonal(_matrix.Value(1, 1) + 1, _matrix.Value(2, 2) + 1, _matrix.Value(3, 3) + 1);
+        _matrix = _matrix.WithDot(a1.Direction().XYZ());
+        _matrix = _matrix.Multiplied(-2);
+        _matrix = _matrix.WithDiagonal(_matrix.Value(1, 1) + 1, _matrix.Value(2, 2) + 1, _matrix.Value(3, 3) + 1);
         _loc.Multiply(_matrix);
         _loc.Add(a1.Location().XYZ());
-        _matrix.Multiply(-1);
+        _matrix = _matrix.Multiplied(-1);
     }
 
     internal void SetMirror(in Frame3D a2)
@@ -98,9 +98,9 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _shape = Ax2Mirror;
         _scale = -1;
         _loc = a2.Location().XYZ();
-        _matrix.SetDot(a2.Direction().XYZ());
-        _matrix.Multiply(2);
-        _matrix.SetDiagonal(_matrix.Value(1, 1) - 1, _matrix.Value(2, 2) - 1, _matrix.Value(3, 3) - 1);
+        _matrix = _matrix.WithDot(a2.Direction().XYZ());
+        _matrix = _matrix.Multiplied(2);
+        _matrix = _matrix.WithDiagonal(_matrix.Value(1, 1) - 1, _matrix.Value(2, 2) - 1, _matrix.Value(3, 3) - 1);
         _loc.Multiply(_matrix);
         _loc.Add(a2.Location().XYZ());
     }
@@ -110,7 +110,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _shape = global::Kerf.Geometry.TransformForm.Rotation;
         _scale = 1.0;
         _loc = a1.Location().XYZ();
-        _matrix.SetRotation(a1.Direction().XYZ(), ang);
+        _matrix = _matrix.WithRotation(a1.Direction().XYZ(), ang);
         _loc.Reverse();
         _loc.Multiply(_matrix);
         _loc.Add(a1.Location().XYZ());
@@ -133,7 +133,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         }
         else
         {
-            _matrix.SetIdentity();
+            _matrix = _matrix.WithIdentity();
         }
 
         switch (_shape)
@@ -174,7 +174,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _scale = s;
         _loc = p.XYZ();
         Standard_ConstructionError_Raise_if(Math.Abs(_scale) <= Constants.Resolution(), "gp_Trsf::SetScaleFactor");
-        _matrix.SetIdentity();
+        _matrix = _matrix.WithIdentity();
         _loc.Multiply(1 - s);
     }
 
@@ -183,7 +183,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _shape = CompoundTrsf;
         _scale = 1.0;
         // matrix from XOY to ToA2
-        _matrix.SetRows(toA2.XDirection().XYZ(), toA2.YDirection().XYZ(), toA2.Direction().XYZ());
+        _matrix = _matrix.WithRows(toA2.XDirection().XYZ(), toA2.YDirection().XYZ(), toA2.Direction().XYZ());
         _loc = toA2.Location().XYZ();
         _loc.Multiply(_matrix);
         _loc.Reverse();
@@ -199,14 +199,14 @@ public partial struct Transform3D : IEquatable<Transform3D>
         // matrix * MA1 => FromA1 ToA2
         ma1loc.Multiply(_matrix);
         _loc.Add(ma1loc);
-        _matrix.Multiply(ma1);
+        _matrix = _matrix.Multiplied(ma1);
     }
 
     internal void SetTransformation(in CoordinateSystem a3)
     {
         _shape = CompoundTrsf;
         _scale = 1.0;
-        _matrix.SetRows(a3.XDirection().XYZ(), a3.YDirection().XYZ(), a3.Direction().XYZ());
+        _matrix = _matrix.WithRows(a3.XDirection().XYZ(), a3.YDirection().XYZ(), a3.Direction().XYZ());
         _loc = a3.Location().XYZ();
         _loc.Multiply(_matrix);
         _loc.Reverse();
@@ -225,9 +225,9 @@ public partial struct Transform3D : IEquatable<Transform3D>
         _shape = CompoundTrsf;
         _scale = 1.0;
         // matrix from ToA2 to XOY
-        _matrix.SetCol(1, toA2.XDirection().XYZ());
-        _matrix.SetCol(2, toA2.YDirection().XYZ());
-        _matrix.SetCol(3, toA2.Direction().XYZ());
+        _matrix = _matrix.WithCol(1, toA2.XDirection().XYZ());
+        _matrix = _matrix.WithCol(2, toA2.YDirection().XYZ());
+        _matrix = _matrix.WithCol(3, toA2.Direction().XYZ());
         _loc = toA2.Location().XYZ();
 
         // matrix XOY to FromA1
@@ -236,7 +236,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         Xyz zDir = fromA1.Direction().XYZ();
 
         Matrix3x3 ma1 = new(xDir, yDir, zDir);
-        ma1.Transpose();
+        ma1 = ma1.Transposed();
         Xyz ma1loc = fromA1.Location().XYZ();
         ma1loc.Multiply(ma1);
         ma1loc.Reverse();
@@ -244,14 +244,14 @@ public partial struct Transform3D : IEquatable<Transform3D>
         // matrix * MA1
         ma1loc.Multiply(_matrix);
         _loc.Add(ma1loc);
-        _matrix.Multiply(ma1);
+        _matrix = _matrix.Multiplied(ma1);
     }
 
     internal void SetTranslation(in Vector3D v)
     {
         _shape = global::Kerf.Geometry.TransformForm.Translation;
         _scale = 1.0;
-        _matrix.SetIdentity();
+        _matrix = _matrix.WithIdentity();
         _loc = v.XYZ();
     }
 
@@ -259,7 +259,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
     {
         _shape = global::Kerf.Geometry.TransformForm.Translation;
         _scale = 1.0;
-        _matrix.SetIdentity();
+        _matrix = _matrix.WithIdentity();
         _loc = p2.XYZ().Subtracted(p1.XYZ());
     }
 
@@ -386,7 +386,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
             s = -Math.Pow(-s, 1.0 / 3.0);
         }
 
-        m.Divide(s);
+        m = m.Divided(s);
 
         _scale = s;
         _shape = CompoundTrsf;
@@ -418,7 +418,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         {
             Standard_ConstructionError_Raise_if(Math.Abs(_scale) <= Constants.Resolution(), "gp_Trsf::Invert() - transformation has zero scale");
             _scale = 1.0 / _scale;
-            _matrix.Transpose();
+            _matrix = _matrix.Transposed();
             _loc.Multiply(_matrix);
             _loc.Multiply(-_scale);
         }
@@ -443,7 +443,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                 _loc.Add(t._loc.Multiplied(_matrix));
             }
 
-            _matrix.Multiply(t._matrix);
+            _matrix = _matrix.Multiplied(t._matrix);
         }
         else if (_shape == global::Kerf.Geometry.TransformForm.Translation && t._shape == global::Kerf.Geometry.TransformForm.Translation)
         {
@@ -464,7 +464,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         {
             _shape = global::Kerf.Geometry.TransformForm.Rotation;
             _loc.Add(t._loc.Multiplied(_matrix));
-            _matrix.Multiply(t._matrix);
+            _matrix = _matrix.Multiplied(t._matrix);
         }
         else if ((_shape == CompoundTrsf || _shape == global::Kerf.Geometry.TransformForm.Rotation || _shape == Ax1Mirror || _shape == Ax2Mirror)
                  && t._shape == global::Kerf.Geometry.TransformForm.Translation)
@@ -551,7 +551,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
             }
 
             _loc.Add(tloc);
-            _matrix.Multiply(t._matrix);
+            _matrix = _matrix.Multiplied(t._matrix);
         }
     }
 
@@ -571,7 +571,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         {
             _loc.Multiply(t._matrix);
             _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
+            _matrix = _matrix.PreMultiplied(t._matrix);
         }
         else if (_shape == global::Kerf.Geometry.TransformForm.Translation && t._shape == global::Kerf.Geometry.TransformForm.Translation)
         {
@@ -595,7 +595,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
             _shape = global::Kerf.Geometry.TransformForm.Rotation;
             _loc.Multiply(t._matrix);
             _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
+            _matrix = _matrix.PreMultiplied(t._matrix);
         }
         else if ((_shape == CompoundTrsf || _shape == global::Kerf.Geometry.TransformForm.Rotation || _shape == Ax1Mirror || _shape == Ax2Mirror)
                  && t._shape == global::Kerf.Geometry.TransformForm.Translation)
@@ -675,7 +675,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
             }
 
             _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
+            _matrix = _matrix.PreMultiplied(t._matrix);
         }
     }
 
@@ -690,7 +690,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
             {
                 _scale = 1.0;
                 _shape = Identity;
-                _matrix.SetIdentity();
+                _matrix = _matrix.WithIdentity();
                 _loc = new Xyz(0.0, 0.0, 0.0);
             }
             else if (n == 1)
@@ -760,7 +760,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                         {
                             if (IsOdd(npower))
                             {
-                                _matrix.Multiply(tempmatrix);
+                                _matrix = _matrix.Multiplied(tempmatrix);
                             }
 
                             if (npower == 1)
@@ -768,7 +768,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                                 break;
                             }
 
-                            tempmatrix.Multiply(tempmatrix);
+                            tempmatrix = tempmatrix.Multiplied(tempmatrix);
                             npower = npower / 2;
                         }
                     }
@@ -780,7 +780,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                             if (IsOdd(npower))
                             {
                                 _loc.Add(temploc.Multiplied(_matrix));
-                                _matrix.Multiply(tempmatrix);
+                                _matrix = _matrix.Multiplied(tempmatrix);
                             }
 
                             if (npower == 1)
@@ -789,7 +789,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                             }
 
                             temploc.Add(temploc.Multiplied(tempmatrix));
-                            tempmatrix.Multiply(tempmatrix);
+                            tempmatrix = tempmatrix.Multiplied(tempmatrix);
                             npower = npower / 2;
                         }
                     }
@@ -800,7 +800,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                     {
                         _shape = Identity;
                         _scale = 1.0;
-                        _matrix.SetIdentity();
+                        _matrix = _matrix.WithIdentity();
                         _loc.SetX(0);
                         _loc.SetY(0);
                         _loc.SetZ(0);
@@ -819,7 +819,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
                         {
                             _loc.Add(temploc.Multiplied(_matrix).Multiplied(_scale));
                             _scale = _scale * tempscale;
-                            _matrix.Multiply(tempmatrix);
+                            _matrix = _matrix.Multiplied(tempmatrix);
                         }
 
                         if (npower == 1)
@@ -829,7 +829,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
 
                         tempscale = tempscale * tempscale;
                         temploc.Add(temploc.Multiplied(tempmatrix).Multiplied(tempscale));
-                        tempmatrix.Multiply(tempmatrix);
+                        tempmatrix = tempmatrix.Multiplied(tempmatrix);
                         npower = npower / 2;
                     }
                 }
@@ -854,7 +854,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         v3 -= v1 * v3.Dot(v1) + v2 * v3.Dot(v2);
         v3.Normalize();
 
-        tm.SetCols(v1, v2, v3);
+        tm = tm.WithCols(v1, v2, v3);
 
         v1 = tm.Row(1);
         v2 = tm.Row(2);
@@ -868,7 +868,7 @@ public partial struct Transform3D : IEquatable<Transform3D>
         v3 -= v1 * v3.Dot(v1) + v2 * v3.Dot(v2);
         v3.Normalize();
 
-        tm.SetRows(v1, v2, v3);
+        tm = tm.WithRows(v1, v2, v3);
 
         _matrix = tm;
     }
@@ -1029,11 +1029,11 @@ public partial struct Transform3D : IEquatable<Transform3D>
         Matrix3x3 m = _matrix;
         if (_shape == global::Kerf.Geometry.TransformForm.Scale || _shape == PntMirror)
         {
-            m.SetDiagonal(_scale * m._m00, _scale * m._m11, _scale * m._m22);
+            m = m.WithDiagonal(_scale * m._m00, _scale * m._m11, _scale * m._m22);
         }
         else
         {
-            m.Multiply(_scale);
+            m = m.Multiplied(_scale);
         }
 
         return m;

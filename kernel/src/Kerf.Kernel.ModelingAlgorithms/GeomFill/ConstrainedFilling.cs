@@ -185,7 +185,7 @@ public class ConstrainedFilling
             bound[i].D1(li, out pbid, out tgi);
             if (rev[i])
             {
-                tgi.Reverse();
+                tgi = tgi.Reversed();
             }
             if (!rev[next])
             {
@@ -198,7 +198,7 @@ public class ConstrainedFilling
             bound[next].D1(fn, out pbid, out tgn);
             if (rev[next])
             {
-                tgn.Reverse();
+                tgn = tgn.Reversed();
             }
             double ang = M_PI - tgi.Angle(tgn);
             stat[next].TgtAng(ang);
@@ -873,7 +873,7 @@ public class ConstrainedFilling
                 polij.Add(temp);
                 temp = c3.Multiplied(-ab2 * ab3);
                 polij.Add(temp);
-                ss0[i, j].SetXYZ(polij);
+                ss0[i, j] = ss0[i, j].WithXYZ(polij);
             }
         }
     }
@@ -975,7 +975,7 @@ public class ConstrainedFilling
             vtemp1.Multiply(coef1);
             vtemp = vtemp0.Added(vtemp1);
             vtemp.Multiply(0.5);
-            _v[0].SetXYZ(vtemp);
+            _v[0] = _v[0].WithXYZ(vtemp);
         }
 
         int ln0 = _nk[0]!.Length(), lp0 = _ncpol[0]!.Length();
@@ -991,7 +991,7 @@ public class ConstrainedFilling
             vtemp1.Multiply(coef1);
             vtemp = vtemp0.Added(vtemp1);
             vtemp.Multiply(0.5);
-            _v[1].SetXYZ(vtemp);
+            _v[1] = _v[1].WithXYZ(vtemp);
         }
         ln0 = _nk[0]!.Length();
         lp0 = _ncpol[0]!.Length();
@@ -1008,7 +1008,7 @@ public class ConstrainedFilling
             vtemp1.Multiply(coef1);
             vtemp = vtemp0.Added(vtemp1);
             vtemp.Multiply(0.5);
-            _v[2].SetXYZ(vtemp);
+            _v[2] = _v[2].WithXYZ(vtemp);
         }
         ln1 = _nk[1]!.Length();
         lp1 = _ncpol[1]!.Length();
@@ -1024,7 +1024,7 @@ public class ConstrainedFilling
             vtemp1.Multiply(coef1);
             vtemp = vtemp0.Added(vtemp1);
             vtemp.Multiply(0.5);
-            _v[3].SetXYZ(vtemp);
+            _v[3] = _v[3].WithXYZ(vtemp);
         }
 
         // On construit les poles de S1 par combinaison des poles des
@@ -1123,7 +1123,7 @@ public class ConstrainedFilling
                     temp = v3.Multiplied(-pq2 * pq3);
                     tpolij.Add(temp);
                 }
-                ss1[i, j].SetXYZ(tpolij);
+                ss1[i, j] = ss1[i, j].WithXYZ(tpolij);
             }
         }
     }
@@ -1138,7 +1138,7 @@ public class ConstrainedFilling
         {
             for (j = 1; j <= nj; j++)
             {
-                temp[i, j].SetXYZ(t0[i, j].XYZ().Added(t1[i, j].XYZ()));
+                temp[i, j] = temp[i, j].WithXYZ(t0[i, j].XYZ().Added(t1[i, j].XYZ()));
             }
         }
         _surf = new BSplineSurface(temp, _nk[0]!.Array1(), _nk[1]!.Array1(), _nm[0]!.Array1(), _nm[1]!.Array1(),
@@ -1340,7 +1340,7 @@ public class ConstrainedFilling
             Vector3D vtg = _tgalg[i]!.Value(uu);
             Vector3D vnor = bou.Norm(uu);
             Vector3D vcros = d1.Crossed(vnor);
-            vcros.Normalize();
+            vcros = vcros.Normalized();
             if (iu == 0)
             {
                 pmix = vtg.Dot(vcros);
@@ -1393,7 +1393,7 @@ public class ConstrainedFilling
             {
                 global::Kerf.Engine.Geometry.Splines.BSplCLib.D0(uu, 0, _degree[i % 2], false, _ntpol[i]!.Array1(), global::Kerf.Engine.Geometry.Splines.BSplCLib.NoWeights(), _nk[i % 2]!.Array1(),
                             _nm[i % 2]!.Array1(), out pbid);
-                vapp.SetXYZ(pbid.XYZ());
+                vapp = vapp.WithXYZ(pbid.XYZ());
                 vbound = bou.Norm(uu);
                 if (vapp.Magnitude() > 1.0e-15 && vbound.Magnitude() > 1.0e-15)
                 {

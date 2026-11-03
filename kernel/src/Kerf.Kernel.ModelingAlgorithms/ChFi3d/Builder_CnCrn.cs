@@ -1843,7 +1843,7 @@ public partial class FilletBuilderBase
                             {
                                 xx = xx + 2 * M_PI;
                             }
-                            p2d1.SetX(xx);
+                            p2d1 = p2d1.WithX(xx);
                         }
                         if (evive.Value(icplus).IsSame(edgecouture))
                         {
@@ -1856,7 +1856,7 @@ public partial class FilletBuilderBase
                             {
                                 xx = xx - 2 * M_PI;
                             }
-                            p2d2.SetX(xx);
+                            p2d2 = p2d2.WithX(xx);
                         }
                     }
                     xdir = p2d2.X() - p2d1.X();
@@ -3051,11 +3051,11 @@ internal static class Builder_CnCrn
         cl2.Tangent(out dir4);
         if (inverseic)
         {
-            dir3.Reverse();
+            dir3 = dir3.Reversed();
         }
         if (inverseicplus)
         {
-            dir4.Reverse();
+            dir4 = dir4.Reversed();
         }
         double h = p2d2.Distance(p2d1) / 20;
         Batten bat = new(p2d1, p2d2, h);
@@ -3519,7 +3519,7 @@ internal static class Builder_CnCrn
         Vector3D n = d1U.Crossed(d1V);
         if (fcur.Orientation() == Reversed)
         {
-            n.Reverse();
+            n = n.Reversed();
         }
 
         if (n.SquareMagnitude() <= global::Kerf.Engine.Foundation.Precision.PConfusion())
@@ -3528,7 +3528,7 @@ internal static class Builder_CnCrn
         }
 
         sumFaceNormalAtV1 += n.Normalized();
-        sumFaceNormalAtV1.Normalize();
+        sumFaceNormalAtV1 = sumFaceNormalAtV1.Normalized();
     }
 
     internal enum ChFi3d_SurfType
@@ -3580,7 +3580,7 @@ internal static class Builder_CnCrn
             pc.D0(fpar, out uv);
             plateSurf.D1(uv.X(), uv.Y(), out pp2, out du, out dv);
             Vector3D n1 = du ^ dv;
-            n1.Normalize();
+            n1 = n1.Normalized();
 
             pc.D0((fpar + lpar) / 2.0, out uv);
             plateSurf.D0(uv.X(), uv.Y(), out pp3);
@@ -3588,7 +3588,7 @@ internal static class Builder_CnCrn
             Vector3D vv1 = new(pp2, pp1), vv2 = new(pp2, pp3);
 
             Vector3D n2 = vv2 ^ vv1;
-            n2.Normalize();
+            n2 = n2.Normalized();
 
             sumScal1 += n1 * n2;
             sumScal2 += n2 * refDir;

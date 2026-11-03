@@ -530,7 +530,7 @@ public class OffsetSurface : Surface
                 {
                     return l;
                 }
-                dir.Normalize();
+                dir = dir.Normalized();
                 dir *= _offsetValue;
 
                 l.Translate(dir);
@@ -812,7 +812,7 @@ public class OffsetSurface : Surface
             else if (Radius <= -tol)
             {
                 // Negative radius: flip X-axis to reverse normal orientation.
-                Axis.XReverse();
+                Axis = Axis.XReversed();
                 result = new CylindricalSurface(Axis, -Radius);
             }
             // else: degenerate surface - radius is too small.
@@ -831,7 +831,7 @@ public class OffsetSurface : Surface
                 // Translate apex along axis by offset component.
                 Vector3D z = new Vector3D(anAxis.Direction());
                 z *= -sign * _offsetValue * sin;
-                anAxis.Translate(z);
+                anAxis = anAxis.Translated(z);
                 result = new ConicalSurface(anAxis, alpha, aRadius);
             }
             // else: degenerate surface - radius is negative.
@@ -849,8 +849,8 @@ public class OffsetSurface : Surface
             else if (radius <= -tol)
             {
                 // Negative radius: flip both X and Z axes to reverse normal orientation.
-                axis.XReverse();
-                axis.ZReverse();
+                axis = axis.XReversed();
+                axis = axis.ZReversed();
                 result = new SphericalSurface(axis, -radius);
             }
             // else: degenerate surface - radius is too small.
@@ -870,7 +870,7 @@ public class OffsetSurface : Surface
             else if (minorRadius <= -tol && -minorRadius <= majorRadius)
             {
                 // Negative minor radius: flip X-axis to reverse normal orientation.
-                axis.XReverse();
+                axis = axis.XReversed();
                 result = new ToroidalSurface(axis, majorRadius, -minorRadius);
             }
             // else: degenerate or self-intersecting torus - no equivalent surface.

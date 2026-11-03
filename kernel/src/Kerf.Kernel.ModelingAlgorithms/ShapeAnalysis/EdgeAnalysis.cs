@@ -291,7 +291,7 @@ public sealed class EdgeAnalysis
 
             if (edge.Orientation() == Reversed)
             {
-                tang.Reverse();
+                tang = tang.Reversed();
             }
         }
 
@@ -373,7 +373,7 @@ public sealed class EdgeAnalysis
             Point3D p12d = surf!.Value(p1uv.X(), p1uv.Y());
             if (!loc.IsIdentity)
             {
-                p12d.Transform(loc.Transformation());
+                p12d = p12d.Transformed(loc.Transformation());
             }
 
             if (p1v.Distance(p12d) > (preci < 0 ? Tool.Tolerance(v1) : preci))
@@ -388,7 +388,7 @@ public sealed class EdgeAnalysis
             Point3D p22d = surf!.Value(p2uv.X(), p2uv.Y());
             if (!loc.IsIdentity)
             {
-                p22d.Transform(loc.Transformation());
+                p22d = p22d.Transformed(loc.Transformation());
             }
 
             if (p2v.Distance(p22d) > (preci < 0 ? Tool.Tolerance(v2) : preci))

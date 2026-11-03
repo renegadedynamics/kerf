@@ -613,11 +613,11 @@ public class ProjectCurveOnSurface : Transient
                     }
                     if (isoTypeU)
                     {
-                        valueP1.SetY(isoPar1);
+                        valueP1 = valueP1.WithY(isoPar1);
                     }
                     else
                     {
-                        valueP1.SetX(isoPar1);
+                        valueP1 = valueP1.WithX(isoPar1);
                     }
                 }
                 if (isoClosed && (isoPar2 == parf || isoPar2 == parl))
@@ -633,11 +633,11 @@ public class ProjectCurveOnSurface : Transient
                     }
                     if (isoTypeU)
                     {
-                        valueP2.SetY(isoPar2);
+                        valueP2 = valueP2.WithY(isoPar2);
                     }
                     else
                     {
-                        valueP2.SetX(isoPar2);
+                        valueP2 = valueP2.WithX(isoPar2);
                     }
                 }
 
@@ -742,13 +742,13 @@ public class ProjectCurveOnSurface : Transient
                 {
                     if (isoTypeU)
                     {
-                        p2d.SetX(isoValue);
-                        p2d.SetY(tPar);
+                        p2d = p2d.WithX(isoValue);
+                        p2d = p2d.WithY(tPar);
                     }
                     else
                     {
-                        p2d.SetX(tPar);
-                        p2d.SetY(isoValue);
+                        p2d = p2d.WithX(tPar);
+                        p2d = p2d.WithY(isoValue);
                     }
                 }
             }
@@ -831,11 +831,11 @@ public class ProjectCurveOnSurface : Transient
             {
                 if (changeCycle)
                 {
-                    p2d.SetXY(2.0 * p2d.XY() - points2d[pntIndex + 1].XY());
+                    p2d = p2d.WithXY(2.0 * p2d.XY() - points2d[pntIndex + 1].XY());
                 }
                 else
                 {
-                    p2d.SetXY(2.0 * p2d.XY() - points2d[pntIndex - 1].XY());
+                    p2d = p2d.WithXY(2.0 * p2d.XY() - points2d[pntIndex - 1].XY());
                 }
             }
         }
@@ -886,12 +886,12 @@ public class ProjectCurveOnSurface : Transient
                 while (firstX < uf)
                 {
                     firstX += up;
-                    points2d[1].SetX(firstX);
+                    points2d[1] = points2d[1].WithX(firstX);
                 }
                 while (firstX > ul)
                 {
                     firstX -= up;
-                    points2d[1].SetX(firstX);
+                    points2d[1] = points2d[1].WithX(firstX);
                 }
             }
 
@@ -910,7 +910,7 @@ public class ProjectCurveOnSurface : Transient
                 }
                 double shift = ShapeAnalysisAnalysis.AdjustToPeriod(firstX, minParam, maxParam);
                 firstX += shift;
-                points2d[1].SetX(firstX);
+                points2d[1] = points2d[1].WithX(firstX);
             }
             prevX = firstX;
 
@@ -953,7 +953,7 @@ public class ProjectCurveOnSurface : Transient
                 {
                     for (int pntIter = 1; pntIter <= points2d.Length(); ++pntIter)
                     {
-                        points2d[pntIter].SetX(points2d[pntIter].X() + shiftX);
+                        points2d[pntIter] = points2d[pntIter].WithX(points2d[pntIter].X() + shiftX);
                     }
                 }
             }
@@ -968,12 +968,12 @@ public class ProjectCurveOnSurface : Transient
                 while (firstY < vf)
                 {
                     firstY += vp;
-                    points2d[1].SetY(firstY);
+                    points2d[1] = points2d[1].WithY(firstY);
                 }
                 while (firstY > vl)
                 {
                     firstY -= vp;
-                    points2d[1].SetY(firstY);
+                    points2d[1] = points2d[1].WithY(firstY);
                 }
             }
 
@@ -992,7 +992,7 @@ public class ProjectCurveOnSurface : Transient
                 }
                 double shift = ShapeAnalysisAnalysis.AdjustToPeriod(firstY, minParam, maxParam);
                 firstY += shift;
-                points2d[1].SetY(firstY);
+                points2d[1] = points2d[1].WithY(firstY);
             }
             prevY = firstY;
 
@@ -1035,7 +1035,7 @@ public class ProjectCurveOnSurface : Transient
                 {
                     for (int pntIter = 1; pntIter <= points2d.Length(); ++pntIter)
                     {
-                        points2d[pntIter].SetY(points2d[pntIter].Y() + shiftY);
+                        points2d[pntIter] = points2d[pntIter].WithY(points2d[pntIter].Y() + shiftY);
                     }
                 }
             }
@@ -1084,19 +1084,19 @@ public class ProjectCurveOnSurface : Transient
 
                     if (prevOnFirst)
                     {
-                        points2d[pntIter - 1].SetY(vf);
+                        points2d[pntIter - 1] = points2d[pntIter - 1].WithY(vf);
                     }
                     else if (prevOnLast)
                     {
-                        points2d[pntIter - 1].SetY(vl);
+                        points2d[pntIter - 1] = points2d[pntIter - 1].WithY(vl);
                     }
                     else if (currOnFirst)
                     {
-                        points2d[pntIter].SetY(vf);
+                        points2d[pntIter] = points2d[pntIter].WithY(vf);
                     }
                     else if (currOnLast)
                     {
-                        points2d[pntIter].SetY(vl);
+                        points2d[pntIter] = points2d[pntIter].WithY(vl);
                     }
                 }
             }
@@ -1136,37 +1136,37 @@ public class ProjectCurveOnSurface : Transient
                         double dU = up / 2 + global::Kerf.Engine.Foundation.Precision.PConfusion();
                         if (prevOnBound != 0)
                         {
-                            points2d[ind - 1].SetX(PrevX);
+                            points2d[ind - 1] = points2d[ind - 1].WithX(PrevX);
                             for (int j = ind - 2; j > 0; j--)
                             {
                                 double curX = points2d[j].X();
                                 while (curX < PrevX - dU)
                                 {
                                     curX += up;
-                                    points2d[j].SetX(curX);
+                                    points2d[j] = points2d[j].WithX(curX);
                                 }
                                 while (curX > PrevX + dU)
                                 {
                                     curX -= up;
-                                    points2d[j].SetX(curX);
+                                    points2d[j] = points2d[j].WithX(curX);
                                 }
                             }
                         }
                         else if (onBound != 0)
                         {
-                            points2d[ind].SetX(PrevX);
+                            points2d[ind] = points2d[ind].WithX(PrevX);
                             for (int j = ind + 1; j <= points2d.Length(); j++)
                             {
                                 double curX = points2d[j].X();
                                 while (curX < PrevX - dU)
                                 {
                                     curX += up;
-                                    points2d[j].SetX(curX);
+                                    points2d[j] = points2d[j].WithX(curX);
                                 }
                                 while (curX > PrevX + dU)
                                 {
                                     curX -= up;
-                                    points2d[j].SetX(curX);
+                                    points2d[j] = points2d[j].WithX(curX);
                                 }
                             }
                         }
@@ -1205,37 +1205,37 @@ public class ProjectCurveOnSurface : Transient
                         double dV = vp / 2 + global::Kerf.Engine.Foundation.Precision.PConfusion();
                         if (prevOnBound != 0)
                         {
-                            points2d[ind - 1].SetY(PrevY);
+                            points2d[ind - 1] = points2d[ind - 1].WithY(PrevY);
                             for (int j = ind - 2; j > 0; j--)
                             {
                                 double curY = points2d[j].Y();
                                 while (curY < PrevY - dV)
                                 {
                                     curY += vp;
-                                    points2d[j].SetY(curY);
+                                    points2d[j] = points2d[j].WithY(curY);
                                 }
                                 while (curY > PrevY + dV)
                                 {
                                     curY -= vp;
-                                    points2d[j].SetY(curY);
+                                    points2d[j] = points2d[j].WithY(curY);
                                 }
                             }
                         }
                         else if (onBound != 0)
                         {
-                            points2d[ind].SetY(PrevY);
+                            points2d[ind] = points2d[ind].WithY(PrevY);
                             for (int j = ind + 1; j <= points2d.Length(); j++)
                             {
                                 double curY = points2d[j].Y();
                                 while (curY < PrevY - dV)
                                 {
                                     curY += vp;
-                                    points2d[j].SetY(curY);
+                                    points2d[j] = points2d[j].WithY(curY);
                                 }
                                 while (curY > PrevY + dV)
                                 {
                                     curY -= vp;
-                                    points2d[j].SetY(curY);
+                                    points2d[j] = points2d[j].WithY(curY);
                                 }
                             }
                         }
@@ -1332,7 +1332,7 @@ public class ProjectCurveOnSurface : Transient
             {
                 break;
             }
-            dir.SetCoord(vec.X(), vec.Y());
+            dir = dir.WithCoord(vec.X(), vec.Y());
 
             Line2D line = new(firstPointOfLine, dir);
             IntConicConic intersector = new(isoLine, dom1, line, dom2, 1.0e-10, 1.0e-10);
@@ -1483,7 +1483,7 @@ public class ProjectCurveOnSurface : Transient
         if (toAdjust)
         {
             curCoord = correctedCurCoord;
-            points2d[index].SetCoord(indCoord, curCoord);
+            points2d[index] = points2d[index].WithCoord(indCoord, curCoord);
         }
     }
 
@@ -1568,7 +1568,7 @@ public class ProjectCurveOnSurface : Transient
             for (int i = 1; i <= numberPnt; i++)
             {
                 Point2D pnt2d = tmpPnts2d[i];
-                points3d[i].SetCoord(pnt2d.X(), pnt2d.Y(), 0);
+                points3d[i] = points3d[i].WithCoord(pnt2d.X(), pnt2d.Y(), 0);
                 @params[i] = tmpParams[i];
             }
 
@@ -1581,7 +1581,7 @@ public class ProjectCurveOnSurface : Transient
 
             for (int i = 1; i <= nbPoles; i++)
             {
-                poles2d[i].SetCoord(poles3d[i].X(), poles3d[i].Y());
+                poles2d[i] = poles2d[i].WithCoord(poles3d[i].X(), poles3d[i].Y());
             }
 
             NCollection_Array1<double> weights = crv3d.InternalWeightsArray();
@@ -1745,7 +1745,7 @@ public class ProjectCurveOnSurface : Transient
             tmpParam.SetValue(lastElem, 1);
             Xy lastPnt = points2d.Value(lastElem).XY();
             lastPnt.Add(new Xy(preci, preci));
-            points2d[lastElem].SetXY(lastPnt);
+            points2d[lastElem] = points2d[lastElem].WithXY(lastPnt);
             newLast = firstElem + 1;
         }
 
@@ -1955,11 +1955,11 @@ public class ProjectCurveOnSurface : Transient
                     mind2[0] = currd2[0];
                     if (isoU)
                     {
-                        valueP1.SetCoord(isoVal, tp[0]);
+                        valueP1 = valueP1.WithCoord(isoVal, tp[0]);
                     }
                     else
                     {
-                        valueP1.SetCoord(tp[0], isoVal);
+                        valueP1 = valueP1.WithCoord(tp[0], isoVal);
                     }
                 }
 
@@ -1969,11 +1969,11 @@ public class ProjectCurveOnSurface : Transient
                     mind2[1] = currd2[1];
                     if (isoU)
                     {
-                        valueP2.SetCoord(isoVal, tp[1]);
+                        valueP2 = valueP2.WithCoord(isoVal, tp[1]);
                     }
                     else
                     {
-                        valueP2.SetCoord(tp[1], isoVal);
+                        valueP2 = valueP2.WithCoord(tp[1], isoVal);
                     }
                 }
 
@@ -2005,13 +2005,13 @@ public class ProjectCurveOnSurface : Transient
                 p1OnIso = p2OnIso = true;
                 if (isTypeU)
                 {
-                    valueP1.SetCoord(isoValue, tpar[0]);
-                    valueP2.SetCoord(isoValue, tpar[1]);
+                    valueP1 = valueP1.WithCoord(isoValue, tpar[0]);
+                    valueP2 = valueP2.WithCoord(isoValue, tpar[1]);
                 }
                 else
                 {
-                    valueP1.SetCoord(tpar[0], isoValue);
-                    valueP2.SetCoord(tpar[1], isoValue);
+                    valueP1 = valueP1.WithCoord(tpar[0], isoValue);
+                    valueP2 = valueP2.WithCoord(tpar[1], isoValue);
                 }
 
                 if (mpt[0] != 3 && mpt[1] != 3)
@@ -2224,14 +2224,14 @@ public class ProjectCurveOnSurface : Transient
             double uPeriod = surf.UPeriod();
             double newU = global::Kerf.Engine.Geometry.ElCLib.InPeriod(secondPoint.X(), firstPoint.X() - uPeriod / 2,
                                            firstPoint.X() + uPeriod / 2);
-            secondPoint.SetX(newU);
+            secondPoint = secondPoint.WithX(newU);
         }
         if (surf.IsVPeriodic)
         {
             double vPeriod = surf.VPeriod();
             double newV = global::Kerf.Engine.Geometry.ElCLib.InPeriod(secondPoint.Y(), firstPoint.Y() - vPeriod / 2,
                                            firstPoint.Y() + vPeriod / 2);
-            secondPoint.SetY(newV);
+            secondPoint = secondPoint.WithY(newV);
         }
     }
 
@@ -2298,7 +2298,7 @@ public class ProjectCurveOnSurface : Transient
                 }
             }
 
-            pnt[i].SetCoord(idx, param);
+            pnt[i] = pnt[i].WithCoord(idx, param);
         }
 
         // Find possible period jump and increasing or decreasing coordinates vector
@@ -2330,14 +2330,14 @@ public class ProjectCurveOnSurface : Transient
             {
                 if (pnt[i].Coord(idx) > pnt[i - 1].Coord(idx))
                 {
-                    pnt[i - 1].SetCoord(idx, pnt[i - 1].Coord(idx) + period);
+                    pnt[i - 1] = pnt[i - 1].WithCoord(idx, pnt[i - 1].Coord(idx) + period);
                 }
             }
             for (int i = aSavedPoint; i < 3; i++)
             {
                 if (pnt[i].Coord(idx) < pnt[i + 1].Coord(idx))
                 {
-                    pnt[i + 1].SetCoord(idx, pnt[i + 1].Coord(idx) - period);
+                    pnt[i + 1] = pnt[i + 1].WithCoord(idx, pnt[i + 1].Coord(idx) - period);
                 }
             }
         }
@@ -2347,14 +2347,14 @@ public class ProjectCurveOnSurface : Transient
             {
                 if (pnt[i].Coord(idx) < pnt[i - 1].Coord(idx))
                 {
-                    pnt[i - 1].SetCoord(idx, pnt[i - 1].Coord(idx) - period);
+                    pnt[i - 1] = pnt[i - 1].WithCoord(idx, pnt[i - 1].Coord(idx) - period);
                 }
             }
             for (int i = aSavedPoint; i < 3; i++)
             {
                 if (pnt[i].Coord(idx) > pnt[i + 1].Coord(idx))
                 {
-                    pnt[i + 1].SetCoord(idx, pnt[i + 1].Coord(idx) + period);
+                    pnt[i + 1] = pnt[i + 1].WithCoord(idx, pnt[i + 1].Coord(idx) + period);
                 }
             }
         }

@@ -523,6 +523,13 @@ public struct Matrix3x3 : IEquatable<Matrix3x3>
         return newMat;
     }
 
+    public readonly Matrix3x3 PreMultiplied(in Matrix3x3 other)
+    {
+        Matrix3x3 newMat = this;
+        newMat.PreMultiply(other);
+        return newMat;
+    }
+
     public readonly Matrix3x3 Multiplied(double scalar)
     {
         Matrix3x3 newMat = this;

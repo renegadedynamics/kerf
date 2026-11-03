@@ -29,7 +29,7 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
         _shape = Identity;
         _scale = 1.0;
         _matrix = new Matrix3x3();
-        _matrix.SetScale(1.0);
+        _matrix = _matrix.WithScale(1.0);
     }
 
     public GeneralTransform3D(in Transform3D t)
@@ -66,9 +66,9 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
     {
         _shape = Other;
         _scale = 0.0;
-        _matrix.SetDot(a1.Direction().XYZ());
-        _matrix.Multiply(1.0 - ratio);
-        _matrix.SetDiagonal(_matrix.Value(1, 1) + ratio,
+        _matrix = _matrix.WithDot(a1.Direction().XYZ());
+        _matrix = _matrix.Multiplied(1.0 - ratio);
+        _matrix = _matrix.WithDiagonal(_matrix.Value(1, 1) + ratio,
                            _matrix.Value(2, 2) + ratio,
                            _matrix.Value(3, 3) + ratio);
         _loc = a1.Location().XYZ();
@@ -81,12 +81,12 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
     {
         _shape = Other;
         _scale = 0.0;
-        _matrix.SetDot(a2.Direction().XYZ());
-        _matrix.Multiply(ratio - 1.0);
+        _matrix = _matrix.WithDot(a2.Direction().XYZ());
+        _matrix = _matrix.Multiplied(ratio - 1.0);
         _loc = a2.Location().XYZ();
         _loc.Reverse();
         _loc.Multiply(_matrix);
-        _matrix.SetDiagonal(_matrix.Value(1, 1) + 1.0, _matrix.Value(2, 2) + 1.0, _matrix.Value(3, 3) + 1.0);
+        _matrix = _matrix.WithDiagonal(_matrix.Value(1, 1) + 1.0, _matrix.Value(2, 2) + 1.0, _matrix.Value(3, 3) + 1.0);
     }
 
     internal void SetValue(int row, int col, double value)
@@ -106,10 +106,10 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
         {
             if (!(_shape == Other) && !(_scale == 1.0))
             {
-                _matrix.Multiply(_scale);
+                _matrix = _matrix.Multiplied(_scale);
             }
 
-            _matrix.SetValue(row, col, value);
+            _matrix = _matrix.WithValue(row, col, value);
             _shape = Other;
             _scale = 0.0;
             return;
@@ -171,16 +171,16 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
             s = -Math.Pow(-s, 1.0 / 3.0);
         }
 
-        m.Divide(s);
+        m = m.Divided(s);
 
         // check if the matrix is an uniform matrix
         // the transposition should be the invert.
         Matrix3x3 tm = m;
-        tm.Transpose();
-        tm.Multiply(m);
+        tm = tm.Transposed();
+        tm = tm.Multiplied(m);
         Matrix3x3 identity = new();
-        identity.SetIdentity();
-        tm.Subtract(identity);
+        identity = identity.WithIdentity();
+        tm = tm.Subtracted(identity);
         if (_shape == Other)
         {
             _shape = CompoundTrsf;
@@ -203,14 +203,14 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
     {
         if (_shape == Other)
         {
-            _matrix.Invert();
+            _matrix = _matrix.Inverted();
             _loc.Multiply(_matrix);
             _loc.Reverse();
         }
         else
         {
             Transform3D t = Trsf();
-            t.Invert();
+            t = t.Inverted();
             SetTrsf(t);
         }
     }
@@ -222,13 +222,13 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
         {
             _shape = Other;
             _loc.Add(t._loc.Multiplied(_matrix));
-            _matrix.Multiply(t._matrix);
+            _matrix = _matrix.Multiplied(t._matrix);
         }
         else
         {
             Transform3D t1 = Trsf();
             Transform3D t2 = t.Trsf();
-            t1.Multiply(t2);
+            t1 = t1.Multiplied(t2);
             _matrix = t1._matrix;
             _loc = t1._loc;
             _scale = t1._scale;
@@ -244,13 +244,13 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
             _shape = Other;
             _loc.Multiply(t._matrix);
             _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
+            _matrix = _matrix.PreMultiplied(t._matrix);
         }
         else
         {
             Transform3D t1 = Trsf();
             Transform3D t2 = t.Trsf();
-            t1.PreMultiply(t2);
+            t1 = t1.PreMultiplied(t2);
             _matrix = t1._matrix;
             _loc = t1._loc;
             _scale = t1._scale;
@@ -264,7 +264,7 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
         {
             _scale = 1.0;
             _shape = Identity;
-            _matrix.SetIdentity();
+            _matrix = _matrix.WithIdentity();
             _loc = new Xyz(0.0, 0.0, 0.0);
         }
         else if (n == 1)
@@ -287,7 +287,7 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
                     if (IsOdd(npower))
                     {
                         _loc.Add(temploc.Multiplied(_matrix));
-                        _matrix.Multiply(tempmatrix);
+                        _matrix = _matrix.Multiplied(tempmatrix);
                     }
 
                     if (npower == 1)
@@ -296,14 +296,14 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
                     }
 
                     temploc.Add(temploc.Multiplied(tempmatrix));
-                    tempmatrix.Multiply(tempmatrix);
+                    tempmatrix = tempmatrix.Multiplied(tempmatrix);
                     npower = npower / 2;
                 }
             }
             else
             {
                 Transform3D t = Trsf();
-                t.Power(n);
+                t = t.Powered(n);
                 SetTrsf(t);
             }
         }
@@ -319,15 +319,15 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
 
         _shape = Other;
         _scale = 0.0;
-        _matrix.SetValue(1, 1, mat[0]);
-        _matrix.SetValue(1, 2, mat[1]);
-        _matrix.SetValue(1, 3, mat[2]);
-        _matrix.SetValue(2, 1, mat[4]);
-        _matrix.SetValue(2, 2, mat[5]);
-        _matrix.SetValue(2, 3, mat[6]);
-        _matrix.SetValue(3, 1, mat[8]);
-        _matrix.SetValue(3, 2, mat[9]);
-        _matrix.SetValue(3, 3, mat[10]);
+        _matrix = _matrix.WithValue(1, 1, mat[0]);
+        _matrix = _matrix.WithValue(1, 2, mat[1]);
+        _matrix = _matrix.WithValue(1, 3, mat[2]);
+        _matrix = _matrix.WithValue(2, 1, mat[4]);
+        _matrix = _matrix.WithValue(2, 2, mat[5]);
+        _matrix = _matrix.WithValue(2, 3, mat[6]);
+        _matrix = _matrix.WithValue(3, 1, mat[8]);
+        _matrix = _matrix.WithValue(3, 2, mat[9]);
+        _matrix = _matrix.WithValue(3, 3, mat[10]);
         _loc.SetCoord(mat[3], mat[7], mat[11]);
     }
 

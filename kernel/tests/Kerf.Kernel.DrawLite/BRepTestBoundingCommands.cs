@@ -321,7 +321,7 @@ internal static class BRepTestBoundingCommands
         double aHalfX = theBox.XHSize(), aHalfY = theBox.YHSize(), aHalfZ = theBox.ZHSize();
 
         Frame3D anAxes = new(aBaryCenter, new Direction3D(aZDir), new Direction3D(aXDir));
-        anAxes.SetLocation(new Point3D(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
+        anAxes = anAxes.WithLocation(new Point3D(aBaryCenter.XYZ() - aHalfX * aXDir - aHalfY * aYDir - aHalfZ * aZDir));
         Solid aBox = new MakeBox(anAxes, 2.0 * aHalfX, 2.0 * aHalfY, 2.0 * aHalfZ).Solid();
         theDI.SetShape(theName, aBox);
         return 0;

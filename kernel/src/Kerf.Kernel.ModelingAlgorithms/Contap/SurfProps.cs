@@ -30,7 +30,7 @@ public static class SurfProps
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, pl);
                 if (!pl.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
             }
             break;
@@ -42,11 +42,11 @@ public static class SurfProps
                 norm = new Vector3D(sp.Location(), p);
                 if (sp.Direct())
                 {
-                    norm.Divide(sp.Radius());
+                    norm = norm.Divided(sp.Radius());
                 }
                 else
                 {
-                    norm.Divide(-sp.Radius());
+                    norm = norm.Divided(-sp.Radius());
                 }
             }
             break;
@@ -55,11 +55,11 @@ public static class SurfProps
             {
                 Cylinder cy = HSurfaceTool.Cylinder(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, cy);
-                norm.SetLinearForm(Math.Cos(u), new Vector3D(cy.XAxis().Direction()), Math.Sin(u),
+                norm = Vector3D.LinearForm(Math.Cos(u), new Vector3D(cy.XAxis().Direction()), Math.Sin(u),
                                    new Vector3D(cy.YAxis().Direction()));
                 if (!cy.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
             }
             break;
@@ -76,25 +76,25 @@ public static class SurfProps
                 double vcalc = v;
                 if (Math.Abs(v * sina + rad) <= 1e-12)
                 { // on est a l'apex
-                    norm.SetCoord(0, 0, 0);
+                    norm = norm.WithCoord(0, 0, 0);
                     return;
                 }
 
                 if (rad + vcalc * sina < 0.0)
                 {
-                    norm.SetLinearForm(sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
+                    norm = Vector3D.LinearForm(sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
                                        new Vector3D(co.XAxis().Direction()), cosa * Math.Sin(u),
                                        new Vector3D(co.YAxis().Direction()));
                 }
                 else
                 {
-                    norm.SetLinearForm(-sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
+                    norm = Vector3D.LinearForm(-sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
                                        new Vector3D(co.XAxis().Direction()), cosa * Math.Sin(u),
                                        new Vector3D(co.YAxis().Direction()));
                 }
                 if (!co.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
             }
             break;
@@ -122,7 +122,7 @@ public static class SurfProps
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, pl, out p, out d1u, out d1v);
                 if (!pl.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
             }
             break;
@@ -134,11 +134,11 @@ public static class SurfProps
                 norm = new Vector3D(sp.Location(), p);
                 if (sp.Direct())
                 {
-                    norm.Divide(sp.Radius());
+                    norm = norm.Divided(sp.Radius());
                 }
                 else
                 {
-                    norm.Divide(-sp.Radius());
+                    norm = norm.Divided(-sp.Radius());
                 }
             }
             break;
@@ -147,11 +147,11 @@ public static class SurfProps
             {
                 Cylinder cy = HSurfaceTool.Cylinder(s);
                 global::Kerf.Engine.Geometry.ElSLib.D1(u, v, cy, out p, out d1u, out d1v);
-                norm.SetLinearForm(Math.Cos(u), new Vector3D(cy.XAxis().Direction()), Math.Sin(u),
+                norm = Vector3D.LinearForm(Math.Cos(u), new Vector3D(cy.XAxis().Direction()), Math.Sin(u),
                                    new Vector3D(cy.YAxis().Direction()));
                 if (!cy.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
             }
             break;
@@ -181,19 +181,19 @@ public static class SurfProps
 
                 if (rad + vcalc * sina < 0.0)
                 {
-                    norm.SetLinearForm(sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
+                    norm = Vector3D.LinearForm(sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
                                        new Vector3D(co.XAxis().Direction()), cosa * Math.Sin(u),
                                        new Vector3D(co.YAxis().Direction()));
                 }
                 else
                 {
-                    norm.SetLinearForm(-sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
+                    norm = Vector3D.LinearForm(-sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
                                        new Vector3D(co.XAxis().Direction()), cosa * Math.Sin(u),
                                        new Vector3D(co.YAxis().Direction()));
                 }
                 if (!co.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
             }
             break;
@@ -223,7 +223,7 @@ public static class SurfProps
                 norm = new Vector3D(pl.Axis().Direction());
                 if (!pl.Direct())
                 {
-                    norm.Reverse();
+                    norm = norm.Reversed();
                 }
                 dnu = dnv = new Vector3D(0.0, 0.0, 0.0);
             }
@@ -239,9 +239,9 @@ public static class SurfProps
                 {
                     rad = -rad;
                 }
-                norm.Divide(rad);
-                dnu.Divide(rad);
-                dnv.Divide(rad);
+                norm = norm.Divided(rad);
+                dnu = dnu.Divided(rad);
+                dnv = dnv.Divided(rad);
             }
             break;
 
@@ -249,14 +249,14 @@ public static class SurfProps
             {
                 Cylinder cy = HSurfaceTool.Cylinder(s);
                 p = global::Kerf.Engine.Geometry.ElSLib.Value(u, v, cy);
-                norm.SetLinearForm(Math.Cos(u), new Vector3D(cy.XAxis().Direction()), Math.Sin(u),
+                norm = Vector3D.LinearForm(Math.Cos(u), new Vector3D(cy.XAxis().Direction()), Math.Sin(u),
                                    new Vector3D(cy.YAxis().Direction()));
-                dnu.SetLinearForm(-Math.Sin(u), new Vector3D(cy.XAxis().Direction()), Math.Cos(u),
+                dnu = Vector3D.LinearForm(-Math.Sin(u), new Vector3D(cy.XAxis().Direction()), Math.Cos(u),
                                   new Vector3D(cy.YAxis().Direction()));
                 if (!cy.Direct())
                 {
-                    norm.Reverse();
-                    dnu.Reverse();
+                    norm = norm.Reversed();
+                    dnu = dnu.Reversed();
                 }
                 dnv = new Vector3D(0.0, 0.0, 0.0);
             }
@@ -286,22 +286,22 @@ public static class SurfProps
 
                 if (rad + vcalc * sina < 0.0)
                 {
-                    norm.SetLinearForm(sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
+                    norm = Vector3D.LinearForm(sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
                                        new Vector3D(co.XAxis().Direction()), cosa * Math.Sin(u),
                                        new Vector3D(co.YAxis().Direction()));
                 }
                 else
                 {
-                    norm.SetLinearForm(-sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
+                    norm = Vector3D.LinearForm(-sina, new Vector3D(co.Axis().Direction()), cosa * Math.Cos(u),
                                        new Vector3D(co.XAxis().Direction()), cosa * Math.Sin(u),
                                        new Vector3D(co.YAxis().Direction()));
                 }
-                dnu.SetLinearForm(-cosa * Math.Sin(u), new Vector3D(co.XAxis().Direction()), cosa * Math.Cos(u),
+                dnu = Vector3D.LinearForm(-cosa * Math.Sin(u), new Vector3D(co.XAxis().Direction()), cosa * Math.Cos(u),
                                   new Vector3D(co.YAxis().Direction()));
                 if (!co.Direct())
                 {
-                    norm.Reverse();
-                    dnu.Reverse();
+                    norm = norm.Reversed();
+                    dnu = dnu.Reversed();
                 }
                 dnv = new Vector3D(0.0, 0.0, 0.0);
             }

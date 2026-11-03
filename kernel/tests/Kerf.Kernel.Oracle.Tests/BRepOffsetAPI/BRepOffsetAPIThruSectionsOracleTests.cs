@@ -688,7 +688,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         if (aV == 1)
         {
             Transform3D aT = new();
-            aT.SetTranslation(new Vector3D(theOracle.Real(-0.2, 0.2), theOracle.Real(-0.2, 0.2), 0));
+            aT = aT.WithTranslation(new Vector3D(theOracle.Real(-0.2, 0.2), theOracle.Real(-0.2, 0.2), 0));
             return theWire.Moved(new Placement(aT));
         }
         return theWire;
@@ -961,7 +961,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                         var aNT = new N.gp_Trsf();
                         aNT.SetTranslation(new N.gp_Vec(x, y, z));
                         Transform3D aPT = new();
-                        aPT.SetTranslation(new Vector3D(x, y, z));
+                        aPT = aPT.WithTranslation(new Vector3D(x, y, z));
                         aShapes[t[i]] = (aN.Moved(new N.TopLoc_Location(aNT)), aP.Moved(new Placement(aPT)));
                         Func<Dictionary<int, N.TopoDS_Shape>, N.TopoDS_Shape> aBefore = anAgain[t[i]];
                         anAgain[t[i]] = g =>

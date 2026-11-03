@@ -154,11 +154,11 @@ public class BRepAdaptor_CompCurveTests
 
         if (aVFirst.SquareMagnitude() > Constants.Resolution())
         {
-            aVFirst.Normalize();
+            aVFirst = aVFirst.Normalized();
         }
         if (aVLast.SquareMagnitude() > Constants.Resolution())
         {
-            aVLast.Normalize();
+            aVLast = aVLast.Normalized();
         }
 
         // Reference: inverse circle (normal = (0,1,0)), evaluated at the same parameters
@@ -169,11 +169,11 @@ public class BRepAdaptor_CompCurveTests
         aCircleRef.D1(t2, out Point3D aRefP2, out Vector3D aRefV2);
         if (aRefV1.SquareMagnitude() > Constants.Resolution())
         {
-            aRefV1.Normalize();
+            aRefV1 = aRefV1.Normalized();
         }
         if (aRefV2.SquareMagnitude() > Constants.Resolution())
         {
-            aRefV2.Normalize();
+            aRefV2 = aRefV2.Normalized();
         }
 
         const double aTol = 1.0e-7;

@@ -93,9 +93,9 @@ public class BRepToolsIOTests
     public void Locations_are_written_elementary_then_complex()
     {
         var aT1 = new Transform3D();
-        aT1.SetTranslation(new Vector3D(1, 2, 3));
+        aT1 = aT1.WithTranslation(new Vector3D(1, 2, 3));
         var aT2 = new Transform3D();
-        aT2.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), Math.PI / 2);
+        aT2 = aT2.WithRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), Math.PI / 2);
         var aL1 = new Placement(aT1);
         var aL2 = new Placement(aT2);
         Placement aComplex = aL1 * aL2.Powered(2);

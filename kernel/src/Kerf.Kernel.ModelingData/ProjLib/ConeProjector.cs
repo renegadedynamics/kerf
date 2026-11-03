@@ -57,7 +57,7 @@ public class ConeProjector : Projector
         if (pnt.IsEqual(apex, global::Kerf.Engine.Foundation.Precision.Confusion()))
         {
             // Take another point in the line L, which does not coincide with the cone apex.
-            pnt.Translate(new Vector3D(l.Direction().XYZ()));
+            pnt = pnt.Translated(new Vector3D(l.Direction().XYZ()));
             deltaV = 1.0; // == ||L.Direction()|| == 1.0
         }
 
@@ -134,11 +134,11 @@ public class ConeProjector : Projector
         Direction2D d2d = new();
         if (zCone.Dot(zCir) > 0.0)
         {
-            d2d.SetCoord(1.0, 0.0);
+            d2d = d2d.WithCoord(1.0, 0.0);
         }
         else
         {
-            d2d.SetCoord(-1.0, 0.0);
+            d2d = d2d.WithCoord(-1.0, 0.0);
         }
         _lin = new Line2D(p2d1, d2d);
         _isDone = true;

@@ -273,7 +273,7 @@ public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
         {
             Point3D vertex = nodes.Value(vertIdx);
 
-            vertex.Transform(trsf);
+            vertex = vertex.Transformed(trsf);
 
             _vertexArray.Append(new NCollection_Vec3<double>(vertex.X(), vertex.Y(), vertex.Z()));
             _shapeIdxOfVtxVec.Append(index);

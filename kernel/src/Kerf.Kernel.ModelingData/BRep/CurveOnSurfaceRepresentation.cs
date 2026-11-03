@@ -62,7 +62,7 @@ public class CurveOnSurfaceRepresentation : GCurve
         // should be D0 NYI
         Point2D p2d = _pCurve!.Value(u);
         p = _surface!.Value(p2d.X(), p2d.Y());
-        p.Transform(_location.Transformation());
+        p = p.Transformed(_location.Transformation());
     }
 
     /// <summary>True.</summary>

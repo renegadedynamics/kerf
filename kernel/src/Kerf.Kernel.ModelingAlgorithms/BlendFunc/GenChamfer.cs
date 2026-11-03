@@ -153,8 +153,8 @@ public abstract class GenChamfer : BlendFunction
         Point3D pts2 = _surf2.Value(u2, v2);
         Direction3D dir = new Direction3D(new Vector3D(pts1, pts2));
 
-        c.SetLocation(pts1);
-        c.SetDirection(dir);
+        c = c.WithLocation(pts1);
+        c = c.WithDirection(dir);
 
         pdeb = 0.0;
         pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, pts2);
@@ -192,12 +192,12 @@ public abstract class GenChamfer : BlendFunction
 
         istgt = IsTangencyPoint;
 
-        poles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
-        poles2d[poles2d.Upper()].SetCoord(sol[3], sol[4]);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(sol[3], sol[4]);
         if (!istgt)
         {
-            dPoles2d[poles2d.Lower()].SetCoord(Tangent2dOnS1().X(), Tangent2dOnS1().Y());
-            dPoles2d[poles2d.Upper()].SetCoord(Tangent2dOnS2().X(), Tangent2dOnS2().Y());
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(Tangent2dOnS1().X(), Tangent2dOnS1().Y());
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(Tangent2dOnS2().X(), Tangent2dOnS2().Y());
         }
 
         poles[low] = PointOnS1();
@@ -229,8 +229,8 @@ public abstract class GenChamfer : BlendFunction
         x[2] = v1;
         x[3] = u2;
         x[4] = v2;
-        poles2d[poles2d.Lower()].SetCoord(u1, v1);
-        poles2d[poles2d.Upper()].SetCoord(u2, v2);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(u1, v1);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(u2, v2);
 
         Set(prm);
         Value(x, f);

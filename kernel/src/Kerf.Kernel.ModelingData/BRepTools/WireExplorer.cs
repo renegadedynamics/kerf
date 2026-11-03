@@ -585,11 +585,11 @@ public sealed class WireExplorer
                                     pCurve.D1(ePm, out pEe, out Vector2D aD);
                                     if (e.Orientation() == Reversed)
                                     {
-                                        pEe.SetXY(pEb.XY() - aD.XY());
+                                        pEe = pEe.WithXY(pEb.XY() - aD.XY());
                                     }
                                     else
                                     {
-                                        pEe.SetXY(pEb.XY() + aD.XY());
+                                        pEe = pEe.WithXY(pEb.XY() + aD.XY());
                                     }
 
                                     if (pEb.SquareDistance(pEe) <= Constants.Resolution())

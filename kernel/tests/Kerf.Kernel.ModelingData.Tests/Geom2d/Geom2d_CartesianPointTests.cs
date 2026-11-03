@@ -101,7 +101,7 @@ public class Geom2d_CartesianPointTest
         CartesianPoint2 aPnt = new CartesianPoint2(1.0, 2.0);
 
         Transform2D aTrsf = new();
-        aTrsf.SetTranslation(new Vector2D(3.0, 4.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(3.0, 4.0));
         aPnt.Transform(aTrsf);
 
         Assert.Equal(4.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -114,7 +114,7 @@ public class Geom2d_CartesianPointTest
         CartesianPoint2 aPnt = new CartesianPoint2(1.0, 0.0);
 
         Transform2D aTrsf = new();
-        aTrsf.SetRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
+        aTrsf = aTrsf.WithRotation(new Point2D(0.0, 0.0), M_PI / 2.0);
         aPnt.Transform(aTrsf);
 
         Assert.Equal(0.0, aPnt.X(), global::Kerf.Engine.Foundation.Precision.Confusion());

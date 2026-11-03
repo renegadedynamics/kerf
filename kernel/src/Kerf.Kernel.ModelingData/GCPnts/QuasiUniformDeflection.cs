@@ -162,7 +162,7 @@ public sealed class QuasiUniformDeflection
     {
         Point3D point = new();
         Point2D a2dPoint = c.Value(parameter);
-        point.SetCoord(a2dPoint.X(), a2dPoint.Y(), 0.0);
+        point = point.WithCoord(a2dPoint.X(), a2dPoint.Y(), 0.0);
         return point;
     }
 
@@ -176,8 +176,8 @@ public sealed class QuasiUniformDeflection
         c.D1(parameter, out Point2D a2dPoint, out Vector2D a2dVec);
         p = new Point3D();
         v = new Vector3D();
-        p.SetCoord(a2dPoint.X(), a2dPoint.Y(), 0.0);
-        v.SetCoord(a2dVec.X(), a2dVec.Y(), 0.0);
+        p = p.WithCoord(a2dPoint.X(), a2dPoint.Y(), 0.0);
+        v = v.WithCoord(a2dVec.X(), a2dVec.Y(), 0.0);
     }
 
     // ---- Templates over the curve type (3D instantiation) ----

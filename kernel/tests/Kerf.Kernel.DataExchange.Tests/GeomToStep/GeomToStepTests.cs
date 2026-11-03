@@ -121,10 +121,10 @@ public sealed class GeomToStepTests
     public void A_transformation_operator_reads_back_as_the_transformation()
     {
         Transform3D T = new Transform3D();
-        T.SetRotation(new Axis3D(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0.5);
+        T = T.WithRotation(new Axis3D(new Point3D(1, 0, 0), new Direction3D(0, 0, 1)), 0.5);
         Transform3D aTranslation = new Transform3D();
-        aTranslation.SetTranslation(new Vector3D(3, -2, 1));
-        T.PreMultiply(aTranslation);
+        aTranslation = aTranslation.WithTranslation(new Vector3D(3, -2, 1));
+        T = T.PreMultiplied(aTranslation);
 
         StepCartesianTransformationOperator3d anOperator = new MakeCartesianTransformationOperator(T).Value();
         Transform3D aBack = new Transform3D();

@@ -179,8 +179,8 @@ public static partial class ShapeConstruct
             BSplineCurve3D bspl = InternalConvertCurveToBSpline(basis, uf, ul, tol3d, cnt, maxSegments, maxDegree)!;
 
             Transform3D shiftF = new(), shiftL = new();
-            shiftF.SetTranslation(extr.Value(uf, 0), extr.Value(uf, vf));
-            shiftL.SetTranslation(extr.Value(uf, 0), extr.Value(uf, vl));
+            shiftF = shiftF.WithTranslation(extr.Value(uf, 0), extr.Value(uf, vf));
+            shiftL = shiftL.WithTranslation(extr.Value(uf, 0), extr.Value(uf, vl));
 
             int nbPoles = bspl.PoleCount;
             NCollection_Array1<Point3D> poles = bspl.InternalPoles();

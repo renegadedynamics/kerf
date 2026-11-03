@@ -150,7 +150,7 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
     public void Value(int index, NCollection_Array1<Point3D> tabPnt)
     {
         Point3D p = _line!.Point(index).Value();
-        tabPnt[1].SetCoord(p.X() + _xo, p.Y() + _yo, p.Z() + _zo);
+        tabPnt[1] = tabPnt[1].WithCoord(p.X() + _xo, p.Y() + _yo, p.Z() + _zo);
     }
 
     /// <summary>The 2d points of the MultiPoint <paramref name="index"/>.</summary>
@@ -162,19 +162,19 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
         {
             if (_p2donfirst)
             {
-                tabPnt2d[1].SetCoord(u1 + _u1o, v1 + _v1o);
+                tabPnt2d[1] = tabPnt2d[1].WithCoord(u1 + _u1o, v1 + _v1o);
             }
             else
             {
-                tabPnt2d[1].SetCoord(u2 + _u2o, v2 + _v2o);
+                tabPnt2d[1] = tabPnt2d[1].WithCoord(u2 + _u2o, v2 + _v2o);
             }
         }
         else
         {
-            tabPnt2d[1].SetCoord(u1 + _u1o, v1 + _v1o);
+            tabPnt2d[1] = tabPnt2d[1].WithCoord(u1 + _u1o, v1 + _v1o);
             if (tabPnt2d.Length() >= 2)
             {
-                tabPnt2d[2].SetCoord(u2 + _u2o, v2 + _v2o);
+                tabPnt2d[2] = tabPnt2d[2].WithCoord(u2 + _u2o, v2 + _v2o);
             }
         }
     }
@@ -200,7 +200,7 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
         bool ret = _ptrOnmySvSurfaces.Tangency(u1, v1, u2, v2, ref tabVec[1]);
         if (!ret)
         {
-            tabVec[1].SetCoord(0.0, 0.0, 0.0);
+            tabVec[1] = tabVec[1].WithCoord(0.0, 0.0, 0.0);
         }
 
         return ret;
@@ -468,7 +468,7 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
             double d, du, dv, duv2;
             temp.Point(i).Parameters(out u1, out v1, out u2, out v2);
             //-- Turn P1A P1B P1C
-            p1C.SetCoord(u1, v1);
+            p1C = p1C.WithCoord(u1, v1);
             du = p1B.X() - p1A.X();
             dv = p1B.Y() - p1A.Y();
             duv2 = 0.25 * (du * du + dv * dv);
@@ -484,7 +484,7 @@ public class MultiLine<TheLine> where TheLine : class, IWLine<TheLine>
             }
 
             //-- Turn P2A P2B P2C
-            p2C.SetCoord(u2, v2);
+            p2C = p2C.WithCoord(u2, v2);
             du = p2B.X() - p2A.X();
             dv = p2B.Y() - p2A.Y();
             duv2 = 0.25 * (du * du + dv * dv);

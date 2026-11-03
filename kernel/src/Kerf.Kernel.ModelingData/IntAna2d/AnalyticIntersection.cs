@@ -423,7 +423,7 @@ public class AnalyticIntersection
             Vector2D ax = new(c1.Location(), c2.Location());
             if (c1.Radius() < c2.Radius())
             {
-                ax.Reverse();
+                ax = ax.Reversed();
             }
 
             Vector2D ox1 = new(c1.XAxis().Direction());

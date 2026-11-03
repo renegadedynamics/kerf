@@ -63,7 +63,7 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
     {
         _persp = false;
         _focus = 0;
-        _scaledTrsf.SetTransformation(new CoordinateSystem(cs));
+        _scaledTrsf = _scaledTrsf.WithTransformation(new CoordinateSystem(cs));
         Scaled();
         SetDirection();
     }
@@ -74,7 +74,7 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
     {
         _persp = true;
         _focus = focus;
-        _scaledTrsf.SetTransformation(new CoordinateSystem(cs));
+        _scaledTrsf = _scaledTrsf.WithTransformation(new CoordinateSystem(cs));
         Scaled();
         SetDirection();
     }
@@ -164,15 +164,15 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
         _trsf = _scaledTrsf;
         if (!On)
         {
-            _trsf.SetScaleFactor(1.0);
+            _trsf = _trsf.WithScaleFactor(1.0);
             if (!_persp)
             {
-                _trsf.SetTranslationPart(new Vector3D(0.0, 0.0, 0.0));
+                _trsf = _trsf.WithTranslationPart(new Vector3D(0.0, 0.0, 0.0));
                 _type = TrsfType(_trsf);
             }
         }
         _invTrsf = _trsf;
-        _invTrsf.Invert();
+        _invTrsf = _invTrsf.Inverted();
     }
 
     /// <summary>A copy computing with the scale and translation (<paramref name="On"/>) or without (<see cref="Scaled"/>'s twin).</summary>
@@ -223,13 +223,13 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
     /// <summary>Transforms <paramref name="d"/> by the active transformation.</summary>
     public readonly void Transform(ref Vector3D d)
     {
-        d.Transform(_trsf);
+        d = d.Transformed(_trsf);
     }
 
     /// <summary>Transforms <paramref name="pnt"/> by the active transformation.</summary>
     public readonly void Transform(ref Point3D pnt)
     {
-        pnt.Transform(_trsf);
+        pnt = pnt.Transformed(_trsf);
     }
 
     /// <summary>
@@ -258,14 +258,14 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
                 { //-- top
                     x = p.X();
                     y = p.Y(); //-- Z=P.Z();
-                    pout.SetCoord(x, y);
+                    pout = pout.WithCoord(x, y);
                     break;
                 }
                 case 2:
                 {
                     x = p.X();
                     y = p.Z(); //-- Z=-P.Y();
-                    pout.SetCoord(x, y);
+                    pout = pout.WithCoord(x, y);
                     break;
                 }
                 case 3:
@@ -274,7 +274,7 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
                     double z07 = p.Z() * 0.7071067811865476;
                     x = 0.7071067811865476 * (p.X() + p.Y());
                     y = -xmy05 + z07;
-                    pout.SetCoord(x, y);
+                    pout = pout.WithCoord(x, y);
                     //-- Z= xmy05+z07;
                     break;
                 }
@@ -285,11 +285,11 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
                     if (_persp)
                     {
                         double r = 1.0 - p2.Z() / _focus;
-                        pout.SetCoord(p2.X() / r, p2.Y() / r);
+                        pout = pout.WithCoord(p2.X() / r, p2.Y() / r);
                     }
                     else
                     {
-                        pout.SetCoord(p2.X(), p2.Y());
+                        pout = pout.WithCoord(p2.X(), p2.Y());
                     }
                     break;
                 }
@@ -302,11 +302,11 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
             if (_persp)
             {
                 double r = 1.0 - p2.Z() / _focus;
-                pout.SetCoord(p2.X() / r, p2.Y() / r);
+                pout = pout.WithCoord(p2.X() / r, p2.Y() / r);
             }
             else
             {
-                pout.SetCoord(p2.X(), p2.Y());
+                pout = pout.WithCoord(p2.X(), p2.Y());
             }
         }
     }
@@ -380,20 +380,20 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
         pout = new Point2D();
         d1out = new Vector2D();
         Point3D pp = p;
-        pp.Transform(_trsf);
+        pp = pp.Transformed(_trsf);
         Vector3D dd1 = d1;
-        dd1.Transform(_trsf);
+        dd1 = dd1.Transformed(_trsf);
         if (_persp)
         {
             double r = 1.0 - pp.Z() / _focus;
-            pout.SetCoord(pp.X() / r, pp.Y() / r);
-            d1out.SetCoord(dd1.X() / r + pp.X() * dd1.Z() / (_focus * r * r),
+            pout = pout.WithCoord(pp.X() / r, pp.Y() / r);
+            d1out = d1out.WithCoord(dd1.X() / r + pp.X() * dd1.Z() / (_focus * r * r),
                            dd1.Y() / r + pp.Y() * dd1.Z() / (_focus * r * r));
         }
         else
         {
-            pout.SetCoord(pp.X(), pp.Y());
-            d1out.SetCoord(dd1.X(), dd1.Y());
+            pout = pout.WithCoord(pp.X(), pp.Y());
+            d1out = d1out.WithCoord(dd1.X(), dd1.Y());
         }
     }
 
@@ -409,36 +409,36 @@ public partial struct AlgorithmProjector : IEquatable<AlgorithmProjector>
         {
             l = new Line3D(new Point3D(x, y, 0), new Direction3D(Direction3D.D.NZ));
         }
-        l.Transform(_invTrsf);
+        l = l.Transformed(_invTrsf);
         return l;
     }
 
     private void SetDirection()
     {
         Vector3D v1 = new(1, 0, 0);
-        v1.Transform(_trsf);
+        v1 = v1.Transformed(_trsf);
         if ((Math.Abs(v1.X()) + Math.Abs(v1.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            v1.SetCoord(1, 1, 0);
+            v1 = v1.WithCoord(1, 1, 0);
         }
         Vector2D d1 = new(v1.X(), v1.Y());
-        _d1.SetCoord(-d1.Y(), d1.X());
+        _d1 = _d1.WithCoord(-d1.Y(), d1.X());
         Vector3D v2 = new(0, 1, 0);
-        v2.Transform(_trsf);
+        v2 = v2.Transformed(_trsf);
         if ((Math.Abs(v2.X()) + Math.Abs(v2.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            v2.SetCoord(1, 1, 0);
+            v2 = v2.WithCoord(1, 1, 0);
         }
         Vector2D d2 = new(v2.X(), v2.Y());
-        _d2.SetCoord(-d2.Y(), d2.X());
+        _d2 = _d2.WithCoord(-d2.Y(), d2.X());
         Vector3D v3 = new(0, 0, 1);
-        v3.Transform(_trsf);
+        v3 = v3.Transformed(_trsf);
         if ((Math.Abs(v3.X()) + Math.Abs(v3.Y())) < global::Kerf.Engine.Foundation.Precision.Angular())
         {
-            v3.SetCoord(1, 1, 0);
+            v3 = v3.WithCoord(1, 1, 0);
         }
         Vector2D d3 = new(v3.X(), v3.Y());
-        _d3.SetCoord(-d3.Y(), d3.X());
+        _d3 = _d3.WithCoord(-d3.Y(), d3.X());
     }
 
     public readonly bool Equals(AlgorithmProjector other)

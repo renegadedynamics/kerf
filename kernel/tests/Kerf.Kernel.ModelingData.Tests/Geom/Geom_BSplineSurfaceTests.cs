@@ -318,7 +318,7 @@ public class Geom_BSplineSurfaceTests
     public void Transform()
     {
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(10, 20, 30));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(10, 20, 30));
         Point3D aPtBefore = myOriginalSurface.Value(0.5, 0.5);
         myOriginalSurface.Transform(aTrsf);
         Point3D aPtAfter = myOriginalSurface.Value(0.5, 0.5);

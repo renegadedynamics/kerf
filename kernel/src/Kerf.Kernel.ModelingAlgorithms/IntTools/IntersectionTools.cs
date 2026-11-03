@@ -624,11 +624,11 @@ public static partial class IntersectionTools
         Direction3D dirLin = lin.Direction();
         Point3D locLin = lin.Location();
         //
-        p1.SetXYZ(locLin.XYZ() + tLin1 * dirLin.XYZ());
+        p1 = p1.WithXYZ(locLin.XYZ() + tLin1 * dirLin.XYZ());
         dist1 = dirPln.X() * (p1.X() - locPln.X()) + dirPln.Y() * (p1.Y() - locPln.Y())
                  + dirPln.Z() * (p1.Z() - locPln.Z());
         //
-        p2.SetXYZ(locLin.XYZ() + tLin2 * dirLin.XYZ());
+        p2 = p2.WithXYZ(locLin.XYZ() + tLin2 * dirLin.XYZ());
         dist2 = dirPln.X() * (p2.X() - locPln.X()) + dirPln.Y() * (p2.Y() - locPln.Y())
                  + dirPln.Z() * (p2.Z() - locPln.Z());
         //
@@ -655,7 +655,7 @@ public static partial class IntersectionTools
         }
         //
         tp = aTP;
-        p.SetXYZ(locLin.XYZ() + aTP * dirLin.XYZ());
+        p = p.WithXYZ(locLin.XYZ() + aTP * dirLin.XYZ());
         tolP = tol;
         tPmin = tp - tolPln;
         tPmax = tp + tolPln;

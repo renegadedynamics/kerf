@@ -149,7 +149,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             _conSurf.D0(u, out p);
         }
-        p.Transform(_trsf);
+        p = p.Transformed(_trsf);
         return p;
     }
 
@@ -165,8 +165,8 @@ public class TransformedCurve : CurveAdaptorBase
         {
             _conSurf.D1(u, out res.Point, out res.D1);
         }
-        res.Point.Transform(_trsf);
-        res.D1.Transform(_trsf);
+        res.Point = res.Point.Transformed(_trsf);
+        res.D1 = res.D1.Transformed(_trsf);
         return res;
     }
 
@@ -182,9 +182,9 @@ public class TransformedCurve : CurveAdaptorBase
         {
             _conSurf.D2(u, out res.Point, out res.D1, out res.D2);
         }
-        res.Point.Transform(_trsf);
-        res.D1.Transform(_trsf);
-        res.D2.Transform(_trsf);
+        res.Point = res.Point.Transformed(_trsf);
+        res.D1 = res.D1.Transformed(_trsf);
+        res.D2 = res.D2.Transformed(_trsf);
         return res;
     }
 
@@ -200,10 +200,10 @@ public class TransformedCurve : CurveAdaptorBase
         {
             _conSurf.D3(u, out res.Point, out res.D1, out res.D2, out res.D3);
         }
-        res.Point.Transform(_trsf);
-        res.D1.Transform(_trsf);
-        res.D2.Transform(_trsf);
-        res.D3.Transform(_trsf);
+        res.Point = res.Point.Transformed(_trsf);
+        res.D1 = res.D1.Transformed(_trsf);
+        res.D2 = res.D2.Transformed(_trsf);
+        res.D3 = res.D3.Transformed(_trsf);
         return res;
     }
 
@@ -219,7 +219,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             v = _conSurf.DN(u, n);
         }
-        v.Transform(_trsf);
+        v = v.Transformed(_trsf);
         return v;
     }
 
@@ -240,7 +240,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             l = _conSurf.Line();
         }
-        l.Transform(_trsf);
+        l = l.Transformed(_trsf);
         return l;
     }
 
@@ -256,7 +256,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             c = _conSurf.Circle();
         }
-        c.Transform(_trsf);
+        c = c.Transformed(_trsf);
         return c;
     }
 
@@ -272,7 +272,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             e = _conSurf.Ellipse();
         }
-        e.Transform(_trsf);
+        e = e.Transformed(_trsf);
         return e;
     }
 
@@ -288,7 +288,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             h = _conSurf.Hyperbola();
         }
-        h.Transform(_trsf);
+        h = h.Transformed(_trsf);
         return h;
     }
 
@@ -304,7 +304,7 @@ public class TransformedCurve : CurveAdaptorBase
         {
             p = _conSurf.Parabola();
         }
-        p.Transform(_trsf);
+        p = p.Transformed(_trsf);
         return p;
     }
 

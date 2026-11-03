@@ -796,9 +796,9 @@ public static partial class SurfaceBSplSLib
                       vPer,
                       out double w,
                       out p);
-        p.SetX(p.X() / w);
-        p.SetY(p.Y() / w);
-        p.SetZ(p.Z() / w);
+        p = p.WithX(p.X() / w);
+        p = p.WithY(p.Y() / w);
+        p = p.WithZ(p.Z() / w);
     }
 
     //=================================================================================================
@@ -2057,11 +2057,11 @@ public static partial class SurfaceBSplSLib
                 for (j = pLowerCol; j <= pUpperCol; j++)
                 {
                     ref Point3D p = ref poles.ChangeValue(i, j);
-                    p.SetX(fp[l]);
+                    p = p.WithX(fp[l]);
                     l++;
-                    p.SetY(fp[l]);
+                    p = p.WithY(fp[l]);
                     l++;
-                    p.SetZ(fp[l]);
+                    p = p.WithZ(fp[l]);
                     l++;
                 }
             }
@@ -2075,11 +2075,11 @@ public static partial class SurfaceBSplSLib
                 for (i = pLowerRow; i <= pUpperRow; i++)
                 {
                     ref Point3D p = ref poles.ChangeValue(i, j);
-                    p.SetX(fp[l]);
+                    p = p.WithX(fp[l]);
                     l++;
-                    p.SetY(fp[l]);
+                    p = p.WithY(fp[l]);
                     l++;
-                    p.SetZ(fp[l]);
+                    p = p.WithZ(fp[l]);
                     l++;
                 }
             }
@@ -2113,11 +2113,11 @@ public static partial class SurfaceBSplSLib
                     double w = fp[l + 3];
                     weights[i, j] = w;
                     ref Point3D p = ref poles.ChangeValue(i, j);
-                    p.SetX(fp[l] / w);
+                    p = p.WithX(fp[l] / w);
                     l++;
-                    p.SetY(fp[l] / w);
+                    p = p.WithY(fp[l] / w);
                     l++;
-                    p.SetZ(fp[l] / w);
+                    p = p.WithZ(fp[l] / w);
                     l++;
                     l++;
                 }
@@ -2134,11 +2134,11 @@ public static partial class SurfaceBSplSLib
                     double w = fp[l + 3];
                     weights[i, j] = w;
                     ref Point3D p = ref poles.ChangeValue(i, j);
-                    p.SetX(fp[l] / w);
+                    p = p.WithX(fp[l] / w);
                     l++;
-                    p.SetY(fp[l] / w);
+                    p = p.WithY(fp[l] / w);
                     l++;
-                    p.SetZ(fp[l] / w);
+                    p = p.WithZ(fp[l] / w);
                     l++;
                     l++;
                 }
@@ -4281,9 +4281,9 @@ public static partial class SurfaceBSplSLib
                         throw new ConstructionErrorException();
                     }
                     ref Point3D p = ref newNumerator[ii, jj];
-                    p.SetX(p.X() * result);
-                    p.SetY(p.Y() * result);
-                    p.SetZ(p.Z() * result);
+                    p = p.WithX(p.X() * result);
+                    p = p.WithY(p.Y() * result);
+                    p = p.WithZ(p.Z() * result);
                     newDenominator[ii, jj] *= result;
                 }
             }

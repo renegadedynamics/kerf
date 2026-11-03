@@ -75,7 +75,7 @@ public partial struct Cone : IEquatable<Cone>
     /// <summary>Reverses the V parametrisation (the main direction), which reverses the semi-angle.</summary>
     internal void VReverse()
     {
-        _pos.ZReverse();
+        _pos = _pos.ZReversed();
         _semiAngle = -_semiAngle;
     }
 
@@ -89,7 +89,7 @@ public partial struct Cone : IEquatable<Cone>
 
     internal void Scale(in Point3D p, double s)
     {
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
         _radius *= s;
         if (_radius < 0)
         {
@@ -99,7 +99,7 @@ public partial struct Cone : IEquatable<Cone>
 
     internal void Transform(in Transform3D t)
     {
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
         _radius *= t.ScaleFactor();
         if (_radius < 0)
         {
@@ -191,7 +191,7 @@ public partial struct Cone : IEquatable<Cone>
         // Dans le repere du cone :
         // X**2 + Y**2 - (radius + Z * std::tan(semiAngle))**2 = 0.0
         Transform3D t = new();
-        t.SetTransformation(_pos);
+        t = t.WithTransformation(_pos);
         double kAng = Math.Tan(_semiAngle);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
@@ -234,35 +234,35 @@ public partial struct Cone : IEquatable<Cone>
     public readonly Cone Mirrored(in Point3D p)
     {
         Cone c = this;
-        c._pos.Mirror(p);
+        c._pos = c._pos.Mirrored(p);
         return c;
     }
 
     public readonly Cone Mirrored(in Axis3D a1)
     {
         Cone c = this;
-        c._pos.Mirror(a1);
+        c._pos = c._pos.Mirrored(a1);
         return c;
     }
 
     public readonly Cone Mirrored(in Frame3D a2)
     {
         Cone c = this;
-        c._pos.Mirror(a2);
+        c._pos = c._pos.Mirrored(a2);
         return c;
     }
 
     public readonly Cone Rotated(in Axis3D a1, double ang)
     {
         Cone cone = this;
-        cone._pos.Rotate(a1, ang);
+        cone._pos = cone._pos.Rotated(a1, ang);
         return cone;
     }
 
     public readonly Cone Scaled(in Point3D p, double s)
     {
         Cone c = this;
-        c._pos.Scale(p, s);
+        c._pos = c._pos.Scaled(p, s);
         c._radius *= s;
         if (c._radius < 0)
         {
@@ -275,7 +275,7 @@ public partial struct Cone : IEquatable<Cone>
     public readonly Cone Transformed(in Transform3D t)
     {
         Cone c = this;
-        c._pos.Transform(t);
+        c._pos = c._pos.Transformed(t);
         c._radius *= t.ScaleFactor();
         if (c._radius < 0)
         {
@@ -288,14 +288,14 @@ public partial struct Cone : IEquatable<Cone>
     public readonly Cone Translated(in Vector3D v)
     {
         Cone cone = this;
-        cone._pos.Translate(v);
+        cone._pos = cone._pos.Translated(v);
         return cone;
     }
 
     public readonly Cone Translated(in Point3D p1, in Point3D p2)
     {
         Cone cone = this;
-        cone._pos.Translate(p1, p2);
+        cone._pos = cone._pos.Translated(p1, p2);
         return cone;
     }
 

@@ -73,7 +73,7 @@ public sealed class RevolutionForm
         if (_isTrans)
         {
             Transform3D t = new();
-            t.SetRotation(_axis, _angTra);
+            t = t.WithRotation(_axis, _angTra);
             TrsfModification modbase = new(t);
             modif.Init(theBase);
             modif.Perform(modbase);

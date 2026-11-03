@@ -65,11 +65,11 @@ public static class BRepLProp
             d2 = clp2.D1();
             if (c1.Edge().Orientation() == Reversed)
             {
-                d1.Reverse();
+                d1 = d1.Reversed();
             }
             if (c2.Edge().Orientation() == Reversed)
             {
-                d2.Reverse();
+                d2 = d2.Reversed();
             }
             if (d1.IsEqual(d2, tl, ta))
             {
@@ -81,11 +81,11 @@ public static class BRepLProp
                 clp2.Tangent(out Direction3D dir2);
                 if (c1.Edge().Orientation() == Reversed)
                 {
-                    dir1.Reverse();
+                    dir1 = dir1.Reversed();
                 }
                 if (c2.Edge().Orientation() == Reversed)
                 {
-                    dir2.Reverse();
+                    dir2 = dir2.Reversed();
                 }
                 if (dir1.IsEqual(dir2, ta))
                 {

@@ -684,7 +684,7 @@ public class IsoCurve : CurveAdaptorBase
                             axes = new CoordinateSystem(ax1.Location(), ax1.Direction(), new Direction3D(dx));
                             ComputeHR(axes, val0, out h, out radius);
                             Vector3D vt = new Vector3D(axes.Direction());
-                            axes.Translate(vt * h);
+                            axes = axes.Translated(vt * h);
                             return new Circle3D(axes.Ax2(), radius);
                         }
                     }

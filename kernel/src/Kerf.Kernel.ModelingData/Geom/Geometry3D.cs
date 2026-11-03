@@ -28,7 +28,7 @@ public abstract class Geometry3D : Transient
     {
         CheckMutable();
         Transform3D t = new Transform3D();
-        t.SetMirror(p);
+        t = t.WithMirror(p);
         Transform(t);
     }
 
@@ -37,7 +37,7 @@ public abstract class Geometry3D : Transient
     {
         CheckMutable();
         Transform3D t = new Transform3D();
-        t.SetMirror(a1);
+        t = t.WithMirror(a1);
         Transform(t);
     }
 
@@ -46,7 +46,7 @@ public abstract class Geometry3D : Transient
     {
         CheckMutable();
         Transform3D t = new Transform3D();
-        t.SetMirror(a2);
+        t = t.WithMirror(a2);
         Transform(t);
     }
 
@@ -55,7 +55,7 @@ public abstract class Geometry3D : Transient
     {
         CheckMutable();
         Transform3D t = new Transform3D();
-        t.SetRotation(a1, ang);
+        t = t.WithRotation(a1, ang);
         Transform(t);
     }
 
@@ -64,7 +64,7 @@ public abstract class Geometry3D : Transient
     {
         CheckMutable();
         Transform3D t = new Transform3D();
-        t.SetScale(p, s);
+        t = t.WithScale(p, s);
         Transform(t);
     }
 
@@ -73,7 +73,7 @@ public abstract class Geometry3D : Transient
     {
         CheckMutable();
         Transform3D t = new Transform3D();
-        t.SetTranslation(v);
+        t = t.WithTranslation(v);
         Transform(t);
     }
 

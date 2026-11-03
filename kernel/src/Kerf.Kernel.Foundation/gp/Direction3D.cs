@@ -165,7 +165,7 @@ public partial struct Direction3D : IEquatable<Direction3D>
     internal void Rotate(in Axis3D a1, double ang)
     {
         Transform3D t = new();
-        t.SetRotation(a1, ang);
+        t = t.WithRotation(a1, ang);
         _coord.Multiply(t.HVectorialPart());
     }
 

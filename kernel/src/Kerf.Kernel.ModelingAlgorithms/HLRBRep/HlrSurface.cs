@@ -105,7 +105,7 @@ public sealed class HlrSurface
         {
             for (iv = 1; iv <= nbvPoles; iv++)
             {
-                pnt[iu, iv].Transform(t);
+                pnt[iu, iv] = pnt[iu, iv].Transformed(t);
             }
         }
 
@@ -177,8 +177,8 @@ public sealed class HlrSurface
             Axis3D a = pl.Axis();
             pt = a.Location();
             d = new Vector3D(a.Direction());
-            pt.Transform(Proj().Transformation());
-            d.Transform(Proj().Transformation());
+            pt = pt.Transformed(Proj().Transformation());
+            d = d.Transformed(Proj().Transformation());
             if (Proj().Perspective())
             {
                 r = d.Z() * Proj().Focus() - (d.X() * pt.X() + d.Y() * pt.Y() + d.Z() * pt.Z());
@@ -198,7 +198,7 @@ public sealed class HlrSurface
             Cylinder cyl = BSurfaceTool.Cylinder(_surf);
             Axis3D a = cyl.Axis();
             d = new Vector3D(a.Direction());
-            d.Transform(Proj().Transformation());
+            d = d.Transformed(Proj().Transformation());
             r = Sqrt(d.X() * d.X() + d.Y() * d.Y());
             return r < toler;
         }
@@ -210,7 +210,7 @@ public sealed class HlrSurface
             }
             Cone con = BSurfaceTool.Cone(_surf);
             pt = con.Apex();
-            pt.Transform(Proj().Transformation());
+            pt = pt.Transformed(Proj().Transformation());
             double tol = 0.001;
             return pt.IsEqual(new Point3D(0, 0, Proj().Focus()), tol);
         }

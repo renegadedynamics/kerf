@@ -18,7 +18,7 @@ public static class CustomCurve2d
         Vector2D avec = new Vector2D(p1, p2);
         Direction2D adir = new Direction2D(avec);
         Line2D alin = new Line2D(p1, adir);
-        alin.SetLocation(global::Kerf.Engine.Geometry.ElCLib.Value(c1, alin));
+        alin = alin.WithLocation(global::Kerf.Engine.Geometry.ElCLib.Value(c1, alin));
         cf = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, p1);
         cl = global::Kerf.Engine.Geometry.ElCLib.Parameter(alin, p2);
         return alin;

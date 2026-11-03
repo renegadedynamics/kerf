@@ -44,8 +44,8 @@ public class Axis2Placement : AxisPlacement
     {
         _vxdir = vx;
         _vydir = vy;
-        _axis.SetLocation(p);
-        _axis.SetDirection(vz);
+        _axis = _axis.WithLocation(p);
+        _axis = _axis.WithDirection(vz);
     }
 
     /// <summary>A new, unfrozen coordinate system equal to this one.</summary>
@@ -75,7 +75,7 @@ public class Axis2Placement : AxisPlacement
     protected internal override void SetDirection(in Direction3D v)
     {
         CheckMutable();
-        _axis.SetDirection(v);
+        _axis = _axis.WithDirection(v);
         _vxdir = v.CrossCrossed(_vxdir, v);
         _vydir = v.Crossed(_vxdir);
     }
@@ -108,10 +108,10 @@ public class Axis2Placement : AxisPlacement
     {
         CheckMutable();
         // axis.Location().Transform (T);
-        _axis.SetLocation(_axis.Location().Transformed(t)); // 10-03-93
-        _vxdir.Transform(t);
-        _vydir.Transform(t);
-        _axis.SetDirection(_vxdir.Crossed(_vydir));
+        _axis = _axis.WithLocation(_axis.Location().Transformed(t)); // 10-03-93
+        _vxdir = _vxdir.Transformed(t);
+        _vydir = _vydir.Transformed(t);
+        _axis = _axis.WithDirection(_vxdir.Crossed(_vydir));
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

@@ -53,7 +53,7 @@ internal class Revolution : OneAxis
         Edge e = new();
         Curve3D c = (Curve3D)_meridian!.Copy();
         Transform3D t = new();
-        t.SetRotation(Axes().Axis(), ang);
+        t = t.WithRotation(Axes().Axis(), ang);
         c.Transform(t);
         _builder.Builder().MakeEdge(ref e, c, global::Kerf.Engine.Foundation.Precision.Confusion());
         return e;

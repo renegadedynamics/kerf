@@ -86,7 +86,7 @@ internal static class OffsetCurveUtils3D
         // P(u)
         value.ChangeCoord().Add(ndir);
         // P'(u)
-        d1.Add(new Vector3D(dNdir));
+        d1 = d1.Added(new Vector3D(dNdir));
         return true;
     }
 
@@ -158,13 +158,13 @@ internal static class OffsetCurveUtils3D
         // P(u)
         value.ChangeCoord().Add(ndir);
         // P'(u) :
-        d1.Add(new Vector3D(dNdir));
+        d1 = d1.Added(new Vector3D(dNdir));
         // P"(u) :
         if (isDirChange)
         {
-            d2.Reverse();
+            d2 = d2.Reversed();
         }
-        d2.Add(new Vector3D(d2Ndir));
+        d2 = d2.Added(new Vector3D(d2Ndir));
         return true;
     }
 
@@ -258,15 +258,15 @@ internal static class OffsetCurveUtils3D
         // P(u)
         value.ChangeCoord().Add(ndir);
         // P'(u) :
-        d1.Add(new Vector3D(dNdir));
+        d1 = d1.Added(new Vector3D(dNdir));
         // P"(u)
-        d2.Add(new Vector3D(d2Ndir));
+        d2 = d2.Added(new Vector3D(d2Ndir));
         // P"'(u)
         if (isDirChange)
         {
-            d3.Reverse();
+            d3 = d3.Reversed();
         }
-        d3.Add(new Vector3D(d3Ndir));
+        d3 = d3.Added(new Vector3D(d3Ndir));
         return true;
     }
 

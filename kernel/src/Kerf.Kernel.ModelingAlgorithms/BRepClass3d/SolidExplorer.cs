@@ -102,11 +102,11 @@ public class SolidExplorer
             double y = t.Y();
             if (edge.Orientation() == Forward)
             {
-                t.SetCoord(-y, x);
+                t = t.WithCoord(-y, x);
             }
             else
             {
-                t.SetCoord(y, -x);
+                t = t.WithCoord(y, -x);
             }
 
             double paramInit = global::Kerf.Engine.Foundation.Precision.Infinite();
@@ -115,8 +115,8 @@ public class SolidExplorer
 
             var fClassifier = new FacePassiveClassifier();
 
-            t.Normalize();
-            p.SetCoord(p.X() + tolInit * t.X(), p.Y() + tolInit * t.Y());
+            t = t.Normalized();
+            p = p.WithCoord(p.X() + tolInit * t.X(), p.Y() + tolInit * t.Y());
             fClassifier.Reset(new Line2D(p, new Direction2D(t)), paramInit, RealEpsilon()); //-- Length and Tolerance #######
 
             var otherfaceexplorer = new Explorer();

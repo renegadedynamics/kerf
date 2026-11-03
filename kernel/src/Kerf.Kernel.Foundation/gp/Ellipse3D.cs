@@ -91,7 +91,7 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform3D t)
@@ -108,7 +108,7 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector3D v) => _pos.Translate(v);
@@ -248,28 +248,28 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
     public readonly Ellipse3D Mirrored(in Point3D p)
     {
         Ellipse3D e = this;
-        e._pos.Mirror(p);
+        e._pos = e._pos.Mirrored(p);
         return e;
     }
 
     public readonly Ellipse3D Mirrored(in Axis3D a1)
     {
         Ellipse3D e = this;
-        e._pos.Mirror(a1);
+        e._pos = e._pos.Mirrored(a1);
         return e;
     }
 
     public readonly Ellipse3D Mirrored(in Frame3D a2)
     {
         Ellipse3D e = this;
-        e._pos.Mirror(a2);
+        e._pos = e._pos.Mirrored(a2);
         return e;
     }
 
     public readonly Ellipse3D Rotated(in Axis3D a1, double ang)
     {
         Ellipse3D e = this;
-        e._pos.Rotate(a1, ang);
+        e._pos = e._pos.Rotated(a1, ang);
         return e;
     }
 
@@ -288,7 +288,7 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
             e._minorRadius = -e._minorRadius;
         }
 
-        e._pos.Scale(p, s);
+        e._pos = e._pos.Scaled(p, s);
         return e;
     }
 
@@ -307,21 +307,21 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
             e._minorRadius = -e._minorRadius;
         }
 
-        e._pos.Transform(t);
+        e._pos = e._pos.Transformed(t);
         return e;
     }
 
     public readonly Ellipse3D Translated(in Vector3D v)
     {
         Ellipse3D e = this;
-        e._pos.Translate(v);
+        e._pos = e._pos.Translated(v);
         return e;
     }
 
     public readonly Ellipse3D Translated(in Point3D p1, in Point3D p2)
     {
         Ellipse3D e = this;
-        e._pos.Translate(p1, p2);
+        e._pos = e._pos.Translated(p1, p2);
         return e;
     }
 

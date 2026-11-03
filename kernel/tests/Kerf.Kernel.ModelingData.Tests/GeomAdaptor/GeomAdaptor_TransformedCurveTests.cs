@@ -27,7 +27,7 @@ public class GeomAdaptor_TransformedCurveTest
     private static Transform3D CreateTranslation(double theDx, double theDy, double theDz)
     {
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(theDx, theDy, theDz));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(theDx, theDy, theDz));
         return aTrsf;
     }
 
@@ -35,7 +35,7 @@ public class GeomAdaptor_TransformedCurveTest
     private static Transform3D CreateRotationZ(double theAngleRad)
     {
         Transform3D aTrsf = new();
-        aTrsf.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theAngleRad);
+        aTrsf = aTrsf.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), theAngleRad);
         return aTrsf;
     }
 
@@ -227,10 +227,10 @@ public class GeomAdaptor_TransformedCurveTest
 
             // Get local values and transform manually
             aCircle.D3(aParams.Value(i), out Point3D aLocalP, out Vector3D aLocalD1, out Vector3D aLocalD2, out Vector3D aLocalD3);
-            aLocalP.Transform(aTrsf);
-            aLocalD1.Transform(aTrsf);
-            aLocalD2.Transform(aTrsf);
-            aLocalD3.Transform(aTrsf);
+            aLocalP = aLocalP.Transformed(aTrsf);
+            aLocalD1 = aLocalD1.Transformed(aTrsf);
+            aLocalD2 = aLocalD2.Transformed(aTrsf);
+            aLocalD3 = aLocalD3.Transformed(aTrsf);
 
             Assert.Equal(0.0, aPnt.Distance(aLocalP), THE_TOLERANCE);
             Assert.Equal(0.0, (aD1 - aLocalD1).Magnitude(), THE_TOLERANCE);
@@ -250,7 +250,7 @@ public class GeomAdaptor_TransformedCurveTest
         {
             Vector3D aResult = aCurve.DN(1.0, aOrder);
             Vector3D aExpected = aCircle.DN(1.0, aOrder);
-            aExpected.Transform(aTrsf);
+            aExpected = aExpected.Transformed(aTrsf);
             Assert.Equal(0.0, (aResult - aExpected).Magnitude(), THE_TOLERANCE);
         }
     }

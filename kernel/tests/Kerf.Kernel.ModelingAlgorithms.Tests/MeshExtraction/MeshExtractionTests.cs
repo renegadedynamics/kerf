@@ -184,9 +184,9 @@ public class MeshExtractionTests
         global::Kerf.Engine.Meshing.MeshBuffers aPlain = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCone, Deflection, Angle);
 
         var aRotation = new Transform3D();
-        aRotation.SetRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0.5)), 0.8);
+        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(1, 2, 3), new Direction3D(1, 1, 0.5)), 0.8);
         var aMirror = new Transform3D();
-        aMirror.SetMirror(new Frame3D(new Point3D(0, 0, 2), new Direction3D(0.2, 0.1, 1)));
+        aMirror = aMirror.WithMirror(new Frame3D(new Point3D(0, 0, 2), new Direction3D(0.2, 0.1, 1)));
         foreach (Transform3D aTrsf in new[] { aRotation, aMirror })
         {
             global::Kerf.Engine.Meshing.MeshBuffers aMoved = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aCone.Moved(new Placement(aTrsf)), Deflection, Angle);

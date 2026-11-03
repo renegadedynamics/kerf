@@ -65,7 +65,7 @@ public partial struct Sphere : IEquatable<Sphere>
 
     internal void Scale(in Point3D p, double s)
     {
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
         _radius *= s;
         if (_radius < 0)
         {
@@ -75,7 +75,7 @@ public partial struct Sphere : IEquatable<Sphere>
 
     internal void Transform(in Transform3D t)
     {
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
         _radius *= t.ScaleFactor();
         if (_radius < 0)
         {
@@ -140,7 +140,7 @@ public partial struct Sphere : IEquatable<Sphere>
         // Dans le repere local de la sphere :
         // X*X + Y*Y + Z*Z - radius * radius = 0
         Transform3D t = new();
-        t.SetTransformation(_pos);
+        t = t.WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -184,35 +184,35 @@ public partial struct Sphere : IEquatable<Sphere>
     public readonly Sphere Mirrored(in Point3D p)
     {
         Sphere c = this;
-        c._pos.Mirror(p);
+        c._pos = c._pos.Mirrored(p);
         return c;
     }
 
     public readonly Sphere Mirrored(in Axis3D a1)
     {
         Sphere c = this;
-        c._pos.Mirror(a1);
+        c._pos = c._pos.Mirrored(a1);
         return c;
     }
 
     public readonly Sphere Mirrored(in Frame3D a2)
     {
         Sphere c = this;
-        c._pos.Mirror(a2);
+        c._pos = c._pos.Mirrored(a2);
         return c;
     }
 
     public readonly Sphere Rotated(in Axis3D a1, double ang)
     {
         Sphere c = this;
-        c._pos.Rotate(a1, ang);
+        c._pos = c._pos.Rotated(a1, ang);
         return c;
     }
 
     public readonly Sphere Scaled(in Point3D p, double s)
     {
         Sphere c = this;
-        c._pos.Scale(p, s);
+        c._pos = c._pos.Scaled(p, s);
         c._radius *= s;
         if (c._radius < 0)
         {
@@ -225,7 +225,7 @@ public partial struct Sphere : IEquatable<Sphere>
     public readonly Sphere Transformed(in Transform3D t)
     {
         Sphere c = this;
-        c._pos.Transform(t);
+        c._pos = c._pos.Transformed(t);
         c._radius *= t.ScaleFactor();
         if (c._radius < 0)
         {
@@ -238,14 +238,14 @@ public partial struct Sphere : IEquatable<Sphere>
     public readonly Sphere Translated(in Vector3D v)
     {
         Sphere c = this;
-        c._pos.Translate(v);
+        c._pos = c._pos.Translated(v);
         return c;
     }
 
     public readonly Sphere Translated(in Point3D p1, in Point3D p2)
     {
         Sphere c = this;
-        c._pos.Translate(p1, p2);
+        c._pos = c._pos.Translated(p1, p2);
         return c;
     }
 

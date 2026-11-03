@@ -47,16 +47,16 @@ public class CoonsAlgPatch : Transient
         Xyz temp;
         temp = b4.Value(deb1).XYZ().Added(b1.Value(deb0).XYZ());
         temp.Multiply(0.5);
-        _c[0].SetXYZ(temp);
+        _c[0] = _c[0].WithXYZ(temp);
         temp = b1.Value(fin0).XYZ().Added(b2.Value(deb1).XYZ());
         temp.Multiply(0.5);
-        _c[1].SetXYZ(temp);
+        _c[1] = _c[1].WithXYZ(temp);
         temp = b2.Value(fin1).XYZ().Added(b3.Value(fin0).XYZ());
         temp.Multiply(0.5);
-        _c[2].SetXYZ(temp);
+        _c[2] = _c[2].WithXYZ(temp);
         temp = b3.Value(deb0).XYZ().Added(b4.Value(fin1).XYZ());
         temp.Multiply(0.5);
-        _c[3].SetXYZ(temp);
+        _c[3] = _c[3].WithXYZ(temp);
     }
 
     /// <summary>The blending functions.</summary>
@@ -163,7 +163,7 @@ public class CoonsAlgPatch : Transient
         cortemp.Multiply(-a2 * a3);
         cor.Add(cortemp);
 
-        vbid.SetXYZ(cor);
+        vbid = vbid.WithXYZ(cor);
         return vbid;
     }
 
@@ -212,7 +212,7 @@ public class CoonsAlgPatch : Transient
         cortemp.Multiply(-a2 * a3);
         cor.Add(cortemp);
 
-        vbid.SetXYZ(cor);
+        vbid = vbid.WithXYZ(cor);
         return vbid;
     }
 
@@ -264,7 +264,7 @@ public class CoonsAlgPatch : Transient
         cortemp.Multiply(-a2 * a3);
         cor.Add(cortemp);
 
-        vbid.SetXYZ(cor);
+        vbid = vbid.WithXYZ(cor);
         return vbid;
     }
 

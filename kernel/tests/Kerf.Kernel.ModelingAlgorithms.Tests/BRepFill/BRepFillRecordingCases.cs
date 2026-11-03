@@ -219,10 +219,10 @@ internal static class BRepFillRecordingCases
     {
         Transform3D aRot = new();
         double anAngle = r.R(-3, 3);
-        aRot.SetRotation(new Axis3D(new Point3D(0, 0, 0), Dir(r)), anAngle);
+        aRot = aRot.WithRotation(new Axis3D(new Point3D(0, 0, 0), Dir(r)), anAngle);
         Transform3D aTr = new();
         Point3D aP = Pnt(r, theScale);
-        aTr.SetTranslation(new Vector3D(aP.XYZ()));
+        aTr = aTr.WithTranslation(new Vector3D(aP.XYZ()));
         return aTr * aRot;
     }
 
@@ -603,7 +603,7 @@ internal static class BRepFillRecordingCases
         double tx = r.R(-1, 1);
         double ty = r.R(2, 4);
         double tz = r.R(-1, 1);
-        aT.SetTranslation(new Vector3D(tx, ty, tz));
+        aT = aT.WithTranslation(new Vector3D(tx, ty, tz));
         Wire aG = ShapeCasts.Wire(new Transform(aW, aT, true).Shape());
         Guard(() =>
         {
@@ -770,9 +770,9 @@ internal static class BRepFillRecordingCases
             Transform3D aTr = new();
             double tx = r.R(-1, 1);
             double ty = r.R(-1, 1);
-            aTr.SetTranslation(new Vector3D(tx, ty, 5.0 * i));
+            aTr = aTr.WithTranslation(new Vector3D(tx, ty, 5.0 * i));
             Transform3D aRot = new();
-            aRot.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), r.R(-0.5, 0.5));
+            aRot = aRot.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), r.R(-0.5, 0.5));
             aTr = aTr * aRot;
             if ((i == 1 && aFirstPoint) || (i == aNb && aLastPoint))
             {
@@ -902,7 +902,7 @@ internal static class BRepFillRecordingCases
         else
         {
             Transform3D aT = new();
-            aT.SetTranslation(new Vector3D(aO.XYZ()));
+            aT = aT.WithTranslation(new Vector3D(aO.XYZ()));
             aSec = new Transform(RandomWire(r, 1, 0.3, 0.3), aT, true).Shape();
         }
         bool aContact = r.I(0, 1) == 1;

@@ -530,7 +530,7 @@ internal static class PolyhedronUtils
             return 0.0;
         }
 
-        normalVector.Divide(normLen);
+        normalVector = normalVector.Divided(normLen);
 
         // Compute distance from center to triangle plane
         Vector3D p1P = new(p1, center);

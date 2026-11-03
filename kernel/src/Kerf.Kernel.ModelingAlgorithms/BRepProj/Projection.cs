@@ -205,7 +205,7 @@ public sealed class Projection
 
         // move the base of the cylindrical surface by translating it by -mdis
         Transform3D t = new();
-        t.SetTranslation(vinf);
+        t = t.WithTranslation(vinf);
         // Note: it is necessary to create copy of wire to avoid adding new pcurves into it
         TrsfModification trsf = new(t);
         Modifier modif = new(wire, trsf);
@@ -271,7 +271,7 @@ public sealed class Projection
 
         // move the base of the conical surface by scaling it with ratio Scale
         Transform3D t = new();
-        t.SetScale(p, scale);
+        t = t.WithScale(p, scale);
         TrsfModification tsca = new(t);
         Modifier modifScale = new(aWire, tsca);
         Shape shapeGen1 = modifScale.InternalModifiedShape(aWire);

@@ -93,15 +93,15 @@ public partial class ChBuilder : FilletBuilderBase
         Vector3D tg1 = new(), tg2 = new();
         spine1.D1(spine1.Absc(v), out tmp, out tg1);
         spine2.D1(spine2.Absc(v), out tmp, out tg2);
-        tg1.Normalize();
-        tg2.Normalize();
+        tg1 = tg1.Normalized();
+        tg2 = tg2.Normalized();
         if (isfirst1)
         {
-            tg1.Reverse();
+            tg1 = tg1.Reversed();
         }
         if (isfirst2)
         {
-            tg2.Reverse();
+            tg2 = tg2.Reversed();
         }
 
         double cosalpha = 0.0, sinalpha = 0.0;
@@ -765,13 +765,13 @@ public partial class ChBuilder : FilletBuilderBase
                 isec.Set(line, p1, p2);
                 if (i == 1)
                 {
-                    pf1.SetCoord(u1, v1);
-                    pf2.SetCoord(u2, v2);
+                    pf1 = pf1.WithCoord(u1, v1);
+                    pf2 = pf2.WithCoord(u2, v2);
                 }
                 if (i == nbp)
                 {
-                    pl1.SetCoord(u1, v1);
-                    pl2.SetCoord(u2, v2);
+                    pl1 = pl1.WithCoord(u1, v1);
+                    pl2 = pl2.WithCoord(u2, v2);
                 }
             }
 
@@ -894,13 +894,13 @@ public partial class ChBuilder : FilletBuilderBase
                 isec.Set(line, p1, p2);
                 if (i == 1)
                 {
-                    pf1.SetCoord(u1, v1);
-                    pf2.SetCoord(u2, v2);
+                    pf1 = pf1.WithCoord(u1, v1);
+                    pf2 = pf2.WithCoord(u2, v2);
                 }
                 if (i == nbp)
                 {
-                    pl1.SetCoord(u1, v1);
-                    pl2.SetCoord(u2, v2);
+                    pl1 = pl1.WithCoord(u1, v1);
+                    pl2 = pl2.WithCoord(u2, v2);
                 }
             }
 
@@ -996,13 +996,13 @@ public partial class ChBuilder : FilletBuilderBase
                 isec.Set(line, p1, p2);
                 if (i == 1)
                 {
-                    pf1.SetCoord(u1, v1);
-                    pf2.SetCoord(u2, v2);
+                    pf1 = pf1.WithCoord(u1, v1);
+                    pf2 = pf2.WithCoord(u2, v2);
                 }
                 if (i == nbp)
                 {
-                    pl1.SetCoord(u1, v1);
-                    pl2.SetCoord(u2, v2);
+                    pl1 = pl1.WithCoord(u1, v1);
+                    pl2 = pl2.WithCoord(u2, v2);
                 }
             }
 
@@ -1142,17 +1142,17 @@ public partial class ChBuilder : FilletBuilderBase
 
             if (rev1)
             {
-                tgF.Reverse();
+                tgF = tgF.Reversed();
             }
             if (rev2)
             {
-                tgL.Reverse();
+                tgL = tgL.Reversed();
             }
 
             temp = (tgF.XYZ()).Multiplied(dis);
-            pt1.SetXYZ((ptgui.XYZ()).Added(temp));
+            pt1 = pt1.WithXYZ((ptgui.XYZ()).Added(temp));
             temp = (tgL.XYZ()).Multiplied(dis);
-            pt2.SetXYZ((ptgui.XYZ()).Added(temp));
+            pt2 = pt2.WithXYZ((ptgui.XYZ()).Added(temp));
 
             double tol = _tolesp * 1.0e2;
             //    double u,v;
@@ -1241,11 +1241,11 @@ public partial class ChBuilder : FilletBuilderBase
 
             if (rev1)
             {
-                tgF.Reverse();
+                tgF = tgF.Reversed();
             }
             if (rev2)
             {
-                tgL.Reverse();
+                tgL = tgL.Reversed();
             }
 
             double dist1 = dis1, dist2 = dis2;
@@ -1265,9 +1265,9 @@ public partial class ChBuilder : FilletBuilderBase
             }
 
             temp = (tgF.XYZ()).Multiplied(dist1);
-            pt1.SetXYZ((ptgui.XYZ()).Added(temp));
+            pt1 = pt1.WithXYZ((ptgui.XYZ()).Added(temp));
             temp = (tgL.XYZ()).Multiplied(dist2);
-            pt2.SetXYZ((ptgui.XYZ()).Added(temp));
+            pt2 = pt2.WithXYZ((ptgui.XYZ()).Added(temp));
 
             double tol = _tolesp * 1.0e2;
             //    double u,v;
@@ -1331,15 +1331,15 @@ public partial class ChBuilder : FilletBuilderBase
 
             if (rev1)
             {
-                tgF.Reverse();
+                tgF = tgF.Reversed();
             }
             if (rev2)
             {
-                tgL.Reverse();
+                tgL = tgL.Reversed();
             }
 
             temp = (tgF.XYZ()).Multiplied(dis1);
-            pt1.SetXYZ((ptgui.XYZ()).Added(temp));
+            pt1 = pt1.WithXYZ((ptgui.XYZ()).Added(temp));
 
             double dis2 = 0.0, tmpcos = 0.0, tmpsin = 0.0;
             tmpcos = tgF.Dot(tgL);
@@ -1348,7 +1348,7 @@ public partial class ChBuilder : FilletBuilderBase
             dis2 = dis1 / (tmpcos + tmpsin / Math.Tan(angle));
 
             temp = (tgL.XYZ()).Multiplied(dis2);
-            pt2.SetXYZ((ptgui.XYZ()).Added(temp));
+            pt2 = pt2.WithXYZ((ptgui.XYZ()).Added(temp));
 
             double tol = _tolesp * 1.0e2;
             //      double u,v;
@@ -1840,8 +1840,8 @@ public partial class ChBuilder : FilletBuilderBase
 
                         if (n1.SquareMagnitude() > 1.0e-14 && n2.SquareMagnitude() > 1.0e-14)
                         {
-                            n1.Normalize();
-                            n2.Normalize();
+                            n1 = n1.Normalized();
+                            n2 = n2.Normalized();
                             double sina2 = n1.Crossed(n2).SquareMagnitude();
                             if (sina2 < seuil2)
                             {

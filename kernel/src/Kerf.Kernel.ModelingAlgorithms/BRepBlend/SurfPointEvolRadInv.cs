@@ -99,8 +99,8 @@ public class SurfPointEvolRadInv : SurfPointFuncInv
         unsurnormd1cur = 1.0 / normd1cur;
         nplan = unsurnormd1cur * d1cur;
 
-        dnplan.SetLinearForm(-nplan.Dot(d2cur), nplan, d2cur);
-        dnplan.Multiply(unsurnormd1cur);
+        dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
+        dnplan = dnplan.Multiplied(unsurnormd1cur);
         dtheD = -nplan.XYZ().Dot(d1cur.XYZ()) - dnplan.XYZ().Dot(ptcur.XYZ());
         d[1, 1] = dnplan.XYZ().Dot(_point.XYZ()) + dtheD;
         d[1, 2] = d[1, 3] = 0.0;
@@ -134,19 +134,19 @@ public class SurfPointEvolRadInv : SurfPointFuncInv
         double dvnplandotnsurf = nplan.Dot(dvnsurf);
 
         Vector3D temp = new(), dwtemp = new(), dutemp = new(), dvtemp = new();
-        temp.SetLinearForm(nplandotnsurf, nplan, -1.0, nsurf);
-        dwtemp.SetLinearForm(nplandotnsurf, dnplan, dwnplandotnsurf, nplan);
-        dutemp.SetLinearForm(dunplandotnsurf, nplan, -1.0, dunsurf);
-        dvtemp.SetLinearForm(dvnplandotnsurf, nplan, -1.0, dvnsurf);
+        temp = Vector3D.LinearForm(nplandotnsurf, nplan, -1.0, nsurf);
+        dwtemp = Vector3D.LinearForm(nplandotnsurf, dnplan, dwnplandotnsurf, nplan);
+        dutemp = Vector3D.LinearForm(dunplandotnsurf, nplan, -1.0, dunsurf);
+        dvtemp = Vector3D.LinearForm(dvnplandotnsurf, nplan, -1.0, dvnsurf);
 
         Vector3D @ref = new(), dwref = new(), duref = new(), dvref = new(), corde = new(_point, pts);
-        @ref.SetLinearForm(raysurnorm, temp, corde);
-        dwref.SetLinearForm(raysurnorm, dwtemp, -raysurnorm2 * dwnorm, temp);
-        dwref.SetLinearForm(1.0, dwref, dray * unsurnorm, temp);
-        duref.SetLinearForm(raysurnorm, dutemp, -raysurnorm2 * dunorm, temp, d1u);
-        dvref.SetLinearForm(raysurnorm, dvtemp, -raysurnorm2 * dvnorm, temp, d1v);
+        @ref = Vector3D.LinearForm(raysurnorm, temp, corde);
+        dwref = Vector3D.LinearForm(raysurnorm, dwtemp, -raysurnorm2 * dwnorm, temp);
+        dwref = Vector3D.LinearForm(1.0, dwref, dray * unsurnorm, temp);
+        duref = Vector3D.LinearForm(raysurnorm, dutemp, -raysurnorm2 * dunorm, temp, d1u);
+        dvref = Vector3D.LinearForm(raysurnorm, dvtemp, -raysurnorm2 * dvnorm, temp, d1v);
 
-        @ref.Add(@ref);
+        @ref = @ref.Added(@ref);
         d[3, 1] = @ref.Dot(dwref) - 2.0 * dray * _ray;
         d[3, 2] = @ref.Dot(duref);
         d[3, 3] = @ref.Dot(dvref);
@@ -172,8 +172,8 @@ public class SurfPointEvolRadInv : SurfPointFuncInv
         f[1] = nplan.XYZ().Dot(_point.XYZ()) + theD;
         f[2] = nplan.XYZ().Dot(pts.XYZ()) + theD;
 
-        dnplan.SetLinearForm(-nplan.Dot(d2cur), nplan, d2cur);
-        dnplan.Multiply(unsurnormd1cur);
+        dnplan = Vector3D.LinearForm(-nplan.Dot(d2cur), nplan, d2cur);
+        dnplan = dnplan.Multiplied(unsurnormd1cur);
         dtheD = -nplan.XYZ().Dot(d1cur.XYZ()) - dnplan.XYZ().Dot(ptcur.XYZ());
         d[1, 1] = dnplan.XYZ().Dot(_point.XYZ()) + dtheD;
         d[1, 2] = d[1, 3] = 0.0;
@@ -206,20 +206,20 @@ public class SurfPointEvolRadInv : SurfPointFuncInv
         double dvnplandotnsurf = nplan.Dot(dvnsurf);
 
         Vector3D temp = new(), dwtemp = new(), dutemp = new(), dvtemp = new();
-        temp.SetLinearForm(nplandotnsurf, nplan, -1.0, nsurf);
-        dwtemp.SetLinearForm(nplandotnsurf, dnplan, dwnplandotnsurf, nplan);
-        dutemp.SetLinearForm(dunplandotnsurf, nplan, -1.0, dunsurf);
-        dvtemp.SetLinearForm(dvnplandotnsurf, nplan, -1.0, dvnsurf);
+        temp = Vector3D.LinearForm(nplandotnsurf, nplan, -1.0, nsurf);
+        dwtemp = Vector3D.LinearForm(nplandotnsurf, dnplan, dwnplandotnsurf, nplan);
+        dutemp = Vector3D.LinearForm(dunplandotnsurf, nplan, -1.0, dunsurf);
+        dvtemp = Vector3D.LinearForm(dvnplandotnsurf, nplan, -1.0, dvnsurf);
 
         Vector3D @ref = new(), dwref = new(), duref = new(), dvref = new(), corde = new(_point, pts);
-        @ref.SetLinearForm(raysurnorm, temp, corde);
+        @ref = Vector3D.LinearForm(raysurnorm, temp, corde);
         f[3] = @ref.SquareMagnitude() - _ray * _ray;
-        dwref.SetLinearForm(raysurnorm, dwtemp, -raysurnorm2 * dwnorm, temp);
-        dwref.SetLinearForm(1.0, dwref, dray * unsurnorm, temp);
-        duref.SetLinearForm(raysurnorm, dutemp, -raysurnorm2 * dunorm, temp, d1u);
-        dvref.SetLinearForm(raysurnorm, dvtemp, -raysurnorm2 * dvnorm, temp, d1v);
+        dwref = Vector3D.LinearForm(raysurnorm, dwtemp, -raysurnorm2 * dwnorm, temp);
+        dwref = Vector3D.LinearForm(1.0, dwref, dray * unsurnorm, temp);
+        duref = Vector3D.LinearForm(raysurnorm, dutemp, -raysurnorm2 * dunorm, temp, d1u);
+        dvref = Vector3D.LinearForm(raysurnorm, dvtemp, -raysurnorm2 * dvnorm, temp, d1v);
 
-        @ref.Add(@ref);
+        @ref = @ref.Added(@ref);
         d[3, 1] = @ref.Dot(dwref) - 2.0 * dray * _ray;
         d[3, 2] = @ref.Dot(duref);
         d[3, 3] = @ref.Dot(dvref);

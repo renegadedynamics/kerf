@@ -773,7 +773,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                     p2 = d2.FirstPoint();
                     if (pos1 != Position2D.Middle)
                     {
-                        p1.SetCoord(0.5 * (p1.X() + p2.X()), 0.5 * (p1.Y() + p2.Y()));
+                        p1 = p1.WithCoord(0.5 * (p1.X() + p2.X()), 0.5 * (p1.Y() + p2.Y()));
                     }
                     else
                     {
@@ -787,7 +787,7 @@ public class IntPolyPolyGen<TheCurve, TheCurveTool, TheProjPCur> : Intersection2
                     p2 = d2.LastPoint();
                     if (pos1 != Position2D.Middle)
                     {
-                        p1.SetCoord(0.5 * (p1.X() + p2.X()), 0.5 * (p1.Y() + p2.Y()));
+                        p1 = p1.WithCoord(0.5 * (p1.X() + p2.X()), 0.5 * (p1.Y() + p2.Y()));
                     }
                     else
                     {

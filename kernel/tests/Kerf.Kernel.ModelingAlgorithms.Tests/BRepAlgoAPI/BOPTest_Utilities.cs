@@ -138,7 +138,7 @@ public static class BOPTest_Utilities
     public static Shape RotateShape(in Shape theShape, in Axis3D theAxis, double theAngle)
     {
         Transform3D aTrsf = new();
-        aTrsf.SetRotation(theAxis, theAngle);
+        aTrsf = aTrsf.WithRotation(theAxis, theAngle);
         Transform aTransformer = new(theShape, aTrsf);
         return aTransformer.Shape();
     }
@@ -147,7 +147,7 @@ public static class BOPTest_Utilities
     public static Shape TranslateShape(in Shape theShape, in Vector3D theVector)
     {
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(theVector);
+        aTrsf = aTrsf.WithTranslation(theVector);
         Transform aTransformer = new(theShape, aTrsf);
         return aTransformer.Shape();
     }
@@ -194,7 +194,7 @@ public static class BOPTest_Utilities
             {
                 // Y command: translate along Y
                 double aDY = double.Parse(theCommands[i + 1], System.Globalization.CultureInfo.InvariantCulture);
-                aCurrentPt.SetY(aCurrentPt.Y() + aDY);
+                aCurrentPt = aCurrentPt.WithY(aCurrentPt.Y() + aDY);
                 aPoints.Add(aCurrentPt);
                 i++; // Skip next parameter
             }
@@ -204,7 +204,7 @@ public static class BOPTest_Utilities
                 double aRadius = double.Parse(theCommands[i + 1], System.Globalization.CultureInfo.InvariantCulture);
                 // Simplified: just move in current direction
                 Vector2D aMoveVec = aCurrentDir * aRadius;
-                aCurrentPt.Translate(aMoveVec);
+                aCurrentPt = aCurrentPt.Translated(aMoveVec);
                 aPoints.Add(aCurrentPt);
                 i += 2; // Skip next two parameters
             }
@@ -249,7 +249,7 @@ public static class BOPTest_Utilities
                         // Profile still starts at (0,0) in the new plane coordinate system
                         if (!aFirstSet)
                         {
-                            aCurrentPt.SetCoord(0.0, 0.0); // TCL default: start at (0,0)
+                            aCurrentPt = aCurrentPt.WithCoord(0.0, 0.0); // TCL default: start at (0,0)
                             aFirstPt = aCurrentPt;
                             aFirstSet = true;
                         }
@@ -276,7 +276,7 @@ public static class BOPTest_Utilities
                 case ProfileCmd.F: // Set first point
                     if (op.@params.Count >= 2)
                     {
-                        aCurrentPt.SetCoord(op.@params[0], op.@params[1]);
+                        aCurrentPt = aCurrentPt.WithCoord(op.@params[0], op.@params[1]);
                         aFirstPt = aCurrentPt;
                         aFirstSet = true;
                     }
@@ -288,7 +288,7 @@ public static class BOPTest_Utilities
                         // If first point not set, implicitly start at (0,0)
                         if (!aFirstSet)
                         {
-                            aCurrentPt.SetCoord(0.0, 0.0);
+                            aCurrentPt = aCurrentPt.WithCoord(0.0, 0.0);
                             aFirstPt = aCurrentPt;
                             aFirstSet = true;
                         }
@@ -309,7 +309,7 @@ public static class BOPTest_Utilities
                         // If first point not set, implicitly start at (0,0)
                         if (!aFirstSet)
                         {
-                            aCurrentPt.SetCoord(0.0, 0.0);
+                            aCurrentPt = aCurrentPt.WithCoord(0.0, 0.0);
                             aFirstPt = aCurrentPt;
                             aFirstSet = true;
                         }
@@ -352,7 +352,7 @@ public static class BOPTest_Utilities
                             // If first point not set, start at origin with default direction
                             if (!aFirstSet)
                             {
-                                aCurrentPt.SetCoord(0.0, 0.0);
+                                aCurrentPt = aCurrentPt.WithCoord(0.0, 0.0);
                                 aCurrentDir = new Vector2D(1, 0); // Default direction: positive X
                                 aFirstPt = aCurrentPt;
                                 aFirstSet = true;
@@ -385,7 +385,7 @@ public static class BOPTest_Utilities
                     if (op.@params.Count >= 2)
                     {
                         aCurrentDir = new Vector2D(op.@params[0], op.@params[1]);
-                        aCurrentDir.Normalize();
+                        aCurrentDir = aCurrentDir.Normalized();
                     }
                     break;
 
@@ -498,7 +498,7 @@ public static class BOPTest_Utilities
     public static Shape RotateZ(in Shape theShape, double theAngleDeg)
     {
         Transform3D aRotation = new();
-        aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), theAngleDeg * M_PI / 180.0);
+        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Z)), theAngleDeg * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
@@ -507,7 +507,7 @@ public static class BOPTest_Utilities
     public static Shape RotateY(in Shape theShape, double theAngleDeg)
     {
         Transform3D aRotation = new();
-        aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), theAngleDeg * M_PI / 180.0);
+        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.Y)), theAngleDeg * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
@@ -516,7 +516,7 @@ public static class BOPTest_Utilities
     public static Shape RotateX(in Shape theShape, double theAngleDeg)
     {
         Transform3D aRotation = new();
-        aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)), theAngleDeg * M_PI / 180.0);
+        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 0), new Direction3D(Direction3D.D.X)), theAngleDeg * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }
@@ -532,7 +532,7 @@ public static class BOPTest_Utilities
     public static Shape Translate(in Shape theShape, double theDx, double theDy, double theDz)
     {
         Transform3D aTranslation = new();
-        aTranslation.SetTranslation(new Vector3D(theDx, theDy, theDz));
+        aTranslation = aTranslation.WithTranslation(new Vector3D(theDx, theDy, theDz));
         Transform aTransform = new(theShape, aTranslation);
         return aTransform.Shape();
     }
@@ -541,7 +541,7 @@ public static class BOPTest_Utilities
     public static Shape RotateY90(in Shape theShape)
     {
         Transform3D aRotation = new();
-        aRotation.SetRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
+        aRotation = aRotation.WithRotation(new Axis3D(new Point3D(0, 0, 1), new Direction3D(Direction3D.D.Y)), 90.0 * M_PI / 180.0);
         Transform aTransform = new(theShape, aRotation);
         return aTransform.Shape();
     }

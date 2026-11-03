@@ -303,7 +303,7 @@ public class MakeWireOffset : MakeShape
                         dist2Min = extPS.SquareDistance(ie);
                         found = true;
                         extPS.Point(ie).Parameter(out x, out y);
-                        pv.SetCoord(x, y);
+                        pv = pv.WithCoord(x, y);
                     }
                 }
                 if (found && (cl.Perform(pv) == In))

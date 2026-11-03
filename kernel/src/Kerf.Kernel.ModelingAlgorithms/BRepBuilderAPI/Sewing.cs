@@ -795,7 +795,7 @@ public class Sewing : Transient
             //
             rr = 0.5 * (r[m] + r[n] + d);
             xyZr = 0.5 * (p[m].XYZ() + p[n].XYZ() - vd.XYZ() * (dR / d));
-            pr.SetXYZ(xyZr);
+            pr = pr.WithXYZ(xyZr);
             //
             bb.MakeVertex(ref newV, pr, rr);
         }
@@ -823,7 +823,7 @@ public class Sewing : Transient
         }
         //
         xyz.Divide(3.0);
-        center.SetXYZ(xyz);
+        center = center.WithXYZ(xyz);
         //
         dmax = -1.0;
         for (int i = 0; i < 3; ++i)

@@ -510,7 +510,7 @@ public sealed class DPrism
         Direction3D normale = p.Axis().Direction();
         if (!p.Direct())
         {
-            normale.Reverse();
+            normale = normale.Reversed();
         }
 
         NCollection_Map<Shape> theMap = new(ShapeHasher.Instance);
@@ -538,9 +538,9 @@ public sealed class DPrism
                     c.D1(prm, out Point3D pt, out Vector3D d1);
                     if (exp.Current().Orientation() == Reversed)
                     {
-                        d1.Reverse();
+                        d1 = d1.Reversed();
                     }
-                    d1.Normalize();
+                    d1 = d1.Normalized();
                     Direction3D locy = normale.Crossed(new Direction3D(d1));
                     Vector3D ldir = new(dy * locy.XYZ() + dz * normale.XYZ());
                     Line3D lin = new(pt, new Direction3D(ldir));
@@ -572,7 +572,7 @@ public sealed class DPrism
         Direction3D normale = p.Axis().Direction();
         if (!p.Direct())
         {
-            normale.Reverse();
+            normale = normale.Reversed();
         }
         if (_spine.Orientation() == Reversed)
         {

@@ -814,12 +814,12 @@ public static class Fill
             ce1.D1(par1, out loc1, out tang1);
             if (!l.IsIdentity)
             {
-                tang1.Transform(l.Transformation());
-                loc1.Transform(l.Transformation());
+                tang1 = tang1.Transformed(l.Transformation());
+                loc1 = loc1.Transformed(l.Transformation());
             }
             if (e1.Orientation() == Reversed)
             {
-                tang1.Reverse();
+                tang1 = tang1.Reversed();
             }
 
             Curve3D ce2 = Tool.Curve(e2, out l, out _, out _)!;
@@ -827,17 +827,17 @@ public static class Fill
             ce2.D1(par2, out loc2, out tang2);
             if (!l.IsIdentity)
             {
-                tang2.Transform(l.Transformation());
-                loc2.Transform(l.Transformation());
+                tang2 = tang2.Transformed(l.Transformation());
+                loc2 = loc2.Transformed(l.Transformation());
             }
             if (e2.Orientation() == Reversed)
             {
-                tang2.Reverse();
+                tang2 = tang2.Reversed();
             }
 
             //  modified by NIZHNY-EAP Wed Feb  2 15:38:41 2000 ___BEGIN___
-            tang1.Normalize();
-            tang2.Normalize();
+            tang1 = tang1.Normalized();
+            tang2 = tang2.Normalized();
             double sca1 = 0.0, sca2 = 0.0;
             Edge e;
             for (pe.Init(profile, ShapeType.Edge); pe.More(); pe.Next())
@@ -897,7 +897,7 @@ public static class Fill
                         bac.D1(par, out loc, out tang);
                         if (e.Orientation() == Reversed)
                         {
-                            tang.Reverse();
+                            tang = tang.Reversed();
                         }
                     }
                 }

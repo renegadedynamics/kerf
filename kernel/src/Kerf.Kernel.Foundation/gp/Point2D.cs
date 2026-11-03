@@ -45,14 +45,14 @@ public partial struct Point2D : IEquatable<Point2D>
     internal void Mirror(in Axis2D a)
     {
         Transform2D t = new();
-        t.SetMirror(a);
+        t = t.WithMirror(a);
         t.Transforms(ref _coord);
     }
 
     internal void Rotate(in Point2D p, double ang)
     {
         Transform2D t = new();
-        t.SetRotation(p, ang);
+        t = t.WithRotation(p, ang);
         t.Transforms(ref _coord);
     }
 

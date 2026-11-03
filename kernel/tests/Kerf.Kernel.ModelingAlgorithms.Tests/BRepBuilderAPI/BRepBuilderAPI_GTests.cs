@@ -360,7 +360,7 @@ public class BRepBuilderAPI_TransformTest
         Shape aBox = Box10();
 
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(100.0, 0.0, 0.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(100.0, 0.0, 0.0));
 
         var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
@@ -380,7 +380,7 @@ public class BRepBuilderAPI_TransformTest
 
         var aTrsf = new Transform3D();
         var aZAxis = new Axis3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(0.0, 0.0, 1.0));
-        aTrsf.SetRotation(aZAxis, Math.PI / 2.0);
+        aTrsf = aTrsf.WithRotation(aZAxis, Math.PI / 2.0);
 
         var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
@@ -398,7 +398,7 @@ public class BRepBuilderAPI_TransformTest
         Shape aBox = Box10();
 
         var aTrsf = new Transform3D();
-        aTrsf.SetScale(new Point3D(0.0, 0.0, 0.0), 2.0);
+        aTrsf = aTrsf.WithScale(new Point3D(0.0, 0.0, 0.0), 2.0);
 
         var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
@@ -414,7 +414,7 @@ public class BRepBuilderAPI_TransformTest
 
         var aTrsf = new Transform3D();
         var aYZPlane = new Frame3D(new Point3D(0.0, 0.0, 0.0), new Direction3D(1.0, 0.0, 0.0));
-        aTrsf.SetMirror(aYZPlane);
+        aTrsf = aTrsf.WithMirror(aYZPlane);
 
         var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();
@@ -431,7 +431,7 @@ public class BRepBuilderAPI_TransformTest
         Shape aBox = Box10();
 
         var aTrsf = new Transform3D();
-        aTrsf.SetTranslation(new Vector3D(50.0, 50.0, 50.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(50.0, 50.0, 50.0));
 
         var aTransform = new Transform(aBox, aTrsf);
         Shape aResult = aTransform.Shape();

@@ -90,7 +90,7 @@ public sealed class GeometryBuilderHelix : BuilderHelixGen
 
                     Curve3D c1 = _curves[1];
                     c1.D0(c1.FirstParameter(), out p1);
-                    pi.SetCoord(p1.X(), p1.Y(), p1.Z() + (i - 1) * _pitch);
+                    pi = pi.WithCoord(p1.X(), p1.Y(), p1.Z() + (i - 1) * _pitch);
                     ci = (Curve3D)c1.Translated(p1, pi);
 
                     _curves.Append(ci);
@@ -151,7 +151,7 @@ public sealed class GeometryBuilderHelix : BuilderHelixGen
         Transform3D trsf = new();
         CoordinateSystem ax3 = new(), ax3x = new(_position);
         // Set transformation from standard coordinate system to helix position
-        trsf.SetDisplacement(ax3, ax3x);
+        trsf = trsf.WithDisplacement(ax3, ax3x);
         // Apply transformation to all generated curves (new and unfrozen: the coil builder's own, or translated copies)
         nbC = _curves.Length();
         for (i = 1; i <= nbC; ++i)

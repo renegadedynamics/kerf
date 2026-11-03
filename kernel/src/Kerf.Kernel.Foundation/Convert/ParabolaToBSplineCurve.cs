@@ -56,9 +56,9 @@ public class ParabolaToBSplineCurve : ConicToBSplineCurve
 
         // replace the bspline in the mark of the parabola
         Transform2D trsf = new();
-        trsf.SetTransformation(prb.Axis().XAxis(), Constants.OX2d());
-        _poles[1].Transform(trsf);
-        _poles[2].Transform(trsf);
-        _poles[3].Transform(trsf);
+        trsf = trsf.WithTransformation(prb.Axis().XAxis(), Constants.OX2d());
+        _poles[1] = _poles[1].Transformed(trsf);
+        _poles[2] = _poles[2].Transformed(trsf);
+        _poles[3] = _poles[3].Transformed(trsf);
     }
 }

@@ -624,7 +624,7 @@ internal static class BRepTestCurveCommands
                         goto badargs;
                     }
 
-                    P.SetLocation(new Point3D(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i])));
+                    P = P.WithLocation(new Point3D(theDI.Atof(a[i - 2]), theDI.Atof(a[i - 1]), theDI.Atof(a[i])));
                     stayfirst = true;
                     break;
 
@@ -652,7 +652,7 @@ internal static class BRepTestCurveCommands
                         }
 
                         var ax = new Frame3D(P.Location(), new Direction3D(vn), new Direction3D(vx));
-                        P.SetPosition(new CoordinateSystem(ax));
+                        P = P.WithPosition(new CoordinateSystem(ax));
                     }
 
                     stayfirst = true;

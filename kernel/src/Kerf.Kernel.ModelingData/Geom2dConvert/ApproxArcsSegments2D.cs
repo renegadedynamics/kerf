@@ -651,7 +651,7 @@ public sealed class ApproxArcsSegments2D
 
         // definition of point of intersection two tangent directions in the points
         // corresponding FirstParameter and LastParameter.
-        dir1.Reverse();
+        dir1 = dir1.Reversed();
 
         // Direct calculation of intersection point, replaces a class call below
         double prod0 = pnt0 ^ dir0.XY(), prod1 = pnt1 ^ dir1.XY(), prod2 = dir1 ^ new Direction2D(dir0.XY()); // C++ converts the gp_XY to a gp_Dir2d implicitly

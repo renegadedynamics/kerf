@@ -88,11 +88,11 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         _periodfirst = _periodlast = 0.0;
 
         first_param = LimitInfinite(par1);
-        _firstPoint.SetCoord(LimitInfinite(pnt1.X()), LimitInfinite(pnt1.Y()));
+        _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt1.X()), LimitInfinite(pnt1.Y()));
         _firstTol = tol1;
 
         last_param = LimitInfinite(par2);
-        _lastPoint.SetCoord(LimitInfinite(pnt2.X()), LimitInfinite(pnt2.Y()));
+        _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt2.X()), LimitInfinite(pnt2.Y()));
         _lastTol = tol2;
     }
 
@@ -111,14 +111,14 @@ public partial struct TwoDDomain : IEquatable<TwoDDomain>
         {
             _status = 1;
             first_param = LimitInfinite(par);
-            _firstPoint.SetCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
+            _firstPoint = _firstPoint.WithCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
             _firstTol = tol;
         }
         else
         {
             _status = 2;
             last_param = LimitInfinite(par);
-            _lastPoint.SetCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
+            _lastPoint = _lastPoint.WithCoord(LimitInfinite(pnt.X()), LimitInfinite(pnt.Y()));
             _lastTol = tol;
         }
     }

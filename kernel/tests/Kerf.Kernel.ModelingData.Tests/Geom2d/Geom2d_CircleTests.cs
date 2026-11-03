@@ -144,7 +144,7 @@ public class Geom2d_CircleTest
     public void Transform_Translation()
     {
         Transform2D aTrsf = new Transform2D();
-        aTrsf.SetTranslation(new Vector2D(10.0, 20.0));
+        aTrsf = aTrsf.WithTranslation(new Vector2D(10.0, 20.0));
         myCircle.Transform(aTrsf);
         Assert.Equal(10.0, myCircle.Location().X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(20.0, myCircle.Location().Y(), global::Kerf.Engine.Foundation.Precision.Confusion());

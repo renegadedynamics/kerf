@@ -142,56 +142,56 @@ public partial struct Line2D : IEquatable<Line2D>
     public readonly Line2D Reversed()
     {
         Line2D l = this;
-        l._pos.Reverse();
+        l._pos = l._pos.Reversed();
         return l;
     }
 
     public readonly Line2D Mirrored(in Point2D p)
     {
         Line2D l = this;
-        l._pos.Mirror(p);
+        l._pos = l._pos.Mirrored(p);
         return l;
     }
 
     public readonly Line2D Mirrored(in Axis2D a)
     {
         Line2D l = this;
-        l._pos.Mirror(a);
+        l._pos = l._pos.Mirrored(a);
         return l;
     }
 
     public readonly Line2D Rotated(in Point2D p, double ang)
     {
         Line2D l = this;
-        l._pos.Rotate(p, ang);
+        l._pos = l._pos.Rotated(p, ang);
         return l;
     }
 
     public readonly Line2D Scaled(in Point2D p, double s)
     {
         Line2D l = this;
-        l._pos.Scale(p, s);
+        l._pos = l._pos.Scaled(p, s);
         return l;
     }
 
     public readonly Line2D Transformed(in Transform2D t)
     {
         Line2D l = this;
-        l._pos.Transform(t);
+        l._pos = l._pos.Transformed(t);
         return l;
     }
 
     public readonly Line2D Translated(in Vector2D v)
     {
         Line2D l = this;
-        l._pos.Translate(v);
+        l._pos = l._pos.Translated(v);
         return l;
     }
 
     public readonly Line2D Translated(in Point2D p1, in Point2D p2)
     {
         Line2D l = this;
-        l._pos.Translate(new Vector2D(p1, p2));
+        l._pos = l._pos.Translated(new Vector2D(p1, p2));
         return l;
     }
 

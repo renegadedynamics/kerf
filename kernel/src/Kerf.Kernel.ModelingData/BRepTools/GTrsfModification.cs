@@ -66,8 +66,8 @@ public class GTrsfModification : Modification
         tol = 0.0;
         revWires = revFace = false;
         GeneralTransform3D gtrsf = new GeneralTransform3D();
-        gtrsf.SetVectorialPart(_gTrsf.VectorialPart());
-        gtrsf.SetTranslationPart(_gTrsf.TranslationPart());
+        gtrsf = gtrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationPart());
         s = Tool.Surface(f, out l);
         if (s is null)
         {
@@ -127,8 +127,8 @@ public class GTrsfModification : Modification
     public override bool NewCurve(in Edge e, out Curve3D? c, out Placement L, out double tol)
     {
         GeneralTransform3D gtrsf = new GeneralTransform3D();
-        gtrsf.SetVectorialPart(_gTrsf.VectorialPart());
-        gtrsf.SetTranslationPart(_gTrsf.TranslationPart());
+        gtrsf = gtrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        gtrsf = gtrsf.WithTranslationPart(_gTrsf.TranslationPart());
         tol = Tool.Tolerance(e) * _gScale;
         c = Tool.Curve(e, out L, out double f, out double l);
 
@@ -176,7 +176,7 @@ public class GTrsfModification : Modification
         Xyz coor = pnt.Coord();
         _gTrsf.Transforms(ref coor);
         p = new Point3D();
-        p.SetXYZ(coor);
+        p = p.WithXYZ(coor);
 
         return true;
     }
@@ -231,9 +231,9 @@ public class GTrsfModification : Modification
         }
 
         GeneralTransform3D gTrsf = new GeneralTransform3D();
-        gTrsf.SetVectorialPart(_gTrsf.VectorialPart());
-        gTrsf.SetTranslationPart(_gTrsf.TranslationPart());
-        gTrsf.Multiply(new GeneralTransform3D(loc.Transformation()));
+        gTrsf = gTrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationPart());
+        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation()));
 
         triangulation = triangulation.Copy();
         triangulation.SetCachedMinMax(new Box()); // clear bounding box
@@ -244,7 +244,7 @@ public class GTrsfModification : Modification
             Point3D p = triangulation.Node(ind);
             Xyz xyz = p.XYZ();
             gTrsf.Transforms(ref xyz);
-            p.SetXYZ(xyz);
+            p = p.WithXYZ(xyz);
             triangulation.SetNode(ind, p);
         }
         // modify triangles orientation in case of mirror transformation
@@ -265,11 +265,11 @@ public class GTrsfModification : Modification
             {
                 Direction3D normal = triangulation.Normal(ind);
                 Matrix3x3 mat = gTrsf.VectorialPart();
-                mat.SetDiagonal(1.0, 1.0, 1.0);
+                mat = mat.WithDiagonal(1.0, 1.0, 1.0);
                 Transform3D trsf = new Transform3D();
-                trsf.SetForm(Rotation);
+                trsf = trsf.WithForm(Rotation);
                 trsf._matrix = mat;
-                normal.Transform(trsf);
+                normal = normal.Transformed(trsf);
                 triangulation.SetNormal(ind, normal);
             }
         }
@@ -287,9 +287,9 @@ public class GTrsfModification : Modification
         }
 
         GeneralTransform3D gTrsf = new GeneralTransform3D();
-        gTrsf.SetVectorialPart(_gTrsf.VectorialPart());
-        gTrsf.SetTranslationPart(_gTrsf.TranslationPart());
-        gTrsf.Multiply(new GeneralTransform3D(loc.Transformation()));
+        gTrsf = gTrsf.WithVectorialPart(_gTrsf.VectorialPart());
+        gTrsf = gTrsf.WithTranslationPart(_gTrsf.TranslationPart());
+        gTrsf = gTrsf.Multiplied(new GeneralTransform3D(loc.Transformation()));
 
         poly = poly.Copy();
         poly.Deflection(poly.Deflection() * Math.Abs(_gScale));
@@ -300,7 +300,7 @@ public class GTrsfModification : Modification
             ref Point3D p = ref nodesArray[id];
             Xyz xyz = p.XYZ();
             gTrsf.Transforms(ref xyz);
-            p.SetXYZ(xyz);
+            p = p.WithXYZ(xyz);
         }
         return true;
     }

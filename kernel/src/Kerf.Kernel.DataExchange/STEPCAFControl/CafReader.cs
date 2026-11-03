@@ -1262,7 +1262,7 @@ public class CafReader
                     CoordinateSystem ax3Targ = new CoordinateSystem(targ.Ax2());
 
                     Transform3D tr1 = new Transform3D();
-                    tr1.SetTransformation(ax3Targ, ax3Orig);
+                    tr1 = tr1.WithTransformation(ax3Targ, ax3Orig);
                     Placement loc1 = new Placement(tr1);
                     loc = loc.Multiplied(loc1);
                 }

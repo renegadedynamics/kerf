@@ -187,7 +187,7 @@ public sealed class Offset
                             Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.SphereVIso(axis, sph.Radius(), p.Y());
                             Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                             var axeRev = new Axis3D(axis.Location(), dRev);
-                            ci.Rotate(axeRev, p.X());
+                            ci = ci.Rotated(axeRev, p.X());
                             CircleCurve3D circle = new CircleCurve3D(ci);
                             if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                             {
@@ -205,7 +205,7 @@ public sealed class Offset
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.CylinderVIso(axis, cyl.Radius(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new CircleCurve3D(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -222,7 +222,7 @@ public sealed class Offset
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.ConeVIso(axis, cone.RefRadius(), cone.SemiAngle(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new CircleCurve3D(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -239,7 +239,7 @@ public sealed class Offset
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusVIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.Y());
                         Direction3D dRev = axis.XDirection().Crossed(axis.YDirection());
                         var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new CircleCurve3D(ci);
                         if (d.IsOpposite(Constants.DX2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -262,12 +262,12 @@ public sealed class Offset
                         // set to sameparameter (rotation of circle - offset of Y)
                         Direction3D dRev = axis.XDirection().Crossed(axis.Direction());
                         var axeRev = new Axis3D(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.Y());
+                        ci = ci.Rotated(axeRev, p.Y());
 
                         // transformation en iso U ( = P.X())
                         dRev = axis.XDirection().Crossed(axis.YDirection());
                         axeRev = new Axis3D(axis.Location(), dRev);
-                        ci.Rotate(axeRev, p.X());
+                        ci = ci.Rotated(axeRev, p.X());
                         CircleCurve3D circle = new CircleCurve3D(ci);
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -283,8 +283,8 @@ public sealed class Offset
                         Point2D p = c.Line().Location();
                         Line3D l = global::Kerf.Engine.Geometry.ElSLib.CylinderUIso(cyl.Position(), cyl.Radius(), p.X());
                         var tr = new Vector3D(l.Direction());
-                        tr.Multiply(p.Y());
-                        l.Translate(tr);
+                        tr = tr.Multiplied(p.Y());
+                        l = l.Translated(tr);
                         LineCurve3D line = new LineCurve3D(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -299,8 +299,8 @@ public sealed class Offset
                         Point2D p = c.Line().Location();
                         Line3D l = global::Kerf.Engine.Geometry.ElSLib.ConeUIso(cone.Position(), cone.RefRadius(), cone.SemiAngle(), p.X());
                         var tr = new Vector3D(l.Direction());
-                        tr.Multiply(p.Y());
-                        l.Translate(tr);
+                        tr = tr.Multiplied(p.Y());
+                        l = l.Translated(tr);
                         LineCurve3D line = new LineCurve3D(l);
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
                         {
@@ -315,7 +315,7 @@ public sealed class Offset
                         Point2D p = c.Line().Location();
                         CoordinateSystem axis = tore.Position();
                         Circle3D ci = global::Kerf.Engine.Geometry.ElSLib.TorusUIso(axis, tore.MajorRadius(), tore.MinorRadius(), p.X());
-                        ci.Rotate(ci.Axis(), p.Y());
+                        ci = ci.Rotated(ci.Axis(), p.Y());
                         CircleCurve3D circle = new CircleCurve3D(ci);
 
                         if (d.IsOpposite(Constants.DY2d(), global::Kerf.Engine.Foundation.Precision.Angular()))
@@ -844,7 +844,7 @@ public sealed class Offset
                         theSurf.D0(p2d1.X(), p2d1.Y(), out p1);
                         if (!L.IsIdentity && !isTransformed)
                         {
-                            p1.Transform(L.Transformation());
+                            p1 = p1.Transformed(L.Transformation());
                         }
                         vstart = p2d1.Y();
                     }
@@ -866,7 +866,7 @@ public sealed class Offset
                         theSurf.D0(p2d2.X(), p2d2.Y(), out p2);
                         if (!L.IsIdentity && !isTransformed)
                         {
-                            p2.Transform(L.Transformation());
+                            p2 = p2.Transformed(L.Transformation());
                         }
                         vend = p2d2.Y();
                     }
@@ -915,11 +915,11 @@ public sealed class Offset
                     {
                         if (vonDegen.Contains(V1))
                         {
-                            p2d1.SetY(vstart);
+                            p2d1 = p2d1.WithY(vstart);
                         }
                         if (vonDegen.Contains(V2))
                         {
-                            p2d2.SetY(vend);
+                            p2d2 = p2d2.WithY(vend);
                         }
                         C2d = new LineCurve2D(p2d1, new Direction2D(new Vector2D(p2d1, p2d2)));
                         f = 0.0;
@@ -951,11 +951,11 @@ public sealed class Offset
                             p2d2 = C2d_1.Value(Tool.Parameter(V2, e, curFace));
                             if (vonDegen.Contains(V1))
                             {
-                                p2d1.SetY(vstart);
+                                p2d1 = p2d1.WithY(vstart);
                             }
                             if (vonDegen.Contains(V2))
                             {
-                                p2d2.SetY(vend);
+                                p2d2 = p2d2.WithY(vend);
                             }
                             C2d_1 = new LineCurve2D(p2d1, new Direction2D(new Vector2D(p2d1, p2d2)));
                             if (e.Orientation() == Forward)
@@ -1590,7 +1590,7 @@ public sealed class Offset
                 var tr = new Vector2D(M_PI, 0.0);
                 if (p2d.X() > M_PI)
                 {
-                    tr.Reverse();
+                    tr = tr.Reversed();
                 }
                 pCurve.Translate(tr);
             }

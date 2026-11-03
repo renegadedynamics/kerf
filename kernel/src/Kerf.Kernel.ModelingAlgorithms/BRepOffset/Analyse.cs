@@ -76,7 +76,7 @@ public sealed class Analyse
         Vertex vlast = Exploration.LastVertex(anEdge);
         if (aVertex.IsSame(vlast))
         {
-            tangVec.Reverse();
+            tangVec = tangVec.Reversed();
         }
     }
 

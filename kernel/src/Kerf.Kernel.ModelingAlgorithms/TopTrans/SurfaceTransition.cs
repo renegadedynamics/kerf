@@ -450,7 +450,7 @@ public class SurfaceTransition
         Direction3D dironF = FUN_nCinsideS(tgC, norm);
         if (MReversed(o))
         {
-            dironF.Reverse();
+            dironF = dironF.Reversed();
         }
 
         double ang = beafter.AngleWithRef(dironF, tgC);

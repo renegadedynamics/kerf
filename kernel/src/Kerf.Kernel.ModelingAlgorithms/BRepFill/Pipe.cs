@@ -257,7 +257,7 @@ public sealed class Pipe
         Transform3D fila = new();
         _loc.Law(1).GetDomain(out double first, out double last);
         _loc.Law(1).D0(first, ref m, ref v);
-        fila.SetValues(m[1, 1],
+        fila = fila.WithValues(m[1, 1],
                        m[1, 2],
                        m[1, 3],
                        v.X(),
@@ -270,7 +270,7 @@ public sealed class Pipe
                        m[3, 3],
                        v.Z());
 
-        fila.Multiply(_trsf);
+        fila = fila.Multiplied(_trsf);
         Placement locFirst = new(fila);
         _first = _profile;
         if (!locFirst.IsIdentity)
@@ -287,7 +287,7 @@ public sealed class Pipe
         _loc.Law(_loc.LawCount).GetDomain(out first, out last);
         _loc.Law(_loc.LawCount).D0(last, ref m, ref v);
         //    try { // Not good, but there are no other means to test SetValues
-        fila.SetValues(m[1, 1],
+        fila = fila.WithValues(m[1, 1],
                        m[1, 2],
                        m[1, 3],
                        v.X(),
@@ -299,7 +299,7 @@ public sealed class Pipe
                        m[3, 2],
                        m[3, 3],
                        v.Z());
-        fila.Multiply(_trsf);
+        fila = fila.Multiplied(_trsf);
         Placement locLast = new(fila);
         if (!_loc.IsClosed() || locFirst != locLast)
         {
@@ -554,7 +554,7 @@ public sealed class Pipe
         // Positioning
         Point3D p;
         p = point;
-        p.Transform(_trsf);
+        p = p.Transformed(_trsf);
 
         Vertex vertexSection = new LibraryMakeVertex(p).InternalVertex();
         ShapeLaw section = new(vertexSection);

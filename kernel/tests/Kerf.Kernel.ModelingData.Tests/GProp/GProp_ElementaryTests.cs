@@ -108,7 +108,7 @@ public class GProp_ElementaryTests
 
         // A rotated rectangle of points: no symmetry axis, principal axes along the rectangle.
         var aRot = new Transform3D();
-        aRot.SetRotation(new Axis3D(Constants.Origin(), new Direction3D(0.0, 0.0, 1.0)), 0.3);
+        aRot = aRot.WithRotation(new Axis3D(Constants.Origin(), new Direction3D(0.0, 0.0, 1.0)), 0.3);
         var aRect = new NCollection_Array1<Point3D>(1, 4);
         aRect[1] = new Point3D(2.0, 1.0, 0.0).Transformed(aRot);
         aRect[2] = new Point3D(-2.0, 1.0, 0.0).Transformed(aRot);

@@ -167,7 +167,7 @@ public class GeomEval_TBezierSurfaceTest
     {
         TBezierSurface aSurf = createSimpleSurface();
         Transform3D aTrsf = new();
-        aTrsf.SetTranslation(new Vector3D(1.0, 2.0, 3.0));
+        aTrsf = aTrsf.WithTranslation(new Vector3D(1.0, 2.0, 3.0));
 
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transform(aTrsf));
         Assert.ThrowsAny<global::Kerf.Engine.Foundation.MethodNotImplementedException>(() => aSurf.Transformed(aTrsf));

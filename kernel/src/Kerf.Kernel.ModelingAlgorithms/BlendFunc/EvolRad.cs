@@ -257,7 +257,7 @@ public class EvolRad : BlendFunction
                         _tcurv.D2(t, out s_ptgui, out s_d1gui, out s_d2gui);
                         _nplan = s_d1gui.Normalized();
                         s_invnormtg = ((double)1) / s_d1gui.Magnitude();
-                        _dnplan.SetLinearForm(s_invnormtg, s_d2gui, -s_invnormtg * (_nplan.Dot(s_d2gui)), _nplan);
+                        _dnplan = Vector3D.LinearForm(s_invnormtg, s_d2gui, -s_invnormtg * (_nplan.Dot(s_d2gui)), _nplan);
                         _tevol.D1(t, out _ray, out _dray);
                     }
                     break;
@@ -266,11 +266,11 @@ public class EvolRad : BlendFunction
                         _tcurv.D3(t, out s_ptgui, out s_d1gui, out s_d2gui, out s_d3gui);
                         _nplan = s_d1gui.Normalized();
                         s_invnormtg = ((double)1) / s_d1gui.Magnitude();
-                        _dnplan.SetLinearForm(s_invnormtg, s_d2gui, -s_invnormtg * (_nplan.Dot(s_d2gui)), _nplan);
+                        _dnplan = Vector3D.LinearForm(s_invnormtg, s_d2gui, -s_invnormtg * (_nplan.Dot(s_d2gui)), _nplan);
                         s_dinvnormtg = -_nplan.Dot(s_d2gui) * s_invnormtg * s_invnormtg;
-                        _d2nplan.SetLinearForm(s_invnormtg, s_d3gui, s_dinvnormtg, s_d2gui);
+                        _d2nplan = Vector3D.LinearForm(s_invnormtg, s_d3gui, s_dinvnormtg, s_d2gui);
                         aux = s_dinvnormtg * (_nplan.Dot(s_d2gui)) + s_invnormtg * (_dnplan.Dot(s_d2gui) + _nplan.Dot(s_d3gui));
-                        _d2nplan.SetLinearForm(-s_invnormtg * (_nplan.Dot(s_d2gui)), _dnplan, -aux, _nplan, _d2nplan);
+                        _d2nplan = Vector3D.LinearForm(-s_invnormtg * (_nplan.Dot(s_d2gui)), _dnplan, -aux, _nplan, _d2nplan);
                         _tevol.D2(t, out _ray, out _dray, out _d2ray);
                         break;
                     }
@@ -393,12 +393,12 @@ public class EvolRad : BlendFunction
         ndotns1 = _nplan.Dot(_nsurf1);
         ndotns2 = _nplan.Dot(_nsurf2);
 
-        n1.SetLinearForm(ndotns1, _nplan, -1.0, _nsurf1);
-        n1.Multiply(invnorm1);
-        n2.SetLinearForm(ndotns2, _nplan, -1.0, _nsurf2);
-        n2.Multiply(invnorm2);
+        n1 = Vector3D.LinearForm(ndotns1, _nplan, -1.0, _nsurf1);
+        n1 = n1.Multiplied(invnorm1);
+        n2 = Vector3D.LinearForm(ndotns2, _nplan, -1.0, _nsurf2);
+        n2 = n2.Multiplied(invnorm2);
 
-        resul.SetLinearForm(ray1, n1, -ray2, n2, new Vector3D(_pts2, _pts1));
+        resul = Vector3D.LinearForm(ray1, n1, -ray2, n2, new Vector3D(_pts2, _pts1));
 
         _e[2] = resul.X();
         _e[3] = resul.Y();
@@ -417,10 +417,10 @@ public class EvolRad : BlendFunction
             cube = invnorm1 * invnorm1 * invnorm1;
             // Derived in relation to u1
             grosterme = -ncrossns1.Dot(_nplan.Crossed(_dns1u1)) * cube;
-            _dndu1.SetLinearForm(grosterme * ndotns1 + invnorm1 * _nplan.Dot(_dns1u1), _nplan, -grosterme, _nsurf1,
+            _dndu1 = Vector3D.LinearForm(grosterme * ndotns1 + invnorm1 * _nplan.Dot(_dns1u1), _nplan, -grosterme, _nsurf1,
                                 -invnorm1, _dns1u1);
 
-            resul.SetLinearForm(ray1, _dndu1, _d1u1);
+            resul = Vector3D.LinearForm(ray1, _dndu1, _d1u1);
             _dedx[2, 1] = resul.X();
             _dedx[3, 1] = resul.Y();
             _dedx[4, 1] = resul.Z();
@@ -428,10 +428,10 @@ public class EvolRad : BlendFunction
             // Derived in relation to v1
 
             grosterme = -ncrossns1.Dot(_nplan.Crossed(_dns1v1)) * cube;
-            _dndv1.SetLinearForm(grosterme * ndotns1 + invnorm1 * _nplan.Dot(_dns1v1), _nplan, -grosterme, _nsurf1,
+            _dndv1 = Vector3D.LinearForm(grosterme * ndotns1 + invnorm1 * _nplan.Dot(_dns1v1), _nplan, -grosterme, _nsurf1,
                                 -invnorm1, _dns1v1);
 
-            resul.SetLinearForm(ray1, _dndv1, _d1v1);
+            resul = Vector3D.LinearForm(ray1, _dndv1, _d1v1);
             _dedx[2, 2] = resul.X();
             _dedx[3, 2] = resul.Y();
             _dedx[4, 2] = resul.Z();
@@ -439,40 +439,40 @@ public class EvolRad : BlendFunction
             cube = invnorm2 * invnorm2 * invnorm2;
             // Derived in relation to u2
             grosterme = -ncrossns2.Dot(_nplan.Crossed(_dns1u2)) * cube;
-            _dndu2.SetLinearForm(grosterme * ndotns2 + invnorm2 * _nplan.Dot(_dns1u2), _nplan, -grosterme, _nsurf2,
+            _dndu2 = Vector3D.LinearForm(grosterme * ndotns2 + invnorm2 * _nplan.Dot(_dns1u2), _nplan, -grosterme, _nsurf2,
                                 -invnorm2, _dns1u2);
 
-            resul.SetLinearForm(-ray2, _dndu2, -1, _d1u2);
+            resul = Vector3D.LinearForm(-ray2, _dndu2, -1, _d1u2);
             _dedx[2, 3] = resul.X();
             _dedx[3, 3] = resul.Y();
             _dedx[4, 3] = resul.Z();
 
             // Derived in relation to v2
             grosterme = -ncrossns2.Dot(_nplan.Crossed(_dns1v2)) * cube;
-            _dndv2.SetLinearForm(grosterme * ndotns2 + invnorm2 * _nplan.Dot(_dns1v2), _nplan, -grosterme, _nsurf2,
+            _dndv2 = Vector3D.LinearForm(grosterme * ndotns2 + invnorm2 * _nplan.Dot(_dns1v2), _nplan, -grosterme, _nsurf2,
                                 -invnorm2, _dns1v2);
 
-            resul.SetLinearForm(-ray2, _dndv2, -1, _d1v2);
+            resul = Vector3D.LinearForm(-ray2, _dndv2, -1, _d1v2);
             _dedx[2, 4] = resul.X();
             _dedx[3, 4] = resul.Y();
             _dedx[4, 4] = resul.Z();
 
             if (byParam)
             {
-                temp.SetXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - s_ptgui.XYZ());
+                temp = temp.WithXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - s_ptgui.XYZ());
                 // Derived from n1 in relation to w
                 grosterme = ncrossns1.Dot(_dnplan.Crossed(_nsurf1)) * invnorm1 * invnorm1;
-                _dn1w.SetLinearForm((_dnplan.Dot(_nsurf1) - grosterme * ndotns1) * invnorm1, _nplan,
+                _dn1w = Vector3D.LinearForm((_dnplan.Dot(_nsurf1) - grosterme * ndotns1) * invnorm1, _nplan,
                                    ndotns1 * invnorm1, _dnplan, grosterme * invnorm1, _nsurf1);
 
                 // Derivee from n2 in relation to w
                 grosterme = ncrossns2.Dot(_dnplan.Crossed(_nsurf2)) * invnorm2 * invnorm2;
-                _dn2w.SetLinearForm((_dnplan.Dot(_nsurf2) - grosterme * ndotns2) * invnorm2, _nplan,
+                _dn2w = Vector3D.LinearForm((_dnplan.Dot(_nsurf2) - grosterme * ndotns2) * invnorm2, _nplan,
                                    ndotns2 * invnorm2, _dnplan, grosterme * invnorm2, _nsurf2);
 
                 _dedt[1] = _dnplan.Dot(temp) - 1.0 / s_invnormtg;
-                temp.SetLinearForm(ray2, _dn2w, _sg2 * _dray, n2);
-                resul.SetLinearForm(ray1, _dn1w, _sg1 * _dray, n1, -1, temp);
+                temp = Vector3D.LinearForm(ray2, _dn2w, _sg2 * _dray, n2);
+                resul = Vector3D.LinearForm(ray1, _dn1w, _sg1 * _dray, n1, -1, temp);
                 _dedt[2] = resul.X();
                 _dedt[3] = resul.Y();
                 _dedt[4] = resul.Z();
@@ -501,18 +501,18 @@ public class EvolRad : BlendFunction
                 cube = carre * invnorm1;
                 // Derived double compared to u1
                 // Derived from the norm
-                d2ns1u1.SetLinearForm(1, s_d3u1.Crossed(_d1v1), 2, _d2u1.Crossed(_d2uv1), 1, _d1u1.Crossed(s_d3uuv1));
+                d2ns1u1 = Vector3D.LinearForm(1, s_d3u1.Crossed(_d1v1), 2, _d2u1.Crossed(_d2uv1), 1, _d1u1.Crossed(s_d3uuv1));
                 dPrim = ncrossns1.Dot(_nplan.Crossed(_dns1u1));
                 smallterm = -2 * dPrim * cube;
                 dSecn = ncrossns1.Dot(_nplan.Crossed(d2ns1u1)) + (_nplan.Crossed(_dns1u1)).SquareMagnitude();
                 grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
 
-                temp.SetLinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
+                temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
                 p1 = _nplan.Dot(_dns1u1);
                 p2 = _nplan.Dot(d2ns1u1);
-                _d2ndu1.SetLinearForm(invnorm1 * p2 + smallterm * p1, _nplan, -smallterm, _dns1u1, -invnorm1, d2ns1u1);
+                _d2ndu1 = Vector3D.LinearForm(invnorm1 * p2 + smallterm * p1, _nplan, -smallterm, _dns1u1, -invnorm1, d2ns1u1);
                 _d2ndu1 += temp;
-                resul.SetLinearForm(ray1, _d2ndu1, _d2u1);
+                resul = Vector3D.LinearForm(ray1, _d2ndu1, _d2u1);
                 _d2EDX2[2, 1, 1] = resul.X();
                 _d2EDX2[3, 1, 1] = resul.Y();
                 _d2EDX2[4, 1, 1] = resul.Z();
@@ -529,12 +529,12 @@ public class EvolRad : BlendFunction
 
                 p1 = _nplan.Dot(_dns1u1);
                 p2 = _nplan.Dot(_dns1v1);
-                temp.SetLinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1, -invnorm1, d2ns1uv1);
-                _d2nduv1.SetLinearForm(invnorm1 * _nplan.Dot(d2ns1uv1) + uterm * p2 + vterm * p1, _nplan, -uterm,
+                temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1, -invnorm1, d2ns1uv1);
+                _d2nduv1 = Vector3D.LinearForm(invnorm1 * _nplan.Dot(d2ns1uv1) + uterm * p2 + vterm * p1, _nplan, -uterm,
                                       _dns1v1, -vterm, _dns1u1);
 
                 _d2nduv1 += temp;
-                resul.SetLinearForm(ray1, _d2nduv1, _d2uv1);
+                resul = Vector3D.LinearForm(ray1, _d2nduv1, _d2uv1);
 
                 _d2EDX2[2, 2, 1] = _d2EDX2[2, 1, 2] = resul.X();
                 _d2EDX2[3, 2, 1] = _d2EDX2[3, 1, 2] = resul.Y();
@@ -542,7 +542,7 @@ public class EvolRad : BlendFunction
 
                 // Derived double compared to v1
                 // Derived from the norm
-                d2ns1v1.SetLinearForm(1, _d1u1.Crossed(s_d3v1), 2, _d2uv1.Crossed(_d2v1), 1, s_d3uvv1.Crossed(_d1v1));
+                d2ns1v1 = Vector3D.LinearForm(1, _d1u1.Crossed(s_d3v1), 2, _d2uv1.Crossed(_d2v1), 1, s_d3uvv1.Crossed(_d1v1));
                 dPrim = ncrossns1.Dot(_nplan.Crossed(_dns1v1));
                 smallterm = -2 * dPrim * cube;
                 dSecn = ncrossns1.Dot(_nplan.Crossed(d2ns1v1)) + (_nplan.Crossed(_dns1v1)).SquareMagnitude();
@@ -550,10 +550,10 @@ public class EvolRad : BlendFunction
 
                 p1 = _nplan.Dot(_dns1v1);
                 p2 = _nplan.Dot(d2ns1v1);
-                temp.SetLinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
-                _d2ndv1.SetLinearForm(invnorm1 * p2 + smallterm * p1, _nplan, -smallterm, _dns1v1, -invnorm1, d2ns1v1);
+                temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
+                _d2ndv1 = Vector3D.LinearForm(invnorm1 * p2 + smallterm * p1, _nplan, -smallterm, _dns1v1, -invnorm1, d2ns1v1);
                 _d2ndv1 += temp;
-                resul.SetLinearForm(ray1, _d2ndv1, _d2v1);
+                resul = Vector3D.LinearForm(ray1, _d2ndv1, _d2v1);
 
                 _d2EDX2[2, 2, 2] = resul.X();
                 _d2EDX2[3, 2, 2] = resul.Y();
@@ -565,18 +565,18 @@ public class EvolRad : BlendFunction
                 cube = carre * invnorm2;
                 // Derived double compared to u2
                 // Derived from the norm
-                d2ns1u2.SetLinearForm(1, s_d3u2.Crossed(_d1v2), 2, _d2u2.Crossed(_d2uv2), 1, _d1u2.Crossed(s_d3uuv2));
+                d2ns1u2 = Vector3D.LinearForm(1, s_d3u2.Crossed(_d1v2), 2, _d2u2.Crossed(_d2uv2), 1, _d1u2.Crossed(s_d3uuv2));
                 dPrim = ncrossns2.Dot(_nplan.Crossed(_dns1u2));
                 smallterm = -2 * dPrim * cube;
                 dSecn = ncrossns2.Dot(_nplan.Crossed(d2ns1u2)) + (_nplan.Crossed(_dns1u2)).SquareMagnitude();
                 grosterme = (3 * dPrim * dPrim * carre - dSecn) * cube;
 
-                temp.SetLinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
+                temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
                 p1 = _nplan.Dot(_dns1u2);
                 p2 = _nplan.Dot(d2ns1u2);
-                _d2ndu2.SetLinearForm(invnorm2 * p2 + smallterm * p1, _nplan, -smallterm, _dns1u2, -invnorm2, d2ns1u2);
+                _d2ndu2 = Vector3D.LinearForm(invnorm2 * p2 + smallterm * p1, _nplan, -smallterm, _dns1u2, -invnorm2, d2ns1u2);
                 _d2ndu2 += temp;
-                resul.SetLinearForm(-ray2, _d2ndu2, -1, _d2u2);
+                resul = Vector3D.LinearForm(-ray2, _d2ndu2, -1, _d2u2);
                 _d2EDX2[2, 3, 3] = resul.X();
                 _d2EDX2[3, 3, 3] = resul.Y();
                 _d2EDX2[4, 3, 3] = resul.Z();
@@ -593,12 +593,12 @@ public class EvolRad : BlendFunction
 
                 p1 = _nplan.Dot(_dns1u2);
                 p2 = _nplan.Dot(_dns1v2);
-                temp.SetLinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2, -invnorm2, d2ns1uv2);
-                _d2nduv2.SetLinearForm(invnorm2 * _nplan.Dot(d2ns1uv2) + uterm * p2 + vterm * p1, _nplan, -uterm,
+                temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2, -invnorm2, d2ns1uv2);
+                _d2nduv2 = Vector3D.LinearForm(invnorm2 * _nplan.Dot(d2ns1uv2) + uterm * p2 + vterm * p1, _nplan, -uterm,
                                       _dns1v2, -vterm, _dns1u2);
 
                 _d2nduv2 += temp;
-                resul.SetLinearForm(-ray2, _d2nduv2, -1, _d2uv2);
+                resul = Vector3D.LinearForm(-ray2, _d2nduv2, -1, _d2uv2);
 
                 _d2EDX2[2, 4, 3] = _d2EDX2[2, 3, 4] = resul.X();
                 _d2EDX2[3, 4, 3] = _d2EDX2[3, 3, 4] = resul.Y();
@@ -606,7 +606,7 @@ public class EvolRad : BlendFunction
 
                 // Derived double compared to v2
                 // Derived from the norm
-                d2ns1v2.SetLinearForm(1, _d1u2.Crossed(s_d3v2), 2, _d2uv2.Crossed(_d2v2), 1, s_d3uvv2.Crossed(_d1v2));
+                d2ns1v2 = Vector3D.LinearForm(1, _d1u2.Crossed(s_d3v2), 2, _d2uv2.Crossed(_d2v2), 1, s_d3uvv2.Crossed(_d1v2));
                 dPrim = ncrossns2.Dot(_nplan.Crossed(_dns1v2));
                 smallterm = -2 * dPrim * cube;
                 dSecn = ncrossns2.Dot(_nplan.Crossed(d2ns1v2)) + (_nplan.Crossed(_dns1v2)).SquareMagnitude();
@@ -614,10 +614,10 @@ public class EvolRad : BlendFunction
 
                 p1 = _nplan.Dot(_dns1v2);
                 p2 = _nplan.Dot(d2ns1v2);
-                temp.SetLinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
-                _d2ndv2.SetLinearForm(invnorm2 * p2 + smallterm * p1, _nplan, -smallterm, _dns1v2, -invnorm2, d2ns1v2);
+                temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
+                _d2ndv2 = Vector3D.LinearForm(invnorm2 * p2 + smallterm * p1, _nplan, -smallterm, _dns1v2, -invnorm2, d2ns1v2);
                 _d2ndv2 += temp;
-                resul.SetLinearForm(-ray2, _d2ndv2, -1, _d2v2);
+                resul = Vector3D.LinearForm(-ray2, _d2ndv2, -1, _d2v2);
 
                 _d2EDX2[2, 4, 4] = resul.X();
                 _d2EDX2[3, 4, 4] = resul.Y();
@@ -648,11 +648,11 @@ public class EvolRad : BlendFunction
                     p2 = _nplan.Dot(_dns1u1);
                     p12 = _dnplan.Dot(_dns1u1);
 
-                    _d2ndtu1.SetLinearForm(invnorm1 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns1, _nplan,
+                    _d2ndtu1 = Vector3D.LinearForm(invnorm1 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns1, _nplan,
                                           invnorm1 * p2 + uterm * ndotns1, _dnplan, -smallterm, _dns1u1);
                     _d2ndtu1 -= grosterme * _nsurf1;
 
-                    resul.SetLinearForm(ray1, _d2ndtu1, _sg1 * _dray, _dndu1);
+                    resul = Vector3D.LinearForm(ray1, _d2ndtu1, _sg1 * _dray, _dndu1);
                     _d2EDXDT[2, 1] = resul.X();
                     _d2EDXDT[3, 1] = resul.Y();
                     _d2EDXDT[4, 1] = resul.Z();
@@ -668,11 +668,11 @@ public class EvolRad : BlendFunction
                     p1 = _dnplan.Dot(_nsurf1);
                     p2 = _nplan.Dot(_dns1v1);
                     p12 = _dnplan.Dot(_dns1v1);
-                    _d2ndtv1.SetLinearForm(invnorm1 * p12 + uterm * p1 + smallterm * p2 + grosterme * ndotns1, _nplan,
+                    _d2ndtv1 = Vector3D.LinearForm(invnorm1 * p12 + uterm * p1 + smallterm * p2 + grosterme * ndotns1, _nplan,
                                           invnorm1 * p2 + uterm * ndotns1, _dnplan, -smallterm, _dns1v1);
                     _d2ndtv1 -= grosterme * _nsurf1;
 
-                    resul.SetLinearForm(ray1, _d2ndtv1, _sg1 * _dray, _dndv1);
+                    resul = Vector3D.LinearForm(ray1, _d2ndtv1, _sg1 * _dray, _dndv1);
                     _d2EDXDT[2, 2] = resul.X();
                     _d2EDXDT[3, 2] = resul.Y();
                     _d2EDXDT[4, 2] = resul.Z();
@@ -693,11 +693,11 @@ public class EvolRad : BlendFunction
                     p2 = _nplan.Dot(_dns1u2);
                     p12 = _dnplan.Dot(_dns1u2);
 
-                    _d2ndtu2.SetLinearForm(invnorm2 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns2, _nplan,
+                    _d2ndtu2 = Vector3D.LinearForm(invnorm2 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns2, _nplan,
                                           invnorm2 * p2 + uterm * ndotns2, _dnplan, -smallterm, _dns1u2);
                     _d2ndtu2 -= grosterme * _nsurf2;
 
-                    resul.SetLinearForm(-ray2, _d2ndtu2, -_sg2 * _dray, _dndu2);
+                    resul = Vector3D.LinearForm(-ray2, _d2ndtu2, -_sg2 * _dray, _dndu2);
                     _d2EDXDT[2, 3] = resul.X();
                     _d2EDXDT[3, 3] = resul.Y();
                     _d2EDXDT[4, 3] = resul.Z();
@@ -714,11 +714,11 @@ public class EvolRad : BlendFunction
                     p2 = _nplan.Dot(_dns1v2);
                     p12 = _dnplan.Dot(_dns1v2);
 
-                    _d2ndtv2.SetLinearForm(invnorm2 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns2, _nplan,
+                    _d2ndtv2 = Vector3D.LinearForm(invnorm2 * p12 + smallterm * p2 + uterm * p1 + grosterme * ndotns2, _nplan,
                                           invnorm2 * p2 + uterm * ndotns2, _dnplan, -smallterm, _dns1v2);
                     _d2ndtv2 -= grosterme * _nsurf2;
 
-                    resul.SetLinearForm(-ray2, _d2ndtv2, -_sg2 * _dray, _dndv2);
+                    resul = Vector3D.LinearForm(-ray2, _d2ndtv2, -_sg2 * _dray, _dndv2);
                     _d2EDXDT[2, 4] = resul.X();
                     _d2EDXDT[3, 4] = resul.Y();
                     _d2EDXDT[4, 4] = resul.Z();
@@ -736,8 +736,8 @@ public class EvolRad : BlendFunction
                     p1 = _dnplan.Dot(_nsurf1);
                     p2 = _d2nplan.Dot(_nsurf1);
 
-                    temp.SetLinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
-                    _d2n1w.SetLinearForm(smallterm * p1 + invnorm1 * p2, _nplan, smallterm * ndotns1 + 2 * invnorm1 * p1,
+                    temp = Vector3D.LinearForm(grosterme * ndotns1, _nplan, -grosterme, _nsurf1);
+                    _d2n1w = Vector3D.LinearForm(smallterm * p1 + invnorm1 * p2, _nplan, smallterm * ndotns1 + 2 * invnorm1 * p1,
                                         _dnplan, ndotns1 * invnorm1, _d2nplan);
                     _d2n1w += temp;
 
@@ -753,15 +753,15 @@ public class EvolRad : BlendFunction
                     p1 = _dnplan.Dot(_nsurf2);
                     p2 = _d2nplan.Dot(_nsurf2);
 
-                    temp.SetLinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
-                    _d2n2w.SetLinearForm(smallterm * p1 + invnorm2 * p2, _nplan, smallterm * ndotns2 + 2 * invnorm2 * p1,
+                    temp = Vector3D.LinearForm(grosterme * ndotns2, _nplan, -grosterme, _nsurf2);
+                    _d2n2w = Vector3D.LinearForm(smallterm * p1 + invnorm2 * p2, _nplan, smallterm * ndotns2 + 2 * invnorm2 * p1,
                                         _dnplan, ndotns2 * invnorm2, _d2nplan);
                     _d2n2w += temp;
 
-                    temp.SetXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - s_ptgui.XYZ());
+                    temp = temp.WithXYZ((_pts1.XYZ() + _pts2.XYZ()) / 2 - s_ptgui.XYZ());
                     _d2EDT2[1] = _d2nplan.Dot(temp) - 2 * _dnplan.Dot(s_d1gui) - _nplan.Dot(s_d2gui);
-                    resul.SetLinearForm(ray1, _d2n1w, 2 * _sg1 * _dray, _dn1w, _sg1 * _d2ray, n1);
-                    temp.SetLinearForm(ray2, _d2n2w, 2 * _sg2 * _dray, _dn2w, _sg2 * _d2ray, n2);
+                    resul = Vector3D.LinearForm(ray1, _d2n1w, 2 * _sg1 * _dray, _dn1w, _sg1 * _d2ray, n1);
+                    temp = Vector3D.LinearForm(ray2, _d2n2w, 2 * _sg2 * _dray, _dn2w, _sg2 * _d2ray, n2);
                     resul -= temp;
                     _d2EDT2[2] = resul.X();
                     _d2EDT2[3] = resul.Y();
@@ -840,7 +840,7 @@ public class EvolRad : BlendFunction
                 norm = 1; // Unsatisfactory, but it is not necessary to stop
             }
 
-            ns1.SetLinearForm(_nplan.Dot(ns1) / norm, _nplan, -1.0 / norm, ns1);
+            ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm, _nplan, -1.0 / norm, ns1);
 
             norm = _nplan.Crossed(ns2).Magnitude();
             if (norm < Eps)
@@ -848,7 +848,7 @@ public class EvolRad : BlendFunction
                 norm = 1; // Unsatisfactory, but it is not necessary to stop
             }
 
-            ns2.SetLinearForm(_nplan.Dot(ns2) / norm, _nplan, -1.0 / norm, ns2);
+            ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm, _nplan, -1.0 / norm, ns2);
 
             double maxpiv = 1.0e-14;
             Gauss resol = new(_dedx, maxpiv);
@@ -868,10 +868,10 @@ public class EvolRad : BlendFunction
 
                 if (!_istangent)
                 {
-                    _tg1.SetLinearForm(solution[1], _d1u1, solution[2], _d1v1);
-                    _tg2.SetLinearForm(solution[3], _d1u2, solution[4], _d1v2);
-                    _tg12d.SetCoord(solution[1], solution[2]);
-                    _tg22d.SetCoord(solution[3], solution[4]);
+                    _tg1 = Vector3D.LinearForm(solution[1], _d1u1, solution[2], _d1v1);
+                    _tg2 = Vector3D.LinearForm(solution[3], _d1u2, solution[4], _d1v2);
+                    _tg12d = _tg12d.WithCoord(solution[1], solution[2]);
+                    _tg22d = _tg22d.WithCoord(solution[3], solution[4]);
                 }
             }
             else
@@ -882,12 +882,12 @@ public class EvolRad : BlendFunction
             // update of maxang
             if (_sg1 > 0.0)
             { // sg1*ray
-                ns1.Reverse();
+                ns1 = ns1.Reversed();
             }
 
             if (_sg2 > 0.0)
             { // sg2*ray
-                ns2.Reverse();
+                ns2 = ns2.Reversed();
             }
 
             cosa = ns1.Dot(ns2);
@@ -1063,15 +1063,15 @@ public class EvolRad : BlendFunction
             invnorm1 = 1.0 / invnorm1;
         }
 
-        ns1.SetLinearForm(_nplan.Dot(ns1) * invnorm1, _nplan, -invnorm1, ns1);
-        center.SetXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) * invnorm1, _nplan, -invnorm1, ns1);
+        center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
 
         tgF = _nplan.Crossed(new Vector3D(center, _pts1));
         tgL = _nplan.Crossed(new Vector3D(center, _pts2));
         if (_choix % 2 == 1)
         {
-            tgF.Reverse();
-            tgL.Reverse();
+            tgF = tgF.Reversed();
+            tgL = tgL.Reversed();
         }
     }
 
@@ -1124,30 +1124,30 @@ public class EvolRad : BlendFunction
             norm1 = 1; // Unsatisfactory, but it is not necessary to stop
         }
 
-        ns1.SetLinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        center.SetXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
+        center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
 
         // ns1 is oriented from the center to pts1
 
         if (_sg1 > 0.0)
         {
-            ns1.Reverse();
+            ns1 = ns1.Reversed();
         }
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
+            np = np.Reversed();
         }
 
-        c.SetRadius(Math.Abs(_ray));
-        c.SetPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns1)));
+        c = c.WithRadius(Math.Abs(_ray));
+        c = c.WithPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns1)));
         pdeb = 0.0;
         pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _pts2);
         // Test negative and almost null angles : Singular Case
         if (pfin > 1.5 * M_PI)
         {
-            np.Reverse();
-            c.SetPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns1)));
+            np = np.Reversed();
+            c = c.WithPosition(new Frame3D(center, new Direction3D(np), new Direction3D(ns1)));
             pfin = global::Kerf.Engine.Geometry.ElCLib.Parameter(c, _pts2);
         }
 
@@ -1337,8 +1337,8 @@ public class EvolRad : BlendFunction
         ns2 = _nsurf2;
         np = _nplan;
 
-        poles2d[poles2d.Lower()].SetCoord(x[1], x[2]);
-        poles2d[poles2d.Upper()].SetCoord(x[3], x[4]);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(x[1], x[2]);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(x[3], x[4]);
 
         if (_sShape == SectionShape.Linear)
         {
@@ -1362,27 +1362,27 @@ public class EvolRad : BlendFunction
             norm2 = 1; // Unsatisfactory, but it is not necessary to stop
         }
 
-        ns1.SetLinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2.SetLinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
+        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
 
-        center.SetXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
 
         // ns1 (resp. ns2) is oriented from center to pts1 (resp. pts2),
         // and the trihedron ns1,ns2,nplan is made direct.
 
         if (_sg1 > 0.0)
         {
-            ns1.Reverse();
+            ns1 = ns1.Reversed();
         }
 
         if (_sg2 > 0.0)
         {
-            ns2.Reverse();
+            ns2 = ns2.Reversed();
         }
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
+            np = np.Reversed();
         }
 
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns1, ns2, np, _pts1, _pts2, Math.Abs(_ray), center, poles, weights);
@@ -1441,21 +1441,21 @@ public class EvolRad : BlendFunction
 
         if (!istgt)
         {
-            _tg1.SetLinearForm(secmember[1], _d1u1, secmember[2], _d1v1);
-            _tg2.SetLinearForm(secmember[3], _d1u2, secmember[4], _d1v2);
+            _tg1 = Vector3D.LinearForm(secmember[1], _d1u1, secmember[2], _d1v1);
+            _tg2 = Vector3D.LinearForm(secmember[3], _d1u2, secmember[4], _d1v2);
 
-            dnorm1w.SetLinearForm(secmember[1], _dndu1, secmember[2], _dndv1, _dn1w);
-            dnorm2w.SetLinearForm(secmember[3], _dndu2, secmember[4], _dndv2, _dn2w);
+            dnorm1w = Vector3D.LinearForm(secmember[1], _dndu1, secmember[2], _dndv1, _dn1w);
+            dnorm2w = Vector3D.LinearForm(secmember[3], _dndu2, secmember[4], _dndv2, _dn2w);
             istgt = false;
         }
 
         // Tops 2d
-        poles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
-        poles2d[poles2d.Upper()].SetCoord(sol[3], sol[4]);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(sol[3], sol[4]);
         if (!istgt)
         {
-            dPoles2d[poles2d.Lower()].SetCoord(secmember[1], secmember[2]);
-            dPoles2d[poles2d.Upper()].SetCoord(secmember[3], secmember[4]);
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(secmember[1], secmember[2]);
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(secmember[3], secmember[4]);
         }
 
         // the linear case is processed...
@@ -1489,13 +1489,13 @@ public class EvolRad : BlendFunction
             norm2 = 1; // Unsatisfactory, but it is not necessary to stop
         }
 
-        ns1.SetLinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2.SetLinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
+        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
 
-        center.SetXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
         if (!istgt)
         {
-            tgc.SetLinearForm(_sg1 * _ray, dnorm1w, _sg1 * _dray, ns1, _tg1);
+            tgc = Vector3D.LinearForm(_sg1 * _ray, dnorm1w, _sg1 * _dray, ns1, _tg1);
         }
 
         // ns1 is oriented from center to pts1, and  ns2 from center to pts2
@@ -1503,26 +1503,26 @@ public class EvolRad : BlendFunction
 
         if (_sg1 > 0.0)
         {
-            ns1.Reverse();
+            ns1 = ns1.Reversed();
             if (!istgt)
             {
-                dnorm1w.Reverse();
+                dnorm1w = dnorm1w.Reversed();
             }
         }
 
         if (_sg2 > 0.0)
         {
-            ns2.Reverse();
+            ns2 = ns2.Reversed();
             if (!istgt)
             {
-                dnorm2w.Reverse();
+                dnorm2w = dnorm2w.Reversed();
             }
         }
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
-            dnp.Reverse();
+            np = np.Reversed();
+            dnp = dnp.Reversed();
         }
 
         if (_ray < 0.0)
@@ -1613,39 +1613,39 @@ public class EvolRad : BlendFunction
 
         if (!istgt)
         {
-            _tg1.SetLinearForm(sol[1], _d1u1, sol[2], _d1v1);
-            _tg2.SetLinearForm(sol[3], _d1u2, sol[4], _d1v2);
+            _tg1 = Vector3D.LinearForm(sol[1], _d1u1, sol[2], _d1v1);
+            _tg2 = Vector3D.LinearForm(sol[3], _d1u2, sol[4], _d1v2);
 
-            dnorm1w.SetLinearForm(sol[1], _dndu1, sol[2], _dndv1, _dn1w);
-            dnorm2w.SetLinearForm(sol[3], _dndu2, sol[4], _dndv2, _dn2w);
-            temp.SetLinearForm(sol[1] * sol[1], _d2u1, 2 * sol[1] * sol[2], _d2uv1, sol[2] * sol[2], _d2v1);
+            dnorm1w = Vector3D.LinearForm(sol[1], _dndu1, sol[2], _dndv1, _dn1w);
+            dnorm2w = Vector3D.LinearForm(sol[3], _dndu2, sol[4], _dndv2, _dn2w);
+            temp = Vector3D.LinearForm(sol[1] * sol[1], _d2u1, 2 * sol[1] * sol[2], _d2uv1, sol[2] * sol[2], _d2v1);
 
-            dtg1.SetLinearForm(secmember[1], _d1u1, secmember[2], _d1v1, temp);
+            dtg1 = Vector3D.LinearForm(secmember[1], _d1u1, secmember[2], _d1v1, temp);
 
-            temp.SetLinearForm(sol[3] * sol[3], _d2u2, 2 * sol[3] * sol[4], _d2uv2, sol[4] * sol[4], _d2v2);
-            dtg2.SetLinearForm(secmember[3], _d1u2, secmember[4], _d1v2, temp);
+            temp = Vector3D.LinearForm(sol[3] * sol[3], _d2u2, 2 * sol[3] * sol[4], _d2uv2, sol[4] * sol[4], _d2v2);
+            dtg2 = Vector3D.LinearForm(secmember[3], _d1u2, secmember[4], _d1v2, temp);
 
-            temp.SetLinearForm(sol[1] * sol[1], _d2ndu1, 2 * sol[1] * sol[2], _d2nduv1, sol[2] * sol[2], _d2ndv1);
+            temp = Vector3D.LinearForm(sol[1] * sol[1], _d2ndu1, 2 * sol[1] * sol[2], _d2nduv1, sol[2] * sol[2], _d2ndv1);
 
-            tempbis.SetLinearForm(2 * sol[1], _d2ndtu1, 2 * sol[2], _d2ndtv1, _d2n1w);
+            tempbis = Vector3D.LinearForm(2 * sol[1], _d2ndtu1, 2 * sol[2], _d2ndtv1, _d2n1w);
             temp += tempbis;
-            d2norm1w.SetLinearForm(secmember[1], _dndu1, secmember[2], _dndv1, temp);
+            d2norm1w = Vector3D.LinearForm(secmember[1], _dndu1, secmember[2], _dndv1, temp);
 
-            temp.SetLinearForm(sol[3] * sol[3], _d2ndu2, 2 * sol[3] * sol[4], _d2nduv2, sol[4] * sol[4], _d2ndv2);
-            tempbis.SetLinearForm(2 * sol[3], _d2ndtu2, 2 * sol[4], _d2ndtv2, _d2n2w);
+            temp = Vector3D.LinearForm(sol[3] * sol[3], _d2ndu2, 2 * sol[3] * sol[4], _d2nduv2, sol[4] * sol[4], _d2ndv2);
+            tempbis = Vector3D.LinearForm(2 * sol[3], _d2ndtu2, 2 * sol[4], _d2ndtv2, _d2n2w);
             temp += tempbis;
-            d2norm2w.SetLinearForm(secmember[3], _dndu2, secmember[4], _dndv2, temp);
+            d2norm2w = Vector3D.LinearForm(secmember[3], _dndu2, secmember[4], _dndv2, temp);
         }
 
         // Tops 2d
-        poles2d[poles2d.Lower()].SetCoord(x[1], x[2]);
-        poles2d[poles2d.Upper()].SetCoord(x[3], x[4]);
+        poles2d[poles2d.Lower()] = poles2d[poles2d.Lower()].WithCoord(x[1], x[2]);
+        poles2d[poles2d.Upper()] = poles2d[poles2d.Upper()].WithCoord(x[3], x[4]);
         if (!istgt)
         {
-            dPoles2d[poles2d.Lower()].SetCoord(sol[1], sol[2]);
-            dPoles2d[poles2d.Upper()].SetCoord(sol[3], sol[4]);
-            d2Poles2d[poles2d.Lower()].SetCoord(secmember[1], secmember[2]);
-            d2Poles2d[poles2d.Upper()].SetCoord(secmember[3], secmember[4]);
+            dPoles2d[poles2d.Lower()] = dPoles2d[poles2d.Lower()].WithCoord(sol[1], sol[2]);
+            dPoles2d[poles2d.Upper()] = dPoles2d[poles2d.Upper()].WithCoord(sol[3], sol[4]);
+            d2Poles2d[poles2d.Lower()] = d2Poles2d[poles2d.Lower()].WithCoord(secmember[1], secmember[2]);
+            d2Poles2d[poles2d.Upper()] = d2Poles2d[poles2d.Upper()].WithCoord(secmember[3], secmember[4]);
         }
 
         // linear case is processed...
@@ -1683,14 +1683,14 @@ public class EvolRad : BlendFunction
             norm2 = 1; // Unsatisfactory, but it is not necessary to stop
         }
 
-        ns1.SetLinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2.SetLinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
+        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
 
-        center.SetXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
+        center = center.WithXYZ(_pts1.XYZ() + _sg1 * _ray * ns1.XYZ());
         if (!istgt)
         {
-            tgc.SetLinearForm(_sg1 * _ray, dnorm1w, _sg1 * _dray, ns1, _tg1);
-            dtgc.SetLinearForm(_sg1 * _ray, d2norm1w, 2 * _sg1 * _dray, dnorm1w, _sg1 * _d2ray, ns1);
+            tgc = Vector3D.LinearForm(_sg1 * _ray, dnorm1w, _sg1 * _dray, ns1, _tg1);
+            dtgc = Vector3D.LinearForm(_sg1 * _ray, d2norm1w, 2 * _sg1 * _dray, dnorm1w, _sg1 * _d2ray, ns1);
             dtgc += dtg1;
         }
 
@@ -1699,29 +1699,29 @@ public class EvolRad : BlendFunction
 
         if (_sg1 > 0.0)
         {
-            ns1.Reverse();
+            ns1 = ns1.Reversed();
             if (!istgt)
             {
-                dnorm1w.Reverse();
-                d2norm1w.Reverse();
+                dnorm1w = dnorm1w.Reversed();
+                d2norm1w = d2norm1w.Reversed();
             }
         }
 
         if (_sg2 > 0.0)
         {
-            ns2.Reverse();
+            ns2 = ns2.Reversed();
             if (!istgt)
             {
-                dnorm2w.Reverse();
-                d2norm2w.Reverse();
+                dnorm2w = dnorm2w.Reversed();
+                d2norm2w = d2norm2w.Reversed();
             }
         }
 
         if (_choix % 2 != 0)
         {
-            np.Reverse();
-            dnp.Reverse();
-            d2np.Reverse();
+            np = np.Reversed();
+            dnp = dnp.Reversed();
+            d2np = d2np.Reversed();
         }
 
         if (_ray < 0.0)

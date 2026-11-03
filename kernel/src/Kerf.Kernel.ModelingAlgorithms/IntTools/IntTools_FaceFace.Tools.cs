@@ -417,14 +417,14 @@ public partial class FaceFace
             Axis3D ax1Cyl = cyl.Axis();
             Line3D linCyl = new(ax1Cyl);
             //
-            apexSph.SetXYZ(locSph.XYZ() + r2 * dirSph.XYZ());
+            apexSph = apexSph.WithXYZ(locSph.XYZ() + r2 * dirSph.XYZ());
             d2 = linCyl.SquareDistance(apexSph);
             if (Math.Abs(d2 - rc2) < eps)
             {
                 return !bRes;
             }
             //
-            apexSph.SetXYZ(locSph.XYZ() - r2 * dirSph.XYZ());
+            apexSph = apexSph.WithXYZ(locSph.XYZ() - r2 * dirSph.XYZ());
             d2 = linCyl.SquareDistance(apexSph);
             if (Math.Abs(d2 - rc2) < eps)
             {

@@ -55,7 +55,7 @@ public sealed partial class ImpImpIntersection
         double parOnArc = onS1 ? ptvtx.ParameterOnArc1() : ptvtx.ParameterOnArc2();
         thearc.D1(parOnArc, out Point2D p2d, out Vector2D d2d);
         quad.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-        tgarc.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        tgarc = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
         Vector3D norm = d1u.Crossed(d1v);
         if (norm.SquareMagnitude() < 1e-16)
         {
@@ -150,7 +150,7 @@ public sealed partial class ImpImpIntersection
                 {
                     quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                 }
-                tgline.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                 if (d1u.Magnitude() < 1e-7)
                 { //-- edge degenere ?
@@ -257,7 +257,7 @@ public sealed partial class ImpImpIntersection
                                 {
                                     quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                                 }
-                                tgline.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                 if (ptvtx.IsOnDomS1)
                                 {
                                     SetArcTransition(ref newptvtx, ptvtx, true, quad1, tgline, ref valpt, ref d1u,
@@ -298,7 +298,7 @@ public sealed partial class ImpImpIntersection
                                 {
                                     quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
                                 }
-                                tgline.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgline = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                 if (ptvtx.IsOnDomS1)
                                 {
                                     SetArcTransition(ref newptvtx, ptvtx, true, quad1, tgline, ref valpt, ref d1u,
@@ -720,12 +720,12 @@ public sealed partial class ImpImpIntersection
                                         if (onFirst)
                                         { // donc OnDomS2
                                             quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgrest.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            tgrest = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                             Curve2DAdaptorBase thearc = ptvtx.ArcOnS2();
                                             thearc.D1(ptvtx.ParameterOnArc2(), out p2d, out d2d);
                                             quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgarc.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            tgarc = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                             norm = d1u.Crossed(d1v); // Quad2.Normale(valpt);
                                             if (norm.SquareMagnitude() < 1e-16)
                                             {
@@ -742,12 +742,12 @@ public sealed partial class ImpImpIntersection
                                         else
                                         { // donc OnDomS1
                                             quad2.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgrest.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            tgrest = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                             Curve2DAdaptorBase thearc = ptvtx.ArcOnS1();
                                             thearc.D1(ptvtx.ParameterOnArc1(), out p2d, out d2d);
                                             quad1.D1(p2d.X(), p2d.Y(), ref valpt, ref d1u, ref d1v);
-                                            tgarc.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                            tgarc = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
                                             norm = d1u.Crossed(d1v); // Quad1.Normale(valpt);
                                             if (norm.SquareMagnitude() < 1e-16)
                                             {

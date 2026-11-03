@@ -147,7 +147,7 @@ public sealed class SweepApproximation
             NCollection_Array1<double> wmin = new(1, _num1DSS);
             _func.GetMinimalWeight(wmin);
             size = _func.MaximalSection();
-            _translation.SetXYZ(_func.BarycentreOfSurf().XYZ());
+            _translation = _translation.WithXYZ(_func.BarycentreOfSurf().XYZ());
             for (ii = 1; ii <= _num3DSS; ii++)
             {
                 tol = threeDTol.Value(ii) / 2; // To take account of the error on the final result.
@@ -180,12 +180,12 @@ public sealed class SweepApproximation
                 if (tolu > tolv)
                 {
                     res = tolv;
-                    _aAffin[ii].SetValue(1, 1, tolv / tolu);
+                    _aAffin[ii] = _aAffin[ii].WithValue(1, 1, tolv / tolu);
                 }
                 else
                 {
                     res = tolu;
-                    _aAffin[ii].SetValue(2, 2, tolu / tolv);
+                    _aAffin[ii] = _aAffin[ii].WithValue(2, 2, tolu / tolv);
                 }
                 twoDTol.SetValue(ii, Min(tol2d, res));
             }
@@ -360,7 +360,7 @@ public sealed class SweepApproximation
                         p = poles.Value(jj, ii);
                         wpoid = poles1d.Value(jj, ii);
                         p.ChangeCoord().Divide(wpoid); // It is necessary to divide poles by weight
-                        p.Translate(_translation);
+                        p = p.Translated(_translation);
                         _tabPoles.SetValue(ii, jj, p);
                         _tabWeights.SetValue(ii, jj, wpoid);
                     }
@@ -559,9 +559,9 @@ public sealed class SweepApproximation
                 _poles[ii].ChangeCoord().Subtract(_translation.XYZ());
                 // Homothety on all.
                 double weight = _weigths.Value(ii);
-                _dPoles[ii].Multiply(weight);
-                vaux.SetXYZ(_poles.Value(ii).Coord());
-                _dPoles[ii].Add(_dWeigths.Value(ii) * vaux);
+                _dPoles[ii] = _dPoles[ii].Multiplied(weight);
+                vaux = vaux.WithXYZ(_poles.Value(ii).Coord());
+                _dPoles[ii] = _dPoles[ii].Added(_dWeigths.Value(ii) * vaux);
                 _poles[ii].ChangeCoord().Multiply(weight); // for the cash
             }
 
@@ -570,7 +570,7 @@ public sealed class SweepApproximation
             {
                 vcoord = _dPoles2d.Value(ii).XY();
                 _aAffin!.Value(ii).Transforms(ref vcoord);
-                _dPoles2d[ii].SetXY(vcoord);
+                _dPoles2d[ii] = _dPoles2d[ii].WithXY(vcoord);
                 _aAffin.Value(ii).Transforms(ref _poles2d[ii].ChangeCoord());
             }
 
@@ -639,16 +639,16 @@ public sealed class SweepApproximation
                 _poles[ii].ChangeCoord().Subtract(_translation.XYZ());
 
                 // Calculate the second derivative
-                _d2Poles[ii].Multiply(_weigths.Value(ii));
-                vaux.SetXYZ(_dPoles.Value(ii).XYZ());
-                _d2Poles[ii].Add((2 * _dWeigths.Value(ii)) * vaux);
-                vaux.SetXYZ(_poles.Value(ii).Coord());
-                _d2Poles[ii].Add(_d2Weigths.Value(ii) * vaux);
+                _d2Poles[ii] = _d2Poles[ii].Multiplied(_weigths.Value(ii));
+                vaux = vaux.WithXYZ(_dPoles.Value(ii).XYZ());
+                _d2Poles[ii] = _d2Poles[ii].Added((2 * _dWeigths.Value(ii)) * vaux);
+                vaux = vaux.WithXYZ(_poles.Value(ii).Coord());
+                _d2Poles[ii] = _d2Poles[ii].Added(_d2Weigths.Value(ii) * vaux);
 
                 // Then the remainder for the cash
-                _dPoles[ii].Multiply(_weigths.Value(ii));
-                vaux.SetXYZ(_poles.Value(ii).Coord());
-                _dPoles[ii].Add(_dWeigths.Value(ii) * vaux);
+                _dPoles[ii] = _dPoles[ii].Multiplied(_weigths.Value(ii));
+                vaux = vaux.WithXYZ(_poles.Value(ii).Coord());
+                _dPoles[ii] = _dPoles[ii].Added(_dWeigths.Value(ii) * vaux);
                 _poles[ii].ChangeCoord().Multiply(_weigths.Value(ii));
             }
 
@@ -657,10 +657,10 @@ public sealed class SweepApproximation
             {
                 vcoord = _d2Poles2d.Value(ii).XY();
                 _aAffin!.Value(ii).Transforms(ref vcoord);
-                _d2Poles2d[ii].SetXY(vcoord);
+                _d2Poles2d[ii] = _d2Poles2d[ii].WithXY(vcoord);
                 vcoord = _dPoles2d.Value(ii).XY();
                 _aAffin.Value(ii).Transforms(ref vcoord);
-                _dPoles2d[ii].SetXY(vcoord);
+                _dPoles2d[ii] = _dPoles2d[ii].WithXY(vcoord);
                 _aAffin.Value(ii).Transforms(ref _poles2d[ii].ChangeCoord());
             }
 

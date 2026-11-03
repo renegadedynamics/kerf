@@ -326,7 +326,7 @@ public static partial class AlgoTools
                             if (pr.IsPointOnCurve(c, l))
                             {
                                 Point3D pc = c.Value(pr.Parameter());
-                                pc.Transform(l.Transformation());
+                                pc = pc.Transformed(l.Transformation());
                                 double d2 = pv.SquareDistance(pc);
                                 if (d2 > tol)
                                 {
@@ -353,7 +353,7 @@ public static partial class AlgoTools
                             {
                                 pc = c.Value(gc.Last());
                             }
-                            pc.Transform(l.Transformation());
+                            pc = pc.Transformed(l.Transformation());
                             //
                             double d2 = pv.SquareDistance(pc);
                             if (d2 > tol)

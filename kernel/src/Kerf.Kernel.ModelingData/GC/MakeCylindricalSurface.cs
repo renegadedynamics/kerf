@@ -87,7 +87,7 @@ public sealed class MakeCylindricalSurface : Root
         Cylinder c = cyl;
         Line3D l = new Line3D(c.Axis());
         double r = l.Distance(point);
-        c.SetRadius(r);
+        c = c.WithRadius(r);
         _theCylinder = new CylindricalSurface(c);
     }
 

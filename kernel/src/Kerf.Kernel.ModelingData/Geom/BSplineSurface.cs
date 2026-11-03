@@ -2105,7 +2105,7 @@ public class BSplineSurface : BoundedSurface
         {
             for (int i = _poles.LowerRow(); i <= _poles.UpperRow(); i++)
             {
-                _poles[i, j].Transform(t);
+                _poles[i, j] = _poles[i, j].Transformed(t);
             }
         }
         _maxDerivInvOk = false;

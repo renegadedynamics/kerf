@@ -347,15 +347,15 @@ public static class SpecialPoints
             if (Math.Abs(dUofPSurf.Z()) > Math.Abs(dVofPSurf.Z()))
             {
                 double dusDvs = dVofPSurf.Z() / dUofPSurf.Z();
-                v1.SetCoord(dUofPSurf.X() * dusDvs - dVofPSurf.X(), dUofPSurf.Y() * dusDvs - dVofPSurf.Y());
+                v1 = v1.WithCoord(dUofPSurf.X() * dusDvs - dVofPSurf.X(), dUofPSurf.Y() * dusDvs - dVofPSurf.Y());
             }
             else
             {
                 double dvsDus = dUofPSurf.Z() / dVofPSurf.Z();
-                v1.SetCoord(dVofPSurf.X() * dvsDus - dUofPSurf.X(), dVofPSurf.Y() * dvsDus - dUofPSurf.Y());
+                v1 = v1.WithCoord(dVofPSurf.X() * dvsDus - dUofPSurf.X(), dVofPSurf.Y() * dvsDus - dUofPSurf.Y());
             }
 
-            v1.Normalize();
+            v1 = v1.Normalized();
 
             if (Math.Abs(v1.X()) > Math.Abs(v1.Y()))
             {
@@ -428,7 +428,7 @@ public static class SpecialPoints
                 }
 
                 // Normalize
-                vecCS.Divide(Math.Sqrt(sqMod));
+                vecCS = vecCS.Divided(Math.Sqrt(sqMod));
 
                 // Angle in range [0, PI/2]
                 double uq = (Math.Abs(vecCS.X()) < Math.Abs(vecCS.Y())) ? Math.Acos(Math.Abs(vecCS.X()))
@@ -618,12 +618,12 @@ public static class SpecialPoints
 
         // Transforms parametric surface in coordinate-system of the quadric
         Transform3D tr = new();
-        tr.SetTransformation((qSurf.GetType() == SurfaceKind.Sphere) ? qSurf.Sphere().Position()
+        tr = tr.WithTransformation((qSurf.GetType() == SurfaceKind.Sphere) ? qSurf.Sphere().Position()
                                                                       : qSurf.Cone().Position());
 
         // Derivatives of transformed thePSurf
-        vecDu.Transform(tr);
-        vecDv.Transform(tr);
+        vecDu = vecDu.Transformed(tr);
+        vecDv = vecDv.Transformed(tr);
 
         bool isIsoChoosen;
 
@@ -720,11 +720,11 @@ public static class SpecialPoints
 
             // Transforms parametric surface in coordinate-system of the quadric
             Transform3D tr = new();
-            tr.SetTransformation(qSurf.Cone().Position());
+            tr = tr.WithTransformation(qSurf.Cone().Position());
 
             // Derivatives of transformed thePSurf
-            vecDu.Transform(tr);
-            vecDv.Transform(tr);
+            vecDu = vecDu.Transformed(tr);
+            vecDv = vecDv.Transformed(tr);
 
             ProcessCone(refPt, vecDu, vecDv, qSurf.Cone(), isReversed, ref uquad, out _);
 

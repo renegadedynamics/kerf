@@ -115,7 +115,7 @@ public class MiddlePath : MakeShape
         curve.D1(thePar, out _, out Vector3D theTangent);
         if (or == Reversed)
         {
-            theTangent.Reverse();
+            theTangent = theTangent.Reversed();
         }
 
         return theTangent;
@@ -809,7 +809,7 @@ public class MiddlePath : MakeShape
                         curve.D1(theParam, out pnt1, out theTangent);
                         if (edge.Orientation() == Reversed)
                         {
-                            theTangent.Reverse();
+                            theTangent = theTangent.Reversed();
                         }
                     }
                     else
@@ -848,14 +848,14 @@ public class MiddlePath : MakeShape
                     }
                     if (Math.Abs(angle - theAngle) > angTol)
                     {
-                        theAxis.Reverse();
+                        theAxis = theAxis.Reversed();
                     }
                     Frame3D theAx2 = new(theCenterOfCirc, theAxis.Direction(), new Direction3D(vec1));
                     CircleCurve3D theCircle = new MakeCircle(theAx2, vec1.Magnitude()).Value();
                     theCircle.D1(0.0, out pnt1, out Vector3D tangent);
                     if (tangent * theTangent < 0.0)
                     {
-                        theAxis.Reverse();
+                        theAxis = theAxis.Reversed();
                         theAx2 = new Frame3D(theCenterOfCirc, theAxis.Direction(), new Direction3D(vec1));
                         theCircle = new MakeCircle(theAx2, vec1.Magnitude()).Value();
                     }
@@ -919,7 +919,7 @@ public class MiddlePath : MakeShape
                             Vector3D tangent2 = TangentOfEdge(_paths[indp][k], true); // at begin
                             tangent = tangent1 + tangent2;
                         }
-                        tangent.Normalize();
+                        tangent = tangent.Normalized();
                         Point3D pnt = new(tangent.XYZ());
                         pntSeq.Append(pnt);
                     }

@@ -498,11 +498,11 @@ public static class Inter2d
                     v2or = V2;
                     if (e1.Orientation() == Reversed)
                     {
-                        v1or.Reverse();
+                        v1or = v1or.Reversed();
                     }
                     if (e2.Orientation() == Reversed)
                     {
-                        v2or.Reverse();
+                        v2or = v2or.Reversed();
                     }
                     double crossProd = v2or ^ V1;
                     // OCCT_DEBUG output left out
@@ -788,11 +788,11 @@ public static class Inter2d
                 v2or = v2;
                 if (e1.Orientation() == Reversed)
                 {
-                    v1or.Reverse();
+                    v1or = v1or.Reversed();
                 }
                 if (e2.Orientation() == Reversed)
                 {
-                    v2or.Reverse();
+                    v2or = v2or.Reversed();
                 }
                 double crossProd = v2or ^ v1;
                 // OCCT_DEBUG output left out
@@ -1059,7 +1059,7 @@ public static class Inter2d
         if (firstPar > anEf - a2Offset)
         {
             aPCurve.D1(firstPar, out pBnd, out vBnd);
-            dBnd.SetXY(vBnd.XY());
+            dBnd = dBnd.WithXY(vBnd.XY());
             pBeg = pBnd.Translated(new Vector2D(-delta * dBnd.XY()));
             lin = new LineCurve2D(pBeg, dBnd);
             segment = new TrimmedCurve2D(lin, 0, delta);
@@ -1073,7 +1073,7 @@ public static class Inter2d
         if (lastPar < anEl + a2Offset)
         {
             aPCurve.D1(lastPar, out pBeg, out vBnd);
-            dBnd.SetXY(vBnd.XY());
+            dBnd = dBnd.WithXY(vBnd.XY());
             lin = new LineCurve2D(pBeg, dBnd);
             segment = new TrimmedCurve2D(lin, 0, delta);
 
@@ -1330,7 +1330,7 @@ public static class Inter2d
                     {
                         Point2D p2d1 = minPC.Value(firstParOnPC);
                         Point3D p1 = minSurf!.Value(p2d1.X(), p2d1.Y());
-                        p1.Transform(minLocTrsf);
+                        p1 = p1.Transformed(minLocTrsf);
                         projector.Init(p1, c3d);
                         if (projector.NbPoints() > 0)
                         {
@@ -1342,7 +1342,7 @@ public static class Inter2d
                     {
                         Point2D p2d2 = minPC.Value(lastParOnPC);
                         Point3D p2 = minSurf!.Value(p2d2.X(), p2d2.Y());
-                        p2.Transform(minLocTrsf);
+                        p2 = p2.Transformed(minLocTrsf);
                         projector.Init(p2, c3d);
                         if (projector.NbPoints() > 0)
                         {
@@ -1515,7 +1515,7 @@ public static class Inter2d
                 if (firstPar > ef - a2Offset)
                 {
                     c3d.D1(firstPar, out pBnd, out vBnd);
-                    dBnd.SetXYZ(vBnd.XYZ());
+                    dBnd = dBnd.WithXYZ(vBnd.XYZ());
                     pBeg = pBnd.Translated(new Vector3D(-aDelta * dBnd.XYZ()));
                     lin = new LineCurve3D(pBeg, dBnd);
                     segment = new TrimmedCurve3D(lin, 0, aDelta);
@@ -1529,7 +1529,7 @@ public static class Inter2d
                 if (lastPar < el + a2Offset)
                 {
                     c3d.D1(lastPar, out pBeg, out vBnd);
-                    dBnd.SetXYZ(vBnd.XYZ());
+                    dBnd = dBnd.WithXYZ(vBnd.XYZ());
                     lin = new LineCurve3D(pBeg, dBnd);
                     segment = new TrimmedCurve3D(lin, 0, aDelta);
 

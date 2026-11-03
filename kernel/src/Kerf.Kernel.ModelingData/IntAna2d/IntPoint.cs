@@ -61,7 +61,7 @@ public partial struct IntPoint : IEquatable<IntPoint>
     internal void SetValue(double x, double y, double u1, double u2)
     {
         _myimplicit = false;
-        _myp.SetCoord(x, y);
+        _myp = _myp.WithCoord(x, y);
         _myu1 = u1;
         _myu2 = u2;
     }
@@ -70,7 +70,7 @@ public partial struct IntPoint : IEquatable<IntPoint>
     internal void SetValue(double x, double y, double u1)
     {
         _myimplicit = true;
-        _myp.SetCoord(x, y);
+        _myp = _myp.WithCoord(x, y);
         _myu1 = u1;
         _myu2 = RealLast();
     }

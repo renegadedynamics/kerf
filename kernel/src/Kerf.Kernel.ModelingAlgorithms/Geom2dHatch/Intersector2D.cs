@@ -142,7 +142,7 @@ public sealed class Intersector2D : GInter, IIntersector<CurveAdaptor2D>
         else
         {
             norm = new Direction2D();
-            norm.SetCoord(tang.Y(), -tang.X());
+            norm = norm.WithCoord(tang.Y(), -tang.X());
         }
     }
 }

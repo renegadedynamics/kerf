@@ -117,7 +117,7 @@ public class Ruled : BlendFunction
             _surf1.D1(sol[1], sol[2], out _pts1, out Vector3D d1u1, out Vector3D d1v1);
             _surf2.D1(sol[3], sol[4], out _pts2, out Vector3D d1u2, out Vector3D d1v2);
 
-            dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+            dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
             secmember[1] = _normtg - dnplan.Dot(new Vector3D(_ptgui, _pts1));
             secmember[2] = _normtg - dnplan.Dot(new Vector3D(_ptgui, _pts2));
@@ -129,7 +129,7 @@ public class Ruled : BlendFunction
 
             // Derivee de nor1 par rapport au parametre sur la ligne guide
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-            temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+            temp = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                                grosterme / norm, ns);
 
             secmember[3] = -(temp.Dot(new Vector3D(_pts1, _pts2)));
@@ -141,7 +141,7 @@ public class Ruled : BlendFunction
 
             // Derivee de nor2 par rapport au parametre sur la ligne guide
             grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-            temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+            temp = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                                grosterme / norm, ns);
 
             secmember[4] = -(temp.Dot(new Vector3D(_pts1, _pts2)));
@@ -151,10 +151,10 @@ public class Ruled : BlendFunction
             {
                 resol.Solve(secmember);
 
-                _tg1.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
-                _tg2.SetLinearForm(secmember[3], d1u2, secmember[4], d1v2);
-                _tg12d.SetCoord(secmember[1], secmember[2]);
-                _tg22d.SetCoord(secmember[3], secmember[4]);
+                _tg1 = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
+                _tg2 = Vector3D.LinearForm(secmember[3], d1u2, secmember[4], d1v2);
+                _tg12d = _tg12d.WithCoord(secmember[1], secmember[2]);
+                _tg22d = _tg22d.WithCoord(secmember[3], secmember[4]);
                 _istangent = false;
             }
             else
@@ -186,8 +186,8 @@ public class Ruled : BlendFunction
 
         double norm1 = _nplan.Crossed(ns1).Magnitude();
         double norm2 = _nplan.Crossed(ns2).Magnitude();
-        ns1.SetLinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
-        ns2.SetLinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
+        ns1 = Vector3D.LinearForm(_nplan.Dot(ns1) / norm1, _nplan, -1.0 / norm1, ns1);
+        ns2 = Vector3D.LinearForm(_nplan.Dot(ns2) / norm2, _nplan, -1.0 / norm2, ns2);
 
         f[1] = (_nplan.XYZ().Dot(_pts1.XYZ())) + _d;
         f[2] = (_nplan.XYZ().Dot(_pts2.XYZ())) + _d;
@@ -228,8 +228,8 @@ public class Ruled : BlendFunction
         ndotns1 = _nplan.Dot(ns1);
         ndotns2 = _nplan.Dot(ns2);
 
-        nor1.SetLinearForm(ndotns1 / norm1, _nplan, -1.0 / norm1, ns1);
-        nor2.SetLinearForm(ndotns2 / norm2, _nplan, -1.0 / norm2, ns2);
+        nor1 = Vector3D.LinearForm(ndotns1 / norm1, _nplan, -1.0 / norm1, ns1);
+        nor2 = Vector3D.LinearForm(ndotns2 / norm2, _nplan, -1.0 / norm2, ns2);
 
         p1p2 = new Vector3D(_pts1, _pts2);
 
@@ -237,7 +237,7 @@ public class Ruled : BlendFunction
 
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns1.Dot(_nplan.Crossed(temp)) / norm1 / norm1;
-        resul.SetLinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
                             -1.0 / norm1, temp);
 
         d[3, 1] = -(d1u1.Dot(nor1)) + p1p2.Dot(resul);
@@ -246,7 +246,7 @@ public class Ruled : BlendFunction
 
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns1.Dot(_nplan.Crossed(temp)) / norm1 / norm1;
-        resul.SetLinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
                             -1.0 / norm1, temp);
 
         d[3, 2] = -(d1v1.Dot(nor1)) + p1p2.Dot(resul);
@@ -260,7 +260,7 @@ public class Ruled : BlendFunction
         // Derivee de nor2 par rapport a u2
         temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
         grosterme = ncrossns2.Dot(_nplan.Crossed(temp)) / norm2 / norm2;
-        resul.SetLinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
                             -1.0 / norm2, temp);
 
         d[4, 3] = d1u2.Dot(nor2) + p1p2.Dot(resul);
@@ -268,7 +268,7 @@ public class Ruled : BlendFunction
         // Derivee par rapport a v2
         temp = d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2));
         grosterme = ncrossns2.Dot(_nplan.Crossed(temp)) / norm2 / norm2;
-        resul.SetLinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
                             -1.0 / norm2, temp);
 
         d[4, 4] = d1v2.Dot(nor2) + p1p2.Dot(resul);
@@ -300,8 +300,8 @@ public class Ruled : BlendFunction
         ndotns1 = _nplan.Dot(ns1);
         ndotns2 = _nplan.Dot(ns2);
 
-        nor1.SetLinearForm(ndotns1 / norm1, _nplan, -1.0 / norm1, ns1);
-        nor2.SetLinearForm(ndotns2 / norm2, _nplan, -1.0 / norm2, ns2);
+        nor1 = Vector3D.LinearForm(ndotns1 / norm1, _nplan, -1.0 / norm1, ns1);
+        nor2 = Vector3D.LinearForm(ndotns2 / norm2, _nplan, -1.0 / norm2, ns2);
 
         f[1] = (_nplan.XYZ().Dot(_pts1.XYZ())) + _d;
         f[2] = (_nplan.XYZ().Dot(_pts2.XYZ())) + _d;
@@ -322,7 +322,7 @@ public class Ruled : BlendFunction
 
         temp = d2u1.Crossed(d1v1).Added(d1u1.Crossed(d2uv1));
         grosterme = ncrossns1.Dot(_nplan.Crossed(temp)) / norm1 / norm1;
-        resul.SetLinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
                             -1.0 / norm1, temp);
 
         d[3, 1] = -(d1u1.Dot(nor1)) + p1p2.Dot(resul);
@@ -331,7 +331,7 @@ public class Ruled : BlendFunction
 
         temp = d2uv1.Crossed(d1v1).Added(d1u1.Crossed(d2v1));
         grosterme = ncrossns1.Dot(_nplan.Crossed(temp)) / norm1 / norm1;
-        resul.SetLinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns1 - _nplan.Dot(temp)) / norm1, _nplan, grosterme / norm1, ns1,
                             -1.0 / norm1, temp);
 
         d[3, 2] = -(d1v1.Dot(nor1)) + p1p2.Dot(resul);
@@ -345,7 +345,7 @@ public class Ruled : BlendFunction
         // Derivee de nor2 par rapport a u2
         temp = d2u2.Crossed(d1v2).Added(d1u2.Crossed(d2uv2));
         grosterme = ncrossns2.Dot(_nplan.Crossed(temp)) / norm2 / norm2;
-        resul.SetLinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
                             -1.0 / norm2, temp);
 
         d[4, 3] = d1u2.Dot(nor2) + p1p2.Dot(resul);
@@ -353,7 +353,7 @@ public class Ruled : BlendFunction
         // Derivee par rapport a v2
         temp = d2uv2.Crossed(d1v2).Added(d1u2.Crossed(d2v2));
         grosterme = ncrossns2.Dot(_nplan.Crossed(temp)) / norm2 / norm2;
-        resul.SetLinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
+        resul = Vector3D.LinearForm(-(grosterme * ndotns2 - _nplan.Dot(temp)) / norm2, _nplan, grosterme / norm2, ns2,
                             -1.0 / norm2, temp);
 
         d[4, 4] = d1v2.Dot(nor2) + p1p2.Dot(resul);
@@ -467,7 +467,7 @@ public class Ruled : BlendFunction
         _surf1.D1(sol[1], sol[2], out _pts1, out Vector3D d1u1, out Vector3D d1v1);
         _surf2.D1(sol[3], sol[4], out _pts2, out Vector3D d1u2, out Vector3D d1v2);
 
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         secmember[1] = _normtg - dnplan.Dot(new Vector3D(_ptgui, _pts1));
         secmember[2] = _normtg - dnplan.Dot(new Vector3D(_ptgui, _pts2));
@@ -479,7 +479,7 @@ public class Ruled : BlendFunction
 
         // Derivee de nor1 par rapport au parametre sur la ligne guide
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-        temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+        temp = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                            grosterme / norm, ns);
 
         secmember[3] = -(temp.Dot(new Vector3D(_pts1, _pts2)));
@@ -491,7 +491,7 @@ public class Ruled : BlendFunction
 
         // Derivee de nor2 par rapport au parametre sur la ligne guide
         grosterme = ncrossns.Dot(dnplan.Crossed(ns)) / norm / norm;
-        temp.SetLinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
+        temp = Vector3D.LinearForm((dnplan.Dot(ns) - grosterme * ndotns) / norm, _nplan, ndotns / norm, dnplan,
                            grosterme / norm, ns);
 
         secmember[4] = -(temp.Dot(new Vector3D(_pts1, _pts2)));
@@ -501,8 +501,8 @@ public class Ruled : BlendFunction
         {
             resol.Solve(secmember);
 
-            _tg1.SetLinearForm(secmember[1], d1u1, secmember[2], d1v1);
-            _tg2.SetLinearForm(secmember[3], d1u2, secmember[4], d1v2);
+            _tg1 = Vector3D.LinearForm(secmember[1], d1u1, secmember[2], d1v1);
+            _tg2 = Vector3D.LinearForm(secmember[3], d1u2, secmember[4], d1v2);
 
             tabP[lowp] = _pts1;
             tabP[lowp + nbPoint - 1] = _pts2;
@@ -513,8 +513,8 @@ public class Ruled : BlendFunction
             for (i = 2; i <= nbPoint - 1; i++)
             {
                 lambda = (double)(i - 1) / (double)(nbPoint - 1);
-                tabP[lowp + i - 1].SetXYZ((1.0 - lambda) * _pts1.XYZ() + lambda * _pts2.XYZ());
-                tabV[lowv + i - 1].SetLinearForm(1.0 - lambda, _tg1, lambda, _tg2);
+                tabP[lowp + i - 1] = tabP[lowp + i - 1].WithXYZ((1.0 - lambda) * _pts1.XYZ() + lambda * _pts2.XYZ());
+                tabV[lowv + i - 1] = Vector3D.LinearForm(1.0 - lambda, _tg1, lambda, _tg2);
             }
 
             return true;
@@ -601,9 +601,9 @@ public class Ruled : BlendFunction
         poles[lowp] = p.PointOnS1();
         poles[lowp + 1] = p.PointOnS2();
         p.ParametersOnS1(out u, out v);
-        poles2d[lowp2d].SetCoord(u, v);
+        poles2d[lowp2d] = poles2d[lowp2d].WithCoord(u, v);
         p.ParametersOnS2(out u, out v);
-        poles2d[lowp2d + 1].SetCoord(u, v);
+        poles2d[lowp2d + 1] = poles2d[lowp2d + 1].WithCoord(u, v);
         weights[lowp] = 1.0;
         weights[lowp + 1] = 1.0;
         if (!p.IsTangencyPoint)
@@ -628,9 +628,9 @@ public class Ruled : BlendFunction
         poles[lowp] = p.PointOnS1();
         poles[lowp + 1] = p.PointOnS2();
         p.ParametersOnS1(out u, out v);
-        poles2d[lowp2d].SetCoord(u, v);
+        poles2d[lowp2d] = poles2d[lowp2d].WithCoord(u, v);
         p.ParametersOnS2(out u, out v);
-        poles2d[lowp2d + 1].SetCoord(u, v);
+        poles2d[lowp2d + 1] = poles2d[lowp2d + 1].WithCoord(u, v);
         weights[lowp] = 1.0;
         weights[lowp + 1] = 1.0;
     }
@@ -645,12 +645,12 @@ public class Ruled : BlendFunction
         _curv.D2(prm, out _ptgui, out _d1gui, out _d2gui);
         _normtg = _d1gui.Magnitude();
         _nplan = _d1gui.Normalized();
-        dnplan.SetLinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
+        dnplan = Vector3D.LinearForm(1.0 / _normtg, _d2gui, -1.0 / _normtg * (_nplan.Dot(_d2gui)), _nplan);
 
         dirax = _nplan.Crossed(dnplan);
-        axrot.SetDirection(new Direction3D(dirax));
-        oriax.SetXYZ(_ptgui.XYZ() + (_normtg / dnplan.Magnitude()) * dnplan.Normalized().XYZ());
-        axrot.SetLocation(oriax);
+        axrot = axrot.WithDirection(new Direction3D(dirax));
+        oriax = oriax.WithXYZ(_ptgui.XYZ() + (_normtg / dnplan.Magnitude()) * dnplan.Normalized().XYZ());
+        axrot = axrot.WithLocation(oriax);
         return axrot;
     }
 

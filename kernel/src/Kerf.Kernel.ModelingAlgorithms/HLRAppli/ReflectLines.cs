@@ -49,7 +49,7 @@ public class ReflectLines
         Direction3D xpers = ypers.Crossed(zpers);
         CoordinateSystem axe = new(at, zpers, xpers);
         Transform3D t = new();
-        t.SetTransformation(axe);
+        t = t.WithTransformation(axe);
 
         // myProjector = aPrs3dProjector.Projector();
         _projector = new AlgorithmProjector(t, isPerspective, focus);

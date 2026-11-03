@@ -260,7 +260,7 @@ public static class RstInt
 
         double tol2 = tol * tol;
         PatchLineType typL = l.ArcType();
-        tgl.SetCoord(0.0, 0.0, 0.0);
+        tgl = tgl.WithCoord(0.0, 0.0, 0.0);
 
         if (typL == PatchLineType.Restriction)
         {
@@ -283,7 +283,7 @@ public static class RstInt
             {
                 return false;
             }
-            tgl.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+            tgl = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
             return (true);
         }
 
@@ -895,7 +895,7 @@ public static class RstInt
                                 }
 
                                 surf.D1(u1, v1, out _, out Vector3D d1u, out Vector3D d1v);
-                                tgrst.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+                                tgrst = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
                                 normsurf = d1u.Crossed(d1v);
                                 if (normsurf.Magnitude() < Constants.Resolution())

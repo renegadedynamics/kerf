@@ -83,7 +83,7 @@ public partial struct Torus : IEquatable<Torus>
 
     internal void Scale(in Point3D p, double theS)
     {
-        _pos.Scale(p, theS);
+        _pos = _pos.Scaled(p, theS);
         double s = theS;
         if (s < 0)
         {
@@ -96,7 +96,7 @@ public partial struct Torus : IEquatable<Torus>
 
     internal void Transform(in Transform3D t)
     {
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
         double aT = t.ScaleFactor();
         if (aT < 0)
         {
@@ -201,7 +201,7 @@ public partial struct Torus : IEquatable<Torus>
         Standard_DimensionError_Raise_if(coef.Length < 35, "gp_Torus::theCoefficients(): Dimension mismatch");
 
         Transform3D tr = new();
-        tr.SetTransformation(_pos);
+        tr = tr.WithTransformation(_pos);
         double t11 = tr.Value(1, 1);
         double t12 = tr.Value(1, 2);
         double t13 = tr.Value(1, 3);
@@ -323,28 +323,28 @@ public partial struct Torus : IEquatable<Torus>
     public readonly Torus Mirrored(in Point3D p)
     {
         Torus c = this;
-        c._pos.Mirror(p);
+        c._pos = c._pos.Mirrored(p);
         return c;
     }
 
     public readonly Torus Mirrored(in Axis3D a1)
     {
         Torus c = this;
-        c._pos.Mirror(a1);
+        c._pos = c._pos.Mirrored(a1);
         return c;
     }
 
     public readonly Torus Mirrored(in Frame3D a2)
     {
         Torus c = this;
-        c._pos.Mirror(a2);
+        c._pos = c._pos.Mirrored(a2);
         return c;
     }
 
     public readonly Torus Rotated(in Axis3D a1, double ang)
     {
         Torus c = this;
-        c._pos.Rotate(a1, ang);
+        c._pos = c._pos.Rotated(a1, ang);
         return c;
     }
 
@@ -352,7 +352,7 @@ public partial struct Torus : IEquatable<Torus>
     public readonly Torus Scaled(in Point3D p, double s)
     {
         Torus c = this;
-        c._pos.Scale(p, s);
+        c._pos = c._pos.Scaled(p, s);
         c._majorRadius *= s;
         if (c._majorRadius < 0)
         {
@@ -371,7 +371,7 @@ public partial struct Torus : IEquatable<Torus>
     public readonly Torus Transformed(in Transform3D t)
     {
         Torus c = this;
-        c._pos.Transform(t);
+        c._pos = c._pos.Transformed(t);
         c._majorRadius *= t.ScaleFactor();
         if (c._majorRadius < 0)
         {
@@ -390,14 +390,14 @@ public partial struct Torus : IEquatable<Torus>
     public readonly Torus Translated(in Vector3D v)
     {
         Torus c = this;
-        c._pos.Translate(v);
+        c._pos = c._pos.Translated(v);
         return c;
     }
 
     public readonly Torus Translated(in Point3D p1, in Point3D p2)
     {
         Torus c = this;
-        c._pos.Translate(p1, p2);
+        c._pos = c._pos.Translated(p1, p2);
         return c;
     }
 

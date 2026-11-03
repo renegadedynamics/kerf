@@ -477,7 +477,7 @@ public class CSWalking
         HCurve2dTool.D1(a, param, out p2d, out dp2d);
         HSurfaceTool.D1(_surf, p2d.X(), p2d.Y(), out pbid, out d1u, out d1v);
 
-        tgrst.SetLinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
+        tgrst = Vector3D.LinearForm(dp2d.X(), d1u, dp2d.Y(), d1v);
         normale = d1u.Crossed(d1v);
 
         global::Kerf.Engine.Intersection.Walking.IntSurf.MakeTransition(_previousP.TangentOnS(), tgrst, new Direction3D(normale), ref tLine, ref tArc);

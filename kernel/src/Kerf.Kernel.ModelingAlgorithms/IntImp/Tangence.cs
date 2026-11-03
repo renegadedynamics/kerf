@@ -85,23 +85,23 @@ public static class Tangence
         //
         //-------------------------------------------------
         Vector3D n1 = dPuv[0];
-        n1.Cross(dPuv[1]);
+        n1 = n1.Crossed(dPuv[1]);
         //
         m2 = n1.SquareMagnitude();
         if (m2 < tol2)
         {
             return true;
         }
-        n1.Normalize();
+        n1 = n1.Normalized();
         //-------------------------------------------------
         Vector3D n2 = dPuv[2];
-        n2.Cross(dPuv[3]);
+        n2 = n2.Crossed(dPuv[3]);
         m2 = n2.SquareMagnitude();
         if (m2 < tol2)
         {
             return true;
         }
-        n2.Normalize();
+        n2 = n2.Normalized();
         //
         for (i = 0; i < 4; ++i)
         {

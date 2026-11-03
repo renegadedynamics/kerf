@@ -1752,10 +1752,10 @@ public static class BRepAlgoAPI_CutTests
         {
             const double aSize = 50.0;
             NCollection_Array2<Point3D> aPoles = new(1, 2, 1, 2);
-            aPoles[1, 1].SetCoord(-aSize, 0, -aSize);
-            aPoles[1, 2].SetCoord(-aSize, 0, aSize);
-            aPoles[2, 1].SetCoord(aSize, 0, -aSize);
-            aPoles[2, 2].SetCoord(aSize, 0, aSize);
+            aPoles[1, 1] = aPoles[1, 1].WithCoord(-aSize, 0, -aSize);
+            aPoles[1, 2] = aPoles[1, 2].WithCoord(-aSize, 0, aSize);
+            aPoles[2, 1] = aPoles[2, 1].WithCoord(aSize, 0, -aSize);
+            aPoles[2, 2] = aPoles[2, 2].WithCoord(aSize, 0, aSize);
 
             BezierSurface aBezSurf = new(aPoles);
             BSplineSurface aBSpSurf = global::Kerf.Engine.Geometry.Conversion.GeomConvert.SurfaceToBSplineSurface(aBezSurf);

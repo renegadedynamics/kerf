@@ -189,7 +189,7 @@ public static class BlendFunc
                      ref thenormal, out _, out _);
         if (stat == Defined)
         {
-            normal.SetXYZ(thenormal.XYZ());
+            normal = normal.WithXYZ(thenormal.XYZ());
             return true;
         }
 
@@ -238,7 +238,7 @@ public static class BlendFunc
                      ref thenormal, out int orderU, out int orderV);
         if (stat == Defined)
         {
-            normal.SetXYZ(thenormal.XYZ());
+            normal = normal.WithXYZ(thenormal.XYZ());
             dNu = global::Kerf.Engine.Geometry.CSLib.DNNormal(1, 0, derNUV, orderU, orderV);
             dNv = global::Kerf.Engine.Geometry.CSLib.DNNormal(0, 1, derNUV, orderU, orderV);
             return true;

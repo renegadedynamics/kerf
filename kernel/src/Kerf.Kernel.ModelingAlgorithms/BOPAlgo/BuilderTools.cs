@@ -1807,7 +1807,7 @@ public static partial class BuilderTools
             return false;
         }
 
-        trsf.SetTranslation(new Vector3D(box.CornerMin(), point));
+        trsf = trsf.WithTranslation(new Vector3D(box.CornerMin(), point));
         return true;
     }
 

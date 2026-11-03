@@ -50,13 +50,13 @@ public class VectorWithMagnitude2 : GeometryVector2D
     internal void SetX(double x)
     {
         CheckMutable();
-        _gpVec2d.SetX(x);
+        _gpVec2d = _gpVec2d.WithX(x);
     }
 
     internal void SetY(double y)
     {
         CheckMutable();
-        _gpVec2d.SetY(y);
+        _gpVec2d = _gpVec2d.WithY(y);
     }
 
     public override double Magnitude() => _gpVec2d.Magnitude();
@@ -66,14 +66,14 @@ public class VectorWithMagnitude2 : GeometryVector2D
     internal void Add(GeometryVector2D other)
     {
         CheckMutable();
-        _gpVec2d.Add(other.Vec2d());
+        _gpVec2d = _gpVec2d.Added(other.Vec2d());
     }
 
     /// <summary>this + Other.</summary>
     public VectorWithMagnitude2 Added(GeometryVector2D other)
     {
         Vector2D temp = other.Vec2d();
-        temp.Add(_gpVec2d);
+        temp = temp.Added(_gpVec2d);
         return new VectorWithMagnitude2(temp);
     }
 
@@ -88,14 +88,14 @@ public class VectorWithMagnitude2 : GeometryVector2D
     internal void Divide(double scalar)
     {
         CheckMutable();
-        _gpVec2d.Divide(scalar);
+        _gpVec2d = _gpVec2d.Divided(scalar);
     }
 
     /// <summary>this / Scalar.</summary>
     public VectorWithMagnitude2 Divided(double scalar)
     {
         Vector2D v = _gpVec2d;
-        v.Divide(scalar);
+        v = v.Divided(scalar);
         return new VectorWithMagnitude2(v);
     }
 
@@ -106,21 +106,21 @@ public class VectorWithMagnitude2 : GeometryVector2D
     public VectorWithMagnitude2 Multiplied(double scalar)
     {
         Vector2D v = _gpVec2d;
-        v.Multiply(scalar);
+        v = v.Multiplied(scalar);
         return new VectorWithMagnitude2(v);
     }
 
     internal void Multiply(double scalar)
     {
         CheckMutable();
-        _gpVec2d.Multiply(scalar);
+        _gpVec2d = _gpVec2d.Multiplied(scalar);
     }
 
     /// <exception cref="ConstructionErrorException">The magnitude is at most <c>gp::Resolution()</c>.</exception>
     internal void Normalize()
     {
         CheckMutable();
-        _gpVec2d.Normalize();
+        _gpVec2d = _gpVec2d.Normalized();
     }
 
     /// <summary>The unit vector of this one.</summary>
@@ -134,14 +134,14 @@ public class VectorWithMagnitude2 : GeometryVector2D
     internal void Subtract(GeometryVector2D other)
     {
         CheckMutable();
-        _gpVec2d.Subtract(other.Vec2d());
+        _gpVec2d = _gpVec2d.Subtracted(other.Vec2d());
     }
 
     /// <summary>this - Other.</summary>
     public VectorWithMagnitude2 Subtracted(GeometryVector2D other)
     {
         Vector2D v = _gpVec2d;
-        v.Subtract(other.Vec2d());
+        v = v.Subtracted(other.Vec2d());
         return new VectorWithMagnitude2(v);
     }
 
@@ -152,7 +152,7 @@ public class VectorWithMagnitude2 : GeometryVector2D
     protected internal override void Transform(in Transform2D t)
     {
         CheckMutable();
-        _gpVec2d.Transform(t);
+        _gpVec2d = _gpVec2d.Transformed(t);
     }
 
     // Non-mutating twins of the Set methods (OCCT.NET)

@@ -465,7 +465,7 @@ public class CorrectedFrenet : TrihedronLaw
 
                 aT += tangent;
                 cross = tangent.Crossed(normal);
-                aN.SetLinearForm(Math.Sin(angleAT), cross, 1 - Math.Cos(angleAT), tangent.Crossed(cross), normal + aN);
+                aN = Vector3D.LinearForm(Math.Sin(angleAT), cross, 1 - Math.Cos(angleAT), tangent.Crossed(cross), normal + aN);
                 prevTangent = tangent;
                 param = currParam;
                 i++;
@@ -628,7 +628,7 @@ public class CorrectedFrenet : TrihedronLaw
         // rotation around Tangent
         Vector3D cross;
         cross = tangent.Crossed(normal);
-        normal.SetLinearForm(Math.Sin(angleAT), cross, (1 - Math.Cos(angleAT)), tangent.Crossed(cross), normal);
+        normal = Vector3D.LinearForm(Math.Sin(angleAT), cross, (1 - Math.Cos(angleAT)), tangent.Crossed(cross), normal);
         biNormal = tangent.Crossed(normal);
 
         return true;
@@ -654,20 +654,20 @@ public class CorrectedFrenet : TrihedronLaw
         cosa = Math.Cos(angleAT);
 
         cross = tangent.Crossed(normal);
-        dcross.SetLinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
+        dcross = Vector3D.LinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
 
         tcross = tangent.Crossed(cross);
-        dtcross.SetLinearForm(1, dTangent.Crossed(cross), tangent.Crossed(dcross));
+        dtcross = Vector3D.LinearForm(1, dTangent.Crossed(cross), tangent.Crossed(dcross));
 
-        aux.SetLinearForm(sina, dcross, cosa * d_angleAT, cross);
-        aux.SetLinearForm(1 - cosa, dtcross, sina * d_angleAT, tcross, aux);
+        aux = Vector3D.LinearForm(sina, dcross, cosa * d_angleAT, cross);
+        aux = Vector3D.LinearForm(1 - cosa, dtcross, sina * d_angleAT, tcross, aux);
         dNormal += aux;
 
-        normal.SetLinearForm(sina, cross, (1 - cosa), tcross, normal);
+        normal = Vector3D.LinearForm(sina, cross, (1 - cosa), tcross, normal);
 
         biNormal = tangent.Crossed(normal);
 
-        dBiNormal.SetLinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
+        dBiNormal = Vector3D.LinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
 
         return true;
     }
@@ -692,31 +692,31 @@ public class CorrectedFrenet : TrihedronLaw
         sina = Math.Sin(angleAT);
         cosa = Math.Cos(angleAT);
         cross = tangent.Crossed(normal);
-        dcross.SetLinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
-        d2cross.SetLinearForm(1, d2Tangent.Crossed(normal), 2, dTangent.Crossed(dNormal), tangent.Crossed(d2Normal));
+        dcross = Vector3D.LinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
+        d2cross = Vector3D.LinearForm(1, d2Tangent.Crossed(normal), 2, dTangent.Crossed(dNormal), tangent.Crossed(d2Normal));
 
         tcross = tangent.Crossed(cross);
-        dtcross.SetLinearForm(1, dTangent.Crossed(cross), tangent.Crossed(dcross));
-        d2tcross.SetLinearForm(1, d2Tangent.Crossed(cross), 2, dTangent.Crossed(dcross), tangent.Crossed(d2cross));
+        dtcross = Vector3D.LinearForm(1, dTangent.Crossed(cross), tangent.Crossed(dcross));
+        d2tcross = Vector3D.LinearForm(1, d2Tangent.Crossed(cross), 2, dTangent.Crossed(dcross), tangent.Crossed(d2cross));
 
-        aux.SetLinearForm(sina, d2cross, 2 * cosa * d_angleAT, dcross, cosa * d2_angleAT - sina * d_angleAT * d_angleAT,
+        aux = Vector3D.LinearForm(sina, d2cross, 2 * cosa * d_angleAT, dcross, cosa * d2_angleAT - sina * d_angleAT * d_angleAT,
                           cross);
 
-        aux.SetLinearForm(1 - cosa, d2tcross, 2 * sina * d_angleAT, dtcross,
+        aux = Vector3D.LinearForm(1 - cosa, d2tcross, 2 * sina * d_angleAT, dtcross,
                           cosa * d_angleAT * d_angleAT + sina * d2_angleAT, tcross, aux);
         d2Normal += aux;
 
-        aux.SetLinearForm(sina, dcross, cosa * d_angleAT, cross);
-        aux.SetLinearForm(1 - cosa, dtcross, sina * d_angleAT, tcross, aux);
+        aux = Vector3D.LinearForm(sina, dcross, cosa * d_angleAT, cross);
+        aux = Vector3D.LinearForm(1 - cosa, dtcross, sina * d_angleAT, tcross, aux);
         dNormal += aux;
 
-        normal.SetLinearForm(sina, cross, (1 - cosa), tcross, normal);
+        normal = Vector3D.LinearForm(sina, cross, (1 - cosa), tcross, normal);
 
         biNormal = tangent.Crossed(normal);
 
-        dBiNormal.SetLinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
+        dBiNormal = Vector3D.LinearForm(1, dTangent.Crossed(normal), tangent.Crossed(dNormal));
 
-        d2BiNormal.SetLinearForm(1, d2Tangent.Crossed(normal), 2, dTangent.Crossed(dNormal), tangent.Crossed(d2Normal));
+        d2BiNormal = Vector3D.LinearForm(1, d2Tangent.Crossed(normal), 2, dTangent.Crossed(dNormal), tangent.Crossed(d2Normal));
 
         return true;
     }
@@ -831,7 +831,7 @@ public class CorrectedFrenet : TrihedronLaw
                 Point2D point2d = new(u, v);
                 if (j != 0)
                 {
-                    vec.SetXY(point2d.XY() - old.XY());
+                    vec = vec.WithXY(point2d.XY() - old.XY());
                     if (k > 2)
                     {
                         double theAngle = prevVec.Angle(vec);
@@ -861,7 +861,7 @@ public class CorrectedFrenet : TrihedronLaw
             aTangent = _at;
             aNormal = _an;
             aBiNormal = aTangent;
-            aBiNormal.Cross(aNormal);
+            aBiNormal = aBiNormal.Crossed(aNormal);
         }
     }
 

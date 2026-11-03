@@ -595,9 +595,9 @@ public class WireDivide : UpgradeTool
                             p = surf!.Value(p2d.X(), p2d.Y());
                             p1 = surf.Value(p2df.X(), p2df.Y());
                             pm = surf.Value(p2dM.X(), p2dM.Y());
-                            p.Transform(loc.Transformation());
-                            p1.Transform(loc.Transformation());
-                            pm.Transform(loc.Transformation());
+                            p = p.Transformed(loc.Transformation());
+                            p1 = p1.Transformed(loc.Transformation());
+                            pm = pm.Transformed(loc.Transformation());
                         }
 
                         if (p.Distance(pntV1) < MinTolerance() && p.Distance(pm) < MinTolerance()

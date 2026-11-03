@@ -37,9 +37,9 @@ public sealed class LocFunction
         Matrix3x3 m = new Matrix3x3();
         bool b;
         b = _law.D0(param, ref m, ref _v[1]);
-        _v[2].SetXYZ(m.Column(1));
-        _v[3].SetXYZ(m.Column(2));
-        _v[4].SetXYZ(m.Column(3));
+        _v[2] = _v[2].WithXYZ(m.Column(1));
+        _v[3] = _v[3].WithXYZ(m.Column(2));
+        _v[4] = _v[4].WithXYZ(m.Column(3));
         return b;
     }
 
@@ -51,12 +51,12 @@ public sealed class LocFunction
         Matrix3x3 m = new Matrix3x3(), dm = new Matrix3x3();
         bool b;
         b = _law.D1(param, ref m, ref _v[1], ref dm, ref _dv[1], t1, t2);
-        _v[2].SetXYZ(m.Column(1));
-        _v[3].SetXYZ(m.Column(2));
-        _v[4].SetXYZ(m.Column(3));
-        _dv[2].SetXYZ(dm.Column(1));
-        _dv[3].SetXYZ(dm.Column(2));
-        _dv[4].SetXYZ(dm.Column(3));
+        _v[2] = _v[2].WithXYZ(m.Column(1));
+        _v[3] = _v[3].WithXYZ(m.Column(2));
+        _v[4] = _v[4].WithXYZ(m.Column(3));
+        _dv[2] = _dv[2].WithXYZ(dm.Column(1));
+        _dv[3] = _dv[3].WithXYZ(dm.Column(2));
+        _dv[4] = _dv[4].WithXYZ(dm.Column(3));
         return b;
     }
 
@@ -68,15 +68,15 @@ public sealed class LocFunction
         Matrix3x3 m = new Matrix3x3(), dm = new Matrix3x3(), d2M = new Matrix3x3();
         bool b;
         b = _law.D2(param, ref m, ref _v[1], ref dm, ref _dv[1], ref d2M, ref _d2V[1], t1, t2, t3);
-        _v[2].SetXYZ(m.Column(1));
-        _v[3].SetXYZ(m.Column(2));
-        _v[4].SetXYZ(m.Column(3));
-        _dv[2].SetXYZ(dm.Column(1));
-        _dv[3].SetXYZ(dm.Column(2));
-        _dv[4].SetXYZ(dm.Column(3));
-        _d2V[2].SetXYZ(d2M.Column(1));
-        _d2V[3].SetXYZ(d2M.Column(2));
-        _d2V[4].SetXYZ(d2M.Column(3));
+        _v[2] = _v[2].WithXYZ(m.Column(1));
+        _v[3] = _v[3].WithXYZ(m.Column(2));
+        _v[4] = _v[4].WithXYZ(m.Column(3));
+        _dv[2] = _dv[2].WithXYZ(dm.Column(1));
+        _dv[3] = _dv[3].WithXYZ(dm.Column(2));
+        _dv[4] = _dv[4].WithXYZ(dm.Column(3));
+        _d2V[2] = _d2V[2].WithXYZ(d2M.Column(1));
+        _d2V[3] = _d2V[3].WithXYZ(d2M.Column(2));
+        _d2V[4] = _d2V[4].WithXYZ(d2M.Column(3));
         return b;
     }
 

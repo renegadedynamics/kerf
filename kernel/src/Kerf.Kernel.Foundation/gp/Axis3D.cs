@@ -50,41 +50,41 @@ public partial struct Axis3D : IEquatable<Axis3D>
 
     internal void Mirror(in Point3D p)
     {
-        _loc.Mirror(p);
-        _vdir.Reverse();
+        _loc = _loc.Mirrored(p);
+        _vdir = _vdir.Reversed();
     }
 
     internal void Mirror(in Axis3D a1)
     {
-        _loc.Mirror(a1);
-        _vdir.Mirror(a1._vdir);
+        _loc = _loc.Mirrored(a1);
+        _vdir = _vdir.Mirrored(a1._vdir);
     }
 
     internal void Mirror(in Frame3D a2)
     {
-        _loc.Mirror(a2);
-        _vdir.Mirror(a2);
+        _loc = _loc.Mirrored(a2);
+        _vdir = _vdir.Mirrored(a2);
     }
 
     internal void Rotate(in Axis3D a1, double angRad)
     {
-        _loc.Rotate(a1, angRad);
-        _vdir.Rotate(a1, angRad);
+        _loc = _loc.Rotated(a1, angRad);
+        _vdir = _vdir.Rotated(a1, angRad);
     }
 
     internal void Scale(in Point3D p, double s)
     {
-        _loc.Scale(p, s);
+        _loc = _loc.Scaled(p, s);
         if (s < 0.0)
         {
-            _vdir.Reverse();
+            _vdir = _vdir.Reversed();
         }
     }
 
     internal void Transform(in Transform3D t)
     {
-        _loc.Transform(t);
-        _vdir.Transform(t);
+        _loc = _loc.Transformed(t);
+        _vdir = _vdir.Transformed(t);
     }
 
     internal void Translate(in Vector3D v) => _loc.Translate(v);
@@ -171,14 +171,14 @@ public partial struct Axis3D : IEquatable<Axis3D>
     public readonly Axis3D Translated(in Vector3D v)
     {
         Axis3D a1 = this;
-        a1._loc.Translate(v);
+        a1._loc = a1._loc.Translated(v);
         return a1;
     }
 
     public readonly Axis3D Translated(in Point3D p1, in Point3D p2)
     {
         Axis3D a1 = this;
-        a1._loc.Translate(p1, p2);
+        a1._loc = a1._loc.Translated(p1, p2);
         return a1;
     }
 

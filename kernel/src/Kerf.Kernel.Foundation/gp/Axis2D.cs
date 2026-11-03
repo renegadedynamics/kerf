@@ -50,35 +50,35 @@ public partial struct Axis2D : IEquatable<Axis2D>
 
     internal void Mirror(in Point2D p)
     {
-        _loc.Mirror(p);
-        _vdir.Reverse();
+        _loc = _loc.Mirrored(p);
+        _vdir = _vdir.Reversed();
     }
 
     internal void Mirror(in Axis2D a)
     {
-        _loc.Mirror(a);
-        _vdir.Mirror(a._vdir);
+        _loc = _loc.Mirrored(a);
+        _vdir = _vdir.Mirrored(a._vdir);
     }
 
     internal void Rotate(in Point2D p, double ang)
     {
-        _loc.Rotate(p, ang);
-        _vdir.Rotate(ang);
+        _loc = _loc.Rotated(p, ang);
+        _vdir = _vdir.Rotated(ang);
     }
 
     internal void Scale(in Point2D p, double s)
     {
-        _loc.Scale(p, s);
+        _loc = _loc.Scaled(p, s);
         if (s < 0.0)
         {
-            _vdir.Reverse();
+            _vdir = _vdir.Reversed();
         }
     }
 
     internal void Transform(in Transform2D t)
     {
-        _loc.Transform(t);
-        _vdir.Transform(t);
+        _loc = _loc.Transformed(t);
+        _vdir = _vdir.Transformed(t);
     }
 
     internal void Translate(in Vector2D v) => _loc.Translate(v);
@@ -173,14 +173,14 @@ public partial struct Axis2D : IEquatable<Axis2D>
     public readonly Axis2D Translated(in Vector2D v)
     {
         Axis2D a = this;
-        (a._loc).Translate(v);
+        (a._loc) = (a._loc).Translated(v);
         return a;
     }
 
     public readonly Axis2D Translated(in Point2D p1, in Point2D p2)
     {
         Axis2D a = this;
-        (a._loc).Translate(p1, p2);
+        (a._loc) = (a._loc).Translated(p1, p2);
         return a;
     }
 

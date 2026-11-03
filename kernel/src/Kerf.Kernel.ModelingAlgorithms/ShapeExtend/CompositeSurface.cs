@@ -388,11 +388,11 @@ public class CompositeSurface : Surface
         Transform2D Shift = new(), scale = new();
         if (shift.X() != 0.0 || shift.Y() != 0.0)
         {
-            Shift.SetTranslation(shift);
+            Shift = Shift.WithTranslation(shift);
         }
         if (scalev != 1.0)
         {
-            scale.SetScale(new Point2D(0, 0), scalev);
+            scale = scale.WithScale(new Point2D(0, 0), scalev);
         }
         trsf = scale * Shift;
         return uFact != 1.0 || trsf.Form() != TransformForm.Identity;

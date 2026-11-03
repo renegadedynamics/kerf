@@ -537,8 +537,8 @@ public abstract class Energy : MultipleVarFunctionWithHessian
         // recopy others
         for (ii = indexDeb1; ii <= indexFin1; ii++)
         {
-            _myPoles.ChangeValue(ii).SetX(x[indexDeb2]);
-            _myPoles.ChangeValue(ii).SetY(x[indexDeb2 + 1]);
+            _myPoles.ChangeValue(ii) = _myPoles.ChangeValue(ii).WithX(x[indexDeb2]);
+            _myPoles.ChangeValue(ii) = _myPoles.ChangeValue(ii).WithY(x[indexDeb2 + 1]);
             indexDeb2 += 2;
         }
     }

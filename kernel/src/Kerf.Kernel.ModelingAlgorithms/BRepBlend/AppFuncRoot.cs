@@ -76,12 +76,12 @@ public abstract class AppFuncRoot : SweepFunction
                 zmax = Max(Max(p.PointOnS1().Z(), p.PointOnS2().Z()), zmax);
                 zmin = Min(Min(p.PointOnS1().Z(), p.PointOnS2().Z()), zmin);
 
-                _bary.SetCoord((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2);
+                _bary = _bary.WithCoord((xmax + xmin) / 2, (ymax + ymin) / 2, (zmax + zmin) / 2);
             }
         }
         else
         {
-            _bary.SetCoord(0, 0, 0);
+            _bary = _bary.WithCoord(0, 0, 0);
         }
 
         _solver = new FunctionSetRoot(func, _tolerance, 30);

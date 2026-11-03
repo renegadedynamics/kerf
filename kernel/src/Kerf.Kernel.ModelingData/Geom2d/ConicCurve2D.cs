@@ -21,25 +21,25 @@ public abstract class ConicCurve2D : Curve2D
     internal void SetAxis(in Frame2D a)
     {
         CheckMutable();
-        _pos.SetAxis(a);
+        _pos = _pos.WithAxis(a);
     }
 
     internal void SetXAxis(in Axis2D ax)
     {
         CheckMutable();
-        _pos.SetXAxis(ax);
+        _pos = _pos.WithXAxis(ax);
     }
 
     internal void SetYAxis(in Axis2D ay)
     {
         CheckMutable();
-        _pos.SetYAxis(ay);
+        _pos = _pos.WithYAxis(ay);
     }
 
     internal void SetLocation(in Point2D p)
     {
         CheckMutable();
-        _pos.SetLocation(p);
+        _pos = _pos.WithLocation(p);
     }
 
     /// <summary>A copy with the local coordinate system theA.</summary>
@@ -94,8 +94,8 @@ public abstract class ConicCurve2D : Curve2D
     {
         CheckMutable();
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        _pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
     }
 
     /// <summary>CN: conics are infinitely smooth.</summary>

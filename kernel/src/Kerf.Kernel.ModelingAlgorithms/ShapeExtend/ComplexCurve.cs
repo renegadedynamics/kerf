@@ -141,7 +141,7 @@ public abstract class ComplexCurve : Curve3D
         double fact = GetScaleFactor(ind);
         for (int i = 1; i <= n; i++)
         {
-            v.Multiply(fact);
+            v = v.Multiplied(fact);
         }
     }
 }

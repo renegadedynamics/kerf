@@ -194,9 +194,9 @@ public class TransformedSurface : SurfaceAdaptorBase
             return _surf.EvalD1(u, v);
         }
         global::Kerf.Geometry.Surface.ResD1 res = _surf.EvalD1(u, v);
-        res.Point.Transform(_trsf);
-        res.D1U.Transform(_trsf);
-        res.D1V.Transform(_trsf);
+        res.Point = res.Point.Transformed(_trsf);
+        res.D1U = res.D1U.Transformed(_trsf);
+        res.D1V = res.D1V.Transformed(_trsf);
         return res;
     }
 
@@ -208,12 +208,12 @@ public class TransformedSurface : SurfaceAdaptorBase
             return _surf.EvalD2(u, v);
         }
         global::Kerf.Geometry.Surface.ResD2 res = _surf.EvalD2(u, v);
-        res.Point.Transform(_trsf);
-        res.D1U.Transform(_trsf);
-        res.D1V.Transform(_trsf);
-        res.D2U.Transform(_trsf);
-        res.D2V.Transform(_trsf);
-        res.D2UV.Transform(_trsf);
+        res.Point = res.Point.Transformed(_trsf);
+        res.D1U = res.D1U.Transformed(_trsf);
+        res.D1V = res.D1V.Transformed(_trsf);
+        res.D2U = res.D2U.Transformed(_trsf);
+        res.D2V = res.D2V.Transformed(_trsf);
+        res.D2UV = res.D2UV.Transformed(_trsf);
         return res;
     }
 
@@ -225,16 +225,16 @@ public class TransformedSurface : SurfaceAdaptorBase
             return _surf.EvalD3(u, v);
         }
         global::Kerf.Geometry.Surface.ResD3 res = _surf.EvalD3(u, v);
-        res.Point.Transform(_trsf);
-        res.D1U.Transform(_trsf);
-        res.D1V.Transform(_trsf);
-        res.D2U.Transform(_trsf);
-        res.D2V.Transform(_trsf);
-        res.D2UV.Transform(_trsf);
-        res.D3U.Transform(_trsf);
-        res.D3V.Transform(_trsf);
-        res.D3UUV.Transform(_trsf);
-        res.D3UVV.Transform(_trsf);
+        res.Point = res.Point.Transformed(_trsf);
+        res.D1U = res.D1U.Transformed(_trsf);
+        res.D1V = res.D1V.Transformed(_trsf);
+        res.D2U = res.D2U.Transformed(_trsf);
+        res.D2V = res.D2V.Transformed(_trsf);
+        res.D2UV = res.D2UV.Transformed(_trsf);
+        res.D3U = res.D3U.Transformed(_trsf);
+        res.D3V = res.D3V.Transformed(_trsf);
+        res.D3UUV = res.D3UUV.Transformed(_trsf);
+        res.D3UVV = res.D3UVV.Transformed(_trsf);
         return res;
     }
 

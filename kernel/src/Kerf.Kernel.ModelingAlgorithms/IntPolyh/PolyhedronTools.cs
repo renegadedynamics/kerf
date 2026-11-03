@@ -160,7 +160,7 @@ public static class PolyhedronTools
                 }
                 else
                 {
-                    vNorm.SetCoord(0.0, 0.0, 0.0);
+                    vNorm = vNorm.WithCoord(0.0, 0.0, 0.0);
                 }
 
                 // Save the pair

@@ -87,7 +87,7 @@ internal static class EdgeIntersectorRecordings
                             if (aShift.SquareMagnitude() != 0.0)
                             {
                                 Transform3D aT = new();
-                                aT.SetTranslation(aShift);
+                                aT = aT.WithTranslation(aShift);
                                 aB = aB.Moved(new Placement(aT));
                             }
                         }

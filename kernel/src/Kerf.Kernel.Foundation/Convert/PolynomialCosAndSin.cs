@@ -83,19 +83,19 @@ internal static class PolynomialCosAndSin
         // Bezier control points for a unit circle (degree-7 polynomial approximation).
         // Coefficients from Tiller's algorithm for polynomial cos/sin representation.
         NCollection_Array1<Point2D> tPoles = new(1, 8), newTPoles = new(1, 8);
-        tPoles[1].SetCoord(1.0, 0.0);
-        tPoles[2].SetCoord(1.0, 1.013854);
-        tPoles[3].SetCoord(-0.199043, 1.871905);
-        tPoles[4].SetCoord(-1.937729, 1.057323);
-        tPoles[5].SetCoord(-1.937729, -1.057323);
-        tPoles[6].SetCoord(-0.199043, -1.871905);
-        tPoles[7].SetCoord(1.0, -1.013854);
-        tPoles[8].SetCoord(1.0, 0.0);
+        tPoles[1] = tPoles[1].WithCoord(1.0, 0.0);
+        tPoles[2] = tPoles[2].WithCoord(1.0, 1.013854);
+        tPoles[3] = tPoles[3].WithCoord(-0.199043, 1.871905);
+        tPoles[4] = tPoles[4].WithCoord(-1.937729, 1.057323);
+        tPoles[5] = tPoles[5].WithCoord(-1.937729, -1.057323);
+        tPoles[6] = tPoles[6].WithCoord(-0.199043, -1.871905);
+        tPoles[7] = tPoles[7].WithCoord(1.0, -1.013854);
+        tPoles[8] = tPoles[8].WithCoord(1.0, 0.0);
         Transform2D t = new();
-        t.SetRotation(Constants.Origin2d(), angle);
+        t = t.WithRotation(Constants.Origin2d(), angle);
         for (ii = 1; ii <= num_poles; ii++)
         {
-            tPoles[ii].Transform(t);
+            tPoles[ii] = tPoles[ii].Transformed(t);
         }
 
         t_min = 1.0e0 - (delta * 1.3e0 / M_PI);
@@ -151,10 +151,10 @@ internal static class PolynomialCosAndSin
         newTPoles[num_poles - 1] = pfin;
 
         // Rotation to return to the arc [LocUFirst, LocUFirst+Delta]
-        t.SetRotation(Constants.Origin2d(), locUFirst);
+        t = t.WithRotation(Constants.Origin2d(), locUFirst);
         for (ii = 1; ii <= num_poles; ii++)
         {
-            newTPoles[ii].Transform(t);
+            newTPoles[ii] = newTPoles[ii].Transformed(t);
         }
 
         for (ii = 1; ii <= num_poles; ii++)

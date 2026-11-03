@@ -168,9 +168,9 @@ internal sealed class HlrRecorder
                                                         20.0));
 
         Transform3D aT = new();
-        aT.SetTransformation(new CoordinateSystem(new Point3D(1, -2, 0.5), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0)));
+        aT = aT.WithTransformation(new CoordinateSystem(new Point3D(1, -2, 0.5), new Direction3D(1, 1, 1), new Direction3D(1, -1, 0)));
         Transform3D aS = new();
-        aS.SetScale(new Point3D(0.5, 0.5, 0.5), 2.5);
+        aS = aS.WithScale(new Point3D(0.5, 0.5, 0.5), 2.5);
         Transform3D aTS = aS * aT;
         RecProjector("trsf", new AlgorithmProjector(aTS, false, 0.0));
         RecProjector("trsf persp", new AlgorithmProjector(aTS, true, 30.0));

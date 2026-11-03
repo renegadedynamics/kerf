@@ -189,7 +189,7 @@ public class BRepTools_ModifierTests
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         var aSnapshot = ShapeSnapshot.Of(aBox);
         Transform3D aScale = new();
-        aScale.SetScale(new Point3D(1, 1, 1), 2.0);
+        aScale = aScale.WithScale(new Point3D(1, 1, 1), 2.0);
         var aModifier = new Modifier(aBox, new TrsfModification(aScale));
         Shape aResult = aModifier.ModifiedShape(aBox);
         foreach (Shape aV in SubShapes(aBox, ShapeType.Vertex))
@@ -205,7 +205,7 @@ public class BRepTools_ModifierTests
 
         // a mirror reverses the faces' new surfaces, so the faces are reversed
         Transform3D aMirror = new();
-        aMirror.SetMirror(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)));
+        aMirror = aMirror.WithMirror(new Frame3D(new Point3D(), new Direction3D(0, 0, 1)));
         var aMirrored = new Modifier(aBox, new TrsfModification(aMirror));
         Assert.Equal(Reversed, aMirrored.ModifiedShape(SubShapes(aBox, ShapeType.Face)[0]).Orientation());
         aSnapshot.AssertUnchanged(aBox);
@@ -487,7 +487,7 @@ public class BRepTools_ModifierTests
     {
         Solid aBox = TestShapes.Frozen(TestShapes.Box(1, 2, 3));
         Transform3D aScale = new();
-        aScale.SetScale(new Point3D(1, 0, 0), 1.5);
+        aScale = aScale.WithScale(new Point3D(1, 0, 0), 1.5);
         Transform3D aMove = Transform3D.Translation(new Vector3D(0, 0, 10));
         Shape aPlaced = aBox.Moved(new Placement(aScale)).Moved(new Placement(aMove));
         var aSnapshot = ShapeSnapshot.Of(aPlaced);

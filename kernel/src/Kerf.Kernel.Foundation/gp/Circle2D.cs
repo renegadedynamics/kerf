@@ -66,8 +66,8 @@ public partial struct Circle2D : IEquatable<Circle2D>
     internal void Reverse()
     {
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        _pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
     }
 
     internal void Mirror(in Point2D p) => _pos.Mirror(p);
@@ -84,7 +84,7 @@ public partial struct Circle2D : IEquatable<Circle2D>
             _radius = -_radius;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform2D t)
@@ -95,7 +95,7 @@ public partial struct Circle2D : IEquatable<Circle2D>
             _radius = -_radius;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector2D v) => _pos.Translate(v);
@@ -203,29 +203,29 @@ public partial struct Circle2D : IEquatable<Circle2D>
     {
         Circle2D circ = this;
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        circ._pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        circ._pos = circ._pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
         return circ;
     }
 
     public readonly Circle2D Mirrored(in Point2D p)
     {
         Circle2D c = this;
-        c._pos.Mirror(p);
+        c._pos = c._pos.Mirrored(p);
         return c;
     }
 
     public readonly Circle2D Mirrored(in Axis2D a)
     {
         Circle2D c = this;
-        c._pos.Mirror(a);
+        c._pos = c._pos.Mirrored(a);
         return c;
     }
 
     public readonly Circle2D Rotated(in Point2D p, double ang)
     {
         Circle2D circ = this;
-        circ._pos.Rotate(p, ang);
+        circ._pos = circ._pos.Rotated(p, ang);
         return circ;
     }
 
@@ -238,7 +238,7 @@ public partial struct Circle2D : IEquatable<Circle2D>
             circ._radius = -circ._radius;
         }
 
-        circ._pos.Scale(p, s);
+        circ._pos = circ._pos.Scaled(p, s);
         return circ;
     }
 
@@ -251,21 +251,21 @@ public partial struct Circle2D : IEquatable<Circle2D>
             circ._radius = -circ._radius;
         }
 
-        circ._pos.Transform(t);
+        circ._pos = circ._pos.Transformed(t);
         return circ;
     }
 
     public readonly Circle2D Translated(in Vector2D v)
     {
         Circle2D circ = this;
-        circ._pos.Translate(v);
+        circ._pos = circ._pos.Translated(v);
         return circ;
     }
 
     public readonly Circle2D Translated(in Point2D p1, in Point2D p2)
     {
         Circle2D circ = this;
-        circ._pos.Translate(p1, p2);
+        circ._pos = circ._pos.Translated(p1, p2);
         return circ;
     }
 

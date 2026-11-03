@@ -38,7 +38,7 @@ public class CelGProps : Properties
         double yloc = ray * (Math.Cos(u1) - Math.Cos(u2)) / (u2 - u1);
 
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord(xloc * xa1 + yloc * xa2 + x0, xloc * ya1 + yloc * ya2 + y0, z0);
+        _g = _g.WithCoord(xloc * xa1 + yloc * xa2 + x0, xloc * ya1 + yloc * ya2 + y0, z0);
 
         var dm = new Matrix(1, 3, 1, 3);
         dm[1, 1] = ray * ray * ray * (u2 / 2 - u1 / 2 - Math.Sin(2 * u2) / 4 + Math.Sin(2 * u1) / 4);
@@ -88,7 +88,7 @@ public class CelGProps : Properties
         _dim        = Math.Abs(u2 - u1);
         Point3D p2  = global::Kerf.Engine.Geometry.ElCLib.LineValue(u2, pos);
         // OCCT: g is absolute here, but GProp_GProps treats it as relative to loc (wrong when loc is not the origin).
-        _g.SetCoord((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0, (p1.Z() + p2.Z()) / 2.0);
+        _g = _g.WithCoord((p1.X() + p2.X()) / 2.0, (p1.Y() + p2.Y()) / 2.0, (p1.Z() + p2.Z()) / 2.0);
         pos.Direction().Coord(out double vx, out double vy, out double vz);
         pos.Location().Coord(out double x0, out double y0, out double z0);
         double alfa1 = (vz * vz + vy * vy) / 3.0;

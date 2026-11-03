@@ -62,7 +62,7 @@ public class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAd
         HSurfaceTool.D1(_surface1, x[1], x[2], out _, out Vector3D D1u, out Vector3D D1v);
         PatchHCurve2dTool.D1(_curve, x[3], out Point2D p2d, out Vector2D d2d);
         HSurfaceTool.D1(_surface2, p2d.X(), p2d.Y(), out _, out Vector3D d1u, out Vector3D d1v);
-        d1w.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        d1w = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
         d[1, 1] = D1u.X();
         d[1, 2] = D1v.X();
@@ -83,7 +83,7 @@ public class PatchCSFunction : FunctionSetWithDerivatives, ICSFunction<SurfaceAd
         HSurfaceTool.D1(_surface1, x[1], x[2], out Point3D psurf, out Vector3D D1u, out Vector3D D1v);
         PatchHCurve2dTool.D1(_curve, x[3], out Point2D p2d, out Vector2D d2d);
         HSurfaceTool.D1(_surface2, p2d.X(), p2d.Y(), out Point3D pcurv, out Vector3D d1u, out Vector3D d1v);
-        d1w.SetLinearForm(d2d.X(), d1u, d2d.Y(), d1v);
+        d1w = Vector3D.LinearForm(d2d.X(), d1u, d2d.Y(), d1v);
 
         d[1, 1] = D1u.X();
         d[1, 2] = D1v.X();

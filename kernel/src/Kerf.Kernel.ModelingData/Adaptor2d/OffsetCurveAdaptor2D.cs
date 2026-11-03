@@ -408,7 +408,7 @@ public class OffsetCurveAdaptor2D : Curve2DAdaptorBase
                 else if (radius < 0.0)
                 {
                     radius = -radius;
-                    axes.SetXDirection((axes.XDirection()).Reversed());
+                    axes = axes.WithXDirection((axes.XDirection()).Reversed());
                     return new Circle2D(axes, radius);
                 }
                 else

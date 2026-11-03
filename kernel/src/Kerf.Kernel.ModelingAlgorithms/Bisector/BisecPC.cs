@@ -170,9 +170,9 @@ public sealed class BisecPC : BisectorCurve
     {
         CheckMutable();
         _curve.Transform(t);
-        _point.Transform(t);
-        _pointStartBis.Transform(t);
-        _pointEndBis.Transform(t);
+        _point = _point.Transformed(t);
+        _pointStartBis = _pointStartBis.Transformed(t);
+        _pointEndBis = _pointEndBis.Transformed(t);
     }
 
     /// <summary>True if the curve is C(N+1).</summary>
@@ -277,8 +277,8 @@ public sealed class BisecPC : BisectorCurve
             {
                 dU = u - _startIntervals.Value(_bisInterval);
                 Direction2D dirExt = new(_pointStartBis.X() - _point.X(), _pointStartBis.Y() - _point.Y());
-                p.SetCoord(_pointStartBis.X() + dU * dirExt.X(), _pointStartBis.Y() + dU * dirExt.Y());
-                v1.SetCoord(dirExt.X(), dirExt.Y());
+                p = p.WithCoord(_pointStartBis.X() + dU * dirExt.X(), _pointStartBis.Y() + dU * dirExt.Y());
+                v1 = v1.WithCoord(dirExt.X(), dirExt.Y());
             }
         }
         else if (u > _endIntervals.Value(_bisInterval))
@@ -291,8 +291,8 @@ public sealed class BisecPC : BisectorCurve
             {
                 dU = u - _endIntervals.Value(_bisInterval);
                 Direction2D dirExt = new(_point.X() - _pointEndBis.X(), _point.Y() - _pointEndBis.Y());
-                p.SetCoord(_pointEndBis.X() + dU * dirExt.X(), _pointEndBis.Y() + dU * dirExt.Y());
-                v1.SetCoord(dirExt.X(), dirExt.Y());
+                p = p.WithCoord(_pointEndBis.X() + dU * dirExt.X(), _pointEndBis.Y() + dU * dirExt.Y());
+                v1 = v1.WithCoord(dirExt.X(), dirExt.Y());
             }
         }
     }
@@ -354,7 +354,7 @@ public sealed class BisecPC : BisectorCurve
         if (Math.Abs(norPPC) > Constants.Resolution() && (norPPC * _sign) < 0.0)
         {
             a1 = 0.5 * squarePPC / norPPC;
-            p.SetCoord(pc.X() - nor.X() * a1, pc.Y() - nor.Y() * a1);
+            p = p.WithCoord(pc.X() - nor.X() * a1, pc.Y() - nor.Y() * a1);
         }
         else
         {

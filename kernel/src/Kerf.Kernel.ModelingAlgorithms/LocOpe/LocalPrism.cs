@@ -97,7 +97,7 @@ public sealed class LocalPrism
         if (_isTrans)
         {
             Transform3D t = new();
-            t.SetTranslation(_tra);
+            t = t.WithTranslation(_tra);
             TrsfModification modbase = new(t);
             modif.Init(theBase);
             modif.Perform(modbase);

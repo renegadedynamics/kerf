@@ -76,8 +76,8 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     internal void Reverse()
     {
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        _pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
     }
 
     internal void Mirror(in Point2D p) => _pos.Mirror(p);
@@ -100,7 +100,7 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform2D t)
@@ -117,7 +117,7 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
             _minorRadius = -_minorRadius;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector2D v) => _pos.Translate(v);
@@ -181,7 +181,7 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         Xy coord1 = _pos.YDirection().XY();
         Xy coord2 = coord1.Multiplied(_minorRadius / _majorRadius);
         coord1.Add(coord2);
-        vdir.SetXY(coord1);
+        vdir = vdir.WithXY(coord1);
         return new Axis2D(_pos.Location(), vdir);
     }
 
@@ -196,7 +196,7 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         Xy coord1 = _pos.YDirection().XY();
         Xy coord2 = coord1.Multiplied(-_minorRadius / _majorRadius);
         coord1.Add(coord2);
-        vdir.SetXY(coord1);
+        vdir = vdir.WithXY(coord1);
         return new Axis2D(_pos.Location(), new Direction2D(vdir));
     }
 
@@ -215,7 +215,7 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
         else
         {
             Transform2D t = new();
-            t.SetTransformation(_pos.XAxis());
+            t = t.WithTransformation(_pos.XAxis());
             double t11 = t.Value(1, 1);
             double t12 = t.Value(1, 2);
             double t13 = t.Value(1, 3);
@@ -341,29 +341,29 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
     {
         Hyperbola2D h = this;
         Direction2D temp = _pos.YDirection();
-        temp.Reverse();
-        h._pos.SetAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        temp = temp.Reversed();
+        h._pos = h._pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
         return h;
     }
 
     public readonly Hyperbola2D Mirrored(in Point2D p)
     {
         Hyperbola2D h = this;
-        h._pos.Mirror(p);
+        h._pos = h._pos.Mirrored(p);
         return h;
     }
 
     public readonly Hyperbola2D Mirrored(in Axis2D a)
     {
         Hyperbola2D h = this;
-        h._pos.Mirror(a);
+        h._pos = h._pos.Mirrored(a);
         return h;
     }
 
     public readonly Hyperbola2D Rotated(in Point2D p, double ang)
     {
         Hyperbola2D h = this;
-        h._pos.Rotate(p, ang);
+        h._pos = h._pos.Rotated(p, ang);
         return h;
     }
 
@@ -382,7 +382,7 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
             h._minorRadius = -h._minorRadius;
         }
 
-        h._pos.Scale(p, s);
+        h._pos = h._pos.Scaled(p, s);
         return h;
     }
 
@@ -401,21 +401,21 @@ public partial struct Hyperbola2D : IEquatable<Hyperbola2D>
             h._minorRadius = -h._minorRadius;
         }
 
-        h._pos.Transform(t);
+        h._pos = h._pos.Transformed(t);
         return h;
     }
 
     public readonly Hyperbola2D Translated(in Vector2D v)
     {
         Hyperbola2D h = this;
-        h._pos.Translate(v);
+        h._pos = h._pos.Translated(v);
         return h;
     }
 
     public readonly Hyperbola2D Translated(in Point2D p1, in Point2D p2)
     {
         Hyperbola2D h = this;
-        h._pos.Translate(p1, p2);
+        h._pos = h._pos.Translated(p1, p2);
         return h;
     }
 

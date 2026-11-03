@@ -72,7 +72,7 @@ internal static class ComputeDataChPlnCon
         Direction3D dpl = posPl.XDirection().Crossed(posPl.YDirection());
         if (or1 == Reversed)
         {
-            dpl.Reverse();
+            dpl = dpl.Reversed();
         }
         // compute the origin of the conical chamfer PtPl
         Point3D or = con.Location();
@@ -88,7 +88,7 @@ internal static class ComputeDataChPlnCon
         Direction3D dcon = new(deru.Crossed(derv));
         if (or2 == Reversed)
         {
-            dcon.Reverse();
+            dcon = dcon.Reversed();
         }
         bool ouvert = (dpl.Dot(dcon) >= 0.0);
         if (!ouvert)

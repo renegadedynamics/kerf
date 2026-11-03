@@ -163,16 +163,16 @@ public sealed class ToolCurveTool
                 Point2D po = new(0, -M_PI / 2);
                 if (maxcond)
                 {
-                    po.SetY(M_PI / 2);
+                    po = po.WithY(M_PI / 2);
                 }
-                trsf.SetMirror(new Axis2D(po, new Direction2D(Direction2D.D.X)));
+                trsf = trsf.WithMirror(new Axis2D(po, new Direction2D(Direction2D.D.X)));
                 pct.Transform(trsf);
                 // add translation along U direction on PI
                 Vector2D vec = new(M_PI, 0);
                 double uFirst = bas.FirstUParameter();
                 if (u2 - uFirst - M_PI > -1e-7)
                 {
-                    vec.Reverse();
+                    vec = vec.Reversed();
                 }
                 pct.Translate(vec);
                 c2D = pct;

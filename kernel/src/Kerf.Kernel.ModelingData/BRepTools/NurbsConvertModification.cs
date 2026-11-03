@@ -182,7 +182,7 @@ public class NurbsConvertModification : CopyModification
             if (dist2Min < tol * tol)
             {
                 proj.Point().Parameter(out double u, out double v);
-                uv.SetCoord(u, v);
+                uv = uv.WithCoord(u, v);
                 return true;
             }
         }

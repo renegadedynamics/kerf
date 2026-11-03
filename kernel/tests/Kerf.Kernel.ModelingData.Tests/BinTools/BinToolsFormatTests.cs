@@ -148,9 +148,9 @@ public class BinToolsFormatTests
     public void Locations_elementary_and_complex()
     {
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(1, 2, 3));
+        aT = aT.WithTranslation(new Vector3D(1, 2, 3));
         var aR = new Transform3D();
-        aR.SetScale(new Point3D(), 2.0);
+        aR = aR.WithScale(new Point3D(), 2.0);
         var aL1 = new Placement(aT);
         var aL2 = new Placement(aR);
         var aSet = new global::Kerf.Engine.Exchange.Brep.Binary.BinaryLocationSet();
@@ -190,7 +190,7 @@ public class BinToolsFormatTests
         // a null shape, then a location: written, then a new location with the same transformation (another datum, so
         // written again), then that one by reference
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(0, 0, 1));
+        aT = aT.WithTranslation(new Vector3D(0, 0, 1));
         var aLocations = new MemoryStream();
         var aWriter2 = new global::Kerf.Engine.Exchange.Brep.Binary.ShapeWriter();
         aWriter2.Write(new Shape(), aLocations);

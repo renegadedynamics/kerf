@@ -56,7 +56,7 @@ public class ProjectOnPlane : CurveAdaptorBase
 
         double alpha = po * new Vector3D(pl.Direction());
         alpha /= d * pl.Direction();
-        point.SetXYZ(point.XYZ() + alpha * d.XYZ());
+        point = point.WithXYZ(point.XYZ() + alpha * d.XYZ());
 
         return point;
     }
@@ -74,7 +74,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         double alpha = vector * new Vector3D(z);
         alpha /= d * z;
 
-        vector.SetXYZ(vector.XYZ() - alpha * d.XYZ());
+        vector = vector.WithXYZ(vector.XYZ() - alpha * d.XYZ());
         return vector;
     }
 
@@ -93,7 +93,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha = po * new Vector3D(z);
         alpha /= d * z;
         p = new Point3D();
-        p.SetXYZ(point.XYZ() + alpha * d.XYZ());
+        p = p.WithXYZ(point.XYZ() + alpha * d.XYZ());
 
         // evaluate the derivative.
         //
@@ -106,7 +106,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha /= d * z;
 
         v = new Vector3D();
-        v.SetXYZ(vector.XYZ() - alpha * d.XYZ());
+        v = v.WithXYZ(vector.XYZ() - alpha * d.XYZ());
 
         return true;
     }
@@ -132,7 +132,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha = po * new Vector3D(z);
         alpha /= d * z;
         p = new Point3D();
-        p.SetXYZ(point.XYZ() + alpha * d.XYZ());
+        p = p.WithXYZ(point.XYZ() + alpha * d.XYZ());
 
         // evaluate the derivative.
         //
@@ -145,13 +145,13 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha /= d * z;
 
         v1 = new Vector3D();
-        v1.SetXYZ(vector1.XYZ() - alpha * d.XYZ());
+        v1 = v1.WithXYZ(vector1.XYZ() - alpha * d.XYZ());
 
         alpha = vector2 * new Vector3D(z);
         alpha /= d * z;
 
         v2 = new Vector3D();
-        v2.SetXYZ(vector2.XYZ() - alpha * d.XYZ());
+        v2 = v2.WithXYZ(vector2.XYZ() - alpha * d.XYZ());
         return true;
     }
 
@@ -177,7 +177,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha = po * new Vector3D(z);
         alpha /= d * z;
         p = new Point3D();
-        p.SetXYZ(point.XYZ() + alpha * d.XYZ());
+        p = p.WithXYZ(point.XYZ() + alpha * d.XYZ());
 
         // evaluate the derivative.
         //
@@ -190,18 +190,18 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha /= d * z;
 
         v1 = new Vector3D();
-        v1.SetXYZ(vector1.XYZ() - alpha * d.XYZ());
+        v1 = v1.WithXYZ(vector1.XYZ() - alpha * d.XYZ());
 
         alpha = vector2 * new Vector3D(z);
         alpha /= d * z;
 
         v2 = new Vector3D();
-        v2.SetXYZ(vector2.XYZ() - alpha * d.XYZ());
+        v2 = v2.WithXYZ(vector2.XYZ() - alpha * d.XYZ());
         alpha = vector3 * new Vector3D(z);
         alpha /= d * z;
 
         v3 = new Vector3D();
-        v3.SetXYZ(vector3.XYZ() - alpha * d.XYZ());
+        v3 = v3.WithXYZ(vector3.XYZ() - alpha * d.XYZ());
         return true;
     }
 
@@ -443,7 +443,7 @@ public class ProjectOnPlane : CurveAdaptorBase
         alpha /= theDir * thePlane.Direction();
 
         Point3D p = new();
-        p.SetXYZ(point.XYZ() + alpha * theDir.XYZ());
+        p = p.WithXYZ(point.XYZ() + alpha * theDir.XYZ());
 
         return p;
     }
@@ -662,9 +662,9 @@ public class ProjectOnPlane : CurveAdaptorBase
                             // projected ellipse (swap eigenvectors in respect to major and minor axes)
                             Matrix eigenVec = eigenCalc.Vectors();
                             Transform2D trsfInPlane = new();
-                            trsfInPlane.SetValues(eigenVec[1, 2], eigenVec[1, 1], 0.0, eigenVec[2, 2], eigenVec[2, 1], 0.0);
+                            trsfInPlane = trsfInPlane.WithValues(eigenVec[1, 2], eigenVec[1, 1], 0.0, eigenVec[2, 2], eigenVec[2, 1], 0.0);
                             Transform3D rot = new();
-                            rot.SetRotation(new Axis3D(p, _plane.Direction()), trsfInPlane.RotationPart());
+                            rot = rot.WithRotation(new Axis3D(p, _plane.Direction()), trsfInPlane.RotationPart());
 
                             dx = _plane.XDirection().Transformed(rot);
                             dy = _plane.YDirection().Transformed(rot);

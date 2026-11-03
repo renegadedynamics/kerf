@@ -201,8 +201,8 @@ public class SurfaceCache : Transient
         // Use direct division for better numerical stability with very small span lengths
         double spanLengthU = 0.5 * _paramsU.SpanLength;
         double spanLengthV = 0.5 * _paramsV.SpanLength;
-        tangentU.Divide(spanLengthU);
-        tangentV.Divide(spanLengthV);
+        tangentU = tangentU.Divided(spanLengthU);
+        tangentV = tangentV.Divided(spanLengthV);
     }
 
     /// <summary>
@@ -266,11 +266,11 @@ public class SurfaceCache : Transient
         double spanLengthV = 0.5 * _paramsV.SpanLength;
         double spanLengthU2 = spanLengthU * spanLengthU;
         double spanLengthV2 = spanLengthV * spanLengthV;
-        tangentU.Divide(spanLengthU);
-        tangentV.Divide(spanLengthV);
-        curvatureU.Divide(spanLengthU2);
-        curvatureV.Divide(spanLengthV2);
-        curvatureUV.Divide(spanLengthU * spanLengthV);
+        tangentU = tangentU.Divided(spanLengthU);
+        tangentV = tangentV.Divided(spanLengthV);
+        curvatureU = curvatureU.Divided(spanLengthU2);
+        curvatureV = curvatureV.Divided(spanLengthV2);
+        curvatureUV = curvatureUV.Divided(spanLengthU * spanLengthV);
     }
 
     /// <summary>The point and first derivatives of the surface at (<paramref name="u"/>, <paramref name="v"/>).</summary>
@@ -314,8 +314,8 @@ public class SurfaceCache : Transient
         }
 
         // Scale derivatives using the same inverse values used for parameter transformation
-        tangentU.Multiply(invU);
-        tangentV.Multiply(invV);
+        tangentU = tangentU.Multiplied(invU);
+        tangentV = tangentV.Multiplied(invV);
     }
 
     /// <summary>
@@ -367,11 +367,11 @@ public class SurfaceCache : Transient
         }
 
         // Scale derivatives using the same inverse values used for parameter transformation
-        tangentU.Multiply(invU);
-        tangentV.Multiply(invV);
-        curvatureU.Multiply(invU * invU);
-        curvatureV.Multiply(invV * invV);
-        curvatureUV.Multiply(invU * invV);
+        tangentU = tangentU.Multiplied(invU);
+        tangentV = tangentV.Multiplied(invV);
+        curvatureU = curvatureU.Multiplied(invU * invU);
+        curvatureV = curvatureV.Multiplied(invV * invV);
+        curvatureUV = curvatureUV.Multiplied(invU * invV);
     }
 
     //=================================================================================================

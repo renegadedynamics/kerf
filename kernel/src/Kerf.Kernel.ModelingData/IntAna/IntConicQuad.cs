@@ -430,8 +430,8 @@ public class IntConicQuad
                 // check the distance from bounding point of the line to the plane
                 Point3D p1 = new(), p2 = new();
                 //
-                p1.SetCoord(orig.X() - dis * a, orig.Y() - dis * b, orig.Z() - dis * c);
-                p2.SetCoord(p1.X() + len * al, p1.Y() + len * bl, p1.Z() + len * cl);
+                p1 = p1.WithCoord(orig.X() - dis * a, orig.Y() - dis * b, orig.Z() - dis * c);
+                p2 = p2.WithCoord(p1.X() + len * al, p1.Y() + len * bl, p1.Z() + len * cl);
                 if (p.Distance(p2) > tol)
                 {
                     _parallel = false;
@@ -448,7 +448,7 @@ public class IntConicQuad
             _inquadric = false;
             _nbpts = 1;
             _paramonc[0] = -dis / direc;
-            _pnts[0].SetCoord(orig.X() + _paramonc[0] * al,
+            _pnts[0] = _pnts[0].WithCoord(orig.X() + _paramonc[0] * al,
                              orig.Y() + _paramonc[0] * bl,
                              orig.Z() + _paramonc[0] * cl);
         }
@@ -509,7 +509,7 @@ public class IntConicQuad
                 Point2D resul = int2d.Point(i).Value();
                 double x = resul.X();
                 double y = resul.Y();
-                _pnts[i - 1].SetCoord(plconic.Location().X() + x * axex.X() + y * axey.X(),
+                _pnts[i - 1] = _pnts[i - 1].WithCoord(plconic.Location().X() + x * axex.X() + y * axey.X(),
                                      plconic.Location().Y() + x * axex.Y() + y * axey.Y(),
                                      plconic.Location().Z() + x * axex.Z() + y * axey.Z());
                 _paramonc[i - 1] = int2d.Point(i).ParamOnSecond();

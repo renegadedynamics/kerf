@@ -636,7 +636,7 @@ public class ValidationProps : ConstructTool
                 UnitContext unitTool = new UnitContext();
                 unitTool.ComputeFactors(theGUAC, localFactors);
                 Point3D zero = new Point3D(0, 0, 0);
-                pos.Scale(zero, unitTool.LengthFactor());
+                pos = pos.Scaled(zero, unitTool.LengthFactor());
             }
         }
         pnt = pos;

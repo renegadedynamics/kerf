@@ -71,7 +71,7 @@ public sealed class Lin2d2TanIter
                 double   sign1 = vect1.Dot(vdir);
                 if (sign1 <= 0.0)
                 {
-                    vect1.Reverse();
+                    vect1 = vect1.Reversed();
                 }
                 double sign2 = vect2.Crossed(vect1);
                 if (qualified2.IsUnqualified || (qualified2.IsEnclosing && sign2 <= 0.0)

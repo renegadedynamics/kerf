@@ -221,7 +221,7 @@ public sealed class PolynomialConvertor
             dp.SetCoord(dPx[ii], dPy[ii], 0);
             dp *= m;
             aux.SetLinearForm(1, p, 1, dp, dCenter.XYZ());
-            dPoles[ii].SetXYZ(aux);
+            dPoles[ii] = dPoles[ii].WithXYZ(aux);
         }
     }
 
@@ -338,12 +338,12 @@ public sealed class PolynomialConvertor
 
             poles[ii].ChangeCoord() = m * p + center.XYZ();
             auxyz.SetLinearForm(1, mPrim * p, 1, m * dp, dCenter.XYZ());
-            dPoles[ii].SetXYZ(auxyz);
+            dPoles[ii] = dPoles[ii].WithXYZ(auxyz);
             p *= mSecn;
             dp *= mPrim;
             d2P *= m;
             auxyz.SetLinearForm(1, p, 2, dp, 1, d2P, d2Center.XYZ());
-            d2Poles[ii].SetXYZ(auxyz);
+            d2Poles[ii] = d2Poles[ii].WithXYZ(auxyz);
         }
     }
 }

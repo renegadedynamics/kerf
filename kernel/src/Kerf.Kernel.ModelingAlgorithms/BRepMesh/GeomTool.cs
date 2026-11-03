@@ -125,11 +125,11 @@ public sealed class GeomTool
 
         if (_isoType == IsoU)
         {
-            uv.SetCoord(isoParam, param);
+            uv = uv.WithCoord(isoParam, param);
         }
         else
         {
-            uv.SetCoord(param, isoParam);
+            uv = uv.WithCoord(param, isoParam);
         }
 
         return true;
@@ -207,7 +207,7 @@ public sealed class GeomTool
         Orientation ori = face.Orientation();
         if (ori == Reversed)
         {
-            normal.Reverse();
+            normal = normal.Reversed();
         }
 
         return true;

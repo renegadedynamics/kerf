@@ -55,7 +55,7 @@ public sealed class CylinderBounds : SurfaceBounds.ISurfaceEvaluator
 
         // Add circle at VMax by translating.
         Vector3D t = (vMax - vMin) * new Vector3D(cyl.Axis().Direction());
-        c.Translate(t);
+        c = c.Translated(t);
         box.Add(CircleBounds.Box(c, uMin, uMax, 0.0));
     }
 

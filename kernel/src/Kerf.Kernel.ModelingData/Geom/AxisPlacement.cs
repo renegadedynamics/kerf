@@ -42,7 +42,7 @@ public abstract class AxisPlacement : Geometry3D
     internal void SetLocation(in Point3D p)
     {
         CheckMutable();
-        _axis.SetLocation(p);
+        _axis = _axis.WithLocation(p);
     }
 
     /// <summary>A copy with the main axis A1 (as <c>SetAxis</c>, X and Y directions unchanged).</summary>

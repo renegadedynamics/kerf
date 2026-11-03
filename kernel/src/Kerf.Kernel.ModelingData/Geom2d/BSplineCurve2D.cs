@@ -1330,7 +1330,7 @@ public class BSplineCurve2D : BoundedCurve2D
         Vector2D delta = new Vector2D(p0, p);
         for (ii = 1; ii <= 2; ii++)
         {
-            delta_derivative.SetCoord(ii, tangent.Coord(ii) - delta_derivative.Coord(ii));
+            delta_derivative = delta_derivative.WithCoord(ii, tangent.Coord(ii) - delta_derivative.Coord(ii));
         }
         global::Kerf.Engine.Geometry.Splines.BSplCLib.MovePointAndTangent(u,
                                      delta,
@@ -2011,7 +2011,7 @@ public class BSplineCurve2D : BoundedCurve2D
         CheckMutable();
         for (int i = 1; i <= _poles.Length(); i++)
         {
-            _poles[i].Transform(t);
+            _poles[i] = _poles[i].Transformed(t);
         }
         _maxDerivInvOk = false;
         // OCCT: the evaluation representation is kept (Geom_BSplineCurve clears it), so the transformed curve still

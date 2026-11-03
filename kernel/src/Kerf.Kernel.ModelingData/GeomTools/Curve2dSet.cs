@@ -690,7 +690,7 @@ public class Curve2dSet
         double x, y;
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out x);
         global::Kerf.Engine.Exchange.Brep.GeomTools.GetReal(IS, out y);
-        d.SetCoord(x, y);
+        d = d.WithCoord(x, y);
     }
 
     private static LineCurve2D ReadLine(TextReader IS)

@@ -182,53 +182,53 @@ public class SearchInside<ThePSurface, ThePSurfaceTool, TheFunction>
             {
                 if (i == nbsample + 1)
                 {
-                    s2d.SetCoord(umin + du * 0.02, vmin + dv * 0.02);
+                    s2d = s2d.WithCoord(umin + du * 0.02, vmin + dv * 0.02);
                 }
                 else if (i == nbsample + 2)
                 {
-                    s2d.SetCoord(umax - du * 0.02, vmin + dv * 0.02);
+                    s2d = s2d.WithCoord(umax - du * 0.02, vmin + dv * 0.02);
                 }
                 else if (i == nbsample + 3)
                 {
-                    s2d.SetCoord(umin + du * 0.02, vmax - dv * 0.02);
+                    s2d = s2d.WithCoord(umin + du * 0.02, vmax - dv * 0.02);
                 }
                 else if (i == nbsample + 4)
                 {
-                    s2d.SetCoord(umax - du * 0.02, vmax - dv * 0.02);
+                    s2d = s2d.WithCoord(umax - du * 0.02, vmax - dv * 0.02);
                 }
 
                 else if (i == nbsample + 5)
                 {
-                    s2d.SetCoord(umin + du * 0.02, vmin + dv * 0.02);
+                    s2d = s2d.WithCoord(umin + du * 0.02, vmin + dv * 0.02);
                 }
                 else if (i == nbsample + 6)
                 {
-                    s2d.SetCoord(umax - du * 0.02, vmin + dv * 0.02);
+                    s2d = s2d.WithCoord(umax - du * 0.02, vmin + dv * 0.02);
                 }
                 else if (i == nbsample + 7)
                 {
-                    s2d.SetCoord(umin + du * 0.02, vmax - dv * 0.02);
+                    s2d = s2d.WithCoord(umin + du * 0.02, vmax - dv * 0.02);
                 }
                 else if (i == nbsample + 8)
                 {
-                    s2d.SetCoord(umax - du * 0.02, vmax - dv * 0.02);
+                    s2d = s2d.WithCoord(umax - du * 0.02, vmax - dv * 0.02);
                 }
 
                 else if (i == nbsample + 9)
                 {
-                    s2d.SetCoord(umin + du * 0.005, vmin + dv * 0.005);
+                    s2d = s2d.WithCoord(umin + du * 0.005, vmin + dv * 0.005);
                 }
                 else if (i == nbsample + 10)
                 {
-                    s2d.SetCoord(umax - du * 0.005, vmin + dv * 0.005);
+                    s2d = s2d.WithCoord(umax - du * 0.005, vmin + dv * 0.005);
                 }
                 else if (i == nbsample + 11)
                 {
-                    s2d.SetCoord(umin + du * 0.005, vmax - dv * 0.005);
+                    s2d = s2d.WithCoord(umin + du * 0.005, vmax - dv * 0.005);
                 }
                 else
                 {
-                    s2d.SetCoord(umax - du * 0.005, vmax - dv * 0.005);
+                    s2d = s2d.WithCoord(umax - du * 0.005, vmax - dv * 0.005);
                 }
 
                 uVap[1] = s2d.X();

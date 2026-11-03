@@ -140,7 +140,7 @@ public class BuildAveragePlane
             }
             else
             {
-                bestVec.Divide(Math.Sqrt(sqMagn));
+                bestVec = bestVec.Divided(Math.Sqrt(sqMagn));
             }
         }
         else // the common case
@@ -183,7 +183,7 @@ public class BuildAveragePlane
                         continue;
                     }
 
-                    Vec.Divide(Math.Sqrt(sqMagn));
+                    Vec = Vec.Divided(Math.Sqrt(sqMagn));
 
                     cross1 = new Direction3D(normals.Value(i) ^ normals.Value(j));
                     cross2 = new Direction3D(Vec ^ new Vector3D(cross1));
@@ -193,7 +193,7 @@ public class BuildAveragePlane
 
                     for (n = 0; n <= 2 * nint; n++)
                     {
-                        vec1.Rotate(axe, step);
+                        vec1 = vec1.Rotated(axe, step);
                         double minScal = RealLast();
                         for (m = 1; m <= nn; m++)
                         {
@@ -303,16 +303,16 @@ public class BuildAveragePlane
         Vector3D a = new Vector3D(), b = new Vector3D(), c = new Vector3D(), d;
         Vector3D oz = new Vector3D();
         int i, nb = _pts.Length();
-        gb.SetCoord(0.0, 0.0, 0.0);
+        gb = gb.WithCoord(0.0, 0.0, 0.0);
         for (i = 1; i <= nb; i++)
         {
-            gb.SetCoord(1, (gb.Coord(1) + _pts.Value(i).Coord(1)));
-            gb.SetCoord(2, (gb.Coord(2) + _pts.Value(i).Coord(2)));
-            gb.SetCoord(3, (gb.Coord(3) + _pts.Value(i).Coord(3)));
+            gb = gb.WithCoord(1, (gb.Coord(1) + _pts.Value(i).Coord(1)));
+            gb = gb.WithCoord(2, (gb.Coord(2) + _pts.Value(i).Coord(2)));
+            gb = gb.WithCoord(3, (gb.Coord(3) + _pts.Value(i).Coord(3)));
         }
-        _g.SetCoord(1, (gb.Coord(1) / nb));
-        _g.SetCoord(2, (gb.Coord(2) / nb));
-        _g.SetCoord(3, (gb.Coord(3) / nb));
+        _g = _g.WithCoord(1, (gb.Coord(1) / nb));
+        _g = _g.WithCoord(2, (gb.Coord(2) / nb));
+        _g = _g.WithCoord(3, (gb.Coord(3) / nb));
 
         if (nOption == 1)
         {
@@ -327,19 +327,19 @@ public class BuildAveragePlane
 
             if (_nbBoundPoints != 0 && _pts.Length() != _nbBoundPoints)
             {
-                a.SetCoord(0.0, 0.0, 0.0);
+                a = a.WithCoord(0.0, 0.0, 0.0);
                 for (i = 3; i <= _nbBoundPoints; i++)
                 {
-                    b.SetCoord(_pts.Value(i - 1).Coord(1) - _pts.Value(1).Coord(1),
+                    b = b.WithCoord(_pts.Value(i - 1).Coord(1) - _pts.Value(1).Coord(1),
                                _pts.Value(i - 1).Coord(2) - _pts.Value(1).Coord(2),
                                _pts.Value(i - 1).Coord(3) - _pts.Value(1).Coord(3));
-                    c.SetCoord(_pts.Value(i).Coord(1) - _pts.Value(1).Coord(1),
+                    c = c.WithCoord(_pts.Value(i).Coord(1) - _pts.Value(1).Coord(1),
                                _pts.Value(i).Coord(2) - _pts.Value(1).Coord(2),
                                _pts.Value(i).Coord(3) - _pts.Value(1).Coord(3));
                     d = b ^ c;
-                    a.SetCoord(1, a.Coord(1) + d.Coord(1));
-                    a.SetCoord(2, a.Coord(2) + d.Coord(2));
-                    a.SetCoord(3, a.Coord(3) + d.Coord(3));
+                    a = a.WithCoord(1, a.Coord(1) + d.Coord(1));
+                    a = a.WithCoord(2, a.Coord(2) + d.Coord(2));
+                    a = a.WithCoord(3, a.Coord(3) + d.Coord(3));
                 }
                 Vector3D oz1 = a;
                 double theAngle = oz.Angle(oz1);
@@ -356,19 +356,19 @@ public class BuildAveragePlane
 
         else if (nOption == 2)
         {
-            a.SetCoord(0.0, 0.0, 0.0);
+            a = a.WithCoord(0.0, 0.0, 0.0);
             for (i = 3; i <= _nbBoundPoints; i++)
             {
-                b.SetCoord(_pts.Value(i - 1).Coord(1) - _pts.Value(1).Coord(1),
+                b = b.WithCoord(_pts.Value(i - 1).Coord(1) - _pts.Value(1).Coord(1),
                            _pts.Value(i - 1).Coord(2) - _pts.Value(1).Coord(2),
                            _pts.Value(i - 1).Coord(3) - _pts.Value(1).Coord(3));
-                c.SetCoord(_pts.Value(i).Coord(1) - _pts.Value(1).Coord(1),
+                c = c.WithCoord(_pts.Value(i).Coord(1) - _pts.Value(1).Coord(1),
                            _pts.Value(i).Coord(2) - _pts.Value(1).Coord(2),
                            _pts.Value(i).Coord(3) - _pts.Value(1).Coord(3));
                 d = b ^ c;
-                a.SetCoord(1, a.Coord(1) + d.Coord(1));
-                a.SetCoord(2, a.Coord(2) + d.Coord(2));
-                a.SetCoord(3, a.Coord(3) + d.Coord(3));
+                a = a.WithCoord(1, a.Coord(1) + d.Coord(1));
+                a = a.WithCoord(2, a.Coord(2) + d.Coord(2));
+                a = a.WithCoord(3, a.Coord(3) + d.Coord(3));
             }
             oz = a;
         }
@@ -385,14 +385,14 @@ public class BuildAveragePlane
 
         for (i = 1; i <= nb; i++)
         {
-            proj.SetCoord(1, _pts.Value(i).Coord(1) - _g.Coord(1));
-            proj.SetCoord(2, _pts.Value(i).Coord(2) - _g.Coord(2));
-            proj.SetCoord(3, _pts.Value(i).Coord(3) - _g.Coord(3));
+            proj = proj.WithCoord(1, _pts.Value(i).Coord(1) - _g.Coord(1));
+            proj = proj.WithCoord(2, _pts.Value(i).Coord(2) - _g.Coord(2));
+            proj = proj.WithCoord(3, _pts.Value(i).Coord(3) - _g.Coord(3));
             scal = proj.Coord(1) * oz.Coord(1) + proj.Coord(2) * oz.Coord(2) + proj.Coord(3) * oz.Coord(3);
             scal /= oz.Coord(1) * oz.Coord(1) + oz.Coord(2) * oz.Coord(2) + oz.Coord(3) * oz.Coord(3);
-            proj.SetCoord(1, proj.Coord(1) - scal * oz.Coord(1));
-            proj.SetCoord(2, proj.Coord(2) - scal * oz.Coord(2));
-            proj.SetCoord(3, proj.Coord(3) - scal * oz.Coord(3));
+            proj = proj.WithCoord(1, proj.Coord(1) - scal * oz.Coord(1));
+            proj = proj.WithCoord(2, proj.Coord(2) - scal * oz.Coord(2));
+            proj = proj.WithCoord(3, proj.Coord(3) - scal * oz.Coord(3));
             m[1, 1] += proj.Coord(1) * proj.Coord(1);
             m[2, 2] += proj.Coord(2) * proj.Coord(2);
             m[3, 3] += proj.Coord(3) * proj.Coord(3);
@@ -468,13 +468,13 @@ public class BuildAveragePlane
             || ((Math.Abs(n2) <= _tol) && (Math.Abs(n3) <= _tol))
             || ((Math.Abs(n1) <= _tol) && (Math.Abs(n3) <= _tol)))
         {
-            _ox.SetCoord(v3[1], v3[2], v3[3]);
+            _ox = _ox.WithCoord(v3[1], v3[2], v3[3]);
             _oy = oz ^ _ox;
         }
         else
         {
-            _ox.SetCoord(v3[1], v3[2], v3[3]);
-            _oy.SetCoord(v2[1], v2[2], v2[3]);
+            _ox = _ox.WithCoord(v3[1], v3[2], v3[3]);
+            _oy = _oy.WithCoord(v2[1], v2[2], v2[3]);
         }
     }
 
@@ -537,7 +537,7 @@ public class BuildAveragePlane
                 return false;
             }
 
-            cross.Normalize();
+            cross = cross.Normalized();
             bset.Append(new Aij(1, 2, cross));
             bset.Append(new Aij(2, 1, -cross));
             normals.Append(newNormals.Value(1));
@@ -572,7 +572,7 @@ public class BuildAveragePlane
                     bset.Assign(saveBset);
                     return false;
                 }
-                cross.Normalize();
+                cross = cross.Normalized();
                 bool isNew = true;
                 for (k = 1; k <= b2set.Length(); k++)
                 {
@@ -624,7 +624,7 @@ public class BuildAveragePlane
                     b1set.Append(new Aij(ii, j, cross));
                 }
 
-                cross.Reverse();
+                cross = cross.Reversed();
                 isNew = true;
                 for (k = 1; k <= b2set.Length(); k++)
                 {

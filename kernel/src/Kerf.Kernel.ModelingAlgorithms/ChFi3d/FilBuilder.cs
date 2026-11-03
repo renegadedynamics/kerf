@@ -567,13 +567,13 @@ public partial class FilBuilder : FilletBuilderBase
                 isec.Set(ci, p1, p2);
                 if (i == 1)
                 {
-                    pf1.SetCoord(u1, v1);
-                    pf2.SetCoord(u2, v2);
+                    pf1 = pf1.WithCoord(u1, v1);
+                    pf2 = pf2.WithCoord(u2, v2);
                 }
                 if (i == nbp)
                 {
-                    pl1.SetCoord(u1, v1);
-                    pl2.SetCoord(u2, v2);
+                    pl1 = pl1.WithCoord(u1, v1);
+                    pl2 = pl2.WithCoord(u2, v2);
                 }
             }
         }
@@ -605,13 +605,13 @@ public partial class FilBuilder : FilletBuilderBase
                 isec.Set(ci, p1, p2);
                 if (i == 1)
                 {
-                    pf1.SetCoord(u1, v1);
-                    pf2.SetCoord(u2, v2);
+                    pf1 = pf1.WithCoord(u1, v1);
+                    pf2 = pf2.WithCoord(u2, v2);
                 }
                 if (i == nbp)
                 {
-                    pl1.SetCoord(u1, v1);
-                    pl2.SetCoord(u2, v2);
+                    pl1 = pl1.WithCoord(u1, v1);
+                    pl2 = pl2.WithCoord(u2, v2);
                 }
             }
         }
@@ -734,15 +734,15 @@ public partial class FilBuilder : FilletBuilderBase
                 isec.Set(ci, p1, p2);
                 if (i == 1)
                 {
-                    pf.SetCoord(u, v);
+                    pf = pf.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcf.SetCoord(u, v);
+                    ppcf = ppcf.WithCoord(u, v);
                 }
                 if (i == nbp)
                 {
-                    pl.SetCoord(u, v);
+                    pl = pl.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcl.SetCoord(u, v);
+                    ppcl = ppcl.WithCoord(u, v);
                 }
             }
         }
@@ -791,15 +791,15 @@ public partial class FilBuilder : FilletBuilderBase
                 isec.Set(ci, p1, p2);
                 if (i == 1)
                 {
-                    pf.SetCoord(u, v);
+                    pf = pf.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcf.SetCoord(u, v);
+                    ppcf = ppcf.WithCoord(u, v);
                 }
                 if (i == nbp)
                 {
-                    pl.SetCoord(u, v);
+                    pl = pl.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcl.SetCoord(u, v);
+                    ppcl = ppcl.WithCoord(u, v);
                 }
             }
         }
@@ -883,15 +883,15 @@ public partial class FilBuilder : FilletBuilderBase
                 isec.Set(ci, p1, p2);
                 if (i == 1)
                 {
-                    pf.SetCoord(u, v);
+                    pf = pf.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcf.SetCoord(u, v);
+                    ppcf = ppcf.WithCoord(u, v);
                 }
                 if (i == nbp)
                 {
-                    pl.SetCoord(u, v);
+                    pl = pl.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcl.SetCoord(u, v);
+                    ppcl = ppcl.WithCoord(u, v);
                 }
             }
         }
@@ -940,15 +940,15 @@ public partial class FilBuilder : FilletBuilderBase
                 isec.Set(ci, p1, p2);
                 if (i == 1)
                 {
-                    pf.SetCoord(u, v);
+                    pf = pf.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcf.SetCoord(u, v);
+                    ppcf = ppcf.WithCoord(u, v);
                 }
                 if (i == nbp)
                 {
-                    pl.SetCoord(u, v);
+                    pl = pl.WithCoord(u, v);
                     p.ParametersOnS2(out u, out v);
-                    ppcl.SetCoord(u, v);
+                    ppcl = ppcl.WithCoord(u, v);
                 }
             }
         }
@@ -1686,7 +1686,7 @@ public partial class FilBuilder : FilletBuilderBase
                 @ref.ChangeVertexFirstOnS2().Reset();
                 courbe1.D0(t, out p1);
                 courbe2.D0(t, out p2);
-                p3d.SetXYZ((p1.XYZ() + p2.XYZ()) / 2);
+                p3d = p3d.WithXYZ((p1.XYZ() + p2.XYZ()) / 2);
                 vertexTol = p1.Distance(p2);
                 vertexTol += Max(c1.Tolerance(), c2.Tolerance());
 

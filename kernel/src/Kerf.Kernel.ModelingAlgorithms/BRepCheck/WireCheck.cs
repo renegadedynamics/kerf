@@ -1092,7 +1092,7 @@ public class WireCheck : ResultCheck
                         {
                             //-- try to test in 3d. (ParamOnSecond gives the same result)
                             p3d = conS.Value(ip.ParamOnFirst());
-                            p3d.Transform(l.Transformation());
+                            p3d = p3d.Transformed(l.Transformation());
                         }
                         else
                         {
@@ -1256,7 +1256,7 @@ public class WireCheck : ResultCheck
                             if (conS is not null)
                             {
                                 p3d = conS.Value(IP_ParamOnFirst);
-                                p3d.Transform(l.Transformation());
+                                p3d = p3d.Transformed(l.Transformation());
                             }
                             else
                             {
@@ -1268,7 +1268,7 @@ public class WireCheck : ResultCheck
                             if (conS2 is not null)
                             {
                                 p3d2 = conS2.Value(IP_ParamOnSecond);
-                                p3d2.Transform(L2.Transformation());
+                                p3d2 = p3d2.Transformed(L2.Transformation());
                             }
                             else
                             {
@@ -1368,7 +1368,7 @@ public class WireCheck : ResultCheck
                                         if (conS is not null)
                                         {
                                             p1 = conS.Value(u);
-                                            p1.Transform(l.Transformation());
+                                            p1 = p1.Transformed(l.Transformation());
                                         }
                                         else
                                         {
@@ -1392,7 +1392,7 @@ public class WireCheck : ResultCheck
                                     //  Modified by skv - Wed Jul 23 12:22:20 2003 OCC1764
                                     var tmpDir = new Direction3D(p3d2.XYZ().Subtracted(vertexLePlusProche.XYZ()));
 
-                                    lig.SetDirection(tmpDir);
+                                    lig = lig.WithDirection(tmpDir);
                                     double tole2 = Tool.Tolerance(e2);
                                     for (k = 2; localok && k < 9; k++)
                                     {
@@ -1401,7 +1401,7 @@ public class WireCheck : ResultCheck
                                         if (conS2 is not null)
                                         {
                                             p2 = conS2.Value(u);
-                                            p2.Transform(L2.Transformation());
+                                            p2 = p2.Transformed(L2.Transformation());
                                         }
                                         else
                                         {
@@ -1525,7 +1525,7 @@ public class WireCheck : ResultCheck
                                 if (conS is not null)
                                 {
                                     p3d = conS.Value(IP_ParamOnFirst);
-                                    p3d.Transform(l.Transformation());
+                                    p3d = p3d.Transformed(l.Transformation());
                                 }
                                 else
                                 {
@@ -1536,7 +1536,7 @@ public class WireCheck : ResultCheck
                                 if (conS2 is not null)
                                 {
                                     p3d2 = conS2.Value(IP_ParamOnSecond);
-                                    p3d2.Transform(L2.Transformation());
+                                    p3d2 = p3d2.Transformed(L2.Transformation());
                                 }
                                 else
                                 {
@@ -1735,7 +1735,7 @@ public class WireCheck : ResultCheck
 
         if (vOrientation != edgOrientation)
         {
-            derRef.Reverse();
+            derRef = derRef.Reversed();
         }
 
         it.Initialize(lOfShape);
@@ -1764,7 +1764,7 @@ public class WireCheck : ResultCheck
 
             if (vOrientation == e.Orientation())
             {
-                der.Reverse();
+                der = der.Reversed();
             }
 
             if ((derRef.Magnitude() <= a_gpResolution) || (der.Magnitude() <= a_gpResolution))

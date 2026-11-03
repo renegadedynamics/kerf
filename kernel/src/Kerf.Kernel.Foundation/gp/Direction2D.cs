@@ -119,7 +119,7 @@ public partial struct Direction2D : IEquatable<Direction2D>
     internal void Rotate(double ang)
     {
         Transform2D t = new();
-        t.SetRotation(new Point2D(0.0, 0.0), ang);
+        t = t.WithRotation(new Point2D(0.0, 0.0), ang);
         _coord.Multiply(t.HVectorialPart());
     }
 

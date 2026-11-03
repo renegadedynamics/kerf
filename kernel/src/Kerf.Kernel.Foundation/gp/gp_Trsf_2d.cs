@@ -27,7 +27,7 @@ public partial struct Transform3D
         if (_shape == Ax1Mirror)
         {
             _scale = 1;
-            _matrix.Multiply(-1);
+            _matrix = _matrix.Multiplied(-1);
         }
     }
 }

@@ -402,21 +402,21 @@ internal static partial class BRepTestFeatureCommands
                 {
                     return 1;
                 }
-                V.SetCoord(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+                V = V.WithCoord(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
                 FFrom = theDI.GetShape(a[4], ShapeType.Shape);
                 FUntil = theDI.GetShape(a[5], ShapeType.Shape);
                 borne = 9;
             }
             else
             {
-                V.SetCoord(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
+                V = V.WithCoord(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
                 FUntil = theDI.GetShape(a[4], ShapeType.Shape);
                 borne = 8;
             }
         }
         else
         {
-            V.SetCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
+            V = V.WithCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
             borne = 7;
         }
         double Length = V.Magnitude();
@@ -529,21 +529,21 @@ internal static partial class BRepTestFeatureCommands
                     return 1;
                 }
                 borne = 9;
-                V.SetCoord(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
+                V = V.WithCoord(theDI.Atof(a[6]), theDI.Atof(a[7]), theDI.Atof(a[8]));
                 FFrom = theDI.GetShape(a[4], ShapeType.Shape);
                 FUntil = theDI.GetShape(a[5], ShapeType.Shape);
             }
             else
             {
                 borne = 8;
-                V.SetCoord(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
+                V = V.WithCoord(theDI.Atof(a[5]), theDI.Atof(a[6]), theDI.Atof(a[7]));
                 FUntil = theDI.GetShape(a[4], ShapeType.Shape);
             }
         }
         else
         {
             borne = 7;
-            V.SetCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
+            V = V.WithCoord(theDI.Atof(a[4]), theDI.Atof(a[5]), theDI.Atof(a[6]));
         }
         double Length = V.Magnitude();
         if (Length < global::Kerf.Engine.Foundation.Precision.Confusion())

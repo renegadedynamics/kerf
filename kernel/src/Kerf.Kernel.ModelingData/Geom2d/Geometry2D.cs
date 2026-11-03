@@ -27,7 +27,7 @@ public abstract class Geometry2D : Transient
     {
         CheckMutable();
         Transform2D t = new Transform2D();
-        t.SetMirror(p);
+        t = t.WithMirror(p);
         Transform(t);
     }
 
@@ -36,7 +36,7 @@ public abstract class Geometry2D : Transient
     {
         CheckMutable();
         Transform2D t = new Transform2D();
-        t.SetMirror(a);
+        t = t.WithMirror(a);
         Transform(t);
     }
 
@@ -45,7 +45,7 @@ public abstract class Geometry2D : Transient
     {
         CheckMutable();
         Transform2D t = new Transform2D();
-        t.SetRotation(p, ang);
+        t = t.WithRotation(p, ang);
         Transform(t);
     }
 
@@ -54,7 +54,7 @@ public abstract class Geometry2D : Transient
     {
         CheckMutable();
         Transform2D t = new Transform2D();
-        t.SetScale(p, s);
+        t = t.WithScale(p, s);
         Transform(t);
     }
 
@@ -63,7 +63,7 @@ public abstract class Geometry2D : Transient
     {
         CheckMutable();
         Transform2D t = new Transform2D();
-        t.SetTranslation(v);
+        t = t.WithTranslation(v);
         Transform(t);
     }
 

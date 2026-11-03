@@ -394,11 +394,11 @@ public static class RWStl
                 Vector3D vNorm = vec1.Crossed(vec2);
                 if (vNorm.SquareMagnitude() > Constants.Resolution())
                 {
-                    vNorm.Normalize();
+                    vNorm = vNorm.Normalized();
                 }
                 else
                 {
-                    vNorm.SetCoord(0.0, 0.0, 0.0);
+                    vNorm = vNorm.WithCoord(0.0, 0.0, 0.0);
                 }
 
                 // std::scientific << std::setprecision(12)
@@ -485,11 +485,11 @@ public static class RWStl
                 Vector3D vNorm = vec1.Crossed(vec2);
                 if (vNorm.SquareMagnitude() > Constants.Resolution())
                 {
-                    vNorm.Normalize();
+                    vNorm = vNorm.Normalized();
                 }
                 else
                 {
-                    vNorm.SetCoord(0.0, 0.0, 0.0);
+                    vNorm = vNorm.WithCoord(0.0, 0.0, 0.0);
                 }
                 ConvertDouble(vNorm.X(), dataChunk[byteCount..]);
                 byteCount += 4;

@@ -193,7 +193,7 @@ internal static class BRepTestModifyCommands
 
         var GT = new GeneralTransform3D(new Transform3D());
         var rot = new Matrix3x3(theDI.Atof(a[3]), 0, 0, 0, theDI.Atof(a[4]), 0, 0, 0, theDI.Atof(a[5]));
-        GT.SetVectorialPart(rot);
+        GT = GT.WithVectorialPart(rot);
         var gtrf = new GTransform(GT);
         Shape aShape = theDI.GetShape(a[2]);
         if (aShape.IsNull)
@@ -231,7 +231,7 @@ internal static class BRepTestModifyCommands
         double aFactorZ = theDI.Atof(a[5]);
         var aGTrsf = new GeneralTransform3D();
         var rot = new Matrix3x3(aFactorX, 0, 0, 0, aFactorY, 0, 0, 0, aFactorZ);
-        aGTrsf.SetVectorialPart(rot);
+        aGTrsf = aGTrsf.WithVectorialPart(rot);
         var aBRepGTrsf = new GTransform(aShapeBase, aGTrsf, false);
         if (!aBRepGTrsf.IsDone)
         {

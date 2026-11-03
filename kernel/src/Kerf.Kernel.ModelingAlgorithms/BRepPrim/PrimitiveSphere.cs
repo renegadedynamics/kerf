@@ -58,7 +58,7 @@ internal sealed class PrimitiveSphere : Revolution
         SetMeridianOffset(2 * M_PI);
 
         Direction3D d = Axes().YDirection();
-        d.Reverse();
+        d = d.Reversed();
         Frame3D a = new(Axes().Location(), d, Axes().XDirection());
         CircleCurve3D c = new(a, _radius);
         CircleCurve2D c2d = new(new Axis2D(new Point2D(0, 0), new Direction2D(Direction2D.D.X)), _radius);

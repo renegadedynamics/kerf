@@ -187,7 +187,7 @@ public class gp_VecTest
         Vector3D aV1 = new(1.0, 0.0, 0.0);
         Vector3D aV2 = new(0.0, 1.0, 0.0);
         Vector3D aResult = new();
-        aResult.SetLinearForm(2.0, aV1, 3.0, aV2);
+        aResult = Vector3D.LinearForm(2.0, aV1, 3.0, aV2);
         Assert.Equal(2.0, aResult.X(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(3.0, aResult.Y(), global::Kerf.Engine.Foundation.Precision.Confusion());
         Assert.Equal(0.0, aResult.Z(), global::Kerf.Engine.Foundation.Precision.Confusion());

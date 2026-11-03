@@ -437,13 +437,13 @@ internal static class GeomStepRecorder
             Point3D p = new Point3D(v[i + 1], v[i + 2], v[i + 3]);
             switch ((int)v[i])
             {
-                case 1: t.SetRotation(new Axis3D(p, new Direction3D(v[i + 4], v[i + 5], v[i + 6])), v[i + 7]); break;
-                case 2: t.SetTranslation(new Vector3D(v[i + 1], v[i + 2], v[i + 3])); break;
-                case 3: t.SetScale(p, v[i + 7]); break;
-                default: t.SetMirror(p); break;
+                case 1: t = t.WithRotation(new Axis3D(p, new Direction3D(v[i + 4], v[i + 5], v[i + 6])), v[i + 7]); break;
+                case 2: t = t.WithTranslation(new Vector3D(v[i + 1], v[i + 2], v[i + 3])); break;
+                case 3: t = t.WithScale(p, v[i + 7]); break;
+                default: t = t.WithMirror(p); break;
             }
 
-            T.PreMultiply(t);
+            T = T.PreMultiplied(t);
         }
 
         return T;
@@ -549,7 +549,7 @@ internal static class GeomStepRecorder
                 CoordinateSystem A3 = new CoordinateSystem(A);
                 if (v.Count > 9 && v[9] == 0.0)
                 {
-                    A3.YReverse();
+                    A3 = A3.YReversed();
                 }
 
                 X.Make(theId, "ax3", () => { var m = new Axis2Placement3dMaker(A3, F); return M(m, m.Value); });

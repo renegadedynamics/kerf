@@ -66,7 +66,7 @@ public partial struct Cylinder : IEquatable<Cylinder>
 
     internal void Scale(in Point3D p, double s)
     {
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
         _radius *= s;
         if (_radius < 0)
         {
@@ -76,7 +76,7 @@ public partial struct Cylinder : IEquatable<Cylinder>
 
     internal void Transform(in Transform3D t)
     {
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
         _radius *= t.ScaleFactor();
         if (_radius < 0)
         {
@@ -152,7 +152,7 @@ public partial struct Cylinder : IEquatable<Cylinder>
         // Dans le repere local du cylindre :
         // X**2 + Y**2 - radius = 0.0
         Transform3D t = new();
-        t.SetTransformation(_pos);
+        t = t.WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -186,35 +186,35 @@ public partial struct Cylinder : IEquatable<Cylinder>
     public readonly Cylinder Mirrored(in Point3D p)
     {
         Cylinder c = this;
-        c._pos.Mirror(p);
+        c._pos = c._pos.Mirrored(p);
         return c;
     }
 
     public readonly Cylinder Mirrored(in Axis3D a1)
     {
         Cylinder c = this;
-        c._pos.Mirror(a1);
+        c._pos = c._pos.Mirrored(a1);
         return c;
     }
 
     public readonly Cylinder Mirrored(in Frame3D a2)
     {
         Cylinder c = this;
-        c._pos.Mirror(a2);
+        c._pos = c._pos.Mirrored(a2);
         return c;
     }
 
     public readonly Cylinder Rotated(in Axis3D a1, double ang)
     {
         Cylinder cyl = this;
-        cyl._pos.Rotate(a1, ang);
+        cyl._pos = cyl._pos.Rotated(a1, ang);
         return cyl;
     }
 
     public readonly Cylinder Scaled(in Point3D p, double s)
     {
         Cylinder cyl = this;
-        cyl._pos.Scale(p, s);
+        cyl._pos = cyl._pos.Scaled(p, s);
         cyl._radius *= s;
         if (cyl._radius < 0)
         {
@@ -227,7 +227,7 @@ public partial struct Cylinder : IEquatable<Cylinder>
     public readonly Cylinder Transformed(in Transform3D t)
     {
         Cylinder cyl = this;
-        cyl._pos.Transform(t);
+        cyl._pos = cyl._pos.Transformed(t);
         cyl._radius *= t.ScaleFactor();
         if (cyl._radius < 0)
         {
@@ -240,14 +240,14 @@ public partial struct Cylinder : IEquatable<Cylinder>
     public readonly Cylinder Translated(in Vector3D v)
     {
         Cylinder cyl = this;
-        cyl._pos.Translate(v);
+        cyl._pos = cyl._pos.Translated(v);
         return cyl;
     }
 
     public readonly Cylinder Translated(in Point3D p1, in Point3D p2)
     {
         Cylinder cyl = this;
-        cyl._pos.Translate(p1, p2);
+        cyl._pos = cyl._pos.Translated(p1, p2);
         return cyl;
     }
 

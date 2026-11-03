@@ -206,7 +206,7 @@ public class ConstantBiNormal : TrihedronLaw
                 case Line:
                 { // Is the normal of the plane of the curve perpendicular to the binormal?
                     Vector3D v0 = new Vector3D();
-                    v0.SetXYZ(_curve.Line().Direction().XYZ());
+                    v0 = v0.WithXYZ(_curve.Line().Direction().XYZ());
                     return v0.IsNormal(_bn, global::Kerf.Engine.Foundation.Precision.Angular());
                 }
                 default:
@@ -215,7 +215,7 @@ public class ConstantBiNormal : TrihedronLaw
 
             // Is the normal of the plane of the curve parallel to the binormal?
             Vector3D v = new Vector3D();
-            v.SetXYZ(theAxe.Direction().XYZ());
+            v = v.WithXYZ(theAxe.Direction().XYZ());
             return v.IsParallel(_bn, global::Kerf.Engine.Foundation.Precision.Angular());
         }
     }

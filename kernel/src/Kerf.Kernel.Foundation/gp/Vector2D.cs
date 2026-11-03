@@ -103,7 +103,7 @@ public partial struct Vector2D : IEquatable<Vector2D>
     internal void Rotate(double ang)
     {
         Transform2D t = new();
-        t.SetRotation(new Point2D(0.0, 0.0), ang);
+        t = t.WithRotation(new Point2D(0.0, 0.0), ang);
         _coord.Multiply(t.VectorialPart());
     }
 
@@ -129,6 +129,39 @@ public partial struct Vector2D : IEquatable<Vector2D>
     }
 
     // Copies with a mutator applied
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector2D LinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2, in Vector2D v3)
+    {
+        Xy coord = default;
+        coord.SetLinearForm(a1, v1._coord, a2, v2._coord, v3._coord);
+        return new Vector2D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector2D LinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2)
+    {
+        Xy coord = default;
+        coord.SetLinearForm(a1, v1._coord, a2, v2._coord);
+        return new Vector2D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector2D LinearForm(double a1, in Vector2D v1, in Vector2D v2)
+    {
+        Xy coord = default;
+        coord.SetLinearForm(a1, v1._coord, v2._coord);
+        return new Vector2D(coord);
+    }
+
+    /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
+    public static Vector2D LinearForm(in Vector2D v1, in Vector2D v2)
+    {
+        Xy coord = default;
+        coord.SetLinearForm(v1._coord, v2._coord);
+        return new Vector2D(coord);
+    }
+
 
     public readonly Vector2D WithCoord(int index, double xi)
     {

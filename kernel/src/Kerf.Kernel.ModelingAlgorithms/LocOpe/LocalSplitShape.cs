@@ -1597,7 +1597,7 @@ public sealed class LocalSplitShape
         }
         if (or == Reversed)
         {
-            dir.Reverse();
+            dir = dir.Reversed();
         }
     }
 
@@ -1685,7 +1685,7 @@ public sealed class LocalSplitShape
         refCurve.D1(refPar, out Point2D refPnt, out Vector2D refVec);
         if (or == Forward)
         {
-            refVec.Reverse();
+            refVec = refVec.Reversed();
         }
 
         double first, last, par;
@@ -1716,7 +1716,7 @@ public sealed class LocalSplitShape
             curve.D1(par, out refPnt, out Vector2D vec);
             if (or == Reversed)
             {
-                vec.Reverse();
+                vec = vec.Reversed();
             }
             angle = vec.Angle(refVec);
             if (angle < 0.0)

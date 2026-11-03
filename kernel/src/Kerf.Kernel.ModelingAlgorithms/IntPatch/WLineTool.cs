@@ -204,8 +204,8 @@ public static partial class WLineTool
         for (i = 1; i <= wLine.NbPnts(); i++)
         {
             wLine.Point(i).Parameters(out x1, out y1, out x2, out y2);
-            pntOnF1.SetCoord(x1, y1);
-            pntOnF2.SetCoord(x2, y2);
+            pntOnF1 = pntOnF1.WithCoord(x1, y1);
+            pntOnF2 = pntOnF2.WithCoord(x2, y2);
 
             Containment state1 = dom1.Classify(pntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
             Containment state2 = dom2.Classify(pntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -243,8 +243,8 @@ public static partial class WLineTool
         for (i = wLine.NbPnts(); i >= 1; i--)
         {
             wLine.Point(i).Parameters(out x1, out y1, out x2, out y2);
-            pntOnF1.SetCoord(x1, y1);
-            pntOnF2.SetCoord(x2, y2);
+            pntOnF1 = pntOnF1.WithCoord(x1, y1);
+            pntOnF2 = pntOnF2.WithCoord(x2, y2);
 
             Containment state1 = dom1.Classify(pntOnF1, global::Kerf.Engine.Foundation.Precision.Confusion());
             Containment state2 = dom2.Classify(pntOnF2, global::Kerf.Engine.Foundation.Precision.Confusion());
@@ -482,10 +482,10 @@ public static partial class WLineTool
                 uonS2[1] = uonS2[2];
                 vonS2[1] = vonS2[2];
 
-                base2dPnt1.SetCoord(uonS1[0], vonS1[0]);
-                base2dPnt2.SetCoord(uonS2[0], vonS2[0]);
-                base2dVec1.SetCoord(uonS1[1] - uonS1[0], vonS1[1] - vonS1[0]);
-                base2dVec2.SetCoord(uonS2[1] - uonS2[0], vonS2[1] - vonS2[0]);
+                base2dPnt1 = base2dPnt1.WithCoord(uonS1[0], vonS1[0]);
+                base2dPnt2 = base2dPnt2.WithCoord(uonS2[0], vonS2[0]);
+                base2dVec1 = base2dVec1.WithCoord(uonS1[1] - uonS1[0], vonS1[1] - vonS1[0]);
+                base2dVec2 = base2dVec2.WithCoord(uonS2[1] - uonS2[0], vonS2[1] - vonS2[0]);
                 base3dPnt = wLine.Point(i - 1).Value();
                 base3dVec = new Vector3D(wLine.Point(i - 1).Value(), wLine.Point(i).Value());
 

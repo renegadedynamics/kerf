@@ -133,7 +133,7 @@ public sealed class FaceClassifier2D
             tolVertex = 0.0;
             wireIsNotEmpty = false;
             ancienpnt3dinitialise = false;
-            ancienpnt3d.SetCoord(0.0, 0.0, 0.0);
+            ancienpnt3d = ancienpnt3d.WithCoord(0.0, 0.0, 0.0);
             //
             seqPnt2d.Clear();
             indexMap.Clear();
@@ -389,7 +389,7 @@ public sealed class FaceClassifier2D
 
                 if (or == Reversed)
                 {
-                    v.Reverse();
+                    v = v.Reversed();
                 }
 
                 d1Next.Append(v);
@@ -400,7 +400,7 @@ public sealed class FaceClassifier2D
 
                 if (or == Reversed)
                 {
-                    v.Reverse();
+                    v = v.Reversed();
                 }
 
                 if (nbEdges > 0)

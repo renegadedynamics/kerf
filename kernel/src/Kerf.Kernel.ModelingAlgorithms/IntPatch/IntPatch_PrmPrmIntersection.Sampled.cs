@@ -872,8 +872,8 @@ public partial class PrmPrmIntersection
                     XP2DS1(i, j) = 0;
                     XIP1(i, j) = 0;
                     XIP2(i, j) = 0;
-                    XP1(i, j).SetCoord(0.0, 0.0, 0.0);
-                    XP2(i, j).SetCoord(0.0, 0.0, 0.0);
+                    XP1(i, j) = XP1(i, j).WithCoord(0.0, 0.0, 0.0);
+                    XP2(i, j) = XP2(i, j).WithCoord(0.0, 0.0, 0.0);
                 }
             }
         }

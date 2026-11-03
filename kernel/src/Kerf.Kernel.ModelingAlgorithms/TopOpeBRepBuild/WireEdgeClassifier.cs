@@ -202,7 +202,7 @@ public class WireEdgeClassifier : CompositeClassifier
         }
         if (v.IsSame(vl))
         {
-            tg.Reverse();
+            tg = tg.Reversed();
         }
         return tg;
     }

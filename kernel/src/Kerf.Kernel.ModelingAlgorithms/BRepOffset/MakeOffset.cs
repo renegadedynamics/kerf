@@ -2278,8 +2278,8 @@ public sealed partial class MakeOffset
                     Vector3D xdir = ydir ^ norm;
                     // Xdir.Rotate(gp_Ax1(theApex, aNorm), -f);
                     Frame3D ax2 = new(theApex, new Direction3D(norm), new Direction3D(xdir));
-                    theSphere.SetRadius(_offset);
-                    theSphere.SetPosition(new CoordinateSystem(ax2) /*gp_Ax3(theApex, gp_Dir(aNorm))*/);
+                    theSphere = theSphere.WithRadius(_offset);
+                    theSphere = theSphere.WithPosition(new CoordinateSystem(ax2) /*gp_Ax3(theApex, gp_Dir(aNorm))*/);
                     sphSurf = new SphericalSurface(theSphere);
                     firstPoint = fPnt;
                     theFirstVertex = new LibraryMakeVertex(fPnt).InternalVertex();
@@ -3077,10 +3077,10 @@ public sealed partial class MakeOffset
                             CoordinateSystem theAx3 = new(circ.Position());
                             if (circAxisDir * theCone.Axis().Direction() < 0.0)
                             {
-                                theAx3.ZReverse();
-                                circAxisDir.Reverse();
+                                theAx3 = theAx3.ZReversed();
+                                circAxisDir = circAxisDir.Reversed();
                             }
-                            theCone.SetPosition(theAx3);
+                            theCone = theCone.WithPosition(theAx3);
                             theSurf = new ConicalSurface(theCone);
                         }
                         if (!isPlanar)
@@ -5192,9 +5192,9 @@ public sealed partial class MakeOffset
                     Direction3D plnNorm = pln.Position().Direction();
                     if (norm.Dot(new Vector3D(plnNorm)) < 0.0)
                     {
-                        plnNorm.Reverse();
+                        plnNorm = plnNorm.Reversed();
                         Axis3D ax = new(pln.Position().Location(), plnNorm);
-                        pln.SetAxis(ax);
+                        pln = pln.WithAxis(ax);
                     }
                     PlaneSurface plane = new(pln);
                     Face planarFace = new();

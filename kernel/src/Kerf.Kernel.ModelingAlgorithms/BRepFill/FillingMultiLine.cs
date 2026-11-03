@@ -524,7 +524,7 @@ public sealed class FillingMultiLine : Function
         Point2D p2d = ValueOnF1(u);
 
         Point3D p3d = s.Value(p2d.X(), p2d.Y());
-        p3d.Transform(l.Transformation());
+        p3d = p3d.Transformed(l.Transformation());
 
         return p3d;
     }
@@ -675,7 +675,7 @@ public sealed class FillingMultiLine : Function
 
         Surface s = Tool.Surface(_face1, out Placement l)!;
         p3d = s.Value(pf1.X(), pf1.Y());
-        p3d.Transform(l.Transformation());
+        p3d = p3d.Transformed(l.Transformation());
     }
 
     /// <inheritdoc/>

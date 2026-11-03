@@ -25,7 +25,7 @@ public sealed class FunctionH : FunctionWithDerivative
     {
         _p1 = p1;
         Vector2D aT1 = t1;
-        aT1.Normalize();
+        aT1 = aT1.Normalized();
         _t1 = aT1;
         _curve2 = c2;
     }

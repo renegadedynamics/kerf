@@ -399,7 +399,7 @@ public class GeomGridEval_CurveConsistencyTest(ITestOutputHelper theOutput)
                 if (aKind is "Circle" or "BSpline" or "Bezier" or "OffsetEllipse")
                 {
                     Transform3D aTrsf = new();
-                    aTrsf.SetRotation(new Axis3D(RandomPnt(aRnd, 5.0), RandomDir(aRnd)), aRnd.NextDouble() * 6);
+                    aTrsf = aTrsf.WithRotation(new Axis3D(RandomPnt(aRnd, 5.0), RandomDir(aRnd)), aRnd.NextDouble() * 6);
                     TransformedCurve anOther = new(aCurve, aTrsf);
                     CurveGrid anOtherEval = new(anOther);
                     Assert.Equal(anOther.GetType(), anOtherEval.GetType());

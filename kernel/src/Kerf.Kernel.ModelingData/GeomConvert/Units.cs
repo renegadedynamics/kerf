@@ -68,7 +68,7 @@ public static class Units
                 || aCurve2d is EllipseCurve2D)
             {
                 var t = new Transform2D();
-                t.SetScale(Constants.Origin2d(), lengthFact);
+                t = t.WithScale(Constants.Origin2d(), lengthFact);
                 aCurve2d.Transform(t);
                 return aCurve2d;
             }
@@ -84,9 +84,9 @@ public static class Units
             Point2D myLoc = line2d.Location();
             Direction2D myDir = line2d.Direction();
             var myNewLoc = new Point2D();
-            myNewLoc.SetCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
+            myNewLoc = myNewLoc.WithCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
             var myNewDir = new Direction2D();
-            myNewDir.SetCoord(myDir.X() * uFact, myDir.Y() * vFact);
+            myNewDir = myNewDir.WithCoord(myDir.X() * uFact, myDir.Y() * vFact);
             LineCurve2D myNewLine2d = (LineCurve2D)line2d.Copy();
             myNewLine2d.SetLocation(myNewLoc);
             myNewLine2d.SetDirection(myNewDir);
@@ -105,8 +105,8 @@ public static class Units
         }
 
         // Compute affinity
-        tMatu.SetAffinity(Constants.OY2d(), uFact);
-        tMatv.SetAffinity(Constants.OX2d(), vFact);
+        tMatu = tMatu.WithAffinity(Constants.OY2d(), uFact);
+        tMatv = tMatv.WithAffinity(Constants.OX2d(), vFact);
         if (aCurve2d is BoundedCurve2D)
         {
             if (aCurve2d is BSplineCurve2D)
@@ -120,7 +120,7 @@ public static class Units
                     pXY = bSpline2d.Pole(i).XY();
                     tMatu.Transforms(ref pXY);
                     tMatv.Transforms(ref pXY);
-                    pt1.SetXY(pXY);
+                    pt1 = pt1.WithXY(pXY);
                     myNewBSpline2d.SetPole(i, pt1);
                 }
 
@@ -185,7 +185,7 @@ public static class Units
                 || aPcurve is EllipseCurve2D)
             {
                 var t = new Transform2D();
-                t.SetScale(Constants.Origin2d(), lengthFact);
+                t = t.WithScale(Constants.Origin2d(), lengthFact);
                 aPcurve.Transform(t);
                 return aPcurve;
             }
@@ -217,8 +217,8 @@ public static class Units
 
         // Compute affinity
 
-        tMatu.SetAffinity(Constants.OY2d(), uFact);
-        tMatv.SetAffinity(Constants.OX2d(), vFact);
+        tMatu = tMatu.WithAffinity(Constants.OY2d(), uFact);
+        tMatv = tMatv.WithAffinity(Constants.OX2d(), vFact);
 
         if (aPcurve is LineCurve2D)
         {
@@ -228,10 +228,10 @@ public static class Units
             Direction2D myDir = line2d.Direction();
 
             var myNewLoc = new Point2D();
-            myNewLoc.SetCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
+            myNewLoc = myNewLoc.WithCoord(myLoc.X() * uFact, myLoc.Y() * vFact);
 
             var myNewDir = new Direction2D();
-            myNewDir.SetCoord(myDir.X() * uFact, myDir.Y() * vFact);
+            myNewDir = myNewDir.WithCoord(myDir.X() * uFact, myDir.Y() * vFact);
 
             line2d.SetLocation(myNewLoc);
             line2d.SetDirection(myNewDir);
@@ -250,7 +250,7 @@ public static class Units
                 pXY = bSpline2d.Pole(i).XY();
                 tMatu.Transforms(ref pXY);
                 tMatv.Transforms(ref pXY);
-                pt1.SetXY(pXY);
+                pt1 = pt1.WithXY(pXY);
                 bSpline2d.SetPole(i, pt1);
             }
 
@@ -269,7 +269,7 @@ public static class Units
         var loc = new Point2D(0.0, 0.0);
         var dir = new Direction2D(Direction2D.D.X);
         var ax2 = new Axis2D(loc, dir);
-        t.SetMirror(ax2);
+        t = t.WithMirror(ax2);
         theMirrored.Transform(t);
         return theMirrored;
     }

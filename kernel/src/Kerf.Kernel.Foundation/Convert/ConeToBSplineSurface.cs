@@ -118,7 +118,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         // and calculate the weight of the bspline.
         double w1;
         Transform3D trsf = new();
-        trsf.SetTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
+        trsf = trsf.WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -134,7 +134,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
             for (j = 1; j <= _nbVPoles; j++)
             {
                 _weights[i, j] = w1;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();
@@ -181,7 +181,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
         // and calculate the weight of bspline.
         double w;
         Transform3D trsf = new();
-        trsf.SetTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
+        trsf = trsf.WithTransformation(c.Position(), new CoordinateSystem(Constants.XOY()));
 
         for (i = 1; i <= _nbUPoles; i++)
         {
@@ -197,7 +197,7 @@ public class ConeToBSplineSurface : ElementarySurfaceToBSplineSurface
             for (j = 1; j <= _nbVPoles; j++)
             {
                 _weights[i, j] = w;
-                _poles[i, j].Transform(trsf);
+                _poles[i, j] = _poles[i, j].Transformed(trsf);
             }
         }
         FinalizeArrays();

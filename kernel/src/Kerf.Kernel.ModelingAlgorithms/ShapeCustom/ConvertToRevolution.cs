@@ -128,7 +128,7 @@ public class ConvertToRevolution : CustomModification
         */
         if (!ax3.Direct())
         {
-            axis.Reverse();
+            axis = axis.Reversed();
         }
 
         RevolutionSurface rev = new RevolutionSurface(basisCurve!, axis);

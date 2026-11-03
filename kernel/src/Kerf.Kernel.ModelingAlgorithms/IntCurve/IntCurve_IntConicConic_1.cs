@@ -960,7 +960,7 @@ public sealed partial class IntConicConic
             {
                 global::Kerf.Engine.Geometry.ElCLib.CircleD2(c1inf, axis2C1, r1, out p1a, out tan1, out norm1);
                 global::Kerf.Engine.Geometry.ElCLib.CircleD2(c2inf, axis2C2, r2, out p2a, out tan2, out norm2);
-                tan2.Reverse();
+                tan2 = tan2.Reversed();
 
                 global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out pos1a, domainCirc1, p1a, c1inf);
                 global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out pos2a, _DomainCirc2, p2a, PIpPI - c2inf);
@@ -980,7 +980,7 @@ public sealed partial class IntConicConic
 
                     global::Kerf.Engine.Geometry.ElCLib.CircleD2(c1sup, axis2C1, r1, out p1b, out tan1, out norm1);
                     global::Kerf.Engine.Geometry.ElCLib.CircleD2(c2sup, axis2C2, r2, out p2b, out tan2, out norm2);
-                    tan2.Reverse();
+                    tan2 = tan2.Reversed();
 
                     global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out pos1b, domainCirc1, p1b, c1sup);
                     global::Kerf.Engine.Intersection.Implicit.IntImpParGen.DeterminePosition(out pos2b, _DomainCirc2, p2b, PIpPI - c2sup);
@@ -2425,7 +2425,7 @@ public sealed partial class IntConicConic
     {
         Frame2D elAxis = ellipse.Axis();
         Transform2D tr = new();
-        tr.SetTransformation(elAxis.XAxis());
+        tr = tr.WithTransformation(elAxis.XAxis());
         Ellipse2D tEllipse = ellipse.Transformed(tr);
         Line2D tLine = line.Transformed(tr);
         double dy = tLine.Position().Direction().Y();

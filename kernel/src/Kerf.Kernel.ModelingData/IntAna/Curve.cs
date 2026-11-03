@@ -434,7 +434,7 @@ public partial struct Curve : IEquatable<Curve>
         }
         Point3D p2 = Value(theta2);
         dtheta = 1.0 / dtheta;
-        vec.SetCoord((p2.X() - pt.X()) * dtheta, (p2.Y() - pt.Y()) * dtheta, (p2.Z() - pt.Z()) * dtheta);
+        vec = vec.WithCoord((p2.X() - pt.X()) * dtheta, (p2.Y() - pt.Y()) * dtheta, (p2.Z() - pt.Z()) * dtheta);
 
         return (true);
     }

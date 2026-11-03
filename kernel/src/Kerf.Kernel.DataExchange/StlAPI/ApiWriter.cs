@@ -99,7 +99,7 @@ public class ApiWriter
             for (int nodeIter = 1; nodeIter <= triangulation.NodeCount; ++nodeIter)
             {
                 Point3D pnt = triangulation.Node(nodeIter);
-                pnt.Transform(trsf);
+                pnt = pnt.Transformed(trsf);
                 mesh.SetNode(nodeIter + nodeOffset, pnt);
             }
 

@@ -243,11 +243,11 @@ public sealed class BisecAna : BisectorCurve
         if (!oncurve)
         {
             lineBisVec = new Vector2D(pnt1, pnt2);
-            lineBisVec.Rotate(M_PI / 2.0);
+            lineBisVec = lineBisVec.Rotated(M_PI / 2.0);
         }
         ///////////////////
 
-        tan1.Reverse();
+        tan1 = tan1.Reversed();
 
         if (type1 == typeof(TrimmedCurve2D))
         {
@@ -413,8 +413,8 @@ public sealed class BisecAna : BisectorCurve
                 {
                     //  Modified by Sergey KHROMOV - Thu Oct 31 12:42:22 2002 Begin
                     // C2 included in C1 and tangent.
-                    circle1.SetRadius(radius1 - d1);
-                    circle2.SetRadius(radius2 + d1);
+                    circle1 = circle1.WithRadius(radius1 - d1);
+                    circle2 = circle2.WithRadius(radius2 + d1);
                     circlesTangent = true;
                 }
                 else
@@ -425,8 +425,8 @@ public sealed class BisecAna : BisectorCurve
                     {
                         //  Modified by Sergey KHROMOV - Thu Oct 31 12:44:25 2002 End
                         // C2 and C1 tangent and disconnected.
-                        circle1.SetRadius(radius1 - d1);
-                        circle2.SetRadius(radius2 - d1);
+                        circle1 = circle1.WithRadius(radius1 - d1);
+                        circle2 = circle2.WithRadius(radius2 - d1);
                         circlesTangent = true;
                     }
                 } // end of reframing.
@@ -625,7 +625,7 @@ public sealed class BisecAna : BisectorCurve
                     if (Math.Abs(d1) < preConf && tan1.IsParallel(tan2, 1.0e-8))
                     {
                         //  Modified by Sergey KHROMOV - Wed Oct 30 14:48:44 2002 End
-                        circle1.SetRadius(radius1 + d1);
+                        circle1 = circle1.WithRadius(radius1 + d1);
                     }
                 }
 

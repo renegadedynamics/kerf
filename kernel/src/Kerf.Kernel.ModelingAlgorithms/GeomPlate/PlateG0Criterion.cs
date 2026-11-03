@@ -82,9 +82,9 @@ public class PlateG0Criterion : Criterion
                 vp = (2 * p2d.Y() - vInt[0] - vInt[1]) / (vInt[1] - vInt[0]);
                 global::Kerf.Engine.Numerics.Polynomials.PLib.EvalPoly2Var(up, vp, 0, 0, nbCoeff[0] - 1, nbCoeff[1] - 1, 3, coeffs, digit);
 
-                p3d.SetCoord(1, digit[0]);
-                p3d.SetCoord(2, digit[1]);
-                p3d.SetCoord(3, digit[2]);
+                p3d = p3d.WithCoord(1, digit[0]);
+                p3d = p3d.WithCoord(2, digit[1]);
+                p3d = p3d.WithCoord(3, digit[2]);
                 double x = (p3d.Coord(1) - _xyz.Value(i).Coord(1)),
                        y = (p3d.Coord(2) - _xyz.Value(i).Coord(2)),
                        z = (p3d.Coord(3) - _xyz.Value(i).Coord(3)), distTmp = x * x + y * y + z * z;

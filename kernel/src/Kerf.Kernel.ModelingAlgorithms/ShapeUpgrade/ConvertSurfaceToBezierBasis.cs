@@ -396,8 +396,8 @@ public class ConvertSurfaceToBezierBasis : SplitSurface
             nbCurves = curves.Length();
 
             Transform3D shiftF = new(), shiftL = new();
-            shiftF.SetTranslation(extr.Value(uFirst, 0), extr.Value(uFirst, vFirst));
-            shiftL.SetTranslation(extr.Value(uFirst, 0), extr.Value(uFirst, vLast));
+            shiftF = shiftF.WithTranslation(extr.Value(uFirst, 0), extr.Value(uFirst, vFirst));
+            shiftL = shiftL.WithTranslation(extr.Value(uFirst, 0), extr.Value(uFirst, vLast));
             var surf = new NCollection_HArray2<Surface>(1, nbCurves, 1, 1);
 
             int k;

@@ -34,8 +34,8 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         _axis = new Axis3D(p, n);
         _vydir = n;
         _vxdir = n;
-        _vxdir.CrossCross(vx, n);
-        _vydir.Cross(_vxdir);
+        _vxdir = _vxdir.CrossCrossed(vx, n);
+        _vydir = _vydir.Crossed(_vxdir);
     }
 
     public CoordinateSystem(in Point3D p, Direction3D.D n, Direction3D.D vx)
@@ -60,33 +60,33 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         {
             if (aabs > cabs)
             {
-                d.SetCoord(-c, 0.0, a);
+                d = d.WithCoord(-c, 0.0, a);
             }
             else
             {
-                d.SetCoord(c, 0.0, -a);
+                d = d.WithCoord(c, 0.0, -a);
             }
         }
         else if (aabs <= babs && aabs <= cabs)
         {
             if (babs > cabs)
             {
-                d.SetCoord(0.0, -c, b);
+                d = d.WithCoord(0.0, -c, b);
             }
             else
             {
-                d.SetCoord(0.0, c, -b);
+                d = d.WithCoord(0.0, c, -b);
             }
         }
         else
         {
             if (aabs > babs)
             {
-                d.SetCoord(-b, a, 0.0);
+                d = d.WithCoord(-b, a, 0.0);
             }
             else
             {
-                d.SetCoord(b, -a, 0.0);
+                d = d.WithCoord(b, -a, 0.0);
             }
         }
 
@@ -113,7 +113,7 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     internal void SetAxis(in Axis3D a1)
     {
-        _axis.SetLocation(a1.Location());
+        _axis = _axis.WithLocation(a1.Location());
         SetDirection(a1.Direction());
     }
 
@@ -132,12 +132,12 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
                 _vxdir = _axis.Direction();
             }
 
-            _axis.SetDirection(v);
+            _axis = _axis.WithDirection(v);
         }
         else
         {
             bool direct = Direct();
-            _axis.SetDirection(v);
+            _axis = _axis.WithDirection(v);
             _vxdir = v.CrossCrossed(_vxdir, v);
             if (direct)
             {
@@ -159,12 +159,12 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         {
             if (dot > 0)
             {
-                _axis.SetDirection(_vxdir);
+                _axis = _axis.WithDirection(_vxdir);
                 _vydir = -_vydir;
             }
             else
             {
-                _axis.SetDirection(_vxdir);
+                _axis = _axis.WithDirection(_vxdir);
             }
 
             _vxdir = vx;
@@ -191,12 +191,12 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         {
             if (dot > 0)
             {
-                _axis.SetDirection(_vydir);
+                _axis = _axis.WithDirection(_vydir);
                 _vxdir = -_vxdir;
             }
             else
             {
-                _axis.SetDirection(_vydir);
+                _axis = _axis.WithDirection(_vydir);
             }
 
             _vydir = vy;
@@ -208,54 +208,54 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
             _vydir = _axis.Direction().Crossed(_vxdir);
             if (!isDirect)
             {
-                _vxdir.Reverse();
+                _vxdir = _vxdir.Reversed();
             }
         }
     }
 
     internal void Mirror(in Point3D p)
     {
-        _axis.Mirror(p);
-        _vxdir.Reverse();
-        _vydir.Reverse();
+        _axis = _axis.Mirrored(p);
+        _vxdir = _vxdir.Reversed();
+        _vydir = _vydir.Reversed();
     }
 
     internal void Mirror(in Axis3D a1)
     {
-        _vydir.Mirror(a1);
-        _vxdir.Mirror(a1);
-        _axis.Mirror(a1);
+        _vydir = _vydir.Mirrored(a1);
+        _vxdir = _vxdir.Mirrored(a1);
+        _axis = _axis.Mirrored(a1);
     }
 
     internal void Mirror(in Frame3D a2)
     {
-        _vydir.Mirror(a2);
-        _vxdir.Mirror(a2);
-        _axis.Mirror(a2);
+        _vydir = _vydir.Mirrored(a2);
+        _vxdir = _vxdir.Mirrored(a2);
+        _axis = _axis.Mirrored(a2);
     }
 
     internal void Rotate(in Axis3D a1, double ang)
     {
-        _axis.Rotate(a1, ang);
-        _vxdir.Rotate(a1, ang);
-        _vydir.Rotate(a1, ang);
+        _axis = _axis.Rotated(a1, ang);
+        _vxdir = _vxdir.Rotated(a1, ang);
+        _vydir = _vydir.Rotated(a1, ang);
     }
 
     internal void Scale(in Point3D p, double s)
     {
-        _axis.Scale(p, s);
+        _axis = _axis.Scaled(p, s);
         if (s < 0.0)
         {
-            _vxdir.Reverse();
-            _vydir.Reverse();
+            _vxdir = _vxdir.Reversed();
+            _vydir = _vydir.Reversed();
         }
     }
 
     internal void Transform(in Transform3D t)
     {
-        _axis.Transform(t);
-        _vxdir.Transform(t);
-        _vydir.Transform(t);
+        _axis = _axis.Transformed(t);
+        _vxdir = _vxdir.Transformed(t);
+        _vydir = _vydir.Transformed(t);
     }
 
     internal void Translate(in Vector3D v) => _axis.Translate(v);
@@ -332,7 +332,7 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
         Direction3D zz = _axis.Direction();
         if (!Direct())
         {
-            zz.Reverse();
+            zz = zz.Reversed();
         }
 
         return new Frame3D(_axis.Location(), zz, _vxdir);

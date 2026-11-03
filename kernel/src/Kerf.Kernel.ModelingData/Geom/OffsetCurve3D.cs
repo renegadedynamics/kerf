@@ -157,12 +157,12 @@ public class OffsetCurve3D : Curve3D
                 if (_offsetValue >= 0.0)
                 {
                     _offsetValue = vdir.Magnitude();
-                    _direction.SetXYZ(vdir.XYZ());
+                    _direction = _direction.WithXYZ(vdir.XYZ());
                 }
                 else
                 {
                     _offsetValue = -vdir.Magnitude();
-                    _direction.SetXYZ((-vdir).XYZ());
+                    _direction = _direction.WithXYZ((-vdir).XYZ());
                 }
             }
         }
@@ -421,7 +421,7 @@ public class OffsetCurve3D : Curve3D
         ClearEvalRepresentation();
         OwnBasisCurve();
         _basisCurve.Transform(t);
-        _direction.Transform(t);
+        _direction = _direction.Transformed(t);
         _offsetValue *= t.ScaleFactor();
     }
 

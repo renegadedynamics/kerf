@@ -315,7 +315,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         if (vl > Constants.Resolution())
         {
             double ivl = 1.0 / vl;
-            axis.SetCoord(_x * ivl, _y * ivl, _z * ivl);
+            axis = axis.WithCoord(_x * ivl, _y * ivl, _z * ivl);
             if (_w < 0.0)
             {
                 angle = 2.0 * Math.Atan2(-vl, -_w); // [-PI, 0]
@@ -327,7 +327,7 @@ public partial struct Quaternion3 : IEquatable<Quaternion3>
         }
         else
         {
-            axis.SetCoord(0.0, 0.0, 1.0);
+            axis = axis.WithCoord(0.0, 0.0, 1.0);
             angle = 0.0;
         }
     }

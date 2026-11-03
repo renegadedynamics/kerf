@@ -539,7 +539,7 @@ public sealed class TreeReader
                          && m[12] == 0.0 && m[13] == 0.0 && m[14] == 0.0;
             if (!isIdentity)
             {
-                trsf.SetValues(m[0], m[4], m[8], m[12],
+                trsf = trsf.WithValues(m[0], m[4], m[8], m[12],
                                   m[1], m[5], m[9], m[13],
                                   m[2], m[6], m[10], m[14]);
             }

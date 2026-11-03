@@ -95,9 +95,9 @@ internal static class BinTestShapes
     {
         Solid aBox = TestShapes.Box(1, 1, 1);
         var aT1 = new Transform3D();
-        aT1.SetTranslation(new Vector3D(5, 0, 0));
+        aT1 = aT1.WithTranslation(new Vector3D(5, 0, 0));
         var aT2 = new Transform3D();
-        aT2.SetRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), 0.3);
+        aT2 = aT2.WithRotation(new Axis3D(new Point3D(), new Direction3D(0, 0, 1)), 0.3);
         var aL1 = new Placement(aT1);
         var aL2 = new Placement(aT2);
         Placement aComplex = aL1 * aL2.Powered(2);
@@ -123,7 +123,7 @@ internal static class BinTestShapes
         theBuilder.MakeCompSolid(ref aCS);
         theBuilder.Add(aCS, TestShapes.Box(1, 1, 1));
         var aT = new Transform3D();
-        aT.SetTranslation(new Vector3D(1, 0, 0));
+        aT = aT.WithTranslation(new Vector3D(1, 0, 0));
         theBuilder.Add(aCS, TestShapes.Box(1, 1, 1).Moved(new Placement(aT)));
         return aCS;
     }

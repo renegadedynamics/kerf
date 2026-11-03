@@ -95,7 +95,7 @@ public partial class FilletBuilderBase
         else
         {
             bc.D1(-wtg + edl, out ped, out ded);
-            ded.Reverse();
+            ded = ded.Reversed();
         }
         spine.D1(wsp, out psp, out dsp);
         Point3D p1 = new(), p2 = new();

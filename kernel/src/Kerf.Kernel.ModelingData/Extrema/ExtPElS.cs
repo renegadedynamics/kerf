@@ -390,7 +390,7 @@ public class ExtPElS
         {
             v1 = 0.0;
         }
-        oPp.Reverse();
+        oPp = oPp.Reversed();
         double v2 = oPp.AngleWithRef(new Vector3D(p, o2), oPp.Crossed(oz));
         if (v2 > -ExtPElS_MyEps && v2 < ExtPElS_MyEps)
         {

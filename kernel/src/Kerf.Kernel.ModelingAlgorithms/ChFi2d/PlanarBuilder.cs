@@ -1213,7 +1213,7 @@ public sealed partial class PlanarBuilder
 
             if (oe1 == Reversed)
             {
-                vec1.Reverse();
+                vec1 = vec1.Reversed();
             } // if (OE1 ...
             bool sense = (vec1 * vec) > 0.0;
             if (u1 > vv1 && u1 > 2.0 * M_PI)

@@ -83,7 +83,7 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
             _focalLength = -_focalLength;
         }
 
-        _pos.Scale(p, s);
+        _pos = _pos.Scaled(p, s);
     }
 
     internal void Transform(in Transform3D t)
@@ -94,7 +94,7 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
             _focalLength = -_focalLength;
         }
 
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     internal void Translate(in Vector3D v) => _pos.Translate(v);
@@ -175,28 +175,28 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
     public readonly Parabola3D Mirrored(in Point3D p)
     {
         Parabola3D prb = this;
-        prb._pos.Mirror(p);
+        prb._pos = prb._pos.Mirrored(p);
         return prb;
     }
 
     public readonly Parabola3D Mirrored(in Axis3D a1)
     {
         Parabola3D prb = this;
-        prb._pos.Mirror(a1);
+        prb._pos = prb._pos.Mirrored(a1);
         return prb;
     }
 
     public readonly Parabola3D Mirrored(in Frame3D a2)
     {
         Parabola3D prb = this;
-        prb._pos.Mirror(a2);
+        prb._pos = prb._pos.Mirrored(a2);
         return prb;
     }
 
     public readonly Parabola3D Rotated(in Axis3D a1, double ang)
     {
         Parabola3D prb = this;
-        prb._pos.Rotate(a1, ang);
+        prb._pos = prb._pos.Rotated(a1, ang);
         return prb;
     }
 
@@ -209,7 +209,7 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
             prb._focalLength = -prb._focalLength;
         }
 
-        prb._pos.Scale(p, s);
+        prb._pos = prb._pos.Scaled(p, s);
         return prb;
     }
 
@@ -222,21 +222,21 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
             prb._focalLength = -prb._focalLength;
         }
 
-        prb._pos.Transform(t);
+        prb._pos = prb._pos.Transformed(t);
         return prb;
     }
 
     public readonly Parabola3D Translated(in Vector3D v)
     {
         Parabola3D prb = this;
-        prb._pos.Translate(v);
+        prb._pos = prb._pos.Translated(v);
         return prb;
     }
 
     public readonly Parabola3D Translated(in Point3D p1, in Point3D p2)
     {
         Parabola3D prb = this;
-        prb._pos.Translate(p1, p2);
+        prb._pos = prb._pos.Translated(p1, p2);
         return prb;
     }
 

@@ -37,7 +37,7 @@ public partial class PWalking
                 _previousd2 = _firstd2;
                 _previousd = _tgdir;
                 _tangentIdx = _line.PointCount;
-                _tgdir.Reverse();
+                _tgdir = _tgdir.Reversed();
                 _line.Reverse();
 
                 _sensCheminement = -1;
@@ -75,7 +75,7 @@ public partial class PWalking
                     _previousd2 = _firstd2;
                     _previousd = _tgdir;
                     _tangentIdx = _line.PointCount;
-                    _tgdir.Reverse();
+                    _tgdir = _tgdir.Reversed();
                     _line.Reverse();
 
                     _sensCheminement = -1;

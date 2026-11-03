@@ -627,7 +627,7 @@ public sealed class MakePrism : Form
         }
         if (!_skface.IsNull && Working(until).IsSame(_skface))
         {
-            _dir.Reverse();
+            _dir = _dir.Reversed();
             PerformUntilEnd();
             return;
         }
@@ -1097,11 +1097,11 @@ public sealed class MakePrism : Form
             // apply locations
             if (!loc1.IsIdentity)
             {
-                pl1.Transform(loc1.Transformation());
+                pl1 = pl1.Transformed(loc1.Transformation());
             }
             if (!loc2.IsIdentity)
             {
-                pl2.Transform(loc2.Transformation());
+                pl2 = pl2.Transformed(loc2.Transformation());
             }
 
             if (pl1.Position().IsCoplanar(pl2.Position(), tollin, tolang))

@@ -153,11 +153,11 @@ public class QuadQuadGeo
                 {
                     a = (smz * v2.X() - smx * v2.Z()) / det3;
                 }
-                _ptintersect.SetCoord(p1.X() + a * v1.X(), p1.Y() + a * v1.Y(), p1.Z() + a * v1.Z());
+                _ptintersect = _ptintersect.WithCoord(p1.X() + a * v1.X(), p1.Y() + a * v1.Y(), p1.Z() + a * v1.Z());
             }
             else
             {
-                _ptintersect.SetCoord(0, 0, 0); //-- To avoid FPE
+                _ptintersect = _ptintersect.WithCoord(0, 0, 0); //-- To avoid FPE
             }
         }
 
@@ -554,7 +554,7 @@ public class QuadQuadGeo
             if (Math.Abs(Math.Abs(dist) - radius) < tol)
             {
                 _nbint = 1;
-                _pt1.SetXYZ(omega);
+                _pt1 = _pt1.WithXYZ(omega);
 
                 if (newparams)
                 {
@@ -567,7 +567,7 @@ public class QuadQuadGeo
                                         omegaXYZtrnsl.Y() - distt * b,
                                         omegaXYZtrnsl.Z() - distt * c);
                     Point3D ppt1 = new();
-                    ppt1.SetXYZ(omega1);
+                    ppt1 = ppt1.WithXYZ(omega1);
                     Vector3D vv1 = new(_pt1, ppt1);
                     Direction3D dd1 = new(vv1);
                     _dir1 = dd1;
@@ -583,8 +583,8 @@ public class QuadQuadGeo
                 h = Math.Sqrt(radius * radius - dist * dist);
                 axey = axec.Direction().XYZ().Crossed(normp); // axey is normalized
 
-                _pt1.SetXYZ(omega - h * axey);
-                _pt2.SetXYZ(omega + h * axey);
+                _pt1 = _pt1.WithXYZ(omega - h * axey);
+                _pt2 = _pt2.WithXYZ(omega + h * axey);
 
                 if (newparams)
                 {
@@ -600,8 +600,8 @@ public class QuadQuadGeo
                                         omegaXYZtrnsl.Y() - distt * b,
                                         omegaXYZtrnsl.Z() - distt * c);
                     Point3D ppt1 = new(), ppt2 = new();
-                    ppt1.SetXYZ(omega1 - ht * axey);
-                    ppt2.SetXYZ(omega1 + ht * axey);
+                    ppt1 = ppt1.WithXYZ(omega1 - ht * axey);
+                    ppt2 = ppt2.WithXYZ(omega1 + ht * axey);
                     Vector3D vv1 = new(_pt1, ppt1);
                     Vector3D vv2 = new(_pt2, ppt2);
                     Direction3D dd1 = new(vv1);
@@ -651,8 +651,8 @@ public class QuadQuadGeo
                 cost = Math.Abs(axec.Direction().XYZ().Dot(normp));
                 axex = axey.Crossed(normp);
 
-                _dir1.SetXYZ(normp); // Modified in this block
-                _dir2.SetXYZ(axex);
+                _dir1 = _dir1.WithXYZ(normp); // Modified in this block
+                _dir2 = _dir2.WithXYZ(axex);
 
                 _param1 = radius / cost;
                 _param1bis = radius;
@@ -733,7 +733,7 @@ public class QuadQuadGeo
                 dist = a * ptonaxe.X() + b * ptonaxe.Y() + c * ptonaxe.Z() + d;
                 ptonaxe = ptonaxe - dist * normp;
                 _pt1 = apex;
-                _dir1.SetXYZ(ptonaxe - _pt1.XYZ());
+                _dir1 = _dir1.WithXYZ(ptonaxe - _pt1.XYZ());
             }
             else if (cost < sina)
             { // plane "interior" to the cone
@@ -742,8 +742,8 @@ public class QuadQuadGeo
                 _pt1 = apex;
                 _pt2 = apex;
                 dh = Math.Sqrt(sina * sina - cost * cost) / cosa;
-                _dir1.SetXYZ(axex + dh * axey);
-                _dir2.SetXYZ(axex - dh * axey);
+                _dir1 = _dir1.WithXYZ(axex + dh * axey);
+                _dir2 = _dir2.WithXYZ(axex - dh * axey);
             }
             else
             { // plane "exterior" to the cone
@@ -764,10 +764,10 @@ public class QuadQuadGeo
                 // the hyperbola
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Hyperbola;
                 _nbint = 2;
-                _pt1.SetXYZ(apex.XYZ() - dist * normp);
+                _pt1 = _pt1.WithXYZ(apex.XYZ() - dist * normp);
                 _pt2 = _pt1;
                 _dir1 = new Direction3D(normp);
-                _dir2.SetXYZ(axex);
+                _dir2 = _dir2.WithXYZ(axex);
                 _param1 = _param2 = Math.Abs(dist / Math.Tan(angl));
                 _param1bis = _param2bis = Math.Abs(dist);
             }
@@ -795,9 +795,9 @@ public class QuadQuadGeo
                     _nbint = 1;
                     deltacenter = distance / 2.0 / cosa;
                     axex.Normalize();
-                    _pt1.SetXYZ(center.XYZ() - deltacenter * axex);
+                    _pt1 = _pt1.WithXYZ(center.XYZ() - deltacenter * axex);
                     _dir1 = new Direction3D(normp);
-                    _dir2.SetXYZ(axex);
+                    _dir2 = _dir2.WithXYZ(axex);
                     _param1 = deltacenter * sina * sina;
                 }
                 else if (sint < tolang)
@@ -816,10 +816,10 @@ public class QuadQuadGeo
                     axex.Normalize();
 
                     deltacenter = sint * sina * sina * distance / (sina * sina - cost * cost);
-                    _pt1.SetXYZ(center.XYZ() - deltacenter * axex);
+                    _pt1 = _pt1.WithXYZ(center.XYZ() - deltacenter * axex);
                     _pt2 = _pt1;
                     _dir1 = new Direction3D(normp);
-                    _dir2.SetXYZ(axex);
+                    _dir2 = _dir2.WithXYZ(axex);
                     _param1 = _param2 = cost * sina * cosa * distance / (sina * sina - cost * cost);
                     _param1bis = _param2bis = cost * sina * distance / Math.Sqrt(sina * sina - cost * cost);
                 }
@@ -830,9 +830,9 @@ public class QuadQuadGeo
                     double radius = cost * sina * cosa * distance / (cost * cost - sina * sina);
                     deltacenter = sint * sina * sina * distance / (cost * cost - sina * sina);
                     axex.Normalize();
-                    _pt1.SetXYZ(center.XYZ() + deltacenter * axex);
+                    _pt1 = _pt1.WithXYZ(center.XYZ() + deltacenter * axex);
                     _dir1 = new Direction3D(normp);
-                    _dir2.SetXYZ(axex);
+                    _dir2 = _dir2.WithXYZ(axex);
                     _param1 = radius;
                     _param1bis = cost * sina * distance / Math.Sqrt(cost * cost - sina * sina);
                 }
@@ -902,18 +902,18 @@ public class QuadQuadGeo
             // onto the plane
             _nbint = 1;
             _typeres = global::Kerf.Engine.Intersection.ResultType.Point;
-            _pt1.SetCoord(x - dist * a, y - dist * b, z - dist * c);
+            _pt1 = _pt1.WithCoord(x - dist * a, y - dist * b, z - dist * c);
         }
         else if (Math.Abs(dist) < radius)
         {
             // we have a circle solution
             _nbint = 1;
             _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
-            _pt1.SetCoord(x - dist * a, y - dist * b, z - dist * c);
+            _pt1 = _pt1.WithCoord(x - dist * a, y - dist * b, z - dist * c);
             _dir1 = p.Axis().Direction();
             if (!p.Direct())
             {
-                _dir1.Reverse();
+                _dir1 = _dir1.Reversed();
             }
             _dir2 = p.Position().XDirection();
             _param1 = Math.Sqrt(radius * radius - dist * dist);
@@ -974,7 +974,7 @@ public class QuadQuadGeo
 
                 // P2 is a projection the location of the 2nd cylinder on the base
                 // of the 1st cylinder
-                P2.SetCoord(p2t.X() - projP2OnDirCyl1 * dirCyl.X(),
+                P2 = P2.WithCoord(p2t.X() - projP2OnDirCyl1 * dirCyl.X(),
                             p2t.Y() - projP2OnDirCyl1 * dirCyl.Y(),
                             p2t.Z() - projP2OnDirCyl1 * dirCyl.Z());
                 //--
@@ -992,7 +992,7 @@ public class QuadQuadGeo
                     _nbint = 1;
                     _dir1 = dirCyl;
                     double R1_R1pR2 = r1 / r1pR2;
-                    _pt1.SetCoord(P1.X() + R1_R1pR2 * (P2.X() - P1.X()),
+                    _pt1 = _pt1.WithCoord(P1.X() + R1_R1pR2 * (P2.X() - P1.X()),
                                  P1.Y() + R1_R1pR2 * (P2.Y() - P1.Y()),
                                  P1.Z() + R1_R1pR2 * (P2.Z() - P1.Z()));
                 }
@@ -1047,7 +1047,7 @@ public class QuadQuadGeo
                         // Intercept the segment from P1 point along P1P2 direction
                         // and having |P1O1| length
                         _nbint = 1;
-                        _pt1.SetXYZ(P1.XYZ() + dirA1A2.XYZ() * r1 * cos);
+                        _pt1 = _pt1.WithXYZ(P1.XYZ() + dirA1A2.XYZ() * r1 * cos);
                     }
                     else
                     {
@@ -1071,11 +1071,11 @@ public class QuadQuadGeo
 
                         // New coordinate (after rotation) of the P1P2 vector normalized.
                         double newDx = dx * cos - dy * sin, newDy = dy * cos + dx * sin;
-                        _pt1.SetXYZ(P1.XYZ() + newDx * r1Xdir.XYZ() + newDy * r1Ydir.XYZ());
+                        _pt1 = _pt1.WithXYZ(P1.XYZ() + newDx * r1Xdir.XYZ() + newDy * r1Ydir.XYZ());
 
                         newDx = dx * cos + dy * sin;
                         newDy = dy * cos - dx * sin;
-                        _pt2.SetXYZ(P1.XYZ() + newDx * r1Xdir.XYZ() + newDy * r1Ydir.XYZ());
+                        _pt2 = _pt2.WithXYZ(P1.XYZ() + newDx * r1Xdir.XYZ() + newDy * r1Ydir.XYZ());
                     }
                 }
                 else if (distA1A2 > (rmR - tol))
@@ -1091,7 +1091,7 @@ public class QuadQuadGeo
                         R1_RmR = -R1_RmR;
                     }
 
-                    _pt1.SetCoord(P1.X() + R1_RmR * (P2.X() - P1.X()),
+                    _pt1 = _pt1.WithCoord(P1.X() + R1_RmR * (P2.X() - P1.X()),
                                  P1.Y() + R1_RmR * (P2.Y() - P1.Y()),
                                  P1.Z() + R1_RmR * (P2.Z() - P1.Z()));
                 }
@@ -1168,7 +1168,7 @@ public class QuadQuadGeo
                     d1 = new Direction3D(p1P2);
                     p1 = cyl1.Radius();
 
-                    _pt1.SetCoord(P1.X() + p1 * d1.X(), P1.Y() + p1 * d1.Y(), P1.Z() + p1 * d1.Z());
+                    _pt1 = _pt1.WithCoord(P1.X() + p1 * d1.X(), P1.Y() + p1 * d1.Y(), P1.Z() + p1 * d1.Z());
                     _nbint = 1;
                 }
                 else
@@ -1197,8 +1197,8 @@ public class QuadQuadGeo
             Point3D pt = con.Apex();
             double dist = cyl.Radius() / (Math.Tan(con.SemiAngle()));
             Direction3D dir = cyl.Position().Direction();
-            _pt1.SetCoord(pt.X() + dist * dir.X(), pt.Y() + dist * dir.Y(), pt.Z() + dist * dir.Z());
-            _pt2.SetCoord(pt.X() - dist * dir.X(), pt.Y() - dist * dir.Y(), pt.Z() - dist * dir.Z());
+            _pt1 = _pt1.WithCoord(pt.X() + dist * dir.X(), pt.Y() + dist * dir.Y(), pt.Z() + dist * dir.Z());
+            _pt2 = _pt2.WithCoord(pt.X() - dist * dir.X(), pt.Y() - dist * dir.Y(), pt.Z() - dist * dir.Z());
             _dir1 = _dir2 = dir;
             _param1 = _param2 = cyl.Radius();
             _nbint = 2;
@@ -1236,12 +1236,12 @@ public class QuadQuadGeo
                 Direction3D dir = cyl.Position().Direction();
                 _dir1 = _dir2 = dir;
                 _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
-                _pt1.SetCoord(pt.X() + dist * dir.X(), pt.Y() + dist * dir.Y(), pt.Z() + dist * dir.Z());
+                _pt1 = _pt1.WithCoord(pt.X() + dist * dir.X(), pt.Y() + dist * dir.Y(), pt.Z() + dist * dir.Z());
                 _nbint = 1;
                 _param1 = cyl.Radius();
                 if (dist > RealEpsilon())
                 {
-                    _pt2.SetCoord(pt.X() - dist * dir.X(), pt.Y() - dist * dir.Y(), pt.Z() - dist * dir.Z());
+                    _pt2 = _pt2.WithCoord(pt.X() - dist * dir.X(), pt.Y() - dist * dir.Y(), pt.Z() - dist * dir.Z());
                     _param2 = cyl.Radius();
                     _nbint = 2;
                 }
@@ -1324,11 +1324,11 @@ public class QuadQuadGeo
                     return;
                 }
                 x = (d * tg2) / (tg1 + tg2);
-                _pt1.SetCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
+                _pt1 = _pt1.WithCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
                 _param1 = Math.Abs(x * tg1);
 
                 x = (d * tg2) / (tg2 - tg1);
-                _pt2.SetCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
+                _pt2 = _pt2.WithCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
                 _param2 = Math.Abs(x * tg1);
                 _dir1 = _dir2 = D;
                 _nbint = 2;
@@ -1345,7 +1345,7 @@ public class QuadQuadGeo
                     _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
                     _nbint = 1;
                     x = d * 0.5;
-                    _pt1.SetCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
+                    _pt1 = _pt1.WithCoord(P.X() + x * D.X(), P.Y() + x * D.Y(), P.Z() + x * D.Z());
                     _param1 = Math.Abs(x * tg1);
                     _dir1 = D;
                 }
@@ -1459,8 +1459,8 @@ public class QuadQuadGeo
             //
             halfPI = 0.5 * M_PI;
             aD1 = 1.0;
-            pa1.SetCoord(aD1, 0.0);
-            p0.SetCoord(0.0, 0.0);
+            pa1 = pa1.WithCoord(aD1, 0.0);
+            p0 = p0.WithCoord(0.0, 0.0);
             //
             ax1 = con1.Axis();
             ax2 = con2.Axis();
@@ -1481,10 +1481,10 @@ public class QuadQuadGeo
             tgBeta2 = Math.Abs(tgBeta2);
             //
             r1 = aD1 * tgBeta1;
-            p1.SetCoord(aD1, r1);
+            p1 = p1.WithCoord(aD1, r1);
             //
             // PA2
-            vAx2.SetCoord(cosGamma, sinGamma);
+            vAx2 = vAx2.WithCoord(cosGamma, sinGamma);
             Direction2D dAx2 = new(vAx2);
             Line2D lAx2 = new(p0, dAx2);
             _ = lAx2;
@@ -1522,20 +1522,20 @@ public class QuadQuadGeo
             //
             qApex1 = con1.Apex();
             d3Ax1 = ax1.Direction();
-            qa1.SetCoord(qApex1.X() + aD1 * d3Ax1.X(),
+            qa1 = qa1.WithCoord(qApex1.X() + aD1 * d3Ax1.X(),
                           qApex1.Y() + aD1 * d3Ax1.Y(),
                           qApex1.Z() + aD1 * d3Ax1.Z());
             //
             dx = d3Ax1.Dot(ax2.Direction());
             if (dx < 0.0)
             {
-                ax2.Reverse();
+                ax2 = ax2.Reversed();
             }
             d3Ax2 = ax2.Direction();
             //
             aD2 = aD1 * Math.Sqrt((1.0 + tgBeta1 * tgBeta1) / (1.0 + tgBeta2 * tgBeta2));
             //
-            qa2.SetCoord(qApex1.X() + aD2 * d3Ax2.X(),
+            qa2 = qa2.WithCoord(qApex1.X() + aD2 * d3Ax2.X(),
                           qApex1.Y() + aD2 * d3Ax2.Y(),
                           qApex1.Z() + aD2 * d3Ax2.Z());
             //
@@ -1784,7 +1784,7 @@ public class QuadQuadGeo
                         double x = eq.Value(1);
                         double dApexSphCenterpx = dApexSphCenter + x;
                         _nbint = 1;
-                        _pt1.SetCoord(conApex.X() + (dApexSphCenterpx) * conDir.X(),
+                        _pt1 = _pt1.WithCoord(conApex.X() + (dApexSphCenterpx) * conDir.X(),
                                      conApex.Y() + (dApexSphCenterpx) * conDir.Y(),
                                      conApex.Z() + (dApexSphCenterpx) * conDir.Z());
                         _param1 = tga * dApexSphCenterpx;
@@ -1801,7 +1801,7 @@ public class QuadQuadGeo
                         double x = eq.Value(2);
                         double dApexSphCenterpx = dApexSphCenter + x;
                         _nbint = 2;
-                        _pt2.SetCoord(conApex.X() + (dApexSphCenterpx) * conDir.X(),
+                        _pt2 = _pt2.WithCoord(conApex.X() + (dApexSphCenterpx) * conDir.X(),
                                      conApex.Y() + (dApexSphCenterpx) * conDir.Y(),
                                      conApex.Z() + (dApexSphCenterpx) * conDir.Z());
                         _param2 = tga * dApexSphCenterpx;
@@ -1893,7 +1893,7 @@ public class QuadQuadGeo
                     t2 = (-r1 + (dO1O2 - r2)) * 0.5;
                 }
 
-                _pt1.SetCoord(o1.X() + t2 * dir.X(), o1.Y() + t2 * dir.Y(), o1.Z() + t2 * dir.Z());
+                _pt1 = _pt1.WithCoord(o1.X() + t2 * dir.X(), o1.Y() + t2 * dir.Y(), o1.Z() + t2 * dir.Z());
             }
             else
             {
@@ -1930,7 +1930,7 @@ public class QuadQuadGeo
                         _dir1 = dir;
                         _param1 = beta;
                     }
-                    _pt1.SetCoord(o1.X() + alpha * dir.X(), o1.Y() + alpha * dir.Y(), o1.Z() + alpha * dir.Z());
+                    _pt1 = _pt1.WithCoord(o1.X() + alpha * dir.X(), o1.Y() + alpha * dir.Y(), o1.Z() + alpha * dir.Z());
 
                     _nbint = 1;
                 }
@@ -2000,7 +2000,7 @@ public class QuadQuadGeo
             //
             _typeres = global::Kerf.Engine.Intersection.ResultType.Circle;
             //
-            _pt1.SetCoord(x - dist * a, y - dist * b, z - dist * c);
+            _pt1 = _pt1.WithCoord(x - dist * a, y - dist * b, z - dist * c);
             dt = Math.Sqrt(Math.Abs(rMin * rMin - dist * dist));
             _param1 = rMaj + dt;
             _dir1 = torAx.Direction();
@@ -2029,8 +2029,8 @@ public class QuadQuadGeo
             _nbint = 2;
             //
             Direction3D dir = torAx.Direction() ^ _dir1;
-            _pt1.SetXYZ(torLoc.XYZ() + rMaj * dir.XYZ());
-            _pt2.SetXYZ(torLoc.XYZ() - rMaj * dir.XYZ());
+            _pt1 = _pt1.WithXYZ(torLoc.XYZ() + rMaj * dir.XYZ());
+            _pt2 = _pt2.WithXYZ(torLoc.XYZ() - rMaj * dir.XYZ());
         }
     }
 
@@ -2084,13 +2084,13 @@ public class QuadQuadGeo
         Xyz torLoc = torAx.Location().XYZ();
         //
         _dir1 = torAx.Direction();
-        _pt1.SetXYZ(torLoc + dist * _dir1.XYZ());
+        _pt1 = _pt1.WithXYZ(torLoc + dist * _dir1.XYZ());
         _param1 = rCyl;
         _nbint = 1;
         if ((dist > tol) && (rCyl > (rMaj - rMin)) && (rCyl < (rMaj + rMin)))
         {
             _dir2 = _dir1;
-            _pt2.SetXYZ(torLoc - dist * _dir2.XYZ());
+            _pt2 = _pt2.WithXYZ(torLoc - dist * _dir2.XYZ());
             _param2 = _param1;
             _nbint = 2;
         }
@@ -2141,7 +2141,7 @@ public class QuadQuadGeo
         angle = con.SemiAngle();
         torLoc = torAx.Location();
         //
-        pn.SetXYZ(torLoc.XYZ() + rMaj * tor.YAxis().Direction().XYZ());
+        pn = pn.WithXYZ(torLoc.XYZ() + rMaj * tor.YAxis().Direction().XYZ());
         Direction3D dn = new(new Vector3D(torLoc, pn));
         Axis3D axCLRot = new(conApex, dn);
         Line3D conL = lin.Rotated(axCLRot, angle);
@@ -2154,9 +2154,9 @@ public class QuadQuadGeo
         {
             if (i != 0)
             {
-                xDir.Reverse();
+                xDir = xDir.Reversed();
             }
-            pct.SetXYZ(torLoc.XYZ() + rMaj * xDir.XYZ());
+            pct = pct.WithXYZ(torLoc.XYZ() + rMaj * xDir.XYZ());
             //
             dist = conL.Distance(pct);
             if (dist > rMin + tol)
@@ -2171,16 +2171,16 @@ public class QuadQuadGeo
             //
             Point3D p = new();
             Xyz dVal = dt * dl.XYZ();
-            p.SetXYZ(ph + dVal);
+            p = p.WithXYZ(ph + dVal);
             param[_nbint] = lin.Distance(p);
-            pt[_nbint].SetXYZ(p.XYZ() - param[_nbint] * xDir.XYZ());
+            pt[_nbint] = pt[_nbint].WithXYZ(p.XYZ() - param[_nbint] * xDir.XYZ());
             dir[_nbint] = torAx.Direction();
             ++_nbint;
             if ((dist < rMin) && (dt > tol))
             {
-                p.SetXYZ(ph - dVal);
+                p = p.WithXYZ(ph - dVal);
                 param[_nbint] = lin.Distance(p);
-                pt[_nbint].SetXYZ(p.XYZ() - param[_nbint] * xDir.XYZ());
+                pt[_nbint] = pt[_nbint].WithXYZ(p.XYZ() - param[_nbint] * xDir.XYZ());
                 dir[_nbint] = dir[_nbint - 1];
                 ++_nbint;
             }
@@ -2260,7 +2260,7 @@ public class QuadQuadGeo
         Point3D torLoc = new();
         //
         Direction3D xDir = tor.XAxis().Direction();
-        torLoc.SetXYZ(torAx.Location().XYZ() + rMaj * xDir.XYZ());
+        torLoc = torLoc.WithXYZ(torAx.Location().XYZ() + rMaj * xDir.XYZ());
         rSph = sph.Radius();
         //
         Vector3D vec12 = new(torLoc, sphLoc);
@@ -2284,16 +2284,16 @@ public class QuadQuadGeo
         //
         Point3D p = new();
         Xyz dVal = beta * dc.XYZ();
-        p.SetXYZ(ph + dVal);
+        p = p.WithXYZ(ph + dVal);
         _param1 = lin.Distance(p);
-        _pt1.SetXYZ(p.XYZ() - _param1 * xDir.XYZ());
+        _pt1 = _pt1.WithXYZ(p.XYZ() - _param1 * xDir.XYZ());
         _dir1 = torAx.Direction();
         _nbint = 1;
         if ((dist < (rSph + rMin)) && (dist > Math.Abs(rSph - rMin)) && (dVal.Modulus() > tol))
         {
-            p.SetXYZ(ph - dVal);
+            p = p.WithXYZ(ph - dVal);
             _param2 = lin.Distance(p);
-            _pt2.SetXYZ(p.XYZ() - _param2 * xDir.XYZ());
+            _pt2 = _pt2.WithXYZ(p.XYZ() - _param2 * xDir.XYZ());
             _dir2 = _dir1;
             _nbint = 2;
         }
@@ -2348,8 +2348,8 @@ public class QuadQuadGeo
         Point3D p1 = new(), p2 = new();
         //
         Direction3D xDir1 = tor1.XAxis().Direction();
-        p1.SetXYZ(loc1.XYZ() + rMaj1 * xDir1.XYZ());
-        p2.SetXYZ(loc2.XYZ() + rMaj2 * xDir1.XYZ());
+        p1 = p1.WithXYZ(loc1.XYZ() + rMaj1 * xDir1.XYZ());
+        p2 = p2.WithXYZ(loc2.XYZ() + rMaj2 * xDir1.XYZ());
         //
         Vector3D v12 = new(p1, p2);
         dist = v12.Magnitude();
@@ -2372,16 +2372,16 @@ public class QuadQuadGeo
         //
         Point3D p = new();
         Xyz dVal = beta * dc.XYZ();
-        p.SetXYZ(ph + dVal);
+        p = p.WithXYZ(ph + dVal);
         _param1 = l1.Distance(p);
-        _pt1.SetXYZ(p.XYZ() - _param1 * xDir1.XYZ());
+        _pt1 = _pt1.WithXYZ(p.XYZ() - _param1 * xDir1.XYZ());
         _dir1 = ax1.Direction();
         _nbint = 1;
         if ((dist < (rMin1 + rMin2)) && (dist > Math.Abs(rMin1 - rMin2)) && dVal.Modulus() > tol)
         {
-            p.SetXYZ(ph - dVal);
+            p = p.WithXYZ(ph - dVal);
             _param2 = l1.Distance(p);
-            _pt2.SetXYZ(p.XYZ() - _param2 * xDir1.XYZ());
+            _pt2 = _pt2.WithXYZ(p.XYZ() - _param2 * xDir1.XYZ());
             _dir2 = _dir1;
             _nbint = 2;
         }
@@ -2662,7 +2662,7 @@ public class QuadQuadGeo
                     break;
                 }
             }
-            aDir.SetCoord(c[0], c[1], c[2]);
+            aDir = aDir.WithCoord(c[0], c[1], c[2]);
         }
     }
 }

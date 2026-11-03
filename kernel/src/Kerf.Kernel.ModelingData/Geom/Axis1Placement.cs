@@ -29,7 +29,7 @@ public class Axis1Placement : AxisPlacement
     protected internal override void SetDirection(in Direction3D v)
     {
         CheckMutable();
-        _axis.SetDirection(v);
+        _axis = _axis.WithDirection(v);
     }
 
     /// <summary>The axis as a <see cref="Axis3D"/>.</summary>
@@ -39,21 +39,21 @@ public class Axis1Placement : AxisPlacement
     internal void Reverse()
     {
         CheckMutable();
-        _axis.Reverse();
+        _axis = _axis.Reversed();
     }
 
     /// <summary>Applies T to this axis.</summary>
     protected internal override void Transform(in Transform3D t)
     {
         CheckMutable();
-        _axis.Transform(t);
+        _axis = _axis.Transformed(t);
     }
 
     /// <summary>A copy with the direction reversed.</summary>
     public Axis1Placement Reversed()
     {
         Axis3D a1 = _axis;
-        a1.Reverse();
+        a1 = a1.Reversed();
         Axis1Placement temp = new Axis1Placement(a1);
         return temp;
     }

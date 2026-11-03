@@ -37,11 +37,11 @@ public partial struct Frame2D : IEquatable<Frame2D>
         double value = vx.Crossed(vy);
         if (value >= 0.0)
         {
-            _vydir.SetCoord(-_vxdir.Y(), _vxdir.X());
+            _vydir = _vydir.WithCoord(-_vxdir.Y(), _vxdir.X());
         }
         else
         {
-            _vydir.SetCoord(_vxdir.Y(), -_vxdir.X());
+            _vydir = _vydir.WithCoord(_vxdir.Y(), -_vxdir.X());
         }
     }
 
@@ -53,11 +53,11 @@ public partial struct Frame2D : IEquatable<Frame2D>
         _vxdir = v;
         if (isSense)
         {
-            _vydir.SetCoord(-v.Y(), v.X());
+            _vydir = _vydir.WithCoord(-v.Y(), v.X());
         }
         else
         {
-            _vydir.SetCoord(v.Y(), -v.X());
+            _vydir = _vydir.WithCoord(v.Y(), -v.X());
         }
     }
 
@@ -69,11 +69,11 @@ public partial struct Frame2D : IEquatable<Frame2D>
         _vxdir = a.Direction();
         if (isSense)
         {
-            _vydir.SetCoord(-_vxdir.Y(), _vxdir.X());
+            _vydir = _vydir.WithCoord(-_vxdir.Y(), _vxdir.X());
         }
         else
         {
-            _vydir.SetCoord(_vxdir.Y(), -_vxdir.X());
+            _vydir = _vydir.WithCoord(_vxdir.Y(), -_vxdir.X());
         }
     }
 
@@ -93,11 +93,11 @@ public partial struct Frame2D : IEquatable<Frame2D>
         _vxdir = a1.Direction();
         if (isSign)
         {
-            _vydir.SetCoord(-_vxdir.Y(), _vxdir.X());
+            _vydir = _vydir.WithCoord(-_vxdir.Y(), _vxdir.X());
         }
         else
         {
-            _vydir.SetCoord(_vxdir.Y(), -_vxdir.X());
+            _vydir = _vydir.WithCoord(_vxdir.Y(), -_vxdir.X());
         }
     }
 
@@ -108,11 +108,11 @@ public partial struct Frame2D : IEquatable<Frame2D>
         _vydir = a1.Direction();
         if (isSign)
         {
-            _vxdir.SetCoord(_vydir.Y(), -_vydir.X());
+            _vxdir = _vxdir.WithCoord(_vydir.Y(), -_vydir.X());
         }
         else
         {
-            _vxdir.SetCoord(-_vydir.Y(), _vydir.X());
+            _vxdir = _vxdir.WithCoord(-_vydir.Y(), _vydir.X());
         }
     }
 
@@ -124,11 +124,11 @@ public partial struct Frame2D : IEquatable<Frame2D>
         _vxdir = vx;
         if (isSign)
         {
-            _vydir.SetCoord(-vx.Y(), vx.X());
+            _vydir = _vydir.WithCoord(-vx.Y(), vx.X());
         }
         else
         {
-            _vydir.SetCoord(vx.Y(), -vx.X());
+            _vydir = _vydir.WithCoord(vx.Y(), -vx.X());
         }
     }
 
@@ -138,60 +138,60 @@ public partial struct Frame2D : IEquatable<Frame2D>
         _vydir = vy;
         if (isSign)
         {
-            _vxdir.SetCoord(vy.Y(), -vy.X());
+            _vxdir = _vxdir.WithCoord(vy.Y(), -vy.X());
         }
         else
         {
-            _vxdir.SetCoord(-vy.Y(), vy.X());
+            _vxdir = _vxdir.WithCoord(-vy.Y(), vy.X());
         }
     }
 
     internal void Mirror(in Point2D p)
     {
         Point2D temp = _point;
-        temp.Mirror(p);
+        temp = temp.Mirrored(p);
         _point = temp;
-        _vxdir.Reverse();
-        _vydir.Reverse();
+        _vxdir = _vxdir.Reversed();
+        _vydir = _vydir.Reversed();
     }
 
     internal void Mirror(in Axis2D a1)
     {
-        _vydir.Mirror(a1);
-        _vxdir.Mirror(a1);
+        _vydir = _vydir.Mirrored(a1);
+        _vxdir = _vxdir.Mirrored(a1);
         Point2D temp = _point;
-        temp.Mirror(a1);
+        temp = temp.Mirrored(a1);
         _point = temp;
     }
 
     internal void Rotate(in Point2D p, double ang)
     {
         Point2D temp = _point;
-        temp.Rotate(p, ang);
+        temp = temp.Rotated(p, ang);
         _point = temp;
-        _vxdir.Rotate(ang);
-        _vydir.Rotate(ang);
+        _vxdir = _vxdir.Rotated(ang);
+        _vydir = _vydir.Rotated(ang);
     }
 
     internal void Scale(in Point2D p, double s)
     {
         Point2D temp = _point;
-        temp.Scale(p, s);
+        temp = temp.Scaled(p, s);
         _point = temp;
         if (s < 0.0)
         {
-            _vxdir.Reverse();
-            _vydir.Reverse();
+            _vxdir = _vxdir.Reversed();
+            _vydir = _vydir.Reversed();
         }
     }
 
     internal void Transform(in Transform2D t)
     {
         Point2D temp = _point;
-        temp.Transform(t);
+        temp = temp.Transformed(t);
         _point = temp;
-        _vxdir.Transform(t);
-        _vydir.Transform(t);
+        _vxdir = _vxdir.Transformed(t);
+        _vydir = _vydir.Transformed(t);
     }
 
     internal void Translate(in Vector2D v) => _point.Translate(v);

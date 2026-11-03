@@ -128,7 +128,7 @@ public class CylindricalSurface : ElementarySurface
                              out double d)
     {
         Transform3D t = new Transform3D();
-        t.SetTransformation(_pos);
+        t = t.WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);
@@ -237,7 +237,7 @@ public class CylindricalSurface : ElementarySurface
     {
         CheckMutable();
         _radius = _radius * Math.Abs(t.ScaleFactor());
-        _pos.Transform(t);
+        _pos = _pos.Transformed(t);
     }
 
     /// <summary>V scaled by |T.ScaleFactor()| (unless infinite); U unchanged.</summary>
@@ -254,7 +254,7 @@ public class CylindricalSurface : ElementarySurface
     {
         GeneralTransform2D t2 = new GeneralTransform2D();
         Axis2D axis = new Axis2D(Constants.Origin2d(), Constants.DX2d());
-        t2.SetAffinity(axis, Math.Abs(t.ScaleFactor()));
+        t2 = t2.WithAffinity(axis, Math.Abs(t.ScaleFactor()));
         return t2;
     }
 }

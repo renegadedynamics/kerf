@@ -325,7 +325,7 @@ public class BinarySurfaceSet
         CoordinateSystem ax3 = new(p, a, ax);
         if (ay.DotCross(a, ax) < 0)
         {
-            ax3.YReverse();
+            ax3 = ax3.YReversed();
         }
 
         a3 = ax3;

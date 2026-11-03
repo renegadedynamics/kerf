@@ -131,7 +131,7 @@ public static class GeomFill
                         double ang = Math.Atan(rad / v);
                         if (ang < 0.0)
                         {
-                            A1.ZReverse();
+                            A1 = A1.ZReversed();
                             v = -v;
                             ang = -ang;
                         }
@@ -416,16 +416,16 @@ public static class GeomFill
                         lambda = ((double)(i)) * alpha;
                         cosa = Math.Cos(lambda);
                         sina = Math.Sin(lambda);
-                        temp.SetLinearForm(cosa - 1, ns1, sina, np2);
-                        poles[jj].SetXYZ(pts1.XYZ() + rayon * temp.XYZ());
+                        temp = Vector3D.LinearForm(cosa - 1, ns1, sina, np2);
+                        poles[jj] = poles[jj].WithXYZ(pts1.XYZ() + rayon * temp.XYZ());
                         weights[jj] = 1;
                     }
 
                     lambda = 1.0 / (2.0 * cosas2 * cosas2);
                     for (i = 1, jj = low + 1; i <= nbSpan; i++, jj += 2)
                     {
-                        temp.SetXYZ(poles[jj - 1].XYZ() + poles[jj + 1].XYZ() - 2.0 * center.XYZ());
-                        poles[jj].SetXYZ(center.XYZ() + lambda * temp.XYZ());
+                        temp = temp.WithXYZ(poles[jj - 1].XYZ() + poles[jj + 1].XYZ() - 2.0 * center.XYZ());
+                        poles[jj] = poles[jj].WithXYZ(center.XYZ() + lambda * temp.XYZ());
                         weights[jj] = cosas2;
                     }
                     break;
@@ -553,13 +553,13 @@ public static class GeomFill
                         lambda = ((double)(i)) * alpha;
                         cosa = Math.Cos(lambda);
                         sina = Math.Sin(lambda);
-                        temp.SetLinearForm(cosa - 1, ns1, sina, np2);
-                        poles[jj].SetXYZ(pts1.XYZ() + rayon * temp.XYZ());
+                        temp = Vector3D.LinearForm(cosa - 1, ns1, sina, np2);
+                        poles[jj] = poles[jj].WithXYZ(pts1.XYZ() + rayon * temp.XYZ());
 
-                        dPoles[jj].SetLinearForm(dRayon, temp, tang1);
-                        temp.SetLinearForm(-sina, ns1, cosa, np2);
-                        temp.Multiply(((double)(i)) / ((double)(nbSpan)) * dAngle);
-                        temp.Add(((cosa - 1) * dn1w).Added(sina * dnp2));
+                        dPoles[jj] = Vector3D.LinearForm(dRayon, temp, tang1);
+                        temp = Vector3D.LinearForm(-sina, ns1, cosa, np2);
+                        temp = temp.Multiplied(((double)(i)) / ((double)(nbSpan)) * dAngle);
+                        temp = temp.Added(((cosa - 1) * dn1w).Added(sina * dnp2));
                         dPoles[jj] += rayon * temp;
                     }
 
@@ -568,9 +568,9 @@ public static class GeomFill
 
                     for (i = 1, jj = low; i <= nbSpan; i++, jj += 2)
                     {
-                        temp.SetXYZ(poles[jj].XYZ() + poles[jj + 2].XYZ() - 2.0 * center.XYZ());
-                        poles[jj + 1].SetXYZ(center.XYZ() + lambda * temp.XYZ());
-                        dPoles[jj + 1].SetLinearForm(dlambda,
+                        temp = temp.WithXYZ(poles[jj].XYZ() + poles[jj + 2].XYZ() - 2.0 * center.XYZ());
+                        poles[jj + 1] = poles[jj + 1].WithXYZ(center.XYZ() + lambda * temp.XYZ());
+                        dPoles[jj + 1] = Vector3D.LinearForm(dlambda,
                                                      temp,
                                                      1.0 - 2 * lambda,
                                                      dCenter,
@@ -762,21 +762,21 @@ public static class GeomFill
                         lambda = ((double)(i)) * alpha;
                         cosa = Math.Cos(lambda);
                         sina = Math.Sin(lambda);
-                        temp.SetLinearForm(cosa - 1, ns1, sina, np2);
-                        poles[jj].SetXYZ(pts1.XYZ() + rayon * temp.XYZ());
+                        temp = Vector3D.LinearForm(cosa - 1, ns1, sina, np2);
+                        poles[jj] = poles[jj].WithXYZ(pts1.XYZ() + rayon * temp.XYZ());
 
-                        dPoles[jj].SetLinearForm(dRayon, temp, tang1);
-                        dtemp.SetLinearForm(-sina, ns1, cosa, np2);
+                        dPoles[jj] = Vector3D.LinearForm(dRayon, temp, tang1);
+                        dtemp = Vector3D.LinearForm(-sina, ns1, cosa, np2);
                         aux = ((double)(i)) / ((double)(nbSpan));
-                        dtemp.Multiply(aux * dAngle);
-                        dtemp.Add(((cosa - 1) * dn1w).Added(sina * dnp2));
+                        dtemp = dtemp.Multiplied(aux * dAngle);
+                        dtemp = dtemp.Added(((cosa - 1) * dn1w).Added(sina * dnp2));
                         dPoles[jj] += rayon * dtemp;
 
-                        d2Poles[jj].SetLinearForm(d2Rayon, temp, 2 * dRayon, dtemp, dtang1);
-                        temp.SetLinearForm(cosa - 1, dn2w, sina, d2np2);
-                        dtemp.SetLinearForm(-sina, ns1, cosa, np2);
+                        d2Poles[jj] = Vector3D.LinearForm(d2Rayon, temp, 2 * dRayon, dtemp, dtang1);
+                        temp = Vector3D.LinearForm(cosa - 1, dn2w, sina, d2np2);
+                        dtemp = Vector3D.LinearForm(-sina, ns1, cosa, np2);
                         temp += (aux * aux * d2Angle) * dtemp;
-                        dtemp.SetLinearForm(-sina, dn1w + np2, cosa, dnp2, -cosa, ns1);
+                        dtemp = Vector3D.LinearForm(-sina, dn1w + np2, cosa, dnp2, -cosa, ns1);
                         temp += (aux * dAngle) * dtemp;
                         d2Poles[jj] += rayon * temp;
                     }
@@ -789,12 +789,12 @@ public static class GeomFill
                                / nbSpan;
                     for (i = 1, jj = low; i <= nbSpan; i++, jj += 2)
                     {
-                        temp.SetXYZ(poles[jj].XYZ() + poles[jj + 2].XYZ() - 2.0 * center.XYZ());
-                        poles[jj + 1].SetXYZ(center.XYZ() + lambda * temp.XYZ());
+                        temp = temp.WithXYZ(poles[jj].XYZ() + poles[jj + 2].XYZ() - 2.0 * center.XYZ());
+                        poles[jj + 1] = poles[jj + 1].WithXYZ(center.XYZ() + lambda * temp.XYZ());
 
-                        dtemp.SetXYZ(dPoles[jj].XYZ() + dPoles[jj + 2].XYZ() - 2.0 * dCenter.XYZ());
-                        dPoles[jj + 1].SetLinearForm(dlambda, temp, lambda, dtemp, dCenter);
-                        d2Poles[jj + 1].SetLinearForm(d2lambda,
+                        dtemp = dtemp.WithXYZ(dPoles[jj].XYZ() + dPoles[jj + 2].XYZ() - 2.0 * dCenter.XYZ());
+                        dPoles[jj + 1] = Vector3D.LinearForm(dlambda, temp, lambda, dtemp, dCenter);
+                        d2Poles[jj + 1] = Vector3D.LinearForm(d2lambda,
                                                       temp,
                                                       2 * dlambda,
                                                       dtemp,

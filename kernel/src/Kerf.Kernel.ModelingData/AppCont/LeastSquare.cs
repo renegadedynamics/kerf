@@ -528,13 +528,13 @@ public class LeastSquare
             MultiPoint mPole = new(_nbP, _nbP2d);
             for (j = 1; j <= _nbP; j++)
             {
-                pt.SetCoord(_poles[i, j2], _poles[i, j2 + 1], _poles[i, j2 + 2]);
+                pt = pt.WithCoord(_poles[i, j2], _poles[i, j2 + 1], _poles[i, j2 + 2]);
                 mPole.SetPoint(j, pt);
                 j2 += 3;
             }
             for (j = _nbP + 1; j <= _nbP + _nbP2d; j++)
             {
-                pt2d.SetCoord(_poles[i, j2], _poles[i, j2 + 1]);
+                pt2d = pt2d.WithCoord(_poles[i, j2], _poles[i, j2 + 1]);
                 mPole.SetPoint2d(j, pt2d);
                 j2 += 2;
             }

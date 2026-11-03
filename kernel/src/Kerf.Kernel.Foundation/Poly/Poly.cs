@@ -318,7 +318,7 @@ public static class Poly
             x = stream.Real();
             y = stream.Real();
             z = stream.Real();
-            nodes[i].SetCoord(x, y, z);
+            nodes[i] = nodes[i].WithCoord(x, y, z);
         }
 
         // read the UV points if necessary
@@ -329,7 +329,7 @@ public static class Poly
             {
                 x = stream.Real();
                 y = stream.Real();
-                uvNodes[i].SetCoord(x, y);
+                uvNodes[i] = uvNodes[i].WithCoord(x, y);
             }
         }
 
@@ -388,7 +388,7 @@ public static class Poly
             x = stream.Real();
             y = stream.Real();
             z = stream.Real();
-            nodes[i].SetCoord(x, y, z);
+            nodes[i] = nodes[i].WithCoord(x, y, z);
         }
 
         var param = new NCollection_Array1<double>(1, nbNodes);
@@ -440,7 +440,7 @@ public static class Poly
         {
             x = stream.Real();
             y = stream.Real();
-            nodes[i].SetCoord(x, y);
+            nodes[i] = nodes[i].WithCoord(x, y);
         }
 
         var p = new Polygon2D(nodes);

@@ -38,7 +38,7 @@ internal static class Geom2dOracle
                     Point2D aP = theOracle.Pnt2d();
                     double anAng = theOracle.Angle();
                     using var aNP = Oracle.ToNative(aP);
-                    aT.SetRotation(aP, anAng);
+                    aT = aT.WithRotation(aP, anAng);
                     aNT.SetRotation(aNP, anAng);
                     break;
                 }
@@ -47,7 +47,7 @@ internal static class Geom2dOracle
                     Point2D aP = theOracle.Pnt2d();
                     double aS = theOracle.Real(0.2, 5.0) * (theOracle.Bool() ? 1.0 : -1.0);
                     using var aNP = Oracle.ToNative(aP);
-                    aT.SetScale(aP, aS);
+                    aT = aT.WithScale(aP, aS);
                     aNT.SetScale(aNP, aS);
                     break;
                 }
@@ -55,7 +55,7 @@ internal static class Geom2dOracle
                 {
                     Point2D aP = theOracle.Pnt2d();
                     using var aNP = Oracle.ToNative(aP);
-                    aT.SetMirror(aP);
+                    aT = aT.WithMirror(aP);
                     aNT.SetMirror(aNP);
                     break;
                 }
@@ -63,7 +63,7 @@ internal static class Geom2dOracle
                 {
                     (N.gp_Ax2d aNA, Axis2D anA) = GeomOracleInputs.Ax2ds(theOracle);
                     using var aNAOwner = aNA;
-                    aT.SetMirror(anA);
+                    aT = aT.WithMirror(anA);
                     aNT.SetMirror(aNA);
                     break;
                 }
@@ -71,12 +71,12 @@ internal static class Geom2dOracle
                 {
                     Vector2D aV = theOracle.Vec2d();
                     using var aNV = Oracle.ToNative(aV);
-                    aT.SetTranslation(aV);
+                    aT = aT.WithTranslation(aV);
                     aNT.SetTranslation(aNV);
                     break;
                 }
             }
-            aPort.Multiply(aT);
+            aPort = aPort.Multiplied(aT);
             aNative.Multiply(aNT);
         }
         return (aPort, aNative);

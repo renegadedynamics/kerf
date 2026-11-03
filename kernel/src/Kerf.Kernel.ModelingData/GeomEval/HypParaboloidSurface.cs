@@ -379,7 +379,7 @@ public sealed class HypParaboloidSurface : ElementarySurface
         //   (X_L, Y_L, Z_L)^T = T * (x, y, z, 1)^T
         // where T is the transformation matrix from pos.
         Transform3D t = new Transform3D();
-        t.SetTransformation(_pos);
+        t = t.WithTransformation(_pos);
         double t11 = t.Value(1, 1);
         double t12 = t.Value(1, 2);
         double t13 = t.Value(1, 3);

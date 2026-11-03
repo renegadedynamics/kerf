@@ -315,7 +315,7 @@ public class MinimalVariation : Batten
             {
                 auxXY += hermiteCoef[kk, ii] * aDelta[kk];
             }
-            interpolation[ii].SetXY(auxXY);
+            interpolation[ii] = interpolation[ii].WithXY(auxXY);
         }
         // Conversion into BSpline of the same structure as the current batten.
         global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(interpolation, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), hermitePoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());
@@ -422,7 +422,7 @@ public class MinimalVariation : Batten
 
             if (_newConstraintOrder1 < 2)
             {
-                tangente.SetXY(_poles.Value(_poles.Lower() + 1).XY() - _poles.Value(_poles.Lower()).XY());
+                tangente = tangente.WithXY(_poles.Value(_poles.Lower() + 1).XY() - _poles.Value(_poles.Lower()).XY());
 
                 if (_newConstraintOrder1 == 0)
                 {
@@ -433,7 +433,7 @@ public class MinimalVariation : Batten
                     _oldAngle1 = alph1;
                 }
 
-                pseudoNormale.SetXY(_poles.Value(_poles.Lower()).XY()
+                pseudoNormale = pseudoNormale.WithXY(_poles.Value(_poles.Lower()).XY()
                                     - 2 * _poles.Value(_poles.Lower() + 1).XY()
                                     + _poles.Value(_poles.Lower() + 2).XY());
                 _oldCurvature1 = (((double)_degree - 1) / _degree) * (tangente.Normalized() ^ pseudoNormale)
@@ -447,7 +447,7 @@ public class MinimalVariation : Batten
 
             if (_newConstraintOrder2 < 2)
             {
-                tangente.SetXY(_poles.Value(_poles.Upper()).XY() - _poles.Value(_poles.Upper() - 1).XY());
+                tangente = tangente.WithXY(_poles.Value(_poles.Upper()).XY() - _poles.Value(_poles.Upper() - 1).XY());
                 if (_newConstraintOrder2 == 0)
                 {
                     _oldAngle2 = (-tangente).Angle(-p1P2);
@@ -456,7 +456,7 @@ public class MinimalVariation : Batten
                 {
                     _oldAngle2 = alph2;
                 }
-                pseudoNormale.SetXY(_poles.Value(_poles.Upper()).XY()
+                pseudoNormale = pseudoNormale.WithXY(_poles.Value(_poles.Upper()).XY()
                                     - 2 * _poles.Value(_poles.Upper() - 1).XY()
                                     + _poles.Value(_poles.Upper() - 2).XY());
                 _oldCurvature2 = (((double)_degree - 1) / _degree) * (tangente.Normalized() ^ pseudoNormale)
