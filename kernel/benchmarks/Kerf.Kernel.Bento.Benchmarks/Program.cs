@@ -4,7 +4,8 @@
 // (docs/cad/build123d-in-bento.md, section 9), the introductory examples of build123d written as Bento's formulas, here
 // through build123d.NET's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
-//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<build123d.NET>/ [-- passes]
+//   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<build123d.NET>/ [-- passes [copies]]
+// (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // and on native OCCT, for comparison: --project benchmarks/Kerf.Kernel.Bento.Benchmarks/Native (the same arguments).
 // The first pass is a workbook opening (it includes the JIT's work on OCCT.NET); the others are recalculations, of
 // which the median is shown.
@@ -127,6 +128,38 @@ for (int i = 0; i < examples.Length; i++)
 }
 
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{"total",-24} {firstSum,10:F1} {medianSum,10:F1}"));
+
+// Independent workbooks recalculating at once (unit 10I): every example, `copies` times, on the thread pool; the
+// wall time of a round (the median of 3) and the bytes it allocates, each result checked against the serial one.
+int copies = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : Environment.ProcessorCount;
+if (copies > 0)
+{
+    var rounds = new double[3];
+    long roundBytes = 0;
+    int mismatches = 0;
+    for (int round = 0; round < rounds.Length; round++)
+    {
+        long allocatedBefore = GC.GetTotalAllocatedBytes(true);
+        var clock = Stopwatch.StartNew();
+        Parallel.For(0, copies * examples.Length, k =>
+        {
+            int i = k % examples.Length;
+            Shape shape = examples[i].Build();
+            ShapeMesh mesh = shape.Triangulate();
+            string result = string.Create(CultureInfo.InvariantCulture,
+                $"volume {shape.Volume:F3}, {shape.Faces().Count} faces, {mesh.TriangleCount} triangles");
+            if (result != results[i])
+            {
+                Interlocked.Increment(ref mismatches);
+            }
+        });
+        rounds[round] = clock.Elapsed.TotalMilliseconds;
+        roundBytes = GC.GetTotalAllocatedBytes(true) - allocatedBefore;
+    }
+    Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+        $"parallel: {copies} copies of every example on {Environment.ProcessorCount} processors, median round {rounds.Order().ElementAt(1):F1} ms "
+        + $"({medianSum * copies:F1} ms of serial work), {roundBytes / 1048576.0:F1} MB a round, {mismatches} results differing from the serial run"));
+}
 Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
     $"GC: {GC.CollectionCount(0)}/{GC.CollectionCount(1)}/{GC.CollectionCount(2)} collections, pause {GC.GetTotalPauseDuration().TotalMilliseconds:F0} ms; JIT {System.Runtime.JitInfo.GetCompilationTime().TotalMilliseconds:F0} ms"));
 return 0;
