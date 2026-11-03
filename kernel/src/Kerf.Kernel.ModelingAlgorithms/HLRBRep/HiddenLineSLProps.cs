@@ -321,35 +321,26 @@ public class HiddenLineSLProps
     /// True if the point is umbilic (equal principal curvatures). Throws LProp_NotDefined if the curvatures aren't
     /// defined.
     /// </summary>
-    /// <remarks>
-    /// OCCT passes the curvatures by value before computing them, so the first call after a parameter change compares
-    /// the previous parameters' curvatures (0 and 0, so true, on a new object). Call <see cref="IsCurvatureDefined"/>
-    /// first.
-    /// </remarks>
     public bool IsUmbilic()
     {
-        // OCCT: LProp_SurfaceUtils::IsUmbilic(*this, myMaxCurv, myMinCurv) copies the fields before it calls
-        // IsCurvatureDefined(), which computes them
-        double theMaxCurv = _maxCurv;
-        double theMinCurv = _minCurv;
-        if (!IsCurvatureDefined())
-        {
-            throw new NotDefinedException();
-        }
-
-        return Math.Abs(theMaxCurv - theMinCurv) < Math.Abs(Epsilon(theMaxCurv));
+        // the curvatures are read once computed (OCCT read them before: decision 16711)
+        RequireCurvature();
+        return Math.Abs(_maxCurv - _minCurv) < Math.Abs(Epsilon(_maxCurv));
     }
 
     /// <summary>The maximum curvature; throws LProp_NotDefined if the curvatures aren't defined.</summary>
-    /// <remarks>
-    /// As in OCCT, the first call after a parameter change returns the previous parameters' value (0 on a new
-    /// object): call <see cref="IsCurvatureDefined"/> first.
-    /// </remarks>
-    public double MaxCurvature() => RequireCurvature(_maxCurv);
+    public double MaxCurvature()
+    {
+        RequireCurvature();
+        return _maxCurv;
+    }
 
     /// <summary>The minimum curvature; throws LProp_NotDefined if the curvatures aren't defined.</summary>
-    /// <remarks>As <see cref="MaxCurvature"/>, call <see cref="IsCurvatureDefined"/> first.</remarks>
-    public double MinCurvature() => RequireCurvature(_minCurv);
+    public double MinCurvature()
+    {
+        RequireCurvature();
+        return _minCurv;
+    }
 
     /// <summary>The directions of the maximum and minimum curvatures; throws LProp_NotDefined if not defined.</summary>
     public void CurvatureDirections(out Direction3D maxD, out Direction3D minD)
@@ -365,22 +356,27 @@ public class HiddenLineSLProps
     }
 
     /// <summary>The mean curvature; throws LProp_NotDefined if the curvatures aren't defined.</summary>
-    /// <remarks>As <see cref="MaxCurvature"/>, call <see cref="IsCurvatureDefined"/> first.</remarks>
-    public double MeanCurvature() => RequireCurvature(_meanCurv);
+    public double MeanCurvature()
+    {
+        RequireCurvature();
+        return _meanCurv;
+    }
 
     /// <summary>The Gaussian curvature; throws LProp_NotDefined if the curvatures aren't defined.</summary>
-    /// <remarks>As <see cref="MaxCurvature"/>, call <see cref="IsCurvatureDefined"/> first.</remarks>
-    public double GaussianCurvature() => RequireCurvature(_gausCurv);
+    public double GaussianCurvature()
+    {
+        RequireCurvature();
+        return _gausCurv;
+    }
 
-    // LProp_SurfaceUtils::RequireCurvature. OCCT: the value is passed by value, before IsCurvatureDefined() computes it
-    private double RequireCurvature(double value)
+    // LProp_SurfaceUtils::RequireCurvature: computes the curvatures if need be (OCCT took the value to return before
+    // computing it, so a first call after a parameter change returned the previous point's: decision 16711)
+    private void RequireCurvature()
     {
         if (!IsCurvatureDefined())
         {
             throw new NotDefinedException();
         }
-
-        return value;
     }
 
     // LProp_SurfaceUtils::EvalSurfDerivatives, with OCCT's DirectAccess

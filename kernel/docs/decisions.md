@@ -14982,3 +14982,11 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        The order is taken to that scale. Concatenation (GeomConvert, BRepAlgo) joins curves at their ends, never at an
        inner knot, so its results don't move. The pinned test asserts C2, C1 and C0 at a cubic's simple, double and
        triple knots.
+16711. **Curvatures asked before IsCurvatureDefined are the point's** (unit 3C's LProp_SurfaceUtils row).
+       MaxCurvature, MinCurvature, MeanCurvature, GaussianCurvature and IsUmbilic read the curvature fields before calling
+       IsCurvatureDefined, which computes them, so a first call returned the previous point's values (0 on a new object).
+       They compute first, in GeomLProp's SLProps, LProp's SLProps3d (BRepLProp's) and HLRBRep's copy. Test: a sphere's
+       and a cylinder's curvatures asked first (the pinned test rewritten). The SLProps oracle's first calls move to plan
+       3.2's third level: a difference is intended when the port's first value is the one it gives after
+       IsCurvatureDefined, which is then compared with native's; `Curvature_asked_first_returns_the_stale_value` keeps
+       native's stale value and asserts the port's.

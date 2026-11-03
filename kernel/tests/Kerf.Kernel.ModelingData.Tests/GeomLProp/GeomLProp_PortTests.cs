@@ -206,23 +206,29 @@ public class GeomLProp_PortTests
     }
 
     /// <summary>
-    /// OCCT passes the curvature fields by value before computing them (occt-issues.md): asked before
-    /// IsCurvatureDefined, MaxCurvature and the others return the previous value, 0 on a new object, and IsUmbilic
-    /// compares the previous values. The oracle tests confirm it against native OCCT.
+    /// The curvatures asked before IsCurvatureDefined are the point's: a sphere of radius 2 and a cylinder of radius 4
+    /// (OCCT passed the curvature fields by value before computing them, so it returned the previous point's, 0 on a
+    /// new object, and IsUmbilic compared those: occt-issues.md, decision 16711).
     /// </summary>
     [Fact]
-    public void Curvatures_asked_first_return_the_previous_value_as_in_OCCT()
+    public void Curvatures_asked_first_are_the_points()
     {
         var aSphere = new SphericalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 2.0);
         var aProps = new global::Kerf.Engine.Geometry.Properties.SLProps(aSphere, 0.4, 0.3, 2, 1e-7);
-        Assert.Equal(0.0, aProps.MaxCurvature());
+        Assert.Equal(-0.5, aProps.MaxCurvature(), 1e-15);
         Assert.Equal(-0.5, aProps.MaxCurvature(), 1e-15);
 
         var aCylinder = new CylindricalSurface(new CoordinateSystem(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)), 4.0);
         var aCylProps = new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
-        Assert.True(aCylProps.IsUmbilic()); // compares 0 and 0
         Assert.False(aCylProps.IsUmbilic());
-        aCylProps.SetParameters(1.0, 1.0);
-        Assert.Equal(-0.25, aCylProps.MinCurvature(), 1e-15); // the previous parameters' value, the same here
+        Assert.Equal(0.0, new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7).GaussianCurvature(), 1e-15);
+        Assert.Equal(-0.125, new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7).MeanCurvature(), 1e-15);
+
+        // a new point on the same object: the sphere's, not the cylinder's
+        var aMoved = new global::Kerf.Engine.Geometry.Properties.SLProps(aCylinder, 0.4, 0.3, 2, 1e-7);
+        Assert.Equal(-0.25, aMoved.MinCurvature(), 1e-15);
+        aMoved.SetSurface(aSphere);
+        aMoved.SetParameters(1.0, 0.5);
+        Assert.Equal(-0.5, aMoved.MinCurvature(), 1e-15);
     }
 }
