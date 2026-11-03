@@ -14750,3 +14750,10 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        and the sweep recordings stay bit-identical. On twelve random offsets of B-splines
        (`Offsets_of_BSplines_set_quickly`) the six turned ones took 1.3 to 4.7 s and kept 16,709 to 32,205 samples; now
        0.1 to 0.4 s and 6,910 to 9,782 (the test asserts fewer than 12,000, and orthonormal frames).
+16514. **Three rows reclassified to touch** (rows 1122, 1296, 1565). Each needs an algorithm's deeper rework, beyond
+       this batch, and none hangs, so no guard applies. MAT2d_Tool2d::BisecFusion would need a curve/point bisector
+       (Bisector_BisecPC) extended backwards, which trimming can't do; BRepOffsetAPI_MakeOffset's failure comes from
+       Bisector_BisecAna leaving its curve unset on some arc profiles (unit 5M's rows); Draft_Modification's 24 of 870
+       recorded failures are several null dereferences, each needing its case understood. The 2D offset reports "not
+       done" for the first two; the draft still throws a NullReferenceException. They stay listed, with this reason, for
+       the modules' rewrites.
