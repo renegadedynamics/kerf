@@ -13621,3 +13621,37 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        proposed for 10G and 10L (design-rules.md section 14), not written.
 1326. **design-rules.md replaces translation-rules.md for new and redesigned code**; translation-rules.md stays as the
        rules the port followed until phase 10, marked so.
+
+## Phase 10: unit 10K, OCCT's bugs triaged
+
+1327. **The triage of occt-issues.md's 1,154 rows** (phase10-plan.md 2.8; docs/occt-issues-triage.md). Each row gets
+       one class, in a new last column of every table:
+       - **fix**, when a user can see the bug through a public operation: wrong geometry, topology or a property;
+         a spurious failure (an exception or "not done") on valid input; a hang, or minutes where seconds are due; a
+         file written invalid, or data lost reading or writing one. The effect must be shown at a public operation
+         (the row's example, a recording, build123d.NET's use) or the class must be public API that callers use
+         directly (gp, the 2D constraint solvers, the properties, GeomAPI).
+       - **touch** (fix when touched), when the bug is real but its effect stays inside an algorithm or needs misuse
+         to reach: arrays not indexed from 1, a working object reused, invalid input (10F's errors), statics (10I),
+         copy at entry and in-place writes (10H), NCollection (10J), reports (10F). Intersection and Boolean internals
+         (IntPolyh, IntPatch, IntWalk, IntTools, BOPDS, the pave filler) are touch even where a result moves: a fix
+         there shifts Boolean results across the corpus with no shown benefit. A touch row becomes fix when a case
+         shows a user the effect.
+       - **leave**: cosmetic, documentation, dead or latent code, declared and never defined, uninitialised natively
+         but deterministic in the port, native non-determinism the port lacks, test scripts and Draw's own command
+         bugs (Draw-lite keeps OCCT's commands as the corpus harness, question 51).
+       - **settled**: the port already doesn't reproduce the bug (a hang fixed minimally, untrusted-input guards,
+         copies instead of in-place writes, port bugs fixed); the row stays as history.
+       The result: 134 fix (133 distinct; units 8D and 8E repeat 13 rows of 8C1 and 8A2), 572 touch, 313 leave, 135
+       settled. open-questions.md item 10's four examples are all fix.
+1328. **The fix rows go in eight batches, in order of user impact**, each a unit's worth: K1 Booleans, bounding
+       boxes and distances; K2 hangs and spurious failures; K3 wrong geometry from construction; K4 the 2D constraint
+       solvers build123d.NET's constrained lines and arcs use; K5 properties and approximation errors; K6 extrema and
+       projection; K7 curve and surface evaluation and conversion, gp; K8 data exchange. **A fix is recorded** in one
+       commit with its test, never mixed with renames: the `// OCCT` marker goes; the test that pinned OCCT's value
+       asserts the corrected behaviour against an independent reference, never a native value; each 10A recording it
+       moves drops to "geometrically equal" or "intended difference" citing the row and the decision; the row's
+       Triage cell becomes `fixed (decision N)`, the rest of the row unchanged; a build123d.NET workaround of the bug
+       goes in the same unit. The markers can't be matched to rows mechanically (porting notes also start
+       `// OCCT`): by class, 778 rows have a bug note in their class's files, 201 have none, and 126 bug-like markers
+       in 95 files belong to classes with no row; both lists are in the triage's appendices.

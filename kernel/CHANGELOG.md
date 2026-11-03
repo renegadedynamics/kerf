@@ -1656,3 +1656,11 @@ Phase 10 (part): conventions and tooling (unit 10C).
   rules the port followed.
 - A root `.editorconfig` with .NET's naming rules, inert until 10E turns them on folder by folder.
 - No change to the libraries: the pilot rename of gp and math stays on an unmerged branch.
+
+Phase 10 (part): OCCT's bugs triaged (unit 10K's first half).
+- Every bug in docs/occt-issues.md that the port reproduced to match native OCCT now has a verdict: 134 to fix, 572 to
+  fix when their code is next rewritten, 313 to leave, 135 already settled by the port. The ones to fix are those a
+  user would see: wrong Boolean or bounding-box results, hangs and failures in healing, sweeps, lofts, 2D offsets,
+  drafts and fillets, wrong 2D fillets and chamfers, the 2D tangent-circle solvers, wrong properties and continuity,
+  and STEP and STL files read or written wrong. docs/occt-issues-triage.md lists them in eight batches by impact,
+  with each bug's site and the tests that will change. No change to the libraries yet.

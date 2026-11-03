@@ -238,4 +238,5 @@ The numbers in brackets are the plan's (section 7).
 10. **Fixing OCCT's bugs.** [occt-issues.md](occt-issues.md) lists every bug found, all reproduced so results match
     native OCCT. You said to fix them later once consistent behaviour is proven; several (offset-curve D3,
     AdvApp2Var's error estimate, `GeomLProp::Continuity`, `Extrema_ExtCC` not clearing old solutions) affect results
-    that Bento users would see, and are good first candidates.
+    that Bento users would see, and are good first candidates. *Triaged in phase 10 (unit 10K): all four are
+    in [occt-issues-triage.md](occt-issues-triage.md)'s fix list.*
