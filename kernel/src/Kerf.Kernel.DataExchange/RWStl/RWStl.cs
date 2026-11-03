@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Stl;
 /// paths (OCCT's <c>OSD_Path</c> and <c>const char*</c>) open a file and call them. ASCII is written as bytes, LF line
 /// ends; OCCT's file writers open the file in text mode, which writes CR LF on Windows only (decision 1168). The
 /// <c>ReadFile</c> forms (OCCT's for files) also take streams: they recognise the format from the content and read
-/// multi-domain data, where <see cref="ReadStream"/> (as OCCT's) only tests for a leading "solid".
+/// multi-domain data; <see cref="ReadStream"/> recognises the format as they do, and reads one domain.
 /// </para>
 /// <para>
 /// The triangulations read are published frozen (copy one to change it). <c>ReadFile</c> returns what was read
@@ -265,9 +265,9 @@ public static class RWStl
     }
 
     /// <summary>
-    /// Reads STL from a stream, ASCII if it starts with "solid", binary otherwise (a binary file whose header starts
-    /// with "solid" fails: <see cref="ReadFile(Stream, double, ProgressRange, StlReadLimits)"/> recognises
-    /// it). One domain. Null on an error or a user break.
+    /// Reads STL from a stream, ASCII or binary as <see cref="ReadFile(Stream, double, ProgressRange, StlReadLimits)"/>
+    /// recognises it: ASCII if it is shorter than a binary file of one facet or its first 134 bytes are all at most
+    /// <c>~</c>. One domain. Null on an error or a user break.
     /// </summary>
     public static Triangulation? ReadStream(Stream stream, double mergeAngle = Math.PI / 2.0,
                                                  ProgressRange progress = default, StlReadLimits? limits = null)
@@ -287,13 +287,14 @@ public static class RWStl
             stream = copy.BaseStream;
         }
 
-        // Try to detect ASCII vs Binary format by peeking at the first few bytes
+        // ASCII or binary as RWStl_Reader::Read recognises them (OCCT tested for a leading "solid", which a binary
+        // header can start with too, and is case-sensitive; Kerf decision 16815)
         long originalPos = stream.Position;
-        Span<byte> header = stackalloc byte[5];
-        int nbRead = stream.ReadAtLeast(header, 5, throwOnEndOfStream: false);
+        Span<byte> header = stackalloc byte[134];
+        int nbRead = stream.ReadAtLeast(header, header.Length, throwOnEndOfStream: false);
         stream.Position = originalPos;
 
-        bool isAscii = nbRead == 5 && header.SequenceEqual("solid"u8);
+        bool isAscii = nbRead < header.Length || header.IndexOfAnyInRange((byte)('~' + 1), byte.MaxValue) < 0;
 
         if (isAscii)
         {

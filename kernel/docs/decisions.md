@@ -15055,3 +15055,21 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        it was a comment in CacheD2's weights branch.) `CacheD0ToD2_MatchD0ToD2` drops its exception for rational
        surfaces of degrees (1, 1): their cached second derivatives match BSplSLib::D2's. No recording moved:
        BSplSLib_Cache, which the evaluators use, never had the bug.
+16815. **STL read from a stream is recognised as from a file** (occt-issues.md, RWStl::ReadStream and
+       StlAPI_Reader::Read(stream)). The stream is ASCII if shorter than a binary file of one facet or if its first 134
+       bytes are all at most `~`, as RWStl_Reader::Read decides for files; OCCT took it for ASCII only if it began
+       "solid", so a binary header starting "solid " (common from other tools), and ASCII starting "SOLID" or with a
+       blank, failed. Tests (`RWStlFixedBugsTests`): a binary stream with such a header reads as the binary reader
+       reads it, through StlAPI too; ASCII in capitals reads. RWStlNativeTests' eight stream lines where native gave
+       NULL or FAIL (leadingblank.stl, upper.stl, and the binary files given a "solid " header) move to plan 3.2's
+       third level: the port's stream read equals native's file read of the same data.
+16816. **Every domain of a multi-domain ASCII STL is read** (occt-issues.md, RWStl_Reader::Read, multi-domain ASCII).
+       The line buffer reads ahead in 1 KB blocks; after a domain, the reader now puts the stream back where its lines
+       end (`ReadLineBuffer.UnreadCount`, an addition) before skipping the blanks to the next domain. OCCT went on from
+       the stream's position, past the buffered data or at its end, so files under a block lost the domains after the
+       first (twosolids.stl), and blanks skipped there could join lines at a block's end. Tests: a two-domain file
+       under 1 KB gives both domains, and three domains read with the blanks between them moved across the blocks' ends
+       (80 placements). RWStlNativeTests' five blocks of such files (twosolids.stl, as recorded, doubled, with blanks and
+       with CR LF; OMF6391_box.stl with blanks) move to plan 3.2's third level: native's domains are the port's first,
+       the whole-file reads hold all the domains' triangles, the stream readers are native's. The reader's return
+       value is OCCT's: false after an ASCII file's last short block, whether its domains were all read or not.
