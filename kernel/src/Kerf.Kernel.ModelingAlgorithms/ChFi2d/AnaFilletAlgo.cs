@@ -519,7 +519,7 @@ public sealed class AnaFilletAlgo
 
                 // Right neighbour.
                 _shrinke2.Nullify();
-                if (_e1.Orientation() == Forward) // OCCT: e1's orientation decides e2's ends
+                if (_e2.Orientation() == Forward) // e2's own orientation (OCCT used e1's: decision 16716)
                 {
                     p1 = pend;
                     p2 = ac2.Value(ac2.LastParameter());

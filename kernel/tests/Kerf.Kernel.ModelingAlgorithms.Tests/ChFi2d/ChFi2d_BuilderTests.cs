@@ -293,6 +293,28 @@ public class ChFi2d_BuilderTests
     }
 
     [Fact]
+    public void A_fillet_of_edges_of_different_orientations()
+    {
+        // the second edge runs from (10, 10) to the corner and is reversed in the wire: shrunk, it keeps (10, 10) and
+        // the fillet's end, (10, 2). OCCT chose its ends by the first edge's orientation, and kept the corner's part
+        // (occt-issues.md, unit 5R's ChFi2d_AnaFilletAlgo::Perform row; decision 16716).
+        Edge E1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();
+        Edge E2 = ShapeCasts.Edge(new MakeEdge(new Point3D(10, 10, 0), new Point3D(10, 0, 0)).Edge().Reversed());
+        CheckFillet(E1, E2, 2.0);
+        var anAlgo = new AnaFilletAlgo(E1, E2, new Plane3D(new Point3D(0, 0, 0), new Direction3D(0, 0, 1)));
+        Assert.True(anAlgo.Perform(2.0));
+        Edge M1 = new(), M2 = new();
+        anAlgo.Result(ref M1, ref M2);
+        var aC2 = new EdgeCurveAdaptor(M2);
+        Point3D[] anEnds = [aC2.Value(aC2.FirstParameter()), aC2.Value(aC2.LastParameter())];
+        Assert.Contains(anEnds, p => p.Distance(new Point3D(10, 10, 0)) < 1.0e-9);
+        Assert.Contains(anEnds, p => p.Distance(new Point3D(10, 2, 0)) < 1.0e-9);
+        var aC1 = new EdgeCurveAdaptor(M1);
+        Assert.True(aC1.Value(aC1.FirstParameter()).Distance(new Point3D(0, 0, 0)) < 1.0e-9);
+        Assert.True(aC1.Value(aC1.LastParameter()).Distance(new Point3D(8, 0, 0)) < 1.0e-9);
+    }
+
+    [Fact]
     public void FilletAPI_and_ChamferAPI_on_two_segments()
     {
         Edge E1 = new MakeEdge(new Point3D(0, 0, 0), new Point3D(10, 0, 0)).Edge();

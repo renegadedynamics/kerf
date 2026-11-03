@@ -1202,7 +1202,7 @@ the port differ from native in the oracle or the recordings (decision 856).
 | `ChFi2d_Builder_0.cxx`, `ModifyChamfer(Chamfer, E1, E2, D1, D2)` | `E1` unused | Only `E2` orients the new chamfer | touch |
 | `ChFi2d_AnaFilletAlgo.cxx`, `Init(wire)` | `e1` and `e2` are only set when null | A second Init (ChFi2d_FilletAPI reuses its algorithm) keeps the first wire's edges | touch |
 | `ChFi2d_AnaFilletAlgo.cxx`, `isCW` | The middle point is evaluated on the edge's curve without the edge's location, the ends with it | Wrong orientation for an arc edge with a location | fixed (decision 16715) |
-| `ChFi2d_AnaFilletAlgo.cxx`, `Perform` | The right neighbour's ends are chosen by `e1.Orientation()` | Wrong trimming when the two edges have different orientations | fix K3 |
+| `ChFi2d_AnaFilletAlgo.cxx`, `Perform` | The right neighbour's ends are chosen by `e1.Orientation()` | Wrong trimming when the two edges have different orientations | fixed (decision 16716) |
 | `ChFi2d_AnaFilletAlgo.cxx`, `ArcFilletSegment` | Compares a squared distance difference with `SquareConfusion`, where SegmentFilletArc uses `Confusion` | The arc's end point is found less often; the parameter path is used instead | touch |
 | `ChFi2d_FilletAlgo.cxx`, `IsRadiusIntersected` | `LowerDistanceParameter()` (a parameter) compared with `Precision::Confusion()` as if it were a distance | Intersections are judged on the edge by their parameter | touch |
 | `ChFi2d_FilletAlgo.cxx`, `FilletPoint::Copy`, `FilterPoints` | `Copy` doesn't copy `myNear`; FilterPoints removes `myV(b)` with `b` an index into `myNear` | Values and their near indices can fall out of step | touch |

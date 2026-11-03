@@ -15032,3 +15032,6 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        location, so it failed for any moved edge. The middle point is the adaptor's, and the shrunk edges are made on the
        placed curves. Test: a quarter arc moved by (10, 0, 0) and a segment, filleted: an arc of the radius tangent to
        both, the shrunk edges ending where it does; the same arc built in place gives the same.
+16716. **The right neighbour of a 2D fillet is trimmed by its own orientation** (unit 5R's ChFi2d_AnaFilletAlgo::Perform
+       row). The second edge's kept end was chosen by the first edge's orientation, so a reversed second edge kept the
+       corner's part. Test: a forward segment and a reversed one: the second is shrunk to (10, 2)–(10, 10).
