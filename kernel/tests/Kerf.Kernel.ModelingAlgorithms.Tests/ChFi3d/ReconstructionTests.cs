@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
@@ -99,12 +100,12 @@ public class ReconstructionTests
     {
         // box_edge: the two faces along the edge and the two at its ends are cut; the two others are left whole
         ReconComparison.Run aRun = Box();
-        NCollection_IndexedMap<Shape> aFaces = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aFaces = new(ShapeHasher.Instance);
         Exploration.MapShapes(aRun.Input, ShapeType.Face, aFaces);
-        NCollection_IndexedMap<Shape> aResultFaces = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aResultFaces = new(ShapeHasher.Instance);
         Exploration.MapShapes(aRun.Result, ShapeType.Face, aResultFaces);
         int aNbSplit = 0;
-        for (int i = 1; i <= aFaces.Extent(); i++)
+        for (int i = 0; i < aFaces.Count; i++)
         {
             Shape F = aFaces[i];
             if (aRun.Builder.IsSplit(F, In))

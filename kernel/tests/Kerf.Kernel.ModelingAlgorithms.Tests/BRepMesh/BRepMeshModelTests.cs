@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
@@ -233,15 +234,15 @@ public class BRepMeshModelTests
             Shape aShape = ReadDataOcc(aName);
             ModelModel aModel = Model(aShape, Params(0.05, isRelative: true), Stage.Built);
 
-            var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-            var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
+            var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
             foreach (Shape aF in Explore(aShape, ShapeType.Face))
             {
                 aFaces.Add(aF.Located(new Placement()));
             }
             Exploration.MapShapes(aShape, ShapeType.Edge, anEdges);
-            Assert.Equal(aFaces.Extent(), aModel.FacesNb());
-            Assert.Equal(anEdges.Extent(), aModel.EdgesNb());
+            Assert.Equal(aFaces.Count, aModel.FacesNb());
+            Assert.Equal(anEdges.Count, aModel.EdgesNb());
 
             for (int i = 0; i < aModel.FacesNb(); i++)
             {
@@ -643,11 +644,11 @@ public class BRepMeshModelTests
 
         // Each edge's polygons: its discrete pcurves' parameters, nodes that are its points, its deflection.
         int aPolygons = 0;
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Edge, anEdges);
-        for (int anEdgeIt = 1; anEdgeIt <= anEdges.Extent(); anEdgeIt++)
+        for (int anEdgeIt = 0; anEdgeIt < anEdges.Count; anEdgeIt++)
         {
-            Edge anEdge = ShapeCasts.Edge(anEdges.FindKey(anEdgeIt));
+            Edge anEdge = ShapeCasts.Edge(anEdges[anEdgeIt]);
             EdgeModel? aDEdge = null;
             for (int i = 0; i < aModel.EdgesNb() && aDEdge is null; i++)
             {

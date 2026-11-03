@@ -2,6 +2,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.TwoD;
@@ -1058,7 +1059,7 @@ public partial class PatchLineConstructor
                 }
 
                 // prepare list of common arcs for both ends of wline
-                NCollection_IndexedMap<Curve2DAdaptorBase> mapArcsV1 = new(ReferenceEqualityComparer.Instance),
+                IndexedSet<Curve2DAdaptorBase> mapArcsV1 = new(ReferenceEqualityComparer.Instance),
                                                           mapArcs = new(ReferenceEqualityComparer.Instance);
                 int i;
                 for (i = 1; i <= indicesV1.Length(); i++)
@@ -1097,9 +1098,9 @@ public partial class PatchLineConstructor
                 }
 
                 // for each common arc
-                for (int ia = 1; ia <= mapArcs.Extent(); ia++)
+                for (int ia = 0; ia < mapArcs.Count; ia++)
                 {
-                    Curve2DAdaptorBase arc = mapArcs.FindKey(ia);
+                    Curve2DAdaptorBase arc = mapArcs[ia];
                     // get end vertices of wline linked with this arc
                     int iv1 = 0, iv2 = 0;
                     for (i = 1; i <= indicesV1.Length() && iv1 == 0; i++)

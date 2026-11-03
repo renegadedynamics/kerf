@@ -206,7 +206,7 @@ public sealed class WireExplorer
         }
 
         // map of vertices to know if the wire is open
-        var vmap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var vmap = new IndexedSet<Shape>(ShapeHasher.Instance);
         //  map of infinite edges
         var infEmap = new HashSet<Shape>(ShapeHasher.Instance);
 
@@ -236,20 +236,20 @@ public sealed class WireExplorer
 
                 // add or remove in the vertex map
                 v1.Orientation(Forward);
-                int currsize = vmap.Extent(), ind = vmap.Add(v1);
+                int currsize = vmap.Count, ind = vmap.Add(v1) + 1;
                 if (currsize >= ind)
                 {
-                    vmap.RemoveKey(v1);
+                    vmap.Remove(v1);
                 }
             }
 
             if (!v2.IsNull)
             {
                 v2.Orientation(Reversed);
-                int currsize = vmap.Extent(), ind = vmap.Add(v2);
+                int currsize = vmap.Count, ind = vmap.Add(v2) + 1;
                 if (currsize >= ind)
                 {
-                    vmap.RemoveKey(v2);
+                    vmap.Remove(v2);
                 }
             }
 
@@ -288,14 +288,14 @@ public sealed class WireExplorer
         }
 
         // if vmap is not empty the wire is open, let us find the first vertex
-        if (!vmap.IsEmpty())
+        if (vmap.Count != 0)
         {
             int ind = 0;
-            for (ind = 1; ind <= vmap.Extent(); ++ind)
+            for (ind = 1; ind <= vmap.Count; ++ind)
             {
-                if (vmap[ind].Orientation() == Forward)
+                if (vmap[ind - 1].Orientation() == Forward)
                 {
-                    v1 = ShapeCasts.Vertex(vmap[ind]);
+                    v1 = ShapeCasts.Vertex(vmap[ind - 1]);
                     break;
                 }
             }

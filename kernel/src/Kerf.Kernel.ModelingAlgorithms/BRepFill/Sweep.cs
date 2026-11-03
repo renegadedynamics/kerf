@@ -3125,17 +3125,17 @@ internal sealed class Sweep
                 // Check
                 bool closed = true;
                 int iedge;
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(shell, ShapeType.Edge, ShapeType.Face, eFmap);
 
-                for (iedge = 1; iedge <= eFmap.Extent() && closed; iedge++)
+                for (iedge = 1; iedge <= eFmap.Count && closed; iedge++)
                 {
-                    Edge theEdge = ShapeCasts.Edge(eFmap.FindKey(iedge));
+                    Edge theEdge = ShapeCasts.Edge(eFmap.KeyAt(iedge - 1));
                     if (Tool.Degenerated(theEdge))
                     {
                         continue;
                     }
-                    closed = (eFmap[iedge].Extent() > 1);
+                    closed = (eFmap.ValueAt(iedge - 1).Extent() > 1);
                 }
                 shell.Closed(closed);
             }

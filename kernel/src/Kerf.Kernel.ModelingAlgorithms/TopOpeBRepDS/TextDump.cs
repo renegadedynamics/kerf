@@ -2,6 +2,7 @@
 // OCCT.NET addition (unit 7L): not a port of an OCCT class. tools/dsrec/main.cpp writes native OCCT's data structure in
 // the same format; keep the two in step.
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -91,7 +92,7 @@ internal static class TextDump
         private readonly Dictionary<DsInterference, int> _ids = new(ReferenceEqualityComparer.Instance);
         private readonly List<DsInterference> _order = [];
         private readonly HashSet<int> _written = [];
-        private readonly NCollection_IndexedMap<Shape>[] _inMaps = new NCollection_IndexedMap<Shape>[9];
+        private readonly IndexedSet<Shape>[] _inMaps = new IndexedSet<Shape>[9];
 
         internal Writer(DsDataStructure ds, in Shape input)
         {
@@ -99,7 +100,7 @@ internal static class TextDump
             StreamUtilities.Precision(_os, 17);
             for (int t = 0; t < 9; t++)
             {
-                _inMaps[t] = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                _inMaps[t] = new IndexedSet<Shape>(ShapeHasher.Instance);
                 if (t < 8 && !input.IsNull)
                 {
                     Exploration.MapShapes(input, (ShapeType)t, _inMaps[t]);
@@ -116,7 +117,7 @@ internal static class TextDump
                 return "null";
             }
             string s = TypeNames[(int)S.ShapeType()] + " " + OriNames[(int)S.Orientation()];
-            int k = (int)S.ShapeType() < 8 ? _inMaps[(int)S.ShapeType()].FindIndex(S) : 0;
+            int k = (int)S.ShapeType() < 8 ? (_inMaps[(int)S.ShapeType()].IndexOf(S) + 1) : 0;
             if (k > 0)
             {
                 return s + " in " + I(k);
@@ -346,15 +347,15 @@ internal static class TextDump
 
             // the new surfaces of faces: the input's faces in order, then the data structure's other faces
             List<Shape> faces = [];
-            NCollection_IndexedMap<Shape> inFaces = _inMaps[(int)ShapeType.Face];
-            for (int k = 1; k <= inFaces.Extent(); k++)
+            IndexedSet<Shape> inFaces = _inMaps[(int)ShapeType.Face];
+            for (int k = 0; k < inFaces.Count; k++)
             {
-                faces.Add(inFaces.FindKey(k));
+                faces.Add(inFaces[k]);
             }
             for (int i = 1; i <= nS; i++)
             {
                 Shape s = _ds.Shape(i, false);
-                if (s.ShapeType() == ShapeType.Face && inFaces.FindIndex(s) == 0)
+                if (s.ShapeType() == ShapeType.Face && !inFaces.Contains(s))
                 {
                     faces.Add(s);
                 }
@@ -402,7 +403,7 @@ internal static class TextDump
     private sealed class Reader
     {
         private readonly TextReader _is;
-        private readonly NCollection_IndexedMap<Shape>[] _inMaps = new NCollection_IndexedMap<Shape>[9];
+        private readonly IndexedSet<Shape>[] _inMaps = new IndexedSet<Shape>[9];
         private readonly Dictionary<int, DsInterference> _ids = [];
         private readonly DsHDataStructure _hds = new();
         private DsDataStructure DS => _hds.ChangeDS();
@@ -412,7 +413,7 @@ internal static class TextDump
             _is = theIS;
             for (int t = 0; t < 9; t++)
             {
-                _inMaps[t] = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                _inMaps[t] = new IndexedSet<Shape>(ShapeHasher.Instance);
                 if (t < 8 && !input.IsNull)
                 {
                     Exploration.MapShapes(input, (ShapeType)t, _inMaps[t]);
@@ -471,7 +472,7 @@ internal static class TextDump
                 throw new FormatException("TopOpeBRepDS dump: a shape not in the input cannot be rebuilt");
             }
             next = k + 4;
-            return _inMaps[type].FindKey(Int(t[k + 3])).Oriented(ori);
+            return _inMaps[type][Int(t[k + 3]) - 1].Oriented(ori);
         }
 
         private Curve3D? Curve3d(string tag)

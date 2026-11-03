@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -55,7 +56,7 @@ public static partial class AlgoTools
                                            ShapeType connectionType,
                                            ShapeType elementType,
                                            NCollection_List<NCollection_List<Shape>> lcb,
-                                           NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> connectionMap)
+                                           IndexedMap<Shape, NCollection_List<Shape>> connectionMap)
     {
         // Map shapes to find connected elements
         Exploration.MapShapesAndAncestors(s, connectionType, elementType, connectionMap);
@@ -83,7 +84,7 @@ public static partial class AlgoTools
                 for (; expSS.More(); expSS.Next())
                 {
                     Shape subS = expSS.Current();
-                    NCollection_List<Shape> ls = connectionMap.FindFromKey(subS);
+                    NCollection_List<Shape> ls = connectionMap.GetValue(subS);
                     NCollection_List<Shape>.Iterator itLS = new(ls);
                     for (; itLS.More(); itLS.Next())
                     {
@@ -110,7 +111,7 @@ public static partial class AlgoTools
                                            NCollection_List<Shape> lcb)
     {
         NCollection_List<NCollection_List<Shape>> lBlocks = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> cMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> cMap = new(ShapeHasher.Instance);
         MakeConnexityBlocks(s, connectionType, elementType, lBlocks, cMap);
 
         // Make compound from each block
@@ -162,7 +163,7 @@ public static partial class AlgoTools
         }
 
         NCollection_List<NCollection_List<Shape>> aLCB = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> cMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> cMap = new(ShapeHasher.Instance);
         MakeConnexityBlocks(cStart, connectionType, elementType, aLCB, cMap);
 
         // Save the blocks and check their regularity
@@ -194,7 +195,7 @@ public static partial class AlgoTools
                         // Check if there are no multi-connected shapes
                         for (Explorer ex = new(s, connectionType); ex.More() && bRegular; ex.Next())
                         {
-                            bRegular = (cMap.FindFromKey(ex.Current()).Extent() == 2);
+                            bRegular = (cMap.GetValue(ex.Current()).Extent() == 2);
                         }
                     }
                 }
@@ -210,10 +211,10 @@ public static partial class AlgoTools
     public static void OrientEdgesOnWire(ref Shape wire)
     {
         // make vertex-edges connexity map
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(wire, ShapeType.Vertex, ShapeType.Edge, veMap);
         //
-        if (veMap.IsEmpty())
+        if (veMap.Count == 0)
         {
             return;
         }
@@ -252,7 +253,7 @@ public static partial class AlgoTools
                 //
                 for (; ; )
                 {
-                    NCollection_List<Shape> le = veMap.FindFromKey(vc);
+                    NCollection_List<Shape> le = veMap.GetValue(vc);
                     if (le.Extent() != 2)
                     {
                         // free vertex or multi-connexity, go to the next edge
@@ -314,24 +315,24 @@ public static partial class AlgoTools
         Orientation orE1, orE2;
         Face f1x, f2x;
         Shape shellNew = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> processedFaces = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> processedFaces = new(ShapeHasher.Instance);
         BrepBuilder bb = new();
         //
         MakeContainer(ShapeType.Shell, ref shellNew);
         //
         Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, efMap);
-        nbE = efMap.Extent();
+        nbE = efMap.Count;
         //
         // One seam edge  in aEFMap contains  2 equivalent faces.
         for (i = 1; i <= nbE; ++i)
         {
-            NCollection_List<Shape> lf = efMap.ChangeFromIndex(i);
+            NCollection_List<Shape> lf = efMap.ValueAt(i - 1);
             nbF = lf.Extent();
             if (nbF > 1)
             {
                 NCollection_List<Shape> lfTmp = new();
-                NCollection_IndexedMap<Shape> fm = new(ShapeHasher.Instance);
+                IndexedSet<Shape> fm = new(ShapeHasher.Instance);
                 //
                 NCollection_List<Shape>.Iterator it = new(lf);
                 for (; it.More(); it.Next())
@@ -351,13 +352,13 @@ public static partial class AlgoTools
         // Do
         for (i = 1; i <= nbE; ++i)
         {
-            Edge e = ShapeCasts.Edge(efMap.FindKey(i));
+            Edge e = ShapeCasts.Edge(efMap.KeyAt(i - 1));
             if (Tool.Degenerated(e))
             {
                 continue;
             }
             //
-            NCollection_List<Shape> lf = efMap.FindFromIndex(i);
+            NCollection_List<Shape> lf = efMap.ValueAt(i - 1);
             nbF = lf.Extent();
             if (nbF != 2)
             {
@@ -385,15 +386,15 @@ public static partial class AlgoTools
             f1x = ShapeCasts.Face(f1);
             if (bIsProcessed1)
             {
-                j = processedFaces.FindIndex(f1);
-                f1x = ShapeCasts.Face(processedFaces.FindKey(j));
+                j = processedFaces.IndexOf(f1) + 1;
+                f1x = ShapeCasts.Face(processedFaces[j - 1]);
             }
             //
             f2x = ShapeCasts.Face(f2);
             if (bIsProcessed2)
             {
-                j = processedFaces.FindIndex(f2);
-                f2x = ShapeCasts.Face(processedFaces.FindKey(j));
+                j = processedFaces.IndexOf(f2) + 1;
+                f2x = ShapeCasts.Face(processedFaces[j - 1]);
             }
             //
             orE1 = Orientation(e, f1x);
@@ -428,13 +429,13 @@ public static partial class AlgoTools
         //
         for (i = 1; i <= nbE; ++i)
         {
-            Edge e = ShapeCasts.Edge(efMap.FindKey(i));
+            Edge e = ShapeCasts.Edge(efMap.KeyAt(i - 1));
             if (Tool.Degenerated(e))
             {
                 continue;
             }
             //
-            NCollection_List<Shape> lf = efMap.FindFromIndex(i);
+            NCollection_List<Shape> lf = efMap.ValueAt(i - 1);
             nbF = lf.Extent();
             if (nbF != 2)
             {
@@ -477,17 +478,17 @@ public static partial class AlgoTools
     /// not in <paramref name="meAvoid"/>, and appends its faces to <paramref name="lcb"/>.
     /// </summary>
     public static void MakeConnexityBlock(NCollection_List<Shape> lfIn,
-                                          NCollection_IndexedMap<Shape> meAvoid,
+                                          IndexedSet<Shape> meAvoid,
                                           NCollection_List<Shape> lcb)
     {
         int nbF, nbAdd1, nbAdd, i;
         Explorer exp = new();
         NCollection_List<Shape>.Iterator it = new();
         //
-        NCollection_IndexedMap<Shape> mcb = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> mAdd = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> mAdd1 = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mcb = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mAdd = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mAdd1 = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
         //
         // 1. aMEF
         it.Initialize(lfIn);
@@ -504,10 +505,10 @@ public static partial class AlgoTools
         for (; ; )
         {
             mAdd1.Clear();
-            nbAdd = mAdd.Extent();
+            nbAdd = mAdd.Count;
             for (i = 1; i <= nbAdd; ++i)
             {
-                Shape f = mAdd[i];
+                Shape f = mAdd[i - 1];
                 //
                 // aMAdd1.Clear();
                 exp.Init(f, ShapeType.Edge);
@@ -519,7 +520,7 @@ public static partial class AlgoTools
                         continue;
                     }
                     //
-                    NCollection_List<Shape> lf = mef.FindFromKey(e);
+                    NCollection_List<Shape> lf = mef.GetValue(e);
                     it.Initialize(lf);
                     for (; it.More(); it.Next())
                     {
@@ -538,7 +539,7 @@ public static partial class AlgoTools
                 mcb.Add(f);
             } // for (i=1; i<=aNbAdd; ++i) {
             //
-            nbAdd1 = mAdd1.Extent();
+            nbAdd1 = mAdd1.Count;
             if (nbAdd1 == 0)
             {
                 break;
@@ -547,17 +548,17 @@ public static partial class AlgoTools
             mAdd.Clear();
             for (i = 1; i <= nbAdd1; ++i)
             {
-                Shape fAdd = mAdd1[i];
+                Shape fAdd = mAdd1[i - 1];
                 mAdd.Add(fAdd);
             }
             //
         } // while(1) {
 
         //
-        nbF = mcb.Extent();
+        nbF = mcb.Count;
         for (i = 1; i <= nbF; ++i)
         {
-            Shape f = mcb[i];
+            Shape f = mcb[i - 1];
             lcb.Append(f);
         }
     }
@@ -565,7 +566,7 @@ public static partial class AlgoTools
     /// <summary>
     /// The state of the shape relative to the solid, from one point of it: a vertex's point, an edge's intermediate
     /// point, a face's point (see the face form of <see cref="ComputeState(in Face, in Solid, double,
-    /// NCollection_IndexedMap{Shape}, IntersectionContext)"/>). UNKNOWN for other types.
+    /// IndexedSet{Shape}, IntersectionContext)"/>). UNKNOWN for other types.
     /// </summary>
     public static Containment ComputeStateByOnePoint(in Shape s, in Solid theRef, double tol,
                                                       IntersectionContext context)
@@ -583,7 +584,7 @@ public static partial class AlgoTools
                 break;
             case ShapeType.Face:
                 {
-                    NCollection_IndexedMap<Shape> bounds = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> bounds = new(ShapeHasher.Instance);
                     Exploration.MapShapes(theRef, ShapeType.Edge, bounds);
                     state = ComputeState(ShapeCasts.Face(s), theRef, tol, bounds, context);
                     break;
@@ -607,7 +608,7 @@ public static partial class AlgoTools
     /// <paramref name="bounds"/> (the solid's edges), else of a point inside the face.
     /// </summary>
     public static Containment ComputeState(in Face f, in Solid theRef, double tol,
-                                            NCollection_IndexedMap<Shape> bounds, IntersectionContext context)
+                                            IndexedSet<Shape> bounds, IntersectionContext context)
     {
         Containment state = Unknown;
 
@@ -744,7 +745,7 @@ public static partial class AlgoTools
     /// </summary>
     public static bool IsInternalFace(in Face face,
                                       in Solid solid,
-                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef,
+                                      IndexedMap<Shape, NCollection_List<Shape>> mef,
                                       double tol,
                                       IntersectionContext context)
     {
@@ -764,7 +765,7 @@ public static partial class AlgoTools
         for (; exp.More(); exp.Next())
         {
             Edge e = ShapeCasts.Edge(exp.Current());
-            if (!mef.Contains(e))
+            if (!mef.ContainsKey(e))
             {
                 continue;
             }
@@ -780,7 +781,7 @@ public static partial class AlgoTools
                 continue;
             }
             // aE
-            NCollection_List<Shape> lf = mef.ChangeFromKey(e);
+            NCollection_List<Shape> lf = mef.GetValue(e);
             int nbF = lf.Extent();
             if (nbF == 1)
             {
@@ -817,7 +818,7 @@ public static partial class AlgoTools
         // 2. Classify face using classifier
         //
         Containment state;
-        NCollection_IndexedMap<Shape> bounds = new(ShapeHasher.Instance);
+        IndexedSet<Shape> bounds = new(ShapeHasher.Instance);
         //
         Exploration.MapShapes(solid, ShapeType.Edge, bounds);
         //
@@ -2254,23 +2255,23 @@ public static partial class AlgoTools
         bool bRet;
         int i, nbE, nbF;
         Orientation orF;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
         //
         bRet = false;
         //
         Exploration.MapShapesAndAncestors(aSh, ShapeType.Edge, ShapeType.Face, mef);
         //
-        nbE = mef.Extent();
+        nbE = mef.Count;
         for (i = 1; i <= nbE; ++i)
         {
-            Edge e = ShapeCasts.Edge(mef.FindKey(i));
+            Edge e = ShapeCasts.Edge(mef.KeyAt(i - 1));
             if (Tool.Degenerated(e))
             {
                 continue;
             }
             //
             nbF = 0;
-            NCollection_List<Shape> lf = mef.FindFromIndex(i);
+            NCollection_List<Shape> lf = mef.ValueAt(i - 1);
             for (NCollection_List<Shape>.Iterator itLS = new(lf); itLS.More(); itLS.Next())
             {
                 Shape f = itLS.Value();

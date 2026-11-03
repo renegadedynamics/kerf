@@ -60,25 +60,25 @@ public sealed class LocalPipe
         // On enleve les faces generees par les edges de connexite du profile,
         // et on fusionne les plans si possible
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aProfile, ShapeType.Edge, ShapeType.Face, theEFMap);
         Explorer exp = new();
         NCollection_List<Shape>.Iterator it = new();
 
         NCollection_List<Shape> goodfaces = new();
 
-        for (int i = 1; i <= theEFMap.Extent(); i++)
+        for (int i = 0; i < theEFMap.Count; i++)
         {
-            Edge edgpr = ShapeCasts.Edge(theEFMap.FindKey(i));
+            Edge edgpr = ShapeCasts.Edge(theEFMap.KeyAt(i));
             _map[edgpr] = new NCollection_List<Shape>();
-            if (theEFMap[i].Extent() >= 2)
+            if (theEFMap.ValueAt(i).Extent() >= 2)
             {
                 // on ne prend pas les faces generees
             }
             else
             {
                 // on mappe les plans generes par cet edge (in the order they are generated: see the remarks)
-                NCollection_IndexedMap<Shape> mapFac = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mapFac = new(ShapeHasher.Instance);
                 for (exp.Init(aSpine, ShapeType.Edge); exp.More(); exp.Next())
                 {
                     Edge edgsp = ShapeCasts.Edge(exp.Current());
@@ -105,20 +105,20 @@ public sealed class LocalPipe
                 // Chercher les composantes connexes sur cet ensemble de faces., avec meme
                 // support geometrique
 
-                if (mapFac.Extent() <= 1)
+                if (mapFac.Count <= 1)
                 { // un seul plan. Rien a faire
-                    if (mapFac.Extent() == 1)
+                    if (mapFac.Count == 1)
                     {
-                        _map.GetValue(edgpr).Append(mapFac[1]);
-                        goodfaces.Append(mapFac[1]);
+                        _map.GetValue(edgpr).Append(mapFac[0]);
+                        goodfaces.Append(mapFac[0]);
                     }
                     continue;
                 }
 
-                while (mapFac.Extent() >= 2)
+                while (mapFac.Count >= 2)
                 {
                     NCollection_List<Shape> facFuse = new();
-                    Face faceRef = ShapeCasts.Face(mapFac[1]);
+                    Face faceRef = ShapeCasts.Face(mapFac[0]);
                     facFuse.Append(faceRef);
                     Surface p = Tool.Surface(faceRef)!;
                     if (p.GetType() == typeof(TrimmedSurface))
@@ -127,9 +127,9 @@ public sealed class LocalPipe
                     }
                     Plane3D plref = ((PlaneSurface)p).Pln();
 
-                    for (int itm = 2; itm <= mapFac.Extent(); itm++)
+                    for (int itm = 2; itm <= mapFac.Count; itm++)
                     {
-                        p = Tool.Surface(ShapeCasts.Face(mapFac[itm]))!;
+                        p = Tool.Surface(ShapeCasts.Face(mapFac[itm - 1]))!;
                         if (p.GetType() == typeof(TrimmedSurface))
                         {
                             p = ((TrimmedSurface)p).BasisSurface();
@@ -138,7 +138,7 @@ public sealed class LocalPipe
                         if (pl0.Axis().IsParallel(plref.Axis(), global::Kerf.Engine.Foundation.Precision.Angular())
                             && plref.Contains(pl0.Location(), global::Kerf.Engine.Foundation.Precision.Confusion()))
                         {
-                            facFuse.Append(mapFac[itm]);
+                            facFuse.Append(mapFac[itm - 1]);
                         }
                     }
 
@@ -164,13 +164,13 @@ public sealed class LocalPipe
 
                         // OCCT iterates this map (keyed by the edges' addresses) to build the fused face's wire: the
                         // order of its edges depends on the run natively; the port keeps them in the order they come
-                        NCollection_IndexedMap<Shape> mapEd = new(ShapeHasher.Instance);
+                        IndexedSet<Shape> mapEd = new(ShapeHasher.Instance);
                         for (exp.Init(faceRef.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
                         {
                             mapEd.Add(exp.Current());
                         }
 
-                        mapFac.RemoveKey(faceRef);
+                        mapFac.Remove(faceRef);
                         facFuse.RemoveFirst(); // on enleve FaceRef
                         bool faceToFuse = false;
                         bool moreFound;
@@ -222,14 +222,14 @@ public sealed class LocalPipe
                                 {
                                     if (mapEd.Contains(exp.Current()))
                                     {
-                                        mapEd.RemoveKey(exp.Current());
+                                        mapEd.Remove(exp.Current());
                                     }
                                     else
                                     {
                                         mapEd.Add(exp.Current());
                                     }
                                 }
-                                mapFac.RemoveKey(fac);
+                                mapFac.Remove(fac);
                                 facFuse.Remove(it);
                             }
                         } while (moreFound);
@@ -241,7 +241,7 @@ public sealed class LocalPipe
                             b.MakeFace(ref newFace, p, Tool.Tolerance(faceRef));
                             Wire newWire = new();
                             b.MakeWire(ref newWire);
-                            for (int itm2 = 1; itm2 <= mapEd.Extent(); itm2++)
+                            for (int itm2 = 0; itm2 < mapEd.Count; itm2++)
                             {
                                 b.Add(newWire, mapEd[itm2]);
                             }
@@ -254,7 +254,7 @@ public sealed class LocalPipe
                     }
                     if (facFuse.Extent() == 1)
                     {
-                        mapFac.RemoveKey(facFuse.First());
+                        mapFac.Remove(facFuse.First());
                         _map.GetValue(edgpr).Append(facFuse.First());
                         goodfaces.Append(facFuse.First());
                     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Engine.Topology.Tools;
@@ -71,12 +72,12 @@ public class BRepTools_ExactCopyTests
         // a corner of the box: its 3 edges and 3 faces change; the other 7 vertices, 9 edges and 3 faces are the box's
         (int Kept, int Changed) Count(ShapeType theType)
         {
-            var aMine = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-            var aTheirs = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aMine = new IndexedSet<Shape>(ShapeHasher.Instance);
+            var aTheirs = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aKept, theType, aMine);
             Exploration.MapShapes(aBox, theType, aTheirs);
             int aKeptNb = 0, aChangedNb = 0;
-            for (int i = 1; i <= aTheirs.Extent(); i++)
+            for (int i = 0; i < aTheirs.Count; i++)
             {
                 if (aMine.Contains(aTheirs[i]))
                 {

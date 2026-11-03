@@ -346,7 +346,7 @@ public class Message_LevelTests
         aReport.SetActiveMetric(MetricType_WallClock, true);
         aReport.SetActiveMetric(MetricType_MemHeapUsage, true);
         aReport.SetActiveMetric(MetricType_WallClock, true); // already active
-        Assert.Equal(2, aReport.ActiveMetrics().Extent());
+        Assert.Equal(2, aReport.ActiveMetrics().Count);
         global::Kerf.Engine.Foundation.Messenger aMessenger = new(new ReportTestPrinter());
         global::Kerf.Engine.Foundation.Message.SetDefaultReport(aReport);
         try
@@ -368,7 +368,7 @@ public class Message_LevelTests
             global::Kerf.Engine.Foundation.Message.SetDefaultReport(null);
         }
         aReport.ClearMetrics();
-        Assert.True(aReport.ActiveMetrics().IsEmpty());
+        Assert.True(aReport.ActiveMetrics().Count == 0);
     }
 }
 

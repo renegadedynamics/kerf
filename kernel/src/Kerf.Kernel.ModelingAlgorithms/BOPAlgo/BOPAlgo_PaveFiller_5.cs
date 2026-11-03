@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Api;
@@ -171,8 +172,8 @@ public partial class PaveFiller
         //-----------------------------------------------------scope f
         //
         NCollection_IntMap miefc = new(100);
-        NCollection_IndexedDataMap<Shape, CoupleOfPaveBlocks> mvcpb = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> mpbli = new();
+        IndexedMap<Shape, CoupleOfPaveBlocks> mvcpb = new(ShapeHasher.Instance);
+        IndexedMap<PaveBlock, NCollection_List<int>> mpbli = new();
         Dictionary<PaveBlock, Box> dmpbBox = new();
         //
         List<InterfEF> eFs = _ds!.InterfEF();
@@ -196,7 +197,7 @@ public partial class PaveFiller
             Box bbf = _ds.ShapeInfo(nF).Box();
             //
             FaceInfo fi = _ds.ChangeFaceInfo(nF);
-            NCollection_IndexedMap<PaveBlock> mpbf = fi.PaveBlocksOn();
+            IndexedSet<PaveBlock> mpbf = fi.PaveBlocksOn();
             //
             NCollection_IntMap mvIn = fi.VerticesIn();
             NCollection_IntMap mvOn = fi.VerticesOn();
@@ -741,7 +742,7 @@ public partial class PaveFiller
         // of edge/face which have the same vertices.
 
         // Collect all pave blocks
-        NCollection_IndexedMap<PaveBlock> mpb = new();
+        IndexedSet<PaveBlock> mpb = new();
         int nbS = _ds!.SourceShapeCount;
         for (int nE = 0; nE < nbS; ++nE)
         {
@@ -787,21 +788,21 @@ public partial class PaveFiller
     /// Intersects the pave blocks with the faces containing both their vertices, looking for edge/face common blocks
     /// only; <paramref name="addInterf"/> adds the interferences and makes the common blocks.
     /// </summary>
-    protected void ForceInterfEF(NCollection_IndexedMap<PaveBlock> mpb, ProgressRange range, bool addInterf)
+    protected void ForceInterfEF(IndexedSet<PaveBlock> mpb, ProgressRange range, bool addInterf)
     {
         // Split progress on preparation, intersection and post-treatment stages
         using var psOuter = new ProgressScope(range, null, 10);
-        if (mpb.IsEmpty())
+        if (mpb.Count == 0)
         {
             return;
         }
         // Fill the tree with bounding boxes of the pave blocks
         BoxTree bbTree = new();
 
-        NCollection_IndexedMap<PaveBlock> pbMap = new();
+        IndexedSet<PaveBlock> pbMap = new();
 
-        int nbPB = mpb.Extent();
-        for (int iPB = 1; iPB <= nbPB; ++iPB)
+        int nbPB = mpb.Count;
+        for (int iPB = 0; iPB < nbPB; ++iPB)
         {
             PaveBlock pb = mpb[iPB];
             if (!pb.HasShrunkData || !_ds!.IsValidShrunkData(pb))
@@ -819,7 +820,7 @@ public partial class PaveFiller
 
             pb.ShrunkData(out double f, out double l, out Box pbBox, out bool isSplit);
 
-            bbTree.Add(pbMap.Add(pb), global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(pbBox));
+            bbTree.Add(pbMap.Add(pb) + 1, global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(pbBox));
         }
 
         // Shake the tree
@@ -876,13 +877,13 @@ public partial class PaveFiller
             }
 
             // Pave Blocks of the face
-            NCollection_IndexedMap<PaveBlock>[] pMPBF = [fi.PaveBlocksOn(), fi.PaveBlocksIn(), fi.PaveBlocksSc()];
+            IndexedSet<PaveBlock>[] pMPBF = [fi.PaveBlocksOn(), fi.PaveBlocksIn(), fi.PaveBlocksSc()];
             for (int iM = 0; iM < 3; ++iM)
             {
-                int nb = pMPBF[iM].Extent();
+                int nb = pMPBF[iM].Count;
                 for (int iPB = 1; iPB <= nb; ++iPB)
                 {
-                    PaveBlock pb = pMPBF[iM].FindKey(iPB);
+                    PaveBlock pb = pMPBF[iM][iPB - 1];
                     mvf.Add(pb.Pave1().Index());
                     mvf.Add(pb.Pave2().Index());
                 }
@@ -898,7 +899,7 @@ public partial class PaveFiller
             NCollection_List<int>.Iterator itLIPB = new(lipb);
             for (; itLIPB.More(); itLIPB.Next())
             {
-                PaveBlock pb = pbMap[itLIPB.Value()];
+                PaveBlock pb = pbMap[itLIPB.Value() - 1];
                 if (pMPBF[0].Contains(pb) || pMPBF[1].Contains(pb) || pMPBF[2].Contains(pb))
                 {
                     continue;
@@ -1078,7 +1079,7 @@ public partial class PaveFiller
         // intersection type only.
 
         // Collect all pairs for common block creation
-        NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> mpbli = new();
+        IndexedMap<PaveBlock, NCollection_List<int>> mpbli = new();
         for (int i = 0; i < nbEFs; ++i)
         {
             if (UserBreak(psOuter))
@@ -1126,7 +1127,7 @@ public partial class PaveFiller
             }
         }
 
-        if (mpbli.Extent() != 0)
+        if (mpbli.Count != 0)
         {
             // Create new common blocks for coinciding pairs
             BuilderTools.PerformCommonBlocks(mpbli, _ds);

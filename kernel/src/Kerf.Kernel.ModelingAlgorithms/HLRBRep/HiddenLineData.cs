@@ -374,8 +374,8 @@ public class HiddenLineData : Transient
     private readonly int _nbVertices;
     private readonly int _nbEdges;
     private readonly int _nbFaces;
-    private readonly NCollection_IndexedMap<Shape> _eMap = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _fMap = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _eMap = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _fMap = new(ShapeHasher.Instance);
     private readonly NCollection_Array1<HiddenLineEdgeData> _eData;
     private readonly NCollection_Array1<HiddenLineFaceData> _fData;
     private readonly NCollection_Array1<int> _edgeIndices;
@@ -486,7 +486,7 @@ public class HiddenLineData : Transient
                 ed.VEnd(ed.VEnd() + dv);
             }
 
-            _eMap.Add(ds.EdgeMap().FindKey(iedge));
+            _eMap.Add(ds.EdgeMap()[iedge - 1]);
         }
 
         for (int iface = 1; iface <= n1face; iface++)
@@ -513,7 +513,7 @@ public class HiddenLineData : Transient
                 }
             }
 
-            _fMap.Add(ds.FaceMap().FindKey(iface));
+            _fMap.Add(ds.FaceMap()[iface - 1]);
         }
     }
 
@@ -874,9 +874,9 @@ public class HiddenLineData : Transient
 
     public int FaceCount => _nbFaces;
 
-    public NCollection_IndexedMap<Shape> EdgeMap() => _eMap;
+    public IndexedSet<Shape> EdgeMap() => _eMap;
 
-    public NCollection_IndexedMap<Shape> FaceMap() => _fMap;
+    public IndexedSet<Shape> FaceMap() => _fMap;
 
     /// <summary>Selects the edges e1 to e2 not all hidden whose boxes meet MinMaxTot, for the faces to hide.</summary>
     public void InitBoundSort(in EdgesBlock.MinMaxIndices minMaxTot, int e1, int e2)

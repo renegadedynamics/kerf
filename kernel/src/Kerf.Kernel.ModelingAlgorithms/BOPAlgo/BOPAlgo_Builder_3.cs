@@ -146,7 +146,7 @@ public partial class BooleanBuilder
         // Keep INTERNAL faces of the solids
         Dictionary<Shape, NCollection_List<Shape>> solidsIF = new(ShapeHasher.Instance);
         // Draft solids
-        NCollection_IndexedDataMap<Shape, Shape> draftSolid = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Shape> draftSolid = new(ShapeHasher.Instance);
 
         for (i = 0; i < nbS; ++i)
         {
@@ -183,7 +183,7 @@ public partial class BooleanBuilder
         }
 
         // Perform classification of the faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> inParts = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> inParts = new(ShapeHasher.Instance);
 
         BuilderTools.ClassifyFaces(lFaces,
                                     lSolids,
@@ -195,16 +195,16 @@ public partial class BooleanBuilder
                                     ps.Next());
 
         // Analyze the results of classification
-        int nbSol = draftSolid.Extent();
+        int nbSol = draftSolid.Count;
         for (i = 1; i <= nbSol; ++i)
         {
             if (UserBreak(ps))
             {
                 return;
             }
-            Solid solid = ShapeCasts.Solid(draftSolid.FindKey(i));
-            Solid sDraft = ShapeCasts.Solid(draftSolid[i]);
-            NCollection_List<Shape> lInFaces = inParts.FindFromKey(sDraft);
+            Solid solid = ShapeCasts.Solid(draftSolid.KeyAt(i - 1));
+            Solid sDraft = ShapeCasts.Solid(draftSolid.ValueAt(i - 1));
+            NCollection_List<Shape> lInFaces = inParts.GetValue(sDraft);
             NCollection_List<Shape> lInternal = solidsIF.GetValue(sDraft);
 
             int nbIN = lInFaces.Extent();
@@ -361,7 +361,7 @@ public partial class BooleanBuilder
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives
         // the stored key back from its index, and the map is never iterated
-        NCollection_IndexedMap<ToolSet> mst = new();
+        IndexedSet<ToolSet> mst = new();
         List<SplitSolid> vbs = new();
         //
         using var psOuter = new ProgressScope(range, null, 10);
@@ -399,7 +399,7 @@ public partial class BooleanBuilder
         //
         // Build temporary map of solids images to avoid rebuilding
         // of the solids without internal faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> solidsIm = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> solidsIm = new(ShapeHasher.Instance);
         // 1. Build solids for interfered source solids
         for (i = 0; i < nbS; ++i)
         {
@@ -419,7 +419,7 @@ public partial class BooleanBuilder
             Shape sd = draftSolids.GetValue(s);
             if (!_inParts.TryGetValue(s, out NCollection_List<Shape>? pLFIN) || pLFIN.IsEmpty())
             {
-                solidsIm[solidsIm.Add(s, new NCollection_List<Shape>())].Append(sd);
+                solidsIm.ValueAt(solidsIm.Add(s, new NCollection_List<Shape>())).Append(sd);
                 continue;
             }
 
@@ -512,11 +512,11 @@ public partial class BooleanBuilder
         }
         //
         // Add new solids to images map
-        nbBS = solidsIm.Extent();
+        nbBS = solidsIm.Count;
         for (k = 1; k <= nbBS; ++k)
         {
-            Shape s = solidsIm.FindKey(k);
-            NCollection_List<Shape> lsr = solidsIm[k];
+            Shape s = solidsIm.KeyAt(k - 1);
+            NCollection_List<Shape> lsr = solidsIm.ValueAt(k - 1);
             //
             if (!_images.ContainsKey(s))
             {
@@ -532,7 +532,7 @@ public partial class BooleanBuilder
                     //
                     bFlagSD = mst.Contains(st);
                     //
-                    ToolSet sTx = mst.FindKey(mst.Add(st)); // OCCT: aMST.Added(aST)
+                    ToolSet sTx = mst[mst.Add(st)]; // OCCT: aMST.Added(aST)
                     Shape sx = sTx.Shape();
                     pLSx.Append(sx);
                     //
@@ -562,9 +562,9 @@ public partial class BooleanBuilder
         NCollection_List<Shape>.Iterator it = new(), it1 = new();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mSx = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> mx = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> msi = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mSx = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mx = new(ShapeHasher.Instance);
+        IndexedSet<Shape> msi = new(ShapeHasher.Instance);
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
         HashSet<Shape> msOr = new(ShapeHasher.Instance);
         NCollection_List<Shape> lSd = new();
@@ -665,10 +665,10 @@ public partial class BooleanBuilder
             mx.Clear();
             OwnInternalShapes(s, mx);
             //
-            nbSx = mx.Extent();
+            nbSx = mx.Count;
             for (j = 1; j <= nbSx; ++j)
             {
-                Shape aSi = mx[j];
+                Shape aSi = mx[j - 1];
                 if (_images.ContainsKey(aSi))
                 {
                     NCollection_List<Shape> lSp = _images.GetValue(aSi);
@@ -717,13 +717,13 @@ public partial class BooleanBuilder
         //
         // 3. Some shapes of aMSI can be already tied with faces of
         //    split solids
-        nbSI = msi.Extent();
+        nbSI = msi.Count;
         for (i = 1; i <= nbSI; ++i)
         {
-            Shape si = msi[i];
-            if (mSx.Contains(si))
+            Shape si = msi[i - 1];
+            if (mSx.ContainsKey(si))
             {
-                NCollection_List<Shape> lSx = mSx.FindFromKey(si);
+                NCollection_List<Shape> lSx = mSx.GetValue(si);
                 nbSx = lSx.Extent();
                 if (nbSx == 0)
                 {
@@ -816,7 +816,7 @@ public partial class BooleanBuilder
     }
 
     // The own internal parts (all but the shells) of the shape.
-    private static void OwnInternalShapes(in Shape s, NCollection_IndexedMap<Shape> mx)
+    private static void OwnInternalShapes(in Shape s, IndexedSet<Shape> mx)
     {
         Iterator it = new();
         //

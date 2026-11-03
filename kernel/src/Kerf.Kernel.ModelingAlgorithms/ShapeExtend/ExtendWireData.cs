@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
@@ -178,7 +179,7 @@ public class ExtendWireData : Transient
         _seamF = _seamR = 0;
         Shape s;
         int i, nb = EdgeCount;
-        var me = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var me = new IndexedSet<Shape>(ShapeHasher.Instance);
         int[] se = new int[nb + 1];
 
         //  deux passes : d abord on mappe les Edges REVERSED
@@ -188,7 +189,7 @@ public class ExtendWireData : Transient
             s = Edge(i);
             if (s.Orientation() == Reversed)
             {
-                int num = me.Add(s);
+                int num = me.Add(s) + 1;
                 se[num] = i;
             }
         }
@@ -203,7 +204,7 @@ public class ExtendWireData : Transient
                 continue;
             }
 
-            int num = me.FindIndex(s);
+            int num = me.IndexOf(s) + 1;
             if (num <= 0)
             {
                 continue;

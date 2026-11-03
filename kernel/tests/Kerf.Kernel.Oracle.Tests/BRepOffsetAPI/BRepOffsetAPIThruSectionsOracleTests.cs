@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
@@ -416,7 +417,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         // Generated and GeneratedFace, as indices in the result
         var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNRes, aNResMap);
-        NCollection_IndexedMap<Shape> aPResMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aPResMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(aPRes, aPResMap);
         var aNH = new List<string>();
         var aPH = new List<string>();
@@ -424,12 +425,12 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
         {
             var aNInMap = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(theNIn[k], aNInMap);
-            NCollection_IndexedMap<Shape> aPInMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> aPInMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(thePIn[k], aPInMap);
             for (int i = 1; i <= aNInMap.Extent(); i++)
             {
                 N.TopoDS_Shape aNS = aNInMap.FindKey(i);
-                Shape aPS = aPInMap.FindKey(i);
+                Shape aPS = aPInMap[i - 1];
                 if (aPS.ShapeType() != ShapeType.Edge && aPS.ShapeType() != ShapeType.Vertex)
                 {
                     continue;
@@ -445,7 +446,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 }
                 try
                 {
-                    aPG = string.Join(",", aP.Generated(aPS).Select(s => aPResMap.FindIndex(s)));
+                    aPG = string.Join(",", aP.Generated(aPS).Select(s => (aPResMap.IndexOf(s) + 1)));
                 }
                 catch (FailureException f)
                 {
@@ -456,7 +457,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
                 if (aPS.ShapeType() == ShapeType.Edge)
                 {
                     aNH.Add($"{k}.{i}f:{aNResMap.FindIndex(aN.GeneratedFace(aNS))}");
-                    aPH.Add($"{k}.{i}f:{aPResMap.FindIndex(aP.GeneratedFace(aPS))}");
+                    aPH.Add($"{k}.{i}f:{(aPResMap.IndexOf(aP.GeneratedFace(aPS)) + 1)}");
                 }
             }
         }

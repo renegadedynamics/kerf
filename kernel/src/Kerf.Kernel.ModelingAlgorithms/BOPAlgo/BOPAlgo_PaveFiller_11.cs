@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -35,7 +36,7 @@ public partial class PaveFiller
             IndexRange r = _ds.Range(i);
             //
             // Map of connections of interfering shapes
-            NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> mcsi =
+            IndexedMap<Shape, IndexedSet<Shape>> mcsi =
                 new(ShapeHasher.Instance);
             HashSet<CommonBlock> mcbFence = new();
             //
@@ -150,11 +151,11 @@ public partial class PaveFiller
                     //
                     for (int k = 0; k < 2; ++k)
                     {
-                        NCollection_IndexedMap<PaveBlock> mpbf = k == 0 ? fi.PaveBlocksIn() : fi.PaveBlocksSc();
-                        int iPB, nbPB = mpbf.Extent();
+                        IndexedSet<PaveBlock> mpbf = k == 0 ? fi.PaveBlocksIn() : fi.PaveBlocksSc();
+                        int iPB, nbPB = mpbf.Count;
                         for (iPB = 1; iPB <= nbPB; ++iPB)
                         {
-                            PaveBlock pb = mpbf[iPB];
+                            PaveBlock pb = mpbf[iPB - 1];
                             // OCCT's Standard_ASSERT(aPB->HasEdge(), ..., continue): in release builds it only continues.
                             if (!pb.HasEdge())
                             {
@@ -169,21 +170,21 @@ public partial class PaveFiller
             }
             //
             // Analyze connections
-            int nbC = mcsi.Extent();
+            int nbC = mcsi.Count;
             for (j = 1; j <= nbC; ++j)
             {
-                NCollection_IndexedMap<Shape> mcs = mcsi[j];
-                if (mcs.Extent() > 1)
+                IndexedSet<Shape> mcs = mcsi.ValueAt(j - 1);
+                if (mcs.Count > 1)
                 {
                     // Add acquired self-interference warning:
                     // Several faces from one argument contain the same vertex or edge
                     Compound wc = new();
                     bb.MakeCompound(ref wc);
                     //
-                    int iS, nbS = mcs.Extent();
+                    int iS, nbS = mcs.Count;
                     for (iS = 1; iS <= nbS; ++iS)
                     {
-                        Shape sx = mcs[iS];
+                        Shape sx = mcs[iS - 1];
                         bb.Add(wc, sx);
                     }
                     AddWarning(new AlertAcquiredSelfIntersection(wc));
@@ -193,13 +194,13 @@ public partial class PaveFiller
     }
 
     // OCCT's ChangeSeek-or-Add of the connection map, written once.
-    private static void AddConnection(NCollection_IndexedDataMap<Shape, NCollection_IndexedMap<Shape>> mcsi,
+    private static void AddConnection(IndexedMap<Shape, IndexedSet<Shape>> mcsi,
                                       in Shape key, in Shape shape)
     {
-        int index = mcsi.FindIndex(key);
-        NCollection_IndexedMap<Shape> pMSOr = index > 0
-            ? mcsi[index]
-            : mcsi[mcsi.Add(key, new NCollection_IndexedMap<Shape>(ShapeHasher.Instance))];
+        int index = mcsi.IndexOf(key) + 1;
+        IndexedSet<Shape> pMSOr = index > 0
+            ? mcsi.ValueAt(index - 1)
+            : mcsi.ValueAt(mcsi.Add(key, new IndexedSet<Shape>(ShapeHasher.Instance)));
         pMSOr.Add(shape);
     }
 }

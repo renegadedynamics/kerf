@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Upgrade;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -136,11 +137,11 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
             // the edge or vertex to keep, by its index in both sides' maps
             int aKeepIndex = 0;
             ShapeType aKeepType = anOptions.KeepAVertex ? ShapeType.Vertex : ShapeType.Edge;
-            var aPMapIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aPMapIn = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aPIn, aKeepType, aPMapIn);
-            if ((anOptions.KeepAnEdge || anOptions.KeepAVertex) && aPMapIn.Extent() > 0)
+            if ((anOptions.KeepAnEdge || anOptions.KeepAVertex) && aPMapIn.Count > 0)
             {
-                aKeepIndex = theOracle.Int(1, aPMapIn.Extent());
+                aKeepIndex = theOracle.Int(1, aPMapIn.Count);
             }
 
             // native
@@ -194,7 +195,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
                 }
                 if (aKeepIndex > 0)
                 {
-                    aPU.KeepShape(aPMapIn[aKeepIndex]);
+                    aPU.KeepShape(aPMapIn[aKeepIndex - 1]);
                 }
                 aPU.Build();
                 aPRes = aPU.Shape();
@@ -330,23 +331,23 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
         using var aNResMap = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theNIn, aNInMap);
         N.TopExp.MapShapes(theNRes, aNResMap);
-        var aPInMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aPResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aPInMap = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var aPResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(thePIn, aPInMap);
         Exploration.MapShapes(thePRes, aPResMap);
-        Assert.Equal(aNInMap.Extent(), aPInMap.Extent());
-        Assert.Equal(aNResMap.Extent(), aPResMap.Extent());
+        Assert.Equal(aNInMap.Extent(), aPInMap.Count);
+        Assert.Equal(aNResMap.Extent(), aPResMap.Count);
 
         var aHistory = new History();
         theKeptByNative = [];
         for (int i = 1; i <= aNInMap.Extent(); i++)
         {
             using N.TopoDS_Shape aNS = aNInMap.FindKey(i);
-            Shape aPS = aPInMap[i];
+            Shape aPS = aPInMap[i - 1];
             int aKeptIndex = aNResMap.FindIndex(aNS);
             if (aKeptIndex > 0)
             {
-                theKeptByNative[i] = aPResMap[aKeptIndex];
+                theKeptByNative[i] = aPResMap[aKeptIndex - 1];
             }
             if (!History.IsSupportedType(aPS))
             {
@@ -362,7 +363,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
                 {
                     int anIndex = aNResMap.FindIndex(aNM);
                     Assert.True(anIndex > 0, "a modified shape outside native's result");
-                    aHistory.AddModified(aPS, aPResMap[anIndex]);
+                    aHistory.AddModified(aPS, aPResMap[anIndex - 1]);
                 }
             }
             using (N.TopTools_ListOfShape aGenerated = theHistory.Generated(aNS))
@@ -371,7 +372,7 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
                 {
                     int anIndex = aNResMap.FindIndex(aNG);
                     Assert.True(anIndex > 0, "a generated shape outside native's result");
-                    aHistory.AddGenerated(aPS, aPResMap[anIndex]);
+                    aHistory.AddGenerated(aPS, aPResMap[anIndex - 1]);
                 }
             }
         }
@@ -381,16 +382,16 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
     // The port's history with its result's sub-shapes replaced by those of the result read back (by their indices).
     private static History PortHistory(History theHistory, Shape theIn, in Shape theRes, in Shape theResRead)
     {
-        var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aReadMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var aReadMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theRes, aResMap);
         Exploration.MapShapes(theResRead, aReadMap);
-        Assert.Equal(aResMap.Extent(), aReadMap.Extent());
+        Assert.Equal(aResMap.Count, aReadMap.Count);
         Shape Read(Shape theS)
         {
-            int anIndex = aResMap.FindIndex(theS);
+            int anIndex = aResMap.IndexOf(theS) + 1;
             Assert.True(anIndex > 0, "a history shape outside the port's result");
-            return aReadMap[anIndex];
+            return aReadMap[anIndex - 1];
         }
         return Remapped(theHistory, theIn, Read);
     }
@@ -421,9 +422,9 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
     private static IEnumerable<(Shape, bool, IReadOnlyList<Shape>, IReadOnlyList<Shape>)> Entries(History theHistory,
                                                                                                                   Shape theIn)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theIn, aMap);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             Shape aS = aMap[i];
             if (History.IsSupportedType(aS))
@@ -440,12 +441,12 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
     private static History WithoutInPlace(History theHistory, Shape theIn,
                                                     Dictionary<int, Shape> theKeptByNative)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theIn, aMap);
         var aHistory = new History();
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 1; i <= aMap.Count; i++)
         {
-            Shape aS = aMap[i];
+            Shape aS = aMap[i - 1];
             if (!History.IsSupportedType(aS))
             {
                 continue;
@@ -473,18 +474,18 @@ public class ShapeUpgradeUnifySameDomainOracleTests(ITestOutputHelper output)
     // The kept shapes, as native's result read back, moved onto the port's result read back (by index)
     private static Dictionary<int, Shape> ResultAsPort(Dictionary<int, Shape> theKept, in Shape theNRes, in Shape thePRes)
     {
-        var aNMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aPMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aNMap = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var aPMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theNRes, aNMap);
         Exploration.MapShapes(thePRes, aPMap);
         var aKept = new Dictionary<int, Shape>();
-        if (aNMap.Extent() != aPMap.Extent())
+        if (aNMap.Count != aPMap.Count)
         {
             return aKept;
         }
         foreach ((int i, Shape aS) in theKept)
         {
-            aKept[i] = aPMap[aNMap.FindIndex(aS)];
+            aKept[i] = aPMap[aNMap.IndexOf(aS)];
         }
         return aKept;
     }

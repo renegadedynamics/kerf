@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Features.Local;
@@ -194,9 +195,9 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         return aShape;
     }
 
-    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
+    private static IndexedSet<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
@@ -250,11 +251,11 @@ public class LocOpeNativeTests(ITestOutputHelper output)
         {
             return "NOTDONE";
         }
-        NCollection_IndexedMap<Shape> aFaces = Map(theShape, ShapeType.Face);
+        IndexedSet<Shape> aFaces = Map(theShape, ShapeType.Face);
         var aDesc = new StringBuilder();
-        for (int i = 1; i <= Math.Min(30, aFaces.Extent()); i++)
+        for (int i = 1; i <= Math.Min(30, aFaces.Count); i++)
         {
-            aDesc.Append(i > 1 ? "," : "").Append(aSpliter.DescendantShapes(aFaces[i]).Extent().ToString(CultureInfo.InvariantCulture));
+            aDesc.Append(i > 1 ? "," : "").Append(aSpliter.DescendantShapes(aFaces[i - 1]).Extent().ToString(CultureInfo.InvariantCulture));
         }
         return string.Create(CultureInfo.InvariantCulture,
                              $"{Rec(aSpliter.ResultingShape())} {aSpliter.DirectLeft().Extent()} {aSpliter.Left().Extent()} {SetHash(aSpliter.Left())} {(aDesc.Length == 0 ? "-" : aDesc.ToString())}");
@@ -276,15 +277,15 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             throw new InvalidOperationException("a result isn't frozen");
         }
         var aLines = new List<string>();
-        NCollection_IndexedMap<Shape> aMap = Map(theShape, ShapeType.Face);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        IndexedSet<Shape> aMap = Map(theShape, ShapeType.Face);
+        for (int i = 0; i < aMap.Count; i++)
         {
             var aProps = new Properties();
             MassPropertiesBuilder.SurfaceProperties(aMap[i], aProps);
             aLines.Add($"F {Q(aProps.Mass())} {Count(aMap[i], ShapeType.Edge).ToString(CultureInfo.InvariantCulture)}");
         }
         aMap = Map(theShape, ShapeType.Edge);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             Edge anE = ShapeCasts.Edge(aMap[i]);
             Exploration.Vertices(anE, out Vertex aV1, out Vertex aV2);
@@ -305,7 +306,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             aLines.Add($"E {Q(Tool.Tolerance(anE))} {anEnds[0]} {anEnds[1]}");
         }
         aMap = Map(theShape, ShapeType.Vertex);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             Vertex aV = ShapeCasts.Vertex(aMap[i]);
             Point3D aP = Tool.Pnt(aV);
@@ -357,9 +358,9 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             }
         }
 
-        NCollection_IndexedMap<Shape> aFMap = Map(S, ShapeType.Face), anEMap = Map(S, ShapeType.Edge);
-        int aNbF = Math.Min(8, aFMap.Extent());
-        int aNbE = Math.Min(12, anEMap.Extent());
+        IndexedSet<Shape> aFMap = Map(S, ShapeType.Face), anEMap = Map(S, ShapeType.Edge);
+        int aNbF = Math.Min(8, aFMap.Count);
+        int aNbE = Math.Min(12, anEMap.Count);
 
         add(Run("SPLITE", 0, () =>
         {
@@ -370,7 +371,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             var aSplit = new LocalSplitShape(S);
             for (int i = 1; i <= aNbE; i++)
             {
-                Edge anE = ShapeCasts.Edge(anEMap[i]);
+                Edge anE = ShapeCasts.Edge(anEMap[i - 1]);
                 if (Middle(anE, out double aPrm, out Point3D aP) && aSplit.CanSplit(anE))
                 {
                     aSplit.Add(new MakeVertex(aP).Vertex(), aPrm, anE);
@@ -379,14 +380,14 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             string aLine = Split(aSplit.DescendantShapes(S)) + " ";
             for (int i = 1; i <= aNbE; i++)
             {
-                aLine += (i > 1 ? "," : "") + aSplit.DescendantShapes(anEMap[i]).Extent().ToString(CultureInfo.InvariantCulture);
+                aLine += (i > 1 ? "," : "") + aSplit.DescendantShapes(anEMap[i - 1]).Extent().ToString(CultureInfo.InvariantCulture);
             }
             return aLine;
         }));
 
         for (int f = 1; f <= aNbF; f++)
         {
-            Face aF = ShapeCasts.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f - 1]);
             if (!IsPlanar(aF))
             {
                 continue;
@@ -459,7 +460,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            Face aF = ShapeCasts.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f - 1]);
             add(Run("SPLITTER", f, () =>
             {
                 Edge anE = IsoEdge(aF);
@@ -478,7 +479,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
             var anEdges = new NCollection_Sequence<Shape>();
             for (int f = 1; f <= Math.Min(4, aNbF); f++)
             {
-                Edge anE = IsoEdge(ShapeCasts.Face(aFMap[f]));
+                Edge anE = IsoEdge(ShapeCasts.Face(aFMap[f - 1]));
                 if (!anE.IsNull)
                 {
                     anEdges.Append(anE);
@@ -495,7 +496,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= Math.Min(6, aNbF); f++)
         {
-            Face aF = ShapeCasts.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f - 1]);
             add(Run("PRISM", f, () =>
             {
                 var aPrism = new LocalPrism(aF, new Vector3D(3, 4, 12));
@@ -548,7 +549,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            Face aF = ShapeCasts.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f - 1]);
             if (!IsPlanar(aF) || Count(aF, ShapeType.Edge) > 16)
             {
                 continue;
@@ -574,7 +575,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            Face aF = ShapeCasts.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f - 1]);
             if (!IsPlanar(aF))
             {
                 continue;
@@ -604,7 +605,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
 
         for (int f = 1; f <= aNbF; f++)
         {
-            Face aF = ShapeCasts.Face(aFMap[f]);
+            Face aF = ShapeCasts.Face(aFMap[f - 1]);
             add(Run("FIND", f, () =>
             {
                 var aFind = new FindEdges(aF, S);
@@ -612,7 +613,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 int aNb = 0;
                 for (aFind.InitIterator(); aFind.More(); aFind.Next(), aNb++)
                 {
-                    aRes.Append(CultureInfo.InvariantCulture, $" {anEMap.FindIndex(aFind.EdgeFrom())}:{anEMap.FindIndex(aFind.EdgeTo())}");
+                    aRes.Append(CultureInfo.InvariantCulture, $" {(anEMap.IndexOf(aFind.EdgeFrom()) + 1)}:{(anEMap.IndexOf(aFind.EdgeTo()) + 1)}");
                 }
                 return aNb.ToString(CultureInfo.InvariantCulture) + aRes;
             }));
@@ -623,7 +624,7 @@ public class LocOpeNativeTests(ITestOutputHelper output)
                 int aNb = 0;
                 for (aFind.Init(); aFind.More(); aFind.Next(), aNb++)
                 {
-                    aRes.Append(CultureInfo.InvariantCulture, $" {anEMap.FindIndex(aFind.Edge())}");
+                    aRes.Append(CultureInfo.InvariantCulture, $" {(anEMap.IndexOf(aFind.Edge()) + 1)}");
                 }
                 return aNb.ToString(CultureInfo.InvariantCulture) + aRes;
             }));

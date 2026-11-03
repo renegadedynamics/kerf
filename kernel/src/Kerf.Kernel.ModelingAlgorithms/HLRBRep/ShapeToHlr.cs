@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Engine.Topology;
@@ -37,11 +38,11 @@ public static class ShapeToHlr
         s.Fill(p, mst, nbIso);
         TopologyData topDS = s.DataStructure();
 
-        NCollection_IndexedMap<Shape> fm = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> em = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> verticesToEdges =
+        IndexedSet<Shape> fm = new(ShapeHasher.Instance);
+        IndexedSet<Shape> em = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> verticesToEdges =
             new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgesToFaces =
+        IndexedMap<Shape, NCollection_List<Shape>> edgesToFaces =
             new(ShapeHasher.Instance);
 
         Explorer exshell = new(), exface = new();
@@ -69,15 +70,15 @@ public static class ShapeToHlr
         Exploration.MapShapes(outLined, ShapeType.Edge, em);
 
         int i;
-        int nbEdge = em.Extent();
+        int nbEdge = em.Count;
 
         for (i = 1; i <= nbEdge; i++)
         { // vertices back to edges
-            Exploration.MapShapesAndAncestors(em.FindKey(i), ShapeType.Vertex, ShapeType.Edge, verticesToEdges);
+            Exploration.MapShapesAndAncestors(em[i - 1], ShapeType.Vertex, ShapeType.Edge, verticesToEdges);
         }
 
-        int nbVert = verticesToEdges.Extent();
-        int nbFace = fm.Extent();
+        int nbVert = verticesToEdges.Count;
+        int nbFace = fm.Count;
 
         Vertex vf, vl;
         NCollection_List<Shape>.Iterator itn = new();
@@ -97,22 +98,22 @@ public static class ShapeToHlr
 
         for (i = 1; i <= nbFace; i++)
         { // test of Double edges
-            Exploration.MapShapesAndAncestors(fm.FindKey(i), ShapeType.Edge, ShapeType.Face, edgesToFaces);
+            Exploration.MapShapesAndAncestors(fm[i - 1], ShapeType.Edge, ShapeType.Face, edgesToFaces);
         }
 
         for (i = 1; i <= nbEdge; i++)
         { // load the Edges
-            Edge edg = ShapeCasts.Edge(em.FindKey(i));
+            Edge edg = ShapeCasts.Edge(em[i - 1]);
             Exploration.Vertices(edg, out vf, out vl);
             Tool.Range(edg, out pf, out pl);
             bool reg1 = false;
             bool regn = false;
-            int inde = edgesToFaces.FindIndex(edg);
+            int inde = edgesToFaces.IndexOf(edg) + 1;
             if (inde > 0)
             {
-                if (edgesToFaces[inde].Extent() == 2)
+                if (edgesToFaces.ValueAt(inde - 1).Extent() == 2)
                 {
-                    itn.Initialize(edgesToFaces[inde]);
+                    itn.Initialize(edgesToFaces.ValueAt(inde - 1));
                     Face f1 = ShapeCasts.Face(itn.Value());
                     itn.Next();
                     Face f2 = ShapeCasts.Face(itn.Value());
@@ -132,7 +133,7 @@ public static class ShapeToHlr
             }
             else
             {
-                i1 = verticesToEdges.FindIndex(vf);
+                i1 = verticesToEdges.IndexOf(vf) + 1;
                 o1 = topDS.IsOutV(vf);
                 c1 = topDS.IsIntV(vf);
                 tf = (float)Tool.Tolerance(vf);
@@ -148,7 +149,7 @@ public static class ShapeToHlr
             }
             else
             {
-                i2 = verticesToEdges.FindIndex(vl);
+                i2 = verticesToEdges.IndexOf(vl) + 1;
                 o2 = topDS.IsOutV(vl);
                 c2 = topDS.IsIntV(vl);
                 tl = (float)Tool.Tolerance(vl);
@@ -163,14 +164,14 @@ public static class ShapeToHlr
         return ds;
     }
 
-    private static void ExploreFace(OutLiner s, HiddenLineData ds, NCollection_IndexedMap<Shape> fm,
-                                    NCollection_IndexedMap<Shape> em, ref int i, in Face f, bool closed)
+    private static void ExploreFace(OutLiner s, HiddenLineData ds, IndexedSet<Shape> fm,
+                                    IndexedSet<Shape> em, ref int i, in Face f, bool closed)
     {
         i++;
         Explorer ex1 = new(), ex2 = new();
         TopologyData topDS = s.DataStructure();
-        Orientation orient = fm.FindKey(i).Orientation();
-        Face theFace = ShapeCasts.Face(fm.FindKey(i));
+        Orientation orient = fm[i - 1].Orientation();
+        Face theFace = ShapeCasts.Face(fm[i - 1]);
         theFace.Orientation(Forward);
         HiddenLineFaceData fd = ds.FDataArray()[i];
 
@@ -209,7 +210,7 @@ public static class ShapeToHlr
                     continue;
                 }
                 ne++;
-                int ie = em.FindIndex(e);
+                int ie = em.IndexOf(e) + 1;
                 Orientation orientE = e.Orientation();
                 bool Int = topDS.IsIntLFaceEdge(f, e);
                 bool iso = topDS.IsIsoLFaceEdge(f, e);
@@ -222,8 +223,8 @@ public static class ShapeToHlr
         ds.FaceMap().Add(theFace);
     }
 
-    private static void ExploreShape(OutLiner s, HiddenLineData ds, NCollection_IndexedMap<Shape> fm,
-                                     NCollection_IndexedMap<Shape> em)
+    private static void ExploreShape(OutLiner s, HiddenLineData ds, IndexedSet<Shape> fm,
+                                     IndexedSet<Shape> em)
     {
         HashSet<Shape> shapeMap = new(ShapeHasher.Instance);
         Explorer exshell = new(), exface = new(), exedge = new();
@@ -238,7 +239,7 @@ public static class ShapeToHlr
             if (!closed)
             {
                 int ie;
-                int nbEdge = em.Extent();
+                int nbEdge = em.Count;
                 int[] flag = new int[nbEdge + 1];
 
                 for (ie = 1; ie <= nbEdge; ie++)
@@ -249,7 +250,7 @@ public static class ShapeToHlr
                 for (exedge.Init(exshell.Current(), ShapeType.Edge); exedge.More(); exedge.Next())
                 {
                     Edge e = ShapeCasts.Edge(exedge.Current());
-                    ie = em.FindIndex(e);
+                    ie = em.IndexOf(e) + 1;
                     Orientation orient = e.Orientation();
                     if (!Tool.Degenerated(e))
                     {

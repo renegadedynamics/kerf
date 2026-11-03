@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Surfaces;
 using Kerf.Engine.Fillets.Analytic;
 using Kerf.Engine.Fillets.Data;
@@ -156,16 +157,16 @@ internal static class KPartRecorder
 
     private static Edge EdgeOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, M);
-        return ShapeCasts.Edge(M.FindKey(k));
+        return ShapeCasts.Edge(M[k - 1]);
     }
 
     private static Face FaceOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Face, M);
-        return ShapeCasts.Face(M.FindKey(k));
+        return ShapeCasts.Face(M[k - 1]);
     }
 
     private static void FacesOf(in Shape S, in Edge E, out Face F1, out Face F2)
@@ -256,11 +257,11 @@ internal static class KPartRecorder
     private static List<int> CylQEdges(in Shape S, CurveKind theType)
     {
         List<int> aRes = [];
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, M);
-        for (int k = 1; k <= M.Extent(); k++)
+        for (int k = 1; k <= M.Count; k++)
         {
-            Edge E = ShapeCasts.Edge(M.FindKey(k));
+            Edge E = ShapeCasts.Edge(M[k - 1]);
             EdgeCurveAdaptor C = new(E);
             FacesOf(S, E, out Face F1, out Face F2);
             bool aCylFace = new FaceSurfaceAdaptor(F1).GetType() == SurfaceKind.Cylinder
@@ -284,11 +285,11 @@ internal static class KPartRecorder
     private static List<int> EdgesOfType(in Shape S, CurveKind theType)
     {
         List<int> aRes = [];
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, M);
-        for (int k = 1; k <= M.Extent(); k++)
+        for (int k = 1; k <= M.Count; k++)
         {
-            if (new EdgeCurveAdaptor(ShapeCasts.Edge(M.FindKey(k))).GetType() == theType)
+            if (new EdgeCurveAdaptor(ShapeCasts.Edge(M[k - 1])).GetType() == theType)
             {
                 aRes.Add(k);
             }
@@ -645,11 +646,11 @@ internal static class KPartRecorder
         EF.Fill(S, ShapeType.Edge, ShapeType.Face);
         VE.Fill(S, ShapeType.Vertex, ShapeType.Edge);
         VF.Fill(S, ShapeType.Vertex, ShapeType.Face);
-        NCollection_IndexedMap<Shape> MV = new(ShapeHasher.Instance);
+        IndexedSet<Shape> MV = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Vertex, MV);
-        for (int i = 1; i <= MV.Extent(); i++)
+        for (int i = 1; i <= MV.Count; i++)
         {
-            Vertex V = ShapeCasts.Vertex(MV.FindKey(i));
+            Vertex V = ShapeCasts.Vertex(MV[i - 1]);
             o.L("vertex " + i + " nbface " + ChFi3d_nbface(VF[V]) + " nbedges " + ChFi3d_NumberOfEdges(V, VE)
                 + " nbsharp " + ChFi3d_NumberOfSharpEdges(V, VE, EF));
             Edge[] E = new Edge[3];
@@ -675,11 +676,11 @@ internal static class KPartRecorder
                 o.L("edgestate " + (int)ChFi3d_EdgeState(E, EF) + " angle " + Out.R(ChFi3d_AngleEdge(V, E[0], E[1])));
             }
         }
-        NCollection_IndexedMap<Shape> ME = new(ShapeHasher.Instance);
+        IndexedSet<Shape> ME = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, ME);
-        for (int i = 1; i <= ME.Extent(); i++)
+        for (int i = 1; i <= ME.Count; i++)
         {
-            Edge E = ShapeCasts.Edge(ME.FindKey(i));
+            Edge E = ShapeCasts.Edge(ME[i - 1]);
             ChFi3d_conexfaces(E, out Face F1, out Face F2, EF);
             o.L("edge " + i + " conti " + (int)ChFi3d_evalconti(E, F1, F2) + " pseudoseam "
                 + (ChFi3d_IsPseudoSeam(E, F1) ? 1 : 0));

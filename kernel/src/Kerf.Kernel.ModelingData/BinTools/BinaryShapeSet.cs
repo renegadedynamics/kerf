@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -34,18 +35,18 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 public class BinaryShapeSet : ShapeSetBase
 {
     // index and its shape (started from 1)
-    private readonly NCollection_IndexedMap<Shape> _shapes = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _shapes = new(ShapeHasher.Instance);
     private readonly BinaryLocationSet _locations = new();
     private readonly BrepBuilder _builder = new();
     private readonly BinarySurfaceSet _surfaces = new();
     private readonly BinaryCurveSet _curves = new();
     private readonly BinaryCurve2dSet _curves2d = new();
-    private readonly NCollection_IndexedMap<Polygon2D> _polygons2D = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<Polygon3D> _polygons3D = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<Polygon2D> _polygons2D = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<Polygon3D> _polygons3D = new(ReferenceEqualityComparer.Instance);
 
     // with a flag telling whether the triangulation's normals are written
-    private readonly NCollection_IndexedDataMap<Triangulation, bool> _triangulations = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<PolygonOnTriangulation> _nodes = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedMap<Triangulation, bool> _triangulations = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<PolygonOnTriangulation> _nodes = new(ReferenceEqualityComparer.Instance);
 
     // OCCT.NET: untrusted input: the nesting depth of each shape read, by index - 1
     private readonly List<int> _depths = [];
@@ -86,7 +87,7 @@ public class BinaryShapeSet : ShapeSetBase
         _locations.Add(shape.Location());
         Shape s2 = shape;
         s2.Location(new Placement());
-        int index = _shapes.FindIndex(s2);
+        int index = _shapes.IndexOf(s2) + 1;
         if (index == 0)
         {
             AddShape(s2);
@@ -95,7 +96,7 @@ public class BinaryShapeSet : ShapeSetBase
                 Add(its.Value());
             }
 
-            index = _shapes.Add(s2);
+            index = _shapes.Add(s2) + 1;
         }
 
         return index;
@@ -105,13 +106,13 @@ public class BinaryShapeSet : ShapeSetBase
     /// <exception cref="OutOfRangeException">There is no shape of index I.</exception>
     public Shape Shape(int indx)
     {
-        return _shapes[indx];
+        return _shapes[indx - 1];
     }
 
     /// <summary>The index of the shape (its TShape and location), 0 if it isn't in the set.</summary>
     public int Index(in Shape shape)
     {
-        return _shapes.FindIndex(shape);
+        return _shapes.IndexOf(shape) + 1;
     }
 
     /// <summary>The locations of the set.</summary>
@@ -131,7 +132,7 @@ public class BinaryShapeSet : ShapeSetBase
     {
         get
         {
-            return _shapes.Extent();
+            return _shapes.Count;
         }
     }
 
@@ -339,7 +340,7 @@ public class BinaryShapeSet : ShapeSetBase
         // write the shapes
         //-----------------------------------------
 
-        int i, nbShapes = _shapes.Extent();
+        int i, nbShapes = _shapes.Count;
         using var pSinner = new ProgressScope(ps.Next(), "Writing shapes", nbShapes);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "\nTShapes ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbShapes);
@@ -348,7 +349,7 @@ public class BinaryShapeSet : ShapeSetBase
         // subshapes are written first
         for (i = 1; i <= nbShapes && pSinner.More(); i++, pSinner.Next())
         {
-            Shape s = _shapes[i];
+            Shape s = _shapes[i - 1];
 
             // Type
             os.WriteByte((byte)s.ShapeType());
@@ -395,7 +396,7 @@ public class BinaryShapeSet : ShapeSetBase
         finally
         {
             // design 4.2: the shapes freeze once the whole set is read; on a failure too, since the set hands them out
-            for (int i = 1; i <= _shapes.Extent(); i++)
+            for (int i = 0; i < _shapes.Count; i++)
             {
                 _shapes[i].TShape()!.FreezeGraph();
             }
@@ -499,7 +500,7 @@ public class BinaryShapeSet : ShapeSetBase
             int depth = 1;
             for (var its = new Iterator(s, false, false); its.More(); its.Next())
             {
-                int sub = _shapes.FindIndex(its.Value().Located(new Placement()));
+                int sub = _shapes.IndexOf(its.Value().Located(new Placement())) + 1;
                 depth = Math.Max(depth, _depths[sub - 1] + 1);
             }
 
@@ -523,7 +524,7 @@ public class BinaryShapeSet : ShapeSetBase
         {
             // {TopAbs_FORWARD, TopAbs_REVERSED, TopAbs_INTERNAL, TopAbs_EXTERNAL}
             os.WriteByte((byte)s.Orientation());
-            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _shapes.Extent() - _shapes.FindIndex(s.Located(new Placement())) + 1);
+            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _shapes.Count - (_shapes.IndexOf(s.Located(new Placement())) + 1) + 1);
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, Locations().Index(s.Location()));
         }
     }
@@ -596,7 +597,7 @@ public class BinaryShapeSet : ShapeSetBase
             // OCCT.NET: untrusted input: OCCT reads outside its map
             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(shapeIndex is >= int.MinValue and <= int.MaxValue ? (int)shapeIndex : 0,
                                 1,
-                                _shapes.Extent(),
+                                _shapes.Count,
                                 "shape");
             s = Shape((int)shapeIndex);
             s.Orientation(orient);
@@ -789,7 +790,7 @@ public class BinaryShapeSet : ShapeSetBase
                             {
                                 // -5- Polygon3D
                                 os.WriteByte(5);
-                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _polygons3D.FindIndex(cr.Polygon3D()!));
+                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _polygons3D.IndexOf(cr.Polygon3D()!) + 1);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, Locations().Index(cr.Location()));
                             }
                         }
@@ -807,14 +808,14 @@ public class BinaryShapeSet : ShapeSetBase
                                 os.WriteByte(7);
                             }
 
-                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _nodes.FindIndex(pt.PolygonOnTriangulation()!));
+                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _nodes.IndexOf(pt.PolygonOnTriangulation()!) + 1);
 
                             if (cr.IsPolygonOnClosedTriangulation)
                             {
-                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _nodes.FindIndex(pt.PolygonOnTriangulation2()!));
+                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _nodes.IndexOf(pt.PolygonOnTriangulation2()!) + 1);
                             }
 
-                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _triangulations.FindIndex(pt.Triangulation()!));
+                            global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _triangulations.IndexOf(pt.Triangulation()!) + 1);
                             global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, Locations().Index(cr.Location()));
                         }
                     }
@@ -840,7 +841,7 @@ public class BinaryShapeSet : ShapeSetBase
                     {
                         os.WriteByte(2);
                         // Write the triangulation
-                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _triangulations.FindIndex(tf.Triangulation()!));
+                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, _triangulations.IndexOf(tf.Triangulation()!) + 1);
                     }
                     else
                     {
@@ -1194,10 +1195,10 @@ public class BinaryShapeSet : ShapeSetBase
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out c);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l);
                                 // OCCT.NET: untrusted input
-                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(c, 1, _polygons3D.Extent(), "3D polygon");
+                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(c, 1, _polygons3D.Count, "3D polygon");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
                                 //??? Bug?  myBuilder.UpdateEdge(E,myPolygons3D(c));
-                                _builder.UpdateEdge(e, _polygons3D[c], Locations().Location(l));
+                                _builder.UpdateEdge(e, _polygons3D[c - 1], Locations().Location(l));
                                 break;
 
                             case 6: // -6- Polygon on triangulation
@@ -1212,27 +1213,27 @@ public class BinaryShapeSet : ShapeSetBase
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out t);
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out l);
                                 // OCCT.NET: untrusted input
-                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pt, 1, _nodes.Extent(), "polygon on triangulation");
+                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pt, 1, _nodes.Count, "polygon on triangulation");
                                 if (closed)
                                 {
-                                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pt2, 1, _nodes.Extent(), "polygon on triangulation");
+                                    global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(pt2, 1, _nodes.Count, "polygon on triangulation");
                                 }
 
-                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(t, 1, _triangulations.Extent(), "triangulation");
+                                global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(t, 1, _triangulations.Count, "triangulation");
                                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(l, 0, _locations.LocationCount, "location");
                                 if (closed)
                                 {
                                     _builder.UpdateEdge(e,
-                                                         _nodes[pt],
-                                                         _nodes[pt2],
-                                                         _triangulations.FindKey(t),
+                                                         _nodes[pt - 1],
+                                                         _nodes[pt2 - 1],
+                                                         _triangulations.KeyAt(t - 1),
                                                          Locations().Location(l));
                                 }
                                 else
                                 {
                                     _builder.UpdateEdge(e,
-                                                         _nodes[pt],
-                                                         _triangulations.FindKey(t),
+                                                         _nodes[pt - 1],
+                                                         _triangulations.KeyAt(t - 1),
                                                          Locations().Location(l));
                                 }
 
@@ -1288,8 +1289,8 @@ public class BinaryShapeSet : ShapeSetBase
                     {
                         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.GetInteger(IS, out s);
                         // OCCT.NET: untrusted input
-                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _triangulations.Extent(), "triangulation");
-                        _builder.UpdateFace(f, _triangulations.FindKey(s));
+                        global::Kerf.Engine.Exchange.Brep.Binary.BinTools.CheckIndex(s, 1, _triangulations.Count, "triangulation");
+                        _builder.UpdateFace(f, _triangulations.KeyAt(s - 1));
                     }
                 }
                     break;
@@ -1359,7 +1360,7 @@ public class BinaryShapeSet : ShapeSetBase
     /// <summary>Writes the polygons on triangulations ("PolygonOnTriangulations", the count, then each polygon).</summary>
     public void WritePolygonOnTriangulation(Stream os, ProgressRange range = default)
     {
-        int nbPol = _nodes.Extent();
+        int nbPol = _nodes.Count;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "PolygonOnTriangulations ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbPol);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "\n");
@@ -1368,7 +1369,7 @@ public class BinaryShapeSet : ShapeSetBase
             using var ps = new ProgressScope(range, "Writing polygons on triangulation", nbPol);
             for (int polIter = 1; polIter <= nbPol && ps.More(); ++polIter, ps.Next())
             {
-                PolygonOnTriangulation poly = _nodes.FindKey(polIter);
+                PolygonOnTriangulation poly = _nodes[polIter - 1];
                 NCollection_Array1<int> nodes = poly.Nodes();
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, nodes.Length());
                 for (int nodeIter = 1; nodeIter <= nodes.Length(); ++nodeIter)
@@ -1457,7 +1458,7 @@ public class BinaryShapeSet : ShapeSetBase
     /// <summary>Writes the 3D polygons ("Polygon3D", the count, then each polygon).</summary>
     public void WritePolygon3D(Stream os, ProgressRange range = default)
     {
-        int nbPol = _polygons3D.Extent();
+        int nbPol = _polygons3D.Count;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "Polygon3D ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbPol);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "\n");
@@ -1466,7 +1467,7 @@ public class BinaryShapeSet : ShapeSetBase
             using var ps = new ProgressScope(range, "Writing polygons 3D", nbPol);
             for (int polIter = 1; polIter <= nbPol && ps.More(); ++polIter, ps.Next())
             {
-                Polygon3D poly = _polygons3D.FindKey(polIter);
+                Polygon3D poly = _polygons3D[polIter - 1];
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, poly.NodeCount);
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutBool(os, poly.HasParameters);
 
@@ -1556,7 +1557,7 @@ public class BinaryShapeSet : ShapeSetBase
     /// <summary>Writes the triangulations ("Triangulations", the count, then each triangulation).</summary>
     public void WriteTriangulation(Stream os, ProgressRange range = default)
     {
-        int nbTriangulations = _triangulations.Extent();
+        int nbTriangulations = _triangulations.Count;
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "Triangulations ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbTriangulations);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "\n");
@@ -1567,8 +1568,8 @@ public class BinaryShapeSet : ShapeSetBase
             for (int triangulationIter = 1; triangulationIter <= nbTriangulations && ps.More();
                  ++triangulationIter, ps.Next())
             {
-                Triangulation triangulation = _triangulations.FindKey(triangulationIter);
-                bool needToWriteNormals = _triangulations.FindFromIndex(triangulationIter);
+                Triangulation triangulation = _triangulations.KeyAt(triangulationIter - 1);
+                bool needToWriteNormals = _triangulations.ValueAt(triangulationIter - 1);
                 int nbNodes = triangulation.NodeCount;
                 int nbTriangles = triangulation.TriangleCount;
                 global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutInteger(os, nbNodes);

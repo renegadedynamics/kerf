@@ -653,7 +653,7 @@ public sealed class CompatibleWires
                                             in Vertex startVertex,
                                             NCollection_List<Shape> connectedEdges)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapVE = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aWire, ShapeType.Vertex, ShapeType.Edge, mapVE);
         Edge curEdge = startEdge;
         Vertex curVertex = startVertex;
@@ -663,7 +663,7 @@ public sealed class CompatibleWires
 
         for (;;)
         {
-            NCollection_List<Shape>.Iterator itE = new(mapVE.FindFromKey(curVertex));
+            NCollection_List<Shape>.Iterator itE = new(mapVE.GetValue(curVertex));
             for (; itE.More(); itE.Next())
             {
                 Edge edge = ShapeCasts.Edge(itE.Value());

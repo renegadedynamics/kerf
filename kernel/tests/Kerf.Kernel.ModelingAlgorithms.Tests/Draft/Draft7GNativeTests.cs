@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Features.Api;
@@ -207,14 +208,14 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                     case "ROLL":
                     {
                         Shape aS = Input(w[1]);
-                        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
                         Exploration.MapShapes(aS, ShapeType.Face, aFaces);
                         var aRoll = new OffsetBlend();
                         aRoll.Init(aS, FromHex(w[2]), 1.0e-4, false);
                         int[] anIdx = w[4].Split(',').Select(s => int.Parse(s, CultureInfo.InvariantCulture)).ToArray();
                         for (int i = 0; i + 1 < anIdx.Length; i += 2)
                         {
-                            aRoll.SetFaces(ShapeCasts.Face(aFaces[anIdx[i]]), ShapeCasts.Face(aFaces[anIdx[i + 1]]));
+                            aRoll.SetFaces(ShapeCasts.Face(aFaces[anIdx[i] - 1]), ShapeCasts.Face(aFaces[anIdx[i + 1] - 1]));
                         }
                         aRoll.Perform(w[3] == "1");
                         // the recorder writes the contact types as it goes: an exception ends the line

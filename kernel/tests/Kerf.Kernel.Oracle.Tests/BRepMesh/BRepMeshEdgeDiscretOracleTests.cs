@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Meshing;
@@ -143,9 +144,9 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
         public int Shapes, Edges, Polygons, Polygons3D, Values, ExactNodes, NotMeshed, Reused, Disagreements;
     }
 
-    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
+    private static IndexedSet<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
@@ -154,14 +155,14 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     /// The index of the model's sub-shape in the map: the same TShape at the same location (the model keeps one edge or
     /// face per location); a free edge, which the model takes without its location, by its TShape.
     /// </summary>
-    private static int IndexOf(NCollection_IndexedMap<Shape> theMap, in Shape theShape)
+    private static int IndexOf(IndexedSet<Shape> theMap, in Shape theShape)
     {
-        int anIndex = theMap.FindIndex(theShape);
+        int anIndex = theMap.IndexOf(theShape) + 1;
         if (anIndex == 0)
         {
-            for (int i = 1; i <= theMap.Extent() && anIndex == 0; i++)
+            for (int i = 1; i <= theMap.Count && anIndex == 0; i++)
             {
-                if (ReferenceEquals(theMap.FindKey(i).TShape(), theShape.TShape()))
+                if (ReferenceEquals(theMap[i - 1].TShape(), theShape.TShape()))
                 {
                     anIndex = i;
                 }
@@ -187,9 +188,9 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
     private void Compare(Oracle theO, Tally theTally, string theName, ModelModel theModel, in Shape theF1,
                          in Shape theMeshed, N.Poly_Triangulation?[] theNativeTriangulations, in Shape? theOld)
     {
-        NCollection_IndexedMap<Shape> anEdges1 = Map(theF1, ShapeType.Edge), aFaces1 = Map(theF1, ShapeType.Face);
-        NCollection_IndexedMap<Shape> anEdges2 = Map(theMeshed, ShapeType.Edge), aFaces2 = Map(theMeshed, ShapeType.Face);
-        NCollection_IndexedMap<Shape>? anOldEdges = null, anOldFaces = null;
+        IndexedSet<Shape> anEdges1 = Map(theF1, ShapeType.Edge), aFaces1 = Map(theF1, ShapeType.Face);
+        IndexedSet<Shape> anEdges2 = Map(theMeshed, ShapeType.Edge), aFaces2 = Map(theMeshed, ShapeType.Face);
+        IndexedSet<Shape>? anOldEdges = null, anOldFaces = null;
         if (theOld is Shape anOld)
         {
             anOldEdges = Map(anOld, ShapeType.Edge);
@@ -202,7 +203,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             EdgeModel aDEdge = theModel.GetEdge(i);
             theTally.Edges++;
             int anEdgeIndex = IndexOf(anEdges1, aDEdge.GetEdge());
-            Edge anEdge2 = ShapeCasts.Edge(anEdges2.FindKey(anEdgeIndex));
+            Edge anEdge2 = ShapeCasts.Edge(anEdges2[anEdgeIndex - 1]);
             CurveModel aCurve = aDEdge.GetCurve();
             string aWhat = $"{theName} edge {anEdgeIndex}";
 
@@ -250,7 +251,7 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
             foreach (FaceModel aDFace in aFaceOrder)
             {
                 int aFaceIndex = IndexOf(aFaces1, aDFace.GetFace());
-                Face aFace2 = ShapeCasts.Face(aFaces2.FindKey(aFaceIndex));
+                Face aFace2 = ShapeCasts.Face(aFaces2[aFaceIndex - 1]);
                 Triangulation? aTri = Tool.Triangulation(aFace2, out Placement aLoc);
                 if (aTri is null)
                 {
@@ -263,8 +264,8 @@ public sealed class BRepMeshEdgeDiscretOracleTests(ITestOutputHelper output) : I
                 {
                     // Reused by the port: native kept the face's mesh and the edge's polygon on it.
                     theTally.Reused++;
-                    Face anOldFace = ShapeCasts.Face(anOldFaces!.FindKey(aFaceIndex));
-                    Edge anOldEdge = ShapeCasts.Edge(anOldEdges!.FindKey(anEdgeIndex));
+                    Face anOldFace = ShapeCasts.Face(anOldFaces![aFaceIndex - 1]);
+                    Edge anOldEdge = ShapeCasts.Edge(anOldEdges![anEdgeIndex - 1]);
                     Triangulation? anOldTri = Tool.Triangulation(anOldFace, out Placement anOldLoc);
                     PolygonOnTriangulation? anOldPoly = Tool.PolygonOnTriangulation(anOldEdge, anOldTri, anOldLoc);
                     PolygonOnTriangulation? aNewPoly = Tool.PolygonOnTriangulation(anEdge2, aTri, aLoc);

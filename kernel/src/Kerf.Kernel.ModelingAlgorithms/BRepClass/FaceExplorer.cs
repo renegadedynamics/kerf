@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification.Topological;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -35,7 +36,7 @@ public class FaceExplorer : IFaceExplorer<ClassifierEdge>
     private double _maxTolerance;
     private bool _useBndBox;
 
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapVE =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapVE =
         new(ShapeHasher.Instance);
 
     private double _uMin;

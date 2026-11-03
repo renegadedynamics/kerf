@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Occt;
@@ -34,7 +35,7 @@ public class SurfaceSet
     private const int Offset = 11;
 
     // OCCT's NCollection_IndexedMap of handles, which hashes by address and can hold one null handle
-    private readonly NCollection_IndexedMap<object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _map = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>An empty set of surfaces.</summary>
     public SurfaceSet()
@@ -51,24 +52,24 @@ public class SurfaceSet
     public int Add(Surface? s)
     {
         // OCCT: adds the null handle too, as one entry (occt-issues.md)
-        return _map.Add((object?)s ?? CurveSet.NullKey);
+        return _map.Add((object?)s ?? CurveSet.NullKey) + 1;
     }
 
     /// <summary>The surface of index I, or null if there is none.</summary>
     public Surface? Surface(int i)
     {
-        if (i <= 0 || i > _map.Extent())
+        if (i <= 0 || i > _map.Count)
         {
             return null;
         }
 
-        return _map[i] as Surface;
+        return _map[i - 1] as Surface;
     }
 
     /// <summary>The index of the surface, 0 if it isn't in the set (null finds the null entry, as in OCCT).</summary>
     public int Index(Surface? s)
     {
-        return _map.FindIndex((object?)s ?? CurveSet.NullKey);
+        return _map.IndexOf((object?)s ?? CurveSet.NullKey) + 1;
     }
 
     private static void Out(TextWriter os, double value) => StreamUtilities.Write(os, value);
@@ -861,7 +862,7 @@ public class SurfaceSet
     /// <summary>Writes a readable dump of the set.</summary>
     public void Dump(TextWriter os)
     {
-        int i, nbsurf = _map.Extent();
+        int i, nbsurf = _map.Count;
         os.Write("\n -------\n");
         os.Write("Dump of ");
         Out(os, nbsurf);
@@ -885,7 +886,7 @@ public class SurfaceSet
     {
         int prec = StreamUtilities.Precision(os, 17);
 
-        int i, nbsurf = _map.Extent();
+        int i, nbsurf = _map.Count;
         os.Write("Surfaces ");
         Out(os, nbsurf);
         os.Write("\n");

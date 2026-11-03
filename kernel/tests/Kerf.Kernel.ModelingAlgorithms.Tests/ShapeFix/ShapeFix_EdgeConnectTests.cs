@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
@@ -103,9 +104,9 @@ public class ShapeFix_EdgeConnectTests
         Shape aResult = aConnect.Built(aWire);
 
         aSnap.AssertUnchanged(aWire);
-        var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Vertex, aVertices);
-        Assert.Equal(3, aVertices.Extent());
+        Assert.Equal(3, aVertices.Count);
         Assert.True(Tool.IsClosed(aResult));
     }
 

@@ -3,6 +3,7 @@
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Topology;
@@ -204,9 +205,9 @@ internal sealed class CopyAtEntry
             _context.ReplaceTShapes(_originals!, _final);
 
             // the changes made in place without a request
-            var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var subShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(_input, subShapes);
-            for (int i = 1; i <= subShapes.Extent(); i++)
+            for (int i = 0; i < subShapes.Count; i++)
             {
                 Shape sub = subShapes[i];
                 Shape now = WithImage(Copied(sub), _final);
@@ -237,9 +238,9 @@ internal sealed class CopyAtEntry
         }
 
         var composed = new History();
-        var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var subShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(_input, subShapes);
-        for (int i = 1; i <= subShapes.Extent(); i++)
+        for (int i = 0; i < subShapes.Count; i++)
         {
             Shape sub = subShapes[i];
             if (!global::Kerf.Engine.Topology.History.IsSupportedType(sub))

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Build;
 using Kerf.Engine.Healing.Fixes;
@@ -46,9 +47,9 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     // The center of gravity and the matrix of inertia, as Draw's vprops/sprops/lprops print them.
@@ -135,7 +136,7 @@ public class ShapeFix_FixSmallSolidTests(ITestOutputHelper output)
         }
 
         // the faces of the result are the caller's own (removing and merging only rebuild shells and solids)
-        var anInputFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anInputFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShape, ShapeType.Face, anInputFaces);
         for (var anExp = new Explorer(aResult, ShapeType.Face); anExp.More(); anExp.Next())
         {

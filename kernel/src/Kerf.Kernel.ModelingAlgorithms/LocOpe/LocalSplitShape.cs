@@ -863,7 +863,7 @@ public sealed class LocalSplitShape
                 _dblE.Add(edg);
             }
 
-            NCollection_IndexedMap<Shape> possE = new(ShapeHasher.Instance);
+            IndexedSet<Shape> possE = new(ShapeHasher.Instance);
             // OCCT's default hasher: the shapes' TShapes, locations and orientations
             HashSet<Shape> mapE = new(EqualityComparer<Shape>.Default);
             Vertex vdeb, vfin;
@@ -960,7 +960,7 @@ public sealed class LocalSplitShape
                         possE.Add(edg);
                     }
                 }
-                nbPoss = possE.Extent();
+                nbPoss = possE.Count;
                 if (nbPoss == 0)
                 {
                     break;
@@ -969,7 +969,7 @@ public sealed class LocalSplitShape
                 Edge nextEdge = new();
                 if (nbPoss == 1)
                 {
-                    nextEdge = ShapeCasts.Edge(possE.FindKey(1));
+                    nextEdge = ShapeCasts.Edge(possE[0]);
                     Shape localFaceTemp = faceRef.Oriented(wfirst.Orientation());
                     GetDirection(nextEdge, ShapeCasts.Face(localFaceTemp), out plast, out dlast, false);
                 }
@@ -1604,7 +1604,7 @@ public sealed class LocalSplitShape
 
     private static bool ChoixUV(in Edge last,
                                 in Face f,
-                                NCollection_IndexedMap<Shape> poss,
+                                IndexedSet<Shape> poss,
                                 ref Edge resEdge,
                                 ref Point2D plst,
                                 ref Vector2D dlst)
@@ -1617,9 +1617,9 @@ public sealed class LocalSplitShape
         int index = 0, imin = 0;
         double angmax = -Math.PI, ang;
 
-        for (index = 1; index <= poss.Extent(); index++)
+        for (index = 1; index <= poss.Count; index++)
         {
-            Edge edge = ShapeCasts.Edge(poss.FindKey(index));
+            Edge edge = ShapeCasts.Edge(poss[index - 1]);
 
             GetDirection(edge, f, out Point2D p2d, out Vector2D v2d, true);
             if (!SameUV(plst, p2d, surf))
@@ -1647,7 +1647,7 @@ public sealed class LocalSplitShape
 
         if (imin != 0)
         {
-            resEdge = ShapeCasts.Edge(poss.FindKey(imin));
+            resEdge = ShapeCasts.Edge(poss[imin - 1]);
             GetDirection(resEdge, f, out plst, out dlst, false);
         }
 

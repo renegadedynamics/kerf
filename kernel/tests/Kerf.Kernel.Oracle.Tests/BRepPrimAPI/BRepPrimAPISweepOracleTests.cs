@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -355,8 +356,8 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     private static (int, int) Index(N.TopTools_IndexedMapOfShape theMap, N.TopoDS_Shape theS) =>
         theS.IsNull() ? (-1, -1) : (theMap.FindIndex(theS), (int)theS.Orientation());
 
-    private static (int, int) Index(NCollection_IndexedMap<Shape> theMap, in Shape theS) =>
-        theS.IsNull ? (-1, -1) : (theMap.FindIndex(theS), (int)theS.Orientation());
+    private static (int, int) Index(IndexedSet<Shape> theMap, in Shape theS) =>
+        theS.IsNull ? (-1, -1) : (theMap.IndexOf(theS) + 1, (int)theS.Orientation());
 
     private interface ISweepPair
     {
@@ -418,18 +419,18 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
     {
         using var aNP = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(theNProfile, aNP);
-        var aPP = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aPP = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(thePProfile, aPP);
-        Assert.Equal(aNP.Extent(), aPP.Extent());
+        Assert.Equal(aNP.Extent(), aPP.Count);
 
         using var aNR = new N.TopTools_IndexedMapOfShape();
-        var aPR = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aPR = new IndexedSet<Shape>(ShapeHasher.Instance);
         if (!theNResult.IsNull())
         {
             N.TopExp.MapShapes(theNResult, aNR);
             Exploration.MapShapes(thePResult, aPR);
         }
-        Assert.Equal(aNR.Extent(), aPR.Extent());
+        Assert.Equal(aNR.Extent(), aPR.Count);
 
         (N.TopoDS_Shape aNF, Shape aPF) = theSweep.First();
         Assert.True(Index(aNR, aNF) == Index(aPR, aPF), $"{theWhat}: FirstShape");
@@ -440,7 +441,7 @@ public sealed class BRepPrimAPISweepOracleTests(ITestOutputHelper output) : IDis
         for (int i = 1; i <= aNP.Extent(); i++)
         {
             N.TopoDS_Shape aNS = aNP.FindKey(i);
-            Shape aPS = aPP[i];
+            Shape aPS = aPP[i - 1];
             bool aNDel = theSweep.IsDeleted(aNS, aPS, out bool aPDel);
             Assert.True(aNDel == aPDel, $"{theWhat}: IsDeleted of sub-shape {i}");
 

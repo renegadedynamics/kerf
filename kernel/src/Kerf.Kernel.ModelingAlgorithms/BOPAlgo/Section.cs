@@ -149,8 +149,8 @@ public class Section : BooleanBuilder
         Explorer exp = new();
         NCollection_List<Shape> lsa = new(), ls = new();
         NCollection_List<Shape>.Iterator it = new(), itIm = new(), itLS = new();
-        NCollection_IndexedDataMap<Shape, int> msi = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> ms = new(ShapeHasher.Instance);
+        IndexedMap<Shape, int> msi = new(ShapeHasher.Instance);
+        IndexedSet<Shape> ms = new(ShapeHasher.Instance);
         HashSet<Shape> mFence = new(ShapeHasher.Instance);
         NCollection_IntMap.Iterator itMI = new();
         NCollection_List<PaveBlock>.Iterator itPB = new();
@@ -203,12 +203,12 @@ public class Section : BooleanBuilder
             }
             //
             // 1.3 Section edges
-            NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+            IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
             //
-            nbPBSc = mpbSc.Extent();
+            nbPBSc = mpbSc.Count;
             for (j = 1; j <= nbPBSc; ++j)
             {
-                PaveBlock pb = mpbSc[j];
+                PaveBlock pb = mpbSc[j - 1];
                 nE = pb.Edge();
                 Shape e = _ds.Shape(nE);
                 bb.Add(rc1, e);
@@ -313,13 +313,13 @@ public class Section : BooleanBuilder
                 }
             }
             //
-            nbMS = ms.Extent();
+            nbMS = ms.Count;
             for (i = 1; i <= nbMS; ++i)
             {
-                Shape s = ms[i];
-                if (msi.Contains(s))
+                Shape s = ms[i - 1];
+                if (msi.ContainsKey(s))
                 {
-                    ref int iCnt = ref msi.ChangeFromKey(s);
+                    ref int iCnt = ref msi.GetValueRef(s);
                     ++iCnt;
                 }
                 else
@@ -333,15 +333,15 @@ public class Section : BooleanBuilder
         mFence.Clear();
         //
         // 4. Build the result
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
         //
         Exploration.MapShapesAndAncestors(rc1, ShapeType.Vertex, ShapeType.Edge, mve);
         //
-        nbMS = msi.Extent();
+        nbMS = msi.Count;
         for (i = 1; i <= nbMS; ++i)
         {
-            Shape v = msi.FindKey(i);
-            int iCnt = msi.FindFromIndex(i);
+            Shape v = msi.KeyAt(i - 1);
+            int iCnt = msi.ValueAt(i - 1);
             if (iCnt > 1)
             {
                 Exploration.MapShapesAndAncestors(v, ShapeType.Vertex, ShapeType.Edge, mve);
@@ -350,15 +350,15 @@ public class Section : BooleanBuilder
         //
         AlgoTools.MakeContainer(ShapeType.Compound, ref rc);
         //
-        nbMS = mve.Extent();
+        nbMS = mve.Count;
         for (i = 1; i <= nbMS; ++i)
         {
             if (UserBreak(ps))
             {
                 return;
             }
-            Shape v = mve.FindKey(i);
-            NCollection_List<Shape> le = mve.FindFromIndex(i);
+            Shape v = mve.KeyAt(i - 1);
+            NCollection_List<Shape> le = mve.ValueAt(i - 1);
             nbLE = le.Extent();
             if (nbLE == 0)
             {

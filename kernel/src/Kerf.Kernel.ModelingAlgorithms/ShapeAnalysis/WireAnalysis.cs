@@ -2348,7 +2348,7 @@ public class WireAnalysis : Transient
     /// edges not counted). Fills the maps (keyed with TopTools_ShapeMapHasher) of loop vertices, vertex to edges, small
     /// edges and seam edges. Status: DONE1 loops found; FAIL2 an edge has no vertex.
     /// </summary>
-    public bool CheckLoop(NCollection_IndexedMap<Shape> aMapLoopVertices,
+    public bool CheckLoop(IndexedSet<Shape> aMapLoopVertices,
                           Dictionary<Shape, NCollection_List<Shape>> aMapVertexEdges,
                           HashSet<Shape> aMapSmallEdges, HashSet<Shape> aMapSeemEdges)
     {
@@ -2428,7 +2428,7 @@ public class WireAnalysis : Transient
         }
 
         SetPrecision(savPreci);
-        if (aMapLoopVertices.Extent() != 0)
+        if (aMapLoopVertices.Count != 0)
         {
             _status = global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.DONE1);
             _statusLoop |= _status;

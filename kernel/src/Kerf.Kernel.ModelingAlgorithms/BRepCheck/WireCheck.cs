@@ -33,7 +33,7 @@ public class WireCheck : ResultCheck
     private bool _cdone;
     private StatusCheck _cstat;
 
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapVE =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapVE =
         new(ShapeHasher.Instance);
 
     private bool _gctrl;
@@ -94,14 +94,14 @@ public class WireCheck : ResultCheck
                 for (expv.Init(exp.Current(), ShapeType.Vertex); expv.More(); expv.Next())
                 {
                     Shape vtx = expv.Current();
-                    int index = _mapVE.FindIndex(vtx);
+                    int index = _mapVE.IndexOf(vtx) + 1;
                     if (index == 0)
                     {
                         var theListOfShape = new NCollection_List<Shape>();
-                        index = _mapVE.Add(vtx, theListOfShape);
+                        index = _mapVE.Add(vtx, theListOfShape) + 1;
                     }
 
-                    _mapVE[index].Append(exp.Current());
+                    _mapVE.ValueAt(index - 1).Append(exp.Current());
                 }
             }
 
@@ -299,14 +299,14 @@ public class WireCheck : ResultCheck
                 {
                     if (IsOriented(expv.Current()))
                     {
-                        int index = _mapVE.FindIndex(expv.Current());
+                        int index = _mapVE.IndexOf(expv.Current()) + 1;
                         if (index == 0)
                         {
                             var theListOfShape1 = new NCollection_List<Shape>();
-                            index = _mapVE.Add(expv.Current(), theListOfShape1);
+                            index = _mapVE.Add(expv.Current(), theListOfShape1) + 1;
                         }
 
-                        _mapVE[index].Append(exp.Current());
+                        _mapVE.ValueAt(index - 1).Append(exp.Current());
                     }
                 }
             }
@@ -369,9 +369,9 @@ public class WireCheck : ResultCheck
             }
         }
 
-        for (int i = 1; i <= _mapVE.Extent(); i++)
+        for (int i = 0; i < _mapVE.Count; i++)
         {
-            if (_mapVE[i].Extent() % 2 != 0)
+            if (_mapVE.ValueAt(i).Extent() % 2 != 0)
             {
                 _cstat = StatusCheck.NotClosed;
                 if (update)
@@ -682,7 +682,7 @@ public class WireCheck : ResultCheck
         if (theOstat == StatusCheck.NoError)
         {
             int index = 1;
-            int nbOriNoDegen = _mapVE.Extent();
+            int nbOriNoDegen = _mapVE.Count;
             bool isGoFwd = true;
 
             if (vl.IsNull)
@@ -700,11 +700,11 @@ public class WireCheck : ResultCheck
                 int ind;
                 if (!vl.IsNull)
                 {
-                    ind = _mapVE.FindIndex(vl);
+                    ind = _mapVE.IndexOf(vl) + 1;
                 }
                 else if (!vf.IsNull)
                 {
-                    ind = _mapVE.FindIndex(vf);
+                    ind = _mapVE.IndexOf(vf) + 1;
                 }
                 else
                 {
@@ -712,7 +712,7 @@ public class WireCheck : ResultCheck
                     break;
                 }
 
-                for (var itls = new NCollection_List<Shape>.Iterator(_mapVE[ind]); itls.More(); itls.Next())
+                for (var itls = new NCollection_List<Shape>.Iterator(_mapVE.ValueAt(ind - 1)); itls.More(); itls.Next())
                 {
                     Edge edg = ShapeCasts.Edge(itls.Value());
 
@@ -916,8 +916,8 @@ public class WireCheck : ResultCheck
                 if (index == 1 && _cstat != StatusCheck.NotClosed && isCheckClose && !f.IsNull)
                 {
                     ledge.Clear();
-                    ind = _mapVE.FindIndex(vRef);
-                    for (var itlsh = new NCollection_List<Shape>.Iterator(_mapVE[ind]); itlsh.More();
+                    ind = _mapVE.IndexOf(vRef) + 1;
+                    for (var itlsh = new NCollection_List<Shape>.Iterator(_mapVE.ValueAt(ind - 1)); itlsh.More();
                          itlsh.Next())
                     {
                         Edge edg = ShapeCasts.Edge(itlsh.Value());
@@ -986,7 +986,7 @@ public class WireCheck : ResultCheck
         var myDomain1 = new TwoDDomain();
         // OCCT's NCollection_IndexedMap<TopoDS_Shape> hashes with std::hash and compares with operator==
         // (IsEqual: the orientation counts)
-        var eMap = new NCollection_IndexedMap<Shape>(EqualityComparer<Shape>.Default);
+        var eMap = new IndexedSet<Shape>(EqualityComparer<Shape>.Default);
         //
         //-- check with proper tolerances if there is no
         //-- point in the tolerance of a vertex.
@@ -1003,7 +1003,7 @@ public class WireCheck : ResultCheck
         }
 
         //
-        nbedges = eMap.Extent();
+        nbedges = eMap.Count;
         if (nbedges == 0)
         {
             if (update)
@@ -1026,7 +1026,7 @@ public class WireCheck : ResultCheck
         //
         for (i = 1; i <= nbedges; i++)
         {
-            Edge e1 = ShapeCasts.Edge(eMap.FindKey(i));
+            Edge e1 = ShapeCasts.Edge(eMap[i - 1]);
             if (i == 1)
             {
                 Curve2D? pcu = Tool.CurveOnSurface(e1, f, out first1, out last1);
@@ -1135,7 +1135,7 @@ public class WireCheck : ResultCheck
             //
             for (j = i + 1; j <= nbedges; j++)
             {
-                Edge e2 = ShapeCasts.Edge(eMap.FindKey(j));
+                Edge e2 = ShapeCasts.Edge(eMap[j - 1]);
                 if (i == 1)
                 {
                     tabCur[j] = Tool.CurveOnSurface(e2, f, out first2, out last2);
@@ -1624,7 +1624,7 @@ public class WireCheck : ResultCheck
     public bool GeometricControls() => _gctrl;
 
     // fill <mapE> with edges connected to <edg> through vertices contained in <mapVE>
-    private static void Propagate(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE,
+    private static void Propagate(IndexedMap<Shape, NCollection_List<Shape>> mapVE,
                                   in Shape edg,
                                   HashSet<Shape> mapE)
     {
@@ -1647,10 +1647,10 @@ public class WireCheck : ResultCheck
                 for (; ex.More(); ex.Next())
                 {
                     Vertex vtx = ShapeCasts.Vertex(ex.Current());
-                    int indv = mapVE.FindIndex(vtx);
+                    int indv = mapVE.IndexOf(vtx) + 1;
                     if (indv != 0)
                     {
-                        NCollection_List<Shape> edges = mapVE[indv];
+                        NCollection_List<Shape> edges = mapVE.ValueAt(indv - 1);
 
                         var itl = new NCollection_List<Shape>.Iterator(edges);
                         for (; itl.More(); itl.Next())

@@ -1,6 +1,7 @@
 // OCCT.NET: copying the frozen parts of a shape an algorithm works on in place (unit 6G). Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Topology;
 
 using Occt;
@@ -28,7 +29,7 @@ public static partial class BrepTools
         }
 
         // the sub-shapes as placed in the shape, before the replacement
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, map);
 
         var copies = new Dictionary<TShape, TShape>(ReferenceEqualityComparer.Instance);
@@ -36,7 +37,7 @@ public static partial class BrepTools
         Shape result = shape;
         result.TShape(ReplaceFrozen(shape.TShape()!, copies, visited));
 
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 0; i < map.Count; i++)
         {
             Shape s = map[i];
             if (History.IsSupportedType(s) && copies.TryGetValue(s.TShape()!, out TShape? copy)

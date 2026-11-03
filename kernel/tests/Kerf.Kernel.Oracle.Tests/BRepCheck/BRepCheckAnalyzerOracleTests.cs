@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -93,9 +94,9 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         }
     }
 
-    private static NCollection_IndexedMap<Shape> PortMap(in Shape theShape)
+    private static IndexedSet<Shape> PortMap(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap;
     }
@@ -109,11 +110,11 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         try
         {
             var anAnalyzer = new Analyzer(theShape, theGeom, theParallel);
-            NCollection_IndexedMap<Shape> aMap = PortMap(theShape);
-            var aVerdicts = new bool[aMap.Extent()];
-            for (int i = 1; i <= aMap.Extent(); i++)
+            IndexedSet<Shape> aMap = PortMap(theShape);
+            var aVerdicts = new bool[aMap.Count];
+            for (int i = 1; i <= aMap.Count; i++)
             {
-                aVerdicts[i - 1] = anAnalyzer.IsValid(aMap.FindKey(i));
+                aVerdicts[i - 1] = anAnalyzer.IsValid(aMap[i - 1]);
             }
 
             return (aVerdicts, Dump(anAnalyzer, aMap, false), null);
@@ -128,12 +129,12 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
         => string.Join(",", theList.Select(s => Kerf.Engine.Foundation.OcctTypeNames.Of(s).Replace("BRepCheck_", "", StringComparison.Ordinal)));
 
     /// <summary>Every status of every result; with <paramref name="theFaultsOnly"/>, only of the results with a fault.</summary>
-    private static string Dump(Analyzer theAnalyzer, NCollection_IndexedMap<Shape> theMap, bool theFaultsOnly)
+    private static string Dump(Analyzer theAnalyzer, IndexedSet<Shape> theMap, bool theFaultsOnly)
     {
         var aText = new StringBuilder();
-        for (int i = 1; i <= theMap.Extent(); i++)
+        for (int i = 1; i <= theMap.Count; i++)
         {
-            Shape aSub = theMap.FindKey(i);
+            Shape aSub = theMap[i - 1];
             ResultCheck? aResult = theAnalyzer.Result(aSub);
             if (aResult is null)
             {
@@ -143,7 +144,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
             var aContexts = new List<(int, string)>();
             for (aResult.InitContextIterator(); aResult.MoreShapeInContext(); aResult.NextShapeInContext())
             {
-                aContexts.Add((theMap.FindIndex(aResult.ContextualShape()), Statuses(aResult.StatusOnShape())));
+                aContexts.Add((theMap.IndexOf(aResult.ContextualShape()) + 1, Statuses(aResult.StatusOnShape())));
             }
 
             aContexts.Sort();
@@ -183,7 +184,7 @@ public class BRepCheckAnalyzerOracleTests(ITestOutputHelper output) : IDisposabl
     {
         using N.TopoDS_Shape aNative = NativeRead(theFile);
         Shape aPort = PortRead(theFile);
-        Assert.Equal(PortMap(aPort).Extent(), CountNative(aNative));
+        Assert.Equal(PortMap(aPort).Count, CountNative(aNative));
         bool? aWhole = null;
         foreach (bool aGeom in (bool[])[true, false])
         {

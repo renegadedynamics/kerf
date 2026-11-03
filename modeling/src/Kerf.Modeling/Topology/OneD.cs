@@ -1,3 +1,4 @@
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Conversion;
@@ -145,15 +146,15 @@ public static class OneD
         parent ??= edge.TopoParent;
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException("edge has no valid parent");
-        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
         // The map keys on TShape and Location, so a moved edge isn't found by Contains
-        var parentEdge = TopoUtil.FindSame(edge.TopoShape, Enumerable.Range(1, map.Extent()).Select(map.FindKey));
+        var parentEdge = TopoUtil.FindSame(edge.TopoShape, map.Keys);
         if (parentEdge is null)
             return [];
         var relocation = TopoUtil.RelocationBetween(parentEdge.Value, edge.TopoShape);
-        var unique = new NCollection_IndexedMap<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
-        var faces = map.FindFromKey(parentEdge.Value);
+        var unique = new IndexedSet<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var faces = map.GetValue(parentEdge.Value);
         foreach (var face in faces)
             unique.Add(face);
         return [.. unique.Select(f => ShapeCasts.Face(f.Moved(relocation)))];

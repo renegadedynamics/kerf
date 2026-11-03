@@ -40,7 +40,7 @@ namespace Kerf.Engine.Booleans;
 public class CellsBuilder : BooleanBuilder
 {
     protected Shape _allParts = new(); //!< All split parts of the arguments
-    protected NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _index = new(ShapeHasher.Instance); //!< Connection map from all splits parts to the argument shapes from which they were created
+    protected IndexedMap<Shape, NCollection_List<Shape>> _index = new(ShapeHasher.Instance); //!< Connection map from all splits parts to the argument shapes from which they were created
     protected NCollection_IntDataMap<NCollection_List<Shape>> _materials = new(100); //!< Map of assigned materials (material -> list of shape)
     protected Dictionary<Shape, int> _shapeMaterial = new(ShapeHasher.Instance); //!< Map of assigned materials (shape -> material)
     protected Dictionary<Shape, Shape> _mapModified = new(ShapeHasher.Instance); //!< Local modification map to track unification of the splits
@@ -123,7 +123,7 @@ public class CellsBuilder : BooleanBuilder
                     Shape st = exp.Current();
                     if (!_images.TryGetValue(st, out NCollection_List<Shape>? pLSIm))
                     {
-                        if (!_index.FindFromKey(st, out NCollection_List<Shape> pLS))
+                        if (!_index.TryGetValue(st, out NCollection_List<Shape> pLS))
                         {
                             pLS = new NCollection_List<Shape>();
                             _index.Add(st, pLS);
@@ -143,7 +143,7 @@ public class CellsBuilder : BooleanBuilder
                     {
                         Shape stIm = itIm.Value();
                         //
-                        if (!_index.FindFromKey(stIm, out NCollection_List<Shape> pLS))
+                        if (!_index.TryGetValue(stIm, out NCollection_List<Shape> pLS))
                         {
                             pLS = new NCollection_List<Shape>();
                             _index.Add(stIm, pLS);
@@ -169,11 +169,11 @@ public class CellsBuilder : BooleanBuilder
         // for the multi-dimensional case
         // add sub-shapes of the splits into the <myIndex> map
         //
-        int i, nbS = _index.Extent();
+        int i, nbS = _index.Count;
         for (i = 1; i <= nbS; ++i)
         {
-            Shape sp = _index.FindKey(i);
-            NCollection_List<Shape> lsOr = _index[i];
+            Shape sp = _index.KeyAt(i - 1);
+            NCollection_List<Shape> lsOr = _index.ValueAt(i - 1);
             //
             int iType = AlgoTools.Dimension(sp);
             NCollection_IntMap.Iterator itM = new(mDims);
@@ -189,7 +189,7 @@ public class CellsBuilder : BooleanBuilder
                 for (; exp.More(); exp.Next())
                 {
                     Shape ss = exp.Current();
-                    if (!_index.FindFromKey(ss, out NCollection_List<Shape> pLSSOr))
+                    if (!_index.TryGetValue(ss, out NCollection_List<Shape> pLSSOr))
                     {
                         // C++ copies the list into the map
                         _index.Add(ss, new NCollection_List<Shape>(lsOr));
@@ -701,13 +701,13 @@ public class CellsBuilder : BooleanBuilder
             {
                 Shape part = itIm.Value();
                 //
-                if (!_index.Contains(part))
+                if (!_index.ContainsKey(part))
                 {
                     continue;
                 }
                 //
                 // get input shapes in which the split part is contained
-                NCollection_List<Shape> ls = _index.FindFromKey(part);
+                NCollection_List<Shape> ls = _index.GetValue(part);
                 if (ls.Extent() < nbS)
                 {
                     continue;
@@ -861,7 +861,7 @@ public class CellsBuilder : BooleanBuilder
             }
             //
             // fill map of modified shapes
-            NCollection_IndexedMap<Shape> mg = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mg = new(ShapeHasher.Instance);
             int i, nb;
             //
             Exploration.MapShapes(shape, ShapeType.Vertex, mg);
@@ -869,10 +869,10 @@ public class CellsBuilder : BooleanBuilder
             Exploration.MapShapes(shape, ShapeType.Face, mg);
             //
             History history = unify.InternalHistory()!;
-            nb = mg.Extent();
+            nb = mg.Count;
             for (i = 1; i <= nb; ++i)
             {
-                Shape ss = mg[i];
+                Shape ss = mg[i - 1];
                 bool hasMaterial = _shapeMaterial.TryGetValue(ss, out int pMaterial);
                 foreach (Shape su in history.Modified(ss))
                 {
@@ -910,7 +910,7 @@ public class CellsBuilder : BooleanBuilder
                 Shape cb = itLCB.Value();
                 //
                 // Map faces and solids to find boundary faces that can be removed
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmfs = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> dmfs = new(ShapeHasher.Instance);
                 // internal entities
                 NCollection_List<Shape> lsInt = new();
                 //
@@ -933,7 +933,7 @@ public class CellsBuilder : BooleanBuilder
                             for (; itF.More(); itF.Next())
                             {
                                 Shape f = itF.Value();
-                                if (!dmfs.FindFromKey(f, out NCollection_List<Shape> pLSols))
+                                if (!dmfs.TryGetValue(f, out NCollection_List<Shape> pLSols))
                                 {
                                     pLSols = new NCollection_List<Shape>();
                                     dmfs.Add(f, pLSols);
@@ -946,12 +946,12 @@ public class CellsBuilder : BooleanBuilder
                 //
                 // to build unified solid, select only faces attached to only one solid
                 NCollection_List<Shape> lfUnique = new();
-                int i, nb = dmfs.Extent();
+                int i, nb = dmfs.Count;
                 for (i = 1; i <= nb; ++i)
                 {
-                    if (dmfs[i].Extent() == 1)
+                    if (dmfs.ValueAt(i - 1).Extent() == 1)
                     {
-                        lfUnique.Append(dmfs.FindKey(i));
+                        lfUnique.Append(dmfs.KeyAt(i - 1));
                     }
                 }
                 //
@@ -1137,20 +1137,20 @@ public class CellsBuilder : BooleanBuilder
     {
         ShapeType type = ls.First().ShapeType();
         ShapeType typeSubsh = (type == ShapeType.Face ? ShapeType.Edge : ShapeType.Vertex);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapSubSh = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapSubSh = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new(ls);
         for (; it.More(); it.Next())
         {
             Shape s = it.Value();
             Exploration.MapShapesAndAncestors(s, typeSubsh, type, mapSubSh);
         }
-        for (int i = 1; i <= mapSubSh.Extent(); i++)
+        for (int i = 0; i < mapSubSh.Count; i++)
         {
             // check if the subshape belongs to boundary of the area
-            if (mapSubSh[i].Extent() == 1)
+            if (mapSubSh.ValueAt(i).Extent() == 1)
             {
                 // add to theMapKeepBnd
-                mapKeepBnd.Add(mapSubSh.FindKey(i));
+                mapKeepBnd.Add(mapSubSh.KeyAt(i));
             }
         }
     }

@@ -139,18 +139,18 @@ public class GTool : Transient
     public bool Select(Transient? ent, out GeneralModule? gmod, out int cn, bool enforce = false)
     {
         Type type = ent.DynamicType();
-        int num = _thentmod.FindIndex(type); // (ent);
+        int num = _thentmod.IndexOf(type) + 1; // (ent);
         if (num == 0 || enforce)
         {
             if (_thelib.Select(ent, out gmod, out cn))
             {
-                num = _thentmod.Add(type, gmod);
+                num = _thentmod.Add(type, gmod) + 1;
                 _thentnum[type] = cn;
                 return true;
             }
             return false;
         }
-        gmod = (_thentmod.FindFromKey(type) as GeneralModule);
+        gmod = (_thentmod.GetValue(type) as GeneralModule);
         cn = _thentnum.GetValue(type);
         return true;
     }
@@ -161,5 +161,5 @@ public class GTool : Transient
 
     // The cache of selections, by type (OCCT keys them by the Standard_Type handle)
     private readonly Dictionary<Type, int> _thentnum = new();
-    private readonly NCollection_IndexedDataMap<Type, Transient> _thentmod = new();
+    private readonly IndexedMap<Type, Transient> _thentmod = new();
 }

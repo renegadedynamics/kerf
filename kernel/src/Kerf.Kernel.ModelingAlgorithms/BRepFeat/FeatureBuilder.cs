@@ -260,7 +260,7 @@ public class FeatureBuilder : Bop
         NCollection_List<Shape>.Iterator itIm = new();
         // OCCT's NCollection_Map<BOPTools_Set>, of which Added() returns the key in the map: an indexed map gives the
         // stored key back from its index, and the map is never iterated (as BOPAlgo_Builder_3)
-        NCollection_IndexedMap<ToolSet> mst = new();
+        IndexedSet<ToolSet> mst = new();
         NCollection_List<Shape> le = new();
         //
         foreach (Shape s in _shapes)
@@ -318,8 +318,8 @@ public class FeatureBuilder : Bop
             ff = f;
             ff.Orientation(Forward);
 
-            NCollection_IndexedMap<PaveBlock> mpbIn = fi.PaveBlocksIn();
-            NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+            IndexedSet<PaveBlock> mpbIn = fi.PaveBlocksIn();
+            IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
 
             le.Clear();
 
@@ -452,13 +452,13 @@ public class FeatureBuilder : Bop
             }
 
             int nbPBIn, nbPBSc;
-            nbPBIn = mpbIn.Extent();
-            nbPBSc = mpbSc.Extent();
+            nbPBIn = mpbIn.Count;
+            nbPBSc = mpbSc.Count;
             //
             // in edges
             for (j = 1; j <= nbPBIn; ++j)
             {
-                PaveBlock pb = mpbIn.FindKey(j);
+                PaveBlock pb = mpbIn[j - 1];
                 nSp = pb.Edge();
                 sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 if (_removed.Contains(sp))
@@ -474,7 +474,7 @@ public class FeatureBuilder : Bop
             // section edges
             for (j = 1; j <= nbPBSc; ++j)
             {
-                PaveBlock pb = mpbSc.FindKey(j);
+                PaveBlock pb = mpbSc[j - 1];
                 nSp = pb.Edge();
                 sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 if (_removed.Contains(sp))
@@ -508,7 +508,7 @@ public class FeatureBuilder : Bop
                 st.Add(fr, ShapeType.Edge);
                 bFlagSD = mst.Contains(st);
                 //
-                ToolSet sTx = mst.FindKey(mst.Add(st));
+                ToolSet sTx = mst[mst.Add(st)];
                 sx = sTx.Shape();
                 sx.Orientation(oriF);
                 lfIm.Append(sx);
@@ -692,7 +692,7 @@ public class FeatureBuilder : Bop
     /// <summary>Collects the images of the object, that contains in the images of the tool.</summary>
     public void CheckSolidImages()
     {
-        NCollection_IndexedMap<ToolSet> mst = new(); // OCCT's Map with Added(): see RebuildFaces
+        IndexedSet<ToolSet> mst = new(); // OCCT's Map with Added(): see RebuildFaces
         NCollection_List<Shape> lsImNew = new();
         NCollection_List<Shape>.Iterator it = new();
         Explorer exp = new();
@@ -728,7 +728,7 @@ public class FeatureBuilder : Bop
                     st.Add(solIm, ShapeType.Face);
                     bFlagSD = mst.Contains(st);
                     //
-                    ToolSet sTx = mst.FindKey(mst.Add(st));
+                    ToolSet sTx = mst[mst.Add(st)];
                     Shape sx = sTx.Shape();
                     lsImNew.Append(sx);
                     //

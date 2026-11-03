@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1995-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -60,8 +61,8 @@ public class PolyAlgo : Transient
     private readonly double[,] _tiMa = new double[3, 3];
     private readonly double[] _tiLo = new double[3];
     private readonly NCollection_Sequence<Shape> _shapes = new();
-    private readonly NCollection_IndexedMap<Shape> _eMap = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _fMap = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _eMap = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _fMap = new(ShapeHasher.Instance);
     private readonly AlgoPolyAlgo _algo;
     private bool _debug;
     private double _tolSta;
@@ -180,8 +181,8 @@ public class PolyAlgo : Transient
 
         Exploration.MapShapes(shape, ShapeType.Edge, _eMap);
         Exploration.MapShapes(shape, ShapeType.Face, _fMap);
-        int nbEdge = _eMap.Extent();
-        int nbFace = _fMap.Extent();
+        int nbEdge = _eMap.Count;
+        int nbFace = _fMap.Count;
         NCollection_Array1<int> es = new(0, nbEdge); // index of the Shell
         NCollection_Array1<PolyData?> pd = new(0, nbFace);
         NCollection_Array1<PolyInternalData?> pid = new(0, nbFace);
@@ -220,7 +221,7 @@ public class PolyAlgo : Transient
         int index = 0;
         ref AlgoBiPoint.PointsT points =
             ref _algo.Hide(status, out index, out reg1, out regn, out outl, out intl);
-        shape = intl ? _fMap.FindKey(index) : _eMap.FindKey(index);
+        shape = intl ? _fMap[index - 1] : _eMap[index - 1];
         return ref points;
     }
 
@@ -236,7 +237,7 @@ public class PolyAlgo : Transient
     {
         int index = 0;
         ref AlgoBiPoint.PointsT points = ref _algo.Show(out index, out reg1, out regn, out outl, out intl);
-        shape = intl ? _fMap.FindKey(index) : _eMap.FindKey(index);
+        shape = intl ? _fMap[index - 1] : _eMap[index - 1];
         return ref points;
     }
 
@@ -376,15 +377,15 @@ public class PolyAlgo : Transient
                 isClosed = shape.Closed();
                 if (!isClosed)
                 {
-                    NCollection_IndexedMap<Shape> em = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> em = new(ShapeHasher.Instance);
                     Exploration.MapShapes(shape, ShapeType.Edge, em);
-                    int nbEdge = em.Extent();
+                    int nbEdge = em.Count;
                     NCollection_Array1<int> flagArray = new(1, Max(nbEdge, 1));
                     flagArray.Init(0);
                     for (edgeExp.Init(shape, ShapeType.Edge); edgeExp.More(); edgeExp.Next())
                     {
                         Edge edge = ShapeCasts.Edge(edgeExp.Current());
-                        int edgeIndex = em.FindIndex(edge);
+                        int edgeIndex = em.IndexOf(edge) + 1;
                         Orientation edgeOrient = edge.Orientation();
                         if (!Tool.Degenerated(edge))
                         {
@@ -453,7 +454,7 @@ public class PolyAlgo : Transient
                     if (shapeMap2.Add(face))
                     {
                         iFace++;
-                        int faceIndex = _fMap.FindIndex(face);
+                        int faceIndex = _fMap.IndexOf(face) + 1;
                         bool isReversed = face.Orientation() == Reversed;
                         Transform3D tt = loc.Transformation();
                         tt = tt.PreMultiplied(projTrsf);
@@ -570,25 +571,25 @@ public class PolyAlgo : Transient
                 }
             }
 
-            int nbFaces = _fMap.Extent();
+            int nbFaces = _fMap.Count;
             NCollection_List<AlgoBiPoint> list = psd.Edges();
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> ef = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> ef = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(shape, ShapeType.Edge, ShapeType.Face, ef);
             for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
             {
                 if (pid.Value(faceIter) is not null)
                 {
-                    for (edgeExp.Init(_fMap[faceIter], ShapeType.Edge); edgeExp.More(); edgeExp.Next())
+                    for (edgeExp.Init(_fMap[faceIter - 1], ShapeType.Edge); edgeExp.More(); edgeExp.Next())
                     {
                         Edge edge = ShapeCasts.Edge(edgeExp.Current());
                         if (shapeMap1.Add(edge))
                         {
-                            int edgeIndex = _eMap.FindIndex(edge);
+                            int edgeIndex = _eMap.IndexOf(edge) + 1;
                             es.SetValue(edgeIndex, iShell);
-                            int indexE = ef.FindIndex(edge);
+                            int indexE = ef.IndexOf(edge) + 1;
                             if (indexE > 0)
                             {
-                                NCollection_List<Shape> LS = ef[indexE];
+                                NCollection_List<Shape> LS = ef.ValueAt(indexE - 1);
                                 InitBiPointsWithConnexity(edgeIndex, ref edge, list, pid, LS, true);
                             }
                             else
@@ -620,7 +621,7 @@ public class PolyAlgo : Transient
                 Edge edge = ShapeCasts.Edge(edgeExp.Current());
                 if (shapeMap1.Add(edge))
                 {
-                    int edgeIndex = _eMap.FindIndex(edge);
+                    int edgeIndex = _eMap.IndexOf(edge) + 1;
                     es.SetValue(edgeIndex, iShell);
                     NCollection_List<Shape> ls = new();
                     InitBiPointsWithConnexity(edgeIndex, ref edge, list, pid, ls, false);
@@ -865,7 +866,7 @@ public class PolyAlgo : Transient
             {
                 NCollection_List<Shape>.Iterator itn = new(ls);
                 Face f1 = ShapeCasts.Face(itn.Value());
-                int i1 = _fMap.FindIndex(f1);
+                int i1 = _fMap.IndexOf(f1) + 1;
                 Triangulation? tr1 = Tool.Triangulation(f1, out loc);
                 hPol[0] = Tool.PolygonOnTriangulation(edge, tr1, loc);
                 PolyInternalData pid1 = pid.Value(i1)!;
@@ -975,12 +976,12 @@ public class PolyAlgo : Transient
             {
                 NCollection_List<Shape>.Iterator itn = new(ls);
                 Face f1 = ShapeCasts.Face(itn.Value());
-                int i1 = _fMap.FindIndex(f1);
+                int i1 = _fMap.IndexOf(f1) + 1;
                 Triangulation? tr1 = Tool.Triangulation(f1, out loc);
                 hPol[0] = Tool.PolygonOnTriangulation(edge, tr1, loc);
                 itn.Next();
                 Face f2 = ShapeCasts.Face(itn.Value());
-                int i2 = _fMap.FindIndex(f2);
+                int i2 = _fMap.IndexOf(f2) + 1;
                 if (i1 == i2)
                 {
                     edge.Reverse();
@@ -1797,7 +1798,7 @@ public class PolyAlgo : Transient
 
         Transform3D projTrsf = _proj.Transformation();
 
-        int nbFaces = _fMap.Extent();
+        int nbFaces = _fMap.Count;
         for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
         {
             PolyInternalData aPid = pid[faceIter]!;
@@ -1810,7 +1811,7 @@ public class PolyAlgo : Transient
             NCollection_Array1<TriangleData> tData1 = aPid.TData();
             NCollection_Array1<PolyInternalSegment> piSeg1 = aPid.PISeg();
             NCollection_Array1<PolyInternalNode?> piNod1 = aPid.PINod();
-            Shape localShape = _fMap[faceIter];
+            Shape localShape = _fMap[faceIter - 1];
             Face face = ShapeCasts.Face(localShape);
             _bSurf.Initialize(face, false);
             _gSurf = Tool.Surface(face, out loc);
@@ -1939,7 +1940,7 @@ public class PolyAlgo : Transient
         NCollection_Array1<PolyInternalSegment> piSeg2 = null!;
         NCollection_Array1<PolyInternalNode?> piNod2 = null!;
 
-        int nbFaces = _fMap.Extent();
+        int nbFaces = _fMap.Count;
         bool isModif = true;
         int iLoop = 0;
 
@@ -2583,7 +2584,7 @@ public class PolyAlgo : Transient
     {
         double x1, y1, z1, x2, y2, z2;
         double xti1, yti1, zti1, xti2, yti2, zti2;
-        int nbFaces = _fMap.Extent();
+        int nbFaces = _fMap.Count;
         for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
         {
             PolyInternalData aPid = pid[faceIter]!;
@@ -2765,7 +2766,7 @@ public class PolyAlgo : Transient
     private void UpdatePolyData(NCollection_Array1<PolyData?> pd,
         NCollection_Array1<PolyInternalData?> pid, bool isClosed)
     {
-        int nbFaces = _fMap.Extent();
+        int nbFaces = _fMap.Count;
         for (int faceIter = 1; faceIter <= nbFaces; ++faceIter)
         {
             PolyInternalData aPid = pid[faceIter]!;
@@ -2885,7 +2886,7 @@ public class PolyAlgo : Transient
         BrepBuilder builder = new();
         builder.MakeCompound(ref result);
         builder.Add(result, shape);
-        if (_fMap.IsEmpty())
+        if (_fMap.Count == 0)
         {
             result.TShape()?.FreezeGraph();
             return result;
@@ -2916,7 +2917,7 @@ public class PolyAlgo : Transient
                 if (bp.IntLine())
                 {
                     ref AlgoBiPoint.IndicesT indices = ref bp.Indices();
-                    if (map.Contains(_fMap.FindKey(indices.ShapeIndex)))
+                    if (map.Contains(_fMap[indices.ShapeIndex - 1]))
                     {
                         ref AlgoBiPoint.PointsT points = ref bp.Points();
                         builder.Add(result, new LibraryMakeEdge(new Point3D(points.Pnt1), new Point3D(points.Pnt2)).InternalEdge());

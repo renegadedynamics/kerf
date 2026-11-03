@@ -106,7 +106,7 @@ public class History : Transient
     public History(NCollection_List<Shape> arguments, IAlgorithm algo)
     {
         // Map all argument shapes to save them in history
-        var argsMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var argsMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         var it = new NCollection_List<Shape>.Iterator(arguments);
         for (; it.More(); it.Next())
         {
@@ -116,10 +116,10 @@ public class History : Transient
             }
         }
         // Copy the history for all supported shapes from the algorithm
-        int i, nb = argsMap.Extent();
+        int i, nb = argsMap.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape s = argsMap[i];
+            Shape s = argsMap[i - 1];
             if (!IsSupportedType(s))
             {
                 continue;

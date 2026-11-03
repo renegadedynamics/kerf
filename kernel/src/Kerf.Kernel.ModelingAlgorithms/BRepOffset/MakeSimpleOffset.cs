@@ -446,19 +446,19 @@ public sealed class MakeSimpleOffset
     //=============================================================================
     private static void ComputeMaxAngleOnShape(in Shape s, ref double resAngle)
     {
-        var m = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var m = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(s, ShapeType.Edge, ShapeType.Face, m);
         var it = new NCollection_List<Shape>.Iterator();
         var ex = new Explorer();
         Face f1 = new(), f2 = new();
         bool found, couture;
-        for (int i = 1; i <= m.Extent(); i++)
+        for (int i = 0; i < m.Count; i++)
         {
-            Edge e = ShapeCasts.Edge(m.FindKey(i));
+            Edge e = ShapeCasts.Edge(m.KeyAt(i));
             found = false;
             couture = false;
             f1.Nullify();
-            for (it.Initialize(m.FindFromIndex(i)); it.More() && !found; it.Next())
+            for (it.Initialize(m.ValueAt(i)); it.More() && !found; it.Next())
             {
                 if (f1.IsNull)
                 {

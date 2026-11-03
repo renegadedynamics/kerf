@@ -26,7 +26,7 @@ public sealed class PurgeLocations
 {
     private bool _done;
     private Shape _shape = new();
-    private readonly NCollection_IndexedMap<Shape> _mapShapes = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapShapes = new(ShapeHasher.Instance);
     private readonly LocationSet _locations = new();
     private readonly Dictionary<Shape, Shape> _mapNewShapes = new(ShapeHasher.Instance);
     private ReShape? _reShape;
@@ -73,12 +73,12 @@ public sealed class PurgeLocations
             return _done;
         }
 
-        int nbShapes = _mapShapes.Extent();
+        int nbShapes = _mapShapes.Count;
         _mapNewShapes.Clear();
         int inds;
         for (inds = 1; inds <= nbShapes; ++inds)
         {
-            Shape s = _mapShapes[inds];
+            Shape s = _mapShapes[inds - 1];
             int locInd = _locations.Index(s.Location());
             if (locInd == 0)
             {

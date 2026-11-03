@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -31,7 +32,7 @@ public class BinaryCurveSet
     private const byte Offset = 9;
 
     // OCCT's NCollection_IndexedMap of handles, which hashes by address
-    private readonly NCollection_IndexedMap<object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _map = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>An empty set of curves.</summary>
     public BinaryCurveSet()
@@ -47,7 +48,7 @@ public class BinaryCurveSet
     /// <summary>Adds a curve to the set (once) and returns its index; 0 for null.</summary>
     public int Add(Curve3D? c)
     {
-        return (c is null) ? 0 : _map.Add(c);
+        return (c is null) ? 0 : (_map.Add(c) + 1);
     }
 
     /// <summary>The curve of index I; null for 0.</summary>
@@ -59,18 +60,18 @@ public class BinaryCurveSet
         }
         else
         {
-            return _map[i] as Curve3D;
+            return _map[i - 1] as Curve3D;
         }
     }
 
     /// <summary>The index of the curve, 0 if it is null or isn't in the set.</summary>
     public int Index(Curve3D? s)
     {
-        return s is null ? 0 : _map.FindIndex(s);
+        return s is null ? 0 : (_map.IndexOf(s) + 1);
     }
 
     // the number of curves, for the readers' checks
-    internal int CurveCount => _map.Extent();
+    internal int CurveCount => _map.Count;
 
     private static void Write(OStream os, LineCurve3D l)
     {
@@ -248,7 +249,7 @@ public class BinaryCurveSet
     /// <summary>Writes the set ("Curves", the count, then each curve).</summary>
     public void Write(Stream os, ProgressRange range = default)
     {
-        int i, nbcurv = _map.Extent();
+        int i, nbcurv = _map.Count;
         using var ps = new ProgressScope(range, "Writing curves", nbcurv);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "Curves ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbcurv);
@@ -256,7 +257,7 @@ public class BinaryCurveSet
         var stream = new OStream(os);
         for (i = 1; i <= nbcurv && ps.More(); i++, ps.Next())
         {
-            WriteCurve((Curve3D)_map[i], stream);
+            WriteCurve((Curve3D)_map[i - 1], stream);
         }
     }
 

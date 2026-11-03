@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
@@ -106,7 +107,7 @@ public class BuilderFace : BuilderArea
     {
         bool bFound;
         int i, nbV, nbE;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new(_shapes);
         //
         _shapesToAvoid.Clear();
@@ -132,14 +133,14 @@ public class BuilderFace : BuilderArea
                     Exploration.MapShapesAndAncestors(e, ShapeType.Vertex, ShapeType.Edge, mve);
                 }
             }
-            nbV = mve.Extent();
+            nbV = mve.Count;
             //
             // 2. myEdgesToAvoid
             for (i = 1; i <= nbV; ++i)
             {
-                Vertex v = ShapeCasts.Vertex(mve.FindKey(i));
+                Vertex v = ShapeCasts.Vertex(mve.KeyAt(i - 1));
                 //
-                NCollection_List<Shape> le = mve.ChangeFromKey(v);
+                NCollection_List<Shape> le = mve.GetValue(v);
                 nbE = le.Extent();
                 if (nbE == 0)
                 {
@@ -190,7 +191,7 @@ public class BuilderFace : BuilderArea
         bool bFlag;
         int i, nbEA;
         NCollection_List<Shape>.Iterator it = new(_shapes);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> veMap = new(ShapeHasher.Instance);
         // OCCT's NCollection_Map<TopoDS_Shape> with the default hasher (orientation included, decision 721)
         HashSet<Shape> mAdded = new(EqualityComparer<Shape>.Default);
         Iterator itW = new();
@@ -251,10 +252,10 @@ public class BuilderFace : BuilderArea
         }
         //
         // b. collect all edges that are to avoid
-        nbEA = _shapesToAvoid.Extent();
+        nbEA = _shapesToAvoid.Count;
         for (i = 1; i <= nbEA; ++i)
         {
-            Shape e = _shapesToAvoid[i];
+            Shape e = _shapesToAvoid[i - 1];
             mep.Add(e);
         }
         //
@@ -276,17 +277,17 @@ public class BuilderFace : BuilderArea
         // 2. Internal Wires
         _loopsInternal.Clear();
         //
-        nbEA = _shapesToAvoid.Extent();
+        nbEA = _shapesToAvoid.Count;
         for (i = 1; i <= nbEA; ++i)
         {
-            Shape ee = _shapesToAvoid[i];
+            Shape ee = _shapesToAvoid[i - 1];
             Exploration.MapShapesAndAncestors(ee, ShapeType.Vertex, ShapeType.Edge, veMap);
         }
         //
         bFlag = true;
         for (i = 1; (i <= nbEA) && bFlag; ++i)
         {
-            Shape ee = _shapesToAvoid[i];
+            Shape ee = _shapesToAvoid[i - 1];
             if (!mAdded.Add(ee))
             {
                 continue;
@@ -310,7 +311,7 @@ public class BuilderFace : BuilderArea
                 for (; itE.More() && bFlag; itE.Next())
                 {
                     Vertex v = ShapeCasts.Vertex(itE.Value());
-                    NCollection_List<Shape> le = veMap.FindFromKey(v);
+                    NCollection_List<Shape> le = veMap.GetValue(v);
                     it.Initialize(le);
                     for (; it.More() && bFlag; it.Next())
                     {
@@ -363,11 +364,11 @@ public class BuilderFace : BuilderArea
         // The new faces
         NCollection_List<Shape> newFaces = new();
         // The hole faces which has to be classified relatively new faces
-        NCollection_IndexedMap<Shape> holeFaces = new(ShapeHasher.Instance);
+        IndexedSet<Shape> holeFaces = new(ShapeHasher.Instance);
         // Map of the edges of the hole faces for quick check of the growths.
         // If the analyzed wire contains any of the edges from the hole faces
         // it is considered as growth.
-        NCollection_IndexedMap<Shape> mhe = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mhe = new(ShapeHasher.Instance);
 
         // Analyze the new wires - classify them to be the holes and growths
         using (var psClass = new ProgressScope(mainScope.Next(5), "Making faces", _loops.Extent()))
@@ -407,7 +408,7 @@ public class BuilderFace : BuilderArea
             }
         }
 
-        if (holeFaces.IsEmpty())
+        if (holeFaces.Count == 0)
         {
             // No holes, stop the analysis
             _areas.Append(newFaces);
@@ -418,11 +419,11 @@ public class BuilderFace : BuilderArea
 
         // Prepare tree with the boxes of the hole faces
         Box2dTree boxTree = new();
-        int i, nbH = holeFaces.Extent();
+        int i, nbH = holeFaces.Count;
         boxTree.SetSize(nbH);
         for (i = 1; i <= nbH; ++i)
         {
-            Face hFace = ShapeCasts.Face(holeFaces[i]);
+            Face hFace = ShapeCasts.Face(holeFaces[i - 1]);
             //
             Box2d box = new();
             BrepTools.AddUVBounds(hFace, ref box);
@@ -433,7 +434,7 @@ public class BuilderFace : BuilderArea
         boxTree.Build();
 
         // Find outer growth face that is most close to each hole face
-        NCollection_IndexedDataMap<Shape, Shape> holeFaceMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Shape> holeFaceMap = new(ShapeHasher.Instance);
 
         // Selector
         Box2dTreeSelector selector = new();
@@ -463,7 +464,7 @@ public class BuilderFace : BuilderArea
                 for (; itLI.More(); itLI.Next())
                 {
                     int k = itLI.Value();
-                    Shape hole = holeFaces[k];
+                    Shape hole = holeFaces[k - 1];
                     // Check if it is inside
                     if (!IsInside(hole, face, _context!))
                     {
@@ -471,12 +472,12 @@ public class BuilderFace : BuilderArea
                     }
 
                     // Save the relation
-                    int indexWas = holeFaceMap.FindIndex(hole);
+                    int indexWas = holeFaceMap.IndexOf(hole) + 1;
                     if (indexWas > 0)
                     {
-                        if (IsInside(face, holeFaceMap[indexWas], _context!))
+                        if (IsInside(face, holeFaceMap.ValueAt(indexWas - 1), _context!))
                         {
-                            holeFaceMap[indexWas] = face;
+                            holeFaceMap.ValueAt(indexWas - 1) = face;
                         }
                     }
                     else
@@ -488,23 +489,23 @@ public class BuilderFace : BuilderArea
         }
 
         // Make the back map from faces to holes
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> faceHolesMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> faceHolesMap = new(ShapeHasher.Instance);
 
-        nbH = holeFaceMap.Extent();
+        nbH = holeFaceMap.Count;
         for (i = 1; i <= nbH; ++i)
         {
-            Shape hole = holeFaceMap.FindKey(i);
-            Shape face = holeFaceMap[i];
+            Shape hole = holeFaceMap.KeyAt(i - 1);
+            Shape face = holeFaceMap.ValueAt(i - 1);
             //
-            int index = faceHolesMap.FindIndex(face);
+            int index = faceHolesMap.IndexOf(face) + 1;
             NCollection_List<Shape> pLHoles = index > 0
-                                                     ? faceHolesMap[index]
-                                                     : faceHolesMap[faceHolesMap.Add(face, new NCollection_List<Shape>())];
+                                                     ? faceHolesMap.ValueAt(index - 1)
+                                                     : faceHolesMap.ValueAt(faceHolesMap.Add(face, new NCollection_List<Shape>()));
             pLHoles.Append(hole);
         }
 
         // Add unused holes to the original face
-        if (holeFaces.Extent() != holeFaceMap.Extent())
+        if (holeFaces.Count != holeFaceMap.Count)
         {
             Box boxF = new();
             Bounds.Add(_face, ref boxF);
@@ -514,12 +515,12 @@ public class BuilderFace : BuilderArea
                 Face face = new();
                 bb.MakeFace(ref face, s, loc, tol);
                 NCollection_List<Shape> unUsedHoles =
-                  faceHolesMap[faceHolesMap.Add(face, new NCollection_List<Shape>())];
-                nbH = holeFaces.Extent();
+                  faceHolesMap.ValueAt(faceHolesMap.Add(face, new NCollection_List<Shape>()));
+                nbH = holeFaces.Count;
                 for (i = 1; i <= nbH; ++i)
                 {
-                    Shape hole = holeFaces[i];
-                    if (!holeFaceMap.Contains(hole))
+                    Shape hole = holeFaces[i - 1];
+                    if (!holeFaceMap.ContainsKey(hole))
                     {
                         unUsedHoles.Append(hole);
                     }
@@ -540,7 +541,7 @@ public class BuilderFace : BuilderArea
             }
 
             Face face = ShapeCasts.Face(itLS.Value());
-            if (faceHolesMap.FindFromKey(face, out NCollection_List<Shape> pLHoles))
+            if (faceHolesMap.TryGetValue(face, out NCollection_List<Shape> pLHoles))
             {
                 // update faces with the holes
                 NCollection_List<Shape>.Iterator itLH = new(pLHoles);
@@ -581,7 +582,7 @@ public class BuilderFace : BuilderArea
         Box2dTree boxTree = new();
 
         // Map of edges to classify
-        NCollection_IndexedMap<Shape> edgesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> edgesMap = new(ShapeHasher.Instance);
 
         // Main progress scope
         using var mainScope = new ProgressScope(range, "Adding internal shapes", 3);
@@ -604,7 +605,7 @@ public class BuilderFace : BuilderArea
                     BrepTools.AddUVBounds(_face, e, ref boxE);
                     // Make sure the index of edge in the map and
                     // of the box in the tree is the same
-                    boxTree.Add(edgesMap.Add(e), global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(boxE));
+                    boxTree.Add(edgesMap.Add(e) + 1, global::Kerf.Engine.Geometry.Bounds.Tools.Bnd2BVH(boxE));
                 }
             }
         }
@@ -643,7 +644,7 @@ public class BuilderFace : BuilderArea
                 }
 
                 // Collect edges inside the face
-                NCollection_IndexedMap<Shape> edgesInside = new(ShapeHasher.Instance);
+                IndexedSet<Shape> edgesInside = new(ShapeHasher.Instance);
 
                 NCollection_List<int> li = selector.Indices();
                 NCollection_List<int>.Iterator itLI = new(li);
@@ -655,7 +656,7 @@ public class BuilderFace : BuilderArea
                         continue;
                     }
 
-                    Edge e = ShapeCasts.Edge(edgesMap[nE]);
+                    Edge e = ShapeCasts.Edge(edgesMap[nE - 1]);
                     if (IsInside(e, f, _context!))
                     {
                         edgesInside.Add(e);
@@ -663,7 +664,7 @@ public class BuilderFace : BuilderArea
                     }
                 }
 
-                if (edgesInside.IsEmpty())
+                if (edgesInside.Count == 0)
                 {
                     continue;
                 }
@@ -681,7 +682,7 @@ public class BuilderFace : BuilderArea
                 }
 
                 // Condition of early exit
-                if (meDone.Extent() == edgesMap.Extent())
+                if (meDone.Extent() == edgesMap.Count)
                 {
                     // All edges are classified and added into the faces
                     return;
@@ -690,12 +691,12 @@ public class BuilderFace : BuilderArea
         }
 
         // Some edges are left unclassified - warn user about them
-        NCollection_IndexedMap<Shape> edgesUnUsed = new(ShapeHasher.Instance);
-        for (int i = 1; i <= edgesMap.Extent(); ++i)
+        IndexedSet<Shape> edgesUnUsed = new(ShapeHasher.Instance);
+        for (int i = 1; i <= edgesMap.Count; ++i)
         {
             if (!meDone.Contains(i))
             {
-                edgesUnUsed.Add(edgesMap[i]);
+                edgesUnUsed.Add(edgesMap[i - 1]);
             }
         }
 
@@ -726,24 +727,24 @@ public class BuilderFace : BuilderArea
         AddWarning(new AlertFaceBuilderUnusedEdges(wShape));
     }
 
-    private static void MakeInternalWires(NCollection_IndexedMap<Shape> me, NCollection_List<Shape> wires)
+    private static void MakeInternalWires(IndexedSet<Shape> me, NCollection_List<Shape> wires)
     {
         int i, nbE;
         HashSet<Shape> addedMap = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itE = new(wires);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
         BrepBuilder bb = new();
         //
-        nbE = me.Extent();
+        nbE = me.Count;
         for (i = 1; i <= nbE; ++i)
         {
-            Shape e = me[i];
+            Shape e = me[i - 1];
             Exploration.MapShapesAndAncestors(e, ShapeType.Vertex, ShapeType.Edge, mve);
         }
         //
         for (i = 1; i <= nbE; ++i)
         {
-            Shape ee = me[i];
+            Shape ee = me[i - 1];
             if (!addedMap.Add(ee))
             {
                 continue;
@@ -764,7 +765,7 @@ public class BuilderFace : BuilderArea
                 for (; exp.More(); exp.Next())
                 {
                     Shape v = exp.Current();
-                    NCollection_List<Shape> le = mve.FindFromKey(v);
+                    NCollection_List<Shape> le = mve.GetValue(v);
                     itE.Initialize(le);
                     for (; itE.More(); itE.Next())
                     {
@@ -786,7 +787,7 @@ public class BuilderFace : BuilderArea
     private static bool IsInside(in Shape wire, in Shape f, IntersectionContext context)
     {
         // Avoid edges of the face
-        NCollection_IndexedMap<Shape> faceEdgesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> faceEdgesMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(f, ShapeType.Edge, faceEdgesMap);
 
         // Get classification tool from the context
@@ -831,9 +832,9 @@ public class BuilderFace : BuilderArea
         return isInside;
     }
 
-    private static bool IsGrowthWire(in Shape wire, NCollection_IndexedMap<Shape> mhe)
+    private static bool IsGrowthWire(in Shape wire, IndexedSet<Shape> mhe)
     {
-        if (mhe.Extent() != 0)
+        if (mhe.Count != 0)
         {
             Iterator it = new(wire);
             for (; it.More(); it.Next())

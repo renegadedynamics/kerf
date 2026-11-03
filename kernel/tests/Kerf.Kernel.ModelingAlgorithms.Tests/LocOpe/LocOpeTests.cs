@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Checks;
@@ -25,16 +26,16 @@ public class LocOpeTests
 {
     internal static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     internal static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             if (!aMap[i].TShape()!.IsFrozen)
             {
@@ -47,7 +48,7 @@ public class LocOpeTests
     // True if the result holds the caller's own TShape of this sub-shape
     internal static bool Shares(in Shape theResult, in Shape theSub)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theResult, theSub.ShapeType(), aMap);
         return aMap.Contains(theSub);
     }
@@ -71,9 +72,9 @@ public class LocOpeTests
     // The face of the box at z = 30 (its 6th face)
     internal static Face Face(in Shape theShape, int theIndex)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, global::Kerf.Topology.ShapeType.Face, aMap);
-        return ShapeCasts.Face(aMap[theIndex]);
+        return ShapeCasts.Face(aMap[theIndex - 1]);
     }
 
     internal static Face TopFace(in Shape theBox)
@@ -103,9 +104,9 @@ public class LocOpeTests
         Assert.False(global::Kerf.Engine.Features.Local.LocOpe.Closed(ShapeCasts.Edge(anEdges.Current()), aTop));
 
         // two faces of a box meet at a right angle
-        var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, aMap);
-        Assert.False(global::Kerf.Engine.Features.Local.LocOpe.TgtFaces(ShapeCasts.Edge(aMap.FindKey(1)), ShapeCasts.Face(aMap[1].First()), ShapeCasts.Face(aMap[1].Last())));
+        Assert.False(global::Kerf.Engine.Features.Local.LocOpe.TgtFaces(ShapeCasts.Edge(aMap.KeyAt(0)), ShapeCasts.Face(aMap.ValueAt(0).First()), ShapeCasts.Face(aMap.ValueAt(0).Last())));
 
         var aPoints = new NCollection_Sequence<Point3D>();
         global::Kerf.Engine.Features.Local.LocOpe.SampleEdges(aBox, aPoints);

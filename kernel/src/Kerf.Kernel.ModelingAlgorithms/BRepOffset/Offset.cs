@@ -64,14 +64,14 @@ public sealed class Offset
 
     private static Point3D GetFarestCorner(in Wire aWire)
     {
-        var vertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var vertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aWire, ShapeType.Vertex, vertices);
 
         double maxDist = 0.0;
         Point3D thePoint = new();
-        for (int i = 1; i <= vertices.Extent(); i++)
+        for (int i = 0; i < vertices.Count; i++)
         {
-            for (int j = 1; j <= vertices.Extent(); j++)
+            for (int j = 0; j < vertices.Count; j++)
             {
                 Vertex v1 = ShapeCasts.Vertex(vertices[i]);
                 Vertex v2 = ShapeCasts.Vertex(vertices[j]);

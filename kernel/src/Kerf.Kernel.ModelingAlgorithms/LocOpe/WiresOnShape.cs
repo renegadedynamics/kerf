@@ -49,7 +49,7 @@ namespace Kerf.Engine.Features.Local;
 public sealed class WiresOnShape : Transient
 {
     private Shape _shape = new();
-    private readonly NCollection_IndexedDataMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);
     private readonly HashSet<Shape> _facesWithSection = new(ShapeHasher.Instance);
     private bool _checkInterior;
     // OCCT iterates this map keyed by the shapes' addresses (in BindAll); the port in insertion order
@@ -240,7 +240,7 @@ public sealed class WiresOnShape : Transient
     // Bind(E, F) on working shapes
     private void BindCore(in Edge e, in Face f)
     {
-        if (!_mapEF.Contains(e))
+        if (!_mapEF.ContainsKey(e))
         {
             Explorer exp = new(f, global::Kerf.Topology.ShapeType.Edge);
             for (; exp.More(); exp.Next())
@@ -316,13 +316,13 @@ public sealed class WiresOnShape : Transient
             _map[ite.Key] = ite.Value;
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> splits = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> splits = new(ShapeHasher.Instance);
         int ind;
         HashSet<Shape> overlappedEdges = new(ShapeHasher.Instance);
-        for (ind = 1; ind <= _mapEF.Extent(); ind++)
+        for (ind = 1; ind <= _mapEF.Count; ind++)
         {
-            Edge edg = ShapeCasts.Edge(_mapEF.FindKey(ind));
-            Face fac = ShapeCasts.Face(_mapEF[ind]);
+            Edge edg = ShapeCasts.Edge(_mapEF.KeyAt(ind - 1));
+            Face fac = ShapeCasts.Face(_mapEF.ValueAt(ind - 1));
 
             PutPCurve(edg, fac);
             Curve2D? pCurve = Tool.CurveOnSurface(edg, fac, out _, out _);
@@ -342,17 +342,17 @@ public sealed class WiresOnShape : Transient
             }
         }
 
-        for (ind = 1; ind <= splits.Extent(); ind++)
+        for (ind = 1; ind <= splits.Count; ind++)
         {
-            Shape edge = splits.FindKey(ind);
+            Shape edge = splits.KeyAt(ind - 1);
             if (overlappedEdges.Contains(edge))
             {
                 continue;
             }
-            Shape face = _mapEF.FindFromKey(edge);
+            Shape face = _mapEF.GetValue(edge);
             // Remove "anEdge" from "myMapEF"
-            _mapEF.RemoveKey(edge);
-            NCollection_List<Shape>.Iterator itl = new(splits[ind]);
+            _mapEF.Remove(edge);
+            NCollection_List<Shape>.Iterator itl = new(splits.ValueAt(ind - 1));
             for (; itl.More(); itl.Next())
             {
                 _mapEF.Add(itl.Value(), face);
@@ -361,10 +361,10 @@ public sealed class WiresOnShape : Transient
 
         Dictionary<Shape, double> vertParam = new(ShapeHasher.Instance);
 
-        for (ind = 1; ind <= _mapEF.Extent(); ind++)
+        for (ind = 1; ind <= _mapEF.Count; ind++)
         {
-            Edge edg = ShapeCasts.Edge(_mapEF.FindKey(ind));
-            Face fac = ShapeCasts.Face(_mapEF[ind]);
+            Edge edg = ShapeCasts.Edge(_mapEF.KeyAt(ind - 1));
+            Face fac = ShapeCasts.Face(_mapEF.ValueAt(ind - 1));
             // JAG 02.02.96 : On verifie les pcurves...
 
             for (exp.Init(edg, ShapeType.Vertex); exp.More(); exp.Next())
@@ -457,19 +457,19 @@ public sealed class WiresOnShape : Transient
         _index = 1;
     }
 
-    public bool MoreEdge() => _index <= _mapEF.Extent();
+    public bool MoreEdge() => _index <= _mapEF.Count;
 
     /// <summary>The current edge (the caller's edge if it was copied).</summary>
     public Edge Edge() => ShapeCasts.Edge(_work.Original(InternalEdge()));
 
     /// <summary><see cref="Edge"/> as worked on, for ported code.</summary>
-    internal Edge InternalEdge() => ShapeCasts.Edge(_mapEF.FindKey(_index));
+    internal Edge InternalEdge() => ShapeCasts.Edge(_mapEF.KeyAt(_index - 1));
 
     /// <summary>Returns the face of the shape on which the current edge is projected (the caller's face).</summary>
     public Face OnFace() => ShapeCasts.Face(_work.Original(InternalOnFace()));
 
     /// <summary><see cref="OnFace"/> as worked on, for ported code.</summary>
-    internal Face InternalOnFace() => ShapeCasts.Face(_mapEF[_index]);
+    internal Face InternalOnFace() => ShapeCasts.Face(_mapEF.ValueAt(_index - 1));
 
     /// <summary>
     /// If the current edge is projected on an edge, returns true and sets the edge (the caller's edge) in
@@ -486,9 +486,9 @@ public sealed class WiresOnShape : Transient
     internal bool InternalOnEdge(out Edge e)
     {
         e = new Edge();
-        if (_map.ContainsKey(_mapEF.FindKey(_index)))
+        if (_map.ContainsKey(_mapEF.KeyAt(_index - 1)))
         {
-            e = ShapeCasts.Edge(_map.GetValue(_mapEF.FindKey(_index)));
+            e = ShapeCasts.Edge(_map.GetValue(_mapEF.KeyAt(_index - 1)));
             return true;
         }
         return false;
@@ -575,12 +575,12 @@ public sealed class WiresOnShape : Transient
         }
 
         ed = ShapeCasts.Edge(_map.GetValue(v));
-        if (!_mapEF.Contains(edgeFrom))
+        if (!_mapEF.ContainsKey(edgeFrom))
         {
             return false;
         }
 
-        Shape shape = _mapEF.FindFromKey(edgeFrom);
+        Shape shape = _mapEF.GetValue(edgeFrom);
         Curve3D? c = Tool.Curve(ed, out _, out _);
         if (c is null && shape.ShapeType() == ShapeType.Face)
         {
@@ -1315,7 +1315,7 @@ public sealed class WiresOnShape : Transient
 
     private static void FindInternalIntersections(in Edge edge,
                                                   in Face face,
-                                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> splits,
+                                                  IndexedMap<Shape, NCollection_List<Shape>> splits,
                                                   ref bool isOverlapped)
     {
         double tolExt = global::Kerf.Engine.Foundation.Precision.PConfusion();

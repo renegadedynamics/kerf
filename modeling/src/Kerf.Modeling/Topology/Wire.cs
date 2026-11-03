@@ -1,3 +1,4 @@
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Fillets.Api;
@@ -305,9 +306,9 @@ public partial class Wire : Shape1D
             case SupportType.IsVertex:
             {
                 var hit = ShapeCasts.Vertex(extrema.SupportOnShape2(1));
-                var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+                var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
-                var edges = map.FindFromKey(hit);
+                var edges = map.GetValue(hit);
                 closestEdge = ShapeCasts.Edge(edges.First());
                 closestParam = Tool.Parameter(hit, closestEdge);
                 break;
@@ -415,13 +416,13 @@ public partial class Wire : Shape1D
             throw new InvalidOperationException("Can't chamfer empty wire");
         var unchamfered = TopoUtil.MakeFaceFromWires(TopoWire);
         var builder = new MakeFillet2D(unchamfered);
-        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(unchamfered, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
         foreach (var v in vertices)
         {
             if (v.IsEmpty)
                 continue;
-            var list = map.FindFromKey(v.TopoShape);
+            var list = map.GetValue(v.TopoShape);
             var pair = (new Edge(ShapeCasts.Edge(list.First())), new Edge(ShapeCasts.Edge(list.Last())));
             var (edge1, edge2) = OrderChamferEdges(edge, pair);
             if (!edge1.IsEmpty && !edge2.IsEmpty)

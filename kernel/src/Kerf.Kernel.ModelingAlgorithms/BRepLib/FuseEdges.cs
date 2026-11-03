@@ -36,15 +36,15 @@ public sealed class FuseEdges
     private bool _shapeDone;
     private bool _edgesDone;
     private bool _resultEdgesDone;
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapVerLstEdg =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapVerLstEdg =
         new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapEdgLstFac =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapEdgLstFac =
         new(ShapeHasher.Instance);
     private readonly Dictionary<int, NCollection_List<Shape>> _mapLstEdg = new();
     private readonly Dictionary<int, Shape> _mapEdg = new();
     private readonly Dictionary<Shape, Shape> _mapFaces = new(ShapeHasher.Instance);
     private int _nbConnexEdge;
-    private NCollection_IndexedMap<Shape> _avoidEdg = new(ShapeHasher.Instance);
+    private IndexedSet<Shape> _avoidEdg = new(ShapeHasher.Instance);
     private bool _concatBSpl;
 
     private static void BCSmoothing(BSplineCurve3D c, int cont, double tol)
@@ -214,9 +214,9 @@ public sealed class FuseEdges
     }
 
     /// <summary>Sets the edges that must not be fused (a copy of the map is kept).</summary>
-    public void AvoidEdges(NCollection_IndexedMap<Shape> mapEdg)
+    public void AvoidEdges(IndexedSet<Shape> mapEdg)
     {
-        _avoidEdg = new NCollection_IndexedMap<Shape>(mapEdg);
+        _avoidEdg = new IndexedSet<Shape>(mapEdg);
     }
 
     /// <summary>Sets whether connected B-spline edges that are only G1 at their common vertex may be concatenated.</summary>
@@ -404,9 +404,9 @@ public sealed class FuseEdges
         var mapUniqEdg = new HashSet<Shape>(ShapeHasher.Instance);
 
         // for each edge of myMapEdgLstFac
-        for (iEdg = 1; iEdg <= _mapEdgLstFac.Extent(); iEdg++)
+        for (iEdg = 1; iEdg <= _mapEdgLstFac.Count; iEdg++)
         {
-            Shape edgecur = _mapEdgLstFac.FindKey(iEdg);
+            Shape edgecur = _mapEdgLstFac.KeyAt(iEdg - 1);
             var lstEdg = new NCollection_List<Shape>();
 
             // if edge not already treated
@@ -705,7 +705,7 @@ public sealed class FuseEdges
     // theEdgeConnex is written only when theVertex has two edges, as in OCCT.
     private bool NextConnexEdge(in Vertex vertex, in Shape edge, ref Shape edgeConnex)
     {
-        NCollection_List<Shape> lmapEdg = _mapVerLstEdg.FindFromKey(vertex);
+        NCollection_List<Shape> lmapEdg = _mapVerLstEdg.GetValue(vertex);
         bool hasConnex = true;
         var itEdg = new NCollection_List<Shape>.Iterator();
         var itFac1 = new NCollection_List<Shape>.Iterator();
@@ -730,8 +730,8 @@ public sealed class FuseEdges
             // 2nd condition
             if (hasConnex)
             {
-                NCollection_List<Shape> lmapFac1 = _mapEdgLstFac.FindFromKey(edge);
-                NCollection_List<Shape> lmapFac2 = _mapEdgLstFac.FindFromKey(edgeConnex);
+                NCollection_List<Shape> lmapFac1 = _mapEdgLstFac.GetValue(edge);
+                NCollection_List<Shape> lmapFac2 = _mapEdgLstFac.GetValue(edgeConnex);
 
                 if (lmapFac1.Extent() == lmapFac2.Extent() && lmapFac1.Extent() < 3)
                 {
@@ -1070,7 +1070,7 @@ public sealed class FuseEdges
         int iedg = 1;
 
         // take care that we want only Pcurve that maps on the surface where the 3D edges lies.
-        NCollection_List<Shape> lmapFac = _mapEdgLstFac.FindFromKey(oldEdge);
+        NCollection_List<Shape> lmapFac = _mapEdgLstFac.GetValue(oldEdge);
 
         Tool.CurveOnSurface(oldEdge, ref curv2d, ref surf, ref loc, ref cf, ref cl, iedg);
 

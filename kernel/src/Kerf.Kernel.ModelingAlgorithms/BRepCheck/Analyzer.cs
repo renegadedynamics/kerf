@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -42,7 +43,7 @@ public class Analyzer
     // OCCT declares this map without a hasher: the default one compares shapes with operator== (IsEqual), so a shape
     // met with two orientations (a seam edge, a vertex shared by edges) has one result per orientation, and the face
     // check (which skips shapes already seen with IsSame) puts the context on the first one only
-    private readonly NCollection_IndexedDataMap<Shape, ResultCheck?> _map =
+    private readonly IndexedMap<Shape, ResultCheck?> _map =
         new(EqualityComparer<Shape>.Default);
 
     private bool _isParallel;
@@ -104,7 +105,7 @@ public class Analyzer
     /// </summary>
     public bool IsValid(in Shape s)
     {
-        if (_map.FindFromKey(s) is { } result)
+        if (_map.GetValue(s) is { } result)
         {
             var itl = new NCollection_List<StatusCheck>.Iterator();
             itl.Initialize(result.Status());
@@ -157,7 +158,7 @@ public class Analyzer
     /// The check of <paramref name="subS"/>, a sub-shape of the checked shape (null for compounds and
     /// compsolids). Throws <see cref="NoSuchObjectException"/> for a shape that isn't a sub-shape.
     /// </summary>
-    public ResultCheck? Result(in Shape subS) => _map.FindFromKey(subS);
+    public ResultCheck? Result(in Shape subS) => _map.GetValue(subS);
 
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception exception)
@@ -169,7 +170,7 @@ public class Analyzer
 
     private void Put(in Shape shape, bool b)
     {
-        if (_map.Contains(shape))
+        if (_map.ContainsKey(shape))
         {
             return;
         }
@@ -227,7 +228,7 @@ public class Analyzer
 
     private void Perform()
     {
-        int mapSize = _map.Extent();
+        int mapSize = _map.Count;
         const int minTaskSize = 10;
         // OSD_ThreadPool::DefaultPool()->NbThreads() is the number of logical processors
         int nbThreads = OsdParallel.LogicalProcessorCount;
@@ -262,7 +263,7 @@ public class Analyzer
                 arrayOfArray[vectIndex] = new Shape[vectorSize];
             }
 
-            arrayOfArray[vectIndex][shapeIndex] = _map.FindKey(i);
+            arrayOfArray[vectIndex][shapeIndex] = _map.KeyAt(i - 1);
         }
 
         var parallelAnalyzer = new BRepCheck_ParallelAnalyzer(arrayOfArray, _map);
@@ -275,7 +276,7 @@ public class Analyzer
         var exp = new Explorer();
         for (exp.Init(s, subType); exp.More(); exp.Next())
         {
-            ResultCheck rv = _map.FindFromKey(exp.Current())!;
+            ResultCheck rv = _map.GetValue(exp.Current())!;
             for (rv.InitContextIterator(); rv.MoreShapeInContext(); rv.NextShapeInContext())
             {
                 if (rv.ContextualShape().IsSame(s))
@@ -305,10 +306,10 @@ public class Analyzer
     private sealed class BRepCheck_ParallelAnalyzer
     {
         private readonly NCollection_Array1<Shape[]> _array;
-        private readonly NCollection_IndexedDataMap<Shape, ResultCheck?> _map;
+        private readonly IndexedMap<Shape, ResultCheck?> _map;
 
         public BRepCheck_ParallelAnalyzer(NCollection_Array1<Shape[]> array,
-                                          NCollection_IndexedDataMap<Shape, ResultCheck?> map)
+                                          IndexedMap<Shape, ResultCheck?> map)
         {
             _array = array;
             _map = map;
@@ -357,7 +358,7 @@ public class Analyzer
             {
                 Shape shape = vector[shapeIter];
                 ShapeType type = shape.ShapeType();
-                ResultCheck? result = _map.FindFromKey(shape);
+                ResultCheck? result = _map.GetValue(shape);
                 switch (type)
                 {
                     case ShapeType.Vertex:
@@ -385,7 +386,7 @@ public class Analyzer
                         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
                             Shape vertex = exp.Current();
-                            ResultCheck? resOfVertex = _map.FindFromKey(vertex);
+                            ResultCheck? resOfVertex = _map.GetValue(vertex);
                             try
                             {
                                 if (mapS.Add(vertex))
@@ -416,7 +417,7 @@ public class Analyzer
                         var mapS = new HashSet<Shape>(ShapeHasher.Instance);
                         for (exp.Init(shape, ShapeType.Vertex); exp.More(); exp.Next())
                         {
-                            ResultCheck? faceVertexRes = _map.FindFromKey(exp.Current());
+                            ResultCheck? faceVertexRes = _map.GetValue(exp.Current());
                             try
                             {
                                 if (mapS.Add(exp.Current()))
@@ -441,7 +442,7 @@ public class Analyzer
                         mapS.Clear();
                         for (exp.Init(shape, ShapeType.Edge); exp.More(); exp.Next())
                         {
-                            ResultCheck? faceEdgeRes = _map.FindFromKey(exp.Current());
+                            ResultCheck? faceEdgeRes = _map.GetValue(exp.Current());
                             try
                             {
                                 if (mapS.Add(exp.Current()))
@@ -477,7 +478,7 @@ public class Analyzer
                         bool orientofwires = performwire;
                         for (exp.Init(shape, ShapeType.Wire); exp.More(); exp.Next())
                         {
-                            ResultCheck? faceWireRes = _map.FindFromKey(exp.Current());
+                            ResultCheck? faceWireRes = _map.GetValue(exp.Current());
                             try
                             {
                                 faceWireRes!.InContext(shape);
@@ -531,7 +532,7 @@ public class Analyzer
 
                             for (exp.Init(shape, ShapeType.Wire); exp.More(); exp.Next())
                             {
-                                ResultCheck? faceCatchRes = _map.FindFromKey(exp.Current());
+                                ResultCheck? faceCatchRes = _map.GetValue(exp.Current());
                                 if (faceCatchRes is not null)
                                 {
                                     faceCatchRes.SetFailStatus(exp.Current());
@@ -553,7 +554,7 @@ public class Analyzer
                         for (; exp.More(); exp.Next())
                         {
                             Shape shell = exp.Current();
-                            ResultCheck? solidRes = _map.FindFromKey(shell);
+                            ResultCheck? solidRes = _map.GetValue(shell);
                             try
                             {
                                 solidRes!.InContext(shape);

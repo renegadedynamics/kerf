@@ -1421,7 +1421,7 @@ public sealed class MakeRevolutionForm : RibSlot
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapedges = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapedges = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_sbase, ShapeType.Edge, ShapeType.Face, mapedges);
         Explorer ex = new();
         Edge firstEdge = new();
@@ -1486,7 +1486,7 @@ public sealed class MakeRevolutionForm : RibSlot
                 }
             }
 
-            NCollection_List<Shape> l = mapedges.FindFromKey(firstEdge);
+            NCollection_List<Shape> l = mapedges.GetValue(firstEdge);
             NCollection_List<Shape>.Iterator it = new(l);
 
             for (; it.More(); it.Next())
@@ -1619,7 +1619,7 @@ public sealed class MakeRevolutionForm : RibSlot
                 }
             }
 
-            NCollection_List<Shape> l = mapedges.FindFromKey(firstEdge);
+            NCollection_List<Shape> l = mapedges.GetValue(firstEdge);
             NCollection_List<Shape>.Iterator it = new(l);
 
             for (; it.More(); it.Next())

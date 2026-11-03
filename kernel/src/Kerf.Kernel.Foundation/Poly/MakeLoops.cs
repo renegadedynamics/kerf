@@ -177,7 +177,7 @@ public abstract class MakeLoops
     }
 
     private Helper? _helper;
-    private readonly NCollection_IndexedMap<Link> _mapLink = new();
+    private readonly IndexedSet<Link> _mapLink = new();
     private readonly NCollection_Sequence<NCollection_List<Link>> _loops = new();
     private readonly HeapOfInteger _startIndices = new(4000);
     private readonly NCollection_PackedMapOfInteger _hangIndices = new();
@@ -205,10 +205,10 @@ public abstract class MakeLoops
             return;
         }
 
-        int ind = _mapLink.Add(link);
-        Link aLink = _mapLink[ind];
+        int ind = _mapLink.Add(link) + 1;
+        Link aLink = _mapLink[ind - 1];
         aLink.flags |= link.flags;
-        _mapLink.Substitute(ind, aLink);
+        _mapLink.Substitute(ind - 1, aLink);
     }
 
     /// <summary>Replaces a link with another (e.g. to change the order of its nodes); the link is added if not there.</summary>
@@ -219,15 +219,15 @@ public abstract class MakeLoops
             return;
         }
 
-        int ind = _mapLink.Add(link);
+        int ind = _mapLink.Add(link) + 1;
         if (ind > 0)
         {
             var aLink = new Link();
             // replace with a null link first (workaround exception)
-            _mapLink.Substitute(ind, aLink);
+            _mapLink.Substitute(ind - 1, aLink);
             aLink = newLink;
             // and now put there the final value of link
-            _mapLink.Substitute(ind, aLink);
+            _mapLink.Substitute(ind - 1, aLink);
         }
     }
 
@@ -237,14 +237,14 @@ public abstract class MakeLoops
     /// </summary>
     public LinkFlag SetLinkOrientation(in Link link, LinkFlag orient)
     {
-        int ind = _mapLink.FindIndex(link);
+        int ind = _mapLink.IndexOf(link) + 1;
         LinkFlag ori = LF_None;
         if (ind > 0)
         {
-            Link aLink = _mapLink[ind];
+            Link aLink = _mapLink[ind - 1];
             ori = (LinkFlag)(aLink.flags & (int)LF_Both);
             aLink.flags = (int)orient;
-            _mapLink.Substitute(ind, aLink);
+            _mapLink.Substitute(ind - 1, aLink);
         }
 
         return ori;
@@ -253,11 +253,11 @@ public abstract class MakeLoops
     /// <summary>The stored link equal to <paramref name="link"/>, or a null link.</summary>
     public Link FindLink(in Link link)
     {
-        int ind = _mapLink.FindIndex(link);
+        int ind = _mapLink.IndexOf(link) + 1;
         var aLink = new Link();
         if (ind > 0)
         {
-            aLink = _mapLink[ind];
+            aLink = _mapLink[ind - 1];
         }
 
         return aLink;
@@ -269,9 +269,9 @@ public abstract class MakeLoops
         // prepare the set of start indices
         _startIndices.Clear();
         int i;
-        for (i = 1; i <= _mapLink.Extent(); i++)
+        for (i = 1; i <= _mapLink.Count; i++)
         {
-            Link link = _mapLink[i];
+            Link link = _mapLink[i - 1];
             if ((link.flags & (int)LF_Fwd) != 0)
             {
                 _startIndices.Add(i);
@@ -294,7 +294,7 @@ public abstract class MakeLoops
             {
                 int indexS = _startIndices.Top();
 
-                var contour = new NCollection_IndexedMap<int>();
+                var contour = new IndexedSet<int>();
                 int startNumber = FindContour(indexS, contour);
                 if (startNumber == 0)
                 { // error
@@ -302,7 +302,7 @@ public abstract class MakeLoops
                     return result;
                 }
 
-                if (startNumber <= contour.Extent())
+                if (startNumber <= contour.Count)
                 {
                     // there is a closed loop in the contour
                     AcceptContour(contour, startNumber);
@@ -312,7 +312,7 @@ public abstract class MakeLoops
                 {
                     // it is required to mark hanging edges
                     int node;
-                    if (startNumber <= contour.Extent())
+                    if (startNumber <= contour.Count)
                     {
                         // mark hanging edges starting from the first one till a bifurcation
                         node = GetFirstNode(indexS);
@@ -320,7 +320,7 @@ public abstract class MakeLoops
                     else
                     {
                         // open contour - mark from the end back till a bifurcation
-                        indexS = contour[startNumber - 1];
+                        indexS = contour[startNumber - 2];
                         node = GetLastNode(indexS);
                     }
 
@@ -368,7 +368,7 @@ public abstract class MakeLoops
         for (; it.More(); it.Next())
         {
             int indexS = it.Key();
-            Link link = _mapLink[Math.Abs(indexS)];
+            Link link = _mapLink[Math.Abs(indexS) - 1];
             if (indexS < 0)
             {
                 link.Reverse();
@@ -387,7 +387,7 @@ public abstract class MakeLoops
     /// <summary>The link of a signed index, reversed if the index is negative.</summary>
     protected Link GetLink(int segIndex)
     {
-        Link link = _mapLink[Math.Abs(segIndex)];
+        Link link = _mapLink[Math.Abs(segIndex) - 1];
         if (segIndex < 0)
         {
             link.Reverse();
@@ -396,7 +396,7 @@ public abstract class MakeLoops
         return link;
     }
 
-    private int FindContour(int indexS, NCollection_IndexedMap<int> contour)
+    private int FindContour(int indexS, IndexedSet<int> contour)
     {
         contour.Clear();
         int startIndex = 0;
@@ -418,7 +418,7 @@ public abstract class MakeLoops
             var itLinks = new NCollection_List<Link>.Iterator(links);
             for (; itLinks.More(); itLinks.Next())
             {
-                int ind = _mapLink.FindIndex(itLinks.Value());
+                int ind = _mapLink.IndexOf(itLinks.Value()) + 1;
                 if (ind == 0 || ind == index)
                 {
                     continue;
@@ -441,7 +441,7 @@ public abstract class MakeLoops
             if (lstIndS.IsEmpty())
             {
                 // no more ways: open contour
-                startIndex = contour.Extent() + 1;
+                startIndex = contour.Count + 1;
                 break;
             }
 
@@ -462,21 +462,21 @@ public abstract class MakeLoops
             if (aIndexS == 0)
             {
                 // no more ways: open contour
-                startIndex = contour.Extent() + 1;
+                startIndex = contour.Count + 1;
                 break;
             }
 
             if (contour.Contains(aIndexS))
             {
                 // entering the loop second time, stop search
-                startIndex = contour.FindIndex(aIndexS);
+                startIndex = contour.IndexOf(aIndexS) + 1;
                 break;
             }
 
             if (contour.Contains(-aIndexS))
             {
                 // leaving the loop, stop search
-                startIndex = contour.FindIndex(-aIndexS) + 1;
+                startIndex = contour.IndexOf(-aIndexS) + 1 + 1;
                 break;
             }
 
@@ -485,7 +485,7 @@ public abstract class MakeLoops
             {
                 // closing the loop, stop search
                 contour.Add(aIndexS);
-                startIndex = contour.FindIndex(nodeLink.GetValue(lastNode));
+                startIndex = contour.IndexOf(nodeLink.GetValue(lastNode)) + 1;
                 break;
             }
         }
@@ -493,7 +493,7 @@ public abstract class MakeLoops
         return startIndex;
     }
 
-    private void AcceptContour(NCollection_IndexedMap<int> contour, int startNumber)
+    private void AcceptContour(IndexedSet<int> contour, int startNumber)
     {
         // append a new loop to the result
         var loop = new NCollection_List<Link>();
@@ -502,11 +502,11 @@ public abstract class MakeLoops
         // build a loop, mark links as taken,
         // remove them from the set of start indices
         int i;
-        for (i = startNumber; i <= contour.Extent(); i++)
+        for (i = startNumber; i <= contour.Count; i++)
         {
-            int indexS = contour[i]; // index with sign
+            int indexS = contour[i - 1]; // index with sign
             int index = Math.Abs(indexS);
-            Link link = _mapLink[index];
+            Link link = _mapLink[index - 1];
             Link orientedLink = link;
             if (indexS < 0)
             {
@@ -522,7 +522,7 @@ public abstract class MakeLoops
     private int GetFirstNode(int indexS)
     {
         int index = Math.Abs(indexS);
-        Link link = _mapLink[index];
+        Link link = _mapLink[index - 1];
         if (indexS > 0)
         {
             return link.node1;
@@ -534,7 +534,7 @@ public abstract class MakeLoops
     private int GetLastNode(int indexS)
     {
         int index = Math.Abs(indexS);
-        Link link = _mapLink[index];
+        Link link = _mapLink[index - 1];
         if (indexS > 0)
         {
             return link.node2;
@@ -561,7 +561,7 @@ public abstract class MakeLoops
             for (; itLinks.More() && nEdges == 0; itLinks.Next())
             {
                 Link l = itLinks.Value();
-                int ind = _mapLink.FindIndex(l);
+                int ind = _mapLink.IndexOf(l) + 1;
                 if (ind == 0 || ind == index)
                 {
                     continue;
@@ -603,7 +603,7 @@ public abstract class MakeLoops
             for (itLinks.Initialize(nextLinks); itLinks.More(); itLinks.Next())
             {
                 Link l = itLinks.Value();
-                int ind = _mapLink.FindIndex(l);
+                int ind = _mapLink.IndexOf(l) + 1;
                 if (ind == 0 || ind == index)
                 {
                     continue;

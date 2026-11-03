@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Fillets;
 using Kerf.Engine.Fillets.Data;
 using Kerf.Engine.Geometry;
@@ -87,17 +88,17 @@ public class ChFi3dBuilderNativeTests
 
     internal static Edge EdgeOf(in Shape S, int k)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, ShapeType.Edge, M);
-        return ShapeCasts.Edge(M[k]);
+        return ShapeCasts.Edge(M[k - 1]);
     }
 
     /// <summary>tools/dsrec's FaceOf: the first face of the edge in TopExp::MapShapesAndAncestors(S, EDGE, FACE).</summary>
     internal static Face FaceOf(in Shape S, in Edge E)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> M = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(S, ShapeType.Edge, ShapeType.Face, M);
-        return ShapeCasts.Face(M.FindFromKey(E).First());
+        return ShapeCasts.Face(M.GetValue(E).First());
     }
 
     /// <summary>The case's operation (true: chamfer) and edges, as tools/dsrec records them in the status line.</summary>

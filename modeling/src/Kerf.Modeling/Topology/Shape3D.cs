@@ -1,5 +1,6 @@
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Features;
 using Kerf.Engine.Fillets.Api;
@@ -70,7 +71,7 @@ public abstract partial class Shape3D : Shape
             if (edges.Any(e => !faceEdges.Contains(e)))
                 throw new ArgumentException("Some edges are not part of the face");
         }
-        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(TopoShape, global::Kerf.Topology.ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
         var builder = new MakeChamfer(TopoShape);
         var distance2 = length2 is { } l2 && l2 != 0 ? l2 : length;
@@ -81,7 +82,7 @@ public abstract partial class Shape3D : Shape
                 topoFace = face.TopoFace;
             else
             {
-                var ancestors = map.FindFromKey(edge.TopoShape);
+                var ancestors = map.GetValue(edge.TopoShape);
                 topoFace = ShapeCasts.Face(ancestors.First());
             }
             builder.Add(length, distance2, edge.TopoEdge, topoFace);

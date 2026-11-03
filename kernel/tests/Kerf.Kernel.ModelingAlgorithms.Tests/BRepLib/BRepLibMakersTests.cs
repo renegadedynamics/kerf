@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -36,9 +37,9 @@ public class BRepLibMakersTests
 
     private static int Count(in Shape S, ShapeType T)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(S, T, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static int CountOccurrences(in Shape S, ShapeType T)
@@ -586,7 +587,7 @@ public class BRepLibMakersTests
         Wire aW = new LibraryMakePolygon(a, b, c, true).Wire();
         Assert.True(aW.Closed());
         Assert.Equal(3, Count(aW, ShapeType.Vertex));
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aW, ShapeType.Vertex, aMap);
         Assert.True(aMap.Contains(a));
         aSa.AssertUnchanged(a);
@@ -822,12 +823,12 @@ public class BRepLibMakersTests
         Face aF2 = new LibraryMakeFace(aW2, true).Face();
 
         var aShell = Builder.MakeCompound(aF1, aF2);
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var aVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShell, ShapeType.Edge, anEdges);
         Exploration.MapShapes(aShell, ShapeType.Vertex, aVertices);
-        Assert.Equal(7, anEdges.Extent());
-        Assert.Equal(6, aVertices.Extent());
+        Assert.Equal(7, anEdges.Count);
+        Assert.Equal(6, aVertices.Count);
         Assert.True(anEdges.Contains(aShared));
     }
 
@@ -860,7 +861,7 @@ public class BRepLibMakersTests
         aSnap.AssertUnchanged(aWire);
 
         History aH = aMF.InternalHistory()!;
-        var aFaceEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaceEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aF, ShapeType.Edge, aFaceEdges);
         Assert.True(aFaceEdges.Contains(anEdges[0]));
         Assert.True(aFaceEdges.Contains(anEdges[1]));

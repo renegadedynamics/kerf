@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology;
@@ -39,11 +40,11 @@ public class BrepShapeSet : ShapeSet
     private readonly SurfaceSet _surfaces = new();
     private readonly CurveSet _curves = new();
     private readonly Curve2dSet _curves2d = new();
-    private readonly NCollection_IndexedMap<object> _polygons2D = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<object> _polygons3D = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _polygons2D = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _polygons3D = new(ReferenceEqualityComparer.Instance);
     // with the flag that says whether to write the triangulation's normals
-    private readonly NCollection_IndexedDataMap<Triangulation, bool> _triangulations = new(ReferenceEqualityComparer.Instance);
-    private readonly NCollection_IndexedMap<object> _nodes = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedMap<Triangulation, bool> _triangulations = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _nodes = new(ReferenceEqualityComparer.Instance);
     private bool _withTriangles;
     private bool _withNormals;
 
@@ -578,7 +579,7 @@ public class BrepShapeSet : ShapeSet
                     if (gc.Polygon3D() is not null)
                     {
                         os.Write("    - Polygon 3D : ");
-                        Out(os, _polygons3D.FindIndex(cr.Polygon3D()!));
+                        Out(os, _polygons3D.IndexOf(cr.Polygon3D()!) + 1);
                         if (!cr.Location().IsIdentity)
                         {
                             os.Write(" location ");
@@ -597,7 +598,7 @@ public class BrepShapeSet : ShapeSet
                     }
 
                     os.Write(" on triangulation ");
-                    Out(os, cr.Triangulation() is { } tr ? _triangulations.FindIndex(tr) : 0);
+                    Out(os, cr.Triangulation() is { } tr ? (_triangulations.IndexOf(tr) + 1) : 0);
                     if (!cr.Location().IsIdentity)
                     {
                         os.Write(" location ");
@@ -641,7 +642,7 @@ public class BrepShapeSet : ShapeSet
             {
                 // Dump the triangulation
                 os.Write("    - Triangulation : ");
-                Out(os, _triangulations.FindIndex(tf.Triangulation()!));
+                Out(os, _triangulations.IndexOf(tf.Triangulation()!) + 1);
                 if (!s.Location().IsIdentity)
                 {
                     os.Write(" location ");
@@ -656,8 +657,8 @@ public class BrepShapeSet : ShapeSet
     }
 
     // FindIndex of a handle that may be null (OCCT's maps hold the null handle as a key like any other)
-    private static int FindIndex(NCollection_IndexedMap<object> map, object? key)
-        => key is null ? 0 : map.FindIndex(key);
+    private static int FindIndex(IndexedSet<object> map, object? key)
+        => key is null ? 0 : (map.IndexOf(key) + 1);
 
     /// <summary>Writes the geometry of the shape, with the indices of its curves, surfaces, polygons and locations.</summary>
     public override void WriteGeometry(in Shape s, TextWriter os)
@@ -839,7 +840,7 @@ public class BrepShapeSet : ShapeSet
                         {
                             os.Write("5 "); // -5- Polygon3D
                             os.Write(" ");
-                            Out(os, _polygons3D.FindIndex(cr.Polygon3D()!));
+                            Out(os, _polygons3D.IndexOf(cr.Polygon3D()!) + 1);
                             os.Write(" ");
                             Out(os, Locations().Index(cr.Location()));
                             os.Write("\n");
@@ -866,7 +867,7 @@ public class BrepShapeSet : ShapeSet
                         }
 
                         os.Write(" ");
-                        Out(os, pt.Triangulation() is { } tr ? _triangulations.FindIndex(tr) : 0);
+                        Out(os, pt.Triangulation() is { } tr ? (_triangulations.IndexOf(tr) + 1) : 0);
                         os.Write(" ");
                         Out(os, Locations().Index(cr.Location()));
                         os.Write("\n");
@@ -919,7 +920,7 @@ public class BrepShapeSet : ShapeSet
                     os.Write(" ");
                     // Write the triangulation
                     os.Write(" ");
-                    Out(os, _triangulations.FindIndex(tf.Triangulation()!));
+                    Out(os, _triangulations.IndexOf(tf.Triangulation()!) + 1);
                 }
             }
         }
@@ -1241,9 +1242,9 @@ public class BrepShapeSet : ShapeSet
                             StreamUtilities.Read(IS, ref l);
                             // szy-02.05.2004
                             // myBuilder.UpdateEdge(E,occ::down_cast<Poly_Polygon3D>(myPolygons3D(c)));
-                            if (c > 0 && c <= _polygons3D.Extent())
+                            if (c > 0 && c <= _polygons3D.Count)
                             {
-                                _builder.UpdateEdge(e, _polygons3D[c] as Polygon3D, Locations().Location(l));
+                                _builder.UpdateEdge(e, _polygons3D[c - 1] as Polygon3D, Locations().Location(l));
                             }
 
                             break;
@@ -1261,23 +1262,23 @@ public class BrepShapeSet : ShapeSet
                             StreamUtilities.Read(IS, ref l);
                             if (closed)
                             {
-                                if (t > 0 && t <= _triangulations.Extent() && pt > 0 && pt <= _nodes.Extent()
-                                    && pt2 > 0 && pt2 <= _nodes.Extent())
+                                if (t > 0 && t <= _triangulations.Count && pt > 0 && pt <= _nodes.Count
+                                    && pt2 > 0 && pt2 <= _nodes.Count)
                                 {
                                     _builder.UpdateEdge(e,
-                                                         _nodes[pt] as PolygonOnTriangulation,
-                                                         _nodes[pt2] as PolygonOnTriangulation,
-                                                         _triangulations.FindKey(t),
+                                                         _nodes[pt - 1] as PolygonOnTriangulation,
+                                                         _nodes[pt2 - 1] as PolygonOnTriangulation,
+                                                         _triangulations.KeyAt(t - 1),
                                                          Locations().Location(l));
                                 }
                             }
                             else
                             {
-                                if (t > 0 && t <= _triangulations.Extent() && pt > 0 && pt <= _nodes.Extent())
+                                if (t > 0 && t <= _triangulations.Count && pt > 0 && pt <= _nodes.Count)
                                 {
                                     _builder.UpdateEdge(e,
-                                                         _nodes[pt] as PolygonOnTriangulation,
-                                                         _triangulations.FindKey(t),
+                                                         _nodes[pt - 1] as PolygonOnTriangulation,
+                                                         _triangulations.KeyAt(t - 1),
                                                          Locations().Location(l));
                                 }
                             }
@@ -1334,13 +1335,13 @@ public class BrepShapeSet : ShapeSet
                     // only triangulation
                     StreamUtilities.Read(IS, ref s);
                     // OCCT.NET: untrusted input: OCCT reads outside its map
-                    if (s < 1 || s > _triangulations.Extent())
+                    if (s < 1 || s > _triangulations.Count)
                     {
                         throw new StreamFormatErrorException("BRepTools_ShapeSet::ReadGeometry: no triangulation "
                                                             + s.ToString(CultureInfo.InvariantCulture));
                     }
 
-                    _builder.UpdateFace(f, _triangulations.FindKey(s));
+                    _builder.UpdateFace(f, _triangulations.KeyAt(s - 1));
                 }
                 //    else pos = IS.tellg();
 
@@ -1359,9 +1360,9 @@ public class BrepShapeSet : ShapeSet
                 {
                     // cas triangulation
                     s = StreamUtilities.Atoi(@string.AsSpan(2));
-                    if (s > 0 && s <= _triangulations.Extent())
+                    if (s > 0 && s <= _triangulations.Count)
                     {
-                        _builder.UpdateFace(f, _triangulations.FindKey(s));
+                        _builder.UpdateFace(f, _triangulations.KeyAt(s - 1));
                     }
                 }
                 //    else IS.seekg(pos);
@@ -1443,7 +1444,7 @@ public class BrepShapeSet : ShapeSet
     /// </summary>
     public void WritePolygonOnTriangulation(TextWriter os, bool compact = true, ProgressRange progress = default)
     {
-        int i, j, nbpOntri = _nodes.Extent();
+        int i, j, nbpOntri = _nodes.Count;
 
         using var ps = new ProgressScope(progress, "Polygons On Triangulation", nbpOntri);
         if (compact)
@@ -1465,7 +1466,7 @@ public class BrepShapeSet : ShapeSet
         NCollection_HArray1<double>? param;
         for (i = 1; i <= nbpOntri && ps.More(); i++, ps.Next())
         {
-            poly = (PolygonOnTriangulation)_nodes[i];
+            poly = (PolygonOnTriangulation)_nodes[i - 1];
             NCollection_Array1<int> nodes = poly.Nodes();
             if (!compact)
             {
@@ -1620,7 +1621,7 @@ public class BrepShapeSet : ShapeSet
     /// <summary>Writes the 3D polygons: compact, in the format <see cref="ReadPolygon3D"/> reads, or in a readable form.</summary>
     public void WritePolygon3D(TextWriter os, bool compact = true, ProgressRange progress = default)
     {
-        int i, j, nbpol = _polygons3D.Extent();
+        int i, j, nbpol = _polygons3D.Count;
 
         using var ps = new ProgressScope(progress, "3D Polygons", nbpol);
 
@@ -1642,7 +1643,7 @@ public class BrepShapeSet : ShapeSet
         Polygon3D p;
         for (i = 1; i <= nbpol && ps.More(); i++, ps.Next())
         {
-            p = (Polygon3D)_polygons3D[i];
+            p = (Polygon3D)_polygons3D[i - 1];
             if (compact)
             {
                 Out(os, p.NodeCount);
@@ -1815,7 +1816,7 @@ public class BrepShapeSet : ShapeSet
     /// </summary>
     public void WriteTriangulation(TextWriter os, bool compact = true, ProgressRange progress = default)
     {
-        int i, j, nbNodes, nbtri = _triangulations.Extent();
+        int i, j, nbNodes, nbtri = _triangulations.Count;
         int nbTriangles = 0, n1, n2, n3;
 
         using var ps = new ProgressScope(progress, "Triangulations", nbtri);
@@ -1838,8 +1839,8 @@ public class BrepShapeSet : ShapeSet
         Triangulation t;
         for (i = 1; i <= nbtri && ps.More(); i++, ps.Next())
         {
-            t = _triangulations.FindKey(i);
-            bool toWriteNormals = _triangulations[i];
+            t = _triangulations.KeyAt(i - 1);
+            bool toWriteNormals = _triangulations.ValueAt(i - 1);
             if (compact)
             {
                 Out(os, t.NodeCount);

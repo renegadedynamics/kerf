@@ -2779,19 +2779,19 @@ internal static class Builder_CnCrn
         int i = 0, j = 0;
         Edge ecur1 = new(), ecur2 = new();
         bool trouve = false;
-        NCollection_IndexedMap<Shape> mapE1 = new(ShapeHasher.Instance),
+        IndexedSet<Shape> mapE1 = new(ShapeHasher.Instance),
                                              mapE2 = new(ShapeHasher.Instance);
 
         Exploration.MapShapes(f1, global::Kerf.Topology.ShapeType.Edge, mapE1);
         Exploration.MapShapes(f2, global::Kerf.Topology.ShapeType.Edge, mapE2);
-        for (i = 1; i <= mapE1.Extent() && !trouve; i++)
+        for (i = 1; i <= mapE1.Count && !trouve; i++)
         {
-            Shape localShape = mapE1[i];
+            Shape localShape = mapE1[i - 1];
             ecur1 = ShapeCasts.Edge(localShape);
             //  Ecur1=TopoDS::Edge(TopoDS_Shape (MapE1[i]));
-            for (j = 1; j <= mapE2.Extent() && !trouve; j++)
+            for (j = 1; j <= mapE2.Count && !trouve; j++)
             {
-                localShape = mapE2[j];
+                localShape = mapE2[j - 1];
                 ecur2 = ShapeCasts.Edge(localShape);
                 //              Ecur2=TopoDS::Edge(TopoDS_Shape (MapE2[j]));
                 if (ecur2.IsSame(ecur1))
@@ -2904,7 +2904,7 @@ internal static class Builder_CnCrn
         for (nb = 1; nb <= nbface; nb++)
         {
             f = ShapeCasts.Face(face.Value(nb));
-            NCollection_IndexedMap<Shape> mapE1 = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mapE1 = new(ShapeHasher.Instance);
             Edge e1 = new();
             Curve2D? proj1 = null;
             Curve3D? proj1c = null; // OCCT's unused proj2c left out
@@ -2916,9 +2916,9 @@ internal static class Builder_CnCrn
             if (ortProj.IsDone)
             {
                 Exploration.MapShapes(ortProj.Projection(), ShapeType.Edge, mapE1);
-                if (mapE1.Extent() != 0)
+                if (mapE1.Count != 0)
                 {
-                    if (mapE1.Extent() != 1)
+                    if (mapE1.Count != 1)
                     {
                         LibraryMakeFace bface = new(Tool.Surface(f), global::Kerf.Engine.Foundation.Precision.Confusion());
                         f = bface.Face();
@@ -2930,12 +2930,12 @@ internal static class Builder_CnCrn
                             Exploration.MapShapes(ortProj.Projection(), ShapeType.Edge, mapE1);
                         }
                     }
-                    if (mapE1.Extent() != 0)
+                    if (mapE1.Count != 0)
                     {
                         bool trouve = false;
-                        for (int ind = 1; ind <= mapE1.Extent() && !trouve; ind++)
+                        for (int ind = 1; ind <= mapE1.Count && !trouve; ind++)
                         {
-                            Shape localShape = mapE1[ind];
+                            Shape localShape = mapE1[ind - 1];
                             e1 = ShapeCasts.Edge(localShape);
                             //           E1=TopoDS::Edge( TopoDS_Shape (MapE1[ind]));
                             if (!Tool.Degenerated(e1))

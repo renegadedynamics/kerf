@@ -171,19 +171,19 @@ public sealed class PipeShell : Transient
 
     private static bool IsSameOriented(in Shape face, in Shape shell)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgeFaceMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> edgeFaceMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shell, ShapeType.Edge, ShapeType.Face, edgeFaceMap);
 
         for (Explorer faceExplorer = new(face, ShapeType.Edge); faceExplorer.More(); faceExplorer.Next())
         {
             Shape currentEdge = faceExplorer.Current();
-            if (!edgeFaceMap.Contains(currentEdge))
+            if (!edgeFaceMap.ContainsKey(currentEdge))
             {
                 continue;
             }
 
             Orientation currentEdgeOrientation = currentEdge.Orientation();
-            Shape adjFace = edgeFaceMap.FindFromKey(currentEdge).First();
+            Shape adjFace = edgeFaceMap.GetValue(currentEdge).First();
             for (Explorer adjFaceExplorer = new(adjFace, ShapeType.Edge); adjFaceExplorer.More(); adjFaceExplorer.Next())
             {
                 // IsSame compares TShape and Location only; orientation may differ.
@@ -1440,7 +1440,7 @@ public sealed class PipeShell : Transient
                     uIndex[1] = tmp;
                 }
 
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(shell, ShapeType.Vertex, ShapeType.Edge, vEmap);
                 for (int kk = 0; kk < 2; kk++)
                 {
@@ -1493,7 +1493,7 @@ public sealed class PipeShell : Transient
                         }
                         else // a hole
                         {
-                            NCollection_List<Shape> elist = vEmap.FindFromKey(vfirst);
+                            NCollection_List<Shape> elist = vEmap.GetValue(vfirst);
                             NCollection_List<Shape>.Iterator itl = new(elist);
                             for (; itl.More(); itl.Next())
                             {
@@ -1516,7 +1516,7 @@ public sealed class PipeShell : Transient
                     // case of closed wire
                     if (_location!.IsClosed() && !curVertex.IsSame(firstVertex))
                     {
-                        NCollection_List<Shape> elist = vEmap.FindFromKey(curVertex);
+                        NCollection_List<Shape> elist = vEmap.GetValue(curVertex);
                         NCollection_List<Shape>.Iterator itl = new(elist);
                         for (; itl.More(); itl.Next())
                         {

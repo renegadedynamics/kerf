@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Measurement;
@@ -496,12 +497,12 @@ internal static class DBRepCommands
                 return 1;
         }
 
-        var IMOStmp = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var IMOStmp = new IndexedSet<Shape>(ShapeHasher.Instance);
         var MShape = new HashSet<Shape>(ShapeHasher.Instance);
         IMOStmp.Add(S);
         Exploration.MapShapes(S, typ, IMOStmp);
         // OCCT bug: one less than the sub-shapes when the shape is of the type itself (occt-issues.md)
-        int MaxShapes = IMOStmp.Extent() - 1;
+        int MaxShapes = IMOStmp.Count - 1;
         var aShapes = new NCollection_Array1<Shape>(1, MaxShapes);
 
         // explode
@@ -715,12 +716,12 @@ internal static class DBRepCommands
         ];
         var aStr = new StringBuilder();
         int aNbSh = 0;
-        var aM = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aM = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (int i = 7; i >= 0; --i)
         {
             aM.Clear();
             Exploration.MapShapes(aS, (ShapeType)i, aM);
-            int aNb = aM.Extent();
+            int aNb = aM.Count;
             aStr.Append(pNames[i + 1]).Append(aNb.ToString(CultureInfo.InvariantCulture)).Append('\n');
             aNbSh += aNb;
         }

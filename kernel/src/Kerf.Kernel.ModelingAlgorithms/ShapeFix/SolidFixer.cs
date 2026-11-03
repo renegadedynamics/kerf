@@ -85,7 +85,7 @@ public class SolidFixer : RootFixer
     //=================================================================================================
 
     private static void CollectSolids(NCollection_Sequence<Shape> aSeqShells,
-                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anIndexedMapShellHoles,
+                                      IndexedMap<Shape, NCollection_List<Shape>> anIndexedMapShellHoles,
                                       Dictionary<Shape, int> mapStatus)
     {
         var mapHoles      = new HashSet<Shape>(ShapeHasher.Instance);
@@ -166,17 +166,17 @@ public class SolidFixer : RootFixer
                     }
                     Containment pointstatus = Unknown;
                     int          numon       = 0;
-                    var          amapVert    = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-                    for (var expVert = new Explorer(shell2, ShapeType.Vertex); expVert.More() && amapVert.Extent() < 10;
+                    var          amapVert    = new IndexedSet<Shape>(ShapeHasher.Instance);
+                    for (var expVert = new Explorer(shell2, ShapeType.Vertex); expVert.More() && amapVert.Count < 10;
                          expVert.Next())
                     {
                         amapVert.Add(expVert.Current());
                     }
                     for (int k = 1;
-                         k <= amapVert.Extent() && (pointstatus == Unknown || (pointstatus == On && numon < 3));
+                         k <= amapVert.Count && (pointstatus == Unknown || (pointstatus == On && numon < 3));
                          k++)
                     {
-                        Vertex v  = ShapeCasts.Vertex(amapVert.FindKey(k));
+                        Vertex v  = ShapeCasts.Vertex(amapVert[k - 1]);
                         Point3D        pf = Tool.Pnt(v);
                         bsc3d.Perform(pf, Kerf.Engine.Foundation.Precision.Confusion());
                         pointstatus = bsc3d.State();
@@ -248,7 +248,7 @@ public class SolidFixer : RootFixer
 
     //=================================================================================================
 
-    private static bool CreateSolids(in Shape shape, NCollection_IndexedMap<Shape> aMapSolids)
+    private static bool CreateSolids(in Shape shape, IndexedSet<Shape> aMapSolids)
     {
         var  seqShells = new NCollection_Sequence<Shape>();
         bool isDone     = false;
@@ -256,14 +256,14 @@ public class SolidFixer : RootFixer
         {
             seqShells.Append(expShell.Current());
         }
-        var mapShellHoles = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapShellHoles = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var mapStatus     = new Dictionary<Shape, int>(ShapeHasher.Instance);
         CollectSolids(seqShells, mapShellHoles, mapStatus);
-        var shellSolid = new NCollection_IndexedDataMap<Shape, Shape>(ShapeHasher.Instance);
+        var shellSolid = new IndexedMap<Shape, Shape>(ShapeHasher.Instance);
         // Defines correct orientation of shells
-        for (int i = 1; i <= mapShellHoles.Extent(); ++i)
+        for (int i = 0; i < mapShellHoles.Count; ++i)
         {
-            Shell shell    = ShapeCasts.Shell(mapShellHoles.FindKey(i));
+            Shell shell    = ShapeCasts.Shell(mapShellHoles.KeyAt(i));
             var          expEdges = new Explorer(shell, ShapeType.Edge);
             if (!Tool.IsClosed(shell) || !expEdges.More())
             {
@@ -307,7 +307,7 @@ public class SolidFixer : RootFixer
                 B.Add(tmpSolid, shell);
                 aSolid = tmpSolid;
             }
-            NCollection_List<Shape> lHoles = mapShellHoles[i];
+            NCollection_List<Shape> lHoles = mapShellHoles.ValueAt(i);
             for (var lItHoles = new NCollection_List<Shape>.Iterator(lHoles); lItHoles.More(); lItHoles.Next())
             {
                 Shell shellHole = ShapeCasts.Shell(lItHoles.Value());
@@ -334,11 +334,11 @@ public class SolidFixer : RootFixer
             shellSolid.Add(shell, aSolid);
         }
         // Creation of compsolid from shells containing shared faces.
-        var mapFaceShells = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapFaceShells = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Face, ShapeType.Shell, mapFaceShells);
-        for (int i = 1; i <= mapFaceShells.Extent(); i++)
+        for (int i = 0; i < mapFaceShells.Count; i++)
         {
-            NCollection_List<Shape> lshells = mapFaceShells.FindFromIndex(i);
+            NCollection_List<Shape> lshells = mapFaceShells.ValueAt(i);
             if (lshells.Extent() < 2)
             {
                 continue;
@@ -350,9 +350,9 @@ public class SolidFixer : RootFixer
             int nbSol = 0;
             for (var lItSh = new NCollection_List<Shape>.Iterator(lshells); lItSh.More(); lItSh.Next())
             {
-                if (shellSolid.Contains(lItSh.Value()))
+                if (shellSolid.ContainsKey(lItSh.Value()))
                 {
-                    Shape aShape  = shellSolid.FindFromKey(lItSh.Value());
+                    Shape aShape  = shellSolid.GetValue(lItSh.Value());
                     var          expSol = new Explorer(aShape, global::Kerf.Topology.ShapeType.Solid);
                     for (; expSol.More(); expSol.Next())
                     {
@@ -365,21 +365,21 @@ public class SolidFixer : RootFixer
             {
                 for (var lItSh1 = new NCollection_List<Shape>.Iterator(lshells); lItSh1.More(); lItSh1.Next())
                 {
-                    if (shellSolid.Contains(lItSh1.Value()))
+                    if (shellSolid.ContainsKey(lItSh1.Value()))
                     {
-                        shellSolid.ChangeFromKey(lItSh1.Value()) = compSolid;
+                        shellSolid.GetValueRef(lItSh1.Value()) = compSolid;
                     }
                 }
             }
         }
-        for (int kk = 1; kk <= shellSolid.Extent(); kk++)
+        for (int kk = 0; kk < shellSolid.Count; kk++)
         {
-            if (!aMapSolids.Contains(shellSolid.FindFromIndex(kk)))
+            if (!aMapSolids.Contains(shellSolid.ValueAt(kk)))
             {
-                aMapSolids.Add(shellSolid.FindFromIndex(kk));
+                aMapSolids.Add(shellSolid.ValueAt(kk));
             }
         }
-        isDone = (aMapSolids.Extent() > 1 || isDone);
+        isDone = (aMapSolids.Count > 1 || isDone);
         return isDone;
     }
 
@@ -522,13 +522,13 @@ public class SolidFixer : RootFixer
         else
         {
             Shape resShape = context.InternalApply(_shape);
-            var          mapSolids = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var          mapSolids = new IndexedSet<Shape>(ShapeHasher.Instance);
             if (CreateSolids(resShape, mapSolids))
             {
                 SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG20")); // Orientation of shell was corrected..
-                if (mapSolids.Extent() == 1)
+                if (mapSolids.Count == 1)
                 {
-                    Shape resSol = mapSolids.FindKey(1);
+                    Shape resSol = mapSolids[0];
                     if (resShape.ShapeType() == ShapeType.Shell && _createOpenSolidMode)
                     {
                         var solid = new Solid();
@@ -547,16 +547,16 @@ public class SolidFixer : RootFixer
                     }
                     context.Replace(resShape, _solid);
                 }
-                else if (mapSolids.Extent() > 1)
+                else if (mapSolids.Count > 1)
                 {
                     SendWarning(new Msg("FixAdvSolid.FixOrientation.MSG30")); // Bad connected solid a few solids were created.
                     var aB    = new BrepBuilder();
                     var comp = new Compound();
                     aB.MakeCompound(ref comp);
-                    using var psCreatingSolid = new ProgressScope(ps.Next(), "Creating solid", mapSolids.Extent());
-                    for (int i = 1; (i <= mapSolids.Extent()) && (psCreatingSolid.More()); i++, psCreatingSolid.Next())
+                    using var psCreatingSolid = new ProgressScope(ps.Next(), "Creating solid", mapSolids.Count);
+                    for (int i = 1; (i <= mapSolids.Count) && (psCreatingSolid.More()); i++, psCreatingSolid.Next())
                     {
-                        Shape resSh = mapSolids.FindKey(i);
+                        Shape resSh = mapSolids[i - 1];
                         if (resShape.ShapeType() == ShapeType.Shell && _createOpenSolidMode)
                         {
                             resSh.Closed(false);

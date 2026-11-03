@@ -4,6 +4,7 @@ using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Booleans.Legacy.Build;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -30,10 +31,10 @@ public class BooleanInputsUnchangedTests
 
     private static List<Shape> SubShapes(in Shape shape, ShapeType type)
     {
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, type, map);
-        var list = new List<Shape>(map.Extent());
-        for (int i = 1; i <= map.Extent(); i++)
+        var list = new List<Shape>(map.Count);
+        for (int i = 0; i < map.Count; i++)
         {
             list.Add(map[i]);
         }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Fixes;
 using Kerf.Engine.Topology;
@@ -15,9 +16,9 @@ public class ShapeFix_SplitCommonVertexTests
 {
     private static Vertex V(double x, double y) => new MakeVertex(new Point3D(x, y, 0)).Vertex();
 
-    private static NCollection_IndexedMap<Shape> Map(in Shape theShape, ShapeType theType)
+    private static IndexedSet<Shape> Map(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         return aMap;
     }
@@ -53,9 +54,9 @@ public class ShapeFix_SplitCommonVertexTests
             aWires.Add(anIt.Value());
         }
         Assert.Equal(2, aWires.Count);
-        NCollection_IndexedMap<Shape> aV1 = Map(aWires[0], ShapeType.Vertex);
-        NCollection_IndexedMap<Shape> aV2 = Map(aWires[1], ShapeType.Vertex);
-        for (int i = 1; i <= aV1.Extent(); i++)
+        IndexedSet<Shape> aV1 = Map(aWires[0], ShapeType.Vertex);
+        IndexedSet<Shape> aV2 = Map(aWires[1], ShapeType.Vertex);
+        for (int i = 0; i < aV1.Count; i++)
         {
             Assert.False(aV2.Contains(aV1[i]));
         }
@@ -64,10 +65,10 @@ public class ShapeFix_SplitCommonVertexTests
         Assert.True(Map(aFace, ShapeType.Wire).Contains(aWires[0]));
         Assert.False(Map(aFace, ShapeType.Wire).Contains(aWires[1]));
         Assert.True(Map(aResult, ShapeType.Vertex).Contains(aCommon));
-        Assert.Equal(7, Map(aResult, ShapeType.Vertex).Extent());
+        Assert.Equal(7, Map(aResult, ShapeType.Vertex).Count);
         int aNbRecorded = 0;
-        NCollection_IndexedMap<Shape> anEdges = Map(aFace, ShapeType.Edge);
-        for (int i = 1; i <= anEdges.Extent(); i++)
+        IndexedSet<Shape> anEdges = Map(aFace, ShapeType.Edge);
+        for (int i = 0; i < anEdges.Count; i++)
         {
             if (aFix.Context()!.IsRecorded(anEdges[i]))
             {

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Features;
 using Kerf.Engine.Features.Api;
 using Kerf.Engine.Foundation;
@@ -195,9 +196,9 @@ internal static partial class Build123dPhase7Capture
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == N.TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
     }
 
-    private static string Index(NCollection_IndexedMap<Shape> theMap, in Shape theS)
+    private static string Index(IndexedSet<Shape> theMap, in Shape theS)
     {
-        int anI = theMap.FindIndex(theS);
+        int anI = theMap.IndexOf(theS) + 1;
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
     }
 
@@ -234,17 +235,17 @@ internal static partial class Build123dPhase7Capture
     private static string PortHistory(List<Shape> theOps, in Shape theResult, Func<Shape, IEnumerable<Shape>> theGen,
                                       Func<Shape, IEnumerable<Shape>> theMod, Func<Shape, bool> theDel)
     {
-        var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anIn = new IndexedSet<Shape>(ShapeHasher.Instance);
         foreach (Shape anOp in theOps)
         {
             Exploration.MapShapes(anOp, anIn);
         }
-        var aRes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aRes = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theResult, aRes);
         var aSb = new StringBuilder();
-        for (int i = 1; i <= anIn.Extent(); i++)
+        for (int i = 1; i <= anIn.Count; i++)
         {
-            Shape aS = anIn[i];
+            Shape aS = anIn[i - 1];
             if (aS.ShapeType() is not (ShapeType.Vertex or ShapeType.Edge or ShapeType.Face))
             {
                 continue;
@@ -411,7 +412,7 @@ internal static partial class Build123dPhase7Capture
             return RunBlendPort(theCall, theOps, theHistory);
         }
         P7Args a = theCall.Args;
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theOps[0], ShapeType.Face, aFaces);
         try
         {
@@ -423,7 +424,7 @@ internal static partial class Build123dPhase7Capture
                     var aClosing = new NCollection_List<Shape>();
                     foreach (int i in a.Faces ?? [])
                     {
-                        aClosing.Append(aFaces[i]);
+                        aClosing.Append(aFaces[i - 1]);
                     }
                     aMT.MakeThickSolidByJoin(theOps[0], aClosing, a.Value, a.Tol, OffsetMode.Skin, a.Inter, false,
                                              (JoinKind)a.Join, a.RemoveIntEdges);
@@ -453,14 +454,14 @@ internal static partial class Build123dPhase7Capture
                 }
                 case P7Op.Draft:
                 {
-                    var anIn = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                    var anIn = new IndexedSet<Shape>(ShapeHasher.Instance);
                     Exploration.MapShapes(theOps[0], anIn);
                     var aDraft = new DraftAngle(theOps[0]);
                     var aDir = new Direction3D(a.Dir![0], a.Dir[1], a.Dir[2]);
                     var aPln = new Plane3D(new Point3D(a.PlnLoc![0], a.PlnLoc[1], a.PlnLoc[2]), aDir);
                     for (int k = 0; k < a.Faces!.Length; k++)
                     {
-                        aDraft.Add(ShapeCasts.Face(aFaces[a.Faces[k]]), aDir, a.Angles![k], aPln, true);
+                        aDraft.Add(ShapeCasts.Face(aFaces[a.Faces[k] - 1]), aDir, a.Angles![k], aPln, true);
                         if (!aDraft.AddDone())
                         {
                             return new P7Port(null, $"add=False status={(int)aDraft.Status()} bad={Index(anIn, aDraft.ProblematicShape())}", null, "");
@@ -523,7 +524,7 @@ internal static partial class Build123dPhase7Capture
                     string aHistory = "";
                     if (theHistory)
                     {
-                        var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                        var aResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
                         Exploration.MapShapes(aRes, aResMap);
                         aHistory = $"left [{Sorted(aLeft.Select(s => Index(aResMap, s)))}] right [{Sorted(aRight.Select(s => Index(aResMap, s)))}]\n"
                                    + PortHistory(theOps, aRes, s => aSplit.Generated(s), s => aSplit.Modified(s), s => aSplit.IsDeleted(s));

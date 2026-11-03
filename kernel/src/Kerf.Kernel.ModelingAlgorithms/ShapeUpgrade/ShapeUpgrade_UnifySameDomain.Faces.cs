@@ -91,11 +91,11 @@ public partial class UnifySameDomain
     private static Face GetFaceFromSeq(
       NCollection_Sequence<Shape>                                       faces,
       in Face                                                           refFace,
-      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF,
-      NCollection_IndexedMap<Shape>                                     usedFaces,
+      IndexedMap<Shape, NCollection_List<Shape>> mapEF,
+      IndexedSet<Shape>                                     usedFaces,
       ref int                                                                  indFace)
     {
-        if (usedFaces.IsEmpty())
+        if (usedFaces.Count == 0)
         {
             indFace = 1;
             usedFaces.Add(faces[1]);
@@ -104,14 +104,14 @@ public partial class UnifySameDomain
 
         var seamEdge   = new Edge();
         var targetFace = new Face();
-        for (int ii = 1; ii <= usedFaces.Extent(); ii++)
+        for (int ii = 0; ii < usedFaces.Count; ii++)
         {
             Face usedFace = ShapeCasts.Face(usedFaces[ii]);
             var         explo   = new Explorer(usedFace, ShapeType.Edge);
             for (; explo.More(); explo.Next())
             {
                 Edge                    edge    = ShapeCasts.Edge(explo.Current());
-                NCollection_List<Shape> faceList = mapEF.FindFromKey(edge);
+                NCollection_List<Shape> faceList = mapEF.GetValue(edge);
                 if (faceList.Extent() < 2)
                 {
                     continue;
@@ -137,7 +137,7 @@ public partial class UnifySameDomain
             }
             if (targetFace.IsNull && !seamEdge.IsNull)
             {
-                NCollection_List<Shape> faceList = mapEF.FindFromKey(seamEdge);
+                NCollection_List<Shape> faceList = mapEF.GetValue(seamEdge);
                 targetFace = (faceList.First().IsSame(usedFace)) ? ShapeCasts.Face(faceList.Last())
                                                                     : ShapeCasts.Face(faceList.First());
             }
@@ -224,17 +224,17 @@ public partial class UnifySameDomain
 
     // Removes the specified edge from the vertex to edge map. Returns true if the edge was removed.
     private static bool RemoveEdgeFromMap(in Edge                                                         edge,
-                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexToEdges)
+                                          IndexedMap<Shape, NCollection_List<Shape>> vertexToEdges)
     {
         bool isRemoved = false;
         Exploration.Vertices(edge, out Vertex firstVertex, out Vertex lastVertex);
         foreach (Vertex vertex in (ReadOnlySpan<Vertex>)[firstVertex, lastVertex])
         {
-            if (!vertexToEdges.Contains(vertex))
+            if (!vertexToEdges.ContainsKey(vertex))
             {
                 continue;
             }
-            NCollection_List<Shape> vertexEdges = vertexToEdges.ChangeFromKey(vertex);
+            NCollection_List<Shape> vertexEdges = vertexToEdges.GetValue(vertex);
             var                            edgesIter  = new NCollection_List<Shape>.Iterator(vertexEdges);
             while (edgesIter.More())
             {
@@ -292,7 +292,7 @@ public partial class UnifySameDomain
     // Searching for origin of U in 2d space. Returns false if could not find curve on surface, true if succeed.
     private static bool FindCoordBounds(NCollection_Sequence<Shape>                                       faces,
                                         in Face                                                           refFace,
-                                        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF,
+                                        IndexedMap<Shape, NCollection_List<Shape>> mapEF,
                                         HashSet<Shape>                                            edgesMap,
                                         int                                                                      indCoord,
                                         double                                                                   period,
@@ -307,7 +307,7 @@ public partial class UnifySameDomain
         double simpleMax = RealFirst();
         indFaceMax = 0;
 
-        var usedFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var usedFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (int ii = 1; ii <= faces.Length(); ii++)
         {
             int indFace = 0;
@@ -431,7 +431,7 @@ public partial class UnifySameDomain
       double                                                                   coordTol,
       int                                                                      indCoord,
       double                                                                   period,
-      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap,
+      IndexedMap<Shape, NCollection_List<Shape>> vEmap,
       Dictionary<Shape, Curve2D>                          edgeNewPCurve,
       HashSet<Shape>                                            usedEdges)
     {
@@ -524,7 +524,7 @@ public partial class UnifySameDomain
                                             ? Exploration.LastVertex(currentEdge, true)
                                             : Exploration.FirstVertex(currentEdge, true);
 
-                NCollection_List<Shape> elist = vEmap.FindFromKey(curVertex);
+                NCollection_List<Shape> elist = vEmap.GetValue(curVertex);
                 if (elist.IsEmpty())
                 {
                     break; // end of contour in 3d
@@ -630,13 +630,13 @@ public partial class UnifySameDomain
 
     private static Face FindCommonFace(in Edge                                                         edge1,
                                               in Edge                                                         edge2,
-                                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                                              IndexedMap<Shape, NCollection_List<Shape>> vFmap,
                                               ref Orientation                                                 orOfE1OnFace,
                                               ref Orientation                                                 orOfE2OnFace)
     {
         var vertex = new Vertex();
         Exploration.CommonVertex(edge1, edge2, ref vertex);
-        NCollection_List<Shape> flist = vFmap.FindFromKey(vertex);
+        NCollection_List<Shape> flist = vFmap.GetValue(vertex);
         var                            itl   = new NCollection_List<Shape>.Iterator(flist);
         for (; itl.More(); itl.Next())
         {
@@ -670,7 +670,7 @@ public partial class UnifySameDomain
 
     private static bool FindClosestPoints(in Edge                                                         edge1,
                                           in Edge                                                         edge2,
-                                          NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vFmap,
+                                          IndexedMap<Shape, NCollection_List<Shape>> vFmap,
                                           ref Face                                                        commonFace,
                                           ref double                                                             minSqDist,
                                           ref Orientation                                                 orOfE1OnFace,
@@ -1182,14 +1182,14 @@ public partial class UnifySameDomain
                                          NCollection_Sequence<Shape> removedEdges)
     {
         // map of edges
-        var newEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var newEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         // add edges without seams
         for (var exp = new Explorer(aShape, ShapeType.Edge); exp.More(); exp.Next())
         {
             Shape edge = exp.Current();
             if (newEdges.Contains(edge))
             {
-                newEdges.RemoveKey(edge);
+                newEdges.Remove(edge);
                 removedEdges.Append(edge);
             }
             else
@@ -1206,7 +1206,7 @@ public partial class UnifySameDomain
             Shape current = edges[i];
             if (newEdges.Contains(current))
             {
-                newEdges.RemoveKey(current);
+                newEdges.Remove(current);
                 edges.Remove(i);
                 removedEdges.Append(current);
                 i--;
@@ -1220,9 +1220,9 @@ public partial class UnifySameDomain
         }
 
         // add edges to the sequence
-        for (i = 1; i <= newEdges.Extent(); i++)
+        for (i = 1; i <= newEdges.Count; i++)
         {
-            edges.Append(newEdges[i]);
+            edges.Append(newEdges[i - 1]);
         }
 
         return isDropped;
@@ -1566,7 +1566,7 @@ public partial class UnifySameDomain
 
     private static void SplitWire(in Wire                       wire,
                                   in Face                       face,
-                                  NCollection_IndexedMap<Shape> vmap,
+                                  IndexedSet<Shape> vmap,
                                   NCollection_Sequence<Shape>   wireSeq)
     {
         var vEmap = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
@@ -1599,7 +1599,7 @@ public partial class UnifySameDomain
         }
 
         var bb = new BrepBuilder();
-        for (int ii = 1; ii <= vmap.Extent(); ii++)
+        for (int ii = 0; ii < vmap.Count; ii++)
         {
             Vertex                  origin  = ShapeCasts.Vertex(vmap[ii]);
             NCollection_List<Shape> branches = vEmap.GetValue(origin);
@@ -1748,7 +1748,7 @@ public partial class UnifySameDomain
 
     // Checks the sequence of edges on the presence of shared vertex
     private static void CheckSharedVertices(NCollection_Sequence<Shape>                                       seqEdges,
-                                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEdgesVertex,
+                                            IndexedMap<Shape, NCollection_List<Shape>> mapEdgesVertex,
                                             HashSet<Shape>                                            mapKeepShape,
                                             HashSet<Shape>                                            shareVertMap)
     {
@@ -1771,7 +1771,7 @@ public partial class UnifySameDomain
 
         for (int k = 1; k <= seqVertexes.Length() /* && !IsSharedVertexPresent*/; k++)
         {
-            NCollection_List<Shape> listEdgesV1 = mapEdgesVertex.FindFromKey(seqVertexes[k]);
+            NCollection_List<Shape> listEdgesV1 = mapEdgesVertex.GetValue(seqVertexes[k]);
             if (listEdgesV1.Extent() > 2 || mapKeepShape.Contains(seqVertexes[k]))
             {
                 shareVertMap.Add(seqVertexes[k]);

@@ -28,9 +28,9 @@ public class BRepOffset_ToolTests
 
     private static Face Face(in Shape theS, int theIndex)
     {
-        NCollection_IndexedMap<Shape> aMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theS, global::Kerf.Topology.ShapeType.Face, aMap);
-        return global::Kerf.Engine.Topology.ShapeCasts.Face(aMap[theIndex]);
+        return global::Kerf.Engine.Topology.ShapeCasts.Face(aMap[theIndex - 1]);
     }
 
     // Two faces of the box sharing an edge, and a face opposite to the first.

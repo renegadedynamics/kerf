@@ -8,6 +8,7 @@
 // "canonically identical" when IsIdentical holds, and its ToString() says which sub-shapes differ and by how much.
 // CanonicalKeys.Build(shape) gives each sub-shape's key, which HistoryComparison uses to compare histories.
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
@@ -237,12 +238,12 @@ internal sealed class CanonicalKeys
             aText.Append(aWriter.ToString());
         }
         // the face's edges as a multiset of keys (each unique edge once); with orientations, its wires
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theF, ShapeType.Edge, anEdges);
         var aKeys = new List<string>();
-        for (int i = 1; i <= anEdges.Extent(); ++i)
+        for (int i = 0; i < anEdges.Count; ++i)
         {
-            aKeys.Add(Key(anEdges.FindKey(i)));
+            aKeys.Add(Key(anEdges[i]));
         }
         aKeys.Sort(StringComparer.Ordinal);
         aText.Append(" edges ").AppendJoin(',', aKeys);
@@ -369,11 +370,11 @@ internal static class CanonicalShapeComparer
         {
             return aResult;
         }
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        for (int i = 1; i <= aMap.Extent(); ++i)
+        for (int i = 0; i < aMap.Count; ++i)
         {
-            aResult.Add(aMap.FindKey(i));
+            aResult.Add(aMap[i]);
         }
         return aResult;
     }

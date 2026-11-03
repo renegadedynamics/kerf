@@ -46,7 +46,7 @@ public class StepReaderData : FileReaderData
 
     private readonly NCollection_Array1<int> _theidents;
     private readonly NCollection_Array1<int> _thetypes;
-    private readonly NCollection_IndexedMap<string> _thenametypes = new();
+    private readonly IndexedSet<string> _thenametypes = new();
     private readonly Dictionary<int, int> _themults = new();
     private int _thenbents;
     private int _thelastn;
@@ -432,7 +432,7 @@ public class StepReaderData : FileReaderData
         {
             _thenbents++; // total number of proper file terms
         }
-        _thetypes.ChangeValue(num) = _thenametypes.Add(type);
+        _thetypes.ChangeValue(num) = _thenametypes.Add(type) + 1;
         if (global::Kerf.Engine.Foundation.Standard.CStringChar(ident, 0) == '$')
         {
             if (ident.Length > 2)
@@ -464,13 +464,13 @@ public class StepReaderData : FileReaderData
                     if (_theidents[prev] >= 0)
                     {
                         _themults[prev] = num;
-                        if (string.CompareOrdinal(_thenametypes.FindKey(_thetypes.Value(num)), _thenametypes.FindKey(_thetypes.Value(prev))) < 0)
+                        if (string.CompareOrdinal(_thenametypes[_thetypes.Value(num) - 1], _thenametypes[_thetypes.Value(prev) - 1]) < 0)
                         {
                             //  Warning: components in complex entity are not in alphabetical order.
                             var errm = new StringBuilder("Complex Type incorrect : ");
-                            errm.Append(_thenametypes.FindKey(_thetypes.Value(prev)));
+                            errm.Append(_thenametypes[_thetypes.Value(prev) - 1]);
                             errm.Append(" / ");
-                            errm.Append(_thenametypes.FindKey(_thetypes.Value(num)));
+                            errm.Append(_thenametypes[_thetypes.Value(num) - 1]);
                             errm.Append(" ... ");
                             while (_theidents[prev] <= 0)
                             {
@@ -540,13 +540,13 @@ public class StepReaderData : FileReaderData
     /// <summary>Returns Record Type.</summary>
     public string RecordType(int num)
     {
-        return _thenametypes.FindKey(_thetypes.Value(num));
+        return _thenametypes[_thetypes.Value(num) - 1];
     }
 
     /// <summary>Returns Record Type as a CString.</summary>
     public string CType(int num)
     {
-        return _thenametypes.FindKey(_thetypes.Value(num));
+        return _thenametypes[_thetypes.Value(num) - 1];
     }
 
     /// <summary>Returns record identifier (Positive number). If returned ident is not positive: Sub-List or Scope mark.</summary>
@@ -2083,7 +2083,7 @@ public class StepReaderData : FileReaderData
         NCollection_Array1<int> subn = new NCollection_Array1<int>(0, _thelastn);
         bool pbmap = false; // at least one conflict
         int nbmap = 0;
-        NCollection_IndexedMap<int> imap = new NCollection_IndexedMap<int>();
+        IndexedSet<int> imap = new IndexedSet<int>();
         NCollection_Array1<int> indm = new NCollection_Array1<int>(0, nbdirec); // Index Map -> Record Number (only if map)
         int num; // svv Jan11 2000 : porting on DEC
         for (num = 1; num <= nbdirec; num++)
@@ -2092,10 +2092,10 @@ public class StepReaderData : FileReaderData
             if (ident > 0)
             { // Ident normal -> Map ?
                 //  Map: if Overlap, inhibit it. Otherwise, note index
-                int indmap = imap.Add(ident);
+                int indmap = imap.Add(ident) + 1;
                 if (indmap <= nbmap)
                 {
-                    indmap = imap.FindIndex(ident); // safer
+                    indmap = imap.IndexOf(ident) + 1; // safer
                     indm[indmap] = -1; // Map -> pb
                     pbmap = true;
                     //  pbmap means another pass will be necessary ...
@@ -2137,7 +2137,7 @@ public class StepReaderData : FileReaderData
                 else if (letype == global::Kerf.Engine.Exchange.Framework.ParamType.ParamIdent)
                 {
                     int id = fp.EntityNumber();
-                    int indmap = imap.FindIndex(id);
+                    int indmap = imap.IndexOf(id) + 1;
                     if (indmap > 0)
                     { // the map found it
                         int num0 = indm[indmap];
@@ -2198,11 +2198,11 @@ public class StepReaderData : FileReaderData
                 if (ident > 0)
                 { // and not (iamap && ident > 0)
                     //  Map: if Overlap, inhibit it. Otherwise, note index
-                    int indmap = imap.Add(ident);
+                    int indmap = imap.Add(ident) + 1;
                     if (indmap <= nbmap)
                     {
                         bool errorscope = false;
-                        indmap = imap.FindIndex(ident); // plus sur
+                        indmap = imap.IndexOf(ident) + 1; // plus sur
                         pbmap = true;
                         if (_thenbscop == 0)
                         {
@@ -2419,7 +2419,7 @@ public class StepReaderData : FileReaderData
                         //    MAP available
                         if (pass == 1)
                         { // MAP AVAILABLE
-                            int indmap = imap.FindIndex(id);
+                            int indmap = imap.IndexOf(id) + 1;
                             if (indmap > 0)
                             { // the map found it
                                 nok = indm[indmap];

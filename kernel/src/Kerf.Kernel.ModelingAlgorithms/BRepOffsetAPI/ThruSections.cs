@@ -150,10 +150,10 @@ public class ThruSections : MakeShape
         Shape edge = explo.Current();
         Orientation or1 = edge.Orientation();
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, eFmap);
 
-        Shape adjacentFace = eFmap.FindFromKey(edge).First();
+        Shape adjacentFace = eFmap.GetValue(edge).First();
         Shape theEdge = new();
         for (explo.Init(adjacentFace, ShapeType.Edge); explo.More(); explo.Next())
         {
@@ -631,11 +631,11 @@ public class ThruSections : MakeShape
 
         // history
         WireExplorer exp1 = new(), exp2 = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> m = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> m = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shell, ShapeType.Edge, ShapeType.Face, m);
         NCollection_List<Shape>.Iterator it = new();
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mv = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mv = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shell, ShapeType.Vertex, ShapeType.Face, mv);
 
         for (i = 1; i <= nbSects - 1; i++)
@@ -662,14 +662,14 @@ public class ThruSections : MakeShape
                 {
                     Vertex vdegen =
                       ShapeCasts.Vertex(_bfGenerator.InternalResultShape(Exploration.FirstVertex(ShapeCasts.Edge(edge2))));
-                    for (it.Initialize(mv.FindFromKey(vdegen)); it.More(); it.Next())
+                    for (it.Initialize(mv.GetValue(vdegen)); it.More(); it.Next())
                     {
                         mapFaces.Add(it.Value());
                     }
                 }
                 else
                 {
-                    for (it.Initialize(m.FindFromKey(_bfGenerator.InternalResultShape(edge2))); it.More(); it.Next())
+                    for (it.Initialize(m.GetValue(_bfGenerator.InternalResultShape(edge2))); it.More(); it.Next())
                     {
                         mapFaces.Add(it.Value());
                     }
@@ -679,7 +679,7 @@ public class ThruSections : MakeShape
                 {
                     Vertex vdegen =
                       ShapeCasts.Vertex(_bfGenerator.InternalResultShape(Exploration.FirstVertex(ShapeCasts.Edge(edge1))));
-                    for (it.Initialize(mv.FindFromKey(vdegen)); it.More(); it.Next())
+                    for (it.Initialize(mv.GetValue(vdegen)); it.More(); it.Next())
                     {
                         Shape face = it.Value();
                         if (mapFaces.Contains(face))
@@ -691,7 +691,7 @@ public class ThruSections : MakeShape
                 }
                 else
                 {
-                    for (it.Initialize(m.FindFromKey(_bfGenerator.InternalResultShape(edge1))); it.More(); it.Next())
+                    for (it.Initialize(m.GetValue(_bfGenerator.InternalResultShape(edge1))); it.More(); it.Next())
                     {
                         Shape face = it.Value();
                         if (mapFaces.Contains(face))
@@ -1444,7 +1444,7 @@ public class ThruSections : MakeShape
                 return _generated;
             }
 
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
 
             bool[] isDegen = [false, false];
             if (_degen1 || _degen2)
@@ -1480,14 +1480,14 @@ public class ThruSections : MakeShape
                 // For start or end degenerated section
                 // we return the whole bunch of longitudinal edges
                 Exploration.MapShapesAndAncestors(_shape, ShapeType.Vertex, ShapeType.Edge, vEmap);
-                NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+                IndexedSet<Shape> emap = new(ShapeHasher.Instance);
                 Shape newShape = sf;
                 if ((_isRuled || !_mutableInput) && _bfGenerator is not null)
                 {
                     newShape = ResultShape(s);
                 }
 
-                NCollection_List<Shape> edgeList = vEmap.FindFromKey(newShape);
+                NCollection_List<Shape> edgeList = vEmap.GetValue(newShape);
                 NCollection_List<Shape>.Iterator listIterator = new(edgeList);
                 for (; listIterator.More(); listIterator.Next())
                 {
@@ -1505,9 +1505,9 @@ public class ThruSections : MakeShape
                         }
                     }
                 }
-                for (int j = 1; j <= emap.Extent(); j++)
+                for (int j = 0; j < emap.Count; j++)
                 {
-                    Edge edge = ShapeCasts.Edge(emap.FindKey(j));
+                    Edge edge = ShapeCasts.Edge(emap[j]);
                     _generated.Append(edge);
                     if (_isRuled)
                     {
@@ -1517,8 +1517,8 @@ public class ThruSections : MakeShape
                             int indOfSec = (isDegen[0]) ? i : k;
                             Vertex vertex =
                               (isDegen[0]) ? Exploration.LastVertex(edge) : Exploration.FirstVertex(edge);
-                            NCollection_List<Shape> eElist = vEmap.FindFromKey(vertex);
-                            NCollection_IndexedMap<Shape> emapOfSection = new(ShapeHasher.Instance);
+                            NCollection_List<Shape> eElist = vEmap.GetValue(vertex);
+                            IndexedSet<Shape> emapOfSection = new(ShapeHasher.Instance);
                             Shape wireSection = Final(_wires.Value(indOfSec));
                             if ((_isRuled || !_mutableInput) && _bfGenerator is not null)
                             {
@@ -1528,10 +1528,10 @@ public class ThruSections : MakeShape
                             if (_overlay is not null)
                             {
                                 // Kerf: the section's edges as they stand in the result
-                                NCollection_IndexedMap<Shape> finalEdges = new(ShapeHasher.Instance);
-                                for (int e = 1; e <= emapOfSection.Extent(); e++)
+                                IndexedSet<Shape> finalEdges = new(ShapeHasher.Instance);
+                                for (int e = 0; e < emapOfSection.Count; e++)
                                 {
-                                    finalEdges.Add(Final(emapOfSection.FindKey(e)));
+                                    finalEdges.Add(Final(emapOfSection[e]));
                                 }
                                 emapOfSection = finalEdges;
                             }
@@ -1627,7 +1627,7 @@ public class ThruSections : MakeShape
                         firstVertex = vv[0];
                     }
                 }
-                NCollection_List<Shape> elist = vEmap.FindFromKey(firstVertex);
+                NCollection_List<Shape> elist = vEmap.GetValue(firstVertex);
                 NCollection_List<Shape>.Iterator itl = new(elist);
                 Orientation edgeOr = (vindex == 0) ? Reversed : Forward;
                 for (; itl.More(); itl.Next())
@@ -1647,7 +1647,7 @@ public class ThruSections : MakeShape
                 for (int i = 2; i < _wires.Length(); i++)
                 {
                     firstVertex = Exploration.LastVertex(edge2);
-                    NCollection_List<Shape> elist1 = vEmap.FindFromKey(firstVertex);
+                    NCollection_List<Shape> elist1 = vEmap.GetValue(firstVertex);
                     Edge firstEdge = (edge2.IsSame(elist1.First())) ? ShapeCasts.Edge(elist1.Last())
                                                                              : ShapeCasts.Edge(elist1.First());
                     eindex += _nbEdgesInSection;
@@ -1655,7 +1655,7 @@ public class ThruSections : MakeShape
                     firstFace.Orientation(Forward);
                     vEmap.Clear();
                     Exploration.MapShapesAndAncestors(firstFace, ShapeType.Vertex, ShapeType.Edge, vEmap);
-                    NCollection_List<Shape> elist2 = vEmap.FindFromKey(firstVertex);
+                    NCollection_List<Shape> elist2 = vEmap.GetValue(firstVertex);
                     edge2 = (firstEdge.IsSame(elist2.First())) ? ShapeCasts.Edge(elist2.Last())
                                                                  : ShapeCasts.Edge(elist2.First());
                     _generated.Append(edge2);

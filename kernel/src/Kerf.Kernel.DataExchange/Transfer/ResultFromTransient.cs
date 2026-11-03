@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 using static Kerf.Engine.Exchange.Framework.FrameworkCheckStatus;
@@ -102,7 +103,7 @@ public class ResultFromTransient : Transient
     /// This method is used by ResultFromModel to collate the list of ResultFromTransient, avoiding duplications with a
     /// map. Remark : this object is already in the map and has not to be bound.
     /// </summary>
-    public void FillMap(NCollection_IndexedMap<Transient> map)
+    public void FillMap(IndexedSet<Transient> map)
     {
         if (_thesubs is null)
         {

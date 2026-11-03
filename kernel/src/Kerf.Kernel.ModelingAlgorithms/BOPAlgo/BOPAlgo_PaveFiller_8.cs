@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
@@ -102,9 +103,9 @@ public partial class PaveFiller
     /// <summary>Finds the pave blocks of the face (In, On and Sc) that have the vertex as a bound.</summary>
     protected void FindPaveBlocks(int paveIndex, int faceInfoIndex, NCollection_List<PaveBlock> foundBlocks)
     {
-        void ProcessPaveBlocks(NCollection_IndexedMap<PaveBlock> paveBlocksMap)
+        void ProcessPaveBlocks(IndexedSet<PaveBlock> paveBlocksMap)
         {
-            for (int blockIndex = 1; blockIndex <= paveBlocksMap.Extent(); ++blockIndex)
+            for (int blockIndex = 0; blockIndex < paveBlocksMap.Count; ++blockIndex)
             {
                 PaveBlock paveBlock = paveBlocksMap[blockIndex];
                 paveBlock.Indices(out int nV1, out int nV2);

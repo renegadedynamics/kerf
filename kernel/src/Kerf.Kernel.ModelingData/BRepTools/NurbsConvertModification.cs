@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1996-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 
@@ -33,7 +34,7 @@ public class NurbsConvertModification : CopyModification
 {
     private readonly NCollection_List<Shape> _myled = new();
     private readonly NCollection_List<Transient?> _mylcu = new();
-    private readonly NCollection_IndexedDataMap<object, object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedMap<object, object> _map = new(ReferenceEqualityComparer.Instance);
     private readonly NCollection_List<Shape> _updatedEdges = new();
 
     /// <summary>A NURBS conversion.</summary>
@@ -56,7 +57,7 @@ public class NurbsConvertModification : CopyModification
     }
 
     // find 3D curve from theEdge in theMap, and return the transformed curve or NULL
-    private static Curve3D? NewCurveCore(NCollection_IndexedDataMap<object, object> map,
+    private static Curve3D? NewCurveCore(IndexedMap<object, object> map,
                                         in Edge edge,
                                         out double first,
                                         out double last)
@@ -64,36 +65,36 @@ public class NurbsConvertModification : CopyModification
         Curve3D? newCurve = null;
 
         Curve3D? curve = Tool.Curve(edge, out Placement loc, out first, out last);
-        if (curve is not null && map.Contains(curve))
+        if (curve is not null && map.ContainsKey(curve))
         {
-            newCurve = (Curve3D)map.FindFromKey(curve);
+            newCurve = (Curve3D)map.GetValue(curve);
             newCurve = (Curve3D)newCurve.Transformed(loc.Transformation());
         }
         return newCurve;
     }
 
     // find 2D curve from theEdge on theFace in theMap, and return the transformed curve or NULL
-    private static Curve2D? NewCurveCore(NCollection_IndexedDataMap<object, object> map,
+    private static Curve2D? NewCurveCore(IndexedMap<object, object> map,
                                           in Edge edge,
                                           in Face face,
                                           out double first,
                                           out double last)
     {
         Curve2D? c2d = Tool.CurveOnSurface(edge, face, out first, out last);
-        return (c2d is not null && map.Contains(c2d))
-                 ? (Curve2D)map.FindFromKey(c2d)
+        return (c2d is not null && map.ContainsKey(c2d))
+                 ? (Curve2D)map.GetValue(c2d)
                  : null;
     }
 
     // find surface from theFace in theMap, and return the transformed surface or NULL
-    private static Surface? NewSurfaceCore(NCollection_IndexedDataMap<object, object> map, in Face face)
+    private static Surface? NewSurfaceCore(IndexedMap<object, object> map, in Face face)
     {
         Surface? newSurf = null;
 
         Surface? surf = Tool.Surface(face, out Placement loc);
-        if (surf is not null && map.Contains(surf))
+        if (surf is not null && map.ContainsKey(surf))
         {
-            newSurf = (Surface)map.FindFromKey(surf);
+            newSurf = (Surface)map.GetValue(surf);
             newSurf = (Surface)newSurf.Transformed(loc.Transformation());
         }
         return newSurf;
@@ -301,7 +302,7 @@ public class NurbsConvertModification : CopyModification
             GeomLib_ChangeVBounds(bs, v1, v2);
         }
 
-        if (!_map.Contains(ss))
+        if (!_map.ContainsKey(ss))
         {
             _map.Add(ss, s);
         }
@@ -439,7 +440,7 @@ public class NurbsConvertModification : CopyModification
             }
         }
 
-        if (!_map.Contains(caux))
+        if (!_map.ContainsKey(caux))
         {
             _map.Add(caux, c);
         }

@@ -2,6 +2,7 @@
 
 using Kerf.Engine.Booleans.Algo;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Healing.Upgrade;
@@ -28,10 +29,10 @@ public class BRepOffset_MakeOffsetTests
 {
     internal static List<Shape> SubShapes(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
         var aList = new List<Shape>();
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aList.Add(aMap[i]);
         }
@@ -40,7 +41,7 @@ public class BRepOffset_MakeOffsetTests
 
     internal static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry.Adaptors;
@@ -633,11 +634,11 @@ internal static class MeshTestCommands
             }
         }
 
-        var anEdges = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(aShape, ShapeType.Edge, anEdges);
-        for (int i = 1; i <= anEdges.Extent(); ++i)
+        for (int i = 0; i < anEdges.Count; ++i)
         {
-            var aTE = (BrepTEdge)anEdges.FindKey(i).TShape()!;
+            var aTE = (BrepTEdge)anEdges[i].TShape()!;
             for (var anIterCR = new NCollection_List<CurveRepresentation>.Iterator(aTE.Curves()); anIterCR.More(); anIterCR.Next())
             {
                 if (anIterCR.Value().IsPolygonOnTriangulation())
@@ -1139,14 +1140,14 @@ internal static class MeshTestCommands
             anEps = theDI.Atof(a[2]);
         }
 
-        var aMapF = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMapF = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(shape, ShapeType.Face, aMapF);
 
         // detect if a shape has triangulation
         bool hasPoly = false;
-        for (int i = 1; i <= aMapF.Extent(); i++)
+        for (int i = 0; i < aMapF.Count; i++)
         {
-            if (Tool.Triangulation(global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF.FindKey(i)), out _) is not null)
+            if (Tool.Triangulation(global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF[i]), out _) is not null)
             {
                 hasPoly = true;
                 break;
@@ -1157,9 +1158,9 @@ internal static class MeshTestCommands
         double aTriArea = 0;
         if (hasPoly)
         {
-            for (int i = 1; i <= aMapF.Extent(); i++)
+            for (int i = 1; i <= aMapF.Count; i++)
             {
-                Triangulation? aPoly = Tool.Triangulation(global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF.FindKey(i)), out _);
+                Triangulation? aPoly = Tool.Triangulation(global::Kerf.Engine.Topology.ShapeCasts.Face(aMapF[i - 1]), out _);
                 if (aPoly is null)
                 {
                     theDI.Output.Write("face " + i + " has no triangulation\n");

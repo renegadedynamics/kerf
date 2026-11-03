@@ -140,19 +140,19 @@ public sealed class LinearForm
         else
         {
             // Cas base != FACE
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(theBase, ShapeType.Edge, ShapeType.Face, theEFMap);
             NCollection_List<Shape> lfaces = new();
             bool toremove = false;
-            for (int i = 1; i <= theEFMap.Extent(); i++)
+            for (int i = 0; i < theEFMap.Count; i++)
             {
-                Shape edg = theEFMap.FindKey(i);
+                Shape edg = theEFMap.KeyAt(i);
                 NCollection_List<Shape> thelist1 = new();
                 _map[edg] = thelist1;
                 Shape desc = myPrism.Shape(edg);
                 if (!desc.IsNull)
                 {
-                    if (theEFMap[i].Extent() >= 2)
+                    if (theEFMap.ValueAt(i).Extent() >= 2)
                     {
                         toremove = true;
                     }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Geometry.Api;
@@ -27,9 +28,9 @@ public class BRepLib_FuseEdgesTests
 
     private static int Count(in Shape S, ShapeType T)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(S, T, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     // [0,2] x [0,1] on z = 0, six edges: A(0,0) B(1,0) C(2,0) D(2,1) E(1,1) F(0,1); AB-BC and DE-EF collinear.
@@ -83,7 +84,7 @@ public class BRepLib_FuseEdgesTests
         Assert.Equal(ShapeType.Face, aResult.ShapeType());
         Assert.Equal(4, Count(aResult, ShapeType.Edge));
         Assert.Equal(4, Count(aResult, ShapeType.Vertex));
-        var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Vertex, aVertices);
         Assert.False(aVertices.Contains(aV[1]));
         Assert.False(aVertices.Contains(aV[4]));
@@ -107,7 +108,7 @@ public class BRepLib_FuseEdgesTests
     public void Avoided_edges_are_not_fused()
     {
         Face aF = SixEdgeRectangle(out _, out Dictionary<(int, int), Edge> anEdges);
-        var anAvoid = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anAvoid = new IndexedSet<Shape>(ShapeHasher.Instance);
         anAvoid.Add(anEdges[(0, 1)]);
 
         var aFuse = new FuseEdges(aF, true);
@@ -116,7 +117,7 @@ public class BRepLib_FuseEdgesTests
         Assert.Equal(1, aFuse.NbVertices());
         Shape aResult = aFuse.Shape();
         Assert.Equal(5, Count(aResult, ShapeType.Edge));
-        var aResultEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aResultEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Edge, aResultEdges);
         Assert.True(aResultEdges.Contains(anEdges[(0, 1)]));
         Assert.True(aResultEdges.Contains(anEdges[(1, 2)]));

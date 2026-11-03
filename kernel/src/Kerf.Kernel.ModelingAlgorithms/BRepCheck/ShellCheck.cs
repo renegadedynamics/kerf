@@ -27,7 +27,7 @@ public class ShellCheck : ResultCheck
     private bool _odone;
     private StatusCheck _ostat;
 
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _mapEF =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _mapEF =
         new(ShapeHasher.Instance);
 
     /// <summary>Checks the shell on its own (<see cref="Minimum"/>).</summary>
@@ -41,22 +41,22 @@ public class ShellCheck : ResultCheck
         Init(s);
     }
 
-    private static void Propagate(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEF,
+    private static void Propagate(IndexedMap<Shape, NCollection_List<Shape>> mapEF,
                                   in Shape face,
-                                  NCollection_IndexedMap<Shape> mapF)
+                                  IndexedSet<Shape> mapF)
     {
         // Base for the traverse procedure.
         mapF.Add(face);
 
         // Perform well-known width-first traverse.
-        for (int idx = 1; idx <= mapF.Extent(); ++idx)
+        for (int idx = 0; idx < mapF.Count; ++idx)
         {
             Shape aFace = mapF[idx];
             for (var ex = new Explorer(aFace, ShapeType.Edge); ex.More(); ex.Next())
             {
                 Edge edg = ShapeCasts.Edge(ex.Current());
                 // Test if the edge is in the map (only oriented edges are present).
-                if (!mapEF.FindFromKey(edg, out NCollection_List<Shape>? list))
+                if (!mapEF.TryGetValue(edg, out NCollection_List<Shape>? list))
                 {
                     continue;
                 }
@@ -119,14 +119,14 @@ public class ShellCheck : ResultCheck
                 for (expe.Init(exp.Current(), ShapeType.Edge); expe.More(); expe.Next())
                 {
                     Shape edg = expe.Current();
-                    int index = _mapEF.FindIndex(edg);
+                    int index = _mapEF.IndexOf(edg) + 1;
                     if (index == 0)
                     {
                         var thelist1 = new NCollection_List<Shape>();
-                        index = _mapEF.Add(edg, thelist1);
+                        index = _mapEF.Add(edg, thelist1) + 1;
                     }
 
-                    _mapEF[index].Append(exp.Current());
+                    _mapEF.ValueAt(index - 1).Append(exp.Current());
                 }
             } // for (; exp.More(); exp.Next())
 
@@ -136,10 +136,10 @@ public class ShellCheck : ResultCheck
             }
             else if (nbface >= 2)
             {
-                var mapF = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                var mapF = new IndexedSet<Shape>(ShapeHasher.Instance);
                 exp.ReInit();
                 Propagate(_mapEF, exp.Current(), mapF);
-                if (mapF.Extent() != nbface)
+                if (mapF.Count != nbface)
                 {
                     BRepCheckCheck.Add(lst, StatusCheck.NotConnected);
                 }
@@ -274,7 +274,7 @@ public class ShellCheck : ResultCheck
         //
         int index, nbF;
         Explorer exp = new(), ede = new();
-        var mapS = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mapS = new IndexedSet<Shape>(ShapeHasher.Instance);
         var meToAvoid = new HashSet<Shape>(ShapeHasher.Instance);
         _mapEF.Clear();
 
@@ -308,7 +308,7 @@ public class ShellCheck : ResultCheck
             {
                 // OCCT: NCollection_IndexedMap::Add returns the index (never 0), so !mapS.Add(aF) is always false
                 // and a face present twice is never reported here (Orientation reports it)
-                if (mapS.Add(f) == 0)
+                if (mapS.Add(f) + 1 == 0)
                 {
                     _cstat = StatusCheck.RedundantFace;
                     if (update)
@@ -325,21 +325,21 @@ public class ShellCheck : ResultCheck
                     Shape e = ede.Current();
                     if (!meToAvoid.Contains(e))
                     {
-                        index = _mapEF.FindIndex(e);
+                        index = _mapEF.IndexOf(e) + 1;
                         if (index == 0)
                         {
                             var thelist = new NCollection_List<Shape>();
-                            index = _mapEF.Add(e, thelist);
+                            index = _mapEF.Add(e, thelist) + 1;
                         }
 
-                        _mapEF[index].Append(f);
+                        _mapEF.ValueAt(index - 1).Append(f);
                     }
                 }
             }
         }
 
         //
-        _nbori = mapS.Extent();
+        _nbori = mapS.Count;
         if (_nbori >= 2)
         {
             mapS.Clear();
@@ -360,7 +360,7 @@ public class ShellCheck : ResultCheck
 
         //
         //
-        nbF = mapS.Extent();
+        nbF = mapS.Count;
         if (_nbori != nbF)
         {
             _cstat = StatusCheck.NotConnected;
@@ -376,10 +376,10 @@ public class ShellCheck : ResultCheck
         //
         int i, nbedges, nboc, nbSet;
         //
-        nbedges = _mapEF.Extent();
+        nbedges = _mapEF.Count;
         for (i = 1; i <= nbedges; ++i)
         {
-            nboc = _mapEF[i].Extent();
+            nboc = _mapEF.ValueAt(i - 1).Extent();
             if (nboc == 0 || nboc >= 3)
             {
                 var theSet = new NCollection_List<Shape>();
@@ -399,7 +399,7 @@ public class ShellCheck : ResultCheck
             }
             else if (nboc == 1)
             {
-                if (!Tool.Degenerated(ShapeCasts.Edge(_mapEF.FindKey(i))))
+                if (!Tool.Degenerated(ShapeCasts.Edge(_mapEF.KeyAt(i - 1))))
                 {
                     _cstat = StatusCheck.NotClosed;
                     if (update)
@@ -480,19 +480,19 @@ public class ShellCheck : ResultCheck
         // Then the orientation of faces by their connectivity is checked
         // BRepCheck_BadOrientationOfSubshape and
         //         BRepCheck_SubshapeNotInShape are checked;
-        int nbedges = _mapEF.Extent();
+        int nbedges = _mapEF.Count;
         Face fref = new();
         Orientation orf;
 
-        for (int i = 1; i <= nbedges; i++)
+        for (int i = 0; i < nbedges; i++)
         {
-            Edge edg = ShapeCasts.Edge(_mapEF.FindKey(i));
+            Edge edg = ShapeCasts.Edge(_mapEF.KeyAt(i));
             if (Tool.Degenerated(edg))
             {
                 continue;
             }
 
-            NCollection_List<Shape> lface = _mapEF[i];
+            NCollection_List<Shape> lface = _mapEF.ValueAt(i);
             var lite = new NCollection_List<Shape>.Iterator(lface);
 
             if (lface.Extent() <= 2)
@@ -700,7 +700,7 @@ public class ShellCheck : ResultCheck
                         {
                             Edge edg = ShapeCasts.Edge(ede.Current());
                             Orientation orient = edg.Orientation();
-                            NCollection_List<Shape> lface = _mapEF.ChangeFromKey(edg);
+                            NCollection_List<Shape> lface = _mapEF.GetValue(edg);
                             var lite = new NCollection_List<Shape>.Iterator(lface);
 
                             Face fcur = ShapeCasts.Face(lite.Value());
@@ -837,7 +837,7 @@ public class ShellCheck : ResultCheck
     private int NbConnectedSetCore(NCollection_List<Shape> sets, bool toFreeze)
     {
         // The connections are found
-        var parents = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(
+        var parents = new IndexedMap<Shape, NCollection_List<Shape>>(
             ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, parents);
         // All faces are taken
@@ -852,10 +852,10 @@ public class ShellCheck : ResultCheck
         int iCur;
         var theMultiEd = new HashSet<Shape>(ShapeHasher.Instance);
         var theUnOriEd = new HashSet<Shape>(ShapeHasher.Instance);
-        for (iCur = 1; iCur <= parents.Extent(); iCur++)
+        for (iCur = 1; iCur <= parents.Count; iCur++)
         {
-            Edge ed = ShapeCasts.Edge(parents.FindKey(iCur));
-            if (parents[iCur].Extent() > 2)
+            Edge ed = ShapeCasts.Edge(parents.KeyAt(iCur - 1));
+            if (parents.ValueAt(iCur - 1).Extent() > 2)
             {
                 theMultiEd.Add(ed);
             }
@@ -879,7 +879,7 @@ public class ShellCheck : ResultCheck
         {
             if (!theUnOriEd.Contains(ed))
             {
-                for (lconx1.Initialize(parents.FindFromKey(ed)); lconx1.More(); lconx1.Next())
+                for (lconx1.Initialize(parents.GetValue(ed)); lconx1.More(); lconx1.Next())
                 {
                     if (theFaces.Contains(lconx1.Value()))
                     {
@@ -903,7 +903,7 @@ public class ShellCheck : ResultCheck
                                 Shape ced = exsh.Current();
                                 if (!theMultiEd.Contains(ced))
                                 {
-                                    for (lconx2.Initialize(parents.FindFromKey(ced)); lconx2.More(); lconx2.Next())
+                                    for (lconx2.Initialize(parents.GetValue(ced)); lconx2.More(); lconx2.Next())
                                     {
                                         if (theFaces.Contains(lconx2.Value()))
                                         {

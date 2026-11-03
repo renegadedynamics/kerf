@@ -163,7 +163,7 @@ public sealed partial class PlanarBuilder
         // The sequence newEdges will contains this edges.
 
         NCollection_Sequence<Shape> newEdges = new();
-        NCollection_IndexedMap<Shape> refEdgesMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> refEdgesMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(_refFace, ShapeType.Edge, refEdgesMap);
         var ex = new Explorer(_newFace, ShapeType.Edge);
         while (ex.More())
@@ -218,7 +218,7 @@ public sealed partial class PlanarBuilder
     //           been find, this edge is returned in <BasisEdge>, else <E> is
     //           returned in <BasisEdge>.
     //=======================================================================
-    private static bool IsIssuedFrom(in Edge e, NCollection_IndexedMap<Shape> map, ref Edge basisEdge)
+    private static bool IsIssuedFrom(in Edge e, IndexedSet<Shape> map, ref Edge basisEdge)
     {
         double f1, l1, f2, l2;
         //  syntaxe invalide sur NT
@@ -226,9 +226,9 @@ public sealed partial class PlanarBuilder
         //    BRep_Tool::Curve(E, loc1, f1, L1);
         Curve3D? c1 = Tool.Curve(e, out _, out f1, out l1);
 
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 0; i < map.Count; i++)
         {
-            Edge currentEdge = ShapeCasts.Edge(map.FindKey(i));
+            Edge currentEdge = ShapeCasts.Edge(map[i]);
             //  syntaxe invalide sur NT
             //    const occ::handle<Geom_Curve>& c2 =
             //      BRep_Tool::Curve(currentEdge, loc2, f2, L2);

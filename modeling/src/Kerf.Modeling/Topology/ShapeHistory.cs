@@ -296,7 +296,7 @@ public sealed class ShapeHistory
     /// <summary>Every distinct vertex, edge, face and solid of the given shapes.</summary>
     internal static global::Kerf.Topology.Shape[] TrackedSubshapes(IEnumerable<global::Kerf.Topology.Shape> shapes)
     {
-        var found = new NCollection_IndexedMap<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
+        var found = new IndexedSet<global::Kerf.Topology.Shape>(ShapeHasher.Instance);
         foreach (var shape in shapes)
         {
             if (shape.IsNull)

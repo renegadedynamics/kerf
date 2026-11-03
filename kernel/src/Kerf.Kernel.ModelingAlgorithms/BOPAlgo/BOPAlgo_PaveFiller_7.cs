@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
@@ -506,11 +507,11 @@ public partial class PaveFiller
             f1F = ShapeCasts.Face(_ds.Shape(nF1));
             f1F.Orientation(Forward);
             // In
-            NCollection_IndexedMap<PaveBlock> mpbIn = fi.PaveBlocksIn();
-            nbPBIn = mpbIn.Extent();
+            IndexedSet<PaveBlock> mpbIn = fi.PaveBlocksIn();
+            nbPBIn = mpbIn.Count;
             for (j = 1; j <= nbPBIn; ++j)
             {
-                PaveBlock pb = mpbIn[j];
+                PaveBlock pb = mpbIn[j - 1];
                 nE = pb.Edge();
                 // OCCT's Standard_ASSERT(nE >= 0, ..., continue): in release builds it only continues.
                 if (nE < 0)
@@ -526,11 +527,11 @@ public partial class PaveFiller
             }
             //
             // On
-            NCollection_IndexedMap<PaveBlock> mpbOn = fi.PaveBlocksOn();
-            nbPBOn = mpbOn.Extent();
+            IndexedSet<PaveBlock> mpbOn = fi.PaveBlocksOn();
+            nbPBOn = mpbOn.Count;
             for (j = 1; j <= nbPBOn; ++j)
             {
-                PaveBlock pb = mpbOn[j];
+                PaveBlock pb = mpbOn[j - 1];
                 nE = pb.Edge();
                 Edge e = ShapeCasts.Edge(_ds.Shape(nE));
                 bHasPC = AlgoTools2D.HasCurveOnSurface(e, f1F);
@@ -766,7 +767,7 @@ public partial class PaveFiller
         bool bIsBasedOnPlane;
         int i, nb, n1, nF, nbF;
         Explorer exp = new();
-        NCollection_IndexedMap<Shape> mf = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mf = new(ShapeHasher.Instance);
         //
         nb = 3;
         using var psOuter = new ProgressScope(range, null, 1);
@@ -786,7 +787,7 @@ public partial class PaveFiller
             }
         }
         //
-        nbF = mf.Extent();
+        nbF = mf.Count;
         if (nbF == 0)
         {
             return;
@@ -797,7 +798,7 @@ public partial class PaveFiller
         //
         for (i = 1; i <= nbF; ++i)
         {
-            Face f = ShapeCasts.Face(mf[i]);
+            Face f = ShapeCasts.Face(mf[i - 1]);
             exp.Init(f, type[1]);
             for (; exp.More(); exp.Next())
             {

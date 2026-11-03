@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
@@ -582,9 +583,9 @@ public class BOPDS_DSTests
         Assert.True(aDS.HasFaceInfo(nF));
         Assert.Same(aFI, aDS.FaceInfo(nF));
         Assert.Equal(nF, aFI.Index());
-        Assert.Equal(4, aFI.PaveBlocksOn().Extent());
+        Assert.Equal(4, aFI.PaveBlocksOn().Count);
         Assert.Equal(4, aFI.VerticesOn().Extent());
-        Assert.True(aFI.PaveBlocksIn().IsEmpty());
+        Assert.True(aFI.PaveBlocksIn().Count == 0);
         Assert.True(aFI.VerticesIn().IsEmpty());
 
         // A vertex/face interference puts the vertex In the face
@@ -599,7 +600,7 @@ public class BOPDS_DSTests
         aDS.UpdateFaceInfoIn(aFaces);
         Assert.True(aFI.VerticesIn().Contains(nV));
         aDS.UpdateFaceInfoOn(aFaces);
-        Assert.Equal(4, aFI.PaveBlocksOn().Extent());
+        Assert.Equal(4, aFI.PaveBlocksOn().Count);
 
         // the vertex In the face is alone: no In or Sc pave block ends there
         NCollection_List<int> anAlone = new();
@@ -608,22 +609,22 @@ public class BOPDS_DSTests
 
         // RefineFaceInfoOn keeps only pave blocks with edges
         aDS.RefineFaceInfoOn();
-        Assert.True(aFI.PaveBlocksOn().IsEmpty());
+        Assert.True(aFI.PaveBlocksOn().Count == 0);
 
         // RefineFaceInfoIn removes from In what is On
         aDS.UpdateFaceInfoOn(nF);
-        PaveBlock anOn = aFI.PaveBlocksOn().FindKey(1);
+        PaveBlock anOn = aFI.PaveBlocksOn()[0];
         aFI.ChangePaveBlocksIn().Add(anOn);
         aFI.ChangePaveBlocksIn().Add(new PaveBlock());
         aDS.RefineFaceInfoIn();
-        Assert.Equal(1, aFI.PaveBlocksIn().Extent());
+        Assert.Single(aFI.PaveBlocksIn());
         Assert.False(aFI.PaveBlocksIn().Contains(anOn));
 
         aFI.ChangePaveBlocksSc().Add(new PaveBlock());
         aFI.ChangeVerticesSc().Add(3);
         aFI.Clear(); // OCCT leaves the Sc maps
-        Assert.True(aFI.PaveBlocksOn().IsEmpty());
-        Assert.Equal(1, aFI.PaveBlocksSc().Extent());
+        Assert.True(aFI.PaveBlocksOn().Count == 0);
+        Assert.Single(aFI.PaveBlocksSc());
         Assert.Equal(1, aFI.VerticesSc().Extent());
         Assert.Single(aDS.FaceInfoPool());
     }
@@ -652,10 +653,10 @@ public class BOPDS_DSTests
         Assert.True(aDS.ShapeInfo(nF2).HasSubShape(aShared.First()));
 
         NCollection_IntMap aMVOnIn = new(), aMVCommon = new();
-        NCollection_IndexedMap<PaveBlock> aPBOnIn = new();
+        IndexedSet<PaveBlock> aPBOnIn = new();
         HashSet<PaveBlock> aCommonPB = new();
         aDS.SubShapesOnIn(nF1, nF2, aMVOnIn, aMVCommon, aPBOnIn, aCommonPB);
-        Assert.Equal(7, aPBOnIn.Extent());
+        Assert.Equal(7, aPBOnIn.Count);
         Assert.Single(aCommonPB);
         Assert.Equal(6, aMVOnIn.Extent());
         Assert.Equal(2, aMVCommon.Extent());

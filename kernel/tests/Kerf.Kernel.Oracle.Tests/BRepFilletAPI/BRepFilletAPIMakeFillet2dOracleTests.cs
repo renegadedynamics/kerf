@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Exchange.Brep;
@@ -178,9 +179,9 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         var aMaker = new MakeFillet2D(theFace);
         aRun.Maker = aMaker;
         aRun.Steps.Add("init " + (int)aMaker.Status());
-        NCollection_IndexedMap<Shape> aVertices = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aVertices = new(ShapeHasher.Instance);
         Exploration.MapShapes(theFace, ShapeType.Vertex, aVertices);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anAncestors = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> anAncestors = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(theFace, ShapeType.Vertex, ShapeType.Edge, anAncestors);
         Edge aLastFillet = new(), aLastChamfer = new();
         foreach (Op anOp in theOps)
@@ -189,8 +190,8 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             try
             {
                 Edge anEdge = new();
-                Vertex aV = anOp.Vertex > 0 ? ShapeCasts.Vertex(aVertices.FindKey(anOp.Vertex)) : new Vertex();
-                NCollection_List<Shape>? aList = anOp.Vertex > 0 ? anAncestors.FindFromKey(aV) : null;
+                Vertex aV = anOp.Vertex > 0 ? ShapeCasts.Vertex(aVertices[anOp.Vertex - 1]) : new Vertex();
+                NCollection_List<Shape>? aList = anOp.Vertex > 0 ? anAncestors.GetValue(aV) : null;
                 switch (anOp.Kind)
                 {
                     case OpKind.Fillet:
@@ -398,18 +399,18 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         // the history, as indices in the result
         var aNResEdges = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNRes, N.TopAbs_ShapeEnum.TopAbs_EDGE, aNResEdges);
-        NCollection_IndexedMap<Shape> aPResEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aPResEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aPRes, ShapeType.Edge, aPResEdges);
         var aNEdges = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNFace, N.TopAbs_ShapeEnum.TopAbs_EDGE, aNEdges);
-        NCollection_IndexedMap<Shape> aPEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aPEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aPFace, ShapeType.Edge, aPEdges);
         var aNH = new List<string>();
         var aPH = new List<string>();
         for (int i = 1; i <= aNEdges.Extent(); i++)
         {
             N.TopoDS_Edge aNE = N.TopoDS.Edge(aNEdges.FindKey(i));
-            Edge aPE = ShapeCasts.Edge(aPEdges.FindKey(i));
+            Edge aPE = ShapeCasts.Edge(aPEdges[i - 1]);
             aNH.Add($"{i}:{aN.Maker.IsModified(aNE)},{aN.Maker.HasDescendant(aNE)}");
             aPH.Add($"{i}:{aP.Maker.IsModified(aPE)},{aP.Maker.HasDescendant(aPE)}");
             try
@@ -422,7 +423,7 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
             }
             try
             {
-                aPH.Add(string.Join(",", aP.Maker.Modified(aPE).Select(s => aPResEdges.FindIndex(s))));
+                aPH.Add(string.Join(",", aP.Maker.Modified(aPE).Select(s => (aPResEdges.IndexOf(s) + 1))));
             }
             catch (FailureException e)
             {
@@ -432,12 +433,12 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
         for (int k = 1; k <= aN.Maker.NbCurves(); k++)
         {
             aNH.Add("new" + string.Join(",", aN.Maker.NewEdges(k).Select(s => aNResEdges.FindIndex(s))));
-            aPH.Add("new" + string.Join(",", aP.Maker.NewEdges(k).Select(s => aPResEdges.FindIndex(s))));
+            aPH.Add("new" + string.Join(",", aP.Maker.NewEdges(k).Select(s => (aPResEdges.IndexOf(s) + 1))));
         }
         for (int k = 1; k <= aNResEdges.Extent(); k++)
         {
             aNH.Add("basis" + aNEdges.FindIndex(aN.Maker.BasisEdge(N.TopoDS.Edge(aNResEdges.FindKey(k)))));
-            aPH.Add("basis" + aPEdges.FindIndex(aP.Maker.BasisEdge(ShapeCasts.Edge(aPResEdges.FindKey(k)))));
+            aPH.Add("basis" + (aPEdges.IndexOf(aP.Maker.BasisEdge(ShapeCasts.Edge(aPResEdges[k - 1]))) + 1));
         }
         if (aNH.SequenceEqual(aPH))
         {
@@ -456,9 +457,9 @@ public class BRepFilletAPIMakeFillet2dOracleTests(ITestOutputHelper output) : ID
 
     private static int NbVertices(in Shape theShape)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Vertex, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private void Report()

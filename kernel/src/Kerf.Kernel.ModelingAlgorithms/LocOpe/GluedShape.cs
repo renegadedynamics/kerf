@@ -18,7 +18,7 @@ public sealed class GluedShape : GeneratedShape
 {
     private Shape _shape = new();
     // OCCT iterates this map keyed by the faces' addresses; the port in the order the faces were glued
-    private readonly NCollection_IndexedMap<Shape> _map = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _map = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Shape> _gShape = new(ShapeHasher.Instance);
 
     public GluedShape()
@@ -65,14 +65,14 @@ public sealed class GluedShape : GeneratedShape
 
         // Edges et faces generes
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, theMapEF);
 
         HashSet<Shape> mapdone = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itl = new();
         Explorer exp = new(), exp2 = new(), exp3 = new();
 
-        for (int itm = 1; itm <= _map.Extent(); itm++)
+        for (int itm = 0; itm < _map.Count; itm++)
         {
             Face fac = ShapeCasts.Face(_map[itm]);
             for (exp.Init(fac, ShapeType.Edge); exp.More(); exp.Next())
@@ -83,11 +83,11 @@ public sealed class GluedShape : GeneratedShape
                     continue;
                 }
                 // Est-ce un edge de connexite entre les faces collees
-                if (theMapEF.FindFromKey(edg).Extent() != 2)
+                if (theMapEF.GetValue(edg).Extent() != 2)
                 {
                     throw new ConstructionErrorException();
                 }
-                for (itl.Initialize(theMapEF.FindFromKey(edg)); itl.More(); itl.Next())
+                for (itl.Initialize(theMapEF.GetValue(edg)); itl.More(); itl.Next())
                 {
                     if (!_map.Contains(itl.Value()))
                     {

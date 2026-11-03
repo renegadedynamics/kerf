@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1991-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Library;
@@ -41,7 +42,7 @@ public sealed class MedialAxisExplorer
     private int _currentContour;
     private Shape _shape;
     private readonly NCollection_Sequence<bool> _isClosed = new();
-    private readonly NCollection_IndexedDataMap<Shape, Shape> _modifShapes =
+    private readonly IndexedMap<Shape, Shape> _modifShapes =
         new(ShapeHasher.Instance);
 
     public MedialAxisExplorer()
@@ -83,7 +84,7 @@ public sealed class MedialAxisExplorer
     {
         // Taking into account the side of the bisecting loci: the wire as it is in the face.
         WireExplorer exp = new(spine, aFace);
-        NCollection_IndexedDataMap<Shape, Shape> oldNewE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Shape> oldNewE = new(ShapeHasher.Instance);
 
         if (!exp.More())
         {
@@ -170,7 +171,7 @@ public sealed class MedialAxisExplorer
                     }
 
                     newEdge.Orientation(edge.Orientation());
-                    oldNewE.ChangeFromKey(edge) = newEdge;
+                    oldNewE.GetValueRef(edge) = newEdge;
                 }
                 else
                 {
@@ -193,7 +194,7 @@ public sealed class MedialAxisExplorer
                     }
 
                     newEdge.Orientation(prevEdge.Orientation());
-                    oldNewE.ChangeFromKey(prevEdge) = newEdge;
+                    oldNewE.GetValueRef(prevEdge) = newEdge;
                 }
             }
 
@@ -231,7 +232,7 @@ public sealed class MedialAxisExplorer
                 }
 
                 newEdge.Orientation(firstEdge.Orientation());
-                oldNewE.ChangeFromKey(firstEdge) = newEdge;
+                oldNewE.GetValueRef(firstEdge) = newEdge;
             }
             else
             {
@@ -254,7 +255,7 @@ public sealed class MedialAxisExplorer
                 }
 
                 newEdge.Orientation(prevEdge.Orientation());
-                oldNewE.ChangeFromKey(prevEdge) = newEdge;
+                oldNewE.GetValueRef(prevEdge) = newEdge;
             }
         }
 
@@ -264,14 +265,14 @@ public sealed class MedialAxisExplorer
         if (isModif)
         {
             int i;
-            int nbEdges = oldNewE.Extent();
+            int nbEdges = oldNewE.Count;
 
             builder.MakeWire(ref newWire);
 
             for (i = 1; i <= nbEdges; i++)
             {
-                Shape key = oldNewE.FindKey(i);
-                Shape newEdge = oldNewE.FindFromIndex(i);
+                Shape key = oldNewE.KeyAt(i - 1);
+                Shape newEdge = oldNewE.ValueAt(i - 1);
 
                 builder.Add(newWire, newEdge);
                 _modifShapes.Add(key, newEdge);
@@ -344,9 +345,9 @@ public sealed class MedialAxisExplorer
     /// <summary>True if aShape (the face, a wire or an edge read) was replaced.</summary>
     public bool IsModified(in Shape aShape)
     {
-        if (_modifShapes.Contains(aShape))
+        if (_modifShapes.ContainsKey(aShape))
         {
-            Shape newShape = _modifShapes.FindFromKey(aShape);
+            Shape newShape = _modifShapes.GetValue(aShape);
             bool isSame = newShape.IsSame(aShape);
 
             return !isSame;
@@ -358,9 +359,9 @@ public sealed class MedialAxisExplorer
     /// <summary>The shape that replaces aShape, or aShape itself if it isn't replaced.</summary>
     public Shape ModifiedShape(in Shape aShape)
     {
-        if (_modifShapes.Contains(aShape))
+        if (_modifShapes.ContainsKey(aShape))
         {
-            Shape newShape = _modifShapes.FindFromKey(aShape);
+            Shape newShape = _modifShapes.GetValue(aShape);
 
             return newShape;
         }

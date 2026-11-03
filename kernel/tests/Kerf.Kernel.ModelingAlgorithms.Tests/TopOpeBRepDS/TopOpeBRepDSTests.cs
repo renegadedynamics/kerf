@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -26,9 +27,9 @@ public class TopOpeBRepDSTests
 
     private static Shape Sub(in Shape S, ShapeType T, int k)
     {
-        NCollection_IndexedMap<Shape> M = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(S, T, M);
-        return M.FindKey(k);
+        return M[k - 1];
     }
 
     // ---- Transition ----
@@ -396,9 +397,9 @@ public class TopOpeBRepDSTests
     public void DataStructure_ShapesWithStateHaveAnEmptyMapPerDataStructure()
     {
         DsDataStructure DS = new();
-        NCollection_IndexedDataMap<Shape, DsShapeWithState> M = DS.ChangeMapOfShapeWithState(theBox, out bool aFound);
+        IndexedMap<Shape, DsShapeWithState> M = DS.ChangeMapOfShapeWithState(theBox, out bool aFound);
         Assert.False(aFound);
-        Assert.True(M.IsEmpty());
+        Assert.True(M.Count == 0);
         DsShapeWithState SWS = new();
         SWS.AddPart(theBox, In);
         SWS.SetState(On);

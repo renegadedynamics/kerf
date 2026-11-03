@@ -34,7 +34,7 @@ namespace Kerf.Engine.Booleans;
 public class MakeConnectedAlgorithm : Options
 {
     protected NCollection_List<Shape> _arguments = new();                          //!< Input shapes for making them connected
-    protected NCollection_IndexedMap<Shape> _allInputsMap = new(ShapeHasher.Instance); //!< Map of all BRep sub-elements of the input shapes
+    protected IndexedSet<Shape> _allInputsMap = new(ShapeHasher.Instance); //!< Map of all BRep sub-elements of the input shapes
     protected MakePeriodicAlgorithm _periodicityMaker = new();                             //!< Tool for making the shape periodic
     protected Dictionary<Shape, NCollection_List<Shape>> _materials = new(EqualityComparer<Shape>.Default); //!< Map of the materials associations
     protected Dictionary<Shape, NCollection_List<Shape>> _origins = new(ShapeHasher.Instance); //!< Map of origins
@@ -393,7 +393,7 @@ public class MakeConnectedAlgorithm : Options
         _origins.Clear();
 
         // Map the history shapes of the arguments
-        if (_allInputsMap.IsEmpty())
+        if (_allInputsMap.Count == 0)
         {
             NCollection_List<Shape>.Iterator itLA = new(_arguments);
             for (; itLA.More(); itLA.Next())
@@ -402,8 +402,8 @@ public class MakeConnectedAlgorithm : Options
             }
         }
 
-        int nbS = _allInputsMap.Extent();
-        for (int i = 1; i <= nbS; ++i)
+        int nbS = _allInputsMap.Count;
+        for (int i = 0; i < nbS; ++i)
         {
             Shape s = _allInputsMap[i];
             if (!global::Kerf.Engine.Topology.History.IsSupportedType(s))

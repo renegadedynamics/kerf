@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2017-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Occt;
 using static Kerf.Engine.Foundation.Gravity;
 
@@ -29,7 +30,7 @@ public class Report : Transient
     protected readonly Lock _mutex = new();
     protected CompositeAlerts? _compositAlerts; //!< container of alerts
     protected readonly NCollection_Sequence<Level> _alertLevels = new(); //!< container of active levels, new alerts are added below the latest level
-    protected readonly NCollection_IndexedMap<MetricType> _activeMetrics = new(); //!< metrics to compute on alerts
+    protected readonly IndexedSet<MetricType> _activeMetrics = new(); //!< metrics to compute on alerts
     protected int _limit;                  //!< Maximum number of collected alerts on the top level
     protected bool _isActiveInMessenger;   //!< state whether the report is activated in messenger
 
@@ -177,7 +178,7 @@ public class Report : Transient
             AlertExtended levelRootAlert = new();
 
             MessageAttribute attribute;
-            if (!ActiveMetrics().IsEmpty())
+            if (ActiveMetrics().Count != 0)
             {
                 attribute = new AttributeMeter(name);
             }
@@ -266,7 +267,7 @@ public class Report : Transient
     }
 
     /// <summary>The metrics computed on the alerts (the report's own map, which callers only read).</summary>
-    public NCollection_IndexedMap<MetricType> ActiveMetrics() => _activeMetrics;
+    public IndexedSet<MetricType> ActiveMetrics() => _activeMetrics;
 
     /// <summary>Activates or deactivates a metric.</summary>
     public void SetActiveMetric(MetricType metricType, bool activate)
@@ -282,7 +283,7 @@ public class Report : Transient
         }
         else
         {
-            _activeMetrics.RemoveKey(metricType);
+            _activeMetrics.Remove(metricType);
         }
     }
 

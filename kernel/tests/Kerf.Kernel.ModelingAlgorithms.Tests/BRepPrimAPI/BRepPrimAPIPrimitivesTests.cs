@@ -1,5 +1,6 @@
 ﻿// Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Preview;
 using Kerf.Engine.Foundation;
@@ -24,9 +25,9 @@ public class BRepPrimAPIPrimitivesTests
 {
     private static int Count(in Shape theS, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theS, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static (int, int, int, int) Counts(in Shape theS) =>
@@ -48,9 +49,9 @@ public class BRepPrimAPIPrimitivesTests
 
     private static bool AllFrozen(in Shape theS)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theS, aMap);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             if (!aMap[i].TShape()!.IsFrozen)
             {
@@ -119,7 +120,7 @@ public class BRepPrimAPIPrimitivesTests
 
         Shape aSolid = aMaker.Shape();
         Face[] aFaces = [aBottom, aMaker.TopFace(), aMaker.BackFace(), aMaker.FrontFace(), aMaker.LeftFace(), aMaker.RightFace()];
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aSolid, ShapeType.Face, aMap);
         foreach (Face aF in aFaces)
         {
@@ -315,7 +316,7 @@ public class BRepPrimAPIPrimitivesTests
         Assert.True(AllFrozen(aFace));
         Shell aShell = aMaker.Shell();
         Solid aSolid = aMaker.Solid();
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aSolid, aMap);
         Assert.True(aMap.Contains(aFace));
         Assert.True(aMap.Contains(aShell));

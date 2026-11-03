@@ -6,6 +6,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation.Std;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Engine.Geometry.Bounds;
@@ -631,7 +632,7 @@ public class DS
         }
 
         FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
-        NCollection_IndexedMap<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
+        IndexedSet<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
         NCollection_IntMap verticesIn = faceInfo.ChangeVerticesIn();
         paveBlocksIn.Clear();
         verticesIn.Clear();
@@ -648,7 +649,7 @@ public class DS
         }
 
         FaceInfo faceInfo = _faceInfoPool[shapeInfo.Reference()];
-        NCollection_IndexedMap<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
+        IndexedSet<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
         NCollection_IntMap verticesOn = faceInfo.ChangeVerticesOn();
         paveBlocksOn.Clear();
         verticesOn.Clear();
@@ -656,7 +657,7 @@ public class DS
     }
 
     /// <summary>The state On of the face: the (real) pave blocks of its edges and the vertices.</summary>
-    public void FaceInfoOn(int index, NCollection_IndexedMap<PaveBlock> mpb, NCollection_IntMap mvp)
+    public void FaceInfoOn(int index, IndexedSet<PaveBlock> mpb, NCollection_IntMap mvp)
     {
         foreach (int subShapeIndex in ShapeInfo(index).SubShapes())
         {
@@ -681,7 +682,7 @@ public class DS
     /// The state In of the face: its internal vertices, the vertices of vertex/face interferences, the new vertices
     /// of edge/face interferences and the common blocks lying on the face.
     /// </summary>
-    public void FaceInfoIn(int faceIndex, NCollection_IndexedMap<PaveBlock> paveBlocks, NCollection_IntMap indexMap)
+    public void FaceInfoIn(int faceIndex, IndexedSet<PaveBlock> paveBlocks, NCollection_IntMap indexMap)
     {
         // 1. Pure internal vertices on the face
         // Adding to theIndexMap all the indicies of vertices belonging to the face.
@@ -818,13 +819,13 @@ public class DS
         foreach (FaceInfo faceInfo in _faceInfoPool)
         {
             UpdateFaceInfoOn(faceInfo.Index());
-            NCollection_IndexedMap<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
-            for (int paveBlockIndex = paveBlocksOn.Extent(); paveBlockIndex >= 1; --paveBlockIndex)
+            IndexedSet<PaveBlock> paveBlocksOn = faceInfo.ChangePaveBlocksOn();
+            for (int paveBlockIndex = paveBlocksOn.Count; paveBlockIndex >= 1; --paveBlockIndex)
             {
-                PaveBlock paveBlock = paveBlocksOn.FindKey(paveBlockIndex);
+                PaveBlock paveBlock = paveBlocksOn[paveBlockIndex - 1];
                 if (!paveBlock.HasEdge())
                 {
-                    paveBlocksOn.RemoveFromIndex(paveBlockIndex);
+                    paveBlocksOn.RemoveAtSwap(paveBlockIndex - 1);
                 }
             }
         }
@@ -842,19 +843,19 @@ public class DS
             }
 
             FaceInfo faceInfo = ChangeFaceInfo(i);
-            NCollection_IndexedMap<PaveBlock> paveBlocksOn = faceInfo.PaveBlocksOn();
-            NCollection_IndexedMap<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
-            if (paveBlocksIn.IsEmpty() || paveBlocksOn.IsEmpty())
+            IndexedSet<PaveBlock> paveBlocksOn = faceInfo.PaveBlocksOn();
+            IndexedSet<PaveBlock> paveBlocksIn = faceInfo.ChangePaveBlocksIn();
+            if (paveBlocksIn.Count == 0 || paveBlocksOn.Count == 0)
             {
                 continue;
             }
 
-            for (int paveBlockIndex = paveBlocksIn.Extent(); paveBlockIndex >= 1; --paveBlockIndex)
+            for (int paveBlockIndex = paveBlocksIn.Count; paveBlockIndex >= 1; --paveBlockIndex)
             {
-                PaveBlock paveBlock = paveBlocksIn.FindKey(paveBlockIndex);
+                PaveBlock paveBlock = paveBlocksIn[paveBlockIndex - 1];
                 if (paveBlocksOn.Contains(paveBlock))
                 {
-                    paveBlocksIn.RemoveFromIndex(paveBlockIndex);
+                    paveBlocksIn.RemoveAtSwap(paveBlockIndex - 1);
                 }
             }
         }
@@ -874,11 +875,11 @@ public class DS
         NCollection_IntMap mi = new(100);
         FaceInfo faceInfo = FaceInfo(faceIndex);
 
-        foreach (NCollection_IndexedMap<PaveBlock> paveBlocks in new[] { faceInfo.PaveBlocksIn(), faceInfo.PaveBlocksSc() })
+        foreach (IndexedSet<PaveBlock> paveBlocks in new[] { faceInfo.PaveBlocksIn(), faceInfo.PaveBlocksSc() })
         {
-            for (int paveBlockIndex = 1; paveBlockIndex <= paveBlocks.Extent(); ++paveBlockIndex)
+            for (int paveBlockIndex = 0; paveBlockIndex < paveBlocks.Count; ++paveBlockIndex)
             {
-                PaveBlock paveBlock = paveBlocks.FindKey(paveBlockIndex);
+                PaveBlock paveBlock = paveBlocks[paveBlockIndex];
                 paveBlock.Indices(out int nV1, out int nV2);
                 mi.Add(nV1);
                 mi.Add(nV2);
@@ -906,23 +907,23 @@ public class DS
                               int faceIndex2,
                               NCollection_IntMap mvOnIn,
                               NCollection_IntMap mvCommon,
-                              NCollection_IndexedMap<PaveBlock> pbOnIn,
+                              IndexedSet<PaveBlock> pbOnIn,
                               HashSet<PaveBlock> commonPaveBlocks)
     {
         FaceInfo faceInfo1 = FaceInfo(faceIndex1);
         FaceInfo faceInfo2 = FaceInfo(faceIndex2);
 
-        NCollection_IndexedMap<PaveBlock> pbOn1 = faceInfo1.PaveBlocksOn();
-        NCollection_IndexedMap<PaveBlock> pbIn1 = faceInfo1.PaveBlocksIn();
-        NCollection_IndexedMap<PaveBlock> pbOn2 = faceInfo2.PaveBlocksOn();
-        NCollection_IndexedMap<PaveBlock> pbIn2 = faceInfo2.PaveBlocksIn();
+        IndexedSet<PaveBlock> pbOn1 = faceInfo1.PaveBlocksOn();
+        IndexedSet<PaveBlock> pbIn1 = faceInfo1.PaveBlocksIn();
+        IndexedSet<PaveBlock> pbOn2 = faceInfo2.PaveBlocksOn();
+        IndexedSet<PaveBlock> pbIn2 = faceInfo2.PaveBlocksIn();
 
         // Helper to process pave blocks from a map
-        void ProcessMap(NCollection_IndexedMap<PaveBlock> map)
+        void ProcessMap(IndexedSet<PaveBlock> map)
         {
-            for (int idx = 1; idx <= map.Extent(); ++idx)
+            for (int idx = 0; idx < map.Count; ++idx)
             {
-                PaveBlock paveBlock = map.FindKey(idx);
+                PaveBlock paveBlock = map[idx];
                 pbOnIn.Add(paveBlock);
                 paveBlock.Indices(out int v1, out int v2);
                 mvOnIn.Add(v1);
@@ -937,11 +938,11 @@ public class DS
         ProcessMap(pbIn2);
 
         // Find common pave blocks (those in Face1 that are also in Face2)
-        void FindCommon(NCollection_IndexedMap<PaveBlock> map)
+        void FindCommon(IndexedSet<PaveBlock> map)
         {
-            for (int idx = 1; idx <= map.Extent(); ++idx)
+            for (int idx = 0; idx < map.Count; ++idx)
             {
-                PaveBlock paveBlock = map.FindKey(idx);
+                PaveBlock paveBlock = map[idx];
                 if (pbOn2.Contains(paveBlock) || pbIn2.Contains(paveBlock))
                 {
                     commonPaveBlocks.Add(paveBlock);

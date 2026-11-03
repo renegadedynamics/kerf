@@ -32,9 +32,9 @@ public class BRepBuilderAPITests
 {
     private static int Count(in Shape theS, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theS, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static Shape Box10() => TestShapes.Frozen(TestShapes.Box(10.0, 10.0, 10.0));
@@ -357,7 +357,7 @@ public class BRepBuilderAPITests
         Assert.True(aSecond.IsPartner(aFirst));
         Shape aSecondVertex = aC.ModifiedShape(new Explorer(aBox, ShapeType.Vertex).Current());
         Assert.False(aSecondVertex.IsSame(aFirstVertex));
-        var aResultVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aResultVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aSecond, ShapeType.Vertex, aResultVertices);
         Assert.True(aResultVertices.Contains(aFirstVertex));
         Assert.False(aResultVertices.Contains(aSecondVertex));
@@ -385,10 +385,10 @@ public class BRepBuilderAPITests
         // a box whose first edge is G1 between its two faces: the modifier sets the continuity on the copied edge,
         // and a second Perform on the same shape sets it again on the first result's edge, published (frozen) since
         Shape aBox = TestShapes.Box(10.0, 10.0, 10.0);
-        var aMEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, aMEF);
-        Edge anE = ShapeCasts.Edge(aMEF.FindKey(1));
-        Face aF1 = ShapeCasts.Face(aMEF[1].First()), aF2 = ShapeCasts.Face(aMEF[1].Last());
+        Edge anE = ShapeCasts.Edge(aMEF.KeyAt(0));
+        Face aF1 = ShapeCasts.Face(aMEF.ValueAt(0).First()), aF2 = ShapeCasts.Face(aMEF.ValueAt(0).Last());
         new BrepBuilder().Continuity(anE, aF1, aF2, Continuity.G1);
         TestShapes.Frozen(aBox);
 

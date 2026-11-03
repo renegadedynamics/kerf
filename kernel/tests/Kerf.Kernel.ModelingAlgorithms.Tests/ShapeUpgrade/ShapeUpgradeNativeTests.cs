@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Extend;
@@ -94,9 +95,9 @@ public class ShapeUpgradeNativeTests(ITestOutputHelper output)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static string Record(string theTool, in Shape theRes, int theStatus)

@@ -111,8 +111,8 @@ public sealed class Modifier
 
         using var ps = new ProgressScope(progress, "Converting Shape", 2);
 
-        var mve = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
-        var mef = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mve = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mef = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Vertex, ShapeType.Edge, mve);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, mef);
 
@@ -155,14 +155,14 @@ public sealed class Modifier
 
         BrepBuilder bb = new BrepBuilder();
 
-        for (int ii = 1; ii <= mef.Extent(); ii++)
+        for (int ii = 0; ii < mef.Count; ii++)
         {
-            Edge curE = ShapeCasts.Edge(mef.FindKey(ii));
+            Edge curE = ShapeCasts.Edge(mef.KeyAt(ii));
             Edge newE = ShapeCasts.Edge(_map.GetValue(curE));
             if (!curE.IsSame(newE))
             {
                 var it = new NCollection_List<Shape>.Iterator();
-                it.Initialize(mef.FindFromKey(curE));
+                it.Initialize(mef.GetValue(curE));
                 Face f1 = new(), f2 = new();
                 while (it.More() && f2.IsNull)
                 {
@@ -666,14 +666,14 @@ public sealed class Modifier
         return rebuild;
     }
 
-    private void CreateNewVertices(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve,
+    private void CreateNewVertices(IndexedMap<Shape, NCollection_List<Shape>> mve,
                                    Modification m)
     {
         BrepBuilder bb = new BrepBuilder();
-        for (int i = 1; i <= mve.Extent(); i++)
+        for (int i = 0; i < mve.Count; i++)
         {
             // fill MyMap only with vertices with NewPoint == true
-            Vertex v = ShapeCasts.Vertex(mve.FindKey(i));
+            Vertex v = ShapeCasts.Vertex(mve.KeyAt(i));
             bool isNewP = m.NewPoint(v, out Point3D pnt, out double toler);
             if (isNewP)
             {
@@ -690,13 +690,13 @@ public sealed class Modifier
         }
     }
 
-    private void FillNewCurveInfo(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef,
+    private void FillNewCurveInfo(IndexedMap<Shape, NCollection_List<Shape>> mef,
                                   Modification m)
     {
         NewCurveInfo nCinfo = new NewCurveInfo();
-        for (int i = 1; i <= mef.Extent(); i++)
+        for (int i = 0; i < mef.Count; i++)
         {
-            Edge e = ShapeCasts.Edge(mef.FindKey(i));
+            Edge e = ShapeCasts.Edge(mef.KeyAt(i));
             bool isNewCur = m.NewCurve(e, out Curve3D? curve, out Placement location, out double toler);
             if (isNewCur)
             {
@@ -711,10 +711,10 @@ public sealed class Modifier
 
     private void FillNewSurfaceInfo(Modification m)
     {
-        var mf = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mf = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(_shape, ShapeType.Face, mf);
         NewSurfaceInfo nSinfo = new NewSurfaceInfo();
-        for (int i = 1; i <= mf.Extent(); i++)
+        for (int i = 0; i < mf.Count; i++)
         {
             Face f = ShapeCasts.Face(mf[i]);
             bool isNewSur = m.NewSurface(f,
@@ -768,8 +768,8 @@ public sealed class Modifier
         }
     }
 
-    private void CreateOtherVertices(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef,
+    private void CreateOtherVertices(IndexedMap<Shape, NCollection_List<Shape>> mve,
+                                     IndexedMap<Shape, NCollection_List<Shape>> mef,
                                      Modification m)
     {
         // The following logic in some ways repeats the logic from the Rebuild() method.
@@ -779,13 +779,13 @@ public sealed class Modifier
         // Therefore, the updating of vertices will not present in such cases and
         // the EmptyCopied() operation for vertices from this face is not needed.
 
-        for (int i = 1; i <= mve.Extent(); i++)
+        for (int i = 0; i < mve.Count; i++)
         {
-            Vertex v = ShapeCasts.Vertex(mve.FindKey(i));
+            Vertex v = ShapeCasts.Vertex(mve.KeyAt(i));
             Vertex newV = ShapeCasts.Vertex(_map.GetValue(v));
             if (newV.IsNull)
             {
-                NCollection_List<Shape> lEdges = mve[i];
+                NCollection_List<Shape> lEdges = mve.ValueAt(i);
                 bool toReplace = false;
                 var it = new NCollection_List<Shape>.Iterator(lEdges);
                 for (; it.More() && !toReplace; it.Next())
@@ -798,7 +798,7 @@ public sealed class Modifier
 
                     if (!toReplace)
                     {
-                        NCollection_List<Shape> lFaces = mef.FindFromKey(e);
+                        NCollection_List<Shape> lFaces = mef.GetValue(e);
                         var it2 = new NCollection_List<Shape>.Iterator(lFaces);
                         for (; it2.More(); it2.Next())
                         {

@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Exchange.Step.Construct;
@@ -119,19 +120,19 @@ public class ActorWrite : ActorOfFinderProcess
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEdgeFaces =
-            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapEdgeFaces =
+            new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(directShapes, ShapeType.Edge, ShapeType.Face, mapEdgeFaces);
 
-        int nbEdges = mapEdgeFaces.Extent();
+        int nbEdges = mapEdgeFaces.Count;
 
         // Check topology
-        for (int i = 1; i <= nbEdges; i++)
+        for (int i = 0; i < nbEdges; i++)
         {
-            Edge currentEdge = ShapeCasts.Edge(mapEdgeFaces.FindKey(i));
+            Edge currentEdge = ShapeCasts.Edge(mapEdgeFaces.KeyAt(i));
             if (!Tool.Degenerated(currentEdge))
             {
-                int nbAncestors = mapEdgeFaces.FindFromIndex(i).Extent();
+                int nbAncestors = mapEdgeFaces.ValueAt(i).Extent();
                 if (nbAncestors > 2)
                 {
                     result = false;

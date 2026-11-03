@@ -1059,7 +1059,7 @@ public class CafWriter
     }
 
     private static void MakeSTEPStyles(Styles styles, Shape shape,
-                                       NCollection_IndexedDataMap<Shape, Style> settings,
+                                       IndexedMap<Shape, Style> settings,
                                        ref StyledItem theOverride, HashSet<Shape> map,
                                        Dictionary<Shape, Transient> mapCompMDGPR,
                                        Dictionary<string, Transient> dpdCs,
@@ -1078,9 +1078,9 @@ public class CafWriter
         {
             style = inherit.Copy();
         }
-        if (settings.Contains(shape))
+        if (settings.ContainsKey(shape))
         {
-            Style ownStyle = settings.FindFromKey(shape);
+            Style ownStyle = settings.GetValue(shape);
             if (!ownStyle.IsVisible)
             {
                 style.IsVisible = false;
@@ -1240,8 +1240,8 @@ public class CafWriter
             }
 
             // collect settings set on that label
-            NCollection_IndexedDataMap<Shape, Style> settings =
-                new NCollection_IndexedDataMap<Shape, Style>(ShapeHasher.Instance);
+            IndexedMap<Shape, Style> settings =
+                new IndexedMap<Shape, Style>(ShapeHasher.Instance);
             NCollection_Sequence<Label> seq = new NCollection_Sequence<Label>();
             seq.Append(label);
             sTool.GetSubShapes(label, seq);
@@ -1278,9 +1278,9 @@ public class CafWriter
                 }
 
                 Shape sub = sTool.GetShape(seqValue);
-                if (settings.Contains(sub))
+                if (settings.ContainsKey(sub))
                 {
-                    settings.ChangeFromKey(sub) = style;
+                    settings.GetValueRef(sub) = style;
                 }
                 else
                 {
@@ -1288,7 +1288,7 @@ public class CafWriter
                 }
             }
 
-            if (settings.Extent() <= 0)
+            if (settings.Count <= 0)
             {
                 continue;
             }

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
@@ -28,9 +29,9 @@ public class DrawVolumeCellsCommandsTests(ITestOutputHelper output)
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     [Fact]

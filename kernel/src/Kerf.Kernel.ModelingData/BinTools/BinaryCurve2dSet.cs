@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2004-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -31,7 +32,7 @@ public class BinaryCurve2dSet
     private const byte Offset = 9;
 
     // OCCT's NCollection_IndexedMap of handles, which hashes by address and can hold one null handle
-    private readonly NCollection_IndexedMap<object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _map = new(ReferenceEqualityComparer.Instance);
 
     // the null handle as a key
     private static readonly object NullKey = new();
@@ -50,24 +51,24 @@ public class BinaryCurve2dSet
     /// <summary>Adds a curve to the set (once; null too) and returns its index.</summary>
     public int Add(Curve2D? s)
     {
-        return _map.Add((object?)s ?? NullKey);
+        return _map.Add((object?)s ?? NullKey) + 1;
     }
 
     /// <summary>The curve of index I (null for the null entry).</summary>
     /// <exception cref="OutOfRangeException">There is no curve of index I.</exception>
     public Curve2D? Curve2d(int i)
     {
-        return _map[i] as Curve2D;
+        return _map[i - 1] as Curve2D;
     }
 
     /// <summary>The index of the curve, 0 if it isn't in the set.</summary>
     public int Index(Curve2D? s)
     {
-        return _map.FindIndex((object?)s ?? NullKey);
+        return _map.IndexOf((object?)s ?? NullKey) + 1;
     }
 
     // the number of curves, for the readers' checks
-    internal int CurveCount => _map.Extent();
+    internal int CurveCount => _map.Count;
 
     private static void Write(OStream os, LineCurve2D l)
     {
@@ -240,7 +241,7 @@ public class BinaryCurve2dSet
     /// <summary>Writes the set ("Curve2ds", the count, then each curve).</summary>
     public void Write(Stream os, ProgressRange range = default)
     {
-        int i, nbCurves = _map.Extent();
+        int i, nbCurves = _map.Count;
         using var ps = new ProgressScope(range, "Writing 2D curves", nbCurves);
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, "Curve2ds ");
         global::Kerf.Engine.Exchange.Brep.Binary.BinTools.PutText(os, nbCurves);
@@ -249,7 +250,7 @@ public class BinaryCurve2dSet
         for (i = 1; i <= nbCurves && ps.More(); i++, ps.Next())
         {
             // OCCT dereferences the null entry outside its try block, and crashes; the port throws
-            Curve2D curve = _map[i] as Curve2D
+            Curve2D curve = _map[i - 1] as Curve2D
                                   ?? throw new FailureException("BinTools_Curve2dSet::Write: a null curve");
             WriteCurve2d(curve, stream);
         }

@@ -1617,11 +1617,11 @@ public partial class FilletBuilderBase
                 }
                 if (!findonf1)
                 {
-                    NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> mapV = new(ShapeHasher.Instance);
                     Exploration.MapShapes(edge[0], ShapeType.Vertex, mapV);
-                    if (mapV.Extent() == 2)
+                    if (mapV.Count == 2)
                     {
-                        if (!mapV[1].IsSame(vtx) && !mapV[2].IsSame(vtx))
+                        if (!mapV[0].IsSame(vtx) && !mapV[1].IsSame(vtx))
                         {
                             findonf1 = true;
                         }
@@ -1629,11 +1629,11 @@ public partial class FilletBuilderBase
                 }
                 if (!findonf2)
                 {
-                    NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> mapV = new(ShapeHasher.Instance);
                     Exploration.MapShapes(edge[2], ShapeType.Vertex, mapV);
-                    if (mapV.Extent() == 2)
+                    if (mapV.Count == 2)
                     {
-                        if (!mapV[1].IsSame(vtx) && !mapV[2].IsSame(vtx))
+                        if (!mapV[0].IsSame(vtx) && !mapV[1].IsSame(vtx))
                         {
                             findonf2 = true;
                         }
@@ -4891,7 +4891,7 @@ internal static class Builder_C1
     internal static void ComputeCurve2d(Curve3D? ct, ref Face face, ref Curve2D? c2d)
     {
         Edge e1 = new();
-        NCollection_IndexedMap<Shape> mapE1 = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE1 = new(ShapeHasher.Instance);
         LibraryMakeEdge bedge = new(ct);
         Edge edg = bedge.Edge();
         NormalProjection ortProj = new();
@@ -4905,9 +4905,9 @@ internal static class Builder_C1
         if (ortProj.IsDone)
         {
             Exploration.MapShapes(ortProj.Projection(), ShapeType.Edge, mapE1);
-            if (mapE1.Extent() != 0)
+            if (mapE1.Count != 0)
             {
-                Shape localShape = mapE1[1];
+                Shape localShape = mapE1[0];
                 e1 = ShapeCasts.Edge(localShape);
                 //      E1=TopoDS::Edge( TopoDS_Shape (MapE1[1]));
                 c2d = Tool.CurveOnSurface(e1, face, out up1, out up2);
@@ -5019,11 +5019,11 @@ internal static class Builder_C1
             fcur = ShapeCasts.Face(it.Value());
             if (!fcur.IsSame(f1) && !fcur.IsSame(f2) && !fcur.IsSame(f3))
             {
-                NCollection_IndexedMap<Shape> mapE = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mapE = new(ShapeHasher.Instance);
                 Exploration.MapShapes(fcur, ShapeType.Edge, mapE);
-                for (ie = 1; ie <= mapE.Extent() && !trouve; ie++)
+                for (ie = 1; ie <= mapE.Count && !trouve; ie++)
                 {
-                    Shape localShape = mapE[ie];
+                    Shape localShape = mapE[ie - 1];
                     if (e.IsSame(ShapeCasts.Edge(localShape)))
                     //            if (E.IsSame(TopoDS::Edge(TopoDS_Shape (MapE[ie]))))
                     {
@@ -5044,17 +5044,17 @@ internal static class Builder_C1
         int i = 0, j = 0;
         Edge ecur1 = new(), ecur2 = new();
         bool trouve = false;
-        NCollection_IndexedMap<Shape> mapE1 = new(ShapeHasher.Instance), mapE2 = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE1 = new(ShapeHasher.Instance), mapE2 = new(ShapeHasher.Instance);
         Exploration.MapShapes(f1, global::Kerf.Topology.ShapeType.Edge, mapE1);
         Exploration.MapShapes(f2, global::Kerf.Topology.ShapeType.Edge, mapE2);
-        for (i = 1; i <= mapE1.Extent() && !trouve; i++)
+        for (i = 1; i <= mapE1.Count && !trouve; i++)
         {
-            Shape localShape = mapE1[i];
+            Shape localShape = mapE1[i - 1];
             ecur1 = ShapeCasts.Edge(localShape);
             //	Ecur1=TopoDS::Edge(TopoDS_Shape (MapE1[i]));
-            for (j = 1; j <= mapE2.Extent() && !trouve; j++)
+            for (j = 1; j <= mapE2.Count && !trouve; j++)
             {
-                localShape = mapE2[j];
+                localShape = mapE2[j - 1];
                 ecur2 = ShapeCasts.Edge(localShape);
                 //	      Ecur2=TopoDS::Edge(TopoDS_Shape (MapE2[j]));
                 if (ecur2.IsSame(ecur1))
@@ -5076,11 +5076,11 @@ internal static class Builder_C1
         Vertex vcur = new();
         bool trouve = false;
         bool contain = false;
-        NCollection_IndexedMap<Shape> mapV = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapV = new(ShapeHasher.Instance);
         Exploration.MapShapes(f1, ShapeType.Vertex, mapV);
-        for (i = 1; i <= mapV.Extent() && !trouve; i++)
+        for (i = 1; i <= mapV.Count && !trouve; i++)
         {
-            Shape localShape = mapV[i];
+            Shape localShape = mapV[i - 1];
             vcur = ShapeCasts.Vertex(localShape);
             //	Vcur=TopoDS::Vertex(TopoDS_Shape (MapV[i]));
             if (vcur.IsSame(v))
@@ -5098,11 +5098,11 @@ internal static class Builder_C1
         Edge ecur = new();
         bool trouve = false;
         bool contain = false;
-        NCollection_IndexedMap<Shape> mapE = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mapE = new(ShapeHasher.Instance);
         Exploration.MapShapes(f1, ShapeType.Edge, mapE);
-        for (i = 1; i <= mapE.Extent() && !trouve; i++)
+        for (i = 1; i <= mapE.Count && !trouve; i++)
         {
-            Shape localShape = mapE[i];
+            Shape localShape = mapE[i - 1];
             ecur = ShapeCasts.Edge(localShape);
             //	Ecur=TopoDS::Edge(TopoDS_Shape (MapE[i]));
             if (ecur.IsSame(e))

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Adaptors;
@@ -221,16 +222,16 @@ public class BRepMAT2d_BisectingLocusTests(ITestOutputHelper theOutput)
     {
         (MedialAxisExplorer anExplo, BisectingLocus aLocus, Face aFace) = Compute(LShape);
         LinkTopoBilo aLink = new(anExplo, aLocus);
-        NCollection_IndexedMap<Shape> anEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> anEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aFace, ShapeType.Edge, anEdges);
         int aNb = 0;
-        for (int k = 1; k <= anEdges.Extent(); k++)
+        for (int k = 0; k < anEdges.Count; k++)
         {
             int aNbOnEdge = 0;
-            for (aLink.Init(anEdges.FindKey(k)); aLink.More(); aLink.Next())
+            for (aLink.Init(anEdges[k]); aLink.More(); aLink.Next())
             {
                 aNbOnEdge++;
-                Assert.True(aLink.GeneratingShape(aLink.Value()).IsSame(anEdges.FindKey(k)));
+                Assert.True(aLink.GeneratingShape(aLink.Value()).IsSame(anEdges[k]));
             }
             Assert.Equal(1, aNbOnEdge);
             aNb += aNbOnEdge;

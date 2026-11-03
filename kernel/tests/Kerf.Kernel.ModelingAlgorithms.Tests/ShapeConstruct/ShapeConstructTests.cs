@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Foundation;
@@ -371,7 +372,7 @@ public class ShapeConstructTests
         }
         Assert.True(aNbFaces >= 2);
         // every edge of the wire is in the result
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShell, ShapeType.Edge, aMap);
         for (Explorer anExp = new(aWire, ShapeType.Edge); anExp.More(); anExp.Next())
         {

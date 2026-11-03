@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Data;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -181,11 +182,11 @@ internal static class PaveFillerDump
             }
             FaceInfo aFI = theDS.FaceInfo(nF);
             aB.Append("fi ").Append(nF);
-            foreach ((string aTag, NCollection_IndexedMap<PaveBlock> aMPB) in
+            foreach ((string aTag, IndexedSet<PaveBlock> aMPB) in
                      new[] { ("on", aFI.PaveBlocksOn()), ("in", aFI.PaveBlocksIn()), ("sc", aFI.PaveBlocksSc()) })
             {
                 aB.Append(' ').Append(aTag);
-                for (int j = 1; j <= aMPB.Extent(); ++j)
+                for (int j = 0; j < aMPB.Count; ++j)
                 {
                     aB.Append(' ').Append(PB(aMPB[j]));
                 }

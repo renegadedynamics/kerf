@@ -1788,14 +1788,14 @@ public static partial class BrepLibrary
         }
 
         // Process edges
-        var parents = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var parents = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(oldShape, ShapeType.Edge, ShapeType.Face, parents);
         var lConx = new NCollection_List<Shape>.Iterator();
         int iCur;
-        for (iCur = 1; iCur <= parents.Extent(); iCur++)
+        for (iCur = 1; iCur <= parents.Count; iCur++)
         {
             tol = 0;
-            for (lConx.Initialize(parents[iCur]); lConx.More(); lConx.Next())
+            for (lConx.Initialize(parents.ValueAt(iCur - 1)); lConx.More(); lConx.Next())
             {
                 Face ff = ShapeCasts.Face(lConx.Value());
                 double ftol;
@@ -1811,7 +1811,7 @@ public static partial class BrepLibrary
             }
             // Update can only increase tolerance, so if the edge has a greater
             //  tolerance than its faces it is not concerned
-            Edge ek = ShapeCasts.Edge(parents.FindKey(iCur));
+            Edge ek = ShapeCasts.Edge(parents.KeyAt(iCur - 1));
             if (tol > Tool.Tolerance(ek))
             {
                 shToTol[ek] = tol;
@@ -1825,15 +1825,15 @@ public static partial class BrepLibrary
         Exploration.MapShapesAndUniqueAncestors(oldShape, ShapeType.Vertex, ShapeType.Edge, parents);
         // OCCT's map of handles: the vertex TShapes by reference.
         var initialized = new HashSet<TShape>(ReferenceEqualityComparer.Instance);
-        int nbV = parents.Extent();
+        int nbV = parents.Count;
         for (iCur = 1; iCur <= nbV; iCur++)
         {
             tol = 0;
-            Vertex v = ShapeCasts.Vertex(parents.FindKey(iCur));
+            Vertex v = ShapeCasts.Vertex(parents.KeyAt(iCur - 1));
             Point3D pv = Tool.Pnt(v);
             double maxDist = 0.0;
             Point3D p3d;
-            for (lConx.Initialize(parents[iCur]); lConx.More(); lConx.Next())
+            for (lConx.Initialize(parents.ValueAt(iCur - 1)); lConx.More(); lConx.Next())
             {
                 Edge e = ShapeCasts.Edge(lConx.Value());
                 tol = Max(tol, shToTol.TryGetValue(e, out double ntol) ? ntol : Tool.Tolerance(e));
@@ -1960,12 +1960,12 @@ public static partial class BrepLibrary
     /// </summary>
     internal static void UpdateInnerTolerances(in Shape aShape)
     {
-        var eFmap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var eFmap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aShape, ShapeType.Edge, ShapeType.Face, eFmap);
         var bb = new BrepBuilder();
-        for (int i = 1; i <= eFmap.Extent(); i++)
+        for (int i = 0; i < eFmap.Count; i++)
         {
-            Edge edge = ShapeCasts.Edge(eFmap.FindKey(i));
+            Edge edge = ShapeCasts.Edge(eFmap.KeyAt(i));
 
             if (!Tool.IsGeometric(edge))
             {
@@ -1987,11 +1987,11 @@ public static partial class BrepLibrary
                 pnt2 = Tool.Pnt(v2);
             }
 
-            if (!Tool.Degenerated(edge) && eFmap[i].Extent() > 0)
+            if (!Tool.Degenerated(edge) && eFmap.ValueAt(i).Extent() > 0)
             {
                 var theRep = new NCollection_Sequence<CurveAdaptorBase>();
                 theRep.Append(hCurve);
-                var itl = new NCollection_List<Shape>.Iterator(eFmap[i]);
+                var itl = new NCollection_List<Shape>.Iterator(eFmap.ValueAt(i));
                 for (; itl.More(); itl.Next())
                 {
                     Face face = ShapeCasts.Face(itl.Value());
@@ -2417,14 +2417,14 @@ public static partial class BrepLibrary
 
         try
         {
-            var m = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var m = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(aShape, ShapeType.Edge, ShapeType.Face, m);
             var It = new NCollection_List<Shape>.Iterator();
             var ex = new Explorer();
             Face f1 = new(), f2 = new();
-            for (int i = 1; i <= m.Extent(); i++)
+            for (int i = 0; i < m.Count; i++)
             {
-                Edge e = ShapeCasts.Edge(m.FindKey(i));
+                Edge e = ShapeCasts.Edge(m.KeyAt(i));
                 if (edgesToEncode is not null && edgesToEncode.Count != 0)
                 {
                     // process only the edges from the list to update their regularity
@@ -2438,7 +2438,7 @@ public static partial class BrepLibrary
 
                 bool found = false;
                 f1.Nullify();
-                for (It.Initialize(m.FindFromIndex(i)); It.More() && !found; It.Next())
+                for (It.Initialize(m.ValueAt(i)); It.More() && !found; It.Next())
                 {
                     if (f1.IsNull)
                     {
@@ -2681,12 +2681,12 @@ public static partial class BrepLibrary
         }
 
         // loop by edges
-        var mapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Edge, ShapeType.Face, mapEF);
-        for (int ind = 1; ind <= mapEF.Extent(); ind++)
+        for (int ind = 0; ind < mapEF.Count; ind++)
         {
-            Edge edg = ShapeCasts.Edge(mapEF.FindKey(ind));
-            NCollection_List<Shape> edgList = mapEF.FindFromIndex(ind);
+            Edge edg = ShapeCasts.Edge(mapEF.KeyAt(ind));
+            NCollection_List<Shape> edgList = mapEF.ValueAt(ind);
             if (edgList.Extent() != 2)
             {
                 continue;

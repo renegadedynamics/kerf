@@ -84,8 +84,8 @@ public sealed partial class MakeOffset
     private bool _thickening;
     private bool _removeIntEdges;
     private readonly Dictionary<Shape, double> _faceOffset = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _faces = new(ShapeHasher.Instance);
-    private readonly NCollection_IndexedMap<Shape> _originalFaces = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _faces = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _originalFaces = new(ShapeHasher.Instance);
     private readonly Analyse _analyse = new();
     private Shape _offsetShape = new();
     private readonly ShapeImage _initOffsetFace = new();
@@ -350,7 +350,7 @@ public sealed partial class MakeOffset
     // purpose  : fills free boundary contours and faces connected (MapEF)
     //=======================================================================
     private static void FillContours(in Shape aShape, Analyse analyser,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> contours,
+                                     IndexedMap<Shape, NCollection_List<Shape>> contours,
                                      Dictionary<Shape, Shape> mapEF)
     {
         NCollection_List<Shape> edges = new();
@@ -518,7 +518,7 @@ public sealed partial class MakeOffset
 
     //=================================================================================================
 
-    private static void RemoveCorks(ref Shape s, NCollection_IndexedMap<Shape> faces)
+    private static void RemoveCorks(ref Shape s, IndexedSet<Shape> faces)
     {
         Compound ss = new();
         BrepBuilder b = new();
@@ -537,7 +537,7 @@ public sealed partial class MakeOffset
             }
             else
             {
-                faces.RemoveKey(cork);
+                faces.Remove(cork);
                 faces.Add(cork); // to reset it with proper orientation.
             }
         }
@@ -560,7 +560,7 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     private static void MakeList(NCollection_List<Shape> offsetFaces, ShapeImage myInitOffsetFace,
-                                 NCollection_IndexedMap<Shape> myFaces)
+                                 IndexedSet<Shape> myFaces)
     {
         NCollection_List<Shape>.Iterator itLOF = new(myInitOffsetFace.Roots());
         for (; itLOF.More(); itLOF.Next())
@@ -600,7 +600,7 @@ public sealed partial class MakeOffset
 
     private void SetFaces()
     {
-        for (int ii = 1; ii <= _originalFaces.Extent(); ii++)
+        for (int ii = 0; ii < _originalFaces.Count; ii++)
         {
             Face face = ShapeCasts.Face(_originalFaces[ii]);
             if (_facePlanfaceMap.TryGetValue(face, out Shape planface))
@@ -653,9 +653,9 @@ public sealed partial class MakeOffset
             return;
         }
         _shape = _entry.Shape();
-        NCollection_IndexedMap<Shape> originalFaces = new(_originalFaces);
+        IndexedSet<Shape> originalFaces = new(_originalFaces);
         _originalFaces.Clear();
-        for (int i = 1; i <= originalFaces.Extent(); ++i)
+        for (int i = 0; i < originalFaces.Count; ++i)
         {
             _originalFaces.Add(_entry.Copied(originalFaces[i]));
         }
@@ -715,7 +715,7 @@ public sealed partial class MakeOffset
         //------------------------------------------
         // Construction of myShape without caps.
         //------------------------------------------
-        if (!_faces.IsEmpty())
+        if (_faces.Count != 0)
         {
             RemoveCorks(ref _shape, _originalFaces);
             Shape faceComp = _faceComp;
@@ -816,10 +816,10 @@ public sealed partial class MakeOffset
         //-----------------
         // Intersection2D
         //-----------------
-        NCollection_IndexedMap<Shape> modif = inter.TouchedFaces();
-        NCollection_IndexedMap<Shape> newEdges = inter.NewEdges();
+        IndexedSet<Shape> modif = inter.TouchedFaces();
+        IndexedSet<Shape> newEdges = inter.NewEdges();
 
-        if (!modif.IsEmpty())
+        if (modif.Count != 0)
         {
             Intersection2D(modif, newEdges, psInter.Next(4));
             if (_error != global::Kerf.Engine.Offsets.Error.NoError)
@@ -840,7 +840,7 @@ public sealed partial class MakeOffset
         // Reconstruction of non modified faces sharing
         // reconstructed edges
         //------------------------------------------------------
-        if (!modif.IsEmpty())
+        if (modif.Count != 0)
         {
             MakeFaces(modif, psInter.Next(2));
             if (_error != global::Kerf.Engine.Offsets.Error.NoError)
@@ -976,12 +976,12 @@ public sealed partial class MakeOffset
         // Construction of a solid with the initial shell, parallel shell
         // limited by caps.
         //--------------------------------------------------------------------
-        if (!_faces.IsEmpty())
+        if (_faces.Count != 0)
         {
             Solid res = new();
             Explorer exp = new();
             BrepBuilder b = new();
-            int nbF = _faces.Extent();
+            int nbF = _faces.Count;
 
             b.MakeSolid(ref res);
 
@@ -1163,9 +1163,9 @@ public sealed partial class MakeOffset
         const int BuildOffsetByInter_FillHistoryForDeepenings = 7;
         const int BuildOffsetByInter_Last = 8;
 
-        double nbFaces = _faceComp.ChildCount + _analyse.NewFaces().Extent() + _faces.Extent();
+        double nbFaces = _faceComp.ChildCount + _analyse.NewFaces().Extent() + _faces.Count;
         double offsetsPart = (_faceComp.ChildCount + _analyse.NewFaces().Extent()) / nbFaces;
-        double deepeningsPart = _faces.Extent() / nbFaces;
+        double deepeningsPart = _faces.Count / nbFaces;
 
         NCollection_Array1<double> steps = new(0, BuildOffsetByInter_Last - 1);
         {
@@ -1260,7 +1260,7 @@ public sealed partial class MakeOffset
         //------------------------------------------ ----------------
         Dictionary<Shape, NCollection_List<Shape>> edgesOrigins =
             new(ShapeHasher.Instance); // offset edge - initial edges
-        NCollection_IndexedMap<Shape> newEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> newEdges = new(ShapeHasher.Instance);
         Dictionary<Shape, Shape> eTrimEInf =
             new(ShapeHasher.Instance); // trimmed - not trimmed edges
         //
@@ -1277,7 +1277,7 @@ public sealed partial class MakeOffset
         //---------------------------------
         // Intersection 2D on //
         //---------------------------------
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv =
+        IndexedMap<Shape, NCollection_List<Shape>> dmvv =
             new(ShapeHasher.Instance);
         Dictionary<Shape, Shape> facesOrigins =
             new(ShapeHasher.Instance); // offset face - initial face
@@ -1305,15 +1305,15 @@ public sealed partial class MakeOffset
         // Intersections 2d on caps.
         //----------------------------------------------
         int i;
-        using ProgressScope ps2dCaps = new(ps2d.Next(2.0 * deepeningsPart), null, _faces.Extent());
-        for (i = 1; i <= _faces.Extent(); i++)
+        using ProgressScope ps2dCaps = new(ps2d.Next(2.0 * deepeningsPart), null, _faces.Count);
+        for (i = 1; i <= _faces.Count; i++)
         {
             if (!ps2dCaps.More())
             {
                 _error = global::Kerf.Engine.Offsets.Error.UserBreak;
                 return;
             }
-            Face cork = ShapeCasts.Face(_faces[i]);
+            Face cork = ShapeCasts.Face(_faces[i - 1]);
             double currFaceTol = Tool.Tolerance(cork);
             Inter2d.Compute(asDes, cork, newEdges, currFaceTol, _edgeIntEdges, dmvv, ps2dCaps.Next());
         }
@@ -1570,15 +1570,15 @@ public sealed partial class MakeOffset
         //---------------------------
         // NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher> View;
         using ProgressScope psHist2 = new(psOuter.Next(steps[BuildOffsetByInter_FillHistoryForDeepenings]),
-                                                   "Fill history for deepening faces", _faces.Extent());
-        for (i = 1; i <= _faces.Extent(); i++, psHist2.Next())
+                                                   "Fill history for deepening faces", _faces.Count);
+        for (i = 1; i <= _faces.Count; i++, psHist2.Next())
         {
             if (!psHist2.More())
             {
                 _error = global::Kerf.Engine.Offsets.Error.UserBreak;
                 return;
             }
-            Shape cork = _faces[i];
+            Shape cork = _faces[i - 1];
             NCollection_List<Shape> le = asDes.Descendant(cork);
             for (itLF.Initialize(le); itLF.More(); itLF.Next())
             {
@@ -1867,7 +1867,7 @@ public sealed partial class MakeOffset
         // Extension of parallel faces to the context.
         // Extended faces are ordered in DS and removed from MapSF.
         //------------------------------------------------------------
-        if (!_faces.IsEmpty())
+        if (_faces.Count != 0)
         {
             ToContext(mapSF);
         }
@@ -1954,7 +1954,7 @@ public sealed partial class MakeOffset
     {
         Dictionary<Shape, Shape> created = new(ShapeHasher.Instance);
         Dictionary<Shape, Shape> mef = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> facesToBuild = new(ShapeHasher.Instance);
+        IndexedSet<Shape> facesToBuild = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itl = new();
         Explorer exp = new();
 
@@ -1970,9 +1970,9 @@ public sealed partial class MakeOffset
         // intersection.
         //---------------------------------------------------------
         int j;
-        for (j = 1; j <= _faces.Extent(); j++)
+        for (j = 1; j <= _faces.Count; j++)
         {
-            Face cf = ShapeCasts.Face(_faces[j]);
+            Face cf = ShapeCasts.Face(_faces[j - 1]);
             for (exp.Init(cf.Oriented(Forward), ShapeType.Edge); exp.More(); exp.Next())
             {
                 Edge e = ShapeCasts.Edge(exp.Current());
@@ -2016,9 +2016,9 @@ public sealed partial class MakeOffset
         Shape oe, ne;
         Orientation or;
 
-        for (j = 1; j <= facesToBuild.Extent(); j++)
+        for (j = 1; j <= facesToBuild.Count; j++)
         {
-            Shape s = facesToBuild[j];
+            Shape s = facesToBuild[j - 1];
             // OCCT copies the offset (a value type); the port's is only read here, and unbound below.
             Offset bof = mapSF.GetValue(s);
             f = ShapeCasts.Face(bof.InternalFace());
@@ -2183,11 +2183,11 @@ public sealed partial class MakeOffset
                 // if (aSurf->DynamicType() == STANDARD_TYPE(Geom_OffsetSurface))
                 // aSurf = (occ::down_cast<Geom_OffsetSurface>(aSurf))->BasisSurface(); //???
 
-                NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+                IndexedSet<Shape> emap = new(ShapeHasher.Instance);
                 Exploration.MapShapes(face, ShapeType.Edge, emap);
-                for (i = 1; i <= emap.Extent(); i++)
+                for (i = 1; i <= emap.Count; i++)
                 {
-                    Edge edge = ShapeCasts.Edge(emap[i]);
+                    Edge edge = ShapeCasts.Edge(emap[i - 1]);
                     // double f, l;
                     // occ::handle<Geom_Curve> theCurve = BRep_Tool::Curve( anEdge, f, l );
                     // occ::handle<BRep_TEdge>& TE = *((occ::handle<BRep_TEdge>*) &anEdge.TShape());
@@ -2326,13 +2326,13 @@ public sealed partial class MakeOffset
                 Point2D fPnt2d, lPnt2d;
                 fPnt2d = bAc2d.Value(bAc2d.FirstParameter());
                 lPnt2d = bAc2d.Value(bAc2d.LastParameter());
-                NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+                IndexedSet<Shape> emap = new(ShapeHasher.Instance);
                 Exploration.MapShapes(face, ShapeType.Edge, emap);
                 Edge[] ee = [new(), new()];
                 int j = 0, k;
-                for (k = 1; k <= emap.Extent(); k++)
+                for (k = 1; k <= emap.Count; k++)
                 {
-                    Edge edge = ShapeCasts.Edge(emap[k]);
+                    Edge edge = ShapeCasts.Edge(emap[k - 1]);
                     if (!Tool.Degenerated(edge))
                     {
                         Exploration.Vertices(edge, out Vertex v1e, out Vertex v2e);
@@ -2594,7 +2594,7 @@ public sealed partial class MakeOffset
     private void Intersection3D(Inter3d inter, ProgressRange range)
     {
         // OCCT_DEBUG: the chronometer is left out.
-        using ProgressScope ps = new(range, null, (_faces.Extent() != 0 && _join == Arc) ? 2 : 1);
+        using ProgressScope ps = new(range, null, (_faces.Count != 0 && _join == Arc) ? 2 : 1);
 
         // In the Complete Intersection mode, implemented currently for planar
         // solids only, there is no need to intersect the faces here.
@@ -2603,7 +2603,7 @@ public sealed partial class MakeOffset
         //
         // Make sure to match the parameters in which the method
         // BuildShellsCompleteInter is called.
-        if (_inter && (_join == global::Kerf.Geometry.JoinKind.Intersection) && _isPlanar && !_thickening && _faces.IsEmpty()
+        if (_inter && (_join == global::Kerf.Geometry.JoinKind.Intersection) && _isPlanar && !_thickening && _faces.Count == 0
             && IsSolid(_shape))
         {
             return;
@@ -2612,7 +2612,7 @@ public sealed partial class MakeOffset
         NCollection_List<Shape> offsetFaces = new(); // list of faces // created.
         MakeList(offsetFaces, _initOffsetFace, _faces);
 
-        if (!_faces.IsEmpty())
+        if (_faces.Count != 0)
         {
             bool inSide = (_offset < 0.0); // Temporary
             // it is necessary to calculate Inside taking account of the concavity or convexity of edges
@@ -2634,7 +2634,7 @@ public sealed partial class MakeOffset
                 _error = global::Kerf.Engine.Offsets.Error.UserBreak;
                 return;
             }
-            NCollection_IndexedMap<Shape> newEdges = inter.NewEdges();
+            IndexedSet<Shape> newEdges = inter.NewEdges();
             if (_join == global::Kerf.Geometry.JoinKind.Intersection)
             {
                 OffsetTool.CorrectOrientation(_faceComp, newEdges, _asDes, _initOffsetFace, _offset);
@@ -2657,7 +2657,7 @@ public sealed partial class MakeOffset
 
     //=================================================================================================
 
-    private void Intersection2D(NCollection_IndexedMap<Shape> modif, NCollection_IndexedMap<Shape> newEdges,
+    private void Intersection2D(IndexedSet<Shape> modif, IndexedSet<Shape> newEdges,
                                 ProgressRange range)
     {
         // OCCT_DEBUG: the chronometer is left out.
@@ -2669,17 +2669,17 @@ public sealed partial class MakeOffset
         //-----------------------------------------------
         // Intersection of edges 2 by 2.
         //-----------------------------------------------
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmvv = new(ShapeHasher.Instance);
         int i;
-        using ProgressScope ps = new(range, "Intersection 2D", modif.Extent());
-        for (i = 1; i <= modif.Extent(); i++)
+        using ProgressScope ps = new(range, "Intersection 2D", modif.Count);
+        for (i = 1; i <= modif.Count; i++)
         {
             if (!ps.More())
             {
                 _error = global::Kerf.Engine.Offsets.Error.UserBreak;
                 return;
             }
-            Face f = ShapeCasts.Face(modif[i]);
+            Face f = ShapeCasts.Face(modif[i - 1]);
             Inter2d.Compute(_asDes, f, newEdges, _tol, _edgeIntEdges, dmvv, ps.Next());
         }
         //
@@ -2690,7 +2690,7 @@ public sealed partial class MakeOffset
 
     //=================================================================================================
 
-    private void MakeLoops(NCollection_IndexedMap<Shape> modif, ProgressRange range)
+    private void MakeLoops(IndexedSet<Shape> modif, ProgressRange range)
     {
         // OCCT_DEBUG: the chronometer is left out.
         // NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher>::Iterator    it(Modif);
@@ -2699,15 +2699,15 @@ public sealed partial class MakeOffset
         // unwinding of faces // modified.
         //-----------------------------------------
         int i;
-        for (i = 1; i <= modif.Extent(); i++)
+        for (i = 1; i <= modif.Count; i++)
         {
-            if (!_faces.Contains(modif[i]))
+            if (!_faces.Contains(modif[i - 1]))
             {
-                lf.Append(modif[i]);
+                lf.Append(modif[i - 1]);
             }
         }
         //
-        using ProgressScope ps = new(range, null, lf.Extent() + _faces.Extent());
+        using ProgressScope ps = new(range, null, lf.Extent() + _faces.Count);
         if ((_join == global::Kerf.Geometry.JoinKind.Intersection) && _inter && _isPlanar)
         {
             BuildSplitsOfTrimmedFaces(lf, _asDes, _imageOffset, ps.Next(lf.Extent()));
@@ -2725,9 +2725,9 @@ public sealed partial class MakeOffset
         //-----------------------------------------
         // unwinding of caps.
         //-----------------------------------------
-        for (i = 1; i <= _faces.Extent(); i++)
+        for (i = 1; i <= _faces.Count; i++)
         {
-            lc.Append(_faces[i]);
+            lc.Append(_faces[i - 1]);
         }
 
         bool inSide = true;
@@ -2745,7 +2745,7 @@ public sealed partial class MakeOffset
     // purpose  : Reconstruction of topologically unchanged faces that
     //           share edges that were reconstructed.
     //=======================================================================
-    private void MakeFaces(NCollection_IndexedMap<Shape> modif, ProgressRange range)
+    private void MakeFaces(IndexedSet<Shape> modif, ProgressRange range)
     {
         // OCCT_DEBUG: the chronometer is left out.
         NCollection_List<Shape>.Iterator itr = new();
@@ -2822,24 +2822,24 @@ public sealed partial class MakeOffset
 
     private void MakeMissingWalls(ProgressRange range)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> contours =
+        IndexedMap<Shape, NCollection_List<Shape>> contours =
             new(ShapeHasher.Instance); // Start vertex + list of connected edges (free boundary)
         Dictionary<Shape, Shape> mapEF = new(ShapeHasher.Instance); // Edges of contours: edge + face
         double offsetVal = Math.Abs(_offset);
 
         FillContours(_faceComp, _analyse, contours, mapEF);
 
-        using ProgressScope ps = new(range, "Making missing walls", contours.Extent());
-        for (int ic = 1; ic <= contours.Extent(); ic++, ps.Next())
+        using ProgressScope ps = new(range, "Making missing walls", contours.Count);
+        for (int ic = 1; ic <= contours.Count; ic++, ps.Next())
         {
             if (!ps.More())
             {
                 _error = global::Kerf.Engine.Offsets.Error.UserBreak;
                 return;
             }
-            Vertex startVertex = ShapeCasts.Vertex(contours.FindKey(ic));
+            Vertex startVertex = ShapeCasts.Vertex(contours.KeyAt(ic - 1));
             Edge startEdge = new();
-            NCollection_List<Shape> contour = contours[ic];
+            NCollection_List<Shape> contour = contours.ValueAt(ic - 1);
             NCollection_List<Shape>.Iterator itl = new(contour);
             bool firstStep = true;
             Edge prevEdge = new();
@@ -3397,7 +3397,7 @@ public sealed partial class MakeOffset
         }
         //
         bool bDone = false;
-        if ((_join == global::Kerf.Geometry.JoinKind.Intersection) && _inter && !_thickening && _faces.IsEmpty() && IsSolid(_shape)
+        if ((_join == global::Kerf.Geometry.JoinKind.Intersection) && _inter && !_thickening && _faces.Count == 0 && IsSolid(_shape)
             && _isPlanar)
         {
             //
@@ -3562,7 +3562,7 @@ public sealed partial class MakeOffset
         }
         // myShape has free borders and there are no caps
         // no unwinding 3d.
-        if (freeEdges.Count != 0 && _faces.IsEmpty())
+        if (freeEdges.Count != 0 && _faces.Count == 0)
         {
             return;
         }
@@ -3604,10 +3604,10 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     /// <summary>The closing faces stored by <see cref="AddFace"/>, as the caller gave them.</summary>
-    public NCollection_IndexedMap<Shape> ClosingFaces()
+    public IndexedSet<Shape> ClosingFaces()
     {
-        NCollection_IndexedMap<Shape> faces = new(ShapeHasher.Instance);
-        for (int i = 1; i <= _originalFaces.Extent(); ++i)
+        IndexedSet<Shape> faces = new(ShapeHasher.Instance);
+        for (int i = 0; i < _originalFaces.Count; ++i)
         {
             faces.Add(InternalOriginal(_originalFaces[i]));
         }
@@ -3615,7 +3615,7 @@ public sealed partial class MakeOffset
     }
 
     /// <summary>The closing faces, of the working copy, for ported code.</summary>
-    internal NCollection_IndexedMap<Shape> InternalClosingFaces() => _originalFaces;
+    internal IndexedSet<Shape> InternalClosingFaces() => _originalFaces;
 
     /// <summary>The caller's sub-shape a working copy's sub-shape was made from (itself when there is none).</summary>
     private Shape InternalOriginal(in Shape s) =>
@@ -3886,7 +3886,7 @@ public sealed partial class MakeOffset
 
     // OCCT.NET: Locked(false) acts on the offset's own shapes: the result's new edges and vertices, and, in the
     // thickening mode, the copy of the caller's shape made at the entry (decision 1005).
-    private static void UpdateTolerance(ref Shape s, NCollection_IndexedMap<Shape> faces,
+    private static void UpdateTolerance(ref Shape s, IndexedSet<Shape> faces,
                                         in Shape initShape)
     {
         BrepBuilder b = new();
@@ -3895,9 +3895,9 @@ public sealed partial class MakeOffset
 
         // The edges of caps are not modified.
         int j;
-        for (j = 1; j <= faces.Extent(); j++)
+        for (j = 1; j <= faces.Count; j++)
         {
-            Shape f = faces[j];
+            Shape f = faces[j - 1];
             Explorer exp = new();
             for (exp.Init(f, ShapeType.Edge); exp.More(); exp.Next())
             {
@@ -4210,7 +4210,7 @@ public sealed partial class MakeOffset
     {
         bool bRemoveWire, bRemoveEdge;
         Explorer expF = new(), expW = new(), expE = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmelf = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmelf = new(ShapeHasher.Instance);
         //
         Exploration.MapShapesAndAncestors(_offsetShape, ShapeType.Edge, ShapeType.Face, dmelf);
         //
@@ -4239,7 +4239,7 @@ public sealed partial class MakeOffset
                         continue;
                     }
                     //
-                    NCollection_List<Shape> lf = dmelf.FindFromKey(e);
+                    NCollection_List<Shape> lf = dmelf.GetValue(e);
                     bRemoveEdge = (lf.Extent() == 1);
                     if (bRemoveEdge)
                     {
@@ -4367,9 +4367,9 @@ public sealed partial class MakeOffset
                                 ref AsDes asDes2d, ProgressRange range)
     {
         double tolF;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmvv = new(ShapeHasher.Instance);
         // intersect edges created from edges
-        NCollection_IndexedMap<Shape> mfv = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mfv = new(ShapeHasher.Instance);
         using ProgressScope psOuter = new(range, null, 2);
         using ProgressScope ps1 = new(psOuter.Next(), null, faces.Extent());
         for (NCollection_List<Shape>.Iterator it = new(faces); it.More(); it.Next())
@@ -4390,11 +4390,11 @@ public sealed partial class MakeOffset
             }
         }
         // intersect edges created from vertices
-        int i, nbF = mfv.Extent();
+        int i, nbF = mfv.Count;
         using ProgressScope ps2 = new(psOuter.Next(), "Intersecting edges created from vertices", nbF);
         for (i = 1; i <= nbF; ++i)
         {
-            Face f = ShapeCasts.Face(mfv[i]);
+            Face f = ShapeCasts.Face(mfv[i - 1]);
             tolF = Tool.Tolerance(f);
             Inter2d.ConnexIntByIntInVert(f, mapSF.GetValue(f), mes, build, asDes, asDes2d, tolF,
                                                     _analyse, dmvv, ps2.Next());
@@ -4419,7 +4419,7 @@ public sealed partial class MakeOffset
                                   Dictionary<Shape, Offset> mapSF,
                                   Dictionary<Shape, Shape> mes,
                                   Dictionary<Shape, Shape> build, ref AsDes asDes,
-                                  ref AsDes asDes2d, NCollection_IndexedMap<Shape> newEdges,
+                                  ref AsDes asDes2d, IndexedSet<Shape> newEdges,
                                   Dictionary<Shape, Shape> eTrimEInf,
                                   Dictionary<Shape, NCollection_List<Shape>> edgesOrigins)
     {
@@ -4434,7 +4434,7 @@ public sealed partial class MakeOffset
         }
 
         HashSet<Shape> mfGenerated = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmef = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmef = new(ShapeHasher.Instance);
         for (NCollection_List<Shape>.Iterator it = new(analyse.NewFaces()); it.More(); it.Next())
         {
             Shape fg = it.Value();
@@ -4453,16 +4453,16 @@ public sealed partial class MakeOffset
             }
             //
             HashSet<Shape> view = new(ShapeHasher.Instance);
-            NCollection_IndexedMap<Shape> vEmap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> vEmap = new(ShapeHasher.Instance);
             int i, nb;
             //
             Exploration.MapShapes(fi.Oriented(Forward), ShapeType.Edge, vEmap);
             Exploration.MapShapes(fi.Oriented(Forward), ShapeType.Vertex, vEmap);
             //
-            nb = vEmap.Extent();
+            nb = vEmap.Count;
             for (i = 1; i <= nb; ++i)
             {
-                Shape s = vEmap[i];
+                Shape s = vEmap[i - 1];
                 if (!view.Add(s))
                 {
                     continue;
@@ -4530,7 +4530,7 @@ public sealed partial class MakeOffset
                     {
                         continue;
                     }
-                    if (mfGenerated.Contains(fi) && dmef.FindFromKey(s).Extent() == 1)
+                    if (mfGenerated.Contains(fi) && dmef.GetValue(s).Extent() == 1)
                     {
                         continue;
                     }
@@ -4577,9 +4577,9 @@ public sealed partial class MakeOffset
 
     // OCCT: "if (theNewEdges.Add(NE))" tests the index NCollection_IndexedMap::Add returns, never 0, so an edge already
     // in the map is trimmed again (occt-issues.md).
-    private static bool AddNew(NCollection_IndexedMap<Shape> map, in Shape s)
+    private static bool AddNew(IndexedSet<Shape> map, in Shape s)
     {
-        return map.Add(s) != 0;
+        return map.Add(s) + 1 != 0;
     }
 
     //=======================================================================
@@ -4774,10 +4774,10 @@ public sealed partial class MakeOffset
 
         // It is necessary to rebuild the solids, avoiding internal faces
         // Map faces to solids
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmfs = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmfs = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(result1, ShapeType.Face, ShapeType.Solid, dmfs);
         //
-        int i, nb = dmfs.Extent();
+        int i, nb = dmfs.Count;
         bDone = (nb > 0);
         if (!bDone)
         {
@@ -4789,10 +4789,10 @@ public sealed partial class MakeOffset
         NCollection_List<Shape> aLF = new();
         for (i = 1; i <= nb; ++i)
         {
-            NCollection_List<Shape> ls = dmfs[i];
+            NCollection_List<Shape> ls = dmfs.ValueAt(i - 1);
             if (ls.Extent() == 1)
             {
-                Shape f = dmfs.FindKey(i);
+                Shape f = dmfs.KeyAt(i - 1);
                 aLF.Append(f);
             }
         }
@@ -4954,7 +4954,7 @@ public sealed partial class MakeOffset
             {
                 _initOffsetFace.LastImage(s, _generated);
 
-                if (!_faces.IsEmpty())
+                if (_faces.Count != 0)
                 {
                     // Reverse generated shapes in case of small solids.
                     // Useful only for faces without influence on others.
@@ -5023,7 +5023,7 @@ public sealed partial class MakeOffset
             {
                 _initOffsetFace.LastImage(s, _generated);
 
-                if (!_faces.IsEmpty())
+                if (_faces.Count != 0)
                 {
                     // Reverse generated shapes in case of small solids.
                     // Useful only for faces without influence on others.
@@ -5101,7 +5101,7 @@ public sealed partial class MakeOffset
 
         // Proportions will be different for different connection types
         bool isArc = (_join == Arc);
-        bool isPlanarIntCase = _inter && !isArc && _isPlanar && !_thickening && _faces.IsEmpty() && IsSolid(_shape);
+        bool isPlanarIntCase = _inter && !isArc && _isPlanar && !_thickening && _faces.Count == 0 && IsSolid(_shape);
 
         steps[PIOperation_CheckInputData] = 1.0;
         steps[PIOperation_Analyse] = 2.0;
@@ -5212,7 +5212,7 @@ public sealed partial class MakeOffset
                     _facePlanfaceMap[f] = planarFace;
                     if (_faces.Contains(f))
                     {
-                        _faces.RemoveKey(f);
+                        _faces.Remove(f);
                         _faces.Add(planarFace);
                     }
                 }

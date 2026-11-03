@@ -999,14 +999,14 @@ internal sealed class TrimShellCorner
                     error = true;
                     break;
                 }
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(oldComp2, ShapeType.Vertex, ShapeType.Edge, vEmap);
                 NCollection_List<Shape>[] vedges = [new(), new()];
                 for (j = 0; j < 2; j++)
                 {
-                    if (vEmap.Contains(extremity[j]))
+                    if (vEmap.ContainsKey(extremity[j]))
                     {
-                        vedges[j].Assign(vEmap.FindFromKey(extremity[j]));
+                        vedges[j].Assign(vEmap.GetValue(extremity[j]));
                     }
                 }
                 if (vedges[0].IsEmpty() && vedges[1].IsEmpty())
@@ -1225,19 +1225,19 @@ internal sealed class TrimShellCorner
                                          NCollection_List<Shape> listOfVertex)
     {
         listOfVertex.Clear();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> map = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> map = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Vertex, ShapeType.Edge, map);
         int i = 0;
 
-        for (i = 1; i <= map.Extent(); i++)
+        for (i = 1; i <= map.Count; i++)
         {
-            Shape key = map.FindKey(i);
+            Shape key = map.KeyAt(i - 1);
 
             if (verticesToAvoid.Contains(key))
             {
                 continue;
             }
-            NCollection_List<Shape> list = map.FindFromIndex(i);
+            NCollection_List<Shape> list = map.ValueAt(i - 1);
 
             if (list.Extent() < 2)
             {
@@ -1394,15 +1394,15 @@ internal sealed class TrimShellCorner
                                 in Compound sectionEdges,
                                 NCollection_List<Shape> orderedList)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> map = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> map = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(sectionEdges, ShapeType.Vertex, ShapeType.Edge, map);
 
-        if (map.IsEmpty())
+        if (map.Count == 0)
         {
             return false;
         }
 
-        if (!map.Contains(firstVertex) || !map.Contains(lastVertex))
+        if (!map.ContainsKey(firstVertex) || !map.ContainsKey(lastVertex))
         {
             return false;
         }
@@ -1423,7 +1423,7 @@ internal sealed class TrimShellCorner
 
     private static bool FindNextEdge(in Vertex firstVertex,
                                      in Vertex lastVertex,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE,
+                                     IndexedMap<Shape, NCollection_List<Shape>> mapVE,
                                      HashSet<Shape> mapToAvoid,
                                      NCollection_List<Shape> orderedList)
     {
@@ -1432,13 +1432,13 @@ internal sealed class TrimShellCorner
         NCollection_List<Shape> listOfEdge = new();
         int i = 0;
 
-        for (i = 1; i <= mapVE.Extent(); i++)
+        for (i = 1; i <= mapVE.Count; i++)
         {
-            if (!mapVE.Contains(curVertex))
+            if (!mapVE.ContainsKey(curVertex))
             {
                 break;
             }
-            NCollection_List<Shape> lste = mapVE.FindFromKey(curVertex);
+            NCollection_List<Shape> lste = mapVE.GetValue(curVertex);
             bool befound = false;
 
             NCollection_List<Shape>.Iterator it = new(lste);
@@ -2447,18 +2447,18 @@ internal sealed class TrimShellCorner
                                                             in Compound comp,
                                                             in Axis3D axis)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(comp, ShapeType.Vertex, ShapeType.Edge, vEmap);
 
         Edge minEdge = new();
-        if (!vEmap.Contains(vertex))
+        if (!vEmap.ContainsKey(vertex))
         {
             return minEdge;
         }
 
         BrepBuilder bb = new();
 
-        NCollection_List<Shape> edges = vEmap.FindFromKey(vertex);
+        NCollection_List<Shape> edges = vEmap.GetValue(vertex);
         if (edges.Extent() == 1)
         {
             minEdge = ShapeCasts.Edge(edges.First());
@@ -2518,14 +2518,14 @@ internal sealed class TrimShellCorner
                                         in Compound comp,
                                         NCollection_List<Shape> elist)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(comp, ShapeType.Vertex, ShapeType.Edge, vEmap);
-        if (vEmap.IsEmpty())
+        if (vEmap.Count == 0)
         {
             return false;
         }
 
-        if (!vEmap.Contains(vertex1) || !vEmap.Contains(vertex2))
+        if (!vEmap.ContainsKey(vertex1) || !vEmap.ContainsKey(vertex2))
         {
             return false;
         }

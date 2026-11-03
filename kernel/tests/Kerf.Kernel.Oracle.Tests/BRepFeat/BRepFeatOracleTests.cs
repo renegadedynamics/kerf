@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Features;
@@ -50,9 +51,9 @@ public class BRepFeatOracleTests(ITestOutputHelper output)
     private static List<Shape> Faces(in Shape theShape)
     {
         var aList = new List<Shape>();
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Face, aMap);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aList.Add(aMap[i]);
         }

@@ -34,7 +34,7 @@ namespace Kerf.Engine.Topology.Tools;
 /// </remarks>
 public sealed class Quilt
 {
-    private readonly NCollection_IndexedDataMap<Shape, Shape> _bounds = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, Shape> _bounds = new(ShapeHasher.Instance);
     private bool _hasCopy;
 
     /// <summary>An empty quilt.</summary>
@@ -45,13 +45,13 @@ public sealed class Quilt
 
     // test if the shape must be copied
     // i.e. it contains a bound subshape
-    private static bool NeedCopied(in Shape shape, NCollection_IndexedDataMap<Shape, Shape> myBounds)
+    private static bool NeedCopied(in Shape shape, IndexedMap<Shape, Shape> myBounds)
     {
         bool isCopied = false;
         var itv = new Iterator(shape);
         for (; itv.More(); itv.Next())
         {
-            if (myBounds.Contains(itv.Value()))
+            if (myBounds.ContainsKey(itv.Value()))
             {
                 isCopied = true;
                 break;
@@ -60,7 +60,7 @@ public sealed class Quilt
         return isCopied;
     }
 
-    private static void CopyShape(in Edge e, NCollection_IndexedDataMap<Shape, Shape> myBounds)
+    private static void CopyShape(in Edge e, IndexedMap<Shape, Shape> myBounds)
     {
         Edge ne = e;
         ne.EmptyCopy();
@@ -72,9 +72,9 @@ public sealed class Quilt
         for (; itv.More(); itv.Next())
         {
             Shape v = itv.Value();
-            if (myBounds.Contains(v))
+            if (myBounds.ContainsKey(v))
             {
-                b.Add(ne, myBounds.FindFromKey(v).Oriented(v.Orientation()));
+                b.Add(ne, myBounds.GetValue(v).Oriented(v.Orientation()));
             }
             else
             {
@@ -95,7 +95,7 @@ public sealed class Quilt
         //  Binds all the faces of S
         //   - to the face itself if it is not copied
         //   - to the copy if it is copied
-        if (_bounds.Contains(s))
+        if (_bounds.ContainsKey(s))
         {
             return;
         }
@@ -130,7 +130,7 @@ public sealed class Quilt
 
                 for (var fed = new Explorer(f, ShapeType.Edge); fed.More(); fed.Next())
                 {
-                    if (_bounds.Contains(fed.Current()))
+                    if (_bounds.ContainsKey(fed.Current()))
                     {
                         copyFace = true;
                     }
@@ -178,9 +178,9 @@ public sealed class Quilt
                     {
                         Edge e = ShapeCasts.Edge(ite.Value());
                         Orientation oe = e.Orientation();
-                        if (_bounds.Contains(e))
+                        if (_bounds.ContainsKey(e))
                         {
-                            Edge ne = ShapeCasts.Edge(_bounds.FindFromKey(e));
+                            Edge ne = ShapeCasts.Edge(_bounds.GetValue(e));
                             // pcurve.
                             if (ne.Orientation() == Forward)
                             {
@@ -232,7 +232,7 @@ public sealed class Quilt
     /// </summary>
     public void Bind(in Vertex vold, in Vertex vnew)
     {
-        if (!_bounds.Contains(vold))
+        if (!_bounds.ContainsKey(vold))
         {
             _bounds.Add(vold, vnew);
         }
@@ -247,7 +247,7 @@ public sealed class Quilt
     /// </summary>
     public void Bind(in Edge eold, in Edge enew)
     {
-        if (!_bounds.Contains(eold))
+        if (!_bounds.ContainsKey(eold))
         {
             Edge eNew = enew;
             if (IsCopied(enew))
@@ -268,7 +268,7 @@ public sealed class Quilt
             var itold = new Iterator(eold);
             while (itold.More())
             {
-                if (!_bounds.Contains(itold.Value()))
+                if (!_bounds.ContainsKey(itold.Value()))
                 {
                     // find the vertex of Enew with same orientation
                     Orientation orien = itold.Value().Orientation();
@@ -298,9 +298,9 @@ public sealed class Quilt
     /// <summary>True if the shape (a vertex, an edge or a face) has been copied.</summary>
     public bool IsCopied(in Shape s)
     {
-        if (_bounds.Contains(s))
+        if (_bounds.ContainsKey(s))
         {
-            return !s.IsSame(_bounds.FindFromKey(s));
+            return !s.IsSame(_bounds.GetValue(s));
         }
         else
         {
@@ -321,7 +321,7 @@ public sealed class Quilt
     internal Shape InternalCopy(in Shape s)
     {
         Standard_NoSuchObject_Raise_if(!IsCopied(s), "BRepTools_Quilt::Copy");
-        return _bounds.FindFromKey(s);
+        return _bounds.GetValue(s);
     }
 
     /// <summary>
@@ -365,9 +365,9 @@ public sealed class Quilt
         var edgesFaces = new HashSet<Shape>(ShapeHasher.Instance);
 
         // loop on the face in myBounds
-        for (int ii = 1; ii <= _bounds.Extent(); ii++)
+        for (int ii = 0; ii < _bounds.Count; ii++)
         {
-            Shape shape = _bounds.FindFromIndex(ii); // it.Value();
+            Shape shape = _bounds.ValueAt(ii); // it.Value();
             if (shape.ShapeType() == ShapeType.Face)
             {
                 for (var expEdg = new Explorer(shape, ShapeType.Edge); expEdg.More(); expEdg.Next())
@@ -537,9 +537,9 @@ public sealed class Quilt
         // gka version for free edges
         foreach (Shape itother in mapOtherShape)
         {
-            if (!edgesFaces.Contains(itother) && _bounds.Contains(itother))
+            if (!edgesFaces.Contains(itother) && _bounds.ContainsKey(itother))
             {
-                Shape sh = _bounds.FindFromKey(itother);
+                Shape sh = _bounds.GetValue(itother);
                 b.Add(result, sh);
             }
         }

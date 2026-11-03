@@ -2421,7 +2421,7 @@ public class BeanFaceIntersector
                                        NCollection_List<CurveRangeSample> listCurveRangeSort,
                                        NCollection_List<SurfaceRangeSample> listSurfaceRangeSort)
     {
-        NCollection_IndexedMap<SurfaceRangeSample> mapToAvoid = new();
+        IndexedSet<SurfaceRangeSample> mapToAvoid = new();
 
         Dictionary<int, NCollection_List<int>> curveIdMap = new();
         NCollection_LinearVector<CurveRangeSample> curveRangeVector = new();
@@ -2435,7 +2435,7 @@ public class BeanFaceIntersector
         for (; itS.More() && itC.More(); itS.Next(), itC.Next(), ++curveRangeId)
         {
             curveRangeVector.Append(itC.Value());
-            int surfIndex = mapToAvoid.Add(itS.Value());
+            int surfIndex = mapToAvoid.Add(itS.Value()) + 1;
             if (surfIndex > surfRangeSize)
             {
                 NCollection_List<int> newList = new();
@@ -2449,9 +2449,9 @@ public class BeanFaceIntersector
             }
         }
 
-        for (int i = 1; i <= mapToAvoid.Extent(); i++)
+        for (int i = 1; i <= mapToAvoid.Count; i++)
         {
-            SurfaceRangeSample surfRange = mapToAvoid.FindKey(i);
+            SurfaceRangeSample surfRange = mapToAvoid[i - 1];
             NCollection_List<int> curveRangeList = curveIdMap.GetValue(i);
             for (NCollection_List<int>.Iterator iter = new(curveRangeList); iter.More(); iter.Next())
             {

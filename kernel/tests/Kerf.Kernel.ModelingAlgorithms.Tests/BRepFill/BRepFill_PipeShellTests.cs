@@ -2,6 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKBool/GTests/BRepFill_PipeShell_Test.cxx (OCCT V8_0_1), with OCCT.NET's checks of
 // frozen inputs and the history added.
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Healing.Checks;
@@ -109,7 +110,7 @@ public class BRepFill_PipeShellTests
         Assert.Equal(ShapeType.Solid, aResult.ShapeType());
 
         // every edge of the profile generates faces of the result, every edge of the spine too
-        NCollection_IndexedMap<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        IndexedSet<Shape> aFaces = new(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(aResult, ShapeType.Face, aFaces);
         NCollection_List<Shape> aList = new();
         foreach (ShapeType aType in new[] { ShapeType.Edge, ShapeType.Vertex })

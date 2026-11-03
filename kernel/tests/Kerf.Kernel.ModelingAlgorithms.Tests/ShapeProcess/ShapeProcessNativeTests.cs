@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Brep;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Extend;
@@ -76,9 +77,9 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         {
             return 0;
         }
-        var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static char TypeChar(in Shape theShape) => theShape.IsNull ? 'n' : theShape.ShapeType() switch
@@ -132,9 +133,9 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
         Sign(theInput);
         foreach (ShapeType aType in new[] { ShapeType.Solid, ShapeType.Shell, ShapeType.Face })
         {
-            var aKeys = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+            var aKeys = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
             global::Kerf.Engine.Topology.Exploration.MapShapes(theInput, aType, aKeys);
-            for (int i = 1; i <= aKeys.Extent(); i++)
+            for (int i = 0; i < aKeys.Count; i++)
             {
                 Sign(aKeys[i]);
             }
@@ -262,10 +263,10 @@ public class ShapeProcessNativeTests(ITestOutputHelper output)
     // iterates in insertion order (occt-issues.md, unit 7C). Attributed only for inputs holding such a TShape.
     private static bool HoldsInstances(in Shape theShape)
     {
-        var aSubShapes = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aSubShapes = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, aSubShapes);
         var aTShapes = new HashSet<global::Kerf.Engine.Topology.TShape>(ReferenceEqualityComparer.Instance);
-        for (int i = 1; i <= aSubShapes.Extent(); i++)
+        for (int i = 0; i < aSubShapes.Count; i++)
         {
             if (!aTShapes.Add(aSubShapes[i].TShape()!))
             {

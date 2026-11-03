@@ -4,6 +4,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
@@ -35,16 +36,16 @@ public class BuildShapeSet
     protected readonly ToolShapeExplorer _subShapeExplorer = new();
     protected readonly NCollection_List<Shape> _startShapes = new();
     protected readonly NCollection_List<Shape>.Iterator _startShapesIter = new();
-    protected readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _subShapeMap =
+    protected readonly IndexedMap<Shape, NCollection_List<Shape>> _subShapeMap =
         new(ShapeHasher.Instance);
     protected readonly NCollection_List<Shape>.Iterator _incidentShapesIter = new();
     protected readonly NCollection_List<Shape> _shapes = new();
     protected readonly NCollection_List<Shape>.Iterator _shapesIter = new();
     protected Shape _currentShape = new();
     protected readonly NCollection_List<Shape> _currentShapeNeighbours = new();
-    protected readonly NCollection_IndexedMap<Shape> _omss = new(EqualityComparer<Shape>.Default);
-    protected readonly NCollection_IndexedMap<Shape> _omes = new(EqualityComparer<Shape>.Default);
-    protected readonly NCollection_IndexedMap<Shape> _omsh = new(EqualityComparer<Shape>.Default);
+    protected readonly IndexedSet<Shape> _omss = new(EqualityComparer<Shape>.Default);
+    protected readonly IndexedSet<Shape> _omes = new(EqualityComparer<Shape>.Default);
+    protected readonly IndexedSet<Shape> _omsh = new(EqualityComparer<Shape>.Default);
     protected bool _checkShape;
 
     /// <summary>
@@ -133,13 +134,13 @@ public class BuildShapeSet
             for (; ex.More(); ex.Next())
             {
                 Shape subshape = ex.Current();
-                bool b = !_subShapeMap.Contains(subshape);
+                bool b = !_subShapeMap.ContainsKey(subshape);
                 if (b)
                 {
                     // OCCT copies an empty list into the map
                     _subShapeMap.Add(subshape, new NCollection_List<Shape>());
                 }
-                _subShapeMap.ChangeFromKey(subshape).Append(s);
+                _subShapeMap.GetValue(subshape).Append(s);
             }
         }
     }
@@ -272,7 +273,7 @@ public class BuildShapeSet
     /// <summary>The elements incident to the sub-shape <paramref name="v"/> of <paramref name="e"/>.</summary>
     public virtual NCollection_List<Shape> MakeNeighboursList(in Shape e, in Shape v)
     {
-        NCollection_List<Shape> l = _subShapeMap.FindFromKey(v);
+        NCollection_List<Shape> l = _subShapeMap.GetValue(v);
         return l;
     }
 
@@ -285,12 +286,12 @@ public class BuildShapeSet
         while (se.More())
         {
             Shape subShape = se.Current();
-            if (!_subShapeMap.Contains(subShape))
+            if (!_subShapeMap.ContainsKey(subShape))
             {
                 se.Next();
                 continue;
             }
-            NCollection_List<Shape> l = _subShapeMap.FindFromKey(subShape);
+            NCollection_List<Shape> l = _subShapeMap.GetValue(subShape);
             li.Initialize(l);
             for (i = 0; li.More(); li.Next(), i++)
             {

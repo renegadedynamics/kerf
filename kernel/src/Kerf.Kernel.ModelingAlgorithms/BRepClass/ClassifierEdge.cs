@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1992-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 
 using Kerf.Topology;
@@ -67,9 +68,9 @@ public partial struct ClassifierEdge
     /// Finds and sets the next edge of the current one: the other edge at its last vertex, when that vertex has exactly
     /// two edges in <paramref name="mapVE"/>. Leaves the next edge unchanged otherwise.
     /// </summary>
-    internal void SetNextEdge(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE)
+    internal void SetNextEdge(IndexedMap<Shape, NCollection_List<Shape>> mapVE)
     {
-        if (mapVE.IsEmpty() || _edge.IsNull)
+        if (mapVE.Count == 0 || _edge.IsNull)
         {
             return;
         }
@@ -82,7 +83,7 @@ public partial struct ClassifierEdge
         }
 
         // The vertex is in the map of its own wire (C++ dereferences the result of Seek unchecked)
-        mapVE.FindFromKey(vl, out NCollection_List<Shape>? listE);
+        mapVE.TryGetValue(vl, out NCollection_List<Shape>? listE);
         if (listE!.Extent() == 2)
         {
             for (var it = new NCollection_List<Shape>.Iterator(listE); it.More(); it.Next())
@@ -110,7 +111,7 @@ public partial struct ClassifierEdge
     // Functional twins
 
     /// <summary>The edge with the next edge found in <paramref name="mapVE"/> (see <see cref="SetNextEdge"/>).</summary>
-    public readonly ClassifierEdge WithNextEdge(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapVE)
+    public readonly ClassifierEdge WithNextEdge(IndexedMap<Shape, NCollection_List<Shape>> mapVE)
     {
         ClassifierEdge copy = this;
         copy.SetNextEdge(mapVE);

@@ -2399,7 +2399,7 @@ public partial class FaceFixer : RootFixer
     }
 
     private static void FindNext(in Shape aVert, in Shape ainitEdge,
-                                 NCollection_IndexedMap<Shape> aMapVertices,
+                                 IndexedSet<Shape> aMapVertices,
                                  Dictionary<Shape, NCollection_List<Shape>> aMapVertexEdges,
                                  HashSet<Shape> aMapSmallEdges,
                                  HashSet<Shape> aMapSeemEdges,
@@ -2479,7 +2479,7 @@ public partial class FaceFixer : RootFixer
 
     private bool FixLoopWireCore(NCollection_Sequence<Shape> aResWires)
     {
-        var mapVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var mapVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
         var mapVertexEdges = new Dictionary<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         var mapSmallEdges = new HashSet<Shape>(ShapeHasher.Instance);
         var mapSeemEdges = new HashSet<Shape>(ShapeHasher.Instance);
@@ -2493,9 +2493,9 @@ public partial class FaceFixer : RootFixer
 
         // collecting wires from common vertex belonging more than 2 edges
         int i = 1;
-        for (; i <= mapVertices.Extent(); i++)
+        for (; i <= mapVertices.Count; i++)
         {
-            Shape vert = mapVertices.FindKey(i);
+            Shape vert = mapVertices[i - 1];
             NCollection_List<Shape> aledges = mapVertexEdges.GetValue(vert);
             var liter = new NCollection_List<Shape>.Iterator(aledges);
             for (; liter.More(); liter.Next())

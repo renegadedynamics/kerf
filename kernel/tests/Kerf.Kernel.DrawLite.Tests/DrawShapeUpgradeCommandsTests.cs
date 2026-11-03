@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
@@ -34,17 +35,17 @@ public class DrawShapeUpgradeCommandsTests(ITestOutputHelper output)
         aSewing.Add(Rectangle(5, 10));
         aSewing.Perform();
         Shape aShell = aSewing.SewedShape();
-        var aMap = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var aMap = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aShell, ShapeType.Edge, ShapeType.Face, aMap);
-        theSharedEdge = Enumerable.Range(1, aMap.Extent()).Select(aMap.FindKey).Single(e => aMap.FindFromKey(e).Extent() == 2);
+        theSharedEdge = aMap.Keys.Single(e => aMap.GetValue(e).Extent() == 2);
         return aShell;
     }
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     [Fact]

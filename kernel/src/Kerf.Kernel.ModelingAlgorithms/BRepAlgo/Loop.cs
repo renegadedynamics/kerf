@@ -191,7 +191,7 @@ public sealed class Loop
     }
 
     // Removes the hanging edges
-    private static void RemovePendingEdges(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve)
+    private static void RemovePendingEdges(IndexedMap<Shape, NCollection_List<Shape>> mve)
     {
         //--------------------------------
         // Remove hanging edges.
@@ -205,10 +205,10 @@ public sealed class Loop
             NCollection_List<Shape> vToRemove = new();
             HashSet<Shape> eToRemove = new(ShapeHasher.Instance);
 
-            for (int iV = 1; iV <= mve.Extent(); iV++)
+            for (int iV = 0; iV < mve.Count; iV++)
             {
-                Shape vertex = mve.FindKey(iV);
-                NCollection_List<Shape> edges = mve.FindFromIndex(iV);
+                Shape vertex = mve.KeyAt(iV);
+                NCollection_List<Shape> edges = mve.ValueAt(iV);
                 if (edges.IsEmpty())
                 {
                     vToRemove.Append(vertex);
@@ -230,13 +230,13 @@ public sealed class Loop
                 yaSupress = true;
                 for (itl.Initialize(vToRemove); itl.More(); itl.Next())
                 {
-                    mve.RemoveKey(itl.Value());
+                    mve.Remove(itl.Value());
                 }
                 if (eToRemove.Count != 0)
                 {
-                    for (int iV = 1; iV <= mve.Extent(); iV++)
+                    for (int iV = 0; iV < mve.Count; iV++)
                     {
-                        NCollection_List<Shape> le = mve.ChangeFromIndex(iV);
+                        NCollection_List<Shape> le = mve.ValueAt(iV);
                         itl.Initialize(le);
                         while (itl.More())
                         {
@@ -413,7 +413,7 @@ public sealed class Loop
     // (within theTolConf), recorded in VerticesForSubstitute; doubles the seams
     private static void StoreInMVE(in Face f,
                                    in Edge e,
-                                   NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve,
+                                   IndexedMap<Shape, NCollection_List<Shape>> mve,
                                    ref bool yaCouture,
                                    Dictionary<Shape, Shape> verticesForSubstitute,
                                    double tolConf)
@@ -421,9 +421,9 @@ public sealed class Loop
         Vertex v1, v2, v;
         Point3D p1, p;
         BrepBuilder bb = new();
-        for (int iV = 1; iV <= mve.Extent(); iV++)
+        for (int iV = 0; iV < mve.Count; iV++)
         {
-            v = ShapeCasts.Vertex(mve.FindKey(iV));
+            v = ShapeCasts.Vertex(mve.KeyAt(iV));
             p = Tool.Pnt(v);
             NCollection_List<Shape> vList = new();
             Iterator verExp = new(e);
@@ -489,26 +489,26 @@ public sealed class Loop
             yaCouture = false;
             return;
         }
-        if (!mve.Contains(v1))
+        if (!mve.ContainsKey(v1))
         {
             mve.Add(v1, new NCollection_List<Shape>());
         }
-        mve.ChangeFromKey(v1).Append(e);
+        mve.GetValue(v1).Append(e);
         if (!v1.IsSame(v2))
         {
-            if (!mve.Contains(v2))
+            if (!mve.ContainsKey(v2))
             {
                 mve.Add(v2, new NCollection_List<Shape>());
             }
-            mve.ChangeFromKey(v2).Append(e);
+            mve.GetValue(v2).Append(e);
         }
         Surface? s = Tool.Surface(f, out Placement l);
         if (Tool.IsClosed(e, s, l))
         {
-            mve.ChangeFromKey(v2).Append(e.Reversed());
+            mve.GetValue(v2).Append(e.Reversed());
             if (!v1.IsSame(v2))
             {
-                mve.ChangeFromKey(v1).Append(e.Reversed());
+                mve.GetValue(v1).Append(e.Reversed());
             }
             yaCouture = true;
         }
@@ -537,7 +537,7 @@ public sealed class Loop
         //-----------------------------------
         // Construction map vertex => edges
         //-----------------------------------
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mve = new(ShapeHasher.Instance);
 
         // add cut edges.
         HashSet<Shape> emap = new(ShapeHasher.Instance);
@@ -583,7 +583,7 @@ public sealed class Loop
 
         HashSet<Shape> usedEdges = new(ShapeHasher.Instance);
 
-        while (mve.Extent() > 0)
+        while (mve.Count > 0)
         {
             b.MakeWire(ref nw);
             //--------------------------------
@@ -591,14 +591,14 @@ public sealed class Loop
             //--------------------------------
             RemovePendingEdges(mve);
 
-            if (mve.Extent() == 0)
+            if (mve.Count == 0)
             {
                 break;
             }
             //--------------------------------
             // Start edge.
             //--------------------------------
-            ef = ce = ShapeCasts.Edge(mve.FindFromIndex(1).First());
+            ef = ce = ShapeCasts.Edge(mve.ValueAt(0).First());
             Exploration.Vertices(ce, out v1, out v2);
             //--------------------------------
             // VF vertex start of new wire
@@ -611,11 +611,11 @@ public sealed class Loop
             {
                 cv = vf = v2;
             }
-            if (!mve.Contains(cv))
+            if (!mve.ContainsKey(cv))
             {
                 continue;
             }
-            NCollection_List<Shape> listEdges = mve.ChangeFromKey(cv);
+            NCollection_List<Shape> listEdges = mve.GetValue(cv);
             for (itl.Initialize(listEdges); itl.More(); itl.Next())
             {
                 if (itl.Value().IsEqual(ce))
@@ -644,19 +644,19 @@ public sealed class Loop
                 b.Add(nw, ce);
                 usedEdges.Add(ce);
 
-                if (!mve.Contains(cv) || mve.FindFromKey(cv).IsEmpty())
+                if (!mve.ContainsKey(cv) || mve.GetValue(cv).IsEmpty())
                 {
                     end = true;
                 }
                 else
                 {
-                    end = !SelectEdge(_face, ce, cv, out ne, mve.ChangeFromKey(cv));
+                    end = !SelectEdge(_face, ce, cv, out ne, mve.GetValue(cv));
                     if (!end)
                     {
                         ce = ne;
-                        if (mve.FindFromKey(cv).IsEmpty())
+                        if (mve.GetValue(cv).IsEmpty())
                         {
-                            mve.RemoveKey(cv);
+                            mve.Remove(cv);
                         }
                     }
                 }
@@ -902,20 +902,20 @@ public sealed class Loop
     /// Merges the vertices of single edges in <paramref name="vEmap"/> that are images of the same vertex (the image
     /// set by <see cref="SetImageVV"/>) into one, then rebuilds the map.
     /// </summary>
-    public void UpdateVEmap(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap)
+    public void UpdateVEmap(IndexedMap<Shape, NCollection_List<Shape>> vEmap)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> verLver = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> verLver = new(ShapeHasher.Instance);
 
-        for (int ii = 1; ii <= vEmap.Extent(); ii++)
+        for (int ii = 0; ii < vEmap.Count; ii++)
         {
-            Vertex vertex = ShapeCasts.Vertex(vEmap.FindKey(ii));
-            NCollection_List<Shape> elist = vEmap.FindFromIndex(ii);
+            Vertex vertex = ShapeCasts.Vertex(vEmap.KeyAt(ii));
+            NCollection_List<Shape> elist = vEmap.ValueAt(ii);
             if (elist.Extent() == 1 && _imageVV.IsImage(vertex))
             {
                 Vertex proVertex = ShapeCasts.Vertex(_imageVV.ImageFrom(vertex));
-                if (verLver.Contains(proVertex))
+                if (verLver.ContainsKey(proVertex))
                 {
-                    NCollection_List<Shape> vlist = verLver.ChangeFromKey(proVertex);
+                    NCollection_List<Shape> vlist = verLver.GetValue(proVertex);
                     vlist.Append(vertex.Oriented(Forward));
                 }
                 else
@@ -927,15 +927,15 @@ public sealed class Loop
             }
         }
 
-        if (verLver.IsEmpty())
+        if (verLver.Count == 0)
         {
             return;
         }
 
         BrepBuilder bb = new();
-        for (int ii = 1; ii <= verLver.Extent(); ii++)
+        for (int ii = 0; ii < verLver.Count; ii++)
         {
-            NCollection_List<Shape> vlist = verLver.FindFromIndex(ii);
+            NCollection_List<Shape> vlist = verLver.ValueAt(ii);
             if (vlist.Extent() == 1)
             {
                 continue;
@@ -971,7 +971,7 @@ public sealed class Loop
             for (itl.Initialize(vlist); itl.More(); itl.Next())
             {
                 Vertex vertex = ShapeCasts.Vertex(itl.Value());
-                NCollection_List<Shape> elist = vEmap.FindFromKey(vertex);
+                NCollection_List<Shape> elist = vEmap.GetValue(vertex);
                 Shape edge = elist.First();
                 NCollection_List<Shape>.Iterator itcedges = new(_constEdges);
                 for (; itcedges.More(); itcedges.Next())
@@ -1001,7 +1001,7 @@ public sealed class Loop
                     continue;
                 }
 
-                NCollection_List<Shape> elist = vEmap.FindFromKey(vertex);
+                NCollection_List<Shape> elist = vEmap.GetValue(vertex);
                 Edge edge = ShapeCasts.Edge(elist.First());
                 edge.Orientation(Forward);
                 Exploration.Vertices(edge, out Vertex v1, out Vertex v2);
@@ -1012,10 +1012,10 @@ public sealed class Loop
             }
         }
 
-        NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
-        for (int ii = 1; ii <= vEmap.Extent(); ii++)
+        IndexedSet<Shape> emap = new(ShapeHasher.Instance);
+        for (int ii = 0; ii < vEmap.Count; ii++)
         {
-            NCollection_List<Shape> elist = vEmap.FindFromIndex(ii);
+            NCollection_List<Shape> elist = vEmap.ValueAt(ii);
             NCollection_List<Shape>.Iterator itl = new(elist);
             for (; itl.More(); itl.Next())
             {
@@ -1024,9 +1024,9 @@ public sealed class Loop
         }
 
         vEmap.Clear();
-        for (int ii = 1; ii <= emap.Extent(); ii++)
+        for (int ii = 0; ii < emap.Count; ii++)
         {
-            Exploration.MapShapesAndAncestors(emap.FindKey(ii), ShapeType.Vertex, ShapeType.Edge, vEmap);
+            Exploration.MapShapesAndAncestors(emap[ii], ShapeType.Vertex, ShapeType.Edge, vEmap);
         }
     }
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Custom;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -151,15 +152,15 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
 
     private static void Geometry(Writer theW, in Shape theShape)
     {
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-        var anEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
+        var anEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Face, aFaces);
         Exploration.MapShapes(theShape, ShapeType.Edge, anEdges);
 
         int aNbSurf = 0;
-        for (int i = 1; i <= aFaces.Extent() && aNbSurf < 30; i++)
+        for (int i = 1; i <= aFaces.Count && aNbSurf < 30; i++)
         {
-            Surface? aS = Tool.Surface(ShapeCasts.Face(aFaces[i]), out _);
+            Surface? aS = Tool.Surface(ShapeCasts.Face(aFaces[i - 1]), out _);
             if (aS is not (BSplineSurface or BezierSurface))
             {
                 continue;
@@ -195,9 +196,9 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         }
 
         int aNbCurv = 0;
-        for (int i = 1; i <= anEdges.Extent() && aNbCurv < 30; i++)
+        for (int i = 1; i <= anEdges.Count && aNbCurv < 30; i++)
         {
-            Curve3D? aC = Tool.Curve(ShapeCasts.Edge(anEdges[i]), out _, out _, out _);
+            Curve3D? aC = Tool.Curve(ShapeCasts.Edge(anEdges[i - 1]), out _, out _, out _);
             if (aC is not BSplineCurve3D)
             {
                 continue;
@@ -218,21 +219,21 @@ public class ShapeCustomNativeTests(ITestOutputHelper output)
         }
 
         int aNbPCurv = 0;
-        for (int j = 1; j <= aFaces.Extent() && aNbPCurv < 40; j++)
+        for (int j = 1; j <= aFaces.Count && aNbPCurv < 40; j++)
         {
-            Face aF = ShapeCasts.Face(aFaces[j]);
-            var aFaceEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            Face aF = ShapeCasts.Face(aFaces[j - 1]);
+            var aFaceEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aF, ShapeType.Edge, aFaceEdges);
-            for (int k = 1; k <= aFaceEdges.Extent() && aNbPCurv < 40; k++)
+            for (int k = 1; k <= aFaceEdges.Count && aNbPCurv < 40; k++)
             {
-                Edge anE = ShapeCasts.Edge(aFaceEdges[k]);
+                Edge anE = ShapeCasts.Edge(aFaceEdges[k - 1]);
                 Curve2D? aC = Tool.CurveOnSurface(anE, aF, out double f, out double l);
                 if (aC is not (BSplineCurve2D or BezierCurve2D))
                 {
                     continue;
                 }
                 ++aNbPCurv;
-                theW.Line($"PCURVE {anEdges.FindIndex(anE)} {j}");
+                theW.Line($"PCURVE {(anEdges.IndexOf(anE) + 1)} {j}");
                 try
                 {
                     double cf = 0, cl = 0, aDev = 0;

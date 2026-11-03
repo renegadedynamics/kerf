@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2020-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Occt;
 using System.Diagnostics;
 using static Kerf.Engine.Foundation.MetricType;
@@ -28,7 +29,7 @@ namespace Kerf.Engine.Foundation;
 /// </remarks>
 public class AttributeMeter : MessageAttribute
 {
-    private readonly NCollection_IndexedDataMap<MetricType, (double first, double second)> _metrics = new(); //!< computed metrics
+    private readonly IndexedMap<MetricType, (double first, double second)> _metrics = new(); //!< computed metrics
 
     /// <summary>The value of a metric that isn't defined: -1.</summary>
     public static double UndefinedMetricValue() => -1.0;
@@ -40,7 +41,7 @@ public class AttributeMeter : MessageAttribute
     }
 
     /// <summary>True if the attribute has values for the metric.</summary>
-    public bool HasMetric(MetricType metric) => _metrics.Contains(metric);
+    public bool HasMetric(MetricType metric) => _metrics.ContainsKey(metric);
 
     /// <summary>True if both values of the metric are set.</summary>
     public bool IsMetricValid(MetricType metric)
@@ -56,15 +57,15 @@ public class AttributeMeter : MessageAttribute
         {
             return UndefinedMetricValue();
         }
-        return _metrics.FindFromKey(metric).first;
+        return _metrics.GetValue(metric).first;
     }
 
     /// <summary>Sets the start value of the metric (adding the metric, its stop value undefined).</summary>
     public void SetStartValue(MetricType metric, double value)
     {
-        if (_metrics.Contains(metric))
+        if (_metrics.ContainsKey(metric))
         {
-            _metrics.ChangeFromKey(metric).first = value;
+            _metrics.GetValueRef(metric).first = value;
         }
         else
         {
@@ -79,15 +80,15 @@ public class AttributeMeter : MessageAttribute
         {
             return UndefinedMetricValue();
         }
-        return _metrics.FindFromKey(metric).second;
+        return _metrics.GetValue(metric).second;
     }
 
     /// <summary>Sets the stop value of the metric, if the metric has a start value.</summary>
     public void SetStopValue(MetricType metric, double value)
     {
-        if (_metrics.Contains(metric))
+        if (_metrics.ContainsKey(metric))
         {
-            _metrics.ChangeFromKey(metric).second = value;
+            _metrics.GetValueRef(metric).second = value;
         }
     }
 
@@ -114,7 +115,7 @@ public class AttributeMeter : MessageAttribute
         }
 
         Report report = global::Kerf.Engine.Foundation.Message.DefaultReport(true)!;
-        NCollection_IndexedMap<MetricType> activeMetrics = report.ActiveMetrics();
+        IndexedSet<MetricType> activeMetrics = report.ActiveMetrics();
 
         // time metrics
         if (activeMetrics.Contains(MetricType_WallClock))
@@ -154,9 +155,9 @@ public class AttributeMeter : MessageAttribute
 
         // memory metrics
         bool hasMemory = false;
-        for (int iter = 1; iter <= activeMetrics.Extent(); ++iter)
+        for (int iter = 0; iter < activeMetrics.Count; ++iter)
         {
-            if (activeMetrics.FindKey(iter) >= MetricType_MemPrivate)
+            if (activeMetrics[iter] >= MetricType_MemPrivate)
             {
                 hasMemory = true;
             }
@@ -167,9 +168,9 @@ public class AttributeMeter : MessageAttribute
         }
 
         using Process memProcess = Process.GetCurrentProcess();
-        for (int iter = 1; iter <= activeMetrics.Extent(); ++iter)
+        for (int iter = 0; iter < activeMetrics.Count; ++iter)
         {
-            MetricType metric = activeMetrics.FindKey(iter);
+            MetricType metric = activeMetrics[iter];
             long bytes;
             switch (metric)
             {

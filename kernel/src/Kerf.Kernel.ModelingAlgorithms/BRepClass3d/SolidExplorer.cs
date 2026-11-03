@@ -44,7 +44,7 @@ public class SolidExplorer
     private readonly Dictionary<Shape, CurveSurfaceIntersector?> _mapOfInter =
         new(ShapeHasher.Instance);
     private readonly SpatialTree<int, Box> _tree = new();
-    private readonly NCollection_IndexedMap<Shape> _mapEV = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _mapEV = new(ShapeHasher.Instance);
 
     /// <summary>
     /// A point <paramref name="APoint_"/> in the face <paramref name="_face"/>: <paramref name="param_"/>, in ]0, 1[,
@@ -940,10 +940,10 @@ public class SolidExplorer
         // Fill mapEV with vertices and edges from shape
         var treeFiller = new SpatialTreeFiller<int, Box>(_tree);
         //
-        int i, nbEV = _mapEV.Extent();
+        int i, nbEV = _mapEV.Count;
         for (i = 1; i <= nbEV; ++i)
         {
-            Shape aS = _mapEV[i];
+            Shape aS = _mapEV[i - 1];
             //
             Box box = new();
             Bounds.Add(aS, ref box);
@@ -1016,5 +1016,5 @@ public class SolidExplorer
     public SpatialTree<int, Box> GetTree() => _tree;
 
     /// <summary>The edges and vertices of the shape.</summary>
-    public NCollection_IndexedMap<Shape> GetMapEV() => _mapEV;
+    public IndexedSet<Shape> GetMapEV() => _mapEV;
 }

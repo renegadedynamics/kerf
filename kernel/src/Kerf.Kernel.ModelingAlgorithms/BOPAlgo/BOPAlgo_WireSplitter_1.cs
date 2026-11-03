@@ -35,7 +35,7 @@ public partial class WireSplitter
         NCollection_List<Shape>.Iterator aIt;
         NCollection_List<EdgeInfo>.Iterator itLEI;
         //
-        NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<EdgeInfo>> mySmartMap = new(ShapeHasher.Instance);
         Dictionary<Shape, bool> vertMap = new(ShapeHasher.Instance);
         //
         NCollection_List<Shape> myEdges = aCB.Shapes();
@@ -64,14 +64,14 @@ public partial class WireSplitter
             for (i = 0; itS.More(); itS.Next(), ++i)
             {
                 Shape v = itS.Value();
-                ix = mySmartMap.FindIndex(v);
+                ix = mySmartMap.IndexOf(v) + 1;
                 if (ix == 0)
                 {
                     NCollection_List<EdgeInfo> leIx = new();
-                    ix = mySmartMap.Add(v, leIx);
+                    ix = mySmartMap.Add(v, leIx) + 1;
                 }
                 //
-                NCollection_List<EdgeInfo> lei = mySmartMap[ix];
+                NCollection_List<EdgeInfo> lei = mySmartMap.ValueAt(ix - 1);
                 EdgeInfo ei = new();
                 //
                 ei.SetEdge(e);
@@ -103,14 +103,14 @@ public partial class WireSplitter
             }
         }
         //
-        nb = mySmartMap.Extent();
+        nb = mySmartMap.Count;
         //
         bNothingToDo = true;
         for (i = 1; i <= nb; i++)
         {
             cntIn = 0;
             cntOut = 0;
-            NCollection_List<EdgeInfo> leInfo = mySmartMap[i];
+            NCollection_List<EdgeInfo> leInfo = mySmartMap.ValueAt(i - 1);
             NCollection_List<EdgeInfo>.Iterator it = new(leInfo);
             for (; it.More(); it.Next())
             {
@@ -140,13 +140,13 @@ public partial class WireSplitter
             int nbE, nbMapEE;
             bool bFlag;
             //
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapEE = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> mapEE = new(ShapeHasher.Instance);
             //
             aIt.Initialize(myEdges);
             for (; aIt.More(); aIt.Next())
             {
                 Shape e = aIt.Value();
-                if (!mapEE.Contains(e))
+                if (!mapEE.ContainsKey(e))
                 {
                     NCollection_List<Shape> lEx = new();
                     lEx.Append(e);
@@ -154,16 +154,16 @@ public partial class WireSplitter
                 }
                 else
                 {
-                    NCollection_List<Shape> lEx = mapEE.ChangeFromKey(e);
+                    NCollection_List<Shape> lEx = mapEE.GetValue(e);
                     lEx.Append(e);
                 }
             }
             //
             bFlag = true;
-            nbMapEE = mapEE.Extent();
+            nbMapEE = mapEE.Count;
             for (i = 1; i <= nbMapEE; ++i)
             {
-                NCollection_List<Shape> lEx = mapEE[i];
+                NCollection_List<Shape> lEx = mapEE.ValueAt(i - 1);
                 nbE = lEx.Extent();
                 if (nbE == 1)
                 { // usual case
@@ -202,8 +202,8 @@ public partial class WireSplitter
         //
         for (i = 1; i <= nb; i++)
         {
-            Vertex v = ShapeCasts.Vertex(mySmartMap.FindKey(i));
-            NCollection_List<EdgeInfo> lei = mySmartMap[i];
+            Vertex v = ShapeCasts.Vertex(mySmartMap.KeyAt(i - 1));
+            NCollection_List<EdgeInfo> lei = mySmartMap.ValueAt(i - 1);
             itLEI = new NCollection_List<EdgeInfo>.Iterator(lei);
             for (; itLEI.More(); itLEI.Next())
             {
@@ -233,8 +233,8 @@ public partial class WireSplitter
         //
         for (i = 1; i <= nb; ++i)
         {
-            Vertex va = ShapeCasts.Vertex(mySmartMap.FindKey(i));
-            NCollection_List<EdgeInfo> lei = mySmartMap[i];
+            Vertex va = ShapeCasts.Vertex(mySmartMap.KeyAt(i - 1));
+            NCollection_List<EdgeInfo> lei = mySmartMap.ValueAt(i - 1);
             itLEI = new NCollection_List<EdgeInfo>.Iterator(lei);
             for (; itLEI.More(); itLEI.Next())
             {
@@ -266,7 +266,7 @@ public partial class WireSplitter
                              NCollection_Sequence<Shape> aVertVa,
                              NCollection_Sequence<Point2D> aCoordVa,
                              ConnexityBlock aCB,
-                             NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap)
+                             IndexedMap<Shape, NCollection_List<EdgeInfo>> mySmartMap)
     {
         int i, j, nb, nbj;
         double angleIn, angleOut, angle, minAngle;
@@ -315,7 +315,7 @@ public partial class WireSplitter
 
             Point2D pb = Coord2d(vb, eOuta, myFace);
 
-            NCollection_List<EdgeInfo> leInfo = mySmartMap.FindFromKey(vb);
+            NCollection_List<EdgeInfo> leInfo = mySmartMap.GetValue(vb);
             //
             tol2D = 2.0 * Tolerance2D(vb, aGAS);
             tol2D2 = tol2D * tol2D;
@@ -775,14 +775,14 @@ public partial class WireSplitter
     }
 
     private static void RefineAngles(in Face myFace,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<EdgeInfo>> mySmartMap,
+                                     IndexedMap<Shape, NCollection_List<EdgeInfo>> mySmartMap,
                                      IntersectionContext context)
     {
-        int nb = mySmartMap.Extent();
-        for (int i = 1; i <= nb; ++i)
+        int nb = mySmartMap.Count;
+        for (int i = 0; i < nb; ++i)
         {
-            Vertex v = ShapeCasts.Vertex(mySmartMap.FindKey(i));
-            NCollection_List<EdgeInfo> lei = mySmartMap[i];
+            Vertex v = ShapeCasts.Vertex(mySmartMap.KeyAt(i));
+            NCollection_List<EdgeInfo> lei = mySmartMap.ValueAt(i);
             RefineAngles(v, myFace, lei, context);
         }
     }

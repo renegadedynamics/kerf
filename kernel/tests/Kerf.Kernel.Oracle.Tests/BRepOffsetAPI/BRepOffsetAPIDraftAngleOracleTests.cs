@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Features.Api;
 using Kerf.Engine.Foundation;
@@ -111,9 +112,9 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         ];
     }
 
-    private static NCollection_IndexedMap<Shape> FacesOf(in Shape theShape)
+    private static IndexedSet<Shape> FacesOf(in Shape theShape)
     {
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, ShapeType.Face, aFaces);
         return aFaces;
     }
@@ -161,13 +162,13 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         using var aRun = new ShapeFixOracleRun(output, "draft");
         foreach ((string aName, Shape aShape) in Tape.Budget(Solids()))
         {
-            NCollection_IndexedMap<Shape> aFaces = FacesOf(aShape);
+            IndexedSet<Shape> aFaces = FacesOf(aShape);
             (double z0, double z1) = ZRange(aShape);
             var aPlanes = new[] { ("bottom", z0), ("middle", 0.5 * (z0 + z1)), ("outside", z0 - 0.5 * (z1 - z0)) };
             int aCount = 0;
-            for (int f = 1; f <= aFaces.Extent() && aCount < 8; f++)
+            for (int f = 1; f <= aFaces.Count && aCount < 8; f++)
             {
-                if (!IsDraftable(aFaces[f]))
+                if (!IsDraftable(aFaces[f - 1]))
                 {
                     continue;
                 }
@@ -195,8 +196,8 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         // build123d.NET's Solid.Draft: every side face at once, one angle, one neutral plane
         foreach ((string aName, Shape aShape) in Tape.Budget(Solids()))
         {
-            NCollection_IndexedMap<Shape> aFaces = FacesOf(aShape);
-            int[] aSides = Enumerable.Range(1, aFaces.Extent()).Where(i => IsSide(aFaces[i])).ToArray();
+            IndexedSet<Shape> aFaces = FacesOf(aShape);
+            int[] aSides = Enumerable.Range(1, aFaces.Count).Where(i => IsSide(aFaces[i - 1])).ToArray();
             if (aSides.Length == 0)
             {
                 continue;
@@ -219,7 +220,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         {
             ApiMakePrism aMaker = new(aProfile, new Vector3D(0, 0, aHeight));
             Shape aPrism = aMaker.Shape();
-            NCollection_IndexedMap<Shape> aFaces = FacesOf(aPrism);
+            IndexedSet<Shape> aFaces = FacesOf(aPrism);
             Wire anOuter = BrepTools.OuterWire(aProfile);
             var aSides = new List<int>();
             var anInner = new HashSet<int>();
@@ -232,7 +233,7 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                 }
                 foreach (Shape aSide in aMaker.Generated(anExp.Current()))
                 {
-                    int i = aFaces.FindIndex(aSide);
+                    int i = aFaces.IndexOf(aSide) + 1;
                     if (i > 0 && !aSides.Contains(i))
                     {
                         aSides.Add(i);
@@ -271,8 +272,8 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
                 continue;
             }
             string aName = Path.GetFileNameWithoutExtension(aFile);
-            NCollection_IndexedMap<Shape> aFaces = FacesOf(aShape);
-            int[] aSides = Enumerable.Range(1, aFaces.Extent()).Where(i => IsSide(aFaces[i])).Take(6).ToArray();
+            IndexedSet<Shape> aFaces = FacesOf(aShape);
+            int[] aSides = Enumerable.Range(1, aFaces.Count).Where(i => IsSide(aFaces[i - 1])).Take(6).ToArray();
             (double z0, double z1) = ZRange(aShape);
             foreach (int f in aSides.Take(3))
             {
@@ -402,13 +403,13 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
 
     private static string Keyed(string theHistory, in Shape theResult)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theResult, aMap);
         CanonicalKeys aKeys = CanonicalKeys.Build(theResult);
         return System.Text.RegularExpressions.Regex.Replace(theHistory, @"([GM])\[([^\]]*)\]", m =>
             m.Groups[1].Value + "[" + string.Join(' ', m.Groups[2].Value.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                                                          .Select(s => (I: int.Parse(s.TrimEnd('r'), CultureInfo.InvariantCulture), R: s.EndsWith('r')))
-                                                         .Select(t => (t.I > 0 ? aKeys.Key(aMap[t.I]) : "out") + (t.R ? "r" : ""))
+                                                         .Select(t => (t.I > 0 ? aKeys.Key(aMap[t.I - 1]) : "out") + (t.R ? "r" : ""))
                                                          .Order(StringComparer.Ordinal)) + "]");
     }
 
@@ -424,13 +425,13 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == N.TopAbs_Orientation.TopAbs_REVERSED ? "r" : "");
     }
 
-    private static string IndexOf(NCollection_IndexedMap<Shape> theMap, in Shape theS)
+    private static string IndexOf(IndexedSet<Shape> theMap, in Shape theS)
     {
         if (theS.IsNull)
         {
             return "null";
         }
-        int anI = theMap.FindIndex(theS);
+        int anI = theMap.IndexOf(theS) + 1;
         return anI.ToString(CultureInfo.InvariantCulture) + (anI > 0 && theS.Orientation() == Orientation.Reversed ? "r" : "");
     }
 
@@ -504,15 +505,15 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
 
     internal static Outcome RunPort(ShapeFixOracleRun theRun, Run theCase, Shape theInput)
     {
-        NCollection_IndexedMap<Shape> aFaces = FacesOf(theInput);
-        var anInMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        IndexedSet<Shape> aFaces = FacesOf(theInput);
+        var anInMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theInput, anInMap);
         try
         {
             var aDraft = new DraftAngle(theInput);
             for (int k = 0; k < theCase.Faces.Length; k++)
             {
-                aDraft.Add(ShapeCasts.Face(aFaces[theCase.Faces[k]]), theCase.Dir, theCase.Angles[k] * Math.PI / 180.0, theCase.Plane, theCase.Flag);
+                aDraft.Add(ShapeCasts.Face(aFaces[theCase.Faces[k] - 1]), theCase.Dir, theCase.Angles[k] * Math.PI / 180.0, theCase.Plane, theCase.Flag);
                 if (!aDraft.AddDone())
                 {
                     break;
@@ -530,12 +531,12 @@ public sealed class BRepOffsetAPIDraftAngleOracleTests(ITestOutputHelper output)
             }
             Shape aRes = aDraft.Shape();
             string aText = theRun.PortText(aRes);
-            var aResMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aResMap = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(aRes, aResMap);
             var aSb = new StringBuilder();
-            for (int i = 1; i <= anInMap.Extent(); i++)
+            for (int i = 1; i <= anInMap.Count; i++)
             {
-                Shape aS = anInMap[i];
+                Shape aS = anInMap[i - 1];
                 if (aS.ShapeType() != ShapeType.Face)
                 {
                     continue;

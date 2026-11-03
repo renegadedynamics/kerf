@@ -184,7 +184,7 @@ public class BRepClass3dTests
 
         var anExplorer = new global::Kerf.Engine.Classification.SolidExplorer(Box10());
         Assert.False(anExplorer.Reject(new Point3D()));
-        Assert.Equal(20, anExplorer.GetMapEV().Extent()); // 12 edges and 8 vertices
+        Assert.Equal(20, anExplorer.GetMapEV().Count); // 12 edges and 8 vertices
         int aShells = 0, aFaces = 0;
         for (anExplorer.InitShell(); anExplorer.MoreShell(); anExplorer.NextShell())
         {

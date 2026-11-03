@@ -3,6 +3,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Approximation;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Extrema;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
@@ -37,7 +38,7 @@ public sealed partial class DraftModification
 
     private bool InternalAdd(in Face F, in Direction3D direction, double angle, in Plane3D neutralPlane, bool flag = true)
     {
-        if (_fMap.Contains(F))
+        if (_fMap.ContainsKey(F))
         {
             return (_badShape.IsNull);
         }
@@ -181,7 +182,7 @@ public sealed partial class DraftModification
             _fMap.Add(F, fi);
             if (postponed)
             {
-                _fMap.ChangeFromKey(F).ChangeCurve() = theCircle;
+                _fMap.GetValue(F).ChangeCurve() = theCircle;
             }
         }
 
@@ -190,7 +191,7 @@ public sealed partial class DraftModification
         while (exp.More() && _badShape.IsNull)
         {
             Edge edg = ShapeCasts.Edge(exp.Current());
-            if (!_eMap.Contains(edg))
+            if (!_eMap.ContainsKey(edg))
             {
                 bool addedg = false;
                 bool addface = false;
@@ -205,7 +206,7 @@ public sealed partial class DraftModification
                 {
                     // Find the other face containing the edge.
                     int nbother = 0;
-                    for (NCollection_List<Shape>.Iterator it = new(_efMap.FindFromKey(edg)); it.More(); it.Next())
+                    for (NCollection_List<Shape>.Iterator it = new(_efMap.GetValue(edg)); it.More(); it.Next())
                     {
                         if (!it.Value().IsSame(F))
                         {
@@ -235,7 +236,7 @@ public sealed partial class DraftModification
                 {
                     if (postponed)
                     {
-                        _fMap.ChangeFromKey(F).Add(otherF);
+                        _fMap.GetValue(F).Add(otherF);
                     }
                     Curve3D c = Tool.Curve(edg, out Placement L, out double f, out double l)!;
                     c = (Curve3D)c.Transformed(L.Transformation());
@@ -301,14 +302,14 @@ public sealed partial class DraftModification
                         Type typS = alocalSurface.GetType();
                         if (typS == typeof(CylindricalSurface) || typS == typeof(ExtrusionSurface))
                         {
-                            if (_fMap.Contains(F))
+                            if (_fMap.ContainsKey(F))
                             {
                                 if (!flag && !postponed)
                                 {
-                                    _fMap.RemoveKey(F);
+                                    _fMap.Remove(F);
                                     foreach (Shape key in mapOfE)
                                     {
-                                        _eMap.RemoveKey(ShapeCasts.Edge(key));
+                                        _eMap.Remove(ShapeCasts.Edge(key));
                                     }
                                 }
                             }
@@ -338,9 +339,9 @@ public sealed partial class DraftModification
         Explorer editer = new();
         Explorer vtiter = new();
 
-        for (int i = 1; i <= _fMap.Extent(); i++)
+        for (int i = 0; i < _fMap.Count; i++)
         {
-            Face fc = ShapeCasts.Face(_fMap.FindKey(i));
+            Face fc = ShapeCasts.Face(_fMap.KeyAt(i));
 
             // Exploration of the edges of the face
             editer.Init(fc, ShapeType.Edge);
@@ -348,26 +349,26 @@ public sealed partial class DraftModification
             {
                 e = ShapeCasts.Edge(editer.Current());
 
-                if (!_eMap.Contains(e))
+                if (!_eMap.ContainsKey(e))
                 {
                     DraftEdgeInfo eInf = new(true);
                     _eMap.Add(e, eInf);
                 }
-                _eMap.ChangeFromKey(e).Add(fc);
+                _eMap.GetValue(e).Add(fc);
 
                 // Exploration of the vertices of the edge
                 vtiter.Init(e, ShapeType.Vertex);
                 while (vtiter.More())
                 {
                     v = ShapeCasts.Vertex(vtiter.Current());
-                    if (!_vMap.Contains(v))
+                    if (!_vMap.ContainsKey(v))
                     {
                         VertexInfo vInf = new();
                         _vMap.Add(v, vInf);
                     }
 
-                    _vMap.ChangeFromKey(v).Add(e);
-                    _vMap.ChangeFromKey(v).ChangeParameter(e) = Tool.Parameter(v, e);
+                    _vMap.GetValue(v).Add(e);
+                    _vMap.GetValue(v).ChangeParameter(e) = Tool.Parameter(v, e);
                     vtiter.Next();
                 }
                 editer.Next();
@@ -379,9 +380,9 @@ public sealed partial class DraftModification
 
         // Set edges containing modified vertices.
 
-        for (int i = 1; i <= _vMap.Extent(); i++)
+        for (int i = 0; i < _vMap.Count; i++)
         {
-            Vertex vt = ShapeCasts.Vertex(_vMap.FindKey(i));
+            Vertex vt = ShapeCasts.Vertex(_vMap.KeyAt(i));
 
             // Exploration of the ancestors of the vertex
             anc.Init(_shape, ShapeType.Edge);
@@ -402,26 +403,26 @@ public sealed partial class DraftModification
                 }
                 if (found)
                 {
-                    if (!_eMap.Contains(e))
+                    if (!_eMap.ContainsKey(e))
                     {
                         DraftEdgeInfo eInf = new(false);
                         _eMap.Add(e, eInf);
                     }
-                    _vMap.ChangeFromKey(vt).Add(e);
-                    _vMap.ChangeFromKey(vt).ChangeParameter(e) = Tool.Parameter(vt, e);
+                    _vMap.GetValue(vt).Add(e);
+                    _vMap.GetValue(vt).ChangeParameter(e) = Tool.Parameter(vt, e);
                 }
                 anc.Next();
             }
         }
 
         // Set faces containing modified edges
-        for (int i = 1; i <= _eMap.Extent(); i++)
+        for (int i = 0; i < _eMap.Count; i++)
         {
-            Edge ed = ShapeCasts.Edge(_eMap.FindKey(i));
-            for (NCollection_List<Shape>.Iterator it = new(_efMap.FindFromKey(ed)); it.More(); it.Next())
+            Edge ed = ShapeCasts.Edge(_eMap.KeyAt(i));
+            for (NCollection_List<Shape>.Iterator it = new(_efMap.GetValue(ed)); it.More(); it.Next())
             {
                 F = ShapeCasts.Face(it.Value());
-                if (!_fMap.Contains(F))
+                if (!_fMap.ContainsKey(F))
                 {
                     Surface s = Tool.Surface(F, out Placement L)!;
                     Surface newS = (Surface)s.Transformed(L.Transformation());
@@ -442,15 +443,15 @@ public sealed partial class DraftModification
                     DraftFaceInfo fInf = new(newS, false);
                     _fMap.Add(F, fInf);
                 }
-                _eMap.ChangeFromKey(ed).Add(F);
+                _eMap.GetValue(ed).Add(F);
             }
         }
 
         //  Try to add faces for free borders...
         // JAG 09.11.95
-        for (int i = 1; i <= _eMap.Extent(); i++)
+        for (int i = 0; i < _eMap.Count; i++)
         {
-            DraftEdgeInfo einf = _eMap.ChangeFromIndex(i);
+            DraftEdgeInfo einf = _eMap.ValueAt(i);
             if (einf.NewGeometry() && einf.Geometry() is null && einf.SecondFace().IsNull)
             {
                 Placement loc;
@@ -459,7 +460,7 @@ public sealed partial class DraftModification
                 Surface? s2 = null;
 
                 double f, l;
-                Edge ek = ShapeCasts.Edge(_eMap.FindKey(i));
+                Edge ek = ShapeCasts.Edge(_eMap.KeyAt(i));
                 Curve3D c = Tool.Curve(ek, out loc, out f, out l)!;
                 c = (Curve3D)c.Transformed(loc.Transformation());
                 if (c.GetType() == typeof(TrimmedCurve3D))
@@ -497,9 +498,9 @@ public sealed partial class DraftModification
                 }
                 else
                 { // on the plane
-                    for (int j = 1; j <= _vMap.Extent(); j++)
+                    for (int j = 0; j < _vMap.Count; j++)
                     {
-                        VertexInfo vinf = _vMap.ChangeFromIndex(j);
+                        VertexInfo vinf = _vMap.ValueAt(j);
                         for (vinf.InitEdgeIterator(); vinf.MoreEdge(); vinf.NextEdge())
                         {
                             if (vinf.Edge().IsSame(ek))
@@ -514,7 +515,7 @@ public sealed partial class DraftModification
                                 Edge edg = vinf.Edge();
                                 if (!edg.IsSame(ek))
                                 {
-                                    DraftEdgeInfo ei = _eMap.FindFromKey(edg);
+                                    DraftEdgeInfo ei = _eMap.GetValue(edg);
                                     if (!ei.FirstFace().IsSame(einf.FirstFace())
                                         && (ei.SecondFace().IsNull || !ei.SecondFace().IsSame(einf.FirstFace())))
                                     {
@@ -617,10 +618,10 @@ public sealed partial class DraftModification
 
             // Calculate eventual faces
 
-            for (int i = 1; i <= _fMap.Extent(); i++)
+            for (int i = 0; i < _fMap.Count; i++)
             {
-                Face fk = ShapeCasts.Face(_fMap.FindKey(i));
-                DraftFaceInfo finf = _fMap.ChangeFromIndex(i);
+                Face fk = ShapeCasts.Face(_fMap.KeyAt(i));
+                DraftFaceInfo finf = _fMap.ValueAt(i);
                 if (finf.NewGeometry() && finf.Geometry() is null)
                 {
                     Face f1 = finf.FirstFace();
@@ -632,8 +633,8 @@ public sealed partial class DraftModification
                         _badShape = fk;
                         return;
                     }
-                    Surface? s1 = _fMap.FindFromKey(f1).Geometry();
-                    Surface? s2 = _fMap.FindFromKey(f2).Geometry();
+                    Surface? s1 = _fMap.GetValue(f1).Geometry();
+                    Surface? s2 = _fMap.GetValue(f2).Geometry();
                     if (s1 is null || s2 is null)
                     {
                         _errStat = DraftErrorStatus.FaceRecomputation;
@@ -719,11 +720,11 @@ public sealed partial class DraftModification
             }
 
             // Calculate new edges.
-            for (int ii = 1; ii <= _eMap.Extent(); ii++)
+            for (int ii = 0; ii < _eMap.Count; ii++)
             {
-                DraftEdgeInfo Einf = _eMap.ChangeFromIndex(ii);
+                DraftEdgeInfo Einf = _eMap.ValueAt(ii);
 
-                Edge theEdge = ShapeCasts.Edge(_eMap.FindKey(ii));
+                Edge theEdge = ShapeCasts.Edge(_eMap.KeyAt(ii));
 
                 Surface? s1, s2;
                 Curve3D C;
@@ -738,8 +739,8 @@ public sealed partial class DraftModification
                         Face firstFace = Einf.FirstFace();
                         Face secondFace = Einf.SecondFace();
 
-                        s1 = _fMap.FindFromKey(firstFace).Geometry()!;
-                        s2 = _fMap.FindFromKey(secondFace).Geometry()!;
+                        s1 = _fMap.GetValue(firstFace).Geometry()!;
+                        s2 = _fMap.GetValue(secondFace).Geometry()!;
 
                         int detrompeur = 0;
 
@@ -851,8 +852,8 @@ public sealed partial class DraftModification
                         }
                         else
                         {
-                            s1 = _fMap.FindFromKey(Einf.FirstFace()).Geometry()!;
-                            s2 = _fMap.FindFromKey(Einf.SecondFace()).Geometry()!;
+                            s1 = _fMap.GetValue(Einf.FirstFace()).Geometry()!;
+                            s2 = _fMap.GetValue(Einf.SecondFace()).Geometry()!;
 
                             // PCurves are not calculated immediately for 2 reasons:
                             // 1 - If ProjLib should make an Approx, it is stupid to approximate the
@@ -1216,8 +1217,8 @@ public sealed partial class DraftModification
                         Face f1 = Einf.FirstFace();
                         Face f2 = Einf.SecondFace();
 
-                        Surface? localS1 = _fMap.FindFromKey(f1).Geometry();
-                        Surface? localS2 = _fMap.FindFromKey(f2).Geometry();
+                        Surface? localS1 = _fMap.GetValue(f1).Geometry();
+                        Surface? localS2 = _fMap.GetValue(f2).Geometry();
                         if (localS1 is null || localS2 is null)
                         {
                             _errStat = DraftErrorStatus.EdgeRecomputation;
@@ -1321,13 +1322,13 @@ public sealed partial class DraftModification
             CurveAdaptor hac = new();
             SurfaceAdaptor has = new();
 
-            for (int ii = 1; ii <= _vMap.Extent(); ii++)
+            for (int ii = 0; ii < _vMap.Count; ii++)
             {
                 CurveAdaptor ac = hac;
                 SurfaceAdaptor AS = has;
 
-                Vertex tvv = ShapeCasts.Vertex(_vMap.FindKey(ii));
-                VertexInfo vinf = _vMap.ChangeFromIndex(ii);
+                Vertex tvv = ShapeCasts.Vertex(_vMap.KeyAt(ii));
+                VertexInfo vinf = _vMap.ValueAt(ii);
                 if (!Choose(_fMap, _eMap, tvv, vinf, ac, AS))
                 {
                     // no concerted edge => alignment of two consecutive edges.
@@ -1338,7 +1339,7 @@ public sealed partial class DraftModification
                     {
                         Edge edg1 = vinf.Edge();
                         // const Draft_EdgeInfo& Einf1 = myEMap(Edg1);
-                        DraftEdgeInfo einf1 = _eMap.ChangeFromKey(edg1);
+                        DraftEdgeInfo einf1 = _eMap.GetValue(edg1);
                         Point3D vtori = Tool.Pnt(tvv);
                         // Einf1.Geometry()->D0(Vinf.Parameter(Edg1), pvt);
                         ProjectPointOnCurve Projector = new(vtori, einf1.Geometry()!); // patch
@@ -1350,7 +1351,7 @@ public sealed partial class DraftModification
                         {
                             Edge edg2 = vinf.Edge();
                             // const Draft_EdgeInfo& Einf2 = myEMap(Edg2);
-                            DraftEdgeInfo einf2 = _eMap.ChangeFromKey(edg2);
+                            DraftEdgeInfo einf2 = _eMap.GetValue(edg2);
                             //	    double f;
                             einf2.Geometry()!.D0(vinf.Parameter(edg2), out Point3D opvt);
 
@@ -1362,8 +1363,8 @@ public sealed partial class DraftModification
                             double param2 = Parameter(einf2.Geometry()!, pvt, out int done2);
                             if (done2 != 0)
                             {
-                                Surface s1 = _fMap.FindFromKey(einf2.FirstFace()).Geometry()!;
-                                Surface s2 = _fMap.FindFromKey(einf2.SecondFace()).Geometry()!;
+                                Surface s1 = _fMap.GetValue(einf2.FirstFace()).Geometry()!;
+                                Surface s2 = _fMap.GetValue(einf2.SecondFace()).Geometry()!;
                                 vinf.ChangeParameter(edg2) =
                                     SmartParameter(einf2, Tool.Tolerance(edg2), pvt, done2, s1, s2);
                             }
@@ -1378,8 +1379,8 @@ public sealed partial class DraftModification
                         double param = Parameter(einf1.Geometry()!, pvt, out int done);
                         if (done != 0)
                         {
-                            Surface s1 = _fMap.FindFromKey(einf1.FirstFace()).Geometry()!;
-                            Surface s2 = _fMap.FindFromKey(einf1.SecondFace()).Geometry()!;
+                            Surface s1 = _fMap.GetValue(einf1.FirstFace()).Geometry()!;
+                            Surface s2 = _fMap.GetValue(einf1.SecondFace()).Geometry()!;
                             vinf.ChangeParameter(edg1) =
                                 SmartParameter(einf1, Tool.Tolerance(edg1), pvt, done, s1, s2);
                         }
@@ -1460,13 +1461,13 @@ public sealed partial class DraftModification
                         Edge Edg = vinf.Edge();
                         double initpar = vinf.Parameter(Edg);
                         // const Draft_EdgeInfo& Einf = myEMap(Edg);
-                        DraftEdgeInfo Einf = _eMap.ChangeFromKey(Edg);
+                        DraftEdgeInfo Einf = _eMap.GetValue(Edg);
                         // Vinf.ChangeParameter(Edg) = Parameter(Einf.Geometry(),pvt);
                         double param = Parameter(Einf.Geometry()!, pvt, out int done);
                         if (done != 0)
                         {
-                            Surface s1 = _fMap.FindFromKey(Einf.FirstFace()).Geometry()!;
-                            Surface s2 = _fMap.FindFromKey(Einf.SecondFace()).Geometry()!;
+                            Surface s1 = _fMap.GetValue(Einf.FirstFace()).Geometry()!;
+                            Surface s2 = _fMap.GetValue(Einf.SecondFace()).Geometry()!;
                             vinf.ChangeParameter(Edg) = SmartParameter(Einf, Tool.Tolerance(Edg), pvt, done, s1, s2);
                         }
                         else
@@ -1488,9 +1489,9 @@ public sealed partial class DraftModification
 
         // small loop of validation/protection
 
-        for (int i = 1; i <= _eMap.Extent(); i++)
+        for (int i = 0; i < _eMap.Count; i++)
         {
-            Edge edg = ShapeCasts.Edge(_eMap.FindKey(i));
+            Edge edg = ShapeCasts.Edge(_eMap.KeyAt(i));
 
             Exploration.Vertices(edg, out Vertex Vf, out Vertex Vl);
             if (edg.Orientation() == Reversed)
@@ -1499,19 +1500,19 @@ public sealed partial class DraftModification
                 Vl.Reverse();
             }
 
-            if (_vMap.Contains(Vf) && _vMap.Contains(Vl))
+            if (_vMap.ContainsKey(Vf) && _vMap.ContainsKey(Vl))
             {
                 // Here, we compare directions of the source edge (from input shape)
                 // and corresponding selected part of the intersection edge.
                 // If these directions are opposite then we reverse intersection edge
                 // and recompute corresponding vertex-parameters.
 
-                double parF = _vMap.ChangeFromKey(Vf).Parameter(edg);
-                double parL = _vMap.ChangeFromKey(Vl).Parameter(edg);
+                double parF = _vMap.GetValue(Vf).Parameter(edg);
+                double parL = _vMap.GetValue(Vl).Parameter(edg);
 
                 if (parL < parF)
                 {
-                    DraftEdgeInfo einf = _eMap.ChangeFromKey(edg);
+                    DraftEdgeInfo einf = _eMap.GetValue(edg);
                     Curve3D sCurve = Tool.Curve(edg, out double aF, out double aL)!;
                     Curve3D? intCurv = einf.Geometry()!;
                     Point3D aPf, aPl;
@@ -1556,12 +1557,12 @@ public sealed partial class DraftModification
                         double par = Parameter(einf.Geometry()!, aPf, out int err);
                         if (err == 0)
                         {
-                            _vMap.ChangeFromKey(Vf).ChangeParameter(edg) = par;
+                            _vMap.GetValue(Vf).ChangeParameter(edg) = par;
                         }
                         par = Parameter(einf.Geometry()!, aPl, out err);
                         if (err == 0)
                         {
-                            _vMap.ChangeFromKey(Vl).ChangeParameter(edg) = par;
+                            _vMap.GetValue(Vl).ChangeParameter(edg) = par;
                         }
                     }
                 }
@@ -1583,7 +1584,7 @@ public sealed partial class DraftModification
                 //	pl = gc->LastParameter();
                 //	pf = gc->FirstParameter();
                 //      }
-                Curve3D theCurve = _eMap.FindFromKey(edg).Geometry()!;
+                Curve3D theCurve = _eMap.GetValue(edg).Geometry()!;
                 if (theCurve.IsClosed)
                 {
                     // pf >= pl
@@ -1610,13 +1611,13 @@ public sealed partial class DraftModification
                     return;
                 }
             }
-            if (_vMap.Contains(Vf))
+            if (_vMap.ContainsKey(Vf))
             {
-                _vMap.ChangeFromKey(Vf).ChangeParameter(edg) = pf;
+                _vMap.GetValue(Vf).ChangeParameter(edg) = pf;
             }
-            if (_vMap.Contains(Vl))
+            if (_vMap.ContainsKey(Vl))
             {
-                _vMap.ChangeFromKey(Vl).ChangeParameter(edg) = pl;
+                _vMap.GetValue(Vl).ChangeParameter(edg) = pl;
             }
         }
     }
@@ -1854,8 +1855,8 @@ public sealed partial class DraftModification
 
     //=================================================================================================
 
-    private static bool Choose(NCollection_IndexedDataMap<Shape, DraftFaceInfo> fMap,
-                               NCollection_IndexedDataMap<Shape, DraftEdgeInfo> eMap,
+    private static bool Choose(IndexedMap<Shape, DraftFaceInfo> fMap,
+                               IndexedMap<Shape, DraftEdgeInfo> eMap,
                                in Vertex vtx,
                                VertexInfo vinf,
                                CurveAdaptor ac,
@@ -1868,7 +1869,7 @@ public sealed partial class DraftModification
         while (vinf.MoreEdge())
         {
             Edge e1 = vinf.Edge();
-            DraftEdgeInfo einf1 = eMap.FindFromKey(e1);
+            DraftEdgeInfo einf1 = eMap.GetValue(e1);
             if (einf1.SecondFace().IsNull)
             {
                 break;
@@ -1890,7 +1891,7 @@ public sealed partial class DraftModification
 
         Edge eref = vinf.Edge();
         // const Draft_EdgeInfo& Einf = theEMap(Eref);
-        DraftEdgeInfo einf = eMap.ChangeFromKey(eref);
+        DraftEdgeInfo einf = eMap.GetValue(eref);
 
         ac.Load(einf.Geometry()!);
 
@@ -1901,8 +1902,8 @@ public sealed partial class DraftModification
         double param = Parameter(c, Tool.Pnt(vtx), out int done);
         if (done != 0)
         {
-            Surface s1 = fMap.FindFromKey(einf.FirstFace()).Geometry()!;
-            Surface s2 = fMap.FindFromKey(einf.SecondFace()).Geometry()!;
+            Surface s1 = fMap.GetValue(einf.FirstFace()).Geometry()!;
+            Surface s2 = fMap.GetValue(einf.SecondFace()).Geometry()!;
             prm = SmartParameter(einf, Tool.Tolerance(eref), Tool.Pnt(vtx), done, s1, s2);
         }
         else
@@ -1919,7 +1920,7 @@ public sealed partial class DraftModification
             if (!edg.IsSame(eref))
             {
                 // const Draft_EdgeInfo& Einfo = theEMap(Edg);
-                DraftEdgeInfo einfo = eMap.ChangeFromKey(edg);
+                DraftEdgeInfo einfo = eMap.GetValue(edg);
                 if (!einfo.SecondFace().IsNull
                     && Tool.Continuity(edg, einfo.FirstFace(), einfo.SecondFace()) <= C0)
                 {
@@ -1929,8 +1930,8 @@ public sealed partial class DraftModification
                     double anewparam = Parameter(c, Tool.Pnt(vtx), out int anewdone);
                     if (anewdone != 0)
                     {
-                        Surface s1 = fMap.FindFromKey(einfo.FirstFace()).Geometry()!;
-                        Surface s2 = fMap.FindFromKey(einfo.SecondFace()).Geometry()!;
+                        Surface s1 = fMap.GetValue(einfo.FirstFace()).Geometry()!;
+                        Surface s2 = fMap.GetValue(einfo.SecondFace()).Geometry()!;
                         prm = SmartParameter(einfo, Tool.Tolerance(edg), Tool.Pnt(vtx), anewdone, s1, s2);
                     }
                     else
@@ -1951,27 +1952,27 @@ public sealed partial class DraftModification
             return false;
         }
 
-        DraftEdgeInfo einf2 = eMap.FindFromKey(vinf.Edge());
+        DraftEdgeInfo einf2 = eMap.GetValue(vinf.Edge());
         if (!einf.SecondFace().IsNull)
         {
             if (einf2.FirstFace().IsSame(einf.FirstFace()) || einf2.FirstFace().IsSame(einf.SecondFace()))
             {
-                AS.Load(fMap.FindFromKey(einf2.SecondFace()).Geometry()!);
+                AS.Load(fMap.GetValue(einf2.SecondFace()).Geometry()!);
             }
             else
             {
-                AS.Load(fMap.FindFromKey(einf2.FirstFace()).Geometry()!);
+                AS.Load(fMap.GetValue(einf2.FirstFace()).Geometry()!);
             }
         }
         else
         {
             if (einf2.FirstFace().IsSame(einf.FirstFace()))
             {
-                AS.Load(fMap.FindFromKey(einf2.SecondFace()).Geometry()!);
+                AS.Load(fMap.GetValue(einf2.SecondFace()).Geometry()!);
             }
             else
             {
-                AS.Load(fMap.FindFromKey(einf2.FirstFace()).Geometry()!);
+                AS.Load(fMap.GetValue(einf2.FirstFace()).Geometry()!);
             }
         }
         return true;

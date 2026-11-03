@@ -150,7 +150,7 @@ public class LegacyWireEdgeSet : BuildShapeSet
         Edge e = ShapeCasts.Edge(earg);
         Vertex v = ShapeCasts.Vertex(varg);
 
-        NCollection_List<Shape> l = _subShapeMap.FindFromKey(v);
+        NCollection_List<Shape> l = _subShapeMap.GetValue(v);
 
         int nclosing = NbClosingShapes(l);
         if (nclosing != 0)

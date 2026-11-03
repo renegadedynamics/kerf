@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Occt;
 using static Kerf.Engine.Exchange.Framework.DataState;
@@ -162,7 +163,7 @@ public abstract class InterfaceModel : Transient
     {
         get
         {
-            return _theentities.Extent();
+            return _theentities.Count;
         }
     }
 
@@ -195,7 +196,7 @@ public abstract class InterfaceModel : Transient
         {
             return 0;
         }
-        int num = _theentities.FindIndex(anentity);
+        int num = _theentities.IndexOf(anentity) + 1;
         if (num > 0)
         {
             return num;
@@ -219,7 +220,7 @@ public abstract class InterfaceModel : Transient
     /// </summary>
     public Transient? Value(int num)
     {
-        return _theentities.FindKey(num);
+        return _theentities[num - 1];
     }
 
     /// <summary>
@@ -646,7 +647,7 @@ public abstract class InterfaceModel : Transient
         {
             return;
         }
-        if (_theentities.FindIndex(anent) != 0)
+        if (_theentities.Contains(anent))
         {
             if (!listall)
             {
@@ -683,7 +684,7 @@ public abstract class InterfaceModel : Transient
         {
             return;
         }
-        if (_theentities.FindIndex(anent) != 0)
+        if (_theentities.Contains(anent))
         {
             if (!listall)
             {
@@ -721,7 +722,7 @@ public abstract class InterfaceModel : Transient
     /// </summary>
     public void ReplaceEntity(int nument, Transient? anent)
     {
-        _theentities.Substitute(nument, anent);
+        _theentities.Substitute(nument - 1, anent);
     }
 
     /// <summary>
@@ -740,7 +741,7 @@ public abstract class InterfaceModel : Transient
         int i; // svv #1
         for (i = 1; i <= nb; i++)
         {
-            ents.SetValue(i, _theentities.FindKey(i));
+            ents.SetValue(i, _theentities[i - 1]);
         }
         //    We will empty the Map, then reload it : in order until after
         //        in reverse order after
@@ -810,19 +811,19 @@ public abstract class InterfaceModel : Transient
         }
         for (i = 1; i < minum; i++)
         {
-            ents.SetValue(i, _theentities.FindKey(i));
+            ents.SetValue(i, _theentities[i - 1]);
         }
         for (i = mxnum + cnt; i <= nb; i++)
         {
-            ents.SetValue(i, _theentities.FindKey(i));
+            ents.SetValue(i, _theentities[i - 1]);
         }
         for (i = minum; i < mxnum; i++)
         {
-            ents.SetValue(i + kount, _theentities.FindKey(i));
+            ents.SetValue(i + kount, _theentities[i - 1]);
         }
         for (i = oldnum; i < oldnum + cnt; i++)
         {
-            ents.SetValue(i + (newnum - oldnum), _theentities.FindKey(i));
+            ents.SetValue(i + (newnum - oldnum), _theentities[i - 1]);
         }
 
         _theentities.Clear();
@@ -942,7 +943,7 @@ public abstract class InterfaceModel : Transient
         int nb = EntityCount;
         for (int i = 1; i <= nb; i++)
         {
-            iter.GetOneItem(_theentities.FindKey(i));
+            iter.GetOneItem(_theentities[i - 1]);
         }
     }
 
@@ -1176,7 +1177,7 @@ public abstract class InterfaceModel : Transient
 
     // Entities by reference, numbered in insertion order (OCCT's map of handles); the reports in OCCT's order of
     // integer maps, which Reports() and Redefineds() follow (decision 784's rule)
-    private readonly NCollection_IndexedMap<Transient> _theentities = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<Transient> _theentities = new(ReferenceEqualityComparer.Instance);
     private readonly NCollection_IntDataMap<Transient> _thereports = new();
     private readonly NCollection_IntDataMap<Transient> _therepch = new();
     private FrameworkCheck? _thecheckstx;

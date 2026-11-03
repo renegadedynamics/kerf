@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Tools;
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Intersection.Tools;
@@ -96,7 +97,7 @@ public class BuilderSolid : BuilderArea
         bool bFound;
         int i, nbE, nbF;
         Orientation orE;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator it = new();
         //
         _shapesToAvoid.Clear();
@@ -122,18 +123,18 @@ public class BuilderSolid : BuilderArea
                     Exploration.MapShapesAndAncestors(f, ShapeType.Edge, ShapeType.Face, mef);
                 }
             }
-            nbE = mef.Extent();
+            nbE = mef.Count;
             //
             // 2. myFacesToAvoid
             for (i = 1; i <= nbE; ++i)
             {
-                Edge e = ShapeCasts.Edge(mef.FindKey(i));
+                Edge e = ShapeCasts.Edge(mef.KeyAt(i - 1));
                 if (Tool.Degenerated(e))
                 {
                     continue;
                 }
                 //
-                NCollection_List<Shape> lf = mef.ChangeFromKey(e);
+                NCollection_List<Shape> lf = mef.GetValue(e);
                 nbF = lf.Extent();
                 if (nbF == 0)
                 {
@@ -248,7 +249,7 @@ public class BuilderSolid : BuilderArea
         // 2. Post Treatment
         BrepBuilder bb = new();
         HashSet<Shape> addedFacesMap = new(EqualityComparer<Shape>.Default);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> efMap = new(ShapeHasher.Instance);
         HashSet<Shape> mp = new(EqualityComparer<Shape>.Default);
         //
         // a. collect all edges that are in loops
@@ -269,10 +270,10 @@ public class BuilderSolid : BuilderArea
         }
         //
         // b. collect all edges that are to avoid
-        nbSh = _shapesToAvoid.Extent();
+        nbSh = _shapesToAvoid.Count;
         for (i = 1; i <= nbSh; ++i)
         {
-            Shape f = _shapesToAvoid[i];
+            Shape f = _shapesToAvoid[i - 1];
             mp.Add(f);
         }
         //
@@ -301,10 +302,10 @@ public class BuilderSolid : BuilderArea
         efMap.Clear();
         addedFacesMap.Clear();
         //
-        nbSh = _shapesToAvoid.Extent();
+        nbSh = _shapesToAvoid.Count;
         for (i = 1; i <= nbSh; ++i)
         {
-            Shape ff = _shapesToAvoid[i];
+            Shape ff = _shapesToAvoid[i - 1];
             Exploration.MapShapesAndAncestors(ff, ShapeType.Edge, ShapeType.Face, efMap);
         }
         //
@@ -314,7 +315,7 @@ public class BuilderSolid : BuilderArea
             {
                 return;
             }
-            Shape ff = _shapesToAvoid[i];
+            Shape ff = _shapesToAvoid[i - 1];
             if (!addedFacesMap.Add(ff))
             {
                 continue;
@@ -335,7 +336,7 @@ public class BuilderSolid : BuilderArea
                 for (; exp.More(); exp.Next())
                 {
                     Edge e = ShapeCasts.Edge(exp.Current());
-                    NCollection_List<Shape> lf = efMap.FindFromKey(e);
+                    NCollection_List<Shape> lf = efMap.GetValue(e);
                     it.Initialize(lf);
                     for (; it.More(); it.Next())
                     {
@@ -360,10 +361,10 @@ public class BuilderSolid : BuilderArea
         // The new solids
         NCollection_List<Shape> newSolids = new();
         // The hole shells which has to be classified relatively new solids
-        NCollection_IndexedMap<Shape> holeShells = new(ShapeHasher.Instance);
+        IndexedSet<Shape> holeShells = new(ShapeHasher.Instance);
         // Map of the faces of the hole shells for quick check of the growths.
         // If the analyzed shell contains any of the hole faces, it is considered as growth.
-        NCollection_IndexedMap<Shape> mhf = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mhf = new(ShapeHasher.Instance);
 
         using var mainScope = new ProgressScope(range, "Building solids", 10);
 
@@ -402,7 +403,7 @@ public class BuilderSolid : BuilderArea
             }
         }
 
-        if (holeShells.IsEmpty())
+        if (holeShells.Count == 0)
         {
             // No holes, stop the analysis
             NCollection_List<Shape>.Iterator itLS0 = new(newSolids);
@@ -422,11 +423,11 @@ public class BuilderSolid : BuilderArea
 
         // Prepare tree with the boxes of the hole shells
         BoxTree bbTree = new();
-        int i, nbH = holeShells.Extent();
+        int i, nbH = holeShells.Count;
         bbTree.SetSize(nbH);
         for (i = 1; i <= nbH; ++i)
         {
-            Shape hShell = holeShells[i];
+            Shape hShell = holeShells[i - 1];
             //
             Box box = new();
             Bounds.Add(hShell, ref box);
@@ -439,7 +440,7 @@ public class BuilderSolid : BuilderArea
         bbTree.Build();
 
         // Find outer growth shell that is most close to each hole shell
-        NCollection_IndexedDataMap<Shape, Shape> holeSolidMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Shape> holeSolidMap = new(ShapeHasher.Instance);
 
         using (var psh = new ProgressScope(mainScope.Next(4), "Adding holes", newSolids.Extent()))
         {
@@ -468,7 +469,7 @@ public class BuilderSolid : BuilderArea
                 for (; itLI.More(); itLI.Next())
                 {
                     int k = itLI.Value();
-                    Shape hole = holeShells[k];
+                    Shape hole = holeShells[k - 1];
                     // Check if it is inside
                     if (!IsInside(hole, solid, _context!))
                     {
@@ -476,10 +477,10 @@ public class BuilderSolid : BuilderArea
                     }
 
                     // Save the relation
-                    int indexWas = holeSolidMap.FindIndex(hole);
+                    int indexWas = holeSolidMap.IndexOf(hole) + 1;
                     if (indexWas > 0)
                     {
-                        ref Shape pSolidWas = ref holeSolidMap.ChangeFromIndex(indexWas);
+                        ref Shape pSolidWas = ref holeSolidMap.ValueAt(indexWas - 1);
                         if (IsInside(solid, pSolidWas, _context!))
                         {
                             pSolidWas = solid;
@@ -494,18 +495,18 @@ public class BuilderSolid : BuilderArea
         }
 
         // Make the back map from solids to holes
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> solidHolesMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> solidHolesMap = new(ShapeHasher.Instance);
 
-        nbH = holeSolidMap.Extent();
+        nbH = holeSolidMap.Count;
         for (i = 1; i <= nbH; ++i)
         {
-            Shape hole = holeSolidMap.FindKey(i);
-            Shape solid = holeSolidMap[i];
+            Shape hole = holeSolidMap.KeyAt(i - 1);
+            Shape solid = holeSolidMap.ValueAt(i - 1);
             //
-            int index = solidHolesMap.FindIndex(solid);
+            int index = solidHolesMap.IndexOf(solid) + 1;
             NCollection_List<Shape> pLHoles = index > 0
-                                                     ? solidHolesMap[index]
-                                                     : solidHolesMap[solidHolesMap.Add(solid, new NCollection_List<Shape>())];
+                                                     ? solidHolesMap.ValueAt(index - 1)
+                                                     : solidHolesMap.ValueAt(solidHolesMap.Add(solid, new NCollection_List<Shape>()));
             pLHoles.Append(hole);
         }
 
@@ -520,7 +521,7 @@ public class BuilderSolid : BuilderArea
                     return;
                 }
                 Solid solid = ShapeCasts.Solid(itLS2.Value());
-                if (solidHolesMap.FindFromKey(solid, out NCollection_List<Shape> pLHoles))
+                if (solidHolesMap.TryGetValue(solid, out NCollection_List<Shape> pLHoles))
                 {
                     // update solid
                     NCollection_List<Shape>.Iterator itLH = new(pLHoles);
@@ -539,11 +540,11 @@ public class BuilderSolid : BuilderArea
         }
 
         // Add holes that outside the solids to myAreas
-        nbH = holeShells.Extent();
+        nbH = holeShells.Count;
         for (i = 1; i <= nbH; ++i)
         {
-            Shape hole = holeShells[i];
-            if (!holeSolidMap.Contains(hole))
+            Shape hole = holeShells[i - 1];
+            if (!holeSolidMap.ContainsKey(hole))
             {
                 Solid solid = new();
                 bb.MakeSolid(ref solid);
@@ -578,7 +579,7 @@ public class BuilderSolid : BuilderArea
         using var mainScope = new ProgressScope(range, "Adding internal shapes", 2);
 
         // Get all faces to classify
-        NCollection_IndexedMap<Shape> mFs = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mFs = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itLS = new(_loopsInternal);
         for (; itLS.More(); itLS.Next())
         {
@@ -621,14 +622,14 @@ public class BuilderSolid : BuilderArea
 
         // Prepare list of faces to classify
         NCollection_List<Shape> lFaces = new();
-        int i, nbF = mFs.Extent();
+        int i, nbF = mFs.Count;
         for (i = 1; i <= nbF; ++i)
         {
-            lFaces.Append(mFs[i]);
+            lFaces.Append(mFs[i - 1]);
         }
 
         // Map of solids with IN faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mslf = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mslf = new(ShapeHasher.Instance);
 
         // Perform classification
         BuilderTools.ClassifyFaces(lFaces,
@@ -644,7 +645,7 @@ public class BuilderSolid : BuilderArea
 
         HashSet<Shape> mfDone = new(ShapeHasher.Instance);
 
-        int nbS = mslf.Extent();
+        int nbS = mslf.Count;
         using (var psLoop = new ProgressScope(mainScope.Next(), null, nbS))
         {
             for (i = 1; i <= nbS; ++i, psLoop.Next())
@@ -653,15 +654,15 @@ public class BuilderSolid : BuilderArea
                 {
                     return;
                 }
-                Shape pSolid = mslf.FindKey(i);
+                Shape pSolid = mslf.KeyAt(i - 1);
 
-                NCollection_List<Shape> lf = mslf[i];
+                NCollection_List<Shape> lf = mslf.ValueAt(i - 1);
                 if (lf.IsEmpty())
                 {
                     continue;
                 }
 
-                NCollection_IndexedMap<Shape> mf = new(ShapeHasher.Instance);
+                IndexedSet<Shape> mf = new(ShapeHasher.Instance);
                 itLS.Initialize(lf);
                 for (; itLS.More(); itLS.Next())
                 {
@@ -684,18 +685,18 @@ public class BuilderSolid : BuilderArea
 
         // Find all unclassified faces and warn the user about them.
         // Do not put such faces into result as they will form not closed solid.
-        NCollection_IndexedMap<Shape> mfUnUsed = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mfUnUsed = new(ShapeHasher.Instance);
 
         for (i = 1; i <= nbF; ++i)
         {
-            Shape f = mFs[i];
+            Shape f = mFs[i - 1];
             if (!mfDone.Contains(f))
             {
                 mfUnUsed.Add(f);
             }
         }
 
-        if (mfUnUsed.Extent() != 0)
+        if (mfUnUsed.Count != 0)
         {
             NCollection_List<Shape> lsi = new();
             MakeInternalShells(mfUnUsed, lsi);
@@ -722,24 +723,24 @@ public class BuilderSolid : BuilderArea
     }
 
     // Makes the internal shells of the faces (OCCT's file-static MakeInternalShells).
-    private static void MakeInternalShells(NCollection_IndexedMap<Shape> mf, NCollection_List<Shape> shells)
+    private static void MakeInternalShells(IndexedSet<Shape> mf, NCollection_List<Shape> shells)
     {
         int i, nbF;
         BrepBuilder bb = new();
         NCollection_List<Shape>.Iterator itF = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
         HashSet<Shape> addedFacesMap = new(ShapeHasher.Instance);
         //
-        nbF = mf.Extent();
+        nbF = mf.Count;
         for (i = 1; i <= nbF; ++i)
         {
-            Shape f = mf[i];
+            Shape f = mf[i - 1];
             Exploration.MapShapesAndAncestors(f, ShapeType.Edge, ShapeType.Face, mef);
         }
         //
         for (i = 1; i <= nbF; ++i)
         {
-            Shape ff = mf[i];
+            Shape ff = mf[i - 1];
             if (!addedFacesMap.Add(ff))
             {
                 continue;
@@ -760,7 +761,7 @@ public class BuilderSolid : BuilderArea
                 for (; edgeExp.More(); edgeExp.Next())
                 {
                     Shape e = edgeExp.Current();
-                    NCollection_List<Shape> lf = mef.FindFromKey(e);
+                    NCollection_List<Shape> lf = mef.GetValue(e);
                     itF.Initialize(lf);
                     for (; itF.More(); itF.Next())
                     {
@@ -808,7 +809,7 @@ public class BuilderSolid : BuilderArea
         }
         else
         {
-            NCollection_IndexedMap<Shape> bounds = new(ShapeHasher.Instance);
+            IndexedSet<Shape> bounds = new(ShapeHasher.Instance);
             Exploration.MapShapes(pS2, ShapeType.Edge, bounds);
             Face f = ShapeCasts.Face(exp.Current());
             state = AlgoTools.ComputeState(f, pS2, global::Kerf.Engine.Foundation.Precision.Confusion(), bounds, context);
@@ -817,9 +818,9 @@ public class BuilderSolid : BuilderArea
     }
 
     // True if the shell holds one of the hole faces (OCCT's file-static IsGrowthShell).
-    private static bool IsGrowthShell(in Shape shell, NCollection_IndexedMap<Shape> mhf)
+    private static bool IsGrowthShell(in Shape shell, IndexedSet<Shape> mhf)
     {
-        if (mhf.Extent() != 0)
+        if (mhf.Count != 0)
         {
             Iterator it = new(shell);
             for (; it.More(); it.Next())

@@ -36,16 +36,16 @@ public static partial class BuilderTools
 {
     /// <summary>Makes the chains of the connected elements from the given connexity map.</summary>
     /// <remarks>OCCT's fence map takes the map's hasher from its type: pass it as <paramref name="hasher"/> (null: the default).</remarks>
-    public static void MakeBlocks<TKey>(NCollection_IndexedDataMap<TKey, NCollection_List<TKey>> mili,
+    public static void MakeBlocks<TKey>(IndexedMap<TKey, NCollection_List<TKey>> mili,
                                         NCollection_List<NCollection_List<TKey>> mBlocks,
                                         IEqualityComparer<TKey>? hasher = null)
         where TKey : notnull
     {
         HashSet<TKey> mFence = new(hasher);
-        int i, nb = mili.Extent();
+        int i, nb = mili.Count;
         for (i = 1; i <= nb; ++i)
         {
-            TKey n = mili.FindKey(i);
+            TKey n = mili.KeyAt(i - 1);
             if (!mFence.Add(n))
                 continue;
             //
@@ -57,7 +57,7 @@ public static partial class BuilderTools
             for (; itLChain.More(); itLChain.Next())
             {
                 TKey n1 = itLChain.Value();
-                NCollection_List<TKey> li = mili.FindFromKey(n1);
+                NCollection_List<TKey> li = mili.GetValue(n1);
                 // Add connected elements into the chain
                 NCollection_List<TKey>.Iterator itLI = new(li);
                 for (; itLI.More(); itLI.Next())
@@ -73,33 +73,33 @@ public static partial class BuilderTools
     }
 
     /// <summary>Fills the map with the connected entities.</summary>
-    public static void FillMap<TKey>(TKey n1, TKey n2, NCollection_IndexedDataMap<TKey, NCollection_List<TKey>> mili)
+    public static void FillMap<TKey>(TKey n1, TKey n2, IndexedMap<TKey, NCollection_List<TKey>> mili)
         where TKey : notnull
     {
-        int index1 = mili.FindIndex(n1);
-        NCollection_List<TKey> pList1 = index1 > 0 ? mili[index1] : mili[mili.Add(n1, new NCollection_List<TKey>())];
+        int index1 = mili.IndexOf(n1) + 1;
+        NCollection_List<TKey> pList1 = index1 > 0 ? mili.ValueAt(index1 - 1) : mili.ValueAt(mili.Add(n1, new NCollection_List<TKey>()));
         pList1.Append(n2);
         //
-        int index2 = mili.FindIndex(n2);
-        NCollection_List<TKey> pList2 = index2 > 0 ? mili[index2] : mili[mili.Add(n2, new NCollection_List<TKey>())];
+        int index2 = mili.IndexOf(n2) + 1;
+        NCollection_List<TKey> pList2 = index2 > 0 ? mili.ValueAt(index2 - 1) : mili.ValueAt(mili.Add(n2, new NCollection_List<TKey>()));
         pList2.Append(n1);
     }
 
     /// <summary>Adds the face to the pave block's list of faces.</summary>
-    public static void FillMap(PaveBlock aPB, int nF, NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> aMPBLI)
+    public static void FillMap(PaveBlock aPB, int nF, IndexedMap<PaveBlock, NCollection_List<int>> aMPBLI)
     {
-        int index = aMPBLI.FindIndex(aPB);
-        NCollection_List<int> pLI = index > 0 ? aMPBLI[index] : aMPBLI[aMPBLI.Add(aPB, new NCollection_List<int>())];
+        int index = aMPBLI.IndexOf(aPB) + 1;
+        NCollection_List<int> pLI = index > 0 ? aMPBLI.ValueAt(index - 1) : aMPBLI.ValueAt(aMPBLI.Add(aPB, new NCollection_List<int>()));
         pLI.Append(nF);
     }
 
     /// <summary>Creates the common blocks from the groups of connected pave blocks of <paramref name="aMPBLPB"/>.</summary>
-    public static void PerformCommonBlocks(NCollection_IndexedDataMap<PaveBlock, NCollection_List<PaveBlock>> aMPBLPB,
+    public static void PerformCommonBlocks(IndexedMap<PaveBlock, NCollection_List<PaveBlock>> aMPBLPB,
                                            DS pDS, IntersectionContext? context = null)
     {
         int nbCB;
         //
-        nbCB = aMPBLPB.Extent();
+        nbCB = aMPBLPB.Count;
         if (nbCB == 0)
         {
             return;
@@ -165,7 +165,7 @@ public static partial class BuilderTools
     }
 
     /// <summary>Creates the common blocks on faces from the pave block → faces map <paramref name="aMPBLI"/>.</summary>
-    public static void PerformCommonBlocks(NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> aMPBLI,
+    public static void PerformCommonBlocks(IndexedMap<PaveBlock, NCollection_List<int>> aMPBLI,
                                            DS pDS, IntersectionContext? context = null)
     {
         int nF, i, nb;
@@ -173,10 +173,10 @@ public static partial class BuilderTools
         PaveBlock pb;
         CommonBlock cb;
         //
-        nb = aMPBLI.Extent();
+        nb = aMPBLI.Count;
         for (i = 1; i <= nb; ++i)
         {
-            pb = aMPBLI.FindKey(i);
+            pb = aMPBLI.KeyAt(i - 1);
             if (pDS.IsCommonBlock(pb))
             {
                 cb = pDS.CommonBlock(pb)!;
@@ -187,7 +187,7 @@ public static partial class BuilderTools
                 cb.AddPaveBlock(pb);
             }
             //
-            NCollection_List<int> li = aMPBLI.FindFromKey(pb);
+            NCollection_List<int> li = aMPBLI.GetValue(pb);
             NCollection_List<int> newFaces = new();
             NCollection_List<int> oldFaces = cb.Faces();
             itLI.Initialize(li);
@@ -407,9 +407,9 @@ public static partial class BuilderTools
         // to find all pairs of connected edges with the same cross product.
 
         // Try to compute the plane in which the edge is located
-        NCollection_IndexedDataMap<Shape, Plane3D> dmEdgePln = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Plane3D> dmEdgePln = new(ShapeHasher.Instance);
         // Compute the tangent direction for the edges for which the plane is not defined
-        NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Direction3D> dmEdgeTgt = new(ShapeHasher.Instance);
         //
         // edges for which the plane is not found
         HashSet<Shape> mEdgesNoUniquePlane = new(ShapeHasher.Instance);
@@ -449,33 +449,33 @@ public static partial class BuilderTools
         HashSet<Shape> meFence = new(ShapeHasher.Instance);
         //
         // look for a planes on the single edges
-        int i, j, nbPlanes = dmEdgePln.Extent(), nbEdges = dmEdgeTgt.Extent();
+        int i, j, nbPlanes = dmEdgePln.Count, nbEdges = dmEdgeTgt.Count;
         for (i = 1; i <= nbPlanes; ++i)
         {
-            Shape ei = dmEdgePln.FindKey(i);
+            Shape ei = dmEdgePln.KeyAt(i - 1);
             if (!meFence.Add(ei))
             {
                 continue;
             }
             //
-            Plane3D plnI = dmEdgePln[i];
+            Plane3D plnI = dmEdgePln.ValueAt(i - 1);
             Direction3D di = plnI.Position().Direction();
             //
             lpFence.Append(di);
             //
-            NCollection_IndexedMap<Shape> mePln = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mePln = new(ShapeHasher.Instance);
             mePln.Add(ei);
             //
-            NCollection_IndexedMap<Shape> mv = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mv = new(ShapeHasher.Instance);
             Exploration.MapShapes(ei, ShapeType.Vertex, mv);
             //
             // look for other edges with the plane parallel to current one
             for (j = i + 1; j <= nbPlanes; ++j)
             {
-                Direction3D dj = dmEdgePln[j].Position().Direction();
+                Direction3D dj = dmEdgePln.ValueAt(j - 1).Position().Direction();
                 if (di.IsParallel(dj, angTol))
                 {
-                    Shape ej = dmEdgePln.FindKey(j);
+                    Shape ej = dmEdgePln.KeyAt(j - 1);
                     mePln.Add(ej);
                     meFence.Add(ej);
                     Exploration.MapShapes(ej, ShapeType.Vertex, mv);
@@ -488,10 +488,10 @@ public static partial class BuilderTools
             //
             for (j = 1; j <= nbEdges; ++j)
             {
-                Direction3D dj = dmEdgeTgt[j];
+                Direction3D dj = dmEdgeTgt.ValueAt(j - 1);
                 if (di.IsNormal(dj, angTol))
                 {
-                    bb.Add(cePln, dmEdgeTgt.FindKey(j));
+                    bb.Add(cePln, dmEdgeTgt.KeyAt(j - 1));
                 }
             }
             //
@@ -538,14 +538,14 @@ public static partial class BuilderTools
         }
         //
         // make connection map from vertices to edges to find the connected pairs
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmve = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmve = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(lEdges, ShapeType.Vertex, ShapeType.Edge, dmve);
         //
         // find planes for connected edges
-        int nbV = dmve.Extent();
+        int nbV = dmve.Count;
         for (i = 1; i <= nbV; ++i)
         {
-            NCollection_List<Shape> lei = dmve[i];
+            NCollection_List<Shape> lei = dmve.ValueAt(i - 1);
             if (lei.Extent() < 2)
             {
                 continue;
@@ -555,7 +555,7 @@ public static partial class BuilderTools
             for (; itLEI1.More(); itLEI1.Next())
             {
                 Shape ei1 = itLEI1.Value();
-                Direction3D di1 = dmEdgeTgt.FindFromKey(ei1);
+                Direction3D di1 = dmEdgeTgt.GetValue(ei1);
                 //
                 NCollection_List<Shape>.Iterator itLEI2 = new(lei);
                 for (; itLEI2.More(); itLEI2.Next())
@@ -566,7 +566,7 @@ public static partial class BuilderTools
                         continue;
                     }
                     //
-                    Direction3D di2 = dmEdgeTgt.FindFromKey(ei2);
+                    Direction3D di2 = dmEdgeTgt.GetValue(ei2);
                     //
                     if (di1.IsParallel(di2, angTol))
                     {
@@ -592,17 +592,17 @@ public static partial class BuilderTools
                     lpFence.Append(dni);
                     //
                     // find all other edges in the plane parallel to current one
-                    NCollection_IndexedMap<Shape> mePln = new(ShapeHasher.Instance);
+                    IndexedSet<Shape> mePln = new(ShapeHasher.Instance);
                     mePln.Add(ei1);
                     mePln.Add(ei2);
                     //
                     // iterate on all other edges to find all edges lying in the plane parallel to current one
                     for (j = 1; j <= nbEdges; ++j)
                     {
-                        Direction3D dj = dmEdgeTgt[j];
+                        Direction3D dj = dmEdgeTgt.ValueAt(j - 1);
                         if (dni.IsNormal(dj, angTol))
                         {
-                            mePln.Add(dmEdgeTgt.FindKey(j));
+                            mePln.Add(dmEdgeTgt.KeyAt(j - 1));
                         }
                     }
                     //
@@ -612,12 +612,12 @@ public static partial class BuilderTools
         } // for (i = 1; i < aNb; ++i) {
         //
         // 4. Find unused edges and make wires from them
-        NCollection_IndexedMap<Shape> meAlone = new(ShapeHasher.Instance), meUsed = new(ShapeHasher.Instance);
+        IndexedSet<Shape> meAlone = new(ShapeHasher.Instance), meUsed = new(ShapeHasher.Instance);
         Exploration.MapShapes(rWires, ShapeType.Edge, meUsed);
         //
         for (i = 1; i <= nbEdges; ++i)
         {
-            Shape e = dmEdgeTgt.FindKey(i);
+            Shape e = dmEdgeTgt.KeyAt(i - 1);
             if (!meUsed.Contains(e))
             {
                 meAlone.Add(e);
@@ -653,9 +653,9 @@ public static partial class BuilderTools
         const double max = 1.0e+8;
         //
         // map to store the tangent vectors for the edges
-        NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Direction3D> dmEdgeTgt = new(ShapeHasher.Instance);
         // maps to store the planes found for the wires
-        NCollection_IndexedDataMap<Shape, Plane3D> dmWirePln = new(ShapeHasher.Instance);
+        IndexedMap<Shape, Plane3D> dmWirePln = new(ShapeHasher.Instance);
         // map to store the tolerance for the wire
         Dictionary<Shape, double> dmWireTol = new(ShapeHasher.Instance);
         // edges for which the plane is not found
@@ -675,16 +675,16 @@ public static partial class BuilderTools
             }
         }
         //
-        int i, j, nb = dmWirePln.Extent();
+        int i, j, nb = dmWirePln.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape wireI = dmWirePln.FindKey(i);
+            Shape wireI = dmWirePln.KeyAt(i - 1);
             if (mFence.Contains(wireI))
             {
                 continue;
             }
             //
-            Plane3D plnI = dmWirePln[i];
+            Plane3D plnI = dmWirePln.ValueAt(i - 1);
             //
             NCollection_List<Shape> lw = new();
             lw.Append(wireI);
@@ -695,14 +695,14 @@ public static partial class BuilderTools
             // Find other wires in the same plane
             for (j = i + 1; j <= nb; ++j)
             {
-                Shape wireJ = dmWirePln.FindKey(j);
+                Shape wireJ = dmWirePln.KeyAt(j - 1);
                 if (mFence.Contains(wireJ))
                 {
                     continue;
                 }
                 //
                 // check if the planes are the same
-                Plane3D plnJ = dmWirePln[j];
+                Plane3D plnJ = dmWirePln.ValueAt(j - 1);
                 // check direction of the planes
                 if (!plnI.Position().Direction().IsParallel(plnJ.Position().Direction(), angTol))
                 {
@@ -768,7 +768,7 @@ public static partial class BuilderTools
         }
         //
         // fix tolerances of the resulting faces
-        NCollection_IndexedMap<Shape> mEmpty = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mEmpty = new(ShapeHasher.Instance);
         AlgoTools.CorrectTolerances(rFaces, mEmpty, 0.05, false);
         AlgoTools.CorrectShapeTolerances(rFaces, mEmpty, false);
         //
@@ -777,18 +777,18 @@ public static partial class BuilderTools
     }
 
     // Makes wires from the separate blocks of the given edges (OCCT's file-static MakeWires).
-    private static void MakeWires(NCollection_IndexedMap<Shape> edges,
+    private static void MakeWires(IndexedSet<Shape> edges,
                                   Compound wires,
                                   bool checkUniquePlane,
-                                  NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt,
+                                  IndexedMap<Shape, Direction3D> dmEdgeTgt,
                                   HashSet<Shape> mEdgesNoUniquePlane)
     {
         Compound ce = new();
         new BrepBuilder().MakeCompound(ref ce);
-        int i, nbE = edges.Extent();
+        int i, nbE = edges.Count;
         for (i = 1; i <= nbE; ++i)
         {
-            new BrepBuilder().Add(ce, edges[i]);
+            new BrepBuilder().Add(ce, edges[i - 1]);
         }
         //
         NCollection_List<Shape> lcbe = new();
@@ -822,10 +822,10 @@ public static partial class BuilderTools
 
     // Finds the tangent for the edge using the map (OCCT's file-static FindEdgeTangent); theTgt is written on success.
     private static bool FindEdgeTangent(in Edge edge,
-                                        NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt,
+                                        IndexedMap<Shape, Direction3D> dmEdgeTgt,
                                         ref Direction3D tgt)
     {
-        int index = dmEdgeTgt.FindIndex(edge);
+        int index = dmEdgeTgt.IndexOf(edge) + 1;
         if (index == 0)
         {
             Vector3D vte = new();
@@ -834,9 +834,9 @@ public static partial class BuilderTools
             {
                 return false;
             }
-            index = dmEdgeTgt.Add(edge, new Direction3D(vte));
+            index = dmEdgeTgt.Add(edge, new Direction3D(vte)) + 1;
         }
-        tgt = dmEdgeTgt[index];
+        tgt = dmEdgeTgt.ValueAt(index - 1);
         return true;
     }
 
@@ -934,7 +934,7 @@ public static partial class BuilderTools
     // Finds the plane in which the wire is located (OCCT's file-static FindPlane); thePlane is written on success.
     private static bool FindPlane(in Shape wire,
                                   ref Plane3D plane,
-                                  NCollection_IndexedDataMap<Shape, Direction3D> dmEdgeTgt,
+                                  IndexedMap<Shape, Direction3D> dmEdgeTgt,
                                   HashSet<Shape> mEdgesNoUniquePlane)
     {
         Explorer expE1 = new(wire, ShapeType.Edge);
@@ -1008,7 +1008,7 @@ public static partial class BuilderTools
     /// <summary>Selects the pairs of vertices whose tolerance spheres (with the fuzzy value) meet.</summary>
     private sealed class BOPAlgo_PairVerticesSelector : PairSelector<NCollection_Vec3<double>>
     {
-        private NCollection_IndexedDataMap<Shape, double>? _vertices;
+        private IndexedMap<Shape, double>? _vertices;
         private double _fuzzyValue;
 
         public BOPAlgo_PairVerticesSelector()
@@ -1018,7 +1018,7 @@ public static partial class BuilderTools
         }
 
         //! Sets the map of vertices with tolerances
-        public void SetMapOfVerticesTolerances(NCollection_IndexedDataMap<Shape, double> vertices) => _vertices = vertices;
+        public void SetMapOfVerticesTolerances(IndexedMap<Shape, double> vertices) => _vertices = vertices;
 
         //! Sets the fuzzy value
         public void SetFuzzyValue(double fuzzyValue) => _fuzzyValue = fuzzyValue;
@@ -1029,20 +1029,20 @@ public static partial class BuilderTools
             if (!RejectElement(id1, id2))
             {
                 int anID1 = _bvhSet1!.Element(id1);
-                Vertex v1 = ShapeCasts.Vertex(_vertices!.FindKey(anID1));
+                Vertex v1 = ShapeCasts.Vertex(_vertices!.KeyAt(anID1 - 1));
                 double tolV1 = Tool.Tolerance(v1);
-                if (tolV1 < _vertices.FindFromIndex(anID1))
+                if (tolV1 < _vertices.ValueAt(anID1 - 1))
                 {
-                    tolV1 = _vertices.FindFromIndex(anID1);
+                    tolV1 = _vertices.ValueAt(anID1 - 1);
                 }
                 Point3D p1 = Tool.Pnt(v1);
 
                 int anID2 = _bvhSet1.Element(id2);
-                Vertex v2 = ShapeCasts.Vertex(_vertices.FindKey(anID2));
+                Vertex v2 = ShapeCasts.Vertex(_vertices.KeyAt(anID2 - 1));
                 double tolV2 = Tool.Tolerance(v2);
-                if (tolV2 < _vertices.FindFromIndex(anID2))
+                if (tolV2 < _vertices.ValueAt(anID2 - 1))
                 {
-                    tolV2 = _vertices.FindFromIndex(anID2);
+                    tolV2 = _vertices.ValueAt(anID2 - 1);
                 }
                 Point3D p2 = Tool.Pnt(v2);
 
@@ -1064,16 +1064,16 @@ public static partial class BuilderTools
     /// Finds the chains of intersecting vertices: the vertices of <paramref name="vertices"/> (with tolerances at
     /// least their values) connected by meeting tolerance spheres (with half the fuzzy value each).
     /// </summary>
-    public static void IntersectVertices(NCollection_IndexedDataMap<Shape, double> vertices,
+    public static void IntersectVertices(IndexedMap<Shape, double> vertices,
                                          double fuzzyValue,
                                          NCollection_List<NCollection_List<Shape>> chains)
     {
-        int nbV = vertices.Extent();
+        int nbV = vertices.Count;
         if (nbV <= 1)
         {
             if (nbV == 1)
             {
-                chains.Append(new NCollection_List<Shape>()).Append(vertices.FindKey(1));
+                chains.Append(new NCollection_List<Shape>()).Append(vertices.KeyAt(0));
             }
             return;
         }
@@ -1087,11 +1087,11 @@ public static partial class BuilderTools
 
         for (int i = 1; i <= nbV; ++i)
         {
-            Vertex v = ShapeCasts.Vertex(vertices.FindKey(i));
+            Vertex v = ShapeCasts.Vertex(vertices.KeyAt(i - 1));
             double tol = Tool.Tolerance(v);
-            if (tol < vertices[i])
+            if (tol < vertices.ValueAt(i - 1))
             {
-                tol = vertices[i];
+                tol = vertices.ValueAt(i - 1);
             }
 
             // Build bnd box for vertex
@@ -1116,7 +1116,7 @@ public static partial class BuilderTools
         int nbPairs = pairs.Size();
 
         // Collect interfering pairs
-        NCollection_IndexedDataMap<int, NCollection_List<int>> mili = new();
+        IndexedMap<int, NCollection_List<int>> mili = new();
 
         for (int iPair = 0; iPair < nbPairs; ++iPair)
         {
@@ -1135,16 +1135,16 @@ public static partial class BuilderTools
 
             for (NCollection_List<int>.Iterator itI = new(li); itI.More(); itI.Next())
             {
-                chain.Append(vertices.FindKey(itI.Value()));
+                chain.Append(vertices.KeyAt(itI.Value() - 1));
             }
         }
 
         // Add not interfered vertices as a chain of 1 element
         for (int i = 1; i <= nbV; ++i)
         {
-            if (!mili.Contains(i))
+            if (!mili.ContainsKey(i))
             {
-                chains.Append(new NCollection_List<Shape>()).Append(vertices.FindKey(i));
+                chains.Append(new NCollection_List<Shape>()).Append(vertices.KeyAt(i - 1));
             }
         }
     }
@@ -1257,12 +1257,12 @@ public static partial class BuilderTools
 
             List<BOPAlgo_ShapeBox> vShapeBox = _vShapeBox!;
 
-            NCollection_IndexedMap<Shape> mse = new(ShapeHasher.Instance), msf = new(ShapeHasher.Instance);
+            IndexedSet<Shape> mse = new(ShapeHasher.Instance), msf = new(ShapeHasher.Instance);
             Exploration.MapShapes(_solid, ShapeType.Edge, mse);
             Exploration.MapShapes(_solid, ShapeType.Face, msf);
 
             // Check if the Solid contains any faces
-            bool bIsEmpty = msf.IsEmpty();
+            bool bIsEmpty = msf.Count == 0;
 
             // Add own internal faces of the solid into aMSF
             NCollection_List<Shape>.Iterator itLS = new(_ownIF);
@@ -1311,7 +1311,7 @@ public static partial class BuilderTools
             }
 
             // Prepare EF map of faces to process for building connexity blocks
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mefp = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> mefp = new(ShapeHasher.Instance);
             if (nbFP > 1)
             {
                 for (k = 0; k < nbFP; ++k)
@@ -1324,7 +1324,7 @@ public static partial class BuilderTools
 
             // Map of Edge-Face connection, necessary for solid classification.
             // It will be filled when first classification is performed.
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mefds = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> mefds = new(ShapeHasher.Instance);
 
             // Fence map to avoid processing of the same faces twice
             HashSet<Shape> mfDone = new(ShapeHasher.Instance);
@@ -1386,7 +1386,7 @@ public static partial class BuilderTools
                     faceToClassify = fp;
                 }
 
-                if (mefds.IsEmpty())
+                if (mefds.Count == 0)
                 {
                     // Fill EF map for Solid
                     Exploration.MapShapesAndAncestors(_solid, ShapeType.Edge, ShapeType.Face, mefds);
@@ -1411,7 +1411,7 @@ public static partial class BuilderTools
 
         //! Prepares Edge-Face connection map of the given shape
         private void MapEdgesAndFaces(in Shape f,
-                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap)
+                                      IndexedMap<Shape, NCollection_List<Shape>> efMap)
         {
             _itF.Initialize(f);
             for (; _itF.More(); _itF.Next())
@@ -1427,10 +1427,10 @@ public static partial class BuilderTools
                 {
                     Shape e = _itW.Value();
 
-                    int index = efMap.FindIndex(e);
+                    int index = efMap.IndexOf(e) + 1;
                     NCollection_List<Shape> pLF = index > 0
-                                                         ? efMap[index]
-                                                         : efMap[efMap.Add(e, new NCollection_List<Shape>())];
+                                                         ? efMap.ValueAt(index - 1)
+                                                         : efMap.ValueAt(efMap.Add(e, new NCollection_List<Shape>()));
                     pLF.Append(f);
                 }
             }
@@ -1438,15 +1438,15 @@ public static partial class BuilderTools
 
         //! Makes the connexity block of faces using the connection map
         private void MakeConnexityBlock(in Face fStart,
-                                        NCollection_IndexedMap<Shape> meAvoid,
-                                        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> efMap,
+                                        IndexedSet<Shape> meAvoid,
+                                        IndexedMap<Shape, NCollection_List<Shape>> efMap,
                                         HashSet<Shape> mfDone,
                                         NCollection_List<Shape> lcb,
                                         ref Face faceToClassify)
         {
             // Add start element
             lcb.Append(fStart);
-            if (efMap.IsEmpty())
+            if (efMap.Count == 0)
             {
                 return;
             }
@@ -1477,7 +1477,7 @@ public static partial class BuilderTools
                             continue;
                         }
 
-                        if (!efMap.FindFromKey(e, out NCollection_List<Shape> pLF))
+                        if (!efMap.TryGetValue(e, out NCollection_List<Shape> pLF))
                         {
                             continue;
                         }
@@ -1506,7 +1506,7 @@ public static partial class BuilderTools
                                      NCollection_List<Shape> solids,
                                      bool runParallel,
                                      IntersectionContext context,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> inParts,
+                                     IndexedMap<Shape, NCollection_List<Shape>> inParts,
                                      Dictionary<Shape, Box>? shapeBoxMap = null,
                                      Dictionary<Shape, NCollection_List<Shape>>? solidsIF = null,
                                      ProgressRange range = default)
@@ -1641,7 +1641,7 @@ public static partial class BuilderTools
         }
 
         // Map the solids to avoid classification of the own shapes of the solids
-        NCollection_IndexedMap<Shape> msSolids = new(ShapeHasher.Instance);
+        IndexedSet<Shape> msSolids = new(ShapeHasher.Instance);
         NCollection_List<Shape>.Iterator itLS = new(solids);
         for (; itLS.More(); itLS.Next())
         {

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -51,7 +52,7 @@ public class ShapeSet
     /// </summary>
     public const int MaxShapeNesting = 1000;
 
-    private readonly NCollection_IndexedMap<Shape> _shapes = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _shapes = new(ShapeHasher.Instance);
     private readonly LocationSet _locations = new();
     private int _formatNb;
 
@@ -108,7 +109,7 @@ public class ShapeSet
         _locations.Add(s.Location());
         Shape s2 = s;
         s2.Location(new Placement());
-        int index = _shapes.FindIndex(s2);
+        int index = _shapes.IndexOf(s2) + 1;
         if (index == 0)
         {
             AddGeometry(s2);
@@ -118,17 +119,17 @@ public class ShapeSet
                 Add(its.Value());
             }
 
-            index = _shapes.Add(s2);
+            index = _shapes.Add(s2) + 1;
         }
 
         return index;
     }
 
     /// <summary>The shape of index I.</summary>
-    public Shape Shape(int i) => _shapes[i];
+    public Shape Shape(int i) => _shapes[i - 1];
 
     /// <summary>The index of the shape (its TShape and location), 0 if it isn't in the set.</summary>
-    public int Index(in Shape s) => _shapes.FindIndex(s);
+    public int Index(in Shape s) => _shapes.IndexOf(s) + 1;
 
     /// <summary>The locations of the set.</summary>
     public LocationSet Locations() => _locations;
@@ -206,8 +207,8 @@ public class ShapeSet
     private int[] CountTypes()
     {
         int[] counts = new int[9];
-        int nbSHAPE = _shapes.Extent();
-        for (int i = 1; i <= nbSHAPE; i++)
+        int nbSHAPE = _shapes.Count;
+        for (int i = 0; i < nbSHAPE; i++)
         {
             ShapeType type = _shapes[i].ShapeType();
             if (type != global::Kerf.Topology.ShapeType.Shape)
@@ -263,7 +264,7 @@ public class ShapeSet
         // dump the shapes
         //-----------------------------------------
 
-        int i, nbShapes = _shapes.Extent();
+        int i, nbShapes = _shapes.Count;
 
         os.Write("\nDump of ");
         Out(os, nbShapes);
@@ -275,7 +276,7 @@ public class ShapeSet
 
         for (i = nbShapes; i >= 1; i--)
         {
-            Shape s = _shapes[i];
+            Shape s = _shapes[i - 1];
             os.Write("TShape # ");
             Out(os, nbShapes - i + 1);
             os.Write(" : ");
@@ -302,7 +303,7 @@ public class ShapeSet
             {
                 Shape sub = its.Value();
                 PrintOrientation(sub.Orientation(), os, true);
-                Out(os, nbShapes - _shapes.FindIndex(sub.Located(new Placement())) + 1);
+                Out(os, nbShapes - (_shapes.IndexOf(sub.Located(new Placement())) + 1) + 1);
                 if (!sub.Location().IsIdentity)
                 {
                     os.Write("(L");
@@ -381,7 +382,7 @@ public class ShapeSet
         // write the shapes
         //-----------------------------------------
 
-        int i, nbShapes = _shapes.Extent();
+        int i, nbShapes = _shapes.Count;
 
         os.Write("\nTShapes ");
         Out(os, nbShapes);
@@ -392,7 +393,7 @@ public class ShapeSet
         {
             for (i = 1; i <= nbShapes && ps1.More(); i++, ps1.Next())
             {
-                Shape s = _shapes[i];
+                Shape s = _shapes[i - 1];
 
                 // Type
                 PrintShapeEnum(s.ShapeType(), os, true);
@@ -511,7 +512,7 @@ public class ShapeSet
         finally
         {
             // design 4.2: the shapes freeze once the whole set is read; on a failure too, since the set hands them out
-            for (int i = 1; i <= _shapes.Extent(); i++)
+            for (int i = 0; i < _shapes.Count; i++)
             {
                 _shapes[i].TShape()!.FreezeGraph();
             }
@@ -650,7 +651,7 @@ public class ShapeSet
                 {
                     AddShapes(ref s, ss);
                     // OCCT.NET: untrusted input
-                    depth = Math.Max(depth, depths[_shapes.FindIndex(ss.Located(new Placement()))] + 1);
+                    depth = Math.Max(depth, depths[_shapes.IndexOf(ss.Located(new Placement())) + 1] + 1);
                 }
             } while (!ss.IsNull);
 
@@ -700,7 +701,7 @@ public class ShapeSet
         }
 
         os.Write("Shape : ");
-        Out(os, _shapes.FindIndex(s.Located(new Placement())));
+        Out(os, _shapes.IndexOf(s.Located(new Placement())) + 1);
         os.Write(", ");
         PrintOrientation(s.Orientation(), os, false);
         if (!s.Location().IsIdentity)
@@ -725,7 +726,7 @@ public class ShapeSet
         else
         {
             PrintOrientation(s.Orientation(), os, true);
-            Out(os, _shapes.Extent() - _shapes.FindIndex(s.Located(new Placement())) + 1);
+            Out(os, _shapes.Count - (_shapes.IndexOf(s.Located(new Placement())) + 1) + 1);
             os.Write(" ");
             Out(os, _locations.Index(s.Location()));
             os.Write(" ");
@@ -736,7 +737,7 @@ public class ShapeSet
     /// <exception cref="StreamFormatErrorException">The reference isn't to a shape of the set.</exception>
     public void Read(out Shape s, TextReader IS)
     {
-        Read(out s, IS, _shapes.Extent());
+        Read(out s, IS, _shapes.Count);
     }
 
     /// <summary>
@@ -763,13 +764,13 @@ public class ShapeSet
         {
             long index = (long)nbshapes - StreamUtilities.Atoi(buffer.AsSpan(1)) + 1;
             // OCCT.NET: untrusted input: OCCT reads outside its map
-            if (index < 1 || index > _shapes.Extent())
+            if (index < 1 || index > _shapes.Count)
             {
                 throw new StreamFormatErrorException("TopTools_ShapeSet::Read: no shape "
                                                     + StreamUtilities.CString(buffer));
             }
 
-            s = _shapes[(int)index];
+            s = _shapes[(int)index - 1];
             switch (buffer[0])
             {
                 case '+':
@@ -848,5 +849,5 @@ public class ShapeSet
     }
 
     /// <summary>The number of shapes in the set.</summary>
-    public int ShapeCount => _shapes.Extent();
+    public int ShapeCount => _shapes.Count;
 }

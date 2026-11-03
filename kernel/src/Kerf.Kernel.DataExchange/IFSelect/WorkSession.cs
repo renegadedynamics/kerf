@@ -5,6 +5,7 @@
 
 #nullable disable warnings
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Framework.Transfer;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing.Tools;
@@ -909,7 +910,7 @@ public class WorkSession : Transient
     /// </summary>
     public int MaxIdent()
     {
-        return _theitems.Extent();
+        return _theitems.Count;
     }
 
     /// <summary>
@@ -922,11 +923,11 @@ public class WorkSession : Transient
         {
             return res;
         }
-        if (_theitems.FindFromIndex(id) is null)
+        if (_theitems.ValueAt(id - 1) is null)
         {
             return res;
         }
-        return _theitems.FindKey(id);
+        return _theitems.KeyAt(id - 1);
     }
 
     /// <summary>
@@ -938,12 +939,12 @@ public class WorkSession : Transient
         {
             return 0;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return 0;
         }
-        if (_theitems.FindFromIndex(id) is null)
+        if (_theitems.ValueAt(id - 1) is null)
         {
             return 0;
         }
@@ -1017,12 +1018,12 @@ public class WorkSession : Transient
         {
             return false;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return false;
         }
-        Transient att = _theitems.FindFromIndex(id);
+        Transient att = _theitems.ValueAt(id - 1);
         if (att is null)
         {
             return false;
@@ -1041,12 +1042,12 @@ public class WorkSession : Transient
         {
             return res;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return res; // Null
         }
-        Transient att = _theitems.FindFromIndex(id);
+        Transient att = _theitems.ValueAt(id - 1);
         return (att as TCollection_HAsciiString);
     }
 
@@ -1061,10 +1062,10 @@ public class WorkSession : Transient
         {
             return 0;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id > 0)
         {
-            ref Transient att = ref _theitems.ChangeFromIndex(id);
+            ref Transient att = ref _theitems.ValueAt(id - 1);
             if (att is null)
             {
                 att = item;
@@ -1072,7 +1073,7 @@ public class WorkSession : Transient
         }
         else
         {
-            id = _theitems.Add(item, item);
+            id = _theitems.Add(item, item) + 1;
         }
 
         //  Special cases : Dispatch,Modifier
@@ -1106,10 +1107,10 @@ public class WorkSession : Transient
             _thenames[name] = item;
         }
 
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id > 0)
         {
-            ref Transient att = ref _theitems.ChangeFromIndex(id);
+            ref Transient att = ref _theitems.ValueAt(id - 1);
             if (att is null)
             {
                 att = item;
@@ -1122,11 +1123,11 @@ public class WorkSession : Transient
         }
         else if (CStringChar(name, 0) != '\0')
         {
-            id = _theitems.Add(item, new TCollection_HAsciiString(name));
+            id = _theitems.Add(item, new TCollection_HAsciiString(name)) + 1;
         }
         else
         {
-            id = _theitems.Add(item, item);
+            id = _theitems.Add(item, item) + 1;
         }
 
         //  Special cases : Dispatch,Modifier
@@ -1218,12 +1219,12 @@ public class WorkSession : Transient
         {
             return false;
         }
-        int id = _theitems.FindIndex(item);
+        int id = _theitems.IndexOf(item) + 1;
         if (id == 0)
         {
             return false;
         }
-        ref Transient att = ref _theitems.ChangeFromIndex(id);
+        ref Transient att = ref _theitems.ValueAt(id - 1);
         if (att is null)
         {
             return false; // already canceled
@@ -1354,10 +1355,10 @@ public class WorkSession : Transient
     public NCollection_HSequence<int>? ItemIdents(Type? type)
     {
         NCollection_HSequence<int> list = new NCollection_HSequence<int>();
-        int nb = _theitems.Extent();
+        int nb = _theitems.Count;
         for (int i = 1; i <= nb; i++)
         {
-            if (type is not null && _theitems.FindKey(i).IsKind(type))
+            if (type is not null && _theitems.KeyAt(i - 1).IsKind(type))
             {
                 list.Append(i);
             }
@@ -3963,7 +3964,7 @@ public class WorkSession : Transient
 
     protected HGraph? _thegraph;
     protected CheckIterator _thecheckrun = new CheckIterator();
-    protected NCollection_IndexedDataMap<Transient, Transient> _theitems = new NCollection_IndexedDataMap<Transient, Transient>();
+    protected IndexedMap<Transient, Transient> _theitems = new IndexedMap<Transient, Transient>();
     protected Dictionary<string, Transient> _thenames = new Dictionary<string, Transient>();
     private bool _theerrhand;
     private bool _errHand; // OCCT's file static "errhand", the session's own here

@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 2012-2014 OPEN CASCADE SAS; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Construction.Values;
@@ -274,8 +275,8 @@ public class MiddlePath : MakeShape
             _endWireEdges.Add(itw.Value());
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> eFmap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_initialShape, ShapeType.Vertex, ShapeType.Edge, vEmap);
         Exploration.MapShapesAndAncestors(_initialShape, ShapeType.Edge, ShapeType.Face, eFmap);
 
@@ -288,7 +289,7 @@ public class MiddlePath : MakeShape
         for (i = 1; i <= startVertices.Length(); i++)
         {
             NCollection_Sequence<Shape> edges = new();
-            NCollection_List<Shape> le = vEmap.FindFromKey(startVertices[i]);
+            NCollection_List<Shape> le = vEmap.GetValue(startVertices[i]);
             for (itl.Initialize(le); itl.More(); itl.Next())
             {
                 edge = ShapeCasts.Edge(itl.Value());
@@ -342,7 +343,7 @@ public class MiddlePath : MakeShape
                 {
                     continue;
                 }
-                NCollection_List<Shape> le = vEmap.FindFromKey(theVertex);
+                NCollection_List<Shape> le = vEmap.GetValue(theVertex);
                 HashSet<Shape> nextEdgeCandidates = new(ShapeHasher.Instance);
                 for (itl.Initialize(le); itl.More(); itl.Next())
                 {
@@ -472,12 +473,12 @@ public class MiddlePath : MakeShape
                     edgeSeq[j - 1] = e12; // => proper edge is the edge of previous section between them
                     continue;
                 }
-                NCollection_List<Shape> lf = eFmap.FindFromKey(e1orE2);
+                NCollection_List<Shape> lf = eFmap.GetValue(e1orE2);
                 Face theFace = new();
                 for (itl.Initialize(lf); itl.More(); itl.Next())
                 {
                     Shape face = itl.Value();
-                    NCollection_List<Shape> lf2 = eFmap.FindFromKey(e12);
+                    NCollection_List<Shape> lf2 = eFmap.GetValue(e12);
                     NCollection_List<Shape>.Iterator itl2 = new(lf2);
                     for (; itl2.More(); itl2.Next())
                     {
@@ -498,8 +499,8 @@ public class MiddlePath : MakeShape
                 Vertex curVertex = (e2.IsNull) ? ShapeCasts.Vertex(path2[i]) : Exploration.LastVertex(e2, true);
 
                 Edge properEdge = new();
-                NCollection_List<Shape> le = vEmap.FindFromKey(prevVertex);
-                NCollection_IndexedMap<Shape> edgesOfTheFace = new(ShapeHasher.Instance);
+                NCollection_List<Shape> le = vEmap.GetValue(prevVertex);
+                IndexedSet<Shape> edgesOfTheFace = new(ShapeHasher.Instance);
                 Exploration.MapShapes(theFace, ShapeType.Edge, edgesOfTheFace);
                 for (itl.Initialize(le); itl.More(); itl.Next())
                 {

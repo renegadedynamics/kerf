@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Filling;
 using Kerf.Engine.Foundation;
@@ -61,9 +62,9 @@ public class BRepFill_OffsetWireTests
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     // BRepFill_OffsetWire offsets to the left of the face's wires: inside (MakeOffset reverses them for outside)
@@ -207,7 +208,7 @@ public class BRepFill_OffsetWireTests
         MakeWireOffset anOffset = new(aFace);
         anOffset.Perform(1.0);
         Shape aResult = anOffset.Shape();
-        NCollection_IndexedMap<Shape> aResultEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aResultEdges = new(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, ShapeType.Edge, aResultEdges);
         for (Explorer anExp = new(aFace, ShapeType.Edge); anExp.More(); anExp.Next())
         {

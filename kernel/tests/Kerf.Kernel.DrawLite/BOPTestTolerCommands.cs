@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Library;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -70,12 +71,12 @@ internal static class BOPTestTolerCommands
 
     private static void ReduceEdgeTolerance(in Shape aS, double aTolTreshold)
     {
-        NCollection_IndexedMap<Shape> aEMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aEMap = new(ShapeHasher.Instance);
         //
         Exploration.MapShapes(aS, ShapeType.Edge, aEMap);
         //
-        int aNbE = aEMap.Extent();
-        for (int i = 1; i <= aNbE; i++)
+        int aNbE = aEMap.Count;
+        for (int i = 0; i < aNbE; i++)
         {
             Edge aE = ShapeCasts.Edge(aEMap[i]);
 
@@ -86,11 +87,11 @@ internal static class BOPTestTolerCommands
     private static void ReduceFaceTolerance(in Shape aS)
     {
         double aTolEMin = 1.0e-7;
-        NCollection_IndexedMap<Shape> aFMap = new(ShapeHasher.Instance);
-        NCollection_IndexedMap<Shape> aEMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aFMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aEMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(aS, ShapeType.Face, aFMap);
-        int aNbF = aFMap.Extent();
-        for (int i = 1; i <= aNbF; i++)
+        int aNbF = aFMap.Count;
+        for (int i = 0; i < aNbF; i++)
         {
             double aTolx = 1.0e6;
             Face aF = ShapeCasts.Face(aFMap[i]);
@@ -98,8 +99,8 @@ internal static class BOPTestTolerCommands
             // OCCT: the edge map isn't cleared between faces, so a face's tolerance is the smallest of the edges of
             // this face and of every face before it
             Exploration.MapShapes(aF, ShapeType.Edge, aEMap);
-            int aNbE = aEMap.Extent();
-            for (int j = 1; j <= aNbE; ++j)
+            int aNbE = aEMap.Count;
+            for (int j = 0; j < aNbE; ++j)
             {
                 Edge aE = ShapeCasts.Edge(aEMap[j]);
                 double aTolE = Tool.Tolerance(aE);
@@ -115,18 +116,18 @@ internal static class BOPTestTolerCommands
 
     private static void ReduceVertexTolerance(in Shape aS)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVEMap = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVFMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aVEMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aVFMap = new(ShapeHasher.Instance);
 
         Exploration.MapShapesAndUniqueAncestors(aS, ShapeType.Vertex, ShapeType.Edge, aVEMap);
         Exploration.MapShapesAndUniqueAncestors(aS, ShapeType.Vertex, ShapeType.Face, aVFMap);
 
-        int aNbV = aVEMap.Extent();
-        for (int i = 1; i <= aNbV; i++)
+        int aNbV = aVEMap.Count;
+        for (int i = 0; i < aNbV; i++)
         {
-            Vertex aV = ShapeCasts.Vertex(aVEMap.FindKey(i));
-            NCollection_List<Shape> aLE = aVEMap[i];
-            NCollection_List<Shape> aLF = aVFMap.FindFromKey(aV);
+            Vertex aV = ShapeCasts.Vertex(aVEMap.KeyAt(i));
+            NCollection_List<Shape> aLE = aVEMap.ValueAt(i);
+            NCollection_List<Shape> aLF = aVFMap.GetValue(aV);
 
             ProcessVertex(aV, aLE, aLF);
         }
@@ -361,15 +362,15 @@ internal static class BOPTestTolerCommands
 
     private static void PreparePCurves(in Shape aShape, DrawResult di)
     {
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aEFMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aEFMap = new(ShapeHasher.Instance);
         BrepBuilder aBB = new();
         //
         Exploration.MapShapesAndAncestors(aShape, ShapeType.Edge, ShapeType.Face, aEFMap);
         //
-        int aNbE = aEFMap.Extent();
-        for (int i = 1; i <= aNbE; ++i)
+        int aNbE = aEFMap.Count;
+        for (int i = 0; i < aNbE; ++i)
         {
-            Edge aE = ShapeCasts.Edge(aEFMap.FindKey(i));
+            Edge aE = ShapeCasts.Edge(aEFMap.KeyAt(i));
             //
             if (Tool.Degenerated(aE))
             {
@@ -383,7 +384,7 @@ internal static class BOPTestTolerCommands
             }
             double aTolE = Tool.Tolerance(aE);
             //
-            NCollection_List<Shape> aLF = aEFMap[i];
+            NCollection_List<Shape> aLF = aEFMap.ValueAt(i);
             foreach (Shape aLFi in aLF)
             {
                 Face aF = ShapeCasts.Face(aLFi);

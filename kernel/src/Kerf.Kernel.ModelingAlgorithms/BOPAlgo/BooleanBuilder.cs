@@ -5,6 +5,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
@@ -264,10 +265,10 @@ public partial class BooleanBuilder : BuilderShape
         // will be considered as OUT.
 
         // Prepare the maps of splits of solids faces with orientations (OCCT's default hasher: orientation counts)
-        NCollection_IndexedMap<Shape> mObjFacesOri = new(EqualityComparer<Shape>.Default),
+        IndexedSet<Shape> mObjFacesOri = new(EqualityComparer<Shape>.Default),
                                              mToolFacesOri = new(EqualityComparer<Shape>.Default);
         // Prepare the maps of splits of solids faces
-        NCollection_IndexedMap<Shape> mObjFaces = new(ShapeHasher.Instance),
+        IndexedSet<Shape> mObjFaces = new(ShapeHasher.Instance),
                                              mToolFaces = new(ShapeHasher.Instance);
         // Copy the list of IN faces of the solids into map
         HashSet<Shape> inObjects = new(ShapeHasher.Instance),
@@ -276,8 +277,8 @@ public partial class BooleanBuilder : BuilderShape
         for (int i = 0; i < 2; ++i)
         {
             NCollection_List<Shape> list = i == 0 ? objects : tools;
-            NCollection_IndexedMap<Shape> mapOri = i == 0 ? mObjFacesOri : mToolFacesOri;
-            NCollection_IndexedMap<Shape> map = i == 0 ? mObjFaces : mToolFaces;
+            IndexedSet<Shape> mapOri = i == 0 ? mObjFacesOri : mToolFacesOri;
+            IndexedSet<Shape> map = i == 0 ? mObjFaces : mToolFaces;
             NCollection_List<Shape>.Iterator itLS = new(list);
             for (; itLS.More(); itLS.Next())
             {
@@ -347,7 +348,7 @@ public partial class BooleanBuilder : BuilderShape
         // Choose which SD faces are needed to be taken - equally or differently oriented faces
         bool isSameOriNeeded = objState == toolsState;
         // Resulting faces
-        NCollection_IndexedMap<Shape> mResFacesOri = new(EqualityComparer<Shape>.Default);
+        IndexedSet<Shape> mResFacesOri = new(EqualityComparer<Shape>.Default);
         HashSet<Shape> mResFacesFence = new(ShapeHasher.Instance);
         // Fence map
         HashSet<Shape> mFence = new(ShapeHasher.Instance),
@@ -357,14 +358,14 @@ public partial class BooleanBuilder : BuilderShape
 
         for (int i = 0; i < 2; ++i)
         {
-            NCollection_IndexedMap<Shape> map = i == 0 ? mObjFacesOri : mToolFacesOri;
-            NCollection_IndexedMap<Shape> oppositeMap = i == 0 ? mToolFaces : mObjFaces;
+            IndexedSet<Shape> map = i == 0 ? mObjFacesOri : mToolFacesOri;
+            IndexedSet<Shape> oppositeMap = i == 0 ? mToolFaces : mObjFaces;
             HashSet<Shape> inMap = i == 0 ? inObjects : inTools;
             HashSet<Shape> oppositeINMap = i == 0 ? inTools : inObjects;
             bool bTakeIN = i == 0 ? isObjectsIN : isToolsIN;
 
-            int nbF = map.Extent();
-            for (int j = 1; j <= nbF; ++j)
+            int nbF = map.Count;
+            for (int j = 0; j < nbF; ++j)
             {
                 Shape fIm = map[j];
 
@@ -443,8 +444,8 @@ public partial class BooleanBuilder : BuilderShape
 
         // Remove the faces which has to be avoided
         NCollection_List<Shape> resFaces = new();
-        int nbRF = mResFacesOri.Extent();
-        for (int i = 1; i <= nbRF; ++i)
+        int nbRF = mResFacesOri.Count;
+        for (int i = 0; i < nbRF; ++i)
         {
             Shape rf = mResFacesOri[i];
             if (!mfToAvoid.Contains(rf))
@@ -963,7 +964,7 @@ public partial class BooleanBuilder : BuilderShape
     {
         int i, nbS;
         ShapeType type;
-        NCollection_IndexedMap<Shape> ma = new(ShapeHasher.Instance);
+        IndexedSet<Shape> ma = new(ShapeHasher.Instance);
         if (_paveFiller!.NonDestructive())
         {
             // MapToAvoid

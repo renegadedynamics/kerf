@@ -35,7 +35,7 @@ public class RemoveInternalWires : UpgradeTool
     private Shape _result;
     private double _minArea;
     private bool _removeFacesMode;
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _edgeFaces =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _edgeFaces =
         new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, NCollection_List<Shape>> _removeEdges =
         new(ShapeHasher.Instance);
@@ -111,7 +111,7 @@ public class RemoveInternalWires : UpgradeTool
             return false;
         }
         Clear();
-        var wireFaces = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var wireFaces = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         int i = 1, nb = seqShapes.Length();
         for (; i <= nb; i++)
         {
@@ -122,13 +122,13 @@ public class RemoveInternalWires : UpgradeTool
             }
             else if (s.ShapeType() == ShapeType.Wire)
             {
-                if (wireFaces.Extent() == 0)
+                if (wireFaces.Count == 0)
                 {
                     Exploration.MapShapesAndAncestors(_shape, ShapeType.Wire, ShapeType.Face, wireFaces);
                 }
-                if (wireFaces.Contains(s))
+                if (wireFaces.ContainsKey(s))
                 {
-                    NCollection_List<Shape> alfaces = wireFaces.FindFromKey(s);
+                    NCollection_List<Shape> alfaces = wireFaces.GetValue(s);
                     foreach (Shape face in alfaces)
                     {
                         RemoveSmallWire(face, s);
@@ -240,17 +240,17 @@ public class RemoveInternalWires : UpgradeTool
         {
             Shape wire = _removeWires.Value(i);
             var ite = new Iterator(wire, false);
-            var faceCandidates = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var faceCandidates = new IndexedSet<Shape>(ShapeHasher.Instance);
             // collecting all faces containing edges from removed wire
             for (; ite.More(); ite.Next())
             {
                 Shape edge = ite.Value();
-                if (!_edgeFaces.Contains(edge))
+                if (!_edgeFaces.ContainsKey(edge))
                 {
                     _status |= global::Kerf.Engine.Healing.Extend.ShapeExtend.EncodeStatus(ExtendStatus.FAIL2);
                     continue;
                 }
-                NCollection_List<Shape> lface1 = _edgeFaces.FindFromKey(edge);
+                NCollection_List<Shape> lface1 = _edgeFaces.GetValue(edge);
                 NCollection_List<Shape> lface2 = _removeEdges.GetValue(edge);
                 // OCCT's second iterator is not reset for each face of the first list
                 var aliter2 = new NCollection_List<Shape>.Iterator(lface2);
@@ -291,9 +291,9 @@ public class RemoveInternalWires : UpgradeTool
             // in the case of a few faces based on the same conic surface
             // the edges belogining these faces.
             int k = 1;
-            for (; k <= faceCandidates.Extent(); k++)
+            for (; k <= faceCandidates.Count; k++)
             {
-                Shape f = faceCandidates.FindKey(k);
+                Shape f = faceCandidates[k - 1];
                 Wire outW = ShapeAnalysisAnalysis.OuterWire(ShapeCasts.Face(f));
                 var asewd = new ExtendWireData(outW);
                 int n = 1, nbE = asewd.EdgeCount;
@@ -307,7 +307,7 @@ public class RemoveInternalWires : UpgradeTool
                     Edge e = asewd.Edge(n);
                     if (!_removeEdges.ContainsKey(e))
                     {
-                        NCollection_List<Shape> lface3 = _edgeFaces.FindFromKey(e);
+                        NCollection_List<Shape> lface3 = _edgeFaces.GetValue(e);
                         foreach (Shape face3 in lface3)
                         {
                             Shape f2 = Context()!.InternalApply(face3);

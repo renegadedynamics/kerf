@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -146,13 +147,13 @@ public class BRepCheckAnalyzerTests
     /// <summary>Every status of every sub-shape (by MapShapes index), on its own and in each context, as text.</summary>
     private static string Dump(Analyzer theA, in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         var aText = new StringBuilder();
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 1; i <= aMap.Count; i++)
         {
-            ResultCheck? aR = theA.Result(aMap[i]);
-            aText.Append($"{i} {aMap[i].ShapeType()} valid={theA.IsValid(aMap[i])}");
+            ResultCheck? aR = theA.Result(aMap[i - 1]);
+            aText.Append($"{i} {aMap[i - 1].ShapeType()} valid={theA.IsValid(aMap[i - 1])}");
             if (aR is null)
             {
                 aText.AppendLine();
@@ -163,7 +164,7 @@ public class BRepCheckAnalyzerTests
             var aContexts = new SortedDictionary<int, string>();
             for (aR.InitContextIterator(); aR.MoreShapeInContext(); aR.NextShapeInContext())
             {
-                aContexts[aMap.FindIndex(aR.ContextualShape())] = string.Join(",", L(aR.StatusOnShape()));
+                aContexts[aMap.IndexOf(aR.ContextualShape()) + 1] = string.Join(",", L(aR.StatusOnShape()));
             }
 
             foreach (KeyValuePair<int, string> aC in aContexts)

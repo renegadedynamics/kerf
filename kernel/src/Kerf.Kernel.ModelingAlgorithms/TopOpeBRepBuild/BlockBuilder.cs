@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 public sealed class BlockBuilder
 {
     private readonly Dictionary<int, int> _orientedShapeMapIsValid = new();
-    private readonly NCollection_IndexedMap<Shape> _orientedShapeMap = new(EqualityComparer<Shape>.Default);
+    private readonly IndexedSet<Shape> _orientedShapeMap = new(EqualityComparer<Shape>.Default);
     private readonly NCollection_Sequence<int> _blocks = new();
     private int _blockIndex;
 #pragma warning disable CS0414 // OCCT sets the flag and never reads it
@@ -73,7 +73,7 @@ public sealed class BlockBuilder
         for (ss.InitStartElements(); ss.MoreStartElements(); ss.NextStartElement())
         {
             Shape e = ss.StartElement();
-            mextent = _orientedShapeMap.Extent();
+            mextent = _orientedShapeMap.Count;
             eindex = AddElement(e);
 
             // E = current element of the element set SS
@@ -92,14 +92,14 @@ public sealed class BlockBuilder
                 //    - compute neighbours of E : N(E)
                 //    - add each element N of N(E) to M
 
-                mextent = _orientedShapeMap.Extent();
+                mextent = _orientedShapeMap.Count;
                 bool searchneighbours = eindex <= mextent;
                 while (searchneighbours)
                 {
                     // E = element of M on which neighbours must be searched
                     // first step : Eindex = index of starting element of SS
                     // next steps : Eindex = index of neighbours of starting element of SS
-                    Shape e1 = _orientedShapeMap.FindKey(eindex);
+                    Shape e1 = _orientedShapeMap[eindex - 1];
                     curNei = ss.MaxNumberSubShape(e1);
                     bool condregu = true;
                     if (curNei > 2)
@@ -117,7 +117,7 @@ public sealed class BlockBuilder
                     }
 
                     eindex++;
-                    mextent = _orientedShapeMap.Extent();
+                    mextent = _orientedShapeMap.Count;
                     searchneighbours = eindex <= mextent;
                 } // while (searchneighbours)
                 int iiregu = isRegular ? 1 : 0;
@@ -128,7 +128,7 @@ public sealed class BlockBuilder
         // To value the l bound of the last connexity block created above,
         // we create an artificial block of value = myOrientedShapeMap.Extent() + 1
         // The real number of connexity blocks is myBlocks.Length() - 1
-        mextent = _orientedShapeMap.Extent();
+        mextent = _orientedShapeMap.Count;
         _blocks.Append(mextent + 1);
         _isDone = true;
     }
@@ -173,7 +173,7 @@ public sealed class BlockBuilder
         }
 
         int index = bi.Value();
-        Shape e = _orientedShapeMap.FindKey(index);
+        Shape e = _orientedShapeMap[index - 1];
         return e;
     }
 
@@ -187,7 +187,7 @@ public sealed class BlockBuilder
             throw new FailureException("OutOfRange");
         }
 
-        Shape e = _orientedShapeMap.FindKey(index);
+        Shape e = _orientedShapeMap[index - 1];
         return e;
     }
 
@@ -201,7 +201,7 @@ public sealed class BlockBuilder
             throw new FailureException("OutOfRange");
         }
 
-        int i = _orientedShapeMap.FindIndex(e);
+        int i = _orientedShapeMap.IndexOf(e) + 1;
         return i;
     }
 
@@ -239,7 +239,7 @@ public sealed class BlockBuilder
     /// <summary>Adds <paramref name="s"/> (valid) to the elements; its index.</summary>
     public int AddElement(in Shape s)
     {
-        int sindex = _orientedShapeMap.Add(s);
+        int sindex = _orientedShapeMap.Add(s) + 1;
         _orientedShapeMapIsValid[sindex] = 1;
 
         return sindex;

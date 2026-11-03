@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Exchange.Documents;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
@@ -45,9 +46,9 @@ internal static class XdeDocDump
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(global::Kerf.Engine.Topology.ShapeHasher.Instance);
         global::Kerf.Engine.Topology.Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static void dumpLabel(ExchangeDocument theDoc, Label theLabel, List<string> theOut)

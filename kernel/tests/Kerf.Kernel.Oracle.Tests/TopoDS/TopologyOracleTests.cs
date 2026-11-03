@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
 using Kerf.Engine.Topology.Brep;
@@ -292,7 +293,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
                 theCounts.Shapes += aShapes.Count;
                 var aNMap = new N.TopTools_IndexedMapOfShape();
-                var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
                 foreach (Twin<N.TopoDS_Shape, Shape> aS in aShapes)
                 {
                     theOracle.Same((int)aS.N.ShapeType(), (int)aS.P.ShapeType(), "ShapeType");
@@ -304,7 +305,7 @@ public class TopologyOracleTests(ITestOutputHelper output)
                         theOracle.Same(aNT, aS.P.Location().Transformation(), "Location");
                     }
 
-                    theOracle.Same(aNMap.Add(aS.N), aMap.Add(aS.P), "IndexedMapOfShape.Add");
+                    theOracle.Same(aNMap.Add(aS.N), aMap.Add(aS.P) + 1, "IndexedMapOfShape.Add");
                     theOracle.Same(aS.N.Locked(), aS.P.TShape()!.LockedFlag(), "Locked (stored bit)");
                     Assert.True(aS.P.Locked());
                 }
@@ -331,13 +332,13 @@ public class TopologyOracleTests(ITestOutputHelper output)
                 // the index maps of TopExp agree, with and without the cumulative orientation and location
                 var aNMap2 = new N.TopTools_IndexedMapOfShape();
                 N.TopExp.MapShapes(theShape.N, TwinShapes.ToNative(aType), aNMap2);
-                var aMap2 = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+                var aMap2 = new IndexedSet<Shape>(ShapeHasher.Instance);
                 Exploration.MapShapes(theShape.P, aType, aMap2);
-                theOracle.Same(aNMap2.Extent(), aMap2.Extent(), "MapShapes.Extent");
-                for (int i = 1; i <= aMap2.Extent(); i++)
+                theOracle.Same(aNMap2.Extent(), aMap2.Count, "MapShapes.Extent");
+                for (int i = 1; i <= aMap2.Count; i++)
                 {
                     N.TopoDS_Shape aNKey = aNMap2.FindKey(i);
-                    Shape aKey = aMap2.FindKey(i);
+                    Shape aKey = aMap2[i - 1];
                     theOracle.Same(aShapes.FindIndex(s => s.N.IsEqual(aNKey)), aShapes.FindIndex(s => s.P.IsEqual(aKey)), "MapShapes order");
                 }
             }
@@ -347,13 +348,13 @@ public class TopologyOracleTests(ITestOutputHelper output)
         {
             var aNAll = new N.TopTools_IndexedMapOfShape();
             N.TopExp.MapShapes(theShape.N, aNAll, aCumOri, aCumLoc);
-            var anAll = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var anAll = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(theShape.P, anAll, aCumOri, aCumLoc);
-            theOracle.Same(aNAll.Extent(), anAll.Extent(), "MapShapes (all).Extent");
-            for (int i = 1; i <= anAll.Extent(); i++)
+            theOracle.Same(aNAll.Extent(), anAll.Count, "MapShapes (all).Extent");
+            for (int i = 1; i <= anAll.Count; i++)
             {
                 N.TopoDS_Shape aN = aNAll.FindKey(i);
-                Shape aP = anAll.FindKey(i);
+                Shape aP = anAll[i - 1];
                 theOracle.Same((int)aN.ShapeType(), (int)aP.ShapeType(), "MapShapes (all) type");
                 theOracle.Same((int)aN.Orientation(), (int)aP.Orientation(), "MapShapes (all) orientation");
                 using N.gp_Trsf aNT = aN.Location().Transformation();
@@ -366,18 +367,18 @@ public class TopologyOracleTests(ITestOutputHelper output)
         {
             var aNAnc = new N.TopTools_IndexedDataMapOfShapeListOfShape();
             N.TopExp.MapShapesAndAncestors(theShape.N, TwinShapes.ToNative(aTS), TwinShapes.ToNative(aTA), aNAnc);
-            var anAnc = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var anAnc = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(theShape.P, aTS, aTA, anAnc);
             var aNUnique = new N.TopTools_IndexedDataMapOfShapeListOfShape();
             N.TopExp.MapShapesAndUniqueAncestors(theShape.N, TwinShapes.ToNative(aTS), TwinShapes.ToNative(aTA), aNUnique, true);
-            var anUnique = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var anUnique = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
             Exploration.MapShapesAndUniqueAncestors(theShape.P, aTS, aTA, anUnique, true);
-            theOracle.Same(aNAnc.Extent(), anAnc.Extent(), "MapShapesAndAncestors.Extent");
-            theOracle.Same(aNUnique.Extent(), anUnique.Extent(), "MapShapesAndUniqueAncestors.Extent");
-            for (int i = 1; i <= anAnc.Extent(); i++)
+            theOracle.Same(aNAnc.Extent(), anAnc.Count, "MapShapesAndAncestors.Extent");
+            theOracle.Same(aNUnique.Extent(), anUnique.Count, "MapShapesAndUniqueAncestors.Extent");
+            for (int i = 1; i <= anAnc.Count; i++)
             {
-                theOracle.Same(aNAnc.FindFromIndex(i).Extent(), anAnc.FindFromIndex(i).Extent(), "ancestors");
-                theOracle.Same(aNUnique.FindFromIndex(i).Extent(), anUnique.FindFromIndex(i).Extent(), "unique ancestors");
+                theOracle.Same(aNAnc.FindFromIndex(i).Extent(), anAnc.ValueAt(i - 1).Extent(), "ancestors");
+                theOracle.Same(aNUnique.FindFromIndex(i).Extent(), anUnique.ValueAt(i - 1).Extent(), "unique ancestors");
             }
         }
 
@@ -402,9 +403,9 @@ public class TopologyOracleTests(ITestOutputHelper output)
 
         var aN3D = new N.TopTools_IndexedMapOfShape();
         N.BRepTools.Map3DEdges(theShape.N, aN3D);
-        var a3D = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var a3D = new IndexedSet<Shape>(ShapeHasher.Instance);
         BrepTools.Map3DEdges(theShape.P, a3D);
-        theOracle.Same(aN3D.Extent(), a3D.Extent(), "Map3DEdges");
+        theOracle.Same(aN3D.Extent(), a3D.Count, "Map3DEdges");
     }
 
     private static void CompareVertex(Oracle theOracle, N.TopoDS_Vertex theN, in Vertex theP, string theWhat)

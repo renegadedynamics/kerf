@@ -374,11 +374,11 @@ public sealed class SplitDrafts
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(res, ShapeType.Edge, ShapeType.Face, theMapEF);
 
         // On stocke les geometries potentiellement generees par les edges
-        NCollection_IndexedDataMap<Shape, Shape> mapEV = new(ShapeHasher.Instance); // genere
+        IndexedMap<Shape, Shape> mapEV = new(ShapeHasher.Instance); // genere
         Dictionary<Shape, NCollection_List<Shape>> mapSg = new(ShapeHasher.Instance),
                                                                           mapSd = new(ShapeHasher.Instance); // image a gauche et a droite
 
@@ -389,7 +389,7 @@ public sealed class SplitDrafts
             for (exp.Init(fac, ShapeType.Edge); exp.More(); exp.Next())
             {
                 Shape edg = exp.Current();
-                if (mapEV.FindIndex(edg) != 0)
+                if (mapEV.ContainsKey(edg))
                 {
                     continue;
                 }
@@ -423,18 +423,18 @@ public sealed class SplitDrafts
                 }
                 else
                 { // on recupere la face.
-                    index = theMapEF.FindIndex(edg);
-                    if (theMapEF[index].Extent() != 2)
+                    index = theMapEF.IndexOf(edg) + 1;
+                    if (theMapEF.ValueAt(index - 1).Extent() != 2)
                     {
                         return; // NotDone
                     }
-                    if (theMapEF[index].First().IsSame(fac))
+                    if (theMapEF.ValueAt(index - 1).First().IsSame(fac))
                     {
-                        mapEV.Add(edg, theMapEF[index].Last());
+                        mapEV.Add(edg, theMapEF.ValueAt(index - 1).Last());
                     }
                     else
                     {
-                        mapEV.Add(edg, theMapEF[index].First());
+                        mapEV.Add(edg, theMapEF.ValueAt(index - 1).First());
                     }
                 }
             }
@@ -442,13 +442,13 @@ public sealed class SplitDrafts
 
         Dictionary<Shape, Shape> mapSonS = new(ShapeHasher.Instance);
 
-        nbedges = mapEV.Extent();
+        nbedges = mapEV.Count;
         for (index = 1; index <= nbedges; index++)
         {
-            for (exp.Init(mapEV.FindKey(index), ShapeType.Vertex); exp.More(); exp.Next())
+            for (exp.Init(mapEV.KeyAt(index - 1), ShapeType.Vertex); exp.More(); exp.Next())
             {
                 Vertex vtx = ShapeCasts.Vertex(exp.Current());
-                if (mapEV.FindIndex(vtx) != 0)
+                if (mapEV.ContainsKey(vtx))
                 {
                     continue;
                 }
@@ -464,7 +464,7 @@ public sealed class SplitDrafts
                     {
                         continue;
                     }
-                    for (exp2.Init(mapEV.FindKey(j), ShapeType.Vertex); exp2.More(); exp2.Next())
+                    for (exp2.Init(mapEV.KeyAt(j - 1), ShapeType.Vertex); exp2.More(); exp2.Next())
                     {
                         Shape vtx2 = exp2.Current();
                         if (vtx2.IsSame(vtx))
@@ -478,11 +478,11 @@ public sealed class SplitDrafts
                     }
                 }
                 int choice = 0;
-                Shape edg1 = mapEV.FindKey(index);
+                Shape edg1 = mapEV.KeyAt(index - 1);
                 Shape edg2;
                 if (j <= nbedges)
                 {
-                    edg2 = mapEV.FindKey(j);
+                    edg2 = mapEV.KeyAt(j - 1);
                 }
                 else
                 {
@@ -494,7 +494,7 @@ public sealed class SplitDrafts
                     {             // doit correspondre a edge ferme
                         choice = 2; // droite
                     }
-                    else if (mapW.ContainsKey(mapEV.FindKey(j)))
+                    else if (mapW.ContainsKey(mapEV.KeyAt(j - 1)))
                     {
                         choice = 2; // droite
                     }
@@ -509,7 +509,7 @@ public sealed class SplitDrafts
                     {             // doit correspondre a edge ferme
                         choice = 1; // edge a retrouver
                     }
-                    else if (!mapW.ContainsKey(mapEV.FindKey(j)))
+                    else if (!mapW.ContainsKey(mapEV.KeyAt(j - 1)))
                     {
                         choice = 1; // edge a retrouver
                     }
@@ -568,8 +568,8 @@ public sealed class SplitDrafts
                     break;
                     case 3:
                     {
-                        Face f1 = ShapeCasts.Face(mapEV.FindFromKey(edg1));
-                        Face f2 = ShapeCasts.Face(mapEV.FindFromKey(edg2));
+                        Face f1 = ShapeCasts.Face(mapEV.GetValue(edg1));
+                        Face f2 = ShapeCasts.Face(mapEV.GetValue(edg2));
                         Surface s1 = Tool.Surface(f1)!;
                         Surface s2 = Tool.Surface(f2)!;
                         bool appS1 = false;
@@ -656,8 +656,8 @@ public sealed class SplitDrafts
                     // edge retrouve : on ne fait qu`une seule intersection
                     // il faut utiliser Plg ou Pld
 
-                    int indedgf = theMapEF.FindIndex(edg1);
-                    for (itl.Initialize(theMapEF[indedgf]); itl.More(); itl.Next())
+                    int indedgf = theMapEF.IndexOf(edg1) + 1;
+                    for (itl.Initialize(theMapEF.ValueAt(indedgf - 1)); itl.More(); itl.Next())
                     {
                         if (Contains(_map.GetValue(aF), itl.Value()))
                         {
@@ -742,12 +742,12 @@ public sealed class SplitDrafts
                     b.UpdateVertex(vtx2b, p2, newEdge, global::Kerf.Engine.Foundation.Precision.Confusion());
                     if (newCs1 is not null)
                     {
-                        b.UpdateEdge(newEdge, newCs1, ShapeCasts.Face(mapEV.FindFromKey(edg1)), global::Kerf.Engine.Foundation.Precision.Confusion());
+                        b.UpdateEdge(newEdge, newCs1, ShapeCasts.Face(mapEV.GetValue(edg1)), global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
 
                     if (newCs2 is not null)
                     {
-                        b.UpdateEdge(newEdge, newCs2, ShapeCasts.Face(mapEV.FindFromKey(edg2)), global::Kerf.Engine.Foundation.Precision.Confusion());
+                        b.UpdateEdge(newEdge, newCs2, ShapeCasts.Face(mapEV.GetValue(edg2)), global::Kerf.Engine.Foundation.Precision.Confusion());
                     }
 
                     mapEV.Add(vtx, newEdge);
@@ -832,16 +832,16 @@ public sealed class SplitDrafts
             { // precaution sans doute inutile...
                 continue;
             }
-            int indedg = mapEV.FindIndex(edg);
-            ref Shape genFRef = ref mapEV[indedg];
+            int indedg = mapEV.IndexOf(edg) + 1;
+            ref Shape genFRef = ref mapEV.ValueAt(indedg - 1);
             Face genF = ShapeCasts.Face(genFRef);
             NCollection_List<Shape> thelist13 = new(), thelist14 = new();
             mapSg[edg] = thelist13; // genere a gauche
             mapSd[edg] = thelist14; // genere a droite
             Shape localEdge = edg.Oriented(Forward);
             Exploration.Vertices(ShapeCasts.Edge(localEdge), out Vertex vf, out Vertex vl);
-            Shape gvf = mapEV.FindFromKey(vf);
-            Shape gvl = mapEV.FindFromKey(vl);
+            Shape gvf = mapEV.GetValue(vf);
+            Shape gvl = mapEV.GetValue(vl);
 
             // (OCCT keeps its former construction here, commented out; nouveau code)
 
@@ -1014,12 +1014,12 @@ public sealed class SplitDrafts
                         {
                             newS = newSd;
                         }
-                        int indedg = mapEV.FindIndex(edg);
-                        Face genF = ShapeCasts.Face(mapEV[indedg]);
+                        int indedg = mapEV.IndexOf(edg) + 1;
+                        Face genF = ShapeCasts.Face(mapEV.ValueAt(indedg - 1));
                         Shape localEdge = edg.Oriented(Forward);
                         Exploration.Vertices(ShapeCasts.Edge(localEdge), out Vertex vf, out Vertex vl);
-                        Shape gvf = mapEV.FindFromKey(vf);
-                        Shape gvl = mapEV.FindFromKey(vl);
+                        Shape gvf = mapEV.GetValue(vf);
+                        Shape gvl = mapEV.GetValue(vl);
                         if (gvf.ShapeType() == ShapeType.Vertex && gvl.ShapeType() == ShapeType.Vertex)
                         {
                             if (!gvf.IsSame(vf) || !gvl.IsSame(vl))

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -488,10 +489,10 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
         // ModifiedSubShape of every input edge (TopExp::MapShapes order, the same on both sides), with IsModifiedSubShape.
         using var aNEdges = new N.TopTools_IndexedMapOfShape();
         N.TopExp.MapShapes(aNShape, N.TopAbs_ShapeEnum.TopAbs_EDGE, aNEdges);
-        var aPEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aPEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aPShape, ShapeType.Edge, aPEdges);
-        CompareValue(theTally, aCase, "input edges", aNEdges.Extent(), aPEdges.Extent());
-        if (aNEdges.Extent() == aPEdges.Extent())
+        CompareValue(theTally, aCase, "input edges", aNEdges.Extent(), aPEdges.Count);
+        if (aNEdges.Extent() == aPEdges.Count)
         {
             var aNSub = new List<N.TopoDS_Shape>();
             var aPSub = new List<Shape>();
@@ -503,12 +504,12 @@ public sealed class BRepBuilderAPISewingOracleTests(ITestOutputHelper output) : 
                 {
                     aNModified++;
                 }
-                if (aP.IsModifiedSubShape(aPEdges[i]))
+                if (aP.IsModifiedSubShape(aPEdges[i - 1]))
                 {
                     aPModified++;
                 }
                 aNSub.Add(aN.ModifiedSubShape(anE));
-                aPSub.Add(aP.ModifiedSubShape(aPEdges[i]));
+                aPSub.Add(aP.ModifiedSubShape(aPEdges[i - 1]));
             }
             if (!isNativeWritten)
             {

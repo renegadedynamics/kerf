@@ -182,7 +182,7 @@ public sealed class LocalGenerator
         HashSet<Shape> theLeft = new(ShapeHasher.Instance); // Faces a gauche
 
         // Edges et vertex generateurs; OCCT iterates GEdg keyed by the edges' addresses, the port in their order
-        NCollection_IndexedMap<Shape> gEdg = new(ShapeHasher.Instance);
+        IndexedSet<Shape> gEdg = new(ShapeHasher.Instance);
         HashSet<Shape> gVtx = new(ShapeHasher.Instance);
 
         NCollection_List<Shape>.Iterator itl = new(), itl2 = new();
@@ -223,7 +223,7 @@ public sealed class LocalGenerator
             }
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> theEFMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(_shape, ShapeType.Edge, ShapeType.Face, theEFMap);
 
         // OCCT iterates these maps keyed by the shapes' addresses; the port in insertion order
@@ -232,14 +232,14 @@ public sealed class LocalGenerator
         HashSet<Shape> toRemove = new(ShapeHasher.Instance);
 
         // search for face fusions
-        for (int itm = 1; itm <= gEdg.Extent(); itm++)
+        for (int itm = 0; itm < gEdg.Count; itm++)
         {
             Edge edg = ShapeCasts.Edge(gEdg[itm]);
-            if (!theEFMap.Contains(edg))
+            if (!theEFMap.ContainsKey(edg))
             {
                 continue;
             }
-            for (itl2.Initialize(theEFMap.FindFromKey(edg)); itl2.More(); itl2.Next())
+            for (itl2.Initialize(theEFMap.GetValue(edg)); itl2.More(); itl2.Next())
             {
                 if (!theLeft.Contains(itl2.Value()))
                 {
@@ -460,7 +460,7 @@ public sealed class LocalGenerator
                                 theEEMap.GetValue(edg).Append(edgbis);
                             }
 
-                            itl.Initialize(theEFMap.FindFromKey(edg));
+                            itl.Initialize(theEFMap.GetValue(edg));
                             bool fuseEdge = ToFuse(edg, fac, vtx, toRemove);
                             if (!fuseEdge)
                             {

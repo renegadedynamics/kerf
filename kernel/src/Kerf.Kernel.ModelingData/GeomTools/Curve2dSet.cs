@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Occt;
@@ -32,7 +33,7 @@ public class Curve2dSet
     private const int Offset = 9;
 
     // OCCT's NCollection_IndexedMap of handles, which hashes by address and can hold one null handle
-    private readonly NCollection_IndexedMap<object> _map = new(ReferenceEqualityComparer.Instance);
+    private readonly IndexedSet<object> _map = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>An empty set of 2D curves.</summary>
     public Curve2dSet()
@@ -49,24 +50,24 @@ public class Curve2dSet
     public int Add(Curve2D? s)
     {
         // OCCT: adds the null handle too, as one entry (occt-issues.md)
-        return _map.Add((object?)s ?? CurveSet.NullKey);
+        return _map.Add((object?)s ?? CurveSet.NullKey) + 1;
     }
 
     /// <summary>The curve of index I, or null if there is none.</summary>
     public Curve2D? Curve2d(int i)
     {
-        if (i <= 0 || i > _map.Extent())
+        if (i <= 0 || i > _map.Count)
         {
             return null;
         }
 
-        return _map[i] as Curve2D;
+        return _map[i - 1] as Curve2D;
     }
 
     /// <summary>The index of the curve, 0 if it isn't in the set (null finds the null entry, as in OCCT).</summary>
     public int Index(Curve2D? s)
     {
-        return _map.FindIndex((object?)s ?? CurveSet.NullKey);
+        return _map.IndexOf((object?)s ?? CurveSet.NullKey) + 1;
     }
 
     private static void Out(TextWriter os, double value) => StreamUtilities.Write(os, value);
@@ -637,7 +638,7 @@ public class Curve2dSet
     /// <summary>Writes a readable dump of the set.</summary>
     public void Dump(TextWriter os)
     {
-        int i, nbsurf = _map.Extent();
+        int i, nbsurf = _map.Count;
         os.Write("\n -------\n");
         os.Write("Dump of ");
         Out(os, nbsurf);
@@ -661,7 +662,7 @@ public class Curve2dSet
     {
         int prec = StreamUtilities.Precision(os, 17);
 
-        int i, nbsurf = _map.Extent();
+        int i, nbsurf = _map.Count;
         os.Write("Curve2ds ");
         Out(os, nbsurf);
         os.Write("\n");

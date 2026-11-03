@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Topology;
@@ -32,7 +33,7 @@ public partial class PaveFiller
         List<InterfVV> vVs = _ds!.InterfVV();
         //
         //-----------------------------------------------------scope f
-        NCollection_IndexedDataMap<int, NCollection_List<int>> mili = new();
+        IndexedMap<int, NCollection_List<int>> mili = new();
         NCollection_List<NCollection_List<int>> mBlocks = new();
         //
         // 1. Map V/LV

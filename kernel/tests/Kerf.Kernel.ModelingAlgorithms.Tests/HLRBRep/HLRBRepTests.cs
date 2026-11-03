@@ -157,8 +157,8 @@ public class HLRBRepTests
         AB.Write(A, 0, 0, 0);
         int aBefore = B.FDataArray()[1].Wires()!.Wire(1)!.Edge(1);
         AB.Write(B, A.VertexCount, A.EdgeCount, A.FaceCount);
-        Assert.Equal(24, AB.EdgeMap().Extent());
-        Assert.Equal(12, AB.FaceMap().Extent());
+        Assert.Equal(24, AB.EdgeMap().Count);
+        Assert.Equal(12, AB.FaceMap().Count);
         Assert.Equal(B.EDataArray()[1].VSta() + A.VertexCount, AB.EDataArray()[13].VSta());
         // OCCT: the copied face shares B's wires, whose edge indices are shifted too
         Assert.Same(B.FDataArray()[1].Wires(), AB.FDataArray()[7].Wires());

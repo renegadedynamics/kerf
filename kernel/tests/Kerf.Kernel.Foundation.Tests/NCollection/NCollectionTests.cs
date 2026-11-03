@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 
 using Kerf.Geometry;
@@ -113,16 +114,16 @@ public class NCollectionTests
     [Fact]
     public void IndexedMap_moves_the_last_key_into_a_removed_index()
     {
-        var aMap = new NCollection_IndexedMap<string>();
+        var aMap = new IndexedSet<string>();
         aMap.Add("a");
         aMap.Add("b");
         aMap.Add("c");
-        Assert.Equal(2, aMap.Add("b"));
+        Assert.Equal(2, aMap.Add("b") + 1);
 
-        aMap.RemoveFromIndex(1);
-        Assert.Equal("c", aMap.FindKey(1));
-        Assert.Equal(1, aMap.FindIndex("c"));
-        Assert.Equal(0, aMap.FindIndex("a"));
+        aMap.RemoveAtSwap(0);
+        Assert.Equal("c", aMap[0]);
+        Assert.Equal(1, aMap.IndexOf("c") + 1);
+        Assert.Equal(0, aMap.IndexOf("a") + 1);
     }
 
     [Fact]

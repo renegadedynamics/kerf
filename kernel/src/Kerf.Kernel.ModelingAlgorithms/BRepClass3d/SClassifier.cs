@@ -192,7 +192,7 @@ public class SClassifier
         }
 
         SpatialTree<int, Box> tree = solidExplorer.GetTree();
-        NCollection_IndexedMap<Shape> mapEV = solidExplorer.GetMapEV();
+        IndexedSet<Shape> mapEV = solidExplorer.GetMapEV();
 
         // Vertices/Edges vs Point.
         var selectorPoint = new BndBoxTreeSelectorPoint(mapEV);
@@ -208,7 +208,7 @@ public class SClassifier
             return;
         }
 
-        var mapEF = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+        var mapEF = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(solidExplorer.GetShape(), ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, mapEF);
 
         var selectorLine = new BndBoxTreeSelectorLine(mapEV);
@@ -306,7 +306,7 @@ public class SClassifier
                 {
                     // Line and edge.
                     selectorLine.GetEdgeParam(i, out ee, out param, out lpar);
-                    NCollection_List<Shape> ffs = mapEF.FindFromKey(ee); // ffs size == 2
+                    NCollection_List<Shape> ffs = mapEF.GetValue(ee); // ffs size == 2
                     if (ffs.Extent() != 2)
                     {
                         continue;

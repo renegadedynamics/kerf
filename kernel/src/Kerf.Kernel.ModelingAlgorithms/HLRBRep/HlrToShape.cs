@@ -4,6 +4,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1993-1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.HiddenLines.Algorithm;
 using Kerf.Engine.HiddenLines.Topology;
 using Kerf.Engine.Topology;
@@ -160,13 +161,13 @@ public class HlrToShape
             }
             if (explor)
             {
-                NCollection_IndexedMap<Shape> edges = ds.EdgeMap();
-                NCollection_IndexedMap<Shape> faces = ds.FaceMap();
+                IndexedSet<Shape> edges = ds.EdgeMap();
+                IndexedSet<Shape> faces = ds.FaceMap();
                 Explorer exp = new();
 
                 for (exp.Init(s, ShapeType.Face); exp.More(); exp.Next())
                 {
-                    int iface = faces.FindIndex(WorkingImage(exp.Current()));
+                    int iface = faces.IndexOf(WorkingImage(exp.Current())) + 1;
                     if (iface != 0)
                     {
                         DrawFace(visible, typ, iface, ds, ref result, ref added, in3d);
@@ -176,7 +177,7 @@ public class HlrToShape
                 {
                     for (exp.Init(s, ShapeType.Edge, ShapeType.Face); exp.More(); exp.Next())
                     {
-                        int ie = edges.FindIndex(WorkingImage(exp.Current()));
+                        int ie = edges.IndexOf(WorkingImage(exp.Current())) + 1;
                         if (ie != 0)
                         {
                             HiddenLineEdgeData eDataIE = ds.EDataArray()[ie];

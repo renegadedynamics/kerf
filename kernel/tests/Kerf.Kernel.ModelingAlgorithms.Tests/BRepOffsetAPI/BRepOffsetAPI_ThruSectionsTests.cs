@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Approximation;
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Construction.Curves;
 using Kerf.Engine.Construction.Filling;
@@ -69,9 +70,9 @@ public class BRepOffsetAPI_ThruSectionsTests
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     // ---- OCCT's GTests ----
@@ -418,7 +419,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         }
 
         // the history answers for the caller's edges and vertices, with shapes of the result
-        NCollection_IndexedMap<Shape> aResultMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aResultMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(aResult, aResultMap);
         int aNbFaces = 0;
         for (Explorer anExp = new(aWires[0], ShapeType.Edge); anExp.More(); anExp.Next())

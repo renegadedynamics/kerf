@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Healing.Checks;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
@@ -186,10 +187,10 @@ public sealed partial class Build123dPhase7OracleTests
 
     private static bool Close(double a, double b) => Math.Abs(a - b) <= 1.0e-5 * Math.Max(1.0, Math.Max(Math.Abs(a), Math.Abs(b)));
 
-    private static List<(string Type, double[] Values)> Measures(string theList, NCollection_IndexedMap<Shape> theMap) =>
+    private static List<(string Type, double[] Values)> Measures(string theList, IndexedSet<Shape> theMap) =>
         [.. theList.Split(' ', StringSplitOptions.RemoveEmptyEntries)
                    .Select(s => int.Parse(s.TrimEnd('r'), CultureInfo.InvariantCulture))
-                   .Select(i => i > 0 ? Measure(theMap[i]) : ("out", Array.Empty<double>()))
+                   .Select(i => i > 0 ? Measure(theMap[i - 1]) : ("out", Array.Empty<double>()))
                    .OrderBy(m => m.Item1, StringComparer.Ordinal).ThenBy(m => m.Item2.FirstOrDefault()).ThenBy(m => m.Item2.Skip(1).FirstOrDefault())];
 
     private static bool SameMeasures(List<(string Type, double[] Values)> a, List<(string Type, double[] Values)> b) =>
@@ -219,9 +220,9 @@ public sealed partial class Build123dPhase7OracleTests
             aDiffs.Add($"history of {aNLines.Length} | {aPLines.Length} sub-shapes");
             return aDiffs;
         }
-        var aNMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aNMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theNResult, aNMap);
-        var aPMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aPMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(thePResult, aPMap);
         for (int i = 0; i < aNLines.Length; i++)
         {

@@ -604,10 +604,10 @@ public class ReShape : Transient
 
             // OCCT.NET: OCCT's NCollection_IndexedMap<TopoDS_Shape> and NCollection_Map<TopoDS_Shape> without a hasher
             // use std::hash and operator==, which are IsEqual.
-            var intermediates = new NCollection_IndexedMap<Shape>(EqualityComparer<Shape>.Default);
+            var intermediates = new IndexedSet<Shape>(EqualityComparer<Shape>.Default);
             var modified = new HashSet<Shape>(EqualityComparer<Shape>.Default);
             intermediates.Add(shape);
-            for (int i = 1; i <= intermediates.Extent(); ++i)
+            for (int i = 0; i < intermediates.Count; ++i)
             {
                 Shape intermediate = intermediates[i];
                 if (!_shapeToReplacement.TryGetValue(intermediate, out TReplacement replacement))
@@ -768,7 +768,7 @@ public class ReShape : Transient
     }
 
     // The same, for an indexed map.
-    private static void Add(NCollection_IndexedMap<Shape> map, in Shape shape)
+    private static void Add(IndexedSet<Shape> map, in Shape shape)
     {
         ShapeType type = shape.ShapeType();
         if (type != ShapeType.Wire && type != ShapeType.Shell && type != ShapeType.CompSolid)

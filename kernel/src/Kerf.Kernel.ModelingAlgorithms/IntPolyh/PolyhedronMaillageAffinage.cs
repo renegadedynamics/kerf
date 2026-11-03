@@ -3,6 +3,7 @@
 // Open CASCADE Technology V8_0_1 (b8f597c6). Copyright (c) 1999 Matra Datavision; 1999-2026 OPEN CASCADE SAS.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Bounds;
 using Kerf.Engine.Geometry.Bvh;
@@ -143,7 +144,7 @@ public sealed partial class PolyhedronMaillageAffinage
                                                 PolyhedronArray<PolyhedronPoint> points1,
                                                 PolyhedronArray<PolyhedronTriangle> triangles2,
                                                 PolyhedronArray<PolyhedronPoint> points2,
-                                                NCollection_IndexedDataMap<int, NCollection_List<int>> couples)
+                                                IndexedMap<int, NCollection_List<int>> couples)
     {
         // Use linear builder for BVH construction
         LinearBuilder<double, BVH_Vec3d> lBuilder = new(10);
@@ -194,7 +195,7 @@ public sealed partial class PolyhedronMaillageAffinage
         for (int i = 0; i < nbPairs; ++i)
         {
             IntPolyh_BoxBndTreeSelector.PairIDs pair = pairs[i];
-            if (!couples.FindFromKey(pair.ID1, out NCollection_List<int>? pTriangles2))
+            if (!couples.TryGetValue(pair.ID1, out NCollection_List<int>? pTriangles2))
             {
                 pTriangles2 = new NCollection_List<int>();
                 couples.Add(pair.ID1, pTriangles2);
@@ -968,7 +969,7 @@ public sealed partial class PolyhedronMaillageAffinage
                                                        double flecheCritique2)
     {
         // Find the intersecting triangles
-        NCollection_IndexedDataMap<int, NCollection_List<int>> dmili = new();
+        IndexedMap<int, NCollection_List<int>> dmili = new();
         GetInterferingTriangles(triangles1, points1, triangles2, points2, dmili);
         //
         // Interfering triangles of second surface
@@ -987,7 +988,7 @@ public sealed partial class PolyhedronMaillageAffinage
                 continue;
             }
             //
-            if (!dmili.FindFromKey(i_S1, out NCollection_List<int>? pLI) || pLI is null || pLI.IsEmpty())
+            if (!dmili.TryGetValue(i_S1, out NCollection_List<int>? pLI) || pLI is null || pLI.IsEmpty())
             {
                 // Mark non-interfering triangles of S1 to avoid their repeated usage
                 triangle1.SetIntersectionPossible(false);
@@ -2840,9 +2841,9 @@ public sealed partial class PolyhedronMaillageAffinage
     public int TriangleCompare()
     {
         // Find couples with interfering bounding boxes
-        NCollection_IndexedDataMap<int, NCollection_List<int>> dmili = new();
+        IndexedMap<int, NCollection_List<int>> dmili = new();
         GetInterferingTriangles(_tTriangles1, _tPoints1, _tTriangles2, _tPoints2, dmili);
-        if (dmili.IsEmpty())
+        if (dmili.Count == 0)
         {
             return 0;
         }
@@ -2850,16 +2851,16 @@ public sealed partial class PolyhedronMaillageAffinage
         double coupleAngle = -2.0;
         //
         // Intersection of the triangles
-        int i, nb = dmili.Extent();
+        int i, nb = dmili.Count;
         for (i = 1; i <= nb; ++i)
         {
-            int i_S1 = dmili.FindKey(i);
+            int i_S1 = dmili.KeyAt(i - 1);
             ref PolyhedronTriangle triangle1 = ref _tTriangles1[i_S1];
             ref readonly PolyhedronPoint p1 = ref _tPoints1.Value(triangle1.FirstPoint());
             ref readonly PolyhedronPoint p2 = ref _tPoints1.Value(triangle1.SecondPoint());
             ref readonly PolyhedronPoint p3 = ref _tPoints1.Value(triangle1.ThirdPoint());
             //
-            NCollection_List<int> li2 = dmili.FindFromIndex(i);
+            NCollection_List<int> li2 = dmili.ValueAt(i - 1);
             for (NCollection_List<int>.Iterator itLI = new(li2); itLI.More(); itLI.Next())
             {
                 int i_S2 = itLI.Value();

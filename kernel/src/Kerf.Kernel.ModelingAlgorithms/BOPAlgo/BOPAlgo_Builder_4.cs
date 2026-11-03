@@ -4,6 +4,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
@@ -119,10 +120,10 @@ public partial class BooleanBuilder
         FaceInfo fi = _ds.FaceInfo(nS);
 
         // Section edges of the face
-        NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+        IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
         // Save section edges contained in the result shape
-        int nb = mpbSc.Extent();
-        for (int i = 1; i <= nb; ++i)
+        int nb = mpbSc.Count;
+        for (int i = 0; i < nb; ++i)
         {
             Shape eNew = _ds.Shape(mpbSc[i].Edge());
             if (_mapShape.Contains(eNew))

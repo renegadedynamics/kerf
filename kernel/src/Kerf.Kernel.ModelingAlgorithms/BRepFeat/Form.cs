@@ -1355,7 +1355,7 @@ public abstract class Form : MakeShape
         {
             Shape orig = itdm.Key;
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newdsc = new(ShapeHasher.Instance);
             for (it.Initialize(itdm.Value); it.More(); it.Next())
             {
                 Face fdsc = ShapeCasts.Face(it.Value());
@@ -1551,7 +1551,7 @@ public abstract class Form : MakeShape
                 continue;
             }
             // OCCT iterates this address-keyed map into the list: insertion order here (decision 1054)
-            NCollection_IndexedMap<Shape> newdsc = new(ShapeHasher.Instance);
+            IndexedSet<Shape> newdsc = new(ShapeHasher.Instance);
 
             if (itdm.Value.IsEmpty())
             {

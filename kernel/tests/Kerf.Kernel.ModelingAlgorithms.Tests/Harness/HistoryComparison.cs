@@ -8,6 +8,7 @@
 // differences is empty (or call AssertSame). The arguments of the two sides may be different objects (read twice):
 // they are matched by their canonical keys too.
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Topology;
 
 using Kerf.Topology;
@@ -86,23 +87,23 @@ internal static class HistoryComparison
                                                      History theHistory)
     {
         CanonicalKeys aResultKeys = CanonicalKeys.Build(theResult);
-        var anArgumentMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var anArgumentMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         var aKeysOf = new List<CanonicalKeys>();
         foreach (Shape anArgument in theArguments)
         {
             CanonicalKeys aKeys = CanonicalKeys.Build(anArgument);
-            int aBefore = anArgumentMap.Extent();
+            int aBefore = anArgumentMap.Count;
             Exploration.MapShapes(anArgument, anArgumentMap);
-            for (int i = aBefore + 1; i <= anArgumentMap.Extent(); ++i)
+            for (int i = aBefore + 1; i <= anArgumentMap.Count; ++i)
             {
                 aKeysOf.Add(aKeys);
             }
         }
 
         var anEntries = new Dictionary<string, Entry>(StringComparer.Ordinal);
-        for (int i = 1; i <= anArgumentMap.Extent(); ++i)
+        for (int i = 1; i <= anArgumentMap.Count; ++i)
         {
-            Shape aShape = anArgumentMap.FindKey(i);
+            Shape aShape = anArgumentMap[i - 1];
             if (!History.IsSupportedType(aShape))
             {
                 continue;

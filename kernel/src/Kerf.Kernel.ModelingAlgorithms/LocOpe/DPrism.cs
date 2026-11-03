@@ -375,16 +375,16 @@ public sealed class DPrism
     private static void EndFaces(in Compound c, NCollection_List<Shape> lfaces, NCollection_List<Shape> lcomplete)
     {
         BrepBuilder b = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> theMapEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(c, ShapeType.Edge, ShapeType.Face, theMapEF);
         HashSet<Shape> view = new(ShapeHasher.Instance);
 
-        for (int i = 1; i <= theMapEF.Extent(); i++)
+        for (int i = 0; i < theMapEF.Count; i++)
         {
-            if (theMapEF[i].Extent() == 1)
+            if (theMapEF.ValueAt(i).Extent() == 1)
             {
-                Edge edg = ShapeCasts.Edge(theMapEF.FindKey(i));
-                Face fac = ShapeCasts.Face(theMapEF[i].First());
+                Edge edg = ShapeCasts.Edge(theMapEF.KeyAt(i));
+                Face fac = ShapeCasts.Face(theMapEF.ValueAt(i).First());
                 if (view.Add(fac))
                 {
                     Shape localShape = fac.EmptyCopied();

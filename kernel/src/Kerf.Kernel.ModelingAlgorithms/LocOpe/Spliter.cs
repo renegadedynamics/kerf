@@ -115,7 +115,7 @@ public sealed class Spliter
 
         HashSet<Shape> mapV = new(ShapeHasher.Instance), mapE = new(ShapeHasher.Instance);
         Dictionary<Shape, Shape> edgOnEdg = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mapFE = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mapFE = new(ShapeHasher.Instance);
         Explorer exp = new(), exp2 = new();
 
         // 1ere etape : substitution des vertex
@@ -216,24 +216,24 @@ public sealed class Spliter
                 {
                     theFacesWithSection.Add(fac);
                 }
-                if (!mapFE.Contains(fac))
+                if (!mapFE.ContainsKey(fac))
                 {
                     NCollection_List<Shape> thelist = new();
                     mapFE.Add(fac, thelist);
                 }
-                mapFE.ChangeFromKey(fac).Append(edg);
+                mapFE.GetValue(fac).Append(edg);
             }
         }
 
         // Rebuilds wires on each face of the shape
 
         NCollection_List<Shape>.Iterator itl = new();
-        for (int i1 = 1; i1 <= mapFE.Extent(); i1++)
+        for (int i1 = 0; i1 < mapFE.Count; i1++)
         {
-            Face fac = ShapeCasts.Face(mapFE.FindKey(i1));
+            Face fac = ShapeCasts.Face(mapFE.KeyAt(i1));
             //  Modified by skv - Mon May 31 12:32:54 2004 OCC5865 Begin
-            RebuildWires(ref mapFE[i1], pw);
-            NCollection_List<Shape> ledges = mapFE[i1];
+            RebuildWires(ref mapFE.ValueAt(i1), pw);
+            NCollection_List<Shape> ledges = mapFE.ValueAt(i1);
             //  Modified by skv - Mon May 31 12:32:54 2004 OCC5865 End
             if (theFacesWithSection.Contains(fac))
             {
@@ -388,13 +388,13 @@ public sealed class Spliter
 
         ////remove superfluous vertices on degenerated edges
         theSubs.Clear();
-        NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> emap = new(ShapeHasher.Instance);
         Exploration.MapShapes(_res, ShapeType.Edge, emap);
         NCollection_Sequence<Shape> degEdges = new();
         int i, j;
-        for (i = 1; i <= emap.Extent(); i++)
+        for (i = 1; i <= emap.Count; i++)
         {
-            Edge edge = ShapeCasts.Edge(emap[i]);
+            Edge edge = ShapeCasts.Edge(emap[i - 1]);
             if (Tool.Degenerated(edge))
             {
                 degEdges.Append(edge);
@@ -438,15 +438,15 @@ public sealed class Spliter
 
         for (i = 1; i <= degWires.Length(); i++)
         {
-            NCollection_IndexedMap<Shape> vmap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> vmap = new(ShapeHasher.Instance);
             Exploration.MapShapes(degWires[i], ShapeType.Vertex, vmap);
             NCollection_List<Shape> lv = new();
-            lv.Append(vmap[1].Oriented(Forward));
-            for (j = 2; j <= vmap.Extent(); j++)
+            lv.Append(vmap[0].Oriented(Forward));
+            for (j = 2; j <= vmap.Count; j++)
             {
-                if (!vmap[j].IsSame(vmap[1]))
+                if (!vmap[j - 1].IsSame(vmap[0]))
                 {
-                    theSubs.Substitute(vmap[j], lv);
+                    theSubs.Substitute(vmap[j - 1], lv);
                 }
             }
         }

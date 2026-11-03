@@ -3,6 +3,7 @@
 // Not a port of an OCCT file.
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Meshing;
 using Kerf.Engine.Topology.Brep;
@@ -117,9 +118,9 @@ public static partial class BrepTools
     private static void RecordImages(in Shape shape, Dictionary<TShape, TShape> images,
                                      History history)
     {
-        var map = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var map = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(shape, map);
-        for (int i = 1; i <= map.Extent(); i++)
+        for (int i = 0; i < map.Count; i++)
         {
             Shape s = map[i];
             if (History.IsSupportedType(s) && images.TryGetValue(s.TShape()!, out TShape? image)

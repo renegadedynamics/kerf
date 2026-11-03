@@ -200,12 +200,12 @@ public class BOPAlgo_BuilderSolidTests
         NCollection_List<Shape> aLF = Faces(aSewn);
         Assert.Equal(12, aLF.Extent());
         // the common edge is shared by four faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aMEF = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aSewn, ShapeType.Edge, ShapeType.Face, aMEF);
         bool isShared = false;
-        for (int i = 1; i <= aMEF.Extent(); i++)
+        for (int i = 0; i < aMEF.Count; i++)
         {
-            isShared |= aMEF[i].Extent() == 4;
+            isShared |= aMEF.ValueAt(i).Extent() == 4;
         }
         Assert.True(isShared);
         return aLF;
@@ -256,11 +256,11 @@ public class BOPAlgo_BuilderSolidTests
         aLS.Append(aSolid);
         foreach (bool aParallel in new[] { false, true })
         {
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> anInParts = new(ShapeHasher.Instance);
             BuilderTools.ClassifyFaces(aLF, aLS, aParallel, new IntersectionContext(), anInParts);
-            Assert.Equal(1, anInParts.Extent());
-            Assert.True(anInParts.FindKey(1).IsSame(aSolid));
-            NCollection_List<Shape> aLIn = anInParts[1];
+            Assert.Equal(1, anInParts.Count);
+            Assert.True(anInParts.KeyAt(0).IsSame(aSolid));
+            NCollection_List<Shape> aLIn = anInParts.ValueAt(0);
             Assert.Equal(1, aLIn.Extent());
             Assert.True(aLIn.First().IsSame(aFIn));
         }
@@ -270,9 +270,9 @@ public class BOPAlgo_BuilderSolidTests
         NCollection_List<Shape> anOwn = new();
         anOwn.Append(aFIn);
         aSolidsIF[aSolid] = anOwn;
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anInParts2 = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> anInParts2 = new(ShapeHasher.Instance);
         BuilderTools.ClassifyFaces(aLF, aLS, false, new IntersectionContext(), anInParts2, null, aSolidsIF);
-        Assert.True(anInParts2[1].IsEmpty());
+        Assert.True(anInParts2.ValueAt(0).IsEmpty());
     }
 
     [Fact]
@@ -332,13 +332,13 @@ public class BOPAlgo_BuilderSolidTests
 
         Shape aBox = Box(0, 0, 0, 1, 2, 3);
         Assert.Equal(0, BuilderTools.EdgesToWires(aBox, ref aWires, true));
-        NCollection_IndexedMap<Shape> aMEIn = new(ShapeHasher.Instance), aMEOut = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMEIn = new(ShapeHasher.Instance), aMEOut = new(ShapeHasher.Instance);
         Exploration.MapShapes(aBox, ShapeType.Edge, aMEIn);
         Exploration.MapShapes(aWires, ShapeType.Edge, aMEOut);
-        Assert.Equal(12, aMEIn.Extent());
+        Assert.Equal(12, aMEIn.Count);
         for (int i = 1; i <= 12; i++)
         {
-            Assert.True(aMEOut.Contains(aMEIn[i]));
+            Assert.True(aMEOut.Contains(aMEIn[i - 1]));
         }
         Assert.True(Count(aWires, ShapeType.Wire) >= 1);
     }

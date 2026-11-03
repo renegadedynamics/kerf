@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Tools;
@@ -118,15 +119,15 @@ public class BOPAlgo_RemoveFeaturesNativeTests(ITestOutputHelper output)
     internal static (string Outcome, string? Result, string History, Shape Input) Run(Case theCase, bool theParallel)
     {
         BrepTools.Read(out Shape anInput, new StringReader(theCase.ShapeText));
-        var aFaces = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aFaces = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(anInput, ShapeType.Face, aFaces);
         Defeaturing aDF = new();
         aDF.SetShape(anInput);
         foreach (int anIndex in theCase.Faces)
         {
-            if (anIndex >= 1 && anIndex <= aFaces.Extent())
+            if (anIndex >= 1 && anIndex <= aFaces.Count)
             {
-                aDF.AddFaceToRemove(aFaces.FindKey(anIndex));
+                aDF.AddFaceToRemove(aFaces[anIndex - 1]);
             }
         }
         aDF.SetToFillHistory(true);

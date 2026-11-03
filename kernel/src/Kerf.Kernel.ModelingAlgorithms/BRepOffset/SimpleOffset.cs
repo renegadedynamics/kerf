@@ -242,21 +242,21 @@ public sealed class SimpleOffset : Modification
 
         // Iterate over edges to compute 3d curve.
         var edgeFaceMap =
-            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Edge, ShapeType.Face, edgeFaceMap);
-        for (int idx = 1; idx <= edgeFaceMap.Extent(); ++idx)
+        for (int idx = 1; idx <= edgeFaceMap.Count; ++idx)
         {
-            Edge currEdge = ShapeCasts.Edge(edgeFaceMap.FindKey(idx));
+            Edge currEdge = ShapeCasts.Edge(edgeFaceMap.KeyAt(idx - 1));
             FillEdgeData(currEdge, edgeFaceMap, idx);
         }
 
         // Iterate over vertices to compute new vertex.
         var vertexEdgeMap =
-            new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(shape, ShapeType.Vertex, ShapeType.Edge, vertexEdgeMap);
-        for (int idx = 1; idx <= vertexEdgeMap.Extent(); ++idx)
+        for (int idx = 1; idx <= vertexEdgeMap.Count; ++idx)
         {
-            Vertex currVertex = ShapeCasts.Vertex(vertexEdgeMap.FindKey(idx));
+            Vertex currVertex = ShapeCasts.Vertex(vertexEdgeMap.KeyAt(idx - 1));
             FillVertexData(currVertex, vertexEdgeMap, idx);
         }
     }
@@ -297,10 +297,10 @@ public sealed class SimpleOffset : Modification
 
     // Method to fill new edge data for single edge.
     private void FillEdgeData(in Edge edge,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> edgeFaceMap,
+                              IndexedMap<Shape, NCollection_List<Shape>> edgeFaceMap,
                               int idx)
     {
-        NCollection_List<Shape> facesList = edgeFaceMap[idx];
+        NCollection_List<Shape> facesList = edgeFaceMap.ValueAt(idx - 1);
 
         if (facesList.Size() == 0)
         {
@@ -373,7 +373,7 @@ public sealed class SimpleOffset : Modification
 
     // Method to fill new vertex data for single vertex.
     private void FillVertexData(in Vertex vertex,
-                                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vertexEdgeMap,
+                                IndexedMap<Shape, NCollection_List<Shape>> vertexEdgeMap,
                                 int idx)
     {
         // Algorithm:
@@ -384,7 +384,7 @@ public sealed class SimpleOffset : Modification
 
         Point3D currPnt = Tool.Pnt(vertex);
 
-        NCollection_List<Shape> edgesList = vertexEdgeMap[idx];
+        NCollection_List<Shape> edgesList = vertexEdgeMap.ValueAt(idx - 1);
 
         if (edgesList.Size() == 0)
         {

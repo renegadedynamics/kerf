@@ -1195,7 +1195,7 @@ public static class OffsetTool
 
     //=================================================================================================
 
-    private static void CheckIntersFF(DS pDS, in Edge refEdge, NCollection_IndexedMap<Shape> trueEdges)
+    private static void CheckIntersFF(DS pDS, in Edge refEdge, IndexedSet<Shape> trueEdges)
     {
         List<InterfFF> fFs = pDS.InterfFF();
         int nb = fFs.Count;
@@ -1408,7 +1408,7 @@ public static class OffsetTool
         //
         pf.Perform();
 
-        NCollection_IndexedMap<Shape> trueEdges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> trueEdges = new(ShapeHasher.Instance);
         if (!refEdge.IsNull)
         {
             CheckIntersFF(pf.PDS()!, refEdge, trueEdges);
@@ -1449,7 +1449,7 @@ public static class OffsetTool
                     PaveBlock pb = pbIt.Value();
                     int nSect = pb.Edge();
                     Edge edge = ShapeCasts.Edge(pDS.Shape(nSect));
-                    if (!trueEdges.IsEmpty() && !trueEdges.Contains(edge))
+                    if (trueEdges.Count != 0 && !trueEdges.Contains(edge))
                     {
                         continue;
                     }
@@ -1629,18 +1629,18 @@ public static class OffsetTool
             NCollection_Sequence<Shape> eseq = new();
             NCollection_Sequence<Shape> edgesForConcat = new();
 
-            if (!trueEdges.IsEmpty())
+            if (trueEdges.Count != 0)
             {
-                for (i = trueEdges.Extent(); i >= 1; i--)
+                for (i = trueEdges.Count; i >= 1; i--)
                 {
-                    edgesForConcat.Append(trueEdges[i]);
+                    edgesForConcat.Append(trueEdges[i - 1]);
                 }
                 Edge assembledEdge = AssembleEdge(pDS, f1, f2, addPCurve1, addPCurve2, edgesForConcat);
                 if (assembledEdge.IsNull)
                 {
-                    for (i = trueEdges.Extent(); i >= 1; i--)
+                    for (i = trueEdges.Count; i >= 1; i--)
                     {
-                        eseq.Append(trueEdges[i]);
+                        eseq.Append(trueEdges[i - 1]);
                     }
                 }
                 else
@@ -3067,14 +3067,14 @@ public static class OffsetTool
     {
         int i;
         BrepBuilder b = new();
-        NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> emap = new(ShapeHasher.Instance);
         Curve2D? nullPCurve = null;
 
         Exploration.MapShapes(F, ShapeType.Edge, emap);
 
-        for (i = 1; i <= emap.Extent(); i++)
+        for (i = 1; i <= emap.Count; i++)
         {
-            Edge ce = ShapeCasts.Edge(emap[i]);
+            Edge ce = ShapeCasts.Edge(emap[i - 1]);
             ce.Orientation(Forward);
             Curve2D? c2 = Tool.CurveOnSurface(ce, F, out double f, out double l);
             if (c2 is not null)
@@ -3275,9 +3275,9 @@ public static class OffsetTool
         {
             return;
         }
-        NCollection_IndexedMap<Shape> edges = new(ShapeHasher.Instance);
+        IndexedSet<Shape> edges = new(ShapeHasher.Instance);
         Exploration.MapShapes(f, ShapeType.Edge, edges);
-        for (int i = 1; i <= edges.Extent(); i++)
+        for (int i = 0; i < edges.Count; i++)
         {
             if (edges[i].TShape()!.Locked())
             {
@@ -3286,7 +3286,7 @@ public static class OffsetTool
         }
         BrepBuilder b = new();
         b.UpdateFace(f, theNew, l, Tool.Tolerance(f));
-        for (int i = 1; i <= edges.Extent(); i++)
+        for (int i = 0; i < edges.Count; i++)
         {
             Edge e = ShapeCasts.Edge(edges[i]);
             Placement loc = l.Predivided(e.Location());
@@ -3704,10 +3704,10 @@ public static class OffsetTool
             //------------------------------------------------
             Face fforward = F;
             fforward.Orientation(Forward);
-            NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> emap = new(ShapeHasher.Instance);
             Exploration.MapShapes(fforward, ShapeType.Edge, emap);
             double f, l;
-            for (int i = 1; i <= emap.Extent(); i++)
+            for (int i = 0; i < emap.Count; i++)
             {
                 Edge ce = ShapeCasts.Edge(emap[i]);
                 ce.Orientation(Forward);
@@ -4202,17 +4202,17 @@ public static class OffsetTool
             {
                 // if the shell contains free borders that do not belong to the
                 // free borders of caps (Boundary) it is removed.
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> map =
+                IndexedMap<Shape, NCollection_List<Shape>> map =
                     new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(s, ShapeType.Edge, ShapeType.Face, map);
 
                 bool jeGarde = true;
-                for (int i = 1; i <= map.Extent() && jeGarde; i++)
+                for (int i = 1; i <= map.Count && jeGarde; i++)
                 {
-                    NCollection_List<Shape> lf = map[i];
+                    NCollection_List<Shape> lf = map.ValueAt(i - 1);
                     if (lf.Extent() < 2)
                     {
-                        Edge edge = ShapeCasts.Edge(map.FindKey(i));
+                        Edge edge = ShapeCasts.Edge(map.KeyAt(i - 1));
                         if (edge.Orientation() == Internal)
                         {
                             Face face = ShapeCasts.Face(lf.First());
@@ -4303,7 +4303,7 @@ public static class OffsetTool
     /// <paramref name="si"/>'s faces the new edges (<paramref name="newEdges"/>) whose pcurves lie outside the
     /// initial face.
     /// </summary>
-    public static void CorrectOrientation(in Shape si, NCollection_IndexedMap<Shape> newEdges,
+    public static void CorrectOrientation(in Shape si, IndexedSet<Shape> newEdges,
                                           AsDes asDes, ShapeImage initOffset, double offset)
     {
         Explorer exp = new();
@@ -4469,13 +4469,13 @@ public static class OffsetTool
     private static void UpdateVertexTolerances(in Face face)
     {
         BrepBuilder bb = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> vEmap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(face, ShapeType.Vertex, ShapeType.Edge, vEmap);
 
-        for (int i = 1; i <= vEmap.Extent(); i++)
+        for (int i = 0; i < vEmap.Count; i++)
         {
-            Vertex vertex = ShapeCasts.Vertex(vEmap.FindKey(i));
-            NCollection_List<Shape> elist = vEmap[i];
+            Vertex vertex = ShapeCasts.Vertex(vEmap.KeyAt(i));
+            NCollection_List<Shape> elist = vEmap.ValueAt(i);
             Point3D pntVtx = Tool.Pnt(vertex);
             NCollection_List<Shape>.Iterator itl = new(elist);
             for (; itl.More(); itl.Next())

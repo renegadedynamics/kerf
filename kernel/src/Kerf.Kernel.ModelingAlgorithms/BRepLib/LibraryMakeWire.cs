@@ -38,7 +38,7 @@ public class LibraryMakeWire : LibraryMakeShape
     private LibraryWireError _error;
     private Edge _edge = new();
     private Vertex _vertex = new();
-    private readonly NCollection_IndexedMap<Shape> _vertices = new(ShapeHasher.Instance);
+    private readonly IndexedSet<Shape> _vertices = new(ShapeHasher.Instance);
     private Vertex _firstVertex = new();
     private Vertex _vf = new();
     private Vertex _vl = new();
@@ -166,15 +166,15 @@ public class LibraryMakeWire : LibraryMakeShape
             }
             // the wire's sub-shapes and the maker's state as the change left them
             var shapes = new List<Shape>();
-            var subShapes = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var subShapes = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(_shape, subShapes);
-            for (int i = 1; i <= subShapes.Extent(); i++)
+            for (int i = 0; i < subShapes.Count; i++)
             {
                 shapes.Add(subShapes[i]);
             }
-            for (int i = 1; i <= _vertices.Extent(); i++)
+            for (int i = 0; i < _vertices.Count; i++)
             {
-                shapes.Add(_vertices.FindKey(i));
+                shapes.Add(_vertices[i]);
             }
             shapes.Add(_vf);
             shapes.Add(_vl);
@@ -183,9 +183,9 @@ public class LibraryMakeWire : LibraryMakeShape
             shapes.Add(_edge);
 
             _shape = overlay.Finish(_shape, shapes);
-            for (int i = 1; i <= _vertices.Extent(); i++)
+            for (int i = 1; i <= _vertices.Count; i++)
             {
-                _vertices.Substitute(i, overlay.Final(_vertices.FindKey(i)));
+                _vertices.Substitute(i - 1, overlay.Final(_vertices[i - 1]));
             }
             _vf = ShapeCasts.Vertex(overlay.Final(_vf));
             _vl = ShapeCasts.Vertex(overlay.Final(_vl));
@@ -321,9 +321,9 @@ public class LibraryMakeWire : LibraryMakeShape
                     // search if there is a similar vertex in the edge
                     Point3D pe = Tool.Pnt(ve);
 
-                    for (int i = 1; i <= _vertices.Extent(); i++)
+                    for (int i = 0; i < _vertices.Count; i++)
                     {
-                        Vertex vw = ShapeCasts.Vertex(_vertices.FindKey(i));
+                        Vertex vw = ShapeCasts.Vertex(_vertices[i]);
                         Point3D pw = Tool.Pnt(vw);
                         double l = pe.Distance(pw);
 
@@ -409,9 +409,9 @@ public class LibraryMakeWire : LibraryMakeShape
                         Point3D pe = Tool.Pnt(ve);
 
                         bool newvertex = false;
-                        for (int i = 1; i <= _vertices.Extent(); i++)
+                        for (int i = 0; i < _vertices.Count; i++)
                         {
-                            Vertex vw = ShapeCasts.Vertex(_vertices.FindKey(i));
+                            Vertex vw = ShapeCasts.Vertex(_vertices[i]);
                             Point3D pw = Tool.Pnt(vw);
                             double l = pe.Distance(pw), tolE, tolW;
                             tolW = Tool.Tolerance(vw);
@@ -584,7 +584,7 @@ public class LibraryMakeWire : LibraryMakeShape
             //
             var grVL = new NCollection_List<NCollection_List<Vertex>>();
 
-            var mapVE = new NCollection_IndexedDataMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
+            var mapVE = new IndexedMap<Shape, NCollection_List<Shape>>(ShapeHasher.Instance);
 
             CollectCoincidentVertices(l, grVL);
 
@@ -643,7 +643,7 @@ public class LibraryMakeWire : LibraryMakeShape
                     for (; exp.More(); exp.Next())
                     {
                         Shape cv = exp.Current();
-                        for (itL1.Initialize(mapVE.FindFromKey(cv)); itL1.More(); itL1.Next())
+                        for (itL1.Initialize(mapVE.GetValue(cv)); itL1.More(); itL1.Next())
                         {
                             Shape ne = itL1.Value(); // neighbor edge
                             if (!processedEdges.Contains(ne))
@@ -664,14 +664,14 @@ public class LibraryMakeWire : LibraryMakeShape
 
     private sealed class BRepLib_BndBoxVertexSelector : SpatialTree<int, Box>.Selector
     {
-        private readonly NCollection_IndexedMap<Shape> _mapOfShape; // vertices
+        private readonly IndexedSet<Shape> _mapOfShape; // vertices
         private Point3D _p;
         private double _tolP;
         private int _vInd;
         private Box _vBox = new();
         private readonly NCollection_List<int> _resultInd = new();
 
-        public BRepLib_BndBoxVertexSelector(NCollection_IndexedMap<Shape> mapOfShape)
+        public BRepLib_BndBoxVertexSelector(IndexedSet<Shape> mapOfShape)
         {
             _mapOfShape = mapOfShape;
             _tolP = 0.0;
@@ -682,12 +682,12 @@ public class LibraryMakeWire : LibraryMakeShape
 
         public override bool Accept(in int obj)
         {
-            if (obj > _mapOfShape.Extent())
+            if (obj > _mapOfShape.Count)
             {
                 return false;
             }
 
-            Vertex v = ShapeCasts.Vertex(_mapOfShape[obj]);
+            Vertex v = ShapeCasts.Vertex(_mapOfShape[obj - 1]);
 
             if (obj == _vInd)
             {
@@ -730,7 +730,7 @@ public class LibraryMakeWire : LibraryMakeShape
     private void CollectCoincidentVertices(NCollection_List<Shape> l,
                                            NCollection_List<NCollection_List<Vertex>> grVL)
     {
-        var allV = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var allV = new IndexedSet<Shape>(ShapeHasher.Instance);
 
         Exploration.MapShapes(_shape, global::Kerf.Topology.ShapeType.Vertex, allV);
 
@@ -747,9 +747,9 @@ public class LibraryMakeWire : LibraryMakeShape
         var nonGroupedV = new HashSet<Vertex>(EqualityComparer<Vertex>.Default);
 
         // add vertices from anAllV to treefiller
-        for (int i = 1; i <= allV.Extent(); i++)
+        for (int i = 1; i <= allV.Count; i++)
         {
-            Shape sh = allV[i];
+            Shape sh = allV[i - 1];
             var bb = new Box();
             Bounds.Add(sh, ref bb);
             treeFiller.Add(i, bb);
@@ -760,9 +760,9 @@ public class LibraryMakeWire : LibraryMakeShape
 
         int nbColl = 0;
         var itI = new NCollection_List<int>.Iterator();
-        for (int i = 1; i <= allV.Extent(); i++)
+        for (int i = 1; i <= allV.Count; i++)
         {
-            Vertex v = ShapeCasts.Vertex(allV[i]);
+            Vertex v = ShapeCasts.Vertex(allV[i - 1]);
             if (_vertices.Contains(v))
             {
                 continue;
@@ -775,7 +775,7 @@ public class LibraryMakeWire : LibraryMakeShape
                 HashSet<Vertex> vm = v2CV.SetValueRef(v, new HashSet<Vertex>(EqualityComparer<Vertex>.Default));
                 for (itI.Initialize(resInds); itI.More(); itI.Next())
                 {
-                    Vertex cv = ShapeCasts.Vertex(allV[itI.Value()]);
+                    Vertex cv = ShapeCasts.Vertex(allV[itI.Value() - 1]);
                     vm.Add(cv);
                     if (_vertices.Contains(cv))
                     {

@@ -121,7 +121,7 @@ public partial class PaveFiller
         }
         //
         // Prepare pairs for intersection
-        NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> mvePairs = new();
+        IndexedMap<PaveBlock, NCollection_List<int>> mvePairs = new();
         for (; _iterator.More(); _iterator.Next())
         {
             if (UserBreak(ps))
@@ -164,8 +164,8 @@ public partial class PaveFiller
                 continue;
             }
             //
-            int index = mvePairs.FindIndex(pb);
-            NCollection_List<int> pLV = index > 0 ? mvePairs[index] : mvePairs[mvePairs.Add(pb, new NCollection_List<int>())];
+            int index = mvePairs.IndexOf(pb) + 1;
+            NCollection_List<int> pLV = index > 0 ? mvePairs.ValueAt(index - 1) : mvePairs.ValueAt(mvePairs.Add(pb, new NCollection_List<int>()));
             pLV.Append(nV);
         }
         //
@@ -176,10 +176,10 @@ public partial class PaveFiller
     /// Intersects the vertices with the pave blocks of <paramref name="vePairs"/>, adds the extra paves and splits
     /// the pave blocks; with <paramref name="addInterfs"/> the vertex/edge interferences are added to the DS.
     /// </summary>
-    protected void IntersectVE(NCollection_IndexedDataMap<PaveBlock, NCollection_List<int>> vePairs,
+    protected void IntersectVE(IndexedMap<PaveBlock, NCollection_List<int>> vePairs,
                                ProgressRange range, bool addInterfs = true)
     {
-        int i, nbVE = vePairs.Extent();
+        int i, nbVE = vePairs.Count;
         if (nbVE == 0)
         {
             return;
@@ -202,7 +202,7 @@ public partial class PaveFiller
             {
                 return;
             }
-            PaveBlock pb = vePairs.FindKey(i);
+            PaveBlock pb = vePairs.KeyAt(i - 1);
             int nE = pb.OriginalEdge();
             //
             NCollection_IntMap mvpb = new();
@@ -213,7 +213,7 @@ public partial class PaveFiller
                 mvpb.Add(itPB.Value().Pave2().Index());
             }
 
-            NCollection_List<int> lv = vePairs[i];
+            NCollection_List<int> lv = vePairs.ValueAt(i - 1);
             NCollection_List<int>.Iterator itLV = new(lv);
             for (; itLV.More(); itLV.Next())
             {
@@ -379,7 +379,7 @@ public partial class PaveFiller
         // Fence map to avoid unification of the same vertices twice
         HashSet<Pair> mPairs = new();
         // Map to treat the Common Blocks
-        NCollection_IndexedDataMap<CommonBlock, NCollection_List<PaveBlock>> mcbNewPB = new();
+        IndexedMap<CommonBlock, NCollection_List<PaveBlock>> mcbNewPB = new();
         //
         // Map of vertices to init the pave blocks for them
         NCollection_IntMap mVerticesToInitPB = new();
@@ -467,10 +467,10 @@ public partial class PaveFiller
                     if (cb is not null)
                     {
                         // Store the new pave block to make new common block
-                        int index = mcbNewPB.FindIndex(cb);
+                        int index = mcbNewPB.IndexOf(cb) + 1;
                         NCollection_List<PaveBlock> pLPBCB = index > 0
-                            ? mcbNewPB[index]
-                            : mcbNewPB[mcbNewPB.Add(cb, new NCollection_List<PaveBlock>())];
+                            ? mcbNewPB.ValueAt(index - 1)
+                            : mcbNewPB.ValueAt(mcbNewPB.Add(cb, new NCollection_List<PaveBlock>()));
                         pLPBCB.Append(pbn);
                     }
                 }
@@ -480,14 +480,14 @@ public partial class PaveFiller
         }
         //
         // Make Common Blocks
-        int i, nbCB = mcbNewPB.Extent();
+        int i, nbCB = mcbNewPB.Count;
         for (i = 1; i <= nbCB; ++i)
         {
-            CommonBlock cb = mcbNewPB.FindKey(i);
-            NCollection_List<PaveBlock> lpbn = mcbNewPB[i];
+            CommonBlock cb = mcbNewPB.KeyAt(i - 1);
+            NCollection_List<PaveBlock> lpbn = mcbNewPB.ValueAt(i - 1);
             //
             // For each group of pave blocks with the same vertices make new common block
-            NCollection_IndexedDataMap<Pair, NCollection_List<PaveBlock>> mInds = new();
+            IndexedMap<Pair, NCollection_List<PaveBlock>> mInds = new();
             NCollection_List<PaveBlock>.Iterator itLPB = new(lpbn);
             for (; itLPB.More(); itLPB.Next())
             {
@@ -496,20 +496,20 @@ public partial class PaveFiller
                 Pair pair = new();
                 pair.SetIndices(pb.Pave1().Index(), pb.Pave2().Index());
                 //
-                int index = mInds.FindIndex(pair);
+                int index = mInds.IndexOf(pair) + 1;
                 NCollection_List<PaveBlock> pLPBx = index > 0
-                    ? mInds[index]
-                    : mInds[mInds.Add(pair, new NCollection_List<PaveBlock>())];
+                    ? mInds.ValueAt(index - 1)
+                    : mInds.ValueAt(mInds.Add(pair, new NCollection_List<PaveBlock>()));
                 pLPBx.Append(pb);
             }
             //
             cb.PaveBlock1().Indices(out int nV1, out int nV2);
             bool bIsClosed = (nV1 == nV2);
             //
-            int j, nbPairs = mInds.Extent();
+            int j, nbPairs = mInds.Count;
             for (j = 1; j <= nbPairs; ++j)
             {
-                NCollection_List<PaveBlock> lpb = mInds[j];
+                NCollection_List<PaveBlock> lpb = mInds.ValueAt(j - 1);
                 //
                 if (!bIsClosed)
                 {

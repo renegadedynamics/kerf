@@ -310,13 +310,13 @@ public class DraftAngle : ModifyShape
             {
                 curWire = wit.Value();
                 // OCCT iterates a map of the wire's edges (by address); the port in the wire's order.
-                NCollection_IndexedMap<Shape> emap = new(ShapeHasher.Instance);
+                IndexedSet<Shape> emap = new(ShapeHasher.Instance);
                 eit.Initialize(curWire);
                 for (; eit.More(); eit.Next())
                 {
                     emap.Add(eit.Value());
                 }
-                for (int m = 1; m <= emap.Extent(); m++)
+                for (int m = 0; m < emap.Count; m++)
                 {
                     curEdge = emap[m];
                     if (BrepTools.IsReallyClosed(ShapeCasts.Edge(curEdge), ShapeCasts.Face(curFace)))

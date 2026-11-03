@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Booleans.Legacy.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -16,9 +17,9 @@ public class TopOpeBRepTool_ShapeToolTests
 {
     private static Shape Sub(in Shape S, ShapeType T, int k)
     {
-        NCollection_IndexedMap<Shape> M = new(ShapeHasher.Instance);
+        IndexedSet<Shape> M = new(ShapeHasher.Instance);
         Exploration.MapShapes(S, T, M);
-        return M.FindKey(k);
+        return M[k - 1];
     }
 
     [Fact]

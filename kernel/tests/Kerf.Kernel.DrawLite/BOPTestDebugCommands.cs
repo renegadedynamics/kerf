@@ -691,18 +691,18 @@ internal static class BOPTestDebugCommands
             return 0;
         }
         FaceInfo aFI = pDS.ChangeFaceInfo(nF);
-        (string aText, NCollection_IndexedMap<PaveBlock> aMPB, NCollection_IntMap aMI) = iPriz switch
+        (string aText, IndexedSet<PaveBlock> aMPB, NCollection_IntMap aMI) = iPriz switch
         {
             0 => ("On", aFI.PaveBlocksOn(), aFI.VerticesOn()),
             1 => ("In", aFI.PaveBlocksIn(), aFI.VerticesIn()),
             _ => ("Sc", aFI.PaveBlocksSc(), aFI.VerticesSc()),
         };
         TextWriter anOut = theDI.Output;
-        if (aMPB.Extent() != 0)
+        if (aMPB.Count != 0)
         {
             anOut.Write($" pave blocks {aText}:\n");
-            int aNb = aMPB.Extent();
-            for (int i = 1; i <= aNb; ++i)
+            int aNb = aMPB.Count;
+            for (int i = 0; i < aNb; ++i)
             {
                 aMPB[i].Dump(anOut);
                 anOut.Write(" \n");

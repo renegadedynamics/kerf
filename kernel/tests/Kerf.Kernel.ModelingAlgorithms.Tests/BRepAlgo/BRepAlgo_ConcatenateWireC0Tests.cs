@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Measurement;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
@@ -47,9 +48,9 @@ public class BRepAlgo_ConcatenateWireC0Tests(ITestOutputHelper output)
             Edge anEdge = global::Kerf.Engine.Booleans.Algo.BRepAlgo.ConcatenateWireC0(aWire);
             Assert.False(anEdge.IsNull);
             // checknbshapes r -vertex 2 -edge 1
-            var aVertices = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+            var aVertices = new IndexedSet<Shape>(ShapeHasher.Instance);
             Exploration.MapShapes(anEdge, ShapeType.Vertex, aVertices);
-            Assert.Equal(2, aVertices.Extent());
+            Assert.Equal(2, aVertices.Count);
             // the same path: its length, and its ends at the wire's ends
             Assert.Equal(Length(aWire), Length(anEdge), Length(aWire) * 1e-6);
             Exploration.Vertices(aWire, out Vertex aV1, out Vertex aV2);

@@ -558,7 +558,7 @@ public sealed class Generator
     private static Edge CreateNewEdge(in Edge edge,
                                              Dictionary<Shape, Shape> copiedEdges,
                                              in Wire wire,
-                                             NCollection_IndexedMap<Shape> modifWires)
+                                             IndexedSet<Shape> modifWires)
     {
         BrepBuilder builder = new();
         Edge newEdge;
@@ -630,7 +630,7 @@ public sealed class Generator
         b.MakeShell(ref _shell);
 
         int nb = _wires.Length();
-        NCollection_IndexedMap<Shape> modifWires = new(ShapeHasher.Instance); // indexed map for debugging
+        IndexedSet<Shape> modifWires = new(ShapeHasher.Instance); // indexed map for debugging
 
         WireExplorer ex1 = new(), ex2 = new();
 
@@ -1155,9 +1155,9 @@ public sealed class Generator
 
         // update wire's history
         Iterator itEdge = new();
-        for (int i = 1; i <= modifWires.Extent(); i++)
+        for (int i = 0; i < modifWires.Count; i++)
         {
-            Shape curWire = modifWires.FindKey(i);
+            Shape curWire = modifWires[i];
             Wire newWire = new();
             b.MakeWire(ref newWire);
 

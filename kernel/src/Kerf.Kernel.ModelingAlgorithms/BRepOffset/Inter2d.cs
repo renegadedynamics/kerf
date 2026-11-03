@@ -122,7 +122,7 @@ public static class Inter2d
             return;
         }
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> vEmap =
+        IndexedMap<Shape, NCollection_List<Shape>> vEmap =
             new(ShapeHasher.Instance);
         for (int ii = 1; ii <= seqEdges.Length(); ii++)
         {
@@ -131,10 +131,10 @@ public static class Inter2d
 
         Vertex firstVertex = new();
         Edge firstEdge = new();
-        for (int ii = 1; ii <= vEmap.Extent(); ii++)
+        for (int ii = 0; ii < vEmap.Count; ii++)
         {
-            Vertex vertex = ShapeCasts.Vertex(vEmap.FindKey(ii));
-            NCollection_List<Shape> elist = vEmap[ii];
+            Vertex vertex = ShapeCasts.Vertex(vEmap.KeyAt(ii));
+            NCollection_List<Shape> elist = vEmap.ValueAt(ii);
             if (elist.Extent() == 1)
             {
                 Edge edge = ShapeCasts.Edge(elist.First());
@@ -163,10 +163,10 @@ public static class Inter2d
             if (indCoord != 0)
             {
                 double maxDelta = 0.0;
-                for (int ii = 1; ii <= vEmap.Extent(); ii++)
+                for (int ii = 0; ii < vEmap.Count; ii++)
                 {
-                    Vertex vertex = ShapeCasts.Vertex(vEmap.FindKey(ii));
-                    NCollection_List<Shape> elist = vEmap[ii];
+                    Vertex vertex = ShapeCasts.Vertex(vEmap.KeyAt(ii));
+                    NCollection_List<Shape> elist = vEmap.ValueAt(ii);
                     Edge edge1 = ShapeCasts.Edge(elist.First());
                     Edge edge2 = ShapeCasts.Edge(elist.Last());
                     double param1 = Tool.Parameter(vertex, edge1);
@@ -182,7 +182,7 @@ public static class Inter2d
                         firstVertex = vertex;
                     }
                 }
-                NCollection_List<Shape> elist1 = vEmap.FindFromKey(firstVertex);
+                NCollection_List<Shape> elist1 = vEmap.GetValue(firstVertex);
                 NCollection_List<Shape>.Iterator itl = new(elist1);
                 for (; itl.More(); itl.Next())
                 {
@@ -209,7 +209,7 @@ public static class Inter2d
                 break;
             }
 
-            NCollection_List<Shape> elist = vEmap.FindFromKey(lastVertex);
+            NCollection_List<Shape> elist = vEmap.GetValue(lastVertex);
             if (elist.Extent() == 1)
             {
                 break;
@@ -245,7 +245,7 @@ public static class Inter2d
                               double tol,
                               bool isToUpdate,
                               AsDes asDes2d,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv)
+                              IndexedMap<Shape, NCollection_List<Shape>> dmvv)
     {
         // Update vertices
         NCollection_List<Shape>.Iterator it = new(lv);
@@ -334,20 +334,20 @@ public static class Inter2d
                 for (; itLV.More(); itLV.Next())
                 {
                     Shape vc = itLV.Value();
-                    int indC = dmvv.FindIndex(vc);
+                    int indC = dmvv.IndexOf(vc) + 1;
                     if (indC == 0)
                     {
-                        indC = dmvv.Add(vc, new NCollection_List<Shape>());
+                        indC = dmvv.Add(vc, new NCollection_List<Shape>()) + 1;
                     }
-                    dmvv[indC].Append(v);
+                    dmvv.ValueAt(indC - 1).Append(v);
                 }
                 //
-                int ind = dmvv.FindIndex(v);
+                int ind = dmvv.IndexOf(v) + 1;
                 if (ind == 0)
                 {
-                    ind = dmvv.Add(v, new NCollection_List<Shape>());
+                    ind = dmvv.Add(v, new NCollection_List<Shape>()) + 1;
                 }
-                dmvv[ind].Append(lvc);
+                dmvv.ValueAt(ind - 1).Append(lvc);
             }
             asDes2d.Add(edge, v);
         }
@@ -363,7 +363,7 @@ public static class Inter2d
                               NCollection_List<Shape> lv2,
                               double tol,
                               AsDes asDes2d,
-                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv)
+                              IndexedMap<Shape, NCollection_List<Shape>> dmvv)
     {
         for (int i = 0; i < 2; ++i)
         {
@@ -382,7 +382,7 @@ public static class Inter2d
                                   AsDes asDes,
                                   double tol,
                                   bool withOri,
-                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVV)
+                                  IndexedMap<Shape, NCollection_List<Shape>> aDMVV)
     {
 
         if (e1.IsSame(e2))
@@ -643,7 +643,7 @@ public static class Inter2d
                                      bool withOri,
                                      in Vertex vref,
                                      ShapeImage imageVV,
-                                     NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aDMVV,
+                                     IndexedMap<Shape, NCollection_List<Shape>> aDMVV,
                                      out bool coincide)
     {
         //
@@ -1618,10 +1618,10 @@ public static class Inter2d
     /// </summary>
     public static void Compute(AsDes asDes,
                                in Face f,
-                               NCollection_IndexedMap<Shape> newEdges,
+                               IndexedSet<Shape> newEdges,
                                double tol,
                                Dictionary<Shape, NCollection_List<Shape>> edgeIntEdges,
-                               NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv,
+                               IndexedMap<Shape, NCollection_List<Shape>> dmvv,
                                ProgressRange range = default)
     {
 
@@ -1732,10 +1732,10 @@ public static class Inter2d
                                       double offset,
                                       double tol,
                                       Analyse analyse,
-                                      NCollection_IndexedMap<Shape> facesWithVerts,
+                                      IndexedSet<Shape> facesWithVerts,
                                       ShapeImage imageVV,
                                       Dictionary<Shape, NCollection_List<Shape>> edgeIntEdges,
-                                      NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv,
+                                      IndexedMap<Shape, NCollection_List<Shape>> dmvv,
                                       ProgressRange range = default)
     {
 
@@ -2000,7 +2000,7 @@ public static class Inter2d
                                             AsDes asDes2d,
                                             double tol,
                                             Analyse analyse,
-                                            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv,
+                                            IndexedMap<Shape, NCollection_List<Shape>> dmvv,
                                             ProgressRange range = default)
     {
         Face fio = ofi.InternalFace();
@@ -2202,17 +2202,17 @@ public static class Inter2d
     //=================================================================================================
 
     private static void MakeChain(in Shape v,
-                                  NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv,
+                                  IndexedMap<Shape, NCollection_List<Shape>> dmvv,
                                   HashSet<Shape> mDone,
                                   NCollection_List<Shape> chain)
     {
         if (mDone.Add(v))
         {
             chain.Append(v);
-            int ind = dmvv.FindIndex(v);
+            int ind = dmvv.IndexOf(v) + 1;
             if (ind != 0)
             {
-                NCollection_List<Shape> pLV = dmvv.FindFromIndex(ind);
+                NCollection_List<Shape> pLV = dmvv.ValueAt(ind - 1);
                 NCollection_List<Shape>.Iterator it = new(pLV);
                 for (; it.More(); it.Next())
                 {
@@ -2229,16 +2229,16 @@ public static class Inter2d
     /// <paramref name="asDes"/>, replacing the old vertices with the new ones. False if a vertex has no parameter
     /// on one of its edges.
     /// </summary>
-    public static bool FuseVertices(NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv,
+    public static bool FuseVertices(IndexedMap<Shape, NCollection_List<Shape>> dmvv,
                                     AsDes asDes,
                                     ShapeImage imageVV)
     {
         BrepBuilder bb = new();
         HashSet<Shape> mvDone = new(ShapeHasher.Instance);
-        int i, nb = dmvv.Extent();
+        int i, nb = dmvv.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Vertex v = ShapeCasts.Vertex(dmvv.FindKey(i));
+            Vertex v = ShapeCasts.Vertex(dmvv.KeyAt(i - 1));
             //
             // find chain of vertices
             NCollection_List<Shape> lvChain = new();

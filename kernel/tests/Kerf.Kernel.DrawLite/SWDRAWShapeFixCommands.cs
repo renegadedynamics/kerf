@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Healing.Analysis;
 using Kerf.Engine.Healing.Build;
@@ -782,7 +783,7 @@ internal static class SWDRAWShapeFixCommands
         }
         var aExpE = new Explorer(aSh1, ShapeType.Edge);
         var aSeqEdges = new NCollection_HSequence<Shape>();
-        var aMapEdges = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMapEdges = new IndexedSet<Shape>(ShapeHasher.Instance);
         for (; aExpE.More(); aExpE.Next())
         {
             aSeqEdges.Append(aExpE.Current());
@@ -804,7 +805,7 @@ internal static class SWDRAWShapeFixCommands
             {
                 if (shared)
                 {
-                    int ind = aMapEdges.FindIndex(aExp1.Current());
+                    int ind = aMapEdges.IndexOf(aExp1.Current()) + 1;
                     di.Append(ind).Append(" ");
                 }
                 else

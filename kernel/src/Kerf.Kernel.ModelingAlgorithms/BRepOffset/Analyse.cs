@@ -61,7 +61,7 @@ public sealed class Analyse
     // Map containing the list of intervals on the edge
     private readonly Dictionary<Shape, NCollection_List<Interval>> _mapEdgeType = new(ShapeHasher.Instance);
     // Ancestors map
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _ancestors = new(ShapeHasher.Instance);
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _ancestors = new(ShapeHasher.Instance);
     // Replacement of an edge in the face
     private readonly Dictionary<Shape, Dictionary<Shape, Shape>> _replacement = new(ShapeHasher.Instance);
     // Map of shapes descendants built on the base of Ancestors map. Filled on the first query.
@@ -282,7 +282,7 @@ public sealed class Analyse
 
     //=================================================================================================
 
-    private static void BuildAncestors(in Shape s, NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> ma)
+    private static void BuildAncestors(in Shape s, IndexedMap<Shape, NCollection_List<Shape>> ma)
     {
         ma.Clear();
         Exploration.MapShapesAndUniqueAncestors(s, ShapeType.Vertex, ShapeType.Edge, ma);
@@ -506,7 +506,7 @@ public sealed class Analyse
 
         // Make blocks of connected edges
         NCollection_List<NCollection_List<Shape>> lcb = new();
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mveMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mveMap = new(ShapeHasher.Instance);
 
         AlgoTools.MakeConnexityBlocks(ceTangent, ShapeType.Vertex, ShapeType.Edge, lcb, mveMap);
 
@@ -569,7 +569,7 @@ public sealed class Analyse
                 }
 
                 Shape prism = mp.InternalShape();
-                NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> prismAncestors = new(ShapeHasher.Instance);
+                IndexedMap<Shape, NCollection_List<Shape>> prismAncestors = new(ShapeHasher.Instance);
                 Exploration.MapShapesAndAncestors(prism, ShapeType.Edge, ShapeType.Face, prismAncestors);
                 Exploration.MapShapesAndAncestors(prism, ShapeType.Vertex, ShapeType.Edge, prismAncestors);
 
@@ -579,7 +579,7 @@ public sealed class Analyse
                     NCollection_List<Shape> lg = mp.InternalGenerated(e);
                     Face fNew = ShapeCasts.Face(lg.First());
 
-                    NCollection_List<Shape> la = _ancestors.ChangeFromKey(e);
+                    NCollection_List<Shape> la = _ancestors.GetValue(e);
 
                     Shape f1 = la.First();
                     Shape f2 = la.Last();
@@ -700,7 +700,7 @@ public sealed class Analyse
                             }
                         }
 
-                        NCollection_List<Shape> lva = _ancestors.ChangeFromKey(v);
+                        NCollection_List<Shape> lva = _ancestors.GetValue(v);
                         if (!lva.Contains(eg))
                         {
                             lva.Append(eg);
@@ -708,7 +708,7 @@ public sealed class Analyse
                         fNewEdgeMap.Add(eg);
 
                         NCollection_List<Shape> lega =
-                            _ancestors[_ancestors.Add(eg, new NCollection_List<Shape>(prismAncestors.FindFromKey(eg)))];
+                            _ancestors.ValueAt(_ancestors.Add(eg, new NCollection_List<Shape>(prismAncestors.GetValue(eg))));
                         {
                             // Add ancestors from the shape
                             if (dmvfAnc.TryGetValue(v, out NCollection_List<Shape>? pSA) && !pSA.IsEmpty())
@@ -771,7 +771,7 @@ public sealed class Analyse
                     for (Iterator itV = new(eOpposite); itV.More(); itV.Next())
                     {
                         Shape v = itV.Value();
-                        NCollection_List<Shape> lva = prismAncestors.FindFromKey(v);
+                        NCollection_List<Shape> lva = prismAncestors.GetValue(v);
                         _ancestors.Add(v, new NCollection_List<Shape>(lva));
                     }
 
@@ -836,11 +836,11 @@ public sealed class Analyse
         if (_descendants.Count == 0 || update)
         {
             _descendants.Clear();
-            int nbA = _ancestors.Extent();
-            for (int i = 1; i <= nbA; ++i)
+            int nbA = _ancestors.Count;
+            for (int i = 0; i < nbA; ++i)
             {
-                Shape ss = _ancestors.FindKey(i);
-                NCollection_List<Shape> la = _ancestors[i];
+                Shape ss = _ancestors.KeyAt(i);
+                NCollection_List<Shape> la = _ancestors.ValueAt(i);
 
                 for (NCollection_List<Shape>.Iterator it = new(la); it.More(); it.Next())
                 {
@@ -994,10 +994,10 @@ public sealed class Analyse
     }
 
     /// <summary>True if the shape has ancestors.</summary>
-    public bool HasAncestor(in Shape s) => _ancestors.Contains(s);
+    public bool HasAncestor(in Shape s) => _ancestors.ContainsKey(s);
 
     /// <summary>The ancestors of the shape (throws if it has none).</summary>
-    public NCollection_List<Shape> Ancestors(in Shape s) => _ancestors.FindFromKey(s);
+    public NCollection_List<Shape> Ancestors(in Shape s) => _ancestors.GetValue(s);
 
     //=================================================================================================
 

@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry;
 using Kerf.Engine.Healing.Upgrade;
@@ -68,9 +69,9 @@ public class ShapeUpgrade_UnifySameDomainTests
 
     private static int Count(in Shape theShape, ShapeType theType)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, theType, aMap);
-        return aMap.Extent();
+        return aMap.Count;
     }
 
     private static HashSet<TShape> TShapes(in Shape theShape, ShapeType theType)
@@ -85,7 +86,7 @@ public class ShapeUpgrade_UnifySameDomainTests
 
     private static bool AllFrozen(in Shape theShape)
     {
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, aMap);
         return aMap.All(s => s.TShape()!.IsFrozen);
     }
@@ -184,10 +185,10 @@ public class ShapeUpgrade_UnifySameDomainTests
         Assert.Same(aShell.TShape(), aResult.TShape());
 
         // a kept vertex forbids the merge of the edges through it
-        var aMap = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
+        var aMap = new IndexedSet<Shape>(ShapeHasher.Instance);
         Exploration.MapShapes(aShell, ShapeType.Vertex, aMap);
         var aUnifier2 = new UnifySameDomain(aShell);
-        for (int i = 1; i <= aMap.Extent(); i++)
+        for (int i = 0; i < aMap.Count; i++)
         {
             aUnifier2.KeepShape(aMap[i]);
         }

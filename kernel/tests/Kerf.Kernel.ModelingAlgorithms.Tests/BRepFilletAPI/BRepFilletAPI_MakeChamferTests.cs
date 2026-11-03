@@ -2,6 +2,7 @@
 // Port of: src/ModelingAlgorithms/TKFillet/GTests/BRepFilletAPI_MakeChamfer_Test.cxx (OCCT V8_0_1)
 
 using Kerf.Engine.Booleans.Api;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Fillets.Api;
 using Kerf.Engine.Foundation;
@@ -42,13 +43,13 @@ public class BRepFilletAPI_MakeChamferTests
         Shape aBox = aBoxMaker.Shape();
         Assert.True(aBoxMaker.IsDone);
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEdgeFaceMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> anEdgeFaceMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aBox, ShapeType.Edge, ShapeType.Face, anEdgeFaceMap);
 
         Explorer anExp = new(aBox, ShapeType.Edge);
         Assert.True(anExp.More());
         Edge anEdge = ShapeCasts.Edge(anExp.Current());
-        Face aFace = ShapeCasts.Face(anEdgeFaceMap.FindFromKey(anEdge).First());
+        Face aFace = ShapeCasts.Face(anEdgeFaceMap.GetValue(anEdge).First());
 
         MakeChamfer aChamfer = new(aBox);
         aChamfer.Add(1.0, 3.0, anEdge, aFace);
@@ -100,9 +101,9 @@ public class BRepFilletAPI_MakeChamferTests
         Assert.True(aFuse.IsDone);
         Shape aFused = aFuse.Shape();
 
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> aVtxFaceMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> aVtxFaceMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aFused, ShapeType.Vertex, ShapeType.Face, aVtxFaceMap);
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> anEdgeFaceMap = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> anEdgeFaceMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aFused, ShapeType.Edge, ShapeType.Face, anEdgeFaceMap);
 
         // Select edges at vertices with 3+ adjacent faces (complex topology).
@@ -111,14 +112,14 @@ public class BRepFilletAPI_MakeChamferTests
         for (Explorer anEdgeExp = new(aFused, ShapeType.Edge); anEdgeExp.More() && anEdgeCount < 4; anEdgeExp.Next())
         {
             Edge anEdge = ShapeCasts.Edge(anEdgeExp.Current());
-            if (!anEdgeFaceMap.Contains(anEdge) || anEdgeFaceMap.FindFromKey(anEdge).IsEmpty())
+            if (!anEdgeFaceMap.ContainsKey(anEdge) || anEdgeFaceMap.GetValue(anEdge).IsEmpty())
             {
                 continue;
             }
             bool hasComplexVertex = false;
             for (Explorer aVtxExp = new(anEdge, ShapeType.Vertex); aVtxExp.More(); aVtxExp.Next())
             {
-                if (aVtxFaceMap.Contains(aVtxExp.Current()) && aVtxFaceMap.FindFromKey(aVtxExp.Current()).Size() >= 3)
+                if (aVtxFaceMap.ContainsKey(aVtxExp.Current()) && aVtxFaceMap.GetValue(aVtxExp.Current()).Size() >= 3)
                 {
                     hasComplexVertex = true;
                     break;
@@ -128,7 +129,7 @@ public class BRepFilletAPI_MakeChamferTests
             {
                 continue;
             }
-            Face aFace = ShapeCasts.Face(anEdgeFaceMap.FindFromKey(anEdge).First());
+            Face aFace = ShapeCasts.Face(anEdgeFaceMap.GetValue(anEdge).First());
             aChamfer.Add(0.5, 0.5, anEdge, aFace);
             anEdgeCount++;
         }
@@ -164,21 +165,21 @@ public class BRepFilletAPI_MakeChamferTests
 
         for (int i = 0; i < 3; ++i)
         {
-            NCollection_IndexedMap<Shape> anEdgeMap = new(ShapeHasher.Instance);
+            IndexedSet<Shape> anEdgeMap = new(ShapeHasher.Instance);
             Exploration.MapShapes(aShape, ShapeType.Edge, anEdgeMap);
-            if (anEdgeMap.IsEmpty())
+            if (anEdgeMap.Count == 0)
             {
                 break;
             }
             // Verify topology actually changed after each successful chamfer.
             if (i > 0 && aPrevEdges > 0)
             {
-                Assert.NotEqual(aPrevEdges, anEdgeMap.Extent());
+                Assert.NotEqual(aPrevEdges, anEdgeMap.Count);
             }
-            aPrevEdges = anEdgeMap.Extent();
+            aPrevEdges = anEdgeMap.Count;
 
-            int anIdx = (i * 3 + 1) % anEdgeMap.Extent() + 1;
-            Edge anEdge = ShapeCasts.Edge(anEdgeMap[anIdx]);
+            int anIdx = (i * 3 + 1) % anEdgeMap.Count + 1;
+            Edge anEdge = ShapeCasts.Edge(anEdgeMap[anIdx - 1]);
 
             MakeChamfer aChamfer = new(aShape);
             aChamfer.Add(1.0, anEdge);

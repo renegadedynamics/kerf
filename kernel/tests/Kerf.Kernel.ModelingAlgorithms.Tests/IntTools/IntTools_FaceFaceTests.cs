@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Intersection.Patches;
@@ -22,9 +23,9 @@ public class IntTools_FaceFaceTests
 {
     private static Face Face(in Shape theShape, int theIndex = 1)
     {
-        NCollection_IndexedMap<Shape> aMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> aMap = new(ShapeHasher.Instance);
         Exploration.MapShapes(theShape, global::Kerf.Topology.ShapeType.Face, aMap);
-        return ShapeCasts.Face(aMap.FindKey(theIndex));
+        return ShapeCasts.Face(aMap[theIndex - 1]);
     }
 
     private static Face PlaneFace(Plane3D thePln, double theSize)

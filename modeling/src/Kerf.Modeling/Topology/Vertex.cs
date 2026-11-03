@@ -1,4 +1,5 @@
 using Kerf.Engine.Classification;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Construction.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Adaptors;
@@ -257,12 +258,12 @@ public sealed class Vertex : Shape
         if (parent is null || parent.IsEmpty)
             throw new InvalidOperationException(
                 "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
-        var map = new NCollection_IndexedDataMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
+        var map = new IndexedMap<global::Kerf.Topology.Shape, NCollection_List<global::Kerf.Topology.Shape>>(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(parent.TopoShape, global::Kerf.Topology.ShapeType.Vertex, global::Kerf.Topology.ShapeType.Edge, map);
-        var own = TopoUtil.FindSame(TopoShape, Enumerable.Range(1, map.Extent()).Select(map.FindKey))
+        var own = TopoUtil.FindSame(TopoShape, map.Keys)
                   ?? throw new InvalidOperationException("this vertex is not part of its topo_parent");
         var kinds = new HashSet<Convexity>();
-        var edges = map.FindFromKey(own);
+        var edges = map.GetValue(own);
         foreach (var topoEdge in edges)
             kinds.Add(((Edge)Cast(topoEdge).WithTopoPath(TopoPath)).Convexity);
         kinds.Remove(Convexity.Smooth);

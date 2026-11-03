@@ -61,17 +61,17 @@ public sealed class OffsetBlend
     private Shape _shape = new();
     private Shape _result = new();
     private bool _buildShape;
-    private readonly NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> _ancestors =
+    private readonly IndexedMap<Shape, NCollection_List<Shape>> _ancestors =
         new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Dictionary<Shape, NCollection_List<Shape>>>
         _created = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, NCollection_List<Shape>> _cutEdges =
         new(ShapeHasher.Instance);
-    private NCollection_IndexedMap<Shape> _faces = new(ShapeHasher.Instance);
-    private NCollection_IndexedMap<Shape> _edges = new(ShapeHasher.Instance);
+    private IndexedSet<Shape> _faces = new(ShapeHasher.Instance);
+    private IndexedSet<Shape> _edges = new(ShapeHasher.Instance);
     private HashSet<Shape> _stopFaces = new(ShapeHasher.Instance);
     private readonly Analyse _analyse = new();
-    private NCollection_IndexedMap<Shape> _centers = new(ShapeHasher.Instance);
+    private IndexedSet<Shape> _centers = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Offset> _mapSF = new(ShapeHasher.Instance);
     private readonly ShapeImage _initOffsetFace = new();
     private readonly ShapeImage _image = new();
@@ -129,7 +129,7 @@ public sealed class OffsetBlend
 
     // If WarningSurBordLibre = TRUE, no propagation if the edge is open.
     private static void Add(in Edge e,
-                            NCollection_IndexedMap<Shape> map,
+                            IndexedSet<Shape> map,
                             in Shape s,
                             Offset of,
                             Analyse analyse,
@@ -756,14 +756,14 @@ public sealed class OffsetBlend
         if (_entry.IsCopied)
         {
             _shape = _entry.Shape();
-            NCollection_IndexedMap<Shape> faces = new(ShapeHasher.Instance);
-            for (int k = 1; k <= _faces.Extent(); k++)
+            IndexedSet<Shape> faces = new(ShapeHasher.Instance);
+            for (int k = 0; k < _faces.Count; k++)
             {
                 faces.Add(_entry.Copied(_faces[k]));
             }
             _faces = faces;
-            NCollection_IndexedMap<Shape> edges = new(ShapeHasher.Instance);
-            for (int k = 1; k <= _edges.Extent(); k++)
+            IndexedSet<Shape> edges = new(ShapeHasher.Instance);
+            for (int k = 0; k < _edges.Count; k++)
             {
                 edges.Add(_entry.Copied(_edges[k]));
             }
@@ -829,7 +829,7 @@ public sealed class OffsetBlend
             Shape f = expf.Current();
             if (_faces.Contains(f) && sew.IsModified(f))
             {
-                _faces.RemoveKey(f);
+                _faces.Remove(f);
                 _faces.Add(sew.InternalModified(f));
             }
         }
@@ -846,7 +846,7 @@ public sealed class OffsetBlend
             Shape f = exp.Current();
             if (_faces.Contains(f))
             {
-                _faces.RemoveKey(f);
+                _faces.Remove(f);
                 _faces.Add(f);
             }
             else if (_stopFaces.Contains(f))
@@ -904,17 +904,17 @@ public sealed class OffsetBlend
     //=================================================================================================
 
     /// <summary>The number of blending surfaces.</summary>
-    public int SurfaceCount => _centers.Extent();
+    public int SurfaceCount => _centers.Count;
 
     //=================================================================================================
 
     /// <summary>The blending surface of index <paramref name="index"/>.</summary>
-    public Surface? Surface(int index) => Surface(_centers[index]);
+    public Surface? Surface(int index) => Surface(_centers[index - 1]);
 
     //=================================================================================================
 
     /// <summary>The blending face of index <paramref name="index"/> (frozen).</summary>
-    public Face Face(int index) => Face(_centers[index]);
+    public Face Face(int index) => Face(_centers[index - 1]);
 
     //=================================================================================================
 
@@ -925,7 +925,7 @@ public sealed class OffsetBlend
         int nb = SurfaceCount;
         for (int i = 1; i <= nb; i++)
         {
-            lc.Append(_centers[i]);
+            lc.Append(_centers[i - 1]);
         }
     }
 
@@ -1034,7 +1034,7 @@ public sealed class OffsetBlend
     /// <summary>The first support shape of the blending surface of index <paramref name="index"/>.</summary>
     public Shape SupportShape1(int index)
     {
-        Edge curE = ShapeCasts.Edge(_centers[index]);
+        Edge curE = ShapeCasts.Edge(_centers[index - 1]);
 
         NCollection_List<Shape> l = _asDes.Ascendant(curE);
 
@@ -1051,7 +1051,7 @@ public sealed class OffsetBlend
     /// <summary>The second support shape of the blending surface of index <paramref name="index"/>.</summary>
     public Shape SupportShape2(int index)
     {
-        Edge curE = ShapeCasts.Edge(_centers[index]);
+        Edge curE = ShapeCasts.Edge(_centers[index - 1]);
 
         NCollection_List<Shape> l = _asDes.Ascendant(curE);
 
@@ -1076,7 +1076,7 @@ public sealed class OffsetBlend
     /// <summary>The 3D curve of the blending surface of index <paramref name="index"/> on its first support.</summary>
     public Curve3D? CurveOnShape1(int index)
     {
-        Edge curE = ShapeCasts.Edge(_centers[index]);
+        Edge curE = ShapeCasts.Edge(_centers[index - 1]);
         Shape F = _mapSF.GetValue(curE).InternalFace();
 
         // somewhat brutal method based ONLY on the construction of the fillet:
@@ -1098,7 +1098,7 @@ public sealed class OffsetBlend
     /// <summary>The 3D curve of the blending surface of index <paramref name="index"/> on its second support.</summary>
     public Curve3D? CurveOnShape2(int index)
     {
-        Edge curE = ShapeCasts.Edge(_centers[index]);
+        Edge curE = ShapeCasts.Edge(_centers[index - 1]);
         Shape F = _mapSF.GetValue(curE).InternalFace();
 
         // somewhat brutal method based ONLY on the construction of the fillet:
@@ -1143,7 +1143,7 @@ public sealed class OffsetBlend
         // else, compute the Branches.
         Quilt glue = new();
 
-        int nbFaces = _centers.Extent();
+        int nbFaces = _centers.Count;
 
         if (nbFaces == 0)
         {
@@ -1153,7 +1153,7 @@ public sealed class OffsetBlend
         int i;
         for (i = 1; i <= nbFaces; i++)
         {
-            Shape centerLine = _centers[i];
+            Shape centerLine = _centers[i - 1];
             glue.Add(_mapSF.GetValue(centerLine).InternalFace());
         }
 
@@ -1163,7 +1163,7 @@ public sealed class OffsetBlend
         // The method is brutal and unpolished,
         // it is possible to refine it.
         _nbBranches = 0;
-        NCollection_IndexedMap<Shape> tmpMap = new(ShapeHasher.Instance);
+        IndexedSet<Shape> tmpMap = new(ShapeHasher.Instance);
 
         Explorer exp = new(shells, ShapeType.Shell);
         for (; exp.More(); exp.Next())
@@ -1191,7 +1191,7 @@ public sealed class OffsetBlend
 
                 for (i = 1; i <= nbFaces; i++)
                 {
-                    Shape center = _centers[i];
+                    Shape center = _centers[i - 1];
                     Shape rakk = _mapSF.GetValue(center).InternalFace();
                     // Rakk = the ith generated connection face
                     if (curF.IsEqual(rakk))
@@ -1292,15 +1292,15 @@ public sealed class OffsetBlend
                 // -------------------------------------------------
                 fini = true;
                 // for (it.Initialize(myEdges); it.More(); it.Next()) {
-                for (i = 1; i <= _edges.Extent(); i++)
+                for (i = 1; i <= _edges.Count; i++)
                 {
-                    Edge e = ShapeCasts.Edge(_edges[i]);
+                    Edge e = ShapeCasts.Edge(_edges[i - 1]);
                     if (Tool.Degenerated(e))
                     {
                         continue;
                     }
 
-                    NCollection_List<Shape> l = _ancestors.FindFromKey(e);
+                    NCollection_List<Shape> l = _ancestors.GetValue(e);
                     if (l.Extent() == 1)
                     {
                         // So this is a free border onwhich the ball should roll.
@@ -1328,9 +1328,9 @@ public sealed class OffsetBlend
                 // Construction of Offsets of all faces.
                 // --------------------------------------------
                 // for (it.Initialize(myFaces); it.More(); it.Next()) {
-                for (i = 1; i <= _faces.Extent(); i++)
+                for (i = 1; i <= _faces.Count; i++)
                 {
-                    Shape AS = _faces[i];
+                    Shape AS = _faces[i - 1];
                     if (_mapSF.ContainsKey(AS))
                     {
                         continue;
@@ -1341,7 +1341,7 @@ public sealed class OffsetBlend
 
                     if (AS.ShapeType() == global::Kerf.Topology.ShapeType.Face)
                     {
-                        Face f = ShapeCasts.Face(_faces[i]);
+                        Face f = ShapeCasts.Face(_faces[i - 1]);
                         if (touchedByCork.Contains(f))
                         {
                             OffsetTool.EnLargeFace(f, ref bigF, true);
@@ -1443,7 +1443,7 @@ public sealed class OffsetBlend
                 ot1 = TypeOfConcavity.Concave;
             }
 
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> map =
+            IndexedMap<Shape, NCollection_List<Shape>> map =
                 new(ShapeHasher.Instance);
             Exploration.MapShapesAndAncestors(co, ShapeType.Edge, global::Kerf.Topology.ShapeType.Face, map);
             Exploration.MapShapesAndAncestors(co, ShapeType.Vertex, ShapeType.Edge, map);
@@ -1457,7 +1457,7 @@ public sealed class OffsetBlend
                     continue;
                 }
 
-                NCollection_List<Shape> anc = map.FindFromKey(e);
+                NCollection_List<Shape> anc = map.GetValue(e);
                 if (anc.Extent() == 2)
                 {
                     NCollection_List<Interval> l = _analyse.Type(e);
@@ -1526,7 +1526,7 @@ public sealed class OffsetBlend
         } // end while JenRajoute
 
         _edges.Clear();
-        _edges = new NCollection_IndexedMap<Shape>(inter.NewEdges());
+        _edges = new IndexedSet<Shape>(inter.NewEdges());
 
         // -------------------------------------------------------------------
         // now it is necessary to limit edges on the neighbors (otherwise one
@@ -1534,7 +1534,7 @@ public sealed class OffsetBlend
         // -------------------------------------------------------------------
 
         // Proceed with MakeLoops
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmvv =
+        IndexedMap<Shape, NCollection_List<Shape>> dmvv =
             new(ShapeHasher.Instance);
         TypeOfConcavity ot = TypeOfConcavity.Concave;
         if (_radius < 0.0)
@@ -1544,9 +1544,9 @@ public sealed class OffsetBlend
 
         NCollection_List<Shape> lof = new();
         // it.Initialize(myFaces);
-        for (i = 1; i <= _faces.Extent(); i++)
+        for (i = 1; i <= _faces.Count; i++)
         {
-            Shape curS = _faces[i];
+            Shape curS = _faces[i - 1];
 
             // tube on free border, it is undesirable.
             if (_stopFaces.Contains(curS))
@@ -1730,9 +1730,9 @@ public sealed class OffsetBlend
 
         // NCollection_Map<TopoDS_Shape, TopTools_ShapeMapHasher>::Iterator ic(myEdges);
         int i;
-        for (i = 1; i <= _edges.Extent(); i++)
+        for (i = 1; i <= _edges.Count; i++)
         {
-            Edge curE = ShapeCasts.Edge(_edges[i]);
+            Edge curE = ShapeCasts.Edge(_edges[i - 1]);
 
             NCollection_List<Shape> l = _asDes.Ascendant(curE);
             if (l.Extent() != 2)
@@ -2104,13 +2104,13 @@ public sealed class OffsetBlend
         // Construction of spheres,
         // if enough tubes arrive at the vertex
         // ---------------------------------------------------
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> map = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> map = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(co, ShapeType.Vertex, ShapeType.Edge, map);
 
-        for (int j = 1; j <= map.Extent(); j++)
+        for (int j = 0; j < map.Count; j++)
         {
-            Vertex v = ShapeCasts.Vertex(map.FindKey(j));
-            if (map[j].Extent() != 3)
+            Vertex v = ShapeCasts.Vertex(map.KeyAt(j));
+            if (map.ValueAt(j).Extent() != 3)
             {
                 continue;
             }
@@ -2118,7 +2118,7 @@ public sealed class OffsetBlend
             NCollection_List<Shape> loe = new();
             NCollection_List<Shape>.Iterator it = new();
 
-            for (it.Initialize(map[j]); it.More(); it.Next())
+            for (it.Initialize(map.ValueAt(j)); it.More(); it.Next())
             {
                 bool reverse = true;
                 if (reverse)

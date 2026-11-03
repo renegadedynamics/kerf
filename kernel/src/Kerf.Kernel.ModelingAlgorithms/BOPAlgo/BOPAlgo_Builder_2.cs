@@ -178,7 +178,7 @@ public partial class BooleanBuilder
         using var psOuter = new ProgressScope(range, null, 10);
         // Build temporary map of faces images to avoid rebuilding
         // of the faces without any IN or section edges
-        NCollection_IndexedDataMap<int, NCollection_List<Shape>> facesIm = new();
+        IndexedMap<int, NCollection_List<Shape>> facesIm = new();
         //
         nbS = _ds!.SourceShapeCount;
         //
@@ -205,15 +205,15 @@ public partial class BooleanBuilder
             //
             FaceInfo fi = _ds.FaceInfo(i);
             //
-            NCollection_IndexedMap<PaveBlock> mpbIn = fi.PaveBlocksIn();
-            NCollection_IndexedMap<PaveBlock> mpbOn = fi.PaveBlocksOn();
-            NCollection_IndexedMap<PaveBlock> mpbSc = fi.PaveBlocksSc();
+            IndexedSet<PaveBlock> mpbIn = fi.PaveBlocksIn();
+            IndexedSet<PaveBlock> mpbOn = fi.PaveBlocksOn();
+            IndexedSet<PaveBlock> mpbSc = fi.PaveBlocksSc();
             liav.Clear();
             _ds.AloneVertices(i, liav);
 
-            nbPBIn = mpbIn.Extent();
-            nbPBOn = mpbOn.Extent();
-            nbPBSc = mpbSc.Extent();
+            nbPBIn = mpbIn.Count;
+            nbPBOn = mpbOn.Count;
+            nbPBSc = mpbSc.Count;
             nbAV = liav.Extent();
             if (nbPBIn == 0 && nbPBOn == 0 && nbPBSc == 0 && nbAV == 0)
             { // not compete
@@ -269,7 +269,7 @@ public partial class BooleanBuilder
                     Face fd = BuildDraftFace(f, _images, _context!, _report);
                     if (!fd.IsNull)
                     {
-                        facesIm[facesIm.Add(i, new NCollection_List<Shape>())].Append(fd);
+                        facesIm.ValueAt(facesIm.Add(i, new NCollection_List<Shape>())).Append(fd);
                         continue;
                     }
                 }
@@ -391,7 +391,7 @@ public partial class BooleanBuilder
             // 1.2 In edges
             for (j = 1; j <= nbPBIn; ++j)
             {
-                PaveBlock pb = mpbIn[j];
+                PaveBlock pb = mpbIn[j - 1];
                 nSp = pb.Edge();
                 if (nSp < 0)
                 {
@@ -410,7 +410,7 @@ public partial class BooleanBuilder
             // 1.3 Section edges
             for (j = 1; j <= nbPBSc; ++j)
             {
-                PaveBlock pb = mpbSc[j];
+                PaveBlock pb = mpbSc[j - 1];
                 nSp = pb.Edge();
                 sp = ShapeCasts.Edge(_ds.Shape(nSp));
                 //
@@ -459,12 +459,12 @@ public partial class BooleanBuilder
             _report.Merge(bf.GetReport());
         }
 
-        nbBF = facesIm.Extent();
+        nbBF = facesIm.Count;
         for (k = 1; k <= nbBF; ++k)
         {
-            Face f = ShapeCasts.Face(_ds.Shape(facesIm.FindKey(k)));
+            Face f = ShapeCasts.Face(_ds.Shape(facesIm.KeyAt(k - 1)));
             oriF = f.Orientation();
-            NCollection_List<Shape> lfr = facesIm[k];
+            NCollection_List<Shape> lfr = facesIm.ValueAt(k - 1);
             //
             NCollection_List<Shape> pLFIm = _images.SetValueRef(f, new NCollection_List<Shape>());
             it.Initialize(lfr);
@@ -483,16 +483,16 @@ public partial class BooleanBuilder
     }
 
     // Adds the set of the edges of the shape to the map, keeping the connection to the shape.
-    private static void AddEdgeSet(in Shape s, NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> map)
+    private static void AddEdgeSet(in Shape s, IndexedMap<ToolSet, NCollection_List<Shape>> map)
     {
         // Make set
         ToolSet se = new();
         se.Add(s, ShapeType.Edge);
         // Add set to the map, keeping connection to the shape
-        int index = map.FindIndex(se);
+        int index = map.IndexOf(se) + 1;
         NCollection_List<Shape> pLF = index > 0
-                                                 ? map[index]
-                                                 : map[map.Add(se, new NCollection_List<Shape>())];
+                                                 ? map.ValueAt(index - 1)
+                                                 : map.ValueAt(map.Add(se, new NCollection_List<Shape>()));
         pLF.Append(s);
     }
 
@@ -599,7 +599,7 @@ public partial class BooleanBuilder
         }
 
         // Data map of set of edges with all faces having this set
-        NCollection_IndexedDataMap<ToolSet, NCollection_List<Shape>> eSetFaces = new();
+        IndexedMap<ToolSet, NCollection_List<Shape>> eSetFaces = new();
         // Map of planar bounded faces. If such faces have the same Edge set
         // they are considered Same domain, without additional check.
         HashSet<Shape> mfPlanar = new(ShapeHasher.Instance);
@@ -654,16 +654,16 @@ public partial class BooleanBuilder
         List<PairOfShapeBoolean> vpsb = new();
 
         // Back and forth map of SD faces to make the blocks
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> dmsls = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> dmsls = new(ShapeHasher.Instance);
 
-        int nbSets = eSetFaces.Extent();
-        for (int i = 1; i <= nbSets; ++i)
+        int nbSets = eSetFaces.Count;
+        for (int i = 0; i < nbSets; ++i)
         {
             if (UserBreak(psOuter))
             {
                 return;
             }
-            NCollection_List<Shape> lf = eSetFaces[i];
+            NCollection_List<Shape> lf = eSetFaces.ValueAt(i);
             if (lf.Extent() < 2)
             {
                 continue;

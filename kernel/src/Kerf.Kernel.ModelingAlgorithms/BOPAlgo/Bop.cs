@@ -570,11 +570,11 @@ public class Bop : ToolsProvider
         NCollection_List<Shape>.Iterator itLS = new();
         //
         // prepare the building elements of arguments to get its splits
-        NCollection_IndexedMap<Shape> mArgs = new(ShapeHasher.Instance), mTools = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mArgs = new(ShapeHasher.Instance), mTools = new(ShapeHasher.Instance);
         for (i = 0; i < 2; ++i)
         {
             NCollection_List<Shape> ls = i == 0 ? _arguments : _tools;
-            NCollection_IndexedMap<Shape> ms = i == 0 ? mArgs : mTools;
+            IndexedSet<Shape> ms = i == 0 ? mArgs : mTools;
             itLS.Initialize(ls);
             for (; itLS.More(); itLS.Next())
             {
@@ -603,19 +603,19 @@ public class Bop : ToolsProvider
         bCheckEdges = false;
         //
         // get splits of building elements
-        NCollection_IndexedMap<Shape> mArgsIm = new(ShapeHasher.Instance), mToolsIm = new(ShapeHasher.Instance);
-        NCollection_IndexedDataMap<ToolSet, Shape> mSetArgs = new(), mSetTools = new();
+        IndexedSet<Shape> mArgsIm = new(ShapeHasher.Instance), mToolsIm = new(ShapeHasher.Instance);
+        IndexedMap<ToolSet, Shape> mSetArgs = new(), mSetTools = new();
 
         for (i = 0; i < 2; ++i)
         {
-            NCollection_IndexedMap<Shape> ms = i == 0 ? mArgs : mTools;
-            NCollection_IndexedMap<Shape> msIm = i == 0 ? mArgsIm : mToolsIm;
-            NCollection_IndexedDataMap<ToolSet, Shape> mSet = i == 0 ? mSetArgs : mSetTools;
+            IndexedSet<Shape> ms = i == 0 ? mArgs : mTools;
+            IndexedSet<Shape> msIm = i == 0 ? mArgsIm : mToolsIm;
+            IndexedMap<ToolSet, Shape> mSet = i == 0 ? mSetArgs : mSetTools;
             //
-            nb = ms.Extent();
+            nb = ms.Count;
             for (j = 1; j <= nb; ++j)
             {
-                Shape s = ms[j];
+                Shape s = ms[j - 1];
                 type = s.ShapeType();
                 if (type == ShapeType.Edge)
                 {
@@ -644,7 +644,7 @@ public class Bop : ToolsProvider
                     {
                         ToolSet st = new();
                         st.Add(s, ShapeType.Face);
-                        if (!mSet.Contains(st))
+                        if (!mSet.ContainsKey(st))
                         {
                             mSet.Add(st, s);
                         }
@@ -661,19 +661,19 @@ public class Bop : ToolsProvider
         bCommon = _operation == global::Kerf.Engine.Booleans.Operation.Common;
         bCut21 = _operation == global::Kerf.Engine.Booleans.Operation.CUT21;
         //
-        NCollection_IndexedMap<Shape> mIt = bCut21 ? mToolsIm : mArgsIm;
-        NCollection_IndexedMap<Shape> mCheck = bCut21 ? mArgsIm : mToolsIm;
-        NCollection_IndexedDataMap<ToolSet, Shape> mSetCheck = bCut21 ? mSetArgs : mSetTools;
+        IndexedSet<Shape> mIt = bCut21 ? mToolsIm : mArgsIm;
+        IndexedSet<Shape> mCheck = bCut21 ? mArgsIm : mToolsIm;
+        IndexedMap<ToolSet, Shape> mSetCheck = bCut21 ? mSetArgs : mSetTools;
         //
-        NCollection_IndexedMap<Shape> mCheckExp = new(ShapeHasher.Instance), mItExp;
+        IndexedSet<Shape> mCheckExp = new(ShapeHasher.Instance), mItExp;
         //
         if (bCommon)
         {
-            mItExp = new NCollection_IndexedMap<Shape>(ShapeHasher.Instance);
-            nb = mIt.Extent();
+            mItExp = new IndexedSet<Shape>(ShapeHasher.Instance);
+            nb = mIt.Count;
             for (i = 1; i <= nb; ++i)
             {
-                Shape s = mIt[i];
+                Shape s = mIt[i - 1];
                 iDimMax = AlgoTools.Dimension(s);
                 for (iDim = iDimMin; iDim < iDimMax; ++iDim)
                 {
@@ -686,13 +686,13 @@ public class Bop : ToolsProvider
         else
         {
             // a copy, as OCCT's assignment
-            mItExp = new NCollection_IndexedMap<Shape>(mIt);
+            mItExp = new IndexedSet<Shape>(mIt);
         }
         //
-        nb = mCheck.Extent();
+        nb = mCheck.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape s = mCheck[i];
+            Shape s = mCheck[i - 1];
             iDimMax = AlgoTools.Dimension(s);
             for (iDim = iDimMin; iDim < iDimMax; ++iDim)
             {
@@ -702,17 +702,17 @@ public class Bop : ToolsProvider
             mCheckExp.Add(s);
         }
         //
-        nb = mItExp.Extent();
+        nb = mItExp.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape s = mItExp[i];
+            Shape s = mItExp[i - 1];
             //
             bContains = mCheckExp.Contains(s);
             if (!bContains && s.ShapeType() == ShapeType.Solid)
             {
                 ToolSet st = new();
                 st.Add(s, ShapeType.Face);
-                bContains = mSetCheck.Contains(st);
+                bContains = mSetCheck.ContainsKey(st);
             }
             //
             if (bCommon)
@@ -768,7 +768,7 @@ public class Bop : ToolsProvider
         }
         // The squats around degenerated edges
         int nVD;
-        NCollection_IndexedMap<Shape> mvc = new(ShapeHasher.Instance);
+        IndexedSet<Shape> mvc = new(ShapeHasher.Instance);
         //
         // 1. Vertices of aC
         Exploration.MapShapes(c, ShapeType.Vertex, mvc);
@@ -1057,7 +1057,7 @@ public class Bop : ToolsProvider
         // Get solids from input arguments
         HashSet<Shape> msa = new(ShapeHasher.Instance);
         // Map the arguments to find shared faces
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mfs = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mfs = new(ShapeHasher.Instance);
         for (int i0 = 0; i0 < 2; ++i0)
         {
             NCollection_List<Shape> lsa = i0 != 0 ? _arguments : _tools;
@@ -1085,10 +1085,10 @@ public class Bop : ToolsProvider
         //
         // Find solids in input arguments sharing faces with other solids
         HashSet<Shape> mtSols = new(ShapeHasher.Instance);
-        int i, nb = mfs.Extent();
+        int i, nb = mfs.Count;
         for (i = 1; i < nb; ++i) // OCCT: the last face of the map is not checked
         {
-            NCollection_List<Shape> lSols = mfs[i];
+            NCollection_List<Shape> lSols = mfs.ValueAt(i - 1);
             if (lSols.Extent() > 1)
             {
                 itLS.Initialize(lSols);
@@ -1100,7 +1100,7 @@ public class Bop : ToolsProvider
         }
         //
         // Possibly untouched solids - to be added to results as is
-        NCollection_IndexedMap<Shape> muSols = new(ShapeHasher.Instance);
+        IndexedSet<Shape> muSols = new(ShapeHasher.Instance);
         // Use map to chose the most outer faces to build result solids
         mfs.Clear();
         //
@@ -1123,17 +1123,17 @@ public class Bop : ToolsProvider
         // Process possibly untouched solids.
         // Really untouched solids will be added into result as is.
         // Others will be processed by BuilderSolid.
-        NCollection_IndexedDataMap<ToolSet, Shape> dmsts = new();
+        IndexedMap<ToolSet, Shape> dmsts = new();
         //
-        nb = muSols.Extent();
+        nb = muSols.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape sx = muSols[i];
+            Shape sx = muSols[i - 1];
             //
             exp.Init(sx, ShapeType.Face);
             for (; exp.More(); exp.Next())
             {
-                if (mfs.Contains(exp.Current()))
+                if (mfs.ContainsKey(exp.Current()))
                 {
                     break;
                 }
@@ -1147,7 +1147,7 @@ public class Bop : ToolsProvider
             {
                 ToolSet st = new();
                 st.Add(sx, ShapeType.Face);
-                if (!dmsts.Contains(st))
+                if (!dmsts.ContainsKey(st))
                 {
                     dmsts.Add(st, sx);
                 }
@@ -1159,16 +1159,16 @@ public class Bop : ToolsProvider
             return;
         }
         //
-        NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
+        IndexedMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
         // Fill the list of faces to build the result solids
         NCollection_List<Shape> sfs = new();
-        nb = mfs.Extent();
+        nb = mfs.Count;
         for (i = 1; i <= nb; ++i)
         {
-            NCollection_List<Shape> lSx = mfs[i];
+            NCollection_List<Shape> lSx = mfs.ValueAt(i - 1);
             if (lSx.Extent() == 1)
             {
-                Shape fx = mfs.FindKey(i);
+                Shape fx = mfs.KeyAt(i - 1);
                 Exploration.MapShapesAndAncestors(fx, ShapeType.Edge, ShapeType.Face, mef);
                 sfs.Append(fx);
             }
@@ -1205,10 +1205,10 @@ public class Bop : ToolsProvider
         }
         //
         // add untouched solids to result
-        nb = dmsts.Extent();
+        nb = dmsts.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape sx = dmsts[i];
+            Shape sx = dmsts.ValueAt(i - 1);
             bb.Add(rc, sx);
         }
         //
@@ -1376,7 +1376,7 @@ public class Bop : ToolsProvider
             Shape solid = si.Shape();
 
             // Check that not INTERNAL faces create closed loops
-            NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
+            IndexedMap<Shape, NCollection_List<Shape>> mef = new(ShapeHasher.Instance);
             // Collect all splits of internal faces
             HashSet<Shape> mfInternal = new(ShapeHasher.Instance);
 
@@ -1415,20 +1415,20 @@ public class Bop : ToolsProvider
 
             // Analyze the Edge-Face connection map on free edges
             bool isClosed = true;
-            int nbE = mef.Extent();
+            int nbE = mef.Count;
             for (int j = 1; j <= nbE && isClosed; ++j)
             {
-                Edge e = ShapeCasts.Edge(mef.FindKey(j));
+                Edge e = ShapeCasts.Edge(mef.KeyAt(j - 1));
                 if (Tool.Degenerated(e))
                 {
                     // Skip degenerated edges
                     continue;
                 }
 
-                isClosed = mef[j].Extent() > 1;
+                isClosed = mef.ValueAt(j - 1).Extent() > 1;
                 if (!isClosed)
                 {
-                    Face f = ShapeCasts.Face(mef[j].First());
+                    Face f = ShapeCasts.Face(mef.ValueAt(j - 1).First());
                     isClosed = Tool.IsClosed(e, f); // Check for seam edges
                     if (!isClosed)
                     {
@@ -1572,14 +1572,14 @@ public class Bop : ToolsProvider
         }
         //
         // map containers to compare its contents (OCCT's default hasher: orientation included, decision 721)
-        NCollection_IndexedDataMap<Shape, HashSet<Shape>> contents = new(EqualityComparer<Shape>.Default);
+        IndexedMap<Shape, HashSet<Shape>> contents = new(EqualityComparer<Shape>.Default);
         //
         itLC.Initialize(lc);
         for (; itLC.More(); itLC.Next())
         {
             Shape c = itLC.Value();
             //
-            HashSet<Shape> mc = contents[contents.Add(c, new HashSet<Shape>(ShapeHasher.Instance))];
+            HashSet<Shape> mc = contents.ValueAt(contents.Add(c, new HashSet<Shape>(ShapeHasher.Instance)));
             //
             Iterator it = new(c);
             for (; it.More(); it.Next())
@@ -1591,25 +1591,25 @@ public class Bop : ToolsProvider
         // compare the contents of the containers and find duplicates
         HashSet<Shape> duplicates = new(ShapeHasher.Instance);
         //
-        int i, j, nb = contents.Extent();
+        int i, j, nb = contents.Count;
         for (i = 1; i <= nb; ++i)
         {
-            Shape ci = contents.FindKey(i);
+            Shape ci = contents.KeyAt(i - 1);
             if (duplicates.Contains(ci))
             {
                 continue;
             }
-            HashSet<Shape> mi = contents[i];
+            HashSet<Shape> mi = contents.ValueAt(i - 1);
             int nbi = mi.Count;
             //
             for (j = i + 1; j <= nb; ++j)
             {
-                Shape cj = contents.FindKey(j);
+                Shape cj = contents.KeyAt(j - 1);
                 if (duplicates.Contains(cj))
                 {
                     continue;
                 }
-                HashSet<Shape> mj = contents[j];
+                HashSet<Shape> mj = contents.ValueAt(j - 1);
                 int nbj = mj.Count;
                 //
                 int nbCommon = NbCommonItemsInMap(mi, mj);
@@ -1673,7 +1673,7 @@ public class Bop : ToolsProvider
     // Stores the faces of the given solid into outgoing maps:
     // <theMFS> - not internal faces with reference to solid.
     private static void MapFacesToBuildSolids(in Shape sol,
-                                              NCollection_IndexedDataMap<Shape, NCollection_List<Shape>> mfs)
+                                              IndexedMap<Shape, NCollection_List<Shape>> mfs)
     {
         Explorer exp = new(sol, ShapeType.Face);
         for (; exp.More(); exp.Next())
@@ -1685,16 +1685,16 @@ public class Bop : ToolsProvider
                 continue;
             }
             //
-            int index = mfs.FindIndex(f);
+            int index = mfs.IndexOf(f) + 1;
             if (index == 0)
             {
-                NCollection_List<Shape> pLSol = mfs[mfs.Add(f, new NCollection_List<Shape>())];
+                NCollection_List<Shape> pLSol = mfs.ValueAt(mfs.Add(f, new NCollection_List<Shape>()));
                 pLSol.Append(sol);
             }
             else
             {
-                NCollection_List<Shape> pLSol = mfs[index];
-                Shape f1 = mfs.FindKey(index);
+                NCollection_List<Shape> pLSol = mfs.ValueAt(index - 1);
+                Shape f1 = mfs.KeyAt(index - 1);
                 if (f1.Orientation() != f.Orientation())
                 {
                     pLSol.Append(sol);

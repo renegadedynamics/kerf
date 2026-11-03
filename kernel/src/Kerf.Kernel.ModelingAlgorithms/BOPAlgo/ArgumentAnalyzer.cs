@@ -7,6 +7,7 @@
 
 using Kerf.Engine.Booleans.Data;
 using Kerf.Engine.Booleans.Tools;
+using Kerf.Engine.Collections;
 using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Measurement.Distance;
@@ -902,7 +903,7 @@ public class ArgumentAnalyzer : BooleanAlgorithm
                 continue;
             }
             //
-            NCollection_IndexedMap<Shape> ms = new(ShapeHasher.Instance);
+            IndexedSet<Shape> ms = new(ShapeHasher.Instance);
             // Edges
             exp.Init(s, ShapeType.Edge);
             for (; exp.More(); exp.Next())
@@ -931,10 +932,10 @@ public class ArgumentAnalyzer : BooleanAlgorithm
             }
             //
             // add shapes with continuity C0 to result
-            nbS = ms.Extent();
+            nbS = ms.Count;
             for (j = 1; j <= nbS; ++j)
             {
-                Shape fs = ms.FindKey(j);
+                Shape fs = ms[j - 1];
                 CheckResult result = new();
                 if (i == 0)
                 {
