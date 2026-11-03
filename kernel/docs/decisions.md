@@ -14988,3 +14988,8 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        OCCT formula from its reference: the six evaluations that compared D3 with it compare with the chain rule, and
        the test that pinned the difference (a line of slope (1, 2) on a cylinder of radius 2, off by about 0.9) checks
        D3 against the chain rule and a finite difference of D2.
+16806. **An offset surface transforms its parameters once** (occt-issues.md, Geom_OffsetSurface::TransformParameters).
+       They are the basis surface's, as `ParametricTransformation` already said; the second transformation by the
+       equivalent surface is gone. The test that pinned the double scale checks, for offsets of a plane, a cylinder
+       and a sphere, with and without the equivalent surface, that the transformed surface's point at the transformed
+       parameters is the transformed point, and that the parameters are ParametricTransformation's.
