@@ -17,10 +17,10 @@ namespace Kerf.Geometry;
 /// <c>new gp_Parab2d()</c> is OCCT's indefinite parabola (focal length <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Parab2d)</c> is not valid.
 /// </remarks>
-public partial struct Parabola2D : IEquatable<Parabola2D>
+public readonly partial struct Parabola2D : IEquatable<Parabola2D>
 {
-    private Frame2D _pos;
-    private double _focalLength;
+    private readonly Frame2D _pos;
+    private readonly double _focalLength;
 
     public Parabola2D()
     {
@@ -68,87 +68,35 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
         _pos = new Frame2D(apex, xDir, dirVec);
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetFocal(double focal)
-    {
-        Standard_ConstructionError_Raise_if(focal < 0.0, "gp_Parab2d::SetFocal() - focal length should be >= 0");
-        _focalLength = focal;
-    }
-
-    internal void SetLocation(in Point2D p) => _pos.SetLocation(p);
-
-    internal void SetMirrorAxis(in Axis2D a) => _pos.SetXAxis(a);
-
-    internal void SetAxis(in Frame2D a) => _pos.SetAxis(a);
-
-    internal void Reverse()
-    {
-        Direction2D temp = _pos.YDirection();
-        temp = temp.Reversed();
-        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
-    }
-
-    internal void Mirror(in Point2D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis2D a) => _pos.Mirror(a);
-
-    internal void Rotate(in Point2D p, double ang) => _pos.Rotate(p, ang);
-
-    internal void Scale(in Point2D p, double s)
-    {
-        _focalLength *= s;
-        if (_focalLength < 0)
-        {
-            _focalLength = -_focalLength;
-        }
-
-        _pos = _pos.Scaled(p, s);
-    }
-
-    internal void Transform(in Transform2D t)
-    {
-        _focalLength *= t.ScaleFactor();
-        if (_focalLength < 0)
-        {
-            _focalLength = -_focalLength;
-        }
-
-        _pos = _pos.Transformed(t);
-    }
-
-    internal void Translate(in Vector2D v) => _pos.Translate(v);
-
-    internal void Translate(in Point2D p1, in Point2D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Parabola2D WithFocal(double focal)
     {
-        Parabola2D copy = this;
-        copy.SetFocal(focal);
-        return copy;
+        double focalLength = _focalLength;
+        Standard_ConstructionError_Raise_if(focal < 0.0, "gp_Parab2d::SetFocal() - focal length should be >= 0");
+        focalLength = focal;
+        return new Parabola2D(_pos, focalLength);
     }
 
     public readonly Parabola2D WithLocation(in Point2D p)
     {
-        Parabola2D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D WithMirrorAxis(in Axis2D a)
     {
-        Parabola2D copy = this;
-        copy.SetMirrorAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithXAxis(a);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D WithAxis(in Frame2D a)
     {
-        Parabola2D copy = this;
-        copy.SetAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithAxis(a);
+        return new Parabola2D(pos, _focalLength);
     }
 
     // Queries
@@ -206,72 +154,74 @@ public partial struct Parabola2D : IEquatable<Parabola2D>
 
     public readonly Parabola2D Reversed()
     {
-        Parabola2D p = this;
+        Frame2D pos = _pos;
         Direction2D temp = _pos.YDirection();
         temp = temp.Reversed();
-        p._pos = p._pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
-        return p;
+        pos = pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D Mirrored(in Point2D p)
     {
-        Parabola2D prb = this;
-        prb._pos = prb._pos.Mirrored(p);
-        return prb;
+        Frame2D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D Mirrored(in Axis2D a)
     {
-        Parabola2D prb = this;
-        prb._pos = prb._pos.Mirrored(a);
-        return prb;
+        Frame2D pos = _pos;
+        pos = pos.Mirrored(a);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D Rotated(in Point2D p, double ang)
     {
-        Parabola2D prb = this;
-        prb._pos = prb._pos.Rotated(p, ang);
-        return prb;
+        Frame2D pos = _pos;
+        pos = pos.Rotated(p, ang);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D Scaled(in Point2D p, double s)
     {
-        Parabola2D prb = this;
-        prb._focalLength *= s;
-        if (prb._focalLength < 0)
+        Frame2D pos = _pos;
+        double focalLength = _focalLength;
+        focalLength *= s;
+        if (focalLength < 0)
         {
-            prb._focalLength = -prb._focalLength;
+            focalLength = -focalLength;
         }
 
-        prb._pos = prb._pos.Scaled(p, s);
-        return prb;
+        pos = pos.Scaled(p, s);
+        return new Parabola2D(pos, focalLength);
     }
 
     public readonly Parabola2D Transformed(in Transform2D t)
     {
-        Parabola2D prb = this;
-        prb._focalLength *= t.ScaleFactor();
-        if (prb._focalLength < 0)
+        Frame2D pos = _pos;
+        double focalLength = _focalLength;
+        focalLength *= t.ScaleFactor();
+        if (focalLength < 0)
         {
-            prb._focalLength = -prb._focalLength;
+            focalLength = -focalLength;
         }
 
-        prb._pos = prb._pos.Transformed(t);
-        return prb;
+        pos = pos.Transformed(t);
+        return new Parabola2D(pos, focalLength);
     }
 
     public readonly Parabola2D Translated(in Vector2D v)
     {
-        Parabola2D prb = this;
-        prb._pos = prb._pos.Translated(v);
-        return prb;
+        Frame2D pos = _pos;
+        pos = pos.Translated(v);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly Parabola2D Translated(in Point2D p1, in Point2D p2)
     {
-        Parabola2D prb = this;
-        prb._pos = prb._pos.Translated(p1, p2);
-        return prb;
+        Frame2D pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Parabola2D(pos, _focalLength);
     }
 
     public readonly bool Equals(Parabola2D other) => _pos.Equals(other._pos) && _focalLength.Equals(other._focalLength);

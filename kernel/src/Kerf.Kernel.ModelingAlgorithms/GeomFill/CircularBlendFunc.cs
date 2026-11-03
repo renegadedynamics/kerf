@@ -226,7 +226,7 @@ public class CircularBlendFunc : SweepFunction
                     _minang = angle;
                 }
                 _distmin = Min(_distmin, p1.Distance(p2));
-                _bary.ChangeCoord() += (p1.XYZ() + p2.XYZ());
+                _bary = new Point3D(_bary.XYZ() + ((p1.XYZ() + p2.XYZ())));
             }
         }
         else
@@ -259,10 +259,10 @@ public class CircularBlendFunc : SweepFunction
                     _minang = angle;
                 }
                 _distmin = Min(_distmin, p1.Distance(p2));
-                _bary.ChangeCoord() += (p1.XYZ() + p2.XYZ());
+                _bary = new Point3D(_bary.XYZ() + ((p1.XYZ() + p2.XYZ())));
             }
         }
-        _bary.ChangeCoord() *= percent;
+        _bary = new Point3D(_bary.XYZ() * percent);
 
         // Faut il inverser la trajectoire ?
         t = (tFirst + tLast) / 2;
@@ -313,7 +313,7 @@ public class CircularBlendFunc : SweepFunction
         nplan = nplan.Normalized();
 
         temp.SetLinearForm(_radius, ns1.XYZ(), _radius, ns2.XYZ(), 1, p1.XYZ(), p2.XYZ());
-        center.ChangeCoord() = 0.5 * temp;
+        center = new Point3D(0.5 * temp);
 
         // Section
         global::Kerf.Engine.Construction.Surfaces.GeomFill.GetCircle(_tConv, ns1, ns2, nplan, p1, p2, _radius, center, poles, weigths);
@@ -375,7 +375,7 @@ public class CircularBlendFunc : SweepFunction
         dns2 *= invnorm2;
 
         temp.SetLinearForm(_radius, ns1.XYZ(), _radius, ns2.XYZ(), 1, p1.XYZ(), p2.XYZ());
-        center.ChangeCoord() = 0.5 * temp;
+        center = new Point3D(0.5 * temp);
         dCenter = Vector3D.LinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
         dCenter *= 0.5;
 
@@ -483,7 +483,7 @@ public class CircularBlendFunc : SweepFunction
         dns2 *= invnorm2;
 
         temp.SetLinearForm(_radius, ns1.XYZ(), _radius, ns2.XYZ(), 1, p1.XYZ(), p2.XYZ());
-        center.ChangeCoord() = 0.5 * temp;
+        center = new Point3D(0.5 * temp);
         dCenter = Vector3D.LinearForm(_radius, dns1, _radius, dns2, 1, dp1, dp2);
         dCenter *= 0.5;
         d2Center = Vector3D.LinearForm(_radius, d2ns1, _radius, d2ns2, 1, d2P1, d2P2);

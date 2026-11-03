@@ -18,10 +18,10 @@ namespace Kerf.Geometry;
 /// <c>new gp_Sphere()</c> is OCCT's indefinite sphere (radius <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Sphere)</c> is not valid.
 /// </remarks>
-public partial struct Sphere : IEquatable<Sphere>
+public readonly partial struct Sphere : IEquatable<Sphere>
 {
-    private CoordinateSystem _pos;
-    private double _radius;
+    private readonly CoordinateSystem _pos;
+    private readonly double _radius;
 
     public Sphere()
     {
@@ -37,91 +37,42 @@ public partial struct Sphere : IEquatable<Sphere>
         Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Sphere() - radius should be >= 0");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetLocation(in Point3D loc) => _pos.SetLocation(loc);
-
-    internal void SetPosition(in CoordinateSystem a3) => _pos = a3;
-
-    internal void SetRadius(double r)
-    {
-        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Sphere::SetRadius() - radius should be >= 0");
-        _radius = r;
-    }
-
-    /// <summary>Reverses the U parametrisation (the Y direction).</summary>
-    internal void UReverse() => _pos.YReverse();
-
-    /// <summary>Reverses the V parametrisation (the main direction).</summary>
-    internal void VReverse() => _pos.ZReverse();
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _pos = _pos.Scaled(p, s);
-        _radius *= s;
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _pos = _pos.Transformed(t);
-        _radius *= t.ScaleFactor();
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-    }
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Sphere WithLocation(in Point3D loc)
     {
-        Sphere copy = this;
-        copy.SetLocation(loc);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.WithLocation(loc);
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere WithPosition(in CoordinateSystem a3)
     {
-        Sphere copy = this;
-        copy.SetPosition(a3);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = a3;
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere WithRadius(double r)
     {
-        Sphere copy = this;
-        copy.SetRadius(r);
-        return copy;
+        double newRadius = _radius;
+        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Sphere::SetRadius() - radius should be >= 0");
+        newRadius = r;
+        return new Sphere(_pos, newRadius);
     }
 
     public readonly Sphere UReversed()
     {
-        Sphere copy = this;
-        copy.UReverse();
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.YReversed();
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere VReversed()
     {
-        Sphere copy = this;
-        copy.VReverse();
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.ZReversed();
+        return new Sphere(pos, _radius);
     }
 
     // Queries
@@ -183,70 +134,72 @@ public partial struct Sphere : IEquatable<Sphere>
 
     public readonly Sphere Mirrored(in Point3D p)
     {
-        Sphere c = this;
-        c._pos = c._pos.Mirrored(p);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere Mirrored(in Axis3D a1)
     {
-        Sphere c = this;
-        c._pos = c._pos.Mirrored(a1);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere Mirrored(in Frame3D a2)
     {
-        Sphere c = this;
-        c._pos = c._pos.Mirrored(a2);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere Rotated(in Axis3D a1, double ang)
     {
-        Sphere c = this;
-        c._pos = c._pos.Rotated(a1, ang);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere Scaled(in Point3D p, double s)
     {
-        Sphere c = this;
-        c._pos = c._pos.Scaled(p, s);
-        c._radius *= s;
-        if (c._radius < 0)
+        CoordinateSystem pos = _pos;
+        double radius = _radius;
+        pos = pos.Scaled(p, s);
+        radius *= s;
+        if (radius < 0)
         {
-            c._radius = -c._radius;
+            radius = -radius;
         }
 
-        return c;
+        return new Sphere(pos, radius);
     }
 
     public readonly Sphere Transformed(in Transform3D t)
     {
-        Sphere c = this;
-        c._pos = c._pos.Transformed(t);
-        c._radius *= t.ScaleFactor();
-        if (c._radius < 0)
+        CoordinateSystem pos = _pos;
+        double radius = _radius;
+        pos = pos.Transformed(t);
+        radius *= t.ScaleFactor();
+        if (radius < 0)
         {
-            c._radius = -c._radius;
+            radius = -radius;
         }
 
-        return c;
+        return new Sphere(pos, radius);
     }
 
     public readonly Sphere Translated(in Vector3D v)
     {
-        Sphere c = this;
-        c._pos = c._pos.Translated(v);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Translated(v);
+        return new Sphere(pos, _radius);
     }
 
     public readonly Sphere Translated(in Point3D p1, in Point3D p2)
     {
-        Sphere c = this;
-        c._pos = c._pos.Translated(p1, p2);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Sphere(pos, _radius);
     }
 
     public readonly bool Equals(Sphere other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);

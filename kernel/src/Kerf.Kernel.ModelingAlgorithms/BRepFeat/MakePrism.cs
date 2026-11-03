@@ -1051,9 +1051,9 @@ public sealed class MakePrism : Form
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
             Point3D pvt = spt[jj];
-            bar.ChangeCoord() += pvt.XYZ();
+            bar = new Point3D(bar.XYZ() + pvt.XYZ());
         }
-        bar.ChangeCoord().Divide(spt.Length());
+        bar = new Point3D(bar.XYZ().Divided(spt.Length()));
         Axis3D newAx = new(bar, new Direction3D(v));
         LineCurve3D theLin = new(newAx);
         return theLin;

@@ -441,7 +441,9 @@ public abstract class LocationLaw : Transient
             p2 *= m2;
             p2 += v2.XYZ();
 
-            p.ChangeCoord().SetLinearForm(0.5, p1, 0.5, p2);
+            Xyz coord = default;
+            coord.SetLinearForm(0.5, p1, 0.5, p2);
+            p = new Point3D(coord);
             p1 -= p2;
             double tol = p1.Modulus() / 2;
             tol += tolMin;
@@ -449,8 +451,8 @@ public abstract class LocationLaw : Transient
         }
         else
         {
-            p.ChangeCoord() *= m1;
-            p.ChangeCoord() += v1.XYZ();
+            p = new Point3D(p.XYZ() * m1);
+            p = new Point3D(p.XYZ() + v1.XYZ());
             b.MakeVertex(ref output, p, tolMin);
         }
     }

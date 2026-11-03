@@ -150,7 +150,7 @@ public class SurfaceCache : Transient
         point = new Point3D(aPoint[0], aPoint[1], aPoint[2]);
         if (_isRational)
         {
-            point.ChangeCoord().Divide(aPoint[3]);
+            point = new Point3D(point.XYZ().Divided(aPoint[3]));
         }
     }
 

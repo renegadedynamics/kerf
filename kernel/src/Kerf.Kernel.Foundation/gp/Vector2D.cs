@@ -11,9 +11,9 @@ using static Kerf.Geometry.TransformForm;
 namespace Kerf.Geometry;
 
 /// <summary>A vector in 2D space.</summary>
-public partial struct Vector2D : IEquatable<Vector2D>
+public readonly partial struct Vector2D : IEquatable<Vector2D>
 {
-    private Xy _coord;
+    private readonly Xy _coord;
 
     public Vector2D(in Direction2D v) => _coord = v.XY();
 
@@ -24,111 +24,7 @@ public partial struct Vector2D : IEquatable<Vector2D>
     /// <summary>The vector from <paramref name="p1"/> to <paramref name="p2"/>.</summary>
     public Vector2D(in Point2D p1, in Point2D p2) => _coord = p2.XY().Subtracted(p1.XY());
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetCoord(int index, double xi) => _coord.SetCoord(index, xi);
-
-    internal void SetCoord(double xv, double yv) => _coord.SetCoord(xv, yv);
-
-    internal void SetX(double x) => _coord.SetX(x);
-
-    internal void SetY(double y) => _coord.SetY(y);
-
-    internal void SetXY(in Xy coord) => _coord = coord;
-
-    internal void Add(in Vector2D other) => _coord.Add(other._coord);
-
-    internal void Divide(double scalar) => _coord.Divide(scalar);
-
-    internal void Multiply(double scalar) => _coord.Multiply(scalar);
-
-    internal void Normalize()
-    {
-        double d = _coord.Modulus();
-        Standard_ConstructionError_Raise_if(d <= Constants.Resolution(), "gp_Vec2d::Normalize() - vector has zero norm");
-        _coord.Divide(d);
-    }
-
-    internal void Reverse() => _coord.Reverse();
-
-    internal void Subtract(in Vector2D right) => _coord.Subtract(right._coord);
-
-    internal void SetLinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2, in Vector2D v3)
-        => _coord.SetLinearForm(a1, v1._coord, a2, v2._coord, v3._coord);
-
-    internal void SetLinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2)
-        => _coord.SetLinearForm(a1, v1._coord, a2, v2._coord);
-
-    internal void SetLinearForm(double a1, in Vector2D v1, in Vector2D v2) => _coord.SetLinearForm(a1, v1._coord, v2._coord);
-
-    internal void SetLinearForm(in Vector2D v1, in Vector2D v2) => _coord.SetLinearForm(v1._coord, v2._coord);
-
-    internal void Mirror(in Vector2D v)
-    {
-        double magnitude = v._coord.Modulus();
-        if (magnitude > Constants.Resolution())
-        {
-            Xy mirrorVecXY = v._coord;
-            double origX = _coord.X();
-            double origY = _coord.Y();
-
-            double normDirX = mirrorVecXY.X() / magnitude;
-            double normDirY = mirrorVecXY.Y() / magnitude;
-
-            double crossTerm = 2.0 * normDirX * normDirY;
-            double xxTerm = 2.0 * normDirX * normDirX - 1.0;
-            double yyTerm = 2.0 * normDirY * normDirY - 1.0;
-
-            _coord.SetX(xxTerm * origX + crossTerm * origY);
-            _coord.SetY(crossTerm * origX + yyTerm * origY);
-        }
-    }
-
-    internal void Mirror(in Axis2D a1)
-    {
-        Xy directionXY = a1.Direction().XY();
-        double origX = _coord.X();
-        double origY = _coord.Y();
-        double dirX = directionXY.X();
-        double dirY = directionXY.Y();
-
-        double crossTerm = 2.0 * dirX * dirY;
-        double xxTerm = 2.0 * dirX * dirX - 1.0;
-        double yyTerm = 2.0 * dirY * dirY - 1.0;
-
-        _coord.SetX(xxTerm * origX + crossTerm * origY);
-        _coord.SetY(crossTerm * origX + yyTerm * origY);
-    }
-
-    internal void Rotate(double ang)
-    {
-        Transform2D t = new();
-        t = t.WithRotation(new Point2D(0.0, 0.0), ang);
-        _coord.Multiply(t.VectorialPart());
-    }
-
-    internal void Scale(double s) => _coord.Multiply(s);
-
-    internal void Transform(in Transform2D t)
-    {
-        switch (t.Form())
-        {
-            case Identity:
-            case Translation:
-                break;
-            case PntMirror:
-                _coord.Reverse();
-                break;
-            case global::Kerf.Geometry.TransformForm.Scale:
-                _coord.Multiply(t.ScaleFactor());
-                break;
-            default:
-                _coord.Multiply(t.VectorialPart());
-                break;
-        }
-    }
-
-    // Copies with a mutator applied
+    // Copies
 
     /// <summary>The linear form of the arguments, as OCCT's <c>SetLinearForm</c> computes it.</summary>
     public static Vector2D LinearForm(double a1, in Vector2D v1, double a2, in Vector2D v2, in Vector2D v3)
@@ -162,12 +58,11 @@ public partial struct Vector2D : IEquatable<Vector2D>
         return new Vector2D(coord);
     }
 
-
     public readonly Vector2D WithCoord(int index, double xi)
     {
-        Vector2D copy = this;
-        copy.SetCoord(index, xi);
-        return copy;
+        Xy coord = _coord;
+        coord.SetCoord(index, xi);
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D WithCoord(double xv, double yv) => new(xv, yv);
@@ -266,9 +161,9 @@ public partial struct Vector2D : IEquatable<Vector2D>
 
     public readonly Vector2D Added(in Vector2D other)
     {
-        Vector2D v = this;
-        v._coord.Add(other._coord);
-        return v;
+        Xy coord = _coord;
+        coord.Add(other._coord);
+        return new Vector2D(coord);
     }
 
     /// <summary>The scalar cross product.</summary>
@@ -280,9 +175,9 @@ public partial struct Vector2D : IEquatable<Vector2D>
 
     public readonly Vector2D Divided(double scalar)
     {
-        Vector2D v = this;
-        v._coord.Divide(scalar);
-        return v;
+        Xy coord = _coord;
+        coord.Divide(scalar);
+        return new Vector2D(coord);
     }
 
     public readonly double Dot(in Vector2D other) => _coord.Dot(other._coord);
@@ -292,67 +187,110 @@ public partial struct Vector2D : IEquatable<Vector2D>
 
     public readonly Vector2D Multiplied(double scalar)
     {
-        Vector2D v = this;
-        v._coord.Multiply(scalar);
-        return v;
+        Xy coord = _coord;
+        coord.Multiply(scalar);
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Normalized()
     {
         double d = _coord.Modulus();
         Standard_ConstructionError_Raise_if(d <= Constants.Resolution(), "gp_Vec2d::Normalized() - vector has zero norm");
-        Vector2D v = this;
-        v._coord.Divide(d);
-        return v;
+        Xy coord = _coord;
+        coord.Divide(d);
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Reversed()
     {
-        Vector2D v = this;
-        v._coord.Reverse();
-        return v;
+        Xy coord = _coord;
+        coord.Reverse();
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Subtracted(in Vector2D right)
     {
-        Vector2D v = this;
-        v._coord.Subtract(right._coord);
-        return v;
+        Xy coord = _coord;
+        coord.Subtract(right._coord);
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Mirrored(in Vector2D v)
     {
-        Vector2D vres = this;
-        vres.Mirror(v);
-        return vres;
+        Xy coord = _coord;
+        double magnitude = v._coord.Modulus();
+        if (magnitude > Constants.Resolution())
+        {
+            Xy mirrorVecXY = v._coord;
+            double origX = coord.X();
+            double origY = coord.Y();
+
+            double normDirX = mirrorVecXY.X() / magnitude;
+            double normDirY = mirrorVecXY.Y() / magnitude;
+
+            double crossTerm = 2.0 * normDirX * normDirY;
+            double xxTerm = 2.0 * normDirX * normDirX - 1.0;
+            double yyTerm = 2.0 * normDirY * normDirY - 1.0;
+
+            coord.SetX(xxTerm * origX + crossTerm * origY);
+            coord.SetY(crossTerm * origX + yyTerm * origY);
+        }
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Mirrored(in Axis2D a1)
     {
-        Vector2D vres = this;
-        vres.Mirror(a1);
-        return vres;
+        Xy coord = _coord;
+        Xy directionXY = a1.Direction().XY();
+        double origX = coord.X();
+        double origY = coord.Y();
+        double dirX = directionXY.X();
+        double dirY = directionXY.Y();
+
+        double crossTerm = 2.0 * dirX * dirY;
+        double xxTerm = 2.0 * dirX * dirX - 1.0;
+        double yyTerm = 2.0 * dirY * dirY - 1.0;
+
+        coord.SetX(xxTerm * origX + crossTerm * origY);
+        coord.SetY(crossTerm * origX + yyTerm * origY);
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Rotated(double ang)
     {
-        Vector2D v = this;
-        v.Rotate(ang);
-        return v;
+        Xy coord = _coord;
+        Transform2D t = new();
+        t = t.WithRotation(new Point2D(0.0, 0.0), ang);
+        coord.Multiply(t.VectorialPart());
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Scaled(double s)
     {
-        Vector2D v = this;
-        v._coord.Multiply(s);
-        return v;
+        Xy coord = _coord;
+        coord.Multiply(s);
+        return new Vector2D(coord);
     }
 
     public readonly Vector2D Transformed(in Transform2D t)
     {
-        Vector2D v = this;
-        v.Transform(t);
-        return v;
+        Xy coord = _coord;
+        switch (t.Form())
+        {
+            case Identity:
+            case Translation:
+                break;
+            case PntMirror:
+                coord.Reverse();
+                break;
+            case global::Kerf.Geometry.TransformForm.Scale:
+                coord.Multiply(t.ScaleFactor());
+                break;
+            default:
+                coord.Multiply(t.VectorialPart());
+                break;
+        }
+        return new Vector2D(coord);
     }
 
     public static Vector2D operator +(in Vector2D left, in Vector2D right) => left.Added(right);

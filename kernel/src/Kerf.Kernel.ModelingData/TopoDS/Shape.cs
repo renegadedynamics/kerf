@@ -70,7 +70,7 @@ public partial struct Shape : IEquatable<Shape>
     internal void Nullify()
     {
         _tShape = null;
-        _location.Clear();
+        _location = new Placement();
         _orient = global::Kerf.Topology.Orientation.External;
     }
 

@@ -764,7 +764,7 @@ public sealed class SurfaceSweep
                     Vector3D dc = new Vector3D();
                     // On calcul le centre eventuel
                     dc = dc.WithXYZ(c.Location().XYZ() - centre.XYZ());
-                    centre.ChangeCoord() += (dc.Dot(dn)) * dn.XYZ();
+                    centre = new Point3D(centre.XYZ() + ((dc.Dot(dn)) * dn.XYZ()));
                     dc = dc.WithXYZ(c.Location().XYZ() - centre.XYZ());
                     Radius = dc.Magnitude(); // grand Rayon du tore
                     if ((Radius > tol) && (dc.Dot(ds) < 0))

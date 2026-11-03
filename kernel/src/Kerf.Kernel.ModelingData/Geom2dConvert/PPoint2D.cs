@@ -59,7 +59,7 @@ public partial struct PPoint2D : IEquatable<PPoint2D>
     /// <summary>The first derivative.</summary>
     public readonly Xy D1() => _d1.XY();
 
-    internal void SetD1(in Xy d1) => _d1.SetXY(d1);
+    internal void SetD1(in Xy d1) => _d1 = _d1.WithXY(d1);
 
     /// <summary>A copy with the derivative theD1.</summary>
     public readonly PPoint2D WithD1(in Xy d1)

@@ -207,7 +207,7 @@ public class Cache : Transient
         point = new Point3D(aPoint[0], aPoint[1], aPoint[2]);
         if (_isRational)
         {
-            point.ChangeCoord().Divide(aPoint[3]);
+            point = new Point3D(point.XYZ().Divided(aPoint[3]));
         }
     }
 
@@ -319,7 +319,7 @@ public class Cache : Transient
         point = new Point2D(aPoint[0], aPoint[1]);
         if (_isRational)
         {
-            point.ChangeCoord().Divide(aPoint[2]);
+            point = new Point2D(point.XY().Divided(aPoint[2]));
         }
     }
 

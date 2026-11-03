@@ -67,6 +67,13 @@ public class DefensiveCopyAnalyzerTests
     public void Allows_a_readonly_field_in_its_own_constructor()
         => Assert.Empty(Analyze("", extraStruct: "public sealed class C { private readonly P p; public C() { p.Move(1); } }"));
 
+    [Fact]
+    public void Allows_a_field_of_a_readonly_struct_in_its_constructor()
+    {
+        Assert.Empty(Analyze("", extraStruct: "public readonly struct T { private readonly P p; public T(double d) { p = default; p.Move(d); } }"));
+        Assert.Single(Analyze("", extraStruct: "public readonly struct T { private readonly P p; public T Moved() { p.Move(1); return this; } }"));
+    }
+
     private static ImmutableArray<Diagnostic> Analyze(string method, string extraStruct = "")
     {
         string source = Prelude + extraStruct + (method.Length > 0 ? "\npublic static class Test { static " + method + " }" : "");

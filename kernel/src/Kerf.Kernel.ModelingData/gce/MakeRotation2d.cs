@@ -14,7 +14,7 @@ public sealed class MakeRotation2d
     private Transform2D _theRotation2d = new();
 
     /// <summary>A rotation by Angle (radians) around a point.</summary>
-    public MakeRotation2d(in Point2D point, double angle) => _theRotation2d.SetRotation(point, angle);
+    public MakeRotation2d(in Point2D point, double angle) => _theRotation2d = _theRotation2d.WithRotation(point, angle);
 
     /// <summary>The constructed transformation.</summary>
     public Transform2D Value() => _theRotation2d;

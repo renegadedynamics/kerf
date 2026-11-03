@@ -602,11 +602,11 @@ public class SurfaceNSections : SurfaceSectionLaw
             for (ii = 0; ii <= 20; ii++, u += deltaU)
             {
                 p = _surface.Value(u, v);
-                bary.ChangeCoord() += p.XYZ();
+                bary = new Point3D(bary.XYZ() + p.XYZ());
             }
         }
 
-        bary.ChangeCoord() /= (21 * 21);
+        bary = new Point3D(bary.XYZ() / ((21 * 21)));
         return bary;
     }
 

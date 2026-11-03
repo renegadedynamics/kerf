@@ -15,12 +15,30 @@ namespace Kerf.Geometry;
 /// orthogonal. Its form is gp_Other unless it was built from a <see cref="Transform2D"/>.
 /// </summary>
 /// <remarks><c>new gp_GTrsf2d()</c> is the identity, as in OCCT; <c>default(gp_GTrsf2d)</c> is not valid.</remarks>
-public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
+public readonly partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
 {
-    private Matrix2x2 _matrix;
-    private Xy _loc;
-    private TransformForm _shape;
-    private double _scale;
+    private readonly Matrix2x2 _matrix;
+    private readonly Xy _loc;
+    private readonly TransformForm _shape;
+    private readonly double _scale;
+
+    /// <summary>A value of the fields as they are (unit 10G: the returning forms build their results with it).</summary>
+    private GeneralTransform2D(in Matrix2x2 matrix, in Xy loc, TransformForm shape, double scale)
+    {
+        _matrix = matrix;
+        _loc = loc;
+        _shape = shape;
+        _scale = scale;
+    }
+
+    /// <summary>The fields, for the returning forms that take a whole value back (unit 10G).</summary>
+    private void Deconstruct(out Matrix2x2 matrix, out Xy loc, out TransformForm shape, out double scale)
+    {
+        matrix = _matrix;
+        loc = _loc;
+        shape = _shape;
+        scale = _scale;
+    }
 
     public GeneralTransform2D()
     {
@@ -53,213 +71,78 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
     /// <summary>The affinity of ratio <paramref name="ratio"/> along the normal to the axis <paramref name="a"/>.</summary>
     public static GeneralTransform2D Affinity(in Axis2D a, double ratio) => new GeneralTransform2D().WithAffinity(a, ratio);
 
-    // Mutators (internal: see docs/translation-rules.md)
+    // Copies
 
-    internal void SetAffinity(in Axis2D A, double ratio)
+    public readonly GeneralTransform2D WithAffinity(in Axis2D A, double ratio)
     {
-        _shape = Other;
-        _scale = 0.0;
+        Matrix2x2 matrix = _matrix;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        shape = Other;
+        scale = 0.0;
         double a = A.Direction().X();
         double b = A.Direction().Y();
-        _matrix.SetValue(1, 1, (1.0 - ratio) * a * a + ratio);
-        _matrix.SetValue(2, 2, (1.0 - ratio) * b * b + ratio);
-        _matrix.SetValue(1, 2, (1.0 - ratio) * a * b);
-        _matrix.SetValue(2, 1, _matrix.Value(1, 2));
-        _loc = A.Location().XY();
-        _loc.Reverse();
-        _loc.Multiply(_matrix);
-        _loc.Add(A.Location().XY());
+        matrix.SetValue(1, 1, (1.0 - ratio) * a * a + ratio);
+        matrix.SetValue(2, 2, (1.0 - ratio) * b * b + ratio);
+        matrix.SetValue(1, 2, (1.0 - ratio) * a * b);
+        matrix.SetValue(2, 1, matrix.Value(1, 2));
+        loc = A.Location().XY();
+        loc.Reverse();
+        loc.Multiply(matrix);
+        loc.Add(A.Location().XY());
+        return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
-    internal void SetValue(int row, int col, double value)
+    public readonly GeneralTransform2D WithValue(int row, int col, double value)
     {
+        Matrix2x2 matrix = _matrix;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
         Standard_OutOfRange_Raise_if(row < 1 || row > 2 || col < 1 || col > 3, " ");
         if (col == 3)
         {
-            _loc.SetCoord(row, value);
+            loc.SetCoord(row, value);
         }
         else
         {
-            _matrix.SetValue(row, col, value);
+            matrix.SetValue(row, col, value);
         }
 
-        _shape = Other;
+        shape = Other;
+        return new GeneralTransform2D(matrix, loc, shape, _scale);
     }
 
-    internal void SetTranslationPart(in Xy coord)
+    public readonly GeneralTransform2D WithTranslationPart(in Xy coord)
     {
-        _loc = coord;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
+        loc = coord;
         if (Form() == CompoundTrsf || Form() == Other || Form() == Translation)
         {
         }
         else if (Form() == Identity)
         {
-            _shape = Translation;
+            shape = Translation;
         }
         else
         {
-            _shape = CompoundTrsf;
+            shape = CompoundTrsf;
         }
-    }
-
-    internal void SetTrsf2d(in Transform2D t)
-    {
-        _shape = t._shape;
-        _matrix = t._matrix;
-        _loc = t._loc;
-        _scale = t._scale;
-    }
-
-    internal void SetVectorialPart(in Matrix2x2 matrix)
-    {
-        _matrix = matrix;
-        _shape = Other;
-        _scale = 0.0;
-    }
-
-    internal void Invert()
-    {
-        if (_shape == Other)
-        {
-            _matrix.Invert();
-            _loc.Multiply(_matrix);
-            _loc.Reverse();
-        }
-        else
-        {
-            Transform2D t = Trsf2d();
-            t = t.Inverted();
-            SetTrsf2d(t);
-        }
-    }
-
-    internal void Multiply(in GeneralTransform2D t)
-    {
-        if (Form() == Other || t.Form() == Other)
-        {
-            _shape = Other;
-            _loc.Add(t._loc.Multiplied(_matrix));
-            _matrix.Multiply(t._matrix);
-        }
-        else
-        {
-            Transform2D t1 = Trsf2d();
-            Transform2D t2 = t.Trsf2d();
-            t1 = t1.Multiplied(t2);
-            _matrix = t1._matrix;
-            _loc = t1._loc;
-            _scale = t1._scale;
-            _shape = t1._shape;
-        }
-    }
-
-    internal void PreMultiply(in GeneralTransform2D t)
-    {
-        if (Form() == Other || t.Form() == Other)
-        {
-            _shape = Other;
-            _loc.Multiply(t._matrix);
-            _loc.Add(t._loc);
-            _matrix.PreMultiply(t._matrix);
-        }
-        else
-        {
-            Transform2D t1 = Trsf2d();
-            Transform2D t2 = t.Trsf2d();
-            t1 = t1.PreMultiplied(t2);
-            _matrix = t1._matrix;
-            _loc = t1._loc;
-            _scale = t1._scale;
-            _shape = t1._shape;
-        }
-    }
-
-    internal void Power(int n)
-    {
-        if (n == 0)
-        {
-            _scale = 1.0;
-            _shape = Identity;
-            _matrix.SetIdentity();
-            _loc = new Xy(0.0, 0.0);
-        }
-        else if (n == 1)
-        {
-        }
-        else if (n == -1)
-        {
-            Invert();
-        }
-        else
-        {
-            if (n < 0)
-            {
-                Invert();
-            }
-
-            if (_shape == Other)
-            {
-                int npower = Math.Abs(n) - 1;
-                Xy temploc = _loc;
-                Matrix2x2 tempmatrix = _matrix;
-                for (;;)
-                {
-                    if (IsOdd(npower))
-                    {
-                        _loc.Add(temploc.Multiplied(_matrix));
-                        _matrix.Multiply(tempmatrix);
-                    }
-
-                    if (npower == 1)
-                    {
-                        break;
-                    }
-
-                    temploc.Add(temploc.Multiplied(tempmatrix));
-                    // OCCT squares in place through an aliased reference (gp_Mat2d::Power, docs/occt-issues.md)
-                    tempmatrix.Multiply(tempmatrix);
-                    npower = npower / 2;
-                }
-            }
-            else
-            {
-                Transform2D t = Trsf2d();
-                t = t.Powered(n);
-                SetTrsf2d(t);
-            }
-        }
-    }
-
-    // Copies with a mutator applied
-
-    public readonly GeneralTransform2D WithAffinity(in Axis2D a, double ratio)
-    {
-        GeneralTransform2D copy = this;
-        copy.SetAffinity(a, ratio);
-        return copy;
-    }
-
-    public readonly GeneralTransform2D WithValue(int row, int col, double value)
-    {
-        GeneralTransform2D copy = this;
-        copy.SetValue(row, col, value);
-        return copy;
-    }
-
-    public readonly GeneralTransform2D WithTranslationPart(in Xy coord)
-    {
-        GeneralTransform2D copy = this;
-        copy.SetTranslationPart(coord);
-        return copy;
+        return new GeneralTransform2D(_matrix, loc, shape, _scale);
     }
 
     public readonly GeneralTransform2D WithTrsf2d(in Transform2D t) => new(t);
 
     public readonly GeneralTransform2D WithVectorialPart(in Matrix2x2 matrix)
     {
-        GeneralTransform2D copy = this;
-        copy.SetVectorialPart(matrix);
-        return copy;
+        Matrix2x2 newMatrix = _matrix;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        newMatrix = matrix;
+        shape = Other;
+        scale = 0.0;
+        return new GeneralTransform2D(newMatrix, _loc, shape, scale);
     }
 
     // Queries
@@ -296,32 +179,137 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
 
     public readonly GeneralTransform2D Inverted()
     {
-        GeneralTransform2D t = this;
-        t.Invert();
-        return t;
+        Matrix2x2 matrix = _matrix;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (shape == Other)
+        {
+            matrix.Invert();
+            loc.Multiply(matrix);
+            loc.Reverse();
+        }
+        else
+        {
+            Transform2D t = Trsf2d();
+            t = t.Inverted();
+            (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTrsf2d(t);
+        }
+        return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
     /// <summary><c>this * theT</c>, which applies <paramref name="t"/> first.</summary>
     public readonly GeneralTransform2D Multiplied(in GeneralTransform2D t)
     {
-        GeneralTransform2D tres = this;
-        tres.Multiply(t);
-        return tres;
+        Matrix2x2 matrix = _matrix;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (Form() == Other || t.Form() == Other)
+        {
+            shape = Other;
+            loc.Add(t._loc.Multiplied(matrix));
+            matrix.Multiply(t._matrix);
+        }
+        else
+        {
+            Transform2D t1 = Trsf2d();
+            Transform2D t2 = t.Trsf2d();
+            t1 = t1.Multiplied(t2);
+            matrix = t1._matrix;
+            loc = t1._loc;
+            scale = t1._scale;
+            shape = t1._shape;
+        }
+        return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
     /// <summary><c>theT * this</c>, which applies this transformation first.</summary>
     public readonly GeneralTransform2D PreMultiplied(in GeneralTransform2D t)
     {
-        GeneralTransform2D tres = this;
-        tres.PreMultiply(t);
-        return tres;
+        Matrix2x2 matrix = _matrix;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (Form() == Other || t.Form() == Other)
+        {
+            shape = Other;
+            loc.Multiply(t._matrix);
+            loc.Add(t._loc);
+            matrix.PreMultiply(t._matrix);
+        }
+        else
+        {
+            Transform2D t1 = Trsf2d();
+            Transform2D t2 = t.Trsf2d();
+            t1 = t1.PreMultiplied(t2);
+            matrix = t1._matrix;
+            loc = t1._loc;
+            scale = t1._scale;
+            shape = t1._shape;
+        }
+        return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
     public readonly GeneralTransform2D Powered(int n)
     {
-        GeneralTransform2D t = this;
-        t.Power(n);
-        return t;
+        Matrix2x2 matrix = _matrix;
+        Xy loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (n == 0)
+        {
+            scale = 1.0;
+            shape = Identity;
+            matrix.SetIdentity();
+            loc = new Xy(0.0, 0.0);
+        }
+        else if (n == 1)
+        {
+        }
+        else if (n == -1)
+        {
+            (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).Inverted();
+        }
+        else
+        {
+            if (n < 0)
+            {
+                (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).Inverted();
+            }
+
+            if (shape == Other)
+            {
+                int npower = Math.Abs(n) - 1;
+                Xy temploc = loc;
+                Matrix2x2 tempmatrix = matrix;
+                for (;;)
+                {
+                    if (IsOdd(npower))
+                    {
+                        loc.Add(temploc.Multiplied(matrix));
+                        matrix.Multiply(tempmatrix);
+                    }
+
+                    if (npower == 1)
+                    {
+                        break;
+                    }
+
+                    temploc.Add(temploc.Multiplied(tempmatrix));
+                    // OCCT squares in place through an aliased reference (gp_Mat2d::Power, docs/occt-issues.md)
+                    tempmatrix.Multiply(tempmatrix);
+                    npower = npower / 2;
+                }
+            }
+            else
+            {
+                Transform2D t = Trsf2d();
+                t = t.Powered(n);
+                (matrix, loc, shape, scale) = new GeneralTransform2D(matrix, loc, shape, scale).WithTrsf2d(t);
+            }
+        }
+        return new GeneralTransform2D(matrix, loc, shape, scale);
     }
 
     public readonly void Transforms(ref Xy coord)
@@ -386,12 +374,7 @@ public partial struct GeneralTransform2D : IEquatable<GeneralTransform2D>
             throw new ConstructionErrorException("gp_GTrsf2d::Trsf2d() - non-orthogonal GTrsf2d(3)");
         }
 
-        Transform2D transformation = new();
-        transformation._matrix = _matrix;
-        transformation._shape = _shape;
-        transformation._scale = _scale;
-        transformation._loc = _loc;
-        return transformation;
+        return new Transform2D(_scale, _shape, _matrix, _loc);
     }
 
     public static GeneralTransform2D operator *(in GeneralTransform2D left, in GeneralTransform2D right) => left.Multiplied(right);

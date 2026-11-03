@@ -14,10 +14,10 @@ public sealed class MakeTranslation
     private Transform3D _theTranslation = new();
 
     /// <summary>A translation by a vector.</summary>
-    public MakeTranslation(in Vector3D vec) => _theTranslation.SetTranslation(vec);
+    public MakeTranslation(in Vector3D vec) => _theTranslation = _theTranslation.WithTranslation(vec);
 
     /// <summary>A translation from Point1 to Point2.</summary>
-    public MakeTranslation(in Point3D point1, in Point3D point2) => _theTranslation.SetTranslation(new Vector3D(point1, point2));
+    public MakeTranslation(in Point3D point1, in Point3D point2) => _theTranslation = _theTranslation.WithTranslation(new Vector3D(point1, point2));
 
     /// <summary>The constructed transformation.</summary>
     public Transform3D Value() => _theTranslation;

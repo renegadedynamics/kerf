@@ -173,10 +173,10 @@ public class UniformSection : SurfaceSectionLaw
         for (int ii = 0; ii <= 20; ii++, u += delta)
         {
             p = _curve.Value(u);
-            bary.ChangeCoord() += p.XYZ();
+            bary = new Point3D(bary.XYZ() + p.XYZ());
         }
 
-        bary.ChangeCoord() /= 21.0;
+        bary = new Point3D(bary.XYZ() / 21.0);
         return bary;
     }
 

@@ -338,8 +338,10 @@ public sealed class GeomTool
         }
 
         Span<double> param = stackalloc double[2];
+        Xy intCoord = intPnt.XY();
         IntFlag intFlag =
-            IntLinLin(startPnt1, endPnt1, startPnt2, endPnt2, ref intPnt.ChangeCoord(), param);
+            IntLinLin(startPnt1, endPnt1, startPnt2, endPnt2, ref intCoord, param);
+        intPnt = new Point2D(intCoord);
         if (intFlag == IntFlag.NoIntersection)
         {
             return IntFlag.NoIntersection;

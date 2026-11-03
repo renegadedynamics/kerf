@@ -1129,18 +1129,18 @@ public static partial class GeomLib
 
         // Calculation of deformation constraints
         aIn.D1(ti[1], out p, out v);
-        polesDef[1].ChangeCoord() = p1.XYZ() - p.XYZ();
+        polesDef[1] = new Point3D(p1.XYZ() - p.XYZ());
         vtan = t1;
         vtan = vtan.Normalized();
         dv = vtan * (vtan * v) - v;
-        polesDef[2].ChangeCoord() = (ti[4] - ti[1]) * dv.XYZ();
+        polesDef[2] = new Point3D((ti[4] - ti[1]) * dv.XYZ());
 
         aIn.D1(ti[4], out p, out v);
-        polesDef[3].ChangeCoord() = p2.XYZ() - p.XYZ();
+        polesDef[3] = new Point3D(p2.XYZ() - p.XYZ());
         vtan = t2;
         vtan = vtan.Normalized();
         dv = vtan * (vtan * v) - v;
-        polesDef[4].ChangeCoord() = (ti[4] - ti[1]) * dv.XYZ();
+        polesDef[4] = new Point3D((ti[4] - ti[1]) * dv.XYZ());
 
         // Interpolation of constraints
         Matrix mat = new(1, 4, 1, 4);
@@ -1191,7 +1191,7 @@ public static partial class GeomLib
         for (ii = 1; ii <= def.PoleCount; ii++)
         {
             p = aIn.Pole(ii);
-            p.ChangeCoord() += def.Pole(ii).XYZ();
+            p = new Point3D(p.XYZ() + def.Pole(ii).XYZ());
             aIn.SetPole(ii, p);
         }
         curve = aIn;
@@ -1327,7 +1327,7 @@ public static partial class GeomLib
         {
             for (jj = 1; jj <= size; jj++)
             {
-                extraCoeffs[jj].ChangeCoord() += matCoefs[ii, jj] * cont[ii];
+                extraCoeffs[jj] = new Point3D(extraCoeffs[jj].XYZ() + (matCoefs[ii, jj] * cont[ii]));
             }
         }
 
@@ -1812,7 +1812,7 @@ public static partial class GeomLib
                             else
                             {
                                 newW[ii, jj] = ww;
-                                newP[ii, jj].ChangeCoord() /= ww;
+                                newP[ii, jj] = new Point3D(newP[ii, jj].XYZ() / ww);
                             }
                         }
                     }
@@ -1842,7 +1842,7 @@ public static partial class GeomLib
                             else
                             {
                                 newW[ii, jj] = ww;
-                                newP[ii, jj].ChangeCoord() /= ww;
+                                newP[ii, jj] = new Point3D(newP[ii, jj].XYZ() / ww);
                             }
                         }
                     }

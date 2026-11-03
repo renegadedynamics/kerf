@@ -20,11 +20,11 @@ namespace Kerf.Geometry;
 /// <c>new gp_Elips()</c> is OCCT's indefinite ellipse (major radius <see cref="Standard.RealLast"/>, minor radius
 /// <see cref="Standard.RealSmall"/>); <c>default(gp_Elips)</c> is not valid.
 /// </remarks>
-public partial struct Ellipse3D : IEquatable<Ellipse3D>
+public readonly partial struct Ellipse3D : IEquatable<Ellipse3D>
 {
-    private Frame3D _pos;
-    private double _majorRadius;
-    private double _minorRadius;
+    private readonly Frame3D _pos;
+    private readonly double _majorRadius;
+    private readonly double _minorRadius;
 
     public Ellipse3D()
     {
@@ -45,111 +45,47 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
                                             "gp_Elips() - invalid construction parameters");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetAxis(in Axis3D a1) => _pos.SetAxis(a1);
-
-    internal void SetLocation(in Point3D p) => _pos.SetLocation(p);
-
-    internal void SetMajorRadius(double majorRadius)
-    {
-        Standard_ConstructionError_Raise_if(
-            majorRadius < _minorRadius,
-            "gp_Elips::SetMajorRadius() - major radius should be greater or equal to minor radius");
-        _majorRadius = majorRadius;
-    }
-
-    internal void SetMinorRadius(double minorRadius)
-    {
-        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || _majorRadius < minorRadius,
-                                            "gp_Elips::SetMinorRadius() - minor radius should be a "
-                                            + "positive number lesser or equal to major radius");
-        _minorRadius = minorRadius;
-    }
-
-    internal void SetPosition(in Frame3D a2) => _pos = a2;
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _majorRadius *= s;
-        if (_majorRadius < 0)
-        {
-            _majorRadius = -_majorRadius;
-        }
-
-        _minorRadius *= s;
-        if (_minorRadius < 0)
-        {
-            _minorRadius = -_minorRadius;
-        }
-
-        _pos = _pos.Scaled(p, s);
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _majorRadius *= t.ScaleFactor();
-        if (_majorRadius < 0)
-        {
-            _majorRadius = -_majorRadius;
-        }
-
-        _minorRadius *= t.ScaleFactor();
-        if (_minorRadius < 0)
-        {
-            _minorRadius = -_minorRadius;
-        }
-
-        _pos = _pos.Transformed(t);
-    }
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Ellipse3D WithAxis(in Axis3D a1)
     {
-        Ellipse3D copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        Frame3D pos = _pos;
+        pos = pos.WithAxis(a1);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D WithLocation(in Point3D p)
     {
-        Ellipse3D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Frame3D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D WithMajorRadius(double majorRadius)
     {
-        Ellipse3D copy = this;
-        copy.SetMajorRadius(majorRadius);
-        return copy;
+        double newMajorRadius = _majorRadius;
+        Standard_ConstructionError_Raise_if(
+            majorRadius < _minorRadius,
+            "gp_Elips::SetMajorRadius() - major radius should be greater or equal to minor radius");
+        newMajorRadius = majorRadius;
+        return new Ellipse3D(_pos, newMajorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D WithMinorRadius(double minorRadius)
     {
-        Ellipse3D copy = this;
-        copy.SetMinorRadius(minorRadius);
-        return copy;
+        double newMinorRadius = _minorRadius;
+        Standard_ConstructionError_Raise_if(minorRadius < 0.0 || _majorRadius < minorRadius,
+                                            "gp_Elips::SetMinorRadius() - minor radius should be a "
+                                            + "positive number lesser or equal to major radius");
+        newMinorRadius = minorRadius;
+        return new Ellipse3D(_pos, _majorRadius, newMinorRadius);
     }
 
     public readonly Ellipse3D WithPosition(in Frame3D a2)
     {
-        Ellipse3D copy = this;
-        copy.SetPosition(a2);
-        return copy;
+        Frame3D pos = _pos;
+        pos = a2;
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     // Queries
@@ -247,82 +183,86 @@ public partial struct Ellipse3D : IEquatable<Ellipse3D>
 
     public readonly Ellipse3D Mirrored(in Point3D p)
     {
-        Ellipse3D e = this;
-        e._pos = e._pos.Mirrored(p);
-        return e;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D Mirrored(in Axis3D a1)
     {
-        Ellipse3D e = this;
-        e._pos = e._pos.Mirrored(a1);
-        return e;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D Mirrored(in Frame3D a2)
     {
-        Ellipse3D e = this;
-        e._pos = e._pos.Mirrored(a2);
-        return e;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D Rotated(in Axis3D a1, double ang)
     {
-        Ellipse3D e = this;
-        e._pos = e._pos.Rotated(a1, ang);
-        return e;
+        Frame3D pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D Scaled(in Point3D p, double s)
     {
-        Ellipse3D e = this;
-        e._majorRadius *= s;
-        if (e._majorRadius < 0)
+        Frame3D pos = _pos;
+        double majorRadius = _majorRadius;
+        double minorRadius = _minorRadius;
+        majorRadius *= s;
+        if (majorRadius < 0)
         {
-            e._majorRadius = -e._majorRadius;
+            majorRadius = -majorRadius;
         }
 
-        e._minorRadius *= s;
-        if (e._minorRadius < 0)
+        minorRadius *= s;
+        if (minorRadius < 0)
         {
-            e._minorRadius = -e._minorRadius;
+            minorRadius = -minorRadius;
         }
 
-        e._pos = e._pos.Scaled(p, s);
-        return e;
+        pos = pos.Scaled(p, s);
+        return new Ellipse3D(pos, majorRadius, minorRadius);
     }
 
     public readonly Ellipse3D Transformed(in Transform3D t)
     {
-        Ellipse3D e = this;
-        e._majorRadius *= t.ScaleFactor();
-        if (e._majorRadius < 0)
+        Frame3D pos = _pos;
+        double majorRadius = _majorRadius;
+        double minorRadius = _minorRadius;
+        majorRadius *= t.ScaleFactor();
+        if (majorRadius < 0)
         {
-            e._majorRadius = -e._majorRadius;
+            majorRadius = -majorRadius;
         }
 
-        e._minorRadius *= t.ScaleFactor();
-        if (e._minorRadius < 0)
+        minorRadius *= t.ScaleFactor();
+        if (minorRadius < 0)
         {
-            e._minorRadius = -e._minorRadius;
+            minorRadius = -minorRadius;
         }
 
-        e._pos = e._pos.Transformed(t);
-        return e;
+        pos = pos.Transformed(t);
+        return new Ellipse3D(pos, majorRadius, minorRadius);
     }
 
     public readonly Ellipse3D Translated(in Vector3D v)
     {
-        Ellipse3D e = this;
-        e._pos = e._pos.Translated(v);
-        return e;
+        Frame3D pos = _pos;
+        pos = pos.Translated(v);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly Ellipse3D Translated(in Point3D p1, in Point3D p2)
     {
-        Ellipse3D e = this;
-        e._pos = e._pos.Translated(p1, p2);
-        return e;
+        Frame3D pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Ellipse3D(pos, _majorRadius, _minorRadius);
     }
 
     public readonly bool Equals(Ellipse3D other)

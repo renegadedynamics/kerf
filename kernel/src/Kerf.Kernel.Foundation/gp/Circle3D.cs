@@ -18,10 +18,10 @@ namespace Kerf.Geometry;
 /// <c>new gp_Circ()</c> is OCCT's indefinite circle (radius <see cref="Standard.RealLast"/>); <c>default(gp_Circ)</c>
 /// is not valid.
 /// </remarks>
-public partial struct Circle3D : IEquatable<Circle3D>
+public readonly partial struct Circle3D : IEquatable<Circle3D>
 {
-    private Frame3D _pos;
-    private double _radius;
+    private readonly Frame3D _pos;
+    private readonly double _radius;
 
     public Circle3D()
     {
@@ -37,82 +37,35 @@ public partial struct Circle3D : IEquatable<Circle3D>
         Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ() - radius should be positive number");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetAxis(in Axis3D a1) => _pos.SetAxis(a1);
-
-    internal void SetLocation(in Point3D p) => _pos.SetLocation(p);
-
-    internal void SetPosition(in Frame3D a2) => _pos = a2;
-
-    internal void SetRadius(double radius)
-    {
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ::SetRadius() - radius should be positive number");
-        _radius = radius;
-    }
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _radius *= s;
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-
-        _pos = _pos.Scaled(p, s);
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _radius *= t.ScaleFactor();
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-
-        _pos = _pos.Transformed(t);
-    }
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Circle3D WithAxis(in Axis3D a1)
     {
-        Circle3D copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        Frame3D pos = _pos;
+        pos = pos.WithAxis(a1);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D WithLocation(in Point3D p)
     {
-        Circle3D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Frame3D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D WithPosition(in Frame3D a2)
     {
-        Circle3D copy = this;
-        copy.SetPosition(a2);
-        return copy;
+        Frame3D pos = _pos;
+        pos = a2;
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D WithRadius(double radius)
     {
-        Circle3D copy = this;
-        copy.SetRadius(radius);
-        return copy;
+        double newRadius = _radius;
+        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ::SetRadius() - radius should be positive number");
+        newRadius = radius;
+        return new Circle3D(_pos, newRadius);
     }
 
     // Queries
@@ -152,70 +105,72 @@ public partial struct Circle3D : IEquatable<Circle3D>
 
     public readonly Circle3D Mirrored(in Point3D p)
     {
-        Circle3D c = this;
-        c._pos = c._pos.Mirrored(p);
-        return c;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D Mirrored(in Axis3D a1)
     {
-        Circle3D c = this;
-        c._pos = c._pos.Mirrored(a1);
-        return c;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D Mirrored(in Frame3D a2)
     {
-        Circle3D c = this;
-        c._pos = c._pos.Mirrored(a2);
-        return c;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D Rotated(in Axis3D a1, double ang)
     {
-        Circle3D c = this;
-        c._pos = c._pos.Rotated(a1, ang);
-        return c;
+        Frame3D pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D Scaled(in Point3D p, double s)
     {
-        Circle3D c = this;
-        c._radius *= s;
-        if (c._radius < 0)
+        Frame3D pos = _pos;
+        double radius = _radius;
+        radius *= s;
+        if (radius < 0)
         {
-            c._radius = -c._radius;
+            radius = -radius;
         }
 
-        c._pos = c._pos.Scaled(p, s);
-        return c;
+        pos = pos.Scaled(p, s);
+        return new Circle3D(pos, radius);
     }
 
     public readonly Circle3D Transformed(in Transform3D t)
     {
-        Circle3D c = this;
-        c._radius *= t.ScaleFactor();
-        if (c._radius < 0)
+        Frame3D pos = _pos;
+        double radius = _radius;
+        radius *= t.ScaleFactor();
+        if (radius < 0)
         {
-            c._radius = -c._radius;
+            radius = -radius;
         }
 
-        c._pos = c._pos.Transformed(t);
-        return c;
+        pos = pos.Transformed(t);
+        return new Circle3D(pos, radius);
     }
 
     public readonly Circle3D Translated(in Vector3D v)
     {
-        Circle3D c = this;
-        c._pos = c._pos.Translated(v);
-        return c;
+        Frame3D pos = _pos;
+        pos = pos.Translated(v);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly Circle3D Translated(in Point3D p1, in Point3D p2)
     {
-        Circle3D c = this;
-        c._pos = c._pos.Translated(p1, p2);
-        return c;
+        Frame3D pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Circle3D(pos, _radius);
     }
 
     public readonly bool Equals(Circle3D other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);

@@ -197,7 +197,7 @@ public sealed class QuasiAngularConvertor
             pnt.SetCoord(_px[ii] / wi, _py[ii] / wi, 0);
             pnt *= m;
             pnt += center.XYZ();
-            poles[ii].ChangeCoord() = pnt;
+            poles[ii] = new Point3D(pnt);
             weights[ii] = wi;
         }
     }
@@ -334,7 +334,7 @@ public sealed class QuasiAngularConvertor
             dp.SetCoord(dPx[ii] / wi, dPy[ii] / wi, 0);
             dp -= (dw[ii] / wi) * p;
 
-            poles[ii].ChangeCoord() = m * p + center.XYZ();
+            poles[ii] = new Point3D(m * p + center.XYZ());
             p *= mPrim;
             dp *= m;
             aux.SetLinearForm(1, p, 1, dp, dCenter.XYZ());
@@ -544,7 +544,7 @@ public sealed class QuasiAngularConvertor
             d2P += (2 * Math.Pow(dwi / wi, 2) - d2W[ii] / wi) * p;
             dp -= (dw[ii] / wi) * p;
 
-            poles[ii].ChangeCoord() = m * p + center.XYZ();
+            poles[ii] = new Point3D(m * p + center.XYZ());
             auxyz.SetLinearForm(1, mPrim * p, 1, m * dp, dCenter.XYZ());
             dPoles[ii] = dPoles[ii].WithXYZ(auxyz);
             p *= mSecn;

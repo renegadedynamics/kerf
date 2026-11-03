@@ -115,7 +115,7 @@ public class GTrsfModification : Modification
             throw new NoSuchObjectException("BRepTools_GTrsfModification : Pb no BSpline/Bezier Type Surface");
         }
 
-        l.Identity();
+        l = new Placement();
         return true;
     }
 
@@ -163,7 +163,7 @@ public class GTrsfModification : Modification
             }
             c = new TrimmedCurve3D(c, f, l);
         }
-        L.Identity();
+        L = new Placement();
         return c is not null;
     }
 
@@ -266,9 +266,7 @@ public class GTrsfModification : Modification
                 Direction3D normal = triangulation.Normal(ind);
                 Matrix3x3 mat = gTrsf.VectorialPart();
                 mat = mat.WithDiagonal(1.0, 1.0, 1.0);
-                Transform3D trsf = new Transform3D();
-                trsf = trsf.WithForm(Rotation);
-                trsf._matrix = mat;
+                Transform3D trsf = new Transform3D(1.0, Rotation, mat, new Xyz(0.0, 0.0, 0.0));
                 normal = normal.Transformed(trsf);
                 triangulation.SetNormal(ind, normal);
             }

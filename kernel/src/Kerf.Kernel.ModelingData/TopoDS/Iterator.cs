@@ -57,7 +57,7 @@ public sealed class Iterator
         }
         else
         {
-            _location.Identity();
+            _location = new Placement();
         }
 
         if (cumOri)

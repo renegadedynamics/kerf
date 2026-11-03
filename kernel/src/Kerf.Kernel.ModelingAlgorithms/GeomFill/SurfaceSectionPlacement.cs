@@ -702,7 +702,9 @@ public sealed class SurfaceSectionPlacement
 
         if (withTranslation)
         {
-            p.ChangeCoord().SetLinearForm(-1, pSection.XYZ(), v.XYZ());
+            Xyz coord = default;
+            coord.SetLinearForm(-1, pSection.XYZ(), v.XYZ());
+            p = new Point3D(coord);
         }
         else
         {

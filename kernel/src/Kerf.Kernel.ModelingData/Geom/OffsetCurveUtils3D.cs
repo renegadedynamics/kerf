@@ -41,7 +41,7 @@ internal static class OffsetCurveUtils3D
             return false;
         }
         ndir.Multiply(offset / r);
-        value.ChangeCoord().Add(ndir);
+        value = new Point3D(value.XYZ().Added(ndir));
         return true;
     }
 
@@ -84,7 +84,7 @@ internal static class OffsetCurveUtils3D
 
         ndir.Multiply(offset / r);
         // P(u)
-        value.ChangeCoord().Add(ndir);
+        value = new Point3D(value.XYZ().Added(ndir));
         // P'(u)
         d1 = d1.Added(new Vector3D(dNdir));
         return true;
@@ -156,7 +156,7 @@ internal static class OffsetCurveUtils3D
 
         ndir.Multiply(offset / r);
         // P(u)
-        value.ChangeCoord().Add(ndir);
+        value = new Point3D(value.XYZ().Added(ndir));
         // P'(u) :
         d1 = d1.Added(new Vector3D(dNdir));
         // P"(u) :
@@ -256,7 +256,7 @@ internal static class OffsetCurveUtils3D
 
         ndir.Multiply(offset / r);
         // P(u)
-        value.ChangeCoord().Add(ndir);
+        value = new Point3D(value.XYZ().Added(ndir));
         // P'(u) :
         d1 = d1.Added(new Vector3D(dNdir));
         // P"(u)

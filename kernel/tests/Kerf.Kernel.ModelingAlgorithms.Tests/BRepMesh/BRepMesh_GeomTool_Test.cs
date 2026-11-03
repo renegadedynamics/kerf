@@ -43,14 +43,15 @@ public class BRepMesh_GeomTool_Test
         // Test 3: Test IntLinLin() static method - line-line intersection
         Xy[] aRefPnts = [new(-10.0, -10.0), new(10.0, 10.0), new(-10.0, 10.0), new(10.0, -10.0)];
 
-        Point2D anIntPnt = new();
+        Xy anIntCoord = new Point2D().XY();
         Span<double> aParams = stackalloc double[2];
         GeomTool.IntFlag anIntFlag = GeomTool.IntLinLin(aRefPnts[0],
                                                                           aRefPnts[1],
                                                                           aRefPnts[2],
                                                                           aRefPnts[3],
-                                                                          ref anIntPnt.ChangeCoord(),
+                                                                          ref anIntCoord,
                                                                           aParams);
+        Point2D anIntPnt = new(anIntCoord);
 
         double aDiff = anIntPnt.Distance(Constants.Origin2d());
         Assert.Equal(GeomTool.IntFlag.Cross, anIntFlag);

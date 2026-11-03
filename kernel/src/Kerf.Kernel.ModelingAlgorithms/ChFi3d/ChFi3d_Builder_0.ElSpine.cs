@@ -196,8 +196,9 @@ internal static partial class Builder_0
             {
                 es.LastPointAndTgt(out ptemp, out vtemp);
                 Direction3D d = new(vtemp);
-                Point3D olin = new();
-                olin.ChangeCoord().SetLinearForm(-wl, d.XYZ(), pFin.XYZ());
+                Xyz olinCoord = default;
+                olinCoord.SetLinearForm(-wl, d.XYZ(), pFin.XYZ());
+                Point3D olin = new(olinCoord);
                 l = new LineCurve3D(olin, d);
                 es.SetCurve(l);
             }
@@ -205,8 +206,9 @@ internal static partial class Builder_0
             {
                 es.FirstPointAndTgt(out ptemp, out vtemp);
                 Direction3D d = new(vtemp);
-                Point3D olin = new();
-                olin.ChangeCoord().SetLinearForm(-wf, d.XYZ(), pDeb.XYZ());
+                Xyz olinCoord = default;
+                olinCoord.SetLinearForm(-wf, d.XYZ(), pDeb.XYZ());
+                Point3D olin = new(olinCoord);
                 l = new LineCurve3D(olin, d);
                 es.SetCurve(l);
             }

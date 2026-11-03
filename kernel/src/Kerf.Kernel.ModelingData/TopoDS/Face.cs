@@ -48,7 +48,7 @@ public partial struct Face : IEquatable<Face>
     internal void Nullify()
     {
         _tShape = null;
-        _location.Clear();
+        _location = new Placement();
         _orient = global::Kerf.Topology.Orientation.External;
     }
 

@@ -18,10 +18,10 @@ namespace Kerf.Geometry;
 /// <c>new gp_Parab()</c> is OCCT's indefinite parabola (focal length <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Parab)</c> is not valid.
 /// </remarks>
-public partial struct Parabola3D : IEquatable<Parabola3D>
+public readonly partial struct Parabola3D : IEquatable<Parabola3D>
 {
-    private Frame3D _pos;
-    private double _focalLength;
+    private readonly Frame3D _pos;
+    private readonly double _focalLength;
 
     public Parabola3D()
     {
@@ -53,82 +53,35 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
                          ax.Direction());
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetAxis(in Axis3D a1) => _pos.SetAxis(a1);
-
-    internal void SetFocal(double focal)
-    {
-        Standard_ConstructionError_Raise_if(focal < 0.0, "gp_Parab::SetFocal() - focal length should be >= 0");
-        _focalLength = focal;
-    }
-
-    internal void SetLocation(in Point3D p) => _pos.SetLocation(p);
-
-    internal void SetPosition(in Frame3D a2) => _pos = a2;
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _focalLength *= s;
-        if (_focalLength < 0)
-        {
-            _focalLength = -_focalLength;
-        }
-
-        _pos = _pos.Scaled(p, s);
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _focalLength *= t.ScaleFactor();
-        if (_focalLength < 0)
-        {
-            _focalLength = -_focalLength;
-        }
-
-        _pos = _pos.Transformed(t);
-    }
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Parabola3D WithAxis(in Axis3D a1)
     {
-        Parabola3D copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        Frame3D pos = _pos;
+        pos = pos.WithAxis(a1);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D WithFocal(double focal)
     {
-        Parabola3D copy = this;
-        copy.SetFocal(focal);
-        return copy;
+        double focalLength = _focalLength;
+        Standard_ConstructionError_Raise_if(focal < 0.0, "gp_Parab::SetFocal() - focal length should be >= 0");
+        focalLength = focal;
+        return new Parabola3D(_pos, focalLength);
     }
 
     public readonly Parabola3D WithLocation(in Point3D p)
     {
-        Parabola3D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Frame3D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D WithPosition(in Frame3D a2)
     {
-        Parabola3D copy = this;
-        copy.SetPosition(a2);
-        return copy;
+        Frame3D pos = _pos;
+        pos = a2;
+        return new Parabola3D(pos, _focalLength);
     }
 
     // Queries
@@ -174,70 +127,72 @@ public partial struct Parabola3D : IEquatable<Parabola3D>
 
     public readonly Parabola3D Mirrored(in Point3D p)
     {
-        Parabola3D prb = this;
-        prb._pos = prb._pos.Mirrored(p);
-        return prb;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D Mirrored(in Axis3D a1)
     {
-        Parabola3D prb = this;
-        prb._pos = prb._pos.Mirrored(a1);
-        return prb;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D Mirrored(in Frame3D a2)
     {
-        Parabola3D prb = this;
-        prb._pos = prb._pos.Mirrored(a2);
-        return prb;
+        Frame3D pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D Rotated(in Axis3D a1, double ang)
     {
-        Parabola3D prb = this;
-        prb._pos = prb._pos.Rotated(a1, ang);
-        return prb;
+        Frame3D pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D Scaled(in Point3D p, double s)
     {
-        Parabola3D prb = this;
-        prb._focalLength *= s;
-        if (prb._focalLength < 0)
+        Frame3D pos = _pos;
+        double focalLength = _focalLength;
+        focalLength *= s;
+        if (focalLength < 0)
         {
-            prb._focalLength = -prb._focalLength;
+            focalLength = -focalLength;
         }
 
-        prb._pos = prb._pos.Scaled(p, s);
-        return prb;
+        pos = pos.Scaled(p, s);
+        return new Parabola3D(pos, focalLength);
     }
 
     public readonly Parabola3D Transformed(in Transform3D t)
     {
-        Parabola3D prb = this;
-        prb._focalLength *= t.ScaleFactor();
-        if (prb._focalLength < 0)
+        Frame3D pos = _pos;
+        double focalLength = _focalLength;
+        focalLength *= t.ScaleFactor();
+        if (focalLength < 0)
         {
-            prb._focalLength = -prb._focalLength;
+            focalLength = -focalLength;
         }
 
-        prb._pos = prb._pos.Transformed(t);
-        return prb;
+        pos = pos.Transformed(t);
+        return new Parabola3D(pos, focalLength);
     }
 
     public readonly Parabola3D Translated(in Vector3D v)
     {
-        Parabola3D prb = this;
-        prb._pos = prb._pos.Translated(v);
-        return prb;
+        Frame3D pos = _pos;
+        pos = pos.Translated(v);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly Parabola3D Translated(in Point3D p1, in Point3D p2)
     {
-        Parabola3D prb = this;
-        prb._pos = prb._pos.Translated(p1, p2);
-        return prb;
+        Frame3D pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Parabola3D(pos, _focalLength);
     }
 
     public readonly bool Equals(Parabola3D other) => _pos.Equals(other._pos) && _focalLength.Equals(other._focalLength);

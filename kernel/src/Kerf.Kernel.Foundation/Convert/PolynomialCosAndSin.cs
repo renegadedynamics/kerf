@@ -140,14 +140,14 @@ internal static class PolynomialCosAndSin
         double dtg = newTPoles[1].Distance(newTPoles[2]);
         newTPoles[1] = pdeb;
         Xy theXY = new(0.0, dtg);
-        pdeb.ChangeCoord() += theXY;
+        pdeb = new Point2D(pdeb.XY() + theXY);
         newTPoles[2] = pdeb;
 
         // readjustment to Euclid
         dtg = newTPoles[num_poles].Distance(newTPoles[num_poles - 1]);
         newTPoles[num_poles] = pfin;
         theXY.SetCoord(dtg * sinD, -dtg * cosD);
-        pfin.ChangeCoord() += theXY;
+        pfin = new Point2D(pfin.XY() + theXY);
         newTPoles[num_poles - 1] = pfin;
 
         // Rotation to return to the arc [LocUFirst, LocUFirst+Delta]

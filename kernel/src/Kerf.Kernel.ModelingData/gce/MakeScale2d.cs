@@ -14,7 +14,7 @@ public sealed class MakeScale2d
     private Transform2D _theScale2d = new();
 
     /// <summary>A scaling by Scale about a point.</summary>
-    public MakeScale2d(in Point2D point, double scale) => _theScale2d.SetScale(point, scale);
+    public MakeScale2d(in Point2D point, double scale) => _theScale2d = _theScale2d.WithScale(point, scale);
 
     /// <summary>The constructed transformation.</summary>
     public Transform2D Value() => _theScale2d;

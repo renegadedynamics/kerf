@@ -9,11 +9,19 @@ namespace Kerf.Geometry;
 
 /// <summary>A coordinate system in 3D space, right- or left-handed ("direct" or "indirect").</summary>
 /// <remarks><c>new gp_Ax3()</c> is the global system, as in OCCT; <c>default(gp_Ax3)</c> is not valid.</remarks>
-public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
+public readonly partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 {
-    private Axis3D _axis;
-    private Direction3D _vydir;
-    private Direction3D _vxdir;
+    private readonly Axis3D _axis;
+    private readonly Direction3D _vydir;
+    private readonly Direction3D _vxdir;
+
+    /// <summary>A value of the fields as they are (unit 10G: the returning forms build their results with it).</summary>
+    private CoordinateSystem(in Axis3D axis, in Direction3D vydir, in Direction3D vxdir)
+    {
+        _axis = axis;
+        _vydir = vydir;
+        _vxdir = vxdir;
+    }
 
     public CoordinateSystem()
     {
@@ -103,221 +111,145 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public CoordinateSystem(Direction3D.D v) : this(new Point3D(0.0, 0.0, 0.0), v) { }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void XReverse() => _vxdir.Reverse();
-
-    internal void YReverse() => _vydir.Reverse();
-
-    internal void ZReverse() => _axis.Reverse();
-
-    internal void SetAxis(in Axis3D a1)
-    {
-        _axis = _axis.WithLocation(a1.Location());
-        SetDirection(a1.Direction());
-    }
-
-    internal void SetDirection(in Direction3D v)
-    {
-        double dot = v.Dot(_vxdir);
-        if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
-        {
-            if (dot > 0)
-            {
-                _vxdir = _vydir;
-                _vydir = _axis.Direction();
-            }
-            else
-            {
-                _vxdir = _axis.Direction();
-            }
-
-            _axis = _axis.WithDirection(v);
-        }
-        else
-        {
-            bool direct = Direct();
-            _axis = _axis.WithDirection(v);
-            _vxdir = v.CrossCrossed(_vxdir, v);
-            if (direct)
-            {
-                _vydir = v.Crossed(_vxdir);
-            }
-            else
-            {
-                _vydir = _vxdir.Crossed(v);
-            }
-        }
-    }
-
-    internal void SetLocation(in Point3D p) => _axis.SetLocation(p);
-
-    internal void SetXDirection(in Direction3D vx)
-    {
-        double dot = vx.Dot(_axis.Direction());
-        if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
-        {
-            if (dot > 0)
-            {
-                _axis = _axis.WithDirection(_vxdir);
-                _vydir = -_vydir;
-            }
-            else
-            {
-                _axis = _axis.WithDirection(_vxdir);
-            }
-
-            _vxdir = vx;
-        }
-        else
-        {
-            bool direct = Direct();
-            _vxdir = _axis.Direction().CrossCrossed(vx, _axis.Direction());
-            if (direct)
-            {
-                _vydir = _axis.Direction().Crossed(_vxdir);
-            }
-            else
-            {
-                _vydir = _vxdir.Crossed(_axis.Direction());
-            }
-        }
-    }
-
-    internal void SetYDirection(in Direction3D vy)
-    {
-        double dot = vy.Dot(_axis.Direction());
-        if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
-        {
-            if (dot > 0)
-            {
-                _axis = _axis.WithDirection(_vydir);
-                _vxdir = -_vxdir;
-            }
-            else
-            {
-                _axis = _axis.WithDirection(_vydir);
-            }
-
-            _vydir = vy;
-        }
-        else
-        {
-            bool isDirect = Direct();
-            _vxdir = vy.Crossed(_axis.Direction());
-            _vydir = _axis.Direction().Crossed(_vxdir);
-            if (!isDirect)
-            {
-                _vxdir = _vxdir.Reversed();
-            }
-        }
-    }
-
-    internal void Mirror(in Point3D p)
-    {
-        _axis = _axis.Mirrored(p);
-        _vxdir = _vxdir.Reversed();
-        _vydir = _vydir.Reversed();
-    }
-
-    internal void Mirror(in Axis3D a1)
-    {
-        _vydir = _vydir.Mirrored(a1);
-        _vxdir = _vxdir.Mirrored(a1);
-        _axis = _axis.Mirrored(a1);
-    }
-
-    internal void Mirror(in Frame3D a2)
-    {
-        _vydir = _vydir.Mirrored(a2);
-        _vxdir = _vxdir.Mirrored(a2);
-        _axis = _axis.Mirrored(a2);
-    }
-
-    internal void Rotate(in Axis3D a1, double ang)
-    {
-        _axis = _axis.Rotated(a1, ang);
-        _vxdir = _vxdir.Rotated(a1, ang);
-        _vydir = _vydir.Rotated(a1, ang);
-    }
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _axis = _axis.Scaled(p, s);
-        if (s < 0.0)
-        {
-            _vxdir = _vxdir.Reversed();
-            _vydir = _vydir.Reversed();
-        }
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _axis = _axis.Transformed(t);
-        _vxdir = _vxdir.Transformed(t);
-        _vydir = _vydir.Transformed(t);
-    }
-
-    internal void Translate(in Vector3D v) => _axis.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => Translate(new Vector3D(p1, p2));
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly CoordinateSystem XReversed()
     {
-        CoordinateSystem copy = this;
-        copy.XReverse();
-        return copy;
+        Direction3D vxdir = _vxdir;
+        vxdir = vxdir.Reversed();
+        return new CoordinateSystem(_axis, _vydir, vxdir);
     }
 
     public readonly CoordinateSystem YReversed()
     {
-        CoordinateSystem copy = this;
-        copy.YReverse();
-        return copy;
+        Direction3D vydir = _vydir;
+        vydir = vydir.Reversed();
+        return new CoordinateSystem(_axis, vydir, _vxdir);
     }
 
     public readonly CoordinateSystem ZReversed()
     {
-        CoordinateSystem copy = this;
-        copy.ZReverse();
-        return copy;
+        Axis3D axis = _axis;
+        axis = axis.Reversed();
+        return new CoordinateSystem(axis, _vydir, _vxdir);
     }
 
     public readonly CoordinateSystem WithAxis(in Axis3D a1)
     {
-        CoordinateSystem copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        return new CoordinateSystem(_axis.WithLocation(a1.Location()), _vydir, _vxdir).WithDirection(a1.Direction());
     }
 
     public readonly CoordinateSystem WithDirection(in Direction3D v)
     {
-        CoordinateSystem copy = this;
-        copy.SetDirection(v);
-        return copy;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        double dot = v.Dot(vxdir);
+        if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
+        {
+            if (dot > 0)
+            {
+                vxdir = vydir;
+                vydir = axis.Direction();
+            }
+            else
+            {
+                vxdir = axis.Direction();
+            }
+
+            axis = axis.WithDirection(v);
+        }
+        else
+        {
+            bool direct = Direct();
+            axis = axis.WithDirection(v);
+            vxdir = v.CrossCrossed(vxdir, v);
+            if (direct)
+            {
+                vydir = v.Crossed(vxdir);
+            }
+            else
+            {
+                vydir = vxdir.Crossed(v);
+            }
+        }
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem WithLocation(in Point3D p)
     {
-        CoordinateSystem copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Axis3D axis = _axis;
+        axis = axis.WithLocation(p);
+        return new CoordinateSystem(axis, _vydir, _vxdir);
     }
 
     public readonly CoordinateSystem WithXDirection(in Direction3D vx)
     {
-        CoordinateSystem copy = this;
-        copy.SetXDirection(vx);
-        return copy;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        double dot = vx.Dot(axis.Direction());
+        if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
+        {
+            if (dot > 0)
+            {
+                axis = axis.WithDirection(vxdir);
+                vydir = -vydir;
+            }
+            else
+            {
+                axis = axis.WithDirection(vxdir);
+            }
+
+            vxdir = vx;
+        }
+        else
+        {
+            bool direct = Direct();
+            vxdir = axis.Direction().CrossCrossed(vx, axis.Direction());
+            if (direct)
+            {
+                vydir = axis.Direction().Crossed(vxdir);
+            }
+            else
+            {
+                vydir = vxdir.Crossed(axis.Direction());
+            }
+        }
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem WithYDirection(in Direction3D vy)
     {
-        CoordinateSystem copy = this;
-        copy.SetYDirection(vy);
-        return copy;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        double dot = vy.Dot(axis.Direction());
+        if (1.0 - Math.Abs(dot) <= global::Kerf.Engine.Foundation.Precision.Angular())
+        {
+            if (dot > 0)
+            {
+                axis = axis.WithDirection(vydir);
+                vxdir = -vxdir;
+            }
+            else
+            {
+                axis = axis.WithDirection(vydir);
+            }
+
+            vydir = vy;
+        }
+        else
+        {
+            bool isDirect = Direct();
+            vxdir = vy.Crossed(axis.Direction());
+            vydir = axis.Direction().Crossed(vxdir);
+            if (!isDirect)
+            {
+                vxdir = vxdir.Reversed();
+            }
+        }
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     // Queries
@@ -387,51 +319,78 @@ public partial struct CoordinateSystem : IEquatable<CoordinateSystem>
 
     public readonly CoordinateSystem Mirrored(in Point3D p)
     {
-        CoordinateSystem temp = this;
-        temp.Mirror(p);
-        return temp;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        axis = axis.Mirrored(p);
+        vxdir = vxdir.Reversed();
+        vydir = vydir.Reversed();
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem Mirrored(in Axis3D a1)
     {
-        CoordinateSystem temp = this;
-        temp.Mirror(a1);
-        return temp;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        vydir = vydir.Mirrored(a1);
+        vxdir = vxdir.Mirrored(a1);
+        axis = axis.Mirrored(a1);
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem Mirrored(in Frame3D a2)
     {
-        CoordinateSystem temp = this;
-        temp.Mirror(a2);
-        return temp;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        vydir = vydir.Mirrored(a2);
+        vxdir = vxdir.Mirrored(a2);
+        axis = axis.Mirrored(a2);
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem Rotated(in Axis3D a1, double ang)
     {
-        CoordinateSystem temp = this;
-        temp.Rotate(a1, ang);
-        return temp;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        axis = axis.Rotated(a1, ang);
+        vxdir = vxdir.Rotated(a1, ang);
+        vydir = vydir.Rotated(a1, ang);
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem Scaled(in Point3D p, double s)
     {
-        CoordinateSystem temp = this;
-        temp.Scale(p, s);
-        return temp;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        axis = axis.Scaled(p, s);
+        if (s < 0.0)
+        {
+            vxdir = vxdir.Reversed();
+            vydir = vydir.Reversed();
+        }
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem Transformed(in Transform3D t)
     {
-        CoordinateSystem temp = this;
-        temp.Transform(t);
-        return temp;
+        Axis3D axis = _axis;
+        Direction3D vydir = _vydir;
+        Direction3D vxdir = _vxdir;
+        axis = axis.Transformed(t);
+        vxdir = vxdir.Transformed(t);
+        vydir = vydir.Transformed(t);
+        return new CoordinateSystem(axis, vydir, vxdir);
     }
 
     public readonly CoordinateSystem Translated(in Vector3D v)
     {
-        CoordinateSystem temp = this;
-        temp.Translate(v);
-        return temp;
+        Axis3D axis = _axis;
+        axis = axis.Translated(v);
+        return new CoordinateSystem(axis, _vydir, _vxdir);
     }
 
     public readonly CoordinateSystem Translated(in Point3D p1, in Point3D p2) => Translated(new Vector3D(p1, p2));

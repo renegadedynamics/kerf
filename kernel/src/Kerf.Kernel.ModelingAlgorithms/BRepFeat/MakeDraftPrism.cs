@@ -1103,9 +1103,9 @@ public sealed class MakeDraftPrism : Form
         for (int jj = 1; jj <= spt.Length(); jj++)
         {
             Point3D pvt = spt[jj];
-            bar.ChangeCoord() += pvt.XYZ();
+            bar = new Point3D(bar.XYZ() + pvt.XYZ());
         }
-        bar.ChangeCoord().Divide(spt.Length());
+        bar = new Point3D(bar.XYZ().Divided(spt.Length()));
         Surface s = Tool.Surface(Base)!;
         if (s.GetType() == typeof(TrimmedSurface))
         {

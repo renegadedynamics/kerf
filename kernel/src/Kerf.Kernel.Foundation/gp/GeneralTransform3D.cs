@@ -16,12 +16,30 @@ namespace Kerf.Geometry;
 /// transformation is a <see cref="Transform3D"/> and its scale factor is kept apart from the matrix.
 /// </summary>
 /// <remarks><c>new gp_GTrsf()</c> is the identity, as in OCCT; <c>default(gp_GTrsf)</c> is not valid.</remarks>
-public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
+public readonly partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
 {
-    private Matrix3x3 _matrix;
-    private Xyz _loc;
-    private TransformForm _shape;
-    private double _scale;
+    private readonly Matrix3x3 _matrix;
+    private readonly Xyz _loc;
+    private readonly TransformForm _shape;
+    private readonly double _scale;
+
+    /// <summary>A value of the fields as they are (unit 10G: the returning forms build their results with it).</summary>
+    private GeneralTransform3D(in Matrix3x3 matrix, in Xyz loc, TransformForm shape, double scale)
+    {
+        _matrix = matrix;
+        _loc = loc;
+        _shape = shape;
+        _scale = scale;
+    }
+
+    /// <summary>The fields, for the returning forms that take a whole value back (unit 10G).</summary>
+    private void Deconstruct(out Matrix3x3 matrix, out Xyz loc, out TransformForm shape, out double scale)
+    {
+        matrix = _matrix;
+        loc = _loc;
+        shape = _shape;
+        scale = _scale;
+    }
 
     public GeneralTransform3D()
     {
@@ -60,96 +78,113 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
     /// <summary>The transformation from a 4x4 matrix given row by row (16 values; the last row is ignored).</summary>
     public static GeneralTransform3D Mat4(ReadOnlySpan<double> mat) => new GeneralTransform3D().WithMat4(mat);
 
-    // Mutators (internal: see docs/translation-rules.md)
+    // Copies
 
-    internal void SetAffinity(in Axis3D a1, double ratio)
+    public readonly GeneralTransform3D WithAffinity(in Axis3D a1, double ratio)
     {
-        _shape = Other;
-        _scale = 0.0;
-        _matrix = _matrix.WithDot(a1.Direction().XYZ());
-        _matrix = _matrix.Multiplied(1.0 - ratio);
-        _matrix = _matrix.WithDiagonal(_matrix.Value(1, 1) + ratio,
-                           _matrix.Value(2, 2) + ratio,
-                           _matrix.Value(3, 3) + ratio);
-        _loc = a1.Location().XYZ();
-        _loc.Reverse();
-        _loc.Multiply(_matrix);
-        _loc.Add(a1.Location().XYZ());
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        shape = Other;
+        scale = 0.0;
+        matrix = matrix.WithDot(a1.Direction().XYZ());
+        matrix = matrix.Multiplied(1.0 - ratio);
+        matrix = matrix.WithDiagonal(matrix.Value(1, 1) + ratio,
+                           matrix.Value(2, 2) + ratio,
+                           matrix.Value(3, 3) + ratio);
+        loc = a1.Location().XYZ();
+        loc.Reverse();
+        loc.Multiply(matrix);
+        loc.Add(a1.Location().XYZ());
+        return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
-    internal void SetAffinity(in Frame3D a2, double ratio)
+    public readonly GeneralTransform3D WithAffinity(in Frame3D a2, double ratio)
     {
-        _shape = Other;
-        _scale = 0.0;
-        _matrix = _matrix.WithDot(a2.Direction().XYZ());
-        _matrix = _matrix.Multiplied(ratio - 1.0);
-        _loc = a2.Location().XYZ();
-        _loc.Reverse();
-        _loc.Multiply(_matrix);
-        _matrix = _matrix.WithDiagonal(_matrix.Value(1, 1) + 1.0, _matrix.Value(2, 2) + 1.0, _matrix.Value(3, 3) + 1.0);
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        shape = Other;
+        scale = 0.0;
+        matrix = matrix.WithDot(a2.Direction().XYZ());
+        matrix = matrix.Multiplied(ratio - 1.0);
+        loc = a2.Location().XYZ();
+        loc.Reverse();
+        loc.Multiply(matrix);
+        matrix = matrix.WithDiagonal(matrix.Value(1, 1) + 1.0, matrix.Value(2, 2) + 1.0, matrix.Value(3, 3) + 1.0);
+        return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
-    internal void SetValue(int row, int col, double value)
+    /// <summary>A copy with one coefficient of the 3x4 matrix replaced (row 1 to 3, column 1 to 4).</summary>
+    public readonly GeneralTransform3D WithValue(int row, int col, double value)
     {
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
         Standard_OutOfRange_Raise_if(row < 1 || row > 3 || col < 1 || col > 4, " ");
         if (col == 4)
         {
-            _loc.SetCoord(row, value);
-            if (_shape == Identity)
+            loc.SetCoord(row, value);
+            if (shape == Identity)
             {
-                _shape = Translation;
+                shape = Translation;
             }
 
-            return;
+            return new GeneralTransform3D(matrix, loc, shape, scale);
         }
         else
         {
-            if (!(_shape == Other) && !(_scale == 1.0))
+            if (!(shape == Other) && !(scale == 1.0))
             {
-                _matrix = _matrix.Multiplied(_scale);
+                matrix = matrix.Multiplied(scale);
             }
 
-            _matrix = _matrix.WithValue(row, col, value);
-            _shape = Other;
-            _scale = 0.0;
-            return;
+            matrix = matrix.WithValue(row, col, value);
+            shape = Other;
+            scale = 0.0;
+            return new GeneralTransform3D(matrix, loc, shape, scale);
         }
     }
 
-    internal void SetVectorialPart(in Matrix3x3 matrix)
+    public readonly GeneralTransform3D WithVectorialPart(in Matrix3x3 matrix)
     {
-        _matrix = matrix;
-        _shape = Other;
-        _scale = 0.0;
+        Matrix3x3 newMatrix = _matrix;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        newMatrix = matrix;
+        shape = Other;
+        scale = 0.0;
+        return new GeneralTransform3D(newMatrix, _loc, shape, scale);
     }
 
-    internal void SetTranslationPart(in Xyz coord)
+    public readonly GeneralTransform3D WithTranslationPart(in Xyz coord)
     {
-        _loc = coord;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        loc = coord;
         if (Form() == CompoundTrsf || Form() == Other || Form() == Translation)
         {
         }
         else if (Form() == Identity)
         {
-            _shape = Translation;
+            shape = Translation;
         }
         else
         {
-            _shape = CompoundTrsf;
+            shape = CompoundTrsf;
         }
+        return new GeneralTransform3D(_matrix, loc, shape, _scale);
     }
 
-    internal void SetTrsf(in Transform3D t)
-    {
-        _shape = t._shape;
-        _matrix = t._matrix;
-        _loc = t._loc;
-        _scale = t._scale;
-    }
+    public readonly GeneralTransform3D WithTrsf(in Transform3D t) => new(t);
 
-    /// <summary>Recomputes the form from the matrix: <c>gp_Other</c> unless the matrix is a uniform scale of an orthogonal matrix.</summary>
-    internal void SetForm()
+    /// <summary>A copy whose form is recomputed from its matrix (OCCT's <c>SetForm</c>).</summary>
+    public readonly GeneralTransform3D WithForm()
     {
+        TransformForm shape = _shape;
         double tol = 1.0e-12; // Precision::Angular();
         //
         // don t trust the initial values !
@@ -181,9 +216,9 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
         Matrix3x3 identity = new();
         identity = identity.WithIdentity();
         tm = tm.Subtracted(identity);
-        if (_shape == Other)
+        if (shape == Other)
         {
-            _shape = CompoundTrsf;
+            shape = CompoundTrsf;
         }
 
         for (int i = 1; i <= 3; i++)
@@ -192,198 +227,38 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
             {
                 if (Math.Abs(tm.Value(i, j)) > tol)
                 {
-                    _shape = Other;
-                    return;
+                    shape = Other;
+                    return new GeneralTransform3D(_matrix, _loc, shape, _scale);
                 }
             }
         }
+        return new GeneralTransform3D(_matrix, _loc, shape, _scale);
     }
 
-    internal void Invert()
+    public readonly GeneralTransform3D WithMat4(ReadOnlySpan<double> mat)
     {
-        if (_shape == Other)
-        {
-            _matrix = _matrix.Inverted();
-            _loc.Multiply(_matrix);
-            _loc.Reverse();
-        }
-        else
-        {
-            Transform3D t = Trsf();
-            t = t.Inverted();
-            SetTrsf(t);
-        }
-    }
-
-    /// <summary>this = this * T, which applies T first.</summary>
-    internal void Multiply(in GeneralTransform3D t)
-    {
-        if (Form() == Other || t.Form() == Other)
-        {
-            _shape = Other;
-            _loc.Add(t._loc.Multiplied(_matrix));
-            _matrix = _matrix.Multiplied(t._matrix);
-        }
-        else
-        {
-            Transform3D t1 = Trsf();
-            Transform3D t2 = t.Trsf();
-            t1 = t1.Multiplied(t2);
-            _matrix = t1._matrix;
-            _loc = t1._loc;
-            _scale = t1._scale;
-            _shape = t1._shape;
-        }
-    }
-
-    /// <summary>this = T * this, which applies this transformation first.</summary>
-    internal void PreMultiply(in GeneralTransform3D t)
-    {
-        if (Form() == Other || t.Form() == Other)
-        {
-            _shape = Other;
-            _loc.Multiply(t._matrix);
-            _loc.Add(t._loc);
-            _matrix = _matrix.PreMultiplied(t._matrix);
-        }
-        else
-        {
-            Transform3D t1 = Trsf();
-            Transform3D t2 = t.Trsf();
-            t1 = t1.PreMultiplied(t2);
-            _matrix = t1._matrix;
-            _loc = t1._loc;
-            _scale = t1._scale;
-            _shape = t1._shape;
-        }
-    }
-
-    internal void Power(int n)
-    {
-        if (n == 0)
-        {
-            _scale = 1.0;
-            _shape = Identity;
-            _matrix = _matrix.WithIdentity();
-            _loc = new Xyz(0.0, 0.0, 0.0);
-        }
-        else if (n == 1)
-        {
-        }
-        else if (n == -1)
-        {
-            Invert();
-        }
-        else
-        {
-            if (_shape == Other)
-            {
-                // OCCT: a negative N other than -1 is treated as |N|; the inverse is never taken.
-                int npower = Math.Abs(n) - 1;
-                Xyz temploc = _loc;
-                Matrix3x3 tempmatrix = _matrix;
-                for (;;)
-                {
-                    if (IsOdd(npower))
-                    {
-                        _loc.Add(temploc.Multiplied(_matrix));
-                        _matrix = _matrix.Multiplied(tempmatrix);
-                    }
-
-                    if (npower == 1)
-                    {
-                        break;
-                    }
-
-                    temploc.Add(temploc.Multiplied(tempmatrix));
-                    tempmatrix = tempmatrix.Multiplied(tempmatrix);
-                    npower = npower / 2;
-                }
-            }
-            else
-            {
-                Transform3D t = Trsf();
-                t = t.Powered(n);
-                SetTrsf(t);
-            }
-        }
-    }
-
-    /// <summary>Sets the transformation from a 4x4 matrix given row by row (OCCT's <c>SetMat4</c> on an <c>NCollection_Mat4</c>).</summary>
-    internal void SetMat4(ReadOnlySpan<double> mat)
-    {
+        Matrix3x3 newMatrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
         if (mat.Length < 16)
         {
             throw new ArgumentException("A 4x4 matrix needs 16 elements.", nameof(mat));
         }
 
-        _shape = Other;
-        _scale = 0.0;
-        _matrix = _matrix.WithValue(1, 1, mat[0]);
-        _matrix = _matrix.WithValue(1, 2, mat[1]);
-        _matrix = _matrix.WithValue(1, 3, mat[2]);
-        _matrix = _matrix.WithValue(2, 1, mat[4]);
-        _matrix = _matrix.WithValue(2, 2, mat[5]);
-        _matrix = _matrix.WithValue(2, 3, mat[6]);
-        _matrix = _matrix.WithValue(3, 1, mat[8]);
-        _matrix = _matrix.WithValue(3, 2, mat[9]);
-        _matrix = _matrix.WithValue(3, 3, mat[10]);
-        _loc.SetCoord(mat[3], mat[7], mat[11]);
-    }
-
-    // Copies with a mutator applied
-
-    public readonly GeneralTransform3D WithAffinity(in Axis3D a1, double ratio)
-    {
-        GeneralTransform3D copy = this;
-        copy.SetAffinity(a1, ratio);
-        return copy;
-    }
-
-    public readonly GeneralTransform3D WithAffinity(in Frame3D a2, double ratio)
-    {
-        GeneralTransform3D copy = this;
-        copy.SetAffinity(a2, ratio);
-        return copy;
-    }
-
-    /// <summary>A copy with one coefficient of the 3x4 matrix replaced (row 1 to 3, column 1 to 4).</summary>
-    public readonly GeneralTransform3D WithValue(int row, int col, double value)
-    {
-        GeneralTransform3D copy = this;
-        copy.SetValue(row, col, value);
-        return copy;
-    }
-
-    public readonly GeneralTransform3D WithVectorialPart(in Matrix3x3 matrix)
-    {
-        GeneralTransform3D copy = this;
-        copy.SetVectorialPart(matrix);
-        return copy;
-    }
-
-    public readonly GeneralTransform3D WithTranslationPart(in Xyz coord)
-    {
-        GeneralTransform3D copy = this;
-        copy.SetTranslationPart(coord);
-        return copy;
-    }
-
-    public readonly GeneralTransform3D WithTrsf(in Transform3D t) => new(t);
-
-    /// <summary>A copy whose form is recomputed from its matrix (OCCT's <c>SetForm</c>).</summary>
-    public readonly GeneralTransform3D WithForm()
-    {
-        GeneralTransform3D copy = this;
-        copy.SetForm();
-        return copy;
-    }
-
-    public readonly GeneralTransform3D WithMat4(ReadOnlySpan<double> mat)
-    {
-        GeneralTransform3D copy = this;
-        copy.SetMat4(mat);
-        return copy;
+        shape = Other;
+        scale = 0.0;
+        newMatrix = newMatrix.WithValue(1, 1, mat[0]);
+        newMatrix = newMatrix.WithValue(1, 2, mat[1]);
+        newMatrix = newMatrix.WithValue(1, 3, mat[2]);
+        newMatrix = newMatrix.WithValue(2, 1, mat[4]);
+        newMatrix = newMatrix.WithValue(2, 2, mat[5]);
+        newMatrix = newMatrix.WithValue(2, 3, mat[6]);
+        newMatrix = newMatrix.WithValue(3, 1, mat[8]);
+        newMatrix = newMatrix.WithValue(3, 2, mat[9]);
+        newMatrix = newMatrix.WithValue(3, 3, mat[10]);
+        loc.SetCoord(mat[3], mat[7], mat[11]);
+        return new GeneralTransform3D(newMatrix, loc, shape, scale);
     }
 
     // Queries
@@ -422,32 +297,132 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
 
     public readonly GeneralTransform3D Inverted()
     {
-        GeneralTransform3D t = this;
-        t.Invert();
-        return t;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (shape == Other)
+        {
+            matrix = matrix.Inverted();
+            loc.Multiply(matrix);
+            loc.Reverse();
+        }
+        else
+        {
+            Transform3D t = Trsf();
+            t = t.Inverted();
+            (matrix, loc, shape, scale) = new GeneralTransform3D(matrix, loc, shape, scale).WithTrsf(t);
+        }
+        return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
     /// <summary><c>this * theT</c>, which applies <paramref name="t"/> first.</summary>
     public readonly GeneralTransform3D Multiplied(in GeneralTransform3D t)
     {
-        GeneralTransform3D tres = this;
-        tres.Multiply(t);
-        return tres;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (Form() == Other || t.Form() == Other)
+        {
+            shape = Other;
+            loc.Add(t._loc.Multiplied(matrix));
+            matrix = matrix.Multiplied(t._matrix);
+        }
+        else
+        {
+            Transform3D t1 = Trsf();
+            Transform3D t2 = t.Trsf();
+            t1 = t1.Multiplied(t2);
+            matrix = t1._matrix;
+            loc = t1._loc;
+            scale = t1._scale;
+            shape = t1._shape;
+        }
+        return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
     /// <summary><c>theT * this</c>, which applies this transformation first.</summary>
     public readonly GeneralTransform3D PreMultiplied(in GeneralTransform3D t)
     {
-        GeneralTransform3D tres = this;
-        tres.PreMultiply(t);
-        return tres;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (Form() == Other || t.Form() == Other)
+        {
+            shape = Other;
+            loc.Multiply(t._matrix);
+            loc.Add(t._loc);
+            matrix = matrix.PreMultiplied(t._matrix);
+        }
+        else
+        {
+            Transform3D t1 = Trsf();
+            Transform3D t2 = t.Trsf();
+            t1 = t1.PreMultiplied(t2);
+            matrix = t1._matrix;
+            loc = t1._loc;
+            scale = t1._scale;
+            shape = t1._shape;
+        }
+        return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
     public readonly GeneralTransform3D Powered(int n)
     {
-        GeneralTransform3D t = this;
-        t.Power(n);
-        return t;
+        Matrix3x3 matrix = _matrix;
+        Xyz loc = _loc;
+        TransformForm shape = _shape;
+        double scale = _scale;
+        if (n == 0)
+        {
+            scale = 1.0;
+            shape = Identity;
+            matrix = matrix.WithIdentity();
+            loc = new Xyz(0.0, 0.0, 0.0);
+        }
+        else if (n == 1)
+        {
+        }
+        else if (n == -1)
+        {
+            (matrix, loc, shape, scale) = new GeneralTransform3D(matrix, loc, shape, scale).Inverted();
+        }
+        else
+        {
+            if (shape == Other)
+            {
+                // OCCT: a negative N other than -1 is treated as |N|; the inverse is never taken.
+                int npower = Math.Abs(n) - 1;
+                Xyz temploc = loc;
+                Matrix3x3 tempmatrix = matrix;
+                for (;;)
+                {
+                    if (IsOdd(npower))
+                    {
+                        loc.Add(temploc.Multiplied(matrix));
+                        matrix = matrix.Multiplied(tempmatrix);
+                    }
+
+                    if (npower == 1)
+                    {
+                        break;
+                    }
+
+                    temploc.Add(temploc.Multiplied(tempmatrix));
+                    tempmatrix = tempmatrix.Multiplied(tempmatrix);
+                    npower = npower / 2;
+                }
+            }
+            else
+            {
+                Transform3D t = Trsf();
+                t = t.Powered(n);
+                (matrix, loc, shape, scale) = new GeneralTransform3D(matrix, loc, shape, scale).WithTrsf(t);
+            }
+        }
+        return new GeneralTransform3D(matrix, loc, shape, scale);
     }
 
     public readonly void Transforms(ref Xyz coord)
@@ -491,12 +466,7 @@ public partial struct GeneralTransform3D : IEquatable<GeneralTransform3D>
             throw new ConstructionErrorException("gp_GTrsf::Trsf() - non-orthogonal GTrsf");
         }
 
-        Transform3D t = new();
-        t._shape = _shape;
-        t._scale = _scale;
-        t._matrix = _matrix;
-        t._loc = _loc;
-        return t;
+        return new Transform3D(_scale, _shape, _matrix, _loc);
     }
 
     /// <summary>The 4x4 matrix, row by row, as OCCT's <c>GetMat4</c>.</summary>

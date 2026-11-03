@@ -410,7 +410,7 @@ public class Batten
         nPoles.ChangeArray1().Assign(deltaCurve.InternalPoles());
         for (kk = nPoles.Lower(); kk <= nPoles.Upper(); kk++)
         {
-            nPoles.ChangeValue(kk).ChangeCoord() += _poles.Value(kk).Coord();
+            nPoles.ChangeValue(kk) = new Point2D(nPoles.ChangeValue(kk).XY() + _poles.Value(kk).Coord());
         }
 
         // Intermediary data

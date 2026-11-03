@@ -20,11 +20,11 @@ namespace Kerf.Geometry;
 /// <c>new gp_Cone()</c> is OCCT's indefinite cone (reference radius <see cref="Standard.RealLast"/>, semi-angle
 /// PI/4); <c>default(gp_Cone)</c> is not valid.
 /// </remarks>
-public partial struct Cone : IEquatable<Cone>
+public readonly partial struct Cone : IEquatable<Cone>
 {
-    private CoordinateSystem _pos;
-    private double _radius;
-    private double _semiAngle;
+    private readonly CoordinateSystem _pos;
+    private readonly double _radius;
+    private readonly double _semiAngle;
 
     public Cone()
     {
@@ -47,119 +47,61 @@ public partial struct Cone : IEquatable<Cone>
                                             "gp_Cone() - invalid construction parameters");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetAxis(in Axis3D a1) => _pos.SetAxis(a1);
-
-    internal void SetLocation(in Point3D loc) => _pos.SetLocation(loc);
-
-    internal void SetPosition(in CoordinateSystem a3) => _pos = a3;
-
-    internal void SetRadius(double r)
-    {
-        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Cone::SetRadius() - radius should be positive number");
-        _radius = r;
-    }
-
-    internal void SetSemiAngle(double ang)
-    {
-        Standard_ConstructionError_Raise_if(Math.Abs(ang) <= Constants.Resolution()
-                                            || M_PI * 0.5 - Math.Abs(ang) <= Constants.Resolution(),
-                                            "gp_Cone::SetSemiAngle() - invalid angle range");
-        _semiAngle = ang;
-    }
-
-    /// <summary>Reverses the U parametrisation (the Y direction).</summary>
-    internal void UReverse() => _pos.YReverse();
-
-    /// <summary>Reverses the V parametrisation (the main direction), which reverses the semi-angle.</summary>
-    internal void VReverse()
-    {
-        _pos = _pos.ZReversed();
-        _semiAngle = -_semiAngle;
-    }
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s)
-    {
-        _pos = _pos.Scaled(p, s);
-        _radius *= s;
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        _pos = _pos.Transformed(t);
-        _radius *= t.ScaleFactor();
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-    }
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Cone WithAxis(in Axis3D a1)
     {
-        Cone copy = this;
-        copy.SetAxis(a1);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.WithAxis(a1);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone WithLocation(in Point3D loc)
     {
-        Cone copy = this;
-        copy.SetLocation(loc);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.WithLocation(loc);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone WithPosition(in CoordinateSystem a3)
     {
-        Cone copy = this;
-        copy.SetPosition(a3);
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = a3;
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone WithRadius(double r)
     {
-        Cone copy = this;
-        copy.SetRadius(r);
-        return copy;
+        double newRadius = _radius;
+        Standard_ConstructionError_Raise_if(r < 0.0, "gp_Cone::SetRadius() - radius should be positive number");
+        newRadius = r;
+        return new Cone(_pos, _semiAngle, newRadius);
     }
 
     public readonly Cone WithSemiAngle(double ang)
     {
-        Cone copy = this;
-        copy.SetSemiAngle(ang);
-        return copy;
+        double semiAngle = _semiAngle;
+        Standard_ConstructionError_Raise_if(Math.Abs(ang) <= Constants.Resolution()
+                                            || M_PI * 0.5 - Math.Abs(ang) <= Constants.Resolution(),
+                                            "gp_Cone::SetSemiAngle() - invalid angle range");
+        semiAngle = ang;
+        return new Cone(_pos, semiAngle, _radius);
     }
 
     public readonly Cone UReversed()
     {
-        Cone copy = this;
-        copy.UReverse();
-        return copy;
+        CoordinateSystem pos = _pos;
+        pos = pos.YReversed();
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone VReversed()
     {
-        Cone copy = this;
-        copy.VReverse();
-        return copy;
+        CoordinateSystem pos = _pos;
+        double semiAngle = _semiAngle;
+        pos = pos.ZReversed();
+        semiAngle = -semiAngle;
+        return new Cone(pos, semiAngle, _radius);
     }
 
     // Queries
@@ -233,70 +175,72 @@ public partial struct Cone : IEquatable<Cone>
 
     public readonly Cone Mirrored(in Point3D p)
     {
-        Cone c = this;
-        c._pos = c._pos.Mirrored(p);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone Mirrored(in Axis3D a1)
     {
-        Cone c = this;
-        c._pos = c._pos.Mirrored(a1);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone Mirrored(in Frame3D a2)
     {
-        Cone c = this;
-        c._pos = c._pos.Mirrored(a2);
-        return c;
+        CoordinateSystem pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone Rotated(in Axis3D a1, double ang)
     {
-        Cone cone = this;
-        cone._pos = cone._pos.Rotated(a1, ang);
-        return cone;
+        CoordinateSystem pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone Scaled(in Point3D p, double s)
     {
-        Cone c = this;
-        c._pos = c._pos.Scaled(p, s);
-        c._radius *= s;
-        if (c._radius < 0)
+        CoordinateSystem pos = _pos;
+        double radius = _radius;
+        pos = pos.Scaled(p, s);
+        radius *= s;
+        if (radius < 0)
         {
-            c._radius = -c._radius;
+            radius = -radius;
         }
 
-        return c;
+        return new Cone(pos, _semiAngle, radius);
     }
 
     public readonly Cone Transformed(in Transform3D t)
     {
-        Cone c = this;
-        c._pos = c._pos.Transformed(t);
-        c._radius *= t.ScaleFactor();
-        if (c._radius < 0)
+        CoordinateSystem pos = _pos;
+        double radius = _radius;
+        pos = pos.Transformed(t);
+        radius *= t.ScaleFactor();
+        if (radius < 0)
         {
-            c._radius = -c._radius;
+            radius = -radius;
         }
 
-        return c;
+        return new Cone(pos, _semiAngle, radius);
     }
 
     public readonly Cone Translated(in Vector3D v)
     {
-        Cone cone = this;
-        cone._pos = cone._pos.Translated(v);
-        return cone;
+        CoordinateSystem pos = _pos;
+        pos = pos.Translated(v);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly Cone Translated(in Point3D p1, in Point3D p2)
     {
-        Cone cone = this;
-        cone._pos = cone._pos.Translated(p1, p2);
-        return cone;
+        CoordinateSystem pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Cone(pos, _semiAngle, _radius);
     }
 
     public readonly bool Equals(Cone other)

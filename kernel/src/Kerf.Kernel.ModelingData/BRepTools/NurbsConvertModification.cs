@@ -381,7 +381,7 @@ public class NurbsConvertModification : CopyModification
 
         if (caux is null)
         {
-            L.Identity();
+            L = new Placement();
             return false;
         }
         Type theType = caux.GetType();

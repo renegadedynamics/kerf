@@ -11,7 +11,7 @@ namespace Kerf.Geometry;
 
 /// <summary>A unit vector in 3D space.</summary>
 /// <remarks><c>new gp_Dir()</c> is (1, 0, 0), as in OCCT; <c>default(gp_Dir)</c> is all zeros and not a valid direction.</remarks>
-public partial struct Direction3D : IEquatable<Direction3D>
+public readonly partial struct Direction3D : IEquatable<Direction3D>
 {
     /// <summary>The six directions along the axes of the global system.</summary>
     public enum D
@@ -30,7 +30,14 @@ public partial struct Direction3D : IEquatable<Direction3D>
         NZ,
     }
 
-    private Xyz _coord;
+    private readonly Xyz _coord;
+
+    /// <summary>A value of the fields as they are (unit 10G: the returning forms build their results with it).</summary>
+    /// <remarks><paramref name="isUnit"/> tells it from the public constructor, which normalizes.</remarks>
+    private Direction3D(in Xyz coord, bool isUnit)
+    {
+        _coord = coord;
+    }
 
     public Direction3D() => _coord = new Xyz(1.0, 0.0, 0.0);
 
@@ -45,189 +52,33 @@ public partial struct Direction3D : IEquatable<Direction3D>
 
     public Direction3D(double xv, double yv, double zv)
     {
-        _coord = default;
-        SetCoord(xv, yv, zv);
-    }
-
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetCoord(int index, double xi)
-    {
-        Standard_OutOfRange_Raise_if(index < 1 || index > 3, "gp_Dir::SetCoord() - index is out of range [1, 3]");
-        if (index == 1)
-        {
-            SetX(xi);
-        }
-        else if (index == 2)
-        {
-            SetY(xi);
-        }
-        else
-        {
-            SetZ(xi);
-        }
-    }
-
-    internal void SetCoord(double xv, double yv, double zv)
-    {
         double sqMod = xv * xv + yv * yv + zv * zv;
         if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
         {
-            _coord.SetCoord(xv, yv, zv);
+            _coord = new Xyz(xv, yv, zv);
             return;
         }
 
         Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::SetCoord() - input vector has zero norm");
         double d = Math.Sqrt(sqMod);
-        _coord.SetCoord(xv / d, yv / d, zv / d);
+        _coord = new Xyz(xv / d, yv / d, zv / d);
     }
 
-    internal void SetX(double x) => SetCoord(x, _coord.Y(), _coord.Z());
-
-    internal void SetY(double y) => SetCoord(_coord.X(), y, _coord.Z());
-
-    internal void SetZ(double z) => SetCoord(_coord.X(), _coord.Y(), z);
-
-    internal void SetXYZ(in Xyz xyz) => SetCoord(xyz.X(), xyz.Y(), xyz.Z());
-
-    internal void Cross(in Direction3D right)
-    {
-        _coord.Cross(right._coord);
-        double sqMod = _coord.SquareModulus();
-        if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
-        {
-            return;
-        }
-
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::Cross() - result vector has zero norm");
-        _coord.Divide(Math.Sqrt(sqMod));
-    }
-
-    internal void CrossCross(in Direction3D v1, in Direction3D v2)
-    {
-        _coord.CrossCross(v1._coord, v2._coord);
-        double sqMod = _coord.SquareModulus();
-        if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
-        {
-            return;
-        }
-
-        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::CrossCross() - result vector has zero norm");
-        _coord.Divide(Math.Sqrt(sqMod));
-    }
-
-    internal void Reverse() => _coord.Reverse();
-
-    internal void Mirror(in Direction3D v)
-    {
-        Xyz xyz = v._coord;
-        double a = xyz.X();
-        double b = xyz.Y();
-        double c = xyz.Z();
-        double x = _coord.X();
-        double y = _coord.Y();
-        double z = _coord.Z();
-        double m1 = 2.0 * a * b;
-        double m2 = 2.0 * a * c;
-        double m3 = 2.0 * b * c;
-        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y + m2 * z;
-        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y + m3 * z;
-        double zz = m2 * x + m3 * y + ((2.0 * c * c) - 1.0) * z;
-        _coord.SetCoord(xx, yy, zz);
-    }
-
-    internal void Mirror(in Axis3D a1)
-    {
-        Xyz xyz = a1.Direction()._coord;
-        double a = xyz.X();
-        double b = xyz.Y();
-        // OCCT takes C from Y here, not Z (docs/occt-issues.md); kept so results match OCCT
-        double c = xyz.Y();
-        double x = _coord.X();
-        double y = _coord.Y();
-        double z = _coord.Z();
-        double m1 = 2.0 * a * b;
-        double m2 = 2.0 * a * c;
-        double m3 = 2.0 * b * c;
-        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y + m2 * z;
-        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y + m3 * z;
-        double zz = m2 * x + m3 * y + ((2.0 * c * c) - 1.0) * z;
-        _coord.SetCoord(xx, yy, zz);
-    }
-
-    internal void Mirror(in Frame3D a2)
-    {
-        Direction3D vz = a2.Direction();
-        Mirror(vz);
-        Reverse();
-    }
-
-    internal void Rotate(in Axis3D a1, double ang)
-    {
-        Transform3D t = new();
-        t = t.WithRotation(a1, ang);
-        _coord.Multiply(t.HVectorialPart());
-    }
-
-    internal void Transform(in Transform3D t)
-    {
-        if (t.Form() == Identity || t.Form() == Translation)
-        {
-        }
-        else if (t.Form() == PntMirror)
-        {
-            _coord.Reverse();
-        }
-        else if (t.Form() == Scale)
-        {
-            if (t.ScaleFactor() < 0.0)
-            {
-                _coord.Reverse();
-            }
-        }
-        else
-        {
-            _coord.Multiply(t.HVectorialPart());
-            double d = _coord.Modulus();
-            _coord.Divide(d);
-            if (t.ScaleFactor() < 0.0)
-            {
-                _coord.Reverse();
-            }
-        }
-    }
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Direction3D WithCoord(int index, double xi)
     {
-        Direction3D copy = this;
-        copy.SetCoord(index, xi);
-        return copy;
+        Standard_OutOfRange_Raise_if(index < 1 || index > 3, "gp_Dir::SetCoord() - index is out of range [1, 3]");
+        return index == 1 ? WithX(xi) : index == 2 ? WithY(xi) : WithZ(xi);
     }
 
     public readonly Direction3D WithCoord(double xv, double yv, double zv) => new(xv, yv, zv);
 
-    public readonly Direction3D WithX(double x)
-    {
-        Direction3D copy = this;
-        copy.SetX(x);
-        return copy;
-    }
+    public readonly Direction3D WithX(double x) => new(x, _coord.Y(), _coord.Z());
 
-    public readonly Direction3D WithY(double y)
-    {
-        Direction3D copy = this;
-        copy.SetY(y);
-        return copy;
-    }
+    public readonly Direction3D WithY(double y) => new(_coord.X(), y, _coord.Z());
 
-    public readonly Direction3D WithZ(double z)
-    {
-        Direction3D copy = this;
-        copy.SetZ(z);
-        return copy;
-    }
+    public readonly Direction3D WithZ(double z) => new(_coord.X(), _coord.Y(), z);
 
     public readonly Direction3D WithXYZ(in Xyz xyz) => new(xyz);
 
@@ -321,16 +172,32 @@ public partial struct Direction3D : IEquatable<Direction3D>
 
     public readonly Direction3D Crossed(in Direction3D right)
     {
-        Direction3D v = this;
-        v.Cross(right);
-        return v;
+        Xyz coord = _coord;
+        coord.Cross(right._coord);
+        double sqMod = coord.SquareModulus();
+        if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
+        {
+            return new Direction3D(coord, isUnit: true);
+        }
+
+        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::Cross() - result vector has zero norm");
+        coord.Divide(Math.Sqrt(sqMod));
+        return new Direction3D(coord, isUnit: true);
     }
 
     public readonly Direction3D CrossCrossed(in Direction3D v1, in Direction3D v2)
     {
-        Direction3D v = this;
-        v.CrossCross(v1, v2);
-        return v;
+        Xyz coord = _coord;
+        coord.CrossCross(v1._coord, v2._coord);
+        double sqMod = coord.SquareModulus();
+        if (sqMod >= (1.0 - Constants.Resolution()) && sqMod <= (1.0 + Constants.Resolution()))
+        {
+            return new Direction3D(coord, isUnit: true);
+        }
+
+        Standard_ConstructionError_Raise_if(sqMod <= Constants.Resolution() * Constants.Resolution(), "gp_Dir::CrossCross() - result vector has zero norm");
+        coord.Divide(Math.Sqrt(sqMod));
+        return new Direction3D(coord, isUnit: true);
     }
 
     public readonly double Dot(in Direction3D other) => _coord.Dot(other._coord);
@@ -339,44 +206,95 @@ public partial struct Direction3D : IEquatable<Direction3D>
 
     public readonly Direction3D Reversed()
     {
-        Direction3D v = this;
-        v._coord.Reverse();
-        return v;
+        Xyz coord = _coord;
+        coord.Reverse();
+        return new Direction3D(coord, isUnit: true);
     }
 
     public readonly Direction3D Mirrored(in Direction3D v)
     {
-        Direction3D vres = this;
-        vres.Mirror(v);
-        return vres;
+        Xyz coord = _coord;
+        Xyz xyz = v._coord;
+        double a = xyz.X();
+        double b = xyz.Y();
+        double c = xyz.Z();
+        double x = coord.X();
+        double y = coord.Y();
+        double z = coord.Z();
+        double m1 = 2.0 * a * b;
+        double m2 = 2.0 * a * c;
+        double m3 = 2.0 * b * c;
+        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y + m2 * z;
+        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y + m3 * z;
+        double zz = m2 * x + m3 * y + ((2.0 * c * c) - 1.0) * z;
+        coord.SetCoord(xx, yy, zz);
+        return new Direction3D(coord, isUnit: true);
     }
 
     public readonly Direction3D Mirrored(in Axis3D a1)
     {
-        Direction3D v = this;
-        v.Mirror(a1);
-        return v;
+        Xyz coord = _coord;
+        Xyz xyz = a1.Direction()._coord;
+        double a = xyz.X();
+        double b = xyz.Y();
+        // OCCT takes C from Y here, not Z (docs/occt-issues.md); kept so results match OCCT
+        double c = xyz.Y();
+        double x = coord.X();
+        double y = coord.Y();
+        double z = coord.Z();
+        double m1 = 2.0 * a * b;
+        double m2 = 2.0 * a * c;
+        double m3 = 2.0 * b * c;
+        double xx = ((2.0 * a * a) - 1.0) * x + m1 * y + m2 * z;
+        double yy = m1 * x + ((2.0 * b * b) - 1.0) * y + m3 * z;
+        double zz = m2 * x + m3 * y + ((2.0 * c * c) - 1.0) * z;
+        coord.SetCoord(xx, yy, zz);
+        return new Direction3D(coord, isUnit: true);
     }
 
     public readonly Direction3D Mirrored(in Frame3D a2)
     {
-        Direction3D v = this;
-        v.Mirror(a2);
-        return v;
+        Direction3D vz = a2.Direction();
+        return Mirrored(vz).Reversed();
     }
 
     public readonly Direction3D Rotated(in Axis3D a1, double ang)
     {
-        Direction3D v = this;
-        v.Rotate(a1, ang);
-        return v;
+        Xyz coord = _coord;
+        Transform3D t = new();
+        t = t.WithRotation(a1, ang);
+        coord.Multiply(t.HVectorialPart());
+        return new Direction3D(coord, isUnit: true);
     }
 
     public readonly Direction3D Transformed(in Transform3D t)
     {
-        Direction3D v = this;
-        v.Transform(t);
-        return v;
+        Xyz coord = _coord;
+        if (t.Form() == Identity || t.Form() == Translation)
+        {
+        }
+        else if (t.Form() == PntMirror)
+        {
+            coord.Reverse();
+        }
+        else if (t.Form() == Scale)
+        {
+            if (t.ScaleFactor() < 0.0)
+            {
+                coord.Reverse();
+            }
+        }
+        else
+        {
+            coord.Multiply(t.HVectorialPart());
+            double d = coord.Modulus();
+            coord.Divide(d);
+            if (t.ScaleFactor() < 0.0)
+            {
+                coord.Reverse();
+            }
+        }
+        return new Direction3D(coord, isUnit: true);
     }
 
     public static Direction3D operator -(in Direction3D v) => v.Reversed();

@@ -2890,7 +2890,7 @@ internal static class Builder_CnCrn
         {
             for (jj = 1; jj <= size; jj++)
             {
-                extraCoeffs[jj].ChangeCoord() += matCoefs[ii, jj] * cont[ii];
+                extraCoeffs[jj] = new Point3D(extraCoeffs[jj].XYZ() + (matCoefs[ii, jj] * cont[ii]));
             }
         }
         global::Kerf.Engine.Numerics.Polynomials.PLib.CoefficientsPoles(extraCoeffs, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights(), extrapPoles, global::Kerf.Engine.Numerics.Polynomials.PLib.NoWeights());

@@ -19,10 +19,10 @@ namespace Kerf.Geometry;
 /// <c>new gp_Circ2d()</c> is OCCT's indefinite circle (radius <see cref="Standard.RealLast"/>);
 /// <c>default(gp_Circ2d)</c> is not valid.
 /// </remarks>
-public partial struct Circle2D : IEquatable<Circle2D>
+public readonly partial struct Circle2D : IEquatable<Circle2D>
 {
-    private Frame2D _pos;
-    private double _radius;
+    private readonly Frame2D _pos;
+    private readonly double _radius;
 
     public Circle2D()
     {
@@ -47,96 +47,42 @@ public partial struct Circle2D : IEquatable<Circle2D>
         Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ2d() - radius should be positive number");
     }
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void SetLocation(in Point2D p) => _pos.SetLocation(p);
-
-    internal void SetXAxis(in Axis2D a) => _pos.SetXAxis(a);
-
-    internal void SetAxis(in Frame2D a) => _pos.SetAxis(a);
-
-    internal void SetYAxis(in Axis2D a) => _pos.SetYAxis(a);
-
-    internal void SetRadius(double radius)
-    {
-        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ2d::SetRadius() - radius should be positive number");
-        _radius = radius;
-    }
-
-    internal void Reverse()
-    {
-        Direction2D temp = _pos.YDirection();
-        temp = temp.Reversed();
-        _pos = _pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
-    }
-
-    internal void Mirror(in Point2D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis2D a) => _pos.Mirror(a);
-
-    internal void Rotate(in Point2D p, double ang) => _pos.Rotate(p, ang);
-
-    internal void Scale(in Point2D p, double s)
-    {
-        _radius *= s;
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-
-        _pos = _pos.Scaled(p, s);
-    }
-
-    internal void Transform(in Transform2D t)
-    {
-        _radius *= t.ScaleFactor();
-        if (_radius < 0)
-        {
-            _radius = -_radius;
-        }
-
-        _pos = _pos.Transformed(t);
-    }
-
-    internal void Translate(in Vector2D v) => _pos.Translate(v);
-
-    internal void Translate(in Point2D p1, in Point2D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Circle2D WithLocation(in Point2D p)
     {
-        Circle2D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D WithXAxis(in Axis2D a)
     {
-        Circle2D copy = this;
-        copy.SetXAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithXAxis(a);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D WithAxis(in Frame2D a)
     {
-        Circle2D copy = this;
-        copy.SetAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithAxis(a);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D WithYAxis(in Axis2D a)
     {
-        Circle2D copy = this;
-        copy.SetYAxis(a);
-        return copy;
+        Frame2D pos = _pos;
+        pos = pos.WithYAxis(a);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D WithRadius(double radius)
     {
-        Circle2D copy = this;
-        copy.SetRadius(radius);
-        return copy;
+        double newRadius = _radius;
+        Standard_ConstructionError_Raise_if(radius < 0.0, "gp_Circ2d::SetRadius() - radius should be positive number");
+        newRadius = radius;
+        return new Circle2D(_pos, newRadius);
     }
 
     // Queries
@@ -201,72 +147,74 @@ public partial struct Circle2D : IEquatable<Circle2D>
 
     public readonly Circle2D Reversed()
     {
-        Circle2D circ = this;
+        Frame2D pos = _pos;
         Direction2D temp = _pos.YDirection();
         temp = temp.Reversed();
-        circ._pos = circ._pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
-        return circ;
+        pos = pos.WithAxis(new Frame2D(_pos.Location(), _pos.XDirection(), temp));
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D Mirrored(in Point2D p)
     {
-        Circle2D c = this;
-        c._pos = c._pos.Mirrored(p);
-        return c;
+        Frame2D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D Mirrored(in Axis2D a)
     {
-        Circle2D c = this;
-        c._pos = c._pos.Mirrored(a);
-        return c;
+        Frame2D pos = _pos;
+        pos = pos.Mirrored(a);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D Rotated(in Point2D p, double ang)
     {
-        Circle2D circ = this;
-        circ._pos = circ._pos.Rotated(p, ang);
-        return circ;
+        Frame2D pos = _pos;
+        pos = pos.Rotated(p, ang);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D Scaled(in Point2D p, double s)
     {
-        Circle2D circ = this;
-        circ._radius *= s;
-        if (circ._radius < 0)
+        Frame2D pos = _pos;
+        double radius = _radius;
+        radius *= s;
+        if (radius < 0)
         {
-            circ._radius = -circ._radius;
+            radius = -radius;
         }
 
-        circ._pos = circ._pos.Scaled(p, s);
-        return circ;
+        pos = pos.Scaled(p, s);
+        return new Circle2D(pos, radius);
     }
 
     public readonly Circle2D Transformed(in Transform2D t)
     {
-        Circle2D circ = this;
-        circ._radius *= t.ScaleFactor();
-        if (circ._radius < 0)
+        Frame2D pos = _pos;
+        double radius = _radius;
+        radius *= t.ScaleFactor();
+        if (radius < 0)
         {
-            circ._radius = -circ._radius;
+            radius = -radius;
         }
 
-        circ._pos = circ._pos.Transformed(t);
-        return circ;
+        pos = pos.Transformed(t);
+        return new Circle2D(pos, radius);
     }
 
     public readonly Circle2D Translated(in Vector2D v)
     {
-        Circle2D circ = this;
-        circ._pos = circ._pos.Translated(v);
-        return circ;
+        Frame2D pos = _pos;
+        pos = pos.Translated(v);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly Circle2D Translated(in Point2D p1, in Point2D p2)
     {
-        Circle2D circ = this;
-        circ._pos = circ._pos.Translated(p1, p2);
-        return circ;
+        Frame2D pos = _pos;
+        pos = pos.Translated(p1, p2);
+        return new Circle2D(pos, _radius);
     }
 
     public readonly bool Equals(Circle2D other) => _pos.Equals(other._pos) && _radius.Equals(other._radius);

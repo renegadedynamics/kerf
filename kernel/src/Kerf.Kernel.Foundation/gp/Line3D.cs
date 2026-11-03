@@ -13,9 +13,9 @@ namespace Kerf.Geometry;
 
 /// <summary>An infinite line in 3D space, positioned by an axis (a location and a unit direction).</summary>
 /// <remarks><c>new gp_Lin()</c> is the Z axis, as in OCCT; <c>default(gp_Lin)</c> is not valid.</remarks>
-public partial struct Line3D : IEquatable<Line3D>
+public readonly partial struct Line3D : IEquatable<Line3D>
 {
-    private Axis3D _pos;
+    private readonly Axis3D _pos;
 
     public Line3D() => _pos = new Axis3D();
 
@@ -23,46 +23,20 @@ public partial struct Line3D : IEquatable<Line3D>
 
     public Line3D(in Point3D p, in Direction3D v) => _pos = new Axis3D(p, v);
 
-    // Mutators (internal: see docs/translation-rules.md)
-
-    internal void Reverse() => _pos.Reverse();
-
-    internal void SetDirection(in Direction3D v) => _pos.SetDirection(v);
-
-    internal void SetLocation(in Point3D p) => _pos.SetLocation(p);
-
-    internal void SetPosition(in Axis3D a1) => _pos = a1;
-
-    internal void Mirror(in Point3D p) => _pos.Mirror(p);
-
-    internal void Mirror(in Axis3D a1) => _pos.Mirror(a1);
-
-    internal void Mirror(in Frame3D a2) => _pos.Mirror(a2);
-
-    internal void Rotate(in Axis3D a1, double ang) => _pos.Rotate(a1, ang);
-
-    internal void Scale(in Point3D p, double s) => _pos.Scale(p, s);
-
-    internal void Transform(in Transform3D t) => _pos.Transform(t);
-
-    internal void Translate(in Vector3D v) => _pos.Translate(v);
-
-    internal void Translate(in Point3D p1, in Point3D p2) => _pos.Translate(p1, p2);
-
-    // Copies with a mutator applied
+    // Copies
 
     public readonly Line3D WithDirection(in Direction3D v)
     {
-        Line3D copy = this;
-        copy.SetDirection(v);
-        return copy;
+        Axis3D pos = _pos;
+        pos = pos.WithDirection(v);
+        return new Line3D(pos);
     }
 
     public readonly Line3D WithLocation(in Point3D p)
     {
-        Line3D copy = this;
-        copy.SetLocation(p);
-        return copy;
+        Axis3D pos = _pos;
+        pos = pos.WithLocation(p);
+        return new Line3D(pos);
     }
 
     public readonly Line3D WithPosition(in Axis3D a1) => new(a1);
@@ -71,9 +45,9 @@ public partial struct Line3D : IEquatable<Line3D>
 
     public readonly Line3D Reversed()
     {
-        Line3D l = this;
-        l._pos = l._pos.Reversed();
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Reversed();
+        return new Line3D(pos);
     }
 
     public readonly Direction3D Direction() => _pos.Direction();
@@ -135,58 +109,58 @@ public partial struct Line3D : IEquatable<Line3D>
 
     public readonly Line3D Mirrored(in Point3D p)
     {
-        Line3D l = this;
-        l._pos = l._pos.Mirrored(p);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Mirrored(p);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Mirrored(in Axis3D a1)
     {
-        Line3D l = this;
-        l._pos = l._pos.Mirrored(a1);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Mirrored(a1);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Mirrored(in Frame3D a2)
     {
-        Line3D l = this;
-        l._pos = l._pos.Mirrored(a2);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Mirrored(a2);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Rotated(in Axis3D a1, double ang)
     {
-        Line3D l = this;
-        l._pos = l._pos.Rotated(a1, ang);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Rotated(a1, ang);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Scaled(in Point3D p, double s)
     {
-        Line3D l = this;
-        l._pos = l._pos.Scaled(p, s);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Scaled(p, s);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Transformed(in Transform3D t)
     {
-        Line3D l = this;
-        l._pos = l._pos.Transformed(t);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Transformed(t);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Translated(in Vector3D v)
     {
-        Line3D l = this;
-        l._pos = l._pos.Translated(v);
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Translated(v);
+        return new Line3D(pos);
     }
 
     public readonly Line3D Translated(in Point3D p1, in Point3D p2)
     {
-        Line3D l = this;
-        l._pos = l._pos.Translated(new Vector3D(p1, p2));
-        return l;
+        Axis3D pos = _pos;
+        pos = pos.Translated(new Vector3D(p1, p2));
+        return new Line3D(pos);
     }
 
     public readonly bool Equals(Line3D other) => _pos.Equals(other._pos);
