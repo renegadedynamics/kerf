@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 
 namespace Kerf.Engine.Offsets.Api;
@@ -63,7 +63,7 @@ public class MakeOffsetShape : MakeShape
     /// pipes and spheres (GeomAbs_Arc) or by extending and intersecting them (GeomAbs_Intersection);
     /// <paramref name="removeIntEdges"/> removes the INTERNAL edges from the result.
     /// </summary>
-    public void PerformByJoin(in Shape s, double offset, double tol, OffsetMode mode = OffsetMode.Skin,
+    public void PerformByJoin(in Shape s, double offset, double tol, global::Kerf.Offsets.OffsetMode mode = global::Kerf.Offsets.OffsetMode.Skin,
                               bool intersection = false, bool selfInter = false, JoinKind Join = Arc,
                               bool removeIntEdges = false, ProgressRange range = default)
     {

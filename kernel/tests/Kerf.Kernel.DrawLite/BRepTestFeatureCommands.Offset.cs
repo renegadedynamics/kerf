@@ -9,7 +9,7 @@ using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Kerf.Engine.Offsets.Error;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -133,7 +133,7 @@ internal static partial class BRepTestFeatureCommands
         }
 
         MakeOffset B = new();
-        B.Initialize(S, Of, Tol, OffsetMode.Skin, Inter, false, JT, true);
+        B.Initialize(S, Of, Tol, global::Kerf.Offsets.OffsetMode.Skin, Inter, false, JT, true);
 
         B.MakeOffsetShape();
 
@@ -207,7 +207,7 @@ internal static partial class BRepTestFeatureCommands
                     aRemIntEdges = true;
                 }
             }
-            aMaker.PerformByJoin(aShape, anOffVal, aTol, OffsetMode.Skin, anInt, aSelfInt, aJoin, aRemIntEdges);
+            aMaker.PerformByJoin(aShape, anOffVal, aTol, global::Kerf.Offsets.OffsetMode.Skin, anInt, aSelfInt, aJoin, aRemIntEdges);
         }
 
         if (!aMaker.IsDone)
@@ -255,7 +255,7 @@ internal static partial class BRepTestFeatureCommands
                 Tol = theDI.Atof(a[4]);
             }
         }
-        B.Initialize(S, Of, Tol, OffsetMode.Skin, Inter, false, JT);
+        B.Initialize(S, Of, Tol, global::Kerf.Offsets.OffsetMode.Skin, Inter, false, JT);
         //------------------------------------------
         // recuperation et chargement des bouchons.
         //----------------------------------------
@@ -386,7 +386,7 @@ internal static partial class BRepTestFeatureCommands
         s.TheRadius = Of;
         //  bool Inter = true;
 
-        s.TheOffset.Initialize(S, Of, s.TheTolerance, OffsetMode.Skin, s.TheInter, false, s.TheJoin, false, s.RemoveIntEdges);
+        s.TheOffset.Initialize(S, Of, s.TheTolerance, global::Kerf.Offsets.OffsetMode.Skin, s.TheInter, false, s.TheJoin, false, s.RemoveIntEdges);
         //------------------------------------------
         // recuperation et chargement des bouchons.
         //----------------------------------------

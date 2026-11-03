@@ -11,7 +11,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using static Kerf.Engine.Construction.Api.PipeError;
-using static Kerf.Engine.Construction.Api.TransitionMode;
+using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Construction.Filling.TypeOfContact;
 using static Kerf.Engine.Construction.Surfaces.SurfacePipeError;
 
@@ -186,7 +186,7 @@ public class MakePipeShell : MakeSweep
     }
 
     /// <summary>The treatment of the spine's corners: transformed (default), right corner or round corner.</summary>
-    public void SetTransitionMode(TransitionMode mode = TransitionMode.Transformed)
+    public void SetTransitionMode(global::Kerf.Construction.TransitionMode mode = global::Kerf.Construction.TransitionMode.Transformed)
     {
         _pipe.SetTransition((TransitionStyle)mode);
     }

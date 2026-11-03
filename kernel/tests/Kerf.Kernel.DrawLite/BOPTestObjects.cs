@@ -46,7 +46,7 @@ internal sealed partial class BOPTestObjects
 
     public double FuzzyValue { get; set; }
 
-    public GlueMode Glue { get; set; }
+    public global::Kerf.Booleans.GlueMode Glue { get; set; }
 
     public bool DrawWarnShapes { get; set; }
 
@@ -97,7 +97,7 @@ internal sealed partial class BOPTestObjects
         RunParallel = false;
         NonDestructive = false;
         FuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Glue = GlueMode.GlueOff;
+        Glue = global::Kerf.Booleans.GlueMode.Off;
         DrawWarnShapes = false;
         CheckInverted = true;
         UseOBB = false;

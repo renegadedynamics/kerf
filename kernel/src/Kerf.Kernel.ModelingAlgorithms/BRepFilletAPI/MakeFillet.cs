@@ -13,7 +13,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
-using static Kerf.Engine.Fillets.FilletShape;
+using static Kerf.Fillets.FilletShape;
 using static Kerf.Topology.ShapeType;
 using static Kerf.Topology.Containment;
 
@@ -49,7 +49,7 @@ public class MakeFillet : LocalOperation
     /// ChFi3d_QuasiAngular (a NURBS representation whose parametrization matches the circle's) or ChFi3d_Polynomial
     /// (a polynomial representation of circles).
     /// </summary>
-    public MakeFillet(in Shape s, FilletShape fShape = FilletShape.Rational)
+    public MakeFillet(in Shape s, global::Kerf.Fillets.FilletShape fShape = global::Kerf.Fillets.FilletShape.Rational)
     {
         _builder = new FilBuilder(s, fShape);
     }
@@ -296,7 +296,7 @@ public class MakeFillet : LocalOperation
     //=================================================================================================
 
     /// <summary>Assigns the type of fillet surface.</summary>
-    public void SetFilletShape(FilletShape fShape)
+    public void SetFilletShape(global::Kerf.Fillets.FilletShape fShape)
     {
         _builder.SetFilletShape(fShape);
     }
@@ -304,7 +304,7 @@ public class MakeFillet : LocalOperation
     //=================================================================================================
 
     /// <summary>The type of fillet surface.</summary>
-    public FilletShape GetFilletShape()
+    public global::Kerf.Fillets.FilletShape GetFilletShape()
     {
         return _builder.GetFilletShape();
     }

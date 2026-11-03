@@ -1875,7 +1875,7 @@ internal static partial class BRepTestFeatureCommands
         {
             return 1;
         }
-        FilletShape FSh = FilletShape.Rational;
+        global::Kerf.Fillets.FilletShape FSh = global::Kerf.Fillets.FilletShape.Rational;
         // the file's own tolerances (OCCT's file-scope statics, which no command of this file changes)
         const double tesp = 1.0e-4, t3d = 1.0e-4, t2d = 1.0e-5, ta = 1.0e-2, fl = 1.0e-3, tapp_angle = 1.0e-2;
         MakeFillet Rakk = new(V, FSh);

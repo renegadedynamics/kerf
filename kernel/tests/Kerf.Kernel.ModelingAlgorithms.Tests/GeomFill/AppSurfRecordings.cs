@@ -6,7 +6,7 @@ using Kerf.Geometry;
 using System.Globalization;
 using System.IO.Compression;
 using System.Text;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Kernel.ModelingAlgorithms.Tests;
@@ -407,7 +407,7 @@ internal static class AppSurfRecordings
             {
                 anApp.Init(aDMin, aDMax, aTol3d, aTol2d, aNbIt, aKnown);
                 Continuity[] aConts = [C0, C1, C2, C3];
-                ParametrizationType[] aPars = [ChordLength, Centripetal, IsoParametric];
+                global::Kerf.Geometry.ParametrizationType[] aPars = [ChordLength, Centripetal, IsoParametric];
                 anApp.SetContinuity(aConts[aCont]);
                 anApp.SetParType(aPars[aParT]);
                 anApp.SetCriteriumWeight(aW1, aW2, aW3);

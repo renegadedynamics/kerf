@@ -658,7 +658,7 @@ public partial class IntSS
                             approx2 = true;
                         }
 
-                        ParametrizationType parType =
+                        global::Kerf.Geometry.ParametrizationType parType =
                             KnotTools.DefineParType(wl, ifprm, ilprm, anApprox, approx1, approx2);
 
                         theapp3d.SetParameters(myTolApprox, tol2d, 4, 8, 0, 30, myHS1 != myHS2, parType);

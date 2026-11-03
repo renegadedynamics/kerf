@@ -40,7 +40,7 @@ public class BuilderAlgo : Algo
 
     // Options
     protected bool _nonDestructive;  //!< Non-destructive mode management
-    protected GlueMode _glue; //!< Gluing mode management
+    protected global::Kerf.Booleans.GlueMode _glue; //!< Gluing mode management
     protected bool _checkInverted;   //!< Check for inverted solids management
     protected bool _fillHistory;     //!< Controls the history collection
 
@@ -55,7 +55,7 @@ public class BuilderAlgo : Algo
     public BuilderAlgo()
     {
         _nonDestructive = false;
-        _glue = GlueMode.GlueOff;
+        _glue = global::Kerf.Booleans.GlueMode.Off;
         _checkInverted = true;
         _fillHistory = true;
         _isIntersectionNeeded = true;
@@ -67,7 +67,7 @@ public class BuilderAlgo : Algo
     public BuilderAlgo(PaveFiller aPF)
     {
         _nonDestructive = false;
-        _glue = GlueMode.GlueOff;
+        _glue = global::Kerf.Booleans.GlueMode.Off;
         _checkInverted = true;
         _fillHistory = true;
         _isIntersectionNeeded = false;
@@ -90,9 +90,9 @@ public class BuilderAlgo : Algo
     public bool NonDestructive() => _nonDestructive;
 
     /// <summary>Sets the glue option, which speeds up the intersection of arguments that only touch.</summary>
-    public void SetGlue(GlueMode glue) => _glue = glue;
+    public void SetGlue(global::Kerf.Booleans.GlueMode glue) => _glue = glue;
 
-    public GlueMode Glue() => _glue;
+    public global::Kerf.Booleans.GlueMode Glue() => _glue;
 
     /// <summary>Enables or disables the check of the input solids for being inverted.</summary>
     public void SetCheckInverted(bool check) => _checkInverted = check;

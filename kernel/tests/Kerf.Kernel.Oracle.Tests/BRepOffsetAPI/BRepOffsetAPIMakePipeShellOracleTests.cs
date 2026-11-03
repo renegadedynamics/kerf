@@ -127,7 +127,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
         public Shape Aux = new(); // auxiliary spine, or Darboux support
         public bool Curvilinear;
         public TypeOfContact Contact;
-        public TransitionMode Transition;
+        public global::Kerf.Construction.TransitionMode Transition;
         public bool Solid;
         public int Simulate;
     }
@@ -637,7 +637,7 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
 
     // ---- the cases ----
 
-    private static TransitionMode RandomTransition(Oracle theOracle) => (TransitionMode)theOracle.Int(0, 2);
+    private static global::Kerf.Construction.TransitionMode RandomTransition(Oracle theOracle) => (global::Kerf.Construction.TransitionMode)theOracle.Int(0, 2);
 
     [Fact]
     public void Every_mode_and_transition_on_random_spines()
@@ -695,9 +695,9 @@ public sealed class BRepOffsetAPIMakePipeShellOracleTests(ITestOutputHelper outp
             }
             Wire aSpine = Polyline(false, [.. aPoints]);
             Frame3D aFrame = StartFrame(aSpine);
-            foreach (TransitionMode aTransition in new[] { TransitionMode.Transformed,
-                                                                          TransitionMode.RightCorner,
-                                                                          TransitionMode.RoundCorner })
+            foreach (global::Kerf.Construction.TransitionMode aTransition in new[] { global::Kerf.Construction.TransitionMode.Transformed,
+                                                                          global::Kerf.Construction.TransitionMode.RightCorner,
+                                                                          global::Kerf.Construction.TransitionMode.RoundCorner })
             {
                 (Shape aProfile, string aProfKind) = RandomProfile(anOracle, aFrame, anOracle.Real(0.5, 2), true);
                 Run(new Case

@@ -61,7 +61,7 @@ public class OffsetInputsUnchangedTests
         Shape box = Box();
         ShapeSnapshot snapshot = ShapeSnapshot.Of(box);
         var offset = new MakeOffsetShape();
-        offset.PerformByJoin(box, 1.0, 1.0e-7, OffsetMode.Skin, false, false, Arc);
+        offset.PerformByJoin(box, 1.0, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, false, false, Arc);
         snapshot.AssertUnchanged(box);
         Assert.True(offset.IsDone);
         Shape result = offset.Shape();
@@ -85,7 +85,7 @@ public class OffsetInputsUnchangedTests
         var closing = new NCollection_List<Shape>();
         closing.Append(top);
         var thick = new MakeThickSolid();
-        thick.MakeThickSolidByJoin(box, closing, -1.0, 1.0e-3, OffsetMode.Skin, join == Intersection, false, join);
+        thick.MakeThickSolidByJoin(box, closing, -1.0, 1.0e-3, global::Kerf.Offsets.OffsetMode.Skin, join == Intersection, false, join);
         snapshot.AssertUnchanged(box);
         Assert.True(thick.IsDone);
         Shape result = thick.Shape();

@@ -34,7 +34,7 @@ using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
 using static Kerf.Engine.Offsets.Error;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Engine.Offsets.OffsetStatus;
 using static Kerf.Engine.Fillets.Data.TypeOfConcavity;
 using static Kerf.Geometry.CurveKind;
@@ -78,7 +78,7 @@ public sealed partial class MakeOffset
     private Shape _initialShape = new();
     private Shape _shape = new();
     private Compound _faceComp = new();
-    private OffsetMode _mode;
+    private global::Kerf.Offsets.OffsetMode _mode;
     private bool _isLinearizationAllowed;
     private bool _inter;
     private bool _selfInter;
@@ -427,7 +427,7 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     /// <summary>Initializes the algorithm and makes the offset shape (<see cref="MakeOffsetShape"/>).</summary>
-    public MakeOffset(in Shape s, double offset, double tol, OffsetMode mode = OffsetMode.Skin,
+    public MakeOffset(in Shape s, double offset, double tol, global::Kerf.Offsets.OffsetMode mode = global::Kerf.Offsets.OffsetMode.Skin,
                                  bool inter = false, bool selfInter = false, global::Kerf.Geometry.JoinKind Join = Arc,
                                  bool thickening = false, bool removeIntEdges = false,
                                  ProgressRange range = default)
@@ -452,7 +452,7 @@ public sealed partial class MakeOffset
     //=================================================================================================
 
     /// <summary>Sets the arguments of the offset and clears the results of an earlier run.</summary>
-    public void Initialize(in Shape s, double offset, double tol, OffsetMode mode = OffsetMode.Skin,
+    public void Initialize(in Shape s, double offset, double tol, global::Kerf.Offsets.OffsetMode mode = global::Kerf.Offsets.OffsetMode.Skin,
                            bool inter = false, bool selfInter = false, global::Kerf.Geometry.JoinKind Join = Arc,
                            bool thickening = false, bool removeIntEdges = false)
     {

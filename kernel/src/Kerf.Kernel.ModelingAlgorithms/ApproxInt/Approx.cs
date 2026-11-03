@@ -9,7 +9,7 @@ using Kerf.Engine.Intersection.Walking;
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.SurfaceKind;
 
 namespace Kerf.Engine.Intersection.Approximation;
@@ -101,7 +101,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
         public double Xo, Yo, Zo, U1o, V1o, U2o, V2o;
         public bool ApproxXYZ, ApproxU1V1, ApproxU2V2;
         public int indicemin, indicemax, NbPntMax;
-        public ParametrizationType parametrization;
+        public global::Kerf.Geometry.ParametrizationType parametrization;
     }
 
     private readonly BSplComputeLine<global::Kerf.Engine.Intersection.Approximation.MultiLine<TheWLine>, MultiLineTool<TheWLine>>
@@ -171,7 +171,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     /// for the parametrisation <paramref name="par"/>, from 0 to 1, in <paramref name="theParameters"/>.
     /// </summary>
     public static void Parameters(global::Kerf.Engine.Intersection.Approximation.MultiLine<TheWLine> line, int firstP, int lastP,
-                                  ParametrizationType par, math_Vector theParameters)
+                                  global::Kerf.Geometry.ParametrizationType par, math_Vector theParameters)
     {
         int i, j, nbP2d, nbP3d;
         double dist;
@@ -484,7 +484,7 @@ public class Approx<ThePSurface, ThePSurfaceTool, TheWLine>
     /// </summary>
     public void SetParameters(double tol3d, double tol2d, int degMin, int degMax, int nbIterMax, int nbPntMax = 30,
                               bool approxWithTangency = true,
-                              ParametrizationType parametrization = ChordLength)
+                              global::Kerf.Geometry.ParametrizationType parametrization = ChordLength)
     {
         _data.NbPntMax = nbPntMax;
         _withTangency = approxWithTangency;

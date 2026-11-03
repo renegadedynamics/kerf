@@ -322,7 +322,7 @@ public class BRepAlgoAPI_ShellTests
     {
         AlgoApiOptions o = new();
         Assert.Equal(global::Kerf.Engine.Foundation.Precision.Confusion(), o.FuzzyValue);
-        Assert.Equal(GlueMode.GlueOff, o.Glue);
+        Assert.Equal(global::Kerf.Booleans.GlueMode.Off, o.Glue);
         Assert.False(o.UseOBB);
         Assert.True(o.CheckInverted);
         Assert.False(o.RunParallel);
@@ -344,7 +344,7 @@ public class BRepAlgoAPI_ShellTests
         Dictionary<AlgoApiOptions, int> aCache = new() { [p] = 1 };
         Assert.Equal(1, aCache[q]);
         Assert.Contains("FuzzyValue=1E-05", p.ToString());
-        Assert.False(new AlgoApiOptions { Glue = GlueMode.GlueFull }.Equals(o));
+        Assert.False(new AlgoApiOptions { Glue = global::Kerf.Booleans.GlueMode.Full }.Equals(o));
     }
 
     [Fact]
@@ -428,8 +428,8 @@ public class BRepAlgoAPI_ShellTests
         Assert.True(aFuse.UseOBB());
         aFuse.SetRunParallel(true);
         Assert.True(aFuse.RunParallel());
-        aFuse.SetGlue(GlueMode.GlueShift);
-        Assert.Equal(GlueMode.GlueShift, aFuse.Glue());
+        aFuse.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
+        Assert.Equal(global::Kerf.Booleans.GlueMode.Shift, aFuse.Glue());
         aFuse.SetNonDestructive(true);
         Assert.True(aFuse.NonDestructive());
         aFuse.SetCheckInverted(false);

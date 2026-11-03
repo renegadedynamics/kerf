@@ -61,7 +61,7 @@ internal static class BOPTestBOPCommands
         double aTol = aSession.FuzzyValue;
         bool bRunParallel = aSession.RunParallel;
         bool bNonDestructive = aSession.NonDestructive;
-        GlueMode aGlue = aSession.Glue;
+        global::Kerf.Booleans.GlueMode aGlue = aSession.Glue;
         aLC.Append(aS1);
         aLC.Append(aS2);
         aSession.BopPaveFiller = null;
@@ -218,7 +218,7 @@ internal static class BOPTestBOPCommands
         double aTol = aSession.FuzzyValue;
         bool bRunParallel = aSession.RunParallel;
         bool bNonDestructive = aSession.NonDestructive;
-        GlueMode aGlue = aSession.Glue;
+        global::Kerf.Booleans.GlueMode aGlue = aSession.Glue;
         for (int i = 4; i < n; ++i)
         {
             if (a[i] == "-n2d")
@@ -538,7 +538,7 @@ internal static class BOPTestBOPCommands
         double aTol = aSession.FuzzyValue;
         bool bRunParallel = aSession.RunParallel;
         bool bNonDestructive = aSession.NonDestructive;
-        GlueMode aGlue = aSession.Glue;
+        global::Kerf.Booleans.GlueMode aGlue = aSession.Glue;
         //
         bool bToIntersect = true;
         bool bCompounds = false;

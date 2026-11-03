@@ -1,0 +1,17 @@
+# The map unit 10L2 applied (kerf-rename's format; tools/kerf-rename/README.md). Engine enums that are exactly the
+# public API's move into its namespaces, rather than a public twin with a conversion (decision 16901); the engine's
+# fillet option structs give their names to the public records (design-rules 1: no two types of one name).
+
+# --- 1. Kerf.Kernel.ModelingAlgorithms (16901)
+type T:Kerf.Engine.Booleans.GlueMode Kerf.Booleans.GlueMode
+member F:Kerf.Engine.Booleans.GlueMode.GlueOff Off
+member F:Kerf.Engine.Booleans.GlueMode.GlueShift Shift
+member F:Kerf.Engine.Booleans.GlueMode.GlueFull Full
+type T:Kerf.Engine.Fillets.FilletShape Kerf.Fillets.FilletShape
+type T:Kerf.Engine.Offsets.OffsetMode Kerf.Offsets.OffsetMode
+type T:Kerf.Engine.Construction.Api.TransitionMode Kerf.Construction.TransitionMode
+type T:Kerf.Engine.Fillets.Api.FilletOptions Kerf.Engine.Fillets.Api.MakeFilletOptions
+type T:Kerf.Engine.Fillets.Api.ChamferOptions Kerf.Engine.Fillets.Api.MakeChamferOptions
+
+# --- 2. Kerf.Kernel.ModelingData (16901)
+type T:Kerf.Engine.Approximation.ParametrizationType Kerf.Geometry.ParametrizationType

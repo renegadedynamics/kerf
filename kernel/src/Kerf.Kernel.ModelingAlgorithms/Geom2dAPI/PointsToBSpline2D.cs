@@ -8,7 +8,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Occt;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Geometry.Api;
@@ -60,7 +60,7 @@ internal class PointsToBSpline2D
     }
 
     /// <summary>Approximates <paramref name="points"/> with the parametrisation <paramref name="parType"/>.</summary>
-    public PointsToBSpline2D(NCollection_Array1<Point2D> points, ParametrizationType parType,
+    public PointsToBSpline2D(NCollection_Array1<Point2D> points, global::Kerf.Geometry.ParametrizationType parType,
                                      int degMin = 3, int degMax = 8, Continuity continuity = C2,
                                      double tol2D = 1.0e-3)
     {
@@ -89,7 +89,7 @@ internal class PointsToBSpline2D
     }
 
     /// <summary>Approximates <paramref name="points"/> with the parametrisation <paramref name="parType"/>.</summary>
-    public void Init(NCollection_Array1<Point2D> points, ParametrizationType parType, int degMin = 3,
+    public void Init(NCollection_Array1<Point2D> points, global::Kerf.Geometry.ParametrizationType parType, int degMin = 3,
                      int degMax = 8, Continuity continuity = C2, double tol2D = 1.0e-3)
     {
         _isDone = false;

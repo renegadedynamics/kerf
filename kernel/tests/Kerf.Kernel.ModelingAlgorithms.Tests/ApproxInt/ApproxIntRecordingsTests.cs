@@ -204,7 +204,7 @@ public class ApproxIntRecordingsTests(ITestOutputHelper output)
         int n = aWL.NbPnts();
         TheMultiLineOfWLApprox ml = new(aWL, 1, 2, true, true, 0, 0, 0, 0, 0, 0, 0, true, 1, n);
         math_Vector pars = new(1, n);
-        WLApprox.Parameters(ml, 1, n, ParametrizationType.ChordLength, pars);
+        WLApprox.Parameters(ml, 1, n, global::Kerf.Geometry.ParametrizationType.ChordLength, pars);
         NCollection_Array1<Point3D> p3 = new(1, n);
         NCollection_Array1<Point2D> pa = new(1, n), pb = new(1, n);
         for (int i = 1; i <= n; i++)

@@ -9,7 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Construction.Api.TransitionMode;
+using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Construction.Filling.TransitionStyle;
 
 namespace Kerf.Engine.Features.Api;
@@ -32,11 +32,11 @@ public sealed class MakeDraft : MakeShape
     }
 
     /// <summary>The transition at the wire's corners (right or round) and the angular control of the sweep.</summary>
-    public void SetOptions(TransitionMode Style = TransitionMode.RightCorner, double angleMin = 0.01,
+    public void SetOptions(global::Kerf.Construction.TransitionMode Style = global::Kerf.Construction.TransitionMode.RightCorner, double angleMin = 0.01,
                            double angleMax = 3.0)
     {
         TransitionStyle style = TransitionStyle.Right;
-        if (Style == TransitionMode.RoundCorner)
+        if (Style == global::Kerf.Construction.TransitionMode.RoundCorner)
         {
             style = TransitionStyle.Round;
         }

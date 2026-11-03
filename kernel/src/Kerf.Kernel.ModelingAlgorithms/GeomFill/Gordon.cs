@@ -11,7 +11,7 @@ using Kerf.Engine.Geometry.Evaluation.Grid;
 using Kerf.Engine.Numerics;
 using Kerf.Geometry;
 using Occt;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Construction.Surfaces;

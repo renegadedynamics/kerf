@@ -11,7 +11,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -358,7 +358,7 @@ public class MakeConnectedAlgorithm : Options
             // Glue the shapes
             BooleanBuilder gluer = new();
             gluer.SetArguments(_arguments);
-            gluer.SetGlue(GlueMode.GlueShift);
+            gluer.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
             gluer.SetRunParallel(_runParallel);
             gluer.SetNonDestructive(true);
             gluer.Perform();

@@ -38,7 +38,7 @@ public class SurfaceBuilder
     public SurfaceBuilder(in Shape s, NCollection_List<Shape> e, double r, double ta = 1.0e-2,
                               double tapp3d = 1.0e-4, double tapp2d = 1.0e-5)
     {
-        _intBuild = new InternalBuilder(s, FilletShape.Polynomial, ta, tapp3d, tapp2d);
+        _intBuild = new InternalBuilder(s, global::Kerf.Fillets.FilletShape.Polynomial, ta, tapp3d, tapp2d);
         _myisdone = StatusDone.IsOk;
         _myerrorstatus = ErrorTypeStatus.EmptyList;
         int add = _intBuild.Add(e, r);

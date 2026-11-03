@@ -291,10 +291,10 @@ public class BRepFilletAPITests
     {
         Shape aBox = Box();
         Edge E = EdgeOf(aBox, 1);
-        Assert.Equal(new FilletOptions(), new FilletOptions());
-        Assert.NotEqual(new FilletOptions(), new FilletOptions { Tesp = 1.0e-3 });
+        Assert.Equal(new MakeFilletOptions(), new MakeFilletOptions());
+        Assert.NotEqual(new MakeFilletOptions(), new MakeFilletOptions { Tesp = 1.0e-3 });
 
-        Shape aTwin = BRepFilletApi.Fillet(aBox, [E], 2.0, new FilletOptions(), out History aHistory);
+        Shape aTwin = BRepFilletApi.Fillet(aBox, [E], 2.0, new MakeFilletOptions(), out History aHistory);
         MakeFillet aMaker = new(aBox);
         aMaker.Add(2.0, E);
         Assert.True(aTwin.TShape()!.IsFrozen);
@@ -302,10 +302,10 @@ public class BRepFilletAPITests
         Assert.Single(aHistory.Generated(E));
         Assert.Equal(4, Faces(aBox).Count(f => aHistory.Modified(f).Count() == 1)); // the edge's two faces and the two at its ends
 
-        Shape aChamfer = BRepFilletApi.Chamfer(aBox, [E], 1.0, new ChamferOptions());
+        Shape aChamfer = BRepFilletApi.Chamfer(aBox, [E], 1.0, new MakeChamferOptions());
         Assert.Equal(1000.0 - 0.5 * 10.0, ReconComparison.Volume(aChamfer), 1.0e-6);
 
         Shape aSmall = Box(1.0);
-        Assert.Throws<NotDoneException>(() => BRepFilletApi.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new FilletOptions()));
+        Assert.Throws<NotDoneException>(() => BRepFilletApi.Fillet(aSmall, [EdgeOf(aSmall, 1)], 5.0, new MakeFilletOptions()));
     }
 }

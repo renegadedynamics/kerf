@@ -372,7 +372,7 @@ public sealed class Build123dConstructionOracleTests(ITestOutputHelper output) :
     /// the profiles are added (Solid.Sweep) or after (Face.Sweep, Shell.Sweep), or not at all (null).
     /// </summary>
     private sealed record SweepCall(int Mode, bool Frenet = false, Vec3? Start = null, Vec3? Dir = null, bool Curvilinear = false,
-                                    TransitionMode? Transition = null, bool TransitionAfterAdd = false, bool MakeSolid = false,
+                                    global::Kerf.Construction.TransitionMode? Transition = null, bool TransitionAfterAdd = false, bool MakeSolid = false,
                                     bool Rotate = false, bool DefaultAdd = false);
 
     private void RunSweep(string theName, string theOperands, SweepCase theCase)

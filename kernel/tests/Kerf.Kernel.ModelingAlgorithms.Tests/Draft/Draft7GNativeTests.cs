@@ -182,7 +182,7 @@ public class Draft7GNativeTests(ITestOutputHelper output)
                         var aMk = new MakeDraft(Input(w[1]), new Direction3D(0, 0, 1), FromHex(w[2]));
                         if (w[5] == "1")
                         {
-                            aMk.SetOptions(TransitionMode.RoundCorner);
+                            aMk.SetOptions(global::Kerf.Construction.TransitionMode.RoundCorner);
                         }
                         if (w[4] == "1")
                         {

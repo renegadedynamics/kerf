@@ -16,7 +16,7 @@ using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.ShapeType;
@@ -142,7 +142,7 @@ public partial class PaveFiller
         //
         int nE, nF;
         //
-        if (_glue == GlueMode.GlueFull)
+        if (_glue == global::Kerf.Booleans.GlueMode.Full)
         {
             // there is no need to intersect edges with faces in this mode
             // just initialize FaceInfo for faces

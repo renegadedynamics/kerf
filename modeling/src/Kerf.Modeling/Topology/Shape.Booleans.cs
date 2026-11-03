@@ -137,7 +137,7 @@ public abstract partial class Shape
     {
         var op = new Fuse();
         if (glue)
-            op.SetGlue(GlueMode.GlueShift);
+            op.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
         if (tolerance is { } tol && tol != 0)
             op.SetFuzzyValue(tol);
         return BoolOp([this], toFuse, op);

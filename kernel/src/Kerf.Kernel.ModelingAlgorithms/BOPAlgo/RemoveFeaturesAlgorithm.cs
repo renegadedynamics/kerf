@@ -610,7 +610,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             }
 
             // Avoid faces intersection
-            gfTrim.SetGlue(GlueMode.GlueShift);
+            gfTrim.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
             gfTrim.SetRunParallel(_runParallel);
             gfTrim.SetNonDestructive(true);
 

@@ -17,7 +17,7 @@ using Kerf.Topology;
 using Occt;
 using System.Runtime.CompilerServices;
 using Schematiq.Collections;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 
 namespace Kerf.Engine.Booleans;
 
@@ -708,7 +708,7 @@ public class MakePeriodicAlgorithm : Options
         // Add the shape
         intersector.AddArgument(_shape);
         // Use gluing to speed-up intersections
-        intersector.SetGlue(GlueMode.GlueShift);
+        intersector.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
         // Use safe input mode, to avoid reusing geometry of the shape
         intersector.SetNonDestructive(true);
         // Set parallel processing mode
@@ -738,7 +738,7 @@ public class MakePeriodicAlgorithm : Options
         // Set Tools
         splitter.SetTools(tools);
         // Use Gluing
-        splitter.SetGlue(GlueMode.GlueShift);
+        splitter.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
         // Set parallel processing mode
         splitter.SetRunParallel(_runParallel);
         // Perform splitting
@@ -846,7 +846,7 @@ public class MakePeriodicAlgorithm : Options
         BooleanBuilder gluer = new();
         gluer.SetArguments(shapes);
         // Avoid intersections of the sub-shapes
-        gluer.SetGlue(GlueMode.GlueFull);
+        gluer.SetGlue(global::Kerf.Booleans.GlueMode.Full);
         // Set parallel processing mode
         gluer.SetRunParallel(_runParallel);
         // Perform gluing

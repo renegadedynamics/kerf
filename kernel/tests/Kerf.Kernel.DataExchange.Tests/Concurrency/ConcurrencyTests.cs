@@ -89,7 +89,7 @@ public class ConcurrencyTests
             var closing = new NCollection_List<Shape>();
             closing.Append(SubShapes(box, ShapeType.Face)[5]);
             var thick = new MakeThickSolid();
-            thick.MakeThickSolidByJoin(box, closing, -1.0, 1.0e-3, OffsetMode.Skin, false, false, JoinKind.Arc);
+            thick.MakeThickSolidByJoin(box, closing, -1.0, 1.0e-3, global::Kerf.Offsets.OffsetMode.Skin, false, false, JoinKind.Arc);
             return BRepText(thick.Shape());
         }),
         ("healing", () =>

@@ -8,7 +8,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 
 namespace Kerf.Engine.Offsets.Api;
@@ -47,7 +47,7 @@ public class MakeThickSolid : MakeOffsetShape
     /// <see cref="MakeOffsetShape.PerformByJoin"/>.
     /// </summary>
     public void MakeThickSolidByJoin(in Shape s, NCollection_List<Shape> closingFaces, double offset,
-                                     double tol, OffsetMode mode = OffsetMode.Skin, bool intersection = false,
+                                     double tol, global::Kerf.Offsets.OffsetMode mode = global::Kerf.Offsets.OffsetMode.Skin, bool intersection = false,
                                      bool selfInter = false, JoinKind Join = Arc,
                                      bool removeIntEdges = false, ProgressRange range = default)
     {

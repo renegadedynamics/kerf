@@ -12,6 +12,7 @@ using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
+using Kerf.Offsets;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
