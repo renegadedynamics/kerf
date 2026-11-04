@@ -1,15 +1,14 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
-using Kerf.Engine.Geometry.Bounds;
-using Kerf.Engine.Measurement;
-using Kerf.Engine.Meshing;
-using Kerf.Engine.Topology.Tools;
+using Kerf.Exchange;
+using Kerf.Geometry;
+using Kerf.Measurement;
+using Kerf.Meshing;
 using Kerf.Topology;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
-using Occt;
 
 namespace Kerf.Kernel.WasmDemo;
 
@@ -18,14 +17,14 @@ public sealed class DemoResult
 {
     public double ReadMs, MeshMs, ExtractMs, Deflection;
     public int Faces, Edges, Nodes, Triangles;
-    public global::Kerf.Engine.Meshing.MeshBuffers Buffers = null!;
+    public ShapeMesh Mesh = null!;
     public ulong[] FaceHashes = [], NormalHashes = [], EdgeHashes = [];
 }
 
 /// <summary>
-/// The spike's work, the same in the browser and on win-x64 (the benchmark project links this file): read BRep text,
-/// mesh it at the viewer's tolerances (0.1% of the diagonal, 0.2 rad; parallel requested, which the browser runs
-/// serially), extract, and hash every face's and edge's buffers bit for bit.
+/// The spike's work, the same in the browser and on win-x64 (the benchmark project links this file), on the public API
+/// alone: read BRep text, mesh it at the viewer's tolerances (0.1% of the diagonal, 0.2 rad; parallel requested, which
+/// the browser runs serially), and hash every face's and edge's buffers bit for bit.
 /// </summary>
 public static class DemoCore
 {
@@ -35,52 +34,44 @@ public static class DemoCore
     {
         var aResult = new DemoResult();
         long t0 = Stopwatch.GetTimestamp();
-        Shape aShape;
-        using (var aReader = new StreamReader(new MemoryStream(theBrep), Encoding.Latin1, false))
-        {
-            BrepTools.Read(out aShape, aReader);
-        }
+        Shape aShape = Brep.Read(new MemoryStream(theBrep)).Value;
         long t1 = Stopwatch.GetTimestamp();
-        // Some data/occ files carry meshes: meshed afresh, as a shape built in Bento would be
-        aShape = BrepTools.Cleaned(aShape);
 
-        var aBox = new Box();
-        Bounds.Add(aShape, ref aBox, true);
-        double aDiagonal = aBox.IsVoid ? 0.0 : Math.Sqrt(aBox.SquareExtent());
+        BoundingBox aBox = aShape.BoundingBox();
+        double aDiagonal = aBox.IsEmpty ? 0.0 : aBox.Size.Magnitude;
         aResult.Deflection = aDiagonal > 1e-6 ? aDiagonal * thePercent / 100 : 1e-3;
 
         long t2 = Stopwatch.GetTimestamp();
-        Shape aMeshed = new IncrementalMesh(aShape, aResult.Deflection, false, Angle, true).Shape();
+        // Meshing includes reading the buffers out. A face of the file that already holds a mesh fine enough keeps it.
+        ShapeMesh aMesh = aShape.Mesh(new MeshOptions { LinearDeflection = aResult.Deflection, AngularDeflection = Angle }).Value;
         long t3 = Stopwatch.GetTimestamp();
-        global::Kerf.Engine.Meshing.MeshBuffers aBuffers = global::Kerf.Engine.Meshing.MeshExtraction.Extract(aMeshed, aResult.Deflection, Angle);
-        long t4 = Stopwatch.GetTimestamp();
 
         aResult.ReadMs = Stopwatch.GetElapsedTime(t0, t1).TotalMilliseconds;
         aResult.MeshMs = Stopwatch.GetElapsedTime(t2, t3).TotalMilliseconds;
-        aResult.ExtractMs = Stopwatch.GetElapsedTime(t3, t4).TotalMilliseconds;
-        aResult.Buffers = aBuffers;
-        aResult.Faces = aBuffers.FaceTypes.Length;
-        aResult.Edges = aBuffers.EdgeTypes.Length;
-        aResult.Nodes = (int)aBuffers.FaceNodes[^1];
-        aResult.Triangles = (int)(aBuffers.FaceTriangles[^1] / 3);
+        aResult.Mesh = aMesh;
+        aResult.Faces = aMesh.Faces.Count;
+        aResult.Edges = aMesh.Edges.Count;
+        aResult.Nodes = aMesh.NodeCount;
+        aResult.Triangles = aMesh.TriangleCount;
         aResult.FaceHashes = new ulong[aResult.Faces];
         aResult.NormalHashes = new ulong[aResult.Faces];
         for (int f = 0; f < aResult.Faces; f++)
         {
-            int n0 = (int)aBuffers.FaceNodes[f], n1 = (int)aBuffers.FaceNodes[f + 1];
-            int t = (int)aBuffers.FaceTriangles[f], tEnd = (int)aBuffers.FaceTriangles[f + 1];
+            FaceMesh aFace = aMesh.Faces[f];
+            int aKind = (int)aFace.Kind;
             // The mesh (nodes and triangles) and the normals apart, to attribute a difference
-            ulong h = Hash(Basis, MemoryMarshal.AsBytes(aBuffers.Positions.AsSpan(3 * n0, 3 * (n1 - n0))));
-            h = Hash(h, MemoryMarshal.AsBytes(aBuffers.Triangles.AsSpan(t, tEnd - t)));
-            aResult.NormalHashes[f] = Hash(Basis, MemoryMarshal.AsBytes(aBuffers.Normals.AsSpan(3 * n0, 3 * (n1 - n0))));
-            aResult.FaceHashes[f] = Hash(h, MemoryMarshal.AsBytes(aBuffers.FaceTypes.AsSpan(f, 1)));
+            ulong h = Hash(Basis, MemoryMarshal.AsBytes(aFace.Positions.Span));
+            h = Hash(h, MemoryMarshal.AsBytes(aFace.Triangles.Span));
+            aResult.NormalHashes[f] = Hash(Basis, MemoryMarshal.AsBytes(aFace.Normals.Span));
+            aResult.FaceHashes[f] = Hash(h, MemoryMarshal.AsBytes(new ReadOnlySpan<int>(in aKind)));
         }
         aResult.EdgeHashes = new ulong[aResult.Edges];
         for (int e = 0; e < aResult.Edges; e++)
         {
-            int p0 = (int)aBuffers.EdgePoints[e], p1 = (int)aBuffers.EdgePoints[e + 1];
-            ulong h = Hash(Basis, MemoryMarshal.AsBytes(aBuffers.Points.AsSpan(3 * p0, 3 * (p1 - p0))));
-            aResult.EdgeHashes[e] = Hash(h, MemoryMarshal.AsBytes(aBuffers.EdgeTypes.AsSpan(e, 1)));
+            EdgePolyline anEdge = aMesh.Edges[e];
+            int aKind = (int)anEdge.Kind;
+            ulong h = Hash(Basis, MemoryMarshal.AsBytes(anEdge.Points.Span));
+            aResult.EdgeHashes[e] = Hash(h, MemoryMarshal.AsBytes(new ReadOnlySpan<int>(in aKind)));
         }
         return aResult;
     }
