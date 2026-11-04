@@ -15950,7 +15950,9 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        extrusion's history also generates each profile sub-shape's top cap (decision 1560): the layer's tapered
        extrusion already takes only the faces, and the one test of `FromAlgorithm` on a prism now counts the generated
        face and edge. Volumes, face counts, the STEP references byte for byte and the Python-reference tests are as they
-       were: `Build123d.Tests` 1,884 of 1,884.
+       were: `Build123d.Tests` 1,884 of 1,884. Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, kerf main 9c6086ff
+       against this unit, one after the other on the same machine): the same volumes, faces and triangles for all 11
+       examples, the median recalculation 883.3 ms before and 883.5 ms after, the first pass 2,796 and 2,783 ms.
 17408. **Python's text retired, its results kept.** `PyFormat` is gone: numbers print as .NET's shortest invariant text
        ("1", "0.5", "1E-07"), `ToString(format)` takes .NET numeric formats ("G6", "F2"; null for "G6"), and `Repr()`
        (Vector, Location, Plane) is gone. build123d's own rounding of noise to zero stays. The tests that pinned Python's
