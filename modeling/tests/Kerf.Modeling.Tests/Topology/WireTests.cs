@@ -174,7 +174,7 @@ public class WireTests
     {
         var l1 = new Line(new Vector(0, 65), new Vector(80.0 / 2 + 1.526 * 4, 65));
         var l2 = new PolarLine(l1.PositionAt(1), 20.371288916, direction: new Vector(0, 1, 0).Rotate(Axis.X, -75));
-        var w = Plane.YZ * (Wire)Ops.Fillet((l1 + l2).Vertices(), 7);
+        var w = Plane.YZ * (Wire)Ops.Fillet((l1 + l2).Vertices(), 7).Value;
         var parameters = Enumerable.Range(0, 21).Select(i => w.ParamAtPoint(w.PositionAt(i / 20.0))).ToList();
         Assert.Equal(parameters.Order(), parameters);
         for (int i = 0; i < parameters.Count; i++)

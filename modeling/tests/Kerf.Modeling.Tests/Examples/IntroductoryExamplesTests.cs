@@ -92,7 +92,7 @@ public class IntroductoryExamplesTests
     private static Shape Ex2() => new Box(Length, Width, Thickness) - new Cylinder(22.0 / 2, Thickness);
 
     // 3. An extruded prismatic solid
-    private static Shape Ex3() => Extrude(new Circle(Width) - new Rectangle(Length / 2, Width / 2), 2 * Thickness);
+    private static Shape Ex3() => Extrude(new Circle(Width) - new Rectangle(Length / 2, Width / 2), 2 * Thickness).Value;
 
     // 4. Building profiles using lines and arcs
     private static Shape Ex4()
@@ -102,8 +102,8 @@ public class IntroductoryExamplesTests
             new Line(new Vector(Length, 0), new Vector(Length, Width)),
             new ThreePointArc(new Vector(Length, Width), new Vector(Width, Width * 1.5), new Vector(0.0, Width)),
             new Line(new Vector(0.0, Width), new Vector(0, 0)),
-        ]);
-        return Extrude(MakeFace(lines), Thickness);
+        ]).Value;
+        return Extrude(MakeFace(lines), Thickness).Value;
     }
 
     // 5. Moving the current working point
@@ -111,7 +111,7 @@ public class IntroductoryExamplesTests
     {
         double a = 90, b = 45, c = 15, d = 7.5;
         var sk5 = new Circle(a) - new Pos(b, 0.0) * new Rectangle(c, c) - new Pos(0.0, b) * new Circle(d);
-        return Extrude(sk5, c);
+        return Extrude(sk5, c).Value;
     }
 
     // 6. Using point lists
@@ -119,7 +119,7 @@ public class IntroductoryExamplesTests
     {
         double a = 80, b = 60, c = 10;
         var sk6 = new Locations(new Vector(b, 0), new Vector(0, b), new Vector(-b, 0), new Vector(0, -b)).Select(loc => (Shape)(loc * new Circle(c)));
-        return Extrude(new Circle(a) - sk6, c);
+        return Extrude(new Circle(a) - sk6, c).Value;
     }
 
     // 7. Polygons
@@ -127,7 +127,7 @@ public class IntroductoryExamplesTests
     {
         double a = 60, b = 80, c = 5;
         var polygons = new Locations(new Vector(0, 3 * c), new Vector(0, -3 * c)).Select(loc => (Shape)(loc * new RegularPolygon(2 * c, 6)));
-        return Extrude(new Rectangle(a, b) - polygons, c);
+        return Extrude(new Rectangle(a, b) - polygons, c).Value;
     }
 
     // 8. Polylines
@@ -142,15 +142,15 @@ public class IntroductoryExamplesTests
         Shape ln = new Polyline(pts);
         ln += Mirror(ln, Plane.YZ);
         var sk8 = MakeFace(Plane.YZ * ln);
-        return Extrude(sk8, -l).Clean();
+        return Extrude(sk8, -l).Value.Clean();
     }
 
     // 9. Selectors, fillets and chamfers
     private static Shape Ex9()
     {
         Shape ex9 = new Box(Length, Width, Thickness);
-        ex9 = Chamfer(ex9.Edges().GroupBy(Axis.Z)[^1], length: 4);
-        return Fillet(ex9.Edges().ParallelTo(Axis.Z), radius: 5);
+        ex9 = Chamfer(ex9.Edges().GroupBy(Axis.Z)[^1], length: 4).Value;
+        return Fillet(ex9.Edges().ParallelTo(Axis.Z), radius: 5).Value;
     }
 
     // 10. Select last edges and hole
@@ -160,22 +160,22 @@ public class IntroductoryExamplesTests
         var snapshot = ex10.Edges();
         ex10 -= new Hole(Width / 4, depth: Thickness);
         var lastEdges = ex10.Edges().Except(snapshot);
-        return Fillet(lastEdges.GroupBy(Axis.Z)[^1], 2);
+        return Fillet(lastEdges.GroupBy(Axis.Z)[^1], 2).Value;
     }
 
     // 11. A face as a workplane, grid locations
     private static Shape Ex11()
     {
         Shape ex11 = new Box(Length, Width, Thickness);
-        ex11 = Chamfer(ex11.Edges().GroupBy(Axis.Z)[^1], 4);
-        ex11 = Fillet(ex11.Edges().ParallelTo(Axis.Z), 5);
+        ex11 = Chamfer(ex11.Edges().GroupBy(Axis.Z)[^1], 4).Value;
+        ex11 = Fillet(ex11.Edges().ParallelTo(Axis.Z), 5).Value;
         var last = ex11.Edges();
         ex11 -= new Hole(Width / 4, depth: Thickness);
-        ex11 = Fillet(ex11.Edges().Except(last).OrderBy(Axis.Z).Last(), 2);
+        ex11 = Fillet(ex11.Edges().Except(last).OrderBy(Axis.Z).Last(), 2).Value;
         var plane = new Plane(ex11.Faces().OrderBy(Axis.Z).Last());
         var polygons = new Sketch().Add(new GridLocations(Length / 2, Width / 2, 2, 2)
-            .Select(loc => (Shape)(plane * loc * new RegularPolygon(5, 5))));
-        ex11 -= Extrude(polygons, -Thickness);
+            .Select(loc => (Shape)(plane * loc * new RegularPolygon(5, 5)))).Value;
+        ex11 -= Extrude(polygons, -Thickness).Value;
         return ex11;
     }
 
@@ -186,7 +186,7 @@ public class IntroductoryExamplesTests
         var l2 = new Line(l1.PositionAt(0), new Vector(60, 0));
         var l3 = new Line(l2.PositionAt(1), new Vector(0, 0));
         var l4 = new Line(l3.PositionAt(1), l1.PositionAt(1));
-        return Extrude(MakeFace([l1, l2, l3, l4]), 10);
+        return Extrude(MakeFace([l1, l2, l3, l4]), 10).Value;
     }
 
     // 13. Counterbore and countersink holes, polar locations
@@ -210,7 +210,7 @@ public class IntroductoryExamplesTests
         var l3 = new Line(l2.PositionAt(1), l2.PositionAt(1) + new Vector(-a, a));
         var path = l1 + l2 + l3;
         var sk14 = Plane.XZ * new Rectangle(b, b);
-        return Sweep(sk14, path);
+        return Sweep(sk14, path).Value;
     }
 
     // 15. Mirroring symmetric geometry
@@ -222,19 +222,19 @@ public class IntroductoryExamplesTests
         var l3 = new Line(l2.PositionAt(1), l2.PositionAt(1) + new Vector(-c, 0));
         var l4 = new Line(l3.PositionAt(1), l3.PositionAt(1) + new Vector(0, -c));
         var l5 = new Line(l4.PositionAt(1), new Vector(0, l4.PositionAt(1).Y));
-        Shape ln = new Curve().Add([l1, l2, l3, l4, l5]);
+        Shape ln = new Curve().Add([l1, l2, l3, l4, l5]).Value;
         ln += Mirror(ln, Plane.YZ);
-        return Extrude(MakeFace(ln), c);
+        return Extrude(MakeFace(ln), c).Value;
     }
 
     // 16. Mirroring 3D objects
     private static Shape Ex16()
     {
         Shape sk16 = new Rectangle(Length, Width);
-        sk16 = Fillet(sk16.Vertices(), Length / 10);
+        sk16 = Fillet(sk16.Vertices(), Length / 10).Value;
         var circles = new GridLocations(Length / 4, 0, 3, 1).Select(loc => (Shape)(loc * new Circle(Length / 12)));
         sk16 = sk16 - circles - new Rectangle(Length, Width, align: new Alignment(Align.Min, Align.Min));
-        var single = Extrude(Plane.XZ * sk16, Length);
+        var single = Extrude(Plane.XZ * sk16, Length).Value;
         Plane[] planes = [Plane.XY.Offset(Width), Plane.YX.Offset(Width), Plane.YZ.Offset(Width), Plane.YZ.Offset(-Width)];
         return single + planes.Select(p => (Shape)Mirror(single, p));
     }
@@ -243,7 +243,7 @@ public class IntroductoryExamplesTests
     private static Shape Ex17()
     {
         double a = 30, b = 20;
-        Shape ex17 = Extrude(new RegularPolygon(a, 5), b);
+        Shape ex17 = Extrude(new RegularPolygon(a, 5), b).Value;
         ex17 += Mirror(ex17, new Plane(ex17.Faces().OrderBy(Axis.Y).First()));
         return ex17;
     }
@@ -253,10 +253,10 @@ public class IntroductoryExamplesTests
     {
         double a = 4, b = 5;
         Shape ex18 = new Box(Length, Width, Thickness);
-        ex18 = Chamfer(ex18.Edges().GroupBy(Axis.Z)[^1], a);
-        ex18 = Fillet(ex18.Edges().ParallelTo(Axis.Z), b);
+        ex18 = Chamfer(ex18.Edges().GroupBy(Axis.Z)[^1], a).Value;
+        ex18 = Fillet(ex18.Edges().ParallelTo(Axis.Z), b).Value;
         var sk18 = new Plane(ex18.Faces().OrderBy(Axis.Z).First()) * new Rectangle(2 * b, 2 * b);
-        ex18 -= Extrude(sk18, -Thickness);
+        ex18 -= Extrude(sk18, -Thickness).Value;
         return ex18;
     }
 
@@ -264,13 +264,13 @@ public class IntroductoryExamplesTests
     private static Shape Ex19()
     {
         double length = 80.0, thickness = 10.0;
-        Shape ex19 = Extrude(new RegularPolygon(length / 2, 7), thickness);
+        Shape ex19 = Extrude(new RegularPolygon(length / 2, 7), thickness).Value;
         var topf = ex19.Faces().OrderBy(Axis.Z).Last();
         var vtx = topf.Vertices().GroupBy(Axis.X)[^1][0];
         var vtx2 = topf.Vertices().OrderBy(new Axis(new Vector(0, 0, 0), new Vector(-1, -0.5, 0)))[^1];
         var circle = new Circle(length / 8);
         var sk2 = new Pos(vtx.X, vtx.Y) * circle + new Pos(vtx2.X, vtx2.Y) * circle;
-        ex19 -= Extrude(sk2, thickness);
+        ex19 -= Extrude(sk2, thickness).Value;
         return ex19;
     }
 
@@ -279,7 +279,7 @@ public class IntroductoryExamplesTests
     {
         Shape ex20 = new Box(Length, Width, Thickness);
         var plane = new Plane(ex20.Faces().OrderBy(Axis.X).First()).Offset(2 * Thickness);
-        ex20 += Extrude(plane * new Circle(Width / 3), Width);
+        ex20 += Extrude(plane * new Circle(Width / 3), Width).Value;
         return ex20;
     }
 
@@ -287,9 +287,9 @@ public class IntroductoryExamplesTests
     private static Shape Ex21()
     {
         double width = 10.0, length = 60.0;
-        Shape ex21 = Extrude(new Circle(width / 2), length);
+        Shape ex21 = Extrude(new Circle(width / 2), length).Value;
         var plane = new Plane(ex21.Center(), zDir: new Vector(-1, 0, 0));
-        ex21 += plane * Extrude(new Circle(width / 2), length);
+        ex21 += plane * Extrude(new Circle(width / 2), length).Value;
         return ex21;
     }
 
@@ -299,8 +299,8 @@ public class IntroductoryExamplesTests
         Shape ex22 = new Box(Length, Width, Thickness);
         var plane = new Plane(ex22.Faces().GroupBy(Axis.Z)[0][0]) * new Rot(0, 50, 0);
         var holes = new Sketch().Add(new GridLocations(Length / 4, Width / 4, 2, 2)
-            .Select(loc => (Shape)(new Location(plane) * loc * new Circle(Thickness / 4))));
-        ex22 -= Extrude(holes, -100, new ExtrudeOptions { Both = true });
+            .Select(loc => (Shape)(new Location(plane) * loc * new Circle(Thickness / 4)))).Value;
+        ex22 -= Extrude(holes, -100, new ExtrudeOptions { Both = true }).Value;
         return ex22;
     }
 
@@ -312,7 +312,7 @@ public class IntroductoryExamplesTests
         Shape sk23 = MakeFace([l1, l2]);
         sk23 += new Pos(0, 35) * new Circle(25);
         sk23 = Plane.XZ * Split(sk23, bisectBy: Plane.ZY);
-        return Revolve(sk23, Axis.Z);
+        return Revolve(sk23, Axis.Z).Value;
     }
 
     // 24. Lofts
@@ -320,8 +320,8 @@ public class IntroductoryExamplesTests
     {
         Shape ex24 = new Box(Length, Length, Thickness);
         var plane = new Plane(ex24.Faces().OrderBy(Axis.Z).Last());
-        var faces = new Sketch().Add([plane * new Circle(Length / 3), plane.Offset(Length / 2) * new Rectangle(Length / 6, Width / 6)]);
-        ex24 += Loft([faces]);
+        var faces = new Sketch().Add([plane * new Circle(Length / 3), plane.Offset(Length / 2) * new Rectangle(Length / 6, Width / 6)]).Value;
+        ex24 += Loft([faces]).Value;
         return ex24;
     }
 
@@ -330,10 +330,10 @@ public class IntroductoryExamplesTests
     {
         double rad = 50, offs = 10;
         var sk1 = new RegularPolygon(rad, 5);
-        var sk2 = Offset(Plane.XY.Offset(15) * new RegularPolygon(rad, 5), offs);
-        var sk3 = Offset(Plane.XY.Offset(30) * new RegularPolygon(rad, 5), offs, new OffsetOptions { Kind = Kind.Intersection });
-        var sk25 = new Sketch().Add([sk1, sk2, sk3]);
-        return Extrude(sk25, 1);
+        var sk2 = Offset(Plane.XY.Offset(15) * new RegularPolygon(rad, 5), offs).Value;
+        var sk3 = Offset(Plane.XY.Offset(30) * new RegularPolygon(rad, 5), offs, new OffsetOptions { Kind = Kind.Intersection }).Value;
+        var sk25 = new Sketch().Add([sk1, sk2, sk3]).Value;
+        return Extrude(sk25, 1).Value;
     }
 
     // 26. Offset part to create thin features
@@ -342,7 +342,7 @@ public class IntroductoryExamplesTests
         double wall = 2.0;
         Shape ex26 = new Box(Length, Width, Thickness);
         var topf = ex26.Faces().OrderBy(Axis.Z).Last();
-        return Offset(ex26, -wall, new OffsetOptions { Openings = [topf] });
+        return Offset(ex26, -wall, new OffsetOptions { Openings = [topf] }).Value;
     }
 
     // 27. Splitting an object
@@ -350,7 +350,7 @@ public class IntroductoryExamplesTests
     {
         Shape ex27 = new Box(Length, Width, Thickness);
         var sk27 = new Plane(ex27.Faces().OrderBy(Axis.Z).First()) * new Circle(Width / 4);
-        ex27 -= Extrude(sk27, -Thickness);
+        ex27 -= Extrude(sk27, -Thickness).Value;
         return Split(ex27, new Plane(ex27.Faces().OrderBy(Axis.Y).Last()).Offset(-Width / 2));
     }
 
@@ -358,7 +358,7 @@ public class IntroductoryExamplesTests
     private static Shape Ex28()
     {
         double width = 80.0, thickness = 10.0;
-        var tmp28 = Extrude(new RegularPolygon(width / 4, 3), thickness);
+        var tmp28 = Extrude(new RegularPolygon(width / 4, 3), thickness).Value;
         Shape ex28 = new Sphere(width / 2);
         foreach (var p in tmp28.Faces().GroupBy(Axis.Z)[1].Select(f => new Plane(f)))
             ex28 -= p * new Hole(thickness / 2, depth: width);
@@ -375,12 +375,12 @@ public class IntroductoryExamplesTests
         Shape ln29 = l1 + l2 + l3;
         ln29 += Mirror(ln29);
         var sk29 = MakeFace(ln29);
-        Shape ex29 = Extrude(sk29, -(h + b));
-        ex29 = Fillet(ex29.Edges(), radius: w / 6);
+        Shape ex29 = Extrude(sk29, -(h + b)).Value;
+        ex29 = Fillet(ex29.Edges(), radius: w / 6).Value;
         var neck = new Plane(ex29.Faces().OrderBy(Axis.Z).Last()) * new Circle(t);
-        ex29 += Extrude(neck, n);
+        ex29 += Extrude(neck, n).Value;
         var necktopf = ex29.Faces().OrderBy(Axis.Z).Last();
-        return Offset(ex29, -b, new OffsetOptions { Openings = [necktopf] });
+        return Offset(ex29, -b, new OffsetOptions { Openings = [necktopf] }).Value;
     }
 
     // 30. Bezier curve
@@ -389,7 +389,7 @@ public class IntroductoryExamplesTests
         Vector[] pts = [new Vector(0, 0), new Vector(20, 20), new Vector(40, 0), new Vector(0, -40), new Vector(-60, 0), new Vector(0, 100), new Vector(100, 0)];
         double[] wts = [1.0, 1.0, 2.0, 3.0, 4.0, 2.0, 1.0];
         var ln = new Polyline(pts) + new Bezier(pts, wts);
-        return Extrude(MakeFace(ln), -10);
+        return Extrude(MakeFace(ln), -10).Value;
     }
 
     // 31. Nesting locations
@@ -399,7 +399,7 @@ public class IntroductoryExamplesTests
         Shape ex31 = new Rot(z: 30) * new RegularPolygon(3 * b, 6);
         var cell = new RegularPolygon(b, 4) + new GridLocations(3 * b, 3 * b, 2, 2).Select(loc => (Shape)(loc * new RegularPolygon(b, 3)));
         ex31 += new PolarLocations(a / 2, 6).Select(loc => (Shape)(loc * cell));
-        return Extrude(ex31, 3);
+        return Extrude(ex31, 3).Value;
     }
 
     // 32. Python for-loop
@@ -408,7 +408,7 @@ public class IntroductoryExamplesTests
         double a = 80.0, b = 10.0, c = 1.0;
         Shape sk = new RegularPolygon(2 * b, 6, rotation: 30);
         sk += new PolarLocations(a / 2, 6).Select(loc => (Shape)(loc * new RegularPolygon(b, 4)));
-        return new Part().Add(sk.Faces().Select((face, idx) => (Shape)Extrude(face, c + 3 * idx)));
+        return new Part().Add(sk.Faces().Select((face, idx) => (Shape)Extrude(face, c + 3 * idx).Value)).Value;
     }
 
     // 33. Python function and for-loop
@@ -416,7 +416,7 @@ public class IntroductoryExamplesTests
     {
         double a = 80.0, b = 5.0, c = 1.0;
         static Shape Square(double rad, Location loc) => loc * new RegularPolygon(rad, 4);
-        return new Part().Add(new PolarLocations(a / 2, 6).Select((loc, i) => (Shape)Extrude(Square(b + 2 * i, loc), c + 2 * i)));
+        return new Part().Add(new PolarLocations(a / 2, 6).Select((loc, i) => (Shape)Extrude(Square(b + 2 * i, loc), c + 2 * i).Value)).Value;
     }
 
     // 35. Slots
@@ -429,7 +429,7 @@ public class IntroductoryExamplesTests
         sk += new SlotCurve(ln.Edges()[0], Thickness);
         var ln2 = new RadiusArc(new Vector(0, -Width / 2), new Vector(Width / 2, 0), -Width / 2);
         sk += new SlotCurve(ln2.Edges()[0], Thickness);
-        ex35 -= Extrude(plane * sk, -Thickness);
+        ex35 -= Extrude(plane * sk, -Thickness).Value;
         return ex35;
     }
 
@@ -438,9 +438,9 @@ public class IntroductoryExamplesTests
     {
         double rad = 6, rev = 50;
         var sk36 = new Pos(0, rev) * new Circle(rad);
-        Shape ex36 = Revolve(sk36, Axis.X, revolutionArc: 180);
+        Shape ex36 = Revolve(sk36, Axis.X, revolutionArc: 180).Value;
         var sk36b = new Rectangle(rad, rev);
-        ex36 += Extrude(sk36b, Until.Next, ex36);
+        ex36 += Extrude(sk36b, Until.Next, ex36).Value;
         return ex36;
     }
 
@@ -451,7 +451,7 @@ public class IntroductoryExamplesTests
         var origin = sk1.Vertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[0];
         var sk2 = Plane.XY.ShiftOrigin(origin) * new Circle(1);
         var sk3 = new Plane(new Vector(0.5, 2)) * new Ellipse(0.5, 1);
-        return Extrude(new Sketch().Add([sk1, sk2, sk3]), 1);
+        return Extrude(new Sketch().Add([sk1, sk2, sk3]).Value, 1).Value;
     }
 
     // 38. Applying rotations
@@ -461,6 +461,6 @@ public class IntroductoryExamplesTests
         var aboutAxis = new Box(length, width, height).Rotate(new Axis(new Vector(-length / 2, -width / 2), new Vector(0, 0, 1)), 20);
         var withConstructor = new Pos(y: spacing) * new Box(length, width, height, rotation: new Rotation(0, 0, 40));
         var withLocation = new Pos(y: 2 * spacing) * new Rot(z: 60) * new Box(length, width, height);
-        return new Part().Add([aboutAxis, withConstructor, withLocation]);
+        return new Part().Add([aboutAxis, withConstructor, withLocation]).Value;
     }
 }

@@ -76,11 +76,11 @@ public static partial class Operations
     /// No edges are given, they weren't taken from a 3D object, both <paramref name="length2"/> and <paramref name="angle"/>
     /// are given, or <paramref name="reference"/> is given without either.
     /// </exception>
-    public static Part Chamfer(IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
-        (Part)ChamferCore(edges, length, length2, angle, reference);
+    public static Result<Part> Chamfer(IEnumerable<Edge> edges, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
+        Failures.Try(() => (Part)ChamferCore(edges, length, length2, angle, reference));
 
     /// <inheritdoc cref="Chamfer(IEnumerable{Edge}, double, double?, double?, Face?)"/>
-    public static Part Chamfer(Edge edge, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
+    public static Result<Part> Chamfer(Edge edge, double length, double? length2 = null, double? angle = null, Face? reference = null) =>
         Chamfer([edge], length, length2, angle, reference);
 
     /// <summary>
@@ -93,11 +93,11 @@ public static partial class Operations
     /// No vertices are given, they weren't taken from a 1D, 2D or sheet object, both <paramref name="length2"/> and
     /// <paramref name="angle"/> are given, or <paramref name="reference"/> is given without either.
     /// </exception>
-    public static Shape Chamfer(IEnumerable<Vertex> vertices, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
-        ChamferCore(vertices, length, length2, angle, reference);
+    public static Result<Shape> Chamfer(IEnumerable<Vertex> vertices, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
+        Failures.Try(() => ChamferCore(vertices, length, length2, angle, reference));
 
     /// <inheritdoc cref="Chamfer(IEnumerable{Vertex}, double, double?, double?, Edge?)"/>
-    public static Shape Chamfer(Vertex vertex, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
+    public static Result<Shape> Chamfer(Vertex vertex, double length, double? length2 = null, double? angle = null, Edge? reference = null) =>
         Chamfer([vertex], length, length2, angle, reference);
 
     private static Shape ChamferCore(IEnumerable<Shape> objects, double length, double? length2, double? angle, Shape? reference)
@@ -173,20 +173,20 @@ public static partial class Operations
     /// that suits it.
     /// </remarks>
     /// <exception cref="ArgumentException">No edges are given, or they weren't taken from a 3D object.</exception>
-    public static Part Fillet(IEnumerable<Edge> edges, double radius) => (Part)FilletCore(edges, radius);
+    public static Result<Part> Fillet(IEnumerable<Edge> edges, double radius) => Failures.Try(() => (Part)FilletCore(edges, radius));
 
     /// <inheritdoc cref="Fillet(IEnumerable{Edge}, double)"/>
-    public static Part Fillet(Edge edge, double radius) => Fillet([edge], radius);
+    public static Result<Part> Fillet(Edge edge, double radius) => Fillet([edge], radius);
 
     /// <summary>
     /// The 2D object (a Sketch), sheet (a Shell) or 1D object (a Wire) the vertices were taken from, with the corners at
     /// the vertices filleted. The vertices at the ends of an open wire are skipped.
     /// </summary>
     /// <exception cref="ArgumentException">No vertices are given, or they weren't taken from a 1D, 2D or sheet object.</exception>
-    public static Shape Fillet(IEnumerable<Vertex> vertices, double radius) => FilletCore(vertices, radius);
+    public static Result<Shape> Fillet(IEnumerable<Vertex> vertices, double radius) => Failures.Try(() => FilletCore(vertices, radius));
 
     /// <inheritdoc cref="Fillet(IEnumerable{Vertex}, double)"/>
-    public static Shape Fillet(Vertex vertex, double radius) => Fillet([vertex], radius);
+    public static Result<Shape> Fillet(Vertex vertex, double radius) => Fillet([vertex], radius);
 
     private static Shape FilletCore(IEnumerable<Shape> objects, double radius)
     {
@@ -332,7 +332,10 @@ public static partial class Operations
     /// <returns>A Part, Sketch or Curve when the objects are all 3D, 2D or 1D; otherwise a Compound.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="objects"/> is null.</exception>
     /// <exception cref="ArgumentException">One of the objects can't be offset.</exception>
-    public static Compound Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null)
+    public static Result<Compound> Offset(IEnumerable<Shape> objects, double amount, OffsetOptions? options = null) =>
+        Failures.Try(() => OffsetOrThrow(objects, amount, options));
+
+    internal static Compound OffsetOrThrow(IEnumerable<Shape> objects, double amount, OffsetOptions? options)
     {
         options ??= OffsetOptions.Default;
         var (openings, kind, side, closed, minEdgeLength) = ((IEnumerable<Face>)options.Openings, options.Kind, options.Side, options.Closed, options.MinEdgeLength);
@@ -385,7 +388,7 @@ public static partial class Operations
                     var offsetWire = AsWire(innerWire.Offset2D(-amount, kind));
                     innerWires.Add(minEdgeLength is { } innerMin ? offsetWire.FixDegenerateEdges(innerMin) : offsetWire);
                 }
-                catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or KerfException)
+                catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException)
                 {
                     // The hole closed up
                 }
@@ -432,16 +435,16 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Offset(IEnumerable{Shape}, double, OffsetOptions?)"/>
-    public static Compound Offset(Shape obj, double amount, OffsetOptions? options = null) => Offset([obj], amount, options);
+    public static Result<Compound> Offset(Shape obj, double amount, OffsetOptions? options = null) => Offset([obj], amount, options);
 
     /// <summary>The part offset: its solids, with <see cref="OffsetOptions.Openings"/> left open.</summary>
-    public static Part Offset(Part obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).As<Part>();
+    public static Result<Part> Offset(Part obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Part>());
 
     /// <summary>The sketch offset: its faces' outer wires out and their holes in.</summary>
-    public static Sketch Offset(Sketch obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).As<Sketch>();
+    public static Result<Sketch> Offset(Sketch obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Sketch>());
 
     /// <summary>The curve offset in its plane.</summary>
-    public static Curve Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).As<Curve>();
+    public static Result<Curve> Offset(Curve obj, double amount, OffsetOptions? options = null) => Offset([(Shape)obj], amount, options).Map(c => c.As<Curve>());
 
     /// <summary>A 2D offset as a wire: a single-edge offset comes back as its edge.</summary>
     private static Wire AsWire(Shape1D offset) => offset as Wire ?? new Wire((Edge)offset);
@@ -628,7 +631,10 @@ public static partial class Operations
     /// <returns>A Part for face sections, otherwise a Sketch.</returns>
     /// <exception cref="ArgumentNullException"><paramref name="path"/> is null.</exception>
     /// <exception cref="ArgumentException">The path is empty, or there are no sections.</exception>
-    public static Compound Sweep(IEnumerable<Shape> sections, Shape path, SweepOptions? options = null)
+    public static Result<Compound> Sweep(IEnumerable<Shape> sections, Shape path, SweepOptions? options = null) =>
+        Failures.Try(() => SweepOrThrow(sections, path, options));
+
+    internal static Compound SweepOrThrow(IEnumerable<Shape> sections, Shape path, SweepOptions? options)
     {
         // Phase 5: in builder mode the path defaults to the pending edges and the sections to the pending faces, and the
         // result is combined with mode
@@ -642,7 +648,10 @@ public static partial class Operations
     /// <summary>Sections swept along a path of edges, which must join into a wire.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
     /// <exception cref="ArgumentException">The edges don't join into a wire, or there are no sections.</exception>
-    public static Compound Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options = null)
+    public static Result<Compound> Sweep(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options = null) =>
+        Failures.Try(() => SweepOrThrow(sections, path, options));
+
+    internal static Compound SweepOrThrow(IEnumerable<Shape> sections, IEnumerable<Edge> path, SweepOptions? options)
     {
         Wire pathWire;
         try
@@ -657,24 +666,28 @@ public static partial class Operations
     }
 
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
-    public static Compound Sweep(Shape section, Shape path, SweepOptions? options = null) => Sweep([section], path, options);
+    public static Result<Compound> Sweep(Shape section, Shape path, SweepOptions? options = null) => Sweep([section], path, options);
 
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, IEnumerable{Edge}, SweepOptions?)"/>
-    public static Compound Sweep(Shape section, IEnumerable<Edge> path, SweepOptions? options = null) => Sweep([section], path, options);
+    public static Result<Compound> Sweep(Shape section, IEnumerable<Edge> path, SweepOptions? options = null) => Sweep([section], path, options);
 
     /// <summary>A face or sketch swept along a path into a Part.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
-    public static Part Sweep(Shape2D section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Part>();
+    public static Result<Part> Sweep(Shape2D section, Shape path, SweepOptions? options = null) =>
+        Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
 
     /// <inheritdoc cref="Sweep(Shape2D, Shape, SweepOptions?)"/>
-    public static Part Sweep(Sketch section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Part>();
+    public static Result<Part> Sweep(Sketch section, Shape path, SweepOptions? options = null) =>
+        Sweep([(Shape)section], path, options).Map(c => c.As<Part>());
 
     /// <summary>An edge, wire or curve swept along a path into a Sketch of faces.</summary>
     /// <inheritdoc cref="Sweep(IEnumerable{Shape}, Shape, SweepOptions?)"/>
-    public static Sketch Sweep(Shape1D section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Sketch>();
+    public static Result<Sketch> Sweep(Shape1D section, Shape path, SweepOptions? options = null) =>
+        Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 
     /// <inheritdoc cref="Sweep(Shape1D, Shape, SweepOptions?)"/>
-    public static Sketch Sweep(Curve section, Shape path, SweepOptions? options = null) => Sweep([(Shape)section], path, options).As<Sketch>();
+    public static Result<Sketch> Sweep(Curve section, Shape path, SweepOptions? options = null) =>
+        Sweep([(Shape)section], path, options).Map(c => c.As<Sketch>());
 
     private static Compound SweepCore(IEnumerable<Shape> sections, Wire pathWire, SweepOptions options)
     {

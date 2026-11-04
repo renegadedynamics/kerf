@@ -79,7 +79,8 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         NothingToExport(toExport);
-        var mesh = Mesher.Mesh(toExport.TopoShape, MeshOptions(tolerance, angularTolerance), cancellationToken: cancellationToken).GetValueOrThrow();
+        var mesh = Failures.Get(Mesher.Mesh(toExport.TopoShape, MeshOptions(tolerance, angularTolerance), cancellationToken: cancellationToken),
+                                () => "mesh");
         return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = asciiFormat }, cancellationToken).IsSuccess;
     }
 

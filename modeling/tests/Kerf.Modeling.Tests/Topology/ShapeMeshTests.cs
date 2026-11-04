@@ -29,7 +29,7 @@ public class ShapeMeshTests
     [Fact]
     public void TheOrderIsTheShapes()
     {
-        var part = Ops.Fillet(new Box(10, 10, 10).Edges().GroupBy(Axis.Z).Last(), 2) - new Cylinder(2, 20);
+        var part = Ops.Fillet(new Box(10, 10, 10).Edges().GroupBy(Axis.Z).Last(), 2).Value - new Cylinder(2, 20);
         var mesh = part.Triangulate(0.01);
         var faces = part.Faces();
         Assert.Equal(faces.Count, mesh.Faces.Count);
@@ -138,7 +138,7 @@ public class ShapeMeshTests
     [Fact]
     public void TheSameShapeAndTolerancesGiveTheSameMesh()
     {
-        var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1);
+        var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
         var a = part.Triangulate(0.01);
         var b = part.Triangulate(0.01);
         Assert.Equal(a.Faces.Count, b.Faces.Count);
@@ -152,7 +152,7 @@ public class ShapeMeshTests
     [Fact]
     public void ShapesSharingGeometryTriangulateConcurrently()
     {
-        var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1);
+        var part = Ops.Fillet(new Box(10, 10, 10).Edges(), 1).Value;
         var copies = Enumerable.Range(0, 16).Select(i => part.Moved(new Location(new Vector(i * 20.0, 0.0, 0.0)))).ToList();
         var expected = part.Triangulate(0.01).TriangleCount;
         var counts = new int[copies.Count];

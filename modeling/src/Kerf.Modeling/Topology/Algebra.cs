@@ -4,6 +4,10 @@ namespace Kerf.Modeling;
 // and gives a value of its own class, so a fuse of parts is a Part and a cut of sketches a Sketch. The operators read
 // as build123d's do: + fuses, - cuts, & keeps what is common. Operands are flattened into their top-level shapes, and
 // an empty one adds or removes nothing.
+//
+// Add, Subtract and Common return a Result: a Boolean that fails is a failure a caller should expect. The operators are
+// the shorthand for code whose inputs are known to combine (unit 10M3): an operator can't return a Result and still
+// chain, so it returns the value, and a failure throws InvalidOperationException with the Boolean's message.
 
 public partial class Part
 {
@@ -12,32 +16,44 @@ public partial class Part
     /// Adding nothing returns this part.
     /// </summary>
     /// <exception cref="ArgumentException">An operand isn't three-dimensional.</exception>
-    public Part Add(params IEnumerable<Shape> others) => AddCore(Checked(others)).As<Part>();
+    public Result<Part> Add(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => AddCore(operands).As<Part>());
+    }
 
     /// <summary>This part with <paramref name="others"/>, solids or parts, cut away.</summary>
     /// <exception cref="ArgumentException">An operand isn't three-dimensional.</exception>
-    public Part Subtract(params IEnumerable<Shape> others) => SubtractCore(Checked(others)).As<Part>();
+    public Result<Part> Subtract(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => SubtractCore(operands).As<Part>());
+    }
 
     /// <summary>What this part has in common with <paramref name="others"/>: empty if nothing.</summary>
-    public Part Common(params IEnumerable<Shape> others) => CommonCore(Checked(others)).As<Part>();
+    public Result<Part> Common(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => CommonCore(operands).As<Part>());
+    }
 
     /// <summary>The part fused with a shape (see <see cref="Add"/>).</summary>
-    public static Part operator +(Part a, Shape b) => a.Add(b);
+    public static Part operator +(Part a, Shape b) => a.AddCore(Checked([b])).As<Part>();
 
     /// <summary>The part fused with shapes (see <see cref="Add"/>).</summary>
-    public static Part operator +(Part a, IEnumerable<Shape> b) => a.Add(b);
+    public static Part operator +(Part a, IEnumerable<Shape> b) => a.AddCore(Checked(b)).As<Part>();
 
     /// <summary>The part with a shape cut away (see <see cref="Subtract"/>).</summary>
-    public static Part operator -(Part a, Shape b) => a.Subtract(b);
+    public static Part operator -(Part a, Shape b) => a.SubtractCore(Checked([b])).As<Part>();
 
     /// <summary>The part with shapes cut away (see <see cref="Subtract"/>).</summary>
-    public static Part operator -(Part a, IEnumerable<Shape> b) => a.Subtract(b);
+    public static Part operator -(Part a, IEnumerable<Shape> b) => a.SubtractCore(Checked(b)).As<Part>();
 
     /// <summary>What the part has in common with a shape (see <see cref="Common"/>).</summary>
-    public static Part operator &(Part a, Shape b) => a.Common(b);
+    public static Part operator &(Part a, Shape b) => a.CommonCore(Checked([b])).As<Part>();
 
     /// <summary>What the part has in common with shapes (see <see cref="Common"/>).</summary>
-    public static Part operator &(Part a, IEnumerable<Shape> b) => a.Common(b);
+    public static Part operator &(Part a, IEnumerable<Shape> b) => a.CommonCore(Checked(b)).As<Part>();
 }
 
 public partial class Sketch
@@ -47,32 +63,44 @@ public partial class Sketch
     /// Adding nothing returns this sketch.
     /// </summary>
     /// <exception cref="ArgumentException">An operand isn't two-dimensional.</exception>
-    public Sketch Add(params IEnumerable<Shape> others) => AddCore(Checked(others)).As<Sketch>();
+    public Result<Sketch> Add(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => AddCore(operands).As<Sketch>());
+    }
 
     /// <summary>This sketch with <paramref name="others"/>, faces, sketches or solids, cut away.</summary>
     /// <exception cref="ArgumentException">An operand has fewer than two dimensions.</exception>
-    public Sketch Subtract(params IEnumerable<Shape> others) => SubtractCore(Checked(others)).As<Sketch>();
+    public Result<Sketch> Subtract(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => SubtractCore(operands).As<Sketch>());
+    }
 
     /// <summary>What this sketch has in common with <paramref name="others"/>: empty if nothing.</summary>
-    public Sketch Common(params IEnumerable<Shape> others) => CommonCore(Checked(others)).As<Sketch>();
+    public Result<Sketch> Common(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => CommonCore(operands).As<Sketch>());
+    }
 
     /// <summary>The sketch fused with a shape (see <see cref="Add"/>).</summary>
-    public static Sketch operator +(Sketch a, Shape b) => a.Add(b);
+    public static Sketch operator +(Sketch a, Shape b) => a.AddCore(Checked([b])).As<Sketch>();
 
     /// <summary>The sketch fused with shapes (see <see cref="Add"/>).</summary>
-    public static Sketch operator +(Sketch a, IEnumerable<Shape> b) => a.Add(b);
+    public static Sketch operator +(Sketch a, IEnumerable<Shape> b) => a.AddCore(Checked(b)).As<Sketch>();
 
     /// <summary>The sketch with a shape cut away (see <see cref="Subtract"/>).</summary>
-    public static Sketch operator -(Sketch a, Shape b) => a.Subtract(b);
+    public static Sketch operator -(Sketch a, Shape b) => a.SubtractCore(Checked([b])).As<Sketch>();
 
     /// <summary>The sketch with shapes cut away (see <see cref="Subtract"/>).</summary>
-    public static Sketch operator -(Sketch a, IEnumerable<Shape> b) => a.Subtract(b);
+    public static Sketch operator -(Sketch a, IEnumerable<Shape> b) => a.SubtractCore(Checked(b)).As<Sketch>();
 
     /// <summary>What the sketch has in common with a shape (see <see cref="Common"/>).</summary>
-    public static Sketch operator &(Sketch a, Shape b) => a.Common(b);
+    public static Sketch operator &(Sketch a, Shape b) => a.CommonCore(Checked([b])).As<Sketch>();
 
     /// <summary>What the sketch has in common with shapes (see <see cref="Common"/>).</summary>
-    public static Sketch operator &(Sketch a, IEnumerable<Shape> b) => a.Common(b);
+    public static Sketch operator &(Sketch a, IEnumerable<Shape> b) => a.CommonCore(Checked(b)).As<Sketch>();
 }
 
 public partial class Curve
@@ -82,28 +110,40 @@ public partial class Curve
     /// fused, in a curve. Adding nothing returns this curve.
     /// </summary>
     /// <exception cref="ArgumentException">An operand isn't one-dimensional.</exception>
-    public Curve Add(params IEnumerable<Shape> others) => AddCore(Checked(others)).As<Curve>();
+    public Result<Curve> Add(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => AddCore(operands).As<Curve>());
+    }
 
     /// <summary>The curve joined with a shape (see <see cref="Add"/>).</summary>
-    public static Curve operator +(Curve a, Shape b) => a.Add(b);
+    public static Curve operator +(Curve a, Shape b) => a.AddCore(Checked([b])).As<Curve>();
 
     /// <summary>The curve joined with shapes (see <see cref="Add"/>).</summary>
-    public static Curve operator +(Curve a, IEnumerable<Shape> b) => a.Add(b);
+    public static Curve operator +(Curve a, IEnumerable<Shape> b) => a.AddCore(Checked(b)).As<Curve>();
 
     /// <summary>This curve with <paramref name="others"/>, of any dimension, cut away.</summary>
-    public Curve Subtract(params IEnumerable<Shape> others) => SubtractCore(Checked(others)).As<Curve>();
+    public Result<Curve> Subtract(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => SubtractCore(operands).As<Curve>());
+    }
 
     /// <summary>What this curve has in common with <paramref name="others"/>: empty if nothing.</summary>
-    public Curve Common(params IEnumerable<Shape> others) => CommonCore(Checked(others)).As<Curve>();
+    public Result<Curve> Common(params IEnumerable<Shape> others)
+    {
+        var operands = Checked(others);
+        return Failures.Try(() => CommonCore(operands).As<Curve>());
+    }
 
     /// <summary>The curve with a shape cut away (see <see cref="Subtract"/>).</summary>
-    public static Curve operator -(Curve a, Shape b) => a.Subtract(b);
+    public static Curve operator -(Curve a, Shape b) => a.SubtractCore(Checked([b])).As<Curve>();
 
     /// <summary>The curve with shapes cut away (see <see cref="Subtract"/>).</summary>
-    public static Curve operator -(Curve a, IEnumerable<Shape> b) => a.Subtract(b);
+    public static Curve operator -(Curve a, IEnumerable<Shape> b) => a.SubtractCore(Checked(b)).As<Curve>();
 
     /// <summary>What the curve has in common with a shape (see <see cref="Common"/>).</summary>
-    public static Curve operator &(Curve a, Shape b) => a.Common(b);
+    public static Curve operator &(Curve a, Shape b) => a.CommonCore(Checked([b])).As<Curve>();
 }
 
 // The topological shapes (solids, faces, edges) keep build123d's operators, and their result is the kernel's: one solid

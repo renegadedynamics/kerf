@@ -34,8 +34,8 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Edge edge = part.Edges().GroupBy(Axis.Z)[0][0];
-        Shape fillet = Untouched(part, () => Ops.Fillet([edge], 0.5));
-        Shape chamfer = Untouched(part, () => Ops.Chamfer([edge], 0.5));
+        Shape fillet = Untouched(part, () => Ops.Fillet([edge], 0.5).Value);
+        Shape chamfer = Untouched(part, () => Ops.Chamfer([edge], 0.5).Value);
         int faces = part.Faces().Count;
         Assert.True(SharedFaces(fillet, part) >= faces - 4);
         Assert.True(SharedFaces(chamfer, part) >= faces - 4);
@@ -45,8 +45,8 @@ public class FeatureInputsUnchangedTests
     public void OffsettingAndShellingAPartLeaveItAlone()
     {
         Part part = Fused();
-        Untouched(part, () => Ops.Offset(part, 0.5));
-        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }));
+        Untouched(part, () => Ops.Offset(part, 0.5).Value);
+        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, new Ops.OffsetOptions { Openings = [part.Faces().OrderBy(Axis.Z).Last()] }).Value);
         // the bottom face, away from the opening, is the part's own
         Face bottom = part.Faces().OrderBy(Axis.Z)[0];
         Assert.Contains(shell.Faces(), f => f.KernelShape.IsSame(bottom.KernelShape));
@@ -57,14 +57,14 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Face top = part.Faces().OrderBy(Axis.Z)[0];
-        Untouched(part, () => Ops.Thicken(top, 1));
-        Untouched(part, () => Ops.Thicken(top, -1));
+        Untouched(part, () => Ops.Thicken(top, 1).Value);
+        Untouched(part, () => Ops.Thicken(top, -1).Value);
     }
 
     [Fact]
     public void DraftingTheSidesOfAPartLeavesItAlone()
     {
         Box box = new(10, 6, 4);
-        Untouched(box, () => Ops.Draft(box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-2), 5));
+        Untouched(box, () => Ops.Draft(box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-2), 5).Value);
     }
 }

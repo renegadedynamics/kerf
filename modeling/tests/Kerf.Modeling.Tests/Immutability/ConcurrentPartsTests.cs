@@ -18,15 +18,15 @@ public class ConcurrentPartsTests
     private static readonly (string Name, Func<Shape> Build)[] Parts =
     [
         ("plate with hole", () => new Box(Length, Width, Thickness) - new Cylinder(22.0 / 2, Thickness)),
-        ("prismatic solid", () => Extrude(new Circle(Width) - new Rectangle(Length / 2, Width / 2), 2 * Thickness)),
-        ("working point", () => Extrude(new Circle(90) - new Pos(45, 0.0) * new Rectangle(15, 15) - new Pos(0.0, 45) * new Circle(7.5), 15)),
+        ("prismatic solid", () => Extrude(new Circle(Width) - new Rectangle(Length / 2, Width / 2), 2 * Thickness).Value),
+        ("working point", () => Extrude(new Circle(90) - new Pos(45, 0.0) * new Rectangle(15, 15) - new Pos(0.0, 45) * new Circle(7.5), 15).Value),
         ("chamfer, fillet", () =>
         {
             Shape a1 = new Box(Length, Width, Thickness);
-            Shape a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4);
-            return Fillet(a4.Edges().ParallelTo(Axis.Z), radius: 5);
+            Shape a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4).Value;
+            return Fillet(a4.Edges().ParallelTo(Axis.Z), radius: 5).Value;
         }),
-        ("revolution", () => Revolve(new Pos(0, 50) * new Circle(6), Axis.X, revolutionArc: 180)),
+        ("revolution", () => Revolve(new Pos(0, 50) * new Circle(6), Axis.X, revolutionArc: 180).Value),
     ];
 
     private static string Text(Shape shape)

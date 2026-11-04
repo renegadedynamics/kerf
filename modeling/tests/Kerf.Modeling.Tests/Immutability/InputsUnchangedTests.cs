@@ -171,7 +171,7 @@ public class InputsUnchangedTests
         {
             c.Run();
         }
-        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException or Kerf.KerfException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException)
         {
             // Failing is allowed; changing the inputs isn't
         }
@@ -248,7 +248,7 @@ public class InputsUnchangedTests
                 var value => value?.ToString() ?? "null",
             };
         }
-        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException or Kerf.KerfException)
+        catch (Exception e) when (Failures.IsKernelFailure(e) || e is ArgumentException or InvalidOperationException)
         {
             return e.GetType().Name + ": " + e.Message;
         }

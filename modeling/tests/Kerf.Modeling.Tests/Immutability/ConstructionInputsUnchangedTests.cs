@@ -42,7 +42,7 @@ public class ConstructionInputsUnchangedTests
     {
         Box part = Part();
         Face top = Top(part);
-        Shape result = Untouched(part, () => Ops.Extrude(top, 3, new Ops.ExtrudeOptions { Clean = false }));
+        Shape result = Untouched(part, () => Ops.Extrude(top, 3, new Ops.ExtrudeOptions { Clean = false }).Value);
         Assert.True(Holds(result, top));
         Assert.All(top.Edges(), e => Assert.True(Holds(result, e)));
         Shape solid = Untouched(part, () => Solid.Extrude(top, new Vector(0, 0, 3)));
@@ -55,7 +55,7 @@ public class ConstructionInputsUnchangedTests
         // build123d revolves with copy (BRepPrimAPI_MakeRevol's last argument): the solid shares nothing with the face
         Box part = Part();
         Face side = Side(part);
-        Untouched(part, () => Ops.Revolve(side, new Axis(new Vector(20.0, 0.0, 0.0), new Vector(0.0, 0.0, 1.0)), 90, clean: false));
+        Untouched(part, () => Ops.Revolve(side, new Axis(new Vector(20.0, 0.0, 0.0), new Vector(0.0, 0.0, 1.0)), 90, clean: false).Value);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class ConstructionInputsUnchangedTests
         Box part = Part();
         Face top = Top(part);
         Edge path = Edge.MakeThreePointArc(new Vector(5, 3, 4), new Vector(5, 8, 9), new Vector(5, 13, 4));
-        Untouched(part, () => Ops.Sweep(top, path, new Ops.SweepOptions { Clean = false }));
+        Untouched(part, () => Ops.Sweep(top, path, new Ops.SweepOptions { Clean = false }).Value);
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class ConstructionInputsUnchangedTests
         Box other = new(4, 4, 4);
         Shape moved = other.Moved(new Location(new Vector(0.0, 0.0, 10.0)));
         byte[] otherBefore = Text(other);
-        Untouched(part, () => Ops.Loft([Top(part), Top(moved)], clean: false));
+        Untouched(part, () => Ops.Loft([Top(part), Top(moved)], clean: false).Value);
         Assert.True(otherBefore.AsSpan().SequenceEqual(Text(other)));
-        Untouched(part, () => Ops.Loft([Top(part), Top(moved)], ruled: true, clean: false));
+        Untouched(part, () => Ops.Loft([Top(part), Top(moved)], ruled: true, clean: false).Value);
     }
 }

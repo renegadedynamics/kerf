@@ -399,14 +399,14 @@ public class Shape1DTests
     public void EdgesTopoParent()
     {
         var phoneCasePlan = Face.MakeRect(80, 150) - Face.MakeRect(25, 25, new Plane(new Vector(-20, 55)));
-        var phoneCase = Ops.Extrude(phoneCasePlan, 2);
+        var phoneCase = Ops.Extrude(phoneCasePlan, 2).Value;
         var windowEdges = phoneCase.Faces().OrderBy(Axis.Z)[^1].InnerWires()[0].Edges();
         Assert.All(windowEdges, e => Assert.Equal(phoneCase, e.TopoParent));
-        var phoneCaseF = Ops.Fillet(windowEdges, 1);
+        var phoneCaseF = Ops.Fillet(windowEdges, 1).Value;
         Assert.True(phoneCaseF.Volume < phoneCase.Volume);
         var perimeter = phoneCaseF.Faces().OrderBy(Axis.Z)[^1].OuterWire().Edges();
         Assert.All(perimeter, e => Assert.Equal(phoneCaseF, e.TopoParent));
-        var phoneCaseFF = Ops.Fillet(perimeter, 1);
+        var phoneCaseFF = Ops.Fillet(perimeter, 1).Value;
         Assert.True(phoneCaseFF.Volume < phoneCaseF.Volume);
     }
 

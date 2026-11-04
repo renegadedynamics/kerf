@@ -295,7 +295,7 @@ public sealed class Selector : IEquatable<Selector>
             {
                 return get();
             }
-            catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or ArgumentException or KerfException or NotSupportedException
+            catch (Exception e) when (Failures.IsKernelFailure(e) || e is InvalidOperationException or ArgumentException or NotSupportedException
                                        or NotImplementedException)
             {
                 return null;

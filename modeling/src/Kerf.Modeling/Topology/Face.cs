@@ -501,7 +501,7 @@ public partial class Face : Shape2D
             throw new InvalidOperationException(error);
         var filled = Surfaces.Fill(boundaries, options);
         if (!filled.TryGetValue(out var face))
-            throw new InvalidOperationException(error, new KerfException(filled.Diagnostics));
+            throw new InvalidOperationException(error, Failures.Failed(filled.Diagnostics));
         return new Face(face.Shape);
     }
 
@@ -517,7 +517,7 @@ public partial class Face : Shape2D
         var made = surfaceFace.TopoFace.WithHoles(holes);
         if (!made.TryGetValue(out var face))
             throw new InvalidOperationException("The inner wires can't be added as holes to the non-planar face.",
-                                                new KerfException(made.Diagnostics));
+                                                Failures.Failed(made.Diagnostics));
         return new Face(face);
     }
 
@@ -821,7 +821,7 @@ public partial class Face : Shape2D
         var made = TopoFace.WithHoles(interiorWires.Select(w => w.TopoWire));
         if (!made.TryGetValue(out var holed))
             throw new InvalidOperationException("The inner wires can't be added as holes to the non-planar face.",
-                                                new KerfException(made.Diagnostics));
+                                                Failures.Failed(made.Diagnostics));
         return new Face(holed).Fix();
     }
 
