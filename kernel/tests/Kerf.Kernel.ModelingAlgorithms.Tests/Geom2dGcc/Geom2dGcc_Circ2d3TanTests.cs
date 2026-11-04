@@ -327,7 +327,7 @@ public class Geom2dGcc_Circ2d3TanTests
     }
 
     [Fact]
-    public void Iterative_StartOnSolution_IsKept_AndTangency3Throws()
+    public void Iterative_StartOnSolution_IsKept_WithItsThreeTangencies()
     {
         double anA = Math.Atan2(0.6, 0.8);
         global::Kerf.Engine.Construction.Constraints.Circ2d3Tan aSolver = new(createQualifiedCircle(0.0, 0.0, 1.0), createQualifiedCircle(4.0, 0.0, 1.0),
@@ -338,11 +338,14 @@ public class Geom2dGcc_Circ2d3TanTests
         Assert.Equal(2.0, aSol.Location.X, 1.0e-9);
         Assert.Equal(1.5, aSol.Location.Y, 1.0e-9);
         Assert.Equal(1.5, aSol.Radius, 1.0e-9);
-        aSolver.Tangency1(1, out _, out double aPar1, out _);
+        aSolver.Tangency1(1, out double aSol1, out double aPar1, out Point2D aP1);
         Assert.Equal(anA, aPar1, 1.0e-12);
-        // OCCT: Geom2dGcc_Circ2d3TanIter::IsTheSame3 is always true, so the third tangency is never given.
-        Assert.True(aSolver.IsTheSame3(1));
-        Assert.Throws<global::Kerf.Engine.Foundation.NotDoneException>(() => aSolver.Tangency3(1, out _, out _, out _));
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aSol1, aSol).DistanceTo(aP1) < 1.0e-9);
+        // the third tangency, on the line y = 3 (OCCT's IsTheSame3 was always true, so it was never given: decision 17107)
+        Assert.False(aSolver.IsTheSame3(1));
+        aSolver.Tangency3(1, out double aSol3, out _, out Point2D aP3);
+        Assert.True(aP3.DistanceTo(new Point2D(2.0, 3.0)) < 1.0e-9);
+        Assert.True(global::Kerf.Engine.Geometry.ElCLib.Value(aSol3, aSol).DistanceTo(aP3) < 1.0e-9);
     }
 
     [Fact]
