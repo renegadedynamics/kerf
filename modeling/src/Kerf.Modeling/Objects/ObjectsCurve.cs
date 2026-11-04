@@ -62,7 +62,7 @@ internal static class CurveObjects
     internal static Edge? ShortestTrimmed(object limit, params Edge[] arcs)
     {
         var reaching = new ShapeList<Edge>(arcs.Select(a => a.TrimToOther(limit)).Where(a => !a.IsEmpty));
-        return reaching.Count == 0 ? null : reaching.SortBy(e => e.Length)[0];
+        return reaching.Count == 0 ? null : reaching.OrderBy(e => e.Length).First();
     }
 
     /// <summary>
@@ -727,7 +727,7 @@ public class FilletPolyline : BaseLineObject
             var others = corner.SelectMany(e => e.Vertices()).Where(ve => ve != vertex).Distinct().ToList();
             var thirdEdge = Edge.MakeLine(others[0].ToVector(), others[1].ToVector());
             var filletFace = new Face(new Wire([.. corner, thirdEdge])).Fillet2D(currentRadius, [vertex]);
-            fillets.Add(filletFace.Edges().FilterBy(GeomType.Circle)[0]);
+            fillets.Add(filletFace.Edges().Where(GeomType.Circle)[0]);
         }
 
         // The lines joining the fillets

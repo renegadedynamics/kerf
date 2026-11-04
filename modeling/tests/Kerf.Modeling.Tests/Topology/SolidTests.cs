@@ -40,7 +40,7 @@ public class SolidTests
         Check.AlmostEqual(1, f.Volume, 5);
 
         var s = Compound.Extrude(
-            new Shell(Solid.MakeBox(1, 1, 1).Located(new Location((-2, 1, 0))).Faces().SortBy(new Axis((0, 0, 0), (1, 1, 1)))[^2..]),
+            new Shell(Solid.MakeBox(1, 1, 1).Located(new Location((-2, 1, 0))).Faces().OrderBy(new Axis((0, 0, 0), (1, 1, 1)))[^2..]),
             (0.1, 0.1, 0.1));
         Check.AlmostEqual(0.2, s.Volume, 5);
     }
@@ -90,7 +90,7 @@ public class SolidTests
         // A cross with rounded inner corners, as cut for a Phillips recess, cannot be drafted at this angle but can be
         // lofted
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var inner = new ShapeList<Vertex>(cross.Vertices()).SortByDistance((0, 0, 0))[..4];
+        var inner = new ShapeList<Vertex>(cross.Vertices()).OrderByDistanceTo((0, 0, 0))[..4];
         var recess = cross.Fillet2D(5.3 / 3, inner);
         var tapered = Solid.ExtrudeTaper(recess, (0, 0, -3.27), 20);
         Assert.True(tapered.IsValid);
@@ -105,7 +105,7 @@ public class SolidTests
         const double taper = 10;
         var taperSolid = Solid.ExtrudeTaper(rectHole, direction, taper);
         var offsetAmt = -direction.Length * Math.Tan(taper * Math.PI / 180);
-        var hole = taperSolid.Edges().FilterBy(GeomType.Circle).SortBy(Axis.Z)[^1];
+        var hole = taperSolid.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
         Check.AlmostEqual(0.25 - offsetAmt, hole.Radius, 5);
     }
 
@@ -117,8 +117,8 @@ public class SolidTests
         const double taper = 10;
         var taperSolidT = Solid.ExtrudeTaper(rectHole, direction, taper, true);
         var taperSolidF = Solid.ExtrudeTaper(rectHole, direction, taper, false);
-        var holeT = taperSolidT.Edges().FilterBy(GeomType.Circle).SortBy(Axis.Z)[^1];
-        var holeF = taperSolidF.Edges().FilterBy(GeomType.Circle).SortBy(Axis.Z)[^1];
+        var holeT = taperSolidT.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
+        var holeF = taperSolidF.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[^1];
         Assert.True(holeT.Radius > holeF.Radius);
     }
 
@@ -211,8 +211,8 @@ public class SolidTests
         static void CheckTwist(Solid twist)
         {
             Check.AlmostEqual(1, twist.Volume, 5);
-            var top = twist.Faces().SortBy(Axis.Z)[^1].Rotate(Axis.Z, 45);
-            var bottom = twist.Faces().SortBy(Axis.Z)[0];
+            var top = twist.Faces().OrderBy(Axis.Z)[^1].Rotate(Axis.Z, 45);
+            var bottom = twist.Faces().OrderBy(Axis.Z)[0];
             var intersect = top.Translate((0, 0, -1)).Intersect(bottom);
             var area = intersect.SelectMany(s => s.Faces()).Sum(f => f.Area);
             Check.AlmostEqual(1, area, 5);
@@ -355,10 +355,10 @@ public class OffsetOrientationTests
     public void OffsetCupCanBeFilleted()
     {
         var cone = Solid.MakeCone(22.5, 33.75, 40);
-        var cup = (Shape3D)cone.Offset3D(cone.Faces().SortBy(Axis.Z)[^1..], 3, kind: Kind.Intersection);
+        var cup = (Shape3D)cone.Offset3D(cone.Faces().OrderBy(Axis.Z)[^1..], 3, kind: Kind.Intersection);
         Assert.Equal(Orientation.Forward, cup.Wrapped.Orientation);
         Assert.True(cup.Volume > 0);
-        var rim = cup.Edges().FilterBy(GeomType.Circle).SortBy(Axis.Z)[0];
+        var rim = cup.Edges().Where(GeomType.Circle).OrderBy(Axis.Z)[0];
         var rounded = cup.Fillet(1, [rim]);
         Assert.True(rounded.IsValid);
         Assert.InRange(rounded.Volume, cup.Volume - cup.Volume / 100, cup.Volume + cup.Volume / 100);
@@ -373,12 +373,12 @@ public class OffsetOrientationTests
     public void OffsetBoxBothWaysAndKinds(double amount, Kind kind)
     {
         var box = Solid.MakeBox(30, 20, 10);
-        var top = box.Faces().SortBy(Axis.Z)[^1..];
+        var top = box.Faces().OrderBy(Axis.Z)[^1..];
         var shelled = (Shape3D)box.Offset3D(top, amount, kind: kind);
         Assert.Equal(Orientation.Forward, shelled.Wrapped.Orientation);
         Assert.True(shelled.Volume > 0);
         // The sharp edges around the opening fillet on every variant
-        var rim = shelled.Edges().FilterBy(GeomType.Line).GroupBy(Axis.Z)[^1];
+        var rim = shelled.Edges().Where(GeomType.Line).GroupBy(Axis.Z)[^1];
         var rounded = shelled.Fillet(0.5, rim);
         Assert.True(rounded.IsValid);
         Assert.True(rounded.Volume < shelled.Volume);
@@ -396,8 +396,8 @@ public class SolidDraftTests
     {
         // A simple box to test draft
         _box = Solid.MakeBox(10, 10, 10, new Plane((-5, -5, -5)));
-        _sides = _box.Faces().FilterBy(Axis.Z, reverse: true);
-        _bottomFace = _box.Faces().SortBy(Axis.Z)[0];
+        _sides = _box.Faces().NotParallelTo(Axis.Z);
+        _bottomFace = _box.Faces().OrderBy(Axis.Z)[0];
         _neutralPlane = new Plane(_bottomFace);
     }
 

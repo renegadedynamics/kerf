@@ -449,9 +449,9 @@ public class Triangle : BaseSketchObject
         (SideA, SideB, SideC) = (t.a, t.b, t.c);
         (AngleA, AngleB, AngleC) = (t.A * Constants.RadToDeg, t.B * Constants.RadToDeg, t.C * Constants.RadToDeg);
         var edges = Edges();
-        EdgeA = edges.FilterBy(e => Math.Abs(e.Length - t.a) < Constants.Tolerance)[0];
-        EdgeB = edges.FilterBy(e => Math.Abs(e.Length - t.b) < Constants.Tolerance && e != EdgeA)[0];
-        EdgeC = edges.FilterBy(e => e != EdgeA && e != EdgeB)[0];
+        EdgeA = edges.First(e => Math.Abs(e.Length - t.a) < Constants.Tolerance);
+        EdgeB = edges.First(e => Math.Abs(e.Length - t.b) < Constants.Tolerance && e != EdgeA);
+        EdgeC = edges.First(e => e != EdgeA && e != EdgeB);
         VertexA = (Vertex)Vertex.CommonVertex(EdgeB, EdgeC).WithTopoPath([this]);
         VertexB = (Vertex)Vertex.CommonVertex(EdgeA, EdgeC).WithTopoPath([this]);
         VertexC = (Vertex)Vertex.CommonVertex(EdgeA, EdgeB).WithTopoPath([this]);

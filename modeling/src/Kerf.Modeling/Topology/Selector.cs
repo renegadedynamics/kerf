@@ -3,7 +3,7 @@ namespace Kerf.Modeling;
 
 /// <summary>
 /// A selection written as plain values: the faces, edges or vertices of a shape, narrowed by a few filters and
-/// groups, such as <c>Faces().FilterBy(GeomType.Plane).GroupBy(Axis.Z).Last</c>. It can be kept (in a cell, say) and
+/// groups, such as <c>Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last()</c>. It can be kept (in a cell, say) and
 /// applied again to a changed model, where a picked face itself would be lost.
 /// </summary>
 /// <remarks>
@@ -42,13 +42,9 @@ public sealed class Selector : IEquatable<Selector>
         return selected;
     }
 
-    /// <summary>The selector as C#: <c>Faces().GroupBy(Axis.Z).Last</c>.</summary>
+    /// <summary>The selector as C#: <c>Faces().GroupBy(Axis.Z).Last()</c>.</summary>
     public override string ToString() =>
         (Of switch { ShapeType.Face => "Faces()", ShapeType.Edge => "Edges()", _ => "Vertices()" }) + string.Concat(Steps.Select(s => "." + s));
-
-    /// <summary>The selector as build123d's Python: <c>faces().group_by(Axis.Z)[-1]</c>.</summary>
-    public string ToPython() =>
-        (Of switch { ShapeType.Face => "faces()", ShapeType.Edge => "edges()", _ => "vertices()" }) + string.Concat(Steps.Select(s => s.ToPython()));
 
     /// <inheritdoc/>
     public bool Equals(Selector? other) => other is not null && Of == other.Of && Steps.SequenceEqual(other.Steps);
@@ -68,37 +64,31 @@ public sealed class Selector : IEquatable<Selector>
 
         internal abstract ShapeList<Shape> Apply(ShapeList<Shape> shapes);
 
-        internal abstract string ToPython();
-
         private protected static string Name(Axis axis) =>
             axis.Equals(Axis.X) ? "Axis.X" : axis.Equals(Axis.Y) ? "Axis.Y" : axis.Equals(Axis.Z) ? "Axis.Z" : axis.ToString();
     }
 
-    /// <summary>The shapes of a geometry type: <c>FilterBy(GeomType.Plane)</c>.</summary>
-    public sealed record FilterByGeomType(GeomType GeomType) : Step
+    /// <summary>The shapes of a geometry type: <c>Where(GeomType.Plane)</c>.</summary>
+    public sealed record OfGeomType(GeomType GeomType) : Step
     {
-        internal override ShapeList<Shape> Apply(ShapeList<Shape> shapes) => shapes.FilterBy(GeomType);
+        internal override ShapeList<Shape> Apply(ShapeList<Shape> shapes) => shapes.Where(GeomType);
 
         /// <inheritdoc/>
-        public override string ToString() => $"FilterBy(GeomType.{GeomType})";
-
-        internal override string ToPython() => $".filter_by(GeomType.{PyName(GeomType.ToString())})";
+        public override string ToString() => $"Where(GeomType.{GeomType})";
     }
 
-    /// <summary>The planar faces or linear edges parallel to an axis: <c>FilterBy(Axis.Z)</c>.</summary>
-    public sealed record FilterByAxis(Axis Axis) : Step
+    /// <summary>The planar faces or linear edges parallel to an axis: <c>ParallelTo(Axis.Z)</c>.</summary>
+    public sealed record ParallelTo(Axis Axis) : Step
     {
-        internal override ShapeList<Shape> Apply(ShapeList<Shape> shapes) => shapes.FilterBy(Axis);
+        internal override ShapeList<Shape> Apply(ShapeList<Shape> shapes) => shapes.ParallelTo(Axis);
 
         /// <inheritdoc/>
-        public override string ToString() => $"FilterBy({Name(Axis)})";
-
-        internal override string ToPython() => $".filter_by({Name(Axis)})";
+        public override string ToString() => $"ParallelTo({Name(Axis)})";
     }
 
     /// <summary>
     /// A group along an axis, by its index from the start (0 is the first) or, if negative, from the end (-1 is the
-    /// last): <c>GroupBy(Axis.Z).Last</c>, <c>GroupBy(Axis.X)[2]</c>. An index past the groups selects nothing.
+    /// last): <c>GroupBy(Axis.Z).Last()</c>, <c>GroupBy(Axis.X)[2]</c>. An index past the groups selects nothing.
     /// </summary>
     public sealed record GroupByAxis(Axis Axis, int Index) : Step
     {
@@ -107,24 +97,21 @@ public sealed class Selector : IEquatable<Selector>
         /// <inheritdoc/>
         public override string ToString() => $"GroupBy({Name(Axis)}){Indexed(Index)}";
 
-        internal override string ToPython() => $".group_by({Name(Axis)})[{Index}]";
     }
 
     /// <summary>
-    /// A group by a measure, indexed as <see cref="GroupByAxis"/> is: <c>GroupBy(SortBy.Area).Last</c> is the group of
-    /// the largest.
+    /// A group by a measure, indexed as <see cref="GroupByAxis"/> is: <c>GroupBy(ShapeKey.Area).Last()</c> is the
+    /// group of the largest.
     /// </summary>
-    public sealed record GroupByMeasure(SortBy Measure, int Index) : Step
+    public sealed record GroupByKey(ShapeKey Key, int Index) : Step
     {
-        internal override ShapeList<Shape> Apply(ShapeList<Shape> shapes) => Pick(shapes.GroupBy(Measure), Index);
+        internal override ShapeList<Shape> Apply(ShapeList<Shape> shapes) => Pick(shapes.GroupBy(Key), Index);
 
         /// <inheritdoc/>
-        public override string ToString() => $"GroupBy(SortBy.{Measure}){Indexed(Index)}";
-
-        internal override string ToPython() => $".group_by(SortBy.{PyName(Measure.ToString())})[{Index}]";
+        public override string ToString() => $"GroupBy(ShapeKey.{Key}){Indexed(Index)}";
     }
 
-    private static ShapeList<Shape> Pick<TKey>(GroupBy<Shape, TKey> groups, int index)
+    private static ShapeList<Shape> Pick<TKey>(ShapeGroups<Shape, TKey> groups, int index)
     {
         var at = index < 0 ? groups.Count + index : index;
         return at >= 0 && at < groups.Count ? groups[at] : [];
@@ -132,14 +119,11 @@ public sealed class Selector : IEquatable<Selector>
 
     private static string Indexed(int index) => index switch
     {
-        0 => ".First",
-        -1 => ".Last",
+        0 => ".First()",
+        -1 => ".Last()",
         < 0 => $"[^{-index}]",
         _ => $"[{index}]",
     };
-
-    private static string PyName(string name) =>
-        string.Concat(name.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + c : c.ToString())).ToUpperInvariant();
 
     // ---- Finding selectors ----
 
@@ -188,7 +172,7 @@ public sealed class Selector : IEquatable<Selector>
     private sealed class Search
     {
         private static readonly Axis[] Axes = [Axis.Z, Axis.X, Axis.Y];
-        private static readonly SortBy[] MeasureOrder = [SortBy.Area, SortBy.Length, SortBy.Radius, SortBy.Volume, SortBy.Distance];
+        private static readonly ShapeKey[] MeasureOrder = [ShapeKey.Area, ShapeKey.Length, ShapeKey.Radius, ShapeKey.Volume, ShapeKey.Distance];
 
         private readonly int _n;
         private readonly int _target;
@@ -209,14 +193,14 @@ public sealed class Selector : IEquatable<Selector>
             // Filters by type and direction
             var types = all.Select(o => Try(() => o.GeomType)).ToArray();
             if (types[target] is { } type)
-                _moves.Add(set => Filter(set, i => types[i] == type, new FilterByGeomType(type), 1));
+                _moves.Add(set => Filter(set, i => types[i] == type, new OfGeomType(type), 1));
             foreach (var axis in Axes)
             {
-                var parallel = all.FilterBy(axis).ToHashSet(ReferenceEqualityComparer.Instance);
+                var parallel = all.ParallelTo(axis).ToHashSet(ReferenceEqualityComparer.Instance);
                 if (parallel.Contains(all[target]))
                 {
                     var flags = all.Select(o => parallel.Contains(o)).ToArray();
-                    _moves.Add(set => Filter(set, i => flags[i], new FilterByAxis(axis), 1));
+                    _moves.Add(set => Filter(set, i => flags[i], new ParallelTo(axis), 1));
                 }
             }
             // The smallest or largest of a measure, where every candidate has it
@@ -225,8 +209,8 @@ public sealed class Selector : IEquatable<Selector>
                 var key = all.Select(o => Try(() => Math.Round(Measures.Of(o, measure), 6))).ToArray();
                 if (key[target] is null)
                     continue;
-                int cost = measure == SortBy.Distance ? 5 : 2;
-                _moves.Add(set => Group(set, key, index => new GroupByMeasure(measure, index), extremeCost: cost, innerCost: 0, inner: false));
+                int cost = measure == ShapeKey.Distance ? 5 : 2;
+                _moves.Add(set => Group(set, key, index => new GroupByKey(measure, index), extremeCost: cost, innerCost: 0, inner: false));
             }
         }
 

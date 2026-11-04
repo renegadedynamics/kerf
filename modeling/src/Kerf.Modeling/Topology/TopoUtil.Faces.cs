@@ -226,7 +226,7 @@ public static partial class TopologyUtils
 {
     /// <summary>
     /// A key function giving each shape's topological distance from <paramref name="other"/>, for
-    /// <see cref="ShapeList{T}.SortBy{TKey}(Func{T, TKey}, bool)"/> and <c>GroupBy</c>. Distances are measured over the
+    /// <c>OrderBy</c> and <c>GroupBy</c>. Distances are measured over the
     /// whole topology of the reference shapes' shared <see cref="Shape.TopoParent"/>: the references are 0, shapes
     /// connected to them 1, and so on; unreachable shapes are infinitely far.
     /// </summary>

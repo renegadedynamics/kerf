@@ -82,7 +82,7 @@ public abstract partial class Shape1D : Shape
         {
             if (this is Wire)
                 // A wire: its comp curve reports OtherCurve, so ask its first edge
-                return Edges().First.Radius;
+                return Edges()[0].Radius;
             if (!((Edge)this).GeomAdaptor().TryGetCircle(out var circle))
                 throw new InvalidOperationException("Shape could not be reduced to a circle");
             return circle.Radius;

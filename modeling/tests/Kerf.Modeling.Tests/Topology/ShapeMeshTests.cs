@@ -29,7 +29,7 @@ public class ShapeMeshTests
     [Fact]
     public void TheOrderIsTheShapes()
     {
-        var part = Ops.Fillet(new Box(10, 10, 10).Edges().GroupBy(Axis.Z).Last, 2) - new Cylinder(2, 20);
+        var part = Ops.Fillet(new Box(10, 10, 10).Edges().GroupBy(Axis.Z).Last(), 2) - new Cylinder(2, 20);
         var mesh = part.Triangulate(0.01);
         var faces = part.Faces();
         Assert.Equal(faces.Count, mesh.Faces.Count);

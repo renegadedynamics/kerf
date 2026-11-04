@@ -42,10 +42,10 @@ public class TopologyReferenceTests
             ["disjoint_fuse"] = () => Box(1, 1, 1) + Box(1, 1, 1, (3, 0, 0)),
             ["pocket"] = () => Box(20, 20, 10) - Box(10, 10, 10, (5, 5, 5)),
             // Features
-            ["fillet_top"] = () => block.Fillet(1.5, block.Edges().GroupBy(Axis.Z).Last),
-            ["chamfer_vertical"] = () => block.Chamfer(1, null, block.Edges().FilterBy(Axis.Z)),
-            ["chamfer_asymmetric"] = () => block.Chamfer(2, 1, block.Edges().GroupBy(Axis.Z).Last),
-            ["hollow"] = () => block.Hollow([block.Faces().SortBy(Axis.Z).Last], -1),
+            ["fillet_top"] = () => block.Fillet(1.5, block.Edges().GroupBy(Axis.Z).Last()),
+            ["chamfer_vertical"] = () => block.Chamfer(1, null, block.Edges().ParallelTo(Axis.Z)),
+            ["chamfer_asymmetric"] = () => block.Chamfer(2, 1, block.Edges().GroupBy(Axis.Z).Last()),
+            ["hollow"] = () => block.Hollow([block.Faces().OrderBy(Axis.Z).Last()], -1),
             ["offset_3d"] = () => block.Offset3D(null, 1),
             // Faces and extrusions
             ["rect_face"] = () => rect,

@@ -62,8 +62,8 @@ public class OperationsGenericTests
     {
         var s = new Circle(1);
         var p = Extrude(s, amount: 1);
-        p = Chamfer(p.Edges().FilterBy(GeomType.Circle), 0.3);
-        Assert.Equal(4, p.Edges().FilterBy(GeomType.Circle).Count);
+        p = Chamfer(p.Edges().Where(GeomType.Circle), 0.3);
+        Assert.Equal(4, p.Edges().Where(GeomType.Circle).Count);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class OperationsGenericTests
         Assert.IsType<Sketch>(box);
         Check.AlmostEqual(400, box.Area, 5);
         // The ears of mickey: the top corners of the box
-        var ears = (box.Vertices() > Axis.Y)[..^2];
+        var ears = box.Vertices().OrderBy(Axis.Y)[..^2];
         Shape mickey = new Circle(10);
         foreach (var ear in ears)
             mickey = mickey + new Location(ear.ToVector()) * new Circle(7);
@@ -113,7 +113,7 @@ public class OperationsGenericTests
     public void PartChamferAsymLength()
     {
         var box = new Box(10, 10, 10);
-        var test = Chamfer(box.Edges().FilterBy(Axis.Z), length: 1, length2: Math.Sqrt(3));
+        var test = Chamfer(box.Edges().ParallelTo(Axis.Z), length: 1, length2: Math.Sqrt(3));
         Check.AlmostEqual(1000 - 4 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
 
@@ -121,7 +121,7 @@ public class OperationsGenericTests
     public void PartChamferAsymAngle()
     {
         var box = new Box(10, 10, 10);
-        var test = Chamfer(box.Edges().FilterBy(Axis.Z), length: 1, angle: 60);
+        var test = Chamfer(box.Edges().ParallelTo(Axis.Z), length: 1, angle: 60);
         Check.AlmostEqual(1000 - 4 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
 
@@ -129,7 +129,7 @@ public class OperationsGenericTests
     public void PartChamferAsymLengthReference()
     {
         var box = new Box(10, 10, 10);
-        var face = box.Faces().SortBy(Axis.Z)[^1];
+        var face = box.Faces().OrderBy(Axis.Z)[^1];
         var test = Chamfer(face.Edges()[0], length: 1, length2: Math.Sqrt(3), reference: face);
         Check.AlmostEqual(1000 - 1 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
@@ -138,7 +138,7 @@ public class OperationsGenericTests
     public void PartChamferAsymAngleReference()
     {
         var box = new Box(10, 10, 10);
-        var face = box.Faces().SortBy(Axis.Z)[^1];
+        var face = box.Faces().OrderBy(Axis.Z)[^1];
         var test = Chamfer(face.Edges()[0], length: 1, angle: 60, reference: face);
         Check.AlmostEqual(1000 - 1 * 0.5 * 10 * Math.Sqrt(3), test.Volume, 5);
     }
@@ -158,7 +158,7 @@ public class OperationsGenericTests
         Check.AlmostEqual(100 - 4 * 0.5, test.Area, 5);
 
         var two = new Pos(-10, 0) * new Rectangle(10, 10) + new Pos(10, 0) * new Rectangle(10, 10);
-        test = Chamfer(two.Vertices().FilterByPosition(Axis.X, minimum: 0, maximum: 20), length: 1);
+        test = Chamfer(two.Vertices().Between(Axis.X, minimum: 0, maximum: 20), length: 1);
         Check.AlmostEqual(200 - 4 * 0.5, test.Area, 5);
     }
 
@@ -166,7 +166,7 @@ public class OperationsGenericTests
     public void SketchChamferWithHole()
     {
         var square = new Rectangle(20, 20) - new Rectangle(5, 5);
-        var test = Chamfer(square.Vertices().GroupBy(Axis.Y).Last, length: 2);
+        var test = Chamfer(square.Vertices().GroupBy(Axis.Y).Last(), length: 2);
         var face = test.SingleFace();
         Assert.True(face.IsValid);
         Assert.Single(face.InnerWires());
@@ -191,7 +191,7 @@ public class OperationsGenericTests
     public void SketchChamferAsymAngleReference()
     {
         var rect = new Rectangle(10, 10);
-        var edge = rect.Edges().SortBy(Axis.Y)[0];
+        var edge = rect.Edges().OrderBy(Axis.Y)[0];
         var vertex = edge.Vertices()[0];
         var test = Chamfer(vertex, length: 1, angle: 60, reference: edge);
         Check.AlmostEqual(100 - 0.5 * Math.Sqrt(3), test.Area, 5);
@@ -201,11 +201,11 @@ public class OperationsGenericTests
     public void SketchChamferAsymLengthReference()
     {
         var rect = new Rectangle(10, 10);
-        var edge = rect.Edges().SortBy(Axis.Y)[0];
+        var edge = rect.Edges().OrderBy(Axis.Y)[0];
         var vertex = edge.Vertices()[0];
         var test = Chamfer(vertex, length: 1, length2: Math.Sqrt(3), reference: edge);
         Check.AlmostEqual(100 - 0.5 * Math.Sqrt(3), test.Area, 5);
-        Check.AlmostEqual(9, test.Edges().SortBy(Axis.Y)[0].Length);
+        Check.AlmostEqual(9, test.Edges().OrderBy(Axis.Y)[0].Length);
     }
 
     private static Wire Corner() => Wire.MakePolygon([(0, 0), (10, 0), (10, 10)], close: false);
@@ -229,9 +229,9 @@ public class OperationsGenericTests
     public void WireChamferLength2Edge()
     {
         var line = Corner();
-        var edge = line.Edges().SortBy(Axis.Y)[0];
+        var edge = line.Edges().OrderBy(Axis.Y)[0];
         var test = Chamfer(line.Vertices(), length: 1, length2: 2, reference: edge);
-        Check.AlmostEqual(9, test.Edges().SortBy(Axis.Y)[0].Length);
+        Check.AlmostEqual(9, test.Edges().OrderBy(Axis.Y)[0].Length);
     }
 
     [Fact]
@@ -250,7 +250,7 @@ public class OperationsGenericTests
         Assert.Equal("No objects provided", e.Message);
 
         var box10 = new Box(10, 10, 10);
-        var face = box10.Faces().SortBy(Axis.Z)[^1];
+        var face = box10.Faces().OrderBy(Axis.Z)[^1];
         Assert.Throws<ArgumentException>(() => Chamfer(face.Edges()[0], length: 1, reference: face));
 
         Assert.Throws<ArgumentException>(() => Chamfer(Corner().Edges()[0], length: 1));
@@ -298,7 +298,7 @@ public class OperationsGenericTests
         Check.AlmostEqual(100 - 4 + Math.PI, test.Area, 5);
 
         var two = new Pos(-10, 0) * new Rectangle(10, 10) + new Pos(10, 0) * new Rectangle(10, 10);
-        test = Fillet(two.Vertices().FilterByPosition(Axis.X, minimum: 0, maximum: 20), radius: 1);
+        test = Fillet(two.Vertices().Between(Axis.X, minimum: 0, maximum: 20), radius: 1);
         Check.AlmostEqual(200 - 4 + Math.PI, test.Area, 5);
     }
 
@@ -368,8 +368,8 @@ public class OperationsGenericTests
         var wire = Wire.MakeCircle(1, new Plane((5, 0, 0)));
         var test = Mirror([edge, wire], Plane.YZ);
         Assert.IsType<Curve>(test);
-        Assert.Empty(test.Edges().FilterByPosition(Axis.X, minimum: 0, maximum: 10));
-        Assert.Equal(2, test.Edges().FilterByPosition(Axis.X, minimum: -10, maximum: 0).Count);
+        Assert.Empty(test.Edges().Between(Axis.X, minimum: 0, maximum: 10));
+        Assert.Equal(2, test.Edges().Between(Axis.X, minimum: -10, maximum: 0).Count);
     }
 
     [Fact]
@@ -382,9 +382,9 @@ public class OperationsGenericTests
         var test = Mirror([edge, wire, face, compound], Plane.YZ);
         // Mixed dimensions: a plain compound
         Assert.Equal(typeof(Compound), test.GetType());
-        Assert.Empty(test.Edges().FilterByPosition(Axis.X, minimum: 0, maximum: 10));
-        Assert.Empty(test.Faces().FilterByPosition(Axis.X, minimum: 0, maximum: 10));
-        Assert.Equal(3, test.Faces().FilterByPosition(Axis.X, minimum: -10, maximum: 0).Count);
+        Assert.Empty(test.Edges().Between(Axis.X, minimum: 0, maximum: 10));
+        Assert.Empty(test.Faces().Between(Axis.X, minimum: 0, maximum: 10));
+        Assert.Equal(3, test.Faces().Between(Axis.X, minimum: -10, maximum: 0).Count);
     }
 
     [Fact]
@@ -393,7 +393,7 @@ public class OperationsGenericTests
         var cone = Solid.MakeCone(2, 1, 2, new Plane((5, 4, 0)));
         var test = Mirror(cone, Plane.YZ);
         Assert.IsType<Part>(test);
-        Assert.Single(test.Solids().FilterByPosition(Axis.X, minimum: -10, maximum: 0));
+        Assert.Single(test.Solids().Between(Axis.X, minimum: -10, maximum: 0));
     }
 
     [Fact]
@@ -413,7 +413,7 @@ public class OperationsGenericTests
                    - new Pos(wheelR, ringT / 2) * new Rectangle(2, 2);
         var p = Revolve(Plane.XZ * side, Axis.Z);
         var mirrored = Mirror(p, Plane.XY);
-        Assert.Equal(GeomType.Plane, mirrored.Faces().SortBy(Axis.Z)[0].GeomType);
+        Assert.Equal(GeomType.Plane, mirrored.Faces().OrderBy(Axis.Z)[0].GeomType);
     }
 
     [Fact]
@@ -482,10 +482,10 @@ public class OperationsGenericTests
     public void BoxOffsetWithOpening()
     {
         var box = new Box(10, 10, 10);
-        var test = Offset(box, amount: -1, openings: box.Faces() >> Axis.Z, kind: Kind.Intersection);
+        var test = Offset(box, amount: -1, openings: box.Faces().GroupBy(Axis.Z).Last(), kind: Kind.Intersection);
         Check.AlmostEqual(10 * 10 * 10 - 8 * 8 * 9, test.Volume, 5);
 
-        test = Offset(box, amount: -1, openings: [box.Faces().SortBy(Axis.Z)[^1]], kind: Kind.Intersection);
+        test = Offset(box, amount: -1, openings: [box.Faces().OrderBy(Axis.Z)[^1]], kind: Kind.Intersection);
         Check.AlmostEqual(10 * 10 * 10 - 8 * 8 * 9, test.Volume, 5);
     }
 
@@ -566,7 +566,7 @@ public class OperationsGenericTests
     public void OffsetFailure()
     {
         var cup = Loft([new Circle(35), new Pos(0, 0, 50) * new Circle(37.62)]);
-        var topf = cup.Faces().SortBy(Axis.Z)[^1];
+        var topf = cup.Faces().OrderBy(Axis.Z)[^1];
         Assert.ThrowsAny<InvalidOperationException>(() => Offset(cup, amount: -2, openings: [topf]));
     }
 
@@ -593,13 +593,13 @@ public class OperationsGenericTests
     [Fact]
     public void ProjectToSketch()
     {
-        var profile = Fillet(new Rectangle(10, 15).Vertices().GroupBy(Axis.Y).Last, 2);
+        var profile = Fillet(new Rectangle(10, 15).Vertices().GroupBy(Axis.Y).Last(), 2);
         var loaf = Extrude(Plane.YZ * profile, amount: 15, both: true);
-        var refPoints = loaf.Vertices().GroupBy(Axis.X).Last.GroupBy(Axis.Z).First;
+        var refPoints = loaf.Vertices().GroupBy(Axis.X).Last().GroupBy(Axis.Z).First();
         var origin = (refPoints[0].ToVector() + refPoints[1].ToVector()) / 2;
-        var xDir = refPoints.SortBy(Axis.Y)[^1].ToVector() - refPoints.SortBy(Axis.Y)[0].ToVector();
+        var xDir = refPoints.OrderBy(Axis.Y)[^1].ToVector() - refPoints.OrderBy(Axis.Y)[0].ToVector();
         var workplane = ProjectWorkplane(origin, xDir, (1, 0, 1), 30);
-        var projection = Project(loaf.Faces().SortBy(Axis.X)[^1], workplane);
+        var projection = Project(loaf.Faces().OrderBy(Axis.X)[^1], workplane);
         Assert.IsType<Sketch>(projection);
         Check.AlmostEqual(104.85204601097809, projection.Area, 5);
         Assert.Equal(6, projection.Edges().Count);
@@ -796,7 +796,7 @@ public class OperationsGenericTests
         var binormal = Edge.MakeLine((-5, 5), (-8, 10));
         var swept = Sweep(new Rectangle(4, 6), path, binormal: binormal);
 
-        var endFace = swept.Faces().FilterBy(GeomType.Plane).SortBy(Axis.X)[0];
+        var endFace = swept.Faces().Where(GeomType.Plane).OrderBy(Axis.X)[0];
         var faceBinormalAxis = new Axis(endFace.Center(), binormal.PositionAt(1) - endFace.Center());
         var faceNormalAxis = new Axis(endFace.Center(), endFace.NormalAt());
         Assert.True(faceNormalAxis.IsNormal(faceBinormalAxis));
@@ -837,9 +837,9 @@ public class OperationsGenericTests
     public void SweepPathFromEdges()
     {
         double d = 8.5, h = 4.65, lip = 0.5;
-        var sk = Fillet(new Rectangle(d * 3, d).Vertices().GroupBy(Axis.X).First, d / 2);
+        var sk = Fillet(new Rectangle(d * 3, d).Vertices().GroupBy(Axis.X).First(), d / 2);
         var p = Extrude(sk, amount: 4.65);
-        var topEdges = p.Edges().GroupBy(Axis.Z)[2].SortBy(Axis.X)[0..3].SortBy(Axis.Y);
+        var topEdges = p.Edges().GroupBy(Axis.Z)[2].OrderBy(Axis.X)[0..3].OrderBy(Axis.Y);
         var sk2 = Plane.ZY.Offset(-d * 3 / 2) * (new Pos(h, -d / 2) * new Rectangle(2 * lip, 2 * lip));
         var result = p - Sweep(sk2, topEdges);
         Assert.True(result.IsValid);

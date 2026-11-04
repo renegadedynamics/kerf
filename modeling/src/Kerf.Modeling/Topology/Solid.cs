@@ -279,7 +279,7 @@ public partial class Solid : Shape3D
         var surfaces = new ShapeList<Shape2D>(TopoUtil.TopLevelShapes(sewn).Select(s =>
             s.IsFace() ? (Shape2D)new Face((global::Kerf.Topology.Face)s)
             : s.IsShell() ? new Shell((global::Kerf.Topology.Shell)s)
-            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).SortBy(s => s.DistanceTo(profile));
+            : throw new InvalidOperationException($"Invalid sewn shape {TopoUtil.TypeName(s)}"))).OrderBy(s => s.DistanceTo(profile)).ToShapeList();
         var limit = surfaces[until == Until.Next ? 0 : surfaces.Count - 1];
 
         // 4: split the extrusion by that surface

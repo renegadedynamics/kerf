@@ -106,8 +106,8 @@ public class EdgeWireSmokeTests
             Check.AlmostEqual(edges[i].EndPoint(), edges[(i + 1) % 4].StartPoint());
         // Each edge knows the wire it was taken from
         Assert.All(edges, e => Assert.Same(rect, e.TopoParent));
-        Assert.Equal(2, (edges | Axis.X).Count);
-        Check.AlmostEqual(-1, (edges > Axis.Y)[0].Center().Y);
+        Assert.Equal(2, edges.ParallelTo(Axis.X).Count);
+        Check.AlmostEqual(-1, edges.OrderBy(Axis.Y)[0].Center().Y);
     }
 
     [Fact]

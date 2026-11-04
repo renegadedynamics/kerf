@@ -129,7 +129,7 @@ public class ShapePlacementTests
         var solid = Solid.Extrude(cross, (0, 0, 2));   // extrude(cross, 2)
         foreach (var (name, relocated) in new[] { ("located", solid.Located(Elsewhere)), ("moved", solid.Moved(Elsewhere)) })
         {
-            var interior = relocated.Edges().FilterBy(e => e.IsInterior);
+            var interior = relocated.Edges().Where(e => e.IsInterior).ToShapeList();
             Assert.True(interior.Count == 4, name);
         }
     }

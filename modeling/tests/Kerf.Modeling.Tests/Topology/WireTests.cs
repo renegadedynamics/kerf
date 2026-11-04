@@ -66,10 +66,10 @@ public class WireTests
     public void Chamfer2DEdge()
     {
         var square = Wire.MakeRect(1, 1);
-        var edge = square.Edges().SortBy(Axis.Y)[0];
-        var vertex = edge.Vertices().SortBy(Axis.X)[0];
+        var edge = square.Edges().OrderBy(Axis.Y)[0];
+        var vertex = edge.Vertices().OrderBy(Axis.X)[0];
         square = square.Chamfer2D(distance: 0.1, distance2: 0.2, vertices: [vertex], edge: edge);
-        Check.AlmostEqual(0.9, square.Edges().SortBy(Axis.Y)[0].Length);
+        Check.AlmostEqual(0.9, square.Edges().OrderBy(Axis.Y)[0].Length);
     }
 
     [Fact]
@@ -342,7 +342,7 @@ public class WireTests
     {
         foreach (var (name, wire) in ReversedWires())
         {
-            var sortedEdges = wire.Edges().SortBy(wire);
+            var sortedEdges = wire.Edges().OrderBy(wire);
             Assert.True(sortedEdges[0].DistanceTo(wire.PositionAt(0.01)) < 1e-5, name);
             Assert.True(sortedEdges[^1].DistanceTo(wire.PositionAt(0.99)) < 1e-5, name);
         }

@@ -307,8 +307,8 @@ public enum Side
 #pragma warning restore CS1591
 }
 
-/// <summary>Sorting criteria.</summary>
-public enum SortBy
+/// <summary>A measure of a shape to sort, group or filter by: <c>edges.OrderBy(ShapeKey.Length)</c>.</summary>
+public enum ShapeKey
 {
 #pragma warning disable CS1591
     Length, Radius, Area, Volume, Distance,

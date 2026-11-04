@@ -363,7 +363,7 @@ public class Shape1DTests
     [Fact]
     public void Project2()
     {
-        var target = Solid.MakeCylinder(1, 10, new Plane((0, 0, -5))).Faces().FilterBy(GeomType.Plane, reverse: true)[0];
+        var target = Solid.MakeCylinder(1, 10, new Plane((0, 0, -5))).Faces().WhereNot(GeomType.Plane)[0];
         var square = Wire.MakeRect(1, 1, Plane.YZ).Located(new Location((10, 0, 0)));
         var projections = square.Project(target, direction: (-1, 0, 0), closest: false);
         Assert.Equal(2, projections.Count);
@@ -374,9 +374,9 @@ public class Shape1DTests
     {
         var plate = Solid.MakeBox(10, 10, 1, new Plane((-5, -5, -0.5)))
                     - Solid.MakeCylinder(1, 1, new Plane((0, 0, -0.5)));
-        var holeEdges = plate.Edges().FilterBy(GeomType.Circle);
-        Assert.True(holeEdges.SortBy(Axis.Z).Last.IsForward);
-        Assert.False(holeEdges.SortBy(Axis.Z)[0].IsForward);
+        var holeEdges = plate.Edges().Where(GeomType.Circle);
+        Assert.True(holeEdges.OrderBy(Axis.Z).Last().IsForward);
+        Assert.False(holeEdges.OrderBy(Axis.Z)[0].IsForward);
         var e = new Edge();
         Assert.Throws<InvalidOperationException>(() => e.IsForward);
     }
@@ -385,14 +385,14 @@ public class Shape1DTests
     public void Offset2D()
     {
         var baseWire = Wire.MakePolygon([(0, 0), (1, 0), (1, 1)], close: false);
-        var corner = baseWire.Vertices().GroupBy(Axis.Y)[0].SortBy(Axis.X)[^1];
+        var corner = baseWire.Vertices().GroupBy(Axis.Y)[0].OrderBy(Axis.X)[^1];
         baseWire = baseWire.Fillet2D(0.4, [corner]);
         var offsetWire = baseWire.Offset2D(0.1, side: Side.Left);
         Assert.True(offsetWire.IsClosed);
-        Assert.Equal(6, offsetWire.Edges().FilterBy(GeomType.Line).Count);
-        Assert.Equal(2, offsetWire.Edges().FilterBy(GeomType.Circle).Count);
+        Assert.Equal(6, offsetWire.Edges().Where(GeomType.Line).Count);
+        Assert.Equal(2, offsetWire.Edges().Where(GeomType.Circle).Count);
         var offsetWireRight = baseWire.Offset2D(0.1, side: Side.Right);
-        Check.AlmostEqual(0.5, offsetWireRight.Edges().FilterBy(GeomType.Circle).SortBy(SortBy.Radius)[^1].Radius, 4);
+        Check.AlmostEqual(0.5, offsetWireRight.Edges().Where(GeomType.Circle).OrderBy(ShapeKey.Radius)[^1].Radius, 4);
     }
 
     [Fact]
@@ -400,11 +400,11 @@ public class Shape1DTests
     {
         var phoneCasePlan = Face.MakeRect(80, 150) - Face.MakeRect(25, 25, new Plane((-20, 55)));
         var phoneCase = Ops.Extrude(phoneCasePlan, 2);
-        var windowEdges = phoneCase.Faces().SortBy(Axis.Z)[^1].InnerWires()[0].Edges();
+        var windowEdges = phoneCase.Faces().OrderBy(Axis.Z)[^1].InnerWires()[0].Edges();
         Assert.All(windowEdges, e => Assert.Equal(phoneCase, e.TopoParent));
         var phoneCaseF = Ops.Fillet(windowEdges, 1);
         Assert.True(phoneCaseF.Volume < phoneCase.Volume);
-        var perimeter = phoneCaseF.Faces().SortBy(Axis.Z)[^1].OuterWire().Edges();
+        var perimeter = phoneCaseF.Faces().OrderBy(Axis.Z)[^1].OuterWire().Edges();
         Assert.All(perimeter, e => Assert.Equal(phoneCaseF, e.TopoParent));
         var phoneCaseFF = Ops.Fillet(perimeter, 1);
         Assert.True(phoneCaseFF.Volume < phoneCaseF.Volume);
@@ -541,7 +541,7 @@ public class Shape1DTests
     public void Edges()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var topX = box.Faces().SortBy(Axis.Z).Last.Edges().SortBy(Axis.X).Last;
+        var topX = box.Faces().OrderBy(Axis.Z).Last().Edges().OrderBy(Axis.X).Last();
         Assert.Equal(box, topX.TopoParent);
         Assert.IsType<Edge>(topX);
         Check.AlmostEqual((1, 0.5, 1), topX.Center(), 5);
@@ -553,8 +553,8 @@ public class Shape1DTests
         // An extracted shape records the whole route it was selected by, so an edge knows the face it was picked off
         // as well as the solid
         var box = Solid.MakeBox(1, 1, 1);
-        var face = box.Faces().SortBy(Axis.X).Last;
-        var edge = face.Edges().SortBy(Axis.Y)[0];
+        var face = box.Faces().OrderBy(Axis.X).Last();
+        var edge = face.Edges().OrderBy(Axis.Y)[0];
         Assert.Equal(2, edge.TopoPath.Count);
         Assert.Equal(box, edge.TopoParent);
         Assert.Equal(face, edge.TopoOwner);

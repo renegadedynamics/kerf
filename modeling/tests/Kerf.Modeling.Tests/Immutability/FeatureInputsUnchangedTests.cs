@@ -46,9 +46,9 @@ public class FeatureInputsUnchangedTests
     {
         Part part = Fused();
         Untouched(part, () => Ops.Offset(part, 0.5));
-        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, openings: [part.Faces().SortBy(Axis.Z).Last]));
+        Shape shell = Untouched(part, () => Ops.Offset(part, -0.5, openings: [part.Faces().OrderBy(Axis.Z).Last()]));
         // the bottom face, away from the opening, is the part's own
-        Face bottom = part.Faces().SortBy(Axis.Z)[0];
+        Face bottom = part.Faces().OrderBy(Axis.Z)[0];
         Assert.Contains(shell.Faces(), f => f.Wrapped.IsSame(bottom.Wrapped));
     }
 
@@ -56,7 +56,7 @@ public class FeatureInputsUnchangedTests
     public void ThickeningAFaceOfAPartLeavesThePartAlone()
     {
         Part part = Fused();
-        Face top = part.Faces().SortBy(Axis.Z)[0];
+        Face top = part.Faces().OrderBy(Axis.Z)[0];
         Untouched(part, () => Ops.Thicken(top, 1));
         Untouched(part, () => Ops.Thicken(top, -1));
     }
@@ -65,6 +65,6 @@ public class FeatureInputsUnchangedTests
     public void DraftingTheSidesOfAPartLeavesItAlone()
     {
         Box box = new(10, 6, 4);
-        Untouched(box, () => Ops.Draft(box.Faces().FilterBy(Axis.Z, reverse: true), Plane.XY.Offset(-2), 5));
+        Untouched(box, () => Ops.Draft(box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-2), 5));
     }
 }

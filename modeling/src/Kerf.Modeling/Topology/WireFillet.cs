@@ -24,7 +24,7 @@ public partial class Wire
         foreach (var vertex in vertices)
         {
             var local = plane.ToLocalCoords(vertex);
-            var current = filleted.Vertices().SortByDistance(local)[0];
+            var current = filleted.Vertices().OrderByDistanceTo(local)[0];
             if ((current.ToVector() - local.ToVector()).Length > Constants.Tolerance)
                 throw new ArgumentException($"Could not find fillet vertex on wire: {vertex}");
             var beforeCorner = filleted;
@@ -141,13 +141,13 @@ internal static class WireFillet
         var arcs = ConstrainedSolvers.TwoTanRadArcs([corner.ConnectedEdges[0], corner.ConnectedEdges[1]], radius, Sagitta.Both);
         if (arcs.Count == 0)
             return null;
-        var arc = arcs.SortByDistance(corner.Vertex)[0];
+        var arc = arcs.OrderByDistanceTo(corner.Vertex)[0];
 
         var trimmed = new List<global::Kerf.Topology.Edge?>();
         foreach (var connected in corner.ConnectedEdges)
         {
             var other = connected.Vertices().First(v => v != corner.Vertex);
-            var filletVertex = arc.Vertices().SortByDistance(connected)[0];
+            var filletVertex = arc.Vertices().OrderByDistanceTo(connected)[0];
             var pnt = filletVertex.ToVector().ToGpPnt();
             var splitVertex = new Vertex(global::Kerf.Topology.Vertex.At(pnt));
             // A copy is split, as build123d splits a deepcopy, so the pieces share nothing with the wire: the identity

@@ -21,7 +21,7 @@ public class ShellTests
     [Fact]
     public void ShellInitSingleFace()
     {
-        var face = Solid.MakeCone(1, 0, 2).Faces().FilterBy(GeomType.Cone).First;
+        var face = Solid.MakeCone(1, 0, 2).Faces().Where(GeomType.Cone).First();
         var shell = new Shell(face);
         Assert.True(shell.IsValid);
     }
@@ -30,8 +30,8 @@ public class ShellTests
     public void ShellInitTolerance()
     {
         // the lid sits 1e-5 above the box's sides: too far for the default tolerance, within reach of a larger one
-        var sorted = Solid.MakeBox(1, 1, 1).Faces().SortBy(Axis.Z);
-        Face[] faces = [.. sorted.Take(sorted.Count - 1), sorted.Last.Moved(new Pos(0, 0, 1e-5))];
+        var sorted = Solid.MakeBox(1, 1, 1).Faces().OrderBy(Axis.Z);
+        Face[] faces = [.. sorted.Take(sorted.Count - 1), sorted.Last().Moved(new Pos(0, 0, 1e-5))];
         Assert.Throws<ArgumentException>(() => new Shell(faces));
         Assert.Throws<ArgumentException>(() => new Shell(faces, tolerance: 1e-6));
         var sewn = new Shell(faces, tolerance: 1e-4);
@@ -141,8 +141,8 @@ public class ShellTests
         var shell = new Shell(tube.Faces());
         Assert.Single(shell.Bends());
         Assert.Equal(2, shell.Flats().Count);
-        Assert.Equal(shell.Faces().FilterBy(GeomType.Cylinder), shell.Bends());
-        Assert.Equal(shell.Faces().FilterBy(GeomType.Plane), shell.Flats());
+        Assert.Equal(shell.Faces().Where(GeomType.Cylinder), shell.Bends());
+        Assert.Equal(shell.Faces().Where(GeomType.Plane), shell.Flats());
         Assert.Equal(shell.Faces().Count, shell.Bends().Count + shell.Flats().Count);
     }
 

@@ -35,14 +35,14 @@ var examples = new (string Name, Func<Shape> Build)[]
     {
         Shape a1 = new Box(Length, Width, Thickness);
         Shape a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4);
-        return Fillet(a4.Edges().FilterBy(Axis.Z), radius: 5);
+        return Fillet(a4.Edges().ParallelTo(Axis.Z), radius: 5);
     }),
     // A1 =CAD_PT_BOX(80, 60, 10); A2 =CAD_CUT(A1, CAD_PT_HOLE(60 / 4, 10)); A3 =CAD_PT_FILLET(A2, CAD_SEL_LAST(CAD_SEL_GROUP(CAD_SEL_NEW(A2, A1, {type: "edge"}), "Z")), 2)
     ("10 select last, hole", () =>
     {
         Shape a1 = new Box(Length, Width, Thickness);
         Shape a2 = a1 - new Hole(Width / 4, depth: Thickness);
-        return Fillet((a2.Edges() - a1.Edges()).GroupBy(Axis.Z)[^1], 2);
+        return Fillet(a2.Edges().Except(a1.Edges()).GroupBy(Axis.Z)[^1], 2);
     }),
     // The classic OCC bottle (section 13): a profile, extruded, filleted, a neck added, and hollowed with offset
     ("29 bottle", () =>
@@ -55,8 +55,8 @@ var examples = new (string Name, Func<Shape> Build)[]
         profile += Mirror(profile);
         Shape body = Extrude(MakeFace(profile), -(h + b));
         body = Fillet(body.Edges(), radius: w / 6);
-        body += Extrude(new Plane(body.Faces().SortBy(Axis.Z).Last) * new Circle(t), n);
-        return Offset(body, -b, openings: [body.Faces().SortBy(Axis.Z).Last]);
+        body += Extrude(new Plane(body.Faces().OrderBy(Axis.Z).Last()) * new Circle(t), n);
+        return Offset(body, -b, openings: [body.Faces().OrderBy(Axis.Z).Last()]);
     }),
     // Nested locations: CAD_LOC_COMBINE of a polar and a grid placement, fused and extruded (164 faces)
     ("31 nesting locations", () =>

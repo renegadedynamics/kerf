@@ -20,7 +20,7 @@ public class ShapeHistoryTests
     readonly Solid _box = Solid.MakeBox(10, 10, 10);
     readonly Face _top;
 
-    public ShapeHistoryTests() => _top = _box.Faces().SortBy(Axis.Z)[^1];
+    public ShapeHistoryTests() => _top = _box.Faces().OrderBy(Axis.Z)[^1];
 
     /// <summary>
     /// A cylinder standing on the box: the top is rebuilt around the cylinder's own bottom circle, the cylinder's
@@ -34,12 +34,12 @@ public class ShapeHistoryTests
         var history = fused.History;
         Assert.IsType<ShapeHistory>(history);
         Assert.Single(history.Modified(_top.Wrapped));
-        foreach (var side in _box.Faces().FilterBy(Axis.Z, reverse: true))
+        foreach (var side in _box.Faces().NotParallelTo(Axis.Z))
         {
             Assert.Empty(history.Modified(side.Wrapped));
             Assert.False(history.IsRemoved(side.Wrapped));
         }
-        var bottomCap = cylinder.Faces().SortBy(Axis.Z)[0];
+        var bottomCap = cylinder.Faces().OrderBy(Axis.Z)[0];
         Assert.True(history.IsRemoved(bottomCap.Wrapped));
         Assert.Empty(history.Generated(_top.Wrapped));
 
@@ -57,7 +57,7 @@ public class ShapeHistoryTests
         var slab = Solid.MakeBox(10, 10, 5, new Plane((0, 0, 10)));
         var fused = _box.Fuse(slab);   // coplanar sides are unified by the clean
         var history = fused.History!;
-        var side = _box.Faces().SortBy(Axis.X)[0];
+        var side = _box.Faces().OrderBy(Axis.X)[0];
         var merged = history.Modified(side.Wrapped);
         Assert.Single(merged);
         Check.AlmostEqual(150, new Face(((global::Kerf.Topology.Face)(merged[0]))).Area, 5);
@@ -91,14 +91,14 @@ public class ShapeHistoryTests
     [Fact]
     public void AlgorithmHistoryFromAFillet()
     {
-        var rounded = _box.Fillet(1, _box.Edges().FilterBy(Axis.Z));
+        var rounded = _box.Fillet(1, _box.Edges().ParallelTo(Axis.Z));
         var trace = rounded.History!.TraceOf([_box.Wrapped]);
         var faces = rounded.Faces();
         Assert.Equal(6, faces.Count(f => trace.IsModified(f.Wrapped)));
         Assert.Equal(4, faces.Count(f => trace.IsGenerated(f.Wrapped)));
         Assert.Equal(10, faces.Count(f => trace.IsDescendant(f.Wrapped)));
         // the filleted edges are gone and the fillet faces came from them
-        foreach (var edge in _box.Edges().FilterBy(Axis.Z))
+        foreach (var edge in _box.Edges().ParallelTo(Axis.Z))
         {
             Assert.True(rounded.History.IsRemoved(edge.Wrapped));
             Assert.Single(rounded.History.Generated(edge.Wrapped));
@@ -132,8 +132,8 @@ public class ShapeHistoryTests
         foreach (var face in new[] { left, right })
             Assert.Single(history.Modified(face.Wrapped));
         // the two coincident edges were merged into one edge of the shell
-        var leftEdge = left.Edges().SortBy(Axis.X)[^1];
-        var rightEdge = right.Edges().SortBy(Axis.X)[0];
+        var leftEdge = left.Edges().OrderBy(Axis.X)[^1];
+        var rightEdge = right.Edges().OrderBy(Axis.X)[0];
         var mergedLeft = history.Modified(leftEdge.Wrapped);
         var mergedRight = history.Modified(rightEdge.Wrapped);
         Assert.Single(mergedLeft);
@@ -361,7 +361,7 @@ public class AlgebraSelectTests
     [Fact]
     public void OperationsOtherThanBooleans()
     {
-        var rounded = Ops.Fillet(new Box(10, 10, 10).Edges().FilterBy(Axis.Z), 1);
+        var rounded = Ops.Fillet(new Box(10, 10, 10).Edges().ParallelTo(Axis.Z), 1);
         Assert.Equal(4, rounded.Faces(Select.Last).Count);
         Assert.Equal(16, rounded.Edges(Select.New).Count);
     }

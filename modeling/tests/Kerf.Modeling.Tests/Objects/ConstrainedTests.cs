@@ -371,7 +371,7 @@ public class ConstrainedArcsTests
         var ln2 = new Line(c1.PositionAt(1), (10, 20));
         var ln3 = new Line((10, 10), ln2.PositionAt(1));
         var ln4 = ConstrainedArcs.CenteredOn(tangencyOne: c1, tangencyTwo: ln2, centerOn: ln3);
-        Assert.NotEmpty(ln4.Vertices().SortBy(Axis.Y)[0].Intersect(c1));
+        Assert.NotEmpty(ln4.Vertices().OrderBy(Axis.Y)[0].Intersect(c1));
     }
 
     [Fact]
@@ -382,17 +382,17 @@ public class ConstrainedArcsTests
         var conCircleLeft = new CenterArc((-2, 0), rLeft, 0, 360);
         var conCircleRight = new CenterArc((2, 0), rRight, 0, 360);
         var eggBottom = Edge.MakeConstrainedArcs((conCircleRight, Tangency.Outside), (conCircleLeft, Tangency.Outside), radius: rBottom)
-            .SortBy(Axis.Y)[0];
+            .OrderBy(Axis.Y)[0];
         var eggTop = Edge.MakeConstrainedArcs((conCircleRight, Tangency.Enclosing), (conCircleLeft, Tangency.Enclosing), radius: rTop)
-            .SortBy(Axis.Y)[^1];
-        var eggRight = new ThreePointArc(eggBottom.Vertices().SortBy(Axis.X)[^1].ToVector(), conCircleRight.PositionAt(0),
-                                         eggTop.Vertices().SortBy(Axis.X)[^1].ToVector());
-        var eggLeft = new ThreePointArc(eggBottom.Vertices().SortBy(Axis.X)[0].ToVector(), conCircleLeft.PositionAt(0.5),
-                                        eggTop.Vertices().SortBy(Axis.X)[0].ToVector());
+            .OrderBy(Axis.Y)[^1];
+        var eggRight = new ThreePointArc(eggBottom.Vertices().OrderBy(Axis.X)[^1].ToVector(), conCircleRight.PositionAt(0),
+                                         eggTop.Vertices().OrderBy(Axis.X)[^1].ToVector());
+        var eggLeft = new ThreePointArc(eggBottom.Vertices().OrderBy(Axis.X)[0].ToVector(), conCircleLeft.PositionAt(0.5),
+                                        eggTop.Vertices().OrderBy(Axis.X)[0].ToVector());
 
         var eggPlant = new Wire([eggLeft, eggTop, eggRight, eggBottom]);
         Assert.True(eggPlant.IsClosed);
-        var edges = eggPlant.Edges().SortBy(eggPlant);
+        var edges = eggPlant.Edges().OrderBy(eggPlant);
         Assert.Equal(4, Enumerable.Range(0, 4).Count(i => Vertex.CommonVertex(edges[i], edges[(i + 1) % 4]) is not null));
 
         // C1 continuity
@@ -413,7 +413,7 @@ public class ConstrainedArcsTests
         var selected = new ConstrainedArcs(unitCircle, Axis.Y, radius: 1, selector: a => a.GroupBy(Axis.Y)[^1]);
         Assert.Equal(2, selected.Edges().Count);
 
-        Assert.Throws<ArgumentException>(() => new ConstrainedArcs(unitCircle, Axis.Y, radius: 1, selector: l => l.FilterBy(GeomType.Line)));
+        Assert.Throws<ArgumentException>(() => new ConstrainedArcs(unitCircle, Axis.Y, radius: 1, selector: l => l.Where(GeomType.Line)));
     }
 }
 
@@ -624,9 +624,9 @@ public class ConstrainedLinesTests
         var lines = new ConstrainedLines(unitCircle, Axis.Y, direction: (1, 1));
         Assert.Equal(2, lines.Edges().Count);
 
-        var selected = new ConstrainedLines(unitCircle, Axis.Y, direction: (1, 1), selector: l => [l.SortBy(Axis.Y)[^1]]);
+        var selected = new ConstrainedLines(unitCircle, Axis.Y, direction: (1, 1), selector: l => [l.OrderBy(Axis.Y)[^1]]);
         Assert.Single(selected.Edges());
 
-        Assert.Throws<ArgumentException>(() => new ConstrainedLines(unitCircle, Axis.Y, direction: (1, 1), selector: l => l.FilterBy(GeomType.Circle)));
+        Assert.Throws<ArgumentException>(() => new ConstrainedLines(unitCircle, Axis.Y, direction: (1, 1), selector: l => l.Where(GeomType.Circle)));
     }
 }

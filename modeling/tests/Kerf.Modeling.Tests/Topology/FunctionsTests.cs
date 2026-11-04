@@ -15,7 +15,7 @@ public class FunctionsTests
     {
         var squareEdges = Face.MakeRect(1, 1).Edges();
         var rectangleEdges = Face.MakeRect(2, 1, new Plane((5, 0))).Edges();
-        var wires = OneD.EdgesToWires(squareEdges + rectangleEdges);
+        var wires = OneD.EdgesToWires(squareEdges.AddRange(rectangleEdges));
         Assert.Equal(2, wires.Count);
         Check.AlmostEqual(4, wires[0].Length, 5);
         Check.AlmostEqual(6, wires[1].Length, 5);

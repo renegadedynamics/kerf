@@ -62,11 +62,11 @@ public class AxisWithShapesTests
 
         var arc = Edge.MakeCircle(20, startAngle: 0, endAngle: 180);
         var ax0 = new Axis((-20, 30, 0), (4, -3, 0));
-        var intersections = arc.Intersect(ax0).Vertices().SortBy(Axis.X);
+        var intersections = arc.Intersect(ax0).Vertices().OrderBy(Axis.X);
         Check.TupleAlmostEqual([-5.6, 19.2, 0], Check.Of(intersections[0].ToVector()), 4);
         Check.TupleAlmostEqual([20, 0, 0], Check.Of(intersections[1].ToVector()), 4);
 
-        intersections = ax0.Intersect(arc).Vertices().SortBy(Axis.X);
+        intersections = ax0.Intersect(arc).Vertices().OrderBy(Axis.X);
         Check.TupleAlmostEqual([-5.6, 19.2, 0], Check.Of(intersections[0].ToVector()), 4);
         Check.TupleAlmostEqual([20, 0, 0], Check.Of(intersections[1].ToVector()), 4);
 
@@ -119,7 +119,7 @@ public class PlaneWithShapesTests
             (Axis.X.Direction, Axis.Z.Direction, -Axis.Y.Direction),   // trapezoid face, negative y
             (-Axis.X.Direction, Axis.Z.Direction, Axis.Y.Direction),   // trapezoid face, positive y
         ];
-        var faces = (loftedSolid.Faces() | Plane.XZ) > Axis.Y;
+        var faces = loftedSolid.Faces().ParallelTo(Plane.XZ).OrderBy(Axis.Y);
         Assert.Equal(2, faces.Count);
         for (int i = 0; i < faces.Count; i++)
         {
@@ -171,7 +171,7 @@ public class PlaneWithShapesTests
     public void FromNonPlanarFace()
     {
         Assert.IsType<Plane>(new Plane(Face.MakeRect(1, 1)));
-        var cyl = Solid.MakeCylinder(1, 4).Faces().FilterBy(GeomType.Plane, reverse: true)[0];
+        var cyl = Solid.MakeCylinder(1, 4).Faces().WhereNot(GeomType.Plane)[0];
         Assert.Throws<ArgumentException>(() => new Plane(cyl));
     }
 
@@ -179,7 +179,7 @@ public class PlaneWithShapesTests
     public void ShiftOriginAxis()
     {
         var cyl = new Cylinder(1, 2, align: Align.Min);
-        var top = cyl.Faces().SortBy(Axis.Z)[^1];
+        var top = cyl.Faces().OrderBy(Axis.Z)[^1];
         var pln = new Plane(top).ShiftOrigin(Axis.Z);
         var p = cyl - Ops.Extrude(pln * (new Pos(1, 1) * new Circle(0.5)), amount: -2);
         Check.AlmostEqual(Math.PI * (1 - 0.5 * 0.5) * 2, p.Volume, 5);
@@ -189,8 +189,8 @@ public class PlaneWithShapesTests
     public void ShiftOriginVertex()
     {
         var box = new Box(1, 1, 1, align: Align.Min);
-        var front = box.Faces().SortBy(Axis.X)[^1];
-        var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].SortBy(Axis.Y)[^1]);
+        var front = box.Faces().OrderBy(Axis.X)[^1];
+        var pln = new Plane(front).ShiftOrigin(front.Vertices().GroupBy(Axis.Z)[^1].OrderBy(Axis.Y)[^1]);
         var p = box - Ops.Extrude(pln * (new Pos(-0.5, 0.5) * new Circle(0.5)), amount: -1);
         Check.AlmostEqual(1 - Math.PI * 0.5 * 0.5 * 1, p.Volume, 5);
     }
@@ -198,9 +198,9 @@ public class PlaneWithShapesTests
     [Fact]
     public void ShiftOriginVector()
     {
-        var b = Ops.Fillet(new Box(4, 4, 2).Edges().FilterBy(Axis.Z), 0.5);
-        var top = b.Faces().SortBy(Axis.Z)[^1];
-        var reference = top.Edges().FilterBy(GeomType.Circle).GroupBy(Axis.X)[^1].SortBy(Axis.Y)[0].ArcCenter;
+        var b = Ops.Fillet(new Box(4, 4, 2).Edges().ParallelTo(Axis.Z), 0.5);
+        var top = b.Faces().OrderBy(Axis.Z)[^1];
+        var reference = top.Edges().Where(GeomType.Circle).GroupBy(Axis.X)[^1].OrderBy(Axis.Y)[0].ArcCenter;
         var pln = new Plane(top, xDir: (0, 1, 0)).ShiftOrigin(reference);
         var p = b - Ops.Extrude(pln * (new Pos(0.5, 0.5) * new Rectangle(2, 2, align: Align.Min)), amount: -1);
         Check.AlmostEqual(b.Volume - 2 * 2 * 1, p.Volume, 5);

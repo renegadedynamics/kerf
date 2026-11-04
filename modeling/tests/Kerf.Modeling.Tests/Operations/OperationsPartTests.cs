@@ -25,9 +25,9 @@ public class OperationsPartTests
 
     private readonly Solid _box = new Box(10, 10, 10).SingleSolid();
 
-    private ShapeList<Face> Sides => _box.Faces().FilterBy(Axis.Z, reverse: true);
+    private ShapeList<Face> Sides => _box.Faces().NotParallelTo(Axis.Z);
 
-    private Plane NeutralPlane => new(_box.Faces().SortBy(Axis.Z)[0]);
+    private Plane NeutralPlane => new(_box.Faces().OrderBy(Axis.Z)[0]);
 
     [Fact]
     public void SuccessfulDraft()
@@ -38,7 +38,7 @@ public class OperationsPartTests
         Assert.NotNull(result.History);
 
         var box = new Box(10, 10, 10);
-        var drafted = Draft(box.Faces().FilterBy(Axis.Z, reverse: true), Plane.XY.Offset(-5), 5);
+        var drafted = Draft(box.Faces().NotParallelTo(Axis.Z), Plane.XY.Offset(-5), 5);
         Assert.True(drafted.Volume < 1000);
     }
 
@@ -63,14 +63,14 @@ public class OperationsPartTests
     {
         var box2 = new Box(5, 5, 5).SingleSolid();
         var part = new Part().Add(_box, new Pos(10) * box2);
-        Face[] mixed = [part.Faces().SortBy(Axis.X)[0], part.Faces().SortBy(Axis.X)[^1]];
+        Face[] mixed = [part.Faces().OrderBy(Axis.X)[0], part.Faces().OrderBy(Axis.X)[^1]];
         Assert.Throws<ArgumentException>(() => Draft(mixed, NeutralPlane, 5));
     }
 
     [Fact]
     public void BadDraftFaces()
     {
-        Assert.Throws<DraftAngleError>(() => Draft(_box.Faces().SortBy(Axis.Z)[0], NeutralPlane, 10));
+        Assert.Throws<DraftAngleError>(() => Draft(_box.Faces().OrderBy(Axis.Z)[0], NeutralPlane, 10));
     }
 
     // ---- TestExtrude ----
@@ -161,7 +161,7 @@ public class OperationsPartTests
     public void ExtrudeNonPlanarFace()
     {
         var cyl = new Cylinder(1, 2);
-        var npf = cyl.Split(Plane.XZ).Faces().FilterBy(GeomType.Plane, reverse: true)[0];
+        var npf = cyl.Split(Plane.XZ).Faces().WhereNot(GeomType.Plane)[0];
         var testSolid = Extrude(npf, amount: 3, dir: (0, 1, 0));
         Check.AlmostEqual(2 * 2 * 3, testSolid.Volume, 5);
     }
@@ -169,7 +169,7 @@ public class OperationsPartTests
     [Fact]
     public void NonPlanarFaceWithoutDir()
     {
-        var side = new Cylinder(1, 2).Faces().FilterBy(GeomType.Cylinder)[0];
+        var side = new Cylinder(1, 2).Faces().Where(GeomType.Cylinder)[0];
         var e = Assert.Throws<ArgumentException>(() => Extrude(side, amount: 0.5));
         Assert.Contains("dir must be provided", e.Message);
     }
@@ -432,7 +432,7 @@ public class OperationsPartTests
     public void SplitWrappedObject()
     {
         var obj = new Box(1, 1, 1);
-        var filleted = Fillet(obj.Edges().GroupBy(Axis.Z).Last, 0.1);
+        var filleted = Fillet(obj.Edges().GroupBy(Axis.Z).Last(), 0.1);
         var right = Split(filleted, bisectBy: Plane.YZ, keep: Keep.Top);
         Assert.True(right.Volume < filleted.Volume);
     }

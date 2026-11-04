@@ -54,9 +54,9 @@ public class FilletFailuresTests
         var topEdges = rounded.Edges().GroupBy(Axis.Z)[^1];
         (ShapeList<Edge> Selection, string Details)[] cases =
         [
-            (topEdges.FilterBy(GeomType.Line)[..1],
+            (topEdges.Where(GeomType.Line)[..1],
              "1 of 1 edges (no starting solution: [0] at (-10, 0, 2), 7 additional tangent edges)"),
-            (topEdges.FilterBy(GeomType.Circle)[..1],
+            (topEdges.Where(GeomType.Circle)[..1],
              "1 of 1 edges (no starting solution: [0] at (-9.12132, -4.12132, 2), 7 additional tangent edges)"),
             (topEdges[..7],
              "7 of 7 edges (no starting solution: [0] at (-10, 0, 2), [1] at (-9.12132, -4.12132, 2), [2] at (0, -5, 2), "
@@ -115,7 +115,7 @@ public class Shape3DTests
     public void Chamfer()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var chamferBox = box.Chamfer(0.1, null, box.Edges().SortBy(Axis.Z)[^1..]);
+        var chamferBox = box.Chamfer(0.1, null, box.Edges().OrderBy(Axis.Z)[^1..]);
         Check.AlmostEqual(1 - 0.005, chamferBox.Volume, 5);
     }
 
@@ -123,7 +123,7 @@ public class Shape3DTests
     public void ChamferAsymLength()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var chamferBox = box.Chamfer(0.1, 0.2, box.Edges().SortBy(Axis.Z)[^1..]);
+        var chamferBox = box.Chamfer(0.1, 0.2, box.Edges().OrderBy(Axis.Z)[^1..]);
         Check.AlmostEqual(1 - 0.01, chamferBox.Volume, 5);
     }
 
@@ -131,8 +131,8 @@ public class Shape3DTests
     public void ChamferAsymLengthWithFace()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var face = box.Faces().SortBy(Axis.Z)[0];
-        var edge = new[] { face.Edges().SortBy(Axis.Y)[0] };
+        var face = box.Faces().OrderBy(Axis.Z)[0];
+        var edge = new[] { face.Edges().OrderBy(Axis.Y)[0] };
         var chamferBox = box.Chamfer(0.1, 0.2, edge, face: face);
         Check.AlmostEqual(1 - 0.01, chamferBox.Volume, 5);
     }
@@ -141,7 +141,7 @@ public class Shape3DTests
     public void ChamferObjectInstanceReturnsTopology()
     {
         var box = Box(1, 1, 1);
-        var chamferBox = box.Chamfer(0.1, null, box.Edges().SortBy(Axis.Z)[^1..]);
+        var chamferBox = box.Chamfer(0.1, null, box.Edges().OrderBy(Axis.Z)[^1..]);
         Assert.IsType<Solid>(chamferBox);
         Assert.True(chamferBox.IsValid);
     }
@@ -150,9 +150,9 @@ public class Shape3DTests
     public void FilletObjectInstanceReturnsTopology()
     {
         var box = Box(1, 1, 1);
-        var filletBox = box.Fillet(0.1, box.Edges().SortBy(Axis.Z)[^1..]);
+        var filletBox = box.Fillet(0.1, box.Edges().OrderBy(Axis.Z)[^1..]);
         var cylinder = Cylinder(1, 1);
-        var filletCylinder = cylinder.Fillet(0.1, cylinder.Edges().SortBy(Axis.Z)[0..1]);
+        var filletCylinder = cylinder.Fillet(0.1, cylinder.Edges().OrderBy(Axis.Z)[0..1]);
 
         Assert.IsType<Solid>(filletBox);
         Assert.True(filletBox.IsValid);
@@ -164,7 +164,7 @@ public class Shape3DTests
     public void MaxFilletObjectInstance()
     {
         var box = Box(1, 1, 1);
-        var maxRadius = box.MaxFillet(box.Edges().SortBy(Axis.Z)[^1..]);
+        var maxRadius = box.MaxFillet(box.Edges().OrderBy(Axis.Z)[^1..]);
         Assert.True(maxRadius > 0);
     }
 
@@ -182,15 +182,15 @@ public class Shape3DTests
     public void ChamferTooHighLength()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Throws<ArgumentException>(() => box.Chamfer(2, null, box.Edges().SortBy(Axis.Z)[^1..]));
+        Assert.Throws<ArgumentException>(() => box.Chamfer(2, null, box.Edges().OrderBy(Axis.Z)[^1..]));
     }
 
     [Fact]
     public void ChamferEdgeNotPartOfFace()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var edge = box.Edges().SortBy(Axis.Z)[^1..];
-        var face = box.Faces().SortBy(Axis.Z)[0];
+        var edge = box.Edges().OrderBy(Axis.Z)[^1..];
+        var face = box.Faces().OrderBy(Axis.Z)[0];
         Assert.Throws<ArgumentException>(() => box.Chamfer(0.1, null, edge, face: face));
     }
 
@@ -201,7 +201,7 @@ public class Shape3DTests
         Check.AlmostEqual(1 - Math.Pow(0.8, 3), shellBox.Volume, 5);
 
         var box = Solid.MakeBox(1, 1, 1);
-        shellBox = box.Hollow(box.Faces().FilterBy(Axis.Z), thickness: 0.1, kind: Kind.Intersection);
+        shellBox = box.Hollow(box.Faces().ParallelTo(Axis.Z), thickness: 0.1, kind: Kind.Intersection);
         Check.AlmostEqual(1 * Math.Pow(1.2, 2) - 1, shellBox.Volume, 5);
 
         shellBox = Solid.MakeBox(1, 1, 1).Hollow([], thickness: 0.1, kind: Kind.Intersection);

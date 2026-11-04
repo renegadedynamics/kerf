@@ -24,7 +24,7 @@ public class ConcurrentPartsTests
         {
             Shape a1 = new Box(Length, Width, Thickness);
             Shape a4 = Chamfer(a1.Edges().GroupBy(Axis.Z)[^1], length: 4);
-            return Fillet(a4.Edges().FilterBy(Axis.Z), radius: 5);
+            return Fillet(a4.Edges().ParallelTo(Axis.Z), radius: 5);
         }),
         ("revolution", () => Revolve(new Pos(0, 50) * new Circle(6), Axis.X, revolutionArc: 180)),
     ];

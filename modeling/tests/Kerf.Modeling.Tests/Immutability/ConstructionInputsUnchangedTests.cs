@@ -14,9 +14,9 @@ public class ConstructionInputsUnchangedTests
 {
     private static Box Part() => new(10, 6, 4);
 
-    private static Face Top(Shape part) => part.Faces().SortBy(Axis.Z).Last;
+    private static Face Top(Shape part) => part.Faces().OrderBy(Axis.Z).Last();
 
-    private static Face Side(Shape part) => part.Faces().SortBy(Axis.X).Last;
+    private static Face Side(Shape part) => part.Faces().OrderBy(Axis.X).Last();
 
     private static byte[] Text(Shape shape) => Extras.WriteBRep(shape.Wrapped);
 

@@ -90,10 +90,10 @@ public static partial class Operations
         var newArc = Edge.MakeThreePointArc(connectedEdgesEndPoints[0], middleEdgeArcPoint, connectedEdgesEndPoints[1]);
 
         // Recover other edges
-        var otherEdges = parent.Edges() - OneD.ConnectedEdges(edge) - new ShapeList<Edge>([edge]);
+        var otherEdges = parent.Edges().Except(OneD.ConnectedEdges(edge)).Except([edge]);
 
         // Rebuild the face. Note that the longest wire must be the perimeter and others holes
-        var faceWires = Wire.Combine([.. trimmedConnectedEdges, newArc, .. otherEdges]).SortBy(SortBy.Length, reverse: true);
+        var faceWires = Wire.Combine([.. trimmedConnectedEdges, newArc, .. otherEdges]).OrderByDescending(ShapeKey.Length);
         var pendingFace = new Face(faceWires[0], faceWires.Skip(1));
 
         // Flip the face to match the original parent

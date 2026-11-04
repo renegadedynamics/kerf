@@ -31,7 +31,7 @@ public abstract partial class Shape
 
     /// <summary>All the non-degenerate edges in this shape, or those <paramref name="select"/> picks.</summary>
     public virtual ShapeList<Edge> Edges(Select select = Select.All) =>
-        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).FilterBy(e => e.TopoEdge.IsDegenerated, reverse: true), select);
+        SelectFrom(ShapeListOf<Edge>(ShapeType.Edge).Where(e => !e.TopoEdge.IsDegenerated).ToShapeList(), select);
 
     /// <summary>All the wires in this shape, or those <paramref name="select"/> picks.</summary>
     public virtual ShapeList<Wire> Wires(Select select = Select.All) => SelectFrom(ShapeListOf<Wire>(ShapeType.Wire), select);

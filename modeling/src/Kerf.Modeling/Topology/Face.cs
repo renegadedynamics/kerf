@@ -168,8 +168,8 @@ public partial class Face : Shape2D
                 if (top.Count == 0 || bottom.Count == 0 || top.Count != bottom.Count)
                     continue;
                 var axis = new Axis(cog, crossDir);
-                var bottomList = bottom.SortBy(axis);
-                var flipped = new ShapeList<Shape>(top.Select(f => f.Mirror(splitPlane))).SortBy(axis);
+                var bottomList = bottom.OrderBy(axis);
+                var flipped = new ShapeList<Shape>(top.Select(f => f.Mirror(splitPlane))).OrderBy(axis);
                 var bottomArea = bottomList.Sum(f => f.Area);
                 double intersectArea = 0;
                 foreach (var (f, b) in flipped.Zip(bottomList))
@@ -222,7 +222,7 @@ public partial class Face : Shape2D
                 if (pairs.All(p => p[0].TangentAt(0).GetAngle(p[1].TangentAt(0)) == 90))
                 {
                     result = "RECTANGLE";
-                    if (flatEdges.GroupBy(SortBy.Length).Count == 1)
+                    if (flatEdges.GroupBy(ShapeKey.Length).Count == 1)
                         result = "SQUARE";
                 }
             }
@@ -329,7 +329,7 @@ public partial class Face : Shape2D
             if (IsPlanar is not null)
             {
                 // Repositioned on Plane.XY
-                var vertices = new Plane(this).ToLocalCoords(this).Vertices().SortBy(Axis.X);
+                var vertices = new Plane(this).ToLocalCoords(this).Vertices().OrderBy(Axis.X);
                 return vertices[^1].X - vertices[0].X;
             }
             if (GeomType == GeomType.Cylinder)
@@ -350,7 +350,7 @@ public partial class Face : Shape2D
                 return null;
             if (IsPlanar is not null)
             {
-                var vertices = new Plane(this).ToLocalCoords(this).Vertices().SortBy(Axis.Y);
+                var vertices = new Plane(this).ToLocalCoords(this).Vertices().OrderBy(Axis.Y);
                 return vertices[^1].Y - vertices[0].Y;
             }
             if (GeomType == GeomType.Cylinder && Radius is not null)
@@ -402,7 +402,7 @@ public partial class Face : Shape2D
     {
         get
         {
-            return Edges().FilterBy(e => e.TopoEdge.IsSeam(TopoFace));
+            return Edges().Where(e => e.TopoEdge.IsSeam(TopoFace)).ToShapeList();
         }
     }
 
@@ -924,7 +924,7 @@ public partial class Face : Shape2D
                 var shape = TopoUtil.BoolOp([extruded], [shell.TopoShape], BooleanKind.Common);
                 intersected.AddRange(TopoUtil.TopLevelShapes(shape).Select(s => new Shell((global::Kerf.Topology.Shell)s)));
             }
-        var sorted = new ShapeList<Shape2D>(intersected).SortBy(new Axis(Center(), direction));
+        var sorted = new ShapeList<Shape2D>(intersected).OrderBy(new Axis(Center(), direction));
         return new ShapeList<Shape2D>(sorted.Select(s => s.Faces().Count == 1 ? (Shape2D)s.SingleFace() : s));
     }
 }

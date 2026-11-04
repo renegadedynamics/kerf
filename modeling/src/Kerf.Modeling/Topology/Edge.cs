@@ -540,7 +540,7 @@ public partial class Edge : Shape1D
         if (intersections.Count == 0)
             return new Edge();
         var trims = new ShapeList<Edge>(intersections.Vertices().Select(p => Trim(0, p.ToVector())));
-        return trims.SortBy(e => e.Length)[0];
+        return trims.OrderBy(e => e.Length).First();
     }
 
     /// <summary>An infinite line trimmed to 2 × <paramref name="halfLength"/> about its centre; any other edge unchanged.</summary>

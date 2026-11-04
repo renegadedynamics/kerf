@@ -398,9 +398,8 @@ public abstract partial class Shape1D
         {
             // Remove the end arcs
             Vector[] endpoints = [line.PositionAt(0), line.PositionAt(1)];
-            var offsetEdges = offsetWire.Edges().FilterBy(
-                e => e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Length < Constants.Tolerance),
-                reverse: true);
+            var offsetEdges = offsetWire.Edges().Where(
+                e => !(e.GeomType == GeomType.Circle && endpoints.Any(pt => (e.ArcCenter - pt).Length < Constants.Tolerance))).ToShapeList();
             var wires = OneD.EdgesToWires(offsetEdges);
             if (normal is null)
             {

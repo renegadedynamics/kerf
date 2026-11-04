@@ -234,15 +234,15 @@ public class CurveDifferentialTests
         Assert.Equal(10, filleted.Edges().Count);
 
         var cross = (new Rectangle(5.3, 5.3 / 6) + new Rectangle(5.3 / 6, 5.3)).SingleFace();
-        var recess = cross.Fillet2D(5.3 / 3, new ShapeList<Vertex>(cross.Vertices()).SortByDistance((0, 0, 0)).Take(4));
+        var recess = cross.Fillet2D(5.3 / 3, new ShapeList<Vertex>(cross.Vertices()).OrderByDistanceTo((0, 0, 0)).Take(4));
         Check.AlmostEqual(11.2622402623, recess.Area, 7);
         Assert.Equal(16, recess.Edges().Count);
 
         var sketch = new Sketch() + new Rectangle(10, 20) + new Ellipse(20, 5);
-        var mixed = sketch.Faces()[0].Fillet2D(1.0, [sketch.Vertices().GroupBy(Axis.X)[0].SortBy(Axis.Y)[0]]);
+        var mixed = sketch.Faces()[0].Fillet2D(1.0, [sketch.Vertices().GroupBy(Axis.X)[0].OrderBy(Axis.Y)[0]]);
         Check.AlmostEqual(414.996320666, mixed.Area, 6);
         Assert.Equal(10, mixed.Edges().Count);
-        mixed = sketch.Faces()[0].Fillet2D(1.0, [sketch.Vertices().GroupBy(Axis.X)[1].SortBy(Axis.Y)[1]]);
+        mixed = sketch.Faces()[0].Fillet2D(1.0, [sketch.Vertices().GroupBy(Axis.X)[1].OrderBy(Axis.Y)[1]]);
         Check.AlmostEqual(415.391549244, mixed.Area, 6);
         Assert.Equal(10, mixed.Edges().Count);
 

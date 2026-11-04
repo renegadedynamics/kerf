@@ -332,12 +332,12 @@ public class CurveObjectTests
         // The objects are on BuildLine(Plane.YZ) in Python, which doesn't change their edges
         var p = new FilletPolyline([(0, 0, 0), (0, 10, 2), (0, 10, 10), (5, 20, 10)], radius: 2);
         Assert.Equal(5, p.Edges().Count);
-        Assert.Equal(2, p.Edges().FilterBy(GeomType.Circle).Count);
-        Assert.Equal(3, p.Edges().FilterBy(GeomType.Line).Count);
+        Assert.Equal(2, p.Edges().Where(GeomType.Circle).Count);
+        Assert.Equal(3, p.Edges().Where(GeomType.Line).Count);
 
         p = new FilletPolyline([(0, 0), (10, 0), (10, 10), (0, 10)], radii: [1, 2, 3, 0], close: true);
-        Assert.Equal(3, p.Edges().FilterBy(GeomType.Circle).Count);
-        Assert.Equal(4, p.Edges().FilterBy(GeomType.Line).Count);
+        Assert.Equal(3, p.Edges().Where(GeomType.Circle).Count);
+        Assert.Equal(4, p.Edges().Where(GeomType.Line).Count);
 
         Assert.Throws<ArgumentException>(() => new FilletPolyline([(0, 0), (10, 0), (10, 10), (0, 10)], radii: [1, 2, 3, 4], close: false));
         Assert.Throws<ArgumentException>(() => new FilletPolyline([(0, 0), (10, 0), (10, 10), (0, 10)], radius: -1, close: true));
@@ -345,13 +345,13 @@ public class CurveObjectTests
 
         p = new FilletPolyline([(0, 0), (10, 0), (10, 10), (0, 10)], radii: [1, 2, 3, 4], close: true);
         Assert.Equal(8, p.Edges().Count);
-        Assert.Equal(4, p.Edges().FilterBy(GeomType.Circle).Count);
-        Assert.Equal(4, p.Edges().FilterBy(GeomType.Line).Count);
+        Assert.Equal(4, p.Edges().Where(GeomType.Circle).Count);
+        Assert.Equal(4, p.Edges().Where(GeomType.Line).Count);
 
         p = new FilletPolyline([(0, 0, 0), (0, 0, 10), (10, 2, 10), (10, 0, 0)], radius: 2, close: true);
         Assert.Equal(8, p.Edges().Count);
-        Assert.Equal(4, p.Edges().FilterBy(GeomType.Circle).Count);
-        Assert.Equal(4, p.Edges().FilterBy(GeomType.Line).Count);
+        Assert.Equal(4, p.Edges().Where(GeomType.Circle).Count);
+        Assert.Equal(4, p.Edges().Where(GeomType.Line).Count);
         Assert.IsAssignableFrom<Wire>(p);
 
         Assert.Throws<ArgumentException>(() => new FilletPolyline([(0, 0)], radius: 0.1));
@@ -359,7 +359,7 @@ public class CurveObjectTests
 
         // Middle corner radius 0: the current fillet is null
         p = new FilletPolyline([(0, 0), (10, 0), (10, 10), (20, 10)], radii: [0, 1], close: false);
-        Assert.Single(p.Edges().FilterBy(GeomType.Circle));
+        Assert.Single(p.Edges().Where(GeomType.Circle));
 
         // The second corner sharp: the next fillet is null
         p = new FilletPolyline([(0, 0), (10, 0), (10, 10), (0, 10)], radii: [1, 0], close: false);
@@ -368,7 +368,7 @@ public class CurveObjectTests
         // A polyline closed by the user
         var l1 = new FilletPolyline([(0, 0), (2, 6), (0, 5), (-2, 6), (0, 0)], radii: [0, 0.1, 0, 0]);
         Assert.All(l1.Vertices(), v => Assert.Equal(2, l1.Edges().Count(e => e.Vertices().Contains(v))));
-        Assert.Single(l1.Edges().FilterBy(GeomType.Circle));
+        Assert.Single(l1.Edges().Where(GeomType.Circle));
     }
 
     [Fact]
@@ -658,7 +658,7 @@ public class CurveObjectTests
         var l1 = new Line((0, 0), (1, 1));
         var l2 = new Line((0.25, 0.25), (0.75, 0.75));
         var l = l1 - l2;
-        var vertices = l.Vertices().SortBy(Axis.X);
+        var vertices = l.Vertices().OrderBy(Axis.X);
         Assert.Equal(4, vertices.Count);
         Check.TupleAlmostEqual([0.0, 0.0, 0.0], Check.Of(vertices[0].ToVector()), 6);
         Check.TupleAlmostEqual([0.25, 0.25, 0.0], Check.Of(vertices[1].ToVector()), 6);
@@ -672,7 +672,7 @@ public class CurveObjectTests
         var l1 = new Line((0, 0), (1, 1));
         var l2 = new Line((0.25, 0.25), (0.75, 0.75));
         var l = l1 & l2;
-        var vertices = l.Vertices().SortBy(Axis.X);
+        var vertices = l.Vertices().OrderBy(Axis.X);
         Assert.Equal(2, vertices.Count);
         Check.TupleAlmostEqual(Check.Of(l2.PositionAt(0)), Check.Of(vertices[0].ToVector()), 6);
         Check.TupleAlmostEqual(Check.Of(l2.PositionAt(1)), Check.Of(vertices[1].ToVector()), 6);

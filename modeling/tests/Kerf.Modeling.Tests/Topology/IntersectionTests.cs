@@ -324,7 +324,7 @@ public class IntersectionTests
     static readonly Face Fc4 = new Rotation(z: 45) * B.Rectangle(5, 5);
     static readonly Face Fc5 = new Pos(2.5, 2.5, 2.5) * new Rotation(0, 90) * B.Rectangle(5, 5);
     static readonly Face Fc6 = new Pos(2.5, 2.5) * new Rotation(0, 90, 45, Extrinsic.XYZ) * B.Rectangle(5, 5);
-    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).Faces().FilterBy(GeomType.Cylinder)[0];
+    static readonly Face Fc7 = (new Rotation(90) * B.Cylinder(2, 4)).Faces().Where(GeomType.Cylinder)[0];
     static readonly Face Fc8 = new(Wire.MakePolygon(
         [(-1.5, 1, 1), (-1.5, -1, 1), (3.5, -1, -1), (3.5, 1, -1), (-1.5, 1, 1)], close: false));   // make_face(Polyline(…))
     static readonly Face Fc9 = new Pos(-2) * Fc8.Mirror(Plane.XY);
@@ -420,7 +420,7 @@ public class IntersectionTests
     // Extended T-shaped solid for coplanar edge touches
     static readonly Part Sl9 = new([B.Box(2, 2, 2) + Sl5]);
 
-    static readonly Edge L1 = Sl3.Faces().SortBy(Axis.Z).Last.Edges()[0].Trim(0.3, 0.4);
+    static readonly Edge L1 = Sl3.Faces().OrderBy(Axis.Z).Last().Edges()[0].Trim(0.3, 0.4);
     static readonly Edge L2 = L1.Trim(2, 3);
     static readonly Wire Wi7 = new([L1, L2, B.RadiusArc(L1.PositionAt(1), L2.PositionAt(0), 1, shortSagitta: false)]);
 

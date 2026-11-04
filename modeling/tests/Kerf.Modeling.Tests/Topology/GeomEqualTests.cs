@@ -62,7 +62,7 @@ public class EdgeGeomEqualCircleTests
         // Two circles with same radius/endpoints but different center/axis
         var f1 = Ops.MakeFace(new RadiusArc((5, 0), (-5, 0), 15) + new Line((5, 0), (-5, 0)));
         var p1 = Ops.Revolve(f1, Axis.X, 90);
-        var circles = p1.Edges().FilterBy(GeomType.Circle);
+        var circles = p1.Edges().Where(GeomType.Circle);
         Assert.Equal(2, circles.Count);
         var value1 = circles[0];
         var value2 = circles[1].Reversed();

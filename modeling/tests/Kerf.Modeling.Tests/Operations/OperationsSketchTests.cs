@@ -101,10 +101,10 @@ public class OperationsSketchTests
     public void FullRoundEdges()
     {
         var trap = new Trapezoid(0.5, 1, 90 - 8);
-        var test = FullRound(trap.Edges().SortBy(Axis.Y)[^1]);
+        var test = FullRound(trap.Edges().OrderBy(Axis.Y)[^1]);
         Assert.True(test.SingleFace().Area < trap.SingleFace().Area);
 
-        Assert.Throws<ArgumentException>(() => FullRound(trap.Edges().SortBy(Axis.X)[^1]));
+        Assert.Throws<ArgumentException>(() => FullRound(trap.Edges().OrderBy(Axis.X)[^1]));
         Assert.Throws<ArgumentException>(() => FullRound(Edge.MakeLine((0, 0), (1, 0))));
 
         var l1 = Edge.MakeSpline([(-1, 0), (1, 0)], tangents: [new Vector(0, -8), new Vector(0, 8)], scale: true);
@@ -112,29 +112,29 @@ public class OperationsSketchTests
         var face = new Face(new Wire([l1, l2]));
         Assert.Throws<ArgumentException>(() => FullRound(face.Edges()[0]));
 
-        var positive = FullRound(trap.Edges().SortBy(SortBy.Length)[0]);
-        var negative = FullRound(trap.Edges().SortBy(SortBy.Length)[0], invert: true);
+        var positive = FullRound(trap.Edges().OrderBy(ShapeKey.Length)[0]);
+        var negative = FullRound(trap.Edges().OrderBy(ShapeKey.Length)[0], invert: true);
         Assert.True(negative.SingleFace().Area < positive.SingleFace().Area);
         // build123d's (scipy's Voronoi) results
         Check.AlmostEqual(0.35458548403442275, positive.Area, 5);
         Check.AlmostEqual(0.3052168041379631, negative.Area, 5);
 
         var rect = new Rectangle(34, 10);
-        var convexRect = FullRound((rect.Edges() << Axis.X)[0]);
-        var concaveRect = FullRound((rect.Edges() << Axis.X)[0], invert: true);
+        var convexRect = FullRound(rect.Edges().GroupBy(Axis.X).First()[0]);
+        var concaveRect = FullRound(rect.Edges().GroupBy(Axis.X).First()[0], invert: true);
         Assert.True(convexRect.Area < rect.Area);
         Assert.True(concaveRect.Area < convexRect.Area);
         Check.AlmostEqual(329.2704811215115, convexRect.Area, 3);
         Check.AlmostEqual(251.36350580659322, concaveRect.Area, 3);
 
         var tri = new Triangle(a: 10, b: 10, c: 10);
-        var triRound = FullRound(tri.Edges().SortBy(Axis.X)[0]);
+        var triRound = FullRound(tri.Edges().OrderBy(Axis.X)[0]);
         Assert.True(triRound.Area < tri.Area);
         Check.AlmostEqual(31.887519392726578, triRound.Area, 3);
 
         // Flipping the face
         var flipped = (Face)(-Face.MakeRect(34, 10));
-        var rounded = FullRound((flipped.Edges() << Axis.X)[0]).SingleFace();
+        var rounded = FullRound(flipped.Edges().GroupBy(Axis.X).First()[0]).SingleFace();
         Assert.Equal(flipped.NormalAt(), rounded.NormalAt());
     }
 

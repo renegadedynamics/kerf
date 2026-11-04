@@ -17,14 +17,14 @@ public class SolidSmokeTests
         Check.AlmostEqual(BlockVolume, block.Volume, 6);
         Assert.IsType<Solid>(block);
         Assert.Equal(7, block.Faces().Count);
-        Assert.Single(block.Faces().FilterBy(GeomType.Cylinder));
+        Assert.Single(block.Faces().Where(GeomType.Cylinder));
         // The face the cut brought in, from the tool; it isn't new, as it descends from the cylinder's face
         var last = block.Faces(Select.Last);
         Assert.Single(last);
         Assert.Equal(GeomType.Cylinder, last[0].GeomType);
         Assert.Empty(block.Faces(Select.New));
         // The top face is the last along Z
-        var top = block.Faces().SortBy(Axis.Z).Last;
+        var top = block.Faces().OrderBy(Axis.Z).Last();
         Check.AlmostEqual(5, top.Center().Z);
         Assert.Equal(2, top.Wires().Count);
     }
@@ -33,13 +33,13 @@ public class SolidSmokeTests
     public void FilletTheTopEdges()
     {
         var box = Solid.MakeBox(10, 10, 10);
-        var topEdges = box.Edges().GroupBy(Axis.Z).Last;
+        var topEdges = box.Edges().GroupBy(Axis.Z).Last();
         Assert.Equal(4, topEdges.Count);
         var filleted = box.Fillet(1, topEdges);
         Assert.True(filleted.IsValid);
         Assert.Equal(10, filleted.Faces().Count);
         Assert.True(filleted.Volume < 1000);
-        Assert.All(box.Edges().FilterBy(e => true), e => Assert.Equal(Convexity.Convex, e.Convexity));
+        Assert.All(box.Edges().Where(e => true).ToShapeList(), e => Assert.Equal(Convexity.Convex, e.Convexity));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class SolidSmokeTests
     {
         var pocket = Solid.MakeBox(20, 20, 10) - Solid.MakeBox(10, 10, 10, new Plane((5, 5, 5)));
         // Four round the pocket's floor and four up its walls
-        var concave = pocket.Edges().FilterBy(Convexity.Concave);
+        var concave = pocket.Edges().Where(Convexity.Concave);
         Assert.Equal(8, concave.Count);
         Assert.Equal(4, concave.Count(e => Math.Abs(e.Center().Z - 5) < 1e-6));
     }

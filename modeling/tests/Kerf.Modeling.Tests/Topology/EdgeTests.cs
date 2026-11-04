@@ -459,7 +459,7 @@ public class EdgeTests
         var path = new RegularPolygon(5, 5).SingleFace().OuterWire();
         var profile = path.LocationAt(0) * (new Circle(0.6) & new Rectangle(2, 1));
         var target = Sweep(profile, path, transition: Transition.Right);
-        var insideEdges = target.Edges().FilterBy(e => e.IsInterior);
+        var insideEdges = target.Edges().Where(e => e.IsInterior).ToShapeList();
         Assert.Equal(5, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.Equal(GeomType.Ellipse, e.GeomType));
     }
@@ -472,7 +472,7 @@ public class EdgeTests
         // A moved copy of an extracted solid still names the unmoved container as its topo_parent; the faces have to
         // be found by TShape, not Location
         var moved = new Pos(10) * Extrude(Cross(), 2).SingleSolid();
-        var insideEdges = moved.Edges().FilterBy(e => e.IsInterior);
+        var insideEdges = moved.Edges().Where(e => e.IsInterior).ToShapeList();
         Assert.Equal(4, insideEdges.Count);
         Assert.All(insideEdges, e => Assert.True(e.Center().X > 5));
     }
@@ -484,10 +484,10 @@ public class EdgeTests
         Assert.All(box.Edges(), e => Assert.Equal(Convexity.Convex, e.Convexity));
 
         var cross = Extrude(Cross(), 2);
-        var concave = cross.Edges().FilterBy(Convexity.Concave);
+        var concave = cross.Edges().Where(Convexity.Concave);
         Assert.Equal(4, concave.Count);
         Assert.All(concave, e => Assert.True(e.IsInterior));
-        Assert.Equal(32, cross.Edges().FilterBy(Convexity.Convex).Count);
+        Assert.Equal(32, cross.Edges().Where(Convexity.Convex).Count);
         // the re-entrant edges are the vertical ones nearest the axis
         Assert.All(concave, e => Assert.True(Math.Abs(e.Center().X) == 1 && Math.Abs(e.Center().Y) == 1));
     }
@@ -501,9 +501,9 @@ public class EdgeTests
         Assert.DoesNotContain(rounded.Edges(), e => e.IsInterior);
         // a seam has the same face on both sides
         Solid Cylinder() => Solid.MakeCylinder(3, 5, new Plane((0, 0, -2.5)));
-        var seam = Cylinder().Edges().FilterBy(GeomType.Line)[0];
+        var seam = Cylinder().Edges().Where(GeomType.Line)[0];
         Assert.Equal(Convexity.Smooth, seam.Convexity);
-        Assert.Equal(2, Cylinder().Edges().FilterBy(Convexity.Convex).Count);
+        Assert.Equal(2, Cylinder().Edges().Where(Convexity.Convex).Count);
     }
 
     [Fact]

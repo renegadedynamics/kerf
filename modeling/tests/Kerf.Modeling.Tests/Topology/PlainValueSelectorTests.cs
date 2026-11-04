@@ -6,120 +6,114 @@ namespace Build123d.Tests.Topology;
 using Kerf.Modeling;
 
 /// <summary>
-/// Every selector takes plain values, as a spreadsheet formula passes them: build123d's <c>property</c> arguments by
-/// name, and enums by name where a value is compared. Each gives what the lambda overload gives.
+/// Every selector takes plain values, as a spreadsheet formula passes them: a geometry type, an axis, a
+/// <see cref="ShapeKey"/>, a number. Each gives what the lambda form gives. (Until unit 10M2 they were also taken by
+/// name, <c>FilterBy("IsClosed")</c>; these are the same tests on the typed forms that replaced the names.)
 /// </summary>
 public class PlainValueSelectorTests
 {
     // A plate with a hole, filleted around the top: planes, a cylinder, tori and circles of several radii
     private static readonly Shape Part =
-        Ops.Fillet((new Box(20, 10, 4) - new Cylinder(2, 10)).Edges().GroupBy(Axis.Z).Last.FilterBy(GeomType.Line), 1);
+        Ops.Fillet((new Box(20, 10, 4) - new Cylinder(2, 10)).Edges().GroupBy(Axis.Z).Last().Where(GeomType.Line), 1);
 
     [Theory]
-    [InlineData("IsClosed")]
-    [InlineData("isClosed")]
-    [InlineData("is_closed")]
-    public void FilterByABooleanPropertyByName(string name)
+    [InlineData(GeomType.Line)]
+    [InlineData(GeomType.Circle)]
+    [InlineData(GeomType.Ellipse)]
+    public void FilterByAGeomType(GeomType type)
     {
         var edges = Part.Edges();
-        Assert.Equal(edges.FilterBy(e => e.IsClosed), edges.FilterBy(name));
-        Assert.Equal(edges.FilterBy(e => e.IsClosed, reverse: true), edges.FilterBy(name, reverse: true));
-        Assert.NotEmpty(edges.FilterBy(name));
+        Assert.Equal(edges.Where(e => e.GeomType == type).ToShapeList(), edges.Where(type));
+        Assert.Equal(edges.Where(e => e.GeomType != type).ToShapeList(), edges.WhereNot(type));
+        Assert.Equal(edges.Count, edges.Where(type).Count + edges.WhereNot(type).Count);
     }
 
     [Fact]
-    public void FilterByAPropertyThatIsntBooleanSaysSo()
+    public void AMeasureAShapeLacksSaysSo()
     {
-        var e = Assert.Throws<ArgumentException>(() => Part.Edges().FilterBy("Length"));
-        Assert.Contains("FilterByValue", e.Message);
+        var e = Assert.Throws<InvalidOperationException>(() => Part.Vertices().OrderBy(ShapeKey.Length));
+        Assert.Contains("has no length", e.Message);
     }
 
     [Fact]
-    public void AnUnknownNameListsTheKnownOnes()
-    {
-        var e = Assert.Throws<ArgumentException>(() => Part.Faces().SortBy("Lenght"));
-        Assert.Contains("no property 'Lenght'", e.Message);
-        Assert.Contains("Area", e.Message);
-        Assert.Contains("Center()", e.Message);
-    }
+    public void AnUnknownKeyIsRefused() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() => Part.Faces().OrderBy((ShapeKey)99));
 
     [Fact]
-    public void FilterByValueByName()
+    public void FilterByValueOfAnEnum()
     {
         var edges = Part.Edges();
-        var circles = edges.FilterBy(GeomType.Circle);
-        Assert.Equal(edges.FilterByValue(o => o.GeomType, GeomType.Circle), edges.FilterByValue("GeomType", GeomType.Circle));
-        // An enum by its name, as build123d spells it too
-        Assert.Equal(circles, edges.FilterByValue("GeomType", "Circle"));
-        Assert.Equal(circles, edges.FilterByValue("geom_type", "CIRCLE"));
-        // A number, within the tolerance, whatever its type
-        var radius2 = circles.FilterByValue(o => o.Radius, 2.0);
+        var circles = edges.Where(GeomType.Circle);
+        Assert.Equal(circles, edges.WithValue(o => o.GeomType, GeomType.Circle));
+        Assert.Equal(edges.WithValue(o => o.GeomType, GeomType.Line), edges.Where(GeomType.Line));
+        Assert.Equal(edges.WithoutValue(o => o.GeomType, GeomType.Circle), edges.WhereNot(GeomType.Circle));
+        // A number, within the tolerance
+        var radius2 = circles.WithValue(o => o.Radius, 2.0);
         Assert.NotEmpty(radius2);
-        Assert.Equal(radius2, circles.FilterByValue("Radius", 2));
-        Assert.Equal(radius2, circles.FilterByValue("radius", 2.0000001, tolerance: 1e-6));
+        Assert.Equal(radius2, circles.WithValue(ShapeKey.Radius, 2));
+        Assert.Equal(radius2, circles.WithValue(ShapeKey.Radius, 2.0000001, tolerance: 1e-6));
     }
 
     [Fact]
     public void AMissingMeasureNeverMatches()
     {
-        // A plane has no radius: never matched, so kept by reverse
+        // A plane has no radius: never matched, so kept by WithoutValue
         var faces = Part.Faces();
-        var cylinders = faces.FilterByValue("Radius", 2.0);
+        var cylinders = faces.WithValue(ShapeKey.Radius, 2.0);
         Assert.All(cylinders, f => Assert.Equal(GeomType.Cylinder, f.GeomType));
-        Assert.Contains(faces.FilterByValue("Radius", 2.0, reverse: true), f => f.GeomType == GeomType.Plane);
+        Assert.Contains(faces.WithoutValue(ShapeKey.Radius, 2.0), f => f.GeomType == GeomType.Plane);
     }
 
     [Fact]
     public void FilterByValueOfAMeasure()
     {
         var edges = Part.Edges();
-        Assert.Equal(edges.FilterByValue(o => o.Length, 20.0), edges.FilterByValue(SortBy.Length, 20));
+        Assert.Equal(edges.WithValue(o => o.Length, 20.0), edges.WithValue(ShapeKey.Length, 20));
         var faces = Part.Faces();
-        Assert.Equal(faces.FilterByValue(o => o.Radius, 2.0), faces.FilterByValue(SortBy.Radius, 2));
-        Assert.Equal(faces.FilterByValue(o => o.Area, faces[0].Area), faces.FilterByValue(SortBy.Area, faces[0].Area));
+        Assert.Equal(faces.WithValue(o => o.Radius, 2.0), faces.WithValue(ShapeKey.Radius, 2));
+        Assert.Equal(faces.WithValue(o => o.Area, faces[0].Area), faces.WithValue(ShapeKey.Area, faces[0].Area));
     }
 
     [Fact]
-    public void SortByName()
+    public void SortByAMeasure()
     {
         var edges = Part.Edges();
-        Assert.Equal(edges.SortBy(e => e.Length).ToList(), edges.SortBy("Length").ToList());
-        Assert.Equal(edges.SortBy(e => e.Length, reverse: true).ToList(), edges.SortBy("length", reverse: true).ToList());
-        // A method that takes no arguments
+        Assert.Equal(edges.OrderBy(e => e.Length).ToList(), edges.OrderBy(ShapeKey.Length).ToList());
+        Assert.Equal(edges.OrderByDescending(e => e.Length).ToList(), edges.OrderByDescending(ShapeKey.Length).ToList());
         var faces = Part.Faces();
-        Assert.Equal(faces.SortBy(f => f.Area).ToList(), faces.SortBy("Area").ToList());
+        Assert.Equal(faces.OrderBy(f => f.Area).ToList(), faces.OrderBy(ShapeKey.Area).ToList());
     }
 
     [Fact]
-    public void GroupByName()
+    public void GroupByAMeasure()
     {
         var faces = Part.Faces();
-        var byLambda = faces.GroupBy(f => f.Area);
-        var byName = faces.GroupBy("Area");
-        Assert.Equal(byLambda.Count, byName.Count);
+        var byLambda = faces.GroupByValue(f => f.Area);
+        var byKey = faces.GroupBy(ShapeKey.Area);
+        Assert.Equal(byLambda.Count, byKey.Count);
         for (int i = 0; i < byLambda.Count; i++)
-            Assert.Equal(byLambda[i].ToList(), byName[i].ToList());
-        Assert.Equal(byLambda.Keys.Cast<object?>(), byName.Keys);
+            Assert.Equal(byLambda[i].ToList(), byKey[i].ToList());
+        Assert.Equal(byLambda.Keys, byKey.Keys);
         // Not a number: grouped as it is
-        var byType = faces.GroupBy("GeomType");
-        Assert.Equal(faces.GroupBy(f => f.GeomType).Count, byType.Count);
-        Assert.Equal(faces.FilterBy(GeomType.Plane).ToList(), byType.Group(GeomType.Plane).ToList());
+        var byType = faces.GroupByValue(f => f.GeomType);
+        Assert.Equal(faces.Select(f => f.GeomType).Distinct().Count(), byType.Count);
+        Assert.Equal(faces.Where(GeomType.Plane).ToList(), byType.Group(GeomType.Plane).ToList());
     }
 
     [Fact]
-    public void NamesResolvePerClass()
+    public void AMixedListAnswersPerClass()
     {
         // A mixed list: each shape's own class answers
         var mixed = new ShapeList<Shape>([.. Part.Faces().Take(2), .. Part.Edges().Take(2)]);
-        Assert.Equal(4, mixed.SortBy("Area").Count);
-        Assert.Equal(mixed.Where(s => s.GeomType == GeomType.Line).ToList(), mixed.FilterByValue("GeomType", "Line").ToList());
+        Assert.Equal(4, mixed.OrderBy(ShapeKey.Area).Count);
+        Assert.Equal(mixed.Where(s => s.GeomType == GeomType.Line).ToList(), mixed.WithValue(s => s.GeomType, GeomType.Line).ToList());
     }
 
     [Fact]
-    public void ManyThreadsResolveNamesAtOnce()
+    public void ManyThreadsSelectAtOnce()
     {
         var edges = Part.Edges();
-        var expected = edges.SortBy(e => e.Length).ToList();
-        Parallel.For(0, 32, _ => Assert.Equal(expected, edges.SortBy("Length").ToList()));
+        var expected = edges.OrderBy(e => e.Length).ToList();
+        Parallel.For(0, 32, _ => Assert.Equal(expected, edges.OrderBy(ShapeKey.Length).ToList()));
     }
 }

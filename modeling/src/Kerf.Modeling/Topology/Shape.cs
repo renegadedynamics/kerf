@@ -17,10 +17,6 @@ namespace Kerf.Modeling;
 /// <see cref="IsEmpty"/>, has no sub-shapes, and adding it to another shape leaves that shape unchanged.
 /// </para>
 /// </remarks>
-// Properties and methods are found by name for selectors given plain values (ShapeProperty), trimmed or not
-[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(
-    System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties
-    | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicMethods)]
 public abstract partial class Shape : IEquatable<Shape>
 {
     // The OCCT shape. Never modified: copies are made with Located/Moved/Reversed instead

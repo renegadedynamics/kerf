@@ -125,8 +125,8 @@ public class ShapeTests
     {
         var box = Solid.MakeBox(1, 1, 1, new Plane((0, 0, 1)));
         var intersectedFaces = box.FacesIntersectedByAxis(Axis.Z);
-        Assert.Contains(box.Faces().SortBy(Axis.Z)[0], intersectedFaces);
-        Assert.Contains(box.Faces().SortBy(Axis.Z).Last, intersectedFaces);
+        Assert.Contains(box.Faces().OrderBy(Axis.Z)[0], intersectedFaces);
+        Assert.Contains(box.Faces().OrderBy(Axis.Z).Last(), intersectedFaces);
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class ShapeTests
             .Select(i => new Plane(spine ^ positions[i]) * new Rotation(0, 0, twists[i]) * Wire.MakeRect(sizes[i], sizes[i]))
             .ToList();
         var solid = Solid.MakeLoft(sections);
-        var edge = solid.Edges().GroupBy(e => e.Length, tolDigits: 6).Last.SortBy(Axis.X)[^2..].SortBy(Axis.Z).Last;
+        var edge = solid.Edges().GroupByValue(e => e.Length, digits: 6).Last().OrderBy(Axis.X)[^2..].OrderBy(Axis.Z).Last();
         var faces = solid.Faces().Where(f => f.Edges().Any(e => edge == e)).ToList();
         Assert.Equal(2, faces.Count);
 
@@ -386,7 +386,7 @@ public class ShapeTests
     public void Intersection()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        var intersections = box.Intersect(new Axis((0.5, 0.5, 4), (0, 0, -1))).Vertices().SortBy(Axis.Z);
+        var intersections = box.Intersect(new Axis((0.5, 0.5, 4), (0, 0, -1))).Vertices().OrderBy(Axis.Z);
         Check.AlmostEqual((0.5, 0.5, 0), new Vector(intersections[0]), 5);
         Check.AlmostEqual((0.5, 0.5, 1), new Vector(intersections[1]), 5);
     }
@@ -557,7 +557,7 @@ public class ShapeTests
 
         var vEdge = Edge.MakeLine((-5, 0, -20), (-5, 0, 20));
         var (vertices1, edges1) = cylinder.OcpSection(vEdge);
-        vertices1 = vertices1.SortBy(Axis.Z);
+        vertices1 = vertices1.OrderBy(Axis.Z);
         Assert.Equal(2, vertices1.Count);
 
         Check.AlmostEqual((-5, 0, -10), new Vector(vertices1[0]), 5);
@@ -631,7 +631,7 @@ public class ShapeTests
         Assert.Throws<InvalidOperationException>(() => empty.ToSplines());
         var emptyWire = new Wire();
         Assert.Throws<ArgumentException>(() => box.Vertices().GroupBy(emptyWire));
-        Assert.Throws<ArgumentException>(() => box.Vertices().SortBy(emptyWire));
+        Assert.Throws<ArgumentException>(() => box.Vertices().OrderBy(emptyWire));
     }
 
     [Fact]

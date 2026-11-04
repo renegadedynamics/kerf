@@ -215,7 +215,7 @@ public partial class Wire : Shape1D
     public ShapeList<Edge> OrderEdges()
     {
         // Sorting by a reversed wire runs against the orientation of its edges
-        var sorted = Edges().SortBy(this, reverse: !IsForward);
+        var sorted = (IsForward ? Edges().OrderBy(this) : Edges().OrderByDescending(this));
         var ordered = new List<Edge> { sorted[0] };
         foreach (var edge in sorted.Skip(1))
             ordered.Add((ordered[^1].PositionAt(1) - edge.PositionAt(0)).Length < Constants.Tolerance ? edge : edge.Reversed());
@@ -453,7 +453,7 @@ public partial class Wire : Shape1D
         var startU = start.ToParam(this);
         var endU = end.ToParam(this);
         (startU, endU) = (Math.Min(startU, endU), Math.Max(startU, endU));
-        var ordered = Edges().SortBy(this);
+        var ordered = Edges().OrderBy(this);
         if (!IsForward)
             // The edges of a reversed wire run against its positions, so turn each around
             ordered = new ShapeList<Edge>(ordered.Select(e => e.Reversed()));
