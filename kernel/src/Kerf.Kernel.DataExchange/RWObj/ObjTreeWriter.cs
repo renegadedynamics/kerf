@@ -15,10 +15,10 @@ using System.Text;
 namespace Kerf.Engine.Exchange.Obj;
 
 /// <summary>The options of <see cref="ObjTreeWriter"/>.</summary>
-public sealed record ObjWriteOptions
+public sealed record ObjWriterOptions
 {
     /// <summary>The defaults.</summary>
-    public static ObjWriteOptions Default { get; } = new();
+    public static ObjWriterOptions Default { get; } = new();
 
     /// <summary>The factor applied to coordinates (1: the model's unit).</summary>
     public double Scale { get; init; } = 1.0;
@@ -49,10 +49,10 @@ public sealed record ObjWriteOptions
 public sealed class ObjTreeWriter
 {
     /// <summary>A writer with the options (the defaults if null).</summary>
-    public ObjTreeWriter(ObjWriteOptions? options = null) => Options = options ?? ObjWriteOptions.Default;
+    public ObjTreeWriter(ObjWriterOptions? options = null) => Options = options ?? ObjWriterOptions.Default;
 
     /// <summary>The options.</summary>
-    public ObjWriteOptions Options { get; }
+    public ObjWriterOptions Options { get; }
 
     /// <summary>
     /// Writes the tree's OBJ to <paramref name="obj"/> and its materials to <paramref name="mtl"/> (if not null),

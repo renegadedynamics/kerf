@@ -962,7 +962,7 @@ Kerf.Engine.Exchange.Mesh.CoordinateConverter RWMesh_CoordinateConverter
 Kerf.Engine.Exchange.Mesh.ProductMesh RWMesh_ProductMesh
 Kerf.Engine.Exchange.Messages.XstepMessages XSMessage_XSTEP_us
 Kerf.Engine.Exchange.Obj.ObjTreeWriter RWObj_TreeWriter
-Kerf.Engine.Exchange.Obj.ObjWriteOptions RWObj_WriteOptions
+Kerf.Engine.Exchange.Obj.ObjWriterOptions RWObj_WriteOptions
 Kerf.Engine.Exchange.ShapeFixParameters DE_ShapeFixParameters
 Kerf.Engine.Exchange.Step.ActorRead STEPControl_ActorRead
 Kerf.Engine.Exchange.Step.ActorWrite STEPControl_ActorWrite

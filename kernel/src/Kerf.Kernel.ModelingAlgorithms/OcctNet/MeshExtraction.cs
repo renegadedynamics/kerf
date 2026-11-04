@@ -49,6 +49,15 @@ public static class MeshExtraction
     /// <param name="angle">The angular deflection, in radians, for edges without a polygon.</param>
     public static global::Kerf.Engine.Meshing.MeshBuffers Extract(in Shape root, IReadOnlyList<Shape> faces,
                                       IReadOnlyList<Shape> edges, double deflection, double angle)
+        => Extract(root, faces, edges, deflection, angle, out _, out _);
+
+    /// <summary>
+    /// The buffers, as the other form, with each face's triangulation (null for a face without one) and the placement
+    /// it is in: what the public <c>ShapeMesh</c> keeps for the double-precision nodes and the mesh writers (unit 10L3).
+    /// </summary>
+    internal static global::Kerf.Engine.Meshing.MeshBuffers Extract(in Shape root, IReadOnlyList<Shape> faces,
+                                      IReadOnlyList<Shape> edges, double deflection, double angle,
+                                      out Triangulation?[] triangulations, out Placement[] placements)
     {
         ArgumentNullException.ThrowIfNull(faces);
         ArgumentNullException.ThrowIfNull(edges);
@@ -82,6 +91,8 @@ public static class MeshExtraction
         {
             builder.AddEdge(ShapeCasts.Edge(edges[i]), edgeFaces, deflection, angle);
         }
+        triangulations = tris;
+        placements = locations;
         return builder.Finish();
     }
 

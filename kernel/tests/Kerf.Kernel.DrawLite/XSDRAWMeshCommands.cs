@@ -439,7 +439,7 @@ internal static class XSDRAWMeshCommands
         double aSystemUnitFactor = XSDRAWCommands.GetLengthUnit(theDI) * 0.001;
         double aScale = aFileUnitFactor > 0.0 ? aSystemUnitFactor / aFileUnitFactor : 1.0;
         // (a Y-up system written to a Z-up file is written unchanged: decision 1260)
-        var aWriter = new ObjTreeWriter(new ObjWriteOptions { Scale = aScale, ZUpToYUp = isSystemZUp && !isFileZUp });
+        var aWriter = new ObjTreeWriter(new ObjWriterOptions { Scale = aScale, ZUpToYUp = isSystemZUp && !isFileZUp });
         string aMtlPath = Path.ChangeExtension(anObjFilePath, ".mtl");
         var anObj = new MemoryStream();
         var aMtl = new MemoryStream();

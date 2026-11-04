@@ -390,7 +390,7 @@ public class MeshFormatsTests
 
         // Y up and metres on request
         var anObj2 = new MemoryStream();
-        Assert.True(new ObjTreeWriter(new ObjWriteOptions { ZUpToYUp = true, Scale = 0.001 }).Write(aTree, anObj2, null));
+        Assert.True(new ObjTreeWriter(new ObjWriterOptions { ZUpToYUp = true, Scale = 0.001 }).Write(aTree, anObj2, null));
         Assert.DoesNotContain("mtllib", Encoding.UTF8.GetString(anObj2.ToArray()), StringComparison.Ordinal);
         Assert.Equal(aTriangles.Count, ParseObj(Encoding.UTF8.GetString(anObj2.ToArray())).Triangles.Count);
     }

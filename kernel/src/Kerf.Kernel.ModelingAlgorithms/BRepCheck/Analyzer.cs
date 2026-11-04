@@ -160,6 +160,16 @@ public class Analyzer
     /// </summary>
     public ResultCheck? Result(in Shape subS) => _map.GetValue(subS);
 
+    /// <summary>Every checked sub-shape with its check (null for compounds and compsolids), in the order checked: the
+    /// public <c>HealingOperations.Validate</c>'s report (unit 10L3).</summary>
+    internal IEnumerable<(Shape Shape, ResultCheck? Check)> Results()
+    {
+        for (int i = 0; i < _map.Count; i++)
+        {
+            yield return (_map.KeyAt(i), _map.ValueAt(i));
+        }
+    }
+
     // The exceptions OCCT's catch (Standard_Failure) handles under OCC_CATCH_SIGNALS
     private static bool IsCaught(Exception exception)
         => exception is FailureException

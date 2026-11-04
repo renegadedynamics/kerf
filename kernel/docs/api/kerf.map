@@ -2499,7 +2499,7 @@ type T:Occt.RWHeaderSection_ReadWriteModule Kerf.Engine.Exchange.Step.Header.Hea
 type T:Occt.RWMesh_CoordinateConverter Kerf.Engine.Exchange.Mesh.CoordinateConverter  # 10E: internal, drafted in 10E
 type T:Occt.RWMesh_ProductMesh Kerf.Engine.Exchange.Mesh.ProductMesh  # 10E: internal, drafted in 10E
 type T:Occt.RWObj_TreeWriter Kerf.Engine.Exchange.Obj.ObjTreeWriter  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
-type T:Occt.RWObj_WriteOptions Kerf.Engine.Exchange.Obj.ObjWriteOptions  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
+type T:Occt.RWObj_WriteOptions Kerf.Engine.Exchange.Obj.ObjWriterOptions  # 10L3: ObjWriteOptions is Kerf.Exchange.ObjWriteOptions; 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.RWStepAP203_RWCcDesignApproval Kerf.Engine.Exchange.Step.Ap203.ReadWrite.RWCcDesignApproval  # 10E: internal, drafted in 10E
 type T:Occt.RWStepAP203_RWCcDesignCertification Kerf.Engine.Exchange.Step.Ap203.ReadWrite.RWCcDesignCertification  # 10E: internal, drafted in 10E
 type T:Occt.RWStepAP203_RWCcDesignContract Kerf.Engine.Exchange.Step.Ap203.ReadWrite.RWCcDesignContract  # 10E: internal, drafted in 10E
