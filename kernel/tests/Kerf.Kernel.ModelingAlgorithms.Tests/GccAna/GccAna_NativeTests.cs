@@ -1,6 +1,7 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
 using Kerf.Engine.Construction.Constraints;
+using Kerf.Geometry;
 using System.Globalization;
 using System.Text;
 using Xunit.Abstractions;
@@ -40,21 +41,49 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
     };
 
     /// <summary>
-    /// Circ2d3Tan's three lines with the third unqualified and the first two enclosed and unqualified (either way
-    /// round) filter the solutions with cote3(2), which OCCT never sets (it sets cote3(1) twice).
+    /// The constructors Kerf corrected (docs/occt-issues.md's triage, batch K4), with the decision: their cases compare
+    /// at plan 3.2's third level. A case whose results differ from native's is an intended difference when the port's
+    /// solutions obey every law (<see cref="GccLaws"/>) and include each of native's that obeys them; native's other
+    /// solutions are the bugs fixed.
     /// </summary>
-    private static bool IsUninitialisedCase(GccAnaRecordings.Case theCase)
+    private static readonly Dictionary<string, string> theCorrected = new()
     {
-        if (theCase.Ctor != "3Tan.LLL")
+        ["3Tan.CCC"] = "decision 17101", ["3Tan.CCL"] = "decision 17101", ["3Tan.CLL"] = "decision 17101",
+        ["3Tan.LLL"] = "decision 17101", ["3Tan.CCP"] = "decision 17101", ["3Tan.CLP"] = "decision 17101",
+        ["3Tan.LLP"] = "decision 17101",
+    };
+
+    /// <summary>The law tolerance for a case solved with the given tolerance.</summary>
+    private static double LawTolerance(double theTol) => Math.Max(1.0e-6, 10 * theTol);
+
+    /// <summary>True if the port's results obey the laws and keep every solution of native's that does.</summary>
+    internal static bool IsIntendedDifference(GccAnaRecordings.Case theCase, out string theWhy)
+    {
+        theWhy = "";
+        if (GccAnaRecordings.Laws(theCase) is not GccAnaRecordings.LawCase aLaw)
         {
+            theWhy = "no laws for " + theCase.Ctor;
             return false;
         }
-        Qualifier q1 = (Qualifier)(int)theCase.Inputs[4];
-        Qualifier q2 = (Qualifier)(int)theCase.Inputs[9];
-        Qualifier q3 = (Qualifier)(int)theCase.Inputs[14];
-        return q3 == Qualifier.Unqualified
-               && ((q1 == Qualifier.Enclosed && q2 == Qualifier.Unqualified)
-                   || (q1 == Qualifier.Unqualified && q2 == Qualifier.Enclosed));
+        double aTol = LawTolerance(aLaw.Tolerance);
+        List<string> aBroken = GccLaws.Check(aLaw.Solve, aLaw.Args, aLaw.Locus, aLaw.Radius, aTol);
+        if (aBroken.Count > 0)
+        {
+            theWhy = "the port breaks a law: " + aBroken[0];
+            return false;
+        }
+        GccLaws.Circles S = aLaw.Solve();
+        List<Circle2D> aPort = Enumerable.Range(1, S.Count()).Select(S.Solution).ToList();
+        foreach (Circle2D aNative in GccAnaRecordings.NativeCircles(theCase))
+        {
+            if (GccLaws.IsSolution(aNative, aLaw.Args, aLaw.Locus, aLaw.Radius, aTol)
+                && !aPort.Any(p => p.Location.DistanceTo(aNative.Location) <= aTol && Math.Abs(p.Radius - aNative.Radius) <= aTol))
+            {
+                theWhy = FormattableString.Invariant($"native's solution ({aNative.Location.X}, {aNative.Location.Y}) r {aNative.Radius} is lost");
+                return false;
+            }
+        }
+        return true;
     }
 
     private static bool SameValue(string theA, string theB)
@@ -111,26 +140,28 @@ public class GccAna_NativeTests(ITestOutputHelper theOutput)
     public void Port_MatchesNative(string theCtor)
     {
         StringBuilder aReport = new();
-        int aNbDiff = 0, aNbCases = 0, aNbSkipped = 0;
+        int aNbDiff = 0, aNbCases = 0, aNbIntended = 0;
         string[] aMasked = theUninitialised.GetValueOrDefault(theCtor, []);
         foreach (GccAnaRecordings.Case aCase in GccAnaRecordings.Cases.Where(c => c.Ctor == theCtor))
         {
             aNbCases++;
             string[] aPort = GccAnaRecordings.Run(aCase);
-            if (IsUninitialisedCase(aCase))
+            string? aDiff = Diff(aCase.Native, aPort, aMasked);
+            string aWhy = "";
+            if (aDiff is not null && theCorrected.ContainsKey(theCtor) && IsIntendedDifference(aCase, out aWhy))
             {
-                aNbSkipped++;
+                aNbIntended++;
                 continue;
             }
-            string? aDiff = Diff(aCase.Native, aPort, aMasked);
             if (aDiff is not null)
             {
                 aNbDiff++;
                 aReport.AppendLine(CultureInfo.InvariantCulture,
-                                   $"{theCtor} [{string.Join(' ', aCase.Inputs.Select(v => v.ToString("R", CultureInfo.InvariantCulture)))}] {aDiff}");
+                                   $"{theCtor} [{string.Join(' ', aCase.Inputs.Select(v => v.ToString("R", CultureInfo.InvariantCulture)))}] {aDiff} {aWhy}");
             }
         }
-        theOutput.WriteLine($"{theCtor}: {aNbCases} cases, {aNbSkipped} skipped, {aNbDiff} differ"
+        theOutput.WriteLine($"{theCtor}: {aNbCases} cases, {aNbIntended} intended differences"
+                            + (theCorrected.TryGetValue(theCtor, out string? aReason) ? $" ({aReason})" : "") + $", {aNbDiff} differ"
                             + (aMasked.Length > 0 ? $" (masked: {string.Join(' ', aMasked)})" : ""));
         theOutput.WriteLine(aReport.ToString());
         Assert.True(aNbDiff == 0, aReport.ToString());

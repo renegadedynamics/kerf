@@ -377,8 +377,7 @@ internal static class ConstrainedSolvers
                 gcc.Tangency3(i, out uc3, out ua3, out p);
                 if (!Ok(2, ua3))
                     continue;
-                var u = EnclosedCircParamOffset(tangents, circ, [uc1, uc2, uc3]);
-                solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, u[0], u[1]), sagitta));
+                solutions.AddRange(BySagitta(TwoArcEdgesFromParams(circ, uc1, uc2), sagitta));
             }
             return new ShapeList<Edge>(solutions.Select(e => new Edge(e)));
         }

@@ -33,7 +33,7 @@ namespace Kerf.Kernel.Oracle.Tests;
 /// uninitialised memory are attributed by kind; every other token must be identical.
 /// </para>
 /// </remarks>
-public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
+public sealed partial class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 {
     private static readonly int CasesPerConstructor = Tape.Cases(500, 167);
 
@@ -526,6 +526,14 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
 
         /// <summary>Whether the attribution explains these differences (by default, any).</summary>
         public Func<List<string>, bool> Explained = _ => true;
+
+        /// <summary>
+        /// The laws of a solver Kerf corrected (unit 10K4), with the decision: a difference from native is intended when
+        /// the port obeys them and keeps native's solutions that do (Geom2dGccOracleTests.Laws.cs).
+        /// </summary>
+        public Laws? Laws;
+
+        public string? Corrected;
     }
 
     internal static Rec RunNative(Func<NSolver> theCtor)
@@ -784,14 +792,12 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2, a3),
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), NQ(n3, a3.Q), tol, u1, u2, u3))),
                 Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), PQ(p3, a3.Q), tol, u1, u2, u3))),
+                Laws = new([L(a1, p1), L(a2, p2), L(a3, p3)], null, null, tol),
+                Corrected = "GccAna_Circ2d3Tan (decision 17101)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic && a3.IsAnalytic))
             {
                 c.Attribution = "FunctionTanCuCuCu's empty Values: math_FunctionSetRoot starts from its uninitialised F and DF";
-            }
-            else if (a1.IsLine && a2.IsLine && a3.IsLine)
-            {
-                c.Attribution = "GccAna_Circ2d3Tan(three lines)'s unset cote3(2) (decision 781)";
             }
             return c;
         });
@@ -808,6 +814,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1, a2) + $", point ({x}, {y})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), NQ(n2, a2.Q), new N.Geom2d_CartesianPoint(x, y), tol, u1, u2))),
                 Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), PQ(p2, a2.Q), new CartesianPoint2(x, y), tol, u1, u2))),
+                Laws = new([L(a1, p1), L(a2, p2), L(x, y)], null, null, tol),
+                Corrected = "GccAna_Circ2d3Tan (decision 17101)",
             };
             if (!(a1.IsAnalytic && a2.IsAnalytic))
             {
@@ -828,6 +836,8 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 Description = Describe(a1) + $", ({x1}, {y1}), ({x2}, {y2})",
                 Native = () => RunNative(() => NCirc2d3Tan(new N.Geom2dGcc_Circ2d3Tan(NQ(n1, a1.Q), new N.Geom2d_CartesianPoint(x1, y1), new N.Geom2d_CartesianPoint(x2, y2), tol, u1))),
                 Port = () => RunPort(() => PCirc2d3Tan(new global::Kerf.Engine.Construction.Constraints.Circ2d3Tan(PQ(p1, a1.Q), new CartesianPoint2(x1, y1), new CartesianPoint2(x2, y2), tol, u1))),
+                Laws = new([L(a1, p1), L(x1, y1), L(x2, y2)], null, null, tol),
+                Corrected = "GccAna_Circ2d3Tan (decision 17101)",
             };
             if (!a1.IsAnalytic)
             {
@@ -1044,12 +1054,33 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         return aDiff;
     }
 
+    /// <summary>
+    /// The cases (by constructor, the case's index) where the recording ran native twice: its port differed from
+    /// native under an attribution, and the test asked native again whether it repeats itself.
+    /// </summary>
+    private static readonly Dictionary<string, HashSet<int>> theNativeRanTwice = new()
+    {
+        ["Circ2d2TanOn(curve, point, on)"] =
+        [
+            1, 3, 4, 6, 7, 11, 12, 13, 14, 16, 17, 18, 25, 27, 29, 31, 32, 34, 35, 36, 37, 38, 40, 43, 46, 48,
+            52, 54, 55, 56, 57, 61, 63, 65, 66, 69, 70, 72, 73, 74, 75, 80, 82, 83, 84, 89, 92, 94, 96, 98, 99,
+            100, 103, 104, 106, 107, 110, 112, 113, 114, 116, 117, 121, 122, 124, 131, 132, 134, 136, 137, 138,
+            140, 141, 144, 145, 147, 150, 151, 154, 156, 160, 163, 164, 165, 166
+        ],
+        ["Circ2dTanCen(curve, centre)"] =
+        [
+            4, 9, 11, 14, 17, 28, 45, 48, 50, 53, 68, 73, 74, 82, 102, 121, 124, 138, 141, 146, 147, 149, 150,
+            157, 160
+        ],
+    };
+
     [Fact]
     public void Solvers_match_native_token_for_token()
     {
         var anO = new Oracle(output, 20261030);
         int aTotalCases = 0, aTotalIdentical = 0, aTotalTokens = 0, aTotalMasked = 0, aTotalWithSolutions = 0;
         var anAttributed = new Dictionary<string, (int Cases, int NativeRepeats)>();
+        var anIntended = new Dictionary<string, int>();
         var aFailures = new List<string>();
         foreach (var (aCtor, aMake) in Constructors())
         {
@@ -1071,6 +1102,10 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 List<string> aDiff = Differences(aN, aP, aCase.Masked, out int aCompared, out int aMaskedCount);
                 aTotalTokens += aCompared;
                 aTotalMasked += aMaskedCount;
+                // Native ran again on the same inputs where the recording's port differed from it under an
+                // attribution (to record whether native repeats itself): the tape has those runs, so they are made
+                // whatever the port gives now
+                Rec? aN2 = theNativeRanTwice.TryGetValue(aCtor, out HashSet<int>? aTwice) && aTwice.Contains(i) ? aCase.Native() : null;
                 if (aDiff.Count == 0)
                 {
                     anIdentical++;
@@ -1078,14 +1113,19 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 if (aCase.Attribution is not null && aCase.Explained(aDiff))
                 {
-                    // Native again on the same inputs: whether its result repeats is recorded, not required.
-                    Rec aN2 = aCase.Native();
-                    bool aRepeats = Differences(aN, aN2, aCase.Masked, out _, out _).Count == 0;
+                    bool aRepeats = aN2 is not null && Differences(aN, aN2, aCase.Masked, out _, out _).Count == 0;
                     anAttributed.TryGetValue(aCase.Attribution, out var aCount);
                     anAttributed[aCase.Attribution] = (aCount.Cases + 1, aCount.NativeRepeats + (aRepeats ? 1 : 0));
                     continue;
                 }
-                aFailures.Add($"{aCtor} #{i} [{aCase.Description}]: {string.Join("; ", aDiff.Take(6))}");
+                string aWhy = "";
+                if (aCase.Laws is not null && IsIntendedDifference(aN, aP, aCase.Laws, out aWhy))
+                {
+                    anIntended.TryGetValue(aCase.Corrected!, out int aCount);
+                    anIntended[aCase.Corrected!] = aCount + 1;
+                    continue;
+                }
+                aFailures.Add($"{aCtor} #{i} [{aCase.Description}]: {aWhy} {string.Join("; ", aDiff.Take(6))}");
             }
             output.WriteLine(string.Create(CultureInfo.InvariantCulture,
                 $"{aCtor}: {anIdentical}/{aCases} cases identical, {aWithSolutions} with solutions, {aThrows} throwing on both sides or natively"));
@@ -1098,6 +1138,10 @@ public sealed class Geom2dGccOracleTests(ITestOutputHelper output) : IDisposable
         foreach (var (aWhy, aCount) in anAttributed)
         {
             output.WriteLine($"Attributed: {aCount.Cases} cases ({aCount.NativeRepeats} where native repeats itself): {aWhy}");
+        }
+        foreach (var (aWhy, aCount) in anIntended)
+        {
+            output.WriteLine($"Intended differences (plan 3.2's third level): {aCount} cases, {aWhy}");
         }
         foreach (string aF in aFailures.Take(40))
         {

@@ -336,6 +336,53 @@ internal static class GccAnaRecordings
     private static void DumpBisec(Writer w, bool theDone, Func<int> theNb, Func<int, ConstraintBisec?> theSol)
         => w.Solutions(theDone, theNb, i => w.Tok("bis", () => Bisec(theSol(i))));
 
+    //=============================================================================================
+    // The laws' side (Kerf unit 10K4): a case of a circle solver as GccLaws checks it, and native's solutions.
+
+    /// <summary>A case of a circle solver: its arguments, locus and radius, and the port's solver.</summary>
+    public sealed record LawCase(GccLaws.Arg[] Args, GccLaws.Locus? Locus, double? Radius, double Tolerance, Func<GccLaws.Circles> Solve);
+
+    private static GccLaws.CircArg A(in QualifiedCirc theQ) => new(theQ.Qualified(), theQ.Qualifier());
+
+    private static GccLaws.LinArg A(in QualifiedLin theQ) => new(theQ.Qualified(), theQ.Qualifier());
+
+    private static GccLaws.PntArg A(in Point2D theP) => new(theP);
+
+    private static LawCase Tan3(GccLaws.Arg a, GccLaws.Arg b, GccLaws.Arg c, double t)
+        => new([a, b, c], null, null, t, () => GccAna_Circ2d3TanLawsTests.View(GccAna_Circ2d3TanLawsTests.Solve(a, b, c, t)));
+
+    /// <summary>The case as the laws see it, or null for a solver they don't cover.</summary>
+    public static LawCase? Laws(Case theCase)
+    {
+        Reader r = new(theCase.Inputs);
+        switch (theCase.Ctor)
+        {
+            case "3Tan.CCC": { var a = r.QC(); var b = r.QC(); var c = r.QC(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CCL": { var a = r.QC(); var b = r.QC(); var c = r.QL(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CLL": { var a = r.QC(); var b = r.QL(); var c = r.QL(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.LLL": { var a = r.QL(); var b = r.QL(); var c = r.QL(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CCP": { var a = r.QC(); var b = r.QC(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CLP": { var a = r.QC(); var b = r.QL(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.LLP": { var a = r.QL(); var b = r.QL(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.CPP": { var a = r.QC(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.LPP": { var a = r.QL(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+            case "3Tan.PPP": { var a = r.Pnt(); var b = r.Pnt(); var c = r.Pnt(); return Tan3(A(a), A(b), A(c), r.D()); }
+        }
+        return null;
+    }
+
+    /// <summary>The circles of native's solutions, read from its sol tokens.</summary>
+    public static List<Circle2D> NativeCircles(Case theCase)
+    {
+        List<Circle2D> aCircles = [];
+        foreach (string aTok in theCase.Native.Where(t => t.StartsWith("sol:", StringComparison.Ordinal) && !t.StartsWith("sol:!", StringComparison.Ordinal)))
+        {
+            double[] v = aTok[4..].Split(',').Select(h => BitConverter.Int64BitsToDouble(long.Parse(h, NumberStyles.HexNumber, CultureInfo.InvariantCulture))).ToArray();
+            aCircles.Add(new Circle2D(new Frame2D(new Point2D(v[0], v[1]), new Direction2D(v[2], v[3]), new Direction2D(v[4], v[5])), v[6]));
+        }
+        return aCircles;
+    }
+
     /// <summary>Runs the case on the port and writes its results as gccrec does.</summary>
     public static string[] Run(Case theCase)
     {
