@@ -1,12 +1,12 @@
 # Unit 10M2: what Bento sees change
 
-Unit 10M2 redesigned `Kerf.Modeling`'s public API for .NET (kernel decisions 17501 to 17511, placeholders until the
+Unit 10M2 redesigned `Kerf.Modeling`'s public API for .NET (kernel decisions 1575 to 1585, placeholders until the
 merge renumbers them; design.md, "The .NET API (unit 10M2)"). This is every public member renamed, removed or retyped,
 for unit 10N to work from. Found by comparing the public API of `Kerf.Modeling.dll` at kerf main c24cb02e with this
 unit's, by reflection: 249 members went or changed, 346 came or changed. Results are unchanged: the same calls, written
 the new way, give the same shapes.
 
-## Selections (decision 17501)
+## Selections (decision 1575)
 
 Bento's `CAD_SEL_` functions looked members up by name (`FilterBy("IsClosed")`, the property tables): those names are
 gone, and Bento maps its own names to these calls (plan 2.9: "Bento's couplings become explicit").
@@ -43,7 +43,7 @@ gone, and Bento maps its own names to these calls (plan 2.9: "Bento's couplings 
 | `Selector.FilterByGeomType`, `FilterByAxis`, `GroupByMeasure(SortBy, …)` (steps) | `Selector.OfGeomType`, `ParallelTo`, `GroupByKey(ShapeKey, …)`; `GroupByAxis` as before |
 | `Selector.ToPython()` | Removed; `ToString()` prints the C# (`Faces().GroupBy(Axis.Z).Last()`) |
 
-## Booleans and typed results (decisions 17502, 17503)
+## Booleans and typed results (decisions 1576, 1577)
 
 | Before | After |
 |---|---|
@@ -55,7 +55,7 @@ gone, and Bento maps its own names to these calls (plan 2.9: "Bento's couplings 
 | `Curve ^ position`, `Shape1D ^ position` | `LocationAt(position)` (`Curve.LocationAt` is new) |
 | `Axis & …`, `Plane & …`, `Location & …`, `Vector & …` | `Intersect(…)` (the methods were there) |
 
-## Options (decision 17505)
+## Options (decision 1579)
 
 | Before | After |
 |---|---|
@@ -65,7 +65,7 @@ gone, and Bento maps its own names to these calls (plan 2.9: "Bento's couplings 
 | `Thicken(Shape | IEnumerable<Face>, double? amount, Vector? normalOverride, bool both, bool clean)` | `Thicken(…, double amount, Operations.ThickenOptions? options)`; `ThickenOptions { NormalOverride, Both, Clean }` |
 | `Operations.Scale(…, (double, double, double) by, …)`, `shape.Scale((double, double, double) factors, …)` | `Scale(…, Vector by, …)`, `Scale(Vector factors, …)` |
 
-## Errors (decision 17504)
+## Errors (decision 1578)
 
 | Before | After |
 |---|---|
@@ -82,7 +82,7 @@ Bento's `ModelFunctions.Run` shows any exception's message, so a cell shows the 
 forms it can show `Error.Message` without catching. Messages that named Python (snake_case parameters, `None`,
 `BuildSheet`) are .NET sentences now: 32 of them.
 
-## Mode, tuples and names (decisions 17506, 17507, 17509)
+## Mode, tuples and names (decisions 1580, 1581, 1583)
 
 | Before | After |
 |---|---|

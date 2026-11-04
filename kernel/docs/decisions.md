@@ -15998,7 +15998,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `Select.Last` and `Select.New` read, and a second record would say the same.
 1577. **Operators kept where they read naturally in C#.** `+ - &` for Booleans (as LINQ users read `+` on strings and
        `&` on flags: combining two values into one of the same kind), `*` for placement and composition (`location *
-       shape`, `plane * location`, a transform's product), vector arithmetic. Gone: the list operators (17501), `%` and
+       shape`, `plane * location`, a transform's product), vector arithmetic. Gone: the list operators (1575), `%` and
        `^` on curves (`TangentAt`, `LocationAt`, which `Curve` gained) and `&` on geometry values (`Intersect`). A null
        operand throws `ArgumentNullException`; adding nothing is an empty list.
 1578. **Errors: plain forms throw `KerfException`, `Try` forms return `Result<T>`.** An operation that fails in a way a
@@ -16047,7 +16047,7 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        build123d to the final names; modeling/docs/10m2-bento.md lists every public member renamed, removed or retyped,
        for unit 10N.
 1584. **Results and speed unchanged.** Volumes, face counts, the STEP references byte for byte and the Python-reference
-       tests are as they were. `Kerf.Modeling.Tests`: 1,884 tests before, 1,890 after: three new (the tutorials, 17511)
+       tests are as they were. `Kerf.Modeling.Tests`: 1,884 tests before, 1,890 after: three new (the tutorials, 1585)
        and three rows of `IntersectionTests.ShapeCompound` and `Issues` whose display names now differ (the operands'
        classes, `Part` and `Sketch` where they printed `Compound`) where xUnit had merged them as duplicates. Bento's
        benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, rewritten for the new API; kerf main c24cb02e built beside this

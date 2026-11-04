@@ -305,7 +305,7 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
 
 #### The .NET API (unit 10M2)
 
-Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 17501 to 17511, placeholders until the
+Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 1575 to 1585, placeholders until the
 merge renumbers them). build123d's vocabulary stays (Box, Extrude, Fillet, Sketch); what was Python-shaped went.
 [10m2-bento.md](10m2-bento.md) lists every public member renamed, removed or retyped.
 
