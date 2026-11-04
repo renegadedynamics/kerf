@@ -158,3 +158,10 @@ The first packages, for Bento's 3D-models extension.
   tangency)`), `%`, `^` and `&` on geometry went. `PySet`, `PyComparer` and `PyMath` are .NET (`PointOrder`,
   `KeyComparer`, `Numerics`) with the same results. `ToGp…` are `ToPoint3D` and the kernel's other names, `Wrapped` is
   `KernelShape`. Results are unchanged: volumes, face counts, the STEP references, the Python-reference tests.
+- Kerf's unit 10M3: no `KerfException`. `Operations`' `Fillet`, `Chamfer`, `Extrude`, `Loft`, `Revolve`, `Sweep`,
+  `Offset`, `Thicken` and `Draft`, the `Add`, `Subtract` and `Common` of a Part, Sketch or Curve, and the importers
+  return `Result<T>`; the `Try` forms went. The operators, the objects' constructors and the topological shapes' own
+  methods return the value, as the shorthand for inputs known to work, and throw `InvalidOperationException` with the
+  same message on failure. A failed thickening, solid offset or unrecoverable loft is a failure with a code
+  (`modeling.thicken-failed`, new; `offset-failed`; `loft-failed`), and data an importer can't read the exchange's
+  diagnostic, where they were exceptions. Results are unchanged. `docs/10m3-bento.md` lists what changed for Bento.

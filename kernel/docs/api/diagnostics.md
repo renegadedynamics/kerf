@@ -282,29 +282,34 @@ own. Those a program is likely to test for are static properties of the operatio
 
 ## The modelling layer
 
-An operation of Kerf.Modeling that fails in the kernel throws a `KerfException` carrying the kernel's diagnostics (from
-the bridges above), each error's message prefixed with what was being done, outermost first; the exception's inner
-exception is the kernel's own. Bento shows the message in the cell:
+An operation of Kerf.Modeling that fails in the kernel returns a failed `Result<T>` carrying the kernel's diagnostics
+(from the bridges above), each error's message prefixed with what was being done, outermost first (unit 10M3; until then a
+`KerfException`). Bento shows the first error's message in the cell:
 
 - `box 0 × 1 × 1 failed: The value must be a positive number` (`kernel.invalid-argument`)
 - `fuse of a Box with a Cylinder failed: Some of the arguments are self-interfering shapes` (the inputs by class)
 - `extrude until / extrude failed: the geometry can't be constructed: BRepSweep_Translation::Constructor`
 
-Since unit 10M2 (decision 1578) each such operation also has a `Try` form returning the `Result<T>` (`TryFillet`,
-`TryExtrude`, `part.TrySubtract`…), and the failures the layer detects itself have codes of their own
-(`ModelingDiagnostics`), the kernel's diagnostics that led to them following:
+The operations that return results are `Operations`' (`Fillet`, `Chamfer`, `Extrude`, `Loft`, `Revolve`, `Sweep`,
+`Offset`, `Thicken`, `Draft`), the algebra's `Add`, `Subtract` and `Common`, and the importers. The shorthands that can't
+return one (the operators `+ - &`, the objects' constructors such as `new Box(0, 1, 1)`, the topological shapes' own
+methods) throw `InvalidOperationException` with the same message, the kernel's failure inside (unit 10M3). The
+failures the layer detects itself have codes of their own (`ModelingDiagnostics`), the kernel's diagnostics that led to
+them following:
 
 | Code | Where |
 |---|---|
 | `modeling.fillet-failed` | A 3D fillet that fails or is invalid (the message names the edges and why); a 2D fillet's corner |
 | `modeling.chamfer-failed` | A chamfer that fails or is invalid |
-| `modeling.offset-failed` | A 2D offset, or a face's or shell's offset |
-| `modeling.loft-failed` | A loft that is invalid and can't be recovered |
+| `modeling.offset-failed` | A 2D offset, or a face's, shell's or solid's offset (a solid's since unit 10M3) |
+| `modeling.loft-failed` | A loft that is invalid and can't be recovered (unit 10M3: it was an `InvalidOperationException`) |
+| `modeling.thicken-failed` | A face or shell that can't be thickened (unit 10M3: it was an `InvalidOperationException`) |
 | `modeling.draft-failed` | A draft a face can't take (the face is the diagnostic's shape), or a drafted solid that fails |
 | `modeling.spline-failed` | A B-spline that can't be interpolated or approximated through the points |
 | `kernel.invalid-argument` | An argument the kernel refused, said in context (unit 10M1) |
 
 The operations that say what they were doing: the primitives (box, cone, cylinder, sphere, torus, wedge), lofts,
 extrusions (plain, with rotation, tapered, until), revolutions, sweeps (single and multi-section), thickening,
-triangulation and every Boolean (cut, fuse, intersect, section, split). STEP import keeps its `ArgumentException`, its
-message ending with the exchange status's, and the diagnostic in a `KerfException` inside it.
+triangulation and every Boolean (cut, fuse, intersect, section, split). The importers return the exchange's own
+diagnostics (`exchange.failed`, `exchange.malformed`, `exchange.external-references`…); STEP's error says "Could not
+import … : it isn't readable STEP data", then the exchange's message (unit 10M3; it was an `ArgumentException`).

@@ -134,9 +134,10 @@ change every shape sharing it, and race between threads. So:
 
 #### Errors and memory
 
-- **Failures are the kernel's diagnostics in a `KerfException`**, with the operation being done ("box 0 × 1 × 1
-  failed: …"), or the `Try` forms' `Result<T>` (unit 10M2; "The .NET API" below). The native backend's
-  `OcctException` went with the forwarding layer that made it (unit 10B).
+- **Failures are the kernel's diagnostics in a failed `Result<T>`**, with the operation being done ("box 0 × 1 × 1
+  failed: …") (unit 10M3; "The .NET API" below). The shorthands that can't return a result (operators, constructors)
+  throw `InvalidOperationException` with the same message. The native backend's `OcctException` went with the
+  forwarding layer that made it (unit 10B), and Kerf's `KerfException` in unit 10M3.
   - A boolean that fails reports the kernel's alerts (`boolean.self-interfering-shape`) instead of a bare failure.
   - The layer's own failures (fillet, chamfer, offset, loft, draft, spline) have codes of their own
     (`ModelingDiagnostics`), the kernel's diagnostics following.
@@ -146,8 +147,8 @@ change every shape sharing it, and race between threads. So:
 - **Untrusted BRep.** OCCT's reader trusts its input. At the end of truncated data it loops for ever,
   reusing the last word it read, and it reads words into fixed buffers with no length limit. So
   `ReadBRep` first refuses NULs and words of 200 characters or more, then reads through the kernel's `Brep.Read`, and
-  reports any failure as a `KerfException` (`exchange.malformed`; unit 10M1, where it was OCCT's
-  `Storage_StreamFormatError`).
+  reports any failure as a failed result (`exchange.malformed`; unit 10M1, where it was OCCT's
+  `Storage_StreamFormatError`, and a result since unit 10M3).
   - A fuzz test mutates BRep data and checks that reading, validating and measuring the result fail
     cleanly or not at all.
   - Meshing or fusing a shape read from corrupted data can still run for a very long time, which is
@@ -251,9 +252,10 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
   own file access and hands over bytes (bento-integration.md, section 7). An export is made in memory and written
   only when whole, so a failure leaves no partial file.
 - **Hostile input.** `ImportLimits` (bytes, STEP records, nesting depth, triangles, glTF nodes; generous defaults)
-  is passed to the readers, which stop with an error rather than allocate past it. Data past a limit throws
-  `InvalidDataException`; data that isn't the format throws `ArgumentException` (build123d's ValueError), for BREP a
-  `KerfException` (`exchange.malformed`), and for STL and glTF an `InvalidDataException`.
+  is passed to the readers, which stop with an error rather than allocate past it. Each importer returns a
+  `Result<T>` (unit 10M3): data past a limit, or that isn't the format, is a failure with the exchange's diagnostic
+  (`exchange.failed`, `exchange.malformed`, `exchange.limit-exceeded`, `exchange.external-references`). A missing file
+  still throws `FileNotFoundException`.
 - **Cancellation.** Every function takes a `CancellationToken`. It becomes a `Message_ProgressIndicator`, which OCCT's
   readers and writers poll as they run.
 - **Through the kernel's `Kerf.Exchange`** (units 10L3 and 10M1): `Brep`, `Step`, `Stl`, `Gltf`, `ThreeMf` over its
@@ -319,14 +321,21 @@ Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 157
   `OffsetOptions` and `ThickenOptions`, as the kernel's `XxxOptions? options = null`. They are nested in `Operations`
   because the kernel has records of the same names; `using static Kerf.Modeling.Operations;` brings them in by their
   short names. An extrusion by an amount and one up to a target are separate overloads.
-- **Errors.** An operation that fails in a way a caller should expect throws a `KerfException` whose diagnostics carry
-  codes: the kernel's (`boolean.self-interfering-shape`), or the layer's own (`ModelingDiagnostics`:
-  `modeling.fillet-failed`, `chamfer-failed`, `offset-failed`, `loft-failed`, `draft-failed`, `spline-failed`) followed
-  by the kernel's that led to it. That is `Result<T>.Value`'s behaviour; each such operation has a `Try` form returning
-  the `Result<T>` (`TryFillet`, `TryExtrude`, `TryLoft`, `TrySweep`, `TryOffset`, `TryThicken`, `TryDraft`,
-  `part.TrySubtract`…). Chains read with the plain forms; a cell takes the `Try` form at the step that may fail. Misuse
-  throws .NET's argument exceptions (a null operand: `ArgumentNullException`). Messages are .NET sentences: no
-  snake_case names, `None` or builder names.
+- **Errors** (unit 10M3, which replaced 10M2's `KerfException` and `Try` forms). An operation that can fail in a way a
+  caller should expect returns a `Result<T>` whose failure's diagnostics carry codes: the kernel's
+  (`boolean.self-interfering-shape`), or the layer's own (`ModelingDiagnostics`: `modeling.fillet-failed`,
+  `chamfer-failed`, `offset-failed`, `loft-failed`, `thicken-failed`, `draft-failed`, `spline-failed`) followed by the
+  kernel's that led to it. They are `Operations`' `Fillet`, `Chamfer`, `Extrude`, `Loft`, `Revolve`, `Sweep`, `Offset`,
+  `Thicken` and `Draft`, the algebra's `Add`, `Subtract` and `Common`, and the importers. A chain of them reads as a
+  LINQ query (`from … in … select …`) or with `Bind` and `Map`; `Match` turns the result into one value either way, as
+  a cell needs. Misuse throws .NET's argument exceptions (a null operand: `ArgumentNullException`), and reading a
+  failure's `Value` is misuse too (`InvalidOperationException`). Messages are .NET sentences: no snake_case names,
+  `None` or builder names.
+- **The shorthands.** The operators (`+ - &`), the objects' constructors (`new Box(…)`) and the topological shapes' own
+  methods (`solid.Fillet(…)`, `Solid.Sweep(…)`, `Face.MakeSurface(…)`) can't return a result (a constructor, an
+  operator that must chain) or are the layer's lower level. They return the value, and a failure throws
+  `InvalidOperationException` with the same message as the result's first error, the kernel's failure inside: they are
+  for inputs known to work, as `plate -= holes` is. Kerf has no exception type of its own.
 - **No `Mode`, no tuples.** Objects take no `Mode`; the tuple conversions (`(1, 2, 3)` to a `Vector`, a `Rotation`,
   an `Alignment`, a `Tangent`) went, for constructors: `new Vector(1, 2, 3)`, `new Alignment(Align.Min, Align.Max)`,
   `new Tangent(edge, Tangency.Enclosing)`. The implicit conversions that aren't tuples stay (an `Align` to an
@@ -341,7 +350,7 @@ Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 157
   plane `CommonPlane` takes on a tie), and `Numerics` (`FloorMod`, floored division's remainder as Python's `%`;
   SciPy's bounded Brent and Nelder–Mead minimizers, as build123d calls them).
 - **Examples** of the API on build123d's classic tutorials (a plate with holes, a filleted box, a sketch extruded and
-  cut) are compiled tests: `Examples/TutorialExamplesTests.cs`.
+  cut, and since unit 10M3 a chain of operations as a query) are compiled tests: `Examples/TutorialExamplesTests.cs`.
 
 ```csharp
 using Kerf.Modeling;
@@ -351,16 +360,21 @@ using static Kerf.Modeling.Operations;
 Part plate = new Box(80, 60, 10);
 plate -= new GridLocations(60, 40, 2, 2) * new Cylinder(5, 10);
 
-// A filleted box, its vertical edges rounded; and a radius too large, as a result
+// A filleted box, its vertical edges rounded; and a radius too large, a failure to read rather than catch
 Part box = new Box(30, 20, 10);
-Part rounded = Fillet(box.Edges().ParallelTo(Axis.Z), 3);
-Result<Part> tooLarge = TryFillet(box.Edges(), 20);   // IsFailure; Error.Code is modeling.fillet-failed
+Result<Part> rounded = Fillet(box.Edges().ParallelTo(Axis.Z), 3);
+Result<Part> tooLarge = Fillet(box.Edges(), 20);   // IsFailure; Error.Code is modeling.fillet-failed
+string shown = tooLarge.Match(p => $"{p.Volume:F0} mm³", error => error.Message);
 
-// A sketch extruded, then cut by a pocket sketched on its top face
+// A sketch extruded, then cut by a pocket sketched on its top face: a chain of operations as a query, which stops at
+// the first failure
 Sketch profile = new Circle(20) - new Rectangle(10, 10);
-Part disc = Extrude(profile, 5);
-var top = disc.Faces().Where(GeomType.Plane).OrderBy(Axis.Z).Last();
-disc -= Extrude(new Plane(top) * (new Pos(12, 0) * new Circle(4)), -2);
+Result<Part> pocketed =
+    from disc in Extrude(profile, 5)
+    let top = disc.Faces().Where(GeomType.Plane).OrderBy(Axis.Z).Last()
+    from pocket in Extrude(new Plane(top) * (new Pos(12, 0) * new Circle(4)), -2)
+    from cut in disc.Subtract(pocket)
+    select cut;
 ```
 
 #### Left by unit 10M2

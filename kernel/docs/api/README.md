@@ -109,14 +109,16 @@ namespace Kerf;
 public readonly struct Result<T>
 {
     public bool IsSuccess { get; }
-    public T Value { get; }                               // throws KerfException with the diagnostics on failure
+    public T Value { get; }                               // a failure's: InvalidOperationException, a programmer's error
     public ImmutableArray<Diagnostic> Diagnostics { get; } // warnings, and the error on failure
     public Diagnostic? Error { get; }                     // the first error, or null
     public bool TryGetValue([MaybeNullWhen(false)] out T value);
-    public T GetValueOrThrow();                           // the same as Value, for readers who want it spelt out
     public T GetValueOrDefault(T fallback);
+    public TOut Match<TOut>(Func<T, TOut> success, Func<Diagnostic, TOut> failure);
     public Result<TOut> Map<TOut>(Func<T, TOut> map);    // keeps the warnings
     public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> next);
+    public Result<TOut> Select<TOut>(Func<T, TOut> selector);                // Map, for LINQ's query syntax
+    public Result<TOut> SelectMany<TNext, TOut>(Func<T, Result<TNext>> next, Func<T, TNext, TOut> selector);
 
     public static Result<T> Success(T value, ImmutableArray<Diagnostic> warnings = default);
     public static Result<T> Failure(Diagnostic error, ImmutableArray<Diagnostic> warnings = default);
@@ -141,8 +143,6 @@ public readonly record struct DiagnosticCode(string Value)   // well-known codes
     public static DiagnosticCode NotConverged { get; }       // "numerics.not-converged"
     public static DiagnosticCode Cancelled { get; }          // "operation.cancelled"
 }
-
-public sealed class KerfException : Exception { public ImmutableArray<Diagnostic> Diagnostics { get; } }
 ```
 
 - **Expected failures** (a fillet that can't be built, a Boolean on invalid input, an unreadable file, a projection
@@ -160,6 +160,18 @@ errors. **Unit 10F added them** (decision 1365): in Foundation rather than Model
 extension members from ModelingData (`diagnostic.Shapes`, `diagnostic.WithShapes(…)`); `Result<T>.Failure` also takes
 several diagnostics, `IsFailure` and `Diagnostic.Error`/`Warning` were added, and `KerfException`'s message is the
 first error's. [diagnostics.md](diagnostics.md) lists the codes.
+
+**Unit 10M3 removed `KerfException`** (the owner, 4 November 2026: "Let's get rid of that `KerfException`"), with `GetValueOrThrow` and `Result.ThrowIfFailed`. A failure is read, not caught: `IsSuccess`, `TryGetValue`,
+`Match`, `GetValueOrDefault`, or the combinators, which carry a failure through untouched. Reading `Value` of a failure
+is a programmer's error, as reading a null `Nullable<T>`'s is: it throws `InvalidOperationException`, whose message
+gives the first error's code and message. `Select` and `SelectMany` let a chain of operations read as a query:
+
+```csharp
+Result<Part> part = from rounded in Fillet(box.Edges().ParallelTo(Axis.Z), 3)
+                    from cut in rounded.Subtract(hole)
+                    select cut;
+string shown = part.Match(p => $"{p.Volume:F1} mm³", error => error.Message);
+```
 
 ### 2.1 Shape results carry their history
 
@@ -547,9 +559,23 @@ Python-emulating helpers that decide results (`PySet`, `PyComparer`, `PyMath`), 
 
 The modelling layer's API follows this document's patterns where they apply: expected failures are the kernel's
 `KerfException` and `Result<T>` (each failing operation has a `Try` form returning the `Result<T>`, the plain form
-throwing what `Value` throws), with the layer's own codes beside the kernel's ([diagnostics.md](diagnostics.md), "The
+throwing what `Value` throws; unit 10M3 replaced both with the plain form returning the `Result<T>`, section 16), with
+the layer's own codes beside the kernel's ([diagnostics.md](diagnostics.md), "The
 modelling layer"); long parameter lists are options records with `XxxOptions? options = null`, nested in
 `Kerf.Modeling.Operations` since the kernel's records have the same names (`ExtrudeOptions`, `SweepOptions`,
 `OffsetOptions`); misuse throws .NET's argument exceptions. Section 2.1's `Built<T>` isn't used: the layer's shapes
 carry their own history. modeling/docs/design.md, "The .NET API (unit 10M2)", has the rest.
 
+## 16. Implemented: unit 10M3, expected failures are results
+
+*Unit 10M3, 4 November 2026: the owner's decision to remove `KerfException`, and the unit's decisions after it.*
+
+- **The kernel:** `KerfException`, `Result<T>.GetValueOrThrow` and `Result.ThrowIfFailed` are gone (section 2).
+  `Result<T>` gained `Match`, `Select` and `SelectMany`; `Result` gained `Match`.
+- **The modelling layer:** the operations that can fail as a caller should expect return `Result<T>`: `Operations`'
+  `Fillet`, `Chamfer`, `Extrude`, `Loft`, `Revolve`, `Sweep`, `Offset`, `Thicken` and `Draft`, the algebra's `Add`,
+  `Subtract` and `Common` on Part, Sketch and Curve, and `Importers`' `ImportBrep`, `ImportStep`, `ImportStl` and
+  `ImportGltf`. Their `Try` twins went. The operators (`+ - &`), the objects' constructors (`new Box(…)`) and the
+  topological shapes' own methods (`solid.Fillet(…)`, `Solid.Sweep(…)`) can't or don't return results: they are the
+  shorthand for inputs known to work, and a failure there throws `InvalidOperationException` with the same message.
+  modeling/docs/10m3-bento.md lists what changed for Bento.

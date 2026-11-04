@@ -20,7 +20,7 @@ namespace Kerf;
 /// <see cref="GetValueOrDefault"/> or the combinators (<see cref="Map{TOut}"/>, <see cref="Bind{TOut}"/>, and
 /// <see cref="Select{TOut}"/> and <see cref="SelectMany{TNext, TOut}"/> for LINQ's query syntax), which carry a failure
 /// through untouched. Reading <see cref="Value"/> of a failure is a programmer's error, as reading a null
-/// <see cref="Nullable{T}"/>'s is: it throws <see cref="InvalidOperationException"/> (decision 17701).
+/// <see cref="Nullable{T}"/>'s is: it throws <see cref="InvalidOperationException"/> (unit 10M3).
 /// </para>
 /// </remarks>
 public readonly struct Result<T>
