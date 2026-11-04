@@ -12,10 +12,8 @@
   </PropertyGroup>
 
   <!--
-    build123d.NET calls OCCT.NET, the managed port of OCCT, directly (unit 10B), from the kernel's projects in the
-    repository's kernel folder (KerfKernelRoot, ../kernel/ by default), which pack as the Kerf.Kernel.* package dependencies.
-    It uses kernel members the published packages (0.1.0-preview.3) don't make public, so it no longer builds against
-    them (UseOcctNetPackages is gone).
+    Kerf.Modeling builds on the kernel's projects in the repository's kernel folder (KerfKernelRoot, ../kernel/ by
+    default), which pack as the Kerf.Kernel.* package dependencies.
   -->
   <PropertyGroup>
     <KerfKernelRoot Condition="'$(KerfKernelRoot)' == ''">$([System.IO.Path]::GetFullPath('$(RepoRoot)../kernel/'))</KerfKernelRoot>
@@ -28,7 +26,7 @@
     <Authors>Kerf contributors</Authors>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <Copyright>Copyright (c) 2026 The build123d.NET Contributors; based on build123d, copyright (c) 2022–2025 The build123d Contributors</Copyright>
+    <Copyright>Copyright (c) 2026 The Kerf contributors; derived from build123d, copyright (c) 2022–2025 The build123d Contributors</Copyright>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
