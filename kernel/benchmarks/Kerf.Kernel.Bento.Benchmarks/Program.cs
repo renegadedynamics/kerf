@@ -5,6 +5,7 @@
 // through build123d.NET's algebra API as the CAD_ functions call it. Each is built, triangulated with build123d's
 // tolerances as Bento's viewer does (ShapeModels.Part), and its volume and face count read, as a cell shows them.
 //   dotnet run -c Release --project benchmarks/Kerf.Kernel.Bento.Benchmarks -p:KerfModelingRoot=<build123d.NET>/ [-- passes [copies]]
+//   (or [-- images [passes]] for the SVG drawings and PNG pictures of unit 10L4)
 // (copies: how many of each example the parallel rounds run at once; 0 skips them; the default is a processor's worth)
 // and on native OCCT, for comparison: --project benchmarks/Kerf.Kernel.Bento.Benchmarks/Native (the same arguments).
 // The first pass is a workbook opening (it includes the JIT's work on OCCT.NET); the others are recalculations, of
@@ -84,6 +85,48 @@ var examples = new (string Name, Func<Shape> Build)[]
         return a1 + Extrude(new Rectangle(6, 50), until: Until.Next, target: a1);
     }),
 };
+
+// Images (unit 10L4): `-- images [passes]` draws each example's lines (exact hidden lines, isometric) as SVG and renders
+// it at 800 x 600 (meshed for rendering, supersampled 2 x 2) as PNG, and times both
+if (args.Length > 0 && args[0] == "images")
+{
+    int imagePasses = args.Length > 1 ? int.Parse(args[1], CultureInfo.InvariantCulture) : 5;
+    Console.WriteLine("example                   svg ms  svg MB  edges   svg KB  png ms  png MB  render ms  png KB");
+    foreach ((string name, Func<Shape> build) in examples)
+    {
+        global::Kerf.Topology.Shape part = build().Wrapped;
+        var svgTimes = new double[imagePasses];
+        var pngTimes = new double[imagePasses];
+        var renderTimes = new double[imagePasses];
+        long svgBytes = 0, pngBytes = 0;
+        int edges = 0, svgLength = 0, pngLength = 0;
+        for (int pass = 0; pass < imagePasses; pass++)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            var clock = Stopwatch.StartNew();
+            var drawing = global::Kerf.Drawing.DrawingOperations.ProjectLines([part], global::Kerf.Drawing.Camera.Isometric).Value;
+            string svg = global::Kerf.Drawing.Svg.WriteToString(drawing);
+            svgTimes[pass] = clock.Elapsed.TotalMilliseconds;
+            svgBytes = GC.GetAllocatedBytesForCurrentThread() - before;
+            (edges, svgLength) = (drawing.Edges.Length, svg.Length);
+
+            before = GC.GetTotalAllocatedBytes(true);
+            clock.Restart();
+            var image = global::Kerf.Drawing.Renderer.Render(part, global::Kerf.Drawing.Camera.Isometric).Value;
+            renderTimes[pass] = clock.Elapsed.TotalMilliseconds;
+            byte[] png = global::Kerf.Drawing.Png.Encode(image);
+            pngTimes[pass] = clock.Elapsed.TotalMilliseconds;
+            pngBytes = GC.GetTotalAllocatedBytes(true) - before;
+            pngLength = png.Length;
+        }
+
+        static double Median(double[] t) => t.Length > 1 ? t[1..].Order().ElementAt((t.Length - 1) / 2) : t[0];
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+            $"{name,-24} {Median(svgTimes),7:F1} {svgBytes / 1048576.0,7:F1} {edges,6} {svgLength / 1024.0,8:F1} {Median(pngTimes),7:F1} {pngBytes / 1048576.0,7:F1} {Median(renderTimes),10:F1} {pngLength / 1024.0,7:F1}"));
+    }
+
+    return 0;
+}
 
 int passes = args.Length > 0 ? int.Parse(args[0], CultureInfo.InvariantCulture) : 7;
 var times = new double[examples.Length][];
