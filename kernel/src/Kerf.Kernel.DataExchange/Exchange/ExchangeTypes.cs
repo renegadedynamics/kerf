@@ -185,6 +185,9 @@ public enum StepPrecision
 
     /// <summary>The greatest tolerance.</summary>
     Greatest = 1,
+
+    /// <summary>OCCT's session value (<c>write.precision.val</c>).</summary>
+    Session = 2,
 }
 
 /// <summary>How STEP is written (AP214).</summary>

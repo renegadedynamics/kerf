@@ -13,7 +13,7 @@ namespace Kerf.Exchange;
 /// <summary>BREP, OCCT's own format of shapes: text or binary (OCCT's BRepTools and BinTools).</summary>
 public static class Brep
 {
-    // The binary format's first line (BinTools_ShapeSet), which text never starts with
+    // The binary format's first line after a line end (BinTools_ShapeSet), which text's never is
     private static ReadOnlySpan<byte> BinaryHeader => "Open CASCADE Topology V"u8;
 
     /// <summary>
@@ -34,7 +34,7 @@ public static class Brep
             using MemoryStream data = ExchangeTree.ReadAll(stream, limits.MaxBytes, cancellationToken);
             ReadOnlySpan<byte> bytes = data.GetBuffer().AsSpan(0, (int)data.Length);
             var range = new ProgressIndicator(cancellationToken).Start();
-            if (bytes.StartsWith(BinaryHeader))
+            if (bytes.TrimStart("\r\n"u8).StartsWith(BinaryHeader))
             {
                 BinTools.Read(out shape, data, range);
             }
