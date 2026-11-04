@@ -101,4 +101,31 @@ public class GccAna_Circ2d3TanLawsTests(ITestOutputHelper theOutput)
         theOutput.WriteLine(string.Join(Environment.NewLine, aReport));
         Assert.True(aNbBroken == 0, string.Join(Environment.NewLine, aReport));
     }
+
+    /// <summary>
+    /// OCCT's corpus cases geometry/circ2d3Tan/CircleCirclePoint_13 and _14 (Kerf decision 17112): the circles (0, 0) r 10
+    /// and (30, 0) r 20 with the point (20, -10) have one solution, (20, 0) r 10, and with the point (30, -20) on the second
+    /// circle two, that circle itself and (30, 40) r 60; OCCT listed the last of each twice.
+    /// </summary>
+    [Theory]
+    [InlineData(20.0, -10.0, 1)]
+    [InlineData(30.0, -20.0, 2)]
+    public void Corpus_two_circles_and_a_point_each_solution_once(double theX, double theY, int theNb)
+    {
+        Arg[] anArgs =
+        [
+            new CircArg(new Circle2D(new Axis2D(new Point2D(0, 0), new Direction2D(1, 0)), 10), Qualifier.Unqualified),
+            new CircArg(new Circle2D(new Axis2D(new Point2D(30, 0), new Direction2D(1, 0)), 20), Qualifier.Unqualified),
+            new PntArg(new Point2D(theX, theY)),
+        ];
+        int aNb = 0;
+        List<string> aBroken = Check(() =>
+        {
+            AnalyticCirc2d3Tan S = Solve(anArgs[0], anArgs[1], anArgs[2], SolverTol);
+            aNb = S.SolutionCount;
+            return View(S);
+        }, anArgs, null, null, LawTol);
+        Assert.Empty(aBroken);
+        Assert.Equal(theNb, aNb);
+    }
 }

@@ -15688,3 +15688,15 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        `InvalidTangentRaises`). The Geom2dGcc oracle passes with 615 intended differences across its six corrected
        solvers. Draw-lite's 2D constraint group (cirtang, lintan: 15 runnable cases, 13 OK and 2 skipped for missing
        data) has the same statuses before and after, as have the Draw-lite bisector and 5W construction command tests.
+17112. **Two corpus cases expected OCCT's duplicate solutions** (the merge gate's Draw-lite construction corpus,
+       geometry/circ2d3Tan). Both are `circ2d3Tan tan1 c1 c2 p1` with c1 the circle (0, 0) radius 10 and c2 (30, 0)
+       radius 20, all unqualified. CircleCirclePoint_13, p1 = (20, -10): a solution of radius R centred at C has |C - p1|
+       = R and |C| = R + 10 or |R - 10|, |C - (30, 0)| = R + 20 or |R - 20|; the only one is (20, 0) radius 10 (outside
+       c1, enclosed in c2, through p1), and OCCT's script expects it twice (tan1_1 and tan1_2, both of length 20 pi).
+       CircleCirclePoint_14, p1 = (30, -20) on c2: a circle through p1 tangent to c2 touches it at p1, so its centre is on
+       x = 30; the solutions are c2 itself and (30, 40) radius 60 (enclosing both circles, |C| = 50 = 60 - 10), and OCCT
+       expects the second twice (tan1_2 and tan1_3, both of length 120 pi). The port gives each solution once (the
+       duplicate check of decision 17101), each obeying the laws: intended differences in `DrawCorpus.IntendedDifferences`,
+       which accept the port's log (the one solution, or c2 and the circle of length 120 pi, and no further one), and a
+       property test of both configurations (`Corpus_two_circles_and_a_point_each_solution_once`). The corpus's other
+       Gcc grids (geometry/circ2d3Tan's 22 cases, lowalgos/2dgcc) and the 2D fillet corpus pass unchanged.
