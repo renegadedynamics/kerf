@@ -43,7 +43,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     /// build123d.NET runs its splits.
     /// </summary>
     internal sealed record Run(string Name, string ArgsText, int NbObjects, Op Op, double Fuzzy = 0.0,
-                               GlueMode Glue = GlueMode.GlueOff, bool UseOBB = false,
+                               global::Kerf.Booleans.GlueMode Glue = global::Kerf.Booleans.GlueMode.Off, bool UseOBB = false,
                                bool Simplify = false, bool NonDestructive = true, bool CheckInverted = true, bool Api = false);
 
     internal sealed class Tally
@@ -193,7 +193,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
     internal void Compare(ShapeFixOracleRun theRun, Tally theTally, Run theCase)
     {
         string aWhat = $"{theCase.Name} [{theCase.Op}{(theCase.Fuzzy > 0 ? $" fuzzy {theCase.Fuzzy:g}" : "")}"
-                       + $"{(theCase.Glue != GlueMode.GlueOff ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}"
+                       + $"{(theCase.Glue != Kerf.Booleans.GlueMode.Off ? $" {theCase.Glue}" : "")}{(theCase.UseOBB ? " OBB" : "")}"
                        + $"{(theCase.Simplify ? " simplify" : "")}{(theCase.NonDestructive ? "" : " destructive")}"
                        + $"{(theCase.CheckInverted ? "" : " no-inverted-check")}]";
         if (ReadArgs(theRun, theCase.ArgsText) is not (List<N.TopoDS_Shape> aNArgs, List<Shape> aPArgs))
@@ -901,7 +901,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
             double b = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
             double c = isAligned ? theO.Int(2, 12) : theO.Real(2, 12);
             Op anOp = anOps[theO.Int(0, anOps.Length - 1)];
-            GlueMode aGlue = GlueMode.GlueOff;
+            global::Kerf.Booleans.GlueMode aGlue = global::Kerf.Booleans.GlueMode.Off;
             bool isOBB = theO.Int(0, 5) == 0;
             double aFuzzy = theO.Int(0, 7) == 0 ? 1.0e-5 : 0.0;
             string aName;
@@ -916,7 +916,7 @@ public class BooleanOracleTests(ITestOutputHelper output)
                     double dy = isAligned ? theO.Int(-1, 1) : b * theO.Real(-0.5, 0.5);
                     if (isTouching && theO.Int(0, 1) == 0)
                     {
-                        aGlue = dy == 0 ? GlueMode.GlueFull : GlueMode.GlueShift;
+                        aGlue = dy == 0 ? global::Kerf.Booleans.GlueMode.Full : global::Kerf.Booleans.GlueMode.Shift;
                     }
                     aName = "boxes side by side";
                     anArgs = [Box(aF, a, b, c), Box(Moved(aF, dx, dy, 0), a, b, c)];

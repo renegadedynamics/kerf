@@ -19,7 +19,7 @@ namespace Kerf.Engine.Offsets.Blend;
 /// original edge. Only the parameters, D0 (<see cref="EvalD0"/>), the type and a zero-radius circle are defined; the
 /// other members throw <see cref="MethodNotImplementedException"/>, as in OCCT (the base class's).
 /// </summary>
-public sealed class CurveOnEdge : CurveAdaptorBase
+internal sealed class CurveOnEdge : CurveAdaptorBase
 {
     private Edge _edge = new();
     private Edge _eonF = new();

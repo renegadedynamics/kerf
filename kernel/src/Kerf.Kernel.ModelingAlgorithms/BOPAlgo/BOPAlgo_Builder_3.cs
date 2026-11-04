@@ -50,7 +50,7 @@ internal sealed class SplitSolid : BuilderSolid, BooleanParallel.ISolver
     }
 }
 
-public partial class BooleanBuilder
+internal partial class BooleanBuilder
 {
     /// <summary>Fills the images of the solids: the split solids with their internal parts.</summary>
     protected void FillImagesSolids(ProgressRange range)

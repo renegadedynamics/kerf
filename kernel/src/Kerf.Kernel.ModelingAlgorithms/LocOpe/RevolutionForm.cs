@@ -25,7 +25,7 @@ namespace Kerf.Engine.Features.Local;
 /// the <c>Internal</c> forms. OCCT declares the constructor that takes a base and an axis without defining it, and
 /// never sets the rotation of the base it can apply first (myIsTrans stays false); the port leaves the constructor out.
 /// </remarks>
-public sealed class RevolutionForm
+internal sealed class RevolutionForm
 {
     private Shape _base = new();
     private Vector3D _vec = new();

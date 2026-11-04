@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// it (GccEnt_enclosed), are outside it (GccEnt_outside), or may be any of these (GccEnt_unqualified).
 /// </summary>
 /// <remarks>A value: OCCT gives it no setters. <c>default</c> is an unqualified circle of radius 0 at the origin.</remarks>
-public readonly struct QualifiedCirc : IEquatable<QualifiedCirc>
+internal readonly struct QualifiedCirc : IEquatable<QualifiedCirc>
 {
     private readonly Circle2D _theQualified;
     private readonly Qualifier _theQualifier;

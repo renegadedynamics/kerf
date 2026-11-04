@@ -44,7 +44,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// <c>Internal</c> forms (decision 911).
 /// </para>
 /// </remarks>
-public sealed class Pipe
+internal sealed class Pipe
 {
     private Wire _spine = new();
     private Shape _profile = new();

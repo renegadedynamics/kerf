@@ -17,7 +17,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The function of an "ordinary" chamfer: constant distances from the spine to the two surfaces.</summary>
-public class Chamfer : GenChamfer
+internal class Chamfer : GenChamfer
 {
     private readonly Corde _corde1;
     private readonly Corde _corde2;

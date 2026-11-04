@@ -16,7 +16,7 @@ using Kerf.Engine.Topology;
 using Kerf.Engine.Topology.Brep;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Kerf.Engine.Fillets.FilletShape;
+using static Kerf.Fillets.FilletShape;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.ShapeType;
 
@@ -225,7 +225,7 @@ public class BRepFilletAPI_MakeFilletTests
             {
                 try
                 {
-                    MakeFillet aFillet = new(aSlabShape, FilletShape.Rational);
+                    MakeFillet aFillet = new(aSlabShape, global::Kerf.Fillets.FilletShape.Rational);
                     aFillet.SetParams(1.0e-2, 1.0e-4, 1.0e-5, 1.0e-4, 1.0e-5, 1.0e-3);
                     aFillet.SetContinuity(C1, 1.0e-2);
                     aFillet.Add(10.0, anEdges[anEdgeIndex1 - 1]);
@@ -427,7 +427,7 @@ public class BRepFilletAPI_MakeFilletTests
         IndexedMap<Shape, NCollection_List<Shape>> anEdgeMap = new(ShapeHasher.Instance);
         Exploration.MapShapesAndAncestors(aFuseUnif, ShapeType.Edge, ShapeType.Solid, anEdgeMap);
 
-        MakeFillet aBlend = new(aFuseUnif, FilletShape.Rational);
+        MakeFillet aBlend = new(aFuseUnif, global::Kerf.Fillets.FilletShape.Rational);
         for (int i = 0; i < anEdgeMap.Count; i++)
         {
             Edge anEdge = ShapeCasts.Edge(anEdgeMap.KeyAt(i));

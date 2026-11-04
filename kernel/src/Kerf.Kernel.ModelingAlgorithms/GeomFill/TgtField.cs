@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>The root of the tangency fields of the constrained filling (GeomFill_TgtOnCoons).</summary>
 /// <remarks>A working object (decision 21); <see cref="Scale"/> changes a scalable field.</remarks>
-public abstract class TgtField : Transient
+internal abstract class TgtField : Transient
 {
     /// <summary>Whether the field can be scaled; false by default.</summary>
     public virtual bool IsScalable => false;

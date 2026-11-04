@@ -25,7 +25,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// commented out), so the walking stops with "same points" when it leaves the face, and OCCT prints a line to the
 /// standard output there, left out. Its <c>OCCT_DEBUG</c> drawing of the sections is left out too.
 /// </remarks>
-public class CSWalking
+internal class CSWalking
 {
     private bool _done;
     private Line? _line;

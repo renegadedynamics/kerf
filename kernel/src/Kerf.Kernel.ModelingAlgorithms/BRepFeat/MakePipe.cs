@@ -28,7 +28,7 @@ namespace Kerf.Engine.Features;
 /// <para>The basis shape, profile and spine are read, never written: the pipe sweeps a copy of a frozen profile
 /// (LocOpe_Pipe, decision 1014).</para>
 /// </remarks>
-public sealed class MakePipe : Form
+internal sealed class MakePipe : Form
 {
     private Shape _pbase = new();
     // OCCT: the class declares its own mySkface, hiding BRepFeat_Form's, which stays null

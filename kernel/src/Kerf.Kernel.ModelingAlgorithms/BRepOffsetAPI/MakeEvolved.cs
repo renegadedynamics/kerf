@@ -36,7 +36,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <see cref="Bottom"/> and <see cref="GeneratedShapes"/> hand out frozen shapes.
 /// </para>
 /// </remarks>
-public class MakeEvolved : MakeShape
+internal class MakeEvolved : MakeShape
 {
     private readonly Evolved _evolved = new();
     private readonly AdvancedEvolved _volume = new();

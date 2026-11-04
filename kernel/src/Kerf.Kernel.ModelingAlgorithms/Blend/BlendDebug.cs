@@ -12,7 +12,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// OCCT keeps them in file-scope statics. They only affect traces (plan 2.3); they are settings of the
 /// <see cref="OperationContext"/> (unit 10I): a setter changes them for the rest of the current flow of execution.
 /// </remarks>
-public static class BlendDebug
+internal static class BlendDebug
 {
     // recuperation des surfaces des conges approximes.
     private static readonly ContextKey<bool> TraceDrawSectSetting = new("Blend.traceDRAWSECT", false);

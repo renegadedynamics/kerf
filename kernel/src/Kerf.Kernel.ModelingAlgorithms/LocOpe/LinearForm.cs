@@ -25,7 +25,7 @@ namespace Kerf.Engine.Features.Local;
 /// caller's sub-shapes that changed (decision 1014). The shapes it hands out are frozen; ported callers (BRepFeat_MakeLinearForm) read the
 /// <c>Internal</c> forms.
 /// </remarks>
-public sealed class LinearForm
+internal sealed class LinearForm
 {
     private Shape _base = new();
     private Vector3D _vec = new();

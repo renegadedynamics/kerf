@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Values;
 /// through a point or at a signed distance, through three points, through a point normal to the direction to a second
 /// point, or through the location of an axis normal to it.
 /// </summary>
-public sealed class MakePln : Root
+internal sealed class MakePln : Root
 {
     private Plane3D _thePln = new();
 

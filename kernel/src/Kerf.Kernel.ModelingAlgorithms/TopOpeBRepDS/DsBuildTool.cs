@@ -33,7 +33,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// with the copy constructor. Its methods write into the shapes they are given, as in OCCT; a frozen shape throws.
 /// </para>
 /// </remarks>
-public sealed class DsBuildTool
+internal sealed class DsBuildTool
 {
     private readonly BrepBuilder _builder = new();
     private readonly ToolCurveTool _curveTool;

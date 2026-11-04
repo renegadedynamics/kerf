@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// A working object (decision 21). OCCT copies the MultiLine; the port shares it, which is the same, because a
 /// BRepFill_MultiLine never changes after its construction. The curves handed out are new and unfrozen, as OCCT's.
 /// </remarks>
-public sealed class ApproxSeewing
+internal sealed class ApproxSeewing
 {
     private FillingMultiLine _ml = new();
     private bool _isDone;

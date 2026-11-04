@@ -29,7 +29,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// A working object (decision 21). It reads the bisector it is given and never changes it: OCCT keeps a copy of the
 /// Bisector_Bisec sharing the same curve, the port the Bisector_Bisec itself (decision 822).
 /// </remarks>
-public sealed class TrimEdgeTool
+internal sealed class TrimEdgeTool
 {
     private readonly bool _isPoint1;
     private readonly bool _isPoint2;

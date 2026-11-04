@@ -19,7 +19,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// between a curve and the surface, its point on the surface on a 2D arc. The variables are the guide's parameter,
 /// the parameter on the curve and the parameter on the arc.
 /// </summary>
-public class SurfCurvEvolRadInv : SurfCurvFuncInv
+internal class SurfCurvEvolRadInv : SurfCurvFuncInv
 {
     private readonly SurfaceAdaptorBase _surf;
     private readonly CurveAdaptorBase _curv;

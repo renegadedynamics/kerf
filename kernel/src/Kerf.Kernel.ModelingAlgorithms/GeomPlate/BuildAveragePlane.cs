@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// Computed in the constructor. It keeps the caller's points, read only. <see cref="Plane"/> and <see cref="Line"/>
 /// freeze the geometry they return (the same object each time).
 /// </remarks>
-public class BuildAveragePlane
+internal class BuildAveragePlane
 {
     private readonly NCollection_HArray1<Point3D> _pts;
     private double _umax;

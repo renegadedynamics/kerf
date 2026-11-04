@@ -24,7 +24,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// argument's faces). A plane or surface argument becomes a face (C2 or smoother surfaces) or a shell
 /// (BRepBuilderAPI_MakeShell), as in OCCT.
 /// </remarks>
-public class SectionOperation : BooleanOperation
+internal class SectionOperation : BooleanOperation
 {
     private bool _approx;
     private bool _computePCurve1;

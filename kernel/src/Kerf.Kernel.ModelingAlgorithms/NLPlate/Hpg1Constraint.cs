@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Plate;
 
 /// <summary>A G1 constraint of a non-linear plate: target first derivatives at a UV point, the position free.</summary>
-public class Hpg1Constraint : HgppConstraint
+internal class Hpg1Constraint : HgppConstraint
 {
     private bool _incrementalLoadingAllowed;
     private readonly D1 _g1Target;

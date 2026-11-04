@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Fairing;
 
 /// <summary>The "jerk" distribution of a curve: the local energy of its variation of curvature and its derivatives.</summary>
-public class DistributionOfJerk : DistributionOfEnergy
+internal class DistributionOfJerk : DistributionOfEnergy
 {
     private readonly BattenLaw _myLaw;
 

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>An interference of a shape on a shape: for example a vertex of an edge found on another edge or a face.</summary>
-public class DsShapeShapeInterference : DsInterference
+internal class DsShapeShapeInterference : DsInterference
 {
     private bool _gBound;
     private DsConfig _c;

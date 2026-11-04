@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>A curve of the data structure with its interferences.</summary>
-public sealed class DsCurveData : DsGeometryData
+internal sealed class DsCurveData : DsGeometryData
 {
     internal DsCurve _curve;
 

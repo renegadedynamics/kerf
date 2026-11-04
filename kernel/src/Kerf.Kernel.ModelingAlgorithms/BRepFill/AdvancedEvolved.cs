@@ -42,7 +42,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// of the caller's vertices that the sweep might share is written, and the caller's sub-shapes left unchanged stand
 /// in the result (decision 1047). <see cref="Shape"/> freezes the result.
 /// </remarks>
-public sealed class AdvancedEvolved
+internal sealed class AdvancedEvolved
 {
     private const uint BRepFill_AdvancedEvolved_Empty = 0;
     private const uint BRepFill_AdvancedEvolved_NotPlanarSpine = 1;

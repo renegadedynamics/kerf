@@ -41,7 +41,7 @@ public class Geom_CurvePortTests
         Assert.Equal(4, aK.KnotCount);
         Assert.Equal(3, aC.KnotCount);
 
-        BSplineCurve3D aP = aC.WithPole(1, new Point3D(5, 5, 5));
+        BSplineCurve3D aP = aC.WithPoleOneBased(1, new Point3D(5, 5, 5));
         Assert.Equal(new Point3D(5, 5, 5), aP.Pole(1));
         Assert.Equal(new Point3D(0, 0, 0), aC.Pole(1));
 
@@ -68,7 +68,7 @@ public class Geom_CurvePortTests
         Assert.Equal(new[] { 4, 1, 4 }, aC.Multiplicities.ToArray());
         Assert.Equal(9, aC.KnotSequence.Count);
 
-        BSplineCurve3D aChanged = aC.WithPole(2, new Point3D(9, 9, 9));
+        BSplineCurve3D aChanged = aC.WithPoleOneBased(2, new Point3D(9, 9, 9));
         Assert.Equal(new Point3D(1, 2, 0), aPoles[1]);
         Assert.Equal(new Point3D(9, 9, 9), aChanged.Poles[1]);
 
@@ -124,7 +124,7 @@ public class Geom_CurvePortTests
         Assert.Equal(new Point3D(0, 0, 2), aWith.Value(2));
 
         // a modification drops it, as in OCCT
-        Assert.False(aWith.WithPole(1, new Point3D(1, 1, 1)).HasEvalRepresentation);
+        Assert.False(aWith.WithPoleOneBased(1, new Point3D(1, 1, 1)).HasEvalRepresentation);
         Assert.False(aWith.WithEvalRepresentation(null).HasEvalRepresentation);
     }
 

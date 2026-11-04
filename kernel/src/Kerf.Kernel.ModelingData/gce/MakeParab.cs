@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Values;
 /// is the location of the axis system, its X axis the symmetry axis (towards the focus); the equation in it is
 /// Y**2 = (2*P) * X, P being the distance between focus and directrix and the focal length P / 2.
 /// </summary>
-public sealed class MakeParab : Root
+internal sealed class MakeParab : Root
 {
     private Parabola3D _theParab = new();
 

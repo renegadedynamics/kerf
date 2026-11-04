@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>A translation, as a Geom_Transformation.</summary>
 /// <remarks>Not a GC_Root: the construction can't fail, as in OCCT.</remarks>
-public sealed class MakeTranslation
+internal sealed class MakeTranslation
 {
     private readonly GeometryTransformation _theTranslation;
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// solution is its tangency point with the first argument.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117).</remarks>
-public sealed class AnalyticLin2dTanObl
+internal sealed class AnalyticLin2dTanObl
 {
     private bool _wellDone;
     private int _nbrSol;

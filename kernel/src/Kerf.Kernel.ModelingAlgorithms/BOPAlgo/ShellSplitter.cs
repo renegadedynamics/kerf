@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans;
 /// The irregular connexity blocks are split in parallel (BOPAlgo_CBK solvers, each changing its own block's loops)
 /// when <see cref="Options.SetRunParallel"/> is set. The allocator constructor goes.
 /// </remarks>
-public class ShellSplitter : BooleanAlgorithm
+internal class ShellSplitter : BooleanAlgorithm
 {
     protected NCollection_List<Shape> _startShapes = new();
     protected NCollection_List<Shape> _shells = new();

@@ -7,7 +7,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Kerf.Kernel.ModelingData.Tests;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Engine.Booleans.Operation;
 using static Kerf.Engine.Foundation.Gravity;
 
@@ -186,8 +186,8 @@ public class BOPAlgo_OptionsTests
     [Fact]
     public void Enums()
     {
-        Assert.Equal(0, (int)GlueMode.GlueOff);
-        Assert.Equal(2, (int)GlueMode.GlueFull);
+        Assert.Equal(0, (int)global::Kerf.Booleans.GlueMode.Off);
+        Assert.Equal(2, (int)global::Kerf.Booleans.GlueMode.Full);
         Assert.Equal(3, (int)Operation.CUT21);
         Assert.Equal(5, (int)Operation.Unknown);
         Assert.Equal(11, (int)CheckStatus.NotValid);

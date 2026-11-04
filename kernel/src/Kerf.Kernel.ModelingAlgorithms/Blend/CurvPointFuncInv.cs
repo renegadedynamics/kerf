@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// The function of a blending surface between a surface and a curve, used to find a solution at a given point of
 /// the curve.
 /// </summary>
-public abstract class CurvPointFuncInv : FunctionSetWithDerivatives
+internal abstract class CurvPointFuncInv : FunctionSetWithDerivatives
 {
     /// <summary>Returns 2 (OCCT's documentation says 3; its code returns 2).</summary>
     public override int NbVariables()

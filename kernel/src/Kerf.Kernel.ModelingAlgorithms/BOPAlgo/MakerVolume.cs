@@ -30,7 +30,7 @@ namespace Kerf.Engine.Booleans;
 /// that share their faces. The result is a solid, or a compound of solids. <see cref="Box"/> and <see cref="Faces"/>
 /// return the box and the faces the solids were built from (OCCT's working data; the box is published frozen).
 /// </remarks>
-public class MakerVolume : BooleanBuilder
+internal class MakerVolume : BooleanBuilder
 {
     protected bool _intersect;
     protected Box _bBox = new();

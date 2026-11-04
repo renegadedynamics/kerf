@@ -14,7 +14,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
 
-public partial class BooleanBuilder
+internal partial class BooleanBuilder
 {
     /// <summary>Fills the images of the vertices: each vertex to its same-domain vertex.</summary>
     protected void FillImagesVertices(ProgressRange range)

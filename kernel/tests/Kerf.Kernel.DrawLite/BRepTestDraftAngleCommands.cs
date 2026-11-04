@@ -7,7 +7,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Construction.Api.TransitionMode;
+using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Features.Draft.DraftErrorStatus;
 using static Kerf.Topology.ShapeType;
 
@@ -206,12 +206,12 @@ internal static class BRepTestDraftAngleCommands
             {
                 if (a[cur] == "-Ri")
                 {
-                    MkDraft.SetOptions(TransitionMode.RightCorner);
+                    MkDraft.SetOptions(global::Kerf.Construction.TransitionMode.RightCorner);
                     cur++;
                 }
                 else if (a[cur] == "-Ro")
                 {
-                    MkDraft.SetOptions(TransitionMode.RoundCorner);
+                    MkDraft.SetOptions(global::Kerf.Construction.TransitionMode.RoundCorner);
                     cur++;
                 }
             }

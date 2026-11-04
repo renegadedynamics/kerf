@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Booleans;
 
 /// <summary>Adds the tools to the arguments of the General Fuse builder.</summary>
-public class ToolsProvider : BooleanBuilder
+internal class ToolsProvider : BooleanBuilder
 {
     protected NCollection_List<Shape> _tools = new();
     protected HashSet<Shape> _mapTools = new(ShapeHasher.Instance);

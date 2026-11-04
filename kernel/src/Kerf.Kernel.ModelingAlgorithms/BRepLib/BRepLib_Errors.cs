@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Library;
 
 /// <summary>Errors of <see cref="LibraryMakeEdge"/> and <see cref="LibraryMakeEdge2d"/>.</summary>
-public enum LibraryEdgeError
+internal enum LibraryEdgeError
 {
     EdgeDone,
     PointProjectionFailed,
@@ -23,7 +23,7 @@ public enum LibraryEdgeError
 }
 
 /// <summary>Errors of <see cref="LibraryMakeFace"/>.</summary>
-public enum LibraryFaceError
+internal enum LibraryFaceError
 {
     FaceDone,
     NoFace,
@@ -33,7 +33,7 @@ public enum LibraryFaceError
 }
 
 /// <summary>Errors of <see cref="LibraryMakeShell"/>.</summary>
-public enum LibraryShellError
+internal enum LibraryShellError
 {
     ShellDone,
     EmptyShell,
@@ -42,7 +42,7 @@ public enum LibraryShellError
 }
 
 /// <summary>Errors of <see cref="LibraryMakeWire"/>.</summary>
-public enum LibraryWireError
+internal enum LibraryWireError
 {
     WireDone,
     EmptyWire,
@@ -51,7 +51,7 @@ public enum LibraryWireError
 }
 
 /// <summary>Modification type after a topological operation.</summary>
-public enum LibraryShapeModification
+internal enum LibraryShapeModification
 {
     Preserved,
     Deleted,

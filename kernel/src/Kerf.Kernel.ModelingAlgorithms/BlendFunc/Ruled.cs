@@ -18,7 +18,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// The function of a ruled blend between two surfaces along a guide curve: the segment between two points in the
 /// plane normal to the guide, normal to both surfaces' sections.
 /// </summary>
-public class Ruled : BlendFunction
+internal class Ruled : BlendFunction
 {
     private readonly SurfaceAdaptorBase _surf1;
     private readonly SurfaceAdaptorBase _surf2;

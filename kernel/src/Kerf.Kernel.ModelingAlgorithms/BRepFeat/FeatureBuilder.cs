@@ -29,7 +29,7 @@ namespace Kerf.Engine.Features;
 /// <remarks>
 /// A BOPAlgo_BOP: its arguments are read as the Boolean operations read theirs, never written (decision 274).
 /// </remarks>
-public class FeatureBuilder : Bop
+internal class FeatureBuilder : Bop
 {
     protected HashSet<Shape> _shapes = new(ShapeHasher.Instance);
     protected HashSet<Shape> _removed = new(ShapeHasher.Instance);

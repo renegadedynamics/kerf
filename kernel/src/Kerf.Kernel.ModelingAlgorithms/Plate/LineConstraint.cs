@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Plate;
 
 /// <summary>A constraint that the plate's deformation at a 2D point (or its derivative) lies on a line.</summary>
 /// <remarks>A class: OCCT's copies share the linear constraint's arrays (see <see cref="LinearScalarConstraint"/>).</remarks>
-public class LineConstraint
+internal class LineConstraint
 {
     private readonly LinearScalarConstraint _lsc;
 

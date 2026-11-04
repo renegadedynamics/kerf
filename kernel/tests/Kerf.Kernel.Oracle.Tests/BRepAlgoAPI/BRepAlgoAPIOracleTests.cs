@@ -153,7 +153,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         public List<Shape> FilledObjects = [], FilledTools = [];
         public Shape BopA, BopB;
         public double Fuzzy;
-        public GlueMode Glue = GlueMode.GlueOff;
+        public global::Kerf.Booleans.GlueMode Glue = global::Kerf.Booleans.GlueMode.Off;
         public bool NonDestructive, UseOBB, CheckInverted = true;
         public readonly List<Run> Runs = [];
         public string Name = "";
@@ -207,7 +207,7 @@ public class BRepAlgoAPIOracleTests(ITestOutputHelper output)
         Add("baddcompound", (i, a) => { AddCompound(Get(i, a[1]), theRec.Objects); return ""; });
         Add("baddctools", (i, a) => { AddCompound(Get(i, a[1]), theRec.Tools); return ""; });
         Add("bfuzzyvalue", (_, a) => { theRec.Fuzzy = a.Count > 1 ? Real(a[1]) : theRec.Fuzzy; return ""; });
-        Add("bglue", (_, a) => { theRec.Glue = a.Count > 1 ? (GlueMode)int.Parse(a[1], CultureInfo.InvariantCulture) : theRec.Glue; return ""; });
+        Add("bglue", (_, a) => { theRec.Glue = a.Count > 1 ? (global::Kerf.Booleans.GlueMode)int.Parse(a[1], CultureInfo.InvariantCulture) : theRec.Glue; return ""; });
         Add("bnondestructive", (_, a) => { theRec.NonDestructive = a.Count > 1 && a[1] != "0"; return ""; });
         Add("buseobb", (_, a) => { theRec.UseOBB = a.Count > 1 && a[1] != "0"; return ""; });
         Add("bcheckinverted", (_, a) => { theRec.CheckInverted = a.Count > 1 && a[1] != "0"; return ""; });

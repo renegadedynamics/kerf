@@ -24,12 +24,12 @@ namespace Kerf.Engine.Fillets.Api;
 /// (the faulty contours and their statuses) are the maker's to read.
 /// </para>
 /// </remarks>
-public static class BRepFilletApi
+internal static class BRepFilletApi
 {
     /// <summary>The fillet of radius <paramref name="radius"/> on the edges <paramref name="edges"/> of <paramref name="shape"/>.</summary>
     /// <exception cref="NotDoneException">The fillet could not be built.</exception>
     public static Shape Fillet(in Shape shape, IReadOnlyList<Edge> edges, double radius,
-                                      in FilletOptions options, out History history)
+                                      in MakeFilletOptions options, out History history)
     {
         MakeFillet maker = new(shape, options.FShape);
         maker.SetParams(options.Tang, options.Tesp, options.T2d, options.TApp3d, options.TolApp2d,
@@ -42,15 +42,15 @@ public static class BRepFilletApi
         return Run(maker, shape, out history);
     }
 
-    /// <inheritdoc cref="Fillet(in Shape, IReadOnlyList{Edge}, double, in FilletOptions, out History)"/>
+    /// <inheritdoc cref="Fillet(in Shape, IReadOnlyList{Edge}, double, in MakeFilletOptions, out History)"/>
     public static Shape Fillet(in Shape shape, IReadOnlyList<Edge> edges, double radius,
-                                      in FilletOptions options) =>
+                                      in MakeFilletOptions options) =>
         Fillet(shape, edges, radius, options, out _);
 
     /// <summary>The symmetric chamfer of distance <paramref name="distance"/> on the edges <paramref name="edges"/>.</summary>
     /// <exception cref="NotDoneException">The chamfer could not be built.</exception>
     public static Shape Chamfer(in Shape shape, IReadOnlyList<Edge> edges, double distance,
-                                       in ChamferOptions options, out History history)
+                                       in MakeChamferOptions options, out History history)
     {
         MakeChamfer maker = new(shape);
         maker.SetMode(options.Mode);
@@ -61,9 +61,9 @@ public static class BRepFilletApi
         return Run(maker, shape, out history);
     }
 
-    /// <inheritdoc cref="Chamfer(in Shape, IReadOnlyList{Edge}, double, in ChamferOptions, out History)"/>
+    /// <inheritdoc cref="Chamfer(in Shape, IReadOnlyList{Edge}, double, in MakeChamferOptions, out History)"/>
     public static Shape Chamfer(in Shape shape, IReadOnlyList<Edge> edges, double distance,
-                                       in ChamferOptions options) =>
+                                       in MakeChamferOptions options) =>
         Chamfer(shape, edges, distance, options, out _);
 
     // Build, the frozen result (Shape() throws StdFail_NotDone when not done) and OCCT's history over the shape.

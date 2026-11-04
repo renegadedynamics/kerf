@@ -691,11 +691,11 @@ public partial class Face : Shape2D
         return SkipClean.Clean ? result.Clean() : result;
     }
 
-    internal static TransitionMode TransitionMode(Transition transition) => transition switch
+    internal static global::Kerf.Construction.TransitionMode TransitionMode(Transition transition) => transition switch
     {
-        Transition.Transformed => global::Kerf.Engine.Construction.Api.TransitionMode.Transformed,
-        Transition.Round => global::Kerf.Engine.Construction.Api.TransitionMode.RoundCorner,
-        _ => global::Kerf.Engine.Construction.Api.TransitionMode.RightCorner,
+        Transition.Transformed => global::Kerf.Construction.TransitionMode.Transformed,
+        Transition.Round => global::Kerf.Construction.TransitionMode.RoundCorner,
+        _ => global::Kerf.Construction.TransitionMode.RightCorner,
     };
 
     // ---- Evaluation ----

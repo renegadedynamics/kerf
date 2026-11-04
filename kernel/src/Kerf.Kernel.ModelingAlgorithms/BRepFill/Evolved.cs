@@ -48,7 +48,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// with BRepFill_Pipe (BRepFill_Sweep, unit 5S2).
 /// </para>
 /// </remarks>
-public sealed class Evolved
+internal sealed class Evolved
 {
     private Face _spine = new();
     private Wire _profile = new();

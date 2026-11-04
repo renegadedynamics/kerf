@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Api;
 /// transformation is applied to a duplicate (<see cref="TrsfModification"/>). The framework can be reused on
 /// other shapes with <see cref="Perform"/>.
 /// </remarks>
-public class Transform : ModifyShape
+internal class Transform : ModifyShape
 {
     private readonly Transform3D _trsf;
     private Placement _location = new();

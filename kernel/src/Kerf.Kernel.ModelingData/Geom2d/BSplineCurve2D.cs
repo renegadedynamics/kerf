@@ -2225,7 +2225,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knot of index Index changed to K.</summary>
-    internal BSplineCurve2D WithKnot(int index, double k)
+    internal BSplineCurve2D WithKnotOneBased(int index, double k)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetKnot(index, k);
@@ -2241,7 +2241,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the knot of index Index raised to multiplicity M and changed to K.</summary>
-    internal BSplineCurve2D WithKnot(int index, double k, int m)
+    internal BSplineCurve2D WithKnotOneBased(int index, double k, int m)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetKnot(index, k, m);
@@ -2273,7 +2273,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P.</summary>
-    internal BSplineCurve2D WithPole(int index, in Point2D p)
+    internal BSplineCurve2D WithPoleOneBased(int index, in Point2D p)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetPole(index, p);
@@ -2281,7 +2281,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P, of weight W.</summary>
-    internal BSplineCurve2D WithPole(int index, in Point2D p, double w)
+    internal BSplineCurve2D WithPoleOneBased(int index, in Point2D p, double w)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetPole(index, p, w);
@@ -2289,7 +2289,7 @@ public sealed partial class BSplineCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the weight of the pole of index Index changed to W.</summary>
-    internal BSplineCurve2D WithWeight(int index, double w)
+    internal BSplineCurve2D WithWeightOneBased(int index, double w)
     {
         BSplineCurve2D copy = new BSplineCurve2D(this);
         copy.SetWeight(index, w);

@@ -6,7 +6,7 @@ using Kerf.Engine.Geometry.Adaptors;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Extrema.ExtAlgo;
 using static Kerf.Engine.Extrema.ExtFlag;
 
@@ -382,7 +382,7 @@ public class GeomAPIOracleTests(ITestOutputHelper output)
             double aTolerance;
             if (aMethod == 0)
             {
-                ParametrizationType aParType = anOracle.Int(0, 2) switch
+                global::Kerf.Geometry.ParametrizationType aParType = anOracle.Int(0, 2) switch
                 {
                     0 => ChordLength,
                     1 => Centripetal,

@@ -26,7 +26,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// only evaluates them (it adapts the section with an adaptor of its own). <see cref="Section"/> and
 /// <see cref="ModifiedSection"/> return new, unfrozen curves.
 /// </remarks>
-public sealed class SurfaceSectionPlacement
+internal sealed class SurfaceSectionPlacement
 {
     private bool _done;
     private bool _isplan;

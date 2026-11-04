@@ -20,7 +20,7 @@ using Kerf.Topology;
 using Occt;
 using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 using static Kerf.Engine.Fillets.Builder_0;
-using static Kerf.Engine.Fillets.FilletShape;
+using static Kerf.Fillets.FilletShape;
 using static Kerf.Engine.Fillets.Surfaces.SurfaceStatusType;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.Orientation;
@@ -128,7 +128,7 @@ internal sealed class InternalBuilder : FilBuilder
 
     //=================================================================================================
 
-    internal InternalBuilder(in Shape s, FilletShape fShape = FilletShape.Polynomial,
+    internal InternalBuilder(in Shape s, global::Kerf.Fillets.FilletShape fShape = global::Kerf.Fillets.FilletShape.Polynomial,
                                         double ta = 1.0e-2, double tapp3d = 1.0e-4, double tapp2d = 1.0e-5)
         : base(s, fShape, ta)
     {
@@ -343,13 +343,13 @@ internal sealed class InternalBuilder : FilBuilder
         fInv.Set(fsp.Radius(), choix);
         switch (GetFilletShape())
         {
-            case FilletShape.Rational:
+            case global::Kerf.Fillets.FilletShape.Rational:
                 func.Set(SectionShape.Rational);
                 break;
-            case FilletShape.QuasiAngular:
+            case global::Kerf.Fillets.FilletShape.QuasiAngular:
                 func.Set(SectionShape.QuasiAngular);
                 break;
-            case FilletShape.Polynomial:
+            case global::Kerf.Fillets.FilletShape.Polynomial:
                 func.Set(SectionShape.Polynomial);
                 break;
         }

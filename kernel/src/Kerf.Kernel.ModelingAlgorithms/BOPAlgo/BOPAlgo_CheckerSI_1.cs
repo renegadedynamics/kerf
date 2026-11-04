@@ -182,7 +182,7 @@ internal sealed class SolidSolid : ShapeSolid
     }
 }
 
-public partial class CheckerSI
+internal partial class CheckerSI
 {
     /// <summary>Vertex/solid intersection: a vertex classified IN a solid that doesn't share it.</summary>
     protected virtual void PerformVZ(ProgressRange range)

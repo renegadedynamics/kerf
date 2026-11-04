@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// approximation of the law (AdvApprox).
 /// </summary>
 /// <remarks>A working object: evaluation stores its results in the function. It keeps the caller's law.</remarks>
-public sealed class LocFunction
+internal sealed class LocFunction
 {
     private readonly SurfaceLocationLaw _law;
     private readonly NCollection_Array1<Vector3D> _v;

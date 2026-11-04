@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Fairing;
 
 /// <summary>The tension distribution of a batten: its local energy of stretching and its derivatives.</summary>
-public class DistributionOfTension : DistributionOfEnergy
+internal class DistributionOfTension : DistributionOfEnergy
 {
     private double _myLengthSliding;
     private readonly BattenLaw _myLaw;

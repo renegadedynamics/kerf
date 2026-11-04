@@ -49,7 +49,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// is keyed by the caller's own sub-shapes of the profiles and the spine.
 /// </para>
 /// </remarks>
-public sealed class PipeShell : Transient
+internal sealed class PipeShell : Transient
 {
     private Wire _spine;
     private Shape _first = new();

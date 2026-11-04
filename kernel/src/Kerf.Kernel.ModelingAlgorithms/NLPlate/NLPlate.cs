@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// move the UV point of a sliding one (<see cref="ConstraintsSliding"/>). OCCT's stack of plates (a list of
 /// <see cref="PlateSolver"/> values, the newest first) holds plates the solver makes, which nothing else sees.
 /// </remarks>
-public class NLPlate
+internal class NLPlate
 {
     private readonly Surface _initialSurface;
     private readonly NCollection_Sequence<HgppConstraint> _hgppConstraints = new();

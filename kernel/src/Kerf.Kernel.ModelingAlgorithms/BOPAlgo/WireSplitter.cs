@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans;
 /// Builds the loops (wires) from the edges of a BOPAlgo_WireEdgeSet on its face: the connexity blocks that are
 /// regular make one wire each, the others are split by following the smallest clockwise angle at each vertex.
 /// </summary>
-public partial class WireSplitter : BooleanAlgorithm
+internal partial class WireSplitter : BooleanAlgorithm
 {
     protected WireEdgeSet? _wes;
     protected NCollection_List<ConnexityBlock> _lcb = new();

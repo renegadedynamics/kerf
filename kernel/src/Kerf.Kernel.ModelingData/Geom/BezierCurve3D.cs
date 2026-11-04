@@ -863,21 +863,21 @@ public sealed partial class BezierCurve3D : BoundedCurve3D
         return copy;
     }
 
-    internal BezierCurve3D WithPole(int index, in Point3D p)
+    internal BezierCurve3D WithPoleOneBased(int index, in Point3D p)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.SetPole(index, p);
         return copy;
     }
 
-    internal BezierCurve3D WithPole(int index, in Point3D p, double weight)
+    internal BezierCurve3D WithPoleOneBased(int index, in Point3D p, double weight)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.SetPole(index, p, weight);
         return copy;
     }
 
-    internal BezierCurve3D WithWeight(int index, double weight)
+    internal BezierCurve3D WithWeightOneBased(int index, double weight)
     {
         BezierCurve3D copy = (BezierCurve3D)Copy();
         copy.SetWeight(index, weight);

@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>A bisecting curve whose geometry is a 2D parabola.</summary>
-public sealed class BParab : ConstraintBisec
+internal sealed class BParab : ConstraintBisec
 {
     private readonly Parabola2D _par;
 

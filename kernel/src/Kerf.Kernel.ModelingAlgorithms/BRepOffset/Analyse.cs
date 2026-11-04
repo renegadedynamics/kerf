@@ -45,7 +45,7 @@ namespace Kerf.Engine.Offsets;
 /// the new faces then hold copies of the tangent edges where OCCT's hold the edges themselves.
 /// </para>
 /// </remarks>
-public sealed class Analyse
+internal sealed class Analyse
 {
     // Inputs
     private Shape _shape = new(); // Input shape to analyze

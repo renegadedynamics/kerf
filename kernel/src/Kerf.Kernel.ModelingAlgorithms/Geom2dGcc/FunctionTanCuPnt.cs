@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// point tangent to a curve).
 /// </summary>
 /// <remarks>OCCT copies the adaptor; the port shares the solver's, which nothing writes (decision 797).</remarks>
-public sealed class FunctionTanCuPnt : FunctionWithDerivative
+internal sealed class FunctionTanCuPnt : FunctionWithDerivative
 {
     private readonly CurveAdaptor2D _theCurv;
     private readonly Point2D _thePoint;

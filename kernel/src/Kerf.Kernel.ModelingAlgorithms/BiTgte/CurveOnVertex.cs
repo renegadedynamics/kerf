@@ -18,7 +18,7 @@ namespace Kerf.Engine.Offsets.Blend;
 /// Only the parameters, D0 (<see cref="EvalD0"/>) and the type are defined; the other members throw
 /// <see cref="MethodNotImplementedException"/> (the base class's), and <see cref="Circle"/> Standard_NoSuchObject, as in OCCT.
 /// </summary>
-public sealed class CurveOnVertex : CurveAdaptorBase
+internal sealed class CurveOnVertex : CurveAdaptorBase
 {
     private double _first;
     private double _last;

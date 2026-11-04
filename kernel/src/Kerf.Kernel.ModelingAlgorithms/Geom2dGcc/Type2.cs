@@ -10,7 +10,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// The kinds of arguments of Geom2dGcc_FunctionTanCuCuOnCu: two tangency arguments (Cu a curve, Ci a circle, Li a
 /// line, Pt a point) and the curve the centre lies on.
 /// </summary>
-public enum Type2
+internal enum Type2
 {
     CuCuOnCu,
     CiCuOnCu,

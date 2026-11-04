@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d2TanRad
+internal sealed partial class AnalyticCirc2d2TanRad
 {
     // Modified:	Thu Jun 18 15:45:00 1998
     //		PRO10310 : cas ou le point est sur la droite

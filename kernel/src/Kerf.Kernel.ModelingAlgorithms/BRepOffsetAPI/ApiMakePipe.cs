@@ -27,7 +27,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <para>The result, <see cref="MakeSweep.FirstShape()"/>, <see cref="MakeSweep.LastShape()"/>
 /// and the history are frozen when returned (design 4.2).</para>
 /// </remarks>
-public class ApiMakePipe : MakeSweep
+internal class ApiMakePipe : MakeSweep
 {
     private readonly Pipe _pipe;
 

@@ -11,7 +11,7 @@ using static Kerf.Engine.Booleans.Operation;
 namespace Kerf.Engine.Booleans.Api;
 
 /// <summary>The union of the objects and the tools.</summary>
-public class Fuse : BooleanOperation
+internal class Fuse : BooleanOperation
 {
     /// <summary>An empty operation: set the arguments and tools, then <see cref="BooleanOperation.Build"/>.</summary>
     public Fuse()

@@ -16,7 +16,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// AppBlend_AppSurf (decision 845).
 /// </summary>
 /// <remarks>A working object (decision 21): the walking sets its parameter and calls it repeatedly.</remarks>
-public abstract class AppFunction : FunctionSetWithDerivatives, ISectionGenerator<BlendPoint>
+internal abstract class AppFunction : FunctionSetWithDerivatives, ISectionGenerator<BlendPoint>
 {
     /// <summary>Sets the value of the parameter along the guide line: the plane in which the solution is found.</summary>
     public abstract void Set(double param);

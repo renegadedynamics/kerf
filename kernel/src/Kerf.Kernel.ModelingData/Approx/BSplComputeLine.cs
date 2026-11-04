@@ -6,7 +6,7 @@ using Kerf.Engine.Approximation.Interfaces;
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Engine.Approximation;
 
@@ -34,7 +34,7 @@ public class BSplComputeLine<MultiLine, LineTool>
     private MultiBSpCurve _theMultiBSpCurve = new();
     private bool _alldone;
     private bool _tolreached;
-    private ParametrizationType _par;
+    private global::Kerf.Geometry.ParametrizationType _par;
     private NCollection_HArray1<double>? _parameters;
     private NCollection_HArray1<double>? _myfirstParam;
     private NCollection_HArray1<double>? _myknots;
@@ -457,7 +457,7 @@ public class BSplComputeLine<MultiLine, LineTool>
     /// <summary>Initialises the fields of the algorithm; <see cref="Perform"/> runs it.</summary>
     public BSplComputeLine(int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-03,
                                   double tolerance2d = 1.0e-06, int nbIterations = 5, bool cutting = true,
-                                  ParametrizationType parametrization = ChordLength, bool squares = false)
+                                  global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
     {
         _constraints = new NCollection_HArray1<ConstraintCouple>(1, 2);
         _par = parametrization;
@@ -487,7 +487,7 @@ public class BSplComputeLine<MultiLine, LineTool>
     /// </summary>
     public BSplComputeLine(MultiLine line, int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-3,
                                   double tolerance2d = 1.0e-6, int nbIterations = 5, bool cutting = true,
-                                  ParametrizationType parametrization = ChordLength, bool squares = false)
+                                  global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
     {
         _constraints = new NCollection_HArray1<ConstraintCouple>(1, 2);
         _alldone = false;
@@ -985,7 +985,7 @@ public class BSplComputeLine<MultiLine, LineTool>
     /// <summary>Initialises the fields of the algorithm.</summary>
     public void Init(int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-03, double tolerance2d = 1.0e-06,
                      int nbIterations = 5, bool cutting = true,
-                     ParametrizationType parametrization = ChordLength, bool squares = false)
+                     global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
     {
         _mydegremin = degreemin;
         _mydegremax = degreemax;

@@ -1,0 +1,41 @@
+# The map unit 10L2 applied (kerf-rename's format; tools/kerf-rename/README.md). Engine enums that are exactly the
+# public API's move into its namespaces, rather than a public twin with a conversion (decision 16901); the engine's
+# fillet option structs give their names to the public records (design-rules 1: no two types of one name).
+
+# --- 1. Kerf.Kernel.ModelingAlgorithms (16901)
+type T:Kerf.Engine.Booleans.GlueMode Kerf.Booleans.GlueMode
+member F:Kerf.Engine.Booleans.GlueMode.GlueOff Off
+member F:Kerf.Engine.Booleans.GlueMode.GlueShift Shift
+member F:Kerf.Engine.Booleans.GlueMode.GlueFull Full
+type T:Kerf.Engine.Fillets.FilletShape Kerf.Fillets.FilletShape
+type T:Kerf.Engine.Offsets.OffsetMode Kerf.Offsets.OffsetMode
+type T:Kerf.Engine.Construction.Api.TransitionMode Kerf.Construction.TransitionMode
+type T:Kerf.Engine.Fillets.Api.FilletOptions Kerf.Engine.Fillets.Api.MakeFilletOptions
+type T:Kerf.Engine.Fillets.Api.ChamferOptions Kerf.Engine.Fillets.Api.MakeChamferOptions
+
+# --- 2. Kerf.Kernel.ModelingData (16901)
+type T:Kerf.Engine.Approximation.ParametrizationType Kerf.Geometry.ParametrizationType
+
+# --- 3. Kerf.Kernel.ModelingData: the splines' 1-based copies renamed, so the 0-based ones can take the names (16902)
+member M:Kerf.Geometry.BezierCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BezierCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BezierCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve3D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BezierCurve3D WithWeightOneBased
+member M:Kerf.Geometry.BezierSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BezierSurface WithPoleOneBased
+member M:Kerf.Geometry.BezierSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BezierSurface WithPoleOneBased
+member M:Kerf.Geometry.BezierSurface.WithWeight(System.Int32,System.Int32,System.Double)~Kerf.Geometry.BezierSurface WithWeightOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithKnot(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve3D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithKnot(System.Int32,System.Double,System.Int32)~Kerf.Geometry.BSplineCurve3D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BSplineCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithPole(System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BSplineCurve3D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve3D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve3D WithWeightOneBased
+member M:Kerf.Geometry.BSplineSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@)~Kerf.Geometry.BSplineSurface WithPoleOneBased
+member M:Kerf.Geometry.BSplineSurface.WithPole(System.Int32,System.Int32,Kerf.Geometry.Point3D@,System.Double)~Kerf.Geometry.BSplineSurface WithPoleOneBased
+member M:Kerf.Geometry.BSplineSurface.WithWeight(System.Int32,System.Int32,System.Double)~Kerf.Geometry.BSplineSurface WithWeightOneBased
+member M:Kerf.Geometry.BezierCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@)~Kerf.Geometry.BezierCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@,System.Double)~Kerf.Geometry.BezierCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BezierCurve2D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BezierCurve2D WithWeightOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithKnot(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve2D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithKnot(System.Int32,System.Double,System.Int32)~Kerf.Geometry.BSplineCurve2D WithKnotOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@)~Kerf.Geometry.BSplineCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithPole(System.Int32,Kerf.Geometry.Point2D@,System.Double)~Kerf.Geometry.BSplineCurve2D WithPoleOneBased
+member M:Kerf.Geometry.BSplineCurve2D.WithWeight(System.Int32,System.Double)~Kerf.Geometry.BSplineCurve2D WithWeightOneBased

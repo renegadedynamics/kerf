@@ -54,7 +54,7 @@ namespace Kerf.Engine.Offsets;
 /// <see cref="InternalFace"/> and <see cref="InternalGenerated"/>, which don't.
 /// </para>
 /// </remarks>
-public sealed class Offset
+internal sealed class Offset
 {
     private Shape _shape = new();
     private OffsetStatus _status = OffsetStatus.Unknown;

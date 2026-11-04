@@ -17,7 +17,7 @@ namespace Kerf.Engine.Features.Draft;
 /// A value type in C++; a class in the port (decision 1033), as <see cref="DraftEdgeInfo"/>. OCCT's two lists and
 /// their iterator are two lists and an index.
 /// </remarks>
-public sealed class VertexInfo
+internal sealed class VertexInfo
 {
     private Point3D _geom = new();
     private readonly List<Shape> _edges = [];

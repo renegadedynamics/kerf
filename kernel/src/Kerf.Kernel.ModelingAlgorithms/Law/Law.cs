@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// laws and reparametrizations by arc length.
 /// </summary>
 /// <remarks>The B-splines returned are new and unfrozen; <see cref="MixBnd(Linear)"/>'s law freezes its curve.</remarks>
-public static class Law
+internal static class Law
 {
     /// <summary>
     /// A cubic B-spline law on the bounds of the linear law Lin, interpolating it at the Schoenberg points with

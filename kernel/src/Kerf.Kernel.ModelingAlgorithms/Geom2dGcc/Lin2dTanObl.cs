@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// An algorithm object computed by its constructor (decision 117). Up to 2 solutions. OCCT declares IsParallel2
 /// without defining it (V8_0_1); it is left out.
 /// </remarks>
-public sealed class Lin2dTanObl
+internal sealed class Lin2dTanObl
 {
     private readonly bool _wellDone;
     // OCCT's Paral2 (always false, read only by the undefined IsParallel2) is left out.

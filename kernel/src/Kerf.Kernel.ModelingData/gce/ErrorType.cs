@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>The status of a gce construction.</summary>
-public enum ErrorType
+internal enum ErrorType
 {
     Done,
     ConfusedPoints,

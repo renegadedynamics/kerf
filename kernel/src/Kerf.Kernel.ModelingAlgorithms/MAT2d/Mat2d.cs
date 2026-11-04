@@ -22,7 +22,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// and only looked up. OCCT leaves the intersection point index uninitialised until the first intersection found;
 /// it is 0 in the port.</para>
 /// </remarks>
-public sealed class Mat2d
+internal sealed class Mat2d
 {
     private readonly bool _isOpenResult;
     private int _thenumberofbisectors;

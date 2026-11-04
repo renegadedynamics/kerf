@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom_ConicalSurface: from an axis system, a semi-angle and a radius, a gp_Cone, four points, or
 /// two points and two radii.
 /// </summary>
-public sealed class MakeConicalSurface : Root
+internal sealed class MakeConicalSurface : Root
 {
     private ConicalSurface? _theCone;
 

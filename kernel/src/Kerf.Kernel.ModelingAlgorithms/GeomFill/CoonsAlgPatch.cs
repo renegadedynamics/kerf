@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="SetFunc"/> replaces the blending functions. No check is made on the bounds: B1/B3 and B2/B4 must have
 /// the same range and be well oriented. The corners are the midpoints of the adjacent boundaries' ends.
 /// </remarks>
-public class CoonsAlgPatch : Transient
+internal class CoonsAlgPatch : Transient
 {
     private readonly Boundary[] _bound = new Boundary[4];
     private readonly Point3D[] _c = [new Point3D(), new Point3D(), new Point3D(), new Point3D()];

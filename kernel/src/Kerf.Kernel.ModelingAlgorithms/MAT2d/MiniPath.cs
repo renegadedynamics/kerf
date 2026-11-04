@@ -18,7 +18,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// connexions starting on it, ordered by MAT2d_Connexion.IsAfter.
 /// </summary>
 /// <remarks>A working object of MAT2d_Circuit. The maps are keyed by line index and only looked up.</remarks>
-public sealed class MiniPath
+internal sealed class MiniPath
 {
     private readonly Dictionary<int, NCollection_Sequence<Connexion>> _connexions = new();
     private readonly Dictionary<int, Connexion> _father = new();

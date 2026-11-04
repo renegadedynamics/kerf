@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Offsets.MedialAxis;
 
 /// <summary>The side of a bisecting locus: left or right of the contour.</summary>
-public enum MedialSide
+internal enum MedialSide
 {
     Left,
     Right,

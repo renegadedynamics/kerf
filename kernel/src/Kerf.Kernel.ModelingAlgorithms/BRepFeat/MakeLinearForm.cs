@@ -37,7 +37,7 @@ namespace Kerf.Engine.Features;
 /// only for what changed, and the contour's edges answer <see cref="MakeShape.Generated"/>), a frozen plane is
 /// translated on a copy (decision 1052).</para>
 /// </remarks>
-public sealed class MakeLinearForm : RibSlot
+internal sealed class MakeLinearForm : RibSlot
 {
 #pragma warning disable CS0169 // declared, never used: as in OCCT
     private Curve3D? _crv;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>The ancestors (spine edges and vertices) of the edges of a parallel built by BRepFill_OffsetWire.</summary>
 /// <remarks>A working object (decision 21); it reads the offset's internal (unfrozen) forms.</remarks>
-public sealed class OffsetAncestors
+internal sealed class OffsetAncestors
 {
     private bool _isPerform;
     private readonly Dictionary<Shape, Shape> _map = new(ShapeHasher.Instance);

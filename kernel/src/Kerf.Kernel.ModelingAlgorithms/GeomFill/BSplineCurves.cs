@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21): <c>Init</c> recomputes the surface. The caller's curves are copied, never
 /// changed. <see cref="Surface"/> hands out the surface frozen; ported callers use <see cref="InternalSurface"/>.
 /// </remarks>
-public class BSplineCurves
+internal class BSplineCurves
 {
     private BSplineSurface? _surface;
 

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Helix.Geometry;
 /// <summary>
 /// Builds a helix about an arbitrary axis, approximated by B-spline curves, one per full turn and one for the rest.
 /// </summary>
-public sealed class GeometryBuilderHelix : BuilderHelixGen
+internal sealed class GeometryBuilderHelix : BuilderHelixGen
 {
     private Frame3D _position = new();
 

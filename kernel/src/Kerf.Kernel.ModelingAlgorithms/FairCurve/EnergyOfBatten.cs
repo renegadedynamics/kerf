@@ -12,7 +12,7 @@ using static Kerf.Engine.Construction.Fairing.AnalysisCode;
 namespace Kerf.Engine.Construction.Fairing;
 
 /// <summary>The energy criterion that FairCurve_Batten minimises: the batten's tension and sagging.</summary>
-public class EnergyOfBatten : Energy
+internal class EnergyOfBatten : Energy
 {
     private double _myLengthSliding;
     private readonly double _originalSliding;

@@ -24,7 +24,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// <para>A working object. GeomBis hands out the tool's Bisector_Bisec (OCCT returns a copy sharing the same curve):
 /// its curve is the working curve the algorithm trimmed, unfrozen, with internal mutators only.</para>
 /// </remarks>
-public sealed class BisectingLocus
+internal sealed class BisectingLocus
 {
     private MedialGraph? _graph;
     private readonly Tool2d _tool = new();

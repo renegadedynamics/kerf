@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>A point of the data structure with its interferences and the indices of two shapes.</summary>
-public sealed class DsPointData : DsGeometryData
+internal sealed class DsPointData : DsGeometryData
 {
     internal DsPoint _point;
     private int _s1;

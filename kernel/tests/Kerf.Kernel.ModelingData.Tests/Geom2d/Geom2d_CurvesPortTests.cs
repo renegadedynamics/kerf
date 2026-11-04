@@ -237,11 +237,11 @@ public class Geom2d_CurvesPortTest
         Assert.Equal(3, aCurve.Degree);
         AssertSamePoint(aMid, aRaised.Value(1.5), 1e-12);
 
-        BSplineCurve2D aWeighted = aCurve.WithWeight(3, 2.0);
+        BSplineCurve2D aWeighted = aCurve.WithWeightOneBased(3, 2.0);
         Assert.True(aWeighted.IsRational);
         Assert.False(aCurve.IsRational);
 
-        BSplineCurve2D aPoled = aCurve.WithPole(2, new Point2D(9, 9));
+        BSplineCurve2D aPoled = aCurve.WithPoleOneBased(2, new Point2D(9, 9));
         AssertSamePoint(new Point2D(9, 9), aPoled.Pole(2));
         AssertSamePoint(new Point2D(1, 2), aCurve.Pole(2));
 
@@ -273,7 +273,7 @@ public class Geom2d_CurvesPortTest
         Assert.Equal(5, aCurve.PoleInsertedAfter(2, new Point2D(1.5, 2)).PoleCount);
         Assert.Equal(3, aCurve.PoleRemoved(2).PoleCount);
         Assert.Equal(4, aCurve.PoleCount);
-        Assert.True(aCurve.WithWeight(2, 3.0).IsRational);
+        Assert.True(aCurve.WithWeightOneBased(2, 3.0).IsRational);
         Assert.False(aCurve.IsRational);
     }
 
@@ -566,7 +566,7 @@ public class Geom2d_CurvesPortTest
     public void EvalRepresentation_Twins_CopyTheDescriptor()
     {
         BSplineCurve2D aCurve = CubicBSpline();
-        BSplineCurve2D aRep = CubicBSpline().WithPole(3, new Point2D(2, 7));
+        BSplineCurve2D aRep = CubicBSpline().WithPoleOneBased(3, new Point2D(2, 7));
         RepCurveDesc2D.Full aDesc = new RepCurveDesc2D.Full { Representation = aRep };
         BSplineCurve2D aWith = aCurve.WithEvalRepresentation(aDesc);
         Assert.False(aCurve.HasEvalRepresentation);

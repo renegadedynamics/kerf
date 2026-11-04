@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="SetTrsf"/> and <see cref="SetInterval"/> are public. It keeps the caller's curve and surface
 /// adaptors and only evaluates them. The seed search, which OCCT repeats in D0, D1 and D2, is a private helper.
 /// </remarks>
-public class LocationDraft : SurfaceLocationLaw
+internal class LocationDraft : SurfaceLocationLaw
 {
     protected NCollection_HArray1<Point2D> _poles2d;
 

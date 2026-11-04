@@ -29,7 +29,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// is false and <see cref="FC2D_AddNewCurveOnSurface"/> returns 1, as OCCT's code does without a cache (decision 792).
 /// </para>
 /// </remarks>
-public static class Legacy2D
+internal static class Legacy2D
 {
     /// <summary>Whether <paramref name="e"/> has a pcurve on <paramref name="f"/>, stored or computed.</summary>
     public static bool FC2D_HasCurveOnSurface(in Edge e, in Face f)

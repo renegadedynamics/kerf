@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The shape of a blend's sections.</summary>
-public enum SectionShape
+internal enum SectionShape
 {
     Rational,
     QuasiAngular,

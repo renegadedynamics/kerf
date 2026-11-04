@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A discrete trihedron law: trihedrons at sampled parameters, each the previous one rotated onto the new tangent
 /// (a rotation-minimizing frame). Lines and conics use the Frenet law. Its derivatives are zero.
 /// </summary>
-public class DiscreteTrihedron : TrihedronLaw
+internal class DiscreteTrihedron : TrihedronLaw
 {
     private static readonly double TolConf = global::Kerf.Engine.Foundation.Precision.Confusion();
 

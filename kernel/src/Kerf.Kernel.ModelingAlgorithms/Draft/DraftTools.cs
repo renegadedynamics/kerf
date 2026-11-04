@@ -14,7 +14,7 @@ using static Kerf.Topology.Orientation;
 namespace Kerf.Engine.Features.Draft;
 
 /// <summary>The draft angle of a face.</summary>
-public static class DraftTools
+internal static class DraftTools
 {
     //=================================================================================================
 

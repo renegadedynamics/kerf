@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>The method of a chamfer: symmetric, two distances, or a distance and an angle.</summary>
-public enum ChamfMethod
+internal enum ChamfMethod
 {
     Sym,
     TwoDist,

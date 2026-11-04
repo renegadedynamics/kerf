@@ -13,7 +13,7 @@ using static Kerf.Geometry.CurveKind;
 
 namespace Kerf.Engine.Construction.Library;
 
-public static partial class BrepLibrary
+internal static partial class BrepLibrary
 {
     //=======================================================================
     // function: findNearestValidPoint

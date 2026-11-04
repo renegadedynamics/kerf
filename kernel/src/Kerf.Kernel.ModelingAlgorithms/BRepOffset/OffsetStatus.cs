@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Offsets;
 
 /// <summary>The status of an offset surface (<see cref="BRepOffset.Surface"/>, <see cref="Offset"/>).</summary>
-public enum OffsetStatus
+internal enum OffsetStatus
 {
     Good,
     /// <summary>The offset surface is reversed.</summary>

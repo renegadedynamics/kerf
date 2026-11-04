@@ -14,7 +14,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// OCCT derives it from TopExp_Explorer; the port's explorer is sealed, so this one holds an explorer and forwards to
 /// it (decision 791). <c>DumpCurrent</c> is left out (decision 493: no console output).
 /// </remarks>
-public sealed class ToolShapeExplorer
+internal sealed class ToolShapeExplorer
 {
     private readonly Explorer _explorer = new();
     private int _index;

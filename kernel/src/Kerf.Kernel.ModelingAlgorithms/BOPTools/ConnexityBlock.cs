@@ -13,7 +13,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// OCCT copies blocks by value (into lists, into the splitters' solvers): the port writes those copies out with the
 /// copy constructor, which copies both lists. The allocator goes.
 /// </remarks>
-public sealed class ConnexityBlock
+internal sealed class ConnexityBlock
 {
     private bool _regular;
     private readonly NCollection_List<Shape> _shapes;

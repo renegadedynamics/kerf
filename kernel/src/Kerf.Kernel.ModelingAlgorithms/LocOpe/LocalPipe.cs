@@ -36,7 +36,7 @@ namespace Kerf.Engine.Features.Local;
 /// reference first depends on the run natively; the port takes them in the order they are generated.
 /// </para>
 /// </remarks>
-public sealed class LocalPipe
+internal sealed class LocalPipe
 {
     private readonly Pipe _pipe;
     private readonly Dictionary<Shape, NCollection_List<Shape>> _map = new(ShapeHasher.Instance);

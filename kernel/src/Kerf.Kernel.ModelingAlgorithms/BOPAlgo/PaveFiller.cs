@@ -9,7 +9,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Intersection.Tools;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
@@ -95,7 +95,7 @@ public partial class PaveFiller : BooleanAlgorithm
     protected bool _nonDestructive;
     protected bool _isPrimary;
     protected bool _avoidBuildPCurve;
-    protected GlueMode _glue;
+    protected global::Kerf.Booleans.GlueMode _glue;
 
     //! Fence map of intersected faces and pave blocks
     protected NCollection_IntDataMap<HashSet<PaveBlock>> _fpbDone = new();
@@ -113,7 +113,7 @@ public partial class PaveFiller : BooleanAlgorithm
         _nonDestructive = false;
         _isPrimary = true;
         _avoidBuildPCurve = false;
-        _glue = GlueMode.GlueOff;
+        _glue = global::Kerf.Booleans.GlueMode.Off;
     }
 
     /// <summary>The data structure (filled by <see cref="Perform"/>).</summary>
@@ -150,10 +150,10 @@ public partial class PaveFiller : BooleanAlgorithm
     public bool NonDestructive() => _nonDestructive;
 
     /// <summary>Sets the glue option.</summary>
-    public void SetGlue(GlueMode glue) => _glue = glue;
+    public void SetGlue(global::Kerf.Booleans.GlueMode glue) => _glue = glue;
 
     /// <summary>The glue option.</summary>
-    public GlueMode Glue() => _glue;
+    public global::Kerf.Booleans.GlueMode Glue() => _glue;
 
     /// <summary>Disables the building of the p-curves of the section edges on planar faces.</summary>
     public void SetAvoidBuildPCurve(bool value) => _avoidBuildPCurve = value;
@@ -444,7 +444,7 @@ public partial class PaveFiller : BooleanAlgorithm
         _iterator.Initialize(ShapeType.Vertex, ShapeType.Face);
         vfSize = _iterator.ExpectedLength();
 
-        if (_glue != GlueMode.GlueFull)
+        if (_glue != global::Kerf.Booleans.GlueMode.Full)
         {
             _iterator.Initialize(ShapeType.Edge, ShapeType.Face);
             efSize = _iterator.ExpectedLength();
@@ -461,9 +461,9 @@ public partial class PaveFiller : BooleanAlgorithm
         steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_RepeatIntersection, 0.2 * (vvSize + veSize + vfSize));
         steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_ForceInterfEE, 2 * eeSize);
         steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_ForceInterfEF, 2 * efSize);
-        steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_PerformFF, (_glue == GlueMode.GlueFull ? 1 : 30) * ffSize);
+        steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_PerformFF, (_glue == global::Kerf.Booleans.GlueMode.Full ? 1 : 30) * ffSize);
         steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_MakeSplitEdges, eeSize);
-        steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_MakeBlocks, (_glue == GlueMode.GlueFull ? 0 : 5) * ffSize);
+        steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_MakeBlocks, (_glue == global::Kerf.Booleans.GlueMode.Full ? 0 : 5) * ffSize);
         steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_MakePCurves, _avoidBuildPCurve ? 0 : 0.2 * (eeSize + efSize));
         steps.SetStep((int)BOPAlgo_PIOperation.PIOperation_ProcessDE, 0.1 * eeSize);
     }

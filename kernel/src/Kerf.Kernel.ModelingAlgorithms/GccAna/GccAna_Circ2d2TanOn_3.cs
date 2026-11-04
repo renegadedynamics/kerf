@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d2TanOn
+internal sealed partial class AnalyticCirc2d2TanOn
 {
     //=========================================================================
     //  Circles tangent to circle C1, passing by point Point2 and centers     +

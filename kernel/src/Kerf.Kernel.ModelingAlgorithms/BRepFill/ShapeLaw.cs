@@ -29,7 +29,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// trimmed curves, as in OCCT. <see cref="D0"/> gives the caller's wire itself for a constant law and a frozen scaled
 /// copy otherwise; <see cref="Vertex"/> the caller's vertex or a frozen scaled copy (decision 901).
 /// </remarks>
-public class ShapeLaw : SectionLaw
+internal class ShapeLaw : SectionLaw
 {
     protected bool _vertex;
     private readonly Shape _shape;

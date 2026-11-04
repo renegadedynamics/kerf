@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Api;
 /// The face, shell and solid it returns are frozen (design 4.2); the internal forms aren't, for ported code. Each of
 /// them builds the primitive first, so a face is handed out complete.
 /// </remarks>
-public abstract class MakeOneAxis : MakeShape
+internal abstract class MakeOneAxis : MakeShape
 {
     private protected MakeOneAxis()
     {

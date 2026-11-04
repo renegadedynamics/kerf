@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom_Circle: from a gp_Circ, an axis system and a radius, coaxial to a circle at a distance or
 /// through a point, through three points, from a center and a normal, a center and a point on the axis, or an axis.
 /// </summary>
-public sealed class MakeCircle : Root
+internal sealed class MakeCircle : Root
 {
     private CircleCurve3D? _theCircle;
 

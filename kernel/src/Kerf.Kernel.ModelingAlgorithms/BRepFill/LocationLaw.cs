@@ -28,7 +28,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// new vertex, and <see cref="InternalPerformVertex"/> the same vertex unfrozen for the sweeps that keep building on it
 /// (decision 900).
 /// </remarks>
-public abstract class LocationLaw : Transient
+internal abstract class LocationLaw : Transient
 {
     protected Wire _path = new();
     protected double _tol;

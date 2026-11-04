@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// variables are the parameters on the two restrictions.
 /// </summary>
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
-public class RstRstConstRad : RstRstFunction
+internal class RstRstConstRad : RstRstFunction
 {
     private const double Eps = 1.0e-15;
 

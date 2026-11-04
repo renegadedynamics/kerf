@@ -12,7 +12,10 @@ namespace Kerf.Engine.Foundation;
 /// <param name="Shape">The result: read only when <paramref name="IsDone"/>, as reading an unfinished algorithm throws.</param>
 /// <param name="History">The algorithm's history, or null for none.</param>
 /// <param name="Report">The algorithm's report, or null for an algorithm without one.</param>
-internal readonly record struct EngineOutcome(bool IsDone, Func<Shape> Shape, History? History = null, Report? Report = null);
+/// <param name="Failure">Why an algorithm that isn't done failed, when the operation knows (its status enum, unit 10L2),
+/// in place of the report's alerts and the operation's own error.</param>
+internal readonly record struct EngineOutcome(bool IsDone, Func<Shape> Shape, History? History = null, Report? Report = null,
+                                              Diagnostic? Failure = null);
 
 /// <summary>
 /// The one way a public operation runs an engine algorithm (decision 1369; docs/api/README.md, section 3): the progress
@@ -53,6 +56,11 @@ internal static class EngineOperation
         cancellationToken.ThrowIfCancellationRequested();
         if (!outcome.IsDone)
         {
+            if (outcome.Failure is { } known)
+            {
+                return Result<Built<TShape>>.Failure(known);
+            }
+
             return Result<Built<TShape>>.Failure(outcome.Report is { } report ? OperationDiagnostics.FromReport(report, failure) : [failure]);
         }
 

@@ -32,7 +32,7 @@ namespace Kerf.Engine.Booleans;
 /// <c>FillMap</c> are generic over the key; the allocator arguments go. <see cref="WiresToFaces"/> copies a frozen input at
 /// its entry, since OCCT writes p-curves and tolerances into the input's edges.
 /// </remarks>
-public static partial class BuilderTools
+internal static partial class BuilderTools
 {
     /// <summary>Makes the chains of the connected elements from the given connexity map.</summary>
     /// <remarks>OCCT's fence map takes the map's hasher from its type: pass it as <paramref name="hasher"/> (null: the default).</remarks>

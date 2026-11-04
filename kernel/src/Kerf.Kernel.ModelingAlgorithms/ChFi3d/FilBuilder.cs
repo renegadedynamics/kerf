@@ -23,7 +23,7 @@ using Kerf.Topology;
 using Occt;
 using static Kerf.Engine.Fillets.BlendFunctions.SectionShape;
 using static Kerf.Engine.Fillets.Builder_0;
-using static Kerf.Engine.Fillets.FilletShape;
+using static Kerf.Fillets.FilletShape;
 using static Kerf.Engine.Fillets.Data.ErrorStatus;
 using static Kerf.Engine.Fillets.Data.State;
 using static Kerf.Geometry.CurveKind;
@@ -43,12 +43,12 @@ namespace Kerf.Engine.Fillets;
 /// unit 7N2 so that the builder can be compared with native OCCT end to end; the API wrappers are unit 7N3's.
 /// OCCT_DEBUG blocks (traces) are left out.
 /// </remarks>
-public partial class FilBuilder : FilletBuilderBase
+internal partial class FilBuilder : FilletBuilderBase
 {
     private SectionShape _shape;
 
     /// <summary>Initializes the builder on <paramref name="s"/>.</summary>
-    public FilBuilder(in Shape s, FilletShape fShape = FilletShape.Rational, double ta = 1.0e-2)
+    public FilBuilder(in Shape s, global::Kerf.Fillets.FilletShape fShape = global::Kerf.Fillets.FilletShape.Rational, double ta = 1.0e-2)
         : base(s, ta)
     {
         SetFilletShape(fShape);
@@ -127,17 +127,17 @@ public partial class FilBuilder : FilletBuilderBase
 
     //=================================================================================================
 
-    public void SetFilletShape(FilletShape fShape)
+    public void SetFilletShape(global::Kerf.Fillets.FilletShape fShape)
     {
         switch (fShape)
         {
-            case FilletShape.Rational:
+            case global::Kerf.Fillets.FilletShape.Rational:
                 _shape = SectionShape.Rational;
                 break;
-            case FilletShape.QuasiAngular:
+            case global::Kerf.Fillets.FilletShape.QuasiAngular:
                 _shape = SectionShape.QuasiAngular;
                 break;
-            case FilletShape.Polynomial:
+            case global::Kerf.Fillets.FilletShape.Polynomial:
                 _shape = SectionShape.Polynomial;
                 break;
         }
@@ -145,19 +145,19 @@ public partial class FilBuilder : FilletBuilderBase
 
     //=================================================================================================
 
-    public FilletShape GetFilletShape()
+    public global::Kerf.Fillets.FilletShape GetFilletShape()
     {
-        FilletShape filshape = FilletShape.Rational;//  need to set default value
+        global::Kerf.Fillets.FilletShape filshape = global::Kerf.Fillets.FilletShape.Rational;//  need to set default value
         switch (_shape)
         {
             case SectionShape.Rational:
-                filshape = FilletShape.Rational;
+                filshape = global::Kerf.Fillets.FilletShape.Rational;
                 break;
             case SectionShape.QuasiAngular:
-                filshape = FilletShape.QuasiAngular;
+                filshape = global::Kerf.Fillets.FilletShape.QuasiAngular;
                 break;
             case SectionShape.Polynomial:
-                filshape = FilletShape.Polynomial;
+                filshape = global::Kerf.Fillets.FilletShape.Polynomial;
                 break;
             default:
                 break;

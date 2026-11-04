@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// <summary>
 /// The function of a chamfer of constant throat with penetration with one end on a surface's boundary.
 /// </summary>
-public class ConstThroatWithPenetrationInv : ConstThroatInv
+internal class ConstThroatWithPenetrationInv : ConstThroatInv
 {
     public ConstThroatWithPenetrationInv(SurfaceAdaptorBase s1, SurfaceAdaptorBase s2, CurveAdaptorBase c)
         : base(s1, s2, c)

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// another (decision 797). Two qualified curves are equal when they have the same qualifier, the same Geom2d curve
 /// object and the same parameter range. <c>default</c> has no curve.
 /// </remarks>
-public readonly struct QualifiedCurve : IEquatable<QualifiedCurve>
+internal readonly struct QualifiedCurve : IEquatable<QualifiedCurve>
 {
     private readonly Qualifier _theQualifier;
     private readonly CurveAdaptor2D _theQualified;

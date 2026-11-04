@@ -5,7 +5,7 @@
 
 using Kerf.Engine.Approximation;
 using Occt;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Engine.Intersection.Approximation;
 
@@ -23,7 +23,7 @@ public sealed class TheComputeLineBezierOfApprox : ComputeLine<global::Kerf.Engi
     /// </summary>
     public TheComputeLineBezierOfApprox(global::Kerf.Engine.Intersection.Approximation.MultiLine<ApproxLine> line, int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-3,
                           double tolerance2d = 1.0e-6, int nbIterations = 5, bool cutting = true,
-                          ParametrizationType parametrization = ChordLength, bool squares = false)
+                          global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
         : base(line, degreemin, degreemax, tolerance3d, tolerance2d, nbIterations, cutting, parametrization, squares) { }
 
     /// <summary>As the constructor above, starting from the parameters <paramref name="parameters"/>.</summary>
@@ -40,6 +40,6 @@ public sealed class TheComputeLineBezierOfApprox : ComputeLine<global::Kerf.Engi
     /// <summary>Initialises the fields of the algorithm; <c>Perform</c> runs it.</summary>
     public TheComputeLineBezierOfApprox(int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-03, double tolerance2d = 1.0e-06,
                           int nbIterations = 5, bool cutting = true,
-                          ParametrizationType parametrization = ChordLength, bool squares = false)
+                          global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
         : base(degreemin, degreemax, tolerance3d, tolerance2d, nbIterations, cutting, parametrization, squares) { }
 }

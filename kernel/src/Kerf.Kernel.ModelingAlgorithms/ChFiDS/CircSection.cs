@@ -12,7 +12,7 @@ namespace Kerf.Engine.Fillets.Data;
 
 /// <summary>A section of a fillet: a circle or a line, with its parameter range.</summary>
 /// <remarks>A C++ value class, so a struct. <c>new()</c> and <c>default</c> differ only in the default circle and line.</remarks>
-public partial struct CircSection : IEquatable<CircSection>
+internal partial struct CircSection : IEquatable<CircSection>
 {
     private Circle3D _circ;
     private Line3D _lin;

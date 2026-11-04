@@ -10,7 +10,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// <summary>A pair of integers (a key of MAT2d_Tool2d's and MAT2d_Circuit's maps).</summary>
 /// <remarks>A value type (OCCT uses it by value): the setters are internal, equality compares both integers
 /// exactly, as OCCT's IsEqual and std::hash.</remarks>
-public struct BiInt : IEquatable<BiInt>
+internal struct BiInt : IEquatable<BiInt>
 {
     private int _i1;
     private int _i2;

@@ -25,7 +25,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// <para><see cref="MakeShape.Modified"/> answers the descendant of an edge of the face, and throws
 /// Standard_NoSuchObject for an edge that has none, as OCCT does.</para>
 /// </remarks>
-public class MakeFillet2D : MakeShape
+internal class MakeFillet2D : MakeShape
 {
     private readonly PlanarBuilder _makeChFi2d = new();
 

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Values;
 /// Constructions of a gp_Lin2d: from an axis, a point and a direction, a cartesian equation, parallel to a line
 /// through a point or at a signed distance, or through two points.
 /// </summary>
-public sealed class MakeLin2d : Root
+internal sealed class MakeLin2d : Root
 {
     private Line2D _theLin2d = new();
 

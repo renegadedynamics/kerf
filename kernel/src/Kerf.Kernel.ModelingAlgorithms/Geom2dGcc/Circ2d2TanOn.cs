@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// Geom2dGcc_Circ2d2TanOnIter, which gives at most one solution near the given parameters (and, as in OCCT, no centre
 /// parameter: CenterOn3 then returns 0 and the origin).
 /// </remarks>
-public sealed class Circ2d2TanOn
+internal sealed class Circ2d2TanOn
 {
     private bool _wellDone;
     private readonly NCollection_Array1<Circle2D> _cirsol;

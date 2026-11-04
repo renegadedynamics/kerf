@@ -29,7 +29,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// <c>GeomFill_NSections.InternalBSplineSurface</c> (decision 902). <see cref="D0"/> and <see cref="Vertex"/> hand
 /// out new frozen shapes.
 /// </remarks>
-public sealed class NSections : SectionLaw
+internal sealed class NSections : SectionLaw
 {
     private readonly double _vFirst;
     private readonly double _vLast;

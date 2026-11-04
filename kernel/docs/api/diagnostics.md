@@ -254,6 +254,32 @@ The message is BRepFeat's own description of the status (`BRepFeat::Print`).
 | `exchange.failed` | `IFSelect_ReturnStatus::IFSelect_RetFail` | Reading or writing failed. |
 | `exchange.stopped` | `IFSelect_ReturnStatus::IFSelect_RetStop` | Reading or writing was stopped. |
 
+## The public operations' own codes (unit 10L2)
+
+Beside the bridges above, which the operations use for the engine's statuses and alerts, these are the operations'
+own. Those a program is likely to test for are static properties of the operations class (`GeometryOperations.NotConnected`).
+
+| Code | Where | Meaning |
+|---|---|---|
+| `geometry.construction-failed` | `GeometryOperations` (arcs, segments) | The curve can't be constructed from its data (`gce_ErrorType`, described) |
+| `geometry.interpolation-failed` | `Interpolate` | No B-spline passes through the points (coincident points, inconsistent tangents) |
+| `geometry.approximation-failed` | `Approximate` | No B-spline fits within the options |
+| `geometry.not-connected` | `Join` | A curve doesn't meet the ones before it |
+| `geometry.conversion-failed` | `ToBSpline`, `ToCurve2D`, `Join` | The curve can't be converted |
+| `geometry.intersection-failed` | `Intersect` | The intersection couldn't be computed |
+| `geometry.curve-in-surface`, `geometry.curves-overlap` | `Intersect` (warnings) | A stretch in common, which isn't a point |
+| `construction.failed` | `Primitives`, `ShapeFactory` | A primitive or shape the engine couldn't build, with no status |
+| `construction.degenerate-polygon` | `Wire.Polygon` | The points coincide |
+| `construction.sweep-failed` | `Sweeps` | A sweep failed with no status |
+| `construction.not-solid` | `Sweeps.Sweep` | Closed profiles, but the sweep couldn't be closed into a solid |
+| `construction.transform-failed` | `ShapeTransforms` | The transformation couldn't be applied |
+| `construction.projection-empty` | `ShapeProjections` | The projection doesn't meet the shape |
+| `boolean.empty-result` | `BooleanOperations` (warning) | The result is empty |
+| `fillet.<status>` | `Fillet2D`, `Chamfer2D` | `ChFi2d_ConstructionError` in kebab case (`fillet.computation-error`), with the corner |
+| `offset.not-planar` | `Offset2D` | The planar offset couldn't be built |
+| `draft.face-failed` | `FeatureOperations.Draft` | A face can't be drafted, with the face |
+| `feature.failed` | `FeatureOperations` | A feature failed with no status |
+
 ## The modelling layer
 
 Until unit 10M gives Kerf.Modeling results, an operation of it that fails in the kernel throws a `KerfException`

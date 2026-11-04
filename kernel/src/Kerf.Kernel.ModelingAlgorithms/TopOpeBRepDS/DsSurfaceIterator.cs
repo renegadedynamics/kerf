@@ -16,7 +16,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// first interference, whatever its kind; <see cref="DsInterferenceIterator.Next"/> then skips the others
 /// (occt-issues, unit 7L).
 /// </remarks>
-public sealed class DsSurfaceIterator : DsInterferenceIterator
+internal sealed class DsSurfaceIterator : DsInterferenceIterator
 {
     /// <summary>An iterator over the surfaces of the interferences of <paramref name="l"/>.</summary>
     public DsSurfaceIterator(NCollection_List<DsInterference> l)

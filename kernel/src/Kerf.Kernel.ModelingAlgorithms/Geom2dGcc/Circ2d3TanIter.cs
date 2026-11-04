@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// An algorithm object computed by its constructor (decision 117); one solution at most. A point argument is a circle
 /// of radius 0 for the function.
 /// </remarks>
-public sealed class Circ2d3TanIter
+internal sealed class Circ2d3TanIter
 {
     private bool _wellDone;
     private Circle2D _cirsol = new();

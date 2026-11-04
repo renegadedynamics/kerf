@@ -17,7 +17,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// derived at the start.
 /// </summary>
 /// <remarks>A working object (decision 21); the arrays the accessors return are the approximation's own.</remarks>
-public class AppSurface : Approx
+internal class AppSurface : Approx
 {
     private readonly SweepApproximation _approx;
 

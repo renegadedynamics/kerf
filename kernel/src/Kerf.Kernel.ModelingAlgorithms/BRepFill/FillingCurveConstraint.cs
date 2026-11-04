@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// edge on a face).
 /// </summary>
 /// <remarks>A working object, as <see cref="CurveConstraint"/>.</remarks>
-public class FillingCurveConstraint : CurveConstraint
+internal class FillingCurveConstraint : CurveConstraint
 {
     /// <summary>A constraint of order <paramref name="tang"/> (-1 to 2) along a curve on a surface.</summary>
     /// <exception cref="FailureException">The order isn't -1 to 2, or <paramref name="boundary"/> is null.</exception>

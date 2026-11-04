@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Plate;
 
 /// <summary>A G1, G2 and G3 constraint of a non-linear plate, the position free.</summary>
-public class Hpg3Constraint : Hpg2Constraint
+internal class Hpg3Constraint : Hpg2Constraint
 {
     private readonly D3 _g3Target;
 

@@ -11,7 +11,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// Builds the areas of faces from a <see cref="LoopSet"/> of wires and blocks of edges (an
 /// <see cref="Area2dBuilder"/>).
 /// </summary>
-public class FaceAreaBuilder : Area2dBuilder
+internal class FaceAreaBuilder : Area2dBuilder
 {
     /// <summary>An empty face area builder.</summary>
     public FaceAreaBuilder()

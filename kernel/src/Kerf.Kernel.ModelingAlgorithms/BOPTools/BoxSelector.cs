@@ -9,7 +9,7 @@ namespace Kerf.Engine.Booleans.Tools;
 
 /// <summary>Selects the elements of a BVH tree whose boxes meet a given box.</summary>
 /// <remarks>The metric is OCCT's <c>bool</c>: true if the node lies inside the selection box.</remarks>
-public class BoxSelector<TVec> : Traverse<double, TVec, BoxSet<double, TVec, int>, bool>
+internal class BoxSelector<TVec> : Traverse<double, TVec, BoxSet<double, TVec, int>, bool>
     where TVec : unmanaged, INCollection_Vec<double, TVec>
 {
     protected Box<double, TVec> _box = new();          //!< Selection box

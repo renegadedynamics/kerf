@@ -11,7 +11,7 @@ using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Fillets.Blend.AppBlendDebug;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Fillets.Blend;
@@ -33,7 +33,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// A working object (decision 21). The arrays the accessors return are its own (decision 143): shared, don't modify.
 /// </para>
 /// </remarks>
-public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
+internal class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
     where TheSectionGenerator : ISectionGenerator<ThePoint>
     where TheLine : class, ILine<ThePoint>
 {
@@ -58,7 +58,7 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
     private readonly NCollection_Sequence<NCollection_HArray1<Point2D>> _seqPoles2d = new();
     private double _tol3dreached;
     private double _tol2dreached;
-    private ParametrizationType _paramtype;
+    private global::Kerf.Geometry.ParametrizationType _paramtype;
     private Continuity _continuity;
     private readonly double[] _critweights = new double[3];
 
@@ -147,12 +147,12 @@ public class AppSurf<TheSectionGenerator, TheLine, ThePoint> : Approx
     public Continuity Continuity() => _continuity;
 
     /// <summary>The type of parametrisation of the approximation.</summary>
-    public void SetParType(ParametrizationType parType)
+    public void SetParType(global::Kerf.Geometry.ParametrizationType parType)
     {
         _paramtype = parType;
     }
 
-    public ParametrizationType ParType() => _paramtype;
+    public global::Kerf.Geometry.ParametrizationType ParType() => _paramtype;
 
     /// <summary>
     /// Approximates the sections of <paramref name="lin"/>: Bezier pieces joined (AppDef_Compute), or with

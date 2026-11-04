@@ -11,7 +11,7 @@ using static Kerf.Engine.Geometry.Conversion.ParameterisationType;
 namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>Tools and data for filling and sweep surfaces: ruled surfaces and the circular sections of blends.</summary>
-public static class GeomFill
+internal static class GeomFill
 {
     /// <summary>
     /// The ruled surface between Curve1 and Curve2: a plane, cylinder or cone where the curves allow, else a B-spline

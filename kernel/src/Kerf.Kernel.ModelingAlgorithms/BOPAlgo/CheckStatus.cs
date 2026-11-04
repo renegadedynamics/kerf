@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Booleans;
 
 /// <summary>The faults the argument analyzer reports.</summary>
-public enum CheckStatus
+internal enum CheckStatus
 {
     CheckUnknown,
     BadType,

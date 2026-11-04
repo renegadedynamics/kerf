@@ -1,6 +1,6 @@
 # API review: offsets and features
 
-*Unit 10D, draft. Namespaces `Kerf.Offsets` and `Kerf.Features`, in ModelingAlgorithms. Engine: `Kerf.Engine.Offsets`
+*Unit 10D, draft; unit 10L2 implemented it (README.md, section 11, has what differs and what is left). Namespaces `Kerf.Offsets` and `Kerf.Features`, in ModelingAlgorithms. Engine: `Kerf.Engine.Offsets`
 (BRepOffset, BRepOffsetAPI's offsets, BiTgte, MAT, MAT2d, BRepMAT2d, Bisector) and `Kerf.Engine.Features` (BRepFeat,
 LocOpe, Draft, BRepOffsetAPI_DraftAngle).*
 

@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>A constant trihedron law: the same tangent, normal and binormal at every parameter.</summary>
-public class Fixed : TrihedronLaw
+internal class Fixed : TrihedronLaw
 {
     private Vector3D _t;
     private Vector3D _n;

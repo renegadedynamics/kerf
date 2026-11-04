@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Api;
 /// A plane is built only if every edge is within the tolerance of it: the larger of the given tolerance (negative by
 /// default) and the largest edge tolerance. The shape is only read; <see cref="Plane"/> is frozen.
 /// </remarks>
-public sealed class FindPlane
+internal sealed class FindPlane
 {
     private PlaneSurface? _plane;
 

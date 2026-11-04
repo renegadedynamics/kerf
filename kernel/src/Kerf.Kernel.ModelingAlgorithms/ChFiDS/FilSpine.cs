@@ -22,7 +22,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// A working object of the fillet builders (decision 21): the radii are set through the internal mutators; the laws
 /// are built when the builders append the elementary spines. The laws are the builder's own.
 /// </remarks>
-public sealed class FilSpine : Spine
+internal sealed class FilSpine : Spine
 {
     private readonly NCollection_Sequence<Xy> _parandrad = new();
     private readonly NCollection_List<LawsFunction> _laws = new();

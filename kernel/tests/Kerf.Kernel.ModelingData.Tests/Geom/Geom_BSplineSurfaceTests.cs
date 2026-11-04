@@ -734,7 +734,7 @@ public class Geom_BSplineSurfaceTests
         Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.UReverse());
         Assert.Throws<ImmutableObjectException>(() => myOriginalSurface.Transform(Transform3D.Translation(new Vector3D(1, 0, 0))));
 
-        BSplineSurface aMoved = myOriginalSurface.WithPole(2, 2, new Point3D(5, 5, 5));
+        BSplineSurface aMoved = myOriginalSurface.WithPoleOneBased(2, 2, new Point3D(5, 5, 5));
         Assert.False(aMoved.IsFrozen);
         Assert.True(aMoved.Pole(2, 2).IsEqual(new Point3D(5, 5, 5), 0.0));
         Assert.True(myOriginalSurface.Pole(2, 2).IsEqual(new Point3D(2, 2, 0.4), 1e-15));

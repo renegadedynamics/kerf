@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Features;
 
 /// <summary>The status of BRepFeat_MakeCylindricalHole.</summary>
-public enum FeatureStatus
+internal enum FeatureStatus
 {
     NoError,
     InvalidPlacement,

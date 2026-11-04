@@ -33,7 +33,7 @@ namespace Kerf.Engine.Construction.Library;
 /// (unit 10H3): the face holds the caller's own edges and vertices wherever they are unchanged, so faces built on
 /// wires sharing edges still share them; <see cref="InternalHistory"/> records the ones replaced.</para>
 /// </remarks>
-public class LibraryMakeFace : LibraryMakeShape
+internal class LibraryMakeFace : LibraryMakeShape
 {
     private LibraryFaceError _error;
     // Kerf: the history of the wire's sub-shapes the face replaced (null if none).

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Booleans;
 /// The result is a compound of the section edges and vertices: the intersections of faces, the edges shared with
 /// faces, the vertices found in faces, and the parts of the arguments' boundaries shared by several arguments.
 /// </remarks>
-public class Section : BooleanBuilder
+internal class Section : BooleanBuilder
 {
     public Section()
     {

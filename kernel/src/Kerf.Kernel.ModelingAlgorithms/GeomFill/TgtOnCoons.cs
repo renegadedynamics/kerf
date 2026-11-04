@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// cross-boundary derivative with its component along the boundary's normal removed.
 /// </summary>
 /// <remarks>A working object (decision 806); it keeps the caller's patch, as OCCT keeps the handle.</remarks>
-public class TgtOnCoons : TgtField
+internal class TgtOnCoons : TgtField
 {
     private readonly CoonsAlgPatch _k;
     private readonly int _ibound;

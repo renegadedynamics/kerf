@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a line segment in 3D as a Geom_TrimmedCurve: between two points, or on a line between two
 /// points or parameters.
 /// </summary>
-public sealed class MakeSegment : Root
+internal sealed class MakeSegment : Root
 {
     private TrimmedCurve3D? _theSegment;
 

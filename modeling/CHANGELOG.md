@@ -123,3 +123,6 @@ The first packages, for Bento's 3D-models extension.
   `Placement`…) and `Distance`/`Angle` became `DistanceTo`/`AngleTo`; the layer's call sites follow, rewritten by
   the same tool. The layer reaches the kernel's now-internal engine through `InternalsVisibleTo` until 10M. No
   behaviour changes.
+- Kerf's unit 10L2: the kernel's `GlueMode`, `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
+  moved into its public namespaces (`GlueMode.GlueOff` is `GlueMode.Off`); the layer's call sites follow, rewritten by
+  kerf-rename. No behaviour changes.

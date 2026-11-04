@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// As OCCT, the constructor calls <c>SetOrigine</c> on the caller's guide law before copying it for each edge, so the
 /// caller's law is left with the last edge's origin (laws are working objects, decision 806).
 /// </remarks>
-public sealed class AcrLaw : LocationLaw
+internal sealed class AcrLaw : LocationLaw
 {
     private readonly NCollection_HArray1<double> _origParam;
 

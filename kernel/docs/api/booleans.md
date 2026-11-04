@@ -1,6 +1,6 @@
 # API review: Booleans
 
-*Unit 10D, draft. Namespace `Kerf.Booleans`, in ModelingAlgorithms. Engine: `Kerf.Engine.Booleans` (BOPAlgo, BOPDS,
+*Unit 10D, draft; unit 10L2 implemented it (README.md, section 11, has what differs and what is left). Namespace `Kerf.Booleans`, in ModelingAlgorithms. Engine: `Kerf.Engine.Booleans` (BOPAlgo, BOPDS,
 BOPTools, BRepAlgoAPI) and `Kerf.Engine.Booleans.Legacy` (TopOpeBRep*, the old Booleans that fillets still use).*
 
 ## Main types

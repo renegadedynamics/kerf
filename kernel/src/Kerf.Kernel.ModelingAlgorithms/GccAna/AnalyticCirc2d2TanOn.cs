@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// including OCCT's mistakes (marked <c>// OCCT</c>): <see cref="CenterOn3"/> returns the first tangency point, not
 /// the centre, as OCCT's does.
 /// </remarks>
-public sealed partial class AnalyticCirc2d2TanOn
+internal sealed partial class AnalyticCirc2d2TanOn
 {
     private bool _wellDone;
     private int _nbrSol;

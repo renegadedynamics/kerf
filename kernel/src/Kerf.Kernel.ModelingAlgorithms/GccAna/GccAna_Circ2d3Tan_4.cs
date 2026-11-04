@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d3Tan
+internal sealed partial class AnalyticCirc2d3Tan
 {
     private const int MaxSol = 20;
 

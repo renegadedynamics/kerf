@@ -26,7 +26,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// Evaluation doesn't change the plate (OCCT caches the last point's radius in it; the port doesn't, decision 870),
 /// so a solved plate can be evaluated from several threads at once, as GeomPlate_Surface is.
 /// </remarks>
-public class PlateSolver
+internal class PlateSolver
 {
     private int _order;
     private int _nEl;

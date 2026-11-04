@@ -36,7 +36,7 @@ namespace Kerf.Engine.Features.Local;
 /// the order they are found.
 /// </para>
 /// </remarks>
-public sealed class LocalGenerator
+internal sealed class LocalGenerator
 {
     private Shape _shape = new();
     private GeneratedShape? _gen;

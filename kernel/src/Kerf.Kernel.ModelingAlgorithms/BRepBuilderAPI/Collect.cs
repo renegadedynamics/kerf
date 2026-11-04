@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Api;
 /// (<c>InternalModified</c>, <c>InternalGenerated</c>), so the shapes it records aren't frozen by it.
 /// <see cref="Modification"/> and <see cref="Generated"/> return its own maps, as OCCT's references.
 /// </remarks>
-public sealed class Collect
+internal sealed class Collect
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _mod =
         new(ShapeHasher.Instance);

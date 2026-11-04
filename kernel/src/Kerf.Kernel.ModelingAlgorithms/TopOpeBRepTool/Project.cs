@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// for the face maker of the 2D offset (plan 2.11), and <c>FUN_tool_projPonS</c>, for
 /// <see cref="ToolShapeTool.SurfacesSameOriented"/> (unit 7L); the other projections are left out.
 /// </remarks>
-public static class Project
+internal static class Project
 {
     /// <summary>The parameter range of the edge's curve.</summary>
     public static void FUN_tool_bounds(in Edge e, out double f, out double l)

@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>The curve services the Geom2dGcc solvers use, over Geom2dAdaptor_Curve.</summary>
-public static class ConstraintCurveTool
+internal static class ConstraintCurveTool
 {
     public static double EpsX(CurveAdaptor2D c, double tol)
     {

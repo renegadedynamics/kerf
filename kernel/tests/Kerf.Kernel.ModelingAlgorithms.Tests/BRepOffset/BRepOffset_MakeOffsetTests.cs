@@ -15,7 +15,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Kerf.Kernel.ModelingData.Tests;
 using static Kerf.Engine.Offsets.Error;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -60,7 +60,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new MakeOffset();
-        anAlgo.Initialize(aBox, 1.0, 1.0e-7, OffsetMode.Skin, false, false, Arc);
+        anAlgo.Initialize(aBox, 1.0, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -83,7 +83,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new MakeOffset();
-        anAlgo.Initialize(aBox, 1.0, 1.0e-7, OffsetMode.Skin, false, false, Intersection);
+        anAlgo.Initialize(aBox, 1.0, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, false, false, Intersection);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -103,7 +103,7 @@ public class BRepOffset_MakeOffsetTests
         var anAlgo = new MakeThickSolid();
         var aClosing = new NCollection_List<Shape>();
         aClosing.Append(aTop);
-        anAlgo.MakeThickSolidByJoin(aBox, aClosing, -1.0, 1.0e-3, OffsetMode.Skin, false, false, Arc);
+        anAlgo.MakeThickSolidByJoin(aBox, aClosing, -1.0, 1.0e-3, global::Kerf.Offsets.OffsetMode.Skin, false, false, Arc);
 
         aSnap.AssertUnchanged(aBox);
         Assert.True(anAlgo.IsDone);
@@ -138,7 +138,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(aBox);
 
         var anAlgo = new MakeOffset();
-        anAlgo.Initialize(aFace, 2.0, 1.0e-5, OffsetMode.Skin, true, false, Intersection, true, true);
+        anAlgo.Initialize(aFace, 2.0, 1.0e-5, global::Kerf.Offsets.OffsetMode.Skin, true, false, Intersection, true, true);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(aBox);
@@ -165,10 +165,10 @@ public class BRepOffset_MakeOffsetTests
         Shape aBox = new MakeBox(10, 20, 30).Shape();
         Shape aCyl = new ApiMakeCylinder(5, 10).Shape();
         var anAlgo = new MakeOffset();
-        anAlgo.Initialize(aBox, 1.0, 1.0e-7, OffsetMode.Skin, false, false, Arc);
+        anAlgo.Initialize(aBox, 1.0, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
         Shape aFirst = anAlgo.Shape();
-        anAlgo.Initialize(aCyl, -1.0, 1.0e-7, OffsetMode.Skin, false, false, Arc);
+        anAlgo.Initialize(aCyl, -1.0, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, false, false, Arc);
         anAlgo.MakeOffsetShape();
         Assert.True(anAlgo.IsDone);
         Assert.Equal(Math.PI * 16 * 8, Volume(anAlgo.Shape()), 4);
@@ -182,7 +182,7 @@ public class BRepOffset_MakeOffsetTests
         Shape aBox = new MakeBox(10, 20, 30).Shape();
         Face aTop = ShapeCasts.Face(SubShapes(aBox, ShapeType.Face)[5]);
         var anAlgo = new MakeOffset();
-        anAlgo.Initialize(aBox, -1.0, 1.0e-7, OffsetMode.Skin, false, false, Arc);
+        anAlgo.Initialize(aBox, -1.0, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, false, false, Arc);
         anAlgo.AddFace(aTop);
         anAlgo.MakeThickSolid();
         Assert.True(anAlgo.IsDone);
@@ -226,7 +226,7 @@ public class BRepOffset_MakeOffsetTests
         ShapeSnapshot aSnap = ShapeSnapshot.Of(anL);
 
         var anAlgo = new MakeOffset();
-        anAlgo.Initialize(anL, theOffset, 1.0e-7, OffsetMode.Skin, true, false, Intersection);
+        anAlgo.Initialize(anL, theOffset, 1.0e-7, global::Kerf.Offsets.OffsetMode.Skin, true, false, Intersection);
         anAlgo.MakeOffsetShape();
 
         aSnap.AssertUnchanged(anL);

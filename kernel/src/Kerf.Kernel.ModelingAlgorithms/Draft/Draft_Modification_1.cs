@@ -32,7 +32,7 @@ namespace Kerf.Engine.Features.Draft;
 
 // OCCT_DEBUG blocks (the traces of the vertex recomputation and of NewSurface's failures) are left out.
 
-public sealed partial class DraftModification
+internal sealed partial class DraftModification
 {
     //=================================================================================================
 

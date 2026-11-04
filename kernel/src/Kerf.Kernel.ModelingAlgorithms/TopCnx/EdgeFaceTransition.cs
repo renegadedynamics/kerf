@@ -16,7 +16,7 @@ namespace Kerf.Engine.Booleans.Legacy;
 /// <see cref="CurveTransition"/>) and the boundary transition (by counting).
 /// </summary>
 /// <remarks>A working object, as OCCT's. The OCCT_DEBUG traces of unprocessed states are left out.</remarks>
-public sealed class EdgeFaceTransition
+internal sealed class EdgeFaceTransition
 {
     private readonly CurveTransition _curveTransition = new();
     private int _nbBoundForward;

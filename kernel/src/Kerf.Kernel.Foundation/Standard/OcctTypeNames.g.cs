@@ -8,6 +8,8 @@ namespace Kerf.Engine.Foundation;
 public static partial class OcctTypeNames
 {
     private const string Table = """
+Kerf.Booleans.GlueMode BOPAlgo_GlueEnum
+Kerf.Construction.TransitionMode BRepBuilderAPI_TransitionMode
 Kerf.Engine.Approximation.Advanced.ApproxAFunc2Var AdvApp2Var_ApproxAFunc2Var
 Kerf.Engine.Approximation.Advanced.ApproxAFunction AdvApprox_ApproxAFunction
 Kerf.Engine.Approximation.Advanced.ApproxF2var AdvApp2Var_ApproxF2var
@@ -100,7 +102,6 @@ Kerf.Engine.Approximation.ParFunctionOfTheGradient AppDef_ParFunctionOfTheGradie
 Kerf.Engine.Approximation.ParLeastSquareOfMyGradientOfCompute AppDef_ParLeastSquareOfMyGradientOfCompute
 Kerf.Engine.Approximation.ParLeastSquareOfMyGradientbisOfBSplineCompute AppDef_ParLeastSquareOfMyGradientbisOfBSplineCompute
 Kerf.Engine.Approximation.ParLeastSquareOfTheGradient AppDef_ParLeastSquareOfTheGradient
-Kerf.Engine.Approximation.ParametrizationType Approx_ParametrizationType
 Kerf.Engine.Approximation.ResConstraintOfMyGradientOfCompute AppDef_ResConstraintOfMyGradientOfCompute
 Kerf.Engine.Approximation.ResConstraintOfMyGradientbisOfBSplineCompute AppDef_ResConstraintOfMyGradientbisOfBSplineCompute
 Kerf.Engine.Approximation.ResConstraintOfTheGradient AppDef_ResConstraintOfTheGradient
@@ -222,7 +223,6 @@ Kerf.Engine.Booleans.EdgeFaceJob BOPAlgo_EdgeFace
 Kerf.Engine.Booleans.EdgeInfo BOPAlgo_EdgeInfo
 Kerf.Engine.Booleans.FaceFaceJob BOPAlgo_FaceFace
 Kerf.Engine.Booleans.FaceSelfIntersect BOPAlgo_FaceSelfIntersect
-Kerf.Engine.Booleans.GlueMode BOPAlgo_GlueEnum
 Kerf.Engine.Booleans.Legacy.Build.Area2dBuilder TopOpeBRepBuild_Area2dBuilder
 Kerf.Engine.Booleans.Legacy.Build.AreaBuilder TopOpeBRepBuild_AreaBuilder
 Kerf.Engine.Booleans.Legacy.Build.BlockBuilder TopOpeBRepBuild_BlockBuilder
@@ -424,7 +424,6 @@ Kerf.Engine.Construction.Api.ShapeModification BRepBuilderAPI_ShapeModification
 Kerf.Engine.Construction.Api.ShellError BRepBuilderAPI_ShellError
 Kerf.Engine.Construction.Api.ThruSections BRepOffsetAPI_ThruSections
 Kerf.Engine.Construction.Api.Transform BRepBuilderAPI_Transform
-Kerf.Engine.Construction.Api.TransitionMode BRepBuilderAPI_TransitionMode
 Kerf.Engine.Construction.Api.VertexInspector BRepBuilderAPI_VertexInspector
 Kerf.Engine.Construction.Api.WireError BRepBuilderAPI_WireError
 Kerf.Engine.Construction.Constraints.Analytic.AnalyticCirc2d2TanOn GccAna_Circ2d2TanOn
@@ -2890,12 +2889,12 @@ Kerf.Engine.Fillets.Analytic.ComputeDataFilPlnPln ChFiKPart_ComputeData_FilPlnPl
 Kerf.Engine.Fillets.Analytic.ComputeDataRotule ChFiKPart_ComputeData_Rotule
 Kerf.Engine.Fillets.Analytic.ComputeDataSphere ChFiKPart_ComputeData_Sphere
 Kerf.Engine.Fillets.Api.BRepFilletApi BRepFilletAPI
-Kerf.Engine.Fillets.Api.ChamferOptions BRepFilletAPI_ChamferOptions
-Kerf.Engine.Fillets.Api.FilletOptions BRepFilletAPI_FilletOptions
 Kerf.Engine.Fillets.Api.LocalOperation BRepFilletAPI_LocalOperation
 Kerf.Engine.Fillets.Api.MakeChamfer BRepFilletAPI_MakeChamfer
+Kerf.Engine.Fillets.Api.MakeChamferOptions BRepFilletAPI_ChamferOptions
 Kerf.Engine.Fillets.Api.MakeFillet BRepFilletAPI_MakeFillet
 Kerf.Engine.Fillets.Api.MakeFillet2D BRepFilletAPI_MakeFillet2d
+Kerf.Engine.Fillets.Api.MakeFilletOptions BRepFilletAPI_FilletOptions
 Kerf.Engine.Fillets.BOPReconstruction ChFi3d_BOPReconstruction
 Kerf.Engine.Fillets.Blend.AppBlendDebug AppBlend_Debug
 Kerf.Engine.Fillets.Blend.AppFunc BRepBlend_AppFunc
@@ -2992,7 +2991,6 @@ Kerf.Engine.Fillets.FilBuilder ChFi3d_FilBuilder
 Kerf.Engine.Fillets.FilBuilder_C2 ChFi3d_FilBuilder_C2
 Kerf.Engine.Fillets.FilBuilder_C3 ChFi3d_FilBuilder_C3
 Kerf.Engine.Fillets.FilletBuilderBase ChFi3d_Builder
-Kerf.Engine.Fillets.FilletShape ChFi3d_FilletShape
 Kerf.Engine.Fillets.Planar.AnaFilletAlgo ChFi2d_AnaFilletAlgo
 Kerf.Engine.Fillets.Planar.ChamferApi ChFi2d_ChamferAPI
 Kerf.Engine.Fillets.Planar.ConstructionError ChFi2d_ConstructionError
@@ -4226,7 +4224,6 @@ Kerf.Engine.Offsets.MedialAxis.Tool2d MAT2d_Tool2d
 Kerf.Engine.Offsets.Offset BRepOffset_Offset
 Kerf.Engine.Offsets.OffsetInterval BRepOffset_Interval
 Kerf.Engine.Offsets.OffsetMakeLoops BRepOffset_MakeLoops
-Kerf.Engine.Offsets.OffsetMode BRepOffset_Mode
 Kerf.Engine.Offsets.OffsetStatus BRepOffset_Status
 Kerf.Engine.Offsets.OffsetTool BRepOffset_Tool
 Kerf.Engine.Offsets.SimpleOffset BRepOffset_SimpleOffset
@@ -4301,6 +4298,7 @@ Kerf.Engine.Topology.Tools.Quilt BRepTools_Quilt
 Kerf.Engine.Topology.Tools.Substitution BRepTools_Substitution
 Kerf.Engine.Topology.Tools.TrsfModification BRepTools_TrsfModification
 Kerf.Engine.Topology.Tools.WireExplorer BRepTools_WireExplorer
+Kerf.Fillets.FilletShape ChFi3d_FilletShape
 Kerf.Geometry.Axis2D gp_Ax2d
 Kerf.Geometry.Axis3D gp_Ax1
 Kerf.Geometry.BSplineCurve2D Geom2d_BSplineCurve
@@ -4364,6 +4362,7 @@ Kerf.Geometry.Parabola2D gp_Parab2d
 Kerf.Geometry.Parabola3D gp_Parab
 Kerf.Geometry.ParabolaCurve2D Geom2d_Parabola
 Kerf.Geometry.ParabolaCurve3D Geom_Parabola
+Kerf.Geometry.ParametrizationType Approx_ParametrizationType
 Kerf.Geometry.Plane3D gp_Pln
 Kerf.Geometry.PlaneSurface Geom_Plane
 Kerf.Geometry.Point2D gp_Pnt2d
@@ -4385,6 +4384,7 @@ Kerf.Geometry.TrimmedCurve3D Geom_TrimmedCurve
 Kerf.Geometry.TrimmedSurface Geom_RectangularTrimmedSurface
 Kerf.Geometry.Vector2D gp_Vec2d
 Kerf.Geometry.Vector3D gp_Vec
+Kerf.Offsets.OffsetMode BRepOffset_Mode
 Kerf.Topology.CompSolid TopoDS_CompSolid
 Kerf.Topology.Compound TopoDS_Compound
 Kerf.Topology.Containment TopAbs_State
@@ -4401,6 +4401,12 @@ Kerf.Topology.Wire TopoDS_Wire
 """;
 
     private const string MemberTable = """
+Kerf.Booleans.GlueMode.Full BOPAlgo_GlueFull
+Kerf.Booleans.GlueMode.Off BOPAlgo_GlueOff
+Kerf.Booleans.GlueMode.Shift BOPAlgo_GlueShift
+Kerf.Construction.TransitionMode.RightCorner BRepBuilderAPI_RightCorner
+Kerf.Construction.TransitionMode.RoundCorner BRepBuilderAPI_RoundCorner
+Kerf.Construction.TransitionMode.Transformed BRepBuilderAPI_Transformed
 Kerf.Engine.Approximation.Advanced.CriterionRepartition.Incremental AdvApp2Var_Incremental
 Kerf.Engine.Approximation.Advanced.CriterionRepartition.Regular AdvApp2Var_Regular
 Kerf.Engine.Approximation.Advanced.CriterionType.Absolute AdvApp2Var_Absolute
@@ -4411,9 +4417,6 @@ Kerf.Engine.Approximation.Constraint.CurvaturePoint AppParCurves_CurvaturePoint
 Kerf.Engine.Approximation.Constraint.NoConstraint AppParCurves_NoConstraint
 Kerf.Engine.Approximation.Constraint.PassPoint AppParCurves_PassPoint
 Kerf.Engine.Approximation.Constraint.TangencyPoint AppParCurves_TangencyPoint
-Kerf.Engine.Approximation.ParametrizationType.Centripetal Approx_Centripetal
-Kerf.Engine.Approximation.ParametrizationType.ChordLength Approx_ChordLength
-Kerf.Engine.Approximation.ParametrizationType.IsoParametric Approx_IsoParametric
 Kerf.Engine.Approximation.Status.NoApproximation Approx_NoApproximation
 Kerf.Engine.Approximation.Status.NoPointsAdded Approx_NoPointsAdded
 Kerf.Engine.Approximation.Status.PointsAdded Approx_PointsAdded
@@ -4429,9 +4432,6 @@ Kerf.Engine.Booleans.CheckStatus.NotValid BOPAlgo_NotValid
 Kerf.Engine.Booleans.CheckStatus.OperationAborted BOPAlgo_OperationAborted
 Kerf.Engine.Booleans.CheckStatus.SelfIntersect BOPAlgo_SelfIntersect
 Kerf.Engine.Booleans.CheckStatus.TooSmallEdge BOPAlgo_TooSmallEdge
-Kerf.Engine.Booleans.GlueMode.GlueFull BOPAlgo_GlueFull
-Kerf.Engine.Booleans.GlueMode.GlueOff BOPAlgo_GlueOff
-Kerf.Engine.Booleans.GlueMode.GlueShift BOPAlgo_GlueShift
 Kerf.Engine.Booleans.Legacy.Build.LoopEnum.Anyloop TopOpeBRepBuild_ANYLOOP
 Kerf.Engine.Booleans.Legacy.Build.LoopEnum.Block TopOpeBRepBuild_BLOCK
 Kerf.Engine.Booleans.Legacy.Build.LoopEnum.Boundary TopOpeBRepBuild_BOUNDARY
@@ -4496,9 +4496,6 @@ Kerf.Engine.Construction.Api.ShellError.DisconnectedShell BRepBuilderAPI_Disconn
 Kerf.Engine.Construction.Api.ShellError.EmptyShell BRepBuilderAPI_EmptyShell
 Kerf.Engine.Construction.Api.ShellError.ShellDone BRepBuilderAPI_ShellDone
 Kerf.Engine.Construction.Api.ShellError.ShellParametersOutOfRange BRepBuilderAPI_ShellParametersOutOfRange
-Kerf.Engine.Construction.Api.TransitionMode.RightCorner BRepBuilderAPI_RightCorner
-Kerf.Engine.Construction.Api.TransitionMode.RoundCorner BRepBuilderAPI_RoundCorner
-Kerf.Engine.Construction.Api.TransitionMode.Transformed BRepBuilderAPI_Transformed
 Kerf.Engine.Construction.Api.WireError.DisconnectedWire BRepBuilderAPI_DisconnectedWire
 Kerf.Engine.Construction.Api.WireError.EmptyWire BRepBuilderAPI_EmptyWire
 Kerf.Engine.Construction.Api.WireError.NonManifoldWire BRepBuilderAPI_NonManifoldWire
@@ -5098,9 +5095,6 @@ Kerf.Engine.Fillets.Data.TypeOfConcavity.FreeBound ChFiDS_FreeBound
 Kerf.Engine.Fillets.Data.TypeOfConcavity.Mixed ChFiDS_Mixed
 Kerf.Engine.Fillets.Data.TypeOfConcavity.Other ChFiDS_Other
 Kerf.Engine.Fillets.Data.TypeOfConcavity.Tangential ChFiDS_Tangential
-Kerf.Engine.Fillets.FilletShape.Polynomial ChFi3d_Polynomial
-Kerf.Engine.Fillets.FilletShape.QuasiAngular ChFi3d_QuasiAngular
-Kerf.Engine.Fillets.FilletShape.Rational ChFi3d_Rational
 Kerf.Engine.Fillets.Planar.ConstructionError.BothEdgesDegenerated ChFi2d_BothEdgesDegenerated
 Kerf.Engine.Fillets.Planar.ConstructionError.ComputationError ChFi2d_ComputationError
 Kerf.Engine.Fillets.Planar.ConstructionError.ConnexionError ChFi2d_ConnexionError
@@ -6131,9 +6125,6 @@ Kerf.Engine.Offsets.Error.UnknownError BRepOffset_UnknownError
 Kerf.Engine.Offsets.Error.UserBreak BRepOffset_UserBreak
 Kerf.Engine.Offsets.MedialAxis.MedialSide.Left MAT_Left
 Kerf.Engine.Offsets.MedialAxis.MedialSide.Right MAT_Right
-Kerf.Engine.Offsets.OffsetMode.Pipe BRepOffset_Pipe
-Kerf.Engine.Offsets.OffsetMode.RectoVerso BRepOffset_RectoVerso
-Kerf.Engine.Offsets.OffsetMode.Skin BRepOffset_Skin
 Kerf.Engine.Offsets.OffsetStatus.Degenerated BRepOffset_Degenerated
 Kerf.Engine.Offsets.OffsetStatus.Good BRepOffset_Good
 Kerf.Engine.Offsets.OffsetStatus.Reversed BRepOffset_Reversed
@@ -6144,6 +6135,9 @@ Kerf.Engine.Offsets.SimpleOffsetStatus.ErrorOffsetComputation BRepOffsetSimple_E
 Kerf.Engine.Offsets.SimpleOffsetStatus.ErrorWallFaceComputation BRepOffsetSimple_ErrorWallFaceComputation
 Kerf.Engine.Offsets.SimpleOffsetStatus.NullInputShape BRepOffsetSimple_NullInputShape
 Kerf.Engine.Offsets.SimpleOffsetStatus.OK BRepOffsetSimple_OK
+Kerf.Fillets.FilletShape.Polynomial ChFi3d_Polynomial
+Kerf.Fillets.FilletShape.QuasiAngular ChFi3d_QuasiAngular
+Kerf.Fillets.FilletShape.Rational ChFi3d_Rational
 Kerf.Geometry.Continuity.C0 GeomAbs_C0
 Kerf.Geometry.Continuity.C1 GeomAbs_C1
 Kerf.Geometry.Continuity.C2 GeomAbs_C2
@@ -6189,6 +6183,9 @@ Kerf.Geometry.EulerSequence.YawPitchRoll gp_YawPitchRoll
 Kerf.Geometry.JoinKind.Arc GeomAbs_Arc
 Kerf.Geometry.JoinKind.Intersection GeomAbs_Intersection
 Kerf.Geometry.JoinKind.Tangent GeomAbs_Tangent
+Kerf.Geometry.ParametrizationType.Centripetal Approx_Centripetal
+Kerf.Geometry.ParametrizationType.ChordLength Approx_ChordLength
+Kerf.Geometry.ParametrizationType.IsoParametric Approx_IsoParametric
 Kerf.Geometry.SurfaceKind.BSplineSurface GeomAbs_BSplineSurface
 Kerf.Geometry.SurfaceKind.BezierSurface GeomAbs_BezierSurface
 Kerf.Geometry.SurfaceKind.Cone GeomAbs_Cone
@@ -6209,6 +6206,9 @@ Kerf.Geometry.TransformForm.PntMirror gp_PntMirror
 Kerf.Geometry.TransformForm.Rotation gp_Rotation
 Kerf.Geometry.TransformForm.Scale gp_Scale
 Kerf.Geometry.TransformForm.Translation gp_Translation
+Kerf.Offsets.OffsetMode.Pipe BRepOffset_Pipe
+Kerf.Offsets.OffsetMode.RectoVerso BRepOffset_RectoVerso
+Kerf.Offsets.OffsetMode.Skin BRepOffset_Skin
 Kerf.Topology.Containment.In TopAbs_IN
 Kerf.Topology.Containment.On TopAbs_ON
 Kerf.Topology.Containment.Out TopAbs_OUT

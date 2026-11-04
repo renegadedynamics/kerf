@@ -9,7 +9,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>The list of interferences attached to a geometry of the data structure (base of the surface, curve and point data).</summary>
 /// <remarks>Storage of <see cref="DsDataStructure"/>; a working object.</remarks>
-public class DsGeometryData
+internal class DsGeometryData
 {
     private readonly NCollection_List<DsInterference> _interferences = new();
 

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// index, support kind and index; none by default).
 /// </summary>
 /// <remarks>A working object, as OCCT's iterators. Setting a condition does not move the iterator: call <see cref="Match"/>.</remarks>
-public class DsInterferenceIterator
+internal class DsInterferenceIterator
 {
     private readonly NCollection_List<DsInterference>.Iterator _iterator = new();
     private bool _gkDef;

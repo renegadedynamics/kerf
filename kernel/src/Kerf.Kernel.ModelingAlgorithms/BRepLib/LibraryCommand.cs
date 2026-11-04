@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Library;
 
 /// <summary>The root of the BRepLib makers: a command that may or may not be done.</summary>
-public abstract class LibraryCommand
+internal abstract class LibraryCommand
 {
     private bool _done;
 

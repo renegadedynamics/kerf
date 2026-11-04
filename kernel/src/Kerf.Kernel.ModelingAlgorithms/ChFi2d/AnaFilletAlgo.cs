@@ -25,7 +25,7 @@ namespace Kerf.Engine.Fillets.Planar;
 /// A working object; its results are new, frozen edges. The edges it is given are only read. As in OCCT, initialising
 /// it again by a wire keeps the edges of the first initialisation (occt-issues.md, unit 5R).
 /// </remarks>
-public sealed class AnaFilletAlgo
+internal sealed class AnaFilletAlgo
 {
     // Plane.
     private Plane3D _plane = new();

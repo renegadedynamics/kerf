@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// caller's curve itself, as OCCT keeps the handle (it only reads it). <see cref="ConstantSection"/> and
 /// <see cref="BSplineSurface"/> build new, unfrozen geometry.
 /// </remarks>
-public class UniformSection : SurfaceSectionLaw
+internal class UniformSection : SurfaceSectionLaw
 {
     private readonly Curve3D _section;
     private readonly BSplineCurve3D _curve;

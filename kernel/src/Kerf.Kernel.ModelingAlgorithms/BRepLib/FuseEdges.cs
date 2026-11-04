@@ -30,7 +30,7 @@ namespace Kerf.Engine.Construction.Library;
 /// and <see cref="Faces()"/> freeze what they return; ported code reads <see cref="InternalShape"/> and the internal
 /// map forms.
 /// </remarks>
-public sealed class FuseEdges
+internal sealed class FuseEdges
 {
     private Shape _shape;
     private bool _shapeDone;

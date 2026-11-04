@@ -25,7 +25,7 @@ namespace Kerf.Engine.Construction.Library;
 /// <see cref="Edge"/>, <see cref="Vertex1"/> and <see cref="Vertex2"/> freeze the edge (design 4.2); ported code
 /// reads <see cref="InternalEdge"/>.
 /// </remarks>
-public class LibraryMakeEdge2d : LibraryMakeShape
+internal class LibraryMakeEdge2d : LibraryMakeShape
 {
     private LibraryEdgeError _error;
     private Vertex _vertex1 = new();

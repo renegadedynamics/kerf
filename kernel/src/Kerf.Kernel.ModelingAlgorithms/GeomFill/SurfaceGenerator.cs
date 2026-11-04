@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// of degree 1 in V (a ruled surface between consecutive curves).
 /// </summary>
 /// <remarks>A working object (decision 21). <see cref="Surface"/> hands out the surface frozen.</remarks>
-public class SurfaceGenerator : Profiler
+internal class SurfaceGenerator : Profiler
 {
     private Surface? _surface;
 

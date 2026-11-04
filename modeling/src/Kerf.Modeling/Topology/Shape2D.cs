@@ -306,7 +306,7 @@ public abstract partial class Shape2D : Shape
         if (amount == 0)
             return this;
         var builder = new MakeOffset();
-        builder.Initialize(TopoShape, amount, Constants.Tolerance, OffsetMode.Skin, true, false,
+        builder.Initialize(TopoShape, amount, Constants.Tolerance, global::Kerf.Offsets.OffsetMode.Skin, true, false,
                            JoinKind.Intersection, false, true);
         builder.MakeOffsetShape();
         var offset = builder.Shape();

@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The function of a chamfer of constant throat with one end on a surface's boundary.</summary>
-public class ConstThroatInv : GenChamfInv
+internal class ConstThroatInv : GenChamfInv
 {
     protected double _throat;
     protected double _param;

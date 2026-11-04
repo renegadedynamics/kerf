@@ -36,7 +36,7 @@ namespace Kerf.Engine.Features.Local;
 /// callers (BRepFeat) read the <c>Internal</c> forms.
 /// </para>
 /// </remarks>
-public sealed class LocalGluer
+internal sealed class LocalGluer
 {
     private bool _done;
     private Shape _sb = new();

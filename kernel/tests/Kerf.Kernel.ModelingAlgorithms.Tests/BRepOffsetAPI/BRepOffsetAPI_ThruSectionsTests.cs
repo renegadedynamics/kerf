@@ -485,7 +485,7 @@ public class BRepOffsetAPI_ThruSectionsTests
         ThruSections aLoft = new();
         Assert.Equal(8, aLoft.MaxDegree());
         Assert.Equal(Continuity.C2, aLoft.Continuity());
-        Assert.Equal(ParametrizationType.ChordLength, aLoft.ParType());
+        Assert.Equal(global::Kerf.Geometry.ParametrizationType.ChordLength, aLoft.ParType());
         Assert.False(aLoft.UseSmoothing());
         Assert.True(aLoft.IsMutableInput);
         aLoft.CriteriumWeight(out double aW1, out double aW2, out double aW3);

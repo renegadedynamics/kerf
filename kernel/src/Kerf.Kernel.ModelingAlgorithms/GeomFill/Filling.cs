@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21): <c>Init</c> recomputes the poles. <see cref="Poles"/> and <see cref="Weights"/>
 /// copy them into the caller's arrays. Before any <c>Init</c> the accessors throw (OCCT reads a null handle).
 /// </remarks>
-public class Filling
+internal class Filling
 {
     protected bool _isRational;
     protected NCollection_HArray2<Point3D>? _poles;

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// A class: OCCT's by-value class holds arrays of five pinpoint and four linear scalar constraints, which a C++ copy
 /// copies (the linear constraints then share their arrays, see <see cref="LinearScalarConstraint"/>).
 /// </remarks>
-public class FreeGtoCConstraint
+internal class FreeGtoCConstraint
 {
     // Locals of OCCT's inner blocks that a later declaration reuses are renamed with a 1 (C# scopes): du1, dv1, c1, s1, d1.
     private readonly Xy _pnt2d;

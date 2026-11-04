@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// As in OCCT, the class has its own <c>myCurve</c> (hiding the base's, which stays null); the base's
 /// <see cref="TrihedronLaw.GetInterval"/> reads <c>myTrimmed</c>, which <see cref="SetCurve"/> sets.
 /// </remarks>
-public class GuideTrihedronAC : TrihedronWithGuide
+internal class GuideTrihedronAC : TrihedronWithGuide
 {
     private readonly CurvlinFunc _guideAC;
     private readonly double _lguide;

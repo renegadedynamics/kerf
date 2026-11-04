@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="SetCurve"/> searches the curve's singular points (where C' ^ C'' vanishes) unless it is a line or a
 /// conic; near them the trihedron is computed from higher derivatives.
 /// </remarks>
-public class Frenet : TrihedronLaw
+internal class Frenet : TrihedronLaw
 {
     private const double NullTol = 1.0e-10;
     private const double MaxSingular = 1.0e-5;

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans.Data;
 
 /// <summary>An intersection point of two faces: the 3D point, its 2D points on each face and the vertex index.</summary>
 /// <remarks>The default point is (99, 99, 99) with 2D points (99, 99) and the index -1, as OCCT's.</remarks>
-public partial struct DataPoint : IEquatable<DataPoint>
+internal partial struct DataPoint : IEquatable<DataPoint>
 {
     private Point3D _pnt;
     private Point2D _pnt2D1;

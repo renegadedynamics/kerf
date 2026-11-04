@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Api;
 /// then its curves and surfaces are transformed (<see cref="GTrsfModification"/>): a circle may become an
 /// ellipse.
 /// </summary>
-public class GTransform : ModifyShape
+internal class GTransform : ModifyShape
 {
     private readonly GeneralTransform3D _gTrsf;
     private readonly Collect _hist = new();

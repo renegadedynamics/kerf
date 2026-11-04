@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Api;
 /// Builds tori or portions of tori: R1 is the distance from the center of the pipe to the center of the torus, R2 the
 /// radius of the pipe; angle1, angle2 cut the pipe's circle (a ring segment) and angle the revolution (a pipe segment).
 /// </summary>
-public class MakeTorus : MakeOneAxis
+internal class MakeTorus : MakeOneAxis
 {
     private readonly PrimitiveTorus _torus;
 

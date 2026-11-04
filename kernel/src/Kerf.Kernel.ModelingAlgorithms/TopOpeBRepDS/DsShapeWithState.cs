@@ -11,7 +11,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>A shape's state and its parts IN, OUT and ON the other argument, for the legacy Booleans' classification.</summary>
 /// <remarks>Storage of <see cref="DsDataStructure"/>; the fillets don't use it.</remarks>
-public sealed class DsShapeWithState
+internal sealed class DsShapeWithState
 {
     private static readonly NCollection_List<Shape> EmptyListOfShape = new();
 

@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Plate;
 
 /// <summary>A G0 and G1 constraint of a non-linear plate: a target point and target first derivatives.</summary>
-public class Hpg0G1Constraint : Hpg0Constraint
+internal class Hpg0G1Constraint : Hpg0Constraint
 {
     private readonly D1 _g1Target;
     private int _orientation;

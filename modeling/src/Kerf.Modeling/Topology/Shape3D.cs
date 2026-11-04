@@ -263,7 +263,7 @@ public abstract partial class Shape3D : Shape
         var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
         var openings = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
         var builder = new MakeThickSolid();
-        builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, OffsetMode.Skin, true, false, join);
+        builder.MakeThickSolidByJoin(TopoShape, openings, thickness, tolerance, global::Kerf.Offsets.OffsetMode.Skin, true, false, join);
         builder.Build();
         var shellShape = builder.Shape();
         // OCCT can report success and still hand back a null shape
@@ -301,7 +301,7 @@ public abstract partial class Shape3D : Shape
         var join = kind == Kind.Arc ? JoinKind.Arc : JoinKind.Intersection;
         var faces = TopoUtil.ListOf(faceList.Select(f => f.TopoShape));
         var builder = new MakeThickSolid();
-        builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, OffsetMode.Skin, true, false, join, true);
+        builder.MakeThickSolidByJoin(TopoShape, faces, thickness, tolerance, global::Kerf.Offsets.OffsetMode.Skin, true, false, join, true);
         builder.Build();
         global::Kerf.Topology.Shape solid;
         try

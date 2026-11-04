@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// of a circle in the circle/line case, is never set: WhichQualifier returns GccEnt_unqualified there (uninitialised
 /// memory in OCCT).
 /// </remarks>
-public sealed class Lin2dTanPer
+internal sealed class Lin2dTanPer
 {
     private bool _wellDone;
     private int _nbrSol;

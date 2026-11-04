@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The function of an asymmetric chamfer with one end on a surface's boundary.</summary>
-public class ChAsymInv : FuncInv
+internal class ChAsymInv : FuncInv
 {
     private readonly SurfaceAdaptorBase _surf1;
     private readonly SurfaceAdaptorBase _surf2;

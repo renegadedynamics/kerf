@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// A working object of the fillet builders (decision 21): they set its curve, bounds and neighbours through the
 /// internal mutators. As an <see cref="CurveAdaptorBase"/> it evaluates its curve between its own bounds.
 /// </remarks>
-public sealed class ElSpine : CurveAdaptorBase
+internal sealed class ElSpine : CurveAdaptorBase
 {
     private CurveAdaptor _curve = new();
     private Point3D _ptfirst = new();

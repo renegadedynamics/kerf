@@ -15,7 +15,7 @@ namespace Kerf.Engine.Features.Local;
 /// curve and the parameters on the face.
 /// </summary>
 /// <remarks><c>default(LocOpe_PntFace)</c> is OCCT's empty point (its orientation is FORWARD).</remarks>
-public partial struct PntFace : IEquatable<PntFace>
+internal partial struct PntFace : IEquatable<PntFace>
 {
     private Point3D _pnt;
     private Face _face;

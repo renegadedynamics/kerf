@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a line segment in 2D as a Geom2d_TrimmedCurve: between two points, from a point and a direction
 /// to the projection of a point, or on a line between two points or parameters.
 /// </summary>
-public sealed class MakeSegment2d : Root
+internal sealed class MakeSegment2d : Root
 {
     private TrimmedCurve2D? _theSegment;
 

@@ -30,7 +30,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// ones where something was. The faces handed out are frozen.
 /// </para>
 /// </remarks>
-public sealed class WireToFace
+internal sealed class WireToFace
 {
     private readonly NCollection_List<Shape> _lw = new();
 

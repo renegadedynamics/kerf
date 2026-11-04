@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>A qualifier the construction can't use with this kind of argument (a line qualified enclosing).</summary>
-public class BadQualifierException : DomainErrorException
+internal class BadQualifierException : DomainErrorException
 {
     public BadQualifierException() { }
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// written as copies (the copy constructor). An index past the array throws IndexOutOfRangeException where OCCT
 /// would read or write past it (OCCT's polygons hold at most 21 points).
 /// </remarks>
-public sealed class PolyBis
+internal sealed class PolyBis
 {
     private readonly PointOnBis[] _points = new PointOnBis[30];
     private int _nbPoints;

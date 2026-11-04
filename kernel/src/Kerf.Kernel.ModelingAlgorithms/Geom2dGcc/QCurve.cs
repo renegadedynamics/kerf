@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// Geom2dGcc_QualifiedCurve, which OCCT keeps for the public constructors.
 /// </summary>
 /// <remarks>A value; the adaptor is held and returned as shallow copies, as Geom2dGcc_QualifiedCurve (decision 797).</remarks>
-public readonly struct QCurve : IEquatable<QCurve>
+internal readonly struct QCurve : IEquatable<QCurve>
 {
     private readonly Qualifier _theQualifier;
     private readonly CurveAdaptor2D _theQualified;

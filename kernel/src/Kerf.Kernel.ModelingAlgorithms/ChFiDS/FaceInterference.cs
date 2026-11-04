@@ -21,7 +21,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// A C++ value class, so a struct. <see cref="SurfData"/> holds two of them and the fillet builders change
 /// them in place through its <c>Change*</c> accessors. The pcurves are the fillet's own working geometry.
 /// </remarks>
-public partial struct FaceInterference : IEquatable<FaceInterference>
+internal partial struct FaceInterference : IEquatable<FaceInterference>
 {
     private double _firstParam;
     private double _lastParam;

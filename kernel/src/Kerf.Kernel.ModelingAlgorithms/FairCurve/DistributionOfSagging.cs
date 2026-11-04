@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Fairing;
 
 /// <summary>The sagging (flexion) distribution of a batten: its local bending energy and its derivatives.</summary>
-public class DistributionOfSagging : DistributionOfEnergy
+internal class DistributionOfSagging : DistributionOfEnergy
 {
     private readonly BattenLaw _myLaw;
 

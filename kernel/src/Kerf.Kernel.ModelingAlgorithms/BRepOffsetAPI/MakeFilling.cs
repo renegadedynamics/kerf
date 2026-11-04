@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <see cref="Build"/> may be called again after more constraints are added (build123d.NET's <c>MakeSurface</c>
 /// adds points to a built filling): it builds a new face, and the face already handed out doesn't change.
 /// </remarks>
-public class MakeFilling : MakeShape
+internal class MakeFilling : MakeShape
 {
     private readonly SurfaceFilling _filling;
 

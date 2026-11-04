@@ -33,7 +33,7 @@ namespace Kerf.Engine.Booleans.Tools;
 // threshold, CorrectWires' and CorrectEdgeTolerance's comparisons). So native's parallel result depends on the
 // threads' timing and can differ from its serial one (occt-issues.md). The port runs them serially whatever the flag,
 // which is native's serial result (decision 580).
-public static partial class AlgoTools
+internal static partial class AlgoTools
 {
     // The loops write shared sub-shapes: always serial (decision 6430).
     private const bool ToRunCorrectionsInParallel = false;

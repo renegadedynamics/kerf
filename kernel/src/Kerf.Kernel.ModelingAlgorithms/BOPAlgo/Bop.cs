@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans;
 /// <see cref="AlertEmptyShape"/>.
 /// </para>
 /// </remarks>
-public class Bop : ToolsProvider
+internal class Bop : ToolsProvider
 {
     protected Operation _operation;
     protected int[] _dims = [-1, -1];

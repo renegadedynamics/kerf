@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// or through a point.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117).</remarks>
-public sealed class AnalyticCirc2dTanCen
+internal sealed class AnalyticCirc2dTanCen
 {
     private bool _wellDone;
     private int _nbrSol;

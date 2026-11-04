@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Helix.Geometry;
 
 /// <summary>The root of the helix builders: the helix's parameters.</summary>
-public abstract class BuilderHelixGen : BuilderApproxCurve
+internal abstract class BuilderHelixGen : BuilderApproxCurve
 {
     protected double _t1;
     protected double _t2;

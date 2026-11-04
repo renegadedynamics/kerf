@@ -18,7 +18,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// given point, on a curve (the guide), tangent to a surface. The variables are the parameter on the curve and (U, V)
 /// on the surface.
 /// </summary>
-public class SurfPointConstRadInv : SurfPointFuncInv
+internal class SurfPointConstRadInv : SurfPointFuncInv
 {
     private readonly SurfaceAdaptorBase _surf;
     private readonly CurveAdaptorBase _curv;

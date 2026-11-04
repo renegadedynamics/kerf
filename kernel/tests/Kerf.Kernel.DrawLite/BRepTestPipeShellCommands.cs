@@ -15,7 +15,7 @@ using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
 using static Kerf.Engine.Construction.Api.PipeError;
-using static Kerf.Engine.Construction.Api.TransitionMode;
+using static Kerf.Construction.TransitionMode;
 using static Kerf.Engine.Construction.Filling.ThruSectionErrorStatus;
 
 namespace Kerf.Kernel.DrawLite;
@@ -695,17 +695,17 @@ internal static class BRepTestPipeShellCommands
         int cur = 2;
         if (n > cur)
         {
-            TransitionMode Transition = TransitionMode.Transformed;
+            global::Kerf.Construction.TransitionMode Transition = global::Kerf.Construction.TransitionMode.Transformed;
 
             // Reading Transition
             if (a[cur] == "-C")
             {
-                Transition = TransitionMode.RightCorner;
+                Transition = global::Kerf.Construction.TransitionMode.RightCorner;
                 cur++;
             }
             else if (a[cur] == "-R")
             {
-                Transition = TransitionMode.RoundCorner;
+                Transition = global::Kerf.Construction.TransitionMode.RoundCorner;
                 cur++;
             }
             Sweep.SetTransitionMode(Transition);
@@ -800,15 +800,15 @@ internal static class BRepTestPipeShellCommands
 
         if (n > 3)
         {
-            TransitionMode Transition = TransitionMode.Transformed;
+            global::Kerf.Construction.TransitionMode Transition = global::Kerf.Construction.TransitionMode.Transformed;
             // Lecture Transition
             if (a[3] == "-C")
             {
-                Transition = TransitionMode.RightCorner;
+                Transition = global::Kerf.Construction.TransitionMode.RightCorner;
             }
             else if (a[3] == "-R")
             {
-                Transition = TransitionMode.RoundCorner;
+                Transition = global::Kerf.Construction.TransitionMode.RoundCorner;
             }
             Sweep.SetTransitionMode(Transition);
         }

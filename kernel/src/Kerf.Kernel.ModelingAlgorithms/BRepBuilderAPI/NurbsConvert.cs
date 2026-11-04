@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Api;
 /// the conversion raised get that tolerance: new vertices of the result are raised in place, and the input's own
 /// vertices are replaced by new, more tolerant ones (the input isn't changed). The result is read unfrozen until then.
 /// </remarks>
-public class NurbsConvert : ModifyShape
+internal class NurbsConvert : ModifyShape
 {
     private readonly Dictionary<Shape, Shape> _vtxToReplace =
         new(ShapeHasher.Instance);

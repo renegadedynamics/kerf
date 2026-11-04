@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// interfere, and iterates them (sorted).
 /// </summary>
 /// <remarks>As in OCCT, the sub-sets are the caller's lists, held by reference, not copied.</remarks>
-public class SubIterator
+internal class SubIterator
 {
     protected DS? _ds;
     protected List<Pair> _list = new(1);

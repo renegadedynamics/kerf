@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// takes an imposed value (the value itself for order 0).
 /// </summary>
 /// <remarks>A value type (rules, section 3); <c>default</c> is OCCT's default constraint (all zero).</remarks>
-public readonly struct PinpointConstraint : IEquatable<PinpointConstraint>
+internal readonly struct PinpointConstraint : IEquatable<PinpointConstraint>
 {
     private readonly Xyz _value;
     private readonly Xy _pnt2d;

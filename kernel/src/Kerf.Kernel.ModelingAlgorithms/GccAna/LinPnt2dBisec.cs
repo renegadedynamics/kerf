@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// when the point is on the line. There is always one solution.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117).</remarks>
-public sealed class LinPnt2dBisec
+internal sealed class LinPnt2dBisec
 {
     private bool _wellDone;
     private ConstraintBisec? _bissol;

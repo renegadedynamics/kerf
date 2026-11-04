@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans;
 /// </para>
 /// <para><see cref="GetBoxesMap"/> gives the boxes of the solids built (an infinite one for the hole solids).</para>
 /// </remarks>
-public class BuilderSolid : BuilderArea
+internal class BuilderSolid : BuilderArea
 {
     private readonly Dictionary<Shape, Box> _boxes = new(ShapeHasher.Instance); // Boxes of the produced solids
 

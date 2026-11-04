@@ -37,7 +37,7 @@ namespace Kerf.Engine.Features;
 /// (the gluing's, the sweeps', the destructive Booleans') go to its working overlay (decisions 1013, 1052, unit
 /// 10H5), and the result holds new TShapes only for the caller's sub-shapes that changed.</para>
 /// </remarks>
-public abstract class Form : MakeShape
+internal abstract class Form : MakeShape
 {
     protected bool _fuse;
     protected bool _modify;

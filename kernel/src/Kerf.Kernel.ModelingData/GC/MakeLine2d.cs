@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom2d_Line: from an axis, a gp_Lin2d, a point and a direction, two points, or parallel to a line
 /// through a point or at a distance.
 /// </summary>
-public sealed class MakeLine2d : Root
+internal sealed class MakeLine2d : Root
 {
     private LineCurve2D? _theLine;
 

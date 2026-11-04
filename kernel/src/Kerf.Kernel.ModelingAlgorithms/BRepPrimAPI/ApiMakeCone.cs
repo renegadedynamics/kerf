@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Api;
 /// Throws Standard_DomainError if H is below Precision::Confusion(), if R1 and R2 are equal, or if a radius is
 /// negative or not null and below Precision::Confusion().
 /// </remarks>
-public class ApiMakeCone : MakeOneAxis
+internal class ApiMakeCone : MakeOneAxis
 {
     private readonly PrimitiveCone _cone;
 

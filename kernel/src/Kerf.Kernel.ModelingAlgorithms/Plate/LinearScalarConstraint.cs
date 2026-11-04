@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// coefficients. A class has the same sharing. It is a working object (decision 21): <c>SetPPC</c> and
 /// <c>SetCoeff</c> are public, as in OCCT. The default constructor holds no arrays, as OCCT's null handles.
 /// </remarks>
-public class LinearScalarConstraint
+internal class LinearScalarConstraint
 {
     private readonly NCollection_HArray1<PinpointConstraint> _ppc = null!;
     private readonly NCollection_HArray2<Xyz> _coef = null!;

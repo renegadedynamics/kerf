@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// the surface. Its variables are wguide, wcurv, wrst: the parameters on the guide line, on the curve and on the
 /// restriction.
 /// </summary>
-public abstract class SurfCurvFuncInv : FunctionSetWithDerivatives
+internal abstract class SurfCurvFuncInv : FunctionSetWithDerivatives
 {
     /// <summary>Returns 3.</summary>
     public override int NbVariables()

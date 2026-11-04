@@ -18,7 +18,7 @@ namespace Kerf.Engine.Features.Local;
 /// first edge's range inside the second's), as pairs (<see cref="EdgeFrom"/>, <see cref="EdgeTo"/>).
 /// </summary>
 /// <remarks>A working object (decision 21): it only reads the shapes; the edges are theirs.</remarks>
-public sealed class FindEdges
+internal sealed class FindEdges
 {
     private Shape _fFrom = new();
     private Shape _fTo = new();

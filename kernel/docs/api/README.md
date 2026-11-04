@@ -396,3 +396,45 @@ Where the implementation departs from sections 4 to 6 and geometry.md/topology.m
 - **The rest of the engine internal:** the 79 geometry and topology engine types still shown by other areas' public
   engine types or by the modelling layer's API (decision 1520), and the other areas' engine types, as each area's public
   API replaces them. The modelling layer reaches the engine through `InternalsVisibleTo` until 10M.
+
+## 11. Implemented: unit 10L2, and what is left
+
+*Unit 10L2, 4 November 2026: decisions 1523 to 1531; the map it applied is [kerf-10l2.map](kerf-10l2.map).*
+
+**Public now** (ModelingAlgorithms; each operation on `EngineOperation.Run` or, for values, a guarded call, with
+`Built<T>` and its `ShapeHistory`, the engine's statuses and alerts as diagnostics, and cancellation as
+`OperationCanceledException`):
+- **Geometry's operations,** `Kerf.Geometry.GeometryOperations` (one class, as section 3 says, not geometry.md's
+  separate names): `TrimmedCurve3D.ArcThrough`, `ArcTangent`, `Arc` (circle, ellipse, hyperbola, parabola) and
+  `Segment`; `BSplineCurve3D.Interpolate`, `Approximate` and `Join`; `BSplineSurface.Approximate`; `curve.ToBSpline`,
+  `ToCurve2D`, `curve2d.ToCurve3D`; `Project` and `TryProjectNearest` for curves and surfaces; `Intersect` (curve and
+  surface, two surfaces, two 2D curves); `surface.TryGetPlane`; with `InterpolationOptions`, `ApproximationOptions`
+  (curves and surfaces both), `ConversionOptions`, `CurveSurfaceHit` and `CurveCurveHit2D`. The splines' 0-based
+  `WithPole`, `WithWeight` and `WithKnot` (OCCT's 1-based copies are `WithPoleOneBased`…, internal).
+- **Construction,** `Kerf.Construction`: `Primitives` (`Solid.Box`, `Cylinder`, `Cone`, `Sphere`, `Torus`, `Wedge`,
+  `HalfSpace`, each with and without a frame), `Sweeps` (`Extrude`, `Revolve` as extension members of any shape;
+  `Sweep`, `Loft`, `Ruled`), `ShapeFactory` (`Vertex.At`, `Edge.Line`/`FromCurve`/`Circle`/`Arc`,
+  `Wire.FromEdges`/`Polygon`/`TryGetPlane`, `Face.FromWire`/`FromWires`/`FromSurface`/`FromPlane`,
+  `Shell.FromSurface`, `Solid.FromShells`, `shape.TryFindSurface`), `ShapeTransforms` (`Transformed`, `Mirrored`,
+  `Scaled`) and `ShapeProjections.Project` (not `Projections`, the engine's `GeomAPI`); `SphereOptions`,
+  `TorusOptions`, `WedgeOptions`, `ExtrudeOptions`, `SweepOptions`, `SweepFrame`, `LoftOptions`, `TransitionMode`.
+- **Booleans,** `Kerf.Booleans`: `BooleanOperations.Fuse`, `Cut`, `Common`, `Section` (two shapes, as extension
+  members of any shape types, or lists), `FuseAll`, `Split`, `Partition`; `BooleanOptions`, `GlueMode`.
+- **Fillets,** `Kerf.Fillets`: `FilletOperations.Fillet`, `Chamfer` (by edges and a size, or per-edge specs),
+  `Fillet2D`, `Chamfer2D`; `FilletSpec`, `ChamferSpec`, `FilletOptions`, `FilletTolerances`, `ChamferOptions`,
+  `ChamferMode`, `FilletShape`.
+- **Offsets and features,** `Kerf.Offsets` and `Kerf.Features`: `OffsetOperations.Offset`, `Thicken`, `Offset2D`,
+  `solid.Hollow`; `FeatureOperations.Draft`, `ExtrudeUntil`, `SplitFaces`; `OffsetOptions`, `Offset2DOptions`,
+  `OffsetMode`, `ExtrudeUntilOptions`, `ExtrudeLimit` (not `Until`, the modelling layer's name).
+
+Where the implementation departs from the area reviews: no `RevolveOptions` or `DraftOptions` (nothing to hold);
+`Split` takes `BooleanOptions` (no `SplitOptions`); `Wire.FromEdges` takes no tolerance (OCCT's builder has none);
+`Face.FromWires` wants its holes running opposite the outer wire, as OCCT does; a curve's intersection with a surface
+takes no tolerance and reports a stretch lying in the surface as a warning; a 2D chamfer by distance and angle isn't
+offered.
+
+**Left** (for 10L3 or later):
+- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them), `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`),
+  `Sweeps.Helix`, and an extrusion's or revolution's caps in its history (OCCT's `FirstShape`/`LastShape`).
+- The engine types of these areas that something public still shows (decision 1530 lists why): the modelling
+  layer's public API (10M), and the public engine types of the areas 10L3 makes internal.

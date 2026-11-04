@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// and guide, and only evaluates them; the section it revolves is a copy or a curve it builds.
 /// OCCT declares <c>Deriv2T</c> but its definition is commented out; it is not ported.
 /// </remarks>
-public sealed class FunctionGuide : FunctionSetWithDerivatives
+internal sealed class FunctionGuide : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptorBase _theGuide;
     private readonly SurfaceSectionLaw _theLaw;

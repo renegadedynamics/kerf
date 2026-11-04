@@ -12,7 +12,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// The function of a blending surface between two surfaces along a guide line. Its variables are the parametric
 /// coordinates U1, V1, U2, V2 of the section's extremities on the two surfaces.
 /// </summary>
-public abstract class BlendFunction : AppFunction
+internal abstract class BlendFunction : AppFunction
 {
     /// <summary>Returns 4.</summary>
     public override int NbVariables()

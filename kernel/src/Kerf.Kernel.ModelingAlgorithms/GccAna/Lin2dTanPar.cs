@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// unqualified, one when enclosing or outside).
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117).</remarks>
-public sealed class Lin2dTanPar
+internal sealed class Lin2dTanPar
 {
     private bool _wellDone;
     private int _nbrSol;

@@ -25,7 +25,7 @@ namespace Kerf.Engine.Features.Draft;
 /// <see cref="NewCurve2d"/> writes only the range of the modifier's new edge. OCCT's maps keyed by faces, edges and
 /// vertices with TopTools_ShapeMapHasher are keyed by TopoDS_Shape in the port (the same IsSame comparison).
 /// </remarks>
-public sealed partial class DraftModification : Modification
+internal sealed partial class DraftModification : Modification
 {
     private readonly IndexedMap<Shape, DraftFaceInfo> _fMap = new(ShapeHasher.Instance);
     private readonly IndexedMap<Shape, DraftEdgeInfo> _eMap = new(ShapeHasher.Instance);

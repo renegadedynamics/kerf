@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// the base's <see cref="TrihedronLaw.GetInterval"/> throws (OCCT dereferences a null handle there;
 /// occt-issues.md). <see cref="D2"/> computes only the Frenet trihedron of the path and returns false, as in OCCT.
 /// </remarks>
-public class GuideTrihedronPlan : TrihedronWithGuide
+internal class GuideTrihedronPlan : TrihedronWithGuide
 {
     private new CurveAdaptorBase? _trimmed;
     private new CurveAdaptorBase? _curve;

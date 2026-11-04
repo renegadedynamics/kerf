@@ -43,7 +43,7 @@ namespace Kerf.Engine.Booleans.Algo;
 /// write (BRepTools.Update skips frozen faces).
 /// </para>
 /// </remarks>
-public static class BRepAlgo
+internal static class BRepAlgo
 {
     // The minimal tolerance of approximation (edges can be defined with yet smaller tolerance)
     private const double MINIMAL_TOLERANCE = 0.0001;

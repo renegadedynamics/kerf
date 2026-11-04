@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// A working object (decision 21, as the adaptors, decision 101): the laws keep OCCT's public setters, and some
 /// cache evaluation state. <see cref="Trim"/> returns a new law; it never changes this one.
 /// </remarks>
-public abstract class LawsFunction : Transient
+internal abstract class LawsFunction : Transient
 {
     public abstract Continuity Continuity();
 

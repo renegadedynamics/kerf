@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Surfaces;
 
 /// <summary>The error of a <see cref="SurfaceBuilder"/> whose computation gave no result.</summary>
-public enum ErrorTypeStatus
+internal enum ErrorTypeStatus
 {
     EmptyList,
     EdgeNotG1,

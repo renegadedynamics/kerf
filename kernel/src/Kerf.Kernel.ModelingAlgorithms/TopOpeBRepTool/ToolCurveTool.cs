@@ -30,7 +30,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// </para>
 /// <para>A working object (it holds its geomtool by value, as in OCCT).</para>
 /// </remarks>
-public sealed class ToolCurveTool
+internal sealed class ToolCurveTool
 {
     private ToolGeomTool _geomTool = new();
 

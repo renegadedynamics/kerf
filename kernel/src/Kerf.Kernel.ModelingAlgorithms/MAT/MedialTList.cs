@@ -19,7 +19,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// <summary>A node of a MAT_TList: an item and its neighbours.</summary>
 /// <remarks>OCCT instantiates the node as MAT_TListNodeOfListOfBisector and MAT_TListNodeOfListOfEdge; only the
 /// lists build and read nodes, so the port has the generic alone (decision 607).</remarks>
-public sealed class MedialTListNode<TItem> : Transient
+internal sealed class MedialTListNode<TItem> : Transient
     where TItem : class
 {
     private MedialTListNode<TItem>? _thenext;
@@ -55,7 +55,7 @@ public sealed class MedialTListNode<TItem> : Transient
 /// break the reference cycles; the collector needs no help. Dump (each item's Dump to std::cout) is left out. The
 /// mutators are internal: the lists are working objects of MAT2d_Mat2d.
 /// </remarks>
-public abstract class MedialTList<TItem> : Transient
+internal abstract class MedialTList<TItem> : Transient
     where TItem : class
 {
     private MedialTListNode<TItem>? _thefirstnode;
@@ -332,7 +332,7 @@ public abstract class MedialTList<TItem> : Transient
 }
 
 /// <summary>A MAT_TList of MAT_Bisector.</summary>
-public sealed class MedialListOfBisector : MedialTList<MedialBisector>
+internal sealed class MedialListOfBisector : MedialTList<MedialBisector>
 {
     public MedialListOfBisector()
     {
@@ -340,7 +340,7 @@ public sealed class MedialListOfBisector : MedialTList<MedialBisector>
 }
 
 /// <summary>A MAT_TList of MAT_Edge.</summary>
-public sealed class MedialListOfEdge : MedialTList<MedialEdge>
+internal sealed class MedialListOfEdge : MedialTList<MedialEdge>
 {
     public MedialListOfEdge()
     {

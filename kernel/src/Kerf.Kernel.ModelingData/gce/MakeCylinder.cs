@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Values;
 /// Constructions of a gp_Cylinder: from an axis system and a radius, coaxial to a cylinder through a point or at a
 /// signed offset, from three points, from an axis and a radius, or from a circular base.
 /// </summary>
-public sealed class MakeCylinder : Root
+internal sealed class MakeCylinder : Root
 {
     private Cylinder _theCylinder = new();
 

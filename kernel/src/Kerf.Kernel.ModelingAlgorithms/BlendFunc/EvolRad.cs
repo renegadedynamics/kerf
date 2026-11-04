@@ -26,7 +26,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// the cached points and tangents. OCCT's <c>thread_local</c> scratch values of ComputeValues are read across calls
 /// (when the cache skips a positioning), so they are <c>[ThreadStatic]</c> (plan 2.3, decision 1037).
 /// </remarks>
-public class EvolRad : BlendFunction
+internal class EvolRad : BlendFunction
 {
     private const double Eps = 1.0e-15;
 

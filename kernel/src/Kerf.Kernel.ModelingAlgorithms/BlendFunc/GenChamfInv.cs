@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The function of a general chamfer with one end on a surface's boundary.</summary>
-public abstract class GenChamfInv : FuncInv
+internal abstract class GenChamfInv : FuncInv
 {
     protected readonly SurfaceAdaptorBase _surf1;
     protected readonly SurfaceAdaptorBase _surf2;

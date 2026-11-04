@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Data;
 /// writes <c>aVVs.Append(new BOPDS_InterfVV())</c> where OCCT writes <c>aVVs.Appended()</c>. OCCT's
 /// <c>std::optional&lt;int&gt; GetIndexNew()</c> is <c>int?</c>.
 /// </remarks>
-public abstract class Interf
+internal abstract class Interf
 {
     protected int _index1;
     protected int _index2;
@@ -93,12 +93,12 @@ public abstract class Interf
 }
 
 /// <summary>A vertex/vertex interference.</summary>
-public class InterfVV : Interf
+internal class InterfVV : Interf
 {
 }
 
 /// <summary>A vertex/edge interference, with the vertex's parameter on the edge's curve.</summary>
-public class InterfVE : Interf
+internal class InterfVE : Interf
 {
     protected double _parameter;
 
@@ -114,7 +114,7 @@ public class InterfVE : Interf
 }
 
 /// <summary>A vertex/face interference, with the vertex's parameters on the face's surface.</summary>
-public class InterfVF : Interf
+internal class InterfVF : Interf
 {
     protected double _u;
     protected double _v;
@@ -140,7 +140,7 @@ public class InterfVF : Interf
 }
 
 /// <summary>An edge/edge interference, with its common part.</summary>
-public class InterfEE : Interf
+internal class InterfEE : Interf
 {
     protected CommonPrt _commonPart = new();
 
@@ -152,7 +152,7 @@ public class InterfEE : Interf
 }
 
 /// <summary>An edge/face interference, with its common part.</summary>
-public class InterfEF : Interf
+internal class InterfEF : Interf
 {
     protected CommonPrt _commonPart = new();
 
@@ -164,7 +164,7 @@ public class InterfEF : Interf
 }
 
 /// <summary>A face/face interference: the intersection curves and points, and whether the faces are tangent.</summary>
-public class InterfFF : Interf
+internal class InterfFF : Interf
 {
     protected bool _tangentFaces;
     protected List<SectionCurve> _curves = new();
@@ -200,21 +200,21 @@ public class InterfFF : Interf
 }
 
 /// <summary>A vertex/solid interference.</summary>
-public class InterfVZ : Interf
+internal class InterfVZ : Interf
 {
 }
 
 /// <summary>An edge/solid interference.</summary>
-public class InterfEZ : Interf
+internal class InterfEZ : Interf
 {
 }
 
 /// <summary>A face/solid interference.</summary>
-public class InterfFZ : Interf
+internal class InterfFZ : Interf
 {
 }
 
 /// <summary>A solid/solid interference.</summary>
-public class InterfZZ : Interf
+internal class InterfZZ : Interf
 {
 }

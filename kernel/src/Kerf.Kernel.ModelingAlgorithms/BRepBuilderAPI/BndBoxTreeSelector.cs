@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Api;
 /// keeps the indexes of the objects accepted.
 /// </summary>
 /// <remarks>A working object, as OCCT's.</remarks>
-public sealed class BndBoxTreeSelector : SpatialTree<int, Box>.Selector
+internal sealed class BndBoxTreeSelector : SpatialTree<int, Box>.Selector
 {
     private readonly NCollection_List<int> _resInd = new();
     private Box _box = new();

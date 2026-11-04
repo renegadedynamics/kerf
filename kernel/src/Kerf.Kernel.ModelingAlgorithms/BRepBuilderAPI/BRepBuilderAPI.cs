@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Api;
 /// The default plane and precision are BRepLib's settings of the operation context (process-wide in OCCT; decision 415
 /// and unit 10I): callers read them; only ported code sets them, through the internal setters.
 /// </remarks>
-public static class BRepBuilderApi
+internal static class BRepBuilderApi
 {
     /// <summary>Sets the default plane of the 2D edges (internal: BRepLib's setting, for the rest of the flow).</summary>
     internal static void Plane(PlaneSurface p)

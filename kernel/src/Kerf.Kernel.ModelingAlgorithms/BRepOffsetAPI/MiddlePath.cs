@@ -36,7 +36,7 @@ namespace Kerf.Engine.Construction.Api;
 /// It only reads the shape: ShapeUpgrade_UnifySameDomain works on a copy of a frozen shape (decision 928), and every
 /// edge it builds is new. The result is frozen when returned (design 4.2).
 /// </remarks>
-public class MiddlePath : MakeShape
+internal class MiddlePath : MakeShape
 {
     private readonly Shape _initialShape;
     private readonly Wire _startWire;

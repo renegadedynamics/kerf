@@ -35,7 +35,7 @@ namespace Kerf.Engine.Features;
 /// <para>The basis shape and the profile are read, never written: the draft prism evolves a copy of a frozen profile
 /// (LocOpe_DPrism, decision 1014).</para>
 /// </remarks>
-public sealed class MakeDraftPrism : Form
+internal sealed class MakeDraftPrism : Form
 {
     private Face _pbase = new();
     private readonly Dictionary<Shape, NCollection_List<Shape>> _slface = new(ShapeHasher.Instance);

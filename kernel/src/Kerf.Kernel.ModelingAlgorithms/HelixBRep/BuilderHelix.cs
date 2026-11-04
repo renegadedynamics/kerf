@@ -29,7 +29,7 @@ namespace Kerf.Engine.Construction.Helix;
 /// approximation is above the requested one.</para>
 /// <para>A working object (decision 21). <see cref="Shape"/> is a publication point: it freezes the wire.</para>
 /// </remarks>
-public class BuilderHelix
+internal class BuilderHelix
 {
     protected CoordinateSystem _axis3 = new();
     protected NCollection_HArray1<double>? _diams;

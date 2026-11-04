@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// eight systems of quadratic equations directly; the others intersect the bisectors of the arguments (GccAna's
 /// bisector classes) with IntAna2d.
 /// </remarks>
-public sealed partial class AnalyticCirc2d3Tan
+internal sealed partial class AnalyticCirc2d3Tan
 {
     private bool _wellDone;
     private int _nbrSol;

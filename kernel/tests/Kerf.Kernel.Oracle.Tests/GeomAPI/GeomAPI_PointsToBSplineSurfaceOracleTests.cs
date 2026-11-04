@@ -5,7 +5,7 @@ using Kerf.Engine.Foundation;
 using Kerf.Engine.Geometry.Api;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Kernel.Oracle.Tests;
 
@@ -137,7 +137,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
         return aT;
     }
 
-    private static ParametrizationType ParType(Oracle theO) => theO.Int(0, 2) switch
+    private static global::Kerf.Geometry.ParametrizationType ParType(Oracle theO) => theO.Int(0, 2) switch
     {
         0 => ChordLength,
         1 => Centripetal,
@@ -161,7 +161,7 @@ public class GeomAPI_PointsToBSplineSurfaceOracleTests(ITestOutputHelper output)
             double aTol3D = AppDefOracleTests.Tolerance(anOracle);
             int aDegMin = anOracle.Int(1, 4);
             int aDegMax = anOracle.Int(Math.Max(aDegMin, 2), 8);
-            ParametrizationType aParType = ParType(anOracle);
+            global::Kerf.Geometry.ParametrizationType aParType = ParType(anOracle);
             N.GeomAbs_Shape aNCont = (N.GeomAbs_Shape)(int)aCont;
             N.Approx_ParametrizationType aNParType = (N.Approx_ParametrizationType)(int)aParType;
 

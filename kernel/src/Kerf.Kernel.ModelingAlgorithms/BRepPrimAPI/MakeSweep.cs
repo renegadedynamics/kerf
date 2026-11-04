@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Api;
 /// keyed by the caller's sub-shapes; what they hand out is mapped to what stands for it in the result
 /// (<see cref="FromSwept"/>). These helpers are not OCCT's.</para>
 /// </remarks>
-public abstract class MakeSweep : MakeShape
+internal abstract class MakeSweep : MakeShape
 {
     // Kerf: the working overlay the generating shape is swept in (unit 10H3)
     private WorkingOverlay? _overlay;

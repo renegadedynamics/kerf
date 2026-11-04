@@ -26,7 +26,7 @@ internal static class ApproxIntRecordings
         public double Tol3d, Tol2d;
         public int DegMin, DegMax, NbIter, NbPntMax;
         public bool Tangency;
-        public ParametrizationType ParType;
+        public global::Kerf.Geometry.ParametrizationType ParType;
         public bool Xyz, U1V1, U2V2;
         public int IMin, IMax;
 
@@ -47,7 +47,7 @@ internal static class ApproxIntRecordings
         public int Index;
         public double[][] Points = [];
         public bool PtXyz, PtU1V1, PtU2V2;
-        public ParametrizationType ParType;
+        public global::Kerf.Geometry.ParametrizationType ParType;
         public List<Approx> Approxes = [];
     }
 
@@ -145,7 +145,7 @@ internal static class ApproxIntRecordings
                     aLine!.PtXyz = t[1] == "1";
                     aLine.PtU1V1 = t[2] == "1";
                     aLine.PtU2V2 = t[3] == "1";
-                    aLine.ParType = (ParametrizationType)I(t[6]);
+                    aLine.ParType = (global::Kerf.Geometry.ParametrizationType)I(t[6]);
                     break;
                 case "APPROX":
                     anApprox = new Approx
@@ -160,7 +160,7 @@ internal static class ApproxIntRecordings
                         NbIter = I(t[8]),
                         NbPntMax = I(t[9]),
                         Tangency = t[10] == "1",
-                        ParType = (ParametrizationType)I(t[11]),
+                        ParType = (global::Kerf.Geometry.ParametrizationType)I(t[11]),
                         Xyz = t[12] == "1",
                         U1V1 = t[13] == "1",
                         U2V2 = t[14] == "1",

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Api;
 /// the input's sub-shapes (OCCT's Modified, which would answer nothing, has nothing to report since it changes them in
 /// place).</para>
 /// </remarks>
-public class MakeFace : MakeShape
+internal class MakeFace : MakeShape
 {
     private readonly LibraryMakeFace _makeFace;
 

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// shallow copy (<c>ShallowCopy</c>, sharing the geometry) and never changes the caller's.
 /// <see cref="Reparametrize"/> sets a reparametrisation law, a Law_BSpFunc whose B-spline is frozen.
 /// </remarks>
-public class BoundWithSurf : Boundary
+internal class BoundWithSurf : Boundary
 {
     private readonly CurveOnSurface _conS;
     private LawsFunction? _par;

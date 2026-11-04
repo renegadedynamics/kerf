@@ -24,7 +24,7 @@ namespace Kerf.Engine.Booleans.Legacy;
 /// public, as in OCCT. OCCT declares the private <c>UpdateReference</c> and <c>ComputeCos</c> but never defines
 /// them: left out.
 /// </remarks>
-public class SurfaceTransition
+internal class SurfaceTransition
 {
     private const int MUnknown = -100;
     private const int MNoupdate = 0;

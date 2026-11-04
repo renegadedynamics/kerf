@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// A working object (decision 21). It keeps the caller's knot and pole arrays as OCCT keeps the handles, and reads the
 /// poles as the energy that owns it moves them.
 /// </remarks>
-public abstract class DistributionOfEnergy : FunctionSet
+internal abstract class DistributionOfEnergy : FunctionSet
 {
     protected int _myBSplOrder;
     protected NCollection_HArray1<double> _myFlatKnots;

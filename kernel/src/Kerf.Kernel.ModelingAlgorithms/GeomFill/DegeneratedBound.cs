@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A degenerated boundary of a GeomFill_ConstrainedFilling: a point on a parameter range, with no other constraint.
 /// </summary>
 /// <remarks>A working object (decision 21): <see cref="Reparametrize"/> sets the range.</remarks>
-public class DegeneratedBound : Boundary
+internal class DegeneratedBound : Boundary
 {
     private readonly Point3D _point;
     private double _first;

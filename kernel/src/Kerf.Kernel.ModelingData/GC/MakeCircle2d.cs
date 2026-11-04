@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom2d_Circle: from a gp_Circ2d, an axis and a radius, concentric to a circle through a point
 /// or at a distance, through three points, or from a center and a radius or a point.
 /// </summary>
-public sealed class MakeCircle2d : Root
+internal sealed class MakeCircle2d : Root
 {
     private CircleCurve2D? _theCircle;
 

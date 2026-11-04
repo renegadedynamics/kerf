@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// A location law on a wire lying on a shape's faces: Darboux's trihedron along each edge's curve on the first face
 /// of the shape holding a pcurve of it.
 /// </summary>
-public sealed class EdgeOnSurfLaw : LocationLaw
+internal sealed class EdgeOnSurfLaw : LocationLaw
 {
     private readonly bool _hasresult;
 

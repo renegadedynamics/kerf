@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>A bisecting curve whose geometry is a 2D point.</summary>
-public sealed class BPoint : ConstraintBisec
+internal sealed class BPoint : ConstraintBisec
 {
     private readonly Point2D _pnt;
 

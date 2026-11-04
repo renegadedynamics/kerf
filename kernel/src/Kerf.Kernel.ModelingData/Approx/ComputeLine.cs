@@ -7,7 +7,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Engine.Approximation.Status;
 
 namespace Kerf.Engine.Approximation;
@@ -40,7 +40,7 @@ public class ComputeLine<MultiLine, LineTool>
     private MultiBSpCurve _myspline = new();
     private bool _alldone;
     private bool _tolreached; // OCCT never initialises it before the first approximation; false here
-    private ParametrizationType _parametrization;
+    private global::Kerf.Geometry.ParametrizationType _parametrization;
     private NCollection_HArray1<double>? _parameters;
     private NCollection_HArray1<double>? _myfirstParam;
     private readonly NCollection_Sequence<NCollection_HArray1<double>> _par = new();
@@ -722,7 +722,7 @@ public class ComputeLine<MultiLine, LineTool>
     /// <summary>Initialises the fields of the algorithm; <see cref="Perform"/> runs it.</summary>
     public ComputeLine(int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-03,
                               double tolerance2d = 1.0e-06, int nbIterations = 5, bool cutting = true,
-                              ParametrizationType parametrization = ChordLength, bool squares = false)
+                              global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
     {
         _multiLineNb = 0;
         _isClear = false;
@@ -747,7 +747,7 @@ public class ComputeLine<MultiLine, LineTool>
     /// </summary>
     public ComputeLine(MultiLine line, int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-3,
                               double tolerance2d = 1.0e-6, int nbIterations = 5, bool cutting = true,
-                              ParametrizationType parametrization = ChordLength, bool squares = false)
+                              global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
     {
         _multiLineNb = 0;
         _isClear = false;
@@ -924,7 +924,7 @@ public class ComputeLine<MultiLine, LineTool>
                             _constraints.SetValue(2, myCouple2);
 
                             math_Vector param = new(myfirstpt, mylastpt);
-                            ParametrizationType savePar = _parametrization;
+                            global::Kerf.Geometry.ParametrizationType savePar = _parametrization;
                             _parametrization = IsoParametric;
                             Parameters(line, myfirstpt, mylastpt, param);
                             _theMultiCurve = new MultiCurve();
@@ -1603,7 +1603,7 @@ public class ComputeLine<MultiLine, LineTool>
     /// <summary>Initialises the fields of the algorithm.</summary>
     public void Init(int degreemin = 4, int degreemax = 8, double tolerance3d = 1.0e-03, double tolerance2d = 1.0e-06,
                      int nbIterations = 5, bool cutting = true,
-                     ParametrizationType parametrization = ChordLength, bool squares = false)
+                     global::Kerf.Geometry.ParametrizationType parametrization = ChordLength, bool squares = false)
     {
         _mydegremin = degreemin;
         _mydegremax = degreemax;
@@ -1650,5 +1650,5 @@ public class ComputeLine<MultiLine, LineTool>
     }
 
     /// <summary>The type of parametrisation.</summary>
-    public ParametrizationType Parametrization() => _parametrization;
+    public global::Kerf.Geometry.ParametrizationType Parametrization() => _parametrization;
 }
