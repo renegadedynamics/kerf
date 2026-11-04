@@ -19,6 +19,8 @@
   <!-- The kernel, called directly (unit 10B): the kernel's projects (KerfKernelRoot), which pack as the package dependencies -->
   <ItemGroup>
     <ProjectReference Include="$(KerfKernelRoot)src/Kerf.Kernel.DataExchange/Kerf.Kernel.DataExchange.csproj" />
+    <!-- KERF0003: public types are immutable, here as in the kernel (unit 10P2) -->
+    <ProjectReference Include="$(KerfKernelRoot)src/Kerf.Analyzers/Kerf.Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all" />
   </ItemGroup>
 
   <Target Name="RequireKerfKernel" BeforeTargets="ResolveProjectReferences"
