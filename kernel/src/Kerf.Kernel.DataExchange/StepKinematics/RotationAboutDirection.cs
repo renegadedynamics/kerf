@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RotationAboutDirection
 /// </summary>
-public class RotationAboutDirection : StepGeometricRepresentationItem
+internal class RotationAboutDirection : StepGeometricRepresentationItem
 {
     private StepDirection _directionOfAxis;
     private double _rotationAngle;

@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>Read and Write Module for FileDescription.</summary>
-public class RWFileDescription
+internal class RWFileDescription
 {
     public RWFileDescription()
     {

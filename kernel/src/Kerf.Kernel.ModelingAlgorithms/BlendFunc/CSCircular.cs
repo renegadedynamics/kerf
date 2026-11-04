@@ -25,7 +25,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// variables are U, V on the surface.
 /// </summary>
 /// <remarks>OCCT leaves the radius, the "quadrant" and the conversion uninitialised; here they are zero.</remarks>
-public class CSCircular : CSFunction
+internal class CSCircular : CSFunction
 {
     private const double Eps = 1.0e-15;
 

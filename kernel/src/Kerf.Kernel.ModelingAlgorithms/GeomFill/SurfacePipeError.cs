@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Construction.Surfaces;
 
-public enum SurfacePipeError
+internal enum SurfacePipeError
 {
     PipeOk,
     PipeNotOk,

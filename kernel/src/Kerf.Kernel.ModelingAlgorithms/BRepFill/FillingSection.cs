@@ -33,7 +33,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// vertex are the caller's.
 /// </para>
 /// </remarks>
-public partial struct FillingSection : IEquatable<FillingSection>
+internal partial struct FillingSection : IEquatable<FillingSection>
 {
     private Shape _originalShape;
     private Wire _wire;

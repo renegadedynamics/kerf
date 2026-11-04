@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// This Signature returns the cdl Type of an entity, under two forms : - complete dynamic type (package and
 /// class) - class type, without package name
 /// </summary>
-public class SelectionSignType : Signature
+internal class SelectionSignType : Signature
 {
     private const string Nulsign = "";
 

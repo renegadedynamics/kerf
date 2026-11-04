@@ -24,7 +24,7 @@ namespace Kerf.Engine.Construction.Library;
 /// writes into the triangulation it is given, as OCCT does, and throws <see cref="ImmutableObjectException"/> on a
 /// frozen one without normals; <see cref="NormalsComputed"/> returns a copy with normals instead.
 /// </remarks>
-public static class ToolTriangulatedShape
+internal static class ToolTriangulatedShape
 {
     /// <summary>
     /// Computes the nodal normals of <paramref name="tris"/> from the face's surface at the UV nodes (or, without

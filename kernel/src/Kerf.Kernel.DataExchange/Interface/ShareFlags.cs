@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// This class only says for each Entity of a Model, if it is Shared or not by one or more other(s) of this
 /// Model It uses the General Service "Shared".
 /// </summary>
-public class ShareFlags
+internal class ShareFlags
 {
 
     /// <summary>

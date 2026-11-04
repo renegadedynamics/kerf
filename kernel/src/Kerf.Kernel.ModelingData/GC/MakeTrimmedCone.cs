@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// <summary>
 /// Constructions of a trimmed cone as a Geom_RectangularTrimmedSurface: from four points, or two points and two radii.
 /// </summary>
-public sealed class MakeTrimmedCone : Root
+internal sealed class MakeTrimmedCone : Root
 {
     private TrimmedSurface? _theCone;
 

@@ -28,7 +28,7 @@ namespace Kerf.Engine.Offsets;
 /// images, and the faces of BRepOffset_MakeOffset's own copy of the caller's shape) and must be unfrozen: a frozen one
 /// throws <see cref="LockedShapeException"/> or <see cref="ImmutableObjectException"/> at the first write.
 /// </remarks>
-public sealed class OffsetMakeLoops
+internal sealed class OffsetMakeLoops
 {
     private readonly Dictionary<Shape, Shape> _verVerMap = new(ShapeHasher.Instance);
 

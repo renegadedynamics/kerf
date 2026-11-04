@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// <summary>
 /// An Integer through a Handle (i.e. managed as TShared)
 /// </summary>
-public class MonitorIntVal : Transient
+internal class MonitorIntVal : Transient
 {
 
     public MonitorIntVal(int val = 0)

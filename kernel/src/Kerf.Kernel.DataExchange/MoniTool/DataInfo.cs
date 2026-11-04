@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// <summary>
 /// Gives information on an object Used as template to instantiate Elem, etc This class is for Transient
 /// </summary>
-public static class DataInfo
+internal static class DataInfo
 {
 
     /// <summary>

@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>An error of the exchange framework.</summary>
-public class InterfaceErrorException : FailureException
+internal class InterfaceErrorException : FailureException
 {
     public InterfaceErrorException() { }
 

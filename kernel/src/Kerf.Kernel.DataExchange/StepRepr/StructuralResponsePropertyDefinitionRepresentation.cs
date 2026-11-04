@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity StructuralResponsePropertyDefinitionRepresentation
 /// </summary>
-public class StructuralResponsePropertyDefinitionRepresentation : PropertyDefinitionRepresentation
+internal class StructuralResponsePropertyDefinitionRepresentation : PropertyDefinitionRepresentation
 {
     /// <summary>
     /// Empty constructor

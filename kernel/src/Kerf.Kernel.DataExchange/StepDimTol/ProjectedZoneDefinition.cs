@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ProjectedZoneDefinition
 /// </summary>
-public class ProjectedZoneDefinition : ToleranceZoneDefinition
+internal class ProjectedZoneDefinition : ToleranceZoneDefinition
 {
     private ShapeAspect _projectionEnd;
     private LengthMeasureWithUnit _projectionLength;

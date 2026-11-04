@@ -22,7 +22,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// The function of a constant-radius fillet between a surface and a curve along a guide curve: its variables are
 /// U, V on the surface and W on the curve.
 /// </summary>
-public class CSConstRad : CSFunction
+internal class CSConstRad : CSFunction
 {
     private readonly SurfaceAdaptorBase _surf;
     private readonly CurveAdaptorBase _curv;

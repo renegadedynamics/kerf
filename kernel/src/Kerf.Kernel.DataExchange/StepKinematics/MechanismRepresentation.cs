@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity MechanismRepresentation
 /// </summary>
-public class MechanismRepresentation : StepRepresentation
+internal class MechanismRepresentation : StepRepresentation
 {
     private KinematicTopologyRepresentationSelect _representedTopology = new KinematicTopologyRepresentationSelect();
 

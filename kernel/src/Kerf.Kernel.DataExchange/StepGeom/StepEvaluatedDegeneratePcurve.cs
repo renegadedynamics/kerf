@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepEvaluatedDegeneratePcurve : StepDegeneratePcurve
+internal class StepEvaluatedDegeneratePcurve : StepDegeneratePcurve
 {
     private StepCartesianPoint _equivalentPoint;
 

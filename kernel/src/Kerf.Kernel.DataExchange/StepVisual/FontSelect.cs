@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class FontSelect : SelectType
+internal class FontSelect : SelectType
 {
     /// <summary>
     /// Returns a FontSelect SelectType

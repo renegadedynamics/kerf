@@ -27,7 +27,7 @@ namespace Kerf.Engine.Features.Local;
 /// read the <c>Internal</c> forms. OCCT declares the constructors that take a base and an axis without defining them;
 /// the port leaves them out.
 /// </remarks>
-public sealed class LocalRevol
+internal sealed class LocalRevol
 {
     private Shape _base = new();
     private Axis3D _axis = new();

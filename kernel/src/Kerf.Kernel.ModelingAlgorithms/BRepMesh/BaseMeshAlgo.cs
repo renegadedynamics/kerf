@@ -33,7 +33,7 @@ namespace Kerf.Engine.Meshing;
 /// OCCT's <c>catch (Standard_Failure)</c>.
 /// </para>
 /// </remarks>
-public abstract class BaseMeshAlgo : MeshAlgo
+internal abstract class BaseMeshAlgo : MeshAlgo
 {
     private FaceModel? _dFace;
     private ToolParameters _parameters = new();

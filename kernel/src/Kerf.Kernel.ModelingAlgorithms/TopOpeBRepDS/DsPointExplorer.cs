@@ -9,7 +9,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>Explores the points of a data structure in index order, only the kept ones by default.</summary>
 /// <remarks><see cref="Point()"/> returns a copy: to change the current point, use <c>ref DS.ChangePoint(explorer.Index())</c>.</remarks>
-public sealed class DsPointExplorer
+internal sealed class DsPointExplorer
 {
     private int _index;
     private int _max;

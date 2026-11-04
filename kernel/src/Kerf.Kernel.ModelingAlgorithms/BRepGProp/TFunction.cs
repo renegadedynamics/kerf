@@ -18,7 +18,7 @@ namespace Kerf.Engine.Measurement;
 /// Gauss-Kronrod integration to the set tolerance.
 /// </summary>
 /// <remarks>The coefficients are those of <see cref="UFunction"/>. OCCT keeps a copy of the face; so does the port.</remarks>
-public class TFunction : Function
+internal class TFunction : Function
 {
     private readonly FaceIntegrand _surface;
     private readonly UFunction _uFunction;

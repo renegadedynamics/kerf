@@ -15,7 +15,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// U into segments no longer than the maximal angle.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class SplitSurfaceAngle : SplitSurface
+internal class SplitSurfaceAngle : SplitSurface
 {
     private double _maxAngle;
 

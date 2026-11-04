@@ -10,15 +10,15 @@ namespace Kerf.Modeling;
 public sealed class OrientedBoundBox
 {
     /// <summary>The OCCT box. Never modified.</summary>
-    internal OrientedBox Wrapped { get; }
+    internal Obb Wrapped { get; }
 
-    OrientedBoundBox(OrientedBox obb) => Wrapped = obb;
+    OrientedBoundBox(Obb obb) => Wrapped = obb;
 
     /// <summary>Wraps a Bnd_OBB this box takes ownership of.</summary>
-    internal static OrientedBoundBox Own(OrientedBox obb) => new(obb);
+    internal static OrientedBoundBox Own(Obb obb) => new(obb);
 
     /// <summary>An oriented bounding box from an OCCT Bnd_OBB.</summary>
-    public static OrientedBoundBox FromBndObb(OrientedBox obb) => new(obb);
+    public static OrientedBoundBox FromBndObb(Obb obb) => new(obb);
 
     /// <summary>True for the box of nothing, which has no size or axes.</summary>
     public bool IsEmpty => Wrapped.IsVoid;

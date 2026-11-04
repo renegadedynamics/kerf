@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepShell : SelectType
+internal class StepShell : SelectType
 {
     /// <summary>
     /// Returns a Shell SelectType

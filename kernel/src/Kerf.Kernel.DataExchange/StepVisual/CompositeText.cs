@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CompositeText : StepGeometricRepresentationItem
+internal class CompositeText : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<TextOrCharacter> _collectedText;
 

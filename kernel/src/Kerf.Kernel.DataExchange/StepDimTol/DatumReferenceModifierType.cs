@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepDimTol_DatumReferenceModifierType;</c>.</remarks>
-public enum DatumReferenceModifierType
+internal enum DatumReferenceModifierType
 {
     CircularOrCylindrical,
     Distance,

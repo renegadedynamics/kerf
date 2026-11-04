@@ -31,7 +31,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// shape. OCCT declares a constructor from a TopoDS_Wire that it never defines; it is left out.
 /// </para>
 /// </remarks>
-public struct WireSegmentFixer
+internal struct WireSegmentFixer
 {
     private ExtendWireData        _wire;
     private Vertex               _vertex;

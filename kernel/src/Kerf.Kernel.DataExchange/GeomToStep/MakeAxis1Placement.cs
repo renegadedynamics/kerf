@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The mapping of Axis1Placement from Geom (and AxisPlacement from Geom2d, Ax1 and Ax2d from gp) to a STEP
 /// axis1_placement.
 /// </summary>
-public sealed class MakeAxis1Placement : GeometryRoot
+internal sealed class MakeAxis1Placement : GeometryRoot
 {
     private StepAxis1Placement _axis1Placement;
 

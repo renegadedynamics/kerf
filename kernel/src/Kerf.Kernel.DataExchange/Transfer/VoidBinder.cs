@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// interpreted by TransferProcess, which admits a VoidBinder to be over-written, and copies its check to the new
 /// Binder.
 /// </summary>
-public class VoidBinder : Binder
+internal class VoidBinder : Binder
 {
     /// <summary>A VoidBinder is not Multiple (it is not Simple too), but it can bring next results.</summary>
     public VoidBinder()

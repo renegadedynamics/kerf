@@ -12,7 +12,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>Constructions of a gp_Elips: from an axis system and radii, or from a center and two points.</summary>
-public sealed class MakeElips : Root
+internal sealed class MakeElips : Root
 {
     private Ellipse3D _theElips = new();
 

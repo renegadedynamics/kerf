@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Fea;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepFEA_EnumeratedDegreeOfFreedom;</c>.</remarks>
-public enum EnumeratedDegreeOfFreedom
+internal enum EnumeratedDegreeOfFreedom
 {
     XTranslation,
     YTranslation,

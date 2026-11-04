@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Helix.Geometry;
 
 /// <summary>Builds one helix coil about the Z axis, approximated by a B-spline curve.</summary>
-public sealed class BuilderHelixCoil : BuilderHelixGen
+internal sealed class BuilderHelixCoil : BuilderHelixGen
 {
     /// <summary>A builder with the default parameters.</summary>
     public BuilderHelixCoil()

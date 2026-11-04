@@ -19,7 +19,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Booleans.Tools;
 
 // BOPTools_AlgoTools_2.cxx: vertices, edges, ranges and dimensions.
-public static partial class AlgoTools
+internal static partial class AlgoTools
 {
     /// <summary>
     /// Raises the tolerance of <paramref name="aVF"/> to cover <paramref name="aNewVertex"/> (distance plus its

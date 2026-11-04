@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// sets its curve and interval: hand it a law of its own (<see cref="TrihedronLaw.Copy"/>) if the caller
 /// still uses it.
 /// </remarks>
-public class CurveAndTrihedron : SurfaceLocationLaw
+internal class CurveAndTrihedron : SurfaceLocationLaw
 {
     private bool _withTrans;
     private readonly TrihedronLaw _law;

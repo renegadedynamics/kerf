@@ -15,7 +15,7 @@ namespace Kerf.Engine.Booleans;
 /// Ported code that goes on building reads <see cref="InternalShape"/> and <see cref="InternalHistory"/>
 /// (decision 639). The history's lists are read-only lists (BRepTools_History's port).
 /// </remarks>
-public abstract class BuilderShape : BooleanAlgorithm
+internal abstract class BuilderShape : BooleanAlgorithm
 {
     protected Shape _shape = new();                                                //!< Result of the operation
     protected NCollection_List<Shape> _histShapes = new();                         //!< Storer for the history shapes

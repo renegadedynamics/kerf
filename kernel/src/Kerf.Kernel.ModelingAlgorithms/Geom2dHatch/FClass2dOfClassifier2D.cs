@@ -22,7 +22,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A working object (decision 21). The body is TopClass_Classifier2d's (decision 285), as for
 /// BRepClass_FClass2dOfFClassifier.
 /// </remarks>
-public sealed class FClass2dOfClassifier2D : IFClass2d<CurveAdaptor2D>
+internal sealed class FClass2dOfClassifier2D : IFClass2d<CurveAdaptor2D>
 {
     private bool _isSet;
     private bool _firstCompare;

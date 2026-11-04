@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepVertexLoop : StepLoop
+internal class StepVertexLoop : StepLoop
 {
     private StepVertex _loopVertex;
 

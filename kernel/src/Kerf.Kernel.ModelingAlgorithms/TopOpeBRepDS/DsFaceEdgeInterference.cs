@@ -9,7 +9,7 @@ using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>An interference of an edge on a face.</summary>
-public sealed class DsFaceEdgeInterference : DsShapeShapeInterference
+internal sealed class DsFaceEdgeInterference : DsShapeShapeInterference
 {
     /// <summary>The interference of the edge <paramref name="g"/> on the face <paramref name="s"/>.</summary>
     public DsFaceEdgeInterference(in DsTransition t,

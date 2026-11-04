@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity UnconstrainedPair
 /// </summary>
-public class UnconstrainedPair : LowOrderKinematicPair
+internal class UnconstrainedPair : LowOrderKinematicPair
 {
     /// <summary>
     /// default constructor

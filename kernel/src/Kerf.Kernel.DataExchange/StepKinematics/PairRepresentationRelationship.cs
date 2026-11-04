@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PairRepresentationRelationship
 /// </summary>
-public class PairRepresentationRelationship : StepGeometricRepresentationItem
+internal class PairRepresentationRelationship : StepGeometricRepresentationItem
 {
     private RepresentationRelationshipWithTransformation _representationRelationshipWithTransformation;
 

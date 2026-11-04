@@ -32,7 +32,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// (where OCCT copies them) and on sections placed by <see cref="SurfaceSectionPlacement"/> (new geometry).
 /// <see cref="Surface"/> hands out the surface frozen.
 /// </remarks>
-public sealed class SurfacePipe
+internal sealed class SurfacePipe
 {
     private SurfacePipeError _status; //!< Execution status
     private double _radius;

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepDegeneratePcurve : StepPoint
+internal class StepDegeneratePcurve : StepPoint
 {
     private StepSurface _basisSurface;
     private DefinitionalRepresentation _referenceToCurve;

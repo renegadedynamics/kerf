@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Library;
 /// (design 4.2); ported code reads the internal forms. Adding after a public read goes on with a new wire holding the
 /// same edges, so the wire handed out doesn't change.
 /// </remarks>
-public class LibraryMakePolygon : LibraryMakeShape
+internal class LibraryMakePolygon : LibraryMakeShape
 {
     private Vertex _firstVertex = new();
     private Vertex _lastVertex = new();

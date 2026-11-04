@@ -28,7 +28,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// Each closed shell is classified in a solid of its own, built for the check with the internal builder and never
 /// handed out; the checked solid is only read.
 /// </remarks>
-public class SolidCheck : ResultCheck
+internal class SolidCheck : ResultCheck
 {
     // OCCT's BRepCheck_ToolSolid (a class local to the .cxx). Its BRepCheck_HSC, a handle holding the classifier, is
     // the classifier itself.

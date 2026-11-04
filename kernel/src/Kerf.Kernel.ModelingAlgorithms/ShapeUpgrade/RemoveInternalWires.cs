@@ -26,7 +26,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// never modified (decision 999). <see cref="GetResult"/> freezes what it returns; ported callers read
 /// <see cref="InternalGetResult"/>.
 /// </remarks>
-public class RemoveInternalWires : UpgradeTool
+internal class RemoveInternalWires : UpgradeTool
 {
     /// <summary>The status.</summary>
     protected int _status;

@@ -64,7 +64,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// first fix. After a public result, a further fix starts a new overlay.
 /// </para>
 /// </remarks>
-public partial class FaceFixer : RootFixer
+internal partial class FaceFixer : RootFixer
 {
     protected SurfaceAnalysis? _surf;
     protected Face            _face;

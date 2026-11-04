@@ -40,7 +40,7 @@ namespace Kerf.Engine.Booleans;
 /// unit 6G).
 /// </para>
 /// </remarks>
-public class RemoveFeaturesAlgorithm : BuilderShape
+internal class RemoveFeaturesAlgorithm : BuilderShape
 {
     // Inputs
     protected Shape _inputShape = new();                     //!< Input shape
@@ -610,7 +610,7 @@ public class RemoveFeaturesAlgorithm : BuilderShape
             }
 
             // Avoid faces intersection
-            gfTrim.SetGlue(GlueMode.GlueShift);
+            gfTrim.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
             gfTrim.SetRunParallel(_runParallel);
             gfTrim.SetNonDestructive(true);
 

@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>A translation in 3D space, as a gp_Trsf.</summary>
-public sealed class MakeTranslation
+internal sealed class MakeTranslation
 {
     private Transform3D _theTranslation = new();
 

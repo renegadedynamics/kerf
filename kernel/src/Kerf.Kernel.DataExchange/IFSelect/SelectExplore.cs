@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// rejection is just a safety : normally, an input entity is, either taken itself, or explored A maximum
 /// level can be specified. Else, the process continues until all entities have been either taken or rejected
 /// </summary>
-public abstract class SelectExplore : SelectDeduct
+internal abstract class SelectExplore : SelectDeduct
 {
 
     /// <summary>

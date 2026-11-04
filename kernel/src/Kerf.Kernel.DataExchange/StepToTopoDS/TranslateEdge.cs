@@ -35,7 +35,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// (<c>BindTransient</c>): where OCCT reverses or adjusts such a curve in place after an earlier edge took it, the port
 /// works on a copy (decision 1248).
 /// </remarks>
-public sealed class TranslateEdge : ImportRoot
+internal sealed class TranslateEdge : ImportRoot
 {
     private TranslateEdgeError _error;
     private Shape _result = new Shape();

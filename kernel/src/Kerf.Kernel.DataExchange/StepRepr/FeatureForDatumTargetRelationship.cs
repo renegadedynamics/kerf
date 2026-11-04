@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity DimensionalLocation
 /// </summary>
-public class FeatureForDatumTargetRelationship : ShapeAspectRelationship
+internal class FeatureForDatumTargetRelationship : ShapeAspectRelationship
 {
     /// <summary>
     /// Empty constructor

@@ -11,7 +11,7 @@ namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>A rotation about an axis, as a Geom_Transformation.</summary>
 /// <remarks>Not a GC_Root: the construction can't fail, as in OCCT.</remarks>
-public sealed class MakeRotation
+internal sealed class MakeRotation
 {
     private readonly GeometryTransformation _theRotation;
 

@@ -32,7 +32,7 @@ public enum FrameworkLengthUnit
 /// port has no such value (plan 2.7, decision 1195): <see cref="GetCasCadeLengthUnit(StaticSet, FrameworkLengthUnit)"/>
 /// reads <c>xstep.cascade.unit</c> from the parameter set of the read or write, and OCCT's setters are left out.
 /// </remarks>
-public static class UnitsMethods
+internal static class UnitsMethods
 {
     /// <summary>
     /// Returns value of current internal unit for CASCADE in millimeters by default: the unit the parameter

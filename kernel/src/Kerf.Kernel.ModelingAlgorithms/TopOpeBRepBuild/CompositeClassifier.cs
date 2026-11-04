@@ -14,7 +14,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// <see cref="BlockBuilder"/>.
 /// </summary>
 /// <remarks>OCCT holds the block builder as a <c>void*</c>; the port holds a reference to it.</remarks>
-public abstract class CompositeClassifier : LoopClassifier
+internal abstract class CompositeClassifier : LoopClassifier
 {
     protected BlockBuilder _blockBuilder;
 

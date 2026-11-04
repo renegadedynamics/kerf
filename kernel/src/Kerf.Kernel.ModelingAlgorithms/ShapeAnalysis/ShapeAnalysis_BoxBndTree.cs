@@ -24,7 +24,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A working object for ported code (decision 21). <c>Accept</c> reads the wires of the sequence it is given; it
 /// writes nothing into shapes.
 /// </remarks>
-public sealed class BoxBndTreeSelectorAnalysis : SpatialTree<int, Box>.Selector
+internal sealed class BoxBndTreeSelectorAnalysis : SpatialTree<int, Box>.Selector
 {
     private Box _fBox;
     private Box _lBox;

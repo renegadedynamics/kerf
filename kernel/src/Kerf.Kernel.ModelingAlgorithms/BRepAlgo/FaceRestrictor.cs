@@ -37,7 +37,7 @@ namespace Kerf.Engine.Booleans.Algo;
 /// <see cref="InternalCurrent"/> doesn't, for ported callers.
 /// </para>
 /// </remarks>
-public sealed class FaceRestrictor
+internal sealed class FaceRestrictor
 {
     private bool _done;
     private bool _modeProj;

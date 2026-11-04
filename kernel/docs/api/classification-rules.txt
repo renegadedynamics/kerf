@@ -50,7 +50,7 @@ type Storage_StreamFormatError engine Foundation StreamFormatError => a Result's
 package TCollection removed Collections        # strings: string
 package Precision   engine Foundation          => Kerf.Geometry.Tolerances (new)
 package Quantity    engine Foundation          # colours: Kerf.Exchange.ColorRgba (new)
-type Quantity_Color engine Foundation Color => Kerf.Exchange.ColorRgba (new)
+type Quantity_Color engine Foundation LinearColor => Kerf.Color (new; 10L3)
 type Quantity_ColorRGBA engine Foundation ColorWithAlpha => Kerf.Exchange.ColorRgba (new)
 type Quantity_TypeOfColor engine Foundation ColorSpace => Kerf.Exchange.ColorRgba (new)
 package std         engine Foundation/Std      # the port's stand-ins for C++'s standard library
@@ -138,7 +138,7 @@ package ElCLib      engine Geometry
 package ElSLib      engine Geometry
 package Bnd         engine Geometry/Bounds
 type Bnd_Box       engine Geometry/Bounds Box   => Kerf.Geometry.BoundingBox (new)
-type Bnd_OBB       engine Geometry/Bounds OrientedBox => Kerf.Geometry.OrientedBox (new)
+type Bnd_OBB       engine Geometry/Bounds Obb => Kerf.Geometry.OrientedBox (new)
 package BVH         engine Geometry/Bvh
 package TopLoc      engine Topology
 type TopLoc_Location public Topology Placement  # a shape's location: a chain of shared transforms

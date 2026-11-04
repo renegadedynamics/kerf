@@ -28,7 +28,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// on the disk, beside the session's loaded file, as OCCT does (<c>OSD_File::Exists</c>), with
 /// <see cref="Path.GetFullPath(string, string)"/> in place of <c>OSD_Path::AbsolutePath</c> (decision 1277).
 /// </remarks>
-public class ExternRefs : ConstructTool
+internal class ExternRefs : ConstructTool
 {
     /// <summary>Creates an empty tool</summary>
     public ExternRefs()

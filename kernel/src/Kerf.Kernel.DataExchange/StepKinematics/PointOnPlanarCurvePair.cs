@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PointOnPlanarCurvePair
 /// </summary>
-public class PointOnPlanarCurvePair : HighOrderKinematicPair
+internal class PointOnPlanarCurvePair : HighOrderKinematicPair
 {
     private StepCurve _pairCurve;
     private bool _orientation;

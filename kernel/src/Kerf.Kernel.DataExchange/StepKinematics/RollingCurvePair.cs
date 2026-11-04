@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RollingCurvePair
 /// </summary>
-public class RollingCurvePair : PlanarCurvePair
+internal class RollingCurvePair : PlanarCurvePair
 {
     /// <summary>
     /// default constructor

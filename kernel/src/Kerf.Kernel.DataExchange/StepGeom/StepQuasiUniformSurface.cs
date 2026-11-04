@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepQuasiUniformSurface : StepBSplineSurface
+internal class StepQuasiUniformSurface : StepBSplineSurface
 {
     /// <summary>
     /// Returns a QuasiUniformSurface

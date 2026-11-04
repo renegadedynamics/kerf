@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP SELECT type DegreeOfFreedom
 /// </summary>
-public class FeaDegreeOfFreedom : SelectType
+internal class FeaDegreeOfFreedom : SelectType
 {
     /// <summary>
     /// Empty constructor

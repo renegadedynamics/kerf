@@ -46,7 +46,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// as OCCT documents.
 /// </para>
 /// </remarks>
-public partial class EdgeFixer : Transient
+internal partial class EdgeFixer : Transient
 {
     protected ReShapeBuilder?                  _context;
     protected int                                  _status;

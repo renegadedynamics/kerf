@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraModelD3 : CameraModel
+internal class CameraModelD3 : CameraModel
 {
     private StepAxis2Placement3d _viewReferenceSystem;
     private ViewVolume _perspectiveOfVolume;

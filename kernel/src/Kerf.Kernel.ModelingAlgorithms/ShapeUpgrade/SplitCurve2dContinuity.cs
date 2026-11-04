@@ -17,7 +17,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// splitting value. Trimmed and offset curves are processed through their basis.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class SplitCurve2dContinuity : SplitCurve2d
+internal class SplitCurve2dContinuity : SplitCurve2d
 {
     private Continuity _criterion;
     private int _cont;

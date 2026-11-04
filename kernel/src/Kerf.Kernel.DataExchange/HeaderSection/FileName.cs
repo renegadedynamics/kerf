@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>The FILE_NAME entity of a STEP file's header.</summary>
-public class FileName : Transient
+internal class FileName : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _timeStamp;

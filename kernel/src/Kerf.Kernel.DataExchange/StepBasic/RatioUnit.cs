@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class RatioUnit : NamedUnit
+internal class RatioUnit : NamedUnit
 {
     /// <summary>
     /// Returns a RatioUnit

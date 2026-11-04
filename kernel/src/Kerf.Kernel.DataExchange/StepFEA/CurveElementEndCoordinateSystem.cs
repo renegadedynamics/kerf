@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP SELECT type CurveElementEndCoordinateSystem
 /// </summary>
-public class CurveElementEndCoordinateSystem : SelectType
+internal class CurveElementEndCoordinateSystem : SelectType
 {
     /// <summary>
     /// Empty constructor

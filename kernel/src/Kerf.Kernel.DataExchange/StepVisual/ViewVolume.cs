@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class ViewVolume : Transient
+internal class ViewVolume : Transient
 {
     private CentralOrParallel _projectionType;
     private StepCartesianPoint _projectionPoint;

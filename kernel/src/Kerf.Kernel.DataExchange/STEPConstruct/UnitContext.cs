@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Construct;
 /// tolerances (uncertainties).
 /// </summary>
 /// <remarks>A C++ value class, a C# class here (decision 1185).</remarks>
-public class UnitContext
+internal class UnitContext
 {
     // abv 17.11.99: renamed from StepPDR_MakeUnitAndToleranceContext and merged with STEPControl_Unit
     // abv 30.02.00: ability to write file in units other than MM

@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepBezierSurface : StepBSplineSurface
+internal class StepBezierSurface : StepBSplineSurface
 {
     /// <summary>
     /// Returns a BezierSurface

@@ -32,7 +32,7 @@ namespace Kerf.Engine.Construction.Library;
 /// area.</para>
 /// <para>A working object; it only reads the shape. <see cref="Surface"/> freezes the surface it returns.</para>
 /// </remarks>
-public class FindSurface
+internal class FindSurface
 {
     private Surface? _surface;
     private double _tolerance;

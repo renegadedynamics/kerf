@@ -15,7 +15,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Offsets;
 
 /// <summary>Auxiliary tools for the offset algorithms.</summary>
-public static class BRepOffset
+internal static class BRepOffset
 {
     //=================================================================================================
 

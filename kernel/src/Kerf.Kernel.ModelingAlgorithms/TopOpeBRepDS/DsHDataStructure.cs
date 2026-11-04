@@ -27,7 +27,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// reading, <see cref="ChangeDS"/> and the storing functions internal. <c>ChkIntg</c> (TopOpeBRepDS_Check, a builder
 /// tool) is not ported.
 /// </remarks>
-public sealed class DsHDataStructure : Transient
+internal sealed class DsHDataStructure : Transient
 {
     private readonly DsDataStructure _ds = new();
 

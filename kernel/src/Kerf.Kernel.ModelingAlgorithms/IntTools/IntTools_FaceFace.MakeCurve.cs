@@ -524,7 +524,7 @@ public partial class FaceFace
                     double tol2d, tolApproxImp;
                     NCollection_Sequence<PatchLine> seqOfL = new();
                     WLApprox theapp3d = new();
-                    ParametrizationType parType = ParametrizationType.ChordLength;
+                    global::Kerf.Geometry.ParametrizationType parType = global::Kerf.Geometry.ParametrizationType.ChordLength;
                     //
                     bool approx1 = _approx1;
                     bool approx2 = _approx2;

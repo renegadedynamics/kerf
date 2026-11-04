@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// iterations (<c>SearchPoint</c>), so the line it is given changes. OCCT keeps the function as a raw pointer; here
 /// it is a reference.
 /// </remarks>
-public abstract class AppFuncRoot : SweepFunction
+internal abstract class AppFuncRoot : SweepFunction
 {
     private readonly Line _line;
     private readonly AppFunction _func;

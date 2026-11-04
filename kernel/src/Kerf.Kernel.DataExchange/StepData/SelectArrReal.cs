@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>A named select member holding an array of reals.</summary>
-public class SelectArrReal : SelectNamed
+internal class SelectArrReal : SelectNamed
 {
     //  Definitions : cf Field
     private const int KindArrReal = 8;

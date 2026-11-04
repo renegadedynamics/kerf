@@ -9,7 +9,7 @@ namespace Kerf.Engine.Construction.Laws;
 
 /// <summary>An "S" evolution law: a cubic between two values, with given derivatives at the ends.</summary>
 /// <remarks>A working object (decision 21): <see cref="Set(double, double, double, double)"/> is public and changes the law.</remarks>
-public class S : BSpFunc
+internal class S : BSpFunc
 {
     /// <summary>An empty S law.</summary>
     public S()

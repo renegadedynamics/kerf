@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// Geom2dGcc_Circ2d2TanOnIter, which gives at most one solution near the given parameters, its centre copied (OCCT left
 /// CenterOn3 0 and the origin: Kerf decision 17106).
 /// </remarks>
-public sealed class Circ2d2TanOn
+internal sealed class Circ2d2TanOn
 {
     private bool _wellDone;
     private readonly NCollection_Array1<Circle2D> _cirsol;

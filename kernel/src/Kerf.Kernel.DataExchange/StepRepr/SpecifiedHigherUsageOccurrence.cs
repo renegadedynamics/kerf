@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity SpecifiedHigherUsageOccurrence
 /// </summary>
-public class SpecifiedHigherUsageOccurrence : AssemblyComponentUsage
+internal class SpecifiedHigherUsageOccurrence : AssemblyComponentUsage
 {
     private AssemblyComponentUsage _upperUsage;
     private NextAssemblyUsageOccurrence _nextUsage;

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ReprItemAndPlaneAngleMeasureWithUnit : ReprItemAndMeasureWithUnit
+internal class ReprItemAndPlaneAngleMeasureWithUnit : ReprItemAndMeasureWithUnit
 {
     private PlaneAngleMeasureWithUnit _planeAngleMeasureWithUnit;
 

@@ -35,7 +35,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// <see cref="MaxShapeNesting"/> deep, and input that ends where OCCT would loop for ever.
 /// </para>
 /// </remarks>
-public class ShapeSet
+internal class ShapeSet
 {
     // OCCT's version strings, by format number
     internal static readonly string[] THE_ASCII_VERSIONS =

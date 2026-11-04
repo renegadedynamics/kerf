@@ -193,7 +193,7 @@ internal static class BRepTestBoundingCommands
         // 2. Compute box and save results
         if (isOBB)
         {
-            var anOBB = new OrientedBox();
+            var anOBB = new Obb();
             Bounds.AddOBB(aShape, ref anOBB, isTriangulationReq, isOptimal, isTolerUsed);
 
             if (anOBB.IsVoid)
@@ -300,7 +300,7 @@ internal static class BRepTestBoundingCommands
             // save as shape
             if (aResShapeName.Length != 0)
             {
-                return ConvertBndToShape(theDI, theResult, new OrientedBox(anAABB), aResShapeName);
+                return ConvertBndToShape(theDI, theResult, new Obb(anAABB), aResShapeName);
             }
         }
 
@@ -308,7 +308,7 @@ internal static class BRepTestBoundingCommands
     }
 
     /// <summary>ConvertBndToShape: the box as a solid (BRepPrimAPI_MakeBox on the box's axes), or a null shape for a void box.</summary>
-    private static int ConvertBndToShape(DrawInterpreter theDI, DrawResult theResult, in OrientedBox theBox, string theName)
+    private static int ConvertBndToShape(DrawInterpreter theDI, DrawResult theResult, in Obb theBox, string theName)
     {
         if (theBox.IsVoid)
         {
@@ -350,7 +350,7 @@ internal static class BRepTestBoundingCommands
 
         if (isOBB)
         {
-            OrientedBox anOBB1 = new(), anOBB2 = new();
+            Obb anOBB1 = new(), anOBB2 = new();
             Bounds.AddOBB(aShape1, ref anOBB1);
             Bounds.AddOBB(aShape2, ref anOBB2);
             theResult.Append(anOBB1.IsOut(anOBB2) ? "The shapes are NOT interfered by OBB.\n" : "The shapes are interfered by OBB.\n");

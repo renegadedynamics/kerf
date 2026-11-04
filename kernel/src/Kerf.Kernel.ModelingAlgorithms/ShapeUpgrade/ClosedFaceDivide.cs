@@ -23,7 +23,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// one, across the seam's direction.
 /// </summary>
 /// <remarks>A working object (decision 21). The face given is not modified (see <see cref="FaceDivide"/>).</remarks>
-public class ClosedFaceDivide : FaceDivide
+internal class ClosedFaceDivide : FaceDivide
 {
     private int _nbSplit;
 

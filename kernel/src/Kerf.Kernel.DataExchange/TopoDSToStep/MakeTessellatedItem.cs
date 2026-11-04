@@ -25,7 +25,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 /// Maps the triangulation of a face to a triangulated_face or a triangulated_surface_set, and the triangulations of a
 /// shell's faces to a tessellated_shell.
 /// </summary>
-public sealed class MakeTessellatedItem : ExportRoot
+internal sealed class MakeTessellatedItem : ExportRoot
 {
     private TessellatedItem _tessellatedItem;
 

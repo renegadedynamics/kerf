@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraModel : StepGeometricRepresentationItem
+internal class CameraModel : StepGeometricRepresentationItem
 {
     /// <summary>
     /// Returns a CameraModel

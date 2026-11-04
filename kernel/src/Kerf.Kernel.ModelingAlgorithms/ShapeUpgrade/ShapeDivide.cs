@@ -36,7 +36,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// what they return, its internal forms don't.
 /// </para>
 /// </remarks>
-public class ShapeDivide
+internal class ShapeDivide
 {
     /// <summary>The context.</summary>
     protected ReShapeBuilder? _context;

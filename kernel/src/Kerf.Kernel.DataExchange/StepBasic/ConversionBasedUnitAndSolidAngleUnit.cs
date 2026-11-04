@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndSolidAngleUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndSolidAngleUnit : ConversionBasedUnit
 {
     private SolidAngleUnit _solidAngleUnit;
 

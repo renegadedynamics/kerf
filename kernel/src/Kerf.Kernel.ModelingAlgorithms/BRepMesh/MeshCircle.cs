@@ -9,7 +9,7 @@ namespace Kerf.Engine.Meshing;
 
 /// <summary>A 2D circle stored as its centre and radius only (three doubles).</summary>
 /// <remarks>The default circle is the origin with radius 0, as OCCT's; <c>default(T)</c> is the same.</remarks>
-public partial struct MeshCircle : IEquatable<MeshCircle>
+internal partial struct MeshCircle : IEquatable<MeshCircle>
 {
     private Xy _location;
     private double _radius;

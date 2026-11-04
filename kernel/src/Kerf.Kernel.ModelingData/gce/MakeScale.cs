@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>A scaling in 3D space, as a gp_Trsf.</summary>
-public sealed class MakeScale
+internal sealed class MakeScale
 {
     private Transform3D _theScale = new();
 

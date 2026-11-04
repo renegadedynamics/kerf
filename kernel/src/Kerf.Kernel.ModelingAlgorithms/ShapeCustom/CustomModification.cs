@@ -16,7 +16,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// A modification for <see cref="Modifier"/> that can send messages about the shapes it modifies to a
 /// message registrator: the base of ShapeCustom's modifications.
 /// </summary>
-public abstract class CustomModification : Modification
+internal abstract class CustomModification : Modification
 {
     private BasicMsgRegistrator? _msgReg;
 

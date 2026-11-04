@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Import;
 
 /// <summary>The root of the STEP to topology translators: their state (done), precision and maximum tolerance.</summary>
-public class ImportRoot
+internal class ImportRoot
 {
     protected bool _done;
     private double _precision;

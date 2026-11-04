@@ -32,7 +32,7 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// (decision 1236). The tree's roots are the default scene's nodes (all parentless nodes if there is no scene).
 /// </para>
 /// <para>
-/// Hostile input (<see cref="ReadLimits"/>): the file and buffer sizes, the node count and depth, the triangle
+/// Hostile input (<see cref="GltfReadLimits"/>): the file and buffer sizes, the node count and depth, the triangle
 /// count and the JSON nesting are bounded; every index and accessor range is checked against what it refers to; a
 /// node may have one parent; required extensions not supported, sparse accessors and data that isn't 32-bit floats for
 /// positions and normals are refused. An error stops the reading (<see cref="Error"/>) and gives no tree. External
@@ -40,7 +40,7 @@ namespace Kerf.Engine.Exchange.Gltf;
 /// folder only. The tree's shapes are frozen. Cancellation through the progress range.
 /// </para>
 /// </remarks>
-public sealed class TreeReader
+internal sealed class TreeReader
 {
     private const int Float = 5126;
     private const int UNSIGNED_BYTE = 5121;
@@ -141,7 +141,7 @@ public sealed class TreeReader
 
     private sealed class Context(TreeReader theReader, Func<string, Stream?>? theResolver)
     {
-        private readonly ReadLimits _limits = theReader.Options.Limits;
+        private readonly GltfReadLimits _limits = theReader.Options.Limits;
         private readonly CoordinateConverter _toModel =
             new CoordinateConverter(theReader.Options.OutputLengthUnit, theReader.Options.YUpToZUp).Inverse();
         private JsonElement _root;

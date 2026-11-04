@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class PlaneAngleMeasureWithUnit : MeasureWithUnit
+internal class PlaneAngleMeasureWithUnit : MeasureWithUnit
 {
     /// <summary>
     /// Returns a PlaneAngleMeasureWithUnit

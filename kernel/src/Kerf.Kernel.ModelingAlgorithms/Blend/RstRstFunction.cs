@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// The function of a blending surface between two restrictions (curves on surfaces) along a guide line. Its
 /// variables are the parameters on the two restrictions.
 /// </summary>
-public abstract class RstRstFunction : AppFunction
+internal abstract class RstRstFunction : AppFunction
 {
     /// <summary>Not implemented: throws <see cref="MethodNotImplementedException"/>.</summary>
     public override double GetMinimalDistance()

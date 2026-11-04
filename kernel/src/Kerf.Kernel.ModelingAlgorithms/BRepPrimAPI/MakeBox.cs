@@ -25,7 +25,7 @@ namespace Kerf.Engine.Construction.Api;
 /// place, by building the shell.</para>
 /// <para>A flat box (a size not over Precision::Confusion()) throws Standard_DomainError when it is built.</para>
 /// </remarks>
-public class MakeBox : MakeShape
+internal class MakeBox : MakeShape
 {
     private protected Wedge _wedge;
 

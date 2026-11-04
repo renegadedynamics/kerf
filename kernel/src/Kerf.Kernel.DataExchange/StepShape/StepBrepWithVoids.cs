@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepBrepWithVoids : StepManifoldSolidBrep
+internal class StepBrepWithVoids : StepManifoldSolidBrep
 {
     private NCollection_HArray1<StepOrientedClosedShell> _voids;
 

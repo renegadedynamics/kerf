@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of SurfaceOfLinearExtrusion from Geom to a STEP surface_of_linear_extrusion.</summary>
-public sealed class MakeSurfaceOfLinearExtrusion : GeometryRoot
+internal sealed class MakeSurfaceOfLinearExtrusion : GeometryRoot
 {
     private StepSurfaceOfLinearExtrusion _surfaceOfLinearExtrusion;
 

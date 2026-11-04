@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Plate;
 
 /// <summary>A G0 constraint of a non-linear plate: the surface passes through a target point at a UV point.</summary>
-public class Hpg0Constraint : HgppConstraint
+internal class Hpg0Constraint : HgppConstraint
 {
     private readonly Xyz _xyzTarget;
     private bool _uvIsFree;

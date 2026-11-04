@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaAreaDensity
 /// </summary>
-public class FeaAreaDensity : FeaMaterialPropertyRepresentationItem
+internal class FeaAreaDensity : FeaMaterialPropertyRepresentationItem
 {
     private double _feaConstant;
 

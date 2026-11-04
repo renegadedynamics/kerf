@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// already defined, for one use : If this alternate list is set, InputResult queries it instead of calling
 /// the input selection, then clears it immediately
 /// </summary>
-public abstract class SelectDeduct : AbstractSelection
+internal abstract class SelectDeduct : AbstractSelection
 {
 
     /// <summary>

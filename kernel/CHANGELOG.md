@@ -1923,6 +1923,42 @@ Phase 10 (part): the public API, part 1: the shared types, geometry and topology
   layer still reach them. `BRepOffset_Interval` is `OffsetInterval`.
 - `docs/api/kerf-10l1.map` holds the renames, for kerf-rename to apply to other code (Bento).
 
+Phase 10 (part): the public API, part 2: geometry's operations, construction, Booleans, fillets, offsets and features
+(unit 10L2).
+- `Kerf.Geometry.GeometryOperations`: arcs and segments (`TrimmedCurve3D.ArcThrough`, `Arc`, `Segment`), fitting
+  (`BSplineCurve3D.Interpolate`, `Approximate`, `Join`; `BSplineSurface.Approximate`), conversion (`ToBSpline`,
+  `ToCurve2D`, `ToCurve3D`), projection (`Project`, `TryProjectNearest`), intersection (`Intersect`) and
+  `surface.TryGetPlane`, each returning a `Result` where it can fail. The splines' `WithPole`, `WithWeight` and
+  `WithKnot` are indexed from 0.
+- `Kerf.Construction`: `Solid.Box`, `Cylinder`, `Cone`, `Sphere`, `Torus`, `Wedge`, `HalfSpace`; `shape.Extrude`,
+  `Revolve`, `Sweeps.Sweep`, `Loft`, `Ruled`; `Edge.Line`, `Wire.FromEdges`, `Wire.Polygon`, `Face.FromWire` and the
+  other shapes from geometry; `Transformed`, `Mirrored`, `Scaled`; `ShapeProjections.Project`.
+- `Kerf.Booleans`: `a.Fuse(b)`, `Cut`, `Common`, `Section`, and `BooleanOperations.FuseAll`, `Split`, `Partition`, with
+  `BooleanOptions`; never changing their inputs, simplified by default.
+- `Kerf.Fillets`: `Fillet`, `Chamfer`, `Fillet2D`, `Chamfer2D`; a failure names the edges that failed.
+- `Kerf.Offsets` and `Kerf.Features`: `Offset`, `Thicken`, `Offset2D`, `solid.Hollow`; `Draft`, `ExtrudeUntil`,
+  `SplitFaces`.
+- Every operation returns its shape with its history (`Built<T>`), the engine's statuses and alerts as diagnostics, and
+  throws `OperationCanceledException` when cancelled.
+- `GlueMode` (members `Off`, `Shift`, `Full`), `FilletShape`, `OffsetMode`, `TransitionMode` and `ParametrizationType`
+  moved into the public namespaces; 686 more engine types (construction, Booleans, fillets, offsets, features) are
+  internal. `docs/api/kerf-10l2.map` holds the renames.
+Phase 10 (part): the public API, part 3: measurement, healing, meshing and exchange (unit 10L3).
+- `Kerf.Measurement`: `part.Volume()`, `Area()`, `Length()`, `MassProperties(Dimension)`, `BoundingBox()`,
+  `OrientedBox()`, `Distance(other)` (a `Result` with the closest points and their supports), `Intersect(line)` and
+  `solid.Classify(point)`. `Kerf.Geometry.OrientedBox` is a value.
+- `Kerf.Healing`: `Validate()` (a report of every fault, coded `check.not-closed`…), `Fix()`, `Unify()`, `Sew(faces)`,
+  `shell.MakeSolid()`, `FixWireframe`, `ConvertToBSpline`, `ConnectEdges`, `FreeBoundaries`, with options records.
+- `Kerf.Meshing`: `part.Mesh(options)` gives a `ShapeMesh` of flat buffers (positions, normals, triangles per face,
+  edge polylines) and leaves the shape alone: no triangles are stored on its faces. A big mesh copies out with little
+  more than its buffers.
+- `Kerf.Exchange`: `Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj` and `Brep` read and write streams with `ReadLimits` and
+  cancellation, and return `Result`s; assemblies, names and colours travel as `ModelNode`; `Kerf.Color` is sRGB. Files
+  are byte for byte what the engine wrote before. Meshes read from STL and glTF are `ShapeMesh`es.
+- Engine types renamed so the public names are free: `LinearColor` (Quantity_Color), `Obb` (Bnd_OBB),
+  `GltfReadLimits`, `GltfWriterOptions`, `ObjWriterOptions`, `StepLengthUnit`. 1,229 engine types of these areas are
+  internal; the kernel, its tests, Draw-lite, the benchmarks and, until 10M, the modelling layer still reach them.
+
 Phase 10 (part): OCCT's bugs in the 2D constraint solvers (unit 10K4, batch K4).
 - GccAna's circle solvers (three tangents; two tangents centred on a line or circle; two tangents and a radius; a
   tangent, a centre locus and a radius) return only circles tangent to their arguments with the qualifiers asked,

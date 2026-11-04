@@ -426,7 +426,7 @@ internal static partial class Build123dPhase7Capture
                     {
                         aClosing.Append(aFaces[i - 1]);
                     }
-                    aMT.MakeThickSolidByJoin(theOps[0], aClosing, a.Value, a.Tol, OffsetMode.Skin, a.Inter, false,
+                    aMT.MakeThickSolidByJoin(theOps[0], aClosing, a.Value, a.Tol, global::Kerf.Offsets.OffsetMode.Skin, a.Inter, false,
                                              (JoinKind)a.Join, a.RemoveIntEdges);
                     aMT.Build();
                     string aStatus = $"done={aMT.IsDone} error={(int)aMT.MakeOffset().Error()}";
@@ -443,7 +443,7 @@ internal static partial class Build123dPhase7Capture
                     }
                     else
                     {
-                        aMO.Initialize(theOps[0], a.Value, a.Tol, OffsetMode.Skin, a.Inter, false, (JoinKind)a.Join,
+                        aMO.Initialize(theOps[0], a.Value, a.Tol, global::Kerf.Offsets.OffsetMode.Skin, a.Inter, false, (JoinKind)a.Join,
                                        a.Thickening, a.RemoveIntEdges);
                     }
                     aMO.MakeOffsetShape();

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// pipe algorithm): OCCT's instantiation of AppBlend_AppSurf over GeomFill_SweepSectionGenerator and GeomFill_Line.
 /// </summary>
 /// <remarks>A sealed subclass with OCCT's constructors, as <see cref="SurfaceAppSurf"/>; the members are the base class's.</remarks>
-public sealed class AppSweep : AppSurf<SweepSectionGenerator, SurfaceLine, int>
+internal sealed class AppSweep : AppSurf<SweepSectionGenerator, SurfaceLine, int>
 {
     public AppSweep()
     {

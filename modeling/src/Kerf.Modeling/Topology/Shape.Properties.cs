@@ -306,7 +306,7 @@ public abstract partial class Shape
     /// <summary>The smallest box in any orientation containing this shape.</summary>
     public OrientedBoundBox OrientedBoundingBox()
     {
-        var obb = new OrientedBox();
+        var obb = new Obb();
         if (!IsEmpty)
             Bounds.AddOBB(_wrapped, ref obb, true);
         return Kerf.Modeling.OrientedBoundBox.Own(obb);

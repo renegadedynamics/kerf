@@ -16,7 +16,7 @@ namespace Kerf.Engine.Booleans;
 /// The root of the algorithms that build areas from a set of shapes: faces from edges (BOPAlgo_BuilderFace) and solids
 /// from faces (BOPAlgo_BuilderSolid).
 /// </summary>
-public abstract class BuilderArea : BooleanAlgorithm
+internal abstract class BuilderArea : BooleanAlgorithm
 {
     protected IntersectionContext? _context;
     protected NCollection_List<Shape> _shapes = new();

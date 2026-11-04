@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PreDefinedColour : Colour
+internal class PreDefinedColour : Colour
 {
     private PreDefinedItem _item;
 

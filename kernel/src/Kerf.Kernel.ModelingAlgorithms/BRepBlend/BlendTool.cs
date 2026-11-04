@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>The walkers' tools on the arcs of restriction: projection, intersection with a segment, vertices.</summary>
-public static class BlendTool
+internal static class BlendTool
 {
     /// <summary>
     /// Projects the point <paramref name="p"/> on the arc <paramref name="c"/>: <paramref name="paramproj"/> is the

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Features.Draft;
 
 /// <summary>What the draft modification knows of a face: its new surface and the face it was added with.</summary>
 /// <remarks>A value type in C++; a class in the port (decision 1033), as <see cref="DraftEdgeInfo"/>.</remarks>
-public sealed class DraftFaceInfo
+internal sealed class DraftFaceInfo
 {
     private bool _newGeom;
     private Surface? _geom;

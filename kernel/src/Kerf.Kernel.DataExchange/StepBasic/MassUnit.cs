@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity MassUnit
 /// </summary>
-public class MassUnit : NamedUnit
+internal class MassUnit : NamedUnit
 {
     /// <summary>
     /// Empty constructor

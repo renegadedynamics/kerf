@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// and surfaces that can't be read are one null entry. As in OCCT, <see cref="Add"/> and <see cref="Index"/> accept
 /// null (the null entry).
 /// </remarks>
-public class SurfaceSet
+internal class SurfaceSet
 {
     private const int Plane = 1;
     private const int Cylinder = 2;

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// The function of an asymmetric chamfer between two surfaces along a guide curve: a distance on the first surface
 /// and an angle.
 /// </summary>
-public class ChAsym : BlendFunction
+internal class ChAsym : BlendFunction
 {
     private readonly SurfaceAdaptorBase _surf1;
     private readonly SurfaceAdaptorBase _surf2;

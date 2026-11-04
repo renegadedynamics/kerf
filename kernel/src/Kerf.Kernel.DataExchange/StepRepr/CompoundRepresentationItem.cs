@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class CompoundRepresentationItem : RepresentationItem
+internal class CompoundRepresentationItem : RepresentationItem
 {
     private NCollection_HArray1<RepresentationItem> _itemElement;
 

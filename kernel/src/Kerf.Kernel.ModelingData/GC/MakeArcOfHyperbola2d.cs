@@ -12,7 +12,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>Constructions of an arc of hyperbola in 2D as a Geom2d_TrimmedCurve.</summary>
-public sealed class MakeArcOfHyperbola2d : Root
+internal sealed class MakeArcOfHyperbola2d : Root
 {
     private TrimmedCurve2D? _theArc;
 

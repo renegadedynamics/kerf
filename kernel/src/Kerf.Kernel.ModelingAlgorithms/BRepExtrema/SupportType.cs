@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Measurement.Distance;
 
 /// <summary>Where a solution of a distance lies: at a vertex, on an edge or inside a face.</summary>
-public enum SupportType
+internal enum SupportType
 {
     IsVertex,
     IsOnEdge,

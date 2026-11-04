@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class DraughtingPreDefinedCurveFont : PreDefinedCurveFont
+internal class DraughtingPreDefinedCurveFont : PreDefinedCurveFont
 {
     /// <summary>
     /// Returns a DraughtingPreDefinedCurveFont

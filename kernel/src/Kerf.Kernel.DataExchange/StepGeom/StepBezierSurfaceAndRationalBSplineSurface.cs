@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepBezierSurfaceAndRationalBSplineSurface : StepBSplineSurface
+internal class StepBezierSurfaceAndRationalBSplineSurface : StepBSplineSurface
 {
     private StepBezierSurface _bezierSurface;
     private StepRationalBSplineSurface _rationalBSplineSurface;

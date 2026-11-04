@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// A value type (rules, section 3); its fields are internal, as OCCT's friend GeomPlate_BuildAveragePlane reads and
 /// writes them (HalfSpace re-indexes the pairs it keeps).
 /// </remarks>
-public struct Aij : IEquatable<Aij>
+internal struct Aij : IEquatable<Aij>
 {
     internal int _ind1;
     internal int _ind2;

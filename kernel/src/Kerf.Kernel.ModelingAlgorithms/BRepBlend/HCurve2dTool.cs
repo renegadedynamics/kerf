@@ -12,7 +12,7 @@ using static Kerf.Geometry.CurveKind;
 namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>Static access to a 2D curve adaptor (an arc of restriction), as the blend walkers call it.</summary>
-public static class HCurve2dTool
+internal static class HCurve2dTool
 {
     public static double FirstParameter(Curve2DAdaptorBase c) => c.FirstParameter();
 

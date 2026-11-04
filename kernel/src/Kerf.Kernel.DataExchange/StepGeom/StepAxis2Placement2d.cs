@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepAxis2Placement2d : StepPlacement
+internal class StepAxis2Placement2d : StepPlacement
 {
     private StepDirection _refDirection;
     private bool _hasRefDirection;

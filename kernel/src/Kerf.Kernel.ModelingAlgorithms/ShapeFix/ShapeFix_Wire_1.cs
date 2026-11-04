@@ -27,7 +27,7 @@ using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Healing.Fixes;
 
-public partial class WireFixer
+internal partial class WireFixer
 {
     /// <summary>Fixes the gaps between the 3d curves of adjacent edges (see <see cref="FixGap3d"/>).</summary>
     public bool FixGaps3d()

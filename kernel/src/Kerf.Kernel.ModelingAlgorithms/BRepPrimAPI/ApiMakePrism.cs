@@ -26,7 +26,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <para>The result, <see cref="MakeSweep.FirstShape()"/>, <see cref="LastShape(in Shape)"/> and the
 /// history are frozen when returned (design 4.2).</para>
 /// </remarks>
-public class ApiMakePrism : MakeSweep
+internal class ApiMakePrism : MakeSweep
 {
     private readonly Prism _prism;
 

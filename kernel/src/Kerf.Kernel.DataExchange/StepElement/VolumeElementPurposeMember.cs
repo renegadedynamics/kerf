@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of member for STEP SELECT type VolumeElementPurpose
 /// </summary>
-public class VolumeElementPurposeMember : SelectNamed
+internal class VolumeElementPurposeMember : SelectNamed
 {
     private const string Evep = "ENUMERATED_VOLUME_ELEMENT_PURPOSE";
     private const string Adep = "APPLICATION_DEFINED_ELEMENT_PURPOSE";

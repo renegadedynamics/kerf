@@ -12,7 +12,7 @@ using Kerf.Engine.Offsets.Api;
 using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -120,7 +120,7 @@ public class BRepOffset_MakeOffset_Test
     {
         NCollection_List<Shape> aFacesToRemove = new();
         MakeThickSolid aThickMaker = new();
-        aThickMaker.MakeThickSolidByJoin(theShape, aFacesToRemove, theOffset, 1.0e-3, OffsetMode.Skin, theInter, false,
+        aThickMaker.MakeThickSolidByJoin(theShape, aFacesToRemove, theOffset, 1.0e-3, global::Kerf.Offsets.OffsetMode.Skin, theInter, false,
                                          Intersection);
         aThickMaker.Build();
         return aThickMaker;

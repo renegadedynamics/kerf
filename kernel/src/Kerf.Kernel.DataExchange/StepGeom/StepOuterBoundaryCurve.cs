@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepOuterBoundaryCurve : StepBoundaryCurve
+internal class StepOuterBoundaryCurve : StepBoundaryCurve
 {
     /// <summary>
     /// Returns a OuterBoundaryCurve

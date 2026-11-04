@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans.Api;
 /// frozen; they answer for the input's sub-shapes. Features that can't be removed are reported as warnings
 /// (<see cref="AlertUnableToRemoveTheFeature"/>). The input shape is never written.
 /// </remarks>
-public class Defeaturing : Algo
+internal class Defeaturing : Algo
 {
     protected Shape _inputShape = new();                     //!< Input shape to remove the features from
     protected NCollection_List<Shape> _facesToRemove = new(); //!< Features to remove from the shape

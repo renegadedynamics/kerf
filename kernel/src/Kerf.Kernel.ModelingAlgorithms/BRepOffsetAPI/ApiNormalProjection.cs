@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Api;
 /// shape, <see cref="Add"/> the edges and wires, then <see cref="Build"/>. The result is a compound of edges.
 /// </summary>
 /// <remarks>A maker (decision 414): the inputs are only read; <see cref="MakeShape.Shape"/> freezes.</remarks>
-public sealed class ApiNormalProjection : MakeShape
+internal sealed class ApiNormalProjection : MakeShape
 {
     private readonly NormalProjection _normalProjector = new();
 

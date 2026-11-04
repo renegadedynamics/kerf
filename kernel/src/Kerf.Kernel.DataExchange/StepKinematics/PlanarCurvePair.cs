@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PlanarCurvePair
 /// </summary>
-public class PlanarCurvePair : HighOrderKinematicPair
+internal class PlanarCurvePair : HighOrderKinematicPair
 {
     private StepCurve _curve1;
     private StepCurve _curve2;

@@ -815,7 +815,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P.</summary>
-    internal BezierCurve2D WithPole(int index, in Point2D p)
+    internal BezierCurve2D WithPoleOneBased(int index, in Point2D p)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.SetPole(index, p);
@@ -823,7 +823,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the pole of index Index replaced by P, of weight Weight.</summary>
-    internal BezierCurve2D WithPole(int index, in Point2D p, double weight)
+    internal BezierCurve2D WithPoleOneBased(int index, in Point2D p, double weight)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.SetPole(index, p, weight);
@@ -831,7 +831,7 @@ public sealed partial class BezierCurve2D : BoundedCurve2D
     }
 
     /// <summary>A copy with the weight of the pole of index Index changed to Weight.</summary>
-    internal BezierCurve2D WithWeight(int index, double weight)
+    internal BezierCurve2D WithWeightOneBased(int index, double weight)
     {
         BezierCurve2D copy = new BezierCurve2D(this);
         copy.SetWeight(index, weight);

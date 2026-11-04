@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraImage : MappedItem
+internal class CameraImage : MappedItem
 {
     /// <summary>
     /// Returns a CameraImage

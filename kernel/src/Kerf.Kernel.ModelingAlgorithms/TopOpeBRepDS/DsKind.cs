@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>The kinds of object in the legacy data structure: its geometries (point, curve, surface) and shapes.</summary>
-public enum DsKind
+internal enum DsKind
 {
     Point,
     Curve,

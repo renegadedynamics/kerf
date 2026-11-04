@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of vectors (Vector from Geom and Geom2d, Vec and Vec2d from gp) to a STEP vector.</summary>
-public sealed class MakeVector : GeometryRoot
+internal sealed class MakeVector : GeometryRoot
 {
     private StepVector _vector;
 

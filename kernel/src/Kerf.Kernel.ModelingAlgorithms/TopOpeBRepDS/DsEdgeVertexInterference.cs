@@ -9,7 +9,7 @@ using static Kerf.Engine.Booleans.Legacy.Data.DsKind;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>An interference of a vertex on an edge, at a parameter of the edge.</summary>
-public sealed class DsEdgeVertexInterference : DsShapeShapeInterference
+internal sealed class DsEdgeVertexInterference : DsShapeShapeInterference
 {
     private double _param;
 

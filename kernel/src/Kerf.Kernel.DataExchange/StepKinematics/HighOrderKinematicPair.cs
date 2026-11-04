@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity HighOrderKinematicPair
 /// </summary>
-public class HighOrderKinematicPair : KinematicPair
+internal class HighOrderKinematicPair : KinematicPair
 {
     /// <summary>
     /// default constructor

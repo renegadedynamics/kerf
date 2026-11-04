@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSurfaceOfLinearExtrusion : StepSweptSurface
+internal class StepSurfaceOfLinearExtrusion : StepSweptSurface
 {
     private StepVector _extrusionAxis;
 

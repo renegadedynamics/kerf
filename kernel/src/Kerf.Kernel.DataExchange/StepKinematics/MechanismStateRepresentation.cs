@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Kinematics;
 
-public class MechanismStateRepresentation : StepRepresentation
+internal class MechanismStateRepresentation : StepRepresentation
 {
     private MechanismRepresentation _representedMechanism;
 

@@ -17,7 +17,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// tolerances stored in the shapes (not those <see cref="Tool"/> returns, which are at least
 /// Precision::Confusion()), multiplied by the scale factor.
 /// </summary>
-public class CustomTrsfModification : TrsfModification
+internal class CustomTrsfModification : TrsfModification
 {
     /// <summary>The modification applying <paramref name="t"/>.</summary>
     public CustomTrsfModification(in Transform3D t)

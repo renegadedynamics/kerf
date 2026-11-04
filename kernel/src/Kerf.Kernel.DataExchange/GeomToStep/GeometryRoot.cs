@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// through <c>Value()</c>, which throws StdFail_NotDone when the conversion wasn't done. The port's makers are
 /// classes; the entities they make are new (decision 1239).
 /// </remarks>
-public abstract class GeometryRoot
+internal abstract class GeometryRoot
 {
     protected bool _done;
 

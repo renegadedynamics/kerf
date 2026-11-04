@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaSecantCoefficientOfLinearThermalExpansion
 /// </summary>
-public class FeaSecantCoefficientOfLinearThermalExpansion : FeaMaterialPropertyRepresentationItem
+internal class FeaSecantCoefficientOfLinearThermalExpansion : FeaMaterialPropertyRepresentationItem
 {
     private SymmetricTensor23d _feaConstants = new SymmetricTensor23d();
     private double _referenceTemperature;

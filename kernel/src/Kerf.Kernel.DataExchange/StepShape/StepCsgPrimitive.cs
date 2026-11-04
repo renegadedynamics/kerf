@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepCsgPrimitive : SelectType
+internal class StepCsgPrimitive : SelectType
 {
     /// <summary>
     /// Returns a CsgPrimitive SelectType

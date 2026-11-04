@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity GeometricToleranceWithDatumReference
 /// </summary>
-public class GeometricToleranceWithDatumReference : GeometricTolerance
+internal class GeometricToleranceWithDatumReference : GeometricTolerance
 {
     private NCollection_HArray1<DatumSystemOrReference> _datumSystem;
 

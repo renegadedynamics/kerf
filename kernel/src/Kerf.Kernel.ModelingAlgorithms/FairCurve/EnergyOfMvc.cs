@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// The energy criterion that FairCurve_MinimalVariation minimises: tension, plus jerk and sagging mixed by the
 /// physical ratio.
 /// </summary>
-public class EnergyOfMvc : Energy
+internal class EnergyOfMvc : Energy
 {
     private double _myLengthSliding;
     private readonly double _originalSliding;

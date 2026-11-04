@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Basic;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepBasic_SiPrefix;</c>.</remarks>
-public enum SiPrefix
+internal enum SiPrefix
 {
     SpExa,
     SpPeta,

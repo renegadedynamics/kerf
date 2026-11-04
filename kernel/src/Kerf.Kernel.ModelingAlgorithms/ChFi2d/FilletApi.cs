@@ -18,7 +18,7 @@ namespace Kerf.Engine.Fillets.Planar;
 /// common point), chosen from the arguments (a wire or two edges).
 /// </summary>
 /// <remarks>A working object; its results are new, frozen edges. The edges it is given are only read.</remarks>
-public sealed class FilletApi
+internal sealed class FilletApi
 {
     // Implementation of the fillet algorithm.
     private readonly FilletAlgo _filletAlgo = new();

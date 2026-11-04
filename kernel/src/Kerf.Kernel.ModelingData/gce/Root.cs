@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Values;
 /// A construction is computed by its constructor. OCCT leaves the status unset on a few paths (occt-issues.md); the
 /// port's starts as <see cref="ErrorType.Done"/>, a .NET field's default.
 /// </remarks>
-public class Root
+internal class Root
 {
     protected ErrorType _theError;
 

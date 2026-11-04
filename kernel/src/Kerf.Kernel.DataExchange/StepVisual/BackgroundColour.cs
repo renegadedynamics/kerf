@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class BackgroundColour : Colour
+internal class BackgroundColour : Colour
 {
     private AreaOrView _presentation = new AreaOrView();
 

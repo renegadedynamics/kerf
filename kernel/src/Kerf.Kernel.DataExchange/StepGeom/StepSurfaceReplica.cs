@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSurfaceReplica : StepSurface
+internal class StepSurfaceReplica : StepSurface
 {
     private StepSurface _parentSurface;
     private StepCartesianTransformationOperator3d _transformation;

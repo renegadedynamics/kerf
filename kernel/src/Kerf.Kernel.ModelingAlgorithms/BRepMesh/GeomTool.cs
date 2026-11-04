@@ -25,7 +25,7 @@ namespace Kerf.Engine.Meshing;
 /// segment intersections, the deflection of a segment, the cell counts of the circles' grid).
 /// </summary>
 /// <remarks>A working object, as OCCT's: <see cref="AddPoint"/> changes the discretization in place.</remarks>
-public sealed class GeomTool
+internal sealed class GeomTool
 {
     /// <summary>The states of the intersection check of two segments.</summary>
     public enum IntFlag

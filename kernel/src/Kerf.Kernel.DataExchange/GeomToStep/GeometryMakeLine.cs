@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The line's vector is its unit direction made a vector: for a 3D line its magnitude is 1 divided by the length
 /// factor, as OCCT writes it.
 /// </remarks>
-public sealed class GeometryMakeLine : GeometryRoot
+internal sealed class GeometryMakeLine : GeometryRoot
 {
     private StepLine _line;
 

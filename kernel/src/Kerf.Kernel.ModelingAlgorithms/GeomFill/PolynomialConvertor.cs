@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// uses it.
 /// </summary>
 /// <remarks>A working object; <see cref="Init"/> must be called before <c>Section</c>.</remarks>
-public sealed class PolynomialConvertor
+internal sealed class PolynomialConvertor
 {
     // BH = B * H where B is the monomial-to-BSpline conversion matrix on [-1,1], degree 7,
     // and H is the Hermite coefficients matrix. Both are mathematical constants computed once.

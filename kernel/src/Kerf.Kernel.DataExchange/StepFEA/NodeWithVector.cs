@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity NodeWithVector
 /// </summary>
-public class NodeWithVector : FeaNode
+internal class NodeWithVector : FeaNode
 {
     /// <summary>
     /// Empty constructor

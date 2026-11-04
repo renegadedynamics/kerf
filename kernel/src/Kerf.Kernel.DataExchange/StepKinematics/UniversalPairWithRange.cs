@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity UniversalPairWithRange
 /// </summary>
-public class UniversalPairWithRange : UniversalPair
+internal class UniversalPairWithRange : UniversalPair
 {
     private double _lowerLimitFirstRotation;
     /// <summary>

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Values;
 /// Constructions of a gp_Hypr2d: from a center and two points (one on the major axis), from a major axis and radii,
 /// or from an axis system and radii. The major radius may be lower than the minor radius.
 /// </summary>
-public sealed class MakeHypr2d : Root
+internal sealed class MakeHypr2d : Root
 {
     private Hyperbola2D _theHypr2d = new();
 

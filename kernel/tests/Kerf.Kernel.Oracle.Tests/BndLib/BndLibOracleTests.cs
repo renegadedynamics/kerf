@@ -382,7 +382,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     private static void Below(double theNative, double thePort, string theWhat)
         => Assert.True(thePort <= theNative + 1e-12 * Math.Max(1.0, Math.Abs(theNative)), $"{theWhat}: native {theNative}, port {thePort}");
 
-    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in OrientedBox theP, string theWhat, double theTol,
+    private static void SameOBB(Oracle theO, N.Bnd_OBB theN, in Obb theP, string theWhat, double theTol,
                                 bool theIsParabolic = false)
     {
         theO.Same(theN.IsVoid(), theP.IsVoid, theWhat + " IsVoid");
@@ -573,7 +573,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
     /// The port's side of BRepBndLib::AddOBB (no triangulation, not optimal, shape tolerances): the vertices when
     /// the shape is linear or planar with linear edges (CheckPoints), else ComputePCA with native mass properties.
     /// </summary>
-    private OrientedBox PortOBB(N.TopoDS_Shape theShape, Surface? theSurf, (double U1, double U2, double V1, double V2) theUV,
+    private Obb PortOBB(N.TopoDS_Shape theShape, Surface? theSurf, (double U1, double U2, double V1, double V2) theUV,
                                    double theFaceTol, List<EdgeData> theEdges, bool theIsFace)
     {
         // PointsForOBB with triangulation allowed but absent
@@ -588,7 +588,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
             aPointsOnly = IsLinear(EdgeAdaptor(theEdges[0], new Transform3D()));
         }
 
-        var anOBB = new OrientedBox();
+        var anOBB = new Obb();
         if (aPointsOnly)
         {
             PointsOnlyCases++;
@@ -969,7 +969,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 using var aNOBB = new N.Bnd_OBB();
                 N.BRepBndLib.AddOBB(aNE, aNOBB);
-                OrientedBox aPOBB = PortOBB(aNE, null, default, 0, [anE], false);
+                Obb aPOBB = PortOBB(aNE, null, default, 0, [anE], false);
                 SameOBB(anOracle, aNOBB, aPOBB, aW, ObbTolerance, IsParabolic(aPC));
                 anEdges++;
             }
@@ -992,7 +992,7 @@ public class BndLibOracleTests(ITestOutputHelper output) : IDisposable
                 }
                 using var aNOBB = new N.Bnd_OBB();
                 N.BRepBndLib.AddOBB(aNF, aNOBB);
-                OrientedBox aPOBB = PortOBB(aNF, aSurf, UVBounds(aNF), N.BRep_Tool.Tolerance(aNF), anEdgeList, true);
+                Obb aPOBB = PortOBB(aNF, aSurf, UVBounds(aNF), N.BRep_Tool.Tolerance(aNF), anEdgeList, true);
                 SameOBB(anOracle, aNOBB, aPOBB, aW, ObbTolerance);
                 aFaces++;
             }

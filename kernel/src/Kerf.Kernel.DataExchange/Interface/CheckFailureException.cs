@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>A check that fails (OCCT raises it from a check to be thrown).</summary>
-public class CheckFailureException : InterfaceErrorException
+internal class CheckFailureException : InterfaceErrorException
 {
     public CheckFailureException() { }
 

@@ -40,7 +40,7 @@ namespace Kerf.Engine.Healing.Process;
 /// Ported operators read <see cref="InternalResult"/>.
 /// </para>
 /// </remarks>
-public class ShapeContext : ProcessContext
+internal class ShapeContext : ProcessContext
 {
     private Shape _shape;
     private Shape _result;

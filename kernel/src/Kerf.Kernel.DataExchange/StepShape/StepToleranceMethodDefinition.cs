@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepToleranceMethodDefinition : SelectType
+internal class StepToleranceMethodDefinition : SelectType
 {
     public StepToleranceMethodDefinition()
     {

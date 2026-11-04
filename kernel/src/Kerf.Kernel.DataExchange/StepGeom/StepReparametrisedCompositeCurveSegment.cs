@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepReparametrisedCompositeCurveSegment : StepCompositeCurveSegment
+internal class StepReparametrisedCompositeCurveSegment : StepCompositeCurveSegment
 {
     private double _paramLength;
 

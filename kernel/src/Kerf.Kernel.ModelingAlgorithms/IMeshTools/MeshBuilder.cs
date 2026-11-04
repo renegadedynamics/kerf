@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing.Tools;
 /// <see cref="Fail6"/>, the faces couldn't be discretized; <see cref="Fail7"/>, post-processing
 /// failed; <see cref="Fail8"/>, user break; <see cref="Warn1"/>, the shape has nothing to mesh.
 /// </remarks>
-public class MeshBuilder : Algorithm
+internal class MeshBuilder : Algorithm
 {
     private ToolContext? _context;
 

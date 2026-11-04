@@ -10,7 +10,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>A list of shapes (the parts of a shape in one state) and whether the shape is split.</summary>
 /// <remarks>The legacy builder's storage of splits; ported with the data structure's core for unit 7R.</remarks>
-public sealed class DsListOfShapeOn1State
+internal sealed class DsListOfShapeOn1State
 {
     private readonly NCollection_List<Shape> _list = new();
     private int _splits;

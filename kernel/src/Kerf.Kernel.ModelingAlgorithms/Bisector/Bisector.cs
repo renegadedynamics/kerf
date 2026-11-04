@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Offsets.Bisectors;
 
 /// <summary>Tools of the Bisector package.</summary>
-public static class Bisector
+internal static class Bisector
 {
     /// <summary>
     /// True if the curve is convex on the side Sign (1 left, -1 right): tested at its middle parameter, with a

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepBoxDomain : Transient
+internal class StepBoxDomain : Transient
 {
     private StepCartesianPoint _corner;
     private double _xlength;

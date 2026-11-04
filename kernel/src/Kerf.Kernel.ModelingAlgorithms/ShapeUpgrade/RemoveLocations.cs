@@ -27,7 +27,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// <see cref="GetModifiedShapesMap"/> hand out frozen shapes; ported callers read them through the
 /// <c>Internal</c> forms.
 /// </remarks>
-public sealed class RemoveLocations : Transient
+internal sealed class RemoveLocations : Transient
 {
     private ShapeType _levelRemoving;
     private Shape _shape = new();

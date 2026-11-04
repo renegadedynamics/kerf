@@ -50,7 +50,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// edges of <see cref="WireData"/> show the fixes' changes only to the fixes: read them after a result.
 /// </para>
 /// </remarks>
-public partial class WireFixer : RootFixer
+internal partial class WireFixer : RootFixer
 {
     protected EdgeFixer      _fixEdge;
     protected WireAnalysis _analyzer;

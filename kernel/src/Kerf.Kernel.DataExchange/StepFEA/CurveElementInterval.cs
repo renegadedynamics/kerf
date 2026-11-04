@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity CurveElementInterval
 /// </summary>
-public class CurveElementInterval : Transient
+internal class CurveElementInterval : Transient
 {
     private CurveElementLocation _finishPosition;
     private EulerAngles _euAngles;

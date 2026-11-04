@@ -11,7 +11,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 
 /// <summary>The zone of a basic element: the part of the plane nearer to it than to any other element, described
 /// by the arcs on its frontier.</summary>
-public sealed class MedialZone : Transient
+internal sealed class MedialZone : Transient
 {
     private readonly NCollection_Sequence<MedialArc> _frontier = new();
     private bool _limited;

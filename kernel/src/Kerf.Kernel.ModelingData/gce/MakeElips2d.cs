@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Values;
 /// <summary>
 /// Constructions of a gp_Elips2d: from a major axis (or an axis system) and radii, or from a center and two points.
 /// </summary>
-public sealed class MakeElips2d : Root
+internal sealed class MakeElips2d : Root
 {
     private Ellipse2D _theElips2d = new();
 

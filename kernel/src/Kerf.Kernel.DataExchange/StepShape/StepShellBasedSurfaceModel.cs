@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepShellBasedSurfaceModel : StepGeometricRepresentationItem
+internal class StepShellBasedSurfaceModel : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<StepShell> _sbsmBoundary;
 

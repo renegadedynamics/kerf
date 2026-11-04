@@ -33,7 +33,7 @@ namespace Kerf.Engine.Meshing;
 /// <see cref="Failure"/>, as OCCT's <c>catch (Standard_Failure)</c>.
 /// </para>
 /// </remarks>
-public class EdgeDiscret : ModelAlgo
+internal class EdgeDiscret : ModelAlgo
 {
     private ModelModel? _model;
     private ToolParameters _parameters = new();

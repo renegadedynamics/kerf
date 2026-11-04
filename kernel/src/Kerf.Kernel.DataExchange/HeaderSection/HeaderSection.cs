@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>The HeaderSection package: its protocol.</summary>
-public static class HeaderSection
+internal static class HeaderSection
 {
     private static readonly Lazy<HeaderProtocol> Proto = new(() => new HeaderProtocol());
 

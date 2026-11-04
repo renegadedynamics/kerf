@@ -1,5 +1,6 @@
 // Copyright (c) 2026 The OCCT.NET Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
 
+using Kerf.Booleans;
 using Kerf.Engine.Booleans;
 using Kerf.Engine.Booleans.Api;
 using Kerf.Engine.Healing.Upgrade;
@@ -219,7 +220,7 @@ public static class Booleans
         anOp.SetRunParallel(theParallel);
         anOp.SetNonDestructive(true);
         anOp.SetFuzzyValue(theCase.Fuzzy);
-        anOp.SetGlue(theCase.Glue ? GlueMode.GlueShift : GlueMode.GlueOff);
+        anOp.SetGlue(theCase.Glue ? GlueMode.Shift : GlueMode.Off);
         return anOp;
     }
 
@@ -369,7 +370,7 @@ public static class Booleans
                 aPF.SetArguments(anAll);
                 aPF.SetNonDestructive(true);
                 aPF.SetFuzzyValue(aCase.Fuzzy);
-                aPF.SetGlue(aCase.Glue ? GlueMode.GlueShift : GlueMode.GlueOff);
+                aPF.SetGlue(aCase.Glue ? GlueMode.Shift : GlueMode.Off);
                 aPF.Perform();
                 long t1 = Stopwatch.GetTimestamp();
                 var aBOP = new Bop();

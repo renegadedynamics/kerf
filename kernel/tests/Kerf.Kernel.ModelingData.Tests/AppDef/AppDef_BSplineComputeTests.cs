@@ -3,7 +3,7 @@
 using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Kernel.ModelingData.Tests;
 
@@ -56,10 +56,10 @@ public class AppDef_BSplineComputeTests
         return aMax;
     }
 
-    public static TheoryData<ParametrizationType, bool> ParTypesAndSquares()
+    public static TheoryData<global::Kerf.Geometry.ParametrizationType, bool> ParTypesAndSquares()
     {
-        TheoryData<ParametrizationType, bool> aData = [];
-        foreach (ParametrizationType aPar in new[] { ChordLength, Centripetal, IsoParametric })
+        TheoryData<global::Kerf.Geometry.ParametrizationType, bool> aData = [];
+        foreach (global::Kerf.Geometry.ParametrizationType aPar in new[] { ChordLength, Centripetal, IsoParametric })
         {
             aData.Add(aPar, true);
             aData.Add(aPar, false);
@@ -69,7 +69,7 @@ public class AppDef_BSplineComputeTests
 
     [Theory]
     [MemberData(nameof(ParTypesAndSquares))]
-    public void Cubic_IsReproduced(ParametrizationType thePar, bool theSquares)
+    public void Cubic_IsReproduced(global::Kerf.Geometry.ParametrizationType thePar, bool theSquares)
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(25, Cubic);
         BSplineCompute aComputer = new(3, 8, 1.0e-6, 1.0e-6, 5, true, thePar, theSquares);
@@ -89,7 +89,7 @@ public class AppDef_BSplineComputeTests
 
     [Theory]
     [MemberData(nameof(ParTypesAndSquares))]
-    public void CircleAndSine_AreFittedWithinTolerance(ParametrizationType thePar, bool theSquares)
+    public void CircleAndSine_AreFittedWithinTolerance(global::Kerf.Geometry.ParametrizationType thePar, bool theSquares)
     {
         foreach (Func<double, Point3D> aF in new Func<double, Point3D>[] { Circle, Sine })
         {

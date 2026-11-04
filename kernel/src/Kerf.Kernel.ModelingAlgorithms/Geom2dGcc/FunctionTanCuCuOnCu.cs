@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// circle, a line or a point and a curve) whose centre lies on a third curve (a line, a circle or a curve).
 /// </summary>
 /// <remarks>OCCT copies the adaptors; the port shares the solver's, which nothing writes (decision 797).</remarks>
-public sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
+internal sealed class FunctionTanCuCuOnCu : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptor2D _curv1 = new();
     private readonly CurveAdaptor2D _curv2 = new();

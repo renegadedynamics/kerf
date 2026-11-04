@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// style).
 /// </summary>
 /// <remarks>P1 and P3 are the rows j = 1 and j = NbVPoles, P4 the column i = 1 and P2 the column i = NbUPoles.</remarks>
-public class Stretch : Filling
+internal class Stretch : Filling
 {
     public Stretch()
     {

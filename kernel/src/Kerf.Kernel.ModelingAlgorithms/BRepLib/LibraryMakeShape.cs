@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Library;
 /// section 4.2): they freeze the result before returning it. Ported code that goes on building on the result reads
 /// it through the internal accessors (<c>InternalShape</c>, <c>InternalEdge</c>, ...), which don't freeze.
 /// </remarks>
-public abstract class LibraryMakeShape : LibraryCommand
+internal abstract class LibraryMakeShape : LibraryCommand
 {
     protected Shape _shape = new();
     protected NCollection_List<Shape> _genFaces = new();

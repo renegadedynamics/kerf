@@ -11,7 +11,7 @@ namespace Kerf.Engine.Healing;
 
 /// <summary>Returns the tools used by <see cref="AlgoContainer"/> (new ones at each call).</summary>
 /// <remarks>A working object (decision 21), to be derived from to substitute other tools.</remarks>
-public class ToolContainer : Transient
+internal class ToolContainer : Transient
 {
     /// <summary>Empty constructor.</summary>
     public ToolContainer()

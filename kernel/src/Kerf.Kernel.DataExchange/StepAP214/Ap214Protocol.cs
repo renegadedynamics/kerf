@@ -213,7 +213,7 @@ public class Ap214Protocol : StepProtocol
         types.Add(typeof(StepIntersectionCurve), 155);
         types.Add(typeof(Invisibility), 156);
         types.Add(typeof(LengthMeasureWithUnit), 157);
-        types.Add(typeof(LengthUnit), 158);
+        types.Add(typeof(StepLengthUnit), 158);
         types.Add(typeof(StepLine), 159);
         types.Add(typeof(LocalTime), 160);
         types.Add(typeof(StepLoop), 161);

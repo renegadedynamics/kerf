@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of an arc of circle in 2D as a Geom2d_TrimmedCurve: through three points, from two points and the
 /// tangent at the first, or on a circle between two points or parameters.
 /// </summary>
-public sealed class MakeArcOfCircle2d : Root
+internal sealed class MakeArcOfCircle2d : Root
 {
     private TrimmedCurve2D? _theArc;
 

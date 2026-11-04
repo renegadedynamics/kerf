@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// The modification that converts surfaces of revolution and of linear extrusion into elementary surfaces
 /// (cylinders, spheres, cones, tori) where they are such, shifting the pcurves to the new parametrisation.
 /// </summary>
-public class SweptToElementary : CustomModification
+internal class SweptToElementary : CustomModification
 {
     /// <summary>An empty modification.</summary>
     public SweptToElementary()

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity CylindricalPairValue
 /// </summary>
-public class CylindricalPairValue : PairValue
+internal class CylindricalPairValue : PairValue
 {
     private double _actualTranslation;
     private double _actualRotation;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepLimitsAndFits : Transient
+internal class StepLimitsAndFits : Transient
 {
     private TCollection_HAsciiString _formVariance;
     private TCollection_HAsciiString _zoneVariance;

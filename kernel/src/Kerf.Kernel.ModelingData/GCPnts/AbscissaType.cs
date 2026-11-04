@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>How a curve is parameterised, for the abscissa algorithms.</summary>
-public enum AbscissaType
+internal enum AbscissaType
 {
     LengthParametrized,
     Parametrized,

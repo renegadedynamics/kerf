@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepPcurveOrSurface : SelectType
+internal class StepPcurveOrSurface : SelectType
 {
     /// <summary>
     /// Returns a PcurveOrSurface SelectType

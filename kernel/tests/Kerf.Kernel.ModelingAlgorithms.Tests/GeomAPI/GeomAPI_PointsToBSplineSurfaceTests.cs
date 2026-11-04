@@ -79,9 +79,9 @@ public class GeomAPI_PointsToBSplineSurfaceTests
     public void Approximate_EveryMethodIsClose()
     {
         NCollection_Array2<Point3D> aPoints = Grid(9, 8);
-        foreach (ParametrizationType aParType in new[] { ParametrizationType.ChordLength,
-                                                                  ParametrizationType.Centripetal,
-                                                                  ParametrizationType.IsoParametric })
+        foreach (global::Kerf.Geometry.ParametrizationType aParType in new[] { global::Kerf.Geometry.ParametrizationType.ChordLength,
+                                                                  global::Kerf.Geometry.ParametrizationType.Centripetal,
+                                                                  global::Kerf.Geometry.ParametrizationType.IsoParametric })
         {
             PointsToBSplineSurface anApprox = new(aPoints, aParType, 3, 8, Continuity.C2, 1.0e-3);
             Assert.True(anApprox.IsDone);
@@ -113,7 +113,7 @@ public class GeomAPI_PointsToBSplineSurfaceTests
         Assert.True(anApprox.IsDone);
         Assert.True(anApprox.Surface().IsUPeriodic);
 
-        anApprox.Init(aPoints, ParametrizationType.ChordLength, 3, 8, Continuity.C2, 1.0e-3, true);
+        anApprox.Init(aPoints, global::Kerf.Geometry.ParametrizationType.ChordLength, 3, 8, Continuity.C2, 1.0e-3, true);
         Assert.True(anApprox.IsDone);
         Assert.True(anApprox.Surface().IsUPeriodic);
     }

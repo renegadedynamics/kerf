@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of SurfaceOfRevolution from Geom to a STEP surface_of_revolution.</summary>
-public sealed class MakeSurfaceOfRevolution : GeometryRoot
+internal sealed class MakeSurfaceOfRevolution : GeometryRoot
 {
     private StepSurfaceOfRevolution _surfaceOfRevolution;
 

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// Bisector_BisecCC): a 2D curve that knows the parameter of a point on it, whether it is extended at its ends, and
 /// its intervals of C1 continuity.
 /// </summary>
-public abstract class BisectorCurve : Curve2D
+internal abstract class BisectorCurve : Curve2D
 {
     /// <summary>The parameter of the point P on the curve.</summary>
     public abstract double Parameter(in Point2D p);

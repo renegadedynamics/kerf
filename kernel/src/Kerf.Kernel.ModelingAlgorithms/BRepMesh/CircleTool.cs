@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing;
 /// A working object, as OCCT's (a class used by value there; the allocator argument is dropped). It isn't shared:
 /// <see cref="Delaun"/> owns one.
 /// </remarks>
-public sealed class CircleTool
+internal sealed class CircleTool
 {
     private double _tolerance;
     private readonly CellFilter<CircleInspector, int, Xy> _cellFilter;

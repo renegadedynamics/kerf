@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// laws, and <see cref="Trim"/> shares them, as OCCT shares the handles. <see cref="Bounds"/> gives the range of
 /// the laws only after a first evaluation (before, OCCT's -1e100 and 1e100).
 /// </remarks>
-public class Composite : LawsFunction
+internal class Composite : LawsFunction
 {
     private double _first;
     private double _last;

@@ -21,7 +21,7 @@ namespace Kerf.Engine.Booleans;
 /// their graphs (as an alert's <c>GetShape</c>, decision 625): they are the arguments and their sub-shapes. Ported
 /// code reads the <c>Internal</c> forms, which don't freeze.
 /// </remarks>
-public sealed class CheckResult
+internal sealed class CheckResult
 {
     private Shape _shape1 = new();
     private Shape _shape2 = new();

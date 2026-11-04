@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// Base class for complex types (MEASURE_REPRESENTATION_ITEM, MEASURE_WITH_UNIT,
 /// REPRESENTATION_ITEM, LENGTH_MEASURE_WITH_UNIT/PLANE_ANGLE_MEASURE_WITH_UNIT).
 /// </summary>
-public class ReprItemAndMeasureWithUnit : RepresentationItem
+internal class ReprItemAndMeasureWithUnit : RepresentationItem
 {
     private MeasureRepresentationItem _measureRepresentationItem;
     private MeasureWithUnit _measureWithUnit;

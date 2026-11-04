@@ -35,7 +35,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// where OCCT writes the curve into the caller's edge). The new face is handed out unfrozen, as OCCT's working
 /// shape (BRepFill_OffsetWire builds on it).
 /// </remarks>
-public sealed class MedialAxisExplorer
+internal sealed class MedialAxisExplorer
 {
     private readonly NCollection_Sequence<NCollection_Sequence<Curve2D>> _curves = new();
     private int _current;

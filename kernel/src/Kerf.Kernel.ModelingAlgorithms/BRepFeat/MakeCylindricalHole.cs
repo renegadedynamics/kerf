@@ -35,7 +35,7 @@ namespace Kerf.Engine.Features;
 /// <c>Perform</c> protected; C# can't narrow it, so BOPAlgo_BOP's stays public.</para>
 /// <para>The shape is read, never written: the Booleans are non-destructive (decision 274).</para>
 /// </remarks>
-public sealed class MakeCylindricalHole : FeatureBuilder
+internal sealed class MakeCylindricalHole : FeatureBuilder
 {
     private Axis3D _axis = new();
     private bool _axDef;

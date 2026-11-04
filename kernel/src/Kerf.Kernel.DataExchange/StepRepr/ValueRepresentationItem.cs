@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class ValueRepresentationItem : RepresentationItem
+internal class ValueRepresentationItem : RepresentationItem
 {
     private MeasureValueMember _valueComponentMember;
 

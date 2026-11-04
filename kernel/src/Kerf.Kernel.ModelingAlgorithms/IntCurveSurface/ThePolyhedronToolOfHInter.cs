@@ -17,7 +17,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// <see cref="IToolPolyhedron{Polyhedron}"/> (decision 202's approach). <c>Dump</c>, which prints to
 /// std::cout, is left out.
 /// </remarks>
-public readonly struct ThePolyhedronToolOfHInter
+internal readonly struct ThePolyhedronToolOfHInter
     : IToolPolyhedron<ThePolyhedronOfHInter>
 {
     /// <summary>The box of the polyhedron.</summary>

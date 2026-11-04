@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class DocumentUsageConstraint : Transient
+internal class DocumentUsageConstraint : Transient
 {
     private Document _source;
     private TCollection_HAsciiString _se;

@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// OCCT's <c>RejectNode</c> builds a <c>BVH_Box&lt;double, 3&gt;</c> whatever the dimension (only the 3D selector is
 /// instantiated in OCCT); the port uses the selector's own dimension, the same thing in 3D.
 /// </remarks>
-public class PairSelector<TVec> : PairTraverse<double, TVec, BoxSet<double, TVec, int>, double>
+internal class PairSelector<TVec> : PairTraverse<double, TVec, BoxSet<double, TVec, int>, double>
     where TVec : unmanaged, INCollection_Vec<double, TVec>
 {
     /// <summary>A pair of element indices.</summary>

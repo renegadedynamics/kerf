@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// (decision 1177). The parse takes a progress range (cancellation) and limits for hostile input (decisions 1175,
 /// 1176), which OCCT's function does not have.
 /// </remarks>
-public static class StepFileReader
+internal static class StepFileReader
 {
     /// <summary>Prints the error message: as a fail if <paramref name="isFail"/>, else as a trace.</summary>
     public static void StepFile_Interrupt(string? errorMessage, bool isFail = true)

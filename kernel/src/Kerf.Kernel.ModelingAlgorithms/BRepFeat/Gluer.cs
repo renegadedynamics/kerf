@@ -22,7 +22,7 @@ namespace Kerf.Engine.Features;
 /// LocOpe_Gluer writes into the shapes it is given in its working overlay and ends it in <c>Perform</c> (decision 1013,
 /// unit 10H5): the result shares the caller's unchanged sub-shapes, and the history answers for the caller's faces.
 /// </remarks>
-public sealed class Gluer : MakeShape
+internal sealed class Gluer : MakeShape
 {
     private readonly LocalGluer _gluer;
 

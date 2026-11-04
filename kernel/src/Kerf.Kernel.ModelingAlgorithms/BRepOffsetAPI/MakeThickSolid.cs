@@ -8,7 +8,7 @@ using Kerf.Engine.Topology;
 using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 
 namespace Kerf.Engine.Offsets.Api;
@@ -28,7 +28,7 @@ namespace Kerf.Engine.Offsets.Api;
 /// and 1419), and the result holds the caller's faces where the algorithm left them unchanged.
 /// </para>
 /// </remarks>
-public class MakeThickSolid : MakeOffsetShape
+internal class MakeThickSolid : MakeOffsetShape
 {
     //=================================================================================================
 
@@ -47,7 +47,7 @@ public class MakeThickSolid : MakeOffsetShape
     /// <see cref="MakeOffsetShape.PerformByJoin"/>.
     /// </summary>
     public void MakeThickSolidByJoin(in Shape s, NCollection_List<Shape> closingFaces, double offset,
-                                     double tol, OffsetMode mode = OffsetMode.Skin, bool intersection = false,
+                                     double tol, global::Kerf.Offsets.OffsetMode mode = global::Kerf.Offsets.OffsetMode.Skin, bool intersection = false,
                                      bool selfInter = false, JoinKind Join = Arc,
                                      bool removeIntEdges = false, ProgressRange range = default)
     {

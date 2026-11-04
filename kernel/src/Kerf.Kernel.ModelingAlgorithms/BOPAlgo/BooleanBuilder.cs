@@ -37,7 +37,7 @@ namespace Kerf.Engine.Booleans;
 /// (<c>myEntryPoint == 1</c>); the port lets it go.
 /// </para>
 /// </remarks>
-public partial class BooleanBuilder : BuilderShape
+internal partial class BooleanBuilder : BuilderShape
 {
     protected NCollection_List<Shape> _arguments = new();                                                     //!< Arguments of the operation
     protected HashSet<Shape> _mapFence = new(ShapeHasher.Instance);                         //!< Fence map providing the uniqueness of the shapes in the list of arguments
@@ -50,7 +50,7 @@ public partial class BooleanBuilder : BuilderShape
     protected Dictionary<Shape, NCollection_List<Shape>> _origins = new(ShapeHasher.Instance); //!< Origins - map of Origins, back map of Images
     protected Dictionary<Shape, NCollection_List<Shape>> _inParts = new(ShapeHasher.Instance); //!< InParts - map of own and acquired IN faces of the arguments solids
     protected bool _nonDestructive;                                                                                    //!< Safe processing option allows avoiding modification of the input shapes
-    protected GlueMode _glue;                                                                                  //!< Gluing option allows speeding up the intersection of the input shapes
+    protected global::Kerf.Booleans.GlueMode _glue;                                                                                  //!< Gluing option allows speeding up the intersection of the input shapes
     protected bool _checkInverted;                                                                                     //!< Check inverted option allows disabling the check of input solids on inverted status
 
     public BooleanBuilder()
@@ -59,7 +59,7 @@ public partial class BooleanBuilder : BuilderShape
         _ds = null;
         _entryPoint = 0;
         _nonDestructive = false;
-        _glue = GlueMode.GlueOff;
+        _glue = global::Kerf.Booleans.GlueMode.Off;
         _checkInverted = true;
     }
 
@@ -127,10 +127,10 @@ public partial class BooleanBuilder : BuilderShape
     public bool NonDestructive() => _nonDestructive;
 
     /// <summary>Sets the glue option.</summary>
-    public void SetGlue(GlueMode glue) => _glue = glue;
+    public void SetGlue(global::Kerf.Booleans.GlueMode glue) => _glue = glue;
 
     /// <summary>The glue option.</summary>
-    public GlueMode Glue() => _glue;
+    public global::Kerf.Booleans.GlueMode Glue() => _glue;
 
     /// <summary>Enables or disables the check of the input solids for being inverted.</summary>
     public void SetCheckInverted(bool check) => _checkInverted = check;

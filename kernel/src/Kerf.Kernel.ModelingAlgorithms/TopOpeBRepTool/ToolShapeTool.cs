@@ -25,7 +25,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// periodic adjustments, and whether two shapes are oriented the same way.
 /// </summary>
 /// <remarks>Ported whole with the data structure's core (unit 7L): the data structure's same-domain filling and its points from vertices use it.</remarks>
-public static class ToolShapeTool
+internal static class ToolShapeTool
 {
     /// <summary>The tolerance of a face, edge or vertex (0 for a null shape).</summary>
     /// <exception cref="ProgramErrorException">The shape is of another type.</exception>

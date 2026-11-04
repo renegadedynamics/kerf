@@ -24,7 +24,7 @@ namespace Kerf.Engine.Classification;
 /// A working object (decision 21). Before the first point is found the transition is OCCT's uninitialised value; the
 /// port's is IntCurveSurface_Tangent (the enum's zero).
 /// </remarks>
-public class Intersector3d
+internal class Intersector3d
 {
     private Point3D _pnt = new();
     private double _u;

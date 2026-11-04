@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Api;
 /// space: finds the points coinciding with the current one within a tolerance (per coordinate).
 /// </summary>
 /// <remarks>A working object, as OCCT's. Targets are 1-based indexes into the points added with <see cref="Add"/>.</remarks>
-public sealed class VertexInspector : ICellFilterInspector<int, Xyz>
+internal sealed class VertexInspector : ICellFilterInspector<int, Xyz>
 {
     private readonly double _tol;
     private readonly NCollection_List<int> _resInd = new();

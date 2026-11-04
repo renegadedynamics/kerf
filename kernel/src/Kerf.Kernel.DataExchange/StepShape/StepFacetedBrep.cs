@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepFacetedBrep : StepManifoldSolidBrep
+internal class StepFacetedBrep : StepManifoldSolidBrep
 {
     /// <summary>
     /// Returns a FacetedBrep

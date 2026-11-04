@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21): it keeps the caller's adaptors and <see cref="SetInterval"/> trims them into new
 /// adaptors.
 /// </remarks>
-public class CircularBlendFunc : SweepFunction
+internal class CircularBlendFunc : SweepFunction
 {
     private const double TolAng = 1.0e-6;
 

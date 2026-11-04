@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>The FILE_SCHEMA entity of a STEP file's header.</summary>
-public class FileSchema : Transient
+internal class FileSchema : Transient
 {
     private NCollection_HArray1<TCollection_HAsciiString> _schemaIdentifiers;
 

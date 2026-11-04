@@ -15,7 +15,7 @@ using static Kerf.Topology.ShapeType;
 namespace Kerf.Engine.Features.Local;
 
 /// <summary>Provides tools to implement local topological operations on a shape.</summary>
-public static class LocOpe
+internal static class LocOpe
 {
     private const int Nechant = 10;
 

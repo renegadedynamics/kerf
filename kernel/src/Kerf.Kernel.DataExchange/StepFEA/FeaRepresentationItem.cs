@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaRepresentationItem
 /// </summary>
-public class FeaRepresentationItem : RepresentationItem
+internal class FeaRepresentationItem : RepresentationItem
 {
     /// <summary>
     /// Empty constructor

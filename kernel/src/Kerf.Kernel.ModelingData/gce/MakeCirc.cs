@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Values;
 /// offset, through three points, from a center and a normal or plane, from a center and a point on the axis, or from
 /// an axis and a radius.
 /// </summary>
-public sealed class MakeCirc : Root
+internal sealed class MakeCirc : Root
 {
     private Circle3D _theCirc = new();
 

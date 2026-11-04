@@ -15,7 +15,7 @@ namespace Kerf.Engine.Construction.Values;
 /// Constructions of a gp_Lin: from an axis, a point and a direction, parallel to a line through a point, or through
 /// two points.
 /// </summary>
-public sealed class MakeLin : Root
+internal sealed class MakeLin : Root
 {
     private Line3D _theLin = new();
 

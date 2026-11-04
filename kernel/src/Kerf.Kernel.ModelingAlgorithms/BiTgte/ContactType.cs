@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Offsets.Blend;
 
 /// <summary>The kinds of the rolling ball's contacts on the two sides of a blend.</summary>
-public enum ContactType
+internal enum ContactType
 {
     FaceFace,
     FaceEdge,

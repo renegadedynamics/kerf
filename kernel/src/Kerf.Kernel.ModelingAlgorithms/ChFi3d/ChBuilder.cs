@@ -41,7 +41,7 @@ namespace Kerf.Engine.Fillets;
 /// <c>ChFi3d_ChBuilder.cxx</c>), <c>_C2</c> and <c>_C3</c> (corners). Ported in unit 7N2 so that the builder can be
 /// compared with native OCCT end to end; the API wrappers are unit 7N3's. OCCT_DEBUG blocks (traces) are left out.
 /// </remarks>
-public partial class ChBuilder : FilletBuilderBase
+internal partial class ChBuilder : FilletBuilderBase
 {
     private ChamfMode _mode;
 

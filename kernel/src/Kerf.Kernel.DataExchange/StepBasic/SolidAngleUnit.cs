@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SolidAngleUnit : NamedUnit
+internal class SolidAngleUnit : NamedUnit
 {
     /// <summary>
     /// Returns a SolidAngleUnit

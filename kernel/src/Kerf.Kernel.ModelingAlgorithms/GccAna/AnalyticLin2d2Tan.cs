@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// An algorithm object computed by its constructor (decision 117). WhichQualifier gives the side each circle is on
 /// (Kerf decision 17105).
 /// </remarks>
-public sealed class AnalyticLin2d2Tan
+internal sealed class AnalyticLin2d2Tan
 {
     private bool _wellDone;
     private int _nbrSol;

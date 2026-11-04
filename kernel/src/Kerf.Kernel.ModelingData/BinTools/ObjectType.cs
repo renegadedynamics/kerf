@@ -11,7 +11,7 @@ namespace Kerf.Engine.Exchange.Brep.Binary;
 /// <see cref="ShapeReader"/>). The bytes after <see cref="ObjectType_EndShape"/> are shapes: 200 +
 /// 4 × shape type + orientation.
 /// </summary>
-public enum ObjectType : byte
+internal enum ObjectType : byte
 {
     ObjectType_Unknown = 0,
 

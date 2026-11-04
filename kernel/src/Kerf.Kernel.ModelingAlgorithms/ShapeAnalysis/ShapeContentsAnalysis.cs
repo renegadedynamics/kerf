@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// A working object (decision 21): the modes are OCCT's modifiable flags (<c>ref bool</c>), and the sequences
 /// (<see cref="BigSplineSec"/>, ...) are the object's own, cleared by the next <see cref="Perform"/>.
 /// </remarks>
-public sealed class ShapeContentsAnalysis
+internal sealed class ShapeContentsAnalysis
 {
     private int _nbSolids;
     private int _nbShells;

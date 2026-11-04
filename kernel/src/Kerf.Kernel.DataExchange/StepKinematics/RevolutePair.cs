@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity RevolutePair
 /// </summary>
-public class RevolutePair : LowOrderKinematicPair
+internal class RevolutePair : LowOrderKinematicPair
 {
     /// <summary>
     /// default constructor

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// A working object (decision 21): load a shape, then intersect any number of curves. As in OCCT, a second
 /// <see cref="Load"/> adds the new shape's faces to those already loaded. It only reads the shape.
 /// </remarks>
-public class ShapeIntersector
+internal class ShapeIntersector
 {
     private bool _isDone;
     private int _nbFaces;

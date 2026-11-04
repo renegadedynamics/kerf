@@ -2167,7 +2167,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         return copy;
     }
 
-    internal BSplineCurve3D WithKnot(int index, double k)
+    internal BSplineCurve3D WithKnotOneBased(int index, double k)
     {
         BSplineCurve3D copy = CopyBSpline();
         copy.SetKnot(index, k);
@@ -2181,7 +2181,7 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         return copy;
     }
 
-    internal BSplineCurve3D WithKnot(int index, double k, int m)
+    internal BSplineCurve3D WithKnotOneBased(int index, double k, int m)
     {
         BSplineCurve3D copy = CopyBSpline();
         copy.SetKnot(index, k, m);
@@ -2218,21 +2218,21 @@ public sealed partial class BSplineCurve3D : BoundedCurve3D
         return copy;
     }
 
-    internal BSplineCurve3D WithPole(int index, in Point3D p)
+    internal BSplineCurve3D WithPoleOneBased(int index, in Point3D p)
     {
         BSplineCurve3D copy = CopyBSpline();
         copy.SetPole(index, p);
         return copy;
     }
 
-    internal BSplineCurve3D WithPole(int index, in Point3D p, double w)
+    internal BSplineCurve3D WithPoleOneBased(int index, in Point3D p, double w)
     {
         BSplineCurve3D copy = CopyBSpline();
         copy.SetPole(index, p, w);
         return copy;
     }
 
-    internal BSplineCurve3D WithWeight(int index, double w)
+    internal BSplineCurve3D WithWeightOneBased(int index, double w)
     {
         BSplineCurve3D copy = CopyBSpline();
         copy.SetWeight(index, w);

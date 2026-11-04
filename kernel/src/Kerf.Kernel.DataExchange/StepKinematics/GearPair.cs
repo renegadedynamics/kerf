@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity GearPair
 /// </summary>
-public class GearPair : LowOrderKinematicPairWithMotionCoupling
+internal class GearPair : LowOrderKinematicPairWithMotionCoupling
 {
     private double _radiusFirstLink;
     private double _radiusSecondLink;

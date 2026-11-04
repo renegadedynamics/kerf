@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepPointOnCurve : StepPoint
+internal class StepPointOnCurve : StepPoint
 {
     private StepCurve _basisCurve;
     private double _pointParameter;

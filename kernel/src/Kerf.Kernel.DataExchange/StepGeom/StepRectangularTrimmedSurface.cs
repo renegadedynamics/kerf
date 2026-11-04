@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepRectangularTrimmedSurface : StepBoundedSurface
+internal class StepRectangularTrimmedSurface : StepBoundedSurface
 {
     private StepSurface _basisSurface;
     private double _u1;

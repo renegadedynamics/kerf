@@ -21,7 +21,7 @@ namespace Kerf.Engine.Healing.Checks;
 /// <c>BRepCheck_ListOfStatus</c>, <c>NCollection_List&lt;BRepCheck_Status&gt;</c>). The context iterator visits the
 /// contexts in the order they were checked (OCCT's map iterates in hash order, decision 18).
 /// </remarks>
-public abstract class ResultCheck : Transient
+internal abstract class ResultCheck : Transient
 {
     protected Shape _shape;
     protected bool _min;

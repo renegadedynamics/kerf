@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepCircle : StepConic
+internal class StepCircle : StepConic
 {
     private double _radius;
 

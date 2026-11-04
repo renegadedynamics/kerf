@@ -15,7 +15,7 @@ namespace Kerf.Engine.Features.Draft;
 /// A value type in C++, held by value in Draft_Modification's map; a class in the port (decision 1033): the
 /// modification creates one per edge and changes it only through the map, as OCCT's <c>ChangeFromKey</c> does.
 /// </remarks>
-public sealed class DraftEdgeInfo
+internal sealed class DraftEdgeInfo
 {
     private bool _newGeom;
     private Curve3D? _geom;

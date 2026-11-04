@@ -23,7 +23,7 @@ internal class RWLengthUnit
     {
     }
 
-    public void ReadStep(StepReaderData data, int num, FrameworkCheck ach, LengthUnit ent)
+    public void ReadStep(StepReaderData data, int num, FrameworkCheck ach, StepLengthUnit ent)
     {
         // --- Number of Parameter Control ---
 
@@ -43,14 +43,14 @@ internal class RWLengthUnit
         ent.Init(dimensions);
     }
 
-    public void WriteStep(StepWriter sw, LengthUnit ent)
+    public void WriteStep(StepWriter sw, StepLengthUnit ent)
     {
         // --- inherited field dimensions ---
 
         sw.Send(ent.Dimensions());
     }
 
-    public void Share(LengthUnit ent, EntityIterator iter)
+    public void Share(StepLengthUnit ent, EntityIterator iter)
     {
         iter.GetOneItem(ent.Dimensions());
     }

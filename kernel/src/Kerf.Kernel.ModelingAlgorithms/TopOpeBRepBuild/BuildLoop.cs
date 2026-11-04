@@ -14,7 +14,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// <see cref="BlockIterator"/>.
 /// </summary>
 /// <remarks><c>Dump</c> is left out (decision 493).</remarks>
-public class BuildLoop : Transient
+internal class BuildLoop : Transient
 {
     protected bool _isShape;
     protected Shape _shape = new();

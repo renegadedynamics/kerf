@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepMeasureQualification : Transient
+internal class StepMeasureQualification : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

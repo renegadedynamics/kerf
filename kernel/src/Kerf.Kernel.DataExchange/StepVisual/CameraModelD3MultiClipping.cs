@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraModelD3MultiClipping : CameraModelD3
+internal class CameraModelD3MultiClipping : CameraModelD3
 {
     private NCollection_HArray1<CameraModelD3MultiClippingInterectionSelect> _shapeClipping;
 

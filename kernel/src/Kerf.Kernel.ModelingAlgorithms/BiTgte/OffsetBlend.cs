@@ -53,7 +53,7 @@ namespace Kerf.Engine.Offsets.Blend;
 /// <see cref="SupportShape1"/> and <see cref="SupportShape2"/> return the caller's shapes where they are unchanged.
 /// </para>
 /// </remarks>
-public sealed class OffsetBlend
+internal sealed class OffsetBlend
 {
     private double _radius;
     private double _tol;

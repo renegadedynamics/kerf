@@ -31,7 +31,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// frozen.
 /// </para>
 /// </remarks>
-public sealed class FreeBoundsFixer
+internal sealed class FreeBoundsFixer
 {
     private Compound _wires;
     private Compound _edges;

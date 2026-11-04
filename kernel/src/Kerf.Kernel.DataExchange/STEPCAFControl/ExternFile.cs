@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Step.Documents;
 /// Auxiliary class serving as container for data resulting from translation of external file
 /// </summary>
 /// <remarks>OCCT.NET: the label is an <see cref="Label"/> in place of a <c>TDF_Label</c> (decision 1231).</remarks>
-public class ExternFile : Transient
+internal class ExternFile : Transient
 {
     /// <summary>Creates an empty structure</summary>
     public ExternFile()

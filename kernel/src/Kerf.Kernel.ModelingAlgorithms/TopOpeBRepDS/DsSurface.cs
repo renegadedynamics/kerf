@@ -13,7 +13,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// A C++ value class, so a struct. Unlike points and curves, a new surface is <em>not</em> kept (OCCT's default):
 /// <see cref="DsSurfaceExplorer"/> with its default <c>FindOnlyKeep</c> skips it until it is.
 /// </remarks>
-public partial struct DsSurface : IEquatable<DsSurface>
+internal partial struct DsSurface : IEquatable<DsSurface>
 {
     private Surface? _surface;
     private double _tolerance;

@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Tools;
 
 /// <summary>A visitor of the faces and edges of a shape.</summary>
-public abstract class ShapeVisitor : Transient
+internal abstract class ShapeVisitor : Transient
 {
     /// <summary>A visitor.</summary>
     protected ShapeVisitor()

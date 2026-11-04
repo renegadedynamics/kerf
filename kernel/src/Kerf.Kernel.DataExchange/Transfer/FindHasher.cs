@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// which brings the HashCode for its Key. Two keys are the same if the first one <see cref="Finder.Equates"/>
 /// the second.
 /// </summary>
-public sealed class FindHasher : IEqualityComparer<Finder>
+internal sealed class FindHasher : IEqualityComparer<Finder>
 {
     /// <summary>The hasher (it has no state).</summary>
     public static FindHasher Instance { get; } = new();

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// tangent to a circle and a curve), normalised by an average square distance between them.
 /// </summary>
 /// <remarks>OCCT copies the adaptor; the port shares the solver's, which nothing writes (decision 797).</remarks>
-public sealed class FunctionTanCirCu : FunctionWithDerivative
+internal sealed class FunctionTanCirCu : FunctionWithDerivative
 {
     private readonly Circle2D _theCirc;
     private readonly CurveAdaptor2D _curve;

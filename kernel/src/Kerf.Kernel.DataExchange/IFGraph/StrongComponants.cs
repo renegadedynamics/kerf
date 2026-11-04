@@ -12,7 +12,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// <summary>
 /// determines strong components of a graph, that is isolated entities (single components) or loops
 /// </summary>
-public class StrongComponants : SubPartsIterator
+internal class StrongComponants : SubPartsIterator
 {
 
     /// <summary>

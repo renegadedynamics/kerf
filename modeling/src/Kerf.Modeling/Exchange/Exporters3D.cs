@@ -1,4 +1,6 @@
 using System.Text;
+using Kerf.Exchange;
+using Kerf.Meshing;
 using Occt;
 
 namespace Kerf.Modeling;
@@ -48,9 +50,14 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         NothingToExport(toExport);
-        var settings = new StepWriteSettings(ExchangeUnits.Millimetres(unit, "unit"), writePcurves, (int)precisionMode);
+        var options = new StepWriteOptions
+        {
+            Unit = ExchangeUnits.LengthUnit(unit, "unit"),
+            WritePcurves = writePcurves,
+            Precision = (StepPrecision)(int)precisionMode,
+        };
         using var text = new MemoryStream();
-        if (!Extras.WriteStep(StepTree(toExport), text, settings, cancellationToken))
+        if (!Step.Write(StepTree(toExport), text, options, cancellationToken: cancellationToken).IsSuccess)
             throw new InvalidOperationException("Failed to write STEP file");
         stream.Write(StepHeader.WithFileName(text.ToArray(), toExport.Label.Length > 0 ? toExport.Label : null, timestamp, "build123d"));
         return true;
@@ -73,7 +80,8 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         NothingToExport(toExport);
-        return Extras.WriteStl(toExport.MeshedCopy(tolerance, angularTolerance), stream, asciiFormat, cancellationToken);
+        var mesh = Mesher.Mesh(toExport.TopoShape, MeshOptions(tolerance, angularTolerance), cancellationToken: cancellationToken).GetValueOrThrow();
+        return Stl.Write(mesh, stream, new StlWriteOptions { Ascii = asciiFormat }, cancellationToken).IsSuccess;
     }
 
     /// <summary>Writes a shape's mesh to an STL file, whose folder must exist.</summary>
@@ -94,8 +102,8 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         NothingToExport(toExport);
-        var metres = ExchangeUnits.Millimetres(unit, "unit") / 1000.0;
-        return Extras.WriteGltf(MeshTree(toExport, linearDeflection, angularDeflection), stream, null, null, binary, metres, cancellationToken);
+        var options = GltfOptions(unit, binary, linearDeflection, angularDeflection);
+        return Gltf.Write(MeshTree(toExport), stream, options, cancellationToken).IsSuccess;
     }
 
     /// <summary>
@@ -111,11 +119,11 @@ public static class Exporters3D
         NothingToExport(toExport);
         if (binary)
             return ToFile(filePath, s => ExportGltf(toExport, s, unit, binary, linearDeflection, angularDeflection, cancellationToken));
-        var metres = ExchangeUnits.Millimetres(unit, "unit") / 1000.0;
-        var tree = MeshTree(toExport, linearDeflection, angularDeflection);
+        var options = GltfOptions(unit, binary, linearDeflection, angularDeflection);
+        var tree = MeshTree(toExport);
         var binPath = Path.ChangeExtension(filePath, ".bin");
         using var bin = new MemoryStream();
-        var done = ToFile(filePath, s => Extras.WriteGltf(tree, s, bin, Path.GetFileName(binPath), false, metres, cancellationToken));
+        var done = ToFile(filePath, s => Gltf.Write(tree, s, bin, Path.GetFileName(binPath), options, cancellationToken).IsSuccess);
         if (done && bin.Length > 0)
             File.WriteAllBytes(binPath, bin.ToArray());
         return done;
@@ -132,8 +140,8 @@ public static class Exporters3D
         ArgumentNullException.ThrowIfNull(toExport);
         ArgumentNullException.ThrowIfNull(stream);
         NothingToExport(toExport);
-        var metres = ExchangeUnits.Millimetres(unit, "unit") / 1000.0;
-        return Extras.Write3mf(MeshTree(toExport, linearDeflection, angularDeflection), stream, metres, cancellationToken);
+        var options = new ThreeMfWriteOptions { Unit = ExchangeUnits.LengthUnit(unit, "unit"), Mesh = MeshOptions(linearDeflection, angularDeflection) };
+        return ThreeMf.Write(MeshTree(toExport), stream, options, cancellationToken).IsSuccess;
     }
 
     /// <summary>Writes a shape or assembly to a 3MF file.</summary>
@@ -164,42 +172,43 @@ public static class Exporters3D
         return true;
     }
 
-    // The tree the mesh writers take: an assembly per compound with children, a meshed copy per part, labels and
-    // colours as they are (the writers resolve a part's inherited colour).
-    private static ExchangeNode MeshTree(Shape shape, double linearDeflection, double angularDeflection)
-    {
-        string? name = shape.Label.Length > 0 ? shape.Label : null;
-        var color = Linear(shape.Color);
-        if (shape is Compound { AssemblyChildren.Count: > 0 } assembly)
-        {
-            var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty)
-                                   .Select(c => MeshTree(c, linearDeflection, angularDeflection)).ToList();
-            return ExchangeNode.Assembly(children, assembly.TopoShape.Placement, name, color);
-        }
-        return ExchangeNode.Part(shape.MeshedCopy(linearDeflection, angularDeflection), name, color);
-    }
+    // The tree the mesh writers take (they mesh each part with the options' deflections, relative to each edge's size,
+    // as build123d meshes): the tree STEP is written from
+    private static ModelNode MeshTree(Shape shape) => StepTree(shape);
 
     // The tree STEP is written from, as build123d's _create_xde: an assembly per compound with children, the other
-    // shapes as parts, labels and colours as they are
-    private static ExchangeNode StepTree(Shape shape)
+    // shapes as parts, labels and colours as they are (the writers resolve a part's inherited colour)
+    private static ModelNode StepTree(Shape shape)
     {
         string? name = shape.Label.Length > 0 ? shape.Label : null;
         var color = Linear(shape.Color);
         if (shape is Compound { AssemblyChildren.Count: > 0 } assembly)
         {
             var children = assembly.AssemblyChildren.Where(c => !c.IsEmpty).Select(StepTree).ToList();
-            return ExchangeNode.Assembly(children, assembly.TopoShape.Placement, name, color);
+            return ModelNode.Assembly(children, name, assembly.TopoShape.Placement, color);
         }
-        return ExchangeNode.Part(shape.TopoShape, name, color);
+        return ModelNode.Part(shape.TopoShape, name, color);
     }
 
-    private static (double R, double G, double B, double A)? Linear(Color? color)
+    private static global::Kerf.Meshing.MeshOptions MeshOptions(double linearDeflection, double angularDeflection) =>
+        new() { LinearDeflection = linearDeflection, AngularDeflection = angularDeflection, Relative = true, Parallel = true };
+
+    private static GltfWriteOptions GltfOptions(Unit unit, bool binary, double linearDeflection, double angularDeflection) =>
+        new()
+        {
+            Binary = binary,
+            Unit = ExchangeUnits.LengthUnit(unit, "unit"),
+            Mesh = MeshOptions(linearDeflection, angularDeflection),
+            Generator = "build123d.NET",
+        };
+
+    private static global::Kerf.Color? Linear(Color? color)
     {
         if (color is not { } c)
             return null;
         var rgba = c.ToQuantityColorRgba();
         var rgb = rgba.GetRGB();
-        return (rgb.Red(), rgb.Green(), rgb.Blue(), rgba.Alpha());
+        return global::Kerf.Color.FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), rgba.Alpha());
     }
 }
 

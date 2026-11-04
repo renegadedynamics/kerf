@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// Complex STEP entity AnnotationCurveOccurrence &amp; AnnotationOccurrence &amp;
 /// GeometricRepresentationItem &amp; RepresentationItem &amp; StyledItem
 /// </summary>
-public class AnnotationCurveOccurrenceAndGeomReprItem : AnnotationCurveOccurrence
+internal class AnnotationCurveOccurrenceAndGeomReprItem : AnnotationCurveOccurrence
 {
     public AnnotationCurveOccurrenceAndGeomReprItem()
     {

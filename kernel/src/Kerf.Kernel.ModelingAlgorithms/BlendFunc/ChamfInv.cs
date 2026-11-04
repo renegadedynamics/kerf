@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.BlendFunctions;
 
 /// <summary>The function of a chamfer of two constant distances with one end on a surface's boundary.</summary>
-public class ChamfInv : GenChamfInv
+internal class ChamfInv : GenChamfInv
 {
     private readonly Corde _corde1;
     private readonly Corde _corde2;

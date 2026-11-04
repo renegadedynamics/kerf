@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity ToleranceZoneDefinition
 /// </summary>
-public class ToleranceZoneDefinition : Transient
+internal class ToleranceZoneDefinition : Transient
 {
     private NCollection_HArray1<ShapeAspect> _boundaries;
     private ToleranceZone _zone;

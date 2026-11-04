@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// <see cref="AlgoContainer"/> returns the default container even before <see cref="Init"/> (OCCT: null).
 /// </para>
 /// </remarks>
-public static class XSAlgo
+internal static class XSAlgo
 {
     private static readonly FrameworkAlgoContainer Container = new();
 

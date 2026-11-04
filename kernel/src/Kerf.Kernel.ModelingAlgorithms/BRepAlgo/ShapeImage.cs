@@ -23,7 +23,7 @@ namespace Kerf.Engine.Booleans.Algo;
 /// object's own (unit 10I; per thread before), so what one operation appended never reaches another.
 /// </para>
 /// </remarks>
-public sealed class ShapeImage
+internal sealed class ShapeImage
 {
     private readonly NCollection_List<Shape> _roots = new();
     private readonly Dictionary<Shape, Shape> _up = new(ShapeHasher.Instance);

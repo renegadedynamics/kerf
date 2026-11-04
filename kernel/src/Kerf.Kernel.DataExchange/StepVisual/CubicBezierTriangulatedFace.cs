@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity CubicBezierTriangulatedFace
 /// </summary>
-public class CubicBezierTriangulatedFace : TessellatedFace
+internal class CubicBezierTriangulatedFace : TessellatedFace
 {
     private NCollection_HArray2<int> _ctriangles;
 

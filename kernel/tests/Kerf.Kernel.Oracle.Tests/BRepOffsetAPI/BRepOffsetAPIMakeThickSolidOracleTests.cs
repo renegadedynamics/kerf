@@ -21,7 +21,7 @@ using System.Globalization;
 using System.Text;
 using Kerf.Kernel.TestHarness;
 using Xunit.Abstractions;
-using static Kerf.Engine.Offsets.OffsetMode;
+using static Kerf.Offsets.OffsetMode;
 using static Kerf.Geometry.JoinKind;
 using static Kerf.Topology.ShapeType;
 
@@ -635,7 +635,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                     }
                     else
                     {
-                        aMO.Initialize(theInput, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false, theCase.Join,
+                        aMO.Initialize(theInput, theCase.Offset, theCase.Tol, global::Kerf.Offsets.OffsetMode.Skin, theCase.Inter, false, theCase.Join,
                                        theCase.Thickening, theCase.RemoveIntEdges);
                     }
                     aMO.MakeOffsetShape();
@@ -649,7 +649,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                 case Kind.OffsetShape:
                 {
                     var aMO = new MakeOffsetShape();
-                    aMO.PerformByJoin(theInput, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false, theCase.Join,
+                    aMO.PerformByJoin(theInput, theCase.Offset, theCase.Tol, global::Kerf.Offsets.OffsetMode.Skin, theCase.Inter, false, theCase.Join,
                                       theCase.RemoveIntEdges);
                     aStatus = $"done={aMO.IsDone} error={(int)aMO.MakeOffset().Error()}";
                     aRes = aMO.IsDone ? aMO.Shape() : new Shape();
@@ -669,7 +669,7 @@ public sealed class BRepOffsetAPIMakeThickSolidOracleTests(ITestOutputHelper out
                             aClosing.Append(aFaces[i - 1]);
                         }
                     }
-                    aMT.MakeThickSolidByJoin(theInput, aClosing, theCase.Offset, theCase.Tol, OffsetMode.Skin, theCase.Inter, false,
+                    aMT.MakeThickSolidByJoin(theInput, aClosing, theCase.Offset, theCase.Tol, global::Kerf.Offsets.OffsetMode.Skin, theCase.Inter, false,
                                              theCase.Join, theCase.RemoveIntEdges);
                     aMT.Build();
                     aStatus = $"done={aMT.IsDone} error={(int)aMT.MakeOffset().Error()}";

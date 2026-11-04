@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// determined. The Result comes from a TransferProcess, either from Transient (the Complete Result is considered, it
 /// must contain only Transient Objects).
 /// </summary>
-public class TransferInput
+internal class TransferInput
 {
     /// <summary>Creates a TransferInput ready to use.</summary>
     public TransferInput()

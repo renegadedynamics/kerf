@@ -12,7 +12,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// </summary>
 /// <typeparam name="ThePoint">What the line gives for each of its points: an index for GeomFill_Line, a
 /// Blend_Point for BRepBlend_Line.</typeparam>
-public interface ISectionGenerator<ThePoint>
+internal interface ISectionGenerator<ThePoint>
 {
     /// <summary>The shape of every section: its poles, knots, degree and 2d poles.</summary>
     void GetShape(out int nbPoles, out int nbKnots, out int degree, out int nbPoles2d);
@@ -40,7 +40,7 @@ public interface ISectionGenerator<ThePoint>
 /// What <see cref="AppSurf{TheSectionGenerator, TheLine, ThePoint}"/> calls on its line (the <c>TheLine</c>
 /// macro of AppBlend_AppSurf.gxx): GeomFill_Line and, later, BRepBlend_Line implement it (decision 845).
 /// </summary>
-public interface ILine<ThePoint>
+internal interface ILine<ThePoint>
 {
     /// <summary>The number of points (sections) of the line.</summary>
     int NbPoints();

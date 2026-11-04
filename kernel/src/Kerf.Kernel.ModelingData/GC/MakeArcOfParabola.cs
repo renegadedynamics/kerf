@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Values.ErrorType;
 namespace Kerf.Engine.Construction.Curves;
 
 /// <summary>Constructions of an arc of parabola as a Geom_TrimmedCurve.</summary>
-public sealed class MakeArcOfParabola : Root
+internal sealed class MakeArcOfParabola : Root
 {
     private TrimmedCurve3D? _theArc;
 

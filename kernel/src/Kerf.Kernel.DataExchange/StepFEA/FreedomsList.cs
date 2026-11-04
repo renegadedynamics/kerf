@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FreedomsList
 /// </summary>
-public class FreedomsList : Transient
+internal class FreedomsList : Transient
 {
     private NCollection_HArray1<FeaDegreeOfFreedom> _freedoms;
 

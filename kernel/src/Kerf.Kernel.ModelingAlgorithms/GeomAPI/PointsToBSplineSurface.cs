@@ -9,7 +9,7 @@ using Kerf.Engine.Geometry;
 using Kerf.Geometry;
 using Occt;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Geometry.Continuity;
 
 namespace Kerf.Engine.Geometry.Api;
@@ -38,7 +38,7 @@ internal class PointsToBSplineSurface
     }
 
     private static void BuildParameters(MultiLine line,
-                                        ParametrizationType parT,
+                                        global::Kerf.Geometry.ParametrizationType parT,
                                         NCollection_Array1<double> pars)
     {
         int i, j, nbP3d = line.PointCount;
@@ -217,7 +217,7 @@ internal class PointsToBSplineSurface
     }
 
     /// <summary>Approximates <paramref name="points"/> with the parametrisation <paramref name="parType"/>.</summary>
-    public PointsToBSplineSurface(NCollection_Array2<Point3D> points, ParametrizationType parType,
+    public PointsToBSplineSurface(NCollection_Array2<Point3D> points, global::Kerf.Geometry.ParametrizationType parType,
                                           int degMin = 3, int degMax = 8, Continuity continuity = C2,
                                           double tol3D = 1.0e-3)
     {
@@ -255,7 +255,7 @@ internal class PointsToBSplineSurface
     }
 
     /// <summary>Interpolates <paramref name="points"/> with the parametrisation <paramref name="parType"/>, periodic in U if asked.</summary>
-    public void Interpolate(NCollection_Array2<Point3D> points, ParametrizationType parType,
+    public void Interpolate(NCollection_Array2<Point3D> points, global::Kerf.Geometry.ParametrizationType parType,
                             bool periodic = false)
     {
         int degMin, degMax;
@@ -276,7 +276,7 @@ internal class PointsToBSplineSurface
     /// Approximates <paramref name="points"/> with the parametrisation <paramref name="parType"/>, or interpolates
     /// them if <paramref name="tol3D"/> ≤ 0; periodic in U if asked.
     /// </summary>
-    public void Init(NCollection_Array2<Point3D> points, ParametrizationType parType, int degMin = 3,
+    public void Init(NCollection_Array2<Point3D> points, global::Kerf.Geometry.ParametrizationType parType, int degMin = 3,
                      int degMax = 8, Continuity continuity = C2, double tol3D = 1.0e-3,
                      bool periodic = false)
     {

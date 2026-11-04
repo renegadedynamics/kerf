@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity NodeRepresentation
 /// </summary>
-public class NodeRepresentation : StepRepresentation
+internal class NodeRepresentation : StepRepresentation
 {
     private FeaModel _modelRef;
 

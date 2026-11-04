@@ -23,7 +23,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// <summary>
 /// The CellFilter inspector of gp_XYZ points in 3D space, used to find coincident points within a tolerance.
 /// </summary>
-public sealed class DistanceVertexInspector : ICellFilterInspector<int, Xyz>
+internal sealed class DistanceVertexInspector : ICellFilterInspector<int, Xyz>
 {
     private double _tol;
     private bool _isNeedAdd;
@@ -90,7 +90,7 @@ public sealed class DistanceVertexInspector : ICellFilterInspector<int, Xyz>
 /// face/face cases only: the coarser mesh is refined first. Results are approximate and depend on the tessellations.
 /// </summary>
 /// <remarks>A working object (decision 21), used by <see cref="ShapeProximity"/>. It only reads the meshes.</remarks>
-public sealed class ProximityValueTool
+internal sealed class ProximityValueTool
 {
     private TriangleSet? _set1;
     private TriangleSet? _set2;

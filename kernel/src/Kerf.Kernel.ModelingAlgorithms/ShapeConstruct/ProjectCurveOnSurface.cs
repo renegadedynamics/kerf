@@ -40,7 +40,7 @@ namespace Kerf.Engine.Healing.Construct;
 /// are only read.
 /// </para>
 /// </remarks>
-public class ProjectCurveOnSurface : Transient
+internal class ProjectCurveOnSurface : Transient
 {
     //! Default number of control points for discretization.
     private const int THE_NCONTROL = 23;

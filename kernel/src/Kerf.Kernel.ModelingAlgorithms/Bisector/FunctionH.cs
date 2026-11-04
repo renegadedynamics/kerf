@@ -14,7 +14,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// H(v) = (T1.P2(v) - P1) * ||T(v)||^2 - (T(v).P2(v) - P1) * ||T1||^2, used by Bisector_BisecCC to find the point of
 /// the second curve paired with a point of the first.
 /// </summary>
-public sealed class FunctionH : FunctionWithDerivative
+internal sealed class FunctionH : FunctionWithDerivative
 {
     private readonly Curve2D _curve2;
     private readonly Point2D _p1;

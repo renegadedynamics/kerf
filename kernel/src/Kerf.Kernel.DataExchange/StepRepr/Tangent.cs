@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class Tangent : DerivedShapeAspect
+internal class Tangent : DerivedShapeAspect
 {
     public Tangent()
     {

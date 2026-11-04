@@ -31,7 +31,7 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>A colour from sRGB components and alpha, each from 0 to 1. Missing components are 1.</summary>
     public Color(double red, double green = 1.0, double blue = 1.0, double alpha = 1.0)
     {
-        var rgb = new global::Kerf.Engine.Foundation.Color(red, green, blue, ColorSpace.TOC_sRGB);
+        var rgb = new global::Kerf.Engine.Foundation.LinearColor(red, green, blue, ColorSpace.TOC_sRGB);
         this = FromLinear(rgb.Red(), rgb.Green(), rgb.Blue(), (float)alpha);
     }
 
@@ -84,7 +84,7 @@ public readonly struct Color : IEquatable<Color>
 
     static Color FromLinear(double r, double g, double b, float alpha)
     {
-        var rgb = new global::Kerf.Engine.Foundation.Color(r, g, b, ColorSpace.TocRgb);
+        var rgb = new global::Kerf.Engine.Foundation.LinearColor(r, g, b, ColorSpace.TocRgb);
         double sr = 0, sg = 0, sb = 0;
         rgb.Values(out sr, out sg, out sb, ColorSpace.TOC_sRGB);
         return new Color((float)r, (float)g, (float)b, alpha, sr, sg, sb);
@@ -98,8 +98,8 @@ public readonly struct Color : IEquatable<Color>
             return (css.R / 255.0, css.G / 255.0, css.B / 255.0);
 
         // Fall back to OCCT's X11 names. build123d passes OCCT's linear components on as sRGB, so do the same.
-        var color = new global::Kerf.Engine.Foundation.Color();
-        if (!global::Kerf.Engine.Foundation.Color.ColorFromName(name, ref color))
+        var color = new global::Kerf.Engine.Foundation.LinearColor();
+        if (!global::Kerf.Engine.Foundation.LinearColor.ColorFromName(name, ref color))
             throw new ArgumentException($"'{name}' is not defined as a named color in CSS3 or OCCT/X11", nameof(name));
         return (color.Red(), color.Green(), color.Blue());
     }
@@ -121,7 +121,7 @@ public readonly struct Color : IEquatable<Color>
     /// <summary>A new OCCT Quantity_ColorRGBA for this colour.</summary>
     public ColorWithAlpha ToQuantityColorRgba()
     {
-        var rgb = new global::Kerf.Engine.Foundation.Color(_r, _g, _b, ColorSpace.TocRgb);
+        var rgb = new global::Kerf.Engine.Foundation.LinearColor(_r, _g, _b, ColorSpace.TocRgb);
         return new ColorWithAlpha(rgb, _a);
     }
 
@@ -222,14 +222,14 @@ public readonly struct Color : IEquatable<Color>
     /// </summary>
     public override string ToString()
     {
-        var rgb = new global::Kerf.Engine.Foundation.Color(_r, _g, _b, ColorSpace.TocRgb);
+        var rgb = new global::Kerf.Engine.Foundation.LinearColor(_r, _g, _b, ColorSpace.TocRgb);
         double sr = 0, sg = 0, sb = 0;
         rgb.Values(out sr, out sg, out sb, ColorSpace.TOC_sRGB);
         var key = ((int)Math.Round(sr * 255), (int)Math.Round(sg * 255), (int)Math.Round(sb * 255));
         string tuple = $"({PyFormat.Repr(R)}, {PyFormat.Repr(G)}, {PyFormat.Repr(B)}, {PyFormat.Repr(A)})";
         if (CssColors.ByRgb.TryGetValue(key, out var css))
             return $"Color: {tuple} is '{css.ToUpperInvariant()}'";
-        var near = global::Kerf.Engine.Foundation.Color.StringName(rgb.Name()) ?? "";
+        var near = global::Kerf.Engine.Foundation.LinearColor.StringName(rgb.Name()) ?? "";
         return $"Color: {tuple} near '{near.ToUpperInvariant()}'";
     }
 }

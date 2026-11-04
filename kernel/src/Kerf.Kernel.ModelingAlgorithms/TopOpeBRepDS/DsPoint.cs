@@ -17,7 +17,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// A C++ value class, so a struct. The data structure keeps its own copy (<see cref="DsDataStructure.AddPoint"/>)
 /// and gives it for writing by <c>ref</c> (<see cref="DsDataStructure.ChangePoint"/>).
 /// </remarks>
-public partial struct DsPoint : IEquatable<DsPoint>
+internal partial struct DsPoint : IEquatable<DsPoint>
 {
     private Point3D _point;
     private double _tolerance;

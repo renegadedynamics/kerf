@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing;
 /// A working object over the sewing, which copies the shapes it is given (decision 583). OCCT declares
 /// <c>NbEdges</c> without defining it; it is left out.
 /// </remarks>
-public sealed class FindContiguousEdges
+internal sealed class FindContiguousEdges
 {
     private readonly Sewing _sewing;
 

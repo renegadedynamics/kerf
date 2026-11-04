@@ -25,7 +25,7 @@ namespace Kerf.Engine.Meshing;
 /// structure it is given, and the constructors taking an index vector sort that vector in place, as OCCT's do, with
 /// MSVC's heap sort (<see cref="Heap"/>, decision 491), so ties come out in native OCCT's order.
 /// </remarks>
-public sealed class Delaun
+internal sealed class Delaun
 {
     private static readonly double AngDeviation1Deg = M_PI / 180.0;
     private static readonly double AngDeviation90Deg = 90 * AngDeviation1Deg;

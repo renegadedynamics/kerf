@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepHyperbola : StepConic
+internal class StepHyperbola : StepConic
 {
     private double _semiAxis;
     private double _semiImagAxis;

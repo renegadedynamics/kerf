@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Data;
 
 /// <summary>The default discrete pcurve of an edge on a face.</summary>
-public class PCurveData : PCurveModel
+internal class PCurveData : PCurveModel
 {
     private readonly List<Point2D> _points2d = [];
     private readonly List<double> _parameters = [];

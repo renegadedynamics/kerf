@@ -28,7 +28,7 @@ namespace Kerf.Engine.Meshing;
 /// A working object: <see cref="Parameter"/> must be called for the points in order, as it follows the previous
 /// one (OCCT's <c>mutable</c> fields).
 /// </remarks>
-public sealed class EdgeParameterProvider<ParametersCollection> : Transient
+internal sealed class EdgeParameterProvider<ParametersCollection> : Transient
     where ParametersCollection : class, INCollection_ArrayRead<double>
 {
     private ParametersCollection? _parameters;

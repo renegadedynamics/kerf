@@ -28,7 +28,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// </para>
 /// <para>A C++ value class, a C# class here (decision 1185).</para>
 /// </remarks>
-public class StepWriter
+internal class StepWriter
 {
     private const int StepLong = 72;
     // StepLong: maximum length of a Step file line

@@ -23,7 +23,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// second argument is the line or circle and the first is not, the solver is called with the arguments swapped and
 /// the accessors swap them back.
 /// </remarks>
-public sealed class Circ2d2TanRad
+internal sealed class Circ2d2TanRad
 {
     private const int ANbSolMAX = 16;
 

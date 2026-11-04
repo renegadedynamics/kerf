@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// working object (decision 21): <c>SetPPC</c> and <c>SetCoeff</c> are public, as in OCCT. The default constructor
 /// holds no arrays, as OCCT's null handles.
 /// </remarks>
-public class LinearXyzConstraint
+internal class LinearXyzConstraint
 {
     private readonly NCollection_HArray1<PinpointConstraint> _ppc = null!;
     private readonly NCollection_HArray2<double> _coef = null!;

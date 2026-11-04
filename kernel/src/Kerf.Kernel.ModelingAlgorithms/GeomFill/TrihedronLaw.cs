@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// adaptor). A law is not safe to evaluate from several threads at once; <see cref="Copy"/> one per thread.
 /// The evaluators' vectors are <c>ref</c>: some laws leave them unwritten on some paths, as in OCCT.
 /// </remarks>
-public abstract class TrihedronLaw : Transient
+internal abstract class TrihedronLaw : Transient
 {
     protected CurveAdaptorBase? _curve;
     protected CurveAdaptorBase? _trimmed;

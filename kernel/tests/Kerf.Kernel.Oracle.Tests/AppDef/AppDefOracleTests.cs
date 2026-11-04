@@ -4,7 +4,7 @@ using Kerf.Engine.Approximation;
 using Kerf.Engine.Foundation;
 using Kerf.Geometry;
 using Xunit.Abstractions;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Kernel.Oracle.Tests;
 
@@ -119,7 +119,7 @@ public class AppDefOracleTests(ITestOutputHelper output)
     [InlineData(ChordLength)]
     [InlineData(Centripetal)]
     [InlineData(IsoParametric)]
-    public void PointsToBSpline_ParametrizationType(ParametrizationType theParType)
+    public void PointsToBSpline_ParametrizationType(global::Kerf.Geometry.ParametrizationType theParType)
     {
         Tape.Row(theParType);
         Oracle anOracle = new(output, 20261029 + (int)theParType);

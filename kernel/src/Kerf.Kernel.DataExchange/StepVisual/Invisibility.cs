@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class Invisibility : Transient
+internal class Invisibility : Transient
 {
     private NCollection_HArray1<InvisibleItem> _invisibleItems;
 

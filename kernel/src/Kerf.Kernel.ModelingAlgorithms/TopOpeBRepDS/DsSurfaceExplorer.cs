@@ -12,7 +12,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// A new surface is not kept (<see cref="DsSurface"/>), so with the default <c>FindOnlyKeep</c> the explorer
 /// skips the surfaces until something keeps them, as in OCCT.
 /// </remarks>
-public sealed class DsSurfaceExplorer
+internal sealed class DsSurfaceExplorer
 {
     private int _index;
     private int _max;

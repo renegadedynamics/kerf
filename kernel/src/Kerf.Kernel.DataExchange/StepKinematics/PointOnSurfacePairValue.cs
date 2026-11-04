@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PointOnSurfacePairValue
 /// </summary>
-public class PointOnSurfacePairValue : PairValue
+internal class PointOnSurfacePairValue : PairValue
 {
     private StepPointOnSurface _actualPointOnSurface;
     private SpatialRotation _inputOrientation = new SpatialRotation();

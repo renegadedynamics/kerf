@@ -20,7 +20,7 @@ using static Kerf.Engine.Exchange.Step.Export.MakeVertexError;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Maps a TopoDS_Vertex to a STEP vertex_point.</summary>
-public sealed class MakeStepVertex : ExportRoot
+internal sealed class MakeStepVertex : ExportRoot
 {
     private StepTopologicalRepresentationItem _result;
     private MakeVertexError _error;

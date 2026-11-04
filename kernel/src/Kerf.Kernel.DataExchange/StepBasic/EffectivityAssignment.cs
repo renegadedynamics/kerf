@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Basic;
 /// <summary>
 /// Representation of STEP entity EffectivityAssignment
 /// </summary>
-public class EffectivityAssignment : Transient
+internal class EffectivityAssignment : Transient
 {
     private Effectivity _assignedEffectivity;
 

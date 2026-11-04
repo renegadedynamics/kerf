@@ -28,7 +28,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// sub-shapes; the wire divider only builds new shapes. <see cref="Result"/> freezes what it returns; ported callers
 /// read <see cref="InternalResult"/>.
 /// </remarks>
-public class FaceDivide : UpgradeTool
+internal class FaceDivide : UpgradeTool
 {
     /// <summary>The face.</summary>
     protected Face _face;

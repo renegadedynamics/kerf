@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Graph;
 /// <summary>
 /// determines Connected Components in a Graph. They define disjoined sets of Entities.
 /// </summary>
-public class ConnectedComponants : SubPartsIterator
+internal class ConnectedComponants : SubPartsIterator
 {
 
     /// <summary>

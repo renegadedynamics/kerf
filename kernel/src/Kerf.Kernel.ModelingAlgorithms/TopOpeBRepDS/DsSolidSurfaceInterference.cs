@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>An interference of a surface on a solid.</summary>
-public sealed class DsSolidSurfaceInterference : DsInterference
+internal sealed class DsSolidSurfaceInterference : DsInterference
 {
     /// <summary>The interference of the geometry <paramref name="g"/> on the support <paramref name="s"/>.</summary>
     public DsSolidSurfaceInterference(in DsTransition t,

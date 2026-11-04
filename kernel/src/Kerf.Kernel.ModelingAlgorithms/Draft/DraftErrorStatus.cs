@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Features.Draft;
 
 /// <summary>The error statuses of the draft modification: which kind of shape could not be recomputed.</summary>
-public enum DraftErrorStatus
+internal enum DraftErrorStatus
 {
     NoError,
     FaceRecomputation,

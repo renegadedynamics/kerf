@@ -11,7 +11,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// <summary>An iterator on the elements of a block of a <see cref="BlockBuilder"/>: an index range.</summary>
 /// <remarks>A value, as in OCCT. <c>new()</c> is OCCT's default (an empty range starting at 1); <c>default</c> starts at
 /// 0. The iteration methods are internal.</remarks>
-public partial struct BlockIterator : IEquatable<BlockIterator>
+internal partial struct BlockIterator : IEquatable<BlockIterator>
 {
     private int _lower;
     private int _upper;

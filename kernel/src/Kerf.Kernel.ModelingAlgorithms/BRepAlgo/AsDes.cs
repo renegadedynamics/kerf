@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Algo;
 /// such a shape still hands out one list that every later call on the store sees, as in OCCT (marked <c>// OCCT</c>),
 /// and no other operation's.
 /// </remarks>
-public sealed class AsDes : Transient
+internal sealed class AsDes : Transient
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _up = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, NCollection_List<Shape>> _down = new(ShapeHasher.Instance);

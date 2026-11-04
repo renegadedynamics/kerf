@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// An algorithm object computed by its constructor (decision 117). Up to 8 solutions (two circles), 4 (a circle and a
 /// line, two lines) or 2 (with a point).
 /// </remarks>
-public sealed partial class AnalyticCirc2d2TanRad
+internal sealed partial class AnalyticCirc2d2TanRad
 {
     private bool _wellDone;
     private readonly NCollection_Array1<Qualifier> _qualifier1;

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// <summary>
 /// Constructions of a Geom_Ellipse: from a gp_Elips, an axis system and two radii, or two apexes and the center.
 /// </summary>
-public sealed class MakeEllipse : Root
+internal sealed class MakeEllipse : Root
 {
     private EllipseCurve3D? _theEllipse;
 

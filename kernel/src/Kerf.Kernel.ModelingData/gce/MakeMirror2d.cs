@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Values;
 
 /// <summary>A symmetry in 2D space about a point or an axis, as a gp_Trsf2d.</summary>
-public sealed class MakeMirror2d
+internal sealed class MakeMirror2d
 {
     private Transform2D _theMirror2d = new();
 

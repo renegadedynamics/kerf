@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21): it keeps the caller's laws, as OCCT keeps the handles, and
 /// <see cref="SetInterval"/> and <see cref="SetTolerance"/> change them.
 /// </remarks>
-public class SurfaceSweepFunction : SweepFunction
+internal class SurfaceSweepFunction : SweepFunction
 {
     private readonly SurfaceLocationLaw _loc;
     private readonly SurfaceSectionLaw _sec;

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>operator==</c>, which compares within <c>Precision::PConfusion()</c> and never matches a deleted vertex, is
 /// <see cref="IsEqual"/>, and maps in ported code take <see cref="Hasher"/>, OCCT's hash and equality.
 /// </remarks>
-public partial struct MeshVertex : IEquatable<MeshVertex>
+internal partial struct MeshVertex : IEquatable<MeshVertex>
 {
     private Xy _uv;
     private int _location3d;

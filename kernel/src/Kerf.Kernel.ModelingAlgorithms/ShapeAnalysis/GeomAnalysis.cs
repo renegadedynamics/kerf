@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Healing.Analysis;
 
 /// <summary>Analysis of geometric entities: the plane nearest a set of points, a transformation from a 3x4 matrix.</summary>
-public static class GeomAnalysis
+internal static class GeomAnalysis
 {
     /// <summary>
     /// Builds a plane out of a set of points. Returns in <paramref name="maxDist"/> the largest distance between the

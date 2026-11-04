@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object (decision 21): <see cref="Reparametrize"/> and the tolerance setters change it, and
 /// GeomFill_ConstrainedFilling reparametrises the boundaries it is given, as OCCT does.
 /// </remarks>
-public abstract class Boundary : Transient
+internal abstract class Boundary : Transient
 {
     private double _t3d;
     private double _tang;

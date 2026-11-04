@@ -40,7 +40,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// frozen shapes; ported callers use the <c>Internal</c> forms.
 /// </para>
 /// </remarks>
-public sealed class Generator
+internal sealed class Generator
 {
     private readonly NCollection_Sequence<Shape> _wires = new();
     private Shell _shell = new();

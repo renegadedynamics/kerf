@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d2TanOn
+internal sealed partial class AnalyticCirc2d2TanOn
 {
     /// <summary>The circles tangent to two lines with their centre on a circle. The tolerance is not used.</summary>
     public AnalyticCirc2d2TanOn(in QualifiedLin qualified1,

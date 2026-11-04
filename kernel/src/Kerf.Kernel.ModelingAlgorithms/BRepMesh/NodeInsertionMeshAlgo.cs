@@ -27,7 +27,7 @@ namespace Kerf.Engine.Meshing;
 /// is the same body over the Delabella base (phase4-plan section 6). The splitter's methods the subclasses redefine
 /// are virtual, as in OCCT, so they dispatch through the generic as through the template.
 /// </remarks>
-public class NodeInsertionMeshAlgo<RangeSplitter> : DelaunayBaseMeshAlgo
+internal class NodeInsertionMeshAlgo<RangeSplitter> : DelaunayBaseMeshAlgo
     where RangeSplitter : DefaultRangeSplitter, new()
 {
     private readonly RangeSplitter _rangeSplitter = new();

@@ -33,7 +33,7 @@ namespace Kerf.Engine.Construction.Library;
 /// what changed and the caller's own for the rest; <see cref="InternalHistory"/> records the caller's edges and
 /// vertices replaced.</para>
 /// </remarks>
-public class LibraryMakeWire : LibraryMakeShape
+internal class LibraryMakeWire : LibraryMakeShape
 {
     private LibraryWireError _error;
     private Edge _edge = new();

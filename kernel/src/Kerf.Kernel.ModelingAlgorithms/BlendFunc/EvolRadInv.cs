@@ -17,7 +17,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// The evolving-radius fillet function with one end on a curve on one of the surfaces (a restriction): its
 /// variables are the parameter on the curve on surface, the guide's parameter, and (U, V) on the other surface.
 /// </summary>
-public class EvolRadInv : FuncInv
+internal class EvolRadInv : FuncInv
 {
     private const double Eps = 1.0e-15;
 

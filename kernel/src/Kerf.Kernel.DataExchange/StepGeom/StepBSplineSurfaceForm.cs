@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepGeom_BSplineSurfaceForm;</c>.</remarks>
-public enum StepBSplineSurfaceForm
+internal enum StepBSplineSurfaceForm
 {
     BssfPlaneSurf,
     BssfCylindricalSurf,

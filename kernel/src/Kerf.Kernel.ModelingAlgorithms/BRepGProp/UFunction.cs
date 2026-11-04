@@ -23,7 +23,7 @@ namespace Kerf.Engine.Measurement;
 /// location; otherwise they are the four coefficients of the plane, its constant shifted to the location. OCCT keeps
 /// a copy of the face and a pointer to the caller's coefficients; the port keeps a copy of both.
 /// </remarks>
-public class UFunction : Function
+internal class UFunction : Function
 {
     private readonly FaceIntegrand _surface;
     private readonly Point3D _vertex;

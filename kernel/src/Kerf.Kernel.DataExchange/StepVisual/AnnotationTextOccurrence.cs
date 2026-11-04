@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class AnnotationTextOccurrence : AnnotationOccurrence
+internal class AnnotationTextOccurrence : AnnotationOccurrence
 {
     /// <summary>
     /// Returns a AnnotationTextOccurrence

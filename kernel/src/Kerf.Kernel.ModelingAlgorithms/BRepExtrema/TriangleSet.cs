@@ -25,7 +25,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// OCCT, <see cref="Clear"/> (and so <see cref="Init"/>) doesn't clear the per-shape vectors, so a set initialised
 /// twice keeps the first shapes' entries in front (occt-issues.md).
 /// </remarks>
-public class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
+internal class TriangleSet : PrimitiveSet<double, NCollection_Vec3<double>>
 {
     /// <summary>The vertex indices of the triangles (x, y, z) and their shape index (w).</summary>
     protected NCollection_LinearVector<NCollection_Vec4<int>> _triangles = new();

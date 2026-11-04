@@ -30,7 +30,7 @@ namespace Kerf.Engine.Healing.Construct;
 /// curve is already a B-spline needing no segment, both return the curve itself.
 /// </para>
 /// </remarks>
-public sealed class ConstructCurve
+internal sealed class ConstructCurve
 {
     /// <summary>
     /// Moves the ends of the curve to <paramref name="p1"/> (if <paramref name="take1"/>) and <paramref name="p2"/>

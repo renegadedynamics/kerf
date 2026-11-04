@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity CoaxialityTolerance
 /// </summary>
-public class CoaxialityTolerance : GeometricToleranceWithDatumReference
+internal class CoaxialityTolerance : GeometricToleranceWithDatumReference
 {
     /// <summary>
     /// Empty constructor

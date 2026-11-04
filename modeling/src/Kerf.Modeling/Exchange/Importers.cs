@@ -1,5 +1,5 @@
-using Kerf.Engine.Exchange.Framework.Selection;
 using Kerf.Engine.Foundation;
+using Kerf.Exchange;
 using Occt;
 
 namespace Kerf.Modeling;
@@ -53,11 +53,34 @@ public static class Importers
     private static Shape ImportStep(Stream stream, ImportLimits? limits, CancellationToken cancellationToken, string name, bool externalFiles)
     {
         ArgumentNullException.ThrowIfNull(stream);
-        var exchangeLimits = (limits ?? ImportLimits.Default).ToExchange();
-        var status = Extras.ReadStep(name, stream, exchangeLimits, externalFiles, out var root, cancellationToken);
-        if (ExchangeDiagnostics.ToDiagnostic(status) is { } error)
+        var options = new StepReadOptions { Limits = (limits ?? ImportLimits.Default).ToReadLimits(), ExternalReferences = externalFiles };
+        var read = externalFiles ? Step.Read(name, options, cancellationToken: cancellationToken)
+                                 : Step.Read(stream, options, cancellationToken: cancellationToken);
+        if (read.Error is { } error)
+        {
+            if (error.Code.Value is "exchange.external-references")
+                throw new InvalidDataException(error.Message, new KerfException(error));
             throw new ArgumentException($"Could not import {name}: it isn't readable STEP data. {error.Message}", new KerfException(error));
-        return root is null ? new Compound() : Shape.Result(FromNode(root));
+        }
+        var root = read.Value;
+        return root.Shape is null && root.Children.IsEmpty ? new Compound() : Shape.Result(FromModel(root));
+    }
+
+    private static Shape FromModel(ModelNode node)
+    {
+        var label = node.Name ?? "";
+        Color? color = null;
+        if (node.Color is { } c)
+        {
+            var (r, g, b, a) = c.ToLinear();
+            var rgb = new global::Kerf.Engine.Foundation.LinearColor(r, g, b, ColorSpace.TocRgb);
+            color = new Color(new ColorWithAlpha(rgb, (float)a));
+        }
+        if (node.Shape is { } shape)
+            return Shape.Cast(shape).WithLabel(label).WithColor(color);
+        var children = node.Children.Select(FromModel).ToList();
+        var assembly = Compound.Assembly(children, label, color);
+        return node.Placement.IsIdentity ? assembly : assembly.Located(new Location(node.Placement));
     }
 
     /// <summary>
@@ -110,7 +133,7 @@ public static class Importers
         Color? color = null;
         if (node.Color is { } c)
         {
-            var rgb = new global::Kerf.Engine.Foundation.Color(c.R, c.G, c.B, ColorSpace.TocRgb);
+            var rgb = new global::Kerf.Engine.Foundation.LinearColor(c.R, c.G, c.B, ColorSpace.TocRgb);
             var rgba = new ColorWithAlpha(rgb, (float)c.A);
             color = new Color(rgba);
         }
@@ -161,4 +184,19 @@ internal static class ExchangeUnits
         Unit.Foot => 304.8,
         _ => throw new ArgumentException($"{parameter} must be one of: Micrometer, Millimeter, Centimeter, Meter, Inch, Foot"),
     };
+
+    /// <summary>The kernel's length unit of a build123d length unit; a mass unit is refused, as <see cref="Millimetres"/>.</summary>
+    internal static LengthUnit LengthUnit(Unit unit, string parameter)
+    {
+        Millimetres(unit, parameter);
+        return unit switch
+        {
+            Unit.Micrometer => global::Kerf.Exchange.LengthUnit.Micrometre,
+            Unit.Centimeter => global::Kerf.Exchange.LengthUnit.Centimetre,
+            Unit.Meter => global::Kerf.Exchange.LengthUnit.Metre,
+            Unit.Inch => global::Kerf.Exchange.LengthUnit.Inch,
+            Unit.Foot => global::Kerf.Exchange.LengthUnit.Foot,
+            _ => global::Kerf.Exchange.LengthUnit.Millimetre,
+        };
+    }
 }

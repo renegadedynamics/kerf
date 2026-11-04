@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Api;
 /// A wrapper of <see cref="LibraryMakeEdge2d"/>. The result is BRepLib's, read without freezing it; <see cref="MakeShape.Shape"/>
 /// and the typed accessors freeze it (design 4.2), and the internal accessors don't, for ported code.
 /// </remarks>
-public class MakeEdge2d : MakeShape
+internal class MakeEdge2d : MakeShape
 {
     private readonly LibraryMakeEdge2d _makeEdge2d;
 

@@ -97,7 +97,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
         public readonly CellsBuilder Cells = new();
         public bool RunParallel;
         public double Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
-        public GlueMode Glue = GlueMode.GlueOff;
+        public global::Kerf.Booleans.GlueMode Glue = global::Kerf.Booleans.GlueMode.Off;
 
         public Shape Resolve(string theText)
         {
@@ -192,7 +192,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
                 theS.Tools.Clear();
                 theS.RunParallel = false;
                 theS.Fuzzy = global::Kerf.Engine.Foundation.Precision.Confusion();
-                theS.Glue = GlueMode.GlueOff;
+                theS.Glue = global::Kerf.Booleans.GlueMode.Off;
                 return "";
             case "bfuzzyvalue":
                 theS.Fuzzy = double.Parse(a[1], CultureInfo.InvariantCulture);
@@ -203,7 +203,7 @@ public class BOPAlgo_VolumeNativeTests(ITestOutputHelper output)
             case "bnondestructive":
                 return "";
             case "bglue":
-                theS.Glue = (GlueMode)Atoi(a[1]);
+                theS.Glue = (global::Kerf.Booleans.GlueMode)Atoi(a[1]);
                 return "";
             case "bfillds":
             {

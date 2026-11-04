@@ -29,7 +29,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// <c>DEBNumber</c>, <c>SName</c>, <c>SNameori</c>) are left out (decision 493).
 /// </para>
 /// </remarks>
-public class BuildShapeSet
+internal class BuildShapeSet
 {
     protected ShapeType _shapeType;
     protected ShapeType _subShapeType;

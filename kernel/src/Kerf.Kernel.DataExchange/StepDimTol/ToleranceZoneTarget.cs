@@ -13,7 +13,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class ToleranceZoneTarget : SelectType
+internal class ToleranceZoneTarget : SelectType
 {
     /// <summary>
     /// Returns a ToleranceZoneTarget select type

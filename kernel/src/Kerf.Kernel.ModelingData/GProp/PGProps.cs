@@ -17,7 +17,7 @@ namespace Kerf.Engine.Measurement;
 /// <see cref="AddPoint(in Point3D)"/> or from arrays. Each point has unit mass unless a density is given.
 /// </summary>
 /// <remarks>Inertia is accumulated at the absolute origin.</remarks>
-public class PGProps : Properties
+internal class PGProps : Properties
 {
     /// <summary>An empty point set, at the origin, with zero mass.</summary>
     public PGProps()

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// curves to Geom2dGcc_Circ2dTanCenGeo.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). Up to 2 solutions.</remarks>
-public sealed class Circ2dTanCen
+internal sealed class Circ2dTanCen
 {
     private readonly bool _wellDone;
     private readonly int _nbrSol;

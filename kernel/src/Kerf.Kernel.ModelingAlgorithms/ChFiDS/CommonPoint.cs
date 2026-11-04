@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// A C++ value class, so a struct. <see cref="SurfData"/> holds four of them and the fillet builders change
 /// them in place through its <c>Change*</c> accessors.
 /// </remarks>
-public partial struct CommonPoint : IEquatable<CommonPoint>
+internal partial struct CommonPoint : IEquatable<CommonPoint>
 {
     private Edge _arc;
     private Vertex _vtx;

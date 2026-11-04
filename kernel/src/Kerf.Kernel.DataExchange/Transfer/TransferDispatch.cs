@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// This allow, for instance, to modify the copied Entity (such as changing a Name for a VDA Entity), or to do a deeper
 /// work (such as Substituting a kind of Entity to another one).
 /// </remarks>
-public class TransferDispatch : CopyTool
+internal class TransferDispatch : CopyTool
 {
     /// <summary>
     /// Creates a TransferDispatch from a Model. Works with a General Service Library, given as an Argument. A

@@ -37,7 +37,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// before <see cref="Perform"/>.
 /// </para>
 /// </remarks>
-public class ShapeFixer : RootFixer
+internal class ShapeFixer : RootFixer
 {
     /// <summary>The result.</summary>
     protected Shape                  _result;

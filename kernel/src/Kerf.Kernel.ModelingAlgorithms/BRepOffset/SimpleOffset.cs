@@ -36,7 +36,7 @@ namespace Kerf.Engine.Offsets;
 /// orientation in which it was first met.
 /// </para>
 /// </remarks>
-public sealed class SimpleOffset : Modification
+internal sealed class SimpleOffset : Modification
 {
     private struct NewFaceData
     {

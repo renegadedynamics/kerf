@@ -22,7 +22,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// A geometry class: its mutators (Perform, Transform) are internal and check that the curve isn't frozen. It owns
 /// a copy of the curve it was given. Reverse throws Standard_NotImplemented, as in OCCT.
 /// </remarks>
-public sealed class BisecPC : BisectorCurve
+internal sealed class BisecPC : BisectorCurve
 {
     private Curve2D _curve = null!;
     private Point2D _point;

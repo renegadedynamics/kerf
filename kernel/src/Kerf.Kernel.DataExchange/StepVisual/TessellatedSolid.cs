@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity TessellatedSolid
 /// </summary>
-public class TessellatedSolid : TessellatedItem
+internal class TessellatedSolid : TessellatedItem
 {
     private NCollection_HArray1<TessellatedStructuredItem> _items;
     private StepManifoldSolidBrep _geometricLink;

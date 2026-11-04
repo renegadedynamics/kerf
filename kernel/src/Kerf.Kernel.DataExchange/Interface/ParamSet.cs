@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// recorded when it reallocates); with .NET strings, a parameter keeps its string and the page is not needed, so
 /// <c>lnval</c> only chooses which part of the text is kept.
 /// </remarks>
-public class ParamSet : Transient
+internal class ParamSet : Transient
 {
     /// <summary>
     /// Creates an empty set, of initial reservation <paramref name="nres"/>: the <paramref name="nres"/> first

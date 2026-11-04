@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity ElementGroup
 /// </summary>
-public class ElementGroup : FeaGroup
+internal class ElementGroup : FeaGroup
 {
     private NCollection_HArray1<ElementRepresentation> _elements;
 

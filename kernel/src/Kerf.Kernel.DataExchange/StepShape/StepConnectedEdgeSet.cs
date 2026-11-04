@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity ConnectedEdgeSet
 /// </summary>
-public class StepConnectedEdgeSet : StepTopologicalRepresentationItem
+internal class StepConnectedEdgeSet : StepTopologicalRepresentationItem
 {
     private NCollection_HArray1<StepEdge> _cesEdges;
 

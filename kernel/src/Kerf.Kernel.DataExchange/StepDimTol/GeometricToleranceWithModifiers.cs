@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity GeometricToleranceWithModifiers
 /// </summary>
-public class GeometricToleranceWithModifiers : GeometricTolerance
+internal class GeometricToleranceWithModifiers : GeometricTolerance
 {
     private NCollection_HArray1<GeometricToleranceModifier> _modifiers;
 

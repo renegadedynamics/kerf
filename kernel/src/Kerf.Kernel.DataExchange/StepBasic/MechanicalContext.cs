@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class MechanicalContext : ProductContext
+internal class MechanicalContext : ProductContext
 {
     /// <summary>
     /// Returns a MechanicalContext

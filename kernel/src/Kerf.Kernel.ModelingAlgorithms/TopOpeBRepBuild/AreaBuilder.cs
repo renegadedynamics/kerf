@@ -19,7 +19,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// A working object. OCCT's <c>ADD_Loop_TO_LISTOFLoop</c> and the other list helpers take a debugging <c>void*</c>;
 /// the port drops it. Appending a list to another moves its loops, as NCollection_List::Append(list) does.
 /// </remarks>
-public class AreaBuilder
+internal class AreaBuilder
 {
     protected readonly NCollection_List<NCollection_List<BuildLoop>> _area = new();
     protected readonly NCollection_List<NCollection_List<BuildLoop>>.Iterator _areaIterator = new();

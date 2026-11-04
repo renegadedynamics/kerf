@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// opposite boundaries (the most rounded style). With two rows, the first row is translated along the second.
 /// </summary>
 /// <remarks>P1 and P3 are the rows j = 1 and j = NbVPoles, P4 the column i = 1 and P2 the column i = NbUPoles.</remarks>
-public class Curved : Filling
+internal class Curved : Filling
 {
     public Curved()
     {

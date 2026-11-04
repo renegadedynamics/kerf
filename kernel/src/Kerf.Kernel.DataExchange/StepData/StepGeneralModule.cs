@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Specific features for General Services adapted to STEP.</summary>
-public abstract class StepGeneralModule : GeneralModule
+internal abstract class StepGeneralModule : GeneralModule
 {
     /// <summary>Specific filling of the list of Entities shared by an Entity ent. Can use the internal utility method Share, below.</summary>
     public abstract override void FillSharedCase(int casenum, Transient? ent, EntityIterator iter);

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class DraughtingCalloutElement : SelectType
+internal class DraughtingCalloutElement : SelectType
 {
     /// <summary>
     /// Returns a DraughtingCalloutElement select type

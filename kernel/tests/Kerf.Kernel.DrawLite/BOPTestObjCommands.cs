@@ -248,12 +248,12 @@ internal static class BOPTestObjCommands
             return 0;
         }
         //
-        GlueMode aGlue = aSession.Glue;
+        global::Kerf.Booleans.GlueMode aGlue = aSession.Glue;
         static string YesNo(bool theFlag) => theFlag ? "Yes" : "No";
         di.Append($" RunParallel: {YesNo(aSession.RunParallel)} \t\t(use \"brunparallel\" command to change)\n");
         di.Append($" NonDestructive: {YesNo(aSession.NonDestructive)} \t\t(use \"bnondestructive\" command to change)\n");
         di.Append($" FuzzyValue: {DrawFormat.AsciiString(aSession.FuzzyValue)} \t\t(use \"bfuzzyvalue\" command to change)\n");
-        di.Append($" GlueOption: {(aGlue == GlueMode.GlueOff ? "Off" : aGlue == GlueMode.GlueFull ? "Full" : "Shift")} \t\t(use \"bglue\" command to change)\n");
+        di.Append($" GlueOption: {(aGlue == Kerf.Booleans.GlueMode.Off ? "Off" : aGlue == Kerf.Booleans.GlueMode.Full ? "Full" : "Shift")} \t\t(use \"bglue\" command to change)\n");
         di.Append($" Draw Warning Shapes: {YesNo(aSession.DrawWarnShapes)} \t(use \"bdrawwarnshapes\" command to change)\n");
         di.Append($" Check for invert solids: {YesNo(aSession.CheckInverted)} \t(use \"bcheckinverted\" command to change)\n");
         di.Append($" Use OBB: {YesNo(aSession.UseOBB)} \t\t\t(use \"buseobb\" command to change)\n");
@@ -305,7 +305,7 @@ internal static class BOPTestObjCommands
             di.Append("Wrong value.\n");
             return 1;
         }
-        BOPTestObjects.Of(theDI).Glue = (GlueMode)iGlue;
+        BOPTestObjects.Of(theDI).Glue = (global::Kerf.Booleans.GlueMode)iGlue;
         return 0;
     }
 

@@ -39,7 +39,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// return; ported code that goes on building reads the internal forms.
 /// </para>
 /// </remarks>
-public class ShellFixer : RootFixer
+internal class ShellFixer : RootFixer
 {
     /// <summary>The shell fixed (the first of the shells made).</summary>
     protected Shell    _shell;

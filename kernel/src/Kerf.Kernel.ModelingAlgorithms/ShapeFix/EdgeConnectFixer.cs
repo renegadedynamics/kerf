@@ -33,7 +33,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// result is frozen.
 /// </para>
 /// </remarks>
-public sealed class EdgeConnectFixer
+internal sealed class EdgeConnectFixer
 {
     private Dictionary<Shape, Shape>                   _vertices;
     private Dictionary<Shape, NCollection_List<Shape>> _lists;

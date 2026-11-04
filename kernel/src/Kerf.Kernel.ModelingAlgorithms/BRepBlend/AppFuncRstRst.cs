@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>A restriction/restriction blend function as a sweep function for the approximation (<see cref="AppFuncRoot"/>).</summary>
-public class AppFuncRstRst : AppFuncRoot
+internal class AppFuncRstRst : AppFuncRoot
 {
     public AppFuncRstRst(Line line, RstRstFunction func, double tol3d, double tol2d)
         : base(line, func, tol3d, tol2d)

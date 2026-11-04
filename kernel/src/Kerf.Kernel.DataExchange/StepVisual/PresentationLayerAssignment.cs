@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationLayerAssignment : Transient
+internal class PresentationLayerAssignment : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

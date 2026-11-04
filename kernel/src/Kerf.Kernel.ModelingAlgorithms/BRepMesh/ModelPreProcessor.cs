@@ -36,7 +36,7 @@ namespace Kerf.Engine.Meshing;
 /// face); the face's surface adaptor is evaluated by that face's body only. The cleaning loop is serial, as in OCCT.
 /// </para>
 /// </remarks>
-public class ModelPreProcessor : ModelAlgo
+internal class ModelPreProcessor : ModelAlgo
 {
     /// <summary>A pre-processor.</summary>
     public ModelPreProcessor()

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// orientation and index, its ancestor rank, and whether it is kept.
 /// </summary>
 /// <remarks>Storage of <see cref="DsDataStructure"/> (a class, so its map gives it for writing).</remarks>
-public sealed class DsShapeData
+internal sealed class DsShapeData
 {
     internal readonly NCollection_List<DsInterference> _interferences = new();
     internal readonly NCollection_List<Shape> _sameDomain = new();

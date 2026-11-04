@@ -25,13 +25,13 @@ namespace Kerf.Engine.Booleans.Api;
 /// <see cref="CheckInverted"/> is false.
 /// </para>
 /// </remarks>
-public struct AlgoApiOptions : IEquatable<AlgoApiOptions>
+internal struct AlgoApiOptions : IEquatable<AlgoApiOptions>
 {
     /// <summary>OCCT's defaults.</summary>
     public AlgoApiOptions()
     {
         FuzzyValue = global::Kerf.Engine.Foundation.Precision.Confusion();
-        Glue = GlueMode.GlueOff;
+        Glue = global::Kerf.Booleans.GlueMode.Off;
         UseOBB = false;
         CheckInverted = true;
         RunParallel = false;
@@ -46,7 +46,7 @@ public struct AlgoApiOptions : IEquatable<AlgoApiOptions>
     public double FuzzyValue;
 
     /// <summary>The glue option (<c>SetGlue</c>; off by default).</summary>
-    public GlueMode Glue;
+    public global::Kerf.Booleans.GlueMode Glue;
 
     /// <summary>Filters the intersections with oriented bounding boxes (<c>SetUseOBB</c>; false by default).</summary>
     public bool UseOBB;

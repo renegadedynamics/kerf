@@ -18,7 +18,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// A working object. The map of elements compares shapes with IsEqual (OCCT's default hasher), so the two orientations
 /// of an edge are two elements.
 /// </remarks>
-public sealed class BlockBuilder
+internal sealed class BlockBuilder
 {
     private readonly Dictionary<int, int> _orientedShapeMapIsValid = new();
     private readonly IndexedSet<Shape> _orientedShapeMap = new(EqualityComparer<Shape>.Default);

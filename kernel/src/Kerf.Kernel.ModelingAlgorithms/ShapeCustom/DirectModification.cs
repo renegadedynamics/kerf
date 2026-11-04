@@ -26,7 +26,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// rebuilds every edge with a pcurve on an indirect surface, and <see cref="NewCurve2d"/> writes only into that new
 /// edge (<c>NewE</c>).
 /// </remarks>
-public class DirectModification : CustomModification
+internal class DirectModification : CustomModification
 {
     /// <summary>An empty modification.</summary>
     public DirectModification()

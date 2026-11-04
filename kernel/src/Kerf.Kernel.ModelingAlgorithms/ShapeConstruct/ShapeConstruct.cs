@@ -34,7 +34,7 @@ namespace Kerf.Engine.Healing.Construct;
 /// edge; its public functional twin is <see cref="PCurvesJoined"/>.
 /// </para>
 /// </remarks>
-public static partial class ShapeConstruct
+internal static partial class ShapeConstruct
 {
     /// <summary>
     /// The 3D curve on [<paramref name="first"/>, <paramref name="last"/>] as a B-spline (frozen): a B-spline is

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaParametricPoint
 /// </summary>
-public class FeaParametricPoint : StepPoint
+internal class FeaParametricPoint : StepPoint
 {
     private NCollection_HArray1<double> _coordinates;
 

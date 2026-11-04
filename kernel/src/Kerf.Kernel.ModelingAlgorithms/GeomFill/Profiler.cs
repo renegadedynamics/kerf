@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// the caller's curve is never changed) and changes those in <see cref="Perform"/>. <see cref="Curve"/> hands one out
 /// frozen; a later <see cref="Perform"/> copies a frozen curve before changing it (decision 844).
 /// </remarks>
-public class Profiler
+internal class Profiler
 {
     protected NCollection_Sequence<Curve3D> _sequence = new();
     protected bool _isDone;

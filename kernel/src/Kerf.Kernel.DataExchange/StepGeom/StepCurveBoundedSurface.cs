@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// <summary>
 /// Representation of STEP entity CurveBoundedSurface
 /// </summary>
-public class StepCurveBoundedSurface : StepBoundedSurface
+internal class StepCurveBoundedSurface : StepBoundedSurface
 {
     private StepSurface _basisSurface;
     private NCollection_HArray1<StepSurfaceBoundary> _boundaries;

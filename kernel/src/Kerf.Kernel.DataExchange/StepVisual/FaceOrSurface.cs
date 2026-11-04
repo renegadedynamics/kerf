@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP SELECT type FaceOrSurface
 /// </summary>
-public class FaceOrSurface : SelectType
+internal class FaceOrSurface : SelectType
 {
     /// <summary>
     /// Empty constructor

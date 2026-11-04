@@ -24,7 +24,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// A working object. It works on copies of the caller's curves (or on new B-splines converted from them), and keeps
 /// the caller's adaptors, as OCCT keeps the handles.
 /// </remarks>
-public sealed class SweepSectionGenerator : ISectionGenerator<int>
+internal sealed class SweepSectionGenerator : ISectionGenerator<int>
 {
     private BSplineCurve3D? _path;
     private BSplineCurve3D? _firstSect;

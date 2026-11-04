@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepGeometricSet : StepGeometricRepresentationItem
+internal class StepGeometricSet : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<StepGeometricSetSelect> _elements;
 

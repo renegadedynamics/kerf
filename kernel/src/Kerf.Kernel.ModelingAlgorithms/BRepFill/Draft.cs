@@ -25,7 +25,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Engine.Booleans.Operation;
 using static Kerf.Engine.Construction.Filling.TransitionStyle;
 using static Kerf.Engine.Construction.Library.LibraryWireError;
@@ -49,7 +49,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// <see cref="Shape"/>, <see cref="Shell"/> and <see cref="Generated"/> freeze what they return; the internal forms
 /// don't.
 /// </remarks>
-public sealed class Draft
+internal sealed class Draft
 {
     private Direction3D _dir;
     private double _angle;
@@ -757,7 +757,7 @@ public sealed class Draft
                     BooleanBuilder gluer = new();
                     gluer.AddArgument(cutMin);
                     gluer.AddArgument(sol2);
-                    gluer.SetGlue(GlueMode.GlueShift);
+                    gluer.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
                     gluer.Perform();
 
                     lo.Clear();

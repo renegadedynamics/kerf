@@ -479,7 +479,7 @@ public partial class Solid : Shape3D
                 adjusted = -depth;
         }
         var builder = new MakeOffset();
-        builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, OffsetMode.Skin, true, false,
+        builder.Initialize(surface.TopoShape, adjusted, 1.0e-5, global::Kerf.Offsets.OffsetMode.Skin, true, false,
                            JoinKind.Intersection, true, true);
         builder.MakeOffsetShape();
         global::Kerf.Topology.Shape thickened;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepSurfacePatch : Transient
+internal class StepSurfacePatch : Transient
 {
     private StepBoundedSurface _parentSurface;
     private StepTransitionCode _uTransition;

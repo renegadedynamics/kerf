@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of member for STEP SELECT type ElementAspect
 /// </summary>
-public class ElementAspectMember : SelectNamed
+internal class ElementAspectMember : SelectNamed
 {
     private const string AElementVolume = "ELEMENT_VOLUME";
     private const string AVolume3dFace = "VOLUME_3D_FACE";

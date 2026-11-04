@@ -29,7 +29,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Selections;
 
 /// <summary>The roots the transfer reader's transient process recorded for transfer (a STEP reader's roots).</summary>
-public class StepSelectForTransfer : SelectForTransfer
+internal class StepSelectForTransfer : SelectForTransfer
 {
     public StepSelectForTransfer()
     {
@@ -54,7 +54,7 @@ public class StepSelectForTransfer : SelectForTransfer
 }
 
 /// <summary>A selection of entities of a STEP type or of a type derived from it.</summary>
-public class SelectDerived : StepType
+internal class SelectDerived : StepType
 {
     public SelectDerived()
     {
@@ -117,7 +117,7 @@ public class SelectDerived : StepType
 }
 
 /// <summary>The faces of the input (face surfaces, and surfaces of geometric sets or alone).</summary>
-public class SelectFaces : SelectExplore
+internal class SelectFaces : SelectExplore
 {
     public SelectFaces() : base(-1)
     {
@@ -179,7 +179,7 @@ public class SelectFaces : SelectExplore
 /// OCCT keeps the flag that lets the first composite curve's geometric set through in a thread-local variable, reset
 /// by every construction; the port keeps it in the selection (decision 1270).
 /// </remarks>
-public class SelectGSCurves : SelectExplore
+internal class SelectGSCurves : SelectExplore
 {
     private int _flag;
 
@@ -261,7 +261,7 @@ public class SelectGSCurves : SelectExplore
 }
 
 /// <summary>The assembly components of the input (placed items and context dependent representations).</summary>
-public class SelectAssembly : SelectExplore
+internal class SelectAssembly : SelectExplore
 {
     public SelectAssembly() : base(-1)
     {
@@ -356,7 +356,7 @@ public class SelectAssembly : SelectExplore
 /// OCCT caches the graph and the instances of its last model in thread-local variables shared by every instance of
 /// the class; the port caches them in the selection (decision 1270).
 /// </remarks>
-public class SelectInstances : SelectExplore
+internal class SelectInstances : SelectExplore
 {
     private HGraph _graph;
     private EntityIterator _entities = new EntityIterator();

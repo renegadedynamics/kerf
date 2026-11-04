@@ -12,7 +12,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// the graph that start and end its zone.</summary>
 /// <remarks>OCCT keeps the arcs as raw pointers (no reference count, to break cycles); the port keeps references. The
 /// setters are internal (MAT_Graph and MAT2d build the graph).</remarks>
-public sealed class MedialBasicElt : Transient
+internal sealed class MedialBasicElt : Transient
 {
     private MedialArc? _startLeftArc;
     private MedialArc? _endLeftArc;

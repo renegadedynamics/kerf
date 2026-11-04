@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SphericalPairWithPin
 /// </summary>
-public class SphericalPairWithPin : LowOrderKinematicPair
+internal class SphericalPairWithPin : LowOrderKinematicPair
 {
     /// <summary>
     /// default constructor

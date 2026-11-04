@@ -36,7 +36,7 @@ namespace Kerf.Engine.Healing.Custom;
 /// caller's edge) and into the B-splines its approximations create (decision 973).
 /// </para>
 /// </remarks>
-public class BSplineRestriction : CustomModification
+internal class BSplineRestriction : CustomModification
 {
     private Continuity _continuity3d;
     private Continuity _continuity2d;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndTimeUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndTimeUnit : ConversionBasedUnit
 {
     private TimeUnit _timeUnit;
 

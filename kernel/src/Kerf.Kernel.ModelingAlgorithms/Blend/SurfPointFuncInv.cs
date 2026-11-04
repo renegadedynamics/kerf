@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// The function of a blending surface between a surface and a curve, used to find a solution at a given point.
 /// Its variables are w, U, V: the parameter on the guide line and the parametric coordinates on the partner surface.
 /// </summary>
-public abstract class SurfPointFuncInv : FunctionSetWithDerivatives
+internal abstract class SurfPointFuncInv : FunctionSetWithDerivatives
 {
     /// <summary>Returns 3.</summary>
     public override int NbVariables()

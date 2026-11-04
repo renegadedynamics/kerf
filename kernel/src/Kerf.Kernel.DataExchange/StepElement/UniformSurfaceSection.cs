@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity UniformSurfaceSection
 /// </summary>
-public class UniformSurfaceSection : SurfaceSection
+internal class UniformSurfaceSection : SurfaceSection
 {
     private double _thickness;
     private MeasureOrUnspecifiedValue _bendingThickness = new MeasureOrUnspecifiedValue();

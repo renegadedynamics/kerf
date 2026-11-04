@@ -13,7 +13,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// <c>ref DS.ChangeCurve(explorer.Index())</c> (OCCT's callers cast the constness away). OCCT's <c>thread_local</c>
 /// empty curve, returned when there is none, is a new empty curve here (decision 1063).
 /// </remarks>
-public sealed class DsCurveExplorer
+internal sealed class DsCurveExplorer
 {
     private int _index;
     private int _max;

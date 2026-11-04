@@ -19,7 +19,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>BRepMesh_CustomDelaunayBaseMeshAlgo&lt;BRepMesh_DelabellaBaseMeshAlgo&gt;</c>), written by a script from the
 /// Watson generic's body with only the names changed (phase4-plan section 6, decision 202's approach).
 /// </remarks>
-public class DelaunayNodeInsertionMeshAlgoOfDelabella<RangeSplitter> : NodeInsertionMeshAlgoOfDelabella<RangeSplitter>
+internal class DelaunayNodeInsertionMeshAlgoOfDelabella<RangeSplitter> : NodeInsertionMeshAlgoOfDelabella<RangeSplitter>
     where RangeSplitter : DefaultRangeSplitter, new()
 {
     private bool _isPreProcessSurfaceNodes;

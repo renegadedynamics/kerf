@@ -33,7 +33,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// overlay (ShapeFix_Shape's) it runs in place in that one. <see cref="Solid"/>, <see cref="Shape"/> and
 /// <see cref="SolidFromShell"/> freeze what they return; ported code reads the internal forms.
 /// </remarks>
-public class SolidFixer : RootFixer
+internal class SolidFixer : RootFixer
 {
     /// <summary>The solid fixed.</summary>
     protected Shape   _solid;

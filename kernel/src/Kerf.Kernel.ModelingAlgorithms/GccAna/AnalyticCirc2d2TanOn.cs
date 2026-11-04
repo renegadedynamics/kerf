@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// third curve as OCCT's do (where it meets the bisectors of the arguments), and keep the circles that touch both
 /// arguments as asked (Kerf decision 17102).
 /// </remarks>
-public sealed partial class AnalyticCirc2d2TanOn
+internal sealed partial class AnalyticCirc2d2TanOn
 {
     private bool _wellDone;
     private int _nbrSol;

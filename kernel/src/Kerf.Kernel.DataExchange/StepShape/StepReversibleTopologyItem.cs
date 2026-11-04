@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepReversibleTopologyItem : SelectType
+internal class StepReversibleTopologyItem : SelectType
 {
     /// <summary>
     /// Returns a ReversibleTopologyItem SelectType

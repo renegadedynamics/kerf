@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepQuasiUniformSurfaceAndRationalBSplineSurface : StepBSplineSurface
+internal class StepQuasiUniformSurfaceAndRationalBSplineSurface : StepBSplineSurface
 {
     private StepQuasiUniformSurface _quasiUniformSurface;
     private StepRationalBSplineSurface _rationalBSplineSurface;

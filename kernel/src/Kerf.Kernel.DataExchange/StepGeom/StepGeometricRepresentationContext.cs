@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepGeometricRepresentationContext : RepresentationContext
+internal class StepGeometricRepresentationContext : RepresentationContext
 {
     private int _coordinateSpaceDimension;
 

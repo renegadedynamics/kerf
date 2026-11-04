@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Representation of STEP entity Subedge
 /// </summary>
-public class StepSubedge : StepEdge
+internal class StepSubedge : StepEdge
 {
     private StepEdge _parentEdge;
 

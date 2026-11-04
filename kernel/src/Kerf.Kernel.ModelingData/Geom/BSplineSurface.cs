@@ -3616,14 +3616,14 @@ public sealed partial class BSplineSurface : BoundedSurface
         return copy;
     }
 
-    internal BSplineSurface WithPole(int uIndex, int vIndex, in Point3D p)
+    internal BSplineSurface WithPoleOneBased(int uIndex, int vIndex, in Point3D p)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPole(uIndex, vIndex, p);
         return copy;
     }
 
-    internal BSplineSurface WithPole(int uIndex, int vIndex, in Point3D p, double weight)
+    internal BSplineSurface WithPoleOneBased(int uIndex, int vIndex, in Point3D p, double weight)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetPole(uIndex, vIndex, p, weight);
@@ -3658,7 +3658,7 @@ public sealed partial class BSplineSurface : BoundedSurface
         return copy;
     }
 
-    internal BSplineSurface WithWeight(int uIndex, int vIndex, double weight)
+    internal BSplineSurface WithWeightOneBased(int uIndex, int vIndex, double weight)
     {
         BSplineSurface copy = CopyBSpline();
         copy.SetWeight(uIndex, vIndex, weight);

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class TessellatedItem : StepGeometricRepresentationItem
+internal class TessellatedItem : StepGeometricRepresentationItem
 {
     /// <summary>
     /// Returns a DraughtingCalloutElement select type

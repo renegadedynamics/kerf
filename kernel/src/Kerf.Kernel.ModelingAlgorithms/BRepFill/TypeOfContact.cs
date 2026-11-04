@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Construction.Filling;
 
 /// <summary>Whether a sweep along an auxiliary spine keeps the profile in contact with it.</summary>
-public enum TypeOfContact
+internal enum TypeOfContact
 {
     /// <summary>No contact is kept.</summary>
     NoContact,

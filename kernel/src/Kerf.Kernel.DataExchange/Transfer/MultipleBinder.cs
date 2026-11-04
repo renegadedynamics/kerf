@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// MultipleBinder itself is intended to be created and filled by TransferProcess itself (method BindMultiple), which
 /// avoids conflicts between Unique (Standard) result and Multiple result.
 /// </remarks>
-public class MultipleBinder : Binder
+internal class MultipleBinder : Binder
 {
     /// <summary>Normal standard constructor, creates an empty MultipleBinder.</summary>
     public MultipleBinder()

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity UnconstrainedPairValue
 /// </summary>
-public class UnconstrainedPairValue : PairValue
+internal class UnconstrainedPairValue : PairValue
 {
     private StepAxis2Placement3d _actualPlacement;
 

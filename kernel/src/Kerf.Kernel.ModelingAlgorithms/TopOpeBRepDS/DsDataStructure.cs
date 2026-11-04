@@ -36,7 +36,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// miss (decision 1066). OCCT's two function-scope statics (the empty shape-with-state map and value) are members here.
 /// </para>
 /// </remarks>
-public sealed class DsDataStructure
+internal sealed class DsDataStructure
 {
     private int _nbSurfaces;
     internal readonly Dictionary<int, DsSurfaceData> _surfaces = new();

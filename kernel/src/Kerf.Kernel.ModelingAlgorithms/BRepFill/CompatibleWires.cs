@@ -42,7 +42,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// sweeps) read the algorithm's own containers through the <c>Internal</c> forms.
 /// </para>
 /// </remarks>
-public sealed class CompatibleWires
+internal sealed class CompatibleWires
 {
 #pragma warning disable CS0414 // set and never read, as in OCCT
     private NCollection_Sequence<Shape> _init = new();

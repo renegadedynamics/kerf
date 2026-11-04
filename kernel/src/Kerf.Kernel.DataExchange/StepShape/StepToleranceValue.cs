@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepToleranceValue : Transient
+internal class StepToleranceValue : Transient
 {
     private Transient _lowerBound;
     private Transient _upperBound;

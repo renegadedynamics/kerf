@@ -13,7 +13,7 @@ namespace Kerf.Engine.Intersection.CurveSurface;
 /// The exact intersection of a curve and a surface adaptor from a starting point, as IntCurveSurface_HInter refines
 /// the points of the interference (OCCT's instantiation of IntImp_IntCS.gxx).
 /// </summary>
-public sealed class TheExactHInter
+internal sealed class TheExactHInter
     : IntCS<TheCSFunctionOfHInter, SurfaceAdaptorBase, TheHSurfaceTool,
                    CurveAdaptorBase, TheHCurveTool>,
       ITheExactInter<TheExactHInter, TheCSFunctionOfHInter>

@@ -1,3 +1,4 @@
+using Kerf.Exchange;
 using Occt;
 
 namespace Kerf.Modeling;
@@ -21,4 +22,7 @@ public sealed record ImportLimits(long MaxBytes = 1L << 30, int MaxEntities = 20
     public static ImportLimits Default { get; } = new();
 
     internal ExchangeReadLimits ToExchange() => new(MaxBytes, MaxEntities, MaxDepth, MaxTriangles, MaxNodes);
+
+    internal ReadLimits ToReadLimits() =>
+        new() { MaxBytes = MaxBytes, MaxEntities = MaxEntities, MaxDepth = MaxDepth, MaxTriangles = MaxTriangles, MaxNodes = MaxNodes };
 }

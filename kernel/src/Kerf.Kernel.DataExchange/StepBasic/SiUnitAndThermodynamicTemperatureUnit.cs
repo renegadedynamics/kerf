@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SiUnitAndThermodynamicTemperatureUnit : SiUnit
+internal class SiUnitAndThermodynamicTemperatureUnit : SiUnit
 {
     private ThermodynamicTemperatureUnit _thermodynamicTemperatureUnit;
 

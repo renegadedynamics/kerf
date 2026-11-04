@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Constraints.Qualifier;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d2TanRad
+internal sealed partial class AnalyticCirc2d2TanRad
 {
     // circular tangent to a circle, a line and a given radius
     //==============================================================

@@ -18,7 +18,7 @@ namespace Kerf.Engine.Measurement;
 /// box. The barycentre, principal axes and extents are available whatever the result.
 /// </summary>
 /// <remarks>Computed in the constructor and immutable afterwards.</remarks>
-public sealed class PEquation
+internal sealed class PEquation
 {
     /// <summary>Type of geometric entity that best fits the cloud.</summary>
     public enum Type

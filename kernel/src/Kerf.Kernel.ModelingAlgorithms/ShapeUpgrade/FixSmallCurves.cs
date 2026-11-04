@@ -16,7 +16,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// segment; the base class approximates nothing (<see cref="Approx"/> returns false).
 /// </summary>
 /// <remarks>A working object (decision 21). It only reads the edge.</remarks>
-public class FixSmallCurves : UpgradeTool
+internal class FixSmallCurves : UpgradeTool
 {
     /// <summary>The status.</summary>
     protected int _status;

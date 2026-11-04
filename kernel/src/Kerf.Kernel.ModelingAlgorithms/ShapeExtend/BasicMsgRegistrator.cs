@@ -15,7 +15,7 @@ namespace Kerf.Engine.Healing.Extend;
 /// processors, <see cref="MsgRegistrator"/>) attach the messages.
 /// </summary>
 /// <remarks>A working object (decision 21). Nothing here writes to the console (decision 493).</remarks>
-public class BasicMsgRegistrator : Transient
+internal class BasicMsgRegistrator : Transient
 {
     /// <summary>An empty registrator.</summary>
     public BasicMsgRegistrator()

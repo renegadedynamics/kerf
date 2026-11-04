@@ -13,7 +13,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// Qualified curves for the Geom2dGcc solvers: circles and lines tangent to curves, through points, or centred on
 /// curves.
 /// </summary>
-public static class Geom2dGcc
+internal static class Geom2dGcc
 {
     /// <summary>A curve whose solutions are not qualified: all solutions apply.</summary>
     public static QualifiedCurve Unqualified(CurveAdaptor2D curve)

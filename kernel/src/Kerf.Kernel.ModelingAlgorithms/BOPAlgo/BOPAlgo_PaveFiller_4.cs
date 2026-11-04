@@ -10,7 +10,7 @@ using Kerf.Engine.Intersection.Tools;
 using Kerf.Engine.Topology;
 using Kerf.Topology;
 using Occt;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.ShapeType;
 
 namespace Kerf.Engine.Booleans;
@@ -113,7 +113,7 @@ public partial class PaveFiller
         int nV, nF;
         //
         using var psOuter = new ProgressScope(range, null, 10);
-        if (_glue == GlueMode.GlueFull)
+        if (_glue == global::Kerf.Booleans.GlueMode.Full)
         {
             // there is no need to intersect vertices with faces in this mode
             // just initialize FaceInfo for all faces

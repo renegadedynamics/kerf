@@ -321,7 +321,7 @@ public sealed class BRepOffsetAPIThruSectionsOracleTests(ITestOutputHelper outpu
             }
             if (theO.ParType >= 0)
             {
-                aP.SetParType((ParametrizationType)theO.ParType);
+                aP.SetParType((global::Kerf.Geometry.ParametrizationType)theO.ParType);
             }
             if (theO.Continuity >= 0)
             {

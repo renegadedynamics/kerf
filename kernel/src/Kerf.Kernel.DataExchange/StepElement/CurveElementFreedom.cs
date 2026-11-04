@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP SELECT type CurveElementFreedom
 /// </summary>
-public class CurveElementFreedom : SelectType
+internal class CurveElementFreedom : SelectType
 {
     private const string AnEnum = "ENUMERATED_CURVE_ELEMENT_FREEDOM";
     private const string AnApp = "APPLICATION_DEFINED_DEGREE_OF_FREEDOM";

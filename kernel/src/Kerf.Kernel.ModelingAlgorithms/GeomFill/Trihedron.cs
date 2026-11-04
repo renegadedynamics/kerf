@@ -6,7 +6,7 @@ using Occt;
 
 namespace Kerf.Engine.Construction.Surfaces;
 
-public enum Trihedron
+internal enum Trihedron
 {
     IsCorrectedFrenet,
     IsFixed,

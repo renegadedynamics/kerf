@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Measurement;
 
 /// <summary>The kind of curve, for the deflection algorithms.</summary>
-public enum DeflectionType
+internal enum DeflectionType
 {
     Linear,
     Circular,

@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity DataEnvironment
 /// </summary>
-public class DataEnvironment : Transient
+internal class DataEnvironment : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

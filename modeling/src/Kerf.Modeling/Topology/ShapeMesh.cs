@@ -59,39 +59,27 @@ public sealed class ShapeMesh
     public int NodeCount => Faces.Sum(f => f.NodeCount);
 
     /// <summary>
-    /// Triangulates a shape. The shape isn't changed: a private copy is meshed (OCCT stores a mesh in the faces it
-    /// meshes), so meshing is safe from any thread, on shapes that share geometry too.
+    /// Triangulates a shape. The shape isn't changed: the kernel's mesher meshes in a working overlay and reads the
+    /// meshes out, so meshing is safe from any thread, on shapes that share geometry too.
     /// </summary>
     internal static ShapeMesh Of(Shape shape, MeshTolerances tolerances) =>
         shape.IsEmpty ? Empty : Failures.Doing(() => "triangulate", () => Mesh(shape, tolerances));
 
     private static ShapeMesh Mesh(Shape shape, MeshTolerances tolerances)
     {
-        var copy = shape.MeshedCopy(tolerances.Linear, tolerances.Angular, tolerances.Relative);
-        // The copy has the shape's structure, so its faces, edges and vertices come in the same order
-        var meshed = shape.Placed(copy);
-        var faces = meshed.Faces().Select(f => f.TopoShape).ToList();
-        var edges = meshed.Edges().Select(e => e.TopoShape).ToList();
-        var deflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : tolerances.Linear;
-        var buffers = Kerf.Engine.Meshing.MeshExtraction.Extract(copy, faces, edges, deflection, tolerances.Angular);
-
-        var faceMeshes = new FaceMesh[faces.Count];
-        for (int i = 0; i < faceMeshes.Length; i++)
+        // The kernel's mesher meshes in a working overlay and reads the meshes out (unit 10L3): the shape is never
+        // written, and its faces, edges and vertices come in the order of Faces(), Edges() and Vertices()
+        var options = new global::Kerf.Meshing.MeshOptions
         {
-            int node = (int)buffers.FaceNodes[i], nodes = (int)buffers.FaceNodes[i + 1] - node;
-            int tri = (int)buffers.FaceTriangles[i], tris = (int)buffers.FaceTriangles[i + 1] - tri;
-            faceMeshes[i] = new FaceMesh(new ReadOnlyMemory<float>(buffers.Positions, 3 * node, 3 * nodes),
-                                         new ReadOnlyMemory<float>(buffers.Normals, 3 * node, 3 * nodes),
-                                         new ReadOnlyMemory<int>(buffers.Triangles, tri, tris),
-                                         GeomTypeOf((SurfaceKind)buffers.FaceTypes[i]));
-        }
-        var edgeMeshes = new EdgeMesh[edges.Count];
-        for (int i = 0; i < edgeMeshes.Length; i++)
-        {
-            int point = (int)buffers.EdgePoints[i], points = (int)buffers.EdgePoints[i + 1] - point;
-            edgeMeshes[i] = new EdgeMesh(new ReadOnlyMemory<float>(buffers.Points, 3 * point, 3 * points),
-                                         GeomTypeOf((CurveKind)buffers.EdgeTypes[i]));
-        }
+            LinearDeflection = tolerances.Linear,
+            AngularDeflection = tolerances.Angular,
+            Relative = tolerances.Relative,
+            Parallel = true,
+            EdgeDeflection = tolerances.Relative ? MeshTolerances.For(shape).Linear : null,
+        };
+        var mesh = global::Kerf.Meshing.Mesher.Mesh(shape.TopoShape, options).GetValueOrThrow();
+        var faceMeshes = mesh.Faces.Select(f => new FaceMesh(f.Positions, f.Normals, f.Triangles, GeomTypeOf(f.Kind))).ToArray();
+        var edgeMeshes = mesh.Edges.Select(e => new EdgeMesh(e.Points, GeomTypeOf(e.Kind))).ToArray();
         return new ShapeMesh(faceMeshes, edgeMeshes, [.. shape.Vertices().Select(v => v.ToVector())], tolerances);
     }
 

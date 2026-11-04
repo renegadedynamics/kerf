@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndVolumeUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndVolumeUnit : ConversionBasedUnit
 {
     private VolumeUnit _volumeUnit;
 

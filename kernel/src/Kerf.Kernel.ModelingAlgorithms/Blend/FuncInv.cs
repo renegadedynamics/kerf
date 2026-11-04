@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// them. Its variables are t, w, U, V: the parameter on the curve on surface, the parameter on the guide line, and the
 /// parametric coordinates of the point on the partner surface.
 /// </summary>
-public abstract class FuncInv : FunctionSetWithDerivatives
+internal abstract class FuncInv : FunctionSetWithDerivatives
 {
     /// <summary>Returns 4.</summary>
     public override int NbVariables()

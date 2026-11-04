@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Tolerances;
 
-public class DatumOrCommonDatum : SelectType
+internal class DatumOrCommonDatum : SelectType
 {
     /// <summary>
     /// Returns a DatumOrCommonDatum select type

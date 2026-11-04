@@ -13,10 +13,11 @@ namespace Kerf.Kernel.PublicApi.Tests;
 /// </summary>
 public class PublicSurfaceTests
 {
-    private static readonly string[] PublicNamespaces = ["Kerf", "Kerf.Geometry", "Kerf.Topology"];
+    private static readonly string[] PublicNamespaces =
+        ["Kerf", "Kerf.Geometry", "Kerf.Topology", "Kerf.Construction", "Kerf.Booleans", "Kerf.Fillets", "Kerf.Offsets", "Kerf.Features"];
 
     private static IEnumerable<Type> PublicTypes()
-        => new[] { typeof(Point3D).Assembly, typeof(Shape).Assembly }
+        => new[] { typeof(Point3D).Assembly, typeof(Shape).Assembly, typeof(GeometryOperations).Assembly }
             .SelectMany(a => a.GetExportedTypes())
             .Where(t => PublicNamespaces.Contains(t.Namespace));
 

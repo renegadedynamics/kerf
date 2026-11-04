@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// The approximation runs in the constructor. <see cref="Surface"/> freezes the surface it returns (the same object
 /// each time); ported code that goes on changing it reads <see cref="InternalSurface"/>.
 /// </remarks>
-public class MakeApprox
+internal class MakeApprox
 {
     private readonly PlateSurface _plate;
     private readonly BSplineSurface? _surface;

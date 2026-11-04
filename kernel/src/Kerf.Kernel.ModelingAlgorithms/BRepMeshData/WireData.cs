@@ -10,7 +10,7 @@ using Occt;
 namespace Kerf.Engine.Meshing.Data;
 
 /// <summary>The default discrete wire.</summary>
-public class WireData : WireModel
+internal class WireData : WireModel
 {
     private readonly List<EdgeModel> _dEdges;
     private readonly List<Orientation> _dEdgesOri;

@@ -11,7 +11,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 
 /// <summary>A node of the bisecting locus: the end of arcs, at a distance from the contour.</summary>
 /// <remarks>OCCT keeps its linked arc as a raw pointer; the port keeps a reference. The setters are internal.</remarks>
-public sealed class MedialNode : Transient
+internal sealed class MedialNode : Transient
 {
     private int _nodeIndex;
     private readonly int _geomIndex;

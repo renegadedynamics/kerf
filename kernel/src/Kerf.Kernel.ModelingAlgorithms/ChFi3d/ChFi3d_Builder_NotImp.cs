@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Fillets;
 
-public abstract partial class FilletBuilderBase
+internal abstract partial class FilletBuilderBase
 {
     // The walking on a restriction (surface/restriction and restriction/restriction), which only ChFi3d_FilBuilder
     // implements: the root class throws.

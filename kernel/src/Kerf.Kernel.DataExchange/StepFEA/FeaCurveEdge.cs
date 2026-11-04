@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Fea;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepFEA_CurveEdge;</c>.</remarks>
-public enum FeaCurveEdge
+internal enum FeaCurveEdge
 {
     ElementEdge,
 }

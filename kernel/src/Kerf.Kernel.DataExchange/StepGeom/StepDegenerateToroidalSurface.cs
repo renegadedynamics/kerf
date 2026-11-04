@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepDegenerateToroidalSurface : StepToroidalSurface
+internal class StepDegenerateToroidalSurface : StepToroidalSurface
 {
     private bool _selectOuter;
 

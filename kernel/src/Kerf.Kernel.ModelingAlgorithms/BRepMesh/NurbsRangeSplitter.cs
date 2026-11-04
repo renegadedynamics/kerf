@@ -28,7 +28,7 @@ namespace Kerf.Engine.Meshing;
 /// <c>std::sort</c> of the parameters sorts doubles that the map made distinct, so <c>Span.Sort</c> gives
 /// <c>std::sort</c>'s order.
 /// </remarks>
-public class NurbsRangeSplitter : UVParamRangeSplitter
+internal class NurbsRangeSplitter : UVParamRangeSplitter
 {
     private SurfaceKind _surfaceType;
 

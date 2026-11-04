@@ -35,7 +35,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// counters (product names, assembly occurrences) are the session's.
 /// </para>
 /// </remarks>
-public class StepController : Controller
+internal class StepController : Controller
 {
     // The controller recorded under "STEP" and "step", made once (a one-time initialisation, unit 10I)
     private static readonly Lazy<StepController> TheRecorded = new(() =>

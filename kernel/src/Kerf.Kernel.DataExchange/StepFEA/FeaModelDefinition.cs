@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FeaModelDefinition
 /// </summary>
-public class FeaModelDefinition : ShapeAspect
+internal class FeaModelDefinition : ShapeAspect
 {
     /// <summary>
     /// Empty constructor

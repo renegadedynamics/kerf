@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class BoxCharacteristicSelect
+internal class BoxCharacteristicSelect
 {
     private double _realValue;
     private int _typeOfContent;

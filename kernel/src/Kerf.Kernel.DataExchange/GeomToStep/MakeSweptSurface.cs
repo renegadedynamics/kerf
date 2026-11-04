@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of SweptSurface from Geom to a STEP swept_surface (linear extrusion or revolution).</summary>
-public sealed class MakeSweptSurface : GeometryRoot
+internal sealed class MakeSweptSurface : GeometryRoot
 {
     private StepSweptSurface _sweptSurface;
 

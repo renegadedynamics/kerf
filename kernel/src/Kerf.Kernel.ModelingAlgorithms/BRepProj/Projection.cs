@@ -34,7 +34,7 @@ namespace Kerf.Engine.Construction.Api;
 /// written. <see cref="Current"/> and <see cref="Shape"/> hand out frozen shapes (decision 938).
 /// </para>
 /// </remarks>
-public sealed class Projection
+internal sealed class Projection
 {
     private bool _isDone;
     // (OCCT's myLsh, never used, is left out)

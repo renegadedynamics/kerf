@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepBooleanResult : StepGeometricRepresentationItem
+internal class StepBooleanResult : StepGeometricRepresentationItem
 {
     private StepBooleanOperator _anOperator;
     private StepBooleanOperand _firstOperand = new StepBooleanOperand();

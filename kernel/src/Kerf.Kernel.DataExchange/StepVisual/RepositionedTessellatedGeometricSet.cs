@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of complex STEP entity RepositionedTessellatedGeometricSet
 /// </summary>
-public class RepositionedTessellatedGeometricSet : TessellatedGeometricSet
+internal class RepositionedTessellatedGeometricSet : TessellatedGeometricSet
 {
     private StepAxis2Placement3d _location;
 

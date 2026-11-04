@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// A pair of STEP points, unordered: (P1, P2) equals (P2, P1). The key of the edges a faceted brep's poly loops share.
 /// Points are compared by reference, as OCCT compares handles.
 /// </summary>
-public readonly struct PointPair : IEquatable<PointPair>
+internal readonly struct PointPair : IEquatable<PointPair>
 {
     private readonly StepCartesianPoint? _p1;
     private readonly StepCartesianPoint? _p2;

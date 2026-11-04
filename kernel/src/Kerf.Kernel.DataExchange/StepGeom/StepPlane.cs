@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepPlane : StepElementarySurface
+internal class StepPlane : StepElementarySurface
 {
     /// <summary>
     /// Returns a Plane

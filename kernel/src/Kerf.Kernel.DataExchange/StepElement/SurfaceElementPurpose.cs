@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP SELECT type SurfaceElementPurpose
 /// </summary>
-public class SurfaceElementPurpose : SelectType
+internal class SurfaceElementPurpose : SelectType
 {
     /// <summary>
     /// Empty constructor

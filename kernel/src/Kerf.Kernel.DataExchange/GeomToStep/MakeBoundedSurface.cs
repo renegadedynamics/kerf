@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 /// The mapping of BoundedSurface from Geom to a STEP bounded_surface: B-spline surfaces (periodic ones made
 /// non-periodic on a copy), Bezier surfaces (converted to B-splines) and rectangular trimmed surfaces.
 /// </summary>
-public sealed class MakeBoundedSurface : GeometryRoot
+internal sealed class MakeBoundedSurface : GeometryRoot
 {
     private StepBoundedSurface _boundedSurface;
 

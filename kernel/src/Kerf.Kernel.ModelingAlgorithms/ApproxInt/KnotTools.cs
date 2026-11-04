@@ -9,7 +9,7 @@ using Kerf.Engine.Intersection.Patches;
 using Kerf.Engine.Intersection.Surfaces;
 using Kerf.Geometry;
 using Occt;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 
 namespace Kerf.Engine.Intersection.Approximation;
 
@@ -639,7 +639,7 @@ public static class KnotTools
     /// The preferable parametrisation of the points <paramref name="fpar"/> to <paramref name="lpar"/> of
     /// <paramref name="wl"/>: centripetal where the curvature varies much, else chord length.
     /// </summary>
-    public static ParametrizationType DefineParType(WLine wl, int fpar, int lpar,
+    public static global::Kerf.Geometry.ParametrizationType DefineParType(WLine wl, int fpar, int lpar,
                                                            bool approxXYZ, bool approxU1V1, bool approxU2V2)
     {
         if (lpar - fpar == 1)
@@ -746,7 +746,7 @@ public static class KnotTools
         const double critRat = 500.0;
         const double critParRat = 100.0;
         math_Vector pars = new(fpar, lpar);
-        ParametrizationType parType = ChordLength;
+        global::Kerf.Geometry.ParametrizationType parType = ChordLength;
         WLApprox.Parameters(testLine, fpar, lpar, parType, pars);
         NCollection_Array1<double> curv = new(pars.Lower(), pars.Upper());
         BuildCurvature(coords, dim, pars, curv, out double maxCurv);

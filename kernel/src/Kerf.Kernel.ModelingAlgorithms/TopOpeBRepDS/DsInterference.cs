@@ -23,7 +23,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// is often held by several lists of the data structure (a shape's and a curve's), so a change is seen by all.
 /// </para>
 /// </remarks>
-public class DsInterference : Transient
+internal class DsInterference : Transient
 {
     private DsTransition _transition;
     private int _support;

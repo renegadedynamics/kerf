@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity UnequallyDisposedGeometricTolerance
 /// </summary>
-public class UnequallyDisposedGeometricTolerance : GeometricTolerance
+internal class UnequallyDisposedGeometricTolerance : GeometricTolerance
 {
     private LengthMeasureWithUnit _displacement;
 

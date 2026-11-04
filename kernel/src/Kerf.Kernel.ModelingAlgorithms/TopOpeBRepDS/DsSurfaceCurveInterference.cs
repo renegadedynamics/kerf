@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>An interference with a 2D curve: a curve on a face or surface, with its pcurve there.</summary>
-public sealed class DsSurfaceCurveInterference : DsInterference
+internal sealed class DsSurfaceCurveInterference : DsInterference
 {
     private Curve2D? _pCurve;
 

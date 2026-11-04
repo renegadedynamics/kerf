@@ -13,7 +13,7 @@ namespace Kerf.Engine.Fillets.Api;
 /// Construction of fillets on the edges of a shell: the contours (chains of edges tangent to each other) that
 /// <see cref="MakeFillet"/> and <see cref="MakeChamfer"/> build on.
 /// </summary>
-public abstract class LocalOperation : MakeShape
+internal abstract class LocalOperation : MakeShape
 {
     /// <summary>Adds a contour in the builder (builds a contour of tangent edges).</summary>
     public abstract void Add(in Edge e);

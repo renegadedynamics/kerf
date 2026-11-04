@@ -58,7 +58,7 @@ namespace Kerf.Engine.Fillets;
 /// caller's own for the rest (decision 1136); <see cref="Shape"/>, <see cref="BadShape"/> and <see cref="Generated"/> freeze what they hand out.
 /// </para>
 /// </remarks>
-public abstract partial class FilletBuilderBase
+internal abstract partial class FilletBuilderBase
 {
     //=================================================================================================
     // Fields (OCCT's protected and private members)

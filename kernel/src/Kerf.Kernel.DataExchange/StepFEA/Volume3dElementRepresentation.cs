@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity Volume3dElementRepresentation
 /// </summary>
-public class Volume3dElementRepresentation : ElementRepresentation
+internal class Volume3dElementRepresentation : ElementRepresentation
 {
     private FeaModel3d _modelRef;
     private Volume3dElementDescriptor _elementDescriptor;

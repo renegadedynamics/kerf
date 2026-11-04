@@ -19,7 +19,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// an approximation) and other curves are converted to B-splines and cut at their knots.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class ConvertCurve3dToBezier : SplitCurve3d
+internal class ConvertCurve3dToBezier : SplitCurve3d
 {
     private readonly NCollection_HSequence<Curve3D> _segments;
     private readonly NCollection_HSequence<double> _splitParams;

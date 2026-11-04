@@ -30,7 +30,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// bisectors of the two arguments (GccAna) intersected with the curve (Geom2dInt).
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117), up to 8 solutions.</remarks>
-public sealed class Circ2d2TanOnGeo
+internal sealed class Circ2d2TanOnGeo
 {
     private const int ANbSolMAX = 8;
 

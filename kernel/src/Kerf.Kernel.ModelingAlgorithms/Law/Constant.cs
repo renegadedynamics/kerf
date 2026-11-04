@@ -10,7 +10,7 @@ namespace Kerf.Engine.Construction.Laws;
 
 /// <summary>A constant law.</summary>
 /// <remarks>A working object (decision 21): <see cref="Set"/> is public and changes the law.</remarks>
-public class Constant : LawsFunction
+internal class Constant : LawsFunction
 {
     private double _radius;
     private double _first;

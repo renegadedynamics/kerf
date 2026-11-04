@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity SphericalPairValue
 /// </summary>
-public class SphericalPairValue : PairValue
+internal class SphericalPairValue : PairValue
 {
     private SpatialRotation _inputOrientation = new SpatialRotation();
 

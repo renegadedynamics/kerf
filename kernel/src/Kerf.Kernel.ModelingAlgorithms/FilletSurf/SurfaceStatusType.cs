@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Surfaces;
 
 /// <summary>How many ends of a section of a fillet lie on an edge of their support faces.</summary>
-public enum SurfaceStatusType
+internal enum SurfaceStatusType
 {
     TwoExtremityOnEdge,
     OneExtremityOnEdge,

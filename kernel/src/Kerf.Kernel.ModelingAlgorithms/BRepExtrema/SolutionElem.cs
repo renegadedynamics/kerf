@@ -18,7 +18,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// OCCT's class is used by value and has no mutators, so it is a readonly struct. <c>default</c> is OCCT's empty
 /// constructor (zeros, a vertex support with null shapes).
 /// </remarks>
-public readonly struct SolutionElem : IEquatable<SolutionElem>
+internal readonly struct SolutionElem : IEquatable<SolutionElem>
 {
     private readonly double _dist;
     private readonly Point3D _point;

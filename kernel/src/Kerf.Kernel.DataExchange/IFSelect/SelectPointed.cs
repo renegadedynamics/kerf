@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// instance the result of picking viewed entities on a graphic screen It can also be used to provide a list
 /// as internal alternate input : this use implies to clear the list once queried
 /// </summary>
-public class SelectPointed : SelectBase
+internal class SelectPointed : SelectBase
 {
 
     /// <summary>

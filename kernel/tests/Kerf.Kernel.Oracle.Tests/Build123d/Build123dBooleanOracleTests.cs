@@ -89,7 +89,7 @@ public class Build123dBooleanOracleTests(ITestOutputHelper output)
                 Kind.Section => Op.Section,
                 _ => Op.Splitter,
             },
-            theCall.Fuzzy, theCall.Glue ? GlueMode.GlueShift : GlueMode.GlueOff, Api: true);
+            theCall.Fuzzy, theCall.Glue ? global::Kerf.Booleans.GlueMode.Shift : global::Kerf.Booleans.GlueMode.Off, Api: true);
 
     // One Boolean: compared by the 6F/6P harness, then sorted; native's (serial) result for the clean
     private N.TopoDS_Shape? CompareBoolean(ShapeFixOracleRun theRun, BooleanOracleTests theHarness, Tally theTally, Call theCall)

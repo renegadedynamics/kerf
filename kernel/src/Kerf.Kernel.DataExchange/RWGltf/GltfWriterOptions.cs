@@ -8,10 +8,10 @@ using Occt;
 namespace Kerf.Engine.Exchange.Gltf;
 
 /// <summary>The options of <see cref="GltfTreeWriter"/>.</summary>
-public sealed record GltfWriteOptions
+internal sealed record GltfWriterOptions
 {
     /// <summary>The defaults.</summary>
-    public static GltfWriteOptions Default { get; } = new();
+    public static GltfWriterOptions Default { get; } = new();
 
     /// <summary>
     /// The size of the model's length unit in metres (glTF's unit); null to take the tree's

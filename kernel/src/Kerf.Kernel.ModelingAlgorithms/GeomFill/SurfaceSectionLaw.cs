@@ -12,7 +12,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 
 /// <summary>A section law for sweeping: the poles and weights of the section as functions of the parameter v.</summary>
 /// <remarks>A working object (decision 21), as <see cref="SurfaceLocationLaw"/>.</remarks>
-public abstract class SurfaceSectionLaw : Transient
+internal abstract class SurfaceSectionLaw : Transient
 {
     /// <summary>Computes the section for v = Param.</summary>
     public abstract bool D0(double param, NCollection_Array1<Point3D> poles, NCollection_Array1<double> weigths);

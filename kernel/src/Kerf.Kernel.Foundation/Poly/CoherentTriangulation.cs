@@ -29,7 +29,7 @@ namespace Kerf.Engine.Meshing;
 /// links are classes, so the references OCCT keeps as pointers stay valid as the arrays grow.
 /// </para>
 /// </remarks>
-public class CoherentTriangulation : Transient
+internal class CoherentTriangulation : Transient
 {
     /// <summary>Iterates the triangles, skipping removed ones. Triangles added during the iteration aren't visited.</summary>
     public sealed class IteratorOfTriangle

@@ -1,0 +1,301 @@
+// Copyright (c) 2026 The Kerf Contributors. LGPL 2.1 with the Open CASCADE exception (see LICENSE).
+
+using System.Collections.Immutable;
+using Kerf.Engine.Construction.Api;
+using Kerf.Engine.Construction.Library;
+using Kerf.Engine.Foundation;
+using Kerf.Engine.Meshing.Tools;
+using Kerf.Engine.Topology;
+using Kerf.Geometry;
+using Kerf.Topology;
+
+namespace Kerf.Construction;
+
+/// <summary>
+/// Shapes from geometry (docs/api/construction.md; OCCT's <c>BRepBuilderAPI_MakeVertex</c>, <c>MakeEdge</c>,
+/// <c>MakeWire</c>, <c>MakePolygon</c>, <c>MakeFace</c>, <c>MakeShell</c>, <c>MakeSolid</c> and <c>BRepLib_FindSurface</c>),
+/// as static extension members of the shape types: <c>Edge.Line(p, q)</c>, <c>Wire.FromEdges(edges)</c>,
+/// <c>Face.FromWire(wire)</c>. Unlike Topology's raw <c>Create</c>, they check and connect: a wire's edges must meet, a
+/// face's wire must lie on its surface. A failure is the builder's status as a diagnostic (docs/api/diagnostics.md).
+/// </summary>
+public static class ShapeFactory
+{
+    extension(Vertex)
+    {
+        /// <summary>A vertex at <paramref name="point"/>.</summary>
+        public static Vertex At(Point3D point) => new MakeVertex(point).Vertex();
+    }
+
+    extension(Edge)
+    {
+        /// <summary>The straight edge from <paramref name="start"/> to <paramref name="end"/>.</summary>
+        public static Result<Edge> Line(Point3D start, Point3D end) => BuildEdge(() => new MakeEdge(start, end));
+
+        /// <summary>An edge on <paramref name="curve"/>, over its whole range or <paramref name="range"/>.</summary>
+        public static Result<Edge> FromCurve(Curve3D curve, Interval? range = null)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            return range is { } r ? BuildEdge(() => new MakeEdge(curve, r.Min, r.Max)) : BuildEdge(() => new MakeEdge(curve));
+        }
+
+        /// <summary>An edge on <paramref name="surface"/> along the 2D curve <paramref name="curve"/> of its parameters,
+        /// with its 3D curve computed.</summary>
+        public static Result<Edge> FromCurve(Curve2D curve, Surface surface, Interval? range = null)
+        {
+            ArgumentNullException.ThrowIfNull(curve);
+            ArgumentNullException.ThrowIfNull(surface);
+            return BuildEdge(() => range is { } r ? new MakeEdge(curve, surface, r.Min, r.Max) : new MakeEdge(curve, surface), buildCurve: true);
+        }
+
+        /// <summary>The closed edge of a whole circle.</summary>
+        public static Result<Edge> Circle(in Circle3D circle)
+        {
+            Circle3D c = circle;
+            return BuildEdge(() => new MakeEdge(c));
+        }
+
+        /// <summary>The edge of an arc of <paramref name="circle"/>, between two angles (radians).</summary>
+        public static Result<Edge> Arc(in Circle3D circle, double startAngle, double endAngle)
+        {
+            Circle3D c = circle;
+            return BuildEdge(() => new MakeEdge(c, startAngle, endAngle));
+        }
+    }
+
+    extension(Wire)
+    {
+        /// <summary>A wire of <paramref name="edges"/>, connected in order (OCCT's <c>BRepBuilderAPI_MakeWire</c>: each edge
+        /// must meet the wire so far; vertices within tolerance are merged).</summary>
+        /// <exception cref="ArgumentException">An edge is null.</exception>
+        public static Result<Wire> FromEdges(IEnumerable<Edge> edges)
+        {
+            ArgumentNullException.ThrowIfNull(edges);
+            Edge[] list = [.. edges];
+            foreach (Edge e in list)
+            {
+                MakerOutcome.NotNull(e, nameof(edges));
+            }
+            return Guarded(() =>
+            {
+                var wire = new MakeWire();
+                foreach (Edge e in list)
+                {
+                    wire.Add(e);
+                }
+                return wire.IsDone ? wire.Wire() : Result<Wire>.Failure(StatusDiagnostics.ToDiagnostic(wire.Error()) ?? Failed("wire"));
+            });
+        }
+
+        /// <summary>The polygon through <paramref name="points"/>, closed back to the first if <paramref name="closed"/>.</summary>
+        /// <exception cref="ArgumentException">Fewer than two points.</exception>
+        public static Result<Wire> Polygon(ReadOnlySpan<Point3D> points, bool closed = false)
+        {
+            if (points.Length < 2)
+            {
+                throw new ArgumentException("A polygon needs at least two points.", nameof(points));
+            }
+            Point3D[] copy = points.ToArray();
+            return Guarded(() =>
+            {
+                var polygon = new MakePolygon();
+                foreach (Point3D p in copy)
+                {
+                    polygon.Add(p);
+                }
+                if (closed)
+                {
+                    polygon.Close();
+                }
+                return polygon.IsDone
+                    ? polygon.Wire()
+                    : Result<Wire>.Failure(Diagnostic.Error(new DiagnosticCode("construction.degenerate-polygon"), "The points don't make a polygon: they coincide."));
+            });
+        }
+    }
+
+    extension(Wire wire)
+    {
+        /// <summary>Whether the wire lies in a plane, and the plane if so (OCCT's <c>BRepLib_FindSurface</c>).</summary>
+        public bool TryGetPlane(out Plane3D plane)
+        {
+            plane = default;
+            if (wire.IsNull || !wire.AsShape().TryFindSurface(-1, out Surface? surface, onlyPlane: true) || surface is not PlaneSurface planar)
+            {
+                return false;
+            }
+            plane = planar.Plane;
+            return true;
+        }
+    }
+
+    extension<TShape>(TShape shape) where TShape : struct, IShape<TShape>
+    {
+        /// <summary>Whether the shape's edges lie on one surface within <paramref name="tolerance"/> (negative: their own
+        /// tolerances), and the surface if so (OCCT's <c>BRepLib_FindSurface</c>), placed as the shape is.</summary>
+        public bool TryFindSurface(double tolerance, [System.Diagnostics.CodeAnalysis.NotNullWhen(true)] out Surface? surface, bool onlyPlane = false)
+        {
+            surface = null;
+            Shape self = shape.AsShape();
+            if (self.IsNull)
+            {
+                return false;
+            }
+            try
+            {
+                var find = new FindSurface(self, tolerance, onlyPlane);
+                if (!find.Found() || find.Surface() is not { } found)
+                {
+                    return false;
+                }
+                surface = find.Location().IsIdentity ? found : (Surface)found.Transformed(find.Location().Transformation);
+                return true;
+            }
+            catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+            {
+                return false;
+            }
+        }
+    }
+
+    extension(Face)
+    {
+        /// <summary>The face bounded by <paramref name="wire"/>, on the surface it lies on (a plane if it can be;
+        /// only a plane if <paramref name="onlyPlane"/>).</summary>
+        public static Result<Face> FromWire(Wire wire, bool onlyPlane = false)
+        {
+            MakerOutcome.NotNull(wire, nameof(wire));
+            return BuildFace(() => new MakeFace(wire, onlyPlane));
+        }
+
+        /// <summary>The face bounded by <paramref name="outer"/> with <paramref name="holes"/> cut from it. The holes must
+        /// lie inside the outer wire and run the opposite way round, as OCCT requires.</summary>
+        public static Result<Face> FromWires(Wire outer, IEnumerable<Wire> holes)
+        {
+            MakerOutcome.NotNull(outer, nameof(outer));
+            ArgumentNullException.ThrowIfNull(holes);
+            Wire[] inner = [.. holes];
+            foreach (Wire hole in inner)
+            {
+                MakerOutcome.NotNull(hole, nameof(holes));
+            }
+            return BuildFace(() =>
+            {
+                var face = new MakeFace(outer);
+                if (face.IsDone)
+                {
+                    foreach (Wire hole in inner)
+                    {
+                        face.Add(hole);
+                    }
+                }
+                return face;
+            });
+        }
+
+        /// <summary>A face on <paramref name="surface"/>: its natural bounds, <paramref name="bounds"/> of its parameters, or
+        /// inside <paramref name="boundary"/>, a wire lying on it.</summary>
+        public static Result<Face> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null, Wire? boundary = null)
+        {
+            ArgumentNullException.ThrowIfNull(surface);
+            if (bounds is not null && boundary is not null)
+            {
+                throw new ArgumentException("Give the bounds or a boundary, not both.", nameof(boundary));
+            }
+            return BuildFace(() => boundary is { } w
+                ? new MakeFace(surface, w)
+                : bounds is { } b
+                    ? new MakeFace(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max, Tolerances.Confusion)
+                    : new MakeFace(surface, Tolerances.Confusion));
+        }
+
+        /// <summary>A face on <paramref name="plane"/>: infinite, or inside <paramref name="boundary"/>.</summary>
+        public static Result<Face> FromPlane(in Plane3D plane, Wire? boundary = null)
+        {
+            Plane3D p = plane;
+            return BuildFace(() => boundary is { } w ? new MakeFace(p, w) : new MakeFace(p));
+        }
+    }
+
+    extension(Shell)
+    {
+        /// <summary>A shell on <paramref name="surface"/>, over its natural bounds or <paramref name="bounds"/>.</summary>
+        public static Result<Shell> FromSurface(Surface surface, (Interval U, Interval V)? bounds = null)
+        {
+            ArgumentNullException.ThrowIfNull(surface);
+            return Guarded(() =>
+            {
+                MakeShell shell = bounds is { } b ? new MakeShell(surface, b.U.Min, b.U.Max, b.V.Min, b.V.Max) : new MakeShell(surface);
+                return shell.IsDone ? shell.Shell() : Result<Shell>.Failure(StatusDiagnostics.ToDiagnostic(shell.Error()) ?? Failed("shell"));
+            });
+        }
+    }
+
+    extension(Solid)
+    {
+        /// <summary>The solid bounded by <paramref name="shells"/> (the first the outer, the others cavities).</summary>
+        /// <exception cref="ArgumentException">No shells, or a null one.</exception>
+        public static Result<Solid> FromShells(IEnumerable<Shell> shells)
+        {
+            ArgumentNullException.ThrowIfNull(shells);
+            Shell[] list = [.. shells];
+            if (list.Length == 0)
+            {
+                throw new ArgumentException("A solid needs at least one shell.", nameof(shells));
+            }
+            foreach (Shell s in list)
+            {
+                MakerOutcome.NotNull(s, nameof(shells));
+            }
+            return Guarded(() =>
+            {
+                var solid = new MakeSolid();
+                foreach (Shell s in list)
+                {
+                    solid.Add(s);
+                }
+                return solid.IsDone ? solid.Solid() : Result<Solid>.Failure(Failed("solid"));
+            });
+        }
+    }
+
+    private static Result<Edge> BuildEdge(Func<MakeEdge> make, bool buildCurve = false) => Guarded(() =>
+    {
+        MakeEdge edge = make();
+        if (!edge.IsDone)
+        {
+            return Result<Edge>.Failure(StatusDiagnostics.ToDiagnostic(edge.Error()) ?? Failed("edge"));
+        }
+        if (!buildCurve)
+        {
+            return edge.Edge();
+        }
+
+        // An edge on a surface gets its 3D curve before it is published
+        Edge built = ShapeCasts.Edge(edge.InternalShape());
+        BrepLibrary.BuildCurves3d(built);
+        built.TShape()?.FreezeGraph();
+        return built;
+    });
+
+    private static Result<Face> BuildFace(Func<MakeFace> make) => Guarded(() =>
+    {
+        MakeFace face = make();
+        return face.IsDone ? face.Face() : Result<Face>.Failure(StatusDiagnostics.ToDiagnostic(face.Error()) ?? Failed("face"));
+    });
+
+    private static Diagnostic Failed(string what) =>
+        Diagnostic.Error(Primitives.Failed, $"The {what} couldn't be built.");
+
+    // The engine's failures as a failed result
+    private static Result<T> Guarded<T>(Func<Result<T>> run)
+    {
+        try
+        {
+            return run();
+        }
+        catch (Exception e) when (e is FailureException || ModelAlgo.IsCaughtFailure(e))
+        {
+            return Result<T>.Failure(FailureDiagnostics.ToDiagnostic(e));
+        }
+    }
+}

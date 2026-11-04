@@ -22,7 +22,7 @@ namespace Kerf.Engine.Classification;
 /// edges (with their pcurves).
 /// </summary>
 /// <remarks>A working object (decision 21). It only reads the face.</remarks>
-public class FaceExplorer : IFaceExplorer<ClassifierEdge>
+internal class FaceExplorer : IFaceExplorer<ClassifierEdge>
 {
     private const double Probing_Start = 0.123;
     private const double Probing_End = 0.7;

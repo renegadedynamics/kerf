@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// For immediate members of TrimmingSelect, i.e. :
 /// ParameterValue (a Real)
 /// </summary>
-public class StepTrimmingMember : SelectReal
+internal class StepTrimmingMember : SelectReal
 {
     public StepTrimmingMember()
     {

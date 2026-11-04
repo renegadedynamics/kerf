@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Booleans.Legacy.Data;
 
 /// <summary>A surface of the data structure with its interferences.</summary>
-public sealed class DsSurfaceData : DsGeometryData
+internal sealed class DsSurfaceData : DsGeometryData
 {
     internal DsSurface _surface;
 

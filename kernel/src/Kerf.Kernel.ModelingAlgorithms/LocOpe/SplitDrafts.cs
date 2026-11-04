@@ -41,7 +41,7 @@ namespace Kerf.Engine.Features.Local;
 /// the messages out.
 /// </para>
 /// </remarks>
-public sealed class SplitDrafts
+internal sealed class SplitDrafts
 {
     private Shape _shape = new();
     private Shape _result = new();

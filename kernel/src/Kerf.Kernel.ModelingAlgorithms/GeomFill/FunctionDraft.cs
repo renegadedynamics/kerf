@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// in the variables (w, u, v) and in the spine parameter t.
 /// </summary>
 /// <remarks>A working object; it keeps the caller's adaptors and only evaluates them.</remarks>
-public sealed class FunctionDraft : FunctionSetWithDerivatives
+internal sealed class FunctionDraft : FunctionSetWithDerivatives
 {
     private readonly CurveAdaptorBase _theCurve;
     private readonly SurfaceAdaptorBase _theSurface;

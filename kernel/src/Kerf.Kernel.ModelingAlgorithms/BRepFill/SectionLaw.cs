@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// A working object (decisions 21 and 806). <see cref="Law"/> returns the law's own elementary laws, not copies;
 /// <see cref="CurrentEdge"/> advances the law's wire explorer.
 /// </remarks>
-public abstract class SectionLaw : Transient
+internal abstract class SectionLaw : Transient
 {
     protected NCollection_HArray1<SurfaceSectionLaw>? _laws;
     protected bool _uclosed;

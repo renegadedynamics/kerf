@@ -36,7 +36,7 @@ namespace Kerf.Engine.Booleans.Algo;
 /// section's). <see cref="Projection"/> and <see cref="Generated"/> are publication points and freeze what they
 /// return; <see cref="InternalProjection"/> and <see cref="InternalGenerated"/> are the unfrozen forms for ported code.
 /// </remarks>
-public sealed class NormalProjection
+internal sealed class NormalProjection
 {
     private Shape _shape = new();
     private bool _isDone;

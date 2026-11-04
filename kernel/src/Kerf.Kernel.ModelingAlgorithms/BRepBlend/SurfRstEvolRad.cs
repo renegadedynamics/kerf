@@ -22,7 +22,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// on the restriction.
 /// </summary>
 /// <remarks>A working object (decision 21): it caches its last solution, which the walkers read.</remarks>
-public class SurfRstEvolRad : SurfRstFunction
+internal class SurfRstEvolRad : SurfRstFunction
 {
     private const double Eps = 1.0e-15;
 

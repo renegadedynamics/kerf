@@ -25,7 +25,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// parametric functions are placeholders (<c>UIso</c>/<c>VIso</c> return null, <c>Continuity</c> GeomAbs_C0,
 /// <c>IsCNu</c>/<c>IsCNv</c> throw), and D3 and DN throw Geom_UndefinedDerivative.
 /// </remarks>
-public class PlateSurface : Surface
+internal class PlateSurface : Surface
 {
     private readonly PlateSolver _surfinter;
     private readonly Surface _surfinit;

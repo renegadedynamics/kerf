@@ -16,7 +16,7 @@ namespace Kerf.Engine.Booleans;
 /// The objects and tools are intersected together (General Fuse), and the result is built from the splits of the
 /// objects. With one object split into one shape (or not split), the result is that shape, not a compound.
 /// </remarks>
-public class Splitter : ToolsProvider
+internal class Splitter : ToolsProvider
 {
     public Splitter()
     {

@@ -34,7 +34,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// freeze, for ported code connecting a shell it owns.
 /// </para>
 /// </remarks>
-public sealed class FaceConnectFixer
+internal sealed class FaceConnectFixer
 {
     private readonly Dictionary<Shape, NCollection_List<Shape>> _connected;
     private readonly Dictionary<Shape, NCollection_List<Shape>> _oriFreeEdges;

@@ -93,7 +93,7 @@ internal sealed class FaceSelfIntersect : FaceFace, BooleanParallel.ISolver
 /// structure holds its own sub-shapes. The class is partial over OCCT's two files.
 /// </para>
 /// </remarks>
-public partial class CheckerSI : PaveFiller
+internal partial class CheckerSI : PaveFiller
 {
     protected int _levelOfCheck;
 

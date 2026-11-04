@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// <summary>
 /// Signs HShape according to its real content (type of Shape) Context is not used
 /// </summary>
-public class SignShape : SignText
+internal class SignShape : SignText
 {
     public SignShape()
     {

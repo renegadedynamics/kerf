@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// redefined, plus general actions to be performed specifically for each Norm, as deferred methods to
 /// define. In particular, FileReaderTool defines the Interface's Unknown and Error entities
 /// </summary>
-public abstract class FileReaderTool
+internal abstract class FileReaderTool
 {
 
     // MGE 16/06/98

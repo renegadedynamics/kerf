@@ -336,11 +336,11 @@ public class GeomFill_AppSurfTests
         anApp.CriteriumWeight(out double w1, out double w2, out double w3);
         Assert.Equal((0.1, 0.2, 0.7), (w1, w2, w3));
         anApp.SetContinuity(C1);
-        anApp.SetParType(ParametrizationType.Centripetal);
+        anApp.SetParType(global::Kerf.Geometry.ParametrizationType.Centripetal);
         anApp.Init(3, 8, 1e-5, 1e-5, 0);
         // Init restores the defaults
         Assert.Equal(C2, anApp.Continuity());
-        Assert.Equal(ParametrizationType.ChordLength, anApp.ParType());
+        Assert.Equal(global::Kerf.Geometry.ParametrizationType.ChordLength, anApp.ParType());
         anApp.CriteriumWeight(out w1, out w2, out w3);
         Assert.Equal((0.4, 0.2, 0.4), (w1, w2, w3));
 

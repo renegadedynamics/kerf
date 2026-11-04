@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// give the first line.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117).</remarks>
-public sealed class Lin2dBisec
+internal sealed class Lin2dBisec
 {
     private bool _wellDone;
     private int _nbrSol;

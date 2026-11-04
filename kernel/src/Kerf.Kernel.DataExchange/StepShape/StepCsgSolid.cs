@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepCsgSolid : StepSolidModel
+internal class StepCsgSolid : StepSolidModel
 {
     private StepCsgSelect _treeRootExpression = new StepCsgSelect();
 

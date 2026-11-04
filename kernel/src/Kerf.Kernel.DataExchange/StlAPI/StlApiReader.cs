@@ -18,7 +18,7 @@ namespace Kerf.Engine.Exchange.Stl.Api;
 /// triangulation.
 /// </summary>
 /// <remarks>The shape is published frozen. The limits for hostile input are an addition (<see cref="StlReadLimits"/>).</remarks>
-public class StlApiReader
+internal class StlApiReader
 {
     /// <summary>Reads an STL file into the shape (left unchanged on failure). True on success.</summary>
     public bool Read(ref Shape shape, string fileName, ProgressRange progress = default, StlReadLimits? limits = null)

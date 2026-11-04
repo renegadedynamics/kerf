@@ -34,7 +34,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// for the rest, the context records the sub-shapes changed in place (it answers for the caller's shapes), and the
 /// result is frozen. A fix after <see cref="Shape"/> starts a new overlay.
 /// </remarks>
-public class WireframeFixer : RootFixer
+internal class WireframeFixer : RootFixer
 {
     /// <summary>The shape fixed (OCCT's own field, hiding the root's).</summary>
     protected new Shape _shape;

@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class SurfaceStyleSegmentationCurve : Transient
+internal class SurfaceStyleSegmentationCurve : Transient
 {
     private CurveStyle _styleOfSegmentationCurve;
 

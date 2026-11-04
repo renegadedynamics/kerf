@@ -37,7 +37,7 @@ namespace Kerf.Engine.Fillets.Data;
 /// elementary curve, so those members are internal too; the members OCCT declares <c>const</c> are public.
 /// </para>
 /// </remarks>
-public class Spine : Transient
+internal class Spine : Transient
 {
     protected bool _splitdone;
     protected readonly NCollection_List<ElSpine> _elspines = new();

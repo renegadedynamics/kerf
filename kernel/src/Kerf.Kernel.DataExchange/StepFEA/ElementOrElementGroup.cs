@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP SELECT type ElementOrElementGroup
 /// </summary>
-public class ElementOrElementGroup : SelectType
+internal class ElementOrElementGroup : SelectType
 {
     /// <summary>
     /// Empty constructor

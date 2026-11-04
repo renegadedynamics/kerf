@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepSphere : StepGeometricRepresentationItem
+internal class StepSphere : StepGeometricRepresentationItem
 {
     private double _radius;
     private StepPoint _centre;

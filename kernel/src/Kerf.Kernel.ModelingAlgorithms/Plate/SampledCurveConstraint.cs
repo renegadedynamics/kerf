@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// same averages of the imposed values.
 /// </summary>
 /// <remarks>A class: OCCT's copies share the linear constraint's arrays (see <see cref="LinearXyzConstraint"/>).</remarks>
-public class SampledCurveConstraint
+internal class SampledCurveConstraint
 {
     private readonly LinearXyzConstraint _lxyzc;
 

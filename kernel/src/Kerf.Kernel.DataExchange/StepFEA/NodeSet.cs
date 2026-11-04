@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity NodeSet
 /// </summary>
-public class NodeSet : StepGeometricRepresentationItem
+internal class NodeSet : StepGeometricRepresentationItem
 {
     private NCollection_HArray1<NodeRepresentation> _nodes;
 

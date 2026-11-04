@@ -20,7 +20,7 @@ namespace Kerf.Engine.Fillets.BlendFunctions;
 /// <remarks>
 /// OCCT holds it by value inside the chamfer functions; here it is a working class (decision 21).
 /// </remarks>
-public sealed class Corde
+internal sealed class Corde
 {
     private readonly SurfaceAdaptorBase _surf;
     private readonly CurveAdaptorBase _guide;

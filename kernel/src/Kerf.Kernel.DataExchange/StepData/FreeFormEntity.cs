@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// A Free Form Entity allows to record any kind of STEP parameters, in any way of typing. It is implemented with an
 /// array of fields. A Complex entity can be defined, as a chain of FreeFormEntity (see Next and As).
 /// </summary>
-public class FreeFormEntity : Transient
+internal class FreeFormEntity : Transient
 {
     private string _thetype = "";
     private NCollection_HArray1<Field> _thefields;

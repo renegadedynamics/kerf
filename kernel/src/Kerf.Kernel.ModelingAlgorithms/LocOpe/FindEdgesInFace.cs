@@ -20,7 +20,7 @@ namespace Kerf.Engine.Features.Local;
 /// circles on its surface whose ends and middle are inside it.
 /// </summary>
 /// <remarks>A working object (decision 21): it only reads the shapes; the edges are the shape's own.</remarks>
-public sealed class FindEdgesInFace
+internal sealed class FindEdgesInFace
 {
     private Shape _shape = new();
     private Face _face = new();

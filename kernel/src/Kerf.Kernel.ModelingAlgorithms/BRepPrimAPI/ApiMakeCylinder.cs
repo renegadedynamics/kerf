@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Api;
 /// limited by V in 0..H and, for a portion, U in 0..Angle (radians). The result has a lateral cylindrical face, two
 /// planar faces at z = 0 and z = H and, for a portion, two planar faces at u = 0 and u = Angle.
 /// </summary>
-public class ApiMakeCylinder : MakeOneAxis
+internal class ApiMakeCylinder : MakeOneAxis
 {
     private readonly PrimitiveCylinder _cylinder;
 

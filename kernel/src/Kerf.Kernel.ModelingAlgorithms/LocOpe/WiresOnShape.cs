@@ -46,7 +46,7 @@ namespace Kerf.Engine.Features.Local;
 /// result. Ported code reads the <c>Internal</c> forms, which give the working shapes.
 /// </para>
 /// </remarks>
-public sealed class WiresOnShape : Transient
+internal sealed class WiresOnShape : Transient
 {
     private Shape _shape = new();
     private readonly IndexedMap<Shape, Shape> _mapEF = new(ShapeHasher.Instance);

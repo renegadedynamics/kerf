@@ -10,7 +10,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using System.Runtime.CompilerServices;
 using Occt;
-using static Kerf.Engine.Fillets.FilletShape;
+using static Kerf.Fillets.FilletShape;
 using static Kerf.Geometry.Continuity;
 using static Kerf.Topology.ShapeType;
 
@@ -160,16 +160,16 @@ internal static partial class BRepTestFilletCommands
         {
             return 1;
         }
-        FilletShape FSh = FilletShape.Rational;
+        global::Kerf.Fillets.FilletShape FSh = global::Kerf.Fillets.FilletShape.Rational;
         if (narg % 2 == 0)
         {
             if (EqualsNoCase(a[narg - 1], "Q"))
             {
-                FSh = FilletShape.QuasiAngular;
+                FSh = global::Kerf.Fillets.FilletShape.QuasiAngular;
             }
             else if (EqualsNoCase(a[narg - 1], "P"))
             {
-                FSh = FilletShape.Polynomial;
+                FSh = global::Kerf.Fillets.FilletShape.Polynomial;
             }
         }
         MakeFillet Rakk = new(V, FSh);
@@ -286,14 +286,14 @@ internal static partial class BRepTestFilletCommands
         Rake.SetContinuity(s.blend_cont, s.tapp_angle);
         if (narg == 4)
         {
-            FilletShape FSh = FilletShape.Rational;
+            global::Kerf.Fillets.FilletShape FSh = global::Kerf.Fillets.FilletShape.Rational;
             if (EqualsNoCase(a[3], "Q"))
             {
-                FSh = FilletShape.QuasiAngular;
+                FSh = global::Kerf.Fillets.FilletShape.QuasiAngular;
             }
             else if (EqualsNoCase(a[3], "P"))
             {
-                FSh = FilletShape.Polynomial;
+                FSh = global::Kerf.Fillets.FilletShape.Polynomial;
             }
             Rake.SetFilletShape(FSh);
         }

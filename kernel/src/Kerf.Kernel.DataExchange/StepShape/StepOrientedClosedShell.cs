@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepOrientedClosedShell : StepClosedShell
+internal class StepOrientedClosedShell : StepClosedShell
 {
     private StepClosedShell _closedShellElement;
     private bool _orientation;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity ActuatedKinematicPair
 /// </summary>
-public class ActuatedKinematicPair : KinematicPair
+internal class ActuatedKinematicPair : KinematicPair
 {
     private ActuatedDirection _tx;
     /// <summary>

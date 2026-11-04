@@ -777,7 +777,7 @@ internal class Ap214GeneralModule : StepGeneralModule
                 break;
             case 158:
                 {
-                    LengthUnit anent = ent as LengthUnit;
+                    StepLengthUnit anent = ent as StepLengthUnit;
                     RWLengthUnit tool = new RWLengthUnit();
                     tool.Share(anent, iter);
                 }
@@ -5023,7 +5023,7 @@ internal class Ap214GeneralModule : StepGeneralModule
                 ent = new LengthMeasureWithUnit();
                 break;
             case 158:
-                ent = new LengthUnit();
+                ent = new StepLengthUnit();
                 break;
             case 159:
                 ent = new StepLine();

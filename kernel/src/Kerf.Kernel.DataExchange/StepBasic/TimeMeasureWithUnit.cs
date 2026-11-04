@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class TimeMeasureWithUnit : MeasureWithUnit
+internal class TimeMeasureWithUnit : MeasureWithUnit
 {
     /// <summary>
     /// Returns a TimeMeasureWithUnit

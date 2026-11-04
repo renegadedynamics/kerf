@@ -4392,7 +4392,7 @@ internal class Ap214ReadWriteModule : ReadWriteModule
                 break;
             case 158:
                 {
-                    LengthUnit anent = ent as LengthUnit;
+                    StepLengthUnit anent = ent as StepLengthUnit;
                     RWLengthUnit tool = new RWLengthUnit();
                     tool.ReadStep(data, num, ach, anent);
                 }
@@ -9526,7 +9526,7 @@ internal class Ap214ReadWriteModule : ReadWriteModule
                 break;
             case 158:
                 {
-                    LengthUnit anent = ent as LengthUnit;
+                    StepLengthUnit anent = ent as StepLengthUnit;
                     RWLengthUnit tool = new RWLengthUnit();
                     //      if (anent.IsNull()) return;
                     tool.WriteStep(sw, anent);

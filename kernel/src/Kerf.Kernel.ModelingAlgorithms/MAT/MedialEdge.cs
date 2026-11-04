@@ -12,7 +12,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// and index of the intersection point of its bisectors.</summary>
 /// <remarks>A working object of MAT2d_Mat2d (decision 21): the setters are internal. OCCT's Dump does nothing and is
 /// left out.</remarks>
-public sealed class MedialEdge : Transient
+internal sealed class MedialEdge : Transient
 {
     private int _theedgenumber;
     private MedialBisector? _thefirstbisector;

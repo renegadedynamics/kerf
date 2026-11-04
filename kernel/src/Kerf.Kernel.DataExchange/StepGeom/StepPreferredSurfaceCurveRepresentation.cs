@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepGeom_PreferredSurfaceCurveRepresentation;</c>.</remarks>
-public enum StepPreferredSurfaceCurveRepresentation
+internal enum StepPreferredSurfaceCurveRepresentation
 {
     PscrCurve3d,
     PscrPcurveS1,

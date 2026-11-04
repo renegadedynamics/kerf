@@ -27,7 +27,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// changes: polynomial families are made compatible through a <see cref="Profiler"/>, which works on copies.
 /// <see cref="Surface"/> hands out the surface frozen.
 /// </remarks>
-public class NetworkSurface
+internal class NetworkSurface
 {
     /// <summary>Result state of the last Perform() call.</summary>
     public enum ResultStatus

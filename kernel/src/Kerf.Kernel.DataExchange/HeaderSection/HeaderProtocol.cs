@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>Protocol for HeaderSection Entities. It requires HeaderSection as a Resource.</summary>
-public class HeaderProtocol : StepProtocol
+internal class HeaderProtocol : StepProtocol
 {
     private const string SchemaNameText = "header_section";
 

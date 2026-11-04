@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepUniformCurve : StepBSplineCurve
+internal class StepUniformCurve : StepBSplineCurve
 {
     /// <summary>
     /// Returns a UniformCurve

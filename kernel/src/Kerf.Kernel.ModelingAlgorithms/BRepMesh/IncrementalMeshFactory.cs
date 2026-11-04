@@ -16,7 +16,7 @@ namespace Kerf.Engine.Meshing;
 /// OCCT registers its instance when the library loads; the port's registers when
 /// <see cref="DiscretAlgoFactory"/> initialises (decision 492).
 /// </remarks>
-public sealed class IncrementalMeshFactory : DiscretAlgoFactory
+internal sealed class IncrementalMeshFactory : DiscretAlgoFactory
 {
     // The instance DiscretAlgoFactory's registry holds, made when it initialises (OCCT's self-registering instance)
     internal IncrementalMeshFactory()

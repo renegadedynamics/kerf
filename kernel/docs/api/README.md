@@ -396,3 +396,89 @@ Where the implementation departs from sections 4 to 6 and geometry.md/topology.m
 - **The rest of the engine internal:** the 79 geometry and topology engine types still shown by other areas' public
   engine types or by the modelling layer's API (decision 1520), and the other areas' engine types, as each area's public
   API replaces them. The modelling layer reaches the engine through `InternalsVisibleTo` until 10M.
+
+## 11. Implemented: unit 10L2, and what is left
+
+*Unit 10L2, 4 November 2026: decisions 1523 to 1531; the map it applied is [kerf-10l2.map](kerf-10l2.map).*
+
+**Public now** (ModelingAlgorithms; each operation on `EngineOperation.Run` or, for values, a guarded call, with
+`Built<T>` and its `ShapeHistory`, the engine's statuses and alerts as diagnostics, and cancellation as
+`OperationCanceledException`):
+- **Geometry's operations,** `Kerf.Geometry.GeometryOperations` (one class, as section 3 says, not geometry.md's
+  separate names): `TrimmedCurve3D.ArcThrough`, `ArcTangent`, `Arc` (circle, ellipse, hyperbola, parabola) and
+  `Segment`; `BSplineCurve3D.Interpolate`, `Approximate` and `Join`; `BSplineSurface.Approximate`; `curve.ToBSpline`,
+  `ToCurve2D`, `curve2d.ToCurve3D`; `Project` and `TryProjectNearest` for curves and surfaces; `Intersect` (curve and
+  surface, two surfaces, two 2D curves); `surface.TryGetPlane`; with `InterpolationOptions`, `ApproximationOptions`
+  (curves and surfaces both), `ConversionOptions`, `CurveSurfaceHit` and `CurveCurveHit2D`. The splines' 0-based
+  `WithPole`, `WithWeight` and `WithKnot` (OCCT's 1-based copies are `WithPoleOneBased`…, internal).
+- **Construction,** `Kerf.Construction`: `Primitives` (`Solid.Box`, `Cylinder`, `Cone`, `Sphere`, `Torus`, `Wedge`,
+  `HalfSpace`, each with and without a frame), `Sweeps` (`Extrude`, `Revolve` as extension members of any shape;
+  `Sweep`, `Loft`, `Ruled`), `ShapeFactory` (`Vertex.At`, `Edge.Line`/`FromCurve`/`Circle`/`Arc`,
+  `Wire.FromEdges`/`Polygon`/`TryGetPlane`, `Face.FromWire`/`FromWires`/`FromSurface`/`FromPlane`,
+  `Shell.FromSurface`, `Solid.FromShells`, `shape.TryFindSurface`), `ShapeTransforms` (`Transformed`, `Mirrored`,
+  `Scaled`) and `ShapeProjections.Project` (not `Projections`, the engine's `GeomAPI`); `SphereOptions`,
+  `TorusOptions`, `WedgeOptions`, `ExtrudeOptions`, `SweepOptions`, `SweepFrame`, `LoftOptions`, `TransitionMode`.
+- **Booleans,** `Kerf.Booleans`: `BooleanOperations.Fuse`, `Cut`, `Common`, `Section` (two shapes, as extension
+  members of any shape types, or lists), `FuseAll`, `Split`, `Partition`; `BooleanOptions`, `GlueMode`.
+- **Fillets,** `Kerf.Fillets`: `FilletOperations.Fillet`, `Chamfer` (by edges and a size, or per-edge specs),
+  `Fillet2D`, `Chamfer2D`; `FilletSpec`, `ChamferSpec`, `FilletOptions`, `FilletTolerances`, `ChamferOptions`,
+  `ChamferMode`, `FilletShape`.
+- **Offsets and features,** `Kerf.Offsets` and `Kerf.Features`: `OffsetOperations.Offset`, `Thicken`, `Offset2D`,
+  `solid.Hollow`; `FeatureOperations.Draft`, `ExtrudeUntil`, `SplitFaces`; `OffsetOptions`, `Offset2DOptions`,
+  `OffsetMode`, `ExtrudeUntilOptions`, `ExtrudeLimit` (not `Until`, the modelling layer's name).
+
+Where the implementation departs from the area reviews: no `RevolveOptions` or `DraftOptions` (nothing to hold);
+`Split` takes `BooleanOptions` (no `SplitOptions`); `Wire.FromEdges` takes no tolerance (OCCT's builder has none);
+`Face.FromWires` wants its holes running opposite the outer wire, as OCCT does; a curve's intersection with a surface
+takes no tolerance and reports a stretch lying in the surface as a warning; a 2D chamfer by distance and angle isn't
+offered.
+
+**Left** (for 10L3 or later):
+- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them), `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`),
+  `Sweeps.Helix`, and an extrusion's or revolution's caps in its history (OCCT's `FirstShape`/`LastShape`).
+- The engine types of these areas that something public still shows (decision 1530 lists why): the modelling
+  layer's public API (10M), and the public engine types of the areas 10L3 makes internal.
+
+## 12. Implemented: unit 10L3, measurement, healing, meshing and exchange
+
+*Unit 10L3, 4 November 2026: decisions 1532 to 1539. Its own section, beside 10L2's additions to section 10.*
+
+**Public now**, each area's operations on the README's pattern (static classes with C# 14 extension members, options
+records with `Default`, `Result`s for expected failures, `ArgumentException` for a null shape):
+- **`Kerf.Measurement`** (ModelingAlgorithms): `MeasureOperations` (`Volume`, `Area`, `Length`, `MassProperties`,
+  `BoundingBox`, `OrientedBox`, `Distance`, `Intersect`, and `Classify` on solids), `MassOptions`, `MassProperties`,
+  `Dimension`, `DistanceOptions`, `DistanceResult`, `DistanceSolution`, `SupportKind`, `LineHit`; and
+  `Kerf.Geometry.OrientedBox` (Foundation).
+- **`Kerf.Healing`**: `HealingOperations` (`Validate`, `Fix`, `Sew`, `Unify`, `MakeSolid`, `FixWireframe`,
+  `ConvertToBSpline`, `ConnectEdges`, `FreeBoundaries`), `ValidationOptions`, `ValidationReport`, `ShapeProblem`,
+  `FixOptions`, `SewOptions`, `UnifyOptions`, `BSplineConversionOptions`.
+- **`Kerf.Meshing`**: `Mesher.Mesh` → `ShapeMesh` (`Positions`, `Normals`, `Triangles`, `EdgePoints`, `Faces`,
+  `Edges`), `FaceMesh` (per-face ranges, `Kind`, `GetNodes()` in double precision, `GetSurfaceParameters()`),
+  `EdgePolyline`, `MeshOptions`. The mesher meshes in its own working overlay and reads the meshes out before dropping
+  it unfinished (decision 1444's route): the shape is never written and no meshed copy is assembled.
+- **`Kerf.Exchange`** (DataExchange, BREP included): `Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj`, `Brep`, `ModelNode`,
+  `ReadLimits`, `LengthUnit`, `StepPrecision` and the options records; and the root `Kerf.Color` (Foundation), sRGB.
+
+Where the implementation departs from measurement.md, healing.md, meshing.md and exchange.md (decisions 1533 to 1537):
+- `Length` counts an edge once per face it bounds, as OCCT; `MassOptions.SkipShared` counts it once.
+- `FixOptions`' modes are `bool?` (null: OCCT decides, its -1), and its tolerances default to OCCT's (all 1e-7).
+- `ConnectEdges` and `FreeBoundaries` return wires, not results: they can't fail.
+- `ShapeMesh.Triangles` index each face's own nodes (one buffer, no copy); `FaceMesh.FirstNode` offsets them. No
+  `Triangle` record (the engine has the name; the buffers are int triples). Double nodes are computed on demand.
+- **Faces hold no meshes in the public API** (question 59): no `Face.FromMesh` or `Face.TryGetMesh`. A mesh read from
+  a file (`Stl.Read`, `Gltf.Read`) is a `ShapeMesh` whose `Shape` is null; `ModelNode.Mesh` holds a mesh part.
+- `ModelNode.Placement` is a `Placement`, not a `Transform3D` (the writers share locations by identity); a part's
+  shape carries its own placement, as STEP's reader places it.
+- `Obj.Write`, not `Obj.Read` (the engine has only OBJ's writer). No `StepReadOptions.Heal` or STEP schema option yet;
+  STEP's header names stay the modelling layer's business.
+
+**Became internal:** see decision 1538 (the engine of these areas, but for the types the modelling layer's public
+API or another area's public engine types still show).
+
+**Left:**
+- `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` stay (decision 1535): the mesher's post-processor still sets each
+  triangulation's deflection after attaching it, and the engine's own meshing (Draw-lite, HLR, the mesh writers'
+  meshing) still stores meshes on faces.
+- The modelling layer's STL and glTF readers (they give faces holding triangles) and BREP import stay on its glue
+  until 10M.
+- Images (the hidden-line API, SVG, the PNG renderer) are a later unit's, on `ShapeMesh`.

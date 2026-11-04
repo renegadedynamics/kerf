@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class MechanicalDesignAndDraughtingRelationship : RepresentationRelationship
+internal class MechanicalDesignAndDraughtingRelationship : RepresentationRelationship
 {
     /// <summary>
     /// Returns a MechanicalDesignAndDraughtingRelationship

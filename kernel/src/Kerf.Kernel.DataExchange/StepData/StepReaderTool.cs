@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Data;
 /// Specific FileReaderTool for Step; works with FileReaderData provides references evaluation, plus access to
 /// literal data and specific methods defined by FileReaderTool. Remarks: works with a ReaderLib to load Entities.
 /// </summary>
-public class StepReaderTool : FileReaderTool
+internal class StepReaderTool : FileReaderTool
 {
     private FileRecognizer _thereco;
     private readonly GeneralLib _theglib;

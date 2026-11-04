@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// constructor here). <c>nb_PPC()</c> is 0 where the normals degenerate or are nearly orthogonal, 2 after the G1
 /// constraints, 5 after G2 and 9 after G3.
 /// </remarks>
-public class GtoCConstraint
+internal class GtoCConstraint
 {
     private readonly PinpointConstraint[] _ppc = new PinpointConstraint[9];
     private readonly D1 _d1SurfInit;

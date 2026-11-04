@@ -20,7 +20,7 @@ namespace Kerf.Engine.Meshing;
 /// Delaunay's criterion, and erasing triangles and free links.
 /// </summary>
 /// <remarks>A working object, as OCCT's: it writes into the structure it is given.</remarks>
-public sealed class MeshTool : Transient
+internal sealed class MeshTool : Transient
 {
     /// <summary>Classifies nodes against the line of a constraint link.</summary>
     public sealed class NodeClassifier

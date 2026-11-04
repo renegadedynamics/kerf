@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>An entity or a model of another norm than the one expected.</summary>
-public class InterfaceMismatchException : InterfaceErrorException
+internal class InterfaceMismatchException : InterfaceErrorException
 {
     public InterfaceMismatchException() { }
 

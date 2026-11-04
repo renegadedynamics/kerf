@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity AngularityTolerance
 /// </summary>
-public class AngularityTolerance : GeometricToleranceWithDatumReference
+internal class AngularityTolerance : GeometricToleranceWithDatumReference
 {
     /// <summary>
     /// Empty constructor

@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// is left out with IFSelect_Act and IFSelect_SessionPilot: Draw-lite ports the commands it needs directly
 /// (decision 1221).
 /// </remarks>
-public static class Functions
+internal static class Functions
 {
     /// <summary>
     /// Takes the name of an entity, either as argument, or (if &lt;name&gt; is empty) on keyboard, and returns the

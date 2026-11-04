@@ -13,7 +13,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>Defines General Services for HeaderSection Entities (Share, Check, Copy; Trace already inherited). Depends (for case numbers) of Protocol from HeaderSection.</summary>
-public class HeaderGeneralModule : StepGeneralModule
+internal class HeaderGeneralModule : StepGeneralModule
 {
     /// <summary>Creates a GeneralModule, registered with HeaderSection's protocol (process-wide, once: RWHeaderSection.Init).</summary>
     public HeaderGeneralModule()

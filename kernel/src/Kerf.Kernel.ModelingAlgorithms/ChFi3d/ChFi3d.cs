@@ -33,7 +33,7 @@ namespace Kerf.Engine.Fillets;
 /// <c>ChFi3d_Coefficient</c> of the builders' free functions and <see cref="LegacyTool.Nt"/>, not the fillet
 /// builder (plan 1.3).
 /// </remarks>
-public static class ChFi3d
+internal static class ChFi3d
 {
     //=================================================================================================
 

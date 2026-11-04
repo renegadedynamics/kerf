@@ -17,7 +17,7 @@ namespace Kerf.Engine.Construction.Laws;
 /// which they keep as OCCT keeps the handle, and <see cref="Curve"/> returns that same curve. Laws made by
 /// <see cref="Trim"/> share it.
 /// </remarks>
-public class BSpFunc : LawsFunction
+internal class BSpFunc : LawsFunction
 {
     private BSpline? _curv;
     private double _first;

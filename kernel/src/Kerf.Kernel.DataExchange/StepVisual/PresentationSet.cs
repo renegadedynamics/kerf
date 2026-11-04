@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class PresentationSet : Transient
+internal class PresentationSet : Transient
 {
     /// <summary>
     /// Returns a PresentationSet

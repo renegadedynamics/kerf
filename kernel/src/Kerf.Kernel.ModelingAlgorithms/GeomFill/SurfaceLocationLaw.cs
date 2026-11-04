@@ -19,7 +19,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="SetTrsf"/>, <see cref="SetInterval"/> and <see cref="SetTolerance"/> are public and change the law.
 /// The evaluators' outputs are <c>ref</c>: some laws leave them unwritten on some paths, as in OCCT.
 /// </remarks>
-public abstract class SurfaceLocationLaw : Transient
+internal abstract class SurfaceLocationLaw : Transient
 {
     /// <summary>Initializes the curve of the location law.</summary>
     public abstract bool SetCurve(CurveAdaptorBase c);

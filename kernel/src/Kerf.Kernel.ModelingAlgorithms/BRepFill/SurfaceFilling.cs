@@ -36,7 +36,7 @@ namespace Kerf.Engine.Construction.Filling;
 /// starts a new plate from the constraints, but keeps what earlier builds recorded: a boundary edge is then rebuilt
 /// from the previous build's edge, and the bounds found for free constraints stay in the boundary.
 /// </remarks>
-public class SurfaceFilling
+internal class SurfaceFilling
 {
     private BuildPlateSurface? _builder;
     private readonly NCollection_Sequence<EdgeFaceAndOrder> _boundary = new();

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Brep;
 /// <see cref="GeomTools.SetUndefinedTypeHandler"/> to support other types.
 /// </summary>
 /// <remarks>As in OCCT, the compact (file) form of the message goes to the console, not to the stream.</remarks>
-public class UndefinedTypeHandler : Transient
+internal class UndefinedTypeHandler : Transient
 {
     public UndefinedTypeHandler()
     {

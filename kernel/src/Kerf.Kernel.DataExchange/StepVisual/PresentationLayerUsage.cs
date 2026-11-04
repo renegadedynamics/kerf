@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Added from StepVisual Rev2 to Rev4
 /// </summary>
-public class PresentationLayerUsage : Transient
+internal class PresentationLayerUsage : Transient
 {
     private PresentationLayerAssignment _assignment;
     private PresentationRepresentation _presentation;

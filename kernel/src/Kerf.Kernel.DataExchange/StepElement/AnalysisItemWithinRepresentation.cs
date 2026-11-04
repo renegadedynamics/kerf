@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Elements;
 /// <summary>
 /// Representation of STEP entity AnalysisItemWithinRepresentation
 /// </summary>
-public class AnalysisItemWithinRepresentation : Transient
+internal class AnalysisItemWithinRepresentation : Transient
 {
     private TCollection_HAsciiString _name;
     private TCollection_HAsciiString _description;

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Construction.Constraints.Analytic;
 /// An algorithm object computed by its constructor (decision 117). WhichQualifier gives the side a circle is on, and
 /// GccEnt_noqualifier for a point (OCCT set neither: Kerf decision 17105).
 /// </remarks>
-public sealed class Lin2dTanPer
+internal sealed class Lin2dTanPer
 {
     private bool _wellDone;
     private int _nbrSol;

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Visual;
 /// <summary>
 /// Representation of STEP entity CubicBezierTessellatedEdge
 /// </summary>
-public class CubicBezierTessellatedEdge : TessellatedEdge
+internal class CubicBezierTessellatedEdge : TessellatedEdge
 {
     /// <summary>
     /// default constructor

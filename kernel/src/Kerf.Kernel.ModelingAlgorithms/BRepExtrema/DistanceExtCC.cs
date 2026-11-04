@@ -17,7 +17,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// A working object (decision 21): initialize with the second edge, then perform with any number of first edges.
 /// OCCT copies a local adaptor into a new handle; the port keeps the adaptor it made (decision 394).
 /// </remarks>
-public sealed class DistanceExtCC
+internal sealed class DistanceExtCC
 {
     private readonly ExtCC _extCC = new();
     private EdgeCurveAdaptor? _hc;

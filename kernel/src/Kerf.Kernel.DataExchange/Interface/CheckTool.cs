@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// Performs Checks on Entities, using General Service Library and Modules to work. Works on one Entity or on
 /// a complete Model
 /// </summary>
-public class CheckTool
+internal class CheckTool
 {
     // OCCT's errh: a static (process-wide) switch between FillCheck with and without try/catch, set by each check
     // list; a field of the tool here (decision 1183)

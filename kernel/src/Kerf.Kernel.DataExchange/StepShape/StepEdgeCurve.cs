@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepEdgeCurve : StepEdge
+internal class StepEdgeCurve : StepEdge
 {
     private StepCurve _edgeGeometry;
     private bool _sameSense;

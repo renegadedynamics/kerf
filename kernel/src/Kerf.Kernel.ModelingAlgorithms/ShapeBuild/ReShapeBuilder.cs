@@ -35,7 +35,7 @@ namespace Kerf.Engine.Healing.Build;
 /// <c>Apply</c> and <c>History</c> answer for the shapes the caller holds.
 /// </para>
 /// </remarks>
-public class ReShapeBuilder : ReShape
+internal class ReShapeBuilder : ReShape
 {
     /// <summary>An empty reshaper.</summary>
     public ReShapeBuilder()

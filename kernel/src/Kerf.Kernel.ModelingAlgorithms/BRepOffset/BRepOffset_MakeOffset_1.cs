@@ -8453,7 +8453,7 @@ internal sealed class BuildOffsetFaces
     }
 }
 
-public sealed partial class MakeOffset
+internal sealed partial class MakeOffset
 {
     //=======================================================================
     // function : BuildSplitsOfTrimmedFaces

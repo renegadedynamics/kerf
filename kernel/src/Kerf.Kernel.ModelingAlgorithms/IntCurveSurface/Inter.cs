@@ -194,7 +194,7 @@ public interface ITheQuadCurvExactInter<TSelf, TheSurface, TheCurve>
 /// <summary>
 /// The function of a quadric along a curve, with OCCT's constructor (IntCurveSurface_TheQuadCurvFuncOfTheQuadCurvExactHInter).
 /// </summary>
-public interface ITheQuadCurvFunc<TSelf, TheCurve>
+internal interface ITheQuadCurvFunc<TSelf, TheCurve>
     where TSelf : ITheQuadCurvFunc<TSelf, TheCurve>
 {
     static abstract TSelf Create(in SurfaceQuadric q, in TheCurve c);

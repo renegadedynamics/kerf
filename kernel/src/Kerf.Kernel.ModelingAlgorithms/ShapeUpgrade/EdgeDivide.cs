@@ -18,7 +18,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// Computes the splitting values of an edge: on its 3D curve and on its pcurve on the face, with the split tools.
 /// </summary>
 /// <remarks>A working object (decision 21). It only reads the edge.</remarks>
-public class EdgeDivide : UpgradeTool
+internal class EdgeDivide : UpgradeTool
 {
     /// <summary>The face the pcurve is taken on (none for free edges).</summary>
     protected Face _face;

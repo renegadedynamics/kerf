@@ -14,7 +14,7 @@ namespace Kerf.Engine.Construction.Fairing;
 /// OCCT copies this class by value (the energies and distributions each keep their own copy of the law they are
 /// given); the port copies explicitly with the copy constructor at each of those sites (decision 858).
 /// </remarks>
-public class BattenLaw : Function
+internal class BattenLaw : Function
 {
     private double _middleHeigth;
     private double _geometricSlope;

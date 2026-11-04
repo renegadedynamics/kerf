@@ -30,7 +30,7 @@ namespace Kerf.Engine.Meshing;
 /// A working object of one loop body: it evaluates its own adaptor of the edge (and of the face), never the discrete
 /// face's shared surface adaptor (decision 490's audit).
 /// </remarks>
-public class MeshCurveTessellator : CurveTessellator
+internal class MeshCurveTessellator : CurveTessellator
 {
     private readonly EdgeModel _dEdge;
     private readonly ToolParameters _parameters; // OCCT holds a reference; the caller's doesn't change meanwhile

@@ -43,7 +43,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// shape throws at the first write.
 /// </para>
 /// </remarks>
-public static partial class AlgoTools
+internal static partial class AlgoTools
 {
     /// <summary>The tolerance increment used when updating tolerances (1e-12).</summary>
     public static double DTolerance() => 1.0e-12;

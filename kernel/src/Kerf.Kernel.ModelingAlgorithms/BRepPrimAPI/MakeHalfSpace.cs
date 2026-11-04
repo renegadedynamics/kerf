@@ -27,7 +27,7 @@ namespace Kerf.Engine.Construction.Api;
 /// The solid holds the caller's face (in a new shell) or shell, shared and unchanged; <see cref="Solid"/> and
 /// <see cref="MakeShape.Shape"/> freeze the solid (design 4.2).
 /// </remarks>
-public class MakeHalfSpace : MakeShape
+internal class MakeHalfSpace : MakeShape
 {
     private Solid _solid = new();
 

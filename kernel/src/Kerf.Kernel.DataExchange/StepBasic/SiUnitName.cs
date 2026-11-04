@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Basic;
 
 /// <remarks>An unscoped enum in C++; ported code imports it with <c>using static Occt.StepBasic_SiUnitName;</c>.</remarks>
-public enum SiUnitName
+internal enum SiUnitName
 {
     SunMetre,
     SunGram,

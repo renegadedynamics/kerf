@@ -89,7 +89,7 @@ public class ConcurrencyTests
             var closing = new NCollection_List<Shape>();
             closing.Append(SubShapes(box, ShapeType.Face)[5]);
             var thick = new MakeThickSolid();
-            thick.MakeThickSolidByJoin(box, closing, -1.0, 1.0e-3, OffsetMode.Skin, false, false, JoinKind.Arc);
+            thick.MakeThickSolidByJoin(box, closing, -1.0, 1.0e-3, global::Kerf.Offsets.OffsetMode.Skin, false, false, JoinKind.Arc);
             return BRepText(thick.Shape());
         }),
         ("healing", () =>
@@ -163,17 +163,17 @@ public class ConcurrencyTests
     [Fact]
     public async Task Settings_stay_in_their_flow_of_execution()
     {
-        double defaultEpsilon = Kerf.Engine.Foundation.Color.Epsilon();
+        double defaultEpsilon = Kerf.Engine.Foundation.LinearColor.Epsilon();
         bool defaultParallel = Options.GetParallelMode();
 
         // A setting made in a task ends with it
         await Task.Run(() =>
         {
-            Kerf.Engine.Foundation.Color.SetEpsilon(0.5);
+            Kerf.Engine.Foundation.LinearColor.SetEpsilon(0.5);
             Options.SetParallelMode(!defaultParallel);
-            Assert.Equal(0.5, Kerf.Engine.Foundation.Color.Epsilon());
+            Assert.Equal(0.5, Kerf.Engine.Foundation.LinearColor.Epsilon());
         });
-        Assert.Equal(defaultEpsilon, Kerf.Engine.Foundation.Color.Epsilon());
+        Assert.Equal(defaultEpsilon, Kerf.Engine.Foundation.LinearColor.Epsilon());
         Assert.Equal(defaultParallel, Options.GetParallelMode());
 
         // Scopes on many threads at once each see their own, and the operations they start inherit it
@@ -183,13 +183,13 @@ public class ConcurrencyTests
             bool parallel = k % 2 == 0;
             using OperationContext.Scope scope = OperationContext.Begin(
                 OperationContext.Current.With(Options.ParallelModeSetting, parallel)
-                                        .With(Kerf.Engine.Foundation.Color.EpsilonSetting, 0.001 * (k + 1)));
+                                        .With(Kerf.Engine.Foundation.LinearColor.EpsilonSetting, 0.001 * (k + 1)));
             var fuse = new Fuse(Box(), Cylinder());
             // the loops an operation starts see its settings
             var inLoop = new bool[2];
             Parallel.For(0, inLoop.Length, i => inLoop[i] = Options.GetParallelMode());
             if (fuse.RunParallel() != parallel || inLoop[0] != parallel || inLoop[1] != parallel
-                || Kerf.Engine.Foundation.Color.Epsilon() != 0.001 * (k + 1))
+                || Kerf.Engine.Foundation.LinearColor.Epsilon() != 0.001 * (k + 1))
             {
                 failures.Add($"run {k}");
             }

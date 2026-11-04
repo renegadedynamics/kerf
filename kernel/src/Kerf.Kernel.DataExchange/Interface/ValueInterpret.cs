@@ -11,10 +11,10 @@ using Occt;
 namespace Kerf.Engine.Exchange.Framework;
 
 /// <summary>A function interpreting the value of an <see cref="InterfaceTypedValue"/> (as <see cref="MonitorValueInterpret"/>).</summary>
-public delegate TCollection_HAsciiString? ValueInterpret(InterfaceTypedValue typval, TCollection_HAsciiString val, bool native);
+internal delegate TCollection_HAsciiString? ValueInterpret(InterfaceTypedValue typval, TCollection_HAsciiString val, bool native);
 
 /// <summary>A function telling whether a value satisfies a specific criterion (as <see cref="MonitorValueSatisfies"/>).</summary>
-public delegate bool ValueSatisfies(TCollection_HAsciiString val);
+internal delegate bool ValueSatisfies(TCollection_HAsciiString val);
 
 /// <summary>A function telling whether a value satisfies a specific criterion of a static parameter.</summary>
-public delegate bool StaticSatisfies(TCollection_HAsciiString val);
+internal delegate bool StaticSatisfies(TCollection_HAsciiString val);

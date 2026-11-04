@@ -154,10 +154,10 @@ internal static class XdeDocDump
     // stepcafrec's palette
     public static ColorWithAlpha PaletteColor(int theIndex) => (theIndex % 4) switch
     {
-        0 => new ColorWithAlpha(new Color(NameOfColor.NocRed)),
-        1 => new ColorWithAlpha(new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb)),
-        2 => new ColorWithAlpha(new Color(0.125, 0.625, 0.25, ColorSpace.TocRgb), 0.5f),
-        _ => new ColorWithAlpha(new Color(NameOfColor.NocGreen)),
+        0 => new ColorWithAlpha(new LinearColor(NameOfColor.NocRed)),
+        1 => new ColorWithAlpha(new LinearColor(0.25, 0.5, 0.75, ColorSpace.TocRgb)),
+        2 => new ColorWithAlpha(new LinearColor(0.125, 0.625, 0.25, ColorSpace.TocRgb), 0.5f),
+        _ => new ColorWithAlpha(new LinearColor(NameOfColor.NocGreen)),
     };
 
     /// <summary>stepcafrec's MakePartDoc, with XCAF's auto-naming.</summary>
@@ -199,7 +199,7 @@ internal static class XdeDocDump
         var aDoc = new ExchangeDocument { AutoNaming = true };
         Label aPart = aDoc.AddShape(theShape, false);
         aDoc.SetName(aPart, "part");
-        aDoc.SetColor(aPart, new Color(NameOfColor.NocRed), ColorType.ColorSurf);
+        aDoc.SetColor(aPart, new LinearColor(NameOfColor.NocRed), ColorType.ColorSurf);
         aDoc.SetLayer(aPart, "parts");
         aDoc.SetVolume(aPart, 12.5);
         Label aSub = aDoc.NewShape();
@@ -210,7 +210,7 @@ internal static class XdeDocDump
         aDoc.AddComponent(aSub, aPart, new Placement());
         Label aSecond = aDoc.AddComponent(aSub, aPart, new Placement(aTrsf));
         aDoc.SetName(aSecond, "second");
-        aDoc.SetColor(aSecond, new Color(0.25, 0.5, 0.75, ColorSpace.TocRgb), ColorType.ColorSurf);
+        aDoc.SetColor(aSecond, new LinearColor(0.25, 0.5, 0.75, ColorSpace.TocRgb), ColorType.ColorSurf);
         Label aTop = aDoc.NewShape();
         aDoc.SetName(aTop, "top");
         var aTrsf2 = new Transform3D();

@@ -15433,6 +15433,153 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        3,277 after; parallel 2,648 and 7,486 before, 1,762 and 3,014 after: noise. The public wrappers sit outside the
        engine's loops; the property conversions compile to the same calls.
 
+## Phase 10: unit 10L2, the public API, part 2: geometry's operations, construction, Booleans, fillets, offsets and features
+
+1523. **Engine enums that are exactly the public API's move into it** rather than gaining a public twin and a
+       conversion (docs/api/kerf-10l2.map, blocks 1 and 2, by kerf-rename): `GlueMode` to `Kerf.Booleans` (its members
+       `GlueOff`, `GlueShift`, `GlueFull` now `Off`, `Shift`, `Full`), `FilletShape` to `Kerf.Fillets`, `OffsetMode` to
+       `Kerf.Offsets`, `TransitionMode` to `Kerf.Construction` (moved first into a file of its own, as the tool moves
+       whole files) and `ParametrizationType` to `Kerf.Geometry`. The engine's fillet option structs
+       (`BRepFilletAPI_FilletOptions`, `…ChamferOptions`) are `MakeFilletOptions` and `MakeChamferOptions`, leaving the
+       names to the public records (design-rules 1). kerf.map's entries and `OcctTypeNames` (regenerated) follow, so the
+       OCCT names printed and recorded are unchanged. Edits: 298 in 56 files, and 120 in 32; the Booleans benchmark's
+       two `GlueMode` uses by hand.
+1524. **The splines' copies are indexed from 0** (geometry.md): `WithPole`, `WithWeight` and `WithKnot` on
+       `BSplineCurve3D`/`2D`, `WithPole` and `WithWeight` on the Béziers and both surfaces, checking their indices and
+       weights (`ArgumentOutOfRangeException`) and turning OCCT's knot-order error into an `ArgumentException`. OCCT's
+       1-based copies keep their code as `WithPoleOneBased`, `WithWeightOneBased` and `WithKnotOneBased` (internal; map
+       block 3, 22 members, 46 edits). kerf-rename's member ids include the return type (`~Kerf.Geometry.BSplineCurve3D`):
+       without it the tool plans the rename and edits nothing, silently.
+1525. **Shared plumbing, additive (for 10L3):** `EngineOutcome` gains an optional last member `Failure`, the diagnostic of
+       an algorithm that isn't done when the operation knows it (its status enum's), which `EngineOperation.Run` returns
+       in place of the report's alerts and the fallback. New, internal, in `Results/MakerOutcome.cs`: `MakerOutcome.Of`
+       and `Done` (a `MakeShape` built and read, its history taken only once done), `HistoryOf` (OCCT's
+       `BRepTools_History` of an algorithm's `Modified`/`Generated`/`IsDeleted` for its inputs), `Made` and the misuse
+       checks (`NotNull`, `Positive`, `Valid` for a default frame, axis or direction). Nothing existing changed.
+1526. **A revolution copies its profile** (`ApiMakeRevol(…, copy: true)`, as the modelling layer does): without, the
+       revolution of a published profile has an empty history (`Generated` of every edge empty), because the engine
+       revolves its own copy of a frozen input and its history is keyed by the copy. An OCCT.NET defect of the
+       copy-at-entry era, not OCCT's; the public operation avoids it, and the engine's default stays.
+1527. **Geometry's operations are one class,** `GeometryOperations` (README section 3: one `<Area>Operations` class
+       per area), of C# 14 extension members: static ones on `TrimmedCurve3D` (`ArcThrough`, `ArcTangent`, `Arc` of the
+       four conics, `Segment`), `BSplineCurve3D` (`Interpolate`, `Approximate`, `Join`) and `BSplineSurface`
+       (`Approximate`), instance ones on `Curve3D` (`ToBSpline`, `ToCurve2D`, `Project`, `TryProjectNearest`,
+       `Intersect(Surface)`), `Curve2D` (`ToCurve3D`, `Intersect`) and `Surface` (`Project`, `TryProjectNearest`,
+       `Intersect`, `TryGetPlane`). Expected failures are results with `geometry.*` codes (docs/api/diagnostics.md);
+       projections return their points nearest first, empty when there are none. `ToBSpline` converts exactly where OCCT
+       can and approximates otherwise. Departures: `ApproximationOptions` serves curves and surfaces; the
+       curve–surface intersection takes no tolerance (OCCT's has none) and reports a stretch in the surface as a
+       warning, as the 2D one does an overlap. `Tangents2D` is left: unit 10K4 was changing GccAna and Geom2dGcc.
+1528. **Construction, Booleans, fillets, offsets and features** follow their reviews on `EngineOperation.Run`, each
+       taking inputs, an options record, then progress and cancellation where the operation can be long (sweeps,
+       lofts, Booleans, 3D fillets and offsets); misuse throws (null or foreign sub-shapes, sizes that aren't positive,
+       a default frame). Operations on shapes are generic extension members
+       (`extension<TShape>(TShape s) where TShape : struct, IShape<TShape>`), as 10L1's traversal is, so `face.Extrude(v)`
+       and `box.Fuse(cylinder)` work without casts; an extension on `Shape` alone doesn't apply to a `Face`. Departures,
+       each listed in README section 11: overloads without a frame use `Frame3D.World`; no `RevolveOptions`,
+       `DraftOptions` or `SplitOptions`; `ShapeProjections` (the engine's `GeomAPI` is `Projections`); `ExtrudeLimit`
+       (`Until` is the modelling layer's); `ChamferMode`; Booleans always non-destructive, `Simplify` on by default, an
+       empty result a `boolean.empty-result` warning; a sweep closes into a solid only when its profiles are closed.
+1529. **A 2D fillet's history is built by hand:** OCCT's `BRepFilletAPI_MakeFillet2d::Modified` takes only edges (it
+       casts), so the generic history of the face's sub-shapes throws on its vertices. Each corner generates its new edge
+       and is removed; each edge cut back is modified into its descendant. A 3D fillet's failure carries the faulty
+       contours' edges (`diagnostic.Shapes`) and the first stripe's status as its code; a 2D one, the corner and
+       `ChFi2d_ConstructionError` in kebab case (`fillet.computation-error`).
+1530. **686 engine types of these areas are internal** (Construction 319, Booleans 172, Fillets 97, Offsets 50,
+       Features 46, Geometry 2), found as 10L1 did: every top-level public type of `Kerf.Engine.Construction`,
+       `.Booleans`, `.Fillets`, `.Offsets`, `.Features`, `.Geometry` and `.Topology` made internal, then, over 19 rounds of
+       builds of Kerf.Slnx, the types each inconsistent-accessibility error named made public again (131). Those stay
+       public because a public type of another area shows them (healing's, meshing's, exchange's and measurement's
+       engine types, 10L3's to make internal: `Xyz`, `Box`, `OrientedBox`, the adaptors, `History`, `ReShape`,
+       `Modifier`…), because the modelling layer's public API does (`MakeShape`, `BuilderAlgo`, `Command`, `Algo`,
+       `Options`; 10M), or because `StatusDiagnostics` (public, in `Kerf.Engine.Foundation`) takes their status enums
+       (`WireError`, `PipeError`, `ErrorStatus`, `StatusError`…). No test changed: the tests, Draw-lite, the benchmarks
+       and the modelling layer reach the engine through `InternalsVisibleTo`.
+1531. **Tests and measurement.** `Kerf.Kernel.PublicApi.Tests` reaches ModelingAlgorithms now and has 43 new tests
+       (84 in all), using only the public API: for each area success, a failure with its diagnostic, cancellation and
+       history; its no-engine-types test covers the five new namespaces and ModelingAlgorithms. Every other suite keeps
+       its count: no test was added, removed or changed by hand; the renames of decisions 1523 and 1524 rewrote the call sites
+       in 48 test files (Draw-lite's among them) and 5 of the modelling layer's source files, by tool, one for one; the
+       internalisation changed none. Counts: PublicApi 84, Foundation 2,305, ModelingData 3,149, ModelingAlgorithms
+       4,844 (9 skipped), DataExchange 282 (1 skipped), Draw-lite 687, Oracle 383, the modelling layer 1,884; all pass.
+       **Measured** (Release, back to back with the base, e668db9b, exported beside; a machine shared with other units).
+       Bento's benchmark (`7 0`): the same volumes, faces and triangles; median recalculation 972 and 967 ms on the base,
+       983 and 951 after. The Booleans' simple grid (407 cases), serial/parallel/clean ms: base 1,822/2,098/147 and
+       2,428/2,079/187, after 2,035/2,923/163 and 1,961/1,796/163; 6.91 MB a Boolean either way: noise. The benchmarks
+       call the engine, whose code didn't change; the public operations add one argument check and one history copy
+       per call, outside the engine's loops.
+## Phase 10: unit 10L3, the public API, part 3: measurement, healing, meshing and exchange
+
+1532. **Four areas public, on the README's pattern** (docs/api/README.md, section 12): `Kerf.Measurement`
+       (`MeasureOperations`), `Kerf.Healing` (`HealingOperations`), `Kerf.Meshing` (`Mesher`, `ShapeMesh`) in
+       ModelingAlgorithms, `Kerf.Exchange` (`Step`, `Stl`, `Gltf`, `ThreeMf`, `Obj`, `Brep`, `ModelNode`) in DataExchange,
+       `Kerf.Color` and `Kerf.Geometry.OrientedBox` in Foundation. Each operation is a static method declared as a C# 14
+       extension member (generic over `IShape<T>`, so `part.Volume()` and `MeasureOperations.Volume(part)` both work);
+       the shape-making ones run on `EngineOperation.Run` (decision 1515) unchanged, so no shared plumbing changed.
+       Volume, area and length are numbers; distances, fixes, sewing, unifying, meshing and every reader and writer are
+       `Result`s; a null shape is an `ArgumentException`. BREP lives in DataExchange with the other formats (exchange.md
+       put it in ModelingData): `ReadLimits` is DataExchange's, and one namespace in one assembly is simpler.
+1533. **Five engine types renamed for public names** (kerf-rename, Kerf.slnx and the benchmarks; kerf.map and
+       `OcctTypeNames` follow, so OCCT's printed names are unchanged): `Quantity_Color` is `LinearColor` (for
+       `Kerf.Color`), `Bnd_OBB` `Obb` (for `OrientedBox`), `RWGltf_ReadLimits` `GltfReadLimits`, `RWGltf_WriteOptions`
+       `GltfWriterOptions`, `RWObj_WriteOptions` `ObjWriterOptions`, `StepBasic_LengthUnit` `StepLengthUnit` (for
+       `ReadLimits`, `GltfWriteOptions`, `ObjWriteOptions`, `LengthUnit`). The tool also renamed the modelling layer's
+       `Geometry/Color.cs` (its type isn't the engine's): moved back by hand. No `Meshing.Triangle` record: the engine's
+       `Triangle` has the name, and the buffers are int triples.
+1534. **Measurement and healing follow OCCT where the review guessed otherwise.** `Length` counts an edge once per face
+       it bounds, as `BRepGProp::LinearProperties` (a box of 10 × 20 × 30 has 480), and `MassOptions.SkipShared` once.
+       `MassProperties.MomentOfInertia` is Huygens' theorem on the record's own inertia (GProp's `HOperator`), so the
+       record holds no engine object. `FixOptions`' modes are `bool?` (null is OCCT's -1, "decide") and its tolerances
+       OCCT's (1e-7, not the review's maximum of 1); a tolerance left at its default isn't passed on. `ConnectEdges` and
+       `FreeBoundaries` return wires, as they can't fail. `Classify` is on solids. `Validate`'s report lists every status
+       of every checked sub-shape, on its own and in its contexts, as `check.` and BRepCheck_Status in words
+       (`check.not-closed`); `IsValid` is the analyser's own (first status only, as OCCT).
+1535. **Meshing by the overlay route, read out unfinished** (decision 1444, question 59). `IncrementalMesh.ReadMeshed`
+       (internal) opens the mesher's overlay on the shape (its unfrozen TShapes copied first), meshes, and hands the
+       meshed target to a reader while the overlay is open; the overlay is dropped, so nothing is published and no
+       meshed copy is assembled. The reader is `MeshExtraction` (10B's, float for float), which now also returns each
+       face's triangulation and placement: `ShapeMesh` keeps them for `FaceMesh.GetNodes()` (double precision, on
+       demand) and the mesh writers. One triangle buffer, its indices local to each face (`FaceMesh.FirstNode` offsets
+       them), so the copy-out is 10H6's: 100,520 triangles copy out with 3.1 MB allocated for 2.4 MB of buffers (2.7 MB
+       of it the extraction, 0.4 MB the mesher's check that the shape's existing meshes are fine enough), 9.8 ms at best
+       (`MesherCopyOutTests`). `BrepBuilder.UpdateFaceMesh`/`UpdateEdgeMesh` stay: the post-processor sets each
+       triangulation's deflection and parameters after attaching it (deflection estimation reads the attached polygons),
+       and the engine's own meshing (Draw-lite, HLR, the writers' meshing of shapes) still stores meshes on faces;
+       retiring them means estimating before attaching, a change to the mesher left for a later unit.
+1536. **No mesh on a public face.** `Face.FromMesh` and `Face.TryGetMesh` are not written: a mesh read from a file
+       (`Stl.Read`, `Gltf.Read`) is a `ShapeMesh` whose `Shape` (and faces) are null, and a model's mesh part is
+       `ModelNode.Mesh`. Internally a mesh goes back to the engine's writers as a compound of faces holding only its
+       triangulations, at their placements and orientations (`ShapeMesh.ToMeshOnlyShape`), never handed out.
+1537. **Exchange.** `ModelNode.Placement` is a `Placement`, not a `Transform3D`: the writers share locations by
+       identity, and an assembly read keeps its instance's. A part's shape carries its own placement (STEP's reader
+       places it). `Kerf.Color` holds OCCT's linear single-precision values and shows sRGB (question 60): `FromLinear`
+       and `ToLinear` round-trip a file's values exactly. STEP data holding no shape reads as an empty assembly. No
+       `Obj.Read` (the engine has only OBJ's writer), no STEP healing switch or schema option yet. The modelling layer's
+       STEP writer and reader, its STL, glTF and 3MF writers and its mesh (`ShapeMesh`) moved onto the public API,
+       mechanically: its STEP native references (byte for byte), and `PublicExchangeIdentityTests` (STL binary and ASCII,
+       glTF, 3MF and BREP against the engine driven the old way, a meshed private copy) show the bytes unchanged. Its
+       STL and glTF readers (they make faces holding triangles) and BREP import stay on its glue until 10M.
+1538. **The six areas' engine internal where nothing public shows it**: 1,229 of the 1,695 top-level types of
+       `Kerf.Engine.Measurement…`, `Classification…`, `Intersection.CurveSurface`, `Healing…`, `Meshing…` and
+       `Exchange…` (927 of exchange's, 127 of healing's, 86 of meshing's, 60 of measurement's, 29 of classification's and
+       the curve-surface intersection's). Found as 10L1 found its own (decision 1520), by a script: all made internal,
+       then rounds of builds of Kerf.slnx and the benchmarks making public again the types the inaccessibility errors
+       named (33 rounds over three runs). The 466 left public are shown by the modelling layer's public API
+       (`Sewing`, `UnifySameDomain`, `Obb`, the colour types…), by public engine types of other areas (Poly's
+       triangulations on BRep's, the classifiers on the Booleans'), or by Draw-lite's and the tests' public helpers
+       (XdeDoc's tree, STEP's style entities); they go with those.
+1539. **Tests and measurement.** Suites keep their counts; no existing test changed. New: `Kerf.Kernel.PublicApi.Tests`
+       35 (measurement 9, healing 9, meshing 5, exchange 10, the areas' surface 2), its fixtures three BREP files read by
+       the public reader; ModelingAlgorithms.Tests 1 (`MesherCopyOutTests`); DataExchange.Tests 4
+       (`PublicExchangeIdentityTests`). Counts: Foundation 2,305, ModelingData 3,149, ModelingAlgorithms 4,845 (9
+       skipped), DataExchange 286 (1 skipped), Oracle 383, PublicApi 76, the modelling layer 1,884, Draw-lite's classes
+       687, all passing. Bento's benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, Release, a machine shared with other
+       units), before (e668db9b with the renames) and after: the same volumes, faces and triangles in every example;
+       allocation per example the same or lower (nesting locations 33.6 to 25.9 MB, plate with hole 3.9 to 3.6, the
+       bottle 93.4 to 92.6: the mesher no longer copies the shape); median recalculation 1,532 ms before, 1,418 after.
+       STEP reading isn't in that benchmark; the reader's path is unchanged but for the tree's conversion to
+       `ModelNode`.
+
 ## Phase 10: unit 10K4, OCCT's bugs: 2D constraints
 
 17101. **GccAna_Circ2d3Tan's solutions obey the laws** (occt-issues.md, unit 5K1's rows on GccAna_Circ2d3Tan; triage

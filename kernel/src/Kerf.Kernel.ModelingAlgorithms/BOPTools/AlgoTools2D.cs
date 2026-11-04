@@ -38,7 +38,7 @@ namespace Kerf.Engine.Booleans.Tools;
 /// (plan 2.3). A frozen edge throws at the first write.
 /// </para>
 /// </remarks>
-public static class AlgoTools2D
+internal static class AlgoTools2D
 {
     /// <summary>
     /// Computes the edge's pcurve on the face and stores it in the edge (with the larger of the edge's tolerance and the

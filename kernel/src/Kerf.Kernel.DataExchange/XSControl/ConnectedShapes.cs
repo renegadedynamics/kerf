@@ -19,7 +19,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// From a TopoDS_Shape, or from the entity which has produced it, searches for the shapes, and the entities
 /// which have produced them in last transfer, which are adjacent to it by VERTICES
 /// </summary>
-public class ConnectedShapes : SelectExplore
+internal class ConnectedShapes : SelectExplore
 {
 
     /// <summary>

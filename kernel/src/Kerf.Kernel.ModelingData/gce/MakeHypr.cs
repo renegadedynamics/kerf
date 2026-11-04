@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Values;
 /// radii. The X axis of the hyperbola is its major axis, the Y axis its minor axis; the major radius may be lower
 /// than the minor radius.
 /// </summary>
-public sealed class MakeHypr : Root
+internal sealed class MakeHypr : Root
 {
     private Hyperbola3D _theHypr = new();
 

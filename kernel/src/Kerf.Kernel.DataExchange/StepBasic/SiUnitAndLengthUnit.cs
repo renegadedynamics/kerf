@@ -10,9 +10,9 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class SiUnitAndLengthUnit : SiUnit
+internal class SiUnitAndLengthUnit : SiUnit
 {
-    private LengthUnit _lengthUnit;
+    private StepLengthUnit _lengthUnit;
 
     /// <summary>
     /// Returns a SiUnitAndLengthUnit
@@ -25,7 +25,7 @@ public class SiUnitAndLengthUnit : SiUnit
     {
         // --- classe inherited fields ---
         // --- ANDOR component fields ---
-        _lengthUnit = new LengthUnit();
+        _lengthUnit = new StepLengthUnit();
         DimensionalExponents dimensions = null;
         dimensions = null;
         _lengthUnit.Init(dimensions);
@@ -34,12 +34,12 @@ public class SiUnitAndLengthUnit : SiUnit
         base.Init(hasAprefix, aPrefix, aName);
     }
 
-    public void SetLengthUnit(LengthUnit aLengthUnit)
+    public void SetLengthUnit(StepLengthUnit aLengthUnit)
     {
         _lengthUnit = aLengthUnit;
     }
 
-    public LengthUnit LengthUnit()
+    public StepLengthUnit LengthUnit()
     {
         return _lengthUnit;
     }

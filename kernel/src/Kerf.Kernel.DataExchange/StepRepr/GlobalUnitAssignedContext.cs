@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class GlobalUnitAssignedContext : RepresentationContext
+internal class GlobalUnitAssignedContext : RepresentationContext
 {
     private NCollection_HArray1<NamedUnit> _units;
 

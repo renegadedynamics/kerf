@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepSweptAreaSolid : StepSolidModel
+internal class StepSweptAreaSolid : StepSolidModel
 {
     private StepCurveBoundedSurface _sweptArea;
 

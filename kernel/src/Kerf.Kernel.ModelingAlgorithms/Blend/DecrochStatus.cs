@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Blend;
 
 /// <summary>Which restrictions a restriction-restriction blend leaves.</summary>
-public enum DecrochStatus
+internal enum DecrochStatus
 {
     NoDecroch,
     DecrochRst1,

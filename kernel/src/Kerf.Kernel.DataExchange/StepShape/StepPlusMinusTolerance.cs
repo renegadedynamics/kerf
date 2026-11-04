@@ -14,7 +14,7 @@ namespace Kerf.Engine.Exchange.Step.Shapes;
 /// <summary>
 /// Added for Dimensional Tolerances
 /// </summary>
-public class StepPlusMinusTolerance : Transient
+internal class StepPlusMinusTolerance : Transient
 {
     private StepToleranceMethodDefinition _range = new StepToleranceMethodDefinition();
     private StepDimensionalCharacteristic _tolerancedDimension = new StepDimensionalCharacteristic();

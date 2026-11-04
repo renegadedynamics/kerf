@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Representation;
 
-public class GlobalUncertaintyAssignedContext : RepresentationContext
+internal class GlobalUncertaintyAssignedContext : RepresentationContext
 {
     private NCollection_HArray1<UncertaintyMeasureWithUnit> _uncertainty;
 

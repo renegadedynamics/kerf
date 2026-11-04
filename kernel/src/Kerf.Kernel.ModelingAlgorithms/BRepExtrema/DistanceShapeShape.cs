@@ -39,7 +39,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// multi-threaded mode the solid treatment's result depends on which thread finds an inner point first, as in OCCT.
 /// </para>
 /// </remarks>
-public sealed class DistanceShapeShape
+internal sealed class DistanceShapeShape
 {
     private double _distRef;
     private bool _isDone;

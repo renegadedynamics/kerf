@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepConnectedFaceSet : StepTopologicalRepresentationItem
+internal class StepConnectedFaceSet : StepTopologicalRepresentationItem
 {
     private NCollection_HArray1<StepFace> _cfsFaces;
 

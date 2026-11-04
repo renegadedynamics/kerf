@@ -16,7 +16,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity GeometricToleranceWithDefinedUnit
 /// </summary>
-public class GeometricToleranceWithDefinedUnit : GeometricTolerance
+internal class GeometricToleranceWithDefinedUnit : GeometricTolerance
 {
     private LengthMeasureWithUnit _unitSize;
 

@@ -20,7 +20,7 @@ namespace Kerf.Engine.Healing.Upgrade;
 /// and other curves are converted to B-splines, simplified and cut at their knots.
 /// </summary>
 /// <remarks>A working object (decision 21).</remarks>
-public class ConvertCurve2dToBezier : SplitCurve2d
+internal class ConvertCurve2dToBezier : SplitCurve2d
 {
     private readonly NCollection_HSequence<Curve2D> _segments;
     private readonly NCollection_HSequence<double> _splitParams;

@@ -10,7 +10,7 @@ namespace Kerf.Engine.Booleans.Legacy.Data;
 /// How a shape lies with respect to the reference of its same-domain group: not sharing its geometry, or sharing it
 /// with the same or the opposite orientation.
 /// </summary>
-public enum DsConfig
+internal enum DsConfig
 {
     Unshgeometry,
     Sameoriented,

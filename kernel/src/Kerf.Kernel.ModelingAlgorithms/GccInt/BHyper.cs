@@ -10,7 +10,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 namespace Kerf.Engine.Construction.Constraints;
 
 /// <summary>A bisecting curve whose geometry is a 2D hyperbola.</summary>
-public sealed class BHyper : ConstraintBisec
+internal sealed class BHyper : ConstraintBisec
 {
     private readonly Hyperbola2D _hyp;
 

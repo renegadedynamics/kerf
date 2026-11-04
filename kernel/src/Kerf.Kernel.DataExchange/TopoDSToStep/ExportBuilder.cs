@@ -19,7 +19,7 @@ using static Kerf.Engine.Exchange.Step.Export.ExportBuilderError;
 namespace Kerf.Engine.Exchange.Step.Export;
 
 /// <summary>Builds the STEP topology of a shell (an open or closed shell) or of a face, and optionally its tessellation.</summary>
-public sealed class ExportBuilder : ExportRoot
+internal sealed class ExportBuilder : ExportRoot
 {
     private StepTopologicalRepresentationItem _result;
     private TessellatedItem _tessellatedResult;

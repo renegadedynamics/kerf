@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// outer wire and outside every hole.
 /// </summary>
 /// <remarks>A working object, as OCCT's: <see cref="RegisterWire"/> adds a wire.</remarks>
-public sealed class Classifier : Transient
+internal sealed class Classifier : Transient
 {
     private readonly List<Class2d> _tabClass = new();
     private readonly List<bool> _tabOrient = new();

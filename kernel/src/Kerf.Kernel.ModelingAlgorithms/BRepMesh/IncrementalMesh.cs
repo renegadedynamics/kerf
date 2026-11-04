@@ -124,7 +124,7 @@ public class IncrementalMesh : DiscretRoot
         }
         try
         {
-            Perform(context, target, overlay, copies, range);
+            Perform(context, target, overlay, copies, range, finish: true);
         }
         finally
         {
@@ -132,9 +132,38 @@ public class IncrementalMesh : DiscretRoot
         }
     }
 
+    /// <summary>
+    /// Meshes <paramref name="shape"/> in a working overlay of its own and gives what <paramref name="read"/> reads of
+    /// the meshes while the overlay is open: the public API's <c>Mesher</c> (unit 10L3, decision 1349 question 59). The
+    /// overlay is dropped unfinished, so nothing is published: the shape is never written, and no meshed copy of it is
+    /// assembled. <paramref name="read"/> gets the shape the meshes are on: <paramref name="shape"/> itself, or, if
+    /// it holds unfrozen TShapes, a copy of it with the same structure.
+    /// </summary>
+    /// <param name="shape">The shape to mesh.</param>
+    /// <param name="parameters">The meshing parameters.</param>
+    /// <param name="read">What to read of the meshes, given the shape they are on.</param>
+    /// <param name="range">The progress range.</param>
+    /// <param name="status">The status flags (<see cref="StatusModel"/>) met while meshing.</param>
+    /// <returns>What <paramref name="read"/> returned, or default if the meshing was stopped.</returns>
+    /// <exception cref="NumericErrorException">The deflection or the angle is too small.</exception>
+    internal static T? ReadMeshed<T>(in Shape shape, in ToolParameters parameters, Func<Shape, T> read, ProgressRange range,
+                                     out int status)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        IncrementalMesh algo = new();
+        algo._parameters = parameters;
+        algo.SetShape(shape);
+        algo.InitParameters();
+        Shape target = WorkingOverlay.WithUnfrozenCopied(shape, out Dictionary<TShape, TShape>? copies);
+        using WorkingOverlay overlay = WorkingOverlay.Begin(target);
+        algo.Perform(new MeshContext(algo._parameters.MeshAlgo), target, overlay, copies, range, finish: false);
+        status = algo._status;
+        return algo.IsDone ? read(target) : default;
+    }
+
     // Meshes target (the input, or the input with its unfrozen TShapes copied) in the overlay, if any.
     private void Perform(ToolContext context, in Shape target, WorkingOverlay? overlay,
-                         Dictionary<TShape, TShape>? copies, ProgressRange range)
+                         Dictionary<TShape, TShape>? copies, ProgressRange range, bool finish)
     {
         context.SetShape(target);
         context.ChangeParameters() = _parameters;
@@ -166,7 +195,7 @@ public class IncrementalMesh : DiscretRoot
         }
 
         // OCCT.NET: publish the meshed shape, sharing what meshing left unchanged (unit 10H6)
-        if (overlay is not null)
+        if (overlay is not null && finish)
         {
             _shape = WorkingOverlay.UncopiedWhereUnchanged(overlay.Finish(target), copies);
             _history = overlay.History();

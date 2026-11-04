@@ -38,7 +38,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// before they are cached or handed out.
 /// </para>
 /// </remarks>
-public class SurfaceAnalysis : Transient
+internal class SurfaceAnalysis : Transient
 {
     protected Surface?         _surf;
     protected SurfaceAdaptor?  _adSur;

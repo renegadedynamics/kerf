@@ -22,7 +22,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// to its data, calling methods defined here). Finally, the Protocols of each norm have to Create and
 /// Recognize Unknown Entities of this norm
 /// </summary>
-public class UndefinedContent : Transient
+internal class UndefinedContent : Transient
 {
     private const int Content_TypeField = 31;
     private const int Content_LocalField = 7;

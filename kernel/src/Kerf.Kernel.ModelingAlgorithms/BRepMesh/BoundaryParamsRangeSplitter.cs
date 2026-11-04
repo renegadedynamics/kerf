@@ -8,7 +8,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>The NURBS range splitter whose grid parameters are those of the border points.</summary>
-public class BoundaryParamsRangeSplitter : NurbsRangeSplitter
+internal class BoundaryParamsRangeSplitter : NurbsRangeSplitter
 {
     /// <summary>A splitter.</summary>
     public BoundaryParamsRangeSplitter()

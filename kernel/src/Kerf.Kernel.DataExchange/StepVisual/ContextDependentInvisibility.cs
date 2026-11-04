@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class ContextDependentInvisibility : Invisibility
+internal class ContextDependentInvisibility : Invisibility
 {
     private InvisibilityContext _presentationContext = new InvisibilityContext();
 

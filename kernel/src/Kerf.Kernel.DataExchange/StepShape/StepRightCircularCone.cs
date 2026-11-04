@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepRightCircularCone : StepGeometricRepresentationItem
+internal class StepRightCircularCone : StepGeometricRepresentationItem
 {
     private StepAxis1Placement _position;
     private double _height;

@@ -11,7 +11,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Data;
 
 /// <summary>Describes a list of ONE field.</summary>
-public class FieldList1 : FieldList
+internal class FieldList1 : FieldList
 {
     private readonly Field _thefield = new();
 

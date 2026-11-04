@@ -23,7 +23,7 @@ namespace Kerf.Engine.Offsets.MedialAxis;
 /// bucket order (NCollection_IntDataMap, decision 543): it decides the order of the basic elements linked to a vertex.
 /// The other maps are only looked up; the map of basic elements compares them by reference, as OCCT's handles.
 /// </remarks>
-public sealed class LinkTopoBilo
+internal sealed class LinkTopoBilo
 {
     private readonly Dictionary<Shape, NCollection_Sequence<MedialBasicElt>> _map =
         new(ShapeHasher.Instance);

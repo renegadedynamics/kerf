@@ -11,7 +11,7 @@ using Kerf.Engine.Topology.Tools;
 using Kerf.Topology;
 using Occt;
 using Schematiq.Collections;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Topology.Orientation;
 using static Kerf.Topology.ShapeType;
 
@@ -31,7 +31,7 @@ namespace Kerf.Engine.Booleans;
 /// sub-shapes are never written), and the materials of a changed shape are those of what stands for it. The
 /// materials map keys elements with their orientation (OCCT's default hasher).
 /// </remarks>
-public class MakeConnectedAlgorithm : Options
+internal class MakeConnectedAlgorithm : Options
 {
     protected NCollection_List<Shape> _arguments = new();                          //!< Input shapes for making them connected
     protected IndexedSet<Shape> _allInputsMap = new(ShapeHasher.Instance); //!< Map of all BRep sub-elements of the input shapes
@@ -358,7 +358,7 @@ public class MakeConnectedAlgorithm : Options
             // Glue the shapes
             BooleanBuilder gluer = new();
             gluer.SetArguments(_arguments);
-            gluer.SetGlue(GlueMode.GlueShift);
+            gluer.SetGlue(global::Kerf.Booleans.GlueMode.Shift);
             gluer.SetRunParallel(_runParallel);
             gluer.SetNonDestructive(true);
             gluer.Perform();

@@ -22,7 +22,7 @@ using Kerf.Geometry;
 using Kerf.Topology;
 using Occt;
 using System.Runtime.InteropServices;
-using static Kerf.Engine.Booleans.GlueMode;
+using static Kerf.Booleans.GlueMode;
 using static Kerf.Geometry.CurveKind;
 using static Kerf.Geometry.SurfaceKind;
 using static Kerf.Topology.ShapeType;
@@ -311,7 +311,7 @@ public partial class PaveFiller
             }
             _iterator.Value(out nF1, out nF2);
 
-            if (_glue == GlueMode.GlueOff)
+            if (_glue == global::Kerf.Booleans.GlueMode.Off)
             {
                 Face f1 = ShapeCasts.Face(_ds.Shape(nF1));
                 Face f2 = ShapeCasts.Face(_ds.Shape(nF2));
@@ -601,7 +601,7 @@ public partial class PaveFiller
     protected void MakeBlocks(ProgressRange range)
     {
         using var psOuter = new ProgressScope(range, null, 4);
-        if (_glue != GlueMode.GlueOff)
+        if (_glue != global::Kerf.Booleans.GlueMode.Off)
         {
             return;
         }

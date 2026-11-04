@@ -23,7 +23,7 @@ namespace Kerf.Engine.Healing.Analysis;
 /// sample points.
 /// </summary>
 /// <remarks>A working object without state (OCCT's is used by value).</remarks>
-public sealed class CurveAnalysis
+internal sealed class CurveAnalysis
 {
     // Projects a point onto a curve by evaluating the curve at several points within the parameter range. It finds
     // the closest point on the curve to thePoint and updates the projection distance, point and parameter. It also

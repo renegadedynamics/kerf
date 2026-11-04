@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Representation;
 /// <summary>
 /// Representation of STEP entity ShapeAspectTransition
 /// </summary>
-public class ShapeAspectTransition : ShapeAspectRelationship
+internal class ShapeAspectTransition : ShapeAspectRelationship
 {
     /// <summary>
     /// Empty constructor

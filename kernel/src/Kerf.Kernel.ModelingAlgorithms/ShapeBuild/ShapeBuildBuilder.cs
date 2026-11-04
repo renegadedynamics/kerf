@@ -9,7 +9,7 @@ using Occt;
 namespace Kerf.Engine.Healing.Build;
 
 /// <summary>Tools for building shapes in Shape Healing.</summary>
-public static class ShapeBuildBuilder
+internal static class ShapeBuildBuilder
 {
     private static readonly PlaneSurface Xoy = MakeXoy();
 

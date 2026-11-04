@@ -24,7 +24,7 @@ namespace Kerf.Engine.Offsets.Bisectors;
 /// OCCT's "Not yet implemented" messages to std::cout, for arguments that aren't circles, lines or points, are left
 /// out.
 /// </remarks>
-public sealed class BisecAna : BisectorCurve
+internal sealed class BisecAna : BisectorCurve
 {
     private TrimmedCurve2D _thebisector = null!;
 

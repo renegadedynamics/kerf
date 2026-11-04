@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// <see cref="DiscretAlgoFactory"/> initialises (decision 492). Unlike FastDiscret's, its algorithms don't
 /// take <see cref="IncrementalMesh.IsParallelDefault"/>, as in OCCT.
 /// </remarks>
-public sealed class Factory : DiscretAlgoFactory
+internal sealed class Factory : DiscretAlgoFactory
 {
     // The instance DiscretAlgoFactory's registry holds, made when it initialises (OCCT's self-registering instance)
     internal Factory()

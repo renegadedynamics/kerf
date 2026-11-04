@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity PointOnSurfacePair
 /// </summary>
-public class PointOnSurfacePair : HighOrderKinematicPair
+internal class PointOnSurfacePair : HighOrderKinematicPair
 {
     private StepSurface _pairSurface;
 

@@ -609,7 +609,7 @@ public class Geom_BezierSurfaceTests
         Assert.Equal(2, myOriginalSurface.VDegree);
         Assert.Equal(2, myOriginalSurface.PoleColRemoved(2).VPoleCount);
         Assert.True(myOriginalSurface.Segmented(0.0, 0.5, 0.0, 1.0).Value(1.0, 0.0).IsEqual(myOriginalSurface.Value(0.5, 0.0), 1e-12));
-        BezierSurface aWeighted = myOriginalSurface.WithWeight(2, 2, 3.0);
+        BezierSurface aWeighted = myOriginalSurface.WithWeightOneBased(2, 2, 3.0);
         Assert.True(aWeighted.IsURational);
         Assert.False(myOriginalSurface.IsURational);
         Assert.True(myOriginalSurface.IsUClosed == false && myOriginalSurface.IsVClosed == false);

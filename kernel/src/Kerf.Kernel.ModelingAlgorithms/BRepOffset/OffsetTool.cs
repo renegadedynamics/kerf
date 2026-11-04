@@ -61,7 +61,7 @@ namespace Kerf.Engine.Offsets;
 /// face's own surface there).
 /// </para>
 /// </remarks>
-public static class OffsetTool
+internal static class OffsetTool
 {
     // The constant defines the maximal value to enlarge surfaces.
     // It is limited to 1.e+7. This limitation is justified by the

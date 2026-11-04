@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Step.Parser;
 /// read using its own instances of the scanner, the parser and this class.
 /// </para>
 /// </remarks>
-public sealed class ReadData
+internal sealed class ReadData
 {
     // Constant litterales
     private static class TextValue

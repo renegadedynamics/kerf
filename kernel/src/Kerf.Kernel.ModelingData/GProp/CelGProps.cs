@@ -14,7 +14,7 @@ namespace Kerf.Engine.Measurement;
 
 /// <summary>Global properties of bounded elementary curves in 3D space (gp lines and circles).</summary>
 /// <remarks>A working object: <c>SetLocation</c> and <c>Perform</c> are public, as in OCCT.</remarks>
-public class CelGProps : Properties
+internal class CelGProps : Properties
 {
     public CelGProps()
     {

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class AreaOrView : SelectType
+internal class AreaOrView : SelectType
 {
     /// <summary>
     /// Returns a AreaOrView SelectType

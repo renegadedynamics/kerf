@@ -38,7 +38,7 @@ namespace Kerf.Engine.Exchange.Step;
 /// AP203's dates and persons come from the write actor's context (<see cref="ActorWrite.ContextTool"/>).</item>
 /// </list>
 /// </remarks>
-public class Writer
+internal class Writer
 {
     /// <summary>Creates a Writer from scratch</summary>
     public Writer()

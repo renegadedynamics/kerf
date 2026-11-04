@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Api;
 /// cut in V (angle1, angle2 in -π/2..π/2), and for a wedge (angle3 or angle in U) two planar faces at u = 0 and
 /// u = angle.
 /// </summary>
-public class MakeSphere : MakeOneAxis
+internal class MakeSphere : MakeOneAxis
 {
     private readonly PrimitiveSphere _sphere;
 

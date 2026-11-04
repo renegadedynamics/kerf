@@ -29,7 +29,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// the others) are left out: the port has no TCollection_ExtendedString, .NET strings are UTF-16 (decision 1221).
 /// The shapes it builds are left as built (a tool's results, as OCCT's: the caller publishes them).
 /// </remarks>
-public class Utils
+internal class Utils
 {
     /// <summary>
     /// the only use of this, is to allow a frontal to get one distinct "Utils" set per separate engine

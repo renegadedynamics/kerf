@@ -30,7 +30,7 @@ namespace Kerf.Engine.Construction.Plate;
 /// <c>Perform</c> also reorders its list of curve constraints). <see cref="Surface"/> and <see cref="SurfInit"/>
 /// freeze the surfaces they return, and <see cref="Curves2d"/> the 2D curves.
 /// </remarks>
-public class BuildPlateSurface
+internal class BuildPlateSurface
 {
     private NCollection_HSequence<CurveConstraint> _linCont;
     private NCollection_HArray1<NCollection_Sequence<double>>? _parCont;

@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity ScrewPair
 /// </summary>
-public class ScrewPair : LowOrderKinematicPairWithMotionCoupling
+internal class ScrewPair : LowOrderKinematicPairWithMotionCoupling
 {
     private double _pitch;
 

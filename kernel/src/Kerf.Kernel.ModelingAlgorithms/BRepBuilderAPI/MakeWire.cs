@@ -21,7 +21,7 @@ namespace Kerf.Engine.Construction.Api;
 /// the input's sub-shapes (OCCT's Modified, which would answer nothing, has nothing to report since it changes them in
 /// place).</para>
 /// </remarks>
-public class MakeWire : MakeShape
+internal class MakeWire : MakeShape
 {
     private readonly LibraryMakeWire _makeWire;
 

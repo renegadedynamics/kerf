@@ -20,7 +20,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// A working object (decision 21). OCCT copies a local surface adaptor into a new handle; the port keeps the adaptor
 /// it made (decision 394).
 /// </remarks>
-public sealed class ExtCF
+internal sealed class ExtCF
 {
     private readonly ExtCS _extCS = new();
     private readonly NCollection_Sequence<double> _sqDist = new();

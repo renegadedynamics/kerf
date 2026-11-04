@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Preview;
 /// Builds a valid box if the points fulfil the conditions of a valid box, and a preview otherwise: a vertex if the box
 /// is thin in all directions, an edge if it is thin in two, a rectangular face if it is thin in one.
 /// </summary>
-public class MakePreviewBox : MakeBox
+internal class MakePreviewBox : MakeBox
 {
     /// <summary>Constructor; set the box with <c>Init</c>.</summary>
     public MakePreviewBox()

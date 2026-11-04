@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity GeneralDatumReference
 /// </summary>
-public class GeneralDatumReference : ShapeAspect
+internal class GeneralDatumReference : ShapeAspect
 {
     private DatumOrCommonDatum _base = new DatumOrCommonDatum();
     private NCollection_HArray1<DatumReferenceModifier> _modifiers;

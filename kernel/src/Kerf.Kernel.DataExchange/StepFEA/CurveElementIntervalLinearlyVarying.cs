@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity CurveElementIntervalLinearlyVarying
 /// </summary>
-public class CurveElementIntervalLinearlyVarying : CurveElementInterval
+internal class CurveElementIntervalLinearlyVarying : CurveElementInterval
 {
     private NCollection_HArray1<CurveElementSectionDefinition> _sections;
 

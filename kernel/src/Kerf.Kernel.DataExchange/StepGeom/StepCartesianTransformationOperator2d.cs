@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Geometry;
 /// <summary>
 /// Added from StepGeom Rev2 to Rev4
 /// </summary>
-public class StepCartesianTransformationOperator2d : StepCartesianTransformationOperator
+internal class StepCartesianTransformationOperator2d : StepCartesianTransformationOperator
 {
     public StepCartesianTransformationOperator2d()
     {

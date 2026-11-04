@@ -20,7 +20,7 @@ namespace Kerf.Engine.Healing;
 /// <see cref="ShapeExtend.Init"/>); <see cref="SetAlgoContainer"/> replaces it for the rest of the current flow of
 /// execution (a setting of the <see cref="OperationContext"/>; in OCCT, for every thread).
 /// </remarks>
-public static class ShapeAlgo
+internal static class ShapeAlgo
 {
     private static readonly Lazy<AlgoContainer> DefaultContainer = new(() =>
     {

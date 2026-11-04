@@ -30,7 +30,7 @@ namespace Kerf.Engine.Exchange.Step.Import;
 /// a triangulated face or surface set into a face carrying a triangulation.
 /// </summary>
 /// <remarks><see cref="Value"/> freezes the result; the translators use <c>InternalValue</c> (decision 1247).</remarks>
-public sealed class TranslateFace : ImportRoot
+internal sealed class TranslateFace : ImportRoot
 {
     private TranslateFaceError _error;
     private Shape _result = new Shape();

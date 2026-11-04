@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// <summary>
 /// This Signature returns the Category of an entity, as recorded in the model
 /// </summary>
-public class SignCategory : Signature
+internal class SignCategory : Signature
 {
     private const string Nulsign = "";
 

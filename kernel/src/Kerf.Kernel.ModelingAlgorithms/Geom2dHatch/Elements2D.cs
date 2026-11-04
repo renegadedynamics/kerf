@@ -22,7 +22,7 @@ namespace Kerf.Engine.Classification.Hatching;
 /// A working object (decision 21). The map is an <see cref="NCollection_IntDataMap{TValue}"/>, so the edges are
 /// explored in OCCT's order (decisions 543 and 666).
 /// </remarks>
-public sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
+internal sealed class Elements2D : IFaceExplorer<CurveAdaptor2D>
 {
     //  Modified by skv - Fri Jul 14 17:03:47 2006 OCC12627
     private const double Probing_Start = 0.123;

@@ -129,7 +129,7 @@ public class GeomConvert_CurveToAnaCurveTests
         Assert.True(aCircle.Value(cl).DistanceTo(anArc.Value(anArc.LastParameter)) < 1e-9);
 
         // Too strict a tolerance for a perturbed arc
-        BSplineCurve3D aPerturbed = anArc.WithPole(3, anArc.Pole(3).Translated(new Vector3D(0.0, 0.0, 0.01)));
+        BSplineCurve3D aPerturbed = anArc.WithPoleOneBased(3, anArc.Pole(3).Translated(new Vector3D(0.0, 0.0, 0.01)));
         Assert.Null(CurveToAnaCurve.ComputeCircle(aPerturbed, 1e-5, aPerturbed.FirstParameter,
                                                               aPerturbed.LastParameter, ref cf, ref cl, ref aDev));
     }
@@ -201,13 +201,13 @@ public class GeomConvert_CurveToAnaCurveTests
 
         // A rational quadratic arc with an end pole moved is still a conic, an ellipse here, now recognised (OCCT
         // rejected it, its axis being beyond 45 degrees of the fitting frame's X: Kerf decision 1492)
-        BSplineCurve3D aMoved = anEllipse.WithPole(3, anEllipse.Pole(3).Translated(new Vector3D(0.1, 0.0, 0.3)));
+        BSplineCurve3D aMoved = anEllipse.WithPoleOneBased(3, anEllipse.Pole(3).Translated(new Vector3D(0.1, 0.0, 0.3)));
         Assert.IsType<EllipseCurve3D>(CurveToAnaCurve.ComputeCurve(aMoved, 1e-6, aU1, aU2, out cf, out cl, ref aGap));
         Assert.True(aGap < 1e-9);
 
         // MinGap failing: gap -1 and the input parameters (two spans, an inner pole moved: no single conic)
         BSplineCurve3D aTwoSpans = anEllipse.KnotInserted(0.5 * (aU1 + aU2), 1, 0.0, false);
-        BSplineCurve3D aWavy = aTwoSpans.WithPole(2, aTwoSpans.Pole(2).Translated(new Vector3D(0.1, 0.0, 0.3)));
+        BSplineCurve3D aWavy = aTwoSpans.WithPoleOneBased(2, aTwoSpans.Pole(2).Translated(new Vector3D(0.1, 0.0, 0.3)));
         Assert.Null(CurveToAnaCurve.ComputeCurve(aWavy, 1e-6, aU1, aU2, out cf, out cl, ref aGap));
         Assert.Equal(-1.0, aGap);
         Assert.Equal(aU1, cf);

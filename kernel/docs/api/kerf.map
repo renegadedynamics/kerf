@@ -371,7 +371,7 @@ type T:Occt.Approx_CurvlinFunc Kerf.Engine.Approximation.CurvlinFunc  # engine (
 type T:Occt.Approx_FitAndDivide Kerf.Engine.Approximation.FitAndDivide  # engine (10D)
 type T:Occt.Approx_FitAndDivide2d Kerf.Engine.Approximation.FitAndDivide2d  # engine (10D)
 type T:Occt.Approx_MCurvesToBSpCurve Kerf.Engine.Approximation.MCurvesToBSpCurve  # engine (10D)
-type T:Occt.Approx_ParametrizationType Kerf.Engine.Approximation.ParametrizationType  # engine (10D)
+type T:Occt.Approx_ParametrizationType Kerf.Geometry.ParametrizationType  # engine (10D); 10L2: public API (kerf-10l2.map)
 type T:Occt.Approx_SameParameter Kerf.Engine.Approximation.SameParameter  # engine (10D)
 type T:Occt.Approx_Status Kerf.Engine.Approximation.Status  # engine (10D)
 type T:Occt.Approx_SweepApproximation Kerf.Engine.Approximation.SweepApproximation  # engine (10D)
@@ -438,7 +438,7 @@ type T:Occt.BOPAlgo_EdgeFace Kerf.Engine.Booleans.EdgeFaceJob  # 10E: settled by
 type T:Occt.BOPAlgo_EdgeInfo Kerf.Engine.Booleans.EdgeInfo  # draft
 type T:Occt.BOPAlgo_FaceFace Kerf.Engine.Booleans.FaceFaceJob  # 10E: settled by hand (would name its base type, or clash, in its namespace)
 type T:Occt.BOPAlgo_FaceSelfIntersect Kerf.Engine.Booleans.FaceSelfIntersect  # draft
-type T:Occt.BOPAlgo_GlueEnum Kerf.Engine.Booleans.GlueMode  # engine (10D)
+type T:Occt.BOPAlgo_GlueEnum Kerf.Booleans.GlueMode  # engine (10D); 10L2: public API (kerf-10l2.map)
 type T:Occt.BOPAlgo_MPC Kerf.Engine.Booleans.MPC  # draft
 type T:Occt.BOPAlgo_MakeConnected Kerf.Engine.Booleans.MakeConnectedAlgorithm  # 10E: settled by hand
 type T:Occt.BOPAlgo_MakePeriodic Kerf.Engine.Booleans.MakePeriodicAlgorithm  # 10E: settled by hand
@@ -613,7 +613,7 @@ type T:Occt.BRepBuilderAPI_Sewing Kerf.Engine.Healing.Sewing  # engine (10D)
 type T:Occt.BRepBuilderAPI_ShapeModification Kerf.Engine.Construction.Api.ShapeModification  # engine (10D)
 type T:Occt.BRepBuilderAPI_ShellError Kerf.Engine.Construction.Api.ShellError  # engine (10D)
 type T:Occt.BRepBuilderAPI_Transform Kerf.Engine.Construction.Api.Transform  # engine (10D)
-type T:Occt.BRepBuilderAPI_TransitionMode Kerf.Engine.Construction.Api.TransitionMode  # engine (10D)
+type T:Occt.BRepBuilderAPI_TransitionMode Kerf.Construction.TransitionMode  # engine (10D); 10L2: public API (kerf-10l2.map)
 type T:Occt.BRepBuilderAPI_VertexInspector Kerf.Engine.Construction.Api.VertexInspector  # engine (10D)
 type T:Occt.BRepBuilderAPI_WireError Kerf.Engine.Construction.Api.WireError  # engine (10D)
 type T:Occt.BRepCheck Kerf.Engine.Healing.Checks.BRepCheckCheck  # engine (10D)
@@ -711,8 +711,8 @@ type T:Occt.BRepFill_TrimShellCorner Kerf.Engine.Construction.Filling.TrimShellC
 type T:Occt.BRepFill_TrimSurfaceTool Kerf.Engine.Construction.Filling.TrimSurfaceTool  # engine (10D)
 type T:Occt.BRepFill_TypeOfContact Kerf.Engine.Construction.Filling.TypeOfContact  # engine (10D)
 type T:Occt.BRepFilletAPI Kerf.Engine.Fillets.Api.BRepFilletApi  # engine (10D)
-type T:Occt.BRepFilletAPI_ChamferOptions Kerf.Engine.Fillets.Api.ChamferOptions  # engine (10D)
-type T:Occt.BRepFilletAPI_FilletOptions Kerf.Engine.Fillets.Api.FilletOptions  # engine (10D)
+type T:Occt.BRepFilletAPI_ChamferOptions Kerf.Engine.Fillets.Api.MakeChamferOptions  # engine (10D); 10L2: ChamferOptions is Kerf.Fillets.ChamferOptions
+type T:Occt.BRepFilletAPI_FilletOptions Kerf.Engine.Fillets.Api.MakeFilletOptions  # engine (10D); 10L2: FilletOptions is Kerf.Fillets.FilletOptions
 type T:Occt.BRepFilletAPI_LocalOperation Kerf.Engine.Fillets.Api.LocalOperation  # engine (10D)
 type T:Occt.BRepFilletAPI_MakeChamfer Kerf.Engine.Fillets.Api.MakeChamfer  # engine (10D)
 type T:Occt.BRepFilletAPI_MakeFillet Kerf.Engine.Fillets.Api.MakeFillet  # engine (10D)
@@ -851,7 +851,7 @@ type T:Occt.BRepOffset_Interval Kerf.Engine.Offsets.OffsetInterval  # engine (10
 type T:Occt.BRepOffset_MakeLoops Kerf.Engine.Offsets.OffsetMakeLoops  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.BRepOffset_MakeOffset Kerf.Engine.Offsets.MakeOffset  # engine (10D)
 type T:Occt.BRepOffset_MakeSimpleOffset Kerf.Engine.Offsets.MakeSimpleOffset  # engine (10D)
-type T:Occt.BRepOffset_Mode Kerf.Engine.Offsets.OffsetMode  # engine (10D)
+type T:Occt.BRepOffset_Mode Kerf.Offsets.OffsetMode  # engine (10D); 10L2: public API (kerf-10l2.map)
 type T:Occt.BRepOffset_Offset Kerf.Engine.Offsets.Offset  # engine (10D)
 type T:Occt.BRepOffset_SimpleOffset Kerf.Engine.Offsets.SimpleOffset  # engine (10D)
 type T:Occt.BRepOffset_Status Kerf.Engine.Offsets.OffsetStatus  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
@@ -1064,7 +1064,7 @@ type T:Occt.Bnd_B3f Kerf.Engine.Geometry.Bounds.B3f  # engine (10D)
 type T:Occt.Bnd_BoundSortBox Kerf.Engine.Geometry.Bounds.BoundSortBox  # engine (10D)
 type T:Occt.Bnd_Box Kerf.Engine.Geometry.Bounds.Box  # engine (10D)
 type T:Occt.Bnd_Box2d Kerf.Engine.Geometry.Bounds.Box2d  # engine (10D)
-type T:Occt.Bnd_OBB Kerf.Engine.Geometry.Bounds.OrientedBox  # engine (10D)
+type T:Occt.Bnd_OBB Kerf.Engine.Geometry.Bounds.Obb  # engine (10D); 10L3: OrientedBox is Kerf.Geometry.OrientedBox
 type T:Occt.Bnd_Range Kerf.Engine.Geometry.Bounds.BoundRange  # 10E: settled by hand (a System type's name)
 type T:Occt.Bnd_Sphere Kerf.Engine.Geometry.Bounds.BoundingSphere  # 10E: settled by hand (Sphere is gp_Sphere's)
 type T:Occt.Bnd_Tools Kerf.Engine.Geometry.Bounds.Tools  # engine (10D)
@@ -1102,7 +1102,7 @@ type T:Occt.ChFi3d_ChBuilder_C3 Kerf.Engine.Fillets.ChBuilder_C3  # draft
 type T:Occt.ChFi3d_FilBuilder Kerf.Engine.Fillets.FilBuilder  # engine (10D)
 type T:Occt.ChFi3d_FilBuilder_C2 Kerf.Engine.Fillets.FilBuilder_C2  # draft
 type T:Occt.ChFi3d_FilBuilder_C3 Kerf.Engine.Fillets.FilBuilder_C3  # draft
-type T:Occt.ChFi3d_FilletShape Kerf.Engine.Fillets.FilletShape  # engine (10D)
+type T:Occt.ChFi3d_FilletShape Kerf.Fillets.FilletShape  # engine (10D); 10L2: public API (kerf-10l2.map)
 type T:Occt.ChFi3d_Reconstruction Kerf.Engine.Fillets.Reconstruction  # draft
 type T:Occt.ChFi3d_SearchSing Kerf.Engine.Fillets.SearchSing  # draft
 type T:Occt.ChFiDS_ChamfMethod Kerf.Engine.Fillets.Data.ChamfMethod  # engine (10D)
@@ -2479,17 +2479,17 @@ type T:Occt.ProjLib_Sphere Kerf.Engine.Geometry.Projection.SphereProjector  # 10
 type T:Occt.ProjLib_Torus Kerf.Engine.Geometry.Projection.TorusProjector  # 10E: settled by hand (its name is also another type's or an enum member's)
 type T:Occt.Prs3d Kerf.Engine.HiddenLines.Presentation.Prs3d  # engine (10D)
 type T:Occt.Prs3d_Drawer Kerf.Engine.HiddenLines.Presentation.Drawer  # engine (10D)
-type T:Occt.Quantity_Color Kerf.Engine.Foundation.Color  # engine (10D)
+type T:Occt.Quantity_Color Kerf.Engine.Foundation.LinearColor  # engine (10D); 10L3: Color is Kerf.Color
 type T:Occt.Quantity_ColorRGBA Kerf.Engine.Foundation.ColorWithAlpha  # engine (10D)
 type T:Occt.Quantity_NameOfColor Kerf.Engine.Foundation.NameOfColor  # engine (10D)
 type T:Occt.Quantity_TypeOfColor Kerf.Engine.Foundation.ColorSpace  # engine (10D)
 type T:Occt.RW3mf_TreeWriter Kerf.Engine.Exchange.ThreeMf.TreeWriter  # engine (10D)
 type T:Occt.RW3mf_WriteOptions Kerf.Engine.Exchange.ThreeMf.WriteOptions  # engine (10D)
-type T:Occt.RWGltf_ReadLimits Kerf.Engine.Exchange.Gltf.ReadLimits  # engine (10D)
+type T:Occt.RWGltf_ReadLimits Kerf.Engine.Exchange.Gltf.GltfReadLimits  # engine (10D); 10L3: ReadLimits is Kerf.Exchange.ReadLimits
 type T:Occt.RWGltf_ReadOptions Kerf.Engine.Exchange.Gltf.ReadOptions  # engine (10D)
 type T:Occt.RWGltf_TreeReader Kerf.Engine.Exchange.Gltf.TreeReader  # engine (10D)
 type T:Occt.RWGltf_TreeWriter Kerf.Engine.Exchange.Gltf.GltfTreeWriter  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
-type T:Occt.RWGltf_WriteOptions Kerf.Engine.Exchange.Gltf.GltfWriteOptions  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
+type T:Occt.RWGltf_WriteOptions Kerf.Engine.Exchange.Gltf.GltfWriterOptions  # 10L3: GltfWriteOptions is Kerf.Exchange.GltfWriteOptions; 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.RWHeaderSection Kerf.Engine.Exchange.Step.Header.RWHeaderSection  # engine (10D)
 type T:Occt.RWHeaderSection_GeneralModule Kerf.Engine.Exchange.Step.Header.HeaderGeneralModule  # 10E: settled by hand (would name its base type, or clash, in its namespace)
 type T:Occt.RWHeaderSection_RWFileDescription Kerf.Engine.Exchange.Step.Header.RWFileDescription  # engine (10D)
@@ -2499,7 +2499,7 @@ type T:Occt.RWHeaderSection_ReadWriteModule Kerf.Engine.Exchange.Step.Header.Hea
 type T:Occt.RWMesh_CoordinateConverter Kerf.Engine.Exchange.Mesh.CoordinateConverter  # 10E: internal, drafted in 10E
 type T:Occt.RWMesh_ProductMesh Kerf.Engine.Exchange.Mesh.ProductMesh  # 10E: internal, drafted in 10E
 type T:Occt.RWObj_TreeWriter Kerf.Engine.Exchange.Obj.ObjTreeWriter  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
-type T:Occt.RWObj_WriteOptions Kerf.Engine.Exchange.Obj.ObjWriteOptions  # 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
+type T:Occt.RWObj_WriteOptions Kerf.Engine.Exchange.Obj.ObjWriterOptions  # 10L3: ObjWriteOptions is Kerf.Exchange.ObjWriteOptions; 10E: settled by hand (its name is also another type's: a reference with both namespaces imported would be ambiguous)
 type T:Occt.RWStepAP203_RWCcDesignApproval Kerf.Engine.Exchange.Step.Ap203.ReadWrite.RWCcDesignApproval  # 10E: internal, drafted in 10E
 type T:Occt.RWStepAP203_RWCcDesignCertification Kerf.Engine.Exchange.Step.Ap203.ReadWrite.RWCcDesignCertification  # 10E: internal, drafted in 10E
 type T:Occt.RWStepAP203_RWCcDesignContract Kerf.Engine.Exchange.Step.Ap203.ReadWrite.RWCcDesignContract  # 10E: internal, drafted in 10E
@@ -3546,7 +3546,7 @@ type T:Occt.StepBasic_GroupRelationship Kerf.Engine.Exchange.Step.Basic.GroupRel
 type T:Occt.StepBasic_IdentificationAssignment Kerf.Engine.Exchange.Step.Basic.IdentificationAssignment  # engine (10D)
 type T:Occt.StepBasic_IdentificationRole Kerf.Engine.Exchange.Step.Basic.IdentificationRole  # engine (10D)
 type T:Occt.StepBasic_LengthMeasureWithUnit Kerf.Engine.Exchange.Step.Basic.LengthMeasureWithUnit  # engine (10D)
-type T:Occt.StepBasic_LengthUnit Kerf.Engine.Exchange.Step.Basic.LengthUnit  # engine (10D)
+type T:Occt.StepBasic_LengthUnit Kerf.Engine.Exchange.Step.Basic.StepLengthUnit  # engine (10D); 10L3: LengthUnit is Kerf.Exchange.LengthUnit
 type T:Occt.StepBasic_LocalTime Kerf.Engine.Exchange.Step.Basic.LocalTime  # engine (10D)
 type T:Occt.StepBasic_MassMeasureWithUnit Kerf.Engine.Exchange.Step.Basic.MassMeasureWithUnit  # engine (10D)
 type T:Occt.StepBasic_MassUnit Kerf.Engine.Exchange.Step.Basic.MassUnit  # engine (10D)
@@ -4876,9 +4876,9 @@ member F:Occt.BOPAlgo_CheckStatus.BOPAlgo_NotValid NotValid
 member F:Occt.BOPAlgo_CheckStatus.BOPAlgo_OperationAborted OperationAborted
 member F:Occt.BOPAlgo_CheckStatus.BOPAlgo_SelfIntersect SelfIntersect
 member F:Occt.BOPAlgo_CheckStatus.BOPAlgo_TooSmallEdge TooSmallEdge
-member F:Occt.BOPAlgo_GlueEnum.BOPAlgo_GlueFull GlueFull
-member F:Occt.BOPAlgo_GlueEnum.BOPAlgo_GlueOff GlueOff
-member F:Occt.BOPAlgo_GlueEnum.BOPAlgo_GlueShift GlueShift
+member F:Occt.BOPAlgo_GlueEnum.BOPAlgo_GlueFull Full
+member F:Occt.BOPAlgo_GlueEnum.BOPAlgo_GlueOff Off
+member F:Occt.BOPAlgo_GlueEnum.BOPAlgo_GlueShift Shift
 member F:Occt.BOPAlgo_Operation.BOPAlgo_COMMON Common
 member F:Occt.BOPAlgo_Operation.BOPAlgo_CUT Cut
 member F:Occt.BOPAlgo_Operation.BOPAlgo_CUT21 CUT21

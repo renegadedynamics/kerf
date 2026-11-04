@@ -28,7 +28,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 /// <c>void*</c>; the port drops it. The debugging members (<c>DumpSS</c>, <c>SName</c>, <c>SNameori</c>,
 /// <c>SNameVEE</c>, <c>SNameVEL</c>) are left out (decision 493).
 /// </remarks>
-public class LegacyWireEdgeSet : BuildShapeSet
+internal class LegacyWireEdgeSet : BuildShapeSet
 {
     private readonly Face _face;
 

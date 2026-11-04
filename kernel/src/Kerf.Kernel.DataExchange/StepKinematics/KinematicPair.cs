@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Kinematics;
 /// <summary>
 /// Representation of STEP entity KinematicPair
 /// </summary>
-public class KinematicPair : StepGeometricRepresentationItem
+internal class KinematicPair : StepGeometricRepresentationItem
 {
     private ItemDefinedTransformation _itemDefinedTransformation;
     /// <summary>

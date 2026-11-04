@@ -16,7 +16,7 @@ namespace Kerf.Engine.Construction.Curves;
 /// Constructions of a Geom2d_Parabola: from a gp_Parab2d, a mirror axis (or axis system) and the focal length, a
 /// directrix and a focus, or a focus and the apex.
 /// </summary>
-public sealed class MakeParabola2d : Root
+internal sealed class MakeParabola2d : Root
 {
     private ParabolaCurve2D? _theParabola;
 

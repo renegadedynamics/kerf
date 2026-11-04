@@ -11,7 +11,7 @@ using static Kerf.Engine.Construction.Constraints.ConstraintCurveType;
 
 namespace Kerf.Engine.Construction.Constraints.Analytic;
 
-public sealed partial class AnalyticCirc2d3Tan
+internal sealed partial class AnalyticCirc2d3Tan
 {
     //=========================================================================
     //   Creation of a circle tangent to two circles and a straight line.     +

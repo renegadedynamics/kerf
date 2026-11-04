@@ -17,7 +17,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity DatumSystem
 /// </summary>
-public class DatumSystem : ShapeAspect
+internal class DatumSystem : ShapeAspect
 {
     private NCollection_HArray1<DatumReferenceCompartment> _constituents;
 

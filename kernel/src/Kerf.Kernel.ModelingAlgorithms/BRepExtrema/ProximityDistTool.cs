@@ -21,7 +21,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// perpendicular one). Results are approximate and depend on the tessellations.
 /// </summary>
 /// <remarks>A working object (decision 21), used by <see cref="ProximityValueTool"/>.</remarks>
-public class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, TriangleSet>
+internal class ProximityDistTool : BvhDistance<double, BVH_Vec3d, BVH_Vec3d, TriangleSet>
 {
     /// <summary>The status of a proximity point: on the border or inside its shape.</summary>
     public enum ProxPnt_Status

@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Geometry;
 
-public class StepRationalBSplineSurface : StepBSplineSurface
+internal class StepRationalBSplineSurface : StepBSplineSurface
 {
     private NCollection_HArray2<double> _weightsData;
 

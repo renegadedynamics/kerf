@@ -10,7 +10,7 @@ namespace Kerf.Engine.Measurement.Distance;
 /// Decides whether two mesh elements should be tested for overlapping or intersection (used to tell correct shared
 /// edges and vertices from incorrect ones). The default checks every pair.
 /// </summary>
-public class ElementFilter
+internal class ElementFilter
 {
     /// <summary>The result of filtering.</summary>
     public enum FilterResult

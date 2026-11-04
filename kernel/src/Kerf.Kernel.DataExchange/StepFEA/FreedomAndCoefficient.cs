@@ -15,7 +15,7 @@ namespace Kerf.Engine.Exchange.Step.Fea;
 /// <summary>
 /// Representation of STEP entity FreedomAndCoefficient
 /// </summary>
-public class FreedomAndCoefficient : Transient
+internal class FreedomAndCoefficient : Transient
 {
     private FeaDegreeOfFreedom _freedom = new FeaDegreeOfFreedom();
     private MeasureOrUnspecifiedValue _a = new MeasureOrUnspecifiedValue();

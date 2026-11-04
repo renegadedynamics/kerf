@@ -7,7 +7,7 @@ using Occt;
 namespace Kerf.Engine.Fillets.Planar;
 
 /// <summary>The status of a 2D fillet or chamfer construction (<see cref="PlanarBuilder"/>).</summary>
-public enum ConstructionError
+internal enum ConstructionError
 {
     /// <summary>The face is not planar.</summary>
     NotPlanar,

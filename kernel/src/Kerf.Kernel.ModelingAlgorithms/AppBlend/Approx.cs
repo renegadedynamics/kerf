@@ -14,7 +14,7 @@ namespace Kerf.Engine.Fillets.Blend;
 /// as OCCT returns them by const reference (decision 143): shared, don't modify. <see cref="Surface"/> and
 /// <see cref="Curve2d"/> copy them into the caller's arrays.
 /// </remarks>
-public abstract class Approx
+internal abstract class Approx
 {
     public abstract bool IsDone { get; }
 

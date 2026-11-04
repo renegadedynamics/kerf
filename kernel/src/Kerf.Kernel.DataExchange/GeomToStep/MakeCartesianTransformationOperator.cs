@@ -15,7 +15,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Export.Geometry;
 
 /// <summary>The mapping of Trsf from gp to a STEP cartesian_transformation_operator_3d.</summary>
-public sealed class MakeCartesianTransformationOperator : GeometryRoot
+internal sealed class MakeCartesianTransformationOperator : GeometryRoot
 {
     private StepCartesianTransformationOperator3d _trsfOp;
 

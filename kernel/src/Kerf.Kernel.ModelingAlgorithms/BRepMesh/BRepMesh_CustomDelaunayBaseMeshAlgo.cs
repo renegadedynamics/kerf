@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// (decision 202). It is the base of the Delabella set of the node-insertion algorithms
 /// (<see cref="NodeInsertionMeshAlgoOfDelabella{RangeSplitter}"/> and the two below it).
 /// </remarks>
-public class CustomDelaunayBaseMeshAlgoOfDelabella : DelabellaBaseMeshAlgo
+internal class CustomDelaunayBaseMeshAlgoOfDelabella : DelabellaBaseMeshAlgo
 {
     /// <summary>An algorithm.</summary>
     public CustomDelaunayBaseMeshAlgoOfDelabella()

@@ -3,7 +3,7 @@
 using Kerf.Engine.Approximation;
 using Kerf.Geometry;
 using static Kerf.Engine.Approximation.Constraint;
-using static Kerf.Engine.Approximation.ParametrizationType;
+using static Kerf.Geometry.ParametrizationType;
 using static Kerf.Kernel.ModelingData.Tests.AppDef_BSplineComputeTests;
 
 namespace Kerf.Kernel.ModelingData.Tests;
@@ -28,7 +28,7 @@ public class AppDef_ComputeTests
         return aMax;
     }
 
-    public static TheoryData<ParametrizationType, bool> ParTypesAndSquares() => AppDef_BSplineComputeTests.ParTypesAndSquares();
+    public static TheoryData<global::Kerf.Geometry.ParametrizationType, bool> ParTypesAndSquares() => AppDef_BSplineComputeTests.ParTypesAndSquares();
 
     // The largest distance between the points of the MultiCurve theIndex and the curve, at their parameters.
     private static double MaxDistance(Compute theComputer, int theIndex, NCollection_Array1<Point3D> thePoints)
@@ -48,7 +48,7 @@ public class AppDef_ComputeTests
     [InlineData(ChordLength)]
     [InlineData(Centripetal)]
     [InlineData(IsoParametric)]
-    public void Cubic_IsOneBezier(ParametrizationType thePar)
+    public void Cubic_IsOneBezier(global::Kerf.Geometry.ParametrizationType thePar)
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(25, Cubic);
         Compute aComputer = new(new MultiLine(aPnts), 3, 8, 1.0e-6, 1.0e-6, 5, true, thePar, false);
@@ -77,7 +77,7 @@ public class AppDef_ComputeTests
 
     [Theory]
     [MemberData(nameof(ParTypesAndSquares))]
-    public void Sine_IsCutIntoBeziers(ParametrizationType thePar, bool theSquares)
+    public void Sine_IsCutIntoBeziers(global::Kerf.Geometry.ParametrizationType thePar, bool theSquares)
     {
         NCollection_Array1<Point3D> aPnts = Sample3d(80, t => new Point3D(10.0 * t, Math.Sin(12.0 * t), 0.5 * Math.Cos(9.0 * t)));
         Compute aComputer = new(new MultiLine(aPnts), 3, 8, 1.0e-3, 1.0e-6, 5, true, thePar, theSquares);

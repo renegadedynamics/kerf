@@ -17,7 +17,7 @@ namespace Kerf.Engine.Meshing;
 /// OCCT reads the environment variable <c>CSF_MeshAlgo</c> to choose the default algorithm. The port doesn't: a
 /// result must not depend on the process environment, so the default is Watson's (decision 492).
 /// </remarks>
-public class MeshContext : ToolContext
+internal class MeshContext : ToolContext
 {
     /// <summary>A context with the tools of BRepMesh and the factory of the given meshing algorithm type.</summary>
     public MeshContext(MeshAlgoType meshType = MeshAlgoType.MeshAlgoType_DEFAULT)

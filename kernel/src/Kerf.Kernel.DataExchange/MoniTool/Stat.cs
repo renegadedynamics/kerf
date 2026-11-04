@@ -23,7 +23,7 @@ namespace Kerf.Engine.Exchange.Framework.Monitoring;
 /// This means that a counter can be opened in a Stat, regardless to the already opened ones :: this will be
 /// cumulated A Current Stat is available, but it is possible to have others
 /// </summary>
-public class Stat
+internal class Stat
 {
 
     /// <summary>

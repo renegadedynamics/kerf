@@ -10,7 +10,7 @@ namespace Kerf.Engine.Features;
 /// To declare the type of selection semantics for local operation Perform methods: no selection, from and until faces,
 /// until a face, up to the next face of the shape, up to the shape's last face.
 /// </summary>
-public enum PerfSelection
+internal enum PerfSelection
 {
     NoSelection,
     SelectionFU,

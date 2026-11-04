@@ -18,7 +18,7 @@ namespace Kerf.Engine.Construction.Constraints;
 /// iteration from parameters on the curves.
 /// </summary>
 /// <remarks>An algorithm object computed by its constructor (decision 117). At most one solution.</remarks>
-public sealed class Lin2d2TanIter
+internal sealed class Lin2d2TanIter
 {
     private readonly bool _wellDone;
     private readonly Line2D _linsol = new();

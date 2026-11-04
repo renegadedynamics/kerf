@@ -62,7 +62,7 @@ public class IntersectionContext : Transient
     private readonly Dictionary<Shape, Dictionary<SurfaceDataKey, SurfaceRangeLocalizeData>> _sDataKeyedMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, Box> _bndBoxDataMap = new(ShapeHasher.Instance);
     private readonly Dictionary<Shape, FaceSurfaceAdaptor> _surfAdaptorMap = new(ShapeHasher.Instance);
-    private readonly Dictionary<Shape, OrientedBox> _obbMap = new(ShapeHasher.Instance);
+    private readonly Dictionary<Shape, Obb> _obbMap = new(ShapeHasher.Instance);
     private int _createFlag;
     private double _pOnSTolerance;
 
@@ -252,14 +252,14 @@ public class IntersectionContext : Transient
     /// <see cref="Precision.Confusion"/> by default), computed on the first call. As in OCCT, a box cached with one gap
     /// is returned for any later gap.
     /// </summary>
-    public OrientedBox OBB(in Shape aS) => OBB(aS, global::Kerf.Engine.Foundation.Precision.Confusion());
+    public Obb OBB(in Shape aS) => OBB(aS, global::Kerf.Engine.Foundation.Precision.Confusion());
 
     /// <inheritdoc cref="OBB(in Shape)"/>
-    public OrientedBox OBB(in Shape aS, double gap)
+    public Obb OBB(in Shape aS, double gap)
     {
-        if (!_obbMap.TryGetValue(aS, out OrientedBox box))
+        if (!_obbMap.TryGetValue(aS, out Obb box))
         {
-            box = new OrientedBox();
+            box = new Obb();
             Bounds.AddOBB(aS, ref box);
             box.Enlarge(gap);
             _obbMap[aS] = box;

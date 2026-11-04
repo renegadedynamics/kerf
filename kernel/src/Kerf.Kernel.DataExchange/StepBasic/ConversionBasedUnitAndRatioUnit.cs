@@ -11,7 +11,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class ConversionBasedUnitAndRatioUnit : ConversionBasedUnit
+internal class ConversionBasedUnitAndRatioUnit : ConversionBasedUnit
 {
     private RatioUnit _ratioUnit;
 

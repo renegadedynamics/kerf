@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>Read and Write Module for FileName.</summary>
-public class RWFileName
+internal class RWFileName
 {
     public RWFileName()
     {

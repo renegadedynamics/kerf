@@ -10,4 +10,4 @@ namespace Kerf.Engine.Measurement.Points;
 /// A function for <see cref="MyGaussFunction"/>: its value at X for the client data D. OCCT's
 /// <c>double (*)(const double, void* const)</c>; the client data is an object.
 /// </summary>
-public delegate double RealFunction(double x, object? d);
+internal delegate double RealFunction(double x, object? d);

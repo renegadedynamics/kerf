@@ -14,7 +14,7 @@ using Occt;
 namespace Kerf.Engine.Exchange.Step.Header;
 
 /// <summary>Read and Write Module for FileSchema.</summary>
-public class RWFileSchema
+internal class RWFileSchema
 {
     public RWFileSchema()
     {

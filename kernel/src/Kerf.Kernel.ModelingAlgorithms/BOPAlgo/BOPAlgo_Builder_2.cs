@@ -138,7 +138,7 @@ internal sealed class VFI : ParallelAlgo, BooleanParallel.IContextSolver<Interse
     }
 }
 
-public partial class BooleanBuilder
+internal partial class BooleanBuilder
 {
     /// <summary>Fills the images of the faces: the split faces, the same-domain faces and the internal vertices.</summary>
     protected void FillImagesFaces(ProgressRange range)

@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Framework;
 /// A list of file parameters, numbered from 1, which grows as values are set (OCCT's NCollection_DynamicArray of
 /// <see cref="FileParameter"/>).
 /// </summary>
-public class ParamList : Transient
+internal class ParamList : Transient
 {
     private readonly List<FileParameter> _vector;
 

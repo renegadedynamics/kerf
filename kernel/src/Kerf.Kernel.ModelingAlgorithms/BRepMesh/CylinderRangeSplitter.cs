@@ -12,7 +12,7 @@ using Occt;
 namespace Kerf.Engine.Meshing;
 
 /// <summary>Extends the default range splitter to generate the internal nodes of a cylindrical surface.</summary>
-public class CylinderRangeSplitter : DefaultRangeSplitter
+internal class CylinderRangeSplitter : DefaultRangeSplitter
 {
     private double _du;
 

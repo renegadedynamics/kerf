@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Shapes;
 
-public class StepVertexPoint : StepVertex
+internal class StepVertexPoint : StepVertex
 {
     private StepPoint _vertexGeometry;
 

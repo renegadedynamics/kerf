@@ -37,7 +37,7 @@ namespace Kerf.Engine.Fillets.Planar;
 /// </list>
 /// <para>A working object; its results are new, frozen edges. The edges it is given are only read.</para>
 /// </remarks>
-public sealed class FilletAlgo
+internal sealed class FilletAlgo
 {
     //! Initial edges where the fillet must be computed.
     private Edge _edge1 = new(), _edge2 = new();

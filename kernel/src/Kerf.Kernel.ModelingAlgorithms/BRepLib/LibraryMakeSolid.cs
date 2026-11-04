@@ -22,7 +22,7 @@ namespace Kerf.Engine.Construction.Library;
 /// (design 4.2); ported code reads <see cref="InternalSolid"/>. Adding after a public read goes on with a new solid
 /// holding the same shells.
 /// </remarks>
-public class LibraryMakeSolid : LibraryMakeShape
+internal class LibraryMakeSolid : LibraryMakeShape
 {
     private readonly NCollection_List<Shape> _deletedFaces = new();
 

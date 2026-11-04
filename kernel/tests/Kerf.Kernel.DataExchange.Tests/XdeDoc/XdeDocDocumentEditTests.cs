@@ -76,8 +76,8 @@ public class XdeDocDocumentEditTests
     {
         var aDoc = new ExchangeDocument();
         Label aBox = aDoc.AddShape(Box(1, 1, 1));
-        var aRed = new ColorWithAlpha(new Color(NameOfColor.NocRed));
-        var aBlue = new ColorWithAlpha(new Color(NameOfColor.NocBlue));
+        var aRed = new ColorWithAlpha(new LinearColor(NameOfColor.NocRed));
+        var aBlue = new ColorWithAlpha(new LinearColor(NameOfColor.NocBlue));
         Label aRedLabel = aDoc.AddColor(aRed);
         Assert.Equal("0:1:2:1", aRedLabel.Entry());
         Assert.Equal(aRedLabel, aDoc.AddColor(aRed));

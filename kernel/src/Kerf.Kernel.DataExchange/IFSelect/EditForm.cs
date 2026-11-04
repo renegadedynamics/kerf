@@ -20,7 +20,7 @@ namespace Kerf.Engine.Exchange.Framework.Selection;
 /// it is not Complete Two methods give the correspondence between this Number and the Rank in the EditForm :
 /// RankFromNumber and NumberFromRank
 /// </summary>
-public class EditForm : Transient
+internal class EditForm : Transient
 {
     private static void PrintList(NCollection_HSequence<TCollection_HAsciiString>? list, TextWriter s, bool alsolist)
     {

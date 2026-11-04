@@ -31,7 +31,7 @@ namespace Kerf.Engine.Exchange.Step.Export;
 /// Maps a TopoDS_Face (with its relative orientation in the shell) to a STEP advanced_face: its surface, its bounds and
 /// the pcurves of its edges.
 /// </summary>
-public sealed class MakeStepFace : ExportRoot
+internal sealed class MakeStepFace : ExportRoot
 {
     private StepTopologicalRepresentationItem _result;
     private MakeFaceError _error;

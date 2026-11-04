@@ -13,7 +13,7 @@ namespace Kerf.Engine.Exchange.Step.Tolerances;
 /// <summary>
 /// Representation of STEP entity PlacedDatumTargetFeature
 /// </summary>
-public class PlacedDatumTargetFeature : DatumTarget
+internal class PlacedDatumTargetFeature : DatumTarget
 {
     /// <summary>
     /// Empty constructor

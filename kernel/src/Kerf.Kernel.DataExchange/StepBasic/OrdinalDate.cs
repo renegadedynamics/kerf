@@ -10,7 +10,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Basic;
 
-public class OrdinalDate : Date
+internal class OrdinalDate : Date
 {
     private int _dayComponent;
 

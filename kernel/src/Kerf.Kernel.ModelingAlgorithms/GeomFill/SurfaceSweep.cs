@@ -28,7 +28,7 @@ namespace Kerf.Engine.Construction.Surfaces;
 /// <see cref="Trace"/> hand out frozen geometry; ported code reads the unfrozen results through the
 /// <c>Internal*</c> accessors.
 /// </remarks>
-public sealed class SurfaceSweep
+internal sealed class SurfaceSweep
 {
     //=======================================================================
     // class : GeomFill_Sweep_Eval

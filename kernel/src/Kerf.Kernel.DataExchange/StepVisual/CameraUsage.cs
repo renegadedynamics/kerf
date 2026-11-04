@@ -12,7 +12,7 @@ using Occt;
 
 namespace Kerf.Engine.Exchange.Step.Visual;
 
-public class CameraUsage : RepresentationMap
+internal class CameraUsage : RepresentationMap
 {
     /// <summary>
     /// Returns a CameraUsage

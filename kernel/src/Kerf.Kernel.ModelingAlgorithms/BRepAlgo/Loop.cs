@@ -23,7 +23,7 @@ namespace Kerf.Engine.Booleans.Algo;
 /// vertices by close ones and raises vertex tolerances): they must be unfrozen, as ported callers' are; a frozen one
 /// throws at the first write. The shapes handed out are not frozen.
 /// </remarks>
-public sealed class Loop
+internal sealed class Loop
 {
     private Face _face = new();
     private readonly NCollection_List<Shape> _constEdges = new();

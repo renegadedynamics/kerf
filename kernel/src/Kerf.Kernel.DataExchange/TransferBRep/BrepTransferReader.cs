@@ -21,7 +21,7 @@ namespace Kerf.Engine.Exchange.Framework.Transfer;
 /// The shapes a transfer gave are published (frozen) when the transfer ends (<see cref="EndTransfer"/>), so
 /// <see cref="Shapes"/>, <see cref="Shape"/> and <see cref="OneShape"/> return frozen shapes (decision 1205).
 /// </remarks>
-public class BrepTransferReader
+internal class BrepTransferReader
 {
     /// <summary>Initializes a non-specialised Reader. Typically, for each norm or protocol, is will be required to define a specific Create to load a file and transfer it.</summary>
     public BrepTransferReader()

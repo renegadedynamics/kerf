@@ -15,7 +15,7 @@ namespace Kerf.Engine.Booleans.Legacy.Tools;
 /// </summary>
 /// <remarks>A value, as in OCCT. <c>new()</c> is OCCT's default (BSPLINE1, every curve computed); the setters are
 /// internal.</remarks>
-public partial struct ToolGeomTool : IEquatable<ToolGeomTool>
+internal partial struct ToolGeomTool : IEquatable<ToolGeomTool>
 {
     private OutCurveType _typeC3D;
     private bool _compC3D;

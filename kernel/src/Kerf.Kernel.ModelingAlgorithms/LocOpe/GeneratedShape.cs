@@ -13,7 +13,7 @@ namespace Kerf.Engine.Features.Local;
 /// A shape generated on a support shape, as <see cref="LocalGenerator"/> reads it: the edges it is glued along, the
 /// edge each of their vertices generates, the face each generates, and its own faces.
 /// </summary>
-public abstract class GeneratedShape : Transient
+internal abstract class GeneratedShape : Transient
 {
     protected readonly NCollection_List<Shape> _gEdges = new();
     protected readonly NCollection_List<Shape> _list = new();

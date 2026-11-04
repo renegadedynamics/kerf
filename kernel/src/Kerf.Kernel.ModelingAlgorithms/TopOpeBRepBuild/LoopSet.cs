@@ -9,7 +9,7 @@ namespace Kerf.Engine.Booleans.Legacy.Build;
 
 /// <summary>A list of loops with an iteration on them.</summary>
 /// <remarks>A working object.</remarks>
-public class LoopSet
+internal class LoopSet
 {
     private readonly NCollection_List<BuildLoop> _listOfLoop = new();
     private readonly NCollection_List<BuildLoop>.Iterator _loopIterator = new();

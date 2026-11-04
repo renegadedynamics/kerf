@@ -25,7 +25,7 @@ namespace Kerf.Engine.Features;
 /// sub-shapes, and <see cref="MakeShape.Modified"/> answers for the caller's faces and edges. A wires-on-shape serves
 /// one splitting: <see cref="Init"/> resets it.
 /// </remarks>
-public sealed class SplitShape : MakeShape
+internal sealed class SplitShape : MakeShape
 {
     private readonly Spliter _sShape;
     private WiresOnShape? _wOnShape;

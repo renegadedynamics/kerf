@@ -26,7 +26,7 @@ namespace Kerf.Engine.Healing.Fixes;
 /// they need no copy of a frozen shape. They return the context applied to the shape, frozen; the
 /// <c>Internal</c> forms don't freeze, for ported code.
 /// </remarks>
-public class FixSmallSolidFixer : RootFixer
+internal class FixSmallSolidFixer : RootFixer
 {
     private int    _fixMode;
     private double _volumeThreshold;
