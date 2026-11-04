@@ -15500,4 +15500,11 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        history; its no-engine-types test covers the five new namespaces and ModelingAlgorithms. Every other suite keeps
        its count: no test was added, removed or changed by hand; the renames of 16901 and 16902 rewrote the call sites
        in 48 test files (Draw-lite's among them) and 5 of the modelling layer's source files, by tool, one for one; the
-       internalisation changed none.
+       internalisation changed none. Counts: PublicApi 84, Foundation 2,305, ModelingData 3,149, ModelingAlgorithms
+       4,844 (9 skipped), DataExchange 282 (1 skipped), Draw-lite 687, Oracle 383, the modelling layer 1,884; all pass.
+       **Measured** (Release, back to back with the base, e668db9b, exported beside; a machine shared with other units).
+       Bento's benchmark (`7 0`): the same volumes, faces and triangles; median recalculation 972 and 967 ms on the base,
+       983 and 951 after. The Booleans' simple grid (407 cases), serial/parallel/clean ms: base 1,822/2,098/147 and
+       2,428/2,079/187, after 2,035/2,923/163 and 1,961/1,796/163; 6.91 MB a Boolean either way: noise. The benchmarks
+       call the engine, whose code didn't change; the public operations add one argument check and one history copy
+       per call, outside the engine's loops.
