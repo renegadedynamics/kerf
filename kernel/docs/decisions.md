@@ -15968,3 +15968,94 @@ Draw-lite's XSDRAWDE commands over a stand-in for TKDE's framework, XSControl's 
        because the WebAssembly sample shows them too (`Xyz`, `Box`, `Obb`, `History`, `CurveAdaptorBase`, the surface
        adaptors, the messenger, `ProgressRange`, `IndexedSet`, `ToolParameters`, `MeshAlgoType`…). Counted by reflection
        (top-level exported types in `Kerf.Engine.*`), 44 engine types remain public, none for the modelling layer.
+
+## Phase 10: unit 10M2, Kerf.Modeling's .NET API
+
+17501. **Selections are LINQ-friendly typed methods.** `ShapeSelection`'s C# 14 extension methods work on any
+       `IEnumerable<T>` of shapes and return a `ShapeList<T>`, beside LINQ's own, so they chain with it:
+       `part.Edges().Where(e => e.IsClosed).OrderBy(Axis.Z).Last()`. Filters `Where(GeomType | Convexity)`,
+       `WhereNot`, `ParallelTo(Axis | Plane)`, `NotParallelTo`, `Between(axis, min, max)`, `WithValue(ShapeKey |
+       measure, value)`, `WithoutValue`; sorts `OrderBy(Axis | ShapeKey | path)`, `OrderByDescending`,
+       `OrderByDistanceTo`; groups `GroupBy(Axis | ShapeKey | path, digits)` and `GroupByValue(key)`, giving
+       `ShapeGroups<T, TKey>` (was `GroupBy<T, TKey>`). Delegates go through LINQ (`Where`, `OrderBy`), which the typed
+       names don't shadow: no overload takes a delegate where LINQ's does, so neither is chosen over the other by
+       namespace. build123d's `reverse` flags are the `Descending` and `Not` forms; `SortBy` is `ShapeKey`. The string
+       selectors and their reflection (`ShapeProperty`, `DynamicallyAccessedMembers` on `Shape`), the list operators
+       (`>`, `<`, `|`, `>>`, `<<`, `+`, `-`, `&`, for `OrderBy`, `Where`, `GroupBy(…).Last()`, `AddRange`, `Except`,
+       `Intersect`), the `First`/`Last` properties of lists and groups (for LINQ's `First()`/`Last()`, which a property
+       of the same name would hide) and `Selector.ToPython` went. `Selector`'s steps are `OfGeomType`, `ParallelTo`,
+       `GroupByAxis` and `GroupByKey`, printed as the new C#.
+17502. **Typed results for the algebra; the kernel's for topology.** `Part`, `Sketch` and `Curve` combine into their own
+       class: `Add`, `Subtract`, `Common` and `+ - &` on them return the class, the result wrapped in it where the core
+       gives a solid or a plain compound (`Shape.As<T>`). `Mirror`, `Scale`, `Split` and `Offset` have typed overloads
+       for each, and `Sweep` of a face or sketch gives a `Part`, of an edge or curve a `Sketch`. The topological shapes
+       keep `+ - &` returning `Shape`: a first version typed them too (solids to a Part, faces to a Sketch, edges to a
+       Curve), and the Python-reference tests failed, since they pin build123d's class of the result (`box - cylinder`
+       is a `Solid`, an edge plus an edge a `Wire`). `Shape.Add`, `Subtract` and `CommonWith` are internal cores. Union
+       returns left: the topological Booleans, the vertex forms of `Fillet` and `Chamfer`, `Shape3D.Fillet`, `Chamfer`,
+       `Hollow` and `DPrism`, `Shape.Intersect(params object[])` and the importers (modeling/docs/design.md, "Left by
+       unit 10M2"). No operation returns the kernel's `Built<T>`: the layer's shapes carry their `ShapeHistory`, which
+       `Select.Last` and `Select.New` read, and a second record would say the same.
+17503. **Operators kept where they read naturally in C#.** `+ - &` for Booleans (as LINQ users read `+` on strings and
+       `&` on flags: combining two values into one of the same kind), `*` for placement and composition (`location *
+       shape`, `plane * location`, a transform's product), vector arithmetic. Gone: the list operators (17501), `%` and
+       `^` on curves (`TangentAt`, `LocationAt`, which `Curve` gained) and `&` on geometry values (`Intersect`). A null
+       operand throws `ArgumentNullException`; adding nothing is an empty list.
+17504. **Errors: plain forms throw `KerfException`, `Try` forms return `Result<T>`.** An operation that fails in a way a
+       caller should expect throws a `KerfException` whose diagnostics carry codes, which is `Result<T>.Value`'s
+       behaviour, so a chain (`Fillet(…) - hole`) reads without unwrapping; each such operation has a `Try` form
+       returning the `Result<T>` for code that must not throw (a spreadsheet cell): `TryFillet`, `TryChamfer`,
+       `TryExtrude`, `TryLoft`, `TryRevolve`, `TrySweep`, `TryOffset`, `TryThicken`, `TryDraft`, and `TryAdd`,
+       `TrySubtract`, `TryCommon` on Part and Sketch. The `Try` prefix returning a `Result<T>` rather than a `bool` with
+       an `out` value is a departure from the BCL's pattern, chosen because the diagnostics are the point. The layer's
+       own failures have codes in `ModelingDiagnostics` (`modeling.fillet-failed`, `chamfer-failed`, `offset-failed`,
+       `loft-failed`, `draft-failed`, `spline-failed`; `kernel.invalid-argument` from 10M1), the kernel's diagnostics
+       that led to them following; `DraftAngleError` went (its face is the diagnostic's shape). Misuse throws .NET's
+       argument exceptions (null inputs `ArgumentNullException`, where build123d's "objects must be provided" was an
+       `ArgumentException`). Messages are .NET sentences: snake_case names, `None`, `max_fillet()` and `BuildSheet`
+       went from 32 messages.
+17505. **Options records, nested in `Operations`.** `ExtrudeOptions` (direction, both, taper, clean), `SweepOptions`
+       (multisection, Frenet, transition, normal, binormal, clean), `OffsetOptions` (openings, kind, side, closed,
+       minimum edge length) and `ThickenOptions` (normal override, both, clean) replace the optional-parameter lists of
+       five to seven, as the kernel's `XxxOptions? options = null`. They are nested in `Operations` because the kernel
+       has public records of the same names (`Kerf.Construction.ExtrudeOptions`, `SweepOptions`, `Kerf.Offsets.
+       OffsetOptions`), which would be ambiguous for a caller importing both; `using static Kerf.Modeling.Operations;`
+       gives the short names. An extrusion by an amount and one up to a target are separate overloads (`Extrude(face,
+       amount, options)`, `Extrude(face, Until.Next, target, options)`), so "neither given" can't be written. Left as
+       parameters: the primitives' geometry, the exporters' three or four settings, the topology factories.
+17506. **No `Mode`.** The enum, the objects' `Mode` property and the `mode` parameter of their constructors went: .NET
+       users get algebra mode, combining with operators. Builders, if they come (design.md's phase 5), will keep their
+       own mode rather than every object storing one.
+17507. **No tuple conversions.** `(x, y)` and `(x, y, z)` no longer convert to `Vector`, `Rotation`, `CurveLimit` or
+       `Tangent`, nor `(Align, Align)` to `Alignment`, nor `(edge, tangency)` to `Tangent`: `new Vector(1, 2, 3)`,
+       `new Alignment(x, y)`, `new Tangent(edge, tangency)` (both new public constructors). `Plane.ShiftOrigin((x, y))`,
+       a local coordinate, is `ShiftOriginBy(x, y)`; `Scale` takes a `Vector`. The conversions that aren't tuples stay
+       (an `Align` to an `Alignment`, an `Edge` to a `Tangent`, a `double` to a `CurvePosition`): they stand for
+       build123d's union parameters as overloads would. About 3,200 test call sites were rewritten, by the compiler's
+       errors, from `(1, 2, 3)` to `new Vector(1, 2, 3)`.
+17508. **Python's emulation as .NET, with the same results.** `PyComparer` is `KeyComparer` (the order build123d's
+       `sorted()` gives keys: null first, sequences element by element), `PyMath` is `Numerics` (`FloorMod`, the
+       floored remainder Python's `%` gives; SciPy's bounded Brent and Nelder–Mead minimizers, step for step), `PySet`
+       is `PointOrder` (the distinct points in the order of CPython's set of 3-tuples: its float and tuple hashes and
+       its probing table). Each is plain .NET whose comment says which rule it keeps; the order of `PointOrder` decides
+       the plane `CommonPlane` takes on a tie, which no .NET collection reproduces, so the table stays. The
+       Python-reference tests pass unchanged.
+17509. **Renames.** OCCT's names in the layer's API take the kernel's: `ToGpPnt`, `ToGpDir`, `ToGpVec` are `ToPoint3D`,
+       `ToDirection3D`, `ToVector3D`; `ToGpAx1` `ToAxis3D`; `ToGpTrsf` `ToTransform3D`; `ToGpGTrsf`
+       `ToGeneralTransform3D`; `ToGpPln`, `ToGpAx3`, `ToGpAx2` `ToPlane3D`, `ToCoordinateSystem`, `ToFrame3D`;
+       `ToTopLoc` `ToPlacement`; Python's `Shape.Wrapped` is `KernelShape`. modeling/docs/name-map.md maps Python
+       build123d to the final names; modeling/docs/10m2-bento.md lists every public member renamed, removed or retyped,
+       for unit 10N.
+17510. **Results and speed unchanged.** Volumes, face counts, the STEP references byte for byte and the Python-reference
+       tests are as they were. `Kerf.Modeling.Tests`: 1,884 tests before, 1,890 after: three new (the tutorials, 17511)
+       and three rows of `IntersectionTests.ShapeCompound` and `Issues` whose display names now differ (the operands'
+       classes, `Part` and `Sketch` where they printed `Compound`) where xUnit had merged them as duplicates. Bento's
+       benchmark (`Kerf.Kernel.Bento.Benchmarks 7 0`, rewritten for the new API; kerf main c24cb02e built beside this
+       unit, the two run in turn twice on a machine shared with other builds): the same volumes, faces and triangles for
+       all 11 examples; the median recalculation 1,106 and 1,193 ms before, 1,123 and 1,094 ms after, the first pass
+       3,072 and 2,945 ms before, 2,821 and 2,655 ms after: no difference beyond the machine's noise (a run alone
+       earlier gave 876 ms before).
+17511. **Examples.** build123d's classic tutorials on the new API (a plate with holes, a filleted box with a failing
+       `TryFillet`, a sketch extruded and cut with a pocket on its top face) are compiled tests,
+       `Examples/TutorialExamplesTests.cs`, checked against volumes worked out by hand, and shown in design.md, "The
+       .NET API (unit 10M2)".

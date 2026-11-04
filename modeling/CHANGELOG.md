@@ -145,3 +145,16 @@ The first packages, for Bento's 3D-models extension.
   (`kernel.invalid-argument`), and BREP data that isn't BREP is `exchange.malformed`. STL, glTF and BREP are read
   through `Kerf.Exchange`. Results are unchanged: volumes, face counts, the STEP references byte for byte, the
   Python-reference tests at their level. `docs/10m1-bento.md` lists the members Bento sees renamed or removed.
+- Kerf's unit 10M2: the public API is redesigned for .NET; `docs/10m2-bento.md` lists every member renamed, removed or
+  retyped, and `docs/name-map.md` maps Python build123d to the new names. Selections are typed extension methods on any
+  sequence of shapes, beside LINQ (`Where(GeomType.Plane)`, `ParallelTo(Axis.Z)`, `OrderBy(Axis.Z)`,
+  `GroupBy(ShapeKey.Area)`, LINQ's `Last()`); the string selectors, the list operators and `First`/`Last` properties
+  went. A Part, Sketch or Curve combines into its own class (`Part + Shape` is a `Part`; `Add`, `Subtract`, `Common`),
+  and `Mirror`, `Scale`, `Split`, `Offset` and `Sweep` are typed for them. `Extrude`, `Sweep`, `Offset` and `Thicken`
+  take options records (`Operations.ExtrudeOptions`…), and an extrusion up to a target is its own overload. Expected
+  failures are `KerfException`s with codes (`ModelingDiagnostics`), or `Result<T>` from the `Try` forms
+  (`TryFillet`, `part.TrySubtract`…); `DraftAngleError` went; null inputs throw `ArgumentNullException`; messages are
+  .NET sentences. `Mode`, the tuple conversions (`new Vector(1, 2, 3)`, `new Alignment(x, y)`, `new Tangent(edge,
+  tangency)`), `%`, `^` and `&` on geometry went. `PySet`, `PyComparer` and `PyMath` are .NET (`PointOrder`,
+  `KeyComparer`, `Numerics`) with the same results. `ToGp…` are `ToPoint3D` and the kernel's other names, `Wrapped` is
+  `KernelShape`. Results are unchanged: volumes, face counts, the STEP references, the Python-reference tests.

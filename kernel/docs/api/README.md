@@ -540,3 +540,16 @@ face; `ShapeMesh.TriangulatedShape` for a mesh read (meshing.md, revising questi
 **Left:** the WebAssembly sample still shows 43 engine types and `Transient` (10L5's); the modelling layer's
 Python-emulating helpers that decide results (`PySet`, `PyComparer`, `PyMath`), its operators and messages, for 10M2
 (modeling/docs/design.md, "Left by unit 10M1").
+
+## 15. Implemented: unit 10M2, the modelling layer's .NET API
+
+*Unit 10M2, 4 November 2026: decisions 17501 to 17511 (placeholders). No kernel change.*
+
+The modelling layer's API follows this document's patterns where they apply: expected failures are the kernel's
+`KerfException` and `Result<T>` (each failing operation has a `Try` form returning the `Result<T>`, the plain form
+throwing what `Value` throws), with the layer's own codes beside the kernel's ([diagnostics.md](diagnostics.md), "The
+modelling layer"); long parameter lists are options records with `XxxOptions? options = null`, nested in
+`Kerf.Modeling.Operations` since the kernel's records have the same names (`ExtrudeOptions`, `SweepOptions`,
+`OffsetOptions`); misuse throws .NET's argument exceptions. Section 2.1's `Built<T>` isn't used: the layer's shapes
+carry their own history. modeling/docs/design.md, "The .NET API (unit 10M2)", has the rest.
+

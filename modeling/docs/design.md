@@ -50,8 +50,8 @@ no aliasing surprises.
 ### 2. OCCT's names below; idiomatic API above them
 
 `Build123d` calls OCCT.NET's classes under OCCT's names, so Python lines like `BRepAlgoAPI_Cut(a, b).Shape()` port
-almost one-to-one. Only `Build123d` itself exposes idiomatic .NET names. `Shape.Wrapped` remains as an escape hatch to
-the raw OCCT shape. Until unit 10B the calls went through `Build123d.Occt`, a binding with OCCT's API: native OCCT
+almost one-to-one. Only `Build123d` itself exposes idiomatic .NET names. `Shape.KernelShape` (Python's `wrapped`; unit
+10M2 renamed it) remains as an escape hatch to the kernel's shape. Until unit 10B the calls went through `Build123d.Occt`, a binding with OCCT's API: native OCCT
 through a generated C shim, or OCCT.NET through a generated forwarding layer (see "The kernel").
 
 #### Geometry values
@@ -134,12 +134,12 @@ change every shape sharing it, and race between threads. So:
 
 #### Errors and memory
 
-- **OCCT's failures are OCCT.NET's exceptions**, `Standard_Failure` and its subclasses (`Standard_DomainError`,
-  `StdFail_NotDone`…, with `OcctType`), as OCCT.NET throws them (unit 10B), until results replace expected exceptions
-  (unit 10F). The native backend's `OcctException`, with the operation being done ("box 0.0 × 1.0 × 1.0 failed: …",
-  from `OcctContext.Doing` scopes), went with the forwarding layer that made it.
-  - A boolean that fails reports OCCT's alerts (`BOPAlgo_Alert…`) instead of a bare `StdFail_NotDone`.
-  - build123d's own messages (fillet, chamfer, offset) stand, with OCCT's exception inside.
+- **Failures are the kernel's diagnostics in a `KerfException`**, with the operation being done ("box 0 × 1 × 1
+  failed: …"), or the `Try` forms' `Result<T>` (unit 10M2; "The .NET API" below). The native backend's
+  `OcctException` went with the forwarding layer that made it (unit 10B).
+  - A boolean that fails reports the kernel's alerts (`boolean.self-interfering-shape`) instead of a bare failure.
+  - The layer's own failures (fillet, chamfer, offset, loft, draft, spline) have codes of their own
+    (`ModelingDiagnostics`), the kernel's diagnostics following.
 - **No native faults, no memory pressure.** OCCT.NET is managed code: an access violation can't happen inside it, and
   the GC counts its memory. The native backend's fault translation and its `GC.AddMemoryPressure` on results went with
   it. The shim's estimate of a shape's memory, which nothing called, moved to the tests' `EngineShapes` in unit 10M1.
@@ -155,18 +155,25 @@ change every shape sharing it, and race between threads. So:
 
 #### Selectors
 
-- **Plain values throughout.** Every selector has an overload that takes values rather than a delegate:
-  axes, planes, enums and numbers, as before. build123d's `property` arguments are taken by name:
-  `FilterBy("IsClosed")`, `FilterByValue("Radius", 5)`, `SortBy("Length")` and `GroupBy("Area")`.
-  - A name matches a public property of the shape's own class, or a method whose parameters are all
-    optional. Case and underscores are ignored, so build123d's `is_closed` works.
-  - Lookups are cached per class and name.
-  - `Shape` carries `DynamicallyAccessedMembers`, so trimming keeps what a name can reach.
-  - An enum compared by `FilterByValue` may be given by its name.
-- **`Selector`** is a selection as a value: faces, edges or vertices, then steps.
-  - The steps are `FilterByGeomType`, `FilterByAxis`, `GroupByAxis(axis, index)` and
-    `GroupByMeasure(measure, index)`, where a negative index counts from the end.
-  - It applies to any shape, prints as C# or Python, and compares by value.
+- **LINQ beside typed selections** (unit 10M2). `ShapeSelection`'s extension methods work on any sequence of shapes and
+  return a `ShapeList<T>`, so they chain with LINQ's own: `part.Edges().Where(e => e.IsClosed).OrderBy(Axis.Z).Last()`.
+  - Filters: `Where(GeomType)`, `WhereNot(GeomType)`, `Where(Convexity)`, `ParallelTo(Axis | Plane)`,
+    `NotParallelTo(…)`, `Between(axis, min, max)`, `WithValue(ShapeKey | measure, value)` and `WithoutValue(…)`.
+  - Sorts: `OrderBy(Axis | ShapeKey | path)`, `OrderByDescending(…)`, `OrderByDistanceTo(shape | point)`; LINQ's
+    `OrderBy(e => …)` for a delegate.
+  - Groups: `GroupBy(Axis | ShapeKey | path, digits)` and `GroupByValue(key)`, giving `ShapeGroups<T, TKey>`, groups in
+    key order (LINQ's `GroupBy` keeps the order met and compares keys exactly). `groups[^1]` or LINQ's `Last()` is the
+    last group.
+  - build123d's `reverse` flags are the `Descending` and `Not` forms; its operators on lists (`>`, `|`, `>>`) and the
+    `First`/`Last` properties went, for LINQ's `First()`/`Last()`. `ShapeKey` (Length, Radius, Area, Volume, Distance)
+    was `SortBy`.
+- **Plain values, no names.** Every selection takes values (axes, planes, enums, numbers), as a spreadsheet formula
+  passes them. The string selectors (`FilterBy("IsClosed")`) and their reflection (`ShapeProperty`) went: Bento maps
+  its own names to these calls (unit 10N).
+- **`Selector`** is a selection as a value: faces, edges or vertices, then steps (`OfGeomType`, `ParallelTo`,
+  `GroupByAxis(axis, index)`, `GroupByKey(key, index)`, a negative index counting from the end).
+  - It applies to any shape, prints as C# (`Faces().Where(GeomType.Plane).GroupBy(Axis.Z).Last()`) and compares by
+    value. Python's text (`ToPython`) went.
 - **`Selector.For(shape, picked)`** finds selectors for a face, edge or vertex picked in a viewer.
   - It does a breadth-first search over sets holding the pick, at most three steps deep. Each step's
     effect comes from keys measured once per candidate, and only steps that keep the pick are tried.
@@ -184,8 +191,8 @@ change every shape sharing it, and race between threads. So:
   aligns and rotates it. An object's parameters are read-only properties, and the self-typed operations
   keep the class, so `box.Moved(loc)` is still a `Box` with its `Length`.
 - **Defaults.** `align: null` means the object's own default (centred for most), and `Align.None` means
-  none, so a caller can ask for either. A `Mode` is stored on every object for the builders of phase 5;
-  algebra mode ignores it.
+  none, so a caller can ask for either. Objects take no `Mode` (unit 10M2): algebra mode combines them with operators,
+  and builders, if they come, will hold their own mode.
 - **Python's union arguments** become overloads: an arc's size is a `double` or a `CurveLimit` (a shape,
   axis, location, plane or point it's trimmed to). Constrained arcs and lines take `Tangent` targets.
 
@@ -296,24 +303,81 @@ build123d's `importers.py` and `exporters3d.py` are `Importers` and `Exporters3D
 - **Faces holding only triangles** (from STL and glTF) have no surface: `BoundingBox()`, which otherwise ignores
   triangulations, bounds their triangles; `Tessellate` and `Triangulate` give them.
 
-#### Left by unit 10M1
+#### The .NET API (unit 10M2)
 
-Unit 10M1 moved the layer onto the kernel's public API (items 1 and 2 of its brief), retired the emulation of Python's
-`repr` and format specs (`PyFormat`: numbers are .NET's invariant text, formats .NET's), and moved the readers onto
-`Kerf.Exchange`. Left, for 10M2 or later:
+Unit 10M2 redesigned the layer's public API for .NET users (kernel decisions 17501 to 17510, placeholders until the
+merge renumbers them). build123d's vocabulary stays (Box, Extrude, Fillet, Sketch); what was Python-shaped went.
+[10m2-bento.md](10m2-bento.md) lists every public member renamed, removed or retyped.
 
-- **`PySet`, `PyComparer` and `PyMath` stay.** Each decides a result, not only its text: `PySet.Distinct` orders the
-  points `Shape1D` fits a plane to as a CPython set iterates them, and the plane taken on a tie depends on that order;
-  `PyComparer` sorts and groups mixed keys (numbers, tuples, strings, null) as Python compares them; `PyMath` is
-  CPython's float modulo and scipy's bounded Brent and Nelder–Mead minimizers, which build123d calls. Replacing them
-  with `HashSet`, `Comparer<T>.Default` and a kernel minimizer would change results the Python-reference tests pin.
-  They want a decision on whether the Python reference or .NET's own behaviour defines those results.
-- **Python's operators and messages.** The operators (`|`, `&`, `^`, `<<`, `>>`, `@`, `%` on shapes, lists and
-  vectors) and build123d's messages are the API's shape, which 10M2 redesigns; 10M1 changed only the numbers in the
-  messages (".0" no longer printed: "radius of 5", not "radius of 5.0").
-- **Helpers that duplicate kernel operations.** `TopoUtil`'s wrappers (`BoolOp`, `Boolean`, `SewFaces`, `Explore`,
-  `Unique`) remain as the layer's adapters onto the kernel's operations, keeping the layer's defaults (unsimplified
-  Booleans, the removal semantics of its histories); 10M2's API shape decides whether they go.
+- **Selections** are LINQ-friendly typed methods (see "Selectors").
+- **Typed results.** A Part, Sketch or Curve combines into its own class: `Part + Shape` is a `Part`, with `Add`,
+  `Subtract` and `Common` methods beside `+`, `-` and `&`. `Mirror`, `Scale`, `Split` and `Offset` of a Part give a
+  Part (of a Sketch, a Sketch; of a Curve, a Curve); `Sweep` of a face or sketch gives a Part, of an edge or curve a
+  Sketch. The topological shapes (Solid, Face, Edge…) keep `+ - &` returning `Shape`, the kernel's result: one solid or
+  a compound of pieces, a wire or a compound of edges, as build123d returns them and the Python-reference tests pin
+  them. The forms that take any shapes (a mix of dimensions) return `Compound`.
+- **Options records** in place of long optional-parameter lists: `Operations.ExtrudeOptions`, `SweepOptions`,
+  `OffsetOptions` and `ThickenOptions`, as the kernel's `XxxOptions? options = null`. They are nested in `Operations`
+  because the kernel has records of the same names; `using static Kerf.Modeling.Operations;` brings them in by their
+  short names. An extrusion by an amount and one up to a target are separate overloads.
+- **Errors.** An operation that fails in a way a caller should expect throws a `KerfException` whose diagnostics carry
+  codes: the kernel's (`boolean.self-interfering-shape`), or the layer's own (`ModelingDiagnostics`:
+  `modeling.fillet-failed`, `chamfer-failed`, `offset-failed`, `loft-failed`, `draft-failed`, `spline-failed`) followed
+  by the kernel's that led to it. That is `Result<T>.Value`'s behaviour; each such operation has a `Try` form returning
+  the `Result<T>` (`TryFillet`, `TryExtrude`, `TryLoft`, `TrySweep`, `TryOffset`, `TryThicken`, `TryDraft`,
+  `part.TrySubtract`…). Chains read with the plain forms; a cell takes the `Try` form at the step that may fail. Misuse
+  throws .NET's argument exceptions (a null operand: `ArgumentNullException`). Messages are .NET sentences: no
+  snake_case names, `None` or builder names.
+- **No `Mode`, no tuples.** Objects take no `Mode`; the tuple conversions (`(1, 2, 3)` to a `Vector`, a `Rotation`,
+  an `Alignment`, a `Tangent`) went, for constructors: `new Vector(1, 2, 3)`, `new Alignment(Align.Min, Align.Max)`,
+  `new Tangent(edge, Tangency.Enclosing)`. The implicit conversions that aren't tuples stay (an `Align` to an
+  `Alignment`, an `Edge` to a `Tangent`, a `double` to a `CurvePosition`): they stand for build123d's union
+  parameters as overloads would, and read naturally in C#.
+- **Operators.** Kept where they read naturally in C#: `+ - &` for Booleans, `*` for placement and composition
+  (`location * shape`, `plane * location`), vector arithmetic. Gone: the list operators (`>`, `<`, `|`, `>>`, `<<`,
+  list `+ - &`), `%` and `^` on curves (`TangentAt`, `LocationAt`) and `&` on geometry values (`Intersect`).
+- **Python's emulation, as .NET.** `PySet`, `PyComparer` and `PyMath` are gone; their results stay, from code written
+  as .NET that says which rule it keeps: `KeyComparer` (the order build123d's `sorted()` gives keys: null first,
+  sequences element by element), `PointOrder.Distinct` (the order a CPython set of points iterates in, which picks the
+  plane `CommonPlane` takes on a tie), and `Numerics` (`FloorMod`, floored division's remainder as Python's `%`;
+  SciPy's bounded Brent and Nelder–Mead minimizers, as build123d calls them).
+- **Examples** of the API on build123d's classic tutorials (a plate with holes, a filleted box, a sketch extruded and
+  cut) are compiled tests: `Examples/TutorialExamplesTests.cs`.
+
+```csharp
+using Kerf.Modeling;
+using static Kerf.Modeling.Operations;
+
+// A plate with four holes
+Part plate = new Box(80, 60, 10);
+plate -= new GridLocations(60, 40, 2, 2) * new Cylinder(5, 10);
+
+// A filleted box, its vertical edges rounded; and a radius too large, as a result
+Part box = new Box(30, 20, 10);
+Part rounded = Fillet(box.Edges().ParallelTo(Axis.Z), 3);
+Result<Part> tooLarge = TryFillet(box.Edges(), 20);   // IsFailure; Error.Code is modeling.fillet-failed
+
+// A sketch extruded, then cut by a pocket sketched on its top face
+Sketch profile = new Circle(20) - new Rectangle(10, 10);
+Part disc = Extrude(profile, 5);
+var top = disc.Faces().Where(GeomType.Plane).OrderBy(Axis.Z).Last();
+disc -= Extrude(new Plane(top) * (new Pos(12, 0) * new Circle(4)), -2);
+```
+
+#### Left by unit 10M2
+
+- **Union returns that remain:** the topological Booleans (`Shape + Shape`, `Fuse`, `Cut`, reasons above), the
+  vertex forms of `Fillet` and `Chamfer` (the result is the class of the shape the vertices came from: a Sketch, a
+  Shell or a Wire), `Shape3D.Fillet`, `Chamfer`, `Hollow` and `DPrism`, `Shape.Intersect(params object[])` (a shape or a
+  geometry value), and the importers (the file decides).
+- **History as `Built<T>`.** The layer's shapes carry their own `ShapeHistory`, which `Select.Last` and `Select.New`
+  read; returning the kernel's `Built<T>` beside it would say the same twice, so no operation does.
+- **Options left as parameters:** the primitives' and objects' geometric parameters (a sphere's three angles, a
+  triangle's sides and angles), the exporters' (STEP's unit, pcurves, precision and time stamp; glTF's), and the
+  topology factories (`Edge.MakeSpline`, `Shape1D.Offset2D`, `Solid.Sweep`); none has more than five. The exporters
+  still return `true` on success, as build123d's do, and throw on failure.
+- **Schematiq.Collections.** `ShapeList<T>` is still built over it (plan 2.6 has the layer drop it): it is internal to
+  `ShapeList<T>`, which exposes only the .NET read-only interfaces.
 
 ### 3. Behavioural parity is tested, not assumed
 
