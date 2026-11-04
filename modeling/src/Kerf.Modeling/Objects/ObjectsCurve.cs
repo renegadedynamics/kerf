@@ -276,7 +276,7 @@ public class BlendCurve : BaseEdgeObject
             else if ((given[i] - curves[i].PositionAt(1)).Length < Constants.Tolerance)
                 endParams[i] = 1;
             else
-                throw new ArgumentException("end_points must be at either the start or end of a curve");
+                throw new ArgumentException("Each end point must be at the start or end of a curve.");
         }
 
         // For a degree-n Bézier B'(0) = n(P₁ - P₀), B'(1) = n(Pₙ - Pₙ₋₁), B''(0) = n(n-1)(P₂ - 2P₁ + P₀) and
@@ -400,7 +400,7 @@ public class ConstrainedArcs : BaseCurveObject
     {
         var selected = selector is null ? [.. edges] : selector(edges)?.ToList();
         if (selected is null || !selected.Any())
-            throw new ArgumentException("selector must return an Edge or list of Edges, not None");
+            throw new ArgumentException("The selector must return edges, not null.");
         return new Curve(selected);
     }
 }
@@ -569,7 +569,7 @@ public class EllipticalStartArc : BaseEdgeObject
             angle = rad * Constants.RadToDeg;
         }
         else
-            throw new ArgumentException("Either start_angle or major_axis_dir must be provided");
+            throw new ArgumentException("Give a start angle or a major axis direction.");
 
         var plane = new Plane(origin, xDir, normal);
         return Edge.MakeEllipse(xRadius, yRadius, plane, angle, angle + arcSize, CurveObjects.DirectionOf(arcSize));
@@ -900,7 +900,7 @@ public class PolarLine : BaseEdgeObject
         }
         if (angle is { } a)
             return (new Vector(1, 0, 0).Rotate(Axis.Z, a), a);
-        throw new ArgumentException("Either angle or direction must be provided");
+        throw new ArgumentException("Give an angle or a direction.");
     }
 
     private static Edge Make(Vector start, double length, double? angle, Vector? direction, LengthMode lengthMode)

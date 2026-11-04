@@ -245,7 +245,7 @@ public sealed class Vertex : Shape
                 "this vertex was not selected from a shape, so there is nothing to classify it against - take it from a face or solid");
         var graph = ShapeGraph.Build(parent.TopoShape);
         var own = TopoUtil.FindSame(TopoShape, graph.All(global::Kerf.Topology.ShapeType.Vertex))
-                  ?? throw new InvalidOperationException("this vertex is not part of its topo_parent");
+                  ?? throw new InvalidOperationException("The vertex isn't part of the shape it was selected from.");
         var kinds = new HashSet<Convexity>();
         var edges = graph.Ancestors(own, global::Kerf.Topology.ShapeType.Edge);
         foreach (var topoEdge in edges)

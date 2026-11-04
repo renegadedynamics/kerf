@@ -264,7 +264,7 @@ public class ShapeTests
         }
         Assert.Throws<InvalidOperationException>(
             () => testSolids[0].MaxFillet(testSolids[0].Edges(), tolerance: 1e-6, maxIterations: 1));
-        Assert.Throws<ArgumentException>(() =>
+        Assert.Throws<Kerf.KerfException>(() =>
         {
             var box = Solid.MakeBox(1, 1, 1);
             box.Fillet(0.75, box.Edges());

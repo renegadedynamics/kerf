@@ -261,7 +261,7 @@ internal static class ConstrainedSolvers
         var args = tangents.Select(AsGccArg).ToList();
         var on = AsGccArg(centerOn);
         if (!on.IsEdge)
-            throw new ArgumentException("center_on must be an Edge (line/circle/curve).");
+            throw new ArgumentException("The centre must lie on an edge (a line, circle or curve).");
         var circles = Solved(Tangents2D.CirclesCentredOn(args[0].Target, args[1].Target, on.H2d!, new Interval(on.First, on.Last),
                                                          Constants.Tolerance),
                              "Unable to find a tangent arc with center_on constraint");
@@ -334,7 +334,7 @@ internal static class ConstrainedSolvers
     {
         var arg = AsGccArg(tangent);
         if (centerOn.Edge is not { } onEdge)
-            throw new ArgumentException("center_on must be an Edge (line/circle/curve) for TanOnRad.");
+            throw new ArgumentException("The centre must lie on an edge (a line, circle or curve).");
         var on = EdgeToQualified2D(onEdge.TopoEdge, Tangency.Unqualified);
         var circles = Solved(Tangents2D.CirclesCentredOn(arg.Target, on.H2d!, radius, new Interval(on.First, on.Last), Constants.Tolerance),
                              "Unable to find circle(s) for TanOnRad constraints");

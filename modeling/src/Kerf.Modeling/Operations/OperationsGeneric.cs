@@ -249,15 +249,15 @@ public static partial class Operations
     {
         // build123d's messages name BuildSheet, which handles sheets in builder mode
         if (!objectList.All(o => o is Vertex))
-            throw new ArgumentException($"BuildSheet {operation} takes only Vertices");
+            throw new ArgumentException($"A sheet's {operation} takes only vertices.");
         var targetFaces = target.Faces();
         foreach (var vertex in objectList)
         {
             var supportingFaces = targetFaces.Where(f => f.Vertices().Any(v => v.Equals(vertex))).ToList();
             if (supportingFaces.Count != 1)
-                throw new ArgumentException($"BuildSheet {operation} vertices must be on the free boundary of one face");
+                throw new ArgumentException($"A sheet's {operation} vertices must be on the free boundary of one face.");
             if (supportingFaces[0].GeomType != GeomType.Plane)
-                throw new ArgumentException($"BuildSheet can only {operation} planar faces");
+                throw new ArgumentException($"Only a sheet's planar faces can take a {operation}.");
         }
         var newFaces = new List<Face>();
         foreach (var face in targetFaces)
@@ -516,7 +516,7 @@ public static partial class Operations
                 : new Axis(pnt, workplane.ZDir);
             var intersection = workplane.Intersect(projectionAxis);
             if (intersection is Axis)
-                throw new InvalidOperationException("working_plane and projection_axis are parallel");
+                throw new InvalidOperationException("The working plane and the projection axis are parallel.");
             if (intersection is Vector v)
                 projectedPoints.Add(workplane.ToLocalCoords(v));
         }

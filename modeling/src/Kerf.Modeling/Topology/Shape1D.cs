@@ -481,10 +481,10 @@ public abstract partial class Shape1D : Shape
     public ShapeList<Edge> CurvatureComb(int count = 100, double? maxToothSize = null)
     {
         if (IsEmpty)
-            throw new InvalidOperationException("Can't create curvature_comb for empty curve");
+            throw new InvalidOperationException("An empty curve has no curvature comb.");
         var pln = CommonPlane();
         if (pln is null || !TopologyUtils.IsCloseB(Math.Abs(pln.ZDir.Z), 1.0, absTol: Constants.Tolerance))
-            throw new InvalidOperationException("curvature_comb only works for curves on Plane.XY");
+            throw new InvalidOperationException("A curvature comb needs a curve on Plane.XY.");
         // A closed curve's first and last tooth would be the same, so the last is left out
         bool endpoint = !IsClosed;
         var uValues = Enumerable.Range(0, count)

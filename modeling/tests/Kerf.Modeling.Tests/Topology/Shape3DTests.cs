@@ -15,10 +15,10 @@ using Kerf.Modeling;
 
 public class FilletFailuresTests
 {
-    const string Advice = ", try a smaller value or use max_fillet() to find the largest valid fillet radius";
+    const string Advice = " failed; try a smaller radius, or MaxFillet to find the largest that works.";
 
     const string PlateMessage =
-        "Failed creating a fillet with radius of 3 on 8 of 12 edges "
+        "The fillet with a radius of 3 on 8 of 12 edges "
         + "(no starting solution: [1] at (-10, 0, 1), [3] at (-10, 0, -1), "
         + "[5] at (10, 0, 1), [7] at (10, 0, -1), [8] at (0, -10, -1), "
         + "[9] at (0, -10, 1), [10] at (0, 10, -1), [11] at (0, 10, 1))" + Advice;
@@ -32,8 +32,8 @@ public class FilletFailuresTests
         var box = Box(20, 20, 2);
         foreach (Shape3D shape in new Shape3D[] { box, box.SingleSolid(), new Part(box.Wrapped) })
         {
-            var e = Assert.Throws<ArgumentException>(() => shape.Fillet(3, shape.Edges()));
-            Assert.Equal(PlateMessage, e.Message);
+            var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(3, shape.Edges()));
+            Assert.Equal(PlateMessage, e.Error.Message);
             Assert.True(Failures.IsKernelFailure(e.InnerException!));
         }
     }
@@ -42,8 +42,8 @@ public class FilletFailuresTests
     public void Operation()
     {
         // The fillet operation reports the same edges as the method
-        var e = Assert.Throws<ArgumentException>(() => Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3));
-        Assert.Equal(PlateMessage, e.Message);
+        var e = Assert.Throws<Kerf.KerfException>(() => Ops.Fillet(Box(20, 20, 2).Edges(), radius: 3));
+        Assert.Equal(PlateMessage, e.Error.Message);
     }
 
     [Fact]
@@ -65,8 +65,8 @@ public class FilletFailuresTests
         ];
         foreach (var (selection, details) in cases)
         {
-            var e = Assert.Throws<ArgumentException>(() => rounded.Fillet(3, selection));
-            Assert.Equal("Failed creating a fillet with radius of 3 on " + details + Advice, e.Message);
+            var e = Assert.Throws<Kerf.KerfException>(() => rounded.Fillet(3, selection));
+            Assert.Equal("The fillet with a radius of 3 on " + details + Advice, e.Error.Message);
         }
     }
 
@@ -82,8 +82,8 @@ public class FilletFailuresTests
         var (shape, radius, edges, text) = notchedCase
             ? (notched, 0.5, notched.Edges().Where((_, i) => i % 2 == 0).ToList(), "0.5")
             : ((Shape3D)cube, 6.0, cube.Edges().ToList(), "6");
-        var e = Assert.Throws<ArgumentException>(() => shape.Fillet(radius, edges));
-        Assert.Equal($"Failed creating a fillet with radius of {text}" + Advice, e.Message);
+        var e = Assert.Throws<Kerf.KerfException>(() => shape.Fillet(radius, edges));
+        Assert.Equal($"The fillet with a radius of {text}" + Advice, e.Error.Message);
     }
 
     [Fact]
@@ -96,12 +96,12 @@ public class FilletFailuresTests
         Assert.True(edges[1].IsSame(reversedEdge));
         Assert.False(edges[1].IsEqual(reversedEdge));
         var selection = new[] { edges[3], edges[0], reversedEdge, edges[1] }.Select(e => e);
-        var e = Assert.Throws<ArgumentException>(() => plate.Fillet(3, selection));
+        var e = Assert.Throws<Kerf.KerfException>(() => plate.Fillet(3, selection));
         Assert.Equal(
-            "Failed creating a fillet with radius of 3 on 3 of 4 edges "
+            "The fillet with a radius of 3 on 3 of 4 edges "
             + "(no starting solution: [0] at (-10, 0, -1), "
             + "[2] at (-10, 0, 1), [3] at (-10, 0, 1))" + Advice,
-            e.Message);
+            e.Error.Message);
     }
 }
 
@@ -182,7 +182,7 @@ public class Shape3DTests
     public void ChamferTooHighLength()
     {
         var box = Solid.MakeBox(1, 1, 1);
-        Assert.Throws<ArgumentException>(() => box.Chamfer(2, null, box.Edges().OrderBy(Axis.Z)[^1..]));
+        Assert.Throws<Kerf.KerfException>(() => box.Chamfer(2, null, box.Edges().OrderBy(Axis.Z)[^1..]));
     }
 
     [Fact]

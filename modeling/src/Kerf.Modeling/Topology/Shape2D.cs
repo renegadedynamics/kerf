@@ -303,7 +303,8 @@ public abstract partial class Shape2D : Shape
         };
         var offsetResult = TopoShape.Offset(amount, options);
         if (!offsetResult.TryGetValue(out var built) || built.Shape.IsNull)
-            throw new InvalidOperationException($"Unable to offset {GetType().Name} by {amount}");
+            throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset of the {GetType().Name} by {Formatting.Number(amount)} failed.",
+                                    offsetResult.IsFailure ? offsetResult.Diagnostics : default);
         var offset = built.Shape;
         var result = Cast(offset);
         // The builder always returns a shell; a face offsets to a single face

@@ -432,7 +432,7 @@ public class ShapeListTests
         Assert.Contains("not supported", e.Message);
 
         e = Assert.Throws<ArgumentException>(() => TopologyUtils.TopoDistanceTo([box1.Faces()[0], box2.Faces()[0]]));
-        Assert.Contains("shared topo_parent", e.Message);
+        Assert.Contains("the same parent shape", e.Message);
     }
 
     [Fact]
@@ -446,10 +446,10 @@ public class ShapeListTests
         Assert.Contains("same type", e.Message);
 
         e = Assert.Throws<ArgumentException>(() => key(Kerf.Modeling.Face.MakeRect(1, 1)));
-        Assert.Contains("topo_parent", e.Message);
+        Assert.Contains("selected from a parent shape", e.Message);
 
         e = Assert.Throws<ArgumentException>(() => key(box2.Faces()[0]));
-        Assert.Contains("shared topo_parent", e.Message);
+        Assert.Contains("the same parent shape", e.Message);
     }
 
     [Fact]

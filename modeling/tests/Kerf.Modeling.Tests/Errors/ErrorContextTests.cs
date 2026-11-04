@@ -78,8 +78,10 @@ public class ErrorContextTests
     public void LibraryExceptionsKeepOcctsAsTheirCause()
     {
         // build123d's own messages stand, with OCCT's failure inside
-        var fillet = Assert.Throws<ArgumentException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
-        Assert.Contains("Failed creating a fillet with radius of 5 on 12 of 12 edges", fillet.Message);
+        var fillet = Assert.Throws<Kerf.KerfException>(() => Ops.Fillet(new Box(1, 1, 1).Edges(), 5));
+        Assert.Contains("The fillet with a radius of 5 on 12 of 12 edges", fillet.Message);
+        Assert.Equal(ModelingDiagnostics.FilletFailed, fillet.Error.Code);
+        Assert.Equal(fillet.Diagnostics.Select(d => d.Code), Ops.TryFillet(new Box(1, 1, 1).Edges(), 5).Diagnostics.Select(d => d.Code));
         Assert.True(Failures.IsKernelFailure(fillet.InnerException!));
     }
 

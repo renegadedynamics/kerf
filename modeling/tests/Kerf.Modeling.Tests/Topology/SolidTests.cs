@@ -5,6 +5,7 @@
 // - TestSolidThicken (both cases), TestSolidDraft.test_adddone_failure_raises_draftangleerror and
 //   test_build_failure_raises_draftangleerror: mock the OCP builders.
 using Kerf.Topology;
+using static Kerf.DiagnosticShapes;
 
 namespace Build123d.Tests.Topology;
 
@@ -422,12 +423,12 @@ public class SolidDraftTests
     [Fact]
     public void DraftAngleErrorContents()
     {
-        // DraftAngleError stores the face and the problematic shape
+        // A failed draft's error (build123d's DraftAngleError until unit 10M2) holds the problematic shape
         var face = _sides[0];
         var shape = _box.Wrapped;
-        var err = new DraftAngleError("msg", face: face, problematicShape: shape);
+        var err = Failures.Expected(ModelingDiagnostics.DraftFailed, "msg", default, null, face.Wrapped, shape);
         Assert.Equal("msg", err.Message);
-        Assert.Same(face, err.Face);
-        Assert.True(err.ProblematicShape is { } problematic && problematic.IsEqual(shape));
+        Assert.True(err.Error.Shapes[0].IsSame(face.Wrapped));
+        Assert.True(err.Error.Shapes[1].IsEqual(shape));
     }
 }

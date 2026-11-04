@@ -277,7 +277,7 @@ public class SlotCenterToCenter : BaseSketchObject
     private static Face Make(double separation, double height, Mode mode)
     {
         if (separation < 0)
-            throw new ArgumentException($"Requires center_separation > 0. Got: center_separation={Formatting.Number(separation)}");
+            throw new ArgumentException($"The centre separation must be positive, not {Formatting.Number(separation)}.");
         if (separation > 0)
             return new Face((Wire)new Wire([Edge.MakeLine(new Vector(-separation / 2, 0, 0), new Vector(0, 0, 0)),
                                             Edge.MakeLine(new Vector(0, 0, 0), new Vector(separation / 2, 0, 0))]).Offset2D(height / 2));
@@ -461,7 +461,7 @@ public class Triangle : BaseSketchObject
     {
         double?[] all = [a, b, c, A, B, C];
         if (a is null && b is null && c is null || all.Count(v => v is null) != 3)
-            throw new ArgumentException("One length and two other values must be provided");
+            throw new ArgumentException("Give one length and two other values.");
         double? Rad(double? deg) => deg * Constants.DegToRad;
         return TriangleSolver.Solve(a, b, c, Rad(A), Rad(B), Rad(C));
     }

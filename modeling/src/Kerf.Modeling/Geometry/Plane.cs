@@ -139,14 +139,14 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     public static Plane FromXAndYDirections(Vector origin, Vector xDir, Vector yDir)
     {
         if (xDir.Length == 0.0)
-            throw new ArgumentException("x_dir must be non null", nameof(xDir));
+            throw new ArgumentException("The X direction can't be null.", nameof(xDir));
         if (yDir.Length == 0.0)
-            throw new ArgumentException("y_dir must be non null", nameof(yDir));
+            throw new ArgumentException("The Y direction can't be null.", nameof(yDir));
         var x = xDir.Normalized();
         var yInput = yDir.Normalized();
         var zFromXy = x.Cross(yInput);
         if (zFromXy.Length == 0.0)
-            throw new ArgumentException("x_dir and y_dir must not be parallel", nameof(yDir));
+            throw new ArgumentException("The X and Y directions can't be parallel.", nameof(yDir));
         var z = zFromXy.Normalized();
         var y = z.Cross(x).Normalized();
         x = y.Cross(z).Normalized();
@@ -181,7 +181,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
     static Plane3D Build(Vector origin, Vector? xDir, Vector zDir)
     {
         if (zDir.Length == 0.0)
-            throw new ArgumentException("z_dir must be non null", nameof(zDir));
+            throw new ArgumentException("The Z direction can't be null.", nameof(zDir));
         var z = zDir.Normalized();
         Vector x;
         if (xDir is null)
@@ -196,7 +196,7 @@ public sealed class Plane : IEquatable<Plane>, IFormattable, IGeometry
         else
         {
             if (xDir.Value.Length == 0.0)
-                throw new ArgumentException("x_dir must be non null", nameof(xDir));
+                throw new ArgumentException("The X direction can't be null.", nameof(xDir));
             x = xDir.Value.Normalized();
         }
         return Ax3Plane(origin, z, x);

@@ -84,11 +84,11 @@ public partial class Edge : Shape1D
     public static Edge MakeBezier(IReadOnlyList<Vector> controlPoints, IReadOnlyList<double>? weights = null)
     {
         if (controlPoints.Count < 2)
-            throw new ArgumentException("At least two control points must be provided (start, end)");
+            throw new ArgumentException("Give at least two control points, the start and the end.");
         if (controlPoints.Count > 25)
             throw new ArgumentException("The maximum number of control points is 25");
         if (weights is { Count: > 0 } && weights.Count != controlPoints.Count)
-            throw new ArgumentException("A weight must be provided for each control point");
+            throw new ArgumentException("Give a weight for each control point.");
         var poles = PointArray(controlPoints);
         BezierCurve3D curve;
         if (weights is { Count: > 0 })
@@ -301,7 +301,7 @@ public partial class Edge : Shape1D
         };
         var interpolated = BSplineCurve3D.Interpolate(pnts, options);
         if (!interpolated.TryGetValue(out var curve))
-            throw new InvalidOperationException("B-spline interpolation failed");
+            throw Failures.Expected(ModelingDiagnostics.SplineFailed, "No B-spline passes through the points.", interpolated.Diagnostics);
         return FromCurve(curve);
     }
 
@@ -348,7 +348,7 @@ public partial class Edge : Shape1D
             : new ApproximationOptions { MinDegree = minDeg, MaxDegree = maxDeg, Continuity = Continuity.C2, Tolerance = tolerance };
         var approximated = BSplineCurve3D.Approximate(array, options);
         if (!approximated.TryGetValue(out var curve))
-            throw new InvalidOperationException("B-spline approximation failed");
+            throw Failures.Expected(ModelingDiagnostics.SplineFailed, "No B-spline approximates the points.", approximated.Diagnostics);
         return FromCurve(curve);
     }
 

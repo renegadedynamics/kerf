@@ -122,7 +122,7 @@ public class CurveObjectTests
         Check.AlmostEqual((0, -1, 0), b.PositionAt(1), 5);
 
         var e = Assert.Throws<ArgumentException>(() => new EllipticalStartArc((0, 0), (1, 0), 5, 3, 90));
-        Assert.Contains("start_angle or major_axis_dir", e.Message);
+        Assert.Contains("a start angle or a major axis direction", e.Message);
 
         var c = new EllipticalStartArc((1, 1), (0, 1), 3, 1, -45, startAngle: 45);
         Assert.True(5 > c.Length);

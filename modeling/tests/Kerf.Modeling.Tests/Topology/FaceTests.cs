@@ -1093,7 +1093,7 @@ public class FaceValidationTests
     public void SurfaceInteriorRejectsAnEmptyWire()
     {
         var exterior = Wire.MakeRect(10, 10);
-        Assert.Contains("empty wire",
+        Assert.Contains("inner wire is empty",
                         Assert.Throws<ArgumentException>(() => Face.MakeSurface(exterior, interiorWires: [new Wire()])).Message);
     }
 

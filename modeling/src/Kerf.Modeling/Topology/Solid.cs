@@ -298,7 +298,7 @@ public partial class Solid : Shape3D
             if (piece.Faces().Any(f => Math.Abs(f.Area - profile.Area) <= Constants.Tolerance * Math.Max(1, profile.Area)
                                        && (f.Center() - center).Length <= Constants.Tolerance))
                 return (Solid)piece;
-        throw new InvalidOperationException("Extrusion is None");
+        throw new InvalidOperationException("The extrusion is empty.");
     }
 
     /// <summary>A cross section (a face, or a wire with optional holes) revolved through <paramref name="angle"/> degrees about an axis.</summary>
@@ -439,7 +439,9 @@ public partial class Solid : Shape3D
     }
 
     /// <summary>The solid with a draft of <paramref name="angle"/> degrees applied to planar, cylindrical or conical faces.</summary>
-    /// <exception cref="DraftAngleError">The draft can't be added to a face, or built.</exception>
+    /// <exception cref="KerfException">
+    /// The draft can't be added to a face (<see cref="ModelingDiagnostics.DraftFailed"/>, the face as its shape), or built.
+    /// </exception>
     public Solid Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {
         var faceList = faces.ToList();
@@ -457,8 +459,10 @@ public partial class Solid : Shape3D
             global::Kerf.Topology.Shape? problem = error.Shapes is [var shape, ..] ? shape : null;
             // A face that couldn't be drafted is the problematic shape itself; a build that failed has no face
             if (problem is { } p && p.IsFace() && faceList.FirstOrDefault(f => f.TopoShape.IsSame(p)) is { } face)
-                throw new DraftAngleError("Draft could not be added to a face.", face, p);
-            throw new DraftAngleError("Draft build failed on the given solid.", null, problem, new KerfException(drafted.Diagnostics));
+                throw Failures.Expected(ModelingDiagnostics.DraftFailed, $"The draft can't be added to the face at {face.Center().ToString("G6")}.",
+                                        drafted.Diagnostics, null, p);
+            throw Failures.Expected(ModelingDiagnostics.DraftFailed, "The drafted solid couldn't be built.", drafted.Diagnostics, null,
+                                    problem is { } q ? [q] : []);
         }
         var result = new Solid((global::Kerf.Topology.Solid)built.Shape);
         return (Solid)result.MadeBy(ShapeHistory.FromAlgorithm(s => built.History.Modified(s), s => built.History.Generated(s),
@@ -594,20 +598,3 @@ public partial class Solid : Shape3D
     }
 }
 
-/// <summary>The error <see cref="Solid.Draft"/> throws, with the face it failed on and OCCT's problematic shape.</summary>
-public sealed class DraftAngleError : InvalidOperationException
-{
-    /// <summary>Creates the error.</summary>
-    public DraftAngleError(string message, Face? face = null, global::Kerf.Topology.Shape? problematicShape = null, Exception? inner = null)
-        : base(message, inner)
-    {
-        Face = face;
-        ProblematicShape = problematicShape;
-    }
-
-    /// <summary>The face the draft couldn't be added to, if it was one.</summary>
-    public Face? Face { get; }
-
-    /// <summary>The shape OCCT reports as problematic.</summary>
-    public global::Kerf.Topology.Shape? ProblematicShape { get; }
-}

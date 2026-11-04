@@ -72,11 +72,12 @@ internal static class WireFillet
         if (IsTangentContinuous(corner))
             return wire;
         var solution = Solve(corner, radius)
-                       ?? throw new ArgumentException($"Fillet algorithm failed for {vertex} with radius {radius}");
+                       ?? throw Failures.Expected(ModelingDiagnostics.FilletFailed,
+                                                  $"The corner at {vertex} can't be filleted with a radius of {Formatting.Number(radius)}.");
         var result = Splice(corner, solution);
         if (!wire.IsClosed || result.IsClosed)
             return result;
-        throw new ArgumentException("Filleting failed to create a closed wire.");
+        throw Failures.Expected(ModelingDiagnostics.FilletFailed, "The filleted wire isn't closed.");
     }
 
     internal static Corner Analyze(Wire wire, Vertex vertex)

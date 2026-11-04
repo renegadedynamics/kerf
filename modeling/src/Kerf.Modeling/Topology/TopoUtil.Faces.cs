@@ -255,10 +255,10 @@ public static partial class TopologyUtils
         };
         var parents = sources.Select(s => s.TopoParent).ToList();
         if (parents.Any(p => p is null))
-            throw new ArgumentException("Topological distance requires shapes with a topo_parent");
+            throw new ArgumentException("Topological distance needs shapes selected from a parent shape.");
         var parent = parents[0]!;
         if (parents.Skip(1).Any(p => !parent.IsSame(p!)))
-            throw new ArgumentException("Topological distance requires a shared topo_parent");
+            throw new ArgumentException("Topological distance needs shapes selected from the same parent shape.");
 
         IEnumerable<Shape> peers = peerType switch
         {
@@ -338,9 +338,9 @@ public static partial class TopologyUtils
             if (obj.ShapeType != peerType)
                 throw new ArgumentException("Topological distance requires shapes of the same type");
             if (obj.TopoParent is null)
-                throw new ArgumentException("Topological distance requires shapes with a topo_parent");
+                throw new ArgumentException("Topological distance needs shapes selected from a parent shape.");
             if (!parent.IsSame(obj.TopoParent))
-                throw new ArgumentException("Topological distance requires a shared topo_parent");
+                throw new ArgumentException("Topological distance needs shapes selected from the same parent shape.");
             return PeerOf(obj) is { } peer && distances.TryGetValue(peer, out var d) ? d : double.PositiveInfinity;
         };
     }

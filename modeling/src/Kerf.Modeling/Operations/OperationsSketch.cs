@@ -20,7 +20,7 @@ public static partial class Operations
     {
         // Phase 5: in builder mode the result is combined with mode (replacing the builder's sketch by default)
         if (edge is null)
-            throw new ArgumentException("A single Edge must be provided");
+            throw new ArgumentException("Give a single edge.");
         var parent = edge.TopoParent ?? throw new ArgumentException("edge must be extracted from shape");
 
         // Generate a set of evenly spaced points along the given edge and the edges connected to it and use them to

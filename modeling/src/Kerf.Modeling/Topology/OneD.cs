@@ -384,7 +384,8 @@ public abstract partial class Shape1D
             ? topoWire.Offset2D(signedDistance, MakePlaneFace(new Plane(start, zDir: sn)), options)
             : topoWire.Offset2D(signedDistance, options);
         if (!offsetted.TryGetValue(out var built))
-            throw new InvalidOperationException($"2D offset failed with distance {distance}");
+            throw Failures.Expected(ModelingDiagnostics.OffsetFailed, $"The offset by {Formatting.Number(distance)} in the plane failed.",
+                                    offsetted.Diagnostics);
         var obj = TopoUtil.Downcast(built.Shape);
         if (obj.IsCompound())
             obj = TopoUtil.UnwrapCompound((global::Kerf.Topology.Compound)obj);

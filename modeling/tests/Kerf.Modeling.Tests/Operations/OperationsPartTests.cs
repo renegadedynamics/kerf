@@ -70,7 +70,10 @@ public class OperationsPartTests
     [Fact]
     public void BadDraftFaces()
     {
-        Assert.Throws<DraftAngleError>(() => Draft(_box.Faces().OrderBy(Axis.Z)[0], NeutralPlane, 10));
+        var e = Assert.Throws<Kerf.KerfException>(() => Draft(_box.Faces().OrderBy(Axis.Z)[0], NeutralPlane, 10));
+        Assert.Equal(ModelingDiagnostics.DraftFailed, e.Error.Code);
+        // The same failure as a result
+        Assert.Equal(ModelingDiagnostics.DraftFailed, TryDraft([_box.Faces().OrderBy(Axis.Z)[0]], NeutralPlane, 10).Error!.Code);
     }
 
     // ---- TestExtrude ----

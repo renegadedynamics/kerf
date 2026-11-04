@@ -130,9 +130,9 @@ public partial class Face : Shape2D
         get
         {
             if (IsEmpty)
-                throw new InvalidOperationException("Can't determine axes_of_symmetry of empty face");
+                throw new InvalidOperationException("An empty face has no axes of symmetry.");
             if (IsPlanar is null)
-                throw new InvalidOperationException("axes_of_symmetry only supports for planar faces");
+                throw new InvalidOperationException("Only a planar face has axes of symmetry.");
             var cog = Center();
             var normal = NormalAt();
             var innerWires = InnerWires();
@@ -432,11 +432,11 @@ public partial class Face : Shape2D
     public static Face MakeBezierSurface(IReadOnlyList<IReadOnlyList<Vector>> points, IReadOnlyList<IReadOnlyList<double>>? weights = null)
     {
         if (points.Count < 2 || points[0].Count < 2)
-            throw new ArgumentException("At least two control points must be provided (start, end)");
+            throw new ArgumentException("Give at least two control points, the start and the end.");
         if (points.Count > 25 || points[0].Count > 25)
             throw new ArgumentException("The maximum number of control points is 25");
         if (weights is { Count: > 0 } && (points.Count != weights.Count || points[0].Count != weights[0].Count))
-            throw new ArgumentException("A weight must be provided for each control point");
+            throw new ArgumentException("Give a weight for each control point.");
         var poles = Grid(points, p => p.ToGpPnt());
         BezierSurface bezier = weights is { Count: > 0 } ? new BezierSurface(poles, Grid(weights, w => w)) : new BezierSurface(poles);
         return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(bezier), () => "Bezier face"));
@@ -511,12 +511,12 @@ public partial class Face : Shape2D
         foreach (var wire in interiorWires)
         {
             if (wire.IsEmpty)
-                throw new ArgumentException("interior_wires contain an empty wire");
+                throw new ArgumentException("An inner wire is empty.");
             holes.Add(wire.TopoWire);
         }
         var made = surfaceFace.TopoFace.WithHoles(holes);
         if (!made.TryGetValue(out var face))
-            throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires",
+            throw new InvalidOperationException("The inner wires can't be added as holes to the non-planar face.",
                                                 new KerfException(made.Diagnostics));
         return new Face(face);
     }
@@ -534,7 +534,7 @@ public partial class Face : Shape2D
             ? new ApproximationOptions { Smoothing = (w1, w2, w3), MaxDegree = Math.Max(maxDeg, 6), Continuity = Continuity.C2, Tolerance = tolerance }
             : new ApproximationOptions { MinDegree = minDeg, MaxDegree = maxDeg, Continuity = Continuity.C2, Tolerance = tolerance };
         if (!BSplineSurface.Approximate(array, options).TryGetValue(out var surface))
-            throw new InvalidOperationException("B-spline approximation failed");
+            throw Failures.Expected(ModelingDiagnostics.SplineFailed, "No B-spline surface approximates the points.");
         return new Face(Failures.Get(global::Kerf.Topology.Face.FromSurface(surface), () => "B-spline face"));
     }
 
@@ -820,7 +820,7 @@ public partial class Face : Shape2D
     {
         var made = TopoFace.WithHoles(interiorWires.Select(w => w.TopoWire));
         if (!made.TryGetValue(out var holed))
-            throw new InvalidOperationException("Error adding interior hole in non-planar face with provided interior_wires",
+            throw new InvalidOperationException("The inner wires can't be added as holes to the non-planar face.",
                                                 new KerfException(made.Diagnostics));
         return new Face(holed).Fix();
     }

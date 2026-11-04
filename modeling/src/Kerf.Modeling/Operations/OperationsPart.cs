@@ -11,7 +11,7 @@ public static partial class Operations
     /// <exception cref="ArgumentException">
     /// A face isn't a plane, cylinder or cone, or the faces aren't all taken from the same single solid.
     /// </exception>
-    /// <exception cref="DraftAngleError">The draft can't be made.</exception>
+    /// <exception cref="KerfException">The draft can't be made (<see cref="ModelingDiagnostics.DraftFailed"/>).</exception>
     public static Part Draft(IEnumerable<Face> faces, Plane neutralPlane, double angle)
     {
         var faceList = faces.ToList();
@@ -31,16 +31,8 @@ public static partial class Operations
             throw new ArgumentException("Topological parent must be a single Solid");
 
         // Create the drafted solid
-        Solid newSolid;
-        try
-        {
-            newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
-        }
-        catch (DraftAngleError err)
-        {
-            throw new DraftAngleError("Draft operation failed. Use `Face` and `ProblematicShape` for more information.",
-                                      err.Face, err.ProblematicShape, err);
-        }
+        // A face that can't be drafted is a KerfException whose first error holds the face
+        var newSolid = parentSolids[0].Draft(faceList, neutralPlane, angle);
 
         // Phase 5: in builder mode the drafted solid replaces the builder's part
         return (Part)new Part([newSolid]).MadeBy(ShapeHistory.Of([newSolid]));
@@ -316,7 +308,7 @@ public static partial class Operations
         var xDirPointAxis = new Axis(origin + x, projection);
         var found = screen.FindIntersectionPoints(xDirPointAxis);
         if (found.Count == 0)
-            throw new ArgumentException("x_dir perpendicular to projection_dir");
+            throw new ArgumentException("The X direction is perpendicular to the projection direction.");
 
         // Set the workplane's x direction
         return workplane.WithXDir(found[0].Point - workplaneOrigin);
