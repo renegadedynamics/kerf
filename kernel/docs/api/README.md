@@ -438,8 +438,9 @@ offered.
   leaves out, which OCCT's calls deleted (decision 17301, replacing 1526).
 - **Done (10L5):** `Surfaces.Fill` (`BRepOffsetAPI_MakeFilling`; `FillBoundary`, `FillOptions`) and `Sweeps.Helix`
   (`HelixBRep_BuilderHelix`; `HelixOptions`), decision 17302.
-- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them), and an extrusion's or revolution's caps in its history
-  (OCCT's `FirstShape`/`LastShape`).
+- **Done (10L5):** an extrusion's and a revolution's caps in their histories (OCCT's `FirstShape`/`LastShape`): the
+  bottom one modified from the profile's sub-shape where the sweep rebuilt it, the top one generated (decision 17303).
+- `Tangents2D` (GccAna, Geom2dGcc: unit 10K4 was changing them).
 - The engine types of these areas that something public still shows (decision 1530 lists why): the modelling
   layer's public API (10M), and the public engine types of the areas 10L3 makes internal.
 

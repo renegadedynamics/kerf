@@ -10,7 +10,7 @@ namespace Kerf.Engine.Construction.Api;
 /// <summary>The root of the sweep algorithms (prisms and revolutions): the shapes at the bottom and the top of the sweep.</summary>
 /// <remarks>
 /// <para><see cref="FirstShape"/> and <see cref="LastShape"/> are publication points: they freeze what they return
-/// (design 4.2). OCCT's virtuals are the internal <see cref="InternalFirstShape"/> and <see cref="InternalLastShape"/>.</para>
+/// (design 4.2). OCCT's virtuals are the internal <see cref="InternalFirstShape()"/> and <see cref="InternalLastShape()"/>.</para>
 /// <para>Kerf: a sweep without copy writes into its generating shape (pcurves of the profile's edges on the new faces,
 /// vertex parameters, 3D curves, tolerances) and shares its sub-shapes in the result. The derived algorithms sweep the
 /// caller's shape itself in a working overlay (unit 10H3): the writes go to working copies, and the result holds the
@@ -38,6 +38,26 @@ internal abstract class MakeSweep : MakeShape
 
     /// <summary><see cref="LastShape()"/> without freezing (OCCT's virtual).</summary>
     internal abstract Shape InternalLastShape();
+
+    /// <summary>The shape at the bottom of the sweep generated with <paramref name="shape"/>, a sub-shape of the
+    /// generating shape, unfrozen; null where the sweep has none (OCCT's <c>FirstShape(S)</c> of the prism and the
+    /// revolution).</summary>
+    internal virtual Shape InternalFirstShape(in Shape shape) => new();
+
+    /// <summary>The shape at the top of the sweep generated with <paramref name="shape"/>, unfrozen; null where the sweep
+    /// has none.</summary>
+    internal virtual Shape InternalLastShape(in Shape shape) => new();
+
+    /// <summary>
+    /// Kerf: the bottom and top shapes generated with <paramref name="shape"/> (the caps of a face's sweep, the bottom
+    /// and top edges of an edge's), asked as a history query, which may build on demand (unit 10L5, for the public
+    /// sweeps' histories).
+    /// </summary>
+    internal (Shape First, Shape Last) CapsOf(in Shape shape)
+    {
+        using WorkingOverlay query = BeginQuery();
+        return (InternalFirstShape(shape), InternalLastShape(shape));
+    }
 
     private protected static Shape Published(Shape shape)
     {

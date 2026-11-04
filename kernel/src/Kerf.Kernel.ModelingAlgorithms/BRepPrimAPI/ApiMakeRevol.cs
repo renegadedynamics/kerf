@@ -415,13 +415,13 @@ internal class ApiMakeRevol : MakeSweep
     public Shape FirstShape(in Shape shape) => Published(InternalFirstShape(shape));
 
     /// <summary><see cref="FirstShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalFirstShape(in Shape shape) => FromSwept(_revol.FirstShape(shape));
+    internal override Shape InternalFirstShape(in Shape shape) => FromSwept(_revol.FirstShape(shape));
 
     /// <summary>The shape at the end of the revolution generated with <paramref name="shape"/>, a sub-shape of the generating shape (frozen).</summary>
     public Shape LastShape(in Shape shape) => Published(InternalLastShape(shape));
 
     /// <summary><see cref="LastShape(in Shape)"/> without freezing.</summary>
-    internal Shape InternalLastShape(in Shape shape) => FromSwept(_revol.LastShape(shape));
+    internal override Shape InternalLastShape(in Shape shape) => FromSwept(_revol.LastShape(shape));
 
     /// <summary>True if the result has degenerated edges.</summary>
     public bool HasDegenerated => !_degenerated.IsEmpty();

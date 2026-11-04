@@ -42,7 +42,7 @@ public static class Sweeps
                 throw new ArgumentException("The extrusion's direction is zero.", nameof(direction));
             }
             Shape p = profile.AsShape();
-            return EngineOperation.Run<Shape>(range => MakerOutcome.Of(new ApiMakePrism(p, direction, false, options.Canonize), range, [p]),
+            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakePrism(p, direction, false, options.Canonize), range, p),
                                               Failure, progress, cancellationToken);
         }
 
@@ -58,18 +58,9 @@ public static class Sweeps
             }
             Shape p = profile.AsShape();
             Axis3D a = axis;
-            // Without copy, as the other sweeps: the result shares the profile's sub-shapes. A whole turn's history
-            // answers for the profile's edges it leaves out too (decision 17301)
-            return EngineOperation.Run<Shape>(range =>
-            {
-                var revol = new ApiMakeRevol(p, a, angle);
-                revol.Build(range);
-                if (!revol.IsDone)
-                {
-                    return new EngineOutcome(false, static () => default);
-                }
-                return new EngineOutcome(true, revol.Shape, MakerOutcome.HistoryOf(new RevolutionHistory(revol), [p]));
-            }, Failure, progress, cancellationToken);
+            // Without copy, as the other sweeps: the result shares the profile's sub-shapes (decision 17301)
+            return EngineOperation.Run<Shape>(range => SweepOutcome(new ApiMakeRevol(p, a, angle), range, p),
+                                              Failure, progress, cancellationToken);
         }
     }
 
@@ -260,14 +251,62 @@ public static class Sweeps
         _ => throw new ArgumentOutOfRangeException(nameof(options), options.Frame, "An unknown sweep frame."),
     };
 
-    /// <summary>A revolution's history, with what OCCT's leaves out: the faces a whole turn sweeps from edges it doesn't
-    /// keep (decision 17301).</summary>
-    private sealed class RevolutionHistory(ApiMakeRevol revol) : History.IAlgorithm
+    // An extrusion or revolution built, with its history of the profile's sub-shapes and their caps
+    private static EngineOutcome SweepOutcome(MakeSweep sweep, ProgressRange range, Shape profile)
     {
-        public bool IsDeleted(in Shape s) => revol.IsDeleted(s);
+        sweep.Build(range);
+        if (!sweep.IsDone)
+        {
+            return new EngineOutcome(false, static () => default);
+        }
+        Shape result = sweep.Shape();
+        return new EngineOutcome(true, () => result, MakerOutcome.HistoryOf(new SweepHistory(sweep, result), [profile]));
+    }
 
-        public IEnumerable<Shape> Modified(in Shape s) => revol.Modified(s);
+    /// <summary>
+    /// An extrusion's or revolution's history (decisions 17301 and 17303): OCCT's, plus the caps. A sub-shape of the
+    /// profile is modified into its first shape (OCCT's <c>FirstShape(S)</c>, the bottom cap of a face, the bottom edge
+    /// of an edge) where the sweep rebuilt it, and generates its last shape (the top cap) beside what it swept; only
+    /// shapes the result holds, so a whole turn, whose last shapes are its first, adds nothing generated. A revolution
+    /// also answers for the edges a whole turn leaves out, which OCCT's history calls deleted.
+    /// </summary>
+    private sealed class SweepHistory : History.IAlgorithm
+    {
+        private readonly MakeSweep _sweep;
+        private readonly HashSet<Shape> _inResult = new(ShapeHasher.Instance);
 
-        public IEnumerable<Shape> Generated(in Shape s) => revol.IsDeleted(s) ? revol.GeneratedEvenIfUnused(s) : revol.Generated(s);
+        public SweepHistory(MakeSweep sweep, Shape result)
+        {
+            _sweep = sweep;
+            Exploration.MapShapes(result, _inResult);
+        }
+
+        public bool IsDeleted(in Shape s) => _sweep.IsDeleted(s);
+
+        public IEnumerable<Shape> Modified(in Shape s)
+        {
+            List<Shape> modified = [.. _sweep.Modified(s)];
+            Shape first = _sweep.CapsOf(s).First;
+            if (Holds(first) && !first.IsSame(s) && !modified.Any(m => m.IsSame(first)))
+            {
+                modified.Add(first);
+            }
+            return modified;
+        }
+
+        public IEnumerable<Shape> Generated(in Shape s)
+        {
+            List<Shape> generated = [.. _sweep is ApiMakeRevol revol && revol.IsDeleted(s)
+                                        ? revol.GeneratedEvenIfUnused(s)
+                                        : _sweep.Generated(s)];
+            (Shape first, Shape last) = _sweep.CapsOf(s);
+            if (Holds(last) && !last.IsSame(s) && !last.IsSame(first) && !generated.Any(g => g.IsSame(last)))
+            {
+                generated.Add(last);
+            }
+            return generated;
+        }
+
+        private bool Holds(in Shape shape) => !shape.IsNull && _inResult.Contains(shape);
     }
 }

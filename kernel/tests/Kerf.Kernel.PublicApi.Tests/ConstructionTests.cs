@@ -96,9 +96,34 @@ public class ConstructionTests
         Assert.Equal(ShapeType.Solid, prism.Shape.Type);
         Assert.Equal(15, MaxZ(prism.Shape), 12);
         Edge bottomEdge = face.Edges()[0];
-        Assert.Single(prism.History.Generated(bottomEdge));
+        // the side face it swept, then its top edge (the caps, decision 17303)
+        Assert.Equal(2, prism.History.Generated(bottomEdge).Count);
         Assert.Equal(ShapeType.Face, prism.History.Generated(bottomEdge)[0].Type);
         Assert.Throws<ArgumentException>(() => face.Extrude(Vector3D.Zero));
+    }
+
+    [Fact]
+    public void An_extrusions_and_a_revolutions_caps_are_in_their_histories()
+    {
+        Face face = Face.FromWire(Square(10)).Value;
+        Built<Shape> prism = face.Extrude(new Vector3D(0, 0, 15)).Value;
+        // the top cap is generated beside the solid; the bottom cap is the profile, or what stands for it
+        IReadOnlyList<Shape> generated = prism.History.Generated(face);
+        Assert.Equal([ShapeType.Solid, ShapeType.Face], generated.Select(g => g.Type));
+        Assert.Equal(15, generated[1].Vertices().Min(v => v.Point.Z), 9);
+        Shape bottom = prism.History.Modified(face) is [var modified] ? modified : face;
+        Assert.Contains(prism.Shape.Faces(), f => f.IsSame(bottom));
+        Assert.Equal(0, bottom.Vertices().Max(v => v.Point.Z), 9);
+        Vertex corner = face.Vertices()[0];
+        Assert.Contains(prism.History.Generated(corner), g => g.Type == ShapeType.Vertex && Math.Abs(((Vertex)g).Point.Z - 15) < 1e-9);
+
+        Face section = Face.FromWire(Wire.Polygon([new(5, 0, 0), new(6, 0, 0), new(6, 0, 1), new(5, 0, 1)], closed: true).Value).Value;
+        Built<Shape> quarter = section.Revolve(Axis3D.ZAxis, Math.PI / 2).Value;
+        Shape end = Assert.Single(quarter.History.Generated(section), g => g.Type == ShapeType.Face);
+        Assert.Equal(5, end.Vertices().Min(v => v.Point.Y), 9);
+        // a whole turn ends where it starts: no cap
+        Built<Shape> ring = section.Revolve(Axis3D.ZAxis).Value;
+        Assert.DoesNotContain(ring.History.Generated(section), g => g.Type == ShapeType.Face);
     }
 
     [Fact]
@@ -123,8 +148,7 @@ public class ConstructionTests
             // every edge swept a face of the result, even those a whole turn leaves out (decision 17301)
             foreach (Edge edge in face.Edges())
             {
-                Shape swept = Assert.Single(revolved.History.Generated(edge));
-                Assert.Equal(ShapeType.Face, swept.Type);
+                Shape swept = Assert.Single(revolved.History.Generated(edge), g => g.Type == ShapeType.Face);
                 Assert.Contains(revolved.Shape.Faces(), f => f.IsSame(swept));
             }
         }
