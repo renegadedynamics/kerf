@@ -1,6 +1,6 @@
 # Unit 10M1: what Bento sees change
 
-Unit 10M1 moved `Kerf.Modeling` onto the kernel's public API alone (kernel decisions 17401 to 17410). Bento isn't
+Unit 10M1 moved `Kerf.Modeling` onto the kernel's public API alone (kernel decisions 1565 to 1574). Bento isn't
 changed in phase 10 until 10N; this is the list of public modelling members it may meet renamed, removed or behaving
 differently. Found by comparing the public API of `Kerf.Modeling.dll` at kerf main 9c6086ff with this unit's, by
 reflection.
@@ -20,8 +20,8 @@ reflection.
 | `Edge.GeomAdaptor()` returning `EdgeCurveAdaptor` | returns the kernel's `EdgeCurve` (`Evaluate`, `Derivatives`, `Range`, `Length`…) | engine adaptor |
 | `Wire.GeomAdaptor()` returning `WireCurveAdaptor` | returns the kernel's `WireCurve` | engine adaptor |
 | `Shape1D.GeomAdaptor()` (abstract, `CurveAdaptorBase`) | gone; `Edge` and `Wire` each have theirs | engine adaptor |
-| `shape.Meshed(tolerance, angularTolerance)` (`ShapeOperations.Meshed`) | gone: `Triangulate` gives the mesh | the kernel never stores a mesh on a shape (decision 17405) |
-| `Vector.Repr()`, `Location.Repr()`, `Plane.Repr()` | `ToString()`, `ToString(format)` | Python's `repr` retired (decision 17408) |
+| `shape.Meshed(tolerance, angularTolerance)` (`ShapeOperations.Meshed`) | gone: `Triangulate` gives the mesh | the kernel never stores a mesh on a shape (decision 1569) |
+| `Vector.Repr()`, `Location.Repr()`, `Plane.Repr()` | `ToString()`, `ToString(format)` | Python's `repr` retired (decision 1572) |
 
 ## Behaving differently
 

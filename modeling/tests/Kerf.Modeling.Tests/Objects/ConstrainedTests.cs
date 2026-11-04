@@ -486,7 +486,7 @@ public class ConstrainedLinesTests
     public void InvalidTangentRaises()
     {
         // Degenerate input: two identical circles have no common tangent the solver gives (OCCT returned degenerate
-        // lines, which were skipped; Kerf decision 17105)
+        // lines, which were skipped; Kerf decision 1544)
         var e0 = Assert.Throws<InvalidOperationException>(() => ConstrainedSolvers.TwoTanLines(UnitCircle(), UnitCircle()));
         Assert.Contains("Unable to find common tangent line(s)", e0.Message);
         var e = Assert.Throws<InvalidOperationException>(() => ConstrainedSolvers.TwoTanLines(UnitCircle(), new Vector(0, 0)));

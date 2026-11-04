@@ -662,7 +662,7 @@ public class FaceTests
         Check.AlmostEqual(151.672, patch3.Area, 3);
 
         // curvature continuity, which failed in OCCT's MakeFilling ("The continuity is not G0 G1 or G2"; Kerf.Kernel's
-        // decision 16507)
+        // decision 1434)
         var patchC2 = Face.MakeSurfacePatch(edgeFaceConstraints:
         [
             (m1, f1, ContinuityLevel.C2),

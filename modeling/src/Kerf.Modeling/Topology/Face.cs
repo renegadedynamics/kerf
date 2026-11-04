@@ -845,7 +845,7 @@ public partial class Face : Shape2D
     public Face Chamfer2D(double distance, double distance2, IEnumerable<Vertex> vertices, Edge? edge = null)
     {
         // The face's own MakeFillet2d, as build123d chamfered before it worked around OCCT's merging of a face's wires
-        // (kernel decision 16717 keeps them apart)
+        // (kernel decision 1474 keeps them apart)
         var list = vertices.Where(v => !v.IsEmpty).ToList();
         if (list.Count == 0)
             return this;

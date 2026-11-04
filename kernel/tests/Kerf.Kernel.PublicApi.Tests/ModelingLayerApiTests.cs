@@ -15,7 +15,7 @@ namespace Kerf.Kernel.PublicApi.Tests;
 
 /// <summary>
 /// The members unit 10M1 added to the public API for the modelling layer, which no longer reaches the engine (decisions
-/// 17401 onwards): each checked against what the OCCT call it stands for does.
+/// 1565 onwards): each checked against what the OCCT call it stands for does.
 /// </summary>
 public class ModelingLayerApiTests
 {
